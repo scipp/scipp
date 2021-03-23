@@ -17,7 +17,6 @@
 namespace scipp::variable {
 
 class Variable;
-class VariableConstView;
 class VariableConcept;
 
 using VariableConceptHandle = std::shared_ptr<VariableConcept>;
@@ -48,7 +47,7 @@ public:
   virtual VariableConceptHandle
   makeDefaultFromParent(const scipp::index size) const = 0;
   virtual VariableConceptHandle
-  makeDefaultFromParent(const VariableConstView &shape) const = 0;
+  makeDefaultFromParent(const Variable &shape) const = 0;
 
   virtual DType dtype() const noexcept = 0;
   const units::Unit &unit() const { return m_unit; }
@@ -59,14 +58,13 @@ public:
   virtual bool hasVariances() const noexcept = 0;
   virtual void setVariances(const Variable &variances) = 0;
 
-  virtual bool equals(const VariableConstView &a,
-                      const VariableConstView &b) const = 0;
-  virtual void copy(const VariableConstView &src, Variable &dest) const = 0;
-  virtual void copy(const VariableConstView &src, Variable &&dest) const = 0;
+  virtual bool equals(const Variable &a, const Variable &b) const = 0;
+  virtual void copy(const Variable &src, Variable &dest) const = 0;
+  virtual void copy(const Variable &src, Variable &&dest) const = 0;
   virtual void assign(const VariableConcept &other) = 0;
   virtual scipp::index dtype_size() const = 0;
 
-  virtual VariableConstView bin_indices() const = 0;
+  virtual const VariableConceptHandle &bin_indices() const = 0;
 
   friend class Variable;
 

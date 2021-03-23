@@ -16,13 +16,10 @@ namespace scipp::variable {
 template <class Id, class Key, class Value> class ConstView;
 template <class T, class U> class MutableView;
 
-SCIPP_VARIABLE_EXPORT std::ostream &
-operator<<(std::ostream &os, const VariableConstView &variable);
 SCIPP_VARIABLE_EXPORT std::ostream &operator<<(std::ostream &os,
                                                const Variable &variable);
 
 SCIPP_VARIABLE_EXPORT std::string to_string(const Variable &variable);
-SCIPP_VARIABLE_EXPORT std::string to_string(const VariableConstView &variable);
 SCIPP_VARIABLE_EXPORT std::string
 to_string(const std::pair<Dim, VariableConstView> &coord);
 SCIPP_VARIABLE_EXPORT std::string

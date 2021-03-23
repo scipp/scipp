@@ -14,9 +14,4 @@ Variable Variable::operator-() const {
   return transform(*this, element::unary_minus);
 }
 
-Variable VariableConstView::operator-() const {
-  Variable copy(*this);
-  return -copy;
-}
-
 } // namespace scipp::variable

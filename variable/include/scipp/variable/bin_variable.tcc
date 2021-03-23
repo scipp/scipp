@@ -16,36 +16,24 @@ std::tuple<Variable, Dim, typename T::buffer_type> Variable::to_constituents() {
   Variable tmp;
   std::swap(*this, tmp);
   auto &model = requireT<DataModel<T>>(tmp.data());
-  return {Variable(std::move(model.indices())), model.bin_dim(),
-          std::move(model.buffer())};
+  return {tmp.bin_indices(), model.bin_dim(), std::move(model.buffer())};
 }
 
 template <class T>
 std::tuple<Variable, Dim, typename T::const_element_type>
 Variable::constituents() const {
   auto &model = requireT<const DataModel<T>>(data());
-  auto view = *this;
-  view.m_object = model.indices().m_object;
-  return {view, model.bin_dim(), model.buffer()};
+  return {bin_indices(), model.bin_dim(), model.buffer()};
 }
 
 template <class T>
 std::tuple<Variable, Dim, typename T::element_type> Variable::constituents() {
   auto &model = requireT<DataModel<T>>(data());
-  auto view = *this;
-  view.m_object = model.indices().m_object;
-  return {view, model.bin_dim(), model.buffer()};
-}
-
-template <class T>
-std::tuple<Variable, Dim, typename T::const_element_type>
-VariableConstView::constituents() const {
-  return underlying().constituents<T>();
+  return {bin_indices(), model.bin_dim(), model.buffer()};
 }
 
 namespace {
-auto contiguous_indices(const VariableConstView &parent,
-                        const Dimensions &dims) {
+auto contiguous_indices(const Variable &parent, const Dimensions &dims) {
   auto indices = Variable(parent, dims);
   copy(parent, indices);
   scipp::index size = 0;
@@ -61,21 +49,18 @@ auto contiguous_indices(const VariableConstView &parent,
 template <class T> class BinVariableMakerCommon : public AbstractVariableMaker {
 public:
   [[nodiscard]] bool is_bins() const override { return true; }
-  [[nodiscard]] Variable
-  empty_like(const VariableConstView &prototype,
-             const std::optional<Dimensions> &shape,
-             const VariableConstView &sizes) const override {
+  [[nodiscard]] Variable empty_like(const Variable &prototype,
+                                    const std::optional<Dimensions> &shape,
+                                    const Variable &sizes) const override {
     if (shape)
       throw except::TypeError(
           "Cannot specify shape in `empty_like` for prototype with bins, shape "
           "must be given by shape of `sizes`.");
     const auto [indices, dim, buf] = prototype.constituents<bucket<T>>();
-    Variable keep_alive_sizes;
     auto sizes_ = sizes;
     if (!sizes) {
       const auto &[begin, end] = unzip(indices);
-      keep_alive_sizes = end - begin;
-      sizes_ = keep_alive_sizes;
+      sizes_ = end - begin;
     }
     const auto end = cumsum(sizes_);
     const auto begin = end - sizes_;
@@ -94,8 +79,7 @@ private:
     const auto count = std::count_if(parents.begin(), parents.end(), is_bins);
     if (count == 0)
       throw except::BinnedDataError("Bin cannot have zero parents");
-    if (!(std::is_same_v<T, Variable> ||
-          std::is_base_of_v<VariableConstView, T>)&&(count > 1))
+    if (!std::is_same_v<T, Variable> && (count > 1))
       throw except::BinnedDataError(
           "Binary operations such as '+' with binned data are only supported "
           "with dtype=VariableView, got dtype=" +
@@ -138,20 +122,13 @@ public:
   }
   void expect_can_set_elem_unit(const Variable &var,
                                 const units::Unit &u) const override {
-    if constexpr (std::is_same_v<T, VariableConstView>)
-      throw std::runtime_error("Cannot set unit via const non-owning view");
-    else {
-      // TODO Is this check sufficient?
-      if ((elem_unit(var) != u) && (var.dims().volume() != var.data().size()))
-        throw except::UnitError("Partial view on data of variable cannot be "
-                                "used to change the unit.");
-    }
+    // TODO Is this check sufficient?
+    if ((elem_unit(var) != u) && (var.dims().volume() != var.data().size()))
+      throw except::UnitError("Partial view on data of variable cannot be "
+                              "used to change the unit.");
   }
   void set_elem_unit(Variable &var, const units::Unit &u) const override {
-    if constexpr (std::is_same_v<T, VariableConstView>)
-      throw std::runtime_error("Cannot set unit via const non-owning view");
-    else
-      std::get<2>(var.constituents<bucket<T>>()).setUnit(u);
+    std::get<2>(var.constituents<bucket<T>>()).setUnit(u);
   }
   bool hasVariances(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).hasVariances();
@@ -170,9 +147,6 @@ public:
       Variable::constituents<__VA_ARGS__>();                                   \
   template SCIPP_EXPORT                                                        \
       std::tuple<Variable, Dim, typename __VA_ARGS__::buffer_type>             \
-      Variable::to_constituents<__VA_ARGS__>();                                \
-  template SCIPP_EXPORT                                                        \
-      std::tuple<Variable, Dim, typename __VA_ARGS__::const_element_type>      \
-      VariableConstView::constituents<__VA_ARGS__>() const;
+      Variable::to_constituents<__VA_ARGS__>();
 
 } // namespace scipp::variable

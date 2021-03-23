@@ -34,14 +34,6 @@ template <class T> ElementArrayView<T> Variable::variances() {
   return cast<T>(*this).variances(array_params());
 }
 
-template <class T> ElementArrayView<const T> VariableConstView::values() const {
-  return cast<T>(*m_variable).values(array_params());
-}
-template <class T>
-ElementArrayView<const T> VariableConstView::variances() const {
-  return cast<T>(*m_variable).variances(array_params());
-}
-
 #define INSTANTIATE_VARIABLE_BASE(name, ...)                                   \
   namespace {                                                                  \
   auto register_dtype_name_##name(                                             \
@@ -49,9 +41,7 @@ ElementArrayView<const T> VariableConstView::variances() const {
   }                                                                            \
   template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__> Variable::values() \
       const;                                                                   \
-  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::values();      \
-  template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
-  VariableConstView::values() const;
+  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::values();
 
 /// Macro for instantiating classes and functions required for support a new
 /// dtype in Variable.
@@ -68,8 +58,6 @@ ElementArrayView<const T> VariableConstView::variances() const {
       std::optional<element_array<__VA_ARGS__>>);                              \
   template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
   Variable::variances() const;                                                 \
-  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::variances();   \
-  template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
-  VariableConstView::variances() const;
+  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::variances();
 
 } // namespace scipp::variable
