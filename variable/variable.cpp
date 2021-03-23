@@ -235,18 +235,18 @@ void VariableConstView::rename(const Dim from, const Dim to) {
   }
 }
 
-void Variable::setVariances(Variable v) {
+void Variable::setVariances(const Variable &v) {
   if (v) {
     core::expect::equals(unit(), v.unit());
     core::expect::equals(dims(), v.dims());
   }
-  data().setVariances(std::move(v));
+  data().setVariances(v);
 }
 
-void VariableView::setVariances(Variable v) const {
+void VariableView::setVariances(const Variable &v) const {
   if (m_offset == 0 && m_dims == m_variable->dims() &&
       m_dataDims == m_variable->dims())
-    m_mutableVariable->setVariances(std::move(v));
+    m_mutableVariable->setVariances(v);
   else
     throw except::VariancesError(
         "Cannot add variances via sliced or reshaped view of Variable.");

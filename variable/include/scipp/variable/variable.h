@@ -145,7 +145,7 @@ public:
   VariableConcept &data() && = delete;
   VariableConcept &data() & { return *m_object; }
 
-  void setVariances(Variable v);
+  void setVariances(const Variable &v);
 
   core::ElementArrayViewParams array_params() const noexcept;
 
@@ -344,7 +344,7 @@ public:
   // (would this suffer from the same issue?).
   template <class T> VariableView assign(const T &other) const;
 
-  void setVariances(Variable v) const;
+  void setVariances(const Variable &v) const;
 
   void setUnit(const units::Unit &unit) const;
   void expectCanSetUnit(const units::Unit &unit) const;

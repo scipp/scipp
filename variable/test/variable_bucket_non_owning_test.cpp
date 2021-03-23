@@ -37,7 +37,7 @@ TEST_F(VariableBucketNonOwningTest, copy) {
 }
 
 TEST_F(VariableBucketNonOwningTest, assign) {
-  Variable buffer_copy(buffer);
+  Variable buffer_copy = variable::copy(buffer);
   Variable copy =
       make_non_owning_bins(indices, Dim::X, VariableView(buffer_copy));
   view.values<bucket<VariableView>>()[0] +=
