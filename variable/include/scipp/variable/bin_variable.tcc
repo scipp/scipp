@@ -21,46 +21,26 @@ std::tuple<Variable, Dim, typename T::buffer_type> Variable::to_constituents() {
 }
 
 template <class T>
-std::tuple<VariableConstView, Dim, typename T::const_element_type>
+std::tuple<Variable, Dim, typename T::const_element_type>
 Variable::constituents() const {
-  return VariableConstView(*this).constituents<T>();
-}
-
-template <class T>
-std::tuple<bin_indices_t<T>, Dim, typename T::element_type>
-Variable::constituents() {
-  return VariableView(*this).constituents<T>();
-}
-
-template <class T>
-std::tuple<VariableConstView, Dim, typename T::const_element_type>
-VariableConstView::constituents() const {
-  const auto &model = requireT<const DataModel<T>>(underlying().data());
+  auto &model = requireT<const DataModel<T>>(data());
   auto view = *this;
-  if constexpr (is_view_v<typename T::buffer_type>) {
-    // See DataModel<bucket<T>>::index_values
-    view = model.indices();
-    view.m_offset += m_offset;
-    view.m_dims = m_dims;
-  } else {
-    view.m_variable = &model.indices();
-  }
+  view.m_object = model.indices().m_object;
   return {view, model.bin_dim(), model.buffer()};
 }
 
 template <class T>
-std::tuple<bin_indices_t<T>, Dim, typename T::element_type>
-VariableView::constituents() const {
-  auto &model = requireT<DataModel<T>>(m_mutableVariable->data());
-  if constexpr (is_view_v<typename T::buffer_type>) {
-    auto view = std::get<0>(VariableConstView::constituents<T>());
-    return {view, model.bin_dim(), model.buffer()};
-  } else {
-    auto view = *this;
-    view.m_variable = &model.indices();
-    view.m_mutableVariable = &model.indices();
-    return {view, model.bin_dim(), model.buffer()};
-  }
+std::tuple<Variable, Dim, typename T::element_type> Variable::constituents() {
+  auto &model = requireT<DataModel<T>>(data());
+  auto view = *this;
+  view.m_object = model.indices().m_object;
+  return {view, model.bin_dim(), model.buffer()};
+}
+
+template <class T>
+std::tuple<Variable, Dim, typename T::const_element_type>
+VariableConstView::constituents() const {
+  return underlying().constituents<T>();
 }
 
 namespace {
@@ -156,18 +136,18 @@ public:
   units::Unit elem_unit(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).unit();
   }
-  void expect_can_set_elem_unit(const VariableView &var,
+  void expect_can_set_elem_unit(const Variable &var,
                                 const units::Unit &u) const override {
     if constexpr (std::is_same_v<T, VariableConstView>)
       throw std::runtime_error("Cannot set unit via const non-owning view");
     else {
-      if ((elem_unit(var) != u) && (var.dims() != var.underlying().dims()))
+      // TODO Is this check sufficient?
+      if ((elem_unit(var) != u) && (var.dims().volume() != var.data().size()))
         throw except::UnitError("Partial view on data of variable cannot be "
                                 "used to change the unit.");
     }
   }
-  void set_elem_unit(const VariableView &var,
-                     const units::Unit &u) const override {
+  void set_elem_unit(Variable &var, const units::Unit &u) const override {
     if constexpr (std::is_same_v<T, VariableConstView>)
       throw std::runtime_error("Cannot set unit via const non-owning view");
     else
@@ -182,20 +162,17 @@ public:
 /// bin dtype in Variable.
 #define INSTANTIATE_BIN_VARIABLE(name, ...)                                    \
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
-  template SCIPP_EXPORT std::tuple<VariableConstView, Dim,                     \
-                                   typename __VA_ARGS__::const_element_type>   \
-  Variable::constituents<__VA_ARGS__>() const;                                 \
-  template SCIPP_EXPORT std::tuple<bin_indices_t<__VA_ARGS__>, Dim,            \
-                                   typename __VA_ARGS__::element_type>         \
-  Variable::constituents<__VA_ARGS__>();                                       \
+  template SCIPP_EXPORT                                                        \
+      std::tuple<Variable, Dim, typename __VA_ARGS__::const_element_type>      \
+      Variable::constituents<__VA_ARGS__>() const;                             \
+  template SCIPP_EXPORT                                                        \
+      std::tuple<Variable, Dim, typename __VA_ARGS__::element_type>            \
+      Variable::constituents<__VA_ARGS__>();                                   \
   template SCIPP_EXPORT                                                        \
       std::tuple<Variable, Dim, typename __VA_ARGS__::buffer_type>             \
       Variable::to_constituents<__VA_ARGS__>();                                \
-  template SCIPP_EXPORT std::tuple<bin_indices_t<__VA_ARGS__>, Dim,            \
-                                   typename __VA_ARGS__::element_type>         \
-  VariableView::constituents<__VA_ARGS__>() const;                             \
-  template SCIPP_EXPORT std::tuple<VariableConstView, Dim,                     \
-                                   typename __VA_ARGS__::const_element_type>   \
-  VariableConstView::constituents<__VA_ARGS__>() const;
+  template SCIPP_EXPORT                                                        \
+      std::tuple<Variable, Dim, typename __VA_ARGS__::const_element_type>      \
+      VariableConstView::constituents<__VA_ARGS__>() const;
 
 } // namespace scipp::variable

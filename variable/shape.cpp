@@ -171,21 +171,8 @@ Variable flatten(const VariableConstView &view,
   return reshape(view, flatten(view.dims(), from_labels, to_dim));
 }
 
-VariableView transpose(Variable &var, const std::vector<Dim> &dims) {
-  return transpose(VariableView(var), dims);
-}
-
-Variable transpose(Variable &&var, const std::vector<Dim> &dims) {
-  return Variable(transpose(VariableConstView(var), dims));
-}
-
-VariableConstView transpose(const VariableConstView &view,
-                            const std::vector<Dim> &dims) {
-  return view.transpose(dims);
-}
-
-VariableView transpose(const VariableView &view, const std::vector<Dim> &dims) {
-  return view.transpose(dims);
+Variable transpose(const Variable &var, const std::vector<Dim> &dims) {
+  return var.transpose(dims);
 }
 
 void squeeze(Variable &var, const std::vector<Dim> &dims) {
