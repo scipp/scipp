@@ -56,7 +56,7 @@ TEST_F(VariableBucketTest, basics) {
 }
 
 TEST_F(VariableBucketTest, view) {
-  VariableView view(var);
+  Variable view(var);
   EXPECT_EQ(view.values<bucket<Variable>>(), var.values<bucket<Variable>>());
   view = var.slice({Dim::Y, 1});
   const auto vals = view.values<bucket<Variable>>();

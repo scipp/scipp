@@ -9,28 +9,29 @@
 namespace scipp::variable {
 
 // Helpers for in-place reductions and reductions with groupby.
-SCIPP_VARIABLE_EXPORT void sum_impl(const VariableView &summed,
+SCIPP_VARIABLE_EXPORT void sum_impl(Variable &summed,
                                     const VariableConstView &var);
-SCIPP_VARIABLE_EXPORT void all_impl(const VariableView &out,
+SCIPP_VARIABLE_EXPORT void all_impl(Variable &out,
                                     const VariableConstView &var);
-SCIPP_VARIABLE_EXPORT void any_impl(const VariableView &out,
+SCIPP_VARIABLE_EXPORT void any_impl(Variable &out,
                                     const VariableConstView &var);
-SCIPP_VARIABLE_EXPORT void max_impl(const VariableView &out,
+SCIPP_VARIABLE_EXPORT void max_impl(Variable &out,
                                     const VariableConstView &var);
-SCIPP_VARIABLE_EXPORT void min_impl(const VariableView &out,
+SCIPP_VARIABLE_EXPORT void min_impl(Variable &out,
                                     const VariableConstView &var);
 SCIPP_VARIABLE_EXPORT Variable mean_impl(const VariableConstView &var,
                                          const Dim dim,
                                          const VariableConstView &masks_sum);
-SCIPP_VARIABLE_EXPORT VariableView mean_impl(const VariableConstView &var,
-                                             const Dim dim,
-                                             const VariableConstView &masks_sum,
-                                             const VariableView &out);
+SCIPP_VARIABLE_EXPORT Variable &mean_impl(const VariableConstView &var,
+                                          const Dim dim,
+                                          const VariableConstView &masks_sum,
+                                          Variable &out);
 SCIPP_VARIABLE_EXPORT Variable nanmean_impl(const VariableConstView &var,
                                             const Dim dim,
                                             const VariableConstView &masks_sum);
-SCIPP_VARIABLE_EXPORT VariableView
-nanmean_impl(const VariableConstView &var, const Dim dim,
-             const VariableConstView &masks_sum, const VariableView &out);
+SCIPP_VARIABLE_EXPORT Variable &nanmean_impl(const VariableConstView &var,
+                                             const Dim dim,
+                                             const VariableConstView &masks_sum,
+                                             Variable &out);
 
 } // namespace scipp::variable

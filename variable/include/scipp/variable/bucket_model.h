@@ -102,8 +102,8 @@ public:
 
   [[nodiscard]] bool equals(const VariableConstView &a,
                             const VariableConstView &b) const override;
-  void copy(const VariableConstView &src,
-            const VariableView &dest) const override;
+  void copy(const VariableConstView &src, Variable &dest) const override;
+  void copy(const VariableConstView &src, Variable &&dest) const override;
   void assign(const VariableConcept &other) override;
 
   // TODO Should the mutable version return a view to prevent risk of clients
@@ -193,9 +193,9 @@ bool DataModel<bucket<T>>::equals(const VariableConstView &a,
 
 template <class T>
 void DataModel<bucket<T>>::copy(const VariableConstView &src,
-                                const VariableView &dest) const {
+                                Variable &dest) const {
   const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
-  const auto &[indices1, dim1, buffer1] = dest.constituents<bucket<T>>();
+  auto &&[indices1, dim1, buffer1] = dest.constituents<bucket<T>>();
   static_cast<void>(dim1);
   if constexpr (is_view_v<T>) {
     // This is overly restrictive, could allow copy to non-const non-owning
@@ -204,6 +204,11 @@ void DataModel<bucket<T>>::copy(const VariableConstView &src,
   } else {
     copy_slices(buffer0, buffer1, dim0, indices0, indices1);
   }
+}
+template <class T>
+void DataModel<bucket<T>>::copy(const VariableConstView &src,
+                                Variable &&dest) const {
+  copy(src, dest);
 }
 
 template <class T>

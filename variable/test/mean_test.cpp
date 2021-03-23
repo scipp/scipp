@@ -47,18 +47,16 @@ template <typename TestFixture, typename Op> void basic_in_place(Op op) {
   using RetType = typename TestFixture::ReturnType;
   auto meanX = makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, units::m);
   auto meanY = makeVariable<RetType>(Dims{Dim::X}, Shape{2}, units::m);
-  auto viewX = op(var, Dim::X, meanX);
-  auto viewY = op(var, Dim::Y, meanY);
+  auto &viewX = op(var, Dim::X, meanX);
+  auto &viewY = op(var, Dim::Y, meanY);
   const auto expectedX =
       makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, units::m, Values{1.5, 3.5});
   const auto expectedY =
       makeVariable<RetType>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 3.0});
   EXPECT_EQ(meanX, expectedX);
-  EXPECT_EQ(viewX, meanX);
-  EXPECT_EQ(viewX.underlying(), meanX);
+  EXPECT_EQ(&viewX, &meanX);
   EXPECT_EQ(meanY, expectedY);
-  EXPECT_EQ(viewY, meanY);
-  EXPECT_EQ(viewY.underlying(), meanY);
+  EXPECT_EQ(&viewY, &meanY);
 }
 
 template <typename Op> void in_place_fail_output_dtype(Op op) {
@@ -103,13 +101,13 @@ void variances_as_standard_deviation_of_the_mean([[maybe_unused]] Op op) {
 
 auto mean_func =
     overloaded{[](const auto &var, const auto &dim) { return mean(var, dim); },
-               [](const auto &var, const auto &dim, auto &out) {
+               [](const auto &var, const auto &dim, auto &out) -> Variable & {
                  return mean(var, dim, out);
                },
                [](const auto &var) { return mean(var); }};
 auto nanmean_func = overloaded{
     [](const auto &var, const auto &dim) { return nanmean(var, dim); },
-    [](const auto &var, const auto &dim, auto &out) {
+    [](const auto &var, const auto &dim, auto &out) -> Variable & {
       return nanmean(var, dim, out);
     },
     [](const auto &var) { return nanmean(var); }};
@@ -182,14 +180,12 @@ TYPED_TEST(MeanTest, nanmean_basic_inplace) {
                                                    units::m, Values{1.5, 3.0});
     const auto expectedY = makeVariable<TypeParam>(Dims{Dim::X}, Shape{2},
                                                    units::m, Values{2.0, 2.0});
-    auto viewX = nanmean(var, Dim::X, meanX);
-    auto viewY = nanmean(var, Dim::Y, meanY);
+    auto &viewX = nanmean(var, Dim::X, meanX);
+    auto &viewY = nanmean(var, Dim::Y, meanY);
     EXPECT_EQ(meanX, expectedX);
-    EXPECT_EQ(viewX, meanX);
-    EXPECT_EQ(viewX.underlying(), meanX);
+    EXPECT_EQ(&viewX, &meanX);
     EXPECT_EQ(meanY, expectedY);
-    EXPECT_EQ(viewY, meanY);
-    EXPECT_EQ(viewY.underlying(), meanY);
+    EXPECT_EQ(&viewY, &meanY);
   } else {
     GTEST_SKIP_("Test type does not support nan testing");
   }
