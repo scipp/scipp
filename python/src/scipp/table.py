@@ -55,16 +55,15 @@ def _make_table_subsections(dict_of_variables, plural):
     return "".join(html)
 
 
-def _make_value_rows(dict_of_variables, is_bin_centers, index, edge_style,
-                     row_start):
+def _make_value_rows(dict_of_variables, is_bin_centers, index, row_start):
     html = []
     for key, section in dict_of_variables.items():
         for name, val in section.items():
             if is_bin_centers[key][name]:
                 if index == row_start:
-                    html.append("<td {}></td>".format(edge_style))
+                    html.append("<td class='sc-padding'></td>")
                     if val.variances is not None:
-                        html.append("<td {}></td>".format(edge_style))
+                        html.append("<td class='sc-padding'></td>")
             else:
                 html.append("<td rowspan='2'>{}</td>".format(
                     escape(su.value_to_string(val.values[index]))))
@@ -75,16 +74,15 @@ def _make_value_rows(dict_of_variables, is_bin_centers, index, edge_style,
     return "".join(html)
 
 
-def _make_trailing_cells(dict_of_variables, is_bin_centers, index, size,
-                         edge_style):
+def _make_trailing_cells(dict_of_variables, is_bin_centers, index, size):
     html = []
     for key, section in dict_of_variables.items():
         for name, val in section.items():
             if is_bin_centers[key][name]:
                 if index == size - 1:
-                    html.append("<td {}></td>".format(edge_style))
+                    html.append("<td class='sc-padding'></td>")
                     if val.variances is not None:
-                        html.append("<td {}></td>".format(edge_style))
+                        html.append("<td class='sc-padding'></td>")
                 else:
                     html.append("<td rowspan='2'>{}</td>".format(
                         escape(su.value_to_string(val.values[index]))))
@@ -114,9 +112,6 @@ def _table_from_dict_of_variables(dict_of_variables,
                                   row_start=0,
                                   max_rows=None,
                                   group=None):
-    edge_style = ("style='border: 0px solid white;background-color: #ffffff; "
-                  "height:1.2em;'")
-
     # Declare table
     html = "<table class='sc-table' style='border-collapse: collapse;'>"
 
@@ -148,11 +143,11 @@ def _table_from_dict_of_variables(dict_of_variables,
         for i in range(row_start, row_end):
             html += "<tr>"
             html += _make_value_rows(dict_of_variables, is_bin_centers, i,
-                                     edge_style, row_start)
+                                     row_start)
             html += "</tr><tr>"
             # If there are bin edges, we need to add trailing cells
             html += _make_trailing_cells(dict_of_variables, is_bin_centers, i,
-                                         row_end, edge_style)
+                                         row_end)
             html += "</tr>"
         # If we are not ending at the last row, add overflow
         if row_end != size:

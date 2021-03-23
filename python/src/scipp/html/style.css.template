@@ -408,3 +408,9 @@ label.sc-hide-icon svg{
 .sc-table th.sc-subheader {
   background-color: var(--sc-background-color2);
 }
+
+.sc-table td.sc-padding {
+  background-color: var(--sc-background-color1);
+  border: 0 solid var(--sc-background-color1);
+  height: 1.2em;
+}
