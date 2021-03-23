@@ -32,14 +32,8 @@ reshape(const VariableConstView &view, const Dimensions &dims);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 flatten(const VariableConstView &view,
         const scipp::span<const Dim> &from_labels, const Dim to_dim);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT VariableView
-transpose(Variable &var, const std::vector<Dim> &dims = {});
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-transpose(Variable &&var, const std::vector<Dim> &dims = {});
-[[nodiscard]] SCIPP_VARIABLE_EXPORT VariableConstView
-transpose(const VariableConstView &view, const std::vector<Dim> &dims = {});
-[[nodiscard]] SCIPP_VARIABLE_EXPORT VariableView
-transpose(const VariableView &view, const std::vector<Dim> &dims = {});
+transpose(const Variable &var, const std::vector<Dim> &dims = {});
 
 SCIPP_VARIABLE_EXPORT void squeeze(Variable &var, const std::vector<Dim> &dims);
 

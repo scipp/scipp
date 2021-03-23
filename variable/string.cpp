@@ -18,10 +18,6 @@ std::ostream &operator<<(std::ostream &os, const VariableConstView &variable) {
   return os << to_string(variable);
 }
 
-std::ostream &operator<<(std::ostream &os, const VariableView &variable) {
-  return os << VariableConstView(variable);
-}
-
 std::ostream &operator<<(std::ostream &os, const Variable &variable) {
   return os << VariableConstView(variable);
 }

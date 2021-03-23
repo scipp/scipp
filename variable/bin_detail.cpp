@@ -81,8 +81,7 @@ Variable subbin_sizes_cumsum_exclusive(const VariableConstView &var,
   return out;
 }
 
-void subbin_sizes_add_intersection(const VariableView &a,
-                                   const VariableConstView &b) {
+void subbin_sizes_add_intersection(Variable &a, const VariableConstView &b) {
   transform_in_place(a, b, core::element::subbin_sizes_add_intersection);
 }
 

@@ -190,7 +190,7 @@ TEST(VariableSpecialValueTest, nan_to_num_inplace) {
   auto a =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
   const auto replacement_value = makeVariable<double>(Values{-1});
-  VariableView b = nan_to_num(a, replacement_value, a);
+  auto &b = nan_to_num(a, replacement_value, a);
   auto expected = makeVariable<double>(
       Dims{Dim::X}, Shape{2}, Values{1.0, replacement_value.value<double>()});
   EXPECT_EQ(b, expected);
@@ -223,7 +223,7 @@ TEST(VariableSpecialValueTest,
                                 Values{1.0, double(NAN)}, Variances{0.1, 0.2});
   const auto replacement_value =
       makeVariable<double>(Values{-1}, Variances{0.1});
-  VariableView b = nan_to_num(a, replacement_value, a);
+  auto &b = nan_to_num(a, replacement_value, a);
   auto expected = makeVariable<double>(
       Dims{Dim::X}, Shape{2}, Values{1.0, replacement_value.value<double>()},
       Variances{0.1, replacement_value.variance<double>()});

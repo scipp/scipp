@@ -19,8 +19,6 @@ template <class T, class U> class MutableView;
 SCIPP_VARIABLE_EXPORT std::ostream &
 operator<<(std::ostream &os, const VariableConstView &variable);
 SCIPP_VARIABLE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                               const VariableView &variable);
-SCIPP_VARIABLE_EXPORT std::ostream &operator<<(std::ostream &os,
                                                const Variable &variable);
 
 SCIPP_VARIABLE_EXPORT std::string to_string(const Variable &variable);

@@ -8,23 +8,22 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-VariableView nan_to_num(const VariableConstView &var,
-                        const VariableConstView &replacement,
-                        const VariableView &out) {
+Variable &nan_to_num(const VariableConstView &var,
+                     const VariableConstView &replacement, Variable &out) {
   transform_in_place(out, var, replacement, element::nan_to_num_out_arg);
   return out;
 }
 
-VariableView positive_inf_to_num(const VariableConstView &var,
-                                 const VariableConstView &replacement,
-                                 const VariableView &out) {
+Variable &positive_inf_to_num(const VariableConstView &var,
+                              const VariableConstView &replacement,
+                              Variable &out) {
   transform_in_place(out, var, replacement,
                      element::positive_inf_to_num_out_arg);
   return out;
 }
-VariableView negative_inf_to_num(const VariableConstView &var,
-                                 const VariableConstView &replacement,
-                                 const VariableView &out) {
+Variable &negative_inf_to_num(const VariableConstView &var,
+                              const VariableConstView &replacement,
+                              Variable &out) {
   transform_in_place(out, var, replacement,
                      element::negative_inf_to_num_out_arg);
   return out;

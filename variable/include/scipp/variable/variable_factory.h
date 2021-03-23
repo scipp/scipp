@@ -26,10 +26,9 @@ public:
   virtual Dim elem_dim(const VariableConstView &var) const = 0;
   virtual DType elem_dtype(const VariableConstView &var) const = 0;
   virtual units::Unit elem_unit(const VariableConstView &var) const = 0;
-  virtual void expect_can_set_elem_unit(const VariableView &var,
+  virtual void expect_can_set_elem_unit(const Variable &var,
                                         const units::Unit &u) const = 0;
-  virtual void set_elem_unit(const VariableView &var,
-                             const units::Unit &u) const = 0;
+  virtual void set_elem_unit(Variable &var, const units::Unit &u) const = 0;
   virtual bool hasVariances(const VariableConstView &var) const = 0;
   virtual const Variable &data(const Variable &) const { throw unreachable(); }
   virtual Variable &data(Variable &) const { throw unreachable(); }
@@ -66,12 +65,11 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   units::Unit elem_unit(const VariableConstView &var) const override {
     return var.unit();
   }
-  void expect_can_set_elem_unit(const VariableView &var,
+  void expect_can_set_elem_unit(const Variable &var,
                                 const units::Unit &u) const override {
     var.expectCanSetUnit(u);
   }
-  void set_elem_unit(const VariableView &var,
-                     const units::Unit &u) const override {
+  void set_elem_unit(Variable &var, const units::Unit &u) const override {
     var.setUnit(u);
   }
   bool hasVariances(const VariableConstView &var) const override {
@@ -119,9 +117,9 @@ public:
   Dim elem_dim(const VariableConstView &var) const;
   DType elem_dtype(const VariableConstView &var) const;
   units::Unit elem_unit(const VariableConstView &var) const;
-  void expect_can_set_elem_unit(const VariableView &var,
+  void expect_can_set_elem_unit(const Variable &var,
                                 const units::Unit &u) const;
-  void set_elem_unit(const VariableView &var, const units::Unit &u) const;
+  void set_elem_unit(Variable &var, const units::Unit &u) const;
   bool hasVariances(const VariableConstView &var) const;
   template <class T, class Var> auto values(Var &&var) const {
     if (!is_bins(var))
@@ -148,7 +146,6 @@ private:
     return var.underlying();
   }
   Variable &view(Variable &var) const { return var; }
-  Variable &view(const VariableView &var) const { return var.underlying(); }
   std::map<DType, std::unique_ptr<AbstractVariableMaker>> m_makers;
 };
 

@@ -42,21 +42,6 @@ ElementArrayView<const T> VariableConstView::variances() const {
   return cast<T>(*m_variable).variances(array_params());
 }
 
-template <class T> ElementArrayView<T> VariableView::values() const {
-  return cast<T>(*m_mutableVariable).values(array_params());
-}
-template <class T> ElementArrayView<T> VariableView::variances() const {
-  return cast<T>(*m_mutableVariable).variances(array_params());
-}
-
-template <class T> void VariableView::replace_model(T model) const {
-  core::expect::equals(dims(),
-                       m_mutableVariable->dims()); // trivial view (no slice)
-  if (dims().volume() != model.size()) // size change would break DataArray
-    throw except::DimensionError("Cannot change size when replacing model.");
-  requireT<T>(m_mutableVariable->data()) = std::move(model);
-}
-
 #define INSTANTIATE_VARIABLE_BASE(name, ...)                                   \
   namespace {                                                                  \
   auto register_dtype_name_##name(                                             \
@@ -66,12 +51,7 @@ template <class T> void VariableView::replace_model(T model) const {
       const;                                                                   \
   template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::values();      \
   template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
-  VariableConstView::values() const;                                           \
-  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> VariableView::values()   \
-      const;                                                                   \
-  template SCIPP_EXPORT void                                                   \
-      VariableView::replace_model<DataModel<__VA_ARGS__>>(                     \
-          DataModel<__VA_ARGS__>) const;
+  VariableConstView::values() const;
 
 /// Macro for instantiating classes and functions required for support a new
 /// dtype in Variable.
@@ -90,8 +70,6 @@ template <class T> void VariableView::replace_model(T model) const {
   Variable::variances() const;                                                 \
   template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::variances();   \
   template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
-  VariableConstView::variances() const;                                        \
-  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__>                          \
-  VariableView::variances() const;
+  VariableConstView::variances() const;
 
 } // namespace scipp::variable

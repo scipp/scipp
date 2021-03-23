@@ -28,9 +28,8 @@ zip(const VariableConstView &first, const VariableConstView &second);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT std::pair<Variable, Variable>
 unzip(const VariableConstView &var);
 
-SCIPP_VARIABLE_EXPORT void fill(const VariableView &var,
-                                const VariableConstView &value);
+SCIPP_VARIABLE_EXPORT void fill(Variable &var, const VariableConstView &value);
 
-SCIPP_VARIABLE_EXPORT void fill_zeros(const VariableView &var);
+SCIPP_VARIABLE_EXPORT void fill_zeros(Variable &var);
 
 } // namespace scipp::variable

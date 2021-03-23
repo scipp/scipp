@@ -18,7 +18,6 @@ namespace scipp::variable {
 
 class Variable;
 class VariableConstView;
-class VariableView;
 class VariableConcept;
 
 using VariableConceptHandle = std::shared_ptr<VariableConcept>;
