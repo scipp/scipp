@@ -28,7 +28,7 @@ Variable sin(Variable &&var) {
   return out;
 }
 
-VariableView sin(const VariableConstView &var, const VariableView &out) {
+Variable &sin(const VariableConstView &var, Variable &out) {
   core::expect::unit_any_of(var, {units::rad, units::deg});
   out.assign(var);
   if (var.unit() == units::deg)
@@ -49,7 +49,7 @@ Variable cos(Variable &&var) {
   return out;
 }
 
-VariableView cos(const VariableConstView &var, const VariableView &out) {
+Variable &cos(const VariableConstView &var, Variable &out) {
   core::expect::unit_any_of(var, {units::rad, units::deg});
   out.assign(var);
   if (var.unit() == units::deg)
@@ -70,7 +70,7 @@ Variable tan(Variable &&var) {
   return out;
 }
 
-VariableView tan(const VariableConstView &var, const VariableView &out) {
+Variable &tan(const VariableConstView &var, Variable &out) {
   core::expect::unit_any_of(var, {units::rad, units::deg});
   out.assign(var);
   if (var.unit() == units::deg)
@@ -89,7 +89,7 @@ Variable asin(Variable &&var) {
   return out;
 }
 
-VariableView asin(const VariableConstView &var, const VariableView &out) {
+Variable &asin(const VariableConstView &var, Variable &out) {
   transform_in_place(out, var, element::asin_out_arg);
   return out;
 }
@@ -104,7 +104,7 @@ Variable acos(Variable &&var) {
   return out;
 }
 
-VariableView acos(const VariableConstView &var, const VariableView &out) {
+Variable &acos(const VariableConstView &var, Variable &out) {
   transform_in_place(out, var, element::acos_out_arg);
   return out;
 }
@@ -119,7 +119,7 @@ Variable atan(Variable &&var) {
   return out;
 }
 
-VariableView atan(const VariableConstView &var, const VariableView &out) {
+Variable &atan(const VariableConstView &var, Variable &out) {
   transform_in_place(out, var, element::atan_out_arg);
   return out;
 }
@@ -128,8 +128,8 @@ Variable atan2(const VariableConstView &y, const VariableConstView &x) {
   return transform(y, x, element::atan2);
 }
 
-VariableView atan2(const VariableConstView &y, const VariableConstView &x,
-                   const VariableView &out) {
+Variable &atan2(const VariableConstView &y, const VariableConstView &x,
+                Variable &out) {
   transform_in_place(out, y, x, element::atan2_out_arg);
   return out;
 }

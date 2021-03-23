@@ -74,8 +74,8 @@ public:
 
   bool equals(const VariableConstView &a,
               const VariableConstView &b) const override;
-  void copy(const VariableConstView &src,
-            const VariableView &dest) const override;
+  void copy(const VariableConstView &src, Variable &dest) const override;
+  void copy(const VariableConstView &src, Variable &&dest) const override;
   void assign(const VariableConcept &other) override;
 
   void setVariances(const Variable &variances) override;
@@ -161,12 +161,15 @@ bool DataModel<T>::equals(const VariableConstView &a,
 /// This method is using virtual dispatch as a trick to obtain T, such that
 /// transform can be called with any T.
 template <class T>
-void DataModel<T>::copy(const VariableConstView &src,
-                        const VariableView &dest) const {
+void DataModel<T>::copy(const VariableConstView &src, Variable &dest) const {
   transform_in_place<T>(
       dest, src,
       overloaded{core::transform_flags::expect_in_variance_if_out_variance,
                  [](auto &a, const auto &b) { a = b; }});
+}
+template <class T>
+void DataModel<T>::copy(const VariableConstView &src, Variable &&dest) const {
+  copy(src, dest);
 }
 
 template <class T> void DataModel<T>::assign(const VariableConcept &other) {

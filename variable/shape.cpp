@@ -129,7 +129,7 @@ Variable resize(const VariableConstView &var, const VariableConstView &shape) {
 namespace {
 void swap(Variable &var, const Dim dim, const scipp::index a,
           const scipp::index b) {
-  const Variable tmp(var.slice({dim, a}));
+  const Variable tmp = copy(var.slice({dim, a}));
   var.slice({dim, a}).assign(var.slice({dim, b}));
   var.slice({dim, b}).assign(tmp);
 }
@@ -144,9 +144,10 @@ Variable reverse(const Variable &var, const Dim dim) {
 }
 
 Variable reshape(const Variable &var, const Dimensions &dims) {
-  // TODO must extract slice if not contiguous
   expect_same_volume(var.dims(), dims);
-  Variable reshaped(var);
+  // TODO This condition is not sufficient
+  Variable reshaped =
+      var.dims().volume() == var.data().size() ? var : copy(var);
   reshaped.setDims(dims);
   return reshaped;
 }

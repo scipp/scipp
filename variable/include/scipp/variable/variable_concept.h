@@ -62,8 +62,8 @@ public:
 
   virtual bool equals(const VariableConstView &a,
                       const VariableConstView &b) const = 0;
-  virtual void copy(const VariableConstView &src,
-                    const VariableView &dest) const = 0;
+  virtual void copy(const VariableConstView &src, Variable &dest) const = 0;
+  virtual void copy(const VariableConstView &src, Variable &&dest) const = 0;
   virtual void assign(const VariableConcept &other) = 0;
   virtual scipp::index dtype_size() const = 0;
 

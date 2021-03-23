@@ -39,22 +39,20 @@ TEST(Variable, sin_out_arg_rad) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{pi<double>, 0.0},
                                 Unit{units::rad});
   auto out = makeVariable<double>(Values{0.0});
-  auto view = sin(x.slice({Dim::X, 0}), out);
+  auto &view = sin(x.slice({Dim::X, 0}), out);
 
   EXPECT_EQ(out, makeVariable<double>(Values{std::sin(pi<double>)}));
-  EXPECT_EQ(view, out);
-  EXPECT_EQ(view.underlying(), out);
+  EXPECT_EQ(&view, &out);
 }
 
 TEST(Variable, sin_out_arg_deg) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{180.0, 0.0},
                                 Unit{units::deg});
   auto out = makeVariable<double>(Values{0.0});
-  auto view = sin(x.slice({Dim::X, 0}), out);
+  auto &view = sin(x.slice({Dim::X, 0}), out);
 
   EXPECT_EQ(out, makeVariable<double>(Values{std::sin(pi<double>)}));
-  EXPECT_EQ(view, out);
-  EXPECT_EQ(view.underlying(), out);
+  EXPECT_EQ(&view, &out);
 }
 
 TEST(VariableTrigonometryTest, cos_rad) {
@@ -87,22 +85,20 @@ TEST(Variable, cos_out_arg_rad) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{pi<double>, 0.0},
                                 Unit{units::rad});
   auto out = makeVariable<double>(Values{0.0});
-  auto view = cos(x.slice({Dim::X, 0}), out);
+  auto &view = cos(x.slice({Dim::X, 0}), out);
 
   EXPECT_EQ(out, makeVariable<double>(Values{std::cos(pi<double>)}));
-  EXPECT_EQ(view, out);
-  EXPECT_EQ(view.underlying(), out);
+  EXPECT_EQ(&view, &out);
 }
 
 TEST(Variable, cos_out_arg_deg) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{180.0, 0.0},
                                 Unit{units::deg});
   auto out = makeVariable<double>(Values{0.0});
-  auto view = cos(x.slice({Dim::X, 0}), out);
+  auto &view = cos(x.slice({Dim::X, 0}), out);
 
   EXPECT_EQ(out, makeVariable<double>(Values{std::cos(pi<double>)}));
-  EXPECT_EQ(view, out);
-  EXPECT_EQ(view.underlying(), out);
+  EXPECT_EQ(&view, &out);
 }
 
 TEST(VariableTrigonometryTest, tan_rad) {
@@ -135,22 +131,20 @@ TEST(Variable, tan_out_arg_rad) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{pi<double>, 0.0},
                                 Unit{units::rad});
   auto out = makeVariable<double>(Values{0.0});
-  auto view = tan(x.slice({Dim::X, 0}), out);
+  auto &view = tan(x.slice({Dim::X, 0}), out);
 
   EXPECT_EQ(out, makeVariable<double>(Values{std::tan(pi<double>)}));
-  EXPECT_EQ(view, out);
-  EXPECT_EQ(view.underlying(), out);
+  EXPECT_EQ(&view, &out);
 }
 
 TEST(Variable, tan_out_arg_deg) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{180.0, 0.0},
                                 Unit{units::deg});
   auto out = makeVariable<double>(Values{0.0});
-  auto view = tan(x.slice({Dim::X, 0}), out);
+  auto &view = tan(x.slice({Dim::X, 0}), out);
 
   EXPECT_EQ(out, makeVariable<double>(Values{std::tan(pi<double>)}));
-  EXPECT_EQ(view, out);
-  EXPECT_EQ(view.underlying(), out);
+  EXPECT_EQ(&view, &out);
 }
 
 TEST(VariableTrigonometryTest, asin) {
@@ -171,12 +165,11 @@ TEST(Variable, asin_move) {
 TEST(Variable, asin_out_arg) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 0.0});
   auto out = makeVariable<double>(Values{0.0});
-  auto view = asin(x.slice({Dim::X, 0}), out);
+  auto &view = asin(x.slice({Dim::X, 0}), out);
 
   EXPECT_EQ(out,
             makeVariable<double>(Values{std::asin(1.0)}, Unit{units::rad}));
-  EXPECT_EQ(view, out);
-  EXPECT_EQ(view.underlying(), out);
+  EXPECT_EQ(&view, &out);
 }
 
 TEST(VariableTrigonometryTest, acos) {
@@ -197,12 +190,11 @@ TEST(Variable, acos_move) {
 TEST(Variable, acos_out_arg) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 0.0});
   auto out = makeVariable<double>(Values{0.0});
-  auto view = acos(x.slice({Dim::X, 0}), out);
+  auto &view = acos(x.slice({Dim::X, 0}), out);
 
   EXPECT_EQ(out,
             makeVariable<double>(Values{std::acos(1.0)}, Unit{units::rad}));
-  EXPECT_EQ(view, out);
-  EXPECT_EQ(view.underlying(), out);
+  EXPECT_EQ(&view, &out);
 }
 
 TEST(VariableTrigonometryTest, atan) {
@@ -223,12 +215,11 @@ TEST(Variable, atan_move) {
 TEST(Variable, atan_out_arg) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 0.0});
   auto out = makeVariable<double>(Values{0.0});
-  auto view = atan(x.slice({Dim::X, 0}), out);
+  auto &view = atan(x.slice({Dim::X, 0}), out);
 
   EXPECT_EQ(out,
             makeVariable<double>(Values{std::atan(1.0)}, Unit{units::rad}));
-  EXPECT_EQ(view, out);
-  EXPECT_EQ(view.underlying(), out);
+  EXPECT_EQ(&view, &out);
 }
 
 TEST(VariableTrigonometryTest, atan2) {

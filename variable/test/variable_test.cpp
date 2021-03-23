@@ -517,34 +517,27 @@ TEST(VariableView, full_mutable_view) {
 
 TEST(VariableView, strides) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
-  EXPECT_EQ(var.slice({Dim::X, 0}).strides(), (std::vector<scipp::index>{3}));
-  EXPECT_EQ(var.slice({Dim::X, 1}).strides(), (std::vector<scipp::index>{3}));
-  EXPECT_EQ(var.slice({Dim::Y, 0}).strides(), (std::vector<scipp::index>{1}));
-  EXPECT_EQ(var.slice({Dim::Y, 1}).strides(), (std::vector<scipp::index>{1}));
-  EXPECT_EQ(var.slice({Dim::X, 0, 1}).strides(),
-            (std::vector<scipp::index>{3, 1}));
-  EXPECT_EQ(var.slice({Dim::X, 1, 2}).strides(),
-            (std::vector<scipp::index>{3, 1}));
-  EXPECT_EQ(var.slice({Dim::Y, 0, 1}).strides(),
-            (std::vector<scipp::index>{3, 1}));
-  EXPECT_EQ(var.slice({Dim::Y, 1, 2}).strides(),
-            (std::vector<scipp::index>{3, 1}));
-  EXPECT_EQ(var.slice({Dim::X, 0, 2}).strides(),
-            (std::vector<scipp::index>{3, 1}));
-  EXPECT_EQ(var.slice({Dim::X, 1, 3}).strides(),
-            (std::vector<scipp::index>{3, 1}));
-  EXPECT_EQ(var.slice({Dim::Y, 0, 2}).strides(),
-            (std::vector<scipp::index>{3, 1}));
-  EXPECT_EQ(var.slice({Dim::Y, 1, 3}).strides(),
-            (std::vector<scipp::index>{3, 1}));
+  EXPECT_TRUE(equals(var.slice({Dim::X, 0}).strides(), {3}));
+  EXPECT_TRUE(equals(var.slice({Dim::X, 1}).strides(), {3}));
+  EXPECT_TRUE(equals(var.slice({Dim::Y, 0}).strides(), {1}));
+  EXPECT_TRUE(equals(var.slice({Dim::Y, 1}).strides(), {1}));
+  EXPECT_TRUE(equals(var.slice({Dim::X, 0, 1}).strides(), {3, 1}));
+  EXPECT_TRUE(equals(var.slice({Dim::X, 1, 2}).strides(), {3, 1}));
+  EXPECT_TRUE(equals(var.slice({Dim::Y, 0, 1}).strides(), {3, 1}));
+  EXPECT_TRUE(equals(var.slice({Dim::Y, 1, 2}).strides(), {3, 1}));
+  EXPECT_TRUE(equals(var.slice({Dim::X, 0, 2}).strides(), {3, 1}));
+  EXPECT_TRUE(equals(var.slice({Dim::X, 1, 3}).strides(), {3, 1}));
+  EXPECT_TRUE(equals(var.slice({Dim::Y, 0, 2}).strides(), {3, 1}));
+  EXPECT_TRUE(equals(var.slice({Dim::Y, 1, 3}).strides(), {3, 1}));
 
-  EXPECT_EQ(var.slice({Dim::X, 0, 1}).slice({Dim::Y, 0, 1}).strides(),
-            (std::vector<scipp::index>{3, 1}));
+  EXPECT_TRUE(equals(var.slice({Dim::X, 0, 1}).slice({Dim::Y, 0, 1}).strides(),
+                     {3, 1}));
 
   auto var3D =
       makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{4, 3, 2});
-  EXPECT_EQ(var3D.slice({Dim::X, 0, 1}).slice({Dim::Z, 0, 1}).strides(),
-            (std::vector<scipp::index>{6, 2, 1}));
+  EXPECT_TRUE(
+      equals(var3D.slice({Dim::X, 0, 1}).slice({Dim::Z, 0, 1}).strides(),
+             std::vector<scipp::index>{6, 2, 1}));
 }
 
 TEST(VariableView, values_and_variances) {
