@@ -23,7 +23,7 @@ public:
       : VariableConcept(units::one), m_indices(indices), m_dim(dim) {}
 
   bool hasVariances() const noexcept override { return false; }
-  void setVariances(Variable &&) override {
+  void setVariances(const Variable &) override {
     throw except::VariancesError("This data type cannot have variances.");
   }
   VariableConstView bin_indices() const override { return indices(); }

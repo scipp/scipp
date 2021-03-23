@@ -3,6 +3,7 @@
 
 namespace scipp::variable {
 
+/*
 VariableConceptHandle::VariableConceptHandle(const VariableConceptHandle &other)
     : VariableConceptHandle(other ? other->clone() : VariableConceptHandle()) {}
 
@@ -22,6 +23,7 @@ VariableConceptHandle::operator=(const VariableConceptHandle &other) {
   }
   return *this = other ? other->clone() : VariableConceptHandle();
 }
+*/
 
 VariableConcept::VariableConcept(const units::Unit &unit) : m_unit(unit) {}
 

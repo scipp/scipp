@@ -20,7 +20,7 @@ permute(const Variable &var, const Dim dim,
 resize(const VariableConstView &var, const Dim dim, const scipp::index size);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 resize(const VariableConstView &var, const VariableConstView &shape);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reverse(Variable var,
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reverse(const Variable &var,
                                                      const Dim dim);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reshape(const Variable &var,
                                                      const Dimensions &dims);
