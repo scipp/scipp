@@ -6,6 +6,12 @@
 
 namespace scipp::core {
 
+Strides::Strides(const scipp::span<const scipp::index> &strides) {
+  scipp::index i = 0;
+  for (const auto &stride : strides)
+    m_strides.at(i++) = stride;
+}
+
 Strides::Strides(const Dimensions &dims) {
   scipp::index offset{1};
   for (scipp::index i = dims.ndim() - 1; i >= 0; --i) {

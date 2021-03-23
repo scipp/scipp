@@ -45,9 +45,7 @@ Variable make_subspan_view(Var &var, const Dimensions &dims,
                            VariancesMaker make_variances) {
   std::conditional_t<std::is_const_v<T>, const Var, Var> &var_ref = var;
   using MaybeConstT =
-      std::conditional_t<std::is_const_v<Var> &&
-                             !std::is_same_v<std::decay_t<Var>, VariableView>,
-                         std::add_const_t<T>, T>;
+      std::conditional_t<std::is_const_v<Var>, std::add_const_t<T>, T>;
   auto valuesView = make_values(var_ref);
   if (var.hasVariances()) {
     auto variancesView = make_variances(var_ref);
@@ -130,20 +128,12 @@ Variable subspan_view_impl(Var &var, Args &&... args) {
 Variable subspan_view(Variable &var, const Dim dim) {
   return subspan_view_impl(var, dim);
 }
-/// Return Variable containing mutable spans over given dimension as elements.
-Variable subspan_view(const VariableView &var, const Dim dim) {
-  return subspan_view_impl(var, dim);
-}
 /// Return Variable containing const spans over given dimension as elements.
 Variable subspan_view(const VariableConstView &var, const Dim dim) {
   return subspan_view_impl(var, dim);
 }
 
 Variable subspan_view(Variable &var, const Dim dim,
-                      const VariableConstView &indices) {
-  return subspan_view_impl(var, dim, indices);
-}
-Variable subspan_view(const VariableView &var, const Dim dim,
                       const VariableConstView &indices) {
   return subspan_view_impl(var, dim, indices);
 }

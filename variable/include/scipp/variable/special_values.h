@@ -9,15 +9,15 @@
 
 namespace scipp::variable {
 
-SCIPP_VARIABLE_EXPORT VariableView
-nan_to_num(const VariableConstView &var, const VariableConstView &replacement,
-           const VariableView &out);
-SCIPP_VARIABLE_EXPORT VariableView positive_inf_to_num(
-    const VariableConstView &var, const VariableConstView &replacement,
-    const VariableView &out);
-SCIPP_VARIABLE_EXPORT VariableView negative_inf_to_num(
-    const VariableConstView &var, const VariableConstView &replacement,
-    const VariableView &out);
+SCIPP_VARIABLE_EXPORT Variable &nan_to_num(const VariableConstView &var,
+                                           const VariableConstView &replacement,
+                                           Variable &out);
+SCIPP_VARIABLE_EXPORT Variable &
+positive_inf_to_num(const VariableConstView &var,
+                    const VariableConstView &replacement, Variable &out);
+SCIPP_VARIABLE_EXPORT Variable &
+negative_inf_to_num(const VariableConstView &var,
+                    const VariableConstView &replacement, Variable &out);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 nan_to_num(const VariableConstView &var, const VariableConstView &replacement);

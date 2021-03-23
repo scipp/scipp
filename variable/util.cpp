@@ -80,12 +80,12 @@ std::pair<Variable, Variable> unzip(const VariableConstView &var) {
 }
 
 /// Fill variable with given values (and variances) and unit.
-void fill(const VariableView &var, const VariableConstView &value) {
+void fill(Variable &var, const VariableConstView &value) {
   transform_in_place(var, value, core::element::fill);
 }
 
 /// Fill variable with zeros.
-void fill_zeros(const VariableView &var) {
+void fill_zeros(Variable &var) {
   transform_in_place(var, core::element::fill_zeros);
 }
 

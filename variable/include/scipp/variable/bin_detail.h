@@ -23,7 +23,6 @@ flatten_subbin_sizes(const VariableConstView &var, const scipp::index length);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 subbin_sizes_cumsum_exclusive(const VariableConstView &var, const Dim dim);
 SCIPP_VARIABLE_EXPORT void
-subbin_sizes_add_intersection(const VariableView &a,
-                              const VariableConstView &b);
+subbin_sizes_add_intersection(Variable &a, const VariableConstView &b);
 
 } // namespace scipp::variable::bin_detail
