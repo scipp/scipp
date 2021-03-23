@@ -372,6 +372,10 @@ label.sc-hide-icon svg{
   padding-right:10px;
 }
 
+.sc-table {
+  border-collapse: collapse;
+}
+
 .sc-table th, .sc-table td {
   border: 1px solid var(--sc-inverse-background-color0);
   padding: 0 5px 0 5px;

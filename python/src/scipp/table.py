@@ -113,7 +113,7 @@ def _table_from_dict_of_variables(dict_of_variables,
                                   max_rows=None,
                                   group=None):
     # Declare table
-    html = "<table class='sc-table' style='border-collapse: collapse;'>"
+    html = "<table class='sc-table'>"
 
     if headers > 1:
         html += _make_table_sections(dict_of_variables)
