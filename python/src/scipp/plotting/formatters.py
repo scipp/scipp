@@ -55,7 +55,7 @@ class DateFormatter:
         self.offset = offset
         self.dim = dim
         self.interface = interface
-        self.indicator_set = False
+        self.indicators = []
 
     def formatter(self, val, pos):
         d = (self.offset + (int(val) * self.offset.unit)).value
@@ -77,7 +77,7 @@ class DateFormatter:
         #     (int(bounds[0]) * offset.unit + offset).value) +
         #              '\n').encode())
         if pos == 0:
-            self.indicator_set = False
+            self.indicators.clear()
 
         date_min = date2cal(
             (int(bounds[0]) * self.offset.unit + self.offset).value)
@@ -101,8 +101,10 @@ class DateFormatter:
             string = str(float(dt[17:23]))
         elif (diff < to_unit(4 * Unit('min'), diff.unit)).value:
             # label: 2017-01-13, tick: 12:15:45
-            trim = 10
-            string = dt[11:19]
+            # trim = 10
+            string = dt[14:21]
+            string, trim = self.check_for_transition(pos, string, date_min,
+                                                     date_max, date, dt, 4)
         elif (diff < to_unit(4 * Unit('h'), diff.unit)).value:
             # label: 2017-01-13, tick: 12:15:45
             # trim = 10
@@ -145,7 +147,7 @@ class DateFormatter:
 
         elif (diff < to_unit(6 * Unit('month'), diff.unit)).value:
             # label: 2017, tick: 01-13
-            string = dt[5:10]
+            string = dt[5:13].replace('T', ' ') + 'h'
             # tick_indicator = False
             # if date_min[0] != date_max[0]:
             #     if pos == 1:
@@ -160,9 +162,17 @@ class DateFormatter:
             string, trim = self.check_for_transition(pos, string, date_min,
                                                      date_max, date, dt, 1)
 
-        else:
+        elif (diff < to_unit(4 * Unit('year'), diff.unit)).value:
+            string = dt[5:10]
+            string, trim = self.check_for_transition(pos, string, date_min,
+                                                     date_max, date, dt, 1)
+        elif (diff < to_unit(100 * Unit('year'), diff.unit)).value:
             # tick: 2017-01
             string = dt[:7]
+        else:
+            # tick: 2017
+            string = dt[:4]
+
         # os.write(1, ('got to here 46 {} {}\n'.format(string, trim)).encode())
 
         if pos == 1:
@@ -188,7 +198,7 @@ class DateFormatter:
     def check_for_transition(self, pos, string, date_min, date_max, date, dt,
                              max_ind):
         # Find non-equal year and month
-        tick_indicator = False
+        # tick_indicator = False
         splits = [0, 4, 7, 10, 13, 16, 19]
         ind = None
         trim = 0
@@ -197,15 +207,23 @@ class DateFormatter:
             np.where(date_min[:max_ind] != date_max[:max_ind]))
         if len(not_equal) > 0:
             ind = np.amin(not_equal)
-            if pos == 1:
-                tick_indicator = True
-            if (date[ind] == date_max[ind]) and (not self.indicator_set):
-                tick_indicator = True
-                self.indicator_set = True
-            if tick_indicator:
+            # return string, trim
+            # os.write(1, "{} {} {}\n".format(ind, date[ind], pos).encode())
+            if pos != 0 and (date[ind] not in self.indicators):
+                # return string, trim
+                # if pos == 1:
+                #     tick_indicator = True
+                # if (date[ind] == date_max[ind]) and (date[ind]
+                #                                      not in self.indicators):
+                # tick_indicator = True
+                self.indicators.append(date[ind])
+                # if tick_indicator:
                 # ind_m1 =
-                string += "\n{}".format(
-                    dt[splits[ind]:splits[max_ind]].strip('-').strip(':'))
+                transition_marker = dt[splits[ind]:splits[max_ind]].strip(
+                    '-').strip(':')
+                if transition_marker[0] == 'T':
+                    transition_marker = transition_marker[1:] + 'h'
+                string += f"\n{transition_marker}"
                 # if ind > 0:
                 trim = splits[ind]
         else:
