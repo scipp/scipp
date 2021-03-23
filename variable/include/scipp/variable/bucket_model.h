@@ -19,14 +19,16 @@ namespace scipp::variable {
 
 template <class Indices> class BinModelBase : public VariableConcept {
 public:
-  BinModelBase(const VariableConstView &indices, const Dim dim)
+  BinModelBase(const VariableConceptHandle &indices, const Dim dim)
       : VariableConcept(units::one), m_indices(indices), m_dim(dim) {}
+
+  scipp::index size() const override { return indices()->size(); }
 
   bool hasVariances() const noexcept override { return false; }
   void setVariances(const Variable &) override {
     throw except::VariancesError("This data type cannot have variances.");
   }
-  VariableConstView bin_indices() const override { return indices(); }
+  const Indices &bin_indices() const override { return indices(); }
 
   const auto &indices() const { return m_indices; }
   auto &indices() { return m_indices; }
@@ -43,20 +45,19 @@ private:
 /// A bucket in this context is defined as an element of a variable mapping to a
 /// range of data, such as a slice of a DataArray.
 template <class T>
-class DataModel<bucket<T>>
-    : public BinModelBase<
-          std::conditional_t<is_view_v<T>, VariableConstView, Variable>> {
-  using Indices = std::conditional_t<is_view_v<T>, VariableConstView, Variable>;
+class DataModel<bucket<T>> : public BinModelBase<VariableConceptHandle> {
+  using Indices = VariableConceptHandle;
 
 public:
   using value_type = bucket<T>;
   using range_type = typename bucket<T>::range_type;
 
-  DataModel(const VariableConstView &indices, const Dim dim, T buffer)
+  DataModel(const VariableConceptHandle &indices, const Dim dim, T buffer)
       : BinModelBase<Indices>(validated_indices(indices, dim, buffer), dim),
         m_buffer(std::move(buffer)) {}
 
   [[nodiscard]] VariableConceptHandle clone() const override {
+    // TODO Deep copy indices?
     return std::make_unique<DataModel>(*this);
   }
 
@@ -71,8 +72,8 @@ public:
   [[nodiscard]] VariableConceptHandle
   makeDefaultFromParent(const scipp::index size) const override {
     return std::make_unique<DataModel>(
-        makeVariable<range_type>(Dims{Dim::X}, Shape{size}), this->bin_dim(),
-        T{m_buffer.slice({this->bin_dim(), 0, 0})});
+        makeVariable<range_type>(Dims{Dim::X}, Shape{size}).data_handle(),
+        this->bin_dim(), T{m_buffer.slice({this->bin_dim(), 0, 0})});
   }
 
   [[nodiscard]] VariableConceptHandle
@@ -82,23 +83,15 @@ public:
     const auto size = end.dims().volume() > 0
                           ? end.values<scipp::index>().as_span().back()
                           : 0;
-    if constexpr (is_view_v<T>) {
-      // converting, e.g., bucket<VariableView> to bucket<Variable>
-      return std::make_unique<DataModel<bucket<typename T::value_type>>>(
-          zip(begin, begin), this->bin_dim(),
-          resize_default_init(m_buffer, this->bin_dim(), size));
-    } else {
-      return std::make_unique<DataModel>(
-          zip(begin, begin), this->bin_dim(),
-          resize_default_init(m_buffer, this->bin_dim(), size));
-    }
+    return std::make_unique<DataModel>(
+        zip(begin, begin).data_handle(), this->bin_dim(),
+        resize_default_init(m_buffer, this->bin_dim(), size));
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }
   [[nodiscard]] DType dtype() const noexcept override {
     return scipp::dtype<bucket<T>>;
   }
-  scipp::index size() const override { return this->indices().dims().volume(); }
 
   [[nodiscard]] bool equals(const VariableConstView &a,
                             const VariableConstView &b) const override;
@@ -124,52 +117,33 @@ public:
   }
 
 private:
-  static auto validated_indices(const VariableConstView &indices,
+  static auto validated_indices(const VariableConceptHandle &indices,
                                 [[maybe_unused]] const Dim dim,
                                 [[maybe_unused]] const T &buffer) {
-    if constexpr (is_view_v<T>) {
-      // Assume validation happened outside when constructing owning DataModel.
-      return indices;
-    } else {
-      Variable copy(indices);
-      const auto vals =
-          scipp::span(copy.values<range_type>().data(),
-                      copy.values<range_type>().data() + copy.dims().volume());
-      std::sort(vals.begin(), vals.end());
-      if ((!vals.empty() && (vals.begin()->first < 0)) ||
-          (!vals.empty() && ((vals.end() - 1)->second > buffer.dims()[dim])))
-        throw except::SliceError("Bin indices out of range");
-      if (std::adjacent_find(vals.begin(), vals.end(),
-                             [](const auto a, const auto b) {
-                               return a.second > b.first;
-                             }) != vals.end())
-        throw except::SliceError("Overlapping bin indices are not allowed.");
-      if (std::find_if(vals.begin(), vals.end(), [](const auto x) {
-            return x.first > x.second;
-          }) != vals.end())
-        throw except::SliceError(
-            "Bin begin index must be less or equal to its end index.");
-      // Copy to avoid a second memory allocation
-      const auto &i = indices.values<range_type>();
-      std::copy(i.begin(), i.end(), vals.begin());
-      return copy;
-    }
+    auto copy = requireT<const DataModel<range_type>>(*indices);
+    const auto vals = copy.values();
+    std::sort(vals.begin(), vals.end());
+    if ((!vals.empty() && (vals.begin()->first < 0)) ||
+        (!vals.empty() && ((vals.end() - 1)->second > buffer.dims()[dim])))
+      throw except::SliceError("Bin indices out of range");
+    if (std::adjacent_find(vals.begin(), vals.end(),
+                           [](const auto a, const auto b) {
+                             return a.second > b.first;
+                           }) != vals.end())
+      throw except::SliceError("Overlapping bin indices are not allowed.");
+    if (std::find_if(vals.begin(), vals.end(), [](const auto x) {
+          return x.first > x.second;
+        }) != vals.end())
+      throw except::SliceError(
+          "Bin begin index must be less or equal to its end index.");
+    // Sharing indices
+    // TODO Move validation out of this class so we can avoid copies and
+    // duplicate validation, in particular for bins_view?
+    return indices;
   }
+
   auto index_values(const core::ElementArrayViewParams &base) const {
-    if constexpr (is_view_v<T>) {
-      // m_indices is a VariableConstView and may thus contain slicing
-      const auto params = this->indices().array_params();
-      const auto offset = params.offset() + base.offset();
-      // `base` comes from the variable (view) holding this model, so it
-      // contains slicing applied after the one that may be part of m_indices.
-      // Dimensions are thus given by `base`:
-      const auto dims = base.dims();
-      const auto dataDims = params.dataDims();
-      return cast<range_type>(this->indices().underlying())
-          .values(core::ElementArrayViewParams(offset, dims, dataDims, {}));
-    } else {
-      return cast<range_type>(this->indices()).values(base);
-    }
+    return requireT<const DataModel<range_type>>(*this->indices()).values(base);
   }
   T m_buffer;
 };
@@ -197,13 +171,7 @@ void DataModel<bucket<T>>::copy(const VariableConstView &src,
   const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
   auto &&[indices1, dim1, buffer1] = dest.constituents<bucket<T>>();
   static_cast<void>(dim1);
-  if constexpr (is_view_v<T>) {
-    // This is overly restrictive, could allow copy to non-const non-owning
-    throw std::runtime_error(
-        "Copying to non-owning binned view is not implemented.");
-  } else {
-    copy_slices(buffer0, buffer1, dim0, indices0, indices1);
-  }
+  copy_slices(buffer0, buffer1, dim0, indices0, indices1);
 }
 template <class T>
 void DataModel<bucket<T>>::copy(const VariableConstView &src,

@@ -71,7 +71,7 @@ Variable resize_default_init(const VariableConstView &var, const Dim dim,
 Variable make_bins(Variable indices, const Dim dim, Variable buffer) {
   return {indices.dims(),
           std::make_unique<variable::DataModel<bucket<Variable>>>(
-              std::move(indices), dim, std::move(buffer))};
+              indices.data_handle(), dim, std::move(buffer))};
 }
 
 } // namespace scipp::variable

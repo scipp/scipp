@@ -24,8 +24,6 @@ resize(const VariableConstView &var, const VariableConstView &shape);
                                                      const Dim dim);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reshape(const Variable &var,
                                                      const Dimensions &dims);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-reshape(const VariableConstView &view, const Dimensions &dims);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable fold(const VariableConstView &view,
                                                   const Dim from_dim,
                                                   const Dimensions &to_dims);

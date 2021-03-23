@@ -10,11 +10,13 @@ namespace scipp::variable {
 namespace {
 
 /// Helper returning vector of subspans from begin to end
-template <class T>
-auto make_subspans(const ElementArrayView<T> &first,
+template <class Var, class T>
+auto make_subspans(Var &, const ElementArrayView<T> &first,
                    const ElementArrayView<T> &last) {
   const auto len = first.size();
-  std::vector<span<T>> spans;
+  std::vector<
+      span<std::conditional_t<std::is_const_v<Var>, std::add_const_t<T>, T>>>
+      spans;
   spans.reserve(len);
   for (scipp::index i = 0; i < len; ++i)
     spans.emplace_back(scipp::span(&first[i], &last[i] + 1));
@@ -75,13 +77,13 @@ template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
   const auto values_view = [dim, len, dims](auto &v) {
     return len == 0
                ? make_empty_subspans(v.template values<E>(), dims)
-               : make_subspans(v.slice({dim, 0}).template values<E>(),
+               : make_subspans(v, v.slice({dim, 0}).template values<E>(),
                                v.slice({dim, len - 1}).template values<E>());
   };
   const auto variances_view = [dim, len, dims](auto &v) {
     return len == 0
                ? make_empty_subspans(v.template variances<E>(), dims)
-               : make_subspans(v.slice({dim, 0}).template variances<E>(),
+               : make_subspans(v, v.slice({dim, 0}).template variances<E>(),
                                v.slice({dim, len - 1}).template variances<E>());
   };
   return make_subspan_view<T>(var, dims, values_view, variances_view);
@@ -129,16 +131,15 @@ Variable subspan_view(Variable &var, const Dim dim) {
   return subspan_view_impl(var, dim);
 }
 /// Return Variable containing const spans over given dimension as elements.
-Variable subspan_view(const VariableConstView &var, const Dim dim) {
+Variable subspan_view(const Variable &var, const Dim dim) {
   return subspan_view_impl(var, dim);
 }
 
-Variable subspan_view(Variable &var, const Dim dim,
-                      const VariableConstView &indices) {
+Variable subspan_view(Variable &var, const Dim dim, const Variable &indices) {
   return subspan_view_impl(var, dim, indices);
 }
-Variable subspan_view(const VariableConstView &var, const Dim dim,
-                      const VariableConstView &indices) {
+Variable subspan_view(const Variable &var, const Dim dim,
+                      const Variable &indices) {
   return subspan_view_impl(var, dim, indices);
 }
 
