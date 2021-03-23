@@ -25,13 +25,15 @@ protected:
   auto make_indices(
       const std::vector<std::pair<scipp::index, scipp::index>> &is) const {
     return makeVariable<std::pair<scipp::index, scipp::index>>(
-        Dims{Dim::Y}, Shape{is.size()}, Values(is));
+               Dims{Dim::Y}, Shape{is.size()}, Values(is))
+        .data_handle();
   }
 };
 
 TEST_F(BucketModelTest, construct) {
-  Model model(indices, Dim::X, buffer);
-  EXPECT_THROW(Model(indices, Dim::Y, buffer), except::DimensionError);
+  Model model(indices.data_handle(), Dim::X, buffer);
+  EXPECT_THROW(Model(indices.data_handle(), Dim::Y, buffer),
+               except::DimensionError);
 }
 
 TEST_F(BucketModelTest, construct_empty_range) {
@@ -60,25 +62,28 @@ TEST_F(BucketModelTest, construct_beyond_end_fail) {
 }
 
 TEST_F(BucketModelTest, dtype) {
-  Model model(indices, Dim::X, buffer);
+  Model model(indices.data_handle(), Dim::X, buffer);
   EXPECT_NE(model.dtype(), buffer.dtype());
   EXPECT_EQ(model.dtype(), dtype<bucket<Variable>>);
 }
 
 TEST_F(BucketModelTest, variances) {
-  Model model(indices, Dim::X, buffer);
+  Model model(indices.data_handle(), Dim::X, buffer);
   EXPECT_FALSE(model.hasVariances());
   EXPECT_THROW(model.setVariances(Variable(buffer)), except::VariancesError);
   EXPECT_FALSE(model.hasVariances());
 }
 
 TEST_F(BucketModelTest, comparison) {
-  EXPECT_EQ(Model(indices, Dim::X, buffer), Model(indices, Dim::X, buffer));
-  EXPECT_NE(Model(Variable(indices.slice({Dim::Y, 0})), Dim::X, buffer),
-            Model(Variable(indices.slice({Dim::Y, 0, 1})), Dim::X, buffer));
+  EXPECT_EQ(Model(indices.data_handle(), Dim::X, buffer),
+            Model(indices.data_handle(), Dim::X, buffer));
+  EXPECT_NE(
+      Model(copy(indices.slice({Dim::Y, 0})).data_handle(), Dim::X, buffer),
+      Model(copy(indices.slice({Dim::Y, 0, 1})).data_handle(), Dim::X, buffer));
   auto indices2 = copy(indices);
   indices2.values<std::pair<scipp::index, scipp::index>>()[0] = {0, 1};
-  EXPECT_NE(Model(indices, Dim::X, buffer), Model(indices2, Dim::X, buffer));
+  EXPECT_NE(Model(indices.data_handle(), Dim::X, buffer),
+            Model(indices2.data_handle(), Dim::X, buffer));
   auto buffer2 = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                       Values{1, 2, 3, 4});
   auto indices3 = make_indices({{0, 1}, {1, 2}});
@@ -87,13 +92,13 @@ TEST_F(BucketModelTest, comparison) {
 }
 
 TEST_F(BucketModelTest, clone) {
-  Model model(indices, Dim::X, buffer);
+  Model model(indices.data_handle(), Dim::X, buffer);
   const auto copy = model.clone();
   EXPECT_EQ(dynamic_cast<const Model &>(*copy), model);
 }
 
 TEST_F(BucketModelTest, values) {
-  Model model(indices, Dim::X, buffer);
+  Model model(indices.data_handle(), Dim::X, buffer);
   core::ElementArrayViewParams params(0, indices.dims(), indices.dims(), {});
   EXPECT_EQ(*(model.values(params).begin() + 0), buffer.slice({Dim::X, 0, 2}));
   EXPECT_EQ(*(model.values(params).begin() + 1), buffer.slice({Dim::X, 2, 4}));
@@ -102,7 +107,7 @@ TEST_F(BucketModelTest, values) {
 }
 
 TEST_F(BucketModelTest, values_const) {
-  const Model model(indices, Dim::X, buffer);
+  const Model model(indices.data_handle(), Dim::X, buffer);
   core::ElementArrayViewParams params(0, indices.dims(), indices.dims(), {});
   EXPECT_EQ(*(model.values(params).begin() + 0), buffer.slice({Dim::X, 0, 2}));
   EXPECT_EQ(*(model.values(params).begin() + 1), buffer.slice({Dim::X, 2, 4}));
@@ -117,8 +122,10 @@ TEST_F(BucketModelTest, values_non_range) {
 
 TEST_F(BucketModelTest, out_of_order_indices) {
   auto reverse = make_indices({{2, 4}, {0, 2}});
-  Model model(reverse, Dim::X, buffer);
-  core::ElementArrayViewParams params(0, reverse.dims(), reverse.dims(), {});
-  EXPECT_EQ(*(model.values(params).begin() + 0), buffer.slice({Dim::X, 2, 4}));
+  const Dimensions dims(Dim::Y, 2);
+  Model model(reverse, Dim::X, copy(buffer));
+  core::ElementArrayViewParams params(0, dims, dims, {});
+  EXPECT_EQ(*(model.values(params).begin() + 0), buffer.slice({Dim::X, 2, 4}))
+      << *(model.values(params).begin() + 0) << buffer.slice({Dim::X, 2, 4});
   EXPECT_EQ(*(model.values(params).begin() + 1), buffer.slice({Dim::X, 0, 2}));
 }

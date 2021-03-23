@@ -125,7 +125,7 @@ public:
     if (!is_bins(var))
       return var.template values<T>();
     const auto &maker = *m_makers.at(var.dtype());
-    auto &&data = maker.data(view(var));
+    auto &&data = maker.data(var);
     return ElementArrayView(maker.array_params(var),
                             data.template values<T>().data());
   }
@@ -133,7 +133,7 @@ public:
     if (!is_bins(var))
       return var.template variances<T>();
     const auto &maker = *m_makers.at(var.dtype());
-    auto &&data = maker.data(view(var));
+    auto &&data = maker.data(var);
     return ElementArrayView(maker.array_params(var),
                             data.template variances<T>().data());
   }
@@ -142,10 +142,6 @@ public:
                       const VariableConstView &sizes = {});
 
 private:
-  const Variable &view(const VariableConstView &var) const {
-    return var.underlying();
-  }
-  Variable &view(Variable &var) const { return var; }
   std::map<DType, std::unique_ptr<AbstractVariableMaker>> m_makers;
 };
 

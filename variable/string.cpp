@@ -14,12 +14,8 @@
 
 namespace scipp::variable {
 
-std::ostream &operator<<(std::ostream &os, const VariableConstView &variable) {
-  return os << to_string(variable);
-}
-
 std::ostream &operator<<(std::ostream &os, const Variable &variable) {
-  return os << VariableConstView(variable);
+  return os << to_string(variable);
 }
 
 namespace {
@@ -95,10 +91,6 @@ std::string format_variable(const std::string &key,
 
 std::string to_string(const Variable &variable) {
   return format_variable(std::string("<scipp.Variable>"), variable);
-}
-
-std::string to_string(const VariableConstView &variable) {
-  return format_variable(std::string("<scipp.VariableView>"), variable);
 }
 
 std::string to_string(const std::pair<Dim, VariableConstView> &coord) {
