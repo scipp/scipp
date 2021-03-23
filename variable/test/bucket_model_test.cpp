@@ -10,9 +10,8 @@ using namespace scipp;
 using namespace scipp::variable;
 
 TEST(BucketTest, member_types) {
-  static_assert(std::is_same_v<bucket<Variable>::element_type, VariableView>);
-  static_assert(
-      std::is_same_v<bucket<Variable>::const_element_type, VariableConstView>);
+  static_assert(std::is_same_v<bucket<Variable>::element_type, Variable>);
+  static_assert(std::is_same_v<bucket<Variable>::const_element_type, Variable>);
 }
 
 using Model = DataModel<bucket<Variable>>;
@@ -122,20 +121,4 @@ TEST_F(BucketModelTest, out_of_order_indices) {
   core::ElementArrayViewParams params(0, reverse.dims(), reverse.dims(), {});
   EXPECT_EQ(*(model.values(params).begin() + 0), buffer.slice({Dim::X, 2, 4}));
   EXPECT_EQ(*(model.values(params).begin() + 1), buffer.slice({Dim::X, 0, 2}));
-}
-
-class NonOwningBucketModelTest : public BucketModelTest {};
-
-TEST_F(NonOwningBucketModelTest, buffer_is_view) {
-  DataModel<bucket<VariableView>> model(indices, Dim::X, buffer);
-  core::ElementArrayViewParams params(0, indices.dims(), indices.dims(), {});
-  (*model.values(params).begin()) += 2.0 * units::one;
-  EXPECT_EQ(buffer, makeVariable<double>(buffer.dims(), Values{3, 4, 3, 4}));
-}
-
-TEST_F(NonOwningBucketModelTest, indices_is_view) {
-  DataModel<bucket<VariableView>> model(indices, Dim::X, buffer);
-  EXPECT_EQ(model.indices(), indices);
-  indices.values<index_pair>()[0] = std::pair{1, 2};
-  EXPECT_EQ(model.indices(), indices);
 }

@@ -141,7 +141,7 @@ TEST_F(TransformUnaryTest, slice) {
 
         const auto result_return = transform<double>(initial, op);
         Variable result_in_place_buffer = copy(initial_buffer);
-        const auto result_in_place = result_in_place_buffer.slice(slice);
+        auto result_in_place = result_in_place_buffer.slice(slice);
         transform_in_place<double>(result_in_place, op_in_place);
 
         EXPECT_TRUE(equals(result_return.values<double>(),
@@ -661,7 +661,7 @@ TEST_F(TransformInPlaceDryRunTest, unit_fail) {
 
 TEST_F(TransformInPlaceDryRunTest, slice_unit_fail) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
-  const auto original(a);
+  const auto original = copy(a);
 
   EXPECT_THROW(dry_run::transform_in_place<double>(a.slice({Dim::X, 0}), unary),
                except::UnitError);
@@ -675,7 +675,7 @@ TEST_F(TransformInPlaceDryRunTest, slice_unit_fail) {
 TEST_F(TransformInPlaceDryRunTest, dimensions_fail) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
   auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m);
-  const auto original(a);
+  const auto original = copy(a);
 
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
                except::NotFoundError);
@@ -686,7 +686,7 @@ TEST_F(TransformInPlaceDryRunTest, variances_fail) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
   auto b = makeVariable<double>(Dimensions{Dim::X, 2}, units::m, Values{},
                                 Variances{});
-  const auto original(a);
+  const auto original = copy(a);
 
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
                except::VariancesError);

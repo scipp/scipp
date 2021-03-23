@@ -31,10 +31,8 @@ public:
   virtual void set_elem_unit(const VariableView &var,
                              const units::Unit &u) const = 0;
   virtual bool hasVariances(const VariableConstView &var) const = 0;
-  virtual VariableConstView data(const VariableConstView &) const {
-    throw unreachable();
-  }
-  virtual VariableView data(const VariableView &) const { throw unreachable(); }
+  virtual const Variable &data(const Variable &) const { throw unreachable(); }
+  virtual Variable &data(Variable &) const { throw unreachable(); }
   virtual core::ElementArrayViewParams
   array_params(const VariableConstView &) const {
     throw unreachable();
@@ -146,9 +144,11 @@ public:
                       const VariableConstView &sizes = {});
 
 private:
-  VariableConstView view(const VariableConstView &var) const { return var; }
-  VariableView view(Variable &var) const { return var; }
-  VariableView view(const VariableView &var) const { return var; }
+  const Variable &view(const VariableConstView &var) const {
+    return var.underlying();
+  }
+  Variable &view(Variable &var) const { return var; }
+  Variable &view(const VariableView &var) const { return var.underlying(); }
   std::map<DType, std::unique_ptr<AbstractVariableMaker>> m_makers;
 };
 

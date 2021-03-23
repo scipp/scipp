@@ -17,7 +17,7 @@ Variable @NAME@(const VariableConstView &var) {
 }
 
 #ifdef GENERATE_OUT
-VariableView @NAME@(const VariableConstView &var, const VariableView &out) {
+Variable &@NAME@(const VariableConstView &var, Variable &out) {
   transform_in_place(out, var, assign_unary{element::@OPNAME@}, std::string_view("@OPNAME@"));
   return out;
 }

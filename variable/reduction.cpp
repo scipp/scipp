@@ -42,11 +42,11 @@ Variable make_accumulant(const VariableConstView &var, const Dim dim,
 
 } // namespace
 
-void sum_impl(const VariableView &summed, const VariableConstView &var) {
+void sum_impl(Variable &summed, const VariableConstView &var) {
   accumulate_in_place(summed, var, element::plus_equals, "sum");
 }
 
-void nansum_impl(const VariableView &summed, const VariableConstView &var) {
+void nansum_impl(Variable &summed, const VariableConstView &var) {
   accumulate_in_place(summed, var, element::nan_plus_equals, "nansum");
 }
 
@@ -60,8 +60,8 @@ Variable sum_with_dim_impl(Op op, const VariableConstView &var, const Dim dim) {
 }
 
 template <typename Op>
-VariableView sum_with_dim_inplace_impl(Op op, const VariableConstView &var,
-                                       const Dim dim, const VariableView &out) {
+Variable &sum_with_dim_inplace_impl(Op op, const VariableConstView &var,
+                                    const Dim dim, Variable &out) {
   if (is_dtype_bool(var) && !is_dtype_int64(out))
     throw except::TypeError("In-place sum of dtype=bool must be stored in an "
                             "output variable with dtype=int64.");
@@ -86,19 +86,16 @@ Variable nansum(const VariableConstView &var, const Dim dim) {
   return sum_with_dim_impl(nansum_impl, var, dim);
 }
 
-VariableView sum(const VariableConstView &var, const Dim dim,
-                 const VariableView &out) {
+Variable &sum(const VariableConstView &var, const Dim dim, Variable &out) {
   return sum_with_dim_inplace_impl(sum_impl, var, dim, out);
 }
 
-VariableView nansum(const VariableConstView &var, const Dim dim,
-                    const VariableView &out) {
+Variable &nansum(const VariableConstView &var, const Dim dim, Variable &out) {
   return sum_with_dim_inplace_impl(nansum_impl, var, dim, out);
 }
 
-VariableView nanmean_impl(const VariableConstView &var, const Dim dim,
-                          const VariableConstView &count,
-                          const VariableView &out) {
+Variable &nanmean_impl(const VariableConstView &var, const Dim dim,
+                       const VariableConstView &count, Variable &out) {
   if (isInt(out.dtype()))
     throw except::TypeError(
         "Cannot calculate nanmean in-place when output dtype is integer");
@@ -129,9 +126,8 @@ Variable nanmean_impl(const VariableConstView &var, const Dim dim,
   return summed;
 }
 
-VariableView mean_impl(const VariableConstView &var, const Dim dim,
-                       const VariableConstView &count,
-                       const VariableView &out) {
+Variable &mean_impl(const VariableConstView &var, const Dim dim,
+                    const VariableConstView &count, Variable &out) {
   if (isInt(out.dtype()))
     throw except::TypeError(
         "Cannot calculate mean in-place when output dtype is integer");
@@ -151,8 +147,7 @@ Variable mean(const VariableConstView &var, const Dim dim) {
   return mean_impl(var, dim, sum(isfinite(var), dim));
 }
 
-VariableView mean(const VariableConstView &var, const Dim dim,
-                  const VariableView &out) {
+Variable &mean(const VariableConstView &var, const Dim dim, Variable &out) {
   using variable::isfinite;
   return mean_impl(var, dim, sum(isfinite(var), dim), out);
 }
@@ -167,14 +162,13 @@ Variable nanmean(const VariableConstView &var, const Dim dim) {
   return nanmean_impl(var, dim, sum(isfinite(var), dim));
 }
 
-VariableView nanmean(const VariableConstView &var, const Dim dim,
-                     const VariableView &out) {
+Variable &nanmean(const VariableConstView &var, const Dim dim, Variable &out) {
   using variable::isfinite;
   return nanmean_impl(var, dim, sum(isfinite(var), dim), out);
 }
 
 template <class Op>
-void reduce_impl(const VariableView &out, const VariableConstView &var, Op op,
+void reduce_impl(Variable &out, const VariableConstView &var, Op op,
                  const std::string_view name) {
   accumulate_in_place(out, var, op, name);
 }
@@ -193,7 +187,7 @@ Variable reduce_idempotent(const VariableConstView &var, const Dim dim, Op op,
   return out;
 }
 
-void any_impl(const VariableView &out, const VariableConstView &var) {
+void any_impl(Variable &out, const VariableConstView &var) {
   reduce_impl(out, var, core::element::logical_or_equals, "any");
 }
 
@@ -202,7 +196,7 @@ Variable any(const VariableConstView &var, const Dim dim) {
                            FillValue::False, "any");
 }
 
-void all_impl(const VariableView &out, const VariableConstView &var) {
+void all_impl(Variable &out, const VariableConstView &var) {
   reduce_impl(out, var, core::element::logical_and_equals, "all");
 }
 
@@ -211,7 +205,7 @@ Variable all(const VariableConstView &var, const Dim dim) {
                            FillValue::True, "all");
 }
 
-void max_impl(const VariableView &out, const VariableConstView &var) {
+void max_impl(Variable &out, const VariableConstView &var) {
   reduce_impl(out, var, core::element::max_equals, "max");
 }
 
@@ -233,7 +227,7 @@ Variable nanmax(const VariableConstView &var, const Dim dim) {
                            FillValue::Lowest, "nanmax");
 }
 
-void min_impl(const VariableView &out, const VariableConstView &var) {
+void min_impl(Variable &out, const VariableConstView &var) {
   reduce_impl(out, var, core::element::min_equals, "min");
 }
 
