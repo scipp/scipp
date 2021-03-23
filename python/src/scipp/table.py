@@ -28,20 +28,20 @@ def _make_table_sections(dict_of_variables):
     return "".join(html)
 
 
-def _make_table_unit_headers(dict_of_variables, text_style):
+def _make_table_unit_headers(dict_of_variables):
     """
     Adds a row containing the unit of the section
     """
     html = []
     for key, section in dict_of_variables.items():
         for name, val in section.items():
-            html.append("<th {} colspan='{}'>{}</th>".format(
-                text_style, 1 + (val.variances is not None),
+            html.append("<th class='sc-units' colspan='{}'>{}</th>".format(
+                1 + (val.variances is not None),
                 escape(su.name_with_unit(val, name=name))))
     return "".join(html)
 
 
-def _make_table_subsections(dict_of_variables, text_style, plural):
+def _make_table_subsections(dict_of_variables, plural):
     """
     Adds Value | Variance columns for the section.
     """
@@ -49,9 +49,9 @@ def _make_table_subsections(dict_of_variables, text_style, plural):
     html = []
     for key, section in dict_of_variables.items():
         for name, val in section.items():
-            html.append("<th {}>Value{}</th>".format(text_style, s))
+            html.append(f"<th class='sc-subheader'>Value{s}</th>")
             if val.variances is not None:
-                html.append("<th {}>Variance{}</th>".format(text_style, s))
+                html.append(f"<th class='sc-subheader'>Variance{s}</th>")
     return "".join(html)
 
 
@@ -114,9 +114,6 @@ def _table_from_dict_of_variables(dict_of_variables,
                                   row_start=0,
                                   max_rows=None,
                                   group=None):
-    mstyle = "style='text-align: center;"
-    vstyle = mstyle + "background-color: #f0f0f0;'"
-    mstyle += "'"
     edge_style = ("style='border: 0px solid white;background-color: #ffffff; "
                   "height:1.2em;'")
 
@@ -127,9 +124,9 @@ def _table_from_dict_of_variables(dict_of_variables,
         html += _make_table_sections(dict_of_variables)
     if headers > 0:
         html += "<tr>"
-        html += _make_table_unit_headers(dict_of_variables, mstyle)
+        html += _make_table_unit_headers(dict_of_variables)
         html += "</tr><tr>"
-        html += _make_table_subsections(dict_of_variables, vstyle,
+        html += _make_table_subsections(dict_of_variables,
                                         group == "1D Variables")
         html += "</tr>"
 

@@ -404,3 +404,7 @@ label.sc-hide-icon svg{
   background-color: var(--sc-table-attrs-color);
   color: var(--sc-table-header-font-color);
 }
+
+.sc-table th.sc-subheader {
+  background-color: var(--sc-background-color2);
+}
