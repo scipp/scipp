@@ -720,7 +720,7 @@ void accumulate_in_place(Var &&var, const VariableConstView &var1,
 }
 
 template <class... TypePairs, class Var, class Op>
-void accumulate_in_place(Var &&var, const VariableView &var1,
+void accumulate_in_place(Var &&var, Variable &var1,
                          const VariableConstView &var2,
                          const VariableConstView &var3, Op op,
                          const std::string_view &name = "operation") {

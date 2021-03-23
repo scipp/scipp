@@ -44,7 +44,6 @@ SCIPP_VARIABLE_EXPORT void expect0D(const Dimensions &dims);
 } // namespace detail
 
 class VariableConstView;
-class VariableView;
 
 } // namespace scipp::variable
 
@@ -52,13 +51,9 @@ namespace scipp {
 template <class T> struct is_view : std::false_type {};
 template <class T> inline constexpr bool is_view_v = is_view<T>::value;
 template <> struct is_view<variable::VariableConstView> : std::true_type {};
-template <> struct is_view<variable::VariableView> : std::true_type {};
 } // namespace scipp
 
 namespace scipp::variable {
-template <class T>
-using bin_indices_t = std::conditional_t<is_view_v<typename T::buffer_type>,
-                                         VariableConstView, VariableView>;
 
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. In addition it has a unit and a set of dimension
@@ -94,7 +89,7 @@ public:
 
   units::Unit unit() const { return m_object->unit(); }
   void setUnit(const units::Unit &unit);
-  constexpr void expectCanSetUnit(const units::Unit &) const noexcept {}
+  void expectCanSetUnit(const units::Unit &) const;
 
   Dimensions dims() const && { return m_dims; }
   const Dimensions &dims() const & { return m_dims; }
@@ -127,10 +122,7 @@ public:
     return variances<T>()[0];
   }
 
-  // ATTENTION: It is really important to avoid any function returning a
-  // (Const)VariableView for rvalue Variable. Otherwise the resulting slice
-  // will point to free'ed memory.
-  Variable slice(const Slice slice) const &;
+  Variable slice(const Slice slice) const;
 
   void rename(const Dim from, const Dim to);
 
@@ -150,13 +142,15 @@ public:
   VariableConstView bin_indices() const;
 
   template <class T>
-  std::tuple<VariableConstView, Dim, typename T::const_element_type>
+  std::tuple<Variable, Dim, typename T::const_element_type>
   constituents() const;
   template <class T>
-  std::tuple<bin_indices_t<T>, Dim, typename T::element_type> constituents();
+  std::tuple<Variable, Dim, typename T::element_type> constituents();
 
   template <class T>
   std::tuple<Variable, Dim, typename T::buffer_type> to_constituents();
+
+  [[nodiscard]] Variable transpose(const std::vector<Dim> &order) const;
 
 private:
   template <class... Ts, class... Args>
@@ -285,7 +279,7 @@ public:
   VariableConstView bin_indices() const;
 
   template <class T>
-  std::tuple<VariableConstView, Dim, typename T::const_element_type>
+  std::tuple<Variable, Dim, typename T::const_element_type>
   constituents() const;
 
 protected:
@@ -295,96 +289,15 @@ protected:
   Dimensions m_dataDims; // not always actual, can be pretend, e.g. with reshape
 };
 
-/** Mutable view into (a subset of) a Variable.
- *
- * By inheriting from VariableConstView any code that works for
- * VariableConstView will automatically work also for this mutable variant.*/
-class SCIPP_VARIABLE_EXPORT VariableView : public VariableConstView {
-public:
-  using const_view_type = VariableConstView;
-  using view_type = VariableView;
-
-  VariableView() = default;
-  VariableView(Variable &variable)
-      : VariableConstView(variable), m_mutableVariable(&variable) {}
-  VariableView(Variable &variable, const Dimensions &dims);
-  VariableView(const VariableView &slice, const Dim dim,
-               const scipp::index begin, const scipp::index end = -1);
-
-  VariableView slice(const Slice slice) const;
-
-  VariableView transpose(const std::vector<Dim> &dims = {}) const;
-
-  // Note: No need to delete rvalue overloads here, see VariableConstView.
-  template <class T> ElementArrayView<T> values() const;
-  template <class T> ElementArrayView<T> variances() const;
-  template <class T> auto &value() const {
-    detail::expect0D(dims());
-    return values<T>()[0];
-  }
-  template <class T> auto &variance() const {
-    detail::expect0D(dims());
-    return variances<T>()[0];
-  }
-
-  // Note: We want to support things like `var(Dim::X, 0) += var2`, i.e., when
-  // the left-hand-side is a temporary. This is ok since data is modified in
-  // underlying Variable. However, we do not return the typical `VariableView
-  // &` from these operations since that could reference a temporary. Due to the
-  // way Python implements things like __iadd__ we must return an object
-  // referencing the data though. We therefore return by value (this is not for
-  // free since it involves a memory allocation but is probably relatively cheap
-  // compared to other things). If the return by value turns out to be a
-  // performance issue, another option is to have overloads for *this of types
-  // `&` and `&&` with distinct return types (by reference in the first case, by
-  // value in the second). In principle we may also change the implementation of
-  // the Python exports to return `a` after calling `a += b` instead of
-  // returning `a += b` but I am not sure how Pybind11 handles object lifetimes
-  // (would this suffer from the same issue?).
-  template <class T> VariableView assign(const T &other) const;
-
-  void setVariances(const Variable &v) const;
-
-  void setUnit(const units::Unit &unit) const;
-  void expectCanSetUnit(const units::Unit &unit) const;
-
-  template <class T>
-  std::tuple<bin_indices_t<T>, Dim, typename T::element_type>
-  constituents() const;
-
-  template <class T> void replace_model(T model) const;
-
-  auto &underlying() const { return *m_mutableVariable; }
-  auto &underlying() { return *m_mutableVariable; }
-
-private:
-  friend class dataset::DataArrayConstView;
-  template <class T> friend typename T::view_type dataset::makeViewItem(T &);
-
-  // For internal use in DataArrayConstView.
-  explicit VariableView(VariableConstView &&base)
-      : VariableConstView(std::move(base)), m_mutableVariable{nullptr} {}
-
-  Variable *m_mutableVariable{nullptr};
-};
-
 SCIPP_VARIABLE_EXPORT Variable copy(const VariableConstView &var);
-SCIPP_VARIABLE_EXPORT VariableView copy(const VariableConstView &dataset,
-                                        Variable &out);
+SCIPP_VARIABLE_EXPORT Variable &copy(const VariableConstView &dataset,
+                                     Variable &out);
 
 } // namespace scipp::variable
 
 namespace scipp::core {
 template <> inline constexpr DType dtype<variable::Variable>{1000};
-template <>
-inline constexpr DType dtype<variable::VariableView>{
-    1001}; // hack for python bindings using
-           // dtype<ElementArrayView<bucket<Variable>>::value_type>
-           // is setting same dtype ID correct?
 template <> inline constexpr DType dtype<bucket<variable::Variable>>{1001};
-template <>
-inline constexpr DType dtype<bucket<variable::VariableConstView>>{1002};
-template <> inline constexpr DType dtype<bucket<variable::VariableView>>{1003};
 } // namespace scipp::core
 
 namespace scipp {
@@ -394,7 +307,6 @@ using variable::Shape;
 using variable::Values;
 using variable::Variable;
 using variable::VariableConstView;
-using variable::VariableView;
 using variable::Variances;
 } // namespace scipp
 

@@ -54,11 +54,11 @@ Variable filter(const Variable &var, const Variable &filter) {
   return out;
 }
 
-/// Return a deep copy of a Variable or of a VariableView.
+/// Return a deep copy of a Variable.
 Variable copy(const VariableConstView &var) { return Variable(var); }
 
 /// Copy variable to output variable.
-VariableView copy(const VariableConstView &var, Variable &out) {
+Variable &copy(const VariableConstView &var, Variable &out) {
   var.underlying().data().copy(var, out);
   return out;
 }

@@ -14,6 +14,7 @@ namespace scipp::core {
 class SCIPP_CORE_EXPORT Strides {
 public:
   Strides() = default;
+  Strides(const scipp::span<const scipp::index> &strides);
   Strides(const Dimensions &dims);
 
   scipp::index operator[](const scipp::index i) const noexcept {

@@ -65,14 +65,6 @@ VariableConstView::VariableConstView(const VariableConstView &slice,
       m_dataDims.relabel(m_dataDims.index(label), Dim::Invalid);
 }
 
-VariableView::VariableView(Variable &variable, const Dimensions &dims)
-    : VariableConstView(variable, dims), m_mutableVariable(&variable) {}
-
-VariableView::VariableView(const VariableView &slice, const Dim dim,
-                           const scipp::index begin, const scipp::index end)
-    : VariableConstView(slice, dim, begin, end),
-      m_mutableVariable(slice.m_mutableVariable) {}
-
 void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == dims().volume()) {
     if (dimensions != dims()) {
@@ -86,11 +78,16 @@ void Variable::setDims(const Dimensions &dimensions) {
   m_object = m_object->makeDefaultFromParent(dimensions.volume());
 }
 
-void Variable::setUnit(const units::Unit &unit) {
+void Variable::expectCanSetUnit(const units::Unit &unit) const {
+  // TODO Is this condition sufficient?
   if ((this->unit() != unit) &&
       (m_offset != 0 || dims().volume() != m_object->size()))
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
+}
+
+void Variable::setUnit(const units::Unit &unit) {
+  expectCanSetUnit(unit);
   m_object->setUnit(unit);
 }
 
@@ -112,20 +109,6 @@ Variable &Variable::assign(const VariableConstView &other) {
   return *this;
 }
 
-template <class T> VariableView VariableView::assign(const T &other) const {
-  if (*this == VariableConstView(other))
-    return *this; // Self-assignment, return early.
-  // underlying().data().copy(other, *this);
-  return *this;
-}
-
-template SCIPP_VARIABLE_EXPORT VariableView
-VariableView::assign(const Variable &) const;
-template SCIPP_VARIABLE_EXPORT VariableView
-VariableView::assign(const VariableConstView &) const;
-template SCIPP_VARIABLE_EXPORT VariableView
-VariableView::assign(const VariableView &) const;
-
 bool VariableConstView::operator==(const VariableConstView &other) const {
   if (!*this || !other)
     return static_cast<bool>(*this) == static_cast<bool>(other);
@@ -138,18 +121,6 @@ bool VariableConstView::operator!=(const VariableConstView &other) const {
   return !(*this == other);
 }
 
-void VariableView::setUnit(const units::Unit &unit) const {
-  expectCanSetUnit(unit);
-  m_mutableVariable->setUnit(unit);
-}
-
-void VariableView::expectCanSetUnit(const units::Unit &unit) const {
-  if ((this->unit() != unit) &&
-      (dims().volume() != m_mutableVariable->data().size()))
-    throw except::UnitError("Partial view on data of variable cannot be used "
-                            "to change the unit.");
-}
-
 scipp::span<const scipp::index> Variable::strides() const {
   return {m_strides.begin(), dims().ndim()};
 }
@@ -157,8 +128,8 @@ scipp::span<const scipp::index> Variable::strides() const {
 core::ElementArrayViewParams Variable::array_params() const noexcept {
   // TODO Translating strides into dims, which get translated back to
   // (slightly different) strides in MultiIndex
+  // TODO Does not work with transpose (strides not ordered)
   Dimensions dataDims;
-  scipp::index previous = 1;
   bool first = true;
   for (scipp::index i = dims().ndim() - 1; i >= 0; --i) {
     if (first && strides()[i] != 1) {
@@ -174,7 +145,7 @@ core::ElementArrayViewParams Variable::array_params() const noexcept {
   return {m_offset, dims(), dataDims, {}};
 }
 
-Variable Variable::slice(const Slice slice) const & {
+Variable Variable::slice(const Slice slice) const {
   Variable out(*this);
   const auto dim = slice.dim();
   const auto begin = slice.begin();
@@ -193,18 +164,19 @@ VariableConstView VariableConstView::slice(const Slice slice) const {
   return VariableConstView(*this, slice.dim(), slice.begin(), slice.end());
 }
 
-VariableView VariableView::slice(const Slice slice) const {
-  return VariableView(*this, slice.dim(), slice.begin(), slice.end());
-}
-
-VariableConstView
-VariableConstView::transpose(const std::vector<Dim> &order) const {
+Variable Variable::transpose(const std::vector<Dim> &order) const {
   auto transposed(*this);
+  Dimensions tmp = dims();
+  for (scipp::index i = 0; i < tmp.ndim(); ++i)
+    tmp.resize(i, strides()[i]);
+  tmp = core::transpose(tmp, order);
+  transposed.m_strides = Strides(tmp.shape());
   transposed.m_dims = core::transpose(dims(), order);
   return transposed;
 }
 
-VariableView VariableView::transpose(const std::vector<Dim> &order) const {
+VariableConstView
+VariableConstView::transpose(const std::vector<Dim> &order) const {
   auto transposed(*this);
   transposed.m_dims = core::transpose(dims(), order);
   return transposed;
@@ -247,15 +219,6 @@ void Variable::setVariances(const Variable &v) {
     core::expect::equals(dims(), v.dims());
   }
   data().setVariances(v);
-}
-
-void VariableView::setVariances(const Variable &v) const {
-  if (m_offset == 0 && m_dims == m_variable->dims() &&
-      m_dataDims == m_variable->dims())
-    m_mutableVariable->setVariances(v);
-  else
-    throw except::VariancesError(
-        "Cannot add variances via sliced or reshaped view of Variable.");
 }
 
 namespace detail {
