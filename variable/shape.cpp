@@ -122,8 +122,7 @@ Variable resize(const VariableConstView &var, const Dim dim,
 /// ignored, i.e., only `shape.dims()` is used to determine the shape of the
 /// output.
 Variable resize(const VariableConstView &var, const VariableConstView &shape) {
-  return Variable(var, shape.dims(),
-                  var.underlying().data().makeDefaultFromParent(shape));
+  return Variable(var, shape.dims(), var.data().makeDefaultFromParent(shape));
 }
 
 namespace {
@@ -148,15 +147,6 @@ Variable reshape(const Variable &var, const Dimensions &dims) {
   // TODO This condition is not sufficient
   Variable reshaped =
       var.dims().volume() == var.data().size() ? var : copy(var);
-  reshaped.setDims(dims);
-  return reshaped;
-}
-
-Variable reshape(const VariableConstView &view, const Dimensions &dims) {
-  // In general a variable slice is not contiguous. Therefore we cannot reshape
-  // without making a copy (except for special cases).
-  expect_same_volume(view.dims(), dims);
-  Variable reshaped(view);
   reshaped.setDims(dims);
   return reshaped;
 }

@@ -104,8 +104,12 @@ public:
   }
 
   scipp::index dtype_size() const override { return sizeof(T); }
-  VariableConstView bin_indices() const override {
+  const VariableConceptHandle &bin_indices() const override {
     throw except::TypeError("This data type does not have bin indices.");
+  }
+
+  scipp::span<T> values() {
+    return {m_values.data(), m_values.data() + m_values.size()};
   }
 
 private:

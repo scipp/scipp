@@ -14,27 +14,29 @@ namespace scipp::variable {
 Variable cumsum(const VariableConstView &var, const Dim dim,
                 const CumSumMode mode) {
   if (var.dims()[dim] == 0)
-    return Variable{var};
-  Variable cumulative(var.slice({dim, 0}));
+    return copy(var);
+  Variable cumulative = copy(var.slice({dim, 0}));
   fill_zeros(cumulative);
-  Variable out(var);
+  Variable out = copy(var);
   if (mode == CumSumMode::Inclusive)
     accumulate_in_place(cumulative, out, core::element::inclusive_scan);
   else
     accumulate_in_place(cumulative, out, core::element::exclusive_scan);
   return out;
 }
+
 Variable cumsum(const VariableConstView &var, const CumSumMode mode) {
   Variable cumulative(var, Dimensions{});
-  Variable out(var);
+  Variable out = copy(var);
   if (mode == CumSumMode::Inclusive)
     accumulate_in_place(cumulative, out, core::element::inclusive_scan);
   else
     accumulate_in_place(cumulative, out, core::element::exclusive_scan);
   return out;
 }
+
 Variable cumsum_bins(const VariableConstView &var, const CumSumMode mode) {
-  Variable out(var);
+  Variable out = copy(var);
   auto cumulative = Variable(variable::variableFactory().elem_dtype(var),
                              var.dims(), var.unit());
   if (mode == CumSumMode::Inclusive)

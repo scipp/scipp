@@ -5,6 +5,7 @@
 #include "scipp/core/element/geometric_operations.h"
 #include "scipp/core/element/special_values.h"
 #include "scipp/core/element/util.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/transform.h"
 
@@ -55,11 +56,16 @@ Variable filter(const Variable &var, const Variable &filter) {
 }
 
 /// Return a deep copy of a Variable.
-Variable copy(const VariableConstView &var) { return Variable(var); }
+Variable copy(const Variable &var) {
+  Variable out(empty_like(var));
+  out.data().copy(var, out);
+  return out;
+}
 
 /// Copy variable to output variable.
-Variable &copy(const VariableConstView &var, Variable &out) {
-  var.underlying().data().copy(var, out);
+Variable &copy(const Variable &var, Variable &out) {
+  // TODO Is this missing dim/shape handling?
+  var.data().copy(var, out);
   return out;
 }
 
