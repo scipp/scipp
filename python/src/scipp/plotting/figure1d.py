@@ -80,9 +80,9 @@ class PlotFigure1d(PlotFigure):
             self.ax.clear()
             self.ax.set_title(title)
 
-        # Note: the axis_offsets text objects need to be created before setting
-        # the axis formatters
-        self.create_axis_offsets()
+        # # Note: the axis_offsets text objects need to be created before setting
+        # # the axis formatters
+        # self.create_axis_offsets()
 
         if self.mpl_line_params is None:
             self.mpl_line_params = {

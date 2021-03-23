@@ -229,7 +229,7 @@ class PlotController:
     def connect_model(self):
         self.model.connect({
             "get_view_axis_bounds": self.get_view_axis_bounds,
-            "set_view_axis_offset": self.set_view_axis_offset,
+            # "set_view_axis_offset": self.set_view_axis_offset,
             "set_view_axis_label": self.set_view_axis_label,
             # "set_view_axis_boundary":
             # self.set_view_axis_boundary
@@ -277,8 +277,8 @@ class PlotController:
     def get_view_axis_bounds(self, dim):
         return self.view.get_axis_bounds(self._dim_to_axis()[dim])
 
-    def set_view_axis_offset(self, dim, string):
-        return self.view.set_axis_offset(self._dim_to_axis()[dim], string)
+    # def set_view_axis_offset(self, dim, string):
+    #     return self.view.set_axis_offset(self._dim_to_axis()[dim], string)
 
     def set_view_axis_label(self, dim, string):
         return self.view.set_axis_label(self._dim_to_axis()[dim], string)

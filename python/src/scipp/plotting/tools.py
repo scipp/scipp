@@ -210,7 +210,7 @@ def date2cal(dt):
     Y, M, D, h, m, s = [dt.astype(f"M8[{x}]") for x in "YMDhms"]
     out[..., 0] = Y + 1970  # Gregorian Year
     out[..., 1] = (M - Y) + 1  # month
-    out[..., 2] = (D - M) + 1  # dat
+    out[..., 2] = (D - M) + 1  # day
     out[..., 3] = (dt - D).astype("m8[h]")  # hour
     out[..., 4] = (dt - h).astype("m8[m]")  # minute
     out[..., 5] = (dt - m).astype("m8[s]")  # second

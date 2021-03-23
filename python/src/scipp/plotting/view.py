@@ -135,8 +135,8 @@ class PlotView:
     def get_axis_bounds(self, *args, **kwargs):
         return self.figure.get_axis_bounds(*args, **kwargs)
 
-    def set_axis_offset(self, *args, **kwargs):
-        return self.figure.set_axis_offset(*args, **kwargs)
+    # def set_axis_offset(self, *args, **kwargs):
+    #     return self.figure.set_axis_offset(*args, **kwargs)
 
     def set_axis_label(self, *args, **kwargs):
         return self.figure.set_axis_label(*args, **kwargs)
