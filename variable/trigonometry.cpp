@@ -30,7 +30,7 @@ Variable sin(Variable &&var) {
 
 Variable &sin(const Variable &var, Variable &out) {
   core::expect::unit_any_of(var, {units::rad, units::deg});
-  out.assign(var);
+  copy(var, out);
   if (var.unit() == units::deg)
     out *= deg_to_rad;
   transform_in_place(out, out, element::sin_out_arg);
@@ -51,7 +51,7 @@ Variable cos(Variable &&var) {
 
 Variable &cos(const Variable &var, Variable &out) {
   core::expect::unit_any_of(var, {units::rad, units::deg});
-  out.assign(var);
+  copy(var, out);
   if (var.unit() == units::deg)
     out *= deg_to_rad;
   transform_in_place(out, out, element::cos_out_arg);
@@ -72,7 +72,7 @@ Variable tan(Variable &&var) {
 
 Variable &tan(const Variable &var, Variable &out) {
   core::expect::unit_any_of(var, {units::rad, units::deg});
-  out.assign(var);
+  copy(var, out);
   if (var.unit() == units::deg)
     out *= deg_to_rad;
   transform_in_place(out, out, element::tan_out_arg);

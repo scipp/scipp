@@ -28,7 +28,7 @@ TEST_F(VariableBucketTest, assign) {
   Variable copy = variable::copy(var);
   var.values<bucket<Variable>>()[0] += var.values<bucket<Variable>>()[1];
   EXPECT_NE(copy, var);
-  copy.assign(var);
+  variable::copy(var, copy);
   EXPECT_EQ(copy, var);
 }
 
