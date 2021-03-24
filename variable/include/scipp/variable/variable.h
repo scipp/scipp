@@ -139,6 +139,8 @@ public:
 
   [[nodiscard]] Variable transpose(const std::vector<Dim> &order) const;
 
+  bool is_slice() const;
+
 private:
   template <class... Ts, class... Args>
   static Variable construct(const DType &type, Args &&... args);

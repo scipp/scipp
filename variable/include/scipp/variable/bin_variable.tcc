@@ -120,8 +120,7 @@ public:
   }
   void expect_can_set_elem_unit(const Variable &var,
                                 const units::Unit &u) const override {
-    // TODO Is this check sufficient?
-    if ((elem_unit(var) != u) && (var.dims().volume() != var.data().size()))
+    if (elem_unit(var) != u && var.is_slice())
       throw except::UnitError("Partial view on data of variable cannot be "
                               "used to change the unit.");
   }

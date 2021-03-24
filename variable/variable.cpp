@@ -46,9 +46,7 @@ void Variable::setDims(const Dimensions &dimensions) {
 }
 
 void Variable::expectCanSetUnit(const units::Unit &unit) const {
-  // TODO Is this condition sufficient?
-  if ((this->unit() != unit) &&
-      (m_offset != 0 || dims().volume() != m_object->size()))
+  if (this->unit() != unit && is_slice())
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
 }
@@ -136,9 +134,13 @@ void Variable::rename(const Dim from, const Dim to) {
     m_dims.relabel(dims().index(from), to);
 }
 
-void Variable::setVariances(const Variable &v) {
+bool Variable::is_slice() const {
   // TODO Is this condition sufficient?
-  if (m_offset != 0 || m_dims.volume() != data().size())
+  return m_offset != 0 || m_dims.volume() != data().size();
+}
+
+void Variable::setVariances(const Variable &v) {
+  if (is_slice())
     throw except::VariancesError(
         "Cannot add variances via sliced view of Variable.");
   if (v) {
