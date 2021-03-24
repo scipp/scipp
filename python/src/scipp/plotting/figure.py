@@ -92,6 +92,9 @@ class PlotFigure:
             return self._to_image()
 
     def _to_image(self):
+        """
+        Convert the Matplotlib figure to a static image.
+        """
         buf = io.BytesIO()
         self.fig.savefig(buf, format='png')
         # Here we close the figure to prevent it from showing up again in
@@ -108,7 +111,7 @@ class PlotFigure:
         """
         self.fig.show()
 
-    def initialise(self, axformatters=None):
+    def initialise(self, axformatters):
         """
         Initialise figure parameters once the model has been created, since
         the axes formatters are defined by the model.
@@ -122,12 +125,12 @@ class PlotFigure:
                     self.axformatter[dim][key] = ticker.FuncFormatter(
                         axformatters[dim][key])
             self.axlocator[dim] = {
-                "linear": ticker.AutoLocator(),
-                "log": ticker.LogLocator()
+                "linear":
+                ticker.MaxNLocator(integer=True) if
+                axformatters[dim]["custom_locator"] else ticker.AutoLocator(),
+                "log":
+                ticker.LogLocator()
             }
-            if axformatters[dim]["custom_locator"]:
-                self.axlocator[dim]["linear"] = ticker.MaxNLocator(
-                    integer=True)
 
     def connect(self, callbacks):
         """
@@ -194,3 +197,9 @@ class PlotFigure:
 
     def save_view(self, *args, **kwargs):
         self.toolbar.save_view()
+
+    def get_axis_bounds(self, axis):
+        return getattr(self.ax, "get_{}lim".format(axis))()
+
+    def set_axis_label(self, axis, string):
+        getattr(self.ax, "set_{}label".format(axis))(string)
