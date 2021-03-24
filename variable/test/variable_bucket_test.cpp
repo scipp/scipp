@@ -92,7 +92,7 @@ TEST_F(VariableBucketTest, binary_operation_with_dense) {
             expected.slice({Dim::Y, 1}));
 }
 
-TEST_F(VariableBucketTest, DISABLED_binary_operation_with_dense_broadcast) {
+TEST_F(VariableBucketTest, binary_operation_with_dense_broadcast) {
   Variable dense =
       makeVariable<double>(Dims{Dim::Z}, Shape{2}, Values{0.1, 0.2});
   Variable expected_buffer = makeVariable<double>(
