@@ -272,7 +272,7 @@ TEST(VariableTest, copy_and_move) {
   EXPECT_EQ(moved, reference);
 }
 
-TEST(Variable, assign_slice) {
+TEST(Variable, copy_slice) {
   const auto parent = makeVariable<double>(
       Dims{Dim::X, Dim::Y, Dim::Z}, Shape{4, 2, 3},
       Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
@@ -285,34 +285,34 @@ TEST(Variable, assign_slice) {
   auto d = copy(empty);
   EXPECT_NE(parent, d);
   for (const scipp::index index : {0, 1, 2, 3})
-    d.slice({Dim::X, index}).assign(parent.slice({Dim::X, index}));
+    copy(parent.slice({Dim::X, index}), d.slice({Dim::X, index}));
   EXPECT_EQ(parent, d);
 
   d = copy(empty);
   EXPECT_NE(parent, d);
   for (const scipp::index index : {0, 1})
-    d.slice({Dim::Y, index}).assign(parent.slice({Dim::Y, index}));
+    copy(parent.slice({Dim::Y, index}), d.slice({Dim::Y, index}));
   EXPECT_EQ(parent, d);
 
   d = copy(empty);
   EXPECT_NE(parent, d);
   for (const scipp::index index : {0, 1, 2})
-    d.slice({Dim::Z, index}).assign(parent.slice({Dim::Z, index}));
+    copy(parent.slice({Dim::Z, index}), d.slice({Dim::Z, index}));
   EXPECT_EQ(parent, d);
 }
 
-TEST(Variable, assign_slice_unit_checks) {
+TEST(Variable, copy_slice_unit_checks) {
   const auto parent =
       makeVariable<double>(Dims(), Shape(), units::m, Values{1});
   auto dimensionless = makeVariable<double>(Dims{Dim::X}, Shape{4});
   auto m = makeVariable<double>(Dims{Dim::X}, Shape{4}, units::m);
 
-  EXPECT_THROW(dimensionless.slice({Dim::X, 1}).assign(parent),
+  EXPECT_THROW(copy(parent, dimensionless.slice({Dim::X, 1})),
                except::UnitError);
-  EXPECT_NO_THROW(m.slice({Dim::X, 1}).assign(parent));
+  EXPECT_NO_THROW(copy(parent, m.slice({Dim::X, 1})));
 }
 
-TEST(Variable, assign_slice_variance_checks) {
+TEST(Variable, copy_slice_variance_checks) {
   const auto parent_vals = makeVariable<double>(Values{1.0});
   const auto parent_vals_vars =
       makeVariable<double>(Values{1.0}, Variances{2.0});
@@ -320,11 +320,11 @@ TEST(Variable, assign_slice_variance_checks) {
   auto vals_vars =
       makeVariable<double>(Dimensions{Dim::X, 4}, Values{}, Variances{});
 
-  EXPECT_NO_THROW(vals.slice({Dim::X, 1}).assign(parent_vals));
-  EXPECT_NO_THROW(vals_vars.slice({Dim::X, 1}).assign(parent_vals_vars));
-  EXPECT_THROW(vals.slice({Dim::X, 1}).assign(parent_vals_vars),
+  EXPECT_NO_THROW(copy(parent_vals, vals.slice({Dim::X, 1})));
+  EXPECT_NO_THROW(copy(parent_vals_vars, vals_vars.slice({Dim::X, 1})));
+  EXPECT_THROW(copy(parent_vals_vars, vals.slice({Dim::X, 1})),
                except::VariancesError);
-  EXPECT_THROW(vals_vars.slice({Dim::X, 1}).assign(parent_vals),
+  EXPECT_THROW(copy(parent_vals, vals_vars.slice({Dim::X, 1})),
                except::VariancesError);
 }
 
@@ -594,6 +594,8 @@ TEST(VariableView, variable_assign_from_slice) {
                            Values{11, 12, 13, 21, 22, 23, 31, 32, 33},
                            Variances{44, 45, 46, 54, 55, 56, 64, 65, 66});
 
+  // TODO Is this test useful in this manner with the new sharing mechanism?
+  // What do we want to test here? copy(Variable)? copy(Variable,Variable)?
   target = Variable(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}));
   EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), units::m,
                                          Values{11, 12, 21, 22},
@@ -628,10 +630,10 @@ TEST(VariableView, variable_assign_from_slice_clears_variances) {
                                          Values{11, 12, 21, 22}));
 }
 
-TEST(VariableView, slice_assign_from_variable_broadcast) {
+TEST(VariableView, slice_copy_from_variable_broadcast) {
   const auto source = makeVariable<double>(Values{2});
   auto target = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  target.slice({Dim::X, 1, 3}).assign(source);
+  copy(source, target.slice({Dim::X, 1, 3}));
   EXPECT_EQ(target, makeVariable<double>(target.dims(), Values{0, 2, 2}));
 }
 
@@ -649,45 +651,45 @@ TEST(VariableView, variable_self_assign_via_slice) {
                                          Variances{55, 56, 65, 66}));
 }
 
-TEST(VariableView, slice_assign_from_variable_unit_fail) {
+TEST(VariableView, slice_copy_from_variable_unit_fail) {
   const auto source = makeVariable<double>(Dims{Dim::X}, Shape{1}, units::m);
   auto target = makeVariable<double>(Dims{Dim::X}, Shape{2});
-  EXPECT_THROW(target.slice({Dim::X, 1, 2}).assign(source), except::UnitError);
+  EXPECT_THROW(copy(source, target.slice({Dim::X, 1, 2})), except::UnitError);
   target = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
-  EXPECT_NO_THROW(target.slice({Dim::X, 1, 2}).assign(source));
+  EXPECT_NO_THROW(copy(source, target.slice({Dim::X, 1, 2})));
 }
 
-TEST(VariableView, slice_assign_from_variable_dimension_fail) {
+TEST(VariableView, slice_copy_from_variable_dimension_fail) {
   const auto source = makeVariable<double>(Dims{Dim::Y}, Shape{1});
   auto target = makeVariable<double>(Dims{Dim::X}, Shape{2});
-  EXPECT_THROW(target.slice({Dim::X, 1, 2}).assign(source),
+  EXPECT_THROW(copy(source, target.slice({Dim::X, 1, 2})),
                except::NotFoundError);
 }
 
-TEST(VariableView, slice_assign_from_variable_full_slice_can_change_unit) {
+TEST(VariableView, slice_copy_from_variable_full_slice_can_change_unit) {
   const auto source = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
   auto target = makeVariable<double>(Dims{Dim::X}, Shape{2});
-  target.slice({Dim::X, 0, 2}).assign(source);
-  EXPECT_NO_THROW(target.slice({Dim::X, 0, 2}).assign(source));
+  copy(source, target.slice({Dim::X, 0, 2}));
+  EXPECT_NO_THROW(copy(source, target.slice({Dim::X, 0, 2})));
 }
 
-TEST(VariableView, slice_assign_from_variable_variance_fail) {
+TEST(VariableView, slice_copy_from_variable_variance_fail) {
   const auto vals = makeVariable<double>(Dims{Dim::X}, Shape{1});
   const auto vals_vars =
       makeVariable<double>(Dimensions{Dim::X, 1}, Values{}, Variances{});
 
   auto target = makeVariable<double>(Dims{Dim::X}, Shape{2});
-  EXPECT_THROW(target.slice({Dim::X, 1, 2}).assign(vals_vars),
+  EXPECT_THROW(copy(vals_vars, target.slice({Dim::X, 1, 2})),
                except::VariancesError);
-  EXPECT_NO_THROW(target.slice({Dim::X, 1, 2}).assign(vals));
+  EXPECT_NO_THROW(copy(vals, target.slice({Dim::X, 1, 2})));
 
   target = makeVariable<double>(Dimensions{Dim::X, 2}, Values{}, Variances{});
-  EXPECT_THROW(target.slice({Dim::X, 1, 2}).assign(vals),
+  EXPECT_THROW(copy(vals, target.slice({Dim::X, 1, 2})),
                except::VariancesError);
-  EXPECT_NO_THROW(target.slice({Dim::X, 1, 2}).assign(vals_vars));
+  EXPECT_NO_THROW(copy(vals_vars, target.slice({Dim::X, 1, 2})));
 }
 
-TEST(VariableView, slice_assign_from_variable) {
+TEST(VariableView, slice_copy_from_variable) {
   const auto source =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                            Values{11, 12, 21, 22}, Variances{33, 34, 43, 44});
@@ -696,25 +698,25 @@ TEST(VariableView, slice_assign_from_variable) {
   // should!?) assign the view contents, not the data.
   const Dimensions dims({{Dim::Y, 3}, {Dim::X, 3}});
   auto target = makeVariable<double>(Dimensions{dims}, Values{}, Variances{});
-  target.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}).assign(source);
+  copy(source, target.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}));
   EXPECT_EQ(target, makeVariable<double>(
                         Dimensions(dims), Values{11, 12, 0, 21, 22, 0, 0, 0, 0},
                         Variances{33, 34, 0, 43, 44, 0, 0, 0, 0}));
 
   target = makeVariable<double>(Dimensions{dims}, Values{}, Variances{});
-  target.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}).assign(source);
+  copy(source, target.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}));
   EXPECT_EQ(target, makeVariable<double>(
                         Dimensions(dims), Values{0, 11, 12, 0, 21, 22, 0, 0, 0},
                         Variances{0, 33, 34, 0, 43, 44, 0, 0, 0}));
 
   target = makeVariable<double>(Dimensions{dims}, Values{}, Variances{});
-  target.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}).assign(source);
+  copy(source, target.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}));
   EXPECT_EQ(target, makeVariable<double>(
                         Dimensions(dims), Values{0, 0, 0, 11, 12, 0, 21, 22, 0},
                         Variances{0, 0, 0, 33, 34, 0, 43, 44, 0}));
 
   target = makeVariable<double>(Dimensions{dims}, Values{}, Variances{});
-  target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}).assign(source);
+  copy(source, target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}));
   EXPECT_EQ(target, makeVariable<double>(
                         Dimensions(dims), Values{0, 0, 0, 0, 11, 12, 0, 21, 22},
                         Variances{0, 0, 0, 0, 33, 34, 0, 43, 44}));
@@ -957,7 +959,7 @@ TEST(TransposeTest, reverse) {
 
   Variable dummy = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 1},
                                         Values{0, 0}, Variances{1, 1});
-  EXPECT_NO_THROW(tvar.slice({Dim::X, 0, 1}).assign(dummy));
+  EXPECT_NO_THROW(copy(dummy, tvar.slice({Dim::X, 0, 1})));
 }
 
 TEST(VariableTest, array_params) {
