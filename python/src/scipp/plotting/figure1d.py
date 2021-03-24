@@ -44,6 +44,10 @@ class PlotFigure1d(PlotFigure):
 
         if legend is None:
             legend = {"show": True}
+        elif isinstance(legend, bool):
+            legend = {"show": legend}
+        elif "show" not in legend:
+            legend["show"] = True
         # Matplotlib line containers
         self.data_lines = {}
         self.mask_lines = {}
