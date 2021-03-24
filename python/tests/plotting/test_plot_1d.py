@@ -217,3 +217,11 @@ def test_plot_access_ax_and_fig_two_entries():
     out = plot(d)
     out['tof.counts'].ax.set_xlabel("MyXlabel")
     out['tof.counts'].fig.set_dpi(120.)
+
+
+def test_plot_legend():
+    d = make_dense_dataset(ndim=1)
+    plot(d, legend=False)
+    plot(d, legend={"show": False})
+    plot(d, legend={"loc": 5})
+    plot(d, legend={"show": True, "loc": 4})
