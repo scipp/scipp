@@ -103,6 +103,7 @@ Documentation
    visualization/plotting-2d-data
    visualization/plotting-nd-data
    visualization/customizing-figures
+   visualization/datetime_handling
 
 .. toctree::
    :caption: Tutorials
