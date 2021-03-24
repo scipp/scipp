@@ -6,8 +6,6 @@ from .. import config
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import matplotlib.transforms as transf
-import numpy as np
 import io
 
 

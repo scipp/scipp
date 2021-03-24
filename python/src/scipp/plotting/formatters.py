@@ -1,8 +1,6 @@
-from .tools import date2cal
 from .._utils import value_to_string
 from .._scipp.core import to_unit, Unit
 import numpy as np
-import re
 
 
 class LabelFormatter:
