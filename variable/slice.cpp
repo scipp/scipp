@@ -39,7 +39,6 @@ auto get_1d_coord(const Variable &coord) {
 }
 
 auto get_coord(Variable coord, const Dim dim) {
-  // TODO avoid variable copy
   coord = get_1d_coord(coord);
   const bool ascending = issorted(coord, dim, variable::SortOrder::Ascending);
   const bool descending = issorted(coord, dim, variable::SortOrder::Descending);
