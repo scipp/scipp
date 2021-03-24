@@ -69,9 +69,6 @@ jobs:
       - bash: |
           set -ex
           cd "$(documentation_repo_path)"
-          # What's New pages depend on old versions and are not generated
-          git reset -- about/whats-new || true
-          git checkout -- about/whats-new || true
           # Amend last commit to keep repository size down
           git commit --amend --date="$(date)" --message='Auto commit from CI'
           git status
