@@ -49,8 +49,8 @@ template <class T>
 auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
   using TM = ElementTypeMap<T>;
   using PyType = typename TM::PyType;
+  TM::check_assignable(obj, unit);
   if constexpr (std::is_same_v<T, core::time_point>) {
-    TM::check_assignable(obj, unit);
     // pbj.cast<py::array_t<PyType> does not always work because
     // numpy.datetime64.__int__ delegates to datetime.datetime if the unit is
     // larger than ns and that cannot be converted to long.
@@ -58,7 +58,6 @@ auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
         .attr("astype")(py::dtype::of<PyType>())
         .template cast<py::array_t<PyType>>();
   } else if constexpr (std::is_pod_v<T>) {
-    TM::check_assignable(obj, unit);
     // Casting to py::array_t applies all sorts of automatic conversions
     // such as integer to double, if required.
     return obj.cast<py::array_t<PyType>>();

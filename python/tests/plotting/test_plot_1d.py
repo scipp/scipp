@@ -159,11 +159,8 @@ def test_plot_data_array():
 def test_plot_vector_axis_labels_1d():
     d = sc.Dataset()
     N = 10
-    vecs = []
-    for i in range(N):
-        vecs.append(np.random.random(3))
     d.coords['x'] = sc.Variable(['x'],
-                                values=vecs,
+                                values=np.random.random([N, 3]),
                                 unit=sc.units.m,
                                 dtype=sc.dtype.vector_3_float64)
     d["Sample"] = sc.Variable(['x'],
@@ -197,6 +194,38 @@ def test_plot_string_axis_labels_1d_short():
     plot(d)
 
 
+def test_plot_with_vector_labels():
+    N = 10
+    d = sc.Dataset()
+    d.coords['x'] = sc.Variable(['x'],
+                                values=np.arange(N, dtype=np.float64),
+                                unit=sc.units.m)
+    d.coords['labs'] = sc.Variable(['x'],
+                                   values=np.random.random([N, 3]),
+                                   unit=sc.units.m,
+                                   dtype=sc.dtype.vector_3_float64)
+    d["Sample"] = sc.Variable(['x'],
+                              values=np.random.random(N),
+                              unit=sc.units.counts)
+    plot(d)
+
+
+def test_plot_vector_axis_with_labels():
+    d = sc.Dataset()
+    N = 10
+    d.coords['labs'] = sc.Variable(['x'],
+                                   values=np.arange(N, dtype=np.float64),
+                                   unit=sc.units.m)
+    d.coords['x'] = sc.Variable(['x'],
+                                values=np.random.random([N, 3]),
+                                unit=sc.units.m,
+                                dtype=sc.dtype.vector_3_float64)
+    d["Sample"] = sc.Variable(['x'],
+                              values=np.random.random(N),
+                              unit=sc.units.counts)
+    plot(d)
+
+
 def test_plot_customized_mpl_axes():
     d = make_dense_dataset(ndim=1)
     plot(d["Sample"], title="MyTitle", xlabel="MyXlabel", ylabel="MyYlabel")
@@ -217,3 +246,60 @@ def test_plot_access_ax_and_fig_two_entries():
     out = plot(d)
     out['tof.counts'].ax.set_xlabel("MyXlabel")
     out['tof.counts'].fig.set_dpi(120.)
+
+
+def test_plot_with_integer_coord():
+    d = sc.Dataset()
+    N = 10
+    d.coords['x'] = sc.Variable(['x'], values=np.arange(N), unit=sc.units.m)
+    d["Sample"] = sc.Variable(['x'],
+                              values=np.random.random(N),
+                              unit=sc.units.counts)
+    plot(d)
+
+
+def test_plot_with_integer_coord_binedges():
+    d = sc.Dataset()
+    N = 10
+    d.coords['x'] = sc.Variable(['x'],
+                                values=np.arange(N + 1),
+                                unit=sc.units.m)
+    d["Sample"] = sc.Variable(['x'],
+                              values=np.random.random(N),
+                              unit=sc.units.counts)
+    plot(d)
+
+
+def test_plot_1d_datetime():
+    time = sc.array(dims=['time'],
+                    values=np.arange(np.datetime64('2017-01-01T12:00:00'),
+                                     np.datetime64('2017-01-01T13:00:00')))
+    da = sc.DataArray(data=sc.array(dims=['time'],
+                                    values=np.random.random(
+                                        time.sizes['time'])),
+                      coords={'time': time})
+    da.plot()
+
+
+def test_plot_1d_datetime_binedges():
+    time = sc.array(dims=['time'],
+                    values=np.arange(np.datetime64('2017-01-01T12:00:00'),
+                                     np.datetime64('2017-01-01T13:00:00'), 20))
+
+    da = sc.DataArray(data=sc.array(
+        dims=['time'],
+        values=np.random.random(time.sizes['time'] - 1),
+        unit="K"),
+                      coords={'time': time})
+    da.plot()
+
+
+def test_plot_1d_datetime_with_labels():
+    time = sc.array(dims=['time'],
+                    values=np.arange(np.datetime64('2017-01-01T12:00:00'),
+                                     np.datetime64('2017-01-01T13:00:00')))
+    da = sc.DataArray(data=sc.array(dims=['time'],
+                                    values=np.random.random(
+                                        time.sizes['time'])),
+                      coords={'time2': time})
+    da.plot()
