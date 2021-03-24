@@ -53,7 +53,7 @@ auto get_coord(Variable coord, const Dim dim) {
 
 std::tuple<Dim, scipp::index> get_slice_params(const Dimensions &dims,
                                                const Variable &coord_,
-                                               const Variable value) {
+                                               const Variable &value) {
   core::expect::equals(value.dims(), Dimensions{});
   const auto dim = coord_.dims().inner();
   if (dims[dim] + 1 == coord_.dims()[dim]) {
@@ -73,7 +73,7 @@ std::tuple<Dim, scipp::index> get_slice_params(const Dimensions &dims,
 
 std::tuple<Dim, scipp::index, scipp::index>
 get_slice_params(const Dimensions &dims, const Variable &coord_,
-                 const Variable begin, const Variable end) {
+                 const Variable &begin, const Variable &end) {
   if (begin)
     core::expect::equals(begin.dims(), Dimensions{});
   if (end)
