@@ -19,26 +19,24 @@ protected:
 public:
   virtual ~AbstractVariableMaker() = default;
   virtual bool is_bins() const = 0;
-  virtual Variable
-  create(const DType elem_dtype, const Dimensions &dims,
-         const units::Unit &unit, const bool variances,
-         const std::vector<VariableConstView> &parents) const = 0;
-  virtual Dim elem_dim(const VariableConstView &var) const = 0;
-  virtual DType elem_dtype(const VariableConstView &var) const = 0;
-  virtual units::Unit elem_unit(const VariableConstView &var) const = 0;
+  virtual Variable create(const DType elem_dtype, const Dimensions &dims,
+                          const units::Unit &unit, const bool variances,
+                          const std::vector<Variable> &parents) const = 0;
+  virtual Dim elem_dim(const Variable &var) const = 0;
+  virtual DType elem_dtype(const Variable &var) const = 0;
+  virtual units::Unit elem_unit(const Variable &var) const = 0;
   virtual void expect_can_set_elem_unit(const Variable &var,
                                         const units::Unit &u) const = 0;
   virtual void set_elem_unit(Variable &var, const units::Unit &u) const = 0;
-  virtual bool hasVariances(const VariableConstView &var) const = 0;
+  virtual bool hasVariances(const Variable &var) const = 0;
   virtual const Variable &data(const Variable &) const { throw unreachable(); }
   virtual Variable &data(Variable &) const { throw unreachable(); }
-  virtual core::ElementArrayViewParams
-  array_params(const VariableConstView &) const {
+  virtual core::ElementArrayViewParams array_params(const Variable &) const {
     throw unreachable();
   }
-  virtual Variable empty_like(const VariableConstView &prototype,
+  virtual Variable empty_like(const Variable &prototype,
                               const std::optional<Dimensions> &shape,
-                              const VariableConstView &sizes) const = 0;
+                              const Variable &sizes) const = 0;
 };
 
 template <class T> class VariableMaker : public AbstractVariableMaker {
@@ -46,7 +44,7 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   bool is_bins() const override { return false; }
   Variable create(const DType, const Dimensions &dims, const units::Unit &unit,
                   const bool variances,
-                  const std::vector<VariableConstView> &) const override {
+                  const std::vector<Variable> &) const override {
     const auto volume = dims.volume();
     if (variances)
       return makeVariable<T>(dims, unit,
@@ -56,13 +54,9 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
       return makeVariable<T>(dims, unit,
                              Values(volume, core::default_init_elements));
   }
-  Dim elem_dim(const VariableConstView &) const override {
-    return Dim::Invalid;
-  }
-  DType elem_dtype(const VariableConstView &var) const override {
-    return var.dtype();
-  }
-  units::Unit elem_unit(const VariableConstView &var) const override {
+  Dim elem_dim(const Variable &) const override { return Dim::Invalid; }
+  DType elem_dtype(const Variable &var) const override { return var.dtype(); }
+  units::Unit elem_unit(const Variable &var) const override {
     return var.unit();
   }
   void expect_can_set_elem_unit(const Variable &var,
@@ -72,12 +66,12 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   void set_elem_unit(Variable &var, const units::Unit &u) const override {
     var.setUnit(u);
   }
-  bool hasVariances(const VariableConstView &var) const override {
+  bool hasVariances(const Variable &var) const override {
     return var.hasVariances();
   }
-  Variable empty_like(const VariableConstView &prototype,
+  Variable empty_like(const Variable &prototype,
                       const std::optional<Dimensions> &shape,
-                      const VariableConstView &sizes) const override {
+                      const Variable &sizes) const override {
     if (sizes)
       throw except::TypeError(
           "Cannot specify sizes in `empty_like` for non-bin prototype.");
@@ -86,7 +80,7 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   }
 };
 
-SCIPP_VARIABLE_EXPORT bool is_bins(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT bool is_bins(const Variable &var);
 
 /// Dynamic factory for variables.
 ///
@@ -96,7 +90,7 @@ SCIPP_VARIABLE_EXPORT bool is_bins(const VariableConstView &var);
 /// `transform`.
 class SCIPP_VARIABLE_EXPORT VariableFactory {
 private:
-  DType bin_dtype(const std::vector<VariableConstView> &vars) const noexcept;
+  DType bin_dtype(const std::vector<Variable> &vars) const noexcept;
 
 public:
   VariableFactory() = default;
@@ -104,23 +98,23 @@ public:
   VariableFactory &operator=(const VariableFactory &) = delete;
   void emplace(const DType key, std::unique_ptr<AbstractVariableMaker> makes);
   bool contains(const DType key) const noexcept;
-  bool is_bins(const VariableConstView &var) const;
+  bool is_bins(const Variable &var) const;
   template <class... Parents>
   Variable create(const DType elem_dtype, const Dimensions &dims,
                   const units::Unit &unit, const bool with_variances,
                   const Parents &... parents) const {
-    const auto parents_ = std::vector<VariableConstView>{parents...};
+    const auto parents_ = std::vector<Variable>{parents...};
     const auto key = bin_dtype(parents_);
     return m_makers.at(key == dtype<void> ? elem_dtype : key)
         ->create(elem_dtype, dims, unit, with_variances, parents_);
   }
-  Dim elem_dim(const VariableConstView &var) const;
-  DType elem_dtype(const VariableConstView &var) const;
-  units::Unit elem_unit(const VariableConstView &var) const;
+  Dim elem_dim(const Variable &var) const;
+  DType elem_dtype(const Variable &var) const;
+  units::Unit elem_unit(const Variable &var) const;
   void expect_can_set_elem_unit(const Variable &var,
                                 const units::Unit &u) const;
   void set_elem_unit(Variable &var, const units::Unit &u) const;
-  bool hasVariances(const VariableConstView &var) const;
+  bool hasVariances(const Variable &var) const;
   template <class T, class Var> auto values(Var &&var) const {
     if (!is_bins(var))
       return var.template values<T>();
@@ -137,9 +131,9 @@ public:
     return ElementArrayView(maker.array_params(var),
                             data.template variances<T>().data());
   }
-  Variable empty_like(const VariableConstView &prototype,
+  Variable empty_like(const Variable &prototype,
                       const std::optional<Dimensions> &shape,
-                      const VariableConstView &sizes = {});
+                      const Variable &sizes = {});
 
 private:
   std::map<DType, std::unique_ptr<AbstractVariableMaker>> m_makers;

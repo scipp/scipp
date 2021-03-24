@@ -16,7 +16,7 @@ namespace {
 constexpr double days_multiplier = llnl::units::precise::day.multiplier();
 }
 
-Variable to_unit(const VariableConstView &var, const units::Unit &unit) {
+Variable to_unit(const Variable &var, const units::Unit &unit) {
   const auto scale =
       llnl::units::quick_convert(var.unit().underlying(), unit.underlying());
   if (std::isnan(scale))

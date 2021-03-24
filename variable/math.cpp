@@ -16,13 +16,11 @@ Variable abs(Variable &&var) {
   return std::move(var);
 }
 
-Variable dot(const VariableConstView &a, const VariableConstView &b) {
+Variable dot(const Variable &a, const Variable &b) {
   return transform(a, b, element::dot);
 }
 
-Variable norm(const VariableConstView &var) {
-  return transform(var, element::norm);
-}
+Variable norm(const Variable &var) { return transform(var, element::norm); }
 
 Variable sqrt(Variable &&var) {
   sqrt(var, var);

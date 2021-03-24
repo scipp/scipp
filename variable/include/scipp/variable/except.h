@@ -19,7 +19,7 @@ struct SCIPP_VARIABLE_EXPORT VariableError : public Error<variable::Variable> {
 
 template <>
 [[noreturn]] SCIPP_VARIABLE_EXPORT void
-throw_mismatch_error(const variable::VariableConstView &expected,
-                     const variable::VariableConstView &actual);
+throw_mismatch_error(const variable::Variable &expected,
+                     const variable::Variable &actual);
 
 } // namespace scipp::except

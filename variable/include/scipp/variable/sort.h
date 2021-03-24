@@ -12,7 +12,7 @@
 
 namespace scipp::variable {
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sort(const VariableConstView &var,
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sort(const Variable &var,
                                                   const Dim dim,
                                                   const SortOrder order);
 

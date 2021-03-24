@@ -9,7 +9,7 @@
 
 namespace scipp::variable {
 
-SCIPP_VARIABLE_EXPORT Variable &@NAME@(Variable &lhs, const VariableConstView &rhs);
-SCIPP_VARIABLE_EXPORT Variable @NAME@(Variable &&lhs, const VariableConstView &rhs);
+SCIPP_VARIABLE_EXPORT Variable &@NAME@(Variable &lhs, const Variable &rhs);
+SCIPP_VARIABLE_EXPORT Variable @NAME@(Variable &&lhs, const Variable &rhs);
 
 } // namespace scipp::variable

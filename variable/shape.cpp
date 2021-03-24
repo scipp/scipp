@@ -22,14 +22,13 @@ void expect_same_volume(const Dimensions &old_dims,
         "Cannot reshape to dimensions with different volume");
 }
 
-Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
+Variable broadcast(const Variable &var, const Dimensions &dims) {
   auto result = variableFactory().empty_like(var, dims);
   result.data().copy(var, result);
   return result;
 }
 
-Variable concatenate(const VariableConstView &a1, const VariableConstView &a2,
-                     const Dim dim) {
+Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   if (a1.dtype() != a2.dtype())
     throw std::runtime_error(
         "Cannot concatenate Variables: Data types do not match.");
@@ -105,8 +104,7 @@ Variable permute(const Variable &var, const Dim dim,
   return permuted;
 }
 
-Variable resize(const VariableConstView &var, const Dim dim,
-                const scipp::index size) {
+Variable resize(const Variable &var, const Dim dim, const scipp::index size) {
   auto dims = var.dims();
   dims.resize(dim, size);
   return Variable(var, dims);
@@ -121,7 +119,7 @@ Variable resize(const VariableConstView &var, const Dim dim,
 /// requested size. For normal (non-bucket) variable the values of `shape` are
 /// ignored, i.e., only `shape.dims()` is used to determine the shape of the
 /// output.
-Variable resize(const VariableConstView &var, const VariableConstView &shape) {
+Variable resize(const Variable &var, const Variable &shape) {
   return Variable(var, shape.dims(), var.data().makeDefaultFromParent(shape));
 }
 
@@ -151,12 +149,12 @@ Variable reshape(const Variable &var, const Dimensions &dims) {
   return reshaped;
 }
 
-Variable fold(const VariableConstView &view, const Dim from_dim,
+Variable fold(const Variable &view, const Dim from_dim,
               const Dimensions &to_dims) {
   return reshape(view, fold(view.dims(), from_dim, to_dims));
 }
 
-Variable flatten(const VariableConstView &view,
+Variable flatten(const Variable &view,
                  const scipp::span<const Dim> &from_labels, const Dim to_dim) {
   return reshape(view, flatten(view.dims(), from_labels, to_dim));
 }
