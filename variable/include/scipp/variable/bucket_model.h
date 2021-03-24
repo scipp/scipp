@@ -77,7 +77,7 @@ public:
   }
 
   [[nodiscard]] VariableConceptHandle
-  makeDefaultFromParent(const VariableConstView &shape) const override {
+  makeDefaultFromParent(const Variable &shape) const override {
     const auto end = cumsum(shape);
     const auto begin = end - shape;
     const auto size = end.dims().volume() > 0
@@ -93,10 +93,10 @@ public:
     return scipp::dtype<bucket<T>>;
   }
 
-  [[nodiscard]] bool equals(const VariableConstView &a,
-                            const VariableConstView &b) const override;
-  void copy(const VariableConstView &src, Variable &dest) const override;
-  void copy(const VariableConstView &src, Variable &&dest) const override;
+  [[nodiscard]] bool equals(const Variable &a,
+                            const Variable &b) const override;
+  void copy(const Variable &src, Variable &dest) const override;
+  void copy(const Variable &src, Variable &&dest) const override;
   void assign(const VariableConcept &other) override;
 
   // TODO Should the mutable version return a view to prevent risk of clients
@@ -149,8 +149,7 @@ private:
 };
 
 template <class T>
-bool DataModel<bucket<T>>::equals(const VariableConstView &a,
-                                  const VariableConstView &b) const {
+bool DataModel<bucket<T>>::equals(const Variable &a, const Variable &b) const {
   if (a.unit() != b.unit())
     return false;
   if (a.dims() != b.dims())
@@ -166,16 +165,14 @@ bool DataModel<bucket<T>>::equals(const VariableConstView &a,
 }
 
 template <class T>
-void DataModel<bucket<T>>::copy(const VariableConstView &src,
-                                Variable &dest) const {
+void DataModel<bucket<T>>::copy(const Variable &src, Variable &dest) const {
   const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
   auto &&[indices1, dim1, buffer1] = dest.constituents<bucket<T>>();
   static_cast<void>(dim1);
   copy_slices(buffer0, buffer1, dim0, indices0, indices1);
 }
 template <class T>
-void DataModel<bucket<T>>::copy(const VariableConstView &src,
-                                Variable &&dest) const {
+void DataModel<bucket<T>>::copy(const Variable &src, Variable &&dest) const {
   copy(src, dest);
 }
 

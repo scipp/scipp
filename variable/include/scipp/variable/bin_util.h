@@ -8,9 +8,7 @@
 
 namespace scipp::variable {
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT VariableConstView
-left_edge(const VariableConstView &edges);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT VariableConstView
-right_edge(const VariableConstView &edges);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable left_edge(const Variable &edges);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable right_edge(const Variable &edges);
 
 } // namespace scipp::variable

@@ -33,8 +33,8 @@ TEST_F(SubspanViewTest, values) {
 }
 
 TEST_F(SubspanViewTest, values_length_0) {
-  // TODO subspan_view does not take ownership, right now this is selecting from
-  // overload by converting to VariableConstView
+  // TODO subspan_view does not take ownership, right now this is selecting
+  // wrong overload by converting to VariableConstView
   auto slice = var.slice({Dim::X, 0, 0});
   auto view = subspan_view(slice, Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
