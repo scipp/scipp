@@ -142,9 +142,10 @@ Variable reverse(const Variable &var, const Dim dim) {
 
 Variable reshape(const Variable &var, const Dimensions &dims) {
   expect_same_volume(var.dims(), dims);
-  // TODO This condition is not sufficient
+  // We could be less restrictive here, avoiding copies whenever we are
+  // reshaping an ordered contiguous chunk.
   Variable reshaped =
-      var.dims().volume() == var.data().size() ? var : copy(var);
+      var.dims() == var.array_params().dataDims() ? var : copy(var);
   reshaped.setDims(dims);
   return reshaped;
 }
