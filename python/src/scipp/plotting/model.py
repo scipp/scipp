@@ -185,9 +185,6 @@ class PlotModel:
                     coord_values = to_bin_centers(coord, dim).values
             form = LabelFormatter(data_array.meta[dim_label_map[dim]].values,
                                   coord_values).formatter
-            # form = lambda val, pos: value_to_string(  # noqa: E731
-            #     data_array.meta[dim_label_map[dim]].values[np.abs(
-            #         coord_values - val).argmin()])
 
         if form is not None:
             formatter.update({"linear": form, "log": form})
