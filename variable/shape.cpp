@@ -127,8 +127,8 @@ namespace {
 void swap(Variable &var, const Dim dim, const scipp::index a,
           const scipp::index b) {
   const Variable tmp = copy(var.slice({dim, a}));
-  var.slice({dim, a}).assign(var.slice({dim, b}));
-  var.slice({dim, b}).assign(tmp);
+  copy(var.slice({dim, b}), var.slice({dim, a}));
+  copy(tmp, var.slice({dim, b}));
 }
 } // namespace
 

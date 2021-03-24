@@ -64,9 +64,14 @@ Variable copy(const Variable &var) {
 
 /// Copy variable to output variable.
 Variable &copy(const Variable &var, Variable &out) {
-  // TODO Is this missing dim/shape handling?
   var.data().copy(var, out);
   return out;
+}
+
+/// Copy variable to output variable.
+Variable copy(const Variable &var, Variable &&out) {
+  copy(var, out);
+  return std::move(out);
 }
 
 Variable masked_to_zero(const Variable &var, const Variable &mask) {

@@ -61,8 +61,6 @@ public:
            std::optional<T> variances);
   explicit Variable(const llnl::units::precise_measurement &m);
 
-  Variable &assign(const Variable &other);
-
   /// Keyword-argument constructor.
   ///
   /// This is equivalent to `makeVariable`, except that the dtype is passed at
@@ -198,6 +196,7 @@ Variable::Variable(const DType &type, Ts &&... args)
 
 SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var);
 SCIPP_VARIABLE_EXPORT Variable &copy(const Variable &dataset, Variable &out);
+SCIPP_VARIABLE_EXPORT Variable copy(const Variable &dataset, Variable &&out);
 
 } // namespace scipp::variable
 
