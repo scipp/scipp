@@ -39,10 +39,17 @@ private:
   Dim m_dim;
 };
 
-/// Specialization of DataModel for "bucketed" data. T could be Variable,
+namespace {
+template <class T> auto clone_impl(const DataModel<bucket<T>> &model) {
+  return std::make_unique<DataModel<bucket<T>>>(
+      model.indices()->clone(), model.bin_dim(), copy(model.buffer()));
+}
+} // namespace
+
+/// Specialization of DataModel for "binned" data. T could be Variable,
 /// DataArray, or Dataset.
 ///
-/// A bucket in this context is defined as an element of a variable mapping to a
+/// A bin in this context is defined as an element of a variable mapping to a
 /// range of data, such as a slice of a DataArray.
 template <class T>
 class DataModel<bucket<T>> : public BinModelBase<VariableConceptHandle> {
@@ -57,12 +64,13 @@ public:
         m_buffer(std::move(buffer)) {}
 
   [[nodiscard]] VariableConceptHandle clone() const override {
-    // TODO Deep copy indices?
-    return std::make_unique<DataModel>(*this);
+    return clone_impl(*this);
   }
 
   bool operator==(const DataModel &other) const noexcept {
-    return this->indices() == other.indices() &&
+    const auto &i1 = requireT<const DataModel<range_type>>(*indices());
+    const auto &i2 = requireT<const DataModel<range_type>>(*other.indices());
+    return equals_impl(i1.values(), i2.values()) &&
            this->bin_dim() == other.bin_dim() && m_buffer == other.m_buffer;
   }
   bool operator!=(const DataModel &other) const noexcept {
