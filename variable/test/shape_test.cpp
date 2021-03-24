@@ -11,7 +11,7 @@
 
 using namespace scipp;
 
-TEST(ShapeTest, DISABLED_broadcast) {
+TEST(ShapeTest, broadcast) {
   auto reference =
       makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{3, 2, 2},
                            Values{1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4},
