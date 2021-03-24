@@ -23,12 +23,10 @@ private:
                      variableFactory().create(type, dims, unit, variances));
   }
   const Variable &data(const Variable &var) const override {
-    auto &model = requireT<const DataModel<bucket<T>>>(var.data());
-    return model.buffer();
+    return requireT<const DataModel<bucket<T>>>(var.data()).buffer();
   }
   Variable &data(Variable &var) const override {
-    auto &model = requireT<DataModel<bucket<T>>>(var.data());
-    return model.buffer();
+    return requireT<DataModel<bucket<T>>>(var.data()).buffer();
   }
   core::ElementArrayViewParams
   array_params(const Variable &var) const override {
