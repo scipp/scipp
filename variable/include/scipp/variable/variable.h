@@ -197,8 +197,6 @@ Variable::Variable(const DType &type, Ts &&... args)
 SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var);
 SCIPP_VARIABLE_EXPORT Variable &copy(const Variable &dataset, Variable &out);
 
-using VariableConstView = Variable;
-
 } // namespace scipp::variable
 
 namespace scipp::core {
@@ -212,7 +210,6 @@ using variable::makeVariable;
 using variable::Shape;
 using variable::Values;
 using variable::Variable;
-using variable::VariableConstView;
 using variable::Variances;
 } // namespace scipp
 

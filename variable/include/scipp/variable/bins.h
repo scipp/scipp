@@ -8,13 +8,13 @@
 
 namespace scipp::variable {
 
-SCIPP_VARIABLE_EXPORT void copy_slices(const VariableConstView &src,
-                                       Variable &dst, const Dim dim,
-                                       const VariableConstView &srcIndices,
-                                       const VariableConstView &dstIndices);
+SCIPP_VARIABLE_EXPORT void copy_slices(const Variable &src, Variable &dst,
+                                       const Dim dim,
+                                       const Variable &srcIndices,
+                                       const Variable &dstIndices);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable resize_default_init(
-    const VariableConstView &var, const Dim dim, const scipp::index size);
+    const Variable &var, const Dim dim, const scipp::index size);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable make_bins(Variable indices,
                                                        const Dim dim,

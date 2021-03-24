@@ -71,8 +71,7 @@ public:
 
 template <class T> class BinVariableMaker : public BinVariableMakerCommon<T> {
 private:
-  const VariableConstView
-  bin_parent(const scipp::span<const VariableConstView> &parents) const {
+  const Variable &bin_parent(const scipp::span<const Variable> &parents) const {
     constexpr auto is_bins = [](auto &x) {
       return x.dtype() == dtype<bucket<T>>;
     };
@@ -90,19 +89,18 @@ private:
           "for binned (event) data.");
     return *std::find_if(parents.begin(), parents.end(), is_bins);
   }
-  virtual Variable call_make_bins(const VariableConstView &parent,
-                                  const VariableConstView &indices,
-                                  const Dim dim, const DType type,
-                                  const Dimensions &dims,
+  virtual Variable call_make_bins(const Variable &parent,
+                                  const Variable &indices, const Dim dim,
+                                  const DType type, const Dimensions &dims,
                                   const units::Unit &unit,
                                   const bool variances) const = 0;
 
 public:
-  Variable
-  create(const DType elem_dtype, const Dimensions &dims,
-         const units::Unit &unit, const bool variances,
-         const std::vector<VariableConstView> &parents) const override {
-    const VariableConstView parent = bin_parent(parents);
+  // TODO use span to avoid Variable copies?
+  Variable create(const DType elem_dtype, const Dimensions &dims,
+                  const units::Unit &unit, const bool variances,
+                  const std::vector<Variable> &parents) const override {
+    const Variable &parent = bin_parent(parents);
     const auto &[parentIndices, dim, buffer] = parent.constituents<bucket<T>>();
     auto [indices, size] = contiguous_indices(parentIndices, dims);
     auto bufferDims = buffer.dims();
@@ -111,13 +109,13 @@ public:
                           variances);
   }
 
-  Dim elem_dim(const VariableConstView &var) const override {
+  Dim elem_dim(const Variable &var) const override {
     return std::get<1>(var.constituents<bucket<T>>());
   }
-  DType elem_dtype(const VariableConstView &var) const override {
+  DType elem_dtype(const Variable &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).dtype();
   }
-  units::Unit elem_unit(const VariableConstView &var) const override {
+  units::Unit elem_unit(const Variable &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).unit();
   }
   void expect_can_set_elem_unit(const Variable &var,
@@ -130,7 +128,7 @@ public:
   void set_elem_unit(Variable &var, const units::Unit &u) const override {
     std::get<2>(var.constituents<bucket<T>>()).setUnit(u);
   }
-  bool hasVariances(const VariableConstView &var) const override {
+  bool hasVariances(const Variable &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).hasVariances();
   }
 };

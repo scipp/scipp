@@ -20,8 +20,7 @@ protected:
 
 using VariableTypesMutable = ::testing::Types<Variable &>;
 
-using VariableTypes =
-    ::testing::Types<Variable &, const Variable &, VariableConstView>;
+using VariableTypes = ::testing::Types<Variable &, const Variable &>;
 
 TYPED_TEST_SUITE(Variable_scalar_accessors_mutate, VariableTypesMutable);
 TYPED_TEST_SUITE(Variable_scalar_accessors, VariableTypes);

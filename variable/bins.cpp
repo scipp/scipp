@@ -36,9 +36,8 @@ constexpr auto copy_spans = overloaded{
     }};
 } // namespace
 
-void copy_slices(const VariableConstView &src, Variable &dst, const Dim dim,
-                 const VariableConstView &srcIndices,
-                 const VariableConstView &dstIndices) {
+void copy_slices(const Variable &src, Variable &dst, const Dim dim,
+                 const Variable &srcIndices, const Variable &dstIndices) {
   const auto [begin0, end0] = unzip(srcIndices);
   const auto [begin1, end1] = unzip(dstIndices);
   const auto sizes0 = end0 - begin0;
@@ -53,7 +52,7 @@ void copy_slices(const VariableConstView &src, Variable &dst, const Dim dim,
                      subspan_view(src, dim, srcIndices), copy_spans);
 }
 
-Variable resize_default_init(const VariableConstView &var, const Dim dim,
+Variable resize_default_init(const Variable &var, const Dim dim,
                              const scipp::index size) {
   auto dims = var.dims();
   if (dims.contains(dim))

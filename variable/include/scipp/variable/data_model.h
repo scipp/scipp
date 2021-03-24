@@ -68,14 +68,13 @@ public:
   makeDefaultFromParent(const scipp::index size) const override;
 
   VariableConceptHandle
-  makeDefaultFromParent(const VariableConstView &shape) const override {
+  makeDefaultFromParent(const Variable &shape) const override {
     return makeDefaultFromParent(shape.dims().volume());
   }
 
-  bool equals(const VariableConstView &a,
-              const VariableConstView &b) const override;
-  void copy(const VariableConstView &src, Variable &dest) const override;
-  void copy(const VariableConstView &src, Variable &&dest) const override;
+  bool equals(const Variable &a, const Variable &b) const override;
+  void copy(const Variable &src, Variable &dest) const override;
+  void copy(const Variable &src, Variable &&dest) const override;
   void assign(const VariableConcept &other) override;
 
   void setVariances(const Variable &variances) override;
@@ -144,8 +143,7 @@ DataModel<T>::makeDefaultFromParent(const scipp::index size) const {
 /// This method is using virtual dispatch as a trick to obtain T, such that
 /// values<T> and variances<T> can be compared.
 template <class T>
-bool DataModel<T>::equals(const VariableConstView &a,
-                          const VariableConstView &b) const {
+bool DataModel<T>::equals(const Variable &a, const Variable &b) const {
   if (a.unit() != b.unit())
     return false;
   if (a.dims() != b.dims())
@@ -165,14 +163,14 @@ bool DataModel<T>::equals(const VariableConstView &a,
 /// This method is using virtual dispatch as a trick to obtain T, such that
 /// transform can be called with any T.
 template <class T>
-void DataModel<T>::copy(const VariableConstView &src, Variable &dest) const {
+void DataModel<T>::copy(const Variable &src, Variable &dest) const {
   transform_in_place<T>(
       dest, src,
       overloaded{core::transform_flags::expect_in_variance_if_out_variance,
                  [](auto &a, const auto &b) { a = b; }});
 }
 template <class T>
-void DataModel<T>::copy(const VariableConstView &src, Variable &&dest) const {
+void DataModel<T>::copy(const Variable &src, Variable &&dest) const {
   copy(src, dest);
 }
 

@@ -12,9 +12,9 @@
 namespace scipp::variable {
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable abs(Variable &&var);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable dot(const VariableConstView &a,
-                                                 const VariableConstView &b);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable norm(const VariableConstView &var);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable dot(const Variable &a,
+                                                 const Variable &b);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable norm(const Variable &var);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sqrt(Variable &&var);
 

@@ -27,9 +27,8 @@ bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
 bool is_dtype_bool(const Variable &var) { return var.dtype() == dtype<bool>; }
 
 template <typename T, class Less>
-void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
-                     Variable &newT, const VariableConstView &oldCoordT,
-                     const VariableConstView &newCoordT) {
+void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,
+                     const Variable &oldCoordT, const Variable &newCoordT) {
   constexpr Less less;
   const auto oldSize = oldT.dims()[dim];
   const auto newSize = newT.dims()[dim];
@@ -97,9 +96,8 @@ struct Less {
 };
 } // namespace
 
-Variable rebin(const VariableConstView &var, const Dim dim,
-               const VariableConstView &oldCoord,
-               const VariableConstView &newCoord) {
+Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
+               const Variable &newCoord) {
   // Rebin could also implemented for count-densities. However, it may be better
   // to avoid this since it increases complexity. Instead, densities could
   // always be computed on-the-fly for visualization, if required.

@@ -14,8 +14,8 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-Variable linspace(const VariableConstView &start, const VariableConstView &stop,
-                  const Dim dim, const scipp::index num) {
+Variable linspace(const Variable &start, const Variable &stop, const Dim dim,
+                  const scipp::index num) {
   // The implementation here is slightly verbose and explicit. It could be
   // improved if we were to introduce new variants of `transform`, similar to
   // `std::generate`.
@@ -41,7 +41,7 @@ Variable linspace(const VariableConstView &start, const VariableConstView &stop,
   return out;
 }
 
-Variable islinspace(const VariableConstView &var, const Dim dim) {
+Variable islinspace(const Variable &var, const Dim dim) {
   return transform(subspan_view(var, dim), core::element::islinspace,
                    "islinspace");
 }
@@ -50,8 +50,7 @@ Variable islinspace(const VariableConstView &var, const Dim dim) {
 ///
 /// If `order` is SortOrder::Ascending, checks if values are non-decreasing.
 /// If `order` is SortOrder::Descending, checks if values are non-increasing.
-bool issorted(const VariableConstView &x, const Dim dim,
-              const SortOrder order) {
+bool issorted(const Variable &x, const Dim dim, const SortOrder order) {
   const auto size = x.dims()[dim];
   if (size < 2)
     return true;
@@ -68,19 +67,19 @@ bool issorted(const VariableConstView &x, const Dim dim,
 }
 
 /// Zip elements of two variables into a variable where each element is a pair.
-Variable zip(const VariableConstView &first, const VariableConstView &second) {
+Variable zip(const Variable &first, const Variable &second) {
   return transform(first, second, core::element::zip);
 }
 
 /// For an input where elements are pairs, return two variables containing the
 /// first and second components of the input pairs.
-std::pair<Variable, Variable> unzip(const VariableConstView &var) {
+std::pair<Variable, Variable> unzip(const Variable &var) {
   return {transform(var, core::element::get<0>),
           transform(var, core::element::get<1>)};
 }
 
 /// Fill variable with given values (and variances) and unit.
-void fill(Variable &var, const VariableConstView &value) {
+void fill(Variable &var, const Variable &value) {
   transform_in_place(var, value, core::element::fill);
 }
 

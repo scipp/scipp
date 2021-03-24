@@ -69,25 +69,17 @@ Variable &copy(const Variable &var, Variable &out) {
   return out;
 }
 
-Variable masked_to_zero(const VariableConstView &var,
-                        const VariableConstView &mask) {
+Variable masked_to_zero(const Variable &var, const Variable &mask) {
   return transform(var, mask, element::convertMaskedToZero);
 }
 
 namespace geometry {
-Variable position(const VariableConstView &x, const VariableConstView &y,
-                  const VariableConstView &z) {
+Variable position(const Variable &x, const Variable &y, const Variable &z) {
   return transform(x, y, z, element::geometry::position);
 }
-Variable x(const VariableConstView &pos) {
-  return transform(pos, element::geometry::x);
-}
-Variable y(const VariableConstView &pos) {
-  return transform(pos, element::geometry::y);
-}
-Variable z(const VariableConstView &pos) {
-  return transform(pos, element::geometry::z);
-}
+Variable x(const Variable &pos) { return transform(pos, element::geometry::x); }
+Variable y(const Variable &pos) { return transform(pos, element::geometry::y); }
+Variable z(const Variable &pos) { return transform(pos, element::geometry::z); }
 } // namespace geometry
 
 } // namespace scipp::variable

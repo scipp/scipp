@@ -10,25 +10,26 @@
 
 namespace scipp::variable {
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-linspace(const VariableConstView &start, const VariableConstView &stop,
-         const Dim dim, const scipp::index num);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable linspace(const Variable &start,
+                                                      const Variable &stop,
+                                                      const Dim dim,
+                                                      const scipp::index num);
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-islinspace(const VariableConstView &var, const Dim dim);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable islinspace(const Variable &var,
+                                                        const Dim dim);
 
 enum class SCIPP_VARIABLE_EXPORT SortOrder { Ascending, Descending };
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT bool
-issorted(const VariableConstView &x, const Dim dim,
+issorted(const Variable &x, const Dim dim,
          const SortOrder order = SortOrder::Ascending);
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-zip(const VariableConstView &first, const VariableConstView &second);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable zip(const Variable &first,
+                                                 const Variable &second);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT std::pair<Variable, Variable>
-unzip(const VariableConstView &var);
+unzip(const Variable &var);
 
-SCIPP_VARIABLE_EXPORT void fill(Variable &var, const VariableConstView &value);
+SCIPP_VARIABLE_EXPORT void fill(Variable &var, const Variable &value);
 
 SCIPP_VARIABLE_EXPORT void fill_zeros(Variable &var);
 

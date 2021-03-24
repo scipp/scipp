@@ -13,10 +13,9 @@ INSTANTIATE_BIN_VARIABLE(VariableView, bucket<Variable>)
 
 template <class T> class BinVariableMakerVariable : public BinVariableMaker<T> {
 private:
-  Variable call_make_bins(const VariableConstView &,
-                          const VariableConstView &indices, const Dim dim,
-                          const DType type, const Dimensions &dims,
-                          const units::Unit &unit,
+  Variable call_make_bins(const Variable &, const Variable &indices,
+                          const Dim dim, const DType type,
+                          const Dimensions &dims, const units::Unit &unit,
                           const bool variances) const override {
     // Buffer contains only variable, which is created with new dtype, no
     // information to copy from parent.
@@ -32,7 +31,7 @@ private:
     return model.buffer();
   }
   core::ElementArrayViewParams
-  array_params(const VariableConstView &var) const override {
+  array_params(const Variable &var) const override {
     const auto &[indices, dim, buffer] = var.constituents<bucket<T>>();
     auto params = var.array_params();
     return {0, // no offset required in buffer since access via indices
