@@ -107,6 +107,10 @@ public:
     throw except::TypeError("This data type does not have bin indices.");
   }
 
+  scipp::span<const T> values() const {
+    return {m_values.data(), m_values.data() + m_values.size()};
+  }
+
   scipp::span<T> values() {
     return {m_values.data(), m_values.data() + m_values.size()};
   }

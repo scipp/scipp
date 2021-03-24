@@ -77,8 +77,12 @@ TEST_F(BucketModelTest, variances) {
 TEST_F(BucketModelTest, comparison) {
   EXPECT_EQ(Model(indices.data_handle(), Dim::X, buffer),
             Model(indices.data_handle(), Dim::X, buffer));
-  EXPECT_NE(
+  // The model has no concept of dims so these two cases cannot be distinguished
+  EXPECT_EQ(
       Model(copy(indices.slice({Dim::Y, 0})).data_handle(), Dim::X, buffer),
+      Model(copy(indices.slice({Dim::Y, 0, 1})).data_handle(), Dim::X, buffer));
+  EXPECT_NE(
+      Model(copy(indices.slice({Dim::Y, 1})).data_handle(), Dim::X, buffer),
       Model(copy(indices.slice({Dim::Y, 0, 1})).data_handle(), Dim::X, buffer));
   auto indices2 = copy(indices);
   indices2.values<std::pair<scipp::index, scipp::index>>()[0] = {0, 1};
