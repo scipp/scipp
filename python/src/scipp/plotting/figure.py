@@ -55,8 +55,6 @@ class PlotFigure:
         self.axlocator = {}
         self.xlabel = xlabel
         self.ylabel = ylabel
-        # self.axis_offsets = {"y_placement": -0.07, "x_placement": 0.0}
-        # self.axis_boundaries = {}
 
     def is_widget(self):
         """
@@ -205,100 +203,5 @@ class PlotFigure:
     def get_axis_bounds(self, axis):
         return getattr(self.ax, "get_{}lim".format(axis))()
 
-    # def set_axis_offset(self, axis, string):
-    #     # import os
-    #     # os.write(1, "set_axis_offset 1\n".encode())
-    #     self.axis_offsets[axis].set_text(string)
-    #     # os.write(1, "set_axis_offset 1.1\n".encode())
-    #     # t = self.ax.transData.inverted()
-    #     # os.write(1, "set_axis_offset 1.2\n".encode())
-    #     # bb = self.axis_offsets[axis].get_window_extent(
-    #     #     renderer=self.fig.canvas.get_renderer())
-    #     # os.write(1, "set_axis_offset 1.3\n".encode())
-    #     # bb = np.ravel(bb.transformed(t))
-
-    #     # os.write(1, "set_axis_offset 2\n".encode())
-    #     # if position is not None:
-    #     #     os.write(1, "set_axis_offset 3\n".encode())
-    #     #     # getattr(self.axis_offsets[axis], "set_{}".format(axis))(position)
-    #     #     if axis == "x":
-    #     #        self.axis_offsets[axis].xy = [position, self.axis_offsets[axis].xy[1]]
-    #     #        self.axis_offsets[axis].xyann = [position, self.axis_offsets[axis].xyann[1]]
-    #     #     else:
-    #     #        self.axis_offsets[axis].xy = [self.axis_offsets[axis].xy[0], position]
-    #     #        self.axis_offsets[axis].xyann = [self.axis_offsets[axis].xyann[0], position]
-
-    #     #     os.write(1, "set_axis_offset 4\n".encode())
-    #     # else:
-    #     #     os.write(1, "set_axis_offset 5\n".encode())
-    #     #     lims = getattr(self.ax, "get_{}lim".format(axis))
-    #     #     # getattr(self.ax,
-    #     #     #         "set_{}".format(axis))(0.7 * (lims[1] - lims[0]) + lims[0])
-    #     #     if axis == "x":
-    #     #         os.write(1, (str(lims[1]-(bb[2]-bb[0]))+"\n").encode())
-    #     #         self.axis_offsets[axis].xy = [lims[1]-(bb[2]-bb[0]),
-    #     #             self.axis_offsets[f"{axis}_placement"]]
-    #     #     else:
-    #     #         self.axis_offsets[axis].xy = [self.axis_offsets[f"{axis}_placement"],
-    #     #             lims[1]]
-    #     #     os.write(1, "set_axis_offset 6\n".encode())
-    #     # os.write(1, "set_axis_offset 7\n".encode())
-
     def set_axis_label(self, axis, string):
         getattr(self.ax, "set_{}label".format(axis))(string)
-
-    # def create_axis_offsets(self):
-    #     """
-    #     The hard-coded numbers represent x/y locations of the text, in
-    #     normalized axis coordinates (i.e. the lower and upper figure axes are
-    #     drawn at 0 and 1, respectively).
-    #     """
-    #     self.axis_offsets.update({
-    #         # "x":
-    #         # self.ax.annotate('', xy=[0.0, 0.0], xytext=[0.0, -0.07],
-    #         #     arrowprops=dict(facecolor='black', arrowstyle="-"),
-    #         #                              ha='left',
-    #         #              va='top',
-    #         #              transform=transf.blended_transform_factory(
-    #         #                  self.ax.transData, self.ax.transAxes)),
-    #         #             "y":
-    #         # self.ax.annotate('', xy=[0.0, 0.0], xytext=[0.0, 0.0],
-    #         #     arrowprops=dict(facecolor='black', arrowstyle="-"),
-    #         #                              ha='left',
-    #         #              va='bottom',
-    #         #              transform=transf.blended_transform_factory(
-    #         #                  self.ax.transAxes, self.ax.transData))
-    #         # })
-
-    #         "x": self.ax.text(0.70,
-    #                      -0.07,
-    #                      "",
-    #                      ha='left',
-    #                      va='top',
-    #                      transform=self.ax.transAxes),
-    #         "y":
-    #         self.ax.text(0.0,
-    #                      1.0,
-    #                      "",
-    #                      ha='left',
-    #                      va='bottom',
-    #                      transform=self.ax.transAxes),
-    #     })
-
-    #     # self.axis_boundaries.update({
-    #     #     "x":
-    #     #     self.ax.text(0.0, 0.0, "", ha='left', va='top'),
-    #     #     "y":
-    #     #     self.ax.text(0.0, 0.0, "", ha='left', va='bottom'),
-    #     #     "line":
-    #     #     self.ax.plot([0, 0])
-    #     # })
-
-    # def reset_axis_offsets(self):
-    #     for key in "xy":
-    #         self.axis_offsets[key].set_text("")
-
-    # # def set_axis_boundary(self, axis, boundary):
-    # #     self.axis_boundaries[axis].set_text(boundary["text"])
-    # #     self.axis_boundaries[axis].set_x(boundary["loc"])
-    # #     # self.ax.plotis_boundaries[axis].set_position([boundary["loc"], -0.05])

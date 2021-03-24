@@ -78,7 +78,6 @@ class PlotFigure2d(PlotFigure):
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.mask_image = {}
-        # self.create_axis_offsets()
 
     def rescale_to_data(self, vmin, vmax):
         """

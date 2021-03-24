@@ -11,7 +11,6 @@ from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
 import enum
-import os
 
 
 class Kind(enum.Enum):
@@ -55,7 +54,6 @@ class PlotModel:
         self.coord_info = {}
         self.dim_to_shape = dim_to_shape
         self.axformatter = {}
-        self.datetime_indicator_set = False
 
         axes_dims = list(axes.values())
 
@@ -205,144 +203,6 @@ class PlotModel:
             coord_unit = name_with_unit(var=coord, name="")
 
         return coord, formatter, coord_label, coord_unit, offset
-
-    # def _vector_tick_formatter(self, array_values, size):
-    #     """
-    #     Format vector output for ticks: return 3 components as a string.
-    #     """
-    #     return lambda val, pos: "(" + ",".join([
-    #         value_to_string(item, precision=2)
-    #         for item in array_values[int(val)]
-    #     ]) + ")" if (int(val) >= 0 and int(val) < size) else ""
-
-    # def _string_tick_formatter(self, array_values, size):
-    #     """
-    #     Format string ticks: find closest string in coordinate array.
-    #     """
-    #     return lambda val, pos: array_values[int(val)] if (int(
-    #         val) >= 0 and int(val) < size) else ""
-
-    # def _date_tick_formatter(self, offset, dim):
-    #     """
-    #     Format datetime ticks: adjust the time precision and update
-    #     offset according to the currently displayed range.
-    #     """
-    #     def formatter(val, pos):
-    #         d = (offset + (int(val) * offset.unit)).value
-    #         dt = str(d)
-    #         date = date2cal(d)
-    #         trim = 0
-    #         boundary = None
-    #         # os.write(1, "got to here 1\n".encode())
-    #         bounds = self.interface["get_view_axis_bounds"](dim)
-    #         diff = (bounds[1] - bounds[0]) * offset.unit
-    #         # os.write(1, "got to here 2\n".encode())
-    #         # os.write(1, (str(bounds) + '\n').encode())
-    #         label = dim
-    #         # os.write(1, "got to here 3\n".encode())
-    #         # os.write(1, ("a " + str(bounds[0] * offset.unit) + '\n').encode())
-    #         # os.write(1, ("b " + str(int(bounds[0]) * offset.unit + offset) +
-    #         #              '\n').encode())
-    #         # os.write(1, ("c " + str(
-    #         #     (int(bounds[0]) * offset.unit + offset).value) +
-    #         #              '\n').encode())
-    #         if pos == 0:
-    #             datetime_indicator_set = False
-
-    #         date_min = date2cal((int(bounds[0]) * offset.unit + offset).value)
-    #         # os.write(1, "got to here 4\n".encode())
-    #         date_max = date2cal((int(bounds[1]) * offset.unit + offset).value)
-    #         if (diff < sc.to_unit(2 * sc.units.us, diff.unit)).value:
-    #             # offset: 2017-01-13T12:15:45.123, tick: 456.789 us
-    #             trim = 23
-    #             label += r" [$\mu$s]"
-    #             string = str(float("{}.{}".format(dt[23:26], dt[26:])))
-    #         elif (diff < sc.to_unit(4 * sc.Unit('ms'), diff.unit)).value:
-    #             # offset: 2017-01-13T12:15:45, tick: 123.456 ms
-    #             trim = 19
-    #             label += " [ms]"
-    #             string = str(float("{}.{}".format(dt[20:23], dt[23:26])))
-    #         elif (diff < sc.to_unit(4 * sc.units.s, diff.unit)).value:
-    #             # offset: 2017-01-13T12:15, tick: 45.123 s
-    #             trim = 16
-    #             label += " [s]"
-    #             string = str(float(dt[17:23]))
-    #         elif (diff < sc.to_unit(4 * sc.Unit('min'), diff.unit)).value:
-    #             # offset: 2017-01-13, tick: 12:15:45
-    #             trim = 10
-    #             string = dt[11:19]
-    #         elif (diff < sc.to_unit(4 * sc.Unit('h'), diff.unit)).value:
-    #             # offset: 2017-01-13, tick: 12:15:45
-    #             trim = 10
-    #             string = dt[11:19]
-    #         elif (diff < sc.to_unit(4 * sc.Unit('d'), diff.unit)).value:
-    #             # offset: 2017-01, tick: 13 12:15
-    #             trim = 7
-    #             string = dt[8:16].replace('T', ' ')
-    #         elif (diff < sc.to_unit(6 * sc.Unit('month'), diff.unit)).value:
-    #             # tick: 2017-01-13
-    #             string = dt[5:10]
-    #             # trim = 4
-    #             os.write(1, (str(date_min) + '\n').encode())
-    #             os.write(1, (str(date_max) + '\n').encode())
-    #             # os.write(1,
-    #             #          (str(date_min[:2] == date_max[:2]) + '\n').encode())
-    #             # inds = np.argwhere(date_min[:2] == date_max[:2]).max()
-    #             # os.write(1, (str(inds) + '\n').encode())
-
-    #             tick_indicator = False
-    #             if date_min[0] != date_max[0]:
-    #                 if pos == 1:
-    #                     tick_indicator = True
-    #                 if (date[0] == date_max[0]) and (
-    #                         not self.datetime_indicator_set):
-    #                     tick_indicator = True
-    #                     self.datetime_indicator_set = True
-    #             if tick_indicator:
-    #                 string += "\n{}".format(date[0])
-
-    #                 # i
-    #                 # string = "{}{}".format(date[0])
-    #             #     # os.write(1,
-    #             #     #          (f'{date_max[0]}-01-01T00:00:00' + '\n').encode())
-    #             #     transition = sc.to_unit(
-    #             #         sc.Variable(value=np.datetime64(
-    #             #             f'{date_max[0]}-01-01T00:00:00')), offset.unit)
-    #             #     # os.write(1, (str(transition) + '\n').encode())
-
-    #             #     # (int(bounds[0]) * offset.unit + offset)
-    #             #     boundary = {
-    #             #         "text": str(date[0]),
-    #             #         "loc": (transition - offset).value
-    #             #     }
-    #             #     # os.write(1, ('got to here 45\n').encode())
-    #             #     # os.write(1, (str(boundary) + '\n').encode())
-    #             else:
-    #                 trim = 4
-
-    #         else:
-    #             # tick: 2017-01
-    #             string = dt[:7]
-    #         # os.write(1, ('got to here 46\n').encode())
-
-    #         if pos == 0:
-    #             offstring = dt[:trim]
-    #             if trim > 0:
-    #                 offstring = "+" + offstring
-    #             # os.write(1, ('got to here 47\n').encode())
-    #             # if boundary is not None:
-    #             #     # os.write(1, ('got to here 47.5\n').encode())
-    #             #     # os.write(1, (str(self.interface) + '\n').encode())
-    #             #     self.interface["set_view_axis_offset"](dim,
-    #             #                                            boundary["text"],
-    #             #                                            boundary["loc"])
-    #             #     # os.write(1, ('got to here 48\n').encode())
-    #             # else:
-    #             self.interface["set_view_axis_offset"](dim, offstring)
-    #             self.interface["set_view_axis_label"](dim, label)
-    #         return string
-
-    #     return formatter
 
     def _make_masks(self, array, mask_info, transpose=False):
         if not mask_info:
