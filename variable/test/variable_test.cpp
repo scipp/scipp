@@ -120,14 +120,14 @@ private:
 
 protected:
   void expect_eq(const Variable &a, const Variable &b) const {
-    expect_eq_impl(a, VariableConstView(b));
-    expect_eq_impl(VariableConstView(a), b);
-    expect_eq_impl(VariableConstView(a), VariableConstView(b));
+    expect_eq_impl(a, Variable(b));
+    expect_eq_impl(Variable(a), b);
+    expect_eq_impl(Variable(a), Variable(b));
   }
   void expect_ne(const Variable &a, const Variable &b) const {
-    expect_ne_impl(a, VariableConstView(b));
-    expect_ne_impl(VariableConstView(a), b);
-    expect_ne_impl(VariableConstView(a), VariableConstView(b));
+    expect_ne_impl(a, Variable(b));
+    expect_ne_impl(Variable(a), b);
+    expect_ne_impl(Variable(a), Variable(b));
   }
 };
 
@@ -265,7 +265,7 @@ TEST(VariableTest, copy_and_move) {
   const auto copy(var);
   EXPECT_EQ(copy, reference);
 
-  const Variable copy_via_slice{VariableConstView(var)};
+  const Variable copy_via_slice{Variable(var)};
   EXPECT_EQ(copy_via_slice, reference);
 
   const auto moved(std::move(var));
@@ -503,7 +503,7 @@ TEST_F(VariableTest_3d, slice_range) {
 TEST(VariableView, full_const_view) {
   const auto var =
       makeVariable<double>(Dimensions{Dim::X, 3}, Values{}, Variances{});
-  VariableConstView view(var);
+  const Variable view(var);
   EXPECT_EQ(&var.values<double>()[0], &view.values<double>()[0]);
   EXPECT_EQ(&var.variances<double>()[0], &view.variances<double>()[0]);
 }
@@ -726,7 +726,7 @@ TEST(VariableTest, rename) {
                                   Variances{7, 8, 9, 10, 11, 12});
   const Variable expected(reshape(var, {{Dim::X, 2}, {Dim::Z, 3}}));
 
-  VariableConstView view(var);
+  Variable view(var);
   view.rename(Dim::Y, Dim::Z);
   ASSERT_EQ(view, expected);
   ASSERT_EQ(view.slice({Dim::X, 1}), expected.slice({Dim::X, 1}));

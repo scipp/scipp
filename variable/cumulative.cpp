@@ -11,8 +11,7 @@ using namespace scipp;
 
 namespace scipp::variable {
 
-Variable cumsum(const VariableConstView &var, const Dim dim,
-                const CumSumMode mode) {
+Variable cumsum(const Variable &var, const Dim dim, const CumSumMode mode) {
   if (var.dims()[dim] == 0)
     return copy(var);
   Variable cumulative = copy(var.slice({dim, 0}));
@@ -25,7 +24,7 @@ Variable cumsum(const VariableConstView &var, const Dim dim,
   return out;
 }
 
-Variable cumsum(const VariableConstView &var, const CumSumMode mode) {
+Variable cumsum(const Variable &var, const CumSumMode mode) {
   Variable cumulative(var, Dimensions{});
   Variable out = copy(var);
   if (mode == CumSumMode::Inclusive)
@@ -35,7 +34,7 @@ Variable cumsum(const VariableConstView &var, const CumSumMode mode) {
   return out;
 }
 
-Variable cumsum_bins(const VariableConstView &var, const CumSumMode mode) {
+Variable cumsum_bins(const Variable &var, const CumSumMode mode) {
   Variable out = copy(var);
   auto cumulative = Variable(variable::variableFactory().elem_dtype(var),
                              var.dims(), var.unit());

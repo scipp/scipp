@@ -16,7 +16,7 @@ namespace scipp::variable {
 const auto deg_to_rad = makeVariable<double>(
     Dims(), Shape(), units::rad / units::deg, Values{pi<double> / 180.0});
 
-Variable sin(const VariableConstView &var) {
+Variable sin(const Variable &var) {
   Variable out(var);
   sin(out, out);
   return out;
@@ -28,7 +28,7 @@ Variable sin(Variable &&var) {
   return out;
 }
 
-Variable &sin(const VariableConstView &var, Variable &out) {
+Variable &sin(const Variable &var, Variable &out) {
   core::expect::unit_any_of(var, {units::rad, units::deg});
   out.assign(var);
   if (var.unit() == units::deg)
@@ -37,7 +37,7 @@ Variable &sin(const VariableConstView &var, Variable &out) {
   return out;
 }
 
-Variable cos(const VariableConstView &var) {
+Variable cos(const Variable &var) {
   Variable out(var);
   cos(out, out);
   return out;
@@ -49,7 +49,7 @@ Variable cos(Variable &&var) {
   return out;
 }
 
-Variable &cos(const VariableConstView &var, Variable &out) {
+Variable &cos(const Variable &var, Variable &out) {
   core::expect::unit_any_of(var, {units::rad, units::deg});
   out.assign(var);
   if (var.unit() == units::deg)
@@ -58,7 +58,7 @@ Variable &cos(const VariableConstView &var, Variable &out) {
   return out;
 }
 
-Variable tan(const VariableConstView &var) {
+Variable tan(const Variable &var) {
   Variable out(var);
   tan(out, out);
   return out;
@@ -70,7 +70,7 @@ Variable tan(Variable &&var) {
   return out;
 }
 
-Variable &tan(const VariableConstView &var, Variable &out) {
+Variable &tan(const Variable &var, Variable &out) {
   core::expect::unit_any_of(var, {units::rad, units::deg});
   out.assign(var);
   if (var.unit() == units::deg)
@@ -79,9 +79,7 @@ Variable &tan(const VariableConstView &var, Variable &out) {
   return out;
 }
 
-Variable asin(const VariableConstView &var) {
-  return transform(var, element::asin);
-}
+Variable asin(const Variable &var) { return transform(var, element::asin); }
 
 Variable asin(Variable &&var) {
   Variable out(std::move(var));
@@ -89,14 +87,12 @@ Variable asin(Variable &&var) {
   return out;
 }
 
-Variable &asin(const VariableConstView &var, Variable &out) {
+Variable &asin(const Variable &var, Variable &out) {
   transform_in_place(out, var, element::asin_out_arg);
   return out;
 }
 
-Variable acos(const VariableConstView &var) {
-  return transform(var, element::acos);
-}
+Variable acos(const Variable &var) { return transform(var, element::acos); }
 
 Variable acos(Variable &&var) {
   Variable out(std::move(var));
@@ -104,14 +100,12 @@ Variable acos(Variable &&var) {
   return out;
 }
 
-Variable &acos(const VariableConstView &var, Variable &out) {
+Variable &acos(const Variable &var, Variable &out) {
   transform_in_place(out, var, element::acos_out_arg);
   return out;
 }
 
-Variable atan(const VariableConstView &var) {
-  return transform(var, element::atan);
-}
+Variable atan(const Variable &var) { return transform(var, element::atan); }
 
 Variable atan(Variable &&var) {
   Variable out(std::move(var));
@@ -119,17 +113,16 @@ Variable atan(Variable &&var) {
   return out;
 }
 
-Variable &atan(const VariableConstView &var, Variable &out) {
+Variable &atan(const Variable &var, Variable &out) {
   transform_in_place(out, var, element::atan_out_arg);
   return out;
 }
 
-Variable atan2(const VariableConstView &y, const VariableConstView &x) {
+Variable atan2(const Variable &y, const Variable &x) {
   return transform(y, x, element::atan2);
 }
 
-Variable &atan2(const VariableConstView &y, const VariableConstView &x,
-                Variable &out) {
+Variable &atan2(const Variable &y, const Variable &x, Variable &out) {
   transform_in_place(out, y, x, element::atan2_out_arg);
   return out;
 }

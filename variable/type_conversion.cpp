@@ -14,7 +14,7 @@ namespace scipp::variable {
 
 struct MakeVariableWithType {
   template <class T> struct Maker {
-    static Variable apply(const VariableConstView &parent) {
+    static Variable apply(const Variable &parent) {
       using namespace core::transform_flags;
       constexpr auto expect_input_variances =
           conditional_flag<!core::canHaveVariances<T>()>(
@@ -32,13 +32,13 @@ struct MakeVariableWithType {
               }});
     }
   };
-  static Variable make(const VariableConstView &var, DType type) {
+  static Variable make(const Variable &var, DType type) {
     return core::CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(
         type, var);
   }
 };
 
-Variable astype(const VariableConstView &var, DType type) {
+Variable astype(const Variable &var, DType type) {
   return type == var.dtype() ? Variable(var)
                              : MakeVariableWithType::make(var, type);
 }

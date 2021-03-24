@@ -29,7 +29,7 @@ auto make_empty_subspans(const ElementArrayView<T> &, const Dimensions &dims) {
 }
 
 template <class T>
-auto make_subspans(T *base, const VariableConstView &indices,
+auto make_subspans(T *base, const Variable &indices,
                    const scipp::index stride) {
   const auto &offset = indices.values<core::bucket_base::range_type>();
   const auto len = offset.size();
@@ -92,8 +92,7 @@ template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
 /// Return Variable containing spans with extents given by indices over given
 /// dimension as elements.
 template <class T, class Var>
-Variable subspan_view(Var &var, const Dim dim,
-                      const VariableConstView &indices) {
+Variable subspan_view(Var &var, const Dim dim, const Variable &indices) {
   using E = std::remove_const_t<T>;
   const auto values_view = [dim, &indices](auto &v) {
     return make_subspans(v.template values<E>().data(), indices,

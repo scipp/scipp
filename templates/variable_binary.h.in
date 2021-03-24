@@ -9,6 +9,6 @@
 
 namespace scipp::variable {
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable @NAME@(const VariableConstView &a, const VariableConstView &b);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable @NAME@(const Variable &a, const Variable &b);
 
 } // namespace scipp::variable

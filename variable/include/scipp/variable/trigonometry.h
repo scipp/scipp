@@ -9,33 +9,27 @@
 
 namespace scipp::variable {
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sin(const VariableConstView &var);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sin(const Variable &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sin(Variable &&var);
-SCIPP_VARIABLE_EXPORT Variable &sin(const VariableConstView &var,
-                                    Variable &out);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable cos(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT Variable &sin(const Variable &var, Variable &out);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable cos(const Variable &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable cos(Variable &&var);
-SCIPP_VARIABLE_EXPORT Variable &cos(const VariableConstView &var,
-                                    Variable &out);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable tan(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT Variable &cos(const Variable &var, Variable &out);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable tan(const Variable &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable tan(Variable &&var);
-SCIPP_VARIABLE_EXPORT Variable &tan(const VariableConstView &var,
-                                    Variable &out);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable asin(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT Variable &tan(const Variable &var, Variable &out);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable asin(const Variable &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable asin(Variable &&var);
-SCIPP_VARIABLE_EXPORT Variable &asin(const VariableConstView &var,
-                                     Variable &out);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable acos(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT Variable &asin(const Variable &var, Variable &out);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable acos(const Variable &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable acos(Variable &&var);
-SCIPP_VARIABLE_EXPORT Variable &acos(const VariableConstView &var,
-                                     Variable &out);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable atan(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT Variable &acos(const Variable &var, Variable &out);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable atan(const Variable &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable atan(Variable &&var);
-SCIPP_VARIABLE_EXPORT Variable &atan(const VariableConstView &var,
-                                     Variable &out);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable atan2(const VariableConstView &y,
-                                                   const VariableConstView &x);
-SCIPP_VARIABLE_EXPORT Variable &
-atan2(const VariableConstView &y, const VariableConstView &x, Variable &out);
+SCIPP_VARIABLE_EXPORT Variable &atan(const Variable &var, Variable &out);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable atan2(const Variable &y,
+                                                   const Variable &x);
+SCIPP_VARIABLE_EXPORT Variable &atan2(const Variable &y, const Variable &x,
+                                      Variable &out);
 
 } // namespace scipp::variable

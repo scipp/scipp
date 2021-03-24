@@ -13,8 +13,7 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-Variable sort(const VariableConstView &var, const Dim dim,
-              const SortOrder order) {
+Variable sort(const Variable &var, const Dim dim, const SortOrder order) {
   Variable out(var);
   if (order == SortOrder::Ascending)
     transform_in_place(subspan_view(out, dim),

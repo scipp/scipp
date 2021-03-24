@@ -12,16 +12,14 @@ namespace scipp::variable {
 enum class CumSumMode { Exclusive, Inclusive };
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-cumsum(const VariableConstView &var, const Dim dim,
+cumsum(const Variable &var, const Dim dim,
        const CumSumMode mode = CumSumMode::Inclusive);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-cumsum(const VariableConstView &var,
-       const CumSumMode mode = CumSumMode::Inclusive);
+cumsum(const Variable &var, const CumSumMode mode = CumSumMode::Inclusive);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-cumsum_bins(const VariableConstView &var,
-            const CumSumMode mode = CumSumMode::Inclusive);
+cumsum_bins(const Variable &var, const CumSumMode mode = CumSumMode::Inclusive);
 
 } // namespace scipp::variable
 
