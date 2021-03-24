@@ -45,6 +45,9 @@ jobs:
           # Unstage deletion of and recover "release" directory
           git reset -- release || true
           git checkout -- release || true
+          # What's New pages depend on old versions and are not generated
+          git reset -- about/whats-new || true
+          git checkout -- about/whats-new || true
           git status
         displayName: 'Remove old documentation, keeping releases'
       - bash: |
