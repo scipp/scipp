@@ -62,8 +62,7 @@ bool Variable::operator==(const Variable &other) const {
   if (!*this || !other)
     return static_cast<bool>(*this) == static_cast<bool>(other);
   // Note: Not comparing strides
-  return dims() == other.dims() &&
-         data().equals(*this, other);
+  return dims() == other.dims() && data().equals(*this, other);
 }
 
 bool Variable::operator!=(const Variable &other) const {
