@@ -5,7 +5,6 @@
 #pragma once
 
 #include "scipp-variable_export.h"
-#include "scipp/common/deep_ptr.h"
 #include "scipp/common/index.h"
 #include "scipp/common/span.h"
 #include "scipp/core/dimensions.h"
@@ -20,18 +19,6 @@ class Variable;
 class VariableConcept;
 
 using VariableConceptHandle = std::shared_ptr<VariableConcept>;
-/*
-class SCIPP_VARIABLE_EXPORT VariableConceptHandle
-    : public scipp::deep_ptr<VariableConcept> {
-public:
-  using scipp::deep_ptr<VariableConcept>::deep_ptr;
-  template <class T> VariableConceptHandle(T object);
-  VariableConceptHandle(VariableConceptHandle &&) = default;
-  VariableConceptHandle(const VariableConceptHandle &other);
-  VariableConceptHandle &operator=(VariableConceptHandle &&) = default;
-  VariableConceptHandle &operator=(const VariableConceptHandle &other);
-};
-*/
 
 /// Abstract base class for any data that can be held by Variable. This is using
 /// so-called concept-based polymorphism, see talks by Sean Parent.
@@ -71,12 +58,5 @@ public:
 private:
   units::Unit m_unit;
 };
-
-/*
-template <class T>
-VariableConceptHandle::VariableConceptHandle(T object)
-    : VariableConceptHandle(
-          std::unique_ptr<VariableConcept>(std::move(object))) {}
-          */
 
 } // namespace scipp::variable
