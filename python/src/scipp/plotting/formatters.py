@@ -24,7 +24,7 @@ class VectorFormatter:
         self.array_values = array_values
         self.size = size
 
-    def format(self, val, pos):
+    def formatter(self, val, pos):
         return "(" + ",".join([
             value_to_string(item, precision=2)
             for item in self.array_values[int(val)]
