@@ -67,12 +67,6 @@ bool Variable::operator!=(const Variable &other) const {
   return !(*this == other);
 }
 
-Variable &Variable::assign(const Variable &other) {
-  // TODO return early on self-assign
-  data().copy(other, *this);
-  return *this;
-}
-
 scipp::span<const scipp::index> Variable::strides() const {
   return {m_strides.begin(), dims().ndim()};
 }

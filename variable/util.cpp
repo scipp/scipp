@@ -33,11 +33,11 @@ Variable linspace(const Variable &start, const Variable &stop, const Dim dim,
   Variable out(start, dims);
   const auto range = stop - start;
   for (scipp::index i = 0; i < num - 1; ++i)
-    out.slice({dim, i}).assign(
-        start +
-        astype(static_cast<double>(i) / (num - 1) * units::one, start.dtype()) *
-            range);
-  out.slice({dim, num - 1}).assign(stop); // endpoint included
+    copy(start + astype(static_cast<double>(i) / (num - 1) * units::one,
+                        start.dtype()) *
+                     range,
+         out.slice({dim, i}));
+  copy(stop, out.slice({dim, num - 1})); // endpoint included
   return out;
 }
 
