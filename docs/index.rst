@@ -42,8 +42,8 @@ If your use case requires one or several of the items on the following list, usi
 - Support for **masks stored with data**.
 - Written in C++ for better performance (for certain applications), in combination with Python bindings.
 
-Generic functionality of scipp is provided in the **scipp** Python module.
-In addition, more specific functionality is made available in other modules.
+Generic functionality of scipp is provided in the **scipp** Python package.
+In addition, more specific functionality is made available in other packages.
 Currently the only example for this is `scippneutron <https://scipp.github.io/scippneutron>`_ for handling data from neutron-scattering experiments.
 
 News
@@ -52,6 +52,10 @@ News
 - Scipp is moving from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
 - Looking for ``scipp.neutron``?
   This submodule has been moved into its own package, `scippneutron <https://scipp.github.io/scippneutron>`_.
+- [March 2021] `scipp-0.6 <https://scipp.github.io/about/release-notes.html#v0-6-0-march-2021>`_ has been released.
+  The `What's new <about/whats-new/whats-new-0.6.0.html>`_ notebook provides an overview of the highlights and major changes.
+- [Janunary 2021] `scipp-0.5 <https://scipp.github.io/about/release-notes.html#v0-5-0-january-2021>`_ has been released.
+  The `What's new <about/whats-new/whats-new-0.5.0.html>`_ notebook provides an overview of the highlights and major changes.
 
 Where can I get help?
 ---------------------
@@ -145,6 +149,7 @@ Documentation
    :maxdepth: 3
 
    about/about
+   about/whats-new
    about/roadmap
    about/contributing
    about/release-notes
