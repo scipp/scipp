@@ -2,6 +2,7 @@ from .tools import date2cal
 from .._utils import value_to_string
 from .._scipp.core import to_unit, Unit
 import numpy as np
+import re
 import os
 
 
@@ -84,21 +85,32 @@ class DateFormatter:
         # os.write(1, "got to here 4\n".encode())
         date_max = date2cal(
             (int(bounds[1]) * self.offset.unit + self.offset).value)
-        if (diff < to_unit(2 * Unit('us'), diff.unit)).value:
+        if (diff < to_unit(4 * Unit('us'), diff.unit)).value:
             # label: 2017-01-13T12:15:45.123, tick: 456.789 us
-            trim = 23
+            # trim = 23
             label += r" [$\mu$s]"
             string = str(float("{}.{}".format(dt[23:26], dt[26:])))
+            string, trim = self.check_for_transition(pos, string, date_min,
+                                                     date_max, date, dt, 7,
+                                                     'ms')
         elif (diff < to_unit(4 * Unit('ms'), diff.unit)).value:
             # label: 2017-01-13T12:15:45, tick: 123.456 ms
-            trim = 19
+            # trim = 19
             label += " [ms]"
             string = str(float("{}.{}".format(dt[20:23], dt[23:26])))
+            string, trim = self.check_for_transition(pos, string, date_min,
+                                                     date_max, date, dt, 6,
+                                                     's')
+
         elif (diff < to_unit(4 * Unit('s'), diff.unit)).value:
             # label: 2017-01-13T12:15, tick: 45.123 s
-            trim = 16
+            # trim = 16
             label += " [s]"
             string = str(float(dt[17:23]))
+            string, trim = self.check_for_transition(pos, string, date_min,
+                                                     date_max, date, dt, 5,
+                                                     'm')
+
         elif (diff < to_unit(4 * Unit('min'), diff.unit)).value:
             # label: 2017-01-13, tick: 12:15:45
             # trim = 10
@@ -195,16 +207,26 @@ class DateFormatter:
 
     # return formatter
 
-    def check_for_transition(self, pos, string, date_min, date_max, date, dt,
-                             max_ind):
+    def check_for_transition(self,
+                             pos,
+                             string,
+                             date_min,
+                             date_max,
+                             date,
+                             dt,
+                             max_ind,
+                             suffix=None):
         # Find non-equal year and month
         # tick_indicator = False
-        splits = [0, 4, 7, 10, 13, 16, 19]
+        splits = [0, 4, 7, 10, 13, 16, 19, 23]
         ind = None
         trim = 0
         # Find first year/month/day etc.. that differs
         not_equal = np.ravel(
             np.where(date_min[:max_ind] != date_max[:max_ind]))
+        # os.write(1, "{}\n".format(date_min[:max_ind]).encode())
+        # os.write(1, "{}\n".format(date_max[:max_ind]).encode())
+        # os.write(1, "{}\n".format(not_equal).encode())
         if len(not_equal) > 0:
             ind = np.amin(not_equal)
             # return string, trim
@@ -220,9 +242,13 @@ class DateFormatter:
                 # if tick_indicator:
                 # ind_m1 =
                 transition_marker = dt[splits[ind]:splits[max_ind]].strip(
-                    '-').strip(':')
-                if transition_marker[0] == 'T':
-                    transition_marker = transition_marker[1:] + 'h'
+                    '-').strip(':').strip('.')
+                transition_marker = re.sub(r'(T)(\d\d)', r' \2h',
+                                           transition_marker)
+                # if transition_marker[0] == 'T':
+                #     transition_marker = transition_marker[1:] + 'h'
+                if suffix is not None:
+                    transition_marker += suffix
                 string += f"\n{transition_marker}"
                 # if ind > 0:
                 trim = splits[ind]

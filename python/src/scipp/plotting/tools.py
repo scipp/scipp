@@ -203,16 +203,17 @@ def date2cal(dt):
 
     From https://stackoverflow.com/a/56260054/13086629
     """
-
-    # allocate output
-    out = np.empty(dt.shape + (7, ), dtype="u4")
+    out = np.empty(dt.shape + (8, ), dtype="u4")
     # decompose calendar floors
-    Y, M, D, h, m, s = [dt.astype(f"M8[{x}]") for x in "YMDhms"]
+    Y, M, D, h, m, s, ms = [
+        dt.astype(f"M8[{x}]") for x in ["Y", "M", "D", "h", "m", "s", "ms"]
+    ]
     out[..., 0] = Y + 1970  # Gregorian Year
     out[..., 1] = (M - Y) + 1  # month
     out[..., 2] = (D - M) + 1  # day
     out[..., 3] = (dt - D).astype("m8[h]")  # hour
     out[..., 4] = (dt - h).astype("m8[m]")  # minute
     out[..., 5] = (dt - m).astype("m8[s]")  # second
-    out[..., 6] = (dt - s).astype("m8[us]")  # microsecond
+    out[..., 6] = (dt - s).astype("m8[ms]")  # millisecond
+    out[..., 7] = (dt - ms).astype("m8[us]")  # microsecond
     return out
