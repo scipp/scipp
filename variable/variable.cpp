@@ -22,15 +22,17 @@ Variable::Variable(const Variable &parent, const Dimensions &dims)
     : m_dims(dims), m_strides(dims),
       m_object(parent.data().makeDefaultFromParent(dims.volume())) {}
 
-Variable::Variable(const Variable &parent, const Dimensions &dims,
-                   VariableConceptHandle data)
-    : m_dims(dims), m_strides(dims), m_object(std::move(data)) {}
-
 Variable::Variable(const Dimensions &dims, VariableConceptHandle data)
     : m_dims(dims), m_strides(dims), m_object(std::move(data)) {}
 
 Variable::Variable(const llnl::units::precise_measurement &m)
     : Variable(m.value() * units::Unit(m.units())) {}
+
+void Variable::setDataHandle(VariableConceptHandle object) {
+  if (object->size() != m_object->size())
+    throw std::runtime_error("Cannot replace by model of different size.");
+  m_object = object;
+}
 
 void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == dims().volume()) {

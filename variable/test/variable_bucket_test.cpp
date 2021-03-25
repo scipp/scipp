@@ -10,19 +10,52 @@ using namespace scipp;
 class VariableBucketTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
-  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+  Variable indices = makeVariable<scipp::index_pair>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   Variable var = make_bins(indices, Dim::X, buffer);
 };
 
+TEST_F(VariableBucketTest, make_bins_from_slice) {
+  // Sharing indices or not yields equivalent results.
+  EXPECT_EQ(make_bins(indices.slice({Dim::Y, 1}), Dim::X, buffer),
+            make_bins(copy(indices.slice({Dim::Y, 1})), Dim::X, buffer));
+}
+
+TEST_F(VariableBucketTest, make_bins_shares_indices_and_buffer) {
+  auto binned = make_bins(indices, Dim::X, buffer);
+  EXPECT_EQ(binned.bin_indices().values<scipp::index_pair>().data(),
+            indices.values<scipp::index_pair>().data());
+  EXPECT_EQ(binned.values<bucket<Variable>>().front().values<double>().data(),
+            buffer.values<double>().data());
+}
+
+TEST_F(VariableBucketTest, make_bins_from_slice_shares_indices_and_buffer) {
+  auto binned = make_bins(indices.slice({Dim::Y, 1}), Dim::X, buffer);
+  EXPECT_EQ(binned.bin_indices().values<scipp::index_pair>().data(),
+            indices.values<scipp::index_pair>().data() + 1);
+  EXPECT_EQ(binned.values<bucket<Variable>>().front().values<double>().data(),
+            buffer.values<double>().data() + 2);
+}
+
 TEST_F(VariableBucketTest, comparison) {
   EXPECT_TRUE(var == var);
   EXPECT_FALSE(var != var);
+  auto var2 = make_bins(copy(indices), Dim::X, copy(buffer));
+  EXPECT_TRUE(var == var2);
 }
 
-TEST_F(VariableBucketTest, copy) { EXPECT_EQ(copy(var), var); }
+TEST_F(VariableBucketTest, copy) {
+  auto copied = copy(var);
+  EXPECT_EQ(copied, var);
+  copied.bin_indices().values<scipp::index_pair>()[0].first += 1;
+  EXPECT_NE(copied, var); // indices gets copied
+  copied = copy(var);
+  EXPECT_EQ(copied, var);
+  buffer.values<double>()[0] += 1;
+  EXPECT_NE(copied, var); // buffer gets copied
+}
 
 TEST_F(VariableBucketTest, assign) {
   Variable copy = variable::copy(var);
@@ -32,10 +65,10 @@ TEST_F(VariableBucketTest, assign) {
   EXPECT_EQ(copy, var);
 }
 
-TEST_F(VariableBucketTest, copy_view) {
-  EXPECT_EQ(Variable(var.slice({Dim::Y, 0, 2})), var);
-  EXPECT_EQ(Variable(var.slice({Dim::Y, 0, 1})), var.slice({Dim::Y, 0, 1}));
-  EXPECT_EQ(Variable(var.slice({Dim::Y, 1, 2})), var.slice({Dim::Y, 1, 2}));
+TEST_F(VariableBucketTest, copy_slice) {
+  EXPECT_EQ(copy(var.slice({Dim::Y, 0, 2})), var);
+  EXPECT_EQ(copy(var.slice({Dim::Y, 0, 1})), var.slice({Dim::Y, 0, 1}));
+  EXPECT_EQ(copy(var.slice({Dim::Y, 1, 2})), var.slice({Dim::Y, 1, 2}));
 }
 
 TEST_F(VariableBucketTest, basics) {
