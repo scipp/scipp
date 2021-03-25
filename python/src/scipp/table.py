@@ -259,10 +259,6 @@ class TableViewer:
                         size_is_defined = True
                 self.sizes[group][key] = max_size if size_is_defined else None
 
-        subtitle = "<span style='font-weight:normal;color:grey;"
-        subtitle += "font-style:italic;background-color:#ffffff;"
-        subtitle += "text-align:left;font-size:1.2em;padding: 1px;'>"
-        subtitle += "{}</span>"
         title = str(type(scipp_obj)).replace("<class '", "").replace(
             "scipp._scipp.core.", "").replace("'>", "")
 
@@ -282,7 +278,7 @@ class TableViewer:
 
             if len(self.tabledict[group]) > 0:
                 self.tables[group] = {}
-                output = subtitle.format(group)
+                output = f"<span class='sc-subtitle'>{group}</span>"
 
                 children = []
                 for key, val in sorted(self.tabledict[group].items()):
