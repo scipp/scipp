@@ -300,7 +300,7 @@ class EllipsisItem:
                       *unused):
         x_pos = offset[0] + 0.3
         y_pos = offset[1] + 2.0
-        content += f'<text x="{x_pos}" y="{y_pos}" \
+        content += f'<text x="{x_pos}" y="{y_pos}" class="sc-label" \
                     style="font-size:{_large_font}px"> ... </text>'
 
         ellipsis_size = [1.5, 2.0]
