@@ -24,8 +24,6 @@ _normal_font = round(_svg_em, 2)
 _small_font = round(0.8 * _svg_em, 2)
 _smaller_font = round(0.6 * _svg_em, 2)
 
-_text_color = 'var(--sc-font-color0, #444444)'
-
 
 def _color_variants(hex_color):
     # Convert hex to rgb
@@ -171,15 +169,15 @@ class VariableDrawer:
             if axis == 2:
                 x_pos = dx + self._margin + 0.5 * extent
                 y_pos = dy + view_height - self._margin + _smaller_font
-                return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
-                         fill="{_text_color}" \
+                return f'<text x="{x_pos}" y="{y_pos}"\
+                         class="sc-label" \
                          style="font-size:#smaller-font">{escape(dim)}</text>'
 
             if axis == 1:
                 x_pos = dx + self._margin - 0.3 * _smaller_font
                 y_pos = dy + view_height - self._margin - 0.5 * extent
-                return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
-                    fill="{_text_color}" style="font-size:#smaller-font" \
+                return f'<text x="{x_pos}" y="{y_pos}" \
+                    class="sc-label" style="font-size:#smaller-font" \
                     transform="rotate(-90, {x_pos}, {y_pos})">\
                         {escape(dim)}</text>'
 
@@ -188,8 +186,8 @@ class VariableDrawer:
                         0.2 * _smaller_font
                 y_pos = dy + view_height - self._margin - self._extents(
                 )[-2] - 0.3 * 0.5 * extent - 0.2 * _smaller_font
-                return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
-                    fill="{_text_color}" style="font-size:#smaller-font" \
+                return f'<text x="{x_pos}" y="{y_pos}" \
+                    class="sc-label" style="font-size:#smaller-font" \
                     transform="rotate(-45, {x_pos}, {y_pos})">\
                         {escape(dim)}</text>'
 

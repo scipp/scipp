@@ -431,3 +431,8 @@ label.sc-hide-icon svg{
   border: 0 solid var(--sc-background-color1);
   height: 1.2em;
 }
+
+.sc-label {
+  fill: var(--sc-font-color0, #444444);
+  text-anchor: middle;
+}
