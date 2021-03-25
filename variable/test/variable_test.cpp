@@ -90,7 +90,7 @@ TEST(Variable, dtype) {
 
 TEST(Variable, span_references_Variable) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2});
-  auto observer = a.values<double>();
+  auto observer = std::as_const(a).values<double>();
   // This line does not compile, const-correctness works:
   // observer[0] = 1.0;
 
