@@ -264,8 +264,7 @@ class TableViewer:
 
         self.box = [
             self.widgets.HTML(value=f"<style>{load_style()}</style>"),
-            self.widgets.HTML(value="<span style='font-weight:bold;"
-                              f"font-size:1.5em;'>{title}</span>")
+            self.widgets.HTML(value=f"<span class='sc-title'>{title}</span>")
         ]
         self.tables = {}
         self.sliders = {}

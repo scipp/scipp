@@ -376,7 +376,12 @@ label.sc-hide-icon svg{
   border-collapse: collapse;
 }
 
-span.sc-subtitle {
+.sc-title {
+  font-weight:bold;
+  font-size:1.5em;
+}
+
+.sc-subtitle {
   font-weight:normal;
   font-style:italic;
   text-align:left;
