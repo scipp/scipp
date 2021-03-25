@@ -123,11 +123,17 @@ protected:
     expect_eq_impl(a, Variable(b));
     expect_eq_impl(Variable(a), b);
     expect_eq_impl(Variable(a), Variable(b));
+    expect_eq_impl(a, copy(b));
+    expect_eq_impl(copy(a), b);
+    expect_eq_impl(copy(a), copy(b));
   }
   void expect_ne(const Variable &a, const Variable &b) const {
     expect_ne_impl(a, Variable(b));
     expect_ne_impl(Variable(a), b);
     expect_ne_impl(Variable(a), Variable(b));
+    expect_ne_impl(a, copy(b));
+    expect_ne_impl(copy(a), b);
+    expect_ne_impl(copy(a), copy(b));
   }
 };
 
@@ -564,22 +570,22 @@ TEST(VariableView, variable_copy_from_slice) {
                            Variances{44, 45, 46, 54, 55, 56, 64, 65, 66});
 
   const Dimensions dims({{Dim::Y, 2}, {Dim::X, 2}});
-  EXPECT_EQ(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}),
+  EXPECT_EQ(copy(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2})),
             makeVariable<double>(Dimensions(dims), units::m,
                                  Values{11, 12, 21, 22},
                                  Variances{44, 45, 54, 55}));
 
-  EXPECT_EQ(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}),
+  EXPECT_EQ(copy(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2})),
             makeVariable<double>(Dimensions(dims), units::m,
                                  Values{12, 13, 22, 23},
                                  Variances{45, 46, 55, 56}));
 
-  EXPECT_EQ(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}),
+  EXPECT_EQ(copy(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3})),
             makeVariable<double>(Dimensions(dims), units::m,
                                  Values{21, 22, 31, 32},
                                  Variances{54, 55, 64, 65}));
 
-  EXPECT_EQ(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}),
+  EXPECT_EQ(copy(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3})),
             makeVariable<double>(Dimensions(dims), units::m,
                                  Values{22, 23, 32, 33},
                                  Variances{55, 56, 65, 66}));
@@ -587,31 +593,30 @@ TEST(VariableView, variable_copy_from_slice) {
 
 TEST(VariableView, variable_assign_from_slice) {
   const Dimensions dims({{Dim::Y, 2}, {Dim::X, 2}});
-  // Unit is dimensionless and no variance
-  auto target = makeVariable<double>(Dimensions(dims), Values{1, 2, 3, 4});
+  // Unit is dimensionless
+  auto target = makeVariable<double>(Dimensions(dims), Values{1, 2, 3, 4},
+                                     Variances{1, 2, 3, 4});
   const auto source =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3}, units::m,
                            Values{11, 12, 13, 21, 22, 23, 31, 32, 33},
                            Variances{44, 45, 46, 54, 55, 56, 64, 65, 66});
 
-  // TODO Is this test useful in this manner with the new sharing mechanism?
-  // What do we want to test here? copy(Variable)? copy(Variable,Variable)?
-  target = Variable(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}));
+  copy(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}), target);
   EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), units::m,
                                          Values{11, 12, 21, 22},
                                          Variances{44, 45, 54, 55}));
 
-  target = Variable(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}));
+  copy(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 0, 2}), target);
   EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), units::m,
                                          Values{12, 13, 22, 23},
                                          Variances{45, 46, 55, 56}));
 
-  target = Variable(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}));
+  copy(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 1, 3}), target);
   EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), units::m,
                                          Values{21, 22, 31, 32},
                                          Variances{54, 55, 64, 65}));
 
-  target = Variable(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}));
+  copy(source.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}), target);
   EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), units::m,
                                          Values{22, 23, 32, 33},
                                          Variances{55, 56, 65, 66}));
@@ -625,7 +630,7 @@ TEST(VariableView, variable_assign_from_slice_clears_variances) {
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3}, units::m,
                            Values{11, 12, 13, 21, 22, 23, 31, 32, 33});
 
-  target = Variable(source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2}));
+  target = source.slice({Dim::X, 0, 2}).slice({Dim::Y, 0, 2});
   EXPECT_EQ(target, makeVariable<double>(Dimensions(dims), units::m,
                                          Values{11, 12, 21, 22}));
 }
@@ -643,7 +648,7 @@ TEST(VariableView, variable_self_assign_via_slice) {
                            Values{11, 12, 13, 21, 22, 23, 31, 32, 33},
                            Variances{44, 45, 46, 54, 55, 56, 64, 65, 66});
 
-  target = Variable(target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3}));
+  target = target.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 3});
   // Note: This test does not actually fail if self-assignment is broken. Had to
   // run address sanitizer to see that it is reading from free'ed memory.
   EXPECT_EQ(target, makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},

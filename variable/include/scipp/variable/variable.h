@@ -194,9 +194,11 @@ Variable::Variable(const DType &type, Ts &&... args)
                          Eigen::Matrix3d, std::string, scipp::core::time_point>(
           type, std::forward<Ts>(args)...)} {}
 
-SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var);
-SCIPP_VARIABLE_EXPORT Variable &copy(const Variable &dataset, Variable &out);
-SCIPP_VARIABLE_EXPORT Variable copy(const Variable &dataset, Variable &&out);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var);
+[[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable &copy(const Variable &dataset,
+                                                      Variable &out);
+[[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &dataset,
+                                                     Variable &&out);
 
 } // namespace scipp::variable
 
