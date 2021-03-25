@@ -321,35 +321,35 @@ class PlotController:
         self.update_axes()
         self.update_log_axes_buttons()
 
-    def toggle_xaxis_scale(self, owner, normalize=False):
+    def toggle_xaxis_scale(self, value, normalize=False):
         """
         Toggle x-axis scale from toolbar button signal.
         """
         dim = self.axes["x"]
-        self.scale[dim] = "log" if owner.value else "linear"
+        self.scale[dim] = "log" if value else "linear"
         self.update_axes(normalize=normalize)
 
-    def toggle_yaxis_scale(self, owner, normalize=False):
+    def toggle_yaxis_scale(self, value, normalize=False):
         """
         Toggle y-axis scale from toolbar button signal.
         """
         dim = self.axes["y"]
-        self.scale[dim] = "log" if owner.value else "linear"
+        self.scale[dim] = "log" if value else "linear"
         self.update_axes(normalize=normalize)
 
-    def toggle_zaxis_scale(self, owner, normalize=False):
+    def toggle_zaxis_scale(self, value, normalize=False):
         """
         Toggle z-axis scale from toolbar button signal.
         """
         dim = self.axes["z"]
-        self.scale[dim] = "log" if owner.value else "linear"
+        self.scale[dim] = "log" if value else "linear"
         self.update_axes(normalize=normalize)
 
-    def toggle_norm(self, owner):
+    def toggle_norm(self, value):
         """
         Toggle data normalization from toolbar button signal.
         """
-        self.norm = "log" if owner.value else "linear"
+        self.norm = "log" if value else "linear"
         vmin, vmax = self.find_vmin_vmax()
         self.view.toggle_norm(self.norm, vmin, vmax)
         self.refresh()
