@@ -34,7 +34,7 @@ set(SRC_FILES
     #bin.cpp
     #bins.cpp
     #counts.cpp
-    #data_array.cpp
+    data_array.cpp
     #dataset_access.cpp
     #dataset.cpp
     #except.cpp
