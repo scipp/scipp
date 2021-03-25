@@ -10,7 +10,6 @@
 
 namespace {
 using namespace scipp;
-using namespace scipp::dataset;
 
 using MeanTestTypes = testing::Types<int32_t, int64_t, float, double>;
 TYPED_TEST_SUITE(MeanTest, MeanTestTypes);

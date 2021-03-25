@@ -32,11 +32,6 @@ namespace llnl::units {
 class precise_measurement;
 }
 
-namespace scipp::dataset {
-class DataArrayConstView;
-template <class T> typename T::view_type makeViewItem(T &);
-} // namespace scipp::dataset
-
 namespace scipp::variable {
 
 namespace detail {
@@ -48,9 +43,6 @@ SCIPP_VARIABLE_EXPORT void expect0D(const Dimensions &dims);
 /// labels.
 class SCIPP_VARIABLE_EXPORT Variable {
 public:
-  using const_view_type = Variable;
-  using view_type = Variable;
-
   Variable() = default;
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const Dimensions &dims, VariableConceptHandle data);
@@ -195,9 +187,9 @@ Variable::Variable(const DType &type, Ts &&... args)
           type, std::forward<Ts>(args)...)} {}
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var);
-[[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable &copy(const Variable &dataset,
+[[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable &copy(const Variable &var,
                                                       Variable &out);
-[[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &dataset,
+[[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var,
                                                      Variable &&out);
 
 } // namespace scipp::variable
