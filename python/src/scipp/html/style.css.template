@@ -436,3 +436,7 @@ label.sc-hide-icon svg{
   fill: var(--sc-font-color0, #444444);
   text-anchor: middle;
 }
+
+.sc-name {
+  fill: var(--sc-font-color0, #111111);
+}

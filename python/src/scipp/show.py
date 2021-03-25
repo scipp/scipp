@@ -212,13 +212,13 @@ class VariableDrawer:
         if title is not None:
             title = _truncate_long_string(str(title))
             svg = f'<text x="{x_pos}" y="{y_pos}" \
-                    style="font-size:#normal-font"> \
+                    class="sc-name" style="font-size:#normal-font"> \
                     {escape(title)}</text>'
 
             svg += f'<title>{escape(details)}</title>'
         else:
             svg = f'<text x="{x_pos}" y="{y_pos}" \
-                    style="font-size:#small-font"> \
+                    class="sc-name" style="font-size:#small-font"> \
                     {escape(details)}</text>'
 
         return svg
