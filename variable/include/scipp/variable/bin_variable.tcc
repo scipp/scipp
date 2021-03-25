@@ -71,8 +71,9 @@ public:
 
 template <class T> class BinVariableMaker : public BinVariableMakerCommon<T> {
 private:
-  const Variable &bin_parent(const scipp::span<const Variable> &parents) const {
-    constexpr auto is_bins = [](auto &x) {
+  const Variable &
+  bin_parent(const typename AbstractVariableMaker::parent_list &parents) const {
+    constexpr auto is_bins = [](const Variable &x) {
       return x.dtype() == dtype<bucket<T>>;
     };
     const auto count = std::count_if(parents.begin(), parents.end(), is_bins);
@@ -96,10 +97,10 @@ private:
                                   const bool variances) const = 0;
 
 public:
-  // TODO use span to avoid Variable copies?
   Variable create(const DType elem_dtype, const Dimensions &dims,
                   const units::Unit &unit, const bool variances,
-                  const std::vector<Variable> &parents) const override {
+                  const typename AbstractVariableMaker::parent_list &parents)
+      const override {
     const Variable &parent = bin_parent(parents);
     const auto &[parentIndices, dim, buffer] = parent.constituents<bucket<T>>();
     auto [indices, size] = contiguous_indices(parentIndices, dims);

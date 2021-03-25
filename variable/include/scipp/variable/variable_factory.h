@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <functional>
+
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {
@@ -17,11 +19,13 @@ protected:
   }
 
 public:
+  using parent_list = std::vector<std::reference_wrapper<const Variable>>;
+
   virtual ~AbstractVariableMaker() = default;
   virtual bool is_bins() const = 0;
   virtual Variable create(const DType elem_dtype, const Dimensions &dims,
                           const units::Unit &unit, const bool variances,
-                          const std::vector<Variable> &parents) const = 0;
+                          const parent_list &parents) const = 0;
   virtual Dim elem_dim(const Variable &var) const = 0;
   virtual DType elem_dtype(const Variable &var) const = 0;
   virtual units::Unit elem_unit(const Variable &var) const = 0;
@@ -43,8 +47,7 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   using AbstractVariableMaker::create;
   bool is_bins() const override { return false; }
   Variable create(const DType, const Dimensions &dims, const units::Unit &unit,
-                  const bool variances,
-                  const std::vector<Variable> &) const override {
+                  const bool variances, const parent_list &) const override {
     const auto volume = dims.volume();
     if (variances)
       return makeVariable<T>(dims, unit,
@@ -90,7 +93,8 @@ SCIPP_VARIABLE_EXPORT bool is_bins(const Variable &var);
 /// `transform`.
 class SCIPP_VARIABLE_EXPORT VariableFactory {
 private:
-  DType bin_dtype(const std::vector<Variable> &vars) const noexcept;
+  using parent_list = typename AbstractVariableMaker::parent_list;
+  DType bin_dtype(const parent_list &vars) const noexcept;
 
 public:
   VariableFactory() = default;
@@ -103,7 +107,7 @@ public:
   Variable create(const DType elem_dtype, const Dimensions &dims,
                   const units::Unit &unit, const bool with_variances,
                   const Parents &... parents) const {
-    const auto parents_ = std::vector<Variable>{parents...};
+    const auto parents_ = parent_list{parents...};
     const auto key = bin_dtype(parents_);
     return m_makers.at(key == dtype<void> ? elem_dtype : key)
         ->create(elem_dtype, dims, unit, with_variances, parents_);
