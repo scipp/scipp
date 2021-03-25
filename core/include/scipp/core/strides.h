@@ -17,7 +17,7 @@ public:
   Strides(const scipp::span<const scipp::index> &strides);
   Strides(const Dimensions &dims);
 
-  scipp::index operator[](const scipp::index i) const noexcept {
+  scipp::index operator[](const scipp::index i) const {
     return m_strides.at(i);
   }
 
