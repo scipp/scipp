@@ -19,8 +19,8 @@ struct bucket_base {
 };
 template <class T> struct bucket : bucket_base {
   using buffer_type = T;
-  using element_type = typename T::view_type;
-  using const_element_type = typename T::const_view_type;
+  using element_type = T;
+  using const_element_type = T;
 };
 
 template <class T> using bin = bucket<T>;
