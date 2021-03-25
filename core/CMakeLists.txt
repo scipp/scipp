@@ -42,6 +42,7 @@ set(SRC_FILES
     element_array_view.cpp
     except.cpp
     multi_index.cpp
+    sizes.cpp
     slice.cpp
     strides.cpp
     string.cpp
