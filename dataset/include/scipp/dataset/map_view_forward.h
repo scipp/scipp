@@ -14,9 +14,11 @@ namespace scipp::dataset {
 
 template <class Key, class Value> class Dict;
 
-/// Dict of coordinates or attributes of DataArray and Dataset.
-using CoordsDict = Dict<Dim, variable::Variable>;
-/// Dict of coordinates or attributes of DataArray and Dataset.
-using MasksDict = Dict<std::string, variable::Variable>;
+/// Dict of coordinates of DataArray and Dataset.
+using Coords = Dict<Dim, variable::Variable>;
+/// Dict of masks of DataArray and Dataset.
+using Masks = Dict<std::string, variable::Variable>;
+/// Dict of attributes of DataArray and Dataset.
+using Attrs = Dict<Dim, variable::Variable>;
 
 } // namespace scipp::dataset
