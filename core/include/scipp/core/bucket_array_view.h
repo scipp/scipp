@@ -63,7 +63,7 @@ private:
 template <class T>
 class ElementArrayView<bucket<T>> : public bucket_array_view<T> {
 public:
-  using value_type = typename T::view_type;
+  using value_type = T;
   using bucket_array_view<T>::bucket_array_view;
 };
 
@@ -74,7 +74,7 @@ public:
 template <class T>
 class ElementArrayView<const bucket<T>> : public bucket_array_view<const T> {
 public:
-  using value_type = typename T::const_view_type;
+  using value_type = T;
   using bucket_array_view<const T>::bucket_array_view;
 };
 
