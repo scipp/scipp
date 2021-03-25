@@ -73,8 +73,11 @@
 }
 
 .sc-section-item input + label {
-  /*color: #ccc;*/
-  color: #0000aa;
+  color: var(--sc-font-color1);
+}
+
+.sc-section-item input + label:hover {
+  color: var(--sc-font-color0);
 }
 
 .sc-section-item input:enabled + label {
