@@ -440,3 +440,9 @@ label.sc-hide-icon svg{
 .sc-name {
   fill: var(--sc-font-color0, #111111);
 }
+
+.sc-inset-line {
+  stroke: var(--sc-font-color1);
+  stroke-width: 0.05;
+  stroke-dasharray: 0.2, 0.2;
+}
