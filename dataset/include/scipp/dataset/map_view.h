@@ -104,9 +104,9 @@ public:
   Dict(const Sizes &sizes,
        std::initializer_list<std::pair<const Key, Value>> items)
       : Dict(sizes, holder_type(items)) {}
-  Dict(const Sizes &sizes, const holder_type &items) : m_sizes(sizes) {
-    for (const auto &[key, value] : items)
-      set(key, value);
+  Dict(const Sizes &sizes, holder_type items) : m_sizes(sizes) {
+    for (auto &&[key, value] : items)
+      set(key, std::move(value));
   }
 
   /// Return the number of coordinates in the view.
@@ -166,6 +166,7 @@ public:
   bool operator==(const Dict &other) const;
   bool operator!=(const Dict &other) const;
 
+  const Sizes &sizes() const noexcept { return m_sizes; }
   const auto &items() const noexcept { return m_items; }
 
   void set(const key_type &key, mapped_type coord);
@@ -193,7 +194,7 @@ template <class Masks>
   return union_;
 }
 
-SCIPP_DATASET_EXPORT Variable masks_merge_if_contained(const MasksDict &masks,
+SCIPP_DATASET_EXPORT Variable masks_merge_if_contained(const Masks &masks,
                                                        const Dimensions &dims);
 
 } // namespace scipp::dataset

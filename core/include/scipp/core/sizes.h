@@ -21,6 +21,9 @@ public:
   Sizes(const Dimensions &dims);
   Sizes(const std::unordered_map<Dim, scipp::index> &sizes) : m_sizes(sizes) {}
 
+  bool operator==(const Sizes &other) const;
+  bool operator!=(const Sizes &other) const;
+
   bool contains(const Dim dim) const noexcept {
     return m_sizes.count(dim) != 0;
   }
@@ -33,6 +36,8 @@ private:
   // TODO More efficient implementation without memory allocations.
   std::unordered_map<Dim, scipp::index> m_sizes;
 };
+
+std::string to_string(const Sizes &sizes);
 
 } // namespace scipp::core
 

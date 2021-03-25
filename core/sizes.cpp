@@ -12,6 +12,12 @@ Sizes::Sizes(const Dimensions &dims) {
     m_sizes[dim] = dims[dim];
 }
 
+bool Sizes::operator==(const Sizes &other) const {
+  return m_sizes == other.m_sizes;
+}
+
+bool Sizes::operator!=(const Sizes &other) const { return !operator==(other); }
+
 scipp::index Sizes::operator[](const Dim dim) const {
   if (!contains(dim))
     throw except::DimensionError("dim not found");
@@ -33,5 +39,7 @@ Sizes Sizes::slice(const Slice &params) const {
     sizes.erase(params.dim());
   return {sizes};
 }
+
+std::string to_string(const Sizes &sizes) { return "Sizes"; }
 
 } // namespace scipp::core
