@@ -53,8 +53,6 @@ public:
 
   Variable() = default;
   Variable(const Variable &parent, const Dimensions &dims);
-  Variable(const Variable &parent, const Dimensions &dims,
-           VariableConceptHandle data);
   Variable(const Dimensions &dims, VariableConceptHandle data);
   template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
@@ -119,6 +117,7 @@ public:
   VariableConcept &data() && = delete;
   VariableConcept &data() & { return *m_object; }
   const auto &data_handle() const { return m_object; }
+  void setDataHandle(VariableConceptHandle object);
 
   void setVariances(const Variable &v);
 

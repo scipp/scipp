@@ -120,7 +120,7 @@ Variable resize(const Variable &var, const Dim dim, const scipp::index size) {
 /// ignored, i.e., only `shape.dims()` is used to determine the shape of the
 /// output.
 Variable resize(const Variable &var, const Variable &shape) {
-  return Variable(var, shape.dims(), var.data().makeDefaultFromParent(shape));
+  return {shape.dims(), var.data().makeDefaultFromParent(shape)};
 }
 
 namespace {

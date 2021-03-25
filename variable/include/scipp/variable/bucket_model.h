@@ -41,6 +41,8 @@ private:
 
 namespace {
 template <class T> auto clone_impl(const DataModel<bucket<T>> &model) {
+  // TODO We should probably call deepcopy on the buffer. Sharing contents if,
+  // e.g., T=DataArray is probably not desirable.
   return std::make_unique<DataModel<bucket<T>>>(
       model.indices()->clone(), model.bin_dim(), copy(model.buffer()));
 }

@@ -68,9 +68,9 @@ Variable resize_default_init(const Variable &var, const Dim dim,
 /// Each bin is represented by a VariableView. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, Variable buffer) {
-  return {indices.dims(),
-          std::make_unique<variable::DataModel<bucket<Variable>>>(
-              indices.data_handle(), dim, std::move(buffer))};
+  indices.setDataHandle(std::make_unique<variable::DataModel<bucket<Variable>>>(
+      indices.data_handle(), dim, std::move(buffer)));
+  return indices;
 }
 
 } // namespace scipp::variable
