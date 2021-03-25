@@ -1,0 +1,41 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+/// @file
+/// @author Simon Heybrock
+#pragma once
+
+#include <unordered_map>
+
+#include "scipp-core_export.h"
+#include "scipp/common/index.h"
+#include "scipp/core/dimensions.h"
+#include "scipp/core/slice.h"
+#include "scipp/units/dim.h"
+
+namespace scipp::core {
+
+/// Sibling of class Dimensions, but unordered.
+class SCIPP_CORE_EXPORT Sizes {
+public:
+  Sizes() = default;
+  Sizes(const Dimensions &dims);
+  Sizes(const std::unordered_map<Dim, scipp::index> &sizes) : m_sizes(sizes) {}
+
+  bool contains(const Dim dim) const noexcept {
+    return m_sizes.count(dim) != 0;
+  }
+
+  scipp::index operator[](const Dim dim) const;
+  bool contains(const Dimensions &dims);
+  Sizes slice(const Slice &params) const;
+
+private:
+  // TODO More efficient implementation without memory allocations.
+  std::unordered_map<Dim, scipp::index> m_sizes;
+};
+
+} // namespace scipp::core
+
+namespace scipp {
+using core::Sizes;
+}

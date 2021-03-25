@@ -7,13 +7,8 @@
 
 namespace scipp::dataset {
 
-template <class Id, class Key, class Value>
-ConstView<Id, Key, Value>::ConstView(holder_type &&items,
-                                     const detail::slice_list &slices)
-    : m_items(std::move(items)), m_slices(slices) {}
-
-template <class Id, class Key, class Value>
-bool ConstView<Id, Key, Value>::operator==(const ConstView &other) const {
+template <class Key, class Value>
+bool Dict<Key, Value>::operator==(const Dict &other) const {
   if (size() != other.size())
     return false;
   for (const auto [name, data] : *this) {
@@ -27,77 +22,72 @@ bool ConstView<Id, Key, Value>::operator==(const ConstView &other) const {
   return true;
 }
 
+template <class Key, class Value>
+bool Dict<Key, Value>::operator!=(const Dict &other) const {
+  return !operator==(other);
+}
+
 /// Returns whether a given key is present in the view.
-template <class Id, class Key, class Value>
-bool ConstView<Id, Key, Value>::contains(const Key &k) const {
+template <class Key, class Value>
+bool Dict<Key, Value>::contains(const Key &k) const {
   return m_items.find(k) != m_items.cend();
 }
 
 /// Returns 1 or 0, depending on whether key is present in the view or not.
-template <class Id, class Key, class Value>
-scipp::index ConstView<Id, Key, Value>::count(const Key &k) const {
+template <class Key, class Value>
+scipp::index Dict<Key, Value>::count(const Key &k) const {
   return static_cast<scipp::index>(contains(k));
 }
 
-/// Return a const view to the coordinate for given dimension.
-template <class Id, class Key, class Value>
-typename ConstView<Id, Key, Value>::mapped_type::const_view_type
-ConstView<Id, Key, Value>::operator[](const Key &key) const {
+/// Const reference to the coordinate for given dimension.
+template <class Key, class Value>
+const Value &Dict<Key, Value>::operator[](const Key &key) const {
+  return at(key);
+}
+
+/// Const reference to the coordinate for given dimension.
+template <class Key, class Value>
+const Value &Dict<Key, Value>::at(const Key &key) const {
   scipp::expect::contains(*this, key);
-  return make_slice(m_items.at(key), m_slices);
+  return m_items.at(key);
 }
 
-/// Return a const view to the coordinate for given dimension.
-template <class Id, class Key, class Value>
-typename ConstView<Id, Key, Value>::mapped_type::const_view_type
-ConstView<Id, Key, Value>::at(const Key &key) const {
-  return operator[](key);
+/// The coordinate for given dimension.
+template <class Key, class Value>
+Value Dict<Key, Value>::operator[](const Key &key) {
+  return std::as_const(*this).at(key);
 }
 
-template <class Id, class Key, class Value>
-bool ConstView<Id, Key, Value>::operator!=(const ConstView &other) const {
-  return !operator==(other);
+/// The coordinate for given dimension.
+template <class Key, class Value> Value Dict<Key, Value>::at(const Key &key) {
+  return std::as_const(*this).at(key);
 }
 
-template <class Base, class Access>
-MutableView<Base, Access>::MutableView(const Access &access,
-                                       typename Base::holder_type &&items,
-                                       const detail::slice_list &slices)
-    : Base(std::move(items), slices), m_access(access) {}
-
-/// Constructor for internal use (slicing and holding const view in mutable
-/// view)
-template <class Base, class Access>
-MutableView<Base, Access>::MutableView(const Access &access, Base &&base)
-    : Base(std::move(base)), m_access(access) {}
-
-template <class Base, class Access>
-/// Return a view to the coordinate for given dimension.
-typename Base::mapped_type::view_type MutableView<Base, Access>::operator[](
-    const typename Base::key_type &key) const {
+template <class Key, class Value>
+void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
+  if (!m_sizes.contains(coord.dims()))
+    throw std::runtime_error("cannot add coord exceeding DataArray dims");
+  m_items.insert_or_assign(key, std::move(coord));
+}
+template <class Key, class Value>
+void Dict<Key, Value>::erase(const key_type &key) {
   scipp::expect::contains(*this, key);
-  return make_slice(Base::items().at(key), Base::slices());
+  m_items.erase(key);
 }
 
-template <class Base, class Access>
-void MutableView<Base, Access>::erase(
-    const typename Base::key_type &key) const {
-  scipp::expect::contains(*this, key);
-  m_access.erase(key);
+template <class Key, class Value>
+Value Dict<Key, Value>::extract(const key_type &key) {
+  auto extracted = at(key);
+  erase(key);
+  return extracted;
 }
 
-template <class Base, class Access>
-typename Base::mapped_type
-MutableView<Base, Access>::extract(const typename Base::key_type &key) const {
-  scipp::expect::contains(*this, key);
-  return m_access.extract(key);
+template <class Key, class Value>
+Dict<Key, Value> Dict<Key, Value>::slice(const Slice &params) const {
+  return Dict(m_sizes.slice(params), slice_map(m_items, params));
 }
 
-template class SCIPP_DATASET_EXPORT
-    ConstView<ViewId::Coords, Dim, variable::Variable>;
-template class SCIPP_DATASET_EXPORT MutableView<CoordsConstView, CoordAccess>;
-template class SCIPP_DATASET_EXPORT
-    ConstView<ViewId::Masks, std::string, variable::Variable>;
-template class SCIPP_DATASET_EXPORT MutableView<MasksConstView, MaskAccess>;
+template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;
+template class SCIPP_DATASET_EXPORT Dict<std::string, Variable>;
 
 } // namespace scipp::dataset
