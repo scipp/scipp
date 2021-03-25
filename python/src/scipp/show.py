@@ -8,6 +8,7 @@ import numpy as np
 from ._scipp import core as sc
 from . import config
 from ._utils import is_data_array, hex_to_rgb, rgb_to_hex
+from .html.resources import load_style
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -44,6 +45,12 @@ def _truncate_long_string(long_string: str) -> str:
     max_title_length = 13
     return (long_string[:max_title_length] +
             '..') if len(long_string) > max_title_length else long_string
+
+
+def _build_svg(content, left, top, width, height):
+    return (
+        f'<svg width={_svg_width}em viewBox="{left} {top} {width} {height}">'
+        f'<defs><style>{load_style()}</style></defs>{content}</svg>')
 
 
 class VariableDrawer:
@@ -163,7 +170,7 @@ class VariableDrawer:
                 x_pos = dx + self._margin + 0.5 * extent
                 y_pos = dy + view_height - self._margin + _smaller_font
                 return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
-                         fill="dim-color" \
+                         fill="var(--sc-table-coords-color, red)" \
                          style="font-size:#smaller-font">{escape(dim)}</text>'
 
             if axis == 1:
@@ -267,10 +274,10 @@ class VariableDrawer:
     def make_svg(self, content_only=False):
         if content_only:
             return self._set_colors(self.draw(color=config.colors['data']))
-        return '<svg width={}em viewBox="0 0 {} {}">{}</svg>'.format(
-            _svg_width, max(_cubes_in_full_width,
-                            self.size()[0]),
-            self.size()[1], self.make_svg(content_only=True))
+        return _build_svg(self.make_svg(content_only=True), 0, 0,
+                          max(_cubes_in_full_width,
+                              self.size()[0]),
+                          self.size()[1])
 
 
 class DrawerItem:
@@ -461,9 +468,8 @@ class DatasetDrawer:
 
         if content_only:
             return content
-        return '<svg width={}em viewBox="{} {} {} {}">{}</svg>'.format(
-            _svg_width, left, top, max(_cubes_in_full_width, width), height,
-            content)
+        return _build_svg(content, left, top, max(_cubes_in_full_width, width),
+                          height)
 
 
 def make_svg(container, content_only=False):
