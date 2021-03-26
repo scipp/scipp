@@ -65,6 +65,11 @@ template <class Key, class Value> Value Dict<Key, Value>::at(const Key &key) {
 
 template <class Key, class Value>
 void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
+  // TODO support also:
+  // - bin edges (exceed sizes by one, along inner dim)
+  // - bin edges of length 2 if dim is not contained
+  // Is a good definition for things that are allowed: "would be possible to
+  // concat along existing dim or extra dim"?
   if (!m_sizes.contains(coord.dims()))
     throw std::runtime_error("cannot add coord exceeding DataArray dims");
   m_items.insert_or_assign(key, std::move(coord));
@@ -84,7 +89,7 @@ Value Dict<Key, Value>::extract(const key_type &key) {
 
 template <class Key, class Value>
 Dict<Key, Value> Dict<Key, Value>::slice(const Slice &params) const {
-  return Dict(m_sizes.slice(params), slice_map(m_items, params));
+  return Dict(m_sizes.slice(params), slice_map(m_sizes, m_items, params));
 }
 
 template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;

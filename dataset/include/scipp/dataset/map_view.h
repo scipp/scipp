@@ -81,14 +81,24 @@ template <class T, class Key> Dim dim_of_coord(const T &var, const Key &key) {
     return var.dims().inner();
 }
 
-template <class T> auto slice_map(const T &map, const Slice &params) {
+template <class T>
+auto slice_map(const Sizes &sizes, const T &map, const Slice &params) {
+  core::expect::validSlice(sizes, params);
   T out;
-  // TODO drop if not range slice>
   for (const auto &[key, value] : map) {
-    if (value.dims().contains(params.dim()))
-      out[key] = value.slice(params);
-    else
+    if (value.dims().contains(params.dim())) {
+      if (value.dims()[params.dim()] == sizes[params.dim()]) {
+        out[key] = value.slice(params);
+      } else { // bin edge
+        const auto end = params.end() == -1 ? params.begin() + 2
+                                            : params.begin() == params.end()
+                                                  ? params.end()
+                                                  : params.end() + 1;
+        out[key] = value.slice(Slice{params.dim(), params.begin(), end});
+      }
+    } else {
       out[key] = value;
+    }
   }
   return out;
 }

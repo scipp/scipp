@@ -11,37 +11,6 @@
 
 namespace scipp::dataset {
 
-template <class T> typename T::view_type makeViewItem(T &variable) {
-  if constexpr (std::is_const_v<T>)
-    return typename T::view_type(typename T::const_view_type(variable));
-  else
-    return typename T::view_type(variable);
-}
-
-template <class T1> auto makeViewItems(T1 &coords) {
-  std::unordered_map<typename T1::key_type, VariableView> items;
-  for (auto &item : coords)
-    items.emplace(item.first, makeViewItem(item.second));
-  return items;
-}
-
-template <class Dims, class T1>
-auto makeViewItems(const Dims &dims, T1 &coords) {
-  std::unordered_map<typename T1::key_type, VariableView> items;
-  // We preserve only items that are part of the space spanned by the
-  // provided parent dimensions.
-  auto contained = [&dims](const auto &coord) {
-    for (const Dim &dim : coord.second.dims().labels())
-      if (dims.count(dim) == 0)
-        return false;
-    return true;
-  };
-  for (auto &item : coords)
-    if (contained(item))
-      items.emplace(item.first, makeViewItem(item.second));
-  return items;
-}
-
 Dataset::Dataset(const DataArray &data) { setData(data.name(), data); }
 
 /// Removes all data items from the Dataset.
@@ -93,6 +62,8 @@ DataArray Dataset::operator[](const std::string &name) const {
   return *find(name);
 }
 
+// TODO should we just not supported "shrinking"? That is, what is set first
+// determines dims? How can we support empty datasets to carry only bin edges?
 namespace extents {
 // Internally use negative extent -1 to indicate unknown edge state. The `-1`
 // is required for dimensions with extent 0.
@@ -152,6 +123,8 @@ void Dataset::rebuildDims() {
 
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
+  // ds.coords().set() must be possible (in Python?)
+  // ... how can we allow for growing sizes?
   setDims(coord.dims(), dim_of_coord(coord, dim));
   for (const auto &item : m_data)
     if (item.second.coords.count(dim))
@@ -161,31 +134,15 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
   m_coords.set(dim, std::move(coord));
 }
 
-/// Set (insert or replace) an attribute for item with given name.
-void Dataset::setCoord(const std::string &name, const Dim dim, Variable coord) {
-  scipp::expect::contains(*this, name);
-  if (coords().contains(dim))
-    throw except::DataArrayError("Attempt to insert attribute with name " +
-                                 to_string(dim) + " shadowing coord.");
-  setDims(coord.dims(), dim_of_coord(coord, dim));
-  m_data[name].attrs().set(dim, std::move(coord));
-}
-
-/// Set (insert or replace) an mask for item with given name.
-void Dataset::setMask(const std::string &name, const std::string &maskName,
-                      Variable mask) {
-  scipp::expect::contains(*this, name);
-  setDims(mask.dims());
-  m_data[name].masks().set(maskName, std::move(mask));
-}
-
-void Dataset::setData_impl(const std::string &name, detail::DatasetData &&data,
+void Dataset::setData_impl(const std::string &name, const Variable &data,
                            const AttrPolicy attrPolicy) {
-  setDims(data.data.dims());
+  setDims(data.dims());
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
-    data.coords = std::move(m_data[name].coords);
-  m_data[name] = std::move(data);
+    m_data[name] = DataArray(data, {}, m_data[name].masks().items(),
+                             m_data[name].attrs().items(), name);
+  else
+    m_data[name] = DataArray(data);
   if (replace)
     rebuildDims();
 }
@@ -201,88 +158,57 @@ void Dataset::setData(const std::string &name, Variable data,
 }
 
 /// Set (insert or replace) data from a DataArray with a given name, avoiding
-/// copies where possible by using std::move.
+/// copies where possible by using std::move. TODO move does not make sense
+///
+/// Coordinates, masks, and attributes of the data array are added to the
+/// dataset. Throws if there are existing but mismatching coords, masks, or
+/// attributes. Throws if the provided data brings the dataset into an
+/// inconsistent state (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, DataArray data) {
-  // Get the Dataset holder
-  auto dataset = DataArray::to_dataset(std::move(data));
-  // There can be only one DatasetData item, so get the first one with begin()
-  auto item = dataset.m_data.begin();
+  // TODO
+  // if (contains(name) && &m_data[name] == &data.underlying() &&
+  //    data.slices().empty())
+  //  return; // Self-assignment, return early.
+  Sizes new_sizes(data.dims());
+  // TODO
+  // no... what if item replace shrinks sizes
+  new_sizes = merge(m_sizes, sizes);
 
-  for (auto &&[dim, coord] : dataset.m_coords) {
+  for (auto &&[dim, coord] : data.coords()) {
     if (const auto it = m_coords.find(dim); it != m_coords.end())
       core::expect::equals(coord, it->second);
     else
       setCoord(dim, std::move(coord));
   }
 
-  setData(name, std::move(item->second.data));
+  setData(name, std::move(data.data()));
+  auto &item = m_data[name];
 
   for (auto &&[dim, coord] : item->second.coords)
+    // TODO dropping not really necessary in new mechanism, fail later
     // Drop unaligned coords if there is aligned coord with same name.
     if (!coords().contains(dim))
-      setCoord(name, dim, std::move(coord));
-  for (auto &&[nm, mask] : item->second.masks)
-    setMask(name, std::string(nm), std::move(mask));
-}
-
-/// Set (insert or replace) data item with given name.
-///
-/// Coordinates, masks, and attributes of the data array are added to the
-/// dataset. Throws if there are existing but mismatching coords, masks, or
-/// attributes. Throws if the provided data brings the dataset into an
-/// inconsistent state (mismatching dtype, unit, or dimensions).
-void Dataset::setData(const std::string &name, const DataArray &data) {
-  if (contains(name) && &m_data[name] == &data.underlying() &&
-      data.slices().empty())
-    return; // Self-assignment, return early.
-  setData(name, DataArray(data));
-}
-
-void DataArrayView::setData(Variable data) const {
-  if (!slices().empty())
-    throw except::SliceError("Cannot set data via slice.");
-  m_mutableDataset->setData(name(), std::move(data), AttrPolicy::Keep);
-}
-
-template <class Key, class Val>
-Val Dataset::extract_from_map(std::unordered_map<Key, Val> &map,
-                              const Key &key) {
-  using core::to_string;
-  if (!map.count(key))
-    throw except::NotFoundError("Cannot erase " + to_string(key) +
-                                " -- not found.");
-  auto value = std::move(map.at(key));
-  map.erase(key);
-  rebuildDims();
-  return value;
-}
-
-/// Remove and return the coordinate for the given dimension.
-Variable Dataset::extractCoord(const Dim dim) {
-  return extract_from_map(m_coords, dim);
-}
-
-/// Remove and return unaligned coord with given name from the given item.
-Variable Dataset::extractCoord(const std::string &name, const Dim dim) {
-  scipp::expect::contains(*this, name);
-  return extract_from_map(m_data[name].coords, dim);
-}
-
-/// Remove and return mask with given mask name from the given item.
-Variable Dataset::extractMask(const std::string &name,
-                              const std::string &maskName) {
-  scipp::expect::contains(*this, name);
-  return extract_from_map(m_data[name].masks, maskName);
+      item.coords().set(dim, std::move(coord));
+  for (auto &&[nm, mask] : data.masks())
+    item.masks().set(nm, std::move(mask));
 }
 
 /// Return slice of the dataset along given dimension with given extents.
-DatasetC Dataset::slice(const Slice s) const {
+Dataset Dataset::slice(const Slice s) const {
   Dataset out;
   // TODO m_dims
-  // TODO coord attr conversion not possible for dataset, but how can we handle
-  // it for items? Can it be done based on dims?
   out.m_coords = m_coords.slice(s);
-  out.m_data = slice_map(m_data, s);
+  // TODO drop items that do not depend on s.dim()?
+  out.m_data = slice_map(m_coords.sizes(), m_data, s);
+  for (auto it = out.m_coords.cbegin(); it != out.m_coords.cend();) {
+    if (unaligned_by_dim_slice(*it, s.dim())) {
+      for (auto &item : out.m_data)
+        item.attrs().set(it->first, it->second);
+      it = out.m_coords.erase(it);
+    } else {
+      ++it;
+    }
+  }
   return out;
 }
 
@@ -313,119 +239,7 @@ void Dataset::rename(const Dim from, const Dim to) {
 }
 
 namespace {
-auto unaligned_by_dim_slice = [](const auto &item, const Dim dim) {
-  const auto &[key, var] = item;
-  if constexpr (std::is_same_v<std::decay_t<decltype(item.first)>, Dim>) {
-    const bool is_dimension_coord = var.dims().contains(key);
-    return var.dims().contains(dim) &&
-           (is_dimension_coord ? key == dim : var.dims().inner() == dim);
-  } else {
-    return false;
-  }
-};
 
-template <class Items>
-void erase_if_unaligned_by_dim_slice(Items &items, const Dim dim) {
-  for (auto it = items.begin(); it != items.end();) {
-    if (unaligned_by_dim_slice(*it, dim))
-      it = items.erase(it);
-    else
-      ++it;
-  }
-}
-
-template <class Items, class Slices>
-void erase_if_unaligned_by_dim_slices(Items &items, const Slices &slices) {
-  for (const auto &slice : slices)
-    if (!slice.first.isRange())
-      erase_if_unaligned_by_dim_slice(items, slice.first.dim());
-}
-
-template <class Items, class Slices>
-void keep_if_unaligned_by_dim_slices(Items &items, const Slices &slices) {
-  constexpr auto keep = [](const auto &item, const auto &slices2) {
-    for (const auto &slice : slices2)
-      if (!slice.first.isRange() &&
-          unaligned_by_dim_slice(item, slice.first.dim()))
-        return true;
-    return false;
-  };
-  for (auto it = items.begin(); it != items.end();) {
-    if (keep(*it, slices))
-      ++it;
-    else
-      it = items.erase(it);
-  }
-}
-
-/// Conditionally removes coords from view to implement mapping of aligned
-/// coords to unaligned coords for non-range slices of data arrays or datasets.
-template <class Items, class Slices>
-void maybe_drop_aligned_or_unaligned(Items &items, const Slices &slices,
-                                     const CoordCategory category) {
-  if (category == CoordCategory::Aligned)
-    erase_if_unaligned_by_dim_slices(items, slices);
-  if (category == CoordCategory::Unaligned)
-    keep_if_unaligned_by_dim_slices(items, slices);
-}
-} // namespace
-
-/// is_item controls whether access should refer to aligned or unaligned coords,
-/// i.e., whether this is a view of a dataset item or a data array.
-template <class T>
-std::conditional_t<std::is_same_v<T, DataArrayView>, CoordsView,
-                   CoordsConstView>
-make_coords(const T &view, const CoordCategory category,
-            [[maybe_unused]] const bool is_item) {
-  // Aligned coords (including unaligned by slicing) from dataset. This is all
-  // coords of the dataset *excluding* those that exceed the item dims.
-  auto items = makeViewItems(view.parentDims(), view.get_dataset().m_coords);
-  maybe_drop_aligned_or_unaligned(items, view.slices(), category);
-  const bool aligned = !(category & CoordCategory::Unaligned);
-  if (category & CoordCategory::Unaligned) {
-    // Unaligned coords: Need to include everything, in particular to preserve
-    // bin edges after non-range slice.
-    const auto tmp = makeViewItems(view.get_data().coords);
-    items.insert(tmp.begin(), tmp.end());
-  }
-  if constexpr (std::is_same_v<T, DataArrayView>) {
-    const bool aligned_of_item = is_item && aligned;
-    // insert/erase disabled for `meta`
-    const bool combined = category == CoordCategory::All;
-    return CoordsView(
-        // Coord insert/erase disabled if:
-        // - coords of a slice:
-        //   array['x', 7].coords['x'] = x # fails
-        //   array.coords['x'] = x # ok
-        // - (aligned) coords of a dataset item:
-        //   del ds['a'].coords['x'] # fails
-        //   del ds.coords['x'] # ok
-        CoordAccess{(view.slices().empty() && !aligned_of_item && !combined)
-                        ? &view.get_dataset()
-                        : nullptr,
-                    &view.name(), is_item},
-        std::move(items), view.slices());
-  } else
-    return CoordsConstView(std::move(items), view.slices());
-}
-
-/// Return a const view to all coordinates of the dataset slice.
-CoordsConstView DatasetConstView::coords() const noexcept {
-  auto items = makeViewItems(m_dataset->dimensions(), m_dataset->m_coords);
-  erase_if_unaligned_by_dim_slices(items, slices());
-  return CoordsConstView(std::move(items), slices());
-}
-
-/// Return a view to all coordinates of the dataset slice.
-CoordsView DatasetView::coords() const noexcept {
-  auto items =
-      makeViewItems(m_mutableDataset->dimensions(), m_mutableDataset->m_coords);
-  erase_if_unaligned_by_dim_slices(items, slices());
-  return CoordsView(CoordAccess(slices().empty() ? m_mutableDataset : nullptr),
-                    std::move(items), slices());
-}
-
-namespace {
 template <class T> const auto &getitem(const T &view, const std::string &name) {
   if (auto it = view.find(name); it != view.end())
     return *it;
@@ -434,6 +248,7 @@ template <class T> const auto &getitem(const T &view, const std::string &name) {
 }
 } // namespace
 
+/*
 // This is a member so it gets access to a private constructor of DataArrayView.
 template <class T>
 std::pair<boost::container::small_vector<DataArrayView, 8>, detail::slice_list>
@@ -471,14 +286,7 @@ DatasetConstView DatasetConstView::slice(const Slice s) const {
   std::tie(sliced.m_items, sliced.m_slices) = slice_items(*this, s);
   return sliced;
 }
-
-DatasetView DatasetView::slice(const Slice s) const {
-  DatasetView sliced;
-  sliced.m_dataset = m_dataset;
-  sliced.m_mutableDataset = m_mutableDataset;
-  std::tie(sliced.m_items, sliced.m_slices) = slice_items(*this, s);
-  return sliced;
-}
+*/
 
 template <class A, class B> bool dataset_equals(const A &a, const B &b) {
   if (a.size() != b.size())

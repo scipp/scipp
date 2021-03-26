@@ -24,6 +24,12 @@ scipp::index Sizes::operator[](const Dim dim) const {
   return m_sizes.at(dim);
 }
 
+void Sizes::set(const Dim dim, const scipp::index size) {
+  if (contains(dim) && operator[](dim) != sizes)
+    throw except::DimensionError("Inconsistent size");
+  m_sizes[dim] = size;
+}
+
 bool Sizes::contains(const Dimensions &dims) {
   for (const auto &dim : dims.labels())
     if (m_sizes.count(dim) == 0 || m_sizes.at(dim) != dims[dim])
@@ -38,6 +44,13 @@ Sizes Sizes::slice(const Slice &params) const {
   else
     sizes.erase(params.dim());
   return {sizes};
+}
+
+Sizes merge(const Sizes &a, const Sizes &b) {
+  auto out(a);
+  for (const auto &[dim, size] : b)
+    out.set(dim, size);
+  return out;
 }
 
 std::string to_string(const Sizes &sizes) { return "Sizes"; }

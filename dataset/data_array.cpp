@@ -5,7 +5,7 @@
 #include "scipp/dataset/data_array.h"
 #include "scipp/variable/misc_operations.h"
 
-//#include "dataset_operations_common.h"
+#include "dataset_operations_common.h"
 
 namespace scipp::dataset {
 
@@ -83,10 +83,17 @@ const std::string &DataArray::name() const { return m_name; }
 void DataArray::setName(const std::string &name) { m_name = name; }
 
 DataArray DataArray::slice(const Slice &s) const {
-  DataArray sliced{m_data.slice(s), m_coords.slice(s), m_masks->slice(s),
-                   m_attrs->slice(s), m_name};
-  // TODO coord to attr conversion
-  return sliced;
+  DataArray out{m_data.slice(s), m_coords.slice(s), m_masks->slice(s),
+                m_attrs->slice(s), m_name};
+  for (auto it = out.m_coords.cbegin(); it != out.m_coords.cend();) {
+    if (unaligned_by_dim_slice(*it, s.dim())) {
+      out.attrs().set(it->first, it->second);
+      it = out.m_coords.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  return out;
 }
 
 DataArray DataArray::view_with_coords(const Coords &coords) const {
@@ -94,9 +101,7 @@ DataArray DataArray::view_with_coords(const Coords &coords) const {
   DataArray out;
   out.m_data = m_data;
   out.m_coords = Coords(m_data.dims(), {});
-  // TODO coord to attr conversion
   // TODO bin edge handling
-  // TODO for a slice of a dataset, how can we possibly convert coord to attr?
   for (const auto &[dim, coord] : coords)
     if (m_data.dims().contains(coord.dims()))
       out.m_coords.set(dim, coord);
