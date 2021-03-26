@@ -29,11 +29,17 @@ class PlotView:
         """
         return self._to_widget()._ipython_display_()
 
-    def _to_widget(self, as_static=False):
+    def _to_widget(self):
         """
         The `view` as a widget is just the `figure` as a widget.
         """
-        return self.figure._to_widget(as_static=as_static)
+        return self.figure._to_widget()
+
+    def close(self):
+        """
+        Close the figure.
+        """
+        return self.figure.close()
 
     def show(self):
         """

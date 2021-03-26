@@ -24,6 +24,7 @@ class PlotFigure:
                  ylabel=None,
                  toolbar=None):
         self.fig = None
+        self.image = None
         self.ax = ax
         self.cax = cax
         self.own_axes = True
@@ -76,7 +77,7 @@ class PlotFigure:
         """
         return self._to_widget()._ipython_display_()
 
-    def _to_widget(self, as_static=False):
+    def _to_widget(self):
         """
         Convert the Matplotlib figure to a widget. If the ipympl (widget)
         backend is in use, return the custom toolbar and the figure canvas.
@@ -84,14 +85,14 @@ class PlotFigure:
         Image container.
         """
         if self.is_widget():
-            if as_static:
-                return ipw.HBox([self.toolbar._to_widget(), self._to_image()])
+            if self.image is not None:
+                return ipw.HBox([self.toolbar._to_widget(), self.image])
             else:
                 return ipw.HBox([self.toolbar._to_widget(), self.fig.canvas])
         else:
             return self._to_image()
 
-    def _to_image(self):
+    def close(self):
         """
         Convert the Matplotlib figure to a static image.
         """
@@ -101,9 +102,9 @@ class PlotFigure:
         # cells further down the notebook.
         plt.close(self.fig)
         buf.seek(0)
-        return ipw.Image(value=buf.getvalue(),
-                         width=config.plot.width,
-                         height=config.plot.height)
+        self.image = ipw.Image(value=buf.getvalue(),
+                               width=config.plot.width,
+                               height=config.plot.height)
 
     def show(self):
         """
