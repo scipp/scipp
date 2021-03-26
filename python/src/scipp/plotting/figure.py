@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config
+from .tools import fig_to_bytes
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -90,19 +91,15 @@ class PlotFigure:
             else:
                 return ipw.HBox([self.toolbar._to_widget(), self.fig.canvas])
         else:
-            return self._to_image()
+            if self.image is None:
+                self._to_image()
+            return self.image
 
-    def close(self):
+    def _to_image(self):
         """
         Convert the Matplotlib figure to a static image.
         """
-        buf = io.BytesIO()
-        self.fig.savefig(buf, format='png')
-        # Here we close the figure to prevent it from showing up again in
-        # cells further down the notebook.
-        plt.close(self.fig)
-        buf.seek(0)
-        self.image = ipw.Image(value=buf.getvalue(),
+        self.image = ipw.Image(value=fig_to_bytes(self.fig),
                                width=config.plot.width,
                                height=config.plot.height)
 
