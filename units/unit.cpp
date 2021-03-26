@@ -32,10 +32,15 @@ Unit::Unit(const std::string &unit)
 }
 
 std::string Unit::name() const {
+  if (*this == Unit{"month"}) {
+    return "M";
+  }
   auto repr = to_string(m_unit);
   repr = std::regex_replace(repr, std::regex("^u"), "µ");
   repr = std::regex_replace(repr, std::regex("item"), "count");
   repr = std::regex_replace(repr, std::regex("count(?!s)"), "counts");
+  repr = std::regex_replace(repr, std::regex("day"), "D");
+  repr = std::regex_replace(repr, std::regex("a_g"), "Y");
   return repr.empty() ? "dimensionless" : repr;
 }
 
