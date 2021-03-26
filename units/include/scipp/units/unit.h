@@ -26,6 +26,10 @@ public:
   bool isCounts() const;
   bool isCountDensity() const;
 
+  [[nodiscard]] constexpr bool in_same_dimension(const Unit& other) const {
+    return m_unit.has_same_base(other.underlying());
+  }
+
   bool operator==(const Unit &other) const;
   bool operator!=(const Unit &other) const;
 
