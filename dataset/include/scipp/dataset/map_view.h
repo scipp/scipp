@@ -134,15 +134,15 @@ public:
   mapped_type operator[](const Key &key);
   mapped_type at(const Key &key);
 
-  auto find(const Key &k) const && = delete;
-  auto find(const Key &k) const &noexcept { return m_items.find(k); }
+  auto find(const Key &k) const noexcept { return m_items.find(k); }
+  auto find(const Key &k) noexcept { return m_items.find(k); }
 
-  auto begin() const && = delete;
   /// Return const iterator to the beginning of all items.
-  auto begin() const &noexcept { return m_items.begin(); }
-  auto end() const && = delete;
+  auto begin() const noexcept { return m_items.begin(); }
+  auto begin() noexcept { return m_items.begin(); }
   /// Return const iterator to the end of all items.
-  auto end() const &noexcept { return m_items.end(); }
+  auto end() const noexcept { return m_items.end(); }
+  auto end() noexcept { return m_items.end(); }
 
   auto items_begin() const && = delete;
   /// Return const iterator to the beginning of all items.
@@ -178,6 +178,7 @@ public:
 
   const Sizes &sizes() const noexcept { return m_sizes; }
   const auto &items() const noexcept { return m_items; }
+  auto &items() noexcept { return m_items; }
 
   void set(const key_type &key, mapped_type coord);
   void erase(const key_type &key);
