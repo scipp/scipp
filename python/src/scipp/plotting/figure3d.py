@@ -14,7 +14,6 @@ from matplotlib.colors import Normalize, LogNorm
 from matplotlib.colorbar import ColorbarBase
 import pythreejs as p3
 from copy import copy
-import io
 
 
 class PlotFigure3d:
@@ -103,7 +102,7 @@ class PlotFigure3d:
         """
         return self._to_widget()._ipython_display_()
 
-    def _to_widget(self, as_static=False):
+    def _to_widget(self):
         """
         Return the renderer and the colorbar into a widget box.
         """
@@ -396,12 +395,6 @@ void main() {
         cbar_ax.set_ylabel(self.unit)
         cbar_ax.yaxis.set_label_coords(-0.9, 0.5)
         self.cbar_image.value = fig_to_bytes(cbar_fig)
-        # # Save to png
-        # buf = io.BytesIO()
-        # cbar_fig.savefig(buf, format='png', bbox_inches='tight')
-        # plt.close(cbar_fig)
-        # buf.seek(0)
-        # self.cbar_image.value = buf.getvalue()
 
     def reset_camera(self, owner=None):
         """

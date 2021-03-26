@@ -7,7 +7,6 @@ from .tools import fig_to_bytes
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import io
 
 
 class PlotFigure:
