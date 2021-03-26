@@ -100,8 +100,38 @@ class PlotToolbar:
                 args[key] = value
         return args
 
+    def update_log_axes_buttons(self, axes_scales):
+        """
+        When axes are changed or swapped, update the value and color of the
+        custom togglebuttons without triggering a new update.
+        """
+        for xyz, scale in axes_scales.items():
+            key = "toggle_{}axis_scale".format(xyz)
+            if key in self.members:
+                self.toggle_button_color(self.members[key],
+                                         value=scale == "log")
+
+    def update_norm_button(self, norm=None):
+        """
+        Change state of norm button according to supplied norm value.
+        """
+        self.toggle_button_color(self.members["toggle_norm"],
+                                 value=norm == "log")
+
     def home_view(self):
         self.mpl_toolbar.home()
+
+    def pan_view(self):
+        # In case the zoom button is selected, we need to de-select it
+        if self.members["zoom_view"].value:
+            self.toggle_button_color(self.members["zoom_view"])
+        self.mpl_toolbar.pan()
+
+    def zoom_view(self):
+        # In case the pan button is selected, we need to de-select it
+        if self.members["pan_view"].value:
+            self.toggle_button_color(self.members["pan_view"])
+        self.mpl_toolbar.zoom()
 
     def save_view(self):
         self.mpl_toolbar.save_figure()
