@@ -88,6 +88,8 @@ defaults = {
         "masks": "#cccccc",
         "hover": "#d6eaf8",
         "header_text": "#111111",
+        "button": "#bdbdbd49",
+        "button_selected": "#bdbdbdbb",
     },
     "table_max_size": 50,
 }
