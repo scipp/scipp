@@ -27,7 +27,7 @@ std::string Unit::name() const {
   repr = std::regex_replace(repr, std::regex("^u"), "µ");
   repr = std::regex_replace(repr, std::regex("item"), "count");
   repr = std::regex_replace(repr, std::regex("count(?!s)"), "counts");
-  return repr == "" ? "dimensionless" : repr;
+  return repr.empty() ? "dimensionless" : repr;
 }
 
 bool Unit::isCounts() const { return *this == counts; }
@@ -68,14 +68,14 @@ Unit operator*(const Unit &a, const Unit &b) {
   if (llnl::units::times_overflows(a.underlying(), b.underlying()))
     throw except::UnitError("Unsupported unit as result of multiplication: (" +
                             a.name() + ") * (" + b.name() + ')');
-  return {a.underlying() * b.underlying()};
+  return Unit{a.underlying() * b.underlying()};
 }
 
 Unit operator/(const Unit &a, const Unit &b) {
   if (llnl::units::divides_overflows(a.underlying(), b.underlying()))
     throw except::UnitError("Unsupported unit as result of division: (" +
                             a.name() + ") / (" + b.name() + ')');
-  return {a.underlying() / b.underlying()};
+  return Unit{a.underlying() / b.underlying()};
 }
 
 Unit operator%(const Unit &a, const Unit &b) { return a / b; }
@@ -88,14 +88,14 @@ Unit sqrt(const Unit &a) {
   if (llnl::units::is_error(sqrt(a.underlying())))
     throw except::UnitError("Unsupported unit as result of sqrt: sqrt(" +
                             a.name() + ").");
-  return {sqrt(a.underlying())};
+  return Unit{sqrt(a.underlying())};
 }
 
 Unit pow(const Unit &a, const int64_t power) {
   if (llnl::units::pow_overflows(a.underlying(), power))
     throw except::UnitError("Unsupported unit as result of pow: pow(" +
                             a.name() + ", " + std::to_string(power) + ").");
-  return {a.underlying().pow(power)};
+  return Unit{a.underlying().pow(power)};
 }
 
 Unit trigonometric(const Unit &a) {
