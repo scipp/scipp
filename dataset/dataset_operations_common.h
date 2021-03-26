@@ -12,6 +12,17 @@
 
 namespace scipp::dataset {
 
+auto unaligned_by_dim_slice = [](const auto &item, const Dim dim) {
+  const auto &[key, var] = item;
+  if constexpr (std::is_same_v<std::decay_t<decltype(item.first)>, Dim>) {
+    const bool is_dimension_coord = var.dims().contains(key);
+    return var.dims().contains(dim) &&
+           (is_dimension_coord ? key == dim : var.dims().inner() == dim);
+  } else {
+    return false;
+  }
+};
+
 template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
   std::map<typename T1::key_type, typename T1::mapped_type> out;
 
@@ -45,8 +56,7 @@ template <class T> auto copy_map(const T &map) {
   return out;
 }
 
-static inline void expectAlignedCoord(const Dim coord_dim,
-                                      const VariableConstView &var,
+static inline void expectAlignedCoord(const Dim coord_dim, const Variable &var,
                                       const Dim operation_dim) {
   // Coordinate is 2D, but the dimension associated with the coordinate is
   // different from that of the operation. Note we do not account for the
@@ -61,8 +71,8 @@ static inline void expectAlignedCoord(const Dim coord_dim,
 }
 
 template <bool ApplyToData, class Func, class... Args>
-DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
-                                 const Dim dim, Args &&... args) {
+DataArray apply_or_copy_dim_impl(const DataArray &a, Func func, const Dim dim,
+                                 Args &&... args) {
   const auto coord_apply_or_copy_dim = [&](auto &coords_, const auto &view,
                                            const bool aligned) {
     // Note the `copy` call, ensuring that the return value of the ternary
@@ -113,7 +123,7 @@ DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
 /// it, (2) if the coords is a coords for a dimension other than `dim`, a
 /// CoordMismatchError is thrown.
 template <class Func, class... Args>
-DataArray apply_to_data_and_drop_dim(const DataArrayConstView &a, Func func,
+DataArray apply_to_data_and_drop_dim(const DataArray &a, Func func,
                                      const Dim dim, Args &&... args) {
   return apply_or_copy_dim_impl<true>(a, func, dim,
                                       std::forward<Args>(args)...);
@@ -126,29 +136,27 @@ DataArray apply_to_data_and_drop_dim(const DataArrayConstView &a, Func func,
 /// array, not just its data. This is useful for more complex operations such as
 /// `histogram`, which require access to coords when computing output data.
 template <class Func, class... Args>
-DataArray apply_and_drop_dim(const DataArrayConstView &a, Func func,
-                             const Dim dim, Args &&... args) {
+DataArray apply_and_drop_dim(const DataArray &a, Func func, const Dim dim,
+                             Args &&... args) {
   return apply_or_copy_dim_impl<false>(a, func, dim,
                                        std::forward<Args>(args)...);
 }
 
 template <class Func, class... Args>
-DataArray apply_to_items(const DataArrayConstView &d, Func func,
-                         Args &&... args) {
+DataArray apply_to_items(const DataArray &d, Func func, Args &&... args) {
   return func(d, std::forward<Args>(args)...);
 }
 
 template <class... Args>
-bool copy_attr(const VariableConstView &attr, const Dim dim, const Args &...) {
+bool copy_attr(const Variable &attr, const Dim dim, const Args &...) {
   return !attr.dims().contains(dim);
 }
-template <class... Args>
-bool copy_attr(const VariableConstView &, const Args &...) {
+template <class... Args> bool copy_attr(const Variable &, const Args &...) {
   return true;
 }
 
 template <class Func, class... Args>
-Dataset apply_to_items(const DatasetConstView &d, Func func, Args &&... args) {
+Dataset apply_to_items(const Dataset &d, Func func, Args &&... args) {
   Dataset result;
   for (const auto &data : d)
     result.setData(data.name(), func(data, std::forward<Args>(args)...));
@@ -161,8 +169,8 @@ template <class A, class B> auto copy_items(const A &a, const B &b) {
     b.set(key, item);
 }
 
-/// Return a copy of map-like objects such as CoordView with `func` applied to
-/// each item.
+/// Return a copy of map-like objects such as Coords with `func` applied to each
+/// item.
 template <class T, class Func> auto transform_map(const T &map, Func func) {
   std::map<typename T::key_type, typename T::mapped_type> out;
   for (const auto &[key, item] : map)
@@ -176,23 +184,21 @@ template <class T, class Func> DataArray transform(const T &a, Func func) {
                    transform_map(a.attrs(), func), a.name());
 }
 
-void copy_metadata(const DataArrayConstView &a, const DataArrayView &b);
+void copy_metadata(const DataArray &a, DataArray &b);
 
 // Helpers for reductions for DataArray and Dataset, which include masks.
-[[nodiscard]] Variable mean(const VariableConstView &var, const Dim dim,
-                            const MasksConstView &masks);
-[[nodiscard]] Variable nanmean(const VariableConstView &var, const Dim dim,
-                               const MasksConstView &masks);
-[[nodiscard]] Variable sum(const VariableConstView &var,
-                           const MasksConstView &masks);
-[[nodiscard]] Variable sum(const VariableConstView &var, const Dim dim,
-                           const MasksConstView &masks);
-VariableView sum(const VariableConstView &var, const Dim dim,
-                 const MasksConstView &masks, const VariableView &out);
-[[nodiscard]] Variable nansum(const VariableConstView &var,
-                              const MasksConstView &masks);
-[[nodiscard]] Variable nansum(const VariableConstView &var, const Dim dim,
-                              const MasksConstView &masks);
+[[nodiscard]] Variable mean(const Variable &var, const Dim dim,
+                            const Masks &masks);
+[[nodiscard]] Variable nanmean(const Variable &var, const Dim dim,
+                               const Masks &masks);
+[[nodiscard]] Variable sum(const Variable &var, const Masks &masks);
+[[nodiscard]] Variable sum(const Variable &var, const Dim dim,
+                           const Masks &masks);
+Variable &sum(const Variable &var, const Dim dim, const Masks &masks,
+              Variable &out);
+[[nodiscard]] Variable nansum(const Variable &var, const Masks &masks);
+[[nodiscard]] Variable nansum(const Variable &var, const Dim dim,
+                              const Masks &masks);
 
 /// Helper class for applying irreducible masks along dim.
 ///
@@ -201,7 +207,8 @@ VariableView sum(const VariableConstView &var, const Dim dim,
 /// needed. It will be deleted once the masked goes out of scope.
 class Masker {
 public:
-  Masker(const DataArrayConstView &array, const Dim dim) {
+  // TODO this is not required any more with new sharing model
+  Masker(const DataArray &array, const Dim dim) {
     const auto mask = irreducible_mask(array.masks(), dim);
     if (mask)
       m_masked = array.data() * ~mask;
@@ -211,7 +218,7 @@ public:
 
 private:
   Variable m_masked;
-  VariableConstView m_data;
+  Variable m_data;
 };
 
 } // namespace scipp::dataset

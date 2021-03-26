@@ -163,12 +163,6 @@ public:
   void setData(const std::string &name, const DataArray &data);
   void setData(const std::string &name, DataArray data);
 
-  [[maybe_unused]] Variable extractCoord(const Dim dim);
-  [[maybe_unused]] Variable extractCoord(const std::string &name,
-                                         const Dim dim);
-  [[maybe_unused]] Variable extractMask(const std::string &name,
-                                        const std::string &maskName);
-
   Dataset slice(const Slice s) const;
 
   void rename(const Dim from, const Dim to);
@@ -202,9 +196,6 @@ private:
   void setExtent(const Dim dim, const scipp::index extent, const bool isCoord);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
   void rebuildDims();
-
-  template <class Key, class Val>
-  Val extract_from_map(std::unordered_map<Key, Val> &map, const Key &key);
 
   std::unordered_map<Dim, scipp::index> m_dims;
   Coords m_coords; // aligned coords
