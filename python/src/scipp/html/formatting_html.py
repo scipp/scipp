@@ -12,7 +12,6 @@ from .._scipp import core as sc
 from .._utils import is_data_array, is_dataset
 from .resources import load_icons, load_style
 
-
 BIN_EDGE_LABEL = "[bin-edge]"
 VARIANCE_PREFIX = "σ² = "
 SPARSE_PREFIX = "len={}"
