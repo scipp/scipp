@@ -16,7 +16,7 @@
 
 namespace scipp::dataset {
 
-auto union_(const DatasetConstView &a, const DatasetConstView &b) {
+auto union_(const Dataset &a, const Dataset &b) {
   std::map<std::string, DataArray> out;
 
   for (const auto &item : a)
@@ -30,16 +30,16 @@ auto union_(const DatasetConstView &a, const DatasetConstView &b) {
   return out;
 }
 
-Dataset merge(const DatasetConstView &a, const DatasetConstView &b) {
+Dataset merge(const Dataset &a, const Dataset &b) {
   return Dataset(union_(a, b), union_(a.coords(), b.coords()));
 }
 
-/// Return a deep copy of a DataArray or of a DataArrayView.
+/// Return a deep copy of a DataArray.
 DataArray copy(const DataArrayConstView &array, const AttrPolicy attrPolicy) {
   return DataArray(array, attrPolicy);
 }
 
-/// Return a deep copy of a Dataset or of a DatasetView.
+/// Return a deep copy of a Dataset.
 Dataset copy(const DatasetConstView &dataset, const AttrPolicy attrPolicy) {
   if (attrPolicy != AttrPolicy::Keep)
     throw std::runtime_error(
@@ -60,8 +60,11 @@ void copy_item(const DataArrayConstView &from, const DataArrayView &to,
 } // namespace
 
 /// Copy data array to output data array
-DataArrayView copy(const DataArrayConstView &array, const DataArrayView &out,
-                   const AttrPolicy attrPolicy) {
+DataArray &copy(const DataArray &array, DataArray &out,
+                const AttrPolicy attrPolicy) {
+  // TODO self assignment check?
+  // TODO do we need something like
+  // expect::coordsAreSuperset(*this, other);
   for (const auto [dim, coord] : array.coords())
     out.coords()[dim].assign(coord);
   copy_item(array, out, attrPolicy);
@@ -69,8 +72,8 @@ DataArrayView copy(const DataArrayConstView &array, const DataArrayView &out,
 }
 
 /// Copy dataset to output dataset
-DatasetView copy(const DatasetConstView &dataset, const DatasetView &out,
-                 const AttrPolicy attrPolicy) {
+Dataset &copy(const Dataset &dataset, Dataset &out,
+              const AttrPolicy attrPolicy) {
   for (const auto [dim, coord] : dataset.coords())
     out.coords()[dim].assign(coord);
   for (const auto &array : dataset)

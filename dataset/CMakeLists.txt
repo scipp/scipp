@@ -36,7 +36,7 @@ set(SRC_FILES
     #counts.cpp
     data_array.cpp
     #dataset_access.cpp
-    #dataset.cpp
+    dataset.cpp
     #except.cpp
     #groupby.cpp
     #histogram.cpp
