@@ -34,6 +34,8 @@ def test_plot_1d_with_attrs():
 
 def test_plot_1d_log_axes():
     d = make_dense_dataset(ndim=1)
+    for key, val in d.items():
+        d[key] = sc.abs(val) + 1.0 * sc.units.counts
     plot(d, scale={'tof': 'log'})
     plot(d, norm='log')
     plot(d, norm='log', scale={'tof': 'log'})
