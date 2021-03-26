@@ -303,3 +303,11 @@ def test_plot_1d_datetime_with_labels():
                                         time.sizes['time'])),
                       coords={'time2': time})
     da.plot()
+
+
+def test_plot_legend():
+    d = make_dense_dataset(ndim=1)
+    plot(d, legend=False)
+    plot(d, legend={"show": False})
+    plot(d, legend={"loc": 5})
+    plot(d, legend={"show": True, "loc": 4})
