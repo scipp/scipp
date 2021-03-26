@@ -39,17 +39,22 @@ public:
 
   explicit operator bool() const noexcept { return m_data.operator bool(); }
 
-  const std::string &name() const { return m_name; }
+  const std::string &name() const;
   void setName(const std::string &name);
 
-  const Coords &coords() const;
-  Coords &coords();
+  const Coords &coords() const { return m_coords; }
+  // TODO either ensure Dict does not allow changing sizes, or return by value
+  // here
+  Coords &coords() { return m_coords; }
 
-  const Masks &masks() const;
-  Masks &masks();
+  const Masks &masks() const { return *m_masks; }
+  Masks &masks() { return *m_masks; }
 
-  const Attrs &attrs() const;
-  Attrs &attrs();
+  const Attrs &attrs() const { return *m_attrs; }
+  Attrs &attrs() { return *m_attrs; }
+
+  const Coords &meta() const;
+  Coords &meta();
 
   Dimensions dims() const { return m_data.dims(); }
   DType dtype() const { return m_data.dtype(); }
@@ -89,6 +94,8 @@ public:
   void setData(Variable data);
 
   DataArray slice(const Slice &s) const;
+
+  DataArray view_with_coords(const Coords &coords) const;
 
 private:
   std::string m_name;

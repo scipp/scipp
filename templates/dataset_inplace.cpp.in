@@ -9,21 +9,21 @@
 
 namespace scipp::dataset {
 
-DataArray &@NAME@(DataArray &lhs, const VariableConstView &rhs) {
+DataArray &@NAME@(DataArray &lhs, const Variable &rhs) {
   @NAME@(lhs.data(), rhs);
   return lhs;
 }
-DataArray &@NAME@(DataArray &lhs, const DataArrayConstView &rhs) {
+DataArray &@NAME@(DataArray &lhs, const DataArray &rhs) {
   expect::coordsAreSuperset(lhs, rhs);
   union_or_in_place(lhs.masks(), rhs.masks());
   @NAME@(lhs.data(), rhs.data());
   return lhs;
 }
-DataArrayView @NAME@(const DataArrayView &lhs, const VariableConstView &rhs) {
+DataArray @NAME@(DataArray &&lhs, const Variable &rhs) {
   @NAME@(lhs.data(), rhs);
-  return lhs;
+  return std::move(lhs);
 }
-DataArrayView @NAME@(const DataArrayView &lhs, const DataArrayConstView &rhs) {
+DataArray @NAME@(DataArray &&lhs, const DataArray &rhs) {
   expect::coordsAreSuperset(lhs, rhs);
   union_or_in_place(lhs.masks(), rhs.masks());
   return @NAME@(lhs, rhs.data());

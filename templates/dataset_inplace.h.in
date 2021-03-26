@@ -9,9 +9,9 @@
 
 namespace scipp::dataset {
 
-SCIPP_DATASET_EXPORT DataArray &@NAME@(DataArray &lhs, const VariableConstView &rhs);
-SCIPP_DATASET_EXPORT DataArray &@NAME@(DataArray &lhs, const DataArrayConstView &rhs);
-SCIPP_DATASET_EXPORT DataArrayView @NAME@(const DataArrayView &lhs, const VariableConstView &rhs);
-SCIPP_DATASET_EXPORT DataArrayView @NAME@(const DataArrayView &lhs, const DataArrayConstView &rhs);
+SCIPP_DATASET_EXPORT DataArray &@NAME@(DataArray &lhs, const Variable &rhs);
+SCIPP_DATASET_EXPORT DataArray &@NAME@(DataArray &lhs, const DataArray &rhs);
+SCIPP_DATASET_EXPORT DataArray @NAME@(DataArray &&lhs, const Variable &rhs);
+SCIPP_DATASET_EXPORT DataArray @NAME@(DataArray &&lhs, const DataArray &rhs);
 
 } // namespace scipp::dataset

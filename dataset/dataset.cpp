@@ -42,31 +42,26 @@ auto makeViewItems(const Dims &dims, T1 &coords) {
   return items;
 }
 
-Dataset::Dataset(const DataArrayConstView &data) { setData(data.name(), data); }
+Dataset::Dataset(const DataArray &data) { setData(data.name(), data); }
 
 /// Removes all data items from the Dataset.
 ///
-/// Coordinates are not modified. This operation invalidates any view objects
-/// creeated from this dataset.
+/// Coordinates are not modified.
 void Dataset::clear() {
   m_data.clear();
   rebuildDims();
 }
 
 /// Return a const view to all coordinates of the dataset.
-CoordsConstView Dataset::coords() const noexcept {
-  return CoordsConstView(makeViewItems(dimensions(), m_coords));
-}
+const Coords &Dataset::coords() const noexcept { return m_coords; }
 
 /// Return a view to all coordinates of the dataset.
-CoordsView Dataset::coords() noexcept {
-  return CoordsView(CoordAccess(this), makeViewItems(dimensions(), m_coords));
-}
+Coords &Dataset::coords() noexcept { return m_coords; }
 
 /// Alias for coords().
-CoordsConstView Dataset::meta() const noexcept { return coords(); }
+const Coords &Dataset::meta() const noexcept { return coords(); }
 /// Alias for coords().
-CoordsView Dataset::meta() noexcept { return coords(); }
+Coords &Dataset::meta() noexcept { return coords(); }
 
 bool Dataset::contains(const std::string &name) const noexcept {
   return m_data.count(name) == 1;
@@ -74,8 +69,7 @@ bool Dataset::contains(const std::string &name) const noexcept {
 
 /// Removes a data item from the Dataset
 ///
-/// Coordinates are not modified. This operation invalidates any view objects
-/// created from this dataset.
+/// Coordinates are not modified.
 void Dataset::erase(const std::string &name) {
   if (m_data.erase(std::string(name)) == 0) {
     throw except::NotFoundError("Expected " + to_string(*this) +
@@ -86,32 +80,17 @@ void Dataset::erase(const std::string &name) {
 
 /// Extract a data item from the Dataset, returning a DataArray
 ///
-/// Aligned coordinates are not modified.
-/// This operation invalidates any view objects created from this dataset.
+/// Coordinates are not modified.
 DataArray Dataset::extract(const std::string &name) {
-  const auto &view = operator[](name);
-  const auto &item = m_data.find(name);
-
-  auto coords = copy_map(view.coords());
-  auto masks = std::move(item->second.masks);
-  auto attrs = std::move(item->second.coords);
-
-  auto extracted = DataArray(std::move(item->second.data), std::move(coords),
-                             std::move(masks), std::move(attrs), name);
+  auto extracted = operator[](name);
   erase(name);
   return extracted;
 }
 
-/// Return a const view to data and coordinates with given name.
-DataArrayConstView Dataset::operator[](const std::string &name) const {
+/// Return a data item with coordinates with given name.
+DataArray Dataset::operator[](const std::string &name) const {
   scipp::expect::contains(*this, name);
-  return DataArrayConstView(*this, *m_data.find(name));
-}
-
-/// Return a view to data and coordinates with given name.
-DataArrayView Dataset::operator[](const std::string &name) {
-  scipp::expect::contains(*this, name);
-  return DataArrayView(*this, *m_data.find(name));
+  return *find(name);
 }
 
 namespace extents {
@@ -179,7 +158,7 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
       throw except::DataArrayError("Attempt to insert dataset coord with "
                                    "name " +
                                    to_string(dim) + "  shadowing attribute.");
-  m_coords.insert_or_assign(dim, std::move(coord));
+  m_coords.set(dim, std::move(coord));
 }
 
 /// Set (insert or replace) an attribute for item with given name.
@@ -189,7 +168,7 @@ void Dataset::setCoord(const std::string &name, const Dim dim, Variable coord) {
     throw except::DataArrayError("Attempt to insert attribute with name " +
                                  to_string(dim) + " shadowing coord.");
   setDims(coord.dims(), dim_of_coord(coord, dim));
-  m_data[name].coords.insert_or_assign(dim, std::move(coord));
+  m_data[name].attrs().set(dim, std::move(coord));
 }
 
 /// Set (insert or replace) an mask for item with given name.
@@ -197,7 +176,7 @@ void Dataset::setMask(const std::string &name, const std::string &maskName,
                       Variable mask) {
   scipp::expect::contains(*this, name);
   setDims(mask.dims());
-  m_data[name].masks.insert_or_assign(maskName, std::move(mask));
+  m_data[name].masks().set(maskName, std::move(mask));
 }
 
 void Dataset::setData_impl(const std::string &name, detail::DatasetData &&data,
@@ -252,7 +231,7 @@ void Dataset::setData(const std::string &name, DataArray data) {
 /// dataset. Throws if there are existing but mismatching coords, masks, or
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dtype, unit, or dimensions).
-void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
+void Dataset::setData(const std::string &name, const DataArray &data) {
   if (contains(name) && &m_data[name] == &data.underlying() &&
       data.slices().empty())
     return; // Self-assignment, return early.
@@ -296,27 +275,15 @@ Variable Dataset::extractMask(const std::string &name,
   return extract_from_map(m_data[name].masks, maskName);
 }
 
-/// Return const slice of the dataset along given dimension with given extents.
-///
-/// This does not make a copy of the data. Instead of view object is returned.
-DatasetConstView Dataset::slice(const Slice s) const & {
-  return DatasetConstView(*this).slice(s);
-}
-
 /// Return slice of the dataset along given dimension with given extents.
-///
-/// This does not make a copy of the data. Instead of view object is returned.
-DatasetView Dataset::slice(const Slice s) & {
-  return DatasetView(*this).slice(s);
-}
-
-/// Return const slice of the dataset along given dimension with given extents.
-///
-/// This overload for rvalue reference *this avoids returning a view
-/// referencing data that is about to go out of scope and returns a new dataset
-/// instead.
-Dataset Dataset::slice(const Slice s) const && {
-  return Dataset{DatasetConstView(*this).slice(s)};
+DatasetC Dataset::slice(const Slice s) const {
+  Dataset out;
+  // TODO m_dims
+  // TODO coord attr conversion not possible for dataset, but how can we handle
+  // it for items? Can it be done based on dims?
+  out.m_coords = m_coords.slice(s);
+  out.m_data = slice_map(m_data, s);
+  return out;
 }
 
 /// Rename dimension `from` to `to`.
@@ -343,51 +310,6 @@ void Dataset::rename(const Dim from, const Dim to) {
     for (auto &mask : value.masks)
       mask.second.rename(from, to);
   }
-}
-
-DataArrayConstView::DataArrayConstView(
-    const Dataset &dataset, const detail::dataset_item_map::value_type &data,
-    const detail::slice_list &slices, VariableView &&view)
-    : m_dataset(&dataset), m_data(&data), m_slices(slices) {
-  if (view)
-    m_view = std::move(view);
-  else if (m_data->second.data)
-    m_view =
-        VariableView(detail::makeSlice(m_data->second.data, this->slices()));
-}
-
-/// Return the name of the view.
-///
-/// The name of the view is equal to the name of the item in a Dataset, or the
-/// name of a DataArray. Note that comparison operations ignore the name.
-const std::string &DataArrayConstView::name() const noexcept {
-  return m_data->first;
-}
-
-/// Set the name of a data array.
-void DataArray::setName(const std::string &name) {
-  auto &map = m_holder.m_data;
-  auto node = map.extract(map.begin());
-  node.key() = name;
-  map.insert(std::move(node));
-}
-
-Dimensions DataArrayConstView::parentDims() const noexcept {
-  return underlying().data.dims();
-}
-
-/// Return an ordered mapping of dimension labels to extents.
-Dimensions DataArrayConstView::dims() const noexcept { return data().dims(); }
-
-/// Return the dtype of the data.
-DType DataArrayConstView::dtype() const { return data().dtype(); }
-
-/// Return the unit of the data values.
-units::Unit DataArrayConstView::unit() const { return data().unit(); }
-
-/// Set the unit of the data values.
-void DataArrayView::setUnit(const units::Unit unit) const {
-  data().setUnit(unit);
 }
 
 namespace {
@@ -487,144 +409,6 @@ make_coords(const T &view, const CoordCategory category,
     return CoordsConstView(std::move(items), view.slices());
 }
 
-/// Return a const view to all coordinates of the data view.
-CoordsConstView DataArrayConstView::meta() const noexcept {
-  return make_coords(*this, CoordCategory::All, m_isItem);
-}
-
-/// Return a view to all coordinates of the data view.
-CoordsView DataArrayView::meta() const noexcept {
-  return make_coords(*this, CoordCategory::All, m_isItem);
-}
-
-/// Return a const view to all coordinates of the data array.
-CoordsConstView DataArray::meta() const { return get().meta(); }
-
-/// Return a view to all coordinates of the data array.
-CoordsView DataArray::meta() {
-  return make_coords(get(), CoordCategory::All, false);
-}
-
-/// Return a const view to all aligned coordinates of the data view.
-CoordsConstView DataArrayConstView::coords() const noexcept {
-  return make_coords(*this, CoordCategory::Aligned, m_isItem);
-}
-
-/// Return a view to all aligned coordinates of the data view.
-CoordsView DataArrayView::coords() const noexcept {
-  return make_coords(*this, CoordCategory::Aligned, m_isItem);
-}
-
-/// Return a const view to all aligned coordinates of the data array.
-CoordsConstView DataArray::coords() const {
-  return make_coords(get(), CoordCategory::Aligned, false);
-}
-
-/// Return a view to all aligned coordinates of the data array.
-CoordsView DataArray::coords() {
-  return make_coords(get(), CoordCategory::Aligned, false);
-}
-
-/// Return a const view to all unaligned coordinates of the data view.
-CoordsConstView DataArrayConstView::attrs() const noexcept {
-  return make_coords(*this, CoordCategory::Unaligned);
-}
-
-/// Return a view to all unaligned coordinates of the data view.
-CoordsView DataArrayView::attrs() const noexcept {
-  return make_coords(*this, CoordCategory::Unaligned);
-}
-
-/// Return a const view to all unaligned coordinates of the data array.
-CoordsConstView DataArray::attrs() const { return get().attrs(); }
-
-/// Return a view to all unaligned coordinates of the data array.
-CoordsView DataArray::attrs() { return get().attrs(); }
-
-/// Return a const view to all masks of the data view.
-MasksConstView DataArrayConstView::masks() const noexcept {
-  auto items = makeViewItems(get_data().masks);
-  return MasksConstView(std::move(items), slices());
-}
-
-/// Return a view to all masks of the data view.
-MasksView DataArrayView::masks() const noexcept {
-  auto items = makeViewItems(get_data().masks);
-  return MasksView(
-      MaskAccess{slices().empty() ? m_mutableDataset : nullptr, &name()},
-      std::move(items), slices());
-}
-
-/// Return a const view to all masks of the data array.
-MasksConstView DataArray::masks() const { return get().masks(); }
-
-/// Return a view to all masks of the data array.
-MasksView DataArray::masks() { return get().masks(); }
-
-DataArrayConstView DataArrayConstView::slice(const Slice s) const {
-  const auto &dims_ = dims();
-  core::expect::validSlice(dims_, s);
-  auto tmp(m_slices);
-  tmp.emplace_back(s, dims_[s.dim()]);
-  return {*m_dataset, *m_data, std::move(tmp)};
-}
-
-DataArrayView::DataArrayView(Dataset &dataset,
-                             detail::dataset_item_map::value_type &data,
-                             const detail::slice_list &slices,
-                             VariableView &&view)
-    : DataArrayConstView(dataset, data, slices,
-                         data.second.data ? VariableView(detail::makeSlice(
-                                                data.second.data, slices))
-                                          : std::move(view)),
-      m_mutableDataset(&dataset), m_mutableData(&data) {}
-
-DataArrayView DataArrayView::slice(const Slice s) const {
-  core::expect::validSlice(dims(), s);
-  auto tmp(slices());
-  tmp.emplace_back(s, dims()[s.dim()]);
-  return {*m_mutableDataset, *m_mutableData, std::move(tmp)};
-}
-
-DataArrayView DataArrayView::assign(const DataArrayConstView &other) const {
-  if (&underlying() == &other.underlying() && slices() == other.slices())
-    return *this; // Self-assignment, return early.
-  expect::coordsAreSuperset(*this, other);
-  data().assign(other.data());
-  return *this;
-}
-
-DataArrayView DataArrayView::assign(const Variable &other) const {
-  data().assign(other);
-  return *this;
-}
-
-DataArrayView DataArrayView::assign(const VariableConstView &other) const {
-  data().assign(other);
-  return *this;
-}
-
-DatasetView DatasetView::assign(const DatasetConstView &other) const {
-  for (const auto &data : other)
-    operator[](data.name()).assign(data);
-  return *this;
-}
-
-DatasetConstView::DatasetConstView(const Dataset &dataset)
-    : m_dataset(&dataset) {
-  m_items.reserve(dataset.size());
-  for (const auto &item : dataset.m_data)
-    m_items.emplace_back(DataArrayView(detail::make_item{this}(item)));
-}
-
-DatasetView::DatasetView(Dataset &dataset)
-    : DatasetConstView(DatasetConstView::makeViewWithEmptyIndexes(dataset)),
-      m_mutableDataset(&dataset) {
-  m_items.reserve(size());
-  for (auto &item : dataset.m_data)
-    m_items.emplace_back(detail::make_item{this}(item));
-}
-
 /// Return a const view to all coordinates of the dataset slice.
 CoordsConstView DatasetConstView::coords() const noexcept {
   auto items = makeViewItems(m_dataset->dimensions(), m_dataset->m_coords);
@@ -641,15 +425,6 @@ CoordsView DatasetView::coords() const noexcept {
                     std::move(items), slices());
 }
 
-/// Alias for coords().
-CoordsConstView DatasetConstView::meta() const noexcept { return coords(); }
-/// Alias for coords().
-CoordsView DatasetView::meta() const noexcept { return coords(); }
-
-bool DatasetConstView::contains(const std::string &name) const noexcept {
-  return find(name) != end();
-}
-
 namespace {
 template <class T> const auto &getitem(const T &view, const std::string &name) {
   if (auto it = view.find(name); it != view.end())
@@ -658,17 +433,6 @@ template <class T> const auto &getitem(const T &view, const std::string &name) {
                               name + ".");
 }
 } // namespace
-
-/// Return a const view to data and coordinates with given name.
-const DataArrayConstView &
-DatasetConstView::operator[](const std::string &name) const {
-  return getitem(*this, name);
-}
-
-/// Return a view to data and coordinates with given name.
-const DataArrayView &DatasetView::operator[](const std::string &name) const {
-  return getitem(*this, name);
-}
 
 // This is a member so it gets access to a private constructor of DataArrayView.
 template <class T>
@@ -737,56 +501,9 @@ bool Dataset::operator==(const Dataset &other) const {
   return dataset_equals(*this, other);
 }
 
-/// Return true if the datasets have identical content.
-bool Dataset::operator==(const DatasetConstView &other) const {
-  return dataset_equals(*this, other);
-}
-
-/// Return true if the datasets have identical content.
-bool DatasetConstView::operator==(const Dataset &other) const {
-  return dataset_equals(*this, other);
-}
-
-/// Return true if the datasets have identical content.
-bool DatasetConstView::operator==(const DatasetConstView &other) const {
-  return dataset_equals(*this, other);
-}
-
 /// Return true if the datasets have mismatching content./
 bool Dataset::operator!=(const Dataset &other) const {
-  return !dataset_equals(*this, other);
-}
-
-/// Return true if the datasets have mismatching content.
-bool Dataset::operator!=(const DatasetConstView &other) const {
-  return !dataset_equals(*this, other);
-}
-
-/// Return true if the datasets have mismatching content.
-bool DatasetConstView::operator!=(const Dataset &other) const {
-  return !dataset_equals(*this, other);
-}
-
-/// Return true if the datasets have mismatching content.
-bool DatasetConstView::operator!=(const DatasetConstView &other) const {
-  return !dataset_equals(*this, other);
-}
-
-std::unordered_map<Dim, scipp::index> DatasetConstView::dimensions() const {
-  auto base_dims = m_dataset->dimensions();
-  // Note current slices are ordered, but NOT unique
-  for (const auto &[slice, extents] : m_slices) {
-    static_cast<void>(extents);
-    auto it = base_dims.find(slice.dim());
-    if (!slice.isRange()) { // For non-range. Erase dimension
-      base_dims.erase(it);
-    } else {
-      it->second = slice.end() -
-                   slice.begin(); // Take extent from slice. This is the effect
-                                  // that the successful slice range will have
-    }
-  }
-  return base_dims;
+  return !operator==(*this, other);
 }
 
 std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
@@ -796,12 +513,9 @@ std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
   return all;
 }
 
-std::map<typename MasksConstView::key_type,
-         typename MasksConstView::mapped_type>
-union_or(const MasksConstView &currentMasks, const MasksConstView &otherMasks) {
-  std::map<typename MasksConstView::key_type,
-           typename MasksConstView::mapped_type>
-      out;
+std::map<typename Masks::key_type, typename Masks::mapped_type>
+union_or(const Masks &currentMasks, const Masks &otherMasks) {
+  std::map<typename Masks::key_type, typename Masks::mapped_type> out;
 
   for (const auto &[key, item] : currentMasks) {
     out.emplace(key, item);
@@ -818,8 +532,7 @@ union_or(const MasksConstView &currentMasks, const MasksConstView &otherMasks) {
   return out;
 }
 
-void union_or_in_place(const MasksView &currentMasks,
-                       const MasksConstView &otherMasks) {
+void union_or_in_place(Masks &currentMasks, const Masks &otherMasks) {
   for (const auto &[key, item] : otherMasks) {
     const auto it = currentMasks.find(key);
     if (it != currentMasks.end()) {
@@ -830,7 +543,7 @@ void union_or_in_place(const MasksView &currentMasks,
   }
 }
 
-void copy_metadata(const DataArrayConstView &a, const DataArrayView &b) {
+void copy_metadata(const DataArray &a, DataArray &b) {
   copy_items(a.coords(), b.coords());
   copy_items(a.masks(), b.masks());
   copy_items(a.attrs(), b.attrs());
