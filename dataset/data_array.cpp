@@ -85,13 +85,12 @@ void DataArray::setName(const std::string &name) { m_name = name; }
 DataArray DataArray::slice(const Slice &s) const {
   DataArray out{m_data.slice(s), m_coords.slice(s), m_masks->slice(s),
                 m_attrs->slice(s), m_name};
-  for (auto it = out.m_coords.cbegin(); it != out.m_coords.cend();) {
+  for (auto it = out.m_coords.begin(); it != out.m_coords.end();) {
     if (unaligned_by_dim_slice(*it, s.dim())) {
       out.attrs().set(it->first, it->second);
-      it = out.m_coords.erase(it);
-    } else {
-      ++it;
+      out.m_coords.erase(it->first);
     }
+    ++it;
   }
   return out;
 }
@@ -108,6 +107,26 @@ DataArray DataArray::view_with_coords(const Coords &coords) const {
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
   return out;
+}
+
+void DataArray::rename(const Dim from, const Dim to) {
+  if ((from != to) && dims().contains(to))
+    throw except::DimensionError("Duplicate dimension.");
+
+  m_data.rename(from, to);
+  const auto relabel = [from, to](auto &map) {
+    auto node = map.extract(from);
+    node.key() = to;
+    map.insert(std::move(node));
+  };
+  if (m_coords.count(from))
+    relabel(m_coords.items());
+  for (auto &item : m_coords)
+    item.second.rename(from, to);
+  for (auto &item : *m_masks)
+    item.second.rename(from, to);
+  for (auto &item : *m_attrs)
+    item.second.rename(from, to);
 }
 
 DataArray astype(const DataArray &var, const DType type) {

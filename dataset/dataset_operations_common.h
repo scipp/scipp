@@ -12,7 +12,7 @@
 
 namespace scipp::dataset {
 
-auto unaligned_by_dim_slice = [](const auto &item, const Dim dim) {
+constexpr auto unaligned_by_dim_slice = [](const auto &item, const Dim dim) {
   const auto &[key, var] = item;
   if constexpr (std::is_same_v<std::decay_t<decltype(item.first)>, Dim>) {
     const bool is_dimension_coord = var.dims().contains(key);
@@ -164,7 +164,7 @@ Dataset apply_to_items(const Dataset &d, Func func, Args &&... args) {
 }
 
 /// Copy all map items from `a` and insert them into `b`.
-template <class A, class B> auto copy_items(const A &a, const B &b) {
+template <class A, class B> auto copy_items(const A &a, B &b) {
   for (const auto [key, item] : a)
     b.set(key, item);
 }

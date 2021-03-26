@@ -74,13 +74,12 @@ void validSlice(const Dimensions &dims, const Slice &slice) {
     throw except::SliceError("Expected " + to_string(slice) + " to be in " +
                              to_string(dims) + ".");
 }
-void validSlice(const std::unordered_map<Dim, scipp::index> &dims,
-                const Slice &slice) {
+
+void validSlice(const Sizes &dims, const Slice &slice) {
   const auto end = slice.end() < 0 ? slice.begin() + 1 : slice.end();
-  if (dims.find(slice.dim()) == dims.end() || end > dims.at(slice.dim()))
-    throw except::SliceError(
-        "Expected " + to_string(slice) +
-        " to be in dimensions."); // TODO to_string for map needed
+  if (!dims.contains(slice.dim()) || end > dims[slice.dim()])
+    throw except::SliceError("Expected " + to_string(slice) + " to be in " +
+                             to_string(dims) + ".");
 }
 
 void notCountDensity(const units::Unit &unit) {
