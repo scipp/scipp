@@ -126,16 +126,22 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
   // ds.coords().set() must be possible (in Python?)
   // ... how can we allow for growing sizes?
   setDims(coord.dims(), dim_of_coord(coord, dim));
-  for (const auto &item : m_data)
-    if (item.second.coords.count(dim))
-      throw except::DataArrayError("Attempt to insert dataset coord with "
-                                   "name " +
-                                   to_string(dim) + "  shadowing attribute.");
+  // TODO remove?
+  // for (const auto &item : m_data)
+  //  if (item.second.coords.count(dim))
+  //    throw except::DataArrayError("Attempt to insert dataset coord with "
+  //                                 "name " +
+  //                                 to_string(dim) + "  shadowing attribute.");
   m_coords.set(dim, std::move(coord));
 }
 
-void Dataset::setData_impl(const std::string &name, const Variable &data,
-                           const AttrPolicy attrPolicy) {
+/// Set (insert or replace) data (values, optional variances) with given name.
+///
+/// Throws if the provided values bring the dataset into an inconsistent state
+/// (mismatching dtype, unit, or dimensions). The default is to drop existing
+/// attributes, unless AttrPolicy::Keep is specified.
+void Dataset::setData(const std::string &name, Variable data,
+                      const AttrPolicy attrPolicy) {
   setDims(data.dims());
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
@@ -147,16 +153,6 @@ void Dataset::setData_impl(const std::string &name, const Variable &data,
     rebuildDims();
 }
 
-/// Set (insert or replace) data (values, optional variances) with given name.
-///
-/// Throws if the provided values bring the dataset into an inconsistent state
-/// (mismatching dtype, unit, or dimensions). The default is to drop existing
-/// attributes, unless AttrPolicy::Keep is specified.
-void Dataset::setData(const std::string &name, Variable data,
-                      const AttrPolicy attrPolicy) {
-  setData_impl(name, detail::DatasetData{std::move(data), {}, {}}, attrPolicy);
-}
-
 /// Set (insert or replace) data from a DataArray with a given name, avoiding
 /// copies where possible by using std::move. TODO move does not make sense
 ///
@@ -164,15 +160,15 @@ void Dataset::setData(const std::string &name, Variable data,
 /// dataset. Throws if there are existing but mismatching coords, masks, or
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dtype, unit, or dimensions).
-void Dataset::setData(const std::string &name, DataArray data) {
+void Dataset::setData(const std::string &name, const DataArray &data) {
   // TODO
   // if (contains(name) && &m_data[name] == &data.underlying() &&
   //    data.slices().empty())
   //  return; // Self-assignment, return early.
-  Sizes new_sizes(data.dims());
+  // Sizes new_sizes(data.dims());
   // TODO
   // no... what if item replace shrinks sizes
-  new_sizes = merge(m_sizes, sizes);
+  // new_sizes = merge(m_sizes, sizes);
 
   for (auto &&[dim, coord] : data.coords()) {
     if (const auto it = m_coords.find(dim); it != m_coords.end())
@@ -184,11 +180,11 @@ void Dataset::setData(const std::string &name, DataArray data) {
   setData(name, std::move(data.data()));
   auto &item = m_data[name];
 
-  for (auto &&[dim, coord] : item->second.coords)
+  for (auto &&[dim, attr] : item.attrs())
     // TODO dropping not really necessary in new mechanism, fail later
     // Drop unaligned coords if there is aligned coord with same name.
     if (!coords().contains(dim))
-      item.coords().set(dim, std::move(coord));
+      item.attrs().set(dim, std::move(attr));
   for (auto &&[nm, mask] : data.masks())
     item.masks().set(nm, std::move(mask));
 }
@@ -200,14 +196,13 @@ Dataset Dataset::slice(const Slice s) const {
   out.m_coords = m_coords.slice(s);
   // TODO drop items that do not depend on s.dim()?
   out.m_data = slice_map(m_coords.sizes(), m_data, s);
-  for (auto it = out.m_coords.cbegin(); it != out.m_coords.cend();) {
+  for (auto it = out.m_coords.begin(); it != out.m_coords.end();) {
     if (unaligned_by_dim_slice(*it, s.dim())) {
       for (auto &item : out.m_data)
-        item.attrs().set(it->first, it->second);
-      it = out.m_coords.erase(it);
-    } else {
-      ++it;
+        item.second.attrs().set(it->first, it->second);
+      out.m_coords.erase(it->first);
     }
+    ++it;
   }
   return out;
 }
@@ -225,17 +220,11 @@ void Dataset::rename(const Dim from, const Dim to) {
   if (m_dims.count(from) != 0)
     relabel(m_dims);
   if (m_coords.count(from))
-    relabel(m_coords);
+    relabel(m_coords.items());
   for (auto &item : m_coords)
     item.second.rename(from, to);
-  for (auto &item : m_data) {
-    auto &value = item.second;
-    value.data.rename(from, to);
-    for (auto &coord : value.coords)
-      coord.second.rename(from, to);
-    for (auto &mask : value.masks)
-      mask.second.rename(from, to);
-  }
+  for (auto &item : m_data)
+    item.second.rename(from, to);
 }
 
 namespace {
@@ -311,7 +300,7 @@ bool Dataset::operator==(const Dataset &other) const {
 
 /// Return true if the datasets have mismatching content./
 bool Dataset::operator!=(const Dataset &other) const {
-  return !operator==(*this, other);
+  return !operator==(other);
 }
 
 std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {

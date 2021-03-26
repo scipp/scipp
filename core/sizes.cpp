@@ -25,7 +25,7 @@ scipp::index Sizes::operator[](const Dim dim) const {
 }
 
 void Sizes::set(const Dim dim, const scipp::index size) {
-  if (contains(dim) && operator[](dim) != sizes)
+  if (contains(dim) && operator[](dim) != size)
     throw except::DimensionError("Inconsistent size");
   m_sizes[dim] = size;
 }
