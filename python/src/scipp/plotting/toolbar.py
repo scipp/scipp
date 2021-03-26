@@ -60,26 +60,29 @@ class PlotToolbar:
         we swap the axes.
         """
         args = self._parse_button_args(**kwargs)
-        self.members[name] = ipw.ToggleButton(**args)
+        self.members[name] = ipw.Button(**args)
         setattr(self.members[name], "value", False)
+        # Add a local observer to change the color of the button according to
+        # its value.
+        self.members[name].on_click(self.toggle_button_color)
+
+    def toggle_button_color(self, owner, value=None):
+        """
+        Change the color of the button to make it look like a ToggleButton.
+        """
+        if value is None:
+            owner.value = not owner.value
+        else:
+            owner.value = value
+        owner.style.button_color = "#bdbdbd" if owner.value else "#eeeeee"
 
     def connect(self, callbacks):
         """
         Connect callbacks to button clicks.
         """
-        def toggle_button_wrapper(callback):
-            def callback_forward(state):
-                callback(state['new'])
-
-            return callback_forward
-
         for key in callbacks:
             if key in self.members:
-                if isinstance(self.members[key], ipw.ToggleButton):
-                    self.members[key].observe(
-                        toggle_button_wrapper(callbacks[key]), 'value')
-                else:
-                    self.members[key].on_click(callbacks[key])
+                self.members[key].on_click(callbacks[key])
 
     def _update_container(self):
         """
