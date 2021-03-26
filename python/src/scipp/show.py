@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-import colorsys
 from html import escape
-
 import numpy as np
 from ._scipp import core as sc
 from . import config
@@ -25,19 +23,13 @@ _smaller_font = round(0.6 * _svg_em, 2)
 
 
 def _color_variants(hex_color):
-    # Convert hex to rgb
-    [r, g, b] = hex_to_rgb(hex_color)
-    # Convert to HSV
-    h, s, v = colorsys.rgb_to_hsv(r, g, b)
-    # Colorize
-    s = min(1.0, max(0.0, s + 0.3))
-    r, g, b = colorsys.hsv_to_rgb(h, s, v)
-    top = rgb_to_hex([r, g, b])
-    # Darken
-    v = min(255, max(0, v - 50))
-    r, g, b = colorsys.hsv_to_rgb(h, s, v)
-    side = rgb_to_hex([r, g, b])
-    return [hex_color, top, side]
+    """
+    Produce darker and lighter color variants, given an input color.
+    """
+    rgb = hex_to_rgb(hex_color)
+    dark = rgb_to_hex(np.clip(rgb - 40, 0, 255))
+    light = rgb_to_hex(np.clip(rgb + 30, 0, 255))
+    return light, hex_color, dark
 
 
 def _truncate_long_string(long_string: str) -> str:
