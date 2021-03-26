@@ -5,12 +5,12 @@
 #include "scipp/dataset/@NAME@.h"
 
 namespace scipp::variable {
-[[nodiscard]] Variable @NAME@(const VariableConstView &var);
+[[nodiscard]] Variable @NAME@(const Variable &var);
 }
 
 namespace scipp::dataset {
 
-DataArray @NAME@(const DataArrayConstView &a) {
+DataArray @NAME@(const DataArray &a) {
   return DataArray(@NAME@(a.data()), a.coords(), a.masks(), a.attrs());
 }
 

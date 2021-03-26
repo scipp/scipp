@@ -48,13 +48,13 @@ DataArray::DataArray(Variable data, typename Coords::holder_type coords,
       m_masks(std::make_shared<Masks>(dims(), std::move(masks))),
       m_attrs(std::make_shared<Attrs>(dims(), std::move(attrs))) {}
 
+DataArray &DataArray::operator=(const DataArray &other) {
+  return *this = DataArray(other);
+}
+
 void DataArray::setData(Variable data) {
   core::expect::equals(dims(), data.dims());
   m_data = data;
-}
-
-DataArray &DataArray::operator=(const DataArray &other) {
-  return *this = DataArray(other);
 }
 
 /// Return true if the dataset proxies have identical content.
@@ -72,6 +72,37 @@ bool operator==(const DataArray &a, const DataArray &b) {
 
 bool operator!=(const DataArray &a, const DataArray &b) {
   return !operator==(a, b);
+}
+
+/// Return the name of the data array.
+///
+/// If part of a dataset, the name of the array is equal to the key of this item
+/// in the dataset. Note that comparison operations ignore the name.
+const std::string &DataArray::name() const { return m_name; }
+
+void DataArray::setName(const std::string &name) { m_name = name; }
+
+DataArray DataArray::slice(const Slice &s) const {
+  DataArray sliced{m_data.slice(s), m_coords.slice(s), m_masks->slice(s),
+                   m_attrs->slice(s), m_name};
+  // TODO coord to attr conversion
+  return sliced;
+}
+
+DataArray DataArray::view_with_coords(const Coords &coords) const {
+  // TODO also handle name here? should be set from dataset
+  DataArray out;
+  out.m_data = m_data;
+  out.m_coords = Coords(m_data.dims(), {});
+  // TODO coord to attr conversion
+  // TODO bin edge handling
+  // TODO for a slice of a dataset, how can we possibly convert coord to attr?
+  for (const auto &[dim, coord] : coords)
+    if (m_data.dims().contains(coord.dims()))
+      out.m_coords.set(dim, coord);
+  out.m_masks = m_masks; // share masks
+  out.m_attrs = m_attrs; // share attrs
+  return out;
 }
 
 DataArray astype(const DataArray &var, const DType type) {
