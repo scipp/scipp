@@ -28,7 +28,11 @@ public:
     return m_sizes.count(dim) != 0;
   }
 
+  auto begin() const { return m_sizes.begin(); }
+  auto end() const { return m_sizes.end(); }
+
   scipp::index operator[](const Dim dim) const;
+  void set(const Dim dim, const scipp::index size);
   bool contains(const Dimensions &dims);
   Sizes slice(const Slice &params) const;
 
@@ -36,6 +40,8 @@ private:
   // TODO More efficient implementation without memory allocations.
   std::unordered_map<Dim, scipp::index> m_sizes;
 };
+
+[[nodiscard]] SCIPP_CORE_EXPORT Sizes merge(const Sizes &a, const Sizes &b);
 
 std::string to_string(const Sizes &sizes);
 
