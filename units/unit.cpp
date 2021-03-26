@@ -15,8 +15,17 @@
 
 namespace scipp::units {
 
+namespace {
+std::string map_unit_string(const std::string &unit) {
+  // custom dimensionless name
+  return unit == "dimensionless" ? ""
+                                 // use Gregorian years by default
+                                 : unit == "y" || unit == "year" ? "a_g" : unit;
+}
+} // namespace
+
 Unit::Unit(const std::string &unit)
-    : Unit(llnl::units::unit_from_string(unit == "dimensionless" ? "" : unit)) {
+    : Unit(llnl::units::unit_from_string(map_unit_string(unit))) {
   if (!is_valid(m_unit))
     throw except::UnitError("Failed to convert string `" + unit +
                             "` to valid unit.");

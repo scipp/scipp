@@ -16,7 +16,8 @@ namespace scipp::units {
 class SCIPP_UNITS_EXPORT Unit {
 public:
   constexpr Unit() = default;
-  constexpr explicit Unit(const llnl::units::precise_unit &u) noexcept : m_unit(u) {}
+  constexpr explicit Unit(const llnl::units::precise_unit &u) noexcept
+      : m_unit(u) {}
   explicit Unit(const std::string &unit);
 
   [[nodiscard]] constexpr auto underlying() const noexcept { return m_unit; }
@@ -26,7 +27,7 @@ public:
   [[nodiscard]] bool isCounts() const;
   [[nodiscard]] bool isCountDensity() const;
 
-  [[nodiscard]] constexpr bool in_same_dimension(const Unit& other) const {
+  [[nodiscard]] constexpr bool in_same_dimension(const Unit &other) const {
     return m_unit.has_same_base(other.underlying());
   }
 
