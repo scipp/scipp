@@ -5,8 +5,7 @@
 
 import numpy as np
 import scipp as sc
-from plot_helper import make_dense_dataset
-from scipp import plot
+from plot_helper import close, make_dense_dataset, plot
 
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing
@@ -233,9 +232,10 @@ def test_plot_customized_mpl_axes():
 
 def test_plot_access_ax_and_fig():
     d = make_dense_dataset(ndim=1)
-    out = plot(d["Sample"], title="MyTitle")
+    out = sc.plot(d["Sample"], title="MyTitle")
     out.ax.set_xlabel("MyXlabel")
     out.fig.set_dpi(120.)
+    close(out)
 
 
 def test_plot_access_ax_and_fig_two_entries():
@@ -243,9 +243,10 @@ def test_plot_access_ax_and_fig_two_entries():
     d["Background"] = sc.Variable(['tof'],
                                   values=2.0 * np.random.random(50),
                                   unit=sc.units.kg)
-    out = plot(d)
+    out = sc.plot(d)
     out['tof.counts'].ax.set_xlabel("MyXlabel")
     out['tof.counts'].fig.set_dpi(120.)
+    close(out)
 
 
 def test_plot_with_integer_coord():
@@ -278,7 +279,7 @@ def test_plot_1d_datetime():
                                     values=np.random.random(
                                         time.sizes['time'])),
                       coords={'time': time})
-    da.plot()
+    close(da.plot())
 
 
 def test_plot_1d_datetime_binedges():
@@ -291,7 +292,7 @@ def test_plot_1d_datetime_binedges():
         values=np.random.random(time.sizes['time'] - 1),
         unit="K"),
                       coords={'time': time})
-    da.plot()
+    close(da.plot())
 
 
 def test_plot_1d_datetime_with_labels():
@@ -302,7 +303,7 @@ def test_plot_1d_datetime_with_labels():
                                     values=np.random.random(
                                         time.sizes['time'])),
                       coords={'time2': time})
-    da.plot()
+    close(da.plot())
 
 
 def test_plot_legend():

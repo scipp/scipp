@@ -5,11 +5,12 @@
 
 import numpy as np
 import scipp as sc
+from plot_helper import close
 
 
 def test_plot_variable():
     v = sc.Variable(['x'], values=np.arange(10.0), unit=sc.units.m)
-    v.plot()
+    close(v.plot().fig)
 
 
 def test_plot_data_array():
@@ -20,7 +21,7 @@ def test_plot_data_array():
                                       values=np.arange(10.0),
                                       unit=sc.units.m)
                       })
-    da.plot()
+    close(da.plot())
 
 
 def test_plot_dataset():
@@ -29,7 +30,7 @@ def test_plot_dataset():
     ds.coords['x'] = sc.Variable(['x'], values=np.arange(N), unit=sc.units.m)
     ds['a'] = sc.Variable(['x'], values=np.random.random(N), unit=sc.units.K)
     ds['b'] = sc.Variable(['x'], values=np.random.random(N), unit=sc.units.K)
-    ds.plot()
+    close(ds.plot())
 
 
 def test_plot_data_array_with_kwargs():
@@ -45,4 +46,4 @@ def test_plot_data_array_with_kwargs():
                                       values=np.arange(10.0),
                                       unit=sc.units.m)
                       })
-    da.plot(cmap="magma", norm="log")
+    close(da.plot(cmap="magma", norm="log"))

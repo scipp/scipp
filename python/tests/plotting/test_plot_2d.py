@@ -5,8 +5,7 @@
 
 import numpy as np
 import scipp as sc
-from plot_helper import make_dense_dataset, make_binned_data_array
-from scipp import plot
+from plot_helper import close, make_dense_dataset, make_binned_data_array, plot
 
 
 def test_plot_2d_image():
@@ -244,8 +243,9 @@ def test_plot_2d_binned_data():
 def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
     data = make_binned_data_array(ndim=2)
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
-    plot_obj = plot(data)
+    plot_obj = sc.plot(data)
     plot_obj.widgets.slider[0].value = 1
+    close(plot_obj)
 
 
 def test_plot_3d_binned_data_where_inner_dimension_nas_no_event_coord():
@@ -273,9 +273,10 @@ def test_plot_customized_mpl_axes():
 
 def test_plot_access_ax_and_fig():
     d = make_dense_dataset(ndim=2)
-    out = plot(d["Sample"], title="MyTitle")
+    out = sc.plot(d["Sample"], title="MyTitle")
     out.ax.set_xlabel("MyXlabel")
     out.fig.set_dpi(120.)
+    close(out)
 
 
 def test_plot_2d_image_int32():
@@ -309,4 +310,4 @@ def test_plot_2d_datetime():
                               'x': sc.Variable(['x'],
                                                values=np.linspace(0, 10, M))
                           })
-    data2d.plot()
+    close(data2d.plot())

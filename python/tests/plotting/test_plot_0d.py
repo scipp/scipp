@@ -4,8 +4,9 @@
 # @author Owen Arnold
 
 import scipp as sc
-from scipp import plot
 import pytest
+
+from plot_helper import plot
 
 
 def test_plot_0d_variable():
