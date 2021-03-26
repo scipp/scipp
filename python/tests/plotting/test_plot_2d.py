@@ -3,6 +3,9 @@
 # @file
 # @author Neil Vaytet
 
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
 import numpy as np
 import scipp as sc
 from plot_helper import close, make_dense_dataset, make_binned_data_array, plot
@@ -86,7 +89,8 @@ def test_plot_2d_image_with_attrss():
 
 
 def test_plot_2d_image_with_filename():
-    plot(make_dense_dataset(ndim=2), filename='image.pdf')
+    with TemporaryDirectory() as dirname:
+        plot(make_dense_dataset(ndim=2), filename=Path(dirname) / 'image.pdf')
 
 
 def test_plot_2d_image_with_bin_edges():
