@@ -155,9 +155,6 @@ public:
   }
 
   void setCoord(const Dim dim, Variable coord);
-  void setCoord(const std::string &name, const Dim dim, Variable coord);
-  void setMask(const std::string &name, const std::string &maskName,
-               Variable mask);
   void setData(const std::string &name, Variable data,
                const AttrPolicy attrPolicy = AttrPolicy::Drop);
   void setData(const std::string &name, const DataArray &data);
@@ -201,7 +198,8 @@ private:
   std::unordered_map<std::string, DataArray> m_data;
 };
 
-/// Const view for Dataset, implementing slicing and item selection.
+using DataArrayConstView = DataArray;
+using DatasetConstView = Dataset;
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 copy(const DataArray &array, const AttrPolicy attrPolicy = AttrPolicy::Keep);
