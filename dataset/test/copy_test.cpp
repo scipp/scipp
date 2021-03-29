@@ -18,7 +18,7 @@ struct CopyTest : public ::testing::Test {
 protected:
   DatasetFactory3D factory;
   Dataset dataset;
-  DataArrayView array;
+  DataArray array;
   Variable attr = makeVariable<double>(Values{1});
 };
 
@@ -44,15 +44,15 @@ struct CopyOutArgTest : public CopyTest {
     array_copy.data() += one;
     array_copy.coords()[Dim::X] += one;
     array_copy.coords()[Dim::Y] += one;
-    array_copy.masks()["masks_x"].assign(~array_copy.masks()["masks_x"]);
+    copy(~array_copy.masks()["masks_x"], array_copy.masks()["masks_x"]);
     array_copy.attrs()[Dim("attr")] += one;
     EXPECT_NE(array_copy, array);
     dataset_copy["data_xyz"].data() += one;
     dataset_copy["data_xyz"].attrs()[Dim("attr")] += one;
     dataset_copy.coords()[Dim::X] += one;
     dataset_copy.coords()[Dim::Y] += one;
-    dataset_copy["data_xyz"].masks()["masks_x"].assign(
-        ~array_copy.masks()["masks_x"]);
+    copy(~array_copy.masks()["masks_x"],
+         dataset_copy["data_xyz"].masks()["masks_x"]);
     EXPECT_NE(dataset_copy, dataset);
   }
 
@@ -74,17 +74,15 @@ TEST_F(CopyOutArgTest, dataset_out_arg) {
 }
 
 TEST_F(CopyOutArgTest, data_array_out_arg_drop_attrs) {
-  array_copy.attrs()[Dim("attr")].assign(array.attrs()[Dim("attr")]);
-
+  copy(array.attrs()[Dim("attr")], array_copy.attrs()[Dim("attr")]);
   // copy with out arg also copies coords, masks, and attrs
   EXPECT_EQ(copy(array, array_copy, AttrPolicy::Drop), array);
   EXPECT_EQ(array_copy, array);
 }
 
 TEST_F(CopyOutArgTest, dataset_out_arg_drop_attrs) {
-  dataset_copy["data_xyz"].attrs()[Dim("attr")].assign(
-      dataset["data_xyz"].attrs()[Dim("attr")]);
-
+  copy(dataset["data_xyz"].attrs()[Dim("attr")],
+       dataset_copy["data_xyz"].attrs()[Dim("attr")]);
   // copy with out arg also copies coords, masks, and attrs
   EXPECT_EQ(copy(dataset, dataset_copy, AttrPolicy::Drop), dataset);
   EXPECT_EQ(dataset_copy, dataset);
@@ -95,7 +93,7 @@ TEST_F(CopyOutArgTest, data_array_out_arg_drop_attrs_untouched) {
   // untouched. This also applies to dropped attributes.
   EXPECT_NE(copy(array, array_copy, AttrPolicy::Drop), array);
   EXPECT_NE(array_copy, array);
-  array_copy.attrs()[Dim("attr")].assign(array.attrs()[Dim("attr")]);
+  copy(array.attrs()[Dim("attr")], array_copy.attrs()[Dim("attr")]);
   EXPECT_EQ(array_copy, array);
 }
 
@@ -104,7 +102,7 @@ TEST_F(CopyOutArgTest, dataset_out_arg_drop_attrs_untouched) {
   // untouched. This also applies to dropped attributes.
   EXPECT_NE(copy(dataset, dataset_copy, AttrPolicy::Drop), dataset);
   EXPECT_NE(dataset_copy, dataset);
-  dataset_copy["data_xyz"].attrs()[Dim("attr")].assign(
-      dataset["data_xyz"].attrs()[Dim("attr")]);
+  copy(dataset["data_xyz"].attrs()[Dim("attr")],
+       dataset_copy["data_xyz"].attrs()[Dim("attr")]);
   EXPECT_EQ(dataset_copy, dataset);
 }

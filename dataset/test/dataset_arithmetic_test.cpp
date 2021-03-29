@@ -75,7 +75,7 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
     a.setCoord(Dim("t"), labelT);
     a.setData("data_a",
               makeVariable<double>(Dimensions{Dim::X, lx}, Values(rand(lx))));
-    a.setMask("data_a", "mask", mask);
+    a["data_a"].masks().set("mask", mask);
     a.setData("data_b",
               makeVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly))));
   }
@@ -89,7 +89,7 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
     b.setCoord(Dim("t"), labelT);
     b.setData("data_a",
               makeVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly))));
-    b.setMask("data_a", "mask", mask);
+    b["data_a"].masks().set("mask", mask);
   }
 
   return std::make_tuple(a, b);
@@ -383,53 +383,6 @@ TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
   EXPECT_EQ(slice3["data_x"].masks()["masks_x"], expectedMask);
 }
 
-TYPED_TEST(DatasetViewBinaryEqualsOpTest, return_value) {
-  auto a = datasetFactory().make();
-  auto b = datasetFactory().make();
-  DatasetView view(a);
-
-  ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(view, b["data_scalar"])),
-                              DatasetView>));
-  {
-    const auto &result = TestFixture::op(view, b["data_scalar"]);
-    EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
-              &a["data_scalar"].template values<double>()[0]);
-  }
-
-  ASSERT_TRUE(
-      (std::is_same_v<decltype(TestFixture::op(view, b)), DatasetView>));
-  {
-    const auto &result = TestFixture::op(view, b);
-    EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
-              &a["data_scalar"].template values<double>()[0]);
-  }
-
-  ASSERT_TRUE(
-      (std::is_same_v<decltype(TestFixture::op(view, b.slice({Dim::Z, 3}))),
-                      DatasetView>));
-  {
-    const auto &result = TestFixture::op(view, b.slice({Dim::Z, 3}));
-    EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
-              &a["data_scalar"].template values<double>()[0]);
-  }
-
-  ASSERT_TRUE(
-      (std::is_same_v<decltype(TestFixture::op(view, b["data_scalar"].data())),
-                      DatasetView>));
-  {
-    const auto &result = TestFixture::op(view, b["data_scalar"].data());
-    EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
-              &a["data_scalar"].template values<double>()[0]);
-  }
-
-  ASSERT_TRUE((std::is_same_v<decltype(TestFixture::op(view, 5.0 * units::one)),
-                              DatasetView>));
-  {
-    const auto &result = TestFixture::op(view, 5.0 * units::one);
-    EXPECT_EQ(&result["data_scalar"].template values<double>()[0],
-              &a["data_scalar"].template values<double>()[0]);
-  }
-}
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
   auto dataset = datasetFactory().make();
@@ -475,7 +428,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
   auto a = otherCoordsFactory.make();
   auto b = datasetFactory().make();
 
-  ASSERT_THROW(TestFixture::op(DatasetView(a), b), except::CoordMismatchError);
+  ASSERT_THROW(TestFixture::op(Dataset(a), b), except::CoordMismatchError);
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
@@ -484,7 +437,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
   auto b = datasetFactory().make();
   auto reference(a);
 
-  ASSERT_NO_THROW(TestFixture::op(DatasetView(a), b));
+  ASSERT_NO_THROW(TestFixture::op(Dataset(a), b));
   for (const auto &item : a) {
     if (item.name() == "extra") {
       EXPECT_EQ(item, reference[item.name()]);
@@ -499,7 +452,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
   auto b = datasetFactory().make();
   b.setData("extra", makeVariable<double>(Values{double{}}));
 
-  ASSERT_ANY_THROW(TestFixture::op(DatasetView(a), b));
+  ASSERT_ANY_THROW(TestFixture::op(Dataset(a), b));
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
@@ -546,7 +499,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest,
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
   auto dataset = datasetFactory().make();
-  const DatasetView view(dataset);
+  Dataset view(dataset);
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
   ASSERT_THROW(TestFixture::op(view, dataset.slice({Dim::X, 3})),

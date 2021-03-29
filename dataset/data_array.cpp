@@ -89,13 +89,16 @@ Coords DataArray::meta() const {
 DataArray DataArray::slice(const Slice &s) const {
   DataArray out{m_data->slice(s), m_coords.slice(s), m_masks->slice(s),
                 m_attrs->slice(s), m_name};
+  std::vector<Dim> erase;
   for (auto it = out.m_coords.begin(); it != out.m_coords.end();) {
     if (unaligned_by_dim_slice(*it, s)) {
       out.attrs().set(it->first, it->second);
-      out.m_coords.erase(it->first);
+      erase.emplace_back(it->first);
     }
     ++it;
   }
+  for (const Dim &dim : erase)
+    out.m_coords.erase(dim);
   return out;
 }
 
