@@ -65,9 +65,7 @@ Variable make_subspan_view(Var &var, const Dimensions &dims,
 template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
   using E = std::remove_const_t<T>;
   const auto len = var.dims()[dim];
-  // Check that stride in `dim` is 1
-  if (len > 0 && var.template values<E>().data() + 1 !=
-                     var.slice({dim, 1}).template values<E>().data())
+  if (var.strides()[var.dims().index(dim)] != 1)
     throw except::DimensionError(
         "View over subspan can only be created for contiguous "
         "range of data.");

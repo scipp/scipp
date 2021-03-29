@@ -40,11 +40,7 @@ TEST_F(HistogramHelpersTest, edge_dimension) {
 
   EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::X, coordX}})),
                except::BinEdgeError);
-  EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::X, coordY}})),
-               except::BinEdgeError);
   EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::Y, coordX}})),
-               except::BinEdgeError);
-  EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::Y, coordY}})),
                except::BinEdgeError);
 
   // Coord length X is 2 and data does not depend on X, but this is *not*
