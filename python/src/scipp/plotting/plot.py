@@ -143,7 +143,7 @@ def plot(scipp_obj,
     tobeplotted = dict()
     for name, var in sorted(inventory.items()):
         ndims = len(var.dims)
-        if ndims > 0:
+        if (ndims > 0) and (np.sum(var.shape) > 0):
             if ndims == 1:
                 # Construct a key from the dimensions
                 if axes is not None:
