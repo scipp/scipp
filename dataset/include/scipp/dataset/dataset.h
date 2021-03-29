@@ -26,7 +26,7 @@ namespace detail {
 template <class D> struct make_item {
   D *dataset;
   template <class T> auto operator()(T &item) const {
-    return item.second.view_with_coords(dataset->coords());
+    return item.second.view_with_coords(dataset->coords(), item.first);
   }
 };
 template <class D> make_item(D *) -> make_item<D>;

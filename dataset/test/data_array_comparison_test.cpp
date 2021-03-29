@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 //
-// The test in this file ensure that comparison operators for DataArray and
-// DataArrayConstView are correct. More complex tests should build on the
-// assumption that comparison operators are correct.
+// The test in this file ensure that comparison operators for DataArray are
+// correct. More complex tests should build on the assumption that comparison
+// operators are correct.
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
@@ -42,11 +42,11 @@ protected:
     dataset.setData("val_and_var",
                     makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
                                          Values(12), Variances(12)));
-    dataset.setCoord("val_and_var", Dim("attr"),
-                     makeVariable<int>(Values{int{}}));
+    dataset["val_and_var"].coords().set(Dim("attr"),
+                                        makeVariable<int>(Values{int{}}));
 
     dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
-    dataset.setCoord("val", Dim("attr"), makeVariable<int>(Values{int{}}));
+    dataset["val"].coords().set(Dim("attr"), makeVariable<int>(Values{int{}}));
     for (const auto &item : {"val_and_var", "val"})
       dataset[item].masks().set("mask",
                                 makeVariable<bool>(Dims{Dim::X}, Shape{4}));
@@ -56,53 +56,45 @@ protected:
 };
 
 template <class T> auto make_values(const Dimensions &dims) {
-  Dataset d;
-  d.setData("", makeVariable<T>(Dimensions(dims)));
-  return DataArray(d[""]);
+  return DataArray(makeVariable<T>(Dimensions(dims)));
 }
 
 template <class T, class T2>
 auto make_1_coord(const Dim dim, const Dimensions &dims, const units::Unit unit,
                   const std::initializer_list<T2> &data) {
-  Dataset d;
-  d.setCoord(
-      dim, makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
-  d.setData("", makeVariable<T>(Dimensions(dims)));
-  return DataArray(d[""]);
+  auto a = make_values<T>(dims);
+  a.coords().set(dim, makeVariable<T>(dims, units::Unit(unit), Values(data)));
+  return a;
 }
 
 template <class T, class T2>
 auto make_1_labels(const std::string &name, const Dimensions &dims,
                    const units::Unit unit,
                    const std::initializer_list<T2> &data) {
-  Dataset d;
-  d.setCoord(Dim(name), makeVariable<T>(Dimensions(dims), units::Unit(unit),
-                                        Values(data)));
-  d.setData("", makeVariable<T>(Dimensions(dims)));
-  return DataArray(d[""]);
+  auto a = make_values<T>(dims);
+  a.coords().set(Dim(name),
+                 makeVariable<T>(dims, units::Unit(unit), Values(data)));
+  return a;
 }
 
 template <class T, class T2>
 auto make_1_mask(const std::string &name, const Dimensions &dims,
                  const units::Unit unit,
                  const std::initializer_list<T2> &data) {
-  Dataset d;
-  d.setData("", makeVariable<T>(Dimensions(dims)));
-  d[""].masks().set(
+  auto a = make_values<T>(dims);
+  a.masks().set(
       name, makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
-  return DataArray(d[""]);
+  return a;
 }
 
 template <class T, class T2>
 auto make_1_attr(const std::string &name, const Dimensions &dims,
                  const units::Unit unit,
                  const std::initializer_list<T2> &data) {
-  Dataset d;
-  d.setData("", makeVariable<T>(Dimensions(dims)));
-  d.setCoord(
-      "", Dim(name),
-      makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
-  return DataArray(d[""]);
+  auto a = make_values<T>(dims);
+  a.attrs().set(Dim(name), makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                           Values(data)));
+  return a;
 }
 
 template <class T, class T2>
@@ -247,7 +239,7 @@ TEST_F(DataArray_comparison_operators, extra_labels) {
 
 TEST_F(DataArray_comparison_operators, extra_mask) {
   auto extra = dataset;
-  for (const auto &a : extra) {
+  for (auto &&a : extra) {
     a.masks().set("extra", makeVariable<bool>(Values{false}));
     expect_ne(a, dataset[a.name()]);
   }
@@ -256,7 +248,8 @@ TEST_F(DataArray_comparison_operators, extra_mask) {
 TEST_F(DataArray_comparison_operators, extra_attr) {
   auto extra = dataset;
   for (const auto &a : extra) {
-    extra.setCoord(a.name(), Dim("extra"), makeVariable<double>(Values{0.0}));
+    extra[a.name()].attrs().set(Dim("extra"),
+                                makeVariable<double>(Values{0.0}));
     expect_ne(a, dataset[a.name()]);
   }
 }
@@ -269,7 +262,7 @@ TEST_F(DataArray_comparison_operators, extra_variance) {
 }
 
 TEST_F(DataArray_comparison_operators, different_coord_insertion_order) {
-  const auto var = makeVariable<double>(Values{1.0});
+  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 3});
   auto a = DataArray(var);
   auto b = DataArray(var);
   a.coords().set(Dim::X, dataset.coords()[Dim::X]);
@@ -282,7 +275,7 @@ TEST_F(DataArray_comparison_operators, different_coord_insertion_order) {
 TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
   auto a = Dataset();
   auto b = Dataset();
-  const auto var = makeVariable<double>(Values{1.0});
+  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 3});
   a.setData("item", var);
   b.setData("item", var);
   a["item"].attrs().set(Dim::X, dataset.coords()[Dim::X]);

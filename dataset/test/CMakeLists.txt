@@ -16,10 +16,10 @@ add_executable(
   #coords_view_test.cpp
   #copy_test.cpp
   #counts_test.cpp
-  #data_array_comparison_test.cpp
+  data_array_comparison_test.cpp
   #data_array_test.cpp
   #dataset_arithmetic_test.cpp
-  #dataset_comparison_test.cpp
+  dataset_comparison_test.cpp
   #dataset_operations_test.cpp
   dataset_test_common.cpp
   dataset_test.cpp
