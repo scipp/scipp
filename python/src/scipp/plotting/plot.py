@@ -150,7 +150,7 @@ def plot(scipp_obj,
                 key = "{}.{}".format(key, str(var.unit))
             else:
                 key = name
-            if (ndims == 1) or (projection.lower() == "1d"):
+            if ndims == 1 or projection == "1d" or projection == "1D":
                 line_count += 1
 
             mpl_line_params = {}
