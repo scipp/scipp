@@ -9,25 +9,20 @@
 
 namespace scipp::dataset {
 
-/*
-DataArray::DataArray(const DataArray &view,
-                   const AttrPolicy attrPolicy)
-  : DataArray(Variable(view.data()), copy_map(view.coords()),
-              copy_map(view.masks()),
-              attrPolicy == AttrPolicy::Keep ? copy_map(view.attrs())
-                                             : std::map<Dim, Variable>{},
-              view.name()) {}
-              */
 namespace {
 template <class T> auto copy_shared(const std::shared_ptr<T> &obj) {
   return std::make_shared<T>(*obj);
 }
 } // namespace
 
-DataArray::DataArray(const DataArray &other)
+DataArray::DataArray(const DataArray &other, const AttrPolicy attrPolicy)
     : m_name(other.m_name), m_data(other.m_data), m_coords(other.m_coords),
-      m_masks(copy_shared(other.m_masks)), m_attrs(copy_shared(other.m_attrs)) {
-}
+      m_masks(copy_shared(other.m_masks)),
+      m_attrs(attrPolicy == AttrPolicy::Keep ? copy_shared(other.m_attrs)
+                                             : std::make_shared<Attrs>()) {}
+
+DataArray::DataArray(const DataArray &other)
+    : DataArray(other, AttrPolicy::Keep) {}
 
 DataArray::DataArray(Variable data, Coords coords, Masks masks, Attrs attrs,
                      const std::string &name)

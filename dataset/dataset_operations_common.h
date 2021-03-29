@@ -4,7 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <map>
+#include <unordered_map>
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
@@ -24,7 +24,7 @@ constexpr auto unaligned_by_dim_slice = [](const auto &item, const Dim dim) {
 };
 
 template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
-  std::map<typename T1::key_type, typename T1::mapped_type> out;
+  std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
 
   for (const auto [key, item] : a)
     out.emplace(key, item);
@@ -41,7 +41,7 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 /// Return intersection of maps, i.e., all items with matching names that
 /// have matching content.
 template <class Map> auto intersection(const Map &a, const Map &b) {
-  std::map<typename Map::key_type, Variable> out;
+  std::unordered_map<typename Map::key_type, Variable> out;
   for (const auto [key, item] : a)
     if (const auto it = b.find(key); it != b.end() && it->second == item)
       out.emplace(key, item);
@@ -50,7 +50,7 @@ template <class Map> auto intersection(const Map &a, const Map &b) {
 
 /// Return a copy of map-like objects such as CoordView.
 template <class T> auto copy_map(const T &map) {
-  std::map<typename T::key_type, typename T::mapped_type> out;
+  std::unordered_map<typename T::key_type, typename T::mapped_type> out;
   for (const auto [key, item] : map)
     out.emplace(key, item);
   return out;
@@ -91,13 +91,13 @@ DataArray apply_or_copy_dim_impl(const DataArray &a, Func func, const Dim dim,
         }
       }
   };
-  std::map<Dim, Variable> coords;
+  std::unordered_map<Dim, Variable> coords;
   coord_apply_or_copy_dim(coords, a.coords(), true);
 
-  std::map<Dim, Variable> attrs;
+  std::unordered_map<Dim, Variable> attrs;
   coord_apply_or_copy_dim(attrs, a.attrs(), false);
 
-  std::map<std::string, Variable> masks;
+  std::unordered_map<std::string, Variable> masks;
   for (auto &&[name, mask] : a.masks())
     if (!mask.dims().contains(dim))
       masks.emplace(name, mask);
@@ -172,7 +172,7 @@ template <class A, class B> auto copy_items(const A &a, B &b) {
 /// Return a copy of map-like objects such as Coords with `func` applied to each
 /// item.
 template <class T, class Func> auto transform_map(const T &map, Func func) {
-  std::map<typename T::key_type, typename T::mapped_type> out;
+  std::unordered_map<typename T::key_type, typename T::mapped_type> out;
   for (const auto &[key, item] : map)
     out.emplace(key, func(item));
   return out;

@@ -9,8 +9,13 @@
 #include "scipp/dataset/generated_util.h"
 
 namespace scipp {
-SCIPP_DATASET_EXPORT scipp::index size_of(const VariableConstView &view);
+
+SCIPP_DATASET_EXPORT scipp::index size_of(const Variable &view);
 SCIPP_DATASET_EXPORT scipp::index size_of(const DataArrayConstView &dataarray,
                                           bool include_aligned_coords = true);
 SCIPP_DATASET_EXPORT scipp::index size_of(const DatasetConstView &dataset);
+
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+astype(const DataArrayConstView &var, const DType type);
+
 } // namespace scipp

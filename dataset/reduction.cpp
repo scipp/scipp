@@ -8,6 +8,7 @@
 #include "scipp/dataset/math.h"
 #include "scipp/dataset/reduction.h"
 #include "scipp/dataset/special_values.h"
+#include "scipp/dataset/util.h"
 
 using scipp::common::reduce_all_dims;
 
