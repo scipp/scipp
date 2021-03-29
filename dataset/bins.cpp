@@ -37,9 +37,9 @@
 
 namespace scipp::dataset {
 namespace {
-constexpr auto copy_or_match = [](const auto &a, const auto &b, const Dim dim,
-                                  const VariableConstView &srcIndices,
-                                  const VariableConstView &dstIndices) {
+constexpr auto copy_or_match = [](const auto &a, auto &&b, const Dim dim,
+                                  const Variable &srcIndices,
+                                  const Variable &dstIndices) {
   if (a.dims().contains(dim))
     copy_slices(a, b, dim, srcIndices, dstIndices);
   else
@@ -66,9 +66,8 @@ constexpr auto expect_matching_keys = [](const auto &a, const auto &b) {
 
 } // namespace
 
-void copy_slices(const DataArrayConstView &src, const DataArrayView &dst,
-                 const Dim dim, const VariableConstView &srcIndices,
-                 const VariableConstView &dstIndices) {
+void copy_slices(const DataArrayConstView &src, DataArray dst, const Dim dim,
+                 const Variable &srcIndices, const Variable &dstIndices) {
   copy_slices(src.data(), dst.data(), dim, srcIndices, dstIndices);
   expect_matching_keys(src.meta(), dst.meta());
   expect_matching_keys(src.masks(), dst.masks());
@@ -78,9 +77,8 @@ void copy_slices(const DataArrayConstView &src, const DataArrayView &dst,
     copy_or_match(mask, dst.masks()[name], dim, srcIndices, dstIndices);
 }
 
-void copy_slices(const DatasetConstView &src, const DatasetView &dst,
-                 const Dim dim, const VariableConstView &srcIndices,
-                 const VariableConstView &dstIndices) {
+void copy_slices(const DatasetConstView &src, Dataset dst, const Dim dim,
+                 const Variable &srcIndices, const Variable &dstIndices) {
   for (const auto &[name, var] : src.coords())
     copy_or_match(var, dst.coords()[name], dim, srcIndices, dstIndices);
   expect_matching_keys(src.coords(), dst.coords());
@@ -143,14 +141,15 @@ Dataset resize_default_init(const DatasetConstView &parent, const Dim dim,
 }
 
 template <class T>
-Variable make_bins_impl(Variable &&indices, const Dim dim, T &&buffer) {
-  return {indices.dims(), std::make_unique<variable::DataModel<bucket<T>>>(
-                              std::move(indices), dim, std::move(buffer))};
+Variable make_bins_impl(Variable indices, const Dim dim, T &&buffer) {
+  indices.setDataHandle(std::make_unique<variable::DataModel<bucket<T>>>(
+      indices.data_handle(), dim, std::move(buffer)));
+  return indices;
 }
 
 /// Construct a bin-variable over a data array.
 ///
-/// Each bin is represented by a VariableView. `indices` defines the array of
+/// Each bin is represented by a Variable slice. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, DataArray buffer) {
   return make_bins_impl(std::move(indices), dim, std::move(buffer));
@@ -158,35 +157,21 @@ Variable make_bins(Variable indices, const Dim dim, DataArray buffer) {
 
 /// Construct a bin-variable over a dataset.
 ///
-/// Each bin is represented by a VariableView. `indices` defines the array of
+/// Each bin is represented by a Variable slice. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
   return make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
-Variable make_non_owning_bins(const VariableView &indices, const Dim dim,
-                              const DataArrayView &buffer) {
-  return {indices.dims(),
-          std::make_unique<variable::DataModel<bucket<DataArrayView>>>(
-              indices, dim, buffer)};
-}
-
-Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
-                              const DataArrayConstView &buffer) {
-  return {indices.dims(),
-          std::make_unique<variable::DataModel<bucket<DataArrayConstView>>>(
-              indices, dim, buffer)};
-}
-
 namespace {
-template <class T> Variable bucket_sizes_impl(const VariableConstView &view) {
+template <class T> Variable bucket_sizes_impl(const Variable &view) {
   const auto &indices = std::get<0>(view.constituents<bucket<T>>());
   const auto [begin, end] = unzip(indices);
   return end - begin;
 }
 } // namespace
 
-Variable bucket_sizes(const VariableConstView &var) {
+Variable bucket_sizes(const Variable &var) {
   if (var.dtype() == dtype<bucket<Variable>>)
     return bucket_sizes_impl<Variable>(var);
   else if (var.dtype() == dtype<bucket<DataArray>>)
@@ -218,8 +203,7 @@ bool is_bins(const DatasetConstView &dataset) {
 namespace scipp::dataset::buckets {
 namespace {
 
-template <class T>
-auto combine(const VariableConstView &var0, const VariableConstView &var1) {
+template <class T> auto combine(const Variable &var0, const Variable &var1) {
   const auto &[indices0, dim0, buffer0] = var0.constituents<bucket<T>>();
   const auto &[indices1, dim1, buffer1] = var1.constituents<bucket<T>>();
   static_cast<void>(buffer1);
@@ -239,22 +223,18 @@ auto combine(const VariableConstView &var0, const VariableConstView &var1) {
   auto buffer = resize_default_init(buffer0, dim, total_size);
   copy_slices(buffer0, buffer, dim, indices0, zip(begin, end - sizes1));
   copy_slices(buffer1, buffer, dim, indices1, zip(begin + sizes0, end));
-  return variable::DataModel<bucket<T>>{zip(begin, end), dim,
-                                        std::move(buffer)};
+  return std::make_shared<variable::DataModel<bucket<T>>>(
+      zip(begin, end).data_handle(), dim, std::move(buffer));
 }
 
 template <class T>
-auto concatenate_impl(const VariableConstView &var0,
-                      const VariableConstView &var1) {
-  return Variable{
-      merge(var0.dims(), var1.dims()),
-      std::make_unique<variable::DataModel<bucket<T>>>(combine<T>(var0, var1))};
+auto concatenate_impl(const Variable &var0, const Variable &var1) {
+  return Variable{merge(var0.dims(), var1.dims()), combine<T>(var0, var1)};
 }
 
-template <class T>
-void reserve_impl(const VariableView &var, const VariableConstView &shape) {
+template <class T> void reserve_impl(Variable &var, const Variable &shape) {
   // TODO this only reserves in the bins, but assumes buffer has enough space
-  const auto &[indices, dim, buffer] = var.constituents<bucket<T>>();
+  auto &&[indices, dim, buffer] = var.constituents<bucket<T>>();
   static_cast<void>(dim);
   static_cast<void>(buffer);
   variable::transform_in_place(
@@ -267,7 +247,7 @@ void reserve_impl(const VariableView &var, const VariableConstView &shape) {
 
 } // namespace
 
-void reserve(const VariableView &var, const VariableConstView &shape) {
+void reserve(Variable &var, const Variable &shape) {
   if (var.dtype() == dtype<bucket<Variable>>)
     return reserve_impl<Variable>(var, shape);
   else if (var.dtype() == dtype<bucket<DataArray>>)
@@ -276,8 +256,7 @@ void reserve(const VariableView &var, const VariableConstView &shape) {
     return reserve_impl<Dataset>(var, shape);
 }
 
-Variable concatenate(const VariableConstView &var0,
-                     const VariableConstView &var1) {
+Variable concatenate(const Variable &var0, const Variable &var1) {
   if (var0.dtype() == dtype<bucket<Variable>>)
     return concatenate_impl<Variable>(var0, var1);
   else if (var0.dtype() == dtype<bucket<DataArray>>)
@@ -288,15 +267,15 @@ Variable concatenate(const VariableConstView &var0,
 
 DataArray concatenate(const DataArrayConstView &a,
                       const DataArrayConstView &b) {
-  return {buckets::concatenate(a.data(), b.data()),
-          union_(a.coords(), b.coords()), union_or(a.masks(), b.masks()),
-          intersection(a.attrs(), b.attrs())};
+  return DataArray{
+      buckets::concatenate(a.data(), b.data()), union_(a.coords(), b.coords()),
+      union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
 }
 
 /// Reduce a dimension by concatenating all elements along the dimension.
 ///
 /// This is the analogue to summing non-bucket data.
-Variable concatenate(const VariableConstView &var, const Dim dim) {
+Variable concatenate(const Variable &var, const Dim dim) {
   if (var.dtype() == dtype<bucket<Variable>>)
     return concat_bins<Variable>(var, dim);
   else
@@ -310,23 +289,24 @@ DataArray concatenate(const DataArrayConstView &array, const Dim dim) {
   return groupby_concat_bins(array, {}, {}, {dim});
 }
 
-void append(const VariableView &var0, const VariableConstView &var1) {
+void append(Variable &var0, const Variable &var1) {
   if (var0.dtype() == dtype<bucket<Variable>>)
-    var0.replace_model(combine<Variable>(var0, var1));
+    var0.setDataHandle(combine<Variable>(var0, var1));
   else if (var0.dtype() == dtype<bucket<DataArray>>)
-    var0.replace_model(combine<DataArray>(var0, var1));
+    var0.setDataHandle(combine<DataArray>(var0, var1));
   else
-    var0.replace_model(combine<Dataset>(var0, var1));
+    var0.setDataHandle(combine<Dataset>(var0, var1));
 }
 
-void append(const DataArrayView &a, const DataArrayConstView &b) {
+void append(Variable &&var0, const Variable &var1) { append(var0, var1); }
+
+void append(DataArray &a, const DataArrayConstView &b) {
   expect::coordsAreSuperset(a, b);
   union_or_in_place(a.masks(), b.masks());
   append(a.data(), b.data());
 }
 
-Variable histogram(const VariableConstView &data,
-                   const VariableConstView &binEdges) {
+Variable histogram(const Variable &data, const Variable &binEdges) {
   using namespace scipp::core;
   auto hist_dim = binEdges.dims().inner();
   auto &&[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
@@ -352,8 +332,7 @@ Variable histogram(const VariableConstView &data,
     return hist;
 }
 
-Variable map(const DataArrayConstView &function, const VariableConstView &x,
-             Dim dim) {
+Variable map(const DataArrayConstView &function, const Variable &x, Dim dim) {
   if (dim == Dim::Invalid)
     dim = edge_dimension(function);
   const Masker masker(function, dim);
@@ -371,8 +350,7 @@ Variable map(const DataArrayConstView &function, const VariableConstView &x,
   }
 }
 
-void scale(const DataArrayView &array, const DataArrayConstView &histogram,
-           Dim dim) {
+void scale(DataArray &array, const DataArrayConstView &histogram, Dim dim) {
   if (dim == Dim::Invalid)
     dim = edge_dimension(histogram);
   // Coords along dim are ignored since "binning" is dynamic for buckets.
@@ -396,9 +374,8 @@ void scale(const DataArrayView &array, const DataArrayConstView &histogram,
 }
 
 namespace {
-Variable applyMask(const DataArrayConstView &buffer,
-                   const VariableConstView &indices, const Dim dim,
-                   const Variable &masks) {
+Variable applyMask(const DataArrayConstView &buffer, const Variable &indices,
+                   const Dim dim, const Variable &masks) {
   auto indices_copy = Variable(indices);
   auto masked_data = scipp::variable::masked_to_zero(buffer.data(), masks);
   return make_bins(std::move(indices_copy), dim, std::move(masked_data));
@@ -406,7 +383,7 @@ Variable applyMask(const DataArrayConstView &buffer,
 
 } // namespace
 
-Variable sum(const VariableConstView &data) {
+Variable sum(const Variable &data) {
   auto type = variable::variableFactory().elem_dtype(data);
   type = type == dtype<bool> ? dtype<int64_t> : type;
   const auto unit = variable::variableFactory().elem_unit(data);

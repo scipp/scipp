@@ -22,12 +22,11 @@ public:
 
 protected:
   auto make(const View &view) const {
-    return make_non_owning_bins(this->indices(), this->dim(), view);
+    // TODO avoid index re-validation
+    return make_bins(this->indices(), this->dim(), view);
   }
-  auto check_and_get_buf(const VariableConstView &var) const {
-    const auto &[i, d, buf] = var.dtype() == dtype<bucket<VariableView>>
-                                  ? var.constituents<bucket<VariableView>>()
-                                  : var.constituents<bucket<Variable>>();
+  auto check_and_get_buf(const Variable &var) const {
+    const auto &[i, d, buf] = var.constituents<bucket<Variable>>();
     core::expect::equals(i, this->indices());
     core::expect::equals(d, this->dim());
     return buf;
@@ -60,7 +59,7 @@ public:
     return this->make(m_mapView[key]);
   }
   void erase(const key_type &key) const { return m_mapView.erase(key); }
-  void set(const key_type &key, const VariableConstView &var) const {
+  void set(const key_type &key, const Variable &var) const {
     m_mapView.set(key, this->check_and_get_buf(var));
   }
   auto begin() const noexcept {
@@ -84,7 +83,7 @@ template <class T, class View> class Bins : public BinsCommon<T, View> {
 public:
   using BinsCommon<T, View>::BinsCommon;
   auto data() const { return this->make(this->buffer().data()); }
-  void setData(const VariableConstView &var) {
+  void setData(const Variable &var) {
     this->buffer().setData(Variable(this->check_and_get_buf(var)));
   }
   auto meta() const { return BinsMapView(*this, this->buffer().meta()); }
@@ -103,14 +102,8 @@ public:
 ///
 /// The returned objects are variables referencing data in `var`. They do not
 /// own or share ownership of any data.
-template <class T, class View> auto bins_view(const View &var) {
+template <class T, class View> auto bins_view(View var) {
   return bins_view_detail::Bins<T, View>(var);
-}
-template <class T> auto bins_view(const Variable &var) {
-  return bins_view<T>(VariableConstView(var));
-}
-template <class T> auto bins_view(Variable &var) {
-  return bins_view<T>(VariableView(var));
 }
 
 } // namespace scipp::dataset

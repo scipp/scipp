@@ -31,26 +31,26 @@ set(INC_FILES
 set(SRC_FILES
     ${dataset_SRC_FILES}
     arithmetic.cpp
-    #bin.cpp
-    #bins.cpp
-    #counts.cpp
+    bin.cpp
+    bins.cpp
+    counts.cpp
     data_array.cpp
     #dataset_access.cpp
     dataset.cpp
-    #except.cpp
-    #groupby.cpp
-    #histogram.cpp
+    except.cpp
+    groupby.cpp
+    histogram.cpp
     map_view.cpp
     operations.cpp
-    #rebin.cpp
+    rebin.cpp
     reduction.cpp
     util.cpp
-    #shape.cpp
-    #slice.cpp
-    #sort.cpp
-    #string.cpp
-    #variable_instantiate_bin_elements.cpp
-    #variable_instantiate_dataset.cpp
+    shape.cpp
+    slice.cpp
+    sort.cpp
+    string.cpp
+    variable_instantiate_bin_elements.cpp
+    variable_instantiate_dataset.cpp
     variable_reduction.cpp
 )
 

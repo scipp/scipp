@@ -25,15 +25,14 @@ void throw_mismatch_error(const dataset::DatasetConstView &expected,
                      to_string(actual) + '.');
 }
 
-CoordMismatchError::CoordMismatchError(
-    const std::pair<Dim, VariableConstView> &expected,
-    const std::pair<Dim, VariableConstView> &actual)
+CoordMismatchError::CoordMismatchError(const std::pair<Dim, Variable> &expected,
+                                       const std::pair<Dim, Variable> &actual)
     : DatasetError{"Mismatch in coordinate, expected " + to_string(expected) +
                    ", got " + to_string(actual)} {}
 
 template <>
-void throw_mismatch_error(const std::pair<Dim, VariableConstView> &expected,
-                          const std::pair<Dim, VariableConstView> &actual) {
+void throw_mismatch_error(const std::pair<Dim, Variable> &expected,
+                          const std::pair<Dim, Variable> &actual) {
   throw CoordMismatchError(expected, actual);
 }
 
@@ -49,7 +48,7 @@ void coordsAreSuperset(const DataArrayConstView &a,
       throw except::CoordMismatchError(*a_coords.find(b_coord.first), b_coord);
 }
 
-void isKey(const VariableConstView &key) {
+void isKey(const Variable &key) {
   if (key.dims().ndim() != 1)
     throw except::DimensionError(
         "Coord for binning or grouping must be 1-dimensional");
