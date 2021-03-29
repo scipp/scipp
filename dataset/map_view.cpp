@@ -58,14 +58,22 @@ template <class Key, class Value> Value Dict<Key, Value>::at(const Key &key) {
   return std::as_const(*this).at(key);
 }
 
+namespace {
+constexpr auto is_edges = [](const auto &dict, const Variable &var) {
+  if (var.dims().ndim() == 0)
+    return false;
+  const Dim dim = var.dims().inner();
+  const auto size = var.dims()[dim];
+  const auto sizes = dict.sizes();
+  return size == (sizes.contains(dim) ? sizes[dim] + 1 : 2);
+};
+}
+
 template <class Key, class Value>
 void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
-  // TODO support also:
-  // - bin edges (exceed sizes by one, along inner dim)
-  // - bin edges of length 2 if dim is not contained
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
-  if (!m_sizes.contains(coord.dims()))
+  if (!m_sizes.contains(coord.dims()) && !is_edges(*this, coord))
     throw std::runtime_error("cannot add coord exceeding DataArray dims");
   m_items.insert_or_assign(key, std::move(coord));
 }
