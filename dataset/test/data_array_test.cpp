@@ -3,7 +3,9 @@
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 #include "scipp/dataset/histogram.h"
+#include "scipp/dataset/util.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/reduction.h"
