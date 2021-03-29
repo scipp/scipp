@@ -108,6 +108,7 @@ void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
   for (const auto &dim : dims.labels())
     extents::setExtent(tmp, dim, dims[dim], dim == coordDim);
   m_dims = tmp;
+  m_coords.sizes() = Sizes(dimensions());
 }
 
 void Dataset::rebuildDims() {
@@ -282,14 +283,8 @@ template <class A, class B> bool dataset_equals(const A &a, const B &b) {
     return false;
   if (a.coords() != b.coords())
     return false;
-  for (const auto &data : a) {
-    try {
-      if (data != b[data.name()])
-        return false;
-    } catch (except::NotFoundError &) {
-      return false;
-    }
-  }
+  for (const auto &data : a)
+    return b.contains(data.name()) ? data != b[data.name()] : false;
   return true;
 }
 

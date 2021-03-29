@@ -81,7 +81,8 @@ public:
 
   DataArray slice(const Slice &s) const;
 
-  DataArray view_with_coords(const Coords &coords) const;
+  DataArray view_with_coords(const Coords &coords,
+                             const std::string &name) const;
 
 private:
   std::string m_name;
