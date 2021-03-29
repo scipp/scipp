@@ -11,37 +11,37 @@ add_executable(
   #binned_creation_test.cpp
   #bins_test.cpp
   #bin_test.cpp
-  #choose_test.cpp
-  #concatenate_test.cpp
+  choose_test.cpp
+  concatenate_test.cpp
   #coords_view_test.cpp
-  #copy_test.cpp
-  #counts_test.cpp
+  copy_test.cpp
+  counts_test.cpp
   data_array_comparison_test.cpp
   #data_array_test.cpp
-  #dataset_arithmetic_test.cpp
+  dataset_arithmetic_test.cpp
   dataset_comparison_test.cpp
-  #dataset_operations_test.cpp
+  dataset_operations_test.cpp
   dataset_test_common.cpp
   dataset_test.cpp
   #dataset_view_test.cpp
   #data_view_test.cpp
-  #event_data_operations_consistency_test.cpp
-  #except_test.cpp
-  #groupby_test.cpp
-  #histogram_test.cpp
-  #masks_view_test.cpp
-  #math_test.cpp
-  #mean_test.cpp
-  #merge_test.cpp
-  #rebin_test.cpp
-  #self_assignment_test.cpp
-  #shape_test.cpp
-  #size_of_test.cpp
-  #slice_by_value_test.cpp
+  event_data_operations_consistency_test.cpp
+  except_test.cpp
+  groupby_test.cpp
+  histogram_test.cpp
+  masks_view_test.cpp
+  math_test.cpp
+  mean_test.cpp
+  merge_test.cpp
+  rebin_test.cpp
+  self_assignment_test.cpp
+  shape_test.cpp
+  size_of_test.cpp
+  slice_by_value_test.cpp
   #slice_test.cpp
-  #sort_test.cpp
-  #string_test.cpp
-  #sum_test.cpp
+  sort_test.cpp
+  string_test.cpp
+  sum_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(
