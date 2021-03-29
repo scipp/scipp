@@ -6,6 +6,7 @@
 
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/bins.h"
@@ -274,7 +275,7 @@ protected:
   }
 
   auto make_buckets(const DataArray &events,
-                    const std::map<Dim, VariableConstView> coords = {}) const {
+                    const std::map<Dim, Variable> coords = {}) const {
     auto array = DataArray(make_bins(make_indices(), Dim("event"), events));
     for (const auto &[dim, coord] : coords)
       array.coords().set(dim, coord);
@@ -320,7 +321,7 @@ TEST_F(DataArrayBinsScaleTest, events_times_histogram) {
       Dims{Dim("event")}, Shape{7}, Values{2.0, 3.0, 3.0, 2.0, 2.0, 3.0, 0.0},
       Variances{0.3, 0.4, 0.4, 0.3, 0.3, 0.4, 0.0});
   auto expected_events = events;
-  expected_events.data().assign(expected_weights);
+  copy(expected_weights, expected_events.data());
 
   EXPECT_EQ(buckets, make_buckets(expected_events));
 }
