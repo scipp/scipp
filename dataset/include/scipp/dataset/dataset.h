@@ -193,7 +193,6 @@ private:
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
   void rebuildDims();
 
-  std::unordered_map<Dim, scipp::index> m_dims;
   Coords m_coords; // aligned coords
   std::unordered_map<std::string, DataArray> m_data;
 };
