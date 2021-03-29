@@ -49,8 +49,7 @@ public:
   const Attrs &attrs() const { return *m_attrs; }
   Attrs &attrs() { return *m_attrs; }
 
-  const Coords &meta() const;
-  Coords &meta();
+  Coords meta() const;
 
   Dimensions dims() const { return m_data.dims(); }
   DType dtype() const { return m_data.dtype(); }
