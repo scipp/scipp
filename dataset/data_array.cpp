@@ -98,7 +98,8 @@ DataArray DataArray::slice(const Slice &s) const {
   return out;
 }
 
-DataArray DataArray::view_with_coords(const Coords &coords) const {
+DataArray DataArray::view_with_coords(const Coords &coords,
+                                      const std::string &name) const {
   // TODO also handle name here? should be set from dataset
   DataArray out;
   out.m_data = m_data;
@@ -109,6 +110,7 @@ DataArray DataArray::view_with_coords(const Coords &coords) const {
       out.m_coords.set(dim, coord);
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
+  out.m_name = name;
   return out;
 }
 
