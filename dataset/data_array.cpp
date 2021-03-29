@@ -16,8 +16,8 @@ template <class T> auto copy_shared(const std::shared_ptr<T> &obj) {
 } // namespace
 
 DataArray::DataArray(const DataArray &other, const AttrPolicy attrPolicy)
-    : m_name(other.m_name), m_data(other.m_data), m_coords(other.m_coords),
-      m_masks(copy_shared(other.m_masks)),
+    : m_name(other.m_name), m_data(copy_shared(other.m_data)),
+      m_coords(other.m_coords), m_masks(copy_shared(other.m_masks)),
       m_attrs(attrPolicy == AttrPolicy::Keep ? copy_shared(other.m_attrs)
                                              : std::make_shared<Attrs>()) {}
 
@@ -26,7 +26,8 @@ DataArray::DataArray(const DataArray &other)
 
 DataArray::DataArray(Variable data, Coords coords, Masks masks, Attrs attrs,
                      const std::string &name)
-    : m_name(name), m_data(std::move(data)), m_coords(std::move(coords)),
+    : m_name(name), m_data(std::make_shared<Variable>(std::move(data))),
+      m_coords(std::move(coords)),
       m_masks(std::make_shared<Masks>(std::move(masks))),
       m_attrs(std::make_shared<Attrs>(std::move(attrs))) {
   const Sizes sizes(dims());
@@ -38,7 +39,7 @@ DataArray::DataArray(Variable data, Coords coords, Masks masks, Attrs attrs,
 DataArray::DataArray(Variable data, typename Coords::holder_type coords,
                      typename Masks::holder_type masks,
                      typename Attrs::holder_type attrs, const std::string &name)
-    : m_name(name), m_data(std::move(data)),
+    : m_name(name), m_data(std::make_shared<Variable>(std::move(data))),
       m_coords(dims(), std::move(coords)),
       m_masks(std::make_shared<Masks>(dims(), std::move(masks))),
       m_attrs(std::make_shared<Attrs>(dims(), std::move(attrs))) {}
@@ -49,7 +50,7 @@ DataArray &DataArray::operator=(const DataArray &other) {
 
 void DataArray::setData(Variable data) {
   core::expect::equals(dims(), data.dims());
-  m_data = data;
+  *m_data = data;
 }
 
 /// Return true if the dataset proxies have identical content.
@@ -86,7 +87,7 @@ Coords DataArray::meta() const {
 }
 
 DataArray DataArray::slice(const Slice &s) const {
-  DataArray out{m_data.slice(s), m_coords.slice(s), m_masks->slice(s),
+  DataArray out{m_data->slice(s), m_coords.slice(s), m_masks->slice(s),
                 m_attrs->slice(s), m_name};
   for (auto it = out.m_coords.begin(); it != out.m_coords.end();) {
     if (unaligned_by_dim_slice(*it, s)) {
@@ -102,11 +103,11 @@ DataArray DataArray::view_with_coords(const Coords &coords,
                                       const std::string &name) const {
   // TODO also handle name here? should be set from dataset
   DataArray out;
-  out.m_data = m_data;
-  out.m_coords = Coords(m_data.dims(), {});
+  out.m_data = m_data; // share data
+  out.m_coords = Coords(dims(), {});
   // TODO bin edge handling
   for (const auto &[dim, coord] : coords)
-    if (m_data.dims().contains(coord.dims()))
+    if (dims().contains(coord.dims()))
       out.m_coords.set(dim, coord);
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
@@ -117,21 +118,10 @@ DataArray DataArray::view_with_coords(const Coords &coords,
 void DataArray::rename(const Dim from, const Dim to) {
   if ((from != to) && dims().contains(to))
     throw except::DimensionError("Duplicate dimension.");
-
-  m_data.rename(from, to);
-  const auto relabel = [from, to](auto &map) {
-    auto node = map.extract(from);
-    node.key() = to;
-    map.insert(std::move(node));
-  };
-  if (m_coords.count(from))
-    relabel(m_coords.items());
-  for (auto &item : m_coords)
-    item.second.rename(from, to);
-  for (auto &item : *m_masks)
-    item.second.rename(from, to);
-  for (auto &item : *m_attrs)
-    item.second.rename(from, to);
+  m_data->rename(from, to);
+  m_coords.rename(from, to);
+  m_masks->rename(from, to);
+  m_attrs->rename(from, to);
 }
 
 } // namespace scipp::dataset

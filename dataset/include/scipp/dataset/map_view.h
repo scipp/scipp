@@ -188,6 +188,8 @@ public:
 
   Dict slice(const Slice &params) const;
 
+  void rename(const Dim from, const Dim to);
+
 protected:
   Sizes m_sizes;
   holder_type m_items;
