@@ -118,7 +118,7 @@ auto make_single_events() {
 
 DataArray make_expected(const Variable &var, const Variable &edges) {
   auto dim = var.dims().inner();
-  std::map<Dim, Variable> coords = {{dim, edges}};
+  std::unordered_map<Dim, Variable> coords = {{dim, edges}};
   auto expected = DataArray(var, coords, {}, {}, "events");
   return expected;
 }
