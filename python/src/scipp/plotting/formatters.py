@@ -1,5 +1,5 @@
 from .._utils import value_to_string
-from .. import to_unit, Unit
+from .._scipp.core import to_unit, Unit
 import numpy as np
 
 
