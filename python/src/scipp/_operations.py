@@ -83,3 +83,32 @@ def stddevs(x):
     :seealso: :py:func:`scipp.values`, :py:func:`scipp.stddevs`.
     """
     return _call_cpp_func(_cpp.stddevs, x)
+
+
+def rebin(x, dim, bins, old=None):
+    """
+    Rebin a dimension of a variable or a data array.
+
+    In the case of a Variable, both the old and the new bin edges have to be
+    supplied.
+    In the case of a DataArray, only the new edges are needed, as the
+    coordinate associated with dim will be used as the old bin edges.
+
+    :param x: Data to rebin.
+    :param dim: Dimension to rebin over.
+    :param bins: New bin edges.
+    :param old: Old bin edges.
+    :type x: Variable or DataArray
+    :type dim: str
+    :type bins: Variable
+    :type old: Variable, optional
+    :raises: If data cannot be rebinned, e.g., if the unit is not
+             counts, or the existing coordinate is not a bin-edge
+             coordinate.
+    :return: Data rebinned according to the new bin edges.
+    :rtype: Variable or DataArray
+    """
+    if old is None:
+        return _call_cpp_func(_cpp.rebin, x, dim, bins)
+    else:
+        return _call_cpp_func(_cpp.rebin, x, dim, old, bins)

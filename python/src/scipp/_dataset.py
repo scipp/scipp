@@ -40,20 +40,3 @@ def merge(lhs, rhs):
     :rtype: Dataset
     """
     return _call_cpp_func(_cpp.merge, lhs, rhs)
-
-
-def rebin(x, dim, bins):
-    """Rebin a dimension of a data array.
-
-    :param x: Data to rebin.
-    :param dim: Dimension to rebin over.
-    :param bins: New bin edges.
-    :type x: Dataset or DataArray
-    :type dim: str
-    :type bins: Variable
-    :raises: If data cannot be rebinned, e.g., if the unit is not
-             counts, or the existing coordinate is not a bin-edge
-             coordinate.
-    :return: Data rebinned according to the new coordinate.
-    """
-    return _call_cpp_func(_cpp.rebin, x, dim, bins)

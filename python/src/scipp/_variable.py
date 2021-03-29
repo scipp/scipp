@@ -58,24 +58,6 @@ def islinspace(x):
     return _call_cpp_func(_cpp.islinspace, x)
 
 
-def rebin(x, dim, old, new):
-    """
-    Rebin a variable alonf a dimension given some old and new bin edges.
-
-    :param x: Variable to rebin.
-    :param dim: Dimension along which to perform the rebin.
-    :param old: Old bin edges
-    :param new: New bin edges
-    :type x: Variable
-    :type dim: str
-    :type old: Variable
-    :type new: Variable
-    :returns: Data rebinned according to the new bin edges.
-    :rtype: Variable
-    """
-    return _call_cpp_func(_cpp.rebin, x, dim, old, new)
-
-
 def scalar(value: Any,
            variance: Any = None,
            unit: Union[Unit, str] = units.dimensionless,
