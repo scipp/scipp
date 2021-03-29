@@ -36,7 +36,7 @@ constexpr auto copy_spans = overloaded{
     }};
 } // namespace
 
-void copy_slices(const Variable &src, Variable &dst, const Dim dim,
+void copy_slices(const Variable &src, Variable dst, const Dim dim,
                  const Variable &srcIndices, const Variable &dstIndices) {
   const auto [begin0, end0] = unzip(srcIndices);
   const auto [begin1, end1] = unzip(dstIndices);

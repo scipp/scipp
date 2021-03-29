@@ -26,8 +26,7 @@ template <class T> T same(const T &a, const T &b) {
 /// Checks that the last edges in `a` match the first edges in `b`. The
 /// Concatenates the input edges, removing duplicate bin edges.
 template <class View>
-typename View::value_type join_edges(const View &a, const View &b,
-                                     const Dim dim) {
+Variable join_edges(const View &a, const View &b, const Dim dim) {
   core::expect::equals(a.slice({dim, a.dims()[dim] - 1}), b.slice({dim, 0}));
   return concatenate(a.slice({dim, 0, a.dims()[dim] - 1}), b, dim);
 }
@@ -42,7 +41,7 @@ constexpr auto is_bin_edges = [](const auto &coord, const auto &dims,
 template <class T1, class T2, class DimT>
 auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
             const DimT &dimsB) {
-  std::map<typename T1::key_type, typename T1::mapped_type> out;
+  std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
   for (const auto [key, a_] : a) {
     if (dim_of_coord(a_, key) == dim) {
       if (is_bin_edges(a_, dimsA, dim) != is_bin_edges(b[key], dimsB, dim)) {
@@ -152,7 +151,7 @@ namespace {
 /// 2. If at least one (but not all) of the from_dims is contained in the
 ///    variable's dims, broadcast
 /// 3. If none of the variables's dimensions are contained, no broadcast
-Variable maybe_broadcast(const VariableConstView &var,
+Variable maybe_broadcast(const Variable &var,
                          const scipp::span<const Dim> &from_labels,
                          const Dimensions &data_dims) {
   const auto &var_dims = var.dims();
@@ -175,7 +174,7 @@ Variable maybe_broadcast(const VariableConstView &var,
 }
 
 /// Special handling for folding coord along a dim that contains bin edges.
-Variable fold_bin_edge(const VariableConstView &var, const Dim from_dim,
+Variable fold_bin_edge(const Variable &var, const Dim from_dim,
                        const Dimensions &to_dims) {
   // The size of the bin edge dim
   const auto bin_edge_size = var.dims()[from_dim];
@@ -201,7 +200,7 @@ Variable fold_bin_edge(const VariableConstView &var, const Dim from_dim,
 }
 
 /// Special handling for flattening coord along a dim that contains bin edges.
-Variable flatten_bin_edge(const VariableConstView &var,
+Variable flatten_bin_edge(const Variable &var,
                           const scipp::span<const Dim> &from_labels,
                           const Dim to_dim, const Dim bin_edge_dim) {
   const auto data_shape = var.dims()[bin_edge_dim] - 1;
@@ -234,8 +233,7 @@ Variable flatten_bin_edge(const VariableConstView &var,
 }
 
 /// Check if one of the from_labels is a bin edge
-Dim bin_edge_in_from_labels(const VariableConstView &var,
-                            const Dimensions &array_dims,
+Dim bin_edge_in_from_labels(const Variable &var, const Dimensions &array_dims,
                             const scipp::span<const Dim> &from_labels) {
   for (const auto &dim : from_labels)
     if (is_bin_edges(var, array_dims, dim))

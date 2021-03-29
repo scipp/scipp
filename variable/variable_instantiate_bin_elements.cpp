@@ -23,21 +23,9 @@ private:
                      variableFactory().create(type, dims, unit, variances));
   }
   const Variable &data(const Variable &var) const override {
-    return requireT<const DataModel<bucket<T>>>(var.data()).buffer();
+    return this->buffer(var);
   }
-  Variable &data(Variable &var) const override {
-    return requireT<DataModel<bucket<T>>>(var.data()).buffer();
-  }
-  core::ElementArrayViewParams
-  array_params(const Variable &var) const override {
-    const auto &[indices, dim, buffer] = var.constituents<bucket<T>>();
-    auto params = var.array_params();
-    return {0, // no offset required in buffer since access via indices
-            params.dims(),
-            params.dataDims(),
-            {dim, buffer.dims(),
-             indices.template values<scipp::index_pair>().data()}};
-  }
+  Variable data(Variable &var) const override { return this->buffer(var); }
 };
 
 namespace {

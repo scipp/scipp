@@ -19,7 +19,7 @@ using namespace scipp::variable;
 namespace scipp::dataset {
 
 DataArray histogram(const DataArrayConstView &events,
-                    const VariableConstView &binEdges) {
+                    const Variable &binEdges) {
   using namespace scipp::core;
   auto dim = binEdges.dims().inner();
 
@@ -31,7 +31,7 @@ DataArray histogram(const DataArrayConstView &events,
     result = apply_and_drop_dim(
         events,
         [](const DataArrayConstView &events_, const Dim dim_,
-           const VariableConstView &binEdges_) {
+           const Variable &binEdges_) {
           const Masker masker(events_, dim_);
           // TODO Creating a full copy of event data here is very inefficient
           return buckets::histogram(masker.data(), binEdges_);
@@ -42,7 +42,7 @@ DataArray histogram(const DataArrayConstView &events,
     result = apply_and_drop_dim(
         events,
         [](const DataArrayConstView &events_, const Dim data_dim_,
-           const VariableConstView &binEdges_) {
+           const Variable &binEdges_) {
           const auto dim_ = binEdges_.dims().inner();
           const Masker masker(events_, dim_);
           return transform_subspan(
@@ -61,8 +61,7 @@ DataArray histogram(const DataArrayConstView &events,
   return result;
 }
 
-Dataset histogram(const DatasetConstView &dataset,
-                  const VariableConstView &binEdges) {
+Dataset histogram(const DatasetConstView &dataset, const Variable &binEdges) {
   return apply_to_items(
       dataset,
       [](const auto &item, const Dim, const auto &binEdges_) {

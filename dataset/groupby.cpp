@@ -85,11 +85,13 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
   // Apply to each group, storing result in output slice
   const auto process_groups = [&](const auto &range) {
     for (scipp::index group = range.begin(); group != range.end(); ++group) {
-      const auto out_slice = out.slice({dim(), group});
+      auto out_slice = out.slice({dim(), group});
       if constexpr (std::is_same_v<T, Dataset>) {
-        for (const auto &item : m_data)
-          op(out_slice[item.name()], item, groups()[group], reductionDim,
+        for (const auto &item : m_data) {
+          auto out_item = out_slice[item.name()];
+          op(out_item, item, groups()[group], reductionDim,
              get_mask(m_data[item.name()]));
+        }
       } else {
         op(out_slice, m_data, groups()[group], reductionDim, get_mask(m_data));
       }
@@ -102,25 +104,26 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
 
 namespace groupby_detail {
 
-static constexpr auto sum =
-    [](const DataArrayView &out, const auto &data_container,
-       const GroupByGrouping::group &group, const Dim, const Variable &mask) {
-      for (const auto &slice : group) {
-        const auto data_slice = data_container.slice(slice);
-        if (mask)
-          sum_impl(out.data(), data_slice.data() * mask.slice(slice));
-        else
-          sum_impl(out.data(), data_slice.data());
-      }
-    };
+static constexpr auto sum = [](DataArray &out, const auto &data_container,
+                               const GroupByGrouping::group &group, const Dim,
+                               const Variable &mask) {
+  for (const auto &slice : group) {
+    const auto data_slice = data_container.slice(slice);
+    auto data = out.data();
+    if (mask)
+      sum_impl(data, data_slice.data() * mask.slice(slice));
+    else
+      sum_impl(data, data_slice.data());
+  }
+};
 
-template <void (*Func)(const VariableView &, const VariableConstView &)>
+template <void (*Func)(Variable &, const Variable &)>
 // The msvc compiler was failing to pass the templated function correctly
 // requiring the introduction of a wrapping struct to aid compiler
 // resolution.
 struct wrap {
   static constexpr auto reduce_idempotent =
-      [](const DataArrayView &out, const auto &data_container,
+      [](auto &&out, const auto &data_container,
          const GroupByGrouping::group &group, const Dim reductionDim,
          const Variable &mask) {
         bool first = true;
@@ -130,10 +133,11 @@ struct wrap {
             throw std::runtime_error(
                 "This operation does not support masks yet.");
           if (first) {
-            out.data().assign(data_slice.data().slice({reductionDim, 0}));
+            copy(data_slice.data().slice({reductionDim, 0}), out.data());
             first = false;
           }
-          Func(out.data(), data_slice.data());
+          auto data = out.data();
+          Func(data, data_slice.data());
         }
       };
 };
@@ -210,7 +214,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
 
   // 3. sum/N -> mean
   if constexpr (std::is_same_v<T, Dataset>) {
-    for (const auto &item : out) {
+    for (auto &&item : out) {
       if (isInt(item.data().dtype()))
         out.setData(item.name(), item.data() * get_scale(m_data[item.name()]),
                     AttrPolicy::Keep);
@@ -228,7 +232,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
 }
 
 template <class T> struct MakeGroups {
-  static auto apply(const VariableConstView &key, const Dim targetDim) {
+  static auto apply(const Variable &key, const Dim targetDim) {
     expect::isKey(key);
     const auto &values = key.values<T>();
 
@@ -262,8 +266,7 @@ template <class T> struct MakeGroups {
 };
 
 template <class T> struct MakeBinGroups {
-  static auto apply(const VariableConstView &key,
-                    const VariableConstView &bins) {
+  static auto apply(const Variable &key, const Variable &bins) {
     expect::isKey(key);
     if (bins.dims().ndim() != 1)
       throw except::DimensionError("Group-by bins must be 1-dimensional");
@@ -294,9 +297,8 @@ template <class T> struct MakeBinGroups {
 };
 
 template <class T>
-GroupBy<typename T::value_type> call_groupby(const T &array,
-                                             const VariableConstView &key,
-                                             const VariableConstView &bins) {
+GroupBy<T> call_groupby(const T &array, const Variable &key,
+                        const Variable &bins) {
   return {
       array,
       core::CallDType<double, float, int64_t, int32_t>::apply<MakeBinGroups>(
@@ -304,8 +306,7 @@ GroupBy<typename T::value_type> call_groupby(const T &array,
 }
 
 template <class T>
-GroupBy<typename T::value_type>
-call_groupby(const T &array, const VariableConstView &key, const Dim &dim) {
+GroupBy<T> call_groupby(const T &array, const Variable &key, const Dim &dim) {
   return {array,
           core::CallDType<double, float, int64_t, int32_t, bool, std::string,
                           core::time_point>::apply<MakeGroups>(key.dtype(), key,
@@ -328,7 +329,7 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
 /// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
-                           const VariableConstView &bins) {
+                           const Variable &bins) {
   const auto &key = array.coords()[dim];
   return groupby(array, key, bins);
 }
@@ -338,9 +339,8 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
 /// Groups the slices of `array` according to values in given by a coord.
 /// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
-GroupBy<DataArray> groupby(const DataArrayConstView &array,
-                           const VariableConstView &key,
-                           const VariableConstView &bins) {
+GroupBy<DataArray> groupby(const DataArrayConstView &array, const Variable &key,
+                           const Variable &bins) {
   if (!array.dims().contains(key.dims()))
     throw except::DimensionError("Size of Group-by key is incorrect.");
 
@@ -363,7 +363,7 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
 /// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
-                         const VariableConstView &bins) {
+                         const Variable &bins) {
   const auto &key = dataset.coords()[dim];
   return groupby(dataset, key, bins);
 }
@@ -373,9 +373,8 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
 /// Groups the slices of `dataset` according to values in given by a coord.
 /// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
-GroupBy<Dataset> groupby(const DatasetConstView &dataset,
-                         const VariableConstView &key,
-                         const VariableConstView &bins) {
+GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Variable &key,
+                         const Variable &bins) {
   for (const auto &n : dataset.dimensions()) {
     Dimensions dims(n.first, n.second);
     if (dims.contains(key.dims()))
@@ -403,8 +402,8 @@ constexpr auto slice_by_value = [](const auto &x, const Dim dim,
 ///
 /// Chooses slices of `choices` along `dim`, based on values of dimension-coord
 /// for `dim`.
-DataArray choose(const VariableConstView &key,
-                 const DataArrayConstView &choices, const Dim dim) {
+DataArray choose(const Variable &key, const DataArrayConstView &choices,
+                 const Dim dim) {
   const auto grouping = call_groupby(key, key, dim);
   const Dim target_dim = key.dims().inner();
   auto out = resize(choices, dim, key.dims()[target_dim]);
@@ -414,8 +413,8 @@ DataArray choose(const VariableConstView &key,
     const auto value = grouping.key().slice({dim, group});
     const auto &choice = slice_by_value(choices, dim, value);
     for (const auto &slice : grouping.groups()[group]) {
-      const auto out_ = out.slice(slice);
-      out_.data().assign(broadcast(choice.data(), out_.dims()));
+      auto out_ = out.slice(slice);
+      copy(broadcast(choice.data(), out_.dims()), out_.data());
     }
   }
   return out;

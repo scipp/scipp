@@ -12,7 +12,7 @@ namespace scipp::dataset {
 
 namespace counts {
 
-std::vector<Variable> getBinWidths(const CoordsConstView &c,
+std::vector<Variable> getBinWidths(const Coords &c,
                                    const std::vector<Dim> &dims) {
   std::vector<Variable> binWidths;
   for (const auto &dim : dims) {
@@ -26,8 +26,7 @@ std::vector<Variable> getBinWidths(const CoordsConstView &c,
   return binWidths;
 }
 
-void toDensity(const DataArrayView data,
-               const std::vector<Variable> &binWidths) {
+void toDensity(DataArray data, const std::vector<Variable> &binWidths) {
   if (data.unit().isCounts()) {
     for (const auto &binWidth : binWidths)
       data /= binWidth;
@@ -67,8 +66,7 @@ DataArray toDensity(DataArray a, const std::vector<Dim> &dims) {
   return a;
 }
 
-void fromDensity(const DataArrayView data,
-                 const std::vector<Variable> &binWidths) {
+void fromDensity(DataArray data, const std::vector<Variable> &binWidths) {
   if (data.unit().isCounts()) {
     // Do nothing, but do not fail either.
   } else if (data.unit().isCountDensity()) {
@@ -83,7 +81,7 @@ Dataset fromDensity(Dataset d, const Dim dim) {
 
 Dataset fromDensity(Dataset d, const std::vector<Dim> &dims) {
   const auto binWidths = getBinWidths(d.coords(), dims);
-  for (const auto &data : d)
+  for (auto &&data : d)
     fromDensity(data, binWidths);
   return d;
 }

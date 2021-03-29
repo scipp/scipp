@@ -8,7 +8,7 @@
 
 namespace scipp::dataset {
 
-SCIPP_DATASET_EXPORT DataArray choose(const VariableConstView &key,
+SCIPP_DATASET_EXPORT DataArray choose(const Variable &key,
                                       const DataArrayConstView &choices,
                                       const Dim dim);
 
