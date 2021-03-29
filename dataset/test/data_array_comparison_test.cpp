@@ -55,6 +55,7 @@ protected:
   Dataset dataset;
 };
 
+namespace {
 template <class T> auto make_values(const Dimensions &dims) {
   return DataArray(makeVariable<T>(Dimensions(dims)));
 }
@@ -117,6 +118,7 @@ auto make_values_and_variances(const std::string &name, const Dimensions &dims,
                                   Values(values), Variances(variances)));
   return DataArray(d[name]);
 }
+} // namespace
 
 // Baseline checks: Does data-array comparison pick up arbitrary mismatch of
 // individual items? Strictly speaking many of these are just retesting the
