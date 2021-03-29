@@ -293,10 +293,12 @@ TEST(DatasetTest, slice_no_data) {
 
 TEST(DatasetTest, slice_validation_simple) {
   Dataset dataset;
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
+  // TODO this fails length 2, since setCoords detects bin edges and does not
+  // add dim
+  auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   dataset.setCoord(Dim::X, var);
   EXPECT_THROW(dataset.slice(Slice{Dim::Y, 0, 1}), except::SliceError);
-  EXPECT_THROW(dataset.slice(Slice{Dim::X, 0, 3}), except::SliceError);
+  EXPECT_THROW(dataset.slice(Slice{Dim::X, 0, 4}), except::SliceError);
   EXPECT_THROW(dataset.slice(Slice{Dim::X, -1, 0}), except::SliceError);
   EXPECT_NO_THROW(dataset.slice(Slice{Dim::X, 0, 1}));
 }
@@ -367,7 +369,10 @@ TEST(DatasetTest, erase_item_coord_cannot_erase_coord) {
   Dataset ds(ref);
   auto coord = Variable(ds.coords()[Dim::X]);
   ASSERT_TRUE(ds.contains("data_x"));
-  EXPECT_THROW(ds["data_x"].coords().erase(Dim::X), except::DatasetError);
+  ASSERT_NO_THROW(ds["data_x"].coords().erase(Dim::X));
+  // Coord was erase in DataArray returned by ds["data_x"], but not from coord
+  // dict of ds
+  ASSERT_TRUE(ds.coords().contains(Dim::X));
 }
 
 /*

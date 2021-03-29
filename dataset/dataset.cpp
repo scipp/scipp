@@ -72,7 +72,7 @@ DataArray Dataset::operator[](const std::string &name) const {
 /// replaced item is the only one in the dataset with that dimension it cannot
 /// be "resized" in this way.
 void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
-  if (is_edges(m_coords.sizes(), dims, coordDim))
+  if (coordDim != Dim::Invalid && is_edges(m_coords.sizes(), dims, coordDim))
     return;
   m_coords.sizes() = merge(m_coords.sizes(), Sizes(dims));
 }
@@ -176,17 +176,7 @@ Dataset Dataset::slice(const Slice s) const {
 void Dataset::rename(const Dim from, const Dim to) {
   if ((from != to) && m_coords.sizes().contains(to))
     throw except::DimensionError("Duplicate dimension.");
-
-  const auto relabel = [from, to](auto &map) {
-    auto node = map.extract(from);
-    node.key() = to;
-    map.insert(std::move(node));
-  };
-  // TODO relabel sizes
-  if (m_coords.count(from))
-    relabel(m_coords.items());
-  for (auto &item : m_coords)
-    item.second.rename(from, to);
+  m_coords.rename(from, to);
   for (auto &item : m_data)
     item.second.rename(from, to);
 }

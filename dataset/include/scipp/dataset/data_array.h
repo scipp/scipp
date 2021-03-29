@@ -33,7 +33,9 @@ public:
   DataArray &operator=(const DataArray &other);
   DataArray &operator=(DataArray &&other) = default;
 
-  explicit operator bool() const noexcept { return m_data.operator bool(); }
+  explicit operator bool() const noexcept {
+    return m_data && m_data->operator bool();
+  }
 
   const std::string &name() const;
   void setName(const std::string &name);
@@ -51,29 +53,29 @@ public:
 
   Coords meta() const;
 
-  Dimensions dims() const { return m_data.dims(); }
-  DType dtype() const { return m_data.dtype(); }
-  units::Unit unit() const { return m_data.unit(); }
+  Dimensions dims() const { return m_data->dims(); }
+  DType dtype() const { return m_data->dtype(); }
+  units::Unit unit() const { return m_data->unit(); }
 
-  void setUnit(const units::Unit unit) { m_data.setUnit(unit); }
+  void setUnit(const units::Unit unit) { m_data->setUnit(unit); }
 
   /// Return true if the data array contains data variances.
-  bool hasVariances() const { return m_data.hasVariances(); }
+  bool hasVariances() const { return m_data->hasVariances(); }
 
   /// Return untyped const view for data (values and optional variances).
-  const Variable &data() const { return m_data; }
+  const Variable &data() const { return *m_data; }
   /// Return untyped view for data (values and optional variances).
-  Variable data() { return m_data; }
+  Variable data() { return *m_data; }
 
   /// Return typed const view for data values.
-  template <class T> auto values() const { return m_data.values<T>(); }
+  template <class T> auto values() const { return m_data->values<T>(); }
   /// Return typed view for data values.
-  template <class T> auto values() { return m_data.values<T>(); }
+  template <class T> auto values() { return m_data->values<T>(); }
 
   /// Return typed const view for data variances.
-  template <class T> auto variances() const { return m_data.variances<T>(); }
+  template <class T> auto variances() const { return m_data->variances<T>(); }
   /// Return typed view for data variances.
-  template <class T> auto variances() { return m_data.variances<T>(); }
+  template <class T> auto variances() { return m_data->variances<T>(); }
 
   void rename(const Dim from, const Dim to);
 
@@ -86,7 +88,7 @@ public:
 
 private:
   std::string m_name;
-  Variable m_data;
+  std::shared_ptr<Variable> m_data;
   Coords m_coords;
   std::shared_ptr<Masks> m_masks;
   std::shared_ptr<Attrs> m_attrs;

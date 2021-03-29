@@ -85,6 +85,21 @@ Dict<Key, Value> Dict<Key, Value>::slice(const Slice &params) const {
   return Dict(m_sizes.slice(params), slice_map(m_sizes, m_items, params));
 }
 
+template <class Key, class Value>
+void Dict<Key, Value>::rename(const Dim from, const Dim to) {
+  m_sizes.relabel(from, to);
+  // TODO relabel only if coords (not attrs?)?
+  if constexpr (std::is_same_v<Key, Dim>) {
+    if (m_items.count(from)) {
+      auto node = m_items.extract(from);
+      node.key() = to;
+      m_items.insert(std::move(node));
+    }
+  }
+  for (auto &item : m_items)
+    item.second.rename(from, to);
+}
+
 template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;
 template class SCIPP_DATASET_EXPORT Dict<std::string, Variable>;
 

@@ -38,6 +38,14 @@ void Sizes::erase(const Dim dim) {
   m_sizes.erase(dim);
 }
 
+void Sizes::relabel(const Dim from, const Dim to) {
+  if (!contains(from))
+    return;
+  auto node = m_sizes.extract(from);
+  node.key() = to;
+  m_sizes.insert(std::move(node));
+}
+
 bool Sizes::contains(const Dimensions &dims) {
   for (const auto &dim : dims.labels())
     if (m_sizes.count(dim) == 0 || m_sizes.at(dim) != dims[dim])
