@@ -24,7 +24,7 @@ def combine_masks(masks, labels, shape):
     :return: A new variable that contains the union of all masks.
     :rtype: Variable
     """
-    return _call_cpp_func(_cpp.merge, lhs, rhs)
+    return _call_cpp_func(_cpp.combine_masks, labels, shape)
 
 
 def merge(lhs, rhs):
