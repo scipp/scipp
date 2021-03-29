@@ -208,8 +208,14 @@ copy(const Dataset &dataset, const AttrPolicy attrPolicy = AttrPolicy::Keep);
 [[maybe_unused]] SCIPP_DATASET_EXPORT DataArray &
 copy(const DataArray &array, DataArray &out,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
+[[maybe_unused]] SCIPP_DATASET_EXPORT DataArray
+copy(const DataArray &array, DataArray &&out,
+     const AttrPolicy attrPolicy = AttrPolicy::Keep);
 [[maybe_unused]] SCIPP_DATASET_EXPORT Dataset &
 copy(const Dataset &dataset, Dataset &out,
+     const AttrPolicy attrPolicy = AttrPolicy::Keep);
+[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset
+copy(const Dataset &dataset, Dataset &&out,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
 SCIPP_DATASET_EXPORT DataArray operator-(const DataArray &a);
@@ -252,8 +258,8 @@ SCIPP_DATASET_EXPORT Dataset merge(const Dataset &a, const Dataset &b);
 /// If any of the masks repeat they are OR'ed.
 /// The result is stored in a new map
 SCIPP_DATASET_EXPORT
-    std::map<typename Masks::key_type, typename Masks::mapped_type>
-    union_or(const Masks &currentMasks, const Masks &otherMasks);
+std::unordered_map<typename Masks::key_type, typename Masks::mapped_type>
+union_or(const Masks &currentMasks, const Masks &otherMasks);
 
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.
@@ -267,10 +273,13 @@ namespace scipp::core {
 template <> inline constexpr DType dtype<dataset::DataArray>{2000};
 template <> inline constexpr DType dtype<dataset::Dataset>{2001};
 template <> inline constexpr DType dtype<bucket<dataset::DataArray>>{2002};
+template <> inline constexpr DType dtype<bucket<dataset::Dataset>>{2003};
 } // namespace scipp::core
 
 namespace scipp {
+using dataset::DataArrayConstView;
 using dataset::Dataset;
+using dataset::DatasetConstView;
 } // namespace scipp
 
 #include "scipp/dataset/arithmetic.h"

@@ -29,8 +29,8 @@ set(INC_FILES
 )
 
 set(SRC_FILES
-    #${dataset_SRC_FILES}
-    #arithmetic.cpp
+    ${dataset_SRC_FILES}
+    arithmetic.cpp
     #bin.cpp
     #bins.cpp
     #counts.cpp
@@ -41,17 +41,17 @@ set(SRC_FILES
     #groupby.cpp
     #histogram.cpp
     map_view.cpp
-    #operations.cpp
+    operations.cpp
     #rebin.cpp
-    #reduction.cpp
-    #util.cpp
+    reduction.cpp
+    util.cpp
     #shape.cpp
     #slice.cpp
     #sort.cpp
     #string.cpp
     #variable_instantiate_bin_elements.cpp
     #variable_instantiate_dataset.cpp
-    #variable_reduction.cpp
+    variable_reduction.cpp
 )
 
 set(LINK_TYPE "STATIC")
