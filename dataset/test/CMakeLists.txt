@@ -39,7 +39,7 @@ add_executable(
   size_of_test.cpp
   slice_by_value_test.cpp
   #slice_test.cpp
-  sort_test.cpp
+  #sort_test.cpp
   string_test.cpp
   sum_test.cpp
 )
