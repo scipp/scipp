@@ -92,12 +92,12 @@ std::string to_string(const Variable &variable) {
   return format_variable(std::string("<scipp.Variable>"), variable);
 }
 
-std::string to_string(const std::pair<Dim, const Variable &> &coord) {
+std::string to_string(const std::pair<Dim, Variable> &coord) {
   using units::to_string;
   return to_string(coord.first) + ":\n" + to_string(coord.second);
 }
 
-std::string to_string(const std::pair<std::string, const Variable &> &coord) {
+std::string to_string(const std::pair<std::string, Variable> &coord) {
   return coord.first + ":\n" + to_string(coord.second);
 }
 

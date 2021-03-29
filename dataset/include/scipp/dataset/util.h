@@ -15,7 +15,7 @@ SCIPP_DATASET_EXPORT scipp::index size_of(const DataArrayConstView &dataarray,
                                           bool include_aligned_coords = true);
 SCIPP_DATASET_EXPORT scipp::index size_of(const DatasetConstView &dataset);
 
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-astype(const DataArrayConstView &var, const DType type);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray astype(const DataArray &var,
+                                                    const DType type);
 
 } // namespace scipp
