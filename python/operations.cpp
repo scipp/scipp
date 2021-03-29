@@ -28,19 +28,11 @@ auto get_sort_order(const std::string &order) {
 }
 
 template <typename T> void bind_dot(py::module &m) {
-  auto doc = Docstring()
-                 .description("Element-wise dot product.")
-                 .raises("If the dtype of the input is not vector_3_float64.")
-                 .returns("The dot product of the input vectors.")
-                 .rtype<T>()
-                 .template param<T>("x", "Input left hand side operand.")
-                 .template param<T>("y", "Input right hand side operand.");
   m.def(
       "dot",
       [](const typename T::const_view_type &x,
          const typename T::const_view_type &y) { return dot(x, y); },
-      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
-      doc.c_str());
+      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_sort(py::module &m) {
@@ -73,23 +65,7 @@ void bind_issorted(py::module &m) {
         return issorted(x, dim, get_sort_order(order));
       },
       py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
-      py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description("Check if the values of a variable are sorted in.\n\nIf "
-                       "'order' is 'ascending' checks if values are "
-                       "non-decreasing along 'dim'. If 'order' is 'descending' "
-                       "checks if values are non-increasing along 'dim'.")
-          .param("x", "Variable to check.", "Variable")
-          .param("dim", "Dimension along which order is checked.", "Dim")
-          .param("order",
-                 "Sorted order. Valid options are 'ascending' and "
-                 "'descending'. Default is 'ascending'.",
-                 "str")
-          .returns(
-              "True if the variable values are monotonously ascending or "
-              "descending (depending on the requested order), False otherwise.")
-          .rtype("bool")
-          .c_str());
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_sort_variable(py::module &m) {

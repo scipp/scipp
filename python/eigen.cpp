@@ -11,7 +11,8 @@
 namespace py = pybind11;
 
 void init_eigen(py::module &m) {
-  m.def(
+  auto eigen_m = m.def_submodule("eigen");
+  eigen_m.def(
       "rotation_matrix_from_quaternion_coeffs", [](py::array_t<double> value) {
         if (value.size() != 4)
           throw std::runtime_error("Incompatible list size: expected size 4.");

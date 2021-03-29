@@ -27,7 +27,10 @@ from ._scipp.core import Variable, VariableView, DataArray, DataArrayView, \
                          GroupByDataset
 from ._scipp.core import units, dtype
 from ._scipp.core import DTypeError, CoordError, UnitError
+from ._scipp.core.eigen import *
+from ._scipp.core import geometry
 from ._scipp import __version__
+
 from . import detail
 from .show import show, make_svg
 from .table import table

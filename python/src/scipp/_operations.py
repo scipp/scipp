@@ -5,6 +5,40 @@ from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
+def dot(x, y):
+    """Element-wise dot product.
+
+    :param x: Left hand side operand.
+    :param y: Right hand side operand.
+    :type x: Variable
+    :type y: Variable
+    :raises: If the dtype of the input is not vector_3_float64.
+    :return: The dot product of the input vectors.
+    :rtype: Variable
+    """
+    return _call_cpp_func(_cpp.dot, x, y)
+
+
+def issorted(x, dim, order='ascending'):
+    """
+    Check if the values of a variable are sorted in.
+    If `order` is `ascending`, check if values are non-decreasing along `dim`.
+    If `order` is `descending`, check if values are non-increasing along 'dim'.
+
+    :param x: Variable to check.
+    :param dim: Dimension along which order is checked.
+    :param order: Optional Sorted order. Valid options are 'ascending' and
+      'descending'. Default is 'ascending'.
+    :type x: Variable
+    :type dim: str
+    :type order: str
+    :return: True if the variable values are monotonously ascending or
+      descending (depending on the requested order), False otherwise.
+    :rtype: bool
+    """
+    return _call_cpp_func(_cpp.issorted, x, dim, order)
+
+
 def sort(x, key, order='ascending'):
     """Sort variable along a dimension by a sort key or dimension label
 
