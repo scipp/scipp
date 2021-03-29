@@ -16,13 +16,13 @@ using namespace scipp::dataset;
 template <typename T> class CoordsViewTest : public ::testing::Test {
 protected:
   template <class D>
-  std::conditional_t<std::is_same_v<T, CoordsView>, Dataset, const Dataset> &
+  std::conditional_t<std::is_same_v<T, Coords>, Dataset, const Dataset> &
   access(D &dataset) {
     return dataset;
   }
 };
 
-using CoordsViewTypes = ::testing::Types<CoordsView, CoordsConstView>;
+using CoordsViewTypes = ::testing::Types<Coords, const Coords>;
 TYPED_TEST_SUITE(CoordsViewTest, CoordsViewTypes);
 
 TYPED_TEST(CoordsViewTest, empty) {
@@ -120,7 +120,7 @@ TEST(MutableCoordsViewTest, item_write) {
   d.setCoord(Dim::X, x);
   d.setCoord(Dim::Y, y);
 
-  const auto coords = d.coords();
+  auto &coords = d.coords();
   coords[Dim::X].values<double>()[0] += 0.5;
   coords[Dim::Y].values<double>()[0] += 0.5;
   ASSERT_EQ(coords[Dim::X], x_reference);

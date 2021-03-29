@@ -6,18 +6,18 @@ set(TARGET_NAME "scipp-dataset-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
-  #attributes_test.cpp
-  #binned_arithmetic_test.cpp
-  #binned_creation_test.cpp
-  #bins_test.cpp
-  #bin_test.cpp
+  attributes_test.cpp
+  binned_arithmetic_test.cpp
+  binned_creation_test.cpp
+  bins_test.cpp
+  bin_test.cpp
   choose_test.cpp
   concatenate_test.cpp
-  #coords_view_test.cpp
+  coords_view_test.cpp
   copy_test.cpp
   counts_test.cpp
   data_array_comparison_test.cpp
-  #data_array_test.cpp
+  data_array_test.cpp
   dataset_arithmetic_test.cpp
   dataset_comparison_test.cpp
   dataset_operations_test.cpp
