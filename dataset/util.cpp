@@ -4,6 +4,7 @@
 /// @author Matthew Andrew
 #include "scipp/dataset/util.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
 
@@ -66,4 +67,10 @@ scipp::index size_of(const DatasetConstView &dataset) {
   }
   return size;
 }
+
+DataArray astype(const DataArray &var, const DType type) {
+  return DataArray(astype(var.data(), type), var.coords(), var.masks(),
+                   var.attrs(), var.name());
+}
+
 } // namespace scipp

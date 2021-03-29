@@ -43,7 +43,7 @@ private:
 
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes merge(const Sizes &a, const Sizes &b);
 
-std::string to_string(const Sizes &sizes);
+SCIPP_CORE_EXPORT std::string to_string(const Sizes &sizes);
 
 } // namespace scipp::core
 

@@ -77,6 +77,14 @@ const std::string &DataArray::name() const { return m_name; }
 
 void DataArray::setName(const std::string &name) { m_name = name; }
 
+Coords DataArray::meta() const {
+  // TODO throw if shadowing?
+  auto out = attrs();
+  for (const auto &[dim, coord] : coords())
+    out.set(dim, coord);
+  return out;
+}
+
 DataArray DataArray::slice(const Slice &s) const {
   DataArray out{m_data.slice(s), m_coords.slice(s), m_masks->slice(s),
                 m_attrs->slice(s), m_name};
@@ -122,11 +130,6 @@ void DataArray::rename(const Dim from, const Dim to) {
     item.second.rename(from, to);
   for (auto &item : *m_attrs)
     item.second.rename(from, to);
-}
-
-DataArray astype(const DataArray &var, const DType type) {
-  return DataArray(astype(var.data(), type), var.coords(), var.masks(),
-                   var.attrs(), var.name());
 }
 
 } // namespace scipp::dataset
