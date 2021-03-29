@@ -11,14 +11,14 @@
 
 namespace scipp::dataset::counts {
 
-SCIPP_DATASET_EXPORT void toDensity(const DataArrayView data,
+SCIPP_DATASET_EXPORT void toDensity(DataArray data,
                                     const std::vector<Variable> &binWidths);
 SCIPP_DATASET_EXPORT Dataset toDensity(Dataset d, const Dim dim);
 SCIPP_DATASET_EXPORT Dataset toDensity(Dataset d, const std::vector<Dim> &dims);
 SCIPP_DATASET_EXPORT DataArray toDensity(DataArray a, const Dim dim);
 SCIPP_DATASET_EXPORT DataArray toDensity(DataArray a,
                                          const std::vector<Dim> &dims);
-SCIPP_DATASET_EXPORT void fromDensity(const DataArrayView data,
+SCIPP_DATASET_EXPORT void fromDensity(DataArray data,
                                       const std::vector<Variable> &binWidths);
 SCIPP_DATASET_EXPORT Dataset fromDensity(Dataset d, const Dim dim);
 SCIPP_DATASET_EXPORT Dataset fromDensity(Dataset d,

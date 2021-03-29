@@ -96,6 +96,14 @@ private:
                                   const units::Unit &unit,
                                   const bool variances) const = 0;
 
+protected:
+  const T &buffer(const Variable &var) const {
+    return requireT<const DataModel<bucket<T>>>(var.data()).buffer();
+  }
+  T buffer(Variable &var) const {
+    return requireT<DataModel<bucket<T>>>(var.data()).buffer();
+  }
+
 public:
   Variable create(const DType elem_dtype, const Dimensions &dims,
                   const units::Unit &unit, const bool variances,
@@ -130,6 +138,16 @@ public:
   }
   bool hasVariances(const Variable &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).hasVariances();
+  }
+  core::ElementArrayViewParams
+  array_params(const Variable &var) const override {
+    const auto &[indices, dim, buffer] = var.constituents<bucket<T>>();
+    auto params = var.array_params();
+    return {0, // no offset required in buffer since access via indices
+            params.dims(),
+            params.dataDims(),
+            {dim, buffer.dims(),
+             indices.template values<scipp::index_pair>().data()}};
   }
 };
 

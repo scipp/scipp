@@ -10,7 +10,7 @@
 namespace scipp::dataset {
 
 DataArray rebin(const DataArrayConstView &a, const Dim dim,
-                const VariableConstView &coord) {
+                const Variable &coord) {
   auto rebinned = apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord);
   for (auto &&[name, mask] : a.masks()) {
@@ -21,8 +21,7 @@ DataArray rebin(const DataArrayConstView &a, const Dim dim,
   return rebinned;
 }
 
-Dataset rebin(const DatasetConstView &d, const Dim dim,
-              const VariableConstView &coord) {
+Dataset rebin(const DatasetConstView &d, const Dim dim, const Variable &coord) {
   return apply_to_items(
       d, [](auto &&... _) { return rebin(_...); }, dim, coord);
 }

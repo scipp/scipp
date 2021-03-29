@@ -8,7 +8,7 @@
 
 namespace scipp::variable {
 
-SCIPP_VARIABLE_EXPORT void copy_slices(const Variable &src, Variable &dst,
+SCIPP_VARIABLE_EXPORT void copy_slices(const Variable &src, Variable dst,
                                        const Dim dim,
                                        const Variable &srcIndices,
                                        const Variable &dstIndices);

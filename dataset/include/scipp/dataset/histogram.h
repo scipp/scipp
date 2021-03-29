@@ -8,14 +8,14 @@
 #include <set>
 #include <tuple>
 
-#include "scipp/dataset/except.h"
+#include "scipp/dataset/dataset.h"
 
 namespace scipp::dataset {
 
 SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &events,
-                                         const VariableConstView &binEdges);
+                                         const Variable &binEdges);
 SCIPP_DATASET_EXPORT Dataset histogram(const DatasetConstView &dataset,
-                                       const VariableConstView &bins);
+                                       const Variable &bins);
 
 SCIPP_DATASET_EXPORT std::set<Dim> edge_dimensions(const DataArrayConstView &a);
 SCIPP_DATASET_EXPORT Dim edge_dimension(const DataArrayConstView &a);
