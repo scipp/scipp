@@ -197,7 +197,7 @@ def fix_empty_range(lims, replacement=None):
     return [lims[0] - dx, lims[1] + dx]
 
 
-def fig_to_bytes(fig):
+def fig_to_pngbytes(fig):
     """
     Convert figure to png image bytes.
     We also close the figure to prevent it from showing up again in

@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config
-from .tools import fig_to_bytes
+from .tools import fig_to_pngbytes
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -98,7 +98,7 @@ class PlotFigure:
         """
         Convert the Matplotlib figure to a static image.
         """
-        self.image = ipw.Image(value=fig_to_bytes(self.fig),
+        self.image = ipw.Image(value=fig_to_pngbytes(self.fig),
                                width=config.plot.width,
                                height=config.plot.height)
 

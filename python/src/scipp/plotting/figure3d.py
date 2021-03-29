@@ -4,7 +4,7 @@
 
 from .. import config
 from .toolbar import PlotToolbar3d
-from .tools import fig_to_bytes
+from .tools import fig_to_pngbytes
 from .._utils import value_to_string
 import numpy as np
 import ipywidgets as ipw
@@ -394,7 +394,7 @@ void main() {
                          extend=self.extend)
         cbar_ax.set_ylabel(self.unit)
         cbar_ax.yaxis.set_label_coords(-0.9, 0.5)
-        self.cbar_image.value = fig_to_bytes(cbar_fig)
+        self.cbar_image.value = fig_to_pngbytes(cbar_fig)
 
     def reset_camera(self, owner=None):
         """
