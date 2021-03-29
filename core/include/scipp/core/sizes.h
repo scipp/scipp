@@ -36,6 +36,7 @@ public:
   scipp::index operator[](const Dim dim) const;
   void set(const Dim dim, const scipp::index size);
   void erase(const Dim dim);
+  void relabel(const Dim from, const Dim to);
   bool contains(const Dimensions &dims);
   Sizes slice(const Slice &params) const;
 
