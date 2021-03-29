@@ -62,38 +62,6 @@ DataArray Dataset::operator[](const std::string &name) const {
   return *find(name);
 }
 
-// TODO should we just not supported "shrinking"? That is, what is set first
-// determines dims? How can we support empty datasets to carry only bin edges?
-namespace extents {
-// Internally use negative extent -1 to indicate unknown edge state. The `-1`
-// is required for dimensions with extent 0.
-scipp::index makeUnknownEdgeState(const scipp::index extent) {
-  return -extent - 1;
-}
-bool isUnknownEdgeState(const scipp::index extent) { return extent < 0; }
-scipp::index decode(const scipp::index extent) {
-  if (isUnknownEdgeState(extent))
-    return -extent - 1;
-  return extent;
-}
-void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
-               const scipp::index extent, const bool isCoord) {
-  const auto it = dims.find(dim);
-  if (it == dims.end()) {
-    dims[dim] = isCoord ? extents::makeUnknownEdgeState(extent) : extent;
-    return;
-  }
-  auto &current = it->second;
-  if ((extent == decode(current) && !isCoord) ||
-      (extent == decode(current) + 1 && isCoord))
-    current = decode(current); // switch to known
-  if (extent == decode(current) - 1 && isUnknownEdgeState(current))
-    current = extent; // shrink by 1 and switch to known
-  if (extent != decode(current) && !(isCoord && extent == decode(current) + 1))
-    throw except::DimensionError(decode(current), extent);
-}
-} // namespace extents
-
 /// Consistency-enforcing update of the dimensions of the dataset.
 ///
 /// Calling this in the various set* methods prevents insertion of variable with
@@ -104,28 +72,22 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
 /// replaced item is the only one in the dataset with that dimension it cannot
 /// be "resized" in this way.
 void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
-  auto tmp = m_dims;
-  for (const auto &dim : dims.labels())
-    extents::setExtent(tmp, dim, dims[dim], dim == coordDim);
-  m_dims = tmp;
-  m_coords.sizes() = Sizes(dimensions());
+  if (is_edges(m_coords.sizes(), dims, coordDim))
+    return;
+  m_coords.sizes() = merge(m_coords.sizes(), Sizes(dims));
 }
 
 void Dataset::rebuildDims() {
-  m_dims.clear();
-
-  for (const auto &d : *this) {
+  m_coords.sizes().clear();
+  for (const auto &d : *this)
     setDims(d.dims());
-  }
-  for (const auto &c : m_coords) {
+  // TODO if this happens to process edge coord first this won't work
+  for (const auto &c : m_coords)
     setDims(c.second.dims(), dim_of_coord(c.second, c.first));
-  }
 }
 
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
-  // ds.coords().set() must be possible (in Python?)
-  // ... how can we allow for growing sizes?
   setDims(coord.dims(), dim_of_coord(coord, dim));
   // TODO remove?
   // for (const auto &item : m_data)
@@ -193,24 +155,26 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
 /// Return slice of the dataset along given dimension with given extents.
 Dataset Dataset::slice(const Slice s) const {
   Dataset out;
-  // TODO m_dims
   out.m_coords = m_coords.slice(s);
   // TODO drop items that do not depend on s.dim()?
   out.m_data = slice_map(m_coords.sizes(), m_data, s);
+  std::vector<Dim> erase;
   for (auto it = out.m_coords.begin(); it != out.m_coords.end();) {
-    if (unaligned_by_dim_slice(*it, s.dim())) {
+    if (unaligned_by_dim_slice(*it, s)) {
       for (auto &item : out.m_data)
         item.second.attrs().set(it->first, it->second);
-      out.m_coords.erase(it->first);
+      erase.emplace_back(it->first);
     }
     ++it;
   }
+  for (const Dim &dim : erase)
+    out.m_coords.erase(dim);
   return out;
 }
 
 /// Rename dimension `from` to `to`.
 void Dataset::rename(const Dim from, const Dim to) {
-  if ((from != to) && (m_dims.count(to) != 0))
+  if ((from != to) && m_coords.sizes().contains(to))
     throw except::DimensionError("Duplicate dimension.");
 
   const auto relabel = [from, to](auto &map) {
@@ -218,8 +182,7 @@ void Dataset::rename(const Dim from, const Dim to) {
     node.key() = to;
     map.insert(std::move(node));
   };
-  if (m_dims.count(from) != 0)
-    relabel(m_dims);
+  // TODO relabel sizes
   if (m_coords.count(from))
     relabel(m_coords.items());
   for (auto &item : m_coords)
@@ -301,8 +264,8 @@ bool Dataset::operator!=(const Dataset &other) const {
 
 std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
   std::unordered_map<Dim, scipp::index> all;
-  for (const auto &dim : this->m_dims)
-    all[dim.first] = extents::decode(dim.second);
+  for (const auto &dim : m_coords.sizes())
+    all[dim.first] = dim.second;
   return all;
 }
 

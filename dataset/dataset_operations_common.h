@@ -12,9 +12,14 @@
 
 namespace scipp::dataset {
 
-constexpr auto unaligned_by_dim_slice = [](const auto &item, const Dim dim) {
+constexpr auto unaligned_by_dim_slice = [](const auto &item,
+                                           const Slice &params) {
+  if (params.end() != -1)
+    return false;
+  const Dim dim = params.dim();
   const auto &[key, var] = item;
   if constexpr (std::is_same_v<std::decay_t<decltype(item.first)>, Dim>) {
+    // TODO why duplicate?
     const bool is_dimension_coord = var.dims().contains(key);
     return var.dims().contains(dim) &&
            (is_dimension_coord ? key == dim : var.dims().inner() == dim);
