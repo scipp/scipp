@@ -48,16 +48,20 @@ def _input_to_data_array(item, all_keys, key=None):
     to_plot = {}
     if su.is_dataset(item):
         for name in sorted(item.keys()):
-            proto_plt_key = f'{key}_{name}' if key else name
-            to_plot[_make_plot_key(proto_plt_key, all_keys)] = item[name]
+            if su.numeric_type(item[name]):
+                proto_plt_key = f'{key}_{name}' if key else name
+                to_plot[_make_plot_key(proto_plt_key, all_keys)] = item[name]
     elif su.is_variable(item):
-        if key is None:
-            key = str(type(item))
-        to_plot[_make_plot_key(key, all_keys)] = _variable_to_data_array(item)
+        if su.numeric_type(item):
+            if key is None:
+                key = str(type(item))
+            to_plot[_make_plot_key(key,
+                                   all_keys)] = _variable_to_data_array(item)
     elif su.is_data_array(item):
-        if key is None:
-            key = item.name
-        to_plot[_make_plot_key(key, all_keys)] = item
+        if su.numeric_type(item):
+            if key is None:
+                key = item.name
+            to_plot[_make_plot_key(key, all_keys)] = item
     elif isinstance(item, np.ndarray):
         if key is None:
             key = str(type(item))
@@ -198,7 +202,6 @@ def plot(scipp_obj,
     elif len(output) > 0:
         return output[list(output.keys())[0]]
     else:
-        raise ValueError("Input contains nothing that can be plotted."
-                         " Your scipp_obj may be"
-                         " (or may contain items that are)"
-                         f" 0-D:\n\n{scipp_obj}")
+        raise ValueError("Input contains nothing that can be plotted. "
+                         "Input may be of dtype vector or string, "
+                         f"or may have zero dimensions:\n{scipp_obj}")
