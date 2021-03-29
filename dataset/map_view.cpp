@@ -11,14 +11,9 @@ template <class Key, class Value>
 bool Dict<Key, Value>::operator==(const Dict &other) const {
   if (size() != other.size())
     return false;
-  for (const auto [name, data] : *this) {
-    try {
-      if (data != other[name])
-        return false;
-    } catch (except::NotFoundError &) {
+  for (const auto [name, data] : *this)
+    if (!other.contains(name) || data != other[name])
       return false;
-    }
-  }
   return true;
 }
 
