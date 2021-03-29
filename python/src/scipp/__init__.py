@@ -25,10 +25,10 @@ if _debug_:
 from ._scipp.core import Variable, VariableView, DataArray, DataArrayView, \
                          Dataset, DatasetView, Dim, GroupByDataArray, \
                          GroupByDataset
-from ._scipp.core import units, dtype
+from ._scipp.core import units, dtype, buckets, geometry
 from ._scipp.core import DTypeError, CoordError, UnitError
 from ._scipp.core.eigen import *
-from ._scipp.core import geometry
+from ._scipp.core import choose
 from ._scipp import __version__
 
 from . import detail

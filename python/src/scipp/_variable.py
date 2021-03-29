@@ -3,8 +3,77 @@
 # @author Matthew Andrew
 from . import units, Unit, dtype, Variable
 from ._scipp import core as _cpp
+from ._cpp_wrapper_util import call_func as _call_cpp_func
 from typing import Any, Sequence, Union
 import numpy
+
+
+def filter(x, key):
+    """
+    Selects elements for a Variable using a filter (mask).
+
+    The filter variable must be 1D and of bool type.
+    A true value in the filter means the corresponding element in the input is
+    selected and will be copied to the output.
+    A false value in the filter discards the corresponding element
+    in the input.
+
+    :param x: Variable to filter.
+    :param key: Variable which defines the filter.
+    :type x: Variable
+    :type key: Variable
+    :raises: If the filter variable is not 1 dimensional.
+    :returns: New variable containing the data selected by the filter.
+    :rtype: Variable
+    """
+    return _call_cpp_func(_cpp.filter, x, key)
+
+
+def split(x, dim, inds):
+    """
+    Split a Variable along a given Dimension.
+
+    :param x: Variable to split.
+    :param dim: Dimension along which to perform the split.
+    :param inds: List of indices  where the variable will split.
+    :type x: Variable
+    :type dim: str
+    :type inds: list
+    :returns: A list of variables.
+    :rtype: list
+    """
+    return _call_cpp_func(_cpp.split, x, dim, inds)
+
+
+def islinspace(x):
+    """
+    Check if the values of a variable are evenly spaced.
+
+    :param x: Variable to check.
+    :type x: Variable
+    :returns: True if the variable contains regularly spaced values,
+      False otherwise.
+    :rtype: bool
+    """
+    return _call_cpp_func(_cpp.islinspace, x)
+
+
+def rebin(x, dim, old, new):
+    """
+    Rebin a variable alonf a dimension given some old and new bin edges.
+
+    :param x: Variable to rebin.
+    :param dim: Dimension along which to perform the rebin.
+    :param old: Old bin edges
+    :param new: New bin edges
+    :type x: Variable
+    :type dim: str
+    :type old: Variable
+    :type new: Variable
+    :returns: Data rebinned according to the new bin edges.
+    :rtype: Variable
+    """
+    return _call_cpp_func(_cpp.rebin, x, dim, old, new)
 
 
 def scalar(value: Any,
@@ -24,7 +93,8 @@ def scalar(value: Any,
       in which case type is inferred from value input.
       Cannot be specified for value types of
       str, Dataset or DataArray.
-    :raises: Add this
+    :returns: A scalar (zero-dimensional) Variable.
+    :rtype: Variable
     """
     if dtype is None:
         return Variable(value=value, variance=variance, unit=unit)
