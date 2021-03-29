@@ -10,8 +10,7 @@
 using namespace scipp::variable;
 namespace scipp {
 
-template <class T>
-scipp::index size_of_bucket_impl(const VariableConstView &view) {
+template <class T> scipp::index size_of_bucket_impl(const Variable &view) {
   const auto &[indices, dim, buffer] = view.constituents<T>();
   const auto &[begin, end] = unzip(indices);
   const auto sizes = sum(end - begin).template value<scipp::index>();
@@ -20,7 +19,7 @@ scipp::index size_of_bucket_impl(const VariableConstView &view) {
   return size_of(indices) + size_of(buffer) * scale;
 }
 
-scipp::index size_of(const VariableConstView &view) {
+scipp::index size_of(const Variable &view) {
   if (view.dtype() == dtype<bucket<Variable>>) {
     return size_of_bucket_impl<bucket<Variable>>(view);
   }
@@ -31,7 +30,7 @@ scipp::index size_of(const VariableConstView &view) {
     return size_of_bucket_impl<bucket<Dataset>>(view);
   }
 
-  auto value_size = view.underlying().data().dtype_size();
+  auto value_size = view.data().dtype_size();
   auto variance_scale = view.hasVariances() ? 2 : 1;
   return view.dims().volume() * value_size * variance_scale;
 }

@@ -18,15 +18,15 @@ DataArray operator-(const DataArray &a) {
   return DataArray(-a.data(), a.coords(), a.masks(), a.attrs());
 }
 
-template <class Op>
-void dry_run_op(const DataArray &a, const Variable &b, Op op) {
+namespace {
+
+template <class T, class Op> void dry_run_op(T &&a, const Variable &b, Op op) {
   // This dry run relies on the knowledge that the implementation of operations
   // for variable simply calls transform_in_place and nothing else.
   variable::dry_run::transform_in_place(a.data(), b, op);
 }
 
-template <class Op>
-void dry_run_op(const DataArray &a, const DataArray &b, Op op) {
+template <class T, class Op> void dry_run_op(T &&a, const DataArray &b, Op op) {
   expect::coordsAreSuperset(a, b);
   dry_run_op(a, b.data(), op);
 }
@@ -44,33 +44,39 @@ template <typename T> bool are_same(const T &a, const T &b) { return &a == &b; }
 
 template <class A, class B>
 bool have_common_underlying(const A &a, const B &b) {
-  return are_same(a.underlying(), b.underlying());
+  return are_same(a.data_handle(), b.data_handle());
 }
 
 template <>
-bool have_common_underlying<DataArrayView, Variable>(const DataArrayView &a,
-                                                     const Variable &b) {
-  return are_same(a.underlying().data, b.underlying());
+bool have_common_underlying<DataArray, Variable>(const DataArray &a,
+                                                 const Variable &b) {
+  return are_same(a.data().data_handle(), b.data_handle());
+}
+
+template <>
+bool have_common_underlying<DataArray, DataArray>(const DataArray &a,
+                                                  const DataArray &b) {
+  return are_same(a.data().data_handle(), b.data().data_handle());
 }
 
 template <class Op, class A, class B>
 decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
-  for (const auto &item : a)
+  for (auto &&item : a)
     dry_run_op(item, b, op);
   // For `b` referencing data in `a` we delay operation. The alternative would
   // be to make a deep copy of `other` before starting the iteration over items.
-  std::optional<DataArrayView> delayed;
+  DataArray delayed;
   // Note the inefficiency here: We are comparing some or all of the coords for
   // each item. This could be improved by implementing the operations for
-  // detail::DatasetData instead of DataArrayView.
-  for (const auto &item : a) {
+  // internal items of Dataset instead of DataArray.
+  for (auto &&item : a) {
     if (have_common_underlying(item, b))
       delayed = item;
     else
       op(item, b);
   }
   if (delayed)
-    op(*delayed, b);
+    op(delayed, b);
   return std::forward<A>(a);
 }
 
@@ -114,6 +120,8 @@ auto apply_with_broadcast(const Op &op, const Variable &a, const B &b) {
     res.setData(item.name(), op(a, item));
   return res;
 }
+
+} // namespace
 
 Dataset &Dataset::operator+=(const DataArray &other) {
   return apply_with_delay(core::element::plus_equals, *this, other);

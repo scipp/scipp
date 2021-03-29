@@ -310,9 +310,9 @@ std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
   return all;
 }
 
-std::map<typename Masks::key_type, typename Masks::mapped_type>
+std::unordered_map<typename Masks::key_type, typename Masks::mapped_type>
 union_or(const Masks &currentMasks, const Masks &otherMasks) {
-  std::map<typename Masks::key_type, typename Masks::mapped_type> out;
+  std::unordered_map<typename Masks::key_type, typename Masks::mapped_type> out;
 
   for (const auto &[key, item] : currentMasks) {
     out.emplace(key, item);

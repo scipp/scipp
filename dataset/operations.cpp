@@ -48,14 +48,15 @@ Dataset copy(const DatasetConstView &dataset, const AttrPolicy attrPolicy) {
 }
 
 namespace {
-void copy_item(const DataArrayConstView &from, const DataArrayView &to,
+template <class T>
+void copy_item(const DataArrayConstView &from, T &&to,
                const AttrPolicy attrPolicy) {
   for (const auto &[name, mask] : from.masks())
-    to.masks()[name].assign(mask);
+    copy(mask, to.masks()[name]);
   if (attrPolicy == AttrPolicy::Keep)
     for (const auto [dim, attr] : from.attrs())
-      to.attrs()[dim].assign(attr);
-  to.data().assign(from.data());
+      copy(attr, to.attrs()[dim]);
+  copy(from.data(), to.data());
 }
 } // namespace
 
@@ -66,19 +67,33 @@ DataArray &copy(const DataArray &array, DataArray &out,
   // TODO do we need something like
   // expect::coordsAreSuperset(*this, other);
   for (const auto [dim, coord] : array.coords())
-    out.coords()[dim].assign(coord);
+    copy(coord, out.coords()[dim]);
   copy_item(array, out, attrPolicy);
   return out;
+}
+
+/// Copy data array to output data array
+DataArray copy(const DataArray &array, DataArray &&out,
+               const AttrPolicy attrPolicy) {
+  copy(array, out, attrPolicy);
+  return std::move(out);
 }
 
 /// Copy dataset to output dataset
 Dataset &copy(const Dataset &dataset, Dataset &out,
               const AttrPolicy attrPolicy) {
   for (const auto [dim, coord] : dataset.coords())
-    out.coords()[dim].assign(coord);
+    copy(coord, out.coords()[dim]);
   for (const auto &array : dataset)
     copy_item(array, out[array.name()], attrPolicy);
   return out;
+}
+
+/// Copy dataset to output dataset
+Dataset copy(const Dataset &dataset, Dataset &&out,
+             const AttrPolicy attrPolicy) {
+  copy(dataset, out, attrPolicy);
+  return std::move(out);
 }
 
 } // namespace scipp::dataset

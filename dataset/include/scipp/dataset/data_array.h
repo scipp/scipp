@@ -19,16 +19,12 @@ enum class AttrPolicy { Keep, Drop };
 class SCIPP_DATASET_EXPORT DataArray {
 public:
   DataArray() = default;
-  /*
-  explicit DataArray(const DataArray &view,
-                     const AttrPolicy attrPolicy = AttrPolicy::Keep);
-  */
-
+  DataArray(const DataArray &other, const AttrPolicy attrPolicy);
   DataArray(const DataArray &other);
   DataArray(DataArray &&other) = default;
 
   DataArray(Variable data, Coords coords, Masks masks, Attrs attrs,
-            const std::string &name);
+            const std::string &name = "");
   explicit DataArray(Variable data, typename Coords::holder_type coords = {},
                      typename Masks::holder_type masks = {},
                      typename Attrs::holder_type attrs = {},
@@ -81,15 +77,6 @@ public:
   template <class T> auto variances() { return m_data.variances<T>(); }
 
   void rename(const Dim from, const Dim to);
-
-  DataArray &operator+=(const DataArray &other);
-  DataArray &operator-=(const DataArray &other);
-  DataArray &operator*=(const DataArray &other);
-  DataArray &operator/=(const DataArray &other);
-  DataArray &operator+=(const Variable &other);
-  DataArray &operator-=(const Variable &other);
-  DataArray &operator*=(const Variable &other);
-  DataArray &operator/=(const Variable &other);
 
   void setData(Variable data);
 
