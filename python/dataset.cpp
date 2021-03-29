@@ -325,16 +325,7 @@ void init_dataset(py::module &m) {
       [](const DatasetConstView &lhs, const DatasetConstView &rhs) {
         return dataset::merge(lhs, rhs);
       },
-      py::arg("lhs"), py::arg("rhs"), py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description("Union of two datasets.")
-          .raises("If there are conflicting items with different content.")
-          .returns("A new dataset that contains the union of all data items, "
-                   "coords, masks and attributes.")
-          .rtype("Dataset")
-          .param("lhs", "First Dataset", "Dataset")
-          .param("rhs", "Second Dataset", "Dataset")
-          .c_str());
+      py::arg("lhs"), py::arg("rhs"), py::call_guard<py::gil_scoped_release>());
 
   m.def(
       "combine_masks",
@@ -344,34 +335,12 @@ void init_dataset(py::module &m) {
                                                  Dimensions(labels, shape));
       },
       py::arg("masks"), py::arg("labels"), py::arg("shape"),
-      py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description(
-              "Combine all masks into a single one following the OR operation. "
-              "This requires a masks view as an input, followed by the "
-              "dimension labels and shape of the Variable/DataArray. The "
-              "labels and the shape are used to create a Dimensions object. "
-              "The function then iterates through the masks view and combines "
-              "only the masks that have all their dimensions contained in the "
-              "Variable/DataArray Dimensions.")
-          .returns("A new variable that contains the union of all masks.")
-          .rtype("Variable")
-          .param("masks", "Masks view of the dataset's masks.", "MaskView")
-          .param("labels", "A list of dimension labels.", "list")
-          .param("shape", "A list of dimension extents.", "list")
-          .c_str());
+      py::call_guard<py::gil_scoped_release>());
 
   m.def(
       "reciprocal",
       [](const DataArrayConstView &self) { return reciprocal(self); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description("Element-wise reciprocal.")
-          .raises("If the dtype has no reciprocal, e.g., if it is a string.")
-          .returns("The reciprocal values of the input.")
-          .rtype("DataArray")
-          .param("x", "Input data array.", "DataArray")
-          .c_str());
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
 
   bind_astype(dataArray);
   bind_astype(dataArrayView);

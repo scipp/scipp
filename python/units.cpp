@@ -56,7 +56,7 @@ Variable doDivScalarUnit(const units::Unit &unit, const py::object &scalar,
 }
 } // namespace
 
-void init_units_neutron(py::module &m) {
+void init_units(py::module &m) {
   py::class_<units::Dim>(m, "Dim", "Dimension label")
       .def(py::init<const std::string &>())
       .def(py::self == py::self)

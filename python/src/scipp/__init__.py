@@ -22,7 +22,11 @@ if _debug_:
         'You are running a "Debug" build of scipp. For optimal performance use a "Release" build.'
     )
 
-from ._scipp.core import *
+from ._scipp.core import Variable, VariableView, DataArray, DataArrayView, \
+                         Dataset, DatasetView, Dim, GroupByDataArray, \
+                         GroupByDataset
+from ._scipp.core import units, dtype
+from ._scipp.core import DTypeError, CoordError, UnitError
 from ._scipp import __version__
 from . import detail
 from .show import show, make_svg
@@ -53,11 +57,11 @@ from ._trigonometry import *
 from ._variable import *
 
 setattr(Variable, '_repr_html_', make_html)
-setattr(VariableConstView, '_repr_html_', make_html)
+setattr(VariableView, '_repr_html_', make_html)
 setattr(DataArray, '_repr_html_', make_html)
-setattr(DataArrayConstView, '_repr_html_', make_html)
+setattr(DataArrayView, '_repr_html_', make_html)
 setattr(Dataset, '_repr_html_', make_html)
-setattr(DatasetConstView, '_repr_html_', make_html)
+setattr(DatasetView, '_repr_html_', make_html)
 
 from .io.hdf5 import to_hdf5 as _to_hdf5
 setattr(Variable, 'to_hdf5', _to_hdf5)
@@ -87,11 +91,11 @@ setattr(GroupByDataArray, 'bins', property(_groupby_bins))
 setattr(GroupByDataset, 'bins', property(_groupby_bins))
 
 setattr(Variable, 'plot', plot)
-setattr(VariableConstView, 'plot', plot)
+setattr(VariableView, 'plot', plot)
 setattr(DataArray, 'plot', plot)
-setattr(DataArrayConstView, 'plot', plot)
+setattr(DataArrayView, 'plot', plot)
 setattr(Dataset, 'plot', plot)
-setattr(DatasetConstView, 'plot', plot)
+setattr(DatasetView, 'plot', plot)
 
 # Prevent unwanted conversion to numpy arrays by operations. Properly defining
 # __array_ufunc__ should be possible by converting non-scipp arguments to

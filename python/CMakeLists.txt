@@ -30,7 +30,7 @@ pybind11_add_module(
   trigonometry.cpp
   unary.cpp
   unit.cpp
-  units_neutron.cpp
+  units.cpp
   variable.cpp
   variable_instantiate_py_object.cpp
   element_array_view.cpp

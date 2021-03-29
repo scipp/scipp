@@ -26,7 +26,7 @@ void init_shape(py::module &);
 void init_reduction(py::module &);
 void init_trigonometry(py::module &);
 void init_unary(py::module &);
-void init_units_neutron(py::module &);
+void init_units(py::module &);
 void init_variable(py::module &);
 
 void init_generated_arithmetic(py::module &);
@@ -39,7 +39,7 @@ void init_generated_special_values(py::module &);
 
 void init_core(py::module &m) {
   auto core = m.def_submodule("core");
-  init_units_neutron(core);
+  init_units(core);
   init_eigen(core);
   init_exceptions(core);
   init_dtype(core);
