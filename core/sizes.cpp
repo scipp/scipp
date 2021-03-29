@@ -18,6 +18,8 @@ bool Sizes::operator==(const Sizes &other) const {
 
 bool Sizes::operator!=(const Sizes &other) const { return !operator==(other); }
 
+void Sizes::clear() { m_sizes.clear(); }
+
 scipp::index Sizes::operator[](const Dim dim) const {
   if (!contains(dim))
     throw except::DimensionError("dim not found");
@@ -28,6 +30,12 @@ void Sizes::set(const Dim dim, const scipp::index size) {
   if (contains(dim) && operator[](dim) != size)
     throw except::DimensionError("Inconsistent size");
   m_sizes[dim] = size;
+}
+
+void Sizes::erase(const Dim dim) {
+  if (!contains(dim))
+    throw except::DimensionError("dim not found");
+  m_sizes.erase(dim);
 }
 
 bool Sizes::contains(const Dimensions &dims) {
@@ -51,6 +59,13 @@ Sizes merge(const Sizes &a, const Sizes &b) {
   for (const auto &[dim, size] : b)
     out.set(dim, size);
   return out;
+}
+
+bool is_edges(const Sizes &sizes, const Dimensions &dims, const Dim dim) {
+  if (dim == Dim::Invalid)
+    return false;
+  const auto size = dims[dim];
+  return size == (sizes.contains(dim) ? sizes[dim] + 1 : 2);
 }
 
 std::string to_string(const Sizes &sizes) { return "Sizes"; }

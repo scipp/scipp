@@ -31,8 +31,11 @@ public:
   auto begin() const { return m_sizes.begin(); }
   auto end() const { return m_sizes.end(); }
 
+  void clear();
+
   scipp::index operator[](const Dim dim) const;
   void set(const Dim dim, const scipp::index size);
+  void erase(const Dim dim);
   bool contains(const Dimensions &dims);
   Sizes slice(const Slice &params) const;
 
@@ -42,6 +45,9 @@ private:
 };
 
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes merge(const Sizes &a, const Sizes &b);
+
+SCIPP_CORE_EXPORT bool is_edges(const Sizes &sizes, const Dimensions &dims,
+                                const Dim dim);
 
 SCIPP_CORE_EXPORT std::string to_string(const Sizes &sizes);
 

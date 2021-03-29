@@ -126,7 +126,7 @@ TEST(DatasetTest, setCoord_shrink) {
   const auto var4 = makeVariable<double>(Dims{Dim::X}, Shape{4});
   Dataset d;
   ASSERT_NO_THROW(d.setCoord(Dim::X, var4));
-  ASSERT_NO_THROW(d.setCoord(Dim::Y, var3));
+  ASSERT_THROW(d.setCoord(Dim::Y, var3), except::DimensionError);
 }
 
 TEST(DatasetTest, set_item_mask) {
@@ -285,7 +285,7 @@ TEST(DatasetTest, slice_temporary) {
 
 TEST(DatasetTest, slice_no_data) {
   Dataset d;
-  d.coords().set(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
+  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
   EXPECT_TRUE(d.coords().contains(Dim::X));
   const auto slice = d.slice({Dim::X, 1, 3});
   EXPECT_TRUE(slice.coords().contains(Dim::X));
