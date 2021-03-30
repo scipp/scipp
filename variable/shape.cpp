@@ -85,8 +85,7 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
                      concatenate(bin_sizes(a1.bin_indices()),
                                  bin_sizes(a2.bin_indices()), dim));
   } else {
-    out = Variable(a1);
-    out.setDims(dims);
+    out = Variable(a1, dims);
   }
 
   out.data().copy(a1, out.slice({dim, 0, extent1}));

@@ -32,6 +32,7 @@ Variable join_edges(const View &a, const View &b, const Dim dim) {
 }
 
 namespace {
+// TODO near-duplicate of is_edges in core/sizes.cpp
 constexpr auto is_bin_edges = [](const auto &coord, const auto &dims,
                                  const Dim dim) {
   return coord.dims().contains(dim) &&
