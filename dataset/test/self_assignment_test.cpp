@@ -33,6 +33,8 @@ TEST_F(SelfAssignmentTest, dataset_item) {
   EXPECT_EQ(dataset["a"], expected);
   EXPECT_EQ(dataset["a"].values<double>().data(), expected_ptr);
 
+  // TODO I think this test does not make sense any more. It IS now possible to
+  // store a slice in a dataset.
   // Code that checks for self-assignment might erroneously not check for
   // presence of slices.
   dataset.setData("a", dataset["a"].slice({Dim::X, 0}));

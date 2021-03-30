@@ -105,7 +105,8 @@ DataArray DataArray::view_with_coords(const Coords &coords,
   out.m_coords = Coords(dims(), {});
   // TODO bin edge handling
   for (const auto &[dim, coord] : coords)
-    if (dims().contains(coord.dims()))
+    if (dims().contains(coord.dims()) ||
+        is_edges(dims(), coord.dims(), dim_of_coord(coord, dim)))
       out.m_coords.set(dim, coord);
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
