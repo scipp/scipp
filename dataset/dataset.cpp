@@ -133,6 +133,7 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
   // no... what if item replace shrinks sizes
   // new_sizes = merge(m_sizes, sizes);
 
+  setDims(data.dims());
   for (auto &&[dim, coord] : data.coords()) {
     if (const auto it = m_coords.find(dim); it != m_coords.end())
       core::expect::equals(coord, it->second);

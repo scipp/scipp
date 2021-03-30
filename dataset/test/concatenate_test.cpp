@@ -21,7 +21,7 @@ protected:
                makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
     a.setData("data_1",
               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
-    a["data_1"].coords().set(
+    a["data_1"].attrs().set(
         Dim("label_1"),
         makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
     a["data_1"].masks().set(
@@ -32,7 +32,7 @@ protected:
                makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6}));
     b.setData("data_1",
               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{14, 15, 16}));
-    b["data_1"].coords().set(
+    b["data_1"].attrs().set(
         Dim("label_1"),
         makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{24, 25, 26}));
     b["data_1"].masks().set(
@@ -91,10 +91,10 @@ TEST_F(Concatenate1DTest, to_2d_with_0d_coord) {
 class Concatenate1DHistogramTest : public ::testing::Test {
 protected:
   Concatenate1DHistogramTest() {
-    a.setCoord(Dim::X,
-               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
     a.setData("data_1",
               makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{11, 12}));
+    a.setCoord(Dim::X,
+               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
     a["data_1"].coords().set(
         Dim("edge_labels"),
         makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
@@ -103,10 +103,10 @@ protected:
         makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{21, 22}));
     a["data_1"].masks().set("masks", makeVariable<bool>(Dims{Dim::X}, Shape{2},
                                                         Values{false, true}));
-    b.setCoord(Dim::X,
-               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{3, 4, 5}));
     b.setData("data_1",
               makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{13, 14}));
+    b.setCoord(Dim::X,
+               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{3, 4, 5}));
     b["data_1"].coords().set(
         Dim("edge_labels"),
         makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{23, 24, 25}));
@@ -123,10 +123,10 @@ protected:
 
 TEST_F(Concatenate1DHistogramTest, simple_1d) {
   Dataset expected;
-  expected.setCoord(
-      Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
   expected.setData("data_1", makeVariable<int>(Dims{Dim::X}, Shape{4},
                                                Values{11, 12, 13, 14}));
+  expected.setCoord(
+      Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
   expected["data_1"].coords().set(
       Dim("edge_labels"),
       makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{21, 22, 23, 24, 25}));
@@ -151,16 +151,16 @@ TEST_F(Concatenate1DHistogramTest, slices_of_1d) {
 
 TEST(ConcatenateTest, fail_when_histograms_have_non_overlapping_bins) {
   Dataset a;
-  a.setCoord(Dim::X,
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
   a.setData("data_1",
             makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{11, 12}));
+  a.setCoord(Dim::X,
+             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
 
   Dataset b;
-  b.setCoord(Dim::X,
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6}));
   b.setData("data_1",
             makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{13, 14}));
+  b.setCoord(Dim::X,
+             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6}));
 
   EXPECT_THROW_DISCARD(concatenate(a, b, Dim::X), except::VariableError);
 }
