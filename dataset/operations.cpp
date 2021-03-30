@@ -36,15 +36,18 @@ Dataset merge(const Dataset &a, const Dataset &b) {
 
 /// Return a deep copy of a DataArray.
 DataArray copy(const DataArrayConstView &array, const AttrPolicy attrPolicy) {
-  return DataArray(array, attrPolicy);
+  // TODO is this correct? copy data but not meta data?
+  return DataArray(copy(array.data()), array.coords(), array.masks(),
+                   attrPolicy == AttrPolicy::Keep ? array.attrs() : Attrs{},
+                   array.name());
 }
 
 /// Return a deep copy of a Dataset.
 Dataset copy(const DatasetConstView &dataset, const AttrPolicy attrPolicy) {
-  if (attrPolicy != AttrPolicy::Keep)
-    throw std::runtime_error(
-        "Dropping attributes when copying dataset not implemented yet.");
-  return Dataset(dataset);
+  Dataset out({}, dataset.coords());
+  for (const auto &item : dataset)
+    out.setData(item.name(), copy(item, attrPolicy));
+  return out;
 }
 
 namespace {

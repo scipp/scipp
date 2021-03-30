@@ -143,7 +143,7 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
   setData(name, std::move(data.data()));
   auto &item = m_data[name];
 
-  for (auto &&[dim, attr] : item.attrs())
+  for (auto &&[dim, attr] : data.attrs())
     // TODO dropping not really necessary in new mechanism, fail later
     // Drop unaligned coords if there is aligned coord with same name.
     if (!coords().contains(dim))
