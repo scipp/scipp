@@ -104,7 +104,7 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, other_data_unchanged) {
 
   for (const auto &item : dataset_b) {
     auto dataset_a = datasetFactory().make();
-    const auto original_a(dataset_a);
+    const auto original_a = copy(dataset_a);
     auto target = dataset_a["data_zyx"];
 
     ASSERT_NO_THROW(TestFixture::op(target, item));
@@ -123,10 +123,10 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_with_variance) {
   for (const auto &item : dataset_b) {
     const bool randomMasks = true;
     auto dataset_a = datasetFactory().make(randomMasks);
-    auto target = dataset_a["data_zyx"];
+    auto target = copy(dataset_a["data_zyx"]);
     auto data_array = copy(target);
 
-    Variable reference(target.data());
+    auto reference = copy(target.data());
     TestFixture::op(reference, item.data());
 
     ASSERT_NO_THROW(target = TestFixture::op(target, item));
@@ -141,13 +141,13 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_without_variance) {
   for (const auto &item : dataset_b) {
     const bool randomMasks = true;
     auto dataset_a = datasetFactory().make(randomMasks);
-    auto target = dataset_a["data_xyz"];
+    auto target = copy(dataset_a["data_xyz"]);
     auto data_array = copy(target);
 
     if (item.hasVariances()) {
       ASSERT_ANY_THROW(TestFixture::op(target, item));
     } else {
-      Variable reference(target.data());
+      auto reference = copy(target.data());
       TestFixture::op(reference, item.data());
 
       ASSERT_NO_THROW(target = TestFixture::op(target, item));
@@ -164,11 +164,11 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, slice_lhs_with_variance) {
   for (const auto &item : dataset_b) {
     const bool randomMasks = true;
     auto dataset_a = datasetFactory().make(randomMasks);
-    auto target = dataset_a["data_zyx"];
+    auto target = copy(dataset_a["data_zyx"]);
     const auto &dims = item.dims();
 
     for (const Dim dim : dims.labels()) {
-      Variable reference(target.data());
+      auto reference = copy(target.data());
       TestFixture::op(reference, item.data().slice({dim, 2}));
 
       // Fails if any *other* multi-dimensional coord also depends on the

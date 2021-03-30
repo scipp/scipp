@@ -171,8 +171,8 @@ TEST(ConcatenateTest, fail_mixing_point_data_and_histogram) {
   pointData.setData("data_1", makeVariable<int>(Dims{Dim::X}, Shape{3}));
 
   Dataset histogram;
-  histogram.setCoord(Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}));
   histogram.setData("data_1", makeVariable<int>(Dims{Dim::X}, Shape{2}));
+  histogram.setCoord(Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}));
 
   EXPECT_THROW_DISCARD(concatenate(pointData, histogram, Dim::X),
                        except::BinEdgeError);
