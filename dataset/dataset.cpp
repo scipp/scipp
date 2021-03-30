@@ -156,19 +156,22 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
 Dataset Dataset::slice(const Slice s) const {
   Dataset out;
   out.m_coords = m_coords.slice(s);
-  // TODO drop items that do not depend on s.dim()?
   out.m_data = slice_map(m_coords.sizes(), m_data, s);
-  std::vector<Dim> erase;
-  for (auto it = out.m_coords.begin(); it != out.m_coords.end();) {
+  // TODO dropping items independent of s.dim(), is this still what we want?
+  for (auto it = out.m_data.begin(); it != out.m_data.end();) {
+    if (!m_data.at(it->first).dims().contains(s.dim()))
+      it = out.m_data.erase(it);
+    else
+      ++it;
+  }
+  for (auto it = m_coords.begin(); it != m_coords.end();) {
     if (unaligned_by_dim_slice(*it, s)) {
+      auto extracted = out.m_coords.extract(it->first);
       for (auto &item : out.m_data)
-        item.second.attrs().set(it->first, it->second);
-      erase.emplace_back(it->first);
+        item.second.attrs().set(it->first, extracted);
     }
     ++it;
   }
-  for (const Dim &dim : erase)
-    out.m_coords.erase(dim);
   return out;
 }
 
