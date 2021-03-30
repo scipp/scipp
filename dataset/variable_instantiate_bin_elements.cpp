@@ -25,7 +25,10 @@ private:
                           const Dim dim, const DType type,
                           const Dimensions &dims, const units::Unit &unit,
                           const bool variances) const override {
-    const auto &source = std::get<2>(parent.constituents<bucket<DataArray>>());
+    // TODO somthing wrong with constituents?
+    // should share ownership of coords, so they can be added?
+    // always get buffer
+    const auto &source = buffer(parent);
     if (parent.dims() !=
         indices
             .dims()) // would need to select and copy slices from source coords
@@ -35,8 +38,9 @@ private:
     // in any bucket).
     auto buffer = DataArray(
         variable::variableFactory().create(type, dims, unit, variances),
-        source.coords(), source.masks(), source.attrs());
-    return make_bins(Variable(indices), dim, std::move(buffer));
+        copy(source.coords()), copy(source.masks()), copy(source.attrs()));
+    // TODO is the copy needed?
+    return make_bins(copy(indices), dim, std::move(buffer));
   }
   const Variable &data(const Variable &var) const override {
     return buffer(var).data();

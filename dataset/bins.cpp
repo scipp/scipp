@@ -106,7 +106,7 @@ constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
   return var.dims().contains(dim)
              ? variable::variableFactory().create(var.dtype(), dims, var.unit(),
                                                   var.hasVariances())
-             : Variable(var);
+             : copy(var);
 };
 }
 
