@@ -27,15 +27,16 @@ TEST_F(CopyTest, dataset) { EXPECT_EQ(copy(dataset), dataset); }
 
 TEST_F(CopyTest, data_array_drop_attrs) {
   auto copied = copy(array, AttrPolicy::Drop);
-
   EXPECT_NE(copied, array);
   copied.attrs().set(Dim("attr"), attr);
   EXPECT_EQ(copied, array);
 }
 
 TEST_F(CopyTest, dataset_drop_attrs) {
-  // not implemented yet
-  EXPECT_ANY_THROW(auto _ = copy(dataset, AttrPolicy::Drop));
+  auto copied = copy(dataset, AttrPolicy::Drop);
+  EXPECT_NE(copied, dataset);
+  copied["data_xyz"].attrs().set(Dim("attr"), attr);
+  EXPECT_EQ(copied, dataset);
 }
 
 struct CopyOutArgTest : public CopyTest {
