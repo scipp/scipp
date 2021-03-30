@@ -57,7 +57,7 @@ template <class Map> auto intersection(const Map &a, const Map &b) {
 template <class T> auto copy_map(const T &map) {
   std::unordered_map<typename T::key_type, typename T::mapped_type> out;
   for (const auto [key, item] : map)
-    out.emplace(key, item);
+    out.emplace(key, copy(item));
   return out;
 }
 

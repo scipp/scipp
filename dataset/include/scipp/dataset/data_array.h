@@ -97,6 +97,11 @@ private:
 SCIPP_DATASET_EXPORT bool operator==(const DataArray &a, const DataArray &b);
 SCIPP_DATASET_EXPORT bool operator!=(const DataArray &a, const DataArray &b);
 
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+copy(const DataArray &array, const AttrPolicy attrPolicy = AttrPolicy::Keep);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray deepcopy(
+    const DataArray &array, const AttrPolicy attrPolicy = AttrPolicy::Keep);
+
 } // namespace scipp::dataset
 
 namespace scipp {

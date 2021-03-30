@@ -34,7 +34,10 @@ Dataset merge(const Dataset &a, const Dataset &b) {
   return Dataset(union_(a, b), union_(a.coords(), b.coords()));
 }
 
-/// Return a deep copy of a DataArray.
+Coords copy(const Coords &coords) { return {coords.sizes(), copy_map(coords)}; }
+Masks copy(const Masks &masks) { return {masks.sizes(), copy_map(masks)}; }
+
+/// Return a copy of a DataArray.
 DataArray copy(const DataArrayConstView &array, const AttrPolicy attrPolicy) {
   // TODO is this correct? copy data but not meta data?
   return DataArray(copy(array.data()), array.coords(), array.masks(),
@@ -42,11 +45,28 @@ DataArray copy(const DataArrayConstView &array, const AttrPolicy attrPolicy) {
                    array.name());
 }
 
-/// Return a deep copy of a Dataset.
+/// Return a deep copy of a DataArray.
+DataArray deepcopy(const DataArrayConstView &array,
+                   const AttrPolicy attrPolicy) {
+  return DataArray(
+      copy(array.data()), copy(array.coords()), copy(array.masks()),
+      attrPolicy == AttrPolicy::Keep ? copy(array.attrs()) : Attrs{},
+      array.name());
+}
+
+/// Return a copy of a Dataset.
 Dataset copy(const DatasetConstView &dataset, const AttrPolicy attrPolicy) {
   Dataset out({}, dataset.coords());
   for (const auto &item : dataset)
     out.setData(item.name(), copy(item, attrPolicy));
+  return out;
+}
+
+/// Return a deep copy of a Dataset.
+Dataset deepcopy(const DatasetConstView &dataset, const AttrPolicy attrPolicy) {
+  Dataset out({}, copy(dataset.coords()));
+  for (const auto &item : dataset)
+    out.setData(item.name(), deepcopy(item, attrPolicy));
   return out;
 }
 
