@@ -67,6 +67,7 @@ jobs:
           ./tools/make_and_install.sh
         displayName: 'Build and run C++ tests'
       - bash: |
+          source activate scipp-developer
           conda build --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload ./conda
         displayName: 'Conda build'
       - task: PublishBuildArtifacts@1
