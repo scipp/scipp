@@ -2,7 +2,7 @@
 
 set -ex
 
-if test -z "${SKIP_BUILD}"
+if test -z "${ALREADY_BUILT}"
 then
   ./tools/make_and_install.sh
 fi
