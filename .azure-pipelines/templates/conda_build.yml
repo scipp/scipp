@@ -60,15 +60,16 @@ jobs:
           # echo "##vso[task.prependpath]$CONDA/envs/scipp-developer/bin"
           conda list
           echo "conda prefix is: $CONDA_PREFIX"
+          ./tools/make_and_install.sh
         displayName: 'Setup Conda'
-      # - bash: |
-      #     set -ex
-      #     echo $OSX_VERSION $CONDA $CONDA_PREFIX $PYTHONPATH
-      #   displayName: 'Print variables'
-      - bash: CONDA_PREFIX=$CONDA_PREFIX ./tools/make_and_install.sh
-        # env:
-        #   CONDA_PREFIX: $CONDA_PREFIX
-        displayName: 'Make and Install'
+      # # - bash: |
+      # #     set -ex
+      # #     echo $OSX_VERSION $CONDA $CONDA_PREFIX $PYTHONPATH
+      # #   displayName: 'Print variables'
+      # - bash: CONDA_PREFIX=$CONDA_PREFIX ./tools/make_and_install.sh
+      #   # env:
+      #   #   CONDA_PREFIX: $CONDA_PREFIX
+      #   displayName: 'Make and Install'
       - bash: |
           conda build --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload ./conda
         env:
