@@ -4,6 +4,8 @@ set -ex
 
 mkdir -p 'build' && cd 'build'
 
+echo "conda prefix is: ${CONDA_PREFIX}";
+
 if test -z "${OSX_VERSION}"
 then
   IPO="ON"
