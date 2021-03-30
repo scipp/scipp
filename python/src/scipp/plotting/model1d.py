@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 from .model import PlotModel
+from .tools import find_limits
 import numpy as np
 
 
@@ -31,15 +32,13 @@ class PlotModel1d(PlotModel):
         entries in the dict of data arrays, and return a dict of 1d value
         arrays for data values, variances, and masks.
         """
-        # TODO Setting some self.dslice required to determine limits
-        self.dslice = self.slice_data(next(iter(self.data_arrays.values())),
-                                      slices)
-        return {
-            name:
-            self._make_profile(self.slice_data(self.data_arrays[name], slices),
-                               self.dim, mask_info[name])
-            for name in self.data_arrays
-        }
+        self.dslice = {}
+        out = {}
+        for name in self.data_arrays:
+            self.dslice[name] = self.slice_data(self.data_arrays[name], slices)
+            out[name] = self._make_profile(self.dslice[name], self.dim,
+                                           mask_info[name])
+        return out
 
     def update_profile(self,
                        xdata=None,
@@ -65,3 +64,16 @@ class PlotModel1d(PlotModel):
                 profile_dim, mask_info[name])
             for name in self.data_arrays
         }
+
+    def rescale_to_data(self, scale=None):
+        """
+        Get the min and max values of the currently displayed slice.
+        """
+        if self.dslice is not None:
+            limits = np.array([
+                find_limits(array.data, scale=scale)[scale]
+                for array in self.dslice.values()
+            ])
+            return [np.amin(limits[:, 0]), np.amax(limits[:, 1])]
+        else:
+            return [None, None]

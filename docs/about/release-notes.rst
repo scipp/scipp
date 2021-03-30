@@ -3,8 +3,22 @@
 Release Notes
 =============
 
-Since v0.5
+Since v0.6
 ----------
+
+Features
+~~~~~~~~
+
+* Can now control the position and visibility of the legend in 1d plots with ``plot(da, legend={"show": True, "loc": 4})`` `#1790 <https://github.com/scipp/scipp/pull/1790>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+v0.6.0 (March 2021)
+-------------------
 
 Features
 ~~~~~~~~

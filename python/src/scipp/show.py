@@ -81,6 +81,12 @@ class VariableDrawer:
             str(origin_x)).replace("origin_y",
                                    str(origin_y)).replace("xlen", str(xlen))
 
+    def _draw_dots(self, x0, y0):
+        dots = ""
+        for x, y in 0.1 + 0.8 * np.random.rand(7, 2) + np.array([x0, y0]):
+            dots += f'<circle cx="{x}" cy="{y}" r="0.07"/>'
+        return dots
+
     def _variance_offset(self):
         shape = self._extents()
         depth = shape[-3] + 1
@@ -121,7 +127,7 @@ class VariableDrawer:
         height += 0.3 * depth
         return [width, height]
 
-    def _draw_array(self, color, offset=None):
+    def _draw_array(self, color, offset=None, events=False):
         """Draw the array of boxes"""
         if offset is None:
             offset = [0, 0]
@@ -134,15 +140,16 @@ class VariableDrawer:
             for y in reversed(range(ly)):
                 true_lx = lx
                 x_scale = 1
-                events = False
                 for x in range(true_lx):
                     # Do not draw hidden boxes
-                    if not events:
-                        if z != lz - 1 and y != 0 and x != lx - 1:
-                            continue
-                    svg += self._draw_box(
-                        dx + x * x_scale + self._margin + 0.3 * (lz - z - 1),
-                        dy + y + 2 * self._margin + 0.3 * z, color, x_scale)
+                    if z != lz - 1 and y != 0 and x != lx - 1:
+                        continue
+                    origin_x = dx + x * x_scale + self._margin + 0.3 * (lz -
+                                                                        z - 1)
+                    origin_y = dy + y + 2 * self._margin + 0.3 * z
+                    svg += self._draw_box(origin_x, origin_y, color, x_scale)
+                    if events:
+                        svg += self._draw_dots(origin_x, origin_y)
         return svg
 
     def _draw_labels(self, offset):
@@ -209,6 +216,21 @@ class VariableDrawer:
 
         return svg
 
+    def _draw_bins_buffer(self):
+        if self._variable.bins is None:
+            return ''
+        svg = ''
+        x0 = self._margin + self._extents()[-1]
+        y0 = 2 * self._margin + 0.3 * self._extents()[-3]
+        style = 'style="stroke:black;stroke-width:0.05;stroke-dasharray:.2,.2"'
+        svg += f'<line x1={x0} y1={y0+0} x2={x0+2} y2={y0-1} {style}/>'
+        svg += f'<line x1={x0} y1={y0+1} x2={x0+2} y2={y0+2} {style}/>'
+        svg += '<g transform="translate({},{}) scale(0.5)">{}</g>'.format(
+            self.size()[0] + 1, 0,
+            make_svg(self._variable.bins.constituents['data'],
+                     content_only=True))
+        return svg
+
     def draw(self, color, offset=np.zeros(2), title=None):
         svg = '<g>'
         svg += self._draw_info(offset, title)
@@ -225,10 +247,12 @@ class VariableDrawer:
                 color=color,
                 offset=offset +
                 np.array([(len(items) - i - 1) * self._variance_offset(),
-                          i * self._variance_offset()]))
+                          i * self._variance_offset()]),
+                events=self._variable.bins is not None)
             svg += '</g>'
             svg += self._draw_labels(offset=offset)
         svg += '</g>'
+        svg += self._draw_bins_buffer()
         return svg.replace('#normal-font',
                            '{}px'.format(_normal_font)).replace(
                                '#small-font',
@@ -240,12 +264,13 @@ class VariableDrawer:
         dim_color = '#444444'
         return svg.replace('dim-color', dim_color)
 
-    def make_svg(self):
-        return self._set_colors(
-            '<svg width={}em viewBox="0 0 {} {}">{}</svg>'.format(
-                _svg_width, max(_cubes_in_full_width,
-                                self.size()[0]),
-                self.size()[1], self.draw(color=config.colors['data'])))
+    def make_svg(self, content_only=False):
+        if content_only:
+            return self._set_colors(self.draw(color=config.colors['data']))
+        return '<svg width={}em viewBox="0 0 {} {}">{}</svg>'.format(
+            _svg_width, max(_cubes_in_full_width,
+                            self.size()[0]),
+            self.size()[1], self.make_svg(content_only=True))
 
 
 class DrawerItem:
@@ -298,25 +323,18 @@ class DatasetDrawer:
         self._dataset = dataset
 
     def _dims(self):
-        # The dimension-order in a dataset is not defined. However, here we
-        # need one for the practical purpose of drawing variables with
-        # consistent ordering. We simply use that of the item with highest
-        # dimension count.
+        dims = self._dataset.dims
         if is_data_array(self._dataset):
-            dims = self._dataset.dims
-        else:
-            dims = []
-            for item in self._dataset.values():
-                if len(item.dims) > len(dims):
-                    dims = item.dims
-            for dim in self._dataset.dims:
-                if dim not in dims:
-                    dims = [dim] + dims
+            # Handle, e.g., bin edges of a slice, where data lacks the edge dim
+            for item in self._dataset.meta.values():
+                for dim in item.dims:
+                    if dim not in dims:
+                        dims = [dim] + dims
         if len(dims) > 3:
             raise RuntimeError("Cannot visualize {}-D data".format(len(dims)))
         return dims
 
-    def make_svg(self):
+    def make_svg(self, content_only=False):
         content = ''
         width = 0
         height = 0
@@ -434,12 +452,14 @@ class DatasetDrawer:
         content += '<g transform="translate(0,{})">{}</g>'.format(height, c_x)
         height += max(h_x, h_0d)
 
+        if content_only:
+            return content
         return '<svg width={}em viewBox="{} {} {} {}">{}</svg>'.format(
             _svg_width, left, top, max(_cubes_in_full_width, width), height,
             content)
 
 
-def make_svg(container):
+def make_svg(container, content_only=False):
     """
     Return a svg representation of a variable or dataset.
     """
@@ -448,7 +468,7 @@ def make_svg(container):
         draw = VariableDrawer(container)
     else:
         draw = DatasetDrawer(container)
-    return draw.make_svg()
+    return draw.make_svg(content_only=content_only)
 
 
 def show(container):

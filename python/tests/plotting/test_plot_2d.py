@@ -280,3 +280,33 @@ def test_plot_access_ax_and_fig():
 
 def test_plot_2d_image_int32():
     plot(make_dense_dataset(ndim=2, dtype=sc.dtype.int32))
+
+
+def test_plot_2d_image_int_coords():
+    N = 20
+    M = 10
+    x = np.arange(N + 1)
+    y = np.arange(M)
+    d = sc.Dataset()
+    d.coords['x'] = sc.Variable(['x'], values=x, unit=sc.units.m)
+    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
+    d['a'] = sc.Variable(['y', 'x'],
+                         values=np.random.random([M, N]),
+                         unit=sc.units.K)
+    plot(d)
+
+
+def test_plot_2d_datetime():
+    time = sc.array(dims=['time'],
+                    values=np.arange(
+                        np.datetime64('2017-01-01T12:00:00'),
+                        np.datetime64('2017-01-01T12:00:00.0001')))
+    N, M = time.sizes['time'], 200
+    data2d = sc.DataArray(data=sc.array(dims=['time', 'x'],
+                                        values=np.random.normal(0, 1, (N, M))),
+                          coords={
+                              'time': time,
+                              'x': sc.Variable(['x'],
+                                               values=np.linspace(0, 10, M))
+                          })
+    data2d.plot()

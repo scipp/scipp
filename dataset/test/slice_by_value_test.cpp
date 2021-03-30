@@ -67,9 +67,9 @@ TEST(SliceByValueTest, test_begin_end_not_0D_throws) {
   auto one_d = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
   auto test = [&](const auto &sliceable) {
     EXPECT_THROW(auto s = slice(sliceable, Dim::X, one_d, {}),
-                 except::MismatchError<Dimensions>);
+                 except::DimensionError);
     EXPECT_THROW(auto s = slice(sliceable, Dim::X, {}, one_d),
-                 except::MismatchError<Dimensions>);
+                 except::DimensionError);
   };
 
   test(da);                              // Test for DataArray

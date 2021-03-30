@@ -2,6 +2,8 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "test_macros.h"
+
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
@@ -111,7 +113,7 @@ TEST_F(DataArrayBinsTest, concatenate_with_broadcast) {
   EXPECT_EQ(result, make_bins(out_indices, Dim::X, out_buffer));
 
   // Broadcast not possible for in-place append
-  EXPECT_THROW(buckets::append(var, var2), except::DimensionMismatchError);
+  EXPECT_THROW(buckets::append(var, var2), except::DimensionError);
 }
 
 TEST_F(DataArrayBinsTest, histogram) {
@@ -290,9 +292,9 @@ TEST_F(DataArrayBinsScaleTest, fail_events_op_non_histogram) {
   DataArray not_hist(data, {{Dim::X, coord}});
 
   // Fail due to coord mismatch between event coord and dense coord
-  EXPECT_THROW(events * not_hist, except::CoordMismatchError);
-  EXPECT_THROW(not_hist * events, except::CoordMismatchError);
-  EXPECT_THROW(events / not_hist, except::CoordMismatchError);
+  EXPECT_THROW_DISCARD(events * not_hist, except::CoordMismatchError);
+  EXPECT_THROW_DISCARD(not_hist * events, except::CoordMismatchError);
+  EXPECT_THROW_DISCARD(events / not_hist, except::CoordMismatchError);
 
   auto buckets = make_buckets(events);
 

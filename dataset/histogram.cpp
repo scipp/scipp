@@ -49,7 +49,7 @@ DataArray histogram(const DataArrayConstView &events,
               events_.dtype(), dim_, binEdges_.dims()[dim_] - 1,
               subspan_view(events_.coords()[dim_], data_dim_),
               subspan_view(masker.data(), data_dim_), binEdges_,
-              element::histogram);
+              element::histogram, "histogram");
         },
         data_dim, binEdges);
   } else {
@@ -76,7 +76,7 @@ Dataset histogram(const DatasetConstView &dataset,
 std::set<Dim> edge_dimensions(const DataArrayConstView &a) {
   const auto coords = a.coords();
   std::set<Dim> dims;
-  for (const auto &[d, coord] : a.coords())
+  for (const auto [d, coord] : a.coords())
     if (a.dims().contains(d) && coord.dims().contains(d) &&
         coord.dims()[d] == a.dims()[d] + 1)
       dims.insert(d);

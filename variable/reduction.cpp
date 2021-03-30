@@ -43,11 +43,11 @@ Variable make_accumulant(const VariableConstView &var, const Dim dim,
 } // namespace
 
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
-  accumulate_in_place(summed, var, element::plus_equals);
+  accumulate_in_place(summed, var, element::plus_equals, "sum");
 }
 
 void nansum_impl(const VariableView &summed, const VariableConstView &var) {
-  accumulate_in_place(summed, var, element::nan_plus_equals);
+  accumulate_in_place(summed, var, element::nan_plus_equals, "nansum");
 }
 
 template <typename Op>
@@ -174,8 +174,9 @@ VariableView nanmean(const VariableConstView &var, const Dim dim,
 }
 
 template <class Op>
-void reduce_impl(const VariableView &out, const VariableConstView &var, Op op) {
-  accumulate_in_place(out, var, op);
+void reduce_impl(const VariableView &out, const VariableConstView &var, Op op,
+                 const std::string_view name) {
+  accumulate_in_place(out, var, op, name);
 }
 
 /// Reduction for idempotent operations such that op(a,a) = a.
@@ -186,32 +187,32 @@ void reduce_impl(const VariableView &out, const VariableConstView &var, Op op) {
 /// of a sensible starting value difficult.
 template <class Op>
 Variable reduce_idempotent(const VariableConstView &var, const Dim dim, Op op,
-                           const FillValue &init) {
+                           const FillValue &init, const std::string_view name) {
   auto out = make_accumulant(var, dim, init);
-  reduce_impl(out, var, op);
+  reduce_impl(out, var, op, name);
   return out;
 }
 
 void any_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl(out, var, core::element::logical_or_equals);
+  reduce_impl(out, var, core::element::logical_or_equals, "any");
 }
 
 Variable any(const VariableConstView &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::logical_or_equals,
-                           FillValue::False);
+                           FillValue::False, "any");
 }
 
 void all_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl(out, var, core::element::logical_and_equals);
+  reduce_impl(out, var, core::element::logical_and_equals, "all");
 }
 
 Variable all(const VariableConstView &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::logical_and_equals,
-                           FillValue::True);
+                           FillValue::True, "all");
 }
 
 void max_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl(out, var, core::element::max_equals);
+  reduce_impl(out, var, core::element::max_equals, "max");
 }
 
 /// Return the maximum along given dimension.
@@ -220,7 +221,7 @@ void max_impl(const VariableView &out, const VariableConstView &var) {
 /// variance of the maximum element is returned.
 Variable max(const VariableConstView &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::max_equals,
-                           FillValue::Lowest);
+                           FillValue::Lowest, "max");
 }
 
 /// Return the maximum along given dimension ignoring NaN values.
@@ -229,11 +230,11 @@ Variable max(const VariableConstView &var, const Dim dim) {
 /// variance of the maximum element is returned.
 Variable nanmax(const VariableConstView &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::nanmax_equals,
-                           FillValue::Lowest);
+                           FillValue::Lowest, "nanmax");
 }
 
 void min_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl(out, var, core::element::min_equals);
+  reduce_impl(out, var, core::element::min_equals, "min");
 }
 
 /// Return the minimum along given dimension.
@@ -241,7 +242,8 @@ void min_impl(const VariableView &out, const VariableConstView &var) {
 /// Variances are not considered when determining the minimum. If present, the
 /// variance of the minimum element is returned.
 Variable min(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::min_equals, FillValue::Max);
+  return reduce_idempotent(var, dim, core::element::min_equals, FillValue::Max,
+                           "min");
 }
 
 /// Return the minimum along given dimension ignorning NaN values.
@@ -250,7 +252,7 @@ Variable min(const VariableConstView &var, const Dim dim) {
 /// variance of the minimum element is returned.
 Variable nanmin(const VariableConstView &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::nanmin_equals,
-                           FillValue::Max);
+                           FillValue::Max, "nanmin");
 }
 
 /// Return the sum along all dimensions.

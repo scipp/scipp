@@ -44,6 +44,10 @@ class PlotFigure1d(PlotFigure):
 
         if legend is None:
             legend = {"show": True}
+        elif isinstance(legend, bool):
+            legend = {"show": legend}
+        elif "show" not in legend:
+            legend["show"] = True
         # Matplotlib line containers
         self.data_lines = {}
         self.mask_lines = {}
@@ -186,6 +190,8 @@ class PlotFigure1d(PlotFigure):
 
         if self.show_legend():
             self.ax.legend(loc=self.legend["loc"])
+
+        self.fig.tight_layout()
 
     def _preprocess_hist(self, name, vals):
         """
@@ -342,14 +348,9 @@ class PlotFigure1d(PlotFigure):
 
     def rescale_to_data(self, vmin=None, vmax=None):
         """
-        Automatically rescale x and y axes to the contents of the plot.
+        Rescale y axis to the contents of the plot.
         """
-        if vmin is None and vmax is None:
-            self.ax.autoscale(True)
-            self.ax.relim()
-            self.ax.autoscale_view()
-        else:
-            self.ax.set_ylim(vmin, vmax)
+        self.ax.set_ylim(vmin, vmax)
         self.draw()
 
     def show_legend(self):

@@ -43,7 +43,7 @@ scipp::index Dimensions::at(const Dim dim) const {
   for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
       return m_shape[i];
-  throw except::DimensionNotFoundError(*this, dim);
+  except::throw_dimension_not_found_error(*this, dim);
 }
 
 /// Return a mutable reference to the extent of `dim`. Throws if the space
@@ -52,14 +52,14 @@ scipp::index &Dimensions::at(const Dim dim) {
   for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
       return m_shape[i];
-  throw except::DimensionNotFoundError(*this, dim);
+  except::throw_dimension_not_found_error(*this, dim);
 }
 
 /// Return true if all dimensions of other contained in *this, ignoring order.
 bool Dimensions::contains(const Dimensions &other) const noexcept {
   if (*this == other)
     return true;
-  for (const auto dim : other.labels())
+  for (const auto &dim : other.labels())
     if (!contains(dim) || other[dim] != operator[](dim))
       return false;
   return true;
@@ -111,7 +111,7 @@ scipp::index Dimensions::offset(const Dim label) const {
       return offset;
     offset *= m_shape[i];
   }
-  throw except::DimensionNotFoundError(*this, label);
+  except::throw_dimension_not_found_error(*this, label);
 }
 
 void Dimensions::resize(const Dim label, const scipp::index size) {
@@ -173,7 +173,7 @@ int32_t Dimensions::index(const Dim dim) const {
   for (int32_t i = 0; i < NDIM_MAX; ++i)
     if (m_dims[i] == dim)
       return i;
-  throw except::DimensionNotFoundError(*this, dim);
+  except::throw_dimension_not_found_error(*this, dim);
 }
 
 /// Return the direct sum, i.e., the combination of dimensions in a and b.
@@ -186,7 +186,7 @@ Dimensions merge(const Dimensions &a, const Dimensions &b) {
   Dimensions out;
   auto it = b.labels().begin();
   auto end = b.labels().end();
-  for (const auto dim : a.labels()) {
+  for (const auto &dim : a.labels()) {
     // add any labels appearing *before* dim
     if (b.contains(dim)) {
       if (a[dim] != b[dim])
@@ -216,7 +216,7 @@ Dimensions merge(const Dimensions &a, const Dimensions &b) {
 Dimensions intersection(const Dimensions &a, const Dimensions &b) {
   Dimensions out;
   Dimensions m = merge(a, b);
-  for (const auto dim : m.labels()) {
+  for (const auto &dim : m.labels()) {
     if (a.contains(dim) && b.contains(dim))
       out.addInner(dim, m[dim]);
   }
@@ -249,11 +249,11 @@ Dimensions transpose(const Dimensions &dims, std::vector<Dim> labels) {
 Dimensions fold(const Dimensions &old_dims, const Dim from_dim,
                 const Dimensions &to_dims) {
   Dimensions new_dims;
-  for (const auto dim : old_dims.labels())
+  for (const auto &dim : old_dims.labels())
     if (dim != from_dim)
       new_dims.addInner(dim, old_dims[dim]);
     else
-      for (const auto lab : to_dims.labels())
+      for (const auto &lab : to_dims.labels())
         new_dims.addInner(lab, to_dims[lab]);
   return new_dims;
 }
@@ -270,7 +270,7 @@ Dimensions fold(const Dimensions &old_dims, const Dim from_dim,
 Dimensions flatten(const Dimensions &old_dims,
                    const scipp::span<const Dim> from_labels, const Dim to_dim) {
   Dimensions from_dims;
-  for (const auto dim : from_labels)
+  for (const auto &dim : from_labels)
     if (old_dims.contains(dim))
       from_dims.addInner(dim, old_dims[dim]);
 
@@ -287,7 +287,7 @@ Dimensions flatten(const Dimensions &old_dims,
                                    "dimensions in the correct order");
 
   Dimensions new_dims;
-  for (const auto dim : old_dims.labels())
+  for (const auto &dim : old_dims.labels())
     if (from_dims.contains(dim)) {
       if (!new_dims.contains(to_dim))
         new_dims.addInner(to_dim, from_dims.volume());

@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
-from .table_html import make_html
+from .html import make_html
 
 
 def _repr_html_():

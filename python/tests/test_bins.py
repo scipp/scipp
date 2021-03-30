@@ -59,7 +59,7 @@ def test_bins_view():
     assert 'attr' in var.bins.meta
     assert 'attr' in var.bins.attrs
     assert 'mask' in var.bins.masks
-    with pytest.raises(RuntimeError):
+    with pytest.raises(sc.DTypeError):
         var.bins.coords['time2'] = col  # col is not binned
 
     def check(a, b):

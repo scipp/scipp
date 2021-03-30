@@ -30,7 +30,6 @@ test:
     - h5py
     - ipywidgets
     - matplotlib-base
-    - psutil
     - pytest
     - pythreejs
   source_files:

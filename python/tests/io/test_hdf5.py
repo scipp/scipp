@@ -34,6 +34,16 @@ eigen_2d = sc.Variable(dims=['x'],
                        dtype=sc.dtype.matrix_3_float64,
                        values=np.random.rand(4, 3, 3))
 
+datetime64ms_1d = sc.Variable(dims=['x'],
+                              dtype=sc.dtype.datetime64,
+                              unit='ms',
+                              values=np.arange(10))
+
+datetime64us_1d = sc.Variable(dims=['x'],
+                              dtype=sc.dtype.datetime64,
+                              unit='us',
+                              values=np.arange(10))
+
 array_1d = sc.DataArray(data=x,
                         coords={
                             'x': x,
@@ -76,6 +86,13 @@ def test_variable_eigen():
     check_roundtrip(eigen_1d['x', 0])
     check_roundtrip(eigen_2d)
     check_roundtrip(eigen_2d['x', 0])
+
+
+def test_variable_datetime64():
+    check_roundtrip(datetime64ms_1d)
+    check_roundtrip(datetime64ms_1d['x', 0])
+    check_roundtrip(datetime64us_1d)
+    check_roundtrip(datetime64us_1d['x', 0])
 
 
 def test_variable_binned_variable():
