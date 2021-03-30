@@ -17,7 +17,6 @@ pybind11_add_module(
   detail.cpp
   docstring.cpp
   dtype.cpp
-  eigen.cpp
   except.cpp
   geometry.cpp
   groupby.cpp

@@ -27,7 +27,6 @@ from ._scipp.core import Variable, VariableView, DataArray, DataArrayView, \
                          GroupByDataset
 from ._scipp.core import units, dtype, buckets, geometry
 from ._scipp.core import DTypeError, CoordError, UnitError
-from ._scipp.core.eigen import *
 from ._scipp.core import choose
 from ._scipp import __version__
 

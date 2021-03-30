@@ -15,7 +15,6 @@ void init_cumulative(py::module &);
 void init_dataset(py::module &);
 void init_detail(py::module &);
 void init_dtype(py::module &);
-void init_eigen(py::module &);
 void init_element_array_view(py::module &);
 void init_exceptions(py::module &);
 void init_groupby(py::module &);
@@ -40,7 +39,6 @@ void init_generated_special_values(py::module &);
 void init_core(py::module &m) {
   auto core = m.def_submodule("core");
   init_units(core);
-  init_eigen(core);
   init_exceptions(core);
   init_dtype(core);
   init_variable(core);
