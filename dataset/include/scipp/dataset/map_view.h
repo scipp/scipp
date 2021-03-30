@@ -7,7 +7,6 @@
 #include <boost/container/small_vector.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
-#include "scipp-dataset_export.h"
 #include "scipp/core/sizes.h"
 #include "scipp/core/slice.h"
 #include "scipp/dataset/map_view_forward.h"
