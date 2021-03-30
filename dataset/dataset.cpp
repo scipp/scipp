@@ -273,7 +273,10 @@ union_or(const Masks &currentMasks, const Masks &otherMasks) {
   for (const auto &[key, item] : otherMasks) {
     const auto it = currentMasks.find(key);
     if (it != currentMasks.end()) {
-      out[key] |= item;
+      if (out[key].dims().contains(item.dims()))
+        out[key] |= item;
+      else
+        out[key] = out[key] | item;
     } else {
       out.emplace(key, item);
     }

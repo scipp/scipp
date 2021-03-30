@@ -31,9 +31,9 @@ DataArray::DataArray(Variable data, Coords coords, Masks masks, Attrs attrs,
       m_masks(std::make_shared<Masks>(std::move(masks))),
       m_attrs(std::make_shared<Attrs>(std::move(attrs))) {
   const Sizes sizes(dims());
-  core::expect::equals(sizes, m_coords.sizes());
-  core::expect::equals(sizes, m_masks->sizes());
-  core::expect::equals(sizes, m_attrs->sizes());
+  m_coords.setSizes(sizes);
+  m_masks->setSizes(sizes);
+  m_attrs->setSizes(sizes);
 }
 
 DataArray::DataArray(Variable data, typename Coords::holder_type coords,
