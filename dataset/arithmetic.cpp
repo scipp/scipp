@@ -40,7 +40,9 @@ auto &apply(const Op &op, A &a, const B &b) {
   return a;
 }
 
-template <typename T> bool are_same(const T &a, const T &b) { return &a == &b; }
+template <typename T> bool are_same(const T &a, const T &b) {
+  return a.get() == b.get();
+}
 
 template <class A, class B>
 bool have_common_underlying(const A &a, const B &b) {
