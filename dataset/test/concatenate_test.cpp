@@ -255,43 +255,25 @@ TEST(ConcatenateTest, concat_2d_coord) {
 }
 
 TEST(ConcatenateTest, dataset_with_no_data_items) {
-  Dataset a, b;
-  a.setCoord(Dim::X,
-             makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2}));
-  a.setCoord(Dim("points"),
-             makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{.1, .2}));
-  b.setCoord(Dim::X,
-             makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{3, 4}));
-  b.setCoord(Dim("points"),
-             makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{.3, .4}));
-
-  const auto res = concatenate(a, b, Dim::X);
-
-  EXPECT_EQ(res.coords()[Dim::X],
-            makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}));
+  Dataset ds;
+  ds.setCoord(Dim::X,
+              makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}));
+  ds.setCoord(Dim("points"), makeVariable<double>(Dims{Dim::X}, Shape{4},
+                                                  Values{.1, .2, .3, .4}));
   EXPECT_EQ(
-      res.coords()[Dim("points")],
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{.1, .2, .3, .4}));
+      concatenate(ds.slice({Dim::X, 0, 2}), ds.slice({Dim::X, 2, 4}), Dim::X),
+      ds);
 }
 
 TEST(ConcatenateTest, dataset_with_no_data_items_histogram) {
-  Dataset a, b;
-  a.setCoord(Dim::X,
-             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  a.setCoord(Dim("histogram"),
-             makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{.1, .2}));
-  b.setCoord(Dim::X,
-             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{3, 4, 5}));
-  b.setCoord(Dim("histogram"),
-             makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{.3, .4}));
-
-  const auto res = concatenate(a, b, Dim::X);
-
-  EXPECT_EQ(res.coords()[Dim::X], makeVariable<double>(Dims{Dim::X}, Shape{5},
-                                                       Values{1, 2, 3, 4, 5}));
+  Dataset ds;
+  ds.setCoord(Dim("histogram"), makeVariable<double>(Dims{Dim::X}, Shape{4},
+                                                     Values{.1, .2, .3, .4}));
+  ds.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                           Values{1, 2, 3, 4, 5}));
   EXPECT_EQ(
-      res.coords()[Dim("histogram")],
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{.1, .2, .3, .4}));
+      concatenate(ds.slice({Dim::X, 0, 2}), ds.slice({Dim::X, 2, 4}), Dim::X),
+      ds);
 }
 
 TEST(ConcatenateTest, broadcast_coord) {
