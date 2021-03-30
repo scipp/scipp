@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp-dataset_export.h"
 #include "scipp/units/dim.h"
 
 namespace scipp::variable {
@@ -20,5 +21,8 @@ using Coords = Dict<Dim, variable::Variable>;
 using Masks = Dict<std::string, variable::Variable>;
 /// Dict of attributes of DataArray and Dataset.
 using Attrs = Dict<Dim, variable::Variable>;
+
+[[nodiscard]] SCIPP_DATASET_EXPORT Coords copy(const Coords &coords);
+[[nodiscard]] SCIPP_DATASET_EXPORT Masks copy(const Masks &masks);
 
 } // namespace scipp::dataset
