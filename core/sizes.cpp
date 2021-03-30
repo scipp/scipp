@@ -46,9 +46,16 @@ void Sizes::relabel(const Dim from, const Dim to) {
   m_sizes.insert(std::move(node));
 }
 
-bool Sizes::contains(const Dimensions &dims) {
+bool Sizes::contains(const Dimensions &dims) const {
   for (const auto &dim : dims.labels())
     if (m_sizes.count(dim) == 0 || m_sizes.at(dim) != dims[dim])
+      return false;
+  return true;
+}
+
+bool Sizes::contains(const Sizes &sizes) const {
+  for (const auto &[dim, size] : sizes)
+    if (m_sizes.count(dim) == 0 || m_sizes.at(dim) != size)
       return false;
   return true;
 }
@@ -76,6 +83,12 @@ bool is_edges(const Sizes &sizes, const Dimensions &dims, const Dim dim) {
   return size == (sizes.contains(dim) ? sizes[dim] + 1 : 2);
 }
 
-std::string to_string(const Sizes &sizes) { return "Sizes"; }
+std::string to_string(const Sizes &sizes) {
+  std::string repr("Sizes[");
+  for (const auto &[dim, size] : sizes)
+    repr += to_string(dim) + ":" + std::to_string(size) + ", ";
+  repr += "]";
+  return repr;
+}
 
 } // namespace scipp::core

@@ -31,7 +31,7 @@ auto make_empty_subspans(const ElementArrayView<T> &, const Dimensions &dims) {
 template <class T>
 auto make_subspans(T *base, const Variable &indices,
                    const scipp::index stride) {
-  const auto &offset = indices.values<core::bucket_base::range_type>();
+  const auto &offset = indices.values<scipp::index_pair>();
   const auto len = offset.size();
   std::vector<span<T>> spans;
   spans.reserve(len);

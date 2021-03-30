@@ -37,7 +37,8 @@ public:
   void set(const Dim dim, const scipp::index size);
   void erase(const Dim dim);
   void relabel(const Dim from, const Dim to);
-  bool contains(const Dimensions &dims);
+  bool contains(const Dimensions &dims) const;
+  bool contains(const Sizes &sizes) const;
   Sizes slice(const Slice &params) const;
 
 private:

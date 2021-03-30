@@ -75,7 +75,7 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
     a.setCoord(Dim("t"), labelT);
     a.setData("data_a",
               makeVariable<double>(Dimensions{Dim::X, lx}, Values(rand(lx))));
-    a["data_a"].masks().set("mask", mask);
+    a["data_a"].masks().set("mask", makeVariable<bool>(Values{false}));
     a.setData("data_b",
               makeVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly))));
   }
@@ -543,7 +543,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
   /* Expect coordinates to be copied to the result dataset */
   EXPECT_EQ(res.coords(), dataset_a.coords());
   for (const auto &item : res)
-    EXPECT_EQ(item.masks(), dataset_a[item.name()].masks());
+    EXPECT_EQ(item.masks(), dataset_b[item.name()].masks());
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_variableconstview_rhs) {

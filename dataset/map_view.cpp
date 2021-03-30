@@ -59,6 +59,12 @@ template <class Key, class Value> Value Dict<Key, Value>::at(const Key &key) {
 }
 
 template <class Key, class Value>
+void Dict<Key, Value>::setSizes(const Sizes &sizes) {
+  scipp::expect::contains(sizes, m_sizes);
+  m_sizes = sizes;
+}
+
+template <class Key, class Value>
 void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
