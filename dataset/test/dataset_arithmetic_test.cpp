@@ -235,8 +235,8 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, return_value) {
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
   auto dataset = datasetFactory().make();
-  auto original(dataset);
-  auto reference(dataset);
+  auto original = copy(dataset);
+  auto reference = copy(dataset);
 
   ASSERT_NO_THROW(TestFixture::op(dataset, dataset["data_scalar"]));
   for (const auto &item : dataset) {
@@ -259,8 +259,8 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_Variable_self_overlap) {
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DataArrayView_self_overlap_slice) {
   auto dataset = datasetFactory().make();
-  auto original(dataset);
-  auto reference(dataset);
+  auto original = copy(dataset);
+  auto reference = copy(dataset);
 
   ASSERT_NO_THROW(
       TestFixture::op(dataset, dataset["values_x"].slice({Dim::X, 1})));
@@ -386,7 +386,7 @@ TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
   auto dataset = datasetFactory().make();
-  auto reference(dataset);
+  auto reference = copy(dataset);
   TestFixture::op(reference, dataset["data_scalar"]);
 
   for (scipp::index z = 0; z < dataset.coords()[Dim::Z].dims()[Dim::Z]; ++z) {
@@ -406,7 +406,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
 TYPED_TEST(DatasetViewBinaryEqualsOpTest,
            rhs_DataArrayView_self_overlap_slice) {
   auto dataset = datasetFactory().make();
-  auto reference(dataset);
+  auto reference = copy(dataset);
   TestFixture::op(reference, dataset["values_x"].slice({Dim::X, 1}));
 
   for (scipp::index z = 0; z < dataset.coords()[Dim::Z].dims()[Dim::Z]; ++z) {
@@ -478,7 +478,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest,
            rhs_DatasetView_self_overlap_undetectable) {
   auto dataset = datasetFactory().make();
   const auto slice = dataset.slice({Dim::Z, 3});
-  auto reference(dataset);
+  auto reference = copy(dataset);
 
   // Same as `rhs_DatasetView_self_overlap` above, but reverse slice order.
   // The second line will see the updated slice 3, and there is no way to
