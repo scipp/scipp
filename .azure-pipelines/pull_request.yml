@@ -14,7 +14,7 @@ extends:
   parameters:
     py_versions:
       linux: ['3.7']
-      osx: ['3.7']
+      # osx: ['3.7']
       # windows: ['3.7']
     deploy: false
 
