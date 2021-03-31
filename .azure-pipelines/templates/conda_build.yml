@@ -14,9 +14,9 @@ parameters:
 - name: publish
   type: string
   default: ''
-- name: ALREADY_BUILT
-  type: string
-  default: 'YES'
+# - name: INSTALL_TARGET
+#   type: string
+#   default: 'YES'
 
 
 jobs:
@@ -28,8 +28,8 @@ jobs:
     variables:
       - name: OSX_VERSION
         value: ${{ parameters.OSX_VERSION }}
-      - name: ALREADY_BUILT
-        value: ${{ parameters.ALREADY_BUILT }}
+      # - name: ALREADY_BUILT
+      #   value: ${{ parameters.ALREADY_BUILT }}
 
     steps:
       - checkout: self
@@ -65,9 +65,9 @@ jobs:
       - bash: |
           source activate scipp-developer
           ./tools/make_and_install.sh
+          echo "##vso[task.setvariable variable=install_target]$CONDA_PREFIX"
         displayName: 'Build and run C++ tests'
       - bash: |
-          source activate scipp-developer
           conda build --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload ./conda
         displayName: 'Conda build'
       - task: PublishBuildArtifacts@1
