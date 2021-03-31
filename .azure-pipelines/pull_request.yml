@@ -16,7 +16,7 @@ extends:
       linux: ['3.7']
       # osx: ['3.7']
       # windows: ['3.7']
-    deploy: false
+    deploy: true
 
 
       # linux: ['3.6', '3.7']
