@@ -340,11 +340,11 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
     nonclashing_name += d.name();
   const Dim dummy = Dim(nonclashing_name);
   indices.rename(hist_dim, dummy);
+  const auto masked = masked_data(buffer, dim);
   auto hist = variable::transform_subspan(
       buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
       subspan_view(buffer.meta()[hist_dim], dim, indices),
-      subspan_view(masked_data(buffer, dim), dim, indices), binEdges,
-      element::histogram);
+      subspan_view(masked, dim, indices), binEdges, element::histogram);
   if (hist.dims().contains(dummy))
     return sum(hist, dummy);
   else
@@ -356,7 +356,8 @@ Variable map(const DataArray &function, const Variable &x, Dim dim) {
     dim = edge_dimension(function);
   const auto &coord = bins_view<DataArray>(x).meta()[dim];
   const auto &edges = function.meta()[dim];
-  const auto weights = subspan_view(masked_data(function, dim), dim);
+  const auto data = masked_data(function, dim);
+  const auto weights = subspan_view(data, dim);
   if (all(islinspace(edges, dim)).value<bool>()) {
     return variable::transform(coord, subspan_view(edges, dim), weights,
                                core::element::event::map_linspace);
@@ -378,7 +379,8 @@ void scale(DataArray &array, const DataArray &histogram, Dim dim) {
   auto data = bins_view<DataArray>(array.data()).data();
   const auto &coord = bins_view<DataArray>(array.data()).meta()[dim];
   const auto &edges = histogram.meta()[dim];
-  const auto weights = subspan_view(masked_data(histogram, dim), dim);
+  const auto masked = masked_data(histogram, dim);
+  const auto weights = subspan_view(masked, dim);
   if (all(islinspace(edges, dim)).value<bool>()) {
     transform_in_place(data, coord, subspan_view(edges, dim), weights,
                        core::element::event::map_and_mul_linspace);

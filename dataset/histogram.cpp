@@ -42,11 +42,12 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
         [](const DataArray &events_, const Dim data_dim_,
            const Variable &binEdges_) {
           const auto dim_ = binEdges_.dims().inner();
+          const auto data = masked_data(events_, dim_);
           return transform_subspan(
               events_.dtype(), dim_, binEdges_.dims()[dim_] - 1,
               subspan_view(events_.coords()[dim_], data_dim_),
-              subspan_view(masked_data(events_, dim_), data_dim_), binEdges_,
-              element::histogram, "histogram");
+              subspan_view(data, data_dim_), binEdges_, element::histogram,
+              "histogram");
         },
         data_dim, binEdges);
   } else {
