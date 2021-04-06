@@ -54,7 +54,7 @@ static constexpr auto make_key_value = [](auto &&view) {
 };
 
 static constexpr auto make_key = [](auto &&view) -> decltype(auto) {
-    return view.first;
+  return view.first;
 };
 
 static constexpr auto make_value = [](auto &&view) -> decltype(auto) {
