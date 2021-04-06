@@ -78,13 +78,16 @@ parse_datetime_dtype(const std::string &dtype_name) {
     return scipp::units::dimensionless;
   } else if (match[unit_idx] == "s") {
     return scipp::units::s;
-  } else if (match[unit_idx] == "ms") {
-    static const auto ms = units::Unit("ms");
-    return ms;
   } else if (match[unit_idx] == "us") {
     return scipp::units::us;
   } else if (match[unit_idx] == "ns") {
     return scipp::units::ns;
+  } else {
+    for (const char *name : {"ms", "D", "M", "Y"}) {
+      if (match[unit_idx] == name) {
+        return units::Unit(name);
+      }
+    }
   }
 
   throw std::invalid_argument(std::string("Unsupported unit in datetime: ") +
