@@ -72,13 +72,17 @@ TYPED_TEST(CoordsViewTest, iterators) {
 
   auto it = coords.begin();
   ASSERT_NE(it, coords.end());
-  EXPECT_EQ(it->first, Dim::X);
-  EXPECT_EQ(it->second, x);
+  if (it->first == Dim::X)
+    EXPECT_EQ(it->second, x);
+  else
+    EXPECT_EQ(it->second, y);
 
   ASSERT_NO_THROW(++it);
   ASSERT_NE(it, coords.end());
-  EXPECT_EQ(it->first, Dim::Y);
-  EXPECT_EQ(it->second, y);
+  if (it->first == Dim::Y)
+    EXPECT_EQ(it->second, y);
+  else
+    EXPECT_EQ(it->second, x);
 
   ASSERT_NO_THROW(++it);
   ASSERT_EQ(it, coords.end());
