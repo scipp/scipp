@@ -256,7 +256,7 @@ TEST(DatasetTest, const_iterators_return_types) {
 TEST(DatasetTest, construct_from_view) {
   DatasetFactory3D factory;
   const auto dataset = factory.make();
-  const DatasetConstView view(dataset);
+  const Dataset view(dataset);
   Dataset from_view(view);
   ASSERT_EQ(from_view, dataset);
 }

@@ -9,7 +9,6 @@
 namespace scipp::dataset {
 
 SCIPP_DATASET_EXPORT DataArray choose(const Variable &key,
-                                      const DataArrayConstView &choices,
-                                      const Dim dim);
+                                      const DataArray &choices, const Dim dim);
 
 } // namespace scipp::dataset

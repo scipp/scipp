@@ -52,28 +52,26 @@ Variable sort(const Variable &var, const Variable &key,
 }
 
 /// Return a DataArray sorted based on key.
-DataArray sort(const DataArrayConstView &array, const Variable &key,
+DataArray sort(const DataArray &array, const Variable &key,
                const SortOrder &order) {
   return concatenate(
       IndexedSliceView{array, key.dims().inner(), makePermutation(key, order)});
 }
 
 /// Return a DataArray sorted based on coordinate.
-DataArray sort(const DataArrayConstView &array, const Dim &key,
-               const SortOrder &order) {
+DataArray sort(const DataArray &array, const Dim &key, const SortOrder &order) {
   return sort(array, array.coords()[key], order);
 }
 
 /// Return a Dataset sorted based on key.
-Dataset sort(const DatasetConstView &dataset, const Variable &key,
+Dataset sort(const Dataset &dataset, const Variable &key,
              const SortOrder &order) {
   return concatenate(IndexedSliceView{dataset, key.dims().inner(),
                                       makePermutation(key, order)});
 }
 
 /// Return a Dataset sorted based on coordinate.
-Dataset sort(const DatasetConstView &dataset, const Dim &key,
-             const SortOrder &order) {
+Dataset sort(const Dataset &dataset, const Dim &key, const SortOrder &order) {
   return sort(dataset, dataset.coords()[key], order);
 }
 

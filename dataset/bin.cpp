@@ -484,9 +484,8 @@ template Variable concat_bins<DataArray>(const Variable &, const Dim);
 /// reduction dimension, any binning along the dimensions of the conflicting
 /// coords is removed. It is replaced by a single bin along that dimension, with
 /// bin edges given my min and max of the old coord.
-DataArray groupby_concat_bins(const DataArrayConstView &array,
-                              const Variable &edges, const Variable &groups,
-                              const Dim reductionDim) {
+DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
+                              const Variable &groups, const Dim reductionDim) {
   TargetBinBuilder builder;
   if (edges)
     builder.bin(edges);
@@ -505,15 +504,15 @@ DataArray groupby_concat_bins(const DataArrayConstView &array,
 
   HideMasked hide_masked(array.data(), array.masks(), builder.dims());
   const auto masked = hide_masked();
-  TargetBins<DataArrayConstView> target_bins(masked, builder.dims());
+  TargetBins<DataArray> target_bins(masked, builder.dims());
   builder.build(*target_bins, array.coords());
-  return add_metadata(bin<DataArrayConstView>(masked, *target_bins, builder),
+  return add_metadata(bin<DataArray>(masked, *target_bins, builder),
                       array.coords(), array.masks(), array.attrs(),
                       builder.edges(), builder.groups(), {reductionDim});
 }
 
 namespace {
-void validate_bin_args(const DataArrayConstView &array,
+void validate_bin_args(const DataArray &array,
                        const std::vector<Variable> &edges,
                        const std::vector<Variable> &groups) {
   if ((is_bins(array) &&
@@ -541,8 +540,7 @@ void validate_bin_args(const DataArrayConstView &array,
 }
 } // namespace
 
-DataArray bin(const DataArrayConstView &array,
-              const std::vector<Variable> &edges,
+DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
               const std::vector<Variable> &groups,
               const std::vector<Dim> &erase) {
   validate_bin_args(array, edges, groups);
@@ -573,9 +571,8 @@ DataArray bin(const DataArrayConstView &array,
     builder.build(target_bins_buffer, coords);
     const auto target_bins =
         make_bins_no_validate(indices, dim, target_bins_buffer);
-    return add_metadata(bin<DataArrayConstView>(tmp, target_bins, builder),
-                        coords, masks, attrs, builder.edges(), builder.groups(),
-                        erase);
+    return add_metadata(bin<DataArray>(tmp, target_bins, builder), coords,
+                        masks, attrs, builder.edges(), builder.groups(), erase);
   }
 }
 
@@ -600,12 +597,10 @@ DataArray bin(const Variable &data, const Coords &coords, const Masks &masks,
   auto builder = axis_actions(data, coords, edges, groups, erase);
   HideMasked hide_masked(data, masks, builder.dims());
   const auto masked = hide_masked();
-  TargetBins<DataArrayConstView> target_bins(masked, builder.dims());
-  builder.build(*target_bins, bins_view<DataArrayConstView>(masked).coords(),
-                coords);
-  return add_metadata(bin<DataArrayConstView>(masked, *target_bins, builder),
-                      coords, masks, attrs, builder.edges(), builder.groups(),
-                      erase);
+  TargetBins<DataArray> target_bins(masked, builder.dims());
+  builder.build(*target_bins, bins_view<DataArray>(masked).coords(), coords);
+  return add_metadata(bin<DataArray>(masked, *target_bins, builder), coords,
+                      masks, attrs, builder.edges(), builder.groups(), erase);
 }
 
 template SCIPP_DATASET_EXPORT DataArray

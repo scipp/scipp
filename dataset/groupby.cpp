@@ -318,7 +318,7 @@ GroupBy<T> call_groupby(const T &array, const Variable &key, const Dim &dim) {
 /// Groups the slices of `array` according to values in given by a coord.
 /// Grouping will create a new coordinate for the dimension of the grouping
 /// coord in a later apply/combine step.
-GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
+GroupBy<DataArray> groupby(const DataArray &array, const Dim dim) {
   const auto &key = array.coords()[dim];
   return call_groupby(array, key, dim);
 }
@@ -328,7 +328,7 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim) {
 /// Groups the slices of `array` according to values in given by a coord.
 /// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
-GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
+GroupBy<DataArray> groupby(const DataArray &array, const Dim dim,
                            const Variable &bins) {
   const auto &key = array.coords()[dim];
   return groupby(array, key, bins);
@@ -339,7 +339,7 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Dim dim,
 /// Groups the slices of `array` according to values in given by a coord.
 /// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
-GroupBy<DataArray> groupby(const DataArrayConstView &array, const Variable &key,
+GroupBy<DataArray> groupby(const DataArray &array, const Variable &key,
                            const Variable &bins) {
   if (!array.dims().contains(key.dims()))
     throw except::DimensionError("Size of Group-by key is incorrect.");
@@ -352,7 +352,7 @@ GroupBy<DataArray> groupby(const DataArrayConstView &array, const Variable &key,
 /// Groups the slices of `dataset` according to values in given by a coord.
 /// Grouping will create a new coordinate for the dimension of the grouping
 /// coord in a later apply/combine step.
-GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
+GroupBy<Dataset> groupby(const Dataset &dataset, const Dim dim) {
   const auto &key = dataset.coords()[dim];
   return call_groupby(dataset, key, dim);
 }
@@ -362,7 +362,7 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim) {
 /// Groups the slices of `dataset` according to values in given by a coord.
 /// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
-GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
+GroupBy<Dataset> groupby(const Dataset &dataset, const Dim dim,
                          const Variable &bins) {
   const auto &key = dataset.coords()[dim];
   return groupby(dataset, key, bins);
@@ -373,7 +373,7 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
 /// Groups the slices of `dataset` according to values in given by a coord.
 /// Grouping of a coord is according to given `bins`, which will be added as a
 /// new coordinate to the output in a later apply/combine step.
-GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Variable &key,
+GroupBy<Dataset> groupby(const Dataset &dataset, const Variable &key,
                          const Variable &bins) {
   for (const auto &n : dataset.dimensions()) {
     Dimensions dims(n.first, n.second);
@@ -402,8 +402,7 @@ constexpr auto slice_by_value = [](const auto &x, const Dim dim,
 ///
 /// Chooses slices of `choices` along `dim`, based on values of dimension-coord
 /// for `dim`.
-DataArray choose(const Variable &key, const DataArrayConstView &choices,
-                 const Dim dim) {
+DataArray choose(const Variable &key, const DataArray &choices, const Dim dim) {
   const auto grouping = call_groupby(key, key, dim);
   const Dim target_dim = key.dims().inner();
   auto out = resize(choices, dim, key.dims()[target_dim]);

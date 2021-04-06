@@ -195,46 +195,6 @@ template <class T> const auto &getitem(const T &view, const std::string &name) {
 }
 } // namespace
 
-/*
-// This is a member so it gets access to a private constructor of DataArrayView.
-template <class T>
-std::pair<boost::container::small_vector<DataArrayView, 8>, detail::slice_list>
-DatasetConstView::slice_items(const T &view, const Slice slice) {
-  auto slices = view.slices();
-  boost::container::small_vector<DataArrayView, 8> items;
-  scipp::index extent = std::numeric_limits<scipp::index>::max();
-  for (const auto &item : view) {
-    const auto &dims = item.dims();
-    if (dims.contains(slice.dim())) {
-      items.emplace_back(DataArrayView(item.slice(slice)));
-      // In principle data may be on bin edges. The overall dimension is then
-      // determined by the extent of data that is *not* on the edges.
-      extent = std::min(extent, dims[slice.dim()]);
-    }
-  }
-  if (extent == std::numeric_limits<scipp::index>::max()) {
-    // Fallback: Could not determine extent from data (not data that depends on
-    // slicing dimension), use `dimensions()` to also consider coords.
-    const auto currentDims = view.dimensions();
-    core::expect::validSlice(currentDims, slice);
-    extent = currentDims.at(slice.dim());
-  }
-  slices.emplace_back(slice, extent);
-  return std::pair{std::move(items), std::move(slices)};
-}
-
-/// Return a slice of the dataset view.
-///
-/// The returned view will not contain references to data items that do not
-/// depend on the sliced dimension.
-DatasetConstView DatasetConstView::slice(const Slice s) const {
-  DatasetConstView sliced;
-  sliced.m_dataset = m_dataset;
-  std::tie(sliced.m_items, sliced.m_slices) = slice_items(*this, s);
-  return sliced;
-}
-*/
-
 template <class A, class B> bool dataset_equals(const A &a, const B &b) {
   if (a.size() != b.size())
     return false;

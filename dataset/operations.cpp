@@ -38,7 +38,7 @@ Coords copy(const Coords &coords) { return {coords.sizes(), copy_map(coords)}; }
 Masks copy(const Masks &masks) { return {masks.sizes(), copy_map(masks)}; }
 
 /// Return a copy of a DataArray.
-DataArray copy(const DataArrayConstView &array, const AttrPolicy attrPolicy) {
+DataArray copy(const DataArray &array, const AttrPolicy attrPolicy) {
   // TODO is this correct? copy data but not meta data?
   return DataArray(copy(array.data()), array.coords(), array.masks(),
                    attrPolicy == AttrPolicy::Keep ? array.attrs() : Attrs{},
@@ -46,8 +46,7 @@ DataArray copy(const DataArrayConstView &array, const AttrPolicy attrPolicy) {
 }
 
 /// Return a deep copy of a DataArray.
-DataArray deepcopy(const DataArrayConstView &array,
-                   const AttrPolicy attrPolicy) {
+DataArray deepcopy(const DataArray &array, const AttrPolicy attrPolicy) {
   return DataArray(
       copy(array.data()), copy(array.coords()), copy(array.masks()),
       attrPolicy == AttrPolicy::Keep ? copy(array.attrs()) : Attrs{},
@@ -55,7 +54,7 @@ DataArray deepcopy(const DataArrayConstView &array,
 }
 
 /// Return a copy of a Dataset.
-Dataset copy(const DatasetConstView &dataset, const AttrPolicy attrPolicy) {
+Dataset copy(const Dataset &dataset, const AttrPolicy attrPolicy) {
   Dataset out({}, dataset.coords());
   for (const auto &item : dataset)
     out.setData(item.name(), copy(item, attrPolicy));
@@ -63,7 +62,7 @@ Dataset copy(const DatasetConstView &dataset, const AttrPolicy attrPolicy) {
 }
 
 /// Return a deep copy of a Dataset.
-Dataset deepcopy(const DatasetConstView &dataset, const AttrPolicy attrPolicy) {
+Dataset deepcopy(const Dataset &dataset, const AttrPolicy attrPolicy) {
   Dataset out({}, copy(dataset.coords()));
   for (const auto &item : dataset)
     out.setData(item.name(), deepcopy(item, attrPolicy));
@@ -72,8 +71,7 @@ Dataset deepcopy(const DatasetConstView &dataset, const AttrPolicy attrPolicy) {
 
 namespace {
 template <class T>
-void copy_item(const DataArrayConstView &from, T &&to,
-               const AttrPolicy attrPolicy) {
+void copy_item(const DataArray &from, T &&to, const AttrPolicy attrPolicy) {
   for (const auto &[name, mask] : from.masks())
     copy(mask, to.masks()[name]);
   if (attrPolicy == AttrPolicy::Keep)

@@ -39,8 +39,7 @@ scipp::index size_of(const Variable &view) {
 /// Return the size in memory of a DataArray object. The aligned coord is
 /// optional because for a DataArray owned by a dataset aligned coords are
 /// assumed to be owned by the dataset as they can apply to multiple arrays.
-scipp::index size_of(const DataArrayConstView &dataarray,
-                     bool include_aligned_coords) {
+scipp::index size_of(const DataArray &dataarray, bool include_aligned_coords) {
   scipp::index size = 0;
   size += size_of(dataarray.data());
   for (const auto coord : dataarray.attrs()) {
@@ -57,7 +56,7 @@ scipp::index size_of(const DataArrayConstView &dataarray,
   return size;
 }
 
-scipp::index size_of(const DatasetConstView &dataset) {
+scipp::index size_of(const Dataset &dataset) {
   scipp::index size = 0;
   for (const auto &data : dataset) {
     size += size_of(data, false);

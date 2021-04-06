@@ -61,22 +61,21 @@ private:
   GroupByGrouping m_grouping;
 };
 
+SCIPP_DATASET_EXPORT GroupBy<DataArray> groupby(const DataArray &dataset,
+                                                const Dim dim);
 SCIPP_DATASET_EXPORT GroupBy<DataArray>
-groupby(const DataArrayConstView &dataset, const Dim dim);
-SCIPP_DATASET_EXPORT GroupBy<DataArray>
-groupby(const DataArrayConstView &dataset, const Dim dim, const Variable &bins);
+groupby(const DataArray &dataset, const Dim dim, const Variable &bins);
 
-SCIPP_DATASET_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
+SCIPP_DATASET_EXPORT GroupBy<Dataset> groupby(const Dataset &dataset,
                                               const Dim dim);
 SCIPP_DATASET_EXPORT GroupBy<Dataset>
-groupby(const DatasetConstView &dataset, const Dim dim, const Variable &bins);
+groupby(const Dataset &dataset, const Dim dim, const Variable &bins);
 
-SCIPP_DATASET_EXPORT GroupBy<DataArray>
-groupby(const DataArrayConstView &dataset, const Variable &variable,
-        const Variable &bins);
+SCIPP_DATASET_EXPORT GroupBy<DataArray> groupby(const DataArray &dataset,
+                                                const Variable &variable,
+                                                const Variable &bins);
 
-SCIPP_DATASET_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
-                                              const Variable &variable,
-                                              const Variable &bins);
+SCIPP_DATASET_EXPORT GroupBy<Dataset>
+groupby(const Dataset &dataset, const Variable &variable, const Variable &bins);
 
 } // namespace scipp::dataset
