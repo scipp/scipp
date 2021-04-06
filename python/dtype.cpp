@@ -88,7 +88,7 @@ parse_datetime_dtype(const std::string &dtype_name) {
   }
 
   throw std::invalid_argument(std::string("Unsupported unit in datetime: ") +
-                              dtype_name[11] + "s");
+                              std::string(match[unit_idx]));
 }
 
 [[nodiscard]] scipp::units::Unit
