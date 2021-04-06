@@ -117,4 +117,15 @@ Dataset copy(const Dataset &dataset, Dataset &&out,
   return std::move(out);
 }
 
+/// Return data of data array, applying masks along dim if applicable.
+///
+/// Only in the latter case a copy is returned.
+Variable masked_data(const DataArray &array, const Dim dim) {
+  const auto mask = irreducible_mask(array.masks(), dim);
+  if (mask)
+    return array.data() * ~mask;
+  else
+    return array.data();
+}
+
 } // namespace scipp::dataset

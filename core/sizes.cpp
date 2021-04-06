@@ -2,8 +2,8 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/except.h"
 #include "scipp/core/sizes.h"
+#include "scipp/core/except.h"
 
 namespace scipp::core {
 
