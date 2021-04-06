@@ -65,15 +65,14 @@ public:
   void setUnit(const units::Unit &unit);
   void expectCanSetUnit(const units::Unit &) const;
 
-  Dimensions dims() const && { return m_dims; }
-  const Dimensions &dims() const & { return m_dims; }
+  const Dimensions &dims() const;
   void setDims(const Dimensions &dimensions);
 
-  DType dtype() const noexcept { return data().dtype(); }
+  DType dtype() const { return data().dtype(); }
 
   scipp::span<const scipp::index> strides() const;
 
-  bool hasVariances() const noexcept { return data().hasVariances(); }
+  bool hasVariances() const { return data().hasVariances(); }
 
   template <class T> ElementArrayView<const T> values() const;
   template <class T> ElementArrayView<T> values();
