@@ -102,7 +102,7 @@ TEST_F(BinnedDataArraySizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
 }
 
 TEST_F(BinnedDatasetSizeOfTest, size_in_memory_of_bucketed_variable) {
-  buffer.coords().set(Dim::X, column);
+  buffer.setCoord(Dim::X, column);
   Variable var = make_bins(indices, Dim::X, buffer);
   const auto &[indices_, dim_, buffer_] = var.constituents<bucket<Dataset>>();
   EXPECT_EQ(dim_, Dim::X);
@@ -110,7 +110,7 @@ TEST_F(BinnedDatasetSizeOfTest, size_in_memory_of_bucketed_variable) {
 }
 
 TEST_F(BinnedDatasetSizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
-  buffer.coords().set(Dim::X, column);
+  buffer.setCoord(Dim::X, column);
   Variable var = make_bins(indices, Dim::X, buffer);
   auto slice = var.slice(Slice(Dim::Y, 0, 1));
   const auto &[indices_, dim_, buffer_] = slice.constituents<bucket<Dataset>>();
