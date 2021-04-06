@@ -30,7 +30,7 @@ Variable::Variable(const llnl::units::precise_measurement &m)
 
 void Variable::setDataHandle(VariableConceptHandle object) {
   if (object->size() != m_object->size())
-    throw std::runtime_error("Cannot replace by model of different size.");
+    throw except::DimensionError("Cannot replace by model of different size.");
   m_object = object;
 }
 

@@ -95,7 +95,7 @@ TEST_F(DataArrayBinsTest, concatenate) {
 }
 
 TEST_F(DataArrayBinsTest, concatenate_with_broadcast) {
-  auto var2 = var;
+  auto var2 = copy(var);
   var2.rename(Dim::Y, Dim::Z);
   var2 *= 3.0 * units::one;
   const auto result = buckets::concatenate(var, var2);
@@ -354,7 +354,7 @@ protected:
 
   DataArrayBinsPlusMinusTest() {
     eventsA = make_events();
-    eventsB = eventsA;
+    eventsB = copy(eventsA);
     eventsB.coords()[Dim::X] += 0.01 * units::us;
     eventsB = concatenate(eventsB, eventsA, Dim("event"));
     eventsB.coords()[Dim::X] += 0.02 * units::us;
@@ -390,7 +390,7 @@ TEST_F(DataArrayBinsPlusMinusTest, minus) {
 }
 
 TEST_F(DataArrayBinsPlusMinusTest, plus_equals) {
-  auto out(a);
+  auto out = copy(a);
   buckets::append(out, b);
   EXPECT_EQ(out, buckets::concatenate(a, b));
   buckets::append(out, -b);
@@ -400,13 +400,13 @@ TEST_F(DataArrayBinsPlusMinusTest, plus_equals) {
 }
 
 TEST_F(DataArrayBinsPlusMinusTest, plus_equals_self) {
-  auto out(a);
+  auto out = copy(a);
   buckets::append(out, out);
   EXPECT_EQ(out, buckets::concatenate(a, a));
 }
 
 TEST_F(DataArrayBinsPlusMinusTest, minus_equals) {
-  auto out(a);
+  auto out = copy(a);
   buckets::append(out, -b);
   EXPECT_EQ(out, buckets::concatenate(a, -b));
 }
@@ -441,8 +441,8 @@ protected:
 };
 
 TEST_F(DatasetBinsTest, concatenate) {
-  buffer0.coords().set(Dim::X, column);
-  buffer1.coords().set(Dim::X, column + column);
+  buffer0.setCoord(Dim::X, column);
+  buffer1.setCoord(Dim::X, column + column);
   check();
   buffer0.setData("a", column * column);
   check_fail();
