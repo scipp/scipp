@@ -12,6 +12,7 @@
   --sc-font-color1: var(--jp-content-font-color1, #555);
   --sc-font-color2: var(--jp-content-font-color2, #888);
   --sc-font-color3: var(--jp-content-font-color3, #ccc);
+  --sc-table-data-color: $data_color;
   --sc-table-coords-color: $coords_color;
   --sc-table-masks-color: $masks_color;
   --sc-table-attrs-color: $attrs_color;
@@ -405,6 +406,11 @@ label.sc-hide-icon svg{
 
 .sc-table tr:hover {
   background-color: var(--sc-background-color2);
+}
+
+.sc-table th.sc-data {
+  background-color: var(--sc-table-data-color);
+  color: var(--sc-table-header-font-color);
 }
 
 .sc-table th.sc-coords {
