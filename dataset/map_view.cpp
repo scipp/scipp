@@ -68,9 +68,14 @@ template <class Key, class Value>
 void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
-  if (!m_sizes.contains(coord.dims()) &&
-      !is_edges(m_sizes, coord.dims(), dim_of_coord(coord, key)))
-    throw std::runtime_error("cannot add coord exceeding DataArray dims");
+  if (!m_sizes.contains(coord.dims())) {
+    const auto dim = dim_of_coord(coord, key);
+    auto dims = coord.dims();
+    if (dims.contains(dim))
+      dims.erase(dim);
+    if (!(is_edges(m_sizes, coord.dims(), dim) && m_sizes.contains(dims)))
+      throw except::DimensionError("Cannot add coord exceeding DataArray dims");
+  }
   m_items.insert_or_assign(key, std::move(coord));
 }
 template <class Key, class Value>

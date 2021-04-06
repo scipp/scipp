@@ -348,12 +348,12 @@ TEST_F(GroupbyWithBinsTest, bins) {
                                    Values{0.0, 1.0, 2.0, 3.0});
 
   Dataset expected;
-  expected.setCoord(Dim::Z, bins);
   expected.setData("a", makeVariable<double>(Dims{Dim::Z}, Shape{3}, units::s,
                                              Values{0.0, 0.8, 0.3}));
   expected.setData("b",
                    makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 3},
                                         units::s, Values{0, 8, 3, 0, 23, 8}));
+  expected.setCoord(Dim::Z, bins);
   expected["a"].coords().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
 
   EXPECT_EQ(groupby(d, Dim("labels2"), bins).sum(Dim::X), expected);
