@@ -84,7 +84,7 @@ public:
   using BinsCommon<T, View>::BinsCommon;
   auto data() const { return this->make(this->buffer().data()); }
   void setData(const Variable &var) {
-    this->buffer().setData(Variable(this->check_and_get_buf(var)));
+    this->buffer().setData(this->check_and_get_buf(var));
   }
   auto meta() const { return BinsMapView(*this, this->buffer().meta()); }
   auto coords() const { return BinsMapView(*this, this->buffer().coords()); }
