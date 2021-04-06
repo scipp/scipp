@@ -151,15 +151,17 @@ auto bin(const Variable &data, const Variable &indices,
   return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
 }
 
-constexpr auto get_coords = [](auto &a) { return a.coords(); };
-constexpr auto get_attrs = [](auto &a) { return a.attrs(); };
-constexpr auto get_masks = [](auto &a) { return a.masks(); };
+constexpr auto get_coords = [](auto &a) -> decltype(auto) {
+  return a.coords();
+};
+constexpr auto get_attrs = [](auto &a) -> decltype(auto) { return a.attrs(); };
+constexpr auto get_masks = [](auto &a) -> decltype(auto) { return a.masks(); };
 
 template <class T, class Meta> auto extract_unbinned(T &array, Meta meta) {
   const auto dim = array.dims().inner();
-  std::vector<typename decltype(meta(array))::key_type> to_extract;
-  std::unordered_map<typename decltype(meta(array))::key_type, Variable>
-      extracted;
+  using Key = typename std::decay_t<decltype(meta(array))>::key_type;
+  std::vector<Key> to_extract;
+  std::unordered_map<Key, Variable> extracted;
   const auto view = meta(array);
   // WARNING: Do not use `view` while extracting, `extract` invalidates it!
   std::copy_if(
