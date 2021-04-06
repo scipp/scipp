@@ -31,9 +31,8 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
         events,
         [](const DataArray &events_, const Dim dim_,
            const Variable &binEdges_) {
-          const Masker masker(events_, dim_);
           // TODO Creating a full copy of event data here is very inefficient
-          return buckets::histogram(masker.data(), binEdges_);
+          return buckets::histogram(masked_data(events_, dim_), binEdges_);
         },
         dim, binEdges);
   } else if (!is_histogram(events, dim)) {
@@ -43,11 +42,10 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
         [](const DataArray &events_, const Dim data_dim_,
            const Variable &binEdges_) {
           const auto dim_ = binEdges_.dims().inner();
-          const Masker masker(events_, dim_);
           return transform_subspan(
               events_.dtype(), dim_, binEdges_.dims()[dim_] - 1,
               subspan_view(events_.coords()[dim_], data_dim_),
-              subspan_view(masker.data(), data_dim_), binEdges_,
+              subspan_view(masked_data(events_, dim_), data_dim_), binEdges_,
               element::histogram, "histogram");
         },
         data_dim, binEdges);
