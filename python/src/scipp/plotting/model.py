@@ -7,7 +7,7 @@ from .formatters import VectorFormatter, StringFormatter, \
                         DateFormatter, LabelFormatter
 from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
                    vars_to_err, find_limits
-from .._utils import name_with_unit
+from .._utils import name_with_unit, vector_type, string_type, datetime_type
 from .._scipp import core as sc
 import numpy as np
 import enum
@@ -132,11 +132,11 @@ class PlotModel:
             keys.append(dim_label_map[dim])
 
         for key in keys:
-            if data_array.meta[key].dtype == sc.dtype.vector_3_float64:
+            if vector_type(data_array.meta[key]):
                 kind[key] = Kind.vector
-            elif data_array.meta[key].dtype == sc.dtype.string:
+            elif string_type(data_array.meta[key]):
                 kind[key] = Kind.string
-            elif data_array.meta[key].dtype == sc.dtype.datetime64:
+            elif datetime_type(data_array.meta[key]):
                 kind[key] = Kind.datetime
             else:
                 kind[key] = Kind.other

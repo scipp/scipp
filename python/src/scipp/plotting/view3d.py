@@ -23,3 +23,10 @@ class PlotView3d(PlotView):
 
     def update_depth_test(self, *args, **kwargs):
         self.figure.update_depth_test(*args, **kwargs)
+
+    def close(self):
+        """
+        Dummy close function because 3d plots cannot be closed like mpl
+        figures.
+        """
+        return
