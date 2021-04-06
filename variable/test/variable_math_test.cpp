@@ -30,14 +30,6 @@ TYPED_TEST(VariableMathTest, abs) {
   }
 }
 
-TEST(Variable, abs_move) {
-  auto var = makeVariable<double>(Values{-1.23});
-  const auto ptr = var.values<double>().data();
-  auto out = abs(std::move(var));
-  EXPECT_EQ(out, makeVariable<double>(Values{element::abs(-1.23)}));
-  EXPECT_EQ(out.values<double>().data(), ptr);
-}
-
 TEST(Variable, abs_out_arg) {
   const auto x = -1.23 * units::m;
   auto out = 0.0 * units::dimensionless;
@@ -82,14 +74,6 @@ TYPED_TEST(VariableMathTest, sqrt) {
   }
 }
 
-TEST(Variable, sqrt_move) {
-  auto var = makeVariable<double>(Values{1.23});
-  const auto ptr = var.values<double>().data();
-  auto out = sqrt(std::move(var));
-  EXPECT_EQ(out, makeVariable<double>(Values{element::sqrt(1.23)}));
-  EXPECT_EQ(out.values<double>().data(), ptr);
-}
-
 TEST(Variable, sqrt_out_arg) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.23, 0.0});
   auto out = x.slice({Dim::X, 1});
@@ -119,14 +103,6 @@ TEST(Variable, reciprocal) {
   var1 = makeVariable<double>(Values{2}, Variances{1});
   var2 = makeVariable<double>(Values{0.5}, Variances{0.0625});
   ASSERT_EQ(reciprocal(var1), var2);
-}
-
-TEST(Variable, reciprocal_move) {
-  auto var = makeVariable<double>(Values{4});
-  const auto ptr = var.values<double>().data();
-  auto out = reciprocal(std::move(var));
-  EXPECT_EQ(out, makeVariable<double>(Values{0.25}));
-  EXPECT_EQ(out.values<double>().data(), ptr);
 }
 
 TEST(Variable, reciprocal_out_arg_full_in_place) {
