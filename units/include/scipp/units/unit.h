@@ -27,7 +27,7 @@ public:
   [[nodiscard]] bool isCounts() const;
   [[nodiscard]] bool isCountDensity() const;
 
-  [[nodiscard]] constexpr bool in_same_dimension(const Unit &other) const {
+  [[nodiscard]] constexpr bool has_same_base(const Unit &other) const {
     return m_unit.has_same_base(other.underlying());
   }
 

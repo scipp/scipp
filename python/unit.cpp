@@ -12,7 +12,7 @@ namespace py = pybind11;
 
 namespace {
 bool temporal_or_dimensionless(const units::Unit unit) {
-  return unit == units::one || unit.in_same_dimension(units::s);
+  return unit == units::one || unit.has_same_base(units::s);
 }
 } // namespace
 
