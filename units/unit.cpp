@@ -51,6 +51,10 @@ bool Unit::isCountDensity() const {
   return !isCounts() && m_unit.base_units().count() != 0;
 }
 
+bool Unit::has_same_base(const Unit &other) const {
+  return m_unit.has_same_base(other.underlying());
+}
+
 bool Unit::operator==(const Unit &other) const {
   return m_unit == other.m_unit;
 }

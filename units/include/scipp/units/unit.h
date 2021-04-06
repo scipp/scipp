@@ -27,9 +27,7 @@ public:
   [[nodiscard]] bool isCounts() const;
   [[nodiscard]] bool isCountDensity() const;
 
-  [[nodiscard]] constexpr bool has_same_base(const Unit &other) const {
-    return m_unit.has_same_base(other.underlying());
-  }
+  [[nodiscard]] bool has_same_base(const Unit &other) const;
 
   bool operator==(const Unit &other) const;
   bool operator!=(const Unit &other) const;
