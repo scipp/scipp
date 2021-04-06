@@ -152,6 +152,16 @@ Variable make_bins_impl(Variable indices, const Dim dim, T &&buffer) {
 /// Each bin is represented by a Variable slice. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, DataArray buffer) {
+  expect_valid_bin_indices(indices.data_handle(), dim, buffer.dims());
+  return make_bins_no_validate(std::move(indices), dim, std::move(buffer));
+}
+
+/// Construct a bin-variable over a data array without index validation.
+///
+/// Must be used only when it is guarenteed that indices are valid or overlap of
+/// bins is acceptable.
+Variable make_bins_no_validate(Variable indices, const Dim dim,
+                               DataArray buffer) {
   return make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
@@ -160,6 +170,16 @@ Variable make_bins(Variable indices, const Dim dim, DataArray buffer) {
 /// Each bin is represented by a Variable slice. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
+  expect_valid_bin_indices(indices.data_handle(), dim, buffer.dims());
+  return make_bins_no_validate(std::move(indices), dim, std::move(buffer));
+}
+
+/// Construct a bin-variable over a dataset without index validation.
+///
+/// Must be used only when it is guarenteed that indices are valid or overlap of
+/// bins is acceptable.
+Variable make_bins_no_validate(Variable indices, const Dim dim,
+                               Dataset buffer) {
   return make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 

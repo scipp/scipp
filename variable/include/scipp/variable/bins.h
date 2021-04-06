@@ -20,4 +20,7 @@ SCIPP_VARIABLE_EXPORT void copy_slices(const Variable &src, Variable dst,
                                                        const Dim dim,
                                                        Variable buffer);
 
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+make_bins_no_validate(Variable indices, const Dim dim, Variable buffer);
+
 } // namespace scipp::variable

@@ -25,9 +25,13 @@ SCIPP_DATASET_EXPORT void copy_slices(const DatasetConstView &src, Dataset dst,
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable make_bins(Variable indices,
                                                       const Dim dim,
                                                       DataArray buffer);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable
+make_bins_no_validate(Variable indices, const Dim dim, DataArray buffer);
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable make_bins(Variable indices,
                                                       const Dim dim,
                                                       Dataset buffer);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable
+make_bins_no_validate(Variable indices, const Dim dim, Dataset buffer);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable bucket_sizes(const Variable &var);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
