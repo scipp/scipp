@@ -198,25 +198,6 @@ Variable &sum(const Variable &var, const Dim dim, const Masks &masks,
 [[nodiscard]] Variable nansum(const Variable &var, const Dim dim,
                               const Masks &masks);
 
-/// Helper class for applying irreducible masks along dim.
-///
-/// If a mask is applied this class keeps ownership of the masked temporary.
-/// `Masker` should thus be created in the scope where the masked data is
-/// needed. It will be deleted once the masked goes out of scope.
-class Masker {
-public:
-  // TODO this is not required any more with new sharing model
-  Masker(const DataArray &array, const Dim dim) {
-    const auto mask = irreducible_mask(array.masks(), dim);
-    if (mask)
-      m_masked = array.data() * ~mask;
-    m_data = m_masked ? m_masked : array.data();
-  }
-  auto data() const noexcept { return m_data; }
-
-private:
-  Variable m_masked;
-  Variable m_data;
-};
+[[nodiscard]] Variable masked_data(const DataArray &array, const Dim dim);
 
 } // namespace scipp::dataset
