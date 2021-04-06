@@ -327,7 +327,6 @@ TEST(DatasetTest, slice_validation_complex) {
                except::SliceError);
 }
 
-/*
 TEST(DatasetTest, sum_and_mean) {
   auto ds = make_1_values_and_variances<float>("a", {Dim::X, 3}, units::one,
                                                {1, 2, 3}, {12, 15, 18});
@@ -341,16 +340,14 @@ TEST(DatasetTest, sum_and_mean) {
   EXPECT_EQ(dataset::mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
             makeVariable<float>(Values{1.5}, Variances{6.75}));
 }
-*/
 
-/*
 TEST(DatasetTest, extract_coord) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
   Dataset ds(ref);
   auto coord = Variable(ds.coords()[Dim::X]);
   auto ptr = ds.coords()[Dim::X].values<double>().data();
-  auto var = ds.extractCoord(Dim::X);
+  auto var = ds.coords().extract(Dim::X);
   EXPECT_EQ(var.values<double>().data(), ptr);
   EXPECT_FALSE(ds.coords().contains(Dim::X));
   ds.setCoord(Dim::X, coord);
@@ -361,7 +358,6 @@ TEST(DatasetTest, extract_coord) {
   ds.setCoord(Dim::X, coord);
   EXPECT_EQ(ref, ds);
 }
-*/
 
 TEST(DatasetTest, erase_item_coord_cannot_erase_coord) {
   DatasetFactory3D factory;
@@ -370,18 +366,17 @@ TEST(DatasetTest, erase_item_coord_cannot_erase_coord) {
   auto coord = Variable(ds.coords()[Dim::X]);
   ASSERT_TRUE(ds.contains("data_x"));
   ASSERT_NO_THROW(ds["data_x"].coords().erase(Dim::X));
-  // Coord was erase in DataArray returned by ds["data_x"], but not from coord
+  // Coord was erased in DataArray returned by ds["data_x"], but not from coord
   // dict of ds
   ASSERT_TRUE(ds.coords().contains(Dim::X));
 }
 
-/*
 TEST(DatasetTest, extract_labels) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
   Dataset ds(ref);
   auto labels = Variable(ds.coords()[Dim("labels_x")]);
-  ds.extractCoord(Dim("labels_x"));
+  ds.coords().extract(Dim("labels_x"));
   EXPECT_FALSE(ds.coords().contains(Dim("labels_x")));
   ds.setCoord(Dim("labels_x"), labels);
   EXPECT_EQ(ref, ds);
@@ -391,7 +386,6 @@ TEST(DatasetTest, extract_labels) {
   ds.setCoord(Dim("labels_x"), labels);
   EXPECT_EQ(ref, ds);
 }
-*/
 
 TEST(DatasetTest, set_erase_item_attr) {
   DatasetFactory3D factory;
