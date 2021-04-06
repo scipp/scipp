@@ -165,8 +165,7 @@ Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
 
 namespace {
 template <class T> Variable bucket_sizes_impl(const Variable &view) {
-  const auto &indices = std::get<0>(view.constituents<bucket<T>>());
-  const auto [begin, end] = unzip(indices);
+  const auto [begin, end] = unzip(view.bin_indices());
   return end - begin;
 }
 } // namespace

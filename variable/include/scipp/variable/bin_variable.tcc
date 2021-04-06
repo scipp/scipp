@@ -22,7 +22,6 @@ std::tuple<Variable, Dim, typename T::buffer_type> Variable::to_constituents() {
 template <class T>
 std::tuple<Variable, Dim, typename T::const_element_type>
 Variable::constituents() const {
-  // TODO something is wrong here, var += 1.2 * m has disappearing coords?
   auto &model = requireT<const DataModel<T>>(data());
   return {bin_indices(), model.bin_dim(), model.buffer()};
 }

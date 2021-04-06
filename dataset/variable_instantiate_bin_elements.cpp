@@ -25,9 +25,6 @@ private:
                           const Dim dim, const DType type,
                           const Dimensions &dims, const units::Unit &unit,
                           const bool variances) const override {
-    // TODO somthing wrong with constituents?
-    // should share ownership of coords, so they can be added?
-    // always get buffer
     const auto &source = buffer(parent);
     if (parent.dims() !=
         indices
