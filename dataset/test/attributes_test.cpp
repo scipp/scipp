@@ -118,10 +118,10 @@ TEST_F(AttributesTest, binary_ops_in_place) {
 
 TEST_F(AttributesTest, reduction_ops) {
   Dataset d;
-  d.setCoord(Dim::X,
-             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 1, 2}));
   d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
                                       Values{10, 20}));
+  d.setCoord(Dim::X,
+             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 1, 2}));
   d["a"].attrs().set(Dim("a_attr"), scalar);
   d["a"].attrs().set(Dim("a_attr_x"), varX);
 
