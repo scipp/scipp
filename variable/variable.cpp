@@ -34,6 +34,12 @@ void Variable::setDataHandle(VariableConceptHandle object) {
   m_object = object;
 }
 
+const Dimensions &Variable::dims() const {
+  if (!*this)
+    throw std::runtime_error("invalid variable");
+  return m_dims;
+}
+
 void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == dims().volume()) {
     if (dimensions != dims()) {
