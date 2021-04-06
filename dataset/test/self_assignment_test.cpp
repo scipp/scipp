@@ -27,23 +27,19 @@ protected:
 };
 
 TEST_F(SelfAssignmentTest, dataset_item) {
-  const DataArray expected(dataset["a"]);
+  const DataArray expected = copy(dataset["a"]);
   const auto *expected_ptr = dataset["a"].values<double>().data();
   dataset.setData("a", dataset["a"]);
   EXPECT_EQ(dataset["a"], expected);
   EXPECT_EQ(dataset["a"].values<double>().data(), expected_ptr);
-
-  // TODO I think this test does not make sense any more. It IS now possible to
-  // store a slice in a dataset.
-  // Code that checks for self-assignment might erroneously not check for
-  // presence of slices.
+  // Store slice of current item under same name.
   dataset.setData("a", dataset["a"].slice({Dim::X, 0}));
-  EXPECT_NE(dataset["a"], expected);
-  EXPECT_NE(dataset["a"].values<double>().data(), expected_ptr);
+  EXPECT_EQ(dataset["a"], expected.slice({Dim::X, 0}));
+  EXPECT_EQ(dataset["a"].values<double>().data(), expected_ptr);
 }
 
 TEST_F(SelfAssignmentTest, data_view_assign) {
-  const DataArray expected(dataset["a"]);
+  const DataArray expected = copy(dataset["a"]);
   const auto *expected_ptr = dataset["a"].values<double>().data();
   copy(dataset["a"], dataset["a"]);
   EXPECT_EQ(dataset["a"], expected);
@@ -52,12 +48,13 @@ TEST_F(SelfAssignmentTest, data_view_assign) {
   // Code that checks for self-assignment might erroneously not check for
   // presence of slices.
   copy(dataset["a"].slice({Dim::X, 1, 2}), dataset["a"].slice({Dim::X, 0, 1}));
-  EXPECT_NE(dataset["a"], expected);
+  EXPECT_EQ(dataset["a"].slice({Dim::X, 0, 1}), expected.slice({Dim::X, 1, 2}));
+  EXPECT_EQ(dataset["a"].slice({Dim::X, 1, 2}), expected.slice({Dim::X, 1, 2}));
   EXPECT_EQ(dataset["a"].values<double>().data(), expected_ptr);
 }
 
 TEST_F(SelfAssignmentTest, variable_view_assign) {
-  const Variable expected(dataset["a"].data());
+  const Variable expected = copy(dataset["a"].data());
   const auto *expected_ptr = dataset["a"].values<double>().data();
 
   // Without slices the view just forward to the data in the underlying
