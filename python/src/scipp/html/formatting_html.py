@@ -150,14 +150,6 @@ def format_dims(dims, sizes, coords):
     return f"<ul class='sc-dim-list'>{dims_li}</ul>"
 
 
-def summarize_attrs_simple(attrs):
-    attrs_dl = "".join(f"<dt><span>{escape(name)} :</span></dt>"
-                       f"<dd>{values}</dd>"
-                       for name, values in _ordered_dict(attrs).items())
-
-    return f"<dl class='sc-attrs'>{attrs_dl}</dl>"
-
-
 def _icon(icon_name):
     # icon_name is defined in icon-svg-inline.html
     return ("<svg class='icon sc-{0}'>"
