@@ -17,13 +17,13 @@ using namespace scipp;
 using namespace scipp::dataset;
 
 namespace {
-void expect_eq(const DataArrayConstView &a, const DataArrayConstView &b) {
+void expect_eq(const DataArray &a, const DataArray &b) {
   EXPECT_TRUE(a == b);
   EXPECT_TRUE(b == a);
   EXPECT_FALSE(a != b);
   EXPECT_FALSE(b != a);
 }
-void expect_ne(const DataArrayConstView &a, const DataArrayConstView &b) {
+void expect_ne(const DataArray &a, const DataArray &b) {
   EXPECT_TRUE(a != b);
   EXPECT_TRUE(b != a);
   EXPECT_FALSE(a == b);

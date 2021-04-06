@@ -49,8 +49,7 @@ constexpr auto copy_or_match = [](const auto &a, auto &&b, const Dim dim,
 constexpr auto expect_matching_keys = [](const auto &a, const auto &b) {
   bool ok = true;
   constexpr auto key = [](const auto &x_) {
-    if constexpr (std::is_base_of_v<DataArrayConstView,
-                                    std::decay_t<decltype(x_)>>)
+    if constexpr (std::is_base_of_v<DataArray, std::decay_t<decltype(x_)>>)
       return x_.name();
     else
       return x_.first;
@@ -66,7 +65,7 @@ constexpr auto expect_matching_keys = [](const auto &a, const auto &b) {
 
 } // namespace
 
-void copy_slices(const DataArrayConstView &src, DataArray dst, const Dim dim,
+void copy_slices(const DataArray &src, DataArray dst, const Dim dim,
                  const Variable &srcIndices, const Variable &dstIndices) {
   copy_slices(src.data(), dst.data(), dim, srcIndices, dstIndices);
   expect_matching_keys(src.meta(), dst.meta());
@@ -77,7 +76,7 @@ void copy_slices(const DataArrayConstView &src, DataArray dst, const Dim dim,
     copy_or_match(mask, dst.masks()[name], dim, srcIndices, dstIndices);
 }
 
-void copy_slices(const DatasetConstView &src, Dataset dst, const Dim dim,
+void copy_slices(const Dataset &src, Dataset dst, const Dim dim,
                  const Variable &srcIndices, const Variable &dstIndices) {
   for (const auto &[name, var] : src.coords())
     copy_or_match(var, dst.coords()[name], dim, srcIndices, dstIndices);
@@ -113,7 +112,7 @@ constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
 // TODO These functions are an unfortunate near-duplicate of `resize`. However,
 // the latter drops coords along the resized dimension. Is there a way to unify
 // this? Can the need to drop coords in resize be avoided?
-DataArray resize_default_init(const DataArrayConstView &parent, const Dim dim,
+DataArray resize_default_init(const DataArray &parent, const Dim dim,
                               const scipp::index size) {
   DataArray buffer(copy_or_resize(parent.data(), dim, size));
   for (const auto &[name, var] : parent.coords())
@@ -125,7 +124,7 @@ DataArray resize_default_init(const DataArrayConstView &parent, const Dim dim,
   return buffer;
 }
 
-Dataset resize_default_init(const DatasetConstView &parent, const Dim dim,
+Dataset resize_default_init(const Dataset &parent, const Dim dim,
                             const scipp::index size) {
   Dataset buffer;
   for (const auto &[name, var] : parent.coords())
@@ -201,18 +200,18 @@ Variable bucket_sizes(const Variable &var) {
     return makeVariable<scipp::index>(var.dims());
 }
 
-DataArray bucket_sizes(const DataArrayConstView &array) {
+DataArray bucket_sizes(const DataArray &array) {
   return {bucket_sizes(array.data()), array.coords(), array.masks(),
           array.attrs()};
 }
 
-Dataset bucket_sizes(const DatasetConstView &dataset) {
+Dataset bucket_sizes(const Dataset &dataset) {
   return apply_to_items(dataset, [](auto &&_) { return bucket_sizes(_); });
 }
 
-bool is_bins(const DataArrayConstView &array) { return is_bins(array.data()); }
+bool is_bins(const DataArray &array) { return is_bins(array.data()); }
 
-bool is_bins(const DatasetConstView &dataset) {
+bool is_bins(const Dataset &dataset) {
   return std::any_of(dataset.begin(), dataset.end(),
                      [](const auto &item) { return is_bins(item); });
 }
@@ -284,8 +283,7 @@ Variable concatenate(const Variable &var0, const Variable &var1) {
     return concatenate_impl<Dataset>(var0, var1);
 }
 
-DataArray concatenate(const DataArrayConstView &a,
-                      const DataArrayConstView &b) {
+DataArray concatenate(const DataArray &a, const DataArray &b) {
   return DataArray{
       buckets::concatenate(a.data(), b.data()), union_(a.coords(), b.coords()),
       union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
@@ -304,7 +302,7 @@ Variable concatenate(const Variable &var, const Dim dim) {
 /// Reduce a dimension by concatenating all elements along the dimension.
 ///
 /// This is the analogue to summing non-bucket data.
-DataArray concatenate(const DataArrayConstView &array, const Dim dim) {
+DataArray concatenate(const DataArray &array, const Dim dim) {
   return groupby_concat_bins(array, {}, {}, {dim});
 }
 
@@ -319,7 +317,7 @@ void append(Variable &var0, const Variable &var1) {
 
 void append(Variable &&var0, const Variable &var1) { append(var0, var1); }
 
-void append(DataArray &a, const DataArrayConstView &b) {
+void append(DataArray &a, const DataArray &b) {
   expect::coordsAreSuperset(a, b);
   union_or_in_place(a.masks(), b.masks());
   auto data = a.data();
@@ -353,7 +351,7 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
     return hist;
 }
 
-Variable map(const DataArrayConstView &function, const Variable &x, Dim dim) {
+Variable map(const DataArray &function, const Variable &x, Dim dim) {
   if (dim == Dim::Invalid)
     dim = edge_dimension(function);
   const Masker masker(function, dim);
@@ -371,7 +369,7 @@ Variable map(const DataArrayConstView &function, const Variable &x, Dim dim) {
   }
 }
 
-void scale(DataArray &array, const DataArrayConstView &histogram, Dim dim) {
+void scale(DataArray &array, const DataArray &histogram, Dim dim) {
   if (dim == Dim::Invalid)
     dim = edge_dimension(histogram);
   // Coords along dim are ignored since "binning" is dynamic for buckets.
@@ -395,7 +393,7 @@ void scale(DataArray &array, const DataArrayConstView &histogram, Dim dim) {
 }
 
 namespace {
-Variable applyMask(const DataArrayConstView &buffer, const Variable &indices,
+Variable applyMask(const DataArray &buffer, const Variable &indices,
                    const Dim dim, const Variable &masks) {
   auto indices_copy = copy(indices);
   auto masked_data = scipp::variable::masked_to_zero(buffer.data(), masks);
@@ -429,11 +427,11 @@ Variable sum(const Variable &data) {
   return summed;
 }
 
-DataArray sum(const DataArrayConstView &data) {
+DataArray sum(const DataArray &data) {
   return {buckets::sum(data.data()), data.coords(), data.masks(), data.attrs()};
 }
 
-Dataset sum(const DatasetConstView &d) {
+Dataset sum(const Dataset &d) {
   return apply_to_items(d, [](auto &&... _) { return buckets::sum(_...); });
 }
 

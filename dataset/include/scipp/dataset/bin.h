@@ -8,7 +8,7 @@
 
 namespace scipp::dataset {
 
-SCIPP_DATASET_EXPORT DataArray bin(const DataArrayConstView &array,
+SCIPP_DATASET_EXPORT DataArray bin(const DataArray &array,
                                    const std::vector<Variable> &edges,
                                    const std::vector<Variable> &groups = {},
                                    const std::vector<Dim> &erase = {});
