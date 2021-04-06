@@ -82,8 +82,11 @@ parse_datetime_dtype(const std::string &dtype_name) {
     return scipp::units::us;
   } else if (match[unit_idx] == "ns") {
     return scipp::units::ns;
+  } else if (match[unit_idx] == "m") {
+    // In np.datetime64, m means minute.
+    return units::Unit("min");
   } else {
-    for (const char *name : {"ms", "D", "M", "Y"}) {
+    for (const char *name : {"ms", "h", "D", "M", "Y"}) {
       if (match[unit_idx] == name) {
         return units::Unit(name);
       }
