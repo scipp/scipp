@@ -307,8 +307,7 @@
 }
 
 .sc-var-name span,
-.sc-var-data,
-.sc-attrs {
+.sc-var-data {
   padding-left: 25px !important;
 }
 
