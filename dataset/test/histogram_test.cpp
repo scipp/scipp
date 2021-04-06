@@ -54,7 +54,7 @@ TEST_F(HistogramHelpersTest, is_histogram) {
   EXPECT_TRUE(is_histogram(histX, Dim::X));
   EXPECT_FALSE(is_histogram(histX, Dim::Y));
   // Also for Dataset
-  const auto ds_histX = Dataset{DataArrayConstView{histX}};
+  const auto ds_histX = Dataset{histX};
   EXPECT_TRUE(is_histogram(ds_histX, Dim::X));
   EXPECT_FALSE(is_histogram(ds_histX, Dim::Y));
 
@@ -67,9 +67,7 @@ TEST_F(HistogramHelpersTest, is_histogram) {
   EXPECT_TRUE(is_histogram(histY2d, Dim::Y));
 
   EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::X, coordX}}), Dim::X));
-  EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::X, coordY}}), Dim::X));
   EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::Y, coordX}}), Dim::X));
-  EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::Y, coordY}}), Dim::X));
 
   // Coord length X is 2 and data does not depend on X, but this is *not*
   // interpreted as a single-bin histogram.

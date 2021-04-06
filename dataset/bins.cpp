@@ -129,7 +129,7 @@ Dataset resize_default_init(const DatasetConstView &parent, const Dim dim,
                             const scipp::index size) {
   Dataset buffer;
   for (const auto &[name, var] : parent.coords())
-    buffer.coords().set(name, copy_or_resize(var, dim, size));
+    buffer.setCoord(name, copy_or_resize(var, dim, size));
   for (const auto &item : parent) {
     buffer.setData(item.name(), copy_or_resize(item.data(), dim, size));
     for (const auto &[name, var] : item.masks())
@@ -322,7 +322,9 @@ void append(Variable &&var0, const Variable &var1) { append(var0, var1); }
 void append(DataArray &a, const DataArrayConstView &b) {
   expect::coordsAreSuperset(a, b);
   union_or_in_place(a.masks(), b.masks());
-  append(a.data(), b.data());
+  auto data = a.data();
+  append(data, b.data());
+  a.setData(data);
 }
 
 Variable histogram(const Variable &data, const Variable &binEdges) {
