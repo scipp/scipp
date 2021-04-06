@@ -83,7 +83,7 @@ class PlotController:
             # Iterate through axes and collect dimensions
             for dim in self.axes.values():
 
-                coord, label, unit = self.model.get_data_coord(name, dim)
+                coord, label, unit = self.model.get_data_coord(key, dim)
 
                 # To allow for 2D coordinates, the histograms are
                 # stored as dicts, with one key per dimension of the coordinate
