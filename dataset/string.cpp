@@ -68,8 +68,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
   if (!dataset.coords().empty()) {
     s << shift << "Coordinates:\n";
     Coords map;
-    if constexpr (std::is_same_v<D, DataArray> ||
-                  std::is_same_v<D, DataArrayConstView>)
+    if constexpr (std::is_same_v<D, DataArray>)
       map = dataset.coords();
     else
       map = dataset.coords();
@@ -77,8 +76,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
       s << shift << format_variable(name, var, dims);
   }
 
-  if constexpr (std::is_same_v<D, DataArray> ||
-                std::is_same_v<D, DataArrayConstView>) {
+  if constexpr (std::is_same_v<D, DataArray>) {
     s << shift << "Data:\n"
       << format_data_view(dataset.name(), dataset, dims, shift, true);
   } else {

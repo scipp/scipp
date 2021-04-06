@@ -197,9 +197,6 @@ private:
   std::unordered_map<std::string, DataArray> m_data;
 };
 
-using DataArrayConstView = DataArray;
-using DatasetConstView = Dataset;
-
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset
 copy(const Dataset &dataset, const AttrPolicy attrPolicy = AttrPolicy::Keep);
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset deepcopy(
@@ -277,9 +274,7 @@ template <> inline constexpr DType dtype<bucket<dataset::Dataset>>{2003};
 } // namespace scipp::core
 
 namespace scipp {
-using dataset::DataArrayConstView;
 using dataset::Dataset;
-using dataset::DatasetConstView;
 } // namespace scipp
 
 #include "scipp/dataset/arithmetic.h"
