@@ -19,8 +19,9 @@ namespace {
 std::string map_unit_string(const std::string &unit) {
   // custom dimensionless name
   return unit == "dimensionless" ? ""
-                                 // use Gregorian years by default
-                                 : unit == "y" || unit == "year" ? "a_g" : unit;
+         // use Gregorian years by default
+         : unit == "y" || unit == "Y" || unit == "year" ? "a_g"
+                                                        : unit;
 }
 } // namespace
 
