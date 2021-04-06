@@ -7,6 +7,7 @@ extends:
   template: templates/build_and_package.yml
   parameters:
     py_versions:
-      linux: ['3.6', '3.7']
-      osx: ['3.6', '3.7']
+      linux: ['3.7', '3.8']
+      osx: ['3.7', '3.8']
     deploy: true
+    label: 'test'
