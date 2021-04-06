@@ -375,7 +375,7 @@ void scale(DataArray &array, const DataArrayConstView &histogram, Dim dim) {
 namespace {
 Variable applyMask(const DataArrayConstView &buffer, const Variable &indices,
                    const Dim dim, const Variable &masks) {
-  auto indices_copy = Variable(indices);
+  auto indices_copy = copy(indices);
   auto masked_data = scipp::variable::masked_to_zero(buffer.data(), masks);
   return make_bins(std::move(indices_copy), dim, std::move(masked_data));
 }

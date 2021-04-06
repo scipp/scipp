@@ -292,7 +292,7 @@ template <class T> struct MakeBinGroups {
         groups[std::distance(edges.begin(), left)].emplace_back(dim, begin, i);
       }
     }
-    return GroupByGrouping{Variable(bins), std::move(groups)};
+    return GroupByGrouping{bins, std::move(groups)};
   }
 };
 
