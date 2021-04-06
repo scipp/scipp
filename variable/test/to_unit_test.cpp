@@ -44,3 +44,31 @@ TEST(ToUnitTest, ints) {
       to_unit(var, units::Unit("um")),
       makeVariable<int32_t>(dims, units::Unit("um"), Values{100000, 2000000}));
 }
+
+TEST(ToUnitTest, time_point_bad_units) {
+  const auto do_to_unit = [](const char *initial, const char *final) {
+    return to_unit(makeVariable<core::time_point>(Dims{}, units::Unit(initial)),
+                   units::Unit(final));
+  };
+
+  // Conversions to or from time points with unit day or larger are complicated
+  // and not implemented.
+  const auto small_unit_names = {"h", "min", "s", "ns"};
+  const auto large_unit_names = {"Y", "M", "D"};
+  for (const char *initial : small_unit_names) {
+    for (const char *final : small_unit_names) {
+      EXPECT_NO_THROW_DISCARD(do_to_unit(initial, final));
+    }
+    for (const char *final : large_unit_names) {
+      EXPECT_THROW_DISCARD(do_to_unit(initial, final), except::UnitError);
+    }
+  }
+  for (const char *initial : large_unit_names) {
+    for (const char *final : small_unit_names) {
+      EXPECT_THROW_DISCARD(do_to_unit(initial, final), except::UnitError);
+    }
+    for (const char *final : large_unit_names) {
+      EXPECT_THROW_DISCARD(do_to_unit(initial, final), except::UnitError);
+    }
+  }
+}
