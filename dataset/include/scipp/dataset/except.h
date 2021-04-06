@@ -42,14 +42,14 @@ throw_mismatch_error(const dataset::Dataset &expected,
                      const dataset::Dataset &actual);
 
 struct SCIPP_DATASET_EXPORT CoordMismatchError : public DatasetError {
-  CoordMismatchError(const std::pair<Dim, Variable> &expected,
-                     const std::pair<Dim, Variable> &actual);
+  CoordMismatchError(const std::pair<const Dim, Variable> &expected,
+                     const std::pair<const Dim, Variable> &actual);
 };
 
 template <>
 [[noreturn]] SCIPP_DATASET_EXPORT void
-throw_mismatch_error(const std::pair<Dim, Variable> &expected,
-                     const std::pair<Dim, Variable> &actual);
+throw_mismatch_error(const std::pair<const Dim, Variable> &expected,
+                     const std::pair<const Dim, Variable> &actual);
 
 } // namespace scipp::except
 
