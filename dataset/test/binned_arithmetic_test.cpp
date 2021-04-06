@@ -21,7 +21,7 @@ protected:
                                       Values{1, 2, 3, 4, 5});
   Variable expected = makeVariable<double>(Dims{Dim::Event}, Shape{5}, units::m,
                                            Values{1, 2, 6, 8, 10});
-  DataArray array = DataArray(var, {{Dim::X, var + var}});
+  DataArray array = DataArray(copy(var), {{Dim::X, var + var}});
 };
 
 TEST_F(BinnedArithmeticTest, fail_modify_slice_inplace_var) {
