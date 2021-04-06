@@ -428,12 +428,12 @@ TEST_F(Dataset3DTest, commutative_slice_range) {
       d.slice({Dim::Z, 3, 4}).slice({Dim::X, 1, 3}).slice({Dim::Y, 2, 4}));
 }
 
-using DataArrayViewTypes = ::testing::Types<DataArrayView, DataArrayConstView>;
+using DataArrayViewTypes = ::testing::Types<DataArray, const DataArray>;
 
 template <typename T> class DataArrayView3DTest : public Dataset3DTest {
 protected:
-  using dataset_type = std::conditional_t<std::is_same_v<T, DataArrayView>,
-                                          Dataset, const Dataset>;
+  using dataset_type =
+      std::conditional_t<std::is_same_v<T, DataArray>, Dataset, const Dataset>;
 
   dataset_type &dataset() { return Dataset3DTest::dataset; }
 };
