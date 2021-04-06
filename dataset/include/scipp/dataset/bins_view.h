@@ -22,8 +22,7 @@ public:
 
 protected:
   auto make(const View &view) const {
-    // TODO avoid index re-validation
-    return make_bins(this->indices(), this->dim(), view);
+    return make_bins_no_validate(this->indices(), this->dim(), view);
   }
   auto check_and_get_buf(const Variable &var) const {
     const auto &[i, d, buf] = var.constituents<bucket<Variable>>();

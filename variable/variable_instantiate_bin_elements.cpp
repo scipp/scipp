@@ -28,6 +28,26 @@ private:
   Variable data(Variable &var) const override { return this->buffer(var); }
 };
 
+void expect_valid_bin_indices(const VariableConceptHandle &indices,
+                              const Dim dim, const Dimensions &buffer_dims) {
+  auto copy = requireT<const DataModel<scipp::index_pair>>(*indices);
+  const auto vals = copy.values();
+  std::sort(vals.begin(), vals.end());
+  if ((!vals.empty() && (vals.begin()->first < 0)) ||
+      (!vals.empty() && ((vals.end() - 1)->second > buffer_dims[dim])))
+    throw except::SliceError("Bin indices out of range");
+  if (std::adjacent_find(vals.begin(), vals.end(),
+                         [](const auto a, const auto b) {
+                           return a.second > b.first;
+                         }) != vals.end())
+    throw except::SliceError("Overlapping bin indices are not allowed.");
+  if (std::find_if(vals.begin(), vals.end(), [](const auto x) {
+        return x.first > x.second;
+      }) != vals.end())
+    throw except::SliceError(
+        "Bin begin index must be less or equal to its end index.");
+}
+
 namespace {
 auto register_variable_maker_bucket_Variable(
     (variableFactory().emplace(
