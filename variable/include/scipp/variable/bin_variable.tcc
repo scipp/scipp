@@ -32,6 +32,16 @@ std::tuple<Variable, Dim, typename T::element_type> Variable::constituents() {
   return {bin_indices(), model.bin_dim(), model.buffer()};
 }
 
+template <class T> const T &Variable::bin_buffer() const {
+  auto &model = requireT<const DataModel<core::bin<T>>>(data());
+  return model.buffer();
+}
+
+template <class T> T &Variable::bin_buffer() {
+  auto &model = requireT<DataModel<core::bin<T>>>(data());
+  return model.buffer();
+}
+
 namespace {
 auto contiguous_indices(const Variable &parent, const Dimensions &dims) {
   auto indices = Variable(parent, dims);
@@ -158,6 +168,10 @@ public:
   template SCIPP_EXPORT                                                        \
       std::tuple<Variable, Dim, typename __VA_ARGS__::const_element_type>      \
       Variable::constituents<__VA_ARGS__>() const;                             \
+  template SCIPP_EXPORT const typename __VA_ARGS__::buffer_type &              \
+  Variable::bin_buffer<typename __VA_ARGS__::buffer_type>() const;             \
+  template SCIPP_EXPORT typename __VA_ARGS__::buffer_type &                    \
+  Variable::bin_buffer<typename __VA_ARGS__::buffer_type>();                   \
   template SCIPP_EXPORT                                                        \
       std::tuple<Variable, Dim, typename __VA_ARGS__::element_type>            \
       Variable::constituents<__VA_ARGS__>();                                   \

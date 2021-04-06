@@ -18,7 +18,7 @@ public:
   BinsCommon(const View &var) : m_var(var) {}
   auto indices() const { return std::get<0>(get()); }
   auto dim() const { return std::get<1>(get()); }
-  auto buffer() const { return std::get<2>(get()); }
+  auto &buffer() const { return m_var.template bin_buffer<T>(); }
 
 protected:
   auto make(const View &view) const {
