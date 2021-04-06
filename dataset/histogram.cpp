@@ -18,8 +18,7 @@ using namespace scipp::variable;
 
 namespace scipp::dataset {
 
-DataArray histogram(const DataArrayConstView &events,
-                    const Variable &binEdges) {
+DataArray histogram(const DataArray &events, const Variable &binEdges) {
   using namespace scipp::core;
   auto dim = binEdges.dims().inner();
 
@@ -30,7 +29,7 @@ DataArray histogram(const DataArrayConstView &events,
     // Should we instead have a separate named function for this case?
     result = apply_and_drop_dim(
         events,
-        [](const DataArrayConstView &events_, const Dim dim_,
+        [](const DataArray &events_, const Dim dim_,
            const Variable &binEdges_) {
           const Masker masker(events_, dim_);
           // TODO Creating a full copy of event data here is very inefficient
@@ -41,7 +40,7 @@ DataArray histogram(const DataArrayConstView &events,
     const auto data_dim = events.dims().inner();
     result = apply_and_drop_dim(
         events,
-        [](const DataArrayConstView &events_, const Dim data_dim_,
+        [](const DataArray &events_, const Dim data_dim_,
            const Variable &binEdges_) {
           const auto dim_ = binEdges_.dims().inner();
           const Masker masker(events_, dim_);
@@ -61,7 +60,7 @@ DataArray histogram(const DataArrayConstView &events,
   return result;
 }
 
-Dataset histogram(const DatasetConstView &dataset, const Variable &binEdges) {
+Dataset histogram(const Dataset &dataset, const Variable &binEdges) {
   return apply_to_items(
       dataset,
       [](const auto &item, const Dim, const auto &binEdges_) {
@@ -72,7 +71,7 @@ Dataset histogram(const DatasetConstView &dataset, const Variable &binEdges) {
 
 /// Return the dimensions of the given data array that have an "bin edge"
 /// coordinate.
-std::set<Dim> edge_dimensions(const DataArrayConstView &a) {
+std::set<Dim> edge_dimensions(const DataArray &a) {
   const auto coords = a.coords();
   std::set<Dim> dims;
   for (const auto [d, coord] : a.coords())
@@ -85,7 +84,7 @@ std::set<Dim> edge_dimensions(const DataArrayConstView &a) {
 /// Return the Dim of the given data array that has an "bin edge" coordinate.
 ///
 /// Throws if there is not excactly one such dimension.
-Dim edge_dimension(const DataArrayConstView &a) {
+Dim edge_dimension(const DataArray &a) {
   const auto &dims = edge_dimensions(a);
   if (dims.size() != 1)
     throw except::BinEdgeError("Expected bin edges in only one dimension.");
@@ -102,12 +101,12 @@ template <typename T> bool is_histogram_impl(const T &a, const Dim dim) {
 }
 } // namespace
 /// Return true if the data array represents a histogram for given dim.
-bool is_histogram(const DataArrayConstView &a, const Dim dim) {
+bool is_histogram(const DataArray &a, const Dim dim) {
   return is_histogram_impl(a, dim);
 }
 
 /// Return true if the dataset represents a histogram for given dim.
-bool is_histogram(const DatasetConstView &a, const Dim dim) {
+bool is_histogram(const Dataset &a, const Dim dim) {
   return is_histogram_impl(a, dim);
 }
 

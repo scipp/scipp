@@ -36,7 +36,7 @@ template <class T> auto sorted(const T &map) {
 }
 
 template <class Key>
-auto format_data_view(const Key &name, const DataArrayConstView &data,
+auto format_data_view(const Key &name, const DataArray &data,
                       const Dimensions &datasetDims, const std::string &shift,
                       const bool inline_meta) {
   std::stringstream s;

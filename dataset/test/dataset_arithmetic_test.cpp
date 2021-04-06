@@ -618,7 +618,7 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstview_rhs) {
   auto dataset_a = datasetFactory().make();
   auto dataset_b = datasetFactory().make();
 
-  DatasetConstView dataset_b_view(dataset_b);
+  Dataset dataset_b_view(dataset_b);
   const auto res = TestFixture::op(dataset_a, dataset_b_view);
 
   for (const auto &item : res) {
@@ -632,7 +632,7 @@ TYPED_TEST(DatasetBinaryOpTest, datasetconstview_lhs_dataset_rhs) {
   const auto dataset_a = datasetFactory().make();
   const auto dataset_b = datasetFactory().make().slice({Dim::X, 1});
 
-  DatasetConstView dataset_a_view = dataset_a.slice({Dim::X, 1});
+  Dataset dataset_a_view = dataset_a.slice({Dim::X, 1});
   const auto res = TestFixture::op(dataset_a_view, dataset_b);
 
   Dataset dataset_a_slice(dataset_a_view);
@@ -644,8 +644,8 @@ TYPED_TEST(DatasetBinaryOpTest, datasetconstview_lhs_datasetconstview_rhs) {
   auto dataset_a = datasetFactory().make();
   auto dataset_b = datasetFactory().make();
 
-  DatasetConstView dataset_a_view(dataset_a);
-  DatasetConstView dataset_b_view(dataset_b);
+  Dataset dataset_a_view(dataset_a);
+  Dataset dataset_b_view(dataset_b);
   const auto res = TestFixture::op(dataset_a_view, dataset_b_view);
 
   for (const auto &item : res) {

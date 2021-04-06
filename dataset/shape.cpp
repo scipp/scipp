@@ -80,8 +80,7 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
 }
 } // namespace
 
-DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
-                      const Dim dim) {
+DataArray concatenate(const DataArray &a, const DataArray &b, const Dim dim) {
   auto out = DataArray(concatenate(a.data(), b.data(), dim), {},
                        concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
   for (auto &&[d, coord] :
@@ -94,8 +93,7 @@ DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
   return out;
 }
 
-Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
-                    const Dim dim) {
+Dataset concatenate(const Dataset &a, const Dataset &b, const Dim dim) {
   // Note that in the special case of a dataset without data items (only coords)
   // concatenating a range slice with a non-range slice will fail due to the
   // missing unaligned coord in the non-range slice. This is an extremely
@@ -117,27 +115,23 @@ Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
   return result;
 }
 
-DataArray resize(const DataArrayConstView &a, const Dim dim,
-                 const scipp::index size) {
+DataArray resize(const DataArray &a, const Dim dim, const scipp::index size) {
   return apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return resize(_...); }, dim, size);
 }
 
-Dataset resize(const DatasetConstView &d, const Dim dim,
-               const scipp::index size) {
+Dataset resize(const Dataset &d, const Dim dim, const scipp::index size) {
   return apply_to_items(
       d, [](auto &&... _) { return resize(_...); }, dim, size);
 }
 
-DataArray resize(const DataArrayConstView &a, const Dim dim,
-                 const DataArrayConstView &shape) {
+DataArray resize(const DataArray &a, const Dim dim, const DataArray &shape) {
   return apply_to_data_and_drop_dim(
       a, [](auto &&v, const Dim, auto &&s) { return resize(v, s); }, dim,
       shape.data());
 }
 
-Dataset resize(const DatasetConstView &d, const Dim dim,
-               const DatasetConstView &shape) {
+Dataset resize(const Dataset &d, const Dim dim, const Dataset &shape) {
   Dataset result;
   for (const auto &data : d)
     result.setData(data.name(), resize(data, dim, shape[data.name()]));
@@ -246,7 +240,7 @@ Dim bin_edge_in_from_labels(const Variable &var, const Dimensions &array_dims,
 
 /// Fold a single dimension into multiple dimensions:
 /// ['x': 6] -> ['y': 2, 'z': 3]
-DataArray fold(const DataArrayConstView &a, const Dim from_dim,
+DataArray fold(const DataArray &a, const Dim from_dim,
                const Dimensions &to_dims) {
   auto folded = DataArray(fold(a.data(), from_dim, to_dims));
 
@@ -272,8 +266,8 @@ DataArray fold(const DataArrayConstView &a, const Dim from_dim,
 
 /// Flatten multiple dimensions into a single dimension:
 /// ['y', 'z'] -> ['x']
-DataArray flatten(const DataArrayConstView &a,
-                  const scipp::span<const Dim> &from_labels, const Dim to_dim) {
+DataArray flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
+                  const Dim to_dim) {
   auto flattened = DataArray(flatten(a.data(), from_labels, to_dim));
 
   for (auto &&[name, coord] : a.coords()) {

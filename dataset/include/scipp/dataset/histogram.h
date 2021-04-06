@@ -12,16 +12,14 @@
 
 namespace scipp::dataset {
 
-SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &events,
+SCIPP_DATASET_EXPORT DataArray histogram(const DataArray &events,
                                          const Variable &binEdges);
-SCIPP_DATASET_EXPORT Dataset histogram(const DatasetConstView &dataset,
+SCIPP_DATASET_EXPORT Dataset histogram(const Dataset &dataset,
                                        const Variable &bins);
 
-SCIPP_DATASET_EXPORT std::set<Dim> edge_dimensions(const DataArrayConstView &a);
-SCIPP_DATASET_EXPORT Dim edge_dimension(const DataArrayConstView &a);
-SCIPP_DATASET_EXPORT bool is_histogram(const DataArrayConstView &a,
-                                       const Dim dim);
-SCIPP_DATASET_EXPORT bool is_histogram(const DatasetConstView &a,
-                                       const Dim dim);
+SCIPP_DATASET_EXPORT std::set<Dim> edge_dimensions(const DataArray &a);
+SCIPP_DATASET_EXPORT Dim edge_dimension(const DataArray &a);
+SCIPP_DATASET_EXPORT bool is_histogram(const DataArray &a, const Dim dim);
+SCIPP_DATASET_EXPORT bool is_histogram(const Dataset &a, const Dim dim);
 
 } // namespace scipp::dataset
