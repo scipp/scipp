@@ -116,6 +116,8 @@ public:
   core::ElementArrayViewParams array_params() const noexcept;
 
   Variable bin_indices() const;
+  template <class T> const T &bin_buffer() const;
+  template <class T> T &bin_buffer();
 
   template <class T>
   std::tuple<Variable, Dim, typename T::const_element_type>
