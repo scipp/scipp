@@ -10,8 +10,8 @@ fi
 
 # Move scipp Python library to site packages location
 mv "$INSTALL_TARGET"/scipp "$CONDA_PREFIX"/lib/python*/
-mv "$INSTALL_TARGET"/lib/libscipp*.so "$CONDA_PREFIX"/lib/
-mv "$INSTALL_TARGET"/lib/libunits-shared.so "$CONDA_PREFIX"/lib/
+mv "$INSTALL_TARGET"/lib/libscipp* "$CONDA_PREFIX"/lib/
+mv "$INSTALL_TARGET"/lib/libunits-shared.* "$CONDA_PREFIX"/lib/
 mv "$INSTALL_TARGET"/lib/cmake/scipp "$CONDA_PREFIX"/lib/cmake/
 mv "$INSTALL_TARGET"/include/Eigen "$CONDA_PREFIX"/include/
 mv "$INSTALL_TARGET"/include/scipp* "$CONDA_PREFIX"/include/
