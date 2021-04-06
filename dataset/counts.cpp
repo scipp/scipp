@@ -26,7 +26,7 @@ std::vector<Variable> getBinWidths(const Coords &c,
   return binWidths;
 }
 
-void toDensity(DataArray data, const std::vector<Variable> &binWidths) {
+void toDensity(DataArray &data, const std::vector<Variable> &binWidths) {
   if (data.unit().isCounts()) {
     for (const auto &binWidth : binWidths)
       data /= binWidth;
@@ -45,28 +45,29 @@ void toDensity(DataArray data, const std::vector<Variable> &binWidths) {
   // unchanged.
 }
 
-Dataset toDensity(Dataset d, const Dim dim) {
+Dataset toDensity(const Dataset &d, const Dim dim) {
   return toDensity(std::move(d), std::vector<Dim>{dim});
 }
 
-Dataset toDensity(Dataset d, const std::vector<Dim> &dims) {
+Dataset toDensity(const Dataset &d, const std::vector<Dim> &dims) {
   const auto binWidths = getBinWidths(d.coords(), dims);
-  for (const auto &data : d)
+  for (auto &&data : d)
     toDensity(data, binWidths);
   return d;
 }
 
-DataArray toDensity(DataArray a, const Dim dim) {
-  return toDensity(std::move(a), std::vector<Dim>{dim});
+DataArray toDensity(const DataArray &a, const Dim dim) {
+  return toDensity(a, std::vector<Dim>{dim});
 }
 
-DataArray toDensity(DataArray a, const std::vector<Dim> &dims) {
+DataArray toDensity(const DataArray &a, const std::vector<Dim> &dims) {
   const auto binWidths = getBinWidths(a.coords(), dims);
-  toDensity(a, binWidths);
-  return a;
+  auto out = copy(a);
+  toDensity(out, binWidths);
+  return out;
 }
 
-void fromDensity(DataArray data, const std::vector<Variable> &binWidths) {
+void fromDensity(DataArray &data, const std::vector<Variable> &binWidths) {
   if (data.unit().isCounts()) {
     // Do nothing, but do not fail either.
   } else if (data.unit().isCountDensity()) {
@@ -75,25 +76,26 @@ void fromDensity(DataArray data, const std::vector<Variable> &binWidths) {
   }
 }
 
-Dataset fromDensity(Dataset d, const Dim dim) {
-  return fromDensity(std::move(d), std::vector<Dim>{dim});
+Dataset fromDensity(const Dataset &d, const Dim dim) {
+  return fromDensity(d, std::vector<Dim>{dim});
 }
 
-Dataset fromDensity(Dataset d, const std::vector<Dim> &dims) {
+Dataset fromDensity(const Dataset &d, const std::vector<Dim> &dims) {
   const auto binWidths = getBinWidths(d.coords(), dims);
   for (auto &&data : d)
     fromDensity(data, binWidths);
   return d;
 }
 
-DataArray fromDensity(DataArray a, const Dim dim) {
-  return fromDensity(std::move(a), std::vector<Dim>{dim});
+DataArray fromDensity(const DataArray &a, const Dim dim) {
+  return fromDensity(a, std::vector<Dim>{dim});
 }
 
-DataArray fromDensity(DataArray a, const std::vector<Dim> &dims) {
+DataArray fromDensity(const DataArray &a, const std::vector<Dim> &dims) {
   const auto binWidths = getBinWidths(a.coords(), dims);
-  fromDensity(a, binWidths);
-  return a;
+  auto out = copy(a);
+  fromDensity(out, binWidths);
+  return out;
 }
 
 } // namespace counts

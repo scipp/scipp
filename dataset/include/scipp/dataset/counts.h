@@ -11,20 +11,21 @@
 
 namespace scipp::dataset::counts {
 
-SCIPP_DATASET_EXPORT void toDensity(DataArray data,
+SCIPP_DATASET_EXPORT void toDensity(DataArray &data,
                                     const std::vector<Variable> &binWidths);
-SCIPP_DATASET_EXPORT Dataset toDensity(Dataset d, const Dim dim);
-SCIPP_DATASET_EXPORT Dataset toDensity(Dataset d, const std::vector<Dim> &dims);
-SCIPP_DATASET_EXPORT DataArray toDensity(DataArray a, const Dim dim);
-SCIPP_DATASET_EXPORT DataArray toDensity(DataArray a,
+SCIPP_DATASET_EXPORT Dataset toDensity(const Dataset &d, const Dim dim);
+SCIPP_DATASET_EXPORT Dataset toDensity(const Dataset &d,
+                                       const std::vector<Dim> &dims);
+SCIPP_DATASET_EXPORT DataArray toDensity(const DataArray &a, const Dim dim);
+SCIPP_DATASET_EXPORT DataArray toDensity(const DataArray &a,
                                          const std::vector<Dim> &dims);
-SCIPP_DATASET_EXPORT void fromDensity(DataArray data,
+SCIPP_DATASET_EXPORT void fromDensity(DataArray &data,
                                       const std::vector<Variable> &binWidths);
-SCIPP_DATASET_EXPORT Dataset fromDensity(Dataset d, const Dim dim);
-SCIPP_DATASET_EXPORT Dataset fromDensity(Dataset d,
+SCIPP_DATASET_EXPORT Dataset fromDensity(const Dataset &d, const Dim dim);
+SCIPP_DATASET_EXPORT Dataset fromDensity(const Dataset &d,
                                          const std::vector<Dim> &dims);
-SCIPP_DATASET_EXPORT DataArray fromDensity(DataArray a, const Dim dim);
-SCIPP_DATASET_EXPORT DataArray fromDensity(DataArray a,
+SCIPP_DATASET_EXPORT DataArray fromDensity(const DataArray &a, const Dim dim);
+SCIPP_DATASET_EXPORT DataArray fromDensity(const DataArray &a,
                                            const std::vector<Dim> &dims);
 
 } // namespace scipp::dataset::counts
