@@ -23,7 +23,7 @@ Variable begin_edge(const Variable &coord, const Variable &edges) {
   const auto dim = edges.dims().inner();
   if (indices.dims()[dim] == 0)
     return indices;
-  Variable bin(indices.slice({dim, 0}));
+  auto bin = copy(indices.slice({dim, 0}));
   accumulate_in_place(bin, indices, coord, subspan_view(edges, dim),
                       core::element::begin_edge);
   return indices;
@@ -39,7 +39,7 @@ Variable end_edge(const Variable &coord, const Variable &edges) {
   const auto dim = edges.dims().inner();
   if (indices.dims()[dim] == 0)
     return indices;
-  Variable bin(indices.slice({dim, 0}));
+  auto bin = copy(indices.slice({dim, 0}));
   accumulate_in_place(bin, indices, coord, subspan_view(edges, dim),
                       core::element::end_edge);
   return indices;
@@ -71,10 +71,10 @@ std::vector<scipp::index> flatten_subbin_sizes(const Variable &var,
 
 Variable subbin_sizes_cumsum_exclusive(const Variable &var, const Dim dim) {
   if (var.dims()[dim] == 0)
-    return Variable{var};
-  Variable cumulative(var.slice({dim, 0}));
+    return copy(var);
+  auto cumulative = copy(var.slice({dim, 0}));
   fill_zeros(cumulative);
-  Variable out(var);
+  auto out = copy(var);
   accumulate_in_place(cumulative, out,
                       core::element::subbin_sizes_exclusive_scan);
   return out;

@@ -205,7 +205,7 @@ template <class Masks>
   Variable union_;
   for (const auto &mask : masks)
     if (mask.second.dims().contains(dim))
-      union_ = union_ ? union_ | mask.second : Variable(mask.second);
+      union_ = union_ ? union_ | mask.second : copy(mask.second);
   return union_;
 }
 
