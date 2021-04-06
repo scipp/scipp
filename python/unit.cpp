@@ -59,6 +59,8 @@ std::tuple<units::Unit, int64_t> get_time_unit(const py::buffer &value,
       unit);
 }
 
-std::string to_string_ascii_time(const scipp::units::Unit unit) {
-  return unit == units::us ? std::string("us") : to_string(unit);
+std::string to_numpy_time_string(const scipp::units::Unit unit) {
+  return unit == units::us
+             ? std::string("us")
+             : unit == units::Unit("min") ? std::string("m") : to_string(unit);
 }
