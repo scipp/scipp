@@ -17,11 +17,11 @@ using namespace scipp::dataset;
 // DataArrayConstView.
 template <typename T> class DataArrayViewTest : public ::testing::Test {
 protected:
-  using dataset_type = std::conditional_t<std::is_same_v<T, DataArrayView>,
-                                          Dataset, const Dataset>;
+  using dataset_type =
+      std::conditional_t<std::is_same_v<T, DataArray>, Dataset, const Dataset>;
 };
 
-using DataArrayViewTypes = ::testing::Types<DataArrayView, DataArrayConstView>;
+using DataArrayViewTypes = ::testing::Types<DataArray, const DataArray>;
 TYPED_TEST_SUITE(DataArrayViewTest, DataArrayViewTypes);
 
 TYPED_TEST(DataArrayViewTest, name_ignored_in_comparison) {
@@ -72,8 +72,8 @@ TYPED_TEST(DataArrayViewTest, unit) {
 TYPED_TEST(DataArrayViewTest, coords) {
   Dataset d;
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  d.coords().set(Dim::X, var);
   d.setData("a", var);
+  d.coords().set(Dim::X, var);
 
   typename TestFixture::dataset_type &d_ref(d);
   ASSERT_NO_THROW(d_ref["a"].coords());

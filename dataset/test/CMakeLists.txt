@@ -23,8 +23,8 @@ add_executable(
   dataset_operations_test.cpp
   dataset_test_common.cpp
   dataset_test.cpp
-  #dataset_view_test.cpp
-  #data_view_test.cpp
+  dataset_view_test.cpp
+  data_view_test.cpp
   event_data_operations_consistency_test.cpp
   except_test.cpp
   groupby_test.cpp

@@ -15,8 +15,7 @@ protected:
   template <class D> T access(D &dataset) { return dataset; }
 };
 
-using DatasetViewTypes =
-    ::testing::Types<Dataset &, const Dataset &, DatasetView, DatasetConstView>;
+using DatasetViewTypes = ::testing::Types<Dataset &, const Dataset &>;
 TYPED_TEST_SUITE(DatasetViewTest, DatasetViewTypes);
 
 TYPED_TEST(DatasetViewTest, empty) {
