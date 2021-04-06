@@ -12,7 +12,7 @@ import pytest
 
 import scipp as sc
 
-_UNIT_STRINGS = ('s', 'ms', 'us', 'ns')
+_UNIT_STRINGS = ('s', 'ms', 'us', 'ns', 'D', 'M', 'Y')
 
 
 def _mismatch_pairs(units):
