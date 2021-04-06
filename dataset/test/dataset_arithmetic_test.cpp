@@ -383,7 +383,6 @@ TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
   EXPECT_EQ(slice3["data_x"].masks()["masks_x"], expectedMask);
 }
 
-
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
   auto dataset = datasetFactory().make();
   auto reference = copy(dataset);
