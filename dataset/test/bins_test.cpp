@@ -25,7 +25,7 @@ protected:
   Variable data =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   DataArray buffer = DataArray(data, {{Dim::X, data + data}});
-  Variable var = make_bins(indices, Dim::X, buffer);
+  Variable var = make_bins(indices, Dim::X, copy(buffer));
 };
 
 TEST_F(DataArrayBinsTest, concatenate_dim_1d) {

@@ -689,7 +689,7 @@ TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
 
 TEST(DatasetSetData, dense_to_dense) {
   auto dense = datasetFactory().make();
-  auto d = Dataset(dense.slice({Dim::X, 0, 2}));
+  auto d = copy(dense.slice({Dim::X, 0, 2}));
   dense.setData("data_x_1", dense["data_x"]);
   EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
 
@@ -710,7 +710,7 @@ TEST(DatasetSetData, labels) {
       Dim("l"),
       makeVariable<double>(
           Dims{Dim::X}, Shape{dense.coords()[Dim::X].values<double>().size()}));
-  auto d = Dataset(dense.slice({Dim::Y, 0}));
+  auto d = copy(dense.slice({Dim::Y, 0}));
   dense.setData("data_x_1", dense["data_x"]);
   EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
 
