@@ -11,8 +11,9 @@ using namespace scipp;
 using namespace scipp::dataset;
 
 struct CopyTest : public ::testing::Test {
-  CopyTest() : dataset(factory.make()), array(dataset["data_xyz"]) {
+  CopyTest() : dataset(factory.make()), array(copy(dataset["data_xyz"])) {
     array.attrs().set(Dim("attr"), attr);
+    dataset["data_xyz"].attrs().set(Dim("attr"), attr);
   }
 
 protected:
@@ -40,7 +41,8 @@ TEST_F(CopyTest, dataset_drop_attrs) {
 }
 
 struct CopyOutArgTest : public CopyTest {
-  CopyOutArgTest() : dataset_copy(copy(dataset)), array_copy(copy(array)) {
+  CopyOutArgTest()
+      : dataset_copy(deepcopy(dataset)), array_copy(deepcopy(array)) {
     const auto one = 1.0 * units::one;
     array_copy.data() += one;
     array_copy.coords()[Dim::X] += one;
