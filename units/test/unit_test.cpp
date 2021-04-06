@@ -143,6 +143,7 @@ TEST(UnitFunctionsTest, abs) {
 
 TEST(UnitFunctionsTest, sqrt) {
   EXPECT_EQ(sqrt(units::m * units::m), units::m);
+  EXPECT_EQ(sqrt(units::counts * units::counts), units::counts);
   EXPECT_EQ(sqrt(units::one), units::one);
   EXPECT_THROW_MSG(sqrt(units::m), except::UnitError,
                    "Unsupported unit as result of sqrt: sqrt(m).");
