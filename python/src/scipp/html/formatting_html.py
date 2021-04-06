@@ -76,8 +76,8 @@ def _repr_item(s, bin_dim, item, ellipsis_after, do_ellide, summary):
     if summary:
         s.append(SPARSE_PREFIX.format(shape))
     else:
-        s.append('events({})'.format(_format_array(item, shape),
-                                     ellipsis_after, do_ellide))
+        s.append('events({})'.format(
+            _format_array(item, shape, ellipsis_after, do_ellide)))
 
 
 def _get_events(var, variances, ellipsis_after, summary=False):
@@ -96,7 +96,8 @@ def _get_events(var, variances, ellipsis_after, summary=False):
 
         data = retrieve(var, variances=variances)
         while i < size:
-            if i == ellipsis_after and do_ellide and size > 2 * ellipsis_after + 1:
+            if i == ellipsis_after and do_ellide \
+                    and size > 2 * ellipsis_after + 1:
                 s.append("...")
                 i = size - ellipsis_after
             item = data[i]
