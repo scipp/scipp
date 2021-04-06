@@ -25,14 +25,15 @@ void throw_mismatch_error(const dataset::DatasetConstView &expected,
                      to_string(actual) + '.');
 }
 
-CoordMismatchError::CoordMismatchError(const std::pair<Dim, Variable> &expected,
-                                       const std::pair<Dim, Variable> &actual)
+CoordMismatchError::CoordMismatchError(
+    const std::pair<const Dim, Variable> &expected,
+    const std::pair<const Dim, Variable> &actual)
     : DatasetError{"Mismatch in coordinate, expected " + to_string(expected) +
                    ", got " + to_string(actual)} {}
 
 template <>
-void throw_mismatch_error(const std::pair<Dim, Variable> &expected,
-                          const std::pair<Dim, Variable> &actual) {
+void throw_mismatch_error(const std::pair<const Dim, Variable> &expected,
+                          const std::pair<const Dim, Variable> &actual) {
   throw CoordMismatchError(expected, actual);
 }
 
