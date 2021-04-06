@@ -6,6 +6,8 @@
 #include "scipp/variable/bins.h"
 #include "scipp/variable/bucket_model.h"
 
+#include "test_macros.h"
+
 using namespace scipp;
 using namespace scipp::variable;
 
@@ -25,40 +27,46 @@ protected:
   auto make_indices(
       const std::vector<std::pair<scipp::index, scipp::index>> &is) const {
     return makeVariable<std::pair<scipp::index, scipp::index>>(
-               Dims{Dim::Y}, Shape{is.size()}, Values(is))
-        .data_handle();
+        Dims{Dim::Y}, Shape{is.size()}, Values(is));
   }
 };
 
 TEST_F(BucketModelTest, construct) {
   Model model(indices.data_handle(), Dim::X, buffer);
-  EXPECT_THROW(Model(indices.data_handle(), Dim::Y, buffer),
-               except::DimensionError);
+  // No validation
+  EXPECT_NO_THROW(Model(indices.data_handle(), Dim::Y, buffer));
+  // make_bins validates
+  EXPECT_THROW_DISCARD(make_bins(indices, Dim::Y, buffer),
+                       except::DimensionError);
 }
 
 TEST_F(BucketModelTest, construct_empty_range) {
-  auto empty = make_indices({{0, 2}, {2, 2}});
+  auto empty = make_indices({{0, 2}, {2, 2}}).data_handle();
   EXPECT_NO_THROW(Model(empty, Dim::X, buffer));
 }
 
 TEST_F(BucketModelTest, construct_negative_range_fail) {
   auto overlapping = make_indices({{0, 2}, {2, 1}});
-  EXPECT_THROW(Model(overlapping, Dim::X, buffer), except::SliceError);
+  EXPECT_THROW_DISCARD(make_bins(overlapping, Dim::X, buffer),
+                       except::SliceError);
 }
 
 TEST_F(BucketModelTest, construct_overlapping_fail) {
   auto overlapping = make_indices({{0, 3}, {2, 4}});
-  EXPECT_THROW(Model(overlapping, Dim::X, buffer), except::SliceError);
+  EXPECT_THROW_DISCARD(make_bins(overlapping, Dim::X, buffer),
+                       except::SliceError);
 }
 
 TEST_F(BucketModelTest, construct_before_begin_fail) {
   auto before_begin = make_indices({{-1, 2}, {2, 4}});
-  EXPECT_THROW(Model(before_begin, Dim::X, buffer), except::SliceError);
+  EXPECT_THROW_DISCARD(make_bins(before_begin, Dim::X, buffer),
+                       except::SliceError);
 }
 
 TEST_F(BucketModelTest, construct_beyond_end_fail) {
   auto beyond_end = make_indices({{0, 2}, {2, 5}});
-  EXPECT_THROW(Model(beyond_end, Dim::X, buffer), except::SliceError);
+  EXPECT_THROW_DISCARD(make_bins(beyond_end, Dim::X, buffer),
+                       except::SliceError);
 }
 
 TEST_F(BucketModelTest, dtype) {
@@ -90,7 +98,7 @@ TEST_F(BucketModelTest, comparison) {
             Model(indices2.data_handle(), Dim::X, buffer));
   auto buffer2 = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                       Values{1, 2, 3, 4});
-  auto indices3 = make_indices({{0, 1}, {1, 2}});
+  auto indices3 = make_indices({{0, 1}, {1, 2}}).data_handle();
   EXPECT_NE(Model(indices3, Dim::X, buffer2), Model(indices3, Dim::Y, buffer2));
   EXPECT_NE(Model(indices3, Dim::X, buffer), Model(indices3, Dim::X, buffer2));
 }
@@ -121,11 +129,11 @@ TEST_F(BucketModelTest, values_non_range) {
   auto i = make_indices({{2, 4}, {0, -1}});
   // The model would actually support this, but operations with such data do not
   // handle this case, so it is disabled.
-  EXPECT_THROW(Model(i, Dim::X, buffer), except::SliceError);
+  EXPECT_THROW_DISCARD(make_bins(i, Dim::X, buffer), except::SliceError);
 }
 
 TEST_F(BucketModelTest, out_of_order_indices) {
-  auto reverse = make_indices({{2, 4}, {0, 2}});
+  auto reverse = make_indices({{2, 4}, {0, 2}}).data_handle();
   const Dimensions dims(Dim::Y, 2);
   Model model(reverse, Dim::X, copy(buffer));
   core::ElementArrayViewParams params(0, dims, dims, {});
