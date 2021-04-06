@@ -331,7 +331,7 @@ struct GroupbyWithBinsTest : public ::testing::Test {
     d.setData("b", makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 5}},
                                         units::s,
                                         Values{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
-    d["a"].coords().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
+    d["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
     d.setCoord(Dim("labels1"),
                makeVariable<double>(Dimensions{Dim::X, 5}, units::m,
                                     Values{1, 2, 3, 4, 5}));
@@ -354,7 +354,7 @@ TEST_F(GroupbyWithBinsTest, bins) {
                    makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 3},
                                         units::s, Values{0, 8, 3, 0, 23, 8}));
   expected.setCoord(Dim::Z, bins);
-  expected["a"].coords().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
+  expected["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
 
   EXPECT_EQ(groupby(d, Dim("labels2"), bins).sum(Dim::X), expected);
   EXPECT_EQ(groupby(d["a"], Dim("labels2"), bins).sum(Dim::X), expected["a"]);
