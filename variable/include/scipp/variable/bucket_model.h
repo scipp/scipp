@@ -48,6 +48,9 @@ template <class T> auto clone_impl(const DataModel<bucket<T>> &model) {
 }
 } // namespace
 
+void expect_valid_bin_indices(const VariableConceptHandle &indices,
+                              const Dim dim, const Dimensions &buffer_dims);
+
 /// Specialization of DataModel for "binned" data. T could be Variable,
 /// DataArray, or Dataset.
 ///
@@ -62,8 +65,7 @@ public:
   using range_type = typename bucket<T>::range_type;
 
   DataModel(const VariableConceptHandle &indices, const Dim dim, T buffer)
-      : BinModelBase<Indices>(validated_indices(indices, dim, buffer), dim),
-        m_buffer(std::move(buffer)) {}
+      : BinModelBase<Indices>(indices, dim), m_buffer(std::move(buffer)) {}
 
   [[nodiscard]] VariableConceptHandle clone() const override {
     return clone_impl(*this);
@@ -127,31 +129,6 @@ public:
   }
 
 private:
-  static auto validated_indices(const VariableConceptHandle &indices,
-                                [[maybe_unused]] const Dim dim,
-                                [[maybe_unused]] const T &buffer) {
-    auto copy = requireT<const DataModel<range_type>>(*indices);
-    const auto vals = copy.values();
-    std::sort(vals.begin(), vals.end());
-    if ((!vals.empty() && (vals.begin()->first < 0)) ||
-        (!vals.empty() && ((vals.end() - 1)->second > buffer.dims()[dim])))
-      throw except::SliceError("Bin indices out of range");
-    if (std::adjacent_find(vals.begin(), vals.end(),
-                           [](const auto a, const auto b) {
-                             return a.second > b.first;
-                           }) != vals.end())
-      throw except::SliceError("Overlapping bin indices are not allowed.");
-    if (std::find_if(vals.begin(), vals.end(), [](const auto x) {
-          return x.first > x.second;
-        }) != vals.end())
-      throw except::SliceError(
-          "Bin begin index must be less or equal to its end index.");
-    // Sharing indices
-    // TODO Move validation out of this class so we can avoid copies and
-    // duplicate validation, in particular for bins_view?
-    return indices;
-  }
-
   auto index_values(const core::ElementArrayViewParams &base) const {
     return requireT<const DataModel<range_type>>(*this->indices()).values(base);
   }

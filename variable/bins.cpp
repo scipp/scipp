@@ -68,6 +68,16 @@ Variable resize_default_init(const Variable &var, const Dim dim,
 /// Each bin is represented by a VariableView. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, Variable buffer) {
+  expect_valid_bin_indices(indices.data_handle(), dim, buffer.dims());
+  return make_bins_no_validate(std::move(indices), dim, buffer);
+}
+
+/// Construct a bin-variable over a variable without index validation.
+///
+/// Must be used only when it is guarenteed that indices are valid or overlap of
+/// bins is acceptable.
+Variable make_bins_no_validate(Variable indices, const Dim dim,
+                               Variable buffer) {
   indices.setDataHandle(std::make_unique<variable::DataModel<bucket<Variable>>>(
       indices.data_handle(), dim, std::move(buffer)));
   return indices;

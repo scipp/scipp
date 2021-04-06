@@ -35,7 +35,10 @@ namespace {
 template <class T> Variable as_subspan_view(T &&binned) {
   auto &&[indices, dim, buffer] =
       binned.template constituents<core::bin<Variable>>();
-  return subspan_view(buffer, dim, indices);
+  if constexpr (std::is_const_v<std::remove_reference_t<T>>)
+    return subspan_view(std::as_const(buffer), dim, indices);
+  else
+    return subspan_view(buffer, dim, indices);
 }
 
 auto make_range(const scipp::index begin, const scipp::index end,
@@ -101,7 +104,7 @@ auto bin(const Variable &data, const Variable &indices,
   // along a dimension each output bin sees contributions from all input bins
   // along that dim.
   auto output_bin_sizes = bin_sizes(indices, builder.offsets(), builder.nbin());
-  auto offsets = output_bin_sizes;
+  auto offsets = copy(output_bin_sizes);
   fill_zeros(offsets);
   // Not using cumsum along *all* dims, since some outer dims may be left
   // untouched (no rebin).
@@ -125,18 +128,19 @@ auto bin(const Variable &data, const Variable &indices,
       zip(end - filtered_input_bin_size, end);
 
   // Perform actual binning step for data, all coords, all masks, ...
-  auto out_buffer = dataset::transform(bins_view<T>(data), [&](auto &&var) {
-    if (!is_bins(var))
-      return std::forward<decltype(var)>(var);
-    const auto &[input_indices, buffer_dim, in_buffer] =
-        var.template constituents<core::bin<Variable>>();
-    static_cast<void>(input_indices);
-    auto out = resize_default_init(in_buffer, buffer_dim, total_size);
-    transform_in_place(subspan_view(out, buffer_dim, filtered_input_bin_ranges),
-                       offsets, as_subspan_view(var), as_subspan_view(indices),
-                       core::element::bin);
-    return out;
-  });
+  auto out_buffer =
+      dataset::transform(bins_view<T>(data), [&](const auto &var) {
+        if (!is_bins(var))
+          return copy(var);
+        const auto &[input_indices, buffer_dim, in_buffer] =
+            var.template constituents<core::bin<Variable>>();
+        static_cast<void>(input_indices);
+        auto out = resize_default_init(in_buffer, buffer_dim, total_size);
+        transform_in_place(
+            subspan_view(out, buffer_dim, filtered_input_bin_ranges), offsets,
+            as_subspan_view(var), as_subspan_view(indices), core::element::bin);
+        return out;
+      });
 
   // Up until here the output was viewed with same bin index ranges as input.
   // Now switch to desired final bin indices.
@@ -235,7 +239,7 @@ public:
   template <class CoordsT, class BinCoords = Coords>
   void build(Variable &indices, CoordsT &&coords, BinCoords &&bin_coords = {}) {
     const auto get_coord = [&](const Dim dim) {
-      return coords.count(dim) ? coords[dim] : Variable(bin_coords.at(dim));
+      return coords.count(dim) ? coords[dim] : bin_coords.at(dim);
     };
     m_offsets = makeVariable<scipp::index>(Values{0});
     m_nbin = dims().volume() * units::one;
@@ -285,7 +289,7 @@ public:
           m_offsets = begin * inner_volume;
           // Mask out any output bin edges that need not be considered since
           // there is no overlap between given input and output bin.
-          const auto masked_key = make_bins(indices_, dim, key);
+          const auto masked_key = make_bins_no_validate(indices_, dim, key);
           update_indices_by_binning(indices, get_coord(dim), masked_key,
                                     linspace);
         } else {
@@ -423,9 +427,7 @@ public:
       }
     }
     m_indices = zip(begin, end);
-    // TODO here and elsewhere which previously used mak_non_owning_bins, avoid
-    // index validation
-    m_data = make_bins(m_indices, buffer_dim, buffer);
+    m_data = make_bins_no_validate(m_indices, buffer_dim, buffer);
   }
   Variable operator()() const { return m_data; }
 
@@ -444,7 +446,7 @@ public:
     m_target_bins_buffer = (dims.volume() > std::numeric_limits<int32_t>::max())
                                ? makeVariable<int64_t>(buffer.dims())
                                : makeVariable<int32_t>(buffer.dims());
-    m_target_bins = make_bins(begin_end, dim, m_target_bins_buffer);
+    m_target_bins = make_bins_no_validate(begin_end, dim, m_target_bins_buffer);
   }
   auto &operator*() noexcept { return m_target_bins; }
 
@@ -560,7 +562,7 @@ DataArray bin(const DataArrayConstView &array,
     auto end = begin + stride * units::one;
     end.values<scipp::index>().as_span().back() = data.dims()[dim];
     const auto indices = zip(begin, end);
-    const auto tmp = make_bins(indices, dim, array);
+    const auto tmp = make_bins_no_validate(indices, dim, array);
     auto target_bins_buffer =
         (data.dims().volume() > std::numeric_limits<int32_t>::max())
             ? makeVariable<int64_t>(data.dims())
@@ -568,7 +570,7 @@ DataArray bin(const DataArrayConstView &array,
     auto builder = axis_actions(data, coords, edges, groups, erase);
     builder.build(target_bins_buffer, coords);
     const auto target_bins =
-        make_bins(indices, dim, Variable(target_bins_buffer));
+        make_bins_no_validate(indices, dim, target_bins_buffer);
     return add_metadata(bin<DataArrayConstView>(tmp, target_bins, builder),
                         coords, masks, attrs, builder.edges(), builder.groups(),
                         erase);
