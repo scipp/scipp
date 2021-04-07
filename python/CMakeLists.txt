@@ -14,7 +14,6 @@ pybind11_add_module(
   creation.cpp
   cumulative.cpp
   dataset.cpp
-  detail.cpp
   docstring.cpp
   dtype.cpp
   eigen.cpp

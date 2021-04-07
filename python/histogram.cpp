@@ -25,10 +25,7 @@ template <class T> void bind_histogram(py::module &m) {
                  .param("bins", "Bin edges.", "Variable");
   m.def(
       "histogram",
-      [](const typename T::const_view_type &x,
-         const typename Variable::const_view_type &bins) {
-        return histogram(x, bins);
-      },
+      [](const T &x, const Variable &bins) { return histogram(x, bins); },
       py::arg("x"), py::arg("bins"), py::call_guard<py::gil_scoped_release>(),
       doc.c_str());
 }

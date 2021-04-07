@@ -40,6 +40,11 @@ template <class T> void declare_span(py::module &m, const std::string &suffix) {
   mutable_span_methods<T>::add(span);
 }
 
+namespace {
+template <class T> struct is_bins : std::false_type {};
+template <class T> struct is_bins<core::bin<T>> : std::true_type {};
+}
+
 template <class T>
 void declare_ElementArrayView(py::module &m, const std::string &suffix) {
   py::class_<ElementArrayView<T>> view(
@@ -53,13 +58,14 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
       .def("__iter__", [](const ElementArrayView<T> &self) {
         return py::make_iterator(self.begin(), self.end());
       });
-  view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
-                             [[maybe_unused]] const T value) {
-    if constexpr (is_view_v<decltype(self[i])>)
-      throw std::runtime_error("Assigning bin contents is not possible.");
-    else
-      self[i] = value;
-  });
+  view.def("__setitem__",
+           [](ElementArrayView<T> &self, const scipp::index i, const T value) {
+             if constexpr (is_bins<T>::value)
+               throw std::runtime_error(
+                   "Assigning bin contents is not possible.");
+             else
+               self[i] = value;
+           });
 }
 
 void init_element_array_view(py::module &m) {

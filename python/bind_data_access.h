@@ -22,16 +22,14 @@ namespace py = pybind11;
 using namespace scipp;
 
 template <class T> void remove_variances(T &obj) {
-  if constexpr (std::is_same_v<T, DataArray> ||
-                std::is_same_v<T, DataArrayView>)
+  if constexpr (std::is_same_v<T, DataArray>)
     obj.data().setVariances(Variable());
   else
     obj.setVariances(Variable());
 }
 
 template <class T> void init_variances(T &obj) {
-  if constexpr (std::is_same_v<T, DataArray> ||
-                std::is_same_v<T, DataArrayView>)
+  if constexpr (std::is_same_v<T, DataArray>)
     obj.data().setVariances(Variable(obj.data()));
   else
     obj.setVariances(Variable(obj));
@@ -39,7 +37,7 @@ template <class T> void init_variances(T &obj) {
 
 /// Add element size as factor to strides.
 template <class T>
-std::vector<ssize_t> numpy_strides(const std::vector<scipp::index> &s) {
+std::vector<ssize_t> numpy_strides(const scipp::span<const scipp::index> &s) {
   std::vector<ssize_t> strides(s.size());
   for (size_t i = 0; i < strides.size(); ++i) {
     strides[i] = sizeof(T) * s[i];
@@ -55,11 +53,10 @@ class DataAccessHelper {
   template <class Getter, class T, class Var>
   static py::object as_py_array_t_impl(py::object &obj, Var &view) {
     const auto get_strides = [&]() {
-      if constexpr (std::is_same_v<Var, DataArray> ||
-                    std::is_same_v<Var, DataArrayView>) {
-        return numpy_strides<T>(VariableView(view.data()).strides());
+      if constexpr (std::is_same_v<Var, DataArray>) {
+        return numpy_strides<T>(view.data().strides());
       } else {
-        return numpy_strides<T>(VariableView(view).strides());
+        return numpy_strides<T>(view.strides());
       }
     };
     const auto get_dtype = [&view]() {
@@ -193,6 +190,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
               // the element, so it is ok if the parent `obj` (the variable)
               // goes out of scope.
               return data[0].to_pybind();
+              // TODO do we need this?
+              /*
             } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
               // Views such as VariableView are returned by value and require
               // separate handling to avoid the
@@ -201,6 +200,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
               auto ret = py::cast(data[0], py::return_value_policy::move);
               pybind11::detail::keep_alive_impl(ret, obj);
               return ret;
+              */
             } else {
               // Returning reference to element in variable. Return-policy
               // reference_internal keeps alive `obj`. Note that an attempt to
@@ -258,10 +258,11 @@ private:
       if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
                                    scipp::python::PyObject>) {
         return data[0].to_pybind();
-      } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
-        auto ret = py::cast(data[0], py::return_value_policy::move);
-        pybind11::detail::keep_alive_impl(ret, self);
-        return ret;
+        // TODO
+        //} else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
+        //  auto ret = py::cast(data[0], py::return_value_policy::move);
+        //  pybind11::detail::keep_alive_impl(ret, self);
+        //  return ret;
       } else if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
                                           core::time_point>) {
         static const auto np_datetime64 =

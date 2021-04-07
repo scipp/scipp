@@ -28,21 +28,17 @@ template <class T> Docstring docstring_groupby(const std::string &op) {
 }
 
 template <class T> void bind_groupby(py::module &m, const std::string &name) {
-  m.def("groupby",
-        py::overload_cast<const typename T::const_view_type &, const Dim>(
-            &groupby),
+  m.def("groupby", py::overload_cast<const T &, const Dim>(&groupby),
         py::arg("data"), py::arg("group"),
         py::call_guard<py::gil_scoped_release>());
 
   m.def("groupby",
-        py::overload_cast<const typename T::const_view_type &, const Dim,
-                          const VariableConstView &>(&groupby),
+        py::overload_cast<const T &, const Dim, const Variable &>(&groupby),
         py::arg("data"), py::arg("group"), py::arg("bins"),
         py::call_guard<py::gil_scoped_release>());
 
   m.def("groupby",
-        py::overload_cast<const typename T::const_view_type &,
-                          const VariableConstView &, const VariableConstView &>(
+        py::overload_cast<const T &, const Variable &, const Variable &>(
             &groupby),
         py::arg("data"), py::arg("group"), py::arg("bins"),
         py::call_guard<py::gil_scoped_release>());

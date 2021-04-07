@@ -19,6 +19,7 @@ public:
   auto indices() const { return std::get<0>(get()); }
   auto dim() const { return std::get<1>(get()); }
   auto &buffer() const { return m_var.template bin_buffer<T>(); }
+  auto &buffer() { return m_var.template bin_buffer<T>(); }
 
 protected:
   auto make(const View &view) const {
@@ -57,8 +58,8 @@ public:
   auto operator[](const key_type &key) const {
     return this->make(m_mapView[key]);
   }
-  void erase(const key_type &key) const { return m_mapView.erase(key); }
-  void set(const key_type &key, const Variable &var) const {
+  void erase(const key_type &key) { return m_mapView.erase(key); }
+  void set(const key_type &key, const Variable &var) {
     m_mapView.set(key, this->check_and_get_buf(var));
   }
   auto begin() const noexcept {
@@ -82,6 +83,7 @@ template <class T, class View> class Bins : public BinsCommon<T, View> {
 public:
   using BinsCommon<T, View>::BinsCommon;
   auto data() const { return this->make(this->buffer().data()); }
+  // TODO how to handle const-ness?
   void setData(const Variable &var) {
     this->buffer().setData(this->check_and_get_buf(var));
   }
