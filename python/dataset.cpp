@@ -183,15 +183,14 @@ void init_dataset(py::module &m) {
                       &data,
                   const std::map<Dim, Variable> &coords) {
         Dataset d;
-        for (auto &&[dim, coord] : coords)
-          d.setCoord(dim, std::move(coord));
-
         for (auto &&[name, item] : data) {
           auto visitor = [&d, name = name](auto &object) {
             d.setData(std::string(name), std::move(object));
           };
           std::visit(visitor, item);
         }
+        for (auto &&[dim, coord] : coords)
+          d.setCoord(dim, std::move(coord));
         return d;
       }),
       py::arg("data") =

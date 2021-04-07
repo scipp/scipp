@@ -249,7 +249,6 @@ def test_chained_slicing():
         })
 
     expected = sc.Dataset()
-    expected.coords['y'] = sc.Variable(dims=['y'], values=np.arange(11.0))
     expected['a'] = sc.Variable(dims=['y'],
                                 values=np.arange(501.0, 600.0, 10.0))
     expected['b'] = sc.Variable(1.5)
@@ -257,6 +256,7 @@ def test_chained_slicing():
     expected['b'].attrs['x'] = x['x', 1:3]
     expected['a'].attrs['z'] = z['z', 5:7]
     expected['b'].attrs['z'] = z['z', 5:7]
+    expected.coords['y'] = sc.Variable(dims=['y'], values=np.arange(11.0))
 
     assert sc.identical(d['x', 1]['z', 5], expected)
 
@@ -462,20 +462,20 @@ def test_dataset_set_data():
     assert sc.identical(d2['a'].data, d1['c'].data)
 
     d = sc.Dataset()
-    d.coords['row'] = sc.Variable(dims=['row'], values=np.arange(10.0))
     d['a'] = sc.Variable(dims=['row'],
                          values=np.arange(10.0),
                          variances=np.arange(10.0))
     d['b'] = sc.Variable(dims=['row'], values=np.arange(10.0, 20.0))
+    d.coords['row'] = sc.Variable(dims=['row'], values=np.arange(10.0))
     d1 = d['row', 0:1]
     d2 = sc.Dataset({'a': d1['a'].data}, coords={'row': d1['a'].coords['row']})
     d2['b'] = d1['b']
     expected = sc.Dataset()
-    expected.coords['row'] = sc.Variable(dims=['row'], values=np.arange(1.0))
     expected['a'] = sc.Variable(dims=['row'],
                                 values=np.arange(1.0),
                                 variances=np.arange(1.0))
     expected['b'] = sc.Variable(dims=['row'], values=np.arange(10.0, 11.0))
+    expected.coords['row'] = sc.Variable(dims=['row'], values=np.arange(1.0))
     assert sc.identical(d2, expected)
 
 
@@ -493,7 +493,7 @@ def test_binary__with_dataarray():
     da = sc.DataArray(
         data=sc.Variable(dims=['x'], values=np.arange(1.0, 10.0)),
         coords={'x': sc.Variable(dims=['x'], values=np.arange(1.0, 10.0))})
-    ds = sc.Dataset({da.name: da})
+    ds = sc.Dataset({da.name: da.copy()})
     orig = ds.copy()
     ds += da
     ds -= da

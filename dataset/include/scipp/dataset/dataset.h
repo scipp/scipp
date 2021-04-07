@@ -45,14 +45,14 @@ public:
             class CoordMap = std::unordered_map<Dim, Variable>>
   explicit Dataset(DataMap data,
                    CoordMap coords = std::unordered_map<Dim, Variable>{}) {
-    for (auto &&[dim, coord] : coords)
-      setCoord(dim, std::move(coord));
     if constexpr (std::is_base_of_v<Dataset, std::decay_t<DataMap>>)
       for (auto &&item : data)
         setData(item.name(), item);
     else
       for (auto &&[name, item] : data)
         setData(std::string(name), std::move(item));
+    for (auto &&[dim, coord] : coords)
+      setCoord(dim, std::move(coord));
   }
 
   /// Return the number of data items in the dataset.
