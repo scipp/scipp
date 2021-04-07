@@ -81,8 +81,14 @@ void DataArray::setName(const std::string &name) { m_name = name; }
 Coords DataArray::meta() const {
   // TODO throw if shadowing?
   auto out = attrs();
-  for (const auto &[dim, coord] : coords())
+  for (const auto &[dim, coord] : coords()) {
+    if (out.contains(dim))
+      throw except::DataArrayError(
+          "Coord '" + to_string(dim) +
+          "' shadows attr of the same name. Remove the attr or use the "
+          "`coords` and `attrs` properties instead of `meta`.");
     out.set(dim, coord);
+  }
   return out;
 }
 
