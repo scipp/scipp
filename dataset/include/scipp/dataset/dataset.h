@@ -18,8 +18,6 @@
 
 namespace scipp::dataset {
 
-enum CoordCategory { Aligned = 1, Unaligned = 2, All = 3 };
-
 namespace detail {
 
 /// Helper for creating iterators of Dataset.
@@ -185,10 +183,6 @@ public:
   const Sizes &dims() const;
 
 private:
-  template <class T>
-  friend Coords make_coords(const T &view, const CoordCategory category,
-                            const bool is_item);
-
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
   void rebuildDims();
 
