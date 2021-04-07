@@ -11,11 +11,8 @@ using namespace scipp;
 namespace py = pybind11;
 
 namespace {
-// TODO proper dimension check
 bool temporal_or_dimensionless(const units::Unit unit) {
-  static const auto ms = units::Unit("ms");
-  return unit != units::one && unit != units::s && unit != units::ns &&
-         unit != units::us && unit != ms;
+  return unit == units::one || unit.has_same_base(units::s);
 }
 } // namespace
 
@@ -23,7 +20,7 @@ std::tuple<units::Unit, int64_t>
 get_time_unit(const std::optional<scipp::units::Unit> value_unit,
               const std::optional<scipp::units::Unit> dtype_unit,
               const units::Unit sc_unit) {
-  if (temporal_or_dimensionless(sc_unit)) {
+  if (!temporal_or_dimensionless(sc_unit)) {
     throw std::invalid_argument("Invalid unit for dtype=datetime64: " +
                                 to_string(sc_unit));
   }
@@ -62,6 +59,8 @@ std::tuple<units::Unit, int64_t> get_time_unit(const py::buffer &value,
       unit);
 }
 
-std::string to_string_ascii_time(const scipp::units::Unit unit) {
-  return unit == units::us ? std::string("us") : to_string(unit);
+std::string to_numpy_time_string(const scipp::units::Unit unit) {
+  return unit == units::us
+             ? std::string("us")
+             : unit == units::Unit("min") ? std::string("m") : to_string(unit);
 }

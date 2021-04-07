@@ -39,3 +39,31 @@ def is_dataset_or_array(obj):
     Return True if the input object is either a Dataset or DataArray.
     """
     return is_dataset(obj) or is_data_array(obj)
+
+
+def vector_type(obj):
+    """
+    Return True if the object dtype is vector_3_float64.
+    """
+    return obj.dtype == sc.dtype.vector_3_float64
+
+
+def string_type(obj):
+    """
+    Return True if the object dtype is string.
+    """
+    return obj.dtype == sc.dtype.string
+
+
+def datetime_type(obj):
+    """
+    Return True if the object dtype is datetime64.
+    """
+    return obj.dtype == sc.dtype.datetime64
+
+
+def numeric_type(obj):
+    """
+    Return False if the dtype is either vector or string.
+    """
+    return (not vector_type(obj)) and (not string_type(obj))
