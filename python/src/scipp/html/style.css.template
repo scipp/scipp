@@ -299,7 +299,6 @@
   padding-left: 25px !important;
 }
 
-.sc-attrs,
 .sc-var-attrs,
 .sc-var-data {
   grid-column: 1 / -1;
