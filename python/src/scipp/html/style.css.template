@@ -54,11 +54,6 @@
   color: var(--sc-font-color1);
 }
 
-.sc-array-name {
-  color: #00aa00;
-  /*color: #000;*/
-}
-
 .sc-sections {
   padding-left: 0 !important;
   display: grid;
@@ -73,11 +68,6 @@
   display: none;
 }
 
-.sc-section-item input + label {
-  /*color: #ccc;*/
-  color: #0000aa;
-}
-
 .sc-section-item input:enabled + label {
   cursor: pointer;
   color: var(--sc-font-color1);
@@ -89,8 +79,6 @@
 
 .sc-section-summary {
   grid-column: 1 ;
-  color: #00aaaa;
-  /*color: #555;*/
   font-weight: 500;
 }
 
