@@ -13,7 +13,6 @@ void init_counts(py::module &);
 void init_creation(py::module &);
 void init_cumulative(py::module &);
 void init_dataset(py::module &);
-void init_detail(py::module &);
 void init_dtype(py::module &);
 void init_eigen(py::module &);
 void init_element_array_view(py::module &);
@@ -82,5 +81,4 @@ PYBIND11_MODULE(_scipp, m) {
   m.attr("_debug_") = py::cast(true);
 #endif
   init_core(m);
-  init_detail(m);
 }

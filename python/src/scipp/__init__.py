@@ -24,7 +24,6 @@ if _debug_:
 
 from ._scipp.core import *
 from ._scipp import __version__
-from . import detail
 from .show import show, make_svg
 from .table import table
 from .plotting import plot
@@ -53,51 +52,34 @@ from ._trigonometry import *
 from ._variable import *
 
 setattr(Variable, '_repr_html_', make_html)
-setattr(VariableConstView, '_repr_html_', make_html)
 setattr(DataArray, '_repr_html_', make_html)
-setattr(DataArrayConstView, '_repr_html_', make_html)
 setattr(Dataset, '_repr_html_', make_html)
-setattr(DatasetConstView, '_repr_html_', make_html)
 
 from .io.hdf5 import to_hdf5 as _to_hdf5
 setattr(Variable, 'to_hdf5', _to_hdf5)
-setattr(VariableView, 'to_hdf5', _to_hdf5)
 setattr(DataArray, 'to_hdf5', _to_hdf5)
-setattr(DataArrayView, 'to_hdf5', _to_hdf5)
 setattr(Dataset, 'to_hdf5', _to_hdf5)
-setattr(DatasetView, 'to_hdf5', _to_hdf5)
 
 setattr(Variable, 'sizes', property(_make_sizes))
-setattr(VariableView, 'sizes', property(_make_sizes))
 setattr(DataArray, 'sizes', property(_make_sizes))
-setattr(DataArrayView, 'sizes', property(_make_sizes))
 setattr(Dataset, 'sizes', property(_make_sizes))
-setattr(DatasetView, 'sizes', property(_make_sizes))
 
 from ._bins import _bins, _set_bins
 setattr(Variable, 'bins', property(_bins, _set_bins))
-setattr(VariableView, 'bins', property(_bins, _set_bins))
 setattr(DataArray, 'bins', property(_bins, _set_bins))
-setattr(DataArrayView, 'bins', property(_bins, _set_bins))
 setattr(Dataset, 'bins', property(_bins, _set_bins))
-setattr(DatasetView, 'bins', property(_bins, _set_bins))
 
 from ._bins import _groupby_bins
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
 setattr(GroupByDataset, 'bins', property(_groupby_bins))
 
 setattr(Variable, 'plot', plot)
-setattr(VariableConstView, 'plot', plot)
 setattr(DataArray, 'plot', plot)
-setattr(DataArrayConstView, 'plot', plot)
 setattr(Dataset, 'plot', plot)
-setattr(DatasetConstView, 'plot', plot)
 
 # Prevent unwanted conversion to numpy arrays by operations. Properly defining
 # __array_ufunc__ should be possible by converting non-scipp arguments to
 # variables. The most difficult part is probably mapping the ufunc to scipp
 # functions.
-for obj in [
-        Variable, VariableView, DataArray, DataArrayView, Dataset, DatasetView
-]:
+for obj in [Variable, DataArray, Dataset]:
     setattr(obj, '__array_ufunc__', None)
