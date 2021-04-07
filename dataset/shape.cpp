@@ -101,10 +101,11 @@ Dataset concatenate(const Dataset &a, const Dataset &b, const Dim dim) {
   // coords to dataset (which is not desirable for a variety of reasons). It is
   // unlikely that this will cause trouble in practice. Users can just use a
   // range slice of thickness 1.
-  auto result = a.empty() ? Dataset(std::map<std::string, Variable>(),
-                                    concat(a.coords(), b.coords(), dim,
-                                           a.dimensions(), b.dimensions()))
-                          : Dataset();
+  auto result =
+      a.empty()
+          ? Dataset(std::map<std::string, Variable>(),
+                    concat(a.coords(), b.coords(), dim, a.sizes(), b.sizes()))
+          : Dataset();
   for (const auto &item : a)
     if (b.contains(item.name())) {
       if (!item.dims().contains(dim) && item == b[item.name()])

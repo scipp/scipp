@@ -89,11 +89,9 @@ Coords DataArray::meta() const {
 DataArray DataArray::slice(const Slice &s) const {
   DataArray out{m_data->slice(s), m_coords.slice(s), m_masks->slice(s),
                 m_attrs->slice(s), m_name};
-  for (auto it = m_coords.begin(); it != m_coords.end();) {
+  for (auto it = m_coords.begin(); it != m_coords.end(); ++it)
     if (unaligned_by_dim_slice(*it, s))
       out.attrs().set(it->first, out.m_coords.extract(it->first));
-    ++it;
-  }
   return out;
 }
 

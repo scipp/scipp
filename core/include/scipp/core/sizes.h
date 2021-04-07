@@ -28,12 +28,17 @@ public:
     return m_sizes.count(dim) != 0;
   }
 
+  scipp::index count(const Dim dim) const noexcept {
+    return m_sizes.count(dim);
+  }
+
   auto begin() const { return m_sizes.begin(); }
   auto end() const { return m_sizes.end(); }
 
   void clear();
 
   scipp::index operator[](const Dim dim) const;
+  scipp::index at(const Dim dim) const;
   void set(const Dim dim, const scipp::index size);
   void erase(const Dim dim);
   void relabel(const Dim from, const Dim to);

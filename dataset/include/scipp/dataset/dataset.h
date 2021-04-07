@@ -181,8 +181,8 @@ public:
 
   // TODO dims() required for generic code. Need proper equivalent to class
   // Dimensions that does not imply dimension order.
-  std::unordered_map<Dim, scipp::index> dimensions() const;
-  std::unordered_map<Dim, scipp::index> dims() const { return dimensions(); }
+  const Sizes &sizes() const;
+  const Sizes &dims() const;
 
 private:
   template <class T>
