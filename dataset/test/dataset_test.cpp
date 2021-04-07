@@ -166,10 +166,10 @@ TEST(DatasetTest, setData_updates_dimensions) {
   d.setData("x", xy);
   d.setData("x", x);
 
-  const auto dims = d.dimensions();
-  ASSERT_TRUE(dims.find(Dim::X) != dims.end());
+  const auto dims = d.sizes();
+  ASSERT_TRUE(dims.contains(Dim::X));
   // Dim::Y should no longer appear in dimensions after item "x" was replaced.
-  ASSERT_TRUE(dims.find(Dim::Y) == dims.end());
+  ASSERT_FALSE(dims.contains(Dim::Y));
 }
 
 TEST(DatasetTest, setData_clears_attributes) {

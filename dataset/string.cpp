@@ -93,19 +93,12 @@ std::string do_to_string(const D &dataset, const std::string &id,
   return s.str();
 }
 
-template <class T> Dimensions dimensions(const T &dataset) {
-  Dimensions dims;
-  for (const auto &[dim, size] : dataset.dimensions())
-    dims.add(dim, size);
-  return dims;
-}
-
 std::string to_string(const DataArray &data) {
   return do_to_string(data, "<scipp.DataArray>", data.dims());
 }
 
 std::string to_string(const Dataset &dataset) {
-  return do_to_string(dataset, "<scipp.Dataset>", dimensions(dataset));
+  return do_to_string(dataset, "<scipp.Dataset>", Dimensions(dataset.sizes()));
 }
 
 } // namespace scipp::dataset

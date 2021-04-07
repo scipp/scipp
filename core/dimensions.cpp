@@ -33,6 +33,11 @@ Dimensions::Dimensions(const std::vector<Dim> &labels,
     addInner(labels[i], shape[i]);
 }
 
+Dimensions::Dimensions(const Sizes &sizes) {
+  for (const auto &[label, size] : sizes)
+    addInner(label, size);
+}
+
 /// Return the extent of `dim`. Throws if the space defined by this does not
 /// contain `dim`.
 scipp::index Dimensions::operator[](const Dim dim) const { return at(dim); }
