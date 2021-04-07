@@ -53,7 +53,7 @@ TEST(DatasetTest, erase) {
 TEST(DatasetTest, extract) {
   DatasetFactory3D factory;
   auto dataset = factory.make();
-  Dataset reference(dataset);
+  auto reference = copy(dataset);
 
   auto ptr = dataset["data_xyz"].values<double>().data();
   auto array = dataset.extract("data_xyz");

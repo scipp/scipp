@@ -40,10 +40,8 @@ bool Dataset::contains(const std::string &name) const noexcept {
 ///
 /// Coordinates are not modified.
 void Dataset::erase(const std::string &name) {
-  if (m_data.erase(std::string(name)) == 0) {
-    throw except::NotFoundError("Expected " + to_string(*this) +
-                                " to contain " + name + ".");
-  }
+  scipp::expect::contains(*this, name);
+  m_data.erase(std::string(name));
   rebuildDims();
 }
 
