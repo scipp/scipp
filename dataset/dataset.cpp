@@ -62,8 +62,8 @@ DataArray Dataset::operator[](const std::string &name) const {
 
 /// Consistency-enforcing update of the dimensions of the dataset.
 ///
-/// Calling this in the various set* methods prevents insertion of variable with
-/// bad shape. This supports insertion of bin edges. Note that the current
+/// Calling this in the various set* methods prevents insertion of variables
+/// with bad shape. This supports insertion of bin edges. Note that the current
 /// implementation does not support shape-changing operations which would in
 /// theory be permitted but are probably not important in reality: The previous
 /// extent of a replaced item is not excluded from the check, so even if that
@@ -99,8 +99,8 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 /// Set (insert or replace) data (values, optional variances) with given name.
 ///
 /// Throws if the provided values bring the dataset into an inconsistent state
-/// (mismatching dtype, unit, or dimensions). The default is to drop existing
-/// attributes, unless AttrPolicy::Keep is specified.
+/// (mismatching dimensions). The default is to drop existing attributes, unless
+/// AttrPolicy::Keep is specified.
 void Dataset::setData(const std::string &name, Variable data,
                       const AttrPolicy attrPolicy) {
   setDims(data.dims());
@@ -114,8 +114,7 @@ void Dataset::setData(const std::string &name, Variable data,
     rebuildDims();
 }
 
-/// Set (insert or replace) data from a DataArray with a given name, avoiding
-/// copies where possible by using std::move. TODO move does not make sense
+/// Set (insert or replace) data from a DataArray with a given name.
 ///
 /// Coordinates, masks, and attributes of the data array are added to the
 /// dataset. Throws if there are existing but mismatching coords, masks, or

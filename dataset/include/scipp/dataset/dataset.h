@@ -189,7 +189,6 @@ private:
   friend Coords make_coords(const T &view, const CoordCategory category,
                             const bool is_item);
 
-  void setExtent(const Dim dim, const scipp::index extent, const bool isCoord);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
   void rebuildDims();
 
