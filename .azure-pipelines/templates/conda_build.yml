@@ -78,7 +78,7 @@ jobs:
         - bash: |
             set -ex
             source activate scipp-developer
-            tools\make_and_install.bat
+            tools/make_and_install.bat
           displayName: 'Build and run C++ tests'
 
       - ${{ if not(contains(parameters.image, 'windows')) }}:
