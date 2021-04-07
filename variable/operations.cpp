@@ -62,6 +62,9 @@ Variable copy(const Variable &var) {
   return out;
 }
 
+/// Return a deep copy of a Variable.
+Variable deepcopy(const Variable &var) { return copy(var); }
+
 /// Copy variable to output variable.
 Variable &copy(const Variable &var, Variable &out) {
   var.data().copy(var, out);
