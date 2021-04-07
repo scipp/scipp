@@ -375,7 +375,7 @@ GroupBy<Dataset> groupby(const Dataset &dataset, const Dim dim,
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<Dataset> groupby(const Dataset &dataset, const Variable &key,
                          const Variable &bins) {
-  for (const auto &n : dataset.dimensions()) {
+  for (const auto &n : dataset.sizes()) {
     Dimensions dims(n.first, n.second);
     if (dims.contains(key.dims()))
       // Found compatible Dimension.

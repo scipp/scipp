@@ -20,7 +20,9 @@ bool Sizes::operator!=(const Sizes &other) const { return !operator==(other); }
 
 void Sizes::clear() { m_sizes.clear(); }
 
-scipp::index Sizes::operator[](const Dim dim) const {
+scipp::index Sizes::operator[](const Dim dim) const { return at(dim); }
+
+scipp::index Sizes::at(const Dim dim) const {
   if (!contains(dim))
     throw except::DimensionError("dim not found");
   return m_sizes.at(dim);

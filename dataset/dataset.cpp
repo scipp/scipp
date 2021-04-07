@@ -79,7 +79,8 @@ void Dataset::rebuildDims() {
   m_coords.sizes().clear();
   for (const auto &d : *this)
     setDims(d.dims());
-  // TODO if this happens to process edge coord first this won't work
+  // TODO if there are not data items AND this happens to process edge coord
+  // first this won't work
   for (const auto &c : m_coords)
     setDims(c.second.dims(), dim_of_coord(c.second, c.first));
 }
@@ -87,12 +88,6 @@ void Dataset::rebuildDims() {
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
   setDims(coord.dims(), dim_of_coord(coord, dim));
-  // TODO remove?
-  // for (const auto &item : m_data)
-  //  if (item.second.coords.count(dim))
-  //    throw except::DataArrayError("Attempt to insert dataset coord with "
-  //                                 "name " +
-  //                                 to_string(dim) + "  shadowing attribute.");
   m_coords.set(dim, std::move(coord));
 }
 
@@ -121,15 +116,6 @@ void Dataset::setData(const std::string &name, Variable data,
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataArray &data) {
-  // TODO
-  // if (contains(name) && &m_data[name] == &data.underlying() &&
-  //    data.slices().empty())
-  //  return; // Self-assignment, return early.
-  // Sizes new_sizes(data.dims());
-  // TODO
-  // no... what if item replace shrinks sizes
-  // new_sizes = merge(m_sizes, sizes);
-
   setDims(data.dims());
   for (auto &&[dim, coord] : data.coords()) {
     if (const auto it = m_coords.find(dim); it != m_coords.end())
@@ -142,10 +128,10 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
   auto &item = m_data[name];
 
   for (auto &&[dim, attr] : data.attrs())
-    // TODO dropping not really necessary in new mechanism, fail later
-    // Drop unaligned coords if there is aligned coord with same name.
-    if (!coords().contains(dim))
-      item.attrs().set(dim, std::move(attr));
+    // Attrs might be shadowed by a coord, but this cannot be prevented in
+    // general, so instead of failing here we proceed (and may fail later if
+    // meta() is called).
+    item.attrs().set(dim, std::move(attr));
   for (auto &&[nm, mask] : data.masks())
     item.masks().set(nm, std::move(mask));
 }
@@ -182,30 +168,16 @@ void Dataset::rename(const Dim from, const Dim to) {
     item.second.rename(from, to);
 }
 
-namespace {
-
-template <class T> const auto &getitem(const T &view, const std::string &name) {
-  if (auto it = view.find(name); it != view.end())
-    return *it;
-  throw except::NotFoundError("Expected " + to_string(view) + " to contain " +
-                              name + ".");
-}
-} // namespace
-
-template <class A, class B> bool dataset_equals(const A &a, const B &b) {
-  if (a.size() != b.size())
-    return false;
-  if (a.coords() != b.coords())
-    return false;
-  for (const auto &data : a)
-    if (!b.contains(data.name()) || data != b[data.name()])
-      return false;
-  return true;
-}
-
 /// Return true if the datasets have identical content.
 bool Dataset::operator==(const Dataset &other) const {
-  return dataset_equals(*this, other);
+  if (size() != other.size())
+    return false;
+  if (coords() != other.coords())
+    return false;
+  for (const auto &data : *this)
+    if (!other.contains(data.name()) || data != other[data.name()])
+      return false;
+  return true;
 }
 
 /// Return true if the datasets have mismatching content./
@@ -213,12 +185,8 @@ bool Dataset::operator!=(const Dataset &other) const {
   return !operator==(other);
 }
 
-std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
-  std::unordered_map<Dim, scipp::index> all;
-  for (const auto &dim : m_coords.sizes())
-    all[dim.first] = dim.second;
-  return all;
-}
+const Sizes &Dataset::sizes() const { return m_coords.sizes(); }
+const Sizes &Dataset::dims() const { return sizes(); }
 
 std::unordered_map<typename Masks::key_type, typename Masks::mapped_type>
 union_or(const Masks &currentMasks, const Masks &otherMasks) {
