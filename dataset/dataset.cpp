@@ -516,10 +516,14 @@ CoordsView DataArrayView::coords() const noexcept {
 }
 
 /// Return a const view to all aligned coordinates of the data array.
-CoordsConstView DataArray::coords() const { return get().coords(); }
+CoordsConstView DataArray::coords() const {
+  return make_coords(get(), CoordCategory::Aligned, false);
+}
 
 /// Return a view to all aligned coordinates of the data array.
-CoordsView DataArray::coords() { return m_holder.coords(); }
+CoordsView DataArray::coords() {
+  return make_coords(get(), CoordCategory::Aligned, false);
+}
 
 /// Return a const view to all unaligned coordinates of the data view.
 CoordsConstView DataArrayConstView::attrs() const noexcept {

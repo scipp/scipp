@@ -17,7 +17,7 @@ dependencies:
   - appdirs
   - ipympl
   - ipywidgets
-  - matplotlib-base=3.2.2 # version 3.3.3 causes issues with nodejs in JupyterLab
+  - matplotlib-base
   - numpy >=1.15.3
   - python
   - python-configuration
@@ -28,7 +28,6 @@ dependencies:
 
   # Test
   - h5py
-  - psutil
   - pytest
 
   # Formatting & static analysis
@@ -42,3 +41,4 @@ dependencies:
   - sphinx=3.4.3 # see https://github.com/sphinx-doc/sphinx/issues/8885
   - sphinx_rtd_theme
   - nbsphinx
+  - docutils=0.16 # see https://github.com/spatialaudio/nbsphinx/issues/549

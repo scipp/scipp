@@ -4,15 +4,16 @@
 
 from .. import config
 from .toolbar import PlotToolbar3d
+from .tools import fig_to_pngbytes
 from .._utils import value_to_string
 import numpy as np
 import ipywidgets as ipw
 from matplotlib import cm, ticker
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, LogNorm
+from matplotlib.colorbar import ColorbarBase
 import pythreejs as p3
 from copy import copy
-import io
 
 
 class PlotFigure3d:
@@ -62,7 +63,8 @@ class PlotFigure3d:
 
         # Create the colorbar image
         self.cbar_image = ipw.Image()
-        self.cbar_fig, self.cbar = self._create_colorbar(figsize, extend)
+        self.figsize = figsize
+        self.extend = extend
 
         # Create the point cloud material with pythreejs
         self.points_material = None
@@ -100,7 +102,7 @@ class PlotFigure3d:
         """
         return self._to_widget()._ipython_display_()
 
-    def _to_widget(self, as_static=False):
+    def _to_widget(self):
         """
         Return the renderer and the colorbar into a widget box.
         """
@@ -321,27 +323,6 @@ void main() {
 
         return ticks_and_labels
 
-    def _create_colorbar(self, figsize, extend):
-        """
-        Make image from matplotlib colorbar.
-        We need to make a dummy imshow so we can later update the limits with
-        set_clim, as this method is not available on a ColorbarBase class.
-        """
-        height_inches = figsize[1] / config.plot.dpi
-
-        cbar_fig, ax = plt.subplots(figsize=(height_inches * 0.2,
-                                             height_inches),
-                                    dpi=config.plot.dpi)
-        cbar_imshow = ax.imshow(np.array([[0, 1]]),
-                                cmap=self.scalar_map.get_cmap(),
-                                norm=self.scalar_map.norm)
-        ax.set_visible(False)
-        cbar_ax = cbar_fig.add_axes([0.05, 0.02, 0.25, 0.94])
-        cbar = plt.colorbar(cbar_imshow, cax=cbar_ax, extend=extend)
-        cbar.set_label(self.unit)
-        cbar.ax.yaxis.set_label_coords(-0.9, 0.5)
-        return cbar_fig, cbar_imshow
-
     def update_opacity(self, alpha):
         """
         Update opacity of all points when opacity slider is changed.
@@ -394,17 +375,26 @@ void main() {
         container.
         """
         self.scalar_map.set_clim(vmin, vmax)
-        self.cbar.set_clim(vmin, vmax)
         self.update_colorbar()
 
     def update_colorbar(self):
         """
-        Save the colorbar figure to png and update the image widget.
+        Create the colorbar figure and save it to png and update the image
+        widget.
+        Note that the figure is closed as soon as it is created to avoid it
+        re-appearing further down the notebook.
         """
-        buf = io.BytesIO()
-        self.cbar_fig.savefig(buf, format='png', bbox_inches='tight')
-        buf.seek(0)
-        self.cbar_image.value = buf.getvalue()
+        height_inches = self.figsize[1] / config.plot.dpi
+        cbar_fig = plt.figure(figsize=(height_inches * 0.2, height_inches),
+                              dpi=config.plot.dpi)
+        cbar_ax = cbar_fig.add_axes([0.05, 0.02, 0.25, 0.94])
+        _ = ColorbarBase(cbar_ax,
+                         cmap=self.scalar_map.get_cmap(),
+                         norm=self.scalar_map.norm,
+                         extend=self.extend)
+        cbar_ax.set_ylabel(self.unit)
+        cbar_ax.yaxis.set_label_coords(-0.9, 0.5)
+        self.cbar_image.value = fig_to_pngbytes(cbar_fig)
 
     def reset_camera(self, owner=None):
         """
@@ -457,7 +447,6 @@ void main() {
                                                                   vmax=vmax)
         self.scalar_map.set_norm(new_norm)
         self.masks_scalar_map.set_norm(new_norm)
-        self.cbar.set_norm(new_norm)
         self.update_colorbar()
 
     def update_log_axes_buttons(self, *args, **kwargs):

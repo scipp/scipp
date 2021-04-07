@@ -28,10 +28,9 @@ Run
 
   - ``appdirs`` (MIT) (system application directory helper, used in user configuration loading)
   - ``ipywidgets`` * (BSD-3-Clause) (interactive Jupyter notebook widgets)
-  - ``mantid-framework`` * (GPL-3.0-or-later) (used for Mantid interoperability)
   - ``matplotlib`` * (custom permissive) (plotting library)
+  - ``ipympl`` * (BSD-3-Clause) (matplotlib-jupyter integration)
   - ``numpy`` >=1.15.3 (custom permissive)
-  - ``Pillow`` (HPND) (Python Imaging Library, used in plot_3d to create colorbar)
   - ``python`` (PSF-2.0)
   - ``python-configuration`` (MIT) (configuration file parser, used in user configuration loading)
   - ``pythreejs`` * (BSD-3-Clause) (3D plotting library, used in plot_3d and instrument_view)
@@ -41,10 +40,17 @@ Run
 Test
 ----
 
-  - all (including optional) dependecies of *Run*
+  - all (including optional) dependencies of *Run*
   - ``mantid-framework`` * (GPL-3.0-or-later) (Mantid interoperability tests are skipped if not present)
-  - ``psutil`` (BSD-3-Clause) (used to determine if host has enough memory for certain unit tests)
   - ``pytest`` (MIT) (test framework)
+
+Jupyter Lab
+-----------
+To use scipp with Jupyter Lab:
+
+- ``jupyterlab`` (BSD-3-Clause)
+- ``jupyterlab_widgets`` (BSD-3-Clause) (jupterlab widgets extension)
+- ``nodejs`` (MIT) (javascript runtime)
 
 Documentation Build
 -------------------

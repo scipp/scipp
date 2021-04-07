@@ -83,7 +83,7 @@ class PlotController:
             # Iterate through axes and collect dimensions
             for dim in self.axes.values():
 
-                coord, label, unit = self.model.get_data_coord(name, dim)
+                coord, label, unit = self.model.get_data_coord(key, dim)
 
                 # To allow for 2D coordinates, the histograms are
                 # stored as dicts, with one key per dimension of the coordinate
@@ -120,6 +120,7 @@ class PlotController:
 
         self.connect_widgets()
         self.connect_view()
+        self.connect_model()
         if self.panel is not None:
             self.connect_panel()
 
@@ -225,6 +226,12 @@ class PlotController:
         self.view.connect(view_callbacks=view_callbacks,
                           figure_callbacks=figure_callbacks)
 
+    def connect_model(self):
+        self.model.connect({
+            "get_view_axis_bounds": self.get_view_axis_bounds,
+            "set_view_axis_label": self.set_view_axis_label
+        })
+
     def connect_panel(self):
         """
         Dummy connect for `PlotPanel`.
@@ -263,6 +270,12 @@ class PlotController:
 
     def save_view(self, button=None):
         self.view.save_view()
+
+    def get_view_axis_bounds(self, dim):
+        return self.view.get_axis_bounds(self._dim_to_axis()[dim])
+
+    def set_view_axis_label(self, dim, string):
+        return self.view.set_axis_label(self._dim_to_axis()[dim], string)
 
     def find_vmin_vmax(self, button=None):
         """
@@ -366,7 +379,6 @@ class PlotController:
         self.update_log_axes_buttons()
         # Update the slider readout here because the widgets do not have access
         # to the model, which holds the coordinates.
-        # ranges = {}
         lower, upper = self.model.get_slice_coord_bounds(
             self.name, new_dim, [0, 1])
         self.widgets.update_slider_readout(index, lower, upper, [0, 1],
@@ -639,3 +651,9 @@ class PlotController:
         in the widgets.
         """
         self.profile.toggle_hover_visibility(value)
+
+    def _dim_to_axis(self):
+        """
+        Make a map from dim to axis
+        """
+        return {self.axes[key]: key for key in self._get_xyz_axes()}

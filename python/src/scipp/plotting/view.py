@@ -29,11 +29,17 @@ class PlotView:
         """
         return self._to_widget()._ipython_display_()
 
-    def _to_widget(self, as_static=False):
+    def _to_widget(self):
         """
         The `view` as a widget is just the `figure` as a widget.
         """
-        return self.figure._to_widget(as_static=as_static)
+        return self.figure._to_widget()
+
+    def close(self):
+        """
+        Close the figure.
+        """
+        return self.figure._to_image()
 
     def show(self):
         """
@@ -131,3 +137,9 @@ class PlotView:
         Forward norm button update to the `figure`.
         """
         self.figure.update_norm_button(*args, **kwargs)
+
+    def get_axis_bounds(self, *args, **kwargs):
+        return self.figure.get_axis_bounds(*args, **kwargs)
+
+    def set_axis_label(self, *args, **kwargs):
+        return self.figure.set_axis_label(*args, **kwargs)

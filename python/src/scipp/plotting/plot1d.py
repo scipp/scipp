@@ -53,7 +53,8 @@ class SciPlot1d(SciPlot):
                  grid=False,
                  title=None,
                  xlabel=None,
-                 ylabel=None):
+                 ylabel=None,
+                 legend=None):
 
         if masks is None:
             masks = {"color": "k"}
@@ -101,7 +102,8 @@ class SciPlot1d(SciPlot):
                                picker=True,
                                grid=grid,
                                xlabel=xlabel,
-                               ylabel=ylabel)
+                               ylabel=ylabel,
+                               legend=legend)
 
         # Profile view which displays an additional dimension as a 1d plot
         if self.ndim > 1:

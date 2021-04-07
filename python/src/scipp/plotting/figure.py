@@ -3,10 +3,10 @@
 # @author Neil Vaytet
 
 from .. import config
+from .tools import fig_to_pngbytes
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import io
 
 
 class PlotFigure:
@@ -24,6 +24,7 @@ class PlotFigure:
                  ylabel=None,
                  toolbar=None):
         self.fig = None
+        self.image = None
         self.ax = ax
         self.cax = cax
         self.own_axes = True
@@ -76,7 +77,7 @@ class PlotFigure:
         """
         return self._to_widget()._ipython_display_()
 
-    def _to_widget(self, as_static=False):
+    def _to_widget(self):
         """
         Convert the Matplotlib figure to a widget. If the ipympl (widget)
         backend is in use, return the custom toolbar and the figure canvas.
@@ -84,23 +85,22 @@ class PlotFigure:
         Image container.
         """
         if self.is_widget():
-            if as_static:
-                return ipw.HBox([self.toolbar._to_widget(), self._to_image()])
+            if self.image is not None:
+                return ipw.HBox([self.toolbar._to_widget(), self.image])
             else:
                 return ipw.HBox([self.toolbar._to_widget(), self.fig.canvas])
         else:
-            return self._to_image()
+            if self.image is None:
+                self._to_image()
+            return self.image
 
     def _to_image(self):
-        buf = io.BytesIO()
-        self.fig.savefig(buf, format='png')
-        # Here we close the figure to prevent it from showing up again in
-        # cells further down the notebook.
-        plt.close(self.fig)
-        buf.seek(0)
-        return ipw.Image(value=buf.getvalue(),
-                         width=config.plot.width,
-                         height=config.plot.height)
+        """
+        Convert the Matplotlib figure to a static image.
+        """
+        self.image = ipw.Image(value=fig_to_pngbytes(self.fig),
+                               width=config.plot.width,
+                               height=config.plot.height)
 
     def show(self):
         """
@@ -108,7 +108,7 @@ class PlotFigure:
         """
         self.fig.show()
 
-    def initialise(self, axformatters=None):
+    def initialise(self, axformatters):
         """
         Initialise figure parameters once the model has been created, since
         the axes formatters are defined by the model.
@@ -122,12 +122,12 @@ class PlotFigure:
                     self.axformatter[dim][key] = ticker.FuncFormatter(
                         axformatters[dim][key])
             self.axlocator[dim] = {
-                "linear": ticker.AutoLocator(),
-                "log": ticker.LogLocator()
+                "linear":
+                ticker.MaxNLocator(integer=True) if
+                axformatters[dim]["custom_locator"] else ticker.AutoLocator(),
+                "log":
+                ticker.LogLocator()
             }
-            if axformatters[dim]["custom_locator"]:
-                self.axlocator[dim]["linear"] = ticker.MaxNLocator(
-                    integer=True)
 
     def connect(self, callbacks):
         """
@@ -194,3 +194,9 @@ class PlotFigure:
 
     def save_view(self, *args, **kwargs):
         self.toolbar.save_view()
+
+    def get_axis_bounds(self, axis):
+        return getattr(self.ax, "get_{}lim".format(axis))()
+
+    def set_axis_label(self, axis, string):
+        getattr(self.ax, "set_{}label".format(axis))(string)

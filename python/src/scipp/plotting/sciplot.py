@@ -50,7 +50,6 @@ class SciPlot:
         self.widgets = None
 
         self.show_widgets = True
-        self.as_static = False
         self.view_ndims = view_ndims
 
         # Shortcut access to the underlying figure for easier modification
@@ -73,11 +72,11 @@ class SciPlot:
                                       view_ndims=view_ndims,
                                       positions=positions)
 
-        # Set cmap extend state: if we have sliders, then we need to extend.
+        # Set cmap extend state: if we have sliders (= key "0" is found in
+        # self.axes), then we need to extend.
         # We also need to extend if vmin or vmax are set.
         self.extend_cmap = "neither"
-        if (self.ndim > view_ndims) or ((vmin is not None) and
-                                        (vmax is not None)):
+        if (0 in self.axes) or ((vmin is not None) and (vmax is not None)):
             self.extend_cmap = "both"
         elif vmin is not None:
             self.extend_cmap = "min"
@@ -172,7 +171,7 @@ class SciPlot:
         """
         Get the SciPlot object as an `ipywidget`.
         """
-        widget_list = [self.view._to_widget(self.as_static)]
+        widget_list = [self.view._to_widget()]
         if self.profile is not None:
             widget_list.append(self.profile._to_widget())
         if self.show_widgets:
@@ -188,8 +187,11 @@ class SciPlot:
         """
         self.show_widgets = False if self.view_ndims < 3 else True
 
-    def make_static(self):
-        self.as_static = True
+    def close(self):
+        """
+        Send close signal to the view.
+        """
+        self.view.close()
 
     def show(self):
         """
