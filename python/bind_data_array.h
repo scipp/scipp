@@ -44,15 +44,8 @@ void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
           "__getitem__",
           [](T &self, const typename T::key_type &key) { return self[key]; },
           py::return_value_policy::move, py::keep_alive<0, 1>())
-      .def("__setitem__",
-           [](T &self, const typename T::key_type key, const Variable &var) {
-             if (self.contains(key) && !is_bins(self[key]) &&
-                 self[key].dims().ndim() == var.dims().ndim() &&
-                 self[key].dims().contains(var.dims())) {
-               copy(var, self[key]);
-             } else
-               self.set(key, var);
-           })
+      .def("__setitem__", [](T &self, const typename T::key_type key,
+                             const Variable &var) { self.set(key, var); })
       .def("__delitem__", &T::erase, py::call_guard<py::gil_scoped_release>())
       .def(
           "values", [](T &self) { return values_view(self); },
