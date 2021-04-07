@@ -79,7 +79,6 @@ const std::string &DataArray::name() const { return m_name; }
 void DataArray::setName(const std::string &name) { m_name = name; }
 
 Coords DataArray::meta() const {
-  // TODO throw if shadowing?
   auto out = attrs();
   for (const auto &[dim, coord] : coords()) {
     if (out.contains(dim))
