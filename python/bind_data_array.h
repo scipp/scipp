@@ -122,27 +122,15 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
       },
       R"(Underlying data item.)");
   c.def_property_readonly(
-      "coords",
-      py::cpp_function([](T &self) { return self.coords(); },
-                       py::return_value_policy::move, py::keep_alive<0, 1>()),
-      R"(
-      Dict of aligned coords.)");
-  c.def_property_readonly("meta",
-                          py::cpp_function([](T &self) { return self.meta(); },
-                                           py::return_value_policy::move,
-                                           py::keep_alive<0, 1>()),
-                          R"(
-      Dict of coords and attrs.)");
-  c.def_property_readonly("attrs",
-                          py::cpp_function([](T &self) { return self.attrs(); },
-                                           py::return_value_policy::move,
-                                           py::keep_alive<0, 1>()),
-                          R"(
-      Dict of attrs.)");
-  c.def_property_readonly("masks",
-                          py::cpp_function([](T &self) { return self.masks(); },
-                                           py::return_value_policy::move,
-                                           py::keep_alive<0, 1>()),
-                          R"(
-      Dict of masks.)");
+      "coords", [](T &self) -> decltype(auto) { return self.coords(); },
+      R"(Dict of aligned coords.)");
+  c.def_property_readonly(
+      "meta", [](T &self) -> decltype(auto) { return self.meta(); },
+      R"(Dict of coords and attrs.)");
+  c.def_property_readonly(
+      "attrs", [](T &self) -> decltype(auto) { return self.attrs(); },
+      R"(Dict of attrs.)");
+  c.def_property_readonly(
+      "masks", [](T &self) -> decltype(auto) { return self.masks(); },
+      R"(Dict of masks.)");
 }
