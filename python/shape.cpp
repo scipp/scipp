@@ -25,8 +25,7 @@ Dimensions dict_to_dims(const py::dict &map) {
 template <class T> void bind_broadcast(py::module &m) {
   m.def(
       "broadcast",
-      [](const typename T::const_view_type &self,
-         const std::vector<Dim> &labels,
+      [](const T &self, const std::vector<Dim> &labels,
          const std::vector<scipp::index> &shape) {
         Dimensions dims(labels, shape);
         return broadcast(self, dims);
@@ -37,9 +36,9 @@ template <class T> void bind_broadcast(py::module &m) {
 template <class T> void bind_concatenate(py::module &m) {
   m.def(
       "concatenate",
-      [](const typename T::const_view_type &x,
-         const typename T::const_view_type &y,
-         const Dim dim) { return concatenate(x, y, dim); },
+      [](const T &x, const T &y, const Dim dim) {
+        return concatenate(x, y, dim);
+      },
       py::arg("x"), py::arg("y"), py::arg("dim"),
       py::call_guard<py::gil_scoped_release>());
 }
@@ -92,15 +91,9 @@ void init_shape(py::module &m) {
   bind_concatenate<DataArray>(m);
   bind_concatenate<Dataset>(m);
   bind_reshape<Variable>(m);
-  bind_reshape<VariableView>(m);
   bind_fold<Variable>(m);
-  bind_fold<VariableView>(m);
   bind_fold<DataArray>(m);
-  bind_fold<DataArrayView>(m);
   bind_flatten<Variable>(m);
-  bind_flatten<VariableView>(m);
   bind_flatten<DataArray>(m);
-  bind_flatten<DataArrayView>(m);
   bind_transpose<Variable>(m);
-  bind_transpose<VariableView>(m);
 }

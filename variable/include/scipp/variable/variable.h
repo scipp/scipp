@@ -188,6 +188,7 @@ Variable::Variable(const DType &type, Ts &&... args)
           type, std::forward<Ts>(args)...)} {}
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable deepcopy(const Variable &var);
 [[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable &copy(const Variable &var,
                                                       Variable &out);
 [[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var,

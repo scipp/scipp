@@ -8,7 +8,6 @@
 #include "scipp/variable/variable_factory.h"
 
 #include "bind_operators.h"
-#include "detail.h"
 #include "pybind11.h"
 #include "view.h"
 
@@ -41,24 +40,18 @@ void bind_helper_view(py::module &m, const std::string &name) {
 template <class Other, class T, class... Ignored>
 void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
   view.def("__len__", &T::size)
-      .def("__getitem__", &T::operator[], py::return_value_policy::move,
-           py::keep_alive<0, 1>())
+      .def(
+          "__getitem__",
+          [](T &self, const typename T::key_type &key) { return self[key]; },
+          py::return_value_policy::move, py::keep_alive<0, 1>())
       .def("__setitem__",
-           [](T &self, const typename T::key_type key,
-              const VariableConstView &var) {
+           [](T &self, const typename T::key_type key, const Variable &var) {
              if (self.contains(key) && !is_bins(self[key]) &&
                  self[key].dims().ndim() == var.dims().ndim() &&
                  self[key].dims().contains(var.dims())) {
-               self[key].assign(var);
+               copy(var, self[key]);
              } else
                self.set(key, var);
-           })
-      // This additional setitem allows us to do things like
-      // d.coords["a"] = scipp.detail.move(scipp.Variable())
-      .def("__setitem__",
-           [](T &self, const typename T::key_type key,
-              Moveable<Variable> &mvar) {
-             self.set(key, std::move(mvar.value));
            })
       .def("__delitem__", &T::erase, py::call_guard<py::gil_scoped_release>())
       .def(
@@ -67,10 +60,9 @@ void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
       .def("__contains__", &T::contains);
 }
 
-template <class T, class ConstT>
+template <class T>
 void bind_mutable_view(py::module &m, const std::string &name) {
-  py::class_<ConstT>(m, (name + "ConstView").c_str());
-  py::class_<T, ConstT> view(m, (name + "View").c_str());
+  py::class_<T> view(m, name.c_str());
   bind_common_mutable_view_operators<T>(view);
   bind_inequality_to_operator<T>(view);
   view.def(
@@ -89,10 +81,9 @@ void bind_mutable_view(py::module &m, const std::string &name) {
           R"(view on self's items)");
 }
 
-template <class T, class ConstT>
+template <class T>
 void bind_mutable_view_no_dim(py::module &m, const std::string &name) {
-  py::class_<ConstT>(m, (name + "ConstView").c_str());
-  py::class_<T, ConstT> view(m, (name + "View").c_str());
+  py::class_<T> view(m, name.c_str());
   bind_common_mutable_view_operators<T>(view);
   bind_inequality_to_operator<T>(view);
   view.def(
@@ -123,9 +114,9 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
       "data",
       py::cpp_function([](T &self) { return self.data(); },
                        py::return_value_policy::move, py::keep_alive<0, 1>()),
-      [](T &self, const VariableConstView &data) {
-        if constexpr (std::is_convertible_v<T, DataArrayView>)
-          self.data().assign(data);
+      [](T &self, const Variable &data) {
+        if constexpr (std::is_convertible_v<T, DataArray>)
+          copy(data, self.data());
         else // bins_view
           self.setData(data);
       },
