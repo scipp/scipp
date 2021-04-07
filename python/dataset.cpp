@@ -29,21 +29,18 @@ namespace py = pybind11;
 
 template <class T, class... Ignored>
 void bind_dataset_coord_properties(py::class_<T, Ignored...> &c) {
+  // TODO does this comment still apply?
   // For some reason the return value policy and/or keep-alive policy do not
   // work unless we wrap things in py::cpp_function.
   c.def_property_readonly(
-      "coords",
-      py::cpp_function([](T &self) { return self.coords(); },
-                       py::return_value_policy::move, py::keep_alive<0, 1>()),
+      "coords", [](T &self) -> decltype(auto) { return self.coords(); },
       R"(
       Dict of coordinates.)");
   // Metadata for dataset is same as `coords` since dataset cannot have attrs
   // (unaligned coords).
-  c.def_property_readonly("meta",
-                          py::cpp_function([](T &self) { return self.meta(); },
-                                           py::return_value_policy::move,
-                                           py::keep_alive<0, 1>()),
-                          R"(
+  c.def_property_readonly(
+      "meta", [](T &self) -> decltype(auto) { return self.meta(); },
+      R"(
       Dict of coordinates.)");
 }
 

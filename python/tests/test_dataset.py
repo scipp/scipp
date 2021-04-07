@@ -128,8 +128,8 @@ def test_del_item_missing():
 def test_coord_setitem():
     var = sc.Variable(dims=['x'], values=np.arange(4))
     d = sc.Dataset({'a': var}, coords={'x': var})
-    with pytest.raises(RuntimeError):
-        d['x', 2:3].coords['y'] = sc.Variable(1.0)
+    d['x', 2:3].coords['y'] = sc.Variable(1.0)  # no effect
+    assert 'y' not in d.coords
     d.coords['y'] = sc.Variable(1.0)
     assert len(d) == 1
     assert len(d.coords) == 2
