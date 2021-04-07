@@ -52,6 +52,19 @@ TEST(DataArrayTest, erase_coord) {
   EXPECT_THROW(a.coords().erase(Dim::X), except::NotFoundError);
 }
 
+TEST(DataArrayTest, shadow_attr) {
+  const auto var1 = 1.0 * units::m;
+  const auto var2 = 2.0 * units::m;
+  DataArray a(0.0 * units::m);
+  a.coords().set(Dim::X, var1);
+  a.attrs().set(Dim::X, var2);
+  EXPECT_EQ(a.coords()[Dim::X], var1);
+  EXPECT_EQ(a.attrs()[Dim::X], var2);
+  EXPECT_THROW_DISCARD(a.meta(), except::DataArrayError);
+  a.attrs().erase(Dim::X);
+  EXPECT_EQ(a.meta()[Dim::X], var1);
+}
+
 TEST(DataArrayTest, sum_dataset_columns_via_DataArray) {
   DatasetFactory3D factory;
   auto dataset = factory.make();
