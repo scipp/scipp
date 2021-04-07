@@ -72,17 +72,13 @@ DataArray Dataset::operator[](const std::string &name) const {
 void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
   if (coordDim != Dim::Invalid && is_edges(m_coords.sizes(), dims, coordDim))
     return;
-  m_coords.sizes() = merge(m_coords.sizes(), Sizes(dims));
+  m_coords.setSizes(merge(m_coords.sizes(), Sizes(dims)));
 }
 
 void Dataset::rebuildDims() {
-  m_coords.sizes().clear();
+  m_coords.rebuildSizes();
   for (const auto &d : *this)
     setDims(d.dims());
-  // TODO if there are not data items AND this happens to process edge coord
-  // first this won't work
-  for (const auto &c : m_coords)
-    setDims(c.second.dims(), dim_of_coord(c.second, c.first));
 }
 
 /// Set (insert or replace) the coordinate for the given dimension.
