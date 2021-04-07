@@ -41,3 +41,4 @@ dependencies:
   - sphinx=3.4.3 # see https://github.com/sphinx-doc/sphinx/issues/8885
   - sphinx_rtd_theme
   - nbsphinx
+  - docutils=0.16 # see https://github.com/spatialaudio/nbsphinx/issues/549
