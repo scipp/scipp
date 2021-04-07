@@ -4,19 +4,6 @@
 # @author Neil Vaytet
 import numpy as np
 import scipp as sc
-import matplotlib.pyplot as plt
-
-
-def close(fig):
-    if hasattr(fig, 'fig'):
-        plt.close(fig.fig)
-    elif isinstance(fig, dict):
-        for x in fig.values():
-            close(x)
-
-
-def plot(*args, **kwargs):
-    close(sc.plot(*args, **kwargs))
 
 
 def make_dense_dataset(ndim=1,

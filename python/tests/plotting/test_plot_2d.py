@@ -7,85 +7,88 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import numpy as np
+from scipp import plot
 import scipp as sc
-from plot_helper import close, make_dense_dataset, make_binned_data_array, plot
+from plot_helper import make_dense_dataset, make_binned_data_array
 
 
 def test_plot_2d_image():
-    plot(make_dense_dataset(ndim=2))
+    plot(make_dense_dataset(ndim=2)).close()
 
 
 def test_plot_2d_image_with_variances():
-    plot(make_dense_dataset(ndim=2, variances=True))
+    plot(make_dense_dataset(ndim=2, variances=True)).close()
 
 
 def test_plot_2d_image_with_log():
-    plot(make_dense_dataset(ndim=2), norm='log')
+    plot(make_dense_dataset(ndim=2), norm='log').close()
 
 
 def test_plot_2d_image_with_log_and_variances():
-    plot(make_dense_dataset(ndim=2, variances=True), norm='log')
+    plot(make_dense_dataset(ndim=2, variances=True), norm='log').close()
 
 
 def test_plot_2d_image_with_vmin_vmax():
-    plot(make_dense_dataset(ndim=2), vmin=0.1, vmax=0.9)
+    plot(make_dense_dataset(ndim=2), vmin=0.1, vmax=0.9).close()
 
 
 def test_plot_2d_image_with_unit():
-    plot(make_dense_dataset(ndim=2, unit=sc.units.kg))
+    plot(make_dense_dataset(ndim=2, unit=sc.units.kg)).close()
 
 
 def test_plot_2d_image_with_vmin_vmax_with_log():
-    plot(make_dense_dataset(ndim=2), vmin=0.1, vmax=0.9, norm='log')
+    plot(make_dense_dataset(ndim=2), vmin=0.1, vmax=0.9, norm='log').close()
 
 
 def test_plot_2d_image_with_log_scale_x():
-    plot(make_dense_dataset(ndim=2), scale={'tof': 'log'})
+    plot(make_dense_dataset(ndim=2), scale={'tof': 'log'}).close()
 
 
 def test_plot_2d_image_with_log_scale_y():
-    plot(make_dense_dataset(ndim=2), scale={'x': 'log'})
+    plot(make_dense_dataset(ndim=2), scale={'x': 'log'}).close()
 
 
 def test_plot_2d_image_with_log_scale_xy():
-    plot(make_dense_dataset(ndim=2), scale={'tof': 'log', 'x': 'log'})
+    plot(make_dense_dataset(ndim=2), scale={'tof': 'log', 'x': 'log'}).close()
 
 
 def test_plot_2d_image_with_aspect():
-    plot(make_dense_dataset(ndim=2), aspect="equal")
-    plot(make_dense_dataset(ndim=2), aspect="auto")
+    plot(make_dense_dataset(ndim=2), aspect="equal").close()
+    plot(make_dense_dataset(ndim=2), aspect="auto").close()
 
 
 def test_plot_2d_image_with_with_nan():
     d = make_dense_dataset(ndim=2)
     d['Sample'].values[0, 0] = np.nan
-    plot(d)
+    plot(d).close()
 
 
 def test_plot_2d_image_with_with_nan_with_log():
     d = make_dense_dataset(ndim=2)
     d['Sample'].values[0, 0] = np.nan
-    plot(d, norm='log')
+    plot(d, norm='log').close()
 
 
 def test_plot_2d_image_with_cmap():
-    plot(make_dense_dataset(ndim=2), cmap='jet')
+    plot(make_dense_dataset(ndim=2), cmap='jet').close()
 
 
 def test_plot_2d_image_with_xaxis_specified():
-    plot(make_dense_dataset(ndim=2), axes={'x': 'x'})
+    plot(make_dense_dataset(ndim=2), axes={'x': 'x'}).close()
 
 
 def test_plot_2d_image_with_yaxis_specified():
-    plot(make_dense_dataset(ndim=2), axes={'y': 'tof'})
+    plot(make_dense_dataset(ndim=2), axes={'y': 'tof'}).close()
 
 
 def test_plot_2d_image_with_labels():
-    plot(make_dense_dataset(ndim=2, labels=True), axes={'x': 'somelabels'})
+    plot(make_dense_dataset(ndim=2, labels=True), axes={
+        'x': 'somelabels'
+    }).close()
 
 
 def test_plot_2d_image_with_attrss():
-    plot(make_dense_dataset(ndim=2, attrs=True), axes={'x': 'attr'})
+    plot(make_dense_dataset(ndim=2, attrs=True), axes={'x': 'attr'}).close()
 
 
 def test_plot_2d_image_with_filename():
@@ -94,34 +97,36 @@ def test_plot_2d_image_with_filename():
 
 
 def test_plot_2d_image_with_bin_edges():
-    plot(make_dense_dataset(ndim=2, binedges=True))
+    plot(make_dense_dataset(ndim=2, binedges=True)).close()
 
 
 def test_plot_2d_with_masks():
-    plot(make_dense_dataset(ndim=2, masks=True))
+    plot(make_dense_dataset(ndim=2, masks=True)).close()
 
 
 def test_plot_2d_with_masks_and_labels():
     plot(make_dense_dataset(ndim=2, masks=True, labels=True),
-         axes={'x': 'somelabels'})
+         axes={
+             'x': 'somelabels'
+         }).close()
 
 
 def test_plot_2d_image_with_non_regular_bin_edges():
     d = make_dense_dataset(ndim=2, binedges=True)
     d.coords['tof'].values = d.coords['tof'].values**2
-    plot(d)
+    plot(d).close()
 
 
 def test_plot_2d_image_with_non_regular_bin_edges_resolution():
     d = make_dense_dataset(ndim=2, binedges=True)
     d.coords['tof'].values = d.coords['tof'].values**2
-    plot(d, resolution=128)
+    plot(d, resolution=128).close()
 
 
 def test_plot_2d_image_with_non_regular_bin_edges_with_masks():
     d = make_dense_dataset(ndim=2, masks=True, binedges=True)
     d.coords['tof'].values = d.coords['tof'].values**2
-    plot(d)
+    plot(d).close()
 
 
 def test_plot_variable_2d():
@@ -129,19 +134,22 @@ def test_plot_variable_2d():
     v2d = sc.Variable(['tof', 'x'],
                       values=np.random.rand(N, N),
                       unit=sc.units.K)
-    plot(v2d)
+    plot(v2d).close()
 
 
 def test_plot_ndarray_2d():
-    plot(np.random.random([10, 50]))
+    plot(np.random.random([10, 50])).close()
 
 
 def test_plot_dict_of_ndarrays_2d():
-    plot({'a': np.arange(50).reshape(5, 10), 'b': np.random.random([30, 40])})
+    plot({
+        'a': np.arange(50).reshape(5, 10),
+        'b': np.random.random([30, 40])
+    }).close()
 
 
 def test_plot_from_dict_variable_2d():
-    plot({"dims": ['x', 'y'], "values": np.random.random([20, 10])})
+    plot({"dims": ['x', 'y'], "values": np.random.random([20, 10])}).close()
 
 
 def test_plot_from_dict_data_array_2d():
@@ -160,7 +168,7 @@ def test_plot_from_dict_data_array_2d():
                 "values": np.arange(11)
             }
         }
-    })
+    }).close()
 
 
 def test_plot_string_and_vector_axis_labels_2d():
@@ -180,7 +188,7 @@ def test_plot_string_and_vector_axis_labels_2d():
     d['Signal'] = sc.Variable(['y', 'x'],
                               values=np.random.random([M, N]),
                               unit=sc.units.counts)
-    plot(d)
+    plot(d).close()
 
 
 def test_plot_2d_with_dimension_of_size_1():
@@ -199,8 +207,8 @@ def test_plot_2d_with_dimension_of_size_1():
     d['b'] = sc.Variable(['z', 'x'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
-    plot(d['a'])
-    plot(d['b'])
+    plot(d['a']).close()
+    plot(d['b']).close()
 
 
 def test_plot_2d_with_dimension_of_size_2():
@@ -209,25 +217,25 @@ def test_plot_2d_with_dimension_of_size_2():
                          'x': sc.Variable(dims=['x'], values=[1, 2, 3, 4]),
                          'y': sc.Variable(dims=['y'], values=[1, 2])
                      })
-    plot(a)
+    plot(a).close()
 
 
 def test_plot_2d_ragged_coord():
-    plot(make_dense_dataset(ndim=2, ragged=True))
+    plot(make_dense_dataset(ndim=2, ragged=True)).close()
 
 
 def test_plot_2d_ragged_coord_bin_edges():
-    plot(make_dense_dataset(ndim=2, ragged=True, binedges=True))
+    plot(make_dense_dataset(ndim=2, ragged=True, binedges=True)).close()
 
 
 def test_plot_2d_ragged_coord_with_masks():
-    plot(make_dense_dataset(ndim=2, ragged=True, masks=True))
+    plot(make_dense_dataset(ndim=2, ragged=True, masks=True)).close()
 
 
 def test_plot_2d_with_labels_but_no_dimension_coord():
     d = make_dense_dataset(ndim=2, labels=True)
     del d.coords['x']
-    plot(d, axes={'x': 'somelabels'})
+    plot(d, axes={'x': 'somelabels'}).close()
 
 
 def test_plot_2d_with_decreasing_edges():
@@ -237,11 +245,11 @@ def test_plot_2d_with_decreasing_edges():
                          'x': sc.Variable(dims=['x'], values=[4, 3, 2, 1]),
                          'y': sc.Variable(dims=['y'], values=[1, 2, 3])
                      })
-    plot(a)
+    plot(a).close()
 
 
 def test_plot_2d_binned_data():
-    plot(make_binned_data_array(ndim=2))
+    plot(make_binned_data_array(ndim=2)).close()
 
 
 def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
@@ -249,30 +257,33 @@ def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
     plot_obj = sc.plot(data)
     plot_obj.widgets.slider[0].value = 1
-    close(plot_obj)
+    plot_obj.close()
 
 
 def test_plot_3d_binned_data_where_inner_dimension_nas_no_event_coord():
     data = make_binned_data_array(ndim=2)
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
-    plot(data, axes={'x': 'run', 'y': 'tof'})
+    plot(data, axes={'x': 'run', 'y': 'tof'}).close()
 
 
 def test_plot_2d_binned_data_with_variances():
-    plot(make_binned_data_array(ndim=2, variances=True))
+    plot(make_binned_data_array(ndim=2, variances=True)).close()
 
 
 def test_plot_2d_binned_data_with_variances_nbin():
-    plot(make_binned_data_array(ndim=2, variances=True), bins={'tof': 3})
+    plot(make_binned_data_array(ndim=2, variances=True), bins={
+        'tof': 3
+    }).close()
 
 
 def test_plot_2d_binned_data_with_masks():
-    plot(make_binned_data_array(ndim=2, masks=True))
+    plot(make_binned_data_array(ndim=2, masks=True)).close()
 
 
 def test_plot_customized_mpl_axes():
     d = make_dense_dataset(ndim=2)
-    plot(d["Sample"], title="MyTitle", xlabel="MyXlabel", ylabel="MyYlabel")
+    plot(d["Sample"], title="MyTitle", xlabel="MyXlabel",
+         ylabel="MyYlabel").close()
 
 
 def test_plot_access_ax_and_fig():
@@ -280,11 +291,11 @@ def test_plot_access_ax_and_fig():
     out = sc.plot(d["Sample"], title="MyTitle")
     out.ax.set_xlabel("MyXlabel")
     out.fig.set_dpi(120.)
-    close(out)
+    out.close()
 
 
 def test_plot_2d_image_int32():
-    plot(make_dense_dataset(ndim=2, dtype=sc.dtype.int32))
+    plot(make_dense_dataset(ndim=2, dtype=sc.dtype.int32)).close()
 
 
 def test_plot_2d_image_int_coords():
@@ -298,7 +309,7 @@ def test_plot_2d_image_int_coords():
     d['a'] = sc.Variable(['y', 'x'],
                          values=np.random.random([M, N]),
                          unit=sc.units.K)
-    plot(d)
+    plot(d).close()
 
 
 def test_plot_2d_datetime():
@@ -314,4 +325,4 @@ def test_plot_2d_datetime():
                               'x': sc.Variable(['x'],
                                                values=np.linspace(0, 10, M))
                           })
-    close(data2d.plot())
+    data2d.plot().close()

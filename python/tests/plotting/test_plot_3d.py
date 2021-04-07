@@ -4,8 +4,9 @@
 # @author Neil Vaytet
 
 import numpy as np
+from scipp import plot
 import scipp as sc
-from plot_helper import make_dense_dataset, plot
+from plot_helper import make_dense_dataset
 
 
 def make_data_with_position_vectors():
@@ -32,41 +33,45 @@ def make_data_with_position_vectors():
 
 
 def test_plot_projection_3d():
-    plot(make_dense_dataset(ndim=3), projection="3d")
+    plot(make_dense_dataset(ndim=3), projection="3d").close()
 
 
 def test_plot_projection_3d_with_labels():
     plot(make_dense_dataset(ndim=3, labels=True),
          projection="3d",
-         axes={'x': "somelabels"})
+         axes={
+             'x': "somelabels"
+         }).close()
 
 
 def test_plot_projection_3d_with_bin_edges():
-    plot(make_dense_dataset(ndim=3, binedges=True), projection="3d")
+    plot(make_dense_dataset(ndim=3, binedges=True), projection="3d").close()
 
 
 def test_plot_projection_3d_with_masks():
-    plot(make_dense_dataset(ndim=3, masks=True), projection="3d")
+    plot(make_dense_dataset(ndim=3, masks=True), projection="3d").close()
 
 
 def test_plot_projection_3d_with_aspect():
-    plot(make_dense_dataset(ndim=3), projection="3d", aspect="equal")
-    plot(make_dense_dataset(ndim=3), projection="3d", aspect="auto")
+    plot(make_dense_dataset(ndim=3), projection="3d", aspect="equal").close()
+    plot(make_dense_dataset(ndim=3), projection="3d", aspect="auto").close()
 
 
 def test_plot_projection_3d_with_vectors():
-    plot(make_data_with_position_vectors(), projection="3d", positions="xyz")
+    plot(make_data_with_position_vectors(), projection="3d",
+         positions="xyz").close()
 
 
 def test_plot_projection_3d_with_vectors_non_dim_coord():
-    plot(make_data_with_position_vectors(), projection="3d", positions="pos")
+    plot(make_data_with_position_vectors(), projection="3d",
+         positions="pos").close()
 
 
 def test_plot_projection_3d_with_vectors_with_aspect():
     plot(make_data_with_position_vectors(),
          projection="3d",
          positions="xyz",
-         aspect="auto")
+         aspect="auto").close()
 
 
 def test_plot_variable_3d():
@@ -74,7 +79,7 @@ def test_plot_variable_3d():
     v3d = sc.Variable(['tof', 'x', 'y'],
                       values=np.random.rand(N, N, N),
                       unit=sc.units.m)
-    plot(v3d, projection="3d")
+    plot(v3d, projection="3d").close()
 
 
 def test_plot_4d_with_masks_projection_3d():
@@ -87,7 +92,7 @@ def test_plot_4d_with_masks_projection_3d():
     data.masks['tube_ends'] = sc.Variable(dims=['pixel'],
                                           values=np.where(
                                               a > 0.5, True, False))
-    plot(data, projection="3d")
+    plot(data, projection="3d").close()
 
 
 def test_plot_customized_axes():
@@ -96,7 +101,7 @@ def test_plot_customized_axes():
          projection="3d",
          xlabel="MyXlabel",
          ylabel="MyYlabel",
-         zlabel="MyZlabel")
+         zlabel="MyZlabel").close()
 
 
 def test_plot_3d_with_2d_position_coordinate():
@@ -122,4 +127,4 @@ def test_plot_3d_with_2d_position_coordinate():
     da.coords['tof'] = sc.Variable(['tof'],
                                    values=np.arange(ntof + 1).astype(np.float))
 
-    plot(da, projection="3d", positions="pos")
+    plot(da, projection="3d", positions="pos").close()
