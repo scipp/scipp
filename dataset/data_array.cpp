@@ -99,14 +99,13 @@ DataArray DataArray::slice(const Slice &s) const {
 
 DataArray DataArray::view_with_coords(const Coords &coords,
                                       const std::string &name) const {
-  // TODO also handle name here? should be set from dataset
   DataArray out;
   out.m_data = m_data; // share data
-  out.m_coords = Coords(dims(), {});
-  // TODO bin edge handling
+  const Sizes sizes(dims());
+  out.m_coords = Coords(sizes, {});
   for (const auto &[dim, coord] : coords)
     if (dims().contains(coord.dims()) ||
-        is_edges(dims(), coord.dims(), dim_of_coord(coord, dim)))
+        is_edges(sizes, coord.dims(), dim_of_coord(coord, dim)))
       out.m_coords.set(dim, coord);
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
