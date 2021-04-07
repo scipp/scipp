@@ -3,7 +3,6 @@
 
 import collections
 import operator
-import os
 import uuid
 from functools import partial, reduce
 from html import escape
@@ -11,14 +10,7 @@ import sys
 
 from .._scipp import core as sc
 from .._utils import is_data_array, is_dataset
-
-CSS_FILE_PATH = f"{os.path.dirname(__file__)}/style.css"
-with open(CSS_FILE_PATH, 'r') as f:
-    CSS_STYLE = "".join(f.readlines())
-
-ICONS_SVG_PATH = f"{os.path.dirname(__file__)}/icons-svg-inline.html"
-with open(ICONS_SVG_PATH, 'r') as f:
-    ICONS_SVG = "".join(f.readlines())
+from .resources import load_icons, load_style
 
 BIN_EDGE_LABEL = "[bin-edge]"
 VARIANCE_PREFIX = "σ² = "
@@ -156,14 +148,6 @@ def format_dims(dims, sizes, coords):
                       for dim, size in zip(dims, sizes))
 
     return f"<ul class='sc-dim-list'>{dims_li}</ul>"
-
-
-def summarize_attrs_simple(attrs):
-    attrs_dl = "".join(f"<dt><span>{escape(name)} :</span></dt>"
-                       f"<dd>{values}</dd>"
-                       for name, values in _ordered_dict(attrs).items())
-
-    return f"<dl class='sc-attrs'>{attrs_dl}</dl>"
 
 
 def _icon(icon_name):
@@ -453,7 +437,7 @@ def _obj_repr(header_components, sections):
                        for s in sections)
 
     return ("<div>"
-            f"{ICONS_SVG}<style>{CSS_STYLE}</style>"
+            f"{load_icons()}<style>{load_style()}</style>"
             "<div class='sc-wrap'>"
             f"{header}"
             f"<ul class='sc-sections'>{sections}</ul>"
