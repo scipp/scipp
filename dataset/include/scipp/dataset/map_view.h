@@ -21,30 +21,6 @@ namespace detail {
 using slice_list =
     boost::container::small_vector<std::pair<Slice, scipp::index>, 2>;
 
-template <class T> void do_make_slice(T &slice, const slice_list &slices) {
-  for (const auto &[params, extent] : slices) {
-    if (slice.dims().contains(params.dim())) {
-      if (slice.dims()[params.dim()] == extent) {
-        slice = slice.slice(params);
-      } else {
-        const auto end = params.end() == -1 ? params.begin() + 2
-                                            : params.begin() == params.end()
-                                                  ? params.end()
-                                                  : params.end() + 1;
-        slice = slice.slice(Slice{params.dim(), params.begin(), end});
-      }
-    }
-  }
-}
-
-template <class Var> auto makeSlice(Var &var, const slice_list &slices) {
-  std::conditional_t<std::is_const_v<Var>, typename Var::const_view_type,
-                     typename Var::view_type>
-      slice(var);
-  do_make_slice(slice, slices);
-  return slice;
-}
-
 static constexpr auto make_key_value = [](auto &&view) {
   using In = decltype(view);
   using View =

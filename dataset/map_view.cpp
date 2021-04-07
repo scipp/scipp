@@ -78,6 +78,7 @@ void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
   }
   m_items.insert_or_assign(key, std::move(coord));
 }
+
 template <class Key, class Value>
 void Dict<Key, Value>::erase(const key_type &key) {
   scipp::expect::contains(*this, key);
