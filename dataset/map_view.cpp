@@ -64,6 +64,22 @@ void Dict<Key, Value>::setSizes(const Sizes &sizes) {
   m_sizes = sizes;
 }
 
+template <class Key, class Value> void Dict<Key, Value>::rebuildSizes() {
+  Sizes new_sizes = m_sizes;
+  for (const auto &size : m_sizes) {
+    bool erase = true;
+    for (const auto &item : *this) {
+      if (item.second.dims().contains(size.first)) {
+        erase = false;
+        break;
+      }
+    }
+    if (erase)
+      new_sizes.erase(size.first);
+  }
+  m_sizes = std::move(new_sizes);
+}
+
 template <class Key, class Value>
 void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
   // Is a good definition for things that are allowed: "would be possible to
