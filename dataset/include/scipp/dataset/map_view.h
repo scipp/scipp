@@ -152,12 +152,10 @@ public:
   bool operator!=(const Dict &other) const;
 
   const Sizes &sizes() const noexcept { return m_sizes; }
-  // TODO users should not have access to this, use only internally in Dataset
-  Sizes &sizes() noexcept { return m_sizes; }
   const auto &items() const noexcept { return m_items; }
-  auto &items() noexcept { return m_items; }
 
   void setSizes(const Sizes &sizes);
+  void rebuildSizes();
   void set(const key_type &key, mapped_type coord);
   void erase(const key_type &key);
   mapped_type extract(const key_type &key);
