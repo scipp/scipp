@@ -361,7 +361,6 @@ def test_slicing():
     for slice_, expected in ((slice(0, 2), [0, 1]), (slice(-3, -1), [0, 1]),
                              (slice(2, 1), [])):
         var_slice = var[('x', slice_)]
-        assert isinstance(var_slice, sc.VariableView)
         assert len(var_slice.values) == len(expected)
         assert np.array_equal(var_slice.values, np.array(expected))
 

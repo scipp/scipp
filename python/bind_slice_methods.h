@@ -200,17 +200,17 @@ template <class T> struct slicer {
 
 template <class T, class... Ignored>
 void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
-  c.def("__getitem__", &slicer<T>::get, py::keep_alive<0, 1>());
-  c.def("__getitem__", &slicer<T>::get_range, py::keep_alive<0, 1>());
+  c.def("__getitem__", &slicer<T>::get);
+  c.def("__getitem__", &slicer<T>::get_range);
   c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, scipp::index>>);
   c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, py::slice>>);
   if constexpr (std::is_same_v<T, DataArray>) {
-    c.def("__getitem__", &slicer<T>::get_by_value, py::keep_alive<0, 1>());
+    c.def("__getitem__", &slicer<T>::get_by_value);
     c.def("__setitem__", &slicer<T>::template set_by_value<Variable>);
     c.def("__setitem__", &slicer<T>::template set_by_value<DataArray>);
   }
   if constexpr (std::is_same_v<T, Dataset>) {
-    c.def("__getitem__", &slicer<T>::get_by_value, py::keep_alive<0, 1>());
+    c.def("__getitem__", &slicer<T>::get_by_value);
     c.def("__setitem__", &slicer<T>::template set_by_value<Dataset>);
   }
 }
