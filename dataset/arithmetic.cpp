@@ -5,8 +5,10 @@
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
+#include "scipp/dataset/util.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/util.h"
 
 #include "dataset_operations_common.h"
 
@@ -124,6 +126,39 @@ auto apply_with_broadcast(const Op &op, const Variable &a, const B &b) {
 }
 
 } // namespace
+
+Dataset &assign_from(Dataset &d, const Dataset &other) {
+  for (const auto &item : other)
+    assign_from(d[item.name()], item);
+  return d;
+}
+
+Dataset assign_from(Dataset &&d, const Dataset &other) {
+  assign_from(d, other);
+  return std::move(d);
+}
+
+Dataset &assign_from(Dataset &d, const DataArray &other) {
+  for (auto &&item : d)
+    assign_from(item, other);
+  return d;
+}
+
+Dataset assign_from(Dataset &&d, const DataArray &other) {
+  assign_from(d, other);
+  return std::move(d);
+}
+
+Dataset &assign_from(Dataset &d, const Variable &other) {
+  for (auto &&item : d)
+    assign_from(item, other);
+  return d;
+}
+
+Dataset assign_from(Dataset &&d, const Variable &other) {
+  assign_from(d, other);
+  return std::move(d);
+}
 
 Dataset &Dataset::operator+=(const DataArray &other) {
   return apply_with_delay(core::element::plus_equals, *this, other);

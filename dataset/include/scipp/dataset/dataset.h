@@ -208,6 +208,19 @@ copy(const Dataset &dataset, Dataset &out,
 copy(const Dataset &dataset, Dataset &&out,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
+[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset &
+assign_from(Dataset &, const Dataset &other);
+[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset assign_from(Dataset &&,
+                                                          const Dataset &other);
+[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset &
+assign_from(Dataset &, const DataArray &other);
+[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset
+assign_from(Dataset &&, const DataArray &other);
+[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset &
+assign_from(Dataset &, const Variable &other);
+[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset
+assign_from(Dataset &&, const Variable &other);
+
 SCIPP_DATASET_EXPORT DataArray operator-(const DataArray &a);
 
 SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs, const Dataset &rhs);
