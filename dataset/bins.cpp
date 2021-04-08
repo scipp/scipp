@@ -157,7 +157,7 @@ Variable make_bins(Variable indices, const Dim dim, DataArray buffer) {
 
 /// Construct a bin-variable over a data array without index validation.
 ///
-/// Must be used only when it is guarenteed that indices are valid or overlap of
+/// Must be used only when it is guaranteed that indices are valid or overlap of
 /// bins is acceptable.
 Variable make_bins_no_validate(Variable indices, const Dim dim,
                                DataArray buffer) {
@@ -176,7 +176,7 @@ Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
 
 /// Construct a bin-variable over a dataset without index validation.
 ///
-/// Must be used only when it is guarenteed that indices are valid or overlap of
+/// Must be used only when it is guaranteed that indices are valid or overlap of
 /// bins is acceptable.
 Variable make_bins_no_validate(Variable indices, const Dim dim,
                                Dataset buffer) {
