@@ -11,6 +11,8 @@
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/slice.h"
+#include "scipp/dataset/util.h"  // assign_from
+#include "scipp/variable/util.h" // assign_from
 #include "scipp/variable/variable.h"
 
 namespace py = pybind11;
@@ -129,29 +131,20 @@ template <class T> struct slicer {
   template <class Other>
   static void set_from_view(T &self, const std::tuple<Dim, scipp::index> &index,
                             const Other &data) {
-    if constexpr (std::is_same_v<T, Other>)
-      copy(data, slicer<T>::get(self, index));
-    else
-      copy(data, slicer<T>::get(self, index).data());
+    assign_from(slicer<T>::get(self, index), data);
   }
 
   template <class Other>
   static void set_from_view(T &self,
                             const std::tuple<Dim, const py::slice> &index,
                             const Other &data) {
-    if constexpr (std::is_same_v<T, Other>)
-      copy(data, slicer<T>::get_range(self, index));
-    else
-      copy(data, slicer<T>::get_range(self, index).data());
+    assign_from(slicer<T>::get_range(self, index), data);
   }
 
   template <class Other>
   static void set_by_value(T &self, const std::tuple<Dim, Variable> &value,
                            const Other &data) {
-    if constexpr (std::is_same_v<T, Other>)
-      copy(data, slicer<T>::get_by_value(self, value));
-    else
-      copy(data, slicer<T>::get_by_value(self, value).data());
+    assign_from(slicer<T>::get_by_value(self, value), data);
   }
 
   // Manually dispatch based on the object we are assigning from in order to

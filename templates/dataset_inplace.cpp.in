@@ -3,9 +3,13 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/@OPNAME@.h"
-#include "scipp/variable/@OPNAME@.h"
 
 #include "dataset_operations_common.h"
+
+namespace scipp::variable {
+[[maybe_unused]] Variable &@NAME@(Variable &var, const Variable &other);
+[[maybe_unused]] Variable @NAME@(Variable &&var, const Variable &other);
+}
 
 namespace scipp::dataset {
 

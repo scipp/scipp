@@ -10,6 +10,11 @@
 
 namespace scipp::variable {
 
+[[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable &
+assign_from(Variable &var, const Variable &other);
+[[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable
+assign_from(Variable &&var, const Variable &other);
+
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable linspace(const Variable &start,
                                                       const Variable &stop,
                                                       const Dim dim,
