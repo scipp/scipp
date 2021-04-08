@@ -76,10 +76,7 @@ void validSlice(const Dimensions &dims, const Slice &slice) {
 }
 
 void validSlice(const Sizes &dims, const Slice &slice) {
-  const auto end = slice.end() < 0 ? slice.begin() + 1 : slice.end();
-  if (!dims.contains(slice.dim()) || end > dims[slice.dim()])
-    throw except::SliceError("Expected " + to_string(slice) + " to be in " +
-                             to_string(dims) + ".");
+  validSlice(Dimensions(dims), slice);
 }
 
 void notCountDensity(const units::Unit &unit) {
