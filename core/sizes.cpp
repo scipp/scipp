@@ -23,20 +23,20 @@ void Sizes::clear() { m_sizes.clear(); }
 scipp::index Sizes::operator[](const Dim dim) const { return at(dim); }
 
 scipp::index Sizes::at(const Dim dim) const {
-  if (!contains(dim))
-    throw except::DimensionError("dim not found");
+  scipp::expect::contains(*this, dim);
   return m_sizes.at(dim);
 }
 
 void Sizes::set(const Dim dim, const scipp::index size) {
   if (contains(dim) && operator[](dim) != size)
-    throw except::DimensionError("Inconsistent size");
+    throw except::DimensionError(
+        "Inconsistent size for dim '" + to_string(dim) + "', given " +
+        std::to_string(at(dim)) + ", requested " + std::to_string(size));
   m_sizes[dim] = size;
 }
 
 void Sizes::erase(const Dim dim) {
-  if (!contains(dim))
-    throw except::DimensionError("dim not found");
+  scipp::expect::contains(*this, dim);
   m_sizes.erase(dim);
 }
 
