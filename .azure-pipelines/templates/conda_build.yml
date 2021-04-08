@@ -78,7 +78,7 @@ jobs:
             Write-Host "##vso[task.setvariable variable=install_target]$env:CONDA_PREFIX"
           displayName: 'Set install target'
 
-      - ${{ if not contains(parameters.image, 'windows') }}:
+      - ${{ if not(contains(parameters.image, 'windows')) }}:
         - bash: |
             set -ex
             source activate scipp-developer
