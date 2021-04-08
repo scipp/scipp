@@ -91,12 +91,7 @@ template <class T> auto bin_dim(const Variable &var) {
 
 template <class T> auto get_buffer(py::object &obj) {
   auto &view = obj.cast<Variable &>();
-  auto &&[indices, dim, buffer] = view.constituents<bucket<T>>();
-  static_cast<void>(dim);
-  static_cast<void>(indices);
-  auto ret = py::cast(buffer, py::return_value_policy::move);
-  pybind11::detail::keep_alive_impl(ret, obj);
-  return ret;
+  return py::cast(view.bin_buffer<T>());
 }
 
 template <class T>

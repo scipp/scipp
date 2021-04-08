@@ -56,7 +56,7 @@ template <typename T> void bind_nan_to_num(py::module &m) {
       py::arg("x"), py::arg("nan") = std::optional<Variable>(),
       py::arg("posinf") = std::optional<Variable>(),
       py::arg("neginf") = std::optional<Variable>(), py::arg("out"),
-      py::keep_alive<0, 5>(), py::call_guard<py::gil_scoped_release>());
+      py::call_guard<py::gil_scoped_release>());
 }
 
 void init_unary(py::module &m) {

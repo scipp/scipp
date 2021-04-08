@@ -67,10 +67,8 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
       "items", [](T &self) { return items_view(self); },
       py::return_value_policy::move, py::keep_alive<0, 1>(),
       R"(view on self's items)");
-  c.def(
-      "__getitem__",
-      [](T &self, const std::string &name) { return self[name]; },
-      py::keep_alive<0, 1>());
+  c.def("__getitem__",
+        [](T &self, const std::string &name) { return self[name]; });
   c.def("__contains__", &T::contains);
   c.def_property_readonly(
       "dims",
