@@ -25,8 +25,8 @@ static constexpr auto make_key_value = [](auto &&view) {
   using In = decltype(view);
   using View =
       std::conditional_t<std::is_rvalue_reference_v<In>, std::decay_t<In>, In>;
-  return std::pair<const std::string &, View>(
-      view.name(), std::forward<decltype(view)>(view));
+  return std::pair<std::string, View>(view.name(),
+                                      std::forward<decltype(view)>(view));
 };
 
 static constexpr auto make_key = [](auto &&view) -> decltype(auto) {
