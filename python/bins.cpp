@@ -103,10 +103,14 @@ void bind_bins_map_view(py::module &m, const std::string &name) {
 template <class T> void bind_bins_view(py::module &m) {
   py::class_<decltype(dataset::bins_view<T>(Variable{}))> c(
       m, "_BinsViewDataArray");
+  bind_bins_map_view<decltype(dataset::bins_view<T>(Variable{}).meta())>(
+      m, "_BinsMeta");
   bind_bins_map_view<decltype(dataset::bins_view<T>(Variable{}).coords())>(
       m, "_BinsCoords");
   bind_bins_map_view<decltype(dataset::bins_view<T>(Variable{}).masks())>(
       m, "_BinsMasks");
+  bind_bins_map_view<decltype(dataset::bins_view<T>(Variable{}).attrs())>(
+      m, "_BinsAttrs");
   bind_data_array_properties(c);
   m.def("_bins_view", [](Variable &var) { return dataset::bins_view<T>(var); });
 }
