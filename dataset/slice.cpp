@@ -11,7 +11,8 @@ namespace {
 
 template <class T>
 T slice(const T &data, const Dim dim, const Variable &value) {
-  const auto [d, i] = get_slice_params(data.dims(), data.coords()[dim], value);
+  const auto [d, i] =
+      get_slice_params(Dimensions(data.dims()), data.coords()[dim], value);
   return data.slice({d, i});
 }
 
@@ -19,7 +20,7 @@ template <class T>
 T slice(const T &data, const Dim dim, const Variable &begin,
         const Variable &end) {
   const auto [d, b, e] =
-      get_slice_params(data.dims(), data.coords()[dim], begin, end);
+      get_slice_params(Dimensions(data.dims()), data.coords()[dim], begin, end);
   return data.slice({d, b, e});
 }
 
