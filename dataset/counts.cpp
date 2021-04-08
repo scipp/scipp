@@ -46,7 +46,7 @@ void toDensity(DataArray &data, const std::vector<Variable> &binWidths) {
 }
 
 Dataset toDensity(const Dataset &d, const Dim dim) {
-  return toDensity(std::move(d), std::vector<Dim>{dim});
+  return toDensity(d, std::vector<Dim>{dim});
 }
 
 Dataset toDensity(const Dataset &d, const std::vector<Dim> &dims) {
