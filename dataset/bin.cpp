@@ -151,12 +151,6 @@ auto bin(const Variable &data, const Variable &indices,
   return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
 }
 
-constexpr auto get_coords = [](auto &a) -> decltype(auto) {
-  return a.coords();
-};
-constexpr auto get_attrs = [](auto &a) -> decltype(auto) { return a.attrs(); };
-constexpr auto get_masks = [](auto &a) -> decltype(auto) { return a.masks(); };
-
 template <class T, class Meta> auto extract_unbinned(T &array, Meta meta) {
   const auto dim = array.dims().inner();
   using Key = typename std::decay_t<decltype(meta(array))>::key_type;

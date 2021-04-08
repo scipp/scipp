@@ -12,6 +12,13 @@
 
 namespace scipp::dataset {
 
+constexpr auto get_meta = [](auto &&a) -> decltype(auto) { return a.meta(); };
+constexpr auto get_coords = [](auto &&a) -> decltype(auto) {
+  return a.coords();
+};
+constexpr auto get_attrs = [](auto &&a) -> decltype(auto) { return a.attrs(); };
+constexpr auto get_masks = [](auto &&a) -> decltype(auto) { return a.masks(); };
+
 namespace bins_view_detail {
 template <class T, class View> class BinsCommon {
 public:
@@ -37,7 +44,7 @@ private:
   View m_var;
 };
 
-template <class T, class View, class MapView>
+template <class T, class View, class MapGetter>
 class BinsMapView : public BinsCommon<T, View> {
   struct make_item {
     const BinsMapView *view;
@@ -48,35 +55,39 @@ class BinsMapView : public BinsCommon<T, View> {
         return std::pair(item.first, copy(item.second));
     }
   };
+  using MapView =
+      std::decay_t<decltype(std::declval<MapGetter>()(std::declval<T>()))>;
 
 public:
   using key_type = typename MapView::key_type;
   using mapped_type = typename MapView::mapped_type;
-  BinsMapView(const BinsCommon<T, View> base, MapView mapView)
-      : BinsCommon<T, View>(base), m_mapView(std::move(mapView)) {}
-  scipp::index size() const noexcept { return m_mapView.size(); }
+  BinsMapView(const BinsCommon<T, View> base, MapGetter map)
+      : BinsCommon<T, View>(base), m_map(map) {}
+  scipp::index size() const noexcept { return mapView().size(); }
   auto operator[](const key_type &key) const {
-    return this->make(m_mapView[key]);
+    return this->make(mapView()[key]);
   }
-  void erase(const key_type &key) { return m_mapView.erase(key); }
+  void erase(const key_type &key) { return mapView().erase(key); }
   void set(const key_type &key, const Variable &var) {
-    m_mapView.set(key, this->check_and_get_buf(var));
+    mapView().set(key, this->check_and_get_buf(var));
   }
   auto begin() const noexcept {
-    return boost::make_transform_iterator(m_mapView.begin(), make_item{this});
+    return boost::make_transform_iterator(mapView().begin(), make_item{this});
   }
   auto end() const noexcept {
-    return boost::make_transform_iterator(m_mapView.end(), make_item{this});
+    return boost::make_transform_iterator(mapView().end(), make_item{this});
   }
   bool contains(const key_type &key) const noexcept {
-    return m_mapView.contains(key);
+    return mapView().contains(key);
   }
   scipp::index count(const key_type &key) const noexcept {
-    return m_mapView.count(key);
+    return mapView().count(key);
   }
 
 private:
-  MapView m_mapView;
+  decltype(auto) mapView() const { return m_map(this->buffer()); }
+  decltype(auto) mapView() { return m_map(this->buffer()); }
+  MapGetter m_map;
 };
 
 template <class T, class View> class Bins : public BinsCommon<T, View> {
@@ -87,10 +98,10 @@ public:
   void setData(const Variable &var) {
     this->buffer().setData(this->check_and_get_buf(var));
   }
-  auto meta() const { return BinsMapView(*this, this->buffer().meta()); }
-  auto coords() const { return BinsMapView(*this, this->buffer().coords()); }
-  auto attrs() const { return BinsMapView(*this, this->buffer().attrs()); }
-  auto masks() const { return BinsMapView(*this, this->buffer().masks()); }
+  auto meta() const { return BinsMapView(*this, get_meta); }
+  auto coords() const { return BinsMapView(*this, get_coords); }
+  auto attrs() const { return BinsMapView(*this, get_attrs); }
+  auto masks() const { return BinsMapView(*this, get_masks); }
   auto &name() const { return this->buffer().name(); }
 };
 } // namespace bins_view_detail
