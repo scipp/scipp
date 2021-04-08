@@ -58,7 +58,6 @@ template <class T, class Key> Dim dim_of_coord(const T &var, const Key &key) {
 
 template <class T>
 auto slice_map(const Sizes &sizes, const T &map, const Slice &params) {
-  core::expect::validSlice(sizes, params);
   T out;
   for (const auto &[key, value] : map) {
     if (value.dims().contains(params.dim())) {

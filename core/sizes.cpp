@@ -63,6 +63,7 @@ bool Sizes::contains(const Sizes &sizes) const {
 }
 
 Sizes Sizes::slice(const Slice &params) const {
+  core::expect::validSlice(*this, params);
   auto sizes = m_sizes;
   if (params.isRange())
     sizes.at(params.dim()) = params.end() - params.begin();
