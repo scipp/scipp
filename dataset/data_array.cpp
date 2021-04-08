@@ -11,7 +11,7 @@ namespace scipp::dataset {
 
 namespace {
 template <class T> auto copy_shared(const std::shared_ptr<T> &obj) {
-  return std::make_shared<T>(*obj);
+  return obj ? std::make_shared<T>(*obj) : obj;
 }
 } // namespace
 
