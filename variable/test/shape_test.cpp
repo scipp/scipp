@@ -29,7 +29,7 @@ TEST(ShapeTest, broadcast) {
 TEST(ShapeTest, broadcast_fail) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1, 2, 3, 4});
-  EXPECT_THROW(broadcast(var, {Dim::X, 3}), except::NotFoundError);
+  EXPECT_THROW_DISCARD(broadcast(var, {Dim::X, 3}), except::NotFoundError);
 }
 
 class SqueezeTest : public ::testing::Test {
@@ -195,8 +195,8 @@ TEST(ShapeTest, flatten_only_2_dims) {
 
 TEST(ShapeTest, flatten_bad_dim_order) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
-  EXPECT_THROW(flatten(var, std::vector<Dim>{Dim::Y, Dim::X}, Dim::Z),
-               except::DimensionError);
+  EXPECT_THROW_DISCARD(flatten(var, std::vector<Dim>{Dim::Y, Dim::X}, Dim::Z),
+                       except::DimensionError);
 }
 
 TEST(ShapeTest, round_trip) {
