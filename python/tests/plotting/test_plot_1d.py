@@ -4,9 +4,8 @@
 # @author Neil Vaytet
 
 import numpy as np
-from scipp import plot
 import scipp as sc
-from plot_helper import make_dense_dataset
+from plot_helper import make_dense_dataset, plot
 
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing
@@ -14,38 +13,36 @@ from plot_helper import make_dense_dataset
 
 
 def test_plot_1d():
-    plot(make_dense_dataset(ndim=1)).close()
+    plot(make_dense_dataset(ndim=1))
 
 
 def test_plot_1d_with_variances():
-    plot(make_dense_dataset(ndim=1, variances=True)).close()
+    plot(make_dense_dataset(ndim=1, variances=True))
 
 
 def test_plot_1d_bin_edges():
-    plot(make_dense_dataset(ndim=1, binedges=True)).close()
+    plot(make_dense_dataset(ndim=1, binedges=True))
 
 
 def test_plot_1d_with_labels():
-    plot(make_dense_dataset(ndim=1, labels=True), axes={
-        "x": "somelabels"
-    }).close()
+    plot(make_dense_dataset(ndim=1, labels=True), axes={"x": "somelabels"})
 
 
 def test_plot_1d_with_attrs():
-    plot(make_dense_dataset(ndim=1, attrs=True), axes={"x": "attr"}).close()
+    plot(make_dense_dataset(ndim=1, attrs=True), axes={"x": "attr"})
 
 
 def test_plot_1d_log_axes():
     d = make_dense_dataset(ndim=1)
     for key, val in d.items():
         d[key] = sc.abs(val) + 1.0 * sc.units.counts
-    plot(d, scale={'tof': 'log'}).close()
-    plot(d, norm='log').close()
-    plot(d, norm='log', scale={'tof': 'log'}).close()
+    plot(d, scale={'tof': 'log'})
+    plot(d, norm='log')
+    plot(d, norm='log', scale={'tof': 'log'})
 
 
 def test_plot_1d_bin_edges_with_variances():
-    plot(make_dense_dataset(ndim=1, variances=True, binedges=True)).close()
+    plot(make_dense_dataset(ndim=1, variances=True, binedges=True))
 
 
 def test_plot_1d_two_separate_entries():
@@ -53,7 +50,7 @@ def test_plot_1d_two_separate_entries():
     d["Background"] = sc.Variable(['tof'],
                                   values=2.0 * np.random.random(50),
                                   unit=sc.units.kg)
-    plot(d).close()
+    plot(d)
 
 
 def test_plot_1d_two_entries_on_same_plot():
@@ -61,7 +58,7 @@ def test_plot_1d_two_entries_on_same_plot():
     d["Background"] = sc.Variable(['tof'],
                                   values=2.0 * np.random.random(50),
                                   unit=sc.units.counts)
-    plot(d).close()
+    plot(d)
 
 
 def test_plot_1d_two_entries_hide_variances():
@@ -69,23 +66,23 @@ def test_plot_1d_two_entries_hide_variances():
     d["Background"] = sc.Variable(['tof'],
                                   values=2.0 * np.random.random(50),
                                   unit=sc.units.counts)
-    plot(d, errorbars=False).close()
+    plot(d, errorbars=False)
     # When variances are not present, the plot does not fail, is silently does
     # not show variances
-    plot(d, errorbars={"Sample": False, "Background": True}).close()
+    plot(d, errorbars={"Sample": False, "Background": True})
 
 
 def test_plot_1d_with_masks():
-    plot(make_dense_dataset(ndim=1, masks=True)).close()
+    plot(make_dense_dataset(ndim=1, masks=True))
 
 
 def test_plot_collapse():
     d = make_dense_dataset(ndim=2)
-    plot(sc.collapse(d["Sample"], keep='tof')).close()
+    plot(sc.collapse(d["Sample"], keep='tof'))
 
 
 def test_plot_sliceviewer_with_1d_projection():
-    plot(make_dense_dataset(ndim=3), projection="1d").close()
+    plot(make_dense_dataset(ndim=3), projection="1d")
 
 
 def test_plot_sliceviewer_with_1d_projection_with_nans():
@@ -94,7 +91,7 @@ def test_plot_sliceviewer_with_1d_projection_with_nans():
                                   d['Sample'].values)
     d['Sample'].variances = np.where(d['Sample'].values < 0.2, np.nan,
                                      d['Sample'].variances)
-    plot(d, projection='1d').close()
+    plot(d, projection='1d')
 
     # TODO: moving the sliders is disabled for now, because we are not in a
     # Jupyter backend and once the plot has returned, the widgets no longer
@@ -111,7 +108,7 @@ def test_plot_variable_1d():
     v1d = sc.Variable(['tof'],
                       values=np.random.random(N),
                       unit=sc.units.counts)
-    plot(v1d).close()
+    plot(v1d)
 
 
 def test_plot_dict_of_variables_1d():
@@ -120,19 +117,19 @@ def test_plot_dict_of_variables_1d():
     v2 = sc.Variable(['tof'],
                      values=5.0 * np.random.random(N),
                      unit=sc.units.counts)
-    plot({'v1': v1, 'v2': v2}).close()
+    plot({'v1': v1, 'v2': v2})
 
 
 def test_plot_ndarray_1d():
-    plot(np.random.random(50)).close()
+    plot(np.random.random(50))
 
 
 def test_plot_dict_of_ndarrays_1d():
-    plot({'a': np.arange(20), 'b': np.random.random(50)}).close()
+    plot({'a': np.arange(20), 'b': np.random.random(50)})
 
 
 def test_plot_from_dict_variable_1d():
-    plot({"dims": ['adim'], "values": np.random.random(20)}).close()
+    plot({"dims": ['adim'], "values": np.random.random(20)})
 
 
 def test_plot_from_dict_data_array_1d():
@@ -147,17 +144,17 @@ def test_plot_from_dict_data_array_1d():
                 "values": np.arange(21)
             }
         }
-    }).close()
+    })
 
 
 def test_plot_dataset_view():
     d = make_dense_dataset(ndim=2)
-    plot(d['x', 0]).close()
+    plot(d['x', 0])
 
 
 def test_plot_data_array():
     d = make_dense_dataset(ndim=1)
-    plot(d["Sample"]).close()
+    plot(d["Sample"])
 
 
 def test_plot_vector_axis_labels_1d():
@@ -170,7 +167,7 @@ def test_plot_vector_axis_labels_1d():
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
-    plot(d).close()
+    plot(d)
 
 
 def test_plot_string_axis_labels_1d():
@@ -183,7 +180,7 @@ def test_plot_string_axis_labels_1d():
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
-    plot(d).close()
+    plot(d)
 
 
 def test_plot_string_axis_labels_1d_short():
@@ -195,7 +192,7 @@ def test_plot_string_axis_labels_1d_short():
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
-    plot(d).close()
+    plot(d)
 
 
 def test_plot_with_vector_labels():
@@ -211,7 +208,7 @@ def test_plot_with_vector_labels():
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
-    plot(d).close()
+    plot(d)
 
 
 def test_plot_vector_axis_with_labels():
@@ -227,13 +224,12 @@ def test_plot_vector_axis_with_labels():
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
-    plot(d).close()
+    plot(d)
 
 
 def test_plot_customized_mpl_axes():
     d = make_dense_dataset(ndim=1)
-    plot(d["Sample"], title="MyTitle", xlabel="MyXlabel",
-         ylabel="MyYlabel").close()
+    plot(d["Sample"], title="MyTitle", xlabel="MyXlabel", ylabel="MyYlabel")
 
 
 def test_plot_access_ax_and_fig():
@@ -262,7 +258,7 @@ def test_plot_with_integer_coord():
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
-    plot(d).close()
+    plot(d)
 
 
 def test_plot_with_integer_coord_binedges():
@@ -274,7 +270,7 @@ def test_plot_with_integer_coord_binedges():
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
-    plot(d).close()
+    plot(d)
 
 
 def test_plot_1d_datetime():
@@ -314,7 +310,7 @@ def test_plot_1d_datetime_with_labels():
 
 def test_plot_legend():
     d = make_dense_dataset(ndim=1)
-    plot(d, legend=False).close()
-    plot(d, legend={"show": False}).close()
-    plot(d, legend={"loc": 5}).close()
-    plot(d, legend={"show": True, "loc": 4}).close()
+    plot(d, legend=False)
+    plot(d, legend={"show": False})
+    plot(d, legend={"loc": 5})
+    plot(d, legend={"show": True, "loc": 4})

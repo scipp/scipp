@@ -5,9 +5,8 @@
 
 import numpy as np
 import pytest
-from scipp import plot
 import scipp as sc
-from plot_helper import make_dense_dataset
+from plot_helper import make_dense_dataset, plot
 
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing
@@ -15,37 +14,35 @@ from plot_helper import make_dense_dataset
 
 
 def test_plot_sliceviewer_2d():
-    plot(make_dense_dataset(ndim=3)).close()
+    plot(make_dense_dataset(ndim=3))
 
 
 def test_plot_sliceviewer_2d_with_two_sliders():
-    plot(make_dense_dataset(ndim=4)).close()
+    plot(make_dense_dataset(ndim=4))
 
 
 def test_plot_sliceviewer_2d_with_axes():
-    plot(make_dense_dataset(ndim=3), axes={'y': 'tof'}).close()
+    plot(make_dense_dataset(ndim=3), axes={'y': 'tof'})
 
 
 def test_plot_sliceviewer_2d_with_axes_redundant():
-    plot(make_dense_dataset(ndim=3), axes={'y': 'tof', 'x': 'x'}).close()
+    plot(make_dense_dataset(ndim=3), axes={'y': 'tof', 'x': 'x'})
 
 
 def test_plot_sliceviewer_2d_with_two_axes():
-    plot(make_dense_dataset(ndim=3), axes={'x': 'y', 'y': 'tof'}).close()
+    plot(make_dense_dataset(ndim=3), axes={'x': 'y', 'y': 'tof'})
 
 
 def test_plot_sliceviewer_2d_with_labels():
-    plot(make_dense_dataset(ndim=3, labels=True), axes={
-        'x': "somelabels"
-    }).close()
+    plot(make_dense_dataset(ndim=3, labels=True), axes={'x': "somelabels"})
 
 
 def test_plot_sliceviewer_2d_with_attrs():
-    plot(make_dense_dataset(ndim=3, attrs=True), axes={'x': "attr"}).close()
+    plot(make_dense_dataset(ndim=3, attrs=True), axes={'x': "attr"})
 
 
 def test_plot_sliceviewer_2d_with_binedges():
-    plot(make_dense_dataset(ndim=3, binedges=True)).close()
+    plot(make_dense_dataset(ndim=3, binedges=True))
 
 
 def test_plot_variable_3d():
@@ -53,7 +50,7 @@ def test_plot_variable_3d():
     v3d = sc.Variable(['tof', 'x', 'y'],
                       values=np.random.rand(N, N, N),
                       unit=sc.units.m)
-    plot(v3d).close()
+    plot(v3d)
 
 
 def test_plot_4d_with_masks_no_coords():
@@ -66,8 +63,8 @@ def test_plot_4d_with_masks_no_coords():
     data.masks['tube_ends'] = sc.Variable(dims=['pixel'],
                                           values=np.where(
                                               a > 0.5, True, False))
-    plot(data).close()
-    plot(data, axes={'y': 'tube'}).close()
+    plot(data)
+    plot(data, axes={'y': 'tube'})
 
 
 def test_plot_3d_data_ragged():
@@ -75,7 +72,7 @@ def test_plot_3d_data_ragged():
     This test has caught MANY bugs and should not be disabled.
     """
     d = make_dense_dataset(ndim=3, ragged=True)
-    plot(d).close()
+    plot(d)
     # Also check that it raises an error if we try to have ragged coord along
     # slider dim
     with pytest.raises(RuntimeError) as e:
@@ -86,8 +83,8 @@ def test_plot_3d_data_ragged():
 
 
 def test_plot_3d_data_ragged_with_edges():
-    plot(make_dense_dataset(ndim=3, ragged=True, binedges=True)).close()
+    plot(make_dense_dataset(ndim=3, ragged=True, binedges=True))
 
 
 def test_plot_3d_data_ragged_with_masks():
-    plot(make_dense_dataset(ndim=3, ragged=True, masks=True)).close()
+    plot(make_dense_dataset(ndim=3, ragged=True, masks=True))
