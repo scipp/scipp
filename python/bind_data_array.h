@@ -43,7 +43,7 @@ void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
       .def(
           "__getitem__",
           [](T &self, const typename T::key_type &key) { return self[key]; },
-          py::return_value_policy::move, py::keep_alive<0, 1>())
+          py::return_value_policy::copy)
       .def("__setitem__", [](T &self, const typename T::key_type key,
                              const Variable &var) { self.set(key, var); })
       .def("__delitem__", &T::erase, py::call_guard<py::gil_scoped_release>())
@@ -106,7 +106,7 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   c.def_property(
       "data",
       py::cpp_function([](T &self) { return self.data(); },
-                       py::return_value_policy::move, py::keep_alive<0, 1>()),
+                       py::return_value_policy::copy),
       [](T &self, const Variable &data) {
         if constexpr (std::is_convertible_v<T, DataArray>)
           copy(data, self.data());
