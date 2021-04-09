@@ -42,10 +42,14 @@ TEST(ResizeTest, data_array_2d) {
   expected.masks().set("mask-x", x);
 
   EXPECT_EQ(resize(a, Dim::Y, 1), expected);
+  EXPECT_NE(resize(a, Dim::Y, 1).masks()["mask-x"].values<double>().data(),
+            expected.masks()["mask-x"].values<double>().data());
 
   Dataset d({{"a", a}});
   Dataset expected_d({{"a", expected}});
   EXPECT_EQ(resize(d, Dim::Y, 1), expected_d);
+  EXPECT_NE(resize(d, Dim::Y, 1)["a"].masks()["mask-x"].values<double>().data(),
+            expected_d["a"].masks()["mask-x"].values<double>().data());
 }
 
 TEST(ReshapeTest, fold_x) {
