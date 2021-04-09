@@ -82,6 +82,11 @@ TEST(UnitTest, multiply) {
   EXPECT_EQ(c * b, units::m * units::m * units::m);
 }
 
+TEST(UnitTest, counts_variances) {
+  Unit counts{units::counts};
+  EXPECT_EQ(counts * counts, units::Unit("counts**2"));
+}
+
 TEST(UnitTest, multiply_counts) {
   Unit counts{units::counts};
   Unit none{units::dimensionless};
@@ -207,8 +212,9 @@ TEST(UnitParseTest, singular_plural) {
 }
 
 TEST(UnitFormatTest, roundtrip_string) {
-  for (const auto &s : {"m", "m/s", "meV", "pAh", "mAh", "ns", "counts",
-                        "counts/meV", "1/counts", "counts/m", "Y", "M", "D"}) {
+  for (const auto &s :
+       {"m", "m/s", "meV", "pAh", "mAh", "ns", "counts", "counts^2",
+        "counts/meV", "1/counts", "counts/m", "Y", "M", "D"}) {
     const auto unit = units::Unit(s);
     EXPECT_EQ(to_string(unit), s);
     EXPECT_EQ(units::Unit(to_string(unit)), unit);
