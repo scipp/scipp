@@ -183,6 +183,8 @@ public:
   const Sizes &dims() const;
 
 private:
+  // Declared friend so gtest recognizes it
+  friend std::ostream &operator<<(std::ostream &, const Dataset &);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
   void rebuildDims();
 

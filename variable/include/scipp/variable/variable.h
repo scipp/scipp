@@ -132,6 +132,8 @@ public:
   bool is_slice() const;
 
 private:
+  // Declared friend so gtest recognizes it
+  friend std::ostream &operator<<(std::ostream &, const Variable &);
   template <class... Ts, class... Args>
   static Variable construct(const DType &type, Args &&... args);
 

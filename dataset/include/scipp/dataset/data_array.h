@@ -87,6 +87,8 @@ public:
                              const std::string &name) const;
 
 private:
+  // Declared friend so gtest recognizes it
+  friend std::ostream &operator<<(std::ostream &, const DataArray &);
   std::string m_name;
   std::shared_ptr<Variable> m_data;
   Coords m_coords;
