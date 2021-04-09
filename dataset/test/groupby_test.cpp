@@ -155,6 +155,11 @@ TEST_F(GroupbyMaskedTest, sum) {
 
   const auto result = groupby(d, dim).sum(Dim::X);
   EXPECT_EQ(result, expected);
+  // Ensure reduction operation does NOT share the unrelated mask
+  EXPECT_NE(result["a"].masks()["mask_z"].values<bool>().data(),
+            expected["a"].masks()["mask_z"].values<bool>().data());
+  result["a"].masks()["mask_z"].values<bool>()[0] = true;
+  EXPECT_NE(result, expected);
 }
 
 TEST_F(GroupbyMaskedTest, sum_irrelevant_mask) {

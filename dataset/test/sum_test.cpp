@@ -25,7 +25,7 @@ TEST(SumTest, masked_data_array) {
   EXPECT_FALSE(sum(a, Dim::X).masks().contains("mask"));
   auto summedY = sum(a, Dim::Y);
   EXPECT_TRUE(summedY.masks().contains("mask"));
-  // Ensure reduction operation does NOT share the mask
+  // Ensure reduction operation does NOT share the unrelated mask
   EXPECT_EQ(summedY.masks()["mask"], mask);
   summedY.masks()["mask"] &= ~mask;
   EXPECT_NE(summedY.masks()["mask"], mask);
