@@ -133,7 +133,8 @@ public:
 
 private:
   // Declared friend so gtest recognizes it
-  friend std::ostream &operator<<(std::ostream &, const Variable &);
+  friend SCIPP_VARIABLE_EXPORT std::ostream &operator<<(std::ostream &,
+                                                        const Variable &);
   template <class... Ts, class... Args>
   static Variable construct(const DType &type, Args &&... args);
 
