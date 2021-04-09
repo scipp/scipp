@@ -34,13 +34,13 @@ TEST(UnitTest, construct_bad_string) {
 TEST(UnitTest, overflows) {
   // These would run out of bits in llnl/units and wrap, ensure that scipp
   // prevents this and throws instead.
-  Unit m4{units::m * units::m * units::m * units::m};
-  Unit inv_m8{units::one / m4 / m4};
-  EXPECT_THROW(m4 * m4, except::UnitError);
-  EXPECT_THROW(units::one / inv_m8, except::UnitError);
-  EXPECT_THROW(inv_m8 / units::m, except::UnitError);
-  EXPECT_THROW(inv_m8 % units::m, except::UnitError);
-  EXPECT_THROW(pow(units::m, 8), except::UnitError);
+  Unit m64{pow(units::m, 64)};
+  Unit inv_m128{units::one / m64 / m64};
+  EXPECT_THROW(m64 * m64, except::UnitError);
+  EXPECT_THROW(units::one / inv_m128, except::UnitError);
+  EXPECT_THROW(inv_m128 / units::m, except::UnitError);
+  EXPECT_THROW(inv_m128 % units::m, except::UnitError);
+  EXPECT_THROW(pow(units::m, 128), except::UnitError);
 }
 
 TEST(UnitTest, compare) {
