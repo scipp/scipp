@@ -184,7 +184,8 @@ public:
 
 private:
   // Declared friend so gtest recognizes it
-  friend std::ostream &operator<<(std::ostream &, const Dataset &);
+  friend SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &,
+                                                       const Dataset &);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
   void rebuildDims();
 

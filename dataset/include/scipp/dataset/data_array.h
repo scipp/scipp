@@ -88,7 +88,8 @@ public:
 
 private:
   // Declared friend so gtest recognizes it
-  friend std::ostream &operator<<(std::ostream &, const DataArray &);
+  friend SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &,
+                                                       const DataArray &);
   std::string m_name;
   std::shared_ptr<Variable> m_data;
   Coords m_coords;
