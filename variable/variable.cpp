@@ -76,8 +76,8 @@ bool Variable::operator!=(const Variable &other) const {
 }
 
 scipp::span<const scipp::index> Variable::strides() const {
-  return scipp::span<const scipp::index>(m_strides.begin(),
-                                         m_strides.begin() + dims().ndim());
+  return scipp::span<const scipp::index>(&*m_strides.begin(),
+                                         &*m_strides.begin() + dims().ndim());
 }
 
 core::ElementArrayViewParams Variable::array_params() const noexcept {
