@@ -39,17 +39,22 @@ jobs:
         - template: ccache.yml
 
       - ${{ if contains(parameters.image, 'windows') }}:
-        - powershell: |
-            Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
-            Write-Host "##vso[task.setvariable variable=conda_dir]$env:CONDA"
-          displayName: 'Configure Conda'
+        - bash: |
+            set -ex
+            echo "##vso[task.prependpath]$CONDA\Scripts"
+          displayName: 'Configure Conda path'
       - ${{ if not(contains(parameters.image, 'windows')) }}:
         - bash: |
+            set -ex
             echo "##vso[task.prependpath]$CONDA/bin"
-            echo "##vso[task.setvariable variable=conda_dir]$CONDA"
-          displayName: 'Configure Conda'
+          displayName: 'Configure Conda path'
+      - bash: |
+          set -ex
+          echo "##vso[task.setvariable variable=conda_dir]$CONDA"
+        displayName: 'Configure Conda dir'
       - ${{ if not(eq(length(parameters.OSX_VERSION), 0)) }}:
         - bash: |
+            set -ex
             sudo chown -R $USER $CONDA
           displayName: 'Take ownership of Conda installation'
       - bash: |
@@ -58,24 +63,39 @@ jobs:
           conda install --yes conda-build
           conda config --set always_yes yes --set changeps1 no
           conda env create -f scipp-developer.yml
-        displayName: 'Setup Conda'
+        displayName: 'Create conda environment'
       - bash: |
           set -ex
           source activate scipp-developer
           ./tools/make_and_install.sh
-          echo "##vso[task.setvariable variable=install_target]$CONDA_PREFIX"
         displayName: 'Build and run C++ tests'
-      - bash: |
-          set -ex
-          conda build --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload ./conda
-        displayName: 'Python tests and conda build'
-      - task: PublishBuildArtifacts@1
-        inputs:
-          PathtoPublish: "$(conda_dir)/conda-bld/${{ parameters.publish }}"
-          ArtifactName: "${{ parameters.publish }}-py${{ parameters.py_version }}"
-        displayName: 'Publish Conda package artifacts'
 
 
+      # - ${{ if contains(parameters.image, 'windows') }}:
+      #   - bash: |
+      #       set -ex
+      #       eval "$(conda shell.bash hook)"
+      #       conda activate scipp-developer
+      #       tools/make_and_install.bat
+      #     displayName: 'Build and run C++ tests'
+
+      # - ${{ if not(contains(parameters.image, 'windows')) }}:
+      #   - bash: |
+      #       set -ex
+      #       eval "$(conda shell.bash hook)"
+      #       conda activate scipp-developer
+      #       ./tools/make_and_install.sh
+      #     displayName: 'Build and run C++ tests'
+
+      # - bash: |
+      #     set -ex
+      #     conda build --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload conda
+      #   displayName: 'Python tests and conda build'
+      # - task: PublishBuildArtifacts@1
+      #   inputs:
+      #     PathtoPublish: "$(conda_dir)/conda-bld/${{ parameters.publish }}"
+      #     ArtifactName: "${{ parameters.publish }}-py${{ parameters.py_version }}"
+      #   displayName: 'Publish Conda package artifacts'
 
 
 
