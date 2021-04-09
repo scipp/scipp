@@ -98,7 +98,7 @@ DataArray apply_or_copy_dim_impl(const DataArray &a, Func func, const Dim dim,
   std::unordered_map<std::string, Variable> masks;
   for (auto &&[name, mask] : a.masks())
     if (!mask.dims().contains(dim))
-      masks.emplace(name, mask);
+      masks.emplace(name, copy(mask));
 
   if constexpr (ApplyToData) {
     return DataArray(func(a.data(), dim, args...), std::move(coords),
