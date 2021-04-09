@@ -91,14 +91,16 @@ jobs:
       - ${{ if contains(parameters.image, 'windows') }}:
         - bash: |
             set -ex
-            source activate scipp-developer
+            eval "$(conda shell.bash hook)"
+            conda activate scipp-developer
             tools/make_and_install.bat
           displayName: 'Build and run C++ tests'
 
       - ${{ if not(contains(parameters.image, 'windows')) }}:
         - bash: |
             set -ex
-            source activate scipp-developer
+            eval "$(conda shell.bash hook)"
+            conda activate scipp-developer
             ./tools/make_and_install.sh
           displayName: 'Build and run C++ tests'
 
