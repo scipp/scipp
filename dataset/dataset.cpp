@@ -189,7 +189,7 @@ union_or(const Masks &currentMasks, const Masks &otherMasks) {
   std::unordered_map<typename Masks::key_type, typename Masks::mapped_type> out;
 
   for (const auto &[key, item] : currentMasks) {
-    out.emplace(key, item);
+    out.emplace(key, copy(item));
   }
 
   for (const auto &[key, item] : otherMasks) {
@@ -200,7 +200,7 @@ union_or(const Masks &currentMasks, const Masks &otherMasks) {
       else
         out[key] = out[key] | item;
     } else {
-      out.emplace(key, item);
+      out.emplace(key, copy(item));
     }
   }
   return out;
@@ -212,7 +212,7 @@ void union_or_in_place(Masks &currentMasks, const Masks &otherMasks) {
     if (it != currentMasks.end()) {
       it->second |= item;
     } else {
-      currentMasks.set(key, item);
+      currentMasks.set(key, copy(item));
     }
   }
 }

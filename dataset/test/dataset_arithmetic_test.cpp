@@ -366,6 +366,36 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, masks_propagate) {
     EXPECT_EQ(a[item].masks()["masks_x"], expectedMask);
 }
 
+TYPED_TEST(DatasetBinaryEqualsOpTest, masks_not_shared) {
+  // See test of same name in DatasetBinaryOpTest
+  auto a = datasetFactory().make();
+  auto b = datasetFactory().make();
+
+  const auto maskA = makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
+                                        Values{false, false, true, false});
+  const auto maskB = makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
+                                        Values{false, false, false, true});
+  const auto maskC = makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
+                                        Values{false, true, false, false});
+
+  for (const auto &item :
+       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"}) {
+    a[item].masks().set("mask_ab", copy(maskA));
+    b[item].masks().set("mask_ab", copy(maskB));
+    b[item].masks().set("mask_b", copy(maskB));
+  }
+
+  TestFixture::op(a, b);
+
+  for (const auto &item :
+       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"}) {
+    a[item].masks()["mask_b"] |= maskC;
+    a[item].masks()["mask_ab"] |= maskC;
+    EXPECT_EQ(b[item].masks()["mask_ab"], maskB);
+    EXPECT_EQ(b[item].masks()["mask_b"], maskB);
+  }
+}
+
 TYPED_TEST_SUITE(DatasetMaskSlicingBinaryOpTest, Binary);
 
 TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
@@ -684,6 +714,46 @@ TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
   for (const auto &item :
        {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
     EXPECT_EQ(res[item].masks()["masks_x"], expectedMask);
+}
+
+TYPED_TEST(DatasetBinaryOpTest, masks_not_shared) {
+  // There are two cases being tested here:
+  // 1. Mask in both operands get ORed, ensure the implementation is not using
+  //    the input variable without copy.
+  // 2. The mask is in one of the operands and gets copied to the output. he
+  //    most sensibly behavior appears to be to *copy* it, i.e., masks behave
+  //    like data. Otherwise future operations with the output will break
+  //    unrelated operands.
+  auto a = datasetFactory().make();
+  auto b = datasetFactory().make();
+
+  const auto maskA = makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
+                                        Values{false, false, true, false});
+  const auto maskB = makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
+                                        Values{false, false, false, true});
+  const auto maskC = makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
+                                        Values{false, true, false, false});
+
+  for (const auto &item :
+       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"}) {
+    a[item].masks().set("mask_ab", copy(maskA));
+    a[item].masks().set("mask_a", copy(maskA));
+    b[item].masks().set("mask_ab", copy(maskB));
+    b[item].masks().set("mask_b", copy(maskB));
+  }
+
+  const auto res = TestFixture::op(a, b);
+
+  for (const auto &item :
+       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"}) {
+    res[item].masks()["mask_a"] |= maskC;
+    res[item].masks()["mask_b"] |= maskC;
+    res[item].masks()["mask_ab"] |= maskC;
+    EXPECT_EQ(a[item].masks()["mask_ab"], maskA);
+    EXPECT_EQ(a[item].masks()["mask_a"], maskA);
+    EXPECT_EQ(b[item].masks()["mask_ab"], maskB);
+    EXPECT_EQ(b[item].masks()["mask_b"], maskB);
+  }
 }
 
 TEST(DatasetSetData, dense_to_dense) {

@@ -39,8 +39,10 @@ Masks copy(const Masks &masks) { return {masks.sizes(), copy_map(masks)}; }
 
 /// Return a copy of a DataArray.
 DataArray copy(const DataArray &array, const AttrPolicy attrPolicy) {
+  // When data is copied we generally need to copy masks, since masks are
+  // typically modified when data is modified.
   // TODO is this correct? copy data but not meta data?
-  return DataArray(copy(array.data()), array.coords(), array.masks(),
+  return DataArray(copy(array.data()), array.coords(), copy(array.masks()),
                    attrPolicy == AttrPolicy::Keep ? array.attrs() : Attrs{},
                    array.name());
 }
@@ -84,9 +86,6 @@ void copy_item(const DataArray &from, T &&to, const AttrPolicy attrPolicy) {
 /// Copy data array to output data array
 DataArray &copy(const DataArray &array, DataArray &out,
                 const AttrPolicy attrPolicy) {
-  // TODO self assignment check?
-  // TODO do we need something like
-  // expect::coordsAreSuperset(*this, other);
   for (const auto [dim, coord] : array.coords())
     copy(coord, out.coords()[dim]);
   copy_item(array, out, attrPolicy);
