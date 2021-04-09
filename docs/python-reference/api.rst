@@ -8,11 +8,8 @@ Classes
 
    Unit
    Variable
-   VariableView
    DataArray
-   DataArrayView
    Dataset
-   DatasetView
    GroupByDataArray
    GroupByDataset
    Bins
