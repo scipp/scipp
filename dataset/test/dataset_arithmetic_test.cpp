@@ -720,7 +720,7 @@ TYPED_TEST(DatasetBinaryOpTest, masks_not_shared) {
   // There are two cases being tested here:
   // 1. Mask in both operands get ORed, ensure the implementation is not using
   //    the input variable without copy.
-  // 2. The mask is in one of the operands and gets copied to the output. he
+  // 2. The mask is in one of the operands and gets copied to the output. The
   //    most sensibly behavior appears to be to *copy* it, i.e., masks behave
   //    like data. Otherwise future operations with the output will break
   //    unrelated operands.
