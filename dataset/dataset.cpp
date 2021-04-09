@@ -217,10 +217,4 @@ void union_or_in_place(Masks &currentMasks, const Masks &otherMasks) {
   }
 }
 
-void copy_metadata(const DataArray &a, DataArray &b) {
-  copy_items(a.coords(), b.coords());
-  copy_items(a.masks(), b.masks());
-  copy_items(a.attrs(), b.attrs());
-}
-
 } // namespace scipp::dataset
