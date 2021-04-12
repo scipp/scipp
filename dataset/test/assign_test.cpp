@@ -16,7 +16,7 @@ protected:
   Variable data = makeVariable<double>(dims, Values{1, 2, 3});
   Variable x = makeVariable<double>(dims, Values{1, 1, 3});
   Variable mask = makeVariable<bool>(dims, Values{true, false, true});
-  DataArray array{data, {{Dim::X, copy(x)}}, {{"mask", mask}}};
+  DataArray array{data, {{Dim::X, copy(x)}}, {{"mask", copy(mask)}}};
 };
 
 TEST_F(AssignTest, self) {
@@ -44,16 +44,16 @@ TEST_F(AssignTest, mask_propagation) {
   EXPECT_EQ(array.masks()["mask"],
             makeVariable<bool>(dims, Values{true, false, true}));
   // Mask not in source is preserved unchanged
-  array.masks().set("other", mask);
+  array.masks().set("other", copy(mask));
   array.slice({Dim::X, 0}).assign(original.slice({Dim::X, 1}));
   EXPECT_EQ(array.masks()["other"], mask);
   // Extra mask is added
   auto extra_mask = copy(array);
-  extra_mask.masks().set("extra", mask);
+  extra_mask.masks().set("extra", copy(mask));
   array.assign(extra_mask.slice({Dim::X, 1}));
   EXPECT_TRUE(array.masks().contains("extra"));
   // Extra masks added to mask dict of slice => silently dropped
-  extra_mask.masks().set("dropped", mask);
+  extra_mask.masks().set("dropped", copy(mask));
   EXPECT_NO_THROW(
       array.slice({Dim::X, 0}).assign(extra_mask.slice({Dim::X, 1})));
   EXPECT_FALSE(array.masks().contains("dropped"));
