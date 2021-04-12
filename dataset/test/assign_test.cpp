@@ -46,7 +46,7 @@ TEST_F(AssignTest, mask_propagation) {
   // Mask not in source is preserved unchanged
   array.masks().set("other", mask);
   array.slice({Dim::X, 0}).assign(original.slice({Dim::X, 1}));
-  EXPECT_EQ(array.masks()["mask"], mask);
+  EXPECT_EQ(array.masks()["other"], mask);
   // Extra mask is added
   auto extra_mask = copy(array);
   extra_mask.masks().set("extra", mask);
