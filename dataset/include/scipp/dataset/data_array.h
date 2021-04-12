@@ -33,6 +33,9 @@ public:
   DataArray &operator=(const DataArray &other);
   DataArray &operator=(DataArray &&other) = default;
 
+  [[maybe_unused]] DataArray &assign(const DataArray &other);
+  [[maybe_unused]] DataArray &assign(const Variable &other);
+
   explicit operator bool() const noexcept {
     return m_data && m_data->operator bool();
   }

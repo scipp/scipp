@@ -48,6 +48,19 @@ DataArray &DataArray::operator=(const DataArray &other) {
   return *this = DataArray(other);
 }
 
+DataArray &DataArray::assign(const DataArray &other) {
+  expect::coordsAreSuperset(*this, other);
+  // TODO Need dry-run mechanism for mask handling?
+  union_copy_in_place(masks(), other.masks());
+  assign(other.data());
+  return *this;
+}
+
+DataArray &DataArray::assign(const Variable &other) {
+  copy(other, data());
+  return *this;
+}
+
 void DataArray::setData(Variable data) {
   core::expect::equals(dims(), data.dims());
   *m_data = data;

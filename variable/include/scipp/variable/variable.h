@@ -58,6 +58,8 @@ public:
   /// should be prefered where possible, since it generates less code.
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
+  [[maybe_unused]] Variable &assign(const Variable &other);
+
   explicit operator bool() const noexcept { return m_object.operator bool(); }
   Variable operator~() const;
 
