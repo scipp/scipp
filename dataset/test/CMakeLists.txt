@@ -6,6 +6,7 @@ set(TARGET_NAME "scipp-dataset-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
+  assign_test.cpp
   attributes_test.cpp
   binned_arithmetic_test.cpp
   binned_creation_test.cpp
