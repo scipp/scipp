@@ -131,20 +131,20 @@ template <class T> struct slicer {
   template <class Other>
   static void set_from_view(T &self, const std::tuple<Dim, scipp::index> &index,
                             const Other &data) {
-    assign_from(slicer<T>::get(self, index), data);
+    slicer<T>::get(self, index).assign(data);
   }
 
   template <class Other>
   static void set_from_view(T &self,
                             const std::tuple<Dim, const py::slice> &index,
                             const Other &data) {
-    assign_from(slicer<T>::get_range(self, index), data);
+    slicer<T>::get_range(self, index).assign(data);
   }
 
   template <class Other>
   static void set_by_value(T &self, const std::tuple<Dim, Variable> &value,
                            const Other &data) {
-    assign_from(slicer<T>::get_by_value(self, value), data);
+    slicer<T>::get_by_value(self, value).assign(data);
   }
 
   // Manually dispatch based on the object we are assigning from in order to

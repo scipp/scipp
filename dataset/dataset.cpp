@@ -13,6 +13,26 @@ namespace scipp::dataset {
 
 Dataset::Dataset(const DataArray &data) { setData(data.name(), data); }
 
+Dataset &Dataset::assign(const Dataset &other) {
+  // TODO Need dry-run mechanism here?
+  for (const auto &item : other)
+    (*this)[item.name()].assign(item);
+  return *this;
+}
+
+Dataset &Dataset::assign(const DataArray &other) {
+  // TODO Need dry-run mechanism here?
+  for (auto &&item : *this)
+    item.assign(other);
+  return *this;
+}
+
+Dataset &Dataset::assign(const Variable &other) {
+  for (auto &&item : *this)
+    item.assign(other);
+  return *this;
+}
+
 /// Removes all data items from the Dataset.
 ///
 /// Coordinates are not modified.
@@ -206,15 +226,26 @@ union_or(const Masks &currentMasks, const Masks &otherMasks) {
   return out;
 }
 
-void union_or_in_place(Masks &currentMasks, const Masks &otherMasks) {
+namespace {
+template <class Op>
+void union_op_in_place(Masks &masks, const Masks &otherMasks, Op op) {
   for (const auto &[key, item] : otherMasks) {
-    const auto it = currentMasks.find(key);
-    if (it != currentMasks.end()) {
-      it->second |= item;
+    const auto it = masks.find(key);
+    if (it != masks.end()) {
+      op(it->second, item);
     } else {
-      currentMasks.set(key, copy(item));
+      masks.set(key, copy(item));
     }
   }
+}
+} // namespace
+
+void union_or_in_place(Masks &masks, const Masks &otherMasks) {
+  union_op_in_place(masks, otherMasks, [](auto &&a, auto &&b) { a |= b; });
+}
+
+void union_copy_in_place(Masks &masks, const Masks &otherMasks) {
+  union_op_in_place(masks, otherMasks, [](auto &&a, auto &&b) { copy(b, a); });
 }
 
 } // namespace scipp::dataset

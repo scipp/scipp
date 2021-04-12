@@ -14,16 +14,6 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-Variable &assign_from(Variable &var, const Variable &other) {
-  copy(other, var);
-  return var;
-}
-
-Variable assign_from(Variable &&var, const Variable &other) {
-  assign_from(var, other);
-  return std::move(var);
-}
-
 Variable linspace(const Variable &start, const Variable &stop, const Dim dim,
                   const scipp::index num) {
   // The implementation here is slightly verbose and explicit. It could be

@@ -28,6 +28,11 @@ Variable::Variable(const Dimensions &dims, VariableConceptHandle data)
 Variable::Variable(const llnl::units::precise_measurement &m)
     : Variable(m.value() * units::Unit(m.units())) {}
 
+Variable &Variable::assign(const Variable &other) {
+  copy(other, *this);
+  return *this;
+}
+
 void Variable::setDataHandle(VariableConceptHandle object) {
   if (object->size() != m_object->size())
     throw except::DimensionError("Cannot replace by model of different size.");
