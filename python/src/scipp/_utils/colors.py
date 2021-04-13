@@ -7,7 +7,7 @@ import numpy as np
 
 def hex_to_rgb(hex_color):
     rgb_hex = [hex_color[x:x + 2] for x in [1, 3, 5]]
-    return [int(hex_value, 16) for hex_value in rgb_hex]
+    return np.array([int(hex_value, 16) for hex_value in rgb_hex])
 
 
 def rgb_to_hex(rgb):
