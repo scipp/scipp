@@ -4,7 +4,7 @@ steps:
       echo "##vso[task.prependpath]/usr/lib/ccache"
       # Set cache dir
       ccache --set-config=cache_dir="$(Pipeline.Workspace)/ccache"
-      echo "##vso[task.setvariable variable=cache_dir]$(Pipeline.Workspace)/ccache"
+      echo "##vso[task.setvariable variable=ccache_dir]$(Pipeline.Workspace)/ccache"
     displayName: 'Install and configure ccache'
   - task: Cache@2
     inputs:
