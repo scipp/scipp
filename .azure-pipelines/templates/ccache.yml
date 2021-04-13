@@ -1,6 +1,5 @@
 steps:
   - bash: |
-      set -ex
       sudo apt-get install -y ccache
       echo "##vso[task.prependpath]/usr/lib/ccache"
       # Set cache dir

@@ -16,3 +16,5 @@ extends:
       linux: ['3.7']
       osx: ['3.7']
       windows: ['3.7']
+    deploy: true
+    label: 'test'
