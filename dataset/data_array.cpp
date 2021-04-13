@@ -138,4 +138,11 @@ void DataArray::rename(const Dim from, const Dim to) {
   m_attrs->rename(from, to);
 }
 
+DataArray DataArray::as_const() const {
+  return DataArray(data().as_const(), coords().as_const(), masks().as_const(),
+                   attrs().as_const(), name());
+}
+
+bool DataArray::is_readonly() const noexcept { return m_data->is_readonly(); }
+
 } // namespace scipp::dataset

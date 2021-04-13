@@ -108,7 +108,10 @@ public:
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & { return *m_object; }
   VariableConcept &data() && = delete;
-  VariableConcept &data() & { return *m_object; }
+  VariableConcept &data() & {
+    expectWritable();
+    return *m_object;
+  }
   const auto &data_handle() const { return m_object; }
   void setDataHandle(VariableConceptHandle object);
 
@@ -132,6 +135,9 @@ public:
   [[nodiscard]] Variable transpose(const std::vector<Dim> &order) const;
 
   bool is_slice() const;
+  bool is_readonly() const noexcept;
+
+  [[nodiscard]] Variable as_const() const;
 
 private:
   // Declared friend so gtest recognizes it
@@ -140,10 +146,13 @@ private:
   template <class... Ts, class... Args>
   static Variable construct(const DType &type, Args &&... args);
 
+  void expectWritable() const;
+
   Dimensions m_dims;
   Strides m_strides;
   scipp::index m_offset{0};
   VariableConceptHandle m_object;
+  bool m_readonly{false};
 };
 
 /// Factory function for Variable supporting "keyword arguments"

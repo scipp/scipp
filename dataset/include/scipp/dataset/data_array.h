@@ -89,6 +89,10 @@ public:
   DataArray view_with_coords(const Coords &coords,
                              const std::string &name) const;
 
+  [[nodiscard]] DataArray as_const() const;
+
+  bool is_readonly() const noexcept;
+
 private:
   // Declared friend so gtest recognizes it
   friend SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &,

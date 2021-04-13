@@ -128,6 +128,16 @@ void Dict<Key, Value>::rename(const Dim from, const Dim to) {
     item.second.rename(from, to);
 }
 
+template <class Key, class Value>
+Dict<Key, Value> Dict<Key, Value>::as_const() const {
+  holder_type items;
+  std::transform(m_items.begin(), m_items.end(),
+                 std::inserter(items, items.end()), [](const auto &item) {
+                   return std::pair(item.first, item.second.as_const());
+                 });
+  return {sizes(), std::move(items)};
+}
+
 template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;
 template class SCIPP_DATASET_EXPORT Dict<std::string, Variable>;
 
