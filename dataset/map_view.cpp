@@ -114,6 +114,31 @@ Dict<Key, Value> Dict<Key, Value>::slice(const Slice &params) const {
 }
 
 template <class Key, class Value>
+Dict<Key, Value> &Dict<Key, Value>::setSlice(const Slice s, const Dict &dict) {
+  using core::to_string;
+  using units::to_string;
+  for (const auto &[key, item] : dict) {
+    const auto it = find(key);
+    if (it != end()) {
+      if (it->second.is_readonly() || !it->second.dims().contains(s.dim())) {
+        if (!it->second.dims().contains(s.dim()) || it->second.slice(s) != item)
+          throw except::DimensionError(
+              "Cannot update meta data '" + to_string(key) +
+              "' via slice since it is implicitly broadcast "
+              "along the slice dimension '" +
+              to_string(s.dim()) + "'.");
+      } else {
+        it->second.setSlice(s, item);
+      }
+    } else {
+      throw except::NotFoundError("Cannot set new meta data '" +
+                                  to_string(key) + "' via a slice.");
+    }
+  }
+  return *this;
+}
+
+template <class Key, class Value>
 void Dict<Key, Value>::rename(const Dim from, const Dim to) {
   m_sizes.relabel(from, to);
   // TODO relabel only if coords (not attrs?)?

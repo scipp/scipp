@@ -55,10 +55,6 @@ public:
       setCoord(dim, std::move(coord));
   }
 
-  [[maybe_unused]] Dataset &assign(const Dataset &other);
-  [[maybe_unused]] Dataset &assign(const DataArray &other);
-  [[maybe_unused]] Dataset &assign(const Variable &other);
-
   /// Return the number of data items in the dataset.
   ///
   /// This does not include coordinates or attributes, but only all named
@@ -162,6 +158,9 @@ public:
   void setData(const std::string &name, const DataArray &data);
 
   Dataset slice(const Slice s) const;
+  [[maybe_unused]] Dataset &setSlice(const Slice s, const Dataset &dataset);
+  [[maybe_unused]] Dataset &setSlice(const Slice s, const DataArray &array);
+  [[maybe_unused]] Dataset &setSlice(const Slice s, const Variable &var);
 
   void rename(const Dim from, const Dim to);
 
@@ -261,9 +260,6 @@ union_or(const Masks &currentMasks, const Masks &otherMasks);
 /// The result is stored in the first view.
 SCIPP_DATASET_EXPORT void union_or_in_place(Masks &masks,
                                             const Masks &otherMasks);
-
-SCIPP_DATASET_EXPORT void union_copy_in_place(Masks &masks,
-                                              const Masks &otherMasks);
 
 SCIPP_DATASET_EXPORT Dataset merge(const Dataset &a, const Dataset &b);
 

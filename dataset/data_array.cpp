@@ -48,19 +48,6 @@ DataArray &DataArray::operator=(const DataArray &other) {
   return *this = DataArray(other);
 }
 
-DataArray &DataArray::assign(const DataArray &other) {
-  expect::coordsAreSuperset(*this, other);
-  // TODO Need dry-run mechanism for mask handling?
-  union_copy_in_place(masks(), other.masks());
-  assign(other.data());
-  return *this;
-}
-
-DataArray &DataArray::assign(const Variable &other) {
-  copy(other, data());
-  return *this;
-}
-
 void DataArray::setData(Variable data) {
   core::expect::equals(dims(), data.dims());
   *m_data = data;
@@ -111,6 +98,18 @@ DataArray DataArray::slice(const Slice &s) const {
     if (unaligned_by_dim_slice(*it, s))
       out.attrs().set(it->first, out.m_coords.extract(it->first));
   return out;
+}
+
+DataArray &DataArray::setSlice(const Slice &s, const DataArray &array) {
+  expect::coordsAreSuperset(*this, array);
+  // TODO Need dry-run mechanism for mask handling?
+  masks().setSlice(s, array.masks());
+  return setSlice(s, array.data());
+}
+
+DataArray &DataArray::setSlice(const Slice &s, const Variable &var) {
+  data().setSlice(s, var);
+  return *this;
 }
 
 DataArray DataArray::view_with_coords(const Coords &coords,
