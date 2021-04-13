@@ -14,10 +14,6 @@ parameters:
 - name: publish
   type: string
   default: ''
-# - name: INSTALL_TARGET
-#   type: string
-#   default: 'YES'
-
 
 jobs:
   - job:
@@ -28,8 +24,6 @@ jobs:
     variables:
       - name: OSX_VERSION
         value: ${{ parameters.OSX_VERSION }}
-      # - name: ALREADY_BUILT
-      #   value: ${{ parameters.ALREADY_BUILT }}
 
     steps:
       - checkout: self
@@ -40,10 +34,14 @@ jobs:
 
       # Note that using set -ex when setting vso variables messes up paths
       - ${{ if contains(parameters.image, 'windows') }}:
-        - bash: echo "##vso[task.prependpath]$CONDA\Scripts"
+        - bash: |
+            echo "##vso[task.prependpath]$CONDA\Scripts"
+            echo "##vso[task.setvariable variable=file_extension]bat"
           displayName: 'Configure Conda path'
       - ${{ if not(contains(parameters.image, 'windows')) }}:
-        - bash: echo "##vso[task.prependpath]$CONDA/bin"
+        - bash: |
+            echo "##vso[task.prependpath]$CONDA/bin"
+            echo "##vso[task.setvariable variable=file_extension]sh"
           displayName: 'Configure Conda path'
       - bash: echo "##vso[task.setvariable variable=conda_dir]$CONDA"
         displayName: 'Configure Conda dir'
@@ -61,18 +59,24 @@ jobs:
           conda env create -f scipp-developer.yml
         displayName: 'Create conda environment'
 
-      - ${{ if contains(parameters.image, 'windows') }}:
-        - bash: |
-            set -ex
-            source activate scipp-developer
-            tools/make_and_install.bat
-          displayName: 'Build and run C++ tests'
-      - ${{ if not(contains(parameters.image, 'windows')) }}:
-        - bash: |
-            set -ex
-            source activate scipp-developer
-            ./tools/make_and_install.sh
-          displayName: 'Build and run C++ tests'
+      - bash: |
+          set -ex
+          source activate scipp-developer
+          tools/make_and_install.$FILE_EXTENSION
+        displayName: 'Build and run C++ tests'
+
+      # - ${{ if contains(parameters.image, 'windows') }}:
+      #   - bash: |
+      #       set -ex
+      #       source activate scipp-developer
+      #       tools/make_and_install.bat
+      #     displayName: 'Build and run C++ tests'
+      # - ${{ if not(contains(parameters.image, 'windows')) }}:
+      #   - bash: |
+      #       set -ex
+      #       source activate scipp-developer
+      #       ./tools/make_and_install.sh
+      #     displayName: 'Build and run C++ tests'
 
       - bash: |
           source activate scipp-developer

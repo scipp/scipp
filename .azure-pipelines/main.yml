@@ -4,10 +4,11 @@ trigger:
 pr: none
 
 extends:
-  template: templates/build_and_package.yml
+  template: templates/stages.yml
   parameters:
     py_versions:
       linux: ['3.7', '3.8']
       osx: ['3.7', '3.8']
+      windows: ['3.7', '3.8']
     deploy: true
-    label: 'test'
+    label: 'dev'

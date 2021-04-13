@@ -10,14 +10,9 @@ pr:
       - '*'
 
 extends:
-  template: templates/build_and_package.yml
+  template: templates/stages.yml
   parameters:
     py_versions:
       linux: ['3.7']
       osx: ['3.7']
       windows: ['3.7']
-    # deploy: false
-    # label: 'test'
-
-
-      # linux: ['3.6', '3.7']

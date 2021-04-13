@@ -12,7 +12,7 @@ parameters:
       image: 'ubuntu-20.04'
       publish: 'linux-64'
       params:
-        ccache: false
+        ccache: true
     osx:
       image: 'macOS-10.14'
       publish: 'osx-64'
@@ -41,7 +41,7 @@ stages:
     jobs:
       - ${{ each os in parameters.py_versions }}:
         - ${{ each py in os.Value }}:
-          - template: conda_build.yml
+          - template: build.yml
             parameters:
               py_version: ${{ py }}
               image: ${{ parameters.settings[os.Key].image }}
