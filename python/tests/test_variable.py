@@ -321,6 +321,15 @@ def test_2D_access_variances():
     assert np.array_equal(var.variances, np.ones(shape=(2, 3)))
 
 
+def test_values_lifetime():
+    var = sc.Variable(dims=['x'], values=np.arange(5))
+    array = var.values
+    del var
+    # do something to maybe mess with previous memory if it was freed
+    sc.Variable(dims=['x'], values=np.arange(5, 10))
+    assert np.array_equal(array, np.arange(5))
+
+
 def test_create_dtype():
     var = sc.Variable(dims=['x'], values=np.arange(4).astype(np.int64))
     assert var.dtype == sc.dtype.int64
