@@ -157,21 +157,6 @@ Dataset Dataset::slice(const Slice s) const {
   Dataset out;
   out.m_coords = m_coords.slice(s);
   out.m_data = slice_map(m_coords.sizes(), m_data, s);
-  // TODO dropping items independent of s.dim(), is this still what we want?
-  for (auto it = out.m_data.begin(); it != out.m_data.end();) {
-    if (!m_data.at(it->first).dims().contains(s.dim()))
-      it = out.m_data.erase(it);
-    else
-      ++it;
-  }
-  for (auto it = m_coords.begin(); it != m_coords.end();) {
-    if (unaligned_by_dim_slice(*it, s)) {
-      auto extracted = out.m_coords.extract(it->first);
-      for (auto &item : out.m_data)
-        item.second.attrs().set(it->first, extracted);
-    }
-    ++it;
-  }
   return out;
 }
 
@@ -232,20 +217,33 @@ void union_op_in_place(Masks &masks, const Masks &otherMasks, Op op) {
   for (const auto &[key, item] : otherMasks) {
     const auto it = masks.find(key);
     if (it != masks.end()) {
-      op(it->second, item);
+      if (it->second.is_readonly()) {
+        if (it->second != op(copy(it->second), item))
+          throw except::DimensionError(
+              "Cannot update mask via slice since the mask is being broadcast "
+              "along the slice dimension.");
+      } else {
+        op(it->second, item);
+      }
     } else {
-      masks.set(key, copy(item));
+      // TODO Do we always need to fail here, or are there cases where we can
+      // proceed?
+      throw except::NotFoundError(
+          "Cannot set new meta data in in-place operation.");
+      // masks.set(key, copy(item));
     }
   }
 }
 } // namespace
 
 void union_or_in_place(Masks &masks, const Masks &otherMasks) {
-  union_op_in_place(masks, otherMasks, [](auto &&a, auto &&b) { a |= b; });
+  union_op_in_place(masks, otherMasks,
+                    [](auto &&a, auto &&b) { return a |= b; });
 }
 
 void union_copy_in_place(Masks &masks, const Masks &otherMasks) {
-  union_op_in_place(masks, otherMasks, [](auto &&a, auto &&b) { copy(b, a); });
+  union_op_in_place(masks, otherMasks,
+                    [](auto &&a, auto &&b) { return a.assign(b); });
 }
 
 } // namespace scipp::dataset

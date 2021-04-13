@@ -50,11 +50,20 @@ TEST_F(AssignTest, mask_propagation) {
   // Extra mask is added
   auto extra_mask = copy(array);
   extra_mask.masks().set("extra", copy(mask));
-  array.assign(extra_mask.slice({Dim::X, 1}));
+  EXPECT_NO_THROW(array.assign(extra_mask.slice({Dim::X, 1})));
   EXPECT_TRUE(array.masks().contains("extra"));
   // Extra masks added to mask dict of slice => silently dropped
   extra_mask.masks().set("dropped", copy(mask));
-  EXPECT_NO_THROW(
-      array.slice({Dim::X, 0}).assign(extra_mask.slice({Dim::X, 1})));
+  EXPECT_THROW(array.slice({Dim::X, 0}).assign(extra_mask.slice({Dim::X, 1})),
+               except::NotFoundError);
   EXPECT_FALSE(array.masks().contains("dropped"));
+}
+
+TEST_F(AssignTest, lower_dimensional_mask_cannot_be_overridden) {
+  auto other = copy(array.slice({Dim::X, 1}));
+  array.masks().set("scalar", makeVariable<bool>(Values{true}));
+  EXPECT_NO_THROW(array.slice({Dim::X, 0}).assign(other));
+  other.masks().set("scalar", makeVariable<bool>(Values{false}));
+  // Setting a slice must not change mask values of unrelated data points
+  EXPECT_THROW(array.slice({Dim::X, 0}).assign(other), except::DimensionError);
 }

@@ -775,17 +775,16 @@ TEST(DatasetSetData, dense_to_empty) {
 
 TEST(DatasetSetData, labels) {
   auto dense = datasetFactory().make();
-  dense.setCoord(
-      Dim("l"),
-      makeVariable<double>(
-          Dims{Dim::X}, Shape{dense.coords()[Dim::X].values<double>().size()}));
+  dense.setCoord(Dim("l"), makeVariable<double>(
+                               Dims{Dim::X},
+                               Shape{dense.coords()[Dim::X].dims().volume()}));
   auto d = copy(dense.slice({Dim::Y, 0}));
   dense.setData("data_x_1", dense["data_x"]);
   EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
 
-  d.setCoord(Dim("l1"), makeVariable<double>(
-                            Dims{Dim::X},
-                            Shape{d.coords()[Dim::X].values<double>().size()}));
+  d.setCoord(Dim("l1"),
+             makeVariable<double>(Dims{Dim::X},
+                                  Shape{d.coords()[Dim::X].dims().volume()}));
   EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), except::NotFoundError);
 }
 

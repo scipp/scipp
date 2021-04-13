@@ -71,7 +71,7 @@ auto slice_map(const Sizes &sizes, const T &map, const Slice &params) {
         out[key] = value.slice(Slice{params.dim(), params.begin(), end});
       }
     } else {
-      out[key] = value;
+      out[key] = value.as_const();
     }
   }
   return out;
@@ -162,6 +162,8 @@ public:
   Dict slice(const Slice &params) const;
 
   void rename(const Dim from, const Dim to);
+
+  [[nodiscard]] Dict as_const() const;
 
 protected:
   Sizes m_sizes;

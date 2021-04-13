@@ -7,9 +7,9 @@
 #include "scipp/variable/variable.h"
 
 #include "scipp/core/dtype.h"
-#include "scipp/core/except.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/creation.h"
+#include "scipp/variable/except.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/variable_concept.h"
 
@@ -59,6 +59,7 @@ void Variable::setDims(const Dimensions &dimensions) {
 }
 
 void Variable::expectCanSetUnit(const units::Unit &unit) const {
+  // TODO readonly flag?
   if (this->unit() != unit && is_slice())
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
@@ -66,6 +67,7 @@ void Variable::expectCanSetUnit(const units::Unit &unit) const {
 
 void Variable::setUnit(const units::Unit &unit) {
   expectCanSetUnit(unit);
+  expectWritable();
   m_object->setUnit(unit);
 }
 
@@ -148,6 +150,8 @@ bool Variable::is_slice() const {
   return m_offset != 0 || m_dims.volume() != data().size();
 }
 
+bool Variable::is_readonly() const noexcept { return m_readonly; }
+
 void Variable::setVariances(const Variable &v) {
   if (is_slice())
     throw except::VariancesError(
@@ -176,6 +180,17 @@ Variable Variable::bin_indices() const {
   auto out{*this};
   out.m_object = data().bin_indices();
   return out;
+}
+
+Variable Variable::as_const() const {
+  Variable out(*this);
+  out.m_readonly = true;
+  return out;
+}
+
+void Variable::expectWritable() const {
+  if (m_readonly)
+    throw except::VariableError("Read-only flag is set, cannot mutate data.");
 }
 
 } // namespace scipp::variable
