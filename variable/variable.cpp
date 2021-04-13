@@ -28,11 +28,6 @@ Variable::Variable(const Dimensions &dims, VariableConceptHandle data)
 Variable::Variable(const llnl::units::precise_measurement &m)
     : Variable(m.value() * units::Unit(m.units())) {}
 
-Variable &Variable::assign(const Variable &other) {
-  copy(other, *this);
-  return *this;
-}
-
 void Variable::setDataHandle(VariableConceptHandle object) {
   if (object->size() != m_object->size())
     throw except::DimensionError("Cannot replace by model of different size.");
@@ -113,12 +108,12 @@ core::ElementArrayViewParams Variable::array_params() const noexcept {
   return {m_offset, dims(), dataDims, {}};
 }
 
-Variable Variable::slice(const Slice slice) const {
-  core::expect::validSlice(dims(), slice);
+Variable Variable::slice(const Slice params) const {
+  core::expect::validSlice(dims(), params);
   Variable out(*this);
-  const auto dim = slice.dim();
-  const auto begin = slice.begin();
-  const auto end = slice.end();
+  const auto dim = params.dim();
+  const auto begin = params.begin();
+  const auto end = params.end();
   const auto index = out.m_dims.index(dim);
   out.m_offset += begin * m_strides[index];
   if (end == -1) {
@@ -127,6 +122,11 @@ Variable Variable::slice(const Slice slice) const {
   } else
     out.m_dims.resize(dim, end - begin);
   return out;
+}
+
+Variable &Variable::setSlice(const Slice params, const Variable &data) {
+  copy(data, slice(params));
+  return *this;
 }
 
 Variable Variable::transpose(const std::vector<Dim> &order) const {

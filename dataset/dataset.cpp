@@ -13,26 +13,6 @@ namespace scipp::dataset {
 
 Dataset::Dataset(const DataArray &data) { setData(data.name(), data); }
 
-Dataset &Dataset::assign(const Dataset &other) {
-  // TODO Need dry-run mechanism here?
-  for (const auto &item : other)
-    (*this)[item.name()].assign(item);
-  return *this;
-}
-
-Dataset &Dataset::assign(const DataArray &other) {
-  // TODO Need dry-run mechanism here?
-  for (auto &&item : *this)
-    item.assign(other);
-  return *this;
-}
-
-Dataset &Dataset::assign(const Variable &other) {
-  for (auto &&item : *this)
-    item.assign(other);
-  return *this;
-}
-
 /// Removes all data items from the Dataset.
 ///
 /// Coordinates are not modified.
@@ -168,6 +148,26 @@ Dataset Dataset::slice(const Slice s) const {
   return out;
 }
 
+Dataset &Dataset::setSlice(const Slice s, const Dataset &data) {
+  // TODO Need dry-run mechanism here?
+  for (const auto &item : data)
+    (*this)[item.name()].setSlice(s, item);
+  return *this;
+}
+
+Dataset &Dataset::setSlice(const Slice s, const DataArray &data) {
+  // TODO Need dry-run mechanism here?
+  for (auto &&item : *this)
+    item.setSlice(s, data);
+  return *this;
+}
+
+Dataset &Dataset::setSlice(const Slice s, const Variable &data) {
+  for (auto &&item : *this)
+    item.setSlice(s, data);
+  return *this;
+}
+
 /// Rename dimension `from` to `to`.
 void Dataset::rename(const Dim from, const Dim to) {
   if ((from != to) && m_coords.sizes().contains(to))
@@ -234,11 +234,11 @@ void union_op_in_place(Masks &masks, const Masks &otherMasks, Op op) {
         op(it->second, item);
       }
     } else {
-      // TODO Do we always need to fail here, or are there cases where we can
-      // proceed?
-      throw except::NotFoundError(
-          "Cannot set new meta data in in-place operation.");
-      // masks.set(key, copy(item));
+      // TODO
+      // C++ slice += other will silently drop, but in Python the final setitem
+      // can save us... except that this comes too late: data will already have
+      // been modifed (see similar issues in xarray). Need to check beforehand?
+      masks.set(key, copy(item));
     }
   }
 }
@@ -247,11 +247,6 @@ void union_op_in_place(Masks &masks, const Masks &otherMasks, Op op) {
 void union_or_in_place(Masks &masks, const Masks &otherMasks) {
   union_op_in_place(masks, otherMasks,
                     [](auto &&a, auto &&b) { return a |= b; });
-}
-
-void union_copy_in_place(Masks &masks, const Masks &otherMasks) {
-  union_op_in_place(masks, otherMasks,
-                    [](auto &&a, auto &&b) { return a.assign(b); });
 }
 
 } // namespace scipp::dataset

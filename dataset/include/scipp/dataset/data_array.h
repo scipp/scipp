@@ -33,9 +33,6 @@ public:
   DataArray &operator=(const DataArray &other);
   DataArray &operator=(DataArray &&other) = default;
 
-  [[maybe_unused]] DataArray &assign(const DataArray &other);
-  [[maybe_unused]] DataArray &assign(const Variable &other);
-
   explicit operator bool() const noexcept {
     return m_data && m_data->operator bool();
   }
@@ -85,6 +82,8 @@ public:
   void setData(Variable data);
 
   DataArray slice(const Slice &s) const;
+  [[maybe_unused]] DataArray &setSlice(const Slice &s, const DataArray &array);
+  [[maybe_unused]] DataArray &setSlice(const Slice &s, const Variable &var);
 
   DataArray view_with_coords(const Coords &coords,
                              const std::string &name) const;
