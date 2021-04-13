@@ -40,9 +40,9 @@ class Plot(dict):
         for item in self.values():
             item.hide_widgets()
 
-    def make_static(self):
+    def close(self):
         for item in self.values():
-            item.make_static()
+            item.close()
 
 
 class PlotArray:

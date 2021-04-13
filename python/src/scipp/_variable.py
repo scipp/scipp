@@ -145,5 +145,5 @@ def array(*,
                     dtype=dtype)
 
 
-# Wrapper to make dateime usable without importing numpy manually.
+# Wrapper to make datetime usable without importing numpy manually.
 datetime64 = numpy.datetime64

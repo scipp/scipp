@@ -215,7 +215,7 @@ def plot(*args, **kwargs):
             output.hide_widgets()
         # Turn mpl figure into image if doc build
         if is_doc_build:
-            output.make_static()
+            output.close()
 
     # Turn auto figure display back on if needed.
     if interactive_on:
