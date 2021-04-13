@@ -75,7 +75,7 @@ class DataAccessHelper {
       auto array =
           py::array{get_dtype(), dims.shape(), get_strides(),
                     Getter::template get<T>(std::as_const(view)).data(), obj};
-      reinterpret_cast<py::detail::PyArray_Proxy *>(array.ptr())->flags &=
+      py::detail::array_proxy(array.ptr())->flags &=
           ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
       return array;
     } else {
