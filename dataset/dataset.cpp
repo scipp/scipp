@@ -157,6 +157,14 @@ Dataset Dataset::slice(const Slice s) const {
   Dataset out;
   out.m_coords = m_coords.slice(s);
   out.m_data = slice_map(m_coords.sizes(), m_data, s);
+  for (auto it = m_coords.begin(); it != m_coords.end();) {
+    if (unaligned_by_dim_slice(*it, s)) {
+      auto extracted = out.m_coords.extract(it->first);
+      for (auto &item : out.m_data)
+        item.second.attrs().set(it->first, extracted);
+    }
+    ++it;
+  }
   return out;
 }
 
