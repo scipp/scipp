@@ -49,7 +49,7 @@ stages:
               ${{ each param in parameters.settings[os.Key].params }}:
                 ${{ param.Key }}: ${{ param.Value }}
 
-  - template: documentation_build.yml
+  - template: documentation.yml
     parameters:
       image: ${{ parameters.settings.linux.image }}
       release: ${{ parameters.release }}
