@@ -58,13 +58,14 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
       .def("__iter__", [](const ElementArrayView<T> &self) {
         return py::make_iterator(self.begin(), self.end());
       });
-  view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
-                             const T value) {
-    if constexpr (is_bins<T>::value)
-      throw std::runtime_error("Assigning bin contents is not possible.");
-    else
-      self[i] = value;
-  });
+  view.def("__setitem__",
+           [](ElementArrayView<T> &self, const scipp::index i, const T value) {
+             if constexpr (is_bins<T>::value || std::is_const_v<T>)
+               throw std::runtime_error(
+                   "Assigning to readonly elements is not possible.");
+             else
+               self[i] = value;
+           });
 }
 
 void init_element_array_view(py::module &m) {
@@ -87,6 +88,7 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<int64_t>(m, "int64");
   declare_ElementArrayView<int32_t>(m, "int32");
   declare_ElementArrayView<std::string>(m, "string");
+  declare_ElementArrayView<const std::string>(m, "string_const");
   declare_ElementArrayView<bool>(m, "bool");
   declare_ElementArrayView<Variable>(m, "Variable");
   declare_ElementArrayView<DataArray>(m, "DataArray");
