@@ -29,14 +29,14 @@ Dict<Key, Value>::Dict(const Sizes &sizes, holder_type items,
   m_readonly = readonly;
 }
 
-/*
 template <class Key, class Value>
 Dict<Key, Value>::Dict(const Dict &other)
     : Dict(other.m_sizes, other.m_items, false) {}
 
 template <class Key, class Value>
 Dict<Key, Value>::Dict(Dict &&other)
-    : Dict(std::move(other.m_sizes), std::move(other.m_items), false) {}
+    : Dict(std::move(other.m_sizes), std::move(other.m_items),
+           other.m_readonly) {}
 
 template <class Key, class Value>
 Dict<Key, Value> &Dict<Key, Value>::operator=(const Dict &other) {
@@ -55,7 +55,6 @@ Dict<Key, Value> &Dict<Key, Value>::operator=(Dict &&other) {
   // keep m_readonly unchanged?
   return *this;
 }
-*/
 
 template <class Key, class Value>
 bool Dict<Key, Value>::operator==(const Dict &other) const {
@@ -141,6 +140,7 @@ void Dict<Key, Value>::set(const key_type &key, mapped_type coord,
   if (!m_sizes.contains(coord.dims())) {
     const auto dim = dim_of_coord(coord, key);
     auto dims = coord.dims();
+    // TODO can remove this with latest change to is_edges?
     if (dims.contains(dim))
       dims.erase(dim);
     if (!(is_edges(m_sizes, coord.dims(), dim) && m_sizes.contains(dims)))
