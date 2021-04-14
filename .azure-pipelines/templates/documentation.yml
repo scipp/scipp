@@ -43,8 +43,8 @@ stages:
             displayName: Add Conda to PATH
           - bash: |
               set -ex
-              # Specify python version in env file.
-              sed -e ':a' -e 'N' -e '$!ba' -e 's/- python\n/- python=${{ parameters.py_version }}\n/g' scipp-developer.yml > temp-env.yml
+              # Specify python version in env file
+              sed 's/- python$/- python=${{ parameters.py_version }}/g' scipp-developer.yml > temp-env.yml
               conda env create -f temp-env.yml
             displayName: 'Create Conda environment'
           - bash: |
