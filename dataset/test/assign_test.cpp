@@ -24,6 +24,15 @@ TEST_F(AssignTest, self) {
   // EXPECT_EQ(array.setSlice(array), original);
 }
 
+TEST_F(AssignTest, copy_slice) {
+  ASSERT_NO_THROW(array.slice({Dim::X, 0}));
+  ASSERT_NO_THROW(array.slice({Dim::X, 0}).masks());
+  EXPECT_THROW(array.slice({Dim::X, 0})
+                   .masks()
+                   .set("abc", makeVariable<bool>(Values{false})),
+               std::runtime_error);
+}
+
 TEST_F(AssignTest, coord_fail) {
   const auto original = copy(array);
   // EXPECT_THROW(array.setSlice(array.slice({Dim::X, 0, 1})),

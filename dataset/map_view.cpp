@@ -39,22 +39,10 @@ Dict<Key, Value>::Dict(Dict &&other)
            other.m_readonly) {}
 
 template <class Key, class Value>
-Dict<Key, Value> &Dict<Key, Value>::operator=(const Dict &other) {
-  expectWritable(*this);
-  m_sizes = other.m_sizes;
-  m_items = other.m_items;
-  // keep m_readonly unchanged?
-  return *this;
-}
+Dict<Key, Value> &Dict<Key, Value>::operator=(const Dict &other) = default;
 
 template <class Key, class Value>
-Dict<Key, Value> &Dict<Key, Value>::operator=(Dict &&other) {
-  expectWritable(*this);
-  m_sizes = std::move(other.m_sizes);
-  m_items = std::move(other.m_items);
-  // keep m_readonly unchanged?
-  return *this;
-}
+Dict<Key, Value> &Dict<Key, Value>::operator=(Dict &&other) = default;
 
 template <class Key, class Value>
 bool Dict<Key, Value>::operator==(const Dict &other) const {

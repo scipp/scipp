@@ -117,9 +117,8 @@ TEST(SortTest, dataset_1d) {
   const auto key =
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{10, 20, -1});
 
-  // Note that the result does not contain `scalar`. Is this a bug or a feature?
-  // - Should we throw if there is any scalar data/coord?
-  // - Should we preserve scalars?
+  EXPECT_THROW(sort(d, key), except::NotFoundError); // scalar has no 'x' coord
+  d.erase("scalar");
   EXPECT_EQ(sort(d, key), expected);
 }
 
@@ -145,8 +144,7 @@ TEST(SortTest, dataset_1d_descending) {
   const auto key =
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{10, 20, -1});
 
-  // Note that the result does not contain `scalar`. Is this a bug or a feature?
-  // - Should we throw if there is any scalar data/coord?
-  // - Should we preserve scalars?
+  EXPECT_THROW(sort(d, key, SortOrder::Descending), except::NotFoundError);
+  d.erase("scalar");
   EXPECT_EQ(sort(d, key, SortOrder::Descending), expected);
 }
