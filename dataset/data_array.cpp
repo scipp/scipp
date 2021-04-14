@@ -101,7 +101,7 @@ DataArray DataArray::slice(const Slice &s) const {
 }
 
 DataArray &DataArray::setSlice(const Slice &s, const DataArray &array) {
-  expect::coordsAreSuperset(*this, array);
+  expect::coordsAreSuperset(slice(s), array);
   // TODO Need dry-run mechanism for mask handling?
   masks().setSlice(s, array.masks());
   return setSlice(s, array.data());

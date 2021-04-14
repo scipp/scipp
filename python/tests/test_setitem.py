@@ -32,12 +32,12 @@ def test_setitem_coords_required_for_inplace_ops():
     var = sc.zeros(dims=['x'], shape=(4, ), dtype=sc.dtype.int64)
     da = sc.DataArray(data=var)
     da.coords['x'] = var
-    da['x', 2:].coords['x'] += 1
+    da.coords['x']['x', 2:] += 1
     assert sc.identical(
         da.coords['x'],
         sc.array(dims=['x'], dtype=sc.dtype.int64, values=[0, 0, 1, 1]))
     ds = sc.Dataset({'a': da})
-    ds['x', 2:].coords['x'] += 1
+    ds.coords['x']['x', 2:] += 1
     assert sc.identical(
         ds.coords['x'],
         sc.array(dims=['x'], dtype=sc.dtype.int64, values=[0, 0, 2, 2]))
