@@ -10,6 +10,8 @@
 
 #include "pybind11.h"
 
+#include "py_object.h"
+
 using namespace scipp;
 using namespace scipp::core;
 
@@ -67,6 +69,32 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
   });
 }
 
+template <>
+void declare_ElementArrayView<scipp::python::PyObject>(
+    py::module &m, const std::string &suffix) {
+  using T = scipp::python::PyObject;
+  py::class_<ElementArrayView<T>> view(
+      m, (std::string("ElementArrayView_") + suffix).c_str())
+      .def(
+          "__repr__",
+          [](const ElementArrayView<T> &self) { return array_to_string(self); })
+      .def(
+          "__getitem__",
+          [](const ElementArrayView<T> &self, const scipp::index i) {
+            return self[i].to_pybind();
+          },
+          py::return_value_policy::reference)
+      .def(
+          "__setitem__",
+          [](ElementArrayView<T> &self, const scipp::index i,
+             const py::object &value) { return self[i].to_pybind() = value; },
+          py::return_value_policy::reference)
+      .def("__len__", &ElementArrayView<T>::size)
+      .def("__iter__", [](const ElementArrayView<T> &self) {
+        return py::make_iterator(self.begin(), self.end());
+      });
+}
+
 void init_element_array_view(py::module &m) {
   declare_span<double>(m, "double");
   declare_span<float>(m, "float");
@@ -96,4 +124,5 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<bucket<Variable>>(m, "bucket_Variable");
   declare_ElementArrayView<bucket<DataArray>>(m, "bucket_DataArray");
   declare_ElementArrayView<bucket<Dataset>>(m, "bucket_Dataset");
+  declare_ElementArrayView<scipp::python::PyObject>(m, "PyObject");
 }
