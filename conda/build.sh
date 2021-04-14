@@ -8,7 +8,6 @@ then
   INSTALL_TARGET=$CONDA_PREFIX
 fi
 
-# Move scipp Python library to site packages location
 mv "$INSTALL_TARGET"/scipp "$CONDA_PREFIX"/lib/python*/
 mv "$INSTALL_TARGET"/lib/libscipp* "$CONDA_PREFIX"/lib/
 mv "$INSTALL_TARGET"/lib/libunits-shared.* "$CONDA_PREFIX"/lib/

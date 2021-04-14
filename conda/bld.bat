@@ -1,8 +1,6 @@
 
 if "%INSTALL_TARGET%" == "" call tools\make_and_install.bat & set INSTALL_TARGET=%CONDA_PREFIX%
 
-dir /s/b %INSTALL_TARGET%
-
 move %INSTALL_TARGET%\scipp %CONDA_PREFIX%\lib\
 move %INSTALL_TARGET%\bin\scipp-*.dll %CONDA_PREFIX%\bin\
 move %INSTALL_TARGET%\bin\units-shared.dll %CONDA_PREFIX%\bin\

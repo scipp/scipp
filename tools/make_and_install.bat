@@ -18,5 +18,5 @@ bin\Release\scipp-variable-test.exe || echo ERROR && exit /b
 bin\Release\scipp-dataset-test.exe || echo ERROR && exit /b
 bin\Release\scipp-units-test.exe || echo ERROR && exit /b
 
-::  Build, install and move scipp Python library to site packages location
+:: Build and install Python library
 cmake --build . --target install --config Release || echo ERROR && exit /b
