@@ -7,6 +7,56 @@
 
 namespace scipp::dataset {
 
+namespace {
+template <class T> void expectWritable(const T &dict) {
+  if (dict.is_readonly())
+    throw std::runtime_error("Read-only flag is set, cannot mutate dict.");
+}
+} // namespace
+
+template <class Key, class Value>
+Dict<Key, Value>::Dict(const Sizes &sizes,
+                       std::initializer_list<std::pair<const Key, Value>> items,
+                       const bool readonly)
+    : Dict(sizes, holder_type(items), readonly) {}
+
+template <class Key, class Value>
+Dict<Key, Value>::Dict(const Sizes &sizes, holder_type items,
+                       const bool readonly)
+    : m_sizes(sizes) {
+  for (auto &&[key, value] : items)
+    set(key, std::move(value));
+  m_readonly = readonly;
+}
+
+/*
+template <class Key, class Value>
+Dict<Key, Value>::Dict(const Dict &other)
+    : Dict(other.m_sizes, other.m_items, false) {}
+
+template <class Key, class Value>
+Dict<Key, Value>::Dict(Dict &&other)
+    : Dict(std::move(other.m_sizes), std::move(other.m_items), false) {}
+
+template <class Key, class Value>
+Dict<Key, Value> &Dict<Key, Value>::operator=(const Dict &other) {
+  expectWritable(*this);
+  m_sizes = other.m_sizes;
+  m_items = other.m_items;
+  // keep m_readonly unchanged?
+  return *this;
+}
+
+template <class Key, class Value>
+Dict<Key, Value> &Dict<Key, Value>::operator=(Dict &&other) {
+  expectWritable(*this);
+  m_sizes = std::move(other.m_sizes);
+  m_items = std::move(other.m_items);
+  // keep m_readonly unchanged?
+  return *this;
+}
+*/
+
 template <class Key, class Value>
 bool Dict<Key, Value>::operator==(const Dict &other) const {
   if (size() != other.size())
@@ -80,8 +130,12 @@ template <class Key, class Value> void Dict<Key, Value>::rebuildSizes() {
   m_sizes = std::move(new_sizes);
 }
 
+// TODO remove force workaround required by DataArray::slice
 template <class Key, class Value>
-void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
+void Dict<Key, Value>::set(const key_type &key, mapped_type coord,
+                           const bool force) {
+  if (!force)
+    expectWritable(*this);
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
   if (!m_sizes.contains(coord.dims())) {
@@ -110,7 +164,8 @@ Value Dict<Key, Value>::extract(const key_type &key) {
 
 template <class Key, class Value>
 Dict<Key, Value> Dict<Key, Value>::slice(const Slice &params) const {
-  return Dict(m_sizes.slice(params), slice_map(m_sizes, m_items, params));
+  const bool readonly = true;
+  return {m_sizes.slice(params), slice_map(m_sizes, m_items, params), readonly};
 }
 
 template <class Key, class Value>
@@ -153,6 +208,12 @@ void Dict<Key, Value>::rename(const Dim from, const Dim to) {
     item.second.rename(from, to);
 }
 
+/// Return true if the dict is readonly. Does not imply that items are readonly.
+template <class Key, class Value>
+bool Dict<Key, Value>::is_readonly() const noexcept {
+  return m_readonly;
+}
+
 template <class Key, class Value>
 Dict<Key, Value> Dict<Key, Value>::as_const() const {
   holder_type items;
@@ -160,7 +221,8 @@ Dict<Key, Value> Dict<Key, Value>::as_const() const {
                  std::inserter(items, items.end()), [](const auto &item) {
                    return std::pair(item.first, item.second.as_const());
                  });
-  return {sizes(), std::move(items)};
+  const bool readonly = true;
+  return {sizes(), std::move(items), readonly};
 }
 
 template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;

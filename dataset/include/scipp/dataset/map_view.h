@@ -86,12 +86,9 @@ public:
 
   Dict() = default;
   Dict(const Sizes &sizes,
-       std::initializer_list<std::pair<const Key, Value>> items)
-      : Dict(sizes, holder_type(items)) {}
-  Dict(const Sizes &sizes, holder_type items) : m_sizes(sizes) {
-    for (auto &&[key, value] : items)
-      set(key, std::move(value));
-  }
+       std::initializer_list<std::pair<const Key, Value>> items,
+       const bool readonly = false);
+  Dict(const Sizes &sizes, holder_type items, const bool readonly = false);
 
   /// Return the number of coordinates in the view.
   index size() const noexcept { return scipp::size(m_items); }
@@ -155,7 +152,7 @@ public:
 
   void setSizes(const Sizes &sizes);
   void rebuildSizes();
-  void set(const key_type &key, mapped_type coord);
+  void set(const key_type &key, mapped_type coord, const bool force = false);
   void erase(const key_type &key);
   mapped_type extract(const key_type &key);
 
@@ -164,11 +161,13 @@ public:
 
   void rename(const Dim from, const Dim to);
 
+  bool is_readonly() const noexcept;
   [[nodiscard]] Dict as_const() const;
 
 protected:
   Sizes m_sizes;
   holder_type m_items;
+  bool m_readonly{false};
 };
 
 /// Returns the union of all masks with irreducible dimension `dim`.
