@@ -7,7 +7,7 @@ parameters:
 - name: package_root
   type: string
   default: ''
-- name: python_version
+- name: py_version
   type: string
   default: ''
 
@@ -23,7 +23,7 @@ stages:
         variables:
           packages_dir: '$(Build.StagingDirectory)/packages'
           docs_build_dir: '$(Build.StagingDirectory)/docs_build'
-          package_name: ${{ parameters.package_root }}-py${{ parameters.python_version }}
+          package_name: ${{ parameters.package_root }}-py${{ parameters.py_version }}
         steps:
           - bash: |
               set -ex
