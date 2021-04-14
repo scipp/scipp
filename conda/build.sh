@@ -16,6 +16,7 @@ fi
 cmake \
   -G Ninja \
   -DPYTHON_EXECUTABLE="$CONDA_PREFIX/bin/python" \
+  -DCMAKE_BUILD_TYPE=Debug \
   -DCMAKE_INSTALL_PREFIX="$CONDA_PREFIX" \
   -DCMAKE_OSX_DEPLOYMENT_TARGET=$OSX_VERSION \
   -DCMAKE_OSX_SYSROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX$OSX_VERSION.sdk" \
