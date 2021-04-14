@@ -111,14 +111,13 @@ TEST(SortTest, dataset_1d) {
                                        Values{3, 1, 2}, Variances{6, 4, 5}));
   expected.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
                                              Values{0.3, 0.1, 0.2}));
+  expected.setData("scalar", makeVariable<double>(Values{1.2}));
   expected.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
                                                  units::m, Values{3, 1, 2}));
 
   const auto key =
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{10, 20, -1});
 
-  EXPECT_THROW(sort(d, key), except::NotFoundError); // scalar has no 'x' coord
-  d.erase("scalar");
   EXPECT_EQ(sort(d, key), expected);
 }
 
@@ -138,13 +137,12 @@ TEST(SortTest, dataset_1d_descending) {
                                        Values{2, 1, 3}, Variances{5, 4, 6}));
   expected.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
                                              Values{0.2, 0.1, 0.3}));
+  expected.setData("scalar", makeVariable<double>(Values{1.2}));
   expected.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
                                                  units::m, Values{2, 1, 3}));
 
   const auto key =
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{10, 20, -1});
 
-  EXPECT_THROW(sort(d, key, SortOrder::Descending), except::NotFoundError);
-  d.erase("scalar");
   EXPECT_EQ(sort(d, key, SortOrder::Descending), expected);
 }
