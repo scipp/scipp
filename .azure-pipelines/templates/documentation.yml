@@ -4,7 +4,10 @@ parameters:
 - name: release
   type: boolean
   default: false
-- name: package_name
+- name: package_root
+  type: string
+  default: ''
+- name: python_version
   type: string
   default: ''
 
@@ -20,6 +23,7 @@ stages:
         variables:
           packages_dir: '$(Build.StagingDirectory)/packages'
           docs_build_dir: '$(Build.StagingDirectory)/docs_build'
+          package_name: ${{ parameters.package_root }}-py${{ parameters.python_version }}
         steps:
           - bash: |
               set -ex
@@ -31,19 +35,22 @@ stages:
               buildType: 'current'
               specificBuildWithTriggering: true
               downloadType: 'single'
-              artifactName: ${{ parameters.package_name }}
+              artifactName: '$(package_name)'
               downloadPath: '$(packages_dir)'
             displayName: 'Download previously built Conda package'
           - bash: |
               echo "##vso[task.prependpath]$CONDA/bin"
             displayName: Add Conda to PATH
           - bash: |
-              conda env create -f scipp-developer.yml
+              set -ex
+              # Specify python version in env file.
+              sed -e ':a' -e 'N' -e '$!ba' -e 's/- python\n/- python=${{ parameters.py_version }}\n/g' scipp-developer.yml > temp-env.yml
+              conda env create -f temp-env.yml
             displayName: 'Create Conda environment'
           - bash: |
               set -ex
               source activate scipp-developer
-              conda install "$(packages_dir)/${{ parameters.package_name }}/"scipp-*.tar.bz2
+              conda install "$(packages_dir)/$(package_name)/"scipp-*.tar.bz2
             displayName: 'Install Scipp package'
           - bash: |
               set -ex

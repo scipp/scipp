@@ -56,7 +56,10 @@ jobs:
           conda --version
           conda install --yes conda-build
           conda config --set always_yes yes --set changeps1 no
-          conda env create -f scipp-developer.yml
+          # Specify python version in env file.
+          # See https://stackoverflow.com/questions/1251999/how-can-i-replace-a-newline-n-using-sed
+          sed -e ':a' -e 'N' -e '$!ba' -e 's/- python\n/- python=${{ parameters.py_version }}\n/g' scipp-developer.yml > temp-env.yml
+          conda env create -f temp-env.yml
         displayName: 'Create conda environment'
 
       - bash: |

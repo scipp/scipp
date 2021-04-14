@@ -53,7 +53,8 @@ stages:
     parameters:
       image: ${{ parameters.settings.linux.image }}
       release: ${{ parameters.release }}
-      package_name: ${{ parameters.settings.linux.publish }}-py3.7
+      package_root: ${{ parameters.settings.linux.publish }}
+      python_version: '3.7'
 
   - ${{ if eq(parameters.deploy, true) }}:
     - template: deploy.yml
