@@ -82,6 +82,9 @@ Sizes merge(const Sizes &a, const Sizes &b) {
 bool is_edges(const Sizes &sizes, const Dimensions &dims, const Dim dim) {
   if (dim == Dim::Invalid)
     return false;
+  for (const auto &d : dims.labels())
+    if (d != dim && !sizes.contains(d))
+      return false;
   const auto size = dims[dim];
   return size == (sizes.contains(dim) ? sizes[dim] + 1 : 2);
 }

@@ -89,6 +89,10 @@ public:
        std::initializer_list<std::pair<const Key, Value>> items,
        const bool readonly = false);
   Dict(const Sizes &sizes, holder_type items, const bool readonly = false);
+  Dict(const Dict &other);
+  Dict(Dict &&other);
+  Dict &operator=(const Dict &other);
+  Dict &operator=(Dict &&other);
 
   /// Return the number of coordinates in the view.
   index size() const noexcept { return scipp::size(m_items); }
