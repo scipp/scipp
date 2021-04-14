@@ -13,8 +13,8 @@ extends:
   template: templates/stages.yml
   parameters:
     py_versions:
-      linux: ['3.7', '3.6']
-      osx: ['3.7', '3.6']
-      windows: ['3.7', '3.6']
+      linux: ['3.7', '3.8']
+      osx: ['3.7', '3.8']
+      windows: ['3.7', '3.8']
     deploy: true
     label: 'test'
