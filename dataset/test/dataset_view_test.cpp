@@ -80,9 +80,9 @@ TYPED_TEST(DatasetViewTest, find_in_slice) {
 
   EXPECT_EQ(slice.find("a")->name(), "a");
   EXPECT_EQ(*slice.find("a"), slice["a"]);
-  EXPECT_EQ(slice.find("b"), slice.end());
+  EXPECT_NE(slice.find("b"), slice.end()); // not removed by slicing
   EXPECT_TRUE(slice.contains("a"));
-  EXPECT_FALSE(slice.contains("b"));
+  EXPECT_TRUE(slice.contains("b"));
 }
 
 TYPED_TEST(DatasetViewTest, iterators_empty_dataset) {

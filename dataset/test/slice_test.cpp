@@ -292,6 +292,9 @@ TEST_P(Dataset3DTest_slice_y, slice) {
       reference[name].attrs().set(
           Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::Y, pos}));
   }
+  for (const auto &item : dataset)
+    if (!reference.contains(item.name()))
+      reference.setData(item.name(), copy(item));
 
   EXPECT_EQ(dataset.slice({Dim::Y, pos}), reference);
 }
@@ -311,6 +314,9 @@ TEST_P(Dataset3DTest_slice_z, slice) {
       reference[name].attrs().set(
           Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::Z, pos}));
   }
+  for (const auto &item : dataset)
+    if (!reference.contains(item.name()))
+      reference.setData(item.name(), copy(item));
 
   EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
 }
