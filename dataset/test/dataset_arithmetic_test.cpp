@@ -413,43 +413,32 @@ TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
   EXPECT_EQ(slice3["data_x"].masks()["masks_x"], expectedMask);
 }
 
-TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DataArrayView_self_overlap) {
+TYPED_TEST(DatasetViewBinaryEqualsOpTest,
+           rhs_DataArray_prevented_modification_of_lower_dimensional_items) {
   auto dataset = datasetFactory().make();
   auto reference = copy(dataset);
-  TestFixture::op(reference, dataset["data_scalar"]);
-
   for (scipp::index z = 0; z < dataset.coords()[Dim::Z].dims()[Dim::Z]; ++z) {
-    for (const auto &item : dataset)
-      if (item.dims().contains(Dim::Z)) {
-        EXPECT_NE(item, reference[item.name()]);
-      }
-    ASSERT_NO_THROW(
-        TestFixture::op(dataset.slice({Dim::Z, z}), dataset["data_scalar"]));
+    ASSERT_THROW(
+        TestFixture::op(dataset.slice({Dim::Z, z}), dataset["data_scalar"]),
+        except::VariableError);
   }
-  for (const auto &item : dataset)
-    if (item.dims().contains(Dim::Z)) {
-      EXPECT_EQ(item, reference[item.name()]);
-    }
+  EXPECT_EQ(dataset, reference);
 }
 
-TYPED_TEST(DatasetViewBinaryEqualsOpTest,
-           rhs_DataArrayView_self_overlap_slice) {
+TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DataArray_self_overlap) {
   auto dataset = datasetFactory().make();
+  for (const auto &name : {"values_x", "data_x", "data_xy", "data_scalar"})
+    dataset.erase(name);
+  // Unless we take the last slice this will not work
+  const auto slice = dataset["data_xyz"].slice({Dim::Z, 5});
   auto reference = copy(dataset);
-  TestFixture::op(reference, dataset["values_x"].slice({Dim::X, 1}));
 
-  for (scipp::index z = 0; z < dataset.coords()[Dim::Z].dims()[Dim::Z]; ++z) {
-    for (const auto &item : dataset)
-      if (item.dims().contains(Dim::Z)) {
-        EXPECT_NE(item, reference[item.name()]);
-      }
-    ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, z}),
-                                    dataset["values_x"].slice({Dim::X, 1})));
+  for (scipp::index z = 0; z < dataset.coords()[Dim::Z].dims()[Dim::Z]; ++z)
+    ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, z}), slice));
+  const auto rhs = copy(reference["data_xyz"].slice({Dim::Z, 5}));
+  for (const auto &item : dataset) {
+    EXPECT_EQ(item, TestFixture::op(reference[item.name()], rhs));
   }
-  for (const auto &item : dataset)
-    if (item.dims().contains(Dim::Z)) {
-      EXPECT_EQ(item, reference[item.name()]);
-    }
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
@@ -484,28 +473,38 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
   ASSERT_ANY_THROW(TestFixture::op(Dataset(a), b));
 }
 
-TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
+TYPED_TEST(DatasetViewBinaryEqualsOpTest,
+           rhs_Dataset_prevented_modification_of_lower_dimensional_items) {
   auto dataset = datasetFactory().make();
   const auto slice = dataset.slice({Dim::Z, 3});
-  auto reference(dataset);
+  auto reference = copy(dataset);
+  ASSERT_THROW(TestFixture::op(dataset.slice({Dim::Z, 0, 3}), slice),
+               except::VariableError);
+  ASSERT_THROW(TestFixture::op(dataset.slice({Dim::Z, 3, 6}), slice),
+               except::VariableError);
+  EXPECT_EQ(dataset, reference);
+}
+
+TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
+  auto dataset = datasetFactory().make();
+  for (const auto &name : {"values_x", "data_x", "data_xy", "data_scalar"})
+    dataset.erase(name);
+  const auto slice = dataset.slice({Dim::Z, 3});
+  auto reference = copy(dataset);
 
   ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, 0, 3}), slice));
   ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, 3, 6}), slice));
   for (const auto &item : dataset) {
-    // Items independent of Z are removed when creating `slice`.
-    if (item.dims().contains(Dim::Z)) {
-      EXPECT_EQ(item,
-                TestFixture::op(reference[item.name()],
-                                reference[item.name()].slice({Dim::Z, 3})));
-    } else {
-      EXPECT_EQ(item, reference[item.name()]);
-    }
+    EXPECT_EQ(item, TestFixture::op(reference[item.name()],
+                                    reference[item.name()].slice({Dim::Z, 3})));
   }
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest,
            rhs_DatasetView_self_overlap_undetectable) {
   auto dataset = datasetFactory().make();
+  for (const auto &name : {"values_x", "data_x", "data_xy", "data_scalar"})
+    dataset.erase(name);
   const auto slice = dataset.slice({Dim::Z, 3});
   auto reference = copy(dataset);
 
@@ -516,13 +515,8 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest,
   ASSERT_NO_THROW(TestFixture::op(dataset.slice({Dim::Z, 0, 3}), slice));
   for (const auto &item : dataset) {
     // Items independent of Z are removed when creating `slice`.
-    if (item.dims().contains(Dim::Z)) {
-      EXPECT_NE(item,
-                TestFixture::op(reference[item.name()],
-                                reference[item.name()].slice({Dim::Z, 3})));
-    } else {
-      EXPECT_EQ(item, reference[item.name()]);
-    }
+    EXPECT_NE(item, TestFixture::op(reference[item.name()],
+                                    reference[item.name()].slice({Dim::Z, 3})));
   }
 }
 
