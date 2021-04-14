@@ -6,8 +6,7 @@
 import numpy as np
 import pytest
 import scipp as sc
-from plot_helper import make_dense_dataset
-from scipp import plot
+from plot_helper import make_dense_dataset, plot
 
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing

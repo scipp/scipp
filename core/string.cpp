@@ -79,37 +79,43 @@ void put_time(std::ostream &os, const std::time_t time_point) {
   const std::tm *tm = std::gmtime(&time_point);
   os << std::put_time(tm, "%FT%T");
 }
+
+template <class Rep, class Period>
+std::string to_string(const std::chrono::duration<Rep, Period> &duration) {
+  using Clock = std::chrono::system_clock;
+
+  std::ostringstream oss;
+  // Cast to seconds to be independent of clock precision.
+  // Sub-second digits are formatted manually.
+  put_time(oss,
+           Clock::to_time_t(Clock::time_point{
+               std::chrono::duration_cast<std::chrono::seconds>(duration)}));
+  if constexpr (std::ratio_less_v<Period, std::ratio<1, 1>>) {
+    oss << '.' << std::setw(num_digits<Period>()) << std::setfill('0')
+        << (duration.count() % (Period::den / Period::num));
+  }
+  return oss.str();
+}
 } // namespace
 
 std::string to_iso_date(const scipp::core::time_point &item,
                         const units::Unit &unit) {
-  using Clock = std::chrono::system_clock;
-
-  const auto print = [&](const auto duration) {
-    using Period = typename decltype(duration)::period;
-    std::ostringstream oss;
-    // Cast to seconds to be independent of clock precision.
-    // Sub-second digits are formatted manually.
-    put_time(oss,
-             Clock::to_time_t(Clock::time_point{
-                 std::chrono::duration_cast<std::chrono::seconds>(duration)}));
-    if constexpr (std::ratio_less_v<Period, std::ratio<1, 1>>) {
-      oss << '.' << std::setw(num_digits<Period>()) << std::setfill('0')
-          << (duration.count() % (Period::den / Period::num));
-    }
-    return oss.str();
-  };
-
   if (unit == units::ns) {
-    return print(std::chrono::nanoseconds{item.time_since_epoch()});
+    return to_string(std::chrono::nanoseconds{item.time_since_epoch()});
   } else if (unit == units::s) {
-    return print(std::chrono::seconds{item.time_since_epoch()});
+    return to_string(std::chrono::seconds{item.time_since_epoch()});
   } else if (unit == units::us) {
-    return print(std::chrono::microseconds{item.time_since_epoch()});
-  }
-  static const auto ms = units::Unit("ms");
-  if (unit == ms) {
-    return print(std::chrono::milliseconds{item.time_since_epoch()});
+    return to_string(std::chrono::microseconds{item.time_since_epoch()});
+  } else if (unit == units::Unit(llnl::units::precise::ms)) {
+    return to_string(std::chrono::milliseconds{item.time_since_epoch()});
+  } else if (unit == units::Unit(llnl::units::precise::min)) {
+    return to_string(std::chrono::minutes{item.time_since_epoch()});
+  } else if (unit == units::Unit(llnl::units::precise::hr)) {
+    return to_string(std::chrono::hours{item.time_since_epoch()});
+  } else if (unit == units::Unit(llnl::units::precise::day) ||
+             unit == units::Unit("month") || unit == units::Unit("year")) {
+    throw except::UnitError("Printing of time points with units greater than "
+                            "hours is not yet implemented.");
   }
   throw except::UnitError("Cannot display time point, unsupported unit: " +
                           to_string(unit));

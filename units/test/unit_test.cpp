@@ -34,13 +34,13 @@ TEST(UnitTest, construct_bad_string) {
 TEST(UnitTest, overflows) {
   // These would run out of bits in llnl/units and wrap, ensure that scipp
   // prevents this and throws instead.
-  Unit m4{units::m * units::m * units::m * units::m};
-  Unit inv_m8{units::one / m4 / m4};
-  EXPECT_THROW(m4 * m4, except::UnitError);
-  EXPECT_THROW(units::one / inv_m8, except::UnitError);
-  EXPECT_THROW(inv_m8 / units::m, except::UnitError);
-  EXPECT_THROW(inv_m8 % units::m, except::UnitError);
-  EXPECT_THROW(pow(units::m, 8), except::UnitError);
+  Unit m64{pow(units::m, 64)};
+  Unit inv_m128{units::one / m64 / m64};
+  EXPECT_THROW(m64 * m64, except::UnitError);
+  EXPECT_THROW(units::one / inv_m128, except::UnitError);
+  EXPECT_THROW(inv_m128 / units::m, except::UnitError);
+  EXPECT_THROW(inv_m128 % units::m, except::UnitError);
+  EXPECT_THROW(pow(units::m, 128), except::UnitError);
 }
 
 TEST(UnitTest, compare) {
@@ -80,6 +80,11 @@ TEST(UnitTest, multiply) {
   EXPECT_EQ(b * b, c);
   EXPECT_EQ(b * c, units::m * units::m * units::m);
   EXPECT_EQ(c * b, units::m * units::m * units::m);
+}
+
+TEST(UnitTest, counts_variances) {
+  Unit counts{units::counts};
+  EXPECT_EQ(counts * counts, units::Unit("counts**2"));
 }
 
 TEST(UnitTest, multiply_counts) {
@@ -143,6 +148,7 @@ TEST(UnitFunctionsTest, abs) {
 
 TEST(UnitFunctionsTest, sqrt) {
   EXPECT_EQ(sqrt(units::m * units::m), units::m);
+  EXPECT_EQ(sqrt(units::counts * units::counts), units::counts);
   EXPECT_EQ(sqrt(units::one), units::one);
   EXPECT_THROW_MSG(sqrt(units::m), except::UnitError,
                    "Unsupported unit as result of sqrt: sqrt(m).");
@@ -206,8 +212,9 @@ TEST(UnitParseTest, singular_plural) {
 }
 
 TEST(UnitFormatTest, roundtrip_string) {
-  for (const auto &s : {"m", "m/s", "meV", "pAh", "mAh", "ns", "counts",
-                        "counts/meV", "1/counts", "counts/m"}) {
+  for (const auto &s :
+       {"m", "m/s", "meV", "pAh", "mAh", "ns", "counts", "counts^2",
+        "counts/meV", "1/counts", "counts/m", "Y", "M", "D"}) {
     const auto unit = units::Unit(s);
     EXPECT_EQ(to_string(unit), s);
     EXPECT_EQ(units::Unit(to_string(unit)), unit);
@@ -217,7 +224,7 @@ TEST(UnitFormatTest, roundtrip_string) {
 TEST(UnitFormatTest, roundtrip_unit) {
   // Some formattings use special characters, e.g., for micro and Angstrom, but
   // some are actually formatted badly right now, but at least roundtrip works.
-  for (const auto &s : {"us", "angstrom", "counts/us"}) {
+  for (const auto &s : {"us", "angstrom", "counts/us", "Y", "M", "D"}) {
     const auto unit = units::Unit(s);
     EXPECT_EQ(units::Unit(to_string(unit)), unit);
   }

@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
@@ -14,25 +15,48 @@
 
 namespace scipp::units {
 
+namespace {
+std::string map_unit_string(const std::string &unit) {
+  // custom dimensionless name
+  return unit == "dimensionless"
+             ? ""
+             // Use Gregorian months and years by default.
+             : unit == "y" || unit == "Y" || unit == "year"
+                   ? "a_g"
+                   // Overwrite M to mean month instead of molarity for numpy
+                   // interop.
+                   : unit == "M" || unit == "month" ? "mog" : unit;
+}
+} // namespace
+
 Unit::Unit(const std::string &unit)
-    : Unit(llnl::units::unit_from_string(unit == "dimensionless" ? "" : unit)) {
+    : Unit(llnl::units::unit_from_string(map_unit_string(unit))) {
   if (!is_valid(m_unit))
     throw except::UnitError("Failed to convert string `" + unit +
                             "` to valid unit.");
 }
 
 std::string Unit::name() const {
+  if (*this == Unit{"month"}) {
+    return "M";
+  }
   auto repr = to_string(m_unit);
   repr = std::regex_replace(repr, std::regex("^u"), "µ");
   repr = std::regex_replace(repr, std::regex("item"), "count");
   repr = std::regex_replace(repr, std::regex("count(?!s)"), "counts");
-  return repr == "" ? "dimensionless" : repr;
+  repr = std::regex_replace(repr, std::regex("day"), "D");
+  repr = std::regex_replace(repr, std::regex("a_g"), "Y");
+  return repr.empty() ? "dimensionless" : repr;
 }
 
 bool Unit::isCounts() const { return *this == counts; }
 
 bool Unit::isCountDensity() const {
   return !isCounts() && m_unit.base_units().count() != 0;
+}
+
+bool Unit::has_same_base(const Unit &other) const {
+  return m_unit.has_same_base(other.underlying());
 }
 
 bool Unit::operator==(const Unit &other) const {
@@ -67,14 +91,14 @@ Unit operator*(const Unit &a, const Unit &b) {
   if (llnl::units::times_overflows(a.underlying(), b.underlying()))
     throw except::UnitError("Unsupported unit as result of multiplication: (" +
                             a.name() + ") * (" + b.name() + ')');
-  return {a.underlying() * b.underlying()};
+  return Unit{a.underlying() * b.underlying()};
 }
 
 Unit operator/(const Unit &a, const Unit &b) {
   if (llnl::units::divides_overflows(a.underlying(), b.underlying()))
     throw except::UnitError("Unsupported unit as result of division: (" +
                             a.name() + ") / (" + b.name() + ')');
-  return {a.underlying() / b.underlying()};
+  return Unit{a.underlying() / b.underlying()};
 }
 
 Unit operator%(const Unit &a, const Unit &b) { return a / b; }
@@ -87,14 +111,14 @@ Unit sqrt(const Unit &a) {
   if (llnl::units::is_error(sqrt(a.underlying())))
     throw except::UnitError("Unsupported unit as result of sqrt: sqrt(" +
                             a.name() + ").");
-  return {sqrt(a.underlying())};
+  return Unit{sqrt(a.underlying())};
 }
 
 Unit pow(const Unit &a, const int64_t power) {
   if (llnl::units::pow_overflows(a.underlying(), power))
     throw except::UnitError("Unsupported unit as result of pow: pow(" +
                             a.name() + ", " + std::to_string(power) + ").");
-  return {a.underlying().pow(power)};
+  return Unit{a.underlying().pow(power)};
 }
 
 Unit trigonometric(const Unit &a) {

@@ -81,12 +81,14 @@ defaults = {
     },
     # The colors for each dataset member used in table and show functions
     "colors": {
-        "coords": "#dde9af",
-        "data": "#ffe680",
-        "labels": "#afdde9",
-        "attrs": "#ff8080",
-        "masks": "#cccccc",
+        "attrs": "#ff5555",
+        "coords": "#c6e590",
+        "data": "#f6d028",
         "hover": "#d6eaf8",
+        "masks": "#c8c8c8",
+        "header_text": "#111111",
+        "button": "#bdbdbd49",
+        "button_selected": "#bdbdbdbb",
     },
     "table_max_size": 50,
 }
@@ -100,7 +102,7 @@ def load():
     if not os.path.exists(config_directory):
         os.makedirs(config_directory)
 
-    # Save a default configuration if no user coniguration file exists
+    # Save a default configuration if no user configuration file exists
     if not os.path.exists(config_filename):
         with open(config_filename, 'w+') as f:
             f.write(yaml.dump(defaults))
