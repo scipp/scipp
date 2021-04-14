@@ -785,7 +785,8 @@ TEST(DatasetSetData, labels) {
   d.setCoord(Dim("l1"),
              makeVariable<double>(Dims{Dim::X},
                                   Shape{d.coords()[Dim::X].dims().volume()}));
-  EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), except::NotFoundError);
+  dense.setData("data_x_2", d["data_x"]);
+  EXPECT_TRUE(dense.coords().contains(Dim("l1")));
 }
 
 TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
