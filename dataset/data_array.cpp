@@ -96,7 +96,7 @@ DataArray DataArray::slice(const Slice &s) const {
                 m_attrs->slice(s), m_name};
   for (auto it = m_coords.begin(); it != m_coords.end(); ++it)
     if (unaligned_by_dim_slice(*it, s))
-      out.attrs().set(it->first, out.m_coords.extract(it->first));
+      out.attrs().set(it->first, out.m_coords.extract(it->first), true);
   return out;
 }
 
