@@ -7,16 +7,18 @@ import numpy as np
 import scipp as sc
 
 
-def make_variable(data, **kwargs):
+def make_variable(data, variances=None, **kwargs):
     """
     Make a Variable with default dimensions from data
     while avoiding copies beyond what sc.Variable does.
     """
     if isinstance(data, (list, tuple)):
         data = np.array(data)
+    if variances is not None and isinstance(variances, (list, tuple)):
+        variances = np.array(variances)
     if isinstance(data, np.ndarray):
         dims = ['x', 'y'][:np.ndim(data)]
-        return sc.array(dims=dims, values=data, **kwargs)
+        return sc.array(dims=dims, values=data, variances=variances, **kwargs)
     return sc.scalar(data, **kwargs)
 
 
@@ -41,8 +43,10 @@ def test_own_var_scalar_copy():
     v.unit = 's'
     assert sc.identical(v, make_variable(2.0, variance=20.0, unit='s'))
     assert sc.identical(v_copy, make_variable(1.0, variance=10.0, unit='m'))
-    assert sc.identical(v_deepcopy, make_variable(1.0, variance=10.0, unit='m'))
-    assert sc.identical(v_methcopy, make_variable(1.0, variance=10.0, unit='m'))
+    assert sc.identical(v_deepcopy, make_variable(1.0, variance=10.0,
+                                                  unit='m'))
+    assert sc.identical(v_methcopy, make_variable(1.0, variance=10.0,
+                                                  unit='m'))
 
 
 def test_own_var_scalar_pyobj_set():
@@ -85,22 +89,24 @@ def test_own_var_scalar_pyobj_copy():
 def test_own_var_scalar_nested_set():
     # Variables are shared when nested.
     a = np.arange(5)
-    inner = make_variable(a)
+    inner = make_variable(a, unit='m')
     outer = make_variable(inner)
     outer.value['x', 0] = -1
     outer.value.values[1] = -2
     inner['x', 2] = -3
+    inner.unit = 's'
     a[3] = -4
-    assert sc.identical(outer, make_variable(make_variable([-1, -2, -3, 3,
-                                                            4])))
-    assert sc.identical(inner, make_variable([-1, -2, -3, 3, 4]))
+    assert sc.identical(
+        outer, make_variable(make_variable([-1, -2, -3, 3, 4], unit='s')))
+    assert sc.identical(inner, make_variable([-1, -2, -3, 3, 4], unit='s'))
     np.testing.assert_array_equal(a, [0, 1, 2, -4, 4])
 
-    # Assigning a new Variable replaces the old without modifying it.
-    outer.value = make_variable(np.arange(5, 8))
+    # Assignment creates a new inner Variable.
+    outer.value = make_variable(np.arange(5, 8), unit='kg')
     outer.value['x', 0] = -5
-    assert sc.identical(outer, make_variable(make_variable([-5, 6, 7])))
-    assert sc.identical(inner, make_variable([-1, -2, -3, 3, 4]))
+    assert sc.identical(outer,
+                        make_variable(make_variable([-5, 6, 7], unit='kg')))
+    assert sc.identical(inner, make_variable([-1, -2, -3, 3, 4], unit='s'))
 
     # TODO this causes and infinite loop and segfaults at the moment
     # outer.value = outer
@@ -121,7 +127,7 @@ def test_own_var_scalar_nested_get():
     assert sc.identical(inner, make_variable(expected))
     np.testing.assert_array_equal(a, expected)
 
-    #
+    # Assignment writes the values into the inner Variable.
     outer.value = make_variable(np.arange(5, 8))
     outer.value['x', 0] = -5
     inner['x', 1] = -10
