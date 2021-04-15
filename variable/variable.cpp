@@ -54,7 +54,6 @@ void Variable::setDims(const Dimensions &dimensions) {
 }
 
 void Variable::expectCanSetUnit(const units::Unit &unit) const {
-  // TODO readonly flag?
   if (this->unit() != unit && is_slice())
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
