@@ -198,31 +198,24 @@ bool Dataset::operator!=(const Dataset &other) const {
 const Sizes &Dataset::sizes() const { return m_coords.sizes(); }
 const Sizes &Dataset::dims() const { return sizes(); }
 
-std::unordered_map<typename Masks::key_type, typename Masks::mapped_type>
-union_or(const Masks &currentMasks, const Masks &otherMasks) {
-  std::unordered_map<typename Masks::key_type, typename Masks::mapped_type> out;
-
-  for (const auto &[key, item] : currentMasks) {
+typename Masks::holder_type union_or(const Masks &currentMasks,
+                                     const Masks &otherMasks) {
+  typename Masks::holder_type out;
+  for (const auto &[key, item] : currentMasks)
     out.emplace(key, copy(item));
-  }
-
   for (const auto &[key, item] : otherMasks) {
     const auto it = currentMasks.find(key);
-    if (it != currentMasks.end()) {
-      if (out[key].dims().contains(item.dims()))
-        out[key] |= item;
-      else
-        out[key] = out[key] | item;
-    } else {
+    if (it == currentMasks.end())
       out.emplace(key, copy(item));
-    }
+    else if (out[key].dims().contains(item.dims()))
+      out[key] |= item;
+    else
+      out[key] = out[key] | item;
   }
   return out;
 }
 
-namespace {
-template <class Op>
-void union_op_in_place(Masks &masks, const Masks &otherMasks, Op op) {
+void union_or_in_place(Masks &masks, const Masks &otherMasks) {
   for (const auto &[key, item] : otherMasks) {
     const auto it = masks.find(key);
     if (it == masks.end()) {
@@ -230,18 +223,12 @@ void union_op_in_place(Masks &masks, const Masks &otherMasks, Op op) {
       // can catch this before data or masks are modified.
       masks.set(key, copy(item));
     } else if (!it->second.is_readonly()) {
-      op(it->second, item);
-    } else if (it->second != op(copy(it->second), item))
+      it->second |= item;
+    } else if (it->second != (it->second | item))
       throw except::DimensionError(
           "Cannot update mask via slice since the mask is being broadcast "
           "along the slice dimension.");
   }
-}
-} // namespace
-
-void union_or_in_place(Masks &masks, const Masks &otherMasks) {
-  union_op_in_place(masks, otherMasks,
-                    [](auto &&a, auto &&b) { return a |= b; });
 }
 
 } // namespace scipp::dataset
