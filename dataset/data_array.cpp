@@ -78,26 +78,16 @@ const std::string &DataArray::name() const { return m_name; }
 
 void DataArray::setName(const std::string &name) { m_name = name; }
 
-Coords DataArray::meta() const {
-  auto out = attrs();
-  for (const auto &[dim, coord] : coords()) {
-    if (out.contains(dim))
-      throw except::DataArrayError(
-          "Coord '" + to_string(dim) +
-          "' shadows attr of the same name. Remove the attr or use the "
-          "`coords` and `attrs` properties instead of `meta`.");
-    out.set(dim, coord);
-  }
-  return out;
-}
+Coords DataArray::meta() const { return attrs().merge_from(coords()); }
 
 DataArray DataArray::slice(const Slice &s) const {
-  DataArray out{m_data->slice(s), m_coords.slice(s), m_masks->slice(s),
-                m_attrs->slice(s), m_name};
+  auto out_coords = m_coords.slice(s);
+  Attrs out_attrs(out_coords.sizes(), {});
   for (auto it = m_coords.begin(); it != m_coords.end(); ++it)
     if (unaligned_by_dim_slice(*it, s))
-      out.attrs().set(it->first, out.m_coords.extract(it->first), true);
-  return out;
+      out_attrs.set(it->first, out_coords.extract(it->first));
+  return {m_data->slice(s), std::move(out_coords), m_masks->slice(s),
+          m_attrs->slice(s).merge_from(out_attrs), m_name};
 }
 
 DataArray &DataArray::setSlice(const Slice &s, const DataArray &array) {

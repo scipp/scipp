@@ -156,7 +156,7 @@ public:
 
   void setSizes(const Sizes &sizes);
   void rebuildSizes();
-  void set(const key_type &key, mapped_type coord, const bool force = false);
+  void set(const key_type &key, mapped_type coord);
   void erase(const key_type &key);
   mapped_type extract(const key_type &key);
 
@@ -167,6 +167,7 @@ public:
 
   bool is_readonly() const noexcept;
   [[nodiscard]] Dict as_const() const;
+  [[nodiscard]] Dict merge_from(const Dict &other) const;
 
   bool item_applies_to(const Key &key, const Dimensions &dims) const;
 
