@@ -168,6 +168,8 @@ public:
   bool is_readonly() const noexcept;
   [[nodiscard]] Dict as_const() const;
 
+  bool item_applies_to(const Key &key, const Dimensions &dims) const;
+
 protected:
   Sizes m_sizes;
   holder_type m_items;

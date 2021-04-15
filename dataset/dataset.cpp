@@ -141,8 +141,7 @@ Dataset Dataset::slice(const Slice s) const {
     if (unaligned_by_dim_slice(*it, s)) {
       auto extracted = out.m_coords.extract(it->first);
       for (auto &item : out.m_data)
-        // TODO This can be check more efficiently
-        if (operator[](item.first).coords().contains(it->first))
+        if (m_coords.item_applies_to(it->first, m_data.at(item.first).dims()))
           item.second.attrs().set(it->first, extracted, true);
     }
     ++it;

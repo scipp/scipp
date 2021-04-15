@@ -209,6 +209,15 @@ Dict<Key, Value> Dict<Key, Value>::as_const() const {
   return {sizes(), std::move(items), readonly};
 }
 
+template <class Key, class Value>
+bool Dict<Key, Value>::item_applies_to(const Key &key,
+                                       const Dimensions &dims) const {
+  const auto &val = m_items.at(key);
+  return dims.contains(val.dims()) ||
+         (!sizes().contains(val.dims()) &&
+          is_edges(Sizes(dims), val.dims(), dim_of_coord(val, key)));
+}
+
 template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;
 template class SCIPP_DATASET_EXPORT Dict<std::string, Variable>;
 
