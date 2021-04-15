@@ -33,14 +33,13 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
       .def("__iter__", [](const ElementArrayView<T> &self) {
         return py::make_iterator(self.begin(), self.end());
       });
-  view.def("__setitem__",
-           [](ElementArrayView<T> &self, const scipp::index i, const T value) {
-             if constexpr (is_bins<T>::value || std::is_const_v<T>)
-               throw std::invalid_argument(
-                   "assignment destination is read-only");
-             else
-               self[i] = value;
-           });
+  view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
+                             const T value) {
+    if constexpr (is_bins<T>::value || std::is_const_v<T>)
+      throw std::invalid_argument("assignment destination is read-only");
+    else
+      self[i] = value;
+  });
 }
 
 void init_element_array_view(py::module &m) {
