@@ -137,14 +137,16 @@ Dataset Dataset::slice(const Slice s) const {
   Dataset out;
   out.m_coords = m_coords.slice(s);
   out.m_data = slice_map(m_coords.sizes(), m_data, s);
-  for (auto it = m_coords.begin(); it != m_coords.end();) {
-    if (unaligned_by_dim_slice(*it, s)) {
-      auto extracted = out.m_coords.extract(it->first);
-      for (auto &item : out.m_data)
-        if (m_coords.item_applies_to(it->first, m_data.at(item.first).dims()))
-          item.second.attrs().set(it->first, extracted, true);
-    }
-    ++it;
+  Attrs out_attrs(out.m_coords.sizes(), {});
+  for (auto it = m_coords.begin(); it != m_coords.end(); ++it)
+    if (unaligned_by_dim_slice(*it, s))
+      out_attrs.set(it->first, out.m_coords.extract(it->first));
+  for (auto &item : out.m_data) {
+    Attrs item_attrs(out.m_coords.sizes(), {});
+    for (const auto &[dim, coord] : out_attrs)
+      if (m_coords.item_applies_to(dim, m_data.at(item.first).dims()))
+        item_attrs.set(dim, coord);
+    item.second.attrs() = item.second.attrs().merge_from(item_attrs);
   }
   return out;
 }

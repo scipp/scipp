@@ -119,12 +119,10 @@ template <class Key, class Value> void Dict<Key, Value>::rebuildSizes() {
 
 // TODO remove force workaround required by DataArray::slice
 template <class Key, class Value>
-void Dict<Key, Value>::set(const key_type &key, mapped_type coord,
-                           const bool force) {
+void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
   if (contains(key) && at(key).is_same(coord))
     return;
-  if (!force)
-    expectWritable(*this);
+  expectWritable(*this);
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
   if (!m_sizes.contains(coord.dims()) &&
@@ -211,6 +209,25 @@ Dict<Key, Value> Dict<Key, Value>::as_const() const {
                  });
   const bool readonly = true;
   return {sizes(), std::move(items), readonly};
+}
+
+template <class Key, class Value>
+Dict<Key, Value> Dict<Key, Value>::merge_from(const Dict &other) const {
+  using core::to_string;
+  using units::to_string;
+  auto out(*this);
+  out.m_readonly = false;
+  for (const auto &[key, value] : other) {
+    if (out.contains(key))
+      throw except::DataArrayError(
+          "Coord '" + to_string(key) +
+          "' shadows attr of the same name. Remove the attr if you are slicing "
+          "an array or use the `coords` and `attrs` properties instead of "
+          "`meta`.");
+    out.set(key, value);
+  }
+  out.m_readonly = m_readonly;
+  return out;
 }
 
 template <class Key, class Value>
