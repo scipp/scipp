@@ -128,7 +128,8 @@ def test_del_item_missing():
 def test_coord_setitem():
     var = sc.Variable(dims=['x'], values=np.arange(4))
     d = sc.Dataset({'a': var}, coords={'x': var})
-    d['x', 2:3].coords['y'] = sc.Variable(1.0)  # no effect
+    with pytest.raises(RuntimeError):
+        d['x', 2:3].coords['y'] = sc.Variable(1.0)
     assert 'y' not in d.coords
     d.coords['y'] = sc.Variable(1.0)
     assert len(d) == 1
@@ -221,12 +222,11 @@ def test_slice():
         coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
     expected = sc.Dataset({
         'a':
-        sc.DataArray(1.0 * sc.units.one, attrs={'x': 1.0 * sc.units.one})
+        sc.DataArray(1.0 * sc.units.one, attrs={'x': 1.0 * sc.units.one}),
+        'b':
+        sc.Variable(1.0)
     })
-
     assert sc.identical(d['x', 1], expected)
-    assert 'a' in d['x', 1]
-    assert 'b' not in d['x', 1]
 
 
 def test_chained_slicing():

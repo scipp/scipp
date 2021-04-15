@@ -11,8 +11,7 @@
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/slice.h"
-#include "scipp/dataset/util.h"  // assign_from
-#include "scipp/variable/util.h" // assign_from
+#include "scipp/variable/slice.h"
 #include "scipp/variable/variable.h"
 
 namespace py = pybind11;
@@ -63,7 +62,7 @@ template <class View> struct SetData {
 
 // Helpers wrapped in struct to avoid unresolvable overloads.
 template <class T> struct slicer {
-  static auto get(T &self, const std::tuple<Dim, scipp::index> &index) {
+  static auto get_slice(T &self, const std::tuple<Dim, scipp::index> &index) {
     auto [dim, i] = index;
     auto sz = dim_extent(self, dim);
     if (i < -sz || i >= sz) // index is out of range
@@ -74,16 +73,26 @@ template <class T> struct slicer {
           std::to_string(sz - 1) + "].");
     if (i < 0)
       i = sz + i;
-    return self.slice(Slice(dim, i));
+    return Slice(dim, i);
+  }
+
+  static auto get(T &self, const std::tuple<Dim, scipp::index> &index) {
+    return self.slice(get_slice(self, index));
+  }
+
+  static auto get_slice_by_value(T &self,
+                                 const std::tuple<Dim, Variable> &value) {
+    auto [dim, i] = value;
+    return std::make_from_tuple<Slice>(
+        get_slice_params(Dimensions(self.dims()), self.coords()[dim], i));
   }
 
   static auto get_by_value(T &self, const std::tuple<Dim, Variable> &value) {
-    auto [dim, i] = value;
-    return slice(self, dim, i);
+    return self.slice(get_slice_by_value(self, value));
   }
 
-  static auto get_range(T &self,
-                        const std::tuple<Dim, const py::slice> &index) {
+  static auto get_slice_range(T &self,
+                              const std::tuple<Dim, const py::slice> &index) {
     auto [dim, py_slice] = index;
     if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Dataset>) {
       try {
@@ -103,13 +112,20 @@ template <class T> struct slicer {
                               ? Variable{}
                               : py::getattr(py_slice, "stop").cast<Variable>();
 
-          return slice(self, dim, start_var, stop_var);
+          return std::make_from_tuple<Slice>(
+              get_slice_params(Dimensions(self.dims()), self.coords()[dim],
+                               start_var, stop_var));
         }
       } catch (const py::cast_error &) {
       }
     }
 
-    return self.slice(from_py_slice(self, index));
+    return from_py_slice(self, index);
+  }
+
+  static auto get_range(T &self,
+                        const std::tuple<Dim, const py::slice> &index) {
+    return self.slice(get_slice_range(self, index));
   }
 
   static void set_from_numpy(T &self,
@@ -131,20 +147,20 @@ template <class T> struct slicer {
   template <class Other>
   static void set_from_view(T &self, const std::tuple<Dim, scipp::index> &index,
                             const Other &data) {
-    assign_from(slicer<T>::get(self, index), data);
+    self.setSlice(slicer<T>::get_slice(self, index), data);
   }
 
   template <class Other>
   static void set_from_view(T &self,
                             const std::tuple<Dim, const py::slice> &index,
                             const Other &data) {
-    assign_from(slicer<T>::get_range(self, index), data);
+    self.setSlice(slicer<T>::get_slice_range(self, index), data);
   }
 
   template <class Other>
   static void set_by_value(T &self, const std::tuple<Dim, Variable> &value,
                            const Other &data) {
-    assign_from(slicer<T>::get_by_value(self, value), data);
+    self.setSlice(slicer<T>::get_slice_by_value(self, value), data);
   }
 
   // Manually dispatch based on the object we are assigning from in order to

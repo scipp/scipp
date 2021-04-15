@@ -152,6 +152,9 @@ protected:
     d.setData("data_xy", dataset["data_xy"].slice({Dim::X, pos}));
     d.setData("data_zyx", dataset["data_zyx"].slice({Dim::X, pos}));
     d.setData("data_xyz", dataset["data_xyz"].slice({Dim::X, pos}));
+    for (const auto &item : dataset)
+      if (!d.contains(item.name()))
+        d.setData(item.name(), copy(item));
     return d;
   }
 };
@@ -182,6 +185,9 @@ protected:
     d.setData("data_xy", dataset["data_xy"].slice({Dim::Y, begin, end}));
     d.setData("data_zyx", dataset["data_zyx"].slice({Dim::Y, begin, end}));
     d.setData("data_xyz", dataset["data_xyz"].slice({Dim::Y, begin, end}));
+    for (const auto &item : dataset)
+      if (!d.contains(item.name()))
+        d.setData(item.name(), copy(item));
     return d;
   }
 };
@@ -201,6 +207,9 @@ protected:
                dataset.coords()[Dim("labels_z")].slice({Dim::Z, begin, end}));
     d.setData("data_zyx", dataset["data_zyx"].slice({Dim::Z, begin, end}));
     d.setData("data_xyz", dataset["data_xyz"].slice({Dim::Z, begin, end}));
+    for (const auto &item : dataset)
+      if (!d.contains(item.name()))
+        d.setData(item.name(), copy(item));
     return d;
   }
 };
@@ -283,6 +292,9 @@ TEST_P(Dataset3DTest_slice_y, slice) {
       reference[name].attrs().set(
           Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::Y, pos}));
   }
+  for (const auto &item : dataset)
+    if (!reference.contains(item.name()))
+      reference.setData(item.name(), copy(item));
 
   EXPECT_EQ(dataset.slice({Dim::Y, pos}), reference);
 }
@@ -302,6 +314,9 @@ TEST_P(Dataset3DTest_slice_z, slice) {
       reference[name].attrs().set(
           Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::Z, pos}));
   }
+  for (const auto &item : dataset)
+    if (!reference.contains(item.name()))
+      reference.setData(item.name(), copy(item));
 
   EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
 }
@@ -328,6 +343,9 @@ TEST_P(Dataset3DTest_slice_range_x, slice) {
                     dataset["data_zyx"].slice({Dim::X, begin, end}));
   reference.setData("data_xyz",
                     dataset["data_xyz"].slice({Dim::X, begin, end}));
+  for (const auto &item : dataset)
+    if (!reference.contains(item.name()))
+      reference.setData(item.name(), copy(item));
 
   EXPECT_EQ(dataset.slice({Dim::X, begin, end}), reference);
 }

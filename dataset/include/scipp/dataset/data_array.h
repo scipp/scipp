@@ -68,12 +68,16 @@ public:
   Variable data() { return *m_data; }
 
   /// Return typed const view for data values.
-  template <class T> auto values() const { return m_data->values<T>(); }
+  template <class T> auto values() const {
+    return std::as_const(*m_data).values<T>();
+  }
   /// Return typed view for data values.
   template <class T> auto values() { return m_data->values<T>(); }
 
   /// Return typed const view for data variances.
-  template <class T> auto variances() const { return m_data->variances<T>(); }
+  template <class T> auto variances() const {
+    return std::as_const(*m_data).variances<T>();
+  }
   /// Return typed view for data variances.
   template <class T> auto variances() { return m_data->variances<T>(); }
 
@@ -82,9 +86,15 @@ public:
   void setData(Variable data);
 
   DataArray slice(const Slice &s) const;
+  [[maybe_unused]] DataArray &setSlice(const Slice &s, const DataArray &array);
+  [[maybe_unused]] DataArray &setSlice(const Slice &s, const Variable &var);
 
   DataArray view_with_coords(const Coords &coords,
                              const std::string &name) const;
+
+  [[nodiscard]] DataArray as_const() const;
+
+  bool is_readonly() const noexcept;
 
 private:
   // Declared friend so gtest recognizes it

@@ -7,9 +7,9 @@
 #include "scipp/variable/variable.h"
 
 #include "scipp/core/dtype.h"
-#include "scipp/core/except.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/creation.h"
+#include "scipp/variable/except.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/variable_concept.h"
 
@@ -61,6 +61,7 @@ void Variable::expectCanSetUnit(const units::Unit &unit) const {
 
 void Variable::setUnit(const units::Unit &unit) {
   expectCanSetUnit(unit);
+  expectWritable();
   m_object->setUnit(unit);
 }
 
@@ -106,12 +107,12 @@ core::ElementArrayViewParams Variable::array_params() const noexcept {
   return {m_offset, dims(), dataDims, {}};
 }
 
-Variable Variable::slice(const Slice slice) const {
-  core::expect::validSlice(dims(), slice);
+Variable Variable::slice(const Slice params) const {
+  core::expect::validSlice(dims(), params);
   Variable out(*this);
-  const auto dim = slice.dim();
-  const auto begin = slice.begin();
-  const auto end = slice.end();
+  const auto dim = params.dim();
+  const auto begin = params.begin();
+  const auto end = params.end();
   const auto index = out.m_dims.index(dim);
   out.m_offset += begin * m_strides[index];
   if (end == -1) {
@@ -120,6 +121,11 @@ Variable Variable::slice(const Slice slice) const {
   } else
     out.m_dims.resize(dim, end - begin);
   return out;
+}
+
+Variable &Variable::setSlice(const Slice params, const Variable &data) {
+  copy(data, slice(params));
+  return *this;
 }
 
 Variable Variable::transpose(const std::vector<Dim> &order) const {
@@ -141,6 +147,14 @@ void Variable::rename(const Dim from, const Dim to) {
 bool Variable::is_slice() const {
   // TODO Is this condition sufficient?
   return m_offset != 0 || m_dims.volume() != data().size();
+}
+
+bool Variable::is_readonly() const noexcept { return m_readonly; }
+
+bool Variable::is_same(const Variable &other) const noexcept {
+  return std::tie(m_dims, m_strides, m_offset, m_object) ==
+         std::tie(other.m_dims, other.m_strides, other.m_offset,
+                  other.m_object);
 }
 
 void Variable::setVariances(const Variable &v) {
@@ -171,6 +185,17 @@ Variable Variable::bin_indices() const {
   auto out{*this};
   out.m_object = data().bin_indices();
   return out;
+}
+
+Variable Variable::as_const() const {
+  Variable out(*this);
+  out.m_readonly = true;
+  return out;
+}
+
+void Variable::expectWritable() const {
+  if (m_readonly)
+    throw except::VariableError("Read-only flag is set, cannot mutate data.");
 }
 
 } // namespace scipp::variable

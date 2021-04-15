@@ -158,6 +158,9 @@ public:
   void setData(const std::string &name, const DataArray &data);
 
   Dataset slice(const Slice s) const;
+  [[maybe_unused]] Dataset &setSlice(const Slice s, const Dataset &dataset);
+  [[maybe_unused]] Dataset &setSlice(const Slice s, const DataArray &array);
+  [[maybe_unused]] Dataset &setSlice(const Slice s, const Variable &var);
 
   void rename(const Dim from, const Dim to);
 
@@ -211,19 +214,6 @@ copy(const Dataset &dataset, Dataset &out,
 copy(const Dataset &dataset, Dataset &&out,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
-[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset &
-assign_from(Dataset &, const Dataset &other);
-[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset assign_from(Dataset &&,
-                                                          const Dataset &other);
-[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset &
-assign_from(Dataset &, const DataArray &other);
-[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset
-assign_from(Dataset &&, const DataArray &other);
-[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset &
-assign_from(Dataset &, const Variable &other);
-[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset
-assign_from(Dataset &&, const Variable &other);
-
 SCIPP_DATASET_EXPORT DataArray operator-(const DataArray &a);
 
 SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs, const Dataset &rhs);
@@ -258,8 +248,6 @@ SCIPP_DATASET_EXPORT Dataset operator/(const DataArray &lhs,
 SCIPP_DATASET_EXPORT Dataset operator/(const Dataset &lhs, const Variable &rhs);
 SCIPP_DATASET_EXPORT Dataset operator/(const Variable &lhs, const Dataset &rhs);
 
-SCIPP_DATASET_EXPORT Dataset merge(const Dataset &a, const Dataset &b);
-
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.
 /// The result is stored in a new map
@@ -270,8 +258,10 @@ union_or(const Masks &currentMasks, const Masks &otherMasks);
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.
 /// The result is stored in the first view.
-SCIPP_DATASET_EXPORT void union_or_in_place(Masks &currentMasks,
+SCIPP_DATASET_EXPORT void union_or_in_place(Masks &masks,
                                             const Masks &otherMasks);
+
+SCIPP_DATASET_EXPORT Dataset merge(const Dataset &a, const Dataset &b);
 
 } // namespace scipp::dataset
 
