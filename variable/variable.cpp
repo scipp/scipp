@@ -152,6 +152,12 @@ bool Variable::is_slice() const {
 
 bool Variable::is_readonly() const noexcept { return m_readonly; }
 
+bool Variable::is_same(const Variable &other) const noexcept {
+  return std::tie(m_dims, m_strides, m_offset, m_object) ==
+         std::tie(other.m_dims, other.m_strides, other.m_offset,
+                  other.m_object);
+}
+
 void Variable::setVariances(const Variable &v) {
   if (is_slice())
     throw except::VariancesError(

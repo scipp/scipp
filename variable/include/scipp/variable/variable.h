@@ -135,6 +135,7 @@ public:
 
   bool is_slice() const;
   bool is_readonly() const noexcept;
+  bool is_same(const Variable &other) const noexcept;
 
   [[nodiscard]] Variable as_const() const;
 
