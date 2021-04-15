@@ -48,7 +48,7 @@ template <>
 void declare_ElementArrayView<scipp::python::PyObject>(
     py::module &m, const std::string &suffix) {
   using T = scipp::python::PyObject;
-  py::class_<ElementArrayView<T>> view(
+  py::class_<ElementArrayView<T>>(
       m, (std::string("ElementArrayView_") + suffix).c_str())
       .def(
           "__repr__",
