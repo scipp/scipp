@@ -20,6 +20,14 @@ Strides::Strides(const Dimensions &dims) {
   }
 }
 
+bool Strides::operator==(const Strides &other) const noexcept {
+  return m_strides == other.m_strides;
+}
+
+bool Strides::operator!=(const Strides &other) const noexcept {
+  return !operator==(other);
+}
+
 void Strides::erase(const scipp::index i) {
   for (scipp::index j = i; j < scipp::size(m_strides) - 1; ++j)
     m_strides[j] = m_strides[j + 1];

@@ -48,19 +48,6 @@ DataArray &DataArray::operator=(const DataArray &other) {
   return *this = DataArray(other);
 }
 
-DataArray &DataArray::assign(const DataArray &other) {
-  expect::coordsAreSuperset(*this, other);
-  // TODO Need dry-run mechanism for mask handling?
-  union_copy_in_place(masks(), other.masks());
-  assign(other.data());
-  return *this;
-}
-
-DataArray &DataArray::assign(const Variable &other) {
-  copy(other, data());
-  return *this;
-}
-
 void DataArray::setData(Variable data) {
   core::expect::equals(dims(), data.dims());
   *m_data = data;
@@ -91,26 +78,28 @@ const std::string &DataArray::name() const { return m_name; }
 
 void DataArray::setName(const std::string &name) { m_name = name; }
 
-Coords DataArray::meta() const {
-  auto out = attrs();
-  for (const auto &[dim, coord] : coords()) {
-    if (out.contains(dim))
-      throw except::DataArrayError(
-          "Coord '" + to_string(dim) +
-          "' shadows attr of the same name. Remove the attr or use the "
-          "`coords` and `attrs` properties instead of `meta`.");
-    out.set(dim, coord);
-  }
-  return out;
-}
+Coords DataArray::meta() const { return attrs().merge_from(coords()); }
 
 DataArray DataArray::slice(const Slice &s) const {
-  DataArray out{m_data->slice(s), m_coords.slice(s), m_masks->slice(s),
-                m_attrs->slice(s), m_name};
+  auto out_coords = m_coords.slice(s);
+  Attrs out_attrs(out_coords.sizes(), {});
   for (auto it = m_coords.begin(); it != m_coords.end(); ++it)
     if (unaligned_by_dim_slice(*it, s))
-      out.attrs().set(it->first, out.m_coords.extract(it->first));
-  return out;
+      out_attrs.set(it->first, out_coords.extract(it->first));
+  return {m_data->slice(s), std::move(out_coords), m_masks->slice(s),
+          m_attrs->slice(s).merge_from(out_attrs), m_name};
+}
+
+DataArray &DataArray::setSlice(const Slice &s, const DataArray &array) {
+  expect::coordsAreSuperset(slice(s), array);
+  // TODO Need dry-run mechanism for mask handling?
+  masks().setSlice(s, array.masks());
+  return setSlice(s, array.data());
+}
+
+DataArray &DataArray::setSlice(const Slice &s, const Variable &var) {
+  data().setSlice(s, var);
+  return *this;
 }
 
 DataArray DataArray::view_with_coords(const Coords &coords,
@@ -120,8 +109,7 @@ DataArray DataArray::view_with_coords(const Coords &coords,
   const Sizes sizes(dims());
   out.m_coords = Coords(sizes, {});
   for (const auto &[dim, coord] : coords)
-    if (dims().contains(coord.dims()) ||
-        is_edges(sizes, coord.dims(), dim_of_coord(coord, dim)))
+    if (coords.item_applies_to(dim, dims()))
       out.m_coords.set(dim, coord);
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
@@ -137,5 +125,12 @@ void DataArray::rename(const Dim from, const Dim to) {
   m_masks->rename(from, to);
   m_attrs->rename(from, to);
 }
+
+DataArray DataArray::as_const() const {
+  return DataArray(data().as_const(), coords().as_const(), masks().as_const(),
+                   attrs().as_const(), name());
+}
+
+bool DataArray::is_readonly() const noexcept { return m_data->is_readonly(); }
 
 } // namespace scipp::dataset

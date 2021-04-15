@@ -58,8 +58,6 @@ public:
   /// should be prefered where possible, since it generates less code.
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
-  [[maybe_unused]] Variable &assign(const Variable &other);
-
   explicit operator bool() const noexcept { return m_object.operator bool(); }
   Variable operator~() const;
 
@@ -97,7 +95,8 @@ public:
     return variances<T>()[0];
   }
 
-  Variable slice(const Slice slice) const;
+  Variable slice(const Slice params) const;
+  [[maybe_unused]] Variable &setSlice(const Slice params, const Variable &data);
 
   void rename(const Dim from, const Dim to);
 
@@ -108,7 +107,10 @@ public:
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & { return *m_object; }
   VariableConcept &data() && = delete;
-  VariableConcept &data() & { return *m_object; }
+  VariableConcept &data() & {
+    expectWritable();
+    return *m_object;
+  }
   const auto &data_handle() const { return m_object; }
   void setDataHandle(VariableConceptHandle object);
 
@@ -132,6 +134,10 @@ public:
   [[nodiscard]] Variable transpose(const std::vector<Dim> &order) const;
 
   bool is_slice() const;
+  bool is_readonly() const noexcept;
+  bool is_same(const Variable &other) const noexcept;
+
+  [[nodiscard]] Variable as_const() const;
 
 private:
   // Declared friend so gtest recognizes it
@@ -140,10 +146,13 @@ private:
   template <class... Ts, class... Args>
   static Variable construct(const DType &type, Args &&... args);
 
+  void expectWritable() const;
+
   Dimensions m_dims;
   Strides m_strides;
   scipp::index m_offset{0};
   VariableConceptHandle m_object;
+  bool m_readonly{false};
 };
 
 /// Factory function for Variable supporting "keyword arguments"

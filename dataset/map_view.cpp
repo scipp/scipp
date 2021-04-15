@@ -7,6 +7,43 @@
 
 namespace scipp::dataset {
 
+namespace {
+template <class T> void expectWritable(const T &dict) {
+  if (dict.is_readonly())
+    throw std::runtime_error("Read-only flag is set, cannot mutate dict.");
+}
+} // namespace
+
+template <class Key, class Value>
+Dict<Key, Value>::Dict(const Sizes &sizes,
+                       std::initializer_list<std::pair<const Key, Value>> items,
+                       const bool readonly)
+    : Dict(sizes, holder_type(items), readonly) {}
+
+template <class Key, class Value>
+Dict<Key, Value>::Dict(const Sizes &sizes, holder_type items,
+                       const bool readonly)
+    : m_sizes(sizes) {
+  for (auto &&[key, value] : items)
+    set(key, std::move(value));
+  m_readonly = readonly;
+}
+
+template <class Key, class Value>
+Dict<Key, Value>::Dict(const Dict &other)
+    : Dict(other.m_sizes, other.m_items, false) {}
+
+template <class Key, class Value>
+Dict<Key, Value>::Dict(Dict &&other)
+    : Dict(std::move(other.m_sizes), std::move(other.m_items),
+           other.m_readonly) {}
+
+template <class Key, class Value>
+Dict<Key, Value> &Dict<Key, Value>::operator=(const Dict &other) = default;
+
+template <class Key, class Value>
+Dict<Key, Value> &Dict<Key, Value>::operator=(Dict &&other) = default;
+
 template <class Key, class Value>
 bool Dict<Key, Value>::operator==(const Dict &other) const {
   if (size() != other.size())
@@ -80,18 +117,17 @@ template <class Key, class Value> void Dict<Key, Value>::rebuildSizes() {
   m_sizes = std::move(new_sizes);
 }
 
+// TODO remove force workaround required by DataArray::slice
 template <class Key, class Value>
 void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
+  if (contains(key) && at(key).is_same(coord))
+    return;
+  expectWritable(*this);
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
-  if (!m_sizes.contains(coord.dims())) {
-    const auto dim = dim_of_coord(coord, key);
-    auto dims = coord.dims();
-    if (dims.contains(dim))
-      dims.erase(dim);
-    if (!(is_edges(m_sizes, coord.dims(), dim) && m_sizes.contains(dims)))
-      throw except::DimensionError("Cannot add coord exceeding DataArray dims");
-  }
+  if (!m_sizes.contains(coord.dims()) &&
+      !is_edges(m_sizes, coord.dims(), dim_of_coord(coord, key)))
+    throw except::DimensionError("Cannot add coord exceeding DataArray dims");
   m_items.insert_or_assign(key, std::move(coord));
 }
 
@@ -110,7 +146,37 @@ Value Dict<Key, Value>::extract(const key_type &key) {
 
 template <class Key, class Value>
 Dict<Key, Value> Dict<Key, Value>::slice(const Slice &params) const {
-  return Dict(m_sizes.slice(params), slice_map(m_sizes, m_items, params));
+  const bool readonly = true;
+  return {m_sizes.slice(params), slice_map(m_sizes, m_items, params), readonly};
+}
+
+template <class Key, class Value>
+Dict<Key, Value> &Dict<Key, Value>::setSlice(const Slice s, const Dict &dict) {
+  using core::to_string;
+  using units::to_string;
+  for (const auto &[key, item] : dict) {
+    const auto it = find(key);
+    if (it == end()) {
+      throw except::NotFoundError("Cannot insert new meta data '" +
+                                  to_string(key) + "' via a slice.");
+    } else if ((it->second.is_readonly() ||
+                !it->second.dims().contains(s.dim())) &&
+               (it->second.dims().contains(s.dim()) ? it->second.slice(s)
+                                                    : it->second) != item) {
+      throw except::DimensionError("Cannot update meta data '" +
+                                   to_string(key) +
+                                   "' via slice since it is implicitly "
+                                   "broadcast along the slice dimension '" +
+                                   to_string(s.dim()) + "'.");
+    }
+  }
+  for (const auto &[key, item] : dict) {
+    const auto it = find(key);
+    if (it != end() && !it->second.is_readonly() &&
+        it->second.dims().contains(s.dim()))
+      it->second.setSlice(s, item);
+  }
+  return *this;
 }
 
 template <class Key, class Value>
@@ -126,6 +192,51 @@ void Dict<Key, Value>::rename(const Dim from, const Dim to) {
   }
   for (auto &item : m_items)
     item.second.rename(from, to);
+}
+
+/// Return true if the dict is readonly. Does not imply that items are readonly.
+template <class Key, class Value>
+bool Dict<Key, Value>::is_readonly() const noexcept {
+  return m_readonly;
+}
+
+template <class Key, class Value>
+Dict<Key, Value> Dict<Key, Value>::as_const() const {
+  holder_type items;
+  std::transform(m_items.begin(), m_items.end(),
+                 std::inserter(items, items.end()), [](const auto &item) {
+                   return std::pair(item.first, item.second.as_const());
+                 });
+  const bool readonly = true;
+  return {sizes(), std::move(items), readonly};
+}
+
+template <class Key, class Value>
+Dict<Key, Value> Dict<Key, Value>::merge_from(const Dict &other) const {
+  using core::to_string;
+  using units::to_string;
+  auto out(*this);
+  out.m_readonly = false;
+  for (const auto &[key, value] : other) {
+    if (out.contains(key))
+      throw except::DataArrayError(
+          "Coord '" + to_string(key) +
+          "' shadows attr of the same name. Remove the attr if you are slicing "
+          "an array or use the `coords` and `attrs` properties instead of "
+          "`meta`.");
+    out.set(key, value);
+  }
+  out.m_readonly = m_readonly;
+  return out;
+}
+
+template <class Key, class Value>
+bool Dict<Key, Value>::item_applies_to(const Key &key,
+                                       const Dimensions &dims) const {
+  const auto &val = m_items.at(key);
+  return dims.contains(val.dims()) ||
+         (!sizes().contains(val.dims()) &&
+          is_edges(Sizes(dims), val.dims(), dim_of_coord(val, key)));
 }
 
 template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;
