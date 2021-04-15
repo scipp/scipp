@@ -129,11 +129,7 @@ void Dict<Key, Value>::set(const key_type &key, mapped_type coord,
   // concat along existing dim or extra dim"?
   if (!m_sizes.contains(coord.dims())) {
     const auto dim = dim_of_coord(coord, key);
-    auto dims = coord.dims();
-    // TODO can remove this with latest change to is_edges?
-    if (dims.contains(dim))
-      dims.erase(dim);
-    if (!(is_edges(m_sizes, coord.dims(), dim) && m_sizes.contains(dims)))
+    if (!is_edges(m_sizes, coord.dims(), dim))
       throw except::DimensionError("Cannot add coord exceeding DataArray dims");
   }
   m_items.insert_or_assign(key, std::move(coord));
