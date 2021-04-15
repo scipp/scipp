@@ -53,7 +53,11 @@ class DataAccessHelper {
   template <class Getter, class T, class View>
   static py::object as_py_array_t_impl(View &view) {
     const auto get_strides = [&]() {
+<<<<<<< HEAD
       if constexpr (std::is_same_v<std::remove_const_t<View>, DataArray>) {
+=======
+      if constexpr (std::is_same_v<std::remove_const_t<Var>, DataArray>) {
+>>>>>>> dev
         return numpy_strides<T>(view.data().strides());
       } else {
         return numpy_strides<T>(view.strides());
@@ -84,7 +88,7 @@ class DataAccessHelper {
           Getter::template get<T>(std::as_const(view)).data(), get_base()};
       py::detail::array_proxy(array.ptr())->flags &=
           ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
-      return std::move(array);  // no automatic move because of type mismatch
+      return std::move(array); // no automatic move because of type mismatch
     } else {
       return py::array{get_dtype(), dims.shape(), get_strides(),
                        Getter::template get<T>(view).data(), get_base()};
