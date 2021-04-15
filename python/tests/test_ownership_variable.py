@@ -190,7 +190,8 @@ def test_own_var_scalar_nested_str_get():
     outer.value = make_variable(np.array(['ghi', 'jkl', 'mno']))
     outer.value['x', 0] = sc.scalar('asd')
     inner['x', 1] = sc.scalar('qwe')
-    assert sc.identical(outer, make_variable(make_variable(np.array(['asd', 'qwe', 'mno']))))
+    assert sc.identical(
+        outer, make_variable(make_variable(np.array(['asd', 'qwe', 'mno']))))
     assert sc.identical(inner, make_variable(np.array(['asd', 'qwe', 'mno'])))
     # TODO `a` seems to be invalidated
     # np.testing.assert_array_equal(a, ['abc', 'def'])
@@ -295,7 +296,6 @@ def test_own_var_1d_copy():
 #     assert x == {'num': 1, 'list': [2, 3]}
 #     assert y == {'num': -4, 'list': [5, 6]}
 
-
 # def test_own_var_scalar_pyobj_get():
 #     # .value getter shares ownership of the object.
 #     s = make_variable({'num': 1, 'list': [2, 3]})
@@ -362,83 +362,97 @@ def test_own_var_1d_str_copy():
     assert sc.identical(v_methcopy, make_variable(np.array(['abc', 'def'])))
 
 
-# TODO possible?
-# def test_own_var_1d_nested_set():
-#     # Variables are shared when nested.
-#     a, b = np.arange(4), np.arange(5, 9)
-#     inner_a, inner_b = make_variable(a, unit='m'), make_variable(b, unit='m')
-#     outer = sc.Variable(dims=['y'], shape=[2], dtype=sc.dtype.Variable)
-#     outer.values[0] = inner_a
-#     outer.values[1] = inner_b
-#     print(outer)
-#     print(outer['y', 0])
-#     outer['y', 0]['x', 0] = -1
-#     outer['y', 0].values[1] = -2
-#     outer.values[4] = -6
-#     inner_a['x', 2] = -3
-#     inner_a.unit = 's'
-#     inner_b.values[2] = -8
-#     assert sc.identical(
-#         outer, sc.concatenate(make_variable([-1, -2, 2, 3], unit='m'),
-#                               make_variable([-6, 6, 7, 8], unit='m'), dim='y'))
-#     assert sc.identical(inner_a, make_variable([0, 1, -3, 3], unit='s'))
-#     assert sc.identical(inner_b, make_variable([5, 6, -8, 8], unit='m'))
-#
-#     # Assignment creates a new inner Variable.
-#     outer.value = make_variable(np.arange(5, 8), unit='kg')
-#     outer.value['x', 0] = -5
-#     assert sc.identical(outer,
-#                         make_variable(make_variable([-5, 6, 7], unit='kg')))
-#     assert sc.identical(inner, make_variable([-1, -2, -3, 3, 4], unit='s'))
-#
-#     # TODO this causes and infinite loop and segfaults at the moment
-#     # outer.value = outer
-#     # assert sc.identical(outer, outer.value)
+def test_own_var_1d_bin_set():
+    # The buffer is shared.
+    a_buffer = np.arange(5)
+    a_indices = np.array([0, 2, 5])
+    buffer = make_variable(a_buffer, unit='m')
+    indices = make_variable(a_indices)
+    binned = sc.bins(data=buffer,
+                     begin=indices['x', :-1],
+                     end=indices['x', 1:],
+                     dim='x')
+    binned['x', 0].value['x', 0] = -1
+    binned.values[0]['x', 1] = -2
+    binned.bins.constituents['data']['x', 2] = -3
+    binned.bins.constituents['data'].unit = 's'
+    buffer['x', 3] = -4
+    a_buffer[4] = -5
+    assert sc.identical(
+        binned,
+        sc.bins(data=make_variable([-1, -2, -3, -4, 4], unit='s'),
+                begin=indices['x', :-1],
+                end=indices['x', 1:],
+                dim='x'))
+    assert sc.identical(buffer, make_variable([-1, -2, -3, -4, 4], unit='s'))
+    np.testing.assert_array_equal(a_buffer, [0, 1, 2, 3, -5])
+
+    # Assigning new Variables to constituents succeeds but does nothing.
+    binned.bins.constituents['data'] = make_variable([6, 7, 8, 9])
+    binned.bins.constituents['begin'] = make_variable([1, 3])
+    binned.bins.constituents['end'] = make_variable([3, 5])
+    assert sc.identical(
+        binned,
+        sc.bins(data=make_variable([-1, -2, -3, -4, 4], unit='s'),
+                begin=indices['x', :-1],
+                end=indices['x', 1:],
+                dim='x'))
+
+    # Assignment to indices has no effect.
+    binned.bins.constituents['begin']['x', 0] = 1
+    binned.bins.constituents['end']['x', -1] = 4
+    indices['x', 1] = 1
+    assert sc.identical(
+        binned,
+        sc.bins(data=make_variable([-1, -2, -3, -4, 4], unit='s'),
+                begin=make_variable([0, 2]),
+                end=make_variable([2, 5]),
+                dim='x'))
 
 
-# def test_own_var_scalar_nested_get():
-#     # Variables are shared when nested.
-#     outer = make_variable(make_variable(np.arange(5)))
-#     inner = outer.value
-#     a = inner.values
-#     outer.value['x', 0] = -1
-#     outer.value.values[1] = -2
-#     inner['x', 2] = -3
-#     a[3] = -4
-#     expected = [-1, -2, -3, -4, 4]
-#     assert sc.identical(outer, make_variable(make_variable(expected)))
-#     assert sc.identical(inner, make_variable(expected))
-#     np.testing.assert_array_equal(a, expected)
-#
-#     # Assignment writes the values into the inner Variable.
-#     outer.value = make_variable(np.arange(5, 8))
-#     outer.value['x', 0] = -5
-#     inner['x', 1] = -10
-#     assert sc.identical(outer, make_variable(make_variable([-5, -10, 7])))
-#     assert sc.identical(inner, make_variable([-5, -10, 7]))
-#     # TODO `a` seems to be invalidated
-#     # np.testing.assert_array_equal(a, [-1, -2, -3, -4, 4])
-#
-#
-# def test_own_var_scalar_nested_copy():
-#     # Copies of variables never copy nested variables.
-#     # TODO intentional? Seems to contradict the behaviour with PyObjects.
-#     outer = make_variable(make_variable(np.arange(5)))
-#     inner = outer.value
-#     a = inner.values
-#     outer_copy = copy(outer)
-#     outer_deepcopy = deepcopy(outer)
-#     outer_methcopy = outer.copy()
-#
-#     outer.value['x', 0] = -1
-#     outer.value.values[1] = -2
-#     inner['x', 2] = -3
-#     a[3] = -4
-#     expected = [-1, -2, -3, -4, 4]
-#     assert sc.identical(outer, make_variable(make_variable(expected)))
-#     assert sc.identical(outer_copy, make_variable(make_variable(expected)))
-#     assert sc.identical(outer_deepcopy, make_variable(make_variable(expected)))
-#     assert sc.identical(outer_methcopy, make_variable(make_variable(expected)))
+def test_own_var_1d_bin_get():
+    # The buffer is shared.
+    indices = make_variable(np.array([0, 2, 5]))
+    binned = sc.bins(data=make_variable(np.arange(5), unit='m'),
+                     begin=indices['x', :-1],
+                     end=indices['x', 1:],
+                     dim='x')
+    buffer = binned.bins.constituents['data']
+    binned['x', 0].value['x', 0] = -1
+    binned.values[0]['x', 1] = -2
+    binned.bins.constituents['data']['x', 2] = -3
+    binned.bins.constituents['data'].unit = 's'
+    assert sc.identical(buffer, make_variable([-1, -2, -3, 3, 4], unit='s'))
+
+
+def test_own_var_1d_bin_copy():
+    # Copies are always deep.
+    indices = make_variable(np.array([0, 2, 5]))
+    binned = sc.bins(data=make_variable(np.arange(5), unit='m'),
+                     begin=indices['x', :-1],
+                     end=indices['x', 1:],
+                     dim='x')
+    binned_copy = copy(binned)
+    binned_deepcopy = deepcopy(binned)
+    binned_methcopy = binned.copy()
+
+    binned['x', 0].value['x', 0] = -1
+    binned.values[0]['x', 1] = -2
+    binned.bins.constituents['data']['x', 2] = -3
+    binned.bins.constituents['data'].unit = 's'
+
+    modified = sc.bins(data=make_variable([-1, -2, -3, 3, 4], unit='s'),
+                       begin=indices['x', :-1],
+                       end=indices['x', 1:],
+                       dim='x')
+    original = sc.bins(data=make_variable(np.arange(5), unit='m'),
+                       begin=indices['x', :-1],
+                       end=indices['x', 1:],
+                       dim='x')
+    assert sc.identical(binned, modified)
+    assert sc.identical(binned_copy, original)
+    assert sc.identical(binned_deepcopy, original)
+    assert sc.identical(binned_methcopy, original)
 
 
 def test_own_var_2d_set():
@@ -465,4 +479,3 @@ def test_own_var_2d_get():
     expected = [[-100, -1, -2, -3, -4], [-30, -30, -30, -40, -50]]
     assert sc.identical(v, make_variable(expected))
     np.testing.assert_array_equal(a, expected)
-
