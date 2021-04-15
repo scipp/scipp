@@ -119,9 +119,7 @@ DataArray DataArray::view_with_coords(const Coords &coords,
   const Sizes sizes(dims());
   out.m_coords = Coords(sizes, {});
   for (const auto &[dim, coord] : coords)
-    if (dims().contains(coord.dims()) ||
-        (!coords.sizes().contains(coord.dims()) &&
-         is_edges(sizes, coord.dims(), dim_of_coord(coord, dim))))
+    if (coords.item_applies_to(dim, dims()))
       out.m_coords.set(dim, coord);
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
