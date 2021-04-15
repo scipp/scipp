@@ -53,11 +53,7 @@ class DataAccessHelper {
   template <class Getter, class T, class View>
   static py::object as_py_array_t_impl(View &view) {
     const auto get_strides = [&]() {
-<<<<<<< HEAD
       if constexpr (std::is_same_v<std::remove_const_t<View>, DataArray>) {
-=======
-      if constexpr (std::is_same_v<std::remove_const_t<Var>, DataArray>) {
->>>>>>> dev
         return numpy_strides<T>(view.data().strides());
       } else {
         return numpy_strides<T>(view.strides());
