@@ -22,16 +22,14 @@ namespace py = pybind11;
 using namespace scipp;
 
 template <class T> void remove_variances(T &obj) {
-  if constexpr (std::is_same_v<T, DataArray> ||
-                std::is_same_v<T, DataArrayView>)
+  if constexpr (std::is_same_v<T, DataArray>)
     obj.data().setVariances(Variable());
   else
     obj.setVariances(Variable());
 }
 
 template <class T> void init_variances(T &obj) {
-  if constexpr (std::is_same_v<T, DataArray> ||
-                std::is_same_v<T, DataArrayView>)
+  if constexpr (std::is_same_v<T, DataArray>)
     obj.data().setVariances(Variable(obj.data()));
   else
     obj.setVariances(Variable(obj));
@@ -39,7 +37,7 @@ template <class T> void init_variances(T &obj) {
 
 /// Add element size as factor to strides.
 template <class T>
-std::vector<ssize_t> numpy_strides(const std::vector<scipp::index> &s) {
+std::vector<ssize_t> numpy_strides(const scipp::span<const scipp::index> &s) {
   std::vector<ssize_t> strides(s.size());
   for (size_t i = 0; i < strides.size(); ++i) {
     strides[i] = sizeof(T) * s[i];
@@ -55,11 +53,10 @@ class DataAccessHelper {
   template <class Getter, class T, class Var>
   static py::object as_py_array_t_impl(py::object &obj, Var &view) {
     const auto get_strides = [&]() {
-      if constexpr (std::is_same_v<Var, DataArray> ||
-                    std::is_same_v<Var, DataArrayView>) {
-        return numpy_strides<T>(VariableView(view.data()).strides());
+      if constexpr (std::is_same_v<std::remove_const_t<Var>, DataArray>) {
+        return numpy_strides<T>(view.data().strides());
       } else {
-        return numpy_strides<T>(VariableView(view).strides());
+        return numpy_strides<T>(view.strides());
       }
     };
     const auto get_dtype = [&view]() {
@@ -74,8 +71,17 @@ class DataAccessHelper {
       }
     };
     const auto &dims = view.dims();
-    return py::array{get_dtype(), dims.shape(), get_strides(),
-                     Getter::template get<T>(view).data(), obj};
+    if (view.is_readonly()) {
+      auto array =
+          py::array{get_dtype(), dims.shape(), get_strides(),
+                    Getter::template get<T>(std::as_const(view)).data(), obj};
+      py::detail::array_proxy(array.ptr())->flags &=
+          ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
+      return array;
+    } else {
+      return py::array{get_dtype(), dims.shape(), get_strides(),
+                       Getter::template get<T>(view).data(), obj};
+    }
   }
 
   struct get_values {
@@ -160,9 +166,13 @@ template <class... Ts> class as_ElementArrayViewImpl {
         view);
   }
 
+public:
   template <class Getter, class View>
   static py::object get_py_array_t(py::object &obj) {
     auto &view = obj.cast<View &>();
+    if (!std::is_const_v<View> && view.is_readonly())
+      return as_ElementArrayViewImpl<const Ts...>::template get_py_array_t<
+          Getter, const View>(obj);
     const DType type = view.dtype();
     if (type == dtype<double>)
       return DataAccessHelper::as_py_array_t_impl<Getter, double>(obj, view);
@@ -186,30 +196,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
           // a 1-D array).
           // 2. For 1-D event data, where the individual item is then a
           // vector-like object.
-          if (dims.shape().size() == 0) {
-            if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-                                         scipp::python::PyObject>) {
-              // Returning PyObject. This increments the reference counter of
-              // the element, so it is ok if the parent `obj` (the variable)
-              // goes out of scope.
-              return data[0].to_pybind();
-            } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
-              // Views such as VariableView are returned by value and require
-              // separate handling to avoid the
-              // py::return_value_policy::reference_internal in the default case
-              // below.
-              auto ret = py::cast(data[0], py::return_value_policy::move);
-              pybind11::detail::keep_alive_impl(ret, obj);
-              return ret;
-            } else {
-              // Returning reference to element in variable. Return-policy
-              // reference_internal keeps alive `obj`. Note that an attempt to
-              // pass `keep_alive` as a call policy to `def_property` failed,
-              // resulting in exception from pybind11, so we have handle it by
-              // hand here.
-              return py::cast(data[0],
-                              py::return_value_policy::reference_internal, obj);
-            }
+          if (dims.ndim() == 0) {
+            return make_scalar(data[0], obj, view);
           } else {
             // Returning view (span or ElementArrayView) by value. This
             // references data in variable, so it must be kept alive. There is
@@ -223,7 +211,6 @@ template <class... Ts> class as_ElementArrayViewImpl {
         get<Getter>(view));
   }
 
-public:
   template <class Var> static py::object values(py::object &object) {
     return get_py_array_t<get_values, Var>(object);
   }
@@ -249,30 +236,43 @@ public:
   }
 
 private:
+  template <class Scalar, class View>
+  static auto make_scalar(Scalar &&scalar, py::object &obj, const View &view) {
+    if constexpr (std::is_same_v<std::decay_t<Scalar>,
+                                 scipp::python::PyObject>) {
+      // Returning PyObject. This increments the reference counter of
+      // the element, so it is ok if the parent `obj` (the variable)
+      // goes out of scope.
+      return scalar.to_pybind();
+    } else if constexpr (std::is_same_v<std::decay_t<Scalar>,
+                                        core::time_point>) {
+      static const auto np_datetime64 =
+          py::module::import("numpy").attr("datetime64");
+      return np_datetime64(scalar.time_since_epoch(),
+                           to_numpy_time_string(view.unit()));
+    } else if constexpr (!std::is_reference_v<Scalar>) {
+      // Views such as slices of data arrays for binned data are
+      // returned by value and require separate handling to avoid the
+      // py::return_value_policy::reference_internal in the default case
+      // below.
+      return py::cast(scalar, py::return_value_policy::move);
+    } else {
+      // Returning reference to element in variable. Return-policy
+      // reference_internal keeps alive `obj`. Note that an attempt to
+      // pass `keep_alive` as a call policy to `def_property` failed,
+      // resulting in exception from pybind11, so we have handle it by
+      // hand here.
+      return py::cast(scalar, py::return_value_policy::reference_internal, obj);
+    }
+  }
+
   // Helper function object to get a scalar value or variance.
   template <class View> struct GetScalarVisitor {
     py::object &self; // The object we're getting the value / variance from.
     std::remove_reference_t<View> &view; // self as a view.
 
     template <class Data> auto operator()(const Data &&data) const {
-      if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-                                   scipp::python::PyObject>) {
-        return data[0].to_pybind();
-      } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
-        auto ret = py::cast(data[0], py::return_value_policy::move);
-        pybind11::detail::keep_alive_impl(ret, self);
-        return ret;
-      } else if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-                                          core::time_point>) {
-        static const auto np_datetime64 =
-            py::module::import("numpy").attr("datetime64");
-        return np_datetime64(data[0].time_since_epoch(),
-                             to_numpy_time_string(view.unit()));
-      } else {
-        // Passing `obj` as parent so py::keep_alive works.
-        return py::cast(data[0], py::return_value_policy::reference_internal,
-                        self);
-      }
+      return make_scalar(data[0], self, view);
     }
   };
 
@@ -303,6 +303,9 @@ public:
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object value(py::object &obj) {
     auto &view = obj.cast<Var &>();
+    if (!std::is_const_v<Var> && view.is_readonly())
+      return as_ElementArrayViewImpl<const Ts...>::template value<const Var>(
+          obj);
     expect_scalar(view.dims(), "value");
     return std::visit(GetScalarVisitor<decltype(view)>{obj, view},
                       get<get_values>(view));
@@ -311,6 +314,9 @@ public:
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object variance(py::object &obj) {
     auto &view = obj.cast<Var &>();
+    if (!std::is_const_v<Var> && view.is_readonly())
+      return as_ElementArrayViewImpl<const Ts...>::template variance<const Var>(
+          obj);
     expect_scalar(view.dims(), "variance");
     if (!view.hasVariances())
       return py::none();

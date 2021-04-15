@@ -35,6 +35,7 @@ add_executable(
   merge_test.cpp
   rebin_test.cpp
   self_assignment_test.cpp
+  set_slice_test.cpp
   shape_test.cpp
   size_of_test.cpp
   slice_by_value_test.cpp

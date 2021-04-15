@@ -10,7 +10,7 @@ import operator
 def test_type():
     variable_slice = sc.Variable(dims=['x'],
                                  values=np.arange(1, 10, dtype=float))['x', :]
-    assert type(variable_slice) == sc.VariableView
+    assert type(variable_slice) == sc.Variable
 
 
 def test_astype():

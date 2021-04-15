@@ -21,17 +21,15 @@ void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
     throw std::runtime_error("The truth value of a variable, data array, or "
                              "dataset is ambiguous. Use any() or all().");
   });
-  // For views such as VariableView __copy__ needs to return a Variable. Use
-  // result type of operator+ to obtain this type.
-  using Copy = decltype(std::declval<T>() + std::declval<T>());
+  // TODO Do we want to default to deep copy?
   c.def(
-      "copy", [](T &self) { return Copy(self); },
-      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+      "copy", [](T &self) { return copy(self); },
+      py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.");
   c.def(
-      "__copy__", [](T &self) { return Copy(self); },
-      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+      "__copy__", [](T &self) { return copy(self); },
+      py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.");
   c.def(
-      "__deepcopy__", [](T &self, py::dict) { return Copy(self); },
+      "__deepcopy__", [](T &self, py::dict) { return deepcopy(self); },
       py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
 }
 
@@ -129,9 +127,7 @@ template <class RHSSetup> struct OpBinder {
         },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     if constexpr (!(std::is_same_v<T, Dataset> ||
-                    std::is_same_v<T, DatasetView> ||
-                    std::is_same_v<Other, Dataset> ||
-                    std::is_same_v<Other, DatasetView>)) {
+                    std::is_same_v<Other, Dataset>)) {
       c.def(
           "__imod__",
           [](py::object &a, Other &b) {
@@ -158,9 +154,7 @@ template <class RHSSetup> struct OpBinder {
         "__truediv__", [](T &a, Other &b) { return a / RHSSetup{}(b); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     if constexpr (!(std::is_same_v<T, Dataset> ||
-                    std::is_same_v<T, DatasetView> ||
-                    std::is_same_v<Other, Dataset> ||
-                    std::is_same_v<Other, DatasetView>)) {
+                    std::is_same_v<Other, Dataset>)) {
       c.def(
           "__floordiv__",
           [](T &a, Other &b) { return floor_divide(a, RHSSetup{}(b)); },
@@ -214,8 +208,8 @@ void bind_boolean_unary(pybind11::class_<T, Ignored...> &c) {
 
 template <class Other, class T, class... Ignored>
 void bind_logical(pybind11::class_<T, Ignored...> &c) {
-  using T1 = const typename T::const_view_type;
-  using T2 = const typename Other::const_view_type;
+  using T1 = const T;
+  using T2 = const Other;
   c.def(
       "__or__", [](T1 &a, T2 &b) { return a | b; }, py::is_operator(),
       py::call_guard<py::gil_scoped_release>());

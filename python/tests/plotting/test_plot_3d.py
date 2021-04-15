@@ -20,6 +20,7 @@ def make_data_with_position_vectors():
     tof = np.arange(M).astype(float)
     a = np.arange(M * N).reshape([M, N]) * np.sin(y)
     d = sc.Dataset()
+    d['a'] = sc.Variable(['tof', 'xyz'], values=a)
     d.coords['xyz'] = sc.Variable(['xyz'],
                                   values=np.array([x, y, z]).T,
                                   dtype=sc.dtype.vector_3_float64)
@@ -27,7 +28,6 @@ def make_data_with_position_vectors():
                                   values=np.array([x, y, z]).T + 20.0,
                                   dtype=sc.dtype.vector_3_float64)
     d.coords['tof'] = sc.Variable(['tof'], values=tof)
-    d['a'] = sc.Variable(['tof', 'xyz'], values=a)
     return d
 
 

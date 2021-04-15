@@ -98,7 +98,7 @@ DataArray apply_or_copy_dim_impl(const DataArray &a, Func func, const Dim dim,
   std::unordered_map<std::string, Variable> masks;
   for (auto &&[name, mask] : a.masks())
     if (!mask.dims().contains(dim))
-      masks.emplace(name, mask);
+      masks.emplace(name, copy(mask));
 
   if constexpr (ApplyToData) {
     return DataArray(func(a.data(), dim, args...), std::move(coords),
@@ -161,12 +161,6 @@ Dataset apply_to_items(const Dataset &d, Func func, Args &&... args) {
   return result;
 }
 
-/// Copy all map items from `a` and insert them into `b`.
-template <class A, class B> auto copy_items(const A &a, B &b) {
-  for (const auto [key, item] : a)
-    b.set(key, item);
-}
-
 /// Return a copy of map-like objects such as Coords with `func` applied to each
 /// item.
 template <class T, class Func> auto transform_map(const T &map, Func func) {
@@ -181,8 +175,6 @@ template <class T, class Func> DataArray transform(const T &a, Func func) {
                    transform_map(a.masks(), func),
                    transform_map(a.attrs(), func), a.name());
 }
-
-void copy_metadata(const DataArray &a, DataArray &b);
 
 // Helpers for reductions for DataArray and Dataset, which include masks.
 [[nodiscard]] Variable mean(const Variable &var, const Dim dim,

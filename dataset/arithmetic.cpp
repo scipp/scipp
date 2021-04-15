@@ -5,8 +5,10 @@
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
+#include "scipp/dataset/util.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/util.h"
 
 #include "dataset_operations_common.h"
 

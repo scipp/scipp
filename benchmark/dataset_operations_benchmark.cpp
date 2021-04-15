@@ -40,9 +40,10 @@ struct Generate {
     d.setData("a", makeData<double>({Dim::X, axisLength}));
     for (int i = 0; i < num_masks; ++i) {
       auto bools = make_bools(axisLength, {false, true});
-      d.setMask("a", std::string(1, ('a' + i)),
-                makeVariable<bool>(Dims{Dim::X}, Shape{axisLength},
-                                   Values(bools.begin(), bools.end())));
+      d["a"].masks().set(
+          std::string(1, ('a' + i)),
+          makeVariable<bool>(Dims{Dim::X}, Shape{axisLength},
+                             Values(bools.begin(), bools.end())));
     }
     return d;
   }
@@ -55,10 +56,11 @@ struct Generate_2D_data {
               makeData<double>({{Dim::X, axisLength}, {Dim::Y, axisLength}}));
     auto bools = make_bools(axisLength * axisLength, {false, true});
     for (int i = 0; i < num_masks; ++i) {
-      d.setMask("a", std::string(1, ('a' + i)),
-                makeVariable<bool>(Dims{Dim::X, Dim::Y},
-                                   Shape{axisLength, axisLength},
-                                   Values(bools.begin(), bools.end())));
+      d["a"].masks().set(
+          std::string(1, ('a' + i)),
+          makeVariable<bool>(Dims{Dim::X, Dim::Y},
+                             Shape{axisLength, axisLength},
+                             Values(bools.begin(), bools.end())));
     }
     return d;
   }
@@ -73,10 +75,11 @@ struct Generate_3D_data {
     auto bools =
         make_bools(axisLength * axisLength * axisLength, {false, true});
     for (int i = 0; i < num_masks; ++i) {
-      d.setMask("a", std::string(1, ('a' + i)),
-                makeVariable<bool>(Dims{Dim::X, Dim::Y, Dim::Z},
-                                   Shape{axisLength, axisLength, axisLength},
-                                   Values(bools.begin(), bools.end())));
+      d["a"].masks().set(
+          std::string(1, ('a' + i)),
+          makeVariable<bool>(Dims{Dim::X, Dim::Y, Dim::Z},
+                             Shape{axisLength, axisLength, axisLength},
+                             Values(bools.begin(), bools.end())));
     }
     return d;
   }

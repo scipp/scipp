@@ -25,8 +25,8 @@ static constexpr auto make_key_value = [](auto &&view) {
   using In = decltype(view);
   using View =
       std::conditional_t<std::is_rvalue_reference_v<In>, std::decay_t<In>, In>;
-  return std::pair<const std::string &, View>(
-      view.name(), std::forward<decltype(view)>(view));
+  return std::pair<std::string, View>(view.name(),
+                                      std::forward<decltype(view)>(view));
 };
 
 static constexpr auto make_key = [](auto &&view) -> decltype(auto) {
@@ -71,7 +71,7 @@ auto slice_map(const Sizes &sizes, const T &map, const Slice &params) {
         out[key] = value.slice(Slice{params.dim(), params.begin(), end});
       }
     } else {
-      out[key] = value;
+      out[key] = value.as_const();
     }
   }
   return out;
@@ -86,12 +86,13 @@ public:
 
   Dict() = default;
   Dict(const Sizes &sizes,
-       std::initializer_list<std::pair<const Key, Value>> items)
-      : Dict(sizes, holder_type(items)) {}
-  Dict(const Sizes &sizes, holder_type items) : m_sizes(sizes) {
-    for (auto &&[key, value] : items)
-      set(key, std::move(value));
-  }
+       std::initializer_list<std::pair<const Key, Value>> items,
+       const bool readonly = false);
+  Dict(const Sizes &sizes, holder_type items, const bool readonly = false);
+  Dict(const Dict &other);
+  Dict(Dict &&other);
+  Dict &operator=(const Dict &other);
+  Dict &operator=(Dict &&other);
 
   /// Return the number of coordinates in the view.
   index size() const noexcept { return scipp::size(m_items); }
@@ -160,12 +161,20 @@ public:
   mapped_type extract(const key_type &key);
 
   Dict slice(const Slice &params) const;
+  [[maybe_unused]] Dict &setSlice(const Slice s, const Dict &dict);
 
   void rename(const Dim from, const Dim to);
+
+  bool is_readonly() const noexcept;
+  [[nodiscard]] Dict as_const() const;
+  [[nodiscard]] Dict merge_from(const Dict &other) const;
+
+  bool item_applies_to(const Key &key, const Dimensions &dims) const;
 
 protected:
   Sizes m_sizes;
   holder_type m_items;
+  bool m_readonly{false};
 };
 
 /// Returns the union of all masks with irreducible dimension `dim`.

@@ -45,14 +45,14 @@ public:
             class CoordMap = std::unordered_map<Dim, Variable>>
   explicit Dataset(DataMap data,
                    CoordMap coords = std::unordered_map<Dim, Variable>{}) {
-    for (auto &&[dim, coord] : coords)
-      setCoord(dim, std::move(coord));
     if constexpr (std::is_base_of_v<Dataset, std::decay_t<DataMap>>)
       for (auto &&item : data)
         setData(item.name(), item);
     else
       for (auto &&[name, item] : data)
         setData(std::string(name), std::move(item));
+    for (auto &&[dim, coord] : coords)
+      setCoord(dim, std::move(coord));
   }
 
   /// Return the number of data items in the dataset.
@@ -158,6 +158,9 @@ public:
   void setData(const std::string &name, const DataArray &data);
 
   Dataset slice(const Slice s) const;
+  [[maybe_unused]] Dataset &setSlice(const Slice s, const Dataset &dataset);
+  [[maybe_unused]] Dataset &setSlice(const Slice s, const DataArray &array);
+  [[maybe_unused]] Dataset &setSlice(const Slice s, const Variable &var);
 
   void rename(const Dim from, const Dim to);
 
@@ -183,6 +186,9 @@ public:
   const Sizes &dims() const;
 
 private:
+  // Declared friend so gtest recognizes it
+  friend SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &,
+                                                       const Dataset &);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
   void rebuildDims();
 
@@ -242,8 +248,6 @@ SCIPP_DATASET_EXPORT Dataset operator/(const DataArray &lhs,
 SCIPP_DATASET_EXPORT Dataset operator/(const Dataset &lhs, const Variable &rhs);
 SCIPP_DATASET_EXPORT Dataset operator/(const Variable &lhs, const Dataset &rhs);
 
-SCIPP_DATASET_EXPORT Dataset merge(const Dataset &a, const Dataset &b);
-
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.
 /// The result is stored in a new map
@@ -254,8 +258,10 @@ union_or(const Masks &currentMasks, const Masks &otherMasks);
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.
 /// The result is stored in the first view.
-SCIPP_DATASET_EXPORT void union_or_in_place(Masks &currentMasks,
+SCIPP_DATASET_EXPORT void union_or_in_place(Masks &masks,
                                             const Masks &otherMasks);
+
+SCIPP_DATASET_EXPORT Dataset merge(const Dataset &a, const Dataset &b);
 
 } // namespace scipp::dataset
 
