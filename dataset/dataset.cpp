@@ -225,22 +225,16 @@ template <class Op>
 void union_op_in_place(Masks &masks, const Masks &otherMasks, Op op) {
   for (const auto &[key, item] : otherMasks) {
     const auto it = masks.find(key);
-    if (it != masks.end()) {
-      if (it->second.is_readonly()) {
-        if (it->second != op(copy(it->second), item))
-          throw except::DimensionError(
-              "Cannot update mask via slice since the mask is being broadcast "
-              "along the slice dimension.");
-      } else {
-        op(it->second, item);
-      }
-    } else {
-      // TODO
-      // C++ slice += other will silently drop, but in Python the final setitem
-      // can save us... except that this comes too late: data will already have
-      // been modifed (see similar issues in xarray). Need to check beforehand?
+    if (it == masks.end()) {
+      // TODO This may fail if readonly after slice. Ensure dry-run mechanism
+      // can catch this before data or masks are modified.
       masks.set(key, copy(item));
-    }
+    } else if (!it->second.is_readonly()) {
+      op(it->second, item);
+    } else if (it->second != op(copy(it->second), item))
+      throw except::DimensionError(
+          "Cannot update mask via slice since the mask is being broadcast "
+          "along the slice dimension.");
   }
 }
 } // namespace
