@@ -165,7 +165,7 @@ void init_dataset(py::module &m) {
           py::arg("name") = std::string{},
           R"(__init__(self, data: Variable, coords: Dict[str, Variable] = {}, masks: Dict[str, Variable] = {}, attrs: Dict[str, Variable] = {}, name: str = '') -> None
 
-          DataArray initialiser.
+          DataArray initializer.
 
           :param data: Data and optionally variances.
           :param coords: Coordinates referenced by dimension.
@@ -197,7 +197,7 @@ void init_dataset(py::module &m) {
   dataArrayView.def(py::init<DataArray &>(), py::arg("dataArray"),
                     R"(__init__(self, dataArray: DataArray) -> None
 
-                    DataArrayView initialiser.
+                    DataArrayView initializer.
 
                     :param dataArray: Viewed DataArray.
                     :type dataArray: DataArray
@@ -218,7 +218,7 @@ void init_dataset(py::module &m) {
   options.disable_function_signatures();
   datasetView.def(py::init<Dataset &>(), py::arg("dataset"),
                   R"(__init__(dataset: Dataset) -> None
-                    Initialises from viewed Dataset.
+                    Initializes from viewed Dataset.
                     )");
 
   py::class_<Dataset> dataset(m, "Dataset", R"(
@@ -248,7 +248,7 @@ void init_dataset(py::module &m) {
       py::arg("coords") = std::map<Dim, VariableConstView>{},
       R"(__init__(self, data: Dict[str, Union[Variable, DataArray]] = {}, coords: Dict[str, Variable] = {}) -> None
 
-              Dataset initialiser.
+              Dataset initializer.
 
              :param data: Dictionary of name and data pairs.
              :param coords: Dictionary of name and coord pairs.

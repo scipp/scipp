@@ -324,9 +324,9 @@ class PlotWidgets:
                 self.mask_checkboxes[name][m].observe(callbacks["toggle_mask"],
                                                       names="value")
 
-    def initialise(self, dim_to_shape, ranges, coord_units):
+    def initialize(self, dim_to_shape, ranges, coord_units):
         """
-        Initialise widget parameters once the `PlotModel`, `PlotView` and
+        Initialize widget parameters once the `PlotModel`, `PlotView` and
         `PlotController` have been created, since, for instance, slider limits
         depend on the dimensions of the input data, which are not known until
         the `PlotModel` is created.

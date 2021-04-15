@@ -108,9 +108,9 @@ class PlotFigure:
         """
         self.fig.show()
 
-    def initialise(self, axformatters):
+    def initialize(self, axformatters):
         """
-        Initialise figure parameters once the model has been created, since
+        Initialize figure parameters once the model has been created, since
         the axes formatters are defined by the model.
         """
         for dim in axformatters:

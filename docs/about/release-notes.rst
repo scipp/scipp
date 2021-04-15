@@ -160,7 +160,7 @@ Breaking changes
 
   * Before: ``plot(..., mpl_axes={"ax": myax0, "cax": myax1})``
   * After: ``plot(..., ax=myax0, cax=myax1)``
-* Plot with keyword argument ``collapse`` has been removed in favour of two more generic free functions that return a ``dict`` of data arrays that can then directly be passed to the ``plot`` function:
+* Plot with keyword argument ``collapse`` has been removed in favor of two more generic free functions that return a ``dict`` of data arrays that can then directly be passed to the ``plot`` function:
 
   * ``collapse(d, keep='x')`` slices all dimensions away to keep only ``'x'``, thus always returning 1D slices.
   * ``slices(d, dim='x')`` slices along dimension ``'x'``, returning slices with ``ndim-1`` dimensions contaiing all dimensions other than ``'x'``.

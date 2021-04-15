@@ -47,9 +47,9 @@ def zeros(*,
           unit: Union[Unit, str] = units.dimensionless,
           dtype: type(dtype.float64) = dtype.float64,
           variances: bool = False) -> Variable:
-    """Constructs a :class:`Variable` with default initialised values with
+    """Constructs a :class:`Variable` with default initialized values with
     given dimension labels and shape.
-    Optionally can add default initialised variances.
+    Optionally can add default initialized variances.
     Only keyword arguments accepted.
 
     :seealso: :py:func:`scipp.ones` :py:func:`scipp.empty`
@@ -60,9 +60,9 @@ def zeros(*,
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
     :param variances: Optional, boolean flag, if True includes variances
-      initialised to the default value for dtype.
+      initialized to the default value for dtype.
       For example for a float type values and variances would all be
-      initialised to 0.0. Default=False
+      initialized to 0.0. Default=False
     """
     return Variable(dims=dims,
                     shape=shape,
@@ -88,7 +88,7 @@ def ones(*,
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
     :param variances: Optional, boolean flag, if True includes variances
-                      initialised to 1. Default=False
+                      initialized to 1. Default=False
     """
     return _cpp.ones(dims, shape, unit, dtype, variances)
 
