@@ -121,6 +121,8 @@ template <class Key, class Value> void Dict<Key, Value>::rebuildSizes() {
 template <class Key, class Value>
 void Dict<Key, Value>::set(const key_type &key, mapped_type coord,
                            const bool force) {
+  if (contains(key) && at(key).is_same(coord))
+    return;
   if (!force)
     expectWritable(*this);
   // Is a good definition for things that are allowed: "would be possible to

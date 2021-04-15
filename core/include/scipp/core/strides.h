@@ -17,6 +17,9 @@ public:
   Strides(const scipp::span<const scipp::index> &strides);
   Strides(const Dimensions &dims);
 
+  bool operator==(const Strides &other) const noexcept;
+  bool operator!=(const Strides &other) const noexcept;
+
   scipp::index operator[](const scipp::index i) const {
     return m_strides.at(i);
   }
