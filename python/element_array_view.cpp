@@ -17,31 +17,6 @@ using namespace scipp::core;
 
 namespace py = pybind11;
 
-template <class T> struct mutable_span_methods {
-  static void add(py::class_<scipp::span<T>> &span) {
-    span.def("__setitem__", [](scipp::span<T> &self, const scipp::index i,
-                               const T value) { self[i] = value; });
-  }
-};
-template <class T> struct mutable_span_methods<const T> {
-  static void add(py::class_<scipp::span<const T>> &) {}
-};
-
-template <class T> void declare_span(py::module &m, const std::string &suffix) {
-  py::class_<scipp::span<T>> span(m, (std::string("span_") + suffix).c_str());
-  span.def("__getitem__", &scipp::span<T>::operator[],
-           py::return_value_policy::reference)
-      .def("size", &scipp::span<T>::size)
-      .def("__len__", &scipp::span<T>::size)
-      .def("__iter__",
-           [](const scipp::span<T> &self) {
-             return py::make_iterator(self.begin(), self.end());
-           })
-      .def("__repr__",
-           [](const scipp::span<T> &self) { return array_to_string(self); });
-  mutable_span_methods<T>::add(span);
-}
-
 namespace {
 template <class T> struct is_bins : std::false_type {};
 template <class T> struct is_bins<core::bin<T>> : std::true_type {};
@@ -62,8 +37,8 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
       });
   view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
                              const T value) {
-    if constexpr (is_bins<T>::value)
-      throw std::runtime_error("Assigning bin contents is not possible.");
+    if constexpr (is_bins<T>::value || std::is_const_v<T>)
+      throw std::invalid_argument("assignment destination is read-only");
     else
       self[i] = value;
   });
@@ -96,20 +71,6 @@ void declare_ElementArrayView<scipp::python::PyObject>(
 }
 
 void init_element_array_view(py::module &m) {
-  declare_span<double>(m, "double");
-  declare_span<float>(m, "float");
-  declare_span<bool>(m, "bool");
-  declare_span<const double>(m, "double_const");
-  declare_span<const long>(m, "long_const");
-  declare_span<long>(m, "long");
-  declare_span<const std::string>(m, "string_const");
-  declare_span<std::string>(m, "string");
-  declare_span<const Dim>(m, "Dim_const");
-  declare_span<Variable>(m, "Variable");
-  declare_span<DataArray>(m, "DataArray");
-  declare_span<Dataset>(m, "Dataset");
-  declare_span<Eigen::Vector3d>(m, "Eigen_Vector3d");
-  declare_span<Eigen::Matrix3d>(m, "Eigen_Matrix3d");
   declare_ElementArrayView<double>(m, "double");
   declare_ElementArrayView<float>(m, "float");
   declare_ElementArrayView<int64_t>(m, "int64");
@@ -121,8 +82,23 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<Dataset>(m, "Dataset");
   declare_ElementArrayView<Eigen::Vector3d>(m, "Eigen_Vector3d");
   declare_ElementArrayView<Eigen::Matrix3d>(m, "Eigen_Matrix3d");
-  declare_ElementArrayView<bucket<Variable>>(m, "bucket_Variable");
-  declare_ElementArrayView<bucket<DataArray>>(m, "bucket_DataArray");
-  declare_ElementArrayView<bucket<Dataset>>(m, "bucket_Dataset");
+  declare_ElementArrayView<bucket<Variable>>(m, "bin_Variable");
+  declare_ElementArrayView<bucket<DataArray>>(m, "bin_DataArray");
+  declare_ElementArrayView<bucket<Dataset>>(m, "bin_Dataset");
   declare_ElementArrayView<scipp::python::PyObject>(m, "PyObject");
+
+  declare_ElementArrayView<const double>(m, "double_const");
+  declare_ElementArrayView<const float>(m, "float_const");
+  declare_ElementArrayView<const int64_t>(m, "int64_const");
+  declare_ElementArrayView<const int32_t>(m, "int32_const");
+  declare_ElementArrayView<const std::string>(m, "string_const");
+  declare_ElementArrayView<const bool>(m, "bool_const");
+  declare_ElementArrayView<const Variable>(m, "Variable_const");
+  declare_ElementArrayView<const DataArray>(m, "DataArray_const");
+  declare_ElementArrayView<const Dataset>(m, "Dataset_const");
+  declare_ElementArrayView<const Eigen::Vector3d>(m, "Eigen_Vector3d_const");
+  declare_ElementArrayView<const Eigen::Matrix3d>(m, "Eigen_Matrix3d_const");
+  declare_ElementArrayView<const bucket<Variable>>(m, "bin_Variable_const");
+  declare_ElementArrayView<const bucket<DataArray>>(m, "bin_DataArray_const");
+  declare_ElementArrayView<const bucket<Dataset>>(m, "bin_Dataset_const");
 }

@@ -13,26 +13,6 @@ namespace scipp::dataset {
 
 Dataset::Dataset(const DataArray &data) { setData(data.name(), data); }
 
-Dataset &Dataset::assign(const Dataset &other) {
-  // TODO Need dry-run mechanism here?
-  for (const auto &item : other)
-    (*this)[item.name()].assign(item);
-  return *this;
-}
-
-Dataset &Dataset::assign(const DataArray &other) {
-  // TODO Need dry-run mechanism here?
-  for (auto &&item : *this)
-    item.assign(other);
-  return *this;
-}
-
-Dataset &Dataset::assign(const Variable &other) {
-  for (auto &&item : *this)
-    item.assign(other);
-  return *this;
-}
-
 /// Removes all data items from the Dataset.
 ///
 /// Coordinates are not modified.
@@ -157,22 +137,38 @@ Dataset Dataset::slice(const Slice s) const {
   Dataset out;
   out.m_coords = m_coords.slice(s);
   out.m_data = slice_map(m_coords.sizes(), m_data, s);
-  // TODO dropping items independent of s.dim(), is this still what we want?
-  for (auto it = out.m_data.begin(); it != out.m_data.end();) {
-    if (!m_data.at(it->first).dims().contains(s.dim()))
-      it = out.m_data.erase(it);
-    else
-      ++it;
-  }
-  for (auto it = m_coords.begin(); it != m_coords.end();) {
-    if (unaligned_by_dim_slice(*it, s)) {
-      auto extracted = out.m_coords.extract(it->first);
-      for (auto &item : out.m_data)
-        item.second.attrs().set(it->first, extracted);
-    }
-    ++it;
+  Attrs out_attrs(out.m_coords.sizes(), {});
+  for (auto it = m_coords.begin(); it != m_coords.end(); ++it)
+    if (unaligned_by_dim_slice(*it, s))
+      out_attrs.set(it->first, out.m_coords.extract(it->first));
+  for (auto &item : out.m_data) {
+    Attrs item_attrs(out.m_coords.sizes(), {});
+    for (const auto &[dim, coord] : out_attrs)
+      if (m_coords.item_applies_to(dim, m_data.at(item.first).dims()))
+        item_attrs.set(dim, coord);
+    item.second.attrs() = item.second.attrs().merge_from(item_attrs);
   }
   return out;
+}
+
+Dataset &Dataset::setSlice(const Slice s, const Dataset &data) {
+  // TODO Need dry-run mechanism here?
+  for (const auto &item : data)
+    (*this)[item.name()].setSlice(s, item);
+  return *this;
+}
+
+Dataset &Dataset::setSlice(const Slice s, const DataArray &data) {
+  // TODO Need dry-run mechanism here?
+  for (auto &&item : *this)
+    item.setSlice(s, data);
+  return *this;
+}
+
+Dataset &Dataset::setSlice(const Slice s, const Variable &data) {
+  for (auto &&item : *this)
+    item.setSlice(s, data);
+  return *this;
 }
 
 /// Rename dimension `from` to `to`.
@@ -204,48 +200,46 @@ bool Dataset::operator!=(const Dataset &other) const {
 const Sizes &Dataset::sizes() const { return m_coords.sizes(); }
 const Sizes &Dataset::dims() const { return sizes(); }
 
-std::unordered_map<typename Masks::key_type, typename Masks::mapped_type>
-union_or(const Masks &currentMasks, const Masks &otherMasks) {
-  std::unordered_map<typename Masks::key_type, typename Masks::mapped_type> out;
-
-  for (const auto &[key, item] : currentMasks) {
+typename Masks::holder_type union_or(const Masks &currentMasks,
+                                     const Masks &otherMasks) {
+  typename Masks::holder_type out;
+  for (const auto &[key, item] : currentMasks)
     out.emplace(key, copy(item));
-  }
-
   for (const auto &[key, item] : otherMasks) {
     const auto it = currentMasks.find(key);
-    if (it != currentMasks.end()) {
-      if (out[key].dims().contains(item.dims()))
-        out[key] |= item;
-      else
-        out[key] = out[key] | item;
-    } else {
+    if (it == currentMasks.end())
       out.emplace(key, copy(item));
-    }
+    else if (out[key].dims().contains(item.dims()))
+      out[key] |= item;
+    else
+      out[key] = out[key] | item;
   }
   return out;
 }
 
-namespace {
-template <class Op>
-void union_op_in_place(Masks &masks, const Masks &otherMasks, Op op) {
+void union_or_in_place(Masks &masks, const Masks &otherMasks) {
+  using core::to_string;
+  using units::to_string;
   for (const auto &[key, item] : otherMasks) {
     const auto it = masks.find(key);
-    if (it != masks.end()) {
-      op(it->second, item);
-    } else {
-      masks.set(key, copy(item));
+    if (it == masks.end() && masks.is_readonly()) {
+      throw except::NotFoundError("Cannot insert new mask '" + to_string(key) +
+                                  "' via a slice.");
+    } else if (it != masks.end() && it->second.is_readonly() &&
+               it->second != (it->second | item)) {
+      throw except::DimensionError("Cannot update mask '" + to_string(key) +
+                                   "' via slice since the mask is implicitly "
+                                   "broadcast along the slice dimension.");
     }
   }
-}
-} // namespace
-
-void union_or_in_place(Masks &masks, const Masks &otherMasks) {
-  union_op_in_place(masks, otherMasks, [](auto &&a, auto &&b) { a |= b; });
-}
-
-void union_copy_in_place(Masks &masks, const Masks &otherMasks) {
-  union_op_in_place(masks, otherMasks, [](auto &&a, auto &&b) { copy(b, a); });
+  for (const auto &[key, item] : otherMasks) {
+    const auto it = masks.find(key);
+    if (it == masks.end()) {
+      masks.set(key, copy(item));
+    } else if (!it->second.is_readonly()) {
+      it->second |= item;
+    }
+  }
 }
 
 } // namespace scipp::dataset

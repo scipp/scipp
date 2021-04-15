@@ -53,7 +53,7 @@ class DataAccessHelper {
   template <class Getter, class T, class Var>
   static py::object as_py_array_t_impl(py::object &obj, Var &view) {
     const auto get_strides = [&]() {
-      if constexpr (std::is_same_v<Var, DataArray>) {
+      if constexpr (std::is_same_v<std::remove_const_t<Var>, DataArray>) {
         return numpy_strides<T>(view.data().strides());
       } else {
         return numpy_strides<T>(view.strides());
@@ -71,8 +71,17 @@ class DataAccessHelper {
       }
     };
     const auto &dims = view.dims();
-    return py::array{get_dtype(), dims.shape(), get_strides(),
-                     Getter::template get<T>(view).data(), obj};
+    if (view.is_readonly()) {
+      auto array =
+          py::array{get_dtype(), dims.shape(), get_strides(),
+                    Getter::template get<T>(std::as_const(view)).data(), obj};
+      py::detail::array_proxy(array.ptr())->flags &=
+          ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
+      return array;
+    } else {
+      return py::array{get_dtype(), dims.shape(), get_strides(),
+                       Getter::template get<T>(view).data(), obj};
+    }
   }
 
   struct get_values {
@@ -157,9 +166,13 @@ template <class... Ts> class as_ElementArrayViewImpl {
         view);
   }
 
+public:
   template <class Getter, class View>
   static py::object get_py_array_t(py::object &obj) {
     auto &view = obj.cast<View &>();
+    if (!std::is_const_v<View> && view.is_readonly())
+      return as_ElementArrayViewImpl<const Ts...>::template get_py_array_t<
+          Getter, const View>(obj);
     const DType type = view.dtype();
     if (type == dtype<double>)
       return DataAccessHelper::as_py_array_t_impl<Getter, double>(obj, view);
@@ -198,7 +211,6 @@ template <class... Ts> class as_ElementArrayViewImpl {
         get<Getter>(view));
   }
 
-public:
   template <class Var> static py::object values(py::object &object) {
     return get_py_array_t<get_values, Var>(object);
   }
@@ -291,6 +303,9 @@ public:
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object value(py::object &obj) {
     auto &view = obj.cast<Var &>();
+    if (!std::is_const_v<Var> && view.is_readonly())
+      return as_ElementArrayViewImpl<const Ts...>::template value<const Var>(
+          obj);
     expect_scalar(view.dims(), "value");
     return std::visit(GetScalarVisitor<decltype(view)>{obj, view},
                       get<get_values>(view));
@@ -299,6 +314,9 @@ public:
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object variance(py::object &obj) {
     auto &view = obj.cast<Var &>();
+    if (!std::is_const_v<Var> && view.is_readonly())
+      return as_ElementArrayViewImpl<const Ts...>::template variance<const Var>(
+          obj);
     expect_scalar(view.dims(), "variance");
     if (!view.hasVariances())
       return py::none();
