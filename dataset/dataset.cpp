@@ -216,18 +216,27 @@ typename Masks::holder_type union_or(const Masks &currentMasks,
 }
 
 void union_or_in_place(Masks &masks, const Masks &otherMasks) {
+  using core::to_string;
+  using units::to_string;
+  for (const auto &[key, item] : otherMasks) {
+    const auto it = masks.find(key);
+    if (it == masks.end() && masks.is_readonly()) {
+      throw except::NotFoundError("Cannot insert new mask '" + to_string(key) +
+                                  "' via a slice.");
+    } else if (it != masks.end() && it->second.is_readonly() &&
+               it->second != (it->second | item)) {
+      throw except::DimensionError("Cannot update mask '" + to_string(key) +
+                                   "' via slice since the mask is implicitly "
+                                   "broadcast along the slice dimension.");
+    }
+  }
   for (const auto &[key, item] : otherMasks) {
     const auto it = masks.find(key);
     if (it == masks.end()) {
-      // TODO This may fail if readonly after slice. Ensure dry-run mechanism
-      // can catch this before data or masks are modified.
       masks.set(key, copy(item));
     } else if (!it->second.is_readonly()) {
       it->second |= item;
-    } else if (it->second != (it->second | item))
-      throw except::DimensionError(
-          "Cannot update mask via slice since the mask is being broadcast "
-          "along the slice dimension.");
+    }
   }
 }
 
