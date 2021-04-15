@@ -36,6 +36,8 @@ General
    :toctree: ../generated
 
    abs
+   bin
+   bins
    choose
    collapse
    dot
