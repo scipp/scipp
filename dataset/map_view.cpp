@@ -158,20 +158,19 @@ Dict<Key, Value> &Dict<Key, Value>::setSlice(const Slice s, const Dict &dict) {
   using units::to_string;
   for (const auto &[key, item] : dict) {
     const auto it = find(key);
-    if (it != end()) {
-      if (it->second.is_readonly() || !it->second.dims().contains(s.dim())) {
-        if (!it->second.dims().contains(s.dim()) || it->second.slice(s) != item)
-          throw except::DimensionError(
-              "Cannot update meta data '" + to_string(key) +
-              "' via slice since it is implicitly broadcast "
-              "along the slice dimension '" +
-              to_string(s.dim()) + "'.");
-      } else {
-        it->second.setSlice(s, item);
-      }
-    } else {
+    if (it == end()) {
       throw except::NotFoundError("Cannot set new meta data '" +
                                   to_string(key) + "' via a slice.");
+    } else if (!it->second.is_readonly() &&
+               it->second.dims().contains(s.dim())) {
+      it->second.setSlice(s, item);
+    } else if (!it->second.dims().contains(s.dim()) ||
+               it->second.slice(s) != item) {
+      throw except::DimensionError("Cannot update meta data '" +
+                                   to_string(key) +
+                                   "' via slice since it is implicitly "
+                                   "broadcast along the slice dimension '" +
+                                   to_string(s.dim()) + "'.");
     }
   }
   return *this;
