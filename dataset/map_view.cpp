@@ -159,19 +159,24 @@ Dict<Key, Value> &Dict<Key, Value>::setSlice(const Slice s, const Dict &dict) {
   for (const auto &[key, item] : dict) {
     const auto it = find(key);
     if (it == end()) {
-      throw except::NotFoundError("Cannot set new meta data '" +
+      throw except::NotFoundError("Cannot insert new meta data '" +
                                   to_string(key) + "' via a slice.");
-    } else if (!it->second.is_readonly() &&
-               it->second.dims().contains(s.dim())) {
-      it->second.setSlice(s, item);
-    } else if (!it->second.dims().contains(s.dim()) ||
-               it->second.slice(s) != item) {
+    } else if ((it->second.is_readonly() ||
+                !it->second.dims().contains(s.dim())) &&
+               (it->second.dims().contains(s.dim()) ? it->second.slice(s)
+                                                    : it->second) != item) {
       throw except::DimensionError("Cannot update meta data '" +
                                    to_string(key) +
                                    "' via slice since it is implicitly "
                                    "broadcast along the slice dimension '" +
                                    to_string(s.dim()) + "'.");
     }
+  }
+  for (const auto &[key, item] : dict) {
+    const auto it = find(key);
+    if (it != end() && !it->second.is_readonly() &&
+        it->second.dims().contains(s.dim()))
+      it->second.setSlice(s, item);
   }
   return *this;
 }
