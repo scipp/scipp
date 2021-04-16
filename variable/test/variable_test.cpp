@@ -987,3 +987,16 @@ TEST(VariableTest, array_params) {
   // inner dim. Should not make a difference since there are 0 elements anyway.
   EXPECT_EQ(empty_2d.array_params().dataDims(), transpose(empty_2d.dims()));
 }
+
+TEST(Variable, nested_Variable_copy) {
+  const auto one = makeVariable<double>(Values{1.0});
+  const auto two = makeVariable<double>(Values{2.0});
+  const auto inner = copy(one);
+  const auto outer = makeVariable<Variable>(Values{inner});
+  auto copied = copy(outer);
+  copied.value<Variable>() += one;
+  EXPECT_NE(two, one);
+  EXPECT_EQ(inner, one);
+  EXPECT_EQ(outer.value<Variable>(), one);
+  EXPECT_EQ(copied.value<Variable>(), two);
+}

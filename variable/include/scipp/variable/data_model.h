@@ -162,6 +162,11 @@ bool DataModel<T>::equals(const Variable &a, const Variable &b) const {
          (!a.hasVariances() || equals_impl(a.variances<T>(), b.variances<T>()));
 }
 
+namespace {
+template <class T> auto copy(const T &x) { return x; }
+constexpr auto do_copy = [](auto &a, const auto &b) { a = copy(b); };
+}
+
 /// Helper for implementing Variable(View) copy operations.
 ///
 /// This method is using virtual dispatch as a trick to obtain T, such that
@@ -171,7 +176,7 @@ void DataModel<T>::copy(const Variable &src, Variable &dest) const {
   transform_in_place<T>(
       dest, src,
       overloaded{core::transform_flags::expect_in_variance_if_out_variance,
-                 [](auto &a, const auto &b) { a = b; }});
+                 do_copy});
 }
 template <class T>
 void DataModel<T>::copy(const Variable &src, Variable &&dest) const {
