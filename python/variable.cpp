@@ -149,6 +149,11 @@ void bind_init_0D_list_eigen(py::class_<Variable> &c) {
 }
 
 void init_variable(py::module &m) {
+  // Needed to let numpy arrays keep alive the scipp buffers.
+  // VariableConcept must ALWAYS be passed to Python by its handle.
+  py::class_<VariableConcept, VariableConceptHandle> variable_concept(
+      m, "_VariableConcept");
+
   py::class_<Variable> variable(m, "Variable",
                                 R"(
 Array of values with dimension labels and a unit, optionally including an array

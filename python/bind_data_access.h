@@ -50,15 +50,8 @@ template <class... Ts> class as_ElementArrayViewImpl;
 class DataAccessHelper {
   template <class... Ts> friend class as_ElementArrayViewImpl;
 
-  template <class Getter, class T, class Var>
-  static py::object as_py_array_t_impl(py::object &obj, Var &view) {
-    const auto get_strides = [&]() {
-      if constexpr (std::is_same_v<std::remove_const_t<Var>, DataArray>) {
-        return numpy_strides<T>(view.data().strides());
-      } else {
-        return numpy_strides<T>(view.strides());
-      }
-    };
+  template <class Getter, class T, class View>
+  static py::object as_py_array_t_impl(View &view) {
     const auto get_dtype = [&view]() {
       if constexpr (std::is_same_v<T, scipp::core::time_point>) {
         // Need a custom implementation because py::dtype::of only works with
@@ -70,17 +63,27 @@ class DataAccessHelper {
         return py::dtype::of<T>();
       }
     };
+    auto &&var = [](auto &&view_) -> decltype(auto) {
+      if constexpr (std::is_same_v<std::decay_t<decltype(view)>,
+                                   scipp::Variable>) {
+        return view_;
+      } else {
+        return view_.data();
+      }
+    }(view);
     const auto &dims = view.dims();
     if (view.is_readonly()) {
       auto array =
-          py::array{get_dtype(), dims.shape(), get_strides(),
-                    Getter::template get<T>(std::as_const(view)).data(), obj};
+          py::array{get_dtype(), dims.shape(), numpy_strides<T>(var.strides()),
+                    Getter::template get<T>(std::as_const(view)).data(),
+                    py::cast(var.data_handle())};
       py::detail::array_proxy(array.ptr())->flags &=
           ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
-      return array;
+      return std::move(array); // no automatic move because of type mismatch
     } else {
-      return py::array{get_dtype(), dims.shape(), get_strides(),
-                       Getter::template get<T>(view).data(), obj};
+      return py::array{
+          get_dtype(), dims.shape(), numpy_strides<T>(var.strides()),
+          Getter::template get<T>(view).data(), py::cast(var.data_handle())};
     }
   }
 
@@ -175,19 +178,19 @@ public:
           Getter, const View>(obj);
     const DType type = view.dtype();
     if (type == dtype<double>)
-      return DataAccessHelper::as_py_array_t_impl<Getter, double>(obj, view);
+      return DataAccessHelper::as_py_array_t_impl<Getter, double>(view);
     if (type == dtype<float>)
-      return DataAccessHelper::as_py_array_t_impl<Getter, float>(obj, view);
+      return DataAccessHelper::as_py_array_t_impl<Getter, float>(view);
     if (type == dtype<int64_t>)
-      return DataAccessHelper::as_py_array_t_impl<Getter, int64_t>(obj, view);
+      return DataAccessHelper::as_py_array_t_impl<Getter, int64_t>(view);
     if (type == dtype<int32_t>)
-      return DataAccessHelper::as_py_array_t_impl<Getter, int32_t>(obj, view);
+      return DataAccessHelper::as_py_array_t_impl<Getter, int32_t>(view);
     if (type == dtype<bool>)
-      return DataAccessHelper::as_py_array_t_impl<Getter, bool>(obj, view);
+      return DataAccessHelper::as_py_array_t_impl<Getter, bool>(view);
     if (type == dtype<scipp::core::time_point>)
       return DataAccessHelper::as_py_array_t_impl<Getter,
                                                   scipp::core::time_point>(
-          obj, view);
+          view);
     return std::visit(
         [&view, &obj](const auto &data) {
           const auto &dims = view.dims();
