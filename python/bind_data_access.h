@@ -45,6 +45,20 @@ std::vector<ssize_t> numpy_strides(const scipp::span<const scipp::index> &s) {
   return strides;
 }
 
+template <typename T> decltype(auto) get_data_variable(T &&x) {
+  if constexpr (std::is_same_v<std::decay_t<T>, scipp::Variable>) {
+    return std::forward<T>(x);
+  } else {
+    return std::forward<T>(x).data();
+  }
+}
+
+/// Return a pybind11 handle to the VariableConcept of x.
+/// Refers to the data variable if T is a DataArray.
+template <typename T> auto get_data_variable_concept_handle(T &&x) {
+  return py::cast(get_data_variable(std::forward<T>(x)).data_handle());
+}
+
 template <class... Ts> class as_ElementArrayViewImpl;
 
 class DataAccessHelper {
@@ -63,27 +77,21 @@ class DataAccessHelper {
         return py::dtype::of<T>();
       }
     };
-    auto &&var = [](auto &&view_) -> decltype(auto) {
-      if constexpr (std::is_same_v<std::decay_t<decltype(view)>,
-                                   scipp::Variable>) {
-        return view_;
-      } else {
-        return view_.data();
-      }
-    }(view);
+    auto &&var = get_data_variable(view);
     const auto &dims = view.dims();
     if (view.is_readonly()) {
       auto array =
           py::array{get_dtype(), dims.shape(), numpy_strides<T>(var.strides()),
                     Getter::template get<T>(std::as_const(view)).data(),
-                    py::cast(var.data_handle())};
+                    get_data_variable_concept_handle(view)};
       py::detail::array_proxy(array.ptr())->flags &=
           ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
       return std::move(array); // no automatic move because of type mismatch
     } else {
-      return py::array{
-          get_dtype(), dims.shape(), numpy_strides<T>(var.strides()),
-          Getter::template get<T>(view).data(), py::cast(var.data_handle())};
+      return py::array{get_dtype(), dims.shape(),
+                       numpy_strides<T>(var.strides()),
+                       Getter::template get<T>(view).data(),
+                       get_data_variable_concept_handle(view)};
     }
   }
 
@@ -193,15 +201,6 @@ public:
           view);
     return std::visit(
         [&view](const auto &data) {
-          const auto get_parent = [](auto &&view_) {
-            if constexpr (std::is_same_v<std::decay_t<decltype(view)>,
-                                         scipp::Variable>) {
-              return py::cast(view_.data_handle());
-            } else {
-              return py::cast(view_.data().data_handle());
-            }
-          };
-
           const auto &dims = view.dims();
           // We return an individual item in two cases:
           // 1. For 0-D data (consistent with numpy behavior, e.g., when slicing
@@ -209,14 +208,16 @@ public:
           // 2. For 1-D event data, where the individual item is then a
           // vector-like object.
           if (dims.ndim() == 0) {
-            return make_scalar(data[0], get_parent(view), view);
+            return make_scalar(data[0], get_data_variable_concept_handle(view),
+                               view);
           } else {
             // Returning view (span or ElementArrayView) by value. This
             // references data in variable, so it must be kept alive. There is
             // no policy that supports this, so we use `keep_alive_impl`
             // manually.
             auto ret = py::cast(data, py::return_value_policy::move);
-            pybind11::detail::keep_alive_impl(ret, get_parent(view));
+            pybind11::detail::keep_alive_impl(
+                ret, get_data_variable_concept_handle(view));
             return ret;
           }
         },
