@@ -96,6 +96,17 @@ def test_lifetime_scalar():
     assert sc.identical(vals, elem)
 
 
+def test_lifetime_array():
+    var = sc.Variable(dims=['x'], values=np.arange(5))
+    array = var.values
+    del var
+    import gc
+    gc.collect()
+    # do something allocating memory to trigger potential segfault
+    sc.Variable(dims=['x'], values=np.arange(5, 10))
+    assert np.array_equal(array, np.arange(5))
+
+
 def test_lifetime_string_array():
     var = sc.Variable(['x'], values=['ab', 'c'] * 100000)
     assert var.values[100000] == 'ab'
