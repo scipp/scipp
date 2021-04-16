@@ -197,6 +197,14 @@ def test_rename_dims():
     assert sc.identical(d, make_dataarray('y', 'x', seed=0))
 
 
+def test_coord_setitem_can_change_dtype():
+    a = np.arange(3)
+    v1 = sc.array(dims=['x'], values=a)
+    v2 = v1.astype(sc.dtype.int32)
+    data = sc.DataArray(data=v1, coords={'x': v1})
+    data.coords['x'] = v2
+
+
 def test_setitem_works_for_view_and_array():
     a = make_dataarray('x', 'y', seed=0)
     a['x', :]['x', 0] = a['x', 1]
