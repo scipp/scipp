@@ -192,7 +192,16 @@ public:
                                                   scipp::core::time_point>(
           view);
     return std::visit(
-        [&view, &obj](const auto &data) {
+        [&view](const auto &data) {
+          const auto get_parent = [](auto &&view_) {
+            if constexpr (std::is_same_v<std::decay_t<decltype(view)>,
+                                         scipp::Variable>) {
+              return py::cast(view_.data_handle());
+            } else {
+              return py::cast(view_.data().data_handle());
+            }
+          };
+
           const auto &dims = view.dims();
           // We return an individual item in two cases:
           // 1. For 0-D data (consistent with numpy behavior, e.g., when slicing
@@ -200,14 +209,14 @@ public:
           // 2. For 1-D event data, where the individual item is then a
           // vector-like object.
           if (dims.ndim() == 0) {
-            return make_scalar(data[0], obj, view);
+            return make_scalar(data[0], get_parent(view), view);
           } else {
             // Returning view (span or ElementArrayView) by value. This
             // references data in variable, so it must be kept alive. There is
             // no policy that supports this, so we use `keep_alive_impl`
             // manually.
             auto ret = py::cast(data, py::return_value_policy::move);
-            pybind11::detail::keep_alive_impl(ret, obj);
+            pybind11::detail::keep_alive_impl(ret, get_parent(view));
             return ret;
           }
         },
@@ -240,11 +249,12 @@ public:
 
 private:
   template <class Scalar, class View>
-  static auto make_scalar(Scalar &&scalar, py::object &obj, const View &view) {
+  static auto make_scalar(Scalar &&scalar, py::object parent,
+                          const View &view) {
     if constexpr (std::is_same_v<std::decay_t<Scalar>,
                                  scipp::python::PyObject>) {
       // Returning PyObject. This increments the reference counter of
-      // the element, so it is ok if the parent `obj` (the variable)
+      // the element, so it is ok if the parent `parent` (the variable)
       // goes out of scope.
       return scalar.to_pybind();
     } else if constexpr (std::is_same_v<std::decay_t<Scalar>,
@@ -261,11 +271,12 @@ private:
       return py::cast(scalar, py::return_value_policy::move);
     } else {
       // Returning reference to element in variable. Return-policy
-      // reference_internal keeps alive `obj`. Note that an attempt to
+      // reference_internal keeps alive `parent`. Note that an attempt to
       // pass `keep_alive` as a call policy to `def_property` failed,
       // resulting in exception from pybind11, so we have handle it by
       // hand here.
-      return py::cast(scalar, py::return_value_policy::reference_internal, obj);
+      return py::cast(scalar, py::return_value_policy::reference_internal,
+                      std::move(parent));
     }
   }
 
