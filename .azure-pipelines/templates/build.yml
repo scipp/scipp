@@ -37,12 +37,15 @@ jobs:
         - bash: |
             echo "##vso[task.prependpath]$CONDA\Scripts"
             echo "##vso[task.setvariable variable=file_extension]bat"
+            echo "##vso[task.setvariable variable=install_prefix]$(Build.StagingDirectory)\install"
           displayName: 'Configure Conda path'
       - ${{ if not(contains(parameters.image, 'windows')) }}:
         - bash: |
             echo "##vso[task.prependpath]$CONDA/bin"
             echo "##vso[task.setvariable variable=file_extension]sh"
+            echo "##vso[task.setvariable variable=install_prefix]$(Build.StagingDirectory)/install"
           displayName: 'Configure Conda path'
+
       - bash: echo "##vso[task.setvariable variable=conda_dir]$CONDA"
         displayName: 'Configure Conda dir'
       - ${{ if not(eq(length(parameters.OSX_VERSION), 0)) }}:
@@ -62,19 +65,10 @@ jobs:
         displayName: 'Create conda environment'
 
       - bash: |
-          echo "##vso[task.setvariable variable=install_prefix]$(Build.StagingDirectory)/install"
-        displayName: 'Set install prefix'
-
-      - bash: |
           set -ex
           source activate scipp-developer
           tools/make_and_install.$FILE_EXTENSION
         displayName: 'Build and run C++ tests'
-
-      # - bash: |
-      #     source activate scipp-developer
-      #     echo "##vso[task.setvariable variable=install_prefix]$(Build.StagingDirectory)/install"
-      #   displayName: 'Set install target'
 
       - bash: |
           set -ex
