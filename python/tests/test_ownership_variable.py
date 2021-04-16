@@ -32,20 +32,23 @@ def test_own_var_scalar_fundamental():
 
 
 def test_own_var_scalar_copy():
-    # Copies of variables are always deep.
+    # Depth of copies of variables can be controlled.
     v = make_variable(1.0, variance=10.0, unit='m')
     v_copy = copy(v)
     v_deepcopy = deepcopy(v)
-    v_methcopy = v.copy()
+    v_methcopy = v.copy(deep=False)
+    v_methdeepcopy = v.copy(deep=True)
 
     v.value = 2.0
     v.variance = 20.0
     v.unit = 's'
     assert sc.identical(v, make_variable(2.0, variance=20.0, unit='s'))
-    assert sc.identical(v_copy, make_variable(1.0, variance=10.0, unit='m'))
+    assert sc.identical(v_copy, make_variable(2.0, variance=20.0, unit='s'))
     assert sc.identical(v_deepcopy, make_variable(1.0, variance=10.0,
                                                   unit='m'))
-    assert sc.identical(v_methcopy, make_variable(1.0, variance=10.0,
+    assert sc.identical(v_methcopy, make_variable(2.0, variance=20.0,
+                                                  unit='s'))
+    assert sc.identical(v_methdeepcopy, make_variable(1.0, variance=10.0,
                                                   unit='m'))
 
 
@@ -71,19 +74,22 @@ def test_own_var_scalar_pyobj_get():
 
 
 def test_own_var_scalar_pyobj_copy():
-    # Copies of variables are always deep.
+    # Depth of copies of variables can be controlled.
     data = {'num': 1, 'list': [2, 3]}
     s = make_variable(data)
     s_copy = copy(s)
     s_deepcopy = deepcopy(s)
-    s_methcopy = s.copy()
+    s_methcopy = s.copy(deep=False)
+    s_methdeepcopy = s.copy(deep=True)
 
     s.value['num'] = -1
     s.value['list'][0] = -2
-    assert sc.identical(s, make_variable({'num': -1, 'list': [-2, 3]}))
-    assert sc.identical(s_copy, make_variable(data))
+    modified = {'num': -1, 'list': [-2, 3]}
+    assert sc.identical(s, make_variable(modified))
+    assert sc.identical(s_copy, make_variable(modified))
     assert sc.identical(s_deepcopy, make_variable(data))
-    assert sc.identical(s_methcopy, make_variable(data))
+    assert sc.identical(s_methcopy, make_variable(modified))
+    assert sc.identical(s_methdeepcopy, make_variable(data))
 
 
 def test_own_var_scalar_str_get():
@@ -96,17 +102,19 @@ def test_own_var_scalar_str_get():
 
 
 def test_own_var_scalar_str_copy():
-    # Copies of variables are always deep.
+    # Depth of copies of variables can be controlled.
     s = make_variable('abc')
     s_copy = copy(s)
     s_deepcopy = deepcopy(s)
-    s_methcopy = s.copy()
+    s_methcopy = s.copy(deep=False)
+    s_methdeepcopy = s.copy(deep=True)
 
     s.value = 'def'
     assert sc.identical(s, make_variable('def'))
-    assert sc.identical(s_copy, make_variable('abc'))
+    assert sc.identical(s_copy, make_variable('def'))
     assert sc.identical(s_deepcopy, make_variable('abc'))
-    assert sc.identical(s_methcopy, make_variable('abc'))
+    assert sc.identical(s_methcopy, make_variable('def'))
+    assert sc.identical(s_methdeepcopy, make_variable('abc'))
 
 
 def test_own_var_scalar_nested_set():
@@ -167,7 +175,8 @@ def test_own_var_scalar_nested_copy():
     a = inner.values
     outer_copy = copy(outer)
     outer_deepcopy = deepcopy(outer)
-    outer_methcopy = outer.copy()
+    outer_methcopy = outer.copy(deep=False)
+    outer_methdeepcopy = outer.copy(deep=True)
 
     outer.value['x', 0] = -1
     outer.value.values[1] = -2
@@ -178,6 +187,7 @@ def test_own_var_scalar_nested_copy():
     assert sc.identical(outer_copy, make_variable(make_variable(expected)))
     assert sc.identical(outer_deepcopy, make_variable(make_variable(expected)))
     assert sc.identical(outer_methcopy, make_variable(make_variable(expected)))
+    assert sc.identical(outer_methdeepcopy, make_variable(make_variable(expected)))
 
 
 def test_own_var_scalar_nested_str_get():
@@ -222,54 +232,48 @@ def test_own_var_1d_get():
 
 
 def test_own_var_1d_copy():
-    # Copies of variables are always deep.
+    # Depth of copies of variables can be controlled.
     v = make_variable(np.arange(5.0), unit='m')
     v_copy = copy(v)
     v_deepcopy = deepcopy(v)
-    v_methcopy = v.copy()
+    v_methcopy = v.copy(deep=False)
+    v_methdeepcopy = v.copy(deep=True)
 
     v.values = np.arange(5.0, 10)
     v['x', 0] = -1.0
     v.unit = 's'
-    assert sc.identical(v, make_variable([-1.0, 6.0, 7.0, 8.0, 9.0], unit='s'))
-    assert sc.identical(v_copy,
-                        make_variable([0.0, 1.0, 2.0, 3.0, 4.0], unit='m'))
-    assert sc.identical(v_deepcopy,
-                        make_variable([0.0, 1.0, 2.0, 3.0, 4.0], unit='m'))
-    assert sc.identical(v_methcopy,
-                        make_variable([0.0, 1.0, 2.0, 3.0, 4.0], unit='m'))
+    modified = make_variable([-1.0, 6.0, 7.0, 8.0, 9.0], unit='s')
+    original = make_variable([0.0, 1.0, 2.0, 3.0, 4.0], unit='m')
+    assert sc.identical(v, modified)
+    assert sc.identical(v_copy, modified)
+    assert sc.identical(v_deepcopy, original)
+    assert sc.identical(v_methcopy, modified)
+    assert sc.identical(v_methdeepcopy, original)
 
     v.variances = np.arange(10.0, 15.0)
-    assert v_copy.variances is None
+    np.testing.assert_array_equal(v_copy.variances, v.variances)
     assert v_deepcopy.variances is None
-    assert v_methcopy.variances is None
+    np.testing.assert_array_equal(v_methcopy.variances, v.variances)
+    assert v_methdeepcopy.variances is None
 
     v_copy = copy(v)
     v_deepcopy = deepcopy(v)
-    v_methcopy = v.copy()
+    v_methcopy = v.copy(deep=False)
+    v_methdeepcopy = v.copy(deep=True)
     v.values[1] = -2.0
     v.variances[1] = -12.0
     v.unit = 'kg'
-    assert sc.identical(
-        v,
-        make_variable([-1.0, -2.0, 7.0, 8.0, 9.0],
-                      variances=[10.0, -12.0, 12.0, 13.0, 14.0],
-                      unit='kg'))
-    assert sc.identical(
-        v_copy,
-        make_variable([-1.0, 6.0, 7.0, 8.0, 9.0],
-                      variances=[10.0, 11.0, 12.0, 13.0, 14.0],
-                      unit='s'))
-    assert sc.identical(
-        v_deepcopy,
-        make_variable([-1.0, 6.0, 7.0, 8.0, 9.0],
-                      variances=[10.0, 11.0, 12.0, 13.0, 14.0],
-                      unit='s'))
-    assert sc.identical(
-        v_methcopy,
-        make_variable([-1.0, 6.0, 7.0, 8.0, 9.0],
-                      variances=[10.0, 11.0, 12.0, 13.0, 14.0],
-                      unit='s'))
+    original =make_variable([-1.0, 6.0, 7.0, 8.0, 9.0],
+                            variances=[10.0, 11.0, 12.0, 13.0, 14.0],
+                            unit='s')
+    modified = make_variable([-1.0, -2.0, 7.0, 8.0, 9.0],
+                             variances=[10.0, -12.0, 12.0, 13.0, 14.0],
+                             unit='kg')
+    assert sc.identical(v, modified)
+    assert sc.identical(v_copy, modified)
+    assert sc.identical(v_deepcopy, original)
+    assert sc.identical(v_methcopy, modified)
+    assert sc.identical(v_methdeepcopy, original)
 
 
 def test_own_var_1d_pyobj_set():
@@ -324,26 +328,30 @@ def test_own_var_1d_pyobj_get():
 
 
 def test_own_var_1d_pyobj_copy():
-    # Copies of variables are always deep.
+    # Depth of copies of variables can be controlled.
     x = make_variable({'num': 1, 'list': [2, 3]})
     y = make_variable({'num': 4, 'list': [5, 6]})
     v = sc.concatenate(x, y, dim='x')
     v_copy = copy(v)
     v_deepcopy = deepcopy(v)
-    v_methcopy = v.copy()
+    v_methcopy = v.copy(deep=False)
+    v_methdeepcopy = v.copy(deep=True)
 
     v.values[0]['num'] = -1
     v.values[0]['list'][0] = -2
-    assert sc.identical(
-        v,
-        sc.concatenate(make_variable({
-            'num': -1,
-            'list': [-2, 3]
-        }), y, dim='x'))
-    x = make_variable({'num': 1, 'list': [2, 3]})
-    assert sc.identical(v_copy, sc.concatenate(x, y, dim='x'))
-    assert sc.identical(v_deepcopy, sc.concatenate(x, y, dim='x'))
-    assert sc.identical(v_methcopy, sc.concatenate(x, y, dim='x'))
+    modified = sc.concatenate(make_variable({
+        'num': -1,
+        'list': [-2, 3]
+    }), y, dim='x')
+    original = sc.concatenate(make_variable({
+        'num': 1,
+        'list': [2, 3]
+    }), y, dim='x')
+    assert sc.identical(v, modified)
+    assert sc.identical(v_copy, modified)
+    assert sc.identical(v_deepcopy, original)
+    assert sc.identical(v_methcopy, modified)
+    assert sc.identical(v_methdeepcopy, original)
 
 
 def test_own_var_1d_str_set():
@@ -371,18 +379,20 @@ def test_own_var_1d_str_get():
 
 
 def test_own_var_1d_str_copy():
-    # Copies of variables are always deep.
+    # Depth of copies of variables can be controlled.
     v = make_variable(np.array(['abc', 'def']))
     v_copy = copy(v)
     v_deepcopy = deepcopy(v)
-    v_methcopy = v.copy()
+    v_methcopy = v.copy(deep=False)
+    v_methdeepcopy = v.copy(deep=True)
 
     v['x', 0] = sc.scalar('asd')
     v.values[1] = 'qwe'
     assert sc.identical(v, make_variable(np.array(['asd', 'qwe'])))
-    assert sc.identical(v_copy, make_variable(np.array(['abc', 'def'])))
+    assert sc.identical(v_copy, make_variable(np.array(['asd', 'qwe'])))
     assert sc.identical(v_deepcopy, make_variable(np.array(['abc', 'def'])))
-    assert sc.identical(v_methcopy, make_variable(np.array(['abc', 'def'])))
+    assert sc.identical(v_methcopy, make_variable(np.array(['asd', 'qwe'])))
+    assert sc.identical(v_methdeepcopy, make_variable(np.array(['abc', 'def'])))
 
 
 def test_own_var_1d_bin_set():
@@ -449,7 +459,7 @@ def test_own_var_1d_bin_get():
 
 
 def test_own_var_1d_bin_copy():
-    # Copies are always deep.
+    # Depth of copies of variables can be controlled.
     indices = make_variable(np.array([0, 2, 5]))
     binned = sc.bins(data=make_variable(np.arange(5), unit='m'),
                      begin=indices['x', :-1],
@@ -457,7 +467,8 @@ def test_own_var_1d_bin_copy():
                      dim='x')
     binned_copy = copy(binned)
     binned_deepcopy = deepcopy(binned)
-    binned_methcopy = binned.copy()
+    binned_methcopy = binned.copy(deep=False)
+    binned_methdeepcopy = binned.copy(deep=True)
 
     binned['x', 0].value['x', 0] = -1
     binned.values[0]['x', 1] = -2
@@ -473,9 +484,10 @@ def test_own_var_1d_bin_copy():
                        end=indices['x', 1:],
                        dim='x')
     assert sc.identical(binned, modified)
-    assert sc.identical(binned_copy, original)
+    assert sc.identical(binned_copy, modified)
     assert sc.identical(binned_deepcopy, original)
-    assert sc.identical(binned_methcopy, original)
+    assert sc.identical(binned_methcopy, modified)
+    assert sc.identical(binned_methdeepcopy, original)
 
 
 def test_own_var_2d_set():
@@ -502,3 +514,24 @@ def test_own_var_2d_get():
     expected = [[-100, -1, -2, -3, -4], [-30, -30, -30, -40, -50]]
     assert sc.identical(v, make_variable(expected))
     np.testing.assert_array_equal(a, expected)
+
+
+def test_own_var_2d_copy():
+    # Depth of copies of variables can be controlled.
+    v = make_variable(np.arange(6).reshape(2, 3), unit='m')
+    v_copy = copy(v)
+    v_deepcopy = deepcopy(v)
+    v_methcopy = v.copy(deep=False)
+    v_methdeepcopy = v.copy(deep=True)
+
+    v['x', 0] = -np.arange(3)
+    v.values[1] = -30
+    v['y', 1:]['x', 1] = [-40, -50]
+    v.unit = 's'
+    modified = make_variable(np.reshape([0, -1, -2, -30, -40, -50], (2, 3)), unit='s')
+    original = make_variable(np.arange(6).reshape(2, 3), unit='m')
+    assert sc.identical(v, modified)
+    assert sc.identical(v_copy, modified)
+    assert sc.identical(v_deepcopy, original)
+    assert sc.identical(v_methcopy, modified)
+    assert sc.identical(v_methdeepcopy, original)

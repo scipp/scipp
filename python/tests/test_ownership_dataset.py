@@ -150,13 +150,12 @@ def test_own_darr_get_meta():
 
 
 def test_own_darr_copy():
-    # TODO intentional?
-    # Copy function and method copy only data and masks,
-    # deepcopy copies all members.
+    # Depth of copy can be controlled.
     da, _, c, a, m = make_data_array()
     da_copy = copy(da)
     da_deepcopy = deepcopy(da)
-    da_methcopy = da.copy()
+    da_methcopy = da.copy(deep=False)
+    da_methdeepcopy = da.copy(deep=True)
     da['x', 0] = -10
     da.data['x', 1] = -20
     da.coords['x']['x', 0] = -1
@@ -167,28 +166,17 @@ def test_own_darr_copy():
     m['x', 1] = True
     da.unit = 'kg'
     da.coords['x'].unit = 'J'
-    assert sc.identical(
-        da,
-        sc.DataArray(
-            sc.array(dims=['x'], values=[-10, -20], unit='kg'),
-            coords={'x': sc.array(dims=['x'], values=[-1, -2], unit='J')},
-            attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
-            masks={'m': sc.array(dims=['x'], values=[False, True])}))
-    assert sc.identical(
-        da_copy,
-        sc.DataArray(
-            sc.array(dims=['x'], values=[10, 20], unit='m'),
-            coords={'x': sc.array(dims=['x'], values=[-1, -2], unit='J')},
-            attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
-            masks={'m': sc.array(dims=['x'], values=[True, False])}))
+
+    modified = sc.DataArray(
+        sc.array(dims=['x'], values=[-10, -20], unit='kg'),
+        coords={'x': sc.array(dims=['x'], values=[-1, -2], unit='J')},
+        attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
+        masks={'m': sc.array(dims=['x'], values=[False, True])})
+    assert sc.identical(da, modified)
+    assert sc.identical(da_copy, modified)
     assert sc.identical(da_deepcopy, make_data_array()[0])
-    assert sc.identical(
-        da_methcopy,
-        sc.DataArray(
-            sc.array(dims=['x'], values=[10, 20], unit='m'),
-            coords={'x': sc.array(dims=['x'], values=[-1, -2], unit='J')},
-            attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
-            masks={'m': sc.array(dims=['x'], values=[True, False])}))
+    assert sc.identical(da_methcopy, modified)
+    assert sc.identical(da_methdeepcopy, make_data_array()[0])
 
 
 def test_own_dset_set_access_through_dataarray():
@@ -198,7 +186,6 @@ def test_own_dset_set_access_through_dataarray():
     dset['da1'] = da
 
     dset['da1']['x', 0] = -10
-    dset['da1'].coords['x']['x', 0] = -1
     dset['da1'].attrs['a']['x', 0] = -100
     dset['da1'].masks['m']['x', 0] = False
     da['x', 1] = -20
@@ -206,12 +193,12 @@ def test_own_dset_set_access_through_dataarray():
     da.attrs['a']['x', 1] = -200
     da.masks['m']['x', 1] = True
     dset['da1'].unit = 'kg'
-    dset['da1'].coords['x'].unit = 'J'
 
-    expected = sc.DataArray(sc.array(dims=['x'], values=[-10, -20], unit='kg'),
-                            coords={'x': sc.array(dims=['x'], values=[-1, -2], unit='J')},
-                            attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
-                            masks={'m': sc.array(dims=['x'], values=[False, True])})
+    expected = sc.DataArray(
+        sc.array(dims=['x'], values=[-10, -20], unit='kg'),
+        coords={'x': sc.array(dims=['x'], values=[1, -2], unit='s')},
+        attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
+        masks={'m': sc.array(dims=['x'], values=[False, True])})
     assert sc.identical(dset, sc.Dataset({'da1': expected}))
     assert sc.identical(da, expected)
 
@@ -223,6 +210,7 @@ def test_own_dset_set_access_through_scalar_slice():
     dset['da1'] = da
 
     dset['x', 0]['da1'].value = -10
+    # TODO allows modification of coord through attrs
     dset['x', 0]['da1'].attrs['x'].value = -1
     dset['x', 0]['da1'].attrs['a'].value = -100
     dset['x', 0]['da1'].masks['m'].value = False
@@ -230,10 +218,11 @@ def test_own_dset_set_access_through_scalar_slice():
     with pytest.raises(sc.UnitError):
         dset['x', 0]['da1'].unit = 's'
 
-    expected = sc.DataArray(sc.array(dims=['x'], values=[-10, 20], unit='m'),
-                            coords={'x': sc.array(dims=['x'], values=[-1, 2], unit='s')},
-                            attrs={'a': sc.array(dims=['x'], values=[-100, 200])},
-                            masks={'m': sc.array(dims=['x'], values=[False, False])})
+    expected = sc.DataArray(
+        sc.array(dims=['x'], values=[-10, 20], unit='m'),
+        coords={'x': sc.array(dims=['x'], values=[-1, 2], unit='s')},
+        attrs={'a': sc.array(dims=['x'], values=[-100, 200])},
+        masks={'m': sc.array(dims=['x'], values=[False, False])})
     assert sc.identical(dset, sc.Dataset({'da1': expected}))
     assert sc.identical(da, expected)
 
@@ -245,16 +234,15 @@ def test_own_dset_set_access_through_range_slice():
     dset['da1'] = da
 
     dset['x', :]['da1']['x', 0] = -10
-    dset['x', :]['da1'].coords['x']['x', 0] = -1
     dset['x', :]['da1'].attrs['a']['x', 0] = -100
     dset['x', :]['da1'].masks['m']['x', False] = False
     dset['x', :]['da1'].unit = 'kg'
-    dset['x', :]['da1'].coords['x'].unit = 'J'
 
-    expected = sc.DataArray(sc.array(dims=['x'], values=[-10, 20], unit='kg'),
-                            coords={'x': sc.array(dims=['x'], values=[-1, 2], unit='J')},
-                            attrs={'a': sc.array(dims=['x'], values=[-100, 200])},
-                            masks={'m': sc.array(dims=['x'], values=[False, False])})
+    expected = sc.DataArray(
+        sc.array(dims=['x'], values=[-10, 20], unit='kg'),
+        coords={'x': sc.array(dims=['x'], values=[1, 2], unit='s')},
+        attrs={'a': sc.array(dims=['x'], values=[-100, 200])},
+        masks={'m': sc.array(dims=['x'], values=[False, False])})
     assert sc.identical(dset, sc.Dataset({'da1': expected}))
     assert sc.identical(da, expected)
 
