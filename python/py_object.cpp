@@ -36,6 +36,9 @@ bool PyObject::operator==(const PyObject &other) const {
   return to_pybind().equal(other.to_pybind());
 }
 
-std::string to_string(const PyObject &obj) { return py::str(obj.to_pybind()); }
+std::string to_string(const PyObject &obj) {
+  py::gil_scoped_acquire gil_{};
+  return py::str(obj.to_pybind());
+}
 
 } // namespace scipp::python
