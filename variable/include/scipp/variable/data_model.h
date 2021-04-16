@@ -165,7 +165,7 @@ bool DataModel<T>::equals(const Variable &a, const Variable &b) const {
 namespace {
 template <class T> auto copy(const T &x) { return x; }
 constexpr auto do_copy = [](auto &a, const auto &b) { a = copy(b); };
-}
+} // namespace
 
 /// Helper for implementing Variable(View) copy operations.
 ///
