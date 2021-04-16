@@ -48,9 +48,13 @@ target_compile_definitions(_scipp PRIVATE SCIPP_EXPORT=)
 # pybind11 FAQ.
 set_target_properties(_scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
 if(UNIX AND NOT APPLE)
-  set_target_properties(_scipp PROPERTIES INSTALL_RPATH "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+  set_target_properties(
+    _scipp PROPERTIES INSTALL_RPATH "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
+  )
 elseif(APPLE)
-  set_target_properties(_scipp PROPERTIES INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}")
+  set_target_properties(
+    _scipp PROPERTIES INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}"
+  )
 endif()
 
 if(PRECOMPILED_HEADERS)
