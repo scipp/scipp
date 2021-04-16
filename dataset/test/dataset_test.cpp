@@ -371,6 +371,15 @@ TEST(DatasetTest, erase_item_coord_cannot_erase_coord) {
   ASSERT_TRUE(ds.coords().contains(Dim::X));
 }
 
+TEST(DatasetTest, item_coord_cannot_change_coord) {
+  DatasetFactory3D factory;
+  Dataset ds = factory.make();
+  const auto original = copy(ds.coords()[Dim::X]);
+  ASSERT_THROW(ds["data_x"].coords()[Dim::X] += original,
+               except::VariableError);
+  ASSERT_EQ(ds.coords()[Dim::X], original);
+}
+
 TEST(DatasetTest, extract_labels) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
