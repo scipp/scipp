@@ -3,6 +3,7 @@
 # @author Jan-Lukas Wynen
 from copy import copy, deepcopy
 
+import pytest
 import scipp as sc
 
 
@@ -188,3 +189,99 @@ def test_own_darr_copy():
             coords={'x': sc.array(dims=['x'], values=[-1, -2], unit='J')},
             attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
             masks={'m': sc.array(dims=['x'], values=[True, False])}))
+
+
+def test_own_dset_set_access_through_dataarray():
+    # The DataArray is shared.
+    dset = sc.Dataset()
+    da, *_ = make_data_array()
+    dset['da1'] = da
+
+    dset['da1']['x', 0] = -10
+    dset['da1'].coords['x']['x', 0] = -1
+    dset['da1'].attrs['a']['x', 0] = -100
+    dset['da1'].masks['m']['x', 0] = False
+    da['x', 1] = -20
+    da.coords['x']['x', 1] = -2
+    da.attrs['a']['x', 1] = -200
+    da.masks['m']['x', 1] = True
+    dset['da1'].unit = 'kg'
+    dset['da1'].coords['x'].unit = 'J'
+
+    expected = sc.DataArray(sc.array(dims=['x'], values=[-10, -20], unit='kg'),
+                            coords={'x': sc.array(dims=['x'], values=[-1, -2], unit='J')},
+                            attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
+                            masks={'m': sc.array(dims=['x'], values=[False, True])})
+    assert sc.identical(dset, sc.Dataset({'da1': expected}))
+    assert sc.identical(da, expected)
+
+
+def test_own_dset_set_access_through_scalar_slice():
+    # The DataArray is shared.
+    dset = sc.Dataset()
+    da, *_ = make_data_array()
+    dset['da1'] = da
+
+    dset['x', 0]['da1'].value = -10
+    dset['x', 0]['da1'].attrs['x'].value = -1
+    dset['x', 0]['da1'].attrs['a'].value = -100
+    dset['x', 0]['da1'].masks['m'].value = False
+    # TODO test this here or somewhere else?
+    with pytest.raises(sc.UnitError):
+        dset['x', 0]['da1'].unit = 's'
+
+    expected = sc.DataArray(sc.array(dims=['x'], values=[-10, 20], unit='m'),
+                            coords={'x': sc.array(dims=['x'], values=[-1, 2], unit='s')},
+                            attrs={'a': sc.array(dims=['x'], values=[-100, 200])},
+                            masks={'m': sc.array(dims=['x'], values=[False, False])})
+    assert sc.identical(dset, sc.Dataset({'da1': expected}))
+    assert sc.identical(da, expected)
+
+
+def test_own_dset_set_access_through_range_slice():
+    # The DataArray is shared.
+    dset = sc.Dataset()
+    da, *_ = make_data_array()
+    dset['da1'] = da
+
+    dset['x', :]['da1']['x', 0] = -10
+    dset['x', :]['da1'].coords['x']['x', 0] = -1
+    dset['x', :]['da1'].attrs['a']['x', 0] = -100
+    dset['x', :]['da1'].masks['m']['x', False] = False
+    dset['x', :]['da1'].unit = 'kg'
+    dset['x', :]['da1'].coords['x'].unit = 'J'
+
+    expected = sc.DataArray(sc.array(dims=['x'], values=[-10, 20], unit='kg'),
+                            coords={'x': sc.array(dims=['x'], values=[-1, 2], unit='J')},
+                            attrs={'a': sc.array(dims=['x'], values=[-100, 200])},
+                            masks={'m': sc.array(dims=['x'], values=[False, False])})
+    assert sc.identical(dset, sc.Dataset({'da1': expected}))
+    assert sc.identical(da, expected)
+
+
+def test_own_dset_set_access_through_coords():
+    # The DataArray is shared.
+    dset = sc.Dataset()
+    da, *_ = make_data_array()
+    dset['da1'] = da
+    dset.coords['x']['x', 0] = -1
+
+    expected, *_ = make_data_array()
+    expected.coords['x']['x', 0] = -1
+    assert sc.identical(dset, sc.Dataset({'da1': expected}))
+    assert sc.identical(da, expected)
+
+
+def test_own_dset_set_access_through_range_slice_coords():
+    # The DataArray is shared.
+    dset = sc.Dataset()
+    da, *_ = make_data_array()
+    dset['da1'] = da
+    dset['x', :]['da1']['x', 0] = -10
+    dset['x', :].coords['x']['x', 0] = -1
+
+    expected, *_ = make_data_array()
+    expected['x', 0] = -10
+    expected.coords['x']['x', 0] = -1
+    assert sc.identical(dset, sc.Dataset({'da1': expected}))
+    assert sc.identical(da, expected)
