@@ -52,7 +52,6 @@ stages:
   - template: documentation.yml
     parameters:
       image: ${{ parameters.settings.linux.image }}
-      release: ${{ parameters.release }}
       package_root: ${{ parameters.settings.linux.publish }}
       py_version: '3.7'
 

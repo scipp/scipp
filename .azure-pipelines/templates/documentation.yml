@@ -1,9 +1,6 @@
 parameters:
 - name: image
   default: ''
-# - name: release
-#   type: boolean
-#   default: false
 - name: package_root
   type: string
   default: ''
