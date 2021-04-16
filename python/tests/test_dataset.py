@@ -689,17 +689,27 @@ def test_rebin():
                                   np.arange(0, 11, 2))
 
 
+def _is_copy_of(orig, copy):
+    assert sc.identical(orig, copy)
+    assert not id(orig) == id(copy)
+    orig += 1
+    assert sc.identical(orig, copy)
+
+
 def _is_deep_copy_of(orig, copy):
     assert sc.identical(orig, copy)
     assert not id(orig) == id(copy)
+    orig += 1
+    assert not sc.identical(orig, copy)
 
 
 def test_copy():
     import copy
     a = sc.Dataset()
     a['x'] = sc.Variable(value=1)
+    _is_copy_of(a, a.copy(deep=False))
     _is_deep_copy_of(a, a.copy())
-    _is_deep_copy_of(a, copy.copy(a))
+    _is_copy_of(a, copy.copy(a))
     _is_deep_copy_of(a, copy.deepcopy(a))
 
 

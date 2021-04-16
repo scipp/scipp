@@ -229,7 +229,7 @@ TEST(ConcatenateTest, concat_2d_coord) {
       "mask_1",
       makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
 
-  Dataset b = deepcopy(a);
+  Dataset b = copy(a);
   b.coords()[Dim::X] += 3 * units::one;
   b["data_1"].data() += 100 * units::one;
 

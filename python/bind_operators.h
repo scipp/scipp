@@ -21,15 +21,20 @@ void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
     throw std::runtime_error("The truth value of a variable, data array, or "
                              "dataset is ambiguous. Use any() or all().");
   });
-  // TODO Do we want to default to deep copy?
   c.def(
-      "copy", [](T &self) { return copy(self); },
+      "copy", [](T &self, const bool deep) { return deep ? copy(self) : self; },
+      py::arg("deep") = true, py::call_guard<py::gil_scoped_release>(),
+      R"(
+      Return a (by default deep) copy.
+
+      If `deep=True` (the default), a deep copy is made. Otherwise, a shallow
+      copy is made, and the returned data (and meta data) values are new views
+      of the data and meta data values of this object.)");
+  c.def(
+      "__copy__", [](T &self) { return self; },
       py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.");
   c.def(
-      "__copy__", [](T &self) { return copy(self); },
-      py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.");
-  c.def(
-      "__deepcopy__", [](T &self, py::dict) { return deepcopy(self); },
+      "__deepcopy__", [](T &self, py::dict) { return copy(self); },
       py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
 }
 

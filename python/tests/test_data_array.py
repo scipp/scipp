@@ -114,16 +114,26 @@ def test_eq():
     assert not sc.identical(da['y', :]['x', 1:], da)
 
 
+def _is_copy_of(orig, copy):
+    assert sc.identical(orig, copy)
+    assert not id(orig) == id(copy)
+    orig += 1.0
+    assert sc.identical(orig, copy)
+
+
 def _is_deep_copy_of(orig, copy):
     assert sc.identical(orig, copy)
     assert not id(orig) == id(copy)
+    orig += 1.0
+    assert not sc.identical(orig, copy)
 
 
 def test_copy():
     import copy
     da = make_dataarray()
+    _is_copy_of(da, da.copy(deep=False))
     _is_deep_copy_of(da, da.copy())
-    _is_deep_copy_of(da, copy.copy(da))
+    _is_copy_of(da, copy.copy(da))
     _is_deep_copy_of(da, copy.deepcopy(da))
 
 

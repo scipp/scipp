@@ -198,8 +198,6 @@ private:
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset
 copy(const Dataset &dataset, const AttrPolicy attrPolicy = AttrPolicy::Keep);
-[[nodiscard]] SCIPP_DATASET_EXPORT Dataset deepcopy(
-    const Dataset &dataset, const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
 [[maybe_unused]] SCIPP_DATASET_EXPORT DataArray &
 copy(const DataArray &array, DataArray &out,
