@@ -12,11 +12,6 @@ else
   IPO="OFF"
 fi
 
-# if test -z "${INSTALL_PREFIX}"
-# then
-#   INSTALL_PREFIX='install'
-# fi
-
 # Perform CMake configuration
 cmake \
   -G Ninja \

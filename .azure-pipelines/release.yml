@@ -13,5 +13,5 @@ extends:
       osx: ['3.7', '3.8']
       windows: ['3.7', '3.8']
     deploy: true
-    label: 'main'
+    conda_label: 'main'
     release: true

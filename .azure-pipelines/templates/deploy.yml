@@ -11,7 +11,7 @@ parameters:
 - name: image
   type: string
   default: ''
-- name: label
+- name: conda_label
   type: string
   default: 'test'
 - name: package_list
@@ -50,7 +50,7 @@ stages:
                 downloadPath: '$(Build.StagingDirectory)/packages'
               displayName: 'Retrieve built conda package'
             - bash: |
-                anaconda --token "$ANACONDA_TOKEN" upload --user scipp --label ${{ parameters.label }} '$(Build.StagingDirectory)/packages/${{ package.Key }}/'scipp-*.tar.bz2
+                anaconda --token "$ANACONDA_TOKEN" upload --user scipp --label ${{ parameters.conda_label }} '$(Build.StagingDirectory)/packages/${{ package.Key }}/'scipp-*.tar.bz2
               env:
                 ANACONDA_TOKEN: $(anaconda_token_secret)
               displayName: 'Deploy ${{ package.Key }}'

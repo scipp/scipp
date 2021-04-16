@@ -11,7 +11,7 @@ parameters:
 - name: OSX_VERSION
   type: string
   default: ''
-- name: publish
+- name: conda_package_root
   type: string
   default: ''
 
@@ -76,8 +76,8 @@ jobs:
         displayName: 'Python tests and conda build'
       - task: PublishBuildArtifacts@1
         inputs:
-          PathtoPublish: "$(conda_dir)/conda-bld/${{ parameters.publish }}"
-          ArtifactName: "${{ parameters.publish }}-py${{ parameters.py_version }}"
+          PathtoPublish: "$(conda_dir)/conda-bld/${{ parameters.conda_package_root }}"
+          ArtifactName: "${{ parameters.conda_package_root }}-py${{ parameters.py_version }}"
         displayName: 'Publish Conda package artifacts'
 
       - ${{ if eq(parameters.ccache, true) }}:

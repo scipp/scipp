@@ -10,24 +10,24 @@ parameters:
   default:
     linux:
       image: 'ubuntu-20.04'
-      publish: 'linux-64'
+      conda_package_root: 'linux-64'
       params:
         ccache: true
     osx:
       image: 'macOS-10.14'
-      publish: 'osx-64'
+      conda_package_root: 'osx-64'
       params:
         OSX_VERSION: '10.15'
     windows:
       image: 'windows-latest'
-      publish: 'win-64'
+      conda_package_root: 'win-64'
 - name: 'deploy'
   type: boolean
   default: false
 - name: release
   type: boolean
   default: false
-- name: label
+- name: conda_label
   type: string
   default: 'test'
 
@@ -45,14 +45,14 @@ stages:
             parameters:
               py_version: ${{ py }}
               image: ${{ parameters.settings[os.Key].image }}
-              publish: ${{ parameters.settings[os.Key].publish }}
+              conda_package_root: ${{ parameters.settings[os.Key].conda_package_root }}
               ${{ each param in parameters.settings[os.Key].params }}:
                 ${{ param.Key }}: ${{ param.Value }}
 
   - template: documentation.yml
     parameters:
       image: ${{ parameters.settings.linux.image }}
-      package_root: ${{ parameters.settings.linux.publish }}
+      conda_package_root: ${{ parameters.settings.linux.conda_package_root }}
       py_version: '3.7'
 
   - ${{ if eq(parameters.deploy, true) }}:
@@ -60,8 +60,8 @@ stages:
       parameters:
         image: ${{ parameters.settings.linux.image }}
         release: ${{ parameters.release }}
-        label: ${{ parameters.label }}
+        conda_label: ${{ parameters.conda_label }}
         package_list:
           ${{ each os in parameters.py_versions }}:
             ${{ each py in os.Value }}:
-              ${{ parameters.settings[os.Key].publish }}-py${{ py }}: true
+              ${{ parameters.settings[os.Key].conda_package_root }}-py${{ py }}: true

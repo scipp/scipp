@@ -1,7 +1,7 @@
 parameters:
 - name: image
   default: ''
-- name: package_root
+- name: conda_package_root
   type: string
   default: ''
 - name: py_version
@@ -20,7 +20,7 @@ stages:
         variables:
           packages_dir: '$(Build.StagingDirectory)/packages'
           docs_build_dir: '$(Build.StagingDirectory)/docs_build'
-          package_name: ${{ parameters.package_root }}-py${{ parameters.py_version }}
+          package_name: ${{ parameters.conda_package_root }}-py${{ parameters.py_version }}
         steps:
           - bash: |
               set -ex
