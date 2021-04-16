@@ -85,6 +85,15 @@ def test_lifetime_scalar_py_object():
     assert val[-1] == 1
 
 
+def test_lifetime_scalar_nested_string():
+    var = sc.scalar(sc.array(dims=['x'], values=np.array(['abc', 'def'])))
+    arr = var.value.values
+    var.value = sc.array(dims=['x'], values=np.array(['ghi', 'jkl']))
+    import gc
+    gc.collect()
+    np.testing.assert_array_equal(arr, ['abc', 'def'])
+
+
 def test_lifetime_scalar():
     elem = sc.Variable(['x'], values=np.arange(100000))
     var = sc.Variable(value=elem)
