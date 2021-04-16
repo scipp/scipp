@@ -12,11 +12,16 @@ else
   IPO="OFF"
 fi
 
+# if test -z "${INSTALL_PREFIX}"
+# then
+#   INSTALL_PREFIX='install'
+# fi
+
 # Perform CMake configuration
 cmake \
   -G Ninja \
   -DPYTHON_EXECUTABLE="${CONDA_PREFIX}/bin/python" \
-  -DCMAKE_INSTALL_PREFIX="${CONDA_PREFIX}" \
+  -DCMAKE_INSTALL_PREFIX="${INSTALL_PREFIX}" \
   -DCMAKE_OSX_DEPLOYMENT_TARGET=$OSX_VERSION \
   -DCMAKE_OSX_SYSROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${OSX_VERSION}.sdk" \
   -DWITH_CTEST=OFF \
