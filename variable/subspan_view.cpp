@@ -73,16 +73,22 @@ template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
   auto dims = var.dims();
   dims.erase(dim);
   const auto values_view = [dim, len, dims](auto &v) {
-    return len == 0
-               ? make_empty_subspans(v.template values<E>(), dims)
-               : make_subspans(v, v.slice({dim, 0}).template values<E>(),
-                               v.slice({dim, len - 1}).template values<E>());
+    if (len == 0)
+      return make_empty_subspans(v.template values<E>(), dims);
+    // `Var` may be `const Variable`, ensuring we call correct `values`
+    // overload. Without this we may clash with readonly flags.
+    Var begin = v.slice({dim, 0});
+    Var end = v.slice({dim, len - 1});
+    return make_subspans(v, begin.template values<E>(),
+                         end.template values<E>());
   };
   const auto variances_view = [dim, len, dims](auto &v) {
-    return len == 0
-               ? make_empty_subspans(v.template variances<E>(), dims)
-               : make_subspans(v, v.slice({dim, 0}).template variances<E>(),
-                               v.slice({dim, len - 1}).template variances<E>());
+    if (len == 0)
+      return make_empty_subspans(v.template variances<E>(), dims);
+    Var begin = v.slice({dim, 0});
+    Var end = v.slice({dim, len - 1});
+    return make_subspans(v, begin.template variances<E>(),
+                         end.template variances<E>());
   };
   return make_subspan_view<T>(var, dims, values_view, variances_view);
 }

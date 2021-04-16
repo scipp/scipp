@@ -110,7 +110,7 @@ DataArray DataArray::view_with_coords(const Coords &coords,
   out.m_coords = Coords(sizes, {});
   for (const auto &[dim, coord] : coords)
     if (coords.item_applies_to(dim, dims()))
-      out.m_coords.set(dim, coord);
+      out.m_coords.set(dim, coord.as_const());
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
   out.m_name = name;
