@@ -20,6 +20,15 @@ namespace py = pybind11;
 namespace {
 template <class T> struct is_bins : std::false_type {};
 template <class T> struct is_bins<core::bin<T>> : std::true_type {};
+
+template <typename T> decltype(auto) to_python_object(T &&val) {
+  if constexpr (std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>,
+                               scipp::python::PyObject>) {
+    return std::forward<T>(val).to_pybind();
+  } else {
+    return std::forward<T>(val);
+  }
+}
 } // namespace
 
 template <class T>
@@ -29,45 +38,34 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
   view.def(
           "__repr__",
           [](const ElementArrayView<T> &self) { return array_to_string(self); })
-      .def("__getitem__", &ElementArrayView<T>::operator[],
-           py::return_value_policy::reference)
-      .def("__len__", &ElementArrayView<T>::size)
-      .def("__iter__", [](const ElementArrayView<T> &self) {
-        return py::make_iterator(self.begin(), self.end());
-      });
-  view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
-                             const T value) {
-    if constexpr (is_bins<T>::value || std::is_const_v<T>)
-      throw std::invalid_argument("assignment destination is read-only");
-    else
-      self[i] = value;
-  });
-}
-
-template <>
-void declare_ElementArrayView<scipp::python::PyObject>(
-    py::module &m, const std::string &suffix) {
-  using T = scipp::python::PyObject;
-  py::class_<ElementArrayView<T>>(
-      m, (std::string("ElementArrayView_") + suffix).c_str())
-      .def(
-          "__repr__",
-          [](const ElementArrayView<T> &self) { return array_to_string(self); })
       .def(
           "__getitem__",
           [](const ElementArrayView<T> &self, const scipp::index i) {
-            return self[i].to_pybind();
+            return to_python_object(self[i]);
           },
-          py::return_value_policy::reference)
-      .def(
-          "__setitem__",
-          [](ElementArrayView<T> &self, const scipp::index i,
-             const py::object &value) { return self[i].to_pybind() = value; },
           py::return_value_policy::reference)
       .def("__len__", &ElementArrayView<T>::size)
       .def("__iter__", [](const ElementArrayView<T> &self) {
         return py::make_iterator(self.begin(), self.end());
       });
+  if constexpr (std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>,
+                               scipp::python::PyObject>) {
+    view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
+                               const py::object &value) {
+      if constexpr (is_bins<T>::value || std::is_const_v<T>)
+        throw std::invalid_argument("assignment destination is read-only");
+      else
+        to_python_object(self[i]) = value;
+    });
+  } else {
+    view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
+                               const T value) {
+      if constexpr (is_bins<T>::value || std::is_const_v<T>)
+        throw std::invalid_argument("assignment destination is read-only");
+      else
+        self[i] = value;
+    });
+  }
 }
 
 void init_element_array_view(py::module &m) {
@@ -101,4 +99,5 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<const bucket<Variable>>(m, "bin_Variable_const");
   declare_ElementArrayView<const bucket<DataArray>>(m, "bin_DataArray_const");
   declare_ElementArrayView<const bucket<Dataset>>(m, "bin_Dataset_const");
+  declare_ElementArrayView<const scipp::python::PyObject>(m, "PyObject_const");
 }
