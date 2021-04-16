@@ -52,13 +52,6 @@ class DataAccessHelper {
 
   template <class Getter, class T, class View>
   static py::object as_py_array_t_impl(View &view) {
-    const auto get_strides = [&]() {
-      if constexpr (std::is_same_v<std::remove_const_t<View>, DataArray>) {
-        return numpy_strides<T>(view.data().strides());
-      } else {
-        return numpy_strides<T>(view.strides());
-      }
-    };
     const auto get_dtype = [&view]() {
       if constexpr (std::is_same_v<T, scipp::core::time_point>) {
         // Need a custom implementation because py::dtype::of only works with
@@ -70,24 +63,27 @@ class DataAccessHelper {
         return py::dtype::of<T>();
       }
     };
-    const auto get_base = [&view]() {
-      if constexpr (std::is_same_v<std::decay_t<View>, scipp::Variable>) {
-        return py::cast(view.data_handle());
+    auto &&var = [](auto &&view_) -> decltype(auto) {
+      if constexpr (std::is_same_v<std::decay_t<decltype(view)>,
+                                   scipp::Variable>) {
+        return view_;
       } else {
-        return py::cast(view.data().data_handle());
+        return view_.data();
       }
-    };
+    }(view);
     const auto &dims = view.dims();
     if (view.is_readonly()) {
-      auto array = py::array{
-          get_dtype(), dims.shape(), get_strides(),
-          Getter::template get<T>(std::as_const(view)).data(), get_base()};
+      auto array =
+          py::array{get_dtype(), dims.shape(), numpy_strides<T>(var.strides()),
+                    Getter::template get<T>(std::as_const(view)).data(),
+                    py::cast(var.data_handle())};
       py::detail::array_proxy(array.ptr())->flags &=
           ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
       return std::move(array); // no automatic move because of type mismatch
     } else {
-      return py::array{get_dtype(), dims.shape(), get_strides(),
-                       Getter::template get<T>(view).data(), get_base()};
+      return py::array{
+          get_dtype(), dims.shape(), numpy_strides<T>(var.strides()),
+          Getter::template get<T>(view).data(), py::cast(var.data_handle())};
     }
   }
 
