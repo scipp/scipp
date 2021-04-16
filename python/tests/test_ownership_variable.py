@@ -48,8 +48,8 @@ def test_own_var_scalar_copy():
                                                   unit='m'))
     assert sc.identical(v_methcopy, make_variable(2.0, variance=20.0,
                                                   unit='s'))
-    assert sc.identical(v_methdeepcopy, make_variable(1.0, variance=10.0,
-                                                  unit='m'))
+    assert sc.identical(v_methdeepcopy,
+                        make_variable(1.0, variance=10.0, unit='m'))
 
 
 def test_own_var_scalar_pyobj_set():
@@ -168,8 +168,7 @@ def test_own_var_scalar_nested_get():
 
 
 def test_own_var_scalar_nested_copy():
-    # Copies of variables never copy nested variables.
-    # TODO intentional? Seems to contradict the behaviour with PyObjects.
+    # Depth of copies of variables can be controlled.
     outer = make_variable(make_variable(np.arange(5)))
     inner = outer.value
     a = inner.values
@@ -182,12 +181,13 @@ def test_own_var_scalar_nested_copy():
     outer.value.values[1] = -2
     inner['x', 2] = -3
     a[3] = -4
-    expected = [-1, -2, -3, -4, 4]
-    assert sc.identical(outer, make_variable(make_variable(expected)))
-    assert sc.identical(outer_copy, make_variable(make_variable(expected)))
-    assert sc.identical(outer_deepcopy, make_variable(make_variable(expected)))
-    assert sc.identical(outer_methcopy, make_variable(make_variable(expected)))
-    assert sc.identical(outer_methdeepcopy, make_variable(make_variable(expected)))
+    modified = make_variable(make_variable([-1, -2, -3, -4, 4]))
+    original = make_variable(make_variable([0, 1, 2, 3, 4]))
+    assert sc.identical(outer, modified)
+    assert sc.identical(outer_copy, modified)
+    assert sc.identical(outer_deepcopy, original)
+    assert sc.identical(outer_methcopy, modified)
+    assert sc.identical(outer_methdeepcopy, original)
 
 
 def test_own_var_scalar_nested_str_get():
@@ -263,9 +263,9 @@ def test_own_var_1d_copy():
     v.values[1] = -2.0
     v.variances[1] = -12.0
     v.unit = 'kg'
-    original =make_variable([-1.0, 6.0, 7.0, 8.0, 9.0],
-                            variances=[10.0, 11.0, 12.0, 13.0, 14.0],
-                            unit='s')
+    original = make_variable([-1.0, 6.0, 7.0, 8.0, 9.0],
+                             variances=[10.0, 11.0, 12.0, 13.0, 14.0],
+                             unit='s')
     modified = make_variable([-1.0, -2.0, 7.0, 8.0, 9.0],
                              variances=[10.0, -12.0, 12.0, 13.0, 14.0],
                              unit='kg')
@@ -342,11 +342,15 @@ def test_own_var_1d_pyobj_copy():
     modified = sc.concatenate(make_variable({
         'num': -1,
         'list': [-2, 3]
-    }), y, dim='x')
+    }),
+                              y,
+                              dim='x')
     original = sc.concatenate(make_variable({
         'num': 1,
         'list': [2, 3]
-    }), y, dim='x')
+    }),
+                              y,
+                              dim='x')
     assert sc.identical(v, modified)
     assert sc.identical(v_copy, modified)
     assert sc.identical(v_deepcopy, original)
@@ -392,7 +396,8 @@ def test_own_var_1d_str_copy():
     assert sc.identical(v_copy, make_variable(np.array(['asd', 'qwe'])))
     assert sc.identical(v_deepcopy, make_variable(np.array(['abc', 'def'])))
     assert sc.identical(v_methcopy, make_variable(np.array(['asd', 'qwe'])))
-    assert sc.identical(v_methdeepcopy, make_variable(np.array(['abc', 'def'])))
+    assert sc.identical(v_methdeepcopy, make_variable(np.array(['abc',
+                                                                'def'])))
 
 
 def test_own_var_1d_bin_set():
@@ -528,7 +533,8 @@ def test_own_var_2d_copy():
     v.values[1] = -30
     v['y', 1:]['x', 1] = [-40, -50]
     v.unit = 's'
-    modified = make_variable(np.reshape([0, -1, -2, -30, -40, -50], (2, 3)), unit='s')
+    modified = make_variable(np.reshape([0, -1, -2, -30, -40, -50], (2, 3)),
+                             unit='s')
     original = make_variable(np.arange(6).reshape(2, 3), unit='m')
     assert sc.identical(v, modified)
     assert sc.identical(v_copy, modified)
