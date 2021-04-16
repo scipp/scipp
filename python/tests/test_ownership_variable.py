@@ -156,8 +156,7 @@ def test_own_var_scalar_nested_get():
     inner['x', 1] = -10
     assert sc.identical(outer, make_variable(make_variable([-5, -10, 7])))
     assert sc.identical(inner, make_variable([-5, -10, 7]))
-    # TODO `a` seems to be invalidated
-    # np.testing.assert_array_equal(a, [-1, -2, -3, -4, 4])
+    np.testing.assert_array_equal(a, [-1, -2, -3, -4, 4])
 
 
 def test_own_var_scalar_nested_copy():
@@ -273,54 +272,78 @@ def test_own_var_1d_copy():
                       unit='s'))
 
 
-# # TODO needs branch pyobject_arrays
-# def test_own_var_1d_pyobj_set():
-#     # Input data is deep-copied.
-#     x = {'num': 1, 'list': [2, 3]}
-#     y = {'num': 4, 'list': [5, 6]}
-#     s = sc.concatenate(make_variable(x), make_variable(y), dim='x')
-#     s['x', 0].value['num'] = -1
-#     s.values[0]['list'][0] = -2
-#     y['num'] = -4
-#     assert sc.identical(
-#         s,
-#         sc.concatenate(make_variable({
-#             'num': -1,
-#             'list': [-2, 3]
-#         }),
-#                        make_variable({
-#                            'num': 4,
-#                            'list': [5, 6]
-#                        }),
-#                        dim='x'))
-#     assert x == {'num': 1, 'list': [2, 3]}
-#     assert y == {'num': -4, 'list': [5, 6]}
+def test_own_var_1d_pyobj_set():
+    # Input data is deep-copied.
+    x = {'num': 1, 'list': [2, 3]}
+    y = {'num': 4, 'list': [5, 6]}
+    v = sc.concatenate(make_variable(x), make_variable(y), dim='x')
+    v['x', 0].value['num'] = -1
+    v.values[0]['list'][0] = -2
+    y['num'] = -4
+    assert sc.identical(
+        v,
+        sc.concatenate(make_variable({
+            'num': -1,
+            'list': [-2, 3]
+        }),
+                       make_variable({
+                           'num': 4,
+                           'list': [5, 6]
+                       }),
+                       dim='x'))
+    assert x == {'num': 1, 'list': [2, 3]}
+    assert y == {'num': -4, 'list': [5, 6]}
 
-# def test_own_var_scalar_pyobj_get():
-#     # .value getter shares ownership of the object.
-#     s = make_variable({'num': 1, 'list': [2, 3]})
-#     x = s.value
-#     x['num'] = -1
-#     s.value['list'][0] = -2
-#     expected = {'num': -1, 'list': [-2, 3]}
-#     assert sc.identical(s, make_variable(expected))
-#     assert x == expected
-#
-#
-# def test_own_var_scalar_pyobj_copy():
-#     # Copies of variables are always deep.
-#     data = {'num': 1, 'list': [2, 3]}
-#     s = make_variable(data)
-#     s_copy = copy(s)
-#     s_deepcopy = deepcopy(s)
-#     s_methcopy = s.copy()
-#
-#     s.value['num'] = -1
-#     s.value['list'][0] = -2
-#     assert sc.identical(s, make_variable({'num': -1, 'list': [-2, 3]}))
-#     assert sc.identical(s_copy, make_variable(data))
-#     assert sc.identical(s_deepcopy, make_variable(data))
-#     assert sc.identical(s_methcopy, make_variable(data))
+
+def test_own_var_1d_pyobj_get():
+    # .values getter shares ownership of the array.
+    v = sc.concatenate(make_variable({
+        'num': 1,
+        'list': [2, 3]
+    }),
+                       make_variable({
+                           'num': 4,
+                           'list': [5, 6]
+                       }),
+                       dim='x')
+    x = v['x', 0].value
+    y = v['x', 1].value
+    x['num'] = -1
+    v['x', 0].value['list'][0] = -2
+    v.values[1]['num'] = -5
+    v.values[1]['list'][0] = -6
+    x_expected = {'num': -1, 'list': [-2, 3]}
+    y_expected = {'num': -5, 'list': [-6, 6]}
+    assert sc.identical(
+        v,
+        sc.concatenate(make_variable(x_expected),
+                       make_variable(y_expected),
+                       dim='x'))
+    assert x == x_expected
+    assert y == y_expected
+
+
+def test_own_var_1d_pyobj_copy():
+    # Copies of variables are always deep.
+    x = make_variable({'num': 1, 'list': [2, 3]})
+    y = make_variable({'num': 4, 'list': [5, 6]})
+    v = sc.concatenate(x, y, dim='x')
+    v_copy = copy(v)
+    v_deepcopy = deepcopy(v)
+    v_methcopy = v.copy()
+
+    v.values[0]['num'] = -1
+    v.values[0]['list'][0] = -2
+    assert sc.identical(
+        v,
+        sc.concatenate(make_variable({
+            'num': -1,
+            'list': [-2, 3]
+        }), y, dim='x'))
+    x = make_variable({'num': 1, 'list': [2, 3]})
+    assert sc.identical(v_copy, sc.concatenate(x, y, dim='x'))
+    assert sc.identical(v_deepcopy, sc.concatenate(x, y, dim='x'))
+    assert sc.identical(v_methcopy, sc.concatenate(x, y, dim='x'))
 
 
 def test_own_var_1d_str_set():
