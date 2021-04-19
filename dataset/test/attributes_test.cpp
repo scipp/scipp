@@ -65,6 +65,18 @@ TEST_F(AttributesTest, slice_dataset_item_attrs) {
   ASSERT_TRUE(d["a"].slice({Dim::Y, 0, 1}).attrs().contains(Dim("x")));
 }
 
+TEST_F(AttributesTest, attrs_from_coord_slice_is_readonly) {
+  Dataset d;
+  d.setData("a", copy(varX));
+  d.coords().set(Dim::X, copy(varX));
+  ASSERT_FALSE(d.slice({Dim::X, 0})["a"].coords().contains(Dim::X));
+  ASSERT_TRUE(d.slice({Dim::X, 0})["a"].attrs().contains(Dim::X));
+  ASSERT_TRUE(d.slice({Dim::X, 0})["a"].attrs()[Dim::X].is_readonly());
+  ASSERT_TRUE(d.slice({Dim::X, 0, 1})["a"].coords().contains(Dim::X));
+  ASSERT_TRUE(d.slice({Dim::X, 0, 1})["a"].coords()[Dim::X].is_readonly());
+  ASSERT_FALSE(d.slice({Dim::X, 0, 1})["a"].attrs().contains(Dim::X));
+}
+
 TEST_F(AttributesTest, binary_ops_matching_attrs_preserved) {
   Dataset d;
   d.setData("a", varX);
