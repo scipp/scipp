@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #include <cmath>
 
-#include "scipp/common/constants.h"
 #include "scipp/core/element/trigonometry.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/to_unit.h"
