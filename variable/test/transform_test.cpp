@@ -421,10 +421,28 @@ TEST(AccumulateTest, in_place) {
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.0, 2.0});
   const auto expected = makeVariable<double>(Values{3.0});
   auto op_ = [](auto &&a, auto &&b) { a += b; };
-  Variable result;
-
   // Note how accumulate is ignoring the unit.
-  result = makeVariable<double>(Values{double{}});
+  auto result = makeVariable<double>(Values{double{}});
+  accumulate_in_place<pair_self_t<double>>(result, var, op_);
+  EXPECT_EQ(result, expected);
+}
+
+TEST(AccumulateTest, bad_dims) {
+  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                                        units::m, Values{1, 2, 3, 4, 5, 6});
+  auto op_ = [](auto &&a, auto &&b) { a += b; };
+  auto result = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  EXPECT_THROW(accumulate_in_place<pair_self_t<double>>(result, var, op_),
+               except::DimensionError);
+}
+
+TEST(AccumulateTest, broadcast) {
+  const auto var =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::m, Values{1, 2, 3});
+  const auto expected =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{6, 6});
+  auto op_ = [](auto &&a, auto &&b) { a += b; };
+  auto result = makeVariable<double>(Dims{Dim::X}, Shape{2});
   accumulate_in_place<pair_self_t<double>>(result, var, op_);
   EXPECT_EQ(result, expected);
 }
