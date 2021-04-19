@@ -56,7 +56,7 @@ TEST(EventsDataOperationsConsistencyTest, multiply) {
   EXPECT_EQ(ab, ba);
 
   hist = make_histogram();
-  edges = Variable(hist.coords()[Dim::X]);
+  edges = hist.coords()[Dim::X];
   scaled = copy(events);
   buckets::scale(scaled, hist);
   ab = histogram(scaled, edges);

@@ -345,7 +345,7 @@ TEST(DatasetTest, extract_coord) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
   Dataset ds(ref);
-  auto coord = Variable(ds.coords()[Dim::X]);
+  auto coord = ds.coords()[Dim::X];
   auto ptr = ds.coords()[Dim::X].values<double>().data();
   auto var = ds.coords().extract(Dim::X);
   EXPECT_EQ(var.values<double>().data(), ptr);
@@ -363,7 +363,7 @@ TEST(DatasetTest, erase_item_coord_cannot_erase_coord) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
   Dataset ds(ref);
-  auto coord = Variable(ds.coords()[Dim::X]);
+  auto coord = ds.coords()[Dim::X];
   ASSERT_TRUE(ds.contains("data_x"));
   ASSERT_NO_THROW(ds["data_x"].coords().erase(Dim::X));
   // Coord was erased in DataArray returned by ds["data_x"], but not from coord
@@ -384,7 +384,7 @@ TEST(DatasetTest, extract_labels) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
   Dataset ds(ref);
-  auto labels = Variable(ds.coords()[Dim("labels_x")]);
+  auto labels = ds.coords()[Dim("labels_x")];
   ds.coords().extract(Dim("labels_x"));
   EXPECT_FALSE(ds.coords().contains(Dim("labels_x")));
   ds.setCoord(Dim("labels_x"), labels);

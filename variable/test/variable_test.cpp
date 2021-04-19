@@ -268,11 +268,11 @@ TEST(VariableTest, copy_and_move) {
       makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1}, units::m,
                            Values{1.1, 2.2}, Variances{0.1, 0.2});
 
-  const auto copy(var);
-  EXPECT_EQ(copy, reference);
+  const Variable shallow(var);
+  EXPECT_EQ(shallow, reference);
 
-  const Variable copy_via_slice{Variable(var)};
-  EXPECT_EQ(copy_via_slice, reference);
+  const auto deep = copy(var);
+  EXPECT_EQ(deep, reference);
 
   const auto moved(std::move(var));
   EXPECT_EQ(moved, reference);
@@ -811,14 +811,14 @@ TEST(VariableViewTest, set_variances) {
   auto view(var);
   test_set_variances(view);
   EXPECT_THROW(
-      var.slice({Dim::X, 0}).setVariances(Variable(var.slice({Dim::X, 0}))),
+      var.slice({Dim::X, 0}).setVariances(var.slice({Dim::X, 0})),
       except::VariancesError);
 }
 
 TEST(VariableViewTest, set_variances_slice_fail) {
   Variable var = makeVariable<double>(Dims{Dim::X}, Shape{3});
   EXPECT_THROW(
-      var.slice({Dim::X, 0}).setVariances(Variable(var.slice({Dim::X, 0}))),
+      var.slice({Dim::X, 0}).setVariances(var.slice({Dim::X, 0})),
       except::VariancesError);
 }
 
@@ -903,7 +903,7 @@ TEST(TransposeTest, make_transposed_2d) {
                                   Values{1, 2, 3, 4, 5, 6},
                                   Variances{11, 12, 13, 14, 15, 16});
 
-  const auto constVar = Variable(var);
+  const auto constVar = copy(var);
 
   auto ref = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                   Values{1, 3, 5, 2, 4, 6},
@@ -924,7 +924,7 @@ TEST(TransposeTest, make_transposed_multiple_d) {
                                   Values{1, 2, 3, 4, 5, 6},
                                   Variances{11, 12, 13, 14, 15, 16});
 
-  const auto constVar = Variable(var);
+  const auto constVar = copy(var);
 
   auto ref = makeVariable<double>(Dims{Dim::Y, Dim::Z, Dim::X}, Shape{2, 1, 3},
                                   Values{1, 3, 5, 2, 4, 6},
