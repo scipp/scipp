@@ -9,7 +9,7 @@ include(ExternalProject)
 externalproject_add(
   llnl-units
   GIT_REPOSITORY https://github.com/SimonHeybrock/units.git
-  GIT_TAG origin/master
+  GIT_TAG origin/unit-data-size-fixes 
   SOURCE_DIR "${CMAKE_BINARY_DIR}/llnl-units-src"
   BINARY_DIR "${CMAKE_BINARY_DIR}/llnl-units-build"
   CONFIGURE_COMMAND ""
