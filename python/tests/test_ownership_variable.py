@@ -205,8 +205,7 @@ def test_own_var_scalar_nested_str_get():
     assert sc.identical(
         outer, make_variable(make_variable(np.array(['asd', 'qwe', 'mno']))))
     assert sc.identical(inner, make_variable(np.array(['asd', 'qwe', 'mno'])))
-    # TODO `a` seems to be invalidated
-    # np.testing.assert_array_equal(a, ['abc', 'def'])
+    np.testing.assert_array_equal(a, ['abc', 'def'])
 
 
 def test_own_var_1d_set():
