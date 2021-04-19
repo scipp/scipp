@@ -432,8 +432,10 @@ TEST(AccumulateTest, bad_dims) {
                                         units::m, Values{1, 2, 3, 4, 5, 6});
   auto op_ = [](auto &&a, auto &&b) { a += b; };
   auto result = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  const auto orig = copy(result);
   EXPECT_THROW(accumulate_in_place<pair_self_t<double>>(result, var, op_),
                except::DimensionError);
+  EXPECT_EQ(result, orig);
 }
 
 TEST(AccumulateTest, broadcast) {
