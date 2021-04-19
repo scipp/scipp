@@ -160,7 +160,8 @@ def test_own_var_scalar_nested_get():
     assert sc.identical(inner, make_variable(expected))
     np.testing.assert_array_equal(a, expected)
 
-    # Assignment writes the values into the inner Variable.
+    # Assignment replaces the buffer of the inner Variable
+    # without touching the original buffer.
     outer.value = make_variable(np.arange(5, 8))
     outer.value['x', 0] = -5
     inner['x', 1] = -10
