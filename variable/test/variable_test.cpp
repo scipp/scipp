@@ -810,16 +810,14 @@ TEST(VariableViewTest, set_variances) {
                                       Values{1.0, 2.0, 3.0});
   auto view(var);
   test_set_variances(view);
-  EXPECT_THROW(
-      var.slice({Dim::X, 0}).setVariances(var.slice({Dim::X, 0})),
-      except::VariancesError);
+  EXPECT_THROW(var.slice({Dim::X, 0}).setVariances(var.slice({Dim::X, 0})),
+               except::VariancesError);
 }
 
 TEST(VariableViewTest, set_variances_slice_fail) {
   Variable var = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  EXPECT_THROW(
-      var.slice({Dim::X, 0}).setVariances(var.slice({Dim::X, 0})),
-      except::VariancesError);
+  EXPECT_THROW(var.slice({Dim::X, 0}).setVariances(var.slice({Dim::X, 0})),
+               except::VariancesError);
 }
 
 TEST(VariableViewTest, create_with_variance) {

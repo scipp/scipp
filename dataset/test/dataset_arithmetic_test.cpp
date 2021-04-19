@@ -446,7 +446,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
   auto a = otherCoordsFactory.make();
   auto b = datasetFactory().make();
 
-  ASSERT_THROW(TestFixture::op(Dataset(a), b), except::CoordMismatchError);
+  ASSERT_THROW(TestFixture::op(copy(a), b), except::CoordMismatchError);
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
@@ -455,7 +455,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_missing_items) {
   auto b = datasetFactory().make();
   auto reference(a);
 
-  ASSERT_NO_THROW(TestFixture::op(Dataset(a), b));
+  ASSERT_NO_THROW(TestFixture::op(copy(a), b));
   for (const auto &item : a) {
     if (item.name() == "extra") {
       EXPECT_EQ(item, reference[item.name()]);
@@ -470,7 +470,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_with_extra_items) {
   auto b = datasetFactory().make();
   b.setData("extra", makeVariable<double>(Values{double{}}));
 
-  ASSERT_ANY_THROW(TestFixture::op(Dataset(a), b));
+  ASSERT_ANY_THROW(TestFixture::op(copy(a), b));
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest,
@@ -520,21 +520,20 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest,
   }
 }
 
-TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
+TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
   auto dataset = datasetFactory().make();
-  Dataset view(dataset);
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
-  ASSERT_THROW(TestFixture::op(view, dataset.slice({Dim::X, 3})),
+  ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::X, 3})),
                except::CoordMismatchError);
-  ASSERT_THROW(TestFixture::op(view, dataset.slice({Dim::Y, 3})),
+  ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::Y, 3})),
                except::CoordMismatchError);
 
-  ASSERT_THROW(TestFixture::op(view, dataset.slice({Dim::X, 3, 4})),
+  ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::X, 3, 4})),
                except::CoordMismatchError);
-  ASSERT_THROW(TestFixture::op(view, dataset.slice({Dim::Y, 3, 4})),
+  ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::Y, 3, 4})),
                except::CoordMismatchError);
-  ASSERT_THROW(TestFixture::op(view, dataset.slice({Dim::Z, 3, 4})),
+  ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::Z, 3, 4})),
                except::CoordMismatchError);
 }
 
@@ -637,20 +636,6 @@ TYPED_TEST(DatasetBinaryOpTest, scalar_lhs_dataset_rhs) {
   EXPECT_EQ(res.coords(), dataset.coords());
 }
 
-TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstview_rhs) {
-  auto dataset_a = datasetFactory().make();
-  auto dataset_b = datasetFactory().make();
-
-  Dataset dataset_b_view(dataset_b);
-  const auto res = TestFixture::op(dataset_a, dataset_b_view);
-
-  for (const auto &item : res) {
-    const auto reference = TestFixture::op(dataset_a[item.name()].data(),
-                                           dataset_b[item.name()].data());
-    EXPECT_EQ(reference, item.data());
-  }
-}
-
 TYPED_TEST(DatasetBinaryOpTest, datasetconstview_lhs_dataset_rhs) {
   const auto dataset_a = datasetFactory().make();
   const auto dataset_b = datasetFactory().make().slice({Dim::X, 1});
@@ -658,27 +643,11 @@ TYPED_TEST(DatasetBinaryOpTest, datasetconstview_lhs_dataset_rhs) {
   Dataset dataset_a_view = dataset_a.slice({Dim::X, 1});
   const auto res = TestFixture::op(dataset_a_view, dataset_b);
 
-  Dataset dataset_a_slice(dataset_a_view);
-  const auto reference = TestFixture::op(dataset_a_slice, dataset_b);
+  const auto reference = TestFixture::op(dataset_a_view, dataset_b);
   EXPECT_EQ(res, reference);
 }
 
-TYPED_TEST(DatasetBinaryOpTest, datasetconstview_lhs_datasetconstview_rhs) {
-  auto dataset_a = datasetFactory().make();
-  auto dataset_b = datasetFactory().make();
-
-  Dataset dataset_a_view(dataset_a);
-  Dataset dataset_b_view(dataset_b);
-  const auto res = TestFixture::op(dataset_a_view, dataset_b_view);
-
-  for (const auto &item : res) {
-    const auto reference = TestFixture::op(dataset_a[item.name()].data(),
-                                           dataset_b[item.name()].data());
-    EXPECT_EQ(reference, item.data());
-  }
-}
-
-TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataarrayview_rhs) {
+TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataarray_rhs) {
   auto dataset_a = datasetFactory().make();
   auto dataset_b = datasetFactory().make();
 
