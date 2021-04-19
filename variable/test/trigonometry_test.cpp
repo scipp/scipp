@@ -37,19 +37,19 @@ protected:
 };
 
 TEST_F(VariableTrigonometryTest, sin_rad) {
-  const auto var = input_in_rad();
+  const auto var = copy(input_in_rad());
   EXPECT_EQ(sin(var), expected_for_op(std::sin));
   EXPECT_EQ(var, input_in_rad());
 }
 
 TEST_F(VariableTrigonometryTest, sin_deg) {
-  const auto var = input_in_deg();
+  const auto var = copy(input_in_deg());
   EXPECT_EQ(sin(var), expected_for_op(std::sin));
   EXPECT_EQ(var, input_in_deg());
 }
 
 TEST_F(VariableTrigonometryTest, sin_move_rad) {
-  auto var = input_in_rad();
+  auto var = copy(input_in_rad());
   const auto ptr = var.values<double>().data();
   auto out = sin(std::move(var));
   EXPECT_EQ(out, expected_for_op(std::sin));
@@ -57,7 +57,7 @@ TEST_F(VariableTrigonometryTest, sin_move_rad) {
 }
 
 TEST_F(VariableTrigonometryTest, sin_move_deg) {
-  auto var = input_in_deg();
+  auto var = copy(input_in_deg());
   const auto ptr = var.values<double>().data();
   auto out = sin(std::move(var));
   EXPECT_EQ(out, expected_for_op(std::sin));
@@ -65,7 +65,7 @@ TEST_F(VariableTrigonometryTest, sin_move_deg) {
 }
 
 TEST_F(VariableTrigonometryTest, sin_out_arg_rad) {
-  const auto in = input_in_rad();
+  const auto in = copy(input_in_rad());
   auto out = special_like(in, FillValue::ZeroNotBool);
   auto &view = sin(in, out);
 
@@ -75,7 +75,7 @@ TEST_F(VariableTrigonometryTest, sin_out_arg_rad) {
 }
 
 TEST_F(VariableTrigonometryTest, sin_out_arg_deg) {
-  const auto in = input_in_deg();
+  const auto in = copy(input_in_deg());
   auto out = special_like(in, FillValue::ZeroNotBool);
   auto &view = sin(in, out);
 
@@ -85,19 +85,19 @@ TEST_F(VariableTrigonometryTest, sin_out_arg_deg) {
 }
 
 TEST_F(VariableTrigonometryTest, cos_rad) {
-  const auto var = input_in_rad();
+  const auto var = copy(input_in_rad());
   EXPECT_EQ(cos(var), expected_for_op(std::cos));
   EXPECT_EQ(var, input_in_rad());
 }
 
 TEST_F(VariableTrigonometryTest, cos_deg) {
-  const auto var = input_in_deg();
+  const auto var = copy(input_in_deg());
   EXPECT_EQ(cos(var), expected_for_op(std::cos));
   EXPECT_EQ(var, input_in_deg());
 }
 
 TEST_F(VariableTrigonometryTest, cos_move_rad) {
-  auto var = input_in_rad();
+  auto var = copy(input_in_rad());
   const auto ptr = var.values<double>().data();
   auto out = cos(std::move(var));
   EXPECT_EQ(out, expected_for_op(std::cos));
@@ -105,7 +105,7 @@ TEST_F(VariableTrigonometryTest, cos_move_rad) {
 }
 
 TEST_F(VariableTrigonometryTest, cos_move_deg) {
-  auto var = input_in_deg();
+  auto var = copy(input_in_deg());
   const auto ptr = var.values<double>().data();
   auto out = cos(std::move(var));
   EXPECT_EQ(out, expected_for_op(std::cos));
@@ -113,7 +113,7 @@ TEST_F(VariableTrigonometryTest, cos_move_deg) {
 }
 
 TEST_F(VariableTrigonometryTest, cos_out_arg_rad) {
-  const auto in = input_in_rad();
+  const auto in = copy(input_in_rad());
   auto out = special_like(in, FillValue::ZeroNotBool);
   auto &view = cos(in, out);
 
@@ -123,7 +123,7 @@ TEST_F(VariableTrigonometryTest, cos_out_arg_rad) {
 }
 
 TEST_F(VariableTrigonometryTest, cos_out_arg_deg) {
-  const auto in = input_in_deg();
+  const auto in = copy(input_in_deg());
   auto out = special_like(in, FillValue::ZeroNotBool);
   auto &view = cos(in, out);
 
@@ -133,19 +133,19 @@ TEST_F(VariableTrigonometryTest, cos_out_arg_deg) {
 }
 
 TEST_F(VariableTrigonometryTest, tan_rad) {
-  const auto var = input_in_rad();
+  const auto var = copy(input_in_rad());
   EXPECT_EQ(tan(var), expected_for_op(std::tan));
   EXPECT_EQ(var, input_in_rad());
 }
 
 TEST_F(VariableTrigonometryTest, tan_deg) {
-  const auto var = input_in_deg();
+  const auto var = copy(input_in_deg());
   EXPECT_EQ(tan(var), expected_for_op(std::tan));
   EXPECT_EQ(var, input_in_deg());
 }
 
 TEST_F(VariableTrigonometryTest, tan_move_rad) {
-  auto var = input_in_rad();
+  auto var = copy(input_in_rad());
   const auto ptr = var.values<double>().data();
   auto out = tan(std::move(var));
   EXPECT_EQ(out, expected_for_op(std::tan));
@@ -153,7 +153,7 @@ TEST_F(VariableTrigonometryTest, tan_move_rad) {
 }
 
 TEST_F(VariableTrigonometryTest, tan_move_deg) {
-  auto var = input_in_deg();
+  auto var = copy(input_in_deg());
   const auto ptr = var.values<double>().data();
   auto out = tan(std::move(var));
   EXPECT_EQ(out, expected_for_op(std::tan));
@@ -161,7 +161,7 @@ TEST_F(VariableTrigonometryTest, tan_move_deg) {
 }
 
 TEST_F(VariableTrigonometryTest, tan_out_arg_rad) {
-  const auto in = input_in_rad();
+  const auto in = copy(input_in_rad());
   auto out = special_like(in, FillValue::ZeroNotBool);
   auto &view = tan(in, out);
 
@@ -171,7 +171,7 @@ TEST_F(VariableTrigonometryTest, tan_out_arg_rad) {
 }
 
 TEST_F(VariableTrigonometryTest, tan_out_arg_deg) {
-  const auto in = input_in_deg();
+  const auto in = copy(input_in_deg());
   auto out = special_like(in, FillValue::ZeroNotBool);
   auto &view = tan(in, out);
 
