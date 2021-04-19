@@ -15,6 +15,7 @@ Bugfixes
 ~~~~~~~~
 
 * ``map`` and ``scale`` operations as well as ``histogram`` for binned data now also work with ``datetime64`` `#1834 <https://github.com/scipp/scipp/pull/1834>`_.
+* ``bin`` now works on previously binned data with 2-D edges, even if the outer dimensions(s) are not rebinned `#1836 <https://github.com/scipp/scipp/pull/1836>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
