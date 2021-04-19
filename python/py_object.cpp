@@ -14,6 +14,19 @@ PyObject::~PyObject() {
 }
 
 PyObject::PyObject(const py::object &object) {
+  py::gil_scoped_acquire acquire;
+  m_object = object;
+}
+
+bool PyObject::operator==(const PyObject &other) const {
+  // Similar to above, re-acquiring GIL here due to segfault in Python C API
+  // (PyObject_RichCompare).
+  py::gil_scoped_acquire acquire;
+  return to_pybind().equal(other.to_pybind());
+}
+
+PyObject copy(const PyObject &obj) {
+  const auto &object = obj.to_pybind();
   if (object) {
     // It is essential to acquire the GIL here. Calling Python code otherwise
     // causes a segfault if the GIL has been released previously. Since this
@@ -23,17 +36,10 @@ PyObject::PyObject(const py::object &object) {
     py::gil_scoped_acquire acquire;
     py::module copy = py::module::import("copy");
     py::object deepcopy = copy.attr("deepcopy");
-    m_object = deepcopy(object);
+    return {deepcopy(object)};
   } else {
-    m_object = object;
+    return {object};
   }
-}
-
-bool PyObject::operator==(const PyObject &other) const {
-  // Similar to above, re-acquiring GIL here due to segfault in Python C API
-  // (PyObject_RichCompare).
-  py::gil_scoped_acquire acquire;
-  return to_pybind().equal(other.to_pybind());
 }
 
 std::string to_string(const PyObject &obj) {
