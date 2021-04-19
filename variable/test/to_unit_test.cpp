@@ -107,8 +107,7 @@ TEST(ToUnitTest, binned) {
   const auto input_buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4},
                            Values{1000, 2000, 3000, 4000}, units::Unit{"mm"});
-  const auto expected_buffer = makeVariable<double>(
-      Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, units::Unit{"m"});
+  const auto expected_buffer = to_unit(input_buffer, units::Unit("m"));
   const auto var = make_bins(indices, Dim::X, input_buffer);
   EXPECT_EQ(to_unit(var, units::Unit{"m"}),
             make_bins(indices, Dim::X, expected_buffer));
