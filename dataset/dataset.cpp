@@ -145,7 +145,7 @@ Dataset Dataset::slice(const Slice s) const {
     Attrs item_attrs(out.m_coords.sizes(), {});
     for (const auto &[dim, coord] : out_attrs)
       if (m_coords.item_applies_to(dim, m_data.at(item.first).dims()))
-        item_attrs.set(dim, coord);
+        item_attrs.set(dim, coord.as_const());
     item.second.attrs() = item.second.attrs().merge_from(item_attrs);
   }
   return out;
