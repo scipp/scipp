@@ -132,11 +132,13 @@ def test_own_var_scalar_nested_set():
     assert sc.identical(inner, make_variable([-1, -2, -3, 3, 4], unit='s'))
     np.testing.assert_array_equal(a, [0, 1, 2, -4, 4])
 
-    # Assignment creates a new inner Variable.
-    outer.value = make_variable(np.arange(5, 8), unit='kg')
+    # Assignment references the RHS and replaces the former content.
+    new_inner = make_variable(np.arange(5, 8), unit='kg')
+    outer.value = new_inner
     outer.value['x', 0] = -5
     assert sc.identical(outer,
                         make_variable(make_variable([-5, 6, 7], unit='kg')))
+    assert sc.identical(new_inner, make_variable([-5, 6, 7], unit='kg'))
     assert sc.identical(inner, make_variable([-1, -2, -3, 3, 4], unit='s'))
 
     # TODO this causes and infinite loop and segfaults at the moment
