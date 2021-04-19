@@ -26,20 +26,20 @@ scipp::index get_count(const Variable &coord, const Dim dim,
 scipp::index get_index(const Variable &coord, const Dim dim,
                        const Variable &value, const bool ascending,
                        const bool edges) {
-  auto i = get_count(coord, dim, value, edges ? ascending : !ascending);
+  auto i = get_count(coord, dim, value, edges == ascending);
   i = edges ? i - 1 : coord.dims()[dim] - i;
   return std::clamp<scipp::index>(0, i, coord.dims()[dim]);
 }
 
-auto get_1d_coord(const Variable &coord) {
+const Variable &get_1d_coord(const Variable &coord) {
   if (coord.dims().ndim() != 1)
     throw except::DimensionError("Multi-dimensional coordinates cannot be used "
                                  "for label-based indexing.");
   return coord;
 }
 
-auto get_coord(Variable coord, const Dim dim) {
-  coord = get_1d_coord(coord);
+auto get_coord(const Variable &coord, const Dim dim) {
+  get_1d_coord(coord);
   const bool ascending = issorted(coord, dim, variable::SortOrder::Ascending);
   const bool descending = issorted(coord, dim, variable::SortOrder::Descending);
   if (!(ascending ^ descending))
