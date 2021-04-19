@@ -11,11 +11,22 @@ Features
 
 * Can now control the position and visibility of the legend in 1d plots with ``plot(da, legend={"show": True, "loc": 4})`` `#1790 <https://github.com/scipp/scipp/pull/1790>`_.
 
+Bugfixes
+~~~~~~~~
+
+* ``map`` and ``scale`` operations as well as ``histogram`` for binned data now also work with ``datetime64`` `#1834 <https://github.com/scipp/scipp/pull/1834>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
 Contributors
 ~~~~~~~~~~~~
+
+Owen Arnold,
+Simon Heybrock,
+Matthew D. Jones,
+Neil Vaytet,
+and Jan-Lukas Wynen
 
 v0.6.0 (March 2021)
 -------------------
