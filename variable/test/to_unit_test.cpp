@@ -2,6 +2,7 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/variable/bins.h"
 #include "scipp/variable/string.h"
 #include "scipp/variable/to_unit.h"
 #include "test_macros.h"
@@ -98,4 +99,17 @@ TEST(ToUnitTest, time_point_bad_units) {
       EXPECT_THROW_DISCARD(do_to_unit(initial, final), except::UnitError);
     }
   }
+}
+
+TEST(ToUnitTest, binned) {
+  const auto indices = makeVariable<scipp::index_pair>(
+      Dims{Dim::Y}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 4}});
+  const auto input_buffer =
+      makeVariable<double>(Dims{Dim::X}, Shape{4},
+                           Values{1000, 2000, 3000, 4000}, units::Unit{"mm"});
+  const auto expected_buffer = makeVariable<double>(
+      Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, units::Unit{"m"});
+  const auto var = make_bins(indices, Dim::X, input_buffer);
+  EXPECT_EQ(to_unit(var, units::Unit{"m"}),
+            make_bins(indices, Dim::X, expected_buffer));
 }
