@@ -259,6 +259,22 @@ TEST(DatasetTest, slice_temporary) {
   ASSERT_TRUE((std::is_same_v<decltype(dataset), Dataset>));
 }
 
+TEST(DatasetTest, construct_from_slice) {
+  DatasetFactory3D factory;
+  const auto dataset = factory.make();
+  const auto slice = dataset.slice({Dim::X, 1});
+  Dataset from_slice = copy(slice);
+  ASSERT_EQ(from_slice, dataset.slice({Dim::X, 1}));
+}
+
+TEST(DatasetTest, construct_dataarray_from_slice) {
+  DatasetFactory3D factory;
+  const auto dataset = factory.make();
+  const auto slice = dataset["data_xyz"].slice({Dim::X, 1});
+  DataArray from_slice = copy(slice);
+  ASSERT_EQ(from_slice, dataset["data_xyz"].slice({Dim::X, 1}));
+}
+
 TEST(DatasetTest, slice_no_data) {
   Dataset d;
   d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
