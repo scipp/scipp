@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 
 #include "scipp/dataset/map_view.h"
 #include "scipp/variable/variable.h"
@@ -24,11 +25,11 @@ public:
   DataArray(DataArray &&other) = default;
 
   DataArray(Variable data, Coords coords, Masks masks, Attrs attrs,
-            const std::string &name = "");
+            std::string_view name = "");
   explicit DataArray(Variable data, typename Coords::holder_type coords = {},
                      typename Masks::holder_type masks = {},
                      typename Attrs::holder_type attrs = {},
-                     const std::string &name = "");
+                     std::string_view name = "");
 
   DataArray &operator=(const DataArray &other);
   DataArray &operator=(DataArray &&other) = default;
@@ -38,7 +39,7 @@ public:
   }
 
   const std::string &name() const;
-  void setName(const std::string &name);
+  void setName(std::string_view name);
 
   const Coords &coords() const { return m_coords; }
   // TODO either ensure Dict does not allow changing sizes, or return by value
