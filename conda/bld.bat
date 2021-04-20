@@ -12,4 +12,4 @@ robocopy %INSTALL_PREFIX%\Lib\cmake\scipp %CONDA_PREFIX%\Lib\cmake\ /e /move
 move %INSTALL_PREFIX%\include\scipp*.h %CONDA_PREFIX%\include\
 robocopy %INSTALL_PREFIX%\include\scipp %CONDA_PREFIX%\include\ /e /move
 robocopy %INSTALL_PREFIX%\include\Eigen %CONDA_PREFIX%\include\ /e /move
-robocopy %INSTALL_PREFIX%\include\scipp %CONDA_PREFIX%\include\ /e /move
+robocopy %INSTALL_PREFIX%\include\units %CONDA_PREFIX%\include\ /e /move
