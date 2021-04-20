@@ -9,6 +9,7 @@
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
 #include "test_macros.h"
 
@@ -710,4 +711,35 @@ TEST_F(CoordToAttrMappingTest, DatasetView) {
 TEST_F(CoordToAttrMappingTest, DatasetConstView) {
   const Dataset d({{"a", a}});
   test_dataset_coord_aligned_to_unaligned_mapping(d);
+}
+
+Dataset make_example() {
+  auto ds = make_empty();
+  std::vector<double> data_values(6);
+  std::iota(data_values.begin(), data_values.end(), 0);
+
+  auto data = makeVariable<double>(Dimensions{{Dim::X, 3}, {Dim::Y, 2}},
+                                   Values(data_values));
+  auto mask_x =
+      makeVariable<bool>(Dimensions{Dim::X, 3}, Values({true, false, false}));
+  auto mask_y =
+      makeVariable<bool>(Dimensions{Dim::Y, 2}, Values({true, false}));
+  auto a = DataArray{data};
+  a.masks().set("mask_x", mask_x);
+  auto b = DataArray{data};
+  b.masks().set("mask_y", mask_y);
+  ds.setData("a", a);
+  ds.setData("b", b);
+  return ds;
+}
+
+TEST(DatasetMetadataTest, updating_with_readonly_metadata) {
+  auto ds = make_example();
+  auto original = make_example();
+  auto point = ds.slice({Dim::X, 1}).slice({Dim::Y, 1});
+  EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::Y, 0}, point),
+                       except::DimensionError);
+  // "a" is getting modified before operation falls over on "b". Need dry-run
+  EXPECT_EQ(original["a"], ds["a"]);
+  EXPECT_EQ(original["b"], ds["b"]);
 }
