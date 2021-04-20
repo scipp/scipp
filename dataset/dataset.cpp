@@ -155,6 +155,7 @@ Dataset &Dataset::setSlice(const Slice s, const Dataset &data) {
   // Validate slice on all items as a dry-run
   for (const auto &item : data)
     (*this)[item.name()].validateSlice(s, item);
+  // Only if all items checked for dry-run does modification go-ahead
   for (const auto &item : data)
     (*this)[item.name()].setSlice(s, item);
   return *this;
@@ -164,6 +165,7 @@ Dataset &Dataset::setSlice(const Slice s, const DataArray &data) {
   // Validate slice on all items as a dry-run
   for (const auto &item : *this)
     (*this)[item.name()].validateSlice(s, data);
+  // Only if all items checked for dry-run does modification go-ahead
   for (auto &&item : *this)
     item.setSlice(s, data);
   return *this;
