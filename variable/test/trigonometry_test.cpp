@@ -3,157 +3,190 @@
 #include <gtest/gtest.h>
 
 #include "scipp/common/constants.h"
+#include "scipp/variable/creation.h"
+#include "scipp/variable/to_unit.h"
 #include "scipp/variable/trigonometry.h"
 
 using namespace scipp;
 using namespace scipp::variable;
 using namespace scipp::units;
 
-TEST(VariableTrigonometryTest, sin_rad) {
-  const auto var = makeVariable<double>(Values{pi<double>}, Unit{units::rad});
-  EXPECT_EQ(sin(var), makeVariable<double>(Values{std::sin(pi<double>)}));
+class VariableTrigonometryTest : public ::testing::Test {
+protected:
+  [[nodiscard]] static Variable input_in_rad() {
+    return makeVariable<double>(Dims{Dim::X}, Shape{7},
+                                Values{0.0, pi<double> / 2.0, pi<double>,
+                                       -pi<double> * 3.0 / 2.0,
+                                       2.0 * pi<double>, -0.123, 1.654},
+                                Unit{units::rad});
+  }
+
+  [[nodiscard]] static Variable input_in_deg() {
+    return to_unit(input_in_rad(), units::deg);
+  }
+
+  [[nodiscard]] static Variable expected_for_op(double (*op)(const double)) {
+    std::vector<double> res;
+    const auto var = input_in_rad();
+    auto values_in_rad = var.values<double>();
+    std::transform(values_in_rad.begin(), values_in_rad.end(),
+                   back_inserter(res),
+                   [&op](double x_in_rad) { return op(x_in_rad); });
+    return makeVariable<double>(Dims{Dim::X}, Shape{res.size()}, Values(res));
+  }
+};
+
+TEST_F(VariableTrigonometryTest, sin_rad) {
+  const auto var = copy(input_in_rad());
+  EXPECT_EQ(sin(var), expected_for_op(std::sin));
+  EXPECT_EQ(var, input_in_rad());
 }
 
-TEST(VariableTrigonometryTest, sin_deg) {
-  const auto var = makeVariable<double>(Values{180.0}, Unit{units::deg});
-  EXPECT_EQ(sin(var), makeVariable<double>(Values{std::sin(pi<double>)}));
+TEST_F(VariableTrigonometryTest, sin_deg) {
+  const auto var = copy(input_in_deg());
+  EXPECT_EQ(sin(var), expected_for_op(std::sin));
+  EXPECT_EQ(var, input_in_deg());
 }
 
-TEST(Variable, sin_move_rad) {
-  auto var = makeVariable<double>(Values{pi<double>}, Unit{units::rad});
+TEST_F(VariableTrigonometryTest, sin_move_rad) {
+  auto var = copy(input_in_rad());
   const auto ptr = var.values<double>().data();
   auto out = sin(std::move(var));
-  EXPECT_EQ(out, makeVariable<double>(Values{std::sin(pi<double>)}));
+  EXPECT_EQ(out, expected_for_op(std::sin));
   EXPECT_EQ(out.values<double>().data(), ptr);
 }
 
-TEST(Variable, sin_move_deg) {
-  auto var = makeVariable<double>(Values{180.0}, Unit{units::deg});
+TEST_F(VariableTrigonometryTest, sin_move_deg) {
+  auto var = copy(input_in_deg());
   const auto ptr = var.values<double>().data();
   auto out = sin(std::move(var));
-  EXPECT_EQ(out, makeVariable<double>(Values{std::sin(pi<double>)}));
+  EXPECT_EQ(out, expected_for_op(std::sin));
   EXPECT_EQ(out.values<double>().data(), ptr);
 }
 
-TEST(Variable, sin_out_arg_rad) {
-  auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{pi<double>, 0.0},
-                                Unit{units::rad});
-  auto out = makeVariable<double>(Values{0.0});
-  auto &view = sin(x.slice({Dim::X, 0}), out);
+TEST_F(VariableTrigonometryTest, sin_out_arg_rad) {
+  const auto in = copy(input_in_rad());
+  auto out = special_like(in, FillValue::ZeroNotBool);
+  auto &view = sin(in, out);
 
-  EXPECT_EQ(out, makeVariable<double>(Values{std::sin(pi<double>)}));
+  EXPECT_EQ(out, expected_for_op(std::sin));
   EXPECT_EQ(&view, &out);
+  EXPECT_EQ(in, input_in_rad());
 }
 
-TEST(Variable, sin_out_arg_deg) {
-  auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{180.0, 0.0},
-                                Unit{units::deg});
-  auto out = makeVariable<double>(Values{0.0});
-  auto &view = sin(x.slice({Dim::X, 0}), out);
+TEST_F(VariableTrigonometryTest, sin_out_arg_deg) {
+  const auto in = copy(input_in_deg());
+  auto out = special_like(in, FillValue::ZeroNotBool);
+  auto &view = sin(in, out);
 
-  EXPECT_EQ(out, makeVariable<double>(Values{std::sin(pi<double>)}));
+  EXPECT_EQ(out, expected_for_op(std::sin));
   EXPECT_EQ(&view, &out);
+  EXPECT_EQ(in, input_in_deg());
 }
 
-TEST(VariableTrigonometryTest, cos_rad) {
-  const auto var = makeVariable<double>(Values{pi<double>}, Unit{units::rad});
-  EXPECT_EQ(cos(var), makeVariable<double>(Values{std::cos(pi<double>)}));
+TEST_F(VariableTrigonometryTest, cos_rad) {
+  const auto var = copy(input_in_rad());
+  EXPECT_EQ(cos(var), expected_for_op(std::cos));
+  EXPECT_EQ(var, input_in_rad());
 }
 
-TEST(VariableTrigonometryTest, cos_deg) {
-  const auto var = makeVariable<double>(Values{180.0}, Unit{units::deg});
-  EXPECT_EQ(cos(var), makeVariable<double>(Values{std::cos(pi<double>)}));
+TEST_F(VariableTrigonometryTest, cos_deg) {
+  const auto var = copy(input_in_deg());
+  EXPECT_EQ(cos(var), expected_for_op(std::cos));
+  EXPECT_EQ(var, input_in_deg());
 }
 
-TEST(Variable, cos_move_rad) {
-  auto var = makeVariable<double>(Values{pi<double>}, Unit{units::rad});
+TEST_F(VariableTrigonometryTest, cos_move_rad) {
+  auto var = copy(input_in_rad());
   const auto ptr = var.values<double>().data();
   auto out = cos(std::move(var));
-  EXPECT_EQ(out, makeVariable<double>(Values{std::cos(pi<double>)}));
+  EXPECT_EQ(out, expected_for_op(std::cos));
   EXPECT_EQ(out.values<double>().data(), ptr);
 }
 
-TEST(Variable, cos_move_deg) {
-  auto var = makeVariable<double>(Values{180.0}, Unit{units::deg});
+TEST_F(VariableTrigonometryTest, cos_move_deg) {
+  auto var = copy(input_in_deg());
   const auto ptr = var.values<double>().data();
   auto out = cos(std::move(var));
-  EXPECT_EQ(out, makeVariable<double>(Values{std::cos(pi<double>)}));
+  EXPECT_EQ(out, expected_for_op(std::cos));
   EXPECT_EQ(out.values<double>().data(), ptr);
 }
 
-TEST(Variable, cos_out_arg_rad) {
-  auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{pi<double>, 0.0},
-                                Unit{units::rad});
-  auto out = makeVariable<double>(Values{0.0});
-  auto &view = cos(x.slice({Dim::X, 0}), out);
+TEST_F(VariableTrigonometryTest, cos_out_arg_rad) {
+  const auto in = copy(input_in_rad());
+  auto out = special_like(in, FillValue::ZeroNotBool);
+  auto &view = cos(in, out);
 
-  EXPECT_EQ(out, makeVariable<double>(Values{std::cos(pi<double>)}));
+  EXPECT_EQ(out, expected_for_op(std::cos));
   EXPECT_EQ(&view, &out);
+  EXPECT_EQ(in, input_in_rad());
 }
 
-TEST(Variable, cos_out_arg_deg) {
-  auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{180.0, 0.0},
-                                Unit{units::deg});
-  auto out = makeVariable<double>(Values{0.0});
-  auto &view = cos(x.slice({Dim::X, 0}), out);
+TEST_F(VariableTrigonometryTest, cos_out_arg_deg) {
+  const auto in = copy(input_in_deg());
+  auto out = special_like(in, FillValue::ZeroNotBool);
+  auto &view = cos(in, out);
 
-  EXPECT_EQ(out, makeVariable<double>(Values{std::cos(pi<double>)}));
+  EXPECT_EQ(out, expected_for_op(std::cos));
   EXPECT_EQ(&view, &out);
+  EXPECT_EQ(in, input_in_deg());
 }
 
-TEST(VariableTrigonometryTest, tan_rad) {
-  const auto var = makeVariable<double>(Values{pi<double>}, Unit{units::rad});
-  EXPECT_EQ(tan(var), makeVariable<double>(Values{std::tan(pi<double>)}));
+TEST_F(VariableTrigonometryTest, tan_rad) {
+  const auto var = copy(input_in_rad());
+  EXPECT_EQ(tan(var), expected_for_op(std::tan));
+  EXPECT_EQ(var, input_in_rad());
 }
 
-TEST(VariableTrigonometryTest, tan_deg) {
-  const auto var = makeVariable<double>(Values{180.0}, Unit{units::deg});
-  EXPECT_EQ(tan(var), makeVariable<double>(Values{std::tan(pi<double>)}));
+TEST_F(VariableTrigonometryTest, tan_deg) {
+  const auto var = copy(input_in_deg());
+  EXPECT_EQ(tan(var), expected_for_op(std::tan));
+  EXPECT_EQ(var, input_in_deg());
 }
 
-TEST(Variable, tan_move_rad) {
-  auto var = makeVariable<double>(Values{pi<double>}, Unit{units::rad});
+TEST_F(VariableTrigonometryTest, tan_move_rad) {
+  auto var = copy(input_in_rad());
   const auto ptr = var.values<double>().data();
   auto out = tan(std::move(var));
-  EXPECT_EQ(out, makeVariable<double>(Values{std::tan(pi<double>)}));
+  EXPECT_EQ(out, expected_for_op(std::tan));
   EXPECT_EQ(out.values<double>().data(), ptr);
 }
 
-TEST(Variable, tan_move_deg) {
-  auto var = makeVariable<double>(Values{180.0}, Unit{units::deg});
+TEST_F(VariableTrigonometryTest, tan_move_deg) {
+  auto var = copy(input_in_deg());
   const auto ptr = var.values<double>().data();
   auto out = tan(std::move(var));
-  EXPECT_EQ(out, makeVariable<double>(Values{std::tan(pi<double>)}));
+  EXPECT_EQ(out, expected_for_op(std::tan));
   EXPECT_EQ(out.values<double>().data(), ptr);
 }
 
-TEST(Variable, tan_out_arg_rad) {
-  auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{pi<double>, 0.0},
-                                Unit{units::rad});
-  auto out = makeVariable<double>(Values{0.0});
-  auto &view = tan(x.slice({Dim::X, 0}), out);
+TEST_F(VariableTrigonometryTest, tan_out_arg_rad) {
+  const auto in = copy(input_in_rad());
+  auto out = special_like(in, FillValue::ZeroNotBool);
+  auto &view = tan(in, out);
 
-  EXPECT_EQ(out, makeVariable<double>(Values{std::tan(pi<double>)}));
+  EXPECT_EQ(out, expected_for_op(std::tan));
   EXPECT_EQ(&view, &out);
+  EXPECT_EQ(in, input_in_rad());
 }
 
-TEST(Variable, tan_out_arg_deg) {
-  auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{180.0, 0.0},
-                                Unit{units::deg});
-  auto out = makeVariable<double>(Values{0.0});
-  auto &view = tan(x.slice({Dim::X, 0}), out);
+TEST_F(VariableTrigonometryTest, tan_out_arg_deg) {
+  const auto in = copy(input_in_deg());
+  auto out = special_like(in, FillValue::ZeroNotBool);
+  auto &view = tan(in, out);
 
-  EXPECT_EQ(out, makeVariable<double>(Values{std::tan(pi<double>)}));
+  EXPECT_EQ(out, expected_for_op(std::tan));
   EXPECT_EQ(&view, &out);
+  EXPECT_EQ(in, input_in_deg());
 }
 
-TEST(VariableTrigonometryTest, asin) {
+TEST_F(VariableTrigonometryTest, asin) {
   const auto var = makeVariable<double>(Values{1.0});
   EXPECT_EQ(asin(var),
             makeVariable<double>(Values{std::asin(1.0)}, Unit{units::rad}));
 }
 
-TEST(Variable, asin_move) {
+TEST_F(VariableTrigonometryTest, asin_move) {
   auto var = makeVariable<double>(Values{1.0});
   const auto ptr = var.values<double>().data();
   auto out = asin(std::move(var));
@@ -162,7 +195,7 @@ TEST(Variable, asin_move) {
   EXPECT_EQ(out.values<double>().data(), ptr);
 }
 
-TEST(Variable, asin_out_arg) {
+TEST_F(VariableTrigonometryTest, asin_out_arg) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 0.0});
   auto out = makeVariable<double>(Values{0.0});
   auto &view = asin(x.slice({Dim::X, 0}), out);
@@ -172,13 +205,13 @@ TEST(Variable, asin_out_arg) {
   EXPECT_EQ(&view, &out);
 }
 
-TEST(VariableTrigonometryTest, acos) {
+TEST_F(VariableTrigonometryTest, acos) {
   const auto var = makeVariable<double>(Values{1.0});
   EXPECT_EQ(acos(var),
             makeVariable<double>(Values{std::acos(1.0)}, Unit{units::rad}));
 }
 
-TEST(Variable, acos_move) {
+TEST_F(VariableTrigonometryTest, acos_move) {
   auto var = makeVariable<double>(Values{1.0});
   const auto ptr = var.values<double>().data();
   auto out = acos(std::move(var));
@@ -187,7 +220,7 @@ TEST(Variable, acos_move) {
   EXPECT_EQ(out.values<double>().data(), ptr);
 }
 
-TEST(Variable, acos_out_arg) {
+TEST_F(VariableTrigonometryTest, acos_out_arg) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 0.0});
   auto out = makeVariable<double>(Values{0.0});
   auto &view = acos(x.slice({Dim::X, 0}), out);
@@ -197,13 +230,13 @@ TEST(Variable, acos_out_arg) {
   EXPECT_EQ(&view, &out);
 }
 
-TEST(VariableTrigonometryTest, atan) {
+TEST_F(VariableTrigonometryTest, atan) {
   const auto var = makeVariable<double>(Values{1.0});
   EXPECT_EQ(atan(var),
             makeVariable<double>(Values{std::atan(1.0)}, Unit{units::rad}));
 }
 
-TEST(Variable, atan_move) {
+TEST_F(VariableTrigonometryTest, atan_move) {
   auto var = makeVariable<double>(Values{1.0});
   const auto ptr = var.values<double>().data();
   auto out = atan(std::move(var));
@@ -212,7 +245,7 @@ TEST(Variable, atan_move) {
   EXPECT_EQ(out.values<double>().data(), ptr);
 }
 
-TEST(Variable, atan_out_arg) {
+TEST_F(VariableTrigonometryTest, atan_out_arg) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 0.0});
   auto out = makeVariable<double>(Values{0.0});
   auto &view = atan(x.slice({Dim::X, 0}), out);
@@ -222,7 +255,7 @@ TEST(Variable, atan_out_arg) {
   EXPECT_EQ(&view, &out);
 }
 
-TEST(VariableTrigonometryTest, atan2) {
+TEST_F(VariableTrigonometryTest, atan2) {
   auto x = makeVariable<double>(units::m, Values{1.0});
   auto y = x;
   auto expected =
@@ -230,7 +263,7 @@ TEST(VariableTrigonometryTest, atan2) {
   EXPECT_EQ(atan2(y, x), expected);
 }
 
-TEST(VariableTrigonometryTest, atan2_out_arg) {
+TEST_F(VariableTrigonometryTest, atan2_out_arg) {
   auto x = makeVariable<double>(units::m, Values{1.0});
   auto y = x;
   auto expected =

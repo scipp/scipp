@@ -549,7 +549,7 @@ struct GroupbyLogicalTest : public ::testing::Test {
 };
 
 TEST_F(GroupbyLogicalTest, no_reduction) {
-  Dataset expected(d);
+  Dataset expected = copy(d);
   expected.rename(Dim::X, Dim("labels1"));
   expected.setCoord(Dim("labels1"), expected.coords()[Dim("labels1")]);
   expected.coords().erase(Dim("labels2"));
@@ -592,7 +592,7 @@ struct GroupbyMinMaxTest : public ::testing::Test {
 };
 
 TEST_F(GroupbyMinMaxTest, no_reduction) {
-  Dataset expected(d);
+  Dataset expected = copy(d);
   expected.rename(Dim::X, Dim("labels1"));
   expected.setCoord(Dim("labels1"), expected.coords()[Dim("labels1")]);
   expected.coords().erase(Dim("labels2"));

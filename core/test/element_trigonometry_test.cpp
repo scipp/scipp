@@ -117,6 +117,8 @@ TEST(ElementAsinTest, unit) {
 TEST(ElementAsinTest, value) {
   EXPECT_EQ(element::asin(1.0), std::asin(1.0));
   EXPECT_EQ(element::asin(1.0f), std::asin(1.0f));
+  EXPECT_TRUE(std::isnan(element::asin(1.2)));
+  EXPECT_TRUE(std::isnan(element::asin(1.2f)));
 }
 
 TEST(ElementAsinOutArgTest, unit) {
@@ -154,6 +156,8 @@ TEST(ElementAcosTest, unit) {
 TEST(ElementAcosTest, value) {
   EXPECT_EQ(element::acos(1.0), std::acos(1.0));
   EXPECT_EQ(element::acos(1.0f), std::acos(1.0f));
+  EXPECT_TRUE(std::isnan(element::acos(1.2)));
+  EXPECT_TRUE(std::isnan(element::acos(1.2f)));
 }
 
 TEST(ElementAcosOutArgTest, unit) {

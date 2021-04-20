@@ -56,7 +56,7 @@ void DatasetFactory3D::seed(const uint32_t value) {
 }
 
 Dataset DatasetFactory3D::make(const bool randomMasks) {
-  Dataset dataset(base);
+  Dataset dataset = copy(base);
   dataset.setData("values_x", makeVariable<double>(Dimensions{m_dim, lx},
                                                    Values(rand(lx))));
   dataset.setData("data_x",
