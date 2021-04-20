@@ -86,6 +86,7 @@ public:
   void setData(Variable data);
 
   DataArray slice(const Slice &s) const;
+  void validateSlice(const Slice &s, const DataArray &array);
   [[maybe_unused]] DataArray &setSlice(const Slice &s, const DataArray &array);
   [[maybe_unused]] DataArray &setSlice(const Slice &s, const Variable &var);
 
