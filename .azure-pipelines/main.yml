@@ -1,3 +1,9 @@
+parameters:
+- name: debug
+  displayName: Debug
+  type: boolean
+  default: false
+
 trigger:
   - main
 
@@ -6,6 +12,7 @@ pr: none
 extends:
   template: templates/stages.yml
   parameters:
+    debug: ${{ parameters.debug }}
     py_versions:
       linux: ['3.7']
       osx: ['3.7']

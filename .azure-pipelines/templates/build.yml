@@ -14,6 +14,9 @@ parameters:
 - name: conda_package_root
   type: string
   default: ''
+- name: debug
+  type: boolean
+  default: false
 
 jobs:
   - job:
@@ -70,10 +73,17 @@ jobs:
           tools/make_and_install.$FILE_EXTENSION
         displayName: 'Build and run C++ tests'
 
-      - bash: |
-          set -ex
-          conda build --debug --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload conda
-        displayName: 'Python tests and conda build'
+      - ${{ if eq(parameters.debug, true) }}:
+        - bash: |
+            set -ex
+            conda build --debug --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload conda
+          displayName: 'Python tests and conda build (debug mode)'
+      - ${{ if eq(parameters.debug, false) }}:
+        - bash: |
+            set -ex
+            conda build --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload conda
+          displayName: 'Python tests and conda build'
+
       - task: PublishBuildArtifacts@1
         inputs:
           PathtoPublish: "$(conda_dir)/conda-bld/${{ parameters.conda_package_root }}"
