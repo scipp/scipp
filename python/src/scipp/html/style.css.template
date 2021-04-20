@@ -3,7 +3,7 @@
 * https://github.com/jsignell/xarray/blob/1d960933ab252e0f79f7e050e6c9261d55568057/xarray/static/css/style.css
 */
 
-.sc-wrap {
+.sc-root {
   --sc-background-color0: var(--jp-layout-color0, #fff);
   --sc-background-color1: var(--jp-layout-color1, #fcfcfc);
   --sc-background-color2: var(--jp-layout-color2, #efefef);
@@ -17,6 +17,9 @@
   --sc-table-masks-color: $masks_color;
   --sc-table-attrs-color: $attrs_color;
   --sc-table-header-font-color: $header_text_color;
+}
+
+.sc-wrap {
   font-size: 14px;
   min-width: 300px;
   max-width: 800px;
