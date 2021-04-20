@@ -161,7 +161,9 @@ Dataset &Dataset::setSlice(const Slice s, const Dataset &data) {
 }
 
 Dataset &Dataset::setSlice(const Slice s, const DataArray &data) {
-  // TODO Need dry-run mechanism here?
+  // Validate slice on all items as a dry-run
+  for (const auto &item : *this)
+    (*this)[item.name()].validateSlice(s, data);
   for (auto &&item : *this)
     item.setSlice(s, data);
   return *this;

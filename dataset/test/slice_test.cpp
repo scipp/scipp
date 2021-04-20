@@ -9,7 +9,6 @@
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
 #include "test_macros.h"
 
@@ -713,7 +712,8 @@ TEST_F(CoordToAttrMappingTest, DatasetConstView) {
   test_dataset_coord_aligned_to_unaligned_mapping(d);
 }
 
-Dataset make_example() {
+Dataset make_example(std::string xmask_name = "mask_x",
+                     std::string ymask_name = "mask_y") {
   auto ds = make_empty();
   std::vector<double> data_values(6);
   std::iota(data_values.begin(), data_values.end(), 0);
@@ -725,21 +725,53 @@ Dataset make_example() {
   auto mask_y =
       makeVariable<bool>(Dimensions{Dim::Y, 2}, Values({true, false}));
   auto a = DataArray{data};
-  a.masks().set("mask_x", mask_x);
+  a.masks().set(xmask_name, mask_x);
   auto b = DataArray{data};
-  b.masks().set("mask_y", mask_y);
+  b.masks().set(ymask_name, mask_y);
   ds.setData("a", a);
   ds.setData("b", b);
   return ds;
 }
 
-TEST(DatasetMetadataTest, updating_with_readonly_metadata) {
-  auto ds = make_example();
-  auto original = make_example();
+TEST(DatasetSliceMetadataTest, set_dataarray_slice_when_metadata_missing) {
+  auto ds = make_example("mask_x", "mask_y");
+  auto original = copy(ds);
+  auto point = ds["a"].slice({Dim::X, 1}).slice({Dim::Y, 1}); // Only has mask_x
+  EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::Y, 0}, point),
+                       except::NotFoundError);
+  // We test for a partially-applied modification as a result of an aborted
+  // transaction Check that "a" is NOT getting modified before operation falls
+  // over on "b", which has no mask_x.
+  EXPECT_EQ(original, ds); // Failed op should have no effect
+}
+
+TEST(DatasetSliceMetadataTest,
+     set_dataarray_slice_with_forbidden_broadcast_of_mask) {
+  auto ds = make_example("mask", "mask");
+  auto original = copy(ds);
+  auto point = ds["a"].slice({Dim::X, 1}).slice({Dim::Y, 1});
+  EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::Y, 0}, point),
+                       except::DimensionError);
+  // We test for a partially-applied modification as a result of an aborted
+  // transaction Check that "a" is NOT getting modified before operation falls
+  // over on "b" as would involve broadcasting mask in non-slice dimension. Mask
+  // should be read-only.
+  EXPECT_EQ(original, ds); // Failed op should have no effect
+}
+
+TEST(DatasetSliceMetadataTest,
+     set_dataset_slice_with_forbidden_broadcast_of_mask) {
+  auto ds = make_example("mask_x", "mask_y");
+  auto original = copy(ds);
   auto point = ds.slice({Dim::X, 1}).slice({Dim::Y, 1});
   EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::Y, 0}, point),
                        except::DimensionError);
-  // "a" is getting modified before operation falls over on "b". Need dry-run
-  EXPECT_EQ(original["a"], ds["a"]);
-  EXPECT_EQ(original["b"], ds["b"]);
+  // We test for a partially-applied modification as a result of an aborted
+  // transaction Check that "a" is NOT getting modified before operation falls
+  // over on "b".
+  EXPECT_EQ(original, ds); // Failed op should have no effect
+
+  EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::X, 0}, point),
+                       except::DimensionError);
+  EXPECT_EQ(original, ds); // Failed op should have no effect
 }
