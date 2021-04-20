@@ -48,7 +48,7 @@ DataArray &DataArray::operator=(const DataArray &other) {
   return *this = DataArray(other);
 }
 
-void DataArray::setData(Variable data) {
+void DataArray::setData(const Variable &data) {
   core::expect::equals(dims(), data.dims());
   *m_data = data;
 }

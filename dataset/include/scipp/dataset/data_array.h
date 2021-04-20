@@ -83,7 +83,7 @@ public:
 
   void rename(const Dim from, const Dim to);
 
-  void setData(Variable data);
+  void setData(const Variable &data);
 
   DataArray slice(const Slice &s) const;
   [[maybe_unused]] DataArray &setSlice(const Slice &s, const DataArray &array);
