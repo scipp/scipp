@@ -26,7 +26,7 @@ DataArray @NAME@(DataArray &&lhs, const Variable &rhs) {
 DataArray @NAME@(DataArray &&lhs, const DataArray &rhs) {
   expect::coordsAreSuperset(lhs, rhs);
   union_or_in_place(lhs.masks(), rhs.masks());
-  return std::move(@NAME@(lhs, rhs.data()));
+  return @NAME@(std::move(lhs), rhs.data());
 }
 
 } // namespace scipp::dataset
