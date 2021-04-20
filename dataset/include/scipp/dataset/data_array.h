@@ -19,7 +19,7 @@ enum class AttrPolicy { Keep, Drop };
 class SCIPP_DATASET_EXPORT DataArray {
 public:
   DataArray() = default;
-  DataArray(const DataArray &other, const AttrPolicy attrPolicy);
+  DataArray(const DataArray &other, AttrPolicy attrPolicy);
   DataArray(const DataArray &other);
   DataArray(DataArray &&other) = default;
 
@@ -81,7 +81,7 @@ public:
   /// Return typed view for data variances.
   template <class T> auto variances() { return m_data->variances<T>(); }
 
-  void rename(const Dim from, const Dim to);
+  void rename(Dim from, Dim to);
 
   void setData(const Variable &data);
 
@@ -111,7 +111,7 @@ SCIPP_DATASET_EXPORT bool operator==(const DataArray &a, const DataArray &b);
 SCIPP_DATASET_EXPORT bool operator!=(const DataArray &a, const DataArray &b);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-copy(const DataArray &array, const AttrPolicy attrPolicy = AttrPolicy::Keep);
+copy(const DataArray &array, AttrPolicy attrPolicy = AttrPolicy::Keep);
 
 } // namespace scipp::dataset
 
