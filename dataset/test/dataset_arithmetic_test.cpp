@@ -520,7 +520,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest,
   }
 }
 
-TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_Dataset_coord_mismatch) {
+TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_slice_coord_mismatch) {
   auto dataset = datasetFactory().make();
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
