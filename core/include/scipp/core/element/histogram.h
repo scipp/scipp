@@ -38,10 +38,13 @@ static constexpr auto histogram = overloaded{
     element::arg_list<
         histogram_detail::args<float, double, float, double>,
         histogram_detail::args<float, int64_t, float, double>,
+        histogram_detail::args<float, int32_t, float, double>,
         histogram_detail::args<double, double, double, double>,
         histogram_detail::args<double, float, double, double>,
         histogram_detail::args<double, float, double, float>,
         histogram_detail::args<double, double, float, double>,
+        histogram_detail::args<double, int64_t, double, int64_t>,
+        histogram_detail::args<double, int32_t, double, int64_t>,
         histogram_detail::args<double, time_point, double, time_point>,
         histogram_detail::args<double, time_point, float, time_point>,
         histogram_detail::args<float, time_point, double, time_point>,

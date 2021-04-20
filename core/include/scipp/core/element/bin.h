@@ -31,6 +31,9 @@ static constexpr auto update_indices_by_binning = overloaded{
         update_indices_by_binning_arg<int32_t, double>,
         update_indices_by_binning_arg<int32_t, float>,
         std::tuple<int32_t, int64_t, scipp::span<const double>>,
+        std::tuple<int32_t, int32_t, scipp::span<const double>>,
+        std::tuple<int32_t, int64_t, scipp::span<const int64_t>>,
+        std::tuple<int32_t, int32_t, scipp::span<const int64_t>>,
         std::tuple<int32_t, time_point, scipp::span<const time_point>>>,
     [](units::Unit &indices, const units::Unit &coord,
        const units::Unit &groups) {
