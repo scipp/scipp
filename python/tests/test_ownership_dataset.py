@@ -210,17 +210,16 @@ def test_own_dset_set_access_through_scalar_slice():
     dset['da1'] = da
 
     dset['x', 0]['da1'].value = -10
-    # TODO allows modification of coord through attrs
-    dset['x', 0]['da1'].attrs['x'].value = -1
     dset['x', 0]['da1'].attrs['a'].value = -100
     dset['x', 0]['da1'].masks['m'].value = False
-    # TODO test this here or somewhere else?
+    with pytest.raises(sc.VariableError):
+        dset['x', 0]['da1'].attrs['x'].value = -1
     with pytest.raises(sc.UnitError):
         dset['x', 0]['da1'].unit = 's'
 
     expected = sc.DataArray(
         sc.array(dims=['x'], values=[-10, 20], unit='m'),
-        coords={'x': sc.array(dims=['x'], values=[-1, 2], unit='s')},
+        coords={'x': sc.array(dims=['x'], values=[1, 2], unit='s')},
         attrs={'a': sc.array(dims=['x'], values=[-100, 200])},
         masks={'m': sc.array(dims=['x'], values=[False, False])})
     assert sc.identical(dset, sc.Dataset({'da1': expected}))
