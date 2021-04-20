@@ -41,7 +41,6 @@ def test_own_darr_set():
     assert sc.identical(a, sc.array(dims=['x'], values=[-100, -200]))
     assert sc.identical(m, sc.array(dims=['x'], values=[False, True]))
 
-    # TODO intentional?
     # Assignments overwrite data but not metadata.
     da.data = sc.array(dims=['x'], values=[11, 22], unit='m')
     da.coords['x'] = sc.array(dims=['x'], values=[3, 4], unit='s')
@@ -89,7 +88,6 @@ def test_own_darr_get():
     assert sc.identical(a, sc.array(dims=['x'], values=[-100, -200]))
     assert sc.identical(m, sc.array(dims=['x'], values=[False, True]))
 
-    # TODO intentional?
     # Assignments overwrite data but not coords.
     da.data = sc.array(dims=['x'], values=[11, 22], unit='m')
     da.coords['x'] = sc.array(dims=['x'], values=[3, 4], unit='s')
@@ -133,7 +131,6 @@ def test_own_darr_get_meta():
     assert sc.identical(c, sc.array(dims=['x'], values=[-1, -2], unit='J'))
     assert sc.identical(a, sc.array(dims=['x'], values=[-100, -200]))
 
-    # TODO intentional?
     # Assignments overwrite data but not coords.
     da.data = sc.array(dims=['x'], values=[11, 22], unit='m')
     da.coords['x'] = sc.array(dims=['x'], values=[3, 4], unit='s')
