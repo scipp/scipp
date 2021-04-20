@@ -13,3 +13,5 @@ robocopy %INSTALL_PREFIX%\include\scipp*.h %CONDA_PREFIX%\include\ /e
 robocopy %INSTALL_PREFIX%\include\scipp %CONDA_PREFIX%\include\ /e
 robocopy %INSTALL_PREFIX%\include\Eigen %CONDA_PREFIX%\include\ /e
 robocopy %INSTALL_PREFIX%\include\units %CONDA_PREFIX%\include\ /e
+
+dir /s/b %CONDA_PREFIX%
