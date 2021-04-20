@@ -701,7 +701,9 @@ void transform_in_place(Var &&var, const Variable &var1, const Variable &var2,
 template <class... TypePairs, class Var, class Other, class Op>
 void accumulate_in_place(Var &&var, Other &&other, Op op,
                          const std::string_view &name = "operation") {
-  scipp::expect::contains(other.dims(), var.dims());
+  // Note lack of dims check here and below: transform_data calls `merge` on the
+  // dims which does the required checks, supporting broadcasting of outputs and
+  // inputs but ensuring compatibility otherwise.
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op, name,
                                   std::forward<Var>(var), other);
@@ -710,8 +712,9 @@ void accumulate_in_place(Var &&var, Other &&other, Op op,
 template <class... TypePairs, class Var, class Op>
 void accumulate_in_place(Var &&var, const Variable &var1, const Variable &var2,
                          Op op, const std::string_view &name = "operation") {
-  scipp::expect::contains(var1.dims(), var.dims());
-  scipp::expect::contains(var2.dims(), var.dims());
+void accumulate_in_place(Var &&var, const VariableConstView &var1,
+                         const VariableConstView &var2, Op op,
+                         const std::string_view &name = "operation") {
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op, name,
                                   std::forward<Var>(var), var1, var2);
 }
@@ -720,9 +723,6 @@ template <class... TypePairs, class Var, class Op>
 void accumulate_in_place(Var &&var, Variable &var1, const Variable &var2,
                          const Variable &var3, Op op,
                          const std::string_view &name = "operation") {
-  scipp::expect::contains(var1.dims(), var.dims());
-  scipp::expect::contains(var2.dims(), var.dims());
-  scipp::expect::contains(var3.dims(), var.dims());
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op, name,
                                   std::forward<Var>(var), var1, var2, var3);
 }

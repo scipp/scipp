@@ -46,11 +46,10 @@ target_compile_definitions(_scipp PRIVATE SCIPP_EXPORT=)
 # Set symbol visibility to hidden to reduce binary size, as recommended in
 # pybind11 FAQ.
 set_target_properties(_scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
-if(UNIX AND NOT APPLE)
-  set_target_properties(_scipp PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
-elseif(APPLE)
-  set_target_properties(_scipp PROPERTIES INSTALL_RPATH "@loader_path/../lib")
-endif()
+set_target_properties(
+  _scipp PROPERTIES INSTALL_RPATH
+                    "${CMAKE_INSTALL_RPATH}/../${CMAKE_INSTALL_LIBDIR}"
+)
 
 if(PRECOMPILED_HEADERS)
   target_precompile_headers(_scipp PRIVATE pybind11.h)
