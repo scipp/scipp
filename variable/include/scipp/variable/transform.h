@@ -712,9 +712,6 @@ void accumulate_in_place(Var &&var, Other &&other, Op op,
 template <class... TypePairs, class Var, class Op>
 void accumulate_in_place(Var &&var, const Variable &var1, const Variable &var2,
                          Op op, const std::string_view &name = "operation") {
-void accumulate_in_place(Var &&var, const VariableConstView &var1,
-                         const VariableConstView &var2, Op op,
-                         const std::string_view &name = "operation") {
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op, name,
                                   std::forward<Var>(var), var1, var2);
 }
