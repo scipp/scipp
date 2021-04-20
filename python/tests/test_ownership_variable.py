@@ -53,13 +53,13 @@ def test_own_var_scalar_copy():
 
 
 def test_own_var_scalar_pyobj_set():
-    # Input data is deep-copied.
+    # Input data is shared.
     x = {'num': 1, 'list': [2, 3]}
     s = make_variable(x)
     x['num'] = -1
     s.value['list'][0] = -2
-    assert sc.identical(s, make_variable({'num': 1, 'list': [-2, 3]}))
-    assert x == {'num': -1, 'list': [2, 3]}
+    assert sc.identical(s, make_variable({'num': -1, 'list': [-2, 3]}))
+    assert x == {'num': -1, 'list': [-2, 3]}
 
 
 def test_own_var_scalar_pyobj_get():
@@ -76,7 +76,7 @@ def test_own_var_scalar_pyobj_get():
 def test_own_var_scalar_pyobj_copy():
     # Depth of copies of variables can be controlled.
     data = {'num': 1, 'list': [2, 3]}
-    s = make_variable(data)
+    s = make_variable(deepcopy(data))
     s_copy = copy(s)
     s_deepcopy = deepcopy(s)
     s_methcopy = s.copy(deep=False)
