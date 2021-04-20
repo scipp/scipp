@@ -38,7 +38,8 @@ DataArray::DataArray(Variable data, Coords coords, Masks masks, Attrs attrs,
 
 DataArray::DataArray(Variable data, typename Coords::holder_type coords,
                      typename Masks::holder_type masks,
-                     typename Attrs::holder_type attrs, const std::string_view name)
+                     typename Attrs::holder_type attrs,
+                     const std::string_view name)
     : m_name(name), m_data(std::make_shared<Variable>(std::move(data))),
       m_coords(dims(), std::move(coords)),
       m_masks(std::make_shared<Masks>(dims(), std::move(masks))),
@@ -83,9 +84,10 @@ Coords DataArray::meta() const { return attrs().merge_from(coords()); }
 DataArray DataArray::slice(const Slice &s) const {
   auto out_coords = m_coords.slice(s);
   Attrs out_attrs(out_coords.sizes(), {});
-  for (auto it = m_coords.begin(); it != m_coords.end(); ++it)
-    if (unaligned_by_dim_slice(*it, s))
-      out_attrs.set(it->first, out_coords.extract(it->first));
+  for (auto &coord : m_coords) {
+    if (unaligned_by_dim_slice(coord, s))
+      out_attrs.set(coord.first, out_coords.extract(coord.first));
+  }
   return {m_data->slice(s), std::move(out_coords), m_masks->slice(s),
           m_attrs->slice(s).merge_from(out_attrs), m_name};
 }
