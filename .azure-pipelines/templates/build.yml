@@ -14,7 +14,7 @@ parameters:
 - name: conda_package_root
   type: string
   default: ''
-- name: debug
+- name: verbose
   type: boolean
   default: false
 
@@ -73,12 +73,12 @@ jobs:
           tools/make_and_install.$FILE_EXTENSION
         displayName: 'Build and run C++ tests'
 
-      - ${{ if eq(parameters.debug, true) }}:
+      - ${{ if eq(parameters.verbose, true) }}:
         - bash: |
             set -ex
             conda build --debug --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload conda
-          displayName: 'Python tests and conda build (debug mode)'
-      - ${{ if eq(parameters.debug, false) }}:
+          displayName: 'Python tests and conda build (verbose mode)'
+      - ${{ if eq(parameters.verbose, false) }}:
         - bash: |
             set -ex
             conda build --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload conda

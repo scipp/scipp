@@ -1,6 +1,6 @@
 parameters:
-- name: debug
-  displayName: Debug
+- name: verbose
+  displayName: Verbose
   type: boolean
   default: true
 
@@ -18,7 +18,7 @@ pr:
 extends:
   template: templates/stages.yml
   parameters:
-    debug: ${{ parameters.debug }}
+    verbose: ${{ parameters.verbose }}
     py_versions:
       linux: ['3.7']
       osx: ['3.7']

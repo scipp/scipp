@@ -30,7 +30,7 @@ parameters:
 - name: conda_label
   type: string
   default: 'test'
-- name: debug
+- name: verbose
   type: boolean
   default: false
 
@@ -46,7 +46,7 @@ stages:
         - ${{ each py in os.Value }}:
           - template: build.yml
             parameters:
-              debug: ${{ parameters.debug }}
+              verbose: ${{ parameters.verbose }}
               py_version: ${{ py }}
               image: ${{ parameters.settings[os.Key].image }}
               conda_package_root: ${{ parameters.settings[os.Key].conda_package_root }}
