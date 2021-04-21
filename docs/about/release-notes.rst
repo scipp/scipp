@@ -14,10 +14,6 @@ Features
 Bugfixes
 ~~~~~~~~
 
-* ``map`` and ``scale`` operations as well as ``histogram`` for binned data now also work with ``datetime64`` `#1834 <https://github.com/scipp/scipp/pull/1834>`_.
-* ``bin`` now works on previously binned data with 2-D edges, even if the outer dimensions(s) are not rebinned `#1836 <https://github.com/scipp/scipp/pull/1836>`_.
-* ``bin`` and ``histogram`` now work with ``int32``-valued coordinates and support binning with ``int64``- or ``int32``-valued bin edges.
-
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
@@ -29,6 +25,16 @@ Simon Heybrock,
 Matthew D. Jones,
 Neil Vaytet,
 and Jan-Lukas Wynen
+
+v0.6.1 (April 2021)
+-------------------
+
+Bugfixes
+~~~~~~~~
+
+* ``map`` and ``scale`` operations as well as ``histogram`` for binned data now also work with ``datetime64`` `#1834 <https://github.com/scipp/scipp/pull/1834>`_.
+* ``bin`` now works on previously binned data with 2-D edges, even if the outer dimensions(s) are not rebinned `#1836 <https://github.com/scipp/scipp/pull/1836>`_.
+* ``bin`` and ``histogram`` now work with ``int32``-valued coordinates and support binning with ``int64``- or ``int32``-valued bin edges.
 
 v0.6.0 (March 2021)
 -------------------
