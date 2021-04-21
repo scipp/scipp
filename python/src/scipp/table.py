@@ -314,6 +314,7 @@ class TableViewer:
                                          width="auto",
                                          display='flex',
                                          flex_flow='column'))
+        self.box.add_class('sc-root')  # needed to apply style
         return
 
     def make_dict(self):
