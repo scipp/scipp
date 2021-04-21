@@ -83,23 +83,20 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
           mask); // `op` multiplies mask into data to zero masked elements
     return mask;
   };
+  const auto process_data_array = [&](const auto &range, const auto &out_data,
+                                      const auto &data) {
+    for (scipp::index group = range.begin(); group != range.end(); ++group) {
+      auto out_slice = out_data.slice({dim(), group});
+      op(out_slice, data, groups()[group], reductionDim, get_mask(data));
+    }
+  };
   // Apply to each group, storing result in output slice
   const auto process_groups = [&](const auto &range) {
     if constexpr (std::is_same_v<T, Dataset>) {
-      for (const auto &item : m_data) {
-        auto out_item = out[item.name()].data();
-        for (scipp::index group = range.begin(); group != range.end();
-             ++group) {
-          auto out_slice = out_item.slice({dim(), group});
-          op(out_slice, item, groups()[group], reductionDim,
-             get_mask(m_data[item.name()]));
-        }
-      }
+      for (const auto &item : m_data)
+        process_data_array(range, out[item.name()].data(), item);
     } else {
-      for (scipp::index group = range.begin(); group != range.end(); ++group) {
-        auto out_slice = out.data().slice({dim(), group});
-        op(out_slice, m_data, groups()[group], reductionDim, get_mask(m_data));
-      }
+      process_data_array(range, out.data(), m_data);
     }
   };
   core::parallel::parallel_for(core::parallel::blocked_range(0, size()),
