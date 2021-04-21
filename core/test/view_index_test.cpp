@@ -39,7 +39,6 @@ protected:
 };
 
 TEST_F(ViewIndex2DTest, construct) {
-  EXPECT_NO_THROW(ViewIndex(xy, none));
   EXPECT_NO_THROW(ViewIndex(xy, xy));
   EXPECT_NO_THROW(ViewIndex(xy, yx));
 }
@@ -104,28 +103,6 @@ TEST_F(ViewIndex2DTest, increment_2D_transpose) {
     EXPECT_EQ(i.get(), correct);
     i.increment();
   }
-}
-
-TEST_F(ViewIndex2DTest, increment_1D) {
-  ViewIndex i(xy, x);
-  EXPECT_EQ(i.get(), 0);
-  i.increment();
-  EXPECT_EQ(i.get(), 1);
-  i.increment();
-  EXPECT_EQ(i.get(), 2);
-  i.increment();
-  EXPECT_EQ(i.get(), 0);
-}
-
-TEST_F(ViewIndex2DTest, increment_0D) {
-  ViewIndex i(xy, none);
-  EXPECT_EQ(i.get(), 0);
-  i.increment();
-  EXPECT_EQ(i.get(), 0);
-  i.increment();
-  EXPECT_EQ(i.get(), 0);
-  i.increment();
-  EXPECT_EQ(i.get(), 0);
 }
 
 TEST_F(ViewIndex2DTest, fixed_dimensions) {

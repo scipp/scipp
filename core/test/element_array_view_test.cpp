@@ -36,8 +36,11 @@ TEST(ElementArrayView, subvolume) {
   std::iota(variable.begin(), variable.end(), 0);
 
   Dimensions variableDims({{Dim::Y, 3}, {Dim::X, 1}});
+  std::cout << "aaaaaa" << std::endl;
   ElementArrayView<double> view(variable.data(), 0, variableDims, dims);
+  std::cout << "bbbbbb" << std::endl;
   auto it = view.begin();
+  std::cout << "ccccc" << std::endl;
   ASSERT_EQ(std::distance(it, view.end()), 3);
   EXPECT_EQ(*it++, 0.0);
   EXPECT_EQ(*it++, 2.0);
@@ -94,58 +97,12 @@ TEST(ElementArrayView, subview) {
   EXPECT_EQ(*it++, 0.0);
   EXPECT_EQ(*it++, 2.0);
   EXPECT_EQ(*it++, 4.0);
-
-  Dimensions subDims({{Dim::Y, 3}, {Dim::X, 2}});
-  ElementArrayView<double> subView(view, subDims);
-  it = subView.begin();
-  ASSERT_EQ(std::distance(it, subView.end()), 6);
-  EXPECT_EQ(*it++, 0.0);
-  EXPECT_EQ(*it++, 0.0);
-  EXPECT_EQ(*it++, 2.0);
-  EXPECT_EQ(*it++, 2.0);
-  EXPECT_EQ(*it++, 4.0);
-  EXPECT_EQ(*it++, 4.0);
 }
 
 auto range(const scipp::index end) {
   std::vector<int32_t> data(end);
   std::iota(data.begin(), data.end(), 0);
   return data;
-}
-
-TEST(ElementArrayViewTest, bad_broadcast) {
-  Dimensions dims{Dim::X, 2};
-  Dimensions target(Dim::X, 3);
-  EXPECT_THROW(ElementArrayView<int32_t>(range(2).data(), 0, target, dims),
-               except::DimensionError);
-}
-
-TEST(ElementArrayViewTest, broadcast_inner) {
-  Dimensions dims{Dim::X, 2};
-  Dimensions target({Dim::X, Dim::Y}, {2, 3});
-  EXPECT_TRUE(equals(ElementArrayView(range(2).data(), 0, target, dims),
-                     {0, 0, 0, 1, 1, 1}));
-}
-
-TEST(ElementArrayViewTest, broadcast_outer) {
-  Dimensions dims{Dim::X, 2};
-  Dimensions target({Dim::Y, Dim::X}, {3, 2});
-  EXPECT_TRUE(equals(ElementArrayView(range(2).data(), 0, target, dims),
-                     {0, 1, 0, 1, 0, 1}));
-}
-
-TEST(ElementArrayViewTest, broadcast_interior) {
-  Dimensions dims{{Dim::X, Dim::Z}, {2, 2}};
-  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {2, 3, 2});
-  EXPECT_TRUE(equals(ElementArrayView(range(4).data(), 0, target, dims),
-                     {0, 1, 0, 1, 0, 1, 2, 3, 2, 3, 2, 3}));
-}
-
-TEST(ElementArrayViewTest, broadcast_inner_and_outer) {
-  Dimensions dims{Dim::Y, 2};
-  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {2, 2, 3});
-  EXPECT_TRUE(equals(ElementArrayView(range(2).data(), 0, target, dims),
-                     {0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1}));
 }
 
 TEST(ElementArrayViewTest, transpose_2d) {
@@ -334,36 +291,6 @@ TEST(ElementArrayViewTest, slice_range_all) {
   Dimensions target{{Dim::X, Dim::Y, Dim::Z}, {1, 2, 2}};
   EXPECT_TRUE(equals(ElementArrayView(range(24).data(), 0, target, dims),
                      {0, 1, 4, 5}));
-}
-
-TEST(ElementArrayViewTest, broadcast_transpose_slice_3d) {
-  Dimensions dims{{Dim::X, Dim::Y}, {2, 3}};
-  Dimensions target{{Dim::Y, Dim::X, Dim::Z}, {2, 2, 4}};
-  EXPECT_TRUE(equals(ElementArrayView(range(6).data(), 0, target, dims),
-                     {0, 0, 0, 0, 3, 3, 3, 3, 1, 1, 1, 1, 4, 4, 4, 4}));
-}
-
-TEST(ElementArrayViewTest, broadcast_transpose_slice_4d) {
-  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
-  Dimensions target{{Dim::Z, Dim::Y, Dim::Time, Dim::X}, {2, 3, 2, 2}};
-  EXPECT_TRUE(equals(ElementArrayView(range(24).data(), 0, target, dims),
-                     {0, 12, 0, 12, 4, 16, 4, 16, 8, 20, 8, 20,
-                      1, 13, 1, 13, 5, 17, 5, 17, 9, 21, 9, 21}));
-}
-
-TEST(ElementArrayViewTest, view_of_view_collapse_and_broadcast) {
-  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
-  Dimensions target{{Dim::X, Dim::Z}, {2, 4}};
-  const auto data = range(24);
-  // Base view with collapsed Y
-  ElementArrayView base(data.data(), 0, target, dims);
-  // Derived view with Y dependence. Since the base view had no Y it is
-  // broadcasted is *not* giving the original data. The application of this is
-  // some operation like var += var.slice(Dim.Y, 0), where we first slice and
-  // then broadcast the result for a subsequent operation.
-  EXPECT_TRUE(equals(ElementArrayView<const int32_t>(base, dims),
-                     {0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,
-                      12, 13, 14, 15, 12, 13, 14, 15, 12, 13, 14, 15}));
 }
 
 TEST(ElementArrayViewTest, view_of_view_bad_broadcast) {

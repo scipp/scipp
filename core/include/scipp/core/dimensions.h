@@ -103,6 +103,10 @@ public:
 
   bool isContiguousIn(const Dimensions &parent) const;
 
+  /// Return true if all dimension labels of *this are also in other
+  /// and the extents are no larger than in other.
+  bool embedded_in(const Dimensions &other) const noexcept;
+
   // TODO Some of the following methods are probably legacy and should be
   // considered for removal.
   Dim label(const scipp::index i) const;

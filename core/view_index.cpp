@@ -6,22 +6,37 @@
 
 #include <algorithm>
 
+#include "scipp/core/except.h"
+
 namespace scipp::core {
+namespace {
+void expect_embedded_in(const Dimensions &a, const Dimensions &b) {
+  if (!a.embedded_in(b)) {
+    throw scipp::except::DimensionError(
+        "Cannot construct view, expected dimensions " + to_string(a) +
+        " to be embedded in dimensions " + to_string(b) + '.');
+  }
+}
+} // namespace
+
 ViewIndex::ViewIndex(const Dimensions &targetDimensions,
                      const Dimensions &dataDimensions) {
-  m_dims = static_cast<int32_t>(targetDimensions.shape().size());
+  // do not allow broadcasting
+  expect_embedded_in(targetDimensions, dataDimensions);
+  m_dims = static_cast<int32_t>(targetDimensions.ndim());
   for (scipp::index d = 0; d < m_dims; ++d)
     m_extent[d] = targetDimensions.size(m_dims - 1 - d);
   scipp::index factor{1};
-  for (scipp::index i = dataDimensions.shape().size() - 1; i >= 0; --i) {
+  scipp::index i_insert = 0;
+  for (scipp::index i = dataDimensions.ndim() - 1; i >= 0; --i) {
     // Note the hidden behavior here: ElementArrayView may be relabeling certain
     // dimensions to Dim::Invalid. Dimensions::contains then returns false,
     // effectively slicing out this dimensions from the data.
     const auto dimension = dataDimensions.label(i);
     if (targetDimensions.contains(dimension)) {
-      m_offsets[m_subdims] = m_dims - 1 - targetDimensions.index(dimension);
-      m_factors[m_subdims] = factor;
-      ++m_subdims;
+      m_offsets[i_insert] = m_dims - 1 - targetDimensions.index(dimension);
+      m_factors[i_insert] = factor;
+      ++i_insert;
     }
     factor *= dataDimensions.size(i);
   }

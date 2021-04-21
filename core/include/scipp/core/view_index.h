@@ -46,7 +46,7 @@ public:
     }
     m_coord[m_dims - 1] = remainder;
     m_index = 0;
-    for (int32_t j = 0; j < m_subdims; ++j)
+    for (int32_t j = 0; j < m_dims; ++j)
       m_index += m_factors[j] * m_coord[m_offsets[j]];
   }
 
