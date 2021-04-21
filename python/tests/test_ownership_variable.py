@@ -445,8 +445,8 @@ def test_own_var_1d_bin_set():
     assert sc.identical(
         binned,
         sc.bins(data=make_variable([-1, -2, -3, -4, 4], unit='s'),
-                begin=make_variable([0, 2]),
-                end=make_variable([2, 5]),
+                begin=make_variable([0, 2], dtype=sc.dtype.int64),
+                end=make_variable([2, 5], dtype=sc.dtype.int64),
                 dim='x'))
 
 
