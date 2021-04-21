@@ -75,16 +75,12 @@ template <class T>
 template <class Op>
 T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
   auto out = makeReductionOutput(reductionDim);
-  const auto get_mask = [&](const auto &data) {
+  const auto process_data_array = [&](const auto &range, const auto &out_data,
+                                      const auto &data) {
     auto mask = irreducible_mask(data.masks(), reductionDim);
     if (mask)
       mask = ~std::move(
           mask); // `op` multiplies mask into data to zero masked elements
-    return mask;
-  };
-  const auto process_data_array = [&](const auto &range, const auto &out_data,
-                                      const auto &data) {
-    const auto &mask = get_mask(data);
     for (scipp::index group = range.begin(); group != range.end(); ++group) {
       auto out_slice = out_data.slice({dim(), group});
       op(out_slice, data, groups()[group], reductionDim, mask);
