@@ -405,7 +405,7 @@ def test_own_var_1d_str_copy():
 def test_own_var_1d_bin_set():
     # The buffer is shared.
     a_buffer = np.arange(5)
-    a_indices = np.array([0, 2, 5], dtype=sc.dtype.int64)
+    a_indices = np.array([0, 2, 5], dtype=np.int64)
     buffer = make_variable(a_buffer, unit='m')
     indices = make_variable(a_indices, dtype=sc.dtype.int64)
     binned = sc.bins(data=buffer,
