@@ -450,7 +450,7 @@ def _obj_repr(header_components, sections):
 
     return ("<div>"
             f"{load_icons()}<style>{load_style()}</style>"
-            "<div class='sc-wrap'>"
+            "<div class='sc-wrap sc-root'>"
             f"{header}"
             f"<ul class='sc-sections'>{sections}</ul>"
             "</div>"
