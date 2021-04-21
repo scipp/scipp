@@ -27,6 +27,8 @@ jobs:
     variables:
       - name: OSX_VERSION
         value: ${{ parameters.OSX_VERSION }}
+      - name: VERBOSE_OPTION
+        value: ''
 
     steps:
       - checkout: self
@@ -40,17 +42,17 @@ jobs:
         - bash: |
             echo "##vso[task.prependpath]$CONDA\Scripts"
             echo "##vso[task.setvariable variable=file_extension]bat"
-            echo "##vso[task.setvariable variable=install_prefix]$(Build.SourcesDirectory)\install"
           displayName: 'Configure Conda path'
       - ${{ if not(contains(parameters.image, 'windows')) }}:
         - bash: |
             echo "##vso[task.prependpath]$CONDA/bin"
             echo "##vso[task.setvariable variable=file_extension]sh"
-            echo "##vso[task.setvariable variable=install_prefix]$(Build.SourcesDirectory)/install"
           displayName: 'Configure Conda path'
 
-      - bash: echo "##vso[task.setvariable variable=conda_dir]$CONDA"
-        displayName: 'Configure Conda dir'
+      - bash: |
+          echo "##vso[task.setvariable variable=conda_dir]$CONDA"
+          echo "##vso[task.setvariable variable=install_prefix]$CONDA/scipp_install"
+        displayName: 'Configure Conda dir and install target'
       - ${{ if not(eq(length(parameters.OSX_VERSION), 0)) }}:
         - bash: |
             set -ex
@@ -75,14 +77,13 @@ jobs:
 
       - ${{ if eq(parameters.verbose, true) }}:
         - bash: |
-            set -ex
-            conda build --debug --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload conda
-          displayName: 'Python tests and conda build (verbose mode)'
-      - ${{ if eq(parameters.verbose, false) }}:
-        - bash: |
-            set -ex
-            conda build --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload conda
-          displayName: 'Python tests and conda build'
+            echo "##vso[task.setvariable variable=verbose_option]--debug"
+          displayName: 'Activate conda build debug mode'
+
+      - bash: |
+          set -ex
+          conda build $VERBOSE_OPTION --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload conda
+        displayName: 'Python tests and conda build'
 
       - task: PublishBuildArtifacts@1
         inputs:
