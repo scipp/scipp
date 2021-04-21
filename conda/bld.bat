@@ -1,6 +1,8 @@
 
 if "%INSTALL_PREFIX%" == "" set INSTALL_PREFIX=%cd% & call tools\make_and_install.bat
 
+dir /s/b %INSTALL_PREFIX%
+
 if not exist "%CONDA_PREFIX%\lib\scipp" mkdir %CONDA_PREFIX%\lib\scipp
 robocopy %INSTALL_PREFIX%\scipp %CONDA_PREFIX%\lib\scipp\ /e /move
 robocopy %INSTALL_PREFIX%\bin %CONDA_PREFIX%\bin\ scipp-*.dll /e /move
