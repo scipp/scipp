@@ -124,12 +124,14 @@ Dataset make_example_dataset(std::string xmask_name = "mask_x",
   return ds;
 }
 
-TEST(DatasetSliceMetadataTest, set_dataarray_slice_when_metadata_missing) {
+TEST_F(SetSliceTest, set_dataarray_slice_when_metadata_missing) {
   auto ds = make_example_dataset("mask_x", "mask_y");
   auto original = copy(ds);
   auto point = ds["a"].slice({Dim::X, 1}).slice({Dim::Y, 1}); // Only has mask_x
-  EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::Y, 0}, point),
+  EXPECT_THROW_DISCARD(ds["b"].setSlice(Slice{Dim::Y, 0}, point),
                        except::NotFoundError);
+  EXPECT_THROW_DISCARD(ds["a"].setSlice(Slice{Dim::Y, 0}, point),
+                       except::DimensionError);
   // We test for a partially-applied modification as a result of an aborted
   // transaction Check that "a" is NOT getting modified before operation falls
   // over on "b", which has no mask_x.
