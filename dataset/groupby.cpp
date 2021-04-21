@@ -71,32 +71,35 @@ T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
   return out;
 }
 
+namespace {
+template <class Op, class Groups>
+void reduce_(Op op, const Dim reductionDim, const Variable &out_data,
+             const DataArray &data, const Dim dim, const Groups &groups) {
+  auto mask = irreducible_mask(data.masks(), reductionDim);
+  if (mask)
+    mask = ~mask; // `op` multiplies mask into data to zero masked elements
+  const auto process = [&](const auto &range) {
+    // Apply to each group, storing result in output slice
+    for (scipp::index group = range.begin(); group != range.end(); ++group) {
+      auto out_slice = out_data.slice({dim, group});
+      op(out_slice, data, groups[group], reductionDim, mask);
+    }
+  };
+  core::parallel::parallel_for(core::parallel::blocked_range(0, groups.size()),
+                               process);
+}
+} // namespace
+
 template <class T>
 template <class Op>
 T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
   auto out = makeReductionOutput(reductionDim);
-  const auto process_data_array = [&](const auto &range, const auto &out_data,
-                                      const auto &data) {
-    auto mask = irreducible_mask(data.masks(), reductionDim);
-    if (mask)
-      mask = ~std::move(
-          mask); // `op` multiplies mask into data to zero masked elements
-    for (scipp::index group = range.begin(); group != range.end(); ++group) {
-      auto out_slice = out_data.slice({dim(), group});
-      op(out_slice, data, groups()[group], reductionDim, mask);
-    }
-  };
-  // Apply to each group, storing result in output slice
-  const auto process_groups = [&](const auto &range) {
-    if constexpr (std::is_same_v<T, Dataset>) {
-      for (const auto &item : m_data)
-        process_data_array(range, out[item.name()].data(), item);
-    } else {
-      process_data_array(range, out.data(), m_data);
-    }
-  };
-  core::parallel::parallel_for(core::parallel::blocked_range(0, size()),
-                               process_groups);
+  if constexpr (std::is_same_v<T, Dataset>) {
+    for (const auto &item : m_data)
+      reduce_(op, reductionDim, out[item.name()].data(), item, dim(), groups());
+  } else {
+    reduce_(op, reductionDim, out.data(), m_data, dim(), groups());
+  }
   return out;
 }
 
