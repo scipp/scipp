@@ -712,29 +712,31 @@ TEST_F(CoordToAttrMappingTest, DatasetConstView) {
   test_dataset_coord_aligned_to_unaligned_mapping(d);
 }
 
-Dataset make_example(std::string xmask_name = "mask_x",
-                     std::string ymask_name = "mask_y") {
-  auto ds = make_empty();
-  std::vector<double> data_values(6);
+DataArray make_example_dataarray(std::string mask_name, Dim mask_dim) {
+  std::vector<double> data_values(4);
   std::iota(data_values.begin(), data_values.end(), 0);
 
-  auto data = makeVariable<double>(Dimensions{{Dim::X, 3}, {Dim::Y, 2}},
+  auto data = makeVariable<double>(Dimensions{{Dim::X, 2}, {Dim::Y, 2}},
                                    Values(data_values));
-  auto mask_x =
-      makeVariable<bool>(Dimensions{Dim::X, 3}, Values({true, false, false}));
-  auto mask_y =
-      makeVariable<bool>(Dimensions{Dim::Y, 2}, Values({true, false}));
-  auto a = DataArray{data};
-  a.masks().set(xmask_name, mask_x);
-  auto b = DataArray{data};
-  b.masks().set(ymask_name, mask_y);
+  auto mask =
+      makeVariable<bool>(Dimensions{mask_dim, 2}, Values({true, false}));
+  auto da = DataArray(data);
+  da.masks().set(mask_name, mask);
+  return da;
+}
+
+Dataset make_example_dataset(std::string xmask_name = "mask_x",
+                             std::string ymask_name = "mask_y") {
+  auto a = make_example_dataarray(xmask_name, Dim::X);
+  auto b = make_example_dataarray(ymask_name, Dim::Y);
+  auto ds = make_empty();
   ds.setData("a", a);
   ds.setData("b", b);
   return ds;
 }
 
 TEST(DatasetSliceMetadataTest, set_dataarray_slice_when_metadata_missing) {
-  auto ds = make_example("mask_x", "mask_y");
+  auto ds = make_example_dataset("mask_x", "mask_y");
   auto original = copy(ds);
   auto point = ds["a"].slice({Dim::X, 1}).slice({Dim::Y, 1}); // Only has mask_x
   EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::Y, 0}, point),
@@ -747,7 +749,7 @@ TEST(DatasetSliceMetadataTest, set_dataarray_slice_when_metadata_missing) {
 
 TEST(DatasetSliceMetadataTest,
      set_dataarray_slice_with_forbidden_broadcast_of_mask) {
-  auto ds = make_example("mask", "mask");
+  auto ds = make_example_dataset("mask", "mask");
   auto original = copy(ds);
   auto point = ds["a"].slice({Dim::X, 1}).slice({Dim::Y, 1});
   EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::Y, 0}, point),
@@ -761,7 +763,7 @@ TEST(DatasetSliceMetadataTest,
 
 TEST(DatasetSliceMetadataTest,
      set_dataset_slice_with_forbidden_broadcast_of_mask) {
-  auto ds = make_example("mask_x", "mask_y");
+  auto ds = make_example_dataset("mask_x", "mask_y");
   auto original = copy(ds);
   auto point = ds.slice({Dim::X, 1}).slice({Dim::Y, 1});
   EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::Y, 0}, point),
@@ -773,5 +775,21 @@ TEST(DatasetSliceMetadataTest,
 
   EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::X, 0}, point),
                        except::DimensionError);
+  EXPECT_EQ(original, ds); // Failed op should have no effect
+}
+
+TEST(DatasetSliceMetadataTest,
+     set_dataarray_slice_with_different_data_units_forbidden) {
+  auto ds = make_example_dataarray("mask", Dim::X);
+  auto original = copy(ds);
+  auto point = make_example_dataarray("mask", Dim::X);
+  point.setUnit(scipp::units::K);
+  point = point.slice({Dim::X, 1}).slice({Dim::Y, 1});
+  // Change the units on the data!
+  EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::X, 0}, point), except::UnitError);
+  // We test for a partially-applied modification as a result of an aborted
+  // transaction Check that "a" is NOT getting modified before operation falls
+  // over on "b" as would involve broadcasting mask in non-slice dimension. Mask
+  // should be read-only.
   EXPECT_EQ(original, ds); // Failed op should have no effect
 }
