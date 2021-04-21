@@ -11,6 +11,7 @@
 
 #include "scipp/variable/indexed_slice_view.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/slice_generator.h"
 #include "scipp/variable/util.h"
 
 #include "scipp/dataset/bins.h"
@@ -108,12 +109,12 @@ static constexpr auto sum = [](DataArray &out, const auto &data_container,
                                const GroupByGrouping::group &group, const Dim,
                                const Variable &mask) {
   for (const auto &slice : group) {
-    const auto data_slice = data_container.slice(slice);
+    const auto data_slice = data_container.data().slice(slice);
     auto data = out.data();
     if (mask)
-      sum_impl(data, data_slice.data() * mask.slice(slice));
+      sum_impl(data, data_slice * mask.slice(slice));
     else
-      sum_impl(data, data_slice.data());
+      sum_impl(data, data_slice);
   }
 };
 
@@ -128,16 +129,16 @@ struct wrap {
          const Variable &mask) {
         bool first = true;
         for (const auto &slice : group) {
-          const auto data_slice = data_container.slice(slice);
+          const auto data_slice = data_container.data().slice(slice);
           if (mask)
             throw std::runtime_error(
                 "This operation does not support masks yet.");
           if (first) {
-            copy(data_slice.data().slice({reductionDim, 0}), out.data());
+            copy(data_slice.slice({reductionDim, 0}), out.data());
             first = false;
           }
           auto data = out.data();
-          Func(data, data_slice.data());
+          Func(data, data_slice);
         }
       };
 };
