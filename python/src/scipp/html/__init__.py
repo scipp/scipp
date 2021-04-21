@@ -2,13 +2,13 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Dimitar Tasev
-from .._scipp import core as sc
-from .formatting_html import dataset_repr, variable_repr
+from .._utils.typing import is_variable
+from .formatting_html import dataset_repr, inject_style, variable_repr
 
 
 def make_html(container):
-    if isinstance(container, sc.Variable) or isinstance(
-            container, sc.VariableView):
+    inject_style()
+    if is_variable(container):
         return variable_repr(container)
     else:
         return dataset_repr(container)
