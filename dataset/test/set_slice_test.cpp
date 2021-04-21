@@ -133,7 +133,7 @@ TEST_F(SetSliceTest, set_dataarray_slice_when_metadata_missing) {
   EXPECT_THROW_DISCARD(ds["a"].setSlice(Slice{Dim::Y, 0}, point),
                        except::DimensionError);
   // We test for a partially-applied modification as a result of an aborted
-  // transaction Check that "a" is NOT getting modified before operation falls
+  // transaction. Check that "a" is NOT getting modified before operation falls
   // over on "b", which has no mask_x.
   EXPECT_EQ(original, ds); // Failed op should have no effect
 }
@@ -145,7 +145,7 @@ TEST_F(SetSliceTest, set_dataarray_slice_with_forbidden_broadcast_of_mask) {
   EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::Y, 0}, point),
                        except::DimensionError);
   // We test for a partially-applied modification as a result of an aborted
-  // transaction Check that "a" is NOT getting modified before operation falls
+  // transaction. Check that "a" is NOT getting modified before operation falls
   // over on "b" as would involve broadcasting mask in non-slice dimension. Mask
   // should be read-only.
   EXPECT_EQ(original, ds); // Failed op should have no effect
@@ -157,7 +157,7 @@ TEST_F(SetSliceTest, set_dataset_slice_with_forbidden_broadcast_of_mask) {
   EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::Y, 0}, point),
                        except::DimensionError);
   // We test for a partially-applied modification as a result of an aborted
-  // transaction Check that "a" is NOT getting modified before operation falls
+  // transaction. Check that "a" is NOT getting modified before operation falls
   // over on "b".
   EXPECT_EQ(original, ds); // Failed op should have no effect
 
@@ -174,7 +174,7 @@ TEST_F(SetSliceTest, set_dataarray_slice_with_different_data_units_forbidden) {
   other = other.slice({Dim::X, 1}).slice({Dim::Y, 1});
   EXPECT_THROW_DISCARD(da.setSlice(Slice{Dim::X, 0}, other), except::UnitError);
   // We test for a partially-applied modification as a result of an aborted
-  // transaction Check that masks are NOT getting modified before operation
+  // transaction. Check that masks are NOT getting modified before operation
   // falls over on unit mismatch for data
   EXPECT_EQ(original, da); // Failed op should have no effect
 }
@@ -188,7 +188,7 @@ TEST_F(SetSliceTest, set_dataarray_slice_with_variances_forbidden) {
   EXPECT_THROW_DISCARD(da.setSlice(Slice{Dim::X, 0}, other),
                        except::VariancesError);
   // We test for a partially-applied modification as a result of an aborted
-  // transaction Check that masks are NOT getting modified before operation
+  // transaction. Check that masks are NOT getting modified before operation
   // falls over on variances for data
   EXPECT_EQ(original, da); // Failed op should have no effect
 }
@@ -200,7 +200,7 @@ TEST_F(SetSliceTest, set_dataarray_slice_with_different_dtype_forbidden) {
   other = other.slice({Dim::X, 1}).slice({Dim::Y, 1});
   EXPECT_THROW_DISCARD(da.setSlice(Slice{Dim::X, 0}, other), except::TypeError);
   // We test for a partially-applied modification as a result of an aborted
-  // transaction Check that masks are NOT getting modified before operation
+  // transaction. Check that masks are NOT getting modified before operation
   // falls over on differing type for data
   EXPECT_EQ(original, da); // Failed op should have no effect
 }
