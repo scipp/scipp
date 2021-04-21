@@ -90,13 +90,16 @@ DataArray DataArray::slice(const Slice &s) const {
           m_attrs->slice(s).merge_from(out_attrs), m_name};
 }
 
-void DataArray::validateSlice(const Slice &s, const DataArray &array) {
+void DataArray::validateSlice(const Slice &s, const DataArray &array) const {
   expect::coordsAreSuperset(slice(s), array);
+  data().validateSlice(s, array.data());
   masks().validateSlice(s, array.masks());
 }
 
 DataArray &DataArray::setSlice(const Slice &s, const DataArray &array) {
   validateSlice(s, array);
+  // TODO. validate slice on the array may pass, but also need to check data. we
+  // MUST DO THIS BEFORE masks are modified
   masks().setSlice(s, array.masks());
   return setSlice(s, array.data());
 }

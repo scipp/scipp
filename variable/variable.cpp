@@ -123,7 +123,18 @@ Variable Variable::slice(const Slice params) const {
   return out;
 }
 
+void Variable::validateSlice(const Slice &s, const Variable &data) const {
+  if (data.unit() != this->unit())
+    throw except::UnitError("Slice has different units from the Variable");
+  if (data.hasVariances() != this->hasVariances())
+    throw except::VariancesError("Slice and Variable must either both have "
+                                 "variances, or neither should");
+  // if(data.dtype() != this->dtype())
+  //  throw except::TypeError("");
+}
+
 Variable &Variable::setSlice(const Slice params, const Variable &data) {
+  validateSlice(params, data);
   copy(data, slice(params));
   return *this;
 }

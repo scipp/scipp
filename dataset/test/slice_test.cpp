@@ -780,16 +780,29 @@ TEST(DatasetSliceMetadataTest,
 
 TEST(DatasetSliceMetadataTest,
      set_dataarray_slice_with_different_data_units_forbidden) {
-  auto ds = make_example_dataarray("mask", Dim::X);
-  auto original = copy(ds);
-  auto point = make_example_dataarray("mask", Dim::X);
-  point.setUnit(scipp::units::K);
-  point = point.slice({Dim::X, 1}).slice({Dim::Y, 1});
-  // Change the units on the data!
-  EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::X, 0}, point), except::UnitError);
+  auto da = make_example_dataarray("mask", Dim::X);
+  auto original = copy(da);
+  auto other = copy(da);
+  other.setUnit(scipp::units::K); // slice to use now had different unit
+  other = other.slice({Dim::X, 1}).slice({Dim::Y, 1});
+  EXPECT_THROW_DISCARD(da.setSlice(Slice{Dim::X, 0}, other), except::UnitError);
   // We test for a partially-applied modification as a result of an aborted
-  // transaction Check that "a" is NOT getting modified before operation falls
-  // over on "b" as would involve broadcasting mask in non-slice dimension. Mask
-  // should be read-only.
-  EXPECT_EQ(original, ds); // Failed op should have no effect
+  // transaction Check that masks are NOT getting modified before operation
+  // falls over on unit mismatch for data
+  EXPECT_EQ(original, da); // Failed op should have no effect
+}
+
+TEST(DatasetSliceMetadataTest, set_dataarray_slice_with_variances) {
+  auto da = make_example_dataarray("mask", Dim::X);
+  auto original = copy(da);
+  auto other = copy(da);
+  other.data().setVariances(other.data()); // Slice applied now has variances
+  other = other.slice({Dim::X, 1}).slice({Dim::Y, 1});
+  // Change the units on the data!
+  EXPECT_THROW_DISCARD(da.setSlice(Slice{Dim::X, 0}, other),
+                       except::VariancesError);
+  // We test for a partially-applied modification as a result of an aborted
+  // transaction Check that masks are NOT getting modified before operation
+  // falls over on variances
+  EXPECT_EQ(original, da); // Failed op should have no effect
 }

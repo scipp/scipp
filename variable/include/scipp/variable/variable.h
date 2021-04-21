@@ -96,6 +96,7 @@ public:
   }
 
   Variable slice(const Slice params) const;
+  void validateSlice(const Slice &s, const Variable &data) const;
   [[maybe_unused]] Variable &setSlice(const Slice params, const Variable &data);
 
   void rename(const Dim from, const Dim to);
