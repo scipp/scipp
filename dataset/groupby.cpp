@@ -11,7 +11,6 @@
 
 #include "scipp/variable/indexed_slice_view.h"
 #include "scipp/variable/operations.h"
-#include "scipp/variable/slice_generator.h"
 #include "scipp/variable/util.h"
 
 #include "scipp/dataset/bins.h"
@@ -85,9 +84,10 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
   };
   const auto process_data_array = [&](const auto &range, const auto &out_data,
                                       const auto &data) {
+    const auto &mask = get_mask(data);
     for (scipp::index group = range.begin(); group != range.end(); ++group) {
       auto out_slice = out_data.slice({dim(), group});
-      op(out_slice, data, groups()[group], reductionDim, get_mask(data));
+      op(out_slice, data, groups()[group], reductionDim, mask);
     }
   };
   // Apply to each group, storing result in output slice
