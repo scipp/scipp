@@ -9,6 +9,7 @@
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/util.h"
 #include "scipp/variable/arithmetic.h"
 #include "test_macros.h"
 
@@ -792,17 +793,29 @@ TEST(DatasetSliceMetadataTest,
   EXPECT_EQ(original, da); // Failed op should have no effect
 }
 
-TEST(DatasetSliceMetadataTest, set_dataarray_slice_with_variances) {
+TEST(DatasetSliceMetadataTest, set_dataarray_slice_with_variances_forbidden) {
   auto da = make_example_dataarray("mask", Dim::X);
   auto original = copy(da);
   auto other = copy(da);
-  other.data().setVariances(other.data()); // Slice applied now has variances
+  other.data().setVariances(other.data()); // Slice now has variances
   other = other.slice({Dim::X, 1}).slice({Dim::Y, 1});
-  // Change the units on the data!
   EXPECT_THROW_DISCARD(da.setSlice(Slice{Dim::X, 0}, other),
                        except::VariancesError);
   // We test for a partially-applied modification as a result of an aborted
   // transaction Check that masks are NOT getting modified before operation
-  // falls over on variances
+  // falls over on variances for data
+  EXPECT_EQ(original, da); // Failed op should have no effect
+}
+
+TEST(DatasetSliceMetadataTest, set_dataarray_slice_with_different_dtype_forbidden) {
+  auto da = make_example_dataarray("mask", Dim::X);
+  auto original = copy(da);
+  auto other = astype(da, dtype<float>);
+  other = other.slice({Dim::X, 1}).slice({Dim::Y, 1});
+  EXPECT_THROW_DISCARD(da.setSlice(Slice{Dim::X, 0}, other),
+                       except::TypeError);
+  // We test for a partially-applied modification as a result of an aborted
+  // transaction Check that masks are NOT getting modified before operation
+  // falls over on differing type for data
   EXPECT_EQ(original, da); // Failed op should have no effect
 }

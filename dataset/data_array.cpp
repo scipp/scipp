@@ -98,8 +98,6 @@ void DataArray::validateSlice(const Slice &s, const DataArray &array) const {
 
 DataArray &DataArray::setSlice(const Slice &s, const DataArray &array) {
   validateSlice(s, array);
-  // TODO. validate slice on the array may pass, but also need to check data. we
-  // MUST DO THIS BEFORE masks are modified
   masks().setSlice(s, array.masks());
   return setSlice(s, array.data());
 }
