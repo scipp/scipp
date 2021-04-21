@@ -86,14 +86,14 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
   // Apply to each group, storing result in output slice
   const auto process_groups = [&](const auto &range) {
     for (scipp::index group = range.begin(); group != range.end(); ++group) {
-      auto out_slice = out.slice({dim(), group});
       if constexpr (std::is_same_v<T, Dataset>) {
         for (const auto &item : m_data) {
-          auto out_item = out_slice[item.name()];
+          auto out_item = out[item.name()].data().slice({dim(), group});
           op(out_item, item, groups()[group], reductionDim,
              get_mask(m_data[item.name()]));
         }
       } else {
+        auto out_slice = out.data().slice({dim(), group});
         op(out_slice, m_data, groups()[group], reductionDim, get_mask(m_data));
       }
     }
@@ -105,16 +105,15 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
 
 namespace groupby_detail {
 
-static constexpr auto sum = [](DataArray &out, const auto &data_container,
+static constexpr auto sum = [](Variable &out, const auto &data_container,
                                const GroupByGrouping::group &group, const Dim,
                                const Variable &mask) {
   for (const auto &slice : group) {
     const auto data_slice = data_container.data().slice(slice);
-    auto data = out.data();
     if (mask)
-      sum_impl(data, data_slice * mask.slice(slice));
+      sum_impl(out, data_slice * mask.slice(slice));
     else
-      sum_impl(data, data_slice);
+      sum_impl(out, data_slice);
   }
 };
 
@@ -134,11 +133,10 @@ struct wrap {
             throw std::runtime_error(
                 "This operation does not support masks yet.");
           if (first) {
-            copy(data_slice.slice({reductionDim, 0}), out.data());
+            copy(data_slice.slice({reductionDim, 0}), out);
             first = false;
           }
-          auto data = out.data();
-          Func(data, data_slice);
+          Func(out, data_slice);
         }
       };
 };
