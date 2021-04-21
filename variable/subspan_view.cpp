@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/variable/subspan_view.h"
 #include "scipp/core/except.h"
+#include "scipp/variable/transform.h"
 
 namespace scipp::variable {
 
@@ -31,14 +32,17 @@ auto make_empty_subspans(const ElementArrayView<T> &, const Dimensions &dims) {
 template <class T>
 auto make_subspans(T *base, const Variable &indices,
                    const scipp::index stride) {
-  const auto &offset = indices.values<scipp::index_pair>();
-  const auto len = offset.size();
-  std::vector<span<T>> spans;
-  spans.reserve(len);
-  for (scipp::index i = 0; i < len; ++i)
-    spans.emplace_back(scipp::span(base + stride * offset[i].first,
-                                   base + stride * offset[i].second));
-  return spans;
+  const auto spans = variable::transform<scipp::index_pair>(
+      indices, overloaded{core::transform_flags::expect_no_variance_arg<0>,
+                          [](const units::Unit &) { return units::one; },
+                          [base, stride](const auto &offset) {
+                            return scipp::span(base + stride * offset.first,
+                                               base + stride * offset.second);
+                          }});
+  const auto vals = spans.template values<span<T>>().as_span();
+  // TODO This is slightly backwards: Extract span from variable, just to put
+  // them into another one in make_subspan_view.
+  return std::vector<span<T>>(vals.begin(), vals.end());
 }
 
 template <class T, class Var, class ValuesMaker, class VariancesMaker>

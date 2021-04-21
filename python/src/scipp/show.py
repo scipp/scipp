@@ -41,7 +41,8 @@ def _truncate_long_string(long_string: str) -> str:
 
 def _build_svg(content, left, top, width, height):
     return (
-        f'<svg width={_svg_width}em viewBox="{left} {top} {width} {height}">'
+        f'<svg width={_svg_width}em viewBox="{left} {top} {width} {height}"'
+        ' class="sc-root">'
         f'<defs><style>{load_style()}</style></defs>{content}</svg>')
 
 
