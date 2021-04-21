@@ -2,7 +2,7 @@ parameters:
 - name: verbose
   displayName: Verbose
   type: boolean
-  default: true
+  default: false
 
 trigger:
   branches:
