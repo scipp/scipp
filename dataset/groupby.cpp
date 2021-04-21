@@ -85,14 +85,18 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
   };
   // Apply to each group, storing result in output slice
   const auto process_groups = [&](const auto &range) {
-    for (scipp::index group = range.begin(); group != range.end(); ++group) {
-      if constexpr (std::is_same_v<T, Dataset>) {
-        for (const auto &item : m_data) {
-          auto out_item = out[item.name()].data().slice({dim(), group});
-          op(out_item, item, groups()[group], reductionDim,
+    if constexpr (std::is_same_v<T, Dataset>) {
+      for (const auto &item : m_data) {
+        auto out_item = out[item.name()].data();
+        for (scipp::index group = range.begin(); group != range.end();
+             ++group) {
+          auto out_slice = out_item.slice({dim(), group});
+          op(out_slice, item, groups()[group], reductionDim,
              get_mask(m_data[item.name()]));
         }
-      } else {
+      }
+    } else {
+      for (scipp::index group = range.begin(); group != range.end(); ++group) {
         auto out_slice = out.data().slice({dim(), group});
         op(out_slice, m_data, groups()[group], reductionDim, get_mask(m_data));
       }
