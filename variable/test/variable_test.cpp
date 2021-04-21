@@ -823,7 +823,7 @@ TEST(VariableViewTest, set_variances_slice_fail) {
 TEST(VariableViewTest, create_with_variance) {
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2},
                                         Values{1.0, 2.0}, Variances{0.1, 0.2});
-  ASSERT_NO_THROW(var.slice({Dim::X, 1, 2}));
+  ASSERT_NO_THROW_DISCARD(var.slice({Dim::X, 1, 2}));
   const auto slice = var.slice({Dim::X, 1, 2});
   ASSERT_TRUE(slice.hasVariances());
   ASSERT_EQ(slice.variances<double>().size(), 1);

@@ -47,7 +47,7 @@ public:
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const Dimensions &dims, VariableConceptHandle data);
   template <class T>
-  Variable(const units::Unit unit, const Dimensions &dimensions, T values,
+  Variable(units::Unit unit, const Dimensions &dimensions, T values,
            std::optional<T> variances);
   explicit Variable(const llnl::units::precise_measurement &m);
 
@@ -61,18 +61,18 @@ public:
   explicit operator bool() const noexcept { return m_object.operator bool(); }
   Variable operator~() const;
 
-  units::Unit unit() const { return m_object->unit(); }
+  [[nodiscard]] units::Unit unit() const { return m_object->unit(); }
   void setUnit(const units::Unit &unit);
   void expectCanSetUnit(const units::Unit &) const;
 
-  const Dimensions &dims() const;
+  [[nodiscard]] const Dimensions &dims() const;
   void setDims(const Dimensions &dimensions);
 
-  DType dtype() const { return data().dtype(); }
+  [[nodiscard]] DType dtype() const { return data().dtype(); }
 
-  scipp::span<const scipp::index> strides() const;
+  [[nodiscard]] scipp::span<const scipp::index> strides() const;
 
-  bool hasVariances() const { return data().hasVariances(); }
+  [[nodiscard]] bool hasVariances() const { return data().hasVariances(); }
 
   template <class T> ElementArrayView<const T> values() const;
   template <class T> ElementArrayView<T> values();
@@ -95,30 +95,30 @@ public:
     return variances<T>()[0];
   }
 
-  Variable slice(const Slice params) const;
-  [[maybe_unused]] Variable &setSlice(const Slice params, const Variable &data);
+  [[nodiscard]] Variable slice(Slice params) const;
+  [[maybe_unused]] Variable &setSlice(Slice params, const Variable &data);
 
-  void rename(const Dim from, const Dim to);
+  void rename(Dim from, Dim to);
 
   bool operator==(const Variable &other) const;
   bool operator!=(const Variable &other) const;
   Variable operator-() const;
 
-  const VariableConcept &data() const && = delete;
-  const VariableConcept &data() const & { return *m_object; }
+  [[nodiscard]] const VariableConcept &data() const && = delete;
+  [[nodiscard]] const VariableConcept &data() const & { return *m_object; }
   VariableConcept &data() && = delete;
   VariableConcept &data() & {
     expectWritable();
     return *m_object;
   }
-  const auto &data_handle() const { return m_object; }
+  [[nodiscard]] const auto &data_handle() const { return m_object; }
   void setDataHandle(VariableConceptHandle object);
 
   void setVariances(const Variable &v);
 
-  core::ElementArrayViewParams array_params() const noexcept;
+  [[nodiscard]] core::ElementArrayViewParams array_params() const noexcept;
 
-  Variable bin_indices() const;
+  [[nodiscard]] Variable bin_indices() const;
   template <class T> const T &bin_buffer() const;
   template <class T> T &bin_buffer();
 
@@ -133,9 +133,9 @@ public:
 
   [[nodiscard]] Variable transpose(const std::vector<Dim> &order) const;
 
-  bool is_slice() const;
-  bool is_readonly() const noexcept;
-  bool is_same(const Variable &other) const noexcept;
+  [[nodiscard]] bool is_slice() const;
+  [[nodiscard]] bool is_readonly() const noexcept;
+  [[nodiscard]] bool is_same(const Variable &other) const noexcept;
 
   [[nodiscard]] Variable as_const() const;
 
