@@ -159,15 +159,8 @@ void Dict<Key, Value>::validateSlice(const Slice s, const Dict &dict) const {
     if (it == end()) {
       throw except::NotFoundError("Cannot insert new meta data '" +
                                   to_string(key) + "' via a slice.");
-    } else if ((it->second.is_readonly() ||
-                !it->second.dims().contains(s.dim())) &&
-               (it->second.dims().contains(s.dim()) ? it->second.slice(s)
-                                                    : it->second) != item) {
-      throw except::DimensionError("Cannot update meta data '" +
-                                   to_string(key) +
-                                   "' via slice since it is implicitly "
-                                   "broadcast along the slice dimension '" +
-                                   to_string(s.dim()) + "'.");
+    } else {
+      it->second.validateSlice(s, item, to_string(key));
     }
   }
 }
