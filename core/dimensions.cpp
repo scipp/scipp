@@ -76,7 +76,7 @@ bool Dimensions::contains(const Dimensions &other) const noexcept {
 /// dimensions in parent, and only the outermost dimensions may be shorter than
 /// the corresponding dimension in parent.
 bool Dimensions::isContiguousIn(const Dimensions &parent) const {
-  if (parent == *this)
+  if (volume() == 0 || parent == *this)
     return true;
   int32_t offset = parent.m_ndim - m_ndim;
   if (offset < 0)
