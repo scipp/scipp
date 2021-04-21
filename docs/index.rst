@@ -28,6 +28,9 @@
 scipp - Multi-dimensional data arrays with labeled dimensions
 =============================================================
 
+A Python library enabling a modern and intuitive way of working with scientific data in Jupyter notebooks
+---------------------------------------------------------------------------------------------------------
+
 **scipp** is heavily inspired by `xarray <https://xarray.pydata.org>`_.
 It enriches raw NumPy-like multi-dimensional arrays of data by adding named dimensions and associated coordinates.
 Multiple arrays can be combined into datasets.
@@ -40,7 +43,7 @@ If your use case requires one or several of the items on the following list, usi
 - Support for scattered data and **non-destructive binning**.
   This includes first and foremost **event data**, a particular form of sparse data with arrays of random-length lists, with very small list entries.
 - Support for **masks stored with data**.
-- Written in C++ for better performance (for certain applications), in combination with Python bindings.
+- Internals written in C++ for better performance (for certain applications), in combination with Python bindings.
 
 Generic functionality of scipp is provided in the **scipp** Python package.
 In addition, more specific functionality is made available in other packages.
