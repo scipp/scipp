@@ -95,7 +95,7 @@ stages:
               cd ${{ parameters.documentation_repo_path }}
               # The .nojekyll file is used to turn off GitHub Pages building
               touch .nojekyll
-              rsync -av "${{ documentation_artefact_path }}/" .
+              rsync -av "${{ parameters.documentation_artefact_path }}/" .
               git add .
               git status
             displayName: 'Copy new documentation'
@@ -104,7 +104,7 @@ stages:
               release_docs_dir="release/$(git describe --tags)"
               cd ${{ parameters.documentation_repo_path }}
               mkdir -p "$release_docs_dir"
-              rsync -av "${{ documentation_artefact_path }}/" "$release_docs_dir"
+              rsync -av "${{ parameters.documentation_artefact_path }}/" "$release_docs_dir"
               git add .
               git status
             condition: and(succeeded(), ${{ parameters.release }})
