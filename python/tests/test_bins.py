@@ -34,6 +34,32 @@ def test_bins_fail_only_end():
         sc.bins(end=end, dim='x', data=data)
 
 
+def test_bins_buffer_access():
+    var = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
+    data = sc.DataArray(data=var,
+                        coords={'coord': var},
+                        masks={'mask': var},
+                        attrs={'attr': var})
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.dtype.int64)
+    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.dtype.int64)
+    binned = sc.bins(begin=begin, end=end, dim='x', data=data)
+    assert 'coord' in binned.bins.constituents['data'].coords
+    assert 'mask' in binned.bins.constituents['data'].masks
+    assert 'attr' in binned.bins.constituents['data'].attrs
+    del binned.bins.constituents['data'].coords['coord']
+    del binned.bins.constituents['data'].masks['mask']
+    del binned.bins.constituents['data'].attrs['attr']
+    assert 'coord' not in binned.bins.constituents['data'].coords
+    assert 'mask' not in binned.bins.constituents['data'].masks
+    assert 'attr' not in binned.bins.constituents['data'].attrs
+    binned.bins.constituents['data'].coords['coord'] = var
+    binned.bins.constituents['data'].masks['mask'] = var
+    binned.bins.constituents['data'].attrs['attr'] = var
+    assert 'coord' in binned.bins.constituents['data'].coords
+    assert 'mask' in binned.bins.constituents['data'].masks
+    assert 'attr' in binned.bins.constituents['data'].attrs
+
+
 def test_bins():
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
     begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.dtype.int64)
