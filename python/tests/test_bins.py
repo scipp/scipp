@@ -49,6 +49,11 @@ def test_bins_buffer_access():
     del binned.bins.constituents['data'].coords['coord']
     del binned.bins.constituents['data'].masks['mask']
     del binned.bins.constituents['data'].attrs['attr']
+    # sc.bins makes a (shallow) copy of `data`
+    assert 'coord' in data.coords
+    assert 'mask' in data.masks
+    assert 'attr' in data.attrs
+    # ... but when buffer is accessed we can insert/delete meta data
     assert 'coord' not in binned.bins.constituents['data'].coords
     assert 'mask' not in binned.bins.constituents['data'].masks
     assert 'attr' not in binned.bins.constituents['data'].attrs
