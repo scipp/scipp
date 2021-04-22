@@ -57,5 +57,8 @@ class PlotController1d(PlotController):
         A small delta is used to add padding around the plotted points.
         """
         vmin, vmax = self.find_vmin_vmax(button=button)
-        delta = 0.05 * (vmax - vmin)
-        self.view.rescale_to_data(vmin - delta, vmax + delta)
+        if button is not None:
+            delta = 0.05 * (vmax - vmin)
+            vmin -= delta
+            vmax += delta
+        self.view.rescale_to_data(vmin, vmax)
