@@ -13,7 +13,7 @@ cmake --build . --target all-benchmarks --config Release -- /m:%NUMBER_OF_PROCES
 :: C++ tests
 cmake --build . --target all-tests --config Release -- /m:%NUMBER_OF_PROCESSORS% || echo ERROR && exit /b
 bin\Release\scipp-common-test.exe || echo ERROR && exit /b
-bin\Release\scipp-core-test.exe || echo ERROR && exit /b
+bin\Release\scipp-core-testss.exe || echo ERROR && exit /b
 bin\Release\scipp-variable-test.exe || echo ERROR && exit /b
 bin\Release\scipp-dataset-test.exe || echo ERROR && exit /b
 bin\Release\scipp-units-test.exe || echo ERROR && exit /b
