@@ -115,10 +115,10 @@ DataArray &DataArray::setSlice(const Slice &s, const Variable &var) {
 
 DataArray DataArray::view() const {
   DataArray out;
-  out.m_data = m_data;   // share data
+  out.m_data = m_data;     // share data
   out.m_coords = m_coords; // share coords
-  out.m_masks = m_masks; // share masks
-  out.m_attrs = m_attrs; // share attrs
+  out.m_masks = m_masks;   // share masks
+  out.m_attrs = m_attrs;   // share attrs
   out.m_name = m_name;
   return out;
 }
