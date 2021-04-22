@@ -135,6 +135,14 @@ TEST_F(MultiIndexTest, slice_outer) { check({x, yx}, {0, 1}); }
 
 TEST_F(MultiIndexTest, 2d) { check({xy, xy}, {0, 1, 2, 3, 4, 5}); }
 
+TEST_F(MultiIndexTest, 6d) {
+  Dimensions dims({Dim("1"), Dim("2"), Dim("3"), Dim("4"), Dim("5"), Dim("6")},
+                  {1, 2, 1, 2, 1, 2});
+  MultiIndex i{dims, dims};
+  i.end();
+  check({dims, dims}, {0, 1, 2, 3, 4, 5, 6, 7});
+}
+
 TEST_F(MultiIndexTest, 2d_transpose) { check({yx, xy}, {0, 3, 1, 4, 2, 5}); }
 
 TEST_F(MultiIndexTest, slice_and_broadcast) {

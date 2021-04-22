@@ -197,7 +197,8 @@ public:
   /// iterated data.
   constexpr void set_index(const scipp::index offset) noexcept {
     auto remainder{offset};
-    for (scipp::index d = 0; d < NDIM_MAX; ++d) {
+    // This loop is until NDIM_MAX inclusive to handle the end index
+    for (scipp::index d = 0; d < NDIM_MAX + 1; ++d) {
       if (has_bins() && d < m_ndim_nested) {
         m_coord[d] = 0;
       } else {
@@ -270,7 +271,7 @@ public:
   }
 
   [[nodiscard]] bool has_bins() const noexcept {
-    return m_ndim_nested != NDIM_MAX;
+    return m_ndim_nested != NDIM_MAX + 1;
   }
 
   /// Return true if the first subindex has a 0 stride
@@ -294,12 +295,12 @@ private:
   };
   std::array<scipp::index, N> m_data_index = {};
   std::array<std::array<scipp::index, NDIM_MAX>, N> m_stride = {};
-  std::array<scipp::index, NDIM_MAX> m_coord = {};
-  std::array<scipp::index, NDIM_MAX> m_shape = {};
+  std::array<scipp::index, NDIM_MAX + 1> m_coord = {};
+  std::array<scipp::index, NDIM_MAX + 1> m_shape = {};
   /// End-sentinel, essentially the volume of the iteration dimensions.
   scipp::index m_end_sentinel{1};
   /// Number of dimensions within bucket, NDIM_MAX if no buckets.
-  scipp::index m_ndim_nested{NDIM_MAX};
+  scipp::index m_ndim_nested{NDIM_MAX + 1};
   /// Stride in buckets along dim referred to by indices, e.g., 2D buckets
   /// slicing along first or second dim.
   scipp::index m_nested_stride = {};
