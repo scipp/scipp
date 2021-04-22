@@ -350,7 +350,7 @@ class PlotFigure1d(PlotFigure):
         """
         Rescale y axis to the contents of the plot.
         """
-        if vmin == vmax == None:
+        if (vmin is None) and (vmax is None):
             self.ax.autoscale(True)
             self.ax.relim()
             self.ax.autoscale_view()
