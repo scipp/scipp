@@ -186,11 +186,11 @@ def plot(*args, **kwargs):
         dimension axis. E.g. `scale={"tof": "log"}`. Defaults to None.
     :type scale: dict, optional
 
-    :param vmin: Minimum value for the colorscale (2d and 3d only).
+    :param vmin: Minimum value for the y-axis (1d) or colorscale (2d and 3d).
         Defaults to None.
     :type vmin: float, optional
 
-    :param vmax: Maximum value for the colorscale (2d and 3d only).
+    :param vmax: Maximum value for the y-axis (1d) or colorscale (2d and 3d).
         Defaults to None.
     :type vmax: float, optional
 
