@@ -1,0 +1,97 @@
+parameters:
+- name: py_version
+  type: string
+  default: ''
+- name: image
+  type: string
+  default: ''
+- name: ccache
+  type: boolean
+  default: false
+- name: OSX_VERSION
+  type: string
+  default: ''
+- name: conda_package_root
+  type: string
+  default: ''
+- name: verbose
+  type: boolean
+  default: false
+
+jobs:
+  - job:
+    timeoutInMinutes: 120
+    displayName: ${{ format('{0}-py{1}', parameters.image, parameters.py_version) }}
+    pool:
+      vmImage: ${{ parameters.image }}
+    variables:
+      - name: OSX_VERSION
+        value: ${{ parameters.OSX_VERSION }}
+      - name: VERBOSE_OPTION
+        value: ''
+
+    steps:
+      - checkout: self
+        submodules: true
+
+      - ${{ if eq(parameters.ccache, true) }}:
+        - template: ccache.yml
+
+      # Note that using set -ex when setting vso variables messes up paths
+      - ${{ if contains(parameters.image, 'windows') }}:
+        - bash: |
+            echo "##vso[task.prependpath]$CONDA\Scripts"
+            echo "##vso[task.setvariable variable=file_extension]bat"
+            echo "##vso[task.setvariable variable=install_prefix]$CONDA\scipp_install"
+          displayName: 'Configure Conda path'
+      - ${{ if not(contains(parameters.image, 'windows')) }}:
+        - bash: |
+            echo "##vso[task.prependpath]$CONDA/bin"
+            echo "##vso[task.setvariable variable=file_extension]sh"
+            echo "##vso[task.setvariable variable=install_prefix]$CONDA/scipp_install"
+          displayName: 'Configure Conda path'
+
+      - bash: |
+          echo "##vso[task.setvariable variable=conda_dir]$CONDA"
+        displayName: 'Configure Conda dir'
+      - ${{ if not(eq(length(parameters.OSX_VERSION), 0)) }}:
+        - bash: |
+            set -ex
+            sudo chown -R $USER $CONDA
+          displayName: 'Take ownership of Conda installation'
+
+      - bash: |
+          set -ex
+          conda --version
+          conda install --yes conda-build
+          conda config --set always_yes yes --set changeps1 no
+          # Specify python version in env file
+          sed 's/- python$/- python=${{ parameters.py_version }}/g' scipp-developer-minimal.yml > temp-env.yml
+          conda env create -f temp-env.yml
+        displayName: 'Create conda environment'
+
+      - bash: |
+          set -ex
+          source activate scipp-developer
+          tools/make_and_install.$FILE_EXTENSION
+        displayName: 'Build and run C++ tests'
+
+      - ${{ if eq(parameters.verbose, true) }}:
+        - bash: |
+            echo "##vso[task.setvariable variable=verbose_option]--debug"
+          displayName: 'Activate conda build debug mode'
+
+      - bash: |
+          set -ex
+          conda build $VERBOSE_OPTION --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload conda
+        displayName: 'Python tests and conda build'
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          PathtoPublish: "$(conda_dir)/conda-bld/${{ parameters.conda_package_root }}"
+          ArtifactName: "${{ parameters.conda_package_root }}-py${{ parameters.py_version }}"
+        displayName: 'Publish Conda package artifacts'
+
+      - ${{ if eq(parameters.ccache, true) }}:
+        - bash: ccache --show-stats
+          displayName: 'Report ccache statistics'
