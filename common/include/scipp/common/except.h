@@ -7,8 +7,6 @@
 #include <initializer_list>
 #include <stdexcept>
 
-#include "traits.h"
-
 namespace scipp::except {
 
 template <class T> struct Error : public std::runtime_error {
@@ -21,17 +19,9 @@ template <class T> struct Error : public std::runtime_error {
 template <class Expected, class Actual>
 [[noreturn]] void throw_mismatch_error(const Expected &expected,
                                        const Actual &actual) {
-  if constexpr (common::has_const_view_type_v<Expected> &&
-                !common::is_const_view_type_v<Expected>) {
-    throw_mismatch_error(typename Expected::const_view_type{expected}, actual);
-  } else if constexpr (common::has_const_view_type_v<Actual> &&
-                       !common::is_const_view_type_v<Actual>) {
-    throw_mismatch_error(expected, typename Actual::const_view_type{actual});
-  } else {
-    throw Error<std::decay_t<Expected>>("Expected  " + to_string(expected) +
-                                        " to be equal to " + to_string(actual) +
-                                        '.');
-  }
+  throw Error<std::decay_t<Expected>>("Expected  " + to_string(expected) +
+                                      " to be equal to " + to_string(actual) +
+                                      '.');
 }
 
 template <class Expected, class Actual>

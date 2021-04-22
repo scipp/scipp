@@ -5,6 +5,7 @@
 #include "scipp/core/element/geometric_operations.h"
 #include "scipp/core/element/special_values.h"
 #include "scipp/core/element/util.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/transform.h"
 
@@ -54,34 +55,36 @@ Variable filter(const Variable &var, const Variable &filter) {
   return out;
 }
 
-/// Return a deep copy of a Variable or of a VariableView.
-Variable copy(const VariableConstView &var) { return Variable(var); }
-
-/// Copy variable to output variable.
-VariableView copy(const VariableConstView &var, const VariableView &out) {
-  var.underlying().data().copy(var, out);
+/// Return a deep copy of a Variable.
+Variable copy(const Variable &var) {
+  Variable out(empty_like(var));
+  out.data().copy(var, out);
   return out;
 }
 
-Variable masked_to_zero(const VariableConstView &var,
-                        const VariableConstView &mask) {
+/// Copy variable to output variable.
+Variable &copy(const Variable &var, Variable &out) {
+  var.data().copy(var, out);
+  return out;
+}
+
+/// Copy variable to output variable.
+Variable copy(const Variable &var, Variable &&out) {
+  copy(var, out);
+  return std::move(out);
+}
+
+Variable masked_to_zero(const Variable &var, const Variable &mask) {
   return transform(var, mask, element::convertMaskedToZero);
 }
 
 namespace geometry {
-Variable position(const VariableConstView &x, const VariableConstView &y,
-                  const VariableConstView &z) {
+Variable position(const Variable &x, const Variable &y, const Variable &z) {
   return transform(x, y, z, element::geometry::position);
 }
-Variable x(const VariableConstView &pos) {
-  return transform(pos, element::geometry::x);
-}
-Variable y(const VariableConstView &pos) {
-  return transform(pos, element::geometry::y);
-}
-Variable z(const VariableConstView &pos) {
-  return transform(pos, element::geometry::z);
-}
+Variable x(const Variable &pos) { return transform(pos, element::geometry::x); }
+Variable y(const Variable &pos) { return transform(pos, element::geometry::y); }
+Variable z(const Variable &pos) { return transform(pos, element::geometry::z); }
 } // namespace geometry
 
 } // namespace scipp::variable

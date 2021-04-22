@@ -33,6 +33,11 @@ Dimensions::Dimensions(const std::vector<Dim> &labels,
     addInner(labels[i], shape[i]);
 }
 
+Dimensions::Dimensions(const Sizes &sizes) {
+  for (const auto &[label, size] : sizes)
+    addInner(label, size);
+}
+
 /// Return the extent of `dim`. Throws if the space defined by this does not
 /// contain `dim`.
 scipp::index Dimensions::operator[](const Dim dim) const { return at(dim); }
@@ -71,7 +76,7 @@ bool Dimensions::contains(const Dimensions &other) const noexcept {
 /// dimensions in parent, and only the outermost dimensions may be shorter than
 /// the corresponding dimension in parent.
 bool Dimensions::isContiguousIn(const Dimensions &parent) const {
-  if (parent == *this)
+  if (volume() == 0 || parent == *this)
     return true;
   int32_t offset = parent.m_ndim - m_ndim;
   if (offset < 0)

@@ -17,9 +17,8 @@ namespace {
 Variable _values(Variable &&in) { return in.hasVariances() ? values(in) : in; }
 } // namespace
 
-Variable isclose(const VariableConstView &a, const VariableConstView &b,
-                 const VariableConstView rtol, const VariableConstView atol,
-                 const NanComparisons equal_nans) {
+Variable isclose(const Variable &a, const Variable &b, const Variable &rtol,
+                 const Variable &atol, const NanComparisons equal_nans) {
   auto tol = atol + rtol * abs(b);
   if (a.hasVariances() && b.hasVariances()) {
     return isclose(values(a), values(b), rtol, atol, equal_nans) &

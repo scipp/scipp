@@ -33,6 +33,13 @@ def test_scalar_Variable_py_object_change():
     assert var.value == 1
 
 
+def test_scalar_Variable_py_object_shares():
+    d = {'a': 1, 'b': 2}
+    var = sc.Variable(value=d)
+    d['a'] += 1
+    assert var.value == {'a': 2, 'b': 2}
+
+
 def test_scalar_Variable_py_object_copy_is_deep_copy():
     var = sc.Variable(value=[1, 2, 3])
     # Dataset.copy() releases the GIL. This will segfault unless

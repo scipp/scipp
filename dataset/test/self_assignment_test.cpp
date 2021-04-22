@@ -27,47 +27,44 @@ protected:
 };
 
 TEST_F(SelfAssignmentTest, dataset_item) {
-  const DataArray expected(dataset["a"]);
+  const DataArray expected = copy(dataset["a"]);
   const auto *expected_ptr = dataset["a"].values<double>().data();
   dataset.setData("a", dataset["a"]);
   EXPECT_EQ(dataset["a"], expected);
   EXPECT_EQ(dataset["a"].values<double>().data(), expected_ptr);
-
-  // Code that checks for self-assignment might erroneously not check for
-  // presence of slices.
+  // Store slice of current item under same name.
   dataset.setData("a", dataset["a"].slice({Dim::X, 0}));
-  EXPECT_NE(dataset["a"], expected);
-  EXPECT_NE(dataset["a"].values<double>().data(), expected_ptr);
+  EXPECT_EQ(dataset["a"], expected.slice({Dim::X, 0}));
+  EXPECT_EQ(dataset["a"].values<double>().data(), expected_ptr);
 }
 
 TEST_F(SelfAssignmentTest, data_view_assign) {
-  const DataArray expected(dataset["a"]);
+  const DataArray expected = copy(dataset["a"]);
   const auto *expected_ptr = dataset["a"].values<double>().data();
-  dataset["a"].assign(dataset["a"]);
+  copy(dataset["a"], dataset["a"]);
   EXPECT_EQ(dataset["a"], expected);
   EXPECT_EQ(dataset["a"].values<double>().data(), expected_ptr);
 
   // Code that checks for self-assignment might erroneously not check for
   // presence of slices.
-  dataset["a"].slice({Dim::X, 0, 1}).assign(dataset["a"].slice({Dim::X, 1, 2}));
-  EXPECT_NE(dataset["a"], expected);
+  copy(dataset["a"].slice({Dim::X, 1, 2}), dataset["a"].slice({Dim::X, 0, 1}));
+  EXPECT_EQ(dataset["a"].slice({Dim::X, 0, 1}), expected.slice({Dim::X, 1, 2}));
+  EXPECT_EQ(dataset["a"].slice({Dim::X, 1, 2}), expected.slice({Dim::X, 1, 2}));
   EXPECT_EQ(dataset["a"].values<double>().data(), expected_ptr);
 }
 
 TEST_F(SelfAssignmentTest, variable_view_assign) {
-  const Variable expected(dataset["a"].data());
+  const Variable expected = copy(dataset["a"].data());
   const auto *expected_ptr = dataset["a"].values<double>().data();
 
   // Without slices the view just forward to the data in the underlying
   // variable, so we test 2 cases here, without and with slice.
-  dataset["a"].data().assign(dataset["a"].data());
+  copy(dataset["a"].data(), dataset["a"].data());
   EXPECT_EQ(dataset["a"].data(), expected);
   EXPECT_EQ(dataset["a"].values<double>().data(), expected_ptr);
 
-  dataset["a"]
-      .data()
-      .slice({Dim::X, 0, 1})
-      .assign(dataset["a"].data().slice({Dim::X, 0, 1}));
+  copy(dataset["a"].data().slice({Dim::X, 0, 1}),
+       dataset["a"].data().slice({Dim::X, 0, 1}));
   // There is no reasonable way to test that no actual copy has happened, this
   // would pass even if the self-assignment would actually assign all the
   // elements.

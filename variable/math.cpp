@@ -11,28 +11,10 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-Variable abs(Variable &&var) {
-  abs(var, var);
-  return std::move(var);
-}
-
-Variable dot(const VariableConstView &a, const VariableConstView &b) {
+Variable dot(const Variable &a, const Variable &b) {
   return transform(a, b, element::dot);
 }
 
-Variable norm(const VariableConstView &var) {
-  return transform(var, element::norm);
-}
-
-Variable sqrt(Variable &&var) {
-  sqrt(var, var);
-  return std::move(var);
-}
-
-Variable reciprocal(Variable &&var) {
-  auto out(std::move(var));
-  reciprocal(out, out);
-  return out;
-}
+Variable norm(const Variable &var) { return transform(var, element::norm); }
 
 } // namespace scipp::variable

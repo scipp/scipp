@@ -10,8 +10,8 @@ namespace scipp::except {
 DataArrayError::DataArrayError(const std::string &msg) : Error{msg} {}
 
 template <>
-void throw_mismatch_error(const dataset::DataArrayConstView &expected,
-                          const dataset::DataArrayConstView &actual) {
+void throw_mismatch_error(const dataset::DataArray &expected,
+                          const dataset::DataArray &actual) {
   throw DataArrayError("Expected DataArray " + to_string(expected) + ", got " +
                        to_string(actual) + '.');
 }
@@ -19,21 +19,21 @@ void throw_mismatch_error(const dataset::DataArrayConstView &expected,
 DatasetError::DatasetError(const std::string &msg) : Error{msg} {}
 
 template <>
-void throw_mismatch_error(const dataset::DatasetConstView &expected,
-                          const dataset::DatasetConstView &actual) {
+void throw_mismatch_error(const dataset::Dataset &expected,
+                          const dataset::Dataset &actual) {
   throw DatasetError("Expected Dataset " + to_string(expected) + ", got " +
                      to_string(actual) + '.');
 }
 
 CoordMismatchError::CoordMismatchError(
-    const std::pair<Dim, VariableConstView> &expected,
-    const std::pair<Dim, VariableConstView> &actual)
+    const std::pair<const Dim, Variable> &expected,
+    const std::pair<const Dim, Variable> &actual)
     : DatasetError{"Mismatch in coordinate, expected " + to_string(expected) +
                    ", got " + to_string(actual)} {}
 
 template <>
-void throw_mismatch_error(const std::pair<Dim, VariableConstView> &expected,
-                          const std::pair<Dim, VariableConstView> &actual) {
+void throw_mismatch_error(const std::pair<const Dim, Variable> &expected,
+                          const std::pair<const Dim, Variable> &actual) {
   throw CoordMismatchError(expected, actual);
 }
 
@@ -41,15 +41,14 @@ void throw_mismatch_error(const std::pair<Dim, VariableConstView> &expected,
 
 namespace scipp::dataset::expect {
 
-void coordsAreSuperset(const DataArrayConstView &a,
-                       const DataArrayConstView &b) {
+void coordsAreSuperset(const DataArray &a, const DataArray &b) {
   const auto &a_coords = a.coords();
   for (const auto b_coord : b.coords())
     if (a_coords[b_coord.first] != b_coord.second)
       throw except::CoordMismatchError(*a_coords.find(b_coord.first), b_coord);
 }
 
-void isKey(const VariableConstView &key) {
+void isKey(const Variable &key) {
   if (key.dims().ndim() != 1)
     throw except::DimensionError(
         "Coord for binning or grouping must be 1-dimensional");

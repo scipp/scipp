@@ -664,7 +664,7 @@ void transform_in_place(Var &&var, Op op,
 /// output range identical to the secound input range, but avoids potentially
 /// costly element copies.
 template <class... TypePairs, class Var, class Op>
-void transform_in_place(Var &&var, const VariableConstView &other, Op op,
+void transform_in_place(Var &&var, const Variable &other, Op op,
                         const std::string_view &name = "operation") {
   in_place<false>::transform<TypePairs...>(op, name, std::forward<Var>(var),
                                            other);
@@ -672,18 +672,16 @@ void transform_in_place(Var &&var, const VariableConstView &other, Op op,
 
 /// Transform the data elements of a variable in-place.
 template <class... TypePairs, class Var, class Op>
-void transform_in_place(Var &&var, const VariableConstView &var1,
-                        const VariableConstView &var2, Op op,
-                        const std::string_view &name = "operation") {
+void transform_in_place(Var &&var, const Variable &var1, const Variable &var2,
+                        Op op, const std::string_view &name = "operation") {
   in_place<false>::transform<TypePairs...>(op, name, std::forward<Var>(var),
                                            var1, var2);
 }
 
 /// Transform the data elements of a variable in-place.
 template <class... TypePairs, class Var, class Op>
-void transform_in_place(Var &&var, const VariableConstView &var1,
-                        const VariableConstView &var2,
-                        const VariableConstView &var3, Op op,
+void transform_in_place(Var &&var, const Variable &var1, const Variable &var2,
+                        const Variable &var3, Op op,
                         const std::string_view &name = "operation") {
   in_place<false>::transform<TypePairs...>(op, name, std::forward<Var>(var),
                                            var1, var2, var3);
@@ -712,17 +710,15 @@ void accumulate_in_place(Var &&var, Other &&other, Op op,
 }
 
 template <class... TypePairs, class Var, class Op>
-void accumulate_in_place(Var &&var, const VariableConstView &var1,
-                         const VariableConstView &var2, Op op,
-                         const std::string_view &name = "operation") {
+void accumulate_in_place(Var &&var, const Variable &var1, const Variable &var2,
+                         Op op, const std::string_view &name = "operation") {
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op, name,
                                   std::forward<Var>(var), var1, var2);
 }
 
 template <class... TypePairs, class Var, class Op>
-void accumulate_in_place(Var &&var, const VariableView &var1,
-                         const VariableConstView &var2,
-                         const VariableConstView &var3, Op op,
+void accumulate_in_place(Var &&var, Variable &var1, const Variable &var2,
+                         const Variable &var3, Op op,
                          const std::string_view &name = "operation") {
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op, name,
                                   std::forward<Var>(var), var1, var2, var3);
@@ -735,7 +731,7 @@ void transform_in_place(Var &&var, Op op,
   in_place<true>::transform<Ts...>(op, name, std::forward<Var>(var));
 }
 template <class... TypePairs, class Var, class Op>
-void transform_in_place(Var &&var, const VariableConstView &other, Op op,
+void transform_in_place(Var &&var, const Variable &other, Op op,
                         const std::string_view &name = "operation") {
   in_place<true>::transform<TypePairs...>(op, name, std::forward<Var>(var),
                                           other);
@@ -762,7 +758,7 @@ Variable transform(std::tuple<Ts...> &&, Op op, const std::string_view &name,
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
 template <class... Ts, class Op>
-[[nodiscard]] Variable transform(const VariableConstView &var, Op op,
+[[nodiscard]] Variable transform(const Variable &var, Op op,
                                  const std::string_view &name = "operation") {
   return detail::transform(type_tuples<Ts...>(op), op, name, var);
 }
@@ -773,27 +769,26 @@ template <class... Ts, class Op>
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
 template <class... Ts, class Op>
-[[nodiscard]] Variable transform(const VariableConstView &var1,
-                                 const VariableConstView &var2, Op op,
+[[nodiscard]] Variable transform(const Variable &var1, const Variable &var2,
+                                 Op op,
                                  const std::string_view &name = "operation") {
   return detail::transform(type_tuples<Ts...>(op), op, name, var1, var2);
 }
 
 /// Transform the data elements of three variables and return a new Variable.
 template <class... Ts, class Op>
-[[nodiscard]] Variable transform(const VariableConstView &var1,
-                                 const VariableConstView &var2,
-                                 const VariableConstView &var3, Op op,
+[[nodiscard]] Variable transform(const Variable &var1, const Variable &var2,
+                                 const Variable &var3, Op op,
                                  const std::string_view &name = "operation") {
   return detail::transform(type_tuples<Ts...>(op), op, name, var1, var2, var3);
 }
 
 /// Transform the data elements of four variables and return a new Variable.
 template <class... Ts, class Op>
-[[nodiscard]] Variable
-transform(const VariableConstView &var1, const VariableConstView &var2,
-          const VariableConstView &var3, const VariableConstView &var4, Op op,
-          const std::string_view &name = "operation") {
+[[nodiscard]] Variable transform(const Variable &var1, const Variable &var2,
+                                 const Variable &var3, const Variable &var4,
+                                 Op op,
+                                 const std::string_view &name = "operation") {
   return detail::transform(type_tuples<Ts...>(op), op, name, var1, var2, var3,
                            var4);
 }

@@ -8,9 +8,11 @@
 
 namespace scipp::dataset {
 
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray rebin(
-    const DataArrayConstView &a, const Dim dim, const VariableConstView &coord);
-[[nodiscard]] SCIPP_DATASET_EXPORT Dataset
-rebin(const DatasetConstView &d, const Dim dim, const VariableConstView &coord);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray rebin(const DataArray &a,
+                                                   const Dim dim,
+                                                   const Variable &coord);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset rebin(const Dataset &d,
+                                                 const Dim dim,
+                                                 const Variable &coord);
 
 } // namespace scipp::dataset

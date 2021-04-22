@@ -26,9 +26,9 @@ def test_plot_data_array():
 def test_plot_dataset():
     N = 100
     ds = sc.Dataset()
-    ds.coords['x'] = sc.Variable(['x'], values=np.arange(N), unit=sc.units.m)
     ds['a'] = sc.Variable(['x'], values=np.random.random(N), unit=sc.units.K)
     ds['b'] = sc.Variable(['x'], values=np.random.random(N), unit=sc.units.K)
+    ds.coords['x'] = sc.Variable(['x'], values=np.arange(N), unit=sc.units.m)
     ds.plot().close()
 
 

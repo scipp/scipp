@@ -11,8 +11,8 @@
 
 namespace scipp::variable {
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable @NAME@(const VariableConstView &var);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable @NAME@(const Variable &var);
 #ifdef GENERATE_OUT
-SCIPP_VARIABLE_EXPORT VariableView @NAME@(const VariableConstView &var, const VariableView &out);
+SCIPP_VARIABLE_EXPORT Variable &@NAME@(const Variable &var, Variable &out);
 #endif
 } // namespace scipp::variable

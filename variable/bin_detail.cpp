@@ -18,13 +18,12 @@ namespace scipp::variable::bin_detail {
 ///
 /// 0 if the coord is less than the first edge, nbin-1 if greater or equal last
 /// edge. Assumes both `edges` and `coord` are sorted.
-Variable begin_edge(const VariableConstView &coord,
-                    const VariableConstView &edges) {
+Variable begin_edge(const Variable &coord, const Variable &edges) {
   auto indices = makeVariable<scipp::index>(coord.dims());
   const auto dim = edges.dims().inner();
   if (indices.dims()[dim] == 0)
     return indices;
-  Variable bin(indices.slice({dim, 0}));
+  auto bin = copy(indices.slice({dim, 0}));
   accumulate_in_place(bin, indices, coord, subspan_view(edges, dim),
                       core::element::begin_edge);
   return indices;
@@ -35,32 +34,31 @@ Variable begin_edge(const VariableConstView &coord,
 /// 1 if the coord is
 /// nbin if the coord is greater than the last edge. Assumes both `edges` and
 /// `coord` are sorted.
-Variable end_edge(const VariableConstView &coord,
-                  const VariableConstView &edges) {
+Variable end_edge(const Variable &coord, const Variable &edges) {
   auto indices = makeVariable<scipp::index>(coord.dims());
   const auto dim = edges.dims().inner();
   if (indices.dims()[dim] == 0)
     return indices;
-  Variable bin(indices.slice({dim, 0}));
+  auto bin = copy(indices.slice({dim, 0}));
   accumulate_in_place(bin, indices, coord, subspan_view(edges, dim),
                       core::element::end_edge);
   return indices;
 }
 
-Variable cumsum_exclusive_subbin_sizes(const VariableConstView &var) {
+Variable cumsum_exclusive_subbin_sizes(const Variable &var) {
   return transform<core::SubbinSizes>(
       var,
       overloaded{[](const units::Unit &u) { return u; },
                  [](const auto &sizes) { return sizes.cumsum_exclusive(); }});
 }
 
-Variable sum_subbin_sizes(const VariableConstView &var) {
+Variable sum_subbin_sizes(const Variable &var) {
   return transform<core::SubbinSizes>(
       var, overloaded{[](const units::Unit &u) { return u; },
                       [](const auto &sizes) { return sizes.sum(); }});
 }
 
-std::vector<scipp::index> flatten_subbin_sizes(const VariableConstView &var,
+std::vector<scipp::index> flatten_subbin_sizes(const Variable &var,
                                                const scipp::index length) {
   std::vector<scipp::index> flat;
   for (const auto &val : var.values<core::SubbinSizes>()) {
@@ -71,20 +69,18 @@ std::vector<scipp::index> flatten_subbin_sizes(const VariableConstView &var,
   return flat;
 }
 
-Variable subbin_sizes_cumsum_exclusive(const VariableConstView &var,
-                                       const Dim dim) {
+Variable subbin_sizes_cumsum_exclusive(const Variable &var, const Dim dim) {
   if (var.dims()[dim] == 0)
-    return Variable{var};
-  Variable cumulative(var.slice({dim, 0}));
+    return copy(var);
+  auto cumulative = copy(var.slice({dim, 0}));
   fill_zeros(cumulative);
-  Variable out(var);
+  auto out = copy(var);
   accumulate_in_place(cumulative, out,
                       core::element::subbin_sizes_exclusive_scan);
   return out;
 }
 
-void subbin_sizes_add_intersection(const VariableView &a,
-                                   const VariableConstView &b) {
+void subbin_sizes_add_intersection(Variable &a, const Variable &b) {
   transform_in_place(a, b, core::element::subbin_sizes_add_intersection);
 }
 

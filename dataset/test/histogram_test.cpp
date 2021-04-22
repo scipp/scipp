@@ -40,11 +40,7 @@ TEST_F(HistogramHelpersTest, edge_dimension) {
 
   EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::X, coordX}})),
                except::BinEdgeError);
-  EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::X, coordY}})),
-               except::BinEdgeError);
   EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::Y, coordX}})),
-               except::BinEdgeError);
-  EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::Y, coordY}})),
                except::BinEdgeError);
 
   // Coord length X is 2 and data does not depend on X, but this is *not*
@@ -58,7 +54,7 @@ TEST_F(HistogramHelpersTest, is_histogram) {
   EXPECT_TRUE(is_histogram(histX, Dim::X));
   EXPECT_FALSE(is_histogram(histX, Dim::Y));
   // Also for Dataset
-  const auto ds_histX = Dataset{DataArrayConstView{histX}};
+  const auto ds_histX = Dataset{histX};
   EXPECT_TRUE(is_histogram(ds_histX, Dim::X));
   EXPECT_FALSE(is_histogram(ds_histX, Dim::Y));
 
@@ -71,9 +67,7 @@ TEST_F(HistogramHelpersTest, is_histogram) {
   EXPECT_TRUE(is_histogram(histY2d, Dim::Y));
 
   EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::X, coordX}}), Dim::X));
-  EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::X, coordY}}), Dim::X));
   EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::Y, coordX}}), Dim::X));
-  EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::Y, coordY}}), Dim::X));
 
   // Coord length X is 2 and data does not depend on X, but this is *not*
   // interpreted as a single-bin histogram.
@@ -118,7 +112,7 @@ auto make_single_events() {
 
 DataArray make_expected(const Variable &var, const Variable &edges) {
   auto dim = var.dims().inner();
-  std::map<Dim, Variable> coords = {{dim, edges}};
+  std::unordered_map<Dim, Variable> coords = {{dim, edges}};
   auto expected = DataArray(var, coords, {}, {}, "events");
   return expected;
 }

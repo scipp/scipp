@@ -458,8 +458,7 @@ def make_svg(container, content_only=False):
     """
     Return a svg representation of a variable or dataset.
     """
-    if isinstance(container, sc.Variable) or isinstance(
-            container, sc.VariableView):
+    if isinstance(container, sc.Variable):
         draw = VariableDrawer(container)
     else:
         draw = DatasetDrawer(container)

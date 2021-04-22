@@ -8,6 +8,7 @@ function(scipp_install_component)
   cmake_parse_arguments(
     PARSE_ARGV 0 SCIPP_INSTALL_COMPONENT "${options}" "${oneValueArgs}" ""
   )
+  add_sanitizers(${SCIPP_INSTALL_COMPONENT_TARGET})
   if(DYNAMIC_LIB)
     install(TARGETS ${SCIPP_INSTALL_COMPONENT_TARGET} EXPORT ${EXPORT_NAME})
     install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})

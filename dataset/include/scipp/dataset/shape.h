@@ -8,29 +8,32 @@
 
 namespace scipp::dataset {
 
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray concatenate(
-    const DataArrayConstView &a, const DataArrayConstView &b, const Dim dim);
-[[nodiscard]] SCIPP_DATASET_EXPORT Dataset concatenate(
-    const DatasetConstView &a, const DatasetConstView &b, const Dim dim);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray concatenate(const DataArray &a,
+                                                         const DataArray &b,
+                                                         const Dim dim);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset concatenate(const Dataset &a,
+                                                       const Dataset &b,
+                                                       const Dim dim);
 
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray resize(const DataArrayConstView &a,
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray resize(const DataArray &a,
                                                     const Dim dim,
                                                     const scipp::index size);
-[[nodiscard]] SCIPP_DATASET_EXPORT Dataset resize(const DatasetConstView &d,
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset resize(const Dataset &d,
                                                   const Dim dim,
                                                   const scipp::index size);
 
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-resize(const DataArrayConstView &a, const Dim dim,
-       const DataArrayConstView &shape);
-[[nodiscard]] SCIPP_DATASET_EXPORT Dataset
-resize(const DatasetConstView &d, const Dim dim, const DatasetConstView &shape);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray resize(const DataArray &a,
+                                                    const Dim dim,
+                                                    const DataArray &shape);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset resize(const Dataset &d,
+                                                  const Dim dim,
+                                                  const Dataset &shape);
 
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray fold(const DataArrayConstView &a,
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray fold(const DataArray &a,
                                                   const Dim from_dim,
                                                   const Dimensions &to_dims);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-flatten(const DataArrayConstView &a, const scipp::span<const Dim> &from_labels,
+flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
         const Dim to_dim);
 
 } // namespace scipp::dataset

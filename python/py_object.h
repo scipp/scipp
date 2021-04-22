@@ -38,6 +38,10 @@ private:
   py::object m_object;
 };
 
+[[nodiscard]] PyObject copy(const PyObject &obj);
+
+std::string to_string(const PyObject &obj);
+
 } // namespace scipp::python
 
 namespace scipp::core {

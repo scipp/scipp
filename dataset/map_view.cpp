@@ -7,97 +7,239 @@
 
 namespace scipp::dataset {
 
-template <class Id, class Key, class Value>
-ConstView<Id, Key, Value>::ConstView(holder_type &&items,
-                                     const detail::slice_list &slices)
-    : m_items(std::move(items)), m_slices(slices) {}
+namespace {
+template <class T> void expectWritable(const T &dict) {
+  if (dict.is_readonly())
+    throw std::runtime_error("Read-only flag is set, cannot mutate dict.");
+}
+} // namespace
 
-template <class Id, class Key, class Value>
-bool ConstView<Id, Key, Value>::operator==(const ConstView &other) const {
+template <class Key, class Value>
+Dict<Key, Value>::Dict(const Sizes &sizes,
+                       std::initializer_list<std::pair<const Key, Value>> items,
+                       const bool readonly)
+    : Dict(sizes, holder_type(items), readonly) {}
+
+template <class Key, class Value>
+Dict<Key, Value>::Dict(const Sizes &sizes, holder_type items,
+                       const bool readonly)
+    : m_sizes(sizes) {
+  for (auto &&[key, value] : items)
+    set(key, std::move(value));
+  m_readonly = readonly;
+}
+
+template <class Key, class Value>
+Dict<Key, Value>::Dict(const Dict &other)
+    : Dict(other.m_sizes, other.m_items, false) {}
+
+template <class Key, class Value>
+Dict<Key, Value>::Dict(Dict &&other)
+    : Dict(std::move(other.m_sizes), std::move(other.m_items),
+           other.m_readonly) {}
+
+template <class Key, class Value>
+Dict<Key, Value> &Dict<Key, Value>::operator=(const Dict &other) = default;
+
+template <class Key, class Value>
+Dict<Key, Value> &Dict<Key, Value>::operator=(Dict &&other) = default;
+
+template <class Key, class Value>
+bool Dict<Key, Value>::operator==(const Dict &other) const {
   if (size() != other.size())
     return false;
-  for (const auto [name, data] : *this) {
-    try {
-      if (data != other[name])
-        return false;
-    } catch (except::NotFoundError &) {
+  for (const auto [name, data] : *this)
+    if (!other.contains(name) || data != other[name])
       return false;
-    }
-  }
   return true;
 }
 
+template <class Key, class Value>
+bool Dict<Key, Value>::operator!=(const Dict &other) const {
+  return !operator==(other);
+}
+
 /// Returns whether a given key is present in the view.
-template <class Id, class Key, class Value>
-bool ConstView<Id, Key, Value>::contains(const Key &k) const {
+template <class Key, class Value>
+bool Dict<Key, Value>::contains(const Key &k) const {
   return m_items.find(k) != m_items.cend();
 }
 
 /// Returns 1 or 0, depending on whether key is present in the view or not.
-template <class Id, class Key, class Value>
-scipp::index ConstView<Id, Key, Value>::count(const Key &k) const {
+template <class Key, class Value>
+scipp::index Dict<Key, Value>::count(const Key &k) const {
   return static_cast<scipp::index>(contains(k));
 }
 
-/// Return a const view to the coordinate for given dimension.
-template <class Id, class Key, class Value>
-typename ConstView<Id, Key, Value>::mapped_type::const_view_type
-ConstView<Id, Key, Value>::operator[](const Key &key) const {
+/// Const reference to the coordinate for given dimension.
+template <class Key, class Value>
+const Value &Dict<Key, Value>::operator[](const Key &key) const {
+  return at(key);
+}
+
+/// Const reference to the coordinate for given dimension.
+template <class Key, class Value>
+const Value &Dict<Key, Value>::at(const Key &key) const {
   scipp::expect::contains(*this, key);
-  return make_slice(m_items.at(key), m_slices);
+  return m_items.at(key);
 }
 
-/// Return a const view to the coordinate for given dimension.
-template <class Id, class Key, class Value>
-typename ConstView<Id, Key, Value>::mapped_type::const_view_type
-ConstView<Id, Key, Value>::at(const Key &key) const {
-  return operator[](key);
+/// The coordinate for given dimension.
+template <class Key, class Value>
+Value Dict<Key, Value>::operator[](const Key &key) {
+  return std::as_const(*this).at(key);
 }
 
-template <class Id, class Key, class Value>
-bool ConstView<Id, Key, Value>::operator!=(const ConstView &other) const {
-  return !operator==(other);
+/// The coordinate for given dimension.
+template <class Key, class Value> Value Dict<Key, Value>::at(const Key &key) {
+  return std::as_const(*this).at(key);
 }
 
-template <class Base, class Access>
-MutableView<Base, Access>::MutableView(const Access &access,
-                                       typename Base::holder_type &&items,
-                                       const detail::slice_list &slices)
-    : Base(std::move(items), slices), m_access(access) {}
+template <class Key, class Value>
+void Dict<Key, Value>::setSizes(const Sizes &sizes) {
+  scipp::expect::contains(sizes, m_sizes);
+  m_sizes = sizes;
+}
 
-/// Constructor for internal use (slicing and holding const view in mutable
-/// view)
-template <class Base, class Access>
-MutableView<Base, Access>::MutableView(const Access &access, Base &&base)
-    : Base(std::move(base)), m_access(access) {}
+template <class Key, class Value> void Dict<Key, Value>::rebuildSizes() {
+  Sizes new_sizes = m_sizes;
+  for (const auto &size : m_sizes) {
+    bool erase = true;
+    for (const auto &item : *this) {
+      if (item.second.dims().contains(size.first)) {
+        erase = false;
+        break;
+      }
+    }
+    if (erase)
+      new_sizes.erase(size.first);
+  }
+  m_sizes = std::move(new_sizes);
+}
 
-template <class Base, class Access>
-/// Return a view to the coordinate for given dimension.
-typename Base::mapped_type::view_type MutableView<Base, Access>::operator[](
-    const typename Base::key_type &key) const {
+// TODO remove force workaround required by DataArray::slice
+template <class Key, class Value>
+void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
+  if (contains(key) && at(key).is_same(coord))
+    return;
+  expectWritable(*this);
+  // Is a good definition for things that are allowed: "would be possible to
+  // concat along existing dim or extra dim"?
+  if (!m_sizes.contains(coord.dims()) &&
+      !is_edges(m_sizes, coord.dims(), dim_of_coord(coord, key)))
+    throw except::DimensionError("Cannot add coord exceeding DataArray dims");
+  m_items.insert_or_assign(key, std::move(coord));
+}
+
+template <class Key, class Value>
+void Dict<Key, Value>::erase(const key_type &key) {
   scipp::expect::contains(*this, key);
-  return make_slice(Base::items().at(key), Base::slices());
+  m_items.erase(key);
 }
 
-template <class Base, class Access>
-void MutableView<Base, Access>::erase(
-    const typename Base::key_type &key) const {
-  scipp::expect::contains(*this, key);
-  m_access.erase(key);
+template <class Key, class Value>
+Value Dict<Key, Value>::extract(const key_type &key) {
+  auto extracted = at(key);
+  erase(key);
+  return extracted;
 }
 
-template <class Base, class Access>
-typename Base::mapped_type
-MutableView<Base, Access>::extract(const typename Base::key_type &key) const {
-  scipp::expect::contains(*this, key);
-  return m_access.extract(key);
+template <class Key, class Value>
+Dict<Key, Value> Dict<Key, Value>::slice(const Slice &params) const {
+  const bool readonly = true;
+  return {m_sizes.slice(params), slice_map(m_sizes, m_items, params), readonly};
 }
 
-template class SCIPP_DATASET_EXPORT
-    ConstView<ViewId::Coords, Dim, variable::Variable>;
-template class SCIPP_DATASET_EXPORT MutableView<CoordsConstView, CoordAccess>;
-template class SCIPP_DATASET_EXPORT
-    ConstView<ViewId::Masks, std::string, variable::Variable>;
-template class SCIPP_DATASET_EXPORT MutableView<MasksConstView, MaskAccess>;
+template <class Key, class Value>
+Dict<Key, Value> &Dict<Key, Value>::setSlice(const Slice s, const Dict &dict) {
+  using core::to_string;
+  using units::to_string;
+  for (const auto &[key, item] : dict) {
+    const auto it = find(key);
+    if (it == end()) {
+      throw except::NotFoundError("Cannot insert new meta data '" +
+                                  to_string(key) + "' via a slice.");
+    } else if ((it->second.is_readonly() ||
+                !it->second.dims().contains(s.dim())) &&
+               (it->second.dims().contains(s.dim()) ? it->second.slice(s)
+                                                    : it->second) != item) {
+      throw except::DimensionError("Cannot update meta data '" +
+                                   to_string(key) +
+                                   "' via slice since it is implicitly "
+                                   "broadcast along the slice dimension '" +
+                                   to_string(s.dim()) + "'.");
+    }
+  }
+  for (const auto &[key, item] : dict) {
+    const auto it = find(key);
+    if (it != end() && !it->second.is_readonly() &&
+        it->second.dims().contains(s.dim()))
+      it->second.setSlice(s, item);
+  }
+  return *this;
+}
+
+template <class Key, class Value>
+void Dict<Key, Value>::rename(const Dim from, const Dim to) {
+  m_sizes.relabel(from, to);
+  // TODO relabel only if coords (not attrs?)?
+  if constexpr (std::is_same_v<Key, Dim>) {
+    if (m_items.count(from)) {
+      auto node = m_items.extract(from);
+      node.key() = to;
+      m_items.insert(std::move(node));
+    }
+  }
+  for (auto &item : m_items)
+    item.second.rename(from, to);
+}
+
+/// Return true if the dict is readonly. Does not imply that items are readonly.
+template <class Key, class Value>
+bool Dict<Key, Value>::is_readonly() const noexcept {
+  return m_readonly;
+}
+
+template <class Key, class Value>
+Dict<Key, Value> Dict<Key, Value>::as_const() const {
+  holder_type items;
+  std::transform(m_items.begin(), m_items.end(),
+                 std::inserter(items, items.end()), [](const auto &item) {
+                   return std::pair(item.first, item.second.as_const());
+                 });
+  const bool readonly = true;
+  return {sizes(), std::move(items), readonly};
+}
+
+template <class Key, class Value>
+Dict<Key, Value> Dict<Key, Value>::merge_from(const Dict &other) const {
+  using core::to_string;
+  using units::to_string;
+  auto out(*this);
+  out.m_readonly = false;
+  for (const auto &[key, value] : other) {
+    if (out.contains(key))
+      throw except::DataArrayError(
+          "Coord '" + to_string(key) +
+          "' shadows attr of the same name. Remove the attr if you are slicing "
+          "an array or use the `coords` and `attrs` properties instead of "
+          "`meta`.");
+    out.set(key, value);
+  }
+  out.m_readonly = m_readonly;
+  return out;
+}
+
+template <class Key, class Value>
+bool Dict<Key, Value>::item_applies_to(const Key &key,
+                                       const Dimensions &dims) const {
+  const auto &val = m_items.at(key);
+  return dims.contains(val.dims()) ||
+         (!sizes().contains(val.dims()) &&
+          is_edges(Sizes(dims), val.dims(), dim_of_coord(val, key)));
+}
+
+template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;
+template class SCIPP_DATASET_EXPORT Dict<std::string, Variable>;
 
 } // namespace scipp::dataset

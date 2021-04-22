@@ -20,9 +20,9 @@ empty(const Dimensions &dims, const units::Unit &unit, const DType type,
                                                   const bool variances = false);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-empty_like(const VariableConstView &prototype,
+empty_like(const Variable &prototype,
            const std::optional<Dimensions> &shape = std::nullopt,
-           const VariableConstView &sizes = {});
+           const Variable &sizes = {});
 
 enum class SCIPP_VARIABLE_EXPORT FillValue {
   ZeroNotBool,
@@ -33,6 +33,6 @@ enum class SCIPP_VARIABLE_EXPORT FillValue {
 };
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-special_like(const VariableConstView &prototype, const FillValue &fill);
+special_like(const Variable &prototype, const FillValue &fill);
 
 } // namespace scipp::variable

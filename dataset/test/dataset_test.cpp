@@ -53,7 +53,7 @@ TEST(DatasetTest, erase) {
 TEST(DatasetTest, extract) {
   DatasetFactory3D factory;
   auto dataset = factory.make();
-  Dataset reference(dataset);
+  auto reference = copy(dataset);
 
   auto ptr = dataset["data_xyz"].values<double>().data();
   auto array = dataset.extract("data_xyz");
@@ -126,7 +126,7 @@ TEST(DatasetTest, setCoord_shrink) {
   const auto var4 = makeVariable<double>(Dims{Dim::X}, Shape{4});
   Dataset d;
   ASSERT_NO_THROW(d.setCoord(Dim::X, var4));
-  ASSERT_NO_THROW(d.setCoord(Dim::Y, var3));
+  ASSERT_THROW(d.setCoord(Dim::Y, var3), except::DimensionError);
 }
 
 TEST(DatasetTest, set_item_mask) {
@@ -166,10 +166,10 @@ TEST(DatasetTest, setData_updates_dimensions) {
   d.setData("x", xy);
   d.setData("x", x);
 
-  const auto dims = d.dimensions();
-  ASSERT_TRUE(dims.find(Dim::X) != dims.end());
+  const auto dims = d.sizes();
+  ASSERT_TRUE(dims.contains(Dim::X));
   // Dim::Y should no longer appear in dimensions after item "x" was replaced.
-  ASSERT_TRUE(dims.find(Dim::Y) == dims.end());
+  ASSERT_FALSE(dims.contains(Dim::Y));
 }
 
 TEST(DatasetTest, setData_clears_attributes) {
@@ -243,38 +243,14 @@ TEST(DatasetTest, setCoord_with_name_matching_data_name) {
 
 TEST(DatasetTest, iterators_return_types) {
   Dataset d;
-  ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataArrayView>));
-  ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataArrayView>));
+  ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataArray>));
+  ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataArray>));
 }
 
 TEST(DatasetTest, const_iterators_return_types) {
   const Dataset d;
-  ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataArrayConstView>));
-  ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataArrayConstView>));
-}
-
-TEST(DatasetTest, construct_from_view) {
-  DatasetFactory3D factory;
-  const auto dataset = factory.make();
-  const DatasetConstView view(dataset);
-  Dataset from_view(view);
-  ASSERT_EQ(from_view, dataset);
-}
-
-TEST(DatasetTest, construct_from_slice) {
-  DatasetFactory3D factory;
-  const auto dataset = factory.make();
-  const auto slice = dataset.slice({Dim::X, 1});
-  Dataset from_slice(slice);
-  ASSERT_EQ(from_slice, dataset.slice({Dim::X, 1}));
-}
-
-TEST(DataArrayTest, construct_from_slice) {
-  DatasetFactory3D factory;
-  const auto dataset = factory.make();
-  const auto slice = dataset["data_xyz"].slice({Dim::X, 1});
-  DataArray from_slice(slice);
-  ASSERT_EQ(from_slice, dataset["data_xyz"].slice({Dim::X, 1}));
+  ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataArray>));
+  ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataArray>));
 }
 
 TEST(DatasetTest, slice_temporary) {
@@ -283,34 +259,40 @@ TEST(DatasetTest, slice_temporary) {
   ASSERT_TRUE((std::is_same_v<decltype(dataset), Dataset>));
 }
 
+TEST(DatasetTest, construct_from_slice) {
+  DatasetFactory3D factory;
+  const auto dataset = factory.make();
+  const auto slice = dataset.slice({Dim::X, 1});
+  Dataset from_slice = copy(slice);
+  ASSERT_EQ(from_slice, dataset.slice({Dim::X, 1}));
+}
+
+TEST(DatasetTest, construct_dataarray_from_slice) {
+  DatasetFactory3D factory;
+  const auto dataset = factory.make();
+  const auto slice = dataset["data_xyz"].slice({Dim::X, 1});
+  DataArray from_slice = copy(slice);
+  ASSERT_EQ(from_slice, dataset["data_xyz"].slice({Dim::X, 1}));
+}
+
 TEST(DatasetTest, slice_no_data) {
   Dataset d;
-  d.coords().set(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
+  d.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
   EXPECT_TRUE(d.coords().contains(Dim::X));
   const auto slice = d.slice({Dim::X, 1, 3});
   EXPECT_TRUE(slice.coords().contains(Dim::X));
 }
 
-template <typename T> void do_test_slice_validation(const T &container) {
-  EXPECT_THROW(container.slice(Slice{Dim::Y, 0, 1}), except::SliceError);
-  EXPECT_THROW(container.slice(Slice{Dim::X, 0, 3}), except::SliceError);
-  EXPECT_THROW(container.slice(Slice{Dim::X, -1, 0}), except::SliceError);
-  EXPECT_NO_THROW(container.slice(Slice{Dim::X, 0, 1}));
-}
-
 TEST(DatasetTest, slice_validation_simple) {
   Dataset dataset;
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
+  // TODO this fails length 2, since setCoords detects bin edges and does not
+  // add dim
+  auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   dataset.setCoord(Dim::X, var);
-  do_test_slice_validation(dataset);
-
-  // Make sure correct via const proxies
-  DatasetConstView constview(dataset);
-  do_test_slice_validation(constview);
-
-  // Make sure correct via proxies
-  DatasetView view(dataset);
-  do_test_slice_validation(view);
+  EXPECT_THROW(dataset.slice(Slice{Dim::Y, 0, 1}), except::SliceError);
+  EXPECT_THROW(dataset.slice(Slice{Dim::X, 0, 4}), except::SliceError);
+  EXPECT_THROW(dataset.slice(Slice{Dim::X, -1, 0}), except::SliceError);
+  EXPECT_NO_THROW(dataset.slice(Slice{Dim::X, 0, 1}));
 }
 
 TEST(DatasetTest, slice_with_no_coords) {
@@ -354,10 +336,10 @@ TEST(DatasetTest, sum_and_mean) {
 TEST(DatasetTest, extract_coord) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
-  Dataset ds(ref);
-  auto coord = Variable(ds.coords()[Dim::X]);
+  Dataset ds = copy(ref);
+  auto coord = ds.coords()[Dim::X];
   auto ptr = ds.coords()[Dim::X].values<double>().data();
-  auto var = ds.extractCoord(Dim::X);
+  auto var = ds.coords().extract(Dim::X);
   EXPECT_EQ(var.values<double>().data(), ptr);
   EXPECT_FALSE(ds.coords().contains(Dim::X));
   ds.setCoord(Dim::X, coord);
@@ -372,18 +354,30 @@ TEST(DatasetTest, extract_coord) {
 TEST(DatasetTest, erase_item_coord_cannot_erase_coord) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
-  Dataset ds(ref);
-  auto coord = Variable(ds.coords()[Dim::X]);
+  Dataset ds = copy(ref);
+  auto coord = ds.coords()[Dim::X];
   ASSERT_TRUE(ds.contains("data_x"));
-  EXPECT_THROW(ds["data_x"].coords().erase(Dim::X), except::DatasetError);
+  ASSERT_NO_THROW(ds["data_x"].coords().erase(Dim::X));
+  // Coord was erased in DataArray returned by ds["data_x"], but not from coord
+  // dict of ds
+  ASSERT_TRUE(ds.coords().contains(Dim::X));
+}
+
+TEST(DatasetTest, item_coord_cannot_change_coord) {
+  DatasetFactory3D factory;
+  Dataset ds = factory.make();
+  const auto original = copy(ds.coords()[Dim::X]);
+  ASSERT_THROW(ds["data_x"].coords()[Dim::X] += original,
+               except::VariableError);
+  ASSERT_EQ(ds.coords()[Dim::X], original);
 }
 
 TEST(DatasetTest, extract_labels) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
-  Dataset ds(ref);
-  auto labels = Variable(ds.coords()[Dim("labels_x")]);
-  ds.extractCoord(Dim("labels_x"));
+  Dataset ds = copy(ref);
+  auto labels = ds.coords()[Dim("labels_x")];
+  ds.coords().extract(Dim("labels_x"));
   EXPECT_FALSE(ds.coords().contains(Dim("labels_x")));
   ds.setCoord(Dim("labels_x"), labels);
   EXPECT_EQ(ref, ds);

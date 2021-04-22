@@ -115,7 +115,7 @@ TEST(Variable, operator_plus_equal_different_dimensions) {
 TEST(Variable, operator_plus_equal_different_unit) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
 
-  auto different_unit(a);
+  auto different_unit = copy(a);
   different_unit.setUnit(units::m);
   EXPECT_THROW(a += different_unit, except::UnitError);
 }
@@ -387,7 +387,7 @@ TEST(Variable, concatenate_fail) {
 TEST(Variable, concatenate_unit_fail) {
   Dimensions dims(Dim::X, 1);
   auto a = makeVariable<double>(Dimensions(dims), Values{1.0});
-  auto b(a);
+  auto b = copy(a);
   EXPECT_NO_THROW_DISCARD(concatenate(a, b, Dim::X));
   a.setUnit(units::m);
   EXPECT_THROW_MSG_DISCARD(concatenate(a, b, Dim::X), std::runtime_error,
@@ -433,7 +433,7 @@ TEST(VariableView, self_overlapping_view_operation) {
 TEST(VariableView, minus_equals_slice_const_outer) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
-  const auto copy(var);
+  const auto copy = variable::copy(var);
 
   var -= copy.slice({Dim::Y, 0});
   const auto data = var.values<double>();
@@ -451,7 +451,7 @@ TEST(VariableView, minus_equals_slice_const_outer) {
 TEST(VariableView, minus_equals_slice_outer) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
-  auto copy(var);
+  auto copy = variable::copy(var);
 
   var -= copy.slice({Dim::Y, 0});
   const auto data = var.values<double>();
@@ -469,7 +469,7 @@ TEST(VariableView, minus_equals_slice_outer) {
 TEST(VariableView, minus_equals_slice_inner) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
-  auto copy(var);
+  auto copy = variable::copy(var);
 
   var -= copy.slice({Dim::X, 0});
   const auto data = var.values<double>();
@@ -487,7 +487,7 @@ TEST(VariableView, minus_equals_slice_inner) {
 TEST(VariableView, minus_equals_slice_of_slice) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
-  auto copy(var);
+  auto copy = variable::copy(var);
 
   var -= copy.slice({Dim::X, 1}).slice({Dim::Y, 1});
   const auto data = var.values<double>();
@@ -1020,4 +1020,16 @@ TEST(VariableTest, masked_to_zero) {
   auto masked_var = masked_to_zero(var, mask);
 
   EXPECT_EQ(masked_var, expected_var);
+}
+
+TEST(Variable, 6d) {
+  ASSERT_EQ(core::NDIM_MAX, 6); // update this test if limit is increased
+  auto a = makeVariable<double>(
+      Dims{Dim("1"), Dim("2"), Dim("3"), Dim("4"), Dim("5"), Dim("6")},
+      Shape{1, 2, 3, 4, 5, 6});
+  auto b = makeVariable<double>(
+      Dims{Dim("3"), Dim("2"), Dim("1"), Dim("4"), Dim("6"), Dim("5")},
+      Shape{3, 2, 1, 4, 6, 5});
+  copy(a, b);
+  a += b;
 }

@@ -29,11 +29,15 @@ def test_setitem_required_for_inplace_ops():
 
 
 def test_setitem_coords_required_for_inplace_ops():
-    import numpy as np
-    var = sc.Variable(['x'], shape=(4, ))
-    d = sc.Dataset()
-    d.coords['x'] = var
-    d['x', 2:].coords['x'] += 1.0
-    # assignment
-    expected_values = np.array([0, 0, 1, 1])
-    assert np.allclose(d['x', :].coords['x'].values, expected_values)
+    var = sc.zeros(dims=['x'], shape=(4, ), dtype=sc.dtype.int64)
+    da = sc.DataArray(data=var)
+    da.coords['x'] = var
+    da.coords['x']['x', 2:] += 1
+    assert sc.identical(
+        da.coords['x'],
+        sc.array(dims=['x'], dtype=sc.dtype.int64, values=[0, 0, 1, 1]))
+    ds = sc.Dataset({'a': da})
+    ds.coords['x']['x', 2:] += 1
+    assert sc.identical(
+        ds.coords['x'],
+        sc.array(dims=['x'], dtype=sc.dtype.int64, values=[0, 0, 2, 2]))

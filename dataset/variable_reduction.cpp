@@ -15,40 +15,37 @@
 
 namespace scipp::dataset {
 
-Variable sum(const VariableConstView &var, const Dim dim,
-             const MasksConstView &masks) {
+Variable sum(const Variable &var, const Dim dim, const Masks &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim)) {
     return sum(masked_to_zero(var, mask_union), dim);
   }
   return sum(var, dim);
 }
 
-VariableView sum(const VariableConstView &var, const Dim dim,
-                 const MasksConstView &masks, const VariableView &out) {
+Variable &sum(const Variable &var, const Dim dim, const Masks &masks,
+              Variable &out) {
   if (const auto mask_union = irreducible_mask(masks, dim)) {
     return sum(masked_to_zero(var, mask_union), dim, out);
   }
   return sum(var, dim, out);
 }
 
-Variable nansum(const VariableConstView &var, const Dim dim,
-                const MasksConstView &masks) {
+Variable nansum(const Variable &var, const Dim dim, const Masks &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim)) {
     return nansum(masked_to_zero(var, mask_union), dim);
   }
   return nansum(var, dim);
 }
 
-VariableView nansum(const VariableConstView &var, const Dim dim,
-                    const MasksConstView &masks, const VariableView &out) {
+Variable &nansum(const Variable &var, const Dim dim, const Masks &masks,
+                 Variable &out) {
   if (const auto mask_union = irreducible_mask(masks, dim)) {
     return nansum(masked_to_zero(var, mask_union), dim, out);
   }
   return nansum(var, dim, out);
 }
 
-Variable mean(const VariableConstView &var, const Dim dim,
-              const MasksConstView &masks) {
+Variable mean(const Variable &var, const Dim dim, const Masks &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim)) {
     return mean_impl(masked_to_zero(var, mask_union), dim,
                      sum(~mask_union, dim));
@@ -56,8 +53,7 @@ Variable mean(const VariableConstView &var, const Dim dim,
   return mean(var, dim);
 }
 
-Variable nanmean(const VariableConstView &var, const Dim dim,
-                 const MasksConstView &masks) {
+Variable nanmean(const Variable &var, const Dim dim, const Masks &masks) {
   using variable::isfinite;
   if (const auto mask_union = irreducible_mask(masks, dim)) {
     const auto count = sum(masked_to_zero(isfinite(var), mask_union), dim);
@@ -68,8 +64,7 @@ Variable nanmean(const VariableConstView &var, const Dim dim,
 
 /// Merges all the masks that have all their dimensions found in the given set
 //  of dimensions.
-Variable masks_merge_if_contained(const MasksConstView &masks,
-                                  const Dimensions &dims) {
+Variable masks_merge_if_contained(const Masks &masks, const Dimensions &dims) {
   auto mask_union = makeVariable<bool>(Values{false});
   for (const auto &mask : masks) {
     if (dims.contains(mask.second.dims()))

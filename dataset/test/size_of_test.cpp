@@ -13,7 +13,7 @@
 using namespace scipp;
 using namespace scipp::dataset;
 
-class BucketVariableSizeOfTest : public ::testing::Test {
+class BinnedVariableSizeOfTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 3};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
@@ -22,7 +22,7 @@ protected:
   Variable var = make_bins(indices, Dim::X, buffer);
 };
 
-class BucketDataArraySizeOfTest : public ::testing::Test {
+class BinnedDataArraySizeOfTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
@@ -32,7 +32,7 @@ protected:
   Variable var = make_bins(indices, Dim::X, buffer);
 };
 
-class BucketDatasetSizeOfTest : public ::testing::Test {
+class BinnedDatasetSizeOfTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
@@ -65,14 +65,13 @@ TEST(SizeOf, size_in_memory_sliced_variables) {
   EXPECT_EQ(size_of(sliced_view), 2 * sizeof(double));
 }
 
-TEST_F(BucketVariableSizeOfTest, size_in_memory_of_bucketed_variable) {
-  const auto &[indices_, dim_, buffer_] =
-      VariableConstView(var).constituents<bucket<Variable>>();
+TEST_F(BinnedVariableSizeOfTest, size_in_memory_of_bucketed_variable) {
+  const auto &[indices_, dim_, buffer_] = var.constituents<bucket<Variable>>();
   EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(var), size_of(buffer_) + size_of(indices_));
 }
 
-TEST_F(BucketVariableSizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
+TEST_F(BinnedVariableSizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
   auto slice = var.slice(Slice(Dim::Y, 0, 1));
   const auto &[indices_, dim_, buffer_] =
       slice.constituents<bucket<Variable>>();
@@ -80,7 +79,7 @@ TEST_F(BucketVariableSizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
   EXPECT_EQ(size_of(slice), size_of(buffer_) * 0.5 + size_of(indices_));
 }
 
-TEST_F(BucketVariableSizeOfTest, empty_buffer) {
+TEST_F(BinnedVariableSizeOfTest, empty_buffer) {
   Variable empty(var.slice(Slice(Dim::Y, 1)));
   const auto &[indices_, dim_, buffer_] =
       empty.constituents<bucket<Variable>>();
@@ -88,14 +87,13 @@ TEST_F(BucketVariableSizeOfTest, empty_buffer) {
   EXPECT_EQ(size_of(empty), size_of(indices_));
 }
 
-TEST_F(BucketDataArraySizeOfTest, size_in_memory_of_bucketed_variable) {
-  const auto &[indices_, dim_, buffer_] =
-      VariableConstView(var).constituents<bucket<DataArray>>();
+TEST_F(BinnedDataArraySizeOfTest, size_in_memory_of_bucketed_variable) {
+  const auto &[indices_, dim_, buffer_] = var.constituents<bucket<DataArray>>();
   EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(var), size_of(buffer_) + size_of(indices_));
 }
 
-TEST_F(BucketDataArraySizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
+TEST_F(BinnedDataArraySizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
   auto slice = var.slice(Slice(Dim::Y, 0, 1));
   const auto &[indices_, dim_, buffer_] =
       slice.constituents<bucket<DataArray>>();
@@ -103,17 +101,16 @@ TEST_F(BucketDataArraySizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
   EXPECT_EQ(size_of(slice), size_of(buffer_) * 0.5 + size_of(indices_));
 }
 
-TEST_F(BucketDatasetSizeOfTest, size_in_memory_of_bucketed_variable) {
-  buffer.coords().set(Dim::X, column);
+TEST_F(BinnedDatasetSizeOfTest, size_in_memory_of_bucketed_variable) {
+  buffer.setCoord(Dim::X, column);
   Variable var = make_bins(indices, Dim::X, buffer);
-  const auto &[indices_, dim_, buffer_] =
-      VariableConstView(var).constituents<bucket<Dataset>>();
+  const auto &[indices_, dim_, buffer_] = var.constituents<bucket<Dataset>>();
   EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(var), size_of(buffer_) + size_of(indices_));
 }
 
-TEST_F(BucketDatasetSizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
-  buffer.coords().set(Dim::X, column);
+TEST_F(BinnedDatasetSizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
+  buffer.setCoord(Dim::X, column);
   Variable var = make_bins(indices, Dim::X, buffer);
   auto slice = var.slice(Slice(Dim::Y, 0, 1));
   const auto &[indices_, dim_, buffer_] = slice.constituents<bucket<Dataset>>();

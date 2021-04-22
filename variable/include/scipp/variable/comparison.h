@@ -14,8 +14,8 @@ namespace scipp::variable {
 enum class NanComparisons { Equal, NotEqual };
 
 SCIPP_VARIABLE_EXPORT Variable
-isclose(const VariableConstView &a, const VariableConstView &b,
-        const VariableConstView rtol, const VariableConstView atol,
+isclose(const Variable &a, const Variable &b, const Variable &rtol,
+        const Variable &atol,
         const NanComparisons equal_nans = NanComparisons::NotEqual);
 
 } // namespace scipp::variable

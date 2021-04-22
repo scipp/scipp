@@ -114,16 +114,26 @@ def test_eq():
     assert not sc.identical(da['y', :]['x', 1:], da)
 
 
+def _is_copy_of(orig, copy):
+    assert sc.identical(orig, copy)
+    assert not id(orig) == id(copy)
+    orig += 1.0
+    assert sc.identical(orig, copy)
+
+
 def _is_deep_copy_of(orig, copy):
     assert sc.identical(orig, copy)
     assert not id(orig) == id(copy)
+    orig += 1.0
+    assert not sc.identical(orig, copy)
 
 
 def test_copy():
     import copy
     da = make_dataarray()
+    _is_copy_of(da, da.copy(deep=False))
     _is_deep_copy_of(da, da.copy())
-    _is_deep_copy_of(da, copy.copy(da))
+    _is_copy_of(da, copy.copy(da))
     _is_deep_copy_of(da, copy.deepcopy(da))
 
 
@@ -195,6 +205,14 @@ def test_rename_dims():
     assert sc.identical(d, make_dataarray('x', 'z', seed=0))
     d.rename_dims(dims_dict={'x': 'y', 'z': 'x'})
     assert sc.identical(d, make_dataarray('y', 'x', seed=0))
+
+
+def test_coord_setitem_can_change_dtype():
+    a = np.arange(3)
+    v1 = sc.array(dims=['x'], values=a)
+    v2 = v1.astype(sc.dtype.int32)
+    data = sc.DataArray(data=v1, coords={'x': v1})
+    data.coords['x'] = v2
 
 
 def test_setitem_works_for_view_and_array():

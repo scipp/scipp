@@ -11,11 +11,13 @@ namespace scipp::variable {
 namespace {
 
 /// Helper returning vector of subspans from begin to end
-template <class T>
-auto make_subspans(const ElementArrayView<T> &first,
+template <class Var, class T>
+auto make_subspans(Var &, const ElementArrayView<T> &first,
                    const ElementArrayView<T> &last) {
   const auto len = first.size();
-  std::vector<span<T>> spans;
+  std::vector<
+      span<std::conditional_t<std::is_const_v<Var>, std::add_const_t<T>, T>>>
+      spans;
   spans.reserve(len);
   for (scipp::index i = 0; i < len; ++i)
     spans.emplace_back(scipp::span(&first[i], &last[i] + 1));
@@ -28,7 +30,7 @@ auto make_empty_subspans(const ElementArrayView<T> &, const Dimensions &dims) {
 }
 
 template <class T>
-auto make_subspans(T *base, const VariableConstView &indices,
+auto make_subspans(T *base, const Variable &indices,
                    const scipp::index stride) {
   const auto spans = variable::transform<scipp::index_pair>(
       indices, overloaded{core::transform_flags::expect_no_variance_arg<0>,
@@ -49,9 +51,7 @@ Variable make_subspan_view(Var &var, const Dimensions &dims,
                            VariancesMaker make_variances) {
   std::conditional_t<std::is_const_v<T>, const Var, Var> &var_ref = var;
   using MaybeConstT =
-      std::conditional_t<std::is_const_v<Var> &&
-                             !std::is_same_v<std::decay_t<Var>, VariableView>,
-                         std::add_const_t<T>, T>;
+      std::conditional_t<std::is_const_v<Var>, std::add_const_t<T>, T>;
   auto valuesView = make_values(var_ref);
   if (var.hasVariances()) {
     auto variancesView = make_variances(var_ref);
@@ -69,9 +69,7 @@ Variable make_subspan_view(Var &var, const Dimensions &dims,
 template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
   using E = std::remove_const_t<T>;
   const auto len = var.dims()[dim];
-  // Check that stride in `dim` is 1
-  if (len > 0 && var.template values<E>().data() + 1 !=
-                     var.slice({dim, 1}).template values<E>().data())
+  if (var.strides()[var.dims().index(dim)] != 1)
     throw except::DimensionError(
         "View over subspan can only be created for contiguous "
         "range of data.");
@@ -79,16 +77,22 @@ template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
   auto dims = var.dims();
   dims.erase(dim);
   const auto values_view = [dim, len, dims](auto &v) {
-    return len == 0
-               ? make_empty_subspans(v.template values<E>(), dims)
-               : make_subspans(v.slice({dim, 0}).template values<E>(),
-                               v.slice({dim, len - 1}).template values<E>());
+    if (len == 0)
+      return make_empty_subspans(v.template values<E>(), dims);
+    // `Var` may be `const Variable`, ensuring we call correct `values`
+    // overload. Without this we may clash with readonly flags.
+    Var begin = v.slice({dim, 0});
+    Var end = v.slice({dim, len - 1});
+    return make_subspans(v, begin.template values<E>(),
+                         end.template values<E>());
   };
   const auto variances_view = [dim, len, dims](auto &v) {
-    return len == 0
-               ? make_empty_subspans(v.template variances<E>(), dims)
-               : make_subspans(v.slice({dim, 0}).template variances<E>(),
-                               v.slice({dim, len - 1}).template variances<E>());
+    if (len == 0)
+      return make_empty_subspans(v.template variances<E>(), dims);
+    Var begin = v.slice({dim, 0});
+    Var end = v.slice({dim, len - 1});
+    return make_subspans(v, begin.template variances<E>(),
+                         end.template variances<E>());
   };
   return make_subspan_view<T>(var, dims, values_view, variances_view);
 }
@@ -96,8 +100,7 @@ template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
 /// Return Variable containing spans with extents given by indices over given
 /// dimension as elements.
 template <class T, class Var>
-Variable subspan_view(Var &var, const Dim dim,
-                      const VariableConstView &indices) {
+Variable subspan_view(Var &var, const Dim dim, const Variable &indices) {
   using E = std::remove_const_t<T>;
   const auto values_view = [dim, &indices](auto &v) {
     return make_subspans(v.template values<E>().data(), indices,
@@ -134,25 +137,16 @@ Variable subspan_view_impl(Var &var, Args &&... args) {
 Variable subspan_view(Variable &var, const Dim dim) {
   return subspan_view_impl(var, dim);
 }
-/// Return Variable containing mutable spans over given dimension as elements.
-Variable subspan_view(const VariableView &var, const Dim dim) {
-  return subspan_view_impl(var, dim);
-}
 /// Return Variable containing const spans over given dimension as elements.
-Variable subspan_view(const VariableConstView &var, const Dim dim) {
+Variable subspan_view(const Variable &var, const Dim dim) {
   return subspan_view_impl(var, dim);
 }
 
-Variable subspan_view(Variable &var, const Dim dim,
-                      const VariableConstView &indices) {
+Variable subspan_view(Variable &var, const Dim dim, const Variable &indices) {
   return subspan_view_impl(var, dim, indices);
 }
-Variable subspan_view(const VariableView &var, const Dim dim,
-                      const VariableConstView &indices) {
-  return subspan_view_impl(var, dim, indices);
-}
-Variable subspan_view(const VariableConstView &var, const Dim dim,
-                      const VariableConstView &indices) {
+Variable subspan_view(const Variable &var, const Dim dim,
+                      const Variable &indices) {
   return subspan_view_impl(var, dim, indices);
 }
 

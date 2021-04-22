@@ -10,57 +10,49 @@ namespace scipp::variable {
 INSTANTIATE_VARIABLE(pair_int64, std::pair<int64_t, int64_t>)
 INSTANTIATE_VARIABLE(pair_int32, std::pair<int32_t, int32_t>)
 INSTANTIATE_BIN_VARIABLE(VariableView, bucket<Variable>)
-INSTANTIATE_BIN_VARIABLE(VariableView_observer, bucket<VariableView>)
-INSTANTIATE_BIN_VARIABLE(VariableConstView_observer, bucket<VariableConstView>)
 
 template <class T> class BinVariableMakerVariable : public BinVariableMaker<T> {
 private:
-  Variable call_make_bins(const VariableConstView &,
-                          const VariableConstView &indices, const Dim dim,
-                          const DType type, const Dimensions &dims,
-                          const units::Unit &unit,
+  Variable call_make_bins(const Variable &, const Variable &indices,
+                          const Dim dim, const DType type,
+                          const Dimensions &dims, const units::Unit &unit,
                           const bool variances) const override {
     // Buffer contains only variable, which is created with new dtype, no
     // information to copy from parent.
-    return make_bins(Variable(indices), dim,
+    return make_bins(copy(indices), dim,
                      variableFactory().create(type, dims, unit, variances));
   }
-  VariableConstView data(const VariableConstView &var) const override {
-    return std::get<2>(var.constituents<bucket<T>>());
+  const Variable &data(const Variable &var) const override {
+    return this->buffer(var);
   }
-  VariableView data(const VariableView &var) const override {
-    if constexpr (std::is_same_v<T, VariableConstView>)
-      // This code is an indication of some shortcomings with the const handling
-      // of variables and views. Essentially we would require better support for
-      // variables with const elements.
-      throw std::runtime_error("Mutable access to data of non-owning binned "
-                               "view of const buffer is not possible.");
-    else
-      return std::get<2>(var.constituents<bucket<T>>());
-  }
-  core::ElementArrayViewParams
-  array_params(const VariableConstView &var) const override {
-    const auto &[indices, dim, buffer] = var.constituents<bucket<T>>();
-    auto params = var.array_params();
-    return {0, // no offset required in buffer since access via indices
-            params.dims(),
-            params.dataDims(),
-            {dim, buffer.dims(),
-             indices.template values<scipp::index_pair>().data()}};
-  }
+  Variable data(Variable &var) const override { return this->buffer(var); }
 };
+
+void expect_valid_bin_indices(const VariableConceptHandle &indices,
+                              const Dim dim, const Dimensions &buffer_dims) {
+  auto copy = requireT<const DataModel<scipp::index_pair>>(*indices);
+  const auto vals = copy.values();
+  std::sort(vals.begin(), vals.end());
+  if ((!vals.empty() && (vals.begin()->first < 0)) ||
+      (!vals.empty() && ((vals.end() - 1)->second > buffer_dims[dim])))
+    throw except::SliceError("Bin indices out of range");
+  if (std::adjacent_find(vals.begin(), vals.end(),
+                         [](const auto a, const auto b) {
+                           return a.second > b.first;
+                         }) != vals.end())
+    throw except::SliceError("Overlapping bin indices are not allowed.");
+  if (std::find_if(vals.begin(), vals.end(), [](const auto x) {
+        return x.first > x.second;
+      }) != vals.end())
+    throw except::SliceError(
+        "Bin begin index must be less or equal to its end index.");
+}
 
 namespace {
 auto register_variable_maker_bucket_Variable(
     (variableFactory().emplace(
          dtype<bucket<Variable>>,
          std::make_unique<BinVariableMakerVariable<Variable>>()),
-     variableFactory().emplace(
-         dtype<bucket<VariableView>>,
-         std::make_unique<BinVariableMakerVariable<VariableView>>()),
-     variableFactory().emplace(
-         dtype<bucket<VariableConstView>>,
-         std::make_unique<BinVariableMakerVariable<VariableConstView>>()),
      0));
 }
 

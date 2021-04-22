@@ -16,8 +16,6 @@
 
 namespace scipp::dataset {
 
-class DataArrayConstView;
-class DatasetConstView;
 class Dataset;
 class DataArray;
 
@@ -31,8 +29,8 @@ struct SCIPP_DATASET_EXPORT DataArrayError : public Error<dataset::DataArray> {
 
 template <>
 [[noreturn]] SCIPP_DATASET_EXPORT void
-throw_mismatch_error(const dataset::DataArrayConstView &expected,
-                     const dataset::DataArrayConstView &actual);
+throw_mismatch_error(const dataset::DataArray &expected,
+                     const dataset::DataArray &actual);
 
 struct SCIPP_DATASET_EXPORT DatasetError : public Error<dataset::Dataset> {
   explicit DatasetError(const std::string &msg);
@@ -40,26 +38,26 @@ struct SCIPP_DATASET_EXPORT DatasetError : public Error<dataset::Dataset> {
 
 template <>
 [[noreturn]] SCIPP_DATASET_EXPORT void
-throw_mismatch_error(const dataset::DatasetConstView &expected,
-                     const dataset::DatasetConstView &actual);
+throw_mismatch_error(const dataset::Dataset &expected,
+                     const dataset::Dataset &actual);
 
 struct SCIPP_DATASET_EXPORT CoordMismatchError : public DatasetError {
-  CoordMismatchError(const std::pair<Dim, VariableConstView> &expected,
-                     const std::pair<Dim, VariableConstView> &actual);
+  CoordMismatchError(const std::pair<const Dim, Variable> &expected,
+                     const std::pair<const Dim, Variable> &actual);
 };
 
 template <>
 [[noreturn]] SCIPP_DATASET_EXPORT void
-throw_mismatch_error(const std::pair<Dim, VariableConstView> &expected,
-                     const std::pair<Dim, VariableConstView> &actual);
+throw_mismatch_error(const std::pair<const Dim, Variable> &expected,
+                     const std::pair<const Dim, Variable> &actual);
 
 } // namespace scipp::except
 
 namespace scipp::dataset::expect {
 
-SCIPP_DATASET_EXPORT void coordsAreSuperset(const DataArrayConstView &a,
-                                            const DataArrayConstView &b);
+SCIPP_DATASET_EXPORT void coordsAreSuperset(const DataArray &a,
+                                            const DataArray &b);
 
-SCIPP_DATASET_EXPORT void isKey(const VariableConstView &key);
+SCIPP_DATASET_EXPORT void isKey(const Variable &key);
 
 } // namespace scipp::dataset::expect

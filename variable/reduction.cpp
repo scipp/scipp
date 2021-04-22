@@ -25,14 +25,12 @@ namespace scipp::variable {
 namespace {
 
 // Workaround VS C7526 (undefined inline variable) with dtype<> in template.
-bool is_dtype_bool(const VariableConstView &var) {
-  return var.dtype() == dtype<bool>;
-}
-bool is_dtype_int64(const VariableConstView &var) {
+bool is_dtype_bool(const Variable &var) { return var.dtype() == dtype<bool>; }
+bool is_dtype_int64(const Variable &var) {
   return var.dtype() == dtype<int64_t>;
 }
 
-Variable make_accumulant(const VariableConstView &var, const Dim dim,
+Variable make_accumulant(const Variable &var, const Dim dim,
                          const FillValue &init) {
   auto dims = var.dims();
   dims.erase(dim);
@@ -42,16 +40,16 @@ Variable make_accumulant(const VariableConstView &var, const Dim dim,
 
 } // namespace
 
-void sum_impl(const VariableView &summed, const VariableConstView &var) {
+void sum_impl(Variable &summed, const Variable &var) {
   accumulate_in_place(summed, var, element::plus_equals, "sum");
 }
 
-void nansum_impl(const VariableView &summed, const VariableConstView &var) {
+void nansum_impl(Variable &summed, const Variable &var) {
   accumulate_in_place(summed, var, element::nan_plus_equals, "nansum");
 }
 
 template <typename Op>
-Variable sum_with_dim_impl(Op op, const VariableConstView &var, const Dim dim) {
+Variable sum_with_dim_impl(Op op, const Variable &var, const Dim dim) {
   // Bool DType is a bit special in that it cannot contain its sum.
   // Instead the sum is stored in a int64_t Variable
   auto summed = make_accumulant(var, dim, FillValue::ZeroNotBool);
@@ -60,8 +58,8 @@ Variable sum_with_dim_impl(Op op, const VariableConstView &var, const Dim dim) {
 }
 
 template <typename Op>
-VariableView sum_with_dim_inplace_impl(Op op, const VariableConstView &var,
-                                       const Dim dim, const VariableView &out) {
+Variable &sum_with_dim_inplace_impl(Op op, const Variable &var, const Dim dim,
+                                    Variable &out) {
   if (is_dtype_bool(var) && !is_dtype_int64(out))
     throw except::TypeError("In-place sum of dtype=bool must be stored in an "
                             "output variable with dtype=int64.");
@@ -78,27 +76,24 @@ VariableView sum_with_dim_inplace_impl(Op op, const VariableConstView &var,
   return out;
 }
 
-Variable sum(const VariableConstView &var, const Dim dim) {
+Variable sum(const Variable &var, const Dim dim) {
   return sum_with_dim_impl(sum_impl, var, dim);
 }
 
-Variable nansum(const VariableConstView &var, const Dim dim) {
+Variable nansum(const Variable &var, const Dim dim) {
   return sum_with_dim_impl(nansum_impl, var, dim);
 }
 
-VariableView sum(const VariableConstView &var, const Dim dim,
-                 const VariableView &out) {
+Variable &sum(const Variable &var, const Dim dim, Variable &out) {
   return sum_with_dim_inplace_impl(sum_impl, var, dim, out);
 }
 
-VariableView nansum(const VariableConstView &var, const Dim dim,
-                    const VariableView &out) {
+Variable &nansum(const Variable &var, const Dim dim, Variable &out) {
   return sum_with_dim_inplace_impl(nansum_impl, var, dim, out);
 }
 
-VariableView nanmean_impl(const VariableConstView &var, const Dim dim,
-                          const VariableConstView &count,
-                          const VariableView &out) {
+Variable &nanmean_impl(const Variable &var, const Dim dim,
+                       const Variable &count, Variable &out) {
   if (isInt(out.dtype()))
     throw except::TypeError(
         "Cannot calculate nanmean in-place when output dtype is integer");
@@ -109,8 +104,7 @@ VariableView nanmean_impl(const VariableConstView &var, const Dim dim,
   return out;
 }
 
-Variable mean_impl(const VariableConstView &var, const Dim dim,
-                   const VariableConstView &count) {
+Variable mean_impl(const Variable &var, const Dim dim, const Variable &count) {
   auto summed = sum(var, dim);
   auto scale = reciprocal(astype(count, core::dtype<double>));
   if (isInt(var.dtype()))
@@ -120,8 +114,8 @@ Variable mean_impl(const VariableConstView &var, const Dim dim,
   return summed;
 }
 
-Variable nanmean_impl(const VariableConstView &var, const Dim dim,
-                      const VariableConstView &count) {
+Variable nanmean_impl(const Variable &var, const Dim dim,
+                      const Variable &count) {
   if (isInt(var.dtype()))
     return mean_impl(var, dim, count);
   auto summed = nansum(var, dim);
@@ -129,9 +123,8 @@ Variable nanmean_impl(const VariableConstView &var, const Dim dim,
   return summed;
 }
 
-VariableView mean_impl(const VariableConstView &var, const Dim dim,
-                       const VariableConstView &count,
-                       const VariableView &out) {
+Variable &mean_impl(const Variable &var, const Dim dim, const Variable &count,
+                    Variable &out) {
   if (isInt(out.dtype()))
     throw except::TypeError(
         "Cannot calculate mean in-place when output dtype is integer");
@@ -142,39 +135,37 @@ VariableView mean_impl(const VariableConstView &var, const Dim dim,
 }
 
 /// Return the mean along all dimensions.
-Variable mean(const VariableConstView &var) {
+Variable mean(const Variable &var) {
   return reduce_all_dims(var, [](auto &&... _) { return mean(_...); });
 }
 
-Variable mean(const VariableConstView &var, const Dim dim) {
+Variable mean(const Variable &var, const Dim dim) {
   using variable::isfinite;
   return mean_impl(var, dim, sum(isfinite(var), dim));
 }
 
-VariableView mean(const VariableConstView &var, const Dim dim,
-                  const VariableView &out) {
+Variable &mean(const Variable &var, const Dim dim, Variable &out) {
   using variable::isfinite;
   return mean_impl(var, dim, sum(isfinite(var), dim), out);
 }
 
 /// Return the mean along all dimensions. Ignoring NaN values.
-Variable nanmean(const VariableConstView &var) {
+Variable nanmean(const Variable &var) {
   return reduce_all_dims(var, [](auto &&... _) { return nanmean(_...); });
 }
 
-Variable nanmean(const VariableConstView &var, const Dim dim) {
+Variable nanmean(const Variable &var, const Dim dim) {
   using variable::isfinite;
   return nanmean_impl(var, dim, sum(isfinite(var), dim));
 }
 
-VariableView nanmean(const VariableConstView &var, const Dim dim,
-                     const VariableView &out) {
+Variable &nanmean(const Variable &var, const Dim dim, Variable &out) {
   using variable::isfinite;
   return nanmean_impl(var, dim, sum(isfinite(var), dim), out);
 }
 
 template <class Op>
-void reduce_impl(const VariableView &out, const VariableConstView &var, Op op,
+void reduce_impl(Variable &out, const Variable &var, Op op,
                  const std::string_view name) {
   accumulate_in_place(out, var, op, name);
 }
@@ -186,32 +177,32 @@ void reduce_impl(const VariableView &out, const VariableConstView &var, Op op,
 /// `max`. Note that masking is not supported here since it would make creation
 /// of a sensible starting value difficult.
 template <class Op>
-Variable reduce_idempotent(const VariableConstView &var, const Dim dim, Op op,
+Variable reduce_idempotent(const Variable &var, const Dim dim, Op op,
                            const FillValue &init, const std::string_view name) {
   auto out = make_accumulant(var, dim, init);
   reduce_impl(out, var, op, name);
   return out;
 }
 
-void any_impl(const VariableView &out, const VariableConstView &var) {
+void any_impl(Variable &out, const Variable &var) {
   reduce_impl(out, var, core::element::logical_or_equals, "any");
 }
 
-Variable any(const VariableConstView &var, const Dim dim) {
+Variable any(const Variable &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::logical_or_equals,
                            FillValue::False, "any");
 }
 
-void all_impl(const VariableView &out, const VariableConstView &var) {
+void all_impl(Variable &out, const Variable &var) {
   reduce_impl(out, var, core::element::logical_and_equals, "all");
 }
 
-Variable all(const VariableConstView &var, const Dim dim) {
+Variable all(const Variable &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::logical_and_equals,
                            FillValue::True, "all");
 }
 
-void max_impl(const VariableView &out, const VariableConstView &var) {
+void max_impl(Variable &out, const Variable &var) {
   reduce_impl(out, var, core::element::max_equals, "max");
 }
 
@@ -219,7 +210,7 @@ void max_impl(const VariableView &out, const VariableConstView &var) {
 ///
 /// Variances are not considered when determining the maximum. If present, the
 /// variance of the maximum element is returned.
-Variable max(const VariableConstView &var, const Dim dim) {
+Variable max(const Variable &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::max_equals,
                            FillValue::Lowest, "max");
 }
@@ -228,12 +219,12 @@ Variable max(const VariableConstView &var, const Dim dim) {
 ///
 /// Variances are not considered when determining the maximum. If present, the
 /// variance of the maximum element is returned.
-Variable nanmax(const VariableConstView &var, const Dim dim) {
+Variable nanmax(const Variable &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::nanmax_equals,
                            FillValue::Lowest, "nanmax");
 }
 
-void min_impl(const VariableView &out, const VariableConstView &var) {
+void min_impl(Variable &out, const Variable &var) {
   reduce_impl(out, var, core::element::min_equals, "min");
 }
 
@@ -241,7 +232,7 @@ void min_impl(const VariableView &out, const VariableConstView &var) {
 ///
 /// Variances are not considered when determining the minimum. If present, the
 /// variance of the minimum element is returned.
-Variable min(const VariableConstView &var, const Dim dim) {
+Variable min(const Variable &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::min_equals, FillValue::Max,
                            "min");
 }
@@ -250,48 +241,48 @@ Variable min(const VariableConstView &var, const Dim dim) {
 ///
 /// Variances are not considered when determining the minimum. If present, the
 /// variance of the minimum element is returned.
-Variable nanmin(const VariableConstView &var, const Dim dim) {
+Variable nanmin(const Variable &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::nanmin_equals,
                            FillValue::Max, "nanmin");
 }
 
 /// Return the sum along all dimensions.
-Variable sum(const VariableConstView &var) {
+Variable sum(const Variable &var) {
   return reduce_all_dims(var, [](auto &&... _) { return sum(_...); });
 }
 
 /// Return the sum along all dimensions, nans treated as zero.
-Variable nansum(const VariableConstView &var) {
+Variable nansum(const Variable &var) {
   return reduce_all_dims(var, [](auto &&... _) { return nansum(_...); });
 }
 
 /// Return the maximum along all dimensions.
-Variable max(const VariableConstView &var) {
+Variable max(const Variable &var) {
   return reduce_all_dims(var, [](auto &&... _) { return max(_...); });
 }
 
 /// Return the maximum along all dimensions ignorning NaN values.
-Variable nanmax(const VariableConstView &var) {
+Variable nanmax(const Variable &var) {
   return reduce_all_dims(var, [](auto &&... _) { return nanmax(_...); });
 }
 
 /// Return the minimum along all dimensions.
-Variable min(const VariableConstView &var) {
+Variable min(const Variable &var) {
   return reduce_all_dims(var, [](auto &&... _) { return min(_...); });
 }
 
 /// Return the minimum along all dimensions ignoring NaN values.
-Variable nanmin(const VariableConstView &var) {
+Variable nanmin(const Variable &var) {
   return reduce_all_dims(var, [](auto &&... _) { return nanmin(_...); });
 }
 
 /// Return the logical AND along all dimensions.
-Variable all(const VariableConstView &var) {
+Variable all(const Variable &var) {
   return reduce_all_dims(var, [](auto &&... _) { return all(_...); });
 }
 
 /// Return the logical OR along all dimensions.
-Variable any(const VariableConstView &var) {
+Variable any(const Variable &var) {
   return reduce_all_dims(var, [](auto &&... _) { return any(_...); });
 }
 
