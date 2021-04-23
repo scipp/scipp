@@ -311,6 +311,15 @@ TEST(DimensionsTest, fold) {
                        except::NotFoundError);
 }
 
+TEST(DimensionsTest, fold_fail_bad_sizes) {
+  Dimensions x(Dim::X, 6);
+  EXPECT_NO_THROW_DISCARD(fold(x, Dim::X, {{Dim::Y, 2}, {Dim::Z, 3}}));
+  EXPECT_THROW_DISCARD(fold(x, Dim::X, {{Dim::Y, 2}, {Dim::Z, 2}}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(fold(x, Dim::X, {{Dim::Y, 3}, {Dim::Z, 3}}),
+                       except::DimensionError);
+}
+
 TEST(DimensionsTest, fold_into_3) {
   Dimensions x = {{Dim::X, 24}};
   Dimensions expected = {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}};

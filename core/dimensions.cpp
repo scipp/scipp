@@ -270,6 +270,12 @@ Dimensions fold(const Dimensions &old_dims, const Dim from_dim,
     else
       for (const auto &lab : to_dims.labels())
         new_dims.addInner(lab, to_dims[lab]);
+  if (old_dims.volume() != new_dims.volume())
+    throw except::DimensionError(
+        "Sizes " + to_string(to_dims) +
+        " provided to `fold` not compatible with length '" +
+        std::to_string(old_dims[from_dim]) + "' of dimension '" +
+        from_dim.name() + "' being folded.");
   return new_dims;
 }
 
