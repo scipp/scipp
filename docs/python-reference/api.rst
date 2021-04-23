@@ -23,7 +23,9 @@ Creation functions
    array
    scalar
    zeros
+   zeros_like
    ones
+   ones_like
    empty
 
 Free functions
