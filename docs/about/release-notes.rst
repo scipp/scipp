@@ -17,6 +17,7 @@ Features
 * ``to_unit`` now supports binned data `#1841 <https://github.com/scipp/scipp/pull/1841>`_.
 * ``broadcast`` now returns a view instead of copying `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
 * ``fold`` now returns a view instead of copying `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
+* ``fold`` now works for binned data `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
 
 Bugfixes
 ~~~~~~~~
