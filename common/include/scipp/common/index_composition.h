@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cassert>
+#include <cstddef>
 
 #include "scipp/common/index.h"
 
@@ -37,6 +38,13 @@ constexpr auto flat_index_from_strides(ForwardIt1 strides_it,
 /// 'column-major' order. Here, this means that i_0 is the fasted moving index
 /// and i_{n-1} is slowest.
 ///
+/// If I == prod_{d=0}^ndim (l_d), i.e. one element past the end,
+/// the resulting indices are i_d = 0 for d < ndim-1, i_{ndim-1} = l_{ndim-1}.
+/// This allows setting 'end-iterators' in a well defined manner.
+/// However, the result is undefined for greater values of I.
+///
+/// Values of array elements in `indices` with d > ndim-1 are unspecified.
+///
 /// @param flat_index I
 /// @param ndim n
 /// @param shape {l_d}
@@ -50,10 +58,13 @@ extract_indices(scipp::index flat_index, const scipp::index ndim,
                 const std::array<scipp::index, Ndim_max> &shape,
                 std::array<scipp::index, Ndim_max> &indices) noexcept {
   assert(ndim <= static_cast<scipp::index>(Ndim_max));
-  for (scipp::index dim = 0; dim < ndim; ++dim) {
+  for (scipp::index dim = 0; dim < ndim - 1; ++dim) {
     const scipp::index aux = flat_index / shape[dim];
     indices[dim] = flat_index - aux * shape[dim];
     flat_index = aux;
+  }
+  if (ndim > 0) {
+    indices[ndim - 1] = flat_index;
   }
 }
 /* Implementation notes for extract_indices
