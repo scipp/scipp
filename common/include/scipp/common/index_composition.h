@@ -39,11 +39,17 @@ constexpr auto flat_index_from_strides(ForwardIt1 strides_it,
 /// and i_{n-1} is slowest.
 ///
 /// If I == prod_{d=0}^ndim (l_d), i.e. one element past the end,
-/// the resulting indices are i_d = 0 for d < ndim-1, i_{ndim-1} = l_{ndim-1}.
+/// the resulting indices are i_d = 0 for d < ndim-1, i_{ndim-1} = l_{ndim-1}
+/// unless l_{ndim-1} = 0, see below.
 /// This allows setting 'end-iterators' in a well defined manner.
 /// However, the result is undefined for greater values of I.
 ///
 /// Values of array elements in `indices` with d > ndim-1 are unspecified.
+///
+/// Any number of l_d maybe 0 which yields i_d = 0.
+/// Except for the one-past-the-end case described above, i_{ndim-1} = 1 if
+/// l_{ndim-1} to allow this case to be distinguishable from an index
+/// to the end.
 ///
 /// @param flat_index I
 /// @param ndim n
@@ -59,9 +65,13 @@ extract_indices(scipp::index flat_index, const scipp::index ndim,
                 std::array<scipp::index, Ndim_max> &indices) noexcept {
   assert(ndim <= static_cast<scipp::index>(Ndim_max));
   for (scipp::index dim = 0; dim < ndim - 1; ++dim) {
-    const scipp::index aux = flat_index / shape[dim];
-    indices[dim] = flat_index - aux * shape[dim];
-    flat_index = aux;
+    if (shape[dim] != 0) {
+      const scipp::index aux = flat_index / shape[dim];
+      indices[dim] = flat_index - aux * shape[dim];
+      flat_index = aux;
+    } else {
+      indices[dim] = 0;
+    }
   }
   if (ndim > 0) {
     indices[ndim - 1] = flat_index;
