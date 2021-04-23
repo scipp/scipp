@@ -260,11 +260,9 @@ Dimensions transpose(const Dimensions &dims, const std::vector<Dim> &labels) {
 ///
 /// Note that addInner will protect against inserting new dims that already
 /// exist in the old dims.
-/// If from_dim is not found in old_dims, the new dims are identical to the
-/// old_dims (this occurs when folding a DataArray whose coordinates do not all
-/// necessarily contain from_dim).
 Dimensions fold(const Dimensions &old_dims, const Dim from_dim,
                 const Dimensions &to_dims) {
+  scipp::expect::contains(old_dims, from_dim);
   Dimensions new_dims;
   for (const auto &dim : old_dims.labels())
     if (dim != from_dim)

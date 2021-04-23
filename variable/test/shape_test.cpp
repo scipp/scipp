@@ -155,6 +155,28 @@ TEST(ShapeTest, reshape_and_slice) {
                                  Variances{22, 23, 26, 27}));
 }
 
+TEST(ShapeTest, reshape_mutable) {
+  auto modified_original = makeVariable<double>(
+      Dims{Dim::X, Dim::Y}, Shape{2, 3}, Values{1, 2, 3, 0, 5, 6});
+  auto reference =
+      makeVariable<double>(Dims{Dim::Row}, Shape{6}, Values{1, 2, 3, 0, 5, 6});
+
+  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                                  Values{1, 2, 3, 4, 5, 6});
+
+  auto view = reshape(var, {Dim::Row, 6});
+  view.values<double>()[3] = 0;
+
+  ASSERT_EQ(view, reference);
+  ASSERT_EQ(var, modified_original);
+}
+
+TEST(ShapeTest, fold_fail_if_dim_not_found) {
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{4});
+  EXPECT_THROW_DISCARD(fold(var, Dim::Time, {{Dim::Y, 2}, {Dim::Z, 2}}),
+                       except::NotFoundError);
+}
+
 TEST(ShapeTest, fold_x) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   const auto expected =

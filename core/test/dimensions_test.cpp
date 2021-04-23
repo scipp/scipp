@@ -307,7 +307,8 @@ TEST(DimensionsTest, fold) {
   Dimensions xy = {{Dim::X, 6}, {Dim::Y, 4}};
   Dimensions expected = {{Dim::Row, 2}, {Dim::Time, 3}, {Dim::Y, 4}};
   EXPECT_EQ(fold(xy, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
-  EXPECT_EQ(fold(xy, Dim::Z, {{Dim::Row, 2}, {Dim::Time, 3}}), xy);
+  EXPECT_THROW_DISCARD(fold(xy, Dim::Z, {{Dim::Row, 2}, {Dim::Time, 3}}),
+                       except::NotFoundError);
 }
 
 TEST(DimensionsTest, fold_into_3) {
