@@ -63,7 +63,7 @@ In this example, we assume that the new repository is named ``ess`` (the full pa
 
 #. On Github, go to the repository ``Settings > Pages`` (you will need admin rights to see the ``Settings`` tab). You should see that it is now saying "Your site is published at ``https://scipp.github.io/ess/``". It should also be saying it is using the ``gh-pages`` branch and the ``/root`` folder.
 
-#. On your local machine, generate a ssh key, without an email nor passphrase: ``ssh-keygen -t rsa -b 4096``. When prompted for a file name, use ``azure-ess-key`` (where ``ess`` is the name of the github repository).
+#. On your local machine, generate a ssh key, without an email or passphrase: ``ssh-keygen -t rsa -b 4096``. When prompted for a file name, use ``azure-ess-key`` (where ``ess`` is the name of the github repository).
 
 #. Go once again to the repository's ``Settings > Deploy keys``. Add a new key, and copy the contents of the ``azure-ess-key.pub`` file. Remember to also give the key ``write`` access to the repository.
 
