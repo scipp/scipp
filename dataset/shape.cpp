@@ -249,18 +249,24 @@ DataArray fold(const DataArray &a, const Dim from_dim,
     if (is_bin_edges(coord, a.dims(), from_dim))
       folded.coords().set(name, fold_bin_edge(coord, from_dim, to_dims));
     else
-      folded.coords().set(name, fold(coord, from_dim, to_dims));
+      folded.coords().set(name, coord.dims().contains(from_dim)
+                                    ? fold(coord, from_dim, to_dims)
+                                    : coord);
   }
 
   for (auto &&[name, attr] : a.attrs())
     if (is_bin_edges(attr, a.dims(), from_dim))
       folded.attrs().set(name, fold_bin_edge(attr, from_dim, to_dims));
     else
-      folded.attrs().set(name, fold(attr, from_dim, to_dims));
+      folded.attrs().set(name, attr.dims().contains(from_dim)
+                                   ? fold(attr, from_dim, to_dims)
+                                   : attr);
 
   // Note that we assume bin-edge masks do not exist
   for (auto &&[name, mask] : a.masks())
-    folded.masks().set(name, fold(mask, from_dim, to_dims));
+    folded.masks().set(name, mask.dims().contains(from_dim)
+                                 ? fold(mask, from_dim, to_dims)
+                                 : mask);
 
   return folded;
 }
