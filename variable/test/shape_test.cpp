@@ -177,6 +177,15 @@ TEST(ShapeTest, fold_fail_if_dim_not_found) {
                        except::NotFoundError);
 }
 
+TEST(ShapeTest, fold_does_not_copy) {
+  const auto var =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  const auto expected = var + var;
+  auto folded = fold(var, Dim::X, {{Dim::Y, 2}, {Dim::Z, 2}});
+  folded += folded;
+  EXPECT_EQ(var, expected);
+}
+
 TEST(ShapeTest, fold_x) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   const auto expected =

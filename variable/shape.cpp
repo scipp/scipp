@@ -149,7 +149,7 @@ Variable reshape(const Variable &var, const Dimensions &dims) {
 
 Variable fold(const Variable &view, const Dim from_dim,
               const Dimensions &to_dims) {
-  return reshape(view, fold(view.dims(), from_dim, to_dims));
+  return view.fold(from_dim, to_dims);
 }
 
 Variable flatten(const Variable &view,

@@ -153,6 +153,21 @@ Variable Variable::broadcast(const Dimensions &target) const {
   return out;
 }
 
+Variable Variable::fold(const Dim dim, const Dimensions &target) const {
+  auto out(*this);
+  out.m_dims = core::fold(dims(), dim, target);
+  const Strides substrides(target);
+  scipp::index i_out = 0;
+  for (scipp::index i_in = 0; i_in < dims().ndim(); ++i_in) {
+    if (dims().label(i_in) == dim)
+      for (scipp::index i_target = 0; i_target < target.ndim(); ++i_target)
+        out.m_strides[i_out++] = m_strides[i_in] * substrides[i_target];
+    else
+      out.m_strides[i_out++] = m_strides[i_in];
+  }
+  return out;
+}
+
 Variable Variable::transpose(const std::vector<Dim> &order) const {
   auto transposed(*this);
   transposed.m_strides = core::transpose(m_strides, dims(), order);

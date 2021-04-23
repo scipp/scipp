@@ -128,6 +128,7 @@ public:
   std::tuple<Variable, Dim, typename T::buffer_type> to_constituents();
 
   [[nodiscard]] Variable broadcast(const Dimensions &target) const;
+  [[nodiscard]] Variable fold(const Dim dim, const Dimensions &target) const;
   [[nodiscard]] Variable transpose(const std::vector<Dim> &order) const;
 
   [[nodiscard]] bool is_valid() const noexcept;
