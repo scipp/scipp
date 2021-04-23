@@ -172,26 +172,12 @@ Variable maybe_broadcast(const Variable &var,
 /// Special handling for folding coord along a dim that contains bin edges.
 Variable fold_bin_edge(const Variable &var, const Dim from_dim,
                        const Dimensions &to_dims) {
-  // The size of the bin edge dim
-  const auto bin_edge_size = var.dims()[from_dim];
-  // inner_size is the size of the inner dimensions in to_dims
-  const auto inner_size = to_dims[to_dims.inner()];
-  // Make the bulk slice of the coord, leaving out the last bin edge
-  const auto base = var.slice({from_dim, 0, bin_edge_size - 1});
-  // The new_dims are the reshaped dims, as if the variable was not bin edges
-  const auto new_dims = core::fold(base.dims(), from_dim, to_dims);
-  auto out_dims = Dimensions(new_dims);
-  // To make the container of the right size, we increase the inner dim by 1
-  out_dims.resize(to_dims.inner(), inner_size + 1);
-  // Create output container
-  auto out = empty(out_dims, var.unit(), var.dtype(), var.hasVariances());
-  // Copy the bulk of the variable into the output, omitting the last bin edge
-  copy(reshape(base, new_dims), out.slice({to_dims.inner(), 0, inner_size}));
-  // Copy the 'end-cap' or final bin edge into the out container, by offsetting
-  // the slicing indices by 1
-  copy(reshape(var.slice({from_dim, 1, bin_edge_size}), new_dims)
-           .slice({to_dims.inner(), inner_size - 1}),
-       out.slice({to_dims.inner(), inner_size}));
+  auto out = var.slice({from_dim, 0, var.dims()[from_dim] - 1})
+                 .fold(from_dim, to_dims) // fold non-overlapping part
+                 .as_const();             // mark readonly since we add overlap
+  auto &out_dims = out.unchecked_dims();
+  // Increase dims without changing strides to obtain first == last
+  out_dims.resize(to_dims.inner(), to_dims[to_dims.inner()] + 1);
   return out;
 }
 

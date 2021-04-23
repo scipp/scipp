@@ -138,6 +138,9 @@ public:
 
   [[nodiscard]] Variable as_const() const;
 
+  auto &unchecked_dims() { return m_dims; }
+  auto &unchecked_strides() { return m_strides; }
+
 private:
   // Declared friend so gtest recognizes it
   friend SCIPP_VARIABLE_EXPORT std::ostream &operator<<(std::ostream &,
