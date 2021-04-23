@@ -52,7 +52,7 @@ Currently the only example for this is `scippneutron <https://scipp.github.io/sc
 News
 ----
 
-- Scipp is moving from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
+- Scipp changed from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
 - Looking for ``scipp.neutron``?
   This submodule has been moved into its own package, `scippneutron <https://scipp.github.io/scippneutron>`_.
 - [March 2021] `scipp-0.6 <https://scipp.github.io/about/release-notes.html#v0-6-0-march-2021>`_ has been released.
