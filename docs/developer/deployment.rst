@@ -7,7 +7,7 @@ The scipp project encompases a collection of packages in an ecosystem.
 This documents the release/deployment process for each package.
 
 Mantid Framework
------------------
+----------------
 
 Mantid is an optional runtime dependency for scippneutron and is utilised solely through its python api.
 In practice it is an important component for using scippneutron for neutron scattering as it provides a number of key components, such as facility specific file loading.
@@ -50,3 +50,35 @@ Mantid Framework Deployment Procedure
   When running ``conda build`` locally, ensure that ``conda-build`` is up to date (``conda update conda-build``). This can be a source of difference between what is observed on the CI (install fresh into clean conda env) and a potentially stale local environment. You should also ensure that the channel order specified is the same as is applied in the CI for your ``conda build`` command. Refer to order applied in ``conda build`` step in pipeline yaml file. Priority decreases from left to right in your command line argument order. You should also ensure that your local `~/.condarc` file does not prioritise any unexpected/conflicting channels and that flag settings such as ``channel_priority: false`` are not utilised. Note that you can set ``--override-channels`` to your ``conda build`` command to prevent local `.condarc` files getting getting in the way.
 
 
+Documentation on Github Pages
+-----------------------------
+
+The procedure below describes the steps to follow in order to publish documentation pages from a new repository in the Scipp organisation to the scipp.github.io website.
+
+In this example, we assume that the new repository is named ``ess`` (the full path including organisation is hence ``scipp/ess``).
+
+#. Clone the ``ess`` repository: ``git clone git@github.com:scipp/ess.git``
+
+#. Create a `gh-pages` branch on the repository with ``git checkout -b gh-pages``
+
+#. On Github, go to the repository ``Settings > Pages`` (you will need admin rights to see the ``Settings`` tab). You should see that it is now saying "Your site is published at ``https://scipp.github.io/ess/``". It should also be saying it is using the ``gh-pages`` branch and the ``/root`` folder.
+
+#. On your local machine, generate a ssh key, without an email nor passphrase: ``ssh-keygen -t rsa -b 4096``. When prompted for a file name, use ``azure-ess-key`` (where ``ess`` is the name of the github repository).
+
+#. Go once again to the repository's ``Settings > Deploy keys``. Add a new key, and copy the contents of the ``azure-ess-key.pub`` file. Remember to also give the key ``write`` access to the repository.
+
+#. Go to the project page on Azure. Go to ``Pipelines > Library > Secure Files``. Upload the ``azure-ess-key`` (without the ``.pub``) file as a secure file.
+
+#. On your local machine, to back to where you cloned the ``ess`` git repository. Create a new branch starting from the ``main`` branch: ``git checkout main`` then ``git checkout -b deploy_docs``.
+
+#. In that new branch, create a ``.azure-pipelines/documentation_deploy.yml`` script. The easiest way is to copy one from another repository, e.g. `ess-notebooks <https://github.com/scipp/ess-notebooks/blob/master/.azure-pipelines/documentation_deploy.yml>`_.
+
+#. In that ``.azure-pipelines/documentation_deploy.yml`` file, replace the ``sshPublicKey`` with the contents of azure-ess-key.pub. Change the ``sshKeySecureFile`` to ``azure-ess-key``. Change ``git clone git@github.com:scipp/ess-notebooks`` to ``git clone git@github.com:scipp/ess``.
+
+#. Push the changes to github (``git push origin deploy_docs``) and create a pull request. Hopefully, once the pull request is merged into ``main`` the pages will show up on `https://scipp.github.io/ess <https://scipp.github.io/ess>`_.
+
+.. note::
+  Some useful links:
+
+  * https://docs.github.com/en/developers/overview/managing-deploy-keys
+  * https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/utility/install-ssh-key?view=azure-devops
