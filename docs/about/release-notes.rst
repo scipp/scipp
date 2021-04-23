@@ -15,8 +15,8 @@ Features
 * ``sort`` is now considerably faster for data with more rows `#1872 <https://github.com/scipp/scipp/pull/1872>`_.
 * Added numpy-like ``linspace``, ``logspace``, ``geomspace``, and ``arange`` variable creation functions `#1871 <https://github.com/scipp/scipp/pull/1871>`_.
 * ``to_unit`` now supports binned data `#1841 <https://github.com/scipp/scipp/pull/1841>`_.
-* ``broadcast`` now returns a view instead of copying.
-* ``fold`` now returns a view instead of copying.
+* ``broadcast`` now returns a view instead of copying `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
+* ``fold`` now returns a view instead of copying `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
 
 Bugfixes
 ~~~~~~~~
