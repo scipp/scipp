@@ -239,36 +239,18 @@ Dim bin_edge_in_from_labels(const Variable &var, const Dimensions &array_dims,
 
 } // end anonymous namespace
 
-/// Fold a single dimension into multiple dimensions:
+/// Fold a single dimension into multiple dimensions
 /// ['x': 6] -> ['y': 2, 'z': 3]
 DataArray fold(const DataArray &a, const Dim from_dim,
                const Dimensions &to_dims) {
-  auto folded = DataArray(fold(a.data(), from_dim, to_dims));
-
-  for (auto &&[name, coord] : a.coords()) {
-    if (is_bin_edges(coord, a.dims(), from_dim))
-      folded.coords().set(name, fold_bin_edge(coord, from_dim, to_dims));
+  return dataset::transform(a, [&](const auto &var) {
+    if (is_bin_edges(var, a.dims(), from_dim))
+      return fold_bin_edge(var, from_dim, to_dims);
+    else if (var.dims().contains(from_dim))
+      return fold(var, from_dim, to_dims);
     else
-      folded.coords().set(name, coord.dims().contains(from_dim)
-                                    ? fold(coord, from_dim, to_dims)
-                                    : coord);
-  }
-
-  for (auto &&[name, attr] : a.attrs())
-    if (is_bin_edges(attr, a.dims(), from_dim))
-      folded.attrs().set(name, fold_bin_edge(attr, from_dim, to_dims));
-    else
-      folded.attrs().set(name, attr.dims().contains(from_dim)
-                                   ? fold(attr, from_dim, to_dims)
-                                   : attr);
-
-  // Note that we assume bin-edge masks do not exist
-  for (auto &&[name, mask] : a.masks())
-    folded.masks().set(name, mask.dims().contains(from_dim)
-                                 ? fold(mask, from_dim, to_dims)
-                                 : mask);
-
-  return folded;
+      return var;
+  });
 }
 
 /// Flatten multiple dimensions into a single dimension:
