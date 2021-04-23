@@ -175,9 +175,8 @@ Variable fold_bin_edge(const Variable &var, const Dim from_dim,
   auto out = var.slice({from_dim, 0, var.dims()[from_dim] - 1})
                  .fold(from_dim, to_dims) // fold non-overlapping part
                  .as_const();             // mark readonly since we add overlap
-  auto &out_dims = out.unchecked_dims();
   // Increase dims without changing strides to obtain first == last
-  out_dims.resize(to_dims.inner(), to_dims[to_dims.inner()] + 1);
+  out.unchecked_dims().resize(to_dims.inner(), to_dims[to_dims.inner()] + 1);
   return out;
 }
 
