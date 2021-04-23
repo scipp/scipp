@@ -40,12 +40,23 @@ void throw_mismatch_error(const std::pair<const Dim, Variable> &expected,
 } // namespace scipp::except
 
 namespace scipp::dataset::expect {
-
-void coordsAreSuperset(const DataArray &a, const DataArray &b) {
-  const auto &a_coords = a.coords();
-  for (const auto b_coord : b.coords())
+namespace {
+void coordsAreSuperset(const Coords &a_coords, const Coords &b_coords) {
+  for (const auto b_coord : b_coords) {
     if (a_coords[b_coord.first] != b_coord.second)
       throw except::CoordMismatchError(*a_coords.find(b_coord.first), b_coord);
+  }
+}
+} // namespace
+
+void coordsAreSuperset(const DataArray &a, const DataArray &b) {
+  coordsAreSuperset(a.coords(), b.coords());
+}
+void coordsAreSuperset(const Dataset &a, const Dataset &b) {
+  coordsAreSuperset(a.coords(), b.coords());
+}
+void coordsAreSuperset(const Dataset &a, const DataArray &b) {
+  coordsAreSuperset(a.coords(), b.coords());
 }
 
 void isKey(const Variable &key) {
