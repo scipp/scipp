@@ -143,6 +143,16 @@ Variable &Variable::setSlice(const Slice params, const Variable &data) {
   return *this;
 }
 
+Variable Variable::broadcast(const Dimensions &target) const {
+  expect::contains(target, dims());
+  auto out = as_const();
+  out.m_dims = target;
+  scipp::index i = 0;
+  for (const auto &d : target.labels())
+    out.m_strides[i++] = dims().contains(d) ? m_strides[dims().index(d)] : 0;
+  return out;
+}
+
 Variable Variable::transpose(const std::vector<Dim> &order) const {
   auto transposed(*this);
   transposed.m_strides = core::transpose(m_strides, dims(), order);

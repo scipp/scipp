@@ -24,9 +24,7 @@ void expect_same_volume(const Dimensions &old_dims,
 }
 
 Variable broadcast(const Variable &var, const Dimensions &dims) {
-  auto result = variableFactory().empty_like(var, dims);
-  result.data().copy(var, result);
-  return result;
+  return var.broadcast(dims);
 }
 
 Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {

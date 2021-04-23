@@ -26,6 +26,18 @@ TEST(ShapeTest, broadcast) {
             transpose(reference, {Dim::Y, Dim::X, Dim::Z}));
 }
 
+TEST(ShapeTest, broadcast_does_not_copy) {
+  auto scalar = makeVariable<double>(Values{1});
+  auto var = broadcast(scalar, {Dim::X, 2});
+  scalar += scalar;
+  EXPECT_EQ(var, makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 2}));
+}
+
+TEST(ShapeTest, broadcast_output_is_readonly) {
+  auto var = broadcast(makeVariable<double>(Values{1}), {Dim::X, 2});
+  EXPECT_TRUE(var.is_readonly());
+}
+
 TEST(ShapeTest, broadcast_fail) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1, 2, 3, 4});
