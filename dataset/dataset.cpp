@@ -165,11 +165,11 @@ Dataset &Dataset::setSlice(const Slice s, const Dataset &data) {
 Dataset &Dataset::setSlice(const Slice s, const DataArray &data) {
   // Validate slice on all items as a dry-run
   expect::coordsAreSuperset(slice(s), data);
-  for (const auto &[name, item] : m_data)
-    item.validateSlice(s, data);
+  for (const auto &item : m_data)
+    item.second.validateSlice(s, data);
   // Only if all items checked for dry-run does modification go-ahead
-  for (auto &&item : *this)
-    item.setSlice(s, data);
+  for (auto &item : m_data)
+    item.second.setSlice(s, data);
   return *this;
 }
 
