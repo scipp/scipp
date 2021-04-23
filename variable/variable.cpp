@@ -123,15 +123,8 @@ Variable Variable::slice(const Slice params) const {
   return out;
 }
 
-void Variable::validateSlice(const Slice &s, const Variable &data,
-                             const std::string &parent_key) const {
-  if ((this->is_readonly() || !this->dims().contains(s.dim())) &&
-      (this->dims().contains(s.dim()) ? this->slice(s) : *this) != data) {
-    throw except::DimensionError("Cannot update meta data '" + parent_key +
-                                 "' via slice since it is implicitly "
-                                 "broadcast along the slice dimension '" +
-                                 to_string(s.dim()) + "'.");
-  }
+void Variable::validateSlice(const Slice &s, const Variable &data) const {
+  core::expect::validSlice(this->dims(), s);
   if (data.hasVariances() != this->hasVariances()) {
     auto variances_message = [](const auto &variable) {
       return "does" + std::string(variable.hasVariances() ? "" : " NOT") +
