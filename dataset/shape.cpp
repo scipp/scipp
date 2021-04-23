@@ -257,38 +257,17 @@ DataArray fold(const DataArray &a, const Dim from_dim,
 /// ['y', 'z'] -> ['x']
 DataArray flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
                   const Dim to_dim) {
-  auto flattened = DataArray(flatten(a.data(), from_labels, to_dim));
-
-  for (auto &&[name, coord] : a.coords()) {
+  static_cast<void>(core::flatten(a.dims(), from_labels, to_dim));
+  return dataset::transform(a, [&](const auto &in) {
     const auto bin_edge_dim =
-        bin_edge_in_from_labels(coord, a.dims(), from_labels);
-    const auto var = maybe_broadcast(coord, from_labels, a.dims());
+        bin_edge_in_from_labels(in, a.dims(), from_labels);
+    const auto var = maybe_broadcast(in, from_labels, a.dims());
     if (bin_edge_dim != Dim::Invalid) {
-      flattened.coords().set(
-          name, flatten_bin_edge(var, from_labels, to_dim, bin_edge_dim));
+      return flatten_bin_edge(var, from_labels, to_dim, bin_edge_dim);
     } else {
-      flattened.coords().set(name, flatten(var, from_labels, to_dim));
+      return flatten(var, from_labels, to_dim);
     }
-  }
-
-  for (auto &&[name, attr] : a.attrs()) {
-    const auto bin_edge_dim =
-        bin_edge_in_from_labels(attr, a.dims(), from_labels);
-    const auto var = maybe_broadcast(attr, from_labels, a.dims());
-    if (bin_edge_dim != Dim::Invalid) {
-      flattened.attrs().set(
-          name, flatten_bin_edge(var, from_labels, to_dim, bin_edge_dim));
-    } else {
-      flattened.attrs().set(name, flatten(var, from_labels, to_dim));
-    }
-  }
-
-  for (auto &&[name, mask] : a.masks())
-    flattened.masks().set(name,
-                          flatten(maybe_broadcast(mask, from_labels, a.dims()),
-                                  from_labels, to_dim));
-
-  return flattened;
+  });
 }
 
 } // namespace scipp::dataset
