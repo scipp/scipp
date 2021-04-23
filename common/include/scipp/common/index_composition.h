@@ -17,16 +17,12 @@ namespace scipp {
 ///       is not the extent of the array in dimension d but rather the step
 ///       length in the flat index to advance one element in d.
 ///       It is thus *not* complementary to extract_indices.
-template <size_t Ndim_max>
-constexpr scipp::index
-flat_index_from_strides(const std::array<scipp::index, Ndim_max> &strides,
-                        const std::array<scipp::index, Ndim_max> &indices,
-                        const scipp::index ndim) noexcept {
-  assert(ndim <= Ndim_max);
-  auto strides_it = strides.begin();
-  auto indices_it = indices.begin();
-  const auto strides_end = std::next(strides_it, ndim);
-  scipp::index result = 0;
+template <class ForwardIt1, class ForwardIt2>
+constexpr auto flat_index_from_strides(ForwardIt1 strides_it,
+                                       ForwardIt2 strides_end,
+                                       ForwardIt2 indices_it) noexcept {
+  std::remove_const_t<std::remove_reference_t<decltype(*strides_it)>> result =
+      0;
   for (; strides_it != strides_end; ++strides_it, ++indices_it) {
     result += *strides_it * *indices_it;
   }
@@ -53,7 +49,7 @@ constexpr void
 extract_indices(scipp::index flat_index, const scipp::index ndim,
                 const std::array<scipp::index, Ndim_max> &shape,
                 std::array<scipp::index, Ndim_max> &indices) noexcept {
-  assert(ndim <= Ndim_max);
+  assert(ndim <= static_cast<scipp::index>(Ndim_max));
   for (scipp::index dim = 0; dim < ndim; ++dim) {
     const scipp::index aux = flat_index / shape[dim];
     indices[dim] = flat_index - aux * shape[dim];

@@ -9,17 +9,20 @@ TEST(IndexTest, size) { ASSERT_EQ(sizeof(scipp::index), 8); }
 TEST(IndexTest, sign) { ASSERT_EQ(scipp::index{-1}, int64_t(-1)); }
 
 TEST(IndexCompositionTest, flat_index_from_strides_0d) {
-  const std::array<scipp::index, 3> strides{-1, -2, -3};
-  const std::array<scipp::index, 3> indices{-1, -2, -3};
-  EXPECT_EQ(scipp::flat_index_from_strides(strides, indices, 0), 0);
+  const std::array<scipp::index, 0> strides{};
+  const std::array<scipp::index, 0> indices{};
+  EXPECT_EQ(scipp::flat_index_from_strides(strides.begin(), strides.end(),
+                                           indices.begin()),
+            0);
 }
 
 TEST(IndexCompositionTest, flat_index_from_strides_1d) {
   for (scipp::index stride = 0; stride < 6; ++stride) {
-    const std::array<scipp::index, 3> strides{stride, -2, -3};
+    const std::array<scipp::index, 1> strides{stride};
     for (scipp::index index = 0; index < stride; ++index) {
-      const std::array<scipp::index, 3> indices{index, -2, -3};
-      EXPECT_EQ(scipp::flat_index_from_strides(strides, indices, 1),
+      const std::array<scipp::index, 1> indices{index};
+      EXPECT_EQ(scipp::flat_index_from_strides(strides.begin(), strides.end(),
+                                               indices.begin()),
                 index * stride);
     }
   }
@@ -28,11 +31,12 @@ TEST(IndexCompositionTest, flat_index_from_strides_1d) {
 TEST(IndexCompositionTest, flat_index_from_strides_2d) {
   for (scipp::index stride0 = 0; stride0 < 6; ++stride0) {
     for (scipp::index stride1 = 0; stride1 < 6; ++stride1) {
-      const std::array<scipp::index, 3> strides{stride0, stride1, -3};
+      const std::array<scipp::index, 2> strides{stride0, stride1};
       for (scipp::index index0 = 0; index0 < stride0; ++index0) {
         for (scipp::index index1 = 0; index1 < stride1; ++index1) {
-          const std::array<scipp::index, 3> indices{index0, index1, -3};
-          EXPECT_EQ(scipp::flat_index_from_strides(strides, indices, 2),
+          const std::array<scipp::index, 2> indices{index0, index1};
+          EXPECT_EQ(scipp::flat_index_from_strides(
+                        strides.begin(), strides.end(), indices.begin()),
                     index0 * stride0 + index1 * stride1);
         }
       }
@@ -49,7 +53,8 @@ TEST(IndexCompositionTest, flat_index_from_strides_3d) {
           for (scipp::index index1 = 0; index1 < stride1; ++index1) {
             for (scipp::index index2 = 0; index2 < stride2; ++index2) {
               const std::array<scipp::index, 3> indices{index0, index1, index2};
-              EXPECT_EQ(scipp::flat_index_from_strides(strides, indices, 3),
+              EXPECT_EQ(scipp::flat_index_from_strides(
+                            strides.begin(), strides.end(), indices.begin()),
                         index0 * stride0 + index1 * stride1 + index2 * stride2);
             }
           }
