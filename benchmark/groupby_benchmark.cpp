@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 #include <numeric>
@@ -89,6 +89,7 @@ static void BM_groupby_large_table(benchmark::State &state) {
   d.setData("a", column);
   d.setData("b", column);
   d.setData("c", column);
+  d["a"].masks().set("mask", makeVariable<bool>(Dims{Dim::X}, Shape{nRow}));
   auto group = makeVariable<int64_t>(Dims{Dim::X}, Shape{nRow},
                                      Values(group_.begin(), group_.end()));
   d.coords().set(Dim("group"),

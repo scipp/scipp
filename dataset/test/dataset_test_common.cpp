@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <algorithm>
 
@@ -56,7 +56,7 @@ void DatasetFactory3D::seed(const uint32_t value) {
 }
 
 Dataset DatasetFactory3D::make(const bool randomMasks) {
-  Dataset dataset(base);
+  Dataset dataset = copy(base);
   dataset.setData("values_x", makeVariable<double>(Dimensions{m_dim, lx},
                                                    Values(rand(lx))));
   dataset.setData("data_x",

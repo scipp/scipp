@@ -1,11 +1,12 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <cmath>
 
-#include "scipp/common/constants.h"
 #include "scipp/core/element/trigonometry.h"
+#include "scipp/variable/creation.h"
+#include "scipp/variable/to_unit.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/trigonometry.h"
 
@@ -13,12 +14,9 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-const auto deg_to_rad = makeVariable<double>(
-    Dims(), Shape(), units::rad / units::deg, Values{pi<double> / 180.0});
-
 Variable sin(const Variable &var) {
-  Variable out(var);
-  sin(out, out);
+  auto out = empty(var.dims(), units::one, var.dtype());
+  sin(var, out);
   return out;
 }
 
@@ -30,16 +28,13 @@ Variable sin(Variable &&var) {
 
 Variable &sin(const Variable &var, Variable &out) {
   core::expect::unit_any_of(var, {units::rad, units::deg});
-  copy(var, out);
-  if (var.unit() == units::deg)
-    out *= deg_to_rad;
-  transform_in_place(out, out, element::sin_out_arg);
+  transform_in_place(out, to_unit(var, units::rad), element::sin_out_arg);
   return out;
 }
 
 Variable cos(const Variable &var) {
-  Variable out(var);
-  cos(out, out);
+  auto out = empty(var.dims(), units::one, var.dtype());
+  cos(var, out);
   return out;
 }
 
@@ -51,16 +46,13 @@ Variable cos(Variable &&var) {
 
 Variable &cos(const Variable &var, Variable &out) {
   core::expect::unit_any_of(var, {units::rad, units::deg});
-  copy(var, out);
-  if (var.unit() == units::deg)
-    out *= deg_to_rad;
-  transform_in_place(out, out, element::cos_out_arg);
+  transform_in_place(out, to_unit(var, units::rad), element::cos_out_arg);
   return out;
 }
 
 Variable tan(const Variable &var) {
-  Variable out(var);
-  tan(out, out);
+  auto out = empty(var.dims(), units::one, var.dtype());
+  tan(var, out);
   return out;
 }
 
@@ -72,10 +64,7 @@ Variable tan(Variable &&var) {
 
 Variable &tan(const Variable &var, Variable &out) {
   core::expect::unit_any_of(var, {units::rad, units::deg});
-  copy(var, out);
-  if (var.unit() == units::deg)
-    out *= deg_to_rad;
-  transform_in_place(out, out, element::tan_out_arg);
+  transform_in_place(out, to_unit(var, units::rad), element::tan_out_arg);
   return out;
 }
 
