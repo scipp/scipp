@@ -197,19 +197,15 @@ Variable flatten_bin_edge(const Variable &var,
         "Flatten: the bin edges cannot be joined together.");
 
   // Make the bulk slice of the coord, leaving out the last bin edge
-  const auto base = var.slice({bin_edge_dim, 0, data_shape});
-  // The new_dims are the reshaped dims, as if the variable was not bin edges
-  const auto new_dims = core::flatten(base.dims(), from_labels, to_dim);
-  auto out_dims = Dimensions(new_dims);
+  const auto bulk =
+      flatten(var.slice({bin_edge_dim, 0, data_shape}), from_labels, to_dim);
+  auto out_dims = bulk.dims();
   // To make the container of the right size, we increase to_dim by 1
-  out_dims.resize(to_dim, new_dims[to_dim] + 1);
-  // Create output container
+  out_dims.resize(to_dim, out_dims[to_dim] + 1);
   auto out = empty(out_dims, var.unit(), var.dtype(), var.hasVariances());
-  // Copy the bulk of the variable into the output, omitting the last bin edge
-  copy(reshape(base, new_dims), out.slice({to_dim, 0, new_dims[to_dim]}));
-  // Copy the back slice (or final bin edge) into the out container
+  copy(bulk, out.slice({to_dim, 0, out_dims[to_dim] - 1}));
   copy(back_flat.slice({to_dim, back.dims().volume() - 1}),
-       out.slice({to_dim, new_dims[to_dim]}));
+       out.slice({to_dim, out_dims[to_dim] - 1}));
   return out;
 }
 
@@ -242,15 +238,17 @@ DataArray fold(const DataArray &a, const Dim from_dim,
 /// ['y', 'z'] -> ['x']
 DataArray flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
                   const Dim to_dim) {
-  static_cast<void>(core::flatten(a.dims(), from_labels, to_dim));
   return dataset::transform(a, [&](const auto &in) {
+    const auto var =
+        (&in == &a.data()) ? in : maybe_broadcast(in, from_labels, a.dims());
     const auto bin_edge_dim =
         bin_edge_in_from_labels(in, a.dims(), from_labels);
-    const auto var = maybe_broadcast(in, from_labels, a.dims());
     if (bin_edge_dim != Dim::Invalid) {
       return flatten_bin_edge(var, from_labels, to_dim, bin_edge_dim);
-    } else {
+    } else if (var.dims().contains(from_labels.front())) {
       return flatten(var, from_labels, to_dim);
+    } else {
+      return var;
     }
   });
 }

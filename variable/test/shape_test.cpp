@@ -227,6 +227,15 @@ TEST(ShapeTest, flatten_bad_dim_order) {
                        except::DimensionError);
 }
 
+TEST(ShapeTest, flatten_non_contiguous) {
+  Dimensions xy = {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}};
+  const auto var = makeVariable<double>(xy);
+  EXPECT_THROW_MSG_DISCARD(
+      flatten(var, std::vector<Dim>{Dim::X, Dim::Z}, Dim::Time),
+      except::DimensionError,
+      "Can only flatten a contiguous set of dimensions in the correct order");
+}
+
 TEST(ShapeTest, round_trip) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   const auto reshaped = fold(var, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});

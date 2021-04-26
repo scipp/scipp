@@ -158,10 +158,6 @@ transpose(const Dimensions &dims, const std::vector<Dim> &labels = {});
                                                 const Dim from_dim,
                                                 const Dimensions &to_dims);
 
-[[nodiscard]] SCIPP_CORE_EXPORT Dimensions
-flatten(const Dimensions &old_dims, const scipp::span<const Dim> from_labels,
-        const Dim to_dim);
-
 } // namespace scipp::core
 
 namespace scipp {
