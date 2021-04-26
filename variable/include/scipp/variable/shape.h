@@ -24,8 +24,6 @@ permute(const Variable &var, const Dim dim,
                                                     const Variable &shape);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reverse(const Variable &var,
                                                      const Dim dim);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reshape(const Variable &var,
-                                                     const Dimensions &dims);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable fold(const Variable &view,
                                                   const Dim from_dim,
                                                   const Dimensions &to_dims);
@@ -37,8 +35,5 @@ transpose(const Variable &var, const std::vector<Dim> &dims = {});
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 squeeze(const Variable &var, const std::vector<Dim> &dims);
-
-SCIPP_VARIABLE_EXPORT void expect_same_volume(const Dimensions &old_dims,
-                                              const Dimensions &new_dims);
 
 } // namespace scipp::variable

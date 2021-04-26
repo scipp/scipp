@@ -731,7 +731,9 @@ TEST(VariableTest, rename) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                   Values{1, 2, 3, 4, 5, 6},
                                   Variances{7, 8, 9, 10, 11, 12});
-  const Variable expected(reshape(var, {{Dim::X, 2}, {Dim::Z, 3}}));
+  const auto expected = makeVariable<double>(Dims{Dim::X, Dim::Z}, Shape{2, 3},
+                                             Values{1, 2, 3, 4, 5, 6},
+                                             Variances{7, 8, 9, 10, 11, 12});
 
   Variable view(var);
   view.rename(Dim::Y, Dim::Z);

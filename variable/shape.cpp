@@ -16,13 +16,6 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-void expect_same_volume(const Dimensions &old_dims,
-                        const Dimensions &new_dims) {
-  if (old_dims.volume() != new_dims.volume())
-    throw except::DimensionError(
-        "Cannot reshape to dimensions with different volume");
-}
-
 Variable broadcast(const Variable &var, const Dimensions &dims) {
   return var.broadcast(dims);
 }
@@ -136,18 +129,6 @@ Variable reverse(const Variable &var, const Dim dim) {
   for (scipp::index i = 0; i < size / 2; ++i)
     swap(out, dim, i, size - i - 1);
   return out;
-}
-
-Variable reshape(const Variable &var, const Dimensions &dims) {
-  expect_same_volume(var.dims(), dims);
-  // We could be less restrictive here, avoiding copies whenever we are
-  // reshaping an ordered contiguous chunk.
-  const Strides strides(var.dims());
-  const bool contiguous =
-      std::equal(var.strides().begin(), var.strides().end(), strides.begin());
-  Variable reshaped = contiguous ? var : copy(var);
-  reshaped.setDims(dims);
-  return reshaped;
 }
 
 Variable fold(const Variable &view, const Dim from_dim,
