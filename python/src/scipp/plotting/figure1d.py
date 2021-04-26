@@ -191,7 +191,7 @@ class PlotFigure1d(PlotFigure):
         if self.show_legend():
             self.ax.legend(loc=self.legend["loc"])
 
-        self.fig.tight_layout()
+        self.fig.tight_layout(rect=self.padding)
 
     def _preprocess_hist(self, name, vals):
         """
@@ -350,7 +350,12 @@ class PlotFigure1d(PlotFigure):
         """
         Rescale y axis to the contents of the plot.
         """
-        self.ax.set_ylim(vmin, vmax)
+        if (vmin is None) and (vmax is None):
+            self.ax.autoscale(True)
+            self.ax.relim()
+            self.ax.autoscale_view()
+        else:
+            self.ax.set_ylim(vmin, vmax)
         self.draw()
 
     def show_legend(self):
