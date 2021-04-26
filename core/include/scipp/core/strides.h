@@ -21,7 +21,11 @@ public:
   bool operator==(const Strides &other) const noexcept;
   bool operator!=(const Strides &other) const noexcept;
 
-  scipp::index operator[](const scipp::index i) const {
+  constexpr scipp::index operator[](const scipp::index i) const {
+    return m_strides.at(i);
+  }
+
+  constexpr scipp::index &operator[](const scipp::index i) {
     return m_strides.at(i);
   }
 
