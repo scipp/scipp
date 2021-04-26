@@ -181,3 +181,72 @@ TEST(ShapeTest, round_trip) {
   EXPECT_EQ(flatten(reshaped, std::vector<Dim>{Dim::Row, Dim::Time}, Dim::X),
             var);
 }
+
+TEST(TransposeTest, make_transposed_2d) {
+  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
+                                  Values{1, 2, 3, 4, 5, 6},
+                                  Variances{11, 12, 13, 14, 15, 16});
+
+  const auto constVar = copy(var);
+
+  auto ref = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                  Values{1, 3, 5, 2, 4, 6},
+                                  Variances{11, 13, 15, 12, 14, 16});
+  EXPECT_EQ(transpose(var, {Dim::Y, Dim::X}), ref);
+  EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::X}), ref);
+
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, {Dim::Z}), except::DimensionError);
+}
+
+TEST(TransposeTest, make_transposed_multiple_d) {
+  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z}, Shape{3, 2, 1},
+                                  Values{1, 2, 3, 4, 5, 6},
+                                  Variances{11, 12, 13, 14, 15, 16});
+
+  const auto constVar = copy(var);
+
+  auto ref = makeVariable<double>(Dims{Dim::Y, Dim::Z, Dim::X}, Shape{2, 1, 3},
+                                  Values{1, 3, 5, 2, 4, 6},
+                                  Variances{11, 13, 15, 12, 14, 16});
+  EXPECT_EQ(transpose(var, {Dim::Y, Dim::Z, Dim::X}), ref);
+  EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::Z, Dim::X}), ref);
+
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, {Dim::Z}), except::DimensionError);
+}
+
+TEST(TransposeTest, reverse) {
+  Variable var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
+                                      Values{1, 2, 3, 4, 5, 6},
+                                      Variances{11, 12, 13, 14, 15, 16});
+  const Variable constVar = makeVariable<double>(
+      Dims{Dim::X, Dim::Y}, Shape{3, 2}, Values{1, 2, 3, 4, 5, 6},
+      Variances{11, 12, 13, 14, 15, 16});
+  auto ref = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                  Values{1, 3, 5, 2, 4, 6},
+                                  Variances{11, 13, 15, 12, 14, 16});
+  auto tvar = transpose(var);
+  auto tconstVar = transpose(constVar);
+  EXPECT_EQ(tvar, ref);
+  EXPECT_EQ(tconstVar, ref);
+  auto v = transpose(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
+                                          Values{1, 2, 3, 4, 5, 6},
+                                          Variances{11, 12, 13, 14, 15, 16}));
+  EXPECT_EQ(v, ref);
+
+  EXPECT_EQ(transpose(transpose(var)), var);
+  EXPECT_EQ(transpose(transpose(constVar)), var);
+
+  Variable dummy = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 1},
+                                        Values{0, 0}, Variances{1, 1});
+  EXPECT_NO_THROW(copy(dummy, tvar.slice({Dim::X, 0, 1})));
+}
