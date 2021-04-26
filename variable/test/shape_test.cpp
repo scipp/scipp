@@ -6,6 +6,8 @@
 #include "test_util.h"
 
 #include "scipp/core/except.h"
+#include "scipp/variable/creation.h"
+#include "scipp/variable/cumulative.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 
@@ -186,43 +188,50 @@ TEST(ShapeTest, fold_does_not_copy) {
   EXPECT_EQ(var, expected);
 }
 
-TEST(ShapeTest, fold_x) {
-  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
-  const auto expected =
-      reshape(arange(Dim::X, 24), {{Dim::Row, 2}, {Dim::Time, 3}, {Dim::Y, 4}});
+TEST(ShapeTest, fold_outer) {
+  const auto var = cumsum(
+      variable::ones({{Dim::X, 6}, {Dim::Y, 4}}, units::m, dtype<double>));
+  const auto expected = cumsum(variable::ones(
+      {{Dim::Row, 2}, {Dim::Time, 3}, {Dim::Y, 4}}, units::m, dtype<double>));
   EXPECT_EQ(fold(var, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
 }
 
-TEST(ShapeTest, fold_y) {
-  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
-  const auto expected =
-      reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Row, 2}, {Dim::Time, 2}});
+TEST(ShapeTest, fold_inner) {
+  const auto var = cumsum(
+      variable::ones({{Dim::X, 6}, {Dim::Y, 4}}, units::m, dtype<double>));
+  const auto expected = cumsum(variable::ones(
+      {{Dim::X, 6}, {Dim::Row, 2}, {Dim::Time, 2}}, units::m, dtype<double>));
   EXPECT_EQ(fold(var, Dim::Y, {{Dim::Row, 2}, {Dim::Time, 2}}), expected);
 }
 
 TEST(ShapeTest, fold_into_3_dims) {
-  const auto var = arange(Dim::X, 24);
-  const auto expected =
-      reshape(arange(Dim::X, 24), {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}});
+  const auto var =
+      cumsum(variable::ones({{Dim::X, 24}}, units::m, dtype<double>));
+  const auto expected = cumsum(variable::ones(
+      {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}}, units::m, dtype<double>));
   EXPECT_EQ(fold(var, Dim::X, {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}}),
             expected);
 }
 
 TEST(ShapeTest, flatten) {
-  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
-  const auto expected = arange(Dim::Z, 24);
+  const auto var = cumsum(
+      variable::ones({{Dim::X, 6}, {Dim::Y, 4}}, units::m, dtype<double>));
+  const auto expected =
+      cumsum(variable::ones({{Dim::Z, 24}}, units::m, dtype<double>));
   EXPECT_EQ(flatten(var, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z), expected);
 }
 
 TEST(ShapeTest, flatten_only_2_dims) {
-  const auto var =
-      reshape(arange(Dim::X, 24), {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}});
-  const auto expected = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Z, 4}});
+  const auto var = cumsum(variable::ones(
+      {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}}, units::m, dtype<double>));
+  const auto expected = cumsum(
+      variable::ones({{Dim::X, 6}, {Dim::Z, 4}}, units::m, dtype<double>));
   EXPECT_EQ(flatten(var, std::vector<Dim>{Dim::X, Dim::Y}, Dim::X), expected);
 }
 
 TEST(ShapeTest, flatten_bad_dim_order) {
-  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  const auto var = cumsum(
+      variable::ones({{Dim::X, 6}, {Dim::Y, 4}}, units::m, dtype<double>));
   EXPECT_THROW_DISCARD(flatten(var, std::vector<Dim>{Dim::Y, Dim::X}, Dim::Z),
                        except::DimensionError);
 }
@@ -237,7 +246,8 @@ TEST(ShapeTest, flatten_non_contiguous) {
 }
 
 TEST(ShapeTest, round_trip) {
-  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  const auto var = cumsum(
+      variable::ones({{Dim::X, 6}, {Dim::Y, 4}}, units::m, dtype<double>));
   const auto reshaped = fold(var, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
   EXPECT_EQ(flatten(reshaped, std::vector<Dim>{Dim::Row, Dim::Time}, Dim::X),
             var);
