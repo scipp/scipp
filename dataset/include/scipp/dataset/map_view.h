@@ -161,6 +161,7 @@ public:
   mapped_type extract(const key_type &key);
 
   Dict slice(const Slice &params) const;
+  void validateSlice(const Slice s, const Dict &dict) const;
   [[maybe_unused]] Dict &setSlice(const Slice s, const Dict &dict);
 
   void rename(const Dim from, const Dim to);

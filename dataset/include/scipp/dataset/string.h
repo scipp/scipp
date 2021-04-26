@@ -28,7 +28,7 @@ template <class Key, class Value>
 std::string to_string(const Dict<Key, Value> &view) {
   std::stringstream ss;
   ss << "<scipp.Dict>\n";
-  for (const auto [key, item] : view) {
+  for (const auto &[key, item] : view) {
     ss << "  " << key << ":" << to_string(item);
   }
   return ss.str();

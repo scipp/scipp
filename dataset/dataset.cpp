@@ -152,16 +152,24 @@ Dataset Dataset::slice(const Slice s) const {
 }
 
 Dataset &Dataset::setSlice(const Slice s, const Dataset &data) {
-  // TODO Need dry-run mechanism here?
-  for (const auto &item : data)
-    (*this)[item.name()].setSlice(s, item);
+  // Validate slice on all items as a dry-run
+  expect::coordsAreSuperset(slice(s).coords(), data.coords());
+  for (const auto &[name, item] : m_data)
+    item.validateSlice(s, data.m_data.at(name));
+  // Only if all items checked for dry-run does modification go-ahead
+  for (auto &[name, item] : m_data)
+    item.setSlice(s, data.m_data.at(name));
   return *this;
 }
 
 Dataset &Dataset::setSlice(const Slice s, const DataArray &data) {
-  // TODO Need dry-run mechanism here?
-  for (auto &&item : *this)
-    item.setSlice(s, data);
+  // Validate slice on all items as a dry-run
+  expect::coordsAreSuperset(slice(s).coords(), data.coords());
+  for (const auto &item : m_data)
+    item.second.validateSlice(s, data);
+  // Only if all items checked for dry-run does modification go-ahead
+  for (auto &item : m_data)
+    item.second.setSlice(s, data);
   return *this;
 }
 
