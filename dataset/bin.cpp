@@ -184,7 +184,7 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
                        const std::vector<Variable> &groups,
                        const std::vector<Dim> &erase) {
   auto &[buffer, bin_sizes] = proto;
-  squeeze(bin_sizes, erase);
+  bin_sizes = squeeze(bin_sizes, erase);
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
   // TODO We probably want to omit the coord used for grouping in the non-edge
@@ -464,7 +464,7 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
 
   builder.build(*target_bins, std::map<Dim, Variable>{});
   auto [buffer, bin_sizes] = bin<DataArray>(var, *target_bins, builder);
-  squeeze(bin_sizes, {dim});
+  bin_sizes = squeeze(bin_sizes, {dim});
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
   return make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer));
