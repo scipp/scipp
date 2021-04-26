@@ -18,6 +18,7 @@ Features
 * ``broadcast`` now returns a view instead of copying `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
 * ``fold`` now returns a view instead of copying `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
 * ``fold`` now works for binned data `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
+* ``flatten`` now returns a view of the input buffer if the input data is contiguous `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
 
 Bugfixes
 ~~~~~~~~
@@ -27,6 +28,7 @@ Breaking changes
 
 * Scipp's data structures now behave mostly like normal nested Python objects, i.e., copies are shallow by default `#1823 <https://github.com/scipp/scipp/pull/1823>`_.
 * ``filter`` and ``split`` removed. Identical functionality can be achieved using ``groupby`` and/or slicing.
+* ``reshape`` has been removed. Use ``fold`` and ``flatten`` instead `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
 
 Contributors
 ~~~~~~~~~~~~
