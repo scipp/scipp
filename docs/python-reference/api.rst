@@ -27,6 +27,7 @@ Creation functions
    ones
    ones_like
    empty
+   empty_like
 
 Free functions
 ==============
