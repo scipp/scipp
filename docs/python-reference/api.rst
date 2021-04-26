@@ -23,8 +23,11 @@ Creation functions
    array
    scalar
    zeros
+   zeros_like
    ones
+   ones_like
    empty
+   empty_like
 
 Free functions
 ==============

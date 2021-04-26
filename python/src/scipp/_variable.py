@@ -71,6 +71,22 @@ def zeros(*,
                     variances=variances)
 
 
+def zeros_like(var: Variable) -> Variable:
+    """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
+    as the input variable, but with all values initialized to 0. If the input
+    has variances, all variances in the output are set to 0.
+
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones_like`
+
+    :param var: Input variable.
+    """
+    return zeros(dims=var.dims,
+                 shape=var.shape,
+                 unit=var.unit,
+                 dtype=var.dtype,
+                 variances=var.variances is not None)
+
+
 def ones(*,
          dims: Sequence[str],
          shape: Sequence[int],
@@ -91,6 +107,22 @@ def ones(*,
                       initialised to 1. Default=False
     """
     return _cpp.ones(dims, shape, unit, dtype, variances)
+
+
+def ones_like(var: Variable) -> Variable:
+    """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
+    as the input variable, but with all values initialized to 1. If the input
+    has variances, all variances in the output are set to 1.
+
+    :seealso: :py:func:`scipp.ones` :py:func:`scipp.zeros_like`
+
+    :param var: Input variable.
+    """
+    return ones(dims=var.dims,
+                shape=var.shape,
+                unit=var.unit,
+                dtype=var.dtype,
+                variances=var.variances is not None)
 
 
 def empty(*,
@@ -115,6 +147,23 @@ def empty(*,
                       variances. Default=False
     """
     return _cpp.empty(dims, shape, unit, dtype, variances)
+
+
+def empty_like(var: Variable) -> Variable:
+    """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
+    as the input variable, but with uninitialized values. If the input
+    has variances, all variances in the output exist but are uninitialized.
+
+    :seealso: :py:func:`scipp.empty` :py:func:`scipp.zeros_like`
+              :py:func:`scipp.ones_like`
+
+    :param var: Input variable.
+    """
+    return empty(dims=var.dims,
+                 shape=var.shape,
+                 unit=var.unit,
+                 dtype=var.dtype,
+                 variances=var.variances is not None)
 
 
 def array(*,
