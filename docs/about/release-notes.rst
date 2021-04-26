@@ -17,6 +17,8 @@ Bugfixes
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* ``filter`` and ``split`` removed. Identical functionality can be achieved using ``groupby`` and/or slicing.
+
 Contributors
 ~~~~~~~~~~~~
 

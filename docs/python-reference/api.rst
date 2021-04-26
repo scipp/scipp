@@ -42,7 +42,6 @@ General
    collapse
    dot
    exp
-   filter
    histogram
    log
    log10

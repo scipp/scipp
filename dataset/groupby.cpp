@@ -42,12 +42,18 @@ T GroupBy<T>::copy(const scipp::index group,
   auto out =
       scipp::dataset::copy(m_data.slice({slice_dim, 0, size}), attrPolicy);
   scipp::index current = 0;
-  for (const auto &slice : slices) {
-    const auto thickness = slice.end() - slice.begin();
-    const Slice out_slice(slice_dim, current, current + thickness);
-    scipp::dataset::copy(m_data.slice(slice), out.slice(out_slice), attrPolicy);
-    current += thickness;
-  }
+  const auto copy_slice = [&](const auto &range) {
+    for (scipp::index i = range.begin(); i != range.end(); ++i) {
+      const auto &slice = slices[i];
+      const auto thickness = slice.end() - slice.begin();
+      const Slice out_slice(slice_dim, current, current + thickness);
+      scipp::dataset::copy(m_data.slice(slice), out.slice(out_slice),
+                           attrPolicy);
+      current += thickness;
+    }
+  };
+  core::parallel::parallel_for(core::parallel::blocked_range(0, slices.size()),
+                               copy_slice);
   return out;
 }
 
