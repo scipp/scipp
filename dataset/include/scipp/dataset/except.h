@@ -57,6 +57,7 @@ namespace scipp::dataset::expect {
 
 SCIPP_DATASET_EXPORT void coordsAreSuperset(const DataArray &a,
                                             const DataArray &b);
+SCIPP_DATASET_EXPORT void coordsAreSuperset(const Coords &a, const Coords &b);
 
 SCIPP_DATASET_EXPORT void isKey(const Variable &key);
 

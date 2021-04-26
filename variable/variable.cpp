@@ -123,7 +123,29 @@ Variable Variable::slice(const Slice params) const {
   return out;
 }
 
+void Variable::validateSlice(const Slice &s, const Variable &data) const {
+  core::expect::validSlice(this->dims(), s);
+  if (data.hasVariances() != this->hasVariances()) {
+    auto variances_message = [](const auto &variable) {
+      return "does" + std::string(variable.hasVariances() ? "" : " NOT") +
+             " have variances.";
+    };
+    throw except::VariancesError("Invalid slice operation. Slice " +
+                                 variances_message(data) + "Variable " +
+                                 variances_message(*this));
+  }
+  if (data.unit() != this->unit())
+    throw except::UnitError(
+        "Invalid slice operation. Slice has unit: " + to_string(data.unit()) +
+        " Variable has unit: " + to_string(this->unit()));
+  if (data.dtype() != this->dtype())
+    throw except::TypeError("Invalid slice operation. Slice has dtype " +
+                            to_string(data.dtype()) + ". Variable has dtype " +
+                            to_string(this->dtype()));
+}
+
 Variable &Variable::setSlice(const Slice params, const Variable &data) {
+  validateSlice(params, data);
   copy(data, slice(params));
   return *this;
 }

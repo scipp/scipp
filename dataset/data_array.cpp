@@ -92,9 +92,17 @@ DataArray DataArray::slice(const Slice &s) const {
           m_attrs->slice(s).merge_from(out_attrs), m_name};
 }
 
-DataArray &DataArray::setSlice(const Slice &s, const DataArray &array) {
+void DataArray::validateSlice(const Slice &s, const DataArray &array) const {
   expect::coordsAreSuperset(slice(s), array);
-  // TODO Need dry-run mechanism for mask handling?
+  data().validateSlice(s, array.data());
+  masks().validateSlice(s, array.masks());
+}
+
+DataArray &DataArray::setSlice(const Slice &s, const DataArray &array) {
+  // validateSlice, but not masks as otherwise repeated
+  expect::coordsAreSuperset(slice(s), array);
+  data().validateSlice(s, array.data());
+  // Apply changes
   masks().setSlice(s, array.masks());
   return setSlice(s, array.data());
 }
