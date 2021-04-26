@@ -29,6 +29,7 @@ class PlotFigure:
         self.cax = cax
         self.own_axes = True
         self.toolbar = None
+        self.padding = padding
         if self.ax is None:
             if figsize is None:
                 figsize = (config.plot.width / config.plot.dpi,
@@ -37,9 +38,9 @@ class PlotFigure:
                                              1,
                                              figsize=figsize,
                                              dpi=config.plot.dpi)
-            if padding is None:
-                padding = config.plot.padding
-            self.fig.tight_layout(rect=padding)
+            if self.padding is None:
+                self.padding = config.plot.padding
+            self.fig.tight_layout(rect=self.padding)
             if self.is_widget():
                 # We create a custom toolbar
                 self.toolbar = toolbar(canvas=self.fig.canvas)
