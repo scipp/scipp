@@ -163,15 +163,15 @@ Variable transpose(const Variable &var, const std::vector<Dim> &dims) {
   return var.transpose(dims);
 }
 
-void squeeze(Variable &var, const std::vector<Dim> &dims) {
-  auto squeezed = var.dims();
+Variable squeeze(const Variable &var, const std::vector<Dim> &dims) {
+  auto squeezed = var;
   for (const auto &dim : dims) {
-    if (squeezed[dim] != 1)
+    if (squeezed.dims()[dim] != 1)
       throw except::DimensionError("Cannot squeeze '" + to_string(dim) +
                                    "' since it is not of length 1.");
-    squeezed.erase(dim);
+    squeezed = squeezed.slice({dim, 0});
   }
-  var.setDims(squeezed);
+  return squeezed;
 }
 
 } // namespace scipp::variable

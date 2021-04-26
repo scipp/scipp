@@ -40,32 +40,33 @@ protected:
 };
 
 TEST_F(SqueezeTest, fail) {
-  EXPECT_THROW(squeeze(var, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(squeeze(var, {Dim::Y}), except::DimensionError);
   EXPECT_EQ(var, original);
-  EXPECT_THROW(squeeze(var, {Dim::X, Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(squeeze(var, {Dim::X, Dim::Y}), except::DimensionError);
   EXPECT_EQ(var, original);
-  EXPECT_THROW(squeeze(var, {Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW_DISCARD(squeeze(var, {Dim::Y, Dim::Z}), except::DimensionError);
   EXPECT_EQ(var, original);
 }
 
-TEST_F(SqueezeTest, none) {
-  squeeze(var, {});
-  EXPECT_EQ(var, original);
-}
+TEST_F(SqueezeTest, none) { EXPECT_EQ(squeeze(var, {}), original); }
 
 TEST_F(SqueezeTest, outer) {
-  squeeze(var, {Dim::X});
-  EXPECT_EQ(var, sum(original, Dim::X));
+  EXPECT_EQ(squeeze(var, {Dim::X}), sum(original, Dim::X));
 }
 
 TEST_F(SqueezeTest, inner) {
-  squeeze(var, {Dim::Z});
-  EXPECT_EQ(var, sum(original, Dim::Z));
+  EXPECT_EQ(squeeze(var, {Dim::Z}), sum(original, Dim::Z));
 }
 
 TEST_F(SqueezeTest, both) {
-  squeeze(var, {Dim::X, Dim::Z});
-  EXPECT_EQ(var, sum(sum(original, Dim::Z), Dim::X));
+  EXPECT_EQ(squeeze(var, {Dim::X, Dim::Z}), sum(sum(original, Dim::Z), Dim::X));
+}
+
+TEST_F(SqueezeTest, slice) {
+  Variable xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                     Values{1, 2, 3, 4});
+  const auto sliced = xy.slice({Dim::Y, 1, 2});
+  EXPECT_EQ(squeeze(sliced, {Dim::Y}), sum(sliced, Dim::Y));
 }
 
 TEST(ShapeTest, reshape) {
