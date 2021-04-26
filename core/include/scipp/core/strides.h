@@ -15,6 +15,7 @@ class SCIPP_CORE_EXPORT Strides {
 public:
   Strides() = default;
   Strides(const scipp::span<const scipp::index> &strides);
+  Strides(std::initializer_list<scipp::index> strides);
   Strides(const Dimensions &dims);
 
   bool operator==(const Strides &other) const noexcept;

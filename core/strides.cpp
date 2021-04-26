@@ -20,6 +20,9 @@ Strides::Strides(const Dimensions &dims) {
   }
 }
 
+Strides::Strides(const std::initializer_list<scipp::index> strides)
+    : Strides{{strides.begin(), strides.end()}} {}
+
 bool Strides::operator==(const Strides &other) const noexcept {
   return m_strides == other.m_strides;
 }
