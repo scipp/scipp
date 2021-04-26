@@ -149,6 +149,23 @@ def empty(*,
     return _cpp.empty(dims, shape, unit, dtype, variances)
 
 
+def empty_like(var: Variable) -> Variable:
+    """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
+    as the input variable, but with uninitialized values. If the input
+    has variances, all variances in the output exist but are uninitialized.
+
+    :seealso: :py:func:`scipp.empty` :py:func:`scipp.zeros_like`
+              :py:func:`scipp.ones_like`
+
+    :param var: Input variable.
+    """
+    return empty(dims=var.dims,
+                 shape=var.shape,
+                 unit=var.unit,
+                 dtype=var.dtype,
+                 variances=var.variances is not None)
+
+
 def array(*,
           dims: Sequence[str],
           values: Union[numpy.ndarray, list],
