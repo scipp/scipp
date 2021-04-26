@@ -99,7 +99,10 @@ void DataArray::validateSlice(const Slice &s, const DataArray &array) const {
 }
 
 DataArray &DataArray::setSlice(const Slice &s, const DataArray &array) {
-  validateSlice(s, array);
+  // validateSlice, but not masks as otherwise repeated
+  expect::coordsAreSuperset(slice(s), array);
+  data().validateSlice(s, array.data());
+  // Apply changes
   masks().setSlice(s, array.masks());
   return setSlice(s, array.data());
 }
