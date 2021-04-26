@@ -32,6 +32,9 @@ private:
   std::array<scipp::index, NDIM_MAX> m_strides{0};
 };
 
+Strides SCIPP_CORE_EXPORT transpose(const Strides &strides, Dimensions from,
+                                    span<const Dim> order);
+
 } // namespace scipp::core
 
 namespace scipp {

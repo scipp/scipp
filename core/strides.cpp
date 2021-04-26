@@ -34,4 +34,12 @@ void Strides::erase(const scipp::index i) {
   m_strides.back() = 0;
 }
 
+Strides transpose(const Strides &strides, Dimensions from,
+                  const span<const Dim> order) {
+  for (scipp::index i = 0; i < from.ndim(); ++i)
+    from.resize(i, strides[i]);
+  from = core::transpose(from, std::vector<Dim>{order.begin(), order.end()});
+  return Strides(from.shape());
+}
+
 } // namespace scipp::core

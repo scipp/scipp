@@ -156,7 +156,7 @@ Dimensions merge(const Dimensions &a, const Dimensions &b,
                                                         const Dimensions &b);
 
 [[nodiscard]] SCIPP_CORE_EXPORT Dimensions
-transpose(const Dimensions &dims, std::vector<Dim> labels = {});
+transpose(const Dimensions &dims, const std::vector<Dim> &labels = {});
 
 [[nodiscard]] SCIPP_CORE_EXPORT Dimensions fold(const Dimensions &old_dims,
                                                 const Dim from_dim,
