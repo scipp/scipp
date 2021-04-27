@@ -2,8 +2,8 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/dataset/groupby.h"
 #include "scipp/dataset/sort.h"
+#include "scipp/dataset/groupby.h"
 
 #include "dataset_operations_common.h"
 
