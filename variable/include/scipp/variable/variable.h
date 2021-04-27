@@ -64,7 +64,6 @@ public:
   void expectCanSetUnit(const units::Unit &) const;
 
   [[nodiscard]] const Dimensions &dims() const;
-  void setDims(const Dimensions &dimensions);
 
   [[nodiscard]] DType dtype() const;
 

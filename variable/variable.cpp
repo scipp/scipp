@@ -44,19 +44,6 @@ DType Variable::dtype() const { return data().dtype(); }
 
 bool Variable::hasVariances() const { return data().hasVariances(); }
 
-void Variable::setDims(const Dimensions &dimensions) {
-  if (dimensions.volume() == dims().volume()) {
-    if (dimensions != dims()) {
-      m_dims = dimensions;
-      m_strides = Strides(dimensions);
-    }
-    return;
-  }
-  m_dims = dimensions;
-  m_strides = Strides(dimensions);
-  m_object = m_object->makeDefaultFromParent(dimensions.volume());
-}
-
 void Variable::expectCanSetUnit(const units::Unit &unit) const {
   if (this->unit() != unit && is_slice())
     throw except::UnitError("Partial view on data of variable cannot be used "
