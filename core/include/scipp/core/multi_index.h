@@ -36,6 +36,8 @@ void copy_strides(std::array<std::array<scipp::index, NDIM_MAX>, N> &dest,
                   const StridesArgs &... strides) {
   (std::reverse_copy(strides.begin(), strides.begin() + ndim, dest[I].begin()),
    ...);
+  // Set remainder to 0. This is required!
+  (std::fill(dest[I].begin() + ndim, dest[I].end(), 0), ...);
 }
 
 template <scipp::index N> class MultiIndex {
