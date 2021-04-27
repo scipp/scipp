@@ -73,18 +73,18 @@ TEST_F(ViewIndex2DTest, construct) {
 TEST_F(ViewIndex2DTest, setIndex_2D) {
   ViewIndex i(xy, s_xy_xy);
   EXPECT_EQ(i.get(), 0);
-  i.setIndex(1);
+  i.set_index(1);
   EXPECT_EQ(i.get(), 1);
-  i.setIndex(3);
+  i.set_index(3);
   EXPECT_EQ(i.get(), 3);
 }
 
 TEST_F(ViewIndex2DTest, setIndex_2D_transpose) {
   ViewIndex i(xy, s_xy_yx);
   EXPECT_EQ(i.get(), 0);
-  i.setIndex(1);
+  i.set_index(1);
   EXPECT_EQ(i.get(), 5);
-  i.setIndex(3);
+  i.set_index(3);
   EXPECT_EQ(i.get(), 1);
 }
 
@@ -102,7 +102,7 @@ TEST_F(ViewIndex2DTest, increment_2D) {
 TEST_F(ViewIndex2DTest, end) {
   ViewIndex it(xy, s_xy_xy);
   ViewIndex end(xy, s_xy_xy);
-  end.setIndex(3 * 5);
+  end.set_index(3 * 5);
   for (scipp::index i = 0; i < 3 * 5; ++i) {
     EXPECT_FALSE(it == end);
     it.increment();
@@ -113,8 +113,8 @@ TEST_F(ViewIndex2DTest, end) {
 TEST_F(ViewIndex2DTest, equal) {
   ViewIndex i(xy, s_xy_xy);
   ViewIndex j(xy, s_xy_xy);
-  i.setIndex(3 * 3);
-  j.setIndex(3 * 3);
+  i.set_index(3 * 3);
+  j.set_index(3 * 3);
   EXPECT_TRUE(i == j);
   i.increment();
   EXPECT_FALSE(i == j);

@@ -31,7 +31,7 @@ public:
                                   const Strides &strides,
                                   const scipp::index index)
       : m_variable(variable), m_index(targetDimensions, strides) {
-    m_index.setIndex(index);
+    m_index.set_index(index);
   }
 
 private:
@@ -42,12 +42,12 @@ private:
   }
   constexpr void increment() noexcept { m_index.increment(); }
   auto &dereference() const { return m_variable[m_index.get()]; }
-  void decrement() { m_index.setIndex(m_index.index() - 1); }
+  void decrement() { m_index.set_index(m_index.index() - 1); }
   void advance(int64_t delta) {
     if (delta == 1)
       increment();
     else
-      m_index.setIndex(m_index.index() + delta);
+      m_index.set_index(m_index.index() + delta);
   }
   int64_t distance_to(const ElementArrayViewParams_iterator &other) const {
     return static_cast<int64_t>(other.m_index.index()) -

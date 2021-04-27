@@ -29,20 +29,20 @@ public:
     ++m_coord[0];
     if (m_coord[0] == m_extent[0])
       increment_outer();
-    ++m_fullIndex;
+    ++m_full_index;
   }
 
-  constexpr void setIndex(const scipp::index index) noexcept {
-    m_fullIndex = index;
+  constexpr void set_index(const scipp::index index) noexcept {
+    m_full_index = index;
     extract_indices(index, m_dims, m_extent, m_coord);
     m_index = flat_index_from_strides(m_strides.begin(), m_strides.end(m_dims),
                                       m_coord.begin());
   }
 
   void set_to_end() noexcept {
-    m_fullIndex = 0;
+    m_full_index = 0;
     for (scipp::index dim = 0; dim < m_dims - 1; ++dim) {
-      m_fullIndex *= m_extent[dim];
+      m_full_index *= m_extent[dim];
     }
     std::fill(m_coord.begin(), m_coord.begin() + std::max(m_dims - 1, 0), 0);
     m_coord[m_dims] = m_extent[m_dims];
@@ -51,14 +51,14 @@ public:
 
   [[nodiscard]] constexpr scipp::index get() const noexcept { return m_index; }
   [[nodiscard]] constexpr scipp::index index() const noexcept {
-    return m_fullIndex;
+    return m_full_index;
   }
 
   constexpr bool operator==(const ViewIndex &other) const noexcept {
-    return m_fullIndex == other.m_fullIndex;
+    return m_full_index == other.m_full_index;
   }
   constexpr bool operator!=(const ViewIndex &other) const noexcept {
-    return m_fullIndex != other.m_fullIndex;
+    return m_full_index != other.m_full_index;
   }
 
 private:
@@ -103,16 +103,27 @@ private:
   // as the performance is identical to C-style arrays, as long as range based
   // loops are used.
 
+  // TODO names?
+
+  /// Index into memory.
   scipp::index m_index{0};
+  /// Steps to advance one element.
   std::array<scipp::index, NDIM_MAX> m_delta = {};
+  /// Multi-dimensional index in iteration dimensions.
   std::array<scipp::index, NDIM_MAX> m_coord = {};
+  /// Shape in iteration dimensions.
   std::array<scipp::index, NDIM_MAX> m_extent = {};
   /// Strides in memory.
   Strides m_strides;
   /// Index in iteration dimensions.
-  scipp::index m_fullIndex{0};
+  scipp::index m_full_index{0};
   /// Number of dimensions.
   int32_t m_dims;
 };
+/*
+ * TODO document implementation
+ * - arrays have fasted dimension first, i.e. opposite to `Dimensions`
+ * - explain attributes: role, exact behavior, special values (e.g. at the end)
+ */
 
 } // namespace scipp::core
