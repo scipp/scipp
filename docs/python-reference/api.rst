@@ -6,13 +6,13 @@ Classes
 .. autosummary::
    :toctree: ../generated
 
-   Unit
-   Variable
+   Bins
    DataArray
    Dataset
    GroupByDataArray
    GroupByDataset
-   Bins
+   Unit
+   Variable
 
 Creation functions
 ==================
@@ -21,13 +21,17 @@ Creation functions
    :toctree: ../generated
 
    array
+   arange
+   empty
+   empty_like
+   geomspace
+   linspace
+   logspace
+   ones
+   ones_like
    scalar
    zeros
    zeros_like
-   ones
-   ones_like
-   empty
-   empty_like
 
 Free functions
 ==============
