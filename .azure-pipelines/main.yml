@@ -19,4 +19,4 @@ extends:
       windows: ['3.7']
     deploy: true
     conda_label: 'dev'
-    publish_documentation: true
+    publish_docs: true

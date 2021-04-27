@@ -17,7 +17,7 @@ parameters:
 - name: package_list
   type: object
   default: []
-- name: publish_documentation
+- name: publish_docs
   type: boolean
   default: True
 
@@ -45,7 +45,7 @@ stages:
             displayName: 'Install anaconda-client'
           - ${{ each package in parameters.package_list }}:
             - task: DownloadBuildArtifacts@0
-              condition: ${{ parameters.publish_documentation }}
+              condition: ${{ parameters.publish_docs }}
               inputs:
                 buildType: 'current'
                 specificBuildWithTriggering: true
@@ -60,7 +60,7 @@ stages:
               displayName: 'Deploy ${{ package.Key }}'
 
           - task: DownloadBuildArtifacts@0
-            condition: ${{ parameters.publish_documentation }}
+            condition: ${{ parameters.publish_docs }}
             inputs:
               buildType: 'current'
               specificBuildWithTriggering: true

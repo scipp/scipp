@@ -19,4 +19,4 @@ extends:
       windows: ['3.7']
     deploy: true
     conda_label: 'next'
-    publish_documentation: false
+    publish_docs: false
