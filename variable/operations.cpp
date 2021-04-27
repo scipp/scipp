@@ -15,46 +15,6 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-// Example of a "derived" operation: Implementation does not require adding a
-// virtual function to VariableConcept.
-std::vector<Variable> split(const Variable &var, const Dim dim,
-                            const std::vector<scipp::index> &indices) {
-  if (indices.empty())
-    return {var};
-  std::vector<Variable> vars;
-  vars.emplace_back(var.slice({dim, 0, indices.front()}));
-  for (scipp::index i = 0; i < scipp::size(indices) - 1; ++i)
-    vars.emplace_back(var.slice({dim, indices[i], indices[i + 1]}));
-  vars.emplace_back(var.slice({dim, indices.back(), var.dims()[dim]}));
-  return vars;
-}
-
-Variable filter(const Variable &var, const Variable &filter) {
-  if (filter.dims().shape().size() != 1)
-    throw std::runtime_error(
-        "Cannot filter variable: The filter must by 1-dimensional.");
-  const auto dim = filter.dims().labels()[0];
-  auto mask = filter.values<bool>();
-
-  const scipp::index removed = std::count(mask.begin(), mask.end(), false);
-  if (removed == 0)
-    return var;
-
-  auto out(var);
-  auto dims = out.dims();
-  dims.resize(dim, dims[dim] - removed);
-  out.setDims(dims);
-
-  scipp::index iOut = 0;
-  // Note: Could copy larger chunks of applicable for better(?) performance.
-  // Note: This implementation is inefficient, since we need to cast to concrete
-  // type for *every* slice. Should be combined into a single virtual call.
-  for (scipp::index iIn = 0; iIn < scipp::size(mask); ++iIn)
-    if (mask[iIn])
-      out.data().copy(var.slice({dim, iIn}), out.slice({dim, iOut++}));
-  return out;
-}
-
 /// Return a deep copy of a Variable.
 Variable copy(const Variable &var) {
   Variable out(empty_like(var));

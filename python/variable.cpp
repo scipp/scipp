@@ -242,31 +242,6 @@ of variances.)");
   py::implicitly_convertible<std::string, Dim>();
 
   m.def(
-      "filter", py::overload_cast<const Variable &, const Variable &>(&filter),
-      py::arg("x"), py::arg("filter"), py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description(
-              "Selects elements for a Variable using a filter (mask).\n\n"
-              "The filter variable must be 1D and of bool type. "
-              "A true value in the filter means the corresponding element in "
-              "the input is "
-              "selected and will be copied to the output. "
-              "A false value in the filter discards the corresponding element "
-              "in the input.")
-          .raises("If the filter variable is not 1 dimensional.")
-          .returns("New variable containing the data selected by the filter.")
-          .rtype("Variable")
-          .param("x", "Variable to filter.", "Variable.")
-          .param("filter", "Variable which defines the filter.", "Variable.")
-          .c_str());
-
-  m.def("split",
-        py::overload_cast<const Variable &, const Dim,
-                          const std::vector<scipp::index> &>(&split),
-        py::call_guard<py::gil_scoped_release>(),
-        "Split a Variable along a given Dimension.");
-
-  m.def(
       "islinspace",
       [](const Variable &x) {
         if (x.dims().ndim() != 1)
