@@ -28,6 +28,10 @@ Creation functions
    ones_like
    empty
    empty_like
+   arange
+   linspace
+   logspace
+   geomspace
 
 Free functions
 ==============
