@@ -9,7 +9,6 @@
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
 
-#include "scipp/variable/indexed_slice_view.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/util.h"
 
