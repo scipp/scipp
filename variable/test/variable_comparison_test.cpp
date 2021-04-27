@@ -173,3 +173,45 @@ TEST_F(Variable_comparison_operators, events) {
   expect_ne(a, d);
   expect_ne(a, a_with_vars);
 }
+
+TEST_F(Variable_comparison_operators, slice) {
+  const auto xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                                       units::m, Values{1, 2, 3, 4, 5, 6},
+                                       Variances{7, 8, 9, 10, 11, 12});
+  const auto sliced = xy.slice({Dim::X, 1, 2}).slice({Dim::Y, 1, 3});
+  const auto section =
+      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{1, 2}, units::m,
+                           Values{5, 6}, Variances{11, 12});
+  EXPECT_FALSE(equals(sliced.strides(), section.strides()));
+  EXPECT_NE(sliced.offset(), section.offset());
+  expect_eq(sliced, section);
+}
+
+TEST_F(Variable_comparison_operators, broadcast) {
+  const auto a = makeVariable<double>(Dimensions(Dim::X, 3), units::m,
+                                      Values{1.2, 1.2, 1.2});
+  const auto b = broadcast(1.2 * units::m, Dimensions(Dim::X, 3));
+  EXPECT_FALSE(equals(a.strides(), b.strides()));
+  EXPECT_TRUE(equals(b.strides(), {0}));
+  expect_eq(a, b);
+}
+
+TEST_F(Variable_comparison_operators, transpose) {
+  const auto xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                       units::m, Values{1, 2, 3, 4});
+  const auto yx = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                       units::m, Values{1, 3, 2, 4});
+  expect_ne(xy, yx);
+  const auto transposed = transpose(yx);
+  EXPECT_FALSE(equals(xy.strides(), transposed.strides()));
+  EXPECT_TRUE(equals(transposed.strides(), {1, 2}));
+  expect_eq(xy, transposed);
+}
+
+TEST_F(Variable_comparison_operators, readonly) {
+  const auto var = makeVariable<double>(Values{1.0});
+  const auto readonly = var.as_const();
+  EXPECT_FALSE(var.is_readonly());
+  EXPECT_TRUE(readonly.is_readonly());
+  expect_eq(var, readonly);
+}
