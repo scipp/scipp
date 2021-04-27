@@ -108,11 +108,7 @@ Variable &Variable::setSlice(const Slice params, const Variable &data) {
 
 Variable Variable::transpose(const std::vector<Dim> &order) const {
   auto transposed(*this);
-  Dimensions tmp = dims();
-  for (scipp::index i = 0; i < tmp.ndim(); ++i)
-    tmp.resize(i, strides()[i]);
-  tmp = core::transpose(tmp, order);
-  transposed.m_strides = Strides(tmp.shape());
+  transposed.m_strides = core::transpose(strides(), dims(), order);
   transposed.m_dims = core::transpose(dims(), order);
   return transposed;
 }
