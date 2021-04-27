@@ -194,8 +194,7 @@ def array(*,
                     dtype=dtype)
 
 
-def linspace(*,
-             dim: str,
+def linspace(dim: str,
              start: Union[int, float],
              stop: Union[int, float],
              num: int,
@@ -222,8 +221,7 @@ def linspace(*,
                  dtype=dtype)
 
 
-def geomspace(*,
-              dim: str,
+def geomspace(dim: str,
               start: Union[int, float],
               stop: Union[int, float],
               num: int,
@@ -252,8 +250,7 @@ def geomspace(*,
                  dtype=dtype)
 
 
-def logspace(*,
-             dim: str,
+def logspace(dim: str,
              start: Union[int, float],
              stop: Union[int, float],
              num: int,
@@ -279,10 +276,9 @@ def logspace(*,
                  dtype=dtype)
 
 
-def arange(*,
-           dim: str,
-           start: Union[int, float] = 0,
-           stop: Union[int, float],
+def arange(dim: str,
+           start: Union[int, float],
+           stop: Union[int, float] = None,
            step: Union[int, float] = 1,
            unit: Union[Unit, str] = units.dimensionless,
            dtype: type(dtype.float64) = None) -> Variable:
@@ -295,15 +291,18 @@ def arange(*,
               :py:func:`scipp.logspace`
 
     :param dim: Dimension label.
-    :param start: The starting value of the sequence.
+    :param start: Optional, the starting value of the sequence. Default=0.
     :param stop: End of interval. The interval does not include this value,
       except in some (rare) cases where step is not an integer and floating
       point round-off can come into play.
-    :param step: Spacing between values.
+    :param step: Optional, spacing between values. Default=1.
     :param unit: Optional, data unit. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
     """
+    if stop is None:
+        stop = start
+        start = 0
     return array(dims=[dim],
                  values=np.arange(start, stop, step),
                  unit=unit,
