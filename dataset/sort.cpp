@@ -12,7 +12,7 @@ namespace scipp::dataset {
 namespace {
 
 template <class T>
-auto sort_impl(const T &obj, const Dim &key, const SortOrder &order) {
+auto sort_impl(const T &obj, const Dim &key, const SortOrder order) {
   const auto grouped = groupby(obj, key);
   const auto dim = obj.coords()[key].dims().inner();
   auto sorted = copy(obj);
@@ -42,14 +42,13 @@ Dim nonclashing_name(const Coords &coords) {
 } // namespace
 
 /// Return a Variable sorted based on key.
-Variable sort(const Variable &var, const Variable &key,
-              const SortOrder &order) {
+Variable sort(const Variable &var, const Variable &key, const SortOrder order) {
   return sort(DataArray(var), key, order).data();
 }
 
 /// Return a DataArray sorted based on key.
 DataArray sort(const DataArray &array, const Variable &key,
-               const SortOrder &order) {
+               const SortOrder order) {
   auto helper = array;
   const auto dummy = nonclashing_name(helper.coords());
   helper.coords().set(dummy, key);
@@ -59,13 +58,13 @@ DataArray sort(const DataArray &array, const Variable &key,
 }
 
 /// Return a DataArray sorted based on coordinate.
-DataArray sort(const DataArray &array, const Dim &key, const SortOrder &order) {
+DataArray sort(const DataArray &array, const Dim &key, const SortOrder order) {
   return sort_impl(array, key, order);
 }
 
 /// Return a Dataset sorted based on key.
 Dataset sort(const Dataset &dataset, const Variable &key,
-             const SortOrder &order) {
+             const SortOrder order) {
   auto helper = dataset;
   const auto dummy = nonclashing_name(helper.coords());
   helper.coords().set(dummy, key);
@@ -75,7 +74,7 @@ Dataset sort(const Dataset &dataset, const Variable &key,
 }
 
 /// Return a Dataset sorted based on coordinate.
-Dataset sort(const Dataset &dataset, const Dim &key, const SortOrder &order) {
+Dataset sort(const Dataset &dataset, const Dim &key, const SortOrder order) {
   return sort_impl(dataset, key, order);
 }
 
