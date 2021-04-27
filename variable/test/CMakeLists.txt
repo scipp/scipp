@@ -26,6 +26,7 @@ add_executable(
   trigonometry_test.cpp
   util_test.cpp
   variable_bucket_test.cpp
+  variable_comparison_test.cpp
   variable_custom_type_test.cpp
   variable_keyword_args_constructor_test.cpp
   variable_math_test.cpp
