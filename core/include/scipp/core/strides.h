@@ -30,12 +30,12 @@ public:
     return m_strides.at(i);
   }
 
-  [[nodiscard]] auto begin() const { return m_strides.begin(); }
-  [[nodiscard]] auto begin() { return m_strides.begin(); }
-  [[nodiscard]] auto end(const scipp::index ndim) const {
+  [[nodiscard]] constexpr auto begin() const { return m_strides.begin(); }
+  [[nodiscard]] constexpr auto begin() { return m_strides.begin(); }
+  [[nodiscard]] constexpr auto end(const scipp::index ndim) const {
     return std::next(m_strides.begin(), ndim);
   }
-  [[nodiscard]] auto end(const scipp::index ndim) {
+  [[nodiscard]] constexpr auto end(const scipp::index ndim) {
     return std::next(m_strides.begin(), ndim);
   }
 
