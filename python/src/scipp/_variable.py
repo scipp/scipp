@@ -203,7 +203,6 @@ def linspace(dim: str,
              dtype: type(dtype.float64) = None) -> Variable:
     """Constructs a :class:`Variable` with `num` evenly spaced samples,
     calculated over the interval `[start, stop]`.
-    Only keyword arguments accepted.
 
     :seealso: :py:func:`scipp.geomspace` :py:func:`scipp.logspace`
               :py:func:`scipp.arange`
@@ -233,7 +232,6 @@ def geomspace(dim: str,
     (a geometric progression). This is similar to :py:func:`scipp.logspace`,
     but with endpoints specified directly.
     Each output sample is a constant multiple of the previous.
-    Only keyword arguments accepted.
 
     :seealso: :py:func:`scipp.linspace` :py:func:`scipp.logspace`
               :py:func:`scipp.arange`
@@ -260,7 +258,6 @@ def logspace(dim: str,
              unit: Union[Unit, str] = units.dimensionless,
              dtype: type(dtype.float64) = None) -> Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale.
-    Only keyword arguments accepted.
 
     :seealso: :py:func:`scipp.linspace` :py:func:`scipp.geomspace`
               :py:func:`scipp.arange`
