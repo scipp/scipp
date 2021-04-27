@@ -186,3 +186,45 @@ def test_empty_like_with_variances():
                            unit='m',
                            dtype=sc.dtype.float32)
     _compare_properties(sc.empty_like(var), expected)
+
+
+def test_linspace():
+    values = np.linspace(1.2, 103., 51)
+    var = sc.linspace(dim='x',
+                      start=1.2,
+                      stop=103.,
+                      num=51,
+                      unit='m',
+                      dtype=sc.dtype.float32)
+    expected = sc.Variable(dims=['x'],
+                           values=values,
+                           unit='m',
+                           dtype=sc.dtype.float32)
+    assert sc.identical(var, expected)
+
+
+def test_logspace():
+    values = np.logspace(2.0, 3.0, num=4)
+    var = sc.logspace(dim='y', start=2.0, stop=3.0, num=4, unit='s')
+    expected = sc.Variable(dims=['y'],
+                           values=values,
+                           unit='s',
+                           dtype=sc.dtype.float64)
+    assert sc.identical(var, expected)
+
+
+def test_geomspace():
+    values = np.geomspace(1, 1000, num=4)
+    var = sc.geomspace(dim='z', start=1.0, stop=1.0e3, num=4)
+    expected = sc.Variable(dims=['z'], values=values, dtype=sc.dtype.float64)
+    assert sc.identical(var, expected)
+
+
+def test_arange():
+    values = np.arange(0, 21, 2)
+    var = sc.arange(dim='x', stop=21, step=2, unit='m', dtype=sc.dtype.int32)
+    expected = sc.Variable(dims=['x'],
+                           values=values,
+                           unit='m',
+                           dtype=sc.dtype.int32)
+    assert sc.identical(var, expected)
