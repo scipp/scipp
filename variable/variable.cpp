@@ -82,29 +82,7 @@ scipp::span<const scipp::index> Variable::strides() const {
 }
 
 core::ElementArrayViewParams Variable::array_params() const noexcept {
-  // TODO Translating strides into dims, which get translated back to
-  // (slightly different) strides in MultiIndex. Refactor ViewIndex and
-  // MultiIndex to use strides directly.
-  Dimensions dataDims;
-  std::vector<std::pair<Dim, scipp::index>> ordered;
-  for (scipp::index i = 0; i < dims().ndim(); ++i)
-    ordered.emplace_back(dims().label(i), strides()[i]);
-  std::reverse(ordered.begin(), ordered.end());
-  std::stable_sort(
-      ordered.begin(), ordered.end(),
-      [](const auto &a, const auto &b) { return a.second < b.second; });
-  if (!ordered.empty() && ordered.front().second > 1) {
-    dataDims.add(Dim::X, ordered.front().second);
-    dataDims.relabel(0, Dim::Invalid);
-  }
-  for (scipp::index i = 0; i < scipp::size(ordered); ++i) {
-    const auto &[dim, stride] = ordered[i];
-    dataDims.add(dim, std::max(dims()[dim], ((i == scipp::size(ordered) - 1)
-                                                 ? m_object->size()
-                                                 : ordered[i + 1].second)) /
-                          std::max(scipp::index(1), stride));
-  }
-  return {m_offset, dims(), dataDims, {}};
+  return {m_offset, dims(), m_strides, {}};
 }
 
 Variable Variable::slice(const Slice params) const {

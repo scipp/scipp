@@ -9,6 +9,7 @@
 #include <boost/iterator/iterator_facade.hpp>
 
 #include "scipp/core/dimensions.h"
+#include "scipp/core/strides.h"
 #include "scipp/core/view_index.h"
 
 namespace scipp::core {
@@ -27,9 +28,9 @@ class ElementArrayViewParams_iterator
 public:
   ElementArrayViewParams_iterator(T *variable,
                                   const Dimensions &targetDimensions,
-                                  const Dimensions &dimensions,
+                                  const Strides &strides,
                                   const scipp::index index)
-      : m_variable(variable), m_index(targetDimensions, dimensions) {
+      : m_variable(variable), m_index(targetDimensions, strides) {
     m_index.setIndex(index);
   }
 
@@ -61,14 +62,14 @@ private:
 class SCIPP_CORE_EXPORT ElementArrayViewParams {
 public:
   ElementArrayViewParams(const scipp::index offset, const Dimensions &iterDims,
-                         const Dimensions &dataDims,
+                         const Strides &strides,
                          const BucketParams &bucketParams);
   ElementArrayViewParams(const ElementArrayViewParams &other,
                          const Dimensions &iterDims);
 
-  ViewIndex begin_index() const noexcept { return {m_iterDims, m_dataDims}; }
+  ViewIndex begin_index() const noexcept { return {m_iterDims, m_strides}; }
   ViewIndex end_index() const noexcept {
-    ViewIndex i{m_iterDims, m_dataDims};
+    ViewIndex i{m_iterDims, m_strides};
     i.setIndex(size());
     return i;
   }
@@ -76,23 +77,28 @@ public:
   scipp::index size() const { return m_iterDims.volume(); }
   constexpr scipp::index offset() const noexcept { return m_offset; }
   constexpr const Dimensions &dims() const noexcept { return m_iterDims; }
-  constexpr const Dimensions &dataDims() const noexcept { return m_dataDims; }
+  const Strides &strides() const noexcept { return m_strides; }
   constexpr const BucketParams &bucketParams() const noexcept {
     return m_bucketParams;
   }
 
-  bool overlaps(const ElementArrayViewParams &other) const {
-    // TODO We could be less restrictive here and use a more sophisticated check
-    // based on offsets and dimensions, if there is a performance issue due to
-    // this current stricter requirement.
-    return (m_offset != other.m_offset) || (m_dataDims != other.m_dataDims);
+  bool overlaps([[maybe_unused]] const ElementArrayViewParams &other) const {
+    // TODO need an actual implementation.
+    //   We need to take iterDims and strides into account.
+    //   But that seems highly non-trivial.
+    //   old comment:
+    //     We could be less restrictive here and use a more sophisticated check
+    //     based on offsets and dimensions, if there is a performance issue due
+    //     to this current stricter requirement.
+    // return (m_offset != other.m_offset) || (m_dataDims != other.m_dataDims);
+    return true;
   }
 
 protected:
   void requireContiguous() const;
   scipp::index m_offset{0};
   Dimensions m_iterDims;
-  Dimensions m_dataDims;
+  Strides m_strides;
   BucketParams m_bucketParams{};
 };
 
@@ -106,9 +112,9 @@ public:
 
   /// Construct an ElementArrayView over given buffer.
   ElementArrayView(T *buffer, const scipp::index offset,
-                   const Dimensions &iterDims, const Dimensions &dataDims,
+                   const Dimensions &iterDims, const Strides &strides,
                    const BucketParams &bucketParams = BucketParams{})
-      : ElementArrayViewParams(offset, iterDims, dataDims, bucketParams),
+      : ElementArrayViewParams(offset, iterDims, strides, bucketParams),
         m_buffer(buffer) {}
 
   /// Construct an ElementArrayView over given buffer.
@@ -122,10 +128,10 @@ public:
       : ElementArrayViewParams(other, iterDims), m_buffer(other.buffer()) {}
 
   iterator begin() const {
-    return {m_buffer + m_offset, m_iterDims, m_dataDims, 0};
+    return {m_buffer + m_offset, m_iterDims, m_strides, 0};
   }
   iterator end() const {
-    return {m_buffer + m_offset, m_iterDims, m_dataDims, size()};
+    return {m_buffer + m_offset, m_iterDims, m_strides, size()};
   }
   auto &operator[](const scipp::index i) const { return *(begin() + i); }
 
