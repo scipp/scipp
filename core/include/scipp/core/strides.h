@@ -17,6 +17,7 @@ public:
   explicit Strides(const scipp::span<const scipp::index> &strides);
   Strides(std::initializer_list<scipp::index> strides);
   explicit Strides(const Dimensions &dims);
+  Strides(const Dimensions &iter_dims, const Dimensions &data_dims);
 
   bool operator==(const Strides &other) const noexcept;
   bool operator!=(const Strides &other) const noexcept;
