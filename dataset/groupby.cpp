@@ -51,8 +51,9 @@ T GroupBy<T>::copy(const scipp::index group,
     for (scipp::index i = range.begin(); i != range.end(); ++i) {
       const auto &slice = slices[i];
       const auto &out_slice = out_slices[i];
-      scipp::dataset::copy(m_data.slice(slice), out.slice(out_slice),
-                           attrPolicy);
+      scipp::dataset::copy(
+          strip_if_broadcast_along(m_data.slice(slice), slice_dim),
+          out.slice(out_slice), attrPolicy);
     }
   };
   core::parallel::parallel_for(core::parallel::blocked_range(0, slices.size()),
