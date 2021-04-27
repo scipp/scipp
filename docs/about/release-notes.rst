@@ -11,6 +11,7 @@ Features
 
 * Can now control the position and visibility of the legend in 1d plots with ``plot(da, legend={"show": True, "loc": 4})`` `#1790 <https://github.com/scipp/scipp/pull/1790>`_.
 * Added ``zeros_like``, ``ones_like`` and ``empty_like`` functions `#1864 <https://github.com/scipp/scipp/pull/1864>`_.
+* ``sort`` is now considerably faster for data with more rows `#1872 <https://github.com/scipp/scipp/pull/1872>`_.
 
 Bugfixes
 ~~~~~~~~
