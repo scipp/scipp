@@ -61,28 +61,37 @@ private:
 /// Base class for ElementArrayView<T> with functionality independent of T.
 class SCIPP_CORE_EXPORT ElementArrayViewParams {
 public:
-  ElementArrayViewParams(const scipp::index offset, const Dimensions &iterDims,
+  ElementArrayViewParams(scipp::index offset, const Dimensions &iter_dims,
                          const Strides &strides,
-                         const BucketParams &bucketParams);
+                         const BucketParams &bucket_params);
   ElementArrayViewParams(const ElementArrayViewParams &other,
                          const Dimensions &iterDims);
 
-  ViewIndex begin_index() const noexcept { return {m_iterDims, m_strides}; }
-  ViewIndex end_index() const noexcept {
+  [[nodiscard]] ViewIndex begin_index() const noexcept {
+    return {m_iterDims, m_strides};
+  }
+  [[nodiscard]] ViewIndex end_index() const noexcept {
     ViewIndex i{m_iterDims, m_strides};
     i.setIndex(size());
     return i;
   }
 
-  scipp::index size() const { return m_iterDims.volume(); }
-  constexpr scipp::index offset() const noexcept { return m_offset; }
-  constexpr const Dimensions &dims() const noexcept { return m_iterDims; }
-  const Strides &strides() const noexcept { return m_strides; }
-  constexpr const BucketParams &bucketParams() const noexcept {
+  // TODO set_at_end
+
+  [[nodiscard]] scipp::index size() const { return m_iterDims.volume(); }
+  [[nodiscard]] constexpr scipp::index offset() const noexcept {
+    return m_offset;
+  }
+  [[nodiscard]] constexpr const Dimensions &dims() const noexcept {
+    return m_iterDims;
+  }
+  [[nodiscard]] const Strides &strides() const noexcept { return m_strides; }
+  [[nodiscard]] constexpr const BucketParams &bucketParams() const noexcept {
     return m_bucketParams;
   }
 
-  bool overlaps([[maybe_unused]] const ElementArrayViewParams &other) const {
+  [[nodiscard]] bool overlaps([
+      [maybe_unused]] const ElementArrayViewParams &other) const {
     // TODO need an actual implementation.
     //   We need to take iterDims and strides into account.
     //   But that seems highly non-trivial.
