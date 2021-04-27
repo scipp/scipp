@@ -23,7 +23,6 @@
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/strides.h"
-#include "scipp/core/tag_util.h"
 
 #include "scipp/variable/variable_keyword_arg_constructor.h"
 
