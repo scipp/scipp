@@ -3,41 +3,43 @@
 #include <gtest/gtest.h>
 
 #include "scipp/variable/sort.h"
+#include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
 using namespace scipp::variable;
 
-TEST(Variable, sort_ascending) {
-  auto var = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
-                                  Values{1.0, 3.0, 2.0, 4.0, 0.0, 5.0});
-  EXPECT_EQ(sort(var, Dim::X, SortOrder::Ascending),
-            makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
-                                 Values{1.0, 2.0, 3.0, 0.0, 4.0, 5.0}));
+class SortTest : public ::testing::Test {
+protected:
+  Variable var = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
+                                      Values{1.0, 3.0, 2.0, 4.0, 0.0, 5.0},
+                                      Variances{1.0, 2.0, 3.0, 3.0, 2.0, 1.0});
+};
+
+TEST_F(SortTest, ascending) {
+  var = values(var);
+  auto sorted = sort(var, Dim::X, SortOrder::Ascending);
+  EXPECT_NE(sorted, var);
+  EXPECT_EQ(sorted, makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
+                                         Values{1.0, 2.0, 3.0, 0.0, 4.0, 5.0}));
 }
 
-TEST(Variable, sort_descending) {
-  auto var = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
-                                  Values{1.0, 3.0, 2.0, 4.0, 0.0, 5.0});
-  EXPECT_EQ(sort(var, Dim::X, SortOrder::Descending),
-            makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
-                                 Values{3.0, 2.0, 1.0, 5.0, 4.0, 0.0}));
+TEST_F(SortTest, descending) {
+  var = values(var);
+  auto sorted = sort(var, Dim::X, SortOrder::Descending);
+  EXPECT_NE(sorted, var);
+  EXPECT_EQ(sorted, makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
+                                         Values{3.0, 2.0, 1.0, 5.0, 4.0, 0.0}));
 }
 
-TEST(Variable, sort_ascending_var) {
-  auto var = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
-                                  Values{1.0, 3.0, 2.0, 4.0, 0.0, 5.0},
-                                  Variances{1.0, 2.0, 3.0, 3.0, 2.0, 1.0});
+TEST_F(SortTest, ascending_with_variances) {
   EXPECT_EQ(sort(var, Dim::X, SortOrder::Ascending),
             makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
                                  Values{1.0, 2.0, 3.0, 0.0, 4.0, 5.0},
                                  Variances{1.0, 3.0, 2.0, 2.0, 3.0, 1.0}));
 }
 
-TEST(Variable, sort_descending_var) {
-  auto var = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
-                                  Values{1.0, 3.0, 2.0, 4.0, 0.0, 5.0},
-                                  Variances{1.0, 2.0, 3.0, 3.0, 2.0, 1.0});
+TEST_F(SortTest, descending_with_variances) {
   EXPECT_EQ(sort(var, Dim::X, SortOrder::Descending),
             makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
                                  Values{3.0, 2.0, 1.0, 5.0, 4.0, 0.0},
