@@ -21,7 +21,7 @@ void expect_embedded_in(const Dimensions &a, const Dimensions &b) {
 
 ViewIndex::ViewIndex(const Dimensions &target_dimensions,
                      const Strides &strides)
-    : m_dims{static_cast<int32_t>(target_dimensions.ndim())} {
+    : m_ndim{static_cast<int32_t>(target_dimensions.ndim())} {
   // do not allow broadcasting
   expect_embedded_in(targetDimensions, dataDimensions);
   m_dims = static_cast<int32_t>(targetDimensions.ndim());
@@ -29,11 +29,11 @@ ViewIndex::ViewIndex(const Dimensions &target_dimensions,
     m_extent[d] = target_dimensions.size(m_dims - 1 - d);
 
   scipp::index rewind = 0;
-  for (scipp::index d = 0; d < m_dims; ++d) {
-    m_delta[d] = strides[m_dims - 1 - d] - rewind;
-    rewind = m_extent[d] * strides[m_dims - 1 - d];
+  for (scipp::index d = 0; d < m_ndim; ++d) {
+    m_delta[d] = strides[m_ndim - 1 - d] - rewind;
+    rewind = m_shape[d] * strides[m_ndim - 1 - d];
   }
-  std::reverse_copy(strides.begin(), strides.begin() + m_dims,
+  std::reverse_copy(strides.begin(), strides.begin() + m_ndim,
                     m_strides.begin());
 }
 

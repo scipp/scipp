@@ -17,48 +17,48 @@ public:
 
   constexpr void increment_outer() noexcept {
     scipp::index d = 0;
-    while ((m_coord[d] == m_extent[d]) && (d < NDIM_MAX - 1)) {
-      m_index += m_delta[d + 1];
+    while ((m_coord[d] == m_shape[d]) && (d < NDIM_MAX - 1)) {
+      m_memory_index += m_delta[d + 1];
       ++m_coord[d + 1];
       m_coord[d] = 0;
       ++d;
     }
   }
   constexpr void increment() noexcept {
-    m_index += m_delta[0];
+    m_memory_index += m_delta[0];
     ++m_coord[0];
-    if (m_coord[0] == m_extent[0])
+    if (m_coord[0] == m_shape[0])
       increment_outer();
-    ++m_full_index;
+    ++m_view_index;
   }
 
   constexpr void set_index(const scipp::index index) noexcept {
-    m_full_index = index;
-    extract_indices(index, m_dims, m_extent, m_coord);
-    m_index = flat_index_from_strides(m_strides.begin(), m_strides.end(m_dims),
+    m_view_index = index;
+    extract_indices(index, m_ndim, m_shape, m_coord);
+    m_memory_index = flat_index_from_strides(m_strides.begin(), m_strides.end(m_ndim),
                                       m_coord.begin());
   }
 
   void set_to_end() noexcept {
-    m_full_index = 0;
-    for (scipp::index dim = 0; dim < m_dims - 1; ++dim) {
-      m_full_index *= m_extent[dim];
+    m_view_index = 0;
+    for (scipp::index dim = 0; dim < m_ndim - 1; ++dim) {
+      m_view_index *= m_shape[dim];
     }
-    std::fill(m_coord.begin(), m_coord.begin() + std::max(m_dims - 1, 0), 0);
-    m_coord[m_dims] = m_extent[m_dims];
-    m_index = m_coord[m_dims] * m_strides[m_dims];
+    std::fill(m_coord.begin(), m_coord.begin() + std::max(m_ndim - 1, 0), 0);
+    m_coord[m_ndim] = m_shape[m_ndim];
+    m_memory_index = m_coord[m_ndim] * m_strides[m_ndim];
   }
 
-  [[nodiscard]] constexpr scipp::index get() const noexcept { return m_index; }
+  [[nodiscard]] constexpr scipp::index get() const noexcept { return m_memory_index; }
   [[nodiscard]] constexpr scipp::index index() const noexcept {
-    return m_full_index;
+    return m_view_index;
   }
 
   constexpr bool operator==(const ViewIndex &other) const noexcept {
-    return m_full_index == other.m_full_index;
+    return m_view_index == other.m_view_index;
   }
   constexpr bool operator!=(const ViewIndex &other) const noexcept {
-    return m_full_index != other.m_full_index;
+    return m_view_index != other.m_view_index;
   }
 
 private:
@@ -106,19 +106,19 @@ private:
   // TODO names?
 
   /// Index into memory.
-  scipp::index m_index{0};
+  scipp::index m_memory_index{0};
   /// Steps to advance one element.
   std::array<scipp::index, NDIM_MAX> m_delta = {};
   /// Multi-dimensional index in iteration dimensions.
   std::array<scipp::index, NDIM_MAX> m_coord = {};
   /// Shape in iteration dimensions.
-  std::array<scipp::index, NDIM_MAX> m_extent = {};
+  std::array<scipp::index, NDIM_MAX> m_shape = {};
   /// Strides in memory.
   Strides m_strides;
   /// Index in iteration dimensions.
-  scipp::index m_full_index{0};
+  scipp::index m_view_index{0};
   /// Number of dimensions.
-  int32_t m_dims;
+  int32_t m_ndim;
 };
 /*
  * TODO document implementation
