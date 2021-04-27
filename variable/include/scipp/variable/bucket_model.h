@@ -24,6 +24,14 @@ public:
 
   scipp::index size() const override { return indices()->size(); }
 
+  void setUnit(const units::Unit &unit) override {
+    if (unit != units::one)
+      throw except::UnitError(
+          "Bins cannot have a unit. Did you mean to set the unit of the bin "
+          "elements? This can be set, e.g., with `array.bins.data.unit = "
+          "'m'`.");
+  }
+
   bool hasVariances() const noexcept override { return false; }
   void setVariances(const Variable &) override {
     throw except::VariancesError("This data type cannot have variances.");
