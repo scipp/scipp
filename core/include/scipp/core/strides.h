@@ -11,6 +11,17 @@
 
 namespace scipp::core {
 
+/// Container for strides in memory.
+///
+/// Given a contiguous buffer in memory viewed as a multi-dimensional array,
+/// `strides[d]` is the distance in memory between consecutive array elements
+/// in dimension `d`.
+/// @see scipp::flat_index_from_strides
+///
+/// Strides objects do not store information on the dimensions.
+/// They should therefore be accompanied by an instance of Dimensions.
+/// The storage order in Strides is arbitrary but should be the same as in
+/// Dimensions, i.e. the slowest moving index should be first.
 class SCIPP_CORE_EXPORT Strides {
 public:
   Strides() = default;
