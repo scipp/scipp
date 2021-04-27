@@ -2,8 +2,6 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Thibault Chatel
-#include <numeric>
-
 #include "scipp/core/element/sort.h"
 #include "scipp/variable/sort.h"
 #include "scipp/variable/subspan_view.h"
@@ -14,7 +12,7 @@ using namespace scipp::core;
 namespace scipp::variable {
 
 Variable sort(const Variable &var, const Dim dim, const SortOrder order) {
-  Variable out(var);
+  auto out = copy(var);
   if (order == SortOrder::Ascending)
     transform_in_place(subspan_view(out, dim),
                        core::element::sort_nondescending);
