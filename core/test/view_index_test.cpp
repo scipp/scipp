@@ -27,6 +27,27 @@ public:
     x.add(Dim::X, xlen);
 
     y.add(Dim::Y, ylen);
+
+    s_xy_xy = Strides{xlen, 1};
+    s_xy_yx = Strides{1, ylen};
+    s_x_xy = Strides{1};
+    s_x_yx = Strides{ylen};
+    s_xy_xy_x_edges = Strides{xlen + 1, 1};
+  }
+
+  static Strides make_strides(const Dimensions &iter_dims,
+                              const Dimensions &data_dims) {
+    Strides strides;
+    scipp::index ndim = 0;
+    scipp::index stride = 1;
+    for (scipp::index i = data_dims.ndim() - 1; i >= 0; --i) {
+      if (iter_dims.contains(data_dims.label(i))) {
+        strides[ndim++] = stride;
+      }
+      stride *= data_dims[data_dims.label(i)];
+    }
+    std::reverse(strides.begin(), strides.begin() + ndim);
+    return strides;
   }
 
 protected:
@@ -36,15 +57,21 @@ protected:
   Dimensions x;
   Dimensions y;
   Dimensions none;
+
+  Strides s_xy_xy;
+  Strides s_xy_yx;
+  Strides s_x_xy;
+  Strides s_x_yx;
+  Strides s_xy_xy_x_edges;
 };
 
 TEST_F(ViewIndex2DTest, construct) {
-  EXPECT_NO_THROW(ViewIndex(xy, xy));
-  EXPECT_NO_THROW(ViewIndex(xy, yx));
+  EXPECT_NO_THROW(ViewIndex(xy, s_xy_xy));
+  EXPECT_NO_THROW(ViewIndex(xy, s_xy_yx));
 }
 
 TEST_F(ViewIndex2DTest, setIndex_2D) {
-  ViewIndex i(xy, xy);
+  ViewIndex i(xy, s_xy_xy);
   EXPECT_EQ(i.get(), 0);
   i.setIndex(1);
   EXPECT_EQ(i.get(), 1);
@@ -53,7 +80,7 @@ TEST_F(ViewIndex2DTest, setIndex_2D) {
 }
 
 TEST_F(ViewIndex2DTest, setIndex_2D_transpose) {
-  ViewIndex i(xy, yx);
+  ViewIndex i(xy, s_xy_yx);
   EXPECT_EQ(i.get(), 0);
   i.setIndex(1);
   EXPECT_EQ(i.get(), 5);
@@ -62,7 +89,7 @@ TEST_F(ViewIndex2DTest, setIndex_2D_transpose) {
 }
 
 TEST_F(ViewIndex2DTest, increment_2D) {
-  ViewIndex i(xy, xy);
+  ViewIndex i(xy, s_xy_xy);
   EXPECT_EQ(i.get(), 0);
   i.increment();
   EXPECT_EQ(i.get(), 1);
@@ -73,8 +100,8 @@ TEST_F(ViewIndex2DTest, increment_2D) {
 }
 
 TEST_F(ViewIndex2DTest, end) {
-  ViewIndex it(xy, xy);
-  ViewIndex end(xy, xy);
+  ViewIndex it(xy, s_xy_xy);
+  ViewIndex end(xy, s_xy_xy);
   end.setIndex(3 * 5);
   for (scipp::index i = 0; i < 3 * 5; ++i) {
     EXPECT_FALSE(it == end);
@@ -84,8 +111,8 @@ TEST_F(ViewIndex2DTest, end) {
 }
 
 TEST_F(ViewIndex2DTest, equal) {
-  ViewIndex i(xy, xy);
-  ViewIndex j(xy, xy);
+  ViewIndex i(xy, s_xy_xy);
+  ViewIndex j(xy, s_xy_xy);
   i.setIndex(3 * 3);
   j.setIndex(3 * 3);
   EXPECT_TRUE(i == j);
@@ -96,7 +123,7 @@ TEST_F(ViewIndex2DTest, equal) {
 }
 
 TEST_F(ViewIndex2DTest, increment_2D_transpose) {
-  ViewIndex i(xy, yx);
+  ViewIndex i(xy, s_xy_yx);
   std::vector<scipp::index> expected{0,  5, 10, 1,  6, 11, 2, 7,
                                      12, 3, 8,  13, 4, 9,  14};
   for (const auto correct : expected) {
@@ -106,7 +133,7 @@ TEST_F(ViewIndex2DTest, increment_2D_transpose) {
 }
 
 TEST_F(ViewIndex2DTest, fixed_dimensions) {
-  ViewIndex i(x, xy);
+  ViewIndex i(x, s_x_xy);
   EXPECT_EQ(i.get(), 0);
   i.increment();
   EXPECT_EQ(i.get(), 1);
@@ -115,7 +142,7 @@ TEST_F(ViewIndex2DTest, fixed_dimensions) {
 }
 
 TEST_F(ViewIndex2DTest, fixed_dimensions_transposed) {
-  ViewIndex i(x, yx);
+  ViewIndex i(x, s_x_yx);
   EXPECT_EQ(i.get(), 0);
   i.increment();
   EXPECT_EQ(i.get(), 5);
@@ -124,7 +151,7 @@ TEST_F(ViewIndex2DTest, fixed_dimensions_transposed) {
 }
 
 TEST_F(ViewIndex2DTest, edges) {
-  ViewIndex i(xy, xy_x_edges);
+  ViewIndex i(xy, s_xy_xy_x_edges);
   EXPECT_EQ(i.get(), 0);
   i.increment();
   EXPECT_EQ(i.get(), 1);
@@ -163,7 +190,7 @@ TEST_F(ViewIndex2DTest, edges) {
 TEST(ViewIndexTest, empty1D) {
   Dimensions dims;
   dims.add(Dim::X, 0);
-  const ViewIndex idx{dims, dims};
+  const ViewIndex idx{dims, Strides{0}};
   EXPECT_EQ(idx.get(), 0);
   EXPECT_EQ(idx.index(), 0);
 }
@@ -172,7 +199,7 @@ TEST(ViewIndexTest, empty2D) {
   Dimensions dims;
   dims.add(Dim::X, 0);
   dims.add(Dim::Y, 0);
-  const ViewIndex idx{dims, dims};
+  const ViewIndex idx{dims, Strides{0, 0}};
   EXPECT_EQ(idx.get(), 0);
   EXPECT_EQ(idx.index(), 0);
 }
