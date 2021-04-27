@@ -20,9 +20,9 @@ namespace py = pybind11;
 
 auto get_sort_order(const std::string &order) {
   if (order == "ascending")
-    return variable::SortOrder::Ascending;
+    return SortOrder::Ascending;
   else if (order == "descending")
-    return variable::SortOrder::Descending;
+    return SortOrder::Descending;
   else
     throw std::runtime_error("Sort order must be 'ascending' or 'descending'");
 }

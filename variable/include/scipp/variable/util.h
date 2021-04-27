@@ -8,6 +8,10 @@
 #include "scipp/variable/generated_util.h"
 #include "scipp/variable/variable.h"
 
+namespace scipp {
+enum class SCIPP_VARIABLE_EXPORT SortOrder { Ascending, Descending };
+}
+
 namespace scipp::variable {
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable linspace(const Variable &start,
@@ -17,8 +21,6 @@ namespace scipp::variable {
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable islinspace(const Variable &var,
                                                         const Dim dim);
-
-enum class SCIPP_VARIABLE_EXPORT SortOrder { Ascending, Descending };
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT bool
 issorted(const Variable &x, const Dim dim,

@@ -11,7 +11,6 @@ set(INC_FILES
     include/scipp/variable/bin_util.h
     include/scipp/variable/comparison.h
     include/scipp/variable/except.h
-    include/scipp/variable/indexed_slice_view.h
     include/scipp/variable/logical.h
     include/scipp/variable/math.h
     include/scipp/variable/misc_operations.h
