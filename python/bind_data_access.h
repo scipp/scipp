@@ -11,6 +11,7 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/variable_concept.h"
 
 #include "dtype.h"
 #include "numpy.h"
