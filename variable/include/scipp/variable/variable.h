@@ -59,7 +59,7 @@ public:
 
   Variable operator~() const;
 
-  [[nodiscard]] units::Unit unit() const;
+  [[nodiscard]] const units::Unit &unit() const;
   void setUnit(const units::Unit &unit);
   void expectCanSetUnit(const units::Unit &) const;
 
@@ -69,6 +69,7 @@ public:
   [[nodiscard]] DType dtype() const;
 
   [[nodiscard]] scipp::span<const scipp::index> strides() const;
+  [[nodiscard]] scipp::index offset() const;
 
   [[nodiscard]] bool hasVariances() const;
 

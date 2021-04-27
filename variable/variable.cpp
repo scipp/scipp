@@ -63,7 +63,7 @@ void Variable::expectCanSetUnit(const units::Unit &unit) const {
                             "to change the unit.");
 }
 
-units::Unit Variable::unit() const { return m_object->unit(); }
+const units::Unit &Variable::unit() const { return m_object->unit(); }
 
 void Variable::setUnit(const units::Unit &unit) {
   expectCanSetUnit(unit);
@@ -95,6 +95,8 @@ scipp::span<const scipp::index> Variable::strides() const {
   return scipp::span<const scipp::index>(&*m_strides.begin(),
                                          &*m_strides.begin() + dims().ndim());
 }
+
+scipp::index Variable::offset() const { return m_offset; }
 
 core::ElementArrayViewParams Variable::array_params() const noexcept {
   return {m_offset, dims(), m_strides, {}};
