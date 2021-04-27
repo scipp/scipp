@@ -43,6 +43,16 @@ TEST(Variable, construct_fail) {
   ASSERT_ANY_THROW(makeVariable<double>(Dims{Dim::X}, Shape{3}, Values(2)));
 }
 
+TEST(Variable, copy) {
+  const auto var =
+      makeVariable<double>(Dimensions{Dim::X, 3}, Values{}, Variances{});
+  const Variable view(var);
+  EXPECT_EQ(var.unit(), view.unit());
+  EXPECT_EQ(var.dims(), view.dims());
+  EXPECT_EQ(var.values<double>().data(), view.values<double>().data());
+  EXPECT_EQ(var.variances<double>().data(), view.variances<double>().data());
+}
+
 TEST(Variable, move) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{2});
   Variable moved(std::move(var));
@@ -345,21 +355,6 @@ TEST_F(VariableTest_3d, slice_range) {
             makeVariable<double>(Dimensions(dims_z2), units::m,
                                  Values(vals_z13.begin(), vals_z13.end()),
                                  Variances(vars_z13.begin(), vars_z13.end())));
-}
-
-TEST(VariableView, full_const_view) {
-  const auto var =
-      makeVariable<double>(Dimensions{Dim::X, 3}, Values{}, Variances{});
-  const Variable view(var);
-  EXPECT_EQ(&var.values<double>()[0], &view.values<double>()[0]);
-  EXPECT_EQ(&var.variances<double>()[0], &view.variances<double>()[0]);
-}
-
-TEST(VariableView, full_mutable_view) {
-  auto var = makeVariable<double>(Dimensions{Dim::X, 3}, Values{}, Variances{});
-  auto view(var);
-  EXPECT_EQ(&var.values<double>()[0], &view.values<double>()[0]);
-  EXPECT_EQ(&var.variances<double>()[0], &view.variances<double>()[0]);
 }
 
 TEST(VariableView, strides) {
