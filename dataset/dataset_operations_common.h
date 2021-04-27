@@ -176,6 +176,9 @@ template <class T, class Func> DataArray transform(const T &a, Func func) {
                    transform_map(a.attrs(), func), a.name());
 }
 
+DataArray strip_if_broadcast_along(DataArray &&a, const Dim dim);
+Dataset strip_if_broadcast_along(Dataset &&d, const Dim dim);
+
 // Helpers for reductions for DataArray and Dataset, which include masks.
 [[nodiscard]] Variable mean(const Variable &var, const Dim dim,
                             const Masks &masks);

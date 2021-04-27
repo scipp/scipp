@@ -11,7 +11,6 @@ add_executable(
   comparison_test.cpp
   creation_test.cpp
   cumulative_test.cpp
-  indexed_slice_view_test.cpp
   mean_test.cpp
   operations_test.cpp
   rebin_test.cpp
