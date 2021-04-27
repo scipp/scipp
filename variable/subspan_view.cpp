@@ -32,6 +32,11 @@ auto make_empty_subspans(const ElementArrayView<T> &, const Dimensions &dims) {
 template <class T>
 auto make_subspans(T *base, const Variable &indices,
                    const scipp::index stride) {
+  if (stride != 1)
+    throw std::logic_error(
+        "span only supports stride=1, this should be "
+        "unreachable due to an earlier check, may want to generalize this "
+        "later to support in particular stride=0 for broadcasted buffers");
   const auto spans = variable::transform<scipp::index_pair>(
       indices, overloaded{core::transform_flags::expect_no_variance_arg<0>,
                           [](const units::Unit &) { return units::one; },
@@ -69,11 +74,6 @@ Variable make_subspan_view(Var &var, const Dimensions &dims,
 template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
   using E = std::remove_const_t<T>;
   const auto len = var.dims()[dim];
-  if (var.strides()[var.dims().index(dim)] != 1)
-    throw except::DimensionError(
-        "View over subspan can only be created for contiguous "
-        "range of data.");
-
   auto dims = var.dims();
   dims.erase(dim);
   const auto values_view = [dim, len, dims](auto &v) {
@@ -125,10 +125,14 @@ auto invoke_subspan_view(const DType dtype, Args &&... args) {
 }
 
 template <class Var, class... Args>
-Variable subspan_view_impl(Var &var, Args &&... args) {
+Variable subspan_view_impl(Var &var, const Dim dim, Args &&... args) {
+  if (var.strides()[var.dims().index(dim)] != 1)
+    throw except::DimensionError(
+        "View over subspan can only be created for contiguous "
+        "range of data.");
   return invoke_subspan_view<double, float, int64_t, int32_t, bool,
                              core::time_point, std::string, Eigen::Vector3d>(
-      var.dtype(), var, args...);
+      var.dtype(), var, dim, args...);
 }
 
 } // namespace
