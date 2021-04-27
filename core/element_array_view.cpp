@@ -23,21 +23,15 @@ void expectCanBroadcastFromTo(const Dimensions &source,
 /// Construct ElementArrayViewParams.
 ///
 /// @param offset Start offset from beginning of array.
-/// @param iterDims Dimensions to use for iteration.
-/// @param dataDims Dimensions of array to iterate.
-/// @param bucketParams Optional, in case of view onto bucket-variable this
+/// @param iter_dims Dimensions to use for iteration.
+/// @param strides Strides in memory, order matches that of iterDims.
+/// @param bucket_params Optional, in case of view onto bucket-variable this
 /// holds parameters for accessing individual buckets.
-///
-/// The parameter `iterDims` can be used to remove, slice, broadcast, or
-/// transpose `dataDims`.
-ElementArrayViewParams::ElementArrayViewParams(const scipp::index offset,
-                                               const Dimensions &iterDims,
-                                               const Dimensions &dataDims,
-                                               const BucketParams &bucketParams)
-    : m_offset(offset), m_iterDims(iterDims), m_dataDims(dataDims),
-      m_bucketParams(bucketParams) {
-  expectCanBroadcastFromTo(m_dataDims, m_iterDims);
-}
+ElementArrayViewParams::ElementArrayViewParams(
+    const scipp::index offset, const Dimensions &iter_dims,
+    const Strides &strides, const BucketParams &bucket_params)
+    : m_offset(offset), m_iterDims(iter_dims), m_strides(strides),
+      m_bucketParams(bucket_params) {}
 
 /// Construct ElementArrayViewParams from another ElementArrayViewParams, with
 /// different iteration dimensions.
