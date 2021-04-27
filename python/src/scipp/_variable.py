@@ -198,6 +198,7 @@ def linspace(dim: str,
              start: Union[int, float],
              stop: Union[int, float],
              num: int,
+             *,
              unit: Union[Unit, str] = units.dimensionless,
              dtype: type(dtype.float64) = None) -> Variable:
     """Constructs a :class:`Variable` with `num` evenly spaced samples,
@@ -225,6 +226,7 @@ def geomspace(dim: str,
               start: Union[int, float],
               stop: Union[int, float],
               num: int,
+              *,
               unit: Union[Unit, str] = units.dimensionless,
               dtype: type(dtype.float64) = None) -> Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale
@@ -254,6 +256,7 @@ def logspace(dim: str,
              start: Union[int, float],
              stop: Union[int, float],
              num: int,
+             *,
              unit: Union[Unit, str] = units.dimensionless,
              dtype: type(dtype.float64) = None) -> Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale.
@@ -280,6 +283,7 @@ def arange(dim: str,
            start: Union[int, float],
            stop: Union[int, float] = None,
            step: Union[int, float] = 1,
+           *,
            unit: Union[Unit, str] = units.dimensionless,
            dtype: type(dtype.float64) = None) -> Variable:
     """Constructs a :class:`Variable` with evenly spaced values within a given
