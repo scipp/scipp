@@ -14,9 +14,9 @@ namespace scipp::core {
 class SCIPP_CORE_EXPORT Strides {
 public:
   Strides() = default;
-  Strides(const scipp::span<const scipp::index> &strides);
+  explicit Strides(const scipp::span<const scipp::index> &strides);
   Strides(std::initializer_list<scipp::index> strides);
-  Strides(const Dimensions &dims);
+  explicit Strides(const Dimensions &dims);
 
   bool operator==(const Strides &other) const noexcept;
   bool operator!=(const Strides &other) const noexcept;
@@ -29,9 +29,16 @@ public:
     return m_strides.at(i);
   }
 
-  auto begin() const { return m_strides.begin(); }
+  [[nodiscard]] auto begin() const { return m_strides.begin(); }
+  [[nodiscard]] auto begin() { return m_strides.begin(); }
+  [[nodiscard]] auto end(const scipp::index ndim) const {
+    return std::next(m_strides.begin(), ndim);
+  }
+  [[nodiscard]] auto end(const scipp::index ndim) {
+    return std::next(m_strides.begin(), ndim);
+  }
 
-  void erase(const scipp::index i);
+  void erase(scipp::index i);
 
 private:
   std::array<scipp::index, NDIM_MAX> m_strides{0};
