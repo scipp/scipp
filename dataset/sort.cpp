@@ -13,23 +13,7 @@ namespace {
 
 template <class T>
 auto sort_impl(const T &obj, const Dim &key, const SortOrder order) {
-  const auto grouped = groupby(obj, key);
-  const auto dim = obj.coords()[key].dims().inner();
-  auto sorted = copy(obj);
-  scipp::index current = 0;
-  scipp::index size = sorted.dims()[dim];
-  for (scipp::index i = 0; i < grouped.size(); ++i) {
-    auto group = grouped.copy(i);
-    const auto group_size = group.dims()[dim];
-    const auto begin =
-        (order == SortOrder::Ascending) ? current : size - current - group_size;
-    const auto end =
-        (order == SortOrder::Ascending) ? current + group_size : size - current;
-    copy(strip_if_broadcast_along(std::move(group), dim),
-         sorted.slice({dim, begin, end}));
-    current += group_size;
-  }
-  return sorted;
+  return groupby(obj, key).copy(order);
 }
 
 Dim nonclashing_name(const Coords &coords) {

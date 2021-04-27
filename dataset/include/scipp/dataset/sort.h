@@ -9,7 +9,6 @@
 #include <scipp/variable/variable.h>
 
 namespace scipp::dataset {
-using scipp::variable::SortOrder;
 
 SCIPP_DATASET_EXPORT Variable
 sort(const Variable &var, const Variable &key,

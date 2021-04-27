@@ -197,6 +197,27 @@ template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
                 reductionDim);
 }
 
+/// Combine groups without changes, effectively sorteding data.
+template <class T> T GroupBy<T>::copy(const SortOrder order) const {
+  auto sorted = dataset::copy(m_data);
+  const Dim slice_dim = m_data.coords()[dim()].dims().inner();
+  scipp::index current = 0;
+  scipp::index data_size = sorted.dims()[slice_dim];
+  for (scipp::index i = 0; i < size(); ++i) {
+    auto group = copy(i);
+    const auto group_size = group.dims()[slice_dim];
+    const auto begin = (order == SortOrder::Ascending)
+                           ? current
+                           : data_size - current - group_size;
+    const auto end = (order == SortOrder::Ascending) ? current + group_size
+                                                     : data_size - current;
+    dataset::copy(strip_if_broadcast_along(std::move(group), slice_dim),
+                  sorted.slice({slice_dim, begin, end}));
+    current += group_size;
+  }
+  return sorted;
+}
+
 /// Apply mean to groups and return combined data.
 template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   // 1. Sum into output slices
