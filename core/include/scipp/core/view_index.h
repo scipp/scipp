@@ -5,14 +5,15 @@
 #pragma once
 
 #include "scipp-core_export.h"
+#include "scipp/common/index_composition.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/strides.h"
 
 namespace scipp::core {
 
 class SCIPP_CORE_EXPORT ViewIndex {
 public:
-  ViewIndex(const Dimensions &targetDimensions,
-            const Dimensions &dataDimensions);
+  ViewIndex(const Dimensions &target_dimensions, const Strides &strides);
 
   constexpr void increment_outer() noexcept {
     scipp::index d = 0;
@@ -33,21 +34,9 @@ public:
 
   constexpr void setIndex(const scipp::index index) noexcept {
     m_fullIndex = index;
-    if (m_dims == 0)
-      return;
-    auto remainder{index};
-    for (int32_t d = 0; d < m_dims - 1; ++d) {
-      if (m_extent[d] != 0) {
-        m_coord[d] = remainder % m_extent[d];
-        remainder /= m_extent[d];
-      } else {
-        m_coord[d] = 0;
-      }
-    }
-    m_coord[m_dims - 1] = remainder;
-    m_index = 0;
-    for (int32_t j = 0; j < m_dims; ++j)
-      m_index += m_factors[j] * m_coord[m_offsets[j]];
+    extract_indices(index, m_dims, m_extent, m_coord);
+    m_index = flat_index_from_strides(m_strides.begin(), m_strides.end(m_dims),
+                                      m_coord.begin());
   }
 
   [[nodiscard]] constexpr scipp::index get() const noexcept { return m_index; }
@@ -108,11 +97,12 @@ private:
   std::array<scipp::index, NDIM_MAX> m_delta = {};
   std::array<scipp::index, NDIM_MAX> m_coord = {};
   std::array<scipp::index, NDIM_MAX> m_extent = {};
-  scipp::index m_fullIndex;
+  /// Strides in memory.
+  Strides m_strides;
+  /// Index in iteration dimensions.
+  scipp::index m_fullIndex{0};
+  /// Number of dimensions.
   int32_t m_dims;
-  int32_t m_subdims = 0;
-  std::array<int32_t, NDIM_MAX> m_offsets;
-  std::array<scipp::index, NDIM_MAX> m_factors;
 };
 
 } // namespace scipp::core
