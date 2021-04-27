@@ -28,17 +28,17 @@ using namespace scipp::variable;
 
 namespace scipp::dataset {
 
-/// Extract given group as a new data array or dataset
-template <class T>
-T GroupBy<T>::copy(const scipp::index group,
-                   const AttrPolicy attrPolicy) const {
-  const auto &slices = groups()[group];
+namespace {
+
+template <class Slices, class Data>
+auto copy_impl(const Slices &slices, const Data &data, const Dim dim,
+               const AttrPolicy attrPolicy = AttrPolicy::Keep) {
   scipp::index size = 0;
   for (const auto &slice : slices)
     size += slice.end() - slice.begin();
   // This is just the slicing dim, but `slices` may be empty
-  const Dim slice_dim = m_data.coords()[dim()].dims().inner();
-  auto out = dataset::copy(m_data.slice({slice_dim, 0, size}), attrPolicy);
+  const Dim slice_dim = data.coords()[dim].dims().inner();
+  auto out = dataset::copy(data.slice({slice_dim, 0, size}), attrPolicy);
   scipp::index current = 0;
   auto out_slices = slices;
   for (auto &slice : out_slices) {
@@ -51,13 +51,22 @@ T GroupBy<T>::copy(const scipp::index group,
       const auto &slice = slices[i];
       const auto &out_slice = out_slices[i];
       scipp::dataset::copy(
-          strip_if_broadcast_along(m_data.slice(slice), slice_dim),
+          strip_if_broadcast_along(data.slice(slice), slice_dim),
           out.slice(out_slice), attrPolicy);
     }
   };
   core::parallel::parallel_for(core::parallel::blocked_range(0, slices.size()),
                                copy_slice);
   return out;
+}
+
+} // namespace
+
+/// Extract given group as a new data array or dataset
+template <class T>
+T GroupBy<T>::copy(const scipp::index group,
+                   const AttrPolicy attrPolicy) const {
+  return copy_impl(groups()[group], m_data, dim());
 }
 
 /// Helper for creating output for "combine" step for "apply" steps that reduce
@@ -199,23 +208,14 @@ template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
 
 /// Combine groups without changes, effectively sorteding data.
 template <class T> T GroupBy<T>::copy(const SortOrder order) const {
-  auto sorted = dataset::copy(m_data);
-  const Dim slice_dim = m_data.coords()[dim()].dims().inner();
-  scipp::index current = 0;
-  scipp::index data_size = sorted.dims()[slice_dim];
-  for (scipp::index i = 0; i < size(); ++i) {
-    auto group = copy(i);
-    const auto group_size = group.dims()[slice_dim];
-    const auto begin = (order == SortOrder::Ascending)
-                           ? current
-                           : data_size - current - group_size;
-    const auto end = (order == SortOrder::Ascending) ? current + group_size
-                                                     : data_size - current;
-    dataset::copy(strip_if_broadcast_along(std::move(group), slice_dim),
-                  sorted.slice({slice_dim, begin, end}));
-    current += group_size;
-  }
-  return sorted;
+  std::vector<Slice> flat;
+  if (order == SortOrder::Ascending)
+    for (const auto &slices : groups())
+      flat.insert(flat.end(), slices.begin(), slices.end());
+  else
+    for (auto it = groups().rbegin(); it != groups().rend(); ++it)
+      flat.insert(flat.end(), it->begin(), it->end());
+  return copy_impl(flat, m_data, dim());
 }
 
 /// Apply mean to groups and return combined data.
