@@ -295,9 +295,18 @@ public:
 private:
   struct BucketIterator {
     BucketIterator() = default;
-    BucketIterator(const ElementArrayViewParams &params) {
-      m_indices = params.bucketParams().indices;
-      m_nbuckets = params.bucketParams() ? params.dims().volume() : 0;
+    BucketIterator(const ElementArrayViewParams &params,
+                   const span<const scipp::index> bucket_strides)
+        : m_indices{params.bucketParams().indices} {
+      if (!params.bucketParams()) {
+        m_nbuckets = 0;
+      } else {
+        m_nbuckets = 1;
+        for (scipp::index i = 0; i < size(bucket_strides); ++i) {
+          m_nbuckets *=
+              bucket_strides[i] * params.dims()[params.dims().label(i)];
+        }
+      }
     }
     scipp::index m_bucket_index{0};
     const std::pair<scipp::index, scipp::index> *m_indices{nullptr};
