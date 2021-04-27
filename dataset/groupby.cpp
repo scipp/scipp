@@ -206,7 +206,7 @@ template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
                 reductionDim);
 }
 
-/// Combine groups without changes, effectively sorteding data.
+/// Combine groups without changes, effectively sorting data.
 template <class T> T GroupBy<T>::copy(const SortOrder order) const {
   std::vector<Slice> flat;
   if (order == SortOrder::Ascending)
