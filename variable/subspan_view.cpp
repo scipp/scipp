@@ -54,31 +54,6 @@ Variable make_subspan_view(Var &var, const Dimensions &dims,
         Values(valuesView.begin(), valuesView.end()));
 }
 
-Variable make_indices(Dimensions dims, const Dim dim) {
-  const auto len = dims[dim];
-  dims.erase(dim);
-  const auto base = len * units::one;
-  const auto end = cumsum(broadcast(base, dims));
-  return zip(end - base, end);
-}
-
-/// Return Variable containing spans over given dimension as elements.
-template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
-  using E = std::remove_const_t<T>;
-  const auto len = var.dims()[dim];
-  auto dims = var.dims();
-  dims.erase(dim);
-  const auto values_view = [dim, len, dims](auto &v) {
-    return make_subspans(v.template values<E>().data(),
-                         make_indices(v.dims(), dim), v.dims().offset(dim));
-  };
-  const auto variances_view = [dim, len, dims](auto &v) {
-    return make_subspans(v.template variances<E>().data(),
-                         make_indices(v.dims(), dim), v.dims().offset(dim));
-  };
-  return make_subspan_view<T>(var, dims, values_view, variances_view);
-}
-
 /// Return Variable containing spans with extents given by indices over given
 /// dimension as elements.
 template <class T, class Var>
@@ -93,6 +68,16 @@ Variable subspan_view(Var &var, const Dim dim, const Variable &indices) {
                          v.dims().offset(dim));
   };
   return make_subspan_view<T>(var, indices.dims(), values_view, variances_view);
+}
+
+/// Return Variable containing spans over given dimension as elements.
+template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
+  auto dims = var.dims();
+  const auto len = dims[dim];
+  dims.erase(dim);
+  const auto base = len * units::one;
+  const auto end = cumsum(broadcast(base, dims));
+  return subspan_view<T>(var, dim, zip(end - base, end));
 }
 
 template <class... Ts, class... Args>
