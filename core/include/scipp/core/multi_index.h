@@ -14,9 +14,6 @@
 
 namespace scipp::core {
 
-SCIPP_CORE_EXPORT std::array<scipp::index, NDIM_MAX>
-get_strides(const Dimensions &iterDims, const Dimensions &dataDims);
-
 SCIPP_CORE_EXPORT void
 validate_bucket_indices_impl(const ElementArrayViewParams &param0,
                              const ElementArrayViewParams &param1);
@@ -33,22 +30,32 @@ auto get_slice_dim(const T &param, const Ts &... params) {
   return param ? param.dim : get_slice_dim(params...);
 }
 
+template <scipp::index N, size_t... I, class... StridesArgs>
+void copy_strides(std::array<std::array<scipp::index, NDIM_MAX>, N> &dest,
+                  const scipp::index ndim, std::index_sequence<I...>,
+                  const StridesArgs &... strides) {
+  (std::reverse_copy(strides.begin(), strides.begin() + ndim, dest[I].begin()),
+   ...);
+}
+
 template <scipp::index N> class MultiIndex {
 public:
-  template <class... DataDims>
-  MultiIndex(const Dimensions &iterDims, DataDims &... dataDims) {
+  template <class... StridesArgs>
+  explicit MultiIndex(const Dimensions &iterDims,
+                      const StridesArgs &... strides)
+      : m_ndim{iterDims.ndim()} {
     scipp::index d = iterDims.ndim() - 1;
     for (const auto size : iterDims.shape()) {
       m_shape[d--] = size;
       m_end_sentinel *= size;
     }
-    m_stride = std::array<std::array<scipp::index, NDIM_MAX>, N>{
-        get_strides(iterDims, dataDims)...};
-    m_ndim = iterDims.ndim();
+    copy_strides<N>(m_stride, m_ndim, std::index_sequence_for<StridesArgs...>(),
+                    strides...);
   }
 
   template <class... Params>
-  MultiIndex(const ElementArrayViewParams &param, const Params &... params) {
+  explicit MultiIndex(const ElementArrayViewParams &param,
+                      const Params &... params) {
     init(param, params...);
   }
 
@@ -69,7 +76,7 @@ public:
   template <class... Params> void init(const Params &... params) {
     const auto iterDims = std::array<Dimensions, N>{params.dims()...}[0];
     if ((!params.bucketParams() && ...)) {
-      *this = MultiIndex(iterDims, params.dataDims()...);
+      *this = MultiIndex(iterDims, params.strides()...);
       return;
     }
     validate_bucket_indices(params...);
@@ -91,11 +98,14 @@ public:
     for (const auto size : nestedDims.shape()) {
       m_shape[dim--] = size;
     }
-    m_stride = std::array<std::array<scipp::index, NDIM_MAX>, N>{get_strides(
-        nestedDims, params.bucketParams() ? nestedDims : Dimensions{})...};
-    const auto bucketStrides =
-        std::array<std::array<scipp::index, NDIM_MAX>, N>{
-            get_strides(iterDims, params.dataDims())...};
+    // TODO can do better?
+    copy_strides<N>(
+        m_stride, nestedDims.ndim(), std::index_sequence_for<Params...>(),
+        Strides(nestedDims,
+                params.bucketParams() ? nestedDims : Dimensions{})...);
+    std::array<std::array<scipp::index, NDIM_MAX>, N> bucketStrides;
+    copy_strides<N>(bucketStrides, m_ndim, std::index_sequence_for<Params...>(),
+                    params.strides()...);
     for (scipp::index data = 0; data < N; ++data) {
       for (scipp::index d = 0; d < NDIM_MAX - m_ndim_nested; ++d)
         m_stride[data][m_ndim_nested + d] = bucketStrides[data][d];
@@ -106,7 +116,7 @@ public:
   }
 
   constexpr void load_bucket_params(const scipp::index i) noexcept {
-    if (m_bucket[i].m_bucket_index >= m_bucket[i].m_size)
+    if (m_bucket[i].m_bucket_index >= m_bucket[i].m_nbuckets)
       return; // at end or dense
     // All bins are guaranteed to have the same size.
     // Use common m_shape and m_nested_stride for all.
@@ -287,11 +297,11 @@ private:
     BucketIterator() = default;
     BucketIterator(const ElementArrayViewParams &params) {
       m_indices = params.bucketParams().indices;
-      m_size = params.bucketParams() ? params.dataDims().volume() : 0;
+      m_nbuckets = params.bucketParams() ? params.dims().volume() : 0;
     }
     scipp::index m_bucket_index{0};
     const std::pair<scipp::index, scipp::index> *m_indices{nullptr};
-    scipp::index m_size{0};
+    scipp::index m_nbuckets{0};
   };
   std::array<scipp::index, N> m_data_index = {};
   std::array<std::array<scipp::index, NDIM_MAX>, N> m_stride = {};
@@ -310,9 +320,9 @@ private:
   std::array<BucketIterator, N> m_bucket = {};
   scipp::index m_ndim;
 };
-template <class... DataDims>
-MultiIndex(const Dimensions &, DataDims &...)
-    -> MultiIndex<sizeof...(DataDims)>;
+template <class... StridesArgs>
+MultiIndex(const Dimensions &, const StridesArgs &...)
+    -> MultiIndex<sizeof...(StridesArgs)>;
 template <class... Params>
 MultiIndex(const ElementArrayViewParams &, const Params &...)
     -> MultiIndex<sizeof...(Params) + 1>;
