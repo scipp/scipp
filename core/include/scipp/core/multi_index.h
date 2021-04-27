@@ -82,13 +82,15 @@ public:
       return;
     }
     validate_bucket_indices(params...);
-    m_bucket = std::array{BucketIterator(params)...};
     const auto nestedDims = get_nested_dims(params.bucketParams()...);
     const Dim sliceDim = get_slice_dim(params.bucketParams()...);
     m_ndim_nested = nestedDims.ndim();
     m_ndim = iterDims.ndim() + m_ndim_nested;
     m_nested_stride = nestedDims.offset(sliceDim);
     m_nested_dim_index = m_ndim_nested - nestedDims.index(sliceDim) - 1;
+    m_bucket = std::array{BucketIterator(
+        params, {params.strides().begin(),
+                 params.strides().begin() + (m_ndim - m_ndim_nested)})...};
     scipp::index dim = iterDims.ndim() - 1 + nestedDims.ndim();
     m_end_sentinel = iterDims.volume();
     if (m_end_sentinel == 0) {
@@ -100,14 +102,12 @@ public:
     for (const auto size : nestedDims.shape()) {
       m_shape[dim--] = size;
     }
-    // TODO can do better?
-    copy_strides<N>(
-        m_stride, nestedDims.ndim(), std::index_sequence_for<Params...>(),
-        Strides(nestedDims,
-                params.bucketParams() ? nestedDims : Dimensions{})...);
+    copy_strides<N>(m_stride, nestedDims.ndim(),
+                    std::index_sequence_for<Params...>(),
+                    params.bucketParams() ? Strides{nestedDims} : Strides{}...);
     std::array<std::array<scipp::index, NDIM_MAX>, N> bucketStrides;
-    copy_strides<N>(bucketStrides, m_ndim, std::index_sequence_for<Params...>(),
-                    params.strides()...);
+    copy_strides<N>(bucketStrides, m_ndim - m_ndim_nested,
+                    std::index_sequence_for<Params...>(), params.strides()...);
     for (scipp::index data = 0; data < N; ++data) {
       for (scipp::index d = 0; d < NDIM_MAX - m_ndim_nested; ++d)
         m_stride[data][m_ndim_nested + d] = bucketStrides[data][d];
@@ -224,13 +224,13 @@ public:
     }
     for (scipp::index data = 0; data < N; ++data) {
       m_data_index[data] = 0;
-      for (scipp::index d = 0; d < NDIM_MAX; ++d)
+      for (scipp::index d = 0; d < m_ndim; ++d)
         m_data_index[data] += m_stride[data][d] * m_coord[d];
     }
     if (has_bins()) {
       for (scipp::index data = 0; data < N; ++data) {
         m_bucket[data].m_bucket_index = 0;
-        for (scipp::index d = m_ndim_nested; d < NDIM_MAX; ++d)
+        for (scipp::index d = m_ndim_nested; d < m_ndim; ++d)
           m_bucket[data].m_bucket_index += m_stride[data][d] * m_coord[d];
         load_bucket_params(data);
       }
@@ -315,6 +315,7 @@ private:
     scipp::index m_nbuckets{0};
   };
   std::array<scipp::index, N> m_data_index = {};
+  // This does *not* 0-init the inner arrays!
   std::array<std::array<scipp::index, NDIM_MAX>, N> m_stride = {};
   std::array<scipp::index, NDIM_MAX + 1> m_coord = {};
   std::array<scipp::index, NDIM_MAX + 1> m_shape = {};
