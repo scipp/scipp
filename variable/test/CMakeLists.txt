@@ -12,6 +12,7 @@ add_executable(
   copy_test.cpp
   creation_test.cpp
   cumulative_test.cpp
+  math_test.cpp
   mean_test.cpp
   operations_test.cpp
   rebin_test.cpp
@@ -19,6 +20,7 @@ add_executable(
   reduce_various_test.cpp
   shape_test.cpp
   sort_test.cpp
+  special_values_test.cpp
   subspan_view_test.cpp
   sum_test.cpp
   test_variables.cpp
@@ -30,9 +32,7 @@ add_executable(
   variable_comparison_test.cpp
   variable_custom_type_test.cpp
   variable_keyword_args_constructor_test.cpp
-  variable_math_test.cpp
   variable_scalar_accessors_test.cpp
-  variable_special_values_test.cpp
   variable_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
