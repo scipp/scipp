@@ -5,7 +5,7 @@ parameters:
   default: false
 
 trigger:
-  - main
+  - next-ci # TODO change
 
 pr: none
 
@@ -18,5 +18,5 @@ extends:
       osx: ['3.7']
       windows: ['3.7']
     deploy: true
-    conda_label: 'dev'
-    publish_documentation: true
+    conda_label: 'next'
+    publish_documentation: false
