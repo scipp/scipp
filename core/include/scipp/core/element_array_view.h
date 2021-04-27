@@ -72,11 +72,9 @@ public:
   }
   [[nodiscard]] ViewIndex end_index() const noexcept {
     ViewIndex i{m_iterDims, m_strides};
-    i.setIndex(size());
+    i.set_to_end();
     return i;
   }
-
-  // TODO set_at_end
 
   [[nodiscard]] scipp::index size() const { return m_iterDims.volume(); }
   [[nodiscard]] constexpr scipp::index offset() const noexcept {

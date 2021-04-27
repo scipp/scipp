@@ -39,6 +39,16 @@ public:
                                       m_coord.begin());
   }
 
+  void set_to_end() noexcept {
+    m_fullIndex = 0;
+    for (scipp::index dim = 0; dim < m_dims - 1; ++dim) {
+      m_fullIndex *= m_extent[dim];
+    }
+    std::fill(m_coord.begin(), m_coord.begin() + std::max(m_dims - 1, 0), 0);
+    m_coord[m_dims] = m_extent[m_dims];
+    m_index = m_coord[m_dims] * m_strides[m_dims];
+  }
+
   [[nodiscard]] constexpr scipp::index get() const noexcept { return m_index; }
   [[nodiscard]] constexpr scipp::index index() const noexcept {
     return m_fullIndex;
