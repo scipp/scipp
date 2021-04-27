@@ -4,30 +4,14 @@
 /// @author Simon Heybrock
 #include "scipp/variable/subspan_view.h"
 #include "scipp/core/except.h"
+#include "scipp/variable/cumulative.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/util.h"
 
 namespace scipp::variable {
 
 namespace {
-
-/// Helper returning vector of subspans from begin to end
-template <class Var, class T>
-auto make_subspans(Var &, const ElementArrayView<T> &first,
-                   const ElementArrayView<T> &last) {
-  const auto len = first.size();
-  std::vector<
-      span<std::conditional_t<std::is_const_v<Var>, std::add_const_t<T>, T>>>
-      spans;
-  spans.reserve(len);
-  for (scipp::index i = 0; i < len; ++i)
-    spans.emplace_back(scipp::span(&first[i], &last[i] + 1));
-  return spans;
-}
-
-template <class T>
-auto make_empty_subspans(const ElementArrayView<T> &, const Dimensions &dims) {
-  return std::vector<span<T>>(dims.volume());
-}
 
 template <class T>
 auto make_subspans(T *base, const Variable &indices,
@@ -70,6 +54,14 @@ Variable make_subspan_view(Var &var, const Dimensions &dims,
         Values(valuesView.begin(), valuesView.end()));
 }
 
+Variable make_indices(Dimensions dims, const Dim dim) {
+  const auto len = dims[dim];
+  dims.erase(dim);
+  const auto base = len * units::one;
+  const auto end = cumsum(broadcast(base, dims));
+  return zip(end - base, end);
+}
+
 /// Return Variable containing spans over given dimension as elements.
 template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
   using E = std::remove_const_t<T>;
@@ -77,22 +69,12 @@ template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
   auto dims = var.dims();
   dims.erase(dim);
   const auto values_view = [dim, len, dims](auto &v) {
-    if (len == 0)
-      return make_empty_subspans(v.template values<E>(), dims);
-    // `Var` may be `const Variable`, ensuring we call correct `values`
-    // overload. Without this we may clash with readonly flags.
-    Var begin = v.slice({dim, 0});
-    Var end = v.slice({dim, len - 1});
-    return make_subspans(v, begin.template values<E>(),
-                         end.template values<E>());
+    return make_subspans(v.template values<E>().data(),
+                         make_indices(v.dims(), dim), v.dims().offset(dim));
   };
   const auto variances_view = [dim, len, dims](auto &v) {
-    if (len == 0)
-      return make_empty_subspans(v.template variances<E>(), dims);
-    Var begin = v.slice({dim, 0});
-    Var end = v.slice({dim, len - 1});
-    return make_subspans(v, begin.template variances<E>(),
-                         end.template variances<E>());
+    return make_subspans(v.template variances<E>().data(),
+                         make_indices(v.dims(), dim), v.dims().offset(dim));
   };
   return make_subspan_view<T>(var, dims, values_view, variances_view);
 }
