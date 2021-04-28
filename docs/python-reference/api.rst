@@ -52,6 +52,9 @@ General
    histogram
    log
    log10
+   logical_and
+   logical_or
+   logical_xor
    merge
    norm
    rebin
@@ -63,6 +66,27 @@ General
    to_unit
    values
    variances
+
+Math
+~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   abs
+   divide
+   dot
+   exp
+   floor_divide
+   log
+   log10
+   minus
+   mod
+   norm
+   plus
+   reciprocal
+   sqrt
+   times
 
 Shape
 ~~~~~
