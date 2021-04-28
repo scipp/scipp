@@ -9,6 +9,7 @@
 #include "scipp/variable/except.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable_concept.h"
 #include "scipp/variable/variable_factory.h"
 
 using namespace scipp::core;

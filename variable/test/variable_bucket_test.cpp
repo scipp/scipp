@@ -71,9 +71,13 @@ TEST_F(VariableBinsTest, copy_slice) {
   EXPECT_EQ(copy(var.slice({Dim::Y, 1, 2})), var.slice({Dim::Y, 1, 2}));
 }
 
+TEST_F(VariableBinsTest, cannot_set_unit) {
+  EXPECT_EQ(var.unit(), units::one);
+  EXPECT_THROW(var.setUnit(units::m), except::UnitError);
+  EXPECT_EQ(var.unit(), units::one);
+}
+
 TEST_F(VariableBinsTest, basics) {
-  // TODO Probably it would be a good idea to prevent having any other unit.
-  // Does this imply unit should move from Variable into VariableConcept?
   EXPECT_EQ(var.unit(), units::one);
   EXPECT_EQ(var.dims(), dims);
   const auto vals = var.values<bucket<Variable>>();
