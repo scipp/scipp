@@ -25,7 +25,7 @@ if _debug_:
 from ._scipp import __version__
 # Import classes
 from ._scipp.core import Variable, DataArray, Dataset, GroupByDataArray, \
-                         GroupByDataset
+                         GroupByDataset, Unit
 # Import errors
 from ._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
@@ -94,5 +94,5 @@ setattr(Dataset, 'plot', plot)
 # __array_ufunc__ should be possible by converting non-scipp arguments to
 # variables. The most difficult part is probably mapping the ufunc to scipp
 # functions.
-for obj in [Variable, DataArray, Dataset]:
-    setattr(obj, '__array_ufunc__', None)
+for _obj in [Variable, DataArray, Dataset]:
+    setattr(_obj, '__array_ufunc__', None)
