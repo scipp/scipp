@@ -34,11 +34,17 @@ void Variable::setDataHandle(VariableConceptHandle object) {
   m_object = object;
 }
 
+Variable::operator bool() const noexcept { return m_object.operator bool(); }
+
 const Dimensions &Variable::dims() const {
   if (!*this)
     throw std::runtime_error("invalid variable");
   return m_dims;
 }
+
+DType Variable::dtype() const { return data().dtype(); }
+
+bool Variable::hasVariances() const { return data().hasVariances(); }
 
 void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == dims().volume()) {
@@ -59,6 +65,8 @@ void Variable::expectCanSetUnit(const units::Unit &unit) const {
                             "to change the unit.");
 }
 
+units::Unit Variable::unit() const { return m_object->unit(); }
+
 void Variable::setUnit(const units::Unit &unit) {
   expectCanSetUnit(unit);
   expectWritable();
@@ -75,6 +83,15 @@ bool Variable::operator==(const Variable &other) const {
 bool Variable::operator!=(const Variable &other) const {
   return !(*this == other);
 }
+
+const VariableConcept &Variable::data() const & { return *m_object; }
+
+VariableConcept &Variable::data() & {
+  expectWritable();
+  return *m_object;
+}
+
+const VariableConceptHandle &Variable::data_handle() const { return m_object; }
 
 scipp::span<const scipp::index> Variable::strides() const {
   return scipp::span<const scipp::index>(&*m_strides.begin(),

@@ -154,7 +154,7 @@ void init_dataset(py::module &m) {
           py::arg("name") = std::string{},
           R"(__init__(self, data: Variable, coords: Dict[str, Variable] = {}, masks: Dict[str, Variable] = {}, attrs: Dict[str, Variable] = {}, name: str = '') -> None
 
-          DataArray initialiser.
+          DataArray initializer.
 
           :param data: Data and optionally variances.
           :param coords: Coordinates referenced by dimension.
@@ -196,7 +196,7 @@ void init_dataset(py::module &m) {
       py::arg("coords") = std::map<Dim, Variable>{},
       R"(__init__(self, data: Dict[str, Union[Variable, DataArray]] = {}, coords: Dict[str, Variable] = {}) -> None
 
-              Dataset initialiser.
+              Dataset initializer.
 
              :param data: Dictionary of name and data pairs.
              :param coords: Dictionary of name and coord pairs.

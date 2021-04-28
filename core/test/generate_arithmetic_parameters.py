@@ -24,7 +24,7 @@ def format_number(x):
 
 
 def build_param(a, b):
-    # implement behaviour of numpy 1.20
+    # implement behavior of numpy 1.20
     sign = -1 if np.sign(a) == -1 or np.sign(b) == -1 else 1
     fd = sign * np.inf if ((isinstance(a, float) or isinstance(b, float))
                            and b == 0 and a != 0) \

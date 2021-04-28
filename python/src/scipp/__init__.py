@@ -77,10 +77,12 @@ setattr(Variable, 'sizes', property(_make_sizes))
 setattr(DataArray, 'sizes', property(_make_sizes))
 setattr(Dataset, 'sizes', property(_make_sizes))
 
-from ._bins import _bins, _set_bins
+from ._bins import _bins, _set_bins, _events
 setattr(Variable, 'bins', property(_bins, _set_bins))
 setattr(DataArray, 'bins', property(_bins, _set_bins))
 setattr(Dataset, 'bins', property(_bins, _set_bins))
+setattr(Variable, 'events', property(_events))
+setattr(DataArray, 'events', property(_events))
 
 from ._bins import _groupby_bins
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))

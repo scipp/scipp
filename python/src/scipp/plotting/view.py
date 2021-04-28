@@ -53,11 +53,11 @@ class PlotView:
         """
         self.figure.savefig(*args, **kwargs)
 
-    def initialise(self, *args, **kwargs):
+    def initialize(self, *args, **kwargs):
         """
         Forward figure initialization.
         """
-        self.figure.initialise(*args, **kwargs)
+        self.figure.initialize(*args, **kwargs)
 
     def connect(self, view_callbacks=None, figure_callbacks=None):
         """
