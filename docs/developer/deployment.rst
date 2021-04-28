@@ -9,7 +9,7 @@ This documents the release/deployment process for each package.
 Mantid Framework
 ----------------
 
-Mantid is an optional runtime dependency for scippneutron and is utilised solely through its python api.
+Mantid is an optional runtime dependency for scippneutron and is utilized solely through its python api.
 In practice it is an important component for using scippneutron for neutron scattering as it provides a number of key components, such as facility specific file loading.
 
 For mac os and linux, ``mantid-framework`` conda packages can be produced and are placed in the anaconda ``scipp`` channel.
@@ -47,7 +47,7 @@ Mantid Framework Deployment Procedure
   As part of the ``conda build`` step mantid's imports are tested and the mantid-scipp interface is tested in ``run_test.sh`` `(see conda docs) <https://docs.conda.io/projects/conda-build/en/latest/resources/define-metadata.html#run-test-script>`_. Packaging can therefore fail if mantid does not appear to work (import) or there are incompatibilities between scipp and mantid. The compatibility checks take the test code from the latest scippneutron. scippneutron itself is installed from the ``scipp/label/dev`` (dev) channel as part of the process. All this means that the package can fail generation at the final test stage (all within ``conda build``) despite ``mantid-framework`` itself building and packaging,  so check reasons for packaging failure by inspecting full log output on azure pipeline.
   
 .. warning::
-  When running ``conda build`` locally, ensure that ``conda-build`` is up to date (``conda update conda-build``). This can be a source of difference between what is observed on the CI (install fresh into clean conda env) and a potentially stale local environment. You should also ensure that the channel order specified is the same as is applied in the CI for your ``conda build`` command. Refer to order applied in ``conda build`` step in pipeline yaml file. Priority decreases from left to right in your command line argument order. You should also ensure that your local `~/.condarc` file does not prioritise any unexpected/conflicting channels and that flag settings such as ``channel_priority: false`` are not utilised. Note that you can set ``--override-channels`` to your ``conda build`` command to prevent local `.condarc` files getting getting in the way.
+  When running ``conda build`` locally, ensure that ``conda-build`` is up to date (``conda update conda-build``). This can be a source of difference between what is observed on the CI (install fresh into clean conda env) and a potentially stale local environment. You should also ensure that the channel order specified is the same as is applied in the CI for your ``conda build`` command. Refer to order applied in ``conda build`` step in pipeline yaml file. Priority decreases from left to right in your command line argument order. You should also ensure that your local `~/.condarc` file does not prioritize any unexpected/conflicting channels and that flag settings such as ``channel_priority: false`` are not utilized. Note that you can set ``--override-channels`` to your ``conda build`` command to prevent local `.condarc` files getting getting in the way.
 
 
 Documentation on Github Pages

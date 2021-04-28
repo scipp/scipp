@@ -174,7 +174,7 @@ private:
 /// 4. If empty Values and/or Variances are provided, resulting Variable
 ///    contains default initialized Values and/or Variances, the way to make
 ///    Variable which contains both Values and Variances given length
-///    uninitialised is:
+///    uninitialized is:
 ///        makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
 template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
   detail::ArgParser<T> parser;

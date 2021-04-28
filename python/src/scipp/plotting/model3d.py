@@ -32,7 +32,7 @@ class PlotModel3d(PlotModel):
             self.pos_coord = scipp_obj_dict[self.name].meta[self.positions]
             self.pos_array = np.array(self.pos_coord.values, dtype=np.float32)
 
-    def initialise(self, cut_options):
+    def initialize(self, cut_options):
         """
         The model handles calculations of opacities for the cut surface, so it
         needs to know which are the possible cut surface options. Those are set
