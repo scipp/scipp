@@ -89,11 +89,6 @@ template <class T> auto bin_dim(const Variable &var) {
   return py::cast(std::string(dim.name()));
 }
 
-template <class T> auto get_buffer(py::object &obj) {
-  auto &view = obj.cast<Variable &>();
-  return py::cast(view.bin_buffer<T>());
-}
-
 template <class T>
 void bind_bins_map_view(py::module &m, const std::string &name) {
   py::class_<T> c(m, name.c_str());
@@ -155,11 +150,12 @@ void init_buckets(py::module &m) {
   m.def("bins_data", [](py::object &obj) -> py::object {
     auto &var = obj.cast<Variable &>();
     if (var.dtype() == dtype<bucket<Variable>>)
-      return get_buffer<Variable>(obj);
+      return py::cast(obj.cast<Variable &>().bin_buffer<Variable>());
     if (var.dtype() == dtype<bucket<DataArray>>)
-      return get_buffer<DataArray>(obj);
+      return py::cast(obj.cast<Variable &>().bin_buffer<DataArray>().view());
     if (var.dtype() == dtype<bucket<Dataset>>)
-      return get_buffer<Dataset>(obj);
+      // TODO Provide mechanism for creating sharing view as for DataArray above
+      return py::cast(obj.cast<Variable &>().bin_buffer<Dataset>());
     return py::none();
   });
 
