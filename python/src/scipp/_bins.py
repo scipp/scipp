@@ -153,7 +153,7 @@ class GroupbyBins:
 
 def _events(obj):
     """
-    Returns the underlying data the bins stored in the object, or None if the
+    Returns the data underlying the bins stored in the object, or None if the
     object stores dense data.
     """
     if _cpp.is_bins(obj):
