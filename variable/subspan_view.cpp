@@ -43,16 +43,6 @@ Variable subspan_view(Var &var, const Dim dim, const Variable &indices) {
   return subspans;
 }
 
-/// Return Variable containing spans over given dimension as elements.
-template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
-  auto dims = var.dims();
-  const auto len = dims[dim];
-  dims.erase(dim);
-  const auto base = len * units::one;
-  const auto end = cumsum(broadcast(base, dims));
-  return subspan_view<T>(var, dim, zip(end - base, end));
-}
-
 template <class... Ts, class... Args>
 auto invoke_subspan_view(const DType dtype, Args &&... args) {
   Variable ret;
@@ -75,15 +65,24 @@ Variable subspan_view_impl(Var &var, const Dim dim, Args &&... args) {
       var.dtype(), var, dim, args...);
 }
 
+Variable make_indices(const Variable &var, const Dim dim) {
+  auto dims = var.dims();
+  const auto len = dims[dim];
+  dims.erase(dim);
+  const auto base = len * units::one;
+  const auto end = cumsum(broadcast(base, dims));
+  return zip(end - base, end);
+}
+
 } // namespace
 
 /// Return Variable containing mutable spans over given dimension as elements.
 Variable subspan_view(Variable &var, const Dim dim) {
-  return subspan_view_impl(var, dim);
+  return subspan_view(var, dim, make_indices(var, dim));
 }
 /// Return Variable containing const spans over given dimension as elements.
 Variable subspan_view(const Variable &var, const Dim dim) {
-  return subspan_view_impl(var, dim);
+  return subspan_view(var, dim, make_indices(var, dim));
 }
 
 Variable subspan_view(Variable &var, const Dim dim, const Variable &indices) {
