@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -18,7 +18,7 @@ protected:
                                  {{Dim("attr"), 1.2 * units::m}});
   Variable m_var = make_bins(m_indices, Dim::Event, m_buffer);
 
-  void check(const VariableConstView &var) const {
+  void check(const Variable &var) const {
     const auto [indices, dim, buf] = var.constituents<core::bin<DataArray>>();
     static_cast<void>(indices);
     static_cast<void>(dim);

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include "scipp/dataset/reduction.h"
 
@@ -23,7 +23,12 @@ TEST(SumTest, masked_data_array) {
   EXPECT_EQ(sum(a, Dim::X).data(), sumX);
   EXPECT_EQ(sum(a, Dim::Y).data(), sumY);
   EXPECT_FALSE(sum(a, Dim::X).masks().contains("mask"));
-  EXPECT_TRUE(sum(a, Dim::Y).masks().contains("mask"));
+  auto summedY = sum(a, Dim::Y);
+  EXPECT_TRUE(summedY.masks().contains("mask"));
+  // Ensure reduction operation does NOT share the unrelated mask
+  EXPECT_EQ(summedY.masks()["mask"], mask);
+  summedY.masks()["mask"] &= ~mask;
+  EXPECT_NE(summedY.masks()["mask"], mask);
 }
 
 TEST(SumTest, masked_data_with_special_vals) {

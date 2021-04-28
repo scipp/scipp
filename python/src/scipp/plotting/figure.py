@@ -1,12 +1,12 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .. import config
+from .tools import fig_to_pngbytes
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import io
 
 
 class PlotFigure:
@@ -24,10 +24,12 @@ class PlotFigure:
                  ylabel=None,
                  toolbar=None):
         self.fig = None
+        self.image = None
         self.ax = ax
         self.cax = cax
         self.own_axes = True
         self.toolbar = None
+        self.padding = padding
         if self.ax is None:
             if figsize is None:
                 figsize = (config.plot.width / config.plot.dpi,
@@ -36,9 +38,9 @@ class PlotFigure:
                                              1,
                                              figsize=figsize,
                                              dpi=config.plot.dpi)
-            if padding is None:
-                padding = config.plot.padding
-            self.fig.tight_layout(rect=padding)
+            if self.padding is None:
+                self.padding = config.plot.padding
+            self.fig.tight_layout(rect=self.padding)
             if self.is_widget():
                 # We create a custom toolbar
                 self.toolbar = toolbar(canvas=self.fig.canvas)
@@ -76,7 +78,7 @@ class PlotFigure:
         """
         return self._to_widget()._ipython_display_()
 
-    def _to_widget(self, as_static=False):
+    def _to_widget(self):
         """
         Convert the Matplotlib figure to a widget. If the ipympl (widget)
         backend is in use, return the custom toolbar and the figure canvas.
@@ -84,26 +86,22 @@ class PlotFigure:
         Image container.
         """
         if self.is_widget():
-            if as_static:
-                return ipw.HBox([self.toolbar._to_widget(), self._to_image()])
+            if self.image is not None:
+                return ipw.HBox([self.toolbar._to_widget(), self.image])
             else:
                 return ipw.HBox([self.toolbar._to_widget(), self.fig.canvas])
         else:
-            return self._to_image()
+            if self.image is None:
+                self._to_image()
+            return self.image
 
     def _to_image(self):
         """
         Convert the Matplotlib figure to a static image.
         """
-        buf = io.BytesIO()
-        self.fig.savefig(buf, format='png')
-        # Here we close the figure to prevent it from showing up again in
-        # cells further down the notebook.
-        plt.close(self.fig)
-        buf.seek(0)
-        return ipw.Image(value=buf.getvalue(),
-                         width=config.plot.width,
-                         height=config.plot.height)
+        self.image = ipw.Image(value=fig_to_pngbytes(self.fig),
+                               width=config.plot.width,
+                               height=config.plot.height)
 
     def show(self):
         """

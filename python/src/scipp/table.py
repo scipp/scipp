@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Igor Gudich & Neil Vaytet
@@ -9,9 +9,10 @@ from html import escape
 from . import config
 from . import _utils as su
 from ._scipp import core as sc
+from .html.resources import load_style
 
 
-def _make_table_sections(dict_of_variables, base_style):
+def _make_table_sections(dict_of_variables):
 
     html = ["<tr>"]
     for key, section in dict_of_variables.items():
@@ -20,29 +21,27 @@ def _make_table_sections(dict_of_variables, base_style):
         for var in section.values():
             col_separators += 1 + (var.variances is not None)
         if col_separators > 0:
-            style = "{} background-color: {};text-align: center;'".format(
-                base_style, config.colors[key])
             html.append("<th {} colspan='{}'>{}</th>".format(
-                style, col_separators, heading))
+                f'class="sc-table sc-{key}"', col_separators, heading))
     html.append("</tr>")
 
     return "".join(html)
 
 
-def _make_table_unit_headers(dict_of_variables, text_style):
+def _make_table_unit_headers(dict_of_variables):
     """
     Adds a row containing the unit of the section
     """
     html = []
     for key, section in dict_of_variables.items():
         for name, val in section.items():
-            html.append("<th {} colspan='{}'>{}</th>".format(
-                text_style, 1 + (val.variances is not None),
+            html.append("<th class='sc-units' colspan='{}'>{}</th>".format(
+                1 + (val.variances is not None),
                 escape(su.name_with_unit(val, name=name))))
     return "".join(html)
 
 
-def _make_table_subsections(dict_of_variables, text_style, plural):
+def _make_table_subsections(dict_of_variables, plural):
     """
     Adds Value | Variance columns for the section.
     """
@@ -50,62 +49,57 @@ def _make_table_subsections(dict_of_variables, text_style, plural):
     html = []
     for key, section in dict_of_variables.items():
         for name, val in section.items():
-            html.append("<th {}>Value{}</th>".format(text_style, s))
+            html.append(f"<th class='sc-subheader'>Value{s}</th>")
             if val.variances is not None:
-                html.append("<th {}>Variance{}</th>".format(text_style, s))
+                html.append(f"<th class='sc-subheader'>Variance{s}</th>")
     return "".join(html)
 
 
-def _make_value_rows(dict_of_variables, is_bin_centers, index, base_style,
-                     edge_style, row_start):
+def _make_value_rows(dict_of_variables, is_bin_centers, index, row_start):
     html = []
     for key, section in dict_of_variables.items():
         for name, val in section.items():
             if is_bin_centers[key][name]:
                 if index == row_start:
-                    html.append("<td {}></td>".format(edge_style))
+                    html.append("<td class='sc-padding'></td>")
                     if val.variances is not None:
-                        html.append("<td {}></td>".format(edge_style))
+                        html.append("<td class='sc-padding'></td>")
             else:
-                html.append("<td rowspan='2' {}>{}</td>".format(
-                    base_style, escape(su.value_to_string(val.values[index]))))
+                html.append("<td rowspan='2'>{}</td>".format(
+                    escape(su.value_to_string(val.values[index]))))
                 if val.variances is not None:
-                    html.append("<td rowspan='2' {}>{}</td>".format(
-                        base_style,
+                    html.append("<td rowspan='2'>{}</td>".format(
                         escape(su.value_to_string(val.variances[index]))))
 
     return "".join(html)
 
 
-def _make_trailing_cells(dict_of_variables, is_bin_centers, index, size,
-                         base_style, edge_style):
+def _make_trailing_cells(dict_of_variables, is_bin_centers, index, size):
     html = []
     for key, section in dict_of_variables.items():
         for name, val in section.items():
             if is_bin_centers[key][name]:
                 if index == size - 1:
-                    html.append("<td {}></td>".format(edge_style))
+                    html.append("<td class='sc-padding'></td>")
                     if val.variances is not None:
-                        html.append("<td {}></td>".format(edge_style))
+                        html.append("<td class='sc-padding'></td>")
                 else:
-                    html.append("<td rowspan='2' {}>{}</td>".format(
-                        base_style,
+                    html.append("<td rowspan='2'>{}</td>".format(
                         escape(su.value_to_string(val.values[index]))))
                     if val.variances is not None:
-                        html.append("<td rowspan='2' {}>{}</td>".format(
-                            base_style,
+                        html.append("<td rowspan='2'>{}</td>".format(
                             escape(su.value_to_string(val.variances[index]))))
 
     return "".join(html)
 
 
-def _make_overflow_row(dict_of_variables, base_style, hover_style):
-    html = ["<tr {}>".format(hover_style)]
+def _make_overflow_row(dict_of_variables):
+    html = ["<tr>"]
     for key, section in dict_of_variables.items():
         for name, val in section.items():
-            html.append("<td {}>...</td>".format(base_style))
+            html.append("<td>...</td>")
             if val.variances is not None:
-                html.append("<td {}>...</td>".format(base_style))
+                html.append("<td>...</td>")
 
     html.append("</tr>")
     return "".join(html)
@@ -118,63 +112,46 @@ def _table_from_dict_of_variables(dict_of_variables,
                                   row_start=0,
                                   max_rows=None,
                                   group=None):
-    base_style = ("style='border: 1px solid black; padding: 0px 5px 0px 5px; "
-                  "text-align: right;")
-
-    mstyle = base_style + "text-align: center;"
-    vstyle = mstyle + "background-color: #f0f0f0;'"
-    mstyle += "'"
-    edge_style = ("style='border: 0px solid white;background-color: #ffffff; "
-                  "height:1.2em;'")
-    hover_style = ("onMouseOver=\"this.style.backgroundColor='" +
-                   config.colors["hover"] +
-                   "'\" onMouseOut=\"this.style.backgroundColor='#ffffff'\"")
-
     # Declare table
-    html = "<table style='border-collapse: collapse;'>"
+    html = "<table class='sc-table'>"
 
     if headers > 1:
-        html += _make_table_sections(dict_of_variables, base_style)
+        html += _make_table_sections(dict_of_variables)
     if headers > 0:
-        html += "<tr {}>".format(hover_style)
-        html += _make_table_unit_headers(dict_of_variables, mstyle)
-        html += "</tr><tr {}>".format(hover_style)
-        html += _make_table_subsections(dict_of_variables, vstyle,
+        html += "<tr>"
+        html += _make_table_unit_headers(dict_of_variables)
+        html += "</tr><tr>"
+        html += _make_table_subsections(dict_of_variables,
                                         group == "1D Variables")
         html += "</tr>"
 
-    # the base style still does not have a closing quote, so we add it here
-    base_style += "'"
-
     if size is None:  # handle 0D variable
-        html += "<tr {}>".format(hover_style)
+        html += "<tr>"
         for key, section in dict_of_variables.items():
             for name, val in section.items():
-                html += "<td {}>{}</td>".format(
-                    base_style, escape(su.value_to_string(val.value)))
+                html += "<td>{}</td>".format(
+                    escape(su.value_to_string(val.value)))
                 if val.variances is not None:
-                    html += "<td {}>{}</td>".format(
-                        base_style, escape(su.value_to_string(val.variance)))
+                    html += "<td>{}</td>".format(
+                        escape(su.value_to_string(val.variance)))
         html += "</tr>"
     else:
         row_end = min(size, row_start + max_rows)
         # If we are not starting at the first row, add overflow
         if row_start > 0:
-            html += _make_overflow_row(dict_of_variables, base_style,
-                                       hover_style)
+            html += _make_overflow_row(dict_of_variables)
         for i in range(row_start, row_end):
-            html += "<tr {}>".format(hover_style)
+            html += "<tr>"
             html += _make_value_rows(dict_of_variables, is_bin_centers, i,
-                                     base_style, edge_style, row_start)
-            html += "</tr><tr {}>".format(hover_style)
+                                     row_start)
+            html += "</tr><tr>"
             # If there are bin edges, we need to add trailing cells
             html += _make_trailing_cells(dict_of_variables, is_bin_centers, i,
-                                         row_end, base_style, edge_style)
+                                         row_end)
             html += "</tr>"
         # If we are not ending at the last row, add overflow
         if row_end != size:
-            html += _make_overflow_row(dict_of_variables, base_style,
-                                       hover_style)
+            html += _make_overflow_row(dict_of_variables)
 
     html += "</table>"
     return html
@@ -208,7 +185,6 @@ def table(scipp_obj):
 
 class TableViewer:
     def __init__(self, scipp_obj):
-
         # Delayed import
         self.widgets = __import__("ipywidgets")
 
@@ -284,16 +260,12 @@ class TableViewer:
                         size_is_defined = True
                 self.sizes[group][key] = max_size if size_is_defined else None
 
-        subtitle = "<span style='font-weight:normal;color:grey;"
-        subtitle += "font-style:italic;background-color:#ffffff;"
-        subtitle += "text-align:left;font-size:1.2em;padding: 1px;'>"
-        subtitle += "{}</span>"
         title = str(type(scipp_obj)).replace("<class '", "").replace(
             "scipp._scipp.core.", "").replace("'>", "")
 
         self.box = [
-            self.widgets.HTML(value="<span style='font-weight:bold;"
-                              "font-size:1.5em;'>{}</span>".format(title))
+            self.widgets.HTML(value=f"<style>{load_style()}</style>"),
+            self.widgets.HTML(value=f"<span class='sc-title'>{title}</span>")
         ]
         self.tables = {}
         self.sliders = {}
@@ -306,7 +278,7 @@ class TableViewer:
 
             if len(self.tabledict[group]) > 0:
                 self.tables[group] = {}
-                output = subtitle.format(group)
+                output = f"<span class='sc-subtitle'>{group}</span>"
 
                 children = []
                 for key, val in sorted(self.tabledict[group].items()):
@@ -342,6 +314,7 @@ class TableViewer:
                                          width="auto",
                                          display='flex',
                                          flex_flow='column'))
+        self.box.add_class('sc-root')  # needed to apply style
         return
 
     def make_dict(self):

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -31,6 +31,11 @@ Dimensions::Dimensions(const std::vector<Dim> &labels,
         std::to_string(shape.size()) + ").");
   for (scipp::index i = 0; i < scipp::size(shape); ++i)
     addInner(labels[i], shape[i]);
+}
+
+Dimensions::Dimensions(const Sizes &sizes) {
+  for (const auto &[label, size] : sizes)
+    addInner(label, size);
 }
 
 /// Return the extent of `dim`. Throws if the space defined by this does not
@@ -71,7 +76,7 @@ bool Dimensions::contains(const Dimensions &other) const noexcept {
 /// dimensions in parent, and only the outermost dimensions may be shorter than
 /// the corresponding dimension in parent.
 bool Dimensions::isContiguousIn(const Dimensions &parent) const {
-  if (parent == *this)
+  if (volume() == 0 || parent == *this)
     return true;
   int32_t offset = parent.m_ndim - m_ndim;
   if (offset < 0)
@@ -95,6 +100,8 @@ bool Dimensions::isContiguousIn(const Dimensions &parent) const {
 Dim Dimensions::label(const scipp::index i) const { return m_dims[i]; }
 
 void Dimensions::relabel(const scipp::index i, const Dim label) {
+  if (m_dims[i] == label)
+    return;
   if (label != Dim::Invalid)
     expectUnique(*this, label);
   m_dims[i] = label;

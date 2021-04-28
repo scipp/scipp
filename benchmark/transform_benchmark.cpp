@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -68,8 +68,8 @@ static void BM_transform_in_place_view(benchmark::State &state) {
   run<true>(
       state,
       [](auto &state_, auto &a, auto &b, auto &op) {
-        VariableView a_view(a);
-        VariableConstView b_view(b);
+        Variable a_view(a);
+        const Variable b_view(b);
         for ([[maybe_unused]] auto _ : state_) {
           transform_in_place<Types>(a_view, b_view, op);
         }
@@ -186,8 +186,8 @@ static void BM_transform_view(benchmark::State &state) {
   run<false>(
       state,
       [](auto &state_, auto &a, auto &b, auto &op) {
-        VariableView a_view(a);
-        VariableConstView b_view(b);
+        Variable a_view(a);
+        const Variable b_view(b);
         for ([[maybe_unused]] auto _ : state_) {
           auto out = transform<Types>(a_view, b_view, op);
           state_.PauseTiming();

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -18,10 +18,9 @@ protected:
   template <class V> T access(V &variable) { return variable; }
 };
 
-using VariableTypesMutable = ::testing::Types<Variable &, VariableView>;
+using VariableTypesMutable = ::testing::Types<Variable &>;
 
-using VariableTypes = ::testing::Types<Variable &, const Variable &,
-                                       VariableView, VariableConstView>;
+using VariableTypes = ::testing::Types<Variable &, const Variable &>;
 
 TYPED_TEST_SUITE(Variable_scalar_accessors_mutate, VariableTypesMutable);
 TYPED_TEST_SUITE(Variable_scalar_accessors, VariableTypes);

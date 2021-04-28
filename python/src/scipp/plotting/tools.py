@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
@@ -7,6 +7,7 @@ from .._utils import name_with_unit
 from .._scipp import core as sc
 import numpy as np
 from copy import copy
+import io
 
 
 def get_line_param(name=None, index=None):
@@ -194,3 +195,17 @@ def fix_empty_range(lims, replacement=None):
         else:
             dx = 0.5 * abs(lims[0])
     return [lims[0] - dx, lims[1] + dx]
+
+
+def fig_to_pngbytes(fig):
+    """
+    Convert figure to png image bytes.
+    We also close the figure to prevent it from showing up again in
+    cells further down the notebook.
+    """
+    import matplotlib.pyplot as plt
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+    return buf.getvalue()

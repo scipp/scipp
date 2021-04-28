@@ -10,12 +10,36 @@ Features
 ~~~~~~~~
 
 * Can now control the position and visibility of the legend in 1d plots with ``plot(da, legend={"show": True, "loc": 4})`` `#1790 <https://github.com/scipp/scipp/pull/1790>`_.
+* Added ``zeros_like``, ``ones_like`` and ``empty_like`` functions `#1864 <https://github.com/scipp/scipp/pull/1864>`_.
+* ``sort`` is now considerably faster for data with more rows `#1872 <https://github.com/scipp/scipp/pull/1872>`_.
+* Added numpy-like ``linspace``, ``logspace``, ``geomspace``, and ``arange`` variable creation functions `#1871 <https://github.com/scipp/scipp/pull/1871>`_.
+
+Bugfixes
+~~~~~~~~
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* ``filter`` and ``split`` removed. Identical functionality can be achieved using ``groupby`` and/or slicing.
+
 Contributors
 ~~~~~~~~~~~~
+
+Owen Arnold,
+Simon Heybrock,
+Matthew D. Jones,
+Neil Vaytet,
+and Jan-Lukas Wynen
+
+v0.6.1 (April 2021)
+-------------------
+
+Bugfixes
+~~~~~~~~
+
+* ``map`` and ``scale`` operations as well as ``histogram`` for binned data now also work with ``datetime64`` `#1834 <https://github.com/scipp/scipp/pull/1834>`_.
+* ``bin`` now works on previously binned data with 2-D edges, even if the outer dimensions(s) are not rebinned `#1836 <https://github.com/scipp/scipp/pull/1836>`_.
+* ``bin`` and ``histogram`` now work with ``int32``-valued coordinates and support binning with ``int64``- or ``int32``-valued bin edges.
 
 v0.6.0 (March 2021)
 -------------------

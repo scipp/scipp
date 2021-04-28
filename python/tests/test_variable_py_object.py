@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
@@ -31,6 +31,13 @@ def test_scalar_Variable_py_object_change():
     var.value = 1
     assert var.dtype == sc.dtype.PyObject
     assert var.value == 1
+
+
+def test_scalar_Variable_py_object_shares():
+    d = {'a': 1, 'b': 2}
+    var = sc.Variable(value=d)
+    d['a'] += 1
+    assert var.value == {'a': 2, 'b': 2}
 
 
 def test_scalar_Variable_py_object_copy_is_deep_copy():

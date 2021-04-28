@@ -1,13 +1,12 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-import colorsys
 from html import escape
-
 import numpy as np
 from ._scipp import core as sc
 from . import config
 from ._utils import is_data_array, hex_to_rgb, rgb_to_hex
+from .html.resources import load_style
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -25,25 +24,26 @@ _smaller_font = round(0.6 * _svg_em, 2)
 
 
 def _color_variants(hex_color):
-    # Convert hex to rgb
-    [r, g, b] = hex_to_rgb(hex_color)
-    # Convert to HSV
-    h, s, v = colorsys.rgb_to_hsv(r, g, b)
-    # Colorize
-    s = min(1.0, max(0.0, s + 0.3))
-    r, g, b = colorsys.hsv_to_rgb(h, s, v)
-    top = rgb_to_hex([r, g, b])
-    # Darken
-    v = min(255, max(0, v - 50))
-    r, g, b = colorsys.hsv_to_rgb(h, s, v)
-    side = rgb_to_hex([r, g, b])
-    return [hex_color, top, side]
+    """
+    Produce darker and lighter color variants, given an input color.
+    """
+    rgb = hex_to_rgb(hex_color)
+    dark = rgb_to_hex(np.clip(rgb - 40, 0, 255))
+    light = rgb_to_hex(np.clip(rgb + 30, 0, 255))
+    return light, hex_color, dark
 
 
 def _truncate_long_string(long_string: str) -> str:
     max_title_length = 13
     return (long_string[:max_title_length] +
             '..') if len(long_string) > max_title_length else long_string
+
+
+def _build_svg(content, left, top, width, height):
+    return (
+        f'<svg width={_svg_width}em viewBox="{left} {top} {width} {height}"'
+        ' class="sc-root">'
+        f'<defs><style>{load_style()}</style></defs>{content}</svg>')
 
 
 class VariableDrawer:
@@ -162,15 +162,15 @@ class VariableDrawer:
             if axis == 2:
                 x_pos = dx + self._margin + 0.5 * extent
                 y_pos = dy + view_height - self._margin + _smaller_font
-                return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
-                         fill="dim-color" \
+                return f'<text x="{x_pos}" y="{y_pos}"\
+                         class="sc-label" \
                          style="font-size:#smaller-font">{escape(dim)}</text>'
 
             if axis == 1:
                 x_pos = dx + self._margin - 0.3 * _smaller_font
                 y_pos = dy + view_height - self._margin - 0.5 * extent
-                return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
-                    fill="dim-color" style="font-size:#smaller-font" \
+                return f'<text x="{x_pos}" y="{y_pos}" \
+                    class="sc-label" style="font-size:#smaller-font" \
                     transform="rotate(-90, {x_pos}, {y_pos})">\
                         {escape(dim)}</text>'
 
@@ -179,8 +179,8 @@ class VariableDrawer:
                         0.2 * _smaller_font
                 y_pos = dy + view_height - self._margin - self._extents(
                 )[-2] - 0.3 * 0.5 * extent - 0.2 * _smaller_font
-                return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
-                    fill="dim-color" style="font-size:#smaller-font" \
+                return f'<text x="{x_pos}" y="{y_pos}" \
+                    class="sc-label" style="font-size:#smaller-font" \
                     transform="rotate(-45, {x_pos}, {y_pos})">\
                         {escape(dim)}</text>'
 
@@ -205,13 +205,13 @@ class VariableDrawer:
         if title is not None:
             title = _truncate_long_string(str(title))
             svg = f'<text x="{x_pos}" y="{y_pos}" \
-                    style="font-size:#normal-font"> \
+                    class="sc-name" style="font-size:#normal-font"> \
                     {escape(title)}</text>'
 
             svg += f'<title>{escape(details)}</title>'
         else:
             svg = f'<text x="{x_pos}" y="{y_pos}" \
-                    style="font-size:#small-font"> \
+                    class="sc-name" style="font-size:#small-font"> \
                     {escape(details)}</text>'
 
         return svg
@@ -222,7 +222,7 @@ class VariableDrawer:
         svg = ''
         x0 = self._margin + self._extents()[-1]
         y0 = 2 * self._margin + 0.3 * self._extents()[-3]
-        style = 'style="stroke:black;stroke-width:0.05;stroke-dasharray:.2,.2"'
+        style = 'class="sc-inset-line"'
         svg += f'<line x1={x0} y1={y0+0} x2={x0+2} y2={y0-1} {style}/>'
         svg += f'<line x1={x0} y1={y0+1} x2={x0+2} y2={y0+2} {style}/>'
         svg += '<g transform="translate({},{}) scale(0.5)">{}</g>'.format(
@@ -260,17 +260,13 @@ class VariableDrawer:
                                    '#smaller-font',
                                    '{}px'.format(_smaller_font))
 
-    def _set_colors(self, svg):
-        dim_color = '#444444'
-        return svg.replace('dim-color', dim_color)
-
     def make_svg(self, content_only=False):
         if content_only:
-            return self._set_colors(self.draw(color=config.colors['data']))
-        return '<svg width={}em viewBox="0 0 {} {}">{}</svg>'.format(
-            _svg_width, max(_cubes_in_full_width,
-                            self.size()[0]),
-            self.size()[1], self.make_svg(content_only=True))
+            return self.draw(color=config.colors['data'])
+        return _build_svg(self.make_svg(content_only=True), 0, 0,
+                          max(_cubes_in_full_width,
+                              self.size()[0]),
+                          self.size()[1])
 
 
 class DrawerItem:
@@ -297,7 +293,7 @@ class EllipsisItem:
                       *unused):
         x_pos = offset[0] + 0.3
         y_pos = offset[1] + 2.0
-        content += f'<text x="{x_pos}" y="{y_pos}" \
+        content += f'<text x="{x_pos}" y="{y_pos}" class="sc-label" \
                     style="font-size:{_large_font}px"> ... </text>'
 
         ellipsis_size = [1.5, 2.0]
@@ -454,17 +450,15 @@ class DatasetDrawer:
 
         if content_only:
             return content
-        return '<svg width={}em viewBox="{} {} {} {}">{}</svg>'.format(
-            _svg_width, left, top, max(_cubes_in_full_width, width), height,
-            content)
+        return _build_svg(content, left, top, max(_cubes_in_full_width, width),
+                          height)
 
 
 def make_svg(container, content_only=False):
     """
     Return a svg representation of a variable or dataset.
     """
-    if isinstance(container, sc.Variable) or isinstance(
-            container, sc.VariableView):
+    if isinstance(container, sc.Variable):
         draw = VariableDrawer(container)
     else:
         draw = DatasetDrawer(container)

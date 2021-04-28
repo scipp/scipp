@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Piotr Rozyczko
@@ -17,9 +17,8 @@ namespace {
 Variable _values(Variable &&in) { return in.hasVariances() ? values(in) : in; }
 } // namespace
 
-Variable isclose(const VariableConstView &a, const VariableConstView &b,
-                 const VariableConstView rtol, const VariableConstView atol,
-                 const NanComparisons equal_nans) {
+Variable isclose(const Variable &a, const Variable &b, const Variable &rtol,
+                 const Variable &atol, const NanComparisons equal_nans) {
   auto tol = atol + rtol * abs(b);
   if (a.hasVariances() && b.hasVariances()) {
     return isclose(values(a), values(b), rtol, atol, equal_nans) &

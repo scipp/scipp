@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 //
 // The test in this file ensure that comparison operators for Dataset and
@@ -47,14 +47,16 @@ protected:
     dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
   }
   void expect_eq(const Dataset &a, const Dataset &b) const {
-    expect_eq_impl(a, DatasetConstView(b));
-    expect_eq_impl(DatasetConstView(a), b);
-    expect_eq_impl(DatasetConstView(a), DatasetConstView(b));
+    expect_eq_impl(a, b);
+    expect_eq_impl(a, copy(b));
+    expect_eq_impl(copy(a), b);
+    expect_eq_impl(copy(a), copy(b));
   }
   void expect_ne(const Dataset &a, const Dataset &b) const {
-    expect_ne_impl(a, DatasetConstView(b));
-    expect_ne_impl(DatasetConstView(a), b);
-    expect_ne_impl(DatasetConstView(a), DatasetConstView(b));
+    expect_ne_impl(a, b);
+    expect_ne_impl(a, copy(b));
+    expect_ne_impl(copy(a), b);
+    expect_ne_impl(copy(a), copy(b));
   }
 
   Dataset dataset;

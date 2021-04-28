@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -9,25 +9,18 @@
 
 namespace scipp::variable {
 
-SCIPP_VARIABLE_EXPORT Variable astype(const VariableConstView &var,
-                                      const DType type);
+SCIPP_VARIABLE_EXPORT Variable astype(const Variable &var, const DType type);
 
-SCIPP_VARIABLE_EXPORT std::vector<Variable>
-split(const Variable &var, const Dim dim,
-      const std::vector<scipp::index> &indices);
-SCIPP_VARIABLE_EXPORT Variable filter(const Variable &var,
-                                      const Variable &filter);
-
-SCIPP_VARIABLE_EXPORT Variable masked_to_zero(const VariableConstView &var,
-                                              const VariableConstView &mask);
+SCIPP_VARIABLE_EXPORT Variable masked_to_zero(const Variable &var,
+                                              const Variable &mask);
 
 namespace geometry {
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-position(const VariableConstView &x, const VariableConstView &y,
-         const VariableConstView &z);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable x(const VariableConstView &pos);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable y(const VariableConstView &pos);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable z(const VariableConstView &pos);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable position(const Variable &x,
+                                                      const Variable &y,
+                                                      const Variable &z);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable x(const Variable &pos);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable y(const Variable &pos);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable z(const Variable &pos);
 
 } // namespace geometry
 

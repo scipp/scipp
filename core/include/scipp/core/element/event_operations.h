@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -11,6 +11,7 @@
 
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/histogram.h"
+#include "scipp/core/time_point.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
 
@@ -28,27 +29,29 @@ template <class Coord, class Edge, class Weight>
 using args = std::tuple<Coord, span<const Edge>, span<const Weight>>;
 } // namespace map_detail
 
-constexpr auto map =
-    overloaded{element::arg_list<map_detail::args<int64_t, int64_t, double>,
-                                 map_detail::args<int64_t, int64_t, float>,
-                                 map_detail::args<int32_t, int32_t, double>,
-                                 map_detail::args<int32_t, int32_t, float>,
-                                 map_detail::args<int64_t, double, double>,
-                                 map_detail::args<int64_t, double, float>,
-                                 map_detail::args<int32_t, double, double>,
-                                 map_detail::args<int32_t, double, float>,
-                                 map_detail::args<double, double, double>,
-                                 map_detail::args<double, double, float>,
-                                 map_detail::args<float, double, double>,
-                                 map_detail::args<float, float, float>,
-                                 map_detail::args<double, float, float>>,
-               transform_flags::expect_no_variance_arg<0>,
-               transform_flags::expect_no_variance_arg<1>,
-               [](const units::Unit &x, const units::Unit &edges,
-                  const units::Unit &weights) {
-                 expect::equals(x, edges);
-                 return weights;
-               }};
+constexpr auto map = overloaded{
+    element::arg_list<map_detail::args<int64_t, int64_t, double>,
+                      map_detail::args<int64_t, int64_t, float>,
+                      map_detail::args<int32_t, int32_t, double>,
+                      map_detail::args<int32_t, int32_t, float>,
+                      map_detail::args<time_point, time_point, double>,
+                      map_detail::args<time_point, time_point, float>,
+                      map_detail::args<int64_t, double, double>,
+                      map_detail::args<int64_t, double, float>,
+                      map_detail::args<int32_t, double, double>,
+                      map_detail::args<int32_t, double, float>,
+                      map_detail::args<double, double, double>,
+                      map_detail::args<double, double, float>,
+                      map_detail::args<float, double, double>,
+                      map_detail::args<float, float, float>,
+                      map_detail::args<double, float, float>>,
+    transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    [](const units::Unit &x, const units::Unit &edges,
+       const units::Unit &weights) {
+      expect::equals(x, edges);
+      return weights;
+    }};
 
 constexpr auto map_linspace = overloaded{
     map, [](const auto &coord, const auto &edges, const auto &weights) {
@@ -71,10 +74,16 @@ using args = std::tuple<Data, Coord, span<const Edge>, span<const Weight>>;
 } // namespace map_and_mul_detail
 
 constexpr auto map_and_mul = overloaded{
-    element::arg_list<map_and_mul_detail::args<double, double, double, double>,
-                      map_and_mul_detail::args<float, double, double, double>,
-                      map_and_mul_detail::args<float, double, double, float>,
-                      map_and_mul_detail::args<double, float, float, double>>,
+    element::arg_list<
+        map_and_mul_detail::args<double, double, double, double>,
+        map_and_mul_detail::args<double, double, double, float>,
+        map_and_mul_detail::args<float, double, double, double>,
+        map_and_mul_detail::args<float, double, double, float>,
+        map_and_mul_detail::args<double, float, float, double>,
+        map_and_mul_detail::args<double, time_point, time_point, double>,
+        map_and_mul_detail::args<double, time_point, time_point, float>,
+        map_and_mul_detail::args<float, time_point, time_point, double>,
+        map_and_mul_detail::args<float, time_point, time_point, float>>,
     transform_flags::expect_in_variance_if_out_variance,
     transform_flags::expect_no_variance_arg<1>,
     transform_flags::expect_no_variance_arg<2>,

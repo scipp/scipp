@@ -1,8 +1,18 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 import ipywidgets as ipw
+
+from .. import config
+
+
+def set_button_color(button, selected=False):
+    name = 'button_selected' if selected else 'button'
+    try:
+        button.style.button_color = config['colors'][name]
+    except KeyError:
+        pass  # we do not have a color we can use
 
 
 class PlotToolbar:
@@ -50,8 +60,9 @@ class PlotToolbar:
         """
         Create a new button and add it to the toolbar members list.
         """
-        args = self._parse_button_args(**kwargs)
-        self.members[name] = ipw.Button(**args)
+        button = ipw.Button(**self._parse_button_args(**kwargs))
+        set_button_color(button)
+        self.members[name] = button
 
     def add_togglebutton(self, name, **kwargs):
         """
@@ -59,12 +70,13 @@ class PlotToolbar:
         change the value of the button without triggering an update, e.g. when
         we swap the axes.
         """
-        args = self._parse_button_args(**kwargs)
-        self.members[name] = ipw.Button(**args)
-        setattr(self.members[name], "value", False)
+        button = ipw.Button(**self._parse_button_args(**kwargs))
+        set_button_color(button)
+        setattr(button, "value", False)
         # Add a local observer to change the color of the button according to
         # its value.
-        self.members[name].on_click(self.toggle_button_color)
+        button.on_click(self.toggle_button_color)
+        self.members[name] = button
 
     def toggle_button_color(self, owner, value=None):
         """
@@ -74,7 +86,7 @@ class PlotToolbar:
             owner.value = not owner.value
         else:
             owner.value = value
-        owner.style.button_color = "#bdbdbd" if owner.value else "#eeeeee"
+        set_button_color(owner, selected=owner.value)
 
     def connect(self, callbacks):
         """

@@ -1,12 +1,11 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 
 import numpy as np
 import scipp as sc
-from plot_helper import make_dense_dataset
-from scipp import plot
+from plot_helper import make_dense_dataset, plot
 
 
 def make_data_with_position_vectors():
@@ -21,6 +20,7 @@ def make_data_with_position_vectors():
     tof = np.arange(M).astype(float)
     a = np.arange(M * N).reshape([M, N]) * np.sin(y)
     d = sc.Dataset()
+    d['a'] = sc.Variable(['tof', 'xyz'], values=a)
     d.coords['xyz'] = sc.Variable(['xyz'],
                                   values=np.array([x, y, z]).T,
                                   dtype=sc.dtype.vector_3_float64)
@@ -28,7 +28,6 @@ def make_data_with_position_vectors():
                                   values=np.array([x, y, z]).T + 20.0,
                                   dtype=sc.dtype.vector_3_float64)
     d.coords['tof'] = sc.Variable(['tof'], values=tof)
-    d['a'] = sc.Variable(['tof', 'xyz'], values=a)
     return d
 
 

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
@@ -186,11 +186,11 @@ def plot(*args, **kwargs):
         dimension axis. E.g. `scale={"tof": "log"}`. Defaults to None.
     :type scale: dict, optional
 
-    :param vmin: Minimum value for the colorscale (2d and 3d only).
+    :param vmin: Minimum value for the y-axis (1d) or colorscale (2d and 3d).
         Defaults to None.
     :type vmin: float, optional
 
-    :param vmax: Maximum value for the colorscale (2d and 3d only).
+    :param vmax: Maximum value for the y-axis (1d) or colorscale (2d and 3d).
         Defaults to None.
     :type vmax: float, optional
 
@@ -215,7 +215,7 @@ def plot(*args, **kwargs):
             output.hide_widgets()
         # Turn mpl figure into image if doc build
         if is_doc_build:
-            output.make_static()
+            output.close()
 
     # Turn auto figure display back on if needed.
     if interactive_on:

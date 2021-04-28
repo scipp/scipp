@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
@@ -22,8 +22,7 @@ if _debug_:
         'You are running a "Debug" build of scipp. For optimal performance use a "Release" build.'
     )
 
-from ._scipp.core import Variable, VariableView, DataArray, DataArrayView, \
-                         Dataset, DatasetView, Dim, GroupByDataArray, \
+from ._scipp.core import Variable, DataArray, Dataset, GroupByDataArray, \
                          GroupByDataset
 from ._scipp.core import units, dtype, buckets, geometry
 from ._scipp.core import DTypeError, CoordError, UnitError
@@ -59,51 +58,34 @@ from ._trigonometry import *
 from ._variable import *
 
 setattr(Variable, '_repr_html_', make_html)
-setattr(VariableView, '_repr_html_', make_html)
 setattr(DataArray, '_repr_html_', make_html)
-setattr(DataArrayView, '_repr_html_', make_html)
 setattr(Dataset, '_repr_html_', make_html)
-setattr(DatasetView, '_repr_html_', make_html)
 
 from .io.hdf5 import to_hdf5 as _to_hdf5
 setattr(Variable, 'to_hdf5', _to_hdf5)
-setattr(VariableView, 'to_hdf5', _to_hdf5)
 setattr(DataArray, 'to_hdf5', _to_hdf5)
-setattr(DataArrayView, 'to_hdf5', _to_hdf5)
 setattr(Dataset, 'to_hdf5', _to_hdf5)
-setattr(DatasetView, 'to_hdf5', _to_hdf5)
 
 setattr(Variable, 'sizes', property(_make_sizes))
-setattr(VariableView, 'sizes', property(_make_sizes))
 setattr(DataArray, 'sizes', property(_make_sizes))
-setattr(DataArrayView, 'sizes', property(_make_sizes))
 setattr(Dataset, 'sizes', property(_make_sizes))
-setattr(DatasetView, 'sizes', property(_make_sizes))
 
 from ._bins import _bins, _set_bins
 setattr(Variable, 'bins', property(_bins, _set_bins))
-setattr(VariableView, 'bins', property(_bins, _set_bins))
 setattr(DataArray, 'bins', property(_bins, _set_bins))
-setattr(DataArrayView, 'bins', property(_bins, _set_bins))
 setattr(Dataset, 'bins', property(_bins, _set_bins))
-setattr(DatasetView, 'bins', property(_bins, _set_bins))
 
 from ._bins import _groupby_bins
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
 setattr(GroupByDataset, 'bins', property(_groupby_bins))
 
 setattr(Variable, 'plot', plot)
-setattr(VariableView, 'plot', plot)
 setattr(DataArray, 'plot', plot)
-setattr(DataArrayView, 'plot', plot)
 setattr(Dataset, 'plot', plot)
-setattr(DatasetView, 'plot', plot)
 
 # Prevent unwanted conversion to numpy arrays by operations. Properly defining
 # __array_ufunc__ should be possible by converting non-scipp arguments to
 # variables. The most difficult part is probably mapping the ufunc to scipp
 # functions.
-for obj in [
-        Variable, VariableView, DataArray, DataArrayView, Dataset, DatasetView
-]:
+for obj in [Variable, DataArray, Dataset]:
     setattr(obj, '__array_ufunc__', None)

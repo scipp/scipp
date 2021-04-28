@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
@@ -23,3 +23,10 @@ class PlotView3d(PlotView):
 
     def update_depth_test(self, *args, **kwargs):
         self.figure.update_depth_test(*args, **kwargs)
+
+    def close(self):
+        """
+        Dummy close function because 3d plots cannot be closed like mpl
+        figures.
+        """
+        return

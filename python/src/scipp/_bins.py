@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from ._scipp import core as _cpp
@@ -6,7 +6,7 @@ from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
 class lookup:
-    def __init__(self, func: _cpp.DataArrayView, dim: str):
+    def __init__(self, func: _cpp.DataArray, dim: str):
         self.func = func
         self.dim = dim
 

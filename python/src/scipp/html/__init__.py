@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Dimitar Tasev
@@ -7,8 +7,7 @@ from .formatting_html import dataset_repr, variable_repr
 
 
 def make_html(container):
-    if isinstance(container, sc.Variable) or isinstance(
-            container, sc.VariableView):
+    if isinstance(container, sc.Variable):
         return variable_repr(container)
     else:
         return dataset_repr(container)

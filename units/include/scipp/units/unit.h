@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -16,15 +16,18 @@ namespace scipp::units {
 class SCIPP_UNITS_EXPORT Unit {
 public:
   constexpr Unit() = default;
-  constexpr Unit(const llnl::units::precise_unit &u) noexcept : m_unit(u) {}
-  Unit(const std::string &unit);
+  constexpr explicit Unit(const llnl::units::precise_unit &u) noexcept
+      : m_unit(u) {}
+  explicit Unit(const std::string &unit);
 
-  constexpr auto underlying() const noexcept { return m_unit; }
+  [[nodiscard]] constexpr auto underlying() const noexcept { return m_unit; }
 
-  std::string name() const;
+  [[nodiscard]] std::string name() const;
 
-  bool isCounts() const;
-  bool isCountDensity() const;
+  [[nodiscard]] bool isCounts() const;
+  [[nodiscard]] bool isCountDensity() const;
+
+  [[nodiscard]] bool has_same_base(const Unit &other) const;
 
   bool operator==(const Unit &other) const;
   bool operator!=(const Unit &other) const;
@@ -47,7 +50,7 @@ SCIPP_UNITS_EXPORT Unit operator%(const Unit &a, const Unit &b);
 SCIPP_UNITS_EXPORT Unit operator-(const Unit &a);
 SCIPP_UNITS_EXPORT Unit abs(const Unit &a);
 SCIPP_UNITS_EXPORT Unit sqrt(const Unit &a);
-SCIPP_UNITS_EXPORT Unit pow(const Unit &a, const int64_t power);
+SCIPP_UNITS_EXPORT Unit pow(const Unit &a, int64_t power);
 SCIPP_UNITS_EXPORT Unit sin(const Unit &a);
 SCIPP_UNITS_EXPORT Unit cos(const Unit &a);
 SCIPP_UNITS_EXPORT Unit tan(const Unit &a);

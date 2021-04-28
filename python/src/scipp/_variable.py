@@ -1,11 +1,11 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
 from . import units, Unit, dtype, Variable
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from typing import Any, Sequence, Union
-import numpy
+import numpy as np
 
 
 def filter(x, key):
@@ -123,6 +123,22 @@ def zeros(*,
                     variances=variances)
 
 
+def zeros_like(var: Variable) -> Variable:
+    """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
+    as the input variable, but with all values initialized to 0. If the input
+    has variances, all variances in the output are set to 0.
+
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones_like`
+
+    :param var: Input variable.
+    """
+    return zeros(dims=var.dims,
+                 shape=var.shape,
+                 unit=var.unit,
+                 dtype=var.dtype,
+                 variances=var.variances is not None)
+
+
 def ones(*,
          dims: Sequence[str],
          shape: Sequence[int],
@@ -143,6 +159,22 @@ def ones(*,
                       initialised to 1. Default=False
     """
     return _cpp.ones(dims, shape, unit, dtype, variances)
+
+
+def ones_like(var: Variable) -> Variable:
+    """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
+    as the input variable, but with all values initialized to 1. If the input
+    has variances, all variances in the output are set to 1.
+
+    :seealso: :py:func:`scipp.ones` :py:func:`scipp.zeros_like`
+
+    :param var: Input variable.
+    """
+    return ones(dims=var.dims,
+                shape=var.shape,
+                unit=var.unit,
+                dtype=var.dtype,
+                variances=var.variances is not None)
 
 
 def empty(*,
@@ -169,10 +201,27 @@ def empty(*,
     return _cpp.empty(dims, shape, unit, dtype, variances)
 
 
+def empty_like(var: Variable) -> Variable:
+    """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
+    as the input variable, but with uninitialized values. If the input
+    has variances, all variances in the output exist but are uninitialized.
+
+    :seealso: :py:func:`scipp.empty` :py:func:`scipp.zeros_like`
+              :py:func:`scipp.ones_like`
+
+    :param var: Input variable.
+    """
+    return empty(dims=var.dims,
+                 shape=var.shape,
+                 unit=var.unit,
+                 dtype=var.dtype,
+                 variances=var.variances is not None)
+
+
 def array(*,
           dims: Sequence[str],
-          values: Union[numpy.ndarray, list],
-          variances: Union[numpy.ndarray, list] = None,
+          values: Union[np.ndarray, list],
+          variances: Union[np.ndarray, list] = None,
           unit: Union[Unit, str] = units.dimensionless,
           dtype: type(dtype.float64) = None) -> Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
@@ -197,5 +246,121 @@ def array(*,
                     dtype=dtype)
 
 
-# Wrapper to make dateime usable without importing numpy manually.
-datetime64 = numpy.datetime64
+def linspace(dim: str,
+             start: Union[int, float],
+             stop: Union[int, float],
+             num: int,
+             *,
+             unit: Union[Unit, str] = units.dimensionless,
+             dtype: type(dtype.float64) = None) -> Variable:
+    """Constructs a :class:`Variable` with `num` evenly spaced samples,
+    calculated over the interval `[start, stop]`.
+
+    :seealso: :py:func:`scipp.geomspace` :py:func:`scipp.logspace`
+              :py:func:`scipp.arange`
+
+    :param dim: Dimension label.
+    :param start: The starting value of the sequence.
+    :param stop: The end value of the sequence.
+    :param num: Number of samples to generate.
+    :param unit: Optional, data unit. Default=dimensionless
+    :param dtype: Optional, type of underlying data. Default=None,
+      in which case type is inferred from value input.
+    """
+    return array(dims=[dim],
+                 values=np.linspace(start, stop, num),
+                 unit=unit,
+                 dtype=dtype)
+
+
+def geomspace(dim: str,
+              start: Union[int, float],
+              stop: Union[int, float],
+              num: int,
+              *,
+              unit: Union[Unit, str] = units.dimensionless,
+              dtype: type(dtype.float64) = None) -> Variable:
+    """Constructs a :class:`Variable` with values spaced evenly on a log scale
+    (a geometric progression). This is similar to :py:func:`scipp.logspace`,
+    but with endpoints specified directly.
+    Each output sample is a constant multiple of the previous.
+
+    :seealso: :py:func:`scipp.linspace` :py:func:`scipp.logspace`
+              :py:func:`scipp.arange`
+
+    :param dim: Dimension label.
+    :param start: The starting value of the sequence.
+    :param stop: The end value of the sequence.
+    :param num: Number of samples to generate.
+    :param unit: Optional, data unit. Default=dimensionless
+    :param dtype: Optional, type of underlying data. Default=None,
+      in which case type is inferred from value input.
+    """
+    return array(dims=[dim],
+                 values=np.geomspace(start, stop, num),
+                 unit=unit,
+                 dtype=dtype)
+
+
+def logspace(dim: str,
+             start: Union[int, float],
+             stop: Union[int, float],
+             num: int,
+             *,
+             unit: Union[Unit, str] = units.dimensionless,
+             dtype: type(dtype.float64) = None) -> Variable:
+    """Constructs a :class:`Variable` with values spaced evenly on a log scale.
+
+    :seealso: :py:func:`scipp.linspace` :py:func:`scipp.geomspace`
+              :py:func:`scipp.arange`
+
+    :param dim: Dimension label.
+    :param start: The starting value of the sequence.
+    :param stop: The end value of the sequence.
+    :param num: Number of samples to generate.
+    :param unit: Optional, data unit. Default=dimensionless
+    :param dtype: Optional, type of underlying data. Default=None,
+      in which case type is inferred from value input.
+    """
+    return array(dims=[dim],
+                 values=np.logspace(start, stop, num),
+                 unit=unit,
+                 dtype=dtype)
+
+
+def arange(dim: str,
+           start: Union[int, float],
+           stop: Union[int, float] = None,
+           step: Union[int, float] = 1,
+           *,
+           unit: Union[Unit, str] = units.dimensionless,
+           dtype: type(dtype.float64) = None) -> Variable:
+    """Constructs a :class:`Variable` with evenly spaced values within a given
+    interval.
+    Values are generated within the half-open interval [start, stop)
+    (in other words, the interval including start but excluding stop).
+
+    :seealso: :py:func:`scipp.linspace` :py:func:`scipp.geomspace`
+              :py:func:`scipp.logspace`
+
+    :param dim: Dimension label.
+    :param start: Optional, the starting value of the sequence. Default=0.
+    :param stop: End of interval. The interval does not include this value,
+      except in some (rare) cases where step is not an integer and floating
+      point round-off can come into play.
+    :param step: Optional, spacing between values. Default=1.
+    :param unit: Optional, data unit. Default=dimensionless
+    :param dtype: Optional, type of underlying data. Default=None,
+      in which case type is inferred from value input.
+    """
+    if stop is None:
+        stop = start
+        start = 0
+    return array(dims=[dim],
+                 values=np.arange(start, stop, step),
+                 unit=unit,
+                 dtype=dtype)
+
+
+# Wrapper to make datetime usable without importing numpy manually.
+datetime64 = np.datetime64

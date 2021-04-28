@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Jan-Lukas Wynen
@@ -12,7 +12,7 @@ import pytest
 
 import scipp as sc
 
-_UNIT_STRINGS = ('s', 'ms', 'us', 'ns')
+_UNIT_STRINGS = ('s', 'ms', 'us', 'ns', 'D', 'M', 'Y')
 
 
 def _mismatch_pairs(units):
@@ -250,21 +250,42 @@ def test_datetime_operations_mismatch():
 
 
 def test_datetime_formatting():
+    def fmt(time_point, scale, unit):
+        var = sc.scalar(int(time_point.timestamp() * scale),
+                        dtype=sc.datetime64,
+                        unit=unit)
+        match = re.search(r'\[[\dT\-:\.]+]', str(var))
+        assert match
+        return match[0][1:-1]
+
     # Time since epoch for a totally arbitrary date.
     # The timezone has an offset of 0 to emulate a timestamp obtained from
     # some source that is not aware of timezones.
-    timestamp = int(
-        datetime(year=1991,
-                 month=8,
-                 day=16,
-                 hour=1,
-                 minute=2,
-                 second=3,
-                 microsecond=456789,
-                 tzinfo=timezone(timedelta(hours=0))).timestamp() * 10**6)
-    var = sc.scalar(np.datetime64(timestamp, 'us'))
-    match = re.search(r'\[[\dT\-:\.]+]', str(var))
-    assert match
+    dt = datetime(year=1991,
+                  month=8,
+                  day=16,
+                  hour=1,
+                  minute=2,
+                  second=3,
+                  microsecond=456789,
+                  tzinfo=timezone(timedelta(hours=0)))
+
     # Make sure that date and time are printed unchanged,
     # i.e. there was no timezone conversion.
-    assert match[0][1:-1] == "1991-08-16T01:02:03.456789"
+    assert fmt(dt, 10**6, 'us') == "1991-08-16T01:02:03.456789"
+    # The unit determines the precision of the output.
+    dt = dt.replace(microsecond=456000)
+    assert fmt(dt, 10**3, 'ms') == "1991-08-16T01:02:03.456"
+    dt = dt.replace(microsecond=0)
+    assert fmt(dt, 1, 's') == "1991-08-16T01:02:03"
+    dt = dt.replace(second=0)
+    assert fmt(dt, 1 / 60, 'min') == "1991-08-16T01:02:00"
+    dt = dt.replace(second=0)
+    assert fmt(dt, 1 / (60 * 60), 'h') == "1991-08-16T01:00:00"
+    # Not supported yet
+    with pytest.raises(sc.UnitError):
+        fmt(dt, 1, 'day')
+    with pytest.raises(sc.UnitError):
+        fmt(dt, 1, 'month')
+    with pytest.raises(sc.UnitError):
+        fmt(dt, 1, 'year')

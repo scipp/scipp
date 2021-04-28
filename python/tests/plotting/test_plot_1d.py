@@ -1,12 +1,11 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 
 import numpy as np
 import scipp as sc
-from plot_helper import make_dense_dataset
-from scipp import plot
+from plot_helper import make_dense_dataset, plot
 
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing
@@ -35,6 +34,8 @@ def test_plot_1d_with_attrs():
 
 def test_plot_1d_log_axes():
     d = make_dense_dataset(ndim=1)
+    for key, val in d.items():
+        d[key] = sc.abs(val) + 1.0 * sc.units.counts
     plot(d, scale={'tof': 'log'})
     plot(d, norm='log')
     plot(d, norm='log', scale={'tof': 'log'})
@@ -159,44 +160,47 @@ def test_plot_data_array():
 def test_plot_vector_axis_labels_1d():
     d = sc.Dataset()
     N = 10
+    d["Sample"] = sc.Variable(['x'],
+                              values=np.random.random(N),
+                              unit=sc.units.counts)
     d.coords['x'] = sc.Variable(['x'],
                                 values=np.random.random([N, 3]),
                                 unit=sc.units.m,
                                 dtype=sc.dtype.vector_3_float64)
-    d["Sample"] = sc.Variable(['x'],
-                              values=np.random.random(N),
-                              unit=sc.units.counts)
     plot(d)
 
 
 def test_plot_string_axis_labels_1d():
     d = sc.Dataset()
     N = 10
+    d["Sample"] = sc.Variable(['x'],
+                              values=np.random.random(N),
+                              unit=sc.units.counts)
     d.coords['x'] = sc.Variable(
         dims=['x'],
         values=["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
         unit=sc.units.m)
-    d["Sample"] = sc.Variable(['x'],
-                              values=np.random.random(N),
-                              unit=sc.units.counts)
     plot(d)
 
 
 def test_plot_string_axis_labels_1d_short():
     d = sc.Dataset()
     N = 5
-    d.coords['x'] = sc.Variable(dims=['x'],
-                                values=["a", "b", "c", "d", "e"],
-                                unit=sc.units.m)
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
+    d.coords['x'] = sc.Variable(dims=['x'],
+                                values=["a", "b", "c", "d", "e"],
+                                unit=sc.units.m)
     plot(d)
 
 
 def test_plot_with_vector_labels():
     N = 10
     d = sc.Dataset()
+    d["Sample"] = sc.Variable(['x'],
+                              values=np.random.random(N),
+                              unit=sc.units.counts)
     d.coords['x'] = sc.Variable(['x'],
                                 values=np.arange(N, dtype=np.float64),
                                 unit=sc.units.m)
@@ -204,15 +208,15 @@ def test_plot_with_vector_labels():
                                    values=np.random.random([N, 3]),
                                    unit=sc.units.m,
                                    dtype=sc.dtype.vector_3_float64)
-    d["Sample"] = sc.Variable(['x'],
-                              values=np.random.random(N),
-                              unit=sc.units.counts)
     plot(d)
 
 
 def test_plot_vector_axis_with_labels():
     d = sc.Dataset()
     N = 10
+    d["Sample"] = sc.Variable(['x'],
+                              values=np.random.random(N),
+                              unit=sc.units.counts)
     d.coords['labs'] = sc.Variable(['x'],
                                    values=np.arange(N, dtype=np.float64),
                                    unit=sc.units.m)
@@ -220,9 +224,6 @@ def test_plot_vector_axis_with_labels():
                                 values=np.random.random([N, 3]),
                                 unit=sc.units.m,
                                 dtype=sc.dtype.vector_3_float64)
-    d["Sample"] = sc.Variable(['x'],
-                              values=np.random.random(N),
-                              unit=sc.units.counts)
     plot(d)
 
 
@@ -233,9 +234,10 @@ def test_plot_customized_mpl_axes():
 
 def test_plot_access_ax_and_fig():
     d = make_dense_dataset(ndim=1)
-    out = plot(d["Sample"], title="MyTitle")
+    out = sc.plot(d["Sample"], title="MyTitle")
     out.ax.set_xlabel("MyXlabel")
     out.fig.set_dpi(120.)
+    out.close()
 
 
 def test_plot_access_ax_and_fig_two_entries():
@@ -243,30 +245,31 @@ def test_plot_access_ax_and_fig_two_entries():
     d["Background"] = sc.Variable(['tof'],
                                   values=2.0 * np.random.random(50),
                                   unit=sc.units.kg)
-    out = plot(d)
+    out = sc.plot(d)
     out['tof.counts'].ax.set_xlabel("MyXlabel")
     out['tof.counts'].fig.set_dpi(120.)
+    out.close()
 
 
 def test_plot_with_integer_coord():
     d = sc.Dataset()
     N = 10
-    d.coords['x'] = sc.Variable(['x'], values=np.arange(N), unit=sc.units.m)
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
+    d.coords['x'] = sc.Variable(['x'], values=np.arange(N), unit=sc.units.m)
     plot(d)
 
 
 def test_plot_with_integer_coord_binedges():
     d = sc.Dataset()
     N = 10
-    d.coords['x'] = sc.Variable(['x'],
-                                values=np.arange(N + 1),
-                                unit=sc.units.m)
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
+    d.coords['x'] = sc.Variable(['x'],
+                                values=np.arange(N + 1),
+                                unit=sc.units.m)
     plot(d)
 
 
@@ -278,7 +281,7 @@ def test_plot_1d_datetime():
                                     values=np.random.random(
                                         time.sizes['time'])),
                       coords={'time': time})
-    da.plot()
+    da.plot().close()
 
 
 def test_plot_1d_datetime_binedges():
@@ -291,7 +294,7 @@ def test_plot_1d_datetime_binedges():
         values=np.random.random(time.sizes['time'] - 1),
         unit="K"),
                       coords={'time': time})
-    da.plot()
+    da.plot().close()
 
 
 def test_plot_1d_datetime_with_labels():
@@ -302,7 +305,7 @@ def test_plot_1d_datetime_with_labels():
                                     values=np.random.random(
                                         time.sizes['time'])),
                       coords={'time2': time})
-    da.plot()
+    da.plot().close()
 
 
 def test_plot_legend():

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -78,17 +78,23 @@ parse_datetime_dtype(const std::string &dtype_name) {
     return scipp::units::dimensionless;
   } else if (match[unit_idx] == "s") {
     return scipp::units::s;
-  } else if (match[unit_idx] == "ms") {
-    static const auto ms = units::Unit("ms");
-    return ms;
   } else if (match[unit_idx] == "us") {
     return scipp::units::us;
   } else if (match[unit_idx] == "ns") {
     return scipp::units::ns;
+  } else if (match[unit_idx] == "m") {
+    // In np.datetime64, m means minute.
+    return units::Unit("min");
+  } else {
+    for (const char *name : {"ms", "h", "D", "M", "Y"}) {
+      if (match[unit_idx] == name) {
+        return units::Unit(name);
+      }
+    }
   }
 
   throw std::invalid_argument(std::string("Unsupported unit in datetime: ") +
-                              dtype_name[11] + "s");
+                              std::string(match[unit_idx]));
 }
 
 [[nodiscard]] scipp::units::Unit

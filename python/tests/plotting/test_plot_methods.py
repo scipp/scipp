@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
@@ -9,7 +9,7 @@ import scipp as sc
 
 def test_plot_variable():
     v = sc.Variable(['x'], values=np.arange(10.0), unit=sc.units.m)
-    v.plot()
+    v.plot().close()
 
 
 def test_plot_data_array():
@@ -20,16 +20,16 @@ def test_plot_data_array():
                                       values=np.arange(10.0),
                                       unit=sc.units.m)
                       })
-    da.plot()
+    da.plot().close()
 
 
 def test_plot_dataset():
     N = 100
     ds = sc.Dataset()
-    ds.coords['x'] = sc.Variable(['x'], values=np.arange(N), unit=sc.units.m)
     ds['a'] = sc.Variable(['x'], values=np.random.random(N), unit=sc.units.K)
     ds['b'] = sc.Variable(['x'], values=np.random.random(N), unit=sc.units.K)
-    ds.plot()
+    ds.coords['x'] = sc.Variable(['x'], values=np.arange(N), unit=sc.units.m)
+    ds.plot().close()
 
 
 def test_plot_data_array_with_kwargs():
@@ -45,4 +45,4 @@ def test_plot_data_array_with_kwargs():
                                       values=np.arange(10.0),
                                       unit=sc.units.m)
                       })
-    da.plot(cmap="magma", norm="log")
+    da.plot(cmap="magma", norm="log").close()

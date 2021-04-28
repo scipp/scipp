@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -15,8 +15,6 @@ INSTANTIATE_VARIABLE(PyObject, scipp::python::PyObject)
 } // namespace scipp::variable
 
 namespace scipp::python {
-// TODO We could actually return __repr__ here, but it may be too large?
-std::string to_string(const PyObject &) { return "<PyObject>"; }
 namespace {
 // Insert classes from scipp::python into formatting registry. The objects
 // themselves do nothing, but the constructor call with comma operator does the

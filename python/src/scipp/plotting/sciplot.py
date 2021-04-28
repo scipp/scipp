@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
@@ -50,7 +50,6 @@ class SciPlot:
         self.widgets = None
 
         self.show_widgets = True
-        self.as_static = False
         self.view_ndims = view_ndims
 
         # Shortcut access to the underlying figure for easier modification
@@ -172,7 +171,7 @@ class SciPlot:
         """
         Get the SciPlot object as an `ipywidget`.
         """
-        widget_list = [self.view._to_widget(self.as_static)]
+        widget_list = [self.view._to_widget()]
         if self.profile is not None:
             widget_list.append(self.profile._to_widget())
         if self.show_widgets:
@@ -188,8 +187,11 @@ class SciPlot:
         """
         self.show_widgets = False if self.view_ndims < 3 else True
 
-    def make_static(self):
-        self.as_static = True
+    def close(self):
+        """
+        Send close signal to the view.
+        """
+        self.view.close()
 
     def show(self):
         """

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #pragma once
 
@@ -18,4 +18,4 @@ get_time_unit(const pybind11::buffer &value, const pybind11::object &dtype,
 /// Format a time unit as an ASCII string.
 /// Only time units are supported!
 // TODO Can be removed if / when the units library supports this.
-std::string to_string_ascii_time(scipp::units::Unit unit);
+std::string to_numpy_time_string(scipp::units::Unit const unit);

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
@@ -40,9 +40,9 @@ class Plot(dict):
         for item in self.values():
             item.hide_widgets()
 
-    def make_static(self):
+    def close(self):
         for item in self.values():
-            item.make_static()
+            item.close()
 
 
 class PlotArray:

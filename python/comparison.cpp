@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -17,10 +17,8 @@ namespace py = pybind11;
 template <class T> void bind_isclose(py::module &m) {
   m.def(
       "isclose",
-      [](const typename T::const_view_type &x,
-         const typename T::const_view_type &y,
-         const typename T::const_view_type &rtol,
-         const typename T::const_view_type &atol, const bool equal_nan) {
+      [](const T &x, const T &y, const T &rtol, const T &atol,
+         const bool equal_nan) {
         return isclose(x, y, rtol, atol,
                        equal_nan ? NanComparisons::Equal
                                  : NanComparisons::NotEqual);
@@ -31,10 +29,8 @@ template <class T> void bind_isclose(py::module &m) {
 
 template <typename T> void bind_identical(py::module &m) {
   m.def(
-      "identical",
-      [](const typename T::const_view_type &x,
-         const typename T::const_view_type &y) { return x == y; },
-      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>());
+      "identical", [](const T &x, const T &y) { return x == y; }, py::arg("x"),
+      py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
 
 void init_comparison(py::module &m) {

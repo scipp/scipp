@@ -1,12 +1,14 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
 import numpy as np
 import scipp as sc
-from plot_helper import make_dense_dataset, make_binned_data_array
-from scipp import plot
+from plot_helper import make_dense_dataset, make_binned_data_array, plot
 
 
 def test_plot_2d_image():
@@ -87,7 +89,10 @@ def test_plot_2d_image_with_attrss():
 
 
 def test_plot_2d_image_with_filename():
-    plot(make_dense_dataset(ndim=2), filename='image.pdf')
+    with TemporaryDirectory() as dirname:
+        plot(make_dense_dataset(ndim=2),
+             filename=Path(dirname) / 'image.pdf',
+             close=False)
 
 
 def test_plot_2d_image_with_bin_edges():
@@ -167,6 +172,9 @@ def test_plot_string_and_vector_axis_labels_2d():
     for i in range(N):
         vecs.append(np.random.random(3))
     d = sc.Dataset()
+    d['Signal'] = sc.Variable(['y', 'x'],
+                              values=np.random.random([M, N]),
+                              unit=sc.units.counts)
     d.coords['x'] = sc.Variable(['x'],
                                 values=vecs,
                                 unit=sc.units.m,
@@ -174,9 +182,6 @@ def test_plot_string_and_vector_axis_labels_2d():
     d.coords['y'] = sc.Variable(['y'],
                                 values=['a', 'b', 'c', 'd', 'e'],
                                 unit=sc.units.m)
-    d['Signal'] = sc.Variable(['y', 'x'],
-                              values=np.random.random([M, N]),
-                              unit=sc.units.counts)
     plot(d)
 
 
@@ -187,15 +192,15 @@ def test_plot_2d_with_dimension_of_size_1():
     y = np.arange(M, dtype=np.float64)
     z = np.arange(M + 1, dtype=np.float64)
     d = sc.Dataset()
-    d.coords['x'] = sc.Variable(['x'], values=x, unit=sc.units.m)
-    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
-    d.coords['z'] = sc.Variable(['z'], values=z, unit=sc.units.m)
     d['a'] = sc.Variable(['y', 'x'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
     d['b'] = sc.Variable(['z', 'x'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
+    d.coords['x'] = sc.Variable(['x'], values=x, unit=sc.units.m)
+    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
+    d.coords['z'] = sc.Variable(['z'], values=z, unit=sc.units.m)
     plot(d['a'])
     plot(d['b'])
 
@@ -244,8 +249,9 @@ def test_plot_2d_binned_data():
 def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
     data = make_binned_data_array(ndim=2)
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
-    plot_obj = plot(data)
+    plot_obj = sc.plot(data)
     plot_obj.widgets.slider[0].value = 1
+    plot_obj.close()
 
 
 def test_plot_3d_binned_data_where_inner_dimension_nas_no_event_coord():
@@ -273,9 +279,10 @@ def test_plot_customized_mpl_axes():
 
 def test_plot_access_ax_and_fig():
     d = make_dense_dataset(ndim=2)
-    out = plot(d["Sample"], title="MyTitle")
+    out = sc.plot(d["Sample"], title="MyTitle")
     out.ax.set_xlabel("MyXlabel")
     out.fig.set_dpi(120.)
+    out.close()
 
 
 def test_plot_2d_image_int32():
@@ -288,11 +295,11 @@ def test_plot_2d_image_int_coords():
     x = np.arange(N + 1)
     y = np.arange(M)
     d = sc.Dataset()
-    d.coords['x'] = sc.Variable(['x'], values=x, unit=sc.units.m)
-    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
     d['a'] = sc.Variable(['y', 'x'],
                          values=np.random.random([M, N]),
                          unit=sc.units.K)
+    d.coords['x'] = sc.Variable(['x'], values=x, unit=sc.units.m)
+    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
     plot(d)
 
 
@@ -309,4 +316,4 @@ def test_plot_2d_datetime():
                               'x': sc.Variable(['x'],
                                                values=np.linspace(0, 10, M))
                           })
-    data2d.plot()
+    data2d.plot().close()
