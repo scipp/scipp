@@ -78,7 +78,7 @@ def test_plot_1d_with_masks():
 
 def test_plot_collapse():
     d = make_dense_dataset(ndim=2)
-    plot(sc.collapse(d["Sample"], keep='tof'))
+    plot(sc.collapse(d["Sample"]['x', :10], keep='tof'))
 
 
 def test_plot_sliceviewer_with_1d_projection():

@@ -282,7 +282,6 @@ void main() {
                                transparent=True)
         return p3.Sprite(material=sm,
                          position=position,
-                         scaleToTexture=True,
                          scale=[size, size, size])
 
     def _generate_axis_ticks_and_labels(self, axparams):
