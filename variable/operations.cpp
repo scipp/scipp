@@ -8,6 +8,7 @@
 #include "scipp/variable/creation.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/variable_concept.h"
 
 #include "operations_common.h"
 

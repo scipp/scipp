@@ -13,6 +13,7 @@
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable_concept.h"
 
 namespace scipp::variable {
 
