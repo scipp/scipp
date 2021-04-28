@@ -22,14 +22,20 @@ if _debug_:
         'You are running a "Debug" build of scipp. For optimal performance use a "Release" build.'
     )
 
-from ._scipp.core import Variable, DataArray, Dataset, GroupByDataArray, \
-                         GroupByDataset
-from ._scipp.core import units, dtype, buckets, geometry
-from ._scipp.core import DTypeError, CoordError, UnitError
-from ._scipp.core import choose
 from ._scipp import __version__
-
-from . import detail
+# Import classes
+from ._scipp.core import Variable, DataArray, Dataset, GroupByDataArray, \
+                         GroupByDataset, Dim
+# Import errors
+from ._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
+                         DataArrayError, DatasetError, DimensionError, \
+                         DTypeError, NotFoundError, SizeError, SliceError, \
+                         UnitError, VariableError, VariancesError
+# Import submodules
+from ._scipp.core import units, dtype, buckets, geometry
+# Import functions
+from ._scipp.core import choose, logical_and, logical_or, logical_xor
+# Import python functions
 from .show import show, make_svg
 from .table import table
 from .plotting import plot

@@ -30,7 +30,7 @@ auto get_sort_order(const std::string &order) {
 template <typename T> void bind_dot(py::module &m) {
   m.def(
       "dot", [](const T &x, const T &y) { return dot(x, y); }, py::arg("x"),
-      py::arg("y"), py::call_guard<py::gil_scoped_release>(), doc.c_str());
+      py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_sort(py::module &m) {
