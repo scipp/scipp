@@ -79,13 +79,13 @@ def scalar(value: _Any,
     :rtype: Variable
     """
     if dtype is None:
-        return Variable(value=value, variance=variance, unit=unit)
+        return _cpp.Variable(value=value, variance=variance, unit=unit)
     else:
         try:
-            return Variable(value=value,
-                            variance=variance,
-                            unit=unit,
-                            dtype=dtype)
+            return _cpp.Variable(value=value,
+                                 variance=variance,
+                                 unit=unit,
+                                 dtype=dtype)
         except TypeError:
             # Raise a more comprehensible error message in the case
             # where a dtype cannot be specified.
@@ -116,11 +116,11 @@ def zeros(*,
       For example for a float type values and variances would all be
       initialised to 0.0. Default=False
     """
-    return Variable(dims=dims,
-                    shape=shape,
-                    unit=unit,
-                    dtype=dtype,
-                    variances=variances)
+    return _cpp.Variable(dims=dims,
+                         shape=shape,
+                         unit=unit,
+                         dtype=dtype,
+                         variances=variances)
 
 
 def zeros_like(var: _cpp.Variable) -> _cpp.Variable:
