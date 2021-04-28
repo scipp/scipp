@@ -56,7 +56,7 @@ void ElementArrayViewParams::requireContiguous() const {
     is_contiguous = false;
   } else {
     scipp::index expected_stride = 1;
-    for (scipp::index dim = m_iterDims.ndim() - 1; dim <= 0; --dim) {
+    for (scipp::index dim = m_iterDims.ndim() - 1; dim >= 0; --dim) {
       if (m_strides[dim] != expected_stride) {
         is_contiguous = false;
         break;
