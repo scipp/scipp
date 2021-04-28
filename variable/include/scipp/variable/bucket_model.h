@@ -28,8 +28,7 @@ public:
     if (unit != units::one)
       throw except::UnitError(
           "Bins cannot have a unit. Did you mean to set the unit of the bin "
-          "elements? This can be set, e.g., with `array.bins.data.unit = "
-          "'m'`.");
+          "elements? This can be set, e.g., with `array.events.unit = 'm'`.");
   }
 
   bool hasVariances() const noexcept override { return false; }
