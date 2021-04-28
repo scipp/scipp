@@ -38,6 +38,10 @@ TEST_F(CopyTest, dataset_with_bin_edge_coord) {
   auto a = Dataset{make_dataarray_with_bin_edges()};
   auto b = copy(a);
   EXPECT_EQ(a, b);
+  for (const auto &[dim, item] : b.coords()) {
+    EXPECT_NE(a.coords().at(dim).values<double>().data(),
+              item.values<double>().data());
+  }
 }
 
 TEST_F(CopyTest, data_array_drop_attrs) {
