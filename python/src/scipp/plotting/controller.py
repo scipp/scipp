@@ -111,11 +111,11 @@ class PlotController:
                 self.coord_labels[key][dim] = label
                 self.coord_units[key][dim] = unit
 
-        self.initialise_widgets(dim_to_shape[self.name])
-        self.initialise_view()
-        self.initialise_model()
+        self.initialize_widgets(dim_to_shape[self.name])
+        self.initialize_view()
+        self.initialize_model()
         if self.profile is not None:
-            self.initialise_profile()
+            self.initialize_profile()
             self.connect_profile()
 
         self.connect_widgets()
@@ -149,39 +149,39 @@ class PlotController:
             name = self.name
         return self.coord_units[name][dim]
 
-    def initialise_widgets(self, dim_to_shape):
+    def initialize_widgets(self, dim_to_shape):
         """
-        Initialise widget parameters once the `PlotModel`, `PlotView` and
+        Initialize widget parameters once the `PlotModel`, `PlotView` and
         `PlotController` have been created.
         """
         ranges = {}
         for dim in self.widgets.get_slider_bounds():
             ranges[dim] = self.model.get_slice_coord_bounds(
                 self.name, dim, [0, 1])
-        self.widgets.initialise(dim_to_shape, ranges,
+        self.widgets.initialize(dim_to_shape, ranges,
                                 self.coord_units[self.name])
 
-    def initialise_view(self):
+    def initialize_view(self):
         """
         Send axformatter information to the `PlotView`.
         """
-        self.view.initialise(
+        self.view.initialize(
             axformatters={
                 dim: self.model.get_axformatter(self.name, dim)
                 for dim in self.axes.values()
             })
 
-    def initialise_profile(self):
+    def initialize_profile(self):
         """
         Send axformatter information to the `PlotProfile`.
         """
-        self.profile.initialise(
+        self.profile.initialize(
             axformatters={
                 dim: self.model.get_axformatter(self.name, dim)
                 for dim in self.axes.values()
             })
 
-    def initialise_model(self):
+    def initialize_model(self):
         """
         Dummy initialization for `PlotModel`.
         """
