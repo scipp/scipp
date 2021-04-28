@@ -54,8 +54,8 @@ template <class T> struct MakeVariableDefaultInit {
 
 template <class ST> struct MakeODFromNativePythonTypes {
   template <class T> struct Maker {
-    static Variable apply(const units::Unit unit, const ST &value,
-                          const std::optional<ST> &variance) {
+    static Variable apply([[maybe_unused]] const units::Unit unit,
+                          const ST &value, const std::optional<ST> &variance) {
       if constexpr (std::is_same_v<T, core::time_point>) {
         if constexpr (std::is_integral_v<ST>) {
           if (variance.has_value()) {
