@@ -66,7 +66,7 @@ auto copy_impl(const Slices &slices, const Data &data, const Dim dim,
 template <class T>
 T GroupBy<T>::copy(const scipp::index group,
                    const AttrPolicy attrPolicy) const {
-  return copy_impl(groups()[group], m_data, dim());
+  return copy_impl(groups()[group], m_data, dim(), attrPolicy);
 }
 
 /// Helper for creating output for "combine" step for "apply" steps that reduce
