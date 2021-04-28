@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -8,12 +8,9 @@
 
 namespace scipp::dataset {
 
-template <class T>
-Variable concat_bins(const VariableConstView &var, const Dim dim);
+template <class T> Variable concat_bins(const Variable &var, const Dim dim);
 
-DataArray groupby_concat_bins(const DataArrayConstView &array,
-                              const VariableConstView &edges,
-                              const VariableConstView &groups,
-                              const Dim reductionDim);
+DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
+                              const Variable &groups, const Dim reductionDim);
 
 } // namespace scipp::dataset

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -35,12 +35,22 @@ using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
 }
 
 static constexpr auto histogram = overloaded{
-    element::arg_list<histogram_detail::args<float, double, float, double>,
-                      histogram_detail::args<float, int64_t, float, double>,
-                      histogram_detail::args<double, double, double, double>,
-                      histogram_detail::args<double, float, double, double>,
-                      histogram_detail::args<double, float, double, float>,
-                      histogram_detail::args<double, double, float, double>>,
+    element::arg_list<
+        histogram_detail::args<float, double, float, double>,
+        histogram_detail::args<float, int64_t, float, double>,
+        histogram_detail::args<float, int32_t, float, double>,
+        histogram_detail::args<double, double, double, double>,
+        histogram_detail::args<double, float, double, double>,
+        histogram_detail::args<double, float, double, float>,
+        histogram_detail::args<double, double, float, double>,
+        histogram_detail::args<double, int64_t, double, int64_t>,
+        histogram_detail::args<double, int32_t, double, int64_t>,
+        histogram_detail::args<double, int64_t, double, int32_t>,
+        histogram_detail::args<double, int32_t, double, int32_t>,
+        histogram_detail::args<double, time_point, double, time_point>,
+        histogram_detail::args<double, time_point, float, time_point>,
+        histogram_detail::args<float, time_point, double, time_point>,
+        histogram_detail::args<float, time_point, float, time_point>>,
     [](const auto &data, const auto &events, const auto &weights,
        const auto &edges) {
       zero(data);

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -15,7 +15,7 @@ namespace py = pybind11;
 template <class Function>
 void bind_component(const std::string xyz, Function func, py::module &gm) {
   gm.def(
-      xyz.c_str(), [func](const VariableConstView &pos) { return func(pos); },
+      xyz.c_str(), [func](const Variable &pos) { return func(pos); },
       py::arg("pos"), py::call_guard<py::gil_scoped_release>(),
       Docstring()
           .description("Un-zip functionality to produce a Variable of the " +
@@ -36,8 +36,9 @@ void init_geometry(py::module &m) {
 
   geom_m.def(
       "position",
-      [](const VariableConstView &x, const VariableConstView &y,
-         const VariableConstView &z) { return position(x, y, z); },
+      [](const Variable &x, const Variable &y, const Variable &z) {
+        return position(x, y, z);
+      },
       py::arg("x"), py::arg("y"), py::arg("z"),
       py::call_guard<py::gil_scoped_release>(),
       Docstring()

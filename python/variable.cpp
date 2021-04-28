@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -44,13 +44,12 @@ template <class T> void bind_init_0D(py::class_<Variable> &c) {
         py::arg("unit") = units::one);
   if constexpr (std::is_same_v<T, Variable> || std::is_same_v<T, DataArray> ||
                 std::is_same_v<T, Dataset>) {
-    c.def(
-        py::init([](const typename T::const_view_type &value,
-                    const std::optional<T> &variance, const units::Unit &unit) {
-          return do_init_0D(copy(value), variance, unit);
-        }),
-        py::arg("value"), py::arg("variance") = std::nullopt,
-        py::arg("unit") = units::one);
+    c.def(py::init([](const T &value, const std::optional<T> &variance,
+                      const units::Unit &unit) {
+            return do_init_0D(copy(value), variance, unit);
+          }),
+          py::arg("value"), py::arg("variance") = std::nullopt,
+          py::arg("unit") = units::one);
   }
 }
 
@@ -150,6 +149,11 @@ void bind_init_0D_list_eigen(py::class_<Variable> &c) {
 }
 
 void init_variable(py::module &m) {
+  // Needed to let numpy arrays keep alive the scipp buffers.
+  // VariableConcept must ALWAYS be passed to Python by its handle.
+  py::class_<VariableConcept, VariableConceptHandle> variable_concept(
+      m, "_VariableConcept");
+
   py::class_<Variable> variable(m, "Variable",
                                 R"(
 Array of values with dimension labels and a unit, optionally including an array
@@ -201,8 +205,7 @@ of variances.)");
           "__rtruediv__",
           [](Variable &a, int &b) { return (b * units::one) / a; },
           py::is_operator())
-      .def("__sizeof__",
-           py::overload_cast<const VariableConstView &>(&size_of));
+      .def("__sizeof__", py::overload_cast<const Variable &>(&size_of));
 
   bind_init_list(variable);
   // Order matters for pybind11's overload resolution. Do not change.
@@ -214,103 +217,33 @@ of variances.)");
   bind_init_0D_list_eigen(variable);
   //------------------------------------
 
-  py::class_<VariableConstView> variableConstView(m, "VariableConstView");
-  variableConstView.def(py::init<const Variable &>())
-      .def("__sizeof__",
-           py::overload_cast<const VariableConstView &>(&size_of));
-
-  py::class_<VariableView, VariableConstView> variableView(m, "VariableView",
-                                                           R"(
-View for Variable, representing a sliced or transposed view onto a variable;
-Mostly equivalent to Variable, see there for details.)");
-  variableView.def(py::init<Variable &>())
-      .def(
-          "__radd__",
-          [](VariableView &a, double &b) { return a + b * units::one; },
-          py::is_operator())
-      .def(
-          "__rsub__",
-          [](VariableView &a, double &b) { return b * units::one - a; },
-          py::is_operator())
-      .def(
-          "__rmul__",
-          [](VariableView &a, double &b) { return a * (b * units::one); },
-          py::is_operator());
-
   bind_common_operators(variable);
-  bind_common_operators(variableConstView);
 
   bind_astype(variable);
-  bind_astype(variableView);
 
   bind_slice_methods(variable);
-  bind_slice_methods(variableView);
 
   bind_comparison<Variable>(variable);
-  bind_comparison<VariableConstView>(variable);
-  bind_comparison<Variable>(variableView);
-  bind_comparison<VariableConstView>(variableView);
-  bind_comparison<DataArrayConstView>(variableView);
 
   bind_in_place_binary<Variable>(variable);
-  bind_in_place_binary<VariableConstView>(variable);
-  bind_in_place_binary<Variable>(variableView);
-  bind_in_place_binary<VariableConstView>(variableView);
   bind_in_place_binary_scalars(variable);
-  bind_in_place_binary_scalars(variableView);
 
   bind_binary<Variable>(variable);
-  bind_binary<VariableConstView>(variable);
-  bind_binary<DataArrayView>(variable);
-  bind_binary<Variable>(variableView);
-  bind_binary<VariableConstView>(variableView);
-  bind_binary<DataArrayView>(variableView);
+  bind_binary<DataArray>(variable);
   bind_binary_scalars(variable);
-  bind_binary_scalars(variableView);
 
   bind_unary(variable);
-  bind_unary(variableView);
 
   bind_boolean_unary(variable);
-  bind_boolean_unary(variableView);
   bind_logical<Variable>(variable);
-  bind_logical<Variable>(variableView);
 
   bind_data_properties(variable);
-  bind_data_properties(variableView);
 
   py::implicitly_convertible<std::string, Dim>();
-  py::implicitly_convertible<Variable, VariableConstView>();
-  py::implicitly_convertible<Variable, VariableView>();
-
-  m.def(
-      "filter", py::overload_cast<const Variable &, const Variable &>(&filter),
-      py::arg("x"), py::arg("filter"), py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description(
-              "Selects elements for a Variable using a filter (mask).\n\n"
-              "The filter variable must be 1D and of bool type. "
-              "A true value in the filter means the corresponding element in "
-              "the input is "
-              "selected and will be copied to the output. "
-              "A false value in the filter discards the corresponding element "
-              "in the input.")
-          .raises("If the filter variable is not 1 dimensional.")
-          .returns("New variable containing the data selected by the filter.")
-          .rtype("Variable")
-          .param("x", "Variable to filter.", "Variable.")
-          .param("filter", "Variable which defines the filter.", "Variable.")
-          .c_str());
-
-  m.def("split",
-        py::overload_cast<const Variable &, const Dim,
-                          const std::vector<scipp::index> &>(&split),
-        py::call_guard<py::gil_scoped_release>(),
-        "Split a Variable along a given Dimension.");
 
   m.def(
       "islinspace",
-      [](const VariableConstView &x) {
+      [](const Variable &x) {
         if (x.dims().ndim() != 1)
           throw scipp::except::VariableError(
               "islinspace can only be called on a 1D Variable.");
@@ -326,9 +259,8 @@ Mostly equivalent to Variable, see there for details.)");
           .c_str());
 
   m.def("rebin",
-        py::overload_cast<const VariableConstView &, const Dim,
-                          const VariableConstView &, const VariableConstView &>(
-            &rebin),
+        py::overload_cast<const Variable &, const Dim, const Variable &,
+                          const Variable &>(&rebin),
         py::arg("x"), py::arg("dim"), py::arg("old"), py::arg("new"),
         py::call_guard<py::gil_scoped_release>(),
         Docstring()

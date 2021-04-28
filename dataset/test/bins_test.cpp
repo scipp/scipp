@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -6,6 +6,7 @@
 
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/bins.h"
@@ -19,18 +20,17 @@ using namespace scipp::dataset;
 class DataArrayBinsTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
-  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+  Variable indices = makeVariable<scipp::index_pair>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable data =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   DataArray buffer = DataArray(data, {{Dim::X, data + data}});
-  Variable var = make_bins(indices, Dim::X, buffer);
+  Variable var = make_bins(indices, Dim::X, copy(buffer));
 };
 
 TEST_F(DataArrayBinsTest, concatenate_dim_1d) {
   Variable expected_indices =
-      makeVariable<std::pair<scipp::index, scipp::index>>(
-          Values{std::pair{0, 4}});
+      makeVariable<scipp::index_pair>(Values{std::pair{0, 4}});
   Variable expected = make_bins(expected_indices, Dim::X, buffer);
   EXPECT_EQ(buckets::concatenate(var, Dim::Y), expected);
 }
@@ -49,21 +49,21 @@ TEST_F(DataArrayBinsTest, concatenate_dim_1d_masked) {
 }
 
 TEST(DataArrayBins2dTest, concatenate_dim_2d) {
-  Variable indicesZY = makeVariable<std::pair<scipp::index, scipp::index>>(
-      Dims{Dim::Z, Dim::Y}, Shape{2, 2},
-      Values{std::pair{0, 2}, std::pair{2, 3}, std::pair{4, 6},
-             std::pair{6, 6}});
+  Variable indicesZY =
+      makeVariable<scipp::index_pair>(Dims{Dim::Z, Dim::Y}, Shape{2, 2},
+                                      Values{std::pair{0, 2}, std::pair{2, 3},
+                                             std::pair{4, 6}, std::pair{6, 6}});
   Variable data =
       makeVariable<double>(Dims{Dim::X}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
   DataArray buffer = DataArray(data, {{Dim::X, data + data}});
   Variable zy = make_bins(indicesZY, Dim::X, buffer);
 
   // Note that equality ignores data not in any bin.
-  Variable indicesZ = makeVariable<std::pair<scipp::index, scipp::index>>(
+  Variable indicesZ = makeVariable<scipp::index_pair>(
       Dims{Dim::Z}, Shape{2}, Values{std::pair{0, 3}, std::pair{4, 6}});
   Variable z = make_bins(indicesZ, Dim::X, buffer);
 
-  Variable indicesY = makeVariable<std::pair<scipp::index, scipp::index>>(
+  Variable indicesY = makeVariable<scipp::index_pair>(
       Dims{Dim::Y}, Shape{2}, Values{std::pair{0, 4}, std::pair{4, 5}});
   data = makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{1, 2, 5, 6, 3});
   buffer = DataArray(data, {{Dim::X, data + data}});
@@ -79,7 +79,7 @@ TEST(DataArrayBins2dTest, concatenate_dim_2d) {
 
 TEST_F(DataArrayBinsTest, concatenate) {
   const auto result = buckets::concatenate(var, var * (3.0 * units::one));
-  Variable out_indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+  Variable out_indices = makeVariable<scipp::index_pair>(
       dims, Values{std::pair{0, 4}, std::pair{4, 8}});
   Variable out_data = makeVariable<double>(Dims{Dim::X}, Shape{8},
                                            Values{1, 2, 3, 6, 3, 4, 9, 12});
@@ -95,11 +95,11 @@ TEST_F(DataArrayBinsTest, concatenate) {
 }
 
 TEST_F(DataArrayBinsTest, concatenate_with_broadcast) {
-  auto var2 = var;
+  auto var2 = copy(var);
   var2.rename(Dim::Y, Dim::Z);
   var2 *= 3.0 * units::one;
   const auto result = buckets::concatenate(var, var2);
-  Variable out_indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+  Variable out_indices = makeVariable<scipp::index_pair>(
       Dims{Dim::Y, Dim::Z}, Shape{2, 2},
       Values{std::pair{0, 4}, std::pair{4, 8}, std::pair{8, 12},
              std::pair{12, 16}});
@@ -177,9 +177,8 @@ TEST_F(DataArrayBinsTest, sum) {
 }
 
 TEST_F(DataArrayBinsTest, operations_on_empty) {
-  const Variable empty_indices =
-      makeVariable<std::pair<scipp::index, scipp::index>>(
-          Dimensions{{Dim::Y, 0}, {Dim::Z, 0}}, Values{});
+  const Variable empty_indices = makeVariable<scipp::index_pair>(
+      Dimensions{{Dim::Y, 0}, {Dim::Z, 0}}, Values{});
   const Variable binned = make_bins(empty_indices, Dim::X, data);
 
   EXPECT_EQ(abs(binned), binned);
@@ -190,7 +189,7 @@ TEST_F(DataArrayBinsTest, operations_on_empty) {
 class DataArrayBinsMapTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
-  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+  Variable indices = makeVariable<scipp::index_pair>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable data =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
@@ -242,7 +241,7 @@ TEST_F(DataArrayBinsMapTest, map_masked) {
 class DataArrayBinsScaleTest : public ::testing::Test {
 protected:
   auto make_indices() const {
-    return makeVariable<std::pair<scipp::index, scipp::index>>(
+    return makeVariable<scipp::index_pair>(
         Dims{Dim::Y, Dim::X}, Shape{2, 1},
         Values{std::pair{0, 3}, std::pair{3, 7}});
   }
@@ -274,7 +273,7 @@ protected:
   }
 
   auto make_buckets(const DataArray &events,
-                    const std::map<Dim, VariableConstView> coords = {}) const {
+                    const std::map<Dim, Variable> coords = {}) const {
     auto array = DataArray(make_bins(make_indices(), Dim("event"), events));
     for (const auto &[dim, coord] : coords)
       array.coords().set(dim, coord);
@@ -320,7 +319,7 @@ TEST_F(DataArrayBinsScaleTest, events_times_histogram) {
       Dims{Dim("event")}, Shape{7}, Values{2.0, 3.0, 3.0, 2.0, 2.0, 3.0, 0.0},
       Variances{0.3, 0.4, 0.4, 0.3, 0.3, 0.4, 0.0});
   auto expected_events = events;
-  expected_events.data().assign(expected_weights);
+  copy(expected_weights, expected_events.data());
 
   EXPECT_EQ(buckets, make_buckets(expected_events));
 }
@@ -355,15 +354,15 @@ protected:
 
   DataArrayBinsPlusMinusTest() {
     eventsA = make_events();
-    eventsB = eventsA;
+    eventsB = copy(eventsA);
     eventsB.coords()[Dim::X] += 0.01 * units::us;
     eventsB = concatenate(eventsB, eventsA, Dim("event"));
     eventsB.coords()[Dim::X] += 0.02 * units::us;
-    a = DataArray(make_bins(makeVariable<std::pair<scipp::index, scipp::index>>(
+    a = DataArray(make_bins(makeVariable<scipp::index_pair>(
                                 Dims{Dim::Y, Dim::X}, Shape{2, 1},
                                 Values{std::pair{0, 3}, std::pair{3, 7}}),
                             Dim("event"), eventsA));
-    b = DataArray(make_bins(makeVariable<std::pair<scipp::index, scipp::index>>(
+    b = DataArray(make_bins(makeVariable<scipp::index_pair>(
                                 Dims{Dim::Y, Dim::X}, Shape{2, 1},
                                 Values{std::pair{0, 5}, std::pair{5, 14}}),
                             Dim("event"), eventsB));
@@ -391,7 +390,7 @@ TEST_F(DataArrayBinsPlusMinusTest, minus) {
 }
 
 TEST_F(DataArrayBinsPlusMinusTest, plus_equals) {
-  auto out(a);
+  auto out = copy(a);
   buckets::append(out, b);
   EXPECT_EQ(out, buckets::concatenate(a, b));
   buckets::append(out, -b);
@@ -401,13 +400,13 @@ TEST_F(DataArrayBinsPlusMinusTest, plus_equals) {
 }
 
 TEST_F(DataArrayBinsPlusMinusTest, plus_equals_self) {
-  auto out(a);
+  auto out = copy(a);
   buckets::append(out, out);
   EXPECT_EQ(out, buckets::concatenate(a, a));
 }
 
 TEST_F(DataArrayBinsPlusMinusTest, minus_equals) {
-  auto out(a);
+  auto out = copy(a);
   buckets::append(out, -b);
   EXPECT_EQ(out, buckets::concatenate(a, -b));
 }
@@ -415,7 +414,7 @@ TEST_F(DataArrayBinsPlusMinusTest, minus_equals) {
 class DatasetBinsTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
-  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+  Variable indices = makeVariable<scipp::index_pair>(
       dims, Values{std::pair{0, 2}, std::pair{2, 3}});
   Variable column =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
@@ -442,8 +441,8 @@ protected:
 };
 
 TEST_F(DatasetBinsTest, concatenate) {
-  buffer0.coords().set(Dim::X, column);
-  buffer1.coords().set(Dim::X, column + column);
+  buffer0.setCoord(Dim::X, column);
+  buffer1.setCoord(Dim::X, column + column);
   check();
   buffer0.setData("a", column * column);
   check_fail();

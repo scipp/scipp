@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Piotr Rozyczko
@@ -14,8 +14,8 @@ namespace scipp::variable {
 enum class NanComparisons { Equal, NotEqual };
 
 SCIPP_VARIABLE_EXPORT Variable
-isclose(const VariableConstView &a, const VariableConstView &b,
-        const VariableConstView rtol, const VariableConstView atol,
+isclose(const Variable &a, const Variable &b, const Variable &rtol,
+        const Variable &atol,
         const NanComparisons equal_nans = NanComparisons::NotEqual);
 
 } // namespace scipp::variable

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -67,9 +67,9 @@ template <class Gen> static void BM_Variable_copy(benchmark::State &state) {
   const auto axisLength = state.range(0);
   auto [var, size] = Gen()(axisLength);
   for (auto _ : state) {
-    Variable copy(var);
+    Variable copied = copy(var);
     state.PauseTiming();
-    copy = Variable();
+    copied = Variable();
     state.ResumeTiming();
   }
   constexpr auto read_write_factor = 3;
@@ -118,8 +118,7 @@ static void BM_Variable_trivial_slice(benchmark::State &state) {
       makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{10, 20, 30});
 
   for (auto _ : state) {
-    VariableView view(var);
-    Variable copy(view);
+    Variable copied = copy(var);
   }
 }
 BENCHMARK(BM_Variable_trivial_slice);
@@ -175,10 +174,10 @@ static void BM_VariableView_assign_1d(benchmark::State &state) {
 
   const auto a = makeVariable<double>(Dims{Dim::X}, Shape{size});
   auto b = makeVariable<double>(Dims{Dim::X}, Shape{size});
-  VariableView bb(b);
+  Variable bb = copy(b);
 
   for (auto _ : state) {
-    bb.assign(a);
+    copy(a, bb);
   }
 
   constexpr auto read_write_factor = 3;

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import numpy as np
@@ -85,6 +85,24 @@ def test_lifetime_scalar_py_object():
     assert val[-1] == 1
 
 
+def test_lifetime_scalar_nested():
+    var = sc.scalar(sc.array(dims=['x'], values=np.array([0, 1])))
+    arr = var.value.values
+    var.value = sc.array(dims=['x'], values=np.array([2, 3]))
+    import gc
+    gc.collect()
+    np.testing.assert_array_equal(arr, [0, 1])
+
+
+def test_lifetime_scalar_nested_string():
+    var = sc.scalar(sc.array(dims=['x'], values=np.array(['abc', 'def'])))
+    arr = var.value.values
+    var.value = sc.array(dims=['x'], values=np.array(['ghi', 'jkl']))
+    import gc
+    gc.collect()
+    np.testing.assert_array_equal(arr, ['abc', 'def'])
+
+
 def test_lifetime_scalar():
     elem = sc.Variable(['x'], values=np.arange(100000))
     var = sc.Variable(value=elem)
@@ -94,6 +112,17 @@ def test_lifetime_scalar():
     gc.collect()
     var.copy()  # do something allocating memory to trigger potential segfault
     assert sc.identical(vals, elem)
+
+
+def test_lifetime_array():
+    var = sc.Variable(dims=['x'], values=np.arange(5))
+    array = var.values
+    del var
+    import gc
+    gc.collect()
+    # do something allocating memory to trigger potential segfault
+    sc.Variable(dims=['x'], values=np.arange(5, 10))
+    assert np.array_equal(array, np.arange(5))
 
 
 def test_lifetime_string_array():

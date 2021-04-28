@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Igor Gudich & Neil Vaytet
@@ -314,6 +314,7 @@ class TableViewer:
                                          width="auto",
                                          display='flex',
                                          flex_flow='column'))
+        self.box.add_class('sc-root')  # needed to apply style
         return
 
     def make_dict(self):

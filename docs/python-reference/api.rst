@@ -6,16 +6,13 @@ Classes
 .. autosummary::
    :toctree: ../generated
 
-   Unit
-   Variable
-   VariableView
+   Bins
    DataArray
-   DataArrayView
    Dataset
-   DatasetView
    GroupByDataArray
    GroupByDataset
-   Bins
+   Unit
+   Variable
 
 Creation functions
 ==================
@@ -24,10 +21,17 @@ Creation functions
    :toctree: ../generated
 
    array
+   arange
+   empty
+   empty_like
+   geomspace
+   linspace
+   logspace
+   ones
+   ones_like
    scalar
    zeros
-   ones
-   empty
+   zeros_like
 
 Free functions
 ==============
@@ -45,7 +49,6 @@ General
    collapse
    dot
    exp
-   filter
    histogram
    log
    log10

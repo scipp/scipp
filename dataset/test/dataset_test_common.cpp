@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <algorithm>
 
@@ -56,7 +56,7 @@ void DatasetFactory3D::seed(const uint32_t value) {
 }
 
 Dataset DatasetFactory3D::make(const bool randomMasks) {
-  Dataset dataset(base);
+  Dataset dataset = copy(base);
   dataset.setData("values_x", makeVariable<double>(Dimensions{m_dim, lx},
                                                    Values(rand(lx))));
   dataset.setData("data_x",
@@ -84,34 +84,32 @@ Dataset DatasetFactory3D::make(const bool randomMasks) {
   if (randomMasks) {
     for (const auto &item :
          {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
-      dataset.setMask(
-          item, "masks_x",
+      dataset[item].masks().set(
+          "masks_x",
           makeVariable<bool>(Dimensions{m_dim, lx}, Values(randBool(lx))));
     for (const auto &item : {"data_xy", "data_zyx", "data_xyz"})
-      dataset.setMask(item, "masks_xy",
-                      makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
+      dataset[item].masks().set(
+          "masks_xy", makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
                                          Values(randBool(lx * ly))));
     for (const auto &item : {"data_zyx", "data_xyz"})
-      dataset.setMask(
-          item, "masks_z",
+      dataset[item].masks().set(
+          "masks_z",
           makeVariable<bool>(Dimensions{Dim::Z, lz}, Values(randBool(lz))));
   } else {
     for (const auto &item :
          {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
-      dataset.setMask(
-          item, "masks_x",
-          makeVariable<bool>(Dimensions{m_dim, lx},
-                             Values(make_bools(lx, {false, true}))));
+      dataset[item].masks().set(
+          "masks_x", makeVariable<bool>(Dimensions{m_dim, lx},
+                                        Values(make_bools(lx, {false, true}))));
     for (const auto &item : {"data_xy", "data_zyx", "data_xyz"})
-      dataset.setMask(
-          item, "masks_xy",
+      dataset[item].masks().set(
+          "masks_xy",
           makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
                              Values(make_bools(lx * ly, {false, true}))));
     for (const auto &item : {"data_zyx", "data_xyz"})
-      dataset.setMask(
-          item, "masks_z",
-          makeVariable<bool>(Dimensions{Dim::Z, lz},
-                             Values(make_bools(lz, {false, true}))));
+      dataset[item].masks().set(
+          "masks_z", makeVariable<bool>(Dimensions{Dim::Z, lz},
+                                        Values(make_bools(lz, {false, true}))));
   }
 
   return dataset;

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -43,42 +43,41 @@ template <class T> class DataModel : public VariableConcept {
 public:
   using value_type = T;
 
-  DataModel(const Dimensions &dimensions, element_array<T> model,
+  DataModel(const scipp::index size, const units::Unit &unit,
+            element_array<T> model,
             std::optional<element_array<T>> variances = std::nullopt)
-      : VariableConcept(dimensions),
+      : VariableConcept(unit),
         m_values(model ? std::move(model)
-                       : element_array<T>(dimensions.volume(),
-                                          default_init<T>::value())),
+                       : element_array<T>(size, default_init<T>::value())),
         m_variances(std::move(variances)) {
     if (m_variances && !core::canHaveVariances<T>())
       throw except::VariancesError("This data type cannot have variances.");
-    if (this->dims().volume() != scipp::size(m_values))
+    if (size != scipp::size(m_values))
       throw except::DimensionError(
           "Creating Variable: data size does not match "
           "volume given by dimension extents.");
     if (m_variances && !*m_variances)
-      *m_variances =
-          element_array<T>(dimensions.volume(), default_init<T>::value());
+      *m_variances = element_array<T>(size, default_init<T>::value());
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
   DType dtype() const noexcept override { return scipp::dtype<T>; }
+  scipp::index size() const override { return m_values.size(); }
 
   VariableConceptHandle
-  makeDefaultFromParent(const Dimensions &dims) const override;
+  makeDefaultFromParent(const scipp::index size) const override;
 
   VariableConceptHandle
-  makeDefaultFromParent(const VariableConstView &shape) const override {
-    return makeDefaultFromParent(shape.dims());
+  makeDefaultFromParent(const Variable &shape) const override {
+    return makeDefaultFromParent(shape.dims().volume());
   }
 
-  bool equals(const VariableConstView &a,
-              const VariableConstView &b) const override;
-  void copy(const VariableConstView &src,
-            const VariableView &dest) const override;
+  bool equals(const Variable &a, const Variable &b) const override;
+  void copy(const Variable &src, Variable &dest) const override;
+  void copy(const Variable &src, Variable &&dest) const override;
   void assign(const VariableConcept &other) override;
 
-  void setVariances(Variable &&variances) override;
+  void setVariances(const Variable &variances) override;
 
   VariableConceptHandle clone() const override {
     return std::make_unique<DataModel<T>>(*this);
@@ -104,8 +103,16 @@ public:
   }
 
   scipp::index dtype_size() const override { return sizeof(T); }
-  VariableConstView bin_indices() const override {
+  const VariableConceptHandle &bin_indices() const override {
     throw except::TypeError("This data type does not have bin indices.");
+  }
+
+  scipp::span<const T> values() const {
+    return {m_values.data(), m_values.data() + m_values.size()};
+  }
+
+  scipp::span<T> values() {
+    return {m_values.data(), m_values.data() + m_values.size()};
   }
 
 private:
@@ -127,13 +134,12 @@ template <class T> DataModel<T> &cast(Variable &var) {
 
 template <class T>
 VariableConceptHandle
-DataModel<T>::makeDefaultFromParent(const Dimensions &dims) const {
+DataModel<T>::makeDefaultFromParent(const scipp::index size) const {
   if (hasVariances())
-    return std::make_unique<DataModel<T>>(dims, element_array<T>(dims.volume()),
-                                          element_array<T>(dims.volume()));
+    return std::make_unique<DataModel<T>>(size, unit(), element_array<T>(size),
+                                          element_array<T>(size));
   else
-    return std::make_unique<DataModel<T>>(dims,
-                                          element_array<T>(dims.volume()));
+    return std::make_unique<DataModel<T>>(size, unit(), element_array<T>(size));
 }
 
 /// Helper for implementing Variable(View)::operator==.
@@ -141,8 +147,7 @@ DataModel<T>::makeDefaultFromParent(const Dimensions &dims) const {
 /// This method is using virtual dispatch as a trick to obtain T, such that
 /// values<T> and variances<T> can be compared.
 template <class T>
-bool DataModel<T>::equals(const VariableConstView &a,
-                          const VariableConstView &b) const {
+bool DataModel<T>::equals(const Variable &a, const Variable &b) const {
   if (a.unit() != b.unit())
     return false;
   if (a.dims() != b.dims())
@@ -157,34 +162,41 @@ bool DataModel<T>::equals(const VariableConstView &a,
          (!a.hasVariances() || equals_impl(a.variances<T>(), b.variances<T>()));
 }
 
+namespace {
+template <class T> auto copy(const T &x) { return x; }
+constexpr auto do_copy = [](auto &a, const auto &b) { a = copy(b); };
+} // namespace
+
 /// Helper for implementing Variable(View) copy operations.
 ///
 /// This method is using virtual dispatch as a trick to obtain T, such that
 /// transform can be called with any T.
 template <class T>
-void DataModel<T>::copy(const VariableConstView &src,
-                        const VariableView &dest) const {
+void DataModel<T>::copy(const Variable &src, Variable &dest) const {
   transform_in_place<T>(
       dest, src,
       overloaded{core::transform_flags::expect_in_variance_if_out_variance,
-                 [](auto &a, const auto &b) { a = b; }});
+                 do_copy});
+}
+template <class T>
+void DataModel<T>::copy(const Variable &src, Variable &&dest) const {
+  copy(src, dest);
 }
 
 template <class T> void DataModel<T>::assign(const VariableConcept &other) {
   *this = requireT<const DataModel<T>>(other);
 }
 
-template <class T> void DataModel<T>::setVariances(Variable &&variances) {
+template <class T> void DataModel<T>::setVariances(const Variable &variances) {
   if (!core::canHaveVariances<T>())
     throw except::VariancesError("This data type cannot have variances.");
   if (!variances)
     return m_variances.reset();
+  // TODO Could move if refcount is 1?
   if (variances.hasVariances())
     throw except::VariancesError(
         "Cannot set variances from variable with variances.");
-  core::expect::equals(this->dims(), variances.dims());
-  m_variances.emplace(
-      std::move(requireT<DataModel>(variances.data()).m_values));
+  m_variances.emplace(requireT<const DataModel>(variances.data()).m_values);
 }
 
 } // namespace scipp::variable

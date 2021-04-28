@@ -1,5 +1,5 @@
 # ~~~
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
 pybind11_add_module(
@@ -14,7 +14,6 @@ pybind11_add_module(
   creation.cpp
   cumulative.cpp
   dataset.cpp
-  detail.cpp
   docstring.cpp
   dtype.cpp
   eigen.cpp
@@ -47,11 +46,10 @@ target_compile_definitions(_scipp PRIVATE SCIPP_EXPORT=)
 # Set symbol visibility to hidden to reduce binary size, as recommended in
 # pybind11 FAQ.
 set_target_properties(_scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
-if(UNIX AND NOT APPLE)
-  set_target_properties(_scipp PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
-elseif(APPLE)
-  set_target_properties(_scipp PROPERTIES INSTALL_RPATH "@loader_path/../lib")
-endif()
+set_target_properties(
+  _scipp PROPERTIES INSTALL_RPATH
+                    "${CMAKE_INSTALL_RPATH}/../${CMAKE_INSTALL_LIBDIR}"
+)
 
 if(PRECOMPILED_HEADERS)
   target_precompile_headers(_scipp PRIVATE pybind11.h)

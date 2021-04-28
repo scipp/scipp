@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -15,8 +15,7 @@ protected:
   template <class D> T access(D &dataset) { return dataset; }
 };
 
-using DatasetViewTypes =
-    ::testing::Types<Dataset &, const Dataset &, DatasetView, DatasetConstView>;
+using DatasetViewTypes = ::testing::Types<Dataset &, const Dataset &>;
 TYPED_TEST_SUITE(DatasetViewTest, DatasetViewTypes);
 
 TYPED_TEST(DatasetViewTest, empty) {
@@ -81,9 +80,9 @@ TYPED_TEST(DatasetViewTest, find_in_slice) {
 
   EXPECT_EQ(slice.find("a")->name(), "a");
   EXPECT_EQ(*slice.find("a"), slice["a"]);
-  EXPECT_EQ(slice.find("b"), slice.end());
+  EXPECT_NE(slice.find("b"), slice.end()); // not removed by slicing
   EXPECT_TRUE(slice.contains("a"));
-  EXPECT_FALSE(slice.contains("b"));
+  EXPECT_TRUE(slice.contains("b"));
 }
 
 TYPED_TEST(DatasetViewTest, iterators_empty_dataset) {

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -7,31 +7,16 @@
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
+#include "scipp/dataset/string.h"
 
 namespace scipp::dataset {
 
-std::ostream &operator<<(std::ostream &os, const DataArrayConstView &data) {
+std::ostream &operator<<(std::ostream &os, const DataArray &data) {
   return os << to_string(data);
 }
 
-std::ostream &operator<<(std::ostream &os, const DataArrayView &data) {
-  return os << DataArrayConstView(data);
-}
-
-std::ostream &operator<<(std::ostream &os, const DataArray &data) {
-  return os << DataArrayConstView(data);
-}
-
-std::ostream &operator<<(std::ostream &os, const DatasetConstView &dataset) {
-  return os << to_string(dataset);
-}
-
-std::ostream &operator<<(std::ostream &os, const DatasetView &dataset) {
-  return os << DatasetConstView(dataset);
-}
-
 std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
-  return os << DatasetConstView(dataset);
+  return os << to_string(dataset);
 }
 
 constexpr const char *tab = "  ";
@@ -42,7 +27,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
 template <class T> auto sorted(const T &map) {
   using core::to_string;
-  std::vector<std::pair<std::string, VariableConstView>> elems;
+  std::vector<std::pair<std::string, Variable>> elems;
   for (const auto [dim, var] : map)
     elems.emplace_back(to_string(dim), var);
   std::sort(elems.begin(), elems.end(),
@@ -51,7 +36,7 @@ template <class T> auto sorted(const T &map) {
 }
 
 template <class Key>
-auto format_data_view(const Key &name, const DataArrayConstView &data,
+auto format_data_view(const Key &name, const DataArray &data,
                       const Dimensions &datasetDims, const std::string &shift,
                       const bool inline_meta) {
   std::stringstream s;
@@ -82,9 +67,8 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if (!dataset.coords().empty()) {
     s << shift << "Coordinates:\n";
-    CoordsConstView map;
-    if constexpr (std::is_same_v<D, DataArray> ||
-                  std::is_same_v<D, DataArrayConstView>)
+    Coords map;
+    if constexpr (std::is_same_v<D, DataArray>)
       map = dataset.coords();
     else
       map = dataset.coords();
@@ -92,8 +76,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
       s << shift << format_variable(name, var, dims);
   }
 
-  if constexpr (std::is_same_v<D, DataArray> ||
-                std::is_same_v<D, DataArrayConstView>) {
+  if constexpr (std::is_same_v<D, DataArray>) {
     s << shift << "Data:\n"
       << format_data_view(dataset.name(), dataset, dims, shift, true);
   } else {
@@ -110,27 +93,12 @@ std::string do_to_string(const D &dataset, const std::string &id,
   return s.str();
 }
 
-template <class T> Dimensions dimensions(const T &dataset) {
-  Dimensions dims;
-  for (const auto &[dim, size] : dataset.dimensions())
-    dims.add(dim, size);
-  return dims;
-}
-
 std::string to_string(const DataArray &data) {
   return do_to_string(data, "<scipp.DataArray>", data.dims());
 }
 
-std::string to_string(const DataArrayConstView &data) {
-  return do_to_string(data, "<scipp.DataArrayView>", data.dims());
-}
-
 std::string to_string(const Dataset &dataset) {
-  return do_to_string(dataset, "<scipp.Dataset>", dimensions(dataset));
-}
-
-std::string to_string(const DatasetConstView &dataset) {
-  return do_to_string(dataset, "<scipp.DatasetView>", dimensions(dataset));
+  return do_to_string(dataset, "<scipp.Dataset>", Dimensions(dataset.sizes()));
 }
 
 } // namespace scipp::dataset

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
@@ -283,15 +283,15 @@ def test_data_array_round_trip():
 
 def test_dataset_to_dict():
     ds = sc.Dataset()
-    ds.coords["x"] = sc.Variable(dims=["x"], values=np.arange(10))
-    ds.coords["y"] = sc.Variable(dims=["y"],
-                                 values=np.arange(5),
-                                 unit=sc.units.m)
     ds["a"] = sc.Variable(dims=["y", "x"], values=np.random.random([5, 10]))
     ds["b"] = sc.Variable(dims=["y", "x"],
                           values=np.random.random([5, 10]),
                           variances=np.random.random([5, 10]),
                           unit=sc.units.s)
+    ds.coords["x"] = sc.Variable(dims=["x"], values=np.arange(10))
+    ds.coords["y"] = sc.Variable(dims=["y"],
+                                 values=np.arange(5),
+                                 unit=sc.units.m)
     ds["a"].masks["amask"] = sc.Variable(
         dims=["y"], values=[True, True, False, True, False])
     # Note that attributes complicate things here, as they are duplicated in
@@ -359,15 +359,15 @@ def test_dataset_from_dict():
 
 def test_dataset_round_trip():
     ds = sc.Dataset()
-    ds.coords["x"] = sc.Variable(dims=["x"], values=np.arange(10))
-    ds.coords["y"] = sc.Variable(dims=["y"],
-                                 values=np.arange(5),
-                                 unit=sc.units.m)
     ds["a"] = sc.Variable(dims=["y", "x"], values=np.random.random([5, 10]))
     ds["b"] = sc.Variable(dims=["y", "x"],
                           values=np.random.random([5, 10]),
                           variances=np.random.random([5, 10]),
                           unit=sc.units.s)
+    ds.coords["x"] = sc.Variable(dims=["x"], values=np.arange(10))
+    ds.coords["y"] = sc.Variable(dims=["y"],
+                                 values=np.arange(5),
+                                 unit=sc.units.m)
     ds["a"].masks["amask"] = sc.Variable(
         dims=["y"], values=[True, True, False, True, False])
     # Note that round trip would not work if attrs are present, since they get

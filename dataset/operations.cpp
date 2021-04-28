@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -16,7 +16,7 @@
 
 namespace scipp::dataset {
 
-auto union_(const DatasetConstView &a, const DatasetConstView &b) {
+auto union_(const Dataset &a, const Dataset &b) {
   std::map<std::string, DataArray> out;
 
   for (const auto &item : a)
@@ -30,52 +30,115 @@ auto union_(const DatasetConstView &a, const DatasetConstView &b) {
   return out;
 }
 
-Dataset merge(const DatasetConstView &a, const DatasetConstView &b) {
+Dataset merge(const Dataset &a, const Dataset &b) {
   return Dataset(union_(a, b), union_(a.coords(), b.coords()));
 }
 
-/// Return a deep copy of a DataArray or of a DataArrayView.
-DataArray copy(const DataArrayConstView &array, const AttrPolicy attrPolicy) {
-  return DataArray(array, attrPolicy);
+Coords copy(const Coords &coords) { return {coords.sizes(), copy_map(coords)}; }
+Masks copy(const Masks &masks) { return {masks.sizes(), copy_map(masks)}; }
+
+/// Return a deep copy of a DataArray.
+DataArray copy(const DataArray &array, const AttrPolicy attrPolicy) {
+  // When data is copied we generally need to copy masks, since masks are
+  // typically modified when data is modified.
+  return DataArray(
+      copy(array.data()), copy(array.coords()), copy(array.masks()),
+      attrPolicy == AttrPolicy::Keep ? copy(array.attrs()) : Attrs{},
+      array.name());
 }
 
-/// Return a deep copy of a Dataset or of a DatasetView.
-Dataset copy(const DatasetConstView &dataset, const AttrPolicy attrPolicy) {
-  if (attrPolicy != AttrPolicy::Keep)
-    throw std::runtime_error(
-        "Dropping attributes when copying dataset not implemented yet.");
-  return Dataset(dataset);
+/// Return a deep copy of a Dataset.
+Dataset copy(const Dataset &dataset, const AttrPolicy attrPolicy) {
+  Dataset out({}, copy(dataset.coords()));
+  for (const auto &item : dataset)
+    out.setData(item.name(), copy(item, attrPolicy));
+  return out;
 }
 
 namespace {
-void copy_item(const DataArrayConstView &from, const DataArrayView &to,
-               const AttrPolicy attrPolicy) {
+template <class T>
+void copy_item(const DataArray &from, T &&to, const AttrPolicy attrPolicy) {
   for (const auto &[name, mask] : from.masks())
-    to.masks()[name].assign(mask);
+    copy(mask, to.masks()[name]);
   if (attrPolicy == AttrPolicy::Keep)
     for (const auto [dim, attr] : from.attrs())
-      to.attrs()[dim].assign(attr);
-  to.data().assign(from.data());
+      copy(attr, to.attrs()[dim]);
+  copy(from.data(), to.data());
 }
 } // namespace
 
 /// Copy data array to output data array
-DataArrayView copy(const DataArrayConstView &array, const DataArrayView &out,
-                   const AttrPolicy attrPolicy) {
+DataArray &copy(const DataArray &array, DataArray &out,
+                const AttrPolicy attrPolicy) {
   for (const auto [dim, coord] : array.coords())
-    out.coords()[dim].assign(coord);
+    copy(coord, out.coords()[dim]);
   copy_item(array, out, attrPolicy);
   return out;
 }
 
+/// Copy data array to output data array
+DataArray copy(const DataArray &array, DataArray &&out,
+               const AttrPolicy attrPolicy) {
+  copy(array, out, attrPolicy);
+  return std::move(out);
+}
+
 /// Copy dataset to output dataset
-DatasetView copy(const DatasetConstView &dataset, const DatasetView &out,
-                 const AttrPolicy attrPolicy) {
+Dataset &copy(const Dataset &dataset, Dataset &out,
+              const AttrPolicy attrPolicy) {
   for (const auto [dim, coord] : dataset.coords())
-    out.coords()[dim].assign(coord);
+    copy(coord, out.coords()[dim]);
   for (const auto &array : dataset)
     copy_item(array, out[array.name()], attrPolicy);
   return out;
+}
+
+/// Copy dataset to output dataset
+Dataset copy(const Dataset &dataset, Dataset &&out,
+             const AttrPolicy attrPolicy) {
+  copy(dataset, out, attrPolicy);
+  return std::move(out);
+}
+
+/// Return data of data array, applying masks along dim if applicable.
+///
+/// Only in the latter case a copy is returned.
+Variable masked_data(const DataArray &array, const Dim dim) {
+  const auto mask = irreducible_mask(array.masks(), dim);
+  if (mask)
+    return array.data() * ~mask;
+  else
+    return array.data();
+}
+
+namespace {
+template <class Dict> void strip_if_broadcast_along(Dict &dict, const Dim dim) {
+  std::vector<typename Dict::key_type> erase;
+  for (const auto &item : dict) {
+    if constexpr (std::is_same_v<Dict, Dataset>) {
+      if (!item.dims().contains(dim))
+        erase.emplace_back(item.name());
+    } else {
+      if (!item.second.dims().contains(dim))
+        erase.emplace_back(item.first);
+    }
+  }
+  for (const auto &key : erase)
+    dict.erase(key);
+}
+} // namespace
+
+DataArray strip_if_broadcast_along(DataArray &&a, const Dim dim) {
+  strip_if_broadcast_along(a.coords(), dim);
+  strip_if_broadcast_along(a.masks(), dim);
+  strip_if_broadcast_along(a.attrs(), dim);
+  return a;
+}
+
+Dataset strip_if_broadcast_along(Dataset &&d, const Dim dim) {
+  strip_if_broadcast_along(d.coords(), dim);
+  strip_if_broadcast_along(d, dim);
+  return d;
 }
 
 } // namespace scipp::dataset

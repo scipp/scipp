@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
@@ -56,11 +56,6 @@ class TestDatasetSlice:
         assert_export(x.copy)
         assert_export(x.__copy__)
         assert_export(x.__deepcopy__, {})
-
-    def test_copy_datasetview_exports(self):
-        d = sc.Dataset()
-        view = sc.DatasetView(d)
-        self._test_copy_exports_on(view)
 
     def test_copy_dataarrayview_exports(self):
         view = self._d['a']
@@ -120,8 +115,8 @@ class TestDatasetSlice:
                             sliced['data'].data)
 
     def test_slice_dataset_with_coords_only(self):
-        d = sc.Dataset()
-        d.coords['y-coord'] = sc.Variable(['y'], values=np.arange(10))
+        d = sc.Dataset(
+            coords={'y-coord': sc.Variable(['y'], values=np.arange(10))})
         sliced = d['y', :]
         assert sc.identical(d, sliced)
         sliced = d['y', 2:6]

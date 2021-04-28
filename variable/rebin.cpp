@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock, Igor Gudich
@@ -27,9 +27,8 @@ bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
 bool is_dtype_bool(const Variable &var) { return var.dtype() == dtype<bool>; }
 
 template <typename T, class Less>
-void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
-                     Variable &newT, const VariableConstView &oldCoordT,
-                     const VariableConstView &newCoordT) {
+void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,
+                     const Variable &oldCoordT, const Variable &newCoordT) {
   constexpr Less less;
   const auto oldSize = oldT.dims()[dim];
   const auto newSize = newT.dims()[dim];
@@ -37,8 +36,8 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
   const auto *xold = oldCoordT.values<T>().data();
   const auto *xnew = newCoordT.values<T>().data();
 
-  auto add_from_bin = [&](const auto &slice, const auto xn_low,
-                          const auto xn_high, const scipp::index iold) {
+  auto add_from_bin = [&](auto &&slice, const auto xn_low, const auto xn_high,
+                          const scipp::index iold) {
     auto xo_low = xold[iold];
     auto xo_high = xold[iold + 1];
     // delta is the overlap of the bins on the x axis
@@ -47,7 +46,7 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
     const auto owidth = std::abs(xo_high - xo_low);
     slice += oldT.slice({dim, iold}) * ((delta / owidth) * units::one);
   };
-  auto accumulate_bin = [&](const auto &slice, const auto xn_low,
+  auto accumulate_bin = [&](auto &&slice, const auto xn_low,
                             const auto xn_high) {
     scipp::index begin =
         std::upper_bound(xold, xold + oldSize + 1, xn_low, less) - xold;
@@ -97,9 +96,8 @@ struct Less {
 };
 } // namespace
 
-Variable rebin(const VariableConstView &var, const Dim dim,
-               const VariableConstView &oldCoord,
-               const VariableConstView &newCoord) {
+Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
+               const Variable &newCoord) {
   // Rebin could also implemented for count-densities. However, it may be better
   // to avoid this since it increases complexity. Instead, densities could
   // always be computed on-the-fly for visualization, if required.

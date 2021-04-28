@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 """
 This script generates input parameters to test whether arithmetic
@@ -41,7 +41,7 @@ def gen_values(dtype):
 def main():
     np.random.seed(14653503)
     with open(sys.argv[1], 'w') as outf:
-        outf.write('// SPDX-License-Identifier: GPL-3.0-or-later\n')
+        outf.write('// SPDX-License-Identifier: BSD-3-Clause\n')
         outf.write('// Copyright (c) 2021 Scipp contributors '
                    '(https://github.com/scipp)\n')
         outf.write('// clang-format off\n')

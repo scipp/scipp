@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
@@ -28,32 +28,9 @@ def make_dense_dataset(ndim=1,
             sc.units.us, sc.units.m, sc.units.m, sc.units.m, sc.units.angstrom
         ]))
 
-    N = 50
-    M = 10
-
     d = sc.Dataset()
-    shapes = []
-    dims = []
-    for i in range(ndim):
-        n = N - (i * M)
-        d.coords[dim_list[i]] = sc.Variable(dims=[dim_list[i]],
-                                            unit=units[dim_list[i]],
-                                            values=np.arange(n + binedges,
-                                                             dtype=np.float64))
-        dims.append(dim_list[i])
-        shapes.append(n)
-
-    if ragged:
-        grid = []
-        for i, dim in enumerate(dims):
-            if binedges and (i < ndim - 1):
-                grid.append(d.coords[dim].values[:-1])
-            else:
-                grid.append(d.coords[dim].values)
-        mesh = np.meshgrid(*grid, indexing="ij")
-        d.coords[dims[-1]] = sc.Variable(dims,
-                                         values=mesh[-1] +
-                                         np.indices(mesh[-1].shape)[0])
+    shapes = np.arange(50, 0, -10)[:ndim]
+    dims = dim_list[:ndim]
 
     a = np.sin(np.arange(np.prod(shapes)).reshape(*shapes).astype(np.float64))
     d["Sample"] = sc.Variable(dims, values=a, unit=unit, dtype=dtype)
@@ -75,6 +52,25 @@ def make_dense_dataset(ndim=1,
         d["Sample"].masks["mask"] = sc.Variable(dims,
                                                 values=np.where(
                                                     a > 0, True, False))
+
+    for i in range(ndim):
+        d.coords[dim_list[i]] = sc.Variable(dims=[dim_list[i]],
+                                            unit=units[dim_list[i]],
+                                            values=np.arange(shapes[i] +
+                                                             binedges,
+                                                             dtype=np.float64))
+
+    if ragged:
+        grid = []
+        for i, dim in enumerate(dims):
+            if binedges and (i < ndim - 1):
+                grid.append(d.coords[dim].values[:-1])
+            else:
+                grid.append(d.coords[dim].values)
+        mesh = np.meshgrid(*grid, indexing="ij")
+        d.coords[dims[-1]] = sc.Variable(dims,
+                                         values=mesh[-1] +
+                                         np.indices(mesh[-1].shape)[0])
     return d
 
 

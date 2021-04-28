@@ -1,5 +1,5 @@
 # ~~~
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
 set(TARGET_NAME "scipp-core")
@@ -42,7 +42,9 @@ set(SRC_FILES
     element_array_view.cpp
     except.cpp
     multi_index.cpp
+    sizes.cpp
     slice.cpp
+    strides.cpp
     string.cpp
     subbin_sizes.cpp
     view_index.cpp

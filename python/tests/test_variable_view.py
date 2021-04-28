@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
@@ -10,7 +10,7 @@ import operator
 def test_type():
     variable_slice = sc.Variable(dims=['x'],
                                  values=np.arange(1, 10, dtype=float))['x', :]
-    assert type(variable_slice) == sc.VariableView
+    assert type(variable_slice) == sc.Variable
 
 
 def test_astype():

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -22,14 +22,13 @@ void expect_same_volume(const Dimensions &old_dims,
         "Cannot reshape to dimensions with different volume");
 }
 
-Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
+Variable broadcast(const Variable &var, const Dimensions &dims) {
   auto result = variableFactory().empty_like(var, dims);
   result.data().copy(var, result);
   return result;
 }
 
-Variable concatenate(const VariableConstView &a1, const VariableConstView &a2,
-                     const Dim dim) {
+Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   if (a1.dtype() != a2.dtype())
     throw std::runtime_error(
         "Cannot concatenate Variables: Data types do not match.");
@@ -86,8 +85,7 @@ Variable concatenate(const VariableConstView &a1, const VariableConstView &a2,
                      concatenate(bin_sizes(a1.bin_indices()),
                                  bin_sizes(a2.bin_indices()), dim));
   } else {
-    out = Variable(a1);
-    out.setDims(dims);
+    out = Variable(a1, dims);
   }
 
   out.data().copy(a1, out.slice({dim, 0, extent1}));
@@ -105,8 +103,7 @@ Variable permute(const Variable &var, const Dim dim,
   return permuted;
 }
 
-Variable resize(const VariableConstView &var, const Dim dim,
-                const scipp::index size) {
+Variable resize(const Variable &var, const Dim dim, const scipp::index size) {
   auto dims = var.dims();
   dims.resize(dim, size);
   return Variable(var, dims);
@@ -121,82 +118,60 @@ Variable resize(const VariableConstView &var, const Dim dim,
 /// requested size. For normal (non-bucket) variable the values of `shape` are
 /// ignored, i.e., only `shape.dims()` is used to determine the shape of the
 /// output.
-Variable resize(const VariableConstView &var, const VariableConstView &shape) {
-  return Variable(var, var.underlying().data().makeDefaultFromParent(shape));
+Variable resize(const Variable &var, const Variable &shape) {
+  return {shape.dims(), var.data().makeDefaultFromParent(shape)};
 }
 
 namespace {
 void swap(Variable &var, const Dim dim, const scipp::index a,
           const scipp::index b) {
-  const Variable tmp(var.slice({dim, a}));
-  var.slice({dim, a}).assign(var.slice({dim, b}));
-  var.slice({dim, b}).assign(tmp);
+  const Variable tmp = copy(var.slice({dim, a}));
+  copy(var.slice({dim, b}), var.slice({dim, a}));
+  copy(tmp, var.slice({dim, b}));
 }
 } // namespace
 
-Variable reverse(Variable var, const Dim dim) {
-  const auto size = var.dims()[dim];
+Variable reverse(const Variable &var, const Dim dim) {
+  auto out = copy(var);
+  const auto size = out.dims()[dim];
   for (scipp::index i = 0; i < size / 2; ++i)
-    swap(var, dim, i, size - i - 1);
-  return var;
+    swap(out, dim, i, size - i - 1);
+  return out;
 }
 
-VariableView reshape(Variable &var, const Dimensions &dims) {
-  return {var, dims};
-}
-
-Variable reshape(Variable &&var, const Dimensions &dims) {
+Variable reshape(const Variable &var, const Dimensions &dims) {
   expect_same_volume(var.dims(), dims);
-  Variable reshaped(std::move(var));
+  // We could be less restrictive here, avoiding copies whenever we are
+  // reshaping an ordered contiguous chunk.
+  Variable reshaped =
+      var.dims() == var.array_params().dataDims() ? var : copy(var);
   reshaped.setDims(dims);
   return reshaped;
 }
 
-Variable reshape(const VariableConstView &view, const Dimensions &dims) {
-  // In general a variable slice is not contiguous. Therefore we cannot reshape
-  // without making a copy (except for special cases).
-  expect_same_volume(view.dims(), dims);
-  Variable reshaped(view);
-  reshaped.setDims(dims);
-  return reshaped;
-}
-
-Variable fold(const VariableConstView &view, const Dim from_dim,
+Variable fold(const Variable &view, const Dim from_dim,
               const Dimensions &to_dims) {
   return reshape(view, fold(view.dims(), from_dim, to_dims));
 }
 
-Variable flatten(const VariableConstView &view,
+Variable flatten(const Variable &view,
                  const scipp::span<const Dim> &from_labels, const Dim to_dim) {
   return reshape(view, flatten(view.dims(), from_labels, to_dim));
 }
 
-VariableView transpose(Variable &var, const std::vector<Dim> &dims) {
-  return transpose(VariableView(var), dims);
+Variable transpose(const Variable &var, const std::vector<Dim> &dims) {
+  return var.transpose(dims);
 }
 
-Variable transpose(Variable &&var, const std::vector<Dim> &dims) {
-  return Variable(transpose(VariableConstView(var), dims));
-}
-
-VariableConstView transpose(const VariableConstView &view,
-                            const std::vector<Dim> &dims) {
-  return view.transpose(dims);
-}
-
-VariableView transpose(const VariableView &view, const std::vector<Dim> &dims) {
-  return view.transpose(dims);
-}
-
-void squeeze(Variable &var, const std::vector<Dim> &dims) {
-  auto squeezed = var.dims();
+Variable squeeze(const Variable &var, const std::vector<Dim> &dims) {
+  auto squeezed = var;
   for (const auto &dim : dims) {
-    if (squeezed[dim] != 1)
+    if (squeezed.dims()[dim] != 1)
       throw except::DimensionError("Cannot squeeze '" + to_string(dim) +
                                    "' since it is not of length 1.");
-    squeezed.erase(dim);
+    squeezed = squeezed.slice({dim, 0});
   }
-  var.setDims(squeezed);
+  return squeezed;
 }
 
 } // namespace scipp::variable

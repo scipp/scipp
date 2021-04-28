@@ -1,8 +1,7 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .. import detail
 from .. import _utils as su
 from .._scipp import core as sc
 
@@ -169,5 +168,4 @@ def _dict_to_data_array(d):
             for name, item in d[key].items():
                 out[key][name] = _dict_to_variable(item)
     out["data"] = _dict_to_variable(d["data"])
-    da = detail.move_to_data_array(**out)
-    return da
+    return sc.DataArray(**out)

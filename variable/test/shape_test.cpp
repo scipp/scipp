@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -29,7 +29,7 @@ TEST(ShapeTest, broadcast) {
 TEST(ShapeTest, broadcast_fail) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1, 2, 3, 4});
-  EXPECT_THROW(broadcast(var, {Dim::X, 3}), except::NotFoundError);
+  EXPECT_THROW_DISCARD(broadcast(var, {Dim::X, 3}), except::NotFoundError);
 }
 
 class SqueezeTest : public ::testing::Test {
@@ -40,32 +40,33 @@ protected:
 };
 
 TEST_F(SqueezeTest, fail) {
-  EXPECT_THROW(squeeze(var, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(squeeze(var, {Dim::Y}), except::DimensionError);
   EXPECT_EQ(var, original);
-  EXPECT_THROW(squeeze(var, {Dim::X, Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(squeeze(var, {Dim::X, Dim::Y}), except::DimensionError);
   EXPECT_EQ(var, original);
-  EXPECT_THROW(squeeze(var, {Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW_DISCARD(squeeze(var, {Dim::Y, Dim::Z}), except::DimensionError);
   EXPECT_EQ(var, original);
 }
 
-TEST_F(SqueezeTest, none) {
-  squeeze(var, {});
-  EXPECT_EQ(var, original);
-}
+TEST_F(SqueezeTest, none) { EXPECT_EQ(squeeze(var, {}), original); }
 
 TEST_F(SqueezeTest, outer) {
-  squeeze(var, {Dim::X});
-  EXPECT_EQ(var, sum(original, Dim::X));
+  EXPECT_EQ(squeeze(var, {Dim::X}), sum(original, Dim::X));
 }
 
 TEST_F(SqueezeTest, inner) {
-  squeeze(var, {Dim::Z});
-  EXPECT_EQ(var, sum(original, Dim::Z));
+  EXPECT_EQ(squeeze(var, {Dim::Z}), sum(original, Dim::Z));
 }
 
 TEST_F(SqueezeTest, both) {
-  squeeze(var, {Dim::X, Dim::Z});
-  EXPECT_EQ(var, sum(sum(original, Dim::Z), Dim::X));
+  EXPECT_EQ(squeeze(var, {Dim::X, Dim::Z}), sum(sum(original, Dim::Z), Dim::X));
+}
+
+TEST_F(SqueezeTest, slice) {
+  Variable xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                     Values{1, 2, 3, 4});
+  const auto sliced = xy.slice({Dim::Y, 1, 2});
+  EXPECT_EQ(squeeze(sliced, {Dim::Y}), sum(sliced, Dim::Y));
 }
 
 TEST(ShapeTest, reshape) {
@@ -195,8 +196,8 @@ TEST(ShapeTest, flatten_only_2_dims) {
 
 TEST(ShapeTest, flatten_bad_dim_order) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
-  EXPECT_THROW(flatten(var, std::vector<Dim>{Dim::Y, Dim::X}, Dim::Z),
-               except::DimensionError);
+  EXPECT_THROW_DISCARD(flatten(var, std::vector<Dim>{Dim::Y, Dim::X}, Dim::Z),
+                       except::DimensionError);
 }
 
 TEST(ShapeTest, round_trip) {
