@@ -11,24 +11,10 @@
 
 namespace scipp::core {
 
-/**
- * At the time of writing older clang 6 lacks support for template
- * argument deduction of class templates (OSX only?)
- * http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0620r0.html
- * https://clang.llvm.org/cxx_status.html
- *
- * This make helper uses function template argument deduction to solve
- * for std::array declarations.
- */
-template <typename... T> constexpr auto make_array(T &&... values) {
-  return std::array<std::decay_t<std::common_type_t<T...>>, sizeof...(T)>{
-      std::forward<T>(values)...};
-}
-
 template <template <class> class Callable, class... Ts, class... Args>
 static auto callDType(const std::tuple<Ts...> &, const DType dtype,
                       Args &&... args) {
-  auto funcs = make_array(Callable<Ts>::apply...);
+  std::array funcs{Callable<Ts>::apply...};
   std::array<DType, sizeof...(Ts)> dtypes{scipp::core::dtype<Ts>...};
   for (size_t i = 0; i < dtypes.size(); ++i)
     if (dtypes[i] == dtype)

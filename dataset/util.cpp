@@ -7,6 +7,7 @@
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable_concept.h"
 
 using namespace scipp::variable;
 namespace scipp {

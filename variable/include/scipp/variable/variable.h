@@ -23,9 +23,7 @@
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/strides.h"
-#include "scipp/core/tag_util.h"
 
-#include "scipp/variable/variable_concept.h"
 #include "scipp/variable/variable_keyword_arg_constructor.h"
 
 namespace llnl::units {
@@ -33,6 +31,9 @@ class precise_measurement;
 }
 
 namespace scipp::variable {
+
+class VariableConcept;
+using VariableConceptHandle = std::shared_ptr<VariableConcept>;
 
 namespace detail {
 SCIPP_VARIABLE_EXPORT void expect0D(const Dimensions &dims);
@@ -58,21 +59,21 @@ public:
   /// should be prefered where possible, since it generates less code.
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
-  explicit operator bool() const noexcept { return m_object.operator bool(); }
+  explicit operator bool() const noexcept;
   Variable operator~() const;
 
-  units::Unit unit() const { return m_object->unit(); }
+  units::Unit unit() const;
   void setUnit(const units::Unit &unit);
   void expectCanSetUnit(const units::Unit &) const;
 
   const Dimensions &dims() const;
   void setDims(const Dimensions &dimensions);
 
-  DType dtype() const { return data().dtype(); }
+  DType dtype() const;
 
   scipp::span<const scipp::index> strides() const;
 
-  bool hasVariances() const { return data().hasVariances(); }
+  bool hasVariances() const;
 
   template <class T> ElementArrayView<const T> values() const;
   template <class T> ElementArrayView<T> values();
@@ -106,13 +107,10 @@ public:
   Variable operator-() const;
 
   const VariableConcept &data() const && = delete;
-  const VariableConcept &data() const & { return *m_object; }
+  const VariableConcept &data() const &;
   VariableConcept &data() && = delete;
-  VariableConcept &data() & {
-    expectWritable();
-    return *m_object;
-  }
-  const auto &data_handle() const { return m_object; }
+  VariableConcept &data() &;
+  const VariableConceptHandle &data_handle() const;
   void setDataHandle(VariableConceptHandle object);
 
   void setVariances(const Variable &v);
@@ -176,7 +174,7 @@ private:
 /// 4. If empty Values and/or Variances are provided, resulting Variable
 ///    contains default initialized Values and/or Variances, the way to make
 ///    Variable which contains both Values and Variances given length
-///    uninitialised is:
+///    uninitialized is:
 ///        makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
 template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
   detail::ArgParser<T> parser;

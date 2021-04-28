@@ -57,7 +57,7 @@ if ipy is not None:
             "var command = 'devicePixelRatio = ' + value; "
             "kernel.execute(command);}")
 
-# Note: due to some strange behaviour when importing matplotlib and pyplot in
+# Note: due to some strange behavior when importing matplotlib and pyplot in
 # different order, we need to import pyplot after switching to the ipympl
 # backend (see https://github.com/matplotlib/matplotlib/issues/19032).
 try:

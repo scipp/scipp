@@ -144,7 +144,7 @@ class PlotView2d(PlotView):
 
     def keep_profile(self, event):
         """
-        Add a coloured scatter point to mark the location of the saved profile.
+        Add a colored scatter point to mark the location of the saved profile.
         """
         xdata = event.mouseevent.xdata
         ydata = event.mouseevent.ydata

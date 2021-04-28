@@ -120,9 +120,9 @@ class PlotFigure3d:
         raise RuntimeError("Saving figures is not yet implemented for 3D "
                            "visualization.")
 
-    def initialise(self, *args, **kwargs):
+    def initialize(self, *args, **kwargs):
         """
-        Dummy initialise function.
+        Dummy initialize function.
         """
         return
 
@@ -158,30 +158,30 @@ class PlotFigure3d:
         # Set camera controller target
         distance_from_center = 1.2
         self.camera.position = list(
-            np.array(axparams["centre"]) +
+            np.array(axparams["center"]) +
             distance_from_center * axparams["box_size"])
         cam_pos_norm = np.linalg.norm(self.camera.position)
         box_mean_size = np.linalg.norm(axparams["box_size"])
         self.camera.near = 0.01 * box_mean_size
         self.camera.far = 5.0 * cam_pos_norm
-        self.controls.target = axparams["centre"]
-        self.camera.lookAt(axparams["centre"])
+        self.controls.target = axparams["center"]
+        self.camera.lookAt(axparams["center"])
 
         # Save camera settings
         self.camera_backup["reset"] = copy(self.camera.position)
-        self.camera_backup["centre"] = copy(axparams["centre"])
+        self.camera_backup["center"] = copy(axparams["center"])
         self.camera_backup["x_normal"] = [
-            axparams["centre"][0] - distance_from_center * box_mean_size,
-            axparams["centre"][1], axparams["centre"][2]
+            axparams["center"][0] - distance_from_center * box_mean_size,
+            axparams["center"][1], axparams["center"][2]
         ]
         self.camera_backup["y_normal"] = [
-            axparams["centre"][0],
-            axparams["centre"][1] - distance_from_center * box_mean_size,
-            axparams["centre"][2]
+            axparams["center"][0],
+            axparams["center"][1] - distance_from_center * box_mean_size,
+            axparams["center"][2]
         ]
         self.camera_backup["z_normal"] = [
-            axparams["centre"][0], axparams["centre"][1],
-            axparams["centre"][2] - distance_from_center * box_mean_size
+            axparams["center"][0], axparams["center"][1],
+            axparams["center"][2] - distance_from_center * box_mean_size
         ]
 
         # Rescale axes helper
@@ -267,7 +267,7 @@ void main() {
         self.outline = p3.LineSegments(
             geometry=edges,
             material=p3.LineBasicMaterial(color='#000000'),
-            position=axparams["centre"])
+            position=axparams["center"])
 
         self.axticks = self._generate_axis_ticks_and_labels(axparams)
 
@@ -430,13 +430,13 @@ void main() {
         """
         if np.allclose(self.camera.position, position):
             position[
-                ind] = 2.0 * self.camera_backup["centre"][ind] - position[ind]
+                ind] = 2.0 * self.camera_backup["center"][ind] - position[ind]
         self.move_camera(position=position)
 
     def move_camera(self, position):
         self.camera.position = position
-        self.controls.target = self.camera_backup["centre"]
-        self.camera.lookAt(self.camera_backup["centre"])
+        self.controls.target = self.camera_backup["center"]
+        self.camera.lookAt(self.camera_backup["center"])
 
     def toggle_norm(self, norm=None, vmin=None, vmax=None):
         """
