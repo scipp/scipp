@@ -190,7 +190,7 @@ template <class T> void DataModel<T>::assign(const VariableConcept &other) {
 template <class T> void DataModel<T>::setVariances(const Variable &variances) {
   if (!core::canHaveVariances<T>())
     throw except::VariancesError("This data type cannot have variances.");
-  if (!variances)
+  if (!variances.is_valid())
     return m_variances.reset();
   // TODO Could move if refcount is 1?
   if (variances.hasVariances())

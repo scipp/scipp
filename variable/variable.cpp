@@ -34,10 +34,8 @@ void Variable::setDataHandle(VariableConceptHandle object) {
   m_object = object;
 }
 
-Variable::operator bool() const noexcept { return m_object.operator bool(); }
-
 const Dimensions &Variable::dims() const {
-  if (!*this)
+  if (!is_valid())
     throw std::runtime_error("invalid variable");
   return m_dims;
 }
@@ -74,8 +72,8 @@ void Variable::setUnit(const units::Unit &unit) {
 }
 
 bool Variable::operator==(const Variable &other) const {
-  if (!*this || !other)
-    return static_cast<bool>(*this) == static_cast<bool>(other);
+  if (!is_valid() || !other.is_valid())
+    return is_valid() == other.is_valid();
   // Note: Not comparing strides
   return dims() == other.dims() && data().equals(*this, other);
 }
@@ -183,6 +181,8 @@ void Variable::rename(const Dim from, const Dim to) {
     m_dims.relabel(dims().index(from), to);
 }
 
+bool Variable::is_valid() const noexcept { return m_object.operator bool(); }
+
 bool Variable::is_slice() const {
   // TODO Is this condition sufficient?
   return m_offset != 0 || m_dims.volume() != data().size();
@@ -200,7 +200,7 @@ void Variable::setVariances(const Variable &v) {
   if (is_slice())
     throw except::VariancesError(
         "Cannot add variances via sliced view of Variable.");
-  if (v) {
+  if (v.is_valid()) {
     core::expect::equals(unit(), v.unit());
     core::expect::equals(dims(), v.dims());
   }

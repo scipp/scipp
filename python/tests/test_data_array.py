@@ -76,6 +76,17 @@ def test_init_from_variable_views():
     assert sc.identical(a, c)
 
 
+@pytest.mark.parametrize("make", [lambda x: x, sc.DataArray])
+def test_builtin_len(make):
+    var = sc.Variable(dims=['x', 'y'], shape=[3, 2])
+    obj = make(var)
+    assert len(obj) == 3
+    assert len(obj['x', 0]) == 2
+    assert len(obj['y', 0]) == 3
+    with pytest.raises(TypeError):
+        len(obj['x', 0]['y', 0])
+
+
 def test_coords():
     da = make_dataarray()
     assert len(dict(da.meta)) == 4

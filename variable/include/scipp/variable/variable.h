@@ -59,7 +59,6 @@ public:
   /// should be prefered where possible, since it generates less code.
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
-  explicit operator bool() const noexcept;
   Variable operator~() const;
 
   units::Unit unit() const;
@@ -132,6 +131,7 @@ public:
 
   [[nodiscard]] Variable transpose(const std::vector<Dim> &order) const;
 
+  bool is_valid() const noexcept;
   bool is_slice() const;
   bool is_readonly() const noexcept;
   bool is_same(const Variable &other) const noexcept;
@@ -188,7 +188,7 @@ Variable Variable::construct(const DType &type, Args &&... args) {
                       ? makeVariable<Ts>(std::forward<Args>(args)...)
                       : Variable()...};
   for (auto &var : vars)
-    if (var)
+    if (var.is_valid())
       return std::move(var);
   throw except::TypeError("Unsupported dtype for constructing a Variable: " +
                           to_string(type));

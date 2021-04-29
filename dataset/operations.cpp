@@ -107,7 +107,7 @@ Dataset copy(const Dataset &dataset, Dataset &&out,
 /// Only in the latter case a copy is returned.
 Variable masked_data(const DataArray &array, const Dim dim) {
   const auto mask = irreducible_mask(array.masks(), dim);
-  if (mask)
+  if (mask.is_valid())
     return array.data() * ~mask;
   else
     return array.data();
