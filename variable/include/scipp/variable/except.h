@@ -17,9 +17,14 @@ struct SCIPP_VARIABLE_EXPORT VariableError : public Error<variable::Variable> {
   explicit VariableError(const std::string &msg);
 };
 
+
 template <>
 [[noreturn]] SCIPP_VARIABLE_EXPORT void
 throw_mismatch_error(const variable::Variable &expected,
                      const variable::Variable &actual);
 
 } // namespace scipp::except
+
+namespace scipp::variable {
+SCIPP_VARIABLE_EXPORT std::string pretty_dtype(const Variable &var);
+}
