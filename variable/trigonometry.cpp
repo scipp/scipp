@@ -15,42 +15,35 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-namespace {
-auto make_out(const Variable &var) {}
-} // namespace
-
 Variable sin(const Variable &var) {
-  auto out = empty(var.dims(), units::one, var.dtype());
+  auto out = variableFactory().empty_like(var, std::nullopt);
   sin(var, out);
   return out;
 }
 
 Variable &sin(const Variable &var, Variable &out) {
-  core::expect::unit_any_of(var, {units::rad, units::deg});
   transform_in_place(out, to_unit(var, units::rad), element::sin_out_arg);
   return out;
 }
 
 Variable cos(const Variable &var) {
-  auto out = empty(var.dims(), units::one, var.dtype());
+  auto out = variableFactory().empty_like(var, std::nullopt);
   cos(var, out);
   return out;
 }
 
 Variable &cos(const Variable &var, Variable &out) {
-  core::expect::unit_any_of(var, {units::rad, units::deg});
   transform_in_place(out, to_unit(var, units::rad), element::cos_out_arg);
   return out;
 }
 
 Variable tan(const Variable &var) {
-  auto out = empty(var.dims(), units::one, var.dtype());
+  auto out = variableFactory().empty_like(var, std::nullopt);
   tan(var, out);
   return out;
 }
 
 Variable &tan(const Variable &var, Variable &out) {
-  core::expect::unit_any_of(var, {units::rad, units::deg});
   transform_in_place(out, to_unit(var, units::rad), element::tan_out_arg);
   return out;
 }

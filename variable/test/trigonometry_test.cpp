@@ -6,6 +6,10 @@
 #include "scipp/variable/creation.h"
 #include "scipp/variable/to_unit.h"
 #include "scipp/variable/trigonometry.h"
+#include "scipp/variable/variable_factory.h"
+
+#include "test_macros.h"
+#include "test_variables.h"
 
 using namespace scipp;
 using namespace scipp::variable;
@@ -196,4 +200,14 @@ TEST_F(VariableTrigonometryTest, atan2_out_arg) {
   auto out = atan2(y, x, y);
   EXPECT_EQ(out, expected);
   EXPECT_EQ(y, expected);
+}
+
+TEST_P(BinnedVariablesTest, trigonometry) {
+  const auto var = GetParam();
+  if (variableFactory().elem_unit(var) == units::one) {
+    EXPECT_NO_THROW_DISCARD(sin(asin(var)));
+    EXPECT_NO_THROW_DISCARD((acos(var)));
+    EXPECT_NO_THROW_DISCARD(tan(atan(var)));
+    EXPECT_NO_THROW_DISCARD(atan2(var, var));
+  }
 }

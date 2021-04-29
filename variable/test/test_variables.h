@@ -7,3 +7,4 @@
 #include "scipp/variable/variable.h"
 
 class DenseVariablesTest : public ::testing::TestWithParam<scipp::Variable> {};
+class BinnedVariablesTest : public ::testing::TestWithParam<scipp::Variable> {};
