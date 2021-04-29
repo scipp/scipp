@@ -21,6 +21,10 @@ void Dataset::clear() {
   rebuildDims();
 }
 
+void Dataset::setCoords(Coords other) {
+  scipp::expect::contains(other.sizes(), m_coords.sizes());
+  m_coords = std::move(other);
+}
 /// Return a const view to all coordinates of the dataset.
 const Coords &Dataset::coords() const noexcept { return m_coords; }
 

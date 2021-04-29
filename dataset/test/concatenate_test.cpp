@@ -230,6 +230,7 @@ TEST(ConcatenateTest, concat_2d_coord) {
       makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
 
   Dataset b = copy(a);
+  EXPECT_EQ(a, b);
   b.coords()[Dim::X] += 3 * units::one;
   b["data_1"].data() += 100 * units::one;
 
