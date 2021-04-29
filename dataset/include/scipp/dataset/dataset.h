@@ -55,6 +55,8 @@ public:
       setCoord(dim, std::move(coord));
   }
 
+  void setCoords(Coords other);
+
   /// Return the number of data items in the dataset.
   ///
   /// This does not include coordinates or attributes, but only all named

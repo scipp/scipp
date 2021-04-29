@@ -22,9 +22,27 @@ protected:
   DataArray array;
   Variable attr = makeVariable<double>(Values{1});
 };
-
 TEST_F(CopyTest, data_array) { EXPECT_EQ(copy(array), array); }
 TEST_F(CopyTest, dataset) { EXPECT_EQ(copy(dataset), dataset); }
+DataArray make_dataarray_with_bin_edges() {
+  return DataArray(makeVariable<double>(Dimensions{Dim::X, 2}, Values({0, 1})),
+                   {{Dim::X, makeVariable<double>(Dimensions{Dim::X, 3},
+                                                  Values({0, 1, 2}))}});
+}
+TEST_F(CopyTest, dataarray_with_bin_edge_coord) {
+  auto a = make_dataarray_with_bin_edges();
+  auto b = copy(a);
+  EXPECT_EQ(a, b);
+}
+TEST_F(CopyTest, dataset_with_bin_edge_coord) {
+  auto a = Dataset{make_dataarray_with_bin_edges()};
+  auto b = copy(a);
+  EXPECT_EQ(a, b);
+  for (const auto &[dim, item] : b.coords()) {
+    EXPECT_NE(a.coords().at(dim).values<double>().data(),
+              item.values<double>().data());
+  }
+}
 
 TEST_F(CopyTest, data_array_drop_attrs) {
   auto copied = copy(array, AttrPolicy::Drop);
