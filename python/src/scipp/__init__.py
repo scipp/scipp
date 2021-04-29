@@ -22,8 +22,21 @@ if _debug_:
         'You are running a "Debug" build of scipp. For optimal performance use a "Release" build.'
     )
 
-from ._scipp.core import *
 from ._scipp import __version__
+# Import classes
+from ._scipp.core import Variable, DataArray, Dataset, GroupByDataArray, \
+                         GroupByDataset, Unit
+# Import errors
+from ._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
+                         DataArrayError, DatasetError, DimensionError, \
+                         DTypeError, NotFoundError, SizeError, SliceError, \
+                         UnitError, VariableError, VariancesError
+# Import submodules
+from ._scipp.core import units, dtype, buckets, geometry
+# Import functions
+from ._scipp.core import choose, divide, floor_divide, logical_and, \
+                         logical_or, logical_xor, minus, mod, plus, times
+# Import python functions
 from .show import show, make_svg
 from .table import table
 from .plotting import plot
@@ -83,5 +96,5 @@ setattr(Dataset, 'plot', plot)
 # __array_ufunc__ should be possible by converting non-scipp arguments to
 # variables. The most difficult part is probably mapping the ufunc to scipp
 # functions.
-for obj in [Variable, DataArray, Dataset]:
-    setattr(obj, '__array_ufunc__', None)
+for _obj in [Variable, DataArray, Dataset]:
+    setattr(_obj, '__array_ufunc__', None)

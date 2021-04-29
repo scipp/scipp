@@ -250,29 +250,11 @@ of variances.)");
         else
           return scipp::numeric::islinspace(x.template values<double>());
       },
-      py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description("Check if the values of a variable are evenly spaced.")
-          .returns("Returns True if the variable contains regularly spaced "
-                   "values, False otherwise.")
-          .rtype("bool")
-          .c_str());
+      py::call_guard<py::gil_scoped_release>());
 
   m.def("rebin",
         py::overload_cast<const Variable &, const Dim, const Variable &,
                           const Variable &>(&rebin),
         py::arg("x"), py::arg("dim"), py::arg("old"), py::arg("new"),
-        py::call_guard<py::gil_scoped_release>(),
-        Docstring()
-            .description("Rebin a dimension of a variable.")
-            .raises("If data cannot be rebinned, e.g., if the unit is not "
-                    "counts, or the existing coordinate is not a bin-edge "
-                    "coordinate.")
-            .returns("Data rebinned according to the new bin edges.")
-            .rtype("Variable")
-            .param("x", "Data to rebin.", "Variable")
-            .param("dim", "Dimension to rebin over.", "Dim")
-            .param("old", "Old bin edges.", "Variable")
-            .param("new", "New bin edges.", "Variable")
-            .c_str());
+        py::call_guard<py::gil_scoped_release>());
 }

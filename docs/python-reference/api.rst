@@ -42,27 +42,43 @@ General
 .. autosummary::
    :toctree: ../generated
 
-   abs
    bin
    bins
    choose
    collapse
-   dot
-   exp
    histogram
-   log
-   log10
+   logical_and
+   logical_or
+   logical_xor
    merge
-   norm
    rebin
-   reciprocal
    slices
    sort
-   sqrt
    stddevs
    to_unit
    values
    variances
+
+Math
+~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   abs
+   divide
+   dot
+   exp
+   floor_divide
+   log
+   log10
+   minus
+   mod
+   norm
+   plus
+   reciprocal
+   sqrt
+   times
 
 Shape
 ~~~~~

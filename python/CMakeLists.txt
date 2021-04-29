@@ -16,7 +16,6 @@ pybind11_add_module(
   dataset.cpp
   docstring.cpp
   dtype.cpp
-  eigen.cpp
   except.cpp
   geometry.cpp
   groupby.cpp
@@ -29,7 +28,7 @@ pybind11_add_module(
   trigonometry.cpp
   unary.cpp
   unit.cpp
-  units_neutron.cpp
+  units.cpp
   variable.cpp
   variable_instantiate_py_object.cpp
   element_array_view.cpp

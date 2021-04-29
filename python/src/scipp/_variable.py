@@ -1,16 +1,66 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
-from . import units, Unit, dtype, Variable
 from ._scipp import core as _cpp
-from typing import Any, Sequence, Union
-import numpy as np
+from ._cpp_wrapper_util import call_func as _call_cpp_func
+from typing import Any as _Any, Sequence as _Sequence, Union as _Union
+import numpy as _np
 
 
-def scalar(value: Any,
-           variance: Any = None,
-           unit: Union[Unit, str] = units.dimensionless,
-           dtype: type(dtype.float64) = None) -> Variable:
+def filter(x, key):
+    """
+    Selects elements for a Variable using a filter (mask).
+
+    The filter variable must be 1D and of bool type.
+    A true value in the filter means the corresponding element in the input is
+    selected and will be copied to the output.
+    A false value in the filter discards the corresponding element
+    in the input.
+
+    :param x: Variable to filter.
+    :param key: Variable which defines the filter.
+    :type x: Variable
+    :type key: Variable
+    :raises: If the filter variable is not 1 dimensional.
+    :returns: New variable containing the data selected by the filter.
+    :rtype: Variable
+    """
+    return _call_cpp_func(_cpp.filter, x, key)
+
+
+def split(x, dim, inds):
+    """
+    Split a Variable along a given Dimension.
+
+    :param x: Variable to split.
+    :param dim: Dimension along which to perform the split.
+    :param inds: List of indices  where the variable will split.
+    :type x: Variable
+    :type dim: str
+    :type inds: list
+    :returns: A list of variables.
+    :rtype: list
+    """
+    return _call_cpp_func(_cpp.split, x, dim, inds)
+
+
+def islinspace(x):
+    """
+    Check if the values of a variable are evenly spaced.
+
+    :param x: Variable to check.
+    :type x: Variable
+    :returns: True if the variable contains regularly spaced values,
+      False otherwise.
+    :rtype: bool
+    """
+    return _call_cpp_func(_cpp.islinspace, x)
+
+
+def scalar(value: _Any,
+           variance: _Any = None,
+           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+           dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
     """Constructs a zero dimensional :class:`Variable` with a unit and optional
     variance.
 
@@ -24,16 +74,17 @@ def scalar(value: Any,
       in which case type is inferred from value input.
       Cannot be specified for value types of
       str, Dataset or DataArray.
-    :raises: Add this
+    :returns: A scalar (zero-dimensional) Variable.
+    :rtype: Variable
     """
     if dtype is None:
-        return Variable(value=value, variance=variance, unit=unit)
+        return _cpp.Variable(value=value, variance=variance, unit=unit)
     else:
         try:
-            return Variable(value=value,
-                            variance=variance,
-                            unit=unit,
-                            dtype=dtype)
+            return _cpp.Variable(value=value,
+                                 variance=variance,
+                                 unit=unit,
+                                 dtype=dtype)
         except TypeError:
             # Raise a more comprehensible error message in the case
             # where a dtype cannot be specified.
@@ -42,11 +93,11 @@ def scalar(value: Any,
 
 
 def zeros(*,
-          dims: Sequence[str],
-          shape: Sequence[int],
-          unit: Union[Unit, str] = units.dimensionless,
-          dtype: type(dtype.float64) = dtype.float64,
-          variances: bool = False) -> Variable:
+          dims: _Sequence[str],
+          shape: _Sequence[int],
+          unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+          dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
+          variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with default initialized values with
     given dimension labels and shape.
     Optionally can add default initialized variances.
@@ -64,14 +115,14 @@ def zeros(*,
       For example for a float type values and variances would all be
       initialized to 0.0. Default=False
     """
-    return Variable(dims=dims,
-                    shape=shape,
-                    unit=unit,
-                    dtype=dtype,
-                    variances=variances)
+    return _cpp.Variable(dims=dims,
+                         shape=shape,
+                         unit=unit,
+                         dtype=dtype,
+                         variances=variances)
 
 
-def zeros_like(var: Variable) -> Variable:
+def zeros_like(var: _cpp.Variable) -> _cpp.Variable:
     """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
     as the input variable, but with all values initialized to 0. If the input
     has variances, all variances in the output are set to 0.
@@ -88,11 +139,11 @@ def zeros_like(var: Variable) -> Variable:
 
 
 def ones(*,
-         dims: Sequence[str],
-         shape: Sequence[int],
-         unit: Union[Unit, str] = units.dimensionless,
-         dtype: type(dtype.float64) = dtype.float64,
-         variances: bool = False) -> Variable:
+         dims: _Sequence[str],
+         shape: _Sequence[int],
+         unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+         dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
+         variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values initialized to 1 with
     given dimension labels and shape.
 
@@ -109,7 +160,7 @@ def ones(*,
     return _cpp.ones(dims, shape, unit, dtype, variances)
 
 
-def ones_like(var: Variable) -> Variable:
+def ones_like(var: _cpp.Variable) -> _cpp.Variable:
     """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
     as the input variable, but with all values initialized to 1. If the input
     has variances, all variances in the output are set to 1.
@@ -126,11 +177,11 @@ def ones_like(var: Variable) -> Variable:
 
 
 def empty(*,
-          dims: Sequence[str],
-          shape: Sequence[int],
-          unit: Union[Unit, str] = units.dimensionless,
-          dtype: type(dtype.float64) = dtype.float64,
-          variances: bool = False) -> Variable:
+          dims: _Sequence[str],
+          shape: _Sequence[int],
+          unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+          dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
+          variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with uninitialized values with given
     dimension labels and shape. USE WITH CARE! Uninitialized means that values
     have undetermined values. Consider using :py:func:`scipp.zeros` unless you
@@ -149,7 +200,7 @@ def empty(*,
     return _cpp.empty(dims, shape, unit, dtype, variances)
 
 
-def empty_like(var: Variable) -> Variable:
+def empty_like(var: _cpp.Variable) -> _cpp.Variable:
     """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
     as the input variable, but with uninitialized values. If the input
     has variances, all variances in the output exist but are uninitialized.
@@ -167,11 +218,11 @@ def empty_like(var: Variable) -> Variable:
 
 
 def array(*,
-          dims: Sequence[str],
-          values: Union[np.ndarray, list],
-          variances: Union[np.ndarray, list] = None,
-          unit: Union[Unit, str] = units.dimensionless,
-          dtype: type(dtype.float64) = None) -> Variable:
+          dims: _Sequence[str],
+          values: _Union[_np.ndarray, list],
+          variances: _Union[_np.ndarray, list] = None,
+          unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+          dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
     values and optional variances. Dimension and value shape must match.
     Only keyword arguments accepted.
@@ -187,20 +238,20 @@ def array(*,
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
     """
-    return Variable(dims=dims,
-                    values=values,
-                    variances=variances,
-                    unit=unit,
-                    dtype=dtype)
+    return _cpp.Variable(dims=dims,
+                         values=values,
+                         variances=variances,
+                         unit=unit,
+                         dtype=dtype)
 
 
 def linspace(dim: str,
-             start: Union[int, float],
-             stop: Union[int, float],
+             start: _Union[int, float],
+             stop: _Union[int, float],
              num: int,
              *,
-             unit: Union[Unit, str] = units.dimensionless,
-             dtype: type(dtype.float64) = None) -> Variable:
+             unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+             dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with `num` evenly spaced samples,
     calculated over the interval `[start, stop]`.
 
@@ -216,18 +267,18 @@ def linspace(dim: str,
       in which case type is inferred from value input.
     """
     return array(dims=[dim],
-                 values=np.linspace(start, stop, num),
+                 values=_np.linspace(start, stop, num),
                  unit=unit,
                  dtype=dtype)
 
 
 def geomspace(dim: str,
-              start: Union[int, float],
-              stop: Union[int, float],
+              start: _Union[int, float],
+              stop: _Union[int, float],
               num: int,
               *,
-              unit: Union[Unit, str] = units.dimensionless,
-              dtype: type(dtype.float64) = None) -> Variable:
+              unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+              dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale
     (a geometric progression). This is similar to :py:func:`scipp.logspace`,
     but with endpoints specified directly.
@@ -245,18 +296,18 @@ def geomspace(dim: str,
       in which case type is inferred from value input.
     """
     return array(dims=[dim],
-                 values=np.geomspace(start, stop, num),
+                 values=_np.geomspace(start, stop, num),
                  unit=unit,
                  dtype=dtype)
 
 
 def logspace(dim: str,
-             start: Union[int, float],
-             stop: Union[int, float],
+             start: _Union[int, float],
+             stop: _Union[int, float],
              num: int,
              *,
-             unit: Union[Unit, str] = units.dimensionless,
-             dtype: type(dtype.float64) = None) -> Variable:
+             unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+             dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale.
 
     :seealso: :py:func:`scipp.linspace` :py:func:`scipp.geomspace`
@@ -271,18 +322,18 @@ def logspace(dim: str,
       in which case type is inferred from value input.
     """
     return array(dims=[dim],
-                 values=np.logspace(start, stop, num),
+                 values=_np.logspace(start, stop, num),
                  unit=unit,
                  dtype=dtype)
 
 
 def arange(dim: str,
-           start: Union[int, float],
-           stop: Union[int, float] = None,
-           step: Union[int, float] = 1,
+           start: _Union[int, float],
+           stop: _Union[int, float] = None,
+           step: _Union[int, float] = 1,
            *,
-           unit: Union[Unit, str] = units.dimensionless,
-           dtype: type(dtype.float64) = None) -> Variable:
+           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+           dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with evenly spaced values within a given
     interval.
     Values are generated within the half-open interval [start, stop)
@@ -305,10 +356,10 @@ def arange(dim: str,
         stop = start
         start = 0
     return array(dims=[dim],
-                 values=np.arange(start, stop, step),
+                 values=_np.arange(start, stop, step),
                  unit=unit,
                  dtype=dtype)
 
 
 # Wrapper to make datetime usable without importing numpy manually.
-datetime64 = np.datetime64
+datetime64 = _np.datetime64
