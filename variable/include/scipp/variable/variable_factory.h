@@ -75,7 +75,7 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   Variable empty_like(const Variable &prototype,
                       const std::optional<Dimensions> &shape,
                       const Variable &sizes) const override {
-    if (sizes)
+    if (sizes.is_valid())
       throw except::TypeError(
           "Cannot specify sizes in `empty_like` for non-bin prototype.");
     return create(prototype.dtype(), shape ? *shape : prototype.dims(),

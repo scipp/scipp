@@ -73,18 +73,18 @@ std::tuple<Dim, scipp::index> get_slice_params(const Dimensions &dims,
 std::tuple<Dim, scipp::index, scipp::index>
 get_slice_params(const Dimensions &dims, const Variable &coord_,
                  const Variable &begin, const Variable &end) {
-  if (begin)
+  if (begin.is_valid())
     core::expect::equals(begin.dims(), Dimensions{});
-  if (end)
+  if (end.is_valid())
     core::expect::equals(end.dims(), Dimensions{});
   const auto dim = coord_.dims().inner();
   const auto &[coord, ascending] = get_coord(coord_, dim);
   scipp::index first = 0;
   scipp::index last = dims[dim];
   const auto bin_edges = last + 1 == coord.dims()[dim];
-  if (begin)
+  if (begin.is_valid())
     first = get_index(coord, dim, begin, ascending, bin_edges);
-  if (end)
+  if (end.is_valid())
     last = get_index(coord, dim, end, ascending, bin_edges);
   // Note: Here the bin containing `end` is included
   return {dim, first, std::min(dims[dim], last + (bin_edges ? 1 : 0))};

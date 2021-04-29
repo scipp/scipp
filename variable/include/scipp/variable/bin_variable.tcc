@@ -68,7 +68,7 @@ public:
           "must be given by shape of `sizes`.");
     const auto [indices, dim, buf] = prototype.constituents<bucket<T>>();
     auto sizes_ = sizes;
-    if (!sizes) {
+    if (!sizes.is_valid()) {
       const auto &[begin, end] = unzip(indices);
       sizes_ = end - begin;
     }

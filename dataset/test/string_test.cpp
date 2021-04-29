@@ -11,7 +11,7 @@ using namespace scipp::dataset;
 
 TEST(StringTest, null_variable) {
   Variable var;
-  ASSERT_FALSE(var);
+  ASSERT_FALSE(var.is_valid());
   ASSERT_NO_THROW(to_string(var));
 }
 

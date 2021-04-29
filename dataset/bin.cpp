@@ -417,7 +417,7 @@ public:
     auto [begin, end] = unzip(begin_end);
     for (const auto dim : dims.labels()) {
       auto mask = irreducible_mask(masks, dim);
-      if (mask) {
+      if (mask.is_valid()) {
         begin *= ~mask;
         end *= ~mask;
       }
@@ -481,9 +481,9 @@ template Variable concat_bins<DataArray>(const Variable &, const Dim);
 DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
                               const Variable &groups, const Dim reductionDim) {
   TargetBinBuilder builder;
-  if (edges)
+  if (edges.is_valid())
     builder.bin(edges);
-  if (groups)
+  if (groups.is_valid())
     builder.group(groups);
   builder.erase(reductionDim);
   const auto dims = array.dims();
