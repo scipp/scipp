@@ -4,6 +4,13 @@ parameters:
   type: boolean
   default: false
 
+resources:
+  repositories:
+  - repository: SharedPipelines
+    name: scipp/pipelines
+    type: github
+    ref: main
+
 trigger:
   branches:
     exclude:
@@ -16,7 +23,7 @@ pr:
       - '*'
 
 extends:
-  template: templates/stages.yml
+  template: templates/stages.yml@SharedPipelines
   parameters:
     verbose: ${{ parameters.verbose }}
     py_versions:
