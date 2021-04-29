@@ -50,16 +50,18 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
       });
   if constexpr (std::is_same_v<std::remove_const_t<std::remove_reference_t<T>>,
                                scipp::python::PyObject>) {
-    view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
-                               const py::object &value) {
+    view.def("__setitem__", [](ElementArrayView<T> &self,
+                               [[maybe_unused]] const scipp::index i,
+                               [[maybe_unused]] const py::object &value) {
       if constexpr (is_bins<T>::value || std::is_const_v<T>)
         throw std::invalid_argument("assignment destination is read-only");
       else
         to_python_object(self[i]) = value;
     });
   } else {
-    view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
-                               const T value) {
+    view.def("__setitem__", [](ElementArrayView<T> &self,
+                               [[maybe_unused]] const scipp::index i,
+                               [[maybe_unused]] const T value) {
       if constexpr (is_bins<T>::value || std::is_const_v<T>)
         throw std::invalid_argument("assignment destination is read-only");
       else
