@@ -9,6 +9,7 @@ resources:
   - repository: SharedPipelines
     name: scipp/pipelines
     type: github
+    endpoint: scipp
     ref: main
 
 trigger:
