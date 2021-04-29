@@ -10,8 +10,10 @@ is_doc_build = False
 
 try:
     import matplotlib as mpl
+    import matplotlib.pyplot as plt
 except ImportError:
     mpl = None
+    plt = None
 
 try:
     from IPython import get_ipython
@@ -40,38 +42,19 @@ if ipy is not None:
             Canvas.header_visible.default_value = False
         except ImportError:
             warnings.warn(
-                "The ipympl backend, which is required for "
+                "The `ipympl` backend, which is required for "
                 "interactive plots in Jupyter, was not found. "
                 "Falling back to a static backend. Use "
-                "conda install -c conda-forge ipympl to install ipympl.")
+                "`conda install -c conda-forge ipympl` to install `ipympl`.")
 
-        # Run some javascript to find the current device pixel ratio, which is
-        # needed to properly scale the pixels in the three.js renderer.
-        # Note that the javascript has to be run here so that the pixel_ratio
-        # value is set after the initial import. Dealying this to inside the
-        # call to plot() would lead to devicePixelRatio being None.
-        ipy.run_cell_magic(
-            "js", "", "var kernel = IPython.notebook.kernel; "
-            "if (kernel) {"
-            "var value = window.devicePixelRatio; "
-            "var command = 'devicePixelRatio = ' + value; "
-            "kernel.execute(command);}")
-
-# Note: due to some strange behavior when importing matplotlib and pyplot in
-# different order, we need to import pyplot after switching to the ipympl
-# backend (see https://github.com/matplotlib/matplotlib/issues/19032).
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    plt = None
-
-if is_doc_build and plt is not None:
+if plt is not None:
     plt.rcParams.update({
         "figure.max_open_warning": 0,
-        "interactive": False,
         "figure.figsize": [6.4, 4.8],
         "figure.dpi": 96
     })
+    if is_doc_build:
+        plt.rcParams.update({"interactive": False})
 
 
 def plot(*args, **kwargs):
