@@ -30,3 +30,4 @@ extends:
     deploy: true
     conda_label: 'main'
     release: true
+    conda_env: 'scipp-developer-minimal.yml'

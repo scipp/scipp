@@ -27,3 +27,4 @@ extends:
       windows: ['3.7']
     deploy: true
     conda_label: 'dev'
+    conda_env: 'scipp-developer-minimal.yml'
