@@ -416,7 +416,8 @@ Variable sum(const Variable &data) {
   if (data.dtype() == dtype<bucket<DataArray>>) {
     const auto &&[indices, dim, buffer] =
         data.constituents<bucket<DataArray>>();
-    if (const auto mask_union = irreducible_mask(buffer.masks(), dim)) {
+    if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
+        mask_union.is_valid()) {
       variable::sum_impl(summed, applyMask(buffer, indices, dim, mask_union));
     } else {
       variable::sum_impl(summed, data);

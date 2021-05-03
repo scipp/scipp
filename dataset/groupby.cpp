@@ -94,7 +94,7 @@ template <class Op, class Groups>
 void reduce_(Op op, const Dim reductionDim, const Variable &out_data,
              const DataArray &data, const Dim dim, const Groups &groups) {
   auto mask = irreducible_mask(data.masks(), reductionDim);
-  if (mask)
+  if (mask.is_valid())
     mask = ~mask; // `op` multiplies mask into data to zero masked elements
   const auto process = [&](const auto &range) {
     // Apply to each group, storing result in output slice
@@ -128,7 +128,7 @@ static constexpr auto sum = [](Variable &out, const auto &data_container,
                                const Variable &mask) {
   for (const auto &slice : group) {
     const auto data_slice = data_container.data().slice(slice);
-    if (mask)
+    if (mask.is_valid())
       sum_impl(out, data_slice * mask.slice(slice));
     else
       sum_impl(out, data_slice);
@@ -147,7 +147,7 @@ struct wrap {
         bool first = true;
         for (const auto &slice : group) {
           const auto data_slice = data_container.data().slice(slice);
-          if (mask)
+          if (mask.is_valid())
             throw std::runtime_error(
                 "This operation does not support masks yet.");
           if (first) {
@@ -233,7 +233,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
         // N contributing to each slice
         scaleT[group] += slice.end() - slice.begin();
         // N masks for each slice, that need to be subtracted
-        if (mask) {
+        if (mask.is_valid()) {
           const auto masks_sum = variable::sum(mask.slice(slice), reductionDim);
           scaleT[group] -= masks_sum.template value<int64_t>();
         }

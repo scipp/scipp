@@ -34,9 +34,7 @@ public:
   DataArray &operator=(const DataArray &other);
   DataArray &operator=(DataArray &&other) = default;
 
-  explicit operator bool() const noexcept {
-    return m_data && m_data->operator bool();
-  }
+  bool is_valid() const noexcept { return m_data && m_data->is_valid(); }
 
   const std::string &name() const;
   void setName(std::string_view name);

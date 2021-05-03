@@ -72,7 +72,7 @@ auto apply(const DType dtype, Args &&... args) {
 
 std::string format_variable(const std::string &key, const Variable &variable,
                             const std::optional<Dimensions> datasetDims) {
-  if (!variable)
+  if (!variable.is_valid())
     return std::string(tab) + "invalid variable\n";
   std::stringstream s;
   const std::string colSep("  ");

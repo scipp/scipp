@@ -382,7 +382,7 @@ def _mapping_section(mapping,
                      details_func=None,
                      max_items_collapse=None,
                      enabled=True):
-    n_items = len(mapping) if hasattr(mapping, "__len__") else 1
+    n_items = 1 if is_data_array(mapping) else len(mapping)
     collapsed = n_items >= max_items_collapse
 
     return collapsible_section(
@@ -469,7 +469,7 @@ def dataset_repr(ds):
     if len(ds.coords) > 0:
         sections.append(coord_section(ds.coords, ds))
 
-    sections.append(data_section(ds if hasattr(ds, '__len__') else {'': ds}))
+    sections.append(data_section(ds if is_dataset(ds) else {'': ds}))
 
     if not is_dataset(ds):
         if len(ds.masks) > 0:
