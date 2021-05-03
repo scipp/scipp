@@ -14,43 +14,53 @@
 
 namespace scipp::core {
 
+template <class Key, class Value, int16_t MaxSize>
+class SCIPP_CORE_EXPORT small_map {
+public:
+  small_map() = default;
+
+  bool operator==(const small_map &other) const noexcept;
+  bool operator!=(const small_map &other) const noexcept;
+
+  auto begin() const { return m_keys.begin(); }
+  auto end() const { return m_keys.end(); }
+  typename std::array<Key, MaxSize>::const_iterator find(const Key &key) const;
+  [[nodiscard]] bool empty() const noexcept;
+  scipp::index size() const noexcept { return m_size; }
+  bool contains(const Key &key) const noexcept;
+  const Value &operator[](const Key &key) const;
+  Value &operator[](const Key &key);
+  const Value &at(const Key &key) const;
+  Value &at(const Key &key);
+  void insert(const Key &key, const Value &value);
+  void erase(const Key &key);
+  void clear();
+  // void relabel(const Dim from, const Dim to);
+
+private:
+  int64_t m_size{0};
+  std::array<Key, MaxSize> m_keys{};
+  std::array<Value, MaxSize> m_values{};
+};
+
 /// Sibling of class Dimensions, but unordered.
-class SCIPP_CORE_EXPORT Sizes {
+class SCIPP_CORE_EXPORT Sizes : public small_map<Dim, scipp::index, NDIM_MAX> {
+private:
+  using base = small_map<Dim, scipp::index, NDIM_MAX>;
+
 public:
   Sizes() = default;
   Sizes(const Dimensions &dims);
-  Sizes(const std::unordered_map<Dim, scipp::index> &sizes) : m_sizes(sizes) {}
+  Sizes(const std::unordered_map<Dim, scipp::index> &sizes);
 
-  bool operator==(const Sizes &other) const;
-  bool operator!=(const Sizes &other) const;
+  scipp::index count(const Dim dim) const noexcept { return contains(dim); }
 
-  bool contains(const Dim dim) const noexcept {
-    return m_sizes.count(dim) != 0;
-  }
-
-  scipp::index count(const Dim dim) const noexcept {
-    return m_sizes.count(dim);
-  }
-
-  auto begin() const { return m_sizes.begin(); }
-  auto end() const { return m_sizes.end(); }
-
-  void clear();
-
-  scipp::index operator[](const Dim dim) const;
-  scipp::index &operator[](const Dim dim);
-  scipp::index at(const Dim dim) const;
-  scipp::index &at(const Dim dim);
   void set(const Dim dim, const scipp::index size);
-  void erase(const Dim dim);
   void relabel(const Dim from, const Dim to);
+  using base::contains;
   bool contains(const Dimensions &dims) const;
   bool contains(const Sizes &sizes) const;
   Sizes slice(const Slice &params) const;
-
-private:
-  // TODO More efficient implementation without memory allocations.
-  std::unordered_map<Dim, scipp::index> m_sizes;
 };
 
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes concatenate(const Sizes &a,

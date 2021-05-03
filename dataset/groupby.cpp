@@ -404,8 +404,8 @@ GroupBy<Dataset> groupby(const Dataset &dataset, const Dim dim,
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<Dataset> groupby(const Dataset &dataset, const Variable &key,
                          const Variable &bins) {
-  for (const auto &n : dataset.sizes()) {
-    Dimensions dims(n.first, n.second);
+  for (const auto &dim : dataset.sizes()) {
+    Dimensions dims(dim, dataset.sizes()[dim]);
     if (dims.contains(key.dims()))
       // Found compatible Dimension.
       return call_groupby(dataset, key, bins);

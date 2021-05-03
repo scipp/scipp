@@ -34,8 +34,8 @@ Dimensions::Dimensions(const std::vector<Dim> &labels,
 }
 
 Dimensions::Dimensions(const Sizes &sizes) {
-  for (const auto &[label, size] : sizes)
-    addInner(label, size);
+  for (const auto &label : sizes)
+    addInner(label, sizes[label]);
 }
 
 /// Return the extent of `dim`. Throws if the space defined by this does not

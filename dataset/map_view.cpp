@@ -104,16 +104,16 @@ void Dict<Key, Value>::setSizes(const Sizes &sizes) {
 
 template <class Key, class Value> void Dict<Key, Value>::rebuildSizes() {
   Sizes new_sizes = m_sizes;
-  for (const auto &size : m_sizes) {
+  for (const auto &dim : m_sizes) {
     bool erase = true;
     for (const auto &item : *this) {
-      if (item.second.dims().contains(size.first)) {
+      if (item.second.dims().contains(dim)) {
         erase = false;
         break;
       }
     }
     if (erase)
-      new_sizes.erase(size.first);
+      new_sizes.erase(dim);
   }
   m_sizes = std::move(new_sizes);
 }
