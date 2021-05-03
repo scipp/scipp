@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <iosfwd>
 #include <map>
 #include <optional>
 #include <string>
@@ -19,9 +20,6 @@
 
 namespace scipp::core {
 
-template <class Id, class Key, class Value> class ConstView;
-template <class T, class U> class MutableView;
-
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Dimensions &dims);
 
@@ -33,26 +31,6 @@ SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
 SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);
 SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
 SCIPP_CORE_EXPORT std::string to_string(const scipp::index_pair &index);
-
-template <class Id, class Key, class Value>
-std::string to_string(const ConstView<Id, Key, Value> &view) {
-  std::stringstream ss;
-
-  for (const auto &[key, item] : view) {
-    ss << "<scipp.ConstView> (" << key << "):\n" << to_string(item);
-  }
-  return ss.str();
-}
-
-template <class T, class U>
-std::string to_string(const MutableView<T, U> &mutableView) {
-  std::stringstream ss;
-
-  for (const auto &[key, item] : mutableView) {
-    ss << "<scipp.MutableView> (" << key << "):\n" << to_string(item);
-  }
-  return ss.str();
-}
 
 // Format a time point according to ISO 8601 including sub-second precision
 // depending on the unit.

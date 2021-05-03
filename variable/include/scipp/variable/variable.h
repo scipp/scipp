@@ -9,8 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include <Eigen/Core>
-
 #include "scipp-variable_export.h"
 #include "scipp/common/index.h"
 #include "scipp/common/span.h"
@@ -196,9 +194,9 @@ Variable Variable::construct(const DType &type, Args &&... args) {
 
 template <class... Ts>
 Variable::Variable(const DType &type, Ts &&... args)
-    : Variable{construct<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-                         Eigen::Matrix3d, std::string, scipp::core::time_point>(
-          type, std::forward<Ts>(args)...)} {}
+    : Variable{construct<double, float, int64_t, int32_t, bool, std::string,
+                         scipp::core::time_point>(type,
+                                                  std::forward<Ts>(args)...)} {}
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var);
 [[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable &copy(const Variable &var,

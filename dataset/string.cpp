@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include <algorithm> // for std::sort
 #include <set>
+#include <sstream>
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
@@ -100,5 +101,18 @@ std::string to_string(const DataArray &data) {
 std::string to_string(const Dataset &dataset) {
   return do_to_string(dataset, "<scipp.Dataset>", Dimensions(dataset.sizes()));
 }
+
+template <class Key, class Value>
+std::string dict_to_string(const Dict<Key, Value> &view) {
+  std::stringstream ss;
+  ss << "<scipp.Dict>\n";
+  for (const auto &[key, item] : view) {
+    ss << "  " << key << ":" << to_string(item);
+  }
+  return ss.str();
+}
+
+std::string to_string(const Coords &coords) { return dict_to_string(coords); }
+std::string to_string(const Masks &masks) { return dict_to_string(masks); }
 
 } // namespace scipp::dataset
