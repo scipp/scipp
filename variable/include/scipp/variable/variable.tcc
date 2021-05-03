@@ -60,4 +60,16 @@ template <class T> ElementArrayView<T> Variable::variances() {
   Variable::variances() const;                                                 \
   template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::variances();
 
+// Insert classes into formatting registry. The objects themselves do nothing,
+// but the constructor call with comma operator does the insertion. Calling this
+// is required for formatting all but basic builtin types.
+#define REGISTER_FORMATTER(name, ...)                                          \
+  namespace {                                                                  \
+  auto register_##name(                                                        \
+      (variable::formatterRegistry().emplace(                                  \
+           dtype<__VA_ARGS__>,                                                 \
+           std::make_unique<variable::Formatter<__VA_ARGS__>>()),              \
+       0));                                                                    \
+  }
+
 } // namespace scipp::variable
