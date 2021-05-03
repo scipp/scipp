@@ -7,6 +7,7 @@
 #include <variant>
 
 #include "scipp/core/dtype.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"

@@ -3,7 +3,9 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/element_array_view.h"
+#include "scipp/core/array_to_string.h"
 #include "scipp/core/dtype.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/except.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
