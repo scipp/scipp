@@ -8,6 +8,7 @@
 
 #include "scipp/common/initialization.h"
 #include "scipp/common/overloaded.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/subbin_sizes.h"
 #include "scipp/core/transform_common.h"

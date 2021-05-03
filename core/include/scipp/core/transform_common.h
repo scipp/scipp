@@ -7,7 +7,6 @@
 #include <tuple>
 
 #include "scipp/common/overloaded.h"
-#include "scipp/core/eigen.h"
 #include "scipp/core/except.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/core/values_and_variances.h"
@@ -41,10 +40,6 @@ using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
 using arithmetic_type_pairs_with_bool =
     decltype(std::tuple_cat(std::declval<arithmetic_type_pairs>(),
                             std::declval<pair_numerical_with_t<bool>>()));
-
-using arithmetic_and_matrix_type_pairs = decltype(
-    std::tuple_cat(std::declval<arithmetic_type_pairs>(),
-                   std::tuple<std::tuple<Eigen::Vector3d, Eigen::Vector3d>>()));
 
 static constexpr auto keep_unit =
     overloaded{[](const units::Unit &) {},

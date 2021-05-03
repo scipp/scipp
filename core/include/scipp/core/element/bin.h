@@ -9,6 +9,7 @@
 #include <numeric>
 
 #include "scipp/common/overloaded.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/element/util.h"
 #include "scipp/core/histogram.h"
