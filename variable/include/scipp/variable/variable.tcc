@@ -2,6 +2,7 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/core/array_to_string.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
@@ -60,9 +61,13 @@ template <class T> ElementArrayView<T> Variable::variances() {
   Variable::variances() const;                                                 \
   template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::variances();
 
-// Insert classes into formatting registry. The objects themselves do nothing,
-// but the constructor call with comma operator does the insertion. Calling this
-// is required for formatting all but basic builtin types.
+template <class T> std::string Formatter<T>::format(const Variable &var) const {
+  return array_to_string(var.template values<T>());
+}
+
+/// Insert classes into formatting registry. The objects themselves do nothing,
+/// but the constructor call with comma operator does the insertion. Calling
+/// this is required for formatting all but basic builtin types.
 #define REGISTER_FORMATTER(name, ...)                                          \
   namespace {                                                                  \
   auto register_##name(                                                        \

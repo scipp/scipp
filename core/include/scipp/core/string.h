@@ -8,8 +8,6 @@
 #include <optional>
 #include <string>
 
-#include <Eigen/Core>
-
 #include "scipp/units/unit.h"
 
 #include "scipp-core_export.h"
@@ -56,59 +54,12 @@ std::string to_string(const MutableView<T, U> &mutableView) {
   return ss.str();
 }
 
-template <class T>
-std::string
-array_to_string(const T &arr,
-                const std::optional<units::Unit> &unit = std::nullopt);
-
 // Format a time point according to ISO 8601 including sub-second precision
 // depending on the unit.
 // No timezone conversion is performed and the result does not show a
 // timezone offset.
 SCIPP_CORE_EXPORT std::string to_iso_date(const scipp::core::time_point &item,
                                           const units::Unit &unit);
-
-template <class T>
-std::string
-element_to_string(const T &item,
-                  const std::optional<units::Unit> &unit = std::nullopt) {
-  using core::to_string;
-  using std::to_string;
-  if constexpr (std::is_same_v<T, std::string>)
-    return {'"' + item + "\", "};
-  else if constexpr (std::is_same_v<T, bool>)
-    return core::to_string(item) + ", ";
-  else if constexpr (std::is_same_v<T, scipp::core::time_point>) {
-    return core::to_string(to_iso_date(item, unit.value())) + ", ";
-  } else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
-    return {"(" + to_string(item[0]) + ", " + to_string(item[1]) + ", " +
-            to_string(item[2]) + "), "};
-  else if constexpr (std::is_same_v<T, Eigen::Matrix3d>)
-    return {"(" + element_to_string(Eigen::Vector3d(item.row(0))) + ", " +
-            element_to_string(Eigen::Vector3d(item.row(1))) + ", " +
-            element_to_string(Eigen::Vector3d(item.row(2))) + "), "};
-  else
-    return to_string(item) + ", ";
-}
-
-template <class T>
-std::string array_to_string(const T &arr,
-                            const std::optional<units::Unit> &unit) {
-  const auto size = scipp::size(arr);
-  if (size == 0)
-    return std::string("[]");
-  std::string s = "[";
-  for (scipp::index i = 0; i < scipp::size(arr); ++i) {
-    if (i == 2 && size > 4) {
-      s += "..., ";
-      i = size - 2;
-    }
-    s += element_to_string(arr[i], unit);
-  }
-  s.resize(s.size() - 2);
-  s += "]";
-  return s;
-}
 
 /// Return the global dtype name registry instance
 SCIPP_CORE_EXPORT std::map<DType, std::string> &dtypeNameRegistry();
