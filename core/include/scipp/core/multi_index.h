@@ -103,9 +103,7 @@ public:
     m_ndim = iterDims.ndim() + m_ndim_nested;
     m_nested_stride = nestedDims.offset(sliceDim);
     m_nested_dim_index = m_ndim_nested - nestedDims.index(sliceDim) - 1;
-    m_bucket = std::array{BucketIterator(
-        params, {params.strides().begin(),
-                 params.strides().begin() + (m_ndim - m_ndim_nested)})...};
+    m_bucket = std::array{BucketIterator(params)...};
     scipp::index dim = iterDims.ndim() - 1 + nestedDims.ndim();
     m_end_sentinel = iterDims.volume();
     if (m_end_sentinel == 0) {
@@ -338,19 +336,8 @@ public:
 private:
   struct BucketIterator {
     BucketIterator() = default;
-    BucketIterator(const ElementArrayViewParams &params,
-                   const span<const scipp::index> bucket_strides)
-        : m_indices{params.bucketParams().indices} {
-      if (!params.bucketParams()) {
-        m_nbuckets = 0;
-      } else {
-        m_nbuckets = 1;
-        for (scipp::index i = 0; i < size(bucket_strides); ++i) {
-          m_nbuckets *=
-              bucket_strides[i] * params.dims()[params.dims().label(i)];
-        }
-      }
-    }
+    explicit BucketIterator(const ElementArrayViewParams &params)
+        : m_indices{params.bucketParams().indices} { }
 
     [[nodiscard]] bool is_binned() noexcept {
       return m_indices != nullptr;
@@ -358,7 +345,6 @@ private:
 
     scipp::index m_bucket_index{0};
     const std::pair<scipp::index, scipp::index> *m_indices{nullptr};
-    scipp::index m_nbuckets{0};
   };
   std::array<scipp::index, N> m_data_index = {};
   // This does *not* 0-init the inner arrays!
