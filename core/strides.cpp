@@ -23,19 +23,6 @@ Strides::Strides(const Dimensions &dims) {
   }
 }
 
-// TODO document
-// TODO test (take test from multi_index_test.cpp)
-/// Strides in dataDims when iterating iterDims.
-Strides::Strides(const Dimensions &iter_dims, const Dimensions &data_dims) {
-  scipp::index d = 0;
-  for (const auto &dim : iter_dims.labels()) {
-    if (data_dims.contains(dim))
-      m_strides[d++] = data_dims.offset(dim);
-    else
-      m_strides[d++] = 0;
-  }
-}
-
 bool Strides::operator==(const Strides &other) const noexcept {
   return m_strides == other.m_strides;
 }
