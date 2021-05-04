@@ -320,12 +320,23 @@ TEST_F(TransformBinaryTest, var_with_view) {
   EXPECT_EQ(ab, a);
 }
 
-TEST_F(TransformBinaryTest, in_place_self_overlap_without_variance) {
+TEST_F(TransformBinaryTest, in_place_self_overlap_without_variance_1d) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
-  Variable slice_copy(a.slice({Dim::X, 1}));
+  auto slice_copy = copy(a.slice({Dim::X, 1}));
   auto reference = a * slice_copy;
   transform_in_place<pair_self_t<double>>(a, a.slice({Dim::X, 1}), op_in_place);
   ASSERT_EQ(a, reference);
+}
+
+TEST_F(TransformBinaryTest, in_place_self_overlap_without_variance_2d) {
+  auto original = makeVariable<double>(Dimensions{{Dim::X, 2}, {Dim::Y, 2}},
+                                       Values{1, 2, 3, 4});
+  auto reference = makeVariable<double>(Dimensions{{Dim::X, 2}, {Dim::Y, 2}},
+                                        Values{1, 6, 6, 16});
+  Variable relabeled = original;
+  relabeled.setDims(Dimensions{{Dim::Y, 2}, {Dim::X, 2}});
+  transform_in_place<pair_self_t<double>>(original, relabeled, op_in_place);
+  ASSERT_EQ(original, reference);
 }
 
 TEST_F(TransformBinaryTest, in_place_self_overlap_with_variance) {
