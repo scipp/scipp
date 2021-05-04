@@ -35,8 +35,8 @@ public:
   constexpr void set_index(const scipp::index index) noexcept {
     m_view_index = index;
     extract_indices(index, m_ndim, m_shape, m_coord);
-    m_memory_index = flat_index_from_strides(m_strides.begin(), m_strides.end(m_ndim),
-                                      m_coord.begin());
+    m_memory_index = flat_index_from_strides(
+        m_strides.begin(), m_strides.end(m_ndim), m_coord.begin());
   }
 
   void set_to_end() noexcept {
@@ -49,7 +49,9 @@ public:
     m_memory_index = m_coord[m_ndim] * m_strides[m_ndim];
   }
 
-  [[nodiscard]] constexpr scipp::index get() const noexcept { return m_memory_index; }
+  [[nodiscard]] constexpr scipp::index get() const noexcept {
+    return m_memory_index;
+  }
   [[nodiscard]] constexpr scipp::index index() const noexcept {
     return m_view_index;
   }
@@ -102,8 +104,6 @@ private:
   // We decided to go with std::array as our final choice to avoid the warning,
   // as the performance is identical to C-style arrays, as long as range based
   // loops are used.
-
-  // TODO names?
 
   /// Index into memory.
   scipp::index m_memory_index{0};

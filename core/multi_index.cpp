@@ -8,7 +8,7 @@
 namespace scipp::core {
 
 void validate_bin_indices_impl(const ElementArrayViewParams &param0,
-                                  const ElementArrayViewParams &param1) {
+                               const ElementArrayViewParams &param1) {
   const auto iterDims = param0.dims();
   auto index = MultiIndex(iterDims, param0.strides(), param1.strides());
   const auto indices0 = param0.bucketParams().indices;
