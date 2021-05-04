@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import pytest
@@ -6,6 +6,12 @@ import scipp as sc
 import numpy as np
 from .nexus_helpers import (find_by_nx_class,
                             in_memory_nexus_file_with_event_data)
+
+
+def test_dense_data_properties_are_none():
+    var = sc.scalar(1)
+    assert var.bins is None
+    assert var.events is None
 
 
 def test_bins_default_begin_end():
@@ -32,6 +38,37 @@ def test_bins_fail_only_end():
     end = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.dtype.int64)
     with pytest.raises(RuntimeError):
         sc.bins(end=end, dim='x', data=data)
+
+
+def test_events_property():
+    var = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
+    data = sc.DataArray(data=var,
+                        coords={'coord': var},
+                        masks={'mask': var},
+                        attrs={'attr': var})
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.dtype.int64)
+    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.dtype.int64)
+    binned = sc.bins(begin=begin, end=end, dim='x', data=data)
+    assert 'coord' in binned.events.coords
+    assert 'mask' in binned.events.masks
+    assert 'attr' in binned.events.attrs
+    del binned.events.coords['coord']
+    del binned.events.masks['mask']
+    del binned.events.attrs['attr']
+    # sc.bins makes a (shallow) copy of `data`
+    assert 'coord' in data.coords
+    assert 'mask' in data.masks
+    assert 'attr' in data.attrs
+    # ... but when buffer is accessed we can insert/delete meta data
+    assert 'coord' not in binned.events.coords
+    assert 'mask' not in binned.events.masks
+    assert 'attr' not in binned.events.attrs
+    binned.events.coords['coord'] = var
+    binned.events.masks['mask'] = var
+    binned.events.attrs['attr'] = var
+    assert 'coord' in binned.events.coords
+    assert 'mask' in binned.events.masks
+    assert 'attr' in binned.events.attrs
 
 
 def test_bins():
@@ -91,7 +128,7 @@ def test_bins_arithmetic():
         coords={'x': sc.Variable(dims=['x'], values=[1.0, 3.0, 5.0])})
     binned.bins *= sc.lookup(func=hist, dim='x')
     assert sc.identical(
-        binned.bins.constituents['data'].data,
+        binned.events.data,
         sc.Variable(dims=['event'], values=[1.0, 2.0, 6.0, 8.0]))
 
 

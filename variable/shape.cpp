@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -9,6 +9,7 @@
 #include "scipp/variable/except.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable_concept.h"
 #include "scipp/variable/variable_factory.h"
 
 using namespace scipp::core;
@@ -162,15 +163,15 @@ Variable transpose(const Variable &var, const std::vector<Dim> &dims) {
   return var.transpose(dims);
 }
 
-void squeeze(Variable &var, const std::vector<Dim> &dims) {
-  auto squeezed = var.dims();
+Variable squeeze(const Variable &var, const std::vector<Dim> &dims) {
+  auto squeezed = var;
   for (const auto &dim : dims) {
-    if (squeezed[dim] != 1)
+    if (squeezed.dims()[dim] != 1)
       throw except::DimensionError("Cannot squeeze '" + to_string(dim) +
                                    "' since it is not of length 1.");
-    squeezed.erase(dim);
+    squeezed = squeezed.slice({dim, 0});
   }
-  var.setDims(squeezed);
+  return squeezed;
 }
 
 } // namespace scipp::variable

@@ -1,10 +1,10 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 
 
-def name_with_unit(var=None, name=None, log=False, replace_dim=True):
+def name_with_unit(var=None, name=None, log=False):
     """
     Make a column title or axis label with "Name [unit]".
     """
@@ -13,8 +13,6 @@ def name_with_unit(var=None, name=None, log=False, replace_dim=True):
         text = name
     elif var is not None:
         text = str(var.dims[-1])
-        if replace_dim:
-            text = text.replace("Dim.", "")
 
     if log:
         text = "log\u2081\u2080(" + text + ")"

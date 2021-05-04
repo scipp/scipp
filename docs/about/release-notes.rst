@@ -10,12 +10,17 @@ Features
 ~~~~~~~~
 
 * Can now control the position and visibility of the legend in 1d plots with ``plot(da, legend={"show": True, "loc": 4})`` `#1790 <https://github.com/scipp/scipp/pull/1790>`_.
+* Added ``zeros_like``, ``ones_like`` and ``empty_like`` functions `#1864 <https://github.com/scipp/scipp/pull/1864>`_.
+* ``sort`` is now considerably faster for data with more rows `#1872 <https://github.com/scipp/scipp/pull/1872>`_.
+* Added numpy-like ``linspace``, ``logspace``, ``geomspace``, and ``arange`` variable creation functions `#1871 <https://github.com/scipp/scipp/pull/1871>`_.
 
 Bugfixes
 ~~~~~~~~
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
+
+* ``filter`` and ``split`` removed. Identical functionality can be achieved using ``groupby`` and/or slicing.
 
 Contributors
 ~~~~~~~~~~~~
@@ -179,7 +184,7 @@ Breaking changes
 
   * Before: ``plot(..., mpl_axes={"ax": myax0, "cax": myax1})``
   * After: ``plot(..., ax=myax0, cax=myax1)``
-* Plot with keyword argument ``collapse`` has been removed in favour of two more generic free functions that return a ``dict`` of data arrays that can then directly be passed to the ``plot`` function:
+* Plot with keyword argument ``collapse`` has been removed in favor of two more generic free functions that return a ``dict`` of data arrays that can then directly be passed to the ``plot`` function:
 
   * ``collapse(d, keep='x')`` slices all dimensions away to keep only ``'x'``, thus always returning 1D slices.
   * ``slices(d, dim='x')`` slices along dimension ``'x'``, returning slices with ``ndim-1`` dimensions contaiing all dimensions other than ``'x'``.

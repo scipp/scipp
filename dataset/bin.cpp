@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -184,7 +184,7 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
                        const std::vector<Variable> &groups,
                        const std::vector<Dim> &erase) {
   auto &[buffer, bin_sizes] = proto;
-  squeeze(bin_sizes, erase);
+  bin_sizes = squeeze(bin_sizes, erase);
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
   // TODO We probably want to omit the coord used for grouping in the non-edge
@@ -417,7 +417,7 @@ public:
     auto [begin, end] = unzip(begin_end);
     for (const auto dim : dims.labels()) {
       auto mask = irreducible_mask(masks, dim);
-      if (mask) {
+      if (mask.is_valid()) {
         begin *= ~mask;
         end *= ~mask;
       }
@@ -464,7 +464,7 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
 
   builder.build(*target_bins, std::map<Dim, Variable>{});
   auto [buffer, bin_sizes] = bin<DataArray>(var, *target_bins, builder);
-  squeeze(bin_sizes, {dim});
+  bin_sizes = squeeze(bin_sizes, {dim});
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
   return make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer));
@@ -481,9 +481,9 @@ template Variable concat_bins<DataArray>(const Variable &, const Dim);
 DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
                               const Variable &groups, const Dim reductionDim) {
   TargetBinBuilder builder;
-  if (edges)
+  if (edges.is_valid())
     builder.bin(edges);
-  if (groups)
+  if (groups.is_valid())
     builder.group(groups);
   builder.erase(reductionDim);
   const auto dims = array.dims();

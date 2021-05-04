@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -6,7 +6,9 @@
 #include <iomanip>
 #include <set>
 
+#include "scipp/core/array_to_string.h"
 #include "scipp/core/bucket_array_view.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/string.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/variable/string.h"
@@ -72,7 +74,7 @@ auto apply(const DType dtype, Args &&... args) {
 
 std::string format_variable(const std::string &key, const Variable &variable,
                             const std::optional<Dimensions> datasetDims) {
-  if (!variable)
+  if (!variable.is_valid())
     return std::string(tab) + "invalid variable\n";
   std::stringstream s;
   const std::string colSep("  ");

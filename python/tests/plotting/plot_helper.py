@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
@@ -32,7 +32,7 @@ def make_dense_dataset(ndim=1,
     shapes = np.arange(50, 0, -10)[:ndim]
     dims = dim_list[:ndim]
 
-    a = np.sin(np.arange(np.prod(shapes)).reshape(*shapes).astype(np.float64))
+    a = np.sin(np.arange(np.prod(shapes), dtype=np.float64).reshape(*shapes))
     d["Sample"] = sc.Variable(dims, values=a, unit=unit, dtype=dtype)
 
     if variances:

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -79,7 +79,7 @@ decltype(auto) apply_with_delay(const Op &op, A &&a, const B &b) {
     else
       op(item, b);
   }
-  if (delayed)
+  if (delayed.is_valid())
     op(delayed, b);
   return std::forward<A>(a);
 }

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Matthew Andrew
@@ -7,6 +7,7 @@
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable_concept.h"
 
 using namespace scipp::variable;
 namespace scipp {

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -67,6 +67,36 @@ TEST_F(GroupbyTest, copy) {
   EXPECT_EQ(two_groups.size(), 2);
   EXPECT_EQ(two_groups.copy(0), d.slice({Dim::X, 0, 2}));
   EXPECT_EQ(two_groups.copy(1), d.slice({Dim::X, 2, 3}));
+}
+
+TEST_F(GroupbyTest, copy_multiple_subgroups) {
+  const auto var =
+      makeVariable<double>(Dims{Dim("x")}, Shape{12}, units::m,
+                           Values{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11});
+  const auto labels = makeVariable<double>(
+      Dims{Dim::X}, Shape{12}, Values{0, 1, 1, 0, 2, 2, 0, 0, 1, 0, 1, 2});
+  const auto da = DataArray(var, {{Dim("labels"), labels}});
+
+  auto grouped = groupby(da, Dim("labels"));
+
+  const auto var0 = makeVariable<double>(Dims{Dim("x")}, Shape{5}, units::m,
+                                         Values{0, 3, 6, 7, 9});
+  const auto var1 = makeVariable<double>(Dims{Dim("x")}, Shape{4}, units::m,
+                                         Values{1, 2, 8, 10});
+  const auto var2 = makeVariable<double>(Dims{Dim("x")}, Shape{3}, units::m,
+                                         Values{4, 5, 11});
+  const auto labels0 =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{0, 0, 0, 0, 0});
+  const auto labels1 =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 1, 1, 1});
+  const auto labels2 =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2, 2, 2});
+  const auto da0 = DataArray(var0, {{Dim("labels"), labels0}});
+  const auto da1 = DataArray(var1, {{Dim("labels"), labels1}});
+  const auto da2 = DataArray(var2, {{Dim("labels"), labels2}});
+  EXPECT_EQ(grouped.copy(0), da0);
+  EXPECT_EQ(grouped.copy(1), da1);
+  EXPECT_EQ(grouped.copy(2), da2);
 }
 
 TEST_F(GroupbyTest, fail_2d_coord) {

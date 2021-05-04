@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -40,9 +40,7 @@ public:
 /// Concrete class for formatting variables with element types not in
 /// scipp-variable.
 template <class T> class Formatter : public AbstractFormatter {
-  std::string format(const Variable &var) const override {
-    return array_to_string(var.template values<T>());
-  }
+  std::string format(const Variable &var) const override;
 };
 
 /// Registry of formatters.

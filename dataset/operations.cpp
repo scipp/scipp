@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -49,9 +49,11 @@ DataArray copy(const DataArray &array, const AttrPolicy attrPolicy) {
 
 /// Return a deep copy of a Dataset.
 Dataset copy(const Dataset &dataset, const AttrPolicy attrPolicy) {
-  Dataset out({}, copy(dataset.coords()));
-  for (const auto &item : dataset)
+  Dataset out{};
+  out.setCoords(copy(dataset.coords()));
+  for (const auto &item : dataset) {
     out.setData(item.name(), copy(item, attrPolicy));
+  }
   return out;
 }
 
@@ -105,10 +107,40 @@ Dataset copy(const Dataset &dataset, Dataset &&out,
 /// Only in the latter case a copy is returned.
 Variable masked_data(const DataArray &array, const Dim dim) {
   const auto mask = irreducible_mask(array.masks(), dim);
-  if (mask)
+  if (mask.is_valid())
     return array.data() * ~mask;
   else
     return array.data();
+}
+
+namespace {
+template <class Dict> void strip_if_broadcast_along(Dict &dict, const Dim dim) {
+  std::vector<typename Dict::key_type> erase;
+  for (const auto &item : dict) {
+    if constexpr (std::is_same_v<Dict, Dataset>) {
+      if (!item.dims().contains(dim))
+        erase.emplace_back(item.name());
+    } else {
+      if (!item.second.dims().contains(dim))
+        erase.emplace_back(item.first);
+    }
+  }
+  for (const auto &key : erase)
+    dict.erase(key);
+}
+} // namespace
+
+DataArray strip_if_broadcast_along(DataArray &&a, const Dim dim) {
+  strip_if_broadcast_along(a.coords(), dim);
+  strip_if_broadcast_along(a.masks(), dim);
+  strip_if_broadcast_along(a.attrs(), dim);
+  return a;
+}
+
+Dataset strip_if_broadcast_along(Dataset &&d, const Dim dim) {
+  strip_if_broadcast_along(d.coords(), dim);
+  strip_if_broadcast_along(d, dim);
+  return d;
 }
 
 } // namespace scipp::dataset

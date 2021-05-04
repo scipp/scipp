@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -242,31 +242,6 @@ of variances.)");
   py::implicitly_convertible<std::string, Dim>();
 
   m.def(
-      "filter", py::overload_cast<const Variable &, const Variable &>(&filter),
-      py::arg("x"), py::arg("filter"), py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description(
-              "Selects elements for a Variable using a filter (mask).\n\n"
-              "The filter variable must be 1D and of bool type. "
-              "A true value in the filter means the corresponding element in "
-              "the input is "
-              "selected and will be copied to the output. "
-              "A false value in the filter discards the corresponding element "
-              "in the input.")
-          .raises("If the filter variable is not 1 dimensional.")
-          .returns("New variable containing the data selected by the filter.")
-          .rtype("Variable")
-          .param("x", "Variable to filter.", "Variable.")
-          .param("filter", "Variable which defines the filter.", "Variable.")
-          .c_str());
-
-  m.def("split",
-        py::overload_cast<const Variable &, const Dim,
-                          const std::vector<scipp::index> &>(&split),
-        py::call_guard<py::gil_scoped_release>(),
-        "Split a Variable along a given Dimension.");
-
-  m.def(
       "islinspace",
       [](const Variable &x) {
         if (x.dims().ndim() != 1)
@@ -275,29 +250,11 @@ of variances.)");
         else
           return scipp::numeric::islinspace(x.template values<double>());
       },
-      py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description("Check if the values of a variable are evenly spaced.")
-          .returns("Returns True if the variable contains regularly spaced "
-                   "values, False otherwise.")
-          .rtype("bool")
-          .c_str());
+      py::call_guard<py::gil_scoped_release>());
 
   m.def("rebin",
         py::overload_cast<const Variable &, const Dim, const Variable &,
                           const Variable &>(&rebin),
         py::arg("x"), py::arg("dim"), py::arg("old"), py::arg("new"),
-        py::call_guard<py::gil_scoped_release>(),
-        Docstring()
-            .description("Rebin a dimension of a variable.")
-            .raises("If data cannot be rebinned, e.g., if the unit is not "
-                    "counts, or the existing coordinate is not a bin-edge "
-                    "coordinate.")
-            .returns("Data rebinned according to the new bin edges.")
-            .rtype("Variable")
-            .param("x", "Data to rebin.", "Variable")
-            .param("dim", "Dimension to rebin over.", "Dim")
-            .param("old", "Old bin edges.", "Variable")
-            .param("new", "New bin edges.", "Variable")
-            .c_str());
+        py::call_guard<py::gil_scoped_release>());
 }

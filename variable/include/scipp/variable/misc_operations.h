@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -10,12 +10,6 @@
 namespace scipp::variable {
 
 SCIPP_VARIABLE_EXPORT Variable astype(const Variable &var, const DType type);
-
-SCIPP_VARIABLE_EXPORT std::vector<Variable>
-split(const Variable &var, const Dim dim,
-      const std::vector<scipp::index> &indices);
-SCIPP_VARIABLE_EXPORT Variable filter(const Variable &var,
-                                      const Variable &filter);
 
 SCIPP_VARIABLE_EXPORT Variable masked_to_zero(const Variable &var,
                                               const Variable &mask);

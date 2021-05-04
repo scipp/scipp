@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -161,6 +161,7 @@ public:
   mapped_type extract(const key_type &key);
 
   Dict slice(const Slice &params) const;
+  void validateSlice(const Slice s, const Dict &dict) const;
   [[maybe_unused]] Dict &setSlice(const Slice s, const Dict &dict);
 
   void rename(const Dim from, const Dim to);
@@ -187,7 +188,7 @@ template <class Masks>
   Variable union_;
   for (const auto &mask : masks)
     if (mask.second.dims().contains(dim))
-      union_ = union_ ? union_ | mask.second : copy(mask.second);
+      union_ = union_.is_valid() ? union_ | mask.second : copy(mask.second);
   return union_;
 }
 

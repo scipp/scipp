@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -68,7 +68,7 @@ public:
           "must be given by shape of `sizes`.");
     const auto [indices, dim, buf] = prototype.constituents<bucket<T>>();
     auto sizes_ = sizes;
-    if (!sizes) {
+    if (!sizes.is_valid()) {
       const auto &[begin, end] = unzip(indices);
       sizes_ = end - begin;
     }

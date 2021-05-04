@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -119,7 +119,7 @@ TEST(IndexCompositionTest, extract_indices_2d_size0) {
   EXPECT_EQ(indices[0], 0);
   EXPECT_EQ(indices[1], 1);
 
-  shape = {1, 0, -3};
+  shape = {2, 0, -3};
   scipp::extract_indices(0, 2, shape, indices);
   EXPECT_EQ(indices[0], 0);
   EXPECT_EQ(indices[1], 0);

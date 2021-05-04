@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -7,6 +7,10 @@
 #include "scipp-variable_export.h"
 #include "scipp/variable/generated_util.h"
 #include "scipp/variable/variable.h"
+
+namespace scipp {
+enum class SCIPP_VARIABLE_EXPORT SortOrder { Ascending, Descending };
+}
 
 namespace scipp::variable {
 
@@ -17,8 +21,6 @@ namespace scipp::variable {
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable islinspace(const Variable &var,
                                                         const Dim dim);
-
-enum class SCIPP_VARIABLE_EXPORT SortOrder { Ascending, Descending };
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT bool
 issorted(const Variable &x, const Dim dim,

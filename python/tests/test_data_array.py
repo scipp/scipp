@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import numpy as np
@@ -74,6 +74,17 @@ def test_init_from_variable_views():
                      masks={'mask1': a.masks['mask1']})
 
     assert sc.identical(a, c)
+
+
+@pytest.mark.parametrize("make", [lambda x: x, sc.DataArray])
+def test_builtin_len(make):
+    var = sc.Variable(dims=['x', 'y'], shape=[3, 2])
+    obj = make(var)
+    assert len(obj) == 3
+    assert len(obj['x', 0]) == 2
+    assert len(obj['y', 0]) == 3
+    with pytest.raises(TypeError):
+        len(obj['x', 0]['y', 0])
 
 
 def test_coords():

@@ -1,10 +1,11 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 #include <vector>
 
 #include "test_macros.h"
 
+#include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 
 #include "scipp/variable/arithmetic.h"
@@ -953,11 +954,6 @@ TEST(TransformFlagsTest, expect_no_in_variance_if_out_cannot_have_variance) {
   EXPECT_THROW(out = transform(var_with_variance, op_has_flags),
                except::VariancesError);
   EXPECT_NO_THROW(out = transform(var_no_variance, op_has_flags));
-}
-
-TEST(TransformEigenTest, is_eigen_type_test) {
-  EXPECT_TRUE(scipp::variable::detail::is_eigen_type_v<Eigen::Vector3d>);
-  EXPECT_TRUE(scipp::variable::detail::is_eigen_type_v<Eigen::Matrix3d>);
 }
 
 class TransformBinElementsTest : public ::testing::Test {

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 #include <vector>
@@ -18,7 +18,7 @@ using namespace scipp;
 TEST(Variable, construct_default) {
   ASSERT_NO_THROW(Variable{});
   Variable var;
-  ASSERT_FALSE(var);
+  ASSERT_FALSE(var.is_valid());
 }
 
 TEST(Variable, construct) {
@@ -46,7 +46,7 @@ TEST(Variable, construct_fail) {
 TEST(Variable, move) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{2});
   Variable moved(std::move(var));
-  EXPECT_FALSE(var);
+  EXPECT_FALSE(var.is_valid());
   EXPECT_NE(moved, var);
 }
 

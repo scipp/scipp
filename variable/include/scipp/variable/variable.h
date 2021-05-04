@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -8,8 +8,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <Eigen/Core>
 
 #include "scipp-variable_export.h"
 #include "scipp/common/index.h"
@@ -23,9 +21,7 @@
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/strides.h"
-#include "scipp/core/tag_util.h"
 
-#include "scipp/variable/variable_concept.h"
 #include "scipp/variable/variable_keyword_arg_constructor.h"
 
 namespace llnl::units {
@@ -33,6 +29,9 @@ class precise_measurement;
 }
 
 namespace scipp::variable {
+
+class VariableConcept;
+using VariableConceptHandle = std::shared_ptr<VariableConcept>;
 
 namespace detail {
 SCIPP_VARIABLE_EXPORT void expect0D(const Dimensions &dims);
@@ -58,21 +57,20 @@ public:
   /// should be prefered where possible, since it generates less code.
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
-  explicit operator bool() const noexcept { return m_object.operator bool(); }
   Variable operator~() const;
 
-  [[nodiscard]] units::Unit unit() const { return m_object->unit(); }
+  [[nodiscard]] units::Unit unit() const;
   void setUnit(const units::Unit &unit);
   void expectCanSetUnit(const units::Unit &) const;
 
   [[nodiscard]] const Dimensions &dims() const;
   void setDims(const Dimensions &dimensions);
 
-  [[nodiscard]] DType dtype() const { return data().dtype(); }
+  [[nodiscard]] DType dtype() const;
 
   [[nodiscard]] scipp::span<const scipp::index> strides() const;
 
-  [[nodiscard]] bool hasVariances() const { return data().hasVariances(); }
+  [[nodiscard]] bool hasVariances() const;
 
   template <class T> ElementArrayView<const T> values() const;
   template <class T> ElementArrayView<T> values();
@@ -95,7 +93,8 @@ public:
     return variances<T>()[0];
   }
 
-  [[nodiscard]] Variable slice(Slice params) const;
+  [[nodiscard]]Variable slice(Slice params) const;
+  void validateSlice(const Slice &s, const Variable &data) const;
   [[maybe_unused]] Variable &setSlice(Slice params, const Variable &data);
 
   void rename(Dim from, Dim to);
@@ -105,13 +104,10 @@ public:
   Variable operator-() const;
 
   [[nodiscard]] const VariableConcept &data() const && = delete;
-  [[nodiscard]] const VariableConcept &data() const & { return *m_object; }
+  [[nodiscard]] const VariableConcept &data() const &;
   VariableConcept &data() && = delete;
-  VariableConcept &data() & {
-    expectWritable();
-    return *m_object;
-  }
-  [[nodiscard]] const auto &data_handle() const { return m_object; }
+  VariableConcept &data() &;
+  [[nodiscard]] const VariableConceptHandle &data_handle() const;
   void setDataHandle(VariableConceptHandle object);
 
   void setVariances(const Variable &v);
@@ -133,6 +129,7 @@ public:
 
   [[nodiscard]] Variable transpose(const std::vector<Dim> &order) const;
 
+  [[nodiscard]] bool is_valid() const noexcept;
   [[nodiscard]] bool is_slice() const;
   [[nodiscard]] bool is_readonly() const noexcept;
   [[nodiscard]] bool is_same(const Variable &other) const noexcept;
@@ -175,7 +172,7 @@ private:
 /// 4. If empty Values and/or Variances are provided, resulting Variable
 ///    contains default initialized Values and/or Variances, the way to make
 ///    Variable which contains both Values and Variances given length
-///    uninitialised is:
+///    uninitialized is:
 ///        makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{}, Variances{});
 template <class T, class... Ts> Variable makeVariable(Ts &&... ts) {
   detail::ArgParser<T> parser;
@@ -189,7 +186,7 @@ Variable Variable::construct(const DType &type, Args &&... args) {
                       ? makeVariable<Ts>(std::forward<Args>(args)...)
                       : Variable()...};
   for (auto &var : vars)
-    if (var)
+    if (var.is_valid())
       return std::move(var);
   throw except::TypeError("Unsupported dtype for constructing a Variable: " +
                           to_string(type));
@@ -197,9 +194,9 @@ Variable Variable::construct(const DType &type, Args &&... args) {
 
 template <class... Ts>
 Variable::Variable(const DType &type, Ts &&... args)
-    : Variable{construct<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-                         Eigen::Matrix3d, std::string, scipp::core::time_point>(
-          type, std::forward<Ts>(args)...)} {}
+    : Variable{construct<double, float, int64_t, int32_t, bool, std::string,
+                         scipp::core::time_point>(type,
+                                                  std::forward<Ts>(args)...)} {}
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var);
 [[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable &copy(const Variable &var,

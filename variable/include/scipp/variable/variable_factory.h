@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -75,7 +75,7 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   Variable empty_like(const Variable &prototype,
                       const std::optional<Dimensions> &shape,
                       const Variable &sizes) const override {
-    if (sizes)
+    if (sizes.is_valid())
       throw except::TypeError(
           "Cannot specify sizes in `empty_like` for non-bin prototype.");
     return create(prototype.dtype(), shape ? *shape : prototype.dims(),

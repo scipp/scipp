@@ -1,78 +1,58 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <numeric>
-
-#include "scipp/core/tag_util.h"
-#include "scipp/dataset/except.h"
-#include "scipp/dataset/shape.h"
 #include "scipp/dataset/sort.h"
-#include "scipp/variable/indexed_slice_view.h"
+#include "scipp/dataset/groupby.h"
 
-using scipp::variable::IndexedSliceView;
+#include "dataset_operations_common.h"
 
 namespace scipp::dataset {
-template <class T> struct MakePermutation {
-  static auto apply(const Variable &key, const SortOrder &order) {
-    if (key.dims().ndim() != 1)
-      throw except::DimensionError("Sort key must be 1-dimensional");
 
-    // Variances are ignored for sorting.
-    const auto &values = key.values<T>();
-
-    std::vector<scipp::index> permutation(values.size());
-    std::iota(permutation.begin(), permutation.end(), 0);
-    if (order == SortOrder::Ascending) {
-      std::sort(permutation.begin(), permutation.end(),
-                [&](scipp::index i, scipp::index j) {
-                  return values[i] < values[j];
-                });
-    } else {
-      std::sort(permutation.begin(), permutation.end(),
-                [&](scipp::index i, scipp::index j) {
-                  return values[i] > values[j];
-                });
-    }
-    return permutation;
-  }
-};
-
-static auto makePermutation(const Variable &key, const SortOrder &order) {
-  return core::CallDType<double, float, int64_t, int32_t, bool,
-                         std::string>::apply<MakePermutation>(key.dtype(), key,
-                                                              order);
+namespace {
+Dim nonclashing_name(const Coords &coords) {
+  std::string name("dummy");
+  for (const auto &item : coords)
+    name += item.first.name();
+  return Dim(name);
 }
+} // namespace
 
 /// Return a Variable sorted based on key.
-Variable sort(const Variable &var, const Variable &key,
-              const SortOrder &order) {
-  return concatenate(
-      IndexedSliceView{var, key.dims().inner(), makePermutation(key, order)});
+Variable sort(const Variable &var, const Variable &key, const SortOrder order) {
+  return sort(DataArray(var), key, order).data();
 }
 
 /// Return a DataArray sorted based on key.
 DataArray sort(const DataArray &array, const Variable &key,
-               const SortOrder &order) {
-  return concatenate(
-      IndexedSliceView{array, key.dims().inner(), makePermutation(key, order)});
+               const SortOrder order) {
+  auto helper = array;
+  const auto dummy = nonclashing_name(helper.coords());
+  helper.coords().set(dummy, key);
+  helper = groupby(helper, dummy).copy(order);
+  helper.coords().erase(dummy);
+  return helper;
 }
 
 /// Return a DataArray sorted based on coordinate.
-DataArray sort(const DataArray &array, const Dim &key, const SortOrder &order) {
-  return sort(array, array.coords()[key], order);
+DataArray sort(const DataArray &array, const Dim &key, const SortOrder order) {
+  return groupby(array, key).copy(order);
 }
 
 /// Return a Dataset sorted based on key.
 Dataset sort(const Dataset &dataset, const Variable &key,
-             const SortOrder &order) {
-  return concatenate(IndexedSliceView{dataset, key.dims().inner(),
-                                      makePermutation(key, order)});
+             const SortOrder order) {
+  auto helper = dataset;
+  const auto dummy = nonclashing_name(helper.coords());
+  helper.coords().set(dummy, key);
+  helper = groupby(helper, dummy).copy(order);
+  helper.coords().erase(dummy);
+  return helper;
 }
 
 /// Return a Dataset sorted based on coordinate.
-Dataset sort(const Dataset &dataset, const Dim &key, const SortOrder &order) {
-  return sort(dataset, dataset.coords()[key], order);
+Dataset sort(const Dataset &dataset, const Dim &key, const SortOrder order) {
+  return groupby(dataset, key).copy(order);
 }
 
 } // namespace scipp::dataset

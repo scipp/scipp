@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -40,12 +40,15 @@ void throw_mismatch_error(const std::pair<const Dim, Variable> &expected,
 } // namespace scipp::except
 
 namespace scipp::dataset::expect {
-
-void coordsAreSuperset(const DataArray &a, const DataArray &b) {
-  const auto &a_coords = a.coords();
-  for (const auto b_coord : b.coords())
+void coordsAreSuperset(const Coords &a_coords, const Coords &b_coords) {
+  for (const auto b_coord : b_coords) {
     if (a_coords[b_coord.first] != b_coord.second)
       throw except::CoordMismatchError(*a_coords.find(b_coord.first), b_coord);
+  }
+}
+
+void coordsAreSuperset(const DataArray &a, const DataArray &b) {
+  coordsAreSuperset(a.coords(), b.coords());
 }
 
 void isKey(const Variable &key) {

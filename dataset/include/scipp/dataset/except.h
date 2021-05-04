@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -57,6 +57,7 @@ namespace scipp::dataset::expect {
 
 SCIPP_DATASET_EXPORT void coordsAreSuperset(const DataArray &a,
                                             const DataArray &b);
+SCIPP_DATASET_EXPORT void coordsAreSuperset(const Coords &a, const Coords &b);
 
 SCIPP_DATASET_EXPORT void isKey(const Variable &key);
 

@@ -1,8 +1,9 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Jan-Lukas Wynen
 #include "scipp/variable/except.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::except {
 VariableError::VariableError(const std::string &msg) : Error{msg} {}
@@ -14,3 +15,14 @@ void throw_mismatch_error(const variable::Variable &expected,
                       to_string(actual) + '.');
 }
 } // namespace scipp::except
+
+namespace scipp::variable {
+
+std::string pretty_dtype(const Variable &var) {
+  if (!is_bins(var))
+    return to_string(var.dtype());
+  return to_string(var.dtype()) +
+         "(dtype=" + pretty_dtype(variableFactory().elem_dtype(var)) + ")";
+}
+
+} // namespace scipp::variable

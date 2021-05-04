@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -93,4 +93,33 @@ TEST(DataArrayTest, astype) {
   const auto x = astype(a, dtype<double>);
   EXPECT_EQ(x.data(),
             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1., 2., 3.}));
+}
+
+TEST(DataArrayTest, view) {
+  const auto var = makeVariable<double>(Values{1});
+  const DataArray a(copy(var), {{Dim::X, copy(var)}}, {{"mask", copy(var)}},
+                    {{Dim("attr"), copy(var)}});
+  const auto b = a.view();
+  EXPECT_EQ(a, b);
+  EXPECT_EQ(&a.data(), &b.data());
+  EXPECT_EQ(&a.coords(), &b.coords());
+  EXPECT_EQ(&a.masks(), &b.masks());
+  EXPECT_EQ(&a.attrs(), &b.attrs());
+  EXPECT_EQ(a.name(), b.name());
+}
+
+TEST(DataArrayTest, as_const) {
+  const auto var = makeVariable<double>(Values{1});
+  const DataArray a(copy(var), {{Dim::X, copy(var)}}, {{"mask", copy(var)}},
+                    {{Dim("attr"), copy(var)}});
+  const auto b = a.as_const();
+  EXPECT_EQ(a, b);
+  EXPECT_TRUE(b.is_readonly());
+  EXPECT_TRUE(b.coords().is_readonly());
+  EXPECT_TRUE(b.masks().is_readonly());
+  EXPECT_TRUE(b.attrs().is_readonly());
+  EXPECT_TRUE(b.coords()[Dim::X].is_readonly());
+  EXPECT_TRUE(b.masks()["mask"].is_readonly());
+  EXPECT_TRUE(b.attrs()[Dim("attr")].is_readonly());
+  EXPECT_EQ(a.name(), b.name());
 }

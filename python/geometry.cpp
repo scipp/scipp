@@ -1,9 +1,10 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "docstring.h"
 #include "pybind11.h"
+#include <Eigen/Geometry>
 
 #include "scipp/variable/misc_operations.h"
 
@@ -54,6 +55,14 @@ void init_geometry(py::module &m) {
           .param("y", "Variable containing y component.", "Variable")
           .param("z", "Variable containing z component.", "Variable")
           .c_str());
+
+  geom_m.def(
+      "rotation_matrix_from_quaternion_coeffs", [](py::array_t<double> value) {
+        if (value.size() != 4)
+          throw std::runtime_error("Incompatible list size: expected size 4.");
+        return Eigen::Quaterniond(value.cast<std::vector<double>>().data())
+            .toRotationMatrix();
+      });
 
   bind_component("x", x, geom_m);
   bind_component("y", y, geom_m);

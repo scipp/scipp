@@ -1,13 +1,12 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
 
-#include <Eigen/Core>
-
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/subbin_sizes.h"
 #include "scipp/core/transform_common.h"
@@ -62,6 +61,10 @@ constexpr auto times_equals =
     overloaded{mul_inplace_types, [](auto &&a, const auto &b) { a *= b; }};
 constexpr auto divide_equals =
     overloaded{div_inplace_types, [](auto &&a, const auto &b) { a /= b; }};
+
+using arithmetic_and_matrix_type_pairs = decltype(
+    std::tuple_cat(std::declval<arithmetic_type_pairs>(),
+                   std::tuple<std::tuple<Eigen::Vector3d, Eigen::Vector3d>>()));
 
 struct add_types_t {
   constexpr void operator()() const noexcept;

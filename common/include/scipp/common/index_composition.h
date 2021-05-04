@@ -105,7 +105,7 @@ extract_indices(scipp::index flat_index, const scipp::index ndim,
  * With ndim == 2, we have
  *     I = i_0 + l_0 * i_1
  * All numbers are positive integers. Thus I can be decomposed using
- * integer division as follows:
+ * integer division as follows (note that i_0 < l_0):
  *     x = I / l_0
  *     i_0 = I - x * l_0
  *     i_1 = x

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -230,6 +230,7 @@ TEST(ConcatenateTest, concat_2d_coord) {
       makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
 
   Dataset b = copy(a);
+  EXPECT_EQ(a, b);
   b.coords()[Dim::X] += 3 * units::one;
   b["data_1"].data() += 100 * units::one;
 

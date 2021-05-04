@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -221,5 +221,11 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   if constexpr (std::is_same_v<T, Dataset>) {
     c.def("__getitem__", &slicer<T>::get_by_value);
     c.def("__setitem__", &slicer<T>::template set_by_value<Dataset>);
+  } else {
+    c.def("__len__", [](const T &self) {
+      if (self.dims().ndim() == 0)
+        throw except::TypeError("len() of unsized object");
+      return self.dims().size(0);
+    });
   }
 }

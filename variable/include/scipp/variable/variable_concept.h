@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -40,7 +40,7 @@ public:
   const units::Unit &unit() const { return m_unit; }
   virtual scipp::index size() const = 0;
 
-  void setUnit(const units::Unit &unit) { m_unit = unit; }
+  virtual void setUnit(const units::Unit &unit) { m_unit = unit; }
 
   virtual bool hasVariances() const noexcept = 0;
   virtual void setVariances(const Variable &variances) = 0;

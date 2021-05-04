@@ -34,17 +34,15 @@ public:
   DataArray &operator=(const DataArray &other);
   DataArray &operator=(DataArray &&other) = default;
 
-  explicit operator bool() const noexcept {
-    return m_data && m_data->operator bool();
-  }
+  bool is_valid() const noexcept { return m_data && m_data->is_valid(); }
 
   const std::string &name() const;
   void setName(std::string_view name);
 
-  const Coords &coords() const { return m_coords; }
+  const Coords &coords() const { return *m_coords; }
   // TODO either ensure Dict does not allow changing sizes, or return by value
   // here
-  Coords &coords() { return m_coords; }
+  Coords &coords() { return *m_coords; }
 
   const Masks &masks() const { return *m_masks; }
   Masks &masks() { return *m_masks; }
@@ -87,9 +85,11 @@ public:
   void setData(const Variable &data);
 
   DataArray slice(const Slice &s) const;
+  void validateSlice(const Slice &s, const DataArray &array) const;
   [[maybe_unused]] DataArray &setSlice(const Slice &s, const DataArray &array);
   [[maybe_unused]] DataArray &setSlice(const Slice &s, const Variable &var);
 
+  DataArray view() const;
   DataArray view_with_coords(const Coords &coords,
                              const std::string &name) const;
 
@@ -103,7 +103,7 @@ private:
                                                        const DataArray &);
   std::string m_name;
   std::shared_ptr<Variable> m_data;
-  Coords m_coords;
+  std::shared_ptr<Coords> m_coords;
   std::shared_ptr<Masks> m_masks;
   std::shared_ptr<Attrs> m_attrs;
 };

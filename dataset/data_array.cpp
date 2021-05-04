@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -17,7 +17,8 @@ template <class T> auto copy_shared(const std::shared_ptr<T> &obj) {
 
 DataArray::DataArray(const DataArray &other, const AttrPolicy attrPolicy)
     : m_name(other.m_name), m_data(copy_shared(other.m_data)),
-      m_coords(other.m_coords), m_masks(copy_shared(other.m_masks)),
+      m_coords(copy_shared(other.m_coords)),
+      m_masks(copy_shared(other.m_masks)),
       m_attrs(attrPolicy == AttrPolicy::Keep ? copy_shared(other.m_attrs)
                                              : std::make_shared<Attrs>()) {}
 
@@ -27,11 +28,11 @@ DataArray::DataArray(const DataArray &other)
 DataArray::DataArray(Variable data, Coords coords, Masks masks, Attrs attrs,
                      const std::string_view name)
     : m_name(name), m_data(std::make_shared<Variable>(std::move(data))),
-      m_coords(std::move(coords)),
+      m_coords(std::make_shared<Coords>(std::move(coords))),
       m_masks(std::make_shared<Masks>(std::move(masks))),
       m_attrs(std::make_shared<Attrs>(std::move(attrs))) {
   const Sizes sizes(dims());
-  m_coords.setSizes(sizes);
+  m_coords->setSizes(sizes);
   m_masks->setSizes(sizes);
   m_attrs->setSizes(sizes);
 }
@@ -41,7 +42,7 @@ DataArray::DataArray(Variable data, typename Coords::holder_type coords,
                      typename Attrs::holder_type attrs,
                      const std::string_view name)
     : m_name(name), m_data(std::make_shared<Variable>(std::move(data))),
-      m_coords(dims(), std::move(coords)),
+      m_coords(std::make_shared<Coords>(dims(), std::move(coords))),
       m_masks(std::make_shared<Masks>(dims(), std::move(masks))),
       m_attrs(std::make_shared<Attrs>(dims(), std::move(attrs))) {}
 
@@ -82,9 +83,9 @@ void DataArray::setName(const std::string_view name) { m_name = name; }
 Coords DataArray::meta() const { return attrs().merge_from(coords()); }
 
 DataArray DataArray::slice(const Slice &s) const {
-  auto out_coords = m_coords.slice(s);
+  auto out_coords = m_coords->slice(s);
   Attrs out_attrs(out_coords.sizes(), {});
-  for (auto &coord : m_coords) {
+  for (auto &coord : *m_coords) {
     if (unaligned_by_dim_slice(coord, s))
       out_attrs.set(coord.first, out_coords.extract(coord.first));
   }
@@ -92,9 +93,17 @@ DataArray DataArray::slice(const Slice &s) const {
           m_attrs->slice(s).merge_from(out_attrs), m_name};
 }
 
-DataArray &DataArray::setSlice(const Slice &s, const DataArray &array) {
+void DataArray::validateSlice(const Slice &s, const DataArray &array) const {
   expect::coordsAreSuperset(slice(s), array);
-  // TODO Need dry-run mechanism for mask handling?
+  data().validateSlice(s, array.data());
+  masks().validateSlice(s, array.masks());
+}
+
+DataArray &DataArray::setSlice(const Slice &s, const DataArray &array) {
+  // validateSlice, but not masks as otherwise repeated
+  expect::coordsAreSuperset(slice(s), array);
+  data().validateSlice(s, array.data());
+  // Apply changes
   masks().setSlice(s, array.masks());
   return setSlice(s, array.data());
 }
@@ -104,15 +113,26 @@ DataArray &DataArray::setSlice(const Slice &s, const Variable &var) {
   return *this;
 }
 
+DataArray DataArray::view() const {
+  DataArray out;
+  out.m_data = m_data;     // share data
+  out.m_coords = m_coords; // share coords
+  out.m_masks = m_masks;   // share masks
+  out.m_attrs = m_attrs;   // share attrs
+  out.m_name = m_name;
+  return out;
+}
+
 DataArray DataArray::view_with_coords(const Coords &coords,
                                       const std::string &name) const {
   DataArray out;
   out.m_data = m_data; // share data
   const Sizes sizes(dims());
-  out.m_coords = Coords(sizes, {});
+  out.m_coords =
+      std::make_shared<Coords>(sizes, typename Coords::holder_type{});
   for (const auto &[dim, coord] : coords)
     if (coords.item_applies_to(dim, dims()))
-      out.m_coords.set(dim, coord.as_const());
+      out.m_coords->set(dim, coord.as_const());
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
   out.m_name = name;
@@ -123,7 +143,7 @@ void DataArray::rename(const Dim from, const Dim to) {
   if ((from != to) && dims().contains(to))
     throw except::DimensionError("Duplicate dimension.");
   m_data->rename(from, to);
-  m_coords.rename(from, to);
+  m_coords->rename(from, to);
   m_masks->rename(from, to);
   m_attrs->rename(from, to);
 }

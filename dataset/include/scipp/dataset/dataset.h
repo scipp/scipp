@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -54,6 +54,8 @@ public:
     for (auto &&[dim, coord] : coords)
       setCoord(dim, std::move(coord));
   }
+
+  void setCoords(Coords other);
 
   /// Return the number of data items in the dataset.
   ///

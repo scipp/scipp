@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -13,6 +13,7 @@
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable_concept.h"
 
 namespace scipp::variable {
 

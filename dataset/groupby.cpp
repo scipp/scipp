@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -9,7 +9,6 @@
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
 
-#include "scipp/variable/indexed_slice_view.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/util.h"
 
@@ -29,26 +28,45 @@ using namespace scipp::variable;
 
 namespace scipp::dataset {
 
-/// Extract given group as a new data array or dataset
-template <class T>
-T GroupBy<T>::copy(const scipp::index group,
-                   const AttrPolicy attrPolicy) const {
-  const auto &slices = groups()[group];
+namespace {
+
+template <class Slices, class Data>
+auto copy_impl(const Slices &slices, const Data &data, const Dim dim,
+               const AttrPolicy attrPolicy = AttrPolicy::Keep) {
   scipp::index size = 0;
   for (const auto &slice : slices)
     size += slice.end() - slice.begin();
   // This is just the slicing dim, but `slices` may be empty
-  const Dim slice_dim = m_data.coords()[dim()].dims().inner();
-  auto out =
-      scipp::dataset::copy(m_data.slice({slice_dim, 0, size}), attrPolicy);
+  const Dim slice_dim = data.coords()[dim].dims().inner();
+  auto out = dataset::copy(data.slice({slice_dim, 0, size}), attrPolicy);
   scipp::index current = 0;
-  for (const auto &slice : slices) {
+  auto out_slices = slices;
+  for (auto &slice : out_slices) {
     const auto thickness = slice.end() - slice.begin();
-    const Slice out_slice(slice_dim, current, current + thickness);
-    scipp::dataset::copy(m_data.slice(slice), out.slice(out_slice), attrPolicy);
+    slice = Slice(slice.dim(), current, current + thickness);
     current += thickness;
   }
+  const auto copy_slice = [&](const auto &range) {
+    for (scipp::index i = range.begin(); i != range.end(); ++i) {
+      const auto &slice = slices[i];
+      const auto &out_slice = out_slices[i];
+      scipp::dataset::copy(
+          strip_if_broadcast_along(data.slice(slice), slice_dim),
+          out.slice(out_slice), attrPolicy);
+    }
+  };
+  core::parallel::parallel_for(core::parallel::blocked_range(0, slices.size()),
+                               copy_slice);
   return out;
+}
+
+} // namespace
+
+/// Extract given group as a new data array or dataset
+template <class T>
+T GroupBy<T>::copy(const scipp::index group,
+                   const AttrPolicy attrPolicy) const {
+  return copy_impl(groups()[group], m_data, dim(), attrPolicy);
 }
 
 /// Helper for creating output for "combine" step for "apply" steps that reduce
@@ -76,7 +94,7 @@ template <class Op, class Groups>
 void reduce_(Op op, const Dim reductionDim, const Variable &out_data,
              const DataArray &data, const Dim dim, const Groups &groups) {
   auto mask = irreducible_mask(data.masks(), reductionDim);
-  if (mask)
+  if (mask.is_valid())
     mask = ~mask; // `op` multiplies mask into data to zero masked elements
   const auto process = [&](const auto &range) {
     // Apply to each group, storing result in output slice
@@ -110,7 +128,7 @@ static constexpr auto sum = [](Variable &out, const auto &data_container,
                                const Variable &mask) {
   for (const auto &slice : group) {
     const auto data_slice = data_container.data().slice(slice);
-    if (mask)
+    if (mask.is_valid())
       sum_impl(out, data_slice * mask.slice(slice));
     else
       sum_impl(out, data_slice);
@@ -129,7 +147,7 @@ struct wrap {
         bool first = true;
         for (const auto &slice : group) {
           const auto data_slice = data_container.data().slice(slice);
-          if (mask)
+          if (mask.is_valid())
             throw std::runtime_error(
                 "This operation does not support masks yet.");
           if (first) {
@@ -188,6 +206,18 @@ template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
                 reductionDim);
 }
 
+/// Combine groups without changes, effectively sorting data.
+template <class T> T GroupBy<T>::copy(const SortOrder order) const {
+  std::vector<Slice> flat;
+  if (order == SortOrder::Ascending)
+    for (const auto &slices : groups())
+      flat.insert(flat.end(), slices.begin(), slices.end());
+  else
+    for (auto it = groups().rbegin(); it != groups().rend(); ++it)
+      flat.insert(flat.end(), it->begin(), it->end());
+  return copy_impl(flat, m_data, dim());
+}
+
 /// Apply mean to groups and return combined data.
 template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   // 1. Sum into output slices
@@ -203,7 +233,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
         // N contributing to each slice
         scaleT[group] += slice.end() - slice.begin();
         // N masks for each slice, that need to be subtracted
-        if (mask) {
+        if (mask.is_valid()) {
           const auto masks_sum = variable::sum(mask.slice(slice), reductionDim);
           scaleT[group] -= masks_sum.template value<int64_t>();
         }

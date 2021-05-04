@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -151,7 +151,7 @@ Dict<Key, Value> Dict<Key, Value>::slice(const Slice &params) const {
 }
 
 template <class Key, class Value>
-Dict<Key, Value> &Dict<Key, Value>::setSlice(const Slice s, const Dict &dict) {
+void Dict<Key, Value>::validateSlice(const Slice s, const Dict &dict) const {
   using core::to_string;
   using units::to_string;
   for (const auto &[key, item] : dict) {
@@ -170,6 +170,11 @@ Dict<Key, Value> &Dict<Key, Value>::setSlice(const Slice s, const Dict &dict) {
                                    to_string(s.dim()) + "'.");
     }
   }
+}
+
+template <class Key, class Value>
+Dict<Key, Value> &Dict<Key, Value>::setSlice(const Slice s, const Dict &dict) {
+  validateSlice(s, dict);
   for (const auto &[key, item] : dict) {
     const auto it = find(key);
     if (it != end() && !it->second.is_readonly() &&

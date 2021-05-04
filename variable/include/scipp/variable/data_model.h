@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -190,7 +190,7 @@ template <class T> void DataModel<T>::assign(const VariableConcept &other) {
 template <class T> void DataModel<T>::setVariances(const Variable &variances) {
   if (!core::canHaveVariances<T>())
     throw except::VariancesError("This data type cannot have variances.");
-  if (!variances)
+  if (!variances.is_valid())
     return m_variances.reset();
   // TODO Could move if refcount is 1?
   if (variances.hasVariances())

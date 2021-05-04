@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -35,10 +35,14 @@ void Variable::setDataHandle(VariableConceptHandle object) {
 }
 
 const Dimensions &Variable::dims() const {
-  if (!*this)
+  if (!is_valid())
     throw std::runtime_error("invalid variable");
   return m_dims;
 }
+
+DType Variable::dtype() const { return data().dtype(); }
+
+bool Variable::hasVariances() const { return data().hasVariances(); }
 
 void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == dims().volume()) {
@@ -59,6 +63,8 @@ void Variable::expectCanSetUnit(const units::Unit &unit) const {
                             "to change the unit.");
 }
 
+units::Unit Variable::unit() const { return m_object->unit(); }
+
 void Variable::setUnit(const units::Unit &unit) {
   expectCanSetUnit(unit);
   expectWritable();
@@ -66,8 +72,8 @@ void Variable::setUnit(const units::Unit &unit) {
 }
 
 bool Variable::operator==(const Variable &other) const {
-  if (!*this || !other)
-    return static_cast<bool>(*this) == static_cast<bool>(other);
+  if (!is_valid() || !other.is_valid())
+    return is_valid() == other.is_valid();
   // Note: Not comparing strides
   return dims() == other.dims() && data().equals(*this, other);
 }
@@ -75,6 +81,15 @@ bool Variable::operator==(const Variable &other) const {
 bool Variable::operator!=(const Variable &other) const {
   return !(*this == other);
 }
+
+const VariableConcept &Variable::data() const & { return *m_object; }
+
+VariableConcept &Variable::data() & {
+  expectWritable();
+  return *m_object;
+}
+
+const VariableConceptHandle &Variable::data_handle() const { return m_object; }
 
 scipp::span<const scipp::index> Variable::strides() const {
   return scipp::span<const scipp::index>(&*m_strides.begin(),
@@ -101,7 +116,29 @@ Variable Variable::slice(const Slice params) const {
   return out;
 }
 
+void Variable::validateSlice(const Slice &s, const Variable &data) const {
+  core::expect::validSlice(this->dims(), s);
+  if (data.hasVariances() != this->hasVariances()) {
+    auto variances_message = [](const auto &variable) {
+      return "does" + std::string(variable.hasVariances() ? "" : " NOT") +
+             " have variances.";
+    };
+    throw except::VariancesError("Invalid slice operation. Slice " +
+                                 variances_message(data) + "Variable " +
+                                 variances_message(*this));
+  }
+  if (data.unit() != this->unit())
+    throw except::UnitError(
+        "Invalid slice operation. Slice has unit: " + to_string(data.unit()) +
+        " Variable has unit: " + to_string(this->unit()));
+  if (data.dtype() != this->dtype())
+    throw except::TypeError("Invalid slice operation. Slice has dtype " +
+                            to_string(data.dtype()) + ". Variable has dtype " +
+                            to_string(this->dtype()));
+}
+
 Variable &Variable::setSlice(const Slice params, const Variable &data) {
+  validateSlice(params, data);
   copy(data, slice(params));
   return *this;
 }
@@ -117,6 +154,8 @@ void Variable::rename(const Dim from, const Dim to) {
   if (dims().contains(from))
     m_dims.relabel(dims().index(from), to);
 }
+
+bool Variable::is_valid() const noexcept { return m_object.operator bool(); }
 
 bool Variable::is_slice() const {
   // TODO Is this condition sufficient?
@@ -135,7 +174,7 @@ void Variable::setVariances(const Variable &v) {
   if (is_slice())
     throw except::VariancesError(
         "Cannot add variances via sliced view of Variable.");
-  if (v) {
+  if (v.is_valid()) {
     core::expect::equals(unit(), v.unit());
     core::expect::equals(dims(), v.dims());
   }

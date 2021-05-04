@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -100,6 +100,8 @@ bool Dimensions::isContiguousIn(const Dimensions &parent) const {
 Dim Dimensions::label(const scipp::index i) const { return m_dims[i]; }
 
 void Dimensions::relabel(const scipp::index i, const Dim label) {
+  if (m_dims[i] == label)
+    return;
   if (label != Dim::Invalid)
     expectUnique(*this, label);
   m_dims[i] = label;

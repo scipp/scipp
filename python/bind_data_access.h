@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -7,10 +7,12 @@
 #include <variant>
 
 #include "scipp/core/dtype.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/variable_concept.h"
 
 #include "dtype.h"
 #include "numpy.h"

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -56,7 +56,7 @@ Variable doDivScalarUnit(const units::Unit &unit, const py::object &scalar,
 }
 } // namespace
 
-void init_units_neutron(py::module &m) {
+void init_units(py::module &m) {
   py::class_<units::Dim>(m, "Dim", "Dimension label")
       .def(py::init<const std::string &>())
       .def(py::self == py::self)

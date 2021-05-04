@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -35,7 +35,8 @@ flatten(const Variable &view, const scipp::span<const Dim> &from_labels,
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 transpose(const Variable &var, const std::vector<Dim> &dims = {});
 
-SCIPP_VARIABLE_EXPORT void squeeze(Variable &var, const std::vector<Dim> &dims);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+squeeze(const Variable &var, const std::vector<Dim> &dims);
 
 SCIPP_VARIABLE_EXPORT void expect_same_volume(const Dimensions &old_dims,
                                               const Dimensions &new_dims);

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <scipp/dataset/dataset.h>
+#include <scipp/variable/util.h>
 
 namespace scipp::dataset {
 
@@ -52,6 +53,7 @@ public:
   T any(const Dim reductionDim) const;
   T max(const Dim reductionDim) const;
   T min(const Dim reductionDim) const;
+  T copy(const SortOrder order) const;
 
 private:
   T makeReductionOutput(const Dim reductionDim) const;

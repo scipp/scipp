@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -175,6 +175,9 @@ template <class T, class Func> DataArray transform(const T &a, Func func) {
                    transform_map(a.masks(), func),
                    transform_map(a.attrs(), func), a.name());
 }
+
+DataArray strip_if_broadcast_along(DataArray &&a, const Dim dim);
+Dataset strip_if_broadcast_along(Dataset &&d, const Dim dim);
 
 // Helpers for reductions for DataArray and Dataset, which include masks.
 [[nodiscard]] Variable mean(const Variable &var, const Dim dim,

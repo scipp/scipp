@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -23,6 +23,13 @@ public:
       : VariableConcept(units::one), m_indices(indices), m_dim(dim) {}
 
   scipp::index size() const override { return indices()->size(); }
+
+  void setUnit(const units::Unit &unit) override {
+    if (unit != units::one)
+      throw except::UnitError(
+          "Bins cannot have a unit. Did you mean to set the unit of the bin "
+          "elements? This can be set, e.g., with `array.events.unit = 'm'`.");
+  }
 
   bool hasVariances() const noexcept override { return false; }
   void setVariances(const Variable &) override {

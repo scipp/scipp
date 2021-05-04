@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
@@ -36,11 +36,11 @@ class PlotController3d(PlotController):
                 "Invalid aspect requested. Expected 'auto' or "
                 "'equal', got", self.aspect)
 
-    def initialise_model(self):
+    def initialize_model(self):
         """
         Give the model3d the list of available options for the cut surface.
         """
-        self.model.initialise(self.panel.get_cut_options())
+        self.model.initialize(self.panel.get_cut_options())
 
     def connect_panel(self):
         """
@@ -61,7 +61,7 @@ class PlotController3d(PlotController):
         axes that are displayed on the plots.
         If `positions` is specified, the axes never change and we simply return
         some axes parameters that were set upon creation.
-        In addition, we give the centre of the positions as half-way between
+        In addition, we give the center of the positions as half-way between
         the axes limits, as well as the extent of the positions which will be
         use to show an outline/box around the points in space.
         """
@@ -95,7 +95,7 @@ class PlotController3d(PlotController):
             axparams['z']["scaling"]
         ])
 
-        axparams["centre"] = [
+        axparams["center"] = [
             0.5 * np.sum(axparams['x']["lims"]),
             0.5 * np.sum(axparams['y']["lims"]),
             0.5 * np.sum(axparams['z']["lims"])

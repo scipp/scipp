@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -71,9 +71,13 @@ TEST_F(VariableBinsTest, copy_slice) {
   EXPECT_EQ(copy(var.slice({Dim::Y, 1, 2})), var.slice({Dim::Y, 1, 2}));
 }
 
+TEST_F(VariableBinsTest, cannot_set_unit) {
+  EXPECT_EQ(var.unit(), units::one);
+  EXPECT_THROW(var.setUnit(units::m), except::UnitError);
+  EXPECT_EQ(var.unit(), units::one);
+}
+
 TEST_F(VariableBinsTest, basics) {
-  // TODO Probably it would be a good idea to prevent having any other unit.
-  // Does this imply unit should move from Variable into VariableConcept?
   EXPECT_EQ(var.unit(), units::one);
   EXPECT_EQ(var.dims(), dims);
   const auto vals = var.values<bucket<Variable>>();
@@ -166,7 +170,7 @@ TEST_F(VariableBinsTest, to_constituents) {
   auto idx_ptr = idx0.values<std::pair<scipp::index, scipp::index>>().data();
   auto buf_ptr = buf0.values<double>().data();
   auto [idx1, dim1, buf1] = var.to_constituents<bucket<Variable>>();
-  EXPECT_FALSE(var);
+  EXPECT_FALSE(var.is_valid());
   EXPECT_EQ((idx1.values<std::pair<scipp::index, scipp::index>>().data()),
             idx_ptr);
   EXPECT_EQ(buf1.values<double>().data(), buf_ptr);

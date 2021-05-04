@@ -46,7 +46,7 @@ build:
 
 about:
   home: https://scipp.github.io/
-  license: GPLv3
+  license: BSD-3-Clause
   summary: Multi-dimensional data arrays with labeled dimensions
   description: Multi-dimensional data arrays with labeled dimensions
   dev_url: https://github.com/scipp/scipp

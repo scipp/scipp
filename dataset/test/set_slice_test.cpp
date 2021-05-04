@@ -1,9 +1,12 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
+#include "scipp/dataset/util.h"
+#include "test_macros.h"
+#include <numeric>
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -96,4 +99,108 @@ TEST_F(SetSliceTest, lower_dimensional_mask_cannot_be_overridden_arithmetic) {
   array = copy(original);
   EXPECT_THROW(array.slice({Dim::X, 1}) += other, except::DimensionError);
   EXPECT_EQ(array, original);
+}
+
+DataArray make_example_dataarray(std::string mask_name, Dim mask_dim) {
+  std::vector<double> data_values(4);
+  std::iota(data_values.begin(), data_values.end(), 0);
+
+  auto data = makeVariable<double>(Dimensions{{Dim::X, 2}, {Dim::Y, 2}},
+                                   Values(data_values));
+  auto mask =
+      makeVariable<bool>(Dimensions{mask_dim, 2}, Values({true, false}));
+  auto da = DataArray(data);
+  da.masks().set(mask_name, mask);
+  return da;
+}
+
+Dataset make_example_dataset(std::string xmask_name = "mask_x",
+                             std::string ymask_name = "mask_y") {
+  auto a = make_example_dataarray(xmask_name, Dim::X);
+  auto b = make_example_dataarray(ymask_name, Dim::Y);
+  auto ds = Dataset{};
+  ds.setData("a", a);
+  ds.setData("b", b);
+  return ds;
+}
+
+TEST_F(SetSliceTest, set_dataarray_slice_when_metadata_missing) {
+  auto ds = make_example_dataset("mask_x", "mask_y");
+  auto original = copy(ds);
+  auto point = ds["a"].slice({Dim::X, 1}).slice({Dim::Y, 1}); // Only has mask_x
+  EXPECT_THROW_DISCARD(ds["b"].setSlice(Slice{Dim::Y, 0}, point),
+                       except::NotFoundError);
+  EXPECT_THROW_DISCARD(ds["a"].setSlice(Slice{Dim::Y, 0}, point),
+                       except::DimensionError);
+  // We test for a partially-applied modification as a result of an aborted
+  // transaction. Check that "a" is NOT getting modified before operation falls
+  // over on "b", which has no mask_x.
+  EXPECT_EQ(original, ds); // Failed op should have no effect
+}
+
+TEST_F(SetSliceTest, set_dataarray_slice_with_forbidden_broadcast_of_mask) {
+  auto ds = make_example_dataset("mask", "mask");
+  auto original = copy(ds);
+  auto point = ds["a"].slice({Dim::X, 1}).slice({Dim::Y, 1});
+  EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::Y, 0}, point),
+                       except::DimensionError);
+  // We test for a partially-applied modification as a result of an aborted
+  // transaction. Check that "a" is NOT getting modified before operation falls
+  // over on "b" as would involve broadcasting mask in non-slice dimension. Mask
+  // should be read-only.
+  EXPECT_EQ(original, ds); // Failed op should have no effect
+}
+TEST_F(SetSliceTest, set_dataset_slice_with_forbidden_broadcast_of_mask) {
+  auto ds = make_example_dataset("mask_x", "mask_y");
+  auto original = copy(ds);
+  auto point = ds.slice({Dim::X, 1}).slice({Dim::Y, 1});
+  EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::Y, 0}, point),
+                       except::DimensionError);
+  // We test for a partially-applied modification as a result of an aborted
+  // transaction. Check that "a" is NOT getting modified before operation falls
+  // over on "b".
+  EXPECT_EQ(original, ds); // Failed op should have no effect
+
+  EXPECT_THROW_DISCARD(ds.setSlice(Slice{Dim::X, 0}, point),
+                       except::DimensionError);
+  EXPECT_EQ(original, ds); // Failed op should have no effect
+}
+
+TEST_F(SetSliceTest, set_dataarray_slice_with_different_data_units_forbidden) {
+  auto da = make_example_dataarray("mask", Dim::X);
+  auto original = copy(da);
+  auto other = copy(da);
+  other.setUnit(scipp::units::K); // slice to use now had different unit
+  other = other.slice({Dim::X, 1}).slice({Dim::Y, 1});
+  EXPECT_THROW_DISCARD(da.setSlice(Slice{Dim::X, 0}, other), except::UnitError);
+  // We test for a partially-applied modification as a result of an aborted
+  // transaction. Check that masks are NOT getting modified before operation
+  // falls over on unit mismatch for data
+  EXPECT_EQ(original, da); // Failed op should have no effect
+}
+
+TEST_F(SetSliceTest, set_dataarray_slice_with_variances_forbidden) {
+  auto da = make_example_dataarray("mask", Dim::X);
+  auto original = copy(da);
+  auto other = copy(da);
+  other.data().setVariances(other.data()); // Slice now has variances
+  other = other.slice({Dim::X, 1}).slice({Dim::Y, 1});
+  EXPECT_THROW_DISCARD(da.setSlice(Slice{Dim::X, 0}, other),
+                       except::VariancesError);
+  // We test for a partially-applied modification as a result of an aborted
+  // transaction. Check that masks are NOT getting modified before operation
+  // falls over on variances for data
+  EXPECT_EQ(original, da); // Failed op should have no effect
+}
+
+TEST_F(SetSliceTest, set_dataarray_slice_with_different_dtype_forbidden) {
+  auto da = make_example_dataarray("mask", Dim::X);
+  auto original = copy(da);
+  auto other = astype(da, dtype<float>);
+  other = other.slice({Dim::X, 1}).slice({Dim::Y, 1});
+  EXPECT_THROW_DISCARD(da.setSlice(Slice{Dim::X, 0}, other), except::TypeError);
+  // We test for a partially-applied modification as a result of an aborted
+  // transaction. Check that masks are NOT getting modified before operation
+  // falls over on differing type for data
+  EXPECT_EQ(original, da); // Failed op should have no effect
 }

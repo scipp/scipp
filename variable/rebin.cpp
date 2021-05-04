@@ -1,11 +1,10 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock, Igor Gudich
 #include "scipp/core/element/rebin.h"
 #include "scipp/core/parallel.h"
 #include "scipp/units/except.h"
-#include "scipp/variable/apply.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"

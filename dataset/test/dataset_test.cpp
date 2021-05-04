@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include "scipp/common/index.h"
 #include "scipp/core/except.h"
@@ -424,7 +424,10 @@ protected:
 TEST_F(DatasetRenameTest, fail_duplicate_dim) {
   ASSERT_THROW(d.rename(Dim::X, Dim::Y), except::DimensionError);
   ASSERT_EQ(d, original);
-  ASSERT_THROW(d.rename(Dim::X, Dim::X), except::DimensionError);
+}
+
+TEST_F(DatasetRenameTest, existing) {
+  ASSERT_NO_THROW(d.rename(Dim::X, Dim::X));
   ASSERT_EQ(d, original);
 }
 
