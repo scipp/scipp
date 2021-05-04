@@ -133,7 +133,7 @@ public:
   }
 
   constexpr void load_bucket_params(const scipp::index i) noexcept {
-    if (m_bucket[i].m_bucket_index >= m_bucket[i].m_nbuckets)
+    if (m_coord[m_ndim] != 0 || m_bucket[i].is_binned())
       return; // at end or dense
     // All bins are guaranteed to have the same size.
     // Use common m_shape and m_nested_stride for all.
@@ -351,6 +351,11 @@ private:
         }
       }
     }
+
+    [[nodiscard]] bool is_binned() noexcept {
+      return m_indices != nullptr;
+    }
+
     scipp::index m_bucket_index{0};
     const std::pair<scipp::index, scipp::index> *m_indices{nullptr};
     scipp::index m_nbuckets{0};
