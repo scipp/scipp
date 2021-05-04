@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <algorithm> // for std::sort
+#include <iomanip>
 #include <set>
 #include <sstream>
 
@@ -36,6 +37,17 @@ template <class T> auto sorted(const T &map) {
   return elems;
 }
 
+namespace {
+std::string format_variable(const std::string &key, const Variable &variable,
+                            const std::optional<Dimensions> datasetDims) {
+  std::stringstream s;
+  const std::string colSep("  ");
+  s << tab << std::left << std::setw(24) << key
+    << format_variable(variable, datasetDims);
+  return s.str();
+}
+} // namespace
+
 template <class Key>
 auto format_data_view(const Key &name, const DataArray &data,
                       const Dimensions &datasetDims, const std::string &shift,
@@ -48,12 +60,12 @@ auto format_data_view(const Key &name, const DataArray &data,
   if (!data.masks().empty()) {
     s << header_shift << "Masks:\n";
     for (const auto &[key, var] : sorted(data.masks()))
-      s << data_shift << format_variable(key, var, datasetDims);
+      s << data_shift << format_variable(key, var, datasetDims) << '\n';
   }
   if (!data.attrs().empty()) {
     s << header_shift << "Attributes:\n";
     for (const auto &[key, var] : sorted(data.attrs()))
-      s << data_shift << format_variable(key, var, datasetDims);
+      s << data_shift << format_variable(key, var, datasetDims) << '\n';
   }
   return s.str();
 }
@@ -74,7 +86,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
     else
       map = dataset.coords();
     for (const auto &[name, var] : sorted(map))
-      s << shift << format_variable(name, var, dims);
+      s << shift << format_variable(name, var, dims) << '\n';
   }
 
   if constexpr (std::is_same_v<D, DataArray>) {
