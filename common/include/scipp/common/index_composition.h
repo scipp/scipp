@@ -7,6 +7,7 @@
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <utility>
 
 #include "scipp/common/index.h"
 
@@ -20,7 +21,7 @@ namespace scipp {
 ///       It is thus *not* complementary to extract_indices.
 template <class ForwardIt1, class ForwardIt2>
 constexpr auto flat_index_from_strides(ForwardIt1 strides_it,
-                                       ForwardIt2 strides_end,
+                                       const ForwardIt2 strides_end,
                                        ForwardIt2 indices_it) noexcept {
   std::remove_const_t<std::remove_reference_t<decltype(*strides_it)>> result =
       0;
@@ -28,6 +29,28 @@ constexpr auto flat_index_from_strides(ForwardIt1 strides_it,
     result += *strides_it * *indices_it;
   }
   return result;
+}
+
+/// Compute the bounds of a piece of memory.
+///
+/// Given a pointer `p` to some memory, a shape, and strides, this function
+/// returns a begin and an end index such that
+/// - `p + begin` is the smallest reachable address and
+/// - `p + end` is one past the largest reachable address
+///
+/// \return A pair of indices `{begin, end}`.
+template <class ForwardIt1, class ForwardIt2>
+constexpr auto memory_bounds(ForwardIt1 shape_it, const ForwardIt1 shape_end,
+                             ForwardIt2 strides_it) noexcept {
+  scipp::index begin = 0;
+  scipp::index end = 0;
+  for (; shape_it != shape_end; ++shape_it, ++strides_it) {
+    if (*strides_it < 0)
+      begin += *shape_it * *strides_it;
+    else
+      end += *shape_it * *strides_it;
+  }
+  return std::pair{begin, end};
 }
 
 /// Extract individual indices from a flat index.
