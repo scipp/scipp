@@ -216,6 +216,10 @@ public:
 
   [[nodiscard]] constexpr scipp::index
   inner_distance_to(const MultiIndex &other) const noexcept {
+    // The end index has coord[0] = 0.
+    if (other.m_coord[0] == 0) {
+      return inner_distance_to_end();
+    }
     return other.m_coord[0] - m_coord[0];
   }
 
