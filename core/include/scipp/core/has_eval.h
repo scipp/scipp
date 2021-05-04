@@ -6,13 +6,10 @@
 
 namespace scipp::core {
 
-template <class T> struct has_eval {
-  template <class U>
-  static auto test(int) -> decltype(std::declval<U>().eval(), std::true_type());
-  template <class> static std::false_type test(...);
-  static constexpr bool value =
-      std::is_same<decltype(test<T>(0)), std::true_type>::value;
-};
+template <class T, class = void> struct has_eval : std::false_type {};
+template <class T>
+struct has_eval<T, std::void_t<decltype(std::declval<T>().eval())>>
+    : std::true_type {};
 
 /// True if T has an eval() method. Used by `transform` to detect expression
 /// templates (from Eigen).
