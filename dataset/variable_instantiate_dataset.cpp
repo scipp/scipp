@@ -15,15 +15,6 @@ INSTANTIATE_VARIABLE(DataArray, scipp::dataset::DataArray)
 } // namespace scipp::variable
 
 namespace scipp::dataset {
-namespace {
-// Insert classes from scipp::dataset into formatting registry. The objects
-// themselves do nothing, but the constructor call with comma operator does the
-// insertion.
-auto register_dataset_types(
-    (variable::formatterRegistry().emplace(
-         dtype<Dataset>, std::make_unique<variable::Formatter<Dataset>>()),
-     variable::formatterRegistry().emplace(
-         dtype<DataArray>, std::make_unique<variable::Formatter<DataArray>>()),
-     0));
-} // namespace
+REGISTER_FORMATTER(DataArray, DataArray)
+REGISTER_FORMATTER(Dataset, Dataset)
 } // namespace scipp::dataset

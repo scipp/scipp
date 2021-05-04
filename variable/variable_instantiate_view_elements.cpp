@@ -2,6 +2,7 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/core/eigen.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable.tcc"
 

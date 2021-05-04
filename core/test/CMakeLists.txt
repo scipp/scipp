@@ -7,6 +7,7 @@ add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
   dimensions_test.cpp
+  eigen_test.cpp
   element_array_test.cpp
   element_array_view_test.cpp
   element_arithmetic_test.cpp

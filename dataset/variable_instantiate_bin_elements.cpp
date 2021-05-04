@@ -73,15 +73,10 @@ class BinVariableMakerDataset
   }
 };
 
+REGISTER_FORMATTER(bin_DataArray, core::bin<DataArray>)
+REGISTER_FORMATTER(bin_Dataset, core::bin<Dataset>)
+
 namespace {
-auto register_dataset_types(
-    (variable::formatterRegistry().emplace(
-         dtype<bucket<Dataset>>,
-         std::make_unique<variable::Formatter<bucket<Dataset>>>()),
-     variable::formatterRegistry().emplace(
-         dtype<bucket<DataArray>>,
-         std::make_unique<variable::Formatter<bucket<DataArray>>>()),
-     0));
 auto register_variable_maker_bucket_DataArray(
     (variable::variableFactory().emplace(
          dtype<bucket<DataArray>>,
