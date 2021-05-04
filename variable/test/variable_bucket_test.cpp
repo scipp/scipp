@@ -141,6 +141,25 @@ TEST_F(VariableBinsTest, binary_operation_with_dense_broadcast) {
   EXPECT_EQ(dense + var, transpose(expected));
 }
 
+TEST_F(VariableBinsTest, binary_operation_strided) {
+  Variable big_buffer = makeVariable<double>(Dimensions{Dim::X, 8},
+                                             Values{1, 2, 3, 4, 5, 6, 7, 8});
+  Variable indices_2d =
+      makeVariable<scipp::index_pair>(Dimensions{{Dim::Y, 2}, {Dim::Z, 2}},
+                                      Values{std::pair{0, 2}, std::pair{2, 4},
+                                             std::pair{4, 6}, std::pair{6, 8}});
+  Variable complete = make_bins(indices_2d, Dim::X, big_buffer);
+  Variable sliced = complete.slice(Slice{Dim::Z, 0, 1});
+
+  Variable expected_buffer =
+      makeVariable<double>(Dimensions{Dim::X, 4}, Values{2, 4, 10, 12});
+  Variable expected_indices =
+      makeVariable<scipp::index_pair>(Dimensions{{Dim::Y, 2}, {Dim::Z, 1}},
+                                      Values{std::pair{0, 2}, std::pair{2, 4}});
+  Variable expected = make_bins(expected_indices, Dim::X, expected_buffer);
+  EXPECT_EQ(sliced * makeVariable<double>(Dims{}, Values{2}), expected);
+}
+
 TEST_F(VariableBinsTest, to_constituents) {
   auto [idx0, dim0, buf0] = var.constituents<bucket<Variable>>();
   static_cast<void>(dim0);
