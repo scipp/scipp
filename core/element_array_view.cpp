@@ -68,4 +68,21 @@ void ElementArrayViewParams::requireContiguous() const {
     throw std::runtime_error("Data is not contiguous");
 }
 
+[[nodiscard]] bool
+ElementArrayViewParams::overlaps(const ElementArrayViewParams &other) const {
+  if (m_offset == other.m_offset && m_iterDims == other.m_iterDims &&
+      m_strides == other.m_strides) {
+    // When both views are exactly the same, we should be fine without
+    // making extra copies.
+    return false;
+  }
+  // Otherwise check for partial overlap.
+  const auto [this_begin, this_end] = memory_bounds(
+      m_iterDims.shape().begin(), m_iterDims.shape().end(), m_strides.begin());
+  const auto [other_begin, other_end] =
+      memory_bounds(other.m_iterDims.shape().begin(),
+                    other.m_iterDims.shape().end(), other.m_strides.begin());
+  return ((this_begin < other_end) && (this_end >= other_begin));
+}
+
 } // namespace scipp::core

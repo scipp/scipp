@@ -88,18 +88,7 @@ public:
     return m_bucketParams;
   }
 
-  [[nodiscard]] bool overlaps([
-      [maybe_unused]] const ElementArrayViewParams &other) const {
-    // TODO need an actual implementation.
-    //   We need to take iterDims and strides into account.
-    //   But that seems highly non-trivial.
-    //   old comment:
-    //     We could be less restrictive here and use a more sophisticated check
-    //     based on offsets and dimensions, if there is a performance issue due
-    //     to this current stricter requirement.
-    // return (m_offset != other.m_offset) || (m_dataDims != other.m_dataDims);
-    return true;
-  }
+  [[nodiscard]] bool overlaps(const ElementArrayViewParams &other) const;
 
 protected:
   void requireContiguous() const;
