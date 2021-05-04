@@ -4,7 +4,7 @@ set -ex
 
 if test -z "${INSTALL_PREFIX}"
 then
-  export INSTALL_PREFIX="$(pwd)/scipp"
+  export INSTALL_PREFIX="$(pwd)/scipp_install"
   ./tools/make_and_install.sh
 fi
 

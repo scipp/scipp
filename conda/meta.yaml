@@ -35,7 +35,7 @@ test:
   source_files:
     - python/tests
   commands:
-    - python -m pytest -v python
+    - python -m pytest -v
 
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
