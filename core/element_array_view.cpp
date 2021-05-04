@@ -42,12 +42,17 @@ ElementArrayViewParams::ElementArrayViewParams(
 ElementArrayViewParams::ElementArrayViewParams(
     const ElementArrayViewParams &other, const Dimensions &iterDims)
     : m_offset(other.m_offset), m_iterDims(iterDims),
-      m_dataDims(other.m_dataDims), m_bucketParams(other.m_bucketParams) {
+      m_bucketParams(other.m_bucketParams) {
   expectCanBroadcastFromTo(other.m_iterDims, m_iterDims);
-  // See implementation of ViewIndex regarding this relabeling.
-  for (const auto &label : m_dataDims.labels())
-    if (label != Dim::Invalid && !other.m_iterDims.contains(label))
-      m_dataDims.relabel(m_dataDims.index(label), Dim::Invalid);
+
+  for (scipp::index dim = 0; dim < iterDims.ndim(); ++dim) {
+    auto label = iterDims.label(dim);
+    if (other.m_iterDims.contains(label)) {
+      m_strides[dim] = other.m_strides[other.m_iterDims.index(label)];
+    } else {
+      m_strides[dim] = 0;
+    }
+  }
 }
 
 void ElementArrayViewParams::requireContiguous() const {

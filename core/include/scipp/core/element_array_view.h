@@ -9,6 +9,7 @@
 #include <boost/iterator/iterator_facade.hpp>
 
 #include "scipp/core/dimensions.h"
+#include "scipp/core/sizes.h"
 #include "scipp/core/strides.h"
 #include "scipp/core/view_index.h"
 
