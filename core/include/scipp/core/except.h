@@ -128,7 +128,6 @@ template <class T> void countsOrCountsDensity(const T &object) {
 }
 
 // TODO maybe just provide a `slice` function/method and check via that?
-void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
 void SCIPP_CORE_EXPORT validSlice(const Sizes &sizes, const Slice &slice);
 
 void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);

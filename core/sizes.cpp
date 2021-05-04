@@ -115,6 +115,8 @@ void small_map<Key, Value, MaxSize, Except>::clear() {
 template <class Key, class Value, int16_t MaxSize, class Except>
 void small_map<Key, Value, MaxSize, Except>::replace_key(const Key &key,
                                                          const Key &new_key) {
+  // TODO no check for duplicate here, which is inconsistent, but needed to
+  // relabel to Dim::Invalid
   if (!contains(key))
     throw except::DimensionError("Key not found");
   auto it = std::find(m_keys.begin(), m_keys.end(), key);
@@ -138,13 +140,15 @@ void Sizes::set(const Dim dim, const scipp::index size) {
     throw except::DimensionError(
         "Inconsistent size for dim '" + to_string(dim) + "', given " +
         std::to_string(at(dim)) + ", requested " + std::to_string(size));
-  insert_right(dim, size);
+  if (!contains(dim))
+    insert_right(dim, size);
 }
 
 void Sizes::relabel(const Dim from, const Dim to) {
-  if (to != Dim::Invalid)
+  if (to != Dim::Invalid && from != to)
     expectUnique(*this, to);
-  replace_key(from, to);
+  if (contains(from))
+    replace_key(from, to);
 }
 
 bool Sizes::contains(const Sizes &sizes) const {

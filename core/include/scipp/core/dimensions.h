@@ -32,7 +32,6 @@ public:
     for (const auto &[label, size] : dims)
       addInner(label, size);
   }
-  explicit Dimensions(const Sizes &sizes);
 
   constexpr bool operator==(const Dimensions &other) const noexcept {
     if (ndim() != other.ndim())

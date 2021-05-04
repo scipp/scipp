@@ -23,15 +23,15 @@ std::ostream &operator<<(std::ostream &os, const Variable &variable) {
 namespace {
 
 std::string make_dims_labels(const Variable &variable,
-                             const std::optional<Dimensions> datasetDims) {
+                             const std::optional<Sizes> datasetSizes) {
   const auto &dims = variable.dims();
   if (dims.empty())
     return "()";
   std::string diminfo = "(";
   for (const auto &dim : dims.labels()) {
     diminfo += to_string(dim);
-    if (datasetDims) {
-      if ((datasetDims->contains(dim) ? (*datasetDims)[dim] : 1) + 1 ==
+    if (datasetSizes) {
+      if ((datasetSizes->contains(dim) ? (*datasetSizes)[dim] : 1) + 1 ==
           dims[dim])
         diminfo += " [bin-edge]";
     }
@@ -72,7 +72,7 @@ auto apply(const DType dtype, Args &&... args) {
 } // namespace
 
 std::string format_variable(const Variable &variable,
-                            const std::optional<Dimensions> datasetDims) {
+                            const std::optional<Sizes> datasetSizes) {
   if (!variable.is_valid())
     return "invalid variable\n";
   std::stringstream s;
@@ -81,8 +81,8 @@ std::string format_variable(const Variable &variable,
     s << to_string(variable.dims()) << colSep;
   s << std::setw(9) << to_string(variable.dtype());
   s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
-  if (datasetDims)
-    s << colSep << make_dims_labels(variable, datasetDims);
+  if (datasetSizes)
+    s << colSep << make_dims_labels(variable, datasetSizes);
   s << colSep;
   s << apply<ValuesToString>(variable.dtype(), variable);
   if (variable.hasVariances())

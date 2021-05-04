@@ -23,10 +23,6 @@ std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
 
 constexpr const char *tab = "  ";
 
-template <class D>
-std::string do_to_string(const D &dataset, const std::string &id,
-                         const Dimensions &dims, const std::string &shift = "");
-
 template <class T> auto sorted(const T &map) {
   using core::to_string;
   std::vector<std::pair<std::string, Variable>> elems;
@@ -49,29 +45,29 @@ std::string format_variable(const std::string &key, const Variable &variable,
 
 template <class Key>
 auto format_data_view(const Key &name, const DataArray &data,
-                      const Dimensions &datasetDims, const std::string &shift,
+                      const Sizes &datasetSizes, const std::string &shift,
                       const bool inline_meta) {
   std::stringstream s;
-  s << shift << format_variable(name, data.data(), datasetDims);
+  s << shift << format_variable(name, data.data(), datasetSizes);
 
   const std::string header_shift = inline_meta ? shift : (shift + tab + tab);
   const std::string data_shift = inline_meta ? shift : (header_shift + tab);
   if (!data.masks().empty()) {
     s << header_shift << "Masks:\n";
     for (const auto &[key, var] : sorted(data.masks()))
-      s << data_shift << format_variable(key, var, datasetDims);
+      s << data_shift << format_variable(key, var, datasetSizes);
   }
   if (!data.attrs().empty()) {
     s << header_shift << "Attributes:\n";
     for (const auto &[key, var] : sorted(data.attrs()))
-      s << data_shift << format_variable(key, var, datasetDims);
+      s << data_shift << format_variable(key, var, datasetSizes);
   }
   return s.str();
 }
 
 template <class D>
 std::string do_to_string(const D &dataset, const std::string &id,
-                         const Dimensions &dims, const std::string &shift) {
+                         const Sizes &dims, const std::string &shift = "") {
   std::stringstream s;
   if (!id.empty())
     s << shift << id + '\n';
@@ -110,7 +106,7 @@ std::string to_string(const DataArray &data) {
 }
 
 std::string to_string(const Dataset &dataset) {
-  return do_to_string(dataset, "<scipp.Dataset>", Dimensions(dataset.sizes()));
+  return do_to_string(dataset, "<scipp.Dataset>", dataset.sizes());
 }
 
 template <class Key, class Value>
