@@ -9,6 +9,13 @@
 
 namespace scipp::core {
 
+namespace {
+template <class T> void expectUnique(const T &map, const Dim label) {
+  if (map.contains(label))
+    throw except::DimensionError("Duplicate dimension.");
+}
+} // namespace
+
 template <class Key, class Value, int16_t MaxSize>
 bool small_map<Key, Value, MaxSize>::operator==(
     const small_map &other) const noexcept {
@@ -67,13 +74,24 @@ Value &small_map<Key, Value, MaxSize>::at(const Key &key) {
 }
 
 template <class Key, class Value, int16_t MaxSize>
-void small_map<Key, Value, MaxSize>::insert(const Key &key,
-                                            const Value &value) {
-  // TODO better to throw here?
-  if (contains(key)) {
-    at(key) = value;
-    return;
+void small_map<Key, Value, MaxSize>::insert_left(const Key &key,
+                                                 const Value &value) {
+  expectUnique(*this, key);
+  if (size() == MaxSize)
+    throw std::runtime_error("Exceeding builtin map size");
+  for (scipp::index i = size(); i > 0; --i) {
+    m_keys[i] = m_keys[i - 1];
+    m_values[i] = m_values[i - 1];
   }
+  m_keys[0] = key;
+  m_values[0] = value;
+  m_size++;
+}
+
+template <class Key, class Value, int16_t MaxSize>
+void small_map<Key, Value, MaxSize>::insert_right(const Key &key,
+                                                  const Value &value) {
+  expectUnique(*this, key);
   if (size() == MaxSize)
     throw std::runtime_error("Exceeding builtin map size");
   m_keys[m_size] = key;
@@ -101,12 +119,12 @@ template class small_map<Dim, scipp::index, NDIM_MAX>;
 
 Sizes::Sizes(const Dimensions &dims) {
   for (const auto dim : dims.labels())
-    insert(dim, dims[dim]);
+    insert_right(dim, dims[dim]);
 }
 
 Sizes::Sizes(const std::unordered_map<Dim, scipp::index> &sizes) {
   for (const auto &[dim, size] : sizes)
-    insert(dim, size);
+    insert_right(dim, size);
 }
 
 scipp::index &Sizes::at(const Dim dim) {
@@ -119,7 +137,7 @@ void Sizes::set(const Dim dim, const scipp::index size) {
     throw except::DimensionError(
         "Inconsistent size for dim '" + to_string(dim) + "', given " +
         std::to_string(at(dim)) + ", requested " + std::to_string(size));
-  insert(dim, size);
+  insert_right(dim, size);
 }
 
 void Sizes::relabel(const Dim from, const Dim to) {
@@ -127,7 +145,7 @@ void Sizes::relabel(const Dim from, const Dim to) {
     return;
   auto size = at(from);
   erase(from);
-  insert(to, size);
+  insert_right(to, size);
 }
 
 bool Sizes::contains(const Dimensions &dims) const {

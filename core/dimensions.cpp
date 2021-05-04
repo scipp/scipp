@@ -7,6 +7,7 @@
 
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
+#include "scipp/core/sizes.h"
 
 namespace scipp::core {
 

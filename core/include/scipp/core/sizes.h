@@ -32,12 +32,13 @@ public:
   Value &operator[](const Key &key);
   const Value &at(const Key &key) const;
   Value &at(const Key &key);
-  void insert(const Key &key, const Value &value);
+  void insert_left(const Key &key, const Value &value);
+  void insert_right(const Key &key, const Value &value);
   void erase(const Key &key);
   void clear();
 
 private:
-  int64_t m_size{0};
+  int16_t m_size{0};
   std::array<Key, MaxSize> m_keys{};
   std::array<Value, MaxSize> m_values{};
 };
@@ -46,7 +47,8 @@ private:
 class SCIPP_CORE_EXPORT Sizes : public small_map<Dim, scipp::index, NDIM_MAX> {
 private:
   using base = small_map<Dim, scipp::index, NDIM_MAX>;
-  using base::insert;
+  using base::insert_left;
+  using base::insert_right;
 
 public:
   Sizes() = default;

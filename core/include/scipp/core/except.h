@@ -11,9 +11,7 @@
 #include "scipp-core_export.h"
 #include "scipp/common/except.h"
 #include "scipp/common/index.h"
-#include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/sizes.h"
 #include "scipp/core/string.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
@@ -21,6 +19,7 @@
 namespace scipp::core {
 
 class Dimensions;
+class Sizes;
 class Slice;
 
 } // namespace scipp::core
