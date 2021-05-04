@@ -43,7 +43,7 @@ std::string format_variable(const std::string &key, const Variable &variable,
   std::stringstream s;
   const std::string colSep("  ");
   s << tab << std::left << std::setw(24) << key
-    << format_variable(variable, datasetDims);
+    << format_variable(variable, datasetDims) << '\n';
   return s.str();
 }
 } // namespace
@@ -60,12 +60,12 @@ auto format_data_view(const Key &name, const DataArray &data,
   if (!data.masks().empty()) {
     s << header_shift << "Masks:\n";
     for (const auto &[key, var] : sorted(data.masks()))
-      s << data_shift << format_variable(key, var, datasetDims) << '\n';
+      s << data_shift << format_variable(key, var, datasetDims);
   }
   if (!data.attrs().empty()) {
     s << header_shift << "Attributes:\n";
     for (const auto &[key, var] : sorted(data.attrs()))
-      s << data_shift << format_variable(key, var, datasetDims) << '\n';
+      s << data_shift << format_variable(key, var, datasetDims);
   }
   return s.str();
 }
@@ -86,7 +86,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
     else
       map = dataset.coords();
     for (const auto &[name, var] : sorted(map))
-      s << shift << format_variable(name, var, dims) << '\n';
+      s << shift << format_variable(name, var, dims);
   }
 
   if constexpr (std::is_same_v<D, DataArray>) {
