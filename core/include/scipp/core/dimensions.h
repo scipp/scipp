@@ -70,6 +70,9 @@ public:
 
   // TODO Some of the following methods are probably legacy and should be
   // considered for removal.
+  // TODO
+  // - remove resize (just use non-const at()?)
+  // - remove relabel?
   Dim label(const scipp::index i) const;
   using Sizes::relabel;
   void relabel(const scipp::index i, const Dim label);
