@@ -133,6 +133,8 @@ public:
       // pre-bin dim)
       for (scipp::index d = m_ndim_nested - 1;
            (m_coord[d] == m_shape[d]) && (d < NDIM_MAX - 1); ++d) {
+        // Increment early so that we can check whether we need ot load bins.
+        ++m_coord[d + 1];
         for (scipp::index data = 0; data < N; ++data) {
           m_data_index[data] +=
               // take a step in dimension d+1
@@ -145,9 +147,12 @@ public:
           else // bin dimension -> rewind earlier bins
             m_bin[data].m_bin_index +=
                 m_stride[data][d + 1] - m_coord[d] * m_stride[data][d];
-          load_bin_params(data);
+          if (m_coord[d+1] != m_shape[d+1]) {
+            // We might have hit the end of the data, keep going with the outer
+            // dimensions.
+            load_bin_params(data);
+          }
         }
-        ++m_coord[d + 1];
         m_coord[d] = 0;
       }
     } while (m_shape[m_nested_dim_index] == 0 && m_coord[m_ndim] == 0);
