@@ -8,13 +8,17 @@
 
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
-#include "scipp/core/dimensions.h"
+#include "scipp/common/span.h"
 #include "scipp/core/slice.h"
 #include "scipp/units/dim.h"
 
 namespace scipp::core {
 
-template <class Key, class Value, int16_t MaxSize>
+constexpr int32_t NDIM_MAX = 6;
+
+class Dimensions;
+
+template <class Key, class Value, int16_t MaxSize, class Except = int>
 class SCIPP_CORE_EXPORT small_map {
 public:
   small_map() = default;
@@ -25,8 +29,8 @@ public:
   auto begin() const { return m_keys.begin(); }
   auto end() const { return m_keys.begin() + size(); }
   typename std::array<Key, MaxSize>::const_iterator find(const Key &key) const;
-  [[nodiscard]] bool empty() const noexcept;
-  scipp::index size() const noexcept { return m_size; }
+  [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
+  constexpr scipp::index size() const noexcept { return m_size; }
   bool contains(const Key &key) const noexcept;
   const Value &operator[](const Key &key) const;
   Value &operator[](const Key &key);
@@ -36,6 +40,13 @@ public:
   void insert_right(const Key &key, const Value &value);
   void erase(const Key &key);
   void clear();
+  void replace_key(const Key &from, const Key &to);
+  constexpr scipp::span<const Key> keys() const &noexcept {
+    return {m_keys.data(), static_cast<size_t>(size())};
+  }
+  constexpr scipp::span<const Value> values() const &noexcept {
+    return {m_values.data(), static_cast<size_t>(size())};
+  }
 
 private:
   int16_t m_size{0};
@@ -47,12 +58,13 @@ private:
 class SCIPP_CORE_EXPORT Sizes : public small_map<Dim, scipp::index, NDIM_MAX> {
 private:
   using base = small_map<Dim, scipp::index, NDIM_MAX>;
+
+protected:
   using base::insert_left;
   using base::insert_right;
 
 public:
   Sizes() = default;
-  Sizes(const Dimensions &dims);
   Sizes(const std::unordered_map<Dim, scipp::index> &sizes);
 
   scipp::index count(const Dim dim) const noexcept { return contains(dim); }
@@ -60,9 +72,13 @@ public:
   void set(const Dim dim, const scipp::index size);
   void relabel(const Dim from, const Dim to);
   using base::contains;
-  bool contains(const Dimensions &dims) const;
   bool contains(const Sizes &sizes) const;
   Sizes slice(const Slice &params) const;
+
+  /// Return the labels of the space defined by *this.
+  constexpr auto labels() const &noexcept { return keys(); }
+  /// Return the shape of the space defined by *this.
+  constexpr auto sizes() const &noexcept { return values(); }
 };
 
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes concatenate(const Sizes &a,

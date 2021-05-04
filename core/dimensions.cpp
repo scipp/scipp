@@ -41,10 +41,11 @@ Dimensions::Dimensions(const Sizes &sizes) {
 
 /// Return the extent of `dim`. Throws if the space defined by this does not
 /// contain `dim`.
-scipp::index Dimensions::operator[](const Dim dim) const { return at(dim); }
+// scipp::index Dimensions::operator[](const Dim dim) const { return at(dim); }
 
 /// Return the extent of `dim`. Throws if the space defined by this does not
 /// contain `dim`.
+/*
 scipp::index Dimensions::at(const Dim dim) const {
   for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
@@ -60,8 +61,10 @@ scipp::index &Dimensions::at(const Dim dim) {
       return m_shape[i];
   except::throw_dimension_not_found_error(*this, dim);
 }
+*/
 
 /// Return true if all dimensions of other contained in *this, ignoring order.
+/*
 bool Dimensions::contains(const Dimensions &other) const noexcept {
   if (*this == other)
     return true;
@@ -70,6 +73,7 @@ bool Dimensions::contains(const Dimensions &other) const noexcept {
       return false;
   return true;
 }
+*/
 
 /// Return true if *this forms a contiguous block within parent.
 ///
@@ -79,10 +83,10 @@ bool Dimensions::contains(const Dimensions &other) const noexcept {
 bool Dimensions::isContiguousIn(const Dimensions &parent) const {
   if (volume() == 0 || parent == *this)
     return true;
-  int32_t offset = parent.m_ndim - m_ndim;
+  int32_t offset = parent.ndim() - ndim();
   if (offset < 0)
     return false;
-  for (int32_t i = 0; i < m_ndim; ++i) {
+  for (int32_t i = 0; i < ndim(); ++i) {
     // All shared dimension labels must match.
     if (parent.label(i + offset) != label(i))
       return false;
@@ -98,26 +102,22 @@ bool Dimensions::isContiguousIn(const Dimensions &parent) const {
   return true;
 }
 
-Dim Dimensions::label(const scipp::index i) const { return m_dims[i]; }
+Dim Dimensions::label(const scipp::index i) const { return labels()[i]; }
 
 void Dimensions::relabel(const scipp::index i, const Dim label) {
-  if (m_dims[i] == label)
-    return;
-  if (label != Dim::Invalid)
-    expectUnique(*this, label);
-  m_dims[i] = label;
+  relabel(labels()[i], label);
 }
 
-scipp::index Dimensions::size(const scipp::index i) const { return m_shape[i]; }
+scipp::index Dimensions::size(const scipp::index i) const { return shape()[i]; }
 
 /// Return the offset of elements along this dimension in a multi-dimensional
 /// array defined by this.
 scipp::index Dimensions::offset(const Dim label) const {
   scipp::index offset{1};
-  for (int32_t i = m_ndim - 1; i >= 0; --i) {
-    if (m_dims[i] == label)
+  for (int32_t i = ndim() - 1; i >= 0; --i) {
+    if (labels()[i] == label)
       return offset;
-    offset *= m_shape[i];
+    offset *= shape()[i];
   }
   except::throw_dimension_not_found_error(*this, label);
 }
@@ -131,31 +131,13 @@ void Dimensions::resize(const scipp::index i, const scipp::index size) {
   resize(label(i), size);
 }
 
-void Dimensions::erase(const Dim label) {
-  for (int32_t i = index(label); i < m_ndim - 1; ++i) {
-    m_shape[i] = m_shape[i + 1];
-    m_dims[i] = m_dims[i + 1];
-  }
-  m_dims[m_ndim - 1] = m_dims[m_ndim];
-  m_dims[m_ndim] = Dim::Invalid;
-  --m_ndim;
-  m_shape[m_ndim] = -1;
-}
-
 /// Add a new dimension, which will be the outermost dimension.
 void Dimensions::add(const Dim label, const scipp::index size) {
   expect::validDim(label);
   expectUnique(*this, label);
   expectExtendable(*this);
   expect::validExtent(size);
-  m_dims[m_ndim + 1] = m_dims[m_ndim];
-  for (int32_t i = m_ndim - 1; i >= 0; --i) {
-    m_shape[i + 1] = m_shape[i];
-    m_dims[i + 1] = m_dims[i];
-  }
-  m_shape[0] = size;
-  m_dims[0] = label;
-  ++m_ndim;
+  insert_left(label, size);
 }
 
 /// Add a new dimension, which will be the innermost dimension.
@@ -164,22 +146,20 @@ void Dimensions::addInner(const Dim label, const scipp::index size) {
   expectUnique(*this, label);
   expect::validExtent(size);
   expectExtendable(*this);
-  m_shape[m_ndim] = size;
-  m_dims[m_ndim] = label;
-  ++m_ndim;
+  insert_right(label, size);
 }
 
 /// Return the innermost dimension. Throws if *this is empty.
 Dim Dimensions::inner() const noexcept {
-  if (m_ndim == 0)
+  if (empty())
     return Dim::Invalid;
-  return m_dims[m_ndim - 1];
+  return labels().back();
 }
 
 int32_t Dimensions::index(const Dim dim) const {
   expect::validDim(dim);
   for (int32_t i = 0; i < NDIM_MAX; ++i)
-    if (m_dims[i] == dim)
+    if (labels()[i] == dim)
       return i;
   except::throw_dimension_not_found_error(*this, dim);
 }
@@ -234,7 +214,7 @@ Dimensions intersection(const Dimensions &a, const Dimensions &b) {
 namespace {
 Dimensions transpose_impl(const Dimensions &dims,
                           const std::vector<Dim> &labels) {
-  if (labels.size() != dims.ndim())
+  if (scipp::size(labels) != dims.ndim())
     throw except::DimensionError("Cannot transpose: Requested new dimension "
                                  "order contains different number of labels.");
   std::vector<scipp::index> shape(labels.size());
