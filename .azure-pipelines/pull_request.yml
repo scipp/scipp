@@ -27,7 +27,10 @@ extends:
   template: stages.yml@SharedPipelines
   parameters:
     verbose: ${{ parameters.verbose }}
-    config.linux.py_versions: ['3.7']
-    config.linux.conda_env: 'scipp-developer.yml'
-    config.osx.py_versions: ['3.7']
-    config.osx.conda_env: 'scipp-developer-minimal.yml'
+    config:
+      linux:
+        py_versions: ['3.7']
+        conda_env: 'scipp-developer.yml'
+      osx:
+        py_versions: ['3.7']
+        conda_env: 'scipp-developer-minimal.yml'
