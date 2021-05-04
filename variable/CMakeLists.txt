@@ -5,7 +5,6 @@
 set(TARGET_NAME "scipp-variable")
 set(INC_FILES
     ${variable_INC_FILES}
-    include/scipp/variable/apply.h
     include/scipp/variable/arithmetic.h
     include/scipp/variable/bins.h
     include/scipp/variable/bin_util.h

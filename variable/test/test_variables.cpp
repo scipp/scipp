@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include <gtest/gtest.h>
 
+#include "scipp/variable/bins.h"
 #include "test_variables.h"
 
 using namespace scipp;
@@ -38,3 +39,14 @@ INSTANTIATE_TEST_SUITE_P(
         makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3}, units::m,
                              Values{1, 2, 3, 4, 5, 6},
                              Variances{1, 1, 2, 2, 3, 3})));
+
+namespace {
+Variable indices = makeVariable<scipp::index_pair>(
+    Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 4}});
+Variable buffer =
+    makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4});
+} // namespace
+
+INSTANTIATE_TEST_SUITE_P(1D, BinnedVariablesTest,
+                         testing::Values(make_bins(indices, Dim::Event,
+                                                   buffer)));
