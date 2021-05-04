@@ -22,7 +22,14 @@ void Sizes::clear() { m_sizes.clear(); }
 
 scipp::index Sizes::operator[](const Dim dim) const { return at(dim); }
 
+scipp::index &Sizes::operator[](const Dim dim) { return at(dim); }
+
 scipp::index Sizes::at(const Dim dim) const {
+  scipp::expect::contains(*this, dim);
+  return m_sizes.at(dim);
+}
+
+scipp::index &Sizes::at(const Dim dim) {
   scipp::expect::contains(*this, dim);
   return m_sizes.at(dim);
 }
