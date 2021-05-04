@@ -9,13 +9,14 @@
 #include <optional>
 
 #include "scipp-core_export.h"
+#include "scipp/common/index_composition.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
 
 namespace scipp::core {
 SCIPP_CORE_EXPORT void
 validate_bin_indices_impl(const ElementArrayViewParams &param0,
-                             const ElementArrayViewParams &param1);
+                          const ElementArrayViewParams &param1);
 
 inline auto get_nested_dims() { return Dimensions(); }
 template <class T, class... Ts>
@@ -67,7 +68,7 @@ public:
   /// Check that corresponding bins have matching sizes.
   template <class Param0, class Param1, class... Params>
   void validate_bin_indices(const Param0 &param0, const Param1 &param1,
-                               const Params &... params) {
+                            const Params &... params) {
     if (param0.bucketParams() && param1.bucketParams())
       validate_bin_indices_impl(param0, param1);
     if (param0.bucketParams())
@@ -226,16 +227,16 @@ public:
       }
     }
     for (scipp::index data = 0; data < N; ++data) {
-      m_data_index[data] = 0;
-      for (scipp::index d = 0; d < m_ndim; ++d)
-        m_data_index[data] += m_stride[data][d] * m_coord[d];
+      m_data_index[data] = flat_index_from_strides(
+          m_stride[data].begin(), m_stride[data].begin() + m_ndim,
+          m_coord.begin());
     }
     if (has_bins()) {
       for (scipp::index data = 0; data < N; ++data) {
-        m_bucket[data].m_bucket_index = 0;
-        for (scipp::index d = m_ndim_nested; d < m_ndim; ++d)
-          m_bucket[data].m_bucket_index += m_stride[data][d] * m_coord[d];
-        load_bucket_params(data);
+        m_bin[data].m_bin_index = flat_index_from_strides(
+            m_stride[data].begin() + m_ndim_nested,
+            m_stride[data].begin() + m_ndim, m_coord.begin() + m_ndim_nested);
+        load_bin_params(data);
       }
       if (m_shape[m_nested_dim_index] == 0 && offset != m_end_sentinel)
         seek_bin();
@@ -301,11 +302,9 @@ private:
   struct BinIterator {
     BinIterator() = default;
     explicit BinIterator(const ElementArrayViewParams &params)
-        : m_indices{params.bucketParams().indices} { }
+        : m_indices{params.bucketParams().indices} {}
 
-    [[nodiscard]] bool is_binned() noexcept {
-      return m_indices != nullptr;
-    }
+    [[nodiscard]] bool is_binned() noexcept { return m_indices != nullptr; }
 
     scipp::index m_bin_index{0};
     const std::pair<scipp::index, scipp::index> *m_indices{nullptr};
