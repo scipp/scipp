@@ -7,9 +7,6 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/slice.h"
 
-#include <cmath>
-#include <set>
-
 namespace scipp::except {
 
 TypeError::TypeError(const std::string &msg) : Error{msg} {}
@@ -45,8 +42,7 @@ void throw_mismatch_error(const core::Dimensions &expected,
                        format_dims(actual) + '.');
 }
 
-void throw_dimension_not_found_error(const core::Dimensions &expected,
-                                     Dim actual) {
+void throw_dimension_not_found_error(const core::Sizes &expected, Dim actual) {
   throw DimensionError{"Expected dimension to be in " + to_string(expected) +
                        ", got " + to_string(actual) + '.'};
 }

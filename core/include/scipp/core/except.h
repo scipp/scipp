@@ -49,9 +49,6 @@ throw_mismatch_error(const core::Dimensions &expected,
                      const core::Dimensions &actual);
 
 [[noreturn]] SCIPP_CORE_EXPORT void
-throw_dimension_not_found_error(const core::Dimensions &expected, Dim actual);
-
-[[noreturn]] SCIPP_CORE_EXPORT void
 throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
                              scipp::index length);
 

@@ -109,12 +109,9 @@ scipp::index Dimensions::size(const scipp::index i) const { return shape()[i]; }
 /// array defined by this.
 scipp::index Dimensions::offset(const Dim label) const {
   scipp::index offset{1};
-  for (int32_t i = ndim() - 1; i >= 0; --i) {
-    if (labels()[i] == label)
-      return offset;
+  for (int32_t i = index(label) + 1; i < ndim(); ++i)
     offset *= shape()[i];
-  }
-  except::throw_dimension_not_found_error(*this, label);
+  return offset;
 }
 
 void Dimensions::resize(const Dim label, const scipp::index size) {
@@ -149,14 +146,6 @@ Dim Dimensions::inner() const noexcept {
   if (empty())
     return Dim::Invalid;
   return labels().back();
-}
-
-int32_t Dimensions::index(const Dim dim) const {
-  expect::validDim(dim);
-  for (int32_t i = 0; i < NDIM_MAX; ++i)
-    if (labels()[i] == dim)
-      return i;
-  except::throw_dimension_not_found_error(*this, dim);
 }
 
 /// Return the direct sum, i.e., the combination of dimensions in a and b.

@@ -48,8 +48,6 @@ public:
     return !(*this == other);
   }
 
-  // constexpr bool empty() const noexcept { return m_ndim == 0; }
-
   /// Return the shape of the space defined by *this.
   constexpr scipp::span<const scipp::index> shape() const &noexcept {
     return sizes();
@@ -68,19 +66,6 @@ public:
 
   Dim inner() const noexcept;
 
-  /// Return true if `dim` is one of the labels in *this.
-  // constexpr bool contains(const Dim dim) const noexcept ;
-
-  /// Returns the number of occurences of `dim` in *this.
-  ///
-  /// This exists for convenience so generic code supporting std::unordered_map
-  /// can be written.
-  // constexpr scipp::index count(const Dim dim) const noexcept {
-  //  return contains(dim) ? 1 : 0;
-  //}
-
-  // bool contains(const Dimensions &other) const noexcept;
-
   bool isContiguousIn(const Dimensions &parent) const;
 
   // TODO Some of the following methods are probably legacy and should be
@@ -96,25 +81,6 @@ public:
   // TODO Better names required.
   void add(const Dim label, const scipp::index size);
   void addInner(const Dim label, const scipp::index size);
-
-  int32_t index(const Dim label) const;
-
-private:
-  // TODO
-  // scipp::index &at(const Dim dim);
-  // This is 56 Byte, or would be 40 Byte for small size 1.
-  // boost::container::small_vector<std::pair<Dim, scipp::index>, 2> m_dims;
-  // Support at most 6 dimensions, should be sufficient?
-  // 6*8 Byte = 48 Byte
-  // TODO: can we find a good way to initialise the values automatically when
-  // NDIM_MAX is changed?
-  /*
-  scipp::index m_shape[NDIM_MAX]{-1, -1, -1, -1, -1, -1};
-  int16_t m_ndim{0};
-  /// Dimensions labels.
-  Dim m_dims[NDIM_MAX]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
-                       Dim::Invalid, Dim::Invalid, Dim::Invalid};
-                       */
 };
 
 [[nodiscard]] SCIPP_CORE_EXPORT constexpr Dimensions

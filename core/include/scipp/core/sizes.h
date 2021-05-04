@@ -32,6 +32,7 @@ public:
   [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
   constexpr scipp::index size() const noexcept { return m_size; }
   bool contains(const Key &key) const noexcept;
+  scipp::index index(const Key &key) const;
   const Value &operator[](const Key &key) const;
   Value &operator[](const Key &key);
   const Value &at(const Key &key) const;
@@ -65,7 +66,6 @@ protected:
 
 public:
   Sizes() = default;
-  Sizes(const std::unordered_map<Dim, scipp::index> &sizes);
 
   scipp::index count(const Dim dim) const noexcept { return contains(dim); }
 
