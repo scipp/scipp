@@ -35,7 +35,6 @@ public:
   void insert(const Key &key, const Value &value);
   void erase(const Key &key);
   void clear();
-  // void relabel(const Dim from, const Dim to);
 
 private:
   int64_t m_size{0};
@@ -47,6 +46,7 @@ private:
 class SCIPP_CORE_EXPORT Sizes : public small_map<Dim, scipp::index, NDIM_MAX> {
 private:
   using base = small_map<Dim, scipp::index, NDIM_MAX>;
+  using base::insert;
 
 public:
   Sizes() = default;
