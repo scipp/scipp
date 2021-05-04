@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <functional>
 
+#include "scipp/common/index_composition.h"
 #include "scipp/core/parallel.h"
 #include "scipp/variable/variable.h"
 
@@ -131,14 +132,9 @@ void copy_flattened_4d(const py::array_t<T> &data, View &&view) {
 template <class T> auto memory_begin_end(const py::buffer_info &info) {
   auto *begin = static_cast<const T *>(info.ptr);
   auto *end = static_cast<const T *>(info.ptr);
-  const auto &shape = info.shape;
-  const auto &strides = info.strides;
-  for (scipp::index i = 0; i < scipp::size(shape); ++i)
-    if (strides[i] < 0)
-      begin += shape[i] * strides[i];
-    else
-      end += shape[i] * strides[i];
-  return std::pair{begin, end};
+  const auto [begin_offset, end_offset] =
+      memory_bounds(info.shape.begin(), info.shape.end(), info.strides.begin());
+  return std::pair{begin + begin_offset, end + end_offset};
 }
 
 template <class T, class View>
