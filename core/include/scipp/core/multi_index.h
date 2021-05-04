@@ -131,7 +131,7 @@ public:
   }
 
   constexpr void load_bucket_params(const scipp::index i) noexcept {
-    if (m_coord[m_ndim] != 0 || m_bucket[i].is_binned())
+    if (m_coord[m_ndim] != 0 || !m_bucket[i].is_binned())
       return; // at end or dense
     // All bins are guaranteed to have the same size.
     // Use common m_shape and m_nested_stride for all.
