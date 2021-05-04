@@ -15,7 +15,7 @@ bool small_map<Key, Value, MaxSize>::operator==(
   if (size() != other.size())
     return false;
   for (const auto &key : *this)
-    if (!other.contains(key) && at(key) != other.at(key))
+    if (!other.contains(key) || at(key) != other.at(key))
       return false;
   return true;
 }
@@ -54,19 +54,26 @@ Value &small_map<Key, Value, MaxSize>::operator[](const Key &key) {
 
 template <class Key, class Value, int16_t MaxSize>
 const Value &small_map<Key, Value, MaxSize>::at(const Key &key) const {
+  if (!contains(key))
+    throw std::runtime_error("Key not found");
   return m_values[std::distance(begin(), find(key))];
 }
 
 template <class Key, class Value, int16_t MaxSize>
 Value &small_map<Key, Value, MaxSize>::at(const Key &key) {
+  if (!contains(key))
+    throw std::runtime_error("Key not found");
   return m_values[std::distance(begin(), find(key))];
 }
 
 template <class Key, class Value, int16_t MaxSize>
 void small_map<Key, Value, MaxSize>::insert(const Key &key,
                                             const Value &value) {
-  if (contains(key))
+  // TODO better to throw here?
+  if (contains(key)) {
+    at(key) = value;
     return;
+  }
   if (size() == MaxSize)
     throw std::runtime_error("Exceeding builtin map size");
   m_keys[m_size] = key;
@@ -76,7 +83,8 @@ void small_map<Key, Value, MaxSize>::insert(const Key &key,
 
 template <class Key, class Value, int16_t MaxSize>
 void small_map<Key, Value, MaxSize>::erase(const Key &key) {
-  // scipp::expect::contains(*this, key);
+  if (!contains(key))
+    throw std::runtime_error("Key not found");
   m_size--;
   for (scipp::index i = std::distance(begin(), find(key)); i < size(); ++i) {
     m_keys[i] = m_keys[i + 1];
@@ -111,7 +119,7 @@ void Sizes::set(const Dim dim, const scipp::index size) {
     throw except::DimensionError(
         "Inconsistent size for dim '" + to_string(dim) + "', given " +
         std::to_string(at(dim)) + ", requested " + std::to_string(size));
-  at(dim) = size;
+  insert(dim, size);
 }
 
 void Sizes::relabel(const Dim from, const Dim to) {

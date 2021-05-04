@@ -23,7 +23,7 @@ public:
   bool operator!=(const small_map &other) const noexcept;
 
   auto begin() const { return m_keys.begin(); }
-  auto end() const { return m_keys.end(); }
+  auto end() const { return m_keys.begin() + size(); }
   typename std::array<Key, MaxSize>::const_iterator find(const Key &key) const;
   [[nodiscard]] bool empty() const noexcept;
   scipp::index size() const noexcept { return m_size; }
