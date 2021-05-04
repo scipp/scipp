@@ -9,24 +9,12 @@
 #include "scipp/core/except.h"
 
 namespace scipp::core {
-namespace {
-void expect_embedded_in(const Dimensions &a, const Dimensions &b) {
-  if (!a.embedded_in(b)) {
-    throw scipp::except::DimensionError(
-        "Cannot construct view, expected dimensions " + to_string(a) +
-        " to be embedded in dimensions " + to_string(b) + '.');
-  }
-}
-} // namespace
 
 ViewIndex::ViewIndex(const Dimensions &target_dimensions,
                      const Strides &strides)
     : m_ndim{static_cast<int32_t>(target_dimensions.ndim())} {
-  // do not allow broadcasting
-  expect_embedded_in(targetDimensions, dataDimensions);
-  m_dims = static_cast<int32_t>(targetDimensions.ndim());
-  for (scipp::index d = 0; d < m_dims; ++d)
-    m_extent[d] = target_dimensions.size(m_dims - 1 - d);
+  for (scipp::index d = 0; d < m_ndim; ++d)
+    m_shape[d] = target_dimensions.size(m_ndim - 1 - d);
 
   scipp::index rewind = 0;
   for (scipp::index d = 0; d < m_ndim; ++d) {

@@ -52,7 +52,9 @@ void copy_strides(std::array<std::array<scipp::index, NDIM_MAX>, N> &dest,
   (std::reverse_copy(strides.begin(), strides.begin() + ndim, dest[I].begin()),
    ...);
   // The last stride must be 0 for the end-state detection.
-  ((dest[I][ndim] = 0), ...);
+  if (ndim < NDIM_MAX) {
+    ((dest[I][ndim] = 0), ...);
+  }
 }
 
 template <scipp::index N> class MultiIndex {
