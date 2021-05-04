@@ -58,18 +58,6 @@ scipp::index &Dimensions::at(const Dim dim) {
 }
 */
 
-/// Return true if all dimensions of other contained in *this, ignoring order.
-/*
-bool Dimensions::contains(const Dimensions &other) const noexcept {
-  if (*this == other)
-    return true;
-  for (const auto &dim : other.labels())
-    if (!contains(dim) || other[dim] != operator[](dim))
-      return false;
-  return true;
-}
-*/
-
 /// Return true if *this forms a contiguous block within parent.
 ///
 /// Specifically, dimensions are not transposed, missing dimensions are outer

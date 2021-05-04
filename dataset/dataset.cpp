@@ -22,7 +22,7 @@ void Dataset::clear() {
 }
 
 void Dataset::setCoords(Coords other) {
-  scipp::expect::contains(other.sizes(), m_coords.sizes());
+  scipp::expect::includes(other.sizes(), m_coords.sizes());
   m_coords = std::move(other);
 }
 /// Return a const view to all coordinates of the dataset.
@@ -218,7 +218,7 @@ typename Masks::holder_type union_or(const Masks &currentMasks,
     const auto it = currentMasks.find(key);
     if (it == currentMasks.end())
       out.emplace(key, copy(item));
-    else if (out[key].dims().contains(item.dims()))
+    else if (out[key].dims().includes(item.dims()))
       out[key] |= item;
     else
       out[key] = out[key] | item;

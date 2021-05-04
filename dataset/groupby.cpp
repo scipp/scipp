@@ -370,7 +370,7 @@ GroupBy<DataArray> groupby(const DataArray &array, const Dim dim,
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArray &array, const Variable &key,
                            const Variable &bins) {
-  if (!array.dims().contains(key.dims()))
+  if (!array.dims().includes(key.dims()))
     throw except::DimensionError("Size of Group-by key is incorrect.");
 
   return call_groupby(array, key, bins);
@@ -406,7 +406,7 @@ GroupBy<Dataset> groupby(const Dataset &dataset, const Variable &key,
                          const Variable &bins) {
   for (const auto &dim : dataset.sizes()) {
     Dimensions dims(dim, dataset.sizes()[dim]);
-    if (dims.contains(key.dims()))
+    if (dims.includes(key.dims()))
       // Found compatible Dimension.
       return call_groupby(dataset, key, bins);
   }

@@ -46,7 +46,7 @@ void copy_slices(const Variable &src, Variable dst, const Dim dim,
   core::expect::equals(src.unit(), dst.unit());
   // May broadcast `src` but not `dst` since that would result in
   // multiple/conflicting writes to same bucket.
-  expect::contains(sizes1.dims(), sizes0.dims());
+  expect::includes(sizes1.dims(), sizes0.dims());
   core::expect::equals(all(equal(sizes0, sizes1)),
                        makeVariable<bool>(Values{true}));
   transform_in_place(subspan_view(dst, dim, dstIndices),

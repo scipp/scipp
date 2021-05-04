@@ -80,21 +80,21 @@ TEST(DimensionsTest, erase_inner) {
   EXPECT_EQ(dims.volume(), 12);
 }
 
-TEST(DimensionsTest, contains_other) {
+TEST(DimensionsTest, includes) {
   Dimensions a;
   a.add(Dim::X, 3);
   a.add(Dim::Y, 2);
 
-  EXPECT_TRUE(a.contains(Dimensions{}));
-  EXPECT_TRUE(a.contains(a));
-  EXPECT_TRUE(a.contains(Dimensions(Dim::Y, 2)));
-  EXPECT_FALSE(a.contains(Dimensions(Dim::Y, 3)));
+  EXPECT_TRUE(a.includes(Dimensions{}));
+  EXPECT_TRUE(a.includes(a));
+  EXPECT_TRUE(a.includes(Dimensions(Dim::Y, 2)));
+  EXPECT_FALSE(a.includes(Dimensions(Dim::Y, 3)));
 
   Dimensions b;
   b.add(Dim::Y, 2);
   b.add(Dim::X, 3);
   // Order does not matter.
-  EXPECT_TRUE(a.contains(b));
+  EXPECT_TRUE(a.includes(b));
 }
 
 TEST(DimensionsTest, isContiguousIn) {

@@ -98,7 +98,7 @@ template <class Key, class Value> Value Dict<Key, Value>::at(const Key &key) {
 
 template <class Key, class Value>
 void Dict<Key, Value>::setSizes(const Sizes &sizes) {
-  scipp::expect::contains(sizes, m_sizes);
+  scipp::expect::includes(sizes, m_sizes);
   m_sizes = sizes;
 }
 
@@ -125,7 +125,7 @@ void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
   expectWritable(*this);
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
-  if (!m_sizes.contains(coord.dims()) &&
+  if (!m_sizes.includes(coord.dims()) &&
       !is_edges(m_sizes, coord.dims(), dim_of_coord(coord, key)))
     throw except::DimensionError("Cannot add coord exceeding DataArray dims");
   m_items.insert_or_assign(key, std::move(coord));
@@ -264,8 +264,8 @@ template <class Key, class Value>
 bool Dict<Key, Value>::item_applies_to(const Key &key,
                                        const Dimensions &dims) const {
   const auto &val = m_items.at(key);
-  return dims.contains(val.dims()) ||
-         (!sizes().contains(val.dims()) &&
+  return dims.includes(val.dims()) ||
+         (!sizes().includes(val.dims()) &&
           is_edges(Sizes(dims), val.dims(), dim_of_coord(val, key)));
 }
 

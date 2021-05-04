@@ -71,8 +71,7 @@ public:
 
   void set(const Dim dim, const scipp::index size);
   void relabel(const Dim from, const Dim to);
-  using base::contains;
-  bool contains(const Sizes &sizes) const;
+  bool includes(const Sizes &sizes) const;
   Sizes slice(const Slice &params) const;
 
   /// Return the labels of the space defined by *this.

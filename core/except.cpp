@@ -42,11 +42,6 @@ void throw_mismatch_error(const core::Dimensions &expected,
                        format_dims(actual) + '.');
 }
 
-void throw_dimension_not_found_error(const core::Sizes &expected, Dim actual) {
-  throw DimensionError{"Expected dimension to be in " + to_string(expected) +
-                       ", got " + to_string(actual) + '.'};
-}
-
 void throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
                                   index length) {
   throw DimensionError{"Expected dimension to be in " + to_string(expected) +

@@ -166,11 +166,11 @@ void Sizes::relabel(const Dim from, const Dim to) {
     replace_key(from, to);
 }
 
-bool Sizes::contains(const Sizes &sizes) const {
-  for (const auto &dim : sizes)
-    if (!contains(dim) || at(dim) != sizes[dim])
-      return false;
-  return true;
+/// Return true if all dimensions of other contained in *this, with same size.
+bool Sizes::includes(const Sizes &sizes) const {
+  return std::all_of(sizes.begin(), sizes.end(), [&](const auto &dim) {
+    return contains(dim) && at(dim) == sizes[dim];
+  });
 }
 
 Sizes Sizes::slice(const Slice &params) const {
