@@ -97,14 +97,6 @@ bool Dimensions::isContiguousIn(const Dimensions &parent) const {
   return true;
 }
 
-bool Dimensions::embedded_in(const Dimensions &other) const noexcept {
-  const auto this_labels = labels();
-  return std::all_of(
-      this_labels.begin(), this_labels.end(), [&](const Dim label) {
-        return other.contains(label) && other[label] >= (*this)[label];
-      });
-}
-
 Dim Dimensions::label(const scipp::index i) const { return m_dims[i]; }
 
 void Dimensions::relabel(const scipp::index i, const Dim label) {
