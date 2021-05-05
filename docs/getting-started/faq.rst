@@ -10,7 +10,6 @@ For help on specific issues with using **scipp**, you should first visit
 `this <https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion>`_
 page to see if the problem you are facing has already been met/solved in the community.
 
-
 If you cannot find an answer, you can ask a new question by
 `opening <https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=>`_
 a new |QuestionLabel|_ issue.
@@ -34,9 +33,6 @@ For our application (handling of neutron-scattering data, which is so far mostly
   This type of data arises in time-resolved detection of neutrons in pixelated detectors.
 - Written in C++ for performance opportunities, in particular also when interfacing with our extensive existing C++ codebase.
 
-Instead of using xarray we intend to provide converters and partial interoperability with :py:class:`xarray.Dataset`.
-This lets us use, e.g., xarray's `powerful plotting functionality <https://xarray.pydata.org/en/stable/plotting.html>`_.
-
 Why are you not just contributing to xarray?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -48,14 +44,22 @@ Furthermore, some of the requirements are unlikely to be obtainable within xarra
 
 We should note that at least some of our additional requirements, in particular physical units, are being pursued also by the xarray developers.
 
-What about performance?
-~~~~~~~~~~~~~~~~~~~~~~~
+Plotting
+--------
 
-In its current state scipp does not support multi-threading and not all parts of the implementation are written to deliver optimal performance.
-This was a deliberate choice for the early milestones.
-We chose to focus first on delivering a decent API and tested implementation.
-After these basics and the codebase have been consolidated, our roadmap contains more performance-related work and parallelization.
-Rest assured that we have undertaken steps during the design and prototyping process to ensure that the architecture and data structures are compatible with higher performance needs.
+How can I set axis limits when creating a plot?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This can be achieved indirectly with scipp's [generic slicing functionality](../user-guide/slicing.html) and [label-based indexing](../user-guide/slicing.html#Label-based-indexing) in particular.
+Example:
+
+.. code-block:: python
+
+  array.plot()  # plot with full x range
+  array['x', 100:200].plot()  # plot 100 points starting at offset 100
+  start = 1.2 * sc.Unit('m')
+  stop = 1.3 * sc.Unit('m')
+  array['x', start:stop].plot()  # plot everything between 1.2 and 1.3 meter
 
 Installation
 ------------
