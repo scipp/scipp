@@ -719,39 +719,6 @@ TYPED_TEST(DatasetBinaryOpTest, masks_not_shared) {
   }
 }
 
-TEST(DatasetSetData, dense_to_dense) {
-  auto dense = datasetFactory().make();
-  auto d = copy(dense.slice({Dim::X, 0, 2}));
-  dense.setData("data_x_1", dense["data_x"]);
-  EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
-
-  EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), except::DimensionError);
-}
-
-TEST(DatasetSetData, dense_to_empty) {
-  auto ds = Dataset();
-  auto dense = datasetFactory().make();
-  ds.setData("data_x", dense["data_x"]);
-  EXPECT_EQ(dense["data_x"].coords(), ds["data_x"].coords());
-  EXPECT_EQ(dense["data_x"].data(), ds["data_x"].data());
-}
-
-TEST(DatasetSetData, labels) {
-  auto dense = datasetFactory().make();
-  dense.setCoord(Dim("l"), makeVariable<double>(
-                               Dims{Dim::X},
-                               Shape{dense.coords()[Dim::X].dims().volume()}));
-  auto d = copy(dense.slice({Dim::Y, 0}));
-  dense.setData("data_x_1", dense["data_x"]);
-  EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
-
-  d.setCoord(Dim("l1"),
-             makeVariable<double>(Dims{Dim::X},
-                                  Shape{d.coords()[Dim::X].dims().volume()}));
-  dense.setData("data_x_2", d["data_x"]);
-  EXPECT_TRUE(dense.coords().contains(Dim("l1")));
-}
-
 TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
   Variable indicesGood = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 3}});
