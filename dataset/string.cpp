@@ -41,7 +41,6 @@ namespace {
 std::string format_variable(const std::string &key, const Variable &variable,
                             const std::optional<Dimensions> datasetDims) {
   std::stringstream s;
-  const std::string colSep("  ");
   s << tab << std::left << std::setw(24) << key
     << format_variable(variable, datasetDims) << '\n';
   return s.str();
