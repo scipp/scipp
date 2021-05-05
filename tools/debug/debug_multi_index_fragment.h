@@ -1,6 +1,5 @@
 /// Include in the MultiIndex class.
 
-
 friend std::ostream &operator<<(std::ostream &os, const MultiIndex<N> &index) {
   os << "MultiIndex<" << N << "> {\n";
   os << "  data_index = " << index.m_data_index << '\n';

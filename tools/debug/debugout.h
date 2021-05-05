@@ -5,7 +5,7 @@
 #include <vector>
 
 // Use namespace std to make the operators discoverable through ADL.
-namespace std {  // NOLINT
+namespace std { // NOLINT
 template <typename T, size_t N>
 std::ostream &operator<<(std::ostream &os, const std::array<T, N> &a) {
   os << '[';
@@ -31,4 +31,4 @@ std::ostream &operator<<(std::ostream &os, const std::vector<T> &v) {
   os << ']';
   return os;
 }
-}
+} // namespace std
