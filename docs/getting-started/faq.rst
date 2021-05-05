@@ -50,7 +50,7 @@ Plotting
 How can I set axis limits when creating a plot?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This can be achieved indirectly with scipp's [generic slicing functionality](../user-guide/slicing.html) and [label-based indexing](../user-guide/slicing.html#Label-based-indexing) in particular.
+This can be achieved indirectly with scipp's `generic slicing functionality <../user-guide/slicing.html>`_ and `label-based indexing <../user-guide/slicing.html#Label-based-indexing>`_ in particular.
 Example:
 
 .. code-block:: python
