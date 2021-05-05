@@ -35,21 +35,6 @@ public:
     s_xy_xy_x_edges = Strides{xlen + 1, 1};
   }
 
-  static Strides make_strides(const Dimensions &iter_dims,
-                              const Dimensions &data_dims) {
-    Strides strides;
-    scipp::index ndim = 0;
-    scipp::index stride = 1;
-    for (scipp::index i = data_dims.ndim() - 1; i >= 0; --i) {
-      if (iter_dims.contains(data_dims.label(i))) {
-        strides[ndim++] = stride;
-      }
-      stride *= data_dims[data_dims.label(i)];
-    }
-    std::reverse(strides.begin(), strides.begin() + ndim);
-    return strides;
-  }
-
 protected:
   Dimensions xy;
   Dimensions xy_x_edges;
