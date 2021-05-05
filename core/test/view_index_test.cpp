@@ -30,6 +30,7 @@ public:
 
     s_xy_xy = Strides{xlen, 1};
     s_xy_yx = Strides{1, ylen};
+    s_xy_x = Strides{0, 1};
     s_x_xy = Strides{1};
     s_x_yx = Strides{ylen};
     s_xy_xy_x_edges = Strides{xlen + 1, 1};
@@ -45,6 +46,7 @@ protected:
 
   Strides s_xy_xy;
   Strides s_xy_yx;
+  Strides s_xy_x;
   Strides s_x_xy;
   Strides s_x_yx;
   Strides s_xy_xy_x_edges;
@@ -115,6 +117,28 @@ TEST_F(ViewIndex2DTest, increment_2D_transpose) {
     EXPECT_EQ(i.get(), correct);
     i.increment();
   }
+}
+
+TEST_F(ViewIndex2DTest, increment_1D) {
+  ViewIndex i(xy, s_xy_x);
+  EXPECT_EQ(i.get(), 0);
+  i.increment();
+  EXPECT_EQ(i.get(), 1);
+  i.increment();
+  EXPECT_EQ(i.get(), 2);
+  i.increment();
+  EXPECT_EQ(i.get(), 0);
+}
+
+TEST_F(ViewIndex2DTest, increment_0D) {
+  ViewIndex i(xy, Strides{0, 0});
+  EXPECT_EQ(i.get(), 0);
+  i.increment();
+  EXPECT_EQ(i.get(), 0);
+  i.increment();
+  EXPECT_EQ(i.get(), 0);
+  i.increment();
+  EXPECT_EQ(i.get(), 0);
 }
 
 TEST_F(ViewIndex2DTest, fixed_dimensions) {
