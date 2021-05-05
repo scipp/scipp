@@ -1,5 +1,5 @@
 /*
- * Put into global namespace:
+ * Put into scipp::core namespace:
  */
 template <typename T, size_t N>
 std::ostream &operator<<(std::ostream &os, const std::array<T, N> &a) {
