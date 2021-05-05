@@ -206,10 +206,6 @@ public:
 
   [[nodiscard]] constexpr scipp::index
   inner_distance_to(const MultiIndex &other) const noexcept {
-    // The end index has coord[0] = 0.
-    if (other.m_coord[0] == 0) {
-      return inner_distance_to_end();
-    }
     return other.m_coord[0] - m_coord[0];
   }
 
@@ -259,7 +255,7 @@ public:
 
   constexpr bool in_same_chunk(const MultiIndex &other,
                                const scipp::index first_dim) const noexcept {
-    for (scipp::index dim = first_dim; dim < NDIM_MAX; ++dim) {
+    for (scipp::index dim = first_dim; dim < NDIM_MAX + 1; ++dim) {
       if (m_coord[dim] != other.m_coord[dim]) {
         return false;
       }
