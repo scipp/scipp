@@ -103,6 +103,35 @@ auto range(const scipp::index end) {
   return data;
 }
 
+TEST(ElementArrayViewTest, broadcast_inner) {
+  Dimensions target({Dim::X, Dim::Y}, {2, 3});
+  EXPECT_TRUE(
+      equals(ElementArrayView(range(2).data(), 0, target, Strides{1, 0}),
+             {0, 0, 0, 1, 1, 1}));
+}
+
+TEST(ElementArrayViewTest, broadcast_outer) {
+  Dimensions dims{Dim::X, 2};
+  Dimensions target({Dim::Y, Dim::X}, {3, 2});
+  EXPECT_TRUE(
+      equals(ElementArrayView(range(2).data(), 0, target, Strides{0, 1}),
+             {0, 1, 0, 1, 0, 1}));
+}
+
+TEST(ElementArrayViewTest, broadcast_interior) {
+  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {2, 3, 2});
+  EXPECT_TRUE(
+      equals(ElementArrayView(range(4).data(), 0, target, Strides{2, 0, 1}),
+             {0, 1, 0, 1, 0, 1, 2, 3, 2, 3, 2, 3}));
+}
+
+TEST(ElementArrayViewTest, broadcast_inner_and_outer) {
+  Dimensions target({Dim::X, Dim::Y, Dim::Z}, {2, 2, 3});
+  EXPECT_TRUE(
+      equals(ElementArrayView(range(2).data(), 0, target, Strides{0, 1, 0}),
+             {0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1}));
+}
+
 Strides transposed_strides(Dimensions &from, const span<const Dim> order) {
   return core::transpose(Strides{from}, from, order);
 }
