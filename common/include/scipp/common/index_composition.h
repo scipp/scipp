@@ -42,6 +42,11 @@ constexpr auto flat_index_from_strides(ForwardIt1 strides_it,
 template <class ForwardIt1, class ForwardIt2>
 constexpr auto memory_bounds(ForwardIt1 shape_it, const ForwardIt1 shape_end,
                              ForwardIt2 strides_it) noexcept {
+  if (shape_it == shape_end) {
+    // Scalars are one element wide in memory, this would not be handled
+    // correctly by the code below.
+    return std::pair{0, 1};
+  }
   scipp::index begin = 0;
   scipp::index end = 0;
   for (; shape_it != shape_end; ++shape_it, ++strides_it) {
@@ -50,10 +55,6 @@ constexpr auto memory_bounds(ForwardIt1 shape_it, const ForwardIt1 shape_end,
     else
       end += *shape_it * *strides_it;
   }
-  // For scalars the above produces begin==end because all strides == 0.
-  // But we need the one-past-the-end to describe the used memory.
-  if (begin == end)
-    ++end;
   return std::pair{begin, end};
 }
 
