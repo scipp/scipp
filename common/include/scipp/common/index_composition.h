@@ -50,6 +50,10 @@ constexpr auto memory_bounds(ForwardIt1 shape_it, const ForwardIt1 shape_end,
     else
       end += *shape_it * *strides_it;
   }
+  // For scalars the above produces begin==end because all strides == 0.
+  // But we need the one-past-the-end to describe the used memory.
+  if (begin == end)
+    ++end;
   return std::pair{begin, end};
 }
 
