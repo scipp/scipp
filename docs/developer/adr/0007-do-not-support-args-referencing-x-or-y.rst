@@ -22,7 +22,7 @@ The ambiguity can be avoided using scipp's ubiquitous approach of requiring expl
 One example for this is the ``scale`` argument of ``plot()``, which is a dictionary mapping from dimension labels to the desired scale (linear or logarithmic).
 The same approach should be adopted for all other arguments to ``plot()``.
 
-Note that in the case of defining limits and alternative approach recommended to users is the use of slicing.
+Note that in the case of defining limits, an alternative approach recommended to users is the use of slicing.
 
 Decision
 --------
