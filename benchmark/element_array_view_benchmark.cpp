@@ -6,12 +6,13 @@
 
 #include "scipp/core/element_array_view.h"
 
+using namespace scipp;
 using namespace scipp::core;
 
 static void BM_ViewIndex(benchmark::State &state) {
   Dimensions dims({{Dim::Y, state.range(0)}, {Dim::X, 2000}});
   std::vector<double> variable(dims.volume());
-  ElementArrayView<double> view(variable.data(), 0, dims, dims);
+  ElementArrayView<double> view(variable.data(), 0, dims, Strides{0, 1});
 
   for (auto _ : state) {
     double sum = 0.0;
@@ -30,6 +31,5 @@ static void BM_ViewIndex(benchmark::State &state) {
   state.SetItemsProcessed(state.iterations() * view.size());
 }
 BENCHMARK(BM_ViewIndex)->RangeMultiplier(2)->Range(4, 8 << 10);
-;
 
 BENCHMARK_MAIN();
