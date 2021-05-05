@@ -5,8 +5,6 @@
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
 
-#include <iostream>
-
 namespace scipp::core {
 
 namespace {
