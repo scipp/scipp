@@ -147,7 +147,7 @@ public:
           else // bin dimension -> rewind earlier bins
             m_bin[data].m_bin_index +=
                 m_stride[data][d + 1] - m_coord[d] * m_stride[data][d];
-          if (m_coord[d+1] != m_shape[d+1]) {
+          if (m_coord[d + 1] != m_shape[d + 1]) {
             // We might have hit the end of the data, keep going with the outer
             // dimensions.
             load_bin_params(data);

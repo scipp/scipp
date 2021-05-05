@@ -93,7 +93,7 @@ public:
     return variances<T>()[0];
   }
 
-  [[nodiscard]]Variable slice(Slice params) const;
+  [[nodiscard]] Variable slice(Slice params) const;
   void validateSlice(const Slice &s, const Variable &data) const;
   [[maybe_unused]] Variable &setSlice(Slice params, const Variable &data);
 
