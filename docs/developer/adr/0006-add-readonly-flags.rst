@@ -42,6 +42,7 @@ Add ``readonly`` flag to:
 
 - ``Variable``
 - Metadata dicts for ``coords``, ``masks``, and ``attrs``.
+- Operations fail rather than silently ignoring read-only flags of variables or metadata dicts.
 
 Consequences
 ------------
