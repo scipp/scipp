@@ -33,7 +33,7 @@ This is effectively "unmasking" elements.
 Note that a hypothetical mechanism that would insert the masks into the slice's parent's masks dict, ``array.masks`` would need to provide a mechanism for broadcasting and initializing this new mask for all other slices.
 The complexity of such a mechanism does not appear justifiable given the minor advantages.
 
-The problem of meta-data insertion into slices can be solved by marking the meta data dicts of slices as "read-only".
+The problem of meta-data insertion into slices can be solved by marking the meta data dicts of slices as "read-only", which prevents item insertion.
 
 Decision
 --------
