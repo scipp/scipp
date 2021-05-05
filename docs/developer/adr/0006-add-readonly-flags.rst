@@ -20,7 +20,7 @@ There are a number of contexts where values of variables are conceptually "broad
 - Coords of items in a dataset.
   The coords are conceptually shared by all items.
 
-In all of the above cases in-place a subsequent modifications would silently affect other unrelated (sub)objects such as other slices or items of the same "parent" object.
+In all of the above cases a subsequent in-place modifications would silently affect other unrelated (sub)objects such as other slices or items of the same "parent" object.
 
 This can be solved by marking the variables affected in these cases as "read-only".
 
@@ -42,7 +42,8 @@ Add ``readonly`` flag to:
 
 - ``Variable``
 - Metadata dicts for ``coords``, ``masks``, and ``attrs``.
-- Operations fail rather than silently ignoring read-only flags of variables or metadata dicts.
+
+Operations fail rather than silently ignoring read-only flags of variables or metadata dicts.
 
 Consequences
 ------------
