@@ -18,7 +18,8 @@ namespace scipp {
 /// @note This function uses *strides* and not a shape, meaning strides[d]
 ///       is not the extent of the array in dimension d but rather the step
 ///       length in the flat index to advance one element in d.
-///       It is thus *not* complementary to extract_indices.
+///       Therefore, some conversion of parameters is required when inverting
+///       the result with `extract_indices`.
 template <class ForwardIt1, class ForwardIt2>
 constexpr auto flat_index_from_strides(ForwardIt1 strides_it,
                                        const ForwardIt2 strides_end,
@@ -83,7 +84,8 @@ constexpr auto memory_bounds(ForwardIt1 shape_it, const ForwardIt1 shape_end,
 /// @param indices {i_d}
 /// @note This function uses a *shape*, i.e. individual dimension sizes
 ///       to encode the size of the array.
-///       It is thus *not* complementary to flat_index_from_strides.
+///       Therefore, some conversion of parameters is required when inverting
+///       the result with `flat_index_from_strides`.
 template <size_t Ndim_max>
 constexpr void
 extract_indices(scipp::index flat_index, const scipp::index ndim,
