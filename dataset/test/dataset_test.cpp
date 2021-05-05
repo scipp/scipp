@@ -39,7 +39,7 @@ TEST(DatasetTest, clear) {
 TEST(DatasetTest, erase_non_existant) {
   Dataset d;
   ASSERT_THROW(d.erase("not an item"), except::NotFoundError);
-  ASSERT_THROW(auto _ = d.extract("not an item"), except::NotFoundError);
+  ASSERT_THROW_DISCARD(d.extract("not an item"), except::NotFoundError);
 }
 
 TEST(DatasetTest, erase) {
@@ -134,8 +134,8 @@ TEST(DatasetTest, set_item_mask) {
   d.setData("scalar", 1.2 * units::one);
   const auto var =
       makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false});
-  d["x"].masks().set("unaligned", var);
-  EXPECT_TRUE(d["x"].masks().contains("unaligned"));
+  d["x"].masks().set("mask", var);
+  EXPECT_TRUE(d["x"].masks().contains("mask"));
 }
 
 TEST(DatasetTest, setData_with_and_without_variances) {
