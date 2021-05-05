@@ -9,6 +9,7 @@
 #include "scipp/variable/operations.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/variable_concept.h"
 
 using namespace scipp;
 
