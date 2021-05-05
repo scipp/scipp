@@ -144,7 +144,6 @@ bool memory_overlaps(const py::array_t<T> &data, const View &view) {
   const auto begin = view.begin();
   const auto end = view.end();
   if (begin == end) {
-    // Scalars cannot overlap with numpy arrays in a way that matters to copy.
     return false;
   }
   const auto view_begin = reinterpret_cast<const std::byte *>(&*begin);
