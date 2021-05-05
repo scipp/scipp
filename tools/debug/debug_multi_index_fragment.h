@@ -1,22 +1,6 @@
-/*
- * Put into scipp::core namespace:
- */
-template <typename T, size_t N>
-std::ostream &operator<<(std::ostream &os, const std::array<T, N> &a) {
-  os << '[';
-  for (size_t i = 0; i + 1 < std::size(a); ++i) {
-    os << a[i] << ", ";
-  }
-  if (std::size(a) > 0) {
-    os << a.back();
-  }
-  os << ']';
-  return os;
-}
+/// Include in the MultiIndex class.
 
-/*
- * Put into MultiIndex class definition:
- */
+
 friend std::ostream &operator<<(std::ostream &os, const MultiIndex<N> &index) {
   os << "MultiIndex<" << N << "> {\n";
   os << "  data_index = " << index.m_data_index << '\n';
