@@ -797,11 +797,11 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
 TEST(DataArrayMasks, can_contain_any_type_but_only_OR_bools) {
   DataArray a(makeVariable<double>(Values{1}));
   a.masks().set("double", makeVariable<double>(Values{1}));
-  ASSERT_THROW(a += a, std::runtime_error);
-  ASSERT_THROW_DISCARD(a + a, std::runtime_error);
+  ASSERT_THROW(a += a, except::TypeError);
+  ASSERT_THROW_DISCARD(a + a, except::TypeError);
   a.masks().set("bool", makeVariable<bool>(Values{false}));
-  ASSERT_THROW(a += a, std::runtime_error);
-  ASSERT_THROW_DISCARD(a + a, std::runtime_error);
+  ASSERT_THROW(a += a, except::TypeError);
+  ASSERT_THROW_DISCARD(a + a, except::TypeError);
   a.masks().erase("double");
   ASSERT_NO_THROW(a += a);
   ASSERT_NO_THROW_DISCARD(a + a);
