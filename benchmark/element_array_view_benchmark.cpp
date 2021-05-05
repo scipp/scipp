@@ -29,7 +29,7 @@ static void BM_ElementArrayView_iterators(benchmark::State &state) {
 
   state.SetItemsProcessed(state.iterations() * view.size());
 }
-BENCHMARK(BM_ElementArrayView_iterators)->RangeMultiplier(2)->Range(4, 8 << 4);
+BENCHMARK(BM_ElementArrayView_iterators)->RangeMultiplier(2)->Range(4, 8 << 10);
 
 static void BM_ElementArrayView_rangeFor(benchmark::State &state) {
   MAKE_VIEW(state.range(0));
@@ -44,7 +44,7 @@ static void BM_ElementArrayView_rangeFor(benchmark::State &state) {
 
   state.SetItemsProcessed(state.iterations() * view.size());
 }
-BENCHMARK(BM_ElementArrayView_rangeFor)->RangeMultiplier(2)->Range(4, 8 << 4);
+BENCHMARK(BM_ElementArrayView_rangeFor)->RangeMultiplier(2)->Range(4, 8 << 10);
 
 static void BM_ElementArrayView_index(benchmark::State &state) {
   MAKE_VIEW(state.range(0));
@@ -59,6 +59,6 @@ static void BM_ElementArrayView_index(benchmark::State &state) {
 
   state.SetItemsProcessed(state.iterations() * view.size());
 }
-BENCHMARK(BM_ElementArrayView_index)->RangeMultiplier(2)->Range(4, 8 << 4);
+BENCHMARK(BM_ElementArrayView_index)->RangeMultiplier(2)->Range(4, 8 << 10);
 
 BENCHMARK_MAIN();
