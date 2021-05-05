@@ -27,7 +27,7 @@ Note that in the case of defining limits, an alternative approach recommended to
 Decision
 --------
 
-TODO
+Do not provide or support arguments referring to ``x`` or ``y``.
 
 Consequences
 ------------
