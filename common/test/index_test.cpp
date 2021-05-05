@@ -17,7 +17,7 @@ TEST(IndexCompositionTest, flat_index_from_strides_0d) {
 }
 
 TEST(IndexCompositionTest, flat_index_from_strides_1d) {
-  for (scipp::index stride = 0; stride < 6; ++stride) {
+  for (scipp::index stride = -5; stride < 6; ++stride) {
     const std::array<scipp::index, 1> strides{stride};
     for (scipp::index index = 0; index < 10; ++index) {
       const std::array<scipp::index, 1> indices{index};
@@ -29,8 +29,8 @@ TEST(IndexCompositionTest, flat_index_from_strides_1d) {
 }
 
 TEST(IndexCompositionTest, flat_index_from_strides_2d) {
-  for (scipp::index stride0 = 0; stride0 < 6; ++stride0) {
-    for (scipp::index stride1 = 0; stride1 < 6; ++stride1) {
+  for (scipp::index stride0 = -5; stride0 < 6; ++stride0) {
+    for (scipp::index stride1 = -5; stride1 < 6; ++stride1) {
       const std::array<scipp::index, 2> strides{stride0, stride1};
       for (scipp::index index0 = 0; index0 < 10; ++index0) {
         for (scipp::index index1 = 0; index1 < 10; ++index1) {
@@ -45,9 +45,9 @@ TEST(IndexCompositionTest, flat_index_from_strides_2d) {
 }
 
 TEST(IndexCompositionTest, flat_index_from_strides_3d) {
-  for (scipp::index stride0 = 0; stride0 < 6; ++stride0) {
-    for (scipp::index stride1 = 0; stride1 < 6; ++stride1) {
-      for (scipp::index stride2 = 0; stride2 < 6; ++stride2) {
+  for (scipp::index stride0 = -5; stride0 < 6; ++stride0) {
+    for (scipp::index stride1 = -5; stride1 < 6; ++stride1) {
+      for (scipp::index stride2 = -5; stride2 < 6; ++stride2) {
         const std::array<scipp::index, 3> strides{stride0, stride1, stride2};
         for (scipp::index index0 = 0; index0 < 10; ++index0) {
           for (scipp::index index1 = 0; index1 < 10; ++index1) {
