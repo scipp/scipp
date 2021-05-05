@@ -95,6 +95,17 @@ TEST(ElementArrayView, subview) {
   EXPECT_EQ(*it++, 0.0);
   EXPECT_EQ(*it++, 2.0);
   EXPECT_EQ(*it++, 4.0);
+
+  // broadcast back to original shape
+  ElementArrayView<double> subView(view, dims);
+  it = subView.begin();
+  ASSERT_EQ(std::distance(it, subView.end()), 6);
+  EXPECT_EQ(*it++, 0.0);
+  EXPECT_EQ(*it++, 0.0);
+  EXPECT_EQ(*it++, 2.0);
+  EXPECT_EQ(*it++, 2.0);
+  EXPECT_EQ(*it++, 4.0);
+  EXPECT_EQ(*it++, 4.0);
 }
 
 auto range(const scipp::index end) {
@@ -353,6 +364,39 @@ TEST(ElementArrayViewTest, slice_range_all) {
   Strides strides{3 * 4, 4, 1};
   EXPECT_TRUE(equals(ElementArrayView(range(24).data(), 0, target, strides),
                      {0, 1, 4, 5}));
+}
+
+TEST(ElementArrayViewTest, broadcast_transpose_slice_3d) {
+  // base dims = {{Dim::X, Dim::Y}, {2, 3}};
+  Dimensions target{{Dim::Y, Dim::X, Dim::Z}, {2, 2, 4}};
+  Strides strides{1, 3, 0};
+  EXPECT_TRUE(equals(ElementArrayView(range(6).data(), 0, target, strides),
+                     {0, 0, 0, 0, 3, 3, 3, 3, 1, 1, 1, 1, 4, 4, 4, 4}));
+}
+
+TEST(ElementArrayViewTest, broadcast_transpose_slice_4d) {
+  // base dims = {{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target{{Dim::Z, Dim::Y, Dim::Time, Dim::X}, {2, 3, 2, 2}};
+  Strides strides{1, 4, 0, 3 * 4};
+  EXPECT_TRUE(equals(ElementArrayView(range(24).data(), 0, target, strides),
+                     {0, 12, 0, 12, 4, 16, 4, 16, 8, 20, 8, 20,
+                      1, 13, 1, 13, 5, 17, 5, 17, 9, 21, 9, 21}));
+}
+
+TEST(ElementArrayViewTest, view_of_view_collapse_and_broadcast) {
+  Dimensions dims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
+  Dimensions target{{Dim::X, Dim::Z}, {2, 4}};
+  Strides strides{3 * 4, 1};
+  const auto data = range(24);
+  // Base view with collapsed Y
+  ElementArrayView base(data.data(), 0, target, strides);
+  // Derived view with Y dependence. Since the base view had no Y it is
+  // broadcast and does *not* give the original data. The application of this is
+  // some operation like var += var.slice(Dim.Y, 0), where we first slice and
+  // then broadcast the result for a subsequent operation.
+  EXPECT_TRUE(equals(ElementArrayView<const int32_t>(base, dims),
+                     {0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,
+                      12, 13, 14, 15, 12, 13, 14, 15, 12, 13, 14, 15}));
 }
 
 TEST(ElementArrayViewTest, view_of_view_bad_broadcast) {
