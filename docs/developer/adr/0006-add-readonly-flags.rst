@@ -1,5 +1,5 @@
 ADR 0006: Add read-only flags
-============================
+=============================
 
 - Status: accepted
 - Deciders: Jan-Lukas, Neil, Owen, Simon
