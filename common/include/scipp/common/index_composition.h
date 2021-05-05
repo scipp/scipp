@@ -45,7 +45,7 @@ constexpr auto memory_bounds(ForwardIt1 shape_it, const ForwardIt1 shape_end,
   if (shape_it == shape_end) {
     // Scalars are one element wide in memory, this would not be handled
     // correctly by the code below.
-    return std::pair{0, 1};
+    return std::pair{scipp::index{0}, scipp::index{1}};
   }
   scipp::index begin = 0;
   scipp::index end = 0;
