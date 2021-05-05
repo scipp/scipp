@@ -23,8 +23,7 @@ template <class ForwardIt1, class ForwardIt2>
 constexpr auto flat_index_from_strides(ForwardIt1 strides_it,
                                        const ForwardIt2 strides_end,
                                        ForwardIt2 indices_it) noexcept {
-  std::remove_const_t<std::remove_reference_t<decltype(*strides_it)>> result =
-      0;
+  std::decay_t<decltype(*strides_it)> result = 0;
   for (; strides_it != strides_end; ++strides_it, ++indices_it) {
     result += *strides_it * *indices_it;
   }
