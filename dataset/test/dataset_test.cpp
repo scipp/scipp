@@ -11,7 +11,6 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
-#include "scipp/dataset/reduction.h"
 #include "scipp/variable/operations.h"
 
 #include "dataset_test_common.h"
@@ -317,20 +316,6 @@ TEST(DatasetTest, slice_validation_complex) {
   // Reverse order. Invalid slice creation should be caught up front.
   EXPECT_THROW(ds.slice(Slice{Dim::X, 1, 2}).slice(Slice{Dim::X, 0, 3}),
                except::SliceError);
-}
-
-TEST(DatasetTest, sum_and_mean) {
-  auto ds = make_1_values_and_variances<float>("a", {Dim::X, 3}, units::one,
-                                               {1, 2, 3}, {12, 15, 18});
-  EXPECT_EQ(dataset::sum(ds, Dim::X)["a"].data(),
-            makeVariable<float>(Values{6}, Variances{45}));
-  EXPECT_EQ(dataset::sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-            makeVariable<float>(Values{3}, Variances{27}));
-
-  EXPECT_EQ(dataset::mean(ds, Dim::X)["a"].data(),
-            makeVariable<float>(Values{2}, Variances{5.0}));
-  EXPECT_EQ(dataset::mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-            makeVariable<float>(Values{1.5}, Variances{6.75}));
 }
 
 TEST(DatasetTest, extract_coord) {
