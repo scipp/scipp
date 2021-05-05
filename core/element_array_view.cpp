@@ -56,20 +56,7 @@ ElementArrayViewParams::ElementArrayViewParams(
 }
 
 void ElementArrayViewParams::requireContiguous() const {
-  bool is_contiguous = true;
-  if (m_bucketParams) {
-    is_contiguous = false;
-  } else {
-    scipp::index expected_stride = 1;
-    for (scipp::index dim = m_iterDims.ndim() - 1; dim >= 0; --dim) {
-      if (m_strides[dim] != expected_stride) {
-        is_contiguous = false;
-        break;
-      }
-      expected_stride *= m_iterDims[m_iterDims.label(dim)];
-    }
-  }
-  if (!is_contiguous)
+  if (m_bucketParams || m_strides != Strides(m_iterDims))
     throw std::runtime_error("Data is not contiguous");
 }
 
