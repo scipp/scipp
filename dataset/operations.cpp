@@ -134,13 +134,13 @@ DataArray strip_if_broadcast_along(DataArray &&a, const Dim dim) {
   strip_if_broadcast_along(a.coords(), dim);
   strip_if_broadcast_along(a.masks(), dim);
   strip_if_broadcast_along(a.attrs(), dim);
-  return a;
+  return std::move(a);
 }
 
 Dataset strip_if_broadcast_along(Dataset &&d, const Dim dim) {
   strip_if_broadcast_along(d.coords(), dim);
   strip_if_broadcast_along(d, dim);
-  return d;
+  return std::move(d);
 }
 
 } // namespace scipp::dataset
