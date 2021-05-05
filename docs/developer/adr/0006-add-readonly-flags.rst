@@ -62,4 +62,4 @@ No major downsides.
 
 In rare cases users may want to get a data array from a dataset, ``item = ds['a']``, and modify a coordinate without copying data.
 This would now require copying these coords by hand, e.g., ``item.coords['x'] = iten.coords['x'].copy()``.
-In practice this should be a rare issue and uses may just copy the entire item ``item = ds['a'].copy()``.
+In practice this should be a rare issue and users may just copy the entire item ``item = ds['a'].copy()``.
