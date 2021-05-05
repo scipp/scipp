@@ -5,6 +5,8 @@
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
 
+#include <iostream>
+
 namespace scipp::core {
 
 namespace {
@@ -87,7 +89,7 @@ ElementArrayViewParams::overlaps(const ElementArrayViewParams &other) const {
   const auto [other_begin, other_end] =
       memory_bounds(other.m_iterDims.shape().begin(),
                     other.m_iterDims.shape().end(), other.m_strides.begin());
-  return ((this_begin < other_end) && (this_end >= other_begin));
+  return ((this_begin < other_end) && (this_end > other_begin));
 }
 
 } // namespace scipp::core

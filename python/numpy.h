@@ -144,6 +144,7 @@ bool memory_overlaps(const py::array_t<T> &data, const View &view) {
   const auto begin = view.begin();
   const auto end = view.end();
   if (begin == end) {
+    // Scalars cannot overlap with numpy arrays in a way that matters to copy.
     return false;
   }
   const auto view_begin = reinterpret_cast<const std::byte *>(&*begin);
@@ -151,7 +152,7 @@ bool memory_overlaps(const py::array_t<T> &data, const View &view) {
   // Note the use of std::less, pointer comparison with operator< may be
   // undefined behavior with pointers from different arrays.
   return std::less<>()(data_begin, view_end) &&
-         std::greater_equal<>()(data_end, view_begin);
+         std::greater<>()(data_end, view_begin);
 }
 
 /// Copy all elements from src into dst.
