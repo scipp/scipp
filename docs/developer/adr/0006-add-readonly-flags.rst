@@ -49,7 +49,7 @@ Consequences
 Positive:
 ~~~~~~~~~
 
-- Can prevent bad modifications if variables that are broadcast.
+- Can prevent bad modifications of variables that are broadcast.
   This allows for using broadcasting safely in more cases.
 - Can prevent modification of dataset coords via items (data arrays), which would unintentionally affect other data arrays in the dataset.
 - Can prevent bad mask updates in in-place binary operations without requiring mask dims to match data dims.
