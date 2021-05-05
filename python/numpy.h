@@ -143,9 +143,6 @@ bool memory_overlaps(const py::array_t<T> &data, const View &view) {
   const auto [data_begin, data_end] = memory_begin_end<std::byte>(buffer_info);
   const auto begin = view.begin();
   const auto end = view.end();
-  if (begin == end) {
-    return false;
-  }
   const auto view_begin = reinterpret_cast<const std::byte *>(&*begin);
   const auto view_end = reinterpret_cast<const std::byte *>(&*end);
   // Note the use of std::less, pointer comparison with operator< may be
