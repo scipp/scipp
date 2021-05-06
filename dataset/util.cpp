@@ -15,10 +15,13 @@ namespace scipp {
 template <class T>
 scipp::index size_of_bucket_impl(const Variable &view, const SizeofTag tag) {
   const auto &[indices, dim, buffer] = view.constituents<T>();
-  const auto &[begin, end] = unzip(indices);
-  const auto sizes = sum(end - begin).template value<scipp::index>();
-  const auto scale = // avoid division by zero
-      sizes == 0 ? 0.0 : sizes / static_cast<double>(buffer.dims()[dim]);
+  scipp::index scale = 1;
+  if (tag == SizeofTag::ViewOnly) {
+    const auto &[begin, end] = unzip(indices);
+    const auto sizes = sum(end - begin).template value<scipp::index>();
+    // avoid division by zero
+    scale = sizes == 0 ? 0.0 : sizes / static_cast<double>(buffer.dims()[dim]);
+  }
   return size_of(indices, tag) + size_of(buffer, tag) * scale;
 }
 
