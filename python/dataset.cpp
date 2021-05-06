@@ -167,8 +167,12 @@ void init_dataset(py::module &m) {
           :type attrs: Dict[str, Variable]
           :type name: str
           )")
-      .def("__sizeof__", [](const DataArray &array) {
-        return size_of(array, SizeofTag::ViewOnly, true);
+      .def("__sizeof__",
+           [](const DataArray &array) {
+             return size_of(array, SizeofTag::ViewOnly, true);
+           })
+      .def("underlying_size", [](const DataArray &self) {
+        return size_of(self, SizeofTag::Underlying);
       });
   options.enable_function_signatures();
 
@@ -219,8 +223,12 @@ void init_dataset(py::module &m) {
            py::call_guard<py::gil_scoped_release>())
       .def("clear", &Dataset::clear,
            R"(Removes all data, preserving coordinates.)")
-      .def("__sizeof__", [](const Dataset &self) {
-        return size_of(self, SizeofTag::ViewOnly);
+      .def("__sizeof__",
+           [](const Dataset &self) {
+             return size_of(self, SizeofTag::ViewOnly);
+           })
+      .def("underlying_size", [](const Dataset &self) {
+        return size_of(self, SizeofTag::Underlying);
       });
 
   bind_dataset_view_methods(dataset);
