@@ -3,7 +3,6 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
-#include <Eigen/Core>
 #include <unordered_map>
 
 #include "scipp-core_export.h"
@@ -41,8 +40,6 @@ template <> inline constexpr DType dtype<int32_t>{4};
 template <> inline constexpr DType dtype<bool>{5};
 template <> inline constexpr DType dtype<std::string>{6};
 template <> inline constexpr DType dtype<time_point>{7};
-template <> inline constexpr DType dtype<Eigen::Vector3d>{8};
-template <> inline constexpr DType dtype<Eigen::Matrix3d>{9};
 class SubbinSizes;
 template <> inline constexpr DType dtype<SubbinSizes>{10};
 // span<T> start at 100
@@ -53,7 +50,6 @@ template <> inline constexpr DType dtype<span<const int32_t>>{103};
 template <> inline constexpr DType dtype<span<const bool>>{104};
 template <> inline constexpr DType dtype<span<const std::string>>{105};
 template <> inline constexpr DType dtype<span<const time_point>>{106};
-template <> inline constexpr DType dtype<span<const Eigen::Vector3d>>{107};
 // span<inline const T> start at 200
 template <> inline constexpr DType dtype<span<double>>{200};
 template <> inline constexpr DType dtype<span<float>>{201};
@@ -62,7 +58,6 @@ template <> inline constexpr DType dtype<span<int32_t>>{203};
 template <> inline constexpr DType dtype<span<bool>>{204};
 template <> inline constexpr DType dtype<span<std::string>>{205};
 template <> inline constexpr DType dtype<span<time_point>>{206};
-template <> inline constexpr DType dtype<span<Eigen::Vector3d>>{207};
 // std containers start at 300
 template <> inline constexpr DType dtype<std::pair<int32_t, int32_t>>{300};
 template <> inline constexpr DType dtype<std::pair<int64_t, int64_t>>{301};
@@ -99,6 +94,7 @@ inline constexpr DType dtype<std::unordered_map<core::time_point, int32_t>>{
 // scipp::variable types start at 1000
 // scipp::dataset types start at 2000
 // scipp::python types start at 3000
+// Eigen types start at 4000
 // User types should start at 10000
 
 SCIPP_CORE_EXPORT bool isInt(DType tp);

@@ -5,7 +5,6 @@
 #include "scipp/core/element/rebin.h"
 #include "scipp/core/parallel.h"
 #include "scipp/units/except.h"
-#include "scipp/variable/apply.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"

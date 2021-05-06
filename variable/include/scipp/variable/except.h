@@ -23,3 +23,7 @@ throw_mismatch_error(const variable::Variable &expected,
                      const variable::Variable &actual);
 
 } // namespace scipp::except
+
+namespace scipp::variable {
+SCIPP_VARIABLE_EXPORT std::string pretty_dtype(const Variable &var);
+}

@@ -6,9 +6,8 @@
 
 #include <cmath>
 
-#include <Eigen/Core>
-
 #include "scipp/common/overloaded.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
 

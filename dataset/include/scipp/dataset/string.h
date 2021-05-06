@@ -23,15 +23,7 @@ SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &os,
 
 SCIPP_DATASET_EXPORT std::string to_string(const DataArray &data);
 SCIPP_DATASET_EXPORT std::string to_string(const Dataset &dataset);
-
-template <class Key, class Value>
-std::string to_string(const Dict<Key, Value> &view) {
-  std::stringstream ss;
-  ss << "<scipp.Dict>\n";
-  for (const auto &[key, item] : view) {
-    ss << "  " << key << ":" << to_string(item);
-  }
-  return ss.str();
-}
+SCIPP_DATASET_EXPORT std::string to_string(const Coords &coords);
+SCIPP_DATASET_EXPORT std::string to_string(const Masks &masks);
 
 } // namespace scipp::dataset

@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/subspan_view.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/shape.h"

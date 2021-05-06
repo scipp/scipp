@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include <string>
 
+#include "scipp/core/eigen.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable.tcc"
 
