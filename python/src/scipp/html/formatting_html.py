@@ -517,7 +517,8 @@ def inject_style():
         from .resources import load_style
         # `display` claims that its parameter should be a tuple, but
         # that does not seem to work in the case of Javascript.
-        display(Javascript(f"""
+        display(
+            Javascript(f"""
             const style = document.createElement('style');
             style.textContent = String.raw`{load_style()}`;
             document.head.append(style);
