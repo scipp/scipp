@@ -117,7 +117,6 @@ template <class Key, class Value> void Dict<Key, Value>::rebuildSizes() {
   m_sizes = std::move(new_sizes);
 }
 
-// TODO remove force workaround required by DataArray::slice
 template <class Key, class Value>
 void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
   if (contains(key) && at(key).is_same(coord))
