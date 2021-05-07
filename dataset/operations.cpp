@@ -114,27 +114,23 @@ Variable masked_data(const DataArray &array, const Dim dim) {
 }
 
 namespace {
-template <class Dict> void strip_if_broadcast_along(Dict &dict, const Dim dim) {
-  std::vector<typename Dict::key_type> erase;
-  for (const auto &item : dict)
-    if (!item.second.dims().contains(dim))
-      erase.emplace_back(item.first);
-  for (const auto &key : erase)
-    dict.erase(key);
+template <class Dict> auto strip_(const Dict &dict, const Dim dim) {
+  Dict stripped(dict.sizes(), {});
+  for (const auto &[key, value] : dict)
+    if (value.dims().contains(dim))
+      stripped.set(key, value);
+  return stripped;
 }
 } // namespace
 
-DataArray strip_if_broadcast_along(DataArray a, const Dim dim) {
-  strip_if_broadcast_along(a.coords(), dim);
-  strip_if_broadcast_along(a.masks(), dim);
-  strip_if_broadcast_along(a.attrs(), dim);
-  return std::move(a);
+DataArray strip_if_broadcast_along(const DataArray &a, const Dim dim) {
+  return {a.data(), strip_(a.coords(), dim), strip_(a.masks(), dim),
+          strip_(a.attrs(), dim), a.name()};
 }
 
 Dataset strip_if_broadcast_along(const Dataset &d, const Dim dim) {
   Dataset stripped;
-  stripped.setCoords(d.coords());
-  strip_if_broadcast_along(stripped.coords(), dim);
+  stripped.setCoords(strip_(d.coords(), dim));
   for (auto &&item : d)
     if (item.dims().contains(dim))
       stripped.setData(item.name(), strip_if_broadcast_along(item, dim));

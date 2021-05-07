@@ -117,7 +117,7 @@ TEST_F(GroupbyTest, dataset_1d_and_2d) {
   expected.setData("c",
                    makeVariable<double>(Dims{Dim(Dim::Z), dim}, Shape{2, 2},
                                         units::s, Values{1.5, 3.0, 4.5, 6.0}));
-  expected["a"].coords().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
+  expected["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
   expected.setCoord(
       dim, makeVariable<double>(Dims{dim}, Shape{2}, units::m, Values{1, 3}));
 
@@ -435,8 +435,6 @@ TEST_F(GroupbyWithBinsTest, two_bin) {
 
   auto group0 =
       concatenate(d.slice({Dim::X, 0, 2}), d.slice({Dim::X, 4, 5}), Dim::X);
-  // concatenate does currently not preserve attributes
-  group0["a"].coords().set(Dim("scalar"), d["a"].attrs()[Dim("scalar")]);
   EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 0}),
             add_bins(sum(group0, Dim::X), 0));
   EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 0}),
