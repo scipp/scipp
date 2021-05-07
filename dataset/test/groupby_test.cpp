@@ -23,7 +23,7 @@ struct GroupbyTest : public ::testing::Test {
                                         Values{0.1, 0.2, 0.3}));
     d.setData("c", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim::X, 3}},
                                         units::s, Values{1, 2, 3, 4, 5, 6}));
-    d["a"].coords().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
+    d["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
     d.setCoord(Dim("labels1"), makeVariable<double>(Dimensions{Dim::X, 3},
                                                     units::m, Values{1, 2, 3}));
     d.setCoord(Dim("labels2"), makeVariable<double>(Dimensions{Dim::X, 3},
@@ -177,7 +177,7 @@ TEST_F(GroupbyMaskedTest, sum) {
                                              units::s, Values{1, 3, 4, 6}));
   expected.setCoord(
       dim, makeVariable<double>(Dimensions{dim, 2}, units::m, Values{1, 3}));
-  expected["a"].coords().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
+  expected["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
   for (const auto &item : {"a", "c"})
     expected[item].masks().set(
         "mask_z",
@@ -202,7 +202,7 @@ TEST_F(GroupbyMaskedTest, sum_irrelevant_mask) {
                                              units::s, Values{3, 3, 9, 6}));
   expected.setCoord(
       dim, makeVariable<double>(Dimensions{dim, 2}, units::m, Values{1, 3}));
-  expected["a"].coords().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
+  expected["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
   for (const auto &item : {"a", "c"})
     expected[item].masks().set(
         "mask_z",
@@ -237,7 +237,7 @@ TEST_F(GroupbyMaskedTest, mean_mask_ignores_values_properly) {
                                              units::s, Values{1, 3, 4, 6}));
   expected.setCoord(
       dim, makeVariable<double>(Dimensions{dim, 2}, units::m, Values{1, 3}));
-  expected["a"].coords().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
+  expected["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
   for (const auto &item : {"a", "c"})
     expected[item].masks().set(
         "mask_z",

@@ -116,31 +116,29 @@ Variable masked_data(const DataArray &array, const Dim dim) {
 namespace {
 template <class Dict> void strip_if_broadcast_along(Dict &dict, const Dim dim) {
   std::vector<typename Dict::key_type> erase;
-  for (const auto &item : dict) {
-    if constexpr (std::is_same_v<Dict, Dataset>) {
-      if (!item.dims().contains(dim))
-        erase.emplace_back(item.name());
-    } else {
-      if (!item.second.dims().contains(dim))
-        erase.emplace_back(item.first);
-    }
-  }
+  for (const auto &item : dict)
+    if (!item.second.dims().contains(dim))
+      erase.emplace_back(item.first);
   for (const auto &key : erase)
     dict.erase(key);
 }
 } // namespace
 
-DataArray strip_if_broadcast_along(DataArray &&a, const Dim dim) {
+DataArray strip_if_broadcast_along(DataArray a, const Dim dim) {
   strip_if_broadcast_along(a.coords(), dim);
   strip_if_broadcast_along(a.masks(), dim);
   strip_if_broadcast_along(a.attrs(), dim);
   return std::move(a);
 }
 
-Dataset strip_if_broadcast_along(Dataset &&d, const Dim dim) {
-  strip_if_broadcast_along(d.coords(), dim);
-  strip_if_broadcast_along(d, dim);
-  return std::move(d);
+Dataset strip_if_broadcast_along(const Dataset &d, const Dim dim) {
+  Dataset stripped;
+  stripped.setCoords(d.coords());
+  strip_if_broadcast_along(stripped.coords(), dim);
+  for (auto &&item : d)
+    if (item.dims().contains(dim))
+      stripped.setData(item.name(), strip_if_broadcast_along(item, dim));
+  return stripped;
 }
 
 } // namespace scipp::dataset
