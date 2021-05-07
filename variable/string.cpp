@@ -21,7 +21,6 @@ std::ostream &operator<<(std::ostream &os, const Variable &variable) {
 }
 
 namespace {
-constexpr const char *tab = "  ";
 
 std::string make_dims_labels(const Variable &variable,
                              const std::optional<Dimensions> datasetDims) {
@@ -72,26 +71,27 @@ auto apply(const DType dtype, Args &&... args) {
 }
 } // namespace
 
-std::string format_variable(const std::string &key, const Variable &variable,
+std::string format_variable(const Variable &variable,
                             const std::optional<Dimensions> datasetDims) {
   if (!variable.is_valid())
-    return std::string(tab) + "invalid variable\n";
+    return "invalid variable\n";
   std::stringstream s;
   const std::string colSep("  ");
-  s << tab << std::left << std::setw(24) << key;
-  s << colSep << std::setw(9) << to_string(variable.dtype());
+  if (!datasetDims)
+    s << to_string(variable.dims()) << colSep;
+  s << std::setw(9) << to_string(variable.dtype());
   s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
-  s << colSep << make_dims_labels(variable, datasetDims);
+  if (datasetDims)
+    s << colSep << make_dims_labels(variable, datasetDims);
   s << colSep;
   s << apply<ValuesToString>(variable.dtype(), variable);
   if (variable.hasVariances())
     s << colSep << apply<VariancesToString>(variable.dtype(), variable);
-  s << '\n';
   return s.str();
 }
 
 std::string to_string(const Variable &variable) {
-  return format_variable(std::string("<scipp.Variable>"), variable);
+  return std::string("<scipp.Variable> ") + format_variable(variable);
 }
 
 std::string to_string(const std::pair<Dim, Variable> &coord) {

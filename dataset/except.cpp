@@ -25,17 +25,11 @@ void throw_mismatch_error(const dataset::Dataset &expected,
                      to_string(actual) + '.');
 }
 
-CoordMismatchError::CoordMismatchError(
-    const std::pair<const Dim, Variable> &expected,
-    const std::pair<const Dim, Variable> &actual)
-    : DatasetError{"Mismatch in coordinate, expected " + to_string(expected) +
-                   ", got " + to_string(actual)} {}
-
-template <>
-void throw_mismatch_error(const std::pair<const Dim, Variable> &expected,
-                          const std::pair<const Dim, Variable> &actual) {
-  throw CoordMismatchError(expected, actual);
-}
+CoordMismatchError::CoordMismatchError(const Dim dim, const Variable &expected,
+                                       const Variable &actual)
+    : DatasetError{"Mismatch in coordinate '" + to_string(dim) +
+                   "', expected\n" + format_variable(expected) + ", got\n" +
+                   format_variable(actual)} {}
 
 } // namespace scipp::except
 
@@ -43,12 +37,18 @@ namespace scipp::dataset::expect {
 void coordsAreSuperset(const Coords &a_coords, const Coords &b_coords) {
   for (const auto &b_coord : b_coords) {
     if (a_coords[b_coord.first] != b_coord.second)
-      throw except::CoordMismatchError(*a_coords.find(b_coord.first), b_coord);
+      throw except::CoordMismatchError(b_coord.first, a_coords[b_coord.first],
+                                       b_coord.second);
   }
 }
 
 void coordsAreSuperset(const DataArray &a, const DataArray &b) {
   coordsAreSuperset(a.coords(), b.coords());
+}
+
+void matchingCoord(const Dim dim, const Variable &a, const Variable &b) {
+  if (a != b)
+    throw except::CoordMismatchError(dim, a, b);
 }
 
 void isKey(const Variable &key) {
