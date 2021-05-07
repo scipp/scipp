@@ -54,6 +54,10 @@
   color: var(--sc-font-color1);
 }
 
+.sc-underlying-size {
+  color: var(--sc-font-color2);
+}
+
 .sc-sections {
   padding-left: 0 !important;
   display: grid;

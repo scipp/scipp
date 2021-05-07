@@ -10,10 +10,14 @@
 
 namespace scipp {
 
-SCIPP_DATASET_EXPORT scipp::index size_of(const Variable &view);
+enum SizeofTag { Underlying, ViewOnly };
+
+SCIPP_DATASET_EXPORT scipp::index size_of(const Variable &view, SizeofTag tag);
 SCIPP_DATASET_EXPORT scipp::index size_of(const DataArray &dataarray,
+                                          SizeofTag tag,
                                           bool include_aligned_coords = true);
-SCIPP_DATASET_EXPORT scipp::index size_of(const Dataset &dataset);
+SCIPP_DATASET_EXPORT scipp::index size_of(const Dataset &dataset,
+                                          SizeofTag tag);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray astype(const DataArray &var,
                                                     const DType type);

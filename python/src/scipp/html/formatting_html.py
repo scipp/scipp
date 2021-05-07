@@ -6,7 +6,6 @@ import operator
 import uuid
 from functools import partial, reduce
 from html import escape
-import sys
 
 from .._scipp import core as sc
 from .._utils import is_data_array, is_dataset
@@ -457,11 +456,21 @@ def _obj_repr(header_components, sections):
             "</div>")
 
 
+def _format_size(obj):
+    view_size = obj.__sizeof__()
+    underlying_size = obj.underlying_size()
+    res = f"({human_readable_size(view_size)}"
+    if view_size != underlying_size:
+        res += " <span class='sc-underlying-size'>out of "\
+               f"{human_readable_size(underlying_size)}</span>"
+    return res + ")"
+
+
 def dataset_repr(ds):
     obj_type = "scipp.{}".format(type(ds).__name__)
     header_components = [
-        f"<div class='sc-obj-type'>{escape(obj_type)}"
-        f" ({human_readable_size(sys.getsizeof(ds))})</div>"
+        f"<div class='sc-obj-type'>{escape(obj_type)} " + _format_size(ds) +
+        "</div>"
     ]
 
     sections = [dim_section(ds)]
@@ -484,8 +493,8 @@ def variable_repr(var):
     obj_type = "scipp.{}".format(type(var).__name__)
 
     header_components = [
-        f"<div class='sc-obj-type'>{escape(obj_type)}"
-        f" ({human_readable_size(sys.getsizeof(var))})</div>"
+        f"<div class='sc-obj-type'>{escape(obj_type)} " + _format_size(var) +
+        "</div>"
     ]
 
     sections = [variable_section(var)]

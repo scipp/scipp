@@ -205,7 +205,13 @@ of variances.)");
           "__rtruediv__",
           [](Variable &a, int &b) { return (b * units::one) / a; },
           py::is_operator())
-      .def("__sizeof__", py::overload_cast<const Variable &>(&size_of));
+      .def("__sizeof__",
+           [](const Variable &self) {
+             return size_of(self, SizeofTag::ViewOnly);
+           })
+      .def("underlying_size", [](const Variable &self) {
+        return size_of(self, SizeofTag::Underlying);
+      });
 
   bind_init_list(variable);
   // Order matters for pybind11's overload resolution. Do not change.
