@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -15,15 +15,6 @@ INSTANTIATE_VARIABLE(DataArray, scipp::dataset::DataArray)
 } // namespace scipp::variable
 
 namespace scipp::dataset {
-namespace {
-// Insert classes from scipp::dataset into formatting registry. The objects
-// themselves do nothing, but the constructor call with comma operator does the
-// insertion.
-auto register_dataset_types(
-    (variable::formatterRegistry().emplace(
-         dtype<Dataset>, std::make_unique<variable::Formatter<Dataset>>()),
-     variable::formatterRegistry().emplace(
-         dtype<DataArray>, std::make_unique<variable::Formatter<DataArray>>()),
-     0));
-} // namespace
+REGISTER_FORMATTER(DataArray, DataArray)
+REGISTER_FORMATTER(Dataset, Dataset)
 } // namespace scipp::dataset

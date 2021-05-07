@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Owen Arnold, Simon Heybrock
@@ -16,32 +16,32 @@ namespace scipp::variable {
 
 namespace {
 
-scipp::index get_count(const VariableConstView &coord, const Dim dim,
-                       const VariableConstView &value, const bool ascending) {
+scipp::index get_count(const Variable &coord, const Dim dim,
+                       const Variable &value, const bool ascending) {
   return (ascending ? sum(less_equal(coord, value), dim)
                     : sum(greater_equal(coord, value), dim))
       .value<scipp::index>();
 }
 
-scipp::index get_index(const VariableConstView &coord, const Dim dim,
-                       const VariableConstView &value, const bool ascending,
+scipp::index get_index(const Variable &coord, const Dim dim,
+                       const Variable &value, const bool ascending,
                        const bool edges) {
-  auto i = get_count(coord, dim, value, edges ? ascending : !ascending);
+  auto i = get_count(coord, dim, value, edges == ascending);
   i = edges ? i - 1 : coord.dims()[dim] - i;
   return std::clamp<scipp::index>(0, i, coord.dims()[dim]);
 }
 
-auto get_1d_coord(const VariableConstView &coord) {
+const Variable &get_1d_coord(const Variable &coord) {
   if (coord.dims().ndim() != 1)
     throw except::DimensionError("Multi-dimensional coordinates cannot be used "
                                  "for label-based indexing.");
   return coord;
 }
 
-auto get_coord(VariableConstView coord, const Dim dim) {
-  coord = get_1d_coord(coord);
-  const bool ascending = issorted(coord, dim, variable::SortOrder::Ascending);
-  const bool descending = issorted(coord, dim, variable::SortOrder::Descending);
+auto get_coord(const Variable &coord, const Dim dim) {
+  get_1d_coord(coord);
+  const bool ascending = issorted(coord, dim, SortOrder::Ascending);
+  const bool descending = issorted(coord, dim, SortOrder::Descending);
   if (!(ascending ^ descending))
     throw std::runtime_error("Coordinate must be monotonically increasing or "
                              "decreasing for label-based indexing.");
@@ -51,8 +51,8 @@ auto get_coord(VariableConstView coord, const Dim dim) {
 } // namespace
 
 std::tuple<Dim, scipp::index> get_slice_params(const Dimensions &dims,
-                                               const VariableConstView &coord_,
-                                               const VariableConstView value) {
+                                               const Variable &coord_,
+                                               const Variable &value) {
   core::expect::equals(value.dims(), Dimensions{});
   const auto dim = coord_.dims().inner();
   if (dims[dim] + 1 == coord_.dims()[dim]) {
@@ -71,20 +71,20 @@ std::tuple<Dim, scipp::index> get_slice_params(const Dimensions &dims,
 }
 
 std::tuple<Dim, scipp::index, scipp::index>
-get_slice_params(const Dimensions &dims, const VariableConstView &coord_,
-                 const VariableConstView begin, const VariableConstView end) {
-  if (begin)
+get_slice_params(const Dimensions &dims, const Variable &coord_,
+                 const Variable &begin, const Variable &end) {
+  if (begin.is_valid())
     core::expect::equals(begin.dims(), Dimensions{});
-  if (end)
+  if (end.is_valid())
     core::expect::equals(end.dims(), Dimensions{});
   const auto dim = coord_.dims().inner();
   const auto &[coord, ascending] = get_coord(coord_, dim);
   scipp::index first = 0;
   scipp::index last = dims[dim];
   const auto bin_edges = last + 1 == coord.dims()[dim];
-  if (begin)
+  if (begin.is_valid())
     first = get_index(coord, dim, begin, ascending, bin_edges);
-  if (end)
+  if (end.is_valid())
     last = get_index(coord, dim, end, ascending, bin_edges);
   // Note: Here the bin containing `end` is included
   return {dim, first, std::min(dims[dim], last + (bin_edges ? 1 : 0))};

@@ -1,5 +1,5 @@
 # ~~~
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
 set(TARGET_NAME "scipp-variable-test")
@@ -11,7 +11,6 @@ add_executable(
   comparison_test.cpp
   creation_test.cpp
   cumulative_test.cpp
-  indexed_slice_view_test.cpp
   mean_test.cpp
   operations_test.cpp
   rebin_test.cpp
@@ -26,7 +25,6 @@ add_executable(
   transform_test.cpp
   trigonometry_test.cpp
   util_test.cpp
-  variable_bucket_non_owning_test.cpp
   variable_bucket_test.cpp
   variable_custom_type_test.cpp
   variable_keyword_args_constructor_test.cpp

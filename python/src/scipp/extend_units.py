@@ -1,4 +1,4 @@
-from ._scipp.core import Unit
+from ._scipp.core import Unit as _Unit
 
 
 def __rmul(self, scalar):
@@ -20,9 +20,9 @@ def __rtruediv(self, scalar):
 # add magic python methods to Unit class
 # it is done here (on python side) because
 # there is no proper way to do this in pybind11
-setattr(Unit, '__rtruediv__', __rtruediv)
-setattr(Unit, '__rmul__', __rmul)
+setattr(_Unit, '__rtruediv__', __rtruediv)
+setattr(_Unit, '__rmul__', __rmul)
 
 # forbid numpy to apply ufuncs to unit
 # wrong behavior in scalar * unit otherwise
-setattr(Unit, "__array_ufunc__", None)
+setattr(_Unit, "__array_ufunc__", None)

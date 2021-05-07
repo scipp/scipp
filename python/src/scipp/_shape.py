@@ -1,9 +1,9 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from typing import Sequence
+from typing import Sequence as _Sequence
 
 
 def broadcast(x, dims, shape):
@@ -150,7 +150,7 @@ def flatten(x, dims=None, to=None):
     return _call_cpp_func(_cpp.flatten, x, dims, to)
 
 
-def transpose(x, dims: Sequence[str]):
+def transpose(x, dims: _Sequence[str]):
     """Transpose dimensions of a variable.
 
     :param x: Variable to transpose.

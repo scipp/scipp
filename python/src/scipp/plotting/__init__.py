@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
@@ -57,7 +57,7 @@ if ipy is not None:
             "var command = 'devicePixelRatio = ' + value; "
             "kernel.execute(command);}")
 
-# Note: due to some strange behaviour when importing matplotlib and pyplot in
+# Note: due to some strange behavior when importing matplotlib and pyplot in
 # different order, we need to import pyplot after switching to the ipympl
 # backend (see https://github.com/matplotlib/matplotlib/issues/19032).
 try:
@@ -186,11 +186,11 @@ def plot(*args, **kwargs):
         dimension axis. E.g. `scale={"tof": "log"}`. Defaults to None.
     :type scale: dict, optional
 
-    :param vmin: Minimum value for the colorscale (2d and 3d only).
+    :param vmin: Minimum value for the y-axis (1d) or colorscale (2d and 3d).
         Defaults to None.
     :type vmin: float, optional
 
-    :param vmax: Maximum value for the colorscale (2d and 3d only).
+    :param vmax: Maximum value for the y-axis (1d) or colorscale (2d and 3d).
         Defaults to None.
     :type vmax: float, optional
 

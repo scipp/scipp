@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Matthew Andrew
@@ -9,8 +9,13 @@
 #include "scipp/dataset/generated_util.h"
 
 namespace scipp {
-SCIPP_DATASET_EXPORT scipp::index size_of(const VariableConstView &view);
-SCIPP_DATASET_EXPORT scipp::index size_of(const DataArrayConstView &dataarray,
+
+SCIPP_DATASET_EXPORT scipp::index size_of(const Variable &view);
+SCIPP_DATASET_EXPORT scipp::index size_of(const DataArray &dataarray,
                                           bool include_aligned_coords = true);
-SCIPP_DATASET_EXPORT scipp::index size_of(const DatasetConstView &dataset);
+SCIPP_DATASET_EXPORT scipp::index size_of(const Dataset &dataset);
+
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray astype(const DataArray &var,
+                                                    const DType type);
+
 } // namespace scipp

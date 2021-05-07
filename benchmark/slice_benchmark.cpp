@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 #include <benchmark/benchmark.h>
@@ -20,7 +20,7 @@ auto make_table() {
 static void BM_dataset_create_view(benchmark::State &state) {
   auto d = make_table();
   for (auto _ : state) {
-    DatasetView view(d);
+    Dataset view(d);
   }
   state.SetItemsProcessed(state.iterations());
 }

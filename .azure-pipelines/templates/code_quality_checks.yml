@@ -1,45 +1,48 @@
+parameters:
+- name: image
+  type: string
+  default: ''
+
 stages:
   - stage: 'code_quality'
-    displayName: 'Code Quality Checks'
+    displayName: 'Code Quality'
 
     jobs:
-      - job: 'cpp_checks'
-        displayName: 'C++ Checks'
+      - job: 'code_quality_checks'
+        displayName: 'Code Quality'
         pool:
-          vmImage: 'ubuntu-20.04'
+          vmImage: ${{ parameters.image }}
         steps:
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.x'
+              addToPath: true
+              architecture: 'x64'
+
           - bash: |
               set -ex
               sudo apt-get install --yes clang-format-10
+              pip install cmake_format==0.6.9 flake8 yapf==0.30.0
             displayName: 'Install tooling'
+
           - bash: |
               set -ex
               clang-format-10 --version
               # Run clang-format in-place on all C++ files, excluding third party libraries
               find . -type f -regex '.*\.\(c\|cpp\|h\|hpp\|tcc\)' -not -path './common/include/scipp/common/span/*' -exec clang-format-10 -i {} +
-              # Show the diff to give an inidcation of the issues in the CI log
+              # Show the diff to give an indication of the issues in the CI log
               git diff
               # Run quiet diff to fail the job if any formatting was done (see man git-diff)
               git diff --quiet
             displayName: 'Run clang-format'
+
           - bash: |
               set -ex
               docker build ./tools -f ./tools/cppcheck.Dockerfile -t scipp_cppcheck
               docker run --rm -v "$PWD":/data scipp_cppcheck
             displayName: 'Run cppcheck'
 
-      - job: 'cmake_checks'
-        displayName: 'CMake Checks'
-        pool:
-          vmImage: 'ubuntu-latest'
-        steps:
-          - task: UsePythonVersion@0
-            inputs:
-              versionSpec: '3.x'
-              addToPath: true
-              architecture: 'x64'
-          - bash: pip install cmake_format==0.6.9
-            displayName: 'Install tooling'
           - bash: |
               set -ex
               cmake-format --version
@@ -47,11 +50,6 @@ stages:
               find . -type f -name CMakeLists.txt -or -name '*.cmake' | xargs cmake-format --check
             displayName: 'Run cmake-format'
 
-      - job: 'copyright_year'
-        displayName: 'Copyright Year'
-        pool:
-          vmImage: 'ubuntu-latest'
-        steps:
           - bash: |
               set -ex
               # Find all occurances of "YYYY Scipp contributors" and replace YYYY with the current year
@@ -62,24 +60,13 @@ stages:
               git diff --quiet
             displayName: 'Check Copyright years are up to date'
 
-      - job: 'python_checks'
-        displayName: 'Python Checks'
-        pool:
-          vmImage: 'ubuntu-latest'
-        steps:
-          - task: UsePythonVersion@0
-            inputs:
-              versionSpec: '3.x'
-              addToPath: true
-              architecture: 'x64'
-          - bash: pip install flake8 yapf==0.30.0
-            displayName: 'Install tooling'
           - bash: |
               set -ex
               flake8 --version
               # Perform format checking on all Python files
               find . -type f -name '*.py' | xargs flake8
             displayName: 'Run flake8'
+
           - bash: |
               set -ex
               yapf --version

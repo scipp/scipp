@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -13,12 +13,8 @@ namespace py = pybind11;
 
 template <class T1, class T2 = T1> void bind_@OPNAME@(py::module &m) {
   m.def(
-      "@OPNAME@", [](
-        const typename T1::const_view_type &a,
-        const typename T2::const_view_type &b) {
-      return @NAME@(a,b);
-      },
-      py::arg("a"),py::arg("b"), py::call_guard<py::gil_scoped_release>());
+      "@OPNAME@", [](const T1 &a, const T2 &b) { return @NAME@(a, b); },
+      py::arg("a"), py::arg("b"), py::call_guard<py::gil_scoped_release>());
 }
 
 void init_@OPNAME@(py::module &m) {

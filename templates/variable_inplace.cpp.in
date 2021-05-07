@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -12,14 +12,14 @@ namespace scipp::variable {
 
 // Note: These will broadcast/transpose the RHS if required. We do not support
 // changing the dimensions of the LHS though!
-Variable &@NAME@(Variable &lhs, const VariableConstView &rhs) {
-  @NAME@(VariableView(lhs), rhs);
+Variable &@NAME@(Variable &lhs, const Variable &rhs) {
+  @NAME@(Variable(lhs), rhs);
   return lhs;
 }
 
-VariableView @NAME@(const VariableView &lhs, const VariableConstView &rhs) {
+Variable @NAME@(Variable &&lhs, const Variable &rhs) {
   transform_in_place(lhs, rhs, core::element::@OPNAME@, std::string_view("@OPNAME@"));
-  return lhs;
+  return std::move(lhs);
 }
 
 } // namespace scipp::variable

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -16,22 +16,17 @@ namespace scipp::variable {
 template <class Id, class Key, class Value> class ConstView;
 template <class T, class U> class MutableView;
 
-SCIPP_VARIABLE_EXPORT std::ostream &
-operator<<(std::ostream &os, const VariableConstView &variable);
-SCIPP_VARIABLE_EXPORT std::ostream &operator<<(std::ostream &os,
-                                               const VariableView &variable);
 SCIPP_VARIABLE_EXPORT std::ostream &operator<<(std::ostream &os,
                                                const Variable &variable);
 
 SCIPP_VARIABLE_EXPORT std::string to_string(const Variable &variable);
-SCIPP_VARIABLE_EXPORT std::string to_string(const VariableConstView &variable);
 SCIPP_VARIABLE_EXPORT std::string
-to_string(const std::pair<Dim, VariableConstView> &coord);
+to_string(const std::pair<Dim, Variable> &coord);
 SCIPP_VARIABLE_EXPORT std::string
-to_string(const std::pair<std::string, VariableConstView> &attr);
+to_string(const std::pair<std::string, Variable> &attr);
 
 SCIPP_VARIABLE_EXPORT std::string
-format_variable(const std::string &key, const VariableConstView &variable,
+format_variable(const std::string &key, const Variable &variable,
                 std::optional<Dimensions> datasetDims = std::nullopt);
 
 /// Abstract base class for formatters for variables with element types not in
@@ -39,15 +34,13 @@ format_variable(const std::string &key, const VariableConstView &variable,
 class SCIPP_VARIABLE_EXPORT AbstractFormatter {
 public:
   virtual ~AbstractFormatter() = default;
-  virtual std::string format(const VariableConstView &var) const = 0;
+  virtual std::string format(const Variable &var) const = 0;
 };
 
 /// Concrete class for formatting variables with element types not in
 /// scipp-variable.
 template <class T> class Formatter : public AbstractFormatter {
-  std::string format(const VariableConstView &var) const override {
-    return array_to_string(var.template values<T>());
-  }
+  std::string format(const Variable &var) const override;
 };
 
 /// Registry of formatters.
@@ -61,7 +54,7 @@ public:
   FormatterRegistry &operator=(const FormatterRegistry &) = delete;
   void emplace(const DType key, std::unique_ptr<AbstractFormatter> formatter);
   bool contains(const DType key) const noexcept;
-  std::string format(const VariableConstView &var) const;
+  std::string format(const Variable &var) const;
 
 private:
   std::map<DType, std::unique_ptr<AbstractFormatter>> m_formatters;

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -26,13 +26,13 @@ template <class T> T same(const T &a, const T &b) {
 /// Checks that the last edges in `a` match the first edges in `b`. The
 /// Concatenates the input edges, removing duplicate bin edges.
 template <class View>
-typename View::value_type join_edges(const View &a, const View &b,
-                                     const Dim dim) {
+Variable join_edges(const View &a, const View &b, const Dim dim) {
   core::expect::equals(a.slice({dim, a.dims()[dim] - 1}), b.slice({dim, 0}));
   return concatenate(a.slice({dim, 0, a.dims()[dim] - 1}), b, dim);
 }
 
 namespace {
+// TODO near-duplicate of is_edges in core/sizes.cpp
 constexpr auto is_bin_edges = [](const auto &coord, const auto &dims,
                                  const Dim dim) {
   return coord.dims().contains(dim) &&
@@ -42,7 +42,7 @@ constexpr auto is_bin_edges = [](const auto &coord, const auto &dims,
 template <class T1, class T2, class DimT>
 auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
             const DimT &dimsB) {
-  std::map<typename T1::key_type, typename T1::mapped_type> out;
+  std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
   for (const auto [key, a_] : a) {
     if (dim_of_coord(a_, key) == dim) {
       if (is_bin_edges(a_, dimsA, dim) != is_bin_edges(b[key], dimsB, dim)) {
@@ -80,8 +80,7 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
 }
 } // namespace
 
-DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
-                      const Dim dim) {
+DataArray concatenate(const DataArray &a, const DataArray &b, const Dim dim) {
   auto out = DataArray(concatenate(a.data(), b.data(), dim), {},
                        concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
   for (auto &&[d, coord] :
@@ -94,8 +93,7 @@ DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
   return out;
 }
 
-Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
-                    const Dim dim) {
+Dataset concatenate(const Dataset &a, const Dataset &b, const Dim dim) {
   // Note that in the special case of a dataset without data items (only coords)
   // concatenating a range slice with a non-range slice will fail due to the
   // missing unaligned coord in the non-range slice. This is an extremely
@@ -103,10 +101,11 @@ Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
   // coords to dataset (which is not desirable for a variety of reasons). It is
   // unlikely that this will cause trouble in practice. Users can just use a
   // range slice of thickness 1.
-  auto result = a.empty() ? Dataset(std::map<std::string, Variable>(),
-                                    concat(a.coords(), b.coords(), dim,
-                                           a.dimensions(), b.dimensions()))
-                          : Dataset();
+  auto result =
+      a.empty()
+          ? Dataset(std::map<std::string, Variable>(),
+                    concat(a.coords(), b.coords(), dim, a.sizes(), b.sizes()))
+          : Dataset();
   for (const auto &item : a)
     if (b.contains(item.name())) {
       if (!item.dims().contains(dim) && item == b[item.name()])
@@ -117,27 +116,23 @@ Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
   return result;
 }
 
-DataArray resize(const DataArrayConstView &a, const Dim dim,
-                 const scipp::index size) {
+DataArray resize(const DataArray &a, const Dim dim, const scipp::index size) {
   return apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return resize(_...); }, dim, size);
 }
 
-Dataset resize(const DatasetConstView &d, const Dim dim,
-               const scipp::index size) {
+Dataset resize(const Dataset &d, const Dim dim, const scipp::index size) {
   return apply_to_items(
       d, [](auto &&... _) { return resize(_...); }, dim, size);
 }
 
-DataArray resize(const DataArrayConstView &a, const Dim dim,
-                 const DataArrayConstView &shape) {
+DataArray resize(const DataArray &a, const Dim dim, const DataArray &shape) {
   return apply_to_data_and_drop_dim(
       a, [](auto &&v, const Dim, auto &&s) { return resize(v, s); }, dim,
       shape.data());
 }
 
-Dataset resize(const DatasetConstView &d, const Dim dim,
-               const DatasetConstView &shape) {
+Dataset resize(const Dataset &d, const Dim dim, const Dataset &shape) {
   Dataset result;
   for (const auto &data : d)
     result.setData(data.name(), resize(data, dim, shape[data.name()]));
@@ -152,7 +147,7 @@ namespace {
 /// 2. If at least one (but not all) of the from_dims is contained in the
 ///    variable's dims, broadcast
 /// 3. If none of the variables's dimensions are contained, no broadcast
-Variable maybe_broadcast(const VariableConstView &var,
+Variable maybe_broadcast(const Variable &var,
                          const scipp::span<const Dim> &from_labels,
                          const Dimensions &data_dims) {
   const auto &var_dims = var.dims();
@@ -175,7 +170,7 @@ Variable maybe_broadcast(const VariableConstView &var,
 }
 
 /// Special handling for folding coord along a dim that contains bin edges.
-Variable fold_bin_edge(const VariableConstView &var, const Dim from_dim,
+Variable fold_bin_edge(const Variable &var, const Dim from_dim,
                        const Dimensions &to_dims) {
   // The size of the bin edge dim
   const auto bin_edge_size = var.dims()[from_dim];
@@ -201,7 +196,7 @@ Variable fold_bin_edge(const VariableConstView &var, const Dim from_dim,
 }
 
 /// Special handling for flattening coord along a dim that contains bin edges.
-Variable flatten_bin_edge(const VariableConstView &var,
+Variable flatten_bin_edge(const Variable &var,
                           const scipp::span<const Dim> &from_labels,
                           const Dim to_dim, const Dim bin_edge_dim) {
   const auto data_shape = var.dims()[bin_edge_dim] - 1;
@@ -234,8 +229,7 @@ Variable flatten_bin_edge(const VariableConstView &var,
 }
 
 /// Check if one of the from_labels is a bin edge
-Dim bin_edge_in_from_labels(const VariableConstView &var,
-                            const Dimensions &array_dims,
+Dim bin_edge_in_from_labels(const Variable &var, const Dimensions &array_dims,
                             const scipp::span<const Dim> &from_labels) {
   for (const auto &dim : from_labels)
     if (is_bin_edges(var, array_dims, dim))
@@ -247,7 +241,7 @@ Dim bin_edge_in_from_labels(const VariableConstView &var,
 
 /// Fold a single dimension into multiple dimensions:
 /// ['x': 6] -> ['y': 2, 'z': 3]
-DataArray fold(const DataArrayConstView &a, const Dim from_dim,
+DataArray fold(const DataArray &a, const Dim from_dim,
                const Dimensions &to_dims) {
   auto folded = DataArray(fold(a.data(), from_dim, to_dims));
 
@@ -273,8 +267,8 @@ DataArray fold(const DataArrayConstView &a, const Dim from_dim,
 
 /// Flatten multiple dimensions into a single dimension:
 /// ['y', 'z'] -> ['x']
-DataArray flatten(const DataArrayConstView &a,
-                  const scipp::span<const Dim> &from_labels, const Dim to_dim) {
+DataArray flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
+                  const Dim to_dim) {
   auto flattened = DataArray(flatten(a.data(), from_labels, to_dim));
 
   for (auto &&[name, coord] : a.coords()) {

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Thibault Chatel
@@ -12,7 +12,7 @@
 
 namespace scipp::variable {
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sort(const VariableConstView &var,
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sort(const Variable &var,
                                                   const Dim dim,
                                                   const SortOrder order);
 

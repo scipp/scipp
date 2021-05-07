@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -9,8 +9,7 @@
 
 namespace scipp::dataset {
 
-DataArray rebin(const DataArrayConstView &a, const Dim dim,
-                const VariableConstView &coord) {
+DataArray rebin(const DataArray &a, const Dim dim, const Variable &coord) {
   auto rebinned = apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord);
   for (auto &&[name, mask] : a.masks()) {
@@ -21,8 +20,7 @@ DataArray rebin(const DataArrayConstView &a, const Dim dim,
   return rebinned;
 }
 
-Dataset rebin(const DatasetConstView &d, const Dim dim,
-              const VariableConstView &coord) {
+Dataset rebin(const Dataset &d, const Dim dim, const Variable &coord) {
   return apply_to_items(
       d, [](auto &&... _) { return rebin(_...); }, dim, coord);
 }

@@ -10,7 +10,7 @@ channels:
 
 dependencies:
   # Build
-  - boost-cpp
+  - boost-cpp=1.75 # see https://github.com/scipp/scipp/issues/1888
   - ninja
   - tbb-devel
 
@@ -25,7 +25,6 @@ dependencies:
   - pythreejs
   - pyyaml
   - tbb
-  - traitlets=4.3.3 # see https://github.com/jupyter-widgets/pythreejs/issues/334
 
   # Test
   - h5py

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Neil Vaytet
@@ -17,16 +17,10 @@ using namespace scipp::dataset;
 template <class T> const std::string type_to_string() {
   if (std::is_same_v<T, Variable>)
     return "Variable";
-  if (std::is_same_v<T, VariableView>)
-    return "VariableView";
   if (std::is_same_v<T, DataArray>)
     return "DataArray";
-  if (std::is_same_v<T, DataArrayView>)
-    return "DataArrayView";
   if (std::is_same_v<T, Dataset>)
     return "Dataset";
-  if (std::is_same_v<T, DatasetView>)
-    return "DatasetView";
   return "";
 }
 

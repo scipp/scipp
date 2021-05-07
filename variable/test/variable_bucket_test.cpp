@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -7,40 +7,77 @@
 
 using namespace scipp;
 
-class VariableBucketTest : public ::testing::Test {
+class VariableBinsTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
-  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+  Variable indices = makeVariable<scipp::index_pair>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   Variable var = make_bins(indices, Dim::X, buffer);
 };
 
-TEST_F(VariableBucketTest, comparison) {
-  EXPECT_TRUE(var == var);
-  EXPECT_FALSE(var != var);
+TEST_F(VariableBinsTest, make_bins_from_slice) {
+  // Sharing indices or not yields equivalent results.
+  EXPECT_EQ(make_bins(indices.slice({Dim::Y, 1}), Dim::X, buffer),
+            make_bins(copy(indices.slice({Dim::Y, 1})), Dim::X, buffer));
 }
 
-TEST_F(VariableBucketTest, copy) { EXPECT_EQ(Variable(var), var); }
+TEST_F(VariableBinsTest, make_bins_shares_indices_and_buffer) {
+  auto binned = make_bins(indices, Dim::X, buffer);
+  EXPECT_EQ(binned.bin_indices().values<scipp::index_pair>().data(),
+            indices.values<scipp::index_pair>().data());
+  EXPECT_EQ(binned.values<bucket<Variable>>().front().values<double>().data(),
+            buffer.values<double>().data());
+}
 
-TEST_F(VariableBucketTest, assign) {
-  Variable copy(var);
+TEST_F(VariableBinsTest, make_bins_from_slice_shares_indices_and_buffer) {
+  auto binned = make_bins(indices.slice({Dim::Y, 1}), Dim::X, buffer);
+  EXPECT_EQ(binned.bin_indices().values<scipp::index_pair>().data(),
+            indices.values<scipp::index_pair>().data() + 1);
+  EXPECT_EQ(binned.values<bucket<Variable>>().front().values<double>().data(),
+            buffer.values<double>().data() + 2);
+}
+
+TEST_F(VariableBinsTest, comparison) {
+  EXPECT_TRUE(var == var);
+  EXPECT_FALSE(var != var);
+  auto var2 = make_bins(copy(indices), Dim::X, copy(buffer));
+  EXPECT_TRUE(var == var2);
+}
+
+TEST_F(VariableBinsTest, copy) {
+  auto copied = copy(var);
+  EXPECT_EQ(copied, var);
+  copied.bin_indices().values<scipp::index_pair>()[0].first += 1;
+  EXPECT_NE(copied, var); // indices gets copied
+  copied = copy(var);
+  EXPECT_EQ(copied, var);
+  buffer.values<double>()[0] += 1;
+  EXPECT_NE(copied, var); // buffer gets copied
+}
+
+TEST_F(VariableBinsTest, assign) {
+  Variable copy = variable::copy(var);
   var.values<bucket<Variable>>()[0] += var.values<bucket<Variable>>()[1];
   EXPECT_NE(copy, var);
-  copy = var;
+  variable::copy(var, copy);
   EXPECT_EQ(copy, var);
 }
 
-TEST_F(VariableBucketTest, copy_view) {
-  EXPECT_EQ(Variable(var.slice({Dim::Y, 0, 2})), var);
-  EXPECT_EQ(Variable(var.slice({Dim::Y, 0, 1})), var.slice({Dim::Y, 0, 1}));
-  EXPECT_EQ(Variable(var.slice({Dim::Y, 1, 2})), var.slice({Dim::Y, 1, 2}));
+TEST_F(VariableBinsTest, copy_slice) {
+  EXPECT_EQ(copy(var.slice({Dim::Y, 0, 2})), var);
+  EXPECT_EQ(copy(var.slice({Dim::Y, 0, 1})), var.slice({Dim::Y, 0, 1}));
+  EXPECT_EQ(copy(var.slice({Dim::Y, 1, 2})), var.slice({Dim::Y, 1, 2}));
 }
 
-TEST_F(VariableBucketTest, basics) {
-  // TODO Probably it would be a good idea to prevent having any other unit.
-  // Does this imply unit should move from Variable into VariableConcept?
+TEST_F(VariableBinsTest, cannot_set_unit) {
+  EXPECT_EQ(var.unit(), units::one);
+  EXPECT_THROW(var.setUnit(units::m), except::UnitError);
+  EXPECT_EQ(var.unit(), units::one);
+}
+
+TEST_F(VariableBinsTest, basics) {
   EXPECT_EQ(var.unit(), units::one);
   EXPECT_EQ(var.dims(), dims);
   const auto vals = var.values<bucket<Variable>>();
@@ -55,8 +92,8 @@ TEST_F(VariableBucketTest, basics) {
             buffer.slice({Dim::X, 0, 2}));
 }
 
-TEST_F(VariableBucketTest, view) {
-  VariableView view(var);
+TEST_F(VariableBinsTest, view) {
+  Variable view(var);
   EXPECT_EQ(view.values<bucket<Variable>>(), var.values<bucket<Variable>>());
   view = var.slice({Dim::Y, 1});
   const auto vals = view.values<bucket<Variable>>();
@@ -64,25 +101,25 @@ TEST_F(VariableBucketTest, view) {
   EXPECT_EQ(vals[0], buffer.slice({Dim::X, 2, 4}));
 }
 
-TEST_F(VariableBucketTest, construct_from_view) {
-  Variable copy{VariableView(var)};
+TEST_F(VariableBinsTest, construct_from_view) {
+  Variable copy{Variable(var)};
   EXPECT_EQ(copy, var);
 }
 
-TEST_F(VariableBucketTest, unary_operation) {
+TEST_F(VariableBinsTest, unary_operation) {
   const auto expected = make_bins(indices, Dim::X, sqrt(buffer));
   EXPECT_EQ(sqrt(var), expected);
   EXPECT_EQ(sqrt(var.slice({Dim::Y, 1})), expected.slice({Dim::Y, 1}));
 }
 
-TEST_F(VariableBucketTest, binary_operation) {
+TEST_F(VariableBinsTest, binary_operation) {
   const auto expected = make_bins(indices, Dim::X, buffer + buffer);
   EXPECT_EQ(var + var, expected);
   EXPECT_EQ(var.slice({Dim::Y, 1}) + var.slice({Dim::Y, 1}),
             expected.slice({Dim::Y, 1}));
 }
 
-TEST_F(VariableBucketTest, binary_operation_with_dense) {
+TEST_F(VariableBinsTest, binary_operation_with_dense) {
   Variable dense = makeVariable<double>(var.dims(), Values{0.1, 0.2});
   Variable expected_buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1.1, 2.1, 3.2, 4.2});
@@ -92,7 +129,7 @@ TEST_F(VariableBucketTest, binary_operation_with_dense) {
             expected.slice({Dim::Y, 1}));
 }
 
-TEST_F(VariableBucketTest, binary_operation_with_dense_broadcast) {
+TEST_F(VariableBinsTest, binary_operation_with_dense_broadcast) {
   Variable dense =
       makeVariable<double>(Dims{Dim::Z}, Shape{2}, Values{0.1, 0.2});
   Variable expected_buffer = makeVariable<double>(
@@ -108,13 +145,13 @@ TEST_F(VariableBucketTest, binary_operation_with_dense_broadcast) {
   EXPECT_EQ(dense + var, transpose(expected));
 }
 
-TEST_F(VariableBucketTest, to_constituents) {
-  auto [idx0, dim0, buf0] = VariableView(var).constituents<bucket<Variable>>();
+TEST_F(VariableBinsTest, to_constituents) {
+  auto [idx0, dim0, buf0] = var.constituents<bucket<Variable>>();
   static_cast<void>(dim0);
   auto idx_ptr = idx0.values<std::pair<scipp::index, scipp::index>>().data();
   auto buf_ptr = buf0.values<double>().data();
   auto [idx1, dim1, buf1] = var.to_constituents<bucket<Variable>>();
-  EXPECT_FALSE(var);
+  EXPECT_FALSE(var.is_valid());
   EXPECT_EQ((idx1.values<std::pair<scipp::index, scipp::index>>().data()),
             idx_ptr);
   EXPECT_EQ(buf1.values<double>().data(), buf_ptr);

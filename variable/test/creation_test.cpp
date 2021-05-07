@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -50,7 +50,7 @@ TEST_P(DenseVariablesTest, empty_like_default_shape) {
 
 TEST_P(DenseVariablesTest, empty_like_slice_default_shape) {
   const auto var = GetParam();
-  if (var.dims().contains(Dim::X)) {
+  if (var.dims().contains(Dim::X) && var.dims()[Dim::X] > 0) {
     const auto empty = empty_like(var.slice({Dim::X, 0}));
     EXPECT_EQ(empty.dtype(), var.dtype());
     EXPECT_EQ(empty.dims(), var.slice({Dim::X, 0}).dims());

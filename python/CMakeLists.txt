@@ -1,5 +1,5 @@
 # ~~~
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
 pybind11_add_module(
@@ -14,10 +14,8 @@ pybind11_add_module(
   creation.cpp
   cumulative.cpp
   dataset.cpp
-  detail.cpp
   docstring.cpp
   dtype.cpp
-  eigen.cpp
   except.cpp
   geometry.cpp
   groupby.cpp
@@ -30,7 +28,7 @@ pybind11_add_module(
   trigonometry.cpp
   unary.cpp
   unit.cpp
-  units_neutron.cpp
+  units.cpp
   variable.cpp
   variable_instantiate_py_object.cpp
   element_array_view.cpp

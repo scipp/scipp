@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -40,10 +40,6 @@ using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
 using arithmetic_type_pairs_with_bool =
     decltype(std::tuple_cat(std::declval<arithmetic_type_pairs>(),
                             std::declval<pair_numerical_with_t<bool>>()));
-
-using arithmetic_and_matrix_type_pairs = decltype(
-    std::tuple_cat(std::declval<arithmetic_type_pairs>(),
-                   std::tuple<std::tuple<Eigen::Vector3d, Eigen::Vector3d>>()));
 
 static constexpr auto keep_unit =
     overloaded{[](const units::Unit &) {},

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
@@ -53,11 +53,11 @@ class PlotView:
         """
         self.figure.savefig(*args, **kwargs)
 
-    def initialise(self, *args, **kwargs):
+    def initialize(self, *args, **kwargs):
         """
         Forward figure initialization.
         """
-        self.figure.initialise(*args, **kwargs)
+        self.figure.initialize(*args, **kwargs)
 
     def connect(self, view_callbacks=None, figure_callbacks=None):
         """

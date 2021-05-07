@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -12,194 +12,19 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
-#include "scipp/common/deep_ptr.h"
-#include "scipp/dataset/dataset_access.h"
+#include "scipp/dataset/data_array.h"
 #include "scipp/dataset/map_view.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::dataset {
 
-class DataArray;
-class Dataset;
-class DatasetConstView;
-class DatasetView;
-
 namespace detail {
-/// Helper for holding data items in Dataset.
-struct DatasetData {
-  /// Data values with optional variances.
-  Variable data;
-  /// Unaligned coords.
-  std::unordered_map<Dim, Variable> coords;
-  std::unordered_map<std::string, Variable> masks;
-};
-
-using dataset_item_map = std::unordered_map<std::string, DatasetData>;
-} // namespace detail
-
-/// Policies for attribute propagation in operations with data arrays or
-/// dataset.
-enum class AttrPolicy { Keep, Drop };
-
-enum CoordCategory { Aligned = 1, Unaligned = 2, All = 3 };
-
-class DataArrayView;
-template <class T>
-std::conditional_t<std::is_same_v<T, DataArrayView>, CoordsView,
-                   CoordsConstView>
-make_coords(const T &view, const CoordCategory category,
-            const bool is_item = true);
-
-/// Const view for a data item and related coordinates of Dataset.
-class SCIPP_DATASET_EXPORT DataArrayConstView {
-public:
-  using value_type = DataArray;
-  using const_view_type = DataArrayConstView;
-  using view_type = DataArrayConstView;
-  DataArrayConstView() = default;
-  DataArrayConstView(const Dataset &dataset,
-                     const detail::dataset_item_map::value_type &data,
-                     const detail::slice_list &slices = {},
-                     VariableView &&view = VariableView{});
-
-  explicit operator bool() const noexcept { return m_dataset != nullptr; }
-
-  const std::string &name() const noexcept;
-
-  Dimensions dims() const noexcept;
-  DType dtype() const;
-  units::Unit unit() const;
-
-  CoordsConstView meta() const noexcept;
-  CoordsConstView coords() const noexcept;
-  CoordsConstView attrs() const noexcept;
-  MasksConstView masks() const noexcept;
-
-  /// Return true if the view contains data variances.
-  bool hasVariances() const noexcept { return data().hasVariances(); }
-
-  /// Return untyped const view for data (values and optional variances).
-  const VariableConstView &data() const;
-  /// Return typed const view for data values.
-  template <class T> auto values() const { return data().template values<T>(); }
-
-  /// Return typed const view for data variances.
-  template <class T> auto variances() const {
-    return data().template variances<T>();
-  }
-
-  DataArrayConstView slice(const Slice s) const;
-
-  const detail::slice_list &slices() const noexcept { return m_slices; }
-
-  auto &underlying() const { return m_data->second; }
-  Dimensions parentDims() const noexcept;
-
-  std::vector<std::pair<Dim, Variable>> slice_bounds() const;
-
-  const auto &get_dataset() const { return *m_dataset; }
-  const auto &get_data() const { return m_data->second; }
-
-protected:
-  // Note that m_view is a VariableView, not a VariableConstView. In case
-  // *this (DataArrayConstView) is stand-alone (not part of DataArrayView),
-  // m_view is actually just a VariableConstView wrapped in an (invalid)
-  // VariableView. The interface guarantees that the invalid mutable view is
-  // not accessible. This wrapping avoids inefficient duplication of the view in
-  // the child class DataArrayView.
-  VariableView m_view; // empty if the array has no data
-  // Flag required to allow for removal/addition of coords from DataArray via a
-  // view. This may be another indicator that the current implementation of
-  // DataArray based on Dataset should be refactored.
-  bool m_isItem{true};
-
-private:
-  friend class DatasetConstView;
-  friend class DatasetView;
-  friend class DataArray;
-
-  const Dataset *m_dataset{nullptr};
-  const detail::dataset_item_map::value_type *m_data{nullptr};
-  detail::slice_list m_slices;
-};
-
-SCIPP_DATASET_EXPORT bool operator==(const DataArrayConstView &a,
-                                     const DataArrayConstView &b);
-SCIPP_DATASET_EXPORT bool operator!=(const DataArrayConstView &a,
-                                     const DataArrayConstView &b);
-
-class DatasetConstView;
-class DatasetView;
-class Dataset;
-
-/// View for a data item and related coordinates of Dataset.
-class SCIPP_DATASET_EXPORT DataArrayView : public DataArrayConstView {
-public:
-  using const_view_type = DataArrayConstView;
-  using view_type = DataArrayView;
-  DataArrayView() = default;
-  DataArrayView(Dataset &dataset, detail::dataset_item_map::value_type &data,
-                const detail::slice_list &slices = {},
-                VariableView &&view = VariableView{});
-
-  CoordsView meta() const noexcept;
-  CoordsView coords() const noexcept;
-  CoordsView attrs() const noexcept;
-  MasksView masks() const noexcept;
-
-  void setUnit(const units::Unit unit) const;
-
-  /// Return untyped view for data (values and optional variances).
-  const VariableView &data() const;
-  /// Return typed view for data values.
-  template <class T> auto values() const { return data().template values<T>(); }
-
-  /// Return typed view for data variances.
-  template <class T> auto variances() const {
-    return data().template variances<T>();
-  }
-
-  DataArrayView slice(const Slice s) const;
-
-  DataArrayView assign(const DataArrayConstView &other) const;
-  DataArrayView assign(const Variable &other) const;
-  DataArrayView assign(const VariableConstView &other) const;
-
-  void setData(Variable data) const;
-
-  auto &get_dataset() const { return *m_mutableDataset; }
-  auto &get_data() const { return m_mutableData->second; }
-
-private:
-  friend class DatasetConstView;
-  // For internal use in DatasetConstView.
-  explicit DataArrayView(DataArrayConstView &&base)
-      : DataArrayConstView(std::move(base)), m_mutableDataset{nullptr},
-        m_mutableData{nullptr} {}
-
-  Dataset *m_mutableDataset{nullptr};
-  detail::dataset_item_map::value_type *m_mutableData{nullptr};
-};
-
-namespace detail {
-template <class T> struct is_const;
-template <> struct is_const<Dataset> : std::false_type {};
-template <> struct is_const<const Dataset> : std::true_type {};
-template <> struct is_const<const DatasetView> : std::false_type {};
-template <> struct is_const<const DatasetConstView> : std::true_type {};
-template <> struct is_const<DatasetView> : std::false_type {};
-template <> struct is_const<DatasetConstView> : std::true_type {};
 
 /// Helper for creating iterators of Dataset.
 template <class D> struct make_item {
   D *dataset;
-  using P =
-      std::conditional_t<is_const<D>::value, DataArrayConstView, DataArrayView>;
   template <class T> auto operator()(T &item) const {
-    if constexpr (std::is_same_v<std::remove_const_t<D>, Dataset>)
-      return P(*dataset, item);
-    else
-      return P(dataset->dataset(), item, dataset->slices());
+    return item.second.view_with_coords(dataset->coords(), item.first);
   }
 };
 template <class D> make_item(D *) -> make_item<D>;
@@ -211,26 +36,26 @@ class SCIPP_DATASET_EXPORT Dataset {
 public:
   using key_type = std::string;
   using mapped_type = DataArray;
-  using value_type = std::pair<const std::string &, DataArrayConstView>;
-  using const_view_type = DatasetConstView;
-  using view_type = DatasetView;
+  using value_type = std::pair<const std::string &, DataArray>;
 
   Dataset() = default;
-  explicit Dataset(const DataArrayConstView &data);
+  explicit Dataset(const DataArray &data);
 
-  template <class DataMap = const std::map<std::string, DataArrayConstView> &,
+  template <class DataMap = const std::map<std::string, DataArray> &,
             class CoordMap = std::unordered_map<Dim, Variable>>
   explicit Dataset(DataMap data,
                    CoordMap coords = std::unordered_map<Dim, Variable>{}) {
-    for (auto &&[dim, coord] : coords)
-      setCoord(dim, std::move(coord));
-    if constexpr (std::is_base_of_v<DatasetConstView, std::decay_t<DataMap>>)
+    if constexpr (std::is_base_of_v<Dataset, std::decay_t<DataMap>>)
       for (auto &&item : data)
         setData(item.name(), item);
     else
       for (auto &&[name, item] : data)
         setData(std::string(name), std::move(item));
+    for (auto &&[dim, coord] : coords)
+      setCoord(dim, std::move(coord));
   }
+
+  void setCoords(Coords other);
 
   /// Return the number of data items in the dataset.
   ///
@@ -243,11 +68,11 @@ public:
 
   void clear();
 
-  CoordsConstView coords() const noexcept;
-  CoordsView coords() noexcept;
+  const Coords &coords() const noexcept;
+  Coords &coords() noexcept;
 
-  CoordsConstView meta() const noexcept;
-  CoordsView meta() noexcept;
+  const Coords &meta() const noexcept;
+  Coords &meta() noexcept;
 
   bool contains(const std::string &name) const noexcept;
 
@@ -265,8 +90,7 @@ public:
                                           detail::make_item{this});
   }
 
-  DataArrayConstView operator[](const std::string &name) const;
-  DataArrayView operator[](const std::string &name);
+  DataArray operator[](const std::string &name) const;
 
   auto begin() const && = delete;
   auto begin() && = delete;
@@ -331,420 +155,113 @@ public:
   }
 
   void setCoord(const Dim dim, Variable coord);
-  void setCoord(const std::string &name, const Dim dim, Variable coord);
-  void setMask(const std::string &name, const std::string &maskName,
-               Variable mask);
   void setData(const std::string &name, Variable data,
                const AttrPolicy attrPolicy = AttrPolicy::Drop);
-  void setData(const std::string &name, const DataArrayConstView &data);
-  void setData(const std::string &name, DataArray data);
+  void setData(const std::string &name, const DataArray &data);
 
-  void setCoord(const Dim dim, const VariableConstView &coord) {
-    setCoord(dim, Variable(coord));
-  }
-  void setCoord(const std::string &name, const Dim dim,
-                const VariableConstView &coord) {
-    setCoord(name, dim, Variable(coord));
-  }
-  void setMask(const std::string &name, const std::string &maskName,
-               const VariableConstView &mask) {
-    setMask(name, maskName, Variable(mask));
-  }
-  void setData(const std::string &name, const VariableConstView &data,
-               const AttrPolicy attrPolicy = AttrPolicy::Drop) {
-    setData(name, Variable(data), attrPolicy);
-  }
-
-  [[maybe_unused]] Variable extractCoord(const Dim dim);
-  [[maybe_unused]] Variable extractCoord(const std::string &name,
-                                         const Dim dim);
-  [[maybe_unused]] Variable extractMask(const std::string &name,
-                                        const std::string &maskName);
-
-  DatasetConstView slice(const Slice s) const &;
-  DatasetView slice(const Slice s) &;
-  Dataset slice(const Slice s) const &&;
+  Dataset slice(const Slice s) const;
+  [[maybe_unused]] Dataset &setSlice(const Slice s, const Dataset &dataset);
+  [[maybe_unused]] Dataset &setSlice(const Slice s, const DataArray &array);
+  [[maybe_unused]] Dataset &setSlice(const Slice s, const Variable &var);
 
   void rename(const Dim from, const Dim to);
 
   bool operator==(const Dataset &other) const;
-  bool operator==(const DatasetConstView &other) const;
   bool operator!=(const Dataset &other) const;
-  bool operator!=(const DatasetConstView &other) const;
 
-  Dataset &operator+=(const DataArrayConstView &other);
-  Dataset &operator-=(const DataArrayConstView &other);
-  Dataset &operator*=(const DataArrayConstView &other);
-  Dataset &operator/=(const DataArrayConstView &other);
-  Dataset &operator+=(const VariableConstView &other);
-  Dataset &operator-=(const VariableConstView &other);
-  Dataset &operator*=(const VariableConstView &other);
-  Dataset &operator/=(const VariableConstView &other);
-  Dataset &operator+=(const DatasetConstView &other);
-  Dataset &operator-=(const DatasetConstView &other);
-  Dataset &operator*=(const DatasetConstView &other);
-  Dataset &operator/=(const DatasetConstView &other);
+  Dataset &operator+=(const DataArray &other);
+  Dataset &operator-=(const DataArray &other);
+  Dataset &operator*=(const DataArray &other);
+  Dataset &operator/=(const DataArray &other);
+  Dataset &operator+=(const Variable &other);
+  Dataset &operator-=(const Variable &other);
+  Dataset &operator*=(const Variable &other);
+  Dataset &operator/=(const Variable &other);
+  Dataset &operator+=(const Dataset &other);
+  Dataset &operator-=(const Dataset &other);
+  Dataset &operator*=(const Dataset &other);
+  Dataset &operator/=(const Dataset &other);
 
   // TODO dims() required for generic code. Need proper equivalent to class
   // Dimensions that does not imply dimension order.
-  std::unordered_map<Dim, scipp::index> dimensions() const;
-  std::unordered_map<Dim, scipp::index> dims() const { return dimensions(); }
+  const Sizes &sizes() const;
+  const Sizes &dims() const;
 
 private:
-  friend class DatasetConstView;
-  friend class DatasetView;
-  friend class DataArray;
-
-  template <class T>
-  friend std::conditional_t<std::is_same_v<T, DataArrayView>, CoordsView,
-                            CoordsConstView>
-  make_coords(const T &view, const CoordCategory category, const bool is_item);
-
-  void setExtent(const Dim dim, const scipp::index extent, const bool isCoord);
+  // Declared friend so gtest recognizes it
+  friend SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &,
+                                                       const Dataset &);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
   void rebuildDims();
 
-  template <class Key, class Val>
-  Val extract_from_map(std::unordered_map<Key, Val> &map, const Key &key);
-
-  void setData_impl(const std::string &name, detail::DatasetData &&data,
-                    const AttrPolicy attrPolicy);
-
-  std::unordered_map<Dim, scipp::index> m_dims;
-  std::unordered_map<Dim, Variable> m_coords; // aligned coords
-  detail::dataset_item_map m_data;
+  Coords m_coords; // aligned coords
+  std::unordered_map<std::string, DataArray> m_data;
 };
 
-/// Const view for Dataset, implementing slicing and item selection.
-class SCIPP_DATASET_EXPORT DatasetConstView {
-  struct make_const_view {
-    constexpr const DataArrayConstView &
-    operator()(const DataArrayView &view) const noexcept {
-      return view;
-    }
-  };
-
-public:
-  using value_type = Dataset;
-  using key_type = std::string;
-  using mapped_type = DataArray;
-
-  DatasetConstView(const Dataset &dataset);
-
-  static DatasetConstView makeViewWithEmptyIndexes(const Dataset &dataset) {
-    auto res = DatasetConstView();
-    res.m_dataset = &dataset;
-    return res;
-  }
-
-  index size() const noexcept { return m_items.size(); }
-  [[nodiscard]] bool empty() const noexcept { return m_items.empty(); }
-
-  CoordsConstView coords() const noexcept;
-  CoordsConstView meta() const noexcept;
-
-  bool contains(const std::string &name) const noexcept;
-
-  const DataArrayConstView &operator[](const std::string &name) const;
-
-  auto begin() const && = delete;
-  auto begin() const &noexcept {
-    return boost::make_transform_iterator(m_items.begin(), make_const_view{});
-  }
-  auto end() const && = delete;
-  auto end() const &noexcept {
-    return boost::make_transform_iterator(m_items.end(), make_const_view{});
-  }
-
-  auto items_begin() const && = delete;
-  auto items_begin() const &noexcept {
-    return boost::make_transform_iterator(begin(), detail::make_key_value);
-  }
-  auto items_end() const && = delete;
-  auto items_end() const &noexcept {
-    return boost::make_transform_iterator(end(), detail::make_key_value);
-  }
-
-  auto keys_begin() const && = delete;
-  /// Return const iterator to the beginning of all keys.
-  auto keys_begin() const &noexcept {
-    return boost::make_transform_iterator(begin(), detail::make_key);
-  }
-  auto keys_end() const && = delete;
-  /// Return const iterator to the end of all keys.
-  auto keys_end() const &noexcept {
-    return boost::make_transform_iterator(end(), detail::make_key);
-  }
-
-  auto find(const std::string &name) const && = delete;
-  auto find(const std::string &name) const &noexcept {
-    return std::find_if(begin(), end(), [&name](const auto &item) {
-      return item.name() == name;
-    });
-  }
-
-  DatasetConstView slice(const Slice s) const;
-
-  const auto &slices() const noexcept { return m_slices; }
-  const auto &dataset() const noexcept { return *m_dataset; }
-
-  bool operator==(const Dataset &other) const;
-  bool operator==(const DatasetConstView &other) const;
-  bool operator!=(const Dataset &other) const;
-  bool operator!=(const DatasetConstView &other) const;
-  std::unordered_map<Dim, scipp::index> dimensions() const;
-  std::unordered_map<Dim, scipp::index> dims() const { return dimensions(); }
-
-protected:
-  explicit DatasetConstView() : m_dataset(nullptr) {}
-  template <class T>
-  static std::pair<boost::container::small_vector<DataArrayView, 8>,
-                   detail::slice_list>
-  slice_items(const T &view, const Slice slice);
-  const Dataset *m_dataset;
-  boost::container::small_vector<DataArrayView, 8> m_items;
-  void expectValidKey(const std::string &name) const;
-  detail::slice_list m_slices;
-};
-
-/// View for Dataset, implementing slicing and item selection.
-class SCIPP_DATASET_EXPORT DatasetView : public DatasetConstView {
-  explicit DatasetView() : DatasetConstView(), m_mutableDataset(nullptr) {}
-
-public:
-  DatasetView(Dataset &dataset);
-
-  CoordsView coords() const noexcept;
-  CoordsView meta() const noexcept;
-
-  const DataArrayView &operator[](const std::string &name) const;
-
-  auto begin() const && = delete;
-  auto begin() const &noexcept { return m_items.begin(); }
-  auto end() const && = delete;
-  auto end() const &noexcept { return m_items.end(); }
-
-  auto items_begin() const && = delete;
-  auto items_begin() const &noexcept {
-    return boost::make_transform_iterator(begin(), detail::make_key_value);
-  }
-  auto items_end() const && = delete;
-  auto items_end() const &noexcept {
-    return boost::make_transform_iterator(end(), detail::make_key_value);
-  }
-
-  auto find(const std::string &name) const && = delete;
-  auto find(const std::string &name) const &noexcept {
-    return std::find_if(begin(), end(), [&name](const auto &item) {
-      return item.name() == name;
-    });
-  }
-
-  DatasetView slice(const Slice s) const;
-
-  DatasetView operator+=(const DataArrayConstView &other) const;
-  DatasetView operator-=(const DataArrayConstView &other) const;
-  DatasetView operator*=(const DataArrayConstView &other) const;
-  DatasetView operator/=(const DataArrayConstView &other) const;
-  DatasetView operator+=(const VariableConstView &other) const;
-  DatasetView operator-=(const VariableConstView &other) const;
-  DatasetView operator*=(const VariableConstView &other) const;
-  DatasetView operator/=(const VariableConstView &other) const;
-  DatasetView operator+=(const DatasetConstView &other) const;
-  DatasetView operator-=(const DatasetConstView &other) const;
-  DatasetView operator*=(const DatasetConstView &other) const;
-  DatasetView operator/=(const DatasetConstView &other) const;
-
-  DatasetView assign(const DatasetConstView &other) const;
-
-  auto &dataset() const noexcept { return *m_mutableDataset; }
-
-private:
-  Dataset *m_mutableDataset;
-};
-
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-copy(const DataArrayConstView &array,
-     const AttrPolicy attrPolicy = AttrPolicy::Keep);
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset
-copy(const DatasetConstView &dataset,
+copy(const Dataset &dataset, const AttrPolicy attrPolicy = AttrPolicy::Keep);
+
+[[maybe_unused]] SCIPP_DATASET_EXPORT DataArray &
+copy(const DataArray &array, DataArray &out,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
-SCIPP_DATASET_EXPORT DataArrayView
-copy(const DataArrayConstView &array, const DataArrayView &out,
+[[maybe_unused]] SCIPP_DATASET_EXPORT DataArray
+copy(const DataArray &array, DataArray &&out,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
-SCIPP_DATASET_EXPORT DatasetView
-copy(const DatasetConstView &dataset, const DatasetView &out,
+[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset &
+copy(const Dataset &dataset, Dataset &out,
+     const AttrPolicy attrPolicy = AttrPolicy::Keep);
+[[maybe_unused]] SCIPP_DATASET_EXPORT Dataset
+copy(const Dataset &dataset, Dataset &&out,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
-/// Data array, a variable with coordinates, masks, and attributes.
-class SCIPP_DATASET_EXPORT DataArray {
-public:
-  using const_view_type = DataArrayConstView;
-  using view_type = DataArrayView;
+SCIPP_DATASET_EXPORT DataArray operator-(const DataArray &a);
 
-  DataArray() = default;
-  explicit DataArray(const DataArrayConstView &view,
-                     const AttrPolicy attrPolicy = AttrPolicy::Keep);
+SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs, const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs,
+                                       const DataArray &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const DataArray &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs, const Variable &rhs);
+SCIPP_DATASET_EXPORT Dataset operator+(const Variable &lhs, const Dataset &rhs);
 
-  template <class Data, class CoordMap = std::map<Dim, Variable>,
-            class MaskMap = std::map<std::string, Variable>,
-            class AttrMap = std::map<Dim, Variable>,
-            typename = std::enable_if_t<std::is_same_v<Data, Variable>>>
-  DataArray(Data data, CoordMap coords = {}, MaskMap masks = {},
-            AttrMap attrs = {}, const std::string &name = "") {
-    if (!data)
-      throw std::runtime_error(
-          "DataArray cannot be created with invalid content.");
-    m_holder.setData(name, std::move(data));
+SCIPP_DATASET_EXPORT Dataset operator-(const Dataset &lhs, const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const Dataset &lhs,
+                                       const DataArray &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const DataArray &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const Dataset &lhs, const Variable &rhs);
+SCIPP_DATASET_EXPORT Dataset operator-(const Variable &lhs, const Dataset &rhs);
 
-    for (auto &&[dim, c] : coords)
-      m_holder.setCoord(dim, std::move(c));
+SCIPP_DATASET_EXPORT Dataset operator*(const Dataset &lhs, const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const Dataset &lhs,
+                                       const DataArray &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const DataArray &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const Dataset &lhs, const Variable &rhs);
+SCIPP_DATASET_EXPORT Dataset operator*(const Variable &lhs, const Dataset &rhs);
 
-    for (auto &&[mask_name, m] : masks)
-      m_holder.setMask(name, std::string(mask_name), std::move(m));
-
-    for (auto &&[dim, a] : attrs)
-      m_holder.setCoord(name, dim, std::move(a));
-  }
-
-  explicit operator bool() const noexcept { return !m_holder.empty(); }
-  operator DataArrayConstView() const;
-  operator DataArrayView();
-
-  const std::string &name() const { return m_holder.begin()->name(); }
-  void setName(const std::string &name);
-
-  CoordsConstView meta() const;
-  CoordsView meta();
-
-  CoordsConstView coords() const;
-  CoordsView coords();
-
-  CoordsConstView attrs() const;
-  CoordsView attrs();
-
-  MasksConstView masks() const;
-  MasksView masks();
-
-  Dimensions dims() const { return get().dims(); }
-  DType dtype() const { return get().dtype(); }
-  units::Unit unit() const { return get().unit(); }
-
-  void setUnit(const units::Unit unit) { get().setUnit(unit); }
-
-  /// Return true if the data array contains data variances.
-  bool hasVariances() const { return get().hasVariances(); }
-
-  /// Return untyped const view for data (values and optional variances).
-  VariableConstView data() const { return get().data(); }
-  /// Return untyped view for data (values and optional variances).
-  VariableView data() { return get().data(); }
-
-  /// Return typed const view for data values.
-  template <class T> auto values() const { return get().values<T>(); }
-  /// Return typed view for data values.
-  template <class T> auto values() { return get().values<T>(); }
-
-  /// Return typed const view for data variances.
-  template <class T> auto variances() const { return get().variances<T>(); }
-  /// Return typed view for data variances.
-  template <class T> auto variances() { return get().variances<T>(); }
-
-  void rename(const Dim from, const Dim to) { m_holder.rename(from, to); }
-
-  void setData(Variable data) {
-    m_holder.setData(name(), std::move(data), AttrPolicy::Keep);
-  }
-
-  DataArrayConstView slice(const Slice s) const & { return get().slice(s); }
-  DataArrayView slice(const Slice s) & { return get().slice(s); }
-  DataArray slice(const Slice s) const && { return copy(get().slice(s)); }
-
-  /// Iterable const view for generic code supporting Dataset and DataArray.
-  DatasetConstView iterable_view() const noexcept { return m_holder; }
-  /// Iterable view for generic code supporting Dataset and DataArray.
-  DatasetView iterable_view() noexcept { return m_holder; }
-
-  /// Return the Dataset holder of the given DataArray, so access to private
-  /// members is possible, thus allowing moving of Variables without making
-  /// copies.
-  static Dataset to_dataset(DataArray &&data) {
-    return std::move(data.m_holder);
-  }
-
-  void drop_alignment();
-
-private:
-  DataArrayConstView get() const;
-  DataArrayView get();
-
-  Dataset m_holder;
-};
-
-SCIPP_DATASET_EXPORT DataArray operator-(const DataArrayConstView &a);
-
-SCIPP_DATASET_EXPORT Dataset operator+(const DatasetConstView &lhs,
-                                       const DatasetConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator+(const DatasetConstView &lhs,
-                                       const DataArrayConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator+(const DataArrayConstView &lhs,
-                                       const DatasetConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator+(const DatasetConstView &lhs,
-                                       const VariableConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator+(const VariableConstView &lhs,
-                                       const DatasetConstView &rhs);
-
-SCIPP_DATASET_EXPORT Dataset operator-(const DatasetConstView &lhs,
-                                       const DatasetConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator-(const DatasetConstView &lhs,
-                                       const DataArrayConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator-(const DataArrayConstView &lhs,
-                                       const DatasetConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator-(const DatasetConstView &lhs,
-                                       const VariableConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator-(const VariableConstView &lhs,
-                                       const DatasetConstView &rhs);
-
-SCIPP_DATASET_EXPORT Dataset operator*(const DatasetConstView &lhs,
-                                       const DatasetConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator*(const DatasetConstView &lhs,
-                                       const DataArrayConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator*(const DataArrayConstView &lhs,
-                                       const DatasetConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator*(const DatasetConstView &lhs,
-                                       const VariableConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator*(const VariableConstView &lhs,
-                                       const DatasetConstView &rhs);
-
-SCIPP_DATASET_EXPORT Dataset operator/(const DatasetConstView &lhs,
-                                       const DatasetConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator/(const DatasetConstView &lhs,
-                                       const DataArrayConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator/(const DataArrayConstView &lhs,
-                                       const DatasetConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator/(const DatasetConstView &lhs,
-                                       const VariableConstView &rhs);
-SCIPP_DATASET_EXPORT Dataset operator/(const VariableConstView &lhs,
-                                       const DatasetConstView &rhs);
-
-SCIPP_DATASET_EXPORT DataArray astype(const DataArrayConstView &var,
-                                      const DType type);
-
-SCIPP_DATASET_EXPORT Dataset merge(const DatasetConstView &a,
-                                   const DatasetConstView &b);
+SCIPP_DATASET_EXPORT Dataset operator/(const Dataset &lhs, const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const Dataset &lhs,
+                                       const DataArray &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const DataArray &lhs,
+                                       const Dataset &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const Dataset &lhs, const Variable &rhs);
+SCIPP_DATASET_EXPORT Dataset operator/(const Variable &lhs, const Dataset &rhs);
 
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.
 /// The result is stored in a new map
-SCIPP_DATASET_EXPORT std::map<typename MasksConstView::key_type,
-                              typename MasksConstView::mapped_type>
-union_or(const MasksConstView &currentMasks, const MasksConstView &otherMasks);
+SCIPP_DATASET_EXPORT
+std::unordered_map<typename Masks::key_type, typename Masks::mapped_type>
+union_or(const Masks &currentMasks, const Masks &otherMasks);
 
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.
 /// The result is stored in the first view.
-SCIPP_DATASET_EXPORT void union_or_in_place(const MasksView &currentMasks,
-                                            const MasksConstView &otherMasks);
+SCIPP_DATASET_EXPORT void union_or_in_place(Masks &masks,
+                                            const Masks &otherMasks);
+
+SCIPP_DATASET_EXPORT Dataset merge(const Dataset &a, const Dataset &b);
 
 } // namespace scipp::dataset
 
@@ -752,33 +269,11 @@ namespace scipp::core {
 template <> inline constexpr DType dtype<dataset::DataArray>{2000};
 template <> inline constexpr DType dtype<dataset::Dataset>{2001};
 template <> inline constexpr DType dtype<bucket<dataset::DataArray>>{2002};
-template <>
-inline constexpr DType dtype<bucket<dataset::DataArrayConstView>>{2003};
-template <> inline constexpr DType dtype<bucket<dataset::DataArrayView>>{2004};
-template <> inline constexpr DType dtype<bucket<dataset::Dataset>>{2005};
-template <>
-inline constexpr DType dtype<dataset::DataArrayView>{
-    2002}; // hack for python bindings using
-           // dtype<ElementArrayView<bucket<DataArray>>::value_type>
-           // is setting same dtype ID correct?
-template <>
-inline constexpr DType dtype<dataset::DatasetView>{
-    2005}; // hack for python bindings using
-           // dtype<ElementArrayView<bucket<Dataset>>::value_type>
-           // is setting same dtype ID correct?
+template <> inline constexpr DType dtype<bucket<dataset::Dataset>>{2003};
 } // namespace scipp::core
 
 namespace scipp {
-using dataset::DataArray;
-using dataset::DataArrayConstView;
-using dataset::DataArrayView;
 using dataset::Dataset;
-using dataset::DatasetConstView;
-using dataset::DatasetView;
-template <> struct is_view<DataArrayConstView> : std::true_type {};
-template <> struct is_view<DataArrayView> : std::true_type {};
-template <> struct is_view<DatasetConstView> : std::true_type {};
-template <> struct is_view<DatasetView> : std::true_type {};
 } // namespace scipp
 
 #include "scipp/dataset/arithmetic.h"

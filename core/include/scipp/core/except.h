@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -7,12 +7,13 @@
 #include <algorithm>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 
 #include "scipp-core_export.h"
 #include "scipp/common/except.h"
 #include "scipp/common/index.h"
+#include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
+#include "scipp/core/sizes.h"
 #include "scipp/core/string.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
@@ -31,7 +32,7 @@ struct SCIPP_CORE_EXPORT TypeError : public Error<core::DType> {
 
   template <class... Vars>
   explicit TypeError(const std::string &msg, Vars &&... vars)
-      : TypeError{msg + ((to_string(vars.dtype()) + ' ') + ...)} {}
+      : TypeError{msg + ((pretty_dtype(vars) + ' ') + ...)} {}
 };
 
 template <>
@@ -127,9 +128,9 @@ template <class T> void countsOrCountsDensity(const T &object) {
                             object.unit().name() + '.');
 }
 
+// TODO maybe just provide a `slice` function/method and check via that?
 void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
-void SCIPP_CORE_EXPORT validSlice(
-    const std::unordered_map<Dim, scipp::index> &dims, const Slice &slice);
+void SCIPP_CORE_EXPORT validSlice(const Sizes &sizes, const Slice &slice);
 
 void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
 void SCIPP_CORE_EXPORT validDim(const Dim dim);

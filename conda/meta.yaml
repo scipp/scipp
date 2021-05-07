@@ -8,7 +8,7 @@ source:
 
 requirements:
   build:
-    - boost-cpp
+    - boost-cpp {{ boost }}
     - cmake
     - gxx_linux-64 9.3.* [linux64]
     - git
@@ -41,13 +41,12 @@ build:
   # Build number is number of Git commits since last tag, if that fails use 0
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
   script_env:
-    - CC
-    - CXX
     - OSX_VERSION
+    - INSTALL_PREFIX
 
 about:
   home: https://scipp.github.io/
-  license: GPLv3
+  license: BSD-3-Clause
   summary: Multi-dimensional data arrays with labeled dimensions
   description: Multi-dimensional data arrays with labeled dimensions
   dev_url: https://github.com/scipp/scipp

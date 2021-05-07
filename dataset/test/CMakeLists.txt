@@ -1,5 +1,5 @@
 # ~~~
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
 set(TARGET_NAME "scipp-dataset-test")
@@ -35,6 +35,7 @@ add_executable(
   merge_test.cpp
   rebin_test.cpp
   self_assignment_test.cpp
+  set_slice_test.cpp
   shape_test.cpp
   size_of_test.cpp
   slice_by_value_test.cpp

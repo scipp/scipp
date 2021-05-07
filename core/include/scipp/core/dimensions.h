@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -19,6 +19,8 @@ namespace scipp::core {
 
 constexpr int32_t NDIM_MAX = 6;
 
+class Sizes;
+
 /// Dimensions are accessed very frequently, so packing everything into a single
 /// (64 Byte) cacheline should be advantageous.
 /// We follow the numpy convention: First dimension is outer dimension, last
@@ -34,10 +36,7 @@ public:
     for (const auto &[label, size] : dims)
       addInner(label, size);
   }
-  Dimensions(const std::unordered_map<Dim, scipp::index> &dims) {
-    for (const auto &[label, size] : dims)
-      addInner(label, size);
-  }
+  explicit Dimensions(const Sizes &sizes);
 
   constexpr bool operator==(const Dimensions &other) const noexcept {
     if (m_ndim != other.m_ndim)

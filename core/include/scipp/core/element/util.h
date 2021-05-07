@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -16,22 +16,6 @@
 #include "scipp/core/value_and_variance.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
-
-namespace scipp::numeric {
-template <> inline bool islinspace(const span<const core::time_point> &range) {
-  if (scipp::size(range) < 2)
-    return false;
-  if (range.back() <= range.front())
-    return false;
-
-  const auto delta = range[1] - range[0];
-
-  return std::adjacent_find(range.begin(), range.end(),
-                            [delta](const auto &a, const auto &b) {
-                              return std::abs(b - a) != delta;
-                            }) == range.end();
-}
-} // namespace scipp::numeric
 
 namespace scipp::core::element {
 
@@ -116,7 +100,8 @@ constexpr auto issorted_nonascending = overloaded{
     }};
 
 constexpr auto islinspace = overloaded{
-    arg_list<span<const double>, span<const float>, span<const time_point>>,
+    arg_list<span<const double>, span<const float>, span<const int64_t>,
+             span<const int32_t>, span<const time_point>>,
     transform_flags::expect_no_variance_arg<0>,
     [](const units::Unit &) { return units::one; },
     [](const auto &range) { return numeric::islinspace(range); }};

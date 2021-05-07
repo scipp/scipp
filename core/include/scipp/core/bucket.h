@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -19,8 +19,8 @@ struct bucket_base {
 };
 template <class T> struct bucket : bucket_base {
   using buffer_type = T;
-  using element_type = typename T::view_type;
-  using const_element_type = typename T::const_view_type;
+  using element_type = T;
+  using const_element_type = T;
 };
 
 template <class T> using bin = bucket<T>;

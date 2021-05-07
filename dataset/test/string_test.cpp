@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -11,7 +11,7 @@ using namespace scipp::dataset;
 
 TEST(StringTest, null_variable) {
   Variable var;
-  ASSERT_FALSE(var);
+  ASSERT_FALSE(var.is_valid());
   ASSERT_NO_THROW(to_string(var));
 }
 

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -34,8 +34,8 @@ TEST(SliceByValueTest, test_dimension_not_found) {
   auto var =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1.0, 2.0, 3.0, 4.0});
   DataArray da{var, {{Dim::X, var}}};
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }
 
 TEST(SliceByValueTest, test_no_multi_dimensional_coords) {
@@ -47,8 +47,8 @@ TEST(SliceByValueTest, test_no_multi_dimensional_coords) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
   DataArray da{var, {{Dim::X, var}}};
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }
 
 TEST(SliceByValueTest, test_unsorted_coord_throws) {
@@ -58,8 +58,8 @@ TEST(SliceByValueTest, test_unsorted_coord_throws) {
   auto unsorted =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1.0, 2.0, 3.0, 1.5});
   DataArray da{unsorted, {{Dim::X, unsorted}}};
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }
 
 TEST(SliceByValueTest, test_begin_end_not_0D_throws) {
@@ -72,8 +72,8 @@ TEST(SliceByValueTest, test_begin_end_not_0D_throws) {
                  except::DimensionError);
   };
 
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }
 
 TEST(SliceByValueTest, test_slicing_defaults_ascending) {
@@ -82,8 +82,8 @@ TEST(SliceByValueTest, test_slicing_defaults_ascending) {
     EXPECT_EQ(sliceable, slice(sliceable, Dim::X, {}, 13.0 * units::m));
     EXPECT_EQ(sliceable, slice(sliceable, Dim::X, {}, {}));
   };
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }
 
 TEST(SliceByValueTest, test_slicing_defaults_descending) {
@@ -92,8 +92,8 @@ TEST(SliceByValueTest, test_slicing_defaults_descending) {
     EXPECT_EQ(sliceable, slice(sliceable, Dim::X, {}, 2.0 * units::m));
     EXPECT_EQ(sliceable, slice(sliceable, Dim::X, {}, {}));
   };
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }
 
 TEST(SliceByValueTest, test_slice_range_on_point_coord_1D_ascending) {
@@ -118,8 +118,8 @@ TEST(SliceByValueTest, test_slice_range_on_point_coord_1D_ascending) {
     out = slice(sliceable, Dim::X, 11.0 * units::m, 13.0 * units::m);
     EXPECT_EQ(out, sliceable.slice({Dim::X, 8, 10}));
   };
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }
 
 TEST(SliceByValueTest, test_slice_range_on_point_coord_1D_descending) {
@@ -144,8 +144,8 @@ TEST(SliceByValueTest, test_slice_range_on_point_coord_1D_descending) {
     out = slice(sliceable, Dim::X, 4.0 * units::m, 1.0 * units::m);
     EXPECT_EQ(out, sliceable.slice({Dim::X, 8, 10}));
   };
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }
 
 TEST(SliceByValueTest, test_slice_range_on_edge_coord_1D_ascending) {
@@ -168,8 +168,8 @@ TEST(SliceByValueTest, test_slice_range_on_edge_coord_1D_ascending) {
     out = slice(sliceable, Dim::X, 11.0 * units::m, 12.0 * units::m);
     EXPECT_EQ(out, sliceable.slice({Dim::X, 8, 9}));
   };
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }
 
 TEST(SliceByValueTest, test_slice_range_on_edge_coord_1D_descending) {
@@ -193,8 +193,8 @@ TEST(SliceByValueTest, test_slice_range_on_edge_coord_1D_descending) {
     out = slice(sliceable, Dim::X, 4.0 * units::m, 3.0 * units::m);
     EXPECT_EQ(out, sliceable.slice({Dim::X, 8, 9}));
   };
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }
 
 TEST(SliceByValueTest, test_point_on_point_coord_1D) {
@@ -209,8 +209,8 @@ TEST(SliceByValueTest, test_point_on_point_coord_1D) {
     EXPECT_EQ(slice(sliceable, Dim::X, 2.0 * units::m),
               sliceable.slice({Dim::X, 4}));
   };
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }
 
 TEST(SliceByValueTest, test_point_on_point_coord_1D_not_unique) {
@@ -223,8 +223,8 @@ TEST(SliceByValueTest, test_point_on_point_coord_1D_not_unique) {
     EXPECT_THROW(auto s = slice(sliceable, Dim::X, 4.0 * units::m),
                  except::SliceError);
   };
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }
 
 TEST(SliceByValueTest, test_slice_point_on_edge_coord_1D) {
@@ -251,8 +251,8 @@ TEST(SliceByValueTest, test_slice_point_on_edge_coord_1D) {
                      slice(sliceable, Dim::X, 2.99 * units::m),
                  except::SliceError);
   };
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }
 
 TEST(SliceByValueTest, test_slice_range_on_point_coord_1D_duplicate) {
@@ -261,8 +261,8 @@ TEST(SliceByValueTest, test_slice_range_on_point_coord_1D_duplicate) {
     EXPECT_EQ(slice(sliceable, Dim::X, 4.0 * units::m, 4.6 * units::m),
               sliceable.slice({Dim::X, 1, 3}));
   };
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }
 
 TEST(SliceByValueTest, test_slice_point_on_edge_coord_1D_duplicate) {
@@ -272,6 +272,6 @@ TEST(SliceByValueTest, test_slice_point_on_edge_coord_1D_duplicate) {
     EXPECT_EQ(slice(sliceable, Dim::X, 4.0 * units::m),
               sliceable.slice({Dim::X, 2}));
   };
-  test(da);                              // Test for DataArray
-  test(Dataset{DataArrayConstView{da}}); // Test for Dataset
+  test(da);
+  test(Dataset{da});
 }

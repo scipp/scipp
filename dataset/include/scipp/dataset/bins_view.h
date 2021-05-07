@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -12,22 +12,28 @@
 
 namespace scipp::dataset {
 
+constexpr auto get_meta = [](auto &&a) -> decltype(auto) { return a.meta(); };
+constexpr auto get_coords = [](auto &&a) -> decltype(auto) {
+  return a.coords();
+};
+constexpr auto get_attrs = [](auto &&a) -> decltype(auto) { return a.attrs(); };
+constexpr auto get_masks = [](auto &&a) -> decltype(auto) { return a.masks(); };
+
 namespace bins_view_detail {
 template <class T, class View> class BinsCommon {
 public:
   BinsCommon(const View &var) : m_var(var) {}
   auto indices() const { return std::get<0>(get()); }
   auto dim() const { return std::get<1>(get()); }
-  auto buffer() const { return std::get<2>(get()); }
+  auto &buffer() const { return m_var.template bin_buffer<T>(); }
+  auto &buffer() { return m_var.template bin_buffer<T>(); }
 
 protected:
   auto make(const View &view) const {
-    return make_non_owning_bins(this->indices(), this->dim(), view);
+    return make_bins_no_validate(this->indices(), this->dim(), view);
   }
-  auto check_and_get_buf(const VariableConstView &var) const {
-    const auto &[i, d, buf] = var.dtype() == dtype<bucket<VariableView>>
-                                  ? var.constituents<bucket<VariableView>>()
-                                  : var.constituents<bucket<Variable>>();
+  auto check_and_get_buf(const Variable &var) const {
+    const auto &[i, d, buf] = var.constituents<bucket<Variable>>();
     core::expect::equals(i, this->indices());
     core::expect::equals(d, this->dim());
     return buf;
@@ -38,7 +44,7 @@ private:
   View m_var;
 };
 
-template <class T, class View, class MapView>
+template <class T, class View, class MapGetter>
 class BinsMapView : public BinsCommon<T, View> {
   struct make_item {
     const BinsMapView *view;
@@ -49,48 +55,53 @@ class BinsMapView : public BinsCommon<T, View> {
         return std::pair(item.first, copy(item.second));
     }
   };
+  using MapView =
+      std::decay_t<decltype(std::declval<MapGetter>()(std::declval<T>()))>;
 
 public:
   using key_type = typename MapView::key_type;
   using mapped_type = typename MapView::mapped_type;
-  BinsMapView(const BinsCommon<T, View> base, MapView mapView)
-      : BinsCommon<T, View>(base), m_mapView(std::move(mapView)) {}
-  scipp::index size() const noexcept { return m_mapView.size(); }
+  BinsMapView(const BinsCommon<T, View> base, MapGetter map)
+      : BinsCommon<T, View>(base), m_map(map) {}
+  scipp::index size() const noexcept { return mapView().size(); }
   auto operator[](const key_type &key) const {
-    return this->make(m_mapView[key]);
+    return this->make(mapView()[key]);
   }
-  void erase(const key_type &key) const { return m_mapView.erase(key); }
-  void set(const key_type &key, const VariableConstView &var) const {
-    m_mapView.set(key, this->check_and_get_buf(var));
+  void erase(const key_type &key) { return mapView().erase(key); }
+  void set(const key_type &key, const Variable &var) {
+    mapView().set(key, this->check_and_get_buf(var));
   }
   auto begin() const noexcept {
-    return boost::make_transform_iterator(m_mapView.begin(), make_item{this});
+    return boost::make_transform_iterator(mapView().begin(), make_item{this});
   }
   auto end() const noexcept {
-    return boost::make_transform_iterator(m_mapView.end(), make_item{this});
+    return boost::make_transform_iterator(mapView().end(), make_item{this});
   }
   bool contains(const key_type &key) const noexcept {
-    return m_mapView.contains(key);
+    return mapView().contains(key);
   }
   scipp::index count(const key_type &key) const noexcept {
-    return m_mapView.count(key);
+    return mapView().count(key);
   }
 
 private:
-  MapView m_mapView;
+  decltype(auto) mapView() const { return m_map(this->buffer()); }
+  decltype(auto) mapView() { return m_map(this->buffer()); }
+  MapGetter m_map;
 };
 
 template <class T, class View> class Bins : public BinsCommon<T, View> {
 public:
   using BinsCommon<T, View>::BinsCommon;
   auto data() const { return this->make(this->buffer().data()); }
-  void setData(const VariableConstView &var) {
-    this->buffer().setData(Variable(this->check_and_get_buf(var)));
+  // TODO how to handle const-ness?
+  void setData(const Variable &var) {
+    this->buffer().setData(this->check_and_get_buf(var));
   }
-  auto meta() const { return BinsMapView(*this, this->buffer().meta()); }
-  auto coords() const { return BinsMapView(*this, this->buffer().coords()); }
-  auto attrs() const { return BinsMapView(*this, this->buffer().attrs()); }
-  auto masks() const { return BinsMapView(*this, this->buffer().masks()); }
+  auto meta() const { return BinsMapView(*this, get_meta); }
+  auto coords() const { return BinsMapView(*this, get_coords); }
+  auto attrs() const { return BinsMapView(*this, get_attrs); }
+  auto masks() const { return BinsMapView(*this, get_masks); }
   auto &name() const { return this->buffer().name(); }
 };
 } // namespace bins_view_detail
@@ -103,14 +114,8 @@ public:
 ///
 /// The returned objects are variables referencing data in `var`. They do not
 /// own or share ownership of any data.
-template <class T, class View> auto bins_view(const View &var) {
+template <class T, class View> auto bins_view(View var) {
   return bins_view_detail::Bins<T, View>(var);
-}
-template <class T> auto bins_view(const Variable &var) {
-  return bins_view<T>(VariableConstView(var));
-}
-template <class T> auto bins_view(Variable &var) {
-  return bins_view<T>(VariableView(var));
 }
 
 } // namespace scipp::dataset

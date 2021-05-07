@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from html import escape
@@ -457,8 +457,7 @@ def make_svg(container, content_only=False):
     """
     Return a svg representation of a variable or dataset.
     """
-    if isinstance(container, sc.Variable) or isinstance(
-            container, sc.VariableView):
+    if isinstance(container, sc.Variable):
         draw = VariableDrawer(container)
     else:
         draw = DatasetDrawer(container)

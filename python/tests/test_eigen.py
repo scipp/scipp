@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
@@ -52,16 +52,16 @@ def test_variable_1D_vector_3_float64_from_numpy():
 
 
 def test_matrix_from_quat_coeffs_list():
-    sc.rotation_matrix_from_quaternion_coeffs([1, 2, 3, 4])
+    sc.geometry.rotation_matrix_from_quaternion_coeffs([1, 2, 3, 4])
 
 
 def test_matrix_from_quat_coeffs_numpy():
-    sc.rotation_matrix_from_quaternion_coeffs(np.arange(4))
+    sc.geometry.rotation_matrix_from_quaternion_coeffs(np.arange(4))
 
 
 def test_variable_0D_matrix():
     # Use known rotation (180 deg around z) to check correct construction
-    rot = sc.Variable(value=sc.rotation_matrix_from_quaternion_coeffs(
+    rot = sc.Variable(value=sc.geometry.rotation_matrix_from_quaternion_coeffs(
         [0, 0, 1, 0]),
                       unit=sc.units.one,
                       dtype=sc.dtype.matrix_3_float64)
