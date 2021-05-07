@@ -10,7 +10,8 @@ namespace scipp::dataset {
 namespace {
 template <class T> void expectWritable(const T &dict) {
   if (dict.is_readonly())
-    throw std::runtime_error("Read-only flag is set, cannot mutate dict.");
+    throw except::DataArrayError(
+        "Read-only flag is set, cannot mutate metadata dict.");
 }
 } // namespace
 
@@ -133,6 +134,7 @@ void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
 
 template <class Key, class Value>
 void Dict<Key, Value>::erase(const key_type &key) {
+  expectWritable(*this);
   scipp::expect::contains(*this, key);
   m_items.erase(key);
 }

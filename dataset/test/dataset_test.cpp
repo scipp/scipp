@@ -14,9 +14,9 @@
 #include "scipp/variable/operations.h"
 
 #include "dataset_test_common.h"
+#include "test_data_arrays.h"
 
 using namespace scipp;
-using namespace scipp::dataset;
 
 // Any dataset functionality that is also available for Dataset(Const)View is
 // to be tested in dataset_view_test.cpp, not here!
@@ -155,6 +155,28 @@ TEST(DatasetTest, setData_with_and_without_variances) {
                                                       Values{1, 1, 1},
                                                       Variances{0, 0, 0})));
   ASSERT_EQ(d.size(), 2);
+}
+
+TEST(DatasetTest, setData_from_DataArray) {
+  const auto array = make_data_array_1d();
+  Dataset ds;
+  ds.setData("a", array);
+  EXPECT_EQ(ds["a"], array);
+  // Data and meta data are shared
+  EXPECT_TRUE(ds["a"].data().is_same(array.data()));
+  EXPECT_TRUE(ds["a"].coords()[Dim::X].is_same(array.coords()[Dim::X]));
+  EXPECT_TRUE(ds["a"].masks()["mask"].is_same(array.masks()["mask"]));
+  EXPECT_TRUE(ds["a"].attrs()[Dim("attr")].is_same(array.attrs()[Dim("attr")]));
+  // Metadata *dicts* are not shared
+  ds.coords().erase(Dim::X);
+  EXPECT_NE(ds["a"].coords(), array.coords());
+  EXPECT_TRUE(array.coords().contains(Dim::X));
+  ds["a"].masks().erase("mask");
+  EXPECT_NE(ds["a"].masks(), array.masks());
+  EXPECT_TRUE(array.masks().contains("mask"));
+  ds["a"].attrs().erase(Dim("attr"));
+  EXPECT_NE(ds["a"].attrs(), array.attrs());
+  EXPECT_TRUE(array.attrs().contains(Dim("attr")));
 }
 
 TEST(DatasetTest, setData_updates_dimensions) {
@@ -336,16 +358,15 @@ TEST(DatasetTest, extract_coord) {
   EXPECT_EQ(ref, ds);
 }
 
-TEST(DatasetTest, erase_item_coord_cannot_erase_coord) {
+TEST(DatasetTest, cannot_set_or_erase_item_coord) {
   DatasetFactory3D factory;
-  const auto ref = factory.make();
-  Dataset ds = copy(ref);
-  auto coord = ds.coords()[Dim::X];
+  auto ds = factory.make();
   ASSERT_TRUE(ds.contains("data_x"));
-  ASSERT_NO_THROW(ds["data_x"].coords().erase(Dim::X));
-  // Coord was erased in DataArray returned by ds["data_x"], but not from coord
-  // dict of ds
+  ASSERT_THROW(ds["data_x"].coords().erase(Dim::X), except::DataArrayError);
   ASSERT_TRUE(ds.coords().contains(Dim::X));
+  ASSERT_THROW(ds["data_x"].coords().set(Dim("new"), ds.coords()[Dim::X]),
+               except::DataArrayError);
+  ASSERT_FALSE(ds.coords().contains(Dim("new")));
 }
 
 TEST(DatasetTest, item_coord_cannot_change_coord) {
@@ -428,15 +449,6 @@ TEST_F(DatasetRenameTest, rename) {
   DatasetFactory3D factory(4, 5, 6, Dim::Row);
   factory.seed(0);
   EXPECT_EQ(d, factory.make());
-}
-
-TEST(DatasetSetData, dense_to_dense) {
-  auto dense = DatasetFactory3D().make();
-  auto d = copy(dense.slice({Dim::X, 0, 2}));
-  dense.setData("data_x_1", dense["data_x"]);
-  EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
-
-  EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), except::DimensionError);
 }
 
 TEST(DatasetSetData, dense_to_empty) {

@@ -42,6 +42,7 @@ add_executable(
   slice_test.cpp
   sort_test.cpp
   string_test.cpp
+  test_data_arrays.cpp
   sum_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})

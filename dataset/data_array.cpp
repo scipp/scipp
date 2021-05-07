@@ -128,11 +128,12 @@ DataArray DataArray::view_with_coords(const Coords &coords,
   DataArray out;
   out.m_data = m_data; // share data
   const Sizes sizes(dims());
-  out.m_coords =
-      std::make_shared<Coords>(sizes, typename Coords::holder_type{});
+  typename Coords::holder_type selected;
   for (const auto &[dim, coord] : coords)
     if (coords.item_applies_to(dim, dims()))
-      out.m_coords->set(dim, coord.as_const());
+      selected[dim] = coord.as_const();
+  const bool readonly = true;
+  out.m_coords = std::make_shared<Coords>(sizes, selected, readonly);
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
   out.m_name = name;
