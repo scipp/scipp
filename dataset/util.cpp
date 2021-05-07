@@ -50,14 +50,14 @@ scipp::index size_of(const DataArray &dataarray, const SizeofTag tag,
                      bool include_aligned_coords) {
   scipp::index size = 0;
   size += size_of(dataarray.data(), tag);
-  for (const auto coord : dataarray.attrs()) {
+  for (const auto &coord : dataarray.attrs()) {
     size += size_of(coord.second, tag);
   }
-  for (const auto mask : dataarray.masks()) {
+  for (const auto &mask : dataarray.masks()) {
     size += size_of(mask.second, tag);
   }
   if (include_aligned_coords) {
-    for (const auto coord : dataarray.coords()) {
+    for (const auto &coord : dataarray.coords()) {
       size += size_of(coord.second, tag);
     }
   }
@@ -69,7 +69,7 @@ scipp::index size_of(const Dataset &dataset, const SizeofTag tag) {
   for (const auto &data : dataset) {
     size += size_of(data, tag, false);
   }
-  for (const auto coord : dataset.coords()) {
+  for (const auto &coord : dataset.coords()) {
     size += size_of(coord.second, tag);
   }
   return size;
