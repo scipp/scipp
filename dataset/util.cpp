@@ -15,7 +15,7 @@ namespace scipp {
 template <class T>
 scipp::index size_of_bucket_impl(const Variable &view, const SizeofTag tag) {
   const auto &[indices, dim, buffer] = view.constituents<T>();
-  scipp::index scale = 1;
+  double scale = 1;
   if (tag == SizeofTag::ViewOnly) {
     const auto &[begin, end] = unzip(indices);
     const auto sizes = sum(end - begin).template value<scipp::index>();
