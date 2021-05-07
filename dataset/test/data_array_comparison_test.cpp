@@ -42,11 +42,11 @@ protected:
     dataset.setData("val_and_var",
                     makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
                                          Values(12), Variances(12)));
-    dataset["val_and_var"].coords().set(Dim("attr"),
-                                        makeVariable<int>(Values{int{}}));
+    dataset["val_and_var"].attrs().set(Dim("attr"),
+                                       makeVariable<int>(Values{int{}}));
 
     dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
-    dataset["val"].coords().set(Dim("attr"), makeVariable<int>(Values{int{}}));
+    dataset["val"].attrs().set(Dim("attr"), makeVariable<int>(Values{int{}}));
     for (const auto &item : {"val_and_var", "val"})
       dataset[item].masks().set("mask",
                                 makeVariable<bool>(Dims{Dim::X}, Shape{4}));

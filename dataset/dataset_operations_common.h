@@ -12,15 +12,6 @@
 
 namespace scipp::dataset {
 
-constexpr auto unaligned_by_dim_slice = [](const auto &item,
-                                           const Slice &params) {
-  if (params.end() != -1)
-    return false;
-  const Dim dim = params.dim();
-  const auto &[key, var] = item;
-  return var.dims().contains(dim) && dim_of_coord(var, key) == dim;
-};
-
 template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
   std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
 

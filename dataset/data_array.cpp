@@ -83,14 +83,9 @@ void DataArray::setName(const std::string_view name) { m_name = name; }
 Coords DataArray::meta() const { return attrs().merge_from(coords()); }
 
 DataArray DataArray::slice(const Slice &s) const {
-  auto out_coords = m_coords->slice(s);
-  Attrs out_attrs(out_coords.sizes(), {});
-  for (auto &coord : *m_coords) {
-    if (unaligned_by_dim_slice(coord, s))
-      out_attrs.set(coord.first, out_coords.extract(coord.first));
-  }
-  return {m_data->slice(s), std::move(out_coords), m_masks->slice(s),
-          m_attrs->slice(s).merge_from(out_attrs), m_name};
+  auto [coords, attrs] = m_coords->slice_coords(s);
+  return {m_data->slice(s), std::move(coords), m_masks->slice(s),
+          m_attrs->slice(s).merge_from(attrs), m_name};
 }
 
 void DataArray::validateSlice(const Slice &s, const DataArray &array) const {

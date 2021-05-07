@@ -152,6 +152,30 @@ Dict<Key, Value> Dict<Key, Value>::slice(const Slice &params) const {
   return {m_sizes.slice(params), slice_map(m_sizes, m_items, params), readonly};
 }
 
+namespace {
+constexpr auto unaligned_by_dim_slice = [](const auto &item,
+                                           const Slice &params) {
+  if (params.end() != -1)
+    return false;
+  const Dim dim = params.dim();
+  const auto &[key, var] = item;
+  return var.dims().contains(dim) && dim_of_coord(var, key) == dim;
+};
+}
+
+template <class Key, class Value>
+std::tuple<Dict<Key, Value>, Dict<Key, Value>>
+Dict<Key, Value>::slice_coords(const Slice &params) const {
+  auto coords = slice(params);
+  coords.m_readonly = false;
+  Dict<Key, Value> attrs(coords.sizes(), {});
+  for (auto &coord : *this)
+    if (unaligned_by_dim_slice(coord, params))
+      attrs.set(coord.first, coords.extract(coord.first));
+  coords.m_readonly = true;
+  return {std::move(coords), std::move(attrs)};
+}
+
 template <class Key, class Value>
 void Dict<Key, Value>::validateSlice(const Slice s, const Dict &dict) const {
   using core::to_string;
