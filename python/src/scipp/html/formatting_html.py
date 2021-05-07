@@ -9,7 +9,7 @@ from html import escape
 
 from .._scipp import core as sc
 from .._utils import is_data_array, is_dataset
-from .resources import load_icons, load_style
+from .resources import load_icons
 
 BIN_EDGE_LABEL = "[bin-edge]"
 VARIANCE_PREFIX = "σ² = "
@@ -448,8 +448,8 @@ def _obj_repr(header_components, sections):
                        for s in sections)
 
     return ("<div>"
-            f"{load_icons()}<style>{load_style()}</style>"
-            "<div class='sc-wrap sc-root'>"
+            f"{load_icons()}"
+            "<div class='sc-wrap'>"
             f"{header}"
             f"<ul class='sc-sections'>{sections}</ul>"
             "</div>"
@@ -511,3 +511,28 @@ def human_readable_size(size_in_bytes):
         return f'{size_in_bytes/(1024):.2f} KB'
 
     return f'{size_in_bytes} Bytes'
+
+
+def inject_style():
+    """
+    Add our CSS style to the HTML head so that it can be used by all
+    HTML and SVG output without duplicating it in every cell.
+    This also preserves the style when the output in Jupyter is cleared.
+
+    The style is only injected once per session.
+    """
+    if not inject_style._has_been_injected:
+        from IPython.display import display, Javascript
+        from .resources import load_style
+        # `display` claims that its parameter should be a tuple, but
+        # that does not seem to work in the case of Javascript.
+        display(
+            Javascript(f"""
+            const style = document.createElement('style');
+            style.textContent = String.raw`{load_style()}`;
+            document.head.append(style);
+            """))
+    inject_style._has_been_injected = True
+
+
+inject_style._has_been_injected = False
