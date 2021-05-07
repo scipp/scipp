@@ -72,6 +72,12 @@ Sizes Sizes::slice(const Slice &params) const {
   return {sizes};
 }
 
+Sizes concatenate(const Sizes &a, const Sizes &b, const Dim dim) {
+  Sizes out = a.contains(dim) ? a.slice({dim, 0}) : a;
+  out.set(dim, (a.contains(dim) ? a[dim] : 1) + (b.contains(dim) ? b[dim] : 1));
+  return out;
+}
+
 Sizes merge(const Sizes &a, const Sizes &b) {
   auto out(a);
   for (const auto &[dim, size] : b)

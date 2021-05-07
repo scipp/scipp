@@ -95,10 +95,10 @@ protected:
               makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{11, 12}));
     a.setCoord(Dim::X,
                makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-    a["data_1"].coords().set(
+    a["data_1"].attrs().set(
         Dim("edge_labels"),
         makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
-    a["data_1"].coords().set(
+    a["data_1"].attrs().set(
         Dim("labels"),
         makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{21, 22}));
     a["data_1"].masks().set("masks", makeVariable<bool>(Dims{Dim::X}, Shape{2},
@@ -107,10 +107,10 @@ protected:
               makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{13, 14}));
     b.setCoord(Dim::X,
                makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{3, 4, 5}));
-    b["data_1"].coords().set(
+    b["data_1"].attrs().set(
         Dim("edge_labels"),
         makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{23, 24, 25}));
-    b["data_1"].coords().set(
+    b["data_1"].attrs().set(
         Dim("labels"),
         makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{24, 25}));
     b["data_1"].masks().set("masks", makeVariable<bool>(Dims{Dim::X}, Shape{2},
@@ -127,10 +127,10 @@ TEST_F(Concatenate1DHistogramTest, simple_1d) {
                                                Values{11, 12, 13, 14}));
   expected.setCoord(
       Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
-  expected["data_1"].coords().set(
+  expected["data_1"].attrs().set(
       Dim("edge_labels"),
       makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{21, 22, 23, 24, 25}));
-  expected["data_1"].coords().set(
+  expected["data_1"].attrs().set(
       Dim("labels"),
       makeVariable<int>(Dims{Dim::X}, Shape{4}, Values{21, 22, 24, 25}));
   expected["data_1"].masks().set(
