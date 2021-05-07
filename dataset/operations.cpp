@@ -63,7 +63,7 @@ void copy_item(const DataArray &from, T &&to, const AttrPolicy attrPolicy) {
   for (const auto &[name, mask] : from.masks())
     copy(mask, to.masks()[name]);
   if (attrPolicy == AttrPolicy::Keep)
-    for (const auto [dim, attr] : from.attrs())
+    for (const auto &[dim, attr] : from.attrs())
       copy(attr, to.attrs()[dim]);
   copy(from.data(), to.data());
 }
@@ -72,7 +72,7 @@ void copy_item(const DataArray &from, T &&to, const AttrPolicy attrPolicy) {
 /// Copy data array to output data array
 DataArray &copy(const DataArray &array, DataArray &out,
                 const AttrPolicy attrPolicy) {
-  for (const auto [dim, coord] : array.coords())
+  for (const auto &[dim, coord] : array.coords())
     copy(coord, out.coords()[dim]);
   copy_item(array, out, attrPolicy);
   return out;
@@ -88,7 +88,7 @@ DataArray copy(const DataArray &array, DataArray &&out,
 /// Copy dataset to output dataset
 Dataset &copy(const Dataset &dataset, Dataset &out,
               const AttrPolicy attrPolicy) {
-  for (const auto [dim, coord] : dataset.coords())
+  for (const auto &[dim, coord] : dataset.coords())
     copy(coord, out.coords()[dim]);
   for (const auto &array : dataset)
     copy_item(array, out[array.name()], attrPolicy);
@@ -134,13 +134,13 @@ DataArray strip_if_broadcast_along(DataArray &&a, const Dim dim) {
   strip_if_broadcast_along(a.coords(), dim);
   strip_if_broadcast_along(a.masks(), dim);
   strip_if_broadcast_along(a.attrs(), dim);
-  return a;
+  return std::move(a);
 }
 
 Dataset strip_if_broadcast_along(Dataset &&d, const Dim dim) {
   strip_if_broadcast_along(d.coords(), dim);
   strip_if_broadcast_along(d, dim);
-  return d;
+  return std::move(d);
 }
 
 } // namespace scipp::dataset

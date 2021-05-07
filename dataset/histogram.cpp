@@ -71,9 +71,8 @@ Dataset histogram(const Dataset &dataset, const Variable &binEdges) {
 /// Return the dimensions of the given data array that have an "bin edge"
 /// coordinate.
 std::set<Dim> edge_dimensions(const DataArray &a) {
-  const auto coords = a.coords();
   std::set<Dim> dims;
-  for (const auto [d, coord] : a.coords())
+  for (const auto &[d, coord] : a.coords())
     if (a.dims().contains(d) && coord.dims().contains(d) &&
         coord.dims()[d] == a.dims()[d] + 1)
       dims.insert(d);
