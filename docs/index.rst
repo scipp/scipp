@@ -106,11 +106,7 @@ Documentation
 
    visualization/representations-and-tables
    visualization/plotting-overview
-   visualization/plotting-1d-data
-   visualization/plotting-2d-data
-   visualization/plotting-nd-data
-   visualization/customizing-figures
-   visualization/datetime_handling
+   visualization/plotting-in-depth
 
 .. toctree::
    :caption: Tutorials
