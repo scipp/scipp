@@ -59,7 +59,7 @@ Example:
   array['x', 100:200].plot()  # plot 100 points starting at offset 100
   start = 1.2 * sc.Unit('m')
   stop = 1.3 * sc.Unit('m')
-  array['x', start:stop].plot()  # plot everything between 1.2 and 1.3 meter
+  array['x', start:stop].plot()  # plot everything between 1.2 and 1.3 meters
 
 Installation
 ------------
