@@ -29,7 +29,7 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 
   for (const auto item : b) {
     if (const auto it = a.find(item.first); it != a.end()) {
-      core::expect::equals(item, *it);
+      expect::matchingCoord(it->first, it->second, item.second);
     } else
       out.emplace(item.first, item.second);
   }

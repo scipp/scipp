@@ -11,7 +11,7 @@ VariableError::VariableError(const std::string &msg) : Error{msg} {}
 template <>
 void throw_mismatch_error(const variable::Variable &expected,
                           const variable::Variable &actual) {
-  throw VariableError("Expected Variable " + to_string(expected) + ", got " +
+  throw VariableError("Expected\n" + to_string(expected) + ", got\n" +
                       to_string(actual) + '.');
 }
 } // namespace scipp::except

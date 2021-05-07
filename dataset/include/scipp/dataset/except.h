@@ -42,14 +42,9 @@ throw_mismatch_error(const dataset::Dataset &expected,
                      const dataset::Dataset &actual);
 
 struct SCIPP_DATASET_EXPORT CoordMismatchError : public DatasetError {
-  CoordMismatchError(const std::pair<const Dim, Variable> &expected,
-                     const std::pair<const Dim, Variable> &actual);
+  CoordMismatchError(const Dim dim, const Variable &expected,
+                     const Variable &actual);
 };
-
-template <>
-[[noreturn]] SCIPP_DATASET_EXPORT void
-throw_mismatch_error(const std::pair<const Dim, Variable> &expected,
-                     const std::pair<const Dim, Variable> &actual);
 
 } // namespace scipp::except
 
@@ -58,6 +53,8 @@ namespace scipp::dataset::expect {
 SCIPP_DATASET_EXPORT void coordsAreSuperset(const DataArray &a,
                                             const DataArray &b);
 SCIPP_DATASET_EXPORT void coordsAreSuperset(const Coords &a, const Coords &b);
+SCIPP_DATASET_EXPORT void matchingCoord(const Dim dim, const Variable &a,
+                                        const Variable &b);
 
 SCIPP_DATASET_EXPORT void isKey(const Variable &key);
 
