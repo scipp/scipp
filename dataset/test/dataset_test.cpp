@@ -194,7 +194,7 @@ TEST(DatasetTest, setData_from_DataArray_replace) {
   Dataset ds;
   ds.setData("a", array1);
   ds.setData("a", array2);
-  EXPECT_EQ(array1, original); // setData does not copy elements
+  EXPECT_EQ(array1, original);     // setData does not copy elements
   const bool shared_coord = false; // coord exists in dataset, not replaced
   check_array_shared(ds, "a", array2, shared_coord);
 }
