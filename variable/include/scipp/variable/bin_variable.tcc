@@ -155,7 +155,7 @@ public:
     auto params = var.array_params();
     return {0, // no offset required in buffer since access via indices
             params.dims(),
-            params.dataDims(),
+            params.strides(),
             {dim, buffer.dims(),
              indices.template values<scipp::index_pair>().data()}};
   }

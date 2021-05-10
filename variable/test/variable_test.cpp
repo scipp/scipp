@@ -823,7 +823,7 @@ TEST(VariableViewTest, set_variances_slice_fail) {
 TEST(VariableViewTest, create_with_variance) {
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2},
                                         Values{1.0, 2.0}, Variances{0.1, 0.2});
-  ASSERT_NO_THROW(var.slice({Dim::X, 1, 2}));
+  ASSERT_NO_THROW_DISCARD(var.slice({Dim::X, 1, 2}));
   const auto slice = var.slice({Dim::X, 1, 2});
   ASSERT_TRUE(slice.hasVariances());
   ASSERT_EQ(slice.variances<double>().size(), 1);
@@ -969,21 +969,18 @@ TEST(VariableTest, array_params) {
   const auto parent =
       makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z}, Shape{4, 2, 3});
 
-  const Dimensions yz({Dim::Y, Dim::Z}, {8, 3});
-  const Dimensions xz({Dim::X, Dim::Z}, {4, 6});
-  Dimensions xy = parent.dims();
-  xy.relabel(2, Dim::Invalid);
-  EXPECT_EQ(parent.array_params().dataDims(), parent.dims());
-  EXPECT_EQ(parent.slice({Dim::X, 1}).array_params().dataDims(), yz);
-  EXPECT_EQ(parent.slice({Dim::Y, 1}).array_params().dataDims(), xz);
-  EXPECT_EQ(parent.slice({Dim::Z, 1}).array_params().dataDims(), xy);
+  const Strides yz{3, 1};
+  const Strides xz{3 * 2, 1};
+  const Strides xy{3 * 2, 3};
+  EXPECT_EQ(parent.array_params().strides(), Strides{parent.strides()});
+  EXPECT_EQ(parent.slice({Dim::X, 1}).array_params().strides(), yz);
+  EXPECT_EQ(parent.slice({Dim::Y, 1}).array_params().strides(), xz);
+  EXPECT_EQ(parent.slice({Dim::Z, 1}).array_params().strides(), xy);
 
   const auto empty_1d = makeVariable<double>(Dims{Dim::X}, Shape{0});
-  EXPECT_EQ(empty_1d.array_params().dataDims(), empty_1d.dims());
+  EXPECT_EQ(empty_1d.array_params().strides(), Strides{empty_1d.strides()});
   const auto empty_2d = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 0});
-  // Artifact from current hack making dataDims from strides: Empty dim moved to
-  // inner dim. Should not make a difference since there are 0 elements anyway.
-  EXPECT_EQ(empty_2d.array_params().dataDims(), transpose(empty_2d.dims()));
+  EXPECT_EQ(empty_2d.array_params().strides(), Strides{empty_2d.strides()});
 }
 
 TEST(Variable, nested_Variable_copy) {

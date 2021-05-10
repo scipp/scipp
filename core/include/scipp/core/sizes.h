@@ -38,7 +38,9 @@ public:
   void clear();
 
   scipp::index operator[](const Dim dim) const;
+  scipp::index &operator[](const Dim dim);
   scipp::index at(const Dim dim) const;
+  scipp::index &at(const Dim dim);
   void set(const Dim dim, const scipp::index size);
   void erase(const Dim dim);
   void relabel(const Dim from, const Dim to);
