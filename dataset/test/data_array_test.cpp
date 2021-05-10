@@ -28,6 +28,18 @@ TEST(DataArrayTest, construct_fail) {
   EXPECT_THROW(DataArray(Variable{}), std::runtime_error);
 }
 
+TEST(DataArrayTest, constructor_shares) {
+  const auto data = makeVariable<double>(Values{1});
+  const auto coord = makeVariable<double>(Values{1});
+  const auto mask = makeVariable<bool>(Values{false});
+  const auto attr = makeVariable<double>(Values{1});
+  DataArray a(data, {{Dim::X, coord}}, {{"mask", mask}}, {{Dim("attr"), attr}});
+  EXPECT_TRUE(a.data().is_same(data));
+  EXPECT_TRUE(a.coords()[Dim::X].is_same(coord));
+  EXPECT_TRUE(a.masks()["mask"].is_same(mask));
+  EXPECT_TRUE(a.attrs()[Dim("attr")].is_same(attr));
+}
+
 TEST(DataArrayTest, setName) {
   DatasetFactory3D factory;
   const auto dataset = factory.make();
