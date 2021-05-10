@@ -8,6 +8,7 @@
 #include "scipp/core/except.h"
 #include "scipp/units/unit.h"
 #include "scipp/variable/data_model.h"
+#include "scipp/variable/matrix_model.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable_factory.h"
@@ -21,6 +22,14 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
       m_object(std::make_unique<DataModel<typename T::value_type>>(
           dimensions.volume(), unit, std::move(values_),
           std::move(variances_))) {}
+
+template <class T> const DataModel<T> &cast(const Variable &var) {
+  return requireT<const DataModel<T>>(var.data());
+}
+
+template <class T> DataModel<T> &cast(Variable &var) {
+  return requireT<DataModel<T>>(var.data());
+}
 
 template <class T> ElementArrayView<const T> Variable::values() const {
   return cast<T>(*this).values(array_params());

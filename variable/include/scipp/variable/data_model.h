@@ -124,14 +124,6 @@ private:
   std::optional<element_array<T>> m_variances;
 };
 
-template <class T> const DataModel<T> &cast(const Variable &var) {
-  return requireT<const DataModel<T>>(var.data());
-}
-
-template <class T> DataModel<T> &cast(Variable &var) {
-  return requireT<DataModel<T>>(var.data());
-}
-
 template <class T>
 VariableConceptHandle
 DataModel<T>::makeDefaultFromParent(const scipp::index size) const {
