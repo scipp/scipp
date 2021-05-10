@@ -21,26 +21,22 @@ public:
   using value_type = T;
 
   MatrixModel(const Variable &elements)
-      : VariableConcept(elements.unit()), m_elements(elements) {
-    if (m_elements.hasVariances())
+      : VariableConcept(elements.unit()),
+        // copy in case this is a slice?
+        m_elements(variable::copy(elements).data_handle()) {
+    if (hasVariances())
       throw except::VariancesError("Matrix data type cannot have variances.");
-    if (m_elements.dtype() != scipp::dtype<double>)
+    if (elements.dtype() != scipp::dtype<double>)
       throw except::TypeError(
           "Matrix data type only supported with float64 elements.");
-    const auto dims = elements.dims();
-    auto it = dims.shape().begin() + dims.ndim() - sizeof...(N);
-    std::array<scipp::index, sizeof...(N)> sizes{N...};
-    if (!std::equal(it, dims.shape().end(), sizes.begin(), sizes.end()))
-      // if (std::distance(it, dims.labels().end()) != sizeof...(N))
+    if (elements.dims().volume() % (N * ...) != 0)
       throw except::DimensionError("Underlying elements do not have correct "
                                    "shape for this matrix type.");
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
   DType dtype() const noexcept override { return scipp::dtype<T>; }
-  scipp::index size() const override {
-    return m_elements.dims().volume() / (N * ...);
-  }
+  scipp::index size() const override { return m_elements->size() / (N * ...); }
 
   VariableConceptHandle
   makeDefaultFromParent(const scipp::index size) const override;
@@ -62,7 +58,7 @@ public:
   }
 
   bool hasVariances() const noexcept override {
-    return m_elements.hasVariances();
+    return m_elements->hasVariances();
   }
 
   auto values(const core::ElementArrayViewParams &base) const {
@@ -70,14 +66,6 @@ public:
   }
   auto values(const core::ElementArrayViewParams &base) {
     return ElementArrayView(base, get_values());
-  }
-  auto variances(const core::ElementArrayViewParams &base) const {
-    throw except::VariancesError("Matrix data type cannot have variances.");
-    return ElementArrayView(base, get_variances());
-  }
-  auto variances(const core::ElementArrayViewParams &base) {
-    throw except::VariancesError("Matrix data type cannot have variances.");
-    return ElementArrayView(base, get_variances());
   }
 
   scipp::index dtype_size() const override { return sizeof(T); }
@@ -90,18 +78,14 @@ public:
 
 private:
   const T *get_values() const {
-    return reinterpret_cast<const T *>(m_elements.values<double>().data());
+    return reinterpret_cast<const T *>(
+        requireT<const DataModel<double>>(*m_elements).values().data());
   }
   T *get_values() {
-    return reinterpret_cast<T *>(m_elements.values<double>().data());
+    return reinterpret_cast<T *>(
+        requireT<DataModel<double>>(*m_elements).values().data());
   }
-  const T *get_variances() const {
-    return reinterpret_cast<const T *>(m_elements.variances<double>().data());
-  }
-  T *get_variances() {
-    return reinterpret_cast<T *>(m_elements.variances<double>().data());
-  }
-  Variable m_elements;
+  VariableConceptHandle m_elements;
 };
 
 template <class T, int... N>
@@ -120,10 +104,11 @@ bool MatrixModel<T, N...>::equals(const Variable &a, const Variable &b) const {
   if (a.dims() != b.dims())
     return false;
   const auto &a_elems =
-      requireT<const MatrixModel<T, N...>>(a.data()).m_elements;
+      *requireT<const MatrixModel<T, N...>>(a.data()).m_elements;
   const auto &b_elems =
-      requireT<const MatrixModel<T, N...>>(b.data()).m_elements;
-  return a_elems == b_elems;
+      *requireT<const MatrixModel<T, N...>>(b.data()).m_elements;
+  throw std::runtime_error("todo ");
+  // return a_elems == b_elems;
 }
 
 /// Helper for implementing Variable(View) copy operations.
