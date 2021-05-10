@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
-/// @author Neil Vaytet
+/// @author Jan-Lukas Wynen
 #pragma once
 
 #include "scipp-core_export.h"
