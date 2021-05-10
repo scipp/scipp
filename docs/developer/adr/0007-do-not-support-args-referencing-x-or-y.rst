@@ -16,7 +16,7 @@ Particularly in scipp's plotting functionality there can be confusion from diffe
 
 Furthermore it should be considered that scipp supports dimensions in arbitrary order.
 That is, data depending on ``dim0`` and ``dim1`` may be stored as ``[dim0, dim1]`` or as ``[dim1, dim0]``.
-Creating a plot from this with hypothetical ``xlim`` or ``xmin`` arguments to ``plot()`` would thus yield different and unpredictable results depending on an in principle irrelevant detail of the data.
+Creating a plot from this with hypothetical ``xlim`` or ``xmin`` arguments to ``plot()`` would thus yield different and unpredictable results depending on an, in principle, irrelevant detail of the data.
 
 The ambiguity can be avoided using scipp's ubiquitous approach of requiring explicit dimension labels.
 One example for this is the ``scale`` argument of ``plot()``, which is a dictionary mapping from dimension labels to the desired scale (linear or logarithmic).
