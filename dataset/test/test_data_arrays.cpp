@@ -22,9 +22,9 @@ DataArray make_data_array_1d(const int64_t seed) {
   auto scalar_mask = makeVariable<bool>(Values{false});
   return DataArray(
       data, {{Dim::X, coord}, {Dim("scalar"), scalar_coord}},
-      {{"mask", mask}, {"mask" + seed, mask}, {"scalar_mask", scalar_mask}},
+      {{"mask", mask}, {"mask" + name, mask}, {"scalar_mask", scalar_mask}},
       {{Dim("attr"), coord + coord},
-       {Dim("attr" + seed), coord + seed * units::m},
+       {Dim("attr" + name), coord + seed * units::m},
        {Dim("scalar_attr"), scalar_coord + scalar_coord}},
       "array" + name);
 }
