@@ -4,9 +4,15 @@
 # @author Simon Heybrock
 
 # flake8: noqa
+"""
+Staging area for experimental and untested scipp features.
+
+Contents of this submodule are subject to changes and removal without
+notice.
+"""
 
 
-def kernel(dtype='float64'):
+def transform_kernel(dtype='float64'):
     if dtype != 'float64':
         raise RuntimeError('Only float64 arguments supported at this point')
     else:
@@ -16,17 +22,22 @@ def kernel(dtype='float64'):
 
     def decorator(function):
         narg = len(signature(function).parameters)
-        function = numba.cfunc(dtype + '(' + ','.join([dtype] * narg) +
-                               ')')(function)
-
-        def wrapper(*args, **kwargs):
-            return function(*args, **kwargs)
-
-        return wrapper
+        return numba.cfunc(dtype + '(' + ','.join([dtype] * narg) +
+                           ')')(function)
 
     return decorator
 
 
-from .._scipp.core import experimental_transform_unary as transform_unary
-from .._scipp.core import experimental_transform_binary as transform_binary
-from .._scipp.core import experimental_transform_ternary as transform_ternary
+def transform(kernel, *args):
+    """Transform one or more variables using a custom kernel.
+
+    Only variables with dtype=float64 are supported.
+    Variances are not supported.
+
+    :param kernel: Kernel to use for the transform. Can be a plain function or
+                   a function decorated using `@scipp.experimental.transform_kernel()`
+    """
+    from .._scipp.core import experimental_transform
+    if not hasattr(kernel, 'address'):
+        kernel = transform_kernel()(kernel)
+    return experimental_transform(kernel, *args)
