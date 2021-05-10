@@ -2,7 +2,7 @@ ADR 0007: Do not support arguments referring to ``x`` or ``y``
 ==============================================================
 
 - Status: proposed
-- Deciders: Jan-Lukas, Matthew D. J., Neil, Owen, Simon
+- Deciders: Jan-Lukas, Neil, Owen, Simon
 - Date: 2021-05-05
 
 Context
