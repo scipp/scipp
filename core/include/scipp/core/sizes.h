@@ -53,6 +53,10 @@ private:
   std::unordered_map<Dim, scipp::index> m_sizes;
 };
 
+[[nodiscard]] SCIPP_CORE_EXPORT Sizes concatenate(const Sizes &a,
+                                                  const Sizes &b,
+                                                  const Dim dim);
+
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes merge(const Sizes &a, const Sizes &b);
 
 SCIPP_CORE_EXPORT bool is_edges(const Sizes &sizes, const Dimensions &dims,

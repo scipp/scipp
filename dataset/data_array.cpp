@@ -83,14 +83,9 @@ void DataArray::setName(const std::string_view name) { m_name = name; }
 Coords DataArray::meta() const { return attrs().merge_from(coords()); }
 
 DataArray DataArray::slice(const Slice &s) const {
-  auto out_coords = m_coords->slice(s);
-  Attrs out_attrs(out_coords.sizes(), {});
-  for (auto &coord : *m_coords) {
-    if (unaligned_by_dim_slice(coord, s))
-      out_attrs.set(coord.first, out_coords.extract(coord.first));
-  }
-  return {m_data->slice(s), std::move(out_coords), m_masks->slice(s),
-          m_attrs->slice(s).merge_from(out_attrs), m_name};
+  auto [coords, attrs] = m_coords->slice_coords(s);
+  return {m_data->slice(s), std::move(coords), m_masks->slice(s),
+          m_attrs->slice(s).merge_from(attrs), m_name};
 }
 
 void DataArray::validateSlice(const Slice &s, const DataArray &array) const {
@@ -128,11 +123,12 @@ DataArray DataArray::view_with_coords(const Coords &coords,
   DataArray out;
   out.m_data = m_data; // share data
   const Sizes sizes(dims());
-  out.m_coords =
-      std::make_shared<Coords>(sizes, typename Coords::holder_type{});
+  typename Coords::holder_type selected;
   for (const auto &[dim, coord] : coords)
     if (coords.item_applies_to(dim, dims()))
-      out.m_coords->set(dim, coord.as_const());
+      selected[dim] = coord.as_const();
+  const bool readonly = true;
+  out.m_coords = std::make_shared<Coords>(sizes, selected, readonly);
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
   out.m_name = name;
