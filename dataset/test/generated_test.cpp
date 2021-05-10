@@ -12,29 +12,6 @@
 
 using namespace scipp;
 
-TEST(GeneratedUnaryTest, DataArray) {
-  const auto array = make_data_array_1d();
-  const auto out = reciprocal(array);
-  EXPECT_FALSE(out.data().is_same(array.data()));
-  EXPECT_EQ(out.data(), reciprocal(array.data()));
-  EXPECT_EQ(out.coords(), array.coords());
-  EXPECT_EQ(out.masks(), array.masks());
-  EXPECT_EQ(out.attrs(), array.attrs());
-  // Meta data is shallow-copied but dicts are not shared
-  EXPECT_NE(&out.coords(), &array.coords());
-  EXPECT_NE(&out.masks(), &array.masks());
-  EXPECT_NE(&out.attrs(), &array.attrs());
-  EXPECT_TRUE(out.coords()[Dim::X].is_same(array.coords()[Dim::X]));
-  EXPECT_TRUE(out.masks()["mask"].is_same(array.masks()["mask"]));
-  EXPECT_TRUE(out.attrs()[Dim("attr")].is_same(array.attrs()[Dim("attr")]));
-}
-
-class GeneratedBinaryTest : public ::testing::Test {
-protected:
-  DataArray a = make_data_array_1d(1);
-  DataArray b = make_data_array_1d(2);
-};
-
 namespace {
 void check_meta(const DataArray &out, const DataArray &a) {
   EXPECT_FALSE(out.data().is_same(a.data()));
@@ -51,6 +28,19 @@ void check_meta(const DataArray &out, const DataArray &a) {
   EXPECT_TRUE(out.attrs()[Dim("attr")].is_same(a.attrs()[Dim("attr")]));
 }
 } // namespace
+
+TEST(GeneratedUnaryTest, DataArray) {
+  const auto array = make_data_array_1d();
+  const auto out = reciprocal(array);
+  EXPECT_EQ(out.data(), reciprocal(array.data()));
+  check_meta(out, array);
+}
+
+class GeneratedBinaryTest : public ::testing::Test {
+protected:
+  DataArray a = make_data_array_1d(1);
+  DataArray b = make_data_array_1d(2);
+};
 
 TEST_F(GeneratedBinaryTest, DataArray_Variable) {
   const auto var = b.data();
