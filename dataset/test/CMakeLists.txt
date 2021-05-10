@@ -16,6 +16,7 @@ add_executable(
   coords_view_test.cpp
   copy_test.cpp
   counts_test.cpp
+  data_array_arithmetic_test.cpp
   data_array_comparison_test.cpp
   data_array_test.cpp
   dataset_arithmetic_test.cpp
