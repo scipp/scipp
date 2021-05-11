@@ -221,7 +221,8 @@ void Dict<Key, Value>::rename(const Dim from, const Dim to) {
     }
   }
   for (auto &item : m_items)
-    item.second.rename(from, to);
+    if (item.second.dims().contains(from))
+      item.second.rename(from, to);
 }
 
 /// Return true if the dict is readonly. Does not imply that items are readonly.

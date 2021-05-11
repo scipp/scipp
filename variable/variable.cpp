@@ -165,8 +165,7 @@ Variable Variable::transpose(const std::vector<Dim> &order) const {
 }
 
 void Variable::rename(const Dim from, const Dim to) {
-  if (dims().contains(from))
-    m_dims.relabel(dims().index(from), to);
+  m_dims.replace_key(from, to);
 }
 
 bool Variable::is_valid() const noexcept { return m_object.operator bool(); }

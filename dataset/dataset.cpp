@@ -186,7 +186,8 @@ void Dataset::rename(const Dim from, const Dim to) {
     throw except::DimensionError("Duplicate dimension.");
   m_coords.rename(from, to);
   for (auto &item : m_data)
-    item.second.rename(from, to);
+    if (item.second.dims().contains(from))
+      item.second.rename(from, to);
 }
 
 /// Return true if the datasets have identical content.
