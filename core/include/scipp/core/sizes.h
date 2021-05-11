@@ -87,7 +87,7 @@ public:
 
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes merge(const Sizes &a, const Sizes &b);
 
-SCIPP_CORE_EXPORT bool is_edges(const Sizes &sizes, const Dimensions &dims,
+SCIPP_CORE_EXPORT bool is_edges(const Sizes &sizes, const Sizes &dataSizes,
                                 const Dim dim);
 
 SCIPP_CORE_EXPORT std::string to_string(const Sizes &sizes);

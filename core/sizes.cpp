@@ -191,13 +191,13 @@ Sizes merge(const Sizes &a, const Sizes &b) {
   return out;
 }
 
-bool is_edges(const Sizes &sizes, const Dimensions &dims, const Dim dim) {
+bool is_edges(const Sizes &sizes, const Sizes &dataSizes, const Dim dim) {
   if (dim == Dim::Invalid)
     return false;
-  for (const auto &d : dims.labels())
-    if (d != dim && !(sizes.contains(d) && sizes[d] == dims[d]))
+  for (const auto &d : dataSizes)
+    if (d != dim && !(sizes.contains(d) && sizes[d] == dataSizes[d]))
       return false;
-  const auto size = dims[dim];
+  const auto size = dataSizes[dim];
   return size == (sizes.contains(dim) ? sizes[dim] + 1 : 2);
 }
 
