@@ -40,6 +40,11 @@ def _make_plot_key(plt_key, all_keys):
     return plt_key
 
 
+def _brief_str(obj):
+    sizes = ', '.join([f'{dim}: {size}' for dim, size in obj.sizes.items()])
+    return f'scipp.{type(obj).__name__}({sizes})'
+
+
 def _input_to_data_array(item, all_keys, key=None):
     """
     Convert an input for the plot function to a DataArray or a dict of
@@ -54,7 +59,7 @@ def _input_to_data_array(item, all_keys, key=None):
     elif su.is_variable(item):
         if su.numeric_type(item):
             if key is None:
-                key = str(item)
+                key = _brief_str(item)
             to_plot[_make_plot_key(key,
                                    all_keys)] = _variable_to_data_array(item)
     elif su.is_data_array(item):

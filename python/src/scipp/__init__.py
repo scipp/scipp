@@ -77,20 +77,6 @@ setattr(Variable, 'sizes', property(_make_sizes))
 setattr(DataArray, 'sizes', property(_make_sizes))
 setattr(Dataset, 'sizes', property(_make_sizes))
 
-
-def _str_factory(cls):
-    def _str(obj):
-        sizes = ', '.join(
-            [f'{dim}: {size}' for dim, size in obj.sizes.items()])
-        return f'scipp.{cls.__name__}({sizes})'
-
-    return _str
-
-
-setattr(Variable, '__str__', _str_factory(Variable))
-setattr(DataArray, '__str__', _str_factory(DataArray))
-setattr(Dataset, '__str__', _str_factory(Dataset))
-
 from ._bins import _bins, _set_bins, _events
 setattr(Variable, 'bins', property(_bins, _set_bins))
 setattr(DataArray, 'bins', property(_bins, _set_bins))
