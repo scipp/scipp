@@ -54,7 +54,7 @@ def _input_to_data_array(item, all_keys, key=None):
     elif su.is_variable(item):
         if su.numeric_type(item):
             if key is None:
-                key = str(type(item))
+                key = str(item)
             to_plot[_make_plot_key(key,
                                    all_keys)] = _variable_to_data_array(item)
     elif su.is_data_array(item):
