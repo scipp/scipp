@@ -53,6 +53,7 @@ from .sizes import _make_sizes
 from ._bins import *
 from ._counts import *
 from ._comparison import *
+from ._convolution import *
 from ._cumulative import *
 from ._dataset import *
 from ._groupby import *
