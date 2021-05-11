@@ -80,7 +80,9 @@ setattr(Dataset, 'sizes', property(_make_sizes))
 
 def _str_factory(cls):
     def _str(obj):
-        return f'scipp.{cls.__name__}(sizes={obj.sizes})'
+        sizes = ', '.join(
+            [f'{dim}: {size}' for dim, size in obj.sizes.items()])
+        return f'scipp.{cls.__name__}({sizes})'
 
     return _str
 
