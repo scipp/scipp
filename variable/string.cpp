@@ -77,7 +77,7 @@ std::string format_variable(const Variable &variable,
     return "invalid variable\n";
   std::stringstream s;
   const std::string colSep("  ");
-  if (!datasetDims)
+  if (!datasetSizes)
     s << to_string(variable.dims()) << colSep;
   s << std::setw(9) << to_string(variable.dtype());
   s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
