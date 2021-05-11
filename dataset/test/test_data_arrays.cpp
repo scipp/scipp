@@ -16,15 +16,16 @@ DataArray make_data_array_1d(const int64_t seed) {
                                    Variances{seed + 3, seed + 4});
   auto coord =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1, 2});
-  auto mask = makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false});
+  auto mask =
+      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{seed % 2 == 0, false});
   const auto name = std::to_string(seed);
   auto scalar_coord = makeVariable<int64_t>(Values{12});
   auto scalar_mask = makeVariable<bool>(Values{false});
   return DataArray(
       data, {{Dim::X, coord}, {Dim("scalar"), scalar_coord}},
-      {{"mask", mask}, {"mask" + seed, mask}, {"scalar_mask", scalar_mask}},
+      {{"mask", mask}, {"mask" + name, mask}, {"scalar_mask", scalar_mask}},
       {{Dim("attr"), coord + coord},
-       {Dim("attr" + seed), coord + seed * units::m},
+       {Dim("attr" + name), coord + seed * units::m},
        {Dim("scalar_attr"), scalar_coord + scalar_coord}},
       "array" + name);
 }
