@@ -56,8 +56,8 @@ public:
   /// Return the volume of the space defined by *this.
   constexpr scipp::index volume() const noexcept {
     scipp::index volume{1};
-    for (int32_t dim = 0; dim < ndim(); ++dim)
-      volume *= shape()[dim];
+    for (const auto &length : shape())
+      volume *= length;
     return volume;
   }
 
@@ -66,13 +66,9 @@ public:
 
   Dim inner() const noexcept;
 
-  // TODO
-  // - remove resize (just use non-const at()?)
   Dim label(const scipp::index i) const;
   scipp::index size(const scipp::index i) const;
   scipp::index offset(const Dim label) const;
-  void resize(const Dim label, const scipp::index size);
-  void resize(const scipp::index i, const scipp::index size);
 
   // TODO Better names required.
   void add(const Dim label, const scipp::index size);

@@ -16,12 +16,6 @@ void expectUnique(const Dimensions &dims, const Dim label) {
     throw except::DimensionError("Duplicate dimension.");
 }
 
-void expectExtendable(const Dimensions &dims) {
-  if (dims.shape().size() == NDIM_MAX)
-    throw except::DimensionError(
-        "Maximum number of allowed dimensions exceeded.");
-}
-
 Dimensions::Dimensions(const std::vector<Dim> &labels,
                        const std::vector<scipp::index> &shape) {
   if (labels.size() != shape.size())
@@ -33,30 +27,6 @@ Dimensions::Dimensions(const std::vector<Dim> &labels,
   for (scipp::index i = 0; i < scipp::size(shape); ++i)
     addInner(labels[i], shape[i]);
 }
-
-/// Return the extent of `dim`. Throws if the space defined by this does not
-/// contain `dim`.
-// scipp::index Dimensions::operator[](const Dim dim) const { return at(dim); }
-
-/// Return the extent of `dim`. Throws if the space defined by this does not
-/// contain `dim`.
-/*
-scipp::index Dimensions::at(const Dim dim) const {
-  for (int32_t i = 0; i < m_ndim; ++i)
-    if (m_dims[i] == dim)
-      return m_shape[i];
-  except::throw_dimension_not_found_error(*this, dim);
-}
-
-/// Return a mutable reference to the extent of `dim`. Throws if the space
-/// defined by this does not contain `dim`.
-scipp::index &Dimensions::at(const Dim dim) {
-  for (int32_t i = 0; i < m_ndim; ++i)
-    if (m_dims[i] == dim)
-      return m_shape[i];
-  except::throw_dimension_not_found_error(*this, dim);
-}
-*/
 
 Dim Dimensions::label(const scipp::index i) const { return labels()[i]; }
 
@@ -71,20 +41,9 @@ scipp::index Dimensions::offset(const Dim label) const {
   return offset;
 }
 
-void Dimensions::resize(const Dim label, const scipp::index size) {
-  expect::validExtent(size);
-  at(label) = size;
-}
-
-void Dimensions::resize(const scipp::index i, const scipp::index size) {
-  resize(label(i), size);
-}
-
 /// Add a new dimension, which will be the outermost dimension.
 void Dimensions::add(const Dim label, const scipp::index size) {
   expect::validDim(label);
-  expectUnique(*this, label);
-  expectExtendable(*this);
   expect::validExtent(size);
   insert_left(label, size);
 }
@@ -92,9 +51,7 @@ void Dimensions::add(const Dim label, const scipp::index size) {
 /// Add a new dimension, which will be the innermost dimension.
 void Dimensions::addInner(const Dim label, const scipp::index size) {
   expect::validDim(label);
-  expectUnique(*this, label);
   expect::validExtent(size);
-  expectExtendable(*this);
   insert_right(label, size);
 }
 

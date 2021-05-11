@@ -15,6 +15,12 @@ template <class T> void expectUnique(const T &map, const Dim label) {
     throw except::DimensionError("Duplicate dimension.");
 }
 
+template <class T> void expectExtendable(const T &map) {
+  if (map.size() == T::capacity)
+    throw except::DimensionError(
+        "Maximum number of allowed dimensions exceeded.");
+}
+
 template <class T> std::string to_string(const T &map) {
   std::string repr("[");
   for (const auto &key : map)
@@ -77,12 +83,6 @@ const Value &small_stable_map<Key, Value, MaxSize, Except>::operator[](
 }
 
 template <class Key, class Value, int16_t MaxSize, class Except>
-Value &
-small_stable_map<Key, Value, MaxSize, Except>::operator[](const Key &key) {
-  return at(key);
-}
-
-template <class Key, class Value, int16_t MaxSize, class Except>
 const Value &
 small_stable_map<Key, Value, MaxSize, Except>::at(const Key &key) const {
   if (!contains(key))
@@ -91,18 +91,18 @@ small_stable_map<Key, Value, MaxSize, Except>::at(const Key &key) const {
 }
 
 template <class Key, class Value, int16_t MaxSize, class Except>
-Value &small_stable_map<Key, Value, MaxSize, Except>::at(const Key &key) {
+void small_stable_map<Key, Value, MaxSize, Except>::assign(const Key &key,
+                                                           const Value &value) {
   if (!contains(key))
     throw_dimension_not_found_error(*this, key);
-  return m_values[std::distance(begin(), find(key))];
+  m_values[std::distance(begin(), find(key))] = value;
 }
 
 template <class Key, class Value, int16_t MaxSize, class Except>
 void small_stable_map<Key, Value, MaxSize, Except>::insert_left(
     const Key &key, const Value &value) {
   expectUnique(*this, key);
-  if (size() == MaxSize)
-    throw std::runtime_error("Exceeding builtin map size");
+  expectExtendable(*this);
   for (scipp::index i = size(); i > 0; --i) {
     m_keys[i] = m_keys[i - 1];
     m_values[i] = m_values[i - 1];
@@ -116,8 +116,7 @@ template <class Key, class Value, int16_t MaxSize, class Except>
 void small_stable_map<Key, Value, MaxSize, Except>::insert_right(
     const Key &key, const Value &value) {
   expectUnique(*this, key);
-  if (size() == MaxSize)
-    throw std::runtime_error("Exceeding builtin map size");
+  expectExtendable(*this);
   m_keys[m_size] = key;
   m_values[m_size] = value;
   m_size++;
@@ -135,7 +134,7 @@ void small_stable_map<Key, Value, MaxSize, Except>::erase(const Key &key) {
 }
 
 template <class Key, class Value, int16_t MaxSize, class Except>
-void small_stable_map<Key, Value, MaxSize, Except>::clear() {
+void small_stable_map<Key, Value, MaxSize, Except>::clear() noexcept {
   m_size = 0;
 }
 
@@ -153,12 +152,19 @@ void small_stable_map<Key, Value, MaxSize, Except>::replace_key(
 template class small_stable_map<Dim, scipp::index, NDIM_MAX, int>;
 
 void Sizes::set(const Dim dim, const scipp::index size) {
+  expect::validDim(dim);
+  expect::validExtent(size);
   if (contains(dim) && operator[](dim) != size)
     throw except::DimensionError(
         "Inconsistent size for dim '" + to_string(dim) + "', given " +
         std::to_string(at(dim)) + ", requested " + std::to_string(size));
   if (!contains(dim))
     insert_right(dim, size);
+}
+
+void Sizes::resize(const Dim dim, const scipp::index size) {
+  expect::validExtent(size);
+  assign(dim, size);
 }
 
 /// Return true if all dimensions of other contained in *this, with same size.
@@ -172,7 +178,7 @@ Sizes Sizes::slice(const Slice &params) const {
   core::expect::validSlice(*this, params);
   Sizes sliced(*this);
   if (params.isRange())
-    sliced.at(params.dim()) = params.end() - params.begin();
+    sliced.resize(params.dim(), params.end() - params.begin());
   else
     sliced.erase(params.dim());
   return sliced;

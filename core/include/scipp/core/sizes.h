@@ -22,26 +22,27 @@ class Dimensions;
 template <class Key, class Value, int16_t MaxSize, class Except = int>
 class SCIPP_CORE_EXPORT small_stable_map {
 public:
+  static constexpr auto capacity = MaxSize;
+
   small_stable_map() = default;
 
   bool operator==(const small_stable_map &other) const noexcept;
   bool operator!=(const small_stable_map &other) const noexcept;
 
-  auto begin() const { return m_keys.begin(); }
-  auto end() const { return m_keys.begin() + size(); }
+  auto begin() const noexcept { return m_keys.begin(); }
+  auto end() const noexcept { return m_keys.begin() + size(); }
   typename std::array<Key, MaxSize>::const_iterator find(const Key &key) const;
   [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
   constexpr scipp::index size() const noexcept { return m_size; }
   bool contains(const Key &key) const noexcept;
   scipp::index index(const Key &key) const;
   const Value &operator[](const Key &key) const;
-  Value &operator[](const Key &key);
   const Value &at(const Key &key) const;
-  Value &at(const Key &key);
+  void assign(const Key &key, const Value &value);
   void insert_left(const Key &key, const Value &value);
   void insert_right(const Key &key, const Value &value);
   void erase(const Key &key);
-  void clear();
+  void clear() noexcept;
   void replace_key(const Key &from, const Key &to);
   constexpr scipp::span<const Key> keys() const &noexcept {
     return {m_keys.data(), static_cast<size_t>(size())};
@@ -63,6 +64,7 @@ private:
   using base = small_stable_map<Dim, scipp::index, NDIM_MAX>;
 
 protected:
+  using base::assign;
   using base::insert_left;
   using base::insert_right;
 
@@ -72,6 +74,7 @@ public:
   scipp::index count(const Dim dim) const noexcept { return contains(dim); }
 
   void set(const Dim dim, const scipp::index size);
+  void resize(const Dim dim, const scipp::index size);
   bool includes(const Sizes &sizes) const;
   Sizes slice(const Slice &params) const;
 
