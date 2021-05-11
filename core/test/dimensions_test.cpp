@@ -307,31 +307,21 @@ TEST(DimensionsTest, fold) {
   Dimensions xy = {{Dim::X, 6}, {Dim::Y, 4}};
   Dimensions expected = {{Dim::Row, 2}, {Dim::Time, 3}, {Dim::Y, 4}};
   EXPECT_EQ(fold(xy, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
-  EXPECT_EQ(fold(xy, Dim::Z, {{Dim::Row, 2}, {Dim::Time, 3}}), xy);
+  EXPECT_THROW_DISCARD(fold(xy, Dim::Z, {{Dim::Row, 2}, {Dim::Time, 3}}),
+                       except::NotFoundError);
+}
+
+TEST(DimensionsTest, fold_fail_bad_sizes) {
+  Dimensions x(Dim::X, 6);
+  EXPECT_NO_THROW_DISCARD(fold(x, Dim::X, {{Dim::Y, 2}, {Dim::Z, 3}}));
+  EXPECT_THROW_DISCARD(fold(x, Dim::X, {{Dim::Y, 2}, {Dim::Z, 2}}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(fold(x, Dim::X, {{Dim::Y, 3}, {Dim::Z, 3}}),
+                       except::DimensionError);
 }
 
 TEST(DimensionsTest, fold_into_3) {
   Dimensions x = {{Dim::X, 24}};
   Dimensions expected = {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}};
   EXPECT_EQ(fold(x, Dim::X, expected), expected);
-}
-
-TEST(DimensionsTest, flatten) {
-  Dimensions xy = {{Dim::X, 6}, {Dim::Y, 4}};
-  Dimensions expected = {{Dim::Time, 24}};
-  EXPECT_EQ(flatten(xy, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Time), expected);
-}
-
-TEST(DimensionsTest, flatten_non_contiguous) {
-  Dimensions xy = {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}};
-  EXPECT_THROW_MSG_DISCARD(
-      flatten(xy, std::vector<Dim>{Dim::X, Dim::Z}, Dim::Time),
-      except::DimensionError,
-      "Can only flatten a contiguous set of dimensions in the correct order");
-}
-
-TEST(DimensionsTest, round_trip) {
-  Dimensions xy = {{Dim::X, 6}, {Dim::Y, 4}};
-  Dimensions folded = fold(xy, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
-  EXPECT_EQ(flatten(folded, std::vector<Dim>{Dim::Row, Dim::Time}, Dim::X), xy);
 }

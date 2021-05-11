@@ -44,26 +44,13 @@ DType Variable::dtype() const { return data().dtype(); }
 
 bool Variable::hasVariances() const { return data().hasVariances(); }
 
-void Variable::setDims(const Dimensions &dimensions) {
-  if (dimensions.volume() == dims().volume()) {
-    if (dimensions != dims()) {
-      m_dims = dimensions;
-      m_strides = Strides(dimensions);
-    }
-    return;
-  }
-  m_dims = dimensions;
-  m_strides = Strides(dimensions);
-  m_object = m_object->makeDefaultFromParent(dimensions.volume());
-}
-
 void Variable::expectCanSetUnit(const units::Unit &unit) const {
   if (this->unit() != unit && is_slice())
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
 }
 
-units::Unit Variable::unit() const { return m_object->unit(); }
+const units::Unit &Variable::unit() const { return m_object->unit(); }
 
 void Variable::setUnit(const units::Unit &unit) {
   expectCanSetUnit(unit);
@@ -95,6 +82,8 @@ scipp::span<const scipp::index> Variable::strides() const {
   return scipp::span<const scipp::index>(&*m_strides.begin(),
                                          &*m_strides.begin() + dims().ndim());
 }
+
+scipp::index Variable::offset() const { return m_offset; }
 
 core::ElementArrayViewParams Variable::array_params() const noexcept {
   return {m_offset, dims(), m_strides, {}};
@@ -141,6 +130,31 @@ Variable &Variable::setSlice(const Slice params, const Variable &data) {
   validateSlice(params, data);
   copy(data, slice(params));
   return *this;
+}
+
+Variable Variable::broadcast(const Dimensions &target) const {
+  expect::contains(target, dims());
+  auto out = as_const();
+  out.m_dims = target;
+  scipp::index i = 0;
+  for (const auto &d : target.labels())
+    out.m_strides[i++] = dims().contains(d) ? m_strides[dims().index(d)] : 0;
+  return out;
+}
+
+Variable Variable::fold(const Dim dim, const Dimensions &target) const {
+  auto out(*this);
+  out.m_dims = core::fold(dims(), dim, target);
+  const Strides substrides(target);
+  scipp::index i_out = 0;
+  for (scipp::index i_in = 0; i_in < dims().ndim(); ++i_in) {
+    if (dims().label(i_in) == dim)
+      for (scipp::index i_target = 0; i_target < target.ndim(); ++i_target)
+        out.m_strides[i_out++] = m_strides[i_in] * substrides[i_target];
+    else
+      out.m_strides[i_out++] = m_strides[i_in];
+  }
+  return out;
 }
 
 Variable Variable::transpose(const std::vector<Dim> &order) const {

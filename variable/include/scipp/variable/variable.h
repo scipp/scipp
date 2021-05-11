@@ -59,16 +59,16 @@ public:
 
   Variable operator~() const;
 
-  [[nodiscard]] units::Unit unit() const;
+  [[nodiscard]] const units::Unit &unit() const;
   void setUnit(const units::Unit &unit);
   void expectCanSetUnit(const units::Unit &) const;
 
   [[nodiscard]] const Dimensions &dims() const;
-  void setDims(const Dimensions &dimensions);
 
   [[nodiscard]] DType dtype() const;
 
   [[nodiscard]] scipp::span<const scipp::index> strides() const;
+  [[nodiscard]] scipp::index offset() const;
 
   [[nodiscard]] bool hasVariances() const;
 
@@ -127,6 +127,8 @@ public:
   template <class T>
   std::tuple<Variable, Dim, typename T::buffer_type> to_constituents();
 
+  [[nodiscard]] Variable broadcast(const Dimensions &target) const;
+  [[nodiscard]] Variable fold(const Dim dim, const Dimensions &target) const;
   [[nodiscard]] Variable transpose(const std::vector<Dim> &order) const;
 
   [[nodiscard]] bool is_valid() const noexcept;
@@ -135,6 +137,9 @@ public:
   [[nodiscard]] bool is_same(const Variable &other) const noexcept;
 
   [[nodiscard]] Variable as_const() const;
+
+  auto &unchecked_dims() { return m_dims; }
+  auto &unchecked_strides() { return m_strides; }
 
 private:
   // Declared friend so gtest recognizes it

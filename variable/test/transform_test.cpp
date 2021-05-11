@@ -10,6 +10,7 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
@@ -333,8 +334,11 @@ TEST_F(TransformBinaryTest, in_place_self_overlap_without_variance_2d) {
                                        Values{1, 2, 3, 4});
   auto reference = makeVariable<double>(Dimensions{{Dim::X, 2}, {Dim::Y, 2}},
                                         Values{1, 6, 6, 16});
-  Variable relabeled = original;
-  relabeled.setDims(Dimensions{{Dim::Y, 2}, {Dim::X, 2}});
+  Variable relabeled =
+      fold(flatten(original, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z), Dim::Z,
+           Dimensions{{Dim::Y, 2}, {Dim::X, 2}});
+  ASSERT_EQ(original.data_handle(), relabeled.data_handle());
+  ASSERT_NE(original.dims(), relabeled.dims());
   transform_in_place<pair_self_t<double>>(original, relabeled, op_in_place);
   ASSERT_EQ(original, reference);
 }

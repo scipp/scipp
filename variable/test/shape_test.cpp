@@ -6,6 +6,8 @@
 #include "test_util.h"
 
 #include "scipp/core/except.h"
+#include "scipp/variable/creation.h"
+#include "scipp/variable/cumulative.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 
@@ -24,6 +26,18 @@ TEST(ShapeTest, broadcast) {
   EXPECT_EQ(broadcast(var, merge(z, var.dims())), reference);
   EXPECT_EQ(broadcast(var, merge(var.dims(), z)),
             transpose(reference, {Dim::Y, Dim::X, Dim::Z}));
+}
+
+TEST(ShapeTest, broadcast_does_not_copy) {
+  auto scalar = makeVariable<double>(Values{1});
+  auto var = broadcast(scalar, {Dim::X, 2});
+  scalar += scalar;
+  EXPECT_EQ(var, makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 2}));
+}
+
+TEST(ShapeTest, broadcast_output_is_readonly) {
+  auto var = broadcast(makeVariable<double>(Values{1}), {Dim::X, 2});
+  EXPECT_TRUE(var.is_readonly());
 }
 
 TEST(ShapeTest, broadcast_fail) {
@@ -69,124 +83,170 @@ TEST_F(SqueezeTest, slice) {
   EXPECT_EQ(squeeze(sliced, {Dim::Y}), sum(sliced, Dim::Y));
 }
 
-TEST(ShapeTest, reshape) {
-  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                        units::m, Values{1, 2, 3, 4, 5, 6});
-
-  ASSERT_EQ(reshape(var, {Dim::Row, 6}),
-            makeVariable<double>(Dims{Dim::Row}, Shape{6}, units::m,
-                                 Values{1, 2, 3, 4, 5, 6}));
-  ASSERT_EQ(reshape(var, {{Dim::Row, 3}, {Dim::Z, 2}}),
-            makeVariable<double>(Dims{Dim::Row, Dim::Z}, Shape{3, 2}, units::m,
-                                 Values{1, 2, 3, 4, 5, 6}));
+TEST(ShapeTest, fold_fail_if_dim_not_found) {
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{4});
+  EXPECT_THROW_DISCARD(fold(var, Dim::Time, {{Dim::Y, 2}, {Dim::Z, 2}}),
+                       except::NotFoundError);
 }
 
-TEST(ShapeTest, reshape_with_variance) {
-  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                        Values{1, 2, 3, 4, 5, 6},
-                                        Variances{7, 8, 9, 10, 11, 12});
-
-  ASSERT_EQ(reshape(var, {Dim::Row, 6}),
-            makeVariable<double>(Dims{Dim::Row}, Shape{6},
-                                 Values{1, 2, 3, 4, 5, 6},
-                                 Variances{7, 8, 9, 10, 11, 12}));
-  ASSERT_EQ(reshape(var, {{Dim::Row, 3}, {Dim::Z, 2}}),
-            makeVariable<double>(Dims{Dim::Row, Dim::Z}, Shape{3, 2},
-                                 Values{1, 2, 3, 4, 5, 6},
-                                 Variances{7, 8, 9, 10, 11, 12}));
+TEST(ShapeTest, fold_does_not_copy) {
+  const auto var =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  const auto expected = var + var;
+  auto folded = fold(var, Dim::X, {{Dim::Y, 2}, {Dim::Z, 2}});
+  folded += folded;
+  EXPECT_EQ(var, expected);
 }
 
-TEST(ShapeTest, reshape_temporary) {
-  const auto var = makeVariable<double>(
-      Dims{Dim::X, Dim::Row}, Shape{2, 4}, units::m,
-      Values{1, 2, 3, 4, 5, 6, 7, 8}, Variances{9, 10, 11, 12, 13, 14, 15, 16});
-  auto reshaped = reshape(sum(var, Dim::X), {{Dim::Y, 2}, {Dim::Z, 2}});
-  ASSERT_EQ(reshaped, makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 2},
-                                           units::m, Values{6, 8, 10, 12},
-                                           Variances{22, 24, 26, 28}));
-
-  EXPECT_EQ(typeid(decltype(reshape(std::move(var), {}))), typeid(Variable));
+TEST(ShapeTest, fold_temporary) {
+  auto var = fold(makeVariable<double>(Dims{Dim::X}, Shape{4}), Dim::X,
+                  {{Dim::Y, 2}, {Dim::Z, 2}});
+  EXPECT_EQ(var.data_handle().use_count(), 1);
 }
 
-TEST(ShapeTest, reshape_fail) {
-  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                  Values{1, 2, 3, 4, 5, 6});
-  EXPECT_THROW_MSG_DISCARD(
-      reshape(var, {Dim::Row, 5}), std::runtime_error,
-      "Cannot reshape to dimensions with different volume");
-  EXPECT_THROW_MSG_DISCARD(
-      reshape(var.slice({Dim::X, 1}), {Dim::Row, 5}), std::runtime_error,
-      "Cannot reshape to dimensions with different volume");
-}
-
-TEST(ShapeTest, reshape_and_slice) {
-  auto var = makeVariable<double>(
-      Dims{Dim::Z}, Shape{16},
-      Values{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-      Variances{17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-                32});
-
-  auto slice = reshape(var, {{Dim::X, 4}, {Dim::Y, 4}})
-                   .slice({Dim::X, 1, 3})
-                   .slice({Dim::Y, 1, 3});
-  ASSERT_EQ(slice, makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
-                                        Values{6, 7, 10, 11},
-                                        Variances{22, 23, 26, 27}));
-
-  Variable center = reshape(reshape(var, {{Dim::X, 4}, {Dim::Y, 4}})
-                                .slice({Dim::X, 1, 3})
-                                .slice({Dim::Y, 1, 3}),
-                            {Dim::Z, 4});
-
-  ASSERT_EQ(center,
-            makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{6, 7, 10, 11},
-                                 Variances{22, 23, 26, 27}));
-}
-
-TEST(ShapeTest, fold_x) {
-  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
-  const auto expected =
-      reshape(arange(Dim::X, 24), {{Dim::Row, 2}, {Dim::Time, 3}, {Dim::Y, 4}});
+TEST(ShapeTest, fold_outer) {
+  const auto var = cumsum(
+      variable::ones({{Dim::X, 6}, {Dim::Y, 4}}, units::m, dtype<double>));
+  const auto expected = cumsum(variable::ones(
+      {{Dim::Row, 2}, {Dim::Time, 3}, {Dim::Y, 4}}, units::m, dtype<double>));
   EXPECT_EQ(fold(var, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
 }
 
-TEST(ShapeTest, fold_y) {
-  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
-  const auto expected =
-      reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Row, 2}, {Dim::Time, 2}});
+TEST(ShapeTest, fold_inner) {
+  const auto var = cumsum(
+      variable::ones({{Dim::X, 6}, {Dim::Y, 4}}, units::m, dtype<double>));
+  const auto expected = cumsum(variable::ones(
+      {{Dim::X, 6}, {Dim::Row, 2}, {Dim::Time, 2}}, units::m, dtype<double>));
   EXPECT_EQ(fold(var, Dim::Y, {{Dim::Row, 2}, {Dim::Time, 2}}), expected);
 }
 
 TEST(ShapeTest, fold_into_3_dims) {
-  const auto var = arange(Dim::X, 24);
-  const auto expected =
-      reshape(arange(Dim::X, 24), {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}});
+  const auto var =
+      cumsum(variable::ones({{Dim::X, 24}}, units::m, dtype<double>));
+  const auto expected = cumsum(variable::ones(
+      {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}}, units::m, dtype<double>));
   EXPECT_EQ(fold(var, Dim::X, {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}}),
             expected);
 }
 
 TEST(ShapeTest, flatten) {
-  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
-  const auto expected = arange(Dim::Z, 24);
-  EXPECT_EQ(flatten(var, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z), expected);
+  const auto var = cumsum(
+      variable::ones({{Dim::X, 6}, {Dim::Y, 4}}, units::m, dtype<double>));
+  const auto expected =
+      cumsum(variable::ones({{Dim::Z, 24}}, units::m, dtype<double>));
+  const auto flat = flatten(var, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z);
+  EXPECT_EQ(flat, expected);
+  EXPECT_EQ(flat.data_handle(), var.data_handle()); // shared
 }
 
 TEST(ShapeTest, flatten_only_2_dims) {
-  const auto var =
-      reshape(arange(Dim::X, 24), {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}});
-  const auto expected = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Z, 4}});
+  const auto var = cumsum(variable::ones(
+      {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}}, units::m, dtype<double>));
+  const auto expected = cumsum(
+      variable::ones({{Dim::X, 6}, {Dim::Z, 4}}, units::m, dtype<double>));
   EXPECT_EQ(flatten(var, std::vector<Dim>{Dim::X, Dim::Y}, Dim::X), expected);
 }
 
+TEST(ShapeTest, flatten_slice) {
+  const auto var = cumsum(
+      variable::ones({{Dim::X, 4}, {Dim::Y, 5}}, units::m, dtype<double>));
+  const auto expected = makeVariable<double>(Dims{Dim::Z}, Shape{6}, units::m,
+                                             Values{7, 8, 9, 12, 13, 14});
+  const auto flat = flatten(var.slice({Dim::X, 1, 3}).slice({Dim::Y, 1, 4}),
+                            std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z);
+  EXPECT_EQ(flat, expected);
+  EXPECT_NE(flat.data_handle(), var.data_handle()); // copy since noncontiguous
+}
+
 TEST(ShapeTest, flatten_bad_dim_order) {
-  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  const auto var = cumsum(
+      variable::ones({{Dim::X, 6}, {Dim::Y, 4}}, units::m, dtype<double>));
   EXPECT_THROW_DISCARD(flatten(var, std::vector<Dim>{Dim::Y, Dim::X}, Dim::Z),
                        except::DimensionError);
 }
 
+TEST(ShapeTest, flatten_non_contiguous) {
+  Dimensions xy = {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}};
+  const auto var = makeVariable<double>(xy);
+  EXPECT_THROW_MSG_DISCARD(
+      flatten(var, std::vector<Dim>{Dim::X, Dim::Z}, Dim::Time),
+      except::DimensionError,
+      "Can only flatten a contiguous set of dimensions in the correct order");
+}
+
 TEST(ShapeTest, round_trip) {
-  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  const auto var = cumsum(
+      variable::ones({{Dim::X, 6}, {Dim::Y, 4}}, units::m, dtype<double>));
   const auto reshaped = fold(var, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
   EXPECT_EQ(flatten(reshaped, std::vector<Dim>{Dim::Row, Dim::Time}, Dim::X),
             var);
+}
+
+TEST(TransposeTest, make_transposed_2d) {
+  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
+                                  Values{1, 2, 3, 4, 5, 6},
+                                  Variances{11, 12, 13, 14, 15, 16});
+
+  const auto constVar = copy(var);
+
+  auto ref = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                  Values{1, 3, 5, 2, 4, 6},
+                                  Variances{11, 13, 15, 12, 14, 16});
+  EXPECT_EQ(transpose(var, {Dim::Y, Dim::X}), ref);
+  EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::X}), ref);
+
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, {Dim::Z}), except::DimensionError);
+}
+
+TEST(TransposeTest, make_transposed_multiple_d) {
+  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z}, Shape{3, 2, 1},
+                                  Values{1, 2, 3, 4, 5, 6},
+                                  Variances{11, 12, 13, 14, 15, 16});
+
+  const auto constVar = copy(var);
+
+  auto ref = makeVariable<double>(Dims{Dim::Y, Dim::Z, Dim::X}, Shape{2, 1, 3},
+                                  Values{1, 3, 5, 2, 4, 6},
+                                  Variances{11, 13, 15, 12, 14, 16});
+  EXPECT_EQ(transpose(var, {Dim::Y, Dim::Z, Dim::X}), ref);
+  EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::Z, Dim::X}), ref);
+
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, {Dim::Z}), except::DimensionError);
+}
+
+TEST(TransposeTest, reverse) {
+  Variable var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
+                                      Values{1, 2, 3, 4, 5, 6},
+                                      Variances{11, 12, 13, 14, 15, 16});
+  const Variable constVar = makeVariable<double>(
+      Dims{Dim::X, Dim::Y}, Shape{3, 2}, Values{1, 2, 3, 4, 5, 6},
+      Variances{11, 12, 13, 14, 15, 16});
+  auto ref = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                  Values{1, 3, 5, 2, 4, 6},
+                                  Variances{11, 13, 15, 12, 14, 16});
+  auto tvar = transpose(var);
+  auto tconstVar = transpose(constVar);
+  EXPECT_EQ(tvar, ref);
+  EXPECT_EQ(tconstVar, ref);
+  auto v = transpose(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
+                                          Values{1, 2, 3, 4, 5, 6},
+                                          Variances{11, 12, 13, 14, 15, 16}));
+  EXPECT_EQ(v, ref);
+
+  EXPECT_EQ(transpose(transpose(var)), var);
+  EXPECT_EQ(transpose(transpose(constVar)), var);
+
+  Variable dummy = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 1},
+                                        Values{0, 0}, Variances{1, 1});
+  EXPECT_NO_THROW(copy(dummy, tvar.slice({Dim::X, 0, 1})));
 }

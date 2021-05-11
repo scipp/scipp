@@ -70,9 +70,13 @@ Variable make_indices(const Variable &var, const Dim dim) {
   auto dims = var.dims();
   const auto len = dims[dim];
   dims.erase(dim);
+  Dimensions data_dims;
+  for (const auto &label : dims.labels())
+    if (var.strides()[var.dims().index(label)] != 0)
+      data_dims.addInner(label, dims[label]);
   const auto base = len * units::one;
-  const auto end = cumsum(broadcast(base, dims));
-  return zip(end - base, end);
+  const auto end = cumsum(broadcast(base, data_dims));
+  return broadcast(zip(end - base, end), dims);
 }
 
 } // namespace
