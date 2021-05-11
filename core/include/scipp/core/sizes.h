@@ -19,10 +19,10 @@ constexpr int32_t NDIM_MAX = 6;
 class Dimensions;
 
 /// Small (fixed maximum size) and stable (preserving key order) map
-template <class Key, class Value, int16_t MaxSize, class Except = int>
+template <class Key, class Value, int16_t Capacity>
 class SCIPP_CORE_EXPORT small_stable_map {
 public:
-  static constexpr auto capacity = MaxSize;
+  static constexpr auto capacity = Capacity;
 
   small_stable_map() = default;
 
@@ -31,7 +31,7 @@ public:
 
   auto begin() const noexcept { return m_keys.begin(); }
   auto end() const noexcept { return m_keys.begin() + size(); }
-  typename std::array<Key, MaxSize>::const_iterator find(const Key &key) const;
+  typename std::array<Key, Capacity>::const_iterator find(const Key &key) const;
   [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
   constexpr scipp::index size() const noexcept { return m_size; }
   bool contains(const Key &key) const noexcept;
@@ -53,8 +53,8 @@ public:
 
 private:
   int16_t m_size{0};
-  std::array<Key, MaxSize> m_keys{};
-  std::array<Value, MaxSize> m_values{};
+  std::array<Key, Capacity> m_keys{};
+  std::array<Value, Capacity> m_values{};
 };
 
 /// Similar to class Dimensions but without implied ordering

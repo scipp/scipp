@@ -38,8 +38,8 @@ void throw_dimension_not_found_error(const T &expected, Dim actual) {
 
 } // namespace
 
-template <class Key, class Value, int16_t MaxSize, class Except>
-bool small_stable_map<Key, Value, MaxSize, Except>::operator==(
+template <class Key, class Value, int16_t Capacity>
+bool small_stable_map<Key, Value, Capacity>::operator==(
     const small_stable_map &other) const noexcept {
   if (size() != other.size())
     return false;
@@ -49,58 +49,57 @@ bool small_stable_map<Key, Value, MaxSize, Except>::operator==(
   return true;
 }
 
-template <class Key, class Value, int16_t MaxSize, class Except>
-bool small_stable_map<Key, Value, MaxSize, Except>::operator!=(
+template <class Key, class Value, int16_t Capacity>
+bool small_stable_map<Key, Value, Capacity>::operator!=(
     const small_stable_map &other) const noexcept {
   return !operator==(other);
 }
 
-template <class Key, class Value, int16_t MaxSize, class Except>
-typename std::array<Key, MaxSize>::const_iterator
-small_stable_map<Key, Value, MaxSize, Except>::find(const Key &key) const {
+template <class Key, class Value, int16_t Capacity>
+typename std::array<Key, Capacity>::const_iterator
+small_stable_map<Key, Value, Capacity>::find(const Key &key) const {
   return std::find(begin(), end(), key);
 }
 
-template <class Key, class Value, int16_t MaxSize, class Except>
-bool small_stable_map<Key, Value, MaxSize, Except>::contains(
+template <class Key, class Value, int16_t Capacity>
+bool small_stable_map<Key, Value, Capacity>::contains(
     const Key &key) const noexcept {
   return std::find(begin(), end(), key) != end();
 }
 
-template <class Key, class Value, int16_t MaxSize, class Except>
+template <class Key, class Value, int16_t Capacity>
 scipp::index
-small_stable_map<Key, Value, MaxSize, Except>::index(const Key &key) const {
+small_stable_map<Key, Value, Capacity>::index(const Key &key) const {
   auto it = std::find(begin(), end(), key);
   if (it == end())
     throw_dimension_not_found_error(*this, key);
   return std::distance(begin(), it);
 }
 
-template <class Key, class Value, int16_t MaxSize, class Except>
-const Value &small_stable_map<Key, Value, MaxSize, Except>::operator[](
-    const Key &key) const {
+template <class Key, class Value, int16_t Capacity>
+const Value &
+small_stable_map<Key, Value, Capacity>::operator[](const Key &key) const {
   return at(key);
 }
 
-template <class Key, class Value, int16_t MaxSize, class Except>
-const Value &
-small_stable_map<Key, Value, MaxSize, Except>::at(const Key &key) const {
+template <class Key, class Value, int16_t Capacity>
+const Value &small_stable_map<Key, Value, Capacity>::at(const Key &key) const {
   if (!contains(key))
     throw_dimension_not_found_error(*this, key);
   return m_values[std::distance(begin(), find(key))];
 }
 
-template <class Key, class Value, int16_t MaxSize, class Except>
-void small_stable_map<Key, Value, MaxSize, Except>::assign(const Key &key,
-                                                           const Value &value) {
+template <class Key, class Value, int16_t Capacity>
+void small_stable_map<Key, Value, Capacity>::assign(const Key &key,
+                                                    const Value &value) {
   if (!contains(key))
     throw_dimension_not_found_error(*this, key);
   m_values[std::distance(begin(), find(key))] = value;
 }
 
-template <class Key, class Value, int16_t MaxSize, class Except>
-void small_stable_map<Key, Value, MaxSize, Except>::insert_left(
-    const Key &key, const Value &value) {
+template <class Key, class Value, int16_t Capacity>
+void small_stable_map<Key, Value, Capacity>::insert_left(const Key &key,
+                                                         const Value &value) {
   expectUnique(*this, key);
   expectExtendable(*this);
   for (scipp::index i = size(); i > 0; --i) {
@@ -112,9 +111,9 @@ void small_stable_map<Key, Value, MaxSize, Except>::insert_left(
   m_size++;
 }
 
-template <class Key, class Value, int16_t MaxSize, class Except>
-void small_stable_map<Key, Value, MaxSize, Except>::insert_right(
-    const Key &key, const Value &value) {
+template <class Key, class Value, int16_t Capacity>
+void small_stable_map<Key, Value, Capacity>::insert_right(const Key &key,
+                                                          const Value &value) {
   expectUnique(*this, key);
   expectExtendable(*this);
   m_keys[m_size] = key;
@@ -122,8 +121,8 @@ void small_stable_map<Key, Value, MaxSize, Except>::insert_right(
   m_size++;
 }
 
-template <class Key, class Value, int16_t MaxSize, class Except>
-void small_stable_map<Key, Value, MaxSize, Except>::erase(const Key &key) {
+template <class Key, class Value, int16_t Capacity>
+void small_stable_map<Key, Value, Capacity>::erase(const Key &key) {
   if (!contains(key))
     throw_dimension_not_found_error(*this, key);
   m_size--;
@@ -133,14 +132,14 @@ void small_stable_map<Key, Value, MaxSize, Except>::erase(const Key &key) {
   }
 }
 
-template <class Key, class Value, int16_t MaxSize, class Except>
-void small_stable_map<Key, Value, MaxSize, Except>::clear() noexcept {
+template <class Key, class Value, int16_t Capacity>
+void small_stable_map<Key, Value, Capacity>::clear() noexcept {
   m_size = 0;
 }
 
-template <class Key, class Value, int16_t MaxSize, class Except>
-void small_stable_map<Key, Value, MaxSize, Except>::replace_key(
-    const Key &key, const Key &new_key) {
+template <class Key, class Value, int16_t Capacity>
+void small_stable_map<Key, Value, Capacity>::replace_key(const Key &key,
+                                                         const Key &new_key) {
   if (!contains(key))
     throw_dimension_not_found_error(*this, key);
   if (key != new_key)
@@ -149,7 +148,7 @@ void small_stable_map<Key, Value, MaxSize, Except>::replace_key(
   *it = new_key;
 }
 
-template class small_stable_map<Dim, scipp::index, NDIM_MAX, int>;
+template class small_stable_map<Dim, scipp::index, NDIM_MAX>;
 
 void Sizes::set(const Dim dim, const scipp::index size) {
   expect::validDim(dim);
