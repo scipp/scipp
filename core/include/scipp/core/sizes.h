@@ -18,13 +18,14 @@ constexpr int32_t NDIM_MAX = 6;
 
 class Dimensions;
 
+/// Small (fixed maximum size) and stable (preserving key order) map
 template <class Key, class Value, int16_t MaxSize, class Except = int>
-class SCIPP_CORE_EXPORT small_map {
+class SCIPP_CORE_EXPORT small_stable_map {
 public:
-  small_map() = default;
+  small_stable_map() = default;
 
-  bool operator==(const small_map &other) const noexcept;
-  bool operator!=(const small_map &other) const noexcept;
+  bool operator==(const small_stable_map &other) const noexcept;
+  bool operator!=(const small_stable_map &other) const noexcept;
 
   auto begin() const { return m_keys.begin(); }
   auto end() const { return m_keys.begin() + size(); }
@@ -55,10 +56,11 @@ private:
   std::array<Value, MaxSize> m_values{};
 };
 
-/// Sibling of class Dimensions, but unordered.
-class SCIPP_CORE_EXPORT Sizes : public small_map<Dim, scipp::index, NDIM_MAX> {
+/// Similar to class Dimensions but without implied ordering
+class SCIPP_CORE_EXPORT Sizes
+    : public small_stable_map<Dim, scipp::index, NDIM_MAX> {
 private:
-  using base = small_map<Dim, scipp::index, NDIM_MAX>;
+  using base = small_stable_map<Dim, scipp::index, NDIM_MAX>;
 
 protected:
   using base::insert_left;

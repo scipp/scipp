@@ -35,10 +35,10 @@ template <class T> auto sorted(const T &map) {
 
 namespace {
 std::string format_variable(const std::string &key, const Variable &variable,
-                            const std::optional<Dimensions> datasetDims) {
+                            const std::optional<Sizes> datasetSizes) {
   std::stringstream s;
   s << tab << std::left << std::setw(24) << key
-    << format_variable(variable, datasetDims) << '\n';
+    << format_variable(variable, datasetSizes) << '\n';
   return s.str();
 }
 } // namespace
