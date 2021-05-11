@@ -58,38 +58,7 @@ scipp::index &Dimensions::at(const Dim dim) {
 }
 */
 
-/// Return true if *this forms a contiguous block within parent.
-///
-/// Specifically, dimensions are not transposed, missing dimensions are outer
-/// dimensions in parent, and only the outermost dimensions may be shorter than
-/// the corresponding dimension in parent.
-bool Dimensions::isContiguousIn(const Dimensions &parent) const {
-  if (volume() == 0 || parent == *this)
-    return true;
-  int32_t offset = parent.ndim() - ndim();
-  if (offset < 0)
-    return false;
-  for (int32_t i = 0; i < ndim(); ++i) {
-    // All shared dimension labels must match.
-    if (parent.label(i + offset) != label(i))
-      return false;
-    // Outermost dimension of *this can be a section of parent.
-    // All but outermost must match.
-    if (i == 0) {
-      if (parent.size(offset) < size(0))
-        return false;
-    } else if (parent.size(i + offset) != size(i)) {
-      return false;
-    }
-  }
-  return true;
-}
-
 Dim Dimensions::label(const scipp::index i) const { return labels()[i]; }
-
-void Dimensions::relabel(const scipp::index i, const Dim label) {
-  replace_key(labels()[i], label);
-}
 
 scipp::index Dimensions::size(const scipp::index i) const { return shape()[i]; }
 

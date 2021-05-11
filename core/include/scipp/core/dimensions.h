@@ -66,15 +66,9 @@ public:
 
   Dim inner() const noexcept;
 
-  bool isContiguousIn(const Dimensions &parent) const;
-
-  // TODO Some of the following methods are probably legacy and should be
-  // considered for removal.
   // TODO
   // - remove resize (just use non-const at()?)
-  // - remove relabel?
   Dim label(const scipp::index i) const;
-  void relabel(const scipp::index i, const Dim label);
   scipp::index size(const scipp::index i) const;
   scipp::index offset(const Dim label) const;
   void resize(const Dim label, const scipp::index size);

@@ -97,38 +97,6 @@ TEST(DimensionsTest, includes) {
   EXPECT_TRUE(a.includes(b));
 }
 
-TEST(DimensionsTest, isContiguousIn) {
-  Dimensions parent({{Dim::Z, 2}, {Dim::Y, 3}, {Dim::X, 4}});
-
-  EXPECT_TRUE(parent.isContiguousIn(parent));
-
-  EXPECT_TRUE(Dimensions({Dim::X, 0}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({Dim::X, 1}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({Dim::X, 2}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({Dim::X, 4}).isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({Dim::X, 5}).isContiguousIn(parent));
-
-  EXPECT_TRUE(Dimensions({{Dim::Y, 0}, {Dim::X, 4}}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::Y, 1}, {Dim::X, 4}}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::Y, 2}, {Dim::X, 4}}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::Y, 3}, {Dim::X, 4}}).isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({{Dim::Y, 4}, {Dim::X, 4}}).isContiguousIn(parent));
-
-  EXPECT_TRUE(Dimensions({{Dim::Z, 0}, {Dim::Y, 3}, {Dim::X, 4}})
-                  .isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::Z, 1}, {Dim::Y, 3}, {Dim::X, 4}})
-                  .isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::Z, 2}, {Dim::Y, 3}, {Dim::X, 4}})
-                  .isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({{Dim::Z, 3}, {Dim::Y, 3}, {Dim::X, 4}})
-                   .isContiguousIn(parent));
-
-  EXPECT_FALSE(Dimensions({Dim::Y, 3}).isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({Dim::Z, 2}).isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({{Dim::Z, 2}, {Dim::X, 4}}).isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({{Dim::Z, 2}, {Dim::Y, 3}}).isContiguousIn(parent));
-}
-
 TEST(DimensionsTest, index_access) {
   Dimensions denseXY({Dim::X, Dim::Y}, {2, 3});
   Dimensions denseXYZ({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4});
