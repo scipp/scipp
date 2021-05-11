@@ -9,6 +9,7 @@ add_executable(
   bin_util_test.cpp
   bucket_model_test.cpp
   comparison_test.cpp
+  convolution_test.cpp
   copy_test.cpp
   creation_test.cpp
   cumulative_test.cpp
