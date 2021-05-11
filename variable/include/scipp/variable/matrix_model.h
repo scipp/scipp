@@ -19,6 +19,7 @@ namespace scipp::variable {
 template <class T, int... N> class MatrixModel : public VariableConcept {
 public:
   using value_type = T;
+  static constexpr auto num_element = (N * ...);
 
   MatrixModel(const Variable &elements)
       : VariableConcept(elements.unit()),
@@ -29,14 +30,16 @@ public:
     if (elements.dtype() != scipp::dtype<double>)
       throw except::TypeError(
           "Matrix data type only supported with float64 elements.");
-    if (elements.dims().volume() % (N * ...) != 0)
+    if (elements.dims().volume() % num_element != 0)
       throw except::DimensionError("Underlying elements do not have correct "
                                    "shape for this matrix type.");
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
   DType dtype() const noexcept override { return scipp::dtype<T>; }
-  scipp::index size() const override { return m_elements->size() / (N * ...); }
+  scipp::index size() const override {
+    return m_elements->size() / num_element;
+  }
 
   VariableConceptHandle
   makeDefaultFromParent(const scipp::index size) const override;
@@ -66,6 +69,24 @@ public:
   }
   auto values(const core::ElementArrayViewParams &base) {
     return ElementArrayView(base, get_values());
+  }
+
+  VariableConceptHandle elements() const { return m_elements; }
+
+  scipp::index element_offset(const scipp::index i) const {
+    if (((i < 0 || i >= N) || ...))
+      throw std::runtime_error("Element index out of range.");
+    if constexpr (sizeof...(N) == 1)
+      return i;
+  }
+
+  scipp::index element_offset(const scipp::index i,
+                              const scipp::index j) const {
+    // TODO range checks with actual N
+    if (i < 0 || i >= 3 || j < 0 || j >= 3)
+      throw std::runtime_error("Element index out of range.");
+    if constexpr (sizeof...(N) == 2)
+      return 3 * i + j;
   }
 
   scipp::index dtype_size() const override { return sizeof(T); }

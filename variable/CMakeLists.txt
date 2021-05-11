@@ -12,6 +12,7 @@ set(INC_FILES
     include/scipp/variable/except.h
     include/scipp/variable/logical.h
     include/scipp/variable/math.h
+    include/scipp/variable/matrix.h
     include/scipp/variable/misc_operations.h
     include/scipp/variable/operations.h
     include/scipp/variable/rebin.h
@@ -46,6 +47,7 @@ set(SRC_FILES
     except.cpp
     logical.cpp
     math.cpp
+    matrix.cpp
     operations.cpp
     rebin.cpp
     reduction.cpp

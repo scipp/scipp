@@ -11,9 +11,9 @@
 #include "scipp/core/except.h"
 #include "scipp/core/time_point.h"
 
+#include "scipp/variable/matrix.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/rebin.h"
-#include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 
 #include "scipp/dataset/dataset.h"
@@ -209,9 +209,22 @@ of variances.)");
            [](const Variable &self) {
              return size_of(self, SizeofTag::ViewOnly);
            })
-      .def("underlying_size", [](const Variable &self) {
-        return size_of(self, SizeofTag::Underlying);
-      });
+      .def("underlying_size",
+           [](const Variable &self) {
+             return size_of(self, SizeofTag::Underlying);
+           })
+      .def("elems",
+           [](Variable &self, const scipp::index i) -> py::object {
+             if (self.dtype() != dtype<Eigen::Vector3d>)
+               return py::none();
+             return py::cast(self.elements<Eigen::Vector3d>(i));
+           })
+      .def("elems",
+           [](Variable &self, scipp::index i, scipp::index j) -> py::object {
+             if (self.dtype() != dtype<Eigen::Matrix3d>)
+               return py::none();
+             return py::cast(self.elements<Eigen::Matrix3d>(i, j));
+           });
 
   bind_init_list(variable);
   // Order matters for pybind11's overload resolution. Do not change.
@@ -263,4 +276,15 @@ of variances.)");
                           const Variable &>(&rebin),
         py::arg("x"), py::arg("dim"), py::arg("old"), py::arg("new"),
         py::call_guard<py::gil_scoped_release>());
+
+  m.def(
+      "vectors",
+      [](const Variable &elements) { return variable::make_vectors(elements); },
+      py::arg("elements"));
+  m.def(
+      "matrices",
+      [](const Variable &elements) {
+        return variable::make_matrices(elements);
+      },
+      py::arg("elements"));
 }

@@ -5,12 +5,12 @@
 #include "scipp/core/array_to_string.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
-#include "scipp/core/has_eval.h"
 #include "scipp/core/except.h"
+#include "scipp/core/has_eval.h"
 #include "scipp/units/unit.h"
 #include "scipp/variable/data_model.h"
-#include "scipp/variable/matrix_model.h"
 #include "scipp/variable/except.h"
+#include "scipp/variable/matrix_model.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable_factory.h"
 
@@ -24,9 +24,12 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
           dimensions.volume(), unit, std::move(values_),
           std::move(variances_))) {}
 
-template <class T> struct model { using type = DataModel<T>  ; };
+template <class T> struct model { using type = DataModel<T>; };
 template <> struct model<Eigen::Vector3d> {
   using type = MatrixModel<Eigen::Vector3d, 3>;
+};
+template <> struct model<Eigen::Matrix3d> {
+  using type = MatrixModel<Eigen::Matrix3d, 3, 3>;
 };
 template <class T> using model_t = typename model<T>::type;
 
@@ -38,6 +41,18 @@ template <class T> auto &cast(Variable &var) {
   return requireT<model_t<T>>(var.data());
 }
 
+template <class T, class... Index>
+Variable Variable::elements(const Index &... index) const {
+  auto elements(*this);
+  const auto &model = cast<T>(*this);
+  elements.m_object = model.elements();
+  elements.m_offset *= model_t<T>::num_element;
+  elements.m_offset += model.element_offset(index...);
+  for (scipp::index i = 0; i < dims().ndim(); ++i)
+    elements.m_strides[i] = model_t<T>::num_element * strides()[i];
+  return elements;
+}
+
 template <class T> ElementArrayView<const T> Variable::values() const {
   return cast<T>(*this).values(array_params());
 }
@@ -45,14 +60,14 @@ template <class T> ElementArrayView<T> Variable::values() {
   return cast<T>(*this).values(array_params());
 }
 template <class T> ElementArrayView<const T> Variable::variances() const {
-  if constexpr(!core::canHaveVariances<T>())
-      throw except::VariancesError("This dtype cannot have variances.");
+  if constexpr (!core::canHaveVariances<T>())
+    throw except::VariancesError("This dtype cannot have variances.");
   else
     return cast<T>(*this).variances(array_params());
 }
 template <class T> ElementArrayView<T> Variable::variances() {
-  if constexpr(!core::canHaveVariances<T>())
-      throw except::VariancesError("This dtype cannot have variances.");
+  if constexpr (!core::canHaveVariances<T>())
+    throw except::VariancesError("This dtype cannot have variances.");
   else
     return cast<T>(*this).variances(array_params());
 }

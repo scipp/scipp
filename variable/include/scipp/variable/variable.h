@@ -97,6 +97,9 @@ public:
   void validateSlice(const Slice &s, const Variable &data) const;
   [[maybe_unused]] Variable &setSlice(Slice params, const Variable &data);
 
+  template <class T, class... Index>
+  Variable elements(const Index &... index) const;
+
   void rename(Dim from, Dim to);
 
   bool operator==(const Variable &other) const;

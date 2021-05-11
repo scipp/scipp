@@ -163,6 +163,14 @@ def empty(*,
     return _cpp.empty(dims, shape, unit, dtype, variances)
 
 
+def matrices(*, elements):
+    return _cpp.matrices(elements=elements)
+
+
+def vectors(*, elements):
+    return _cpp.vectors(elements=elements)
+
+
 def empty_like(var: _cpp.Variable) -> _cpp.Variable:
     """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
     as the input variable, but with uninitialized values. If the input
