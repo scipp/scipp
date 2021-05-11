@@ -79,8 +79,8 @@ DataArray make_1d_events_default_weights() {
       Dims{Dim::Event}, Shape{22},
       Values{1.5, 2.5, 3.5, 4.5, 5.5, 3.5, 4.5, 5.5, 6.5, 7.5, -1.0,
              0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 2.0, 4.0, 4.0, 4.0, 6.0});
-  const auto weights = broadcast(
-      makeVariable<double>(units::counts, Values{1}, Variances{1}), y.dims());
+  const auto weights = copy(broadcast(
+      makeVariable<double>(units::counts, Values{1}, Variances{1}), y.dims()));
   const DataArray table(weights, {{Dim::Y, y}});
   const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::X}, Shape{3},
@@ -100,8 +100,8 @@ TEST(HistogramTest, fail_edges_not_sorted) {
 auto make_single_events() {
   const auto x =
       makeVariable<double>(Dims{Dim::Event}, Shape{5}, Values{0, 1, 1, 2, 3});
-  const auto weights = broadcast(
-      makeVariable<double>(units::counts, Values{1}, Variances{1}), x.dims());
+  const auto weights = copy(broadcast(
+      makeVariable<double>(units::counts, Values{1}, Variances{1}), x.dims()));
   const DataArray table(weights, {{Dim::X, x}});
   const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       Values{std::pair{0, 5}});

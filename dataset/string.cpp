@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <algorithm> // for std::sort
+#include <iomanip>
 #include <set>
 #include <sstream>
 
@@ -35,6 +36,16 @@ template <class T> auto sorted(const T &map) {
             [](const auto &a, const auto &b) { return a.first < b.first; });
   return elems;
 }
+
+namespace {
+std::string format_variable(const std::string &key, const Variable &variable,
+                            const std::optional<Dimensions> datasetDims) {
+  std::stringstream s;
+  s << tab << std::left << std::setw(24) << key
+    << format_variable(variable, datasetDims) << '\n';
+  return s.str();
+}
+} // namespace
 
 template <class Key>
 auto format_data_view(const Key &name, const DataArray &data,

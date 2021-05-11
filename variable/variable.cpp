@@ -44,26 +44,13 @@ DType Variable::dtype() const { return data().dtype(); }
 
 bool Variable::hasVariances() const { return data().hasVariances(); }
 
-void Variable::setDims(const Dimensions &dimensions) {
-  if (dimensions.volume() == dims().volume()) {
-    if (dimensions != dims()) {
-      m_dims = dimensions;
-      m_strides = Strides(dimensions);
-    }
-    return;
-  }
-  m_dims = dimensions;
-  m_strides = Strides(dimensions);
-  m_object = m_object->makeDefaultFromParent(dimensions.volume());
-}
-
 void Variable::expectCanSetUnit(const units::Unit &unit) const {
   if (this->unit() != unit && is_slice())
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
 }
 
-units::Unit Variable::unit() const { return m_object->unit(); }
+const units::Unit &Variable::unit() const { return m_object->unit(); }
 
 void Variable::setUnit(const units::Unit &unit) {
   expectCanSetUnit(unit);
@@ -96,30 +83,10 @@ scipp::span<const scipp::index> Variable::strides() const {
                                          &*m_strides.begin() + dims().ndim());
 }
 
+scipp::index Variable::offset() const { return m_offset; }
+
 core::ElementArrayViewParams Variable::array_params() const noexcept {
-  // TODO Translating strides into dims, which get translated back to
-  // (slightly different) strides in MultiIndex. Refactor ViewIndex and
-  // MultiIndex to use strides directly.
-  Dimensions dataDims;
-  std::vector<std::pair<Dim, scipp::index>> ordered;
-  for (scipp::index i = 0; i < dims().ndim(); ++i)
-    ordered.emplace_back(dims().label(i), strides()[i]);
-  std::reverse(ordered.begin(), ordered.end());
-  std::stable_sort(
-      ordered.begin(), ordered.end(),
-      [](const auto &a, const auto &b) { return a.second < b.second; });
-  if (!ordered.empty() && ordered.front().second > 1) {
-    dataDims.add(Dim::X, ordered.front().second);
-    dataDims.relabel(0, Dim::Invalid);
-  }
-  for (scipp::index i = 0; i < scipp::size(ordered); ++i) {
-    const auto &[dim, stride] = ordered[i];
-    dataDims.add(dim, std::max(dims()[dim], ((i == scipp::size(ordered) - 1)
-                                                 ? m_object->size()
-                                                 : ordered[i + 1].second)) /
-                          std::max(scipp::index(1), stride));
-  }
-  return {m_offset, dims(), dataDims, {}};
+  return {m_offset, dims(), m_strides, {}};
 }
 
 Variable Variable::slice(const Slice params) const {
@@ -165,13 +132,34 @@ Variable &Variable::setSlice(const Slice params, const Variable &data) {
   return *this;
 }
 
+Variable Variable::broadcast(const Dimensions &target) const {
+  expect::contains(target, dims());
+  auto out = as_const();
+  out.m_dims = target;
+  scipp::index i = 0;
+  for (const auto &d : target.labels())
+    out.m_strides[i++] = dims().contains(d) ? m_strides[dims().index(d)] : 0;
+  return out;
+}
+
+Variable Variable::fold(const Dim dim, const Dimensions &target) const {
+  auto out(*this);
+  out.m_dims = core::fold(dims(), dim, target);
+  const Strides substrides(target);
+  scipp::index i_out = 0;
+  for (scipp::index i_in = 0; i_in < dims().ndim(); ++i_in) {
+    if (dims().label(i_in) == dim)
+      for (scipp::index i_target = 0; i_target < target.ndim(); ++i_target)
+        out.m_strides[i_out++] = m_strides[i_in] * substrides[i_target];
+    else
+      out.m_strides[i_out++] = m_strides[i_in];
+  }
+  return out;
+}
+
 Variable Variable::transpose(const std::vector<Dim> &order) const {
   auto transposed(*this);
-  Dimensions tmp = dims();
-  for (scipp::index i = 0; i < tmp.ndim(); ++i)
-    tmp.resize(i, strides()[i]);
-  tmp = core::transpose(tmp, order);
-  transposed.m_strides = Strides(tmp.shape());
+  transposed.m_strides = core::transpose(m_strides, dims(), order);
   transposed.m_dims = core::transpose(dims(), order);
   return transposed;
 }

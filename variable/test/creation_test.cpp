@@ -30,6 +30,9 @@ TEST(CreationTest, ones) {
       makeVariable<double>(dims, units::m, Values{1, 1}, Variances{1, 1}));
   EXPECT_EQ(variable::ones(dims, units::s, dtype<int32_t>),
             makeVariable<int32_t>(dims, units::s, Values{1, 1}));
+  // Not a broadcast of a scalar
+  EXPECT_FALSE(
+      variable::ones(dims, units::m, dtype<double>, true).is_readonly());
 }
 
 TEST_P(DenseVariablesTest, empty_like_fail_if_sizes) {

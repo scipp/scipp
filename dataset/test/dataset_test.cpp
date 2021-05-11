@@ -11,13 +11,12 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
-#include "scipp/dataset/reduction.h"
 #include "scipp/variable/operations.h"
 
 #include "dataset_test_common.h"
+#include "test_data_arrays.h"
 
 using namespace scipp;
-using namespace scipp::dataset;
 
 // Any dataset functionality that is also available for Dataset(Const)View is
 // to be tested in dataset_view_test.cpp, not here!
@@ -40,7 +39,7 @@ TEST(DatasetTest, clear) {
 TEST(DatasetTest, erase_non_existant) {
   Dataset d;
   ASSERT_THROW(d.erase("not an item"), except::NotFoundError);
-  ASSERT_THROW(auto _ = d.extract("not an item"), except::NotFoundError);
+  ASSERT_THROW_DISCARD(d.extract("not an item"), except::NotFoundError);
 }
 
 TEST(DatasetTest, erase) {
@@ -135,8 +134,8 @@ TEST(DatasetTest, set_item_mask) {
   d.setData("scalar", 1.2 * units::one);
   const auto var =
       makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false});
-  d["x"].masks().set("unaligned", var);
-  EXPECT_TRUE(d["x"].masks().contains("unaligned"));
+  d["x"].masks().set("mask", var);
+  EXPECT_TRUE(d["x"].masks().contains("mask"));
 }
 
 TEST(DatasetTest, setData_with_and_without_variances) {
@@ -156,6 +155,48 @@ TEST(DatasetTest, setData_with_and_without_variances) {
                                                       Values{1, 1, 1},
                                                       Variances{0, 0, 0})));
   ASSERT_EQ(d.size(), 2);
+}
+
+void check_array_shared(Dataset &ds, const std::string &name,
+                        const DataArray &array,
+                        const bool shared_coord = true) {
+  EXPECT_EQ(ds[name], array);
+  // Data and meta data are shared
+  EXPECT_TRUE(ds[name].data().is_same(array.data()));
+  EXPECT_EQ(ds[name].coords()[Dim::X].is_same(array.coords()[Dim::X]),
+            shared_coord);
+  EXPECT_TRUE(ds[name].masks()["mask"].is_same(array.masks()["mask"]));
+  EXPECT_TRUE(
+      ds[name].attrs()[Dim("attr")].is_same(array.attrs()[Dim("attr")]));
+  // Metadata *dicts* are not shared
+  ds.coords().erase(Dim::X);
+  EXPECT_NE(ds[name].coords(), array.coords());
+  EXPECT_TRUE(array.coords().contains(Dim::X));
+  ds[name].masks().erase("mask");
+  EXPECT_NE(ds[name].masks(), array.masks());
+  EXPECT_TRUE(array.masks().contains("mask"));
+  ds[name].attrs().erase(Dim("attr"));
+  EXPECT_NE(ds[name].attrs(), array.attrs());
+  EXPECT_TRUE(array.attrs().contains(Dim("attr")));
+}
+
+TEST(DatasetTest, setData_from_DataArray) {
+  const auto array = make_data_array_1d();
+  Dataset ds;
+  ds.setData("a", array);
+  check_array_shared(ds, "a", array);
+}
+
+TEST(DatasetTest, setData_from_DataArray_replace) {
+  const auto array1 = make_data_array_1d(0);
+  const auto array2 = make_data_array_1d(1);
+  const auto original = copy(array1);
+  Dataset ds;
+  ds.setData("a", array1);
+  ds.setData("a", array2);
+  EXPECT_EQ(array1, original);     // setData does not copy elements
+  const bool shared_coord = false; // coord exists in dataset, not replaced
+  check_array_shared(ds, "a", array2, shared_coord);
 }
 
 TEST(DatasetTest, setData_updates_dimensions) {
@@ -319,20 +360,6 @@ TEST(DatasetTest, slice_validation_complex) {
                except::SliceError);
 }
 
-TEST(DatasetTest, sum_and_mean) {
-  auto ds = make_1_values_and_variances<float>("a", {Dim::X, 3}, units::one,
-                                               {1, 2, 3}, {12, 15, 18});
-  EXPECT_EQ(dataset::sum(ds, Dim::X)["a"].data(),
-            makeVariable<float>(Values{6}, Variances{45}));
-  EXPECT_EQ(dataset::sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-            makeVariable<float>(Values{3}, Variances{27}));
-
-  EXPECT_EQ(dataset::mean(ds, Dim::X)["a"].data(),
-            makeVariable<float>(Values{2}, Variances{5.0}));
-  EXPECT_EQ(dataset::mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-            makeVariable<float>(Values{1.5}, Variances{6.75}));
-}
-
 TEST(DatasetTest, extract_coord) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
@@ -351,16 +378,15 @@ TEST(DatasetTest, extract_coord) {
   EXPECT_EQ(ref, ds);
 }
 
-TEST(DatasetTest, erase_item_coord_cannot_erase_coord) {
+TEST(DatasetTest, cannot_set_or_erase_item_coord) {
   DatasetFactory3D factory;
-  const auto ref = factory.make();
-  Dataset ds = copy(ref);
-  auto coord = ds.coords()[Dim::X];
+  auto ds = factory.make();
   ASSERT_TRUE(ds.contains("data_x"));
-  ASSERT_NO_THROW(ds["data_x"].coords().erase(Dim::X));
-  // Coord was erased in DataArray returned by ds["data_x"], but not from coord
-  // dict of ds
+  ASSERT_THROW(ds["data_x"].coords().erase(Dim::X), except::DataArrayError);
   ASSERT_TRUE(ds.coords().contains(Dim::X));
+  ASSERT_THROW(ds["data_x"].coords().set(Dim("new"), ds.coords()[Dim::X]),
+               except::DataArrayError);
+  ASSERT_FALSE(ds.coords().contains(Dim("new")));
 }
 
 TEST(DatasetTest, item_coord_cannot_change_coord) {

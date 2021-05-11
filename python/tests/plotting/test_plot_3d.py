@@ -110,14 +110,15 @@ def test_plot_3d_with_2d_position_coordinate():
         data=sc.Variable(['x', 'y', 'tof'],
                          values=np.arange(nx * ny *
                                           ntof).reshape(nx, ny, ntof)))
-    da.coords['pos'] = sc.reshape(
-        sc.Variable(['xyz'],
-                    values=np.array([xx, yy,
-                                     np.zeros_like(xx)]).T.reshape(nx * ny, 3),
-                    dtype=sc.dtype.vector_3_float64), {
-                        'x': nx,
-                        'y': ny
-                    })
+    da.coords['pos'] = sc.fold(sc.Variable(
+        ['xyz'],
+        values=np.array([xx, yy, np.zeros_like(xx)]).T.reshape(nx * ny, 3),
+        dtype=sc.dtype.vector_3_float64),
+                               dim='xyz',
+                               sizes={
+                                   'x': nx,
+                                   'y': ny
+                               })
     da.coords['tof'] = sc.Variable(['tof'],
                                    values=np.arange(ntof + 1,
                                                     dtype=np.float64))

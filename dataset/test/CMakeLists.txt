@@ -29,7 +29,7 @@ add_executable(
   except_test.cpp
   groupby_test.cpp
   histogram_test.cpp
-  masks_view_test.cpp
+  masks_test.cpp
   math_test.cpp
   mean_test.cpp
   merge_test.cpp
@@ -42,6 +42,7 @@ add_executable(
   slice_test.cpp
   sort_test.cpp
   string_test.cpp
+  test_data_arrays.cpp
   sum_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})

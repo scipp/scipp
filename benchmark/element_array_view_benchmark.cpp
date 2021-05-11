@@ -6,21 +6,36 @@
 
 #include "scipp/core/element_array_view.h"
 
+using namespace scipp;
 using namespace scipp::core;
 
-static void BM_ViewIndex(benchmark::State &state) {
-  Dimensions dims({{Dim::Y, state.range(0)}, {Dim::X, 2000}});
-  std::vector<double> variable(dims.volume());
-  ElementArrayView<double> view(variable.data(), 0, dims, dims);
+// Use a macro to make sure that the view is not invalidated.
+#define MAKE_VIEW(ylen)                                                        \
+  scipp::index xlen_ = 2000;                                                   \
+  Dimensions dims_({{Dim::Y, ylen}, {Dim::X, xlen_}});                         \
+  std::vector<double> variable_(dims_.volume());                               \
+  ElementArrayView<double> view(variable_.data(), 0, dims_, Strides{xlen_, 1})
+
+static void BM_ElementArrayView_iterators(benchmark::State &state) {
+  MAKE_VIEW(state.range(0));
 
   for (auto _ : state) {
     double sum = 0.0;
-    // Caution when iterating over a view!
-    // Using a range based loop here is MUCH faster (80x) than using
-    //   for ( auto it = view.begin(); it != view.end(); ++it ) {
-    //     sum += *it;
-    //   }
-    // See view_index.h for more details.
+    for (auto it = view.begin(); it != view.end(); ++it) {
+      sum += *it;
+    }
+    benchmark::DoNotOptimize(sum);
+  }
+
+  state.SetItemsProcessed(state.iterations() * view.size());
+}
+BENCHMARK(BM_ElementArrayView_iterators)->RangeMultiplier(2)->Range(4, 8 << 10);
+
+static void BM_ElementArrayView_rangeFor(benchmark::State &state) {
+  MAKE_VIEW(state.range(0));
+
+  for (auto _ : state) {
+    double sum = 0.0;
     for (const auto x : view) {
       sum += x;
     }
@@ -29,7 +44,21 @@ static void BM_ViewIndex(benchmark::State &state) {
 
   state.SetItemsProcessed(state.iterations() * view.size());
 }
-BENCHMARK(BM_ViewIndex)->RangeMultiplier(2)->Range(4, 8 << 10);
-;
+BENCHMARK(BM_ElementArrayView_rangeFor)->RangeMultiplier(2)->Range(4, 8 << 10);
+
+static void BM_ElementArrayView_index(benchmark::State &state) {
+  MAKE_VIEW(state.range(0));
+
+  for (auto _ : state) {
+    double sum = 0.0;
+    for (scipp::index i = 0; i < view.size(); ++i) {
+      sum += view[i];
+    }
+    benchmark::DoNotOptimize(sum);
+  }
+
+  state.SetItemsProcessed(state.iterations() * view.size());
+}
+BENCHMARK(BM_ElementArrayView_index)->RangeMultiplier(2)->Range(4, 8 << 10);
 
 BENCHMARK_MAIN();

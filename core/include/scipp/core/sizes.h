@@ -38,7 +38,9 @@ public:
   void clear();
 
   scipp::index operator[](const Dim dim) const;
+  scipp::index &operator[](const Dim dim);
   scipp::index at(const Dim dim) const;
+  scipp::index &at(const Dim dim);
   void set(const Dim dim, const scipp::index size);
   void erase(const Dim dim);
   void relabel(const Dim from, const Dim to);
@@ -50,6 +52,10 @@ private:
   // TODO More efficient implementation without memory allocations.
   std::unordered_map<Dim, scipp::index> m_sizes;
 };
+
+[[nodiscard]] SCIPP_CORE_EXPORT Sizes concatenate(const Sizes &a,
+                                                  const Sizes &b,
+                                                  const Dim dim);
 
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes merge(const Sizes &a, const Sizes &b);
 

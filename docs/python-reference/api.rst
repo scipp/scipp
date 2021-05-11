@@ -90,7 +90,6 @@ Shape
    concatenate
    flatten
    fold
-   reshape
    transpose
 
 Comparison

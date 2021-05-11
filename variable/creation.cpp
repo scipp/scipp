@@ -20,7 +20,7 @@ Variable ones(const Dimensions &dims, const units::Unit &unit, const DType type,
   const auto prototype =
       variances ? Variable{type, Dimensions{}, unit, Values{1}, Variances{1}}
                 : Variable{type, Dimensions{}, unit, Values{1}};
-  return broadcast(prototype, dims);
+  return copy(broadcast(prototype, dims));
 }
 
 /// Create empty (uninitialized) variable with same parameters as prototype.

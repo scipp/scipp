@@ -22,7 +22,14 @@ void Sizes::clear() { m_sizes.clear(); }
 
 scipp::index Sizes::operator[](const Dim dim) const { return at(dim); }
 
+scipp::index &Sizes::operator[](const Dim dim) { return at(dim); }
+
 scipp::index Sizes::at(const Dim dim) const {
+  scipp::expect::contains(*this, dim);
+  return m_sizes.at(dim);
+}
+
+scipp::index &Sizes::at(const Dim dim) {
   scipp::expect::contains(*this, dim);
   return m_sizes.at(dim);
 }
@@ -70,6 +77,12 @@ Sizes Sizes::slice(const Slice &params) const {
   else
     sizes.erase(params.dim());
   return {sizes};
+}
+
+Sizes concatenate(const Sizes &a, const Sizes &b, const Dim dim) {
+  Sizes out = a.contains(dim) ? a.slice({dim, 0}) : a;
+  out.set(dim, (a.contains(dim) ? a[dim] : 1) + (b.contains(dim) ? b[dim] : 1));
+  return out;
 }
 
 Sizes merge(const Sizes &a, const Sizes &b) {

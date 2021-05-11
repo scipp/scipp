@@ -26,7 +26,7 @@ SCIPP_VARIABLE_EXPORT std::string
 to_string(const std::pair<std::string, Variable> &attr);
 
 SCIPP_VARIABLE_EXPORT std::string
-format_variable(const std::string &key, const Variable &variable,
+format_variable(const Variable &variable,
                 std::optional<Dimensions> datasetDims = std::nullopt);
 
 /// Abstract base class for formatters for variables with element types not in

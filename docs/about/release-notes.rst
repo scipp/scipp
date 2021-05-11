@@ -9,10 +9,16 @@ Since v0.6
 Features
 ~~~~~~~~
 
+* Licence changed from GPLv3 to BSD-3-Clause.
 * Can now control the position and visibility of the legend in 1d plots with ``plot(da, legend={"show": True, "loc": 4})`` `#1790 <https://github.com/scipp/scipp/pull/1790>`_.
 * Added ``zeros_like``, ``ones_like`` and ``empty_like`` functions `#1864 <https://github.com/scipp/scipp/pull/1864>`_.
 * ``sort`` is now considerably faster for data with more rows `#1872 <https://github.com/scipp/scipp/pull/1872>`_.
 * Added numpy-like ``linspace``, ``logspace``, ``geomspace``, and ``arange`` variable creation functions `#1871 <https://github.com/scipp/scipp/pull/1871>`_.
+* ``to_unit`` now supports binned data `#1841 <https://github.com/scipp/scipp/pull/1841>`_.
+* ``broadcast`` now returns a view instead of copying `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
+* ``fold`` now returns a view instead of copying `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
+* ``fold`` now works for binned data `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
+* ``flatten`` now returns a view of the input buffer if the input data is contiguous `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
 
 Bugfixes
 ~~~~~~~~
@@ -20,7 +26,9 @@ Bugfixes
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* Scipp's data structures now behave mostly like normal nested Python objects, i.e., copies are shallow by default `#1823 <https://github.com/scipp/scipp/pull/1823>`_.
 * ``filter`` and ``split`` removed. Identical functionality can be achieved using ``groupby`` and/or slicing.
+* ``reshape`` has been removed. Use ``fold`` and ``flatten`` instead `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
 
 Contributors
 ~~~~~~~~~~~~

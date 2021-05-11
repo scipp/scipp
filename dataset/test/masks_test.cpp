@@ -2,14 +2,12 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/logical.h"
-#include "test_macros.h"
 
 using namespace scipp;
 
-TEST(MasksViewTest, irreducible_mask) {
+TEST(MasksTest, irreducible_mask) {
   DataArray a(
       makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z}, Shape{2, 3, 4}));
   const auto x =

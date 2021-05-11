@@ -5,61 +5,62 @@
 #pragma once
 
 #include "scipp-core_export.h"
+#include "scipp/common/index_composition.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/strides.h"
 
 namespace scipp::core {
 
 class SCIPP_CORE_EXPORT ViewIndex {
 public:
-  ViewIndex(const Dimensions &targetDimensions,
-            const Dimensions &dataDimensions);
+  ViewIndex(const Dimensions &target_dimensions, const Strides &strides);
 
   constexpr void increment_outer() noexcept {
     scipp::index d = 0;
-    while ((m_coord[d] == m_extent[d]) && (d < NDIM_MAX - 1)) {
-      m_index += m_delta[d + 1];
+    while ((m_coord[d] == m_shape[d]) && (d < NDIM_MAX - 1)) {
+      m_memory_index += m_delta[d + 1];
       ++m_coord[d + 1];
       m_coord[d] = 0;
       ++d;
     }
   }
   constexpr void increment() noexcept {
-    m_index += m_delta[0];
+    m_memory_index += m_delta[0];
     ++m_coord[0];
-    if (m_coord[0] == m_extent[0])
+    if (m_coord[0] == m_shape[0])
       increment_outer();
-    ++m_fullIndex;
+    ++m_view_index;
   }
 
-  constexpr void setIndex(const scipp::index index) noexcept {
-    m_fullIndex = index;
-    if (m_dims == 0)
-      return;
-    auto remainder{index};
-    for (int32_t d = 0; d < m_dims - 1; ++d) {
-      if (m_extent[d] != 0) {
-        m_coord[d] = remainder % m_extent[d];
-        remainder /= m_extent[d];
-      } else {
-        m_coord[d] = 0;
-      }
+  constexpr void set_index(const scipp::index index) noexcept {
+    m_view_index = index;
+    extract_indices(index, m_ndim, m_shape, m_coord);
+    m_memory_index = flat_index_from_strides(
+        m_strides.begin(), m_strides.end(m_ndim), m_coord.begin());
+  }
+
+  void set_to_end() noexcept {
+    m_view_index = 0;
+    for (scipp::index dim = 0; dim < m_ndim - 1; ++dim) {
+      m_view_index *= m_shape[dim];
     }
-    m_coord[m_dims - 1] = remainder;
-    m_index = 0;
-    for (int32_t j = 0; j < m_subdims; ++j)
-      m_index += m_factors[j] * m_coord[m_offsets[j]];
+    std::fill(m_coord.begin(), m_coord.begin() + std::max(m_ndim - 1, 0), 0);
+    m_coord[m_ndim] = m_shape[m_ndim];
+    m_memory_index = m_coord[m_ndim] * m_strides[m_ndim];
   }
 
-  [[nodiscard]] constexpr scipp::index get() const noexcept { return m_index; }
+  [[nodiscard]] constexpr scipp::index get() const noexcept {
+    return m_memory_index;
+  }
   [[nodiscard]] constexpr scipp::index index() const noexcept {
-    return m_fullIndex;
+    return m_view_index;
   }
 
   constexpr bool operator==(const ViewIndex &other) const noexcept {
-    return m_fullIndex == other.m_fullIndex;
+    return m_view_index == other.m_view_index;
   }
   constexpr bool operator!=(const ViewIndex &other) const noexcept {
-    return m_fullIndex != other.m_fullIndex;
+    return m_view_index != other.m_view_index;
   }
 
 private:
@@ -104,15 +105,25 @@ private:
   // as the performance is identical to C-style arrays, as long as range based
   // loops are used.
 
-  scipp::index m_index{0};
+  /// Index into memory.
+  scipp::index m_memory_index{0};
+  /// Steps to advance one element.
   std::array<scipp::index, NDIM_MAX> m_delta = {};
+  /// Multi-dimensional index in iteration dimensions.
   std::array<scipp::index, NDIM_MAX> m_coord = {};
-  std::array<scipp::index, NDIM_MAX> m_extent = {};
-  scipp::index m_fullIndex;
-  int32_t m_dims;
-  int32_t m_subdims = 0;
-  std::array<int32_t, NDIM_MAX> m_offsets;
-  std::array<scipp::index, NDIM_MAX> m_factors;
+  /// Shape in iteration dimensions.
+  std::array<scipp::index, NDIM_MAX> m_shape = {};
+  /// Strides in memory.
+  Strides m_strides;
+  /// Index in iteration dimensions.
+  scipp::index m_view_index{0};
+  /// Number of dimensions.
+  int32_t m_ndim;
 };
+/*
+ * TODO document implementation
+ * - arrays have fasted dimension first, i.e. opposite to `Dimensions`
+ * - explain attributes: role, exact behavior, special values (e.g. at the end)
+ */
 
 } // namespace scipp::core

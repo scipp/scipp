@@ -12,58 +12,65 @@
 using namespace scipp::variable;
 namespace scipp {
 
-template <class T> scipp::index size_of_bucket_impl(const Variable &view) {
+template <class T>
+scipp::index size_of_bucket_impl(const Variable &view, const SizeofTag tag) {
   const auto &[indices, dim, buffer] = view.constituents<T>();
-  const auto &[begin, end] = unzip(indices);
-  const auto sizes = sum(end - begin).template value<scipp::index>();
-  const auto scale = // avoid division by zero
-      sizes == 0 ? 0.0 : sizes / static_cast<double>(buffer.dims()[dim]);
-  return size_of(indices) + size_of(buffer) * scale;
+  double scale = 1;
+  if (tag == SizeofTag::ViewOnly) {
+    const auto &[begin, end] = unzip(indices);
+    const auto sizes = sum(end - begin).template value<scipp::index>();
+    // avoid division by zero
+    scale = sizes == 0 ? 0.0 : sizes / static_cast<double>(buffer.dims()[dim]);
+  }
+  return size_of(indices, tag) + size_of(buffer, tag) * scale;
 }
 
-scipp::index size_of(const Variable &view) {
+scipp::index size_of(const Variable &view, const SizeofTag tag) {
   if (view.dtype() == dtype<bucket<Variable>>) {
-    return size_of_bucket_impl<bucket<Variable>>(view);
+    return size_of_bucket_impl<bucket<Variable>>(view, tag);
   }
   if (view.dtype() == dtype<bucket<DataArray>>) {
-    return size_of_bucket_impl<bucket<DataArray>>(view);
+    return size_of_bucket_impl<bucket<DataArray>>(view, tag);
   }
   if (view.dtype() == dtype<bucket<Dataset>>) {
-    return size_of_bucket_impl<bucket<Dataset>>(view);
+    return size_of_bucket_impl<bucket<Dataset>>(view, tag);
   }
 
-  auto value_size = view.data().dtype_size();
-  auto variance_scale = view.hasVariances() ? 2 : 1;
-  return view.dims().volume() * value_size * variance_scale;
+  const auto value_size = view.data().dtype_size();
+  const auto variance_scale = view.hasVariances() ? 2 : 1;
+  const auto data_size =
+      tag == SizeofTag::Underlying ? view.data().size() : view.dims().volume();
+  return data_size * value_size * variance_scale;
 }
 
 /// Return the size in memory of a DataArray object. The aligned coord is
 /// optional because for a DataArray owned by a dataset aligned coords are
 /// assumed to be owned by the dataset as they can apply to multiple arrays.
-scipp::index size_of(const DataArray &dataarray, bool include_aligned_coords) {
+scipp::index size_of(const DataArray &dataarray, const SizeofTag tag,
+                     bool include_aligned_coords) {
   scipp::index size = 0;
-  size += size_of(dataarray.data());
-  for (const auto coord : dataarray.attrs()) {
-    size += size_of(coord.second);
+  size += size_of(dataarray.data(), tag);
+  for (const auto &coord : dataarray.attrs()) {
+    size += size_of(coord.second, tag);
   }
-  for (const auto mask : dataarray.masks()) {
-    size += size_of(mask.second);
+  for (const auto &mask : dataarray.masks()) {
+    size += size_of(mask.second, tag);
   }
   if (include_aligned_coords) {
-    for (const auto coord : dataarray.coords()) {
-      size += size_of(coord.second);
+    for (const auto &coord : dataarray.coords()) {
+      size += size_of(coord.second, tag);
     }
   }
   return size;
 }
 
-scipp::index size_of(const Dataset &dataset) {
+scipp::index size_of(const Dataset &dataset, const SizeofTag tag) {
   scipp::index size = 0;
   for (const auto &data : dataset) {
-    size += size_of(data, false);
+    size += size_of(data, tag, false);
   }
-  for (const auto coord : dataset.coords()) {
-    size += size_of(coord.second);
+  for (const auto &coord : dataset.coords()) {
+    size += size_of(coord.second, tag);
   }
   return size;
 }

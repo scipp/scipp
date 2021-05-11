@@ -12,15 +12,6 @@
 
 namespace scipp::dataset {
 
-constexpr auto unaligned_by_dim_slice = [](const auto &item,
-                                           const Slice &params) {
-  if (params.end() != -1)
-    return false;
-  const Dim dim = params.dim();
-  const auto &[key, var] = item;
-  return var.dims().contains(dim) && dim_of_coord(var, key) == dim;
-};
-
 template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
   std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
 
@@ -29,7 +20,7 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 
   for (const auto item : b) {
     if (const auto it = a.find(item.first); it != a.end()) {
-      core::expect::equals(item, *it);
+      expect::matchingCoord(it->first, it->second, item.second);
     } else
       out.emplace(item.first, item.second);
   }
@@ -176,8 +167,8 @@ template <class T, class Func> DataArray transform(const T &a, Func func) {
                    transform_map(a.attrs(), func), a.name());
 }
 
-DataArray strip_if_broadcast_along(DataArray &&a, const Dim dim);
-Dataset strip_if_broadcast_along(Dataset &&d, const Dim dim);
+DataArray strip_if_broadcast_along(const DataArray &a, const Dim dim);
+Dataset strip_if_broadcast_along(const Dataset &d, const Dim dim);
 
 // Helpers for reductions for DataArray and Dataset, which include masks.
 [[nodiscard]] Variable mean(const Variable &var, const Dim dim,

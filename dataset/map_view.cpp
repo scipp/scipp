@@ -10,7 +10,8 @@ namespace scipp::dataset {
 namespace {
 template <class T> void expectWritable(const T &dict) {
   if (dict.is_readonly())
-    throw std::runtime_error("Read-only flag is set, cannot mutate dict.");
+    throw except::DataArrayError(
+        "Read-only flag is set, cannot mutate metadata dict.");
 }
 } // namespace
 
@@ -117,7 +118,6 @@ template <class Key, class Value> void Dict<Key, Value>::rebuildSizes() {
   m_sizes = std::move(new_sizes);
 }
 
-// TODO remove force workaround required by DataArray::slice
 template <class Key, class Value>
 void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
   if (contains(key) && at(key).is_same(coord))
@@ -133,6 +133,7 @@ void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
 
 template <class Key, class Value>
 void Dict<Key, Value>::erase(const key_type &key) {
+  expectWritable(*this);
   scipp::expect::contains(*this, key);
   m_items.erase(key);
 }
@@ -148,6 +149,30 @@ template <class Key, class Value>
 Dict<Key, Value> Dict<Key, Value>::slice(const Slice &params) const {
   const bool readonly = true;
   return {m_sizes.slice(params), slice_map(m_sizes, m_items, params), readonly};
+}
+
+namespace {
+constexpr auto unaligned_by_dim_slice = [](const auto &item,
+                                           const Slice &params) {
+  if (params.end() != -1)
+    return false;
+  const Dim dim = params.dim();
+  const auto &[key, var] = item;
+  return var.dims().contains(dim) && dim_of_coord(var, key) == dim;
+};
+}
+
+template <class Key, class Value>
+std::tuple<Dict<Key, Value>, Dict<Key, Value>>
+Dict<Key, Value>::slice_coords(const Slice &params) const {
+  auto coords = slice(params);
+  coords.m_readonly = false;
+  Dict<Key, Value> attrs(coords.sizes(), {});
+  for (auto &coord : *this)
+    if (unaligned_by_dim_slice(coord, params))
+      attrs.set(coord.first, coords.extract(coord.first));
+  coords.m_readonly = true;
+  return {std::move(coords), std::move(attrs)};
 }
 
 template <class Key, class Value>

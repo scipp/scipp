@@ -67,7 +67,7 @@ For questions not answered in the documentation
 `this page <https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion>`_
 provides a forum with discussions on problems already met/solved in the community.
 
-New question can be asked by
+New questions can be asked by
 `opening <https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=>`_
 a new |QuestionLabel|_ issue.
 
@@ -106,11 +106,7 @@ Documentation
 
    visualization/representations-and-tables
    visualization/plotting-overview
-   visualization/plotting-1d-data
-   visualization/plotting-2d-data
-   visualization/plotting-nd-data
-   visualization/customizing-figures
-   visualization/datetime_handling
+   visualization/plotting-in-depth
 
 .. toctree::
    :caption: Tutorials

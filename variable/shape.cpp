@@ -16,17 +16,8 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-void expect_same_volume(const Dimensions &old_dims,
-                        const Dimensions &new_dims) {
-  if (old_dims.volume() != new_dims.volume())
-    throw except::DimensionError(
-        "Cannot reshape to dimensions with different volume");
-}
-
 Variable broadcast(const Variable &var, const Dimensions &dims) {
-  auto result = variableFactory().empty_like(var, dims);
-  result.data().copy(var, result);
-  return result;
+  return var.broadcast(dims);
 }
 
 Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
@@ -140,24 +131,35 @@ Variable reverse(const Variable &var, const Dim dim) {
   return out;
 }
 
-Variable reshape(const Variable &var, const Dimensions &dims) {
-  expect_same_volume(var.dims(), dims);
-  // We could be less restrictive here, avoiding copies whenever we are
-  // reshaping an ordered contiguous chunk.
-  Variable reshaped =
-      var.dims() == var.array_params().dataDims() ? var : copy(var);
-  reshaped.setDims(dims);
-  return reshaped;
-}
-
 Variable fold(const Variable &view, const Dim from_dim,
               const Dimensions &to_dims) {
-  return reshape(view, fold(view.dims(), from_dim, to_dims));
+  return view.fold(from_dim, to_dims);
 }
 
 Variable flatten(const Variable &view,
                  const scipp::span<const Dim> &from_labels, const Dim to_dim) {
-  return reshape(view, flatten(view.dims(), from_labels, to_dim));
+  const auto &labels = view.dims().labels();
+  auto it = std::search(labels.begin(), labels.end(), from_labels.begin(),
+                        from_labels.end());
+  if (it == labels.end())
+    throw except::DimensionError("Can only flatten a contiguous set of "
+                                 "dimensions in the correct order");
+  scipp::index size = 1;
+  auto to = std::distance(labels.begin(), it);
+  auto out(view);
+  for (const auto &from : from_labels) {
+    size *= out.dims().size(to);
+    if (from == from_labels.back()) {
+      out.unchecked_dims().relabel(to, to_dim);
+      out.unchecked_dims().resize(to, size);
+    } else {
+      if (out.strides()[to] != out.dims().size(to + 1) * out.strides()[to + 1])
+        return flatten(copy(view), from_labels, to_dim);
+      out.unchecked_dims().erase(from);
+      out.unchecked_strides().erase(to);
+    }
+  }
+  return out;
 }
 
 Variable transpose(const Variable &var, const std::vector<Dim> &dims) {
