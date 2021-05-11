@@ -88,7 +88,7 @@ bool Dimensions::isContiguousIn(const Dimensions &parent) const {
 Dim Dimensions::label(const scipp::index i) const { return labels()[i]; }
 
 void Dimensions::relabel(const scipp::index i, const Dim label) {
-  relabel(labels()[i], label);
+  replace_key(labels()[i], label);
 }
 
 scipp::index Dimensions::size(const scipp::index i) const { return shape()[i]; }
@@ -129,7 +129,7 @@ void Dimensions::addInner(const Dim label, const scipp::index size) {
   insert_right(label, size);
 }
 
-/// Return the innermost dimension. Throws if *this is empty.
+/// Return the innermost dimension. Returns Dim::Invalid if *this is empty
 Dim Dimensions::inner() const noexcept {
   if (empty())
     return Dim::Invalid;

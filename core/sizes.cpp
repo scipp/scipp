@@ -142,10 +142,10 @@ void small_stable_map<Key, Value, MaxSize, Except>::clear() {
 template <class Key, class Value, int16_t MaxSize, class Except>
 void small_stable_map<Key, Value, MaxSize, Except>::replace_key(
     const Key &key, const Key &new_key) {
-  // TODO no check for duplicate here, which is inconsistent, but needed to
-  // relabel to Dim::Invalid
   if (!contains(key))
     throw_dimension_not_found_error(*this, key);
+  if (key != new_key)
+    expectUnique(*this, new_key);
   auto it = std::find(m_keys.begin(), m_keys.end(), key);
   *it = new_key;
 }
@@ -159,13 +159,6 @@ void Sizes::set(const Dim dim, const scipp::index size) {
         std::to_string(at(dim)) + ", requested " + std::to_string(size));
   if (!contains(dim))
     insert_right(dim, size);
-}
-
-void Sizes::relabel(const Dim from, const Dim to) {
-  if (to != Dim::Invalid && from != to)
-    expectUnique(*this, to);
-  if (contains(from))
-    replace_key(from, to);
 }
 
 /// Return true if all dimensions of other contained in *this, with same size.

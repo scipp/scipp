@@ -72,7 +72,6 @@ public:
   scipp::index count(const Dim dim) const noexcept { return contains(dim); }
 
   void set(const Dim dim, const scipp::index size);
-  void relabel(const Dim from, const Dim to);
   bool includes(const Sizes &sizes) const;
   Sizes slice(const Slice &params) const;
 

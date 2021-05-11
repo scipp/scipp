@@ -74,7 +74,6 @@ public:
   // - remove resize (just use non-const at()?)
   // - remove relabel?
   Dim label(const scipp::index i) const;
-  using Sizes::relabel;
   void relabel(const scipp::index i, const Dim label);
   scipp::index size(const scipp::index i) const;
   scipp::index offset(const Dim label) const;
