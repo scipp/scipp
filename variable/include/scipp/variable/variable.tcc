@@ -5,6 +5,7 @@
 #include "scipp/core/array_to_string.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
+#include "scipp/core/has_eval.h"
 #include "scipp/core/except.h"
 #include "scipp/units/unit.h"
 #include "scipp/variable/data_model.h"
@@ -23,12 +24,18 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
           dimensions.volume(), unit, std::move(values_),
           std::move(variances_))) {}
 
-template <class T> const DataModel<T> &cast(const Variable &var) {
-  return requireT<const DataModel<T>>(var.data());
+template <class T> struct model { using type = DataModel<T>  ; };
+template <> struct model<Eigen::Vector3d> {
+  using type = MatrixModel<Eigen::Vector3d, 3>;
+};
+template <class T> using model_t = typename model<T>::type;
+
+template <class T> const auto &cast(const Variable &var) {
+  return requireT<const model_t<T>>(var.data());
 }
 
-template <class T> DataModel<T> &cast(Variable &var) {
-  return requireT<DataModel<T>>(var.data());
+template <class T> auto &cast(Variable &var) {
+  return requireT<model_t<T>>(var.data());
 }
 
 template <class T> ElementArrayView<const T> Variable::values() const {
@@ -38,10 +45,16 @@ template <class T> ElementArrayView<T> Variable::values() {
   return cast<T>(*this).values(array_params());
 }
 template <class T> ElementArrayView<const T> Variable::variances() const {
-  return cast<T>(*this).variances(array_params());
+  if constexpr(!core::canHaveVariances<T>())
+      throw except::VariancesError("This dtype cannot have variances.");
+  else
+    return cast<T>(*this).variances(array_params());
 }
 template <class T> ElementArrayView<T> Variable::variances() {
-  return cast<T>(*this).variances(array_params());
+  if constexpr(!core::canHaveVariances<T>())
+      throw except::VariancesError("This dtype cannot have variances.");
+  else
+    return cast<T>(*this).variances(array_params());
 }
 
 #define INSTANTIATE_VARIABLE_BASE(name, ...)                                   \
