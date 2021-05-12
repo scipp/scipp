@@ -62,15 +62,14 @@ small_stable_map<Key, Value, Capacity>::find(const Key &key) const {
 }
 
 template <class Key, class Value, int16_t Capacity>
-bool small_stable_map<Key, Value, Capacity>::contains(
-    const Key &key) const noexcept {
-  return std::find(begin(), end(), key) != end();
+bool small_stable_map<Key, Value, Capacity>::contains(const Key &key) const {
+  return find(key) != end();
 }
 
 template <class Key, class Value, int16_t Capacity>
 scipp::index
 small_stable_map<Key, Value, Capacity>::index(const Key &key) const {
-  auto it = std::find(begin(), end(), key);
+  const auto it = find(key);
   if (it == end())
     throw_dimension_not_found_error(*this, key);
   return std::distance(begin(), it);
@@ -84,17 +83,13 @@ small_stable_map<Key, Value, Capacity>::operator[](const Key &key) const {
 
 template <class Key, class Value, int16_t Capacity>
 const Value &small_stable_map<Key, Value, Capacity>::at(const Key &key) const {
-  if (!contains(key))
-    throw_dimension_not_found_error(*this, key);
-  return m_values[std::distance(begin(), find(key))];
+  return m_values[index(key)];
 }
 
 template <class Key, class Value, int16_t Capacity>
 void small_stable_map<Key, Value, Capacity>::assign(const Key &key,
                                                     const Value &value) {
-  if (!contains(key))
-    throw_dimension_not_found_error(*this, key);
-  m_values[std::distance(begin(), find(key))] = value;
+  m_values[index(key)] = value;
 }
 
 template <class Key, class Value, int16_t Capacity>
@@ -123,13 +118,11 @@ void small_stable_map<Key, Value, Capacity>::insert_right(const Key &key,
 
 template <class Key, class Value, int16_t Capacity>
 void small_stable_map<Key, Value, Capacity>::erase(const Key &key) {
-  if (!contains(key))
-    throw_dimension_not_found_error(*this, key);
-  m_size--;
-  for (scipp::index i = std::distance(begin(), find(key)); i < size(); ++i) {
+  for (scipp::index i = index(key); i < size() - 1; ++i) {
     m_keys[i] = m_keys[i + 1];
     m_values[i] = m_values[i + 1];
   }
+  m_size--;
 }
 
 template <class Key, class Value, int16_t Capacity>
@@ -140,12 +133,9 @@ void small_stable_map<Key, Value, Capacity>::clear() noexcept {
 template <class Key, class Value, int16_t Capacity>
 void small_stable_map<Key, Value, Capacity>::replace_key(const Key &key,
                                                          const Key &new_key) {
-  if (!contains(key))
-    throw_dimension_not_found_error(*this, key);
   if (key != new_key)
     expectUnique(*this, new_key);
-  auto it = std::find(m_keys.begin(), m_keys.end(), key);
-  *it = new_key;
+  m_keys[index(key)] = new_key;
 }
 
 template class small_stable_map<Dim, scipp::index, NDIM_MAX>;

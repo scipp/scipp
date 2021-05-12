@@ -32,7 +32,7 @@ public:
   typename std::array<Key, Capacity>::const_iterator find(const Key &key) const;
   [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
   constexpr scipp::index size() const noexcept { return m_size; }
-  bool contains(const Key &key) const noexcept;
+  bool contains(const Key &key) const;
   scipp::index index(const Key &key) const;
   const Value &operator[](const Key &key) const;
   const Value &at(const Key &key) const;
