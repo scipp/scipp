@@ -7,7 +7,6 @@ from .controller3d import PlotController3d
 from .model3d import PlotModel3d
 from .outputs import Plot
 from .panel3d import PlotPanel3d
-from .sciplot import SciPlot
 from .view3d import PlotView3d
 from .widgets import PlotWidgets
 

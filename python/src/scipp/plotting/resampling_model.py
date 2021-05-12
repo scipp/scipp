@@ -5,7 +5,6 @@
 
 import numpy as np
 from .._scipp import core as sc
-# from .helpers import PlotArray
 from .tools import to_bin_centers
 
 

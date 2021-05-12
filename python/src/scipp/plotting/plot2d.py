@@ -7,7 +7,6 @@ from .controller2d import PlotController2d
 from .model2d import PlotModel2d
 from .outputs import Plot
 from .profile import PlotProfile
-from .sciplot import SciPlot
 from .view2d import PlotView2d
 from .widgets import PlotWidgets
 
