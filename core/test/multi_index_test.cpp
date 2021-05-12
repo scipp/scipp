@@ -27,7 +27,7 @@ protected:
     ASSERT_EQ(i, i.end());
     if (skip_set_index_check)
       return;
-    if (i.end_sentinel() == scipp::size(indices0)) {
+    if (!i.has_bins()) {
       // No buckets
       for (scipp::index n0 = 0; n0 < scipp::size(indices0); ++n0) {
         i.set_index(n0);
@@ -38,7 +38,7 @@ protected:
       }
     } else {
       // Buckets
-      for (scipp::index bucket = 0; bucket < i.end_sentinel(); ++bucket) {
+      for (scipp::index bucket = 0; bucket < scipp::size(indices0); ++bucket) {
         i.set_index(bucket);
         scipp::index n0 = 0;
         auto it = i.begin();

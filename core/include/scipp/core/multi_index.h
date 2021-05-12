@@ -267,10 +267,6 @@ public:
     return true;
   }
 
-  [[nodiscard]] constexpr scipp::index ndim() const noexcept { return m_ndim; }
-
-  [[nodiscard]] constexpr auto shape() const noexcept { return m_shape; }
-
   [[nodiscard]] constexpr auto inner_size() const noexcept {
     return m_shape[0];
   }
@@ -285,10 +281,6 @@ public:
     auto it(*this);
     it.set_index(m_end_sentinel);
     return it;
-  }
-
-  [[nodiscard]] scipp::index end_sentinel() const noexcept {
-    return m_end_sentinel;
   }
 
   [[nodiscard]] bool has_bins() const noexcept {
