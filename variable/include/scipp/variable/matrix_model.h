@@ -21,16 +21,14 @@ public:
   using value_type = T;
   static constexpr auto num_element = (N * ...);
 
-  MatrixModel(const Variable &elements)
-      : VariableConcept(elements.unit()),
-        // copy in case this is a slice?
-        m_elements(variable::copy(elements).data_handle()) {
+  MatrixModel(const VariableConceptHandle &elements)
+      : VariableConcept(elements->unit()), m_elements(elements) {
     if (hasVariances())
       throw except::VariancesError("Matrix data type cannot have variances.");
-    if (elements.dtype() != scipp::dtype<double>)
+    if (elements->dtype() != scipp::dtype<double>)
       throw except::TypeError(
           "Matrix data type only supported with float64 elements.");
-    if (elements.dims().volume() % num_element != 0)
+    if (elements->size() % num_element != 0)
       throw except::DimensionError("Underlying elements do not have correct "
                                    "shape for this matrix type.");
   }
@@ -112,6 +110,8 @@ private:
 template <class T, int... N>
 VariableConceptHandle
 MatrixModel<T, N...>::makeDefaultFromParent(const scipp::index size) const {
+  // return std::make_unique<MatrixModel<T, N...>>(size, unit(),
+  // element_array<T>(size));
   throw std::runtime_error("todo how to get dims?");
   // return std::make_unique<MatrixModel<T, N...>>();
 }

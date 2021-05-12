@@ -16,7 +16,7 @@ Variable make_vectors(const Variable &elements) {
     throw except::DimensionError("Creating vectors of length 3 from elements "
                                  "requires inner dimension of size 3.");
   dims.erase(dims.inner());
-  return Variable(dims, std::make_shared<Model>(elements));
+  return Variable(dims, std::make_shared<Model>(elements.data_handle()));
 }
 
 /// Construct a variable containing matrices from a variable of elements.
@@ -29,7 +29,7 @@ Variable make_matrices(const Variable &elements) {
                                  "requires inner dimensions of sizes 3 and 3.");
   dims.erase(dims.inner());
   dims.erase(dims.inner());
-  return Variable(dims, std::make_shared<Model>(elements));
+  return Variable(dims, std::make_shared<Model>(elements.data_handle()));
 }
 
 } // namespace scipp::variable
