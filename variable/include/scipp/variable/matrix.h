@@ -8,6 +8,11 @@
 
 namespace scipp::variable {
 
+template <class T, class Elem, int... N>
+[[nodiscard]] Variable make_structured(const Dimensions &dims,
+                                       const units::Unit &unit,
+                                       element_array<double> &&values);
+
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 make_vectors(const Dimensions &dims, const units::Unit &unit,
              element_array<double> &&values);

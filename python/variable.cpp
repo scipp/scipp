@@ -148,6 +148,28 @@ void bind_init_0D_list_eigen(py::class_<Variable> &c) {
       py::arg("unit") = units::one, py::arg("dtype") = py::none());
 }
 
+template <class T, class Elem, int... N>
+void bind_structured_creation(py::module &m, const std::string &name) {
+  m.def(
+      name.c_str(),
+      [](const std::vector<Dim> &labels, py::array_t<Elem> &values,
+         units::Unit unit) {
+        if (scipp::size(labels) != values.ndim() - sizeof...(N))
+          throw std::runtime_error("bad shape to make structured type");
+        auto var = variable::make_structured<T, Elem, N...>(
+            Dimensions(labels,
+                       std::vector<scipp::index>(
+                           values.shape(), values.shape() + labels.size())),
+            unit,
+            element_array<Elem>(values.size(), core::default_init_elements));
+        auto elems = var.template elements<T>();
+        copy_array_into_view(values, elems.template values<Elem>(),
+                             elems.dims());
+        return var;
+      },
+      py::arg("dims"), py::arg("values"), py::arg("unit") = units::one);
+}
+
 void init_variable(py::module &m) {
   // Needed to let numpy arrays keep alive the scipp buffers.
   // VariableConcept must ALWAYS be passed to Python by its handle.
@@ -277,29 +299,6 @@ of variances.)");
         py::arg("x"), py::arg("dim"), py::arg("old"), py::arg("new"),
         py::call_guard<py::gil_scoped_release>());
 
-  m.def(
-      "vectors",
-      [](const std::vector<Dim> &labels, py::array_t<double> &values,
-         units::Unit unit) {
-        if (scipp::size(labels) != values.ndim() - 1)
-          throw std::runtime_error("bad shape to make vecs");
-        std::vector<scipp::index> shape(values.shape(),
-                                        values.shape() + labels.size());
-        Dimensions dims(labels, shape);
-        auto var = variable::make_vectors(
-            dims, unit,
-            element_array<double>(dims.volume() * 3,
-                                  core::default_init_elements));
-        auto elems = var.elements<Eigen::Vector3d>();
-        copy_array_into_view(values, elems.values<double>(), elems.dims());
-        return var;
-      },
-      py::arg("dims"), py::arg("values"), py::arg("unit") = units::one);
-  m.def(
-      "matrices",
-      [](const Variable &elements) {
-        return Variable{};
-        // return variable::make_matrices(elements);
-      },
-      py::arg("elements"));
+  bind_structured_creation<Eigen::Vector3d, double, 3>(m, "vectors");
+  bind_structured_creation<Eigen::Matrix3d, double, 3, 3>(m, "matrices");
 }

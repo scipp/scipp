@@ -10,7 +10,7 @@
 #include "scipp/units/unit.h"
 #include "scipp/variable/data_model.h"
 #include "scipp/variable/except.h"
-#include "scipp/variable/matrix_model.h"
+#include "scipp/variable/structured_model.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable_factory.h"
 
@@ -28,10 +28,10 @@ namespace {
 
 template <class T> struct model { using type = DataModel<T>; };
 template <> struct model<Eigen::Vector3d> {
-  using type = MatrixModel<Eigen::Vector3d, 3>;
+  using type = StructuredModel<Eigen::Vector3d, 3>;
 };
 template <> struct model<Eigen::Matrix3d> {
-  using type = MatrixModel<Eigen::Matrix3d, 3, 3>;
+  using type = StructuredModel<Eigen::Matrix3d, 3, 3>;
 };
 template <class T> using model_t = typename model<T>::type;
 

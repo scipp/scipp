@@ -16,13 +16,13 @@
 namespace scipp::variable {
 
 /// Implementation of VariableConcept that holds and array with element type T.
-template <class T, int... N> class MatrixModel : public VariableConcept {
+template <class T, int... N> class StructuredModel : public VariableConcept {
 public:
   using value_type = T;
   static constexpr auto num_element = (N * ...);
 
-  MatrixModel(const scipp::index size, const units::Unit &unit,
-              element_array<double> model)
+  StructuredModel(const scipp::index size, const units::Unit &unit,
+                  element_array<double> model)
       : VariableConcept(units::one), // unit ignored
         m_elements(std::make_shared<DataModel<double>>(size * num_element, unit,
                                                        std::move(model))) {}
@@ -52,7 +52,7 @@ public:
   void setVariances(const Variable &variances) override;
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<MatrixModel<T, N...>>(*this);
+    return std::make_unique<StructuredModel<T, N...>>(*this);
   }
 
   bool hasVariances() const noexcept override {
@@ -106,11 +106,11 @@ private:
 
 template <class T, int... N>
 VariableConceptHandle
-MatrixModel<T, N...>::makeDefaultFromParent(const scipp::index size) const {
-  // return std::make_unique<MatrixModel<T, N...>>(size, unit(),
+StructuredModel<T, N...>::makeDefaultFromParent(const scipp::index size) const {
+  // return std::make_unique<StructuredModel<T, N...>>(size, unit(),
   // element_array<T>(size));
   throw std::runtime_error("todo how to get dims?");
-  // return std::make_unique<MatrixModel<T, N...>>();
+  // return std::make_unique<StructuredModel<T, N...>>();
 }
 
 /// Helper for implementing Variable(View)::operator==.
@@ -118,13 +118,14 @@ MatrixModel<T, N...>::makeDefaultFromParent(const scipp::index size) const {
 /// This method is using virtual dispatch as a trick to obtain T, such that
 /// values<T> and variances<T> can be compared.
 template <class T, int... N>
-bool MatrixModel<T, N...>::equals(const Variable &a, const Variable &b) const {
+bool StructuredModel<T, N...>::equals(const Variable &a,
+                                      const Variable &b) const {
   if (a.dims() != b.dims())
     return false;
   const auto &a_elems =
-      *requireT<const MatrixModel<T, N...>>(a.data()).m_elements;
+      *requireT<const StructuredModel<T, N...>>(a.data()).m_elements;
   const auto &b_elems =
-      *requireT<const MatrixModel<T, N...>>(b.data()).m_elements;
+      *requireT<const StructuredModel<T, N...>>(b.data()).m_elements;
   throw std::runtime_error("todo ");
   // return a_elems == b_elems;
 }
@@ -134,21 +135,22 @@ bool MatrixModel<T, N...>::equals(const Variable &a, const Variable &b) const {
 /// This method is using virtual dispatch as a trick to obtain T, such that
 /// transform can be called with any T.
 template <class T, int... N>
-void MatrixModel<T, N...>::copy(const Variable &src, Variable &dest) const {
+void StructuredModel<T, N...>::copy(const Variable &src, Variable &dest) const {
   transform_in_place<T>(dest, src, [](auto &a, const auto &b) { a = b; });
 }
 template <class T, int... N>
-void MatrixModel<T, N...>::copy(const Variable &src, Variable &&dest) const {
+void StructuredModel<T, N...>::copy(const Variable &src,
+                                    Variable &&dest) const {
   copy(src, dest);
 }
 
 template <class T, int... N>
-void MatrixModel<T, N...>::assign(const VariableConcept &other) {
-  *this = requireT<const MatrixModel<T, N...>>(other);
+void StructuredModel<T, N...>::assign(const VariableConcept &other) {
+  *this = requireT<const StructuredModel<T, N...>>(other);
 }
 
 template <class T, int... N>
-void MatrixModel<T, N...>::setVariances(const Variable &) {
+void StructuredModel<T, N...>::setVariances(const Variable &) {
   throw except::VariancesError("This data type cannot have variances.");
 }
 
