@@ -44,6 +44,10 @@ class Plot(dict):
         for item in self.values():
             item.close()
 
+    def redraw(self):
+        for item in self.values():
+            item.redraw()
+
 
 # class PlotArray:
 #     """

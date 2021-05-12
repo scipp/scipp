@@ -121,7 +121,7 @@ class PlotModel3d(PlotModel):
                                  variances=np.zeros(shape),
                                  dtype=data_slice.data.dtype,
                                  unit=sc.units.one),
-                masks=data_slice.masks)
+                masks={m: mask for m, msk in data_slice.masks.items()})
 
             self.dslice *= data_slice.data
         else:
