@@ -4,10 +4,6 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <limits>
-#include <memory>
-#include <unordered_map>
-#include <utility>
 #include <vector>
 
 #include "scipp-core_export.h"

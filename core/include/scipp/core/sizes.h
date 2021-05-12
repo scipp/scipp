@@ -4,8 +4,6 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <unordered_map>
-
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
 #include "scipp/common/span.h"
@@ -70,8 +68,6 @@ protected:
 
 public:
   Sizes() = default;
-
-  scipp::index count(const Dim dim) const noexcept { return contains(dim); }
 
   void set(const Dim dim, const scipp::index size);
   void resize(const Dim dim, const scipp::index size);

@@ -36,8 +36,8 @@ namespace {
 constexpr auto is_bin_edges = [](const auto &coord, const auto &dims,
                                  const Dim dim) {
   return coord.dims().contains(dim) &&
-         ((dims.count(dim) == 1) ? coord.dims()[dim] != dims.at(dim)
-                                 : coord.dims()[dim] == 2);
+         ((dims.contains(dim) == 1) ? coord.dims()[dim] != dims.at(dim)
+                                    : coord.dims()[dim] == 2);
 };
 template <class T1, class T2, class DimT>
 auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
@@ -48,8 +48,7 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
       if (is_bin_edges(a_, dimsA, dim) != is_bin_edges(b[key], dimsB, dim)) {
         throw except::BinEdgeError(
             "Either both or neither of the inputs must be bin edges.");
-      } else if (a_.dims()[dim] ==
-                 ((dimsA.count(dim) == 1) ? dimsA.at(dim) : 1)) {
+      } else if (a_.dims()[dim] == (dimsA.contains(dim) ? dimsA.at(dim) : 1)) {
         out.emplace(key, concatenate(a_, b[key], dim));
       } else {
         out.emplace(key, join_edges(a_, b[key], dim));
@@ -63,11 +62,11 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
         out.emplace(
             key,
             concatenate(
-                broadcast(a_, merge(dimsA.count(dim)
+                broadcast(a_, merge(dimsA.contains(dim)
                                         ? Dimensions(dim, dimsA.at(dim))
                                         : Dimensions(),
                                     a_.dims())),
-                broadcast(b[key], merge(dimsB.count(dim)
+                broadcast(b[key], merge(dimsB.contains(dim)
                                             ? Dimensions(dim, dimsB.at(dim))
                                             : Dimensions(),
                                         b[key].dims())),
