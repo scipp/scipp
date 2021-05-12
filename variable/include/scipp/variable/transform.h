@@ -116,7 +116,7 @@ inline constexpr auto stride_special_cases<3, true> =
 
 template <>
 inline constexpr auto stride_special_cases<2, false> =
-    std::array<std::array<scipp::index, 2>, 1>{{
+    std::array<std::array<scipp::index, 2>, 2>{{
         {1, 1}, // transform(var)
         {1, 0}  // transform(broadcast(var))
     }};
