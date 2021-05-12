@@ -434,6 +434,16 @@ TEST(DatasetTest, set_erase_item_mask) {
   EXPECT_FALSE(ds["data_x"].masks().contains("item-mask"));
 }
 
+TEST(DatasetTest, item_name) {
+  DatasetFactory3D factory;
+  const auto dataset = factory.make();
+  DataArray array(dataset["data_xyz"]);
+  EXPECT_EQ(array, dataset["data_xyz"]);
+  // Comparison ignores the name, so this is tested separately.
+  EXPECT_EQ(dataset["data_xyz"].name(), "data_xyz");
+  EXPECT_EQ(array.name(), "data_xyz");
+}
+
 struct DatasetRenameTest : public ::testing::Test {
   DatasetRenameTest() {
     DatasetFactory3D factory(4, 5, 6, Dim::X);

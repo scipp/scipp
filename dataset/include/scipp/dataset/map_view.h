@@ -196,4 +196,7 @@ template <class Masks>
 SCIPP_DATASET_EXPORT Variable masks_merge_if_contained(const Masks &masks,
                                                        const Dimensions &dims);
 
+[[nodiscard]] SCIPP_DATASET_EXPORT Coords copy(const Coords &coords);
+[[nodiscard]] SCIPP_DATASET_EXPORT Masks copy(const Masks &masks);
+
 } // namespace scipp::dataset
