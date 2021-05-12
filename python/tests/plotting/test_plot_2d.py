@@ -317,3 +317,11 @@ def test_plot_2d_datetime():
                                                values=np.linspace(0, 10, M))
                           })
     data2d.plot().close()
+
+def test_plot_redraw():
+    d = make_dense_dataset(ndim=2, unit='K')
+    p = sc.plot(d)
+    assert p.view.figure.image_values.get_array()[0, 2] == np.sin(2.0)
+    d *= 5.0
+    p.redraw()
+    assert p.view.figure.image_values.get_array()[0, 2] == 5.0 * np.sin(2.0)

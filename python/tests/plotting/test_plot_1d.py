@@ -314,3 +314,12 @@ def test_plot_legend():
     plot(d, legend={"show": False})
     plot(d, legend={"loc": 5})
     plot(d, legend={"show": True, "loc": 4})
+
+
+def test_plot_redraw():
+    d = make_dense_dataset(ndim=1)
+    p = sc.plot(d)
+    assert p.view.figure.data_lines['Sample'].get_ydata()[2] == np.sin(2.0)
+    d['Sample'] *= 5.0
+    p.redraw()
+    assert p.view.figure.data_lines['Sample'].get_ydata()[2] == 5.0 * np.sin(2.0)
