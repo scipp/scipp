@@ -83,18 +83,6 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
             auto arr = py::array(b);
             auto varr = v ? std::optional{py::array(*v)} : std::nullopt;
             return doMakeVariable({}, arr, varr, unit, dtype);
-          } else if (info.ndim == 1 &&
-                     scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
-            return do_init_0D<Eigen::Vector3d>(
-                b.cast<Eigen::Vector3d>(),
-                v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
-                unit);
-          } else if (info.ndim == 2 &&
-                     scipp_dtype(dtype) == core::dtype<Eigen::Matrix3d>) {
-            return do_init_0D<Eigen::Matrix3d>(
-                b.cast<Eigen::Matrix3d>(),
-                v ? std::optional(v->cast<Eigen::Matrix3d>()) : std::nullopt,
-                unit);
           } else if ((info.ndim == 1) &&
                      py::isinstance(b.get_type(), np_datetime64_type)) {
             if (v.has_value()) {
@@ -164,8 +152,6 @@ of variances.)");
   bind_init_0D<DataArray>(variable);
   bind_init_0D<Dataset>(variable);
   bind_init_0D<std::string>(variable);
-  bind_init_0D<Eigen::Vector3d>(variable);
-  bind_init_0D<Eigen::Matrix3d>(variable);
   variable
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},

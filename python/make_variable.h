@@ -128,17 +128,6 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
       return init_1D_no_variance(labels, shape,
                                  values.cast<std::vector<std::string>>(), unit);
     }
-    if (dtypeTag == core::dtype<Eigen::Vector3d>) {
-      std::vector<scipp::index> shape(values.shape(),
-                                      values.shape() + values.ndim() - 1);
-      return init_1D_no_variance(
-          labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
-    } else if (dtypeTag == core::dtype<Eigen::Matrix3d>) {
-      std::vector<scipp::index> shape(values.shape(),
-                                      values.shape() + values.ndim() - 2);
-      return init_1D_no_variance(
-          labels, shape, values.cast<std::vector<Eigen::Matrix3d>>(), unit);
-    }
   }
 
   if (dtypeTag == scipp::dtype<core::time_point>) {

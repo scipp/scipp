@@ -41,23 +41,6 @@ class NumpyDataIO:
             group['variances'].read_direct(data.variances)
 
 
-class EigenDataIO:
-    @staticmethod
-    def write(group, data):
-        import numpy as np
-        return group.create_dataset('values', data=np.asarray(data.values))
-
-    @staticmethod
-    def read(group, data):
-        import numpy as np
-        if len(data.shape) == 0:
-            data.value = group['values']
-        else:
-            # Wrapping in np.asarray is important, otherwise we appear to be
-            # using a different, much slower code path in the setter
-            data.values = np.asarray(group['values'])
-
-
 class BinDataIO:
     @staticmethod
     def write(group, data):
@@ -154,7 +137,8 @@ def _data_handler_lut():
     from .._scipp.core import dtype as d
     handler = {}
     for dtype in [
-            d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64
+            d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64,
+            d.vector_3_float64, d.matrix_3_float64
     ]:
         handler[str(dtype)] = NumpyDataIO
     for dtype in [d.VariableView, d.DataArrayView, d.DatasetView]:
@@ -163,8 +147,6 @@ def _data_handler_lut():
         handler[str(dtype)] = ScippDataIO
     for dtype in [d.string]:
         handler[str(dtype)] = StringDataIO
-    for dtype in [d.vector_3_float64, d.matrix_3_float64]:
-        handler[str(dtype)] = EigenDataIO
     return handler
 
 
