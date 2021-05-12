@@ -279,12 +279,27 @@ of variances.)");
 
   m.def(
       "vectors",
-      [](const Variable &elements) { return variable::make_vectors(elements); },
-      py::arg("elements"));
+      [](const std::vector<Dim> &labels, py::array_t<double> &values,
+         units::Unit unit) {
+        if (scipp::size(labels) != values.ndim() - 1)
+          throw std::runtime_error("bad shape to make vecs");
+        std::vector<scipp::index> shape(values.shape(),
+                                        values.shape() + labels.size());
+        Dimensions dims(labels, shape);
+        auto var = variable::make_vectors(
+            dims, unit,
+            element_array<double>(dims.volume() * 3,
+                                  core::default_init_elements));
+        auto elems = var.elements<Eigen::Vector3d>();
+        copy_array_into_view(values, elems.values<double>(), elems.dims());
+        return var;
+      },
+      py::arg("dims"), py::arg("values"), py::arg("unit") = units::one);
   m.def(
       "matrices",
       [](const Variable &elements) {
-        return variable::make_matrices(elements);
+        return Variable{};
+        // return variable::make_matrices(elements);
       },
       py::arg("elements"));
 }

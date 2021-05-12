@@ -3,7 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
-#include "scipp/common/initialization.h"
+#include "scipp/common/initialization.h" // TODO can remove this?
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
@@ -21,23 +21,20 @@ public:
   using value_type = T;
   static constexpr auto num_element = (N * ...);
 
-  MatrixModel(const VariableConceptHandle &elements)
-      : VariableConcept(elements->unit()), m_elements(elements) {
-    if (hasVariances())
-      throw except::VariancesError("Matrix data type cannot have variances.");
-    if (elements->dtype() != scipp::dtype<double>)
-      throw except::TypeError(
-          "Matrix data type only supported with float64 elements.");
-    if (elements->size() % num_element != 0)
-      throw except::DimensionError("Underlying elements do not have correct "
-                                   "shape for this matrix type.");
-  }
+  MatrixModel(const scipp::index size, const units::Unit &unit,
+              element_array<double> model)
+      : VariableConcept(units::one), // unit ignored
+        m_elements(std::make_shared<DataModel<double>>(size * num_element, unit,
+                                                       std::move(model))) {}
 
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
   DType dtype() const noexcept override { return scipp::dtype<T>; }
   scipp::index size() const override {
     return m_elements->size() / num_element;
   }
+
+  const units::Unit &unit() const override { return m_elements->unit(); }
+  void setUnit(const units::Unit &unit) override { m_elements->setUnit(unit); }
 
   VariableConceptHandle
   makeDefaultFromParent(const scipp::index size) const override;

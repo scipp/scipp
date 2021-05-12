@@ -9,9 +9,11 @@
 namespace scipp::variable {
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-make_vectors(const Variable &elements);
+make_vectors(const Dimensions &dims, const units::Unit &unit,
+             element_array<double> &&values);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-make_matrices(const Variable &elements);
+make_matrices(const Dimensions &dims, const units::Unit &unit,
+              element_array<double> &&values);
 
 } // namespace scipp::variable

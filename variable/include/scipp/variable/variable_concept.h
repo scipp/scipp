@@ -37,7 +37,7 @@ public:
   makeDefaultFromParent(const Variable &shape) const = 0;
 
   virtual DType dtype() const noexcept = 0;
-  const units::Unit &unit() const { return m_unit; }
+  virtual const units::Unit &unit() const { return m_unit; }
   virtual scipp::index size() const = 0;
 
   virtual void setUnit(const units::Unit &unit) { m_unit = unit; }

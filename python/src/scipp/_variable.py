@@ -167,8 +167,11 @@ def matrices(*, elements):
     return _cpp.matrices(elements=elements)
 
 
-def vectors(*, elements):
-    return _cpp.vectors(elements=elements)
+def vectors(*,
+            dims: _Sequence[str],
+            unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+            values):
+    return _cpp.vectors(dims=dims, unit=unit, values=values)
 
 
 def empty_like(var: _cpp.Variable) -> _cpp.Variable:
