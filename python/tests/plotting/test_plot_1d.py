@@ -163,10 +163,9 @@ def test_plot_vector_axis_labels_1d():
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
-    d.coords['x'] = sc.Variable(['x'],
-                                values=np.random.random([N, 3]),
-                                unit=sc.units.m,
-                                dtype=sc.dtype.vector_3_float64)
+    d.coords['x'] = sc.vectors(dims=['x'],
+                               values=np.random.random([N, 3]),
+                               unit=sc.units.m)
     plot(d)
 
 
@@ -204,10 +203,9 @@ def test_plot_with_vector_labels():
     d.coords['x'] = sc.Variable(['x'],
                                 values=np.arange(N, dtype=np.float64),
                                 unit=sc.units.m)
-    d.coords['labs'] = sc.Variable(['x'],
-                                   values=np.random.random([N, 3]),
-                                   unit=sc.units.m,
-                                   dtype=sc.dtype.vector_3_float64)
+    d.coords['labs'] = sc.vectors(dims=['x'],
+                                  values=np.random.random([N, 3]),
+                                  unit=sc.units.m)
     plot(d)
 
 
@@ -220,10 +218,9 @@ def test_plot_vector_axis_with_labels():
     d.coords['labs'] = sc.Variable(['x'],
                                    values=np.arange(N, dtype=np.float64),
                                    unit=sc.units.m)
-    d.coords['x'] = sc.Variable(['x'],
-                                values=np.random.random([N, 3]),
-                                unit=sc.units.m,
-                                dtype=sc.dtype.vector_3_float64)
+    d.coords['x'] = sc.vectors(dims=['x'],
+                               values=np.random.random([N, 3]),
+                               unit=sc.units.m)
     plot(d)
 
 
