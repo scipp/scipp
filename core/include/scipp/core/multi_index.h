@@ -31,16 +31,34 @@ auto get_slice_dim(const T &param, const Ts &... params) {
   return param ? param.dim : get_slice_dim(params...);
 }
 
-template <scipp::index N, size_t... I, class... StridesArgs>
-void copy_strides(std::array<std::array<scipp::index, NDIM_MAX>, N> &dest,
+template <size_t N, size_t... I, class... StridesArgs>
+void copy_strides(std::array<std::array<scipp::index, N>, NDIM_MAX> &dest,
                   const scipp::index ndim, std::index_sequence<I...>,
                   const StridesArgs &... strides) {
-  (std::reverse_copy(strides.begin(), strides.begin() + ndim, dest[I].begin()),
-   ...);
+  (
+      [&]() {
+        for (scipp::index dim = 0; dim < ndim; ++dim) {
+          dest[dim][I] = strides[ndim - 1 - dim];
+        }
+      }(),
+      ...);
   // The last stride must be 0 for the end-state detection.
   if (ndim < NDIM_MAX) {
-    ((dest[I][ndim] = 0), ...);
+    ((dest[ndim][I] = 0), ...);
   }
+}
+
+template <size_t N>
+scipp::index
+flat_index(const scipp::index i_data,
+           const std::array<scipp::index, NDIM_MAX + 1> &coord,
+           const std::array<std::array<scipp::index, N>, NDIM_MAX> &stride,
+           scipp::index begin_index, const scipp::index end_index) {
+  scipp::index res = 0;
+  for (; begin_index < end_index; ++begin_index) {
+    res += coord[begin_index] * stride[begin_index][i_data];
+  }
+  return res;
 }
 } // namespace detail
 
@@ -108,13 +126,13 @@ public:
     detail::copy_strides<N>(
         m_stride, nestedDims.ndim(), std::index_sequence_for<Params...>(),
         params.bucketParams() ? Strides{nestedDims} : Strides{}...);
-    std::array<std::array<scipp::index, NDIM_MAX>, N> binStrides;
+    std::array<std::array<scipp::index, N>, NDIM_MAX> binStrides;
     detail::copy_strides<N>(binStrides, m_ndim - m_ndim_nested,
                             std::index_sequence_for<Params...>(),
                             params.strides()...);
     for (scipp::index data = 0; data < N; ++data) {
       for (scipp::index d = 0; d < NDIM_MAX - m_ndim_nested; ++d)
-        m_stride[data][m_ndim_nested + d] = binStrides[data][d];
+        m_stride[m_ndim_nested + d][data] = binStrides[d][data];
       load_bin_params(data);
     }
     if (m_shape[m_nested_dim_index] == 0)
@@ -142,15 +160,15 @@ public:
         for (scipp::index data = 0; data < N; ++data) {
           m_data_index[data] +=
               // take a step in dimension d+1
-              m_stride[data][d + 1]
+              m_stride[d + 1][data]
               // rewind dimension d (m_coord[d] == m_shape[d])
-              - m_coord[d] * m_stride[data][d];
+              - m_coord[d] * m_stride[d][data];
           // move to next bin
           if (d == m_ndim_nested - 1) // last non-bin dimension
-            m_bin[data].m_bin_index += m_stride[data][d + 1];
+            m_bin[data].m_bin_index += m_stride[d + 1][data];
           else // bin dimension -> rewind earlier bins
             m_bin[data].m_bin_index +=
-                m_stride[data][d + 1] - m_coord[d] * m_stride[data][d];
+                m_stride[d + 1][data] - m_coord[d] * m_stride[d][data];
           if (m_coord[d + 1] != m_shape[d + 1]) {
             // We might have hit the end of the data, keep going with the outer
             // dimensions.
@@ -170,9 +188,9 @@ public:
       for (scipp::index data = 0; data < N; ++data) {
         m_data_index[data] +=
             // take a step in dimension d+1
-            m_stride[data][d + 1]
+            m_stride[d + 1][data]
             // rewind dimension d (m_coord[d] == m_shape[d])
-            - m_coord[d] * m_stride[data][d];
+            - m_coord[d] * m_stride[d][data];
       }
       ++m_coord[d + 1];
       m_coord[d] = 0;
@@ -183,7 +201,7 @@ public:
 
   constexpr void increment() noexcept {
     for (scipp::index data = 0; data < N; ++data)
-      m_data_index[data] += m_stride[data][0];
+      m_data_index[data] += m_stride[0][data];
     ++m_coord[0];
     if (m_coord[0] == m_shape[0])
       increment_outer();
@@ -191,7 +209,7 @@ public:
 
   constexpr void increment_inner_by(const scipp::index distance) noexcept {
     for (scipp::index data = 0; data < N; ++data) {
-      m_data_index[data] += distance * m_stride[data][0];
+      m_data_index[data] += distance * m_stride[0][data];
     }
     m_coord[0] += distance;
   }
@@ -199,7 +217,7 @@ public:
   [[nodiscard]] auto inner_strides() const noexcept {
     std::array<scipp::index, N> strides;
     for (scipp::index data = 0; data < N; ++data) {
-      strides[data] = m_stride[data][0];
+      strides[data] = m_stride[0][data];
     }
     return strides;
   }
@@ -232,15 +250,13 @@ public:
       }
     }
     for (scipp::index data = 0; data < N; ++data) {
-      m_data_index[data] = flat_index_from_strides(
-          m_stride[data].begin(), m_stride[data].begin() + m_ndim,
-          m_coord.begin());
+      m_data_index[data] =
+          detail::flat_index(data, m_coord, m_stride, 0, m_ndim);
     }
     if (has_bins()) {
       for (scipp::index data = 0; data < N; ++data) {
-        m_bin[data].m_bin_index = flat_index_from_strides(
-            m_stride[data].begin() + m_ndim_nested,
-            m_stride[data].begin() + m_ndim, m_coord.begin() + m_ndim_nested);
+        m_bin[data].m_bin_index =
+            detail::flat_index(data, m_coord, m_stride, m_ndim_nested, m_ndim);
         load_bin_params(data);
       }
       if (m_shape[m_nested_dim_index] == 0 && offset != m_end_sentinel)
@@ -289,8 +305,8 @@ public:
 
   /// Return true if the first subindex has a 0 stride
   [[nodiscard]] bool has_stride_zero() const noexcept {
-    for (scipp::index i = 0; i < m_ndim; ++i)
-      if (m_stride[0][i] == 0)
+    for (scipp::index dim = 0; dim < m_ndim; ++dim)
+      if (m_stride[dim][0] == 0)
         return true;
     return false;
   }
@@ -308,7 +324,7 @@ private:
   };
   std::array<scipp::index, N> m_data_index = {};
   // This does *not* 0-init the inner arrays!
-  std::array<std::array<scipp::index, NDIM_MAX>, N> m_stride = {};
+  std::array<std::array<scipp::index, N>, NDIM_MAX> m_stride = {};
   std::array<scipp::index, NDIM_MAX + 1> m_coord = {};
   std::array<scipp::index, NDIM_MAX + 1> m_shape = {};
   /// End-sentinel, essentially the volume of the iteration dimensions.
