@@ -6,7 +6,7 @@ from .._scipp import core as sc
 from .. import _utils as su
 from ..compat.dict import from_dict
 from .dispatch import dispatch
-from .helpers import Plot
+from .outputs import PlotDict
 from .tools import make_fake_coord, get_line_param
 import numpy as np
 import itertools
@@ -191,7 +191,7 @@ def plot(scipp_obj,
                 tobeplotted[key]["mpl_line_params"][n][name] = p
 
     # Plot all the subsets
-    output = Plot()
+    output = PlotDict()
     for key, val in tobeplotted.items():
         output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
                                name=key,

@@ -6,7 +6,53 @@ from .tools import parse_params
 import ipywidgets as ipw
 
 
-class SciPlot:
+class PlotDict(dict):
+    """
+    The Plot object is used as output for the plot command.
+    It is a small wrapper around python dict, with an `_ipython_display_`
+    representation.
+    The dict will contain one entry for each entry in the input supplied to
+    the plot function.
+    More functionalities can be added in the future.
+    """
+    def __init__(self, *arg, **kw):
+        super(PlotDict, self).__init__(*arg, **kw)
+
+    def _ipython_display_(self):
+        """
+        IPython display representation for Jupyter notebooks.
+        """
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+        """
+        Return plot contents into a single VBocx container
+        """
+        import ipywidgets as ipw
+        contents = []
+        for item in self.values():
+            if item is not None:
+                contents.append(item._to_widget())
+        return ipw.VBox(contents)
+
+    def show(self):
+        for item in self.values():
+            item.show()
+
+    def hide_widgets(self):
+        for item in self.values():
+            item.hide_widgets()
+
+    def close(self):
+        for item in self.values():
+            item.close()
+
+    def redraw(self):
+        for item in self.values():
+            item.redraw()
+
+
+class Plot:
     """
     Base class for plot objects. It uses the Model-View-Controller pattern to
     separate displayed figures and user-interaction via widgets from the
