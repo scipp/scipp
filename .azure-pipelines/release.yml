@@ -4,6 +4,10 @@ parameters:
   type: boolean
   default: false
 
+# Note: the 'endpoint' refers to the Azure service connection, which can be
+# found on the Azure pipelines web interface under
+# scipp > scipp > Settings > Service connections
+
 resources:
   repositories:
   - repository: SharedPipelines
