@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/core/array_to_string.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
 #include "scipp/core/has_eval.h"
@@ -15,14 +16,6 @@
 #include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
-
-template <class T>
-Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
-                   T values_, std::optional<T> variances_)
-    : m_dims(dimensions), m_strides(dimensions),
-      m_object(std::make_unique<DataModel<typename T::value_type>>(
-          dimensions.volume(), unit, std::move(values_),
-          std::move(variances_))) {}
 
 namespace {
 
@@ -49,7 +42,36 @@ template <>
 Dimensions inner_dims<Eigen::Matrix3d>{{Dim::Internal0, 3},
                                        {Dim::Internal1, 3}};
 
+template <class T>
+auto make_model(const units::Unit unit, const Dimensions &dimensions,
+                element_array<T> values,
+                std::optional<element_array<T>> variances) {
+  if constexpr (std::is_same_v<model_t<T>, DataModel<T>>) {
+    return std::make_unique<model_t<T>>(
+        dimensions.volume(), unit, std::move(values), std::move(variances));
+  } else {
+    // There is an extra copy caused here, but in practice this constructor
+    // should not be used much outside unit tests.
+    using Elem = typename model_t<T>::element_type;
+    element_array<Elem> elems;
+    if (values) {
+      auto begin = static_cast<Elem *>(&values.begin()->operator()(0));
+      auto end = begin + model_t<T>::num_element * values.size();
+      elems = element_array<Elem>{begin, end};
+    }
+    return std::make_unique<model_t<T>>(dimensions.volume(), unit,
+                                        std::move(elems));
+  }
+}
+
 } // namespace
+
+template <class T>
+Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
+                   T values_, std::optional<T> variances_)
+    : m_dims(dimensions), m_strides(dimensions),
+      m_object(make_model(unit, dimensions, std::move(values_),
+                          std::move(variances_))) {}
 
 template <class T, class... Index>
 Variable Variable::elements(const Index &... index) const {
@@ -59,7 +81,7 @@ Variable Variable::elements(const Index &... index) const {
   elements.m_offset *= model_t<T>::num_element;
   for (scipp::index i = 0; i < dims().ndim(); ++i)
     elements.m_strides[i] = model_t<T>::num_element * strides()[i];
-  if constexpr(sizeof...(index) == 0) {
+  if constexpr (sizeof...(index) == 0) {
     elements.unchecked_strides()[elements.dims().ndim()] = 1; // TODO matrix
     elements.unchecked_dims() = merge(elements.dims(), inner_dims<T>);
   } else {

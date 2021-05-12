@@ -20,6 +20,7 @@ template <class T, class Elem, int... N>
 class StructuredModel : public VariableConcept {
 public:
   using value_type = T;
+  using element_type = Elem;
   static constexpr auto num_element = (N * ...);
 
   StructuredModel(const scipp::index size, const units::Unit &unit,
@@ -108,10 +109,8 @@ private:
 template <class T, class Elem, int... N>
 VariableConceptHandle StructuredModel<T, Elem, N...>::makeDefaultFromParent(
     const scipp::index size) const {
-  // return std::make_unique<StructuredModel<T, N...>>(size, unit(),
-  // element_array<T>(size));
-  throw std::runtime_error("todo how to get dims?");
-  // return std::make_unique<StructuredModel<T, N...>>();
+  return std::make_unique<StructuredModel<T, Elem, N...>>(
+      size, unit(), element_array<Elem>(size * num_element));
 }
 
 /// Helper for implementing Variable(View)::operator==.
@@ -121,14 +120,18 @@ VariableConceptHandle StructuredModel<T, Elem, N...>::makeDefaultFromParent(
 template <class T, class Elem, int... N>
 bool StructuredModel<T, Elem, N...>::equals(const Variable &a,
                                             const Variable &b) const {
+  if (a.unit() != b.unit())
+    return false;
   if (a.dims() != b.dims())
     return false;
-  const auto &a_elems =
-      *requireT<const StructuredModel<T, Elem, N...>>(a.data()).m_elements;
-  const auto &b_elems =
-      *requireT<const StructuredModel<T, Elem, N...>>(b.data()).m_elements;
-  throw std::runtime_error("todo ");
-  // return a_elems == b_elems;
+  if (a.dtype() != b.dtype())
+    return false;
+  if (a.hasVariances() != b.hasVariances())
+    return false;
+  if (a.dims().volume() == 0 && a.dims() == b.dims())
+    return true;
+  return equals_impl(a.elements<T>().template values<Elem>(),
+                     b.elements<T>().template values<Elem>());
 }
 
 /// Helper for implementing Variable(View) copy operations.
