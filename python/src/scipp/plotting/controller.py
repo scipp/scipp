@@ -424,7 +424,7 @@ class PlotController:
         if normalize:
             self.rescale_to_data()
 
-    def update_data(self, change=None):
+    def update_data(self, change=None, force_update=False):
         """
         This function is called when the data in the displayed 1D plot or 2D
         image is to be updated. This happens for instance when we move a slider
@@ -449,7 +449,8 @@ class PlotController:
         info = {"slice_label": self._make_slice_label(slices, "")[1:]}
 
         new_values = self.model.update_data(slices,
-                                            mask_info=self.get_masks_info())
+                                            mask_info=self.get_masks_info(),
+                                            force_update=force_update)
         self.view.update_data(new_values, info=info)
         if self.panel is not None:
             self.panel.update_data(info)

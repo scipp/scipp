@@ -35,10 +35,13 @@ class ResamplingModel():
     def bounds(self, bnds):
         self._bounds = bnds
 
-    @property
-    def data(self):
-        self._call_resample()
+    # @property
+    def get_data_array(self, force_update=False):
+        self._call_resample(force_update=force_update)
         return self._resampled
+
+    def get_data_coord(self, dim):
+        return self._resampled.coords[dim]
 
     @property
     def edges(self):
@@ -79,13 +82,13 @@ class ResamplingModel():
                 edges.insert(0, edges.pop(i))
         return edges
 
-    def _call_resample(self):
+    def _call_resample(self, force_update=False):
         out = self._array
         params = {}
         for dim, s in self.bounds.items():
             dim = str(dim)
             if s is None:
-                coord = self._array.meta[dim]
+                coord = self._array.coords[dim]
                 low = coord.values[0]
                 high = coord.values[-1]
                 params[dim] = (low, high, coord.unit, self.resolution[dim])
@@ -96,35 +99,35 @@ class ResamplingModel():
                 low, high = s
                 if isinstance(low, int):
                     out = out[dim, low:high]
-                    low = out.meta[dim][dim, 0]
-                    high = out.meta[dim][dim, -1]
+                    low = out.coords[dim][dim, 0]
+                    high = out.coords[dim][dim, -1]
                 else:
                     # cannot pre-select bins for multi-dim coords
-                    if len(out.meta[dim].dims) == 1:
-                        print(sc.get_slice_params(out.data, out.meta[dim],
-                                                      low, high))
-                        sl = sc.get_slice_params(out.data, out.meta[dim],
+                    if len(out.coords[dim].dims) == 1:
+                        # TODO: for now, slicing in scipp does not support step
+                        sl = sc.get_slice_params(out.data, out.coords[dim],
                                                       low, high)
                         out = out[sl[0], slice(sl[1].start, sl[1].stop)]
                         # out = out[sc.get_slice_params(out.data, out.meta[dim],
                         #                               low, high)]
                 params[dim] = (low.value, high.value, low.unit,
                                self.resolution[dim])
-        # if params == self._home_params:
-        #     # This is a crude caching mechanism for past views. Currently we
-        #     # have the "back" buttons disabled in the matplotlib toolbar, so
-        #     # we cache only the "home" view. This is the most expensive to
-        #     # create anyway.
-        #     self._resampled_params = self._home_params
-        #     self._resampled = self._home
-        # elif self._resampled is None or params != self._resampled_params:
-        #     self._resampled_params = params
-        #     self._edges = self._make_edges(params)
-        #     self._resampled = self._resample(out)
+        if (params == self._home_params) and (not force_update):
+            # This is a crude caching mechanism for past views. Currently we
+            # have the "back" buttons disabled in the matplotlib toolbar, so
+            # we cache only the "home" view. This is the most expensive to
+            # create anyway.
+            self._resampled_params = self._home_params
+            self._resampled = self._home
+        elif (self._resampled is None) or (
+            params != self._resampled_params) or force_update:
+            self._resampled_params = params
+            self._edges = self._make_edges(params)
+            self._resampled = self._resample(out)
 
-        self._resampled_params = params
-        self._edges = self._make_edges(params)
-        self._resampled = self._resample(out)
+        # self._resampled_params = params
+        # self._edges = self._make_edges(params)
+        # self._resampled = self._resample(out)
 
         if self._home is None:
             self._home = self._resampled
@@ -136,16 +139,16 @@ class ResamplingBinnedModel(ResamplingModel):
         super().__init__(*args, **kwargs)
         # TODO See #1469. This is a temporary hack to work around the
         # conversion of coords to edges in model.py.
-        new_meta = {name: var for name, var in self._array.meta.items()}
-        self._array = PlotArray(data=self._array.data,
-                                masks=self._array.masks,
-                                meta=new_meta)
-        for name, var in self._array.meta.items():
+        # new_coords = {name: var for name, var in self._array.coords.items()}
+        # self._array = PlotArray(data=self._array.data,
+        #                         masks=self._array.masks,
+        #                         meta=new_meta)
+        for name, var in self._array.coords.items():
             if len(var.dims) == 0:
                 continue
             dim = var.dims[-1]
-            if name not in self._array.data.bins.meta:
-                self._array.meta[name] = to_bin_centers(var, dim)
+            if name not in self._array.data.bins.coords:
+                self._array.coords[name] = to_bin_centers(var, dim)
 
     def _resample(self, array):
         # We could bin with all edges and then use `bins.sum()` but especially
@@ -157,14 +160,14 @@ class ResamplingBinnedModel(ResamplingModel):
             # Must specify bounds for final dim despite handling by `histogram`
             # below: If coord is ragged binning would throw otherwise.
             bounds = sc.concatenate(edges[dim, 0], edges[dim, -1], dim)
-            binned = sc.bin_with_coords(array.data, array.meta,
+            binned = sc.bin_with_coords(array.data, array.coords,
                                         self.edges[:-1] + [bounds], [])
             a = sc.histogram(binned, edges)
         else:
-            a = sc.bin_with_coords(array.data, array.meta, self.edges,
+            a = sc.bin_with_coords(array.data, array.coords, self.edges,
                                    []).bins.sum()
         for name, mask in array.masks.items():
-            a.masks[name] = self._rebin(mask, array.meta)
+            a.masks[name] = self._rebin(mask, array.coords)
         return a
 
 
@@ -174,11 +177,11 @@ class ResamplingCountsModel(ResamplingModel):
 
     def _resample(self, array):
         return sc.DataArray(
-            data=self._rebin(array.data, array.meta),
+            data=self._rebin(array.data, array.coords),
             coords={edge.dims[-1]: edge
                     for edge in self.edges},
             masks={
-                name: self._rebin(mask, array.meta)
+                name: self._rebin(mask, array.coords)
                 for name, mask in array.masks.items()
             })
 
@@ -196,7 +199,7 @@ class ResamplingDenseModel(ResamplingModel):
         if array.dtype != sc.dtype.float64:
             array.data = array.data.astype(sc.dtype.float64)
         for dim in array.data.dims:
-            coord = array.meta[dim]
+            coord = array.coords[dim]
             width = coord[dim, 1:] - coord[dim, :-1]
             width.unit = sc.units.one
             array.data *= width
@@ -213,11 +216,11 @@ class ResamplingDenseModel(ResamplingModel):
 
     def _resample(self, array):
         return sc.DataArray(
-            data=self._from_density(self._rebin(array.data, array.meta)),
+            data=self._from_density(self._rebin(array.data, array.coords)),
             coords={edge.dims[-1]: edge
                     for edge in self.edges},
             masks={
-                name: self._rebin(mask, array.meta)
+                name: self._rebin(mask, array.coords)
                 for name, mask in array.masks.items()
             })
 

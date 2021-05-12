@@ -299,3 +299,6 @@ class SciPlot:
         directory where the script or notebook is running.
         """
         self.view.savefig(filename=filename)
+
+    def redraw(self):
+        self.controller.update_data(force_update=True)

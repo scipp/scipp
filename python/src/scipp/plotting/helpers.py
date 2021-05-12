@@ -45,45 +45,45 @@ class Plot(dict):
             item.close()
 
 
-class PlotArray:
-    """
-    Helper class to hold the contents of a DataArray without making copies.
-    Slicing similar to slicing of data arrays is supported, without the
-    distinction between coords and attrs. Both are treated in a unified way
-    in the `meta` dict.
-    """
-    def __init__(self, data, meta=None, masks=None):
-        self.data = data
-        self.meta = {} if meta is None else {
-            str(name): var
-            for name, var in meta.items()
-        }
-        self.masks = {} if masks is None else masks
+# class PlotArray:
+#     """
+#     Helper class to hold the contents of a DataArray without making copies.
+#     Slicing similar to slicing of data arrays is supported, without the
+#     distinction between coords and attrs. Both are treated in a unified way
+#     in the `meta` dict.
+#     """
+#     def __init__(self, data, meta=None, masks=None):
+#         self.data = data
+#         self.meta = {} if meta is None else {
+#             str(name): var
+#             for name, var in meta.items()
+#         }
+#         self.masks = {} if masks is None else masks
 
-    def _is_edges(self, var, dim):
-        return dict(zip(var.dims, var.shape))[dim] == dict(
-            zip(self.data.dims, self.data.shape))[dim] + 1
+#     def _is_edges(self, var, dim):
+#         return dict(zip(var.dims, var.shape))[dim] == dict(
+#             zip(self.data.dims, self.data.shape))[dim] + 1
 
-    def _maybe_slice(self, var, dim, s):
-        if dim in var.dims:
-            if self._is_edges(var, dim):
-                if isinstance(s, int):
-                    return var[dim, s:s + 2]
-                else:
-                    return var[dim, s.start:s.stop + 1]
-            else:
-                return var[dim, s]
-        else:
-            return var
+#     def _maybe_slice(self, var, dim, s):
+#         if dim in var.dims:
+#             if self._is_edges(var, dim):
+#                 if isinstance(s, int):
+#                     return var[dim, s:s + 2]
+#                 else:
+#                     return var[dim, s.start:s.stop + 1]
+#             else:
+#                 return var[dim, s]
+#         else:
+#             return var
 
-    def __getitem__(self, key):
-        dim, s = key
-        meta = {
-            name: self._maybe_slice(self.meta[name], dim, s)
-            for name in self.meta
-        }
-        masks = {
-            name: self._maybe_slice(self.masks[name], dim, s)
-            for name in self.masks
-        }
-        return PlotArray(data=self.data[dim, s], meta=meta, masks=masks)
+#     def __getitem__(self, key):
+#         dim, s = key
+#         meta = {
+#             name: self._maybe_slice(self.meta[name], dim, s)
+#             for name in self.meta
+#         }
+#         masks = {
+#             name: self._maybe_slice(self.masks[name], dim, s)
+#             for name in self.masks
+#         }
+#         return PlotArray(data=self.data[dim, s], meta=meta, masks=masks)

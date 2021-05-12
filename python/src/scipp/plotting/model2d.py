@@ -70,17 +70,17 @@ class PlotModel2d(PlotModel):
                 slice_values["masks"] = msk.values
         return slice_values
 
-    def _update_image(self, extent=None, mask_info=None):
+    def _update_image(self, extent=None, mask_info=None, force_update=False):
         """
         Resample 2d images to a fixed resolution to handle very large images.
         """
-        data = self._model.data
+        data = self._model.get_data_array(force_update=force_update)
         for dim in self._squeeze:
             data = data[dim, 0]
         self.dslice = data
         return self.get_slice_values(mask_info=mask_info, extent=extent)
 
-    def update_data(self, slices, mask_info):
+    def update_data(self, slices, mask_info, force_update=False):
         """
         Slice the data along dimension sliders that are not disabled for all
         entries in the dict of data arrays.
@@ -94,7 +94,7 @@ class PlotModel2d(PlotModel):
                 self._squeeze.append(dim)
                 self._model.resolution[dim] = 1
                 self._model.bounds[dim] = (start, stop)
-        return self._update_image(mask_info=mask_info)
+        return self._update_image(mask_info=mask_info, force_update=force_update)
 
     def update_viewport(self, xylims, mask_info):
         """
@@ -147,8 +147,10 @@ class PlotModel2d(PlotModel):
         # Find indices of pixel where cursor lies
         dimx = self.displayed_dims['x']
         dimy = self.displayed_dims['y']
-        x = self._model.data.meta[dimx]
-        y = self._model.data.meta[dimy]
+        # x = self._model.data.meta[dimx]
+        # y = self._model.data.meta[dimy]
+        x = self._model.get_data_coord(dimx)
+        y = self._model.get_data_coord(dimy)
         # Note that xdata and ydata already have the left edge subtracted from
         # them
         ix = int(xdata / (x.values[1] - x.values[0]))
@@ -160,6 +162,6 @@ class PlotModel2d(PlotModel):
         }
         return {
             self.name:
-            self._make_profile(self._profile_model.data[dimx, 0][dimy, 0],
+            self._make_profile(self._profile_model.get_data_array()[dimx, 0][dimy, 0],
                                profile_dim, mask_info[self.name])
         }

@@ -90,7 +90,7 @@ class PlotModel3d(PlotModel):
             new_values["masks"] = msk.values.ravel()
         return new_values
 
-    def update_data(self, slices, mask_info):
+    def update_data(self, slices, mask_info, force_update=False):
         """
         Get new slice of data and send it back to the controller.
         """
