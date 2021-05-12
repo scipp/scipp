@@ -148,8 +148,6 @@ class PlotModel2d(PlotModel):
         # Find indices of pixel where cursor lies
         dimx = self.displayed_dims['x']
         dimy = self.displayed_dims['y']
-        # x = self._model.data.meta[dimx]
-        # y = self._model.data.meta[dimy]
         x = self._model.get_data_coord(dimx)
         y = self._model.get_data_coord(dimy)
         # Note that xdata and ydata already have the left edge subtracted from

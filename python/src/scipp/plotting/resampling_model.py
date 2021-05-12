@@ -34,7 +34,6 @@ class ResamplingModel():
     def bounds(self, bnds):
         self._bounds = bnds
 
-    # @property
     def get_data_array(self, force_update=False):
         self._call_resample(force_update=force_update)
         return self._resampled
@@ -121,7 +120,6 @@ class ResamplingModel():
             self._resampled_params = params
             self._edges = self._make_edges(params)
             self._resampled = self._resample(out)
-
         if self._home is None:
             self._home = self._resampled
             self._home_params = self._resampled_params
