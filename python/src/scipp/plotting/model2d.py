@@ -94,7 +94,8 @@ class PlotModel2d(PlotModel):
                 self._squeeze.append(dim)
                 self._model.resolution[dim] = 1
                 self._model.bounds[dim] = (start, stop)
-        return self._update_image(mask_info=mask_info, force_update=force_update)
+        return self._update_image(mask_info=mask_info,
+                                  force_update=force_update)
 
     def update_viewport(self, xylims, mask_info):
         """
@@ -162,6 +163,7 @@ class PlotModel2d(PlotModel):
         }
         return {
             self.name:
-            self._make_profile(self._profile_model.get_data_array()[dimx, 0][dimy, 0],
-                               profile_dim, mask_info[self.name])
+            self._make_profile(
+                self._profile_model.get_data_array()[dimx, 0][dimy, 0],
+                profile_dim, mask_info[self.name])
         }

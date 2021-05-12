@@ -106,10 +106,8 @@ class ResamplingModel():
                     if len(out.coords[dim].dims) == 1:
                         # TODO: for now, slicing in scipp does not support step
                         sl = sc.get_slice_params(out.data, out.coords[dim],
-                                                      low, high)
+                                                 low, high)
                         out = out[sl[0], slice(sl[1].start, sl[1].stop)]
-                        # out = out[sc.get_slice_params(out.data, out.meta[dim],
-                        #                               low, high)]
                 params[dim] = (low.value, high.value, low.unit,
                                self.resolution[dim])
         if (params == self._home_params) and (not force_update):
@@ -119,15 +117,11 @@ class ResamplingModel():
             # create anyway.
             self._resampled_params = self._home_params
             self._resampled = self._home
-        elif (self._resampled is None) or (
-            params != self._resampled_params) or force_update:
+        elif (self._resampled is
+              None) or (params != self._resampled_params) or force_update:
             self._resampled_params = params
             self._edges = self._make_edges(params)
             self._resampled = self._resample(out)
-
-        # self._resampled_params = params
-        # self._edges = self._make_edges(params)
-        # self._resampled = self._resample(out)
 
         if self._home is None:
             self._home = self._resampled
@@ -139,10 +133,6 @@ class ResamplingBinnedModel(ResamplingModel):
         super().__init__(*args, **kwargs)
         # TODO See #1469. This is a temporary hack to work around the
         # conversion of coords to edges in model.py.
-        # new_coords = {name: var for name, var in self._array.coords.items()}
-        # self._array = PlotArray(data=self._array.data,
-        #                         masks=self._array.masks,
-        #                         meta=new_meta)
         for name, var in self._array.coords.items():
             if len(var.dims) == 0:
                 continue
@@ -193,9 +183,6 @@ class ResamplingDenseModel(ResamplingModel):
         super().__init__(self._to_density(array), **kwargs)
 
     def _to_density(self, array):
-        # array = sc.DataArray(data=array.data.astype(sc.dtype.float64),
-        #                   meta=array.meta,
-        #                   masks=array.masks)
         if array.dtype != sc.dtype.float64:
             array.data = array.data.astype(sc.dtype.float64)
         for dim in array.data.dims:

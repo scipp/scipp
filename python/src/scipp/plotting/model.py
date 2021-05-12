@@ -86,17 +86,11 @@ class PlotModel:
                 else:
                     coord_list[dim] = to_bin_edges(coord, dim)
 
-            self.data_arrays[name] = sc.DataArray(data=array.data,
-                                               coords=coord_list)
-
-            # # Create a PlotArray helper object that supports slicing where new
-            # # bin-edge coordinates can be attached to the data
-            # self.data_arrays[name] = PlotArray(data=array.data,
-            #                                    meta=coord_list)
-
-            # Include masks
-            for m in array.masks:
-                self.data_arrays[name].masks[m] = array.masks[m]
+            self.data_arrays[name] = sc.DataArray(
+                data=array.data,
+                coords=coord_list,
+                masks={m: msk
+                       for m, msk in array.masks.items()})
 
         # Store dim of multi-dimensional coordinate if present
         self.multid_coord = None
