@@ -14,6 +14,7 @@
 #include "scipp/core/element_array_view.h"
 
 namespace scipp::core {
+namespace detail {
 SCIPP_CORE_EXPORT void
 validate_bin_indices_impl(const ElementArrayViewParams &param0,
                           const ElementArrayViewParams &param1);
@@ -41,6 +42,7 @@ void copy_strides(std::array<std::array<scipp::index, NDIM_MAX>, N> &dest,
     ((dest[I][ndim] = 0), ...);
   }
 }
+} // namespace detail
 
 template <scipp::index N> class MultiIndex {
 public:
@@ -53,8 +55,9 @@ public:
       m_shape[d--] = size;
       m_end_sentinel *= size;
     }
-    copy_strides<N>(m_stride, m_ndim, std::index_sequence_for<StridesArgs...>(),
-                    strides...);
+    detail::copy_strides<N>(m_stride, m_ndim,
+                            std::index_sequence_for<StridesArgs...>(),
+                            strides...);
   }
 
   template <class... Params>
@@ -70,7 +73,7 @@ public:
   void validate_bin_indices(const Param0 &param0, const Param1 &param1,
                             const Params &... params) {
     if (param0.bucketParams() && param1.bucketParams())
-      validate_bin_indices_impl(param0, param1);
+      detail::validate_bin_indices_impl(param0, param1);
     if (param0.bucketParams())
       validate_bin_indices(param0, params...);
     else
@@ -84,8 +87,8 @@ public:
       return;
     }
     validate_bin_indices(params...);
-    const auto nestedDims = get_nested_dims(params.bucketParams()...);
-    const Dim sliceDim = get_slice_dim(params.bucketParams()...);
+    const auto nestedDims = detail::get_nested_dims(params.bucketParams()...);
+    const Dim sliceDim = detail::get_slice_dim(params.bucketParams()...);
     m_ndim_nested = nestedDims.ndim();
     m_ndim = iterDims.ndim() + m_ndim_nested;
     m_nested_stride = nestedDims.offset(sliceDim);
@@ -102,12 +105,13 @@ public:
     for (const auto size : nestedDims.shape()) {
       m_shape[dim--] = size;
     }
-    copy_strides<N>(m_stride, nestedDims.ndim(),
-                    std::index_sequence_for<Params...>(),
-                    params.bucketParams() ? Strides{nestedDims} : Strides{}...);
+    detail::copy_strides<N>(
+        m_stride, nestedDims.ndim(), std::index_sequence_for<Params...>(),
+        params.bucketParams() ? Strides{nestedDims} : Strides{}...);
     std::array<std::array<scipp::index, NDIM_MAX>, N> binStrides;
-    copy_strides<N>(binStrides, m_ndim - m_ndim_nested,
-                    std::index_sequence_for<Params...>(), params.strides()...);
+    detail::copy_strides<N>(binStrides, m_ndim - m_ndim_nested,
+                            std::index_sequence_for<Params...>(),
+                            params.strides()...);
     for (scipp::index data = 0; data < N; ++data) {
       for (scipp::index d = 0; d < NDIM_MAX - m_ndim_nested; ++d)
         m_stride[data][m_ndim_nested + d] = binStrides[data][d];
