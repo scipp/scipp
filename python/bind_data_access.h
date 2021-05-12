@@ -69,9 +69,9 @@ class DataAccessHelper {
   template <class Getter, class T, class View>
   static py::object as_py_array_t_impl(View &&view) {
     auto &&var = get_data_variable(view);
-    if constexpr (std::is_same_v<T, Eigen::Vector3d>) {
-      return as_py_array_t_impl<Getter, double>(
-          var.template elements<Eigen::Vector3d>());
+    if constexpr (std::is_same_v<T, Eigen::Vector3d> ||
+                  std::is_same_v<T, Eigen::Matrix3d>) {
+      return as_py_array_t_impl<Getter, double>(var.template elements<T>());
     } else {
       const auto get_dtype = [&view]() {
         if constexpr (std::is_same_v<T, scipp::core::time_point>) {
@@ -208,6 +208,9 @@ public:
           view);
     if (type == dtype<Eigen::Vector3d>)
       return DataAccessHelper::as_py_array_t_impl<Getter, Eigen::Vector3d>(
+          view);
+    if (type == dtype<Eigen::Matrix3d>)
+      return DataAccessHelper::as_py_array_t_impl<Getter, Eigen::Matrix3d>(
           view);
     return std::visit(
         [&view](const auto &data) {

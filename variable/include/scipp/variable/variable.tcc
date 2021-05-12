@@ -82,7 +82,10 @@ Variable Variable::elements(const Index &... index) const {
   for (scipp::index i = 0; i < dims().ndim(); ++i)
     elements.m_strides[i] = model_t<T>::num_element * strides()[i];
   if constexpr (sizeof...(index) == 0) {
-    elements.unchecked_strides()[elements.dims().ndim()] = 1; // TODO matrix
+    Strides inner_strides(inner_dims<T>);
+    for (scipp::index i = 0; i < inner_dims<T>.ndim(); ++i)
+      elements.unchecked_strides()[elements.dims().ndim() + i] =
+          inner_strides[i];
     elements.unchecked_dims() = merge(elements.dims(), inner_dims<T>);
   } else {
     elements.m_offset += model.element_offset(index...);

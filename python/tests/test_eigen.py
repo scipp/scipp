@@ -8,9 +8,7 @@ import scipp as sc
 
 
 def test_variable_0D_vector_3_float64_from_list():
-    var = sc.Variable(value=[1, 2, 3],
-                      unit=sc.units.m,
-                      dtype=sc.dtype.vector_3_float64)
+    var = sc.vector(value=[1, 2, 3], unit=sc.units.m)
     np.testing.assert_array_equal(var.value, [1, 2, 3])
     assert var.dtype == sc.dtype.vector_3_float64
     assert var.unit == sc.units.m
@@ -65,12 +63,8 @@ def test_variable_0D_matrix():
         [0, 0, 1, 0]),
                       unit=sc.units.one,
                       dtype=sc.dtype.matrix_3_float64)
-    vec = sc.Variable(value=[1, 2, 3],
-                      unit=sc.units.m,
-                      dtype=sc.dtype.vector_3_float64)
-    rotated = sc.Variable(value=[-1, -2, 3],
-                          unit=sc.units.m,
-                          dtype=sc.dtype.vector_3_float64)
+    vec = sc.vector(value=[1, 2, 3], unit=sc.units.m)
+    rotated = sc.vector(value=[-1, -2, 3], unit=sc.units.m)
     assert sc.identical(rot * vec, rotated)
 
 

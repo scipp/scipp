@@ -30,9 +30,7 @@ def test_variable_0D_to_dict():
 
 
 def test_variable_vector_to_dict():
-    var = sc.Variable(['x'],
-                      values=np.random.random([10, 3]),
-                      dtype=sc.dtype.vector_3_float64)
+    var = sc.vectors(dims=['x'], values=np.random.random([10, 3]))
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == ['x']
     assert var_dict["shape"] == [10]
@@ -41,7 +39,7 @@ def test_variable_vector_to_dict():
 
 
 def test_variable_0D_vector_to_dict():
-    var = sc.Variable(value=[1, 2, 3], dtype=sc.dtype.vector_3_float64)
+    var = sc.vector(value=[1, 2, 3])
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == []
     assert var_dict["shape"] == []
@@ -173,7 +171,7 @@ def test_variable_vector_round_trip():
 
 
 def test_variable_0D_vector_round_trip():
-    var = sc.Variable(value=[1, 2, 3], dtype=sc.dtype.vector_3_float64)
+    var = sc.vector(value=[1, 2, 3])
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 

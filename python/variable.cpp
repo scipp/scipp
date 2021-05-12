@@ -128,26 +128,6 @@ void bind_init_list(py::class_<Variable> &c) {
         py::arg("unit") = units::one, py::arg("dtype") = py::none());
 }
 
-void bind_init_0D_list_eigen(py::class_<Variable> &c) {
-  c.def(
-      py::init([](const py::list &value,
-                  const std::optional<py::list> &variance,
-                  const units::Unit &unit, py::object &dtype) {
-        if (scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
-          return do_init_0D<Eigen::Vector3d>(
-              Eigen::Vector3d(value.cast<std::vector<double>>().data()),
-              variance ? std::optional(variance->cast<Eigen::Vector3d>())
-                       : std::nullopt,
-              unit);
-        } else {
-          throw scipp::except::VariableError(
-              "Cannot create 0D Variable from list of values with this dtype.");
-        }
-      }),
-      py::arg("value"), py::arg("variance") = std::nullopt,
-      py::arg("unit") = units::one, py::arg("dtype") = py::none());
-}
-
 template <class T, class Elem, int... N>
 void bind_structured_creation(py::module &m, const std::string &name) {
   m.def(
@@ -255,7 +235,6 @@ of variances.)");
   bind_init_0D_native_python_types<int64_t>(variable);
   bind_init_0D_native_python_types<double>(variable);
   bind_init_0D<py::object>(variable);
-  bind_init_0D_list_eigen(variable);
   //------------------------------------
 
   bind_common_operators(variable);
