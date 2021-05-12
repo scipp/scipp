@@ -163,14 +163,29 @@ def empty(*,
     return _cpp.empty(dims, shape, unit, dtype, variances)
 
 
-def matrices(*, elements):
-    return _cpp.matrices(elements=elements)
+def matrix(*,
+           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+           value: _Union[_np.ndarray, list]):
+    return _cpp.matrices(dims=[], unit=unit, values=value)
+
+
+def matrices(*,
+             dims: _Sequence[str],
+             unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+             values: _Union[_np.ndarray, list]):
+    return _cpp.matrices(dims=dims, unit=unit, values=values)
+
+
+def vector(*,
+           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+           value: _Union[_np.ndarray, list]):
+    return _cpp.vectors(dims=[], unit=unit, values=value)
 
 
 def vectors(*,
             dims: _Sequence[str],
             unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
-            values):
+            values: _Union[_np.ndarray, list]):
     return _cpp.vectors(dims=dims, unit=unit, values=values)
 
 
