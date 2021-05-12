@@ -23,10 +23,10 @@ TEST_F(VariableMatrixTest, basics) {
 
 TEST_F(VariableMatrixTest, elem_access) {
   Variable var = variable::make_vectors(elems);
-  EXPECT_EQ(var.elements<Eigen::Vector3d>(scipp::index(0)),
-            elems.slice({Dim::X, 0}));
-  EXPECT_EQ(var.elements<Eigen::Vector3d>(scipp::index(1)),
-            elems.slice({Dim::X, 1}));
-  EXPECT_EQ(var.elements<Eigen::Vector3d>(scipp::index(2)),
-            elems.slice({Dim::X, 2}));
+  for (auto i : {0, 1, 2}) {
+    EXPECT_EQ(var.elements<Eigen::Vector3d>().slice({Dim::Internal0, i}),
+              elems.slice({Dim::X, i}));
+    EXPECT_EQ(var.elements<Eigen::Vector3d>(scipp::index(i)),
+              elems.slice({Dim::X, i}));
+  }
 }

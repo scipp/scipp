@@ -24,6 +24,8 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
           dimensions.volume(), unit, std::move(values_),
           std::move(variances_))) {}
 
+namespace {
+
 template <class T> struct model { using type = DataModel<T>; };
 template <> struct model<Eigen::Vector3d> {
   using type = MatrixModel<Eigen::Vector3d, 3>;
@@ -41,15 +43,28 @@ template <class T> auto &cast(Variable &var) {
   return requireT<model_t<T>>(var.data());
 }
 
+template <class T> static Dimensions inner_dims{};
+template <> Dimensions inner_dims<Eigen::Vector3d>{Dim::Internal0, 3};
+template <>
+Dimensions inner_dims<Eigen::Matrix3d>{{Dim::Internal0, 3},
+                                       {Dim::Internal1, 3}};
+
+} // namespace
+
 template <class T, class... Index>
 Variable Variable::elements(const Index &... index) const {
   auto elements(*this);
   const auto &model = cast<T>(*this);
   elements.m_object = model.elements();
   elements.m_offset *= model_t<T>::num_element;
-  elements.m_offset += model.element_offset(index...);
   for (scipp::index i = 0; i < dims().ndim(); ++i)
     elements.m_strides[i] = model_t<T>::num_element * strides()[i];
+  if constexpr(sizeof...(index) == 0) {
+    elements.unchecked_strides()[elements.dims().ndim()] = 1; // TODO matrix
+    elements.unchecked_dims() = merge(elements.dims(), inner_dims<T>);
+  } else {
+    elements.m_offset += model.element_offset(index...);
+  }
   return elements;
 }
 

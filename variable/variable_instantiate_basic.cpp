@@ -22,6 +22,9 @@ INSTANTIATE_VARIABLE(matrix_3_float64, Eigen::Matrix3d)
 INSTANTIATE_VARIABLE(Variable, Variable)
 
 template SCIPP_VARIABLE_EXPORT Variable
+Variable::elements<Eigen::Vector3d>() const;
+
+template SCIPP_VARIABLE_EXPORT Variable
 Variable::elements<Eigen::Vector3d, scipp::index>(const scipp::index &) const;
 
 template SCIPP_VARIABLE_EXPORT Variable
