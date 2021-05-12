@@ -28,10 +28,10 @@ namespace {
 
 template <class T> struct model { using type = DataModel<T>; };
 template <> struct model<Eigen::Vector3d> {
-  using type = StructuredModel<Eigen::Vector3d, 3>;
+  using type = StructuredModel<Eigen::Vector3d, double, 3>;
 };
 template <> struct model<Eigen::Matrix3d> {
-  using type = StructuredModel<Eigen::Matrix3d, 3, 3>;
+  using type = StructuredModel<Eigen::Matrix3d, double, 3, 3>;
 };
 template <class T> using model_t = typename model<T>::type;
 

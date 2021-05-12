@@ -16,16 +16,17 @@
 namespace scipp::variable {
 
 /// Implementation of VariableConcept that holds and array with element type T.
-template <class T, int... N> class StructuredModel : public VariableConcept {
+template <class T, class Elem, int... N>
+class StructuredModel : public VariableConcept {
 public:
   using value_type = T;
   static constexpr auto num_element = (N * ...);
 
   StructuredModel(const scipp::index size, const units::Unit &unit,
-                  element_array<double> model)
+                  element_array<Elem> model)
       : VariableConcept(units::one), // unit ignored
-        m_elements(std::make_shared<DataModel<double>>(size * num_element, unit,
-                                                       std::move(model))) {}
+        m_elements(std::make_shared<DataModel<Elem>>(size * num_element, unit,
+                                                     std::move(model))) {}
 
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
   DType dtype() const noexcept override { return scipp::dtype<T>; }
@@ -52,7 +53,7 @@ public:
   void setVariances(const Variable &variances) override;
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<StructuredModel<T, N...>>(*this);
+    return std::make_unique<StructuredModel<T, Elem, N...>>(*this);
   }
 
   bool hasVariances() const noexcept override {
@@ -95,18 +96,18 @@ public:
 private:
   const T *get_values() const {
     return reinterpret_cast<const T *>(
-        requireT<const DataModel<double>>(*m_elements).values().data());
+        requireT<const DataModel<Elem>>(*m_elements).values().data());
   }
   T *get_values() {
     return reinterpret_cast<T *>(
-        requireT<DataModel<double>>(*m_elements).values().data());
+        requireT<DataModel<Elem>>(*m_elements).values().data());
   }
   VariableConceptHandle m_elements;
 };
 
-template <class T, int... N>
-VariableConceptHandle
-StructuredModel<T, N...>::makeDefaultFromParent(const scipp::index size) const {
+template <class T, class Elem, int... N>
+VariableConceptHandle StructuredModel<T, Elem, N...>::makeDefaultFromParent(
+    const scipp::index size) const {
   // return std::make_unique<StructuredModel<T, N...>>(size, unit(),
   // element_array<T>(size));
   throw std::runtime_error("todo how to get dims?");
@@ -117,15 +118,15 @@ StructuredModel<T, N...>::makeDefaultFromParent(const scipp::index size) const {
 ///
 /// This method is using virtual dispatch as a trick to obtain T, such that
 /// values<T> and variances<T> can be compared.
-template <class T, int... N>
-bool StructuredModel<T, N...>::equals(const Variable &a,
-                                      const Variable &b) const {
+template <class T, class Elem, int... N>
+bool StructuredModel<T, Elem, N...>::equals(const Variable &a,
+                                            const Variable &b) const {
   if (a.dims() != b.dims())
     return false;
   const auto &a_elems =
-      *requireT<const StructuredModel<T, N...>>(a.data()).m_elements;
+      *requireT<const StructuredModel<T, Elem, N...>>(a.data()).m_elements;
   const auto &b_elems =
-      *requireT<const StructuredModel<T, N...>>(b.data()).m_elements;
+      *requireT<const StructuredModel<T, Elem, N...>>(b.data()).m_elements;
   throw std::runtime_error("todo ");
   // return a_elems == b_elems;
 }
@@ -134,23 +135,24 @@ bool StructuredModel<T, N...>::equals(const Variable &a,
 ///
 /// This method is using virtual dispatch as a trick to obtain T, such that
 /// transform can be called with any T.
-template <class T, int... N>
-void StructuredModel<T, N...>::copy(const Variable &src, Variable &dest) const {
+template <class T, class Elem, int... N>
+void StructuredModel<T, Elem, N...>::copy(const Variable &src,
+                                          Variable &dest) const {
   transform_in_place<T>(dest, src, [](auto &a, const auto &b) { a = b; });
 }
-template <class T, int... N>
-void StructuredModel<T, N...>::copy(const Variable &src,
-                                    Variable &&dest) const {
+template <class T, class Elem, int... N>
+void StructuredModel<T, Elem, N...>::copy(const Variable &src,
+                                          Variable &&dest) const {
   copy(src, dest);
 }
 
-template <class T, int... N>
-void StructuredModel<T, N...>::assign(const VariableConcept &other) {
-  *this = requireT<const StructuredModel<T, N...>>(other);
+template <class T, class Elem, int... N>
+void StructuredModel<T, Elem, N...>::assign(const VariableConcept &other) {
+  *this = requireT<const StructuredModel<T, Elem, N...>>(other);
 }
 
-template <class T, int... N>
-void StructuredModel<T, N...>::setVariances(const Variable &) {
+template <class T, class Elem, int... N>
+void StructuredModel<T, Elem, N...>::setVariances(const Variable &) {
   throw except::VariancesError("This data type cannot have variances.");
 }
 
