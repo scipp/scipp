@@ -5,7 +5,7 @@
 
 import numpy as np
 from .._scipp import core as sc
-from .helpers import PlotArray
+# from .helpers import PlotArray
 from .tools import to_bin_centers
 
 
@@ -101,21 +101,31 @@ class ResamplingModel():
                 else:
                     # cannot pre-select bins for multi-dim coords
                     if len(out.meta[dim].dims) == 1:
-                        out = out[sc.get_slice_params(out.data, out.meta[dim],
-                                                      low, high)]
+                        print(sc.get_slice_params(out.data, out.meta[dim],
+                                                      low, high))
+                        sl = sc.get_slice_params(out.data, out.meta[dim],
+                                                      low, high)
+                        out = out[sl[0], slice(sl[1].start, sl[1].stop)]
+                        # out = out[sc.get_slice_params(out.data, out.meta[dim],
+                        #                               low, high)]
                 params[dim] = (low.value, high.value, low.unit,
                                self.resolution[dim])
-        if params == self._home_params:
-            # This is a crude caching mechanism for past views. Currently we
-            # have the "back" buttons disabled in the matplotlib toolbar, so
-            # we cache only the "home" view. This is the most expensive to
-            # create anyway.
-            self._resampled_params = self._home_params
-            self._resampled = self._home
-        elif self._resampled is None or params != self._resampled_params:
-            self._resampled_params = params
-            self._edges = self._make_edges(params)
-            self._resampled = self._resample(out)
+        # if params == self._home_params:
+        #     # This is a crude caching mechanism for past views. Currently we
+        #     # have the "back" buttons disabled in the matplotlib toolbar, so
+        #     # we cache only the "home" view. This is the most expensive to
+        #     # create anyway.
+        #     self._resampled_params = self._home_params
+        #     self._resampled = self._home
+        # elif self._resampled is None or params != self._resampled_params:
+        #     self._resampled_params = params
+        #     self._edges = self._make_edges(params)
+        #     self._resampled = self._resample(out)
+
+        self._resampled_params = params
+        self._edges = self._make_edges(params)
+        self._resampled = self._resample(out)
+
         if self._home is None:
             self._home = self._resampled
             self._home_params = self._resampled_params
@@ -180,9 +190,11 @@ class ResamplingDenseModel(ResamplingModel):
         super().__init__(self._to_density(array), **kwargs)
 
     def _to_density(self, array):
-        array = PlotArray(data=array.data.astype(sc.dtype.float64),
-                          meta=array.meta,
-                          masks=array.masks)
+        # array = sc.DataArray(data=array.data.astype(sc.dtype.float64),
+        #                   meta=array.meta,
+        #                   masks=array.masks)
+        if array.dtype != sc.dtype.float64:
+            array.data = array.data.astype(sc.dtype.float64)
         for dim in array.data.dims:
             coord = array.meta[dim]
             width = coord[dim, 1:] - coord[dim, :-1]
