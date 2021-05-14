@@ -16,3 +16,9 @@ TEST(EigenTest, has_eval) {
   ASSERT_TRUE(has_eval_v<Eigen::Matrix3d>);
   ASSERT_TRUE(has_eval_v<std::decay_t<decltype(vec + vec)>>);
 }
+
+TEST(EigenTest, is_structured) {
+  EXPECT_FALSE(is_structured(dtype<double>));
+  EXPECT_TRUE(is_structured(dtype<Eigen::Vector3d>));
+  EXPECT_TRUE(is_structured(dtype<Eigen::Matrix3d>));
+}

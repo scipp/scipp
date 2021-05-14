@@ -65,6 +65,16 @@ bool Variable::operator==(const Variable &other) const {
   if (!is_valid() || !other.is_valid())
     return is_valid() == other.is_valid();
   // Note: Not comparing strides
+  if (unit() != other.unit())
+    return false;
+  if (dims() != other.dims())
+    return false;
+  if (dtype() != other.dtype())
+    return false;
+  if (hasVariances() != other.hasVariances())
+    return false;
+  if (dims().volume() == 0 && dims() == other.dims())
+    return true;
   return dims() == other.dims() && data().equals(*this, other);
 }
 

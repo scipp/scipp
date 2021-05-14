@@ -140,16 +140,6 @@ DataModel<T>::makeDefaultFromParent(const scipp::index size) const {
 /// values<T> and variances<T> can be compared.
 template <class T>
 bool DataModel<T>::equals(const Variable &a, const Variable &b) const {
-  if (a.unit() != b.unit())
-    return false;
-  if (a.dims() != b.dims())
-    return false;
-  if (a.dtype() != b.dtype())
-    return false;
-  if (a.hasVariances() != b.hasVariances())
-    return false;
-  if (a.dims().volume() == 0 && a.dims() == b.dims())
-    return true;
   return equals_impl(a.values<T>(), b.values<T>()) &&
          (!a.hasVariances() || equals_impl(a.variances<T>(), b.variances<T>()));
 }

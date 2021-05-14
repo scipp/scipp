@@ -120,16 +120,6 @@ VariableConceptHandle StructuredModel<T, Elem, N...>::makeDefaultFromParent(
 template <class T, class Elem, int... N>
 bool StructuredModel<T, Elem, N...>::equals(const Variable &a,
                                             const Variable &b) const {
-  if (a.unit() != b.unit())
-    return false;
-  if (a.dims() != b.dims())
-    return false;
-  if (a.dtype() != b.dtype())
-    return false;
-  if (a.hasVariances() != b.hasVariances())
-    return false;
-  if (a.dims().volume() == 0 && a.dims() == b.dims())
-    return true;
   return equals_impl(a.elements<T>().template values<Elem>(),
                      b.elements<T>().template values<Elem>());
 }
