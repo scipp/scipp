@@ -11,7 +11,7 @@ namespace scipp::variable {
 template <class T, class Elem, int... N>
 Variable make_structured(const Dimensions &dims, const units::Unit &unit,
                          element_array<double> &&values) {
-  return {dims, std::make_shared<StructuredModel<T, Elem, N...>>(
+  return {dims, std::make_shared<StructureArrayModel<T, Elem, N...>>(
                     dims.volume(), unit, std::move(values))};
 }
 

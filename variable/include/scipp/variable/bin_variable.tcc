@@ -15,30 +15,30 @@ template <class T>
 std::tuple<Variable, Dim, typename T::buffer_type> Variable::to_constituents() {
   Variable tmp;
   std::swap(*this, tmp);
-  auto &model = requireT<DataModel<T>>(tmp.data());
+  auto &model = requireT<ElementArrayModel<T>>(tmp.data());
   return {tmp.bin_indices(), model.bin_dim(), std::move(model.buffer())};
 }
 
 template <class T>
 std::tuple<Variable, Dim, typename T::const_element_type>
 Variable::constituents() const {
-  auto &model = requireT<const DataModel<T>>(data());
+  auto &model = requireT<const ElementArrayModel<T>>(data());
   return {bin_indices(), model.bin_dim(), model.buffer()};
 }
 
 template <class T>
 std::tuple<Variable, Dim, typename T::element_type> Variable::constituents() {
-  auto &model = requireT<DataModel<T>>(data());
+  auto &model = requireT<ElementArrayModel<T>>(data());
   return {bin_indices(), model.bin_dim(), model.buffer()};
 }
 
 template <class T> const T &Variable::bin_buffer() const {
-  auto &model = requireT<const DataModel<core::bin<T>>>(data());
+  auto &model = requireT<const ElementArrayModel<core::bin<T>>>(data());
   return model.buffer();
 }
 
 template <class T> T &Variable::bin_buffer() {
-  auto &model = requireT<DataModel<core::bin<T>>>(data());
+  auto &model = requireT<ElementArrayModel<core::bin<T>>>(data());
   return model.buffer();
 }
 
@@ -108,10 +108,10 @@ private:
 
 protected:
   const T &buffer(const Variable &var) const {
-    return requireT<const DataModel<bucket<T>>>(var.data()).buffer();
+    return requireT<const BinArrayModel<T>>(var.data()).buffer();
   }
   T buffer(Variable &var) const {
-    return requireT<DataModel<bucket<T>>>(var.data()).buffer();
+    return requireT<BinArrayModel<T>>(var.data()).buffer();
   }
 
 public:

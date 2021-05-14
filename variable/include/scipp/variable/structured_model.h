@@ -16,18 +16,18 @@ namespace scipp::variable {
 
 /// Implementation of VariableConcept that holds and array with element type T.
 template <class T, class Elem, int... N>
-class StructuredModel : public VariableConcept {
+class StructureArrayModel : public VariableConcept {
 public:
   using value_type = T;
   using element_type = Elem;
   static constexpr auto axis_count = sizeof...(N);
   static constexpr auto element_count = (N * ...);
 
-  StructuredModel(const scipp::index size, const units::Unit &unit,
-                  element_array<Elem> model)
+  StructureArrayModel(const scipp::index size, const units::Unit &unit,
+                      element_array<Elem> model)
       : VariableConcept(units::one), // unit ignored
-        m_elements(std::make_shared<DataModel<Elem>>(size * element_count, unit,
-                                                     std::move(model))) {}
+        m_elements(std::make_shared<ElementArrayModel<Elem>>(
+            size * element_count, unit, std::move(model))) {}
 
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
   DType dtype() const noexcept override { return scipp::dtype<T>; }
@@ -57,7 +57,7 @@ public:
   }
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<StructuredModel<T, Elem, N...>>(*this);
+    return std::make_unique<StructureArrayModel<T, Elem, N...>>(*this);
   }
 
   auto values(const core::ElementArrayViewParams &base) const {
@@ -80,43 +80,43 @@ public:
 private:
   const T *get_values() const {
     return reinterpret_cast<const T *>(
-        requireT<const DataModel<Elem>>(*m_elements).values().data());
+        requireT<const ElementArrayModel<Elem>>(*m_elements).values().data());
   }
   T *get_values() {
     return reinterpret_cast<T *>(
-        requireT<DataModel<Elem>>(*m_elements).values().data());
+        requireT<ElementArrayModel<Elem>>(*m_elements).values().data());
   }
   VariableConceptHandle m_elements;
 };
 
 template <class T, class Elem, int... N>
-VariableConceptHandle StructuredModel<T, Elem, N...>::makeDefaultFromParent(
+VariableConceptHandle StructureArrayModel<T, Elem, N...>::makeDefaultFromParent(
     const scipp::index size) const {
-  return std::make_unique<StructuredModel<T, Elem, N...>>(
+  return std::make_unique<StructureArrayModel<T, Elem, N...>>(
       size, unit(), element_array<Elem>(size * element_count));
 }
 
 template <class T, class Elem, int... N>
-bool StructuredModel<T, Elem, N...>::equals(const Variable &a,
-                                            const Variable &b) const {
+bool StructureArrayModel<T, Elem, N...>::equals(const Variable &a,
+                                                const Variable &b) const {
   return equals_impl(a.elements<T>().template values<Elem>(),
                      b.elements<T>().template values<Elem>());
 }
 
 template <class T, class Elem, int... N>
-void StructuredModel<T, Elem, N...>::copy(const Variable &src,
-                                          Variable &dest) const {
+void StructureArrayModel<T, Elem, N...>::copy(const Variable &src,
+                                              Variable &dest) const {
   transform_in_place<T>(dest, src, [](auto &a, const auto &b) { a = b; });
 }
 template <class T, class Elem, int... N>
-void StructuredModel<T, Elem, N...>::copy(const Variable &src,
-                                          Variable &&dest) const {
+void StructureArrayModel<T, Elem, N...>::copy(const Variable &src,
+                                              Variable &&dest) const {
   copy(src, dest);
 }
 
 template <class T, class Elem, int... N>
-void StructuredModel<T, Elem, N...>::assign(const VariableConcept &other) {
-  *this = requireT<const StructuredModel<T, Elem, N...>>(other);
+void StructureArrayModel<T, Elem, N...>::assign(const VariableConcept &other) {
+  *this = requireT<const StructureArrayModel<T, Elem, N...>>(other);
 }
 
 } // namespace scipp::variable

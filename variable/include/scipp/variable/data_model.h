@@ -39,13 +39,13 @@ bool equals_impl(const T1 &view1, const T2 &view2) {
 }
 
 /// Implementation of VariableConcept that holds and array with element type T.
-template <class T> class DataModel : public VariableConcept {
+template <class T> class ElementArrayModel : public VariableConcept {
 public:
   using value_type = T;
 
-  DataModel(const scipp::index size, const units::Unit &unit,
-            element_array<T> model,
-            std::optional<element_array<T>> variances = std::nullopt)
+  ElementArrayModel(const scipp::index size, const units::Unit &unit,
+                    element_array<T> model,
+                    std::optional<element_array<T>> variances = std::nullopt)
       : VariableConcept(unit),
         m_values(model ? std::move(model)
                        : element_array<T>(size, default_init<T>::value())),
@@ -80,7 +80,7 @@ public:
   void setVariances(const Variable &variances) override;
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<DataModel<T>>(*this);
+    return std::make_unique<ElementArrayModel<T>>(*this);
   }
 
   bool hasVariances() const noexcept override {
@@ -126,12 +126,13 @@ private:
 
 template <class T>
 VariableConceptHandle
-DataModel<T>::makeDefaultFromParent(const scipp::index size) const {
+ElementArrayModel<T>::makeDefaultFromParent(const scipp::index size) const {
   if (hasVariances())
-    return std::make_unique<DataModel<T>>(size, unit(), element_array<T>(size),
-                                          element_array<T>(size));
+    return std::make_unique<ElementArrayModel<T>>(
+        size, unit(), element_array<T>(size), element_array<T>(size));
   else
-    return std::make_unique<DataModel<T>>(size, unit(), element_array<T>(size));
+    return std::make_unique<ElementArrayModel<T>>(size, unit(),
+                                                  element_array<T>(size));
 }
 
 /// Helper for implementing Variable(View)::operator==.
@@ -139,7 +140,7 @@ DataModel<T>::makeDefaultFromParent(const scipp::index size) const {
 /// This method is using virtual dispatch as a trick to obtain T, such that
 /// values<T> and variances<T> can be compared.
 template <class T>
-bool DataModel<T>::equals(const Variable &a, const Variable &b) const {
+bool ElementArrayModel<T>::equals(const Variable &a, const Variable &b) const {
   return equals_impl(a.values<T>(), b.values<T>()) &&
          (!a.hasVariances() || equals_impl(a.variances<T>(), b.variances<T>()));
 }
@@ -154,22 +155,24 @@ constexpr auto do_copy = [](auto &a, const auto &b) { a = copy(b); };
 /// This method is using virtual dispatch as a trick to obtain T, such that
 /// transform can be called with any T.
 template <class T>
-void DataModel<T>::copy(const Variable &src, Variable &dest) const {
+void ElementArrayModel<T>::copy(const Variable &src, Variable &dest) const {
   transform_in_place<T>(
       dest, src,
       overloaded{core::transform_flags::expect_in_variance_if_out_variance,
                  do_copy});
 }
 template <class T>
-void DataModel<T>::copy(const Variable &src, Variable &&dest) const {
+void ElementArrayModel<T>::copy(const Variable &src, Variable &&dest) const {
   copy(src, dest);
 }
 
-template <class T> void DataModel<T>::assign(const VariableConcept &other) {
-  *this = requireT<const DataModel<T>>(other);
+template <class T>
+void ElementArrayModel<T>::assign(const VariableConcept &other) {
+  *this = requireT<const ElementArrayModel<T>>(other);
 }
 
-template <class T> void DataModel<T>::setVariances(const Variable &variances) {
+template <class T>
+void ElementArrayModel<T>::setVariances(const Variable &variances) {
   if (!core::canHaveVariances<T>())
     throw except::VariancesError("This data type cannot have variances.");
   if (!variances.is_valid())
@@ -178,7 +181,8 @@ template <class T> void DataModel<T>::setVariances(const Variable &variances) {
   if (variances.hasVariances())
     throw except::VariancesError(
         "Cannot set variances from variable with variances.");
-  m_variances.emplace(requireT<const DataModel>(variances.data()).m_values);
+  m_variances.emplace(
+      requireT<const ElementArrayModel>(variances.data()).m_values);
 }
 
 } // namespace scipp::variable

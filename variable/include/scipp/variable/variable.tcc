@@ -19,12 +19,12 @@ namespace scipp::variable {
 
 namespace {
 
-template <class T> struct model { using type = DataModel<T>; };
+template <class T> struct model { using type = ElementArrayModel<T>; };
 template <> struct model<Eigen::Vector3d> {
-  using type = StructuredModel<Eigen::Vector3d, double, 3>;
+  using type = StructureArrayModel<Eigen::Vector3d, double, 3>;
 };
 template <> struct model<Eigen::Matrix3d> {
-  using type = StructuredModel<Eigen::Matrix3d, double, 3, 3>;
+  using type = StructureArrayModel<Eigen::Matrix3d, double, 3, 3>;
 };
 template <class T> using model_t = typename model<T>::type;
 
@@ -51,7 +51,7 @@ template <class T>
 auto make_model(const units::Unit unit, const Dimensions &dimensions,
                 element_array<T> values,
                 std::optional<element_array<T>> variances) {
-  if constexpr (std::is_same_v<model_t<T>, DataModel<T>>) {
+  if constexpr (std::is_same_v<model_t<T>, ElementArrayModel<T>>) {
     return std::make_unique<model_t<T>>(
         dimensions.volume(), unit, std::move(values), std::move(variances));
   } else {

@@ -16,7 +16,7 @@ TEST(BucketTest, member_types) {
   static_assert(std::is_same_v<bucket<Variable>::const_element_type, Variable>);
 }
 
-using Model = DataModel<bucket<Variable>>;
+using Model = BinArrayModel<Variable>;
 
 class BucketModelTest : public ::testing::Test {
 protected:

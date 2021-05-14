@@ -30,7 +30,7 @@ private:
 
 void expect_valid_bin_indices(const VariableConceptHandle &indices,
                               const Dim dim, const Sizes &buffer_sizes) {
-  auto copy = requireT<const DataModel<scipp::index_pair>>(*indices);
+  auto copy = requireT<const ElementArrayModel<scipp::index_pair>>(*indices);
   const auto vals = copy.values();
   std::sort(vals.begin(), vals.end());
   if ((!vals.empty() && (vals.begin()->first < 0)) ||
