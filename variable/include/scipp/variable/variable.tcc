@@ -39,8 +39,13 @@ template <class T> auto &cast(Variable &var) {
 template <class T> static Dimensions inner_dims{};
 template <> Dimensions inner_dims<Eigen::Vector3d>{Dim::Internal0, 3};
 template <>
-Dimensions inner_dims<Eigen::Matrix3d>{{Dim::Internal0, 3},
-                                       {Dim::Internal1, 3}};
+Dimensions inner_dims<Eigen::Matrix3d>{{Dim::Internal1, 3},
+                                       {Dim::Internal0, 3}};
+
+template <class T> auto inner_offset(scipp::index i) { return i; }
+template <class T> auto inner_offset(scipp::index i, scipp::index j) {
+  return inner_dims<T>[Dim::Internal0] * j + i;
+}
 
 template <class T>
 auto make_model(const units::Unit unit, const Dimensions &dimensions,
@@ -56,7 +61,7 @@ auto make_model(const units::Unit unit, const Dimensions &dimensions,
     element_array<Elem> elems;
     if (values) {
       auto begin = static_cast<Elem *>(&values.begin()->operator()(0));
-      auto end = begin + model_t<T>::num_element * values.size();
+      auto end = begin + model_t<T>::element_count * values.size();
       elems = element_array<Elem>{begin, end};
     }
     return std::make_unique<model_t<T>>(dimensions.volume(), unit,
@@ -73,22 +78,22 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
       m_object(make_model(unit, dimensions, std::move(values_),
                           std::move(variances_))) {}
 
-template <class T, class... Index>
-Variable Variable::elements(const Index &... index) const {
+template <class T, class... Is>
+Variable Variable::elements(const Is &... index) const {
+  static_assert(sizeof...(Is) == 0 || model_t<T>::axis_count == sizeof...(Is));
   auto elements(*this);
   const auto &model = cast<T>(*this);
   elements.m_object = model.elements();
-  elements.m_offset *= model_t<T>::num_element;
+  elements.m_offset *= model_t<T>::element_count;
   for (scipp::index i = 0; i < dims().ndim(); ++i)
-    elements.m_strides[i] = model_t<T>::num_element * strides()[i];
-  if constexpr (sizeof...(index) == 0) {
+    elements.m_strides[i] = model_t<T>::element_count * strides()[i];
+  if constexpr (sizeof...(Is) == 0) {
     Strides inner_strides(inner_dims<T>);
-    for (scipp::index i = 0; i < inner_dims<T>.ndim(); ++i)
-      elements.unchecked_strides()[elements.dims().ndim() + i] =
-          inner_strides[i];
+    std::copy(inner_strides.begin(), inner_strides.begin() + model_t<T>::axis_count,
+              elements.unchecked_strides().begin() + dims().ndim());
     elements.unchecked_dims() = merge(elements.dims(), inner_dims<T>);
   } else {
-    elements.m_offset += model.element_offset(index...);
+    elements.m_offset += inner_offset<T>(index...);
   }
   return elements;
 }

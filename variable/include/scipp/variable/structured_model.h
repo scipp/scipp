@@ -21,18 +21,19 @@ class StructuredModel : public VariableConcept {
 public:
   using value_type = T;
   using element_type = Elem;
-  static constexpr auto num_element = (N * ...);
+  static constexpr auto axis_count = sizeof...(N);
+  static constexpr auto element_count = (N * ...);
 
   StructuredModel(const scipp::index size, const units::Unit &unit,
                   element_array<Elem> model)
       : VariableConcept(units::one), // unit ignored
-        m_elements(std::make_shared<DataModel<Elem>>(size * num_element, unit,
+        m_elements(std::make_shared<DataModel<Elem>>(size * element_count, unit,
                                                      std::move(model))) {}
 
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
   DType dtype() const noexcept override { return scipp::dtype<T>; }
   scipp::index size() const override {
-    return m_elements->size() / num_element;
+    return m_elements->size() / element_count;
   }
 
   const units::Unit &unit() const override { return m_elements->unit(); }
@@ -51,14 +52,13 @@ public:
   void copy(const Variable &src, Variable &&dest) const override;
   void assign(const VariableConcept &other) override;
 
-  void setVariances(const Variable &variances) override;
+  bool hasVariances() const noexcept override { return false; }
+  void setVariances(const Variable &) override {
+    throw except::VariancesError("This data type cannot have variances.");
+  }
 
   VariableConceptHandle clone() const override {
     return std::make_unique<StructuredModel<T, Elem, N...>>(*this);
-  }
-
-  bool hasVariances() const noexcept override {
-    return m_elements->hasVariances();
   }
 
   auto values(const core::ElementArrayViewParams &base) const {
@@ -69,22 +69,6 @@ public:
   }
 
   VariableConceptHandle elements() const { return m_elements; }
-
-  scipp::index element_offset(const scipp::index i) const {
-    if (((i < 0 || i >= N) || ...))
-      throw std::runtime_error("Element index out of range.");
-    if constexpr (sizeof...(N) == 1)
-      return i;
-  }
-
-  scipp::index element_offset(const scipp::index i,
-                              const scipp::index j) const {
-    // TODO range checks with actual N
-    if (i < 0 || i >= 3 || j < 0 || j >= 3)
-      throw std::runtime_error("Element index out of range.");
-    if constexpr (sizeof...(N) == 2)
-      return 3 * i + j;
-  }
 
   scipp::index dtype_size() const override { return sizeof(T); }
   const VariableConceptHandle &bin_indices() const override {
@@ -110,13 +94,9 @@ template <class T, class Elem, int... N>
 VariableConceptHandle StructuredModel<T, Elem, N...>::makeDefaultFromParent(
     const scipp::index size) const {
   return std::make_unique<StructuredModel<T, Elem, N...>>(
-      size, unit(), element_array<Elem>(size * num_element));
+      size, unit(), element_array<Elem>(size * element_count));
 }
 
-/// Helper for implementing Variable(View)::operator==.
-///
-/// This method is using virtual dispatch as a trick to obtain T, such that
-/// values<T> and variances<T> can be compared.
 template <class T, class Elem, int... N>
 bool StructuredModel<T, Elem, N...>::equals(const Variable &a,
                                             const Variable &b) const {
@@ -124,10 +104,6 @@ bool StructuredModel<T, Elem, N...>::equals(const Variable &a,
                      b.elements<T>().template values<Elem>());
 }
 
-/// Helper for implementing Variable(View) copy operations.
-///
-/// This method is using virtual dispatch as a trick to obtain T, such that
-/// transform can be called with any T.
 template <class T, class Elem, int... N>
 void StructuredModel<T, Elem, N...>::copy(const Variable &src,
                                           Variable &dest) const {
@@ -142,11 +118,6 @@ void StructuredModel<T, Elem, N...>::copy(const Variable &src,
 template <class T, class Elem, int... N>
 void StructuredModel<T, Elem, N...>::assign(const VariableConcept &other) {
   *this = requireT<const StructuredModel<T, Elem, N...>>(other);
-}
-
-template <class T, class Elem, int... N>
-void StructuredModel<T, Elem, N...>::setVariances(const Variable &) {
-  throw except::VariancesError("This data type cannot have variances.");
 }
 
 } // namespace scipp::variable
