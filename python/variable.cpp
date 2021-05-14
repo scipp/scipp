@@ -138,15 +138,32 @@ void bind_structured_creation(py::module &m, const std::string &name) {
       py::arg("dims"), py::arg("values"), py::arg("unit") = units::one);
 }
 
+void require(const Variable &var, Eigen::Vector3d) {
+  if (var.dtype() != dtype<Eigen::Vector3d>)
+    throw except::TypeError(
+        "Vector element access properties `x1`, `x2`, and `x3` not "
+        "supported for dtype=" +
+        to_string(var.dtype()));
+}
+
+void require(const Variable &var, Eigen::Matrix3d) {
+  if (var.dtype() != dtype<Eigen::Matrix3d>)
+    throw except::TypeError(
+        "Matrix element access properties `x11`, `x12`, ... not "
+        "supported for dtype=" +
+        to_string(var.dtype()));
+}
+
 template <class T, scipp::index... I>
 void bind_elem_property(py::class_<Variable> &v, const char *name) {
   v.def_property(
       name,
-      [](Variable &self) -> py::object {
-        return (self.dtype() == dtype<T>) ? py::cast(self.elements<T>(I...))
-                                          : py::none();
+      [](Variable &self) {
+        require(self, T{});
+        return self.elements<T>(I...);
       },
       [](Variable &self, const Variable &elems) {
+        require(self, T{});
         copy(elems, self.elements<T>(I...));
       });
 }
