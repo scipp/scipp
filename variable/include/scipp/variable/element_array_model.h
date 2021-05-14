@@ -38,7 +38,7 @@ bool equals_impl(const T1 &view1, const T2 &view2) {
     return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }
 
-/// Implementation of VariableConcept that holds and array with element type T.
+/// Implementation of VariableConcept that holds an array with element type T.
 template <class T> class ElementArrayModel : public VariableConcept {
 public:
   using value_type = T;

@@ -14,7 +14,12 @@
 
 namespace scipp::variable {
 
-/// Implementation of VariableConcept that holds and array with element type T.
+/// Implementation of VariableConcept that represents an array with structured
+/// elements of type T.
+///
+/// The difference to ElementArrayModel is that this class allows for creating
+/// variables that share ownership of the underlying structure elements, e.g.,
+/// to provide access to an array of vector elements from an array of vectors.
 template <class T, class Elem, int... N>
 class StructureArrayModel : public VariableConcept {
 public:

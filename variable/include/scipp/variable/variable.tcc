@@ -84,15 +84,20 @@ Variable Variable::elements(const Is &... index) const {
   auto elements(*this);
   const auto &model = cast<T>(*this);
   elements.m_object = model.elements();
+  // Scale offset and strides (which refer to type T) so they are correct for
+  // the *element type* of T.
   elements.m_offset *= model_t<T>::element_count;
   for (scipp::index i = 0; i < dims().ndim(); ++i)
     elements.m_strides[i] = model_t<T>::element_count * strides()[i];
   if constexpr (sizeof...(Is) == 0) {
+    // Get all elements but setting up internal dims and strides
     Strides inner_strides(inner_dims<T>);
-    std::copy(inner_strides.begin(), inner_strides.begin() + model_t<T>::axis_count,
+    std::copy(inner_strides.begin(),
+              inner_strides.begin() + model_t<T>::axis_count,
               elements.unchecked_strides().begin() + dims().ndim());
     elements.unchecked_dims() = merge(elements.dims(), inner_dims<T>);
   } else {
+    // Get specific element at offset
     elements.m_offset += inner_offset<T>(index...);
   }
   return elements;
