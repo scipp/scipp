@@ -100,13 +100,13 @@ class DataAccessHelper {
   }
 
   struct get_values {
-    template <class T, class View> static constexpr auto get(View &view) {
+    template <class T, class View> static constexpr auto get(View &&view) {
       return view.template values<T>();
     }
   };
 
   struct get_variances {
-    template <class T, class View> static constexpr auto get(View &view) {
+    template <class T, class View> static constexpr auto get(View &&view) {
       return view.template variances<T>();
     }
   };
@@ -251,7 +251,19 @@ public:
 
   template <class Var>
   static void set_values(Var &view, const py::object &obj) {
-    set(view.dims(), view.unit(), get<get_values>(view), obj);
+    if (view.dtype() == dtype<Eigen::Vector3d>) {
+      auto elems = get_data_variable(view).template elements<Eigen::Vector3d>();
+      set_values(elems, obj);
+    } else if (view.dtype() == dtype<Eigen::Matrix3d>) {
+      auto elems = get_data_variable(view).template elements<Eigen::Matrix3d>();
+      std::vector labels(elems.dims().labels().begin(),
+                         elems.dims().labels().end());
+      std::iter_swap(labels.end() - 2, labels.end() - 1);
+      elems = transpose(elems, labels);
+      set_values(elems, obj);
+    } else {
+      set(view.dims(), view.unit(), get<get_values>(view), obj);
+    }
   }
 
   template <class Var>

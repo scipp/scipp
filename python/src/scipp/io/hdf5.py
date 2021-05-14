@@ -36,7 +36,11 @@ class NumpyDataIO:
 
     @staticmethod
     def read(group, data):
-        group['values'].read_direct(_as_hdf5_type(data.values))
+        if (data.values.flags['C_CONTIGUOUS']):
+            group['values'].read_direct(_as_hdf5_type(data.values))
+        else:
+            # Values of Eigen matrices are transposed
+            data.values = group['values']
         if 'variances' in group:
             group['variances'].read_direct(data.variances)
 
