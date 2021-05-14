@@ -163,17 +163,23 @@ def empty(*,
     return _cpp.empty(dims, shape, unit, dtype, variances)
 
 
+def _to_eigen_layout(a):
+    # Numpy and scipp use row-major, but Eigen matrices use column-major,
+    # transpose matrix axes for copying values.
+    return _np.moveaxis(a, -1, -2)
+
+
 def matrix(*,
            unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
            value: _Union[_np.ndarray, list]):
-    return _cpp.matrices(dims=[], unit=unit, values=value)
+    return _cpp.matrices(dims=[], unit=unit, values=_to_eigen_layout(value))
 
 
 def matrices(*,
              dims: _Sequence[str],
              unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
              values: _Union[_np.ndarray, list]):
-    return _cpp.matrices(dims=dims, unit=unit, values=values)
+    return _cpp.matrices(dims=dims, unit=unit, values=_to_eigen_layout(values))
 
 
 def vector(*,

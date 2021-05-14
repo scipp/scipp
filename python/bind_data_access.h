@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <algorithm>
 #include <variant>
 
 #include "scipp/core/dtype.h"
@@ -11,6 +12,7 @@
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable_concept.h"
 
@@ -204,9 +206,14 @@ public:
     if (type == dtype<Eigen::Vector3d>)
       return DataAccessHelper::as_py_array_t_impl<Getter, double>(
           get_data_variable(view).template elements<Eigen::Vector3d>());
-    if (type == dtype<Eigen::Matrix3d>)
+    if (type == dtype<Eigen::Matrix3d>) {
+      auto elems = get_data_variable(view).template elements<Eigen::Matrix3d>();
+      std::vector labels(elems.dims().labels().begin(),
+                         elems.dims().labels().end());
+      std::iter_swap(labels.end() - 2, labels.end() - 1);
       return DataAccessHelper::as_py_array_t_impl<Getter, double>(
-          get_data_variable(view).template elements<Eigen::Matrix3d>());
+          transpose(elems, labels));
+    }
     return std::visit(
         [&view](const auto &data) {
           const auto &dims = view.dims();

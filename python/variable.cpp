@@ -122,7 +122,7 @@ void bind_structured_creation(py::module &m, const std::string &name) {
       name.c_str(),
       [](const std::vector<Dim> &labels, py::array_t<Elem> &values,
          units::Unit unit) {
-        if (scipp::size(labels) != values.ndim() - sizeof...(N))
+        if (scipp::size(labels) != scipp::index(values.ndim()) - sizeof...(N))
           throw std::runtime_error("bad shape to make structured type");
         auto var = variable::make_structured<T, Elem, N...>(
             Dimensions(labels,
