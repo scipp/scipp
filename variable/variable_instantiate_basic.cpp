@@ -25,6 +25,9 @@ template SCIPP_VARIABLE_EXPORT Variable
 Variable::elements<Eigen::Vector3d>() const;
 
 template SCIPP_VARIABLE_EXPORT Variable
+Variable::elements<Eigen::Matrix3d>() const;
+
+template SCIPP_VARIABLE_EXPORT Variable
 Variable::elements<Eigen::Vector3d, scipp::index>(const scipp::index &) const;
 
 template SCIPP_VARIABLE_EXPORT Variable
