@@ -36,6 +36,8 @@ class PlotDict(dict):
         return ipw.VBox(contents)
 
     def show(self):
+        """
+        """
         for item in self.values():
             item.show()
 
@@ -44,10 +46,16 @@ class PlotDict(dict):
             item.hide_widgets()
 
     def close(self):
+        """
+        Close all plots in dict, making them static.
+        """
         for item in self.values():
             item.close()
 
     def redraw(self):
+        """
+        Redraw/update  all plots in dict.
+        """
         for item in self.values():
             item.redraw()
 
@@ -347,4 +355,8 @@ class Plot:
         self.view.savefig(filename=filename)
 
     def redraw(self):
+        """
+        Redraw the plot. Use this to update a figure when the underlying data
+        has been modified.
+        """
         self.controller.update_data(force_update=True)

@@ -128,7 +128,7 @@ def test_plot_3d_with_2d_position_coordinate():
 
 def test_plot_redraw():
     d = make_dense_dataset(ndim=3, unit='K')
-    p = sc.plot(d)
+    p = sc.plot(d, projection="3d")
     before = p.view.figure.points_geometry.attributes["rgba_color"].array
     d *= 5.0
     p.redraw()
