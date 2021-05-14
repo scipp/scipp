@@ -3,7 +3,6 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
-#include "scipp/common/initialization.h" // TODO can remove this?
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"

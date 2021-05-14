@@ -39,6 +39,9 @@ TEST_F(VariableMatrixTest, matrices_elem_access) {
   EXPECT_EQ(
       matrices.elements<Eigen::Matrix3d>(0l, 1l),
       makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{4, 14}));
+  EXPECT_EQ(
+      matrices.elements<Eigen::Matrix3d>(1l, 0l),
+      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{2, 12}));
 }
 
 TEST_F(VariableMatrixTest, elem_access_unit_overwrite) {

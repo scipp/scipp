@@ -138,13 +138,26 @@ void bind_structured_creation(py::module &m, const std::string &name) {
       py::arg("dims"), py::arg("values"), py::arg("unit") = units::one);
 }
 
+template <class T, scipp::index... I>
+void bind_elem_property(py::class_<Variable> &v, const char *name) {
+  v.def_property(
+      name,
+      [](Variable &self) -> py::object {
+        return (self.dtype() == dtype<T>) ? py::cast(self.elements<T>(I...))
+                                          : py::none();
+      },
+      [](Variable &self, const Variable &elems) {
+        copy(elems, self.elements<T>(I...));
+      });
+}
+
 void init_variable(py::module &m) {
   // Needed to let numpy arrays keep alive the scipp buffers.
   // VariableConcept must ALWAYS be passed to Python by its handle.
   py::class_<VariableConcept, VariableConceptHandle> variable_concept(
       m, "_VariableConcept");
 
-  py::class_<Variable> variable(m, "Variable",
+  py::class_<Variable> variable(m, "Variable", py::dynamic_attr(),
                                 R"(
 Array of values with dimension labels and a unit, optionally including an array
 of variances.)");
@@ -197,22 +210,9 @@ of variances.)");
            [](const Variable &self) {
              return size_of(self, SizeofTag::ViewOnly);
            })
-      .def("underlying_size",
-           [](const Variable &self) {
-             return size_of(self, SizeofTag::Underlying);
-           })
-      .def("elems",
-           [](Variable &self, const scipp::index i) -> py::object {
-             if (self.dtype() != dtype<Eigen::Vector3d>)
-               return py::none();
-             return py::cast(self.elements<Eigen::Vector3d>(i));
-           })
-      .def("elems",
-           [](Variable &self, scipp::index i, scipp::index j) -> py::object {
-             if (self.dtype() != dtype<Eigen::Matrix3d>)
-               return py::none();
-             return py::cast(self.elements<Eigen::Matrix3d>(i, j));
-           });
+      .def("underlying_size", [](const Variable &self) {
+        return size_of(self, SizeofTag::Underlying);
+      });
 
   bind_init_list(variable);
   // Order matters for pybind11's overload resolution. Do not change.
@@ -266,4 +266,16 @@ of variances.)");
 
   bind_structured_creation<Eigen::Vector3d, double, 3>(m, "vectors");
   bind_structured_creation<Eigen::Matrix3d, double, 3, 3>(m, "matrices");
+  bind_elem_property<Eigen::Vector3d, 0>(variable, "x1");
+  bind_elem_property<Eigen::Vector3d, 1>(variable, "x2");
+  bind_elem_property<Eigen::Vector3d, 2>(variable, "x3");
+  bind_elem_property<Eigen::Matrix3d, 0, 0>(variable, "x11");
+  bind_elem_property<Eigen::Matrix3d, 0, 1>(variable, "x12");
+  bind_elem_property<Eigen::Matrix3d, 0, 2>(variable, "x13");
+  bind_elem_property<Eigen::Matrix3d, 1, 0>(variable, "x21");
+  bind_elem_property<Eigen::Matrix3d, 1, 1>(variable, "x22");
+  bind_elem_property<Eigen::Matrix3d, 1, 2>(variable, "x23");
+  bind_elem_property<Eigen::Matrix3d, 2, 0>(variable, "x31");
+  bind_elem_property<Eigen::Matrix3d, 2, 1>(variable, "x32");
+  bind_elem_property<Eigen::Matrix3d, 2, 2>(variable, "x33");
 }
