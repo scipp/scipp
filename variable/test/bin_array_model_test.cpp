@@ -3,8 +3,8 @@
 #include <gtest/gtest.h>
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bin_array_model.h"
 #include "scipp/variable/bins.h"
-#include "scipp/variable/bucket_model.h"
 
 #include "test_macros.h"
 

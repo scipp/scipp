@@ -11,9 +11,9 @@
 #include "scipp/core/except.h"
 #include "scipp/core/time_point.h"
 
-#include "scipp/variable/matrix.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/rebin.h"
+#include "scipp/variable/structures.h"
 #include "scipp/variable/variable.h"
 
 #include "scipp/dataset/dataset.h"
@@ -124,7 +124,7 @@ void bind_structured_creation(py::module &m, const std::string &name) {
          units::Unit unit) {
         if (scipp::size(labels) != values.ndim() - scipp::index(sizeof...(N)))
           throw std::runtime_error("bad shape to make structured type");
-        auto var = variable::make_structured<T, Elem, N...>(
+        auto var = variable::make_structures<T, Elem, N...>(
             Dimensions(labels,
                        std::vector<scipp::index>(
                            values.shape(), values.shape() + labels.size())),

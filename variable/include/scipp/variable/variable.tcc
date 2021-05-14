@@ -9,9 +9,9 @@
 #include "scipp/core/except.h"
 #include "scipp/core/has_eval.h"
 #include "scipp/units/unit.h"
-#include "scipp/variable/data_model.h"
+#include "scipp/variable/element_array_model.h"
 #include "scipp/variable/except.h"
-#include "scipp/variable/structured_model.h"
+#include "scipp/variable/structure_array_model.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable_factory.h"
 

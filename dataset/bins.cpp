@@ -12,8 +12,8 @@
 #include "scipp/core/histogram.h"
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bin_array_model.h"
 #include "scipp/variable/bins.h"
-#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
@@ -141,7 +141,7 @@ Dataset resize_default_init(const Dataset &parent, const Dim dim,
 
 template <class T>
 Variable make_bins_impl(Variable indices, const Dim dim, T &&buffer) {
-  indices.setDataHandle(std::make_unique<variable::DataModel<bucket<T>>>(
+  indices.setDataHandle(std::make_unique<variable::BinArrayModel<T>>(
       indices.data_handle(), dim, std::move(buffer)));
   return indices;
 }
@@ -241,7 +241,7 @@ template <class T> auto combine(const Variable &var0, const Variable &var1) {
   auto buffer = resize_default_init(buffer0, dim, total_size);
   copy_slices(buffer0, buffer, dim, indices0, zip(begin, end - sizes1));
   copy_slices(buffer1, buffer, dim, indices1, zip(begin + sizes0, end));
-  return std::make_shared<variable::DataModel<bucket<T>>>(
+  return std::make_shared<variable::BinArrayModel<T>>(
       zip(begin, end).data_handle(), dim, std::move(buffer));
 }
 

@@ -3,7 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/bucket_model.h"
+#include "scipp/variable/bin_array_model.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/variable.tcc"

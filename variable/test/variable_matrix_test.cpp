@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/eigen.h"
-#include "scipp/variable/matrix.h"
+#include "scipp/variable/structures.h"
 
 using namespace scipp;
 

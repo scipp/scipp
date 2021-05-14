@@ -7,7 +7,7 @@
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
 #include "scipp/units/unit.h"
-#include "scipp/variable/data_model.h"
+#include "scipp/variable/element_array_model.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable_concept.h"
