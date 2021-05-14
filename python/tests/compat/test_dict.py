@@ -182,16 +182,12 @@ def test_variable_matrix_round_trip():
         np.arange(1.0, 10.0).reshape(3, 3),
         np.arange(2.0, 11.0).reshape(3, 3)
     ])
-    var = sc.Variable(['x'],
-                      values=data,
-                      unit=sc.units.m,
-                      dtype=sc.dtype.matrix_3_float64)
+    var = sc.matrices(dims=['x'], values=data, unit=sc.units.m)
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
 def test_variable_0D_matrix_round_trip():
-    var = sc.Variable(value=np.arange(1, 10).reshape(3, 3),
-                      dtype=sc.dtype.matrix_3_float64)
+    var = sc.matrix(value=np.arange(1, 10).reshape(3, 3))
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
