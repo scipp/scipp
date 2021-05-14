@@ -37,10 +37,10 @@ TEST_F(VariableMatrixTest, elem_access) {
 TEST_F(VariableMatrixTest, matrices_elem_access) {
   // storage order is column-major
   EXPECT_EQ(
-      matrices.elements<Eigen::Matrix3d>(0l, 1l),
+      matrices.elements<Eigen::Matrix3d>(scipp::index(0), scipp::index(1)),
       makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{4, 14}));
   EXPECT_EQ(
-      matrices.elements<Eigen::Matrix3d>(1l, 0l),
+      matrices.elements<Eigen::Matrix3d>(scipp::index(1), scipp::index(0)),
       makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{2, 12}));
 }
 
