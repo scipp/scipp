@@ -181,6 +181,20 @@ template <class... Ts> class as_ElementArrayViewImpl {
         view);
   }
 
+  template <class View> static auto structure_elements(View &&view) {
+    if (view.dtype() == dtype<Eigen::Vector3d>) {
+      return get_data_variable(view).template elements<Eigen::Vector3d>();
+    } else if (view.dtype() == dtype<Eigen::Matrix3d>) {
+      auto elems = get_data_variable(view).template elements<Eigen::Matrix3d>();
+      std::vector labels(elems.dims().labels().begin(),
+                         elems.dims().labels().end());
+      std::iter_swap(labels.end() - 2, labels.end() - 1);
+      return transpose(elems, labels);
+    } else {
+      throw std::runtime_error("Unsupported structured dtype");
+    }
+  }
+
 public:
   template <class Getter, class View>
   static py::object get_py_array_t(py::object &obj) {
@@ -203,17 +217,9 @@ public:
       return DataAccessHelper::as_py_array_t_impl<Getter,
                                                   scipp::core::time_point>(
           view);
-    if (type == dtype<Eigen::Vector3d>)
+    if (is_structured(type))
       return DataAccessHelper::as_py_array_t_impl<Getter, double>(
-          get_data_variable(view).template elements<Eigen::Vector3d>());
-    if (type == dtype<Eigen::Matrix3d>) {
-      auto elems = get_data_variable(view).template elements<Eigen::Matrix3d>();
-      std::vector labels(elems.dims().labels().begin(),
-                         elems.dims().labels().end());
-      std::iter_swap(labels.end() - 2, labels.end() - 1);
-      return DataAccessHelper::as_py_array_t_impl<Getter, double>(
-          transpose(elems, labels));
-    }
+          structure_elements(view));
     return std::visit(
         [&view](const auto &data) {
           const auto &dims = view.dims();
@@ -251,15 +257,8 @@ public:
 
   template <class Var>
   static void set_values(Var &view, const py::object &obj) {
-    if (view.dtype() == dtype<Eigen::Vector3d>) {
-      auto elems = get_data_variable(view).template elements<Eigen::Vector3d>();
-      set_values(elems, obj);
-    } else if (view.dtype() == dtype<Eigen::Matrix3d>) {
-      auto elems = get_data_variable(view).template elements<Eigen::Matrix3d>();
-      std::vector labels(elems.dims().labels().begin(),
-                         elems.dims().labels().end());
-      std::iter_swap(labels.end() - 2, labels.end() - 1);
-      elems = transpose(elems, labels);
+    if (is_structured(view.dtype())) {
+      auto elems = structure_elements(view);
       set_values(elems, obj);
     } else {
       set(view.dims(), view.unit(), get<get_values>(view), obj);
