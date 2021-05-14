@@ -10,8 +10,6 @@ using namespace scipp;
 class VariableMatrixTest : public ::testing::Test {
 protected:
   Dimensions inner{Dim::X, 3};
-  Variable elems = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                        units::m, Values{1, 2, 3, 4, 5, 6});
   Variable var = variable::make_vectors(Dimensions(Dim::Y, 2), units::m,
                                         {1, 2, 3, 4, 5, 6});
 };
@@ -23,6 +21,8 @@ TEST_F(VariableMatrixTest, basics) {
 }
 
 TEST_F(VariableMatrixTest, elem_access) {
+  Variable elems = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                        units::m, Values{1, 2, 3, 4, 5, 6});
   for (auto i : {0, 1, 2}) {
     EXPECT_EQ(var.elements<Eigen::Vector3d>().slice({Dim::Internal0, i}),
               elems.slice({Dim::X, i}));
@@ -41,4 +41,9 @@ TEST_F(VariableMatrixTest, elem_access_unit_overwrite) {
   elems.setUnit(units::s);
   EXPECT_EQ(var.unit(), units::s);
   EXPECT_EQ(elems.unit(), units::s);
+}
+
+TEST_F(VariableMatrixTest, readonly) {
+  EXPECT_FALSE(var.elements<Eigen::Vector3d>().is_readonly());
+  EXPECT_TRUE(var.as_const().elements<Eigen::Vector3d>().is_readonly());
 }
