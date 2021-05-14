@@ -322,4 +322,5 @@ def test_plot_redraw():
     assert p.view.figure.data_lines['Sample'].get_ydata()[2] == np.sin(2.0)
     d['Sample'] *= 5.0
     p.redraw()
-    assert p.view.figure.data_lines['Sample'].get_ydata()[2] == 5.0 * np.sin(2.0)
+    assert p.view.figure.data_lines['Sample'].get_ydata(
+    )[2] == 5.0 * np.sin(2.0)
