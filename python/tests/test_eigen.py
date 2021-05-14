@@ -45,6 +45,24 @@ def test_variable_1D_vector_3_float64_from_numpy():
     assert var.unit == sc.units.m
 
 
+def test_set_vector_value():
+    var = sc.vector(value=np.array([1, 2, 3]), unit=sc.units.m)
+    value = np.array([3, 2, 1])
+    ref = sc.vector(value=value, unit=sc.units.m)
+    var.value = value
+    assert sc.identical(var, ref)
+
+
+def test_set_vectors_values():
+    var = sc.vectors(dims=['x'],
+                     values=np.array([[1, 2, 3], [4, 5, 6]]),
+                     unit=sc.units.m)
+    values = np.array([[6, 5, 4], [3, 2, 1]])
+    ref = sc.vectors(dims=['x'], values=values, unit=sc.units.m)
+    var.values = values
+    assert sc.identical(var, ref)
+
+
 def test_matrix_from_quat_coeffs_list():
     sc.geometry.rotation_matrix_from_quaternion_coeffs([1, 2, 3, 4])
 
@@ -76,7 +94,7 @@ def test_variable_1D_matrix_from_numpy():
         np.arange(5.0, 14.0).reshape(3, 3),
         np.arange(1.0, 10.0).reshape(3, 3)
     ])
-    var = sc.matrices(dims=['tof'], values=data, unit=sc.units.us)
+    var = sc.matrices(dims=['x'], values=data, unit=sc.units.us)
     assert len(var.values) == 3
     np.testing.assert_array_equal(var.values[0],
                                   [[0, 1, 2], [3, 4, 5], [6, 7, 8]])
@@ -84,6 +102,24 @@ def test_variable_1D_matrix_from_numpy():
                                   [[5, 6, 7], [8, 9, 10], [11, 12, 13]])
     np.testing.assert_array_equal(var.values[2],
                                   [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-    assert var.dims == ['tof']
+    assert var.dims == ['x']
     assert var.dtype == sc.dtype.matrix_3_float64
     assert var.unit == sc.units.us
+
+
+def test_set_matrix_value():
+    var = sc.matrix(value=np.arange(9).reshape(3, 3), unit=sc.units.m)
+    value = np.arange(9, 18).reshape(3, 3)
+    ref = sc.matrix(value=value, unit=sc.units.m)
+    var.value = value
+    assert sc.identical(var, ref)
+
+
+def test_set_matrices_values():
+    var = sc.matrices(dims=['x'],
+                      values=np.arange(18).reshape(2, 3, 3),
+                      unit=sc.units.m)
+    values = np.arange(18, 36).reshape(2, 3, 3)
+    ref = sc.matrices(dims=['x'], values=values, unit=sc.units.m)
+    var.values = values
+    assert sc.identical(var, ref)
