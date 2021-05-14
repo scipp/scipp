@@ -68,37 +68,32 @@ class DataAccessHelper {
 
   template <class Getter, class T, class View>
   static py::object as_py_array_t_impl(View &&view) {
-    auto &&var = get_data_variable(view);
-    if constexpr (std::is_same_v<T, Eigen::Vector3d> ||
-                  std::is_same_v<T, Eigen::Matrix3d>) {
-      return as_py_array_t_impl<Getter, double>(var.template elements<T>());
-    } else {
-      const auto get_dtype = [&view]() {
-        if constexpr (std::is_same_v<T, scipp::core::time_point>) {
-          // Need a custom implementation because py::dtype::of only works with
-          // types supported by the buffer protocol.
-          return py::dtype("datetime64[" + to_numpy_time_string(view.unit()) +
-                           ']');
-        } else {
-          static_cast<void>(view);
-          return py::dtype::of<T>();
-        }
-      };
-      const auto &dims = view.dims();
-      if (var.is_readonly()) {
-        auto array = py::array{
-            get_dtype(), dims.shape(), numpy_strides<T>(var.strides()),
-            Getter::template get<T>(std::as_const(view)).data(),
-            get_data_variable_concept_handle(view)};
-        py::detail::array_proxy(array.ptr())->flags &=
-            ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
-        return std::move(array); // no automatic move because of type mismatch
+    const auto get_dtype = [&view]() {
+      if constexpr (std::is_same_v<T, scipp::core::time_point>) {
+        // Need a custom implementation because py::dtype::of only works with
+        // types supported by the buffer protocol.
+        return py::dtype("datetime64[" + to_numpy_time_string(view.unit()) +
+                         ']');
       } else {
-        return py::array{get_dtype(), dims.shape(),
-                         numpy_strides<T>(var.strides()),
-                         Getter::template get<T>(view).data(),
-                         get_data_variable_concept_handle(view)};
+        static_cast<void>(view);
+        return py::dtype::of<T>();
       }
+    };
+    auto &&var = get_data_variable(view);
+    const auto &dims = view.dims();
+    if (var.is_readonly()) {
+      auto array =
+          py::array{get_dtype(), dims.shape(), numpy_strides<T>(var.strides()),
+                    Getter::template get<T>(std::as_const(view)).data(),
+                    get_data_variable_concept_handle(view)};
+      py::detail::array_proxy(array.ptr())->flags &=
+          ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
+      return std::move(array); // no automatic move because of type mismatch
+    } else {
+      return py::array{get_dtype(), dims.shape(),
+                       numpy_strides<T>(var.strides()),
+                       Getter::template get<T>(view).data(),
+                       get_data_variable_concept_handle(view)};
     }
   }
 
@@ -207,11 +202,11 @@ public:
                                                   scipp::core::time_point>(
           view);
     if (type == dtype<Eigen::Vector3d>)
-      return DataAccessHelper::as_py_array_t_impl<Getter, Eigen::Vector3d>(
-          view);
+      return DataAccessHelper::as_py_array_t_impl<Getter, double>(
+          get_data_variable(view).template elements<Eigen::Vector3d>());
     if (type == dtype<Eigen::Matrix3d>)
-      return DataAccessHelper::as_py_array_t_impl<Getter, Eigen::Matrix3d>(
-          view);
+      return DataAccessHelper::as_py_array_t_impl<Getter, double>(
+          get_data_variable(view).template elements<Eigen::Matrix3d>());
     return std::visit(
         [&view](const auto &data) {
           const auto &dims = view.dims();
