@@ -169,3 +169,7 @@ def _dict_to_data_array(d):
                 out[key][name] = _dict_to_variable(item)
     out["data"] = _dict_to_variable(d["data"])
     return sc.DataArray(**out)
+
+
+def map_to_dict(map_):
+    return {name: var for name, var in map_.items()}

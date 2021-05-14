@@ -6,7 +6,7 @@ from .._scipp import core as sc
 from .. import _utils as su
 from ..compat.dict import from_dict
 from .dispatch import dispatch
-from .outputs import PlotDict
+from .objects import PlotDict
 from .tools import make_fake_coord, get_line_param
 import numpy as np
 import itertools

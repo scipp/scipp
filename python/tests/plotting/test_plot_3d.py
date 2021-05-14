@@ -124,3 +124,13 @@ def test_plot_3d_with_2d_position_coordinate():
                                                     dtype=np.float64))
 
     plot(da, projection="3d", positions="pos")
+
+
+def test_plot_redraw():
+    d = make_dense_dataset(ndim=3, unit='K')
+    p = sc.plot(d)
+    before = p.view.figure.points_geometry.attributes["rgba_color"].array
+    d *= 5.0
+    p.redraw()
+    after = p.view.figure.points_geometry.attributes["rgba_color"].array
+    assert np.any(before != after)

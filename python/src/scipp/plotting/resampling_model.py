@@ -130,6 +130,7 @@ class ResamplingBinnedModel(ResamplingModel):
         super().__init__(*args, **kwargs)
         # TODO See #1469. This is a temporary hack to work around the
         # conversion of coords to edges in model.py.
+        self._array = self._array.copy()
         for name, var in self._array.coords.items():
             if len(var.dims) == 0:
                 continue
@@ -147,12 +148,12 @@ class ResamplingBinnedModel(ResamplingModel):
             # Must specify bounds for final dim despite handling by `histogram`
             # below: If coord is ragged binning would throw otherwise.
             bounds = sc.concatenate(edges[dim, 0], edges[dim, -1], dim)
-            binned = sc.bin_with_coords(array.data, array.coords,
+            binned = sc.bin_with_coords(array.data, array.coords.to_dict(),
                                         self.edges[:-1] + [bounds], [])
             a = sc.histogram(binned, edges)
         else:
-            a = sc.bin_with_coords(array.data, array.coords, self.edges,
-                                   []).bins.sum()
+            a = sc.bin_with_coords(array.data, array.coords.to_dict(),
+                                   self.edges, []).bins.sum()
         for name, mask in array.masks.items():
             a.masks[name] = self._rebin(mask, array.coords)
         return a
@@ -181,14 +182,19 @@ class ResamplingDenseModel(ResamplingModel):
 
     def _to_density(self, array):
         if array.dtype != sc.dtype.float64:
-            array.data = array.data.astype(sc.dtype.float64)
-        for dim in array.data.dims:
-            coord = array.coords[dim]
+            data = array.data.astype(sc.dtype.float64)
+        else:
+            data = array.data
+        density = sc.DataArray(data=data,
+                               coords=array.coords.to_dict(),
+                               masks=array.masks.to_dict())
+        for dim in density.dims:
+            coord = density.coords[dim]
             width = coord[dim, 1:] - coord[dim, :-1]
             width.unit = sc.units.one
-            array.data *= width
-        array.data.unit = sc.units.one
-        return array
+            density.data *= width
+        density.unit = sc.units.one
+        return density
 
     def _from_density(self, data):
         for edge in self.edges:

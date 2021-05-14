@@ -84,7 +84,7 @@ def test_plot_2d_image_with_labels():
     plot(make_dense_dataset(ndim=2, labels=True), axes={'x': 'somelabels'})
 
 
-def test_plot_2d_image_with_attrss():
+def test_plot_2d_image_with_attrs():
     plot(make_dense_dataset(ndim=2, attrs=True), axes={'x': 'attr'})
 
 
@@ -318,10 +318,11 @@ def test_plot_2d_datetime():
                           })
     data2d.plot().close()
 
+
 def test_plot_redraw():
     d = make_dense_dataset(ndim=2, unit='K')
     p = sc.plot(d)
-    assert p.view.figure.image_values.get_array()[0, 2] == np.sin(2.0)
+    before = p.view.figure.image_values.get_array()
     d *= 5.0
     p.redraw()
-    assert p.view.figure.image_values.get_array()[0, 2] == 5.0 * np.sin(2.0)
+    assert np.allclose(p.view.figure.image_values.get_array(), 5.0 * before)

@@ -25,7 +25,7 @@ if _debug_:
 from ._scipp import __version__
 # Import classes
 from ._scipp.core import Variable, DataArray, Dataset, GroupByDataArray, \
-                         GroupByDataset, Unit
+                         GroupByDataset, Unit, Coords, Masks
 # Import errors
 from ._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
@@ -46,7 +46,7 @@ from .object_list import _repr_html_
 from ._utils import collapse, slices
 from ._utils.typing import is_variable, is_dataset, is_data_array, \
                            is_dataset_or_array
-from .compat.dict import to_dict, from_dict
+from .compat.dict import to_dict, from_dict, map_to_dict
 from .sizes import _make_sizes
 
 # Wrappers for free functions from _scipp.core
@@ -87,6 +87,9 @@ setattr(DataArray, 'events', property(_events))
 from ._bins import _groupby_bins
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
 setattr(GroupByDataset, 'bins', property(_groupby_bins))
+
+setattr(Coords, 'to_dict', map_to_dict)
+setattr(Masks, 'to_dict', map_to_dict)
 
 setattr(Variable, 'plot', plot)
 setattr(DataArray, 'plot', plot)
