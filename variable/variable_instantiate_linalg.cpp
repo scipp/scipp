@@ -9,12 +9,22 @@
 namespace scipp::variable {
 
 template <>
-constexpr auto structure_element_offset<Eigen::Vector3d> =
-    [](scipp::index i) { return i; };
+constexpr auto structure_element_offset<Eigen::Vector3d> = [](scipp::index i) {
+  if (i < 0 || i > 2)
+    throw std::out_of_range("out of ranges index (" + std::to_string(i) +
+                            ") for element accss of vector of length 3.");
+  return i;
+};
 
 template <>
 constexpr auto structure_element_offset<Eigen::Matrix3d> =
-    [](scipp::index i, scipp::index j) { return 3 * j + i; };
+    [](scipp::index i, scipp::index j) {
+      if (i < 0 || i > 2 || j < 0 || j > 2)
+        throw std::out_of_range("out of ranges indices (" + std::to_string(i) +
+                                "," + std::to_string(j) +
+                                ") for element access of 3x3 matrix.");
+      return 3 * j + i;
+    };
 
 INSTANTIATE_STRUCTURE_VARIABLE(vector_3_float64, Eigen::Vector3d, double,
                                scipp::index)
