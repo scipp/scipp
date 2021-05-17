@@ -63,6 +63,50 @@ def test_set_vectors_values():
     assert sc.identical(var, ref)
 
 
+def test_vector_elements():
+    var = sc.vectors(dims=['x'],
+                     values=np.array([[1, 2, 3], [4, 5, 6]]),
+                     unit=sc.units.m)
+    assert sc.identical(
+        var.x1, sc.array(dims=['x'],
+                         values=np.array([1., 4.]),
+                         unit=sc.units.m))
+    assert sc.identical(
+        var.x2, sc.array(dims=['x'],
+                         values=np.array([2., 5.]),
+                         unit=sc.units.m))
+    assert sc.identical(
+        var.x3, sc.array(dims=['x'],
+                         values=np.array([3., 6.]),
+                         unit=sc.units.m))
+
+
+def test_vector_elements_setter():
+    var = sc.vectors(dims=['x'],
+                     values=np.array([[1, 2, 3], [4, 5, 6]]),
+                     unit=sc.units.m)
+
+    var.x1 = sc.array(dims=['x'], values=np.array([7., 8.]), unit=sc.units.m)
+    expected = sc.vectors(dims=['x'],
+                          values=np.array([[7, 2, 3], [8, 5, 6]]),
+                          unit=sc.units.m)
+    assert sc.identical(var, expected)
+
+    var.x2 = sc.array(dims=['x'], values=np.array([7., 8.]), unit=sc.units.m)
+    assert not sc.identical(var, expected)
+    expected = sc.vectors(dims=['x'],
+                          values=np.array([[7, 7, 3], [8, 8, 6]]),
+                          unit=sc.units.m)
+    assert sc.identical(var, expected)
+
+    var.x3 = sc.array(dims=['x'], values=np.array([7., 8.]), unit=sc.units.m)
+    assert not sc.identical(var, expected)
+    expected = sc.vectors(dims=['x'],
+                          values=np.array([[7, 7, 7], [8, 8, 8]]),
+                          unit=sc.units.m)
+    assert sc.identical(var, expected)
+
+
 def test_matrix_from_quat_coeffs_list():
     sc.geometry.rotation_matrix_from_quaternion_coeffs([1, 2, 3, 4])
 
@@ -123,3 +167,35 @@ def test_set_matrices_values():
     ref = sc.matrices(dims=['x'], values=values, unit=sc.units.m)
     var.values = values
     assert sc.identical(var, ref)
+
+
+def test_matrix_elements():
+    m = sc.matrices(dims=['x'],
+                    values=np.arange(18).reshape(2, 3, 3),
+                    unit=sc.units.m)
+    elems = [m.x11, m.x12, m.x13, m.x21, m.x22, m.x23, m.x31, m.x32, m.x33]
+    offsets = range(9)
+    for elem, offset in zip(elems, offsets):
+        assert sc.identical(
+            elem,
+            sc.array(dims=['x'],
+                     values=np.array([0., 9.]) + offset,
+                     unit=sc.units.m))
+
+
+def test_matrix_elements_setter():
+    values = np.arange(18).reshape(2, 3, 3)
+    m = sc.matrices(dims=['x'], values=values, unit=sc.units.m)
+
+    m.x11 = sc.array(dims=['x'], values=np.array([1., 1.]), unit=sc.units.m)
+    expected = sc.matrices(dims=['x'], values=values, unit=sc.units.m)
+    assert not sc.identical(m, expected)
+    values[:, 0, 0] = 1
+    expected = sc.matrices(dims=['x'], values=values, unit=sc.units.m)
+    assert sc.identical(m, expected)
+
+    m.x23 = sc.array(dims=['x'], values=np.array([1., 1.]), unit=sc.units.m)
+    assert not sc.identical(m, expected)
+    values[:, 1, 2] = 1
+    expected = sc.matrices(dims=['x'], values=values, unit=sc.units.m)
+    assert sc.identical(m, expected)
