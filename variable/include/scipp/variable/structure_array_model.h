@@ -104,7 +104,8 @@ VariableConceptHandle StructureArrayModel<T, Elem, N...>::makeDefaultFromParent(
 template <class T, class Elem, int... N>
 bool StructureArrayModel<T, Elem, N...>::equals(const Variable &a,
                                                 const Variable &b) const {
-  return equals_impl(a.elements<T>().template values<Elem>(),
+  return a.dtype() == dtype() && b.dtype() == dtype() &&
+         equals_impl(a.elements<T>().template values<Elem>(),
                      b.elements<T>().template values<Elem>());
 }
 
