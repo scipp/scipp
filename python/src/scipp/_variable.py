@@ -172,6 +172,15 @@ def _to_eigen_layout(a):
 def matrix(*,
            unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
            value: _Union[_np.ndarray, list]):
+    """Constructs a zero dimensional :class:`Variable` holding a single matrix.
+
+    :seealso: :py:func:`scipp.matrices`
+
+    :param value: Initial value, a list or 1-D numpy array.
+    :param unit: Optional, unit. Default=dimensionless
+    :returns: A scalar (zero-dimensional) Variable.
+    :rtype: Variable
+    """
     return _cpp.matrices(dims=[], unit=unit, values=_to_eigen_layout(value))
 
 
@@ -179,12 +188,30 @@ def matrices(*,
              dims: _Sequence[str],
              unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
              values: _Union[_np.ndarray, list]):
+    """Constructs a :class:`Variable` with given dimensions holding an array
+    of matrices.
+
+    :seealso: :py:func:`scipp.matrix`
+
+    :param dims: Dimension labels.
+    :param values: Initial values.
+    :param unit: Optional, data unit. Default=dimensionless
+    """
     return _cpp.matrices(dims=dims, unit=unit, values=_to_eigen_layout(values))
 
 
 def vector(*,
            unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
            value: _Union[_np.ndarray, list]):
+    """Constructs a zero dimensional :class:`Variable` holding a single vector.
+
+    :seealso: :py:func:`scipp.vectors`
+
+    :param value: Initial value, a list or 1-D numpy array.
+    :param unit: Optional, unit. Default=dimensionless
+    :returns: A scalar (zero-dimensional) Variable.
+    :rtype: Variable
+    """
     return _cpp.vectors(dims=[], unit=unit, values=value)
 
 
@@ -192,6 +219,15 @@ def vectors(*,
             dims: _Sequence[str],
             unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
             values: _Union[_np.ndarray, list]):
+    """Constructs a :class:`Variable` with given dimensions holding an array
+    of vectors.
+
+    :seealso: :py:func:`scipp.vector`
+
+    :param dims: Dimension labels.
+    :param values: Initial values.
+    :param unit: Optional, data unit. Default=dimensionless
+    """
     return _cpp.vectors(dims=dims, unit=unit, values=values)
 
 
