@@ -50,8 +50,8 @@ public:
         m_values(model ? std::move(model)
                        : element_array<T>(size, default_init<T>::value())),
         m_variances(std::move(variances)) {
-    if (m_variances && !core::canHaveVariances<T>())
-      throw except::VariancesError("This data type cannot have variances.");
+    if (m_variances)
+      core::expect::canHaveVariances<T>();
     if (size != scipp::size(m_values))
       throw except::DimensionError(
           "Creating Variable: data size does not match "
@@ -80,7 +80,7 @@ public:
   void setVariances(const Variable &variances) override;
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<ElementArrayModel<T>>(*this);
+    return std::make_shared<ElementArrayModel<T>>(*this);
   }
 
   bool hasVariances() const noexcept override {
@@ -128,10 +128,10 @@ template <class T>
 VariableConceptHandle
 ElementArrayModel<T>::makeDefaultFromParent(const scipp::index size) const {
   if (hasVariances())
-    return std::make_unique<ElementArrayModel<T>>(
+    return std::make_shared<ElementArrayModel<T>>(
         size, unit(), element_array<T>(size), element_array<T>(size));
   else
-    return std::make_unique<ElementArrayModel<T>>(size, unit(),
+    return std::make_shared<ElementArrayModel<T>>(size, unit(),
                                                   element_array<T>(size));
 }
 

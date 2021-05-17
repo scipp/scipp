@@ -32,9 +32,6 @@ public:
   }
 
   bool hasVariances() const noexcept override { return false; }
-  void setVariances(const Variable &) override {
-    throw except::VariancesError("This data type cannot have variances.");
-  }
   const Indices &bin_indices() const override { return indices(); }
 
   const auto &indices() const { return m_indices; }
@@ -48,7 +45,7 @@ private:
 
 namespace {
 template <class T> auto clone_impl(const ElementArrayModel<bucket<T>> &model) {
-  return std::make_unique<ElementArrayModel<bucket<T>>>(
+  return std::make_shared<ElementArrayModel<bucket<T>>>(
       model.indices()->clone(), model.bin_dim(), copy(model.buffer()));
 }
 } // namespace
@@ -92,7 +89,7 @@ public:
 
   [[nodiscard]] VariableConceptHandle
   makeDefaultFromParent(const scipp::index size) const override {
-    return std::make_unique<ElementArrayModel>(
+    return std::make_shared<ElementArrayModel>(
         makeVariable<range_type>(Dims{Dim::X}, Shape{size}).data_handle(),
         this->bin_dim(), T{m_buffer.slice({this->bin_dim(), 0, 0})});
   }
@@ -104,7 +101,7 @@ public:
     const auto size = end.dims().volume() > 0
                           ? end.values<scipp::index>().as_span().back()
                           : 0;
-    return std::make_unique<ElementArrayModel>(
+    return std::make_shared<ElementArrayModel>(
         zip(begin, begin).data_handle(), this->bin_dim(),
         resize_default_init(m_buffer, this->bin_dim(), size));
   }
@@ -135,6 +132,10 @@ public:
 
   [[nodiscard]] scipp::index dtype_size() const override {
     return sizeof(range_type);
+  }
+
+  void setVariances(const Variable &) override {
+    except::throw_cannot_have_variances(core::dtype<core::bin<T>>);
   }
 
 private:

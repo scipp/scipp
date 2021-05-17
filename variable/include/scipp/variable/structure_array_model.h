@@ -57,11 +57,11 @@ public:
 
   bool hasVariances() const noexcept override { return false; }
   void setVariances(const Variable &) override {
-    throw except::VariancesError("This data type cannot have variances.");
+    except::throw_cannot_have_variances(core::dtype<T>);
   }
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<StructureArrayModel<T, Elem, N>>(*this);
+    return std::make_shared<StructureArrayModel<T, Elem, N>>(*this);
   }
 
   auto values(const core::ElementArrayViewParams &base) const {
@@ -96,7 +96,7 @@ private:
 template <class T, class Elem, scipp::index N>
 VariableConceptHandle StructureArrayModel<T, Elem, N>::makeDefaultFromParent(
     const scipp::index size) const {
-  return std::make_unique<StructureArrayModel<T, Elem, N>>(
+  return std::make_shared<StructureArrayModel<T, Elem, N>>(
       size, unit(), element_array<Elem>(size * element_count));
 }
 

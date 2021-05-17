@@ -75,6 +75,9 @@ struct SCIPP_CORE_EXPORT BinEdgeError : public std::runtime_error {
 struct SCIPP_CORE_EXPORT NotFoundError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
+
+SCIPP_CORE_EXPORT void throw_cannot_have_variances(const DType type);
+
 } // namespace scipp::except
 
 namespace scipp::expect {
@@ -136,5 +139,9 @@ void SCIPP_CORE_EXPORT validSlice(const Sizes &sizes, const Slice &slice);
 void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);
+template <class T> void canHaveVariances() {
+  if (!core::canHaveVariances<T>())
+    except::throw_cannot_have_variances(dtype<T>);
+}
 
 } // namespace scipp::core::expect
