@@ -8,7 +8,7 @@
 
 namespace scipp::variable {
 
-template <class T, class Elem, scipp::index N>
+template <class T, class Elem>
 [[nodiscard]] Variable make_structures(const Dimensions &dims,
                                        const units::Unit &unit,
                                        element_array<double> &&values);

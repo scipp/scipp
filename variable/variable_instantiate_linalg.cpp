@@ -16,9 +16,9 @@ template <>
 constexpr auto structure_element_offset<Eigen::Matrix3d> =
     [](scipp::index i, scipp::index j) { return 3 * j + i; };
 
-INSTANTIATE_STRUCTURE_VARIABLE(vector_3_float64, Eigen::Vector3d, double, 3,
+INSTANTIATE_STRUCTURE_VARIABLE(vector_3_float64, Eigen::Vector3d, double,
                                scipp::index)
-INSTANTIATE_STRUCTURE_VARIABLE(matrix_3_float64, Eigen::Matrix3d, double, 9,
+INSTANTIATE_STRUCTURE_VARIABLE(matrix_3_float64, Eigen::Matrix3d, double,
                                scipp::index, scipp::index)
 
 } // namespace scipp::variable
