@@ -169,8 +169,7 @@ Variable make_bins_no_validate(Variable indices, const Dim dim,
 /// Each bin is represented by a Variable slice. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
-  expect_valid_bin_indices(indices.data_handle(), dim,
-                           Dimensions(buffer.sizes()));
+  expect_valid_bin_indices(indices.data_handle(), dim, buffer.sizes());
   return make_bins_no_validate(std::move(indices), dim, std::move(buffer));
 }
 
@@ -340,7 +339,8 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
   for (const auto &d : indices.dims().labels())
     nonclashing_name += d.name();
   const Dim dummy = Dim(nonclashing_name);
-  indices.rename(hist_dim, dummy);
+  if (indices.dims().contains(hist_dim))
+    indices.rename(hist_dim, dummy);
   const auto masked = masked_data(buffer, dim);
   auto hist = variable::transform_subspan(
       buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,

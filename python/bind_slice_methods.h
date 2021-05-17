@@ -22,7 +22,7 @@ using namespace scipp::dataset;
 template <class T> auto dim_extent(const T &object, const Dim dim) {
   if constexpr (std::is_same_v<T, Dataset>) {
     scipp::index extent = -1;
-    if (object.sizes().count(dim) > 0)
+    if (object.sizes().contains(dim))
       extent = object.sizes().at(dim);
     return extent;
   } else {
@@ -84,7 +84,7 @@ template <class T> struct slicer {
                                  const std::tuple<Dim, Variable> &value) {
     auto [dim, i] = value;
     return std::make_from_tuple<Slice>(
-        get_slice_params(Dimensions(self.dims()), self.coords()[dim], i));
+        get_slice_params(self.dims(), self.coords()[dim], i));
   }
 
   static auto get_by_value(T &self, const std::tuple<Dim, Variable> &value) {
@@ -112,9 +112,8 @@ template <class T> struct slicer {
                               ? Variable{}
                               : py::getattr(py_slice, "stop").cast<Variable>();
 
-          return std::make_from_tuple<Slice>(
-              get_slice_params(Dimensions(self.dims()), self.coords()[dim],
-                               start_var, stop_var));
+          return std::make_from_tuple<Slice>(get_slice_params(
+              self.dims(), self.coords()[dim], start_var, stop_var));
         }
       } catch (const py::cast_error &) {
       }

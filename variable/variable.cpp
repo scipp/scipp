@@ -133,7 +133,7 @@ Variable &Variable::setSlice(const Slice params, const Variable &data) {
 }
 
 Variable Variable::broadcast(const Dimensions &target) const {
-  expect::contains(target, dims());
+  expect::includes(target, dims());
   auto out = as_const();
   out.m_dims = target;
   scipp::index i = 0;
@@ -165,8 +165,7 @@ Variable Variable::transpose(const std::vector<Dim> &order) const {
 }
 
 void Variable::rename(const Dim from, const Dim to) {
-  if (dims().contains(from))
-    m_dims.relabel(dims().index(from), to);
+  m_dims.replace_key(from, to);
 }
 
 bool Variable::is_valid() const noexcept { return m_object.operator bool(); }

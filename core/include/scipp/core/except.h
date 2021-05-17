@@ -11,9 +11,7 @@
 #include "scipp-core_export.h"
 #include "scipp/common/except.h"
 #include "scipp/common/index.h"
-#include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/sizes.h"
 #include "scipp/core/string.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
@@ -21,6 +19,7 @@
 namespace scipp::core {
 
 class Dimensions;
+class Sizes;
 class Slice;
 
 } // namespace scipp::core
@@ -48,9 +47,6 @@ template <>
 [[noreturn]] SCIPP_CORE_EXPORT void
 throw_mismatch_error(const core::Dimensions &expected,
                      const core::Dimensions &actual);
-
-[[noreturn]] SCIPP_CORE_EXPORT void
-throw_dimension_not_found_error(const core::Dimensions &expected, Dim actual);
 
 [[noreturn]] SCIPP_CORE_EXPORT void
 throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
@@ -86,6 +82,12 @@ template <class A, class B> void contains(const A &a, const B &b) {
   using core::to_string;
   if (!a.contains(b))
     throw except::NotFoundError("Expected " + to_string(a) + " to contain " +
+                                to_string(b) + ".");
+}
+template <class A, class B> void includes(const A &a, const B &b) {
+  using core::to_string;
+  if (!a.includes(b))
+    throw except::NotFoundError("Expected " + to_string(a) + " to include " +
                                 to_string(b) + ".");
 }
 } // namespace scipp::expect
@@ -129,7 +131,6 @@ template <class T> void countsOrCountsDensity(const T &object) {
 }
 
 // TODO maybe just provide a `slice` function/method and check via that?
-void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
 void SCIPP_CORE_EXPORT validSlice(const Sizes &sizes, const Slice &slice);
 
 void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
