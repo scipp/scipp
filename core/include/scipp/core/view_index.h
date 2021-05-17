@@ -40,7 +40,8 @@ public:
 
   constexpr void set_index(const scipp::index index) noexcept {
     m_view_index = index;
-    extract_indices(index, m_ndim, m_shape, m_coord);
+    extract_indices(index, m_shape.begin(), m_shape.begin() + m_ndim,
+                    m_coord.begin());
     m_memory_index = flat_index_from_strides(
         m_strides.begin(), m_strides.end(m_ndim), m_coord.begin());
   }
