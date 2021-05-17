@@ -74,6 +74,8 @@ auto make_model(const units::Unit unit, const Dimensions &dimensions,
 template <class T>
 Variable make_default_init(const Dimensions &dims, const units::Unit &unit,
                            const bool variances) {
+  if (variances && !core::canHaveVariances<T>())
+    throw except::VariancesError("This data type cannot have variances.");
   const auto volume = dims.volume();
   VariableConceptHandle model;
   if constexpr (std::is_same_v<model_t<T>, ElementArrayModel<T>>) {
