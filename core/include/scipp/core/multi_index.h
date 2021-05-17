@@ -214,12 +214,8 @@ public:
     m_coord[0] += distance;
   }
 
-  [[nodiscard]] auto inner_strides() const noexcept {
-    std::array<scipp::index, N> strides;
-    for (scipp::index data = 0; data < N; ++data) {
-      strides[data] = m_stride[0][data];
-    }
-    return strides;
+  [[nodiscard]] auto &inner_strides() const noexcept {
+    return m_stride[0];
   }
 
   [[nodiscard]] constexpr scipp::index inner_distance_to_end() const noexcept {
