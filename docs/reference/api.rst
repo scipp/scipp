@@ -27,9 +27,13 @@ Creation functions
    geomspace
    linspace
    logspace
+   matrix
+   matrices
    ones
    ones_like
    scalar
+   vector
+   vectors
    zeros
    zeros_like
 
