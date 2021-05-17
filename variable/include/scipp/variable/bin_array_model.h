@@ -151,7 +151,8 @@ template <class T>
 bool ElementArrayModel<bucket<T>>::equals(const Variable &a,
                                           const Variable &b) const {
   // TODO This implementation is slow since it creates a view for every bucket.
-  return equals_impl(a.values<bucket<T>>(), b.values<bucket<T>>());
+  return a.dtype() == dtype() && b.dtype() == dtype() &&
+         equals_impl(a.values<bucket<T>>(), b.values<bucket<T>>());
 }
 
 template <class T>
