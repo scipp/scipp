@@ -33,6 +33,11 @@ void validate_bin_indices(const Param0 &param0, const Param1 &param1,
     validate_bin_indices(param1, params...);
 }
 
+template <class Head, class... Args>
+decltype(auto) get_head(Head &&head, Args &&...) {
+  return std::forward<Head>(head);
+}
+
 inline auto get_nested_dims() { return Dimensions(); }
 template <class T, class... Ts>
 auto get_nested_dims(const T &param, const Ts &... params) {
@@ -45,10 +50,11 @@ auto get_slice_dim(const T &param, const Ts &... params) {
   return param ? param.dim : get_slice_dim(params...);
 }
 
-template <size_t N, size_t... I, class... StridesArgs>
-void copy_strides(std::array<std::array<scipp::index, N>, NDIM_MAX> &dest,
-                  const scipp::index ndim, std::index_sequence<I...>,
-                  const StridesArgs &... strides) {
+template <size_t... I, class... StridesArgs>
+void copy_strides(
+    std::array<std::array<scipp::index, sizeof...(I)>, NDIM_MAX> &dest,
+    const scipp::index ndim, std::index_sequence<I...>,
+    const StridesArgs &... strides) {
   (
       [&]() {
         for (scipp::index dim = 0; dim < ndim; ++dim) {
@@ -81,15 +87,14 @@ public:
   template <class... StridesArgs>
   explicit MultiIndex(const Dimensions &iterDims,
                       const StridesArgs &... strides)
-      : m_ndim{iterDims.ndim()} {
+      : m_inner_ndim{iterDims.ndim()} {
     scipp::index d = iterDims.ndim() - 1;
     for (const auto size : iterDims.shape()) {
       m_shape[d--] = size;
       m_end_sentinel *= size;
     }
-    detail::copy_strides<N>(m_stride, m_ndim,
-                            std::index_sequence_for<StridesArgs...>(),
-                            strides...);
+    detail::copy_strides(m_stride, m_inner_ndim,
+                         std::index_sequence_for<StridesArgs...>(), strides...);
   }
 
   template <class... Params>
@@ -99,85 +104,37 @@ public:
   }
 
   template <class... Params> void init(const Params &... params) {
-    const auto iterDims = std::array<Dimensions, N>{params.dims()...}[0];
+    const auto iterDims = detail::get_head(params...).dims();
     if ((!params.bucketParams() && ...)) {
       *this = MultiIndex(iterDims, params.strides()...);
       return;
     }
-    detail::validate_bin_indices(params...);
-    const auto nestedDims = detail::get_nested_dims(params.bucketParams()...);
-    const Dim sliceDim = detail::get_slice_dim(params.bucketParams()...);
-    m_ndim_nested = nestedDims.ndim();
-    m_ndim = iterDims.ndim() + m_ndim_nested;
-    m_nested_stride = nestedDims.offset(sliceDim);
-    m_nested_dim_index = m_ndim_nested - nestedDims.index(sliceDim) - 1;
-    m_bin = std::array{BinIterator(params)...};
-    scipp::index dim = iterDims.ndim() - 1 + nestedDims.ndim();
+    m_has_bins = true;
     m_end_sentinel = iterDims.volume();
+
+    const auto nestedDims = detail::get_nested_dims(params.bucketParams()...);
+    m_inner_ndim = nestedDims.ndim();
+    m_ndim_nested = nestedDims.ndim();
+    m_outer_index = BinIndex(*this, params...);
     if (m_end_sentinel == 0) {
       return; // operands are empty, leave everything below default initialized
     }
-    for (const auto size : iterDims.shape()) {
-      m_shape[dim--] = size;
-    }
-    for (const auto size : nestedDims.shape()) {
-      m_shape[dim--] = size;
-    }
-    detail::copy_strides<N>(
+    std::reverse_copy(nestedDims.shape().begin(), nestedDims.shape().end(),
+                      m_shape.begin());
+    detail::copy_strides(
         m_stride, nestedDims.ndim(), std::index_sequence_for<Params...>(),
         params.bucketParams() ? Strides{nestedDims} : Strides{}...);
     std::array<std::array<scipp::index, N>, NDIM_MAX> binStrides;
-    detail::copy_strides<N>(binStrides, m_ndim - m_ndim_nested,
-                            std::index_sequence_for<Params...>(),
-                            params.strides()...);
+    detail::copy_strides(binStrides, ndim() - m_ndim_nested,
+                         std::index_sequence_for<Params...>(),
+                         params.strides()...);
     for (scipp::index data = 0; data < N; ++data) {
       for (scipp::index d = 0; d < NDIM_MAX - m_ndim_nested; ++d)
         m_stride[m_ndim_nested + d][data] = binStrides[d][data];
-      load_bin_params(data);
+      m_outer_index.load_bin_params(*this, data);
     }
-    if (m_shape[m_nested_dim_index] == 0)
-      seek_bin();
-  }
-
-  constexpr void load_bin_params(const scipp::index i) noexcept {
-    if (m_coord[m_ndim] != 0 || !m_bin[i].is_binned())
-      return; // at end or dense
-    // All bins are guaranteed to have the same size.
-    // Use common m_shape and m_nested_stride for all.
-    const auto [begin, end] = m_bin[i].m_indices[m_bin[i].m_bin_index];
-    m_shape[m_nested_dim_index] = end - begin;
-    m_data_index[i] = m_nested_stride * begin;
-  }
-
-  constexpr void seek_bin() noexcept {
-    do {
-      // go through bin dims which have reached their end (including last
-      // pre-bin dim)
-      for (scipp::index d = m_ndim_nested - 1;
-           (m_coord[d] == m_shape[d]) && (d < NDIM_MAX - 1); ++d) {
-        // Increment early so that we can check whether we need to load bins.
-        ++m_coord[d + 1];
-        for (scipp::index data = 0; data < N; ++data) {
-          m_data_index[data] +=
-              // take a step in dimension d+1
-              m_stride[d + 1][data]
-              // rewind dimension d (m_coord[d] == m_shape[d])
-              - m_coord[d] * m_stride[d][data];
-          // move to next bin
-          if (d == m_ndim_nested - 1) // last non-bin dimension
-            m_bin[data].m_bin_index += m_stride[d + 1][data];
-          else // bin dimension -> rewind earlier bins
-            m_bin[data].m_bin_index +=
-                m_stride[d + 1][data] - m_coord[d] * m_stride[d][data];
-          if (m_coord[d + 1] != m_shape[d + 1]) {
-            // We might have hit the end of the data, keep going with the outer
-            // dimensions.
-            load_bin_params(data);
-          }
-        }
-        m_coord[d] = 0;
-      }
-    } while (m_shape[m_nested_dim_index] == 0 && m_coord[m_ndim] == 0);
+    if (m_shape[m_outer_index.m_nested_dim_index] == 0)
+      m_outer_index.seek_bin(*this);
   }
 
   constexpr void increment_outer() noexcept {
@@ -196,7 +153,7 @@ public:
       m_coord[d] = 0;
     }
     // nested dims incremented, move on to bins
-    seek_bin();
+    m_outer_index.seek_bin(*this);
   }
 
   constexpr void increment() noexcept {
@@ -214,9 +171,7 @@ public:
     m_coord[0] += distance;
   }
 
-  [[nodiscard]] auto &inner_strides() const noexcept {
-    return m_stride[0];
-  }
+  [[nodiscard]] auto &inner_strides() const noexcept { return m_stride[0]; }
 
   [[nodiscard]] constexpr scipp::index inner_distance_to_end() const noexcept {
     return m_shape[0] - m_coord[0];
@@ -230,37 +185,26 @@ public:
   /// Set the absolute index. In the special case of iteration with bins,
   /// this sets the *index of the bin* and NOT the full index within the
   /// iterated data.
-  constexpr void set_index(const scipp::index offset) noexcept {
-    auto remainder{offset};
-    // This loop is until NDIM_MAX inclusive to handle the end index
-    for (scipp::index d = 0; d < NDIM_MAX + 1; ++d) {
-      if (has_bins() && d < m_ndim_nested) {
-        m_coord[d] = 0;
-      } else {
-        if (m_shape[d] == 0) {
-          m_coord[d] = remainder; // this serves as the end index
-          break;
-        }
-        m_coord[d] = remainder % m_shape[d];
-        remainder /= m_shape[d];
-      }
-    }
-    for (scipp::index data = 0; data < N; ++data) {
-      m_data_index[data] =
-          detail::flat_index(data, m_coord, m_stride, 0, m_ndim);
-    }
+  constexpr void set_index(const scipp::index index) noexcept {
     if (has_bins()) {
+      m_outer_index.set_index(*this, index);
+    } else {
+      // TODO +1 from end state
+      extract_indices(index, m_shape.begin(),
+                      m_shape.begin() + m_inner_ndim + 1, m_coord.begin());
       for (scipp::index data = 0; data < N; ++data) {
-        m_bin[data].m_bin_index =
-            detail::flat_index(data, m_coord, m_stride, m_ndim_nested, m_ndim);
-        load_bin_params(data);
+        // TODO do we need to actually go until m_ndim?
+        m_data_index[data] =
+            detail::flat_index(data, m_coord, m_stride, 0, m_inner_ndim);
       }
-      if (m_shape[m_nested_dim_index] == 0 && offset != m_end_sentinel)
-        seek_bin();
     }
   }
 
   constexpr auto get() const noexcept { return m_data_index; }
+
+  constexpr auto ndim() const noexcept {
+    return m_inner_ndim + m_outer_index.m_outer_ndim;
+  };
 
   constexpr bool operator==(const MultiIndex &other) const noexcept {
     return m_coord == other.m_coord;
@@ -295,13 +239,11 @@ public:
     return it;
   }
 
-  [[nodiscard]] bool has_bins() const noexcept {
-    return m_ndim_nested != NDIM_MAX + 1;
-  }
+  [[nodiscard]] bool has_bins() const noexcept { return m_has_bins; }
 
   /// Return true if the first subindex has a 0 stride
   [[nodiscard]] bool has_stride_zero() const noexcept {
-    for (scipp::index dim = 0; dim < m_ndim; ++dim)
+    for (scipp::index dim = 0; dim < ndim(); ++dim)
       if (m_stride[dim][0] == 0)
         return true;
     return false;
@@ -318,6 +260,112 @@ private:
     scipp::index m_bin_index{0};
     const std::pair<scipp::index, scipp::index> *m_indices{nullptr};
   };
+
+  struct BinIndex {
+    // TODO remove?
+    BinIndex() = default;
+
+    template <class... Params>
+    BinIndex(MultiIndex &inner, const Params &... params) {
+      const auto iter_dims = detail::get_head(params...).dims();
+      detail::validate_bin_indices(params...);
+      const auto nested_dims =
+          detail::get_nested_dims(params.bucketParams()...);
+      const Dim slice_dim = detail::get_slice_dim(params.bucketParams()...);
+      m_outer_ndim = iter_dims.ndim();
+      m_nested_stride = nested_dims.offset(slice_dim);
+      m_nested_dim_index =
+          inner.m_inner_ndim - nested_dims.index(slice_dim) - 1;
+      m_bin = std::array{BinIterator(params)...};
+
+      // TODO end_sentinel abort
+
+      std::reverse_copy(iter_dims.shape().begin(), iter_dims.shape().end(),
+                        inner.m_shape.begin() + inner.m_inner_ndim);
+    }
+
+    constexpr void set_index(MultiIndex &inner,
+                             const scipp::index index) noexcept {
+      auto coord_it = inner.m_coord.begin();
+      std::fill(coord_it, coord_it + inner.m_inner_ndim, 0);
+      auto shape_it = inner.m_shape.begin() + inner.m_inner_ndim;
+      // TODO +1 from end state
+      extract_indices(index, shape_it, shape_it + m_outer_ndim + 1,
+                      coord_it + inner.m_inner_ndim);
+
+      for (scipp::index data = 0; data < N; ++data) {
+        // TODO do we need to actually go until m_ndim?
+        inner.m_data_index[data] = detail::flat_index(
+            data, inner.m_coord, inner.m_stride, 0, inner.ndim());
+      }
+      for (scipp::index data = 0; data < N; ++data) {
+        m_bin[data].m_bin_index =
+            detail::flat_index(data, inner.m_coord, inner.m_stride,
+                               inner.m_ndim_nested, inner.ndim());
+        load_bin_params(inner, data);
+      }
+      if (inner.m_shape[m_nested_dim_index] == 0 &&
+          index != inner.m_end_sentinel)
+        seek_bin(inner);
+    }
+
+    constexpr void load_bin_params(MultiIndex &inner,
+                                   const scipp::index i) noexcept {
+      // TODO can avoid ndim()?
+      if (inner.m_coord[inner.ndim()] != 0 || !m_bin[i].is_binned())
+        return; // at end or dense
+      // All bins are guaranteed to have the same size.
+      // Use common m_shape and m_nested_stride for all.
+      const auto [begin, end] = m_bin[i].m_indices[m_bin[i].m_bin_index];
+      inner.m_shape[m_nested_dim_index] = end - begin;
+      inner.m_data_index[i] = m_nested_stride * begin;
+    }
+
+    constexpr void seek_bin(MultiIndex &inner) noexcept {
+      do {
+        // go through bin dims which have reached their end (including last
+        // pre-bin dim)
+        for (scipp::index d = inner.m_ndim_nested - 1;
+             (inner.m_coord[d] == inner.m_shape[d]) && (d < NDIM_MAX - 1);
+             ++d) {
+          // Increment early so that we can check whether we need to load bins.
+          ++inner.m_coord[d + 1];
+          for (scipp::index data = 0; data < N; ++data) {
+            inner.m_data_index[data] +=
+                // take a step in dimension d+1
+                inner.m_stride[d + 1][data]
+                // rewind dimension d (m_coord[d] == m_shape[d])
+                - inner.m_coord[d] * inner.m_stride[d][data];
+            // move to next bin
+            if (d == inner.m_ndim_nested - 1) // last non-bin dimension
+              inner.m_outer_index.m_bin[data].m_bin_index +=
+                  inner.m_stride[d + 1][data];
+            else // bin dimension -> rewind earlier bins
+              inner.m_outer_index.m_bin[data].m_bin_index +=
+                  inner.m_stride[d + 1][data] -
+                  inner.m_coord[d] * inner.m_stride[d][data];
+            if (inner.m_coord[d + 1] != inner.m_shape[d + 1]) {
+              // We might have hit the end of the data, keep going with the
+              // outer dimensions.
+              load_bin_params(inner, data);
+            }
+          }
+          inner.m_coord[d] = 0;
+        }
+      } while (inner.m_shape[inner.m_outer_index.m_nested_dim_index] == 0 &&
+               inner.m_coord[inner.ndim()] == 0); // TODO end state
+    }
+
+    scipp::index m_outer_ndim{0};
+    /// Stride in bins along dim referred to by indices, e.g., 2D bins
+    /// slicing along first or second dim.
+    scipp::index m_nested_stride = {};
+    /// Index of dim referred to by indices to distinguish, e.g., 2D bins
+    /// slicing along first or second dim.
+    scipp::index m_nested_dim_index = {};
+    std::array<BinIterator, N> m_bin = {};
+  };
+
   std::array<scipp::index, N> m_data_index = {};
   // This does *not* 0-init the inner arrays!
   std::array<std::array<scipp::index, N>, NDIM_MAX> m_stride = {};
@@ -325,17 +373,13 @@ private:
   std::array<scipp::index, NDIM_MAX + 1> m_shape = {};
   /// End-sentinel, essentially the volume of the iteration dimensions.
   scipp::index m_end_sentinel{1};
-  /// Number of dimensions within bin, NDIM_MAX if no bins.
   scipp::index m_ndim_nested{NDIM_MAX + 1};
-  /// Stride in bins along dim referred to by indices, e.g., 2D bins
-  /// slicing along first or second dim.
-  scipp::index m_nested_stride = {};
-  /// Index of dim referred to by indices to distinguish, e.g., 2D bins
-  /// slicing along first or second dim.
-  scipp::index m_nested_dim_index = {};
-  std::array<BinIterator, N> m_bin = {};
-  scipp::index m_ndim;
+  scipp::index m_inner_ndim{0};
+  BinIndex m_outer_index{};
+  // TODO try to remove
+  bool m_has_bins = false;
 };
+
 template <class... StridesArgs>
 MultiIndex(const Dimensions &, const StridesArgs &...)
     -> MultiIndex<sizeof...(StridesArgs)>;
