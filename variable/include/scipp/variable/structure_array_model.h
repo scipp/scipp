@@ -20,13 +20,12 @@ namespace scipp::variable {
 /// The difference to ElementArrayModel is that this class allows for creating
 /// variables that share ownership of the underlying structure elements, e.g.,
 /// to provide access to an array of vector elements from an array of vectors.
-template <class T, class Elem, int... N>
+template <class T, class Elem, scipp::index N>
 class StructureArrayModel : public VariableConcept {
 public:
   using value_type = T;
   using element_type = Elem;
-  static constexpr auto axis_count = sizeof...(N);
-  static constexpr auto element_count = (N * ...);
+  static constexpr scipp::index element_count = N;
 
   StructureArrayModel(const scipp::index size, const units::Unit &unit,
                       element_array<Elem> model)
@@ -62,7 +61,7 @@ public:
   }
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<StructureArrayModel<T, Elem, N...>>(*this);
+    return std::make_unique<StructureArrayModel<T, Elem, N>>(*this);
   }
 
   auto values(const core::ElementArrayViewParams &base) const {
@@ -94,35 +93,35 @@ private:
   VariableConceptHandle m_elements;
 };
 
-template <class T, class Elem, int... N>
-VariableConceptHandle StructureArrayModel<T, Elem, N...>::makeDefaultFromParent(
+template <class T, class Elem, scipp::index N>
+VariableConceptHandle StructureArrayModel<T, Elem, N>::makeDefaultFromParent(
     const scipp::index size) const {
-  return std::make_unique<StructureArrayModel<T, Elem, N...>>(
+  return std::make_unique<StructureArrayModel<T, Elem, N>>(
       size, unit(), element_array<Elem>(size * element_count));
 }
 
-template <class T, class Elem, int... N>
-bool StructureArrayModel<T, Elem, N...>::equals(const Variable &a,
-                                                const Variable &b) const {
+template <class T, class Elem, scipp::index N>
+bool StructureArrayModel<T, Elem, N>::equals(const Variable &a,
+                                             const Variable &b) const {
   return a.dtype() == dtype() && b.dtype() == dtype() &&
          equals_impl(a.elements<T>().template values<Elem>(),
                      b.elements<T>().template values<Elem>());
 }
 
-template <class T, class Elem, int... N>
-void StructureArrayModel<T, Elem, N...>::copy(const Variable &src,
-                                              Variable &dest) const {
+template <class T, class Elem, scipp::index N>
+void StructureArrayModel<T, Elem, N>::copy(const Variable &src,
+                                           Variable &dest) const {
   transform_in_place<T>(dest, src, [](auto &a, const auto &b) { a = b; });
 }
-template <class T, class Elem, int... N>
-void StructureArrayModel<T, Elem, N...>::copy(const Variable &src,
-                                              Variable &&dest) const {
+template <class T, class Elem, scipp::index N>
+void StructureArrayModel<T, Elem, N>::copy(const Variable &src,
+                                           Variable &&dest) const {
   copy(src, dest);
 }
 
-template <class T, class Elem, int... N>
-void StructureArrayModel<T, Elem, N...>::assign(const VariableConcept &other) {
-  *this = requireT<const StructureArrayModel<T, Elem, N...>>(other);
+template <class T, class Elem, scipp::index N>
+void StructureArrayModel<T, Elem, N>::assign(const VariableConcept &other) {
+  *this = requireT<const StructureArrayModel<T, Elem, N>>(other);
 }
 
 } // namespace scipp::variable

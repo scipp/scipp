@@ -2,13 +2,18 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <string>
-
 #include "scipp/core/eigen.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable.tcc"
 
 namespace scipp::variable {
+
+template <> struct model<Eigen::Vector3d> {
+  using type = StructureArrayModel<Eigen::Vector3d, double, 3>;
+};
+template <> struct model<Eigen::Matrix3d> {
+  using type = StructureArrayModel<Eigen::Matrix3d, double, 9>;
+};
 
 template <>
 constexpr auto structure_element_offset<Eigen::Vector3d> =
@@ -16,9 +21,7 @@ constexpr auto structure_element_offset<Eigen::Vector3d> =
 
 template <>
 constexpr auto structure_element_offset<Eigen::Matrix3d> =
-    [](scipp::index i, scipp::index j) {
-      return inner_dims<Eigen::Matrix3d>[Dim::Internal0] * j + i;
-    };
+    [](scipp::index i, scipp::index j) { return 3 * j + i; };
 
 INSTANTIATE_STRUCTURE_VARIABLE(vector_3_float64, Eigen::Vector3d, scipp::index)
 INSTANTIATE_STRUCTURE_VARIABLE(matrix_3_float64, Eigen::Matrix3d, scipp::index,

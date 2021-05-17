@@ -17,16 +17,11 @@
 
 namespace scipp::variable {
 
-namespace {
 
 template <class T> struct model { using type = ElementArrayModel<T>; };
-template <> struct model<Eigen::Vector3d> {
-  using type = StructureArrayModel<Eigen::Vector3d, double, 3>;
-};
-template <> struct model<Eigen::Matrix3d> {
-  using type = StructureArrayModel<Eigen::Matrix3d, double, 3, 3>;
-};
 template <class T> using model_t = typename model<T>::type;
+
+namespace {
 
 template <class T> const auto &cast(const Variable &var) {
   return requireT<const model_t<T>>(var.data());
@@ -35,12 +30,6 @@ template <class T> const auto &cast(const Variable &var) {
 template <class T> auto &cast(Variable &var) {
   return requireT<model_t<T>>(var.data());
 }
-
-template <class T> static Dimensions inner_dims{};
-template <> Dimensions inner_dims<Eigen::Vector3d>{Dim::Internal0, 3};
-template <>
-Dimensions inner_dims<Eigen::Matrix3d>{{Dim::Internal1, 3},
-                                       {Dim::Internal0, 3}};
 
 template <class T>
 auto make_model(const units::Unit unit, const Dimensions &dimensions,
@@ -103,20 +92,18 @@ constexpr auto structure_element_offset{
     T::missing_specialization_of_structure_element_offset};
 
 template <class T, class... Is> Variable Variable::elements(Is... index) const {
+  constexpr auto N = model_t<T>::element_count;
   auto elements(*this);
   elements.m_object = cast<T>(*this).elements();
   // Scale offset and strides (which refer to type T) so they are correct for
   // the *element type* of T.
-  elements.m_offset *= model_t<T>::element_count;
+  elements.m_offset *= N;
   for (scipp::index i = 0; i < dims().ndim(); ++i)
-    elements.m_strides[i] = model_t<T>::element_count * strides()[i];
+    elements.m_strides[i] = N * strides()[i];
   if constexpr (sizeof...(Is) == 0) {
-    // Get all elements but setting up internal dims and strides
-    Strides inner_strides(inner_dims<T>);
-    std::copy(inner_strides.begin(),
-              inner_strides.begin() + model_t<T>::axis_count,
-              elements.unchecked_strides().begin() + dims().ndim());
-    elements.unchecked_dims() = merge(elements.dims(), inner_dims<T>);
+    // Get all elements by setting up internal dim and stride
+    elements.unchecked_dims().addInner(Dim::Internal0, N);
+    elements.unchecked_strides()[dims().ndim()] = 1;
   } else {
     // Get specific element at offset
     elements.m_offset += structure_element_offset<T>(index...);
