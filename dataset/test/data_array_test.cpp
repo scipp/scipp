@@ -35,6 +35,21 @@ TEST_F(DataArrayTest, copy_shares) {
   EXPECT_TRUE(a.coords()[Dim::X].is_same(b.coords()[Dim::X]));
   EXPECT_TRUE(a.masks()["mask"].is_same(b.masks()["mask"]));
   EXPECT_TRUE(a.attrs()[Dim("attr")].is_same(b.attrs()[Dim("attr")]));
+  // Meta data may be shallow-copied but dicts are not shared
+  EXPECT_NE(&a.coords(), &b.coords());
+  EXPECT_NE(&a.masks(), &b.masks());
+  EXPECT_NE(&a.attrs(), &b.attrs());
+}
+
+TEST_F(DataArrayTest, copy_assign_shares) {
+  DataArray a(data, {{Dim::X, coord}}, {{"mask", mask}}, {{Dim("attr"), attr}});
+  DataArray b{coord};
+  b = a;
+  EXPECT_TRUE(a.data().is_same(b.data()));
+  EXPECT_TRUE(a.coords()[Dim::X].is_same(b.coords()[Dim::X]));
+  EXPECT_TRUE(a.masks()["mask"].is_same(b.masks()["mask"]));
+  EXPECT_TRUE(a.attrs()[Dim("attr")].is_same(b.attrs()[Dim("attr")]));
+  // Meta data may be shallow-copied but dicts are not shared
   EXPECT_NE(&a.coords(), &b.coords());
   EXPECT_NE(&a.masks(), &b.masks());
   EXPECT_NE(&a.attrs(), &b.attrs());
@@ -101,6 +116,7 @@ TEST_F(DataArrayTest, as_const) {
   const auto var = makeVariable<double>(Values{1});
   const DataArray a(copy(var), {{Dim::X, copy(var)}}, {{"mask", copy(var)}},
                     {{Dim("attr"), copy(var)}});
+  EXPECT_FALSE(var.is_readonly());
   const auto b = a.as_const();
   EXPECT_EQ(a, b);
   EXPECT_TRUE(b.is_readonly());
