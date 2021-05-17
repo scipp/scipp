@@ -10,6 +10,10 @@
 
 namespace scipp::variable {
 
+template <class T>
+Variable make_default_init(const Dimensions &dims, const units::Unit &unit,
+                           const bool variances);
+
 /// Abstract base class for "variable makers", used by VariableFactory to
 /// dynamically create variables with given type.
 class SCIPP_VARIABLE_EXPORT AbstractVariableMaker {
@@ -48,14 +52,7 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   bool is_bins() const override { return false; }
   Variable create(const DType, const Dimensions &dims, const units::Unit &unit,
                   const bool variances, const parent_list &) const override {
-    const auto volume = dims.volume();
-    if (variances)
-      return makeVariable<T>(dims, unit,
-                             Values(volume, core::default_init_elements),
-                             Variances(volume, core::default_init_elements));
-    else
-      return makeVariable<T>(dims, unit,
-                             Values(volume, core::default_init_elements));
+    return make_default_init<T>(dims, unit, variances);
   }
   Dim elem_dim(const Variable &) const override { return Dim::Invalid; }
   DType elem_dtype(const Variable &var) const override { return var.dtype(); }
