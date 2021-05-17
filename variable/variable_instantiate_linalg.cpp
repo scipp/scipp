@@ -10,14 +10,18 @@
 
 namespace scipp::variable {
 
-INSTANTIATE_STRUCTURE_VARIABLE(vector_3_float64, Eigen::Vector3d)
-INSTANTIATE_STRUCTURE_VARIABLE(matrix_3_float64, Eigen::Matrix3d)
+template <>
+constexpr auto structure_element_offset<Eigen::Vector3d> =
+    [](scipp::index i) { return i; };
 
-template SCIPP_VARIABLE_EXPORT Variable
-Variable::elements<Eigen::Vector3d, scipp::index>(const scipp::index &) const;
+template <>
+constexpr auto structure_element_offset<Eigen::Matrix3d> =
+    [](scipp::index i, scipp::index j) {
+      return inner_dims<Eigen::Matrix3d>[Dim::Internal0] * j + i;
+    };
 
-template SCIPP_VARIABLE_EXPORT Variable
-Variable::elements<Eigen::Matrix3d, scipp::index, scipp::index>(
-    const scipp::index &, const scipp::index &) const;
+INSTANTIATE_STRUCTURE_VARIABLE(vector_3_float64, Eigen::Vector3d, scipp::index)
+INSTANTIATE_STRUCTURE_VARIABLE(matrix_3_float64, Eigen::Matrix3d, scipp::index,
+                               scipp::index)
 
 } // namespace scipp::variable

@@ -42,11 +42,6 @@ template <>
 Dimensions inner_dims<Eigen::Matrix3d>{{Dim::Internal1, 3},
                                        {Dim::Internal0, 3}};
 
-template <class T> auto inner_offset(scipp::index i) { return i; }
-template <class T> auto inner_offset(scipp::index i, scipp::index j) {
-  return inner_dims<T>[Dim::Internal0] * j + i;
-}
-
 template <class T>
 auto make_model(const units::Unit unit, const Dimensions &dimensions,
                 element_array<T> values,
@@ -103,12 +98,13 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
       m_object(make_model(unit, dimensions, std::move(values_),
                           std::move(variances_))) {}
 
-template <class T, class... Is>
-Variable Variable::elements(const Is &... index) const {
-  static_assert(sizeof...(Is) == 0 || model_t<T>::axis_count == sizeof...(Is));
+template <class T>
+constexpr auto structure_element_offset{
+    T::missing_specialization_of_structure_element_offset};
+
+template <class T, class... Is> Variable Variable::elements(Is... index) const {
   auto elements(*this);
-  const auto &model = cast<T>(*this);
-  elements.m_object = model.elements();
+  elements.m_object = cast<T>(*this).elements();
   // Scale offset and strides (which refer to type T) so they are correct for
   // the *element type* of T.
   elements.m_offset *= model_t<T>::element_count;
@@ -123,7 +119,7 @@ Variable Variable::elements(const Is &... index) const {
     elements.unchecked_dims() = merge(elements.dims(), inner_dims<T>);
   } else {
     // Get specific element at offset
-    elements.m_offset += inner_offset<T>(index...);
+    elements.m_offset += structure_element_offset<T>(index...);
   }
   return elements;
 }
@@ -156,6 +152,9 @@ template <class T> ElementArrayView<T> Variable::variances() {
       const;                                                                   \
   template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::values();
 
+template <class T> struct arg_type;
+template <class T, class U> struct arg_type<T(U)> { using type = U; };
+
 /// Macro for instantiating classes and functions required for support a new
 /// dtype in Variable.
 #define INSTANTIATE_VARIABLE(name, ...)                                        \
@@ -175,9 +174,13 @@ template <class T> ElementArrayView<T> Variable::variances() {
   Variable::variances() const;                                                 \
   template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::variances();
 
-#define INSTANTIATE_STRUCTURE_VARIABLE(name, ...)                              \
-  template SCIPP_EXPORT Variable Variable::elements<__VA_ARGS__>() const;      \
-  INSTANTIATE_VARIABLE(name, __VA_ARGS__)
+/// Instantiate Variable for structure dtype with element access.
+#define INSTANTIATE_STRUCTURE_VARIABLE(name, T, ...)                           \
+  template SCIPP_EXPORT Variable Variable::elements<arg_type<void(T)>::type>() \
+      const;                                                                   \
+  template SCIPP_EXPORT Variable Variable::elements<arg_type<void(T)>::type>(  \
+      __VA_ARGS__) const;                                                      \
+  INSTANTIATE_VARIABLE(name, arg_type<void(T)>::type)
 
 template <class T> std::string Formatter<T>::format(const Variable &var) const {
   return array_to_string(var.template values<T>());
