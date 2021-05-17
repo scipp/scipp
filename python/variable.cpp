@@ -124,13 +124,17 @@ void bind_structured_creation(py::module &m, const std::string &name) {
          units::Unit unit) {
         if (scipp::size(labels) != values.ndim() - scipp::index(sizeof...(N)))
           throw std::runtime_error("bad shape to make structured type");
-        auto var = variable::make_structures<T, Elem, N...>(
+        auto var = variable::make_structures<T, Elem, (N * ...)>(
             Dimensions(labels,
                        std::vector<scipp::index>(
                            values.shape(), values.shape() + labels.size())),
             unit,
             element_array<Elem>(values.size(), core::default_init_elements));
         auto elems = var.template elements<T>();
+        if constexpr (sizeof...(N) != 1)
+          elems = fold(elems, Dim::Internal0,
+                       Dimensions({Dim::Internal0, Dim::Internal1},
+                                  {scipp::index(N)...}));
         copy_array_into_view(values, elems.template values<Elem>(),
                              elems.dims());
         return var;

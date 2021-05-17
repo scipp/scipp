@@ -186,6 +186,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
       return get_data_variable(view).template elements<Eigen::Vector3d>();
     } else if (view.dtype() == dtype<Eigen::Matrix3d>) {
       auto elems = get_data_variable(view).template elements<Eigen::Matrix3d>();
+      elems = fold(elems, Dim::Internal0,
+                   Dimensions({Dim::Internal0, Dim::Internal1}, {3, 3}));
       std::vector labels(elems.dims().labels().begin(),
                          elems.dims().labels().end());
       std::iter_swap(labels.end() - 2, labels.end() - 1);

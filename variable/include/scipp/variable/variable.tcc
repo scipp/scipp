@@ -162,7 +162,10 @@ template <class T, class U> struct arg_type<T(U)> { using type = U; };
   template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::variances();
 
 /// Instantiate Variable for structure dtype with element access.
-#define INSTANTIATE_STRUCTURE_VARIABLE(name, T, ...)                           \
+#define INSTANTIATE_STRUCTURE_VARIABLE(name, T, Elem, N, ...)                  \
+  template <> struct model<arg_type<void(T)>::type> {                          \
+    using type = StructureArrayModel<arg_type<void(T)>::type, Elem, N>;        \
+  };                                                                           \
   template SCIPP_EXPORT Variable Variable::elements<arg_type<void(T)>::type>() \
       const;                                                                   \
   template SCIPP_EXPORT Variable Variable::elements<arg_type<void(T)>::type>(  \
