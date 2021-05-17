@@ -7,9 +7,8 @@
 
 using namespace scipp;
 
-class VariableMatrixTest : public ::testing::Test {
+class VariableStructureTest : public ::testing::Test {
 protected:
-  Dimensions inner{Dim::X, 3};
   Variable vectors = variable::make_vectors(Dimensions(Dim::Y, 2), units::m,
                                             {1, 2, 3, 4, 5, 6});
   Variable matrices = variable::make_matrices(
@@ -17,13 +16,13 @@ protected:
       {1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19});
 };
 
-TEST_F(VariableMatrixTest, basics) {
+TEST_F(VariableStructureTest, basics) {
   EXPECT_EQ(vectors.dtype(), dtype<Eigen::Vector3d>);
   EXPECT_EQ(vectors.values<Eigen::Vector3d>()[0], Eigen::Vector3d(1, 2, 3));
   EXPECT_EQ(vectors.values<Eigen::Vector3d>()[1], Eigen::Vector3d(4, 5, 6));
 }
 
-TEST_F(VariableMatrixTest, elem_access) {
+TEST_F(VariableStructureTest, elem_access) {
   Variable elems = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                         units::m, Values{1, 2, 3, 4, 5, 6});
   for (auto i : {0, 1, 2}) {
@@ -34,7 +33,7 @@ TEST_F(VariableMatrixTest, elem_access) {
   }
 }
 
-TEST_F(VariableMatrixTest, matrices_elem_access) {
+TEST_F(VariableStructureTest, matrices_elem_access) {
   // storage order is column-major
   EXPECT_EQ(
       matrices.elements<Eigen::Matrix3d>(scipp::index(0), scipp::index(1)),
@@ -44,7 +43,7 @@ TEST_F(VariableMatrixTest, matrices_elem_access) {
       makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{2, 12}));
 }
 
-TEST_F(VariableMatrixTest, elem_access_unit_overwrite) {
+TEST_F(VariableStructureTest, elem_access_unit_overwrite) {
   auto elems = vectors.elements<Eigen::Vector3d>();
   EXPECT_EQ(vectors.unit(), units::m);
   EXPECT_EQ(elems.unit(), units::m);
@@ -56,7 +55,7 @@ TEST_F(VariableMatrixTest, elem_access_unit_overwrite) {
   EXPECT_EQ(elems.unit(), units::s);
 }
 
-TEST_F(VariableMatrixTest, readonly) {
+TEST_F(VariableStructureTest, readonly) {
   EXPECT_FALSE(vectors.elements<Eigen::Vector3d>().is_readonly());
   EXPECT_TRUE(vectors.as_const().elements<Eigen::Vector3d>().is_readonly());
 }

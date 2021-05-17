@@ -106,7 +106,10 @@ template <class T, class... Is> Variable Variable::elements(Is... index) const {
     elements.unchecked_strides()[dims().ndim()] = 1;
   } else {
     // Get specific element at offset
-    elements.m_offset += structure_element_offset<T>(index...);
+    const auto offset = structure_element_offset<T>(index...);
+    if (offset < 0 || offset >= N)
+      throw std::out_of_range("Bad offset");
+    elements.m_offset += offset;
   }
   return elements;
 }
