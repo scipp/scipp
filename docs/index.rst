@@ -113,6 +113,7 @@ Documentation
    :maxdepth: 3
 
    reference/api
+   reference/linear-algebra
    reference/dtype
    reference/units
    reference/error-propagation
