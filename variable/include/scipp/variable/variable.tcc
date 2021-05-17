@@ -175,6 +175,10 @@ template <class T> ElementArrayView<T> Variable::variances() {
   Variable::variances() const;                                                 \
   template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::variances();
 
+#define INSTANTIATE_STRUCTURE_VARIABLE(name, ...)                              \
+  template SCIPP_EXPORT Variable Variable::elements<__VA_ARGS__>() const;      \
+  INSTANTIATE_VARIABLE(name, __VA_ARGS__)
+
 template <class T> std::string Formatter<T>::format(const Variable &var) const {
   return array_to_string(var.template values<T>());
 }

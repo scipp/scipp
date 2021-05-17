@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #include <string>
 
-#include "scipp/core/eigen.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable.tcc"
 
@@ -17,21 +16,6 @@ INSTANTIATE_VARIABLE(int64, int64_t)
 INSTANTIATE_VARIABLE(int32, int32_t)
 INSTANTIATE_VARIABLE(bool, bool)
 INSTANTIATE_VARIABLE(datetime64, scipp::core::time_point)
-INSTANTIATE_VARIABLE(vector_3_float64, Eigen::Vector3d)
-INSTANTIATE_VARIABLE(matrix_3_float64, Eigen::Matrix3d)
 INSTANTIATE_VARIABLE(Variable, Variable)
-
-template SCIPP_VARIABLE_EXPORT Variable
-Variable::elements<Eigen::Vector3d>() const;
-
-template SCIPP_VARIABLE_EXPORT Variable
-Variable::elements<Eigen::Matrix3d>() const;
-
-template SCIPP_VARIABLE_EXPORT Variable
-Variable::elements<Eigen::Vector3d, scipp::index>(const scipp::index &) const;
-
-template SCIPP_VARIABLE_EXPORT Variable
-Variable::elements<Eigen::Matrix3d, scipp::index, scipp::index>(
-    const scipp::index &, const scipp::index &) const;
 
 } // namespace scipp::variable

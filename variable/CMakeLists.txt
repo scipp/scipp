@@ -66,6 +66,7 @@ set(SRC_FILES
     variable.cpp
     variable_instantiate_basic.cpp
     variable_instantiate_bin_elements.cpp
+    variable_instantiate_linalg.cpp
     variable_instantiate_map_elements.cpp
     variable_instantiate_view_elements.cpp
 )
