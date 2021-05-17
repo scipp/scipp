@@ -76,7 +76,8 @@ struct SCIPP_CORE_EXPORT NotFoundError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-SCIPP_CORE_EXPORT void throw_cannot_have_variances(const DType type);
+[[noreturn]] SCIPP_CORE_EXPORT void
+throw_cannot_have_variances(const DType type);
 
 } // namespace scipp::except
 
