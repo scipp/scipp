@@ -19,6 +19,20 @@ SCIPP_CORE_EXPORT void
 validate_bin_indices_impl(const ElementArrayViewParams &param0,
                           const ElementArrayViewParams &param1);
 
+template <class Param> void validate_bin_indices(const Param &) {}
+
+/// Check that corresponding bins have matching sizes.
+template <class Param0, class Param1, class... Params>
+void validate_bin_indices(const Param0 &param0, const Param1 &param1,
+                          const Params &... params) {
+  if (param0.bucketParams() && param1.bucketParams())
+    detail::validate_bin_indices_impl(param0, param1);
+  if (param0.bucketParams())
+    validate_bin_indices(param0, params...);
+  else
+    validate_bin_indices(param1, params...);
+}
+
 inline auto get_nested_dims() { return Dimensions(); }
 template <class T, class... Ts>
 auto get_nested_dims(const T &param, const Ts &... params) {
@@ -84,27 +98,13 @@ public:
     init(param, params...);
   }
 
-  template <class Param> void validate_bin_indices(const Param &) {}
-
-  /// Check that corresponding bins have matching sizes.
-  template <class Param0, class Param1, class... Params>
-  void validate_bin_indices(const Param0 &param0, const Param1 &param1,
-                            const Params &... params) {
-    if (param0.bucketParams() && param1.bucketParams())
-      detail::validate_bin_indices_impl(param0, param1);
-    if (param0.bucketParams())
-      validate_bin_indices(param0, params...);
-    else
-      validate_bin_indices(param1, params...);
-  }
-
   template <class... Params> void init(const Params &... params) {
     const auto iterDims = std::array<Dimensions, N>{params.dims()...}[0];
     if ((!params.bucketParams() && ...)) {
       *this = MultiIndex(iterDims, params.strides()...);
       return;
     }
-    validate_bin_indices(params...);
+    detail::validate_bin_indices(params...);
     const auto nestedDims = detail::get_nested_dims(params.bucketParams()...);
     const Dim sliceDim = detail::get_slice_dim(params.bucketParams()...);
     m_ndim_nested = nestedDims.ndim();
