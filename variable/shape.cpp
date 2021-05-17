@@ -150,8 +150,8 @@ Variable flatten(const Variable &view,
   for (const auto &from : from_labels) {
     size *= out.dims().size(to);
     if (from == from_labels.back()) {
-      out.unchecked_dims().relabel(to, to_dim);
-      out.unchecked_dims().resize(to, size);
+      out.unchecked_dims().resize(from, size);
+      out.unchecked_dims().replace_key(from, to_dim);
     } else {
       if (out.strides()[to] != out.dims().size(to + 1) * out.strides()[to + 1])
         return flatten(copy(view), from_labels, to_dim);

@@ -623,7 +623,7 @@ template <bool dry_run> struct in_place {
   static void transform(Op op, const std::string_view &name, Var &&var,
                         const Other &... other) {
     using namespace detail;
-    (scipp::expect::contains(var.dims(), other.dims()), ...);
+    (scipp::expect::includes(var.dims(), other.dims()), ...);
     auto unit = variableFactory().elem_unit(var);
     op(unit, variableFactory().elem_unit(other)...);
     // Stop early in bad cases of changing units (if `var` is a slice):

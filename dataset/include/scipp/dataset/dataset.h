@@ -191,7 +191,7 @@ private:
   // Declared friend so gtest recognizes it
   friend SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &,
                                                        const Dataset &);
-  void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
+  void setSizes(const Sizes &sizes, const Dim coordDim = Dim::Invalid);
   void rebuildDims();
 
   Coords m_coords; // aligned coords
