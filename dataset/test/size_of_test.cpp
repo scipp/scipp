@@ -70,7 +70,7 @@ TEST(SizeOf, size_in_memory_sliced_variables) {
 }
 
 TEST_F(BinnedVariableSizeOfTest, size_in_memory_of_bucketed_variable) {
-  const auto &[indices_, dim_, buffer_] = var.constituents<bucket<Variable>>();
+  const auto &[indices_, dim_, buffer_] = var.constituents<Variable>();
   EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(var, SizeofTag::ViewOnly),
             size_of(buffer_, SizeofTag::ViewOnly) +
@@ -82,8 +82,7 @@ TEST_F(BinnedVariableSizeOfTest, size_in_memory_of_bucketed_variable) {
 
 TEST_F(BinnedVariableSizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
   auto slice = var.slice(Slice(Dim::Y, 0, 1));
-  const auto &[indices_, dim_, buffer_] =
-      slice.constituents<bucket<Variable>>();
+  const auto &[indices_, dim_, buffer_] = slice.constituents<Variable>();
   EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(slice, SizeofTag::ViewOnly),
             size_of(buffer_, SizeofTag::ViewOnly) * 0.5 +
@@ -95,8 +94,7 @@ TEST_F(BinnedVariableSizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
 
 TEST_F(BinnedVariableSizeOfTest, empty_buffer) {
   Variable empty(var.slice(Slice(Dim::Y, 1)));
-  const auto &[indices_, dim_, buffer_] =
-      empty.constituents<bucket<Variable>>();
+  const auto &[indices_, dim_, buffer_] = empty.constituents<Variable>();
   EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(empty, SizeofTag::ViewOnly),
             size_of(indices_, SizeofTag::ViewOnly));
@@ -106,7 +104,7 @@ TEST_F(BinnedVariableSizeOfTest, empty_buffer) {
 }
 
 TEST_F(BinnedDataArraySizeOfTest, size_in_memory_of_bucketed_variable) {
-  const auto &[indices_, dim_, buffer_] = var.constituents<bucket<DataArray>>();
+  const auto &[indices_, dim_, buffer_] = var.constituents<DataArray>();
   EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(var, SizeofTag::ViewOnly),
             size_of(buffer_, SizeofTag::ViewOnly) +
@@ -118,8 +116,7 @@ TEST_F(BinnedDataArraySizeOfTest, size_in_memory_of_bucketed_variable) {
 
 TEST_F(BinnedDataArraySizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
   auto slice = var.slice(Slice(Dim::Y, 0, 1));
-  const auto &[indices_, dim_, buffer_] =
-      slice.constituents<bucket<DataArray>>();
+  const auto &[indices_, dim_, buffer_] = slice.constituents<DataArray>();
   EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(slice, SizeofTag::ViewOnly),
             size_of(buffer_, SizeofTag::ViewOnly) * 0.5 +
@@ -132,7 +129,7 @@ TEST_F(BinnedDataArraySizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
 TEST_F(BinnedDatasetSizeOfTest, size_in_memory_of_bucketed_variable) {
   buffer.setCoord(Dim::X, column);
   Variable var = make_bins(indices, Dim::X, buffer);
-  const auto &[indices_, dim_, buffer_] = var.constituents<bucket<Dataset>>();
+  const auto &[indices_, dim_, buffer_] = var.constituents<Dataset>();
   EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(var, SizeofTag::ViewOnly),
             size_of(buffer_, SizeofTag::ViewOnly) +
@@ -146,7 +143,7 @@ TEST_F(BinnedDatasetSizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
   buffer.setCoord(Dim::X, column);
   Variable var = make_bins(indices, Dim::X, buffer);
   auto slice = var.slice(Slice(Dim::Y, 0, 1));
-  const auto &[indices_, dim_, buffer_] = slice.constituents<bucket<Dataset>>();
+  const auto &[indices_, dim_, buffer_] = slice.constituents<Dataset>();
   EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(slice, SizeofTag::ViewOnly),
             size_of(buffer_, SizeofTag::ViewOnly) * 0.5 +

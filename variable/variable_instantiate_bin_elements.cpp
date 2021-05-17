@@ -9,7 +9,7 @@ namespace scipp::variable {
 
 INSTANTIATE_VARIABLE(pair_int64, std::pair<int64_t, int64_t>)
 INSTANTIATE_VARIABLE(pair_int32, std::pair<int32_t, int32_t>)
-INSTANTIATE_BIN_VARIABLE(VariableView, bucket<Variable>)
+INSTANTIATE_BIN_VARIABLE(VariableView, Variable)
 
 template <class T> class BinVariableMakerVariable : public BinVariableMaker<T> {
 private:

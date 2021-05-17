@@ -222,8 +222,8 @@ namespace scipp::dataset::buckets {
 namespace {
 
 template <class T> auto combine(const Variable &var0, const Variable &var1) {
-  const auto &[indices0, dim0, buffer0] = var0.constituents<bucket<T>>();
-  const auto &[indices1, dim1, buffer1] = var1.constituents<bucket<T>>();
+  const auto &[indices0, dim0, buffer0] = var0.constituents<T>();
+  const auto &[indices1, dim1, buffer1] = var1.constituents<T>();
   static_cast<void>(buffer1);
   static_cast<void>(dim1);
   const Dim dim = dim0;
@@ -252,7 +252,7 @@ auto concatenate_impl(const Variable &var0, const Variable &var1) {
 
 template <class T> void reserve_impl(Variable &var, const Variable &shape) {
   // TODO this only reserves in the bins, but assumes buffer has enough space
-  auto &&[indices, dim, buffer] = var.constituents<bucket<T>>();
+  auto &&[indices, dim, buffer] = var.constituents<T>();
   static_cast<void>(dim);
   static_cast<void>(buffer);
   variable::transform_in_place(
@@ -328,7 +328,7 @@ void append(DataArray &a, const DataArray &b) {
 Variable histogram(const Variable &data, const Variable &binEdges) {
   using namespace scipp::core;
   auto hist_dim = binEdges.dims().inner();
-  auto &&[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
+  auto &&[indices, dim, buffer] = data.constituents<DataArray>();
   // `hist_dim` may be the same as a dim of data if there is existing binning.
   // We rename to a dummy to avoid duplicate dimensions, perform histogramming,
   // and then sum over the dummy dimensions, i.e., sum contributions from all
@@ -414,8 +414,7 @@ Variable sum(const Variable &data) {
     summed = Variable(type, data.dims(), unit, Values{});
 
   if (data.dtype() == dtype<bucket<DataArray>>) {
-    const auto &&[indices, dim, buffer] =
-        data.constituents<bucket<DataArray>>();
+    const auto &&[indices, dim, buffer] = data.constituents<DataArray>();
     if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
         mask_union.is_valid()) {
       variable::sum_impl(summed, applyMask(buffer, indices, dim, mask_union));

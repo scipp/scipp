@@ -11,34 +11,30 @@
 
 namespace scipp::variable {
 
-template <class T>
-std::tuple<Variable, Dim, typename T::buffer_type> Variable::to_constituents() {
+template <class T> std::tuple<Variable, Dim, T> Variable::to_constituents() {
   Variable tmp;
   std::swap(*this, tmp);
-  auto &model = requireT<ElementArrayModel<T>>(tmp.data());
+  auto &model = requireT<BinArrayModel<T>>(tmp.data());
   return {tmp.bin_indices(), model.bin_dim(), std::move(model.buffer())};
 }
 
-template <class T>
-std::tuple<Variable, Dim, typename T::const_element_type>
-Variable::constituents() const {
-  auto &model = requireT<const ElementArrayModel<T>>(data());
+template <class T> std::tuple<Variable, Dim, T> Variable::constituents() const {
+  auto &model = requireT<const BinArrayModel<T>>(data());
   return {bin_indices(), model.bin_dim(), model.buffer()};
 }
 
-template <class T>
-std::tuple<Variable, Dim, typename T::element_type> Variable::constituents() {
-  auto &model = requireT<ElementArrayModel<T>>(data());
+template <class T> std::tuple<Variable, Dim, T> Variable::constituents() {
+  auto &model = requireT<BinArrayModel<T>>(data());
   return {bin_indices(), model.bin_dim(), model.buffer()};
 }
 
 template <class T> const T &Variable::bin_buffer() const {
-  auto &model = requireT<const ElementArrayModel<core::bin<T>>>(data());
+  auto &model = requireT<const BinArrayModel<T>>(data());
   return model.buffer();
 }
 
 template <class T> T &Variable::bin_buffer() {
-  auto &model = requireT<ElementArrayModel<core::bin<T>>>(data());
+  auto &model = requireT<BinArrayModel<T>>(data());
   return model.buffer();
 }
 
@@ -66,7 +62,7 @@ public:
       throw except::TypeError(
           "Cannot specify shape in `empty_like` for prototype with bins, shape "
           "must be given by shape of `sizes`.");
-    const auto [indices, dim, buf] = prototype.constituents<bucket<T>>();
+    const auto [indices, dim, buf] = prototype.constituents<T>();
     auto sizes_ = sizes;
     if (!sizes.is_valid()) {
       const auto &[begin, end] = unzip(indices);
@@ -120,7 +116,7 @@ public:
                   const typename AbstractVariableMaker::parent_list &parents)
       const override {
     const Variable &parent = bin_parent(parents);
-    const auto &[parentIndices, dim, buffer] = parent.constituents<bucket<T>>();
+    const auto &[parentIndices, dim, buffer] = parent.constituents<T>();
     auto [indices, size] = contiguous_indices(parentIndices, dims);
     auto bufferDims = buffer.dims();
     bufferDims.resize(dim, size);
@@ -129,13 +125,13 @@ public:
   }
 
   Dim elem_dim(const Variable &var) const override {
-    return std::get<1>(var.constituents<bucket<T>>());
+    return std::get<1>(var.constituents<T>());
   }
   DType elem_dtype(const Variable &var) const override {
-    return std::get<2>(var.constituents<bucket<T>>()).dtype();
+    return std::get<2>(var.constituents<T>()).dtype();
   }
   units::Unit elem_unit(const Variable &var) const override {
-    return std::get<2>(var.constituents<bucket<T>>()).unit();
+    return std::get<2>(var.constituents<T>()).unit();
   }
   void expect_can_set_elem_unit(const Variable &var,
                                 const units::Unit &u) const override {
@@ -144,14 +140,14 @@ public:
                               "used to change the unit.");
   }
   void set_elem_unit(Variable &var, const units::Unit &u) const override {
-    std::get<2>(var.constituents<bucket<T>>()).setUnit(u);
+    std::get<2>(var.constituents<T>()).setUnit(u);
   }
   bool hasVariances(const Variable &var) const override {
-    return std::get<2>(var.constituents<bucket<T>>()).hasVariances();
+    return std::get<2>(var.constituents<T>()).hasVariances();
   }
   core::ElementArrayViewParams
   array_params(const Variable &var) const override {
-    const auto &[indices, dim, buffer] = var.constituents<bucket<T>>();
+    const auto &[indices, dim, buffer] = var.constituents<T>();
     auto params = var.array_params();
     return {0, // no offset required in buffer since access via indices
             params.dims(),
@@ -164,19 +160,18 @@ public:
 /// Macro for instantiating classes and functions required for support a new
 /// bin dtype in Variable.
 #define INSTANTIATE_BIN_VARIABLE(name, ...)                                    \
-  INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
-  template SCIPP_EXPORT                                                        \
-      std::tuple<Variable, Dim, typename __VA_ARGS__::const_element_type>      \
-      Variable::constituents<__VA_ARGS__>() const;                             \
-  template SCIPP_EXPORT const typename __VA_ARGS__::buffer_type &              \
-  Variable::bin_buffer<typename __VA_ARGS__::buffer_type>() const;             \
-  template SCIPP_EXPORT typename __VA_ARGS__::buffer_type &                    \
-  Variable::bin_buffer<typename __VA_ARGS__::buffer_type>();                   \
-  template SCIPP_EXPORT                                                        \
-      std::tuple<Variable, Dim, typename __VA_ARGS__::element_type>            \
-      Variable::constituents<__VA_ARGS__>();                                   \
-  template SCIPP_EXPORT                                                        \
-      std::tuple<Variable, Dim, typename __VA_ARGS__::buffer_type>             \
-      Variable::to_constituents<__VA_ARGS__>();
+  template <> struct model<core::bin<__VA_ARGS__>> {                           \
+    using type = BinArrayModel<__VA_ARGS__>;                                   \
+  };                                                                           \
+  INSTANTIATE_VARIABLE_BASE(name, core::bin<__VA_ARGS__>)                      \
+  template SCIPP_EXPORT std::tuple<Variable, Dim, __VA_ARGS__>                 \
+  Variable::constituents<__VA_ARGS__>() const;                                 \
+  template SCIPP_EXPORT const __VA_ARGS__ &Variable::bin_buffer<__VA_ARGS__>() \
+      const;                                                                   \
+  template SCIPP_EXPORT __VA_ARGS__ &Variable::bin_buffer<__VA_ARGS__>();      \
+  template SCIPP_EXPORT std::tuple<Variable, Dim, __VA_ARGS__>                 \
+  Variable::constituents<__VA_ARGS__>();                                       \
+  template SCIPP_EXPORT std::tuple<Variable, Dim, __VA_ARGS__>                 \
+  Variable::to_constituents<__VA_ARGS__>();
 
 } // namespace scipp::variable

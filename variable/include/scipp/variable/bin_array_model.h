@@ -43,9 +43,10 @@ private:
   Dim m_dim;
 };
 
+template <class T> class BinArrayModel;
 namespace {
-template <class T> auto clone_impl(const ElementArrayModel<bucket<T>> &model) {
-  return std::make_shared<ElementArrayModel<bucket<T>>>(
+template <class T> auto clone_impl(const BinArrayModel<T> &model) {
+  return std::make_shared<BinArrayModel<T>>(
       model.indices()->clone(), model.bin_dim(), copy(model.buffer()));
 }
 } // namespace
@@ -60,36 +61,34 @@ expect_valid_bin_indices(const VariableConceptHandle &indices, const Dim dim,
 /// A bin in this context is defined as an element of a variable mapping to a
 /// range of data, such as a slice of a DataArray.
 template <class T>
-class ElementArrayModel<bucket<T>>
-    : public BinModelBase<VariableConceptHandle> {
+class BinArrayModel : public BinModelBase<VariableConceptHandle> {
   using Indices = VariableConceptHandle;
 
 public:
   using value_type = bucket<T>;
   using range_type = typename bucket<T>::range_type;
 
-  ElementArrayModel(const VariableConceptHandle &indices, const Dim dim,
-                    T buffer)
+  BinArrayModel(const VariableConceptHandle &indices, const Dim dim, T buffer)
       : BinModelBase<Indices>(indices, dim), m_buffer(std::move(buffer)) {}
 
   [[nodiscard]] VariableConceptHandle clone() const override {
     return clone_impl(*this);
   }
 
-  bool operator==(const ElementArrayModel &other) const noexcept {
+  bool operator==(const BinArrayModel &other) const noexcept {
     const auto &i1 = requireT<const ElementArrayModel<range_type>>(*indices());
     const auto &i2 =
         requireT<const ElementArrayModel<range_type>>(*other.indices());
     return equals_impl(i1.values(), i2.values()) &&
            this->bin_dim() == other.bin_dim() && m_buffer == other.m_buffer;
   }
-  bool operator!=(const ElementArrayModel &other) const noexcept {
+  bool operator!=(const BinArrayModel &other) const noexcept {
     return !(*this == other);
   }
 
   [[nodiscard]] VariableConceptHandle
   makeDefaultFromParent(const scipp::index size) const override {
-    return std::make_shared<ElementArrayModel>(
+    return std::make_shared<BinArrayModel>(
         makeVariable<range_type>(Dims{Dim::X}, Shape{size}).data_handle(),
         this->bin_dim(), T{m_buffer.slice({this->bin_dim(), 0, 0})});
   }
@@ -101,7 +100,7 @@ public:
     const auto size = end.dims().volume() > 0
                           ? end.values<scipp::index>().as_span().back()
                           : 0;
-    return std::make_shared<ElementArrayModel>(
+    return std::make_shared<BinArrayModel>(
         zip(begin, begin).data_handle(), this->bin_dim(),
         resize_default_init(m_buffer, this->bin_dim(), size));
   }
@@ -146,33 +145,27 @@ private:
   T m_buffer;
 };
 
-template <class T> using BinArrayModel = ElementArrayModel<core::bin<T>>;
-
 template <class T>
-bool ElementArrayModel<bucket<T>>::equals(const Variable &a,
-                                          const Variable &b) const {
+bool BinArrayModel<T>::equals(const Variable &a, const Variable &b) const {
   // TODO This implementation is slow since it creates a view for every bucket.
   return a.dtype() == dtype() && b.dtype() == dtype() &&
          equals_impl(a.values<bucket<T>>(), b.values<bucket<T>>());
 }
 
 template <class T>
-void ElementArrayModel<bucket<T>>::copy(const Variable &src,
-                                        Variable &dest) const {
-  const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
-  auto &&[indices1, dim1, buffer1] = dest.constituents<bucket<T>>();
+void BinArrayModel<T>::copy(const Variable &src, Variable &dest) const {
+  const auto &[indices0, dim0, buffer0] = src.constituents<T>();
+  auto &&[indices1, dim1, buffer1] = dest.constituents<T>();
   static_cast<void>(dim1);
   copy_slices(buffer0, buffer1, dim0, indices0, indices1);
 }
 template <class T>
-void ElementArrayModel<bucket<T>>::copy(const Variable &src,
-                                        Variable &&dest) const {
+void BinArrayModel<T>::copy(const Variable &src, Variable &&dest) const {
   copy(src, dest);
 }
 
-template <class T>
-void ElementArrayModel<bucket<T>>::assign(const VariableConcept &other) {
-  *this = requireT<const ElementArrayModel<bucket<T>>>(other);
+template <class T> void BinArrayModel<T>::assign(const VariableConcept &other) {
+  *this = requireT<const BinArrayModel<T>>(other);
 }
 
 } // namespace scipp::variable

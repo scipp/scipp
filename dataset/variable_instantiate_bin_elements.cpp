@@ -12,8 +12,8 @@
 
 namespace scipp::variable {
 
-INSTANTIATE_BIN_VARIABLE(DatasetView, bucket<Dataset>)
-INSTANTIATE_BIN_VARIABLE(DataArrayView, bucket<DataArray>)
+INSTANTIATE_BIN_VARIABLE(DatasetView, Dataset)
+INSTANTIATE_BIN_VARIABLE(DataArrayView, DataArray)
 
 } // namespace scipp::variable
 

@@ -79,7 +79,7 @@ Variable make_bins(Variable indices, const Dim dim, Variable buffer) {
 /// bins is acceptable.
 Variable make_bins_no_validate(Variable indices, const Dim dim,
                                Variable buffer) {
-  indices.setDataHandle(std::make_unique<BinArrayModel<Variable>>(
+  indices.setDataHandle(std::make_shared<BinArrayModel<Variable>>(
       indices.data_handle(), dim, std::move(buffer)));
   return indices;
 }
