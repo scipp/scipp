@@ -66,10 +66,11 @@ TEST(IndexCompositionTest, flat_index_from_strides_3d) {
 
 TEST(IndexCompositionTest, extract_indices_0d) {
   const std::array<scipp::index, 3> shape{-1, -2, -3};
-  const std::array<scipp::index, 3> ref{-1, -2, -3};
-  auto indices = ref;
+  std::array<scipp::index, 3> indices{-1, -2, -3};
   scipp::extract_indices(0, shape.begin(), shape.begin() + 0, indices.begin());
-  EXPECT_EQ(indices, ref);
+  EXPECT_EQ(indices[0], 0);
+  scipp::extract_indices(1, shape.begin(), shape.begin() + 0, indices.begin());
+  EXPECT_EQ(indices[0], 1);
 }
 
 TEST(IndexCompositionTest, extract_indices_1d) {

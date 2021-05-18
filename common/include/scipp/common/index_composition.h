@@ -72,7 +72,8 @@ constexpr auto memory_bounds(ForwardIt1 shape_it, const ForwardIt1 shape_end,
 /// This allows setting 'end-iterators' in a well defined manner.
 /// However, the result is undefined for greater values of I.
 ///
-/// Values of array elements in `indices` with d > ndim-1 are unspecified.
+/// Values of array elements in `indices` with d > ndim-1 are unspecified
+/// except when ndim == 0, i_0 = I.
 ///
 /// Any number of l_d maybe 0 which yields i_d = 0.
 /// Except for the one-past-the-end case described above, i_{ndim-1} = 1 if
@@ -80,9 +81,11 @@ constexpr auto memory_bounds(ForwardIt1 shape_it, const ForwardIt1 shape_end,
 /// to the end.
 ///
 /// @param flat_index I
-/// @param shape_it Begin iterator for {l_d}
-/// @param shape_end End iterator for {l_d}
-/// @param indices_it Begin iterator for {i_d}
+/// @param shape_it Begin iterator for {l_d}.
+/// @param shape_end End iterator for {l_d}.
+/// @param indices_it Begin iterator for {i_d}.
+///                   `*indices_it` must always be writeable, even when
+///                   `shape_it == shape_end`.
 /// @note This function uses a *shape*, i.e. individual dimension sizes
 ///       to encode the size of the array.
 ///       Therefore, some conversion of parameters is required when inverting
@@ -91,6 +94,7 @@ template <class It1, class It2>
 constexpr void extract_indices(scipp::index flat_index, It1 shape_it,
                                It1 shape_end, It2 indices_it) noexcept {
   if (shape_it == shape_end) {
+    *indices_it = flat_index;
     return;
   }
   shape_end--; // The last element is set after the loop.
