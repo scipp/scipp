@@ -172,7 +172,8 @@ def _to_eigen_layout(a):
 def matrix(*,
            unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
            value: _Union[_np.ndarray, list]):
-    """Constructs a zero dimensional :class:`Variable` holding a single matrix.
+    """Constructs a zero dimensional :class:`Variable` holding a single 3x3
+    matrix.
 
     :seealso: :py:func:`scipp.matrices`
 
@@ -189,7 +190,7 @@ def matrices(*,
              unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
              values: _Union[_np.ndarray, list]):
     """Constructs a :class:`Variable` with given dimensions holding an array
-    of matrices.
+    of 3x3 matrices.
 
     :seealso: :py:func:`scipp.matrix`
 
@@ -203,7 +204,8 @@ def matrices(*,
 def vector(*,
            unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
            value: _Union[_np.ndarray, list]):
-    """Constructs a zero dimensional :class:`Variable` holding a single vector.
+    """Constructs a zero dimensional :class:`Variable` holding a single length-3
+    vector.
 
     :seealso: :py:func:`scipp.vectors`
 
@@ -220,7 +222,7 @@ def vectors(*,
             unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
             values: _Union[_np.ndarray, list]):
     """Constructs a :class:`Variable` with given dimensions holding an array
-    of vectors.
+    of length-3 vectors.
 
     :seealso: :py:func:`scipp.vector`
 

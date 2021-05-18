@@ -11,8 +11,8 @@ namespace scipp::variable {
 template <>
 constexpr auto structure_element_offset<Eigen::Vector3d> = [](scipp::index i) {
   if (i < 0 || i > 2)
-    throw std::out_of_range("out of ranges index (" + std::to_string(i) +
-                            ") for element accss of vector of length 3.");
+    throw std::out_of_range("out of range index (" + std::to_string(i) +
+                            ") for element access of vector of length 3.");
   return i;
 };
 
@@ -20,7 +20,7 @@ template <>
 constexpr auto structure_element_offset<Eigen::Matrix3d> =
     [](scipp::index i, scipp::index j) {
       if (i < 0 || i > 2 || j < 0 || j > 2)
-        throw std::out_of_range("out of ranges indices (" + std::to_string(i) +
+        throw std::out_of_range("out of range indices (" + std::to_string(i) +
                                 "," + std::to_string(j) +
                                 ") for element access of 3x3 matrix.");
       return 3 * j + i;
