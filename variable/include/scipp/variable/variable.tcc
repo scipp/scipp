@@ -9,7 +9,6 @@
 #include "scipp/core/except.h"
 #include "scipp/core/has_eval.h"
 #include "scipp/units/unit.h"
-#include "scipp/variable/bin_array_model.h"
 #include "scipp/variable/element_array_model.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/structure_array_model.h"

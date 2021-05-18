@@ -76,6 +76,9 @@ public:
   }
 
   bool operator==(const BinArrayModel &other) const noexcept {
+    if (indices()->dtype() != core::dtype<scipp::index_pair> ||
+        other.indices()->dtype() != core::dtype<scipp::index_pair>)
+      return false;
     const auto &i1 = requireT<const ElementArrayModel<range_type>>(*indices());
     const auto &i2 =
         requireT<const ElementArrayModel<range_type>>(*other.indices());
