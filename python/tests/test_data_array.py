@@ -265,3 +265,21 @@ def test_sizes():
     assert a.sizes == {'x': 2}
     a = sc.DataArray(data=sc.Variable(['x', 'z'], values=np.ones((2, 4))))
     assert a.sizes == {'x': 2, 'z': 4}
+
+
+def test_readonly():
+    var = sc.array(dims=['x'], values=np.arange(4))
+    da = sc.DataArray(data=var.copy(),
+                      coords={'x': var.copy()},
+                      masks={'m': var.copy()},
+                      attrs={'a': var.copy()})
+    with pytest.raises(sc.DataArrayError):
+        da['x', 1].data = var['x', 1]  # slice is readonly
+    da['x', 1].data += var['x', 1]  # slice is readonly but self-assign ok
+    assert sc.identical(da.data, sc.array(dims=['x'], values=[0, 2, 2, 3]))
+    da['x', 1].values = 1  # slice is readonly, but not the slice values
+    assert sc.identical(da.data, sc.array(dims=['x'], values=[0, 1, 2, 3]))
+    da2 = da['x', 1].copy(deep=False)
+    da2.data = var['x', 0]  # shallow-copy clears readonly flag...
+    # ... but data setter sets new data, rather than overwriting old
+    assert sc.identical(da.data, sc.array(dims=['x'], values=[0, 1, 2, 3]))
