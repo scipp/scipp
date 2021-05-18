@@ -25,7 +25,8 @@ DataArray::DataArray(const DataArray &other, const AttrPolicy attrPolicy)
       m_coords(copy_shared(other.m_coords)),
       m_masks(copy_shared(other.m_masks)),
       m_attrs(attrPolicy == AttrPolicy::Keep ? copy_shared(other.m_attrs)
-                                             : std::make_shared<Attrs>()) {}
+                                             : std::make_shared<Attrs>()),
+      m_readonly(false) {}
 
 DataArray::DataArray(const DataArray &other)
     : DataArray(other, AttrPolicy::Keep) {}
@@ -129,7 +130,8 @@ DataArray DataArray::view() const {
 }
 
 DataArray DataArray::view_with_coords(const Coords &coords,
-                                      const std::string &name) const {
+                                      const std::string &name,
+                                      const bool readonly) const {
   DataArray out;
   out.m_data = m_data; // share data
   const Sizes sizes(dims());
@@ -137,11 +139,12 @@ DataArray DataArray::view_with_coords(const Coords &coords,
   for (const auto &[dim, coord] : coords)
     if (coords.item_applies_to(dim, dims()))
       selected[dim] = coord.as_const();
-  const bool readonly = true;
-  out.m_coords = std::make_shared<Coords>(sizes, selected, readonly);
+  const bool readonly_coords = true;
+  out.m_coords = std::make_shared<Coords>(sizes, selected, readonly_coords);
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
   out.m_name = name;
+  out.m_readonly = readonly;
   return out;
 }
 

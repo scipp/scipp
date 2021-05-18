@@ -90,8 +90,8 @@ public:
   [[maybe_unused]] DataArray &setSlice(const Slice &s, const Variable &var);
 
   DataArray view() const;
-  DataArray view_with_coords(const Coords &coords,
-                             const std::string &name) const;
+  DataArray view_with_coords(const Coords &coords, const std::string &name,
+                             const bool readonly) const;
 
   [[nodiscard]] DataArray as_const() const;
 

@@ -24,7 +24,8 @@ namespace detail {
 template <class D> struct make_item {
   D *dataset;
   template <class T> auto operator()(T &item) const {
-    return item.second.view_with_coords(dataset->coords(), item.first);
+    return item.second.view_with_coords(dataset->coords(), item.first,
+                                        dataset->is_readonly());
   }
 };
 template <class D> make_item(D *) -> make_item<D>;
@@ -39,6 +40,8 @@ public:
   using value_type = std::pair<const std::string &, DataArray>;
 
   Dataset() = default;
+  Dataset(const Dataset &other);
+  Dataset(Dataset &&other) = default;
   explicit Dataset(const DataArray &data);
 
   template <class DataMap = const std::map<std::string, DataArray> &,
@@ -54,6 +57,9 @@ public:
     for (auto &&[dim, coord] : coords)
       setCoord(dim, std::move(coord));
   }
+
+  Dataset &operator=(const Dataset &other);
+  Dataset &operator=(Dataset &&other) = default;
 
   void setCoords(Coords other);
 
@@ -187,6 +193,8 @@ public:
   const Sizes &sizes() const;
   const Sizes &dims() const;
 
+  bool is_readonly() const noexcept;
+
 private:
   // Declared friend so gtest recognizes it
   friend SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &,
@@ -196,6 +204,7 @@ private:
 
   Coords m_coords; // aligned coords
   std::unordered_map<std::string, DataArray> m_data;
+  bool m_readonly{false};
 };
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset

@@ -11,12 +11,28 @@
 
 namespace scipp::dataset {
 
+namespace {
+template <class T> void expectWritable(const T &dict) {
+  if (dict.is_readonly())
+    throw except::DataArrayError(
+        "Read-only flag is set, cannot insert new or erase existing items.");
+}
+} // namespace
+
+Dataset::Dataset(const Dataset &other)
+    : m_coords(other.m_coords), m_data(other.m_data), m_readonly(false) {}
+
 Dataset::Dataset(const DataArray &data) { setData(data.name(), data); }
+
+Dataset &Dataset::operator=(const Dataset &other) {
+  return *this = Dataset(other);
+}
 
 /// Removes all data items from the Dataset.
 ///
 /// Coordinates are not modified.
 void Dataset::clear() {
+  expectWritable(*this);
   m_data.clear();
   rebuildDims();
 }
@@ -44,6 +60,7 @@ bool Dataset::contains(const std::string &name) const noexcept {
 ///
 /// Coordinates are not modified.
 void Dataset::erase(const std::string &name) {
+  expectWritable(*this);
   scipp::expect::contains(*this, name);
   m_data.erase(std::string(name));
   rebuildDims();
@@ -87,6 +104,7 @@ void Dataset::rebuildDims() {
 
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
+  expectWritable(*this);
   setSizes(coord.dims(), dim_of_coord(coord, dim));
   m_coords.set(dim, std::move(coord));
 }
@@ -98,6 +116,7 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 /// AttrPolicy::Keep is specified.
 void Dataset::setData(const std::string &name, Variable data,
                       const AttrPolicy attrPolicy) {
+  expectWritable(*this);
   setSizes(data.dims());
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
@@ -116,6 +135,7 @@ void Dataset::setData(const std::string &name, Variable data,
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataArray &data) {
+  expectWritable(*this);
   setSizes(data.dims());
   for (auto &&[dim, coord] : data.coords()) {
     if (const auto it = m_coords.find(dim); it != m_coords.end())
@@ -209,6 +229,8 @@ bool Dataset::operator!=(const Dataset &other) const {
 
 const Sizes &Dataset::sizes() const { return m_coords.sizes(); }
 const Sizes &Dataset::dims() const { return sizes(); }
+
+bool Dataset::is_readonly() const noexcept { return m_readonly; }
 
 typename Masks::holder_type union_or(const Masks &currentMasks,
                                      const Masks &otherMasks) {

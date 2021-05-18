@@ -79,18 +79,18 @@ class TestSliceByValue:
         test(self._d)
 
     def test_assign_variable_to_range_dataarray(self):
-        self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
-                     sc.units.dimensionless].data = sc.Variable(
-                         dims=['x'], values=[6.0, 6.0, 6.0], unit=sc.units.m)
-
-        assert self._d['a'].data.values.tolist() == [1.0, 6.0, 6.0, 6.0, 1.4]
+        with pytest.raises(sc.DataArrayError):  # readonly
+            self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
+                         sc.units.dimensionless].data = sc.Variable(
+                             dims=['x'],
+                             values=[6.0, 6.0, 6.0],
+                             unit=sc.units.m)
 
     def test_assign_variable_to_range_dataset(self):
-        self._d['x', 1.5 * sc.units.dimensionless:4.5 *
-                sc.units.dimensionless]['a'].data = sc.Variable(
-                    dims=['x'], values=[6.0, 6.0, 6.0], unit=sc.units.m)
-
-        assert self._d['a'].data.values.tolist() == [1.0, 6.0, 6.0, 6.0, 1.4]
+        with pytest.raises(sc.DataArrayError):  # readonly
+            self._d['x', 1.5 * sc.units.dimensionless:4.5 *
+                    sc.units.dimensionless]['a'].data = sc.Variable(
+                        dims=['x'], values=[6.0, 6.0, 6.0], unit=sc.units.m)
 
     def test_on_dataarray_modify_range_in_place_from_variable(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
