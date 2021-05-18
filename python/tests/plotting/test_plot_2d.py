@@ -329,7 +329,7 @@ def test_plot_redraw_dense():
 
 
 def test_plot_redraw_counts():
-    d = make_dense_dataset(ndim=2, unit=sc.unit.counts)
+    d = make_dense_dataset(ndim=2, unit=sc.units.counts)
     p = sc.plot(d)
     before = p.view.figure.image_values.get_array()
     d *= 5.0
