@@ -35,9 +35,8 @@ dependencies:
   - flake8
 
   # Docs
-  - ipython=7.2.0
   - pandoc
-  - sphinx=3.4.3 # see https://github.com/sphinx-doc/sphinx/issues/8885
+  - sphinx
   - sphinx_rtd_theme
   - nbsphinx
   - docutils=0.16 # see https://github.com/spatialaudio/nbsphinx/issues/549

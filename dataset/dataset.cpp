@@ -22,7 +22,7 @@ void Dataset::clear() {
 }
 
 void Dataset::setCoords(Coords other) {
-  scipp::expect::contains(other.sizes(), m_coords.sizes());
+  scipp::expect::includes(other.sizes(), m_coords.sizes());
   m_coords = std::move(other);
 }
 /// Return a const view to all coordinates of the dataset.
@@ -73,21 +73,21 @@ DataArray Dataset::operator[](const std::string &name) const {
 /// extent of a replaced item is not excluded from the check, so even if that
 /// replaced item is the only one in the dataset with that dimension it cannot
 /// be "resized" in this way.
-void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
-  if (coordDim != Dim::Invalid && is_edges(m_coords.sizes(), dims, coordDim))
+void Dataset::setSizes(const Sizes &sizes, const Dim coordDim) {
+  if (coordDim != Dim::Invalid && is_edges(m_coords.sizes(), sizes, coordDim))
     return;
-  m_coords.setSizes(merge(m_coords.sizes(), Sizes(dims)));
+  m_coords.setSizes(merge(m_coords.sizes(), sizes));
 }
 
 void Dataset::rebuildDims() {
   m_coords.rebuildSizes();
   for (const auto &d : *this)
-    setDims(d.dims());
+    setSizes(d.dims());
 }
 
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
-  setDims(coord.dims(), dim_of_coord(coord, dim));
+  setSizes(coord.dims(), dim_of_coord(coord, dim));
   m_coords.set(dim, std::move(coord));
 }
 
@@ -98,7 +98,7 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 /// AttrPolicy::Keep is specified.
 void Dataset::setData(const std::string &name, Variable data,
                       const AttrPolicy attrPolicy) {
-  setDims(data.dims());
+  setSizes(data.dims());
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
     m_data[name] = DataArray(data, {}, m_data[name].masks().items(),
@@ -116,7 +116,7 @@ void Dataset::setData(const std::string &name, Variable data,
 /// attributes. Throws if the provided data brings the dataset into an
 /// inconsistent state (mismatching dtype, unit, or dimensions).
 void Dataset::setData(const std::string &name, const DataArray &data) {
-  setDims(data.dims());
+  setSizes(data.dims());
   for (auto &&[dim, coord] : data.coords()) {
     if (const auto it = m_coords.find(dim); it != m_coords.end())
       core::expect::equals(coord, it->second);
@@ -186,7 +186,8 @@ void Dataset::rename(const Dim from, const Dim to) {
     throw except::DimensionError("Duplicate dimension.");
   m_coords.rename(from, to);
   for (auto &item : m_data)
-    item.second.rename(from, to);
+    if (item.second.dims().contains(from))
+      item.second.rename(from, to);
 }
 
 /// Return true if the datasets have identical content.
@@ -218,7 +219,7 @@ typename Masks::holder_type union_or(const Masks &currentMasks,
     const auto it = currentMasks.find(key);
     if (it == currentMasks.end())
       out.emplace(key, copy(item));
-    else if (out[key].dims().contains(item.dims()))
+    else if (out[key].dims().includes(item.dims()))
       out[key] |= item;
     else
       out[key] = out[key] | item;

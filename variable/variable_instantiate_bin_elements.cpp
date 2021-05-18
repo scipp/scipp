@@ -29,12 +29,12 @@ private:
 };
 
 void expect_valid_bin_indices(const VariableConceptHandle &indices,
-                              const Dim dim, const Dimensions &buffer_dims) {
+                              const Dim dim, const Sizes &buffer_sizes) {
   auto copy = requireT<const DataModel<scipp::index_pair>>(*indices);
   const auto vals = copy.values();
   std::sort(vals.begin(), vals.end());
   if ((!vals.empty() && (vals.begin()->first < 0)) ||
-      (!vals.empty() && ((vals.end() - 1)->second > buffer_dims[dim])))
+      (!vals.empty() && ((vals.end() - 1)->second > buffer_sizes[dim])))
     throw except::SliceError("Bin indices out of range");
   if (std::adjacent_find(vals.begin(), vals.end(),
                          [](const auto a, const auto b) {

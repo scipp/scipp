@@ -73,7 +73,7 @@ Variable nanmean(const Variable &var, const Dim dim, const Masks &masks) {
 Variable masks_merge_if_contained(const Masks &masks, const Dimensions &dims) {
   auto mask_union = makeVariable<bool>(Values{false});
   for (const auto &mask : masks) {
-    if (dims.contains(mask.second.dims()))
+    if (dims.includes(mask.second.dims()))
       mask_union = mask_union | mask.second;
   }
   return mask_union;

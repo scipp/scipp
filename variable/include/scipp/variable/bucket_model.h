@@ -55,7 +55,7 @@ template <class T> auto clone_impl(const DataModel<bucket<T>> &model) {
 
 SCIPP_VARIABLE_EXPORT void
 expect_valid_bin_indices(const VariableConceptHandle &indices, const Dim dim,
-                         const Dimensions &buffer_dims);
+                         const Sizes &buffer_sizes);
 
 /// Specialization of DataModel for "binned" data. T could be Variable,
 /// DataArray, or Dataset.
