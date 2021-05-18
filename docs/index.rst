@@ -112,11 +112,12 @@ Documentation
    :caption: Reference
    :maxdepth: 3
 
-   python-reference/api
-   python-reference/dtype
-   python-reference/units
-   python-reference/error-propagation
-   python-reference/runtime-configuration
+   reference/api
+   reference/dtype
+   reference/units
+   reference/error-propagation
+   reference/runtime-configuration
+   reference/developer-documentation
 
 .. toctree::
    :caption: Tutorials
@@ -124,24 +125,6 @@ Documentation
 
    tutorials/introduction
    tutorials/multi-d-datasets
-
-.. toctree::
-   :caption: Developer Documentation
-   :maxdepth: 2
-
-   developer/getting-started
-   developer/tooling
-   developer/dependencies
-   developer/coding-conventions
-   developer/how-to
-   developer/transform
-   developer/constructing_variables
-   developer/variable_implementation
-   developer/customizing
-   developer/api
-   developer/concepts
-   developer/architecture-decision-records
-   developer/deployment
 
 .. toctree::
    :caption: About
