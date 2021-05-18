@@ -280,6 +280,8 @@ def test_readonly():
     da['x', 1].values = 1  # slice is readonly, but not the slice values
     assert sc.identical(da.data, sc.array(dims=['x'], values=[0, 1, 2, 3]))
     da2 = da['x', 1].copy(deep=False)
+    da2.values = 2  # values reference original
+    assert sc.identical(da.data, sc.array(dims=['x'], values=[0, 2, 2, 3]))
     da2.data = var['x', 0]  # shallow-copy clears readonly flag...
-    # ... but data setter sets new data, rather than overwriting old
-    assert sc.identical(da.data, sc.array(dims=['x'], values=[0, 1, 2, 3]))
+    # ... but data setter sets new data, rather than overwriting original
+    assert sc.identical(da.data, sc.array(dims=['x'], values=[0, 2, 2, 3]))
