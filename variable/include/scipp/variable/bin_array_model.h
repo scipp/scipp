@@ -75,16 +75,8 @@ public:
     return clone_impl(*this);
   }
 
-  bool operator==(const BinArrayModel &other) const noexcept {
-    if (indices()->dtype() != core::dtype<scipp::index_pair> ||
-        other.indices()->dtype() != core::dtype<scipp::index_pair>)
-      return false;
-    const auto &i1 = requireT<const ElementArrayModel<range_type>>(*indices());
-    const auto &i2 =
-        requireT<const ElementArrayModel<range_type>>(*other.indices());
-    return equals_impl(i1.values(), i2.values()) &&
-           this->bin_dim() == other.bin_dim() && m_buffer == other.m_buffer;
-  }
+  bool operator==(const BinArrayModel &other) const noexcept;
+
   bool operator!=(const BinArrayModel &other) const noexcept {
     return !(*this == other);
   }
@@ -141,10 +133,8 @@ public:
   }
 
 private:
-  auto index_values(const core::ElementArrayViewParams &base) const {
-    return requireT<const ElementArrayModel<range_type>>(*this->indices())
-        .values(base);
-  }
+  ElementArrayView<const range_type>
+  index_values(const core::ElementArrayViewParams &base) const;
   T m_buffer;
 };
 
@@ -165,10 +155,6 @@ void BinArrayModel<T>::copy(const Variable &src, Variable &dest) const {
 template <class T>
 void BinArrayModel<T>::copy(const Variable &src, Variable &&dest) const {
   copy(src, dest);
-}
-
-template <class T> void BinArrayModel<T>::assign(const VariableConcept &other) {
-  *this = requireT<const BinArrayModel<T>>(other);
 }
 
 } // namespace scipp::variable

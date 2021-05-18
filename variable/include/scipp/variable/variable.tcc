@@ -22,6 +22,14 @@ template <class T> using model_t = typename model<T>::type;
 
 namespace {
 
+template <class T, class C> auto &requireT(C &varconcept) {
+  if (varconcept.dtype() != dtype<typename T::value_type>)
+    throw except::TypeError("Expected item dtype " +
+                            to_string(T::static_dtype()) + ", got " +
+                            to_string(varconcept.dtype()) + '.');
+  return dynamic_cast<T &>(varconcept);
+}
+
 template <class T> const auto &cast(const Variable &var) {
   return requireT<const model_t<T>>(var.data());
 }
@@ -130,6 +138,41 @@ template <class T> ElementArrayView<T> Variable::variances() {
     except::throw_cannot_have_variances(core::dtype<T>);
   else
     return cast<T>(*this).variances(array_params());
+}
+
+template <class T>
+void ElementArrayModel<T>::assign(const VariableConcept &other) {
+  *this = requireT<const ElementArrayModel<T>>(other);
+}
+
+template <class T, class Elem>
+void StructureArrayModel<T, Elem>::assign(const VariableConcept &other) {
+  *this = requireT<const StructureArrayModel<T, Elem>>(other);
+}
+
+template <class T, class Elem>
+const T *StructureArrayModel<T, Elem>::get_values() const {
+  return reinterpret_cast<const T *>(
+      requireT<const ElementArrayModel<Elem>>(*m_elements).values().data());
+}
+
+template <class T, class Elem> T *StructureArrayModel<T, Elem>::get_values() {
+  return reinterpret_cast<T *>(
+      requireT<ElementArrayModel<Elem>>(*m_elements).values().data());
+}
+
+template <class T>
+void ElementArrayModel<T>::setVariances(const Variable &variances) {
+  if (!core::canHaveVariances<T>())
+    throw except::VariancesError("This data type cannot have variances.");
+  if (!variances.is_valid())
+    return m_variances.reset();
+  // TODO Could move if refcount is 1?
+  if (variances.hasVariances())
+    throw except::VariancesError(
+        "Cannot set variances from variable with variances.");
+  m_variances.emplace(
+      requireT<const ElementArrayModel>(variances.data()).m_values);
 }
 
 #define INSTANTIATE_VARIABLE_BASE(name, ...)                                   \

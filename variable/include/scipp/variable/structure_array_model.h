@@ -83,14 +83,8 @@ public:
   scipp::span<T> values() { return {get_values(), size()}; }
 
 private:
-  const T *get_values() const {
-    return reinterpret_cast<const T *>(
-        requireT<const ElementArrayModel<Elem>>(*m_elements).values().data());
-  }
-  T *get_values() {
-    return reinterpret_cast<T *>(
-        requireT<ElementArrayModel<Elem>>(*m_elements).values().data());
-  }
+  const T *get_values() const;
+  T *get_values();
   VariableConceptHandle m_elements;
 };
 
@@ -118,11 +112,6 @@ template <class T, class Elem>
 void StructureArrayModel<T, Elem>::copy(const Variable &src,
                                         Variable &&dest) const {
   copy(src, dest);
-}
-
-template <class T, class Elem>
-void StructureArrayModel<T, Elem>::assign(const VariableConcept &other) {
-  *this = requireT<const StructureArrayModel<T, Elem>>(other);
 }
 
 } // namespace scipp::variable

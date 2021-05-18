@@ -157,12 +157,36 @@ public:
   }
 };
 
+template <class T>
+bool BinArrayModel<T>::operator==(const BinArrayModel &other) const noexcept {
+  if (indices()->dtype() != core::dtype<scipp::index_pair> ||
+      other.indices()->dtype() != core::dtype<scipp::index_pair>)
+    return false;
+  const auto &i1 = requireT<const ElementArrayModel<range_type>>(*indices());
+  const auto &i2 =
+      requireT<const ElementArrayModel<range_type>>(*other.indices());
+  return equals_impl(i1.values(), i2.values()) &&
+         this->bin_dim() == other.bin_dim() && m_buffer == other.m_buffer;
+}
+
+template <class T> void BinArrayModel<T>::assign(const VariableConcept &other) {
+  *this = requireT<const BinArrayModel<T>>(other);
+}
+
+template <class T>
+ElementArrayView<const typename BinArrayModel<T>::range_type>
+BinArrayModel<T>::index_values(const core::ElementArrayViewParams &base) const {
+  return requireT<const ElementArrayModel<range_type>>(*this->indices())
+      .values(base);
+}
+
 /// Macro for instantiating classes and functions required for support a new
 /// bin dtype in Variable.
 #define INSTANTIATE_BIN_VARIABLE(name, ...)                                    \
   template <> struct model<core::bin<__VA_ARGS__>> {                           \
     using type = BinArrayModel<__VA_ARGS__>;                                   \
   };                                                                           \
+  template class SCIPP_EXPORT BinArrayModel<__VA_ARGS__>;                      \
   INSTANTIATE_VARIABLE_BASE(name, core::bin<__VA_ARGS__>)                      \
   template SCIPP_EXPORT std::tuple<Variable, Dim, __VA_ARGS__>                 \
   Variable::constituents<__VA_ARGS__>() const;                                 \

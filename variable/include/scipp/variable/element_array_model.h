@@ -15,14 +15,6 @@
 
 namespace scipp::variable {
 
-template <class T, class C> auto &requireT(C &varconcept) {
-  if (varconcept.dtype() != dtype<typename T::value_type>)
-    throw except::TypeError("Expected item dtype " +
-                            to_string(T::static_dtype()) + ", got " +
-                            to_string(varconcept.dtype()) + '.');
-  return dynamic_cast<T &>(varconcept);
-}
-
 template <class T> struct is_span : std::false_type {};
 template <class T> struct is_span<scipp::span<T>> : std::true_type {};
 template <class T> inline constexpr bool is_span_v = is_span<T>::value;
@@ -164,25 +156,6 @@ void ElementArrayModel<T>::copy(const Variable &src, Variable &dest) const {
 template <class T>
 void ElementArrayModel<T>::copy(const Variable &src, Variable &&dest) const {
   copy(src, dest);
-}
-
-template <class T>
-void ElementArrayModel<T>::assign(const VariableConcept &other) {
-  *this = requireT<const ElementArrayModel<T>>(other);
-}
-
-template <class T>
-void ElementArrayModel<T>::setVariances(const Variable &variances) {
-  if (!core::canHaveVariances<T>())
-    throw except::VariancesError("This data type cannot have variances.");
-  if (!variances.is_valid())
-    return m_variances.reset();
-  // TODO Could move if refcount is 1?
-  if (variances.hasVariances())
-    throw except::VariancesError(
-        "Cannot set variances from variable with variances.");
-  m_variances.emplace(
-      requireT<const ElementArrayModel>(variances.data()).m_values);
 }
 
 } // namespace scipp::variable
