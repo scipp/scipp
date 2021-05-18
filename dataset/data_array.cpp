@@ -10,6 +10,11 @@
 namespace scipp::dataset {
 
 namespace {
+template <class T> void expectWritable(const T &dict) {
+  if (dict.is_readonly())
+    throw except::DataArrayError("Read-only flag is set, cannot set new data.");
+}
+
 template <class T> auto copy_shared(const std::shared_ptr<T> &obj) {
   return obj ? std::make_shared<T>(*obj) : obj;
 }
@@ -51,6 +56,9 @@ DataArray &DataArray::operator=(const DataArray &other) {
 }
 
 void DataArray::setData(const Variable &data) {
+  if (m_data->is_same(data))
+    return;
+  expectWritable(*this);
   core::expect::equals(dims(), data.dims());
   *m_data = data;
 }
@@ -84,8 +92,10 @@ Coords DataArray::meta() const { return attrs().merge_from(coords()); }
 
 DataArray DataArray::slice(const Slice &s) const {
   auto [coords, attrs] = m_coords->slice_coords(s);
-  return {m_data->slice(s), std::move(coords), m_masks->slice(s),
-          m_attrs->slice(s).merge_from(attrs), m_name};
+  auto out = DataArray{m_data->slice(s), std::move(coords), m_masks->slice(s),
+                       m_attrs->slice(s).merge_from(attrs), m_name};
+  out.m_readonly = true;
+  return out;
 }
 
 void DataArray::validateSlice(const Slice &s, const DataArray &array) const {
@@ -145,10 +155,12 @@ void DataArray::rename(const Dim from, const Dim to) {
 }
 
 DataArray DataArray::as_const() const {
-  return DataArray(data().as_const(), coords().as_const(), masks().as_const(),
-                   attrs().as_const(), name());
+  auto out = DataArray(data().as_const(), coords().as_const(),
+                       masks().as_const(), attrs().as_const(), name());
+  out.m_readonly = true;
+  return out;
 }
 
-bool DataArray::is_readonly() const noexcept { return m_data->is_readonly(); }
+bool DataArray::is_readonly() const noexcept { return m_readonly; }
 
 } // namespace scipp::dataset

@@ -106,6 +106,7 @@ private:
   std::shared_ptr<Coords> m_coords;
   std::shared_ptr<Masks> m_masks;
   std::shared_ptr<Attrs> m_attrs;
+  bool m_readonly{false};
 };
 
 SCIPP_DATASET_EXPORT bool operator==(const DataArray &a, const DataArray &b);
