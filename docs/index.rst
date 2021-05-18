@@ -82,9 +82,9 @@ Documentation
    :maxdepth: 3
 
    getting-started/overview
-   getting-started/faq
    getting-started/installation
    getting-started/quick-start
+   getting-started/faq
 
 .. toctree::
    :caption: User Guide
