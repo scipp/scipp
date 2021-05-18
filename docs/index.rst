@@ -109,13 +109,6 @@ Documentation
    visualization/plotting-in-depth
 
 .. toctree::
-   :caption: Tutorials
-   :maxdepth: 3
-
-   tutorials/introduction
-   tutorials/multi-d-datasets
-
-.. toctree::
    :caption: Reference
    :maxdepth: 3
 
@@ -124,6 +117,13 @@ Documentation
    python-reference/units
    python-reference/error-propagation
    python-reference/runtime-configuration
+
+.. toctree::
+   :caption: Tutorials
+   :maxdepth: 3
+
+   tutorials/introduction
+   tutorials/multi-d-datasets
 
 .. toctree::
    :caption: Developer Documentation
