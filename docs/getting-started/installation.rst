@@ -31,6 +31,8 @@ With the provided environment file
    Above, replace ``scipp.yml`` with the path to the download location you used to download the environment.
    Open the link printed by Jupyter in a browser if it does not open automatically.
 
+If you are new to scipp, continue reading with `Quick Start <quick-start.html>`_ and `Data Structures <../user-guide/data-structures.html>`_.
+
 If you have previously installed scipp with conda we nevertheless recommend creating a fresh environment rather than trying to ``conda update``.
 You may want to remove your old environment first, e.g.,
 
