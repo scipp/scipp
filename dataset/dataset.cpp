@@ -133,8 +133,13 @@ void Dataset::setData(const std::string &name, Variable data,
 /// Coordinates, masks, and attributes of the data array are added to the
 /// dataset. Throws if there are existing but mismatching coords, masks, or
 /// attributes. Throws if the provided data brings the dataset into an
-/// inconsistent state (mismatching dtype, unit, or dimensions).
+/// inconsistent state (mismatching dimensions).
 void Dataset::setData(const std::string &name, const DataArray &data) {
+  if (const auto it = find(name); it != end()) {
+    if (it->data().is_same(data.data()) && it->masks() == data.masks() &&
+        it->attrs() == data.attrs() && it->coords() == data.coords())
+      return; // self-assignment
+  }
   expectWritable(*this);
   setSizes(data.dims());
   for (auto &&[dim, coord] : data.coords()) {
@@ -169,6 +174,7 @@ Dataset Dataset::slice(const Slice s) const {
         item_attrs.set(dim, coord.as_const());
     item.second.attrs() = item.second.attrs().merge_from(item_attrs);
   }
+  out.m_readonly = true;
   return out;
 }
 

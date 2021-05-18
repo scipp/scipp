@@ -59,6 +59,8 @@ void Variable::setUnit(const units::Unit &unit) {
 }
 
 bool Variable::operator==(const Variable &other) const {
+  if (is_same(other))
+    return true;
   if (!is_valid() || !other.is_valid())
     return is_valid() == other.is_valid();
   // Note: Not comparing strides

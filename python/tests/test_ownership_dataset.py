@@ -53,7 +53,11 @@ def test_own_darr_set():
             coords={'x': sc.array(dims=['x'], values=[3, 4], unit='s')},
             attrs={'a': sc.array(dims=['x'], values=[300, 400])},
             masks={'m': sc.array(dims=['x'], values=[True, True])}))
-    assert sc.identical(v, sc.array(dims=['x'], values=[11, 22], unit='m'))
+    # Assignment replaces data
+    assert not sc.identical(v, sc.array(dims=['x'], values=[11, 22], unit='m'))
+    assert sc.identical(da.data, sc.array(dims=['x'],
+                                          values=[11, 22],
+                                          unit='m'))
     assert sc.identical(c, sc.array(dims=['x'], values=[-1, -2], unit='J'))
     assert sc.identical(a, sc.array(dims=['x'], values=[-100, -200]))
     assert sc.identical(m, sc.array(dims=['x'], values=[False, True]))
@@ -100,7 +104,11 @@ def test_own_darr_get():
             coords={'x': sc.array(dims=['x'], values=[3, 4], unit='s')},
             attrs={'a': sc.array(dims=['x'], values=[300, 400])},
             masks={'m': sc.array(dims=['x'], values=[True, True])}))
-    assert sc.identical(v, sc.array(dims=['x'], values=[11, 22], unit='m'))
+    # Assignment replaces data
+    assert not sc.identical(v, sc.array(dims=['x'], values=[11, 22], unit='m'))
+    assert sc.identical(da.data, sc.array(dims=['x'],
+                                          values=[11, 22],
+                                          unit='m'))
     assert sc.identical(c, sc.array(dims=['x'], values=[-1, -2], unit='J'))
     assert sc.identical(a, sc.array(dims=['x'], values=[-100, -200]))
     assert sc.identical(m, sc.array(dims=['x'], values=[False, True]))
@@ -141,7 +149,11 @@ def test_own_darr_get_meta():
             sc.array(dims=['x'], values=[11, 22], unit='m'),
             coords={'x': sc.array(dims=['x'], values=[3, 4], unit='s')},
             attrs={'a': sc.array(dims=['x'], values=[300, 400])}))
-    assert sc.identical(v, sc.array(dims=['x'], values=[11, 22], unit='m'))
+    # Assignment replaces data
+    assert not sc.identical(v, sc.array(dims=['x'], values=[11, 22], unit='m'))
+    assert sc.identical(da.data, sc.array(dims=['x'],
+                                          values=[11, 22],
+                                          unit='m'))
     assert sc.identical(c, sc.array(dims=['x'], values=[-1, -2], unit='J'))
     assert sc.identical(a, sc.array(dims=['x'], values=[-100, -200]))
 
