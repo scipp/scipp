@@ -6,7 +6,7 @@ from .tools import parse_params
 import ipywidgets as ipw
 
 
-class PlotDict(dict):
+class PlotDict():
     """
     The Plot object is used as output for the plot command.
     It is a small wrapper around python dict, with an `_ipython_display_`
@@ -15,8 +15,26 @@ class PlotDict(dict):
     the plot function.
     More functionalities can be added in the future.
     """
-    def __init__(self, *arg, **kw):
-        super(PlotDict, self).__init__(*arg, **kw)
+    def __init__(self, *args, **kwargs):
+        self._items = dict(*args, **kwargs)
+
+    def __getitem__(self, key):
+        return self._items[key]
+
+    def __setitem__(self, key, value):
+        self._items[key] = value
+
+    def __len__(self):
+        return len(self._items)
+
+    def keys(self):
+        return self._items.keys()
+
+    def values(self):
+        return self._items.values()
+
+    def items(self):
+        return self._items.items()
 
     def _ipython_display_(self):
         """

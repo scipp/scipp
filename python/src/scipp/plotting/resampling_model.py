@@ -130,7 +130,7 @@ class ResamplingBinnedModel(ResamplingModel):
         super().__init__(*args, **kwargs)
         # TODO See #1469. This is a temporary hack to work around the
         # conversion of coords to edges in model.py.
-        self._array = self._array.copy()
+        self._array = self._array.copy(deep=False)
         for name, var in self._array.coords.items():
             if len(var.dims) == 0:
                 continue
@@ -181,20 +181,14 @@ class ResamplingDenseModel(ResamplingModel):
         super().__init__(self._to_density(array), **kwargs)
 
     def _to_density(self, array):
-        if array.dtype != sc.dtype.float64:
-            data = array.data.astype(sc.dtype.float64)
-        else:
-            data = array.data
-        density = sc.DataArray(data=data,
-                               coords=array.coords.to_dict(),
-                               masks=array.masks.to_dict())
-        for dim in density.dims:
-            coord = density.coords[dim]
+        array = array.data.astype(sc.dtype.float64)
+        for dim in array.dims:
+            coord = array.coords[dim]
             width = coord[dim, 1:] - coord[dim, :-1]
             width.unit = sc.units.one
-            density.data *= width
-        density.unit = sc.units.one
-        return density
+            array.data *= width
+        array.unit = sc.units.one
+        return array
 
     def _from_density(self, data):
         for edge in self.edges:
