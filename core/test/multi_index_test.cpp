@@ -14,53 +14,65 @@ using namespace scipp::core;
 class MultiIndexTest : public ::testing::Test {
 protected:
   template <scipp::index N, class... Indices>
-  void check_impl(MultiIndex<N> i, const std::vector<scipp::index> &indices0,
-                  const Indices &... indices) const {
-    if (scipp::size(indices0) > 0) {
-      ASSERT_NE(i.begin(), i.end());
-    }
-    const bool skip_set_index_check = i != i.begin();
-    for (scipp::index n = 0; n < scipp::size(indices0); ++n) {
-      EXPECT_EQ(i.get(), (std::array{indices0[n], indices[n]...}));
+  void check_increment(MultiIndex<N> i,
+                       const std::vector<scipp::index> &expected0,
+                       const Indices &... expected) const {
+    const auto end = i.end();
+    for (scipp::index n = 0; n < scipp::size(expected0); ++n) {
+      ASSERT_NE(i, end);
+      EXPECT_EQ(i.get(), (std::array{expected0[n], expected[n]...}));
       i.increment();
     }
     ASSERT_EQ(i, i.end());
-    if (skip_set_index_check)
-      return;
+  }
+
+  template <scipp::index N, class... Indices>
+  void check_set_index(MultiIndex<N> i, const scipp::index bin_volume,
+                       const std::vector<scipp::index> &expected0,
+                       const Indices &... expected) const {
     if (!i.has_bins()) {
-      // No buckets
-      for (scipp::index n0 = 0; n0 < scipp::size(indices0); ++n0) {
-        i.set_index(n0);
-        for (scipp::index n = n0; n < scipp::size(indices0); ++n) {
-          EXPECT_EQ(i.get(), (std::array{indices0[n], indices[n]...}));
-          i.increment();
+      for (scipp::index n = 0; n < scipp::size(expected0); ++n) {
+        i.set_index(n);
+        auto it = i.begin();
+        for (scipp::index k = 0; k < n; ++k) {
+          it.increment();
         }
+        EXPECT_EQ(i, it);
       }
     } else {
-      // Buckets
-      for (scipp::index bucket = 0; bucket < scipp::size(indices0); ++bucket) {
+      for (scipp::index bucket = 0; bucket < bin_volume; ++bucket) {
         i.set_index(bucket);
-        scipp::index n0 = 0;
-        auto it = i.begin();
-        while (it != i) {
-          it.increment();
-          ++n0;
-        }
-        i.set_index(bucket);
-        for (scipp::index n = n0; n < scipp::size(indices0); ++n) {
-          EXPECT_EQ(i.get(), (std::array{indices0[n], indices[n]...}))
-              << bucket << ' ' << n0;
-          i.increment();
+        scipp::index n = 0;
+        // We do not know how many elements there are in each bin.
+        // So just increment until we hit the index for the given bin and
+        // make sure that we see the correct indices along the way.
+        for (auto it = i.begin(); it != i; it.increment(), ++n) {
+          EXPECT_EQ(it.get(), (std::array{expected0[n], expected[n]...}));
         }
       }
     }
   }
-  void check(MultiIndex<1> i, const std::vector<scipp::index> &indices) const {
-    check_impl(i, indices);
+
+  template <scipp::index N, class... Indices>
+  void check_impl(MultiIndex<N> i, const scipp::index bin_volume,
+                  const std::vector<scipp::index> &expected0,
+                  const Indices &... expected) const {
+    if (scipp::size(expected0) > 0) {
+      ASSERT_NE(i.begin(), i.end());
+    }
+    check_increment(i, expected0, expected...);
+    if (i == i.begin()) {
+      check_set_index(i, bin_volume, expected0, expected...);
+    }
+  }
+  void check(MultiIndex<1> i, const std::vector<scipp::index> &indices,
+             const scipp::index bin_volume = 0) const {
+    check_impl(i, bin_volume, indices);
   }
   void check(MultiIndex<2> i, const std::vector<scipp::index> &indices0,
-             const std::vector<scipp::index> &indices1) const {
-    check_impl(i, indices0, indices1);
+             const std::vector<scipp::index> &indices1,
+             const scipp::index bin_volume = 0) const {
+    check_impl(i, bin_volume, indices0, indices1);
   }
   void check_with_buckets(
       const Dimensions &buffer_dims, const Dim slice_dim,
@@ -69,7 +81,7 @@ protected:
       const std::vector<scipp::index> &expected) {
     BucketParams params{slice_dim, buffer_dims, indices.data()};
     MultiIndex<1> index(ElementArrayViewParams{0, iter_dims, strides, params});
-    check(index, expected);
+    check(index, expected, iter_dims.volume());
   }
   void check_with_buckets(
       const Dimensions &buffer_dims0, const Dim slice_dim0,
@@ -84,13 +96,13 @@ protected:
     MultiIndex<2> index(
         ElementArrayViewParams{0, iter_dims, strides0, params0},
         ElementArrayViewParams{0, iter_dims, strides1, params1});
-    check(index, expected0, expected1);
+    check(index, expected0, expected1, iter_dims.volume());
     // Order of arguments should not matter, in particular this also tests that
     // the dense argument may be the first argument.
     MultiIndex<2> swapped(
         ElementArrayViewParams{0, iter_dims, strides1, params1},
         ElementArrayViewParams{0, iter_dims, strides0, params0});
-    check(swapped, expected1, expected0);
+    check(swapped, expected1, expected0, iter_dims.volume());
   }
 
   Dimensions x{Dim::X, 2};
