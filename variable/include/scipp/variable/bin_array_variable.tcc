@@ -5,8 +5,8 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bin_array_model.h"
 #include "scipp/variable/cumulative.h"
-#include "scipp/variable/shape.h"
 #include "scipp/variable/element_array_variable.tcc"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {

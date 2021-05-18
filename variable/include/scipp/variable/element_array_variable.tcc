@@ -2,8 +2,8 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/variable/variable.tcc"
 #include "scipp/variable/element_array_model.h"
+#include "scipp/variable/variable.tcc"
 
 namespace scipp::variable {
 
