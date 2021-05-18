@@ -34,12 +34,9 @@ class ResamplingModel():
     def bounds(self, bnds):
         self._bounds = bnds
 
-    def get_data_array(self, force_update=False):
-        self._call_resample(force_update=force_update)
-        return self._resampled
-
-    def get_data_coord(self, dim):
-        return self._resampled.coords[dim]
+    @property
+    def data(self):
+        self._call_resample()
 
     @property
     def edges(self):
@@ -80,7 +77,7 @@ class ResamplingModel():
                 edges.insert(0, edges.pop(i))
         return edges
 
-    def _call_resample(self, force_update=False):
+    def _call_resample(self):
         out = self._array
         params = {}
         for dim, s in self.bounds.items():
@@ -108,7 +105,7 @@ class ResamplingModel():
                         out = out[sl[0], slice(sl[1].start, sl[1].stop)]
                 params[dim] = (low.value, high.value, low.unit,
                                self.resolution[dim])
-        if (params == self._home_params) and (not force_update):
+        if params == self._home_params:
             # This is a crude caching mechanism for past views. Currently we
             # have the "back" buttons disabled in the matplotlib toolbar, so
             # we cache only the "home" view. This is the most expensive to
@@ -123,6 +120,9 @@ class ResamplingModel():
         if self._home is None:
             self._home = self._resampled
             self._home_params = self._resampled_params
+
+    def reset_home_params(self):
+        self._home_params = None
 
 
 class ResamplingBinnedModel(ResamplingModel):

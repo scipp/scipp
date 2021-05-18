@@ -74,7 +74,9 @@ class PlotModel2d(PlotModel):
         """
         Resample 2d images to a fixed resolution to handle very large images.
         """
-        data = self._model.get_data_array(force_update=force_update)
+        if force_update:
+            self._model.reset_home_params()
+        data = self._model.data
         for dim in self._squeeze:
             data = data[dim, 0]
         self.dslice = data
@@ -148,8 +150,8 @@ class PlotModel2d(PlotModel):
         # Find indices of pixel where cursor lies
         dimx = self.displayed_dims['x']
         dimy = self.displayed_dims['y']
-        x = self._model.get_data_coord(dimx)
-        y = self._model.get_data_coord(dimy)
+        x = self._model.data.coords[dimx]
+        y = self._model.data.coords[dimy]
         # Note that xdata and ydata already have the left edge subtracted from
         # them
         ix = int(xdata / (x.values[1] - x.values[0]))
@@ -161,7 +163,6 @@ class PlotModel2d(PlotModel):
         }
         return {
             self.name:
-            self._make_profile(
-                self._profile_model.get_data_array()[dimx, 0][dimy, 0],
-                profile_dim, mask_info[self.name])
+            self._make_profile(self._profile_model.data[dimx, 0][dimy, 0],
+                               profile_dim, mask_info[self.name])
         }
