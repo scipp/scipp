@@ -2,15 +2,15 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/variable/element_array_variable.tcc"
 #include "scipp/variable/string.h"
-#include "scipp/variable/variable.tcc"
 
 #include "py_object.h"
 #include "pybind11.h"
 
 namespace scipp::variable {
 
-INSTANTIATE_VARIABLE(PyObject, scipp::python::PyObject)
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(PyObject, scipp::python::PyObject)
 
 } // namespace scipp::variable
 

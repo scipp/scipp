@@ -2,14 +2,14 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/variable/bin_variable.tcc"
+#include "scipp/variable/bin_array_variable.tcc"
 #include "scipp/variable/bins.h"
 
 namespace scipp::variable {
 
-INSTANTIATE_VARIABLE(pair_int64, std::pair<int64_t, int64_t>)
-INSTANTIATE_VARIABLE(pair_int32, std::pair<int32_t, int32_t>)
-INSTANTIATE_BIN_VARIABLE(VariableView, Variable)
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(pair_int64, std::pair<int64_t, int64_t>)
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(pair_int32, std::pair<int32_t, int32_t>)
+INSTANTIATE_BIN_ARRAY_VARIABLE(VariableView, Variable)
 
 template <class T> class BinVariableMakerVariable : public BinVariableMaker<T> {
 private:

@@ -11,7 +11,6 @@
 #include "scipp/units/unit.h"
 #include "scipp/variable/element_array_model.h"
 #include "scipp/variable/except.h"
-#include "scipp/variable/structure_array_model.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable_factory.h"
 
@@ -94,33 +93,6 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
       m_object(make_model(unit, dimensions, std::move(values_),
                           std::move(variances_))) {}
 
-template <class T>
-constexpr auto structure_element_offset{
-    T::missing_specialization_of_structure_element_offset};
-
-template <class T, class... Is> Variable Variable::elements(Is... index) const {
-  constexpr auto N = model_t<T>::element_count;
-  auto elements(*this);
-  elements.m_object = cast<T>(*this).elements();
-  // Scale offset and strides (which refer to type T) so they are correct for
-  // the *element type* of T.
-  elements.m_offset *= N;
-  for (scipp::index i = 0; i < dims().ndim(); ++i)
-    elements.m_strides[i] = N * strides()[i];
-  if constexpr (sizeof...(Is) == 0) {
-    // Get all elements by setting up internal dim and stride
-    elements.unchecked_dims().addInner(Dim::Internal0, N);
-    elements.unchecked_strides()[dims().ndim()] = 1;
-  } else {
-    // Get specific element at offset
-    const auto offset = structure_element_offset<T>(index...);
-    if (offset < 0 || offset >= N)
-      throw std::out_of_range("Bad offset");
-    elements.m_offset += offset;
-  }
-  return elements;
-}
-
 template <class T> ElementArrayView<const T> Variable::values() const {
   return cast<T>(*this).values(array_params());
 }
@@ -140,41 +112,6 @@ template <class T> ElementArrayView<T> Variable::variances() {
     return cast<T>(*this).variances(array_params());
 }
 
-template <class T>
-void ElementArrayModel<T>::assign(const VariableConcept &other) {
-  *this = requireT<const ElementArrayModel<T>>(other);
-}
-
-template <class T, class Elem>
-void StructureArrayModel<T, Elem>::assign(const VariableConcept &other) {
-  *this = requireT<const StructureArrayModel<T, Elem>>(other);
-}
-
-template <class T, class Elem>
-const T *StructureArrayModel<T, Elem>::get_values() const {
-  return reinterpret_cast<const T *>(
-      requireT<const ElementArrayModel<Elem>>(*m_elements).values().data());
-}
-
-template <class T, class Elem> T *StructureArrayModel<T, Elem>::get_values() {
-  return reinterpret_cast<T *>(
-      requireT<ElementArrayModel<Elem>>(*m_elements).values().data());
-}
-
-template <class T>
-void ElementArrayModel<T>::setVariances(const Variable &variances) {
-  if (!core::canHaveVariances<T>())
-    throw except::VariancesError("This data type cannot have variances.");
-  if (!variances.is_valid())
-    return m_variances.reset();
-  // TODO Could move if refcount is 1?
-  if (variances.hasVariances())
-    throw except::VariancesError(
-        "Cannot set variances from variable with variances.");
-  m_variances.emplace(
-      requireT<const ElementArrayModel>(variances.data()).m_values);
-}
-
 #define INSTANTIATE_VARIABLE_BASE(name, ...)                                   \
   namespace {                                                                  \
   auto register_dtype_name_##name(                                             \
@@ -183,39 +120,6 @@ void ElementArrayModel<T>::setVariances(const Variable &variances) {
   template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__> Variable::values() \
       const;                                                                   \
   template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::values();
-
-template <class T> struct arg_type;
-template <class T, class U> struct arg_type<T(U)> { using type = U; };
-
-/// Macro for instantiating classes and functions required for support a new
-/// dtype in Variable.
-#define INSTANTIATE_VARIABLE(name, ...)                                        \
-  template SCIPP_EXPORT Variable variable::make_default_init<__VA_ARGS__>(     \
-      const Dimensions &, const units::Unit &, const bool);                    \
-  INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
-  namespace {                                                                  \
-  auto register_variable_maker_##name((                                        \
-      variableFactory().emplace(                                               \
-          dtype<__VA_ARGS__>, std::make_unique<VariableMaker<__VA_ARGS__>>()), \
-      0));                                                                     \
-  }                                                                            \
-  template SCIPP_EXPORT Variable::Variable(                                    \
-      const units::Unit, const Dimensions &, element_array<__VA_ARGS__>,       \
-      std::optional<element_array<__VA_ARGS__>>);                              \
-  template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
-  Variable::variances() const;                                                 \
-  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::variances();
-
-/// Instantiate Variable for structure dtype with element access.
-#define INSTANTIATE_STRUCTURE_VARIABLE(name, T, Elem, ...)                     \
-  template <> struct model<arg_type<void(T)>::type> {                          \
-    using type = StructureArrayModel<arg_type<void(T)>::type, Elem>;           \
-  };                                                                           \
-  template SCIPP_EXPORT Variable Variable::elements<arg_type<void(T)>::type>() \
-      const;                                                                   \
-  template SCIPP_EXPORT Variable Variable::elements<arg_type<void(T)>::type>(  \
-      __VA_ARGS__) const;                                                      \
-  INSTANTIATE_VARIABLE(name, arg_type<void(T)>::type)
 
 template <class T> std::string Formatter<T>::format(const Variable &var) const {
   return array_to_string(var.template values<T>());

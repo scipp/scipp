@@ -3,8 +3,8 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/eigen.h"
+#include "scipp/variable/structure_array_variable.tcc"
 #include "scipp/variable/variable.h"
-#include "scipp/variable/variable.tcc"
 
 namespace scipp::variable {
 
@@ -26,9 +26,9 @@ constexpr auto structure_element_offset<Eigen::Matrix3d> =
       return 3 * j + i;
     };
 
-INSTANTIATE_STRUCTURE_VARIABLE(vector_3_float64, Eigen::Vector3d, double,
-                               scipp::index)
-INSTANTIATE_STRUCTURE_VARIABLE(matrix_3_float64, Eigen::Matrix3d, double,
-                               scipp::index, scipp::index)
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(vector_3_float64, Eigen::Vector3d, double,
+                                     scipp::index)
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(matrix_3_float64, Eigen::Matrix3d, double,
+                                     scipp::index, scipp::index)
 
 } // namespace scipp::variable

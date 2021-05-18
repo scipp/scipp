@@ -6,14 +6,14 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/dataset/string.h"
-#include "scipp/variable/bin_variable.tcc"
+#include "scipp/variable/bin_array_variable.tcc"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/string.h"
 
 namespace scipp::variable {
 
-INSTANTIATE_BIN_VARIABLE(DatasetView, Dataset)
-INSTANTIATE_BIN_VARIABLE(DataArrayView, DataArray)
+INSTANTIATE_BIN_ARRAY_VARIABLE(DatasetView, Dataset)
+INSTANTIATE_BIN_ARRAY_VARIABLE(DataArrayView, DataArray)
 
 } // namespace scipp::variable
 

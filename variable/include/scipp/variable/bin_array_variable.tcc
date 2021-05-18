@@ -6,7 +6,7 @@
 #include "scipp/variable/bin_array_model.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/shape.h"
-#include "scipp/variable/variable.tcc"
+#include "scipp/variable/element_array_variable.tcc"
 #include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
@@ -182,7 +182,7 @@ BinArrayModel<T>::index_values(const core::ElementArrayViewParams &base) const {
 
 /// Macro for instantiating classes and functions required for support a new
 /// bin dtype in Variable.
-#define INSTANTIATE_BIN_VARIABLE(name, ...)                                    \
+#define INSTANTIATE_BIN_ARRAY_VARIABLE(name, ...)                              \
   template <> struct model<core::bin<__VA_ARGS__>> {                           \
     using type = BinArrayModel<__VA_ARGS__>;                                   \
   };                                                                           \

@@ -4,13 +4,13 @@
 /// @author Simon Heybrock
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
+#include "scipp/variable/element_array_variable.tcc"
 #include "scipp/variable/string.h"
-#include "scipp/variable/variable.tcc"
 
 namespace scipp::variable {
 
-INSTANTIATE_VARIABLE(Dataset, scipp::dataset::Dataset)
-INSTANTIATE_VARIABLE(DataArray, scipp::dataset::DataArray)
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(Dataset, scipp::dataset::Dataset)
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(DataArray, scipp::dataset::DataArray)
 
 } // namespace scipp::variable
 
