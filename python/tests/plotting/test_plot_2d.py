@@ -319,8 +319,17 @@ def test_plot_2d_datetime():
     data2d.plot().close()
 
 
-def test_plot_redraw():
+def test_plot_redraw_dense():
     d = make_dense_dataset(ndim=2, unit='K')
+    p = sc.plot(d)
+    before = p.view.figure.image_values.get_array()
+    d *= 5.0
+    p.redraw()
+    assert np.allclose(p.view.figure.image_values.get_array(), 5.0 * before)
+
+
+def test_plot_redraw_counts():
+    d = make_dense_dataset(ndim=2, unit=sc.unit.counts)
     p = sc.plot(d)
     before = p.view.figure.image_values.get_array()
     d *= 5.0

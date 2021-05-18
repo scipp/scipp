@@ -217,16 +217,6 @@ void init_buckets(py::module &m) {
         return dataset::bin(array, edges, groups, erase);
       },
       py::call_guard<py::gil_scoped_release>());
-  m.def("bin_with_coords", [](const Variable &data, const py::dict &coords,
-                              const std::vector<Variable> &edges,
-                              const std::vector<Variable> &groups) {
-    std::map<Dim, Variable> c;
-    for (const auto [name, coord] : coords)
-      c.emplace(Dim(py::cast<std::string>(name)), py::cast<Variable>(coord));
-    py::gil_scoped_release release; // release only *after* using py::cast
-    return dataset::bin(data, c, std::map<std::string, Variable>{},
-                        std::map<Dim, Variable>{}, edges, groups);
-  });
 
   bind_bins_view<DataArray>(m);
 }
