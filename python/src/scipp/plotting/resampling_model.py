@@ -37,6 +37,7 @@ class ResamplingModel():
     @property
     def data(self):
         self._call_resample()
+        return self._resampled
 
     @property
     def edges(self):
@@ -112,8 +113,7 @@ class ResamplingModel():
             # create anyway.
             self._resampled_params = self._home_params
             self._resampled = self._home
-        elif (self._resampled is
-              None) or (params != self._resampled_params) or force_update:
+        elif self._resampled is None or params != self._resampled_params:
             self._resampled_params = params
             self._edges = self._make_edges(params)
             self._resampled = self._resample(out)
@@ -121,8 +121,9 @@ class ResamplingModel():
             self._home = self._resampled
             self._home_params = self._resampled_params
 
-    def reset_home_params(self):
+    def reset_params(self):
         self._home_params = None
+        self._resampled_params = None
 
 
 class ResamplingBinnedModel(ResamplingModel):
@@ -181,7 +182,7 @@ class ResamplingDenseModel(ResamplingModel):
         super().__init__(self._to_density(array), **kwargs)
 
     def _to_density(self, array):
-        array = array.data.astype(sc.dtype.float64)
+        array = array.astype(sc.dtype.float64)
         for dim in array.dims:
             coord = array.coords[dim]
             width = coord[dim, 1:] - coord[dim, :-1]

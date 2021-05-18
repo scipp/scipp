@@ -75,7 +75,7 @@ class PlotModel2d(PlotModel):
         Resample 2d images to a fixed resolution to handle very large images.
         """
         if force_update:
-            self._model.reset_home_params()
+            self._model.reset_params()
         data = self._model.data
         for dim in self._squeeze:
             data = data[dim, 0]
