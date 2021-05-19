@@ -174,6 +174,37 @@ BinArrayModel<T>::BinArrayModel(const VariableConceptHandle &indices,
                                 const Dim dim, T buffer)
     : BinModelBase<Indices>(indices, dim), m_buffer(std::move(buffer)) {}
 
+namespace {
+template <class T> auto clone_impl(const BinArrayModel<T> &model) {
+  return std::make_shared<BinArrayModel<T>>(
+      model.indices()->clone(), model.bin_dim(), copy(model.buffer()));
+}
+} // namespace
+
+template <class T> VariableConceptHandle BinArrayModel<T>::clone() const {
+  return clone_impl(*this);
+}
+
+template <class T>
+VariableConceptHandle
+BinArrayModel<T>::makeDefaultFromParent(const scipp::index size) const {
+  return std::make_shared<BinArrayModel>(
+      makeVariable<range_type>(Dims{Dim::X}, Shape{size}).data_handle(),
+      this->bin_dim(), T{m_buffer.slice({this->bin_dim(), 0, 0})});
+}
+
+template <class T>
+VariableConceptHandle
+BinArrayModel<T>::makeDefaultFromParent(const Variable &shape) const {
+  const auto end = cumsum(shape);
+  const auto begin = end - shape;
+  const auto size =
+      end.dims().volume() > 0 ? end.values<scipp::index>().as_span().back() : 0;
+  return std::make_shared<BinArrayModel>(
+      zip(begin, begin).data_handle(), this->bin_dim(),
+      resize_default_init(m_buffer, this->bin_dim(), size));
+}
+
 template <class T> void BinArrayModel<T>::assign(const VariableConcept &other) {
   *this = requireT<const BinArrayModel<T>>(other);
 }
