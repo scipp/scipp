@@ -14,7 +14,7 @@ namespace scipp::dataset {
 namespace {
 template <class T> void expectWritable(const T &dict) {
   if (dict.is_readonly())
-    throw except::DataArrayError(
+    throw except::DatasetError(
         "Read-only flag is set, cannot insert new or erase existing items.");
 }
 } // namespace
