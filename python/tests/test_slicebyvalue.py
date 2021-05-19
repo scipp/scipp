@@ -113,7 +113,7 @@ class TestSliceByValue:
         assert self._d['a'].data.values.tolist() == [1.0, 2.0, 3.0, 4.0, 1.4]
 
     def test_on_dataset_assign_dataarray_to_range_fails(self):
-        with pytest.raises(sc.DataArrayError):  # readonly
+        with pytest.raises(sc.DatasetError):  # readonly
             self._d['x', 1.5 * sc.units.dimensionless:4.5 *
                     sc.units.dimensionless]['a'] = self._d['b']['x', 1:-1]
 
