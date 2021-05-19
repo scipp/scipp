@@ -78,7 +78,7 @@ class TestSliceByValue:
         test(self._d['a'])
         test(self._d)
 
-    def test_assign_variable_to_range_dataarray(self):
+    def test_assign_variable_to_range_dataarray_fails(self):
         with pytest.raises(sc.DataArrayError):  # readonly
             self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
                          sc.units.dimensionless].data = sc.Variable(
@@ -86,7 +86,7 @@ class TestSliceByValue:
                              values=[6.0, 6.0, 6.0],
                              unit=sc.units.m)
 
-    def test_assign_variable_to_range_dataset(self):
+    def test_assign_variable_to_range_dataset_fails(self):
         with pytest.raises(sc.DataArrayError):  # readonly
             self._d['x', 1.5 * sc.units.dimensionless:4.5 *
                     sc.units.dimensionless]['a'].data = sc.Variable(
