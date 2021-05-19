@@ -57,6 +57,7 @@ DataArray &DataArray::operator=(const DataArray &other) {
 }
 
 void DataArray::setData(const Variable &data) {
+  // Return early on self assign to avoid exceptions from Python inplace ops
   if (m_data->is_same(data))
     return;
   expectWritable(*this);
