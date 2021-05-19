@@ -169,6 +169,11 @@ bool BinArrayModel<T>::operator==(const BinArrayModel &other) const noexcept {
          this->bin_dim() == other.bin_dim() && m_buffer == other.m_buffer;
 }
 
+template <class T>
+BinArrayModel<T>::BinArrayModel(const VariableConceptHandle &indices,
+                                const Dim dim, T buffer)
+    : BinModelBase<Indices>(indices, dim), m_buffer(std::move(buffer)) {}
+
 template <class T> void BinArrayModel<T>::assign(const VariableConcept &other) {
   *this = requireT<const BinArrayModel<T>>(other);
 }
