@@ -40,22 +40,26 @@ def assert_variable_readonly(var):
 
 
 def assert_readonly_data_array(da, readonly_data: bool):
-    da2 = da['x', 1].copy(deep=False)
-    var = sc.array(dims=['x'], values=np.arange(4))
+    N = da.sizes['x']
+    da2 = da.copy(deep=False)
+    var = sc.array(dims=['x'], values=np.arange(N))
     with pytest.raises(sc.DataArrayError):
-        da['x', 1].data = var['x', 1]  # slice is readonly
+        da.data = var  # slice is readonly
     if readonly_data:
         assert_variable_readonly(da.data)
     else:
-        da['x', 1].data += var['x', 1]  # slice is readonly but self-assign ok
-        assert sc.identical(da.data, sc.array(dims=['x'], values=[0, 2, 2, 3]))
-        da['x', 1].values = 1  # slice is readonly, but not the slice values
-        assert sc.identical(da.data, sc.array(dims=['x'], values=[0, 1, 2, 3]))
-        da2.values = 2  # values reference original
-        assert sc.identical(da.data, sc.array(dims=['x'], values=[0, 2, 2, 3]))
-        da2.data = var['x', 0]  # shallow-copy clears readonly flag...
+        expected = da.data + var
+        da.data += var  # slice is readonly but self-assign ok
+        assert sc.identical(da.data, expected)
+        vals = np.arange(1, N + 1)
+        da.values = vals  # slice is readonly, but not values
+        assert sc.identical(da.data, sc.array(dims=['x'], values=vals))
+        vals = np.arange(2, N + 2)
+        da2.values = vals  # values reference original
+        assert sc.identical(da.data, sc.array(dims=['x'], values=vals))
+        da2.data = var  # shallow-copy clears readonly flag...
         # ... but data setter sets new data, rather than overwriting original
-        assert sc.identical(da.data, sc.array(dims=['x'], values=[0, 2, 2, 3]))
+        assert sc.identical(da.data, sc.array(dims=['x'], values=vals))
         assert_variable_writeable(da.data)
 
 
@@ -90,7 +94,8 @@ def _make_data_array():
 
 
 def test_readonly_data_array():
-    assert_readonly_data_array(_make_data_array(), readonly_data=False)
+    assert_readonly_data_array(_make_data_array()['x', 1:4],
+                               readonly_data=False)
 
 
 class TestReadonlyMetadata:
