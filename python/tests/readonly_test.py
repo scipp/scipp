@@ -7,48 +7,71 @@ import pytest
 import scipp as sc
 
 
-def test_readonly_variable_unit_and_variances():
-    var = sc.array(dims=['x'], values=np.arange(4.), variances=np.arange(4.))
+def assert_variable_writeable(var):
     assert var.values.flags['WRITEABLE']
-    assert var.variances.flags['WRITEABLE']
+    if var.variances is not None:
+        assert var.variances.flags['WRITEABLE']
     with pytest.raises(sc.VariancesError):
         var['x', 1].variances = None
     with pytest.raises(sc.UnitError):
         var['x', 1].unit = 'm'  # unit of slice is readonly
     assert var['x', 1].values.flags['WRITEABLE']
-    assert var['x', 1].variances.flags['WRITEABLE']
+    if var.variances is not None:
+        assert var['x', 1].variances.flags['WRITEABLE']
     var['x', 1] = var['x', 0]  # slice is writable
     assert sc.identical(var['x', 1], var['x', 0])
 
 
-def test_readonly_variable():
-    var = sc.broadcast(sc.scalar(value=1., variance=1.), dims=['x'], shape=[4])
+def assert_variable_readonly(var):
     original = var.copy()
     assert not var.values.flags['WRITEABLE']
-    assert not var.variances.flags['WRITEABLE']
+    if var.variances is not None:
+        assert not var.variances.flags['WRITEABLE']
     with pytest.raises(sc.VariableError):
-        var['x', 1].variances = None
+        var.variances = None
     with pytest.raises(sc.VariableError):
-        var['x', 1].unit = 'm'
+        var.unit = 'm'
     assert not var['x', 1].values.flags['WRITEABLE']
-    assert not var['x', 1].variances.flags['WRITEABLE']
+    if var.variances is not None:
+        assert not var['x', 1].variances.flags['WRITEABLE']
     with pytest.raises(sc.VariableError):
         var['x', 1] = var['x', 0]
     assert sc.identical(var, original)
-    shallow = var.copy(deep=False)
-    assert not shallow.values.flags['WRITEABLE']
-    assert not shallow.variances.flags['WRITEABLE']
-    deep = var.copy()
-    assert deep.values.flags['WRITEABLE']
-    assert deep.variances.flags['WRITEABLE']
 
 
-def test_readonly():
+def test_readonly_variable_unit_and_variances():
+    var = sc.array(dims=['x'], values=np.arange(4.), variances=np.arange(4.))
+    assert_variable_writeable(var)
+
+
+def test_readonly_variable():
+    var = sc.broadcast(sc.scalar(value=1., variance=1.), dims=['x'], shape=[4])
+    assert_variable_readonly(var)
+    assert_variable_readonly(var.copy(deep=False))
+    assert_variable_writeable(var.copy())
+
+
+def _make_data_array():
     var = sc.array(dims=['x'], values=np.arange(4))
-    da = sc.DataArray(data=var.copy(),
-                      coords={'x': var.copy()},
-                      masks={'m': var.copy()},
-                      attrs={'a': var.copy()})
+    scalar = sc.scalar(value=4)
+    return sc.DataArray(data=var.copy(),
+                        coords={
+                            'x': var.copy(),
+                            'scalar': scalar
+                        },
+                        masks={
+                            'm': var.copy(),
+                            'scalar': scalar
+                        },
+                        attrs={
+                            'a': var.copy(),
+                            'scalar_attr': scalar
+                        })
+
+
+def test_readonly_data_array():
+    var = sc.array(dims=['x'], values=np.arange(4))
+    da = _make_data_array()
     with pytest.raises(sc.DataArrayError):
         da['x', 1].data = var['x', 1]  # slice is readonly
     da['x', 1].data += var['x', 1]  # slice is readonly but self-assign ok
@@ -61,3 +84,39 @@ def test_readonly():
     da2.data = var['x', 0]  # shallow-copy clears readonly flag...
     # ... but data setter sets new data, rather than overwriting original
     assert sc.identical(da.data, sc.array(dims=['x'], values=[0, 2, 2, 3]))
+
+
+class TestReadonlyMetadata:
+    def test_coords(self):
+        da = _make_data_array()
+        with pytest.raises(sc.DataArrayError):
+            da['x', 1].coords['new'] = sc.scalar(4)
+        assert 'new' not in da.coords
+        with pytest.raises(sc.DataArrayError):
+            del da['x', 1].coords['x']
+        assert 'x' in da.coords
+
+    def test_masks(self):
+        da = _make_data_array()
+        with pytest.raises(sc.DataArrayError):
+            da['x', 1].masks['new'] = sc.scalar(4)
+        assert 'new' not in da.masks
+        with pytest.raises(sc.DataArrayError):
+            del da['x', 1].masks['m']
+        assert 'm' in da.masks
+
+    def test_attrs(self):
+        da = _make_data_array()
+        with pytest.raises(sc.DataArrayError):
+            da['x', 1].attrs['new'] = sc.scalar(4)
+        assert 'new' not in da.attrs
+        with pytest.raises(sc.DataArrayError):
+            del da['x', 1].attrs['a']
+        assert 'a' in da.attrs
+
+    def test_broadcast_sets_readonly_flag(self):
+        da = _make_data_array()
+        da = sc.concatenate(da, da, 'y')
+        assert_variable_readonly(da['y', 1].coords['x'])
+        assert_variable_readonly(da['y', 1].masks['m'])
+        assert_variable_readonly(da['y', 1].attrs['a'])
