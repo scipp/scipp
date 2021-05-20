@@ -183,7 +183,6 @@ bool BinArrayModel<T>::operator==(const BinArrayModel &other) const noexcept {
          this->bin_dim() == other.bin_dim() && m_buffer == other.m_buffer;
 }
 
-
 template <class T>
 VariableConceptHandle
 BinArrayModel<T>::makeDefaultFromParent(const scipp::index size) const {
