@@ -5,7 +5,6 @@
 #include "scipp/core/element/arg_list.h"
 
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/bin_array_model.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/except.h"
@@ -15,9 +14,9 @@
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_concept.h"
 
-namespace scipp::variable {
+#include "operations_common.h"
 
-extern template class variable::BinArrayModel<Variable>;
+namespace scipp::variable {
 
 namespace {
 template <class T> using copy_spans_args = std::tuple<span<T>, span<const T>>;
@@ -81,9 +80,7 @@ Variable make_bins(Variable indices, const Dim dim, Variable buffer) {
 /// bins is acceptable.
 Variable make_bins_no_validate(Variable indices, const Dim dim,
                                Variable buffer) {
-  indices.setDataHandle(std::make_shared<BinArrayModel<Variable>>(
-      indices.data_handle(), dim, std::move(buffer)));
-  return indices;
+  return variable::make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
 } // namespace scipp::variable

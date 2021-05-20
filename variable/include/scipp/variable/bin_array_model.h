@@ -43,10 +43,6 @@ private:
   Dim m_dim;
 };
 
-SCIPP_VARIABLE_EXPORT void
-expect_valid_bin_indices(const VariableConceptHandle &indices, const Dim dim,
-                         const Sizes &buffer_sizes);
-
 /// Specialization of ElementArrayModel for "binned" data. T could be Variable,
 /// DataArray, or Dataset.
 ///
@@ -130,6 +126,7 @@ void BinArrayModel<T>::copy(const Variable &src, Variable &dest) const {
   static_cast<void>(dim1);
   copy_slices(buffer0, buffer1, dim0, indices0, indices1);
 }
+
 template <class T>
 void BinArrayModel<T>::copy(const Variable &src, Variable &&dest) const {
   copy(src, dest);

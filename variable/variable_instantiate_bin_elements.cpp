@@ -5,6 +5,8 @@
 #include "scipp/variable/bin_array_variable.tcc"
 #include "scipp/variable/bins.h"
 
+#include "operations_common.h"
+
 namespace scipp::variable {
 
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(pair_int64, std::pair<int64_t, int64_t>)

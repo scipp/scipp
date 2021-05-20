@@ -214,6 +214,13 @@ BinArrayModel<T>::index_values(const core::ElementArrayViewParams &base) const {
       .values(base);
 }
 
+template <class T>
+Variable make_bins_impl(Variable indices, const Dim dim, T &&buffer) {
+  indices.setDataHandle(std::make_unique<variable::BinArrayModel<T>>(
+      indices.data_handle(), dim, std::move(buffer)));
+  return indices;
+}
+
 /// Macro for instantiating classes and functions required for support a new
 /// bin dtype in Variable.
 #define INSTANTIATE_BIN_ARRAY_VARIABLE(name, ...)                              \
@@ -222,6 +229,8 @@ BinArrayModel<T>::index_values(const core::ElementArrayViewParams &base) const {
   };                                                                           \
   template SCIPP_EXPORT BinArrayModel<__VA_ARGS__> copy(                       \
       const BinArrayModel<__VA_ARGS__> &);                                     \
+  template SCIPP_EXPORT Variable make_bins_impl(Variable, const Dim,           \
+                                                __VA_ARGS__ &&);               \
   template class SCIPP_EXPORT BinArrayModel<__VA_ARGS__>;                      \
   INSTANTIATE_VARIABLE_BASE(name, core::bin<__VA_ARGS__>)                      \
   template SCIPP_EXPORT std::tuple<Variable, Dim, __VA_ARGS__>                 \

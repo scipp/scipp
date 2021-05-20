@@ -12,7 +12,6 @@
 #include "scipp/core/histogram.h"
 
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/bin_array_model.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/misc_operations.h"
@@ -21,6 +20,7 @@
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/transform_subspan.h"
+#include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bin.h"
@@ -34,11 +34,6 @@
 #include "../variable/operations_common.h"
 #include "bin_common.h"
 #include "dataset_operations_common.h"
-
-namespace scipp {
-extern template class variable::BinArrayModel<DataArray>;
-extern template class variable::BinArrayModel<Dataset>;
-} // namespace scipp
 
 namespace scipp::dataset {
 namespace {
@@ -144,13 +139,6 @@ Dataset resize_default_init(const Dataset &parent, const Dim dim,
   return buffer;
 }
 
-template <class T>
-Variable make_bins_impl(Variable indices, const Dim dim, T &&buffer) {
-  indices.setDataHandle(std::make_unique<variable::BinArrayModel<T>>(
-      indices.data_handle(), dim, std::move(buffer)));
-  return indices;
-}
-
 /// Construct a bin-variable over a data array.
 ///
 /// Each bin is represented by a Variable slice. `indices` defines the array of
@@ -166,7 +154,7 @@ Variable make_bins(Variable indices, const Dim dim, DataArray buffer) {
 /// bins is acceptable.
 Variable make_bins_no_validate(Variable indices, const Dim dim,
                                DataArray buffer) {
-  return make_bins_impl(std::move(indices), dim, std::move(buffer));
+  return variable::make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
 /// Construct a bin-variable over a dataset.
@@ -184,7 +172,7 @@ Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
 /// bins is acceptable.
 Variable make_bins_no_validate(Variable indices, const Dim dim,
                                Dataset buffer) {
-  return make_bins_impl(std::move(indices), dim, std::move(buffer));
+  return variable::make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
 namespace {
@@ -246,13 +234,12 @@ template <class T> auto combine(const Variable &var0, const Variable &var1) {
   auto buffer = resize_default_init(buffer0, dim, total_size);
   copy_slices(buffer0, buffer, dim, indices0, zip(begin, end - sizes1));
   copy_slices(buffer1, buffer, dim, indices1, zip(begin + sizes0, end));
-  return std::make_shared<variable::BinArrayModel<T>>(
-      zip(begin, end).data_handle(), dim, std::move(buffer));
+  return make_bins_no_validate(zip(begin, end), dim, std::move(buffer));
 }
 
 template <class T>
 auto concatenate_impl(const Variable &var0, const Variable &var1) {
-  return Variable{merge(var0.dims(), var1.dims()), combine<T>(var0, var1)};
+  return combine<T>(var0, var1);
 }
 
 template <class T> void reserve_impl(Variable &var, const Variable &shape) {
@@ -313,11 +300,11 @@ DataArray concatenate(const DataArray &array, const Dim dim) {
 
 void append(Variable &var0, const Variable &var1) {
   if (var0.dtype() == dtype<bucket<Variable>>)
-    var0.setDataHandle(combine<Variable>(var0, var1));
+    var0.setDataHandle(combine<Variable>(var0, var1).data_handle());
   else if (var0.dtype() == dtype<bucket<DataArray>>)
-    var0.setDataHandle(combine<DataArray>(var0, var1));
+    var0.setDataHandle(combine<DataArray>(var0, var1).data_handle());
   else
-    var0.setDataHandle(combine<Dataset>(var0, var1));
+    var0.setDataHandle(combine<Dataset>(var0, var1).data_handle());
 }
 
 void append(Variable &&var0, const Variable &var1) { append(var0, var1); }
