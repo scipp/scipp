@@ -74,6 +74,7 @@ class PlotModel2d(PlotModel):
         """
         Resample 2d images to a fixed resolution to handle very large images.
         """
+        print("_update_image", self.data_arrays[self.name])
         if force_update:
             self._model.reset_params()
         data = self._model.data

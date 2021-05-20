@@ -103,14 +103,6 @@ def plot(*args, **kwargs):
         Defaults to `None`.
     :type axes: dict, optional
 
-    :param bins: Specify on-the-fly binning when plotting event data.
-        Possible values are:
-        - an integer setting the number of bins
-        - a `numpy` array setting the bin edges
-        - a Variable setting the bin edges
-        Defaults to `None`.
-    :type bins: int or ndarray or Variable, optional
-
     :param cax: Attach colorbar to supplied Matplotlib axes.
         Defaults to `None`.
     :type cax: matplotlib.axes.Axes, optional

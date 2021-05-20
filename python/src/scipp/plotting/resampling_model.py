@@ -101,6 +101,8 @@ class ResamplingModel():
                     # cannot pre-select bins for multi-dim coords
                     if len(out.coords[dim].dims) == 1:
                         # TODO: for now, slicing in scipp does not support step
+                        # and pybind11 py::slice requires a step
+                        # (which is always 1 here)
                         sl = sc.get_slice_params(out.data, out.coords[dim],
                                                  low, high)
                         out = out[sl[0], slice(sl[1].start, sl[1].stop)]
@@ -129,20 +131,32 @@ class ResamplingModel():
 class ResamplingBinnedModel(ResamplingModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # TODO See #1469. This is a temporary hack to work around the
-        # conversion of coords to edges in model.py.
-        self._array = self._array.copy(deep=False)
-        for name, var in self._array.coords.items():
-            if len(var.dims) == 0:
-                continue
-            dim = var.dims[-1]
-            if name not in self._array.data.bins.coords:
-                self._array.coords[name] = to_bin_centers(var, dim)
+        # # TODO See #1469. This is a temporary hack to work around the
+        # # conversion of coords to edges in model.py.
+        # self._array = self._array.copy(deep=False)
+        # print(self._array.data)
+        # for name, var in self._array.coords.items():
+        #     if len(var.dims) == 0:
+        #         continue
+        #     dim = var.dims[-1]
+        #     if name not in self._array.data.bins.coords:
+        #         self._array.coords[name] = to_bin_centers(var, dim)
 
     def _resample(self, array):
         # We could bin with all edges and then use `bins.sum()` but especially
         # for inputs with many bins handling the final edges using `histogram`
         # is faster with the current implementation of `sc.bin`.
+
+        # # TODO See #1469. This is a temporary hack to work around the
+        # # conversion of coords to edges in model.py.
+        # array = array.copy(deep=False)
+        # for name, var in array.coords.items():
+        #     if len(var.dims) == 0:
+        #         continue
+        #     dim = var.dims[-1]
+        #     if name not in array.data.bins.coords:
+        #         array.coords[name] = to_bin_centers(var, dim)
+        # print(self._array)
         edges = self.edges[-1]
         dim = edges.dims[-1]
         if dim in array.data.bins.coords:
@@ -180,7 +194,10 @@ class ResamplingDenseModel(ResamplingModel):
         super().__init__(self._to_density(array), **kwargs)
 
     def _to_density(self, array):
-        array = array.astype(sc.dtype.float64)
+        # If we want to be able to use redraw() on floating point data, we must
+        # avoid the copy where possible.
+        if array.dtype not in [sc.dtype.float64, sc.dtype.float32]:
+            array = array.astype(sc.dtype.float64)
         for dim in array.dims:
             coord = array.coords[dim]
             width = coord[dim, 1:] - coord[dim, :-1]

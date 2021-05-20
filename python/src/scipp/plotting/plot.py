@@ -88,7 +88,6 @@ def plot(scipp_obj,
          marker=None,
          linestyle=None,
          linewidth=None,
-         bins=None,
          **kwargs):
     """
     Wrapper function to plot a scipp object.
@@ -199,7 +198,6 @@ def plot(scipp_obj,
                                projection=projection,
                                axes=val["axes"],
                                mpl_line_params=val["mpl_line_params"],
-                               bins=bins,
                                **kwargs)
 
     if len(output) > 1:
