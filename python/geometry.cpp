@@ -28,8 +28,6 @@ void init_geometry(py::module &m) {
           .description(
               "Element-wise zip functionality to produce a vector_3_float64.")
           .raises("If the dtypes of inputs are not double precision floats.")
-          .seealso(":py:func:`scipp.geometry.x`, :py:func:`scipp.geometry.y`, "
-                   ":py:func:`scipp.geometry.z`")
           .returns(
               "Zip of input x, y and z. Output unit is same as input unit.")
           .rtype("Variable")
