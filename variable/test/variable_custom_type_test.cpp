@@ -17,7 +17,9 @@ template <> constexpr DType core::dtype<CustomType>{123456789};
 // Instantiate Variable type. Test template instantiation with custom type
 // argument.
 #define SCIPP_EXPORT
+namespace scipp::variable {
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(custom_type, CustomType)
+}
 
 TEST(VariableCustomType, use_custom_templates) {
   auto var = makeVariable<CustomType>(Dimensions{Dim::X, 2},
