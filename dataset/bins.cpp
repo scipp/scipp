@@ -35,6 +35,11 @@
 #include "bin_common.h"
 #include "dataset_operations_common.h"
 
+namespace scipp {
+extern template class variable::BinArrayModel<DataArray>;
+extern template class variable::BinArrayModel<Dataset>;
+} // namespace scipp
+
 namespace scipp::dataset {
 namespace {
 constexpr auto copy_or_match = [](const auto &a, auto &&b, const Dim dim,
