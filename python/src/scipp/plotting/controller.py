@@ -661,7 +661,7 @@ class PlotController:
 
     def redraw(self):
         """
-        Update 
+        Update the model data dicts and re-draw the figure.
         """
         self.model.update_data_arrays()
         self.update_data(force_update=True)
