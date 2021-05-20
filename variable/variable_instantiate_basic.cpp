@@ -17,5 +17,7 @@ INSTANTIATE_ELEMENT_ARRAY_VARIABLE(int32, int32_t)
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(bool, bool)
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(datetime64, scipp::core::time_point)
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(Variable, Variable)
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(pair_int64, std::pair<int64_t, int64_t>)
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(pair_int32, std::pair<int32_t, int32_t>)
 
 } // namespace scipp::variable

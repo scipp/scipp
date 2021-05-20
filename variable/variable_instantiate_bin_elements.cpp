@@ -9,8 +9,6 @@
 
 namespace scipp::variable {
 
-INSTANTIATE_ELEMENT_ARRAY_VARIABLE(pair_int64, std::pair<int64_t, int64_t>)
-INSTANTIATE_ELEMENT_ARRAY_VARIABLE(pair_int32, std::pair<int32_t, int32_t>)
 INSTANTIATE_BIN_ARRAY_VARIABLE(VariableView, Variable)
 
 template <class T> class BinVariableMakerVariable : public BinVariableMaker<T> {

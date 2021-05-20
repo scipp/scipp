@@ -157,6 +157,8 @@ public:
   }
 };
 
+extern template class ElementArrayModel<scipp::index_pair>;
+
 template <class T> BinArrayModel<T> copy(const BinArrayModel<T> &model) {
   return BinArrayModel<T>(model.indices()->clone(), model.bin_dim(),
                           copy(model.buffer()));
