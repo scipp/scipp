@@ -11,9 +11,6 @@
 using namespace scipp;
 using namespace scipp::variable;
 
-// Avoid issues from different instantiations on OSX
-extern template class variable::BinArrayModel<Variable>;
-
 TEST(BucketTest, member_types) {
   static_assert(std::is_same_v<bucket<Variable>::element_type, Variable>);
   static_assert(std::is_same_v<bucket<Variable>::const_element_type, Variable>);
