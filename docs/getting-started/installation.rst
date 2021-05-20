@@ -78,4 +78,4 @@ To update or remove ``scipp`` use `conda update <https://docs.conda.io/projects/
 From source
 -----------
 
-See `developer getting started <../developer/getting-started.html>`_.
+See `developer getting started <../reference/developer/getting-started.rst>`_.
