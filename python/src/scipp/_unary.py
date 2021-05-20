@@ -52,6 +52,8 @@ def to_unit(x: _cpp.Variable, unit: _Union[_cpp.Unit, str]) -> _cpp.Variable:
         var = 1.2 * sc.Unit('m')
         var_in_mm = sc.to_unit(var, unit='mm')
 
+    If the unit us unchanged the object is returned without making a deep copy.
+
     Raises an error if the input unit is not compatible with the provided
     unit, e.g., `m` cannot be converted to `s`.
 
