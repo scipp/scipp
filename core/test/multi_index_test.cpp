@@ -22,7 +22,7 @@ protected:
       EXPECT_EQ(i.get(), (std::array{expected0[n], expected[n]...}));
       i.increment();
     }
-    ASSERT_EQ(i, i.end());
+    ASSERT_EQ(i, end);
   }
 
   template <scipp::index N, class... Indices>
@@ -198,6 +198,12 @@ TEST_F(MultiIndexTest, advance_slice_and_broadcast) {
   MultiIndex index(xz, make_strides(xz, xy));
   index.set_index(2);
   check(index, {0, 0, 3, 3, 3, 3});
+}
+
+TEST_F(MultiIndexTest, scalar_of_1d_bins) {
+  const Dim dim = Dim::Row;
+  Dimensions buf{dim, 4};
+  check_with_bins(buf, dim, {{0, 4}}, Dimensions{}, Strides{}, {0, 1, 2, 3});
 }
 
 TEST_F(MultiIndexTest, 1d_array_of_1d_bins) {
