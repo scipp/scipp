@@ -301,11 +301,6 @@ private:
       }
 
       for (scipp::index data = 0; data < N; ++data) {
-        // TODO do we need to actually go until m_ndim?
-        inner.m_data_index[data] = detail::flat_index(
-            data, inner.m_coord, inner.m_stride, 0, inner.ndim());
-      }
-      for (scipp::index data = 0; data < N; ++data) {
         m_bin[data].m_bin_index =
             detail::flat_index(data, inner.m_coord, inner.m_stride,
                                inner.m_ndim_nested, inner.ndim());
@@ -314,24 +309,6 @@ private:
       if (inner.m_shape[m_nested_dim_index] == 0 &&
           index != inner.m_end_sentinel)
         seek_bin(inner);
-    }
-
-    constexpr void load_bin_params2(MultiIndex &inner,
-                                    const scipp::index data) noexcept {
-      // TODO can avoid ndim()?
-      if (inner.m_coord[inner.ndim() - 1] == inner.m_shape[inner.ndim() - 1] ||
-          !m_bin[data].is_binned()) {
-        inner.m_data_index[data] = detail::flat_index(
-            data, inner.m_coord, inner.m_stride, 0, inner.ndim());
-        // at end or dense
-      } else {
-        // All bins are guaranteed to have the same size.
-        // Use common m_shape and m_nested_stride for all.
-        const auto [begin, end] =
-            m_bin[data].m_indices[m_bin[data].m_bin_index];
-        inner.m_shape[m_nested_dim_index] = end - begin;
-        inner.m_data_index[data] = m_nested_stride * begin;
-      }
     }
 
     constexpr void increment_outer(MultiIndex &inner) noexcept {
@@ -365,7 +342,7 @@ private:
       if (inner.m_coord[inner.ndim() - 1] != inner.m_shape[inner.ndim() - 1]) {
         // TODO check needed?
         for (scipp::index data = 0; data < N; ++data) {
-          load_bin_params2(inner, data);
+          load_bin_params(inner, data);
         }
       }
     }
@@ -380,16 +357,21 @@ private:
     }
 
     constexpr void load_bin_params(MultiIndex &inner,
-                                   const scipp::index i) noexcept {
+                                   const scipp::index data) noexcept {
       // TODO can avoid ndim()?
-      if (inner.m_coord[inner.ndim() - 1] == inner.m_shape[inner.ndim() - 1] ||
-          !m_bin[i].is_binned())
-        return; // at end or dense
-      // All bins are guaranteed to have the same size.
-      // Use common m_shape and m_nested_stride for all.
-      const auto [begin, end] = m_bin[i].m_indices[m_bin[i].m_bin_index];
-      inner.m_shape[m_nested_dim_index] = end - begin;
-      inner.m_data_index[i] = m_nested_stride * begin;
+      if (!m_bin[data].is_binned()) {
+        inner.m_data_index[data] = detail::flat_index(
+            data, inner.m_coord, inner.m_stride, 0, inner.ndim());
+      } else if (inner.m_coord[inner.ndim() - 1] !=
+                 inner.m_shape[inner.ndim() - 1]) {
+        // All bins are guaranteed to have the same size.
+        // Use common m_shape and m_nested_stride for all.
+        const auto [begin, end] =
+            m_bin[data].m_indices[m_bin[data].m_bin_index];
+        inner.m_shape[m_nested_dim_index] = end - begin;
+        inner.m_data_index[data] = m_nested_stride * begin;
+      }
+      // else: at end of bins
     }
 
     constexpr void seek_bin(MultiIndex &inner) noexcept {
