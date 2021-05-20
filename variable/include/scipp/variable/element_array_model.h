@@ -115,7 +115,8 @@ void ElementArrayModel<T>::copy(const Variable &src, Variable &dest) const {
   transform_in_place<T>(
       dest, src,
       overloaded{core::transform_flags::expect_in_variance_if_out_variance,
-                 do_copy});
+                 do_copy},
+      "copy");
 }
 template <class T>
 void ElementArrayModel<T>::copy(const Variable &src, Variable &&dest) const {

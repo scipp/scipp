@@ -22,7 +22,8 @@ Variable sin(const Variable &var) {
 }
 
 Variable &sin(const Variable &var, Variable &out) {
-  transform_in_place(out, to_unit(var, units::rad), element::sin_out_arg);
+  transform_in_place(out, to_unit(var, units::rad), element::sin_out_arg,
+                     "sin");
   return out;
 }
 
@@ -33,7 +34,8 @@ Variable cos(const Variable &var) {
 }
 
 Variable &cos(const Variable &var, Variable &out) {
-  transform_in_place(out, to_unit(var, units::rad), element::cos_out_arg);
+  transform_in_place(out, to_unit(var, units::rad), element::cos_out_arg,
+                     "cos");
   return out;
 }
 
@@ -44,37 +46,44 @@ Variable tan(const Variable &var) {
 }
 
 Variable &tan(const Variable &var, Variable &out) {
-  transform_in_place(out, to_unit(var, units::rad), element::tan_out_arg);
+  transform_in_place(out, to_unit(var, units::rad), element::tan_out_arg,
+                     "tan");
   return out;
 }
 
-Variable asin(const Variable &var) { return transform(var, element::asin); }
+Variable asin(const Variable &var) {
+  return transform(var, element::asin, "asin");
+}
 
 Variable &asin(const Variable &var, Variable &out) {
-  transform_in_place(out, var, element::asin_out_arg);
+  transform_in_place(out, var, element::asin_out_arg, "asin");
   return out;
 }
 
-Variable acos(const Variable &var) { return transform(var, element::acos); }
+Variable acos(const Variable &var) {
+  return transform(var, element::acos, "acos");
+}
 
 Variable &acos(const Variable &var, Variable &out) {
-  transform_in_place(out, var, element::acos_out_arg);
+  transform_in_place(out, var, element::acos_out_arg, "acos");
   return out;
 }
 
-Variable atan(const Variable &var) { return transform(var, element::atan); }
+Variable atan(const Variable &var) {
+  return transform(var, element::atan, "atan");
+}
 
 Variable &atan(const Variable &var, Variable &out) {
-  transform_in_place(out, var, element::atan_out_arg);
+  transform_in_place(out, var, element::atan_out_arg, "atan");
   return out;
 }
 
 Variable atan2(const Variable &y, const Variable &x) {
-  return transform(y, x, element::atan2);
+  return transform(y, x, element::atan2, "atan2");
 }
 
 Variable &atan2(const Variable &y, const Variable &x, Variable &out) {
-  transform_in_place(out, y, x, element::atan2_out_arg);
+  transform_in_place(out, y, x, element::atan2_out_arg, "atan2");
   return out;
 }
 

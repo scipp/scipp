@@ -37,7 +37,6 @@ set(INC_FILES
 
 set(SRC_FILES
     ${variable_SRC_FILES}
-    arithmetic.cpp
     bins.cpp
     bin_array_variable.cpp
     bin_detail.cpp
@@ -46,7 +45,6 @@ set(SRC_FILES
     creation.cpp
     cumulative.cpp
     except.cpp
-    logical.cpp
     math.cpp
     operations.cpp
     rebin.cpp

@@ -51,7 +51,8 @@ void copy_slices(const Variable &src, Variable dst, const Dim dim,
   core::expect::equals(all(equal(sizes0, sizes1)),
                        makeVariable<bool>(Values{true}));
   transform_in_place(subspan_view(dst, dim, dstIndices),
-                     subspan_view(src, dim, srcIndices), copy_spans);
+                     subspan_view(src, dim, srcIndices), copy_spans,
+                     "copy_slices");
 }
 
 Variable resize_default_init(const Variable &var, const Dim dim,

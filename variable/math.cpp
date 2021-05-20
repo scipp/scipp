@@ -11,10 +11,4 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-Variable dot(const Variable &a, const Variable &b) {
-  return transform(a, b, element::dot);
-}
-
-Variable norm(const Variable &var) { return transform(var, element::norm); }
-
 } // namespace scipp::variable
