@@ -17,6 +17,8 @@
 
 namespace scipp::variable {
 
+extern template class variable::BinArrayModel<Variable>;
+
 namespace {
 template <class T> using copy_spans_args = std::tuple<span<T>, span<const T>>;
 constexpr auto copy_spans = overloaded{
