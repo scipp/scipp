@@ -377,4 +377,4 @@ class Plot:
         Redraw the plot. Use this to update a figure when the underlying data
         has been modified.
         """
-        self.controller.update_data(force_update=True)
+        self.controller.redraw()

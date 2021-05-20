@@ -16,6 +16,8 @@ class PlotModel2d(PlotModel):
     """
     def __init__(self, *args, resolution=None, **kwargs):
 
+        self._model = None
+
         super().__init__(*args, **kwargs)
 
         self.displayed_dims = {}
@@ -30,8 +32,13 @@ class PlotModel2d(PlotModel):
                 "x": config.plot.width,
                 "y": config.plot.height
             }
-        self._model = resampling_model(self.data_arrays[self.name])
         self._squeeze = []
+
+    def update_data_arrays(self):
+        super().update_data_arrays()
+        if self._model is None:
+            self._model = resampling_model(self.data_arrays[self.name])
+        self._model.update_array(self.data_arrays[self.name])
 
     def update_axes(self, axparams):
         """

@@ -14,7 +14,7 @@ class ResamplingModel():
         self._bounds = {} if bounds is None else bounds
         self._resampled = None
         self._resampled_params = None
-        self._array = data
+        # self._array = data
         self._home = None
         self._home_params = None
 
@@ -123,7 +123,16 @@ class ResamplingModel():
             self._home = self._resampled
             self._home_params = self._resampled_params
 
+    def update_array(self, array):
+        """
+        Update the internal array with a new array.
+        """
+        self._array = array
+
     def reset_params(self):
+        """
+        Reset view parameters to force a plot update.
+        """
         self._home_params = None
         self._resampled_params = None
 
@@ -131,32 +140,20 @@ class ResamplingModel():
 class ResamplingBinnedModel(ResamplingModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # # TODO See #1469. This is a temporary hack to work around the
-        # # conversion of coords to edges in model.py.
-        # self._array = self._array.copy(deep=False)
-        # print(self._array.data)
-        # for name, var in self._array.coords.items():
-        #     if len(var.dims) == 0:
-        #         continue
-        #     dim = var.dims[-1]
-        #     if name not in self._array.data.bins.coords:
-        #         self._array.coords[name] = to_bin_centers(var, dim)
+        # TODO See #1469. This is a temporary hack to work around the
+        # conversion of coords to edges in model.py.
+        self._array = self._array.copy(deep=False)
+        for name, var in self._array.coords.items():
+            if len(var.dims) == 0:
+                continue
+            dim = var.dims[-1]
+            if name not in self._array.data.bins.coords:
+                self._array.coords[name] = to_bin_centers(var, dim)
 
     def _resample(self, array):
         # We could bin with all edges and then use `bins.sum()` but especially
         # for inputs with many bins handling the final edges using `histogram`
         # is faster with the current implementation of `sc.bin`.
-
-        # # TODO See #1469. This is a temporary hack to work around the
-        # # conversion of coords to edges in model.py.
-        # array = array.copy(deep=False)
-        # for name, var in array.coords.items():
-        #     if len(var.dims) == 0:
-        #         continue
-        #     dim = var.dims[-1]
-        #     if name not in array.data.bins.coords:
-        #         array.coords[name] = to_bin_centers(var, dim)
-        # print(self._array)
         edges = self.edges[-1]
         dim = edges.dims[-1]
         if dim in array.data.bins.coords:
@@ -196,8 +193,8 @@ class ResamplingDenseModel(ResamplingModel):
     def _to_density(self, array):
         # If we want to be able to use redraw() on floating point data, we must
         # avoid the copy where possible.
-        if array.dtype not in [sc.dtype.float64, sc.dtype.float32]:
-            array = array.astype(sc.dtype.float64)
+        # if array.dtype not in [sc.dtype.float64, sc.dtype.float32]:
+        array = array.astype(sc.dtype.float64)
         for dim in array.dims:
             coord = array.coords[dim]
             width = coord[dim, 1:] - coord[dim, :-1]
@@ -223,6 +220,12 @@ class ResamplingDenseModel(ResamplingModel):
                 name: self._rebin(mask, array.coords)
                 for name, mask in array.masks.items()
             })
+
+    # def redraw(self, array):
+    #     """
+    #     Update the internal array with a new array.
+    #     """
+    #     super().redraw(self._to_density(array))
 
 
 def resampling_model(array, **kwargs):

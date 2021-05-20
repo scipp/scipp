@@ -658,3 +658,10 @@ class PlotController:
         Make a map from dim to axis
         """
         return {self.axes[key]: key for key in self._get_xyz_axes()}
+
+    def redraw(self):
+        """
+        Update 
+        """
+        self.model.update_data_arrays()
+        self.update_data(force_update=True)

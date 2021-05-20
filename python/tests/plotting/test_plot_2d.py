@@ -264,8 +264,8 @@ def test_plot_2d_binned_data_with_variances():
     plot(make_binned_data_array(ndim=2, variances=True))
 
 
-def test_plot_2d_binned_data_with_variances_nbin():
-    plot(make_binned_data_array(ndim=2, variances=True), bins={'tof': 3})
+def test_plot_2d_binned_data_with_variances_resolution():
+    plot(make_binned_data_array(ndim=2, variances=True), resolution=64)
 
 
 def test_plot_2d_binned_data_with_masks():
@@ -287,6 +287,10 @@ def test_plot_access_ax_and_fig():
 
 def test_plot_2d_image_int32():
     plot(make_dense_dataset(ndim=2, dtype=sc.dtype.int32))
+
+
+def test_plot_2d_image_int64_with_unit():
+    plot(make_dense_dataset(ndim=2, unit='K', dtype=sc.dtype.int64))
 
 
 def test_plot_2d_image_int_coords():

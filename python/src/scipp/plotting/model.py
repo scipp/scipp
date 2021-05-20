@@ -50,6 +50,7 @@ class PlotModel:
 
         # The main container of DataArrays
         self.data_arrays = {}
+        self.backup = {}
         self.coord_info = {}
         self.dim_to_shape = dim_to_shape
         self.axformatter = {}
@@ -85,9 +86,17 @@ class PlotModel:
                 else:
                     coord_list[dim] = to_bin_edges(coord, dim)
 
-            self.data_arrays[name] = sc.DataArray(data=array.data,
-                                                  coords=coord_list,
-                                                  masks=array.masks.to_dict())
+            self.backup.update({name: {"array": array, "coords": coord_list}})
+            # self.data_arrays[name] = sc.DataArray(data=array.data,
+            #                                       coords=coord_list,
+            #                                       masks=array.masks.to_dict())
+
+        # Save a copy of the name for simpler access
+        # Note this needs to be done before calling update_data_arrays
+        self.name = name
+
+        # Update the internal dict of arrays from the original input
+        self.update_data_arrays()
 
         # Store dim of multi-dimensional coordinate if present
         self.multid_coord = None
@@ -98,8 +107,6 @@ class PlotModel:
 
         # The main currently displayed data slice
         self.dslice = None
-        # Save a copy of the name for simpler access
-        self.name = name
 
     def _axis_coord_and_formatter(self, dim, data_array, dim_to_shape,
                                   dim_label_map):
@@ -222,6 +229,13 @@ class PlotModel:
                 profile.data.variances.ravel())
         values["masks"] = self._make_masks(profile, mask_info=mask_info)
         return values
+
+    def update_data_arrays(self):
+        for name, item in self.backup.items():
+            self.data_arrays[name] = sc.DataArray(
+                data=item["array"].data,
+                coords=item["coords"],
+                masks=item["array"].masks.to_dict())
 
     def get_axformatter(self, name, dim):
         """
