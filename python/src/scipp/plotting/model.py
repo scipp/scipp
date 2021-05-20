@@ -87,9 +87,6 @@ class PlotModel:
                     coord_list[dim] = to_bin_edges(coord, dim)
 
             self.backup.update({name: {"array": array, "coords": coord_list}})
-            # self.data_arrays[name] = sc.DataArray(data=array.data,
-            #                                       coords=coord_list,
-            #                                       masks=array.masks.to_dict())
 
         # Save a copy of the name for simpler access
         # Note this needs to be done before calling update_data_arrays
