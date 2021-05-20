@@ -157,6 +157,20 @@ public:
   }
 };
 
+template <class T> BinArrayModel<T> copy(const BinArrayModel<T> &model) {
+  return BinArrayModel<T>(model.indices()->clone(), model.bin_dim(),
+                          copy(model.buffer()));
+}
+
+template <class T>
+BinArrayModel<T>::BinArrayModel(const VariableConceptHandle &indices,
+                                const Dim dim, T buffer)
+    : BinModelBase<Indices>(indices, dim), m_buffer(std::move(buffer)) {}
+
+template <class T> VariableConceptHandle BinArrayModel<T>::clone() const {
+  return std::make_shared<BinArrayModel<T>>(variable::copy(*this));
+}
+
 template <class T>
 bool BinArrayModel<T>::operator==(const BinArrayModel &other) const noexcept {
   if (indices()->dtype() != core::dtype<scipp::index_pair> ||
@@ -169,23 +183,6 @@ bool BinArrayModel<T>::operator==(const BinArrayModel &other) const noexcept {
          this->bin_dim() == other.bin_dim() && m_buffer == other.m_buffer;
 }
 
-template <class T>
-BinArrayModel<T>::BinArrayModel(const VariableConceptHandle &indices,
-                                const Dim dim, T buffer)
-    : BinModelBase<Indices>(indices, dim), m_buffer(std::move(buffer)) {}
-
-template <class T> BinArrayModel<T>::~BinArrayModel() = default;
-
-namespace {
-template <class T> auto clone_impl(const BinArrayModel<T> &model) {
-  return std::make_shared<BinArrayModel<T>>(
-      model.indices()->clone(), model.bin_dim(), copy(model.buffer()));
-}
-} // namespace
-
-template <class T> VariableConceptHandle BinArrayModel<T>::clone() const {
-  return clone_impl(*this);
-}
 
 template <class T>
 VariableConceptHandle
@@ -224,6 +221,8 @@ BinArrayModel<T>::index_values(const core::ElementArrayViewParams &base) const {
   template <> struct model<core::bin<__VA_ARGS__>> {                           \
     using type = BinArrayModel<__VA_ARGS__>;                                   \
   };                                                                           \
+  template SCIPP_EXPORT BinArrayModel<__VA_ARGS__> copy(                       \
+      const BinArrayModel<__VA_ARGS__> &);                                     \
   template class SCIPP_EXPORT BinArrayModel<__VA_ARGS__>;                      \
   INSTANTIATE_VARIABLE_BASE(name, core::bin<__VA_ARGS__>)                      \
   template SCIPP_EXPORT std::tuple<Variable, Dim, __VA_ARGS__>                 \
