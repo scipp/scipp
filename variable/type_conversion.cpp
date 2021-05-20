@@ -39,7 +39,6 @@ struct MakeVariableWithType {
 };
 
 Variable astype(const Variable &var, DType type) {
-  return type == var.dtype() ? Variable(var)
-                             : MakeVariableWithType::make(var, type);
+  return type == var.dtype() ? var : MakeVariableWithType::make(var, type);
 }
 } // namespace scipp::variable
