@@ -81,7 +81,7 @@ class DataAccessHelper {
     };
     auto &&var = get_data_variable(view);
     const auto &dims = view.dims();
-    if (view.is_readonly()) {
+    if (var.is_readonly()) {
       auto array =
           py::array{get_dtype(), dims.shape(), numpy_strides<T>(var.strides()),
                     Getter::template get<T>(std::as_const(view)).data(),
@@ -183,7 +183,7 @@ public:
   template <class Getter, class View>
   static py::object get_py_array_t(py::object &obj) {
     auto &view = obj.cast<View &>();
-    if (!std::is_const_v<View> && view.is_readonly())
+    if (!std::is_const_v<View> && get_data_variable(view).is_readonly())
       return as_ElementArrayViewImpl<const Ts...>::template get_py_array_t<
           Getter, const View>(obj);
     const DType type = view.dtype();
@@ -320,7 +320,7 @@ public:
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object value(py::object &obj) {
     auto &view = obj.cast<Var &>();
-    if (!std::is_const_v<Var> && view.is_readonly())
+    if (!std::is_const_v<Var> && get_data_variable(view).is_readonly())
       return as_ElementArrayViewImpl<const Ts...>::template value<const Var>(
           obj);
     expect_scalar(view.dims(), "value");
@@ -331,7 +331,7 @@ public:
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object variance(py::object &obj) {
     auto &view = obj.cast<Var &>();
-    if (!std::is_const_v<Var> && view.is_readonly())
+    if (!std::is_const_v<Var> && get_data_variable(view).is_readonly())
       return as_ElementArrayViewImpl<const Ts...>::template variance<const Var>(
           obj);
     expect_scalar(view.dims(), "variance");

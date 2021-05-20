@@ -9,11 +9,8 @@ Overview
 A number of concepts and components of **scipp** can and should be customized to the needs of higher-level libraries or to a particular use case.
 At this point we support compile-time customization of:
 
-- New or custom ``dtype`` that can be stored as elements in a ``Variable`` and by the ``transform`` algorithms.
-- Available units and unit combinations
-- The underlying container used for event data.
-
-Some of these are adaptable more readily than others, which require more in-depth changes.
+- The maximum number of dimensions supported by ``Variable`` is configured using the ``NDIM_MAX`` constant.
+- New or custom ``dtype`` that can be stored as elements in a ``Variable`` and used with the ``transform`` algorithms.
 
 Source code for scipp is hosted in a github repository `here <https://github.com/scipp/scipp>`_.
 
@@ -32,10 +29,3 @@ To support formatting of variables with the new ``dtype`` it should be registere
 
 In addition to these steps, it is currently required to manually add Python bindings in several places.
 TODO: Improve or document this process.
-
-Container used for event data
-------------------------------
-
-This is currently defined in the header ``core/include/scipp/core/variable.h`` with the helper ``event_list``.
-This has to be set to a vector-like type, such as ``std::vector`` or ``boost::container::small_vector``.
-In the latter case the small-size of the vector can be used to balance performance/locality against memory overhead.

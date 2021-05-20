@@ -734,6 +734,14 @@ TYPED_TEST(AsTypeTest, variable_astype) {
   ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
 }
 
+TEST(AsTypeTest, buffer_handling) {
+  const auto var = makeVariable<float>(Values{1});
+  const auto same = astype(var, dtype<float>);
+  EXPECT_TRUE(same.is_same(var)); // not modified => not copied
+  const auto different = astype(var, dtype<double>);
+  EXPECT_FALSE(different.is_same(var)); // modified => copied
+}
+
 TEST(VariableTest, array_params) {
   const auto parent =
       makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z}, Shape{4, 2, 3});

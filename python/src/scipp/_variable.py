@@ -7,43 +7,6 @@ from typing import Any as _Any, Sequence as _Sequence, Union as _Union
 import numpy as _np
 
 
-def filter(x, key):
-    """
-    Selects elements for a Variable using a filter (mask).
-
-    The filter variable must be 1D and of bool type.
-    A true value in the filter means the corresponding element in the input is
-    selected and will be copied to the output.
-    A false value in the filter discards the corresponding element
-    in the input.
-
-    :param x: Variable to filter.
-    :param key: Variable which defines the filter.
-    :type x: Variable
-    :type key: Variable
-    :raises: If the filter variable is not 1 dimensional.
-    :returns: New variable containing the data selected by the filter.
-    :rtype: Variable
-    """
-    return _call_cpp_func(_cpp.filter, x, key)
-
-
-def split(x, dim, inds):
-    """
-    Split a Variable along a given Dimension.
-
-    :param x: Variable to split.
-    :param dim: Dimension along which to perform the split.
-    :param inds: List of indices  where the variable will split.
-    :type x: Variable
-    :type dim: str
-    :type inds: list
-    :returns: A list of variables.
-    :rtype: list
-    """
-    return _call_cpp_func(_cpp.split, x, dim, inds)
-
-
 def islinspace(x):
     """
     Check if the values of a variable are evenly spaced.

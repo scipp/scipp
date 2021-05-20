@@ -45,7 +45,10 @@ void bind_astype(py::class_<T, Ignored...> &c) {
       [](const T &self, const scipp::DType type) { return astype(self, type); },
       py::call_guard<py::gil_scoped_release>(),
       R"(
-        Converts a Variable or DataArray to a different type.
+        Converts a Variable or DataArray to a different dtype.
+
+        If the dtype is unchanged the object is returned without making a
+        deep copy.
 
         :raises: If the variable cannot be converted to the requested dtype.
         :return: New variable or data array with specified dtype.

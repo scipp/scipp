@@ -5,7 +5,7 @@ The implementation of ``class Variable`` and its views ``class VariableConstView
 The following figure gives an overview of the relations of the involved classes, with relevant details discussed below.
 This is simplified to only display essential concepts, omitting many methods:
 
-.. image:: ../images/variable_classes.svg
+.. image:: ../../images/variable_classes.svg
   :width: 640
   :alt: Variable, related views, and type-erasure mechanism
 

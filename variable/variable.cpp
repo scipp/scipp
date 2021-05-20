@@ -53,12 +53,14 @@ void Variable::expectCanSetUnit(const units::Unit &unit) const {
 const units::Unit &Variable::unit() const { return m_object->unit(); }
 
 void Variable::setUnit(const units::Unit &unit) {
-  expectCanSetUnit(unit);
   expectWritable();
+  expectCanSetUnit(unit);
   m_object->setUnit(unit);
 }
 
 bool Variable::operator==(const Variable &other) const {
+  if (is_same(other))
+    return true;
   if (!is_valid() || !other.is_valid())
     return is_valid() == other.is_valid();
   // Note: Not comparing strides
@@ -184,6 +186,7 @@ bool Variable::is_same(const Variable &other) const noexcept {
 }
 
 void Variable::setVariances(const Variable &v) {
+  expectWritable();
   if (is_slice())
     throw except::VariancesError(
         "Cannot add variances via sliced view of Variable.");
