@@ -142,7 +142,7 @@ public:
     // Go through all nested dims (with bins) / all dims (without bins)
     // where we have reached the end.
     for (scipp::index d = 0;
-         (m_coord[d] == m_shape[d]) && (d < m_inner_ndim - 1); ++d) {
+         (d < m_inner_ndim - 1) && (m_coord[d] == m_shape[d]); ++d) {
       for (scipp::index data = 0; data < N; ++data) {
         m_data_index[data] +=
             // take a step in dimension d+1
@@ -155,8 +155,10 @@ public:
     }
     // nested dims incremented, move on to bins
     // TODO can do without extra test?
-    if (has_bins())
-      m_outer_index.seek_bin(*this);
+    // TODO do not test last dim twice
+    if (m_outer_index.m_outer_ndim != 0 &&
+        m_coord[m_inner_ndim - 1] == m_shape[m_inner_ndim - 1])
+      m_outer_index.seek_for_inc(*this);
   }
 
   constexpr void increment() noexcept {
@@ -314,6 +316,69 @@ private:
         seek_bin(inner);
     }
 
+    constexpr void load_bin_params2(MultiIndex &inner,
+                                    const scipp::index data) noexcept {
+      // TODO can avoid ndim()?
+      if (inner.m_coord[inner.ndim() - 1] == inner.m_shape[inner.ndim() - 1] ||
+          !m_bin[data].is_binned()) {
+        inner.m_data_index[data] = detail::flat_index(
+            data, inner.m_coord, inner.m_stride, 0, inner.ndim());
+        // at end or dense
+      } else {
+        // All bins are guaranteed to have the same size.
+        // Use common m_shape and m_nested_stride for all.
+        const auto [begin, end] =
+            m_bin[data].m_indices[m_bin[data].m_bin_index];
+        inner.m_shape[m_nested_dim_index] = end - begin;
+        inner.m_data_index[data] = m_nested_stride * begin;
+      }
+    }
+
+    constexpr void increment_outer(MultiIndex &inner) noexcept {
+      for (scipp::index dim = inner.m_inner_ndim;
+           (dim < inner.ndim() - 1) &&
+           (inner.m_coord[dim] == inner.m_shape[dim]);
+           ++dim) {
+        // Increment early so that we can check whether we need to load bins.
+        ++inner.m_coord[dim + 1];
+        for (scipp::index data = 0; data < N; ++data) {
+          m_bin[data].m_bin_index +=
+              // take a step in dimension dim+1
+              inner.m_stride[dim + 1][data]
+              // rewind dimension dim (m_coord[d] == m_shape[d])
+              - inner.m_coord[dim] * inner.m_stride[dim][data];
+        }
+        inner.m_coord[dim] = 0;
+      }
+    }
+
+    constexpr void increment(MultiIndex &inner) noexcept {
+      const auto dim = inner.m_inner_ndim;
+      for (scipp::index data = 0; data < N; ++data) {
+        m_bin[data].m_bin_index += inner.m_stride[dim][data];
+      }
+      std::fill(inner.m_coord.begin(),
+                inner.m_coord.begin() + inner.m_inner_ndim, 0);
+      ++inner.m_coord[dim];
+      if (inner.m_coord[dim] == inner.m_shape[dim])
+        increment_outer(inner);
+      if (inner.m_coord[inner.ndim() - 1] != inner.m_shape[inner.ndim() - 1]) {
+        // TODO check needed?
+        for (scipp::index data = 0; data < N; ++data) {
+          load_bin_params2(inner, data);
+        }
+      }
+    }
+
+    // TODO name
+    constexpr void seek_for_inc(MultiIndex &inner) noexcept {
+      do {
+        increment(inner);
+      } while (inner.m_shape[inner.m_outer_index.m_nested_dim_index] == 0 &&
+               inner.m_coord[inner.ndim() - 1] !=
+                   inner.m_shape[inner.ndim() - 1]);
+    }
+
     constexpr void load_bin_params(MultiIndex &inner,
                                    const scipp::index i) noexcept {
       // TODO can avoid ndim()?
@@ -360,9 +425,10 @@ private:
         }
       } while (inner.m_shape[inner.m_outer_index.m_nested_dim_index] == 0 &&
                inner.m_coord[inner.ndim() - 1] !=
-                   inner.m_shape[inner.ndim() - 1]); // TODO end state
+                   inner.m_shape[inner.ndim() - 1]);
     }
 
+    // TODO store ndim instead?
     scipp::index m_outer_ndim{0};
     /// Stride in bins along dim referred to by indices, e.g., 2D bins
     /// slicing along first or second dim.
@@ -384,6 +450,7 @@ private:
   scipp::index m_inner_ndim{0};
   BinIndex m_outer_index{};
   // TODO try to remove
+  //    -> needed if bins are scalar?
   bool m_has_bins = false;
 };
 
