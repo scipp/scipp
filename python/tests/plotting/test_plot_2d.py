@@ -330,6 +330,17 @@ def test_plot_redraw_dense():
     d *= 5.0
     p.redraw()
     assert np.allclose(p.view.figure.image_values.get_array(), 5.0 * before)
+    p.close()
+
+
+def test_plot_redraw_dense_int64():
+    d = make_dense_dataset(ndim=2, unit='K', dtype=sc.dtype.int64)
+    p = sc.plot(d)
+    before = p.view.figure.image_values.get_array()
+    d *= 5
+    p.redraw()
+    assert np.allclose(p.view.figure.image_values.get_array(), 5 * before)
+    p.close()
 
 
 def test_plot_redraw_counts():
@@ -339,3 +350,19 @@ def test_plot_redraw_counts():
     d *= 5.0
     p.redraw()
     assert np.allclose(p.view.figure.image_values.get_array(), 5.0 * before)
+    p.close()
+
+
+def test_plot_redraw_binned():
+    a = make_binned_data_array(ndim=2)
+    pa = sc.plot(a, resolution=64)
+    asum = pa.view.figure.image_values.get_array().sum()
+    b = make_binned_data_array(ndim=2)
+    pb = sc.plot(b, resolution=64)
+    bsum = pb.view.figure.image_values.get_array().sum()
+
+    a.data = a.bins.concatenate(b).data
+    pa.redraw()
+    assert pa.view.figure.image_values.get_array().sum() == asum + bsum
+    pa.close()
+    pb.close()

@@ -14,7 +14,7 @@ class ResamplingModel():
         self._bounds = {} if bounds is None else bounds
         self._resampled = None
         self._resampled_params = None
-        # self._array = data
+        self._array = data
         self._home = None
         self._home_params = None
 
@@ -221,11 +221,11 @@ class ResamplingDenseModel(ResamplingModel):
                 for name, mask in array.masks.items()
             })
 
-    # def redraw(self, array):
-    #     """
-    #     Update the internal array with a new array.
-    #     """
-    #     super().redraw(self._to_density(array))
+    def update_array(self, array):
+        """
+        Update the internal array with a new array.
+        """
+        super().update_array(self._to_density(array))
 
 
 def resampling_model(array, **kwargs):

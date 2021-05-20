@@ -35,10 +35,14 @@ class PlotModel2d(PlotModel):
         self._squeeze = []
 
     def update_data_arrays(self):
+        """
+        Create or update the internal resampling model.
+        """
         super().update_data_arrays()
         if self._model is None:
             self._model = resampling_model(self.data_arrays[self.name])
-        self._model.update_array(self.data_arrays[self.name])
+        else:
+            self._model.update_array(self.data_arrays[self.name])
 
     def update_axes(self, axparams):
         """
@@ -81,7 +85,6 @@ class PlotModel2d(PlotModel):
         """
         Resample 2d images to a fixed resolution to handle very large images.
         """
-        print("_update_image", self.data_arrays[self.name])
         if force_update:
             self._model.reset_params()
         data = self._model.data

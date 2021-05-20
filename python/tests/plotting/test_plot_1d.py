@@ -319,8 +319,20 @@ def test_plot_legend():
 def test_plot_redraw():
     d = make_dense_dataset(ndim=1)
     p = sc.plot(d)
-    assert p.view.figure.data_lines['Sample'].get_ydata()[2] == np.sin(2.0)
+    assert p.view.figure.data_lines['Sample'].get_ydata(
+    )[2] == 10.0 * np.sin(2.0)
     d['Sample'] *= 5.0
     p.redraw()
     assert p.view.figure.data_lines['Sample'].get_ydata(
-    )[2] == 5.0 * np.sin(2.0)
+    )[2] == 50.0 * np.sin(2.0)
+
+
+def test_plot_redraw_int64():
+    d = make_dense_dataset(ndim=1, dtype=sc.dtype.int64)
+    p = sc.plot(d)
+    assert p.view.figure.data_lines['Sample'].get_ydata()[2] == int(
+        10.0 * np.sin(2.0))
+    d['Sample'] *= 5
+    p.redraw()
+    assert p.view.figure.data_lines['Sample'].get_ydata()[2] == int(
+        50.0 * np.sin(2.0))
