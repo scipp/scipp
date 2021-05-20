@@ -16,16 +16,13 @@ using namespace scipp::core;
 
 namespace scipp::dataset {
 
-DataArray operator-(const DataArray &a) {
-  return DataArray(-a.data(), a.coords(), a.masks(), a.attrs());
-}
-
 namespace {
 
 template <class T, class Op> void dry_run_op(T &&a, const Variable &b, Op op) {
   // This dry run relies on the knowledge that the implementation of operations
   // for variable simply calls transform_in_place and nothing else.
-  variable::dry_run::transform_in_place(a.data(), b, op);
+  // TODO use proper op name here once dataset ops are generated
+  variable::dry_run::transform_in_place(a.data(), b, op, "binary_arithmetic");
 }
 
 template <class T, class Op> void dry_run_op(T &&a, const DataArray &b, Op op) {
