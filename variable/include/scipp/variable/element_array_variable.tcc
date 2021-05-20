@@ -8,6 +8,23 @@
 namespace scipp::variable {
 
 template <class T>
+ElementArrayModel<T>::ElementArrayModel(
+    const scipp::index size, const units::Unit &unit, element_array<T> model,
+    std::optional<element_array<T>> variances)
+    : VariableConcept(unit),
+      m_values(model ? std::move(model)
+                     : element_array<T>(size, default_init<T>::value())),
+      m_variances(std::move(variances)) {
+  if (m_variances)
+    core::expect::canHaveVariances<T>();
+  if (size != scipp::size(m_values))
+    throw except::DimensionError("Creating Variable: data size does not match "
+                                 "volume given by dimension extents.");
+  if (m_variances && !*m_variances)
+    *m_variances = element_array<T>(size, default_init<T>::value());
+}
+
+template <class T>
 void ElementArrayModel<T>::assign(const VariableConcept &other) {
   *this = requireT<const ElementArrayModel<T>>(other);
 }
@@ -29,6 +46,7 @@ void ElementArrayModel<T>::setVariances(const Variable &variances) {
 /// Macro for instantiating classes and functions required for support a new
 /// dtype in Variable.
 #define INSTANTIATE_ELEMENT_ARRAY_VARIABLE(name, ...)                          \
+  template class SCIPP_EXPORT ElementArrayModel<__VA_ARGS__>;                  \
   template SCIPP_EXPORT Variable variable::make_default_init<__VA_ARGS__>(     \
       const Dimensions &, const units::Unit &, const bool);                    \
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \

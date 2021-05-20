@@ -37,20 +37,7 @@ public:
 
   ElementArrayModel(const scipp::index size, const units::Unit &unit,
                     element_array<T> model,
-                    std::optional<element_array<T>> variances = std::nullopt)
-      : VariableConcept(unit),
-        m_values(model ? std::move(model)
-                       : element_array<T>(size, default_init<T>::value())),
-        m_variances(std::move(variances)) {
-    if (m_variances)
-      core::expect::canHaveVariances<T>();
-    if (size != scipp::size(m_values))
-      throw except::DimensionError(
-          "Creating Variable: data size does not match "
-          "volume given by dimension extents.");
-    if (m_variances && !*m_variances)
-      *m_variances = element_array<T>(size, default_init<T>::value());
-  }
+                    std::optional<element_array<T>> variances = std::nullopt);
 
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
   DType dtype() const noexcept override { return scipp::dtype<T>; }
