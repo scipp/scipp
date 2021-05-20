@@ -36,7 +36,8 @@ protected:
         for (scipp::index k = 0; k < n; ++k) {
           it.increment();
         }
-        EXPECT_EQ(i, it);
+        EXPECT_EQ(i, it); // Checks only for m_coord.
+        EXPECT_EQ(i.get(), it.get());
       }
     } else {
       for (scipp::index bin = 0; bin < bin_volume; ++bin) {
@@ -45,10 +46,8 @@ protected:
         // We do not know how many elements there are in each bin.
         // So just increment until we hit the index for the given bin and
         // make sure that we see the correct indices along the way.
-        std::cout << "---------------------------------------\n";
         for (auto it = i.begin(); it != i; it.increment(), ++n) {
-          std::cout << it << std::endl;
-          EXPECT_EQ(it.get(), (std::array{expected0[n], expected[n]...}));
+          ASSERT_EQ(it.get(), (std::array{expected0[n], expected[n]...}));
         }
       }
     }
