@@ -174,6 +174,8 @@ BinArrayModel<T>::BinArrayModel(const VariableConceptHandle &indices,
                                 const Dim dim, T buffer)
     : BinModelBase<Indices>(indices, dim), m_buffer(std::move(buffer)) {}
 
+template <class T> BinArrayModel<T>::~BinArrayModel() = default;
+
 namespace {
 template <class T> auto clone_impl(const BinArrayModel<T> &model) {
   return std::make_shared<BinArrayModel<T>>(

@@ -61,6 +61,7 @@ public:
   using range_type = typename bucket<T>::range_type;
 
   BinArrayModel(const VariableConceptHandle &indices, const Dim dim, T buffer);
+  ~BinArrayModel() override;
 
   [[nodiscard]] VariableConceptHandle clone() const override;
 
