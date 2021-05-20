@@ -107,12 +107,7 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
       "data",
       py::cpp_function([](T &self) { return self.data(); },
                        py::return_value_policy::copy),
-      [](T &self, const Variable &data) {
-        if constexpr (std::is_convertible_v<T, DataArray>)
-          copy(data, self.data());
-        else // bins_view
-          self.setData(data);
-      },
+      [](T &self, const Variable &data) { self.setData(data); },
       R"(Underlying data item.)");
   c.def_property_readonly(
       "coords", [](T &self) -> decltype(auto) { return self.coords(); },

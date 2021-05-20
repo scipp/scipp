@@ -78,19 +78,19 @@ class TestSliceByValue:
         test(self._d['a'])
         test(self._d)
 
-    def test_assign_variable_to_range_dataarray(self):
-        self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
-                     sc.units.dimensionless].data = sc.Variable(
-                         dims=['x'], values=[6.0, 6.0, 6.0], unit=sc.units.m)
+    def test_assign_variable_to_range_dataarray_fails(self):
+        with pytest.raises(sc.DataArrayError):  # readonly
+            self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
+                         sc.units.dimensionless].data = sc.Variable(
+                             dims=['x'],
+                             values=[6.0, 6.0, 6.0],
+                             unit=sc.units.m)
 
-        assert self._d['a'].data.values.tolist() == [1.0, 6.0, 6.0, 6.0, 1.4]
-
-    def test_assign_variable_to_range_dataset(self):
-        self._d['x', 1.5 * sc.units.dimensionless:4.5 *
-                sc.units.dimensionless]['a'].data = sc.Variable(
-                    dims=['x'], values=[6.0, 6.0, 6.0], unit=sc.units.m)
-
-        assert self._d['a'].data.values.tolist() == [1.0, 6.0, 6.0, 6.0, 1.4]
+    def test_assign_variable_to_range_dataset_fails(self):
+        with pytest.raises(sc.DataArrayError):  # readonly
+            self._d['x', 1.5 * sc.units.dimensionless:4.5 *
+                    sc.units.dimensionless]['a'].data = sc.Variable(
+                        dims=['x'], values=[6.0, 6.0, 6.0], unit=sc.units.m)
 
     def test_on_dataarray_modify_range_in_place_from_variable(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
@@ -112,11 +112,10 @@ class TestSliceByValue:
 
         assert self._d['a'].data.values.tolist() == [1.0, 2.0, 3.0, 4.0, 1.4]
 
-    def test_on_dataset_assign_dataarray_to_range_no_effect(self):
-        self._d['x', 1.5 * sc.units.dimensionless:4.5 *
-                sc.units.dimensionless]['a'] = self._d['b']['x', 1:-1]
-        # Sets a new item in the dict of the slice, no effect on original
-        assert self._d['a'].data.values.tolist() == [1.0, 1.1, 1.2, 1.3, 1.4]
+    def test_on_dataset_assign_dataarray_to_range_fails(self):
+        with pytest.raises(sc.DatasetError):  # readonly
+            self._d['x', 1.5 * sc.units.dimensionless:4.5 *
+                    sc.units.dimensionless]['a'] = self._d['b']['x', 1:-1]
 
     def test_on_dataarray_modify_range_in_place_from_dataarray(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
