@@ -129,7 +129,7 @@ class ResamplingModel():
         """
         self._array = array
 
-    def reset_params(self):
+    def reset(self):
         """
         Reset view parameters to force a plot update.
         """

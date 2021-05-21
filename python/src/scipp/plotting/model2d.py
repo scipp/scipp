@@ -175,5 +175,5 @@ class PlotModel2d(PlotModel):
                                profile_dim, mask_info[self.name])
         }
 
-    def reset_resampling_params(self):
-        self._model.reset_params()
+    def reset_resampling_model(self):
+        self._model.reset()

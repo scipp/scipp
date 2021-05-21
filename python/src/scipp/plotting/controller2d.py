@@ -37,5 +37,5 @@ class PlotController2d(PlotController):
         """
         Update the model data dicts and re-draw the figure.
         """
-        self.model.reset_resampling_params()
+        self.model.reset_resampling_model()
         super().redraw()
