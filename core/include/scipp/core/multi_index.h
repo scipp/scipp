@@ -115,7 +115,6 @@ public:
     m_end_sentinel = iter_dims.volume();
 
     m_inner_ndim = nested_dims.ndim();
-    m_ndim_nested = nested_dims.ndim();
     m_outer_index = BinIndex(*this, params...);
     if (m_end_sentinel == 0) {
       return; // operands are empty, leave everything below default initialized
@@ -126,12 +125,12 @@ public:
         m_stride, nested_dims.ndim(), std::index_sequence_for<Params...>(),
         params.bucketParams() ? Strides{nested_dims} : Strides{}...);
     std::array<std::array<scipp::index, N>, NDIM_MAX> binStrides;
-    detail::copy_strides(binStrides, ndim() - m_ndim_nested,
+    detail::copy_strides(binStrides, ndim() - m_inner_ndim,
                          std::index_sequence_for<Params...>(),
                          params.strides()...);
     for (scipp::index data = 0; data < N; ++data) {
-      for (scipp::index d = 0; d < NDIM_MAX - m_ndim_nested; ++d)
-        m_stride[m_ndim_nested + d][data] = binStrides[d][data];
+      for (scipp::index d = 0; d < NDIM_MAX - m_inner_ndim; ++d)
+        m_stride[m_inner_ndim + d][data] = binStrides[d][data];
       m_outer_index.load_bin_params(*this, data);
     }
     if (m_shape[m_outer_index.m_nested_dim_index] == 0)
@@ -303,7 +302,7 @@ private:
       for (scipp::index data = 0; data < N; ++data) {
         m_bin[data].m_bin_index =
             detail::flat_index(data, inner.m_coord, inner.m_stride,
-                               inner.m_ndim_nested, inner.ndim());
+                               inner.m_inner_ndim, inner.ndim());
         load_bin_params(inner, data);
       }
       if (inner.m_shape[m_nested_dim_index] == 0 &&
@@ -390,7 +389,7 @@ private:
                 // rewind dimension d (m_coord[d] == m_shape[d])
                 - inner.m_coord[d] * inner.m_stride[d][data];
             // move to next bin
-            if (d == inner.m_ndim_nested - 1) // last non-bin dimension
+            if (d == inner.m_inner_ndim - 1) // last non-bin dimension
               inner.m_outer_index.m_bin[data].m_bin_index +=
                   inner.m_stride[d + 1][data];
             else // bin dimension -> rewind earlier bins
@@ -428,7 +427,6 @@ private:
   std::array<scipp::index, NDIM_MAX> m_shape = {};
   /// End-sentinel, essentially the volume of the iteration dimensions.
   scipp::index m_end_sentinel{1};
-  scipp::index m_ndim_nested{NDIM_MAX + 1};
   scipp::index m_inner_ndim{0};
   BinIndex m_outer_index{};
   // TODO try to remove
