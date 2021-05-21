@@ -11,6 +11,8 @@
 
 namespace scipp::variable {
 
+extern template class ElementArrayModel<int64_t>;
+
 template <class T> std::tuple<Variable, Dim, T> Variable::to_constituents() {
   Variable tmp;
   std::swap(*this, tmp);
