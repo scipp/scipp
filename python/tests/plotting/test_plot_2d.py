@@ -360,6 +360,7 @@ def test_plot_redraw_binned():
 
     a.data = a.bins.concatenate(b).data
     pa.redraw()
-    assert pa.view.figure.image_values.get_array().sum() == asum + bsum
+    assert np.isclose(pa.view.figure.image_values.get_array().sum(),
+                      asum + bsum)
     pa.close()
     pb.close()

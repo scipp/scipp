@@ -148,12 +148,12 @@ class ResamplingBinnedModel(ResamplingModel):
         conversion of coords to edges in model.py.
         """
         self._array = self._array.copy(deep=False)
-        for name, var in self._array.meta.items():
+        for name, var in self._array.coords.items():
             if len(var.dims) == 0:
                 continue
             dim = var.dims[-1]
-            if name not in self._array.data.bins.meta:
-                self._array.meta[name] = to_bin_centers(var, dim)
+            if name not in self._array.data.bins.coords:
+                self._array.coords[name] = to_bin_centers(var, dim)
 
     def _resample(self, array):
         # We could bin with all edges and then use `bins.sum()` but especially
@@ -168,7 +168,7 @@ class ResamplingBinnedModel(ResamplingModel):
             binned = sc.bin(array=array, edges=self.edges[:-1] + [bounds])
             a = sc.histogram(binned, edges)
         else:
-            a = sc.bin(array, self.edges).bins.sum()
+            a = sc.bin(array=array, edges=self.edges).bins.sum()
         for name, mask in array.masks.items():
             a.masks[name] = self._rebin(mask, array.meta)
         return a
