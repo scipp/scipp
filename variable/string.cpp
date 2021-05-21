@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -6,7 +6,9 @@
 #include <iomanip>
 #include <set>
 
+#include "scipp/core/array_to_string.h"
 #include "scipp/core/bucket_array_view.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/string.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/variable/string.h"
@@ -14,31 +16,22 @@
 
 namespace scipp::variable {
 
-std::ostream &operator<<(std::ostream &os, const VariableConstView &variable) {
+std::ostream &operator<<(std::ostream &os, const Variable &variable) {
   return os << to_string(variable);
 }
 
-std::ostream &operator<<(std::ostream &os, const VariableView &variable) {
-  return os << VariableConstView(variable);
-}
-
-std::ostream &operator<<(std::ostream &os, const Variable &variable) {
-  return os << VariableConstView(variable);
-}
-
 namespace {
-constexpr const char *tab = "  ";
 
-std::string make_dims_labels(const VariableConstView &variable,
-                             const std::optional<Dimensions> datasetDims) {
+std::string make_dims_labels(const Variable &variable,
+                             const std::optional<Sizes> datasetSizes) {
   const auto &dims = variable.dims();
   if (dims.empty())
     return "()";
   std::string diminfo = "(";
   for (const auto &dim : dims.labels()) {
     diminfo += to_string(dim);
-    if (datasetDims) {
-      if ((datasetDims->contains(dim) ? (*datasetDims)[dim] : 1) + 1 ==
+    if (datasetSizes) {
+      if ((datasetSizes->contains(dim) ? (*datasetSizes)[dim] : 1) + 1 ==
           dims[dim])
         diminfo += " [bin-edge]";
     }
@@ -50,12 +43,12 @@ std::string make_dims_labels(const VariableConstView &variable,
 }
 
 template <class T> struct ValuesToString {
-  static auto apply(const VariableConstView &var) {
+  static auto apply(const Variable &var) {
     return core::array_to_string(var.template values<T>(), var.unit());
   }
 };
 template <class T> struct VariancesToString {
-  static auto apply(const VariableConstView &var) {
+  static auto apply(const Variable &var) {
     if constexpr (core::canHaveVariances<T>())
       return core::array_to_string(var.template variances<T>());
     else
@@ -73,45 +66,40 @@ auto apply(const DType dtype, Args &&... args) {
   return core::callDType<Callable>(
       std::tuple<double, float, int64_t, int32_t, std::string, bool,
                  scipp::core::time_point, Eigen::Vector3d, Eigen::Matrix3d,
-                 Variable, bucket<Variable>, bucket<VariableConstView>,
-                 bucket<VariableView>, scipp::index_pair>{},
+                 Variable, bucket<Variable>, scipp::index_pair>{},
       dtype, std::forward<Args>(args)...);
 }
 } // namespace
 
-std::string format_variable(const std::string &key,
-                            const VariableConstView &variable,
-                            const std::optional<Dimensions> datasetDims) {
-  if (!variable)
-    return std::string(tab) + "invalid variable\n";
+std::string format_variable(const Variable &variable,
+                            const std::optional<Sizes> datasetSizes) {
+  if (!variable.is_valid())
+    return "invalid variable\n";
   std::stringstream s;
   const std::string colSep("  ");
-  s << tab << std::left << std::setw(24) << key;
-  s << colSep << std::setw(9) << to_string(variable.dtype());
+  if (!datasetSizes)
+    s << to_string(variable.dims()) << colSep;
+  s << std::setw(9) << to_string(variable.dtype());
   s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
-  s << colSep << make_dims_labels(variable, datasetDims);
+  if (datasetSizes)
+    s << colSep << make_dims_labels(variable, datasetSizes);
   s << colSep;
   s << apply<ValuesToString>(variable.dtype(), variable);
   if (variable.hasVariances())
     s << colSep << apply<VariancesToString>(variable.dtype(), variable);
-  s << '\n';
   return s.str();
 }
 
 std::string to_string(const Variable &variable) {
-  return format_variable(std::string("<scipp.Variable>"), variable);
+  return std::string("<scipp.Variable> ") + format_variable(variable);
 }
 
-std::string to_string(const VariableConstView &variable) {
-  return format_variable(std::string("<scipp.VariableView>"), variable);
-}
-
-std::string to_string(const std::pair<Dim, VariableConstView> &coord) {
+std::string to_string(const std::pair<Dim, Variable> &coord) {
   using units::to_string;
   return to_string(coord.first) + ":\n" + to_string(coord.second);
 }
 
-std::string to_string(const std::pair<std::string, VariableConstView> &coord) {
+std::string to_string(const std::pair<std::string, Variable> &coord) {
   return coord.first + ":\n" + to_string(coord.second);
 }
 
@@ -124,7 +112,7 @@ bool FormatterRegistry::contains(const DType key) const noexcept {
   return m_formatters.find(key) != m_formatters.end();
 }
 
-std::string FormatterRegistry::format(const VariableConstView &var) const {
+std::string FormatterRegistry::format(const Variable &var) const {
   return m_formatters.at(var.dtype())->format(var);
 }
 

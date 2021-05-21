@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -7,24 +7,10 @@
 
 namespace scipp::core {
 
-/// Strides in dataDims when iterating iterDims.
-std::array<scipp::index, NDIM_MAX> get_strides(const Dimensions &iterDims,
-                                               const Dimensions &dataDims) {
-  std::array<scipp::index, NDIM_MAX> strides = {};
-  scipp::index d = iterDims.ndim() - 1;
-  for (const auto &dim : iterDims.labels()) {
-    if (dataDims.contains(dim))
-      strides[d--] = dataDims.offset(dim);
-    else
-      strides[d--] = 0;
-  }
-  return strides;
-}
-
-void validate_bucket_indices_impl(const ElementArrayViewParams &param0,
-                                  const ElementArrayViewParams &param1) {
+void validate_bin_indices_impl(const ElementArrayViewParams &param0,
+                               const ElementArrayViewParams &param1) {
   const auto iterDims = param0.dims();
-  auto index = MultiIndex(iterDims, param0.dataDims(), param1.dataDims());
+  auto index = MultiIndex(iterDims, param0.strides(), param1.strides());
   const auto indices0 = param0.bucketParams().indices;
   const auto indices1 = param1.bucketParams().indices;
   constexpr auto size = [](const auto range) {

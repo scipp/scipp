@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -76,9 +76,8 @@ private:
 };
 template <class T> str_keys_view(T &) -> str_keys_view<T>;
 
-static constexpr auto item_to_str = [](auto &&item) -> decltype(auto) {
-  return std::make_pair<std::string, decltype(item.second)>(
-      item.first.name(), std::move(item.second));
+static constexpr auto item_to_str = [](const auto &item) {
+  return std::pair(item.first.name(), item.second);
 };
 
 /// Helper to provide equivalent of the `items()` method of a Python dict.

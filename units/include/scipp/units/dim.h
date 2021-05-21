@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @author Simon Heybrock
 #pragma once
@@ -14,6 +14,9 @@ namespace scipp::units {
 class SCIPP_UNITS_EXPORT Dim {
 public:
   enum class Id : uint16_t {
+    Invalid,
+    Internal0,
+    Internal1,
     Energy,
     Event,
     Group,
@@ -24,14 +27,16 @@ public:
     Wavelength,
     X,
     Y,
-    Z,
-    Invalid
+    Z
   };
+
+  constexpr static auto Invalid = Id::Invalid;
+  constexpr static auto Internal0 = Id::Internal0;
+  constexpr static auto Internal1 = Id::Internal1;
 
   constexpr static auto Energy = Id::Energy;
   constexpr static auto Event = Id::Event;
   constexpr static auto Group = Id::Group;
-  constexpr static auto Invalid = Id::Invalid;
   constexpr static auto Position = Id::Position;
   constexpr static auto Row = Id::Row;
   constexpr static auto Temperature = Id::Temperature;

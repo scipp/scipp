@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -11,6 +11,7 @@
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/slice.h"
+#include "scipp/variable/slice.h"
 #include "scipp/variable/variable.h"
 
 namespace py = pybind11;
@@ -19,10 +20,10 @@ using namespace scipp::variable;
 using namespace scipp::dataset;
 
 template <class T> auto dim_extent(const T &object, const Dim dim) {
-  if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
+  if constexpr (std::is_same_v<T, Dataset>) {
     scipp::index extent = -1;
-    if (object.dimensions().count(dim) > 0)
-      extent = object.dimensions().at(dim);
+    if (object.sizes().contains(dim))
+      extent = object.sizes().at(dim);
     return extent;
   } else {
     return object.dims()[dim];
@@ -61,7 +62,7 @@ template <class View> struct SetData {
 
 // Helpers wrapped in struct to avoid unresolvable overloads.
 template <class T> struct slicer {
-  static auto get(T &self, const std::tuple<Dim, scipp::index> &index) {
+  static auto get_slice(T &self, const std::tuple<Dim, scipp::index> &index) {
     auto [dim, i] = index;
     auto sz = dim_extent(self, dim);
     if (i < -sz || i >= sz) // index is out of range
@@ -72,22 +73,28 @@ template <class T> struct slicer {
           std::to_string(sz - 1) + "].");
     if (i < 0)
       i = sz + i;
-    return self.slice(Slice(dim, i));
+    return Slice(dim, i);
   }
 
-  static auto get_by_value(T &self,
-                           const std::tuple<Dim, VariableConstView> &value) {
+  static auto get(T &self, const std::tuple<Dim, scipp::index> &index) {
+    return self.slice(get_slice(self, index));
+  }
+
+  static auto get_slice_by_value(T &self,
+                                 const std::tuple<Dim, Variable> &value) {
     auto [dim, i] = value;
-    return slice(self, dim, i);
+    return std::make_from_tuple<Slice>(
+        get_slice_params(self.dims(), self.coords()[dim], i));
   }
 
-  static auto get_range(T &self,
-                        const std::tuple<Dim, const py::slice> &index) {
+  static auto get_by_value(T &self, const std::tuple<Dim, Variable> &value) {
+    return self.slice(get_slice_by_value(self, value));
+  }
+
+  static auto get_slice_range(T &self,
+                              const std::tuple<Dim, const py::slice> &index) {
     auto [dim, py_slice] = index;
-    if constexpr (std::is_same_v<T, DataArray> ||
-                  std::is_same_v<T, DataArrayView> ||
-                  std::is_same_v<T, Dataset> ||
-                  std::is_same_v<T, DatasetView>) {
+    if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Dataset>) {
       try {
         auto step = py::getattr(py_slice, "step");
         if (!step.is_none()) {
@@ -99,21 +106,25 @@ template <class T> struct slicer {
         if (!start.is_none() || !stop.is_none()) { // Means default slice : is
                                                    // treated as index slice
           auto start_var =
-              start.is_none()
-                  ? VariableConstView{}
-                  : py::getattr(py_slice, "start").cast<VariableConstView>();
-          auto stop_var =
-              stop.is_none()
-                  ? VariableConstView{}
-                  : py::getattr(py_slice, "stop").cast<VariableConstView>();
+              start.is_none() ? Variable{}
+                              : py::getattr(py_slice, "start").cast<Variable>();
+          auto stop_var = stop.is_none()
+                              ? Variable{}
+                              : py::getattr(py_slice, "stop").cast<Variable>();
 
-          return slice(self, dim, start_var, stop_var);
+          return std::make_from_tuple<Slice>(get_slice_params(
+              self.dims(), self.coords()[dim], start_var, stop_var));
         }
       } catch (const py::cast_error &) {
       }
     }
 
-    return self.slice(from_py_slice(self, index));
+    return from_py_slice(self, index);
+  }
+
+  static auto get_range(T &self,
+                        const std::tuple<Dim, const py::slice> &index) {
+    return self.slice(get_slice_range(self, index));
   }
 
   static void set_from_numpy(T &self,
@@ -135,24 +146,20 @@ template <class T> struct slicer {
   template <class Other>
   static void set_from_view(T &self, const std::tuple<Dim, scipp::index> &index,
                             const Other &data) {
-    auto slice = slicer<T>::get(self, index);
-    slice.assign(data);
+    self.setSlice(slicer<T>::get_slice(self, index), data);
   }
 
   template <class Other>
   static void set_from_view(T &self,
                             const std::tuple<Dim, const py::slice> &index,
                             const Other &data) {
-    auto slice = slicer<T>::get_range(self, index);
-    slice.assign(data);
+    self.setSlice(slicer<T>::get_slice_range(self, index), data);
   }
 
   template <class Other>
-  static void set_by_value(T &self,
-                           const std::tuple<Dim, VariableConstView> &value,
+  static void set_by_value(T &self, const std::tuple<Dim, Variable> &value,
                            const Other &data) {
-    auto slice = slicer<T>::get_by_value(self, value);
-    slice.assign(data);
+    self.setSlice(slicer<T>::get_slice_by_value(self, value), data);
   }
 
   // Manually dispatch based on the object we are assigning from in order to
@@ -161,19 +168,17 @@ template <class T> struct slicer {
   // in the Python bindings directly.
   template <class IndexOrRange>
   static void set(T &self, const IndexOrRange &index, const py::object &data) {
-    if constexpr (std::is_same_v<T, Dataset> ||
-                  std::is_same_v<T, DatasetView>) {
-      if (py::isinstance<DatasetView>(data)) {
-        set_from_view(self, index, py::cast<DatasetView>(data));
+    if constexpr (std::is_same_v<T, Dataset>) {
+      if (py::isinstance<Dataset>(data)) {
+        set_from_view(self, index, py::cast<Dataset>(data));
         return;
       } else if (py::isinstance<Dataset>(data)) {
         set_from_view(self, index, py::cast<Dataset>(data));
         return;
       }
-    } else if constexpr (std::is_same_v<T, DataArray> ||
-                         std::is_same_v<T, DataArrayView>) {
-      if (py::isinstance<DataArrayView>(data)) {
-        set_from_view(self, index, py::cast<DataArrayView>(data));
+    } else if constexpr (std::is_same_v<T, DataArray>) {
+      if (py::isinstance<DataArray>(data)) {
+        set_from_view(self, index, py::cast<DataArray>(data));
         return;
       } else if (py::isinstance<DataArray>(data)) {
         set_from_view(self, index, py::cast<DataArray>(data));
@@ -181,10 +186,9 @@ template <class T> struct slicer {
       }
     }
 
-    if constexpr (!std::is_same_v<T, Dataset> &&
-                  !std::is_same_v<T, DatasetView>) {
-      if (py::isinstance<VariableView>(data)) {
-        set_from_view(self, index, py::cast<VariableView>(data));
+    if constexpr (!std::is_same_v<T, Dataset>) {
+      if (py::isinstance<Variable>(data)) {
+        set_from_view(self, index, py::cast<Variable>(data));
         return;
       } else if (py::isinstance<Variable>(data)) {
         set_from_view(self, index, py::cast<Variable>(data));
@@ -204,18 +208,23 @@ template <class T> struct slicer {
 
 template <class T, class... Ignored>
 void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
-  c.def("__getitem__", &slicer<T>::get, py::keep_alive<0, 1>());
-  c.def("__getitem__", &slicer<T>::get_range, py::keep_alive<0, 1>());
+  c.def("__getitem__", &slicer<T>::get);
+  c.def("__getitem__", &slicer<T>::get_range);
   c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, scipp::index>>);
   c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, py::slice>>);
-  if constexpr (std::is_same_v<T, DataArray> ||
-                std::is_same_v<T, DataArrayView>) {
-    c.def("__getitem__", &slicer<T>::get_by_value, py::keep_alive<0, 1>());
-    c.def("__setitem__", &slicer<T>::template set_by_value<VariableView>);
-    c.def("__setitem__", &slicer<T>::template set_by_value<DataArrayView>);
+  if constexpr (std::is_same_v<T, DataArray>) {
+    c.def("__getitem__", &slicer<T>::get_by_value);
+    c.def("__setitem__", &slicer<T>::template set_by_value<Variable>);
+    c.def("__setitem__", &slicer<T>::template set_by_value<DataArray>);
   }
-  if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
-    c.def("__getitem__", &slicer<T>::get_by_value, py::keep_alive<0, 1>());
-    c.def("__setitem__", &slicer<T>::template set_by_value<DatasetView>);
+  if constexpr (std::is_same_v<T, Dataset>) {
+    c.def("__getitem__", &slicer<T>::get_by_value);
+    c.def("__setitem__", &slicer<T>::template set_by_value<Dataset>);
+  } else {
+    c.def("__len__", [](const T &self) {
+      if (self.dims().ndim() == 0)
+        throw except::TypeError("len() of unsized object");
+      return self.dims().size(0);
+    });
   }
 }

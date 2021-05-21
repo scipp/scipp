@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
@@ -30,9 +30,13 @@ class PlotModel3d(PlotModel):
         # never change
         if self.positions is not None:
             self.pos_coord = scipp_obj_dict[self.name].meta[self.positions]
+            # TODO Something expects a flat position array?
+            self.pos_coord = sc.flatten(self.pos_coord,
+                                        dims=self.pos_coord.dims,
+                                        to='dummy')
             self.pos_array = np.array(self.pos_coord.values, dtype=np.float32)
 
-    def initialise(self, cut_options):
+    def initialize(self, cut_options):
         """
         The model handles calculations of opacities for the cut surface, so it
         needs to know which are the possible cut surface options. Those are set

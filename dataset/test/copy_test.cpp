@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -11,31 +11,51 @@ using namespace scipp;
 using namespace scipp::dataset;
 
 struct CopyTest : public ::testing::Test {
-  CopyTest() : dataset(factory.make()), array(dataset["data_xyz"]) {
+  CopyTest() : dataset(factory.make()), array(copy(dataset["data_xyz"])) {
     array.attrs().set(Dim("attr"), attr);
+    dataset["data_xyz"].attrs().set(Dim("attr"), attr);
   }
 
 protected:
   DatasetFactory3D factory;
   Dataset dataset;
-  DataArrayView array;
+  DataArray array;
   Variable attr = makeVariable<double>(Values{1});
 };
-
 TEST_F(CopyTest, data_array) { EXPECT_EQ(copy(array), array); }
 TEST_F(CopyTest, dataset) { EXPECT_EQ(copy(dataset), dataset); }
+DataArray make_dataarray_with_bin_edges() {
+  return DataArray(makeVariable<double>(Dimensions{Dim::X, 2}, Values({0, 1})),
+                   {{Dim::X, makeVariable<double>(Dimensions{Dim::X, 3},
+                                                  Values({0, 1, 2}))}});
+}
+TEST_F(CopyTest, dataarray_with_bin_edge_coord) {
+  auto a = make_dataarray_with_bin_edges();
+  auto b = copy(a);
+  EXPECT_EQ(a, b);
+}
+TEST_F(CopyTest, dataset_with_bin_edge_coord) {
+  auto a = Dataset{make_dataarray_with_bin_edges()};
+  auto b = copy(a);
+  EXPECT_EQ(a, b);
+  for (const auto &[dim, item] : b.coords()) {
+    EXPECT_NE(a.coords().at(dim).values<double>().data(),
+              item.values<double>().data());
+  }
+}
 
 TEST_F(CopyTest, data_array_drop_attrs) {
   auto copied = copy(array, AttrPolicy::Drop);
-
   EXPECT_NE(copied, array);
   copied.attrs().set(Dim("attr"), attr);
   EXPECT_EQ(copied, array);
 }
 
 TEST_F(CopyTest, dataset_drop_attrs) {
-  // not implemented yet
-  EXPECT_ANY_THROW(auto _ = copy(dataset, AttrPolicy::Drop));
+  auto copied = copy(dataset, AttrPolicy::Drop);
+  EXPECT_NE(copied, dataset);
+  copied["data_xyz"].attrs().set(Dim("attr"), attr);
+  EXPECT_EQ(copied, dataset);
 }
 
 struct CopyOutArgTest : public CopyTest {
@@ -44,15 +64,15 @@ struct CopyOutArgTest : public CopyTest {
     array_copy.data() += one;
     array_copy.coords()[Dim::X] += one;
     array_copy.coords()[Dim::Y] += one;
-    array_copy.masks()["masks_x"].assign(~array_copy.masks()["masks_x"]);
+    copy(~array_copy.masks()["masks_x"], array_copy.masks()["masks_x"]);
     array_copy.attrs()[Dim("attr")] += one;
     EXPECT_NE(array_copy, array);
     dataset_copy["data_xyz"].data() += one;
     dataset_copy["data_xyz"].attrs()[Dim("attr")] += one;
     dataset_copy.coords()[Dim::X] += one;
     dataset_copy.coords()[Dim::Y] += one;
-    dataset_copy["data_xyz"].masks()["masks_x"].assign(
-        ~array_copy.masks()["masks_x"]);
+    copy(~array_copy.masks()["masks_x"],
+         dataset_copy["data_xyz"].masks()["masks_x"]);
     EXPECT_NE(dataset_copy, dataset);
   }
 
@@ -74,17 +94,15 @@ TEST_F(CopyOutArgTest, dataset_out_arg) {
 }
 
 TEST_F(CopyOutArgTest, data_array_out_arg_drop_attrs) {
-  array_copy.attrs()[Dim("attr")].assign(array.attrs()[Dim("attr")]);
-
+  copy(array.attrs()[Dim("attr")], array_copy.attrs()[Dim("attr")]);
   // copy with out arg also copies coords, masks, and attrs
   EXPECT_EQ(copy(array, array_copy, AttrPolicy::Drop), array);
   EXPECT_EQ(array_copy, array);
 }
 
 TEST_F(CopyOutArgTest, dataset_out_arg_drop_attrs) {
-  dataset_copy["data_xyz"].attrs()[Dim("attr")].assign(
-      dataset["data_xyz"].attrs()[Dim("attr")]);
-
+  copy(dataset["data_xyz"].attrs()[Dim("attr")],
+       dataset_copy["data_xyz"].attrs()[Dim("attr")]);
   // copy with out arg also copies coords, masks, and attrs
   EXPECT_EQ(copy(dataset, dataset_copy, AttrPolicy::Drop), dataset);
   EXPECT_EQ(dataset_copy, dataset);
@@ -95,7 +113,7 @@ TEST_F(CopyOutArgTest, data_array_out_arg_drop_attrs_untouched) {
   // untouched. This also applies to dropped attributes.
   EXPECT_NE(copy(array, array_copy, AttrPolicy::Drop), array);
   EXPECT_NE(array_copy, array);
-  array_copy.attrs()[Dim("attr")].assign(array.attrs()[Dim("attr")]);
+  copy(array.attrs()[Dim("attr")], array_copy.attrs()[Dim("attr")]);
   EXPECT_EQ(array_copy, array);
 }
 
@@ -104,7 +122,7 @@ TEST_F(CopyOutArgTest, dataset_out_arg_drop_attrs_untouched) {
   // untouched. This also applies to dropped attributes.
   EXPECT_NE(copy(dataset, dataset_copy, AttrPolicy::Drop), dataset);
   EXPECT_NE(dataset_copy, dataset);
-  dataset_copy["data_xyz"].attrs()[Dim("attr")].assign(
-      dataset["data_xyz"].attrs()[Dim("attr")]);
+  copy(dataset["data_xyz"].attrs()[Dim("attr")],
+       dataset_copy["data_xyz"].attrs()[Dim("attr")]);
   EXPECT_EQ(dataset_copy, dataset);
 }

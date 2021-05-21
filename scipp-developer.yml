@@ -9,7 +9,7 @@ channels:
 
 dependencies:
   # Build
-  - boost-cpp
+  - boost-cpp=1.75 # see https://github.com/scipp/scipp/issues/1888
   - ninja
   - tbb-devel
 
@@ -24,7 +24,6 @@ dependencies:
   - pythreejs
   - pyyaml
   - tbb
-  - traitlets=4.3.3 # see https://github.com/jupyter-widgets/pythreejs/issues/334
 
   # Test
   - h5py
@@ -36,9 +35,8 @@ dependencies:
   - flake8
 
   # Docs
-  - ipython=7.2.0
   - pandoc
-  - sphinx=3.4.3 # see https://github.com/sphinx-doc/sphinx/issues/8885
+  - sphinx
   - sphinx_rtd_theme
   - nbsphinx
   - docutils=0.16 # see https://github.com/spatialaudio/nbsphinx/issues/549

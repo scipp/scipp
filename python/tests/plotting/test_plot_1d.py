@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
@@ -78,7 +78,7 @@ def test_plot_1d_with_masks():
 
 def test_plot_collapse():
     d = make_dense_dataset(ndim=2)
-    plot(sc.collapse(d["Sample"], keep='tof'))
+    plot(sc.collapse(d["Sample"]['x', :10], keep='tof'))
 
 
 def test_plot_sliceviewer_with_1d_projection():
@@ -160,70 +160,67 @@ def test_plot_data_array():
 def test_plot_vector_axis_labels_1d():
     d = sc.Dataset()
     N = 10
-    d.coords['x'] = sc.Variable(['x'],
-                                values=np.random.random([N, 3]),
-                                unit=sc.units.m,
-                                dtype=sc.dtype.vector_3_float64)
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
+    d.coords['x'] = sc.vectors(dims=['x'],
+                               values=np.random.random([N, 3]),
+                               unit=sc.units.m)
     plot(d)
 
 
 def test_plot_string_axis_labels_1d():
     d = sc.Dataset()
     N = 10
+    d["Sample"] = sc.Variable(['x'],
+                              values=np.random.random(N),
+                              unit=sc.units.counts)
     d.coords['x'] = sc.Variable(
         dims=['x'],
         values=["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
         unit=sc.units.m)
-    d["Sample"] = sc.Variable(['x'],
-                              values=np.random.random(N),
-                              unit=sc.units.counts)
     plot(d)
 
 
 def test_plot_string_axis_labels_1d_short():
     d = sc.Dataset()
     N = 5
-    d.coords['x'] = sc.Variable(dims=['x'],
-                                values=["a", "b", "c", "d", "e"],
-                                unit=sc.units.m)
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
+    d.coords['x'] = sc.Variable(dims=['x'],
+                                values=["a", "b", "c", "d", "e"],
+                                unit=sc.units.m)
     plot(d)
 
 
 def test_plot_with_vector_labels():
     N = 10
     d = sc.Dataset()
-    d.coords['x'] = sc.Variable(['x'],
-                                values=np.arange(N, dtype=np.float64),
-                                unit=sc.units.m)
-    d.coords['labs'] = sc.Variable(['x'],
-                                   values=np.random.random([N, 3]),
-                                   unit=sc.units.m,
-                                   dtype=sc.dtype.vector_3_float64)
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
+    d.coords['x'] = sc.Variable(['x'],
+                                values=np.arange(N, dtype=np.float64),
+                                unit=sc.units.m)
+    d.coords['labs'] = sc.vectors(dims=['x'],
+                                  values=np.random.random([N, 3]),
+                                  unit=sc.units.m)
     plot(d)
 
 
 def test_plot_vector_axis_with_labels():
     d = sc.Dataset()
     N = 10
-    d.coords['labs'] = sc.Variable(['x'],
-                                   values=np.arange(N, dtype=np.float64),
-                                   unit=sc.units.m)
-    d.coords['x'] = sc.Variable(['x'],
-                                values=np.random.random([N, 3]),
-                                unit=sc.units.m,
-                                dtype=sc.dtype.vector_3_float64)
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
+    d.coords['labs'] = sc.Variable(['x'],
+                                   values=np.arange(N, dtype=np.float64),
+                                   unit=sc.units.m)
+    d.coords['x'] = sc.vectors(dims=['x'],
+                               values=np.random.random([N, 3]),
+                               unit=sc.units.m)
     plot(d)
 
 
@@ -254,22 +251,22 @@ def test_plot_access_ax_and_fig_two_entries():
 def test_plot_with_integer_coord():
     d = sc.Dataset()
     N = 10
-    d.coords['x'] = sc.Variable(['x'], values=np.arange(N), unit=sc.units.m)
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
+    d.coords['x'] = sc.Variable(['x'], values=np.arange(N), unit=sc.units.m)
     plot(d)
 
 
 def test_plot_with_integer_coord_binedges():
     d = sc.Dataset()
     N = 10
-    d.coords['x'] = sc.Variable(['x'],
-                                values=np.arange(N + 1),
-                                unit=sc.units.m)
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)
+    d.coords['x'] = sc.Variable(['x'],
+                                values=np.arange(N + 1),
+                                unit=sc.units.m)
     plot(d)
 
 

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -13,7 +13,7 @@
 
 #include "scipp/variable/operations.h"
 #include "scipp/variable/rebin.h"
-#include "scipp/variable/transform.h"
+#include "scipp/variable/structures.h"
 #include "scipp/variable/variable.h"
 
 #include "scipp/dataset/dataset.h"
@@ -44,13 +44,12 @@ template <class T> void bind_init_0D(py::class_<Variable> &c) {
         py::arg("unit") = units::one);
   if constexpr (std::is_same_v<T, Variable> || std::is_same_v<T, DataArray> ||
                 std::is_same_v<T, Dataset>) {
-    c.def(
-        py::init([](const typename T::const_view_type &value,
-                    const std::optional<T> &variance, const units::Unit &unit) {
-          return do_init_0D(copy(value), variance, unit);
-        }),
-        py::arg("value"), py::arg("variance") = std::nullopt,
-        py::arg("unit") = units::one);
+    c.def(py::init([](const T &value, const std::optional<T> &variance,
+                      const units::Unit &unit) {
+            return do_init_0D(copy(value), variance, unit);
+          }),
+          py::arg("value"), py::arg("variance") = std::nullopt,
+          py::arg("unit") = units::one);
   }
 }
 
@@ -84,18 +83,6 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
             auto arr = py::array(b);
             auto varr = v ? std::optional{py::array(*v)} : std::nullopt;
             return doMakeVariable({}, arr, varr, unit, dtype);
-          } else if (info.ndim == 1 &&
-                     scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
-            return do_init_0D<Eigen::Vector3d>(
-                b.cast<Eigen::Vector3d>(),
-                v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
-                unit);
-          } else if (info.ndim == 2 &&
-                     scipp_dtype(dtype) == core::dtype<Eigen::Matrix3d>) {
-            return do_init_0D<Eigen::Matrix3d>(
-                b.cast<Eigen::Matrix3d>(),
-                v ? std::optional(v->cast<Eigen::Matrix3d>()) : std::nullopt,
-                unit);
           } else if ((info.ndim == 1) &&
                      py::isinstance(b.get_type(), np_datetime64_type)) {
             if (v.has_value()) {
@@ -129,28 +116,69 @@ void bind_init_list(py::class_<Variable> &c) {
         py::arg("unit") = units::one, py::arg("dtype") = py::none());
 }
 
-void bind_init_0D_list_eigen(py::class_<Variable> &c) {
-  c.def(
-      py::init([](const py::list &value,
-                  const std::optional<py::list> &variance,
-                  const units::Unit &unit, py::object &dtype) {
-        if (scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
-          return do_init_0D<Eigen::Vector3d>(
-              Eigen::Vector3d(value.cast<std::vector<double>>().data()),
-              variance ? std::optional(variance->cast<Eigen::Vector3d>())
-                       : std::nullopt,
-              unit);
-        } else {
-          throw scipp::except::VariableError(
-              "Cannot create 0D Variable from list of values with this dtype.");
-        }
-      }),
-      py::arg("value"), py::arg("variance") = std::nullopt,
-      py::arg("unit") = units::one, py::arg("dtype") = py::none());
+template <class T, class Elem, int... N>
+void bind_structured_creation(py::module &m, const std::string &name) {
+  m.def(
+      name.c_str(),
+      [](const std::vector<Dim> &labels, py::array_t<Elem> &values,
+         units::Unit unit) {
+        if (scipp::size(labels) != values.ndim() - scipp::index(sizeof...(N)))
+          throw std::runtime_error("bad shape to make structured type");
+        auto var = variable::make_structures<T, Elem>(
+            Dimensions(labels,
+                       std::vector<scipp::index>(
+                           values.shape(), values.shape() + labels.size())),
+            unit,
+            element_array<Elem>(values.size(), core::default_init_elements));
+        auto elems = var.template elements<T>();
+        if constexpr (sizeof...(N) != 1)
+          elems = fold(elems, Dim::Internal0,
+                       Dimensions({Dim::Internal0, Dim::Internal1},
+                                  {scipp::index(N)...}));
+        copy_array_into_view(values, elems.template values<Elem>(),
+                             elems.dims());
+        return var;
+      },
+      py::arg("dims"), py::arg("values"), py::arg("unit") = units::one);
+}
+
+void require(const Variable &var, Eigen::Vector3d) {
+  if (var.dtype() != dtype<Eigen::Vector3d>)
+    throw except::TypeError(
+        "Vector element access properties `x1`, `x2`, and `x3` not "
+        "supported for dtype=" +
+        to_string(var.dtype()));
+}
+
+void require(const Variable &var, Eigen::Matrix3d) {
+  if (var.dtype() != dtype<Eigen::Matrix3d>)
+    throw except::TypeError(
+        "Matrix element access properties `x11`, `x12`, ... not "
+        "supported for dtype=" +
+        to_string(var.dtype()));
+}
+
+template <class T, scipp::index... I>
+void bind_elem_property(py::class_<Variable> &v, const char *name) {
+  v.def_property(
+      name,
+      [](Variable &self) {
+        require(self, T{});
+        return self.elements<T>(I...);
+      },
+      [](Variable &self, const Variable &elems) {
+        require(self, T{});
+        copy(elems, self.elements<T>(I...));
+      });
 }
 
 void init_variable(py::module &m) {
-  py::class_<Variable> variable(m, "Variable",
+  // Needed to let numpy arrays keep alive the scipp buffers.
+  // VariableConcept must ALWAYS be passed to Python by its handle.
+  py::class_<VariableConcept, VariableConceptHandle> variable_concept(
+      m, "_VariableConcept");
+
+  py::class_<Variable> variable(m, "Variable", py::dynamic_attr(),
                                 R"(
 Array of values with dimension labels and a unit, optionally including an array
 of variances.)");
@@ -158,8 +186,6 @@ of variances.)");
   bind_init_0D<DataArray>(variable);
   bind_init_0D<Dataset>(variable);
   bind_init_0D<std::string>(variable);
-  bind_init_0D<Eigen::Vector3d>(variable);
-  bind_init_0D<Eigen::Matrix3d>(variable);
   variable
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
@@ -202,7 +228,12 @@ of variances.)");
           [](Variable &a, int &b) { return (b * units::one) / a; },
           py::is_operator())
       .def("__sizeof__",
-           py::overload_cast<const VariableConstView &>(&size_of));
+           [](const Variable &self) {
+             return size_of(self, SizeofTag::ViewOnly);
+           })
+      .def("underlying_size", [](const Variable &self) {
+        return size_of(self, SizeofTag::Underlying);
+      });
 
   bind_init_list(variable);
   // Order matters for pybind11's overload resolution. Do not change.
@@ -211,136 +242,61 @@ of variances.)");
   bind_init_0D_native_python_types<int64_t>(variable);
   bind_init_0D_native_python_types<double>(variable);
   bind_init_0D<py::object>(variable);
-  bind_init_0D_list_eigen(variable);
   //------------------------------------
 
-  py::class_<VariableConstView> variableConstView(m, "VariableConstView");
-  variableConstView.def(py::init<const Variable &>())
-      .def("__sizeof__",
-           py::overload_cast<const VariableConstView &>(&size_of));
-
-  py::class_<VariableView, VariableConstView> variableView(m, "VariableView",
-                                                           R"(
-View for Variable, representing a sliced or transposed view onto a variable;
-Mostly equivalent to Variable, see there for details.)");
-  variableView.def(py::init<Variable &>())
-      .def(
-          "__radd__",
-          [](VariableView &a, double &b) { return a + b * units::one; },
-          py::is_operator())
-      .def(
-          "__rsub__",
-          [](VariableView &a, double &b) { return b * units::one - a; },
-          py::is_operator())
-      .def(
-          "__rmul__",
-          [](VariableView &a, double &b) { return a * (b * units::one); },
-          py::is_operator());
-
   bind_common_operators(variable);
-  bind_common_operators(variableConstView);
 
   bind_astype(variable);
-  bind_astype(variableView);
 
   bind_slice_methods(variable);
-  bind_slice_methods(variableView);
 
   bind_comparison<Variable>(variable);
-  bind_comparison<VariableConstView>(variable);
-  bind_comparison<Variable>(variableView);
-  bind_comparison<VariableConstView>(variableView);
-  bind_comparison<DataArrayConstView>(variableView);
 
   bind_in_place_binary<Variable>(variable);
-  bind_in_place_binary<VariableConstView>(variable);
-  bind_in_place_binary<Variable>(variableView);
-  bind_in_place_binary<VariableConstView>(variableView);
   bind_in_place_binary_scalars(variable);
-  bind_in_place_binary_scalars(variableView);
 
   bind_binary<Variable>(variable);
-  bind_binary<VariableConstView>(variable);
-  bind_binary<DataArrayView>(variable);
-  bind_binary<Variable>(variableView);
-  bind_binary<VariableConstView>(variableView);
-  bind_binary<DataArrayView>(variableView);
+  bind_binary<DataArray>(variable);
   bind_binary_scalars(variable);
-  bind_binary_scalars(variableView);
 
   bind_unary(variable);
-  bind_unary(variableView);
 
   bind_boolean_unary(variable);
-  bind_boolean_unary(variableView);
   bind_logical<Variable>(variable);
-  bind_logical<Variable>(variableView);
 
   bind_data_properties(variable);
-  bind_data_properties(variableView);
 
   py::implicitly_convertible<std::string, Dim>();
-  py::implicitly_convertible<Variable, VariableConstView>();
-  py::implicitly_convertible<Variable, VariableView>();
-
-  m.def(
-      "filter", py::overload_cast<const Variable &, const Variable &>(&filter),
-      py::arg("x"), py::arg("filter"), py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description(
-              "Selects elements for a Variable using a filter (mask).\n\n"
-              "The filter variable must be 1D and of bool type. "
-              "A true value in the filter means the corresponding element in "
-              "the input is "
-              "selected and will be copied to the output. "
-              "A false value in the filter discards the corresponding element "
-              "in the input.")
-          .raises("If the filter variable is not 1 dimensional.")
-          .returns("New variable containing the data selected by the filter.")
-          .rtype("Variable")
-          .param("x", "Variable to filter.", "Variable.")
-          .param("filter", "Variable which defines the filter.", "Variable.")
-          .c_str());
-
-  m.def("split",
-        py::overload_cast<const Variable &, const Dim,
-                          const std::vector<scipp::index> &>(&split),
-        py::call_guard<py::gil_scoped_release>(),
-        "Split a Variable along a given Dimension.");
 
   m.def(
       "islinspace",
-      [](const VariableConstView &x) {
+      [](const Variable &x) {
         if (x.dims().ndim() != 1)
           throw scipp::except::VariableError(
               "islinspace can only be called on a 1D Variable.");
         else
           return scipp::numeric::islinspace(x.template values<double>());
       },
-      py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description("Check if the values of a variable are evenly spaced.")
-          .returns("Returns True if the variable contains regularly spaced "
-                   "values, False otherwise.")
-          .rtype("bool")
-          .c_str());
+      py::call_guard<py::gil_scoped_release>());
 
   m.def("rebin",
-        py::overload_cast<const VariableConstView &, const Dim,
-                          const VariableConstView &, const VariableConstView &>(
-            &rebin),
+        py::overload_cast<const Variable &, const Dim, const Variable &,
+                          const Variable &>(&rebin),
         py::arg("x"), py::arg("dim"), py::arg("old"), py::arg("new"),
-        py::call_guard<py::gil_scoped_release>(),
-        Docstring()
-            .description("Rebin a dimension of a variable.")
-            .raises("If data cannot be rebinned, e.g., if the unit is not "
-                    "counts, or the existing coordinate is not a bin-edge "
-                    "coordinate.")
-            .returns("Data rebinned according to the new bin edges.")
-            .rtype("Variable")
-            .param("x", "Data to rebin.", "Variable")
-            .param("dim", "Dimension to rebin over.", "Dim")
-            .param("old", "Old bin edges.", "Variable")
-            .param("new", "New bin edges.", "Variable")
-            .c_str());
+        py::call_guard<py::gil_scoped_release>());
+
+  bind_structured_creation<Eigen::Vector3d, double, 3>(m, "vectors");
+  bind_structured_creation<Eigen::Matrix3d, double, 3, 3>(m, "matrices");
+  bind_elem_property<Eigen::Vector3d, 0>(variable, "x1");
+  bind_elem_property<Eigen::Vector3d, 1>(variable, "x2");
+  bind_elem_property<Eigen::Vector3d, 2>(variable, "x3");
+  bind_elem_property<Eigen::Matrix3d, 0, 0>(variable, "x11");
+  bind_elem_property<Eigen::Matrix3d, 0, 1>(variable, "x12");
+  bind_elem_property<Eigen::Matrix3d, 0, 2>(variable, "x13");
+  bind_elem_property<Eigen::Matrix3d, 1, 0>(variable, "x21");
+  bind_elem_property<Eigen::Matrix3d, 1, 1>(variable, "x22");
+  bind_elem_property<Eigen::Matrix3d, 1, 2>(variable, "x23");
+  bind_elem_property<Eigen::Matrix3d, 2, 0>(variable, "x31");
+  bind_elem_property<Eigen::Matrix3d, 2, 1>(variable, "x32");
+  bind_elem_property<Eigen::Matrix3d, 2, 2>(variable, "x33");
 }

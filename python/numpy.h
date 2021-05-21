@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <functional>
 
+#include "scipp/common/index_composition.h"
 #include "scipp/core/parallel.h"
 #include "scipp/variable/variable.h"
 
@@ -131,14 +132,9 @@ void copy_flattened_4d(const py::array_t<T> &data, View &&view) {
 template <class T> auto memory_begin_end(const py::buffer_info &info) {
   auto *begin = static_cast<const T *>(info.ptr);
   auto *end = static_cast<const T *>(info.ptr);
-  const auto &shape = info.shape;
-  const auto &strides = info.strides;
-  for (scipp::index i = 0; i < scipp::size(shape); ++i)
-    if (strides[i] < 0)
-      begin += shape[i] * strides[i];
-    else
-      end += shape[i] * strides[i];
-  return std::pair{begin, end};
+  const auto [begin_offset, end_offset] =
+      memory_bounds(info.shape.begin(), info.shape.end(), info.strides.begin());
+  return std::pair{begin + begin_offset, end + end_offset};
 }
 
 template <class T, class View>
@@ -147,15 +143,12 @@ bool memory_overlaps(const py::array_t<T> &data, const View &view) {
   const auto [data_begin, data_end] = memory_begin_end<std::byte>(buffer_info);
   const auto begin = view.begin();
   const auto end = view.end();
-  if (begin == end) {
-    return false;
-  }
   const auto view_begin = reinterpret_cast<const std::byte *>(&*begin);
   const auto view_end = reinterpret_cast<const std::byte *>(&*end);
   // Note the use of std::less, pointer comparison with operator< may be
   // undefined behavior with pointers from different arrays.
   return std::less<>()(data_begin, view_end) &&
-         std::greater_equal<>()(data_end, view_begin);
+         std::greater<>()(data_end, view_begin);
 }
 
 /// Copy all elements from src into dst.

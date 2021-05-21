@@ -1,16 +1,10 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 
 import numpy as np
 import scipp as sc
 from .common import assert_export
-
-
-def test_reshape():
-    x = sc.array(dims=['x'], values=np.arange(6.0))
-    assert_export(sc.reshape, x=x, sizes={'x': 2, 'y': 3})
-    assert_export(sc.reshape, x=x, dims=['x', 'y'], shape=[2, 3])
 
 
 def test_fold():

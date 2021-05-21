@@ -1,12 +1,12 @@
 # ~~~
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
 set(TARGET_NAME "scipp-common")
 set(INC_FILES
-    include/scipp/common/index.h include/scipp/common/overloaded.h
-    include/scipp/common/reduction.h include/scipp/common/span.h
-    include/scipp/common/initialization.h
+    include/scipp/common/index.h include/scipp/common/index_composition.h
+    include/scipp/common/overloaded.h include/scipp/common/reduction.h
+    include/scipp/common/span.h include/scipp/common/initialization.h
 )
 
 add_library(${TARGET_NAME} INTERFACE)

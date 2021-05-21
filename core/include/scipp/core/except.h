@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 
 #include "scipp-core_export.h"
 #include "scipp/common/except.h"
@@ -20,6 +19,7 @@
 namespace scipp::core {
 
 class Dimensions;
+class Sizes;
 class Slice;
 
 } // namespace scipp::core
@@ -31,7 +31,7 @@ struct SCIPP_CORE_EXPORT TypeError : public Error<core::DType> {
 
   template <class... Vars>
   explicit TypeError(const std::string &msg, Vars &&... vars)
-      : TypeError{msg + ((to_string(vars.dtype()) + ' ') + ...)} {}
+      : TypeError{msg + ((pretty_dtype(vars) + ' ') + ...)} {}
 };
 
 template <>
@@ -47,9 +47,6 @@ template <>
 [[noreturn]] SCIPP_CORE_EXPORT void
 throw_mismatch_error(const core::Dimensions &expected,
                      const core::Dimensions &actual);
-
-[[noreturn]] SCIPP_CORE_EXPORT void
-throw_dimension_not_found_error(const core::Dimensions &expected, Dim actual);
 
 [[noreturn]] SCIPP_CORE_EXPORT void
 throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
@@ -78,6 +75,10 @@ struct SCIPP_CORE_EXPORT BinEdgeError : public std::runtime_error {
 struct SCIPP_CORE_EXPORT NotFoundError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
+
+[[noreturn]] SCIPP_CORE_EXPORT void
+throw_cannot_have_variances(const DType type);
+
 } // namespace scipp::except
 
 namespace scipp::expect {
@@ -85,6 +86,12 @@ template <class A, class B> void contains(const A &a, const B &b) {
   using core::to_string;
   if (!a.contains(b))
     throw except::NotFoundError("Expected " + to_string(a) + " to contain " +
+                                to_string(b) + ".");
+}
+template <class A, class B> void includes(const A &a, const B &b) {
+  using core::to_string;
+  if (!a.includes(b))
+    throw except::NotFoundError("Expected " + to_string(a) + " to include " +
                                 to_string(b) + ".");
 }
 } // namespace scipp::expect
@@ -127,12 +134,15 @@ template <class T> void countsOrCountsDensity(const T &object) {
                             object.unit().name() + '.');
 }
 
-void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
-void SCIPP_CORE_EXPORT validSlice(
-    const std::unordered_map<Dim, scipp::index> &dims, const Slice &slice);
+// TODO maybe just provide a `slice` function/method and check via that?
+void SCIPP_CORE_EXPORT validSlice(const Sizes &sizes, const Slice &slice);
 
 void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);
+template <class T> void canHaveVariances() {
+  if (!core::canHaveVariances<T>())
+    except::throw_cannot_have_variances(dtype<T>);
+}
 
 } // namespace scipp::core::expect

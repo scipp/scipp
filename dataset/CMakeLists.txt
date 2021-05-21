@@ -1,5 +1,5 @@
 # ~~~
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
 set(TARGET_NAME "scipp-dataset")
@@ -9,7 +9,6 @@ set(INC_FILES
     include/scipp/dataset/bins.h
     include/scipp/dataset/choose.h
     include/scipp/dataset/counts.h
-    include/scipp/dataset/dataset_access.h
     include/scipp/dataset/dataset.h
     include/scipp/dataset/dataset_util.h
     include/scipp/dataset/except.h
@@ -35,7 +34,6 @@ set(SRC_FILES
     bins.cpp
     counts.cpp
     data_array.cpp
-    dataset_access.cpp
     dataset.cpp
     except.cpp
     groupby.cpp

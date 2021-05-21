@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include "dataset_test_common.h"
 #include "test_macros.h"
@@ -40,11 +40,7 @@ TEST_F(HistogramHelpersTest, edge_dimension) {
 
   EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::X, coordX}})),
                except::BinEdgeError);
-  EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::X, coordY}})),
-               except::BinEdgeError);
   EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::Y, coordX}})),
-               except::BinEdgeError);
-  EXPECT_THROW(edge_dimension(DataArray(dataX, {{Dim::Y, coordY}})),
                except::BinEdgeError);
 
   // Coord length X is 2 and data does not depend on X, but this is *not*
@@ -58,7 +54,7 @@ TEST_F(HistogramHelpersTest, is_histogram) {
   EXPECT_TRUE(is_histogram(histX, Dim::X));
   EXPECT_FALSE(is_histogram(histX, Dim::Y));
   // Also for Dataset
-  const auto ds_histX = Dataset{DataArrayConstView{histX}};
+  const auto ds_histX = Dataset{histX};
   EXPECT_TRUE(is_histogram(ds_histX, Dim::X));
   EXPECT_FALSE(is_histogram(ds_histX, Dim::Y));
 
@@ -71,9 +67,7 @@ TEST_F(HistogramHelpersTest, is_histogram) {
   EXPECT_TRUE(is_histogram(histY2d, Dim::Y));
 
   EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::X, coordX}}), Dim::X));
-  EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::X, coordY}}), Dim::X));
   EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::Y, coordX}}), Dim::X));
-  EXPECT_FALSE(is_histogram(DataArray(dataX, {{Dim::Y, coordY}}), Dim::X));
 
   // Coord length X is 2 and data does not depend on X, but this is *not*
   // interpreted as a single-bin histogram.
@@ -85,8 +79,8 @@ DataArray make_1d_events_default_weights() {
       Dims{Dim::Event}, Shape{22},
       Values{1.5, 2.5, 3.5, 4.5, 5.5, 3.5, 4.5, 5.5, 6.5, 7.5, -1.0,
              0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 2.0, 4.0, 4.0, 4.0, 6.0});
-  const auto weights = broadcast(
-      makeVariable<double>(units::counts, Values{1}, Variances{1}), y.dims());
+  const auto weights = copy(broadcast(
+      makeVariable<double>(units::counts, Values{1}, Variances{1}), y.dims()));
   const DataArray table(weights, {{Dim::Y, y}});
   const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::X}, Shape{3},
@@ -106,8 +100,8 @@ TEST(HistogramTest, fail_edges_not_sorted) {
 auto make_single_events() {
   const auto x =
       makeVariable<double>(Dims{Dim::Event}, Shape{5}, Values{0, 1, 1, 2, 3});
-  const auto weights = broadcast(
-      makeVariable<double>(units::counts, Values{1}, Variances{1}), x.dims());
+  const auto weights = copy(broadcast(
+      makeVariable<double>(units::counts, Values{1}, Variances{1}), x.dims()));
   const DataArray table(weights, {{Dim::X, x}});
   const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       Values{std::pair{0, 5}});
@@ -118,7 +112,7 @@ auto make_single_events() {
 
 DataArray make_expected(const Variable &var, const Variable &edges) {
   auto dim = var.dims().inner();
-  std::map<Dim, Variable> coords = {{dim, edges}};
+  std::unordered_map<Dim, Variable> coords = {{dim, edges}};
   auto expected = DataArray(var, coords, {}, {}, "events");
   return expected;
 }

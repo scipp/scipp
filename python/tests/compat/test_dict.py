@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
@@ -30,9 +30,7 @@ def test_variable_0D_to_dict():
 
 
 def test_variable_vector_to_dict():
-    var = sc.Variable(['x'],
-                      values=np.random.random([10, 3]),
-                      dtype=sc.dtype.vector_3_float64)
+    var = sc.vectors(dims=['x'], values=np.random.random([10, 3]))
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == ['x']
     assert var_dict["shape"] == [10]
@@ -41,7 +39,7 @@ def test_variable_vector_to_dict():
 
 
 def test_variable_0D_vector_to_dict():
-    var = sc.Variable(value=[1, 2, 3], dtype=sc.dtype.vector_3_float64)
+    var = sc.vector(value=[1, 2, 3])
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == []
     assert var_dict["shape"] == []
@@ -56,10 +54,7 @@ def test_variable_matrix_to_dict():
         np.arange(1.0, 10.0).reshape(3, 3),
         np.arange(2.0, 11.0).reshape(3, 3)
     ])
-    var = sc.Variable(['x'],
-                      values=data,
-                      unit=sc.units.m,
-                      dtype=sc.dtype.matrix_3_float64)
+    var = sc.matrices(dims=['x'], values=data, unit=sc.units.m)
     var_dict = sc.to_dict(var)
     assert var_dict["shape"] == [4]
     assert var_dict["values"].shape == (4, 3, 3)
@@ -67,8 +62,7 @@ def test_variable_matrix_to_dict():
 
 
 def test_variable_0D_matrix_to_dict():
-    var = sc.Variable(value=np.arange(1, 10).reshape(3, 3),
-                      dtype=sc.dtype.matrix_3_float64)
+    var = sc.matrix(value=np.arange(1, 10).reshape(3, 3))
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == []
     assert var_dict["shape"] == []
@@ -166,14 +160,12 @@ def test_variable_0D_round_trip():
 
 
 def test_variable_vector_round_trip():
-    var = sc.Variable(['x'],
-                      values=np.random.random([10, 3]),
-                      dtype=sc.dtype.vector_3_float64)
+    var = sc.vectors(dims=['x'], values=np.random.random([10, 3]))
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
 def test_variable_0D_vector_round_trip():
-    var = sc.Variable(value=[1, 2, 3], dtype=sc.dtype.vector_3_float64)
+    var = sc.vector(value=[1, 2, 3])
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
@@ -184,16 +176,12 @@ def test_variable_matrix_round_trip():
         np.arange(1.0, 10.0).reshape(3, 3),
         np.arange(2.0, 11.0).reshape(3, 3)
     ])
-    var = sc.Variable(['x'],
-                      values=data,
-                      unit=sc.units.m,
-                      dtype=sc.dtype.matrix_3_float64)
+    var = sc.matrices(dims=['x'], values=data, unit=sc.units.m)
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
 def test_variable_0D_matrix_round_trip():
-    var = sc.Variable(value=np.arange(1, 10).reshape(3, 3),
-                      dtype=sc.dtype.matrix_3_float64)
+    var = sc.matrix(value=np.arange(1, 10).reshape(3, 3))
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 
@@ -283,15 +271,15 @@ def test_data_array_round_trip():
 
 def test_dataset_to_dict():
     ds = sc.Dataset()
-    ds.coords["x"] = sc.Variable(dims=["x"], values=np.arange(10))
-    ds.coords["y"] = sc.Variable(dims=["y"],
-                                 values=np.arange(5),
-                                 unit=sc.units.m)
     ds["a"] = sc.Variable(dims=["y", "x"], values=np.random.random([5, 10]))
     ds["b"] = sc.Variable(dims=["y", "x"],
                           values=np.random.random([5, 10]),
                           variances=np.random.random([5, 10]),
                           unit=sc.units.s)
+    ds.coords["x"] = sc.Variable(dims=["x"], values=np.arange(10))
+    ds.coords["y"] = sc.Variable(dims=["y"],
+                                 values=np.arange(5),
+                                 unit=sc.units.m)
     ds["a"].masks["amask"] = sc.Variable(
         dims=["y"], values=[True, True, False, True, False])
     # Note that attributes complicate things here, as they are duplicated in
@@ -359,15 +347,15 @@ def test_dataset_from_dict():
 
 def test_dataset_round_trip():
     ds = sc.Dataset()
-    ds.coords["x"] = sc.Variable(dims=["x"], values=np.arange(10))
-    ds.coords["y"] = sc.Variable(dims=["y"],
-                                 values=np.arange(5),
-                                 unit=sc.units.m)
     ds["a"] = sc.Variable(dims=["y", "x"], values=np.random.random([5, 10]))
     ds["b"] = sc.Variable(dims=["y", "x"],
                           values=np.random.random([5, 10]),
                           variances=np.random.random([5, 10]),
                           unit=sc.units.s)
+    ds.coords["x"] = sc.Variable(dims=["x"], values=np.arange(10))
+    ds.coords["y"] = sc.Variable(dims=["y"],
+                                 values=np.arange(5),
+                                 unit=sc.units.m)
     ds["a"].masks["amask"] = sc.Variable(
         dims=["y"], values=[True, True, False, True, False])
     # Note that round trip would not work if attrs are present, since they get

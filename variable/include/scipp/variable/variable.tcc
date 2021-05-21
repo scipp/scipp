@@ -1,24 +1,72 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/core/array_to_string.h"
 #include "scipp/core/dimensions.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
+#include "scipp/core/has_eval.h"
 #include "scipp/units/unit.h"
-#include "scipp/variable/data_model.h"
+#include "scipp/variable/element_array_model.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
+template <class T> struct model { using type = ElementArrayModel<T>; };
+template <class T> using model_t = typename model<T>::type;
+
+namespace {
+
+template <class T, class C> auto &requireT(C &varconcept) {
+  if (varconcept.dtype() != dtype<typename T::value_type>)
+    throw except::TypeError("Expected item dtype " +
+                            to_string(T::static_dtype()) + ", got " +
+                            to_string(varconcept.dtype()) + '.');
+  return static_cast<T &>(varconcept);
+}
+
+template <class T> const auto &cast(const Variable &var) {
+  return requireT<const model_t<T>>(var.data());
+}
+
+template <class T> auto &cast(Variable &var) {
+  return requireT<model_t<T>>(var.data());
+}
+
+template <class T>
+auto make_model(const units::Unit unit, const Dimensions &dimensions,
+                element_array<T> values,
+                std::optional<element_array<T>> variances) {
+  if constexpr (std::is_same_v<model_t<T>, ElementArrayModel<T>>) {
+    return std::make_unique<model_t<T>>(
+        dimensions.volume(), unit, std::move(values), std::move(variances));
+  } else {
+    // There is an extra copy caused here, but in practice this constructor
+    // should not be used much outside unit tests.
+    using Elem = typename model_t<T>::element_type;
+    element_array<Elem> elems;
+    if (values) {
+      auto begin = static_cast<Elem *>(&values.begin()->operator()(0));
+      auto end = begin + model_t<T>::element_count * values.size();
+      elems = element_array<Elem>{begin, end};
+    }
+    return std::make_unique<model_t<T>>(dimensions.volume(), unit,
+                                        std::move(elems));
+  }
+}
+
+} // namespace
+
 template <class T>
 Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                    T values_, std::optional<T> variances_)
-    : m_unit{unit},
-      m_object(std::make_unique<DataModel<typename T::value_type>>(
-          std::move(dimensions), std::move(values_), std::move(variances_))) {}
+    : m_dims(dimensions), m_strides(dimensions),
+      m_object(make_model(unit, dimensions, std::move(values_),
+                          std::move(variances_))) {}
 
 template <class T> ElementArrayView<const T> Variable::values() const {
   return cast<T>(*this).values(array_params());
@@ -27,33 +75,16 @@ template <class T> ElementArrayView<T> Variable::values() {
   return cast<T>(*this).values(array_params());
 }
 template <class T> ElementArrayView<const T> Variable::variances() const {
-  return cast<T>(*this).variances(array_params());
+  if constexpr (!core::canHaveVariances<T>())
+    except::throw_cannot_have_variances(core::dtype<T>);
+  else
+    return cast<T>(*this).variances(array_params());
 }
 template <class T> ElementArrayView<T> Variable::variances() {
-  return cast<T>(*this).variances(array_params());
-}
-
-template <class T> ElementArrayView<const T> VariableConstView::values() const {
-  return cast<T>(*m_variable).values(array_params());
-}
-template <class T>
-ElementArrayView<const T> VariableConstView::variances() const {
-  return cast<T>(*m_variable).variances(array_params());
-}
-
-template <class T> ElementArrayView<T> VariableView::values() const {
-  return cast<T>(*m_mutableVariable).values(array_params());
-}
-template <class T> ElementArrayView<T> VariableView::variances() const {
-  return cast<T>(*m_mutableVariable).variances(array_params());
-}
-
-template <class T> void VariableView::replace_model(T model) const {
-  core::expect::equals(dims(),
-                       m_mutableVariable->dims()); // trivial view (no slice)
-  core::expect::equals(dims(),
-                       model.dims()); // shape change would break DataArray
-  requireT<T>(m_mutableVariable->data()) = std::move(model);
+  if constexpr (!core::canHaveVariances<T>())
+    except::throw_cannot_have_variances(core::dtype<T>);
+  else
+    return cast<T>(*this).variances(array_params());
 }
 
 #define INSTANTIATE_VARIABLE_BASE(name, ...)                                   \
@@ -63,34 +94,22 @@ template <class T> void VariableView::replace_model(T model) const {
   }                                                                            \
   template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__> Variable::values() \
       const;                                                                   \
-  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::values();      \
-  template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
-  VariableConstView::values() const;                                           \
-  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> VariableView::values()   \
-      const;                                                                   \
-  template SCIPP_EXPORT void                                                   \
-      VariableView::replace_model<DataModel<__VA_ARGS__>>(                     \
-          DataModel<__VA_ARGS__>) const;
+  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::values();
 
-/// Macro for instantiating classes and functions required for support a new
-/// dtype in Variable.
-#define INSTANTIATE_VARIABLE(name, ...)                                        \
-  INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
+template <class T> std::string Formatter<T>::format(const Variable &var) const {
+  return array_to_string(var.template values<T>());
+}
+
+/// Insert classes into formatting registry. The objects themselves do nothing,
+/// but the constructor call with comma operator does the insertion. Calling
+/// this is required for formatting all but basic builtin types.
+#define REGISTER_FORMATTER(name, ...)                                          \
   namespace {                                                                  \
-  auto register_variable_maker_##name((                                        \
-      variableFactory().emplace(                                               \
-          dtype<__VA_ARGS__>, std::make_unique<VariableMaker<__VA_ARGS__>>()), \
-      0));                                                                     \
-  }                                                                            \
-  template SCIPP_EXPORT Variable::Variable(                                    \
-      const units::Unit, const Dimensions &, element_array<__VA_ARGS__>,       \
-      std::optional<element_array<__VA_ARGS__>>);                              \
-  template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
-  Variable::variances() const;                                                 \
-  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::variances();   \
-  template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
-  VariableConstView::variances() const;                                        \
-  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__>                          \
-  VariableView::variances() const;
+  auto register_##name(                                                        \
+      (variable::formatterRegistry().emplace(                                  \
+           dtype<__VA_ARGS__>,                                                 \
+           std::make_unique<variable::Formatter<__VA_ARGS__>>()),              \
+       0));                                                                    \
+  }
 
 } // namespace scipp::variable

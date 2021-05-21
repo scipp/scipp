@@ -1,5 +1,5 @@
 # ~~~
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
 
@@ -74,7 +74,7 @@ add_executable(
   element_array_view_benchmark EXCLUDE_FROM_ALL
   element_array_view_benchmark.cpp
 )
-# add_dependencies(all-benchmarks element_array_view_benchmark)
+add_dependencies(all-benchmarks element_array_view_benchmark)
 target_link_libraries(
   element_array_view_benchmark LINK_PRIVATE scipp-core benchmark
 )

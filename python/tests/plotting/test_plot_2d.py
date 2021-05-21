@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
@@ -172,16 +172,13 @@ def test_plot_string_and_vector_axis_labels_2d():
     for i in range(N):
         vecs.append(np.random.random(3))
     d = sc.Dataset()
-    d.coords['x'] = sc.Variable(['x'],
-                                values=vecs,
-                                unit=sc.units.m,
-                                dtype=sc.dtype.vector_3_float64)
-    d.coords['y'] = sc.Variable(['y'],
-                                values=['a', 'b', 'c', 'd', 'e'],
-                                unit=sc.units.m)
     d['Signal'] = sc.Variable(['y', 'x'],
                               values=np.random.random([M, N]),
                               unit=sc.units.counts)
+    d.coords['x'] = sc.vectors(dims=['x'], values=vecs, unit=sc.units.m)
+    d.coords['y'] = sc.Variable(['y'],
+                                values=['a', 'b', 'c', 'd', 'e'],
+                                unit=sc.units.m)
     plot(d)
 
 
@@ -192,15 +189,15 @@ def test_plot_2d_with_dimension_of_size_1():
     y = np.arange(M, dtype=np.float64)
     z = np.arange(M + 1, dtype=np.float64)
     d = sc.Dataset()
-    d.coords['x'] = sc.Variable(['x'], values=x, unit=sc.units.m)
-    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
-    d.coords['z'] = sc.Variable(['z'], values=z, unit=sc.units.m)
     d['a'] = sc.Variable(['y', 'x'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
     d['b'] = sc.Variable(['z', 'x'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
+    d.coords['x'] = sc.Variable(['x'], values=x, unit=sc.units.m)
+    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
+    d.coords['z'] = sc.Variable(['z'], values=z, unit=sc.units.m)
     plot(d['a'])
     plot(d['b'])
 
@@ -295,11 +292,11 @@ def test_plot_2d_image_int_coords():
     x = np.arange(N + 1)
     y = np.arange(M)
     d = sc.Dataset()
-    d.coords['x'] = sc.Variable(['x'], values=x, unit=sc.units.m)
-    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
     d['a'] = sc.Variable(['y', 'x'],
                          values=np.random.random([M, N]),
                          unit=sc.units.K)
+    d.coords['x'] = sc.Variable(['x'], values=x, unit=sc.units.m)
+    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
     plot(d)
 
 

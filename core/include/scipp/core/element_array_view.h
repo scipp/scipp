@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -9,6 +9,8 @@
 #include <boost/iterator/iterator_facade.hpp>
 
 #include "scipp/core/dimensions.h"
+#include "scipp/core/sizes.h"
+#include "scipp/core/strides.h"
 #include "scipp/core/view_index.h"
 
 namespace scipp::core {
@@ -27,10 +29,10 @@ class ElementArrayViewParams_iterator
 public:
   ElementArrayViewParams_iterator(T *variable,
                                   const Dimensions &targetDimensions,
-                                  const Dimensions &dimensions,
+                                  const Strides &strides,
                                   const scipp::index index)
-      : m_variable(variable), m_index(targetDimensions, dimensions) {
-    m_index.setIndex(index);
+      : m_variable(variable), m_index(targetDimensions, strides) {
+    m_index.set_index(index);
   }
 
 private:
@@ -41,12 +43,12 @@ private:
   }
   constexpr void increment() noexcept { m_index.increment(); }
   auto &dereference() const { return m_variable[m_index.get()]; }
-  void decrement() { m_index.setIndex(m_index.index() - 1); }
+  void decrement() { m_index.set_index(m_index.index() - 1); }
   void advance(int64_t delta) {
     if (delta == 1)
       increment();
     else
-      m_index.setIndex(m_index.index() + delta);
+      m_index.set_index(m_index.index() + delta);
   }
   int64_t distance_to(const ElementArrayViewParams_iterator &other) const {
     return static_cast<int64_t>(other.m_index.index()) -
@@ -60,39 +62,40 @@ private:
 /// Base class for ElementArrayView<T> with functionality independent of T.
 class SCIPP_CORE_EXPORT ElementArrayViewParams {
 public:
-  ElementArrayViewParams(const scipp::index offset, const Dimensions &iterDims,
-                         const Dimensions &dataDims,
-                         const BucketParams &bucketParams);
+  ElementArrayViewParams(scipp::index offset, const Dimensions &iter_dims,
+                         const Strides &strides,
+                         const BucketParams &bucket_params);
   ElementArrayViewParams(const ElementArrayViewParams &other,
                          const Dimensions &iterDims);
 
-  ViewIndex begin_index() const noexcept { return {m_iterDims, m_dataDims}; }
-  ViewIndex end_index() const noexcept {
-    ViewIndex i{m_iterDims, m_dataDims};
-    i.setIndex(size());
+  [[nodiscard]] ViewIndex begin_index() const noexcept {
+    return {m_iterDims, m_strides};
+  }
+  [[nodiscard]] ViewIndex end_index() const noexcept {
+    ViewIndex i{m_iterDims, m_strides};
+    i.set_to_end();
     return i;
   }
 
-  scipp::index size() const { return m_iterDims.volume(); }
-  constexpr scipp::index offset() const noexcept { return m_offset; }
-  constexpr const Dimensions &dims() const noexcept { return m_iterDims; }
-  constexpr const Dimensions &dataDims() const noexcept { return m_dataDims; }
-  constexpr const BucketParams &bucketParams() const noexcept {
+  [[nodiscard]] scipp::index size() const { return m_iterDims.volume(); }
+  [[nodiscard]] constexpr scipp::index offset() const noexcept {
+    return m_offset;
+  }
+  [[nodiscard]] constexpr const Dimensions &dims() const noexcept {
+    return m_iterDims;
+  }
+  [[nodiscard]] const Strides &strides() const noexcept { return m_strides; }
+  [[nodiscard]] constexpr const BucketParams &bucketParams() const noexcept {
     return m_bucketParams;
   }
 
-  bool overlaps(const ElementArrayViewParams &other) const {
-    // TODO We could be less restrictive here and use a more sophisticated check
-    // based on offsets and dimensions, if there is a performance issue due to
-    // this current stricter requirement.
-    return (m_offset != other.m_offset) || (m_dataDims != other.m_dataDims);
-  }
+  [[nodiscard]] bool overlaps(const ElementArrayViewParams &other) const;
 
 protected:
   void requireContiguous() const;
   scipp::index m_offset{0};
   Dimensions m_iterDims;
-  Dimensions m_dataDims;
+  Strides m_strides;
   BucketParams m_bucketParams{};
 };
 
@@ -106,9 +109,9 @@ public:
 
   /// Construct an ElementArrayView over given buffer.
   ElementArrayView(T *buffer, const scipp::index offset,
-                   const Dimensions &iterDims, const Dimensions &dataDims,
+                   const Dimensions &iterDims, const Strides &strides,
                    const BucketParams &bucketParams = BucketParams{})
-      : ElementArrayViewParams(offset, iterDims, dataDims, bucketParams),
+      : ElementArrayViewParams(offset, iterDims, strides, bucketParams),
         m_buffer(buffer) {}
 
   /// Construct an ElementArrayView over given buffer.
@@ -122,10 +125,10 @@ public:
       : ElementArrayViewParams(other, iterDims), m_buffer(other.buffer()) {}
 
   iterator begin() const {
-    return {m_buffer + m_offset, m_iterDims, m_dataDims, 0};
+    return {m_buffer + m_offset, m_iterDims, m_strides, 0};
   }
   iterator end() const {
-    return {m_buffer + m_offset, m_iterDims, m_dataDims, size()};
+    return {m_buffer + m_offset, m_iterDims, m_strides, size()};
   }
   auto &operator[](const scipp::index i) const { return *(begin() + i); }
 

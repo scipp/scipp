@@ -52,13 +52,13 @@ Currently the only example for this is `scippneutron <https://scipp.github.io/sc
 News
 ----
 
-- Scipp is moving from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
+- Scipp changed from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
 - Looking for ``scipp.neutron``?
   This submodule has been moved into its own package, `scippneutron <https://scipp.github.io/scippneutron>`_.
 - [March 2021] `scipp-0.6 <https://scipp.github.io/about/release-notes.html#v0-6-0-march-2021>`_ has been released.
-  The `What's new <https://scipp.github.io/release/0.6.0/about/whats-new/whats-new-0.6.0.html>`_ notebook provides an overview of the highlights and major changes.
+  The `What's new 0.6 <https://scipp.github.io/release/0.6.0/about/whats-new/whats-new-0.6.0.html>`_ notebook provides an overview of the highlights and major changes.
 - [Janunary 2021] `scipp-0.5 <https://scipp.github.io/about/release-notes.html#v0-5-0-january-2021>`_ has been released.
-  The `What's new <https://scipp.github.io/release/0.5.0/about/whats-new/whats-new-0.5.0.html>`_ notebook provides an overview of the highlights and major changes.
+  The `What's new 0.5 <https://scipp.github.io/release/0.5.0/about/whats-new/whats-new-0.5.0.html>`_ notebook provides an overview of the highlights and major changes.
 
 Where can I get help?
 ---------------------
@@ -67,7 +67,7 @@ For questions not answered in the documentation
 `this page <https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion>`_
 provides a forum with discussions on problems already met/solved in the community.
 
-New question can be asked by
+New questions can be asked by
 `opening <https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=>`_
 a new |QuestionLabel|_ issue.
 
@@ -82,9 +82,9 @@ Documentation
    :maxdepth: 3
 
    getting-started/overview
-   getting-started/faq
    getting-started/installation
    getting-started/quick-start
+   getting-started/faq
 
 .. toctree::
    :caption: User Guide
@@ -106,11 +106,19 @@ Documentation
 
    visualization/representations-and-tables
    visualization/plotting-overview
-   visualization/plotting-1d-data
-   visualization/plotting-2d-data
-   visualization/plotting-nd-data
-   visualization/customizing-figures
-   visualization/datetime_handling
+   visualization/plotting-in-depth
+
+.. toctree::
+   :caption: Reference
+   :maxdepth: 3
+
+   reference/api
+   reference/linear-algebra
+   reference/dtype
+   reference/units
+   reference/error-propagation
+   reference/runtime-configuration
+   reference/developer-documentation
 
 .. toctree::
    :caption: Tutorials
@@ -118,34 +126,6 @@ Documentation
 
    tutorials/introduction
    tutorials/multi-d-datasets
-
-.. toctree::
-   :caption: Reference
-   :maxdepth: 3
-
-   python-reference/api
-   python-reference/dtype
-   python-reference/units
-   python-reference/error-propagation
-   python-reference/runtime-configuration
-
-.. toctree::
-   :caption: Developer Documentation
-   :maxdepth: 2
-
-   developer/getting-started
-   developer/tooling
-   developer/dependencies
-   developer/coding-conventions
-   developer/how-to
-   developer/transform
-   developer/constructing_variables
-   developer/variable_implementation
-   developer/customizing
-   developer/api
-   developer/concepts
-   developer/architecture-decision-records
-   developer/deployment
 
 .. toctree::
    :caption: About

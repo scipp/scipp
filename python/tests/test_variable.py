@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
@@ -167,10 +167,9 @@ def test_create_1D_string():
 
 
 def test_create_1D_vector_3_float64():
-    var = sc.Variable(dims=['x'],
-                      values=[[1, 2, 3], [4, 5, 6]],
-                      unit=sc.units.m,
-                      dtype=sc.dtype.vector_3_float64)
+    var = sc.vectors(dims=['x'],
+                     values=[[1, 2, 3], [4, 5, 6]],
+                     unit=sc.units.m)
     assert len(var.values) == 2
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
     np.testing.assert_array_equal(var.values[1], [4, 5, 6])
@@ -361,7 +360,6 @@ def test_slicing():
     for slice_, expected in ((slice(0, 2), [0, 1]), (slice(-3, -1), [0, 1]),
                              (slice(2, 1), [])):
         var_slice = var[('x', slice_)]
-        assert isinstance(var_slice, sc.VariableView)
         assert len(var_slice.values) == len(expected)
         assert np.array_equal(var_slice.values, np.array(expected))
 

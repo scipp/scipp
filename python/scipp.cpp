@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -13,9 +13,7 @@ void init_counts(py::module &);
 void init_creation(py::module &);
 void init_cumulative(py::module &);
 void init_dataset(py::module &);
-void init_detail(py::module &);
 void init_dtype(py::module &);
-void init_eigen(py::module &);
 void init_element_array_view(py::module &);
 void init_exceptions(py::module &);
 void init_groupby(py::module &);
@@ -26,7 +24,7 @@ void init_shape(py::module &);
 void init_reduction(py::module &);
 void init_trigonometry(py::module &);
 void init_unary(py::module &);
-void init_units_neutron(py::module &);
+void init_units(py::module &);
 void init_variable(py::module &);
 
 void init_generated_arithmetic(py::module &);
@@ -39,8 +37,7 @@ void init_generated_special_values(py::module &);
 
 void init_core(py::module &m) {
   auto core = m.def_submodule("core");
-  init_units_neutron(core);
-  init_eigen(core);
+  init_units(core);
   init_exceptions(core);
   init_dtype(core);
   init_variable(core);
@@ -82,5 +79,4 @@ PYBIND11_MODULE(_scipp, m) {
   m.attr("_debug_") = py::cast(true);
 #endif
   init_core(m);
-  init_detail(m);
 }

@@ -6,11 +6,10 @@ import operator
 import uuid
 from functools import partial, reduce
 from html import escape
-import sys
 
 from .._scipp import core as sc
 from .._utils import is_data_array, is_dataset
-from .resources import load_icons, load_style
+from .resources import load_icons
 
 BIN_EDGE_LABEL = "[bin-edge]"
 VARIANCE_PREFIX = "σ² = "
@@ -48,15 +47,12 @@ def _make_row(data_html, variances_html=None):
 
 def _format_non_events(var, has_variances):
     size = reduce(operator.mul, var.shape, 1)
+    if len(var.dims):
+        var = sc.flatten(var, var.dims, 'ignored')
     data = retrieve(var, variances=has_variances)
     # avoid unintentional indexing into value of 0-D data
     if len(var.shape) == 0:
-        data = [
-            data,
-        ]
-    # ravel avoids displaying square brackets in the output
-    if hasattr(data, 'ravel'):
-        data = data.ravel()
+        data = [data]
     s = _format_array(data, size, ellipsis_after=2)
     if has_variances:
         s = f'{VARIANCE_PREFIX}{s}'
@@ -382,7 +378,7 @@ def _mapping_section(mapping,
                      details_func=None,
                      max_items_collapse=None,
                      enabled=True):
-    n_items = len(mapping) if hasattr(mapping, "__len__") else 1
+    n_items = 1 if is_data_array(mapping) else len(mapping)
     collapsed = n_items >= max_items_collapse
 
     return collapsible_section(
@@ -449,19 +445,29 @@ def _obj_repr(header_components, sections):
                        for s in sections)
 
     return ("<div>"
-            f"{load_icons()}<style>{load_style()}</style>"
-            "<div class='sc-wrap sc-root'>"
+            f"{load_icons()}"
+            "<div class='sc-wrap'>"
             f"{header}"
             f"<ul class='sc-sections'>{sections}</ul>"
             "</div>"
             "</div>")
 
 
+def _format_size(obj):
+    view_size = obj.__sizeof__()
+    underlying_size = obj.underlying_size()
+    res = f"({human_readable_size(view_size)}"
+    if view_size != underlying_size:
+        res += " <span class='sc-underlying-size'>out of "\
+               f"{human_readable_size(underlying_size)}</span>"
+    return res + ")"
+
+
 def dataset_repr(ds):
     obj_type = "scipp.{}".format(type(ds).__name__)
     header_components = [
-        f"<div class='sc-obj-type'>{escape(obj_type)}"
-        f" ({human_readable_size(sys.getsizeof(ds))})</div>"
+        f"<div class='sc-obj-type'>{escape(obj_type)} " + _format_size(ds) +
+        "</div>"
     ]
 
     sections = [dim_section(ds)]
@@ -469,7 +475,7 @@ def dataset_repr(ds):
     if len(ds.coords) > 0:
         sections.append(coord_section(ds.coords, ds))
 
-    sections.append(data_section(ds if hasattr(ds, '__len__') else {'': ds}))
+    sections.append(data_section(ds if is_dataset(ds) else {'': ds}))
 
     if not is_dataset(ds):
         if len(ds.masks) > 0:
@@ -484,8 +490,8 @@ def variable_repr(var):
     obj_type = "scipp.{}".format(type(var).__name__)
 
     header_components = [
-        f"<div class='sc-obj-type'>{escape(obj_type)}"
-        f" ({human_readable_size(sys.getsizeof(var))})</div>"
+        f"<div class='sc-obj-type'>{escape(obj_type)} " + _format_size(var) +
+        "</div>"
     ]
 
     sections = [variable_section(var)]
@@ -502,3 +508,28 @@ def human_readable_size(size_in_bytes):
         return f'{size_in_bytes/(1024):.2f} KB'
 
     return f'{size_in_bytes} Bytes'
+
+
+def inject_style():
+    """
+    Add our CSS style to the HTML head so that it can be used by all
+    HTML and SVG output without duplicating it in every cell.
+    This also preserves the style when the output in Jupyter is cleared.
+
+    The style is only injected once per session.
+    """
+    if not inject_style._has_been_injected:
+        from IPython.display import display, Javascript
+        from .resources import load_style
+        # `display` claims that its parameter should be a tuple, but
+        # that does not seem to work in the case of Javascript.
+        display(
+            Javascript(f"""
+            const style = document.createElement('style');
+            style.textContent = String.raw`{load_style()}`;
+            document.head.append(style);
+            """))
+    inject_style._has_been_injected = True
+
+
+inject_style._has_been_injected = False

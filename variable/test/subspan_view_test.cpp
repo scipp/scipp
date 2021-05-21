@@ -1,10 +1,11 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "test_macros.h"
 
-#include "scipp/core/except.h"
+#include "scipp/variable/except.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
 
 using namespace scipp;
@@ -36,8 +37,10 @@ TEST_F(SubspanViewTest, values_length_0) {
   auto view = subspan_view(var.slice({Dim::X, 0, 0}), Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
   EXPECT_EQ(view.unit(), units::m);
-  EXPECT_TRUE(view.values<span<double>>()[0].empty());
-  EXPECT_TRUE(view.values<span<double>>()[1].empty());
+  // Note the `const` here: Temporary returned by `slice()` uses `const Variable
+  // &` overload.
+  EXPECT_TRUE(view.values<span<const double>>()[0].empty());
+  EXPECT_TRUE(view.values<span<const double>>()[1].empty());
   EXPECT_FALSE(view.hasVariances());
 }
 
@@ -55,14 +58,32 @@ TEST_F(SubspanViewTest, values_and_errors_length_0) {
   auto view = subspan_view(var_with_errors.slice({Dim::X, 0, 0}), Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
   EXPECT_EQ(view.unit(), units::m);
-  EXPECT_TRUE(view.values<span<double>>()[0].empty());
-  EXPECT_TRUE(view.values<span<double>>()[1].empty());
-  EXPECT_TRUE(view.variances<span<double>>()[0].empty());
-  EXPECT_TRUE(view.variances<span<double>>()[1].empty());
+  EXPECT_TRUE(view.values<span<const double>>()[0].empty());
+  EXPECT_TRUE(view.values<span<const double>>()[1].empty());
+  EXPECT_TRUE(view.variances<span<const double>>()[0].empty());
+  EXPECT_TRUE(view.variances<span<const double>>()[1].empty());
 }
 
 TEST_F(SubspanViewTest, view_of_const) {
   const auto &const_var = var;
   auto view = subspan_view(const_var, Dim::X);
   EXPECT_NO_THROW(view.values<span<const double>>());
+}
+
+TEST_F(SubspanViewTest, broadcast) {
+  const auto &broadcasted = broadcast(var.slice({Dim::Y, 0}), var.dims());
+  auto view = subspan_view(broadcasted, Dim::X);
+  EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
+  EXPECT_EQ(view.unit(), units::m);
+  EXPECT_TRUE(equals(view.values<span<const double>>()[0], {1, 2, 3}));
+  EXPECT_TRUE(equals(view.values<span<const double>>()[1], {1, 2, 3}));
+}
+
+TEST_F(SubspanViewTest, broadcast_mutable_fails) {
+  auto broadcasted = broadcast(var.slice({Dim::Y, 0}), var.dims());
+  // We could in principle return with dtype=span<const T> in this case, but in
+  // practice this is likely not useful since the caller of subspan_view
+  // typically expects that they can modify data.
+  EXPECT_THROW_DISCARD(subspan_view(broadcasted, Dim::X),
+                       except::VariableError);
 }

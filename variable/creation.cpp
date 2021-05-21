@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -20,7 +20,7 @@ Variable ones(const Dimensions &dims, const units::Unit &unit, const DType type,
   const auto prototype =
       variances ? Variable{type, Dimensions{}, unit, Values{1}, Variances{1}}
                 : Variable{type, Dimensions{}, unit, Values{1}};
-  return broadcast(prototype, dims);
+  return copy(broadcast(prototype, dims));
 }
 
 /// Create empty (uninitialized) variable with same parameters as prototype.
@@ -28,14 +28,13 @@ Variable ones(const Dimensions &dims, const units::Unit &unit, const DType type,
 /// If specified, `shape` defines the shape of the output. If `prototype`
 /// contains binned data `shape` may not be specified, instead `sizes` defines
 /// the sizes of the desired bins.
-Variable empty_like(const VariableConstView &prototype,
+Variable empty_like(const Variable &prototype,
                     const std::optional<Dimensions> &shape,
-                    const VariableConstView &sizes) {
+                    const Variable &sizes) {
   return variableFactory().empty_like(prototype, shape, sizes);
 }
 
-Variable special_like(const VariableConstView &prototype,
-                      const FillValue &fill) {
+Variable special_like(const Variable &prototype, const FillValue &fill) {
   if (fill == FillValue::ZeroNotBool)
     return transform(prototype, core::element::zeros_not_bool_like);
   if (fill == FillValue::True)

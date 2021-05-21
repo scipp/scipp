@@ -1,9 +1,9 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from typing import Union
+from typing import Union as _Union
 
 
 def isnan(x: _cpp.Variable) -> _cpp.Variable:
@@ -41,7 +41,7 @@ def isneginf(x: _cpp.Variable) -> _cpp.Variable:
     return _call_cpp_func(_cpp.isneginf, x)
 
 
-def to_unit(x: _cpp.Variable, unit: Union[_cpp.Unit, str]) -> _cpp.Variable:
+def to_unit(x: _cpp.Variable, unit: _Union[_cpp.Unit, str]) -> _cpp.Variable:
     """
     Convert the variable to a different unit.
 
@@ -51,6 +51,8 @@ def to_unit(x: _cpp.Variable, unit: Union[_cpp.Unit, str]) -> _cpp.Variable:
 
         var = 1.2 * sc.Unit('m')
         var_in_mm = sc.to_unit(var, unit='mm')
+
+    If the unit us unchanged the object is returned without making a deep copy.
 
     Raises an error if the input unit is not compatible with the provided
     unit, e.g., `m` cannot be converted to `s`.

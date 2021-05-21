@@ -1,7 +1,8 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/variable/bins.h"
 #include "scipp/variable/string.h"
 #include "scipp/variable/to_unit.h"
 #include "test_macros.h"
@@ -12,6 +13,15 @@ TEST(ToUnitTest, not_compatible) {
   const Dimensions dims(Dim::X, 2);
   const auto var = makeVariable<float>(dims, units::Unit("m"), Values{1, 2});
   EXPECT_THROW_DISCARD(to_unit(var, units::Unit("s")), except::UnitError);
+}
+
+TEST(ToUnitTest, buffer_handling) {
+  const Dimensions dims(Dim::X, 2);
+  const auto var = makeVariable<float>(dims, units::Unit("m"), Values{1, 2});
+  const auto same = to_unit(var, var.unit());
+  EXPECT_TRUE(same.is_same(var)); // not modified => not copied
+  const auto different = to_unit(var, units::Unit("mm"));
+  EXPECT_FALSE(different.is_same(var)); // modified => copied
 }
 
 TEST(ToUnitTest, same) {
@@ -73,9 +83,9 @@ TEST(ToUnitTest, time_point) {
 }
 
 TEST(ToUnitTest, time_point_bad_units) {
-  const auto do_to_unit = [](const char *initial, const char *final) {
+  const auto do_to_unit = [](const char *initial, const char *target) {
     return to_unit(makeVariable<core::time_point>(Dims{}, units::Unit(initial)),
-                   units::Unit(final));
+                   units::Unit(target));
   };
 
   // Conversions to or from time points with unit day or larger are complicated
@@ -83,19 +93,34 @@ TEST(ToUnitTest, time_point_bad_units) {
   const auto small_unit_names = {"h", "min", "s", "ns"};
   const auto large_unit_names = {"Y", "M", "D"};
   for (const char *initial : small_unit_names) {
-    for (const char *final : small_unit_names) {
-      EXPECT_NO_THROW_DISCARD(do_to_unit(initial, final));
+    for (const char *target : small_unit_names) {
+      EXPECT_NO_THROW_DISCARD(do_to_unit(initial, target));
     }
-    for (const char *final : large_unit_names) {
-      EXPECT_THROW_DISCARD(do_to_unit(initial, final), except::UnitError);
+    for (const char *target : large_unit_names) {
+      EXPECT_THROW_DISCARD(do_to_unit(initial, target), except::UnitError);
     }
   }
   for (const char *initial : large_unit_names) {
-    for (const char *final : small_unit_names) {
-      EXPECT_THROW_DISCARD(do_to_unit(initial, final), except::UnitError);
+    for (const char *target : small_unit_names) {
+      EXPECT_THROW_DISCARD(do_to_unit(initial, target), except::UnitError);
     }
-    for (const char *final : large_unit_names) {
-      EXPECT_THROW_DISCARD(do_to_unit(initial, final), except::UnitError);
+    for (const char *target : large_unit_names) {
+      if (initial == target)
+        EXPECT_NO_THROW_DISCARD(do_to_unit(initial, target));
+      else
+        EXPECT_THROW_DISCARD(do_to_unit(initial, target), except::UnitError);
     }
   }
+}
+
+TEST(ToUnitTest, binned) {
+  const auto indices = makeVariable<scipp::index_pair>(
+      Dims{Dim::Y}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 4}});
+  const auto input_buffer =
+      makeVariable<double>(Dims{Dim::X}, Shape{4},
+                           Values{1000, 2000, 3000, 4000}, units::Unit{"mm"});
+  const auto expected_buffer = to_unit(input_buffer, units::Unit("m"));
+  const auto var = make_bins(indices, Dim::X, input_buffer);
+  EXPECT_EQ(to_unit(var, units::Unit{"m"}),
+            make_bins(indices, Dim::X, expected_buffer));
 }

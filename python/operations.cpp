@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -20,35 +20,23 @@ namespace py = pybind11;
 
 auto get_sort_order(const std::string &order) {
   if (order == "ascending")
-    return variable::SortOrder::Ascending;
+    return SortOrder::Ascending;
   else if (order == "descending")
-    return variable::SortOrder::Descending;
+    return SortOrder::Descending;
   else
     throw std::runtime_error("Sort order must be 'ascending' or 'descending'");
 }
 
 template <typename T> void bind_dot(py::module &m) {
-  auto doc = Docstring()
-                 .description("Element-wise dot product.")
-                 .raises("If the dtype of the input is not vector_3_float64.")
-                 .returns("The dot product of the input vectors.")
-                 .rtype<T>()
-                 .template param<T>("x", "Input left hand side operand.")
-                 .template param<T>("y", "Input right hand side operand.");
   m.def(
-      "dot",
-      [](const typename T::const_view_type &x,
-         const typename T::const_view_type &y) { return dot(x, y); },
-      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
-      doc.c_str());
+      "dot", [](const T &x, const T &y) { return dot(x, y); }, py::arg("x"),
+      py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_sort(py::module &m) {
   m.def(
       "sort",
-      [](const typename T::const_view_type &x,
-         const typename Variable::const_view_type &key,
-         const std::string &order) {
+      [](const T &x, const Variable &key, const std::string &order) {
         return sort(x, key, get_sort_order(order));
       },
       py::arg("x"), py::arg("key"), py::arg("order"),
@@ -58,8 +46,7 @@ template <typename T> void bind_sort(py::module &m) {
 template <typename T> void bind_sort_dim(py::module &m) {
   m.def(
       "sort",
-      [](const typename T::const_view_type &x, const Dim &dim,
-         const std::string &order) {
+      [](const T &x, const Dim &dim, const std::string &order) {
         return sort(x, dim, get_sort_order(order));
       },
       py::arg("x"), py::arg("key"), py::arg("order"),
@@ -69,34 +56,17 @@ template <typename T> void bind_sort_dim(py::module &m) {
 void bind_issorted(py::module &m) {
   m.def(
       "issorted",
-      [](const VariableConstView &x, const Dim dim, const std::string &order) {
+      [](const Variable &x, const Dim dim, const std::string &order) {
         return issorted(x, dim, get_sort_order(order));
       },
       py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
-      py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description("Check if the values of a variable are sorted in.\n\nIf "
-                       "'order' is 'ascending' checks if values are "
-                       "non-decreasing along 'dim'. If 'order' is 'descending' "
-                       "checks if values are non-increasing along 'dim'.")
-          .param("x", "Variable to check.", "Variable")
-          .param("dim", "Dimension along which order is checked.", "Dim")
-          .param("order",
-                 "Sorted order. Valid options are 'ascending' and "
-                 "'descending'. Default is 'ascending'.",
-                 "str")
-          .returns(
-              "True if the variable values are monotonously ascending or "
-              "descending (depending on the requested order), False otherwise.")
-          .rtype("bool")
-          .c_str());
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_sort_variable(py::module &m) {
   m.def(
       "sort",
-      [](const typename T::const_view_type &x, const Dim dim,
-         const std::string &order) {
+      [](const T &x, const Dim dim, const std::string &order) {
         return sort(x, dim, get_sort_order(order));
       },
       py::arg("x"), py::arg("key"), py::arg("order") = "ascending",
@@ -115,12 +85,11 @@ void init_operations(py::module &m) {
   bind_sort_variable<Variable>(m);
   bind_issorted(m);
 
-  m.def("get_slice_params",
-        [](const VariableConstView &var, const VariableConstView &coord,
-           const VariableConstView &begin, const VariableConstView &end) {
-          const auto [dim, start, stop] =
-              get_slice_params(var.dims(), coord, begin, end);
-          // Do NOT release GIL since using py::slice
-          return std::tuple{dim.name(), py::slice(start, stop, 1)};
-        });
+  m.def("get_slice_params", [](const Variable &var, const Variable &coord,
+                               const Variable &begin, const Variable &end) {
+    const auto [dim, start, stop] =
+        get_slice_params(var.dims(), coord, begin, end);
+    // Do NOT release GIL since using py::slice
+    return std::tuple{dim.name(), py::slice(start, stop, 1)};
+  });
 }

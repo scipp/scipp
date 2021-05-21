@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -23,13 +23,13 @@ std::ostream &operator<<(std::ostream &os, const Dimensions &dims) {
 
 std::string to_string(const Dimensions &dims) {
   if (dims.empty())
-    return "{}";
-  std::string s = "{{";
+    return "()";
+  std::string s = "(";
   for (int32_t i = 0; i < scipp::size(dims.shape()); ++i)
-    s += to_string(dims.labels()[i]) + ", " + std::to_string(dims.shape()[i]) +
-         "}, {";
-  s.resize(s.size() - 3);
-  s += "}";
+    s += to_string(dims.labels()[i]) + ": " + std::to_string(dims.shape()[i]) +
+         ", ";
+  s.resize(s.size() - 2);
+  s += ")";
   return s;
 }
 

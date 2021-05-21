@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -54,8 +54,8 @@ template <class T> struct MakeVariableDefaultInit {
 
 template <class ST> struct MakeODFromNativePythonTypes {
   template <class T> struct Maker {
-    static Variable apply(const units::Unit unit, const ST &value,
-                          const std::optional<ST> &variance) {
+    static Variable apply([[maybe_unused]] const units::Unit unit,
+                          const ST &value, const std::optional<ST> &variance) {
       if constexpr (std::is_same_v<T, core::time_point>) {
         if constexpr (std::is_integral_v<ST>) {
           if (variance.has_value()) {
@@ -127,17 +127,6 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                                       values.shape() + values.ndim());
       return init_1D_no_variance(labels, shape,
                                  values.cast<std::vector<std::string>>(), unit);
-    }
-    if (dtypeTag == core::dtype<Eigen::Vector3d>) {
-      std::vector<scipp::index> shape(values.shape(),
-                                      values.shape() + values.ndim() - 1);
-      return init_1D_no_variance(
-          labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
-    } else if (dtypeTag == core::dtype<Eigen::Matrix3d>) {
-      std::vector<scipp::index> shape(values.shape(),
-                                      values.shape() + values.ndim() - 2);
-      return init_1D_no_variance(
-          labels, shape, values.cast<std::vector<Eigen::Matrix3d>>(), unit);
     }
   }
 

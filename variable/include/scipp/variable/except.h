@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -19,7 +19,11 @@ struct SCIPP_VARIABLE_EXPORT VariableError : public Error<variable::Variable> {
 
 template <>
 [[noreturn]] SCIPP_VARIABLE_EXPORT void
-throw_mismatch_error(const variable::VariableConstView &expected,
-                     const variable::VariableConstView &actual);
+throw_mismatch_error(const variable::Variable &expected,
+                     const variable::Variable &actual);
 
 } // namespace scipp::except
+
+namespace scipp::variable {
+SCIPP_VARIABLE_EXPORT std::string pretty_dtype(const Variable &var);
+}

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
@@ -17,17 +17,14 @@ def make_data_with_position_vectors():
     x = r * np.sin(theta) * np.sin(phi)
     y = r * np.sin(theta) * np.cos(phi)
     z = r * np.cos(theta)
-    tof = np.arange(M).astype(float)
+    tof = np.arange(M, dtype=np.float64)
     a = np.arange(M * N).reshape([M, N]) * np.sin(y)
     d = sc.Dataset()
-    d.coords['xyz'] = sc.Variable(['xyz'],
-                                  values=np.array([x, y, z]).T,
-                                  dtype=sc.dtype.vector_3_float64)
-    d.coords['pos'] = sc.Variable(['xyz'],
-                                  values=np.array([x, y, z]).T + 20.0,
-                                  dtype=sc.dtype.vector_3_float64)
-    d.coords['tof'] = sc.Variable(['tof'], values=tof)
     d['a'] = sc.Variable(['tof', 'xyz'], values=a)
+    d.coords['xyz'] = sc.vectors(dims=['xyz'], values=np.array([x, y, z]).T)
+    d.coords['pos'] = sc.vectors(dims=['xyz'],
+                                 values=np.array([x, y, z]).T + 20.0)
+    d.coords['tof'] = sc.Variable(['tof'], values=tof)
     return d
 
 
@@ -104,22 +101,18 @@ def test_plot_3d_with_2d_position_coordinate():
     ny = 40
     ntof = 10
 
-    xx, yy = np.meshgrid(
-        np.arange(nx).astype(np.float),
-        np.arange(ny).astype(np.float))
+    xx, yy = np.meshgrid(np.arange(nx, dtype=np.float64),
+                         np.arange(ny, dtype=np.float64))
     da = sc.DataArray(
         data=sc.Variable(['x', 'y', 'tof'],
                          values=np.arange(nx * ny *
                                           ntof).reshape(nx, ny, ntof)))
-    da.coords['pos'] = sc.reshape(
-        sc.Variable(['xyz'],
-                    values=np.array([xx, yy,
-                                     np.zeros_like(xx)]).T.reshape(nx * ny, 3),
-                    dtype=sc.dtype.vector_3_float64), {
-                        'x': nx,
-                        'y': ny
-                    })
+    da.coords['pos'] = sc.vectors(dims=['x', 'y'],
+                                  values=np.array([xx, yy,
+                                                   np.zeros_like(xx)
+                                                   ]).T.reshape(nx, ny, 3))
     da.coords['tof'] = sc.Variable(['tof'],
-                                   values=np.arange(ntof + 1).astype(np.float))
+                                   values=np.arange(ntof + 1,
+                                                    dtype=np.float64))
 
     plot(da, projection="3d", positions="pos")

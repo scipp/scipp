@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Igor Gudich & Neil Vaytet
@@ -9,7 +9,7 @@ from html import escape
 from . import config
 from . import _utils as su
 from ._scipp import core as sc
-from .html.resources import load_style
+from .html.formatting_html import inject_style
 
 
 def _make_table_sections(dict_of_variables):
@@ -178,6 +178,7 @@ def table(scipp_obj):
     The entries will be grouped by dimensions/coordinates.
     """
 
+    inject_style()
     from IPython.display import display
     tv = TableViewer(scipp_obj)
     display(tv.box)
@@ -264,7 +265,6 @@ class TableViewer:
             "scipp._scipp.core.", "").replace("'>", "")
 
         self.box = [
-            self.widgets.HTML(value=f"<style>{load_style()}</style>"),
             self.widgets.HTML(value=f"<span class='sc-title'>{title}</span>")
         ]
         self.tables = {}
@@ -314,7 +314,6 @@ class TableViewer:
                                          width="auto",
                                          display='flex',
                                          flex_flow='column'))
-        self.box.add_class('sc-root')  # needed to apply style
         return
 
     def make_dict(self):

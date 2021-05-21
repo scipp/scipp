@@ -1,17 +1,15 @@
 # ~~~
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
 set(TARGET_NAME "scipp-variable")
 set(INC_FILES
     ${variable_INC_FILES}
-    include/scipp/variable/apply.h
     include/scipp/variable/arithmetic.h
     include/scipp/variable/bins.h
     include/scipp/variable/bin_util.h
     include/scipp/variable/comparison.h
     include/scipp/variable/except.h
-    include/scipp/variable/indexed_slice_view.h
     include/scipp/variable/logical.h
     include/scipp/variable/math.h
     include/scipp/variable/misc_operations.h
@@ -23,6 +21,7 @@ set(INC_FILES
     include/scipp/variable/sort.h
     include/scipp/variable/special_values.h
     include/scipp/variable/string.h
+    include/scipp/variable/structures.h
     include/scipp/variable/subspan_view.h
     include/scipp/variable/transform.h
     include/scipp/variable/transform_subspan.h
@@ -40,6 +39,7 @@ set(SRC_FILES
     ${variable_SRC_FILES}
     arithmetic.cpp
     bins.cpp
+    bin_array_variable.cpp
     bin_detail.cpp
     bin_util.cpp
     comparison.cpp
@@ -56,6 +56,7 @@ set(SRC_FILES
     sort.cpp
     special_values.cpp
     string.cpp
+    structures.cpp
     subspan_view.cpp
     to_unit.cpp
     trigonometry.cpp
@@ -66,6 +67,7 @@ set(SRC_FILES
     variable.cpp
     variable_instantiate_basic.cpp
     variable_instantiate_bin_elements.cpp
+    variable_instantiate_linalg.cpp
     variable_instantiate_map_elements.cpp
     variable_instantiate_view_elements.cpp
 )

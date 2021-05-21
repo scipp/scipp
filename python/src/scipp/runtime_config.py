@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
@@ -77,7 +77,12 @@ defaults = {
         "linewidth": [1.5],
         # Default line style for 1D non-histogram plots
         "linestyle": ["none"],
+        # Default padding around matplotlib axes
         "padding": [0.05, 0.02, 1, 1],
+        # Default monitor pixel ratio for 3d plots.
+        # Set to > 1 for high density (e.g. retina) displays.
+        "pixel_ratio":
+        1.0,
     },
     # The colors for each dataset member used in table and show functions
     "colors": {

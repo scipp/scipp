@@ -1,9 +1,9 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from typing import Sequence
+from typing import Sequence as _Sequence
 
 
 def broadcast(x, dims, shape):
@@ -49,41 +49,6 @@ def concatenate(x, y, dim):
     :return: The absolute values of the input.
     """
     return _call_cpp_func(_cpp.concatenate, x, y, dim)
-
-
-def reshape(x, sizes=None, dims=None, shape=None):
-    """Reshape a variable.
-
-    Examples:
-      a = sc.array(dims=['x'], values=[1, 2, 3, 4, 5, 6])
-      sc.reshape(var, sizes={'y': 2, 'z': 3})
-      sc.reshape(var, dims=['y', 'z'], shape=(2, 3))
-
-    :param x: Variable to reshape.
-    :param sizes: A dict mapping new dims to new shapes.
-    :param dims: A list of new dims labels.
-    :param shape: A list of new dim shapes.
-    :type x: Variable
-    :type sizes: dict
-    :type dims: list[str]
-    :type shape: list[int]
-    :raises: If the volume of the old shape is not equal to the
-             volume of the new shape.
-    :return: Variable with requested dimension labels and shape.
-    """
-    if sizes is not None:
-        if (dims is not None) or (shape is not None):
-            raise RuntimeError(
-                "If sizes is defined, dims and shape must be None in reshape.")
-    else:
-        if (dims is None) or (shape is None):
-            raise RuntimeError(
-                "Both dims and shape must be defined for reshape.")
-
-    if dims is None:
-        return _call_cpp_func(_cpp.reshape, x, sizes)
-    else:
-        return _call_cpp_func(_cpp.reshape, x, dict(zip(dims, shape)))
 
 
 def fold(x, dim, sizes=None, dims=None, shape=None):
@@ -150,7 +115,7 @@ def flatten(x, dims=None, to=None):
     return _call_cpp_func(_cpp.flatten, x, dims, to)
 
 
-def transpose(x, dims: Sequence[str]):
+def transpose(x, dims: _Sequence[str]):
     """Transpose dimensions of a variable.
 
     :param x: Variable to transpose.

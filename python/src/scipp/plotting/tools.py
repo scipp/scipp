@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
@@ -129,9 +129,10 @@ def find_log_limits(x):
     To find log scale limits, we histogram the data between 1.0-30
     and 1.0e+30 and include only bins that are non-zero.
     """
+    from .. import flatten, ones
     volume = np.product(x.shape)
-    pixel = sc.reshape(sc.values(x), {'pixel': volume})
-    weights = sc.Variable(dims=['pixel'], values=np.ones(volume))
+    pixel = flatten(sc.values(x), to='pixel')
+    weights = ones(dims=['pixel'], shape=[volume])
     hist = sc.histogram(sc.DataArray(data=weights, coords={'order': pixel}),
                         bins=sc.Variable(dims=['order'],
                                          values=np.geomspace(1e-30,

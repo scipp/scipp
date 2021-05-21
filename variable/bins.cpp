@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -6,13 +6,15 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
-#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable_concept.h"
+
+#include "operations_common.h"
 
 namespace scipp::variable {
 
@@ -36,9 +38,8 @@ constexpr auto copy_spans = overloaded{
     }};
 } // namespace
 
-void copy_slices(const VariableConstView &src, const VariableView &dst,
-                 const Dim dim, const VariableConstView &srcIndices,
-                 const VariableConstView &dstIndices) {
+void copy_slices(const Variable &src, Variable dst, const Dim dim,
+                 const Variable &srcIndices, const Variable &dstIndices) {
   const auto [begin0, end0] = unzip(srcIndices);
   const auto [begin1, end1] = unzip(dstIndices);
   const auto sizes0 = end0 - begin0;
@@ -46,14 +47,14 @@ void copy_slices(const VariableConstView &src, const VariableView &dst,
   core::expect::equals(src.unit(), dst.unit());
   // May broadcast `src` but not `dst` since that would result in
   // multiple/conflicting writes to same bucket.
-  expect::contains(sizes1.dims(), sizes0.dims());
+  expect::includes(sizes1.dims(), sizes0.dims());
   core::expect::equals(all(equal(sizes0, sizes1)),
                        makeVariable<bool>(Values{true}));
   transform_in_place(subspan_view(dst, dim, dstIndices),
                      subspan_view(src, dim, srcIndices), copy_spans);
 }
 
-Variable resize_default_init(const VariableConstView &var, const Dim dim,
+Variable resize_default_init(const Variable &var, const Dim dim,
                              const scipp::index size) {
   auto dims = var.dims();
   if (dims.contains(dim))
@@ -69,30 +70,17 @@ Variable resize_default_init(const VariableConstView &var, const Dim dim,
 /// Each bin is represented by a VariableView. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, Variable buffer) {
-  return {std::make_unique<variable::DataModel<bucket<Variable>>>(
-      std::move(indices), dim, std::move(buffer))};
+  expect_valid_bin_indices(indices.data_handle(), dim, buffer.dims());
+  return make_bins_no_validate(std::move(indices), dim, buffer);
 }
 
-/// Construct non-owning binned variable of a mutable buffer.
+/// Construct a bin-variable over a variable without index validation.
 ///
-/// This is intented for internal and short-lived variables. The returned
-/// variable stores *views* onto `indices` and `buffer` rather than copying the
-/// data. This is, it does not own any or share ownership of any data.
-Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
-                              const VariableView &buffer) {
-  return {std::make_unique<variable::DataModel<bucket<VariableView>>>(
-      indices, dim, buffer)};
-}
-
-/// Construct non-owning binned variable of a const buffer.
-///
-/// This is intented for internal and short-lived variables. The returned
-/// variable stores *views* onto `indices` and `buffer` rather than copying the
-/// data. This is, it does not own any or share ownership of any data.
-Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
-                              const VariableConstView &buffer) {
-  return {std::make_unique<variable::DataModel<bucket<VariableConstView>>>(
-      indices, dim, buffer)};
+/// Must be used only when it is guaranteed that indices are valid or overlap of
+/// bins is acceptable.
+Variable make_bins_no_validate(Variable indices, const Dim dim,
+                               Variable buffer) {
+  return variable::make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
 } // namespace scipp::variable

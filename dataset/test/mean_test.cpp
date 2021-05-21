@@ -1,14 +1,31 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-#include "fix_typed_test_suite_warnings.h"
-#include "scipp/dataset/reduction.h"
-#include "test_nans.h"
 #include <gtest/gtest.h>
-#include <scipp/common/overloaded.h>
+
+#include "scipp/common/overloaded.h"
+#include "scipp/dataset/reduction.h"
+
+#include "fix_typed_test_suite_warnings.h"
+#include "test_nans.h"
+
+using namespace scipp;
+
+TEST(DatasetTest, sum_and_mean) {
+  Dataset ds;
+  ds.setData("a", makeVariable<float>(Dimensions{Dim::X, 3}, units::one,
+                                      Values{1, 2, 3}, Variances{12, 15, 18}));
+  EXPECT_EQ(sum(ds, Dim::X)["a"].data(),
+            makeVariable<float>(Values{6}, Variances{45}));
+  EXPECT_EQ(sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+            makeVariable<float>(Values{3}, Variances{27}));
+
+  EXPECT_EQ(mean(ds, Dim::X)["a"].data(),
+            makeVariable<float>(Values{2}, Variances{5.0}));
+  EXPECT_EQ(mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+            makeVariable<float>(Values{1.5}, Variances{6.75}));
+}
 
 namespace {
-using namespace scipp;
-using namespace scipp::dataset;
 
 using MeanTestTypes = testing::Types<int32_t, int64_t, float, double>;
 TYPED_TEST_SUITE(MeanTest, MeanTestTypes);

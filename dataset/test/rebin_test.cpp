@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include "test_macros.h"
 #include <gtest/gtest-matchers.h>
@@ -7,6 +7,7 @@
 #include "scipp/dataset/rebin.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/rebin.h"
+#include "scipp/variable/shape.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -146,15 +147,16 @@ TEST_F(RebinTest, rebin_with_ragged_coord) {
 
 TEST(RebinWithMaskTest, preserves_unrelated_mask) {
   Dataset ds;
+  ds.setData("data_xy", broadcast(makeVariable<double>(Dimensions{Dim::X, 5},
+                                                       Values{1, 2, 3, 4, 5}),
+                                  Dimensions({Dim::Y, Dim::X}, {5, 5})));
   ds.setCoord(Dim::X, makeVariable<double>(Dimensions{Dim::X, 6},
                                            Values{1, 2, 3, 4, 5, 6}));
-  ds.setData("data_x", makeVariable<double>(Dimensions{Dim::X, 5},
-                                            Values{1, 2, 3, 4, 5}));
 
-  ds["data_x"].masks().set(
+  ds["data_xy"].masks().set(
       "mask_x", makeVariable<bool>(Dimensions{Dim::X, 5},
                                    Values{false, false, true, false, false}));
-  ds["data_x"].masks().set(
+  ds["data_xy"].masks().set(
       "mask_y", makeVariable<bool>(Dimensions{Dim::Y, 5},
                                    Values{false, false, true, false, false}));
 
@@ -162,11 +164,12 @@ TEST(RebinWithMaskTest, preserves_unrelated_mask) {
       makeVariable<double>(Dimensions{Dim::X, 3}, Values{1, 3, 5});
   const Dataset result = rebin(ds, Dim::X, edges);
 
-  ASSERT_EQ(result["data_x"].data(),
-            makeVariable<double>(Dimensions{Dim::X, 2}, Values{3, 7}));
-  ASSERT_EQ(result["data_x"].masks()["mask_x"],
+  ASSERT_EQ(result["data_xy"].data(),
+            broadcast(makeVariable<double>(Dimensions{Dim::X, 2}, Values{3, 7}),
+                      Dimensions({Dim::Y, Dim::X}, {5, 2})));
+  ASSERT_EQ(result["data_xy"].masks()["mask_x"],
             makeVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true}));
   // the Y masks should not have been touched
-  ASSERT_EQ(ds["data_x"].masks().size(), 2);
-  ASSERT_EQ(ds["data_x"].masks()["mask_y"].dims(), Dimensions(Dim::Y, 5));
+  ASSERT_EQ(ds["data_xy"].masks().size(), 2);
+  ASSERT_EQ(ds["data_xy"].masks()["mask_y"].dims(), Dimensions(Dim::Y, 5));
 }

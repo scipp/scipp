@@ -1,5 +1,5 @@
 # ~~~
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
 set(TARGET_NAME "scipp-core-test")
@@ -7,6 +7,7 @@ add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
   dimensions_test.cpp
+  eigen_test.cpp
   element_array_test.cpp
   element_array_view_test.cpp
   element_arithmetic_test.cpp
@@ -22,6 +23,8 @@ add_executable(
   element_trigonometry_test.cpp
   element_util_test.cpp
   multi_index_test.cpp
+  slice_test.cpp
+  sizes_test.cpp
   string_test.cpp
   subbin_sizes_test.cpp
   time_point_test.cpp

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -8,6 +8,7 @@
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/histogram.h"
+#include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/misc_operations.h"
@@ -132,7 +133,7 @@ protected:
   Variable edges_y_coarse =
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{-2, -1, 2});
 
-  void expect_near(const DataArrayConstView &a, const DataArrayConstView &b) {
+  void expect_near(const DataArray &a, const DataArray &b) {
     const auto tolerance =
         values(max(buckets::sum(a.data())) * (1e-14 * units::one));
     EXPECT_TRUE(all(isclose(values(buckets::sum(a.data())),
@@ -342,7 +343,7 @@ TEST_P(BinTest, bin_by_group) {
   const auto table = GetParam();
   auto binned = bin(table, {}, {groups});
   // Currently `bin` is not removing coords used for grouping, see TODO.
-  std::get<2>(binned.data().constituents<core::bin<DataArray>>())
+  std::get<2>(binned.data().constituents<DataArray>())
       .coords()
       .erase(Dim("group"));
   // Using bin coord (instead of event coord) for binning.

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -7,206 +7,205 @@
 #include "scipp/variable/variable.h"
 
 #include "scipp/core/dtype.h"
-#include "scipp/core/except.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/creation.h"
+#include "scipp/variable/except.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/variable_concept.h"
 
 namespace scipp::variable {
 
-Variable::Variable(const VariableConstView &slice)
-    : Variable(empty_like(slice)) {
-  data().copy(slice, *this);
-}
-
 /// Construct from parent with same dtype, unit, and hasVariances but new dims.
 ///
 /// In the case of bucket variables the buffer size is set to zero.
 Variable::Variable(const Variable &parent, const Dimensions &dims)
-    : m_unit(parent.unit()),
-      m_object(parent.data().makeDefaultFromParent(dims)) {}
+    : m_dims(dims), m_strides(dims),
+      m_object(parent.data().makeDefaultFromParent(dims.volume())) {}
 
-Variable::Variable(const VariableConstView &parent, const Dimensions &dims)
-    : m_unit(parent.unit()),
-      m_object(parent.underlying().data().makeDefaultFromParent(dims)) {}
-
-Variable::Variable(const VariableConstView &parent, VariableConceptHandle data)
-    : m_unit(parent.unit()), m_object(std::move(data)) {}
-
-Variable::Variable(VariableConceptHandle data) : m_object(std::move(data)) {}
+// TODO there is no size check here!
+Variable::Variable(const Dimensions &dims, VariableConceptHandle data)
+    : m_dims(dims), m_strides(dims), m_object(std::move(data)) {}
 
 Variable::Variable(const llnl::units::precise_measurement &m)
     : Variable(m.value() * units::Unit(m.units())) {}
 
-VariableConstView::VariableConstView(const Variable &variable,
-                                     const Dimensions &dims)
-    : m_variable(&variable), m_dims(dims), m_dataDims(dims) {
-  // TODO implement reshape differently, not with a special constructor?
-  expect_same_volume(m_variable->dims(), dims);
+void Variable::setDataHandle(VariableConceptHandle object) {
+  if (object->size() != m_object->size())
+    throw except::DimensionError("Cannot replace by model of different size.");
+  m_object = object;
 }
 
-VariableConstView::VariableConstView(const VariableConstView &slice,
-                                     const Dim dim, const scipp::index begin,
-                                     const scipp::index end) {
-  *this = slice;
-  m_offset += begin * m_dataDims.offset(dim);
-  if (end == -1)
-    m_dims.erase(dim);
-  else
-    m_dims.resize(dim, end - begin);
-  // See implementation of ViewIndex regarding this relabeling.
-  for (const auto &label : m_dataDims.labels())
-    if (label != Dim::Invalid && !m_dims.contains(label))
-      m_dataDims.relabel(m_dataDims.index(label), Dim::Invalid);
+const Dimensions &Variable::dims() const {
+  if (!is_valid())
+    throw std::runtime_error("invalid variable");
+  return m_dims;
 }
 
-VariableView::VariableView(Variable &variable, const Dimensions &dims)
-    : VariableConstView(variable, dims), m_mutableVariable(&variable) {}
+DType Variable::dtype() const { return data().dtype(); }
 
-VariableView::VariableView(const VariableView &slice, const Dim dim,
-                           const scipp::index begin, const scipp::index end)
-    : VariableConstView(slice, dim, begin, end),
-      m_mutableVariable(slice.m_mutableVariable) {}
+bool Variable::hasVariances() const { return data().hasVariances(); }
 
-void Variable::setDims(const Dimensions &dimensions) {
-  if (dimensions.volume() == m_object->dims().volume()) {
-    if (dimensions != m_object->dims())
-      data().m_dimensions = dimensions;
-    return;
-  }
-  m_object = m_object->makeDefaultFromParent(dimensions);
-}
-
-bool Variable::operator==(const VariableConstView &other) const {
-  if (!*this || !other)
-    return static_cast<bool>(*this) == static_cast<bool>(other);
-  return data().equals(*this, other);
-}
-
-bool Variable::operator!=(const VariableConstView &other) const {
-  return !(*this == other);
-}
-
-Variable &Variable::assign(const VariableConstView &other) {
-  VariableView(*this).assign(other);
-  return *this;
-}
-
-template <class T> VariableView VariableView::assign(const T &other) const {
-  if (*this == VariableConstView(other))
-    return *this; // Self-assignment, return early.
-  underlying().data().copy(other, *this);
-  return *this;
-}
-
-template SCIPP_VARIABLE_EXPORT VariableView
-VariableView::assign(const Variable &) const;
-template SCIPP_VARIABLE_EXPORT VariableView
-VariableView::assign(const VariableConstView &) const;
-template SCIPP_VARIABLE_EXPORT VariableView
-VariableView::assign(const VariableView &) const;
-
-bool VariableConstView::operator==(const VariableConstView &other) const {
-  if (!*this || !other)
-    return static_cast<bool>(*this) == static_cast<bool>(other);
-  // Always use deep comparison (pointer comparison does not make sense since we
-  // may be looking at a different section).
-  return underlying().data().equals(*this, other);
-}
-
-bool VariableConstView::operator!=(const VariableConstView &other) const {
-  return !(*this == other);
-}
-
-void VariableView::setUnit(const units::Unit &unit) const {
-  expectCanSetUnit(unit);
-  m_mutableVariable->setUnit(unit);
-}
-
-void VariableView::expectCanSetUnit(const units::Unit &unit) const {
-  if ((this->unit() != unit) && (dims() != m_mutableVariable->dims()))
+void Variable::expectCanSetUnit(const units::Unit &unit) const {
+  if (this->unit() != unit && is_slice())
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
 }
 
-VariableConstView Variable::slice(const Slice slice) const & {
-  return {*this, slice.dim(), slice.begin(), slice.end()};
+const units::Unit &Variable::unit() const { return m_object->unit(); }
+
+void Variable::setUnit(const units::Unit &unit) {
+  expectWritable();
+  expectCanSetUnit(unit);
+  m_object->setUnit(unit);
 }
 
-Variable Variable::slice(const Slice slice) const && {
-  return Variable{this->slice(slice)};
+bool Variable::operator==(const Variable &other) const {
+  if (is_same(other))
+    return true;
+  if (!is_valid() || !other.is_valid())
+    return is_valid() == other.is_valid();
+  // Note: Not comparing strides
+  if (unit() != other.unit())
+    return false;
+  if (dims() != other.dims())
+    return false;
+  if (dtype() != other.dtype())
+    return false;
+  if (hasVariances() != other.hasVariances())
+    return false;
+  if (dims().volume() == 0 && dims() == other.dims())
+    return true;
+  return dims() == other.dims() && data().equals(*this, other);
 }
 
-VariableView Variable::slice(const Slice slice) & {
-  return {*this, slice.dim(), slice.begin(), slice.end()};
+bool Variable::operator!=(const Variable &other) const {
+  return !(*this == other);
 }
 
-Variable Variable::slice(const Slice slice) && {
-  return Variable{this->slice(slice)};
+const VariableConcept &Variable::data() const & { return *m_object; }
+
+VariableConcept &Variable::data() & {
+  expectWritable();
+  return *m_object;
 }
 
-VariableConstView VariableConstView::slice(const Slice slice) const {
-  return VariableConstView(*this, slice.dim(), slice.begin(), slice.end());
+const VariableConceptHandle &Variable::data_handle() const { return m_object; }
+
+scipp::span<const scipp::index> Variable::strides() const {
+  return scipp::span<const scipp::index>(&*m_strides.begin(),
+                                         &*m_strides.begin() + dims().ndim());
 }
 
-VariableView VariableView::slice(const Slice slice) const {
-  return VariableView(*this, slice.dim(), slice.begin(), slice.end());
+scipp::index Variable::offset() const { return m_offset; }
+
+core::ElementArrayViewParams Variable::array_params() const noexcept {
+  return {m_offset, dims(), m_strides, {}};
 }
 
-VariableConstView
-VariableConstView::transpose(const std::vector<Dim> &order) const {
+Variable Variable::slice(const Slice params) const {
+  core::expect::validSlice(dims(), params);
+  Variable out(*this);
+  const auto dim = params.dim();
+  const auto begin = params.begin();
+  const auto end = params.end();
+  const auto index = out.m_dims.index(dim);
+  out.m_offset += begin * m_strides[index];
+  if (end == -1) {
+    out.m_strides.erase(index);
+    out.m_dims.erase(dim);
+  } else
+    out.m_dims.resize(dim, end - begin);
+  return out;
+}
+
+void Variable::validateSlice(const Slice &s, const Variable &data) const {
+  core::expect::validSlice(this->dims(), s);
+  if (data.hasVariances() != this->hasVariances()) {
+    auto variances_message = [](const auto &variable) {
+      return "does" + std::string(variable.hasVariances() ? "" : " NOT") +
+             " have variances.";
+    };
+    throw except::VariancesError("Invalid slice operation. Slice " +
+                                 variances_message(data) + "Variable " +
+                                 variances_message(*this));
+  }
+  if (data.unit() != this->unit())
+    throw except::UnitError(
+        "Invalid slice operation. Slice has unit: " + to_string(data.unit()) +
+        " Variable has unit: " + to_string(this->unit()));
+  if (data.dtype() != this->dtype())
+    throw except::TypeError("Invalid slice operation. Slice has dtype " +
+                            to_string(data.dtype()) + ". Variable has dtype " +
+                            to_string(this->dtype()));
+}
+
+Variable &Variable::setSlice(const Slice params, const Variable &data) {
+  validateSlice(params, data);
+  copy(data, slice(params));
+  return *this;
+}
+
+Variable Variable::broadcast(const Dimensions &target) const {
+  expect::includes(target, dims());
+  auto out = as_const();
+  out.m_dims = target;
+  scipp::index i = 0;
+  for (const auto &d : target.labels())
+    out.m_strides[i++] = dims().contains(d) ? m_strides[dims().index(d)] : 0;
+  return out;
+}
+
+Variable Variable::fold(const Dim dim, const Dimensions &target) const {
+  auto out(*this);
+  out.m_dims = core::fold(dims(), dim, target);
+  const Strides substrides(target);
+  scipp::index i_out = 0;
+  for (scipp::index i_in = 0; i_in < dims().ndim(); ++i_in) {
+    if (dims().label(i_in) == dim)
+      for (scipp::index i_target = 0; i_target < target.ndim(); ++i_target)
+        out.m_strides[i_out++] = m_strides[i_in] * substrides[i_target];
+    else
+      out.m_strides[i_out++] = m_strides[i_in];
+  }
+  return out;
+}
+
+Variable Variable::transpose(const std::vector<Dim> &order) const {
   auto transposed(*this);
+  transposed.m_strides = core::transpose(m_strides, dims(), order);
   transposed.m_dims = core::transpose(dims(), order);
   return transposed;
-}
-
-VariableView VariableView::transpose(const std::vector<Dim> &order) const {
-  auto transposed(*this);
-  transposed.m_dims = core::transpose(dims(), order);
-  return transposed;
-}
-
-std::vector<scipp::index> VariableConstView::strides() const {
-  const auto parent = m_variable->dims();
-  std::vector<scipp::index> strides;
-  for (const auto &label : parent.labels())
-    if (dims().contains(label))
-      strides.emplace_back(parent.offset(label));
-  return strides;
-}
-
-bool VariableConstView::is_trivial() const noexcept {
-  return m_variable && m_offset == 0 && m_dims == m_variable->dims() &&
-         m_dataDims == m_variable->dims();
 }
 
 void Variable::rename(const Dim from, const Dim to) {
-  if (dims().contains(from))
-    data().m_dimensions.relabel(dims().index(from), to);
+  m_dims.replace_key(from, to);
 }
 
-/// Rename dims of a view. Does NOT rename dims of the underlying variable.
-void VariableConstView::rename(const Dim from, const Dim to) {
-  if (dims().contains(from)) {
-    m_dims.relabel(m_dims.index(from), to);
-    m_dataDims.relabel(m_dataDims.index(from), to);
-  }
+bool Variable::is_valid() const noexcept { return m_object.operator bool(); }
+
+bool Variable::is_slice() const {
+  // TODO Is this condition sufficient?
+  return m_offset != 0 || m_dims.volume() != data().size();
 }
 
-void Variable::setVariances(Variable v) {
-  if (v)
-    core::expect::equals(unit(), v.unit());
-  data().setVariances(std::move(v));
+bool Variable::is_readonly() const noexcept { return m_readonly; }
+
+bool Variable::is_same(const Variable &other) const noexcept {
+  return std::tie(m_dims, m_strides, m_offset, m_object) ==
+         std::tie(other.m_dims, other.m_strides, other.m_offset,
+                  other.m_object);
 }
 
-void VariableView::setVariances(Variable v) const {
-  if (m_offset == 0 && m_dims == m_variable->dims() &&
-      m_dataDims == m_variable->dims())
-    m_mutableVariable->setVariances(std::move(v));
-  else
+void Variable::setVariances(const Variable &v) {
+  expectWritable();
+  if (is_slice())
     throw except::VariancesError(
-        "Cannot add variances via sliced or reshaped view of Variable.");
+        "Cannot add variances via sliced view of Variable.");
+  if (v.is_valid()) {
+    core::expect::equals(unit(), v.unit());
+    core::expect::equals(dims(), v.dims());
+  }
+  data().setVariances(v);
 }
 
 namespace detail {
@@ -222,12 +221,21 @@ void expect0D(const Dimensions &dims) {
 
 } // namespace detail
 
-VariableConstView Variable::bin_indices() const { return data().bin_indices(); }
+Variable Variable::bin_indices() const {
+  auto out{*this};
+  out.m_object = data().bin_indices();
+  return out;
+}
 
-VariableConstView VariableConstView::bin_indices() const {
-  auto view = *this;
-  view.m_variable = &underlying().bin_indices().underlying();
-  return view;
+Variable Variable::as_const() const {
+  Variable out(*this);
+  out.m_readonly = true;
+  return out;
+}
+
+void Variable::expectWritable() const {
+  if (m_readonly)
+    throw except::VariableError("Read-only flag is set, cannot mutate data.");
 }
 
 } // namespace scipp::variable

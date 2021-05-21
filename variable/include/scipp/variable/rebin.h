@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -9,8 +9,9 @@
 
 namespace scipp::variable {
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-rebin(const VariableConstView &var, const Dim dim,
-      const VariableConstView &oldCoord, const VariableConstView &newCoord);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable rebin(const Variable &var,
+                                                   const Dim dim,
+                                                   const Variable &oldCoord,
+                                                   const Variable &newCoord);
 
 } // namespace scipp::variable

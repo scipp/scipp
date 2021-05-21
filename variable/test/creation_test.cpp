@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -30,6 +30,9 @@ TEST(CreationTest, ones) {
       makeVariable<double>(dims, units::m, Values{1, 1}, Variances{1, 1}));
   EXPECT_EQ(variable::ones(dims, units::s, dtype<int32_t>),
             makeVariable<int32_t>(dims, units::s, Values{1, 1}));
+  // Not a broadcast of a scalar
+  EXPECT_FALSE(
+      variable::ones(dims, units::m, dtype<double>, true).is_readonly());
 }
 
 TEST_P(DenseVariablesTest, empty_like_fail_if_sizes) {
@@ -50,7 +53,7 @@ TEST_P(DenseVariablesTest, empty_like_default_shape) {
 
 TEST_P(DenseVariablesTest, empty_like_slice_default_shape) {
   const auto var = GetParam();
-  if (var.dims().contains(Dim::X)) {
+  if (var.dims().contains(Dim::X) && var.dims()[Dim::X] > 0) {
     const auto empty = empty_like(var.slice({Dim::X, 0}));
     EXPECT_EQ(empty.dtype(), var.dtype());
     EXPECT_EQ(empty.dims(), var.slice({Dim::X, 0}).dims());

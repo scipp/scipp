@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
@@ -16,8 +16,6 @@
 
 namespace scipp::dataset {
 
-class DataArrayConstView;
-class DatasetConstView;
 class Dataset;
 class DataArray;
 
@@ -31,8 +29,8 @@ struct SCIPP_DATASET_EXPORT DataArrayError : public Error<dataset::DataArray> {
 
 template <>
 [[noreturn]] SCIPP_DATASET_EXPORT void
-throw_mismatch_error(const dataset::DataArrayConstView &expected,
-                     const dataset::DataArrayConstView &actual);
+throw_mismatch_error(const dataset::DataArray &expected,
+                     const dataset::DataArray &actual);
 
 struct SCIPP_DATASET_EXPORT DatasetError : public Error<dataset::Dataset> {
   explicit DatasetError(const std::string &msg);
@@ -40,26 +38,24 @@ struct SCIPP_DATASET_EXPORT DatasetError : public Error<dataset::Dataset> {
 
 template <>
 [[noreturn]] SCIPP_DATASET_EXPORT void
-throw_mismatch_error(const dataset::DatasetConstView &expected,
-                     const dataset::DatasetConstView &actual);
+throw_mismatch_error(const dataset::Dataset &expected,
+                     const dataset::Dataset &actual);
 
 struct SCIPP_DATASET_EXPORT CoordMismatchError : public DatasetError {
-  CoordMismatchError(const std::pair<Dim, VariableConstView> &expected,
-                     const std::pair<Dim, VariableConstView> &actual);
+  CoordMismatchError(const Dim dim, const Variable &expected,
+                     const Variable &actual);
 };
-
-template <>
-[[noreturn]] SCIPP_DATASET_EXPORT void
-throw_mismatch_error(const std::pair<Dim, VariableConstView> &expected,
-                     const std::pair<Dim, VariableConstView> &actual);
 
 } // namespace scipp::except
 
 namespace scipp::dataset::expect {
 
-SCIPP_DATASET_EXPORT void coordsAreSuperset(const DataArrayConstView &a,
-                                            const DataArrayConstView &b);
+SCIPP_DATASET_EXPORT void coordsAreSuperset(const DataArray &a,
+                                            const DataArray &b);
+SCIPP_DATASET_EXPORT void coordsAreSuperset(const Coords &a, const Coords &b);
+SCIPP_DATASET_EXPORT void matchingCoord(const Dim dim, const Variable &a,
+                                        const Variable &b);
 
-SCIPP_DATASET_EXPORT void isKey(const VariableConstView &key);
+SCIPP_DATASET_EXPORT void isKey(const Variable &key);
 
 } // namespace scipp::dataset::expect
