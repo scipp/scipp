@@ -11,7 +11,14 @@
 
 namespace scipp::variable {
 
-extern template class ElementArrayModel<int64_t>;
+namespace bin_array_variable_detail {
+SCIPP_VARIABLE_EXPORT std::tuple<Variable, scipp::index>
+contiguous_indices(const Variable &parent, const Dimensions &dims);
+SCIPP_VARIABLE_EXPORT const scipp::index_pair *
+index_pair_data(const Variable &indices);
+SCIPP_VARIABLE_EXPORT scipp::index size_from_end_index(const Variable &end);
+SCIPP_VARIABLE_EXPORT const scipp::index &index_value(const Variable &index);
+} // namespace bin_array_variable_detail
 
 template <class T> std::tuple<Variable, Dim, T> Variable::to_constituents() {
   Variable tmp;
@@ -40,20 +47,6 @@ template <class T> T &Variable::bin_buffer() {
   return model.buffer();
 }
 
-namespace {
-auto contiguous_indices(const Variable &parent, const Dimensions &dims) {
-  auto indices = Variable(parent, dims);
-  copy(parent, indices);
-  scipp::index size = 0;
-  for (auto &range : indices.values<core::bucket_base::range_type>()) {
-    range.second += size - range.first;
-    range.first = size;
-    size = range.second;
-  }
-  return std::tuple{indices, size};
-}
-} // namespace
-
 template <class T> class BinVariableMakerCommon : public AbstractVariableMaker {
 public:
   [[nodiscard]] bool is_bins() const override { return true; }
@@ -72,7 +65,7 @@ public:
     }
     const auto end = cumsum(sizes_);
     const auto begin = end - sizes_;
-    const auto size = sum(end - begin).template value<scipp::index>();
+    const auto size = bin_array_variable_detail::index_value(sum(end - begin));
     return make_bins(zip(begin, end), dim, resize_default_init(buf, dim, size));
   }
 };
@@ -119,7 +112,8 @@ public:
       const override {
     const Variable &parent = bin_parent(parents);
     const auto &[parentIndices, dim, buffer] = parent.constituents<T>();
-    auto [indices, size] = contiguous_indices(parentIndices, dims);
+    auto [indices, size] =
+        bin_array_variable_detail::contiguous_indices(parentIndices, dims);
     auto bufferDims = buffer.dims();
     bufferDims.resize(dim, size);
     return call_make_bins(parent, indices, dim, elem_dtype, bufferDims, unit,
@@ -155,11 +149,9 @@ public:
             params.dims(),
             params.strides(),
             {dim, buffer.dims(),
-             indices.template values<scipp::index_pair>().data()}};
+             bin_array_variable_detail ::index_pair_data(indices)}};
   }
 };
-
-extern template class ElementArrayModel<scipp::index_pair>;
 
 template <class T> BinArrayModel<T> copy(const BinArrayModel<T> &model) {
   return BinArrayModel<T>(model.indices()->clone(), model.bin_dim(),
@@ -200,8 +192,7 @@ VariableConceptHandle
 BinArrayModel<T>::makeDefaultFromParent(const Variable &shape) const {
   const auto end = cumsum(shape);
   const auto begin = end - shape;
-  const auto size =
-      end.dims().volume() > 0 ? end.values<scipp::index>().as_span().back() : 0;
+  const auto size = bin_array_variable_detail::size_from_end_index(end);
   return std::make_shared<BinArrayModel>(
       zip(begin, begin).data_handle(), this->bin_dim(),
       resize_default_init(m_buffer, this->bin_dim(), size));
