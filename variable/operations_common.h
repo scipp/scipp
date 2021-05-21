@@ -25,9 +25,7 @@ SCIPP_VARIABLE_EXPORT Variable &nanmean_impl(const Variable &var, const Dim dim,
                                              const Variable &masks_sum,
                                              Variable &out);
 
-template <class T>
-SCIPP_VARIABLE_EXPORT T normalize_impl(const T &nominator,
-                                       const T &denominator) {
+template <class T> T normalize_impl(const T &nominator, const T &denominator) {
   // Nominator may be and int or a Eigen::Vector3d => use double
   // This approach would be wrong if we supported vectors of float
   const auto type =
