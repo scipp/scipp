@@ -11,6 +11,12 @@
 
 namespace scipp::variable {
 
+// Avoid RTTI issues across DSO boundaries on OSX. Use of requireT and call of
+// Variable::values<T>() causes extra instantiations and tests failing with
+// std::bad_cast in dataset module. Helper functions have been moved to .cpp to
+// avoid some of these (see namespace bin_array_variable_detail below, but this
+// particular one is hard to avoid. The `extern template` declaration avoids the
+// instantiation in a different DSO.
 extern template class ElementArrayModel<scipp::index_pair>;
 
 namespace bin_array_variable_detail {
