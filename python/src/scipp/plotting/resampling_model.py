@@ -9,12 +9,12 @@ from .tools import to_bin_centers
 
 
 class ResamplingModel():
-    def __init__(self, data, resolution=None, bounds=None):
+    def __init__(self, array, resolution=None, bounds=None):
         self._resolution = {} if resolution is None else resolution
         self._bounds = {} if bounds is None else bounds
         self._resampled = None
         self._resampled_params = None
-        self._array = data
+        self._array = array
         self._home = None
         self._home_params = None
 
