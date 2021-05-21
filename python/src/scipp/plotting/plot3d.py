@@ -2,7 +2,6 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .. import config
 from .controller3d import PlotController3d
 from .model3d import PlotModel3d
 from .panel3d import PlotPanel3d
