@@ -81,19 +81,17 @@ class PlotModel2d(PlotModel):
                 slice_values["masks"] = msk.values
         return slice_values
 
-    def _update_image(self, extent=None, mask_info=None, force_update=False):
+    def _update_image(self, extent=None, mask_info=None):
         """
         Resample 2d images to a fixed resolution to handle very large images.
         """
-        if force_update:
-            self._model.reset_params()
         data = self._model.data
         for dim in self._squeeze:
             data = data[dim, 0]
         self.dslice = data
         return self.get_slice_values(mask_info=mask_info, extent=extent)
 
-    def update_data(self, slices, mask_info, force_update=False):
+    def update_data(self, slices, mask_info):
         """
         Slice the data along dimension sliders that are not disabled for all
         entries in the dict of data arrays.
@@ -107,8 +105,7 @@ class PlotModel2d(PlotModel):
                 self._squeeze.append(dim)
                 self._model.resolution[dim] = 1
                 self._model.bounds[dim] = (start, stop)
-        return self._update_image(mask_info=mask_info,
-                                  force_update=force_update)
+        return self._update_image(mask_info=mask_info)
 
     def update_viewport(self, xylims, mask_info):
         """
@@ -177,3 +174,6 @@ class PlotModel2d(PlotModel):
             self._make_profile(self._profile_model.data[dimx, 0][dimy, 0],
                                profile_dim, mask_info[self.name])
         }
+
+    def reset_resampling_params(self):
+        self._model.reset_params()

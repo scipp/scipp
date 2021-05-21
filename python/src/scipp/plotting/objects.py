@@ -77,6 +77,17 @@ class PlotDict():
         for item in self.values():
             item.redraw()
 
+    def set_draw_no_delay(self, value):
+        """
+        When set to True, try to update plots as soon as possible.
+        This is useful in the case where one wishes to update the plot inside
+        a loop (e.g. when listening to a data stream).
+        The plot update is then slightly more expensive than when it is set to
+        False.
+        """
+        for item in self.values():
+            item.set_draw_no_delay(value)
+
 
 class Plot:
     """
@@ -378,3 +389,15 @@ class Plot:
         has been modified.
         """
         self.controller.redraw()
+
+    def set_draw_no_delay(self, value):
+        """
+        When set to True, try to update plots as soon as possible.
+        This is useful in the case where one wishes to update the plot inside
+        a loop (e.g. when listening to a data stream).
+        The plot update is then slightly more expensive than when it is set to
+        False.
+        """
+        self.view.set_draw_no_delay(value)
+        if self.profile is not None:
+            self.profile.set_draw_no_delay(value)
