@@ -216,6 +216,9 @@ void init_buckets(py::module &m) {
          const std::vector<Variable> &groups, const std::vector<Dim> &erase) {
         return dataset::bin(array, edges, groups, erase);
       },
+      py::arg("array"), py::arg("edges"),
+      py::arg("groups") = std::vector<Variable>{},
+      py::arg("erase") = std::vector<Dim>{},
       py::call_guard<py::gil_scoped_release>());
 
   bind_bins_view<DataArray>(m);
