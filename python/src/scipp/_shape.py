@@ -55,6 +55,9 @@ def fold(x, dim, sizes=None, dims=None, shape=None):
     """Fold a single dimension of a variable or data array into multiple dims.
 
     Examples:
+
+    .. code-block:: python
+
       sc.fold(a, 'x', {'y': 2, 'z': 3})
       sc.fold(a, 'x', dims=['y', 'x'], shape=[2, 3])
 
@@ -92,6 +95,9 @@ def flatten(x, dims=None, to=None):
     into a single dim.
 
     Examples:
+    
+    .. code-block:: python
+    
       sc.flatten(a, dims=['x', 'y'], to='z')
       sc.flatten(a, to='z')
 
