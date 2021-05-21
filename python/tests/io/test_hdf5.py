@@ -26,13 +26,9 @@ xy = sc.Variable(dims=['y', 'x'],
                  values=np.random.rand(6, 4),
                  variances=np.random.rand(6, 4),
                  unit=sc.units.kg)
-eigen_1d = sc.Variable(dims=['x'],
-                       dtype=sc.dtype.vector_3_float64,
-                       values=np.random.rand(4, 3))
+eigen_1d = sc.vectors(dims=['x'], values=np.random.rand(4, 3))
 
-eigen_2d = sc.Variable(dims=['x'],
-                       dtype=sc.dtype.matrix_3_float64,
-                       values=np.random.rand(4, 3, 3))
+eigen_2d = sc.matrices(dims=['x'], values=np.random.rand(4, 3, 3))
 
 datetime64ms_1d = sc.Variable(dims=['x'],
                               dtype=sc.dtype.datetime64,

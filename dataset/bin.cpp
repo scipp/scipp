@@ -33,8 +33,7 @@ namespace scipp::dataset {
 namespace {
 
 template <class T> Variable as_subspan_view(T &&binned) {
-  auto &&[indices, dim, buffer] =
-      binned.template constituents<core::bin<Variable>>();
+  auto &&[indices, dim, buffer] = binned.template constituents<Variable>();
   if constexpr (std::is_const_v<std::remove_reference_t<T>>)
     return subspan_view(std::as_const(buffer), dim, indices);
   else
@@ -133,7 +132,7 @@ auto bin(const Variable &data, const Variable &indices,
         if (!is_bins(var))
           return copy(var);
         const auto &[input_indices, buffer_dim, in_buffer] =
-            var.template constituents<core::bin<Variable>>();
+            var.template constituents<Variable>();
         static_cast<void>(input_indices);
         auto out = resize_default_init(in_buffer, buffer_dim, total_size);
         transform_in_place(
@@ -413,7 +412,7 @@ public:
   template <class Masks>
   HideMasked(const Variable &data, const Masks &masks, const Dimensions &dims) {
     const auto &[begin_end, buffer_dim, buffer] =
-        data.constituents<core::bin<DataArray>>();
+        data.constituents<DataArray>();
     auto [begin, end] = unzip(begin_end);
     for (const auto dim : dims.labels()) {
       auto mask = irreducible_mask(masks, dim);
@@ -438,7 +437,7 @@ public:
     // In some cases all events in an input bin map to the same output, but
     // right now bin<> cannot handle this and requires target bin indices for
     // every bin element.
-    const auto &[begin_end, dim, buffer] = var.constituents<core::bin<T>>();
+    const auto &[begin_end, dim, buffer] = var.constituents<T>();
     m_target_bins_buffer = (dims.volume() > std::numeric_limits<int32_t>::max())
                                ? makeVariable<int64_t>(buffer.dims())
                                : makeVariable<int32_t>(buffer.dims());
@@ -510,9 +509,7 @@ void validate_bin_args(const DataArray &array,
                        const std::vector<Variable> &edges,
                        const std::vector<Variable> &groups) {
   if ((is_bins(array) &&
-       std::get<2>(array.data().constituents<bucket<DataArray>>())
-               .dims()
-               .ndim() > 1) ||
+       std::get<2>(array.data().constituents<DataArray>()).dims().ndim() > 1) ||
       (!is_bins(array) && array.dims().ndim() > 1)) {
     throw except::BinnedDataError(
         "Binning is only implemented for 1-dimensional data. Consider using "

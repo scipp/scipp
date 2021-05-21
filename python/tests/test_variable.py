@@ -167,10 +167,9 @@ def test_create_1D_string():
 
 
 def test_create_1D_vector_3_float64():
-    var = sc.Variable(dims=['x'],
-                      values=[[1, 2, 3], [4, 5, 6]],
-                      unit=sc.units.m,
-                      dtype=sc.dtype.vector_3_float64)
+    var = sc.vectors(dims=['x'],
+                     values=[[1, 2, 3], [4, 5, 6]],
+                     unit=sc.units.m)
     assert len(var.values) == 2
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
     np.testing.assert_array_equal(var.values[1], [4, 5, 6])

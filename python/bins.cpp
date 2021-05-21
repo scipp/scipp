@@ -76,14 +76,14 @@ template <class T> void bind_bin_size(pybind11::module &m) {
 }
 
 template <class T> auto bin_begin_end(const Variable &var) {
-  auto &&[indices, dim, buffer] = var.constituents<bucket<T>>();
+  auto &&[indices, dim, buffer] = var.constituents<T>();
   static_cast<void>(dim);
   static_cast<void>(buffer);
   return py::cast(unzip(indices));
 }
 
 template <class T> auto bin_dim(const Variable &var) {
-  auto &&[indices, dim, buffer] = var.constituents<bucket<T>>();
+  auto &&[indices, dim, buffer] = var.constituents<T>();
   static_cast<void>(buffer);
   static_cast<void>(indices);
   return py::cast(std::string(dim.name()));

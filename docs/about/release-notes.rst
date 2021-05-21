@@ -20,7 +20,13 @@ Features
 * ``fold`` now works for binned data `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
 * ``flatten`` now returns a view of the input buffer if the input data is contiguous `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
 * Add ``redraw`` method to plot which enables an easy update on a figure when the underlying data has been modified `#1907 <https://github.com/scipp/scipp/pull/1907>`_.
+* Several improvements for work with (3-D position) vectors and (3-D rotation) matrices `#1905 <https://github.com/scipp/scipp/pull/1905>`_:
 
+  * Add creation functions ``vector``, ``vectors``, ``matrix``, ``matrices``.
+  * Direct creation and initialization of 2-D (or higher) arrays of matrices and vectors is now possible from numpy arrays.
+  * Fix extremely slow initialization of array of vectors or matrices from numpy arrays.
+  * The ``values`` property now returns a numpy array with ``ndim+1`` (vectors) or ``ndim+2``` (matrices) axes, with the inner 1 (vectors) or 2 (matrices) axes corresponding o the vector or matrix axes.
+  * Vector or matrix element can now be accessed and modified directly using the new properties of ``Variable``, ``x1``, ``x2``, ``x3`` (for variables containing vectors) or ``x11``, ``x12``, ..., ``x33`` (for matrices).
 
 Bugfixes
 ~~~~~~~~

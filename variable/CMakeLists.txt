@@ -21,6 +21,7 @@ set(INC_FILES
     include/scipp/variable/sort.h
     include/scipp/variable/special_values.h
     include/scipp/variable/string.h
+    include/scipp/variable/structures.h
     include/scipp/variable/subspan_view.h
     include/scipp/variable/transform.h
     include/scipp/variable/transform_subspan.h
@@ -38,6 +39,7 @@ set(SRC_FILES
     ${variable_SRC_FILES}
     arithmetic.cpp
     bins.cpp
+    bin_array_variable.cpp
     bin_detail.cpp
     bin_util.cpp
     comparison.cpp
@@ -54,6 +56,7 @@ set(SRC_FILES
     sort.cpp
     special_values.cpp
     string.cpp
+    structures.cpp
     subspan_view.cpp
     to_unit.cpp
     trigonometry.cpp
@@ -64,6 +67,7 @@ set(SRC_FILES
     variable.cpp
     variable_instantiate_basic.cpp
     variable_instantiate_bin_elements.cpp
+    variable_instantiate_linalg.cpp
     variable_instantiate_map_elements.cpp
     variable_instantiate_view_elements.cpp
 )

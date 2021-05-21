@@ -165,11 +165,11 @@ TEST_F(VariableBinsTest, binary_operation_strided) {
 }
 
 TEST_F(VariableBinsTest, to_constituents) {
-  auto [idx0, dim0, buf0] = var.constituents<bucket<Variable>>();
+  auto [idx0, dim0, buf0] = var.constituents<Variable>();
   static_cast<void>(dim0);
   auto idx_ptr = idx0.values<std::pair<scipp::index, scipp::index>>().data();
   auto buf_ptr = buf0.values<double>().data();
-  auto [idx1, dim1, buf1] = var.to_constituents<bucket<Variable>>();
+  auto [idx1, dim1, buf1] = var.to_constituents<Variable>();
   EXPECT_FALSE(var.is_valid());
   EXPECT_EQ((idx1.values<std::pair<scipp::index, scipp::index>>().data()),
             idx_ptr);

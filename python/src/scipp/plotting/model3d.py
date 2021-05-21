@@ -30,6 +30,10 @@ class PlotModel3d(PlotModel):
         # never change
         if self.positions is not None:
             self.pos_coord = scipp_obj_dict[self.name].meta[self.positions]
+            # TODO Something expects a flat position array?
+            self.pos_coord = sc.flatten(self.pos_coord,
+                                        dims=self.pos_coord.dims,
+                                        to='dummy')
             self.pos_array = np.array(self.pos_coord.values, dtype=np.float32)
 
     def initialize(self, cut_options):

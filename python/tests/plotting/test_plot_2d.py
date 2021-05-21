@@ -175,10 +175,7 @@ def test_plot_string_and_vector_axis_labels_2d():
     d['Signal'] = sc.Variable(['y', 'x'],
                               values=np.random.random([M, N]),
                               unit=sc.units.counts)
-    d.coords['x'] = sc.Variable(['x'],
-                                values=vecs,
-                                unit=sc.units.m,
-                                dtype=sc.dtype.vector_3_float64)
+    d.coords['x'] = sc.vectors(dims=['x'], values=vecs, unit=sc.units.m)
     d.coords['y'] = sc.Variable(['y'],
                                 values=['a', 'b', 'c', 'd', 'e'],
                                 unit=sc.units.m)
