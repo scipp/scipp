@@ -99,6 +99,7 @@ inline constexpr DType dtype<std::unordered_map<core::time_point, int32_t>>{
 
 SCIPP_CORE_EXPORT bool isInt(DType tp);
 SCIPP_CORE_EXPORT bool is_span(DType tp);
+SCIPP_CORE_EXPORT bool is_structured(DType tp);
 
 template <class T> constexpr bool canHaveVariances() noexcept {
   using U = std::remove_const_t<T>;

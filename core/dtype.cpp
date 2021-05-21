@@ -3,6 +3,7 @@
 #include <ostream>
 
 #include "scipp/core/dtype.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/string.h"
 
 namespace scipp::core {
@@ -19,6 +20,10 @@ template <class... Ts> bool is_span_impl(DType tp) {
 
 bool is_span(DType tp) {
   return is_span_impl<double, float, int64_t, int32_t, bool, time_point>(tp);
+}
+
+bool is_structured(DType tp) {
+  return tp == dtype<Eigen::Vector3d> || tp == dtype<Eigen::Matrix3d>;
 }
 
 std::ostream &operator<<(std::ostream &os, const DType &dtype) {

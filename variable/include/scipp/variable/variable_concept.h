@@ -24,7 +24,13 @@ using VariableConceptHandle = std::shared_ptr<VariableConcept>;
 /// so-called concept-based polymorphism, see talks by Sean Parent.
 ///
 /// This is the most generic representation for a multi-dimensional array of
-/// data. More operations are supportd by the typed DataModel.
+/// data. There are currently the implementations of this interface:
+/// - ElementArrayModel for simple arrays of elements.
+/// - StructureArrayModel for arrays of structured elements, providing access to
+///   components of the structures as Variable. Currently used for
+///   Eigen::Vector3d and Eigen::Matrix3d. Could be used, e.g., also for
+///   supporting complex<double>.
+/// - BinArrayModel for "arrays" of bins, i.e., event data.
 class SCIPP_VARIABLE_EXPORT VariableConcept {
 public:
   VariableConcept(const units::Unit &unit);
@@ -37,7 +43,7 @@ public:
   makeDefaultFromParent(const Variable &shape) const = 0;
 
   virtual DType dtype() const noexcept = 0;
-  const units::Unit &unit() const { return m_unit; }
+  virtual const units::Unit &unit() const { return m_unit; }
   virtual scipp::index size() const = 0;
 
   virtual void setUnit(const units::Unit &unit) { m_unit = unit; }

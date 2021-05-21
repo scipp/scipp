@@ -3,8 +3,8 @@
 #include <gtest/gtest.h>
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bin_array_model.h"
 #include "scipp/variable/bins.h"
-#include "scipp/variable/bucket_model.h"
 
 #include "test_macros.h"
 
@@ -16,7 +16,7 @@ TEST(BucketTest, member_types) {
   static_assert(std::is_same_v<bucket<Variable>::const_element_type, Variable>);
 }
 
-using Model = DataModel<bucket<Variable>>;
+using Model = BinArrayModel<Variable>;
 
 class BucketModelTest : public ::testing::Test {
 protected:
@@ -103,10 +103,13 @@ TEST_F(BucketModelTest, comparison) {
   EXPECT_NE(Model(indices3, Dim::X, buffer), Model(indices3, Dim::X, buffer2));
 }
 
-TEST_F(BucketModelTest, clone) {
+TEST_F(BucketModelTest, copy) {
+  // This is used to implement clone(), which has to make a deep copy
   Model model(indices.data_handle(), Dim::X, buffer);
-  const auto copy = model.clone();
-  EXPECT_EQ(dynamic_cast<const Model &>(*copy), model);
+  const auto copied = copy(model);
+  EXPECT_EQ(copied, model);
+  EXPECT_NE(copied.indices(), model.indices()); // pointer comparison
+  EXPECT_FALSE(copied.buffer().is_same(model.buffer()));
 }
 
 TEST_F(BucketModelTest, values) {
