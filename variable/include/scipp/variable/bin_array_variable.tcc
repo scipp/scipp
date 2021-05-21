@@ -11,6 +11,8 @@
 
 namespace scipp::variable {
 
+extern template class ElementArrayModel<scipp::index_pair>;
+
 namespace bin_array_variable_detail {
 SCIPP_VARIABLE_EXPORT std::tuple<Variable, scipp::index>
 contiguous_indices(const Variable &parent, const Dimensions &dims);
