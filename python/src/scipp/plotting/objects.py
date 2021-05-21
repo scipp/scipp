@@ -21,9 +21,6 @@ class PlotDict():
     def __getitem__(self, key):
         return self._items[key]
 
-    def __setitem__(self, key, value):
-        self._items[key] = value
-
     def __len__(self):
         return len(self._items)
 

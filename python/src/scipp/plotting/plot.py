@@ -192,18 +192,18 @@ def plot(scipp_obj,
     # Plot all the subsets
     output = PlotDict()
     for key, val in tobeplotted.items():
-        output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-                               name=key,
-                               ndim=val["ndims"],
-                               projection=projection,
-                               axes=val["axes"],
-                               mpl_line_params=val["mpl_line_params"],
-                               **kwargs)
+        output._items[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
+                                      name=key,
+                                      ndim=val["ndims"],
+                                      projection=projection,
+                                      axes=val["axes"],
+                                      mpl_line_params=val["mpl_line_params"],
+                                      **kwargs)
 
     if len(output) > 1:
         return output
     elif len(output) > 0:
-        return output[list(output.keys())[0]]
+        return output._items[list(output.keys())[0]]
     else:
         raise ValueError("Input contains nothing that can be plotted. "
                          "Input may be of dtype vector or string, "
