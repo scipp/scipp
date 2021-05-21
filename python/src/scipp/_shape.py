@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
+# flake8: noqa: E501
+
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from typing import Sequence as _Sequence
@@ -54,13 +56,6 @@ def concatenate(x, y, dim):
 def fold(x, dim, sizes=None, dims=None, shape=None):
     """Fold a single dimension of a variable or data array into multiple dims.
 
-    Examples:
-
-    .. code-block:: python
-
-      sc.fold(a, 'x', {'y': 2, 'z': 3})
-      sc.fold(a, 'x', dims=['y', 'x'], shape=[2, 3])
-
     :param x: Variable or DataArray to fold.
     :param dim: A single dim label that will be folded into more dims.
     :param sizes: A dict mapping new dims to new shapes.
@@ -74,6 +69,43 @@ def fold(x, dim, sizes=None, dims=None, shape=None):
     :raises: If the volume of the old shape is not equal to the
              volume of the new shape.
     :return: Variable or DataArray with requested dimension labels and shape.
+
+    :Examples:
+
+    .. code-block:: python
+
+      >>> v = sc.arange('x', 6)
+      >>> v
+      <scipp.Variable> (x: 6)      int64  [dimensionless]  [0, 1, ..., 4, 5]
+      >>> sc.fold(v, 'x', {'y': 2, 'z': 3})
+      <scipp.Variable> (y: 2, z: 3)      int64  [dimensionless]  [0, 1, ..., 4, 5]
+      >>> sc.fold(v, 'x', {'y': 2, 'z': 3}).values
+      [[0 1 2]
+       [3 4 5]]
+
+    .. code-block:: python
+
+      >>> sc.fold(a, 'x', dims=['y', 'x'], shape=[2, 3])
+      <scipp.Variable> (y: 2, z: 3)      int64  [dimensionless]  [0, 1, ..., 4, 5]
+
+    .. code-block:: python
+
+      >>> a = sc.DataArray(0.1 * sc.arange('x', 6),
+                           coords={'x': sc.arange('x', 6)})
+      >>> sc.fold(a, 'x', {'y': 2, 'z': 3})
+      <scipp.DataArray>
+      Dimensions: Sizes[y:2, z:3, ]
+      Coordinates:
+        x                           int64  [dimensionless]  (y, z)  [0, 1, ..., 4, 5]
+      Data:
+                                  float64  [dimensionless]  (y, z)  [0.000000, 0.100000, ..., 0.400000, 0.500000]
+
+      >>> sc.fold(a, 'x', {'y': 2, 'z': 3}).data.values
+      [[0.  0.1 0.2]
+       [0.3 0.4 0.5]]
+      >>> sc.fold(a, 'x', {'y': 2, 'z': 3}).coords['x'].values
+      [[0 1 2]
+       [3 4 5]]
     """
     if sizes is not None:
         if (dims is not None) or (shape is not None):
@@ -95,9 +127,9 @@ def flatten(x, dims=None, to=None):
     into a single dim.
 
     Examples:
-    
+
     .. code-block:: python
-    
+
       sc.flatten(a, dims=['x', 'y'], to='z')
       sc.flatten(a, to='z')
 
