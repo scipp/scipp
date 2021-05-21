@@ -140,8 +140,13 @@ class ResamplingModel():
 class ResamplingBinnedModel(ResamplingModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # TODO See #1469. This is a temporary hack to work around the
-        # conversion of coords to edges in model.py.
+        self._recenter_coords()
+
+    def _recenter_coords(self):
+        """
+        TODO See #1469. This is a temporary hack to work around the
+        conversion of coords to edges in model.py.
+        """
         self._array = self._array.copy(deep=False)
         for name, var in self._array.coords.items():
             if len(var.dims) == 0:
@@ -167,6 +172,10 @@ class ResamplingBinnedModel(ResamplingModel):
         for name, mask in array.masks.items():
             a.masks[name] = self._rebin(mask, array.coords)
         return a
+
+    def update_array(self, *args, **kwargs):
+        super().update_array(*args, **kwargs)
+        self._recenter_coords()
 
 
 class ResamplingCountsModel(ResamplingModel):
