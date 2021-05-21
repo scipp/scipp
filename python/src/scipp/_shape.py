@@ -126,13 +126,6 @@ def flatten(x, dims=None, to=None):
     dimension. If dims is omitted, then we flatten all of the inputs dimensions
     into a single dim.
 
-    Examples:
-
-    .. code-block:: python
-
-      sc.flatten(a, dims=['x', 'y'], to='z')
-      sc.flatten(a, to='z')
-
     :param x: Variable or DataArray to flatten.
     :param dims: A list of dim labels that will be flattened.
     :param to: A single dim label for the resulting flattened dim.
@@ -141,6 +134,58 @@ def flatten(x, dims=None, to=None):
     :type to: str
     :raises: If the bin edge coordinates cannot be stitched back together.
     :return: Variable or DataArray with requested dimension labels and shape.
+
+    :Examples:
+
+    .. code-block:: python
+
+      >>> v = sc.array(dims=['x', 'y'], values=np.arange(6).reshape(2, 3))
+      >>> v
+      <scipp.Variable> (x: 2, y: 3)      int64  [dimensionless]  [0, 1, ..., 4, 5]
+      >>> sc.flatten(v, to='u')
+      <scipp.Variable> (u: 6)      int64  [dimensionless]  [0, 1, ..., 4, 5]
+      >>> sc.flatten(v, dims=['x', 'y'], to='u')
+      <scipp.Variable> (u: 6)      int64  [dimensionless]  [0, 1, ..., 4, 5]
+
+    .. code-block:: python
+
+      >>> v = sc.array(dims=['x', 'y', 'z'], values=np.arange(24).reshape(2, 3, 4))
+      >>> v
+      <scipp.Variable> (x: 2, y: 3, z: 4)      int64  [dimensionless]  [0, 1, ..., 22, 23]
+      >>> c.flatten(v, to='u')
+      <scipp.Variable> (u: 24)      int64  [dimensionless]  [0, 1, ..., 22, 23]
+      >>> sc.flatten(v, dims=['x', 'y'], to='u')
+      <scipp.Variable> (u: 6, z: 4)      int64  [dimensionless]  [0, 1, ..., 22, 23]
+      >>> sc.flatten(v, dims=['y', 'z'], to='u')
+      <scipp.Variable> (x: 2, u: 12)      int64  [dimensionless]  [0, 1, ..., 22, 23]
+
+    .. code-block:: python
+
+      >>> a = sc.DataArray(0.1 * sc.array(dims=['x', 'y'], values=np.arange(6).reshape(2, 3)),
+                 coords={'x': sc.arange('x', 2),
+                         'y': sc.arange('y', 3),
+                         'xy': sc.array(dims=['x', 'y'],
+                                        values=np.arange(6).reshape(2, 3))})
+      >>> a
+      <scipp.DataArray>
+      Dimensions: Sizes[x:2, y:3, ]
+      Coordinates:
+        x                           int64  [dimensionless]  (x)  [0, 1]
+        xy                          int64  [dimensionless]  (x, y)  [0, 1, ..., 4, 5]
+        y                           int64  [dimensionless]  (y)  [0, 1, 2]
+      Data:
+                                  float64  [dimensionless]  (x, y)  [0.000000, 0.100000, ..., 0.400000, 0.500000]
+
+      >>> sc.flatten(a, to='u')
+      <scipp.DataArray>
+      Dimensions: Sizes[u:6, ]
+      Coordinates:
+        x                           int64  [dimensionless]  (u)  [0, 0, ..., 1, 1]
+        xy                          int64  [dimensionless]  (u)  [0, 1, ..., 4, 5]
+        y                           int64  [dimensionless]  (u)  [0, 1, ..., 1, 2]
+      Data:
+                                  float64  [dimensionless]  (u)  [0.000000, 0.100000, ..., 0.400000, 0.500000]
+
     """
     if to is None:
         # Note that this is a result of the fact that we want to support
