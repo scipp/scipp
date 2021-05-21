@@ -5,7 +5,7 @@
 from .formatters import VectorFormatter, StringFormatter, \
                         DateFormatter, LabelFormatter
 from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
-                   vars_to_err, find_limits
+                   vars_to_err, find_limits, to_dict
 from .._utils import name_with_unit, vector_type, string_type, datetime_type
 from .._scipp import core as sc
 import numpy as np
@@ -229,10 +229,10 @@ class PlotModel:
 
     def update_data_arrays(self):
         for name, item in self.backup.items():
-            self.data_arrays[name] = sc.DataArray(
-                data=item["array"].data,
-                coords=item["coords"],
-                masks=item["array"].masks.to_dict())
+            self.data_arrays[name] = sc.DataArray(data=item["array"].data,
+                                                  coords=item["coords"],
+                                                  masks=to_dict(
+                                                      item["array"].masks))
 
     def get_axformatter(self, name, dim):
         """
