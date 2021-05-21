@@ -84,7 +84,7 @@ class ResamplingModel():
         for dim, s in self.bounds.items():
             dim = str(dim)
             if s is None:
-                coord = self._array.coords[dim]
+                coord = self._array.meta[dim]
                 low = coord.values[0]
                 high = coord.values[-1]
                 params[dim] = (low, high, coord.unit, self.resolution[dim])
@@ -95,16 +95,16 @@ class ResamplingModel():
                 low, high = s
                 if isinstance(low, int):
                     out = out[dim, low:high]
-                    low = out.coords[dim][dim, 0]
-                    high = out.coords[dim][dim, -1]
+                    low = out.meta[dim][dim, 0]
+                    high = out.meta[dim][dim, -1]
                 else:
                     # cannot pre-select bins for multi-dim coords
-                    if len(out.coords[dim].dims) == 1:
+                    if len(out.meta[dim].dims) == 1:
                         # TODO: for now, slicing in scipp does not support step
                         # and pybind11 py::slice requires a step
                         # (which is always 1 here)
-                        sl = sc.get_slice_params(out.data, out.coords[dim],
-                                                 low, high)
+                        sl = sc.get_slice_params(out.data, out.meta[dim], low,
+                                                 high)
                         out = out[sl[0], slice(sl[1].start, sl[1].stop)]
                 params[dim] = (low.value, high.value, low.unit,
                                self.resolution[dim])
@@ -148,12 +148,12 @@ class ResamplingBinnedModel(ResamplingModel):
         conversion of coords to edges in model.py.
         """
         self._array = self._array.copy(deep=False)
-        for name, var in self._array.coords.items():
+        for name, var in self._array.meta.items():
             if len(var.dims) == 0:
                 continue
             dim = var.dims[-1]
-            if name not in self._array.data.bins.coords:
-                self._array.coords[name] = to_bin_centers(var, dim)
+            if name not in self._array.data.bins.meta:
+                self._array.meta[name] = to_bin_centers(var, dim)
 
     def _resample(self, array):
         # We could bin with all edges and then use `bins.sum()` but especially
@@ -170,7 +170,7 @@ class ResamplingBinnedModel(ResamplingModel):
         else:
             a = sc.bin(array, self.edges).bins.sum()
         for name, mask in array.masks.items():
-            a.masks[name] = self._rebin(mask, array.coords)
+            a.masks[name] = self._rebin(mask, array.meta)
         return a
 
     def update_array(self, *args, **kwargs):
@@ -184,11 +184,11 @@ class ResamplingCountsModel(ResamplingModel):
 
     def _resample(self, array):
         return sc.DataArray(
-            data=self._rebin(array.data, array.coords),
+            data=self._rebin(array.data, array.meta),
             coords={edge.dims[-1]: edge
                     for edge in self.edges},
             masks={
-                name: self._rebin(mask, array.coords)
+                name: self._rebin(mask, array.meta)
                 for name, mask in array.masks.items()
             })
 
@@ -202,7 +202,7 @@ class ResamplingDenseModel(ResamplingModel):
     def _to_density(self, array):
         array = array.astype(sc.dtype.float64)
         for dim in array.dims:
-            coord = array.coords[dim]
+            coord = array.meta[dim]
             width = coord[dim, 1:] - coord[dim, :-1]
             width.unit = sc.units.one
             array.data *= width
@@ -219,11 +219,11 @@ class ResamplingDenseModel(ResamplingModel):
 
     def _resample(self, array):
         return sc.DataArray(
-            data=self._from_density(self._rebin(array.data, array.coords)),
+            data=self._from_density(self._rebin(array.data, array.meta)),
             coords={edge.dims[-1]: edge
                     for edge in self.edges},
             masks={
-                name: self._rebin(mask, array.coords)
+                name: self._rebin(mask, array.meta)
                 for name, mask in array.masks.items()
             })
 
