@@ -200,9 +200,6 @@ class ResamplingDenseModel(ResamplingModel):
         super().__init__(self._to_density(array), **kwargs)
 
     def _to_density(self, array):
-        # If we want to be able to use redraw() on floating point data, we must
-        # avoid the copy where possible.
-        # if array.dtype not in [sc.dtype.float64, sc.dtype.float32]:
         array = array.astype(sc.dtype.float64)
         for dim in array.dims:
             coord = array.coords[dim]
