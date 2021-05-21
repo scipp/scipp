@@ -58,7 +58,9 @@ public:
 
   void setVariances(const Variable &variances) override;
 
-  VariableConceptHandle clone() const override;
+  VariableConceptHandle clone() const override {
+    return std::make_shared<ElementArrayModel<T>>(*this);
+  }
 
   bool hasVariances() const noexcept override {
     return m_variances.has_value();
@@ -100,6 +102,27 @@ private:
   element_array<T> m_values;
   std::optional<element_array<T>> m_variances;
 };
+
+template <class T>
+VariableConceptHandle
+ElementArrayModel<T>::makeDefaultFromParent(const scipp::index size) const {
+  if (hasVariances())
+    return std::make_shared<ElementArrayModel<T>>(
+        size, unit(), element_array<T>(size), element_array<T>(size));
+  else
+    return std::make_shared<ElementArrayModel<T>>(size, unit(),
+                                                  element_array<T>(size));
+}
+
+/// Helper for implementing Variable(View)::operator==.
+///
+/// This method is using virtual dispatch as a trick to obtain T, such that
+/// values<T> and variances<T> can be compared.
+template <class T>
+bool ElementArrayModel<T>::equals(const Variable &a, const Variable &b) const {
+  return equals_impl(a.values<T>(), b.values<T>()) &&
+         (!a.hasVariances() || equals_impl(a.variances<T>(), b.variances<T>()));
+}
 
 namespace {
 template <class T> auto copy(const T &x) { return x; }
