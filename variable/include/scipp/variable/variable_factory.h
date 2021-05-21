@@ -10,10 +10,6 @@
 
 namespace scipp::variable {
 
-template <class T>
-Variable make_default_init(const Dimensions &dims, const units::Unit &unit,
-                           const bool variances);
-
 /// Abstract base class for "variable makers", used by VariableFactory to
 /// dynamically create variables with given type.
 class SCIPP_VARIABLE_EXPORT AbstractVariableMaker {
@@ -45,39 +41,6 @@ public:
   virtual Variable empty_like(const Variable &prototype,
                               const std::optional<Dimensions> &shape,
                               const Variable &sizes) const = 0;
-};
-
-template <class T> class VariableMaker : public AbstractVariableMaker {
-  using AbstractVariableMaker::create;
-  bool is_bins() const override { return false; }
-  Variable create(const DType, const Dimensions &dims, const units::Unit &unit,
-                  const bool variances, const parent_list &) const override {
-    return make_default_init<T>(dims, unit, variances);
-  }
-  Dim elem_dim(const Variable &) const override { return Dim::Invalid; }
-  DType elem_dtype(const Variable &var) const override { return var.dtype(); }
-  units::Unit elem_unit(const Variable &var) const override {
-    return var.unit();
-  }
-  void expect_can_set_elem_unit(const Variable &var,
-                                const units::Unit &u) const override {
-    var.expectCanSetUnit(u);
-  }
-  void set_elem_unit(Variable &var, const units::Unit &u) const override {
-    var.setUnit(u);
-  }
-  bool hasVariances(const Variable &var) const override {
-    return var.hasVariances();
-  }
-  Variable empty_like(const Variable &prototype,
-                      const std::optional<Dimensions> &shape,
-                      const Variable &sizes) const override {
-    if (sizes.is_valid())
-      throw except::TypeError(
-          "Cannot specify sizes in `empty_like` for non-bin prototype.");
-    return create(prototype.dtype(), shape ? *shape : prototype.dims(),
-                  prototype.unit(), prototype.hasVariances(), {});
-  }
 };
 
 SCIPP_VARIABLE_EXPORT bool is_bins(const Variable &var);

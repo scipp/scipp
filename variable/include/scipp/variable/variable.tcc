@@ -62,31 +62,6 @@ auto make_model(const units::Unit unit, const Dimensions &dimensions,
 } // namespace
 
 template <class T>
-Variable make_default_init(const Dimensions &dims, const units::Unit &unit,
-                           const bool variances) {
-  if (variances && !core::canHaveVariances<T>())
-    throw except::VariancesError("This data type cannot have variances.");
-  const auto volume = dims.volume();
-  VariableConceptHandle model;
-  if constexpr (std::is_same_v<model_t<T>, ElementArrayModel<T>>) {
-    if (variances)
-      model = std::make_shared<model_t<T>>(
-          volume, unit, element_array<T>(volume, core::default_init_elements),
-          element_array<T>(volume, core::default_init_elements));
-    else
-      model = std::make_shared<model_t<T>>(
-          volume, unit, element_array<T>(volume, core::default_init_elements));
-  } else {
-    using Elem = typename model_t<T>::element_type;
-    model = std::make_shared<model_t<T>>(
-        volume, unit,
-        element_array<Elem>(model_t<T>::element_count * volume,
-                            core::default_init_elements));
-  }
-  return Variable(dims, std::move(model));
-}
-
-template <class T>
 Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                    T values_, std::optional<T> variances_)
     : m_dims(dimensions), m_strides(dimensions),

@@ -8,6 +8,64 @@
 namespace scipp::variable {
 
 template <class T>
+Variable make_default_init(const Dimensions &dims, const units::Unit &unit,
+                           const bool variances) {
+  if (variances && !core::canHaveVariances<T>())
+    throw except::VariancesError("This data type cannot have variances.");
+  const auto volume = dims.volume();
+  VariableConceptHandle model;
+  if constexpr (std::is_same_v<model_t<T>, ElementArrayModel<T>>) {
+    if (variances)
+      model = std::make_shared<model_t<T>>(
+          volume, unit, element_array<T>(volume, core::default_init_elements),
+          element_array<T>(volume, core::default_init_elements));
+    else
+      model = std::make_shared<model_t<T>>(
+          volume, unit, element_array<T>(volume, core::default_init_elements));
+  } else {
+    using Elem = typename model_t<T>::element_type;
+    model = std::make_shared<model_t<T>>(
+        volume, unit,
+        element_array<Elem>(model_t<T>::element_count * volume,
+                            core::default_init_elements));
+  }
+  return Variable(dims, std::move(model));
+}
+
+template <class T> class VariableMaker : public AbstractVariableMaker {
+  using AbstractVariableMaker::create;
+  bool is_bins() const override { return false; }
+  Variable create(const DType, const Dimensions &dims, const units::Unit &unit,
+                  const bool variances, const parent_list &) const override {
+    return make_default_init<T>(dims, unit, variances);
+  }
+  Dim elem_dim(const Variable &) const override { return Dim::Invalid; }
+  DType elem_dtype(const Variable &var) const override { return var.dtype(); }
+  units::Unit elem_unit(const Variable &var) const override {
+    return var.unit();
+  }
+  void expect_can_set_elem_unit(const Variable &var,
+                                const units::Unit &u) const override {
+    var.expectCanSetUnit(u);
+  }
+  void set_elem_unit(Variable &var, const units::Unit &u) const override {
+    var.setUnit(u);
+  }
+  bool hasVariances(const Variable &var) const override {
+    return var.hasVariances();
+  }
+  Variable empty_like(const Variable &prototype,
+                      const std::optional<Dimensions> &shape,
+                      const Variable &sizes) const override {
+    if (sizes.is_valid())
+      throw except::TypeError(
+          "Cannot specify sizes in `empty_like` for non-bin prototype.");
+    return create(prototype.dtype(), shape ? *shape : prototype.dims(),
+                  prototype.unit(), prototype.hasVariances(), {});
+  }
+};
+
+template <class T>
 ElementArrayModel<T>::ElementArrayModel(
     const scipp::index size, const units::Unit &unit, element_array<T> model,
     std::optional<element_array<T>> variances)
