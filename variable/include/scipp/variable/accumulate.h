@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/variable/shape.h"
 #include "scipp/variable/transform.h"
 
 namespace scipp::variable {
@@ -44,10 +45,35 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
   // for accumulation along the *outer* dim if there are less than about 500
   // output elements. The solution could be to chunk along the input dim, but
   // this possible only if exclusively `var` is modified by `op`.
-  const auto grainsize =
-      reduce_outer ? std::max(scipp::index(32), var.dims()[dim] / 24) : -1;
-  core::parallel::parallel_for(
-      core::parallel::blocked_range(0, var.dims()[dim], grainsize), reduce);
+  const auto size = var.dims()[dim];
+  if (((*other.dims().begin() != dim) || ...) && size < 65536) {
+    // reducing outer dimensions
+    const auto outer_dim = (*other.dims().begin(), ...);
+    const auto outer_size = (other.dims()[outer_dim], ...);
+    const auto nchunk = std::min(scipp::index(24), outer_size);
+    const auto chunk_size = (outer_size + nchunk - 1) / nchunk;
+    auto tmp =
+        copy(broadcast(var, merge({Dim::Internal0, nchunk}, var.dims())));
+    const auto reduce_partial = [&](const auto &range) {
+      for (scipp::index i = range.begin(); i < range.end(); ++i) {
+        auto out = copy(tmp.slice({Dim::Internal0, i}));
+        const Slice slice(outer_dim, i * chunk_size,
+                          std::min((i + 1) * chunk_size, outer_size));
+        in_place<false>::transform_data(types, op, name, out,
+                                        other.slice(slice)...);
+        copy(out, tmp.slice({Dim::Internal0, i}));
+      }
+    };
+    core::parallel::parallel_for(core::parallel::blocked_range(0, nchunk, 1),
+                                 reduce_partial);
+    in_place<false>::transform_data(types, op, name, var, tmp);
+
+  } else {
+    const auto grainsize =
+        reduce_outer ? std::max(scipp::index(32), size / 24) : -1;
+    core::parallel::parallel_for(
+        core::parallel::blocked_range(0, size, grainsize), reduce);
+  }
 }
 } // namespace detail
 
