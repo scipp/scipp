@@ -478,9 +478,7 @@ template <bool dry_run> struct in_place {
     };
     if (begin.has_stride_zero()) {
       // The output has a dimension with stride zero so parallelization must
-      // be done differently. Explicit and precise control of chunking is
-      // required to avoid multiple threads writing to the same output. Not
-      // implemented for now.
+      // be done differently. See parallelization in accumulate.h.
       auto indices = begin; // copy so that run doesn't modify begin
       auto end = begin;
       end.set_index(arg.size());
