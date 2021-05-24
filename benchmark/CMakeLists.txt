@@ -43,7 +43,9 @@ target_link_libraries(transform_benchmark LINK_PRIVATE scipp-variable benchmark)
 
 add_executable(accumulate_benchmark EXCLUDE_FROM_ALL accumulate_benchmark.cpp)
 add_dependencies(all-benchmarks accumulate_benchmark)
-target_link_libraries(accumulate_benchmark LINK_PRIVATE scipp-variable benchmark)
+target_link_libraries(
+  accumulate_benchmark LINK_PRIVATE scipp-variable benchmark
+)
 
 add_executable(variable_benchmark EXCLUDE_FROM_ALL variable_benchmark.cpp)
 add_dependencies(all-benchmarks variable_benchmark)
