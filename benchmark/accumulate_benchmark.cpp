@@ -27,8 +27,8 @@ static void BM_accumulate_in_place(benchmark::State &state) {
   const auto ny = n / nx;
   const bool outer = state.range(1);
   const bool use_variances = state.range(2);
-  auto b = makeBenchmarkVariable(Dimensions{{Dim::X, nx}, {Dim::Y, ny}},
-                                 use_variances);
+  const auto b = makeBenchmarkVariable(Dimensions{{Dim::X, nx}, {Dim::Y, ny}},
+                                       use_variances);
   auto a = copy(b.slice({outer ? Dim::X : Dim::Y, 0}));
   static constexpr auto op{[](auto &a_, const auto &b_) { a_ += b_; }};
 
