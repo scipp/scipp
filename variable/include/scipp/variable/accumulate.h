@@ -15,17 +15,11 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
                        const std::string_view &name, Var &&var,
                        Other &&... other) {
   // Cumulative operations may write to `other`, threading not possible.
-  if constexpr ((std::is_const_v<std::remove_reference_t<Other>> || ...))
+  if constexpr ((!std::is_const_v<std::remove_reference_t<Other>> || ...))
     return in_place<false>::transform_data(types, op, name, var, other...);
-
-  if (var.dims().ndim() == 0 || (!other.dims().includes(var.dims()) || ...)) {
-    // Bail out if output is scalar or input is broadcast => no multi-threading.
-    // TODO Could implement multi-threading for scalars by broadcasting the
-    // output before slicing, but this will require extra care since there are
-    // cases (specifically cumulative operations) where also the secodn argument
-    // is being written two, in which case broadcasting must not be done.
+  // Bail out if `other` is implicitly broadcast
+  if ((!other.dims().includes(var.dims()) || ...))
     return in_place<false>::transform_data(types, op, name, var, other...);
-  }
 
   const auto reduce_chunk = [&](auto &&out, const Slice slice) {
     const bool avoid_false_sharing = out.dims().volume() < 128;
@@ -40,43 +34,39 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
   // than one dimension, e.g., by flattening the output's dims in all inputs.
   // However, it is nontrivial to detect whether calling `flatten` on `other` is
   // possible without copies so this is not implemented at this point.
-  const auto dim = *var.dims().begin();
-  const auto reduce = [&](const auto &range) {
-    const Slice slice(dim, range.begin(), range.end());
-    reduce_chunk(var.slice(slice), slice);
-  };
   const bool reduce_outer =
       (!var.dims().contains(other.dims().labels().front()) || ...);
-  // Avoid slow transposed reads when accumulating along outer dim
-  // TODO Even with this grain size we see essentially no multi-threaded speedup
-  // for accumulation along the *outer* dim if there are less than about 500
-  // output elements. The solution could be to chunk along the input dim, but
-  // this possible only if exclusively `var` is modified by `op`.
-  const auto size = var.dims()[dim];
-  if (((*other.dims().begin() != dim) || ...) && size < 65536) {
-    // reducing outer dimensions
+  if (var.dims().ndim() == 0 ||
+      (reduce_outer && var.dims()[*var.dims().begin()] < 65536)) {
+    // For small output sizes, especially with reduction along the outer
+    // dimension, threading via the output's dimension does not provide
+    // significant speedup, mainly due to partially transposed memory access
+    // patterns. We thus chunk based on the input's dimension, for a 5x speedup
+    // in many cases.
     const auto outer_dim = (*other.dims().begin(), ...);
     const auto outer_size = (other.dims()[outer_dim], ...);
     const auto nchunk = std::min(scipp::index(24), outer_size);
     const auto chunk_size = (outer_size + nchunk - 1) / nchunk;
-    auto tmp =
-        copy(broadcast(var, merge({Dim::Internal0, nchunk}, var.dims())));
-    const auto reduce_partial = [&](const auto &range) {
+    auto v = copy(broadcast(var, merge({Dim::Internal0, nchunk}, var.dims())));
+    const auto reduce = [&](const auto &range) {
       for (scipp::index i = range.begin(); i < range.end(); ++i) {
         const Slice slice(outer_dim, i * chunk_size,
                           std::min((i + 1) * chunk_size, outer_size));
-        reduce_chunk(tmp.slice({Dim::Internal0, i}), slice);
+        reduce_chunk(v.slice({Dim::Internal0, i}), slice);
       }
     };
     core::parallel::parallel_for(core::parallel::blocked_range(0, nchunk, 1),
-                                 reduce_partial);
-    in_place<false>::transform_data(types, op, name, var, tmp);
-
+                                 reduce);
+    in_place<false>::transform_data(types, op, name, var, v);
   } else {
-    const auto grainsize =
-        reduce_outer ? std::max(scipp::index(32), size / 24) : -1;
-    core::parallel::parallel_for(
-        core::parallel::blocked_range(0, size, grainsize), reduce);
+    const auto dim = *var.dims().begin();
+    const auto reduce = [&](const auto &range) {
+      const Slice slice(dim, range.begin(), range.end());
+      reduce_chunk(var.slice(slice), slice);
+    };
+    const auto size = var.dims()[dim];
+    core::parallel::parallel_for(core::parallel::blocked_range(0, size),
+                                 reduce);
   }
 }
 } // namespace detail
