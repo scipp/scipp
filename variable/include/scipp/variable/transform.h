@@ -607,7 +607,7 @@ template <bool dry_run> struct in_place {
   }
 
   template <class... Ts, class Op, class Var, class... Other>
-  static void transform_data(std::tuple<Ts...> &&, Op op,
+  static void transform_data(const std::tuple<Ts...> &, Op op,
                              const std::string_view name, Var &&var,
                              Other &&... other) {
     using namespace detail;
