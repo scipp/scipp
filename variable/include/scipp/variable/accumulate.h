@@ -15,20 +15,39 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
                        Other &&... other) {
   if (var.dims().ndim() == 0 || (!other.dims().includes(var.dims()) || ...)) {
     // Bail out if output is scalar or input is broadcast => no multi-threading.
-    // Could implement multi-threading for scalars by broadcasting the outerput
-    // before slicing, but this will require extra care since there are cases
-    // (specifically cumulative operations) where also the secodn argument is
-    // being written two, in which case broadcasting must not be done.
+    // TODO Could implement multi-threading for scalars by broadcasting the
+    // output before slicing, but this will require extra care since there are
+    // cases (specifically cumulative operations) where also the secodn argument
+    // is being written two, in which case broadcasting must not be done.
     return in_place<false>::transform_data(types, op, name, var, other...);
   }
+  // TODO The parallelism could be improved for cases where the output has more
+  // than one dimension, e.g., by flattening the output's dims in all inputs.
+  // However, it is nontrivial to detect whether calling `flatten` on `other` is
+  // possible without copies so this is not implemented at this point.
   const auto dim = *var.dims().begin();
   const auto reduce = [&](const auto &range) {
     const Slice slice(dim, range.begin(), range.end());
-    in_place<false>::transform_data(types, op, name, var.slice(slice),
+    auto out = var.slice(slice);
+    const bool avoid_false_sharing = range.end() - range.begin() < 128;
+    if (avoid_false_sharing)
+      out = copy(out);
+    in_place<false>::transform_data(types, op, name, out,
                                     other.slice(slice)...);
+    if (avoid_false_sharing)
+      copy(out, var.slice(slice));
   };
+  const bool reduce_outer =
+      (!var.dims().contains(other.dims().labels().front()) || ...);
+  // Avoid slow transposed reads when accumulating along outer dim
+  // TODO Even with this grain size we see essentially no multi-threaded speedup
+  // for accumulation along the *outer* dim if there are less than about 500
+  // output elements. The solution could be to chunk along the input dim, but
+  // this possible only if exclusively `var` is modified by `op`.
+  const auto grainsize =
+      reduce_outer ? std::max(scipp::index(32), var.dims()[dim] / 24) : -1;
   core::parallel::parallel_for(
-      core::parallel::blocked_range(0, var.dims()[dim]), reduce);
+      core::parallel::blocked_range(0, var.dims()[dim], grainsize), reduce);
 }
 } // namespace detail
 
