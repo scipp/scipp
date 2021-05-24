@@ -22,15 +22,14 @@ Variable makeBenchmarkVariable(const Dimensions &dims,
 } // namespace
 
 static void BM_accumulate_in_place(benchmark::State &state) {
-  const auto nx = 1000;
-  const auto ny = state.range(0);
-  const auto n = nx * ny;
-  const bool use_variances = state.range(1);
-  const bool outer = state.range(2);
-  auto a = makeBenchmarkVariable(Dimensions{{Dim::X, nx}}, use_variances);
-  auto b = makeBenchmarkVariable(outer ? Dimensions{{Dim::Y, ny}, {Dim::X, nx}}
-                                       : Dimensions{{Dim::X, nx}, {Dim::Y, ny}},
+  const auto n = 2ul << 26ul;
+  const auto nx = state.range(0);
+  const auto ny = n / nx;
+  const bool outer = state.range(1);
+  const bool use_variances = state.range(2);
+  auto b = makeBenchmarkVariable(Dimensions{{Dim::X, nx}, {Dim::Y, ny}},
                                  use_variances);
+  auto a = copy(b.slice({outer ? Dim::X : Dim::Y, 0}));
   static constexpr auto op{[](auto &a_, const auto &b_) { a_ += b_; }};
 
   for ([[maybe_unused]] auto _ : state) {
@@ -41,7 +40,8 @@ static void BM_accumulate_in_place(benchmark::State &state) {
   state.SetItemsProcessed(state.iterations() * n * variance_factor);
   state.SetBytesProcessed(state.iterations() * n * variance_factor *
                           sizeof(double));
-  state.counters["n"] = n;
+  state.counters["n_outer"] = nx;
+  state.counters["n_inner"] = ny;
   state.counters["variances"] = use_variances;
   state.counters["accumulate-outer"] = outer;
   state.counters["size"] = benchmark::Counter(
@@ -51,6 +51,6 @@ static void BM_accumulate_in_place(benchmark::State &state) {
 
 BENCHMARK(BM_accumulate_in_place)
     ->RangeMultiplier(2)
-    ->Ranges({{1, 2ul << 18ul}, {false, true}, {false, true}});
+    ->Ranges({{2, 2ul << 25ul}, {false, true}, {false, true}});
 
 BENCHMARK_MAIN();
