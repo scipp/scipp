@@ -2,9 +2,9 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/dataset/reduction.h"
 #include "scipp/core/element/util.h"
 #include "scipp/dataset/math.h"
-#include "scipp/dataset/reduction.h"
 #include "scipp/dataset/special_values.h"
 #include "scipp/dataset/util.h"
 
