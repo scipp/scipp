@@ -29,6 +29,8 @@ public:
 
   auto begin() const noexcept { return m_keys.begin(); }
   auto end() const noexcept { return m_keys.begin() + size(); }
+  auto rbegin() const noexcept { return m_keys.rbegin() - size() + NDIM_MAX; }
+  auto rend() const noexcept { return m_keys.rend(); }
   typename std::array<Key, Capacity>::const_iterator find(const Key &key) const;
   [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
   constexpr scipp::index size() const noexcept { return m_size; }

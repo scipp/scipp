@@ -5,6 +5,8 @@
 #include <numeric>
 #include <set>
 
+#include "scipp/common/ranges.h"
+
 #include "scipp/core/element/bin.h"
 #include "scipp/core/element/cumulative.h"
 
@@ -110,7 +112,7 @@ auto bin(const Variable &data, const Variable &indices,
   fill_zeros(offsets);
   // Not using cumsum along *all* dims, since some outer dims may be left
   // untouched (no rebin).
-  for (const auto dim : data.dims().labels())
+  for (const auto dim : views::reverse(data.dims()))
     if (dims.contains(dim) && dims[dim] > 0) {
       subbin_sizes_add_intersection(
           offsets, subbin_sizes_cumsum_exclusive(output_bin_sizes, dim));
