@@ -10,7 +10,7 @@
 #include "scipp/core/except.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/cumulative.h"
-#include "scipp/variable/data_model.h"
+#include "scipp/variable/element_array_model.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
@@ -32,9 +32,6 @@ public:
   }
 
   bool hasVariances() const noexcept override { return false; }
-  void setVariances(const Variable &) override {
-    throw except::VariancesError("This data type cannot have variances.");
-  }
   const Indices &bin_indices() const override { return indices(); }
 
   const auto &indices() const { return m_indices; }
@@ -46,65 +43,34 @@ private:
   Dim m_dim;
 };
 
-namespace {
-template <class T> auto clone_impl(const DataModel<bucket<T>> &model) {
-  return std::make_unique<DataModel<bucket<T>>>(
-      model.indices()->clone(), model.bin_dim(), copy(model.buffer()));
-}
-} // namespace
-
-SCIPP_VARIABLE_EXPORT void
-expect_valid_bin_indices(const VariableConceptHandle &indices, const Dim dim,
-                         const Sizes &buffer_sizes);
-
-/// Specialization of DataModel for "binned" data. T could be Variable,
+/// Specialization of ElementArrayModel for "binned" data. T could be Variable,
 /// DataArray, or Dataset.
 ///
 /// A bin in this context is defined as an element of a variable mapping to a
 /// range of data, such as a slice of a DataArray.
 template <class T>
-class DataModel<bucket<T>> : public BinModelBase<VariableConceptHandle> {
+class BinArrayModel : public BinModelBase<VariableConceptHandle> {
   using Indices = VariableConceptHandle;
 
 public:
   using value_type = bucket<T>;
   using range_type = typename bucket<T>::range_type;
 
-  DataModel(const VariableConceptHandle &indices, const Dim dim, T buffer)
-      : BinModelBase<Indices>(indices, dim), m_buffer(std::move(buffer)) {}
+  BinArrayModel(const VariableConceptHandle &indices, const Dim dim, T buffer);
 
-  [[nodiscard]] VariableConceptHandle clone() const override {
-    return clone_impl(*this);
-  }
+  [[nodiscard]] VariableConceptHandle clone() const override;
 
-  bool operator==(const DataModel &other) const noexcept {
-    const auto &i1 = requireT<const DataModel<range_type>>(*indices());
-    const auto &i2 = requireT<const DataModel<range_type>>(*other.indices());
-    return equals_impl(i1.values(), i2.values()) &&
-           this->bin_dim() == other.bin_dim() && m_buffer == other.m_buffer;
-  }
-  bool operator!=(const DataModel &other) const noexcept {
+  bool operator==(const BinArrayModel &other) const noexcept;
+
+  bool operator!=(const BinArrayModel &other) const noexcept {
     return !(*this == other);
   }
 
   [[nodiscard]] VariableConceptHandle
-  makeDefaultFromParent(const scipp::index size) const override {
-    return std::make_unique<DataModel>(
-        makeVariable<range_type>(Dims{Dim::X}, Shape{size}).data_handle(),
-        this->bin_dim(), T{m_buffer.slice({this->bin_dim(), 0, 0})});
-  }
+  makeDefaultFromParent(const scipp::index size) const override;
 
   [[nodiscard]] VariableConceptHandle
-  makeDefaultFromParent(const Variable &shape) const override {
-    const auto end = cumsum(shape);
-    const auto begin = end - shape;
-    const auto size = end.dims().volume() > 0
-                          ? end.values<scipp::index>().as_span().back()
-                          : 0;
-    return std::make_unique<DataModel>(
-        zip(begin, begin).data_handle(), this->bin_dim(),
-        resize_default_init(m_buffer, this->bin_dim(), size));
-  }
+  makeDefaultFromParent(const Variable &shape) const override;
 
   static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }
   [[nodiscard]] DType dtype() const noexcept override {
@@ -134,44 +100,36 @@ public:
     return sizeof(range_type);
   }
 
-private:
-  auto index_values(const core::ElementArrayViewParams &base) const {
-    return requireT<const DataModel<range_type>>(*this->indices()).values(base);
+  void setVariances(const Variable &) override {
+    except::throw_cannot_have_variances(core::dtype<core::bin<T>>);
   }
+
+private:
+  ElementArrayView<const range_type>
+  index_values(const core::ElementArrayViewParams &base) const;
   T m_buffer;
 };
 
+template <class T> BinArrayModel<T> copy(const BinArrayModel<T> &model);
+
 template <class T>
-bool DataModel<bucket<T>>::equals(const Variable &a, const Variable &b) const {
-  if (a.unit() != b.unit())
-    return false;
-  if (a.dims() != b.dims())
-    return false;
-  if (a.dtype() != b.dtype())
-    return false;
-  if (a.hasVariances() != b.hasVariances())
-    return false;
-  if (a.dims().volume() == 0 && a.dims() == b.dims())
-    return true;
+bool BinArrayModel<T>::equals(const Variable &a, const Variable &b) const {
   // TODO This implementation is slow since it creates a view for every bucket.
-  return equals_impl(a.values<bucket<T>>(), b.values<bucket<T>>());
+  return a.dtype() == dtype() && b.dtype() == dtype() &&
+         equals_impl(a.values<bucket<T>>(), b.values<bucket<T>>());
 }
 
 template <class T>
-void DataModel<bucket<T>>::copy(const Variable &src, Variable &dest) const {
-  const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
-  auto &&[indices1, dim1, buffer1] = dest.constituents<bucket<T>>();
+void BinArrayModel<T>::copy(const Variable &src, Variable &dest) const {
+  const auto &[indices0, dim0, buffer0] = src.constituents<T>();
+  auto &&[indices1, dim1, buffer1] = dest.constituents<T>();
   static_cast<void>(dim1);
   copy_slices(buffer0, buffer1, dim0, indices0, indices1);
 }
-template <class T>
-void DataModel<bucket<T>>::copy(const Variable &src, Variable &&dest) const {
-  copy(src, dest);
-}
 
 template <class T>
-void DataModel<bucket<T>>::assign(const VariableConcept &other) {
-  *this = requireT<const DataModel<bucket<T>>>(other);
+void BinArrayModel<T>::copy(const Variable &src, Variable &&dest) const {
+  copy(src, dest);
 }
 
 } // namespace scipp::variable

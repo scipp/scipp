@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .._variable import vector, vectors, matrix, matrices
 from .. import _utils as su
 from .._scipp import core as sc
 
@@ -151,7 +152,17 @@ def _dict_to_variable(d):
             out[key] = getattr(sc.dtype, d[key])
         else:
             out[key] = d[key]
-    return sc.Variable(**out)
+    # Hack for types that cannot be directly constructed using sc.Variable()
+    if 'value' in out:
+        init = {'vector_3_float64': vector, 'matrix_3_float64': matrix}
+    else:
+        init = {'vector_3_float64': vectors, 'matrix_3_float64': matrices}
+    make_var = init.get(str(out.get('dtype', None)), sc.Variable)
+    if make_var != sc.Variable:
+        for key in ['dtype', 'variance', 'variances']:
+            if key in out:
+                del out[key]
+    return make_var(**out)
 
 
 def _dict_to_data_array(d):

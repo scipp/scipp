@@ -33,4 +33,11 @@ template <class T> T normalize_impl(const T &nominator, const T &denominator) {
   return nominator * reciprocal(astype(denominator, type));
 }
 
+SCIPP_VARIABLE_EXPORT void
+expect_valid_bin_indices(const VariableConceptHandle &indices, const Dim dim,
+                         const Sizes &buffer_sizes);
+
+template <class T>
+Variable make_bins_impl(Variable indices, const Dim dim, T &&buffer);
+
 } // namespace scipp::variable

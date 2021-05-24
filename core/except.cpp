@@ -50,6 +50,11 @@ void throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
                        '.'};
 }
 
+void throw_cannot_have_variances(const DType type) {
+  throw except::VariancesError("Variances for dtype=" + to_string(type) +
+                               " not supported.");
+}
+
 } // namespace scipp::except
 
 namespace scipp::core::expect {

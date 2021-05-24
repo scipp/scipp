@@ -6,7 +6,6 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
-#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/reduction.h"
@@ -14,6 +13,8 @@
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_concept.h"
+
+#include "operations_common.h"
 
 namespace scipp::variable {
 
@@ -79,9 +80,7 @@ Variable make_bins(Variable indices, const Dim dim, Variable buffer) {
 /// bins is acceptable.
 Variable make_bins_no_validate(Variable indices, const Dim dim,
                                Variable buffer) {
-  indices.setDataHandle(std::make_unique<variable::DataModel<bucket<Variable>>>(
-      indices.data_handle(), dim, std::move(buffer)));
-  return indices;
+  return variable::make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
 } // namespace scipp::variable

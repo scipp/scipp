@@ -22,6 +22,7 @@ Variable::Variable(const Variable &parent, const Dimensions &dims)
     : m_dims(dims), m_strides(dims),
       m_object(parent.data().makeDefaultFromParent(dims.volume())) {}
 
+// TODO there is no size check here!
 Variable::Variable(const Dimensions &dims, VariableConceptHandle data)
     : m_dims(dims), m_strides(dims), m_object(std::move(data)) {}
 
@@ -64,6 +65,16 @@ bool Variable::operator==(const Variable &other) const {
   if (!is_valid() || !other.is_valid())
     return is_valid() == other.is_valid();
   // Note: Not comparing strides
+  if (unit() != other.unit())
+    return false;
+  if (dims() != other.dims())
+    return false;
+  if (dtype() != other.dtype())
+    return false;
+  if (hasVariances() != other.hasVariances())
+    return false;
+  if (dims().volume() == 0 && dims() == other.dims())
+    return true;
   return dims() == other.dims() && data().equals(*this, other);
 }
 

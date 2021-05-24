@@ -97,6 +97,8 @@ public:
   void validateSlice(const Slice &s, const Variable &data) const;
   [[maybe_unused]] Variable &setSlice(Slice params, const Variable &data);
 
+  template <class T, class... Index> Variable elements(Index... index) const;
+
   void rename(Dim from, Dim to);
 
   bool operator==(const Variable &other) const;
@@ -118,14 +120,9 @@ public:
   template <class T> const T &bin_buffer() const;
   template <class T> T &bin_buffer();
 
-  template <class T>
-  std::tuple<Variable, Dim, typename T::const_element_type>
-  constituents() const;
-  template <class T>
-  std::tuple<Variable, Dim, typename T::element_type> constituents();
-
-  template <class T>
-  std::tuple<Variable, Dim, typename T::buffer_type> to_constituents();
+  template <class T> std::tuple<Variable, Dim, T> constituents() const;
+  template <class T> std::tuple<Variable, Dim, T> constituents();
+  template <class T> std::tuple<Variable, Dim, T> to_constituents();
 
   [[nodiscard]] Variable broadcast(const Dimensions &target) const;
   [[nodiscard]] Variable fold(const Dim dim, const Dimensions &target) const;
