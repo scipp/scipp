@@ -3,7 +3,6 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/reduction.h"
-#include "scipp/common/reduction.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/core/element/comparison.h"
@@ -18,7 +17,6 @@
 #include "operations_common.h"
 
 using namespace scipp::core;
-using scipp::common::reduce_all_dims;
 
 namespace scipp::variable {
 

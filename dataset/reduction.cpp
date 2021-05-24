@@ -2,8 +2,6 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/common/reduction.h"
-#include "dataset_operations_common.h"
 #include "scipp/core/element/util.h"
 #include "scipp/dataset/math.h"
 #include "scipp/dataset/reduction.h"
@@ -11,8 +9,9 @@
 #include "scipp/dataset/util.h"
 
 #include "../variable/operations_common.h"
+#include "dataset_operations_common.h"
 
-using scipp::common::reduce_all_dims;
+using scipp::variable::reduce_all_dims;
 
 namespace scipp::dataset {
 
