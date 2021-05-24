@@ -50,7 +50,7 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
     auto v = copy(broadcast(var, merge({Dim::Internal0, nchunk}, var.dims())));
     const auto reduce = [&](const auto &range) {
       for (scipp::index i = range.begin(); i < range.end(); ++i) {
-        const Slice slice(outer_dim, i * chunk_size,
+        const Slice slice(outer_dim, std::min(i * chunk_size, outer_size),
                           std::min((i + 1) * chunk_size, outer_size));
         reduce_chunk(v.slice({Dim::Internal0, i}), slice);
       }
