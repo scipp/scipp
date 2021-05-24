@@ -14,6 +14,10 @@ template <class... Ts, class Op, class Var, class... Other>
 static void accumulate(const std::tuple<Ts...> &types, Op op,
                        const std::string_view &name, Var &&var,
                        Other &&... other) {
+  // Cumulative operations may write to `other`, threading not possible.
+  if constexpr ((std::is_const_v<std::remove_reference_t<Other>> || ...))
+    return in_place<false>::transform_data(types, op, name, var, other...);
+
   if (var.dims().ndim() == 0 || (!other.dims().includes(var.dims()) || ...)) {
     // Bail out if output is scalar or input is broadcast => no multi-threading.
     // TODO Could implement multi-threading for scalars by broadcasting the
@@ -22,6 +26,16 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
     // is being written two, in which case broadcasting must not be done.
     return in_place<false>::transform_data(types, op, name, var, other...);
   }
+
+  const auto reduce_chunk = [&](auto &&out, const Slice slice) {
+    const bool avoid_false_sharing = out.dims().volume() < 128;
+    auto tmp = avoid_false_sharing ? copy(out) : out;
+    in_place<false>::transform_data(types, op, name, tmp,
+                                    other.slice(slice)...);
+    if (avoid_false_sharing)
+      copy(tmp, out);
+  };
+
   // TODO The parallelism could be improved for cases where the output has more
   // than one dimension, e.g., by flattening the output's dims in all inputs.
   // However, it is nontrivial to detect whether calling `flatten` on `other` is
@@ -29,14 +43,7 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
   const auto dim = *var.dims().begin();
   const auto reduce = [&](const auto &range) {
     const Slice slice(dim, range.begin(), range.end());
-    auto out = var.slice(slice);
-    const bool avoid_false_sharing = range.end() - range.begin() < 128;
-    if (avoid_false_sharing)
-      out = copy(out);
-    in_place<false>::transform_data(types, op, name, out,
-                                    other.slice(slice)...);
-    if (avoid_false_sharing)
-      copy(out, var.slice(slice));
+    reduce_chunk(var.slice(slice), slice);
   };
   const bool reduce_outer =
       (!var.dims().contains(other.dims().labels().front()) || ...);
@@ -56,16 +63,9 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
         copy(broadcast(var, merge({Dim::Internal0, nchunk}, var.dims())));
     const auto reduce_partial = [&](const auto &range) {
       for (scipp::index i = range.begin(); i < range.end(); ++i) {
-        auto out = tmp.slice({Dim::Internal0, i});
-        const bool avoid_false_sharing = range.end() - range.begin() < 128;
-        if (avoid_false_sharing)
-          out = copy(out);
         const Slice slice(outer_dim, i * chunk_size,
                           std::min((i + 1) * chunk_size, outer_size));
-        in_place<false>::transform_data(types, op, name, out,
-                                        other.slice(slice)...);
-        if (avoid_false_sharing)
-          copy(out, tmp.slice({Dim::Internal0, i}));
+        reduce_chunk(tmp.slice({Dim::Internal0, i}), slice);
       }
     };
     core::parallel::parallel_for(core::parallel::blocked_range(0, nchunk, 1),
