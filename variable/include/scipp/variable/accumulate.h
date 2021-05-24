@@ -37,31 +37,7 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
   // than one dimension, e.g., by flattening the output's dims in all inputs.
   // However, it is nontrivial to detect whether calling `flatten` on `other` is
   // possible without copies so this is not implemented at this point.
-  const bool reduce_outer =
-      (!var.dims().contains(other.dims().labels().front()) || ...);
-  if (var.dims().ndim() == 0 ||
-      (reduce_outer && var.dims()[*var.dims().begin()] < 65536)) {
-    // For small output sizes, especially with reduction along the outer
-    // dimension, threading via the output's dimension does not provide
-    // significant speedup, mainly due to partially transposed memory access
-    // patterns. We thus chunk based on the input's dimension, for a 5x speedup
-    // in many cases.
-    const auto outer_dim = (*other.dims().begin(), ...);
-    const auto outer_size = (other.dims()[outer_dim], ...);
-    const auto nchunk = std::min(scipp::index(24), outer_size);
-    const auto chunk_size = (outer_size + nchunk - 1) / nchunk;
-    auto v = copy(broadcast(var, merge({Dim::Internal0, nchunk}, var.dims())));
-    const auto reduce = [&](const auto &range) {
-      for (scipp::index i = range.begin(); i < range.end(); ++i) {
-        const Slice slice(outer_dim, std::min(i * chunk_size, outer_size),
-                          std::min((i + 1) * chunk_size, outer_size));
-        reduce_chunk(v.slice({Dim::Internal0, i}), slice);
-      }
-    };
-    core::parallel::parallel_for(core::parallel::blocked_range(0, nchunk, 1),
-                                 reduce);
-    in_place<false>::transform_data(types, op, name, var, v);
-  } else {
+  const auto accumulate_parallel = [&]() {
     const auto dim = *var.dims().begin();
     const auto reduce = [&](const auto &range) {
       const Slice slice(dim, range.begin(), range.end());
@@ -70,6 +46,38 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
     const auto size = var.dims()[dim];
     core::parallel::parallel_for(core::parallel::blocked_range(0, size),
                                  reduce);
+  };
+  if constexpr (sizeof...(other) == 1) {
+    const bool reduce_outer =
+        (!var.dims().contains(other.dims().labels().front()) || ...);
+    if (var.dims().ndim() == 0 ||
+        (reduce_outer && var.dims()[*var.dims().begin()] < 65536)) {
+      // For small output sizes, especially with reduction along the outer
+      // dimension, threading via the output's dimension does not provide
+      // significant speedup, mainly due to partially transposed memory access
+      // patterns. We thus chunk based on the input's dimension, for a 5x
+      // speedup in many cases.
+      const auto outer_dim = (*other.dims().begin(), ...);
+      const auto outer_size = (other.dims()[outer_dim], ...);
+      const auto nchunk = std::min(scipp::index(24), outer_size);
+      const auto chunk_size = (outer_size + nchunk - 1) / nchunk;
+      auto v =
+          copy(broadcast(var, merge({Dim::Internal0, nchunk}, var.dims())));
+      const auto reduce = [&](const auto &range) {
+        for (scipp::index i = range.begin(); i < range.end(); ++i) {
+          const Slice slice(outer_dim, std::min(i * chunk_size, outer_size),
+                            std::min((i + 1) * chunk_size, outer_size));
+          reduce_chunk(v.slice({Dim::Internal0, i}), slice);
+        }
+      };
+      core::parallel::parallel_for(core::parallel::blocked_range(0, nchunk, 1),
+                                   reduce);
+      in_place<false>::transform_data(types, op, name, var, v);
+    } else {
+      accumulate_parallel();
+    }
+  } else {
+    accumulate_parallel();
   }
 }
 } // namespace detail
@@ -98,16 +106,16 @@ void accumulate_in_place(Var &&var, Other &&other, Op op,
 template <class... Ts, class Var, class Op>
 void accumulate_in_place(Var &&var, const Variable &var1, const Variable &var2,
                          Op op, const std::string_view &name = "operation") {
-  in_place<false>::transform_data(type_tuples<Ts...>(op), op, name,
-                                  std::forward<Var>(var), var1, var2);
+  detail::accumulate(type_tuples<Ts...>(op), op, name, std::forward<Var>(var),
+                     var1, var2);
 }
 
 template <class... Ts, class Var, class Op>
 void accumulate_in_place(Var &&var, Variable &var1, const Variable &var2,
                          const Variable &var3, Op op,
                          const std::string_view &name = "operation") {
-  in_place<false>::transform_data(type_tuples<Ts...>(op), op, name,
-                                  std::forward<Var>(var), var1, var2, var3);
+  detail::accumulate(type_tuples<Ts...>(op), op, name, std::forward<Var>(var),
+                     var1, var2, var3);
 }
 
 } // namespace scipp::variable
