@@ -92,35 +92,13 @@ Variable &nansum(const Variable &var, const Dim dim, Variable &out) {
   return sum_with_dim_inplace_impl(nansum_impl, var, dim, out);
 }
 
-Variable &nanmean_impl(const Variable &var, const Dim dim,
-                       const Variable &count, Variable &out) {
-  if (isInt(out.dtype()))
-    throw except::TypeError(
-        "Cannot calculate nanmean in-place when output dtype is integer");
-
-  nansum(var, dim, out);
-  auto scale = reciprocal(astype(count, core::dtype<double>));
-  out *= scale;
-  return out;
-}
-
 Variable mean_impl(const Variable &var, const Dim dim, const Variable &count) {
-  auto summed = sum(var, dim);
-  auto scale = reciprocal(astype(count, core::dtype<double>));
-  if (isInt(var.dtype()))
-    summed = summed * scale;
-  else
-    summed *= scale;
-  return summed;
+  return normalize_impl(sum(var, dim), count);
 }
 
 Variable nanmean_impl(const Variable &var, const Dim dim,
                       const Variable &count) {
-  if (isInt(var.dtype()))
-    return mean_impl(var, dim, count);
-  auto summed = nansum(var, dim);
-  summed *= reciprocal(astype(count, core::dtype<double>));
-  return summed;
+  return normalize_impl(nansum(var, dim), count);
 }
 
 Variable &mean_impl(const Variable &var, const Dim dim, const Variable &count,
@@ -128,39 +106,45 @@ Variable &mean_impl(const Variable &var, const Dim dim, const Variable &count,
   if (isInt(out.dtype()))
     throw except::TypeError(
         "Cannot calculate mean in-place when output dtype is integer");
-
   sum(var, dim, out);
   out *= reciprocal(astype(count, core::dtype<double>));
   return out;
 }
 
+Variable &nanmean_impl(const Variable &var, const Dim dim,
+                       const Variable &count, Variable &out) {
+  if (isInt(out.dtype()))
+    throw except::TypeError(
+        "Cannot calculate nanmean in-place when output dtype is integer");
+  nansum(var, dim, out);
+  auto scale = reciprocal(astype(count, core::dtype<double>));
+  out *= scale;
+  return out;
+}
+
 /// Return the mean along all dimensions.
 Variable mean(const Variable &var) {
-  return reduce_all_dims(var, [](auto &&... _) { return mean(_...); });
+  return normalize_impl(sum(var), var.dims().volume() * units::one);
 }
 
 Variable mean(const Variable &var, const Dim dim) {
-  using variable::isfinite;
-  return mean_impl(var, dim, sum(isfinite(var), dim));
+  return mean_impl(var, dim, var.dims()[dim] * units::one);
 }
 
 Variable &mean(const Variable &var, const Dim dim, Variable &out) {
-  using variable::isfinite;
-  return mean_impl(var, dim, sum(isfinite(var), dim), out);
+  return mean_impl(var, dim, var.dims()[dim] * units::one, out);
 }
 
 /// Return the mean along all dimensions. Ignoring NaN values.
 Variable nanmean(const Variable &var) {
-  return reduce_all_dims(var, [](auto &&... _) { return nanmean(_...); });
+  return normalize_impl(nansum(var), sum(isfinite(var)));
 }
 
 Variable nanmean(const Variable &var, const Dim dim) {
-  using variable::isfinite;
   return nanmean_impl(var, dim, sum(isfinite(var), dim));
 }
 
 Variable &nanmean(const Variable &var, const Dim dim, Variable &out) {
-  using variable::isfinite;
   return nanmean_impl(var, dim, sum(isfinite(var), dim), out);
 }
 
