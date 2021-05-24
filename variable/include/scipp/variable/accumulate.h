@@ -56,12 +56,16 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
         copy(broadcast(var, merge({Dim::Internal0, nchunk}, var.dims())));
     const auto reduce_partial = [&](const auto &range) {
       for (scipp::index i = range.begin(); i < range.end(); ++i) {
-        auto out = copy(tmp.slice({Dim::Internal0, i}));
+        auto out = tmp.slice({Dim::Internal0, i});
+        const bool avoid_false_sharing = range.end() - range.begin() < 128;
+        if (avoid_false_sharing)
+          out = copy(out);
         const Slice slice(outer_dim, i * chunk_size,
                           std::min((i + 1) * chunk_size, outer_size));
         in_place<false>::transform_data(types, op, name, out,
                                         other.slice(slice)...);
-        copy(out, tmp.slice({Dim::Internal0, i}));
+        if (avoid_false_sharing)
+          copy(out, tmp.slice({Dim::Internal0, i}));
       }
     };
     core::parallel::parallel_for(core::parallel::blocked_range(0, nchunk, 1),
