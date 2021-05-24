@@ -99,8 +99,7 @@ template <class T, class Elem>
 bool StructureArrayModel<T, Elem>::equals(const Variable &a,
                                           const Variable &b) const {
   return a.dtype() == dtype() && b.dtype() == dtype() &&
-         equals_impl(a.elements<T>().template values<Elem>(),
-                     b.elements<T>().template values<Elem>());
+         a.elements<T>() == b.elements<T>();
 }
 
 template <class T, class Elem>
