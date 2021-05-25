@@ -73,31 +73,42 @@ void bind_init_0D_native_python_types(py::class_<Variable> &c) {
 }
 
 void bind_init_0D_numpy_types(py::class_<Variable> &c) {
-  c.def(py::init([](py::buffer &b, const std::optional<py::buffer> &v,
-                    const units::Unit &unit, py::object &dtype) {
-          py::array value(b);
-          py::buffer_info info = b.request();
-          if (info.ndim == 0) {
-            auto variance = v ? std::optional{py::array(*v)} : std::nullopt;
-            return doMakeVariable({}, value, variance, unit, dtype);
-            // Oddly, np.datetime64 is translated into a buffer with ndim = 1.
-          } else if ((info.ndim == 1) && (scipp_dtype(value.dtype()) ==
-                                          scipp::dtype<core::time_point>)) {
-            if (v.has_value()) {
-              throw except::VariancesError("datetimes cannot have variances.");
-            }
-            const auto [actual_unit, value_factor] =
-                get_time_unit(b, dtype, unit);
-            return do_init_0D<core::time_point>(
-                make_time_point(b, value_factor), std::nullopt, actual_unit);
+  c.def(
+      py::init([](py::buffer &b, const std::optional<py::buffer> &v,
+                  const units::Unit &unit, py::object &dtype) {
+        if (scipp_dtype(dtype) == scipp::dtype<python::PyObject>) {
+          // Allow storing numpy objects as-is instead of only their content.
+          return do_init_0D(
+              b.cast<py::object>(),
+              std::optional<py::object>{v ? std::optional{*v} : std::nullopt},
+              unit);
+        }
 
-          } else {
-            throw scipp::except::VariableError(
-                "Wrong overload for making 0D variable.");
+        py::array value(b);
+        py::buffer_info info = b.request();
+        if (info.ndim == 0) {
+          auto variance = v ? std::optional{py::array(*v)} : std::nullopt;
+          return doMakeVariable({}, value, variance, unit, dtype);
+          // Oddly, np.datetime64 is translated into a buffer with ndim = 1.
+        } else if ((info.ndim == 1) && (scipp_dtype(value.dtype()) ==
+                                        scipp::dtype<core::time_point>)) {
+          if (v.has_value()) {
+            throw except::VariancesError("datetimes cannot have variances.");
           }
-        }),
-        py::arg("value").noconvert(), py::arg("variance") = std::nullopt,
-        py::arg("unit") = units::one, py::arg("dtype") = py::none());
+          const auto [actual_unit, value_factor] =
+              get_time_unit(b, dtype, unit);
+          return do_init_0D<core::time_point>(make_time_point(b, value_factor),
+                                              std::nullopt, actual_unit);
+
+        } else {
+          throw scipp::except::VariableError(
+              "Attempted to create a scalar variable from a non-scalar object."
+              "You can use dtype=sc.dtype.PyObject to create a nested "
+              "variable.");
+        }
+      }),
+      py::arg("value").noconvert(), py::arg("variance") = std::nullopt,
+      py::arg("unit") = units::one, py::arg("dtype") = py::none());
 }
 
 void bind_init_list(py::class_<Variable> &c) {
