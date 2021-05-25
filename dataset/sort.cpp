@@ -5,8 +5,6 @@
 #include "scipp/dataset/sort.h"
 #include "scipp/dataset/groupby.h"
 
-#include "dataset_operations_common.h"
-
 namespace scipp::dataset {
 
 /// Return a Variable sorted based on key.
