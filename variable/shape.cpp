@@ -22,24 +22,23 @@ Variable broadcast(const Variable &var, const Dimensions &dims) {
 
 Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   if (a1.dtype() != a2.dtype())
-    throw std::runtime_error(
+    throw except::TypeError(
         "Cannot concatenate Variables: Data types do not match.");
   if (a1.unit() != a2.unit())
-    throw std::runtime_error(
+    throw except::UnitError(
         "Cannot concatenate Variables: Units do not match.");
 
   const auto &dims1 = a1.dims();
   const auto &dims2 = a2.dims();
   // TODO Many things in this function should be refactored and moved in class
   // Dimensions.
-  // TODO Special handling for edge variables.
   for (const auto &dim1 : dims1.labels()) {
     if (dim1 != dim) {
       if (!dims2.contains(dim1))
-        throw std::runtime_error(
+        throw except::DimensionError(
             "Cannot concatenate Variables: Dimensions do not match.");
       if (dims2[dim1] != dims1[dim1])
-        throw std::runtime_error(
+        throw except::DimensionError(
             "Cannot concatenate Variables: Dimension extents do not match.");
     }
   }
@@ -53,7 +52,7 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   // dims1.
   // TODO Support broadcast of dimensions?
   if (size1 != size2)
-    throw std::runtime_error(
+    throw except::DimensionError(
         "Cannot concatenate Variables: Dimensions do not match.");
 
   Variable out;
