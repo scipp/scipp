@@ -11,19 +11,17 @@ namespace scipp::variable {
 
 namespace detail {
 template <class... Ts, class Op, class Var, class... Other>
-static void accumulate(const std::tuple<Ts...> &types, Op op,
-                       const std::string_view &name, Var &&var,
-                       Other &&... other) {
+static void do_accumulate(const std::tuple<Ts...> &types, Op op,
+                          const std::string_view &name, Var &&var,
+                          const Other &... other) {
   // Bail out (no threading) if:
   // - `other` is implicitly broadcast
   // - `other` are small, to avoid overhead (important for groupby), limit set
   //   by tuning BM_groupby_large_table
-  // - `other` not const, threading for cumulative ops not possible
   // - reduction to scalar with more than 1 `other`
   const scipp::index small_input = 16384;
   if ((!other.dims().includes(var.dims()) || ...) ||
       ((other.dims().volume() < small_input) && ...) ||
-      (!std::is_const_v<std::remove_reference_t<Other>> || ...) ||
       (sizeof...(other) != 1 && var.dims().ndim() == 0))
     return in_place<false>::transform_data(types, op, name, var, other...);
 
@@ -37,8 +35,7 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
     const bool avoid_false_sharing = out.dims().volume() < 128;
     auto tmp = avoid_false_sharing ? copy(out) : out;
     [&](const auto &... args) { // force slices to const, avoid readonly issues
-      if constexpr ((std::is_const_v<std::remove_reference_t<Other>> && ...))
-        in_place<false>::transform_data(types, op, name, tmp, args...);
+      in_place<false>::transform_data(types, op, name, tmp, args...);
     }(other.slice(slice)...);
     if (avoid_false_sharing)
       copy(tmp, out);
@@ -95,6 +92,18 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
     accumulate_parallel();
   }
 }
+
+template <class... Ts, class Op, class Var, class... Other>
+static void accumulate(const std::tuple<Ts...> &types, Op op,
+                       const std::string_view &name, Var &&var,
+                       Other &&... other) {
+  // `other` not const, threading for cumulative ops not possible
+  if constexpr ((!std::is_const_v<std::remove_reference_t<Other>> || ...))
+    return in_place<false>::transform_data(types, op, name, var, other...);
+  else
+    do_accumulate(types, op, name, std::forward<Var>(var), other...);
+}
+
 } // namespace detail
 
 /// Accumulate data elements of a variable in-place.
