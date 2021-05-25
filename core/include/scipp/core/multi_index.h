@@ -157,7 +157,7 @@ public:
     // TODO do not test last dim twice
     if (m_outer_index.m_outer_ndim != 0 &&
         m_coord[m_inner_ndim - 1] == m_shape[m_inner_ndim - 1])
-      m_outer_index.seek_for_inc(*this);
+      m_outer_index.seek_bin(*this);
   }
 
   constexpr void increment() noexcept {
@@ -346,8 +346,7 @@ private:
       }
     }
 
-    // TODO name
-    constexpr void seek_for_inc(MultiIndex &inner) noexcept {
+    constexpr void seek_bin(MultiIndex &inner) noexcept {
       do {
         increment(inner);
       } while (inner.m_shape[inner.m_outer_index.m_nested_dim_index] == 0 &&
@@ -371,42 +370,6 @@ private:
         inner.m_data_index[data] = m_nested_stride * begin;
       }
       // else: at end of bins
-    }
-
-    constexpr void seek_bin(MultiIndex &inner) noexcept {
-      do {
-        // go through bin dims which have reached their end (including last
-        // pre-bin dim)
-        for (scipp::index d = inner.m_inner_ndim - 1;
-             (inner.m_coord[d] == inner.m_shape[d]) && (d < inner.ndim() - 1);
-             ++d) {
-          // Increment early so that we can check whether we need to load bins.
-          ++inner.m_coord[d + 1];
-          for (scipp::index data = 0; data < N; ++data) {
-            inner.m_data_index[data] +=
-                // take a step in dimension d+1
-                inner.m_stride[d + 1][data]
-                // rewind dimension d (m_coord[d] == m_shape[d])
-                - inner.m_coord[d] * inner.m_stride[d][data];
-            // move to next bin
-            if (d == inner.m_inner_ndim - 1) // last non-bin dimension
-              inner.m_outer_index.m_bin[data].m_bin_index +=
-                  inner.m_stride[d + 1][data];
-            else // bin dimension -> rewind earlier bins
-              inner.m_outer_index.m_bin[data].m_bin_index +=
-                  inner.m_stride[d + 1][data] -
-                  inner.m_coord[d] * inner.m_stride[d][data];
-            if (inner.m_coord[d + 1] != inner.m_shape[d + 1]) {
-              // We might have hit the end of the data, keep going with the
-              // outer dimensions.
-              load_bin_params(inner, data);
-            }
-          }
-          inner.m_coord[d] = 0;
-        }
-      } while (inner.m_shape[inner.m_outer_index.m_nested_dim_index] == 0 &&
-               inner.m_coord[inner.ndim() - 1] !=
-                   inner.m_shape[inner.ndim() - 1]);
     }
 
     // TODO store ndim instead?
