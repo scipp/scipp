@@ -305,10 +305,7 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
   // inputs bins to the same output histogram. This also allows for threading of
   // 1-D histogramming provided that the input has multiple bins along
   // `hist_dim`.
-  std::string nonclashing_name("dummy");
-  for (const auto &d : indices.dims().labels())
-    nonclashing_name += d.name();
-  const Dim dummy = Dim(nonclashing_name);
+  const Dim dummy = Dim::Internal0;
   if (indices.dims().contains(hist_dim))
     indices.rename(hist_dim, dummy);
   const auto masked = masked_data(buffer, dim);

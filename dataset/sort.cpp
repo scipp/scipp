@@ -9,15 +9,6 @@
 
 namespace scipp::dataset {
 
-namespace {
-Dim nonclashing_name(const Coords &coords) {
-  std::string name("dummy");
-  for (const auto &item : coords)
-    name += item.first.name();
-  return Dim(name);
-}
-} // namespace
-
 /// Return a Variable sorted based on key.
 Variable sort(const Variable &var, const Variable &key, const SortOrder order) {
   return sort(DataArray(var), key, order).data();
@@ -27,7 +18,7 @@ Variable sort(const Variable &var, const Variable &key, const SortOrder order) {
 DataArray sort(const DataArray &array, const Variable &key,
                const SortOrder order) {
   auto helper = array;
-  const auto dummy = nonclashing_name(helper.coords());
+  const Dim dummy = Dim::Internal0;
   helper.coords().set(dummy, key);
   helper = groupby(helper, dummy).copy(order);
   helper.coords().erase(dummy);
@@ -43,7 +34,7 @@ DataArray sort(const DataArray &array, const Dim &key, const SortOrder order) {
 Dataset sort(const Dataset &dataset, const Variable &key,
              const SortOrder order) {
   auto helper = dataset;
-  const auto dummy = nonclashing_name(helper.coords());
+  const Dim dummy = Dim::Internal0;
   helper.coords().set(dummy, key);
   helper = groupby(helper, dummy).copy(order);
   helper.coords().erase(dummy);
