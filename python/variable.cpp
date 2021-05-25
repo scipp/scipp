@@ -84,10 +84,10 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
                                 : std::nullopt,
                             unit);
         }
-        return doMakeVariable({}, py::array{value},
-                              variance ? std::optional{py::array(*variance)}
-                                       : std::nullopt,
-                              unit, dtype);
+        return do_make_variable({}, py::array{value},
+                                variance ? std::optional{py::array(*variance)}
+                                         : std::nullopt,
+                                unit, dtype);
       }),
       py::arg("value").noconvert(), py::arg("variance") = std::nullopt,
       py::arg("unit") = units::one, py::arg("dtype") = py::none());
@@ -101,7 +101,7 @@ void bind_init_list(py::class_<Variable> &c) {
           auto varr =
               variances ? std::optional(py::array(*variances)) : std::nullopt;
           auto dims = std::vector<Dim>{label[0]};
-          return doMakeVariable(dims, arr, varr, unit, dtype);
+          return do_make_variable(dims, arr, varr, unit, dtype);
         }),
         py::arg("dims"), py::arg("values"), py::arg("variances") = std::nullopt,
         py::arg("unit") = units::one, py::arg("dtype") = py::none());
@@ -184,7 +184,7 @@ of variances.)");
            py::arg("unit") = units::one,
            py::arg("dtype") = py::dtype::of<double>(),
            py::arg("variances").noconvert() = false)
-      .def(py::init(&doMakeVariable), py::arg("dims"),
+      .def(py::init(&do_make_variable), py::arg("dims"),
            py::arg("values"), // py::array
            py::arg("variances") = std::nullopt, py::arg("unit") = units::one,
            py::arg("dtype") = py::none())
