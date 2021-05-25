@@ -114,9 +114,10 @@ auto do_init_0D(const T &value, const std::optional<T> &variance,
   return var;
 }
 
-Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
-                        std::optional<py::array> &variances, units::Unit unit,
-                        const py::object &dtype) {
+Variable do_make_variable(const std::vector<Dim> &labels,
+                          const py::array &values,
+                          const std::optional<py::array> &variances,
+                          units::Unit unit, const py::object &dtype) {
   // Use custom dtype, otherwise dtype of data.
   const auto dtypeTag =
       dtype.is_none() ? scipp_dtype(values.dtype()) : scipp_dtype(dtype);

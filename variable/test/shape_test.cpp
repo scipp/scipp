@@ -40,6 +40,11 @@ TEST(ShapeTest, broadcast_output_is_readonly) {
   EXPECT_TRUE(var.is_readonly());
 }
 
+TEST(ShapeTest, broadcast_output_is_not_readonly_if_not_broadcast) {
+  auto var = broadcast(makeVariable<double>(Values{1}), {Dim::X, 1});
+  EXPECT_FALSE(var.is_readonly());
+}
+
 TEST(ShapeTest, broadcast_fail) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1, 2, 3, 4});
@@ -137,6 +142,17 @@ TEST(ShapeTest, flatten) {
   const auto flat = flatten(var, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z);
   EXPECT_EQ(flat, expected);
   EXPECT_EQ(flat.data_handle(), var.data_handle()); // shared
+}
+
+TEST(ShapeTest, flatten_nothing) {
+  const auto var =
+      cumsum(variable::ones({{Dim::X, 4}}, units::m, dtype<double>));
+  const auto expected = cumsum(
+      variable::ones({{Dim::X, 4}, {Dim::Y, 1}}, units::m, dtype<double>));
+  const auto flat = flatten(var, std::vector<Dim>{}, Dim::Y);
+  EXPECT_EQ(flat, expected);
+  EXPECT_EQ(flat.data_handle(), var.data_handle()); // shared
+  EXPECT_FALSE(flat.is_readonly()); // broadcast, but same size => writeable
 }
 
 TEST(ShapeTest, flatten_only_2_dims) {
