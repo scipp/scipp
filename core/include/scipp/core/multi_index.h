@@ -91,7 +91,6 @@ public:
     scipp::index d = iterDims.ndim() - 1;
     for (const auto size : iterDims.shape()) {
       m_shape[d--] = size;
-      m_end_sentinel *= size;
     }
     detail::copy_strides(m_stride, m_inner_ndim,
                          std::index_sequence_for<StridesArgs...>(), strides...);
@@ -112,11 +111,10 @@ public:
 
     const auto nested_dims = detail::get_nested_dims(params.bucketParams()...);
     m_has_bins = true;
-    m_end_sentinel = iter_dims.volume();
 
     m_inner_ndim = nested_dims.ndim();
     m_outer_index = BinIndex(*this, params...);
-    if (m_end_sentinel == 0) {
+    if (iter_dims.volume() == 0) {
       return; // operands are empty, leave everything below default initialized
     }
     std::reverse_copy(nested_dims.shape().begin(), nested_dims.shape().end(),
@@ -419,8 +417,6 @@ private:
   std::array<std::array<scipp::index, N>, NDIM_MAX> m_stride = {};
   std::array<scipp::index, NDIM_MAX> m_coord = {};
   std::array<scipp::index, NDIM_MAX> m_shape = {};
-  /// End-sentinel, essentially the volume of the iteration dimensions.
-  scipp::index m_end_sentinel{1};
   scipp::index m_inner_ndim{0};
   BinIndex m_outer_index{};
   // TODO try to remove
