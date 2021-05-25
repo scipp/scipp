@@ -16,16 +16,24 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
                        Other &&... other) {
   // Bail out (no threading) if:
   // - `other` is implicitly broadcast
-  // - `other` are small, to avoid overhead (important for groupby)
+  // - `other` are small, to avoid overhead (important for groupby), limit set
+  //   by tuning BM_groupby_large_table
   // - `other` not const, threading for cumulative ops not possible
   // - reduction to scalar with more than 1 `other`
+  const scipp::index small_input = 16384;
   if ((!other.dims().includes(var.dims()) || ...) ||
-      ((other.dims().volume() < 16384) && ...) || // BM_groupby_large_table
+      ((other.dims().volume() < small_input) && ...) ||
       (!std::is_const_v<std::remove_reference_t<Other>> || ...) ||
       (sizeof...(other) != 1 && var.dims().ndim() == 0))
     return in_place<false>::transform_data(types, op, name, var, other...);
 
   const auto reduce_chunk = [&](auto &&out, const Slice slice) {
+    // A typical cache line has 64 Byte, which would fit, e.g., 8 doubles. If
+    // multiple threads write to different elements in the same cache lines we
+    // have "false sharing", with a severe negative performance impact. 128 is a
+    // somewhat arbitrary limit at which we can consider it unlikely that two
+    // threads would frequently run into falsely shared elements. May be need
+    // further tuning.
     const bool avoid_false_sharing = out.dims().volume() < 128;
     auto tmp = avoid_false_sharing ? copy(out) : out;
     in_place<false>::transform_data(types, op, name, tmp,
@@ -51,8 +59,12 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
   if constexpr (sizeof...(other) == 1) {
     const bool reduce_outer =
         (!var.dims().contains(other.dims().labels().front()) || ...);
+    // This value is found from benchmarks reducing the outer dimension. Making
+    // it larger can improve parallelism further, but increases the overhead
+    // from copies. May need further tuning.
+    const scipp::index chunking_limit = 65536;
     if (var.dims().ndim() == 0 ||
-        (reduce_outer && var.dims()[*var.dims().begin()] < 65536)) {
+        (reduce_outer && var.dims()[*var.dims().begin()] < chunking_limit)) {
       // For small output sizes, especially with reduction along the outer
       // dimension, threading via the output's dimension does not provide
       // significant speedup, mainly due to partially transposed memory access
