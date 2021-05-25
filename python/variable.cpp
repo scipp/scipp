@@ -75,16 +75,14 @@ void bind_init_0D_native_python_types(py::class_<Variable> &c) {
 void bind_init_0D_numpy_types(py::class_<Variable> &c) {
   c.def(py::init([](py::buffer &b, const std::optional<py::buffer> &v,
                     const units::Unit &unit, py::object &dtype) {
-          static auto np_datetime64_type =
-              py::module::import("numpy").attr("datetime64").get_type();
-
+          py::array value(b);
           py::buffer_info info = b.request();
           if (info.ndim == 0) {
-            auto arr = py::array(b);
-            auto varr = v ? std::optional{py::array(*v)} : std::nullopt;
-            return doMakeVariable({}, arr, varr, unit, dtype);
-          } else if ((info.ndim == 1) &&
-                     py::isinstance(b.get_type(), np_datetime64_type)) {
+            auto variance = v ? std::optional{py::array(*v)} : std::nullopt;
+            return doMakeVariable({}, value, variance, unit, dtype);
+            // Oddly, np.datetime64 is translated into a buffer with ndim = 1.
+          } else if ((info.ndim == 1) && (scipp_dtype(value.dtype()) ==
+                                          scipp::dtype<core::time_point>)) {
             if (v.has_value()) {
               throw except::VariancesError("datetimes cannot have variances.");
             }
