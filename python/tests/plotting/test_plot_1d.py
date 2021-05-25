@@ -103,6 +103,13 @@ def test_plot_sliceviewer_with_1d_projection_with_nans():
     # p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('y')].value = 10
 
 
+def test_plot_sliceviewer_with_1d_projection():
+    d = make_dense_dataset(ndim=2, unit='K')
+    d['Background'] = d['Sample'].data * 0.2
+    p = sc.plot(d, projection="1d")
+    assert not hasattr(p, "len")
+
+
 def test_plot_variable_1d():
     N = 50
     v1d = sc.Variable(['tof'],
