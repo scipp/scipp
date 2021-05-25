@@ -37,6 +37,7 @@ Breaking changes
 * Scipp's data structures now behave mostly like normal nested Python objects, i.e., copies are shallow by default `#1823 <https://github.com/scipp/scipp/pull/1823>`_.
 * ``filter`` and ``split`` removed. Identical functionality can be achieved using ``groupby`` and/or slicing.
 * ``reshape`` has been removed. Use ``fold`` and ``flatten`` instead `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
+* ``geometry.x``, ``geometry.y``, and ``geometry.z`` have been removed. Use the ``x1``, ``x2``, and ``x3`` properties instead `#1925 <https://github.com/scipp/scipp/pull/1925>`_.
 
 Contributors
 ~~~~~~~~~~~~
