@@ -41,7 +41,7 @@ def test_scalar_throws_if_dtype_provided_for_str_types():
 
 def test_scalar_of_numpy_array():
     value = np.array([1, 2, 3])
-    with pytest.raises(sc.VariableError):
+    with pytest.raises(sc.DimensionError):
         sc.scalar(value)
     var = sc.scalar(value, dtype=sc.dtype.PyObject)
     assert var.dtype == sc.dtype.PyObject
