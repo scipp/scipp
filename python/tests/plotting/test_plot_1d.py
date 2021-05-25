@@ -272,8 +272,8 @@ def test_plot_access_ax_and_fig_two_entries():
                                   values=2.0 * np.random.random(50),
                                   unit=sc.units.kg)
     out = sc.plot(d)
-    out['tof.counts'].ax.set_xlabel("MyXlabel")
-    out['tof.counts'].fig.set_dpi(120.)
+    out["['tof'].counts"].ax.set_xlabel("MyXlabel")
+    out["['tof'].counts"].fig.set_dpi(120.)
     out.close()
 
 
