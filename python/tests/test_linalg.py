@@ -5,6 +5,7 @@
 
 import numpy as np
 import scipp as sc
+import pytest
 
 
 def test_variable_0D_vector_3_float64_from_list():
@@ -105,6 +106,17 @@ def test_vector_elements_setter():
                           values=np.array([[7, 7, 7], [8, 8, 8]]),
                           unit=sc.units.m)
     assert sc.identical(var, expected)
+
+
+def test_vector_readonly_elements():
+    vec = sc.vector(value=[1, 2, 3], unit=sc.units.m)
+    var = sc.broadcast(vec, dims=['x'], shape=[2])
+    with pytest.raises(sc.VariableError):
+        var['x', 0] = vec + vec
+    with pytest.raises(sc.VariableError):
+        var.x1 = 1.1 * sc.units.m
+    assert not var.values.flags['WRITEABLE']
+    assert not var.x1.values.flags['WRITEABLE']
 
 
 def test_matrix_from_quat_coeffs_list():
