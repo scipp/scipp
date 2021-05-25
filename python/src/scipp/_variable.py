@@ -52,7 +52,7 @@ def scalar(value: _Any,
             # Raise a more comprehensible error message in the case
             # where a dtype cannot be specified.
             raise TypeError(f"Cannot convert {value} to {dtype}. "
-                            f"Try omitting the 'dtype=' parameter.")
+                            f"Try omitting the 'dtype=' parameter.") from None
 
 
 def zeros(*,
