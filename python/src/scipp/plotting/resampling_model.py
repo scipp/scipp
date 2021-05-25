@@ -120,9 +120,6 @@ class ResamplingModel():
             self._home = self._resampled
             self._home_params = self._resampled_params
 
-    def _make_array(self, array):
-        return array
-
     def update_array(self, array):
         """
         Update the internal array with a new array.
@@ -172,6 +169,9 @@ class ResamplingBinnedModel(ResamplingModel):
 
 
 class ResamplingCountsModel(ResamplingModel):
+    def _make_array(self, array):
+        return array
+
     def _resample(self, array):
         return sc.DataArray(
             data=self._rebin(array.data, array.meta),
