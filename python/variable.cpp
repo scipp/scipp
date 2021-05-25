@@ -73,33 +73,24 @@ void bind_init_0D_native_python_types(py::class_<Variable> &c) {
 }
 
 void bind_init_0D_numpy_types(py::class_<Variable> &c) {
-  c.def(py::init([](py::buffer &b, const std::optional<py::buffer> &v,
-                    const units::Unit &unit, py::object &dtype) {
-          static auto np_datetime64_type =
-              py::module::import("numpy").attr("datetime64").get_type();
-
-          py::buffer_info info = b.request();
-          if (info.ndim == 0) {
-            auto arr = py::array(b);
-            auto varr = v ? std::optional{py::array(*v)} : std::nullopt;
-            return doMakeVariable({}, arr, varr, unit, dtype);
-          } else if ((info.ndim == 1) &&
-                     py::isinstance(b.get_type(), np_datetime64_type)) {
-            if (v.has_value()) {
-              throw except::VariancesError("datetimes cannot have variances.");
-            }
-            const auto [actual_unit, value_factor] =
-                get_time_unit(b, dtype, unit);
-            return do_init_0D<core::time_point>(
-                make_time_point(b, value_factor), std::nullopt, actual_unit);
-
-          } else {
-            throw scipp::except::VariableError(
-                "Wrong overload for making 0D variable.");
-          }
-        }),
-        py::arg("value").noconvert(), py::arg("variance") = std::nullopt,
-        py::arg("unit") = units::one, py::arg("dtype") = py::none());
+  c.def(
+      py::init([](py::buffer &value, const std::optional<py::buffer> &variance,
+                  const units::Unit &unit, py::object &dtype) {
+        if (scipp_dtype(dtype) == scipp::dtype<python::PyObject>) {
+          // Allow storing numpy objects as-is instead of only their content.
+          return do_init_0D(value.cast<py::object>(),
+                            variance
+                                ? std::optional{variance->cast<py::object>()}
+                                : std::nullopt,
+                            unit);
+        }
+        return do_make_variable({}, py::array{value},
+                                variance ? std::optional{py::array(*variance)}
+                                         : std::nullopt,
+                                unit, dtype);
+      }),
+      py::arg("value").noconvert(), py::arg("variance") = std::nullopt,
+      py::arg("unit") = units::one, py::arg("dtype") = py::none());
 }
 
 void bind_init_list(py::class_<Variable> &c) {
@@ -110,7 +101,7 @@ void bind_init_list(py::class_<Variable> &c) {
           auto varr =
               variances ? std::optional(py::array(*variances)) : std::nullopt;
           auto dims = std::vector<Dim>{label[0]};
-          return doMakeVariable(dims, arr, varr, unit, dtype);
+          return do_make_variable(dims, arr, varr, unit, dtype);
         }),
         py::arg("dims"), py::arg("values"), py::arg("variances") = std::nullopt,
         py::arg("unit") = units::one, py::arg("dtype") = py::none());
@@ -193,7 +184,7 @@ of variances.)");
            py::arg("unit") = units::one,
            py::arg("dtype") = py::dtype::of<double>(),
            py::arg("variances").noconvert() = false)
-      .def(py::init(&doMakeVariable), py::arg("dims"),
+      .def(py::init(&do_make_variable), py::arg("dims"),
            py::arg("values"), // py::array
            py::arg("variances") = std::nullopt, py::arg("unit") = units::one,
            py::arg("dtype") = py::none())
