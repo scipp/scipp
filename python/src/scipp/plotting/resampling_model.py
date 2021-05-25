@@ -101,12 +101,8 @@ class ResamplingModel():
                 else:
                     # cannot pre-select bins for multi-dim coords
                     if len(out.meta[dim].dims) == 1:
-                        # TODO: for now, slicing in scipp does not support step
-                        # and pybind11 py::slice requires a step
-                        # (which is always 1 here)
-                        sl = sc.get_slice_params(out.data, out.meta[dim], low,
-                                                 high)
-                        out = out[sl[0], slice(sl[1].start, sl[1].stop)]
+                        out = out[sc.get_slice_params(out.data, out.meta[dim],
+                                                      low, high)]
                 params[dim] = (low.value, high.value, low.unit,
                                self.resolution[dim])
         if params == self._home_params:
