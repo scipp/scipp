@@ -147,7 +147,7 @@ Variable &Variable::setSlice(const Slice params, const Variable &data) {
 
 Variable Variable::broadcast(const Dimensions &target) const {
   expect::includes(target, dims());
-  auto out = as_const();
+  auto out = target.volume() == dims().volume() ? *this : as_const();
   out.m_dims = target;
   scipp::index i = 0;
   for (const auto &d : target.labels())
