@@ -85,15 +85,6 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   return out;
 }
 
-Variable permute(const Variable &var, const Dim dim,
-                 const std::vector<scipp::index> &indices) {
-  auto permuted(var);
-  for (scipp::index i = 0; i < scipp::size(indices); ++i)
-    permuted.data().copy(var.slice({dim, i}),
-                         permuted.slice({dim, indices[i]}));
-  return permuted;
-}
-
 Variable resize(const Variable &var, const Dim dim, const scipp::index size) {
   auto dims = var.dims();
   dims.resize(dim, size);

@@ -14,9 +14,6 @@ namespace scipp::variable {
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable concatenate(const Variable &a1,
                                                          const Variable &a2,
                                                          const Dim dim);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-permute(const Variable &var, const Dim dim,
-        const std::vector<scipp::index> &indices);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable resize(const Variable &var,
                                                     const Dim dim,
                                                     const scipp::index size);
