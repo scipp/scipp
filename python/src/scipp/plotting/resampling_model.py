@@ -14,9 +14,10 @@ class ResamplingModel():
         self._bounds = {} if bounds is None else bounds
         self._resampled = None
         self._resampled_params = None
-        self._array = array
+        self._array = None
         self._home = None
         self._home_params = None
+        self.update_array(array)
 
     @property
     def resolution(self):
@@ -123,11 +124,14 @@ class ResamplingModel():
             self._home = self._resampled
             self._home_params = self._resampled_params
 
+    def _make_array(self, array):
+        return array
+
     def update_array(self, array):
         """
         Update the internal array with a new array.
         """
-        self._array = array
+        self._array = self._make_array(array)
 
     def reset(self):
         """
@@ -138,22 +142,19 @@ class ResamplingModel():
 
 
 class ResamplingBinnedModel(ResamplingModel):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._recenter_coords()
-
-    def _recenter_coords(self):
+    def _make_array(self, array):
         """
         TODO See #1469. This is a temporary hack to work around the
         conversion of coords to edges in model.py.
         """
-        self._array = self._array.copy(deep=False)
-        for name, var in self._array.coords.items():
+        new_array = array.copy(deep=False)
+        for name, var in new_array.coords.items():
             if len(var.dims) == 0:
                 continue
             dim = var.dims[-1]
-            if name not in self._array.data.bins.coords:
-                self._array.coords[name] = to_bin_centers(var, dim)
+            if name not in new_array.data.bins.coords:
+                new_array.coords[name] = to_bin_centers(var, dim)
+        return new_array
 
     def _resample(self, array):
         # We could bin with all edges and then use `bins.sum()` but especially
@@ -173,15 +174,8 @@ class ResamplingBinnedModel(ResamplingModel):
             a.masks[name] = self._rebin(mask, array.meta)
         return a
 
-    def update_array(self, *args, **kwargs):
-        super().update_array(*args, **kwargs)
-        self._recenter_coords()
-
 
 class ResamplingCountsModel(ResamplingModel):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def _resample(self, array):
         return sc.DataArray(
             data=self._rebin(array.data, array.meta),
@@ -194,11 +188,6 @@ class ResamplingCountsModel(ResamplingModel):
 
 
 class ResamplingDenseModel(ResamplingModel):
-    def __init__(self, array, **kwargs):
-        # Scale by bin widths, so `rebin` is effectively performing a "mean"
-        # operation instead of "sum".
-        super().__init__(self._to_density(array), **kwargs)
-
     def _to_density(self, array):
         array = array.astype(sc.dtype.float64)
         for dim in array.dims:
@@ -227,11 +216,10 @@ class ResamplingDenseModel(ResamplingModel):
                 for name, mask in array.masks.items()
             })
 
-    def update_array(self, array):
-        """
-        Update the internal array with a new array.
-        """
-        super().update_array(self._to_density(array))
+    def _make_array(self, array):
+        # Scale by bin widths, so `rebin` is effectively performing a "mean"
+        # operation instead of "sum".
+        return self._to_density(array)
 
 
 def resampling_model(array, **kwargs):

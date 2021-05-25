@@ -26,7 +26,7 @@ if _debug_:
 from ._scipp import __version__
 # Import classes
 from ._scipp.core import Variable, DataArray, Dataset, GroupByDataArray, \
-                         GroupByDataset, Unit, Coords, Masks
+                         GroupByDataset, Unit
 # Import errors
 from ._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
