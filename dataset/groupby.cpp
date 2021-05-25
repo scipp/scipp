@@ -9,6 +9,7 @@
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
 
+#include "scipp/variable/creation.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/util.h"
 
@@ -140,20 +141,17 @@ template <void (*Func)(Variable &, const Variable &)>
 // requiring the introduction of a wrapping struct to aid compiler
 // resolution.
 struct wrap {
+  template <variable::FillValue fill>
   static constexpr auto reduce_idempotent =
       [](auto &&out, const auto &data_container,
          const GroupByGrouping::group &group, const Dim reductionDim,
          const Variable &mask) {
-        bool first = true;
+        copy(special_like(out, fill), out);
         for (const auto &slice : group) {
           const auto data_slice = data_container.data().slice(slice);
           if (mask.is_valid())
             throw std::runtime_error(
                 "This operation does not support masks yet.");
-          if (first) {
-            copy(data_slice.slice({reductionDim, 0}), out);
-            first = false;
-          }
           Func(out, data_slice);
         }
       };
@@ -184,26 +182,30 @@ template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
 
 /// Reduce each group using `all` and return combined data.
 template <class T> T GroupBy<T>::all(const Dim reductionDim) const {
-  return reduce(groupby_detail::wrap<all_impl>::reduce_idempotent,
-                reductionDim);
+  return reduce(
+      groupby_detail::wrap<all_impl>::reduce_idempotent<FillValue::True>,
+      reductionDim);
 }
 
 /// Reduce each group using `any` and return combined data.
 template <class T> T GroupBy<T>::any(const Dim reductionDim) const {
-  return reduce(groupby_detail::wrap<any_impl>::reduce_idempotent,
-                reductionDim);
+  return reduce(
+      groupby_detail::wrap<any_impl>::reduce_idempotent<FillValue::False>,
+      reductionDim);
 }
 
 /// Reduce each group using `max` and return combined data.
 template <class T> T GroupBy<T>::max(const Dim reductionDim) const {
-  return reduce(groupby_detail::wrap<max_impl>::reduce_idempotent,
-                reductionDim);
+  return reduce(
+      groupby_detail::wrap<max_impl>::reduce_idempotent<FillValue::Lowest>,
+      reductionDim);
 }
 
 /// Reduce each group using `min` and return combined data.
 template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
-  return reduce(groupby_detail::wrap<min_impl>::reduce_idempotent,
-                reductionDim);
+  return reduce(
+      groupby_detail::wrap<min_impl>::reduce_idempotent<FillValue::Max>,
+      reductionDim);
 }
 
 /// Combine groups without changes, effectively sorting data.
