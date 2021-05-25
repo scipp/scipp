@@ -14,14 +14,15 @@ template <class... Ts, class Op, class Var, class... Other>
 static void accumulate(const std::tuple<Ts...> &types, Op op,
                        const std::string_view &name, Var &&var,
                        Other &&... other) {
-  // Cumulative operations may write to `other`, threading not possible.
-  if constexpr ((!std::is_const_v<std::remove_reference_t<Other>> || ...))
-    return in_place<false>::transform_data(types, op, name, var, other...);
-  // Bail out if:
+  // Bail out (no threading) if:
   // - `other` is implicitly broadcast
   // - `other` are small, to avoid overhead (important for groupby)
+  // - `other` not const, threading for cumulative ops not possible
+  // - reduction to scalar with more than 1 `other`
   if ((!other.dims().includes(var.dims()) || ...) ||
-      ((other.dims().volume() < 16384) && ...)) // tuned BM_groupby_large_table
+      ((other.dims().volume() < 16384) && ...) || // BM_groupby_large_table
+      (!std::is_const_v<std::remove_reference_t<Other>> || ...) ||
+      (sizeof...(other) != 1 && var.dims().ndim() == 0))
     return in_place<false>::transform_data(types, op, name, var, other...);
 
   const auto reduce_chunk = [&](auto &&out, const Slice slice) {
