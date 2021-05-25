@@ -104,23 +104,6 @@ Variable resize(const Variable &var, const Variable &shape) {
   return {shape.dims(), var.data().makeDefaultFromParent(shape)};
 }
 
-namespace {
-void swap(Variable &var, const Dim dim, const scipp::index a,
-          const scipp::index b) {
-  const Variable tmp = copy(var.slice({dim, a}));
-  copy(var.slice({dim, b}), var.slice({dim, a}));
-  copy(tmp, var.slice({dim, b}));
-}
-} // namespace
-
-Variable reverse(const Variable &var, const Dim dim) {
-  auto out = copy(var);
-  const auto size = out.dims()[dim];
-  for (scipp::index i = 0; i < size / 2; ++i)
-    swap(out, dim, i, size - i - 1);
-  return out;
-}
-
 Variable fold(const Variable &view, const Dim from_dim,
               const Dimensions &to_dims) {
   return view.fold(from_dim, to_dims);

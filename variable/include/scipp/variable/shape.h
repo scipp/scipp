@@ -19,8 +19,6 @@ namespace scipp::variable {
                                                     const scipp::index size);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable resize(const Variable &var,
                                                     const Variable &shape);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reverse(const Variable &var,
-                                                     const Dim dim);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable fold(const Variable &view,
                                                   const Dim from_dim,
                                                   const Dimensions &to_dims);
