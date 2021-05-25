@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-#include "fix_typed_test_suite_warnings.h"
+#include <gtest/gtest.h>
+
+#include "scipp/common/overloaded.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/reduction.h"
+
+#include "fix_typed_test_suite_warnings.h"
 #include "test_macros.h"
 #include "test_nans.h"
-#include <gtest/gtest.h>
-#include <scipp/common/overloaded.h>
 
 namespace {
 using namespace scipp;
@@ -164,6 +167,7 @@ TYPED_TEST(MeanTest, nanmean_basic) {
     EXPECT_EQ(nanmean(var, Dim::Y),
               makeVariable<RetType>(Dims{Dim::X}, Shape{2}, units::m,
                                     Values{2.0, 2.0}));
+    EXPECT_EQ(nanmean(var), makeVariable<RetType>(units::m, Values{2.0}));
   }
 }
 
@@ -188,4 +192,28 @@ TYPED_TEST(MeanTest, nanmean_basic_inplace) {
   } else {
     GTEST_SKIP_("Test type does not support nan testing");
   }
+}
+
+TEST(MeanTest, vector) {
+  const auto var = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::X, Dim::Y}, Shape{2, 2},
+      Values{Eigen::Vector3d{1, 1, 1}, Eigen::Vector3d{2, 2, 2},
+             Eigen::Vector3d{3, 3, 3}, Eigen::Vector3d{4, 4, 4}});
+
+  const auto meanXY =
+      makeVariable<Eigen::Vector3d>(Values{Eigen::Vector3d{2.5, 2.5, 2.5}});
+  EXPECT_EQ(mean(var), meanXY);
+  EXPECT_EQ(nanmean(var), meanXY);
+
+  const auto meanX = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::Y}, Shape{2},
+      Values{Eigen::Vector3d{2, 2, 2}, Eigen::Vector3d{3, 3, 3}});
+  EXPECT_EQ(mean(var, Dim::X), meanX);
+  EXPECT_EQ(nanmean(var, Dim::X), meanX);
+
+  const auto meanY = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{2},
+      Values{Eigen::Vector3d{1.5, 1.5, 1.5}, Eigen::Vector3d{3.5, 3.5, 3.5}});
+  EXPECT_EQ(mean(var, Dim::Y), meanY);
+  EXPECT_EQ(nanmean(var, Dim::Y), meanY);
 }
