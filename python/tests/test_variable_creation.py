@@ -39,6 +39,15 @@ def test_scalar_throws_if_dtype_provided_for_str_types():
         sc.scalar(value='temp', unit=sc.units.one, dtype=sc.dtype.float64)
 
 
+def test_scalar_of_numpy_array():
+    value = np.array([1, 2, 3])
+    with pytest.raises(sc.VariableError):
+        sc.scalar(value)
+    var = sc.scalar(value, dtype=sc.dtype.PyObject)
+    assert var.dtype == sc.dtype.PyObject
+    np.testing.assert_array_equal(var.value, value)
+
+
 def test_zeros_creates_variable_with_correct_dims_and_shape():
     var = sc.zeros(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     expected = sc.Variable(dims=['x', 'y', 'z'], shape=[1, 2, 3])
