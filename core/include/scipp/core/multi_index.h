@@ -41,7 +41,8 @@ decltype(auto) get_head(Head &&head, Args &&...) {
 inline auto get_nested_dims() { return Dimensions(); }
 template <class T, class... Ts>
 auto get_nested_dims(const T &param, const Ts &... params) {
-  return param ? param.dims : get_nested_dims(params...);
+  const auto &bin_param = param.bucketParams();
+  return bin_param ? bin_param.dims : get_nested_dims(params...);
 }
 
 inline auto get_slice_dim() { return Dim::Invalid; }
@@ -84,44 +85,54 @@ flat_index(const scipp::index i_data,
 
 template <scipp::index N> class MultiIndex {
 public:
+
+  /// Construct without bins.
   template <class... StridesArgs>
-  explicit MultiIndex(const Dimensions &iterDims,
+  explicit MultiIndex(const Dimensions &iter_dims,
                       const StridesArgs &... strides)
-      : m_inner_ndim{iterDims.ndim()} {
-    scipp::index d = iterDims.ndim() - 1;
-    for (const auto size : iterDims.shape()) {
+      : m_inner_ndim{iter_dims.ndim()} {
+    scipp::index d = iter_dims.ndim() - 1;
+    for (const auto size : iter_dims.shape()) {
       m_shape[d--] = size;
     }
     detail::copy_strides(m_stride, m_inner_ndim,
                          std::index_sequence_for<StridesArgs...>(), strides...);
   }
 
+public:
+  /// Determine from arguments if binned.
   template <class... Params>
   explicit MultiIndex(const ElementArrayViewParams &param,
-                      const Params &... params) {
-    init(param, params...);
-  }
+                      const Params &... params)
+      : MultiIndex{(!param.bucketParams() && (!params.bucketParams() && ...))
+                       ? MultiIndex(param.dims(),
+                                    param.strides(), params.strides()...)
+                       : MultiIndex{binned_tag{},
+                                    detail::get_nested_dims(param, params...),
+                                        param, params...}} {}
 
-  template <class... Params> void init(const Params &... params) {
-    const auto iter_dims = detail::get_head(params...).dims();
-    if ((!params.bucketParams() && ...)) {
-      *this = MultiIndex(iter_dims, params.strides()...);
-      return;
-    }
+private:
+  struct binned_tag {};
 
-    const auto nested_dims = detail::get_nested_dims(params.bucketParams()...);
-    m_has_bins = true;
+  /// Construct with bins.
+  template <class... Params>
+  explicit MultiIndex(binned_tag, const Dimensions &inner_dims,
+                      const Params &... params)
+  : m_inner_ndim{inner_dims.ndim()},
+      m_has_bins{true} {
 
-    m_inner_ndim = nested_dims.ndim();
+    std::reverse_copy(inner_dims.shape().begin(), inner_dims.shape().end(),
+                      m_shape.begin());
+
+    detail::copy_strides(
+        m_stride, inner_dims.ndim(), std::index_sequence_for<Params...>(),
+        params.bucketParams() ? Strides{inner_dims} : Strides{}...);
+    // Passing partially initialized *this, the order matters here!
     m_outer_index = BinIndex(*this, params...);
-    if (iter_dims.volume() == 0) {
+    // TODO needed? can use set_index(0)?
+    if (detail::get_head(params...).dims().volume() == 0) {
       return; // operands are empty, leave everything below default initialized
     }
-    std::reverse_copy(nested_dims.shape().begin(), nested_dims.shape().end(),
-                      m_shape.begin());
-    detail::copy_strides(
-        m_stride, nested_dims.ndim(), std::index_sequence_for<Params...>(),
-        params.bucketParams() ? Strides{nested_dims} : Strides{}...);
     std::array<std::array<scipp::index, N>, NDIM_MAX> binStrides;
     detail::copy_strides(binStrides, ndim() - m_inner_ndim,
                          std::index_sequence_for<Params...>(),
@@ -135,6 +146,7 @@ public:
       m_outer_index.seek_bin(*this);
   }
 
+public:
   constexpr void increment_outer() noexcept {
     // Go through all nested dims (with bins) / all dims (without bins)
     // where we have reached the end.
@@ -288,7 +300,7 @@ private:
       const auto iter_dims = detail::get_head(params...).dims();
       detail::validate_bin_indices(params...);
       const auto nested_dims =
-          detail::get_nested_dims(params.bucketParams()...);
+          detail::get_nested_dims(params...);
       const Dim slice_dim = detail::get_slice_dim(params.bucketParams()...);
       m_outer_ndim = iter_dims.ndim();
       m_nested_stride = nested_dims.offset(slice_dim);
@@ -296,6 +308,9 @@ private:
           inner.m_inner_ndim - nested_dims.index(slice_dim) - 1;
 
       // TODO end_sentinel abort
+      if (detail::get_head(params...).dims().volume() == 0) {
+        return; // operands are empty, leave everything below default initialized
+      }
 
       std::reverse_copy(iter_dims.shape().begin(), iter_dims.shape().end(),
                         inner.m_shape.begin() + inner.m_inner_ndim);
@@ -378,7 +393,7 @@ private:
     constexpr void seek_bin(MultiIndex &inner) noexcept {
       do {
         increment(inner);
-      } while (inner.m_shape[inner.m_outer_index.m_nested_dim_index] == 0 &&
+      } while (inner.m_shape[m_nested_dim_index] == 0 &&
                inner.m_coord[inner.ndim() - 1] !=
                    inner.m_shape[inner.ndim() - 1]);
     }
