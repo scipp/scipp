@@ -41,6 +41,7 @@ protected:
       }
     } else {
       for (scipp::index bin = 0; bin < bin_volume; ++bin) {
+        std::cout << "bin = " << bin << std::endl;
         i.set_index(bin);
         scipp::index n = 0;
         // We do not know how many elements there are in each bin.
@@ -234,6 +235,8 @@ TEST_F(MultiIndexTest, 1d_array_of_2d_bins) {
                   {1, 4, 2, 5});
   check_with_bins(buf, Dim("b"), {{1, 3}, {0, 1}}, x, make_strides(x, x),
                   {1, 2, 4, 5, 0, 3});
+  check_with_bins(buf, Dim("b"), {{0, 1}, {1, 1}, {2, 3}}, y,
+                  make_strides(y, y), {0, 3, 2, 5});
   // cut along outer
   check_with_bins(buf, Dim("a"), {{0, 1}, {1, 2}}, x, make_strides(x, x),
                   {0, 1, 2, 3, 4, 5});
@@ -241,6 +244,8 @@ TEST_F(MultiIndexTest, 1d_array_of_2d_bins) {
                   {3, 4, 5, 3, 4, 5});
   check_with_bins(buf, Dim("a"), {{1, 2}, {0, 1}}, x, make_strides(x, x),
                   {3, 4, 5, 0, 1, 2});
+  check_with_bins(buf, Dim("a"), {{0, 1}, {1, 1}, {1, 2}}, y,
+                  make_strides(y, y), {0, 1, 2, 3, 4, 5});
 }
 
 TEST_F(MultiIndexTest, 2d_array_of_1d_bins) {

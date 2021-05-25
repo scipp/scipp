@@ -165,9 +165,6 @@ TEST_F(VariableBinsTest, binary_operation_with_dense_2d_bins) {
   buffer_2d = makeVariable<double>(Dims{Dim::Y, Dim::Event}, Shape{2, 4},
                                    Values{0, 1, 2, 3, 4, 5, 6, 7});
   binned = make_bins(indices_2d, Dim::Event, buffer_2d);
-  std::cout << "------------------------------" << std::endl;
-  auto r = binned * dense;
-  std::cout << "------------------------------" << std::endl;
   EXPECT_EQ(binned * dense, make_bins(indices_2d, Dim::Event,
                                       makeVariable<double>(
                                           Dims{Dim::Y, Dim::Event}, Shape{2, 4},
