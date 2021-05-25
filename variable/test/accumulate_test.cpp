@@ -49,6 +49,15 @@ TEST_F(AccumulateTest, broadcast) {
   EXPECT_EQ(result, expected);
 }
 
+TEST_F(AccumulateTest, readonly) {
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
+  scipp::index size = 10000; // exceed current lower multi-threading limit
+  const auto readonly = broadcast(var, Dimensions({Dim::Y, Dim::X}, {size, 2}));
+  auto result = makeVariable<double>(Dims{Dim::X}, Shape{2});
+  accumulate_in_place<pair_self_t<double>>(result, readonly, op);
+  EXPECT_EQ(result, var * makeVariable<double>(Values{size}));
+}
+
 auto make_variable(const Dimensions &dims) {
   const auto var = makeVariable<int64_t>(
       Dims{Dim("tmp")}, Shape{24},

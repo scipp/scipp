@@ -36,8 +36,10 @@ static void accumulate(const std::tuple<Ts...> &types, Op op,
     // further tuning.
     const bool avoid_false_sharing = out.dims().volume() < 128;
     auto tmp = avoid_false_sharing ? copy(out) : out;
-    in_place<false>::transform_data(types, op, name, tmp,
-                                    other.slice(slice)...);
+    [&](const auto &... args) { // force slices to const, avoid readonly issues
+      if constexpr ((std::is_const_v<std::remove_reference_t<Other>> && ...))
+        in_place<false>::transform_data(types, op, name, tmp, args...);
+    }(other.slice(slice)...);
     if (avoid_false_sharing)
       copy(tmp, out);
   };
