@@ -45,16 +45,6 @@ public:
         m_strides.begin(), m_strides.end(m_ndim), m_coord.begin());
   }
 
-  void set_to_end() noexcept {
-    m_view_index = 0;
-    for (scipp::index dim = 0; dim < m_ndim - 1; ++dim) {
-      m_view_index *= m_shape[dim];
-    }
-    std::fill(m_coord.begin(), m_coord.begin() + std::max(m_ndim - 1, 0), 0);
-    m_coord[m_ndim] = m_shape[m_ndim];
-    m_memory_index = m_coord[m_ndim] * m_strides[m_ndim];
-  }
-
   [[nodiscard]] constexpr scipp::index get() const noexcept {
     return m_memory_index;
   }
