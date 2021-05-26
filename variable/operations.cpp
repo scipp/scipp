@@ -42,7 +42,7 @@ Variable masked_to_zero(const Variable &var, const Variable &mask) {
 
 namespace geometry {
 Variable position(const Variable &x, const Variable &y, const Variable &z) {
-  return transform(x, y, z, element::geometry::position, "linalg.position");
+  return transform(x, y, z, element::geometry::position, "position");
 }
 } // namespace geometry
 
