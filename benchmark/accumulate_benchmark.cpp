@@ -33,7 +33,7 @@ static void BM_accumulate_in_place(benchmark::State &state) {
   static constexpr auto op{[](auto &a_, const auto &b_) { a_ += b_; }};
 
   for ([[maybe_unused]] auto _ : state) {
-    accumulate_in_place<Types>(a, b, op);
+    accumulate_in_place<Types>(a, b, op "");
   }
 
   const scipp::index variance_factor = use_variances ? 2 : 1;

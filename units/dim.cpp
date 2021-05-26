@@ -21,6 +21,7 @@ const auto &builtin_ids() {
       {"<internal_structure_column>", Dim::InternalStructureColumn},
       {"<internal_histogram>", Dim::InternalHistogram},
       {"<internal_sort>", Dim::InternalSort},
+      {"<internal_accumulate>", Dim::InternalAccumulate},
       {"energy", Dim::Energy},
       {"event", Dim::Event},
       {"group", Dim::Group},

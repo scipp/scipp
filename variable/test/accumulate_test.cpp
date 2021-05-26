@@ -14,6 +14,10 @@ using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::variable;
 
+namespace {
+const char *name = "accumulate_test";
+}
+
 class AccumulateTest : public ::testing::Test {
 protected:
   constexpr static auto op = [](auto &&a, auto &&b) { a += b; };
@@ -25,7 +29,7 @@ TEST_F(AccumulateTest, in_place) {
   const auto expected = makeVariable<double>(Values{3.0});
   // Note how accumulate is ignoring the unit.
   auto result = makeVariable<double>(Values{double{}});
-  accumulate_in_place<pair_self_t<double>>(result, var, op);
+  accumulate_in_place<pair_self_t<double>>(result, var, op, name);
   EXPECT_EQ(result, expected);
 }
 
@@ -34,7 +38,7 @@ TEST_F(AccumulateTest, bad_dims) {
                                         units::m, Values{1, 2, 3, 4, 5, 6});
   auto result = makeVariable<double>(Dims{Dim::X}, Shape{3});
   const auto orig = copy(result);
-  EXPECT_THROW(accumulate_in_place<pair_self_t<double>>(result, var, op),
+  EXPECT_THROW(accumulate_in_place<pair_self_t<double>>(result, var, op, name),
                except::DimensionError);
   EXPECT_EQ(result, orig);
 }
@@ -45,7 +49,7 @@ TEST_F(AccumulateTest, broadcast) {
   const auto expected =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{6, 6});
   auto result = makeVariable<double>(Dims{Dim::X}, Shape{2});
-  accumulate_in_place<pair_self_t<double>>(result, var, op);
+  accumulate_in_place<pair_self_t<double>>(result, var, op, name);
   EXPECT_EQ(result, expected);
 }
 
@@ -54,7 +58,7 @@ TEST_F(AccumulateTest, readonly) {
   scipp::index size = 10000; // exceed current lower multi-threading limit
   const auto readonly = broadcast(var, Dimensions({Dim::Y, Dim::X}, {size, 2}));
   auto result = makeVariable<double>(Dims{Dim::X}, Shape{2});
-  accumulate_in_place<pair_self_t<double>>(result, readonly, op);
+  accumulate_in_place<pair_self_t<double>>(result, readonly, op, name);
   EXPECT_EQ(result, var * makeVariable<double>(Values{size}));
 }
 
@@ -70,7 +74,7 @@ TEST_F(AccumulateTest, 1d_to_scalar) {
   const auto var = make_variable({{Dim::X}, {24}});
   const auto expected = makeVariable<int64_t>(Values{300});
   auto result = makeVariable<int64_t>(Values{0});
-  accumulate_in_place<pair_self_t<int64_t>>(result, var, op);
+  accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
   EXPECT_EQ(result, expected);
 }
 
@@ -78,7 +82,7 @@ TEST_F(AccumulateTest, 2d_to_scalar) {
   const auto var = make_variable({{Dim::X, Dim::Y}, {4, 6}});
   const auto expected = makeVariable<int64_t>(Values{300});
   auto result = makeVariable<int64_t>(Values{0});
-  accumulate_in_place<pair_self_t<int64_t>>(result, var, op);
+  accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
   EXPECT_EQ(result, expected);
 }
 
@@ -87,7 +91,7 @@ TEST_F(AccumulateTest, 2d_inner) {
   const auto expected =
       makeVariable<int64_t>(Dims{Dim::X}, Shape{4}, Values{21, 57, 93, 129});
   auto result = makeVariable<int64_t>(Dims{Dim::X}, Shape{4});
-  accumulate_in_place<pair_self_t<int64_t>>(result, var, op);
+  accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
   EXPECT_EQ(result, expected);
 }
 
@@ -96,7 +100,7 @@ TEST_F(AccumulateTest, 2d_outer) {
   const auto expected = makeVariable<int64_t>(Dims{Dim::Y}, Shape{6},
                                               Values{40, 44, 48, 52, 56, 60});
   auto result = makeVariable<int64_t>(Dims{Dim::Y}, Shape{6});
-  accumulate_in_place<pair_self_t<int64_t>>(result, var, op);
+  accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
   EXPECT_EQ(result, expected);
 }
 
@@ -106,14 +110,14 @@ TEST_F(AccumulateTest, 2d_outer) {
 TEST_F(AccumulateTest, 3d_inner) {
   const auto var = make_variable({{Dim::X, Dim::Y, Dim::Z}, {4, 3, 2}});
   auto result = makeVariable<int64_t>(Dims{Dim::X, Dim::Y}, Shape{4, 3});
-  accumulate_in_place<pair_self_t<int64_t>>(result, var, op);
+  accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
   EXPECT_EQ(result, var.slice({Dim::Z, 0}) + var.slice({Dim::Z, 1}));
 }
 
 TEST_F(AccumulateTest, 3d_middle) {
   const auto var = make_variable({{Dim::X, Dim::Y, Dim::Z}, {4, 3, 2}});
   auto result = makeVariable<int64_t>(Dims{Dim::X, Dim::Z}, Shape{4, 2});
-  accumulate_in_place<pair_self_t<int64_t>>(result, var, op);
+  accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
   EXPECT_EQ(result, var.slice({Dim::Y, 0}) + var.slice({Dim::Y, 1}) +
                         var.slice({Dim::Y, 2}));
 }
@@ -123,7 +127,7 @@ TEST_F(AccumulateTest, 3d_outer) {
   const auto expected = makeVariable<int64_t>(Dims{Dim::Y, Dim::Z}, Shape{3, 2},
                                               Values{40, 44, 48, 52, 56, 60});
   auto result = makeVariable<int64_t>(Dims{Dim::Y, Dim::Z}, Shape{3, 2});
-  accumulate_in_place<pair_self_t<int64_t>>(result, var, op);
+  accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
   EXPECT_EQ(result, expected);
 }
 
@@ -132,7 +136,7 @@ TEST_F(AccumulateTest, 3d_middle_inner) {
   const auto expected =
       makeVariable<int64_t>(Dims{Dim::X}, Shape{4}, Values{21, 57, 93, 129});
   auto result = makeVariable<int64_t>(Dims{Dim::X}, Shape{4});
-  accumulate_in_place<pair_self_t<int64_t>>(result, var, op);
+  accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
   EXPECT_EQ(result, expected);
 }
 
@@ -141,7 +145,7 @@ TEST_F(AccumulateTest, 3d_outer_inner) {
   const auto expected =
       makeVariable<int64_t>(Dims{Dim::Y}, Shape{3}, Values{84, 100, 116});
   auto result = makeVariable<int64_t>(Dims{Dim::Y}, Shape{3});
-  accumulate_in_place<pair_self_t<int64_t>>(result, var, op);
+  accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
   EXPECT_EQ(result, expected);
 }
 
@@ -150,6 +154,6 @@ TEST_F(AccumulateTest, 3d_outer_middle) {
   const auto expected =
       makeVariable<int64_t>(Dims{Dim::Z}, Shape{2}, Values{144, 156});
   auto result = makeVariable<int64_t>(Dims{Dim::Z}, Shape{2});
-  accumulate_in_place<pair_self_t<int64_t>>(result, var, op);
+  accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
   EXPECT_EQ(result, expected);
 }
