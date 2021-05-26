@@ -108,37 +108,6 @@ void reduce_(Op op, const Dim reductionDim, const Variable &out_data,
   core::parallel::parallel_for(core::parallel::blocked_range(0, groups.size()),
                                process);
 }
-} // namespace
-
-template <class T>
-template <class Op>
-T GroupBy<T>::reduce(Op op, const Dim reductionDim,
-                     const FillValue fill) const {
-  auto out = makeReductionOutput(reductionDim, fill);
-  if constexpr (std::is_same_v<T, Dataset>) {
-    for (const auto &item : m_data)
-      reduce_(op, reductionDim, out[item.name()].data(), item, dim(), groups(),
-              fill);
-  } else {
-    reduce_(op, reductionDim, out.data(), m_data, dim(), groups(), fill);
-  }
-  return out;
-}
-
-namespace groupby_detail {
-
-static constexpr auto sum = [](Variable &out, const auto &data_container,
-                               const GroupByGrouping::group &group,
-                               const Variable &mask,
-                               const Variable &mask_replacement) {
-  for (const auto &slice : group) {
-    const auto data_slice = data_container.data().slice(slice);
-    if (mask.is_valid())
-      sum_impl(out, where(mask.slice(slice), mask_replacement, data_slice));
-    else
-      sum_impl(out, data_slice);
-  }
-};
 
 template <void (*Func)(Variable &, const Variable &)>
 // The msvc compiler was failing to pass the templated function correctly
@@ -158,7 +127,23 @@ struct wrap {
         }
       };
 };
-} // namespace groupby_detail
+
+} // namespace
+
+template <class T>
+template <class Op>
+T GroupBy<T>::reduce(Op op, const Dim reductionDim,
+                     const FillValue fill) const {
+  auto out = makeReductionOutput(reductionDim, fill);
+  if constexpr (std::is_same_v<T, Dataset>) {
+    for (const auto &item : m_data)
+      reduce_(op, reductionDim, out[item.name()].data(), item, dim(), groups(),
+              fill);
+  } else {
+    reduce_(op, reductionDim, out.data(), m_data, dim(), groups(), fill);
+  }
+  return out;
+}
 
 /// Reduce each group by concatenating elements and return combined data.
 ///
@@ -179,30 +164,31 @@ template <class T> T GroupBy<T>::concatenate(const Dim reductionDim) const {
 
 /// Reduce each group using `sum` and return combined data.
 template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
-  return reduce(groupby_detail::sum, reductionDim, FillValue::ZeroNotBool);
+  return reduce(wrap<sum_impl>::reduce_idempotent, reductionDim,
+                FillValue::ZeroNotBool);
 }
 
 /// Reduce each group using `all` and return combined data.
 template <class T> T GroupBy<T>::all(const Dim reductionDim) const {
-  return reduce(groupby_detail::wrap<all_impl>::reduce_idempotent, reductionDim,
+  return reduce(wrap<all_impl>::reduce_idempotent, reductionDim,
                 FillValue::True);
 }
 
 /// Reduce each group using `any` and return combined data.
 template <class T> T GroupBy<T>::any(const Dim reductionDim) const {
-  return reduce(groupby_detail::wrap<any_impl>::reduce_idempotent, reductionDim,
+  return reduce(wrap<any_impl>::reduce_idempotent, reductionDim,
                 FillValue::False);
 }
 
 /// Reduce each group using `max` and return combined data.
 template <class T> T GroupBy<T>::max(const Dim reductionDim) const {
-  return reduce(groupby_detail::wrap<max_impl>::reduce_idempotent, reductionDim,
+  return reduce(wrap<max_impl>::reduce_idempotent, reductionDim,
                 FillValue::Lowest);
 }
 
 /// Reduce each group using `min` and return combined data.
 template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
-  return reduce(groupby_detail::wrap<min_impl>::reduce_idempotent, reductionDim,
+  return reduce(wrap<min_impl>::reduce_idempotent, reductionDim,
                 FillValue::Max);
 }
 
