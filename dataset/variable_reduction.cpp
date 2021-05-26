@@ -67,7 +67,7 @@ Variable nanmean(const Variable &var, const Dim dim, const Masks &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim);
       mask_union.is_valid()) {
     const auto count = sum(
-        where(mask_union, isinf(var), makeVariable<bool>(Values{true})), dim);
+        where(mask_union, makeVariable<bool>(Values{false}), ~isnan(var)), dim);
     return nanmean_impl(where(mask_union, zero_like(var), var), dim, count);
   }
   return nanmean(var, dim);
