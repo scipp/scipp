@@ -305,7 +305,7 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
   // inputs bins to the same output histogram. This also allows for threading of
   // 1-D histogramming provided that the input has multiple bins along
   // `hist_dim`.
-  const Dim dummy = Dim::Internal0;
+  const Dim dummy = Dim::InternalHistogram;
   if (indices.dims().contains(hist_dim))
     indices.rename(hist_dim, dummy);
   const auto masked = masked_data(buffer, dim);

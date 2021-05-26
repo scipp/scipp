@@ -16,8 +16,11 @@ namespace {
 const auto &builtin_ids() {
   static std::unordered_map<std::string, Dim::Id> ids{
       {"<invalid>", Dim::Invalid},
-      {"<internal0>", Dim::Internal0},
-      {"<internal1>", Dim::Internal1},
+      {"<internal_structure_component>", Dim::InternalStructureComponent},
+      {"<internal_structure_row>", Dim::InternalStructureRow},
+      {"<internal_structure_column>", Dim::InternalStructureColumn},
+      {"<internal_histogram>", Dim::InternalHistogram},
+      {"<internal_sort>", Dim::InternalSort},
       {"energy", Dim::Energy},
       {"event", Dim::Event},
       {"group", Dim::Group},

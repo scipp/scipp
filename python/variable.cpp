@@ -123,8 +123,9 @@ void bind_structured_creation(py::module &m, const std::string &name) {
             element_array<Elem>(values.size(), core::default_init_elements));
         auto elems = var.template elements<T>();
         if constexpr (sizeof...(N) != 1)
-          elems = fold(elems, Dim::Internal0,
-                       Dimensions({Dim::Internal0, Dim::Internal1},
+          elems = fold(elems, Dim::InternalStructureComponent,
+                       Dimensions({Dim::InternalStructureRow,
+                                   Dim::InternalStructureColumn},
                                   {scipp::index(N)...}));
         copy_array_into_view(values, elems.template values<Elem>(),
                              elems.dims());

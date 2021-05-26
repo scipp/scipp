@@ -16,7 +16,7 @@ Variable sort(const Variable &var, const Variable &key, const SortOrder order) {
 DataArray sort(const DataArray &array, const Variable &key,
                const SortOrder order) {
   auto helper = array;
-  const Dim dummy = Dim::Internal0;
+  const Dim dummy = Dim::InternalSort;
   helper.coords().set(dummy, key);
   helper = groupby(helper, dummy).copy(order);
   helper.coords().erase(dummy);
@@ -32,7 +32,7 @@ DataArray sort(const DataArray &array, const Dim &key, const SortOrder order) {
 Dataset sort(const Dataset &dataset, const Variable &key,
              const SortOrder order) {
   auto helper = dataset;
-  const Dim dummy = Dim::Internal0;
+  const Dim dummy = Dim::InternalSort;
   helper.coords().set(dummy, key);
   helper = groupby(helper, dummy).copy(order);
   helper.coords().erase(dummy);
