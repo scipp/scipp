@@ -41,7 +41,6 @@ Test
 ----
 
   - all (including optional) dependencies of *Run*
-  - ``mantid-framework`` * (GPL-3.0-or-later) (Mantid interoperability tests are skipped if not present)
   - ``pytest`` (MIT) (test framework)
 
 Jupyter Lab
