@@ -275,7 +275,7 @@ public:
 
 private:
   constexpr auto dim_at_end(const scipp::index dim) const noexcept {
-    return m_coord[dim] == m_shape[dim];
+    return m_coord[dim] == std::max(m_shape[dim], scipp::index{1});
   }
 
   constexpr auto bin_ndim() const noexcept { return m_ndim - m_inner_ndim; }
