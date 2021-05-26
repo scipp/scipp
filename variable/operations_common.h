@@ -40,4 +40,13 @@ expect_valid_bin_indices(const VariableConceptHandle &indices, const Dim dim,
 template <class T>
 Variable make_bins_impl(Variable indices, const Dim dim, T &&buffer);
 
+template <class T, class Op> auto reduce_all_dims(const T &obj, const Op &op) {
+  if (obj.dims().empty())
+    return copy(obj);
+  auto out = op(obj, obj.dims().inner());
+  while (!out.dims().empty())
+    out = op(out, out.dims().inner());
+  return out;
+}
+
 } // namespace scipp::variable

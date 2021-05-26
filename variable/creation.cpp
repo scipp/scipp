@@ -35,18 +35,20 @@ Variable empty_like(const Variable &prototype,
 }
 
 Variable special_like(const Variable &prototype, const FillValue &fill) {
+  const char *name = "special_like";
   if (fill == FillValue::Default)
     return Variable(prototype, prototype.dims());
   if (fill == FillValue::ZeroNotBool)
-    return transform(prototype, core::element::zeros_not_bool_like);
+    return transform(prototype, core::element::zeros_not_bool_like, name);
   if (fill == FillValue::True)
-    return transform(prototype, core::element::values_like<bool, true>);
+    return transform(prototype, core::element::values_like<bool, true>, name);
   if (fill == FillValue::False)
-    return transform(prototype, core::element::values_like<bool, false>);
+    return transform(prototype, core::element::values_like<bool, false>, name);
   if (fill == FillValue::Max)
-    return transform(prototype, core::element::numeric_limits_max_like);
+    return transform(prototype, core::element::numeric_limits_max_like, name);
   if (fill == FillValue::Lowest)
-    return transform(prototype, core::element::numeric_limits_lowest_like);
+    return transform(prototype, core::element::numeric_limits_lowest_like,
+                     name);
   throw std::runtime_error("Unsupported fill value.");
 }
 

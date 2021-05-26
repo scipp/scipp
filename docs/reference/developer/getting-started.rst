@@ -118,7 +118,6 @@ To run the Python tests, run (in the ``python/`` directory):
 Building Documentation
 ~~~~~~~~~~~~~~~~~~~~~~
 
-- If Mantid is unavailable (e.g. on Windows) edit ``docs/conf.py`` and include ``nbsphinx_allow_errors = True``. Take care to not commit this change though.
 - run ``cmake --build . --target docs`` from your build directory.
 - This will build the documentation and put it on ``<build dir>/docs``.
 - If rebuilding the documentation is slow it can be quicker to remove the docs build directory and start a fresh build.

@@ -5,6 +5,7 @@
 #include "scipp/variable/util.h"
 #include "scipp/core/element/util.h"
 #include "scipp/core/except.h"
+#include "scipp/variable/accumulate.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/subspan_view.h"
@@ -58,34 +59,34 @@ bool issorted(const Variable &x, const Dim dim, const SortOrder order) {
   if (order == SortOrder::Ascending)
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
-                        core::element::issorted_nondescending);
+                        core::element::issorted_nondescending, "issorted");
   else
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
-                        core::element::issorted_nonascending);
+                        core::element::issorted_nonascending, "issorted");
   return out.value<bool>();
 }
 
 /// Zip elements of two variables into a variable where each element is a pair.
 Variable zip(const Variable &first, const Variable &second) {
-  return transform(first, second, core::element::zip);
+  return transform(first, second, core::element::zip, "zip");
 }
 
 /// For an input where elements are pairs, return two variables containing the
 /// first and second components of the input pairs.
 std::pair<Variable, Variable> unzip(const Variable &var) {
-  return {transform(var, core::element::get<0>),
-          transform(var, core::element::get<1>)};
+  return {transform(var, core::element::get<0>, "unzip"),
+          transform(var, core::element::get<1>, "unzip")};
 }
 
 /// Fill variable with given values (and variances) and unit.
 void fill(Variable &var, const Variable &value) {
-  transform_in_place(var, value, core::element::fill);
+  transform_in_place(var, value, core::element::fill, "fill");
 }
 
 /// Fill variable with zeros.
 void fill_zeros(Variable &var) {
-  transform_in_place(var, core::element::fill_zeros);
+  transform_in_place(var, core::element::fill_zeros, "fill_zeros");
 }
 
 /// Return elements chosen from x or y depending on condition.

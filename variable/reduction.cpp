@@ -3,22 +3,20 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/reduction.h"
-#include "scipp/common/reduction.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/core/element/comparison.h"
 #include "scipp/core/element/logical.h"
+#include "scipp/variable/accumulate.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/math.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/special_values.h"
-#include "scipp/variable/transform.h"
 
 #include "operations_common.h"
 
 using namespace scipp::core;
-using scipp::common::reduce_all_dims;
 
 namespace scipp::variable {
 

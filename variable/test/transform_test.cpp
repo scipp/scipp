@@ -20,6 +20,7 @@ using namespace scipp::core;
 using namespace scipp::variable;
 
 namespace {
+const char *name = "transform_test";
 template <typename T>
 auto make_variable_for_test(const Shape &shape, bool variances) {
   auto ndim = shape.data.size();
@@ -111,9 +112,9 @@ TEST_F(TransformUnaryTest, dense) {
     for (bool variances : {false, true}) {
       const auto initial = make_variable_for_test<double>(shape, variances);
 
-      const auto result_return = transform<double>(initial, op);
+      const auto result_return = transform<double>(initial, op, name);
       Variable result_in_place = copy(initial);
-      transform_in_place<double>(result_in_place, op_in_place);
+      transform_in_place<double>(result_in_place, op_in_place, name);
 
       EXPECT_TRUE(equals(result_in_place.values<double>(),
                          op_manual_values(initial.values<double>())));
@@ -141,10 +142,10 @@ TEST_F(TransformUnaryTest, slice) {
       for (const Slice &slice : make_slices(shape)) {
         const auto initial = initial_buffer.slice(slice);
 
-        const auto result_return = transform<double>(initial, op);
+        const auto result_return = transform<double>(initial, op, name);
         Variable result_in_place_buffer = copy(initial_buffer);
         auto result_in_place = result_in_place_buffer.slice(slice);
-        transform_in_place<double>(result_in_place, op_in_place);
+        transform_in_place<double>(result_in_place, op_in_place, name);
 
         EXPECT_TRUE(equals(result_return.values<double>(),
                            op_manual_values(initial.values<double>())));
@@ -174,10 +175,10 @@ TEST_F(TransformUnaryTest, elements_of_bins) {
           const auto indices = make_bin_indices(shape.data[bin_dim], n_bins);
           auto var = make_bins(indices, bin_dim_label, copy(buffer));
 
-          const auto result = transform<double>(var, op);
-          transform_in_place<double>(var, op_in_place);
+          const auto result = transform<double>(var, op, name);
+          transform_in_place<double>(var, op_in_place, name);
 
-          const auto expected = transform<double>(buffer, op);
+          const auto expected = transform<double>(buffer, op, name);
           for (scipp::index bin = 0; bin < n_bins; ++bin) {
             const auto [lower, upper] = indices.values<index_pair>()[bin];
             EXPECT_EQ(var.values<bucket<Variable>>()[bin],
@@ -200,12 +201,12 @@ TEST_F(TransformUnaryTest, in_place_unit_change) {
   Variable result;
 
   result = copy(var);
-  transform_in_place<double>(result, op_);
+  transform_in_place<double>(result, op_, name);
   EXPECT_EQ(result, expected);
 
   // Unit changes but we are transforming only parts of data -> not possible.
   result = copy(var);
-  EXPECT_THROW(transform_in_place<double>(result.slice({Dim::X, 1}), op_),
+  EXPECT_THROW(transform_in_place<double>(result.slice({Dim::X, 1}), op_, name),
                except::UnitError);
 }
 
@@ -213,9 +214,11 @@ TEST(TransformTest, apply_unary_implicit_conversion) {
   const auto var =
       makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   // The functor returns double, so the output type is also double.
-  auto out = transform<float>(
-      var, overloaded{[](const auto x) { return -1.0 * x; },
-                      [](const units::Unit &unit) { return unit; }});
+  auto out =
+      transform<float>(var,
+                       overloaded{[](const auto x) { return -1.0 * x; },
+                                  [](const units::Unit &unit) { return unit; }},
+                       name);
   EXPECT_TRUE(equals(out.values<double>(), {-1.1f, -2.2f}));
 }
 
@@ -224,8 +227,10 @@ TEST(TransformTest, apply_unary_dtype_preserved) {
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   const auto varF =
       makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
-  auto outD = transform<double, float>(varD, [](const auto x) { return -x; });
-  auto outF = transform<double, float>(varF, [](const auto x) { return -x; });
+  auto outD = transform<double, float>(
+      varD, [](const auto x) { return -x; }, name);
+  auto outF = transform<double, float>(
+      varF, [](const auto x) { return -x; }, name);
   EXPECT_TRUE(equals(outD.values<double>(), {-1.1, -2.2}));
   EXPECT_TRUE(equals(outF.values<float>(), {-1.1f, -2.2f}));
 }
@@ -233,27 +238,30 @@ TEST(TransformTest, apply_unary_dtype_preserved) {
 TEST(TransformTest, dtype_bool) {
   auto var = makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false});
 
-  EXPECT_EQ(
-      transform<bool>(var, overloaded{[](const units::Unit &u) { return u; },
-                                      [](const auto x) { return !x; }}),
-      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
+  EXPECT_EQ(transform<bool>(var,
+                            overloaded{[](const units::Unit &u) { return u; },
+                                       [](const auto x) { return !x; }},
+                            name),
+            makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
 
   EXPECT_EQ(transform<pair_self_t<bool>>(
                 var, var,
                 overloaded{
                     [](const units::Unit &a, const units::Unit &) { return a; },
-                    [](const auto x, const auto y) { return !x || y; }}),
+                    [](const auto x, const auto y) { return !x || y; }},
+                name),
             makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true}));
 
   transform_in_place<bool>(
-      var, overloaded{[](units::Unit &) {}, [](auto &x) { x = !x; }});
+      var, overloaded{[](units::Unit &) {}, [](auto &x) { x = !x; }}, name);
   EXPECT_EQ(var,
             makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
 
   transform_in_place<pair_self_t<bool>>(
       var, var,
       overloaded{[](units::Unit &, const units::Unit &) {},
-                 [](auto &x, const auto &y) { x = !x || y; }});
+                 [](auto &x, const auto &y) { x = !x || y; }},
+      name);
   EXPECT_EQ(var,
             makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true}));
 }
@@ -268,9 +276,9 @@ TEST_F(TransformBinaryTest, dense) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   const auto b = makeVariable<double>(Values{3.3});
 
-  const auto ab = transform<pair_self_t<double>>(a, b, op);
-  const auto ba = transform<pair_self_t<double>>(b, a, op);
-  transform_in_place<pair_self_t<double>>(a, b, op_in_place);
+  const auto ab = transform<pair_self_t<double>>(a, b, op, name);
+  const auto ba = transform<pair_self_t<double>>(b, a, op, name);
+  transform_in_place<pair_self_t<double>>(a, b, op_in_place, name);
 
   EXPECT_TRUE(equals(a.values<double>(), {1.1 * 3.3, 2.2 * 3.3}));
   EXPECT_EQ(ab, ba);
@@ -283,8 +291,10 @@ TEST_F(TransformBinaryTest, dims_and_shape_fail_in_place) {
   auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2});
   auto c = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2});
 
-  EXPECT_ANY_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place));
-  EXPECT_ANY_THROW(transform_in_place<pair_self_t<double>>(a, c, op_in_place));
+  EXPECT_ANY_THROW(
+      transform_in_place<pair_self_t<double>>(a, b, op_in_place, name));
+  EXPECT_ANY_THROW(
+      transform_in_place<pair_self_t<double>>(a, c, op_in_place, name));
 }
 
 TEST_F(TransformBinaryTest, dims_and_shape_fail) {
@@ -292,18 +302,20 @@ TEST_F(TransformBinaryTest, dims_and_shape_fail) {
   auto b = makeVariable<double>(Dims{Dim::X}, Shape{2});
   auto c = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2});
 
-  EXPECT_ANY_THROW(auto v = transform<pair_self_t<double>>(a, b, op));
-  EXPECT_ANY_THROW(auto v = transform<pair_self_t<double>>(a, c, op));
+  EXPECT_ANY_THROW(auto v = transform<pair_self_t<double>>(a, b, op, name));
+  EXPECT_ANY_THROW(auto v = transform<pair_self_t<double>>(a, c, op, name));
 }
 
 TEST_F(TransformBinaryTest, dense_mixed_type) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   const auto b = makeVariable<float>(Values{3.3});
 
-  const auto ab = transform<pair_custom_t<std::tuple<double, float>>>(a, b, op);
-  const auto ba = transform<pair_custom_t<std::tuple<float, double>>>(b, a, op);
-  transform_in_place<pair_custom_t<std::tuple<double, float>>>(a, b,
-                                                               op_in_place);
+  const auto ab =
+      transform<pair_custom_t<std::tuple<double, float>>>(a, b, op, name);
+  const auto ba =
+      transform<pair_custom_t<std::tuple<float, double>>>(b, a, op, name);
+  transform_in_place<pair_custom_t<std::tuple<double, float>>>(
+      a, b, op_in_place, name);
 
   EXPECT_TRUE(equals(a.values<double>(), {1.1 * 3.3f, 2.2 * 3.3f}));
   EXPECT_EQ(ab, ba);
@@ -315,8 +327,9 @@ TEST_F(TransformBinaryTest, var_with_view) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   const auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0.1, 3.3});
 
-  auto ab = transform<pair_self_t<double>>(a, b.slice({Dim::Y, 1}), op);
-  transform_in_place<pair_self_t<double>>(a, b.slice({Dim::Y, 1}), op_in_place);
+  auto ab = transform<pair_self_t<double>>(a, b.slice({Dim::Y, 1}), op, name);
+  transform_in_place<pair_self_t<double>>(a, b.slice({Dim::Y, 1}), op_in_place,
+                                          name);
 
   EXPECT_TRUE(equals(a.values<double>(), {1.1 * 3.3, 2.2 * 3.3}));
   EXPECT_EQ(ab, a);
@@ -325,7 +338,8 @@ TEST_F(TransformBinaryTest, var_with_view) {
 TEST_F(TransformBinaryTest, in_place_self_overlap_without_variance_1d) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   auto reference = a * a.slice({Dim::X, 1});
-  transform_in_place<pair_self_t<double>>(a, a.slice({Dim::X, 1}), op_in_place);
+  transform_in_place<pair_self_t<double>>(a, a.slice({Dim::X, 1}), op_in_place,
+                                          name);
   ASSERT_EQ(a, reference);
 }
 
@@ -339,7 +353,8 @@ TEST_F(TransformBinaryTest, in_place_self_overlap_without_variance_2d) {
            Dimensions{{Dim::Y, 2}, {Dim::X, 2}});
   ASSERT_EQ(original.data_handle(), relabeled.data_handle());
   ASSERT_NE(original.dims(), relabeled.dims());
-  transform_in_place<pair_self_t<double>>(original, relabeled, op_in_place);
+  transform_in_place<pair_self_t<double>>(original, relabeled, op_in_place,
+                                          name);
   ASSERT_EQ(original, reference);
 }
 
@@ -351,7 +366,8 @@ TEST_F(TransformBinaryTest, in_place_self_overlap_with_variance) {
   // With self-overlap the implementation needs to make a copy of the rhs. This
   // is a regression test: An initial implementation was unintentionally
   // dropping the variances when making that copy.
-  transform_in_place<pair_self_t<double>>(a, a.slice({Dim::X, 1}), op_in_place);
+  transform_in_place<pair_self_t<double>>(a, a.slice({Dim::X, 1}), op_in_place,
+                                          name);
   ASSERT_EQ(a, reference);
 }
 
@@ -359,7 +375,8 @@ TEST_F(TransformBinaryTest, view_with_var) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   const auto b = makeVariable<double>(Values{3.3});
 
-  transform_in_place<pair_self_t<double>>(a.slice({Dim::X, 1}), b, op_in_place);
+  transform_in_place<pair_self_t<double>>(a.slice({Dim::X, 1}), b, op_in_place,
+                                          name);
 
   EXPECT_TRUE(equals(a.values<double>(), {1.1, 2.2 * 3.3}));
 }
@@ -368,8 +385,8 @@ TEST_F(TransformBinaryTest, view_with_view) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   const auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0.1, 3.3});
 
-  transform_in_place<pair_self_t<double>>(a.slice({Dim::X, 1}),
-                                          b.slice({Dim::Y, 1}), op_in_place);
+  transform_in_place<pair_self_t<double>>(
+      a.slice({Dim::X, 1}), b.slice({Dim::Y, 1}), op_in_place, name);
 
   EXPECT_TRUE(equals(a.values<double>(), {1.1, 2.2 * 3.3}));
 }
@@ -382,17 +399,19 @@ TEST_F(TransformBinaryTest, dense_events) {
   auto events = make_bins(indices, Dim::Event, copy(table));
   auto dense = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.5, 0.5});
 
-  const auto ab = transform<pair_self_t<double>>(events, dense, op);
-  const auto ba = transform<pair_self_t<double>>(dense, events, op);
-  transform_in_place<pair_self_t<double>>(events, dense, op_in_place);
+  const auto ab = transform<pair_self_t<double>>(events, dense, op, name);
+  const auto ba = transform<pair_self_t<double>>(dense, events, op, name);
+  transform_in_place<pair_self_t<double>>(events, dense, op_in_place, name);
 
-  const auto expected = transform<double>(events, dense, op);
+  const auto expected = transform<double>(events, dense, op, name);
   EXPECT_EQ(events.values<bucket<Variable>>()[0],
-            transform<pair_self_t<double>>(
-                dense.slice({Dim::X, 0}), table.slice({Dim::Event, 0, 3}), op));
+            transform<pair_self_t<double>>(dense.slice({Dim::X, 0}),
+                                           table.slice({Dim::Event, 0, 3}), op,
+                                           name));
   EXPECT_EQ(events.values<bucket<Variable>>()[1],
-            transform<pair_self_t<double>>(
-                dense.slice({Dim::X, 1}), table.slice({Dim::Event, 3, 4}), op));
+            transform<pair_self_t<double>>(dense.slice({Dim::X, 1}),
+                                           table.slice({Dim::Event, 3, 4}), op,
+                                           name));
   EXPECT_EQ(ab, events);
   EXPECT_EQ(ba, events);
 }
@@ -405,9 +424,9 @@ TEST_F(TransformBinaryTest, events_size_fail) {
   const auto table = makeVariable<double>(Dims{Dim::Event}, Shape{4});
   auto a = make_bins(indicesA, Dim::Event, table);
   auto b = make_bins(indicesB, Dim::Event, table);
-  ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, b, op),
+  ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, b, op, name),
                        except::BinnedDataError);
-  ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place),
+  ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place, name),
                except::BinnedDataError);
 }
 
@@ -421,47 +440,15 @@ TEST_F(TransformBinaryTest, in_place_unit_change) {
   Variable result;
 
   result = var;
-  transform_in_place<pair_self_t<double>>(result, var, op_);
+  transform_in_place<pair_self_t<double>>(result, var, op_, name);
   EXPECT_EQ(result, expected);
 
   // Unit changes but we are transforming only parts of data -> not possible.
   result = var;
-  EXPECT_THROW(transform_in_place<pair_self_t<double>>(
-                   result.slice({Dim::X, 1}), var.slice({Dim::X, 1}), op_),
-               except::UnitError);
-}
-
-TEST(AccumulateTest, in_place) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.0, 2.0});
-  const auto expected = makeVariable<double>(Values{3.0});
-  auto op_ = [](auto &&a, auto &&b) { a += b; };
-  // Note how accumulate is ignoring the unit.
-  auto result = makeVariable<double>(Values{double{}});
-  accumulate_in_place<pair_self_t<double>>(result, var, op_);
-  EXPECT_EQ(result, expected);
-}
-
-TEST(AccumulateTest, bad_dims) {
-  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                        units::m, Values{1, 2, 3, 4, 5, 6});
-  auto op_ = [](auto &&a, auto &&b) { a += b; };
-  auto result = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  const auto orig = copy(result);
-  EXPECT_THROW(accumulate_in_place<pair_self_t<double>>(result, var, op_),
-               except::DimensionError);
-  EXPECT_EQ(result, orig);
-}
-
-TEST(AccumulateTest, broadcast) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::m, Values{1, 2, 3});
-  const auto expected =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{6, 6});
-  auto op_ = [](auto &&a, auto &&b) { a += b; };
-  auto result = makeVariable<double>(Dims{Dim::X}, Shape{2});
-  accumulate_in_place<pair_self_t<double>>(result, var, op_);
-  EXPECT_EQ(result, expected);
+  EXPECT_THROW(
+      transform_in_place<pair_self_t<double>>(
+          result.slice({Dim::X, 1}), var.slice({Dim::X, 1}), op_, name),
+      except::UnitError);
 }
 
 TEST(TransformTest, Eigen_Vector3d_pass_by_value) {
@@ -474,7 +461,7 @@ TEST(TransformTest, Eigen_Vector3d_pass_by_value) {
   auto op = [](const auto x, const auto y) { return x - y; };
 
   const auto result = transform<pair_self_t<Eigen::Vector3d>>(
-      var.slice({Dim::X, 0}), var.slice({Dim::X, 1}), op);
+      var.slice({Dim::X, 0}), var.slice({Dim::X, 1}), op, name);
 
   EXPECT_EQ(result, expected);
 }
@@ -486,17 +473,17 @@ TEST(TransformTest, mixed_precision) {
   auto base_f = makeVariable<float>(Values{1.0});
   auto op = [](const auto a, const auto b) { return a + b; };
   const auto sum_fd =
-      transform<pair_custom_t<std::tuple<float, double>>>(base_f, d, op);
+      transform<pair_custom_t<std::tuple<float, double>>>(base_f, d, op, name);
   const auto sum_dd =
-      transform<pair_custom_t<std::tuple<double, double>>>(base_d, d, op);
+      transform<pair_custom_t<std::tuple<double, double>>>(base_d, d, op, name);
   EXPECT_NE(sum_fd.values<double>()[0], 1.0f);
   EXPECT_EQ(sum_fd.values<double>()[0], 1.0f + 1e-12);
   EXPECT_NE(sum_dd.values<double>()[0], 1.0);
   EXPECT_EQ(sum_dd.values<double>()[0], 1.0 + 1e-12);
   const auto sum_ff =
-      transform<pair_custom_t<std::tuple<float, float>>>(base_f, f, op);
+      transform<pair_custom_t<std::tuple<float, float>>>(base_f, f, op, name);
   const auto sum_df =
-      transform<pair_custom_t<std::tuple<double, float>>>(base_d, f, op);
+      transform<pair_custom_t<std::tuple<double, float>>>(base_d, f, op, name);
   EXPECT_EQ(sum_ff.values<float>()[0], 1.0f);
   EXPECT_EQ(sum_ff.values<float>()[0], 1.0f + 1e-12f);
   EXPECT_NE(sum_df.values<double>()[0], 1.0);
@@ -509,13 +496,17 @@ TEST(TransformTest, mixed_precision_in_place) {
   auto sum_d = makeVariable<double>(Values{1.0});
   auto sum_f = makeVariable<float>(Values{1.0});
   auto op = [](auto &a, const auto b) { a += b; };
-  transform_in_place<pair_custom_t<std::tuple<float, double>>>(sum_f, d, op);
-  transform_in_place<pair_custom_t<std::tuple<double, double>>>(sum_d, d, op);
+  transform_in_place<pair_custom_t<std::tuple<float, double>>>(sum_f, d, op,
+                                                               name);
+  transform_in_place<pair_custom_t<std::tuple<double, double>>>(sum_d, d, op,
+                                                                name);
   EXPECT_EQ(sum_f.values<float>()[0], 1.0f);
   EXPECT_NE(sum_d.values<double>()[0], 1.0);
   EXPECT_EQ(sum_d.values<double>()[0], 1.0 + 1e-12);
-  transform_in_place<pair_custom_t<std::tuple<float, float>>>(sum_f, f, op);
-  transform_in_place<pair_custom_t<std::tuple<double, float>>>(sum_d, f, op);
+  transform_in_place<pair_custom_t<std::tuple<float, float>>>(sum_f, f, op,
+                                                              name);
+  transform_in_place<pair_custom_t<std::tuple<double, float>>>(sum_d, f, op,
+                                                               name);
   EXPECT_EQ(sum_f.values<float>()[0], 1.0f);
   EXPECT_NE(sum_d.values<double>()[0], 1.0 + 1e-12);
   EXPECT_EQ(sum_d.values<double>()[0], 1.0 + 1e-12 + 1e-12);
@@ -528,13 +519,13 @@ TEST(TransformTest, combined_uncertainty_propagation) {
   const auto b = makeVariable<double>(Values{3.0}, Variances{0.2});
 
   const auto abb = transform<pair_self_t<double>>(
-      a, b, [](const auto &x, const auto &y) { return x * y + y; });
+      a, b, [](const auto &x, const auto &y) { return x * y + y; }, name);
   transform_in_place<pair_self_t<double>>(
-      a, b, [](auto &x, const auto y) { x = x * y + y; });
+      a, b, [](auto &x, const auto y) { x = x * y + y; }, name);
   transform_in_place<pair_self_t<double>>(
-      a_2_step, b, [](auto &x, const auto y) { x = x * y; });
+      a_2_step, b, [](auto &x, const auto y) { x = x * y; }, name);
   transform_in_place<pair_self_t<double>>(
-      a_2_step, b, [](auto &x, const auto y) { x = x + y; });
+      a_2_step, b, [](auto &x, const auto y) { x = x + y; }, name);
 
   EXPECT_TRUE(equals(a.values<double>(), {2.0 * 3.0 + 3.0}));
   EXPECT_TRUE(equals(a.variances<double>(), {0.1 * 3 * 3 + 0.2 * 2 * 2 + 0.2}));
@@ -560,23 +551,26 @@ protected:
 };
 
 TEST_F(TransformTest_events_binary_values_variances_size_fail, baseline) {
-  ASSERT_NO_THROW_DISCARD(transform<pair_self_t<double>>(a, val_var, op));
-  ASSERT_NO_THROW_DISCARD(transform<pair_self_t<double>>(a, val, op));
+  ASSERT_NO_THROW_DISCARD(transform<pair_self_t<double>>(a, val_var, op, name));
+  ASSERT_NO_THROW_DISCARD(transform<pair_self_t<double>>(a, val, op, name));
   ASSERT_NO_THROW(
-      transform_in_place<pair_self_t<double>>(a, val_var, op_in_place));
-  ASSERT_NO_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place));
+      transform_in_place<pair_self_t<double>>(a, val_var, op_in_place, name));
+  ASSERT_NO_THROW(
+      transform_in_place<pair_self_t<double>>(a, val, op_in_place, name));
 }
 
 TEST_F(TransformTest_events_binary_values_variances_size_fail, a_size_bad) {
   a = b;
-  ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, val_var, op),
+  ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, val_var, op, name),
                        except::BinnedDataError);
-  ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, val, op),
+  ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, val, op, name),
                        except::BinnedDataError);
-  ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
-               except::BinnedDataError);
-  ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
-               except::BinnedDataError);
+  ASSERT_THROW(
+      transform_in_place<pair_self_t<double>>(a, val_var, op_in_place, name),
+      except::BinnedDataError);
+  ASSERT_THROW(
+      transform_in_place<pair_self_t<double>>(a, val, op_in_place, name),
+      except::BinnedDataError);
 }
 
 class TransformBinsBinaryTest : public TransformBinaryTest {
@@ -594,8 +588,8 @@ protected:
 };
 
 TEST_F(TransformBinsBinaryTest, events_val_var_with_events_val_var) {
-  const auto ab = transform<pair_self_t<double>>(a, b, op);
-  transform_in_place<pair_self_t<double>>(a, b, op_in_place);
+  const auto ab = transform<pair_self_t<double>>(a, b, op, name);
+  transform_in_place<pair_self_t<double>>(a, b, op_in_place, name);
   // We rely on correctness of *dense* operations (Variable multiplication is
   // also built on transform).
   EXPECT_EQ(a, make_bins(indicesY, Dim::Event, tableA * tableB));
@@ -605,8 +599,8 @@ TEST_F(TransformBinsBinaryTest, events_val_var_with_events_val_var) {
 TEST_F(TransformBinsBinaryTest, events_val_var_with_events_val) {
   const auto table = values(tableB);
   b = make_bins(indicesY, Dim::Event, table);
-  const auto ab = transform<pair_self_t<double>>(a, b, op);
-  transform_in_place<pair_self_t<double>>(a, b, op_in_place);
+  const auto ab = transform<pair_self_t<double>>(a, b, op, name);
+  transform_in_place<pair_self_t<double>>(a, b, op_in_place, name);
   EXPECT_EQ(a, make_bins(indicesY, Dim::Event, tableA * table));
   EXPECT_EQ(ab, a);
 }
@@ -615,8 +609,8 @@ TEST_F(TransformBinsBinaryTest, events_val_var_with_val_var) {
   b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 1.6},
                            Variances{1.7, 1.8});
 
-  const auto ab = transform<pair_self_t<double>>(a, b, op);
-  transform_in_place<pair_self_t<double>>(a, b, op_in_place);
+  const auto ab = transform<pair_self_t<double>>(a, b, op, name);
+  transform_in_place<pair_self_t<double>>(a, b, op_in_place, name);
 
   tableA.slice({Dim::Event, 0, 3}) *= b.slice({Dim::Y, 0});
   tableA.slice({Dim::Event, 3, 4}) *= b.slice({Dim::Y, 1});
@@ -627,8 +621,8 @@ TEST_F(TransformBinsBinaryTest, events_val_var_with_val_var) {
 TEST_F(TransformBinsBinaryTest, events_val_var_with_val) {
   b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 1.6});
 
-  const auto ab = transform<pair_self_t<double>>(a, b, op);
-  transform_in_place<pair_self_t<double>>(a, b, op_in_place);
+  const auto ab = transform<pair_self_t<double>>(a, b, op, name);
+  transform_in_place<pair_self_t<double>>(a, b, op_in_place, name);
 
   tableA.slice({Dim::Event, 0, 3}) *= b.slice({Dim::Y, 0});
   tableA.slice({Dim::Event, 3, 4}) *= b.slice({Dim::Y, 1});
@@ -639,7 +633,8 @@ TEST_F(TransformBinsBinaryTest, events_val_var_with_val) {
 TEST_F(TransformBinsBinaryTest, broadcast_events_val_var_with_val) {
   b = makeVariable<float>(Dims{Dim::Z}, Shape{2}, Values{1.5, 1.6});
 
-  const auto ab = transform<pair_custom_t<std::tuple<double, float>>>(a, b, op);
+  const auto ab =
+      transform<pair_custom_t<std::tuple<double, float>>>(a, b, op, name);
 
   EXPECT_EQ(ab.slice({Dim::Z, 0}),
             make_bins(indicesY, Dim::Event, tableA * b.slice({Dim::Z, 0})));
@@ -662,8 +657,10 @@ TEST(TransformTest, user_op_with_variances) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m,
                                   Values{1.1, 2.2}, Variances{1.1, 3.0});
 
-  const auto result = transform<double>(var, [](auto x) { return user_op(x); });
-  transform_in_place<double>(var, [](auto &x) { x = user_op(x); });
+  const auto result = transform<double>(
+      var, [](auto x) { return user_op(x); }, name);
+  transform_in_place<double>(
+      var, [](auto &x) { x = user_op(x); }, name);
 
   auto expected = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::s,
                                        Values{123, 123}, Variances{456, 456});
@@ -684,12 +681,12 @@ TEST_F(TransformInPlaceDryRunTest, unit_fail) {
   auto a = makeVariable<double>(Dims(), Shape(), units::m);
   const auto original(a);
 
-  EXPECT_THROW(
-      dry_run::transform_in_place<double>(a, [](auto &x) { x += x * x; }),
-      std::runtime_error);
+  EXPECT_THROW(dry_run::transform_in_place<double>(
+                   a, [](auto &x) { x += x * x; }, name),
+               std::runtime_error);
   EXPECT_EQ(a, original);
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(
-                   a, a * a, [](auto &x, const auto &y) { x += y; }),
+                   a, a * a, [](auto &x, const auto &y) { x += y; }, name),
                std::runtime_error);
   EXPECT_EQ(a, original);
 }
@@ -698,11 +695,12 @@ TEST_F(TransformInPlaceDryRunTest, slice_unit_fail) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
   const auto original = copy(a);
 
-  EXPECT_THROW(dry_run::transform_in_place<double>(a.slice({Dim::X, 0}), unary),
-               except::UnitError);
+  EXPECT_THROW(
+      dry_run::transform_in_place<double>(a.slice({Dim::X, 0}), unary, name),
+      except::UnitError);
   EXPECT_EQ(a, original);
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(
-                   a.slice({Dim::X, 0}), a.slice({Dim::X, 0}), binary),
+                   a.slice({Dim::X, 0}), a.slice({Dim::X, 0}), binary, name),
                except::UnitError);
   EXPECT_EQ(a, original);
 }
@@ -712,8 +710,9 @@ TEST_F(TransformInPlaceDryRunTest, dimensions_fail) {
   auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m);
   const auto original = copy(a);
 
-  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
-               except::NotFoundError);
+  EXPECT_THROW(
+      dry_run::transform_in_place<pair_self_t<double>>(a, b, binary, name),
+      except::NotFoundError);
   EXPECT_EQ(a, original);
 }
 
@@ -723,8 +722,9 @@ TEST_F(TransformInPlaceDryRunTest, variances_fail) {
                                 Variances{});
   const auto original = copy(a);
 
-  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
-               except::VariancesError);
+  EXPECT_THROW(
+      dry_run::transform_in_place<pair_self_t<double>>(a, b, binary, name),
+      except::VariancesError);
   EXPECT_EQ(a, original);
 }
 
@@ -746,24 +746,26 @@ protected:
 
 TEST_F(TransformInPlaceBucketsDryRunTest, events_length_fail) {
   const auto original(a);
-  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
-               except::BinnedDataError);
+  EXPECT_THROW(
+      dry_run::transform_in_place<pair_self_t<double>>(a, b, binary, name),
+      except::BinnedDataError);
   EXPECT_EQ(a, original);
 }
 
 TEST_F(TransformInPlaceBucketsDryRunTest, variances_fail) {
   a = make_bins(indicesA, Dim::Event, values(tableA));
   const auto original(a);
-  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
-               except::VariancesError);
+  EXPECT_THROW(
+      dry_run::transform_in_place<pair_self_t<double>>(a, b, binary, name),
+      except::VariancesError);
   EXPECT_EQ(a, original);
 }
 
 TEST_F(TransformInPlaceBucketsDryRunTest, unchanged_if_success) {
   const auto original(a);
-  dry_run::transform_in_place<double>(a, unary);
+  dry_run::transform_in_place<double>(a, unary, name);
   EXPECT_EQ(a, original);
-  dry_run::transform_in_place<pair_self_t<double>>(a, a, binary);
+  dry_run::transform_in_place<pair_self_t<double>>(a, a, binary, name);
   EXPECT_EQ(a, original);
 }
 
@@ -776,33 +778,36 @@ TEST(TransformFlagsTest, no_variance_on_arg) {
   Variable out;
   EXPECT_NO_THROW(
       (out = transform<std::tuple<double>>(var_with_variance, var_no_variance,
-                                           op_arg_0_has_flags)));
-  EXPECT_THROW((out = transform<std::tuple<double>>(
-                    var_no_variance, var_with_variance, op_arg_0_has_flags)),
-               except::VariancesError);
+                                           op_arg_0_has_flags, name)));
+  EXPECT_THROW(
+      (out = transform<std::tuple<double>>(var_no_variance, var_with_variance,
+                                           op_arg_0_has_flags, name)),
+      except::VariancesError);
   EXPECT_NO_THROW(
       (out = transform<std::tuple<double>>(var_with_variance, var_with_variance,
-                                           op_arg_0_has_flags)));
+                                           op_arg_0_has_flags, name)));
   auto op_arg_1_has_flags =
       scipp::overloaded{transform_flags::expect_variance_arg<1>, binary_op};
-  EXPECT_THROW((out = transform<std::tuple<double>>(
-                    var_with_variance, var_no_variance, op_arg_1_has_flags)),
-               except::VariancesError);
+  EXPECT_THROW(
+      (out = transform<std::tuple<double>>(var_with_variance, var_no_variance,
+                                           op_arg_1_has_flags, name)),
+      except::VariancesError);
   EXPECT_NO_THROW(
       (out = transform<std::tuple<double>>(var_no_variance, var_with_variance,
-                                           op_arg_1_has_flags)));
+                                           op_arg_1_has_flags, name)));
   EXPECT_NO_THROW(
       (out = transform<std::tuple<double>>(var_with_variance, var_with_variance,
-                                           op_arg_1_has_flags)));
+                                           op_arg_1_has_flags, name)));
   auto all_args_with_flag =
       scipp::overloaded{transform_flags::expect_variance_arg<0>,
                         transform_flags::expect_variance_arg<1>, binary_op};
-  EXPECT_THROW((out = transform<std::tuple<double>>(
-                    var_no_variance, var_no_variance, all_args_with_flag)),
-               except::VariancesError);
+  EXPECT_THROW(
+      (out = transform<std::tuple<double>>(var_no_variance, var_no_variance,
+                                           all_args_with_flag, name)),
+      except::VariancesError);
   EXPECT_NO_THROW(
       (out = transform<std::tuple<double>>(var_with_variance, var_with_variance,
-                                           all_args_with_flag)));
+                                           all_args_with_flag, name)));
 }
 
 TEST(TransformFlagsTest, no_variance_on_arg_in_place) {
@@ -812,17 +817,17 @@ TEST(TransformFlagsTest, no_variance_on_arg_in_place) {
   auto op_arg_0_has_flags = scipp::overloaded{
       transform_flags::expect_variance_arg<0>, unary_in_place};
   EXPECT_THROW(transform_in_place<std::tuple<double>>(
-                   var_no_variance, var_no_variance, op_arg_0_has_flags),
+                   var_no_variance, var_no_variance, op_arg_0_has_flags, name),
                except::VariancesError);
   EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
-      var_with_variance, var_with_variance, op_arg_0_has_flags));
+      var_with_variance, var_with_variance, op_arg_0_has_flags, name));
   auto op_arg_1_has_flags = scipp::overloaded{
       transform_flags::expect_variance_arg<1>, unary_in_place};
   EXPECT_THROW(transform_in_place<std::tuple<double>>(
-                   var_no_variance, var_no_variance, op_arg_1_has_flags),
+                   var_no_variance, var_no_variance, op_arg_1_has_flags, name),
                except::VariancesError);
   EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
-      var_with_variance, var_with_variance, op_arg_1_has_flags));
+      var_with_variance, var_with_variance, op_arg_1_has_flags, name));
 }
 
 TEST(TransformFlagsTest, variance_on_arg) {
@@ -832,32 +837,38 @@ TEST(TransformFlagsTest, variance_on_arg) {
   auto op_arg_0_has_flags =
       scipp::overloaded{transform_flags::expect_no_variance_arg<0>, binary_op};
   Variable out;
-  EXPECT_THROW((out = transform<std::tuple<double>>(
-                    var_with_variance, var_no_variance, op_arg_0_has_flags)),
-               except::VariancesError);
+  EXPECT_THROW(
+      (out = transform<std::tuple<double>>(var_with_variance, var_no_variance,
+                                           op_arg_0_has_flags, name)),
+      except::VariancesError);
   EXPECT_NO_THROW(
       (out = transform<std::tuple<double>>(var_no_variance, var_with_variance,
-                                           op_arg_0_has_flags)));
-  EXPECT_NO_THROW((out = transform<std::tuple<double>>(
-                       var_no_variance, var_no_variance, op_arg_0_has_flags)));
+                                           op_arg_0_has_flags, name)));
+  EXPECT_NO_THROW(
+      (out = transform<std::tuple<double>>(var_no_variance, var_no_variance,
+                                           op_arg_0_has_flags, name)));
   auto op_arg_1_has_flags =
       scipp::overloaded{transform_flags::expect_no_variance_arg<1>, binary_op};
-  EXPECT_THROW((out = transform<std::tuple<double>>(
-                    var_no_variance, var_with_variance, op_arg_1_has_flags)),
-               except::VariancesError);
+  EXPECT_THROW(
+      (out = transform<std::tuple<double>>(var_no_variance, var_with_variance,
+                                           op_arg_1_has_flags, name)),
+      except::VariancesError);
   EXPECT_NO_THROW(
       (out = transform<std::tuple<double>>(var_with_variance, var_no_variance,
-                                           op_arg_1_has_flags)));
-  EXPECT_NO_THROW((out = transform<std::tuple<double>>(
-                       var_no_variance, var_no_variance, op_arg_1_has_flags)));
+                                           op_arg_1_has_flags, name)));
+  EXPECT_NO_THROW(
+      (out = transform<std::tuple<double>>(var_no_variance, var_no_variance,
+                                           op_arg_1_has_flags, name)));
   auto all_args_with_flag =
       scipp::overloaded{transform_flags::expect_no_variance_arg<0>,
                         transform_flags::expect_no_variance_arg<1>, binary_op};
-  EXPECT_THROW((out = transform<std::tuple<double>>(
-                    var_with_variance, var_with_variance, all_args_with_flag)),
-               except::VariancesError);
-  EXPECT_NO_THROW((out = transform<std::tuple<double>>(
-                       var_no_variance, var_no_variance, all_args_with_flag)));
+  EXPECT_THROW(
+      (out = transform<std::tuple<double>>(var_with_variance, var_with_variance,
+                                           all_args_with_flag, name)),
+      except::VariancesError);
+  EXPECT_NO_THROW(
+      (out = transform<std::tuple<double>>(var_no_variance, var_no_variance,
+                                           all_args_with_flag, name)));
 }
 
 TEST(TransformFlagsTest, no_out_variance) {
@@ -866,7 +877,7 @@ TEST(TransformFlagsTest, no_out_variance) {
                  [](const auto) { return true; },
                  [](const units::Unit &) { return units::one; }};
   const auto var = makeVariable<double>(Values{1.0}, Variances{1.0});
-  EXPECT_EQ(transform(var, op), true * units::one);
+  EXPECT_EQ(transform(var, op, name), true * units::one);
 }
 
 TEST(TransformFlagsTest, variance_on_arg_in_place) {
@@ -875,18 +886,20 @@ TEST(TransformFlagsTest, variance_on_arg_in_place) {
   auto unary_in_place = [](auto &, auto) {};
   auto op_arg_0_has_flags = scipp::overloaded{
       transform_flags::expect_no_variance_arg<0>, unary_in_place};
-  EXPECT_THROW(transform_in_place<std::tuple<double>>(
-                   var_with_variance, var_with_variance, op_arg_0_has_flags),
+  EXPECT_THROW(transform_in_place<std::tuple<double>>(var_with_variance,
+                                                      var_with_variance,
+                                                      op_arg_0_has_flags, name),
                except::VariancesError);
   EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
-      var_no_variance, var_no_variance, op_arg_0_has_flags));
+      var_no_variance, var_no_variance, op_arg_0_has_flags, name));
   auto op_arg_1_has_flags = scipp::overloaded{
       transform_flags::expect_no_variance_arg<1>, unary_in_place};
-  EXPECT_THROW(transform_in_place<std::tuple<double>>(
-                   var_with_variance, var_with_variance, op_arg_1_has_flags),
+  EXPECT_THROW(transform_in_place<std::tuple<double>>(var_with_variance,
+                                                      var_with_variance,
+                                                      op_arg_1_has_flags, name),
                except::VariancesError);
   EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
-      var_no_variance, var_no_variance, op_arg_1_has_flags));
+      var_no_variance, var_no_variance, op_arg_1_has_flags, name));
 }
 
 TEST(TransformFlagsTest, expect_in_variance_if_out_variance) {
@@ -895,16 +908,16 @@ TEST(TransformFlagsTest, expect_in_variance_if_out_variance) {
   constexpr auto inplace_op = [](auto &&x, const auto &y) { x += y; };
   constexpr auto op = overloaded{
       transform_flags::expect_in_variance_if_out_variance, inplace_op};
-  EXPECT_THROW(transform_in_place<std::tuple<double>>(var_with_variance,
-                                                      var_no_variance, op),
+  EXPECT_THROW(transform_in_place<std::tuple<double>>(
+                   var_with_variance, var_no_variance, op, name),
                except::VariancesError);
-  EXPECT_THROW(transform_in_place<std::tuple<double>>(var_no_variance,
-                                                      var_with_variance, op),
+  EXPECT_THROW(transform_in_place<std::tuple<double>>(
+                   var_no_variance, var_with_variance, op, name),
                except::VariancesError);
-  EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(var_no_variance,
-                                                         var_no_variance, op));
   EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
-      var_with_variance, var_with_variance, op));
+      var_no_variance, var_no_variance, op, name));
+  EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
+      var_with_variance, var_with_variance, op, name));
 }
 
 TEST(TransformFlagsTest, expect_all_or_none_have_variance) {
@@ -915,15 +928,16 @@ TEST(TransformFlagsTest, expect_all_or_none_have_variance) {
       transform_flags::expect_all_or_none_have_variance, binary_op};
   Variable out;
   EXPECT_THROW((out = transform<std::tuple<double>>(
-                    var_with_variance, var_no_variance, op_has_flags)),
+                    var_with_variance, var_no_variance, op_has_flags, name)),
                except::VariancesError);
   EXPECT_THROW((out = transform<std::tuple<double>>(
-                    var_no_variance, var_with_variance, op_has_flags)),
+                    var_no_variance, var_with_variance, op_has_flags, name)),
                except::VariancesError);
   EXPECT_NO_THROW((out = transform<std::tuple<double>>(
-                       var_no_variance, var_no_variance, op_has_flags)));
-  EXPECT_NO_THROW((out = transform<std::tuple<double>>(
-                       var_with_variance, var_with_variance, op_has_flags)));
+                       var_no_variance, var_no_variance, op_has_flags, name)));
+  EXPECT_NO_THROW(
+      (out = transform<std::tuple<double>>(var_with_variance, var_with_variance,
+                                           op_has_flags, name)));
 }
 
 TEST(TransformFlagsTest, expect_all_or_none_have_variance_in_place) {
@@ -934,15 +948,15 @@ TEST(TransformFlagsTest, expect_all_or_none_have_variance_in_place) {
       transform_flags::expect_all_or_none_have_variance, unary_op};
   Variable out;
   EXPECT_THROW(transform_in_place<std::tuple<double>>(
-                   var_with_variance, var_no_variance, op_has_flags),
+                   var_with_variance, var_no_variance, op_has_flags, name),
                except::VariancesError);
   EXPECT_THROW(transform_in_place<std::tuple<double>>(
-                   var_no_variance, var_with_variance, op_has_flags),
+                   var_no_variance, var_with_variance, op_has_flags, name),
                except::VariancesError);
   EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
-      var_no_variance, var_no_variance, op_has_flags));
+      var_no_variance, var_no_variance, op_has_flags, name));
   EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
-      var_with_variance, var_with_variance, op_has_flags));
+      var_with_variance, var_with_variance, op_has_flags, name));
 }
 
 TEST(TransformFlagsTest, expect_no_in_variance_if_out_cannot_have_variance) {
@@ -954,9 +968,9 @@ TEST(TransformFlagsTest, expect_no_in_variance_if_out_cannot_have_variance) {
       transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
       unary_op, [](const units::Unit &) { return units::one; }};
   Variable out;
-  EXPECT_THROW(out = transform(var_with_variance, op_has_flags),
+  EXPECT_THROW(out = transform(var_with_variance, op_has_flags, name),
                except::VariancesError);
-  EXPECT_NO_THROW(out = transform(var_no_variance, op_has_flags));
+  EXPECT_NO_THROW(out = transform(var_no_variance, op_has_flags, name));
 }
 
 class TransformBinElementsTest : public ::testing::Test {
@@ -971,8 +985,10 @@ protected:
 
 TEST_F(TransformBinElementsTest, single_arg_in_place) {
   transform_in_place<double>(
-      var, scipp::overloaded{transform_flags::expect_no_variance_arg<0>,
-                             [](auto &x) { x *= x; }});
+      var,
+      scipp::overloaded{transform_flags::expect_no_variance_arg<0>,
+                        [](auto &x) { x *= x; }},
+      name);
   Variable expected = make_bins(indices, Dim::X, buffer * buffer);
   EXPECT_EQ(var, expected);
 }
@@ -980,9 +996,11 @@ TEST_F(TransformBinElementsTest, single_arg_in_place) {
 TEST_F(TransformUnaryTest, drop_variances_when_not_supported_on_out_type) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2},
                                   Variances{1.1, 2.2});
-  const auto result = transform<double>(
-      var, overloaded{[](const units::Unit &unit) { return unit; },
-                      [](const auto) { return true; }});
+  const auto result =
+      transform<double>(var,
+                        overloaded{[](const units::Unit &unit) { return unit; },
+                                   [](const auto) { return true; }},
+                        name);
   EXPECT_EQ(result,
             makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true}));
 }

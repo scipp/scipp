@@ -26,6 +26,7 @@ TEST_F(SizesTest, 0d) {
   EXPECT_TRUE(sizes.empty());
   EXPECT_EQ(sizes.size(), 0);
   EXPECT_EQ(std::distance(sizes.begin(), sizes.end()), 0);
+  EXPECT_EQ(std::distance(sizes.rbegin(), sizes.rend()), 0);
   EXPECT_FALSE(sizes.contains(Dim::X));
 }
 
@@ -35,7 +36,9 @@ TEST_F(SizesTest, 1d) {
   EXPECT_FALSE(sizes.empty());
   EXPECT_EQ(sizes.size(), 1);
   EXPECT_EQ(std::distance(sizes.begin(), sizes.end()), 1);
+  EXPECT_EQ(std::distance(sizes.rbegin(), sizes.rend()), 1);
   EXPECT_EQ(*sizes.begin(), Dim::X);
+  EXPECT_EQ(*sizes.rbegin(), Dim::X);
   EXPECT_TRUE(sizes.contains(Dim::X));
   EXPECT_EQ(sizes[Dim::X], 2);
 }
@@ -47,6 +50,9 @@ TEST_F(SizesTest, 2d) {
   EXPECT_FALSE(sizes.empty());
   EXPECT_EQ(sizes.size(), 2);
   EXPECT_EQ(std::distance(sizes.begin(), sizes.end()), 2);
+  EXPECT_EQ(std::distance(sizes.rbegin(), sizes.rend()), 2);
+  EXPECT_EQ(*sizes.begin(), Dim::X);
+  EXPECT_EQ(*sizes.rbegin(), Dim::Y);
   auto it = sizes.begin();
   EXPECT_TRUE(*it == Dim::X || *it == Dim::Y);
   ++it;

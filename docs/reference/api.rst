@@ -172,9 +172,6 @@ Geometric
    :toctree: ../generated
 
    geometry.position
-   geometry.x
-   geometry.y
-   geometry.z
 
 Group-by (split-apply-combine)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -37,11 +37,8 @@ Variable copy(const Variable &var, Variable &&out) {
 
 namespace geometry {
 Variable position(const Variable &x, const Variable &y, const Variable &z) {
-  return transform(x, y, z, element::geometry::position);
+  return transform(x, y, z, element::geometry::position, "position");
 }
-Variable x(const Variable &pos) { return transform(pos, element::geometry::x); }
-Variable y(const Variable &pos) { return transform(pos, element::geometry::y); }
-Variable z(const Variable &pos) { return transform(pos, element::geometry::z); }
 } // namespace geometry
 
 } // namespace scipp::variable
