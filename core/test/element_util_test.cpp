@@ -1,68 +1,57 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 
+#include <cmath>
+#include <gtest/gtest.h>
+#include <vector>
+
 #include "scipp/core/element/util.h"
+#include "scipp/core/time_point.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
 
 #include "fix_typed_test_suite_warnings.h"
-
-#include <cmath>
-#include <gtest/gtest.h>
-#include <limits>
-#include <vector>
+#include "test_macros.h"
 
 using namespace scipp;
 using namespace scipp::core::element;
 
-TEST(ElementUtilTest, convertMaskedToZero_masks_special_vals) {
-  EXPECT_EQ(convertMaskedToZero(1.0, true), 0.0);
-  EXPECT_EQ(convertMaskedToZero(std::numeric_limits<double>::quiet_NaN(), true),
-            0.0);
-  EXPECT_EQ(convertMaskedToZero(std::numeric_limits<double>::infinity(), true),
-            0.0);
-  EXPECT_EQ(convertMaskedToZero(1.0, false), 1.0);
+TEST(ElementUtilTest, where) {
+  EXPECT_EQ(where(true, 1, 2), 1);
+  EXPECT_EQ(where(false, 1, 2), 2);
 }
 
-TEST(ElementUtilTest, convertMaskedToZero_ignores_unmasked) {
-  EXPECT_TRUE(std::isnan(
-      convertMaskedToZero(std::numeric_limits<double>::quiet_NaN(), false)));
-
-  EXPECT_TRUE(std::isinf(
-      convertMaskedToZero(std::numeric_limits<double>::infinity(), false)));
-}
-
-TEST(ElementUtilTest, convertMaskedToZero_handles_units) {
-  const auto dimensionless = scipp::units::dimensionless;
-
-  for (const auto &unit :
-       {scipp::units::m, scipp::units::dimensionless, scipp::units::s}) {
-    // Unit 'a' should always be preserved
-    EXPECT_EQ(convertMaskedToZero(unit, dimensionless), unit);
+TEST(ElementUtilTest, where_unit_preserved) {
+  for (const auto &unit : {units::m, units::one, units::s}) {
+    EXPECT_EQ(where(units::one, unit, unit), unit);
   }
 }
 
-TEST(ElementUtilTest, convertMaskedToZero_rejects_units_with_dim) {
-  const auto seconds = scipp::units::s;
-
-  for (const auto &unit :
-       {scipp::units::m, scipp::units::kg, scipp::units::s}) {
-    // Unit 'b' should always be dimensionless as its a mask
-    EXPECT_THROW(convertMaskedToZero(seconds, unit), scipp::except::UnitError);
+TEST(ElementUtilTest, where_unit_mismatch_fail) {
+  for (const auto &unit : {units::m, units::one, units::s}) {
+    EXPECT_THROW(where(units::one, unit, units::kg), except::UnitError);
   }
 }
 
-TEST(ElementUtilTest, convertMaskedToZero_accepts_all_types) {
+TEST(ElementUtilTest, where_rejects_condition_with_unit) {
+  EXPECT_NO_THROW_DISCARD(where(units::one, units::m, units::m));
+  for (const auto &unit : {units::m, units::kg, units::s}) {
+    EXPECT_THROW(where(unit, units::m, units::m), except::UnitError);
+  }
+}
+
+TEST(ElementUtilTest, where_accepts_all_types) {
+  static_assert(std::is_same_v<decltype(where(true, bool{}, bool{})), bool>);
   static_assert(
-      std::is_same_v<decltype(convertMaskedToZero(bool{}, true)), bool>);
+      std::is_same_v<decltype(where(true, double{}, double{})), double>);
+  static_assert(std::is_same_v<decltype(where(true, float{}, float{})), float>);
   static_assert(
-      std::is_same_v<decltype(convertMaskedToZero(double{}, true)), double>);
+      std::is_same_v<decltype(where(true, int32_t{}, int32_t{})), int32_t>);
   static_assert(
-      std::is_same_v<decltype(convertMaskedToZero(float{}, true)), float>);
-  static_assert(
-      std::is_same_v<decltype(convertMaskedToZero(int32_t{}, true)), int32_t>);
-  static_assert(
-      std::is_same_v<decltype(convertMaskedToZero(int64_t{}, true)), int64_t>);
+      std::is_same_v<decltype(where(true, int64_t{}, int64_t{})), int64_t>);
+  static_assert(std::is_same_v<decltype(where(true, core::time_point{},
+                                              core::time_point{})),
+                               core::time_point>);
 }
 
 TEST(ElementUtilTest, values_variances_stddev) {

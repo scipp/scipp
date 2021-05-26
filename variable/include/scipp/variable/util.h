@@ -33,4 +33,8 @@ SCIPP_VARIABLE_EXPORT void fill(Variable &var, const Variable &value);
 
 SCIPP_VARIABLE_EXPORT void fill_zeros(Variable &var);
 
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable where(const Variable &condition,
+                                                   const Variable &x,
+                                                   const Variable &y);
+
 } // namespace scipp::variable

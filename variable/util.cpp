@@ -88,4 +88,10 @@ void fill_zeros(Variable &var) {
   transform_in_place(var, core::element::fill_zeros);
 }
 
+/// Return elements chosen from x or y depending on condition.
+Variable where(const Variable &condition, const Variable &x,
+               const Variable &y) {
+  return transform(condition, x, y, element::where);
+}
+
 } // namespace scipp::variable

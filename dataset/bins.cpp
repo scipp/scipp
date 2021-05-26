@@ -14,7 +14,6 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/cumulative.h"
-#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
@@ -362,10 +361,10 @@ void scale(DataArray &array, const DataArray &histogram, Dim dim) {
 
 namespace {
 Variable applyMask(const DataArray &buffer, const Variable &indices,
-                   const Dim dim, const Variable &masks) {
-  auto indices_copy = copy(indices);
-  auto masked_data = scipp::variable::masked_to_zero(buffer.data(), masks);
-  return make_bins(std::move(indices_copy), dim, std::move(masked_data));
+                   const Dim dim, const Variable &mask) {
+  return make_bins(
+      indices, dim,
+      where(mask, Variable(buffer.data(), Dimensions{}), buffer.data()));
 }
 
 } // namespace

@@ -35,10 +35,6 @@ Variable copy(const Variable &var, Variable &&out) {
   return std::move(out);
 }
 
-Variable masked_to_zero(const Variable &var, const Variable &mask) {
-  return transform(var, mask, element::convertMaskedToZero);
-}
-
 namespace geometry {
 Variable position(const Variable &x, const Variable &y, const Variable &z) {
   return transform(x, y, z, element::geometry::position);
