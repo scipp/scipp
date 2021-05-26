@@ -269,7 +269,7 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
       dispatch_inner_loop<false>(op, indices.get(), inner_strides, inner_size,
                                  std::forward<Out>(out),
                                  std::forward<Ts>(other)...);
-      indices.increment_inner_by(inner_size);
+      indices.increment_inner_by(inner_size != 0 ? inner_size : 1);
       indices.increment_outer();
     }
   };
@@ -472,7 +472,7 @@ template <bool dry_run> struct in_place {
         detail::dispatch_inner_loop<true>(op, indices.get(), inner_strides,
                                           inner_size, std::forward<T>(arg),
                                           std::forward<Ts>(other)...);
-        indices.increment_inner_by(inner_size);
+        indices.increment_inner_by(inner_size != 0 ? inner_size : 1);
         indices.increment_outer();
       }
     };
