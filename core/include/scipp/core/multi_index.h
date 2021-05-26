@@ -63,10 +63,6 @@ void copy_strides(
         }
       }(),
       ...);
-  // The last stride must be 0 for the end-state detection.
-  if (ndim < NDIM_MAX) {
-    ((dest[ndim][I] = 0), ...);
-  }
 }
 
 template <size_t N>
