@@ -155,6 +155,7 @@ class PlotView2d(PlotView):
         if self.profile_scatter is None:
             self.profile_scatter = self.figure.ax.scatter([xdata], [ydata],
                                                           c=[col],
+                                                          edgecolors="w",
                                                           picker=5,
                                                           zorder=10)
         else:
