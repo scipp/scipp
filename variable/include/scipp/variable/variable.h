@@ -57,8 +57,6 @@ public:
   /// should be prefered where possible, since it generates less code.
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
-  Variable operator~() const;
-
   [[nodiscard]] const units::Unit &unit() const;
   void setUnit(const units::Unit &unit);
   void expectCanSetUnit(const units::Unit &) const;
@@ -103,7 +101,6 @@ public:
 
   bool operator==(const Variable &other) const;
   bool operator!=(const Variable &other) const;
-  Variable operator-() const;
 
   [[nodiscard]] const VariableConcept &data() const && = delete;
   [[nodiscard]] const VariableConcept &data() const &;

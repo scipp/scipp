@@ -223,8 +223,6 @@ copy(const Dataset &dataset, Dataset &out,
 copy(const Dataset &dataset, Dataset &&out,
      const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
-SCIPP_DATASET_EXPORT DataArray operator-(const DataArray &a);
-
 SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs, const Dataset &rhs);
 SCIPP_DATASET_EXPORT Dataset operator+(const Dataset &lhs,
                                        const DataArray &rhs);

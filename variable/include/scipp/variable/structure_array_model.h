@@ -105,7 +105,8 @@ bool StructureArrayModel<T, Elem>::equals(const Variable &a,
 template <class T, class Elem>
 void StructureArrayModel<T, Elem>::copy(const Variable &src,
                                         Variable &dest) const {
-  transform_in_place<T>(dest, src, [](auto &a, const auto &b) { a = b; });
+  transform_in_place<T>(
+      dest, src, [](auto &a, const auto &b) { a = b; }, "copy");
 }
 template <class T, class Elem>
 void StructureArrayModel<T, Elem>::copy(const Variable &src,

@@ -103,6 +103,35 @@ def test_plot_sliceviewer_with_1d_projection_with_nans():
     # p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('y')].value = 10
 
 
+def test_plot_projection_1d_two_entries():
+    d = make_dense_dataset(ndim=2, unit='K')
+    d['Background'] = d['Sample'].data * 0.2
+    p = sc.plot(d, projection="1d")
+    assert not hasattr(p, "len")
+    p.close()
+
+
+def test_plot_projection_1d_two_entries_different_dims():
+    N = 100
+    M = 50
+    xx = np.arange(N, dtype=np.float64)
+    yy = np.arange(M, dtype=np.float64)
+    a = np.random.random([M, N])
+    d1 = sc.DataArray(data=sc.Variable(['y', 'x'], values=a, unit='K'),
+                      coords={
+                          'x': sc.Variable(['x'], values=xx, unit=sc.units.m),
+                          'y': sc.Variable(['y'], values=yy, unit=sc.units.m)
+                      })
+    d2 = sc.DataArray(data=sc.Variable(['y', 'z'], values=a + 2.0, unit='K'),
+                      coords={
+                          'z': sc.Variable(['z'], values=xx, unit=sc.units.m),
+                          'y': sc.Variable(['y'], values=yy, unit=sc.units.m)
+                      })
+    p = sc.plot({'a': d1, 'b': d2}, projection="1d")
+    assert len(p) == 2
+    p.close()
+
+
 def test_plot_variable_1d():
     N = 50
     v1d = sc.Variable(['tof'],
@@ -243,8 +272,8 @@ def test_plot_access_ax_and_fig_two_entries():
                                   values=2.0 * np.random.random(50),
                                   unit=sc.units.kg)
     out = sc.plot(d)
-    out['tof.counts'].ax.set_xlabel("MyXlabel")
-    out['tof.counts'].fig.set_dpi(120.)
+    out["['tof'].counts"].ax.set_xlabel("MyXlabel")
+    out["['tof'].counts"].fig.set_dpi(120.)
     out.close()
 
 
