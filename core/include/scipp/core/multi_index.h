@@ -238,9 +238,6 @@ public:
 
   constexpr auto get() const noexcept { return m_data_index; }
 
-  // TODO remove?
-  //  constexpr auto ndim() const noexcept { return m_ndim; };
-
   constexpr bool operator==(const MultiIndex &other) const noexcept {
     return m_coord == other.m_coord;
   }
