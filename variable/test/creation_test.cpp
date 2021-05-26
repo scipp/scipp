@@ -75,6 +75,9 @@ TEST_P(DenseVariablesTest, empty_like) {
 TEST(CreationTest, special_like_double) {
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m,
                                         Values{1, 2}, Variances{3, 4});
+  EXPECT_EQ(special_like(var, variable::FillValue::Default),
+            makeVariable<double>(var.dims(), var.unit(), Values{0, 0},
+                                 Variances{0, 0}));
   EXPECT_EQ(special_like(var, variable::FillValue::ZeroNotBool),
             makeVariable<double>(var.dims(), var.unit(), Values{0, 0},
                                  Variances{0, 0}));
@@ -97,6 +100,8 @@ TEST(CreationTest, special_like_double) {
 TEST(CreationTest, special_like_int) {
   const auto var =
       makeVariable<int64_t>(Dims{Dim::X}, Shape{2}, units::m, Values{1, 2});
+  EXPECT_EQ(special_like(var, variable::FillValue::Default),
+            makeVariable<int64_t>(var.dims(), var.unit(), Values{0, 0}));
   EXPECT_EQ(special_like(var, variable::FillValue::ZeroNotBool),
             makeVariable<int64_t>(var.dims(), var.unit(), Values{0, 0}));
   EXPECT_EQ(special_like(var, variable::FillValue::True),
@@ -117,6 +122,8 @@ TEST(CreationTest, special_like_int) {
 TEST(CreationTest, special_like_bool) {
   const auto var =
       makeVariable<bool>(Dims{Dim::X}, Shape{2}, units::m, Values{true, false});
+  EXPECT_EQ(special_like(var, variable::FillValue::Default),
+            makeVariable<bool>(var.dims(), var.unit(), Values{false, false}));
   EXPECT_EQ(special_like(var, variable::FillValue::ZeroNotBool),
             makeVariable<int64_t>(var.dims(), var.unit(), Values{0, 0}));
   EXPECT_EQ(special_like(var, variable::FillValue::Max),
@@ -132,6 +139,8 @@ TEST(CreationTest, special_like_bool) {
 TEST(CreationTest, special_like_time_point) {
   using core::time_point;
   const auto var = makeVariable<time_point>(units::ns, Values{time_point(1)});
+  EXPECT_EQ(special_like(var, variable::FillValue::Default),
+            makeVariable<time_point>(units::ns, Values{time_point(0)}));
   EXPECT_EQ(special_like(var, variable::FillValue::ZeroNotBool),
             makeVariable<time_point>(units::ns, Values{time_point(0)}));
   EXPECT_EQ(special_like(var, variable::FillValue::True),

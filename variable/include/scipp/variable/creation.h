@@ -5,6 +5,8 @@
 #pragma once
 #include <optional>
 
+#include "scipp/core/flags.h"
+
 #include "scipp-variable_export.h"
 #include "scipp/variable/variable.h"
 
@@ -23,14 +25,6 @@ empty(const Dimensions &dims, const units::Unit &unit, const DType type,
 empty_like(const Variable &prototype,
            const std::optional<Dimensions> &shape = std::nullopt,
            const Variable &sizes = {});
-
-enum class SCIPP_VARIABLE_EXPORT FillValue {
-  ZeroNotBool,
-  True,
-  False,
-  Max,
-  Lowest
-};
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 special_like(const Variable &prototype, const FillValue &fill);

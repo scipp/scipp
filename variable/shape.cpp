@@ -85,10 +85,11 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   return out;
 }
 
-Variable resize(const Variable &var, const Dim dim, const scipp::index size) {
+Variable resize(const Variable &var, const Dim dim, const scipp::index size,
+                const FillValue fill) {
   auto dims = var.dims();
   dims.resize(dim, size);
-  return Variable(var, dims);
+  return special_like(broadcast(Variable(var, Dimensions{}), dims), fill);
 }
 
 /// Return new variable resized to given shape.
