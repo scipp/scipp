@@ -15,8 +15,11 @@ class SCIPP_UNITS_EXPORT Dim {
 public:
   enum class Id : uint16_t {
     Invalid,
-    Internal0,
-    Internal1,
+    InternalStructureComponent,
+    InternalStructureRow,
+    InternalStructureColumn,
+    InternalHistogram,
+    InternalSort,
     Energy,
     Event,
     Group,
@@ -31,8 +34,12 @@ public:
   };
 
   constexpr static auto Invalid = Id::Invalid;
-  constexpr static auto Internal0 = Id::Internal0;
-  constexpr static auto Internal1 = Id::Internal1;
+  constexpr static auto InternalStructureComponent =
+      Id::InternalStructureComponent;
+  constexpr static auto InternalStructureRow = Id::InternalStructureRow;
+  constexpr static auto InternalStructureColumn = Id::InternalStructureColumn;
+  constexpr static auto InternalHistogram = Id::InternalHistogram;
+  constexpr static auto InternalSort = Id::InternalSort;
 
   constexpr static auto Energy = Id::Energy;
   constexpr static auto Event = Id::Event;

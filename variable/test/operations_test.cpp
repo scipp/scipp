@@ -737,18 +737,6 @@ TEST(VariableView, slice_binary_operations) {
   EXPECT_TRUE(equals(ratio.values<double>(), {1.0 / 2.0, 3.0 / 4.0}));
 }
 
-TEST(Variable, reverse) {
-  auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                  Values{1, 2, 3, 4, 5, 6});
-  auto reverseX = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                       Values{3, 2, 1, 6, 5, 4});
-  auto reverseY = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                       Values{4, 5, 6, 1, 2, 3});
-
-  EXPECT_EQ(reverse(var, Dim::X), reverseX);
-  EXPECT_EQ(reverse(var, Dim::Y), reverseY);
-}
-
 TEST(Variable, non_in_place_scalar_operations) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
 

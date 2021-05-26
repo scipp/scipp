@@ -44,8 +44,6 @@ bucket_sizes(const DataArray &array);
 
 namespace scipp::dataset::buckets {
 
-SCIPP_DATASET_EXPORT void reserve(Variable &var, const Variable &shape);
-
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable concatenate(const Variable &var0,
                                                         const Variable &var1);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray concatenate(const DataArray &var0,

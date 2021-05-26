@@ -4,15 +4,12 @@
 /// @author Simon Heybrock
 #include "scipp/core/element/arg_list.h"
 
-#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/comparison.h"
-#include "scipp/variable/except.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
-#include "scipp/variable/variable_concept.h"
 
 #include "operations_common.h"
 
