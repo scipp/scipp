@@ -101,7 +101,7 @@ void reduce_(Op op, const Dim reductionDim, const Variable &out_data,
     // Apply to each group, storing result in output slice
     for (scipp::index group = range.begin(); group != range.end(); ++group) {
       auto out_slice = out_data.slice({dim, group});
-      op(out_slice, data, groups[group], reductionDim, mask);
+      op(out_slice, data, groups[group], mask);
     }
   };
   core::parallel::parallel_for(core::parallel::blocked_range(0, groups.size()),
@@ -125,7 +125,7 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
 namespace groupby_detail {
 
 static constexpr auto sum = [](Variable &out, const auto &data_container,
-                               const GroupByGrouping::group &group, const Dim,
+                               const GroupByGrouping::group &group,
                                const Variable &mask) {
   for (const auto &slice : group) {
     const auto data_slice = data_container.data().slice(slice);
@@ -144,8 +144,7 @@ struct wrap {
   template <variable::FillValue fill>
   static constexpr auto reduce_idempotent =
       [](auto &&out, const auto &data_container,
-         const GroupByGrouping::group &group, const Dim reductionDim,
-         const Variable &mask) {
+         const GroupByGrouping::group &group, const Variable &mask) {
         copy(special_like(out, fill), out);
         for (const auto &slice : group) {
           const auto data_slice = data_container.data().slice(slice);
