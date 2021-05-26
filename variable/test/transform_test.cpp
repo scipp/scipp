@@ -451,39 +451,6 @@ TEST_F(TransformBinaryTest, in_place_unit_change) {
       except::UnitError);
 }
 
-TEST(AccumulateTest, in_place) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.0, 2.0});
-  const auto expected = makeVariable<double>(Values{3.0});
-  auto op_ = [](auto &&a, auto &&b) { a += b; };
-  // Note how accumulate is ignoring the unit.
-  auto result = makeVariable<double>(Values{double{}});
-  accumulate_in_place<pair_self_t<double>>(result, var, op_, name);
-  EXPECT_EQ(result, expected);
-}
-
-TEST(AccumulateTest, bad_dims) {
-  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                        units::m, Values{1, 2, 3, 4, 5, 6});
-  auto op_ = [](auto &&a, auto &&b) { a += b; };
-  auto result = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  const auto orig = copy(result);
-  EXPECT_THROW(accumulate_in_place<pair_self_t<double>>(result, var, op_, name),
-               except::DimensionError);
-  EXPECT_EQ(result, orig);
-}
-
-TEST(AccumulateTest, broadcast) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::m, Values{1, 2, 3});
-  const auto expected =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{6, 6});
-  auto op_ = [](auto &&a, auto &&b) { a += b; };
-  auto result = makeVariable<double>(Dims{Dim::X}, Shape{2});
-  accumulate_in_place<pair_self_t<double>>(result, var, op_, name);
-  EXPECT_EQ(result, expected);
-}
-
 TEST(TransformTest, Eigen_Vector3d_pass_by_value) {
   const auto var = makeVariable<Eigen::Vector3d>(
       Dims{Dim::X}, Shape{2},

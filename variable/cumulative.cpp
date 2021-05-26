@@ -4,7 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/variable/cumulative.h"
 #include "scipp/core/element/cumulative.h"
-#include "scipp/variable/transform.h"
+#include "scipp/variable/accumulate.h"
 #include "scipp/variable/util.h"
 
 using namespace scipp;

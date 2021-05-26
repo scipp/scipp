@@ -6,6 +6,7 @@
 #include "scipp/core/element/util.h" // fill_zeros
 #include "scipp/core/subbin_sizes.h"
 
+#include "scipp/variable/accumulate.h"
 #include "scipp/variable/bin_detail.h"
 #include "scipp/variable/bin_util.h"
 #include "scipp/variable/subspan_view.h"

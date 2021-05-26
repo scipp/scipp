@@ -5,6 +5,7 @@
 #include "scipp/variable/util.h"
 #include "scipp/core/element/util.h"
 #include "scipp/core/except.h"
+#include "scipp/variable/accumulate.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/subspan_view.h"

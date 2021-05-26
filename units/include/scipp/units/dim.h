@@ -20,6 +20,7 @@ public:
     InternalStructureColumn,
     InternalHistogram,
     InternalSort,
+    InternalAccumulate,
     Energy,
     Event,
     Group,
@@ -40,6 +41,7 @@ public:
   constexpr static auto InternalStructureColumn = Id::InternalStructureColumn;
   constexpr static auto InternalHistogram = Id::InternalHistogram;
   constexpr static auto InternalSort = Id::InternalSort;
+  constexpr static auto InternalAccumulate = Id::InternalAccumulate;
 
   constexpr static auto Energy = Id::Energy;
   constexpr static auto Event = Id::Event;
