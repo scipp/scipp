@@ -118,7 +118,7 @@ private:
   template <class... Params>
   explicit MultiIndex(binned_tag, const Dimensions &inner_dims,
                       const Params &... params)
-      : m_inner_ndim{inner_dims.ndim()}, m_has_bins{true} {
+      : m_inner_ndim{inner_dims.ndim()} {
     std::reverse_copy(inner_dims.shape().begin(), inner_dims.shape().end(),
                       m_shape.begin());
 
@@ -271,7 +271,9 @@ public:
     return it;
   }
 
-  [[nodiscard]] bool has_bins() const noexcept { return m_has_bins; }
+  [[nodiscard]] bool has_bins() const noexcept {
+    return m_nested_dim_index != -1;
+  }
 
   /// Return true if the first subindex has a 0 stride
   [[nodiscard]] bool has_stride_zero() const noexcept {
@@ -395,11 +397,9 @@ private:
   scipp::index m_nested_stride = {};
   /// Index of dim referred to by indices to distinguish, e.g., 2D bins
   /// slicing along first or second dim.
-  scipp::index m_nested_dim_index = {};
+  /// -1 if not binned.
+  scipp::index m_nested_dim_index{-1};
   std::array<BinIterator, N> m_bin = {};
-  // TODO try to remove
-  //    -> needed if bins are scalar?
-  bool m_has_bins = false;
 };
 
 template <class... StridesArgs>
