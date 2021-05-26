@@ -114,7 +114,10 @@ def _ordered_dict(data):
 
 def inline_variable_repr(var, has_variances=False):
     if var.bins is None:
-        return _format_non_events(var, has_variances)
+        if is_data_array(var):
+            return _format_non_events(var.data, has_variances)
+        else:
+            return _format_non_events(var, has_variances)
     else:
         return _format_events(var, has_variances)
 
