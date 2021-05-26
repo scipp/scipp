@@ -122,3 +122,9 @@ class TestDatasetSlice:
         sliced = d['y', 2:6]
         assert sc.identical(sc.Variable(['y'], values=np.arange(2, 6)),
                             sliced.coords['y-coord'])
+
+    def test_slice_with_step_1(self):
+        var = sc.Variable(['x'], values=np.arange(1, 4, dtype=np.int64))
+        expect = sc.Dataset(data={'a': var, 'b': var}, coords={'x': var})
+        assert sc.identical(self._d['x', 1:4:1], expect)
+        assert sc.identical(self._d['a']['x', 1:4:1], expect['a'])

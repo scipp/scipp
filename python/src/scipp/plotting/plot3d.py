@@ -4,8 +4,8 @@
 
 from .controller3d import PlotController3d
 from .model3d import PlotModel3d
+from .objects import Plot
 from .panel3d import PlotPanel3d
-from .sciplot import SciPlot
 from .view3d import PlotView3d
 from .widgets import PlotWidgets
 
@@ -19,14 +19,14 @@ def plot3d(*args, filename=None, **kwargs):
     planes.
     """
 
-    sp = SciPlot3d(*args, **kwargs)
+    sp = Plot3d(*args, **kwargs)
     if filename is not None:
         sp.savefig(filename)
     else:
         return sp
 
 
-class SciPlot3d(SciPlot):
+class Plot3d(Plot):
     """
     Class for 3 dimensional plots.
 

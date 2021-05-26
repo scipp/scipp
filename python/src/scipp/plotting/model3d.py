@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .model import PlotModel
-from .tools import to_bin_centers, fix_empty_range
+from .tools import to_bin_centers, fix_empty_range, to_dict
 from .._scipp import core as sc
 import numpy as np
 
@@ -125,7 +125,7 @@ class PlotModel3d(PlotModel):
                                  variances=np.zeros(shape),
                                  dtype=data_slice.data.dtype,
                                  unit=sc.units.one),
-                masks=data_slice.masks)
+                masks=to_dict(data_slice.masks))
 
             self.dslice *= data_slice.data
         else:

@@ -5,19 +5,19 @@
 
 import numpy as np
 from .._scipp import core as sc
-from .helpers import PlotArray
 from .tools import to_bin_centers
 
 
 class ResamplingModel():
-    def __init__(self, data, resolution=None, bounds=None):
+    def __init__(self, array, resolution=None, bounds=None):
         self._resolution = {} if resolution is None else resolution
         self._bounds = {} if bounds is None else bounds
         self._resampled = None
         self._resampled_params = None
-        self._array = data
+        self._array = None
         self._home = None
         self._home_params = None
+        self.update_array(array)
 
     @property
     def resolution(self):
@@ -120,22 +120,34 @@ class ResamplingModel():
             self._home = self._resampled
             self._home_params = self._resampled_params
 
+    def update_array(self, array):
+        """
+        Update the internal array with a new array.
+        """
+        self._array = self._make_array(array)
+
+    def reset(self):
+        """
+        Reset view parameters to force a plot update.
+        """
+        self._home_params = None
+        self._resampled_params = None
+
 
 class ResamplingBinnedModel(ResamplingModel):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # TODO See #1469. This is a temporary hack to work around the
-        # conversion of coords to edges in model.py.
-        new_meta = {name: var for name, var in self._array.meta.items()}
-        self._array = PlotArray(data=self._array.data,
-                                masks=self._array.masks,
-                                meta=new_meta)
-        for name, var in self._array.meta.items():
+    def _make_array(self, array):
+        """
+        TODO See #1469. This is a temporary hack to work around the
+        conversion of coords to edges in model.py.
+        """
+        new_array = array.copy(deep=False)
+        for name, var in new_array.coords.items():
             if len(var.dims) == 0:
                 continue
             dim = var.dims[-1]
-            if name not in self._array.data.bins.meta:
-                self._array.meta[name] = to_bin_centers(var, dim)
+            if name not in new_array.data.bins.coords:
+                new_array.coords[name] = to_bin_centers(var, dim)
+        return new_array
 
     def _resample(self, array):
         # We could bin with all edges and then use `bins.sum()` but especially
@@ -147,20 +159,18 @@ class ResamplingBinnedModel(ResamplingModel):
             # Must specify bounds for final dim despite handling by `histogram`
             # below: If coord is ragged binning would throw otherwise.
             bounds = sc.concatenate(edges[dim, 0], edges[dim, -1], dim)
-            binned = sc.bin_with_coords(array.data, array.meta,
-                                        self.edges[:-1] + [bounds], [])
+            binned = sc.bin(array=array, edges=self.edges[:-1] + [bounds])
             a = sc.histogram(binned, edges)
         else:
-            a = sc.bin_with_coords(array.data, array.meta, self.edges,
-                                   []).bins.sum()
+            a = sc.bin(array=array, edges=self.edges).bins.sum()
         for name, mask in array.masks.items():
             a.masks[name] = self._rebin(mask, array.meta)
         return a
 
 
 class ResamplingCountsModel(ResamplingModel):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def _make_array(self, array):
+        return array
 
     def _resample(self, array):
         return sc.DataArray(
@@ -174,21 +184,14 @@ class ResamplingCountsModel(ResamplingModel):
 
 
 class ResamplingDenseModel(ResamplingModel):
-    def __init__(self, array, **kwargs):
-        # Scale by bin widths, so `rebin` is effectively performing a "mean"
-        # operation instead of "sum".
-        super().__init__(self._to_density(array), **kwargs)
-
     def _to_density(self, array):
-        array = PlotArray(data=array.data.astype(sc.dtype.float64),
-                          meta=array.meta,
-                          masks=array.masks)
-        for dim in array.data.dims:
+        array = array.astype(sc.dtype.float64)
+        for dim in array.dims:
             coord = array.meta[dim]
             width = coord[dim, 1:] - coord[dim, :-1]
             width.unit = sc.units.one
             array.data *= width
-        array.data.unit = sc.units.one
+        array.unit = sc.units.one
         return array
 
     def _from_density(self, data):
@@ -208,6 +211,11 @@ class ResamplingDenseModel(ResamplingModel):
                 name: self._rebin(mask, array.meta)
                 for name, mask in array.masks.items()
             })
+
+    def _make_array(self, array):
+        # Scale by bin widths, so `rebin` is effectively performing a "mean"
+        # operation instead of "sum".
+        return self._to_density(array)
 
 
 def resampling_model(array, **kwargs):
