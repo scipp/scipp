@@ -26,7 +26,8 @@ TEST_F(VariableStructureTest, elem_access) {
   Variable elems = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                         units::m, Values{1, 2, 3, 4, 5, 6});
   for (auto i : {0, 1, 2}) {
-    EXPECT_EQ(vectors.elements<Eigen::Vector3d>().slice({Dim::Internal0, i}),
+    EXPECT_EQ(vectors.elements<Eigen::Vector3d>().slice(
+                  {Dim::InternalStructureComponent, i}),
               elems.slice({Dim::X, i}));
     EXPECT_EQ(vectors.elements<Eigen::Vector3d>(scipp::index(i)),
               elems.slice({Dim::X, i}));

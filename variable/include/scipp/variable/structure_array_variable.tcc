@@ -22,7 +22,7 @@ template <class T, class... Is> Variable Variable::elements(Is... index) const {
     elements.m_strides[i] = N * strides()[i];
   if constexpr (sizeof...(Is) == 0) {
     // Get all elements by setting up internal dim and stride
-    elements.unchecked_dims().addInner(Dim::Internal0, N);
+    elements.unchecked_dims().addInner(Dim::InternalStructureComponent, N);
     elements.unchecked_strides()[dims().ndim()] = 1;
   } else {
     // Get specific element at offset

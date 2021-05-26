@@ -115,14 +115,16 @@ Dataset concatenate(const Dataset &a, const Dataset &b, const Dim dim) {
   return result;
 }
 
-DataArray resize(const DataArray &a, const Dim dim, const scipp::index size) {
+DataArray resize(const DataArray &a, const Dim dim, const scipp::index size,
+                 const FillValue fill) {
   return apply_to_data_and_drop_dim(
-      a, [](auto &&... _) { return resize(_...); }, dim, size);
+      a, [](auto &&... _) { return resize(_...); }, dim, size, fill);
 }
 
-Dataset resize(const Dataset &d, const Dim dim, const scipp::index size) {
+Dataset resize(const Dataset &d, const Dim dim, const scipp::index size,
+               const FillValue fill) {
   return apply_to_items(
-      d, [](auto &&... _) { return resize(_...); }, dim, size);
+      d, [](auto &&... _) { return resize(_...); }, dim, size, fill);
 }
 
 DataArray resize(const DataArray &a, const Dim dim, const DataArray &shape) {

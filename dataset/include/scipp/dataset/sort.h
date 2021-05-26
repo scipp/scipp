@@ -4,9 +4,9 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <scipp/dataset/dataset.h>
-#include <scipp/variable/util.h>
-#include <scipp/variable/variable.h>
+#include "scipp/core/flags.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/variable/variable.h"
 
 namespace scipp::dataset {
 

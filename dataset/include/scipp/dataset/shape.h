@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/core/flags.h"
 #include "scipp/dataset/dataset.h"
 
 namespace scipp::dataset {
@@ -15,12 +16,12 @@ namespace scipp::dataset {
                                                        const Dataset &b,
                                                        const Dim dim);
 
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray resize(const DataArray &a,
-                                                    const Dim dim,
-                                                    const scipp::index size);
-[[nodiscard]] SCIPP_DATASET_EXPORT Dataset resize(const Dataset &d,
-                                                  const Dim dim,
-                                                  const scipp::index size);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+resize(const DataArray &a, const Dim dim, const scipp::index size,
+       const FillValue fill = FillValue::Default);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset
+resize(const Dataset &d, const Dim dim, const scipp::index size,
+       const FillValue fill = FillValue::Default);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray resize(const DataArray &a,
                                                     const Dim dim,
