@@ -93,15 +93,16 @@ T GroupBy<T>::makeReductionOutput(const Dim reductionDim,
 namespace {
 template <class Op, class Groups>
 void reduce_(Op op, const Dim reductionDim, const Variable &out_data,
-             const DataArray &data, const Dim dim, const Groups &groups) {
+             const DataArray &data, const Dim dim, const Groups &groups,
+             const FillValue fill) {
+  const auto mask_replacement =
+      special_like(Variable(data.data(), Dimensions{}), fill);
   auto mask = irreducible_mask(data.masks(), reductionDim);
-  if (mask.is_valid())
-    mask = ~mask; // `op` multiplies mask into data to zero masked elements
   const auto process = [&](const auto &range) {
     // Apply to each group, storing result in output slice
     for (scipp::index group = range.begin(); group != range.end(); ++group) {
       auto out_slice = out_data.slice({dim, group});
-      op(out_slice, data, groups[group], mask);
+      op(out_slice, data, groups[group], mask, mask_replacement);
     }
   };
   core::parallel::parallel_for(core::parallel::blocked_range(0, groups.size()),
@@ -116,9 +117,10 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim,
   auto out = makeReductionOutput(reductionDim, fill);
   if constexpr (std::is_same_v<T, Dataset>) {
     for (const auto &item : m_data)
-      reduce_(op, reductionDim, out[item.name()].data(), item, dim(), groups());
+      reduce_(op, reductionDim, out[item.name()].data(), item, dim(), groups(),
+              fill);
   } else {
-    reduce_(op, reductionDim, out.data(), m_data, dim(), groups());
+    reduce_(op, reductionDim, out.data(), m_data, dim(), groups(), fill);
   }
   return out;
 }
@@ -127,11 +129,12 @@ namespace groupby_detail {
 
 static constexpr auto sum = [](Variable &out, const auto &data_container,
                                const GroupByGrouping::group &group,
-                               const Variable &mask) {
+                               const Variable &mask,
+                               const Variable &mask_replacement) {
   for (const auto &slice : group) {
     const auto data_slice = data_container.data().slice(slice);
     if (mask.is_valid())
-      sum_impl(out, data_slice * mask.slice(slice));
+      sum_impl(out, where(mask.slice(slice), mask_replacement, data_slice));
     else
       sum_impl(out, data_slice);
   }
@@ -144,13 +147,14 @@ template <void (*Func)(Variable &, const Variable &)>
 struct wrap {
   static constexpr auto reduce_idempotent =
       [](auto &&out, const auto &data_container,
-         const GroupByGrouping::group &group, const Variable &mask) {
+         const GroupByGrouping::group &group, const Variable &mask,
+         const Variable &mask_replacement) {
         for (const auto &slice : group) {
           const auto data_slice = data_container.data().slice(slice);
           if (mask.is_valid())
-            throw std::runtime_error(
-                "This operation does not support masks yet.");
-          Func(out, data_slice);
+            Func(out, where(mask.slice(slice), mask_replacement, data_slice));
+          else
+            Func(out, data_slice);
         }
       };
 };
