@@ -15,10 +15,10 @@ Variable sort(const Variable &var, const Dim dim, const SortOrder order) {
   auto out = copy(var);
   if (order == SortOrder::Ascending)
     transform_in_place(subspan_view(out, dim),
-                       core::element::sort_nondescending);
+                       core::element::sort_nondescending, "sort");
   else
-    transform_in_place(subspan_view(out, dim),
-                       core::element::sort_nonascending);
+    transform_in_place(subspan_view(out, dim), core::element::sort_nonascending,
+                       "sort");
   return out;
 }
 

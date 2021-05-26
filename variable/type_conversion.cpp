@@ -29,7 +29,8 @@ struct MakeVariableWithType {
                                              static_cast<T>(x.variance)};
                 else
                   return static_cast<T>(x);
-              }});
+              }},
+          "astype");
     }
   };
   static Variable make(const Variable &var, DType type) {

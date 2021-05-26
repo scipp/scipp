@@ -26,10 +26,10 @@ Variable isclose(const Variable &a, const Variable &b, const Variable &rtol,
   } else {
     if (equal_nans == NanComparisons::Equal)
       return variable::transform(a, b, _values(std::move(tol)),
-                                 element::isclose_equal_nan);
+                                 element::isclose_equal_nan, "isclose");
     else
       return variable::transform(a, b, _values(std::move(tol)),
-                                 element::isclose);
+                                 element::isclose, "isclose");
   }
 }
 

@@ -54,11 +54,13 @@ void update_indices_by_binning(Variable &indices, const Variable &key,
   if (linspace) {
     variable::transform_in_place(
         indices, key, edge_view,
-        core::element::update_indices_by_binning_linspace);
+        core::element::update_indices_by_binning_linspace,
+        "scipp.bin.update_indices_by_binning_linspace");
   } else {
     variable::transform_in_place(
         indices, key, edge_view,
-        core::element::update_indices_by_binning_sorted_edges);
+        core::element::update_indices_by_binning_sorted_edges,
+        "scipp.bin.update_indices_by_binning_sorted_edges");
   }
 }
 
@@ -84,15 +86,16 @@ void update_indices_from_existing(Variable &indices, const Dim dim) {
   const scipp::index nbin = indices.dims()[dim];
   const auto index = make_range(0, nbin, 1, dim);
   variable::transform_in_place(indices, index, nbin * units::one,
-                               core::element::update_indices_from_existing);
+                               core::element::update_indices_from_existing,
+                               "scipp.bin.update_indices_from_existing");
 }
 
 /// `sub_bin` is a binned variable with sub-bin indices: new bins within bins
 Variable bin_sizes(const Variable &sub_bin, const Variable &offset,
                    const Variable &nbin) {
   return variable::transform(
-      as_subspan_view(sub_bin), offset, nbin,
-      core::element::count_indices); // transform bins, not bin element
+      as_subspan_view(sub_bin), offset, nbin, core::element::count_indices,
+      "scipp.bin.bin_sizes"); // transform bins, not bin element
 }
 
 template <class T, class Builder>
@@ -137,7 +140,8 @@ auto bin(const Variable &data, const Variable &indices,
         auto out = resize_default_init(in_buffer, buffer_dim, total_size);
         transform_in_place(
             subspan_view(out, buffer_dim, filtered_input_bin_ranges), offsets,
-            as_subspan_view(var), as_subspan_view(indices), core::element::bin);
+            as_subspan_view(var), as_subspan_view(indices), core::element::bin,
+            "bin");
         return out;
       });
 

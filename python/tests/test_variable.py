@@ -1026,13 +1026,6 @@ def test_position():
     assert_export(sc.geometry.position, x=var, y=var, z=var)
 
 
-def test_xyz():
-    var = sc.Variable()
-    assert_export(sc.geometry.x, pos=var)
-    assert_export(sc.geometry.y, pos=var)
-    assert_export(sc.geometry.z, pos=var)
-
-
 def test_comparison():
     var = sc.Variable()
     assert_export(sc.less, x=var, y=var)

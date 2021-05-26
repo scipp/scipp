@@ -182,8 +182,8 @@ class PlotModel3d(PlotModel):
         Find the extents of the box that contains all the positions.
         """
         extents = {}
-        for xyz in "xyz":
-            x = getattr(sc.geometry, xyz)(self.pos_coord)
+        pos = self.pos_coord
+        for xyz, x in zip(['x', 'y', 'z'], [pos.x1, pos.x2, pos.x3]):
             xmin = sc.min(x).value
             xmax = sc.max(x).value
             if pixel_size is not None:

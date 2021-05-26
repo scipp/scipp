@@ -8,11 +8,3 @@
 #include "scipp/variable/variable.h"
 
 #include "scipp/variable/generated_math.h"
-
-namespace scipp::variable {
-
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable dot(const Variable &a,
-                                                 const Variable &b);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable norm(const Variable &var);
-
-} // namespace scipp::variable
