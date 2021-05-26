@@ -33,11 +33,6 @@ void validate_bin_indices(const Param0 &param0, const Param1 &param1,
     validate_bin_indices(param1, params...);
 }
 
-template <class Head, class... Args>
-decltype(auto) get_head(Head &&head, Args &&...) {
-  return std::forward<Head>(head);
-}
-
 inline auto get_nested_dims() { return Dimensions(); }
 template <class T, class... Ts>
 auto get_nested_dims(const T &param, const Ts &... params) {
