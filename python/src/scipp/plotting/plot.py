@@ -6,7 +6,7 @@ from .._scipp import core as sc
 from .. import _utils as su
 from ..compat.dict import from_dict
 from .dispatch import dispatch
-from .helpers import Plot
+from .objects import PlotDict
 from .tools import make_fake_coord, get_line_param
 import numpy as np
 import itertools
@@ -88,7 +88,6 @@ def plot(scipp_obj,
          marker=None,
          linestyle=None,
          linewidth=None,
-         bins=None,
          **kwargs):
     """
     Wrapper function to plot a scipp object.
@@ -190,21 +189,20 @@ def plot(scipp_obj,
                 tobeplotted[key]["mpl_line_params"][n][name] = p
 
     # Plot all the subsets
-    output = Plot()
+    output = PlotDict()
     for key, val in tobeplotted.items():
-        output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-                               name=key,
-                               ndim=val["ndims"],
-                               projection=projection,
-                               axes=val["axes"],
-                               mpl_line_params=val["mpl_line_params"],
-                               bins=bins,
-                               **kwargs)
+        output._items[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
+                                      name=key,
+                                      ndim=val["ndims"],
+                                      projection=projection,
+                                      axes=val["axes"],
+                                      mpl_line_params=val["mpl_line_params"],
+                                      **kwargs)
 
     if len(output) > 1:
         return output
     elif len(output) > 0:
-        return output[list(output.keys())[0]]
+        return output._items[list(output.keys())[0]]
     else:
         raise ValueError("Input contains nothing that can be plotted. "
                          "Input may be of dtype vector or string, "

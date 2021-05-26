@@ -19,6 +19,7 @@ Features
 * ``fold`` now returns a view instead of copying `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
 * ``fold`` now works for binned data `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
 * ``flatten`` now returns a view of the input buffer if the input data is contiguous `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
+* Add ``redraw`` method to plot which enables an easy update on a figure when the underlying data has been modified `#1907 <https://github.com/scipp/scipp/pull/1907>`_.
 * Several improvements for work with (3-D position) vectors and (3-D rotation) matrices `#1905 <https://github.com/scipp/scipp/pull/1905>`_:
 
   * Add creation functions ``vector``, ``vectors``, ``matrix``, ``matrices``.

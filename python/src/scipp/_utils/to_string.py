@@ -18,7 +18,7 @@ def name_with_unit(var=None, name=None, log=False):
         text = "log\u2081\u2080(" + text + ")"
     if var is not None:
         if var.bins is not None:
-            text += " [{}]".format(var.bins.data.unit)
+            text += " [{}]".format(var.bins.constituents["data"].unit)
         else:
             text += " [{}]".format(var.unit)
     return text

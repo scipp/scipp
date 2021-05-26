@@ -5,8 +5,8 @@
 from .. import config
 from .controller2d import PlotController2d
 from .model2d import PlotModel2d
+from .objects import Plot
 from .profile import PlotProfile
-from .sciplot import SciPlot
 from .view2d import PlotView2d
 from .widgets import PlotWidgets
 
@@ -17,14 +17,14 @@ def plot2d(*args, filename=None, **kwargs):
     For every dimension above 2, a slider is created to adjust the position
     of the slice in that particular dimension.
     """
-    sp = SciPlot2d(*args, **kwargs)
+    sp = Plot2d(*args, **kwargs)
     if filename is not None:
         sp.savefig(filename)
     else:
         return sp
 
 
-class SciPlot2d(SciPlot):
+class Plot2d(Plot):
     """
     Class for 2 dimensional plots.
 

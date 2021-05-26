@@ -32,3 +32,10 @@ class PlotController2d(PlotController):
                 "update_viewport": self.update_viewport,
                 "rescale_to_data": self.rescale_to_data
             })
+
+    def redraw(self):
+        """
+        Update the model data dicts and re-draw the figure.
+        """
+        self.model.reset_resampling_model()
+        super().redraw()

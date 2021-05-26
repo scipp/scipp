@@ -84,7 +84,7 @@ def test_plot_2d_image_with_labels():
     plot(make_dense_dataset(ndim=2, labels=True), axes={'x': 'somelabels'})
 
 
-def test_plot_2d_image_with_attrss():
+def test_plot_2d_image_with_attrs():
     plot(make_dense_dataset(ndim=2, attrs=True), axes={'x': 'attr'})
 
 
@@ -261,8 +261,8 @@ def test_plot_2d_binned_data_with_variances():
     plot(make_binned_data_array(ndim=2, variances=True))
 
 
-def test_plot_2d_binned_data_with_variances_nbin():
-    plot(make_binned_data_array(ndim=2, variances=True), bins={'tof': 3})
+def test_plot_2d_binned_data_with_variances_resolution():
+    plot(make_binned_data_array(ndim=2, variances=True), resolution=64)
 
 
 def test_plot_2d_binned_data_with_masks():
@@ -284,6 +284,10 @@ def test_plot_access_ax_and_fig():
 
 def test_plot_2d_image_int32():
     plot(make_dense_dataset(ndim=2, dtype=sc.dtype.int32))
+
+
+def test_plot_2d_image_int64_with_unit():
+    plot(make_dense_dataset(ndim=2, unit='K', dtype=sc.dtype.int64))
 
 
 def test_plot_2d_image_int_coords():
@@ -314,3 +318,49 @@ def test_plot_2d_datetime():
                                                values=np.linspace(0, 10, M))
                           })
     data2d.plot().close()
+
+
+def test_plot_redraw_dense():
+    d = make_dense_dataset(ndim=2, unit='K')
+    p = sc.plot(d)
+    before = p.view.figure.image_values.get_array()
+    d *= 5.0
+    p.redraw()
+    assert np.allclose(p.view.figure.image_values.get_array(), 5.0 * before)
+    p.close()
+
+
+def test_plot_redraw_dense_int64():
+    d = make_dense_dataset(ndim=2, unit='K', dtype=sc.dtype.int64)
+    p = sc.plot(d)
+    before = p.view.figure.image_values.get_array()
+    d *= 5
+    p.redraw()
+    assert np.allclose(p.view.figure.image_values.get_array(), 5 * before)
+    p.close()
+
+
+def test_plot_redraw_counts():
+    d = make_dense_dataset(ndim=2, unit=sc.units.counts)
+    p = sc.plot(d)
+    before = p.view.figure.image_values.get_array()
+    d *= 5.0
+    p.redraw()
+    assert np.allclose(p.view.figure.image_values.get_array(), 5.0 * before)
+    p.close()
+
+
+def test_plot_redraw_binned():
+    a = make_binned_data_array(ndim=2)
+    pa = sc.plot(a, resolution=64)
+    asum = pa.view.figure.image_values.get_array().sum()
+    b = make_binned_data_array(ndim=2)
+    pb = sc.plot(b, resolution=64)
+    bsum = pb.view.figure.image_values.get_array().sum()
+
+    a.data = a.bins.concatenate(b).data
+    pa.redraw()
+    assert np.isclose(pa.view.figure.image_values.get_array().sum(),
+                      asum + bsum)
+    pa.close()
+    pb.close()

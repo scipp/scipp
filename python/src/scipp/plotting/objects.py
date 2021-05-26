@@ -6,7 +6,87 @@ from .tools import parse_params
 import ipywidgets as ipw
 
 
-class SciPlot:
+class PlotDict():
+    """
+    The Plot object is used as output for the plot command.
+    It is a small wrapper around python dict, with an `_ipython_display_`
+    representation.
+    The dict will contain one entry for each entry in the input supplied to
+    the plot function.
+    More functionalities can be added in the future.
+    """
+    def __init__(self, *args, **kwargs):
+        self._items = dict(*args, **kwargs)
+
+    def __getitem__(self, key):
+        return self._items[key]
+
+    def __len__(self):
+        return len(self._items)
+
+    def keys(self):
+        return self._items.keys()
+
+    def values(self):
+        return self._items.values()
+
+    def items(self):
+        return self._items.items()
+
+    def _ipython_display_(self):
+        """
+        IPython display representation for Jupyter notebooks.
+        """
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+        """
+        Return plot contents into a single VBocx container
+        """
+        import ipywidgets as ipw
+        contents = []
+        for item in self.values():
+            if item is not None:
+                contents.append(item._to_widget())
+        return ipw.VBox(contents)
+
+    def show(self):
+        """
+        """
+        for item in self.values():
+            item.show()
+
+    def hide_widgets(self):
+        for item in self.values():
+            item.hide_widgets()
+
+    def close(self):
+        """
+        Close all plots in dict, making them static.
+        """
+        for item in self.values():
+            item.close()
+
+    def redraw(self):
+        """
+        Redraw/update  all plots in dict.
+        """
+        for item in self.values():
+            item.redraw()
+
+    def set_draw_no_delay(self, value):
+        """
+        When set to True, try to update plots as soon as possible.
+        This is useful in the case where one wishes to update the plot inside
+        a loop (e.g. when listening to a data stream).
+        The plot update is then slightly more expensive than when it is set to
+        False.
+        """
+        for item in self.values():
+            item.set_draw_no_delay(value)
+
+
+class Plot:
     """
     Base class for plot objects. It uses the Model-View-Controller pattern to
     separate displayed figures and user-interaction via widgets from the
@@ -299,3 +379,22 @@ class SciPlot:
         directory where the script or notebook is running.
         """
         self.view.savefig(filename=filename)
+
+    def redraw(self):
+        """
+        Redraw the plot. Use this to update a figure when the underlying data
+        has been modified.
+        """
+        self.controller.redraw()
+
+    def set_draw_no_delay(self, value):
+        """
+        When set to True, try to update plots as soon as possible.
+        This is useful in the case where one wishes to update the plot inside
+        a loop (e.g. when listening to a data stream).
+        The plot update is then slightly more expensive than when it is set to
+        False.
+        """
+        self.view.set_draw_no_delay(value)
+        if self.profile is not None:
+            self.profile.set_draw_no_delay(value)
