@@ -10,7 +10,6 @@
 #include "scipp/core/flags.h"
 #include "scipp/variable/creation.h"
 #include <scipp/dataset/dataset.h>
-#include <scipp/variable/util.h>
 
 namespace scipp::dataset {
 

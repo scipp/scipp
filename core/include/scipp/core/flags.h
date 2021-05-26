@@ -16,4 +16,7 @@ enum class SCIPP_CORE_EXPORT FillValue {
   Max,
   Lowest
 };
-}
+
+enum class SCIPP_CORE_EXPORT SortOrder { Ascending, Descending };
+
+} // namespace scipp

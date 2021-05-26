@@ -4,13 +4,11 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/core/flags.h"
+
 #include "scipp-variable_export.h"
 #include "scipp/variable/generated_util.h"
 #include "scipp/variable/variable.h"
-
-namespace scipp {
-enum class SCIPP_VARIABLE_EXPORT SortOrder { Ascending, Descending };
-}
 
 namespace scipp::variable {
 
