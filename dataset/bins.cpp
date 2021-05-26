@@ -242,29 +242,7 @@ auto concatenate_impl(const Variable &var0, const Variable &var1) {
   return combine<T>(var0, var1);
 }
 
-template <class T> void reserve_impl(Variable &var, const Variable &shape) {
-  // TODO this only reserves in the bins, but assumes buffer has enough space
-  auto &&[indices, dim, buffer] = var.constituents<T>();
-  static_cast<void>(dim);
-  static_cast<void>(buffer);
-  variable::transform_in_place(
-      indices, shape,
-      overloaded{
-          core::element::arg_list<std::tuple<scipp::index_pair, scipp::index>>,
-          core::keep_unit,
-          [](auto &begin_end, auto &size) { begin_end.second += size; }});
-}
-
 } // namespace
-
-void reserve(Variable &var, const Variable &shape) {
-  if (var.dtype() == dtype<bucket<Variable>>)
-    return reserve_impl<Variable>(var, shape);
-  else if (var.dtype() == dtype<bucket<DataArray>>)
-    return reserve_impl<DataArray>(var, shape);
-  else
-    return reserve_impl<Dataset>(var, shape);
-}
 
 Variable concatenate(const Variable &var0, const Variable &var1) {
   if (var0.dtype() == dtype<bucket<Variable>>)
@@ -327,10 +305,7 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
   // inputs bins to the same output histogram. This also allows for threading of
   // 1-D histogramming provided that the input has multiple bins along
   // `hist_dim`.
-  std::string nonclashing_name("dummy");
-  for (const auto &d : indices.dims().labels())
-    nonclashing_name += d.name();
-  const Dim dummy = Dim(nonclashing_name);
+  const Dim dummy = Dim::InternalHistogram;
   if (indices.dims().contains(hist_dim))
     indices.rename(hist_dim, dummy);
   const auto masked = masked_data(buffer, dim);
