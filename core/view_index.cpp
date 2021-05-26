@@ -4,8 +4,6 @@
 /// @author Jan-Lukas Wynen
 #include "scipp/core/view_index.h"
 
-#include <algorithm>
-
 #include "scipp/core/except.h"
 
 namespace scipp::core {
