@@ -173,13 +173,13 @@ std::unordered_map<std::string, scipp::index>
 template <>
 std::unordered_map<std::string, scipp::index>
     element_offsets<Eigen::Matrix3d>({{"xx", 0},
-                                      {"xy", 1},
-                                      {"xz", 2},
-                                      {"yx", 3},
+                                      {"xy", 3},
+                                      {"xz", 6},
+                                      {"yx", 1},
                                       {"yy", 4},
-                                      {"yz", 5},
-                                      {"zx", 6},
-                                      {"zy", 7},
+                                      {"yz", 7},
+                                      {"zx", 2},
+                                      {"zy", 5},
                                       {"zz", 8}});
 } // namespace
 

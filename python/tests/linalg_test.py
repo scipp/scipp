@@ -185,7 +185,8 @@ def test_matrix_elements():
     m = sc.matrices(dims=['x'],
                     values=np.arange(18).reshape(2, 3, 3),
                     unit=sc.units.m)
-    elems = [m.x11, m.x12, m.x13, m.x21, m.x22, m.x23, m.x31, m.x32, m.x33]
+    f = m.fields
+    elems = [f.xx, f.xy, f.xz, f.yx, f.yy, f.yz, f.zx, f.zy, f.zz]
     offsets = range(9)
     for elem, offset in zip(elems, offsets):
         assert sc.identical(
