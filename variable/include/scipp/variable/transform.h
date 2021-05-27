@@ -377,7 +377,7 @@ static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
 
 template <class T> struct as_view {
   using value_type = typename T::value_type;
-  bool hasVariances() const { return data.hasVariances(); }
+  [[nodiscard]] bool hasVariances() const { return data.hasVariances(); }
   auto values() const { return decltype(data.values())(data.values(), dims); }
   auto variances() const {
     return decltype(data.variances())(data.variances(), dims);
@@ -482,13 +482,13 @@ template <bool dry_run> struct in_place {
       // be done differently. Explicit and precise control of chunking is
       // required to avoid multiple threads writing to the same output. Not
       // implemented for now.
-      auto indices = begin; // copy so that run doesn't modify begin
-      auto end = begin;
+      auto indices = begin;
+      auto end = std::move(begin);
       end.set_index(arg.size());
       run(indices, end);
     } else {
       auto run_parallel = [&](const auto &range) {
-        auto indices = begin;
+        auto indices = begin; // copy so that run doesn't modify begin
         indices.set_index(range.begin());
         auto end = begin;
         end.set_index(range.end());
