@@ -47,9 +47,9 @@ auto get_slice_dim(const T &param, const Ts &... params) {
   return param ? param.dim : get_slice_dim(params...);
 }
 
-template <scipp::index N_operands>
+template <scipp::index N_Operands>
 constexpr auto get_buffer_size(const scipp::index ndim) noexcept {
-  return (N_operands + 2) * std::max(ndim, scipp::index{2});
+  return (N_Operands + 2) * std::max(ndim, scipp::index{2});
 }
 } // namespace detail
 
@@ -179,10 +179,7 @@ public:
   }
 
   [[nodiscard]] auto inner_strides() const noexcept {
-    // TODO
-    std::array<scipp::index, N> aux;
-    std::copy(&stride(0, 0), &stride(0, 0) + N, aux.begin());
-    return aux;
+    return scipp::span<const scipp::index>(&stride(0, 0), N);
   }
 
   [[nodiscard]] constexpr scipp::index inner_distance_to_end() const noexcept {
