@@ -89,7 +89,7 @@ public:
       : m_buffer{std::make_unique<scipp::index[]>(
             detail::get_buffer_size<N>(iter_dims.ndim()))},
         m_inner_ndim{iter_dims.ndim()}, m_ndim{iter_dims.ndim()} {
-    detail::copy_strides(&stride(0, 0), m_inner_ndim, 0,
+    detail::copy_strides(strides_begin(), m_inner_ndim, 0,
                          std::index_sequence_for<StridesArgs...>(), strides...);
     std::reverse_copy(iter_dims.shape().begin(), iter_dims.shape().end(),
                       &shape(0));
@@ -123,9 +123,9 @@ private:
     detail::validate_bin_indices(params...);
 
     detail::copy_strides(
-        &stride(0, 0), m_inner_ndim, 0, std::index_sequence_for<Params...>(),
+        strides_begin(), m_inner_ndim, 0, std::index_sequence_for<Params...>(),
         params.bucketParams() ? Strides{inner_dims} : Strides{}...);
-    detail::copy_strides(&stride(0, 0), bin_ndim(), m_inner_ndim,
+    detail::copy_strides(strides_begin(), bin_ndim(), m_inner_ndim,
                          std::index_sequence_for<Params...>(),
                          params.strides()...);
     std::reverse_copy(inner_dims.shape().begin(), inner_dims.shape().end(),
@@ -212,7 +212,7 @@ public:
   [[nodiscard]] auto inner_strides() const noexcept {
     // TODO
     std::array<scipp::index, N> aux;
-    std::copy(&stride(0, 0), &stride(0, 0) + N, aux.begin());
+    std::copy(strides_begin(), strides_begin() + N, aux.begin());
     return aux;
   }
 
@@ -235,7 +235,7 @@ public:
       extract_indices(index, &shape(0), &shape(0) + m_inner_ndim, &coord(0));
       for (scipp::index data = 0; data < N; ++data) {
         m_data_index[data] = detail::flat_index<N>(
-            data, &coord(0), &stride(0, 0), 0, m_inner_ndim);
+            data, &coord(0), strides_begin(), 0, m_inner_ndim);
       }
     }
   }
@@ -252,7 +252,7 @@ public:
       }
       for (scipp::index data = 0; data < N; ++data) {
         m_data_index[data] = detail::flat_index<N>(
-            data, &coord(0), &stride(0, 0), 0, m_inner_ndim);
+            data, &coord(0), strides_begin(), 0, m_inner_ndim);
       }
     }
   }
@@ -333,7 +333,7 @@ private:
 
     for (scipp::index data = 0; data < N; ++data) {
       m_bin[data].m_bin_index = detail::flat_index<N>(
-          data, &coord(0), &stride(0, 0), m_inner_ndim, m_ndim);
+          data, &coord(0), strides_begin(), m_inner_ndim, m_ndim);
       load_bin_params(data);
     }
     if (shape(m_nested_dim_index) == 0 && !dim_at_end(m_ndim - 1))
@@ -392,7 +392,7 @@ private:
   constexpr void load_bin_params(const scipp::index data) noexcept {
     if (!m_bin[data].is_binned()) {
       m_data_index[data] =
-          detail::flat_index<N>(data, &coord(0), &stride(0, 0), 0, m_ndim);
+          detail::flat_index<N>(data, &coord(0), strides_begin(), 0, m_ndim);
     } else if (!dim_at_end(m_ndim - 1)) {
       // All bins are guaranteed to have the same size.
       // Use common m_shape and m_nested_stride for all.
@@ -412,6 +412,12 @@ private:
   [[nodiscard]] const scipp::index &
   stride(const scipp::index dim, const scipp::index data) const noexcept {
     return m_buffer[data + dim * N];
+  }
+
+  [[nodiscard]] auto strides_begin() noexcept { return m_buffer.get(); }
+
+  [[nodiscard]] auto strides_end() noexcept {
+    return m_buffer.get() + (N * m_ndim);
   }
 
   /// Current index in iteration dimensions for both bin and inner dims.
