@@ -230,12 +230,6 @@ static void inner_loop(Op &&op,
   }
 }
 
-template <size_t N_Operands>
-constexpr bool equal(const scipp::span<const scipp::index> a,
-                     const std::array<scipp::index, N_Operands> &b) noexcept {
-  return std::equal(a.begin(), a.end(), b.begin());
-}
-
 template <bool in_place, size_t I = 0, class Op, class... Operands>
 static void dispatch_inner_loop(
     Op &&op, const std::array<scipp::index, sizeof...(Operands)> &indices,
@@ -247,8 +241,9 @@ static void dispatch_inner_loop(
     inner_loop<in_place>(std::forward<Op>(op), indices, inner_strides, n,
                          std::forward<Operands>(operands)...);
   } else {
-    if (equal(inner_strides,
-              detail::stride_special_cases<N_Operands, in_place>[I])) {
+    if (std::equal(
+            inner_strides.begin(), inner_strides.end(),
+            detail::stride_special_cases<N_Operands, in_place>[I].begin())) {
       inner_loop<in_place>(
           std::forward<Op>(op), indices,
           detail::make_stride_sequence<I, N_Operands, in_place>{}, n,
