@@ -144,6 +144,7 @@ if(NOT WIN32)
     -Wold-style-cast
     -Wcast-qual
     -Wcast-align
+    -Werror=attributes
     -Werror=return-type
   )
   add_compile_options(
