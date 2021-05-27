@@ -164,6 +164,41 @@ void bind_elem_property(py::class_<Variable> &v, const char *name) {
       });
 }
 
+namespace {
+template <class T>
+std::unordered_map<std::string, scipp::index> element_offsets;
+template <>
+std::unordered_map<std::string, scipp::index>
+    element_offsets<Eigen::Vector3d>({{"x", 0}, {"y", 1}, {"z", 2}});
+template <>
+std::unordered_map<std::string, scipp::index>
+    element_offsets<Eigen::Matrix3d>({{"x", 0}, {"y", 1}, {"z", 2}});
+} // namespace
+
+template <class T> struct ElementKeys {
+  static auto apply(Variable &var) {
+    std::vector<std::string> keys;
+    for (const auto &item : element_offsets<T>)
+      keys.emplace_back(item.first);
+    return keys;
+  }
+};
+
+template <class T> struct GetElements {
+  static auto apply(Variable &var, const std::string &key) {
+    return var.elements<T>().slice(
+        {Dim::InternalStructureComponent, element_offsets<T>.at(key)});
+  }
+};
+
+template <class T> struct SetElements {
+  static auto apply(Variable &var, const std::string &key,
+                    const Variable &elems) {
+    copy(elems, var.elements<T>().slice({Dim::InternalStructureComponent,
+                                         element_offsets<T>.at(key)}));
+  }
+};
+
 void init_variable(py::module &m) {
   // Needed to let numpy arrays keep alive the scipp buffers.
   // VariableConcept must ALWAYS be passed to Python by its handle.
@@ -291,4 +326,18 @@ of variances.)");
   bind_elem_property<Eigen::Matrix3d, 2, 0>(variable, "x31");
   bind_elem_property<Eigen::Matrix3d, 2, 1>(variable, "x32");
   bind_elem_property<Eigen::Matrix3d, 2, 2>(variable, "x33");
+
+  using structured_t = std::tuple<Eigen::Vector3d, Eigen::Matrix3d>;
+  m.def("_element_keys", [](Variable &self) {
+    return core::callDType<ElementKeys>(structured_t{}, self.dtype(), self);
+  });
+  m.def("_get_elements", [](Variable &self, const std::string &key) {
+    return core::callDType<GetElements>(structured_t{}, self.dtype(), self,
+                                        key);
+  });
+  m.def("_set_elements",
+        [](Variable &self, const std::string &key, const Variable &elems) {
+          core::callDType<SetElements>(structured_t{}, self.dtype(), self, key,
+                                       elems);
+        });
 }

@@ -87,6 +87,10 @@ setattr(Dataset, 'bins', property(_bins, _set_bins))
 setattr(Variable, 'events', property(_events))
 setattr(DataArray, 'events', property(_events))
 
+from ._structured import _fields
+
+setattr(Variable, 'fields', property(_fields))
+
 from ._bins import _groupby_bins
 
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
@@ -102,35 +106,3 @@ setattr(Dataset, 'plot', plot)
 # functions.
 for _obj in [Variable, DataArray, Dataset]:
     setattr(_obj, '__array_ufunc__', None)
-
-
-def _property(func):
-    def getter(fields):
-        var = fields._var
-        return func.__get__(var, var.__class__)
-
-    def setter(fields, x):
-        var = fields._var
-        return func.__set__(var, x)
-
-    return property(getter, setter)
-
-
-class FieldsMeta(type):
-    def __new__(cls, clsname, bases, dct):
-        dct['x'] = _property(Variable.x1)
-        return super(FieldsMeta, cls).__new__(cls, clsname, bases, dct)
-
-
-class Fields(object, metaclass=FieldsMeta):
-    def __init__(self, var):
-        self._var = var
-
-
-def _make_fields(self):
-    if self.dtype == dtype.vector_3_float64:
-        return Fields(self)
-    return None
-
-
-setattr(Variable, 'fields', property(_make_fields))
