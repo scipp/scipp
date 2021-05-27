@@ -92,7 +92,7 @@ void fill_zeros(Variable &var) {
 /// Return elements chosen from x or y depending on condition.
 Variable where(const Variable &condition, const Variable &x,
                const Variable &y) {
-  return transform(condition, x, y, element::where);
+  return variable::transform(condition, x, y, element::where, "where");
 }
 
 } // namespace scipp::variable
