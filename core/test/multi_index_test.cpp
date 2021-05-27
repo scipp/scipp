@@ -41,7 +41,6 @@ protected:
       }
     } else {
       for (scipp::index bin = 0; bin < bin_volume; ++bin) {
-        std::cout << "bin = " << bin << std::endl;
         i.set_index(bin);
         scipp::index n = 0;
         // We do not know how many elements there are in each bin.
