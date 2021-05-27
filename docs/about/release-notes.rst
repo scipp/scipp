@@ -33,6 +33,8 @@ Features
 Bugfixes
 ~~~~~~~~
 
+* Profile plots are no longer disabled for binned data with only a single bin in the 3rd dimension `#1936 <https://github.com/scipp/scipp/pull/1936>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
