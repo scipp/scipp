@@ -172,7 +172,15 @@ std::unordered_map<std::string, scipp::index>
     element_offsets<Eigen::Vector3d>({{"x", 0}, {"y", 1}, {"z", 2}});
 template <>
 std::unordered_map<std::string, scipp::index>
-    element_offsets<Eigen::Matrix3d>({{"x", 0}, {"y", 1}, {"z", 2}});
+    element_offsets<Eigen::Matrix3d>({{"xx", 0},
+                                      {"xy", 1},
+                                      {"xz", 2},
+                                      {"yx", 3},
+                                      {"yy", 4},
+                                      {"yz", 5},
+                                      {"zx", 6},
+                                      {"zy", 7},
+                                      {"zz", 8}});
 } // namespace
 
 template <class T> struct ElementKeys {
