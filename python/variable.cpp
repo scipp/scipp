@@ -134,36 +134,10 @@ void bind_structured_creation(py::module &m, const std::string &name) {
       py::arg("dims"), py::arg("values"), py::arg("unit") = units::one);
 }
 
-void require(const Variable &var, Eigen::Vector3d) {
-  if (var.dtype() != dtype<Eigen::Vector3d>)
-    throw except::TypeError(
-        "Vector element access properties `x1`, `x2`, and `x3` not "
-        "supported for dtype=" +
-        to_string(var.dtype()));
-}
-
-void require(const Variable &var, Eigen::Matrix3d) {
-  if (var.dtype() != dtype<Eigen::Matrix3d>)
-    throw except::TypeError(
-        "Matrix element access properties `x11`, `x12`, ... not "
-        "supported for dtype=" +
-        to_string(var.dtype()));
-}
-
-template <class T, scipp::index... I>
-void bind_elem_property(py::class_<Variable> &v, const char *name) {
-  v.def_property(
-      name,
-      [](Variable &self) {
-        require(self, T{});
-        return self.elements<T>(I...);
-      },
-      [](Variable &self, const Variable &elems) {
-        require(self, T{});
-        copy(elems, self.elements<T>(I...));
-      });
-}
-
+// TODO For now we use hard-coded field names and offsets. The intention is to
+// generalize StructureArrayModel to support more general structures. Field
+// names and sizes/offsets would then be stored as part of the model, and would
+// be initialized dynamically at runtime.
 namespace {
 template <class T>
 std::unordered_map<std::string, scipp::index> element_offsets;
@@ -184,7 +158,7 @@ std::unordered_map<std::string, scipp::index>
 } // namespace
 
 template <class T> struct ElementKeys {
-  static auto apply(Variable &var) {
+  static auto apply() {
     std::vector<std::string> keys;
     for (const auto &item : element_offsets<T>)
       keys.emplace_back(item.first);
@@ -322,22 +296,10 @@ of variances.)");
 
   bind_structured_creation<Eigen::Vector3d, double, 3>(m, "vectors");
   bind_structured_creation<Eigen::Matrix3d, double, 3, 3>(m, "matrices");
-  bind_elem_property<Eigen::Vector3d, 0>(variable, "x1");
-  bind_elem_property<Eigen::Vector3d, 1>(variable, "x2");
-  bind_elem_property<Eigen::Vector3d, 2>(variable, "x3");
-  bind_elem_property<Eigen::Matrix3d, 0, 0>(variable, "x11");
-  bind_elem_property<Eigen::Matrix3d, 0, 1>(variable, "x12");
-  bind_elem_property<Eigen::Matrix3d, 0, 2>(variable, "x13");
-  bind_elem_property<Eigen::Matrix3d, 1, 0>(variable, "x21");
-  bind_elem_property<Eigen::Matrix3d, 1, 1>(variable, "x22");
-  bind_elem_property<Eigen::Matrix3d, 1, 2>(variable, "x23");
-  bind_elem_property<Eigen::Matrix3d, 2, 0>(variable, "x31");
-  bind_elem_property<Eigen::Matrix3d, 2, 1>(variable, "x32");
-  bind_elem_property<Eigen::Matrix3d, 2, 2>(variable, "x33");
 
   using structured_t = std::tuple<Eigen::Vector3d, Eigen::Matrix3d>;
   m.def("_element_keys", [](Variable &self) {
-    return core::callDType<ElementKeys>(structured_t{}, self.dtype(), self);
+    return core::callDType<ElementKeys>(structured_t{}, self.dtype());
   });
   m.def("_get_elements", [](Variable &self, const std::string &key) {
     return core::callDType<GetElements>(structured_t{}, self.dtype(), self,
