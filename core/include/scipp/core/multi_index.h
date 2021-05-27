@@ -406,7 +406,7 @@ private:
 
   /// Current index in iteration dimensions for both bin and inner dims.
   [[nodiscard]] scipp::index &coord(const scipp::index dim) noexcept {
-    return m_buffer[std::max(m_ndim, scipp::index{2}) * N + dim];
+    return *coord_it(dim);
   }
 
   [[nodiscard]] const scipp::index &
@@ -424,12 +424,12 @@ private:
 
   /// Shape of the iteration dimensions for both bin and inner dims.
   [[nodiscard]] scipp::index &shape(const scipp::index dim) noexcept {
-    return m_buffer[std::max(m_ndim, scipp::index{2}) * (N + 1) + dim];
+    return *shape_it(dim);
   }
 
   [[nodiscard]] const scipp::index &
   shape(const scipp::index dim) const noexcept {
-    return m_buffer[std::max(m_ndim, scipp::index{2}) * (N + 1) + dim];
+    return *shape_it(dim);
   }
 
   [[nodiscard]] auto shape_it(const scipp::index dim = 0) const noexcept {
