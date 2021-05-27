@@ -89,7 +89,13 @@ setattr(DataArray, 'events', property(_events))
 
 from ._structured import _fields
 
-setattr(Variable, 'fields', property(_fields))
+setattr(
+    Variable, 'fields',
+    property(
+        _fields,
+        doc=
+        """Provides access to fields of structured types such as vectors or matrices."""
+    ))
 
 from ._bins import _groupby_bins
 
