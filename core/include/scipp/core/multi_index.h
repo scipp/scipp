@@ -104,7 +104,7 @@ private:
 
     const Dim slice_dim = detail::get_slice_dim(params.bucketParams()...);
     // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
-    m_nested_stride = inner_dims.offset(slice_dim);
+    m_bin_stride = inner_dims.offset(slice_dim);
     // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
     m_nested_dim_index = m_inner_ndim - inner_dims.index(slice_dim) - 1;
 
@@ -122,7 +122,7 @@ public:
   MultiIndex(const MultiIndex &other)
       : m_buffer{other.copy_buffer()}, m_data_index{other.m_data_index},
         m_inner_ndim{other.m_inner_ndim}, m_ndim{other.m_ndim},
-        m_nested_stride{other.m_nested_stride},
+        m_bin_stride{other.m_bin_stride},
         m_nested_dim_index{other.m_nested_dim_index}, m_bin{other.m_bin} {}
 
   MultiIndex(MultiIndex &&) noexcept = default;
@@ -132,7 +132,7 @@ public:
     m_data_index = other.m_data_index;
     m_inner_ndim = other.m_inner_ndim;
     m_ndim = other.m_ndim;
-    m_nested_stride = other.m_nested_stride;
+    m_bin_stride = other.m_bin_stride;
     m_nested_dim_index = other.m_nested_dim_index;
     m_bin = other.m_bin;
   }
@@ -359,7 +359,7 @@ private:
       // Use common m_shape and m_nested_stride for all.
       const auto [begin, end] = m_bin[data].m_indices[m_bin[data].m_bin_index];
       shape(m_nested_dim_index) = end - begin;
-      m_data_index[data] = m_nested_stride * begin;
+      m_data_index[data] = m_bin_stride * begin;
     }
     // else: at end of bins
   }
@@ -456,10 +456,9 @@ private:
   scipp::index m_inner_ndim{0};
   /// Total number of dimensions.
   scipp::index m_ndim{0};
-  /// Stride in bins along dim referred to by indices, e.g., 2D bins
-  /// slicing along first or second dim.
-  scipp::index m_nested_stride = {};
-  /// Index of dim referred to by indices to distinguish, e.g., 2D bins
+  /// Stride from one bin to the next.
+  scipp::index m_bin_stride = {};
+  /// Index of dim referred to by bin indices to distinguish, e.g., 2D bins
   /// slicing along first or second dim.
   /// -1 if not binned.
   scipp::index m_nested_dim_index{-1};
