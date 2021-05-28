@@ -76,7 +76,11 @@ bool can_be_flattened(const scipp::index dim, const scipp::index size,
           ...);
 }
 
-// Non_flattenable_dim is in the storage order of Dimensions & Strides.
+// non_flattenable_dim is in the storage order of Dimensions & Strides.
+// It is not possible to flatten dimensions outside of the bin-slice dim
+// because they are sliced by that dim and their layout changes depending on
+// the current bin.
+// But the inner dimensions always have the same layout.
 template <class... StridesArgs>
 [[nodiscard]] scipp::index
 flatten_dims(scipp::index *const out_strides, scipp::index *const out_shape,
