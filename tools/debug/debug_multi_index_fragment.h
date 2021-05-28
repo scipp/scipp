@@ -2,6 +2,10 @@
 
 friend std::ostream &operator<<(std::ostream &os, const MultiIndex<N> &index) {
   os << "MultiIndex<" << N << "> {\n";
+  os << "  buffer = [";
+  for (scipp::index i = 0; i < detail::get_buffer_size<N>(index.m_ndim); ++i)
+    os << index.m_buffer[i] << ' ';
+  os << "]\n";
   os << "  data_index = " << index.m_data_index << '\n';
   os << "  ndim = " << index.m_ndim << '\n';
   os << "  stride = [";
@@ -24,7 +28,7 @@ friend std::ostream &operator<<(std::ostream &os, const MultiIndex<N> &index) {
     os << index.shape(dim) << ' ';
   os << "]\n";
   os << "  inner_ndim = " << index.m_inner_ndim << '\n';
-  os << "  nested_stride = " << index.m_nested_stride << '\n';
+  os << "  bin_stride = " << index.m_bin_stride << '\n';
   os << "  nested_dim_index = " << index.m_nested_dim_index << '\n';
   os << "  bin = [\n";
   for (auto &bin : index.m_bin) {
