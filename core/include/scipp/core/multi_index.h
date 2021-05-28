@@ -222,7 +222,7 @@ public:
     }
   }
 
-  constexpr auto get() const noexcept { return m_data_index; }
+  [[nodiscard]] constexpr auto get() const noexcept { return m_data_index; }
 
   constexpr bool operator==(const MultiIndex &other) const noexcept {
     // Assuming the number dimensions match to make the check cheaper.
@@ -232,8 +232,9 @@ public:
     return !(*this == other);
   }
 
-  constexpr bool in_same_chunk(const MultiIndex &other,
-                               const scipp::index first_dim) const noexcept {
+  [[nodiscard]] bool
+  in_same_chunk(const MultiIndex &other,
+                const scipp::index first_dim) const noexcept {
     for (scipp::index dim = first_dim; dim < m_ndim; ++dim) {
       if (coord(dim) != other.coord(dim)) {
         return false;
@@ -244,13 +245,13 @@ public:
 
   [[nodiscard]] constexpr auto inner_size() const noexcept { return shape(0); }
 
-  auto begin() const noexcept {
+  [[nodiscard]] auto begin() const noexcept {
     auto it(*this);
     it.set_index(0);
     return it;
   }
 
-  auto end() const noexcept {
+  [[nodiscard]] auto end() const noexcept {
     auto it(*this);
     it.set_to_end();
     return it;
@@ -269,11 +270,14 @@ public:
   }
 
 private:
-  constexpr auto dim_at_end(const scipp::index dim) const noexcept {
+  [[nodiscard]] constexpr auto
+  dim_at_end(const scipp::index dim) const noexcept {
     return coord(dim) == std::max(shape(dim), scipp::index{1});
   }
 
-  constexpr auto bin_ndim() const noexcept { return m_ndim - m_inner_ndim; }
+  [[nodiscard]] constexpr auto bin_ndim() const noexcept {
+    return m_ndim - m_inner_ndim;
+  }
 
   struct BinIterator {
     BinIterator() = default;
@@ -441,7 +445,7 @@ private:
     return m_buffer.get() + (std::max(m_ndim, scipp::index{2}) * (N + 2));
   }
 
-  auto copy_buffer() const {
+  [[nodiscard]] auto copy_buffer() const {
     const auto size = detail::get_buffer_size<N>(m_ndim);
     auto new_buffer = std::make_unique<scipp::index[]>(size);
     std::copy(m_buffer.get(), m_buffer.get() + size, new_buffer.get());
