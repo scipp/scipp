@@ -135,6 +135,7 @@ public:
     m_bin_stride = other.m_bin_stride;
     m_nested_dim_index = other.m_nested_dim_index;
     m_bin = other.m_bin;
+    return *this;
   }
 
   MultiIndex &operator=(MultiIndex &&) noexcept = default;
