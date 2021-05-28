@@ -67,12 +67,12 @@ protected:
   }
   void check(MultiIndex<1> i, const std::vector<scipp::index> &indices,
              const scipp::index bin_volume = 0) const {
-    check_impl(i, bin_volume, indices);
+    check_impl(std::move(i), bin_volume, indices);
   }
   void check(MultiIndex<2> i, const std::vector<scipp::index> &indices0,
              const std::vector<scipp::index> &indices1,
              const scipp::index bin_volume = 0) const {
-    check_impl(i, bin_volume, indices0, indices1);
+    check_impl(std::move(i), bin_volume, indices0, indices1);
   }
   void check_with_bins(
       const Dimensions &buffer_dims, const Dim slice_dim,
@@ -153,7 +153,7 @@ TEST_F(MultiIndexTest, 6d) {
   Dimensions dims({Dim("1"), Dim("2"), Dim("3"), Dim("4"), Dim("5"), Dim("6")},
                   {1, 2, 1, 2, 1, 2});
   MultiIndex i{dims, make_strides(dims, dims)};
-  i.end();
+  [[maybe_unused]] auto _ = i.end();
   check(i, {0, 1, 2, 3, 4, 5, 6, 7});
 }
 
