@@ -8,21 +8,30 @@
 
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/values_and_variances.h"
+#include <tuple>
 
 /// Operators to be used with transform and transform_in_place to implement
 /// operations for Variable.
 namespace scipp::core::element {
 
-using isclose_types_t = arg_list_t<
+using isclose_common_types_t = arg_list_t<
     double, float, int64_t, int32_t, std::tuple<float, float, double>,
     std::tuple<int64_t, int64_t, double>, std::tuple<int32_t, int32_t, double>,
     std::tuple<int32_t, int64_t, double>, std::tuple<int64_t, int32_t, double>,
     std::tuple<int64_t, int32_t, int64_t>,
     std::tuple<int32_t, int32_t, int64_t>,
     std::tuple<int32_t, int64_t, int64_t>>;
+
+struct isclose_types_t {
+  constexpr void operator()() const noexcept;
+  using types = decltype(std::tuple_cat(
+      isclose_common_types_t::types{},
+      std::tuple<std::tuple<Eigen::Vector3d, Eigen::Vector3d, double>>{}));
+};
 
 constexpr auto isclose_units = [](const units::Unit &x, const units::Unit &y,
                                   const units::Unit &t) {
@@ -34,12 +43,17 @@ constexpr auto isclose_units = [](const units::Unit &x, const units::Unit &y,
 constexpr auto isclose = overloaded{
     transform_flags::expect_no_variance_arg_t<2>{}, isclose_types_t{},
     isclose_units, [](const auto &x, const auto &y, const auto &t) {
-      using std::abs;
-      return abs(x - y) <= t;
+      if constexpr (std::is_same_v<std::decay_t<decltype(x)>,
+                                   Eigen::Vector3d>) {
+        return (x - y).norm() <= t;
+      } else {
+        using std::abs;
+        return abs(x - y) <= t;
+      }
     }};
 
 constexpr auto isclose_equal_nan = overloaded{
-    transform_flags::expect_no_variance_arg_t<2>{}, isclose_types_t{},
+    transform_flags::expect_no_variance_arg_t<2>{}, isclose_common_types_t{},
     isclose_units, [](const auto &x, const auto &y, const auto &t) {
       using std::abs;
       using numeric::isnan;

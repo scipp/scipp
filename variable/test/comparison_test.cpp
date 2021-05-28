@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+#include "scipp/core/eigen.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
 #include "test_macros.h"
@@ -53,7 +54,15 @@ TYPED_TEST(IsCloseTest, rtol_when_variables_outside_tolerance) {
   const auto atol = makeVariable<TypeParam>(Values{0});
   EXPECT_EQ(isclose(a, b, rtol, atol), false * units::one);
 }
-
+TEST(IsCloseTest, with_vectors) {
+  const auto a =
+      makeVariable<Eigen::Vector3d>(Values{Eigen::Vector3d{1, 1, 1}});
+  const auto b =
+      makeVariable<Eigen::Vector3d>(Values{Eigen::Vector3d{1, 1, 1}});
+  const auto rtol = 0.0 * units::one;
+  const auto atol = 1.0 * units::one;
+  EXPECT_EQ(isclose(a, b, rtol, atol), true * units::one);
+}
 TEST(IsCloseTest, works_for_counts) {
   const auto a = makeVariable<double>(Values{1}, Variances{1}, units::counts);
   const auto rtol = 1e-5 * units::one;
