@@ -5,7 +5,7 @@
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
-
+import pytest
 import numpy as np
 import scipp as sc
 from plot_helper import make_dense_dataset, make_binned_data_array, plot
@@ -364,3 +364,30 @@ def test_plot_redraw_binned():
                       asum + bsum)
     pa.close()
     pb.close()
+
+
+def test_plot_bad_2d_coord():
+    def make_data_array(dims, coord_name):
+        return sc.DataArray(data=sc.fold(sc.arange('x', 2 * 10), 'x', {
+            dims[0]: 10,
+            dims[1]: 2
+        }),
+                            coords={
+                                coord_name:
+                                sc.fold(0.1 * sc.arange('x', 20), 'x', {
+                                    dims[0]: 10,
+                                    dims[1]: 2
+                                })
+                            })
+
+    # Ill-formed
+    a = make_data_array(['x', 'y'], 'x')
+    with pytest.raises(sc.DimensionError):
+        plot(a)
+    # Good dim order
+    b = make_data_array(['y', 'x'], 'x')
+    plot(b)
+    # Non-dim coord
+    c = make_data_array(['x', 'y'], 'z')
+    plot(c)
+    plot(c, axes={'x': 'z'})
