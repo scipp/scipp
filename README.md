@@ -7,7 +7,7 @@
 
 | Downstream Project  | Status |
 | ------------------- | ------ |
-| scippneutron        | [![Build Status](https://dev.azure.com/scipp/scippneutron/_apis/build/status/Main?branchName=main)](https://dev.azure.com/scipp/scippneutron/_build/latest?definitionId=44&branchName=main)       |
+| scippneutron (next) | [![Build Status](https://dev.azure.com/scipp/scippneutron/_apis/build/status/Next?repoName=scipp%2Fscippneutron&branchName=next)](https://dev.azure.com/scipp/scippneutron/_build/latest?definitionId=56&repoName=scipp%2Fscippneutron&branchName=next)       |
 
 # Scipp
 
