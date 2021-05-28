@@ -367,44 +367,27 @@ def test_plot_redraw_binned():
 
 
 def test_plot_bad_2d_coord():
+    def make_data_array(dims, coord_name):
+        return sc.DataArray(data=sc.fold(sc.arange('x', 2 * 10), 'x', {
+            dims[0]: 10,
+            dims[1]: 2
+        }),
+                            coords={
+                                coord_name:
+                                sc.fold(0.1 * sc.arange('x', 20), 'x', {
+                                    dims[0]: 10,
+                                    dims[1]: 2
+                                })
+                            })
+
     # Ill-formed
-    a = sc.DataArray(data=sc.fold(sc.arange('x', 2 * 10), 'x', {
-        'x': 10,
-        'y': 2
-    }),
-                     coords={
-                         'x':
-                         sc.fold(0.1 * sc.arange('x', 20), 'x', {
-                             'x': 10,
-                             'y': 2
-                         })
-                     })
+    a = make_data_array(['x', 'y'], 'x')
     with pytest.raises(sc.DimensionError):
         plot(a)
     # Good dim order
-    b = sc.DataArray(data=sc.fold(sc.arange('x', 2 * 10), 'x', {
-        'y': 10,
-        'x': 2
-    }),
-                     coords={
-                         'x':
-                         sc.fold(0.1 * sc.arange('x', 20), 'x', {
-                             'y': 10,
-                             'x': 2
-                         })
-                     })
+    b = make_data_array(['y', 'x'], 'x')
     plot(b)
     # Non-dim coord
-    c = sc.DataArray(data=sc.fold(sc.arange('x', 2 * 10), 'x', {
-        'x': 10,
-        'y': 2
-    }),
-                     coords={
-                         'z':
-                         sc.fold(0.1 * sc.arange('x', 20), 'x', {
-                             'x': 10,
-                             'y': 2
-                         })
-                     })
+    c = make_data_array(['x', 'y'], 'z')
     plot(c)
     plot(c, axes={'x': 'z'})
