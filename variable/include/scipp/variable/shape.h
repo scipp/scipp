@@ -4,8 +4,10 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/core/flags.h"
+
 #include "scipp-variable_export.h"
-#include "scipp/variable/variable.h"
+#include "scipp/variable/creation.h"
 
 namespace scipp::variable {
 
@@ -15,17 +17,10 @@ namespace scipp::variable {
                                                          const Variable &a2,
                                                          const Dim dim);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-permute(const Variable &var, const Dim dim,
-        const std::vector<scipp::index> &indices);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable resize(const Variable &var,
-                                                    const Dim dim,
-                                                    const scipp::index size);
+resize(const Variable &var, const Dim dim, const scipp::index size,
+       const FillValue fill = FillValue::Default);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable resize(const Variable &var,
                                                     const Variable &shape);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reverse(const Variable &var,
-                                                     const Dim dim);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reshape(const Variable &var,
-                                                     const Dimensions &dims);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable fold(const Variable &view,
                                                   const Dim from_dim,
                                                   const Dimensions &to_dims);
@@ -37,8 +32,5 @@ transpose(const Variable &var, const std::vector<Dim> &dims = {});
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 squeeze(const Variable &var, const std::vector<Dim> &dims);
-
-SCIPP_VARIABLE_EXPORT void expect_same_volume(const Dimensions &old_dims,
-                                              const Dimensions &new_dims);
 
 } // namespace scipp::variable

@@ -22,9 +22,11 @@ class PlotWidgets:
                  dim_label_map=None,
                  pos_dims=None,
                  masks=None,
-                 multid_coord=None):
+                 multid_coord=None,
+                 is_binned_data=False):
 
         self.multid_coord = multid_coord
+        self.is_binned_data = is_binned_data
 
         # Dict of callbacks passed on from the `PlotController`
         self.interface = {}
@@ -288,7 +290,10 @@ class PlotWidgets:
         self.slider[index].disabled = disabled
         self.continuous_update[index].disabled = disabled
         self.thickness_slider[index].disabled = disabled
-        self.profile_button[index].disabled = disabled
+        if self.is_binned_data:
+            self.profile_button[index].disabled = False
+        else:
+            self.profile_button[index].disabled = disabled
 
     def toggle_all_masks(self, change):
         """

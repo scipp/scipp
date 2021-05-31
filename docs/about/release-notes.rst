@@ -9,18 +9,39 @@ Since v0.6
 Features
 ~~~~~~~~
 
+* Licence changed from GPLv3 to BSD-3-Clause.
 * Can now control the position and visibility of the legend in 1d plots with ``plot(da, legend={"show": True, "loc": 4})`` `#1790 <https://github.com/scipp/scipp/pull/1790>`_.
 * Added ``zeros_like``, ``ones_like`` and ``empty_like`` functions `#1864 <https://github.com/scipp/scipp/pull/1864>`_.
 * ``sort`` is now considerably faster for data with more rows `#1872 <https://github.com/scipp/scipp/pull/1872>`_.
 * Added numpy-like ``linspace``, ``logspace``, ``geomspace``, and ``arange`` variable creation functions `#1871 <https://github.com/scipp/scipp/pull/1871>`_.
+* ``to_unit`` now supports binned data `#1841 <https://github.com/scipp/scipp/pull/1841>`_.
+* ``broadcast`` now returns a view instead of copying `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
+* ``fold`` now returns a view instead of copying `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
+* ``fold`` now works for binned data `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
+* ``flatten`` now returns a view of the input buffer if the input data is contiguous `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
+* Add ``redraw`` method to plot which enables an easy update on a figure when the underlying data has been modified `#1907 <https://github.com/scipp/scipp/pull/1907>`_.
+* Several improvements for work with (3-D position) vectors and (3-D rotation) matrices `#1905 <https://github.com/scipp/scipp/pull/1905>`_:
+
+  * Add creation functions ``vector``, ``vectors``, ``matrix``, ``matrices``.
+  * Direct creation and initialization of 2-D (or higher) arrays of matrices and vectors is now possible from numpy arrays.
+  * Fix extremely slow initialization of array of vectors or matrices from numpy arrays.
+  * The ``values`` property now returns a numpy array with ``ndim+1`` (vectors) or ``ndim+2``` (matrices) axes, with the inner 1 (vectors) or 2 (matrices) axes corresponding o the vector or matrix axes.
+  * Vector or matrix element can now be accessed and modified directly using the new properties of ``Variable``, ``x1``, ``x2``, ``x3`` (for variables containing vectors) or ``x11``, ``x12``, ..., ``x33`` (for matrices).
+
+* Reduction operations such as ``sum`` and ``mean`` are now also multi-threaded and thus considerably faster `#1923 <https://github.com/scipp/scipp/pull/1923>`_.
 
 Bugfixes
 ~~~~~~~~
 
+* Profile plots are no longer disabled for binned data with only a single bin in the 3rd dimension `#1936 <https://github.com/scipp/scipp/pull/1936>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* Scipp's data structures now behave mostly like normal nested Python objects, i.e., copies are shallow by default `#1823 <https://github.com/scipp/scipp/pull/1823>`_.
 * ``filter`` and ``split`` removed. Identical functionality can be achieved using ``groupby`` and/or slicing.
+* ``reshape`` has been removed. Use ``fold`` and ``flatten`` instead `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
+* ``geometry.x``, ``geometry.y``, and ``geometry.z`` have been removed. Use the ``x1``, ``x2``, and ``x3`` properties instead `#1925 <https://github.com/scipp/scipp/pull/1925>`_.
 
 Contributors
 ~~~~~~~~~~~~

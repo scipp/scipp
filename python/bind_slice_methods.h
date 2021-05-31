@@ -22,7 +22,7 @@ using namespace scipp::dataset;
 template <class T> auto dim_extent(const T &object, const Dim dim) {
   if constexpr (std::is_same_v<T, Dataset>) {
     scipp::index extent = -1;
-    if (object.sizes().count(dim) > 0)
+    if (object.sizes().contains(dim))
       extent = object.sizes().at(dim);
     return extent;
   } else {
@@ -84,7 +84,7 @@ template <class T> struct slicer {
                                  const std::tuple<Dim, Variable> &value) {
     auto [dim, i] = value;
     return std::make_from_tuple<Slice>(
-        get_slice_params(Dimensions(self.dims()), self.coords()[dim], i));
+        get_slice_params(self.dims(), self.coords()[dim], i));
   }
 
   static auto get_by_value(T &self, const std::tuple<Dim, Variable> &value) {
@@ -96,11 +96,6 @@ template <class T> struct slicer {
     auto [dim, py_slice] = index;
     if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Dataset>) {
       try {
-        auto step = py::getattr(py_slice, "step");
-        if (!step.is_none()) {
-          throw std::runtime_error(
-              "Step cannot be specified for value based slicing.");
-        }
         auto start = py::getattr(py_slice, "start");
         auto stop = py::getattr(py_slice, "stop");
         if (!start.is_none() || !stop.is_none()) { // Means default slice : is
@@ -111,10 +106,13 @@ template <class T> struct slicer {
           auto stop_var = stop.is_none()
                               ? Variable{}
                               : py::getattr(py_slice, "stop").cast<Variable>();
-
-          return std::make_from_tuple<Slice>(
-              get_slice_params(Dimensions(self.dims()), self.coords()[dim],
-                               start_var, stop_var));
+          auto step = py::getattr(py_slice, "step");
+          if (!step.is_none()) {
+            throw std::runtime_error(
+                "Step cannot be specified for value based slicing.");
+          }
+          return std::make_from_tuple<Slice>(get_slice_params(
+              self.dims(), self.coords()[dim], start_var, stop_var));
         }
       } catch (const py::cast_error &) {
       }

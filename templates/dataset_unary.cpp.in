@@ -2,7 +2,7 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/dataset/@NAME@.h"
+#include "scipp/dataset/@OPNAME@.h"
 
 namespace scipp::variable {
 [[nodiscard]] Variable @NAME@(const Variable &var);
@@ -11,7 +11,7 @@ namespace scipp::variable {
 namespace scipp::dataset {
 
 DataArray @NAME@(const DataArray &a) {
-  return DataArray(@NAME@(a.data()), a.coords(), a.masks(), a.attrs());
+  return DataArray(@NAME@(a.data()), a.coords(), copy(a.masks()), a.attrs());
 }
 
 } // namespace scipp::dataset

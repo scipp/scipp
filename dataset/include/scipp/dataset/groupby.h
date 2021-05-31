@@ -7,8 +7,9 @@
 #include <boost/container/small_vector.hpp>
 #include <vector>
 
+#include "scipp/core/flags.h"
+#include "scipp/variable/creation.h"
 #include <scipp/dataset/dataset.h>
-#include <scipp/variable/util.h>
 
 namespace scipp::dataset {
 
@@ -56,8 +57,9 @@ public:
   T copy(const SortOrder order) const;
 
 private:
-  T makeReductionOutput(const Dim reductionDim) const;
-  template <class Op> T reduce(Op op, const Dim reductionDim) const;
+  T makeReductionOutput(const Dim reductionDim, const FillValue fill) const;
+  template <class Op>
+  T reduce(Op op, const Dim reductionDim, const FillValue fill) const;
 
   T m_data;
   GroupByGrouping m_grouping;

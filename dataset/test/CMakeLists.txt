@@ -16,6 +16,7 @@ add_executable(
   coords_view_test.cpp
   copy_test.cpp
   counts_test.cpp
+  data_array_arithmetic_test.cpp
   data_array_comparison_test.cpp
   data_array_test.cpp
   dataset_arithmetic_test.cpp
@@ -27,10 +28,10 @@ add_executable(
   data_view_test.cpp
   event_data_operations_consistency_test.cpp
   except_test.cpp
+  generated_test.cpp
   groupby_test.cpp
   histogram_test.cpp
   masks_test.cpp
-  math_test.cpp
   mean_test.cpp
   merge_test.cpp
   rebin_test.cpp

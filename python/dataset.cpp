@@ -75,7 +75,7 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
       [](const T &self) {
         std::vector<std::string> dims;
         for (const auto &dim : self.sizes()) {
-          dims.push_back(dim.first.name());
+          dims.push_back(dim.name());
         }
         return dims;
       },
@@ -85,8 +85,8 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
       "shape",
       [](const T &self) {
         std::vector<int64_t> shape;
-        for (const auto &dim : self.sizes()) {
-          shape.push_back(dim.second);
+        for (const auto &size : self.sizes().sizes()) {
+          shape.push_back(size);
         }
         return shape;
       },

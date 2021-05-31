@@ -57,18 +57,16 @@ public:
   /// should be prefered where possible, since it generates less code.
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
-  Variable operator~() const;
-
-  [[nodiscard]] units::Unit unit() const;
+  [[nodiscard]] const units::Unit &unit() const;
   void setUnit(const units::Unit &unit);
   void expectCanSetUnit(const units::Unit &) const;
 
   [[nodiscard]] const Dimensions &dims() const;
-  void setDims(const Dimensions &dimensions);
 
   [[nodiscard]] DType dtype() const;
 
   [[nodiscard]] scipp::span<const scipp::index> strides() const;
+  [[nodiscard]] scipp::index offset() const;
 
   [[nodiscard]] bool hasVariances() const;
 
@@ -97,11 +95,12 @@ public:
   void validateSlice(const Slice &s, const Variable &data) const;
   [[maybe_unused]] Variable &setSlice(Slice params, const Variable &data);
 
+  template <class T, class... Index> Variable elements(Index... index) const;
+
   void rename(Dim from, Dim to);
 
   bool operator==(const Variable &other) const;
   bool operator!=(const Variable &other) const;
-  Variable operator-() const;
 
   [[nodiscard]] const VariableConcept &data() const && = delete;
   [[nodiscard]] const VariableConcept &data() const &;
@@ -118,15 +117,12 @@ public:
   template <class T> const T &bin_buffer() const;
   template <class T> T &bin_buffer();
 
-  template <class T>
-  std::tuple<Variable, Dim, typename T::const_element_type>
-  constituents() const;
-  template <class T>
-  std::tuple<Variable, Dim, typename T::element_type> constituents();
+  template <class T> std::tuple<Variable, Dim, T> constituents() const;
+  template <class T> std::tuple<Variable, Dim, T> constituents();
+  template <class T> std::tuple<Variable, Dim, T> to_constituents();
 
-  template <class T>
-  std::tuple<Variable, Dim, typename T::buffer_type> to_constituents();
-
+  [[nodiscard]] Variable broadcast(const Dimensions &target) const;
+  [[nodiscard]] Variable fold(const Dim dim, const Dimensions &target) const;
   [[nodiscard]] Variable transpose(const std::vector<Dim> &order) const;
 
   [[nodiscard]] bool is_valid() const noexcept;
@@ -135,6 +131,9 @@ public:
   [[nodiscard]] bool is_same(const Variable &other) const noexcept;
 
   [[nodiscard]] Variable as_const() const;
+
+  auto &unchecked_dims() { return m_dims; }
+  auto &unchecked_strides() { return m_strides; }
 
 private:
   // Declared friend so gtest recognizes it

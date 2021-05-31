@@ -19,7 +19,7 @@ protected:
   Variable m_var = make_bins(m_indices, Dim::Event, m_buffer);
 
   void check(const Variable &var) const {
-    const auto [indices, dim, buf] = var.constituents<core::bin<DataArray>>();
+    const auto [indices, dim, buf] = var.constituents<DataArray>();
     static_cast<void>(indices);
     static_cast<void>(dim);
     EXPECT_EQ(buf.unit(), units::m);
@@ -33,7 +33,7 @@ TEST_F(BinnedCreationTest, empty_like_default_shape) {
   const auto empty = empty_like(m_var);
   EXPECT_EQ(empty.dims(), m_var.dims());
   check(empty);
-  const auto [indices, dim, buf] = empty.constituents<core::bin<DataArray>>();
+  const auto [indices, dim, buf] = empty.constituents<DataArray>();
   static_cast<void>(dim);
   static_cast<void>(buf);
   EXPECT_EQ(indices, m_indices);
@@ -43,7 +43,7 @@ TEST_F(BinnedCreationTest, empty_like_slice_default_shape) {
   const auto empty = empty_like(m_var.slice({Dim::X, 1}));
   EXPECT_EQ(empty.dims(), m_var.slice({Dim::X, 1}).dims());
   check(empty);
-  const auto [indices, dim, buf] = empty.constituents<core::bin<DataArray>>();
+  const auto [indices, dim, buf] = empty.constituents<DataArray>();
   static_cast<void>(dim);
   static_cast<void>(buf);
   EXPECT_EQ(indices, makeVariable<scipp::index_pair>(Values{std::pair{0, 3}}));
@@ -54,7 +54,7 @@ TEST_F(BinnedCreationTest, empty_like) {
                                               Values{1, 2, 5, 6, 3, 4});
   const auto empty = empty_like(m_var, {}, shape);
   EXPECT_EQ(empty.dims(), shape.dims());
-  const auto [indices, dim, buf] = empty.constituents<core::bin<DataArray>>();
+  const auto [indices, dim, buf] = empty.constituents<DataArray>();
   static_cast<void>(dim);
   static_cast<void>(indices);
   EXPECT_EQ(buf.dims(), Dimensions(Dim::Event, 21));

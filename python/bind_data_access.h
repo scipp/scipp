@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <algorithm>
 #include <variant>
 
 #include "scipp/core/dtype.h"
@@ -11,6 +12,7 @@
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable_concept.h"
 
@@ -67,7 +69,7 @@ class DataAccessHelper {
   template <class... Ts> friend class as_ElementArrayViewImpl;
 
   template <class Getter, class T, class View>
-  static py::object as_py_array_t_impl(View &view) {
+  static py::object as_py_array_t_impl(View &&view) {
     const auto get_dtype = [&view]() {
       if constexpr (std::is_same_v<T, scipp::core::time_point>) {
         // Need a custom implementation because py::dtype::of only works with
@@ -81,7 +83,7 @@ class DataAccessHelper {
     };
     auto &&var = get_data_variable(view);
     const auto &dims = view.dims();
-    if (view.is_readonly()) {
+    if (var.is_readonly()) {
       auto array =
           py::array{get_dtype(), dims.shape(), numpy_strides<T>(var.strides()),
                     Getter::template get<T>(std::as_const(view)).data(),
@@ -98,13 +100,13 @@ class DataAccessHelper {
   }
 
   struct get_values {
-    template <class T, class View> static constexpr auto get(View &view) {
+    template <class T, class View> static constexpr auto get(View &&view) {
       return view.template values<T>();
     }
   };
 
   struct get_variances {
-    template <class T, class View> static constexpr auto get(View &view) {
+    template <class T, class View> static constexpr auto get(View &&view) {
       return view.template variances<T>();
     }
   };
@@ -179,11 +181,29 @@ template <class... Ts> class as_ElementArrayViewImpl {
         view);
   }
 
+  template <class View> static auto structure_elements(View &&view) {
+    if (view.dtype() == dtype<Eigen::Vector3d>) {
+      return get_data_variable(view).template elements<Eigen::Vector3d>();
+    } else if (view.dtype() == dtype<Eigen::Matrix3d>) {
+      auto elems = get_data_variable(view).template elements<Eigen::Matrix3d>();
+      elems = fold(
+          elems, Dim::InternalStructureComponent,
+          Dimensions({Dim::InternalStructureRow, Dim::InternalStructureColumn},
+                     {3, 3}));
+      std::vector labels(elems.dims().labels().begin(),
+                         elems.dims().labels().end());
+      std::iter_swap(labels.end() - 2, labels.end() - 1);
+      return transpose(elems, labels);
+    } else {
+      throw std::runtime_error("Unsupported structured dtype");
+    }
+  }
+
 public:
   template <class Getter, class View>
   static py::object get_py_array_t(py::object &obj) {
     auto &view = obj.cast<View &>();
-    if (!std::is_const_v<View> && view.is_readonly())
+    if (!std::is_const_v<View> && get_data_variable(view).is_readonly())
       return as_ElementArrayViewImpl<const Ts...>::template get_py_array_t<
           Getter, const View>(obj);
     const DType type = view.dtype();
@@ -201,6 +221,9 @@ public:
       return DataAccessHelper::as_py_array_t_impl<Getter,
                                                   scipp::core::time_point>(
           view);
+    if (is_structured(type))
+      return DataAccessHelper::as_py_array_t_impl<Getter, double>(
+          structure_elements(view));
     return std::visit(
         [&view](const auto &data) {
           const auto &dims = view.dims();
@@ -238,7 +261,12 @@ public:
 
   template <class Var>
   static void set_values(Var &view, const py::object &obj) {
-    set(view.dims(), view.unit(), get<get_values>(view), obj);
+    if (is_structured(view.dtype())) {
+      auto elems = structure_elements(view);
+      set_values(elems, obj);
+    } else {
+      set(view.dims(), view.unit(), get<get_values>(view), obj);
+    }
   }
 
   template <class Var>
@@ -320,7 +348,7 @@ public:
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object value(py::object &obj) {
     auto &view = obj.cast<Var &>();
-    if (!std::is_const_v<Var> && view.is_readonly())
+    if (!std::is_const_v<Var> && get_data_variable(view).is_readonly())
       return as_ElementArrayViewImpl<const Ts...>::template value<const Var>(
           obj);
     expect_scalar(view.dims(), "value");
@@ -331,7 +359,7 @@ public:
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object variance(py::object &obj) {
     auto &view = obj.cast<Var &>();
-    if (!std::is_const_v<Var> && view.is_readonly())
+    if (!std::is_const_v<Var> && get_data_variable(view).is_readonly())
       return as_ElementArrayViewImpl<const Ts...>::template variance<const Var>(
           obj);
     expect_scalar(view.dims(), "variance");

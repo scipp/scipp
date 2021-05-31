@@ -55,6 +55,7 @@ class PlotFigure:
         self.axlocator = {}
         self.xlabel = xlabel
         self.ylabel = ylabel
+        self.draw_no_delay = False
 
     def is_widget(self):
         """
@@ -146,8 +147,16 @@ class PlotFigure:
         draws are performed on the canvas. Matplotlib's automatic drawing
         (which we have disabled by using `plt.ioff()`) can degrade performance
         significantly.
+        Matplotlib's `draw()` is slightly more expensive than `draw_idle()`
+        but won't update inside a loop (only when the loop has finished
+        executing).
+        If `draw_no_delay` has been set to True (via `set_draw_no_delay`,
+        then we use `draw()` instead of `draw_idle()`.
         """
-        self.fig.canvas.draw_idle()
+        if self.draw_no_delay:
+            self.fig.canvas.draw()
+        else:
+            self.fig.canvas.draw_idle()
 
     def connect_profile(self, pick_callback=None, hover_callback=None):
         """
@@ -201,3 +210,6 @@ class PlotFigure:
 
     def set_axis_label(self, axis, string):
         getattr(self.ax, "set_{}label".format(axis))(string)
+
+    def set_draw_no_delay(self, value):
+        self.draw_no_delay = value

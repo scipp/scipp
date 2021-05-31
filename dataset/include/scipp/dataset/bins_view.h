@@ -33,14 +33,14 @@ protected:
     return make_bins_no_validate(this->indices(), this->dim(), view);
   }
   auto check_and_get_buf(const Variable &var) const {
-    const auto &[i, d, buf] = var.constituents<bucket<Variable>>();
+    const auto &[i, d, buf] = var.constituents<Variable>();
     core::expect::equals(i, this->indices());
     core::expect::equals(d, this->dim());
     return buf;
   }
 
 private:
-  auto get() const { return m_var.template constituents<bucket<T>>(); }
+  auto get() const { return m_var.template constituents<T>(); }
   View m_var;
 };
 

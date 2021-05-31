@@ -45,18 +45,6 @@ if ipy is not None:
                 "Falling back to a static backend. Use "
                 "conda install -c conda-forge ipympl to install ipympl.")
 
-        # Run some javascript to find the current device pixel ratio, which is
-        # needed to properly scale the pixels in the three.js renderer.
-        # Note that the javascript has to be run here so that the pixel_ratio
-        # value is set after the initial import. Dealying this to inside the
-        # call to plot() would lead to devicePixelRatio being None.
-        ipy.run_cell_magic(
-            "js", "", "var kernel = IPython.notebook.kernel; "
-            "if (kernel) {"
-            "var value = window.devicePixelRatio; "
-            "var command = 'devicePixelRatio = ' + value; "
-            "kernel.execute(command);}")
-
 # Note: due to some strange behavior when importing matplotlib and pyplot in
 # different order, we need to import pyplot after switching to the ipympl
 # backend (see https://github.com/matplotlib/matplotlib/issues/19032).
@@ -102,14 +90,6 @@ def plot(*args, **kwargs):
         axis of a 2d image, use `axes={"y": "tof"}`.
         Defaults to `None`.
     :type axes: dict, optional
-
-    :param bins: Specify on-the-fly binning when plotting event data.
-        Possible values are:
-        - an integer setting the number of bins
-        - a `numpy` array setting the bin edges
-        - a Variable setting the bin edges
-        Defaults to `None`.
-    :type bins: int or ndarray or Variable, optional
 
     :param cax: Attach colorbar to supplied Matplotlib axes.
         Defaults to `None`.

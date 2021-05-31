@@ -1,7 +1,7 @@
-# This is used for incremental CI builds. This file is identical
-# to scipp-developer.yml but does not include Mantid, doc build
-# dependencies, or formatting and static analysis dependencies. See
-# https://scipp.github.io/developer/dependencies.html
+# This is used for incremental CI builds.
+# This file is identical to scipp-developer.yml but does not include doc build
+# dependencies, or formatting and static analysis dependencies.
+# See https://scipp.github.io/developer/dependencies.html
 
 name: scipp-developer
 

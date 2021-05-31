@@ -71,9 +71,10 @@ bool can_be_flattened(const scipp::index dim, const scipp::index size,
                       std::index_sequence<I...>,
                       std::array<scipp::index, sizeof...(I)> &rewind,
                       const StridesArgs &... strides) {
-  return ((strides[dim] == std::exchange(rewind[I], size * strides[dim]) &&
-           strides[dim] != 0) &&
+  const bool res = ((strides[dim] == rewind[I] && strides[dim] != 0) &&
           ...);
+  ((rewind[I] = size * strides[dim]), ...);
+  return res;
 }
 
 // non_flattenable_dim is in the storage order of Dimensions & Strides.

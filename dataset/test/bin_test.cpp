@@ -343,7 +343,7 @@ TEST_P(BinTest, bin_by_group) {
   const auto table = GetParam();
   auto binned = bin(table, {}, {groups});
   // Currently `bin` is not removing coords used for grouping, see TODO.
-  std::get<2>(binned.data().constituents<core::bin<DataArray>>())
+  std::get<2>(binned.data().constituents<DataArray>())
       .coords()
       .erase(Dim("group"));
   // Using bin coord (instead of event coord) for binning.

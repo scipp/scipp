@@ -6,7 +6,7 @@ from .._scipp import core as sc
 from .. import _utils as su
 from ..compat.dict import from_dict
 from .dispatch import dispatch
-from .helpers import Plot
+from .objects import PlotDict
 from .tools import make_fake_coord, get_line_param
 import numpy as np
 import itertools
@@ -40,6 +40,11 @@ def _make_plot_key(plt_key, all_keys):
     return plt_key
 
 
+def _brief_str(obj):
+    sizes = ', '.join([f'{dim}: {size}' for dim, size in obj.sizes.items()])
+    return f'scipp.{type(obj).__name__}({sizes})'
+
+
 def _input_to_data_array(item, all_keys, key=None):
     """
     Convert an input for the plot function to a DataArray or a dict of
@@ -54,7 +59,7 @@ def _input_to_data_array(item, all_keys, key=None):
     elif su.is_variable(item):
         if su.numeric_type(item):
             if key is None:
-                key = str(type(item))
+                key = _brief_str(item)
             to_plot[_make_plot_key(key,
                                    all_keys)] = _variable_to_data_array(item)
     elif su.is_data_array(item):
@@ -83,7 +88,6 @@ def plot(scipp_obj,
          marker=None,
          linestyle=None,
          linewidth=None,
-         bins=None,
          **kwargs):
     """
     Wrapper function to plot a scipp object.
@@ -144,18 +148,17 @@ def plot(scipp_obj,
     for name, var in sorted(inventory.items()):
         ndims = len(var.dims)
         if (ndims > 0) and (np.sum(var.shape) > 0):
-            if ndims == 1:
+            if ndims == 1 or projection == "1d" or projection == "1D":
                 # Construct a key from the dimensions
                 if axes is not None:
-                    key = list(axes.values())[0]
+                    key = str(list(axes.values()))
                 else:
-                    key = var.dims[0]
+                    key = str(var.dims)
                 # Add unit to key
                 key = "{}.{}".format(key, str(var.unit))
+                line_count += 1
             else:
                 key = name
-            if ndims == 1 or projection == "1d" or projection == "1D":
-                line_count += 1
 
             mpl_line_params = {}
             for n, p in line_params.items():
@@ -186,21 +189,20 @@ def plot(scipp_obj,
                 tobeplotted[key]["mpl_line_params"][n][name] = p
 
     # Plot all the subsets
-    output = Plot()
+    output = PlotDict()
     for key, val in tobeplotted.items():
-        output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-                               name=key,
-                               ndim=val["ndims"],
-                               projection=projection,
-                               axes=val["axes"],
-                               mpl_line_params=val["mpl_line_params"],
-                               bins=bins,
-                               **kwargs)
+        output._items[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
+                                      name=key,
+                                      ndim=val["ndims"],
+                                      projection=projection,
+                                      axes=val["axes"],
+                                      mpl_line_params=val["mpl_line_params"],
+                                      **kwargs)
 
     if len(output) > 1:
         return output
     elif len(output) > 0:
-        return output[list(output.keys())[0]]
+        return output._items[list(output.keys())[0]]
     else:
         raise ValueError("Input contains nothing that can be plotted. "
                          "Input may be of dtype vector or string, "

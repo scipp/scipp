@@ -76,14 +76,14 @@ template <class T> void bind_bin_size(pybind11::module &m) {
 }
 
 template <class T> auto bin_begin_end(const Variable &var) {
-  auto &&[indices, dim, buffer] = var.constituents<bucket<T>>();
+  auto &&[indices, dim, buffer] = var.constituents<T>();
   static_cast<void>(dim);
   static_cast<void>(buffer);
   return py::cast(unzip(indices));
 }
 
 template <class T> auto bin_dim(const Variable &var) {
-  auto &&[indices, dim, buffer] = var.constituents<bucket<T>>();
+  auto &&[indices, dim, buffer] = var.constituents<T>();
   static_cast<void>(buffer);
   static_cast<void>(indices);
   return py::cast(std::string(dim.name()));
@@ -216,17 +216,10 @@ void init_buckets(py::module &m) {
          const std::vector<Variable> &groups, const std::vector<Dim> &erase) {
         return dataset::bin(array, edges, groups, erase);
       },
+      py::arg("array"), py::arg("edges"),
+      py::arg("groups") = std::vector<Variable>{},
+      py::arg("erase") = std::vector<Dim>{},
       py::call_guard<py::gil_scoped_release>());
-  m.def("bin_with_coords", [](const Variable &data, const py::dict &coords,
-                              const std::vector<Variable> &edges,
-                              const std::vector<Variable> &groups) {
-    std::map<Dim, Variable> c;
-    for (const auto [name, coord] : coords)
-      c.emplace(Dim(py::cast<std::string>(name)), py::cast<Variable>(coord));
-    py::gil_scoped_release release; // release only *after* using py::cast
-    return dataset::bin(data, c, std::map<std::string, Variable>{},
-                        std::map<Dim, Variable>{}, edges, groups);
-  });
 
   bind_bins_view<DataArray>(m);
 }

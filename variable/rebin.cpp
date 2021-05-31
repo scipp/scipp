@@ -18,8 +18,7 @@ using namespace scipp::core::element;
 namespace scipp::variable {
 
 bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
-  edges.resize(dim, edges[dim] - 1);
-  return edges[dim] == toMatch[dim];
+  return edges[dim] - 1 == toMatch[dim];
 }
 
 // Workaround VS C7526 (undefined inline variable) with dtype<> in template.

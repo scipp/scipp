@@ -80,53 +80,21 @@ TEST(DimensionsTest, erase_inner) {
   EXPECT_EQ(dims.volume(), 12);
 }
 
-TEST(DimensionsTest, contains_other) {
+TEST(DimensionsTest, includes) {
   Dimensions a;
   a.add(Dim::X, 3);
   a.add(Dim::Y, 2);
 
-  EXPECT_TRUE(a.contains(Dimensions{}));
-  EXPECT_TRUE(a.contains(a));
-  EXPECT_TRUE(a.contains(Dimensions(Dim::Y, 2)));
-  EXPECT_FALSE(a.contains(Dimensions(Dim::Y, 3)));
+  EXPECT_TRUE(a.includes(Dimensions{}));
+  EXPECT_TRUE(a.includes(a));
+  EXPECT_TRUE(a.includes(Dimensions(Dim::Y, 2)));
+  EXPECT_FALSE(a.includes(Dimensions(Dim::Y, 3)));
 
   Dimensions b;
   b.add(Dim::Y, 2);
   b.add(Dim::X, 3);
   // Order does not matter.
-  EXPECT_TRUE(a.contains(b));
-}
-
-TEST(DimensionsTest, isContiguousIn) {
-  Dimensions parent({{Dim::Z, 2}, {Dim::Y, 3}, {Dim::X, 4}});
-
-  EXPECT_TRUE(parent.isContiguousIn(parent));
-
-  EXPECT_TRUE(Dimensions({Dim::X, 0}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({Dim::X, 1}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({Dim::X, 2}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({Dim::X, 4}).isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({Dim::X, 5}).isContiguousIn(parent));
-
-  EXPECT_TRUE(Dimensions({{Dim::Y, 0}, {Dim::X, 4}}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::Y, 1}, {Dim::X, 4}}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::Y, 2}, {Dim::X, 4}}).isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::Y, 3}, {Dim::X, 4}}).isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({{Dim::Y, 4}, {Dim::X, 4}}).isContiguousIn(parent));
-
-  EXPECT_TRUE(Dimensions({{Dim::Z, 0}, {Dim::Y, 3}, {Dim::X, 4}})
-                  .isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::Z, 1}, {Dim::Y, 3}, {Dim::X, 4}})
-                  .isContiguousIn(parent));
-  EXPECT_TRUE(Dimensions({{Dim::Z, 2}, {Dim::Y, 3}, {Dim::X, 4}})
-                  .isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({{Dim::Z, 3}, {Dim::Y, 3}, {Dim::X, 4}})
-                   .isContiguousIn(parent));
-
-  EXPECT_FALSE(Dimensions({Dim::Y, 3}).isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({Dim::Z, 2}).isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({{Dim::Z, 2}, {Dim::X, 4}}).isContiguousIn(parent));
-  EXPECT_FALSE(Dimensions({{Dim::Z, 2}, {Dim::Y, 3}}).isContiguousIn(parent));
+  EXPECT_TRUE(a.includes(b));
 }
 
 TEST(DimensionsTest, index_access) {
@@ -307,31 +275,21 @@ TEST(DimensionsTest, fold) {
   Dimensions xy = {{Dim::X, 6}, {Dim::Y, 4}};
   Dimensions expected = {{Dim::Row, 2}, {Dim::Time, 3}, {Dim::Y, 4}};
   EXPECT_EQ(fold(xy, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
-  EXPECT_EQ(fold(xy, Dim::Z, {{Dim::Row, 2}, {Dim::Time, 3}}), xy);
+  EXPECT_THROW_DISCARD(fold(xy, Dim::Z, {{Dim::Row, 2}, {Dim::Time, 3}}),
+                       except::NotFoundError);
+}
+
+TEST(DimensionsTest, fold_fail_bad_sizes) {
+  Dimensions x(Dim::X, 6);
+  EXPECT_NO_THROW_DISCARD(fold(x, Dim::X, {{Dim::Y, 2}, {Dim::Z, 3}}));
+  EXPECT_THROW_DISCARD(fold(x, Dim::X, {{Dim::Y, 2}, {Dim::Z, 2}}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(fold(x, Dim::X, {{Dim::Y, 3}, {Dim::Z, 3}}),
+                       except::DimensionError);
 }
 
 TEST(DimensionsTest, fold_into_3) {
   Dimensions x = {{Dim::X, 24}};
   Dimensions expected = {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}};
   EXPECT_EQ(fold(x, Dim::X, expected), expected);
-}
-
-TEST(DimensionsTest, flatten) {
-  Dimensions xy = {{Dim::X, 6}, {Dim::Y, 4}};
-  Dimensions expected = {{Dim::Time, 24}};
-  EXPECT_EQ(flatten(xy, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Time), expected);
-}
-
-TEST(DimensionsTest, flatten_non_contiguous) {
-  Dimensions xy = {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}};
-  EXPECT_THROW_MSG_DISCARD(
-      flatten(xy, std::vector<Dim>{Dim::X, Dim::Z}, Dim::Time),
-      except::DimensionError,
-      "Can only flatten a contiguous set of dimensions in the correct order");
-}
-
-TEST(DimensionsTest, round_trip) {
-  Dimensions xy = {{Dim::X, 6}, {Dim::Y, 4}};
-  Dimensions folded = fold(xy, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
-  EXPECT_EQ(flatten(folded, std::vector<Dim>{Dim::Row, Dim::Time}, Dim::X), xy);
 }

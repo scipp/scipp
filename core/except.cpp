@@ -7,9 +7,6 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/slice.h"
 
-#include <cmath>
-#include <set>
-
 namespace scipp::except {
 
 TypeError::TypeError(const std::string &msg) : Error{msg} {}
@@ -45,18 +42,17 @@ void throw_mismatch_error(const core::Dimensions &expected,
                        format_dims(actual) + '.');
 }
 
-void throw_dimension_not_found_error(const core::Dimensions &expected,
-                                     Dim actual) {
-  throw DimensionError{"Expected dimension to be in " + to_string(expected) +
-                       ", got " + to_string(actual) + '.'};
-}
-
 void throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
                                   index length) {
   throw DimensionError{"Expected dimension to be in " + to_string(expected) +
                        ", got " + to_string(actual) +
                        " with mismatching length " + std::to_string(length) +
                        '.'};
+}
+
+void throw_cannot_have_variances(const DType type) {
+  throw except::VariancesError("Variances for dtype=" + to_string(type) +
+                               " not supported.");
 }
 
 } // namespace scipp::except
@@ -68,15 +64,11 @@ void dimensionMatches(const Dimensions &dims, const Dim dim,
     except::throw_dimension_length_error(dims, dim, length);
 }
 
-void validSlice(const Dimensions &dims, const Slice &slice) {
+void validSlice(const Sizes &dims, const Slice &slice) {
   const auto end = slice.end() < 0 ? slice.begin() + 1 : slice.end();
   if (!dims.contains(slice.dim()) || end > dims[slice.dim()])
     throw except::SliceError("Expected " + to_string(slice) + " to be in " +
                              to_string(dims) + ".");
-}
-
-void validSlice(const Sizes &dims, const Slice &slice) {
-  validSlice(Dimensions(dims), slice);
 }
 
 void notCountDensity(const units::Unit &unit) {

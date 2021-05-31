@@ -4,10 +4,9 @@
 /// @author Thibault Chatel
 #pragma once
 
-#include <vector>
+#include "scipp/core/flags.h"
 
 #include "scipp-variable_export.h"
-#include "scipp/variable/util.h" // for enum ascending, descending
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {
