@@ -57,9 +57,9 @@ def make_dense_data_array(ndim=1,
         grid = []
         for i, dim in enumerate(dims):
             if binedges and (i < ndim - 1):
-                grid.append(d.coords[dim].values[:-1])
+                grid.append(coord_dict[dim].values[:-1])
             else:
-                grid.append(d.coords[dim].values)
+                grid.append(coord_dict[dim].values)
         mesh = np.meshgrid(*grid, indexing="ij")
         coord_dict[dims[-1]] = sc.Variable(dims,
                                            values=mesh[-1] +
