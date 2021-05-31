@@ -71,8 +71,7 @@ bool can_be_flattened(const scipp::index dim, const scipp::index size,
                       std::index_sequence<I...>,
                       std::array<scipp::index, sizeof...(I)> &rewind,
                       const StridesArgs &... strides) {
-  const bool res = ((strides[dim] == rewind[I] && strides[dim] != 0) &&
-          ...);
+  const bool res = ((strides[dim] == rewind[I] && strides[dim] != 0) && ...);
   ((rewind[I] = size * strides[dim]), ...);
   return res;
 }
