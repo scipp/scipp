@@ -12,7 +12,8 @@ template <class T>
 constexpr auto structure_element_offset{
     T::missing_specialization_of_structure_element_offset};
 
-template <class T, class... Is> Variable Variable::elements(Is... index) const {
+template <class T, class... Is>
+Variable Variable::elements_impl(Is... index) const {
   if (dtype() == core::dtype<core::bin<Variable>>) {
     const auto &[idx, dim, buf] = constituents<Variable>();
     return make_bins_no_validate(idx, dim, buf.template elements<T>(index...));
@@ -37,6 +38,14 @@ template <class T, class... Is> Variable Variable::elements(Is... index) const {
     elements.m_offset += offset;
   }
   return elements;
+}
+
+template <class T> Variable Variable::elements() const {
+  return elements_impl<T>();
+}
+
+template <class T> Variable Variable::elements(const std::string &key) const {
+  return elements_impl<T>(key);
 }
 
 template <class T, class Elem>

@@ -29,13 +29,10 @@ TEST_F(LinalgVectorTest, elem_access) {
                   {Dim::InternalStructureComponent, i}),
               elems.slice({Dim::X, i}));
   }
-  EXPECT_EQ(vectors.elements<Eigen::Vector3d>(std::string("x")),
-            elems.slice({Dim::X, 0}));
-  EXPECT_EQ(vectors.elements<Eigen::Vector3d>(std::string("y")),
-            elems.slice({Dim::X, 1}));
-  EXPECT_EQ(vectors.elements<Eigen::Vector3d>(std::string("z")),
-            elems.slice({Dim::X, 2}));
-  EXPECT_THROW_DISCARD(vectors.elements<Eigen::Vector3d>(std::string("X")),
+  EXPECT_EQ(vectors.elements<Eigen::Vector3d>("x"), elems.slice({Dim::X, 0}));
+  EXPECT_EQ(vectors.elements<Eigen::Vector3d>("y"), elems.slice({Dim::X, 1}));
+  EXPECT_EQ(vectors.elements<Eigen::Vector3d>("z"), elems.slice({Dim::X, 2}));
+  EXPECT_THROW_DISCARD(vectors.elements<Eigen::Vector3d>("X"),
                        std::out_of_range);
 }
 

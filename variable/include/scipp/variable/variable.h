@@ -95,7 +95,8 @@ public:
   void validateSlice(const Slice &s, const Variable &data) const;
   [[maybe_unused]] Variable &setSlice(Slice params, const Variable &data);
 
-  template <class T, class... Index> Variable elements(Index... index) const;
+  template <class T> Variable elements() const;
+  template <class T> Variable elements(const std::string &key) const;
 
   void rename(Dim from, Dim to);
 
@@ -141,6 +142,8 @@ private:
                                                         const Variable &);
   template <class... Ts, class... Args>
   static Variable construct(const DType &type, Args &&... args);
+  template <class T, class... Index>
+  Variable elements_impl(Index... index) const;
 
   void expectWritable() const;
 

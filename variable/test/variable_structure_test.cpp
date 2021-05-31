@@ -31,21 +31,18 @@ TEST_F(VariableStructureTest, elem_access) {
                   {Dim::InternalStructureComponent, i}),
               elems.slice({Dim::X, i}));
   }
-  EXPECT_EQ(vectors.elements<Eigen::Vector3d>(std::string("x")),
-            elems.slice({Dim::X, 0}));
-  EXPECT_EQ(vectors.elements<Eigen::Vector3d>(std::string("y")),
-            elems.slice({Dim::X, 1}));
-  EXPECT_EQ(vectors.elements<Eigen::Vector3d>(std::string("z")),
-            elems.slice({Dim::X, 2}));
+  EXPECT_EQ(vectors.elements<Eigen::Vector3d>("x"), elems.slice({Dim::X, 0}));
+  EXPECT_EQ(vectors.elements<Eigen::Vector3d>("y"), elems.slice({Dim::X, 1}));
+  EXPECT_EQ(vectors.elements<Eigen::Vector3d>("z"), elems.slice({Dim::X, 2}));
 }
 
 TEST_F(VariableStructureTest, matrices_elem_access) {
   // storage order is column-major
   EXPECT_EQ(
-      matrices.elements<Eigen::Matrix3d>(std::string("xy")),
+      matrices.elements<Eigen::Matrix3d>("xy"),
       makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{4, 14}));
   EXPECT_EQ(
-      matrices.elements<Eigen::Matrix3d>(std::string("yx")),
+      matrices.elements<Eigen::Matrix3d>("yx"),
       makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{2, 12}));
 }
 
@@ -79,14 +76,14 @@ TEST_F(VariableStructureTest, binned) {
                     .slice({Dim::InternalStructureComponent, i}),
                 elems.slice({Dim::X, i}).slice({Dim::Y, x, x + 1}));
     }
-    EXPECT_EQ(var.elements<Eigen::Vector3d>(std::string("x"))
-                  .values<core::bin<Variable>>()[x],
-              elems.slice({Dim::X, 0}).slice({Dim::Y, x, x + 1}));
-    EXPECT_EQ(var.elements<Eigen::Vector3d>(std::string("y"))
-                  .values<core::bin<Variable>>()[x],
-              elems.slice({Dim::X, 1}).slice({Dim::Y, x, x + 1}));
-    EXPECT_EQ(var.elements<Eigen::Vector3d>(std::string("z"))
-                  .values<core::bin<Variable>>()[x],
-              elems.slice({Dim::X, 2}).slice({Dim::Y, x, x + 1}));
+    EXPECT_EQ(
+        var.elements<Eigen::Vector3d>("x").values<core::bin<Variable>>()[x],
+        elems.slice({Dim::X, 0}).slice({Dim::Y, x, x + 1}));
+    EXPECT_EQ(
+        var.elements<Eigen::Vector3d>("y").values<core::bin<Variable>>()[x],
+        elems.slice({Dim::X, 1}).slice({Dim::Y, x, x + 1}));
+    EXPECT_EQ(
+        var.elements<Eigen::Vector3d>("z").values<core::bin<Variable>>()[x],
+        elems.slice({Dim::X, 2}).slice({Dim::Y, x, x + 1}));
   }
 }
