@@ -2,6 +2,7 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/variable/bins.h"
 #include "scipp/variable/element_array_variable.tcc"
 #include "scipp/variable/structure_array_model.h"
 
@@ -12,6 +13,10 @@ constexpr auto structure_element_offset{
     T::missing_specialization_of_structure_element_offset};
 
 template <class T, class... Is> Variable Variable::elements(Is... index) const {
+  if (dtype() == core::dtype<core::bin<Variable>>) {
+    const auto &[idx, dim, buf] = constituents<Variable>();
+    return make_bins_no_validate(idx, dim, buf.template elements<T>(index...));
+  }
   constexpr auto N = model_t<T>::element_count;
   auto elements(*this);
   elements.m_object = cast<T>(*this).elements();
@@ -54,14 +59,14 @@ template <class T> struct arg_type;
 template <class T, class U> struct arg_type<T(U)> { using type = U; };
 
 /// Instantiate Variable for structure dtype with element access.
-#define INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(name, T, Elem, ...)               \
+#define INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(name, T, Elem)                    \
   template <> struct model<arg_type<void(T)>::type> {                          \
     using type = StructureArrayModel<arg_type<void(T)>::type, Elem>;           \
   };                                                                           \
   template SCIPP_EXPORT Variable Variable::elements<arg_type<void(T)>::type>() \
       const;                                                                   \
   template SCIPP_EXPORT Variable Variable::elements<arg_type<void(T)>::type>(  \
-      __VA_ARGS__) const;                                                      \
+      const std::string &) const;                                              \
   INSTANTIATE_ELEMENT_ARRAY_VARIABLE(name, arg_type<void(T)>::type)
 
 } // namespace scipp::variable

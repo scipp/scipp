@@ -8,27 +8,28 @@
 
 namespace scipp::variable {
 
+// TODO For now we use hard-coded field names and offsets. The intention is to
+// generalize StructureArrayModel to support more general structures. Field
+// names and sizes/offsets would then be stored as part of the model, and would
+// be initialized dynamically at runtime.
 template <>
-constexpr auto structure_element_offset<Eigen::Vector3d> = [](scipp::index i) {
-  if (i < 0 || i > 2)
-    throw std::out_of_range("out of range index (" + std::to_string(i) +
-                            ") for element access of vector of length 3.");
-  return i;
-};
+constexpr auto structure_element_offset<Eigen::Vector3d> =
+    [](const std::string &key) {
+      static std::map<std::string, scipp::index> offsets{
+          {"x", 0}, {"y", 1}, {"z", 2}};
+      return offsets.at(key);
+    };
 
 template <>
 constexpr auto structure_element_offset<Eigen::Matrix3d> =
-    [](scipp::index i, scipp::index j) {
-      if (i < 0 || i > 2 || j < 0 || j > 2)
-        throw std::out_of_range("out of range indices (" + std::to_string(i) +
-                                "," + std::to_string(j) +
-                                ") for element access of 3x3 matrix.");
-      return 3 * j + i;
+    [](const std::string &key) {
+      static std::map<std::string, scipp::index> offsets{
+          {"xx", 0}, {"xy", 3}, {"xz", 6}, {"yx", 1}, {"yy", 4},
+          {"yz", 7}, {"zx", 2}, {"zy", 5}, {"zz", 8}};
+      return offsets.at(key);
     };
 
-INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(vector_3_float64, Eigen::Vector3d, double,
-                                     scipp::index)
-INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(matrix_3_float64, Eigen::Matrix3d, double,
-                                     scipp::index, scipp::index)
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(vector_3_float64, Eigen::Vector3d, double)
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(matrix_3_float64, Eigen::Matrix3d, double)
 
 } // namespace scipp::variable
