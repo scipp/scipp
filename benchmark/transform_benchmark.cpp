@@ -58,7 +58,7 @@ static void BM_transform_in_place(benchmark::State &state) {
       state,
       [](auto &state_, auto &&... args) {
         for ([[maybe_unused]] auto _ : state_) {
-          transform_in_place<Types>(args...);
+          transform_in_place<Types>(args..., "");
         }
       },
       state.range(1));
@@ -71,7 +71,7 @@ static void BM_transform_in_place_view(benchmark::State &state) {
         Variable a_view(a);
         const Variable b_view(b);
         for ([[maybe_unused]] auto _ : state_) {
-          transform_in_place<Types>(a_view, b_view, op);
+          transform_in_place<Types>(a_view, b_view, op, "");
         }
       },
       state.range(1));
@@ -86,7 +86,7 @@ static void BM_transform_in_place_slice(benchmark::State &state) {
         auto a_slice = a.slice({Dim::X, 0, 99});
         auto b_slice = b.slice({Dim::X, 1, 100});
         for ([[maybe_unused]] auto _ : state_) {
-          transform_in_place<Types>(a_slice, b_slice, op);
+          transform_in_place<Types>(a_slice, b_slice, op, "");
         }
       },
       state.range(1));
@@ -116,7 +116,7 @@ static void BM_transform_in_place_transposed(benchmark::State &state) {
   static constexpr auto op{[](auto &a_, const auto &b_) { a_ *= b_; }};
 
   for ([[maybe_unused]] auto _ : state) {
-    transform_in_place<Types>(a, b, op);
+    transform_in_place<Types>(a, b, op, "");
   }
 
   const scipp::index variance_factor = use_variances ? 2 : 1;
@@ -136,44 +136,12 @@ BENCHMARK(BM_transform_in_place_transposed)
     ->RangeMultiplier(2)
     ->Ranges({{1, 2ul << 18ul}, {false, true}});
 
-static void BM_accumulate_in_place(benchmark::State &state) {
-  const auto nx = 1000;
-  const auto ny = state.range(0);
-  const auto n = nx * ny;
-  const bool use_variances = state.range(1);
-  const bool outer = state.range(2);
-  auto a = makeBenchmarkVariable(Dimensions{{Dim::X, nx}}, use_variances);
-  auto b = makeBenchmarkVariable(outer ? Dimensions{{Dim::Y, ny}, {Dim::X, nx}}
-                                       : Dimensions{{Dim::X, nx}, {Dim::Y, ny}},
-                                 use_variances);
-  static constexpr auto op{[](auto &a_, const auto &b_) { a_ += b_; }};
-
-  for ([[maybe_unused]] auto _ : state) {
-    accumulate_in_place<Types>(a, b, op);
-  }
-
-  const scipp::index variance_factor = use_variances ? 2 : 1;
-  state.SetItemsProcessed(state.iterations() * n * variance_factor);
-  state.SetBytesProcessed(state.iterations() * n * variance_factor *
-                          sizeof(double));
-  state.counters["n"] = n;
-  state.counters["variances"] = use_variances;
-  state.counters["accumulate-outer"] = outer;
-  state.counters["size"] = benchmark::Counter(
-      static_cast<double>(n * variance_factor * sizeof(double)),
-      benchmark::Counter::kDefaults, benchmark::Counter::OneK::kIs1024);
-}
-
-BENCHMARK(BM_accumulate_in_place)
-    ->RangeMultiplier(2)
-    ->Ranges({{1, 2ul << 18ul}, {false, true}, {false, true}});
-
 static void BM_transform(benchmark::State &state) {
   run<false>(
       state,
       [](auto &state_, auto &&... args) {
         for ([[maybe_unused]] auto _ : state_) {
-          auto out = transform<Types>(args...);
+          auto out = transform<Types>(args..., "");
           state_.PauseTiming();
           out = Variable();
           state_.ResumeTiming();
@@ -189,7 +157,7 @@ static void BM_transform_view(benchmark::State &state) {
         Variable a_view(a);
         const Variable b_view(b);
         for ([[maybe_unused]] auto _ : state_) {
-          auto out = transform<Types>(a_view, b_view, op);
+          auto out = transform<Types>(a_view, b_view, op, "");
           state_.PauseTiming();
           out = Variable();
           state_.ResumeTiming();
@@ -207,7 +175,7 @@ static void BM_transform_slice(benchmark::State &state) {
         auto a_slice = a.slice({Dim::X, 0, 99});
         auto b_slice = b.slice({Dim::X, 1, 100});
         for ([[maybe_unused]] auto _ : state_) {
-          auto out = transform<Types>(a_slice, b_slice, op);
+          auto out = transform<Types>(a_slice, b_slice, op, "");
           state_.PauseTiming();
           out = Variable();
           state_.ResumeTiming();
@@ -257,7 +225,7 @@ static void BM_transform_in_place_events(benchmark::State &state) {
   static constexpr auto op{[](auto &a_, const auto &b_) { a_ *= b_; }};
 
   for (auto _ : state) {
-    transform_in_place<Types>(a, b, op);
+    transform_in_place<Types>(a, b, op, "");
   }
 
   const scipp::index variance_factor = variances ? 2 : 1;
@@ -293,7 +261,8 @@ static void BM_transform_buckets_inplace_unary(benchmark::State &state) {
   Variable var = make_bins(indices, Dim::X, buffer);
 
   for (auto _ : state) {
-    transform_in_place<double>(var, [](auto &x) { x += x; });
+    transform_in_place<double>(
+        var, [](auto &x) { x += x; }, "");
   }
 
   state.SetItemsProcessed(state.iterations() * n_bucket);

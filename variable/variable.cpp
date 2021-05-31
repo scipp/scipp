@@ -22,6 +22,7 @@ Variable::Variable(const Variable &parent, const Dimensions &dims)
     : m_dims(dims), m_strides(dims),
       m_object(parent.data().makeDefaultFromParent(dims.volume())) {}
 
+// TODO there is no size check here!
 Variable::Variable(const Dimensions &dims, VariableConceptHandle data)
     : m_dims(dims), m_strides(dims), m_object(std::move(data)) {}
 
@@ -44,37 +45,36 @@ DType Variable::dtype() const { return data().dtype(); }
 
 bool Variable::hasVariances() const { return data().hasVariances(); }
 
-void Variable::setDims(const Dimensions &dimensions) {
-  if (dimensions.volume() == dims().volume()) {
-    if (dimensions != dims()) {
-      m_dims = dimensions;
-      m_strides = Strides(dimensions);
-    }
-    return;
-  }
-  m_dims = dimensions;
-  m_strides = Strides(dimensions);
-  m_object = m_object->makeDefaultFromParent(dimensions.volume());
-}
-
 void Variable::expectCanSetUnit(const units::Unit &unit) const {
   if (this->unit() != unit && is_slice())
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
 }
 
-units::Unit Variable::unit() const { return m_object->unit(); }
+const units::Unit &Variable::unit() const { return m_object->unit(); }
 
 void Variable::setUnit(const units::Unit &unit) {
-  expectCanSetUnit(unit);
   expectWritable();
+  expectCanSetUnit(unit);
   m_object->setUnit(unit);
 }
 
 bool Variable::operator==(const Variable &other) const {
+  if (is_same(other))
+    return true;
   if (!is_valid() || !other.is_valid())
     return is_valid() == other.is_valid();
   // Note: Not comparing strides
+  if (unit() != other.unit())
+    return false;
+  if (dims() != other.dims())
+    return false;
+  if (dtype() != other.dtype())
+    return false;
+  if (hasVariances() != other.hasVariances())
+    return false;
+  if (dims().volume() == 0 && dims() == other.dims())
+    return true;
   return dims() == other.dims() && data().equals(*this, other);
 }
 
@@ -95,6 +95,8 @@ scipp::span<const scipp::index> Variable::strides() const {
   return scipp::span<const scipp::index>(&*m_strides.begin(),
                                          &*m_strides.begin() + dims().ndim());
 }
+
+scipp::index Variable::offset() const { return m_offset; }
 
 core::ElementArrayViewParams Variable::array_params() const noexcept {
   return {m_offset, dims(), m_strides, {}};
@@ -143,6 +145,31 @@ Variable &Variable::setSlice(const Slice params, const Variable &data) {
   return *this;
 }
 
+Variable Variable::broadcast(const Dimensions &target) const {
+  expect::includes(target, dims());
+  auto out = target.volume() == dims().volume() ? *this : as_const();
+  out.m_dims = target;
+  scipp::index i = 0;
+  for (const auto &d : target.labels())
+    out.m_strides[i++] = dims().contains(d) ? m_strides[dims().index(d)] : 0;
+  return out;
+}
+
+Variable Variable::fold(const Dim dim, const Dimensions &target) const {
+  auto out(*this);
+  out.m_dims = core::fold(dims(), dim, target);
+  const Strides substrides(target);
+  scipp::index i_out = 0;
+  for (scipp::index i_in = 0; i_in < dims().ndim(); ++i_in) {
+    if (dims().label(i_in) == dim)
+      for (scipp::index i_target = 0; i_target < target.ndim(); ++i_target)
+        out.m_strides[i_out++] = m_strides[i_in] * substrides[i_target];
+    else
+      out.m_strides[i_out++] = m_strides[i_in];
+  }
+  return out;
+}
+
 Variable Variable::transpose(const std::vector<Dim> &order) const {
   auto transposed(*this);
   transposed.m_strides = core::transpose(m_strides, dims(), order);
@@ -151,8 +178,7 @@ Variable Variable::transpose(const std::vector<Dim> &order) const {
 }
 
 void Variable::rename(const Dim from, const Dim to) {
-  if (dims().contains(from))
-    m_dims.relabel(dims().index(from), to);
+  m_dims.replace_key(from, to);
 }
 
 bool Variable::is_valid() const noexcept { return m_object.operator bool(); }
@@ -171,6 +197,7 @@ bool Variable::is_same(const Variable &other) const noexcept {
 }
 
 void Variable::setVariances(const Variable &v) {
+  expectWritable();
   if (is_slice())
     throw except::VariancesError(
         "Cannot add variances via sliced view of Variable.");

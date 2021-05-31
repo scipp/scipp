@@ -143,3 +143,9 @@ class PlotView:
 
     def set_axis_label(self, *args, **kwargs):
         return self.figure.set_axis_label(*args, **kwargs)
+
+    def set_draw_no_delay(self, *args, **kwargs):
+        """
+        Forward set_draw_no_delay to the `figure`.
+        """
+        self.figure.set_draw_no_delay(*args, **kwargs)

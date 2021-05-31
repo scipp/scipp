@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .model import PlotModel
-from .tools import to_bin_centers, fix_empty_range
+from .tools import to_bin_centers, fix_empty_range, to_dict
 from .._scipp import core as sc
 import numpy as np
 
@@ -30,6 +30,10 @@ class PlotModel3d(PlotModel):
         # never change
         if self.positions is not None:
             self.pos_coord = scipp_obj_dict[self.name].meta[self.positions]
+            # TODO Something expects a flat position array?
+            self.pos_coord = sc.flatten(self.pos_coord,
+                                        dims=self.pos_coord.dims,
+                                        to='dummy')
             self.pos_array = np.array(self.pos_coord.values, dtype=np.float32)
 
     def initialize(self, cut_options):
@@ -121,7 +125,7 @@ class PlotModel3d(PlotModel):
                                  variances=np.zeros(shape),
                                  dtype=data_slice.data.dtype,
                                  unit=sc.units.one),
-                masks=data_slice.masks)
+                masks=to_dict(data_slice.masks))
 
             self.dslice *= data_slice.data
         else:
@@ -178,8 +182,8 @@ class PlotModel3d(PlotModel):
         Find the extents of the box that contains all the positions.
         """
         extents = {}
-        for xyz in "xyz":
-            x = getattr(sc.geometry, xyz)(self.pos_coord)
+        pos = self.pos_coord
+        for xyz, x in zip(['x', 'y', 'z'], [pos.x1, pos.x2, pos.x3]):
             xmin = sc.min(x).value
             xmax = sc.max(x).value
             if pixel_size is not None:

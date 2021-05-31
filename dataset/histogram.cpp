@@ -93,7 +93,7 @@ namespace {
 template <typename T> bool is_histogram_impl(const T &a, const Dim dim) {
   const auto dims = a.dims();
   const auto coords = a.coords();
-  return dims.count(dim) == 1 && coords.contains(dim) &&
+  return dims.contains(dim) && coords.contains(dim) &&
          coords[dim].dims().contains(dim) &&
          coords[dim].dims()[dim] == dims.at(dim) + 1;
 }

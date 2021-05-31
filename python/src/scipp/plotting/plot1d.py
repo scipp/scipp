@@ -5,9 +5,9 @@
 from .. import config
 from .controller1d import PlotController1d
 from .model1d import PlotModel1d
+from .objects import Plot
 from .panel1d import PlotPanel1d
 from .profile import PlotProfile
-from .sciplot import SciPlot
 from .view1d import PlotView1d
 from .widgets import PlotWidgets
 
@@ -21,14 +21,14 @@ def plot1d(*args, filename=None, **kwargs):
     If the data contains more than one dimensions, sliders are added to
     navigate to extra dimensions.
     """
-    sp = SciPlot1d(*args, **kwargs)
+    sp = Plot1d(*args, **kwargs)
     if filename is not None:
         sp.savefig(filename)
     else:
         return sp
 
 
-class SciPlot1d(SciPlot):
+class Plot1d(Plot):
     """
     Class for 1 dimensional plots.
 

@@ -4,28 +4,20 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <limits>
-#include <memory>
-#include <unordered_map>
-#include <utility>
 #include <vector>
 
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
-#include "scipp/common/span.h"
+#include "scipp/core/sizes.h"
 #include "scipp/units/dim.h"
 
 namespace scipp::core {
-
-constexpr int32_t NDIM_MAX = 6;
-
-class Sizes;
 
 /// Dimensions are accessed very frequently, so packing everything into a single
 /// (64 Byte) cacheline should be advantageous.
 /// We follow the numpy convention: First dimension is outer dimension, last
 /// dimension is inner dimension.
-class SCIPP_CORE_EXPORT Dimensions {
+class SCIPP_CORE_EXPORT Dimensions : public Sizes {
 public:
   constexpr Dimensions() noexcept {}
   Dimensions(const Dim dim, const scipp::index size)
@@ -36,15 +28,14 @@ public:
     for (const auto &[label, size] : dims)
       addInner(label, size);
   }
-  explicit Dimensions(const Sizes &sizes);
 
   constexpr bool operator==(const Dimensions &other) const noexcept {
-    if (m_ndim != other.m_ndim)
+    if (ndim() != other.ndim())
       return false;
-    for (int32_t i = 0; i < NDIM_MAX; ++i) {
-      if (m_shape[i] != other.m_shape[i])
+    for (int32_t i = 0; i < ndim(); ++i) {
+      if (shape()[i] != other.shape()[i])
         return false;
-      if (m_dims[i] != other.m_dims[i])
+      if (labels()[i] != other.labels()[i])
         return false;
     }
     return true;
@@ -53,85 +44,31 @@ public:
     return !(*this == other);
   }
 
-  constexpr bool empty() const noexcept { return m_ndim == 0; }
+  /// Return the shape of the space defined by *this.
+  constexpr scipp::span<const scipp::index> shape() const &noexcept {
+    return sizes();
+  }
 
   /// Return the volume of the space defined by *this.
   constexpr scipp::index volume() const noexcept {
     scipp::index volume{1};
-    for (int32_t dim = 0; dim < m_ndim; ++dim)
-      volume *= m_shape[dim];
+    for (const auto &length : shape())
+      volume *= length;
     return volume;
   }
 
-  scipp::span<const scipp::index> shape() const && = delete;
-  /// Return the shape of the space defined by *this.
-  constexpr scipp::span<const scipp::index> shape() const &noexcept {
-    return {m_shape, m_shape + m_ndim};
-  }
-
   /// Return number of dims
-  constexpr uint16_t ndim() const noexcept { return m_ndim; }
-
-  scipp::span<const Dim> labels() const && = delete;
-  /// Return the labels of the space defined by *this.
-  constexpr scipp::span<const Dim> labels() const &noexcept {
-    return {m_dims, m_dims + m_ndim};
-  }
-
-  scipp::index operator[](const Dim dim) const;
-  scipp::index at(const Dim dim) const;
+  constexpr scipp::index ndim() const noexcept { return Sizes::size(); }
 
   Dim inner() const noexcept;
 
-  /// Return true if `dim` is one of the labels in *this.
-  constexpr bool contains(const Dim dim) const noexcept {
-    for (int32_t i = 0; i < m_ndim; ++i)
-      if (m_dims[i] == dim)
-        return true;
-    return false;
-  }
-
-  /// Returns the number of occurences of `dim` in *this.
-  ///
-  /// This exists for convenience so generic code supporting std::unordered_map
-  /// can be written.
-  constexpr scipp::index count(const Dim dim) const noexcept {
-    return contains(dim) ? 1 : 0;
-  }
-
-  bool contains(const Dimensions &other) const noexcept;
-
-  bool isContiguousIn(const Dimensions &parent) const;
-
-  // TODO Some of the following methods are probably legacy and should be
-  // considered for removal.
   Dim label(const scipp::index i) const;
-  void relabel(const scipp::index i, const Dim label);
   scipp::index size(const scipp::index i) const;
   scipp::index offset(const Dim label) const;
-  void resize(const Dim label, const scipp::index size);
-  void resize(const scipp::index i, const scipp::index size);
-  void erase(const Dim label);
 
   // TODO Better names required.
   void add(const Dim label, const scipp::index size);
   void addInner(const Dim label, const scipp::index size);
-
-  int32_t index(const Dim label) const;
-
-private:
-  scipp::index &at(const Dim dim);
-  // This is 56 Byte, or would be 40 Byte for small size 1.
-  // boost::container::small_vector<std::pair<Dim, scipp::index>, 2> m_dims;
-  // Support at most 6 dimensions, should be sufficient?
-  // 6*8 Byte = 48 Byte
-  // TODO: can we find a good way to initialise the values automatically when
-  // NDIM_MAX is changed?
-  scipp::index m_shape[NDIM_MAX]{-1, -1, -1, -1, -1, -1};
-  int16_t m_ndim{0};
-  /// Dimensions labels.
-  Dim m_dims[NDIM_MAX]{Dim::Invalid, Dim::Invalid, Dim::Invalid,
-                       Dim::Invalid, Dim::Invalid, Dim::Invalid};
 };
 
 [[nodiscard]] SCIPP_CORE_EXPORT constexpr Dimensions
@@ -157,10 +94,6 @@ transpose(const Dimensions &dims, const std::vector<Dim> &labels = {});
 [[nodiscard]] SCIPP_CORE_EXPORT Dimensions fold(const Dimensions &old_dims,
                                                 const Dim from_dim,
                                                 const Dimensions &to_dims);
-
-[[nodiscard]] SCIPP_CORE_EXPORT Dimensions
-flatten(const Dimensions &old_dims, const scipp::span<const Dim> from_labels,
-        const Dim to_dim);
 
 } // namespace scipp::core
 

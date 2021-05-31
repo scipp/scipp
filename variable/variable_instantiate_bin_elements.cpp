@@ -2,14 +2,14 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/variable/bin_variable.tcc"
+#include "scipp/variable/bin_array_variable.tcc"
 #include "scipp/variable/bins.h"
+
+#include "operations_common.h"
 
 namespace scipp::variable {
 
-INSTANTIATE_VARIABLE(pair_int64, std::pair<int64_t, int64_t>)
-INSTANTIATE_VARIABLE(pair_int32, std::pair<int32_t, int32_t>)
-INSTANTIATE_BIN_VARIABLE(VariableView, bucket<Variable>)
+INSTANTIATE_BIN_ARRAY_VARIABLE(VariableView, Variable)
 
 template <class T> class BinVariableMakerVariable : public BinVariableMaker<T> {
 private:
@@ -29,12 +29,12 @@ private:
 };
 
 void expect_valid_bin_indices(const VariableConceptHandle &indices,
-                              const Dim dim, const Dimensions &buffer_dims) {
-  auto copy = requireT<const DataModel<scipp::index_pair>>(*indices);
+                              const Dim dim, const Sizes &buffer_sizes) {
+  auto copy = requireT<const ElementArrayModel<scipp::index_pair>>(*indices);
   const auto vals = copy.values();
   std::sort(vals.begin(), vals.end());
   if ((!vals.empty() && (vals.begin()->first < 0)) ||
-      (!vals.empty() && ((vals.end() - 1)->second > buffer_dims[dim])))
+      (!vals.empty() && ((vals.end() - 1)->second > buffer_sizes[dim])))
     throw except::SliceError("Bin indices out of range");
   if (std::adjacent_find(vals.begin(), vals.end(),
                          [](const auto a, const auto b) {

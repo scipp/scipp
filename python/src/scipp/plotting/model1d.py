@@ -14,7 +14,7 @@ class PlotModel1d(PlotModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for name, array in self.data_arrays.items():
-            if array.data.bins is not None:
+            if array.bins is not None:
                 raise RuntimeError(
                     "1-D plots of binned data not implemented. Histogram "
                     "manually, e.g., using `plot(array.bins.sum())`")

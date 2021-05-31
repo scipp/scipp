@@ -90,8 +90,8 @@ public:
   [[maybe_unused]] DataArray &setSlice(const Slice &s, const Variable &var);
 
   DataArray view() const;
-  DataArray view_with_coords(const Coords &coords,
-                             const std::string &name) const;
+  DataArray view_with_coords(const Coords &coords, const std::string &name,
+                             const bool readonly) const;
 
   [[nodiscard]] DataArray as_const() const;
 
@@ -106,6 +106,7 @@ private:
   std::shared_ptr<Coords> m_coords;
   std::shared_ptr<Masks> m_masks;
   std::shared_ptr<Attrs> m_attrs;
+  bool m_readonly{false};
 };
 
 SCIPP_DATASET_EXPORT bool operator==(const DataArray &a, const DataArray &b);

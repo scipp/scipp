@@ -594,6 +594,24 @@ TEST_F(GroupbyLogicalTest, all) {
                     makeVariable<double>(Dimensions{Dim("labels2"), 2},
                                          units::m, Values{1, 3}));
   EXPECT_EQ(groupby(d, Dim("labels2")).all(Dim::X), expected);
+  d["a"].masks().set("mask", makeVariable<bool>(Dimensions{Dim::X, 3},
+                                                Values{false, true, false}));
+  expected.setData(
+      "a", makeVariable<bool>(Dimensions{{Dim::Z, 2}, {Dim("labels2"), 2}},
+                              Values{true, false, true, false}));
+  EXPECT_EQ(groupby(d, Dim("labels2")).all(Dim::X), expected);
+}
+
+TEST_F(GroupbyLogicalTest, all_empty_bin) {
+  const auto edges = makeVariable<double>(Dimensions{Dim("labels2"), 3},
+                                          units::m, Values{0, 1, 3});
+  Dataset expected;
+  // No contribution in first bin => init to `true`
+  expected.setData(
+      "a", makeVariable<bool>(Dimensions{{Dim::Z, 2}, {Dim("labels2"), 2}},
+                              Values{true, false, true, true}));
+  expected.setCoord(Dim("labels2"), edges);
+  EXPECT_EQ(groupby(d, Dim("labels2"), edges).all(Dim::X), expected);
 }
 
 TEST_F(GroupbyLogicalTest, any) {
@@ -605,6 +623,24 @@ TEST_F(GroupbyLogicalTest, any) {
                     makeVariable<double>(Dimensions{Dim("labels2"), 2},
                                          units::m, Values{1, 3}));
   EXPECT_EQ(groupby(d, Dim("labels2")).any(Dim::X), expected);
+  d["a"].masks().set("mask", makeVariable<bool>(Dimensions{Dim::X, 3},
+                                                Values{true, false, false}));
+  expected.setData(
+      "a", makeVariable<bool>(Dimensions{{Dim::Z, 2}, {Dim("labels2"), 2}},
+                              Values{false, false, true, false}));
+  EXPECT_EQ(groupby(d, Dim("labels2")).any(Dim::X), expected);
+}
+
+TEST_F(GroupbyLogicalTest, any_empty_bin) {
+  const auto edges = makeVariable<double>(Dimensions{Dim("labels2"), 3},
+                                          units::m, Values{0, 1, 3});
+  Dataset expected;
+  // No contribution in first bin => init to `false`
+  expected.setData(
+      "a", makeVariable<bool>(Dimensions{{Dim::Z, 2}, {Dim("labels2"), 2}},
+                              Values{false, true, false, true}));
+  expected.setCoord(Dim("labels2"), edges);
+  EXPECT_EQ(groupby(d, Dim("labels2"), edges).any(Dim::X), expected);
 }
 
 struct GroupbyMinMaxTest : public ::testing::Test {
@@ -637,6 +673,24 @@ TEST_F(GroupbyMinMaxTest, min) {
                     makeVariable<double>(Dimensions{Dim("labels2"), 2},
                                          units::m, Values{1, 3}));
   EXPECT_EQ(groupby(d, Dim("labels2")).min(Dim::X), expected);
+  d["a"].masks().set("mask", makeVariable<bool>(Dimensions{Dim::X, 3},
+                                                Values{true, false, false}));
+  expected.setData(
+      "a", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim("labels2"), 2}},
+                                Values{2, 3, 5, 6}));
+  EXPECT_EQ(groupby(d, Dim("labels2")).min(Dim::X), expected);
+}
+
+TEST_F(GroupbyMinMaxTest, min_empty_bin) {
+  const auto edges = makeVariable<double>(Dimensions{Dim("labels2"), 3},
+                                          units::m, Values{0, 1, 3});
+  Dataset expected;
+  const auto max = std::numeric_limits<double>::max();
+  expected.setData(
+      "a", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim("labels2"), 2}},
+                                Values{max, 1., max, 4.}));
+  expected.setCoord(Dim("labels2"), edges);
+  EXPECT_EQ(groupby(d, Dim("labels2"), edges).min(Dim::X), expected);
 }
 
 TEST_F(GroupbyMinMaxTest, max) {
@@ -648,4 +702,22 @@ TEST_F(GroupbyMinMaxTest, max) {
                     makeVariable<double>(Dimensions{Dim("labels2"), 2},
                                          units::m, Values{1, 3}));
   EXPECT_EQ(groupby(d, Dim("labels2")).max(Dim::X), expected);
+  d["a"].masks().set("mask", makeVariable<bool>(Dimensions{Dim::X, 3},
+                                                Values{false, true, false}));
+  expected.setData(
+      "a", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim("labels2"), 2}},
+                                Values{1, 3, 4, 6}));
+  EXPECT_EQ(groupby(d, Dim("labels2")).max(Dim::X), expected);
+}
+
+TEST_F(GroupbyMinMaxTest, max_empty_bin) {
+  const auto edges = makeVariable<double>(Dimensions{Dim("labels2"), 3},
+                                          units::m, Values{0, 1, 3});
+  Dataset expected;
+  const auto lowest = std::numeric_limits<double>::lowest();
+  expected.setData(
+      "a", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim("labels2"), 2}},
+                                Values{lowest, 2., lowest, 5.}));
+  expected.setCoord(Dim("labels2"), edges);
+  EXPECT_EQ(groupby(d, Dim("labels2"), edges).max(Dim::X), expected);
 }

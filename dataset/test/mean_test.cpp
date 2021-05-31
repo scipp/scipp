@@ -157,7 +157,7 @@ TYPED_TEST(MeanTest, nanmean_masked_data_with_nans) {
     // First element NaN, second NaN AND masked, third masked, forth non-masked
     // finite number
     const auto mean = makeVariable<typename TestFixture::ReturnType>(
-        units::m, Shape{1}, Values{(0.0 + 0.0 + 0.0 + 4.0) / 1});
+        units::m, Values{(0.0 + 0.0 + 0.0 + 4.0) / 1});
     EXPECT_EQ(nanmean(a).data(), mean);
   }
 }
@@ -234,4 +234,14 @@ TYPED_TEST(MeanTest, nanmean_all_dims) {
     da.values<TypeParam>()[3] = TypeParam(NAN);
     EXPECT_EQ(nanmean(da).data(), makeVariable<TypeParam>(Values{2.0}));
   }
+}
+
+TEST(NanMeanTest, masked) {
+  DataArray da{makeVariable<double>(
+      Dims{Dim::X}, Shape{5}, Values{double(NAN), 2.0, 3.0, double(NAN), 5.0})};
+  da.masks().set("mask",
+                 makeVariable<bool>(Dims{Dim::X}, Shape{5},
+                                    Values{false, false, true, true, false}));
+  EXPECT_EQ(nanmean(da, Dim::X), nanmean(da));
+  EXPECT_EQ(nanmean(da, Dim::X).data(), makeVariable<double>(Values{3.5}));
 }

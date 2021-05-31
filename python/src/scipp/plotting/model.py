@@ -2,11 +2,10 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .helpers import PlotArray
 from .formatters import VectorFormatter, StringFormatter, \
                         DateFormatter, LabelFormatter
 from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
-                   vars_to_err, find_limits
+                   vars_to_err, find_limits, to_dict
 from .._utils import name_with_unit, vector_type, string_type, datetime_type
 from .._scipp import core as sc
 import numpy as np
@@ -51,6 +50,7 @@ class PlotModel:
 
         # The main container of DataArrays
         self.data_arrays = {}
+        self.backup = {}
         self.coord_info = {}
         self.dim_to_shape = dim_to_shape
         self.axformatter = {}
@@ -86,14 +86,14 @@ class PlotModel:
                 else:
                     coord_list[dim] = to_bin_edges(coord, dim)
 
-            # Create a PlotArray helper object that supports slicing where new
-            # bin-edge coordinates can be attached to the data
-            self.data_arrays[name] = PlotArray(data=array.data,
-                                               meta=coord_list)
+            self.backup.update({name: {"array": array, "coords": coord_list}})
 
-            # Include masks
-            for m in array.masks:
-                self.data_arrays[name].masks[m] = array.masks[m]
+        # Save a copy of the name for simpler access
+        # Note this needs to be done before calling update_data_arrays
+        self.name = name
+
+        # Update the internal dict of arrays from the original input
+        self.update_data_arrays()
 
         # Store dim of multi-dimensional coordinate if present
         self.multid_coord = None
@@ -104,8 +104,6 @@ class PlotModel:
 
         # The main currently displayed data slice
         self.dslice = None
-        # Save a copy of the name for simpler access
-        self.name = name
 
     def _axis_coord_and_formatter(self, dim, data_array, dim_to_shape,
                                   dim_label_map):
@@ -228,6 +226,13 @@ class PlotModel:
                 profile.data.variances.ravel())
         values["masks"] = self._make_masks(profile, mask_info=mask_info)
         return values
+
+    def update_data_arrays(self):
+        for name, item in self.backup.items():
+            self.data_arrays[name] = sc.DataArray(data=item["array"].data,
+                                                  coords=item["coords"],
+                                                  masks=to_dict(
+                                                      item["array"].masks))
 
     def get_axformatter(self, name, dim):
         """

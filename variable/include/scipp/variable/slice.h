@@ -9,10 +9,10 @@
 namespace scipp::variable {
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT std::tuple<Dim, scipp::index>
-get_slice_params(const Dimensions &dims, const Variable &coord,
+get_slice_params(const Sizes &sizes, const Variable &coord,
                  const Variable &value);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT std::tuple<Dim, scipp::index, scipp::index>
-get_slice_params(const Dimensions &dims, const Variable &coord,
+get_slice_params(const Sizes &sizes, const Variable &coord,
                  const Variable &begin, const Variable &end);
 
 } // namespace scipp::variable

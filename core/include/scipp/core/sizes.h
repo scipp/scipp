@@ -4,53 +4,82 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <unordered_map>
-
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
-#include "scipp/core/dimensions.h"
+#include "scipp/common/span.h"
 #include "scipp/core/slice.h"
 #include "scipp/units/dim.h"
 
 namespace scipp::core {
 
-/// Sibling of class Dimensions, but unordered.
-class SCIPP_CORE_EXPORT Sizes {
+constexpr int32_t NDIM_MAX = 6;
+
+class Dimensions;
+
+/// Small (fixed maximum size) and stable (preserving key order) map
+template <class Key, class Value, int16_t Capacity>
+class SCIPP_CORE_EXPORT small_stable_map {
 public:
-  Sizes() = default;
-  Sizes(const Dimensions &dims);
-  Sizes(const std::unordered_map<Dim, scipp::index> &sizes) : m_sizes(sizes) {}
+  static constexpr auto capacity = Capacity;
 
-  bool operator==(const Sizes &other) const;
-  bool operator!=(const Sizes &other) const;
+  small_stable_map() = default;
 
-  bool contains(const Dim dim) const noexcept {
-    return m_sizes.count(dim) != 0;
+  bool operator==(const small_stable_map &other) const noexcept;
+  bool operator!=(const small_stable_map &other) const noexcept;
+
+  auto begin() const noexcept { return m_keys.begin(); }
+  auto end() const noexcept { return m_keys.begin() + size(); }
+  auto rbegin() const noexcept { return m_keys.rbegin() - size() + NDIM_MAX; }
+  auto rend() const noexcept { return m_keys.rend(); }
+  typename std::array<Key, Capacity>::const_iterator find(const Key &key) const;
+  [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
+  constexpr scipp::index size() const noexcept { return m_size; }
+  bool contains(const Key &key) const;
+  scipp::index index(const Key &key) const;
+  const Value &operator[](const Key &key) const;
+  const Value &at(const Key &key) const;
+  void assign(const Key &key, const Value &value);
+  void insert_left(const Key &key, const Value &value);
+  void insert_right(const Key &key, const Value &value);
+  void erase(const Key &key);
+  void clear() noexcept;
+  void replace_key(const Key &from, const Key &to);
+  constexpr scipp::span<const Key> keys() const &noexcept {
+    return {m_keys.data(), static_cast<size_t>(size())};
   }
-
-  scipp::index count(const Dim dim) const noexcept {
-    return m_sizes.count(dim);
+  constexpr scipp::span<const Value> values() const &noexcept {
+    return {m_values.data(), static_cast<size_t>(size())};
   }
-
-  auto begin() const { return m_sizes.begin(); }
-  auto end() const { return m_sizes.end(); }
-
-  void clear();
-
-  scipp::index operator[](const Dim dim) const;
-  scipp::index &operator[](const Dim dim);
-  scipp::index at(const Dim dim) const;
-  scipp::index &at(const Dim dim);
-  void set(const Dim dim, const scipp::index size);
-  void erase(const Dim dim);
-  void relabel(const Dim from, const Dim to);
-  bool contains(const Dimensions &dims) const;
-  bool contains(const Sizes &sizes) const;
-  Sizes slice(const Slice &params) const;
 
 private:
-  // TODO More efficient implementation without memory allocations.
-  std::unordered_map<Dim, scipp::index> m_sizes;
+  int16_t m_size{0};
+  std::array<Key, Capacity> m_keys{};
+  std::array<Value, Capacity> m_values{};
+};
+
+/// Similar to class Dimensions but without implied ordering
+class SCIPP_CORE_EXPORT Sizes
+    : public small_stable_map<Dim, scipp::index, NDIM_MAX> {
+private:
+  using base = small_stable_map<Dim, scipp::index, NDIM_MAX>;
+
+protected:
+  using base::assign;
+  using base::insert_left;
+  using base::insert_right;
+
+public:
+  Sizes() = default;
+
+  void set(const Dim dim, const scipp::index size);
+  void resize(const Dim dim, const scipp::index size);
+  bool includes(const Sizes &sizes) const;
+  Sizes slice(const Slice &params) const;
+
+  /// Return the labels of the space defined by *this.
+  constexpr auto labels() const &noexcept { return keys(); }
+  /// Return the shape of the space defined by *this.
+  constexpr auto sizes() const &noexcept { return values(); }
 };
 
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes concatenate(const Sizes &a,
@@ -59,7 +88,7 @@ private:
 
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes merge(const Sizes &a, const Sizes &b);
 
-SCIPP_CORE_EXPORT bool is_edges(const Sizes &sizes, const Dimensions &dims,
+SCIPP_CORE_EXPORT bool is_edges(const Sizes &sizes, const Sizes &dataSizes,
                                 const Dim dim);
 
 SCIPP_CORE_EXPORT std::string to_string(const Sizes &sizes);

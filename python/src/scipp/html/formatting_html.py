@@ -47,15 +47,12 @@ def _make_row(data_html, variances_html=None):
 
 def _format_non_events(var, has_variances):
     size = reduce(operator.mul, var.shape, 1)
+    if len(var.dims):
+        var = sc.flatten(var, var.dims, 'ignored')
     data = retrieve(var, variances=has_variances)
     # avoid unintentional indexing into value of 0-D data
     if len(var.shape) == 0:
-        data = [
-            data,
-        ]
-    # ravel avoids displaying square brackets in the output
-    if hasattr(data, 'ravel'):
-        data = data.ravel()
+        data = [data]
     s = _format_array(data, size, ellipsis_after=2)
     if has_variances:
         s = f'{VARIANCE_PREFIX}{s}'
@@ -117,7 +114,10 @@ def _ordered_dict(data):
 
 def inline_variable_repr(var, has_variances=False):
     if var.bins is None:
-        return _format_non_events(var, has_variances)
+        if is_data_array(var):
+            return _format_non_events(var.data, has_variances)
+        else:
+            return _format_non_events(var, has_variances)
     else:
         return _format_events(var, has_variances)
 

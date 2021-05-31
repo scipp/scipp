@@ -23,12 +23,14 @@ auto make_subspans(T *base, const Variable &indices,
         "unreachable due to an earlier check, may want to generalize this "
         "later to support in particular stride=0 for broadcasted buffers");
   return variable::transform<scipp::index_pair>(
-      indices, overloaded{core::transform_flags::expect_no_variance_arg<0>,
-                          [](const units::Unit &) { return units::one; },
-                          [base, stride](const auto &offset) {
-                            return scipp::span(base + stride * offset.first,
-                                               base + stride * offset.second);
-                          }});
+      indices,
+      overloaded{core::transform_flags::expect_no_variance_arg<0>,
+                 [](const units::Unit &) { return units::one; },
+                 [base, stride](const auto &offset) {
+                   return scipp::span(base + stride * offset.first,
+                                      base + stride * offset.second);
+                 }},
+      "make_subspans");
 }
 
 /// Return Variable containing spans with extents given by indices over given
@@ -70,9 +72,13 @@ Variable make_indices(const Variable &var, const Dim dim) {
   auto dims = var.dims();
   const auto len = dims[dim];
   dims.erase(dim);
+  Dimensions data_dims;
+  for (const auto &label : dims.labels())
+    if (var.strides()[var.dims().index(label)] != 0)
+      data_dims.addInner(label, dims[label]);
   const auto base = len * units::one;
-  const auto end = cumsum(broadcast(base, dims));
-  return zip(end - base, end);
+  const auto end = cumsum(broadcast(base, data_dims));
+  return broadcast(zip(end - base, end), dims);
 }
 
 } // namespace

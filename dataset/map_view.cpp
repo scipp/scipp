@@ -98,22 +98,22 @@ template <class Key, class Value> Value Dict<Key, Value>::at(const Key &key) {
 
 template <class Key, class Value>
 void Dict<Key, Value>::setSizes(const Sizes &sizes) {
-  scipp::expect::contains(sizes, m_sizes);
+  scipp::expect::includes(sizes, m_sizes);
   m_sizes = sizes;
 }
 
 template <class Key, class Value> void Dict<Key, Value>::rebuildSizes() {
   Sizes new_sizes = m_sizes;
-  for (const auto &size : m_sizes) {
+  for (const auto &dim : m_sizes) {
     bool erase = true;
     for (const auto &item : *this) {
-      if (item.second.dims().contains(size.first)) {
+      if (item.second.dims().contains(dim)) {
         erase = false;
         break;
       }
     }
     if (erase)
-      new_sizes.erase(size.first);
+      new_sizes.erase(dim);
   }
   m_sizes = std::move(new_sizes);
 }
@@ -125,7 +125,7 @@ void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
   expectWritable(*this);
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
-  if (!m_sizes.contains(coord.dims()) &&
+  if (!m_sizes.includes(coord.dims()) &&
       !is_edges(m_sizes, coord.dims(), dim_of_coord(coord, key)))
     throw except::DimensionError("Cannot add coord exceeding DataArray dims");
   m_items.insert_or_assign(key, std::move(coord));
@@ -211,7 +211,7 @@ Dict<Key, Value> &Dict<Key, Value>::setSlice(const Slice s, const Dict &dict) {
 
 template <class Key, class Value>
 void Dict<Key, Value>::rename(const Dim from, const Dim to) {
-  m_sizes.relabel(from, to);
+  m_sizes.replace_key(from, to);
   // TODO relabel only if coords (not attrs?)?
   if constexpr (std::is_same_v<Key, Dim>) {
     if (m_items.count(from)) {
@@ -221,7 +221,8 @@ void Dict<Key, Value>::rename(const Dim from, const Dim to) {
     }
   }
   for (auto &item : m_items)
-    item.second.rename(from, to);
+    if (item.second.dims().contains(from))
+      item.second.rename(from, to);
 }
 
 /// Return true if the dict is readonly. Does not imply that items are readonly.
@@ -264,8 +265,8 @@ template <class Key, class Value>
 bool Dict<Key, Value>::item_applies_to(const Key &key,
                                        const Dimensions &dims) const {
   const auto &val = m_items.at(key);
-  return dims.contains(val.dims()) ||
-         (!sizes().contains(val.dims()) &&
+  return dims.includes(val.dims()) ||
+         (!sizes().includes(val.dims()) &&
           is_edges(Sizes(dims), val.dims(), dim_of_coord(val, key)));
 }
 

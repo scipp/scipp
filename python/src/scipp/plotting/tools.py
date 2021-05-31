@@ -129,9 +129,10 @@ def find_log_limits(x):
     To find log scale limits, we histogram the data between 1.0-30
     and 1.0e+30 and include only bins that are non-zero.
     """
+    from .. import flatten, ones
     volume = np.product(x.shape)
-    pixel = sc.reshape(sc.values(x), {'pixel': volume})
-    weights = sc.Variable(dims=['pixel'], values=np.ones(volume))
+    pixel = flatten(sc.values(x), to='pixel')
+    weights = ones(dims=['pixel'], shape=[volume])
     hist = sc.histogram(sc.DataArray(data=weights, coords={'order': pixel}),
                         bins=sc.Variable(dims=['order'],
                                          values=np.geomspace(1e-30,
@@ -209,3 +210,10 @@ def fig_to_pngbytes(fig):
     plt.close(fig)
     buf.seek(0)
     return buf.getvalue()
+
+
+def to_dict(meta):
+    """
+    Convert a coords, meta, attrs or masks object to a python dict.
+    """
+    return {name: var for name, var in meta.items()}
