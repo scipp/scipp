@@ -2,7 +2,6 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
-import numpy as np
 import scipp as sc
 
 

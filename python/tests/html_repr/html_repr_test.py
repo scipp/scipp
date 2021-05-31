@@ -28,8 +28,8 @@ def test_html_repr_variable_1d_variances():
     N = 20
     sc.make_html(
         sc.array(dims=['x'],
-                 values=np.random.random(20),
-                 variances=np.random.random(20) * 0.1,
+                 values=np.random.random(N),
+                 variances=np.random.random(N) * 0.1,
                  unit='m'))
 
 
