@@ -142,19 +142,13 @@ namespace {
 template <class T>
 std::unordered_map<std::string, scipp::index> element_offsets;
 template <>
-std::unordered_map<std::string, scipp::index>
-    element_offsets<Eigen::Vector3d>({{"x", 0}, {"y", 1}, {"z", 2}});
+std::unordered_map<std::string, scipp::index> element_offsets<Eigen::Vector3d> =
+    std::unordered_map<std::string, scipp::index>{{"x", 0}, {"y", 1}, {"z", 2}};
 template <>
-std::unordered_map<std::string, scipp::index>
-    element_offsets<Eigen::Matrix3d>({{"xx", 0},
-                                      {"xy", 3},
-                                      {"xz", 6},
-                                      {"yx", 1},
-                                      {"yy", 4},
-                                      {"yz", 7},
-                                      {"zx", 2},
-                                      {"zy", 5},
-                                      {"zz", 8}});
+std::unordered_map<std::string, scipp::index> element_offsets<Eigen::Matrix3d> =
+    std::unordered_map<std::string, scipp::index>{
+        {"xx", 0}, {"xy", 3}, {"xz", 6}, {"yx", 1}, {"yy", 4},
+        {"yz", 7}, {"zx", 2}, {"zy", 5}, {"zz", 8}};
 } // namespace
 
 template <class T> struct ElementKeys {
