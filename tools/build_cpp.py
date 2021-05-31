@@ -46,13 +46,11 @@ def main(prefix='', build_dir=''):
         '-DPYTHON_EXECUTABLE': shutil.which("python"),
         '-DCMAKE_INSTALL_PREFIX': prefix,
         '-DWITH_CTEST': 'OFF',
-        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'OFF'
+        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'ON'
     }
 
-    if platform == 'linux':
-        cmake_flags.update({'-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'ON'})
-
     if platform == 'darwin':
+        cmake_flags.update({'-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'OFF'})
         osxversion = os.environ.get('OSX_VERSION')
         if osxversion is not None:
             cmake_flags.update({
