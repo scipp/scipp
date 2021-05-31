@@ -29,6 +29,14 @@ constexpr auto structure_element_offset<Eigen::Matrix3d> =
       return offsets.at(key);
     };
 
+std::vector<std::string> element_keys(const Variable &var) {
+  if (variableFactory().elem_dtype(var) == dtype<Eigen::Vector3d>)
+    return {"x", "y", "z"};
+  if (variableFactory().elem_dtype(var) == dtype<Eigen::Matrix3d>)
+    return {"xx", "xy", "xz", "yx", "yy", "yz", "zx", "zy", "zz"};
+  throw except::TypeError("dtype is not structured");
+}
+
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(vector_3_float64, Eigen::Vector3d, double)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(matrix_3_float64, Eigen::Matrix3d, double)
 

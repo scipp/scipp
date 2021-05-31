@@ -15,6 +15,7 @@
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/structures.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/util.h"
@@ -134,44 +135,16 @@ void bind_structured_creation(py::module &m, const std::string &name) {
       py::arg("dims"), py::arg("values"), py::arg("unit") = units::one);
 }
 
-// TODO For now we use hard-coded field names and offsets. The intention is to
-// generalize StructureArrayModel to support more general structures. Field
-// names and sizes/offsets would then be stored as part of the model, and would
-// be initialized dynamically at runtime.
-namespace {
-template <class T>
-std::unordered_map<std::string, scipp::index> element_offsets;
-template <>
-std::unordered_map<std::string, scipp::index> element_offsets<Eigen::Vector3d> =
-    std::unordered_map<std::string, scipp::index>{{"x", 0}, {"y", 1}, {"z", 2}};
-template <>
-std::unordered_map<std::string, scipp::index> element_offsets<Eigen::Matrix3d> =
-    std::unordered_map<std::string, scipp::index>{
-        {"xx", 0}, {"xy", 3}, {"xz", 6}, {"yx", 1}, {"yy", 4},
-        {"yz", 7}, {"zx", 2}, {"zy", 5}, {"zz", 8}};
-} // namespace
-
-template <class T> struct ElementKeys {
-  static auto apply() {
-    std::vector<std::string> keys;
-    for (const auto &item : element_offsets<T>)
-      keys.emplace_back(item.first);
-    return keys;
-  }
-};
-
 template <class T> struct GetElements {
   static auto apply(Variable &var, const std::string &key) {
-    return var.elements<T>().slice(
-        {Dim::InternalStructureComponent, element_offsets<T>.at(key)});
+    return var.elements<T>(key);
   }
 };
 
 template <class T> struct SetElements {
   static auto apply(Variable &var, const std::string &key,
                     const Variable &elems) {
-    copy(elems, var.elements<T>().slice({Dim::InternalStructureComponent,
-                                         element_offsets<T>.at(key)}));
+    copy(elems, var.elements<T>(key));
   }
 };
 
@@ -292,16 +265,14 @@ of variances.)");
   bind_structured_creation<Eigen::Matrix3d, double, 3, 3>(m, "matrices");
 
   using structured_t = std::tuple<Eigen::Vector3d, Eigen::Matrix3d>;
-  m.def("_element_keys", [](Variable &self) {
-    return core::callDType<ElementKeys>(structured_t{}, self.dtype());
-  });
+  m.def("_element_keys", element_keys);
   m.def("_get_elements", [](Variable &self, const std::string &key) {
-    return core::callDType<GetElements>(structured_t{}, self.dtype(), self,
-                                        key);
+    return core::callDType<GetElements>(
+        structured_t{}, variableFactory().elem_dtype(self), self, key);
   });
-  m.def("_set_elements",
-        [](Variable &self, const std::string &key, const Variable &elems) {
-          core::callDType<SetElements>(structured_t{}, self.dtype(), self, key,
-                                       elems);
-        });
+  m.def("_set_elements", [](Variable &self, const std::string &key,
+                            const Variable &elems) {
+    core::callDType<SetElements>(
+        structured_t{}, variableFactory().elem_dtype(self), self, key, elems);
+  });
 }
