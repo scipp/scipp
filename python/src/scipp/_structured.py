@@ -3,7 +3,6 @@
 # @author Simon Heybrock
 from . import dtype
 from ._scipp.core import _element_keys, _get_elements, _set_elements
-from ._utils.typing import is_variable
 
 
 def _prop(key):
@@ -17,8 +16,8 @@ def _prop(key):
 
 
 def is_structured(obj):
-    if obj.events is not None and is_variable(obj.events):
-        return True
+    if obj.events is not None:
+        return is_structured(obj.events)
     return obj.dtype in [dtype.vector_3_float64, dtype.matrix_3_float64]
 
 

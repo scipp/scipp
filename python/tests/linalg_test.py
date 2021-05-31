@@ -219,3 +219,21 @@ def test_matrix_elements_setter():
     values[:, 1, 2] = 1
     expected = sc.matrices(dims=['x'], values=values, unit=sc.units.m)
     assert sc.identical(m, expected)
+
+
+def test_elements_binned():
+    data = sc.array(dims=['x'], values=[1, 2, 3, 4])
+    var = sc.bins(dim='x', data=data)
+    assert var.fields is None
+
+    data = sc.vectors(dims=['x'], values=np.arange(6).reshape(2, 3))
+    var = sc.bins(dim='x', data=data)
+    assert var.fields is not None
+    y = sc.bins(dim='x', data=sc.array(dims=['x'], values=[1., 4.]))
+    assert sc.identical(var.fields.y, y)
+
+    data = sc.matrices(dims=['x'], values=np.arange(18).reshape(2, 3, 3))
+    var = sc.bins(dim='x', data=data)
+    assert var.fields is not None
+    yz = sc.bins(dim='x', data=sc.array(dims=['x'], values=[5., 14.]))
+    assert sc.identical(var.fields.yz, yz)

@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/core/eigen.h"
 #include "scipp/variable/structure_array_variable.tcc"
+#include "scipp/variable/structures.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {
