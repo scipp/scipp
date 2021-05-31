@@ -62,7 +62,9 @@ public:
 private:
   /// Index into memory.
   scipp::index m_memory_index{0};
-  /// Steps to advance one element.
+  /// Index in iteration dimensions.
+  scipp::index m_view_index{0};
+  /// Steps in memory to advance one element.
   std::array<scipp::index, NDIM_MAX> m_delta = {};
   /// Multi-dimensional index in iteration dimensions.
   std::array<scipp::index, NDIM_MAX> m_coord = {};
@@ -70,8 +72,6 @@ private:
   std::array<scipp::index, NDIM_MAX> m_shape = {};
   /// Strides in memory.
   Strides m_strides;
-  /// Index in iteration dimensions.
-  scipp::index m_view_index{0};
   /// Number of dimensions.
   int32_t m_ndim;
 };

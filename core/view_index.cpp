@@ -21,7 +21,7 @@ ViewIndex::ViewIndex(const Dimensions &target_dimensions,
     if (delta != 0 || stride == 0) {
       m_shape[dim_write] = size;
       m_delta[dim_write] = delta;
-      m_strides[dim_write] = strides[dim_read];
+      m_strides[dim_write] = stride;
       ++dim_write;
     } else {
       // The memory for this dimension is contiguous with the previous dim,
