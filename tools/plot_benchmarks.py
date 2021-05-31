@@ -158,6 +158,7 @@ def plot(data, xname, yname, ignored, xscale='log'):
                     marker='_',
                     ls='',
                     c=f'C{iline}')
+        ax.set_ylim((0, ax.get_ylim()[1]))
 
         if igroup == 0:
             ax.legend()
