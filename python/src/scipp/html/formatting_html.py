@@ -73,7 +73,7 @@ def _get_events(var, variances, ellipsis_after, summary=False):
     dims = var.bins.constituents['data'].dims
     bin_dim = dict(zip(dims, range(len(dims))))[dim]
     s = []
-    if hasattr(var.values, '__len__'):
+    if not is_data_array(var.values):
         size = len(var.values)
         i = 0
 
