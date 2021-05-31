@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Dimitar Tasev
-from .._utils.typing import is_variable
+from ..utils.typing import is_variable
 from .formatting_html import dataset_repr, inject_style, variable_repr
 
 

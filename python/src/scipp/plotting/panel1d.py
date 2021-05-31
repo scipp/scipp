@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .panel import PlotPanel
-from .._utils import make_random_color
+from ..utils import make_random_color
 import ipywidgets as ipw
 
 
