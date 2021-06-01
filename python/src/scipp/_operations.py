@@ -112,3 +112,4 @@ def rebin(x, dim, bins, old=None):
         return _call_cpp_func(_cpp.rebin, x, dim, bins)
     else:
         return _call_cpp_func(_cpp.rebin, x, dim, old, bins)
+
