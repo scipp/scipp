@@ -48,8 +48,6 @@ TEST_F(GeneratedBinaryTest, DataArray_Variable) {
   const auto out = less(a, var);
   EXPECT_EQ(out.data(), less(a.data(), var));
   EXPECT_FALSE(out.data().is_same(var));
-  EXPECT_EQ(out.masks()["mask1"], a.masks()["mask1"]);
-  EXPECT_FALSE(out.masks()["mask1"].is_same(a.masks()["mask1"]));
   check_meta(out, a);
 }
 
@@ -59,8 +57,6 @@ TEST_F(GeneratedBinaryTest, Variable_DataArray) {
   const auto out = less(var, a);
   EXPECT_EQ(out.data(), less(var, a.data()));
   EXPECT_FALSE(out.data().is_same(var));
-  EXPECT_EQ(out.masks()["mask1"], a.masks()["mask1"]);
-  EXPECT_FALSE(out.masks()["mask1"].is_same(a.masks()["mask1"]));
   check_meta(out, a);
 }
 
