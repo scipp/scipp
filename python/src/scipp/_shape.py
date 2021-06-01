@@ -54,13 +54,13 @@ def concatenate(x, y, dim):
 
       >>> a = sc.arange('x', 3)
       >>> b = 100 * sc.arange('x', 3)
-      >>> c = sc.concatenate(a, b, 'x')
+      >>> c = sc.concatenate(a, b, dim='x')
       >>> c
       <scipp.Variable> (x: 6)      int64  [dimensionless]  [0, 1, ..., 100, 200]
       >>> c.values
       [  0   1   2   0 100 200]
 
-      >>> d = sc.concatenate(a, b, 'y')
+      >>> d = sc.concatenate(a, b, dim='y')
       >>> d
       <scipp.Variable> (y: 2, x: 3)      int64  [dimensionless]  [0, 1, ..., 100, 200]
       >>> d.values
@@ -71,7 +71,7 @@ def concatenate(x, y, dim):
                            coords={'x': sc.arange('x', 3)})
       >>> y = sc.DataArray(100 * sc.arange('x', 3),
                            coords={'x': 100 * sc.arange('x', 3)})
-      >>> z = sc.concatenate(x, y, 'x')
+      >>> z = sc.concatenate(x, y, dim='x')
       >>> z
       <scipp.DataArray>
       Dimensions: Sizes[x:6, ]
@@ -108,28 +108,28 @@ def fold(x, dim, sizes=None, dims=None, shape=None):
       >>> v = sc.arange('x', 6)
       >>> v
       <scipp.Variable> (x: 6)      int64  [dimensionless]  [0, 1, ..., 4, 5]
-      >>> sc.fold(v, 'x', {'y': 2, 'z': 3})
+      >>> sc.fold(v, dim='x', sizes={'y': 2, 'z': 3})
       <scipp.Variable> (y: 2, z: 3)      int64  [dimensionless]  [0, 1, ..., 4, 5]
-      >>> sc.fold(v, 'x', {'y': 2, 'z': 3}).values
+      >>> sc.fold(v, dim='x', sizes={'y': 2, 'z': 3}).values
       [[0 1 2]
        [3 4 5]]
 
-      >>> sc.fold(a, 'x', dims=['y', 'x'], shape=[2, 3])
+      >>> sc.fold(a, dim='x', dims=['y', 'x'], shape=[2, 3])
       <scipp.Variable> (y: 2, z: 3)      int64  [dimensionless]  [0, 1, ..., 4, 5]
 
       >>> a = sc.DataArray(0.1 * sc.arange('x', 6),
                            coords={'x': sc.arange('x', 6)})
-      >>> sc.fold(a, 'x', {'y': 2, 'z': 3})
+      >>> sc.fold(a, dim='x', dims={'y': 2, 'z': 3})
       <scipp.DataArray>
       Dimensions: Sizes[y:2, z:3, ]
       Coordinates:
         x                           int64  [dimensionless]  (y, z)  [0, 1, ..., 4, 5]
       Data:
                                   float64  [dimensionless]  (y, z)  [0.000000, 0.100000, ..., 0.400000, 0.500000]
-      >>> sc.fold(a, 'x', {'y': 2, 'z': 3}).data.values
+      >>> sc.fold(a, dim='x', sizes={'y': 2, 'z': 3}).data.values
       [[0.  0.1 0.2]
        [0.3 0.4 0.5]]
-      >>> sc.fold(a, 'x', {'y': 2, 'z': 3}).coords['x'].values
+      >>> sc.fold(a, dim='x', sizes={'y': 2, 'z': 3}).coords['x'].values
       [[0 1 2]
        [3 4 5]]
     """
