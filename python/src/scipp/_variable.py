@@ -82,8 +82,8 @@ def zeros(*,
     :seealso: :py:func:`scipp.ones` :py:func:`scipp.empty`
               :py:func:`scipp.scalar` :py:func:`scipp.array`
 
-    :param dims: Optional (if sizes is specified), imension labels.
-    :param shape: Optional (if sizes is specified), imension sizes.
+    :param dims: Optional (if sizes is specified), dimension labels.
+    :param shape: Optional (if sizes is specified), dimension sizes.
     :param sizes: Optional, imension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
@@ -129,8 +129,8 @@ def ones(*,
     :seealso: :py:func:`scipp.zeros` :py:func:`scipp.empty`
               :py:func:`scipp.scalar` :py:func:`scipp.array`
 
-    :param dims: Optional (if sizes is specified), imension labels.
-    :param shape: Optional (if sizes is specified), imension sizes.
+    :param dims: Optional (if sizes is specified), dimension labels.
+    :param shape: Optional (if sizes is specified), dimension sizes.
     :param sizes: Optional, imension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
@@ -176,8 +176,8 @@ def empty(*,
     :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
               :py:func:`scipp.scalar` :py:func:`scipp.array`
 
-    :param dims: Optional (if sizes is specified), imension labels.
-    :param shape: Optional (if sizes is specified), imension sizes.
+    :param dims: Optional (if sizes is specified), dimension labels.
+    :param shape: Optional (if sizes is specified), dimension sizes.
     :param sizes: Optional, imension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
@@ -436,8 +436,8 @@ def random(*,
     :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
               :py:func:`scipp.random_like`
 
-    :param dims: Optional (if sizes is specified), imension labels.
-    :param shape: Optional (if sizes is specified), imension sizes.
+    :param dims: Optional (if sizes is specified), dimension labels.
+    :param shape: Optional (if sizes is specified), dimension sizes.
     :param sizes: Optional, imension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
     :param variances: Optional, boolean flag, if True includes variances
