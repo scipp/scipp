@@ -7,6 +7,17 @@ from typing import Any as _Any, Sequence as _Sequence, Union as _Union
 import numpy as _np
 
 
+def _parse_dims_shape_sizes(dims, shape, sizes):
+    if sizes is not None:
+        if dims is not None or shape is not None:
+            raise ValueError("When sizes is specified, dims and shape must "
+                             "both be None. Got dims: {}, shape: {}".format(
+                                 dims, shape))
+        dims = list(sizes.keys())
+        shape = list(sizes.values())
+    return {"dims": dims, "shape": shape}
+
+
 def islinspace(x):
     """
     Check if the values of a variable are evenly spaced.
@@ -56,21 +67,24 @@ def scalar(value: _Any,
 
 
 def zeros(*,
-          dims: _Sequence[str],
-          shape: _Sequence[int],
+          dims: _Sequence[str] = None,
+          shape: _Sequence[int] = None,
+          sizes: dict = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
           dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
           variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with default initialized values with
     given dimension labels and shape.
+    The dims and shape can also be specified using a sizes dict.
     Optionally can add default initialized variances.
     Only keyword arguments accepted.
 
     :seealso: :py:func:`scipp.ones` :py:func:`scipp.empty`
               :py:func:`scipp.scalar` :py:func:`scipp.array`
 
-    :param dims: Dimension labels.
-    :param shape: Dimension sizes.
+    :param dims: Optional (if sizes is specified), imension labels.
+    :param shape: Optional (if sizes is specified), imension sizes.
+    :param sizes: Optional, imension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
     :param variances: Optional, boolean flag, if True includes variances
@@ -78,8 +92,8 @@ def zeros(*,
       For example for a float type values and variances would all be
       initialized to 0.0. Default=False
     """
-    return _cpp.Variable(dims=dims,
-                         shape=shape,
+
+    return _cpp.Variable(**_parse_dims_shape_sizes(dims, shape, sizes),
                          unit=unit,
                          dtype=dtype,
                          variances=variances)
@@ -102,25 +116,31 @@ def zeros_like(var: _cpp.Variable) -> _cpp.Variable:
 
 
 def ones(*,
-         dims: _Sequence[str],
-         shape: _Sequence[int],
+         dims: _Sequence[str] = None,
+         shape: _Sequence[int] = None,
+         sizes: dict = None,
          unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
          dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
          variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values initialized to 1 with
     given dimension labels and shape.
+    The dims and shape can also be specified using a sizes dict.
 
     :seealso: :py:func:`scipp.zeros` :py:func:`scipp.empty`
               :py:func:`scipp.scalar` :py:func:`scipp.array`
 
-    :param dims: Dimension labels.
-    :param shape: Dimension sizes.
+    :param dims: Optional (if sizes is specified), imension labels.
+    :param shape: Optional (if sizes is specified), imension sizes.
+    :param sizes: Optional, imension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
     :param variances: Optional, boolean flag, if True includes variances
                       initialized to 1. Default=False
     """
-    return _cpp.ones(dims, shape, unit, dtype, variances)
+    return _cpp.ones(**_parse_dims_shape_sizes(dims, shape, sizes),
+                     unit=unit,
+                     dtype=dtype,
+                     variances=variances)
 
 
 def ones_like(var: _cpp.Variable) -> _cpp.Variable:
@@ -140,27 +160,51 @@ def ones_like(var: _cpp.Variable) -> _cpp.Variable:
 
 
 def empty(*,
-          dims: _Sequence[str],
-          shape: _Sequence[int],
+          dims: _Sequence[str] = None,
+          shape: _Sequence[int] = None,
+          sizes: dict = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
           dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
           variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with uninitialized values with given
-    dimension labels and shape. USE WITH CARE! Uninitialized means that values
-    have undetermined values. Consider using :py:func:`scipp.zeros` unless you
+    dimension labels and shape.
+    The dims and shape can also be specified using a sizes dict.
+    USE WITH CARE! Uninitialized means that values have undetermined values.
+    Consider using :py:func:`scipp.zeros` unless you
     know what you are doing and require maximum performance.
 
     :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
               :py:func:`scipp.scalar` :py:func:`scipp.array`
 
-    :param dims: Dimension labels.
-    :param shape: Dimension sizes.
+    :param dims: Optional (if sizes is specified), imension labels.
+    :param shape: Optional (if sizes is specified), imension sizes.
+    :param sizes: Optional, imension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
     :param variances: Optional, boolean flag, if True includes uninitialized
                       variances. Default=False
     """
-    return _cpp.empty(dims, shape, unit, dtype, variances)
+    return _cpp.empty(**_parse_dims_shape_sizes(dims, shape, sizes),
+                      unit=unit,
+                      dtype=dtype,
+                      variances=variances)
+
+
+def empty_like(var: _cpp.Variable) -> _cpp.Variable:
+    """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
+    as the input variable, but with uninitialized values. If the input
+    has variances, all variances in the output exist but are uninitialized.
+
+    :seealso: :py:func:`scipp.empty` :py:func:`scipp.zeros_like`
+              :py:func:`scipp.ones_like`
+
+    :param var: Input variable.
+    """
+    return empty(dims=var.dims,
+                 shape=var.shape,
+                 unit=var.unit,
+                 dtype=var.dtype,
+                 variances=var.variances is not None)
 
 
 def _to_eigen_layout(a):
@@ -231,23 +275,6 @@ def vectors(*,
     :param unit: Optional, data unit. Default=dimensionless
     """
     return _cpp.vectors(dims=dims, unit=unit, values=values)
-
-
-def empty_like(var: _cpp.Variable) -> _cpp.Variable:
-    """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
-    as the input variable, but with uninitialized values. If the input
-    has variances, all variances in the output exist but are uninitialized.
-
-    :seealso: :py:func:`scipp.empty` :py:func:`scipp.zeros_like`
-              :py:func:`scipp.ones_like`
-
-    :param var: Input variable.
-    """
-    return empty(dims=var.dims,
-                 shape=var.shape,
-                 unit=var.unit,
-                 dtype=var.dtype,
-                 variances=var.variances is not None)
 
 
 def array(*,
@@ -392,6 +419,60 @@ def arange(dim: str,
                  values=_np.arange(start, stop, step),
                  unit=unit,
                  dtype=dtype)
+
+
+def random(*,
+           dims: _Sequence[str] = None,
+           shape: _Sequence[int] = None,
+           sizes: dict = None,
+           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+           variances: bool = None) -> _cpp.Variable:
+    """Constructs a :class:`Variable` with random values between 0 and 1 with
+    given dimension labels and shape.
+    The dims and shape can also be specified using a sizes dict.
+    Optionally can add randomly initialized variances.
+    The dtype returned is always float64.
+
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
+              :py:func:`scipp.random_like`
+
+    :param dims: Optional (if sizes is specified), imension labels.
+    :param shape: Optional (if sizes is specified), imension sizes.
+    :param sizes: Optional, imension label to size map.
+    :param unit: Optional, unit of contents. Default=dimensionless
+    :param variances: Optional, boolean flag, if True includes variances
+      initialized with random values. Default=False
+    """
+    params = _parse_dims_shape_sizes(dims, shape, sizes)
+
+    _variances = None
+    if variances is not None and variances is not False:
+        _variances = _np.random.random(params["shape"])
+
+    return array(dims=params["dims"],
+                 values=_np.random.random(params["shape"]),
+                 variances=_variances,
+                 unit=unit,
+                 dtype=_cpp.dtype.float64)
+
+
+def random_like(var: _cpp.Variable) -> _cpp.Variable:
+    """Constructs a :class:`Variable` with the same dims, shape, unit
+    as the input variable, but with all values initialized to a random number
+    between 0 and 1.
+    If the input has variances, the output will be initialized with random
+    variances.
+    The dtype returned is always float64.
+
+    :seealso: :py:func:`scipp.random` :py:func:`scipp.zeros_like`
+              :py:func:`scipp.ones_like`
+
+    :param var: Input variable.
+    """
+    return random(dims=var.dims,
+                  shape=var.shape,
+                  unit=var.unit,
+                  variances=var.variances is not None)
 
 
 # Wrapper to make datetime usable without importing numpy manually.
