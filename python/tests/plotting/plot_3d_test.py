@@ -18,9 +18,9 @@ def make_data_array_with_position_vectors():
     x = r * np.sin(theta) * np.sin(phi)
     y = r * np.sin(theta) * np.cos(phi)
     z = r * np.cos(theta)
-    tof = np.arange(M, dtype=np.float64)
+    time = np.arange(M, dtype=np.float64)
     a = np.arange(M * N).reshape([M, N]) * np.sin(y)
-    da = sc.DataArray(data=sc.Variable(['tof', 'xyz'], values=a),
+    da = sc.DataArray(data=sc.Variable(['time', 'xyz'], values=a),
                       coords={
                           'xyz':
                           sc.vectors(dims=['xyz'],
@@ -28,8 +28,8 @@ def make_data_array_with_position_vectors():
                           'pos':
                           sc.vectors(dims=['xyz'],
                                      values=np.array([x, y, z]).T + 20.0),
-                          'tof':
-                          sc.Variable(['tof'], values=tof)
+                          'time':
+                          sc.Variable(['time'], values=time)
                       })
     return da
 
@@ -82,7 +82,7 @@ def test_plot_projection_3d_with_vectors_with_aspect():
 
 def test_plot_variable_3d():
     N = 50
-    v3d = sc.Variable(['tof', 'x', 'y'],
+    v3d = sc.Variable(['time', 'y', 'x'],
                       values=np.random.rand(N, N, N),
                       unit=sc.units.m)
     plot(v3d, projection="3d")
@@ -111,22 +111,21 @@ def test_plot_customized_axes():
 def test_plot_3d_with_2d_position_coordinate():
     nx = 50
     ny = 40
-    ntof = 10
+    nt = 10
 
     xx, yy = np.meshgrid(np.arange(nx, dtype=np.float64),
                          np.arange(ny, dtype=np.float64))
-    da = sc.DataArray(data=sc.Variable(
-        ['x', 'y', 'tof'],
-        values=np.arange(nx * ny * ntof).reshape(nx, ny, ntof)),
-                      coords={
-                          'pos':
-                          sc.vectors(dims=['x', 'y'],
-                                     values=np.array([
-                                         xx, yy, np.zeros_like(xx)
-                                     ]).T.reshape(nx, ny, 3)),
-                          'tof':
-                          sc.arange('tof', ntof + 1, dtype=np.float64)
-                      })
+    da = sc.DataArray(
+        data=sc.Variable(['x', 'y', 't'],
+                         values=np.arange(nx * ny * nt).reshape(nx, ny, nt)),
+        coords={
+            'pos':
+            sc.vectors(dims=['x', 'y'],
+                       values=np.array([xx, yy, np.zeros_like(xx)
+                                        ]).T.reshape(nx, ny, 3)),
+            't':
+            sc.arange('t', nt + 1, dtype=np.float64)
+        })
 
     plot(da, projection="3d", positions="pos")
 

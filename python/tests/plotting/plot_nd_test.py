@@ -27,23 +27,23 @@ def test_plot_sliceviewer_2d_with_two_sliders():
 
 
 def test_plot_sliceviewer_2d_with_axes():
-    plot(make_dense_data_array(ndim=3), axes={'y': 'tof'})
+    plot(make_dense_data_array(ndim=3), axes={'y': 'x'})
 
 
 def test_plot_sliceviewer_2d_with_axes_redundant():
-    plot(make_dense_data_array(ndim=3), axes={'y': 'tof', 'x': 'x'})
+    plot(make_dense_data_array(ndim=3), axes={'y': 'x', 'x': 'y'})
 
 
 def test_plot_sliceviewer_2d_with_two_axes():
-    plot(make_dense_data_array(ndim=3), axes={'x': 'y', 'y': 'tof'})
+    plot(make_dense_data_array(ndim=3), axes={'x': 'y', 'y': 'z'})
 
 
 def test_plot_sliceviewer_2d_with_labels():
-    plot(make_dense_data_array(ndim=3, labels=True), axes={'x': "somelabels"})
+    plot(make_dense_data_array(ndim=3, labels=True), axes={'x': 'somelabels'})
 
 
 def test_plot_sliceviewer_2d_with_attrs():
-    plot(make_dense_data_array(ndim=3, attrs=True), axes={'x': "attr"})
+    plot(make_dense_data_array(ndim=3, attrs=True), axes={'x': 'attr'})
 
 
 def test_plot_sliceviewer_2d_with_binedges():
@@ -52,7 +52,7 @@ def test_plot_sliceviewer_2d_with_binedges():
 
 def test_plot_variable_3d():
     N = 50
-    v3d = sc.Variable(['tof', 'x', 'y'],
+    v3d = sc.Variable(['z', 'y', 'x'],
                       values=np.random.rand(N, N, N),
                       unit=sc.units.m)
     plot(v3d)
@@ -79,10 +79,10 @@ def test_plot_3d_data_ragged():
     # Also check that it raises an error if we try to have ragged coord along
     # slider dim
     with pytest.raises(RuntimeError) as e:
-        plot(da, axes={'x': 'tof', 'y': 'x'})
-    assert str(e.value) == ("A ragged coordinate cannot lie along "
-                            "a slider dimension, it must be one of "
-                            "the displayed dimensions.")
+        plot(da, axes={'x': 'y', 'y': 'z'})
+    assert str(e.value) == ('A ragged coordinate cannot lie along '
+                            'a slider dimension, it must be one of '
+                            'the displayed dimensions.')
 
 
 def test_plot_3d_data_ragged_with_edges():

@@ -36,9 +36,9 @@ def test_plot_1d_with_attrs():
 def test_plot_1d_log_axes():
     da = make_dense_data_array(ndim=1)
     da = sc.abs(da) + 1.0 * sc.units.counts
-    plot(da, scale={'tof': 'log'})
+    plot(da, scale={'x': 'log'})
     plot(da, norm='log')
-    plot(da, norm='log', scale={'tof': 'log'})
+    plot(da, norm='log', scale={'x': 'log'})
 
 
 def test_plot_1d_bin_edges_with_variances():
@@ -71,7 +71,7 @@ def test_plot_1d_with_masks():
 
 def test_plot_collapse():
     da = make_dense_data_array(ndim=2)
-    plot(sc.collapse(da['x', :10], keep='tof'))
+    plot(sc.collapse(da['y', :10], keep='x'))
 
 
 def test_plot_sliceviewer_with_1d_projection():
@@ -103,7 +103,7 @@ def test_plot_projection_1d_two_entries():
 
 def test_plot_projection_1d_two_entries_different_dims():
     da1 = make_dense_data_array(ndim=2, unit='K')
-    da2 = make_dense_data_array(ndim=2, dims=['y', 'x'], unit='K')
+    da2 = make_dense_data_array(ndim=2, dims=['z', 'y'], unit='K')
     p = sc.plot({'a': da1, 'b': da2}, projection="1d")
     assert len(p) == 2
     p.close()
@@ -114,7 +114,7 @@ def test_plot_variable_1d():
 
 
 def test_plot_dict_of_variables_1d():
-    v1 = sc.arange('tof', 50.0, unit='s')
+    v1 = sc.arange('x', 50.0, unit='s')
     v2 = 5.0 * v1
     plot({'v1': v1, 'v2': v2})
 
@@ -245,20 +245,20 @@ def test_plot_access_ax_and_fig_two_entries():
     d = make_dense_dataset(ndim=1)
     d['b'].unit = 'kg'
     out = sc.plot(d)
-    out["['tof'].counts"].ax.set_xlabel("MyXlabel")
-    out["['tof'].counts"].fig.set_dpi(120.)
+    out["['x'].counts"].ax.set_xlabel("MyXlabel")
+    out["['x'].counts"].fig.set_dpi(120.)
     out.close()
 
 
 def test_plot_with_integer_coord():
     da = make_dense_data_array(ndim=1)
-    da.coords['tof'] = sc.arange('tof', 50, unit='m')
+    da.coords['x'] = sc.arange('x', 50, unit='m')
     plot(da)
 
 
 def test_plot_with_integer_coord_binedges():
     da = make_dense_data_array(ndim=1, binedges=True)
-    da.coords['tof'] = sc.arange('tof', 51, unit='m')
+    da.coords['x'] = sc.arange('x', 51, unit='m')
     plot(da)
 
 

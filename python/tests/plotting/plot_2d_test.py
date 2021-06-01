@@ -46,20 +46,20 @@ def test_plot_2d_with_vmin_vmax_with_log():
 
 
 def test_plot_2d_with_log_scale_x():
-    plot(make_dense_data_array(ndim=2), scale={'tof': 'log'})
-
-
-def test_plot_2d_with_log_scale_y():
     plot(make_dense_data_array(ndim=2), scale={'x': 'log'})
 
 
+def test_plot_2d_with_log_scale_y():
+    plot(make_dense_data_array(ndim=2), scale={'y': 'log'})
+
+
 def test_plot_2d_with_log_scale_xy():
-    plot(make_dense_data_array(ndim=2), scale={'tof': 'log', 'x': 'log'})
+    plot(make_dense_data_array(ndim=2), scale={'x': 'log', 'y': 'log'})
 
 
 def test_plot_2d_with_aspect():
-    plot(make_dense_data_array(ndim=2), aspect="equal")
-    plot(make_dense_data_array(ndim=2), aspect="auto")
+    plot(make_dense_data_array(ndim=2), aspect='equal')
+    plot(make_dense_data_array(ndim=2), aspect='auto')
 
 
 def test_plot_2d_with_with_nan():
@@ -79,11 +79,11 @@ def test_plot_2d_with_cmap():
 
 
 def test_plot_2d_with_xaxis_specified():
-    plot(make_dense_data_array(ndim=2), axes={'x': 'x'})
+    plot(make_dense_data_array(ndim=2), axes={'x': 'y'})
 
 
 def test_plot_2d_with_yaxis_specified():
-    plot(make_dense_data_array(ndim=2), axes={'y': 'tof'})
+    plot(make_dense_data_array(ndim=2), axes={'y': 'x'})
 
 
 def test_plot_2d_with_labels():
@@ -116,25 +116,25 @@ def test_plot_2d_with_masks_and_labels():
 
 def test_plot_2d_with_non_regular_bin_edges():
     da = make_dense_data_array(ndim=2, binedges=True)
-    da.coords['tof'].values = da.coords['tof'].values**2
+    da.coords['x'].values = da.coords['x'].values**2
     plot(da)
 
 
 def test_plot_2d_with_non_regular_bin_edges_resolution():
     da = make_dense_data_array(ndim=2, binedges=True)
-    da.coords['tof'].values = da.coords['tof'].values**2
+    da.coords['x'].values = da.coords['x'].values**2
     plot(da, resolution=128)
 
 
 def test_plot_2d_with_non_regular_bin_edges_with_masks():
     da = make_dense_data_array(ndim=2, masks=True, binedges=True)
-    da.coords['tof'].values = da.coords['tof'].values**2
+    da.coords['x'].values = da.coords['x'].values**2
     plot(da)
 
 
 def test_plot_variable_2d():
     N = 50
-    v2d = sc.Variable(['tof', 'x'], values=np.random.rand(N, N), unit='K')
+    v2d = sc.Variable(['y', 'x'], values=np.random.rand(N, N), unit='K')
     plot(v2d)
 
 
@@ -147,23 +147,23 @@ def test_plot_dict_of_ndarrays_2d():
 
 
 def test_plot_from_dict_variable_2d():
-    plot({"dims": ['x', 'y'], "values": np.random.random([20, 10])})
+    plot({'dims': ['y', 'x'], 'values': np.random.random([20, 10])})
 
 
 def test_plot_from_dict_data_array_2d():
     plot({
-        "data": {
-            "dims": ["x", "y"],
-            "values": np.random.random([20, 10])
+        'data': {
+            'dims': ['y', 'x'],
+            'values': np.random.random([20, 10])
         },
-        "coords": {
-            "x": {
-                "dims": ["x"],
-                "values": np.arange(21)
+        'coords': {
+            'x': {
+                'dims': ['x'],
+                'values': np.arange(11)
             },
-            "y": {
-                "dims": ["y"],
-                "values": np.arange(11)
+            'y': {
+                'dims': ['y'],
+                'values': np.arange(21)
             }
         }
     })
@@ -261,7 +261,7 @@ def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
 def test_plot_3d_binned_data_where_inner_dimension_nas_no_event_coord():
     data = make_binned_data_array(ndim=2)
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
-    plot(data, axes={'x': 'run', 'y': 'tof'})
+    plot(data, axes={'x': 'run', 'y': 'x'})
 
 
 def test_plot_2d_binned_data_with_variances():
@@ -278,13 +278,13 @@ def test_plot_2d_binned_data_with_masks():
 
 def test_plot_customized_mpl_axes():
     da = make_dense_data_array(ndim=2)
-    plot(da, title="MyTitle", xlabel="MyXlabel", ylabel="MyYlabel")
+    plot(da, title='MyTitle', xlabel='MyXlabel', ylabel='MyYlabel')
 
 
 def test_plot_access_ax_and_fig():
     da = make_dense_data_array(ndim=2)
-    out = sc.plot(da, title="MyTitle")
-    out.ax.set_xlabel("MyXlabel")
+    out = sc.plot(da, title='MyTitle')
+    out.ax.set_xlabel('MyXlabel')
     out.fig.set_dpi(120.)
     out.close()
 

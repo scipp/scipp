@@ -17,12 +17,12 @@ def make_dense_data_array(ndim=1,
                           dtype=sc.dtype.float64,
                           unit='counts'):
 
-    dim_list = ['tof', 'x', 'y', 'z', 'Q_x']
-    units = dict(zip(dim_list, ['us', 'm', 'm', 'm', 'angstrom']))
+    dim_list = ['x', 'y', 'z', 'time', 'temperature']
+    units = dict(zip(dim_list, ['m', 'm', 'm', 's', 'K']))
 
     shapes = np.arange(50, 0, -10)[:ndim]
     if dims is None:
-        dims = dim_list[:ndim]
+        dims = dim_list[:ndim][::-1]
 
     a = 10.0 * np.sin(
         np.arange(np.prod(shapes), dtype=np.float64).reshape(*shapes))
@@ -81,7 +81,7 @@ def make_dense_dataset(entries=['a', 'b'], **kwargs):
 
 def make_binned_data_array(ndim=1, variances=False, masks=False):
 
-    dim_list = ['tof', 'x', 'y', 'z', 'Q_x']
+    dim_list = ['x', 'y', 'z', 'time', 'temperature']
 
     N = 50
     M = 10
