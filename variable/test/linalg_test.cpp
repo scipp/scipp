@@ -28,12 +28,11 @@ TEST_F(LinalgVectorTest, elem_access) {
     EXPECT_EQ(vectors.elements<Eigen::Vector3d>().slice(
                   {Dim::InternalStructureComponent, i}),
               elems.slice({Dim::X, i}));
-    EXPECT_EQ(vectors.elements<Eigen::Vector3d>(scipp::index(i)),
-              elems.slice({Dim::X, i}));
   }
-  EXPECT_THROW_DISCARD(vectors.elements<Eigen::Vector3d>(scipp::index(-1)),
-                       std::out_of_range);
-  EXPECT_THROW_DISCARD(vectors.elements<Eigen::Vector3d>(scipp::index(3)),
+  EXPECT_EQ(vectors.elements<Eigen::Vector3d>("x"), elems.slice({Dim::X, 0}));
+  EXPECT_EQ(vectors.elements<Eigen::Vector3d>("y"), elems.slice({Dim::X, 1}));
+  EXPECT_EQ(vectors.elements<Eigen::Vector3d>("z"), elems.slice({Dim::X, 2}));
+  EXPECT_THROW_DISCARD(vectors.elements<Eigen::Vector3d>("X"),
                        std::out_of_range);
 }
 
@@ -45,11 +44,10 @@ protected:
 };
 
 TEST_F(LinalgMatrixTest, range_check) {
-  for (scipp::index i : {-1, 0, 1, 2, 3})
-    for (scipp::index j : {-1, 0, 1, 2, 3})
-      if (i < 0 || i > 2 || j < 0 || j > 2)
-        EXPECT_THROW_DISCARD(matrices.elements<Eigen::Matrix3d>(i, j),
-                             std::out_of_range);
-      else
-        EXPECT_NO_THROW_DISCARD(matrices.elements<Eigen::Matrix3d>(i, j));
+  for (const std::string &key :
+       {"xx", "xy", "xz", "yx", "yy", "yz", "zx", "zy", "zz"})
+    EXPECT_NO_THROW_DISCARD(matrices.elements<Eigen::Matrix3d>(key));
+  for (const std::string &key : {"x", "y", "z", "XX"})
+    EXPECT_THROW_DISCARD(matrices.elements<Eigen::Matrix3d>(key),
+                         std::out_of_range);
 }

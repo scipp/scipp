@@ -26,7 +26,8 @@ Features
   * Direct creation and initialization of 2-D (or higher) arrays of matrices and vectors is now possible from numpy arrays.
   * Fix extremely slow initialization of array of vectors or matrices from numpy arrays.
   * The ``values`` property now returns a numpy array with ``ndim+1`` (vectors) or ``ndim+2``` (matrices) axes, with the inner 1 (vectors) or 2 (matrices) axes corresponding o the vector or matrix axes.
-  * Vector or matrix element can now be accessed and modified directly using the new properties of ``Variable``, ``x1``, ``x2``, ``x3`` (for variables containing vectors) or ``x11``, ``x12``, ..., ``x33`` (for matrices).
+  * Vector or matrix element can now be accessed and modified directly using the new ``fields`` property of ``Variable``.
+    The ``fields`` property provides properties ``x``, ``y``, ``z`` (for variables containing vectors) or ``xx``, ``xy``, ..., ``zz`` (for matrices) that can be read as well as set.
 
 * Reduction operations such as ``sum`` and ``mean`` are now also multi-threaded and thus considerably faster `#1923 <https://github.com/scipp/scipp/pull/1923>`_.
 
@@ -41,7 +42,7 @@ Breaking changes
 * Scipp's data structures now behave mostly like normal nested Python objects, i.e., copies are shallow by default `#1823 <https://github.com/scipp/scipp/pull/1823>`_.
 * ``filter`` and ``split`` removed. Identical functionality can be achieved using ``groupby`` and/or slicing.
 * ``reshape`` has been removed. Use ``fold`` and ``flatten`` instead `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
-* ``geometry.x``, ``geometry.y``, and ``geometry.z`` have been removed. Use the ``x1``, ``x2``, and ``x3`` properties instead `#1925 <https://github.com/scipp/scipp/pull/1925>`_.
+* ``geometry.x``, ``geometry.y``, and ``geometry.z`` have been removed. Use the ``Variable.fields`` property instead `#1925 <https://github.com/scipp/scipp/pull/1925>`_.
 
 Contributors
 ~~~~~~~~~~~~
