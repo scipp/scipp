@@ -4,7 +4,7 @@
 
 from .figure2d import PlotFigure2d
 from .view import PlotView
-from .._utils import make_random_color
+from ..utils import make_random_color
 import numpy as np
 from matplotlib.collections import PathCollection
 
