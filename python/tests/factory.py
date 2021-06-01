@@ -136,8 +136,6 @@ def make_dense_dataset(entries=['a', 'b'], **kwargs):
 
 def make_binned_data_array(ndim=1, variances=False, masks=False):
 
-    # dim_list = ['x', 'y', 'z', 'time', 'temperature']
-
     N = 50
     M = 10
 
