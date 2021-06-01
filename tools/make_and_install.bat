@@ -2,7 +2,7 @@ mkdir build
 cd build
 
 echo building in %cd%
-cmake -G"Visual Studio 16 2019" -A x64 -DCMAKE_CXX_STANDARD=20 -DWITH_CTEST=Off -DCMAKE_INSTALL_PREFIX=%INSTALL_PREFIX% -DPYTHON_EXECUTABLE=%CONDA_PREFIX%\python .. || echo ERROR && exit /b 1
+cmake -G"Visual Studio 16 2019" -A x64 -DWITH_CTEST=Off -DCMAKE_INSTALL_PREFIX=%INSTALL_PREFIX% -DPYTHON_EXECUTABLE=%CONDA_PREFIX%\python .. || echo ERROR && exit /b 1
 
 :: Show cmake settings
 cmake -B . -S .. -LA
