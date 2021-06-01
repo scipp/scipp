@@ -5,129 +5,113 @@
 
 import numpy as np
 import scipp as sc
+import pytest
 from ..factory import make_dense_data_array, make_dense_dataset, \
-                      make_binned_data_array
+    make_binned_data_array, make_scalar, make_variable, make_scalar_array
 
 # TODO:
 # For now,  we are just checking that creating the repr does not throw.
 
 
-def test_html_repr_variable_1d():
-    sc.make_html(sc.arange('x', 50.))
+def maybe_variances(variances, dtype):
+    if dtype in [sc.dtype.float64, sc.dtype.float32]:
+        return variances
+    else:
+        return False
 
 
-def test_html_repr_variable_1d_unit():
-    sc.make_html(sc.arange('x', 50., unit='m'))
+@pytest.mark.parametrize("variance", [False, True])
+@pytest.mark.parametrize(
+    "dtype",
+    [sc.dtype.float64, sc.dtype.float32, sc.dtype.int64, sc.dtype.int32])
+@pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's', 'us'])
+def test_html_repr_scalar(variance, dtype, unit):
+    var = make_scalar(variance=maybe_variances(variance, dtype),
+                      dtype=dtype,
+                      unit=unit)
+    sc.make_html(var)
 
 
-def test_html_repr_variable_1d_slice():
-    sc.make_html(sc.arange('x', 50., unit='m')['x', 1:10])
+@pytest.mark.parametrize("variance", [False, True])
+@pytest.mark.parametrize("label", [False, True])
+@pytest.mark.parametrize("attr", [False, True])
+@pytest.mark.parametrize("mask", [False, True])
+@pytest.mark.parametrize(
+    "dtype",
+    [sc.dtype.float64, sc.dtype.float32, sc.dtype.int64, sc.dtype.int32])
+@pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
+def test_html_repr_scalar_array(variance, label, attr, mask, dtype, unit):
+    da = make_scalar_array(variance=maybe_variances(variance, dtype),
+                           label=label,
+                           attr=attr,
+                           mask=mask,
+                           dtype=dtype,
+                           unit=unit)
+    sc.make_html(da)
 
 
-def test_html_repr_variable_1d_variances():
-    N = 20
-    sc.make_html(
-        sc.array(dims=['x'],
-                 values=np.random.random(N),
-                 variances=np.random.random(N) * 0.1,
-                 unit='m'))
+@pytest.mark.parametrize("ndim", [1, 2, 3, 4])
+@pytest.mark.parametrize("variances", [False, True])
+@pytest.mark.parametrize("dtype", [sc.dtype.float64, sc.dtype.int64])
+@pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
+def test_html_repr_variable(ndim, variances, dtype, unit):
+    print(ndim, variances, dtype, unit)
+    var = make_variable(ndim=ndim,
+                        variances=maybe_variances(variances, dtype),
+                        dtype=dtype,
+                        unit=unit)
+    sc.make_html(var)
+    sc.make_html(var['x', 1:10])
 
 
-def test_html_repr_variable_2d():
-    sc.make_html(
-        sc.array(dims=['y', 'x'], values=np.random.random([10, 20]), unit='s'))
+def test_html_repr_variable_strings():
+    sc.make_html(sc.array(dims=['x'], values=list(map(chr, range(97, 123)))))
 
 
-def test_html_repr_data_array():
-    sc.make_html(make_dense_data_array(ndim=1))
+def test_html_repr_variable_vector():
+    sc.make_html(sc.vectors(dims=['x'], values=np.arange(30.).reshape(10, 3)))
 
 
-def test_html_repr_data_array_slice():
-    sc.make_html(make_dense_data_array(ndim=1)['x', 1:10])
+@pytest.mark.parametrize("ndim", [1, 2, 3, 4])
+@pytest.mark.parametrize("with_all", [True, False])
+@pytest.mark.parametrize("dtype", [sc.dtype.float64, sc.dtype.int64])
+@pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
+def test_html_repr_data_array(ndim, with_all, dtype, unit):
+    da = make_dense_data_array(ndim=ndim,
+                               variances=maybe_variances(with_all, dtype),
+                               binedges=with_all,
+                               labels=with_all,
+                               attrs=with_all,
+                               masks=with_all,
+                               ragged=with_all,
+                               dtype=dtype,
+                               unit=unit)
+    sc.make_html(da)
+    sc.make_html(da['x', 1:10])
 
 
-def test_html_repr_data_array_bin_edges():
-    sc.make_html(make_dense_data_array(ndim=1, binedges=True))
+@pytest.mark.parametrize("ndim", [1, 2, 3, 4])
+@pytest.mark.parametrize("variances", [False, True])
+@pytest.mark.parametrize("masks", [False, True])
+def test_html_repr_binned_data_array(ndim, variances, masks):
+    da = make_binned_data_array(ndim=ndim, variances=variances, masks=masks)
+    sc.make_html(da)
+    sc.make_html(da['x', 1:10])
 
 
-def test_html_repr_data_array_labels():
-    sc.make_html(make_dense_data_array(ndim=1, labels=True))
-
-
-def test_html_repr_data_array_attrs():
-    sc.make_html(make_dense_data_array(ndim=1, attrs=True))
-
-
-def test_html_repr_data_array_masks():
-    sc.make_html(make_dense_data_array(ndim=1, masks=True))
-
-
-def test_html_repr_data_array_2d_simple():
-    sc.make_html(make_dense_data_array(ndim=2))
-
-
-def test_html_repr_data_array_2d_bin_edges():
-    sc.make_html(make_dense_data_array(ndim=2, binedges=True))
-
-
-def test_html_repr_data_array_2d_complex():
-    sc.make_html(
-        make_dense_data_array(ndim=2,
-                              variances=True,
-                              binedges=True,
-                              labels=True,
-                              attrs=True,
-                              masks=True))
-
-
-def test_html_repr_data_array_2d_ragged():
-    sc.make_html(make_dense_data_array(ndim=2, ragged=True))
-
-
-def test_html_repr_data_array_2d_ragged_binedges():
-    sc.make_html(make_dense_data_array(ndim=2, ragged=True, binedges=True))
-
-
-def test_html_repr_data_array_4d_simple():
-    sc.make_html(make_dense_data_array(ndim=4))
-
-
-def test_html_repr_dataset_1d():
-    sc.make_html(make_dense_dataset(ndim=1))
-
-
-def test_html_repr_dataset_2d():
-    sc.make_html(make_dense_dataset(ndim=2))
-
-
-def test_html_repr_dataset_2d_complex():
-    sc.make_html(
-        make_dense_dataset(ndim=2,
-                           binedges=True,
-                           labels=True,
-                           attrs=True,
-                           masks=True))
-
-
-def test_html_repr_1d_binned_data_simple():
-    sc.make_html(make_binned_data_array(ndim=1))
-
-
-def test_html_repr_1d_binned_data_slice():
-    sc.make_html(make_binned_data_array(ndim=1)['x', 0])
-
-
-def test_html_repr_1d_binned_data_complex():
-    sc.make_html(make_binned_data_array(ndim=1, variances=True, masks=True))
-
-
-def test_html_repr_2d_binned_data_simple():
-    sc.make_html(make_binned_data_array(ndim=2))
-
-
-def test_html_repr_2d_binned_data_slice():
-    sc.make_html(make_binned_data_array(ndim=2)['y', 0])
-
-
-def test_html_repr_2d_binned_data_complex():
-    sc.make_html(make_binned_data_array(ndim=2, variances=True, masks=True))
+@pytest.mark.parametrize("ndim", [1, 2, 3, 4])
+@pytest.mark.parametrize("with_all", [True, False])
+@pytest.mark.parametrize("dtype", [sc.dtype.float64, sc.dtype.int64])
+@pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
+def test_html_repr_dataset(ndim, with_all, dtype, unit):
+    da = make_dense_dataset(ndim=ndim,
+                            variances=maybe_variances(with_all, dtype),
+                            binedges=with_all,
+                            labels=with_all,
+                            attrs=with_all,
+                            masks=with_all,
+                            ragged=with_all,
+                            dtype=dtype,
+                            unit=unit)
+    sc.make_html(da)
+    sc.make_html(da['x', 1:10])

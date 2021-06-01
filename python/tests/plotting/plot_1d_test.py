@@ -26,7 +26,7 @@ def test_plot_1d_bin_edges():
 
 
 def test_plot_1d_with_labels():
-    plot(make_dense_data_array(ndim=1, labels=True), axes={"x": "somelabels"})
+    plot(make_dense_data_array(ndim=1, labels=True), axes={"x": "lab"})
 
 
 def test_plot_1d_with_attrs():

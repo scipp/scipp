@@ -87,7 +87,7 @@ def test_plot_2d_with_yaxis_specified():
 
 
 def test_plot_2d_with_labels():
-    plot(make_dense_data_array(ndim=2, labels=True), axes={'x': 'somelabels'})
+    plot(make_dense_data_array(ndim=2, labels=True), axes={'x': 'lab'})
 
 
 def test_plot_2d_with_attrs():
@@ -111,7 +111,7 @@ def test_plot_2d_with_masks():
 
 def test_plot_2d_with_masks_and_labels():
     plot(make_dense_data_array(ndim=2, masks=True, labels=True),
-         axes={'x': 'somelabels'})
+         axes={'x': 'lab'})
 
 
 def test_plot_2d_with_non_regular_bin_edges():
@@ -233,7 +233,7 @@ def test_plot_2d_ragged_coord_with_masks():
 def test_plot_2d_with_labels_but_no_dimension_coord():
     da = make_dense_data_array(ndim=2, labels=True)
     del da.coords['x']
-    plot(da, axes={'x': 'somelabels'})
+    plot(da, axes={'x': 'lab'})
 
 
 def test_plot_2d_with_decreasing_edges():

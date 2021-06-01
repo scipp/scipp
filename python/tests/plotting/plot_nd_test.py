@@ -39,7 +39,7 @@ def test_plot_sliceviewer_2d_with_two_axes():
 
 
 def test_plot_sliceviewer_2d_with_labels():
-    plot(make_dense_data_array(ndim=3, labels=True), axes={'x': 'somelabels'})
+    plot(make_dense_data_array(ndim=3, labels=True), axes={'x': 'lab'})
 
 
 def test_plot_sliceviewer_2d_with_attrs():

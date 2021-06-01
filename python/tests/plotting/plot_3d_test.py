@@ -45,7 +45,7 @@ def test_plot_projection_3d_dataset():
 def test_plot_projection_3d_with_labels():
     plot(make_dense_data_array(ndim=3, labels=True),
          projection="3d",
-         axes={'x': "somelabels"})
+         axes={'x': "lab"})
 
 
 def test_plot_projection_3d_with_bin_edges():
