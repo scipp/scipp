@@ -72,6 +72,12 @@ Variable VariableFactory::empty_like(const Variable &prototype,
   return m_makers.at(prototype.dtype())->empty_like(prototype, shape, sizes);
 }
 
+bool VariableFactory::contains(const Variable &container,
+                               const Variable &var) const {
+  return container.is_valid() &&
+         m_makers.at(container.dtype())->contains(container, var);
+}
+
 VariableFactory &variableFactory() {
   static VariableFactory factory;
   return factory;

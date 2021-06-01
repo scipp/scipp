@@ -12,23 +12,9 @@
 #include "scipp/variable/except.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/variable_concept.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
-namespace {
-[[nodiscard]] bool is_in(const Variable &var, const Variable &other) noexcept {
-  if (other.is_valid() && other.dtype() == dtype<Variable>) {
-    for (const Variable &nested : other.values<Variable>()) {
-      if (&var == &nested) {
-        return true;
-      }
-      if (is_in(var, nested)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-}
 
 /// Construct from parent with same dtype, unit, and hasVariances but new dims.
 ///
@@ -45,7 +31,7 @@ Variable::Variable(const llnl::units::precise_measurement &m)
     : Variable(m.value() * units::Unit(m.units())) {}
 
 Variable &Variable::operator=(const Variable &other) {
-  if (is_in(*this, other)) {
+  if (variableFactory().contains(other, *this)) {
     throw std::invalid_argument("self nesting");
   }
   m_dims = other.m_dims;
@@ -57,7 +43,7 @@ Variable &Variable::operator=(const Variable &other) {
 }
 
 Variable &Variable::operator=(Variable &&other) {
-  if (is_in(*this, other)) {
+  if (variableFactory().contains(other, *this)) {
     throw std::invalid_argument("self nesting");
   }
   m_dims = std::move(other.m_dims);

@@ -43,6 +43,11 @@ private:
     return buffer(var).data();
   }
   Variable data(Variable &var) const override { return buffer(var).data(); }
+  bool contains(const Variable &container, const Variable &var) const override {
+    // Neither indices not buffer can hold a nested variable.
+    // TODO Need to check meta data
+    return false;
+  }
 };
 
 /// This is currently a dummy implemented just to make `is_bins` work.
@@ -70,6 +75,11 @@ class BinVariableMakerDataset
   }
   bool hasVariances(const Variable &) const override {
     throw std::runtime_error("undefined");
+  }
+  bool contains(const Variable &container, const Variable &var) const override {
+    // Neither indices not buffer can hold a nested variable.
+    // TODO Need to check meta data
+    return false;
   }
 };
 

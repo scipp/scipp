@@ -63,6 +63,20 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
     return create(prototype.dtype(), shape ? *shape : prototype.dims(),
                   prototype.unit(), prototype.hasVariances(), {});
   }
+  virtual bool contains(const Variable &container, const Variable &var) const override {
+    if (!container.is_valid() || container.dtype() != dtype<Variable>) {
+      return false;
+    }
+    for (const auto &nested : container.values<Variable>()) {
+      if (&var == &nested) {
+        return true;
+      }
+      if (variableFactory().contains(nested, var)) {
+        return true;
+      }
+    }
+    return false;
+  }
 };
 
 template <class T>

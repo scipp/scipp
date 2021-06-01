@@ -41,6 +41,8 @@ public:
   virtual Variable empty_like(const Variable &prototype,
                               const std::optional<Dimensions> &shape,
                               const Variable &sizes) const = 0;
+  virtual bool contains(const Variable &container,
+                        const Variable &var) const = 0;
 };
 
 SCIPP_VARIABLE_EXPORT bool is_bins(const Variable &var);
@@ -98,6 +100,7 @@ public:
   Variable empty_like(const Variable &prototype,
                       const std::optional<Dimensions> &shape,
                       const Variable &sizes = {});
+  bool contains(const Variable &container, const Variable &var) const;
 
 private:
   std::map<DType, std::unique_ptr<AbstractVariableMaker>> m_makers;
