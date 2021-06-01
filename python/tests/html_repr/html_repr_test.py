@@ -43,7 +43,7 @@ def test_html_repr_data_array():
 
 
 def test_html_repr_data_array_slice():
-    sc.make_html(make_dense_data_array(ndim=1)['tof', 1:10])
+    sc.make_html(make_dense_data_array(ndim=1)['x', 1:10])
 
 
 def test_html_repr_data_array_bin_edges():
@@ -114,7 +114,7 @@ def test_html_repr_1d_binned_data_simple():
 
 
 def test_html_repr_1d_binned_data_slice():
-    sc.make_html(make_binned_data_array(ndim=1)['tof', 0])
+    sc.make_html(make_binned_data_array(ndim=1)['x', 0])
 
 
 def test_html_repr_1d_binned_data_complex():
@@ -126,7 +126,7 @@ def test_html_repr_2d_binned_data_simple():
 
 
 def test_html_repr_2d_binned_data_slice():
-    sc.make_html(make_binned_data_array(ndim=2)['x', 0])
+    sc.make_html(make_binned_data_array(ndim=2)['y', 0])
 
 
 def test_html_repr_2d_binned_data_complex():
