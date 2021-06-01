@@ -126,6 +126,11 @@ template <class T> struct slicer {
     return self.slice(get_slice_range(self, index));
   }
 
+  static auto get_ellipsis(T &self, const py::ellipsis &) {
+    // TODO return DataArray::view()
+    return self;
+  }
+
   static void set_from_numpy(T &self,
                              const std::tuple<Dim, scipp::index> &index,
                              const py::object &obj) {
@@ -142,6 +147,13 @@ template <class T> struct slicer {
         SetData<decltype(slice)>::template Impl>(slice.dtype(), slice, obj);
   }
 
+  static void set_from_numpy(T &self, const py::ellipsis &,
+                             const py::object &obj) {
+    core::CallDType<double, float, int64_t, int32_t,
+                    bool>::apply<SetData<T>::template Impl>(self.dtype(), self,
+                                                            obj);
+  }
+
   template <class Other>
   static void set_from_view(T &self, const std::tuple<Dim, scipp::index> &index,
                             const Other &data) {
@@ -153,6 +165,14 @@ template <class T> struct slicer {
                             const std::tuple<Dim, const py::slice> &index,
                             const Other &data) {
     self.setSlice(slicer<T>::get_slice_range(self, index), data);
+  }
+
+  template <class Other>
+  static void set_from_view(T &self, const py::ellipsis &, const Other &data) {
+    if constexpr (std::is_same_v<T, Other>)
+      copy(data, self);
+    else
+      copy(data, self.data());
   }
 
   template <class Other>
@@ -209,8 +229,10 @@ template <class T, class... Ignored>
 void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   c.def("__getitem__", &slicer<T>::get);
   c.def("__getitem__", &slicer<T>::get_range);
+  c.def("__getitem__", &slicer<T>::get_ellipsis);
   c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, scipp::index>>);
   c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, py::slice>>);
+    c.def("__setitem__", &slicer<T>::template set<py::ellipsis>);
   if constexpr (std::is_same_v<T, DataArray>) {
     c.def("__getitem__", &slicer<T>::get_by_value);
     c.def("__setitem__", &slicer<T>::template set_by_value<Variable>);
