@@ -19,20 +19,6 @@
 
 namespace scipp::core::element {
 
-/// Sets any masked elements to 0 to handle special FP vals
-constexpr auto convertMaskedToZero = overloaded{
-    core::element::arg_list<std::tuple<double, bool>, std::tuple<float, bool>,
-                            std::tuple<bool, bool>, std::tuple<int64_t, bool>,
-                            std::tuple<int32_t, bool>>,
-    [](const auto &a, bool isMasked) { return isMasked ? decltype(a){0} : a; },
-    [](const scipp::units::Unit &a, const scipp::units::Unit &b) {
-      if (b != scipp::units::dimensionless) {
-        throw except::UnitError("Expected mask to contain dimensionless units");
-      }
-
-      return a;
-    }};
-
 /// Set the elements referenced by a span to 0
 template <class T> void zero(const scipp::span<T> &data) {
   for (auto &x : data)
@@ -130,5 +116,20 @@ constexpr auto fill =
 constexpr auto fill_zeros =
     overloaded{arg_list<double, float, int64_t, int32_t, SubbinSizes>,
                [](units::Unit &) {}, [](auto &x) { x = 0; }};
+
+constexpr auto where = overloaded{
+    core::element::arg_list<
+        std::tuple<bool, double, double>, std::tuple<bool, float, float>,
+        std::tuple<bool, int64_t, int64_t>, std::tuple<bool, int32_t, int32_t>,
+        std::tuple<bool, bool, bool>, std::tuple<bool, time_point, time_point>>,
+    [](const auto &condition, const auto &x, const auto &y) {
+      return condition ? x : y;
+    },
+    [](const units::Unit &condition, const units::Unit &x,
+       const units::Unit &y) {
+      expect::equals(condition, units::one);
+      expect::equals(x, y);
+      return x;
+    }};
 
 } // namespace scipp::core::element

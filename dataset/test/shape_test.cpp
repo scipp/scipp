@@ -182,6 +182,14 @@ TEST(ReshapeTest, fold_y_binedges_y) {
   EXPECT_EQ(fold(a, Dim::Y, {{Dim::Row, 2}, {Dim::Time, 2}}), expected);
 }
 
+TEST(ReshapeTest, flatten_binedges_1d) {
+  DataArray a(arange(Dim::X, 4), {{Dim::Z, arange(Dim::X, 5)}});
+  const auto flat = flatten(a, std::vector<Dim>{Dim::X}, Dim::Y);
+  auto expected = copy(a);
+  expected.rename(Dim::X, Dim::Y);
+  EXPECT_EQ(flat, expected);
+}
+
 TEST(ReshapeTest, flatten_binedges_x_fails) {
   const auto var = fold(arange(Dim::X, 24), Dim::X, {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);

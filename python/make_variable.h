@@ -114,9 +114,10 @@ auto do_init_0D(const T &value, const std::optional<T> &variance,
   return var;
 }
 
-Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
-                        std::optional<py::array> &variances, units::Unit unit,
-                        const py::object &dtype) {
+Variable do_make_variable(const std::vector<Dim> &labels,
+                          const py::array &values,
+                          const std::optional<py::array> &variances,
+                          units::Unit unit, const py::object &dtype) {
   // Use custom dtype, otherwise dtype of data.
   const auto dtypeTag =
       dtype.is_none() ? scipp_dtype(values.dtype()) : scipp_dtype(dtype);
@@ -127,17 +128,6 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                                       values.shape() + values.ndim());
       return init_1D_no_variance(labels, shape,
                                  values.cast<std::vector<std::string>>(), unit);
-    }
-    if (dtypeTag == core::dtype<Eigen::Vector3d>) {
-      std::vector<scipp::index> shape(values.shape(),
-                                      values.shape() + values.ndim() - 1);
-      return init_1D_no_variance(
-          labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
-    } else if (dtypeTag == core::dtype<Eigen::Matrix3d>) {
-      std::vector<scipp::index> shape(values.shape(),
-                                      values.shape() + values.ndim() - 2);
-      return init_1D_no_variance(
-          labels, shape, values.cast<std::vector<Eigen::Matrix3d>>(), unit);
     }
   }
 

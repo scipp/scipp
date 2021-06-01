@@ -22,24 +22,23 @@ Variable broadcast(const Variable &var, const Dimensions &dims) {
 
 Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   if (a1.dtype() != a2.dtype())
-    throw std::runtime_error(
+    throw except::TypeError(
         "Cannot concatenate Variables: Data types do not match.");
   if (a1.unit() != a2.unit())
-    throw std::runtime_error(
+    throw except::UnitError(
         "Cannot concatenate Variables: Units do not match.");
 
   const auto &dims1 = a1.dims();
   const auto &dims2 = a2.dims();
   // TODO Many things in this function should be refactored and moved in class
   // Dimensions.
-  // TODO Special handling for edge variables.
   for (const auto &dim1 : dims1.labels()) {
     if (dim1 != dim) {
       if (!dims2.contains(dim1))
-        throw std::runtime_error(
+        throw except::DimensionError(
             "Cannot concatenate Variables: Dimensions do not match.");
       if (dims2[dim1] != dims1[dim1])
-        throw std::runtime_error(
+        throw except::DimensionError(
             "Cannot concatenate Variables: Dimension extents do not match.");
     }
   }
@@ -53,7 +52,7 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   // dims1.
   // TODO Support broadcast of dimensions?
   if (size1 != size2)
-    throw std::runtime_error(
+    throw except::DimensionError(
         "Cannot concatenate Variables: Dimensions do not match.");
 
   Variable out;
@@ -86,19 +85,11 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   return out;
 }
 
-Variable permute(const Variable &var, const Dim dim,
-                 const std::vector<scipp::index> &indices) {
-  auto permuted(var);
-  for (scipp::index i = 0; i < scipp::size(indices); ++i)
-    permuted.data().copy(var.slice({dim, i}),
-                         permuted.slice({dim, indices[i]}));
-  return permuted;
-}
-
-Variable resize(const Variable &var, const Dim dim, const scipp::index size) {
+Variable resize(const Variable &var, const Dim dim, const scipp::index size,
+                const FillValue fill) {
   auto dims = var.dims();
   dims.resize(dim, size);
-  return Variable(var, dims);
+  return special_like(broadcast(Variable(var, Dimensions{}), dims), fill);
 }
 
 /// Return new variable resized to given shape.
@@ -114,23 +105,6 @@ Variable resize(const Variable &var, const Variable &shape) {
   return {shape.dims(), var.data().makeDefaultFromParent(shape)};
 }
 
-namespace {
-void swap(Variable &var, const Dim dim, const scipp::index a,
-          const scipp::index b) {
-  const Variable tmp = copy(var.slice({dim, a}));
-  copy(var.slice({dim, b}), var.slice({dim, a}));
-  copy(tmp, var.slice({dim, b}));
-}
-} // namespace
-
-Variable reverse(const Variable &var, const Dim dim) {
-  auto out = copy(var);
-  const auto size = out.dims()[dim];
-  for (scipp::index i = 0; i < size / 2; ++i)
-    swap(out, dim, i, size - i - 1);
-  return out;
-}
-
 Variable fold(const Variable &view, const Dim from_dim,
               const Dimensions &to_dims) {
   return view.fold(from_dim, to_dims);
@@ -138,6 +112,8 @@ Variable fold(const Variable &view, const Dim from_dim,
 
 Variable flatten(const Variable &view,
                  const scipp::span<const Dim> &from_labels, const Dim to_dim) {
+  if (from_labels.empty())
+    return broadcast(view, merge(view.dims(), Dimensions(to_dim, 1)));
   const auto &labels = view.dims().labels();
   auto it = std::search(labels.begin(), labels.end(), from_labels.begin(),
                         from_labels.end());

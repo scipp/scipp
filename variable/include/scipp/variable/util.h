@@ -4,13 +4,11 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/core/flags.h"
+
 #include "scipp-variable_export.h"
 #include "scipp/variable/generated_util.h"
 #include "scipp/variable/variable.h"
-
-namespace scipp {
-enum class SCIPP_VARIABLE_EXPORT SortOrder { Ascending, Descending };
-}
 
 namespace scipp::variable {
 
@@ -34,5 +32,9 @@ unzip(const Variable &var);
 SCIPP_VARIABLE_EXPORT void fill(Variable &var, const Variable &value);
 
 SCIPP_VARIABLE_EXPORT void fill_zeros(Variable &var);
+
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable where(const Variable &condition,
+                                                   const Variable &x,
+                                                   const Variable &y);
 
 } // namespace scipp::variable

@@ -7,43 +7,6 @@ from typing import Any as _Any, Sequence as _Sequence, Union as _Union
 import numpy as _np
 
 
-def filter(x, key):
-    """
-    Selects elements for a Variable using a filter (mask).
-
-    The filter variable must be 1D and of bool type.
-    A true value in the filter means the corresponding element in the input is
-    selected and will be copied to the output.
-    A false value in the filter discards the corresponding element
-    in the input.
-
-    :param x: Variable to filter.
-    :param key: Variable which defines the filter.
-    :type x: Variable
-    :type key: Variable
-    :raises: If the filter variable is not 1 dimensional.
-    :returns: New variable containing the data selected by the filter.
-    :rtype: Variable
-    """
-    return _call_cpp_func(_cpp.filter, x, key)
-
-
-def split(x, dim, inds):
-    """
-    Split a Variable along a given Dimension.
-
-    :param x: Variable to split.
-    :param dim: Dimension along which to perform the split.
-    :param inds: List of indices  where the variable will split.
-    :type x: Variable
-    :type dim: str
-    :type inds: list
-    :returns: A list of variables.
-    :rtype: list
-    """
-    return _call_cpp_func(_cpp.split, x, dim, inds)
-
-
 def islinspace(x):
     """
     Check if the values of a variable are evenly spaced.
@@ -89,7 +52,7 @@ def scalar(value: _Any,
             # Raise a more comprehensible error message in the case
             # where a dtype cannot be specified.
             raise TypeError(f"Cannot convert {value} to {dtype}. "
-                            f"Try omitting the 'dtype=' parameter.")
+                            f"Try omitting the 'dtype=' parameter.") from None
 
 
 def zeros(*,
@@ -198,6 +161,76 @@ def empty(*,
                       variances. Default=False
     """
     return _cpp.empty(dims, shape, unit, dtype, variances)
+
+
+def _to_eigen_layout(a):
+    # Numpy and scipp use row-major, but Eigen matrices use column-major,
+    # transpose matrix axes for copying values.
+    return _np.moveaxis(a, -1, -2)
+
+
+def matrix(*,
+           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+           value: _Union[_np.ndarray, list]):
+    """Constructs a zero dimensional :class:`Variable` holding a single 3x3
+    matrix.
+
+    :seealso: :py:func:`scipp.matrices`
+
+    :param value: Initial value, a list or 1-D numpy array.
+    :param unit: Optional, unit. Default=dimensionless
+    :returns: A scalar (zero-dimensional) Variable.
+    :rtype: Variable
+    """
+    return _cpp.matrices(dims=[], unit=unit, values=_to_eigen_layout(value))
+
+
+def matrices(*,
+             dims: _Sequence[str],
+             unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+             values: _Union[_np.ndarray, list]):
+    """Constructs a :class:`Variable` with given dimensions holding an array
+    of 3x3 matrices.
+
+    :seealso: :py:func:`scipp.matrix`
+
+    :param dims: Dimension labels.
+    :param values: Initial values.
+    :param unit: Optional, data unit. Default=dimensionless
+    """
+    return _cpp.matrices(dims=dims, unit=unit, values=_to_eigen_layout(values))
+
+
+def vector(*,
+           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+           value: _Union[_np.ndarray, list]):
+    """Constructs a zero dimensional :class:`Variable` holding a single length-3
+    vector.
+
+    :seealso: :py:func:`scipp.vectors`
+
+    :param value: Initial value, a list or 1-D numpy array.
+    :param unit: Optional, unit. Default=dimensionless
+    :returns: A scalar (zero-dimensional) Variable.
+    :rtype: Variable
+    """
+    return _cpp.vectors(dims=[], unit=unit, values=value)
+
+
+def vectors(*,
+            dims: _Sequence[str],
+            unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+            values: _Union[_np.ndarray, list]):
+    """Constructs a :class:`Variable` with given dimensions holding an array
+    of length-3 vectors.
+
+    :seealso: :py:func:`scipp.vector`
+
+    :param dims: Dimension labels.
+    :param values: Initial values.
+    :param unit: Optional, data unit. Default=dimensionless
+    """
+    return _cpp.vectors(dims=dims, unit=unit, values=values)
 
 
 def empty_like(var: _cpp.Variable) -> _cpp.Variable:

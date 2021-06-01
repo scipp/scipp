@@ -4,16 +4,14 @@
 /// @author Simon Heybrock
 #include "scipp/core/element/arg_list.h"
 
-#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
-#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/comparison.h"
-#include "scipp/variable/except.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
-#include "scipp/variable/variable_concept.h"
+
+#include "operations_common.h"
 
 namespace scipp::variable {
 
@@ -50,7 +48,8 @@ void copy_slices(const Variable &src, Variable dst, const Dim dim,
   core::expect::equals(all(equal(sizes0, sizes1)),
                        makeVariable<bool>(Values{true}));
   transform_in_place(subspan_view(dst, dim, dstIndices),
-                     subspan_view(src, dim, srcIndices), copy_spans);
+                     subspan_view(src, dim, srcIndices), copy_spans,
+                     "copy_slices");
 }
 
 Variable resize_default_init(const Variable &var, const Dim dim,
@@ -79,9 +78,7 @@ Variable make_bins(Variable indices, const Dim dim, Variable buffer) {
 /// bins is acceptable.
 Variable make_bins_no_validate(Variable indices, const Dim dim,
                                Variable buffer) {
-  indices.setDataHandle(std::make_unique<variable::DataModel<bucket<Variable>>>(
-      indices.data_handle(), dim, std::move(buffer)));
-  return indices;
+  return variable::make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
 } // namespace scipp::variable

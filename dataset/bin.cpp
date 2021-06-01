@@ -5,6 +5,8 @@
 #include <numeric>
 #include <set>
 
+#include "scipp/common/ranges.h"
+
 #include "scipp/core/element/bin.h"
 #include "scipp/core/element/cumulative.h"
 
@@ -33,8 +35,7 @@ namespace scipp::dataset {
 namespace {
 
 template <class T> Variable as_subspan_view(T &&binned) {
-  auto &&[indices, dim, buffer] =
-      binned.template constituents<core::bin<Variable>>();
+  auto &&[indices, dim, buffer] = binned.template constituents<Variable>();
   if constexpr (std::is_const_v<std::remove_reference_t<T>>)
     return subspan_view(std::as_const(buffer), dim, indices);
   else
@@ -55,11 +56,13 @@ void update_indices_by_binning(Variable &indices, const Variable &key,
   if (linspace) {
     variable::transform_in_place(
         indices, key, edge_view,
-        core::element::update_indices_by_binning_linspace);
+        core::element::update_indices_by_binning_linspace,
+        "scipp.bin.update_indices_by_binning_linspace");
   } else {
     variable::transform_in_place(
         indices, key, edge_view,
-        core::element::update_indices_by_binning_sorted_edges);
+        core::element::update_indices_by_binning_sorted_edges,
+        "scipp.bin.update_indices_by_binning_sorted_edges");
   }
 }
 
@@ -85,15 +88,16 @@ void update_indices_from_existing(Variable &indices, const Dim dim) {
   const scipp::index nbin = indices.dims()[dim];
   const auto index = make_range(0, nbin, 1, dim);
   variable::transform_in_place(indices, index, nbin * units::one,
-                               core::element::update_indices_from_existing);
+                               core::element::update_indices_from_existing,
+                               "scipp.bin.update_indices_from_existing");
 }
 
 /// `sub_bin` is a binned variable with sub-bin indices: new bins within bins
 Variable bin_sizes(const Variable &sub_bin, const Variable &offset,
                    const Variable &nbin) {
   return variable::transform(
-      as_subspan_view(sub_bin), offset, nbin,
-      core::element::count_indices); // transform bins, not bin element
+      as_subspan_view(sub_bin), offset, nbin, core::element::count_indices,
+      "scipp.bin.bin_sizes"); // transform bins, not bin element
 }
 
 template <class T, class Builder>
@@ -108,7 +112,7 @@ auto bin(const Variable &data, const Variable &indices,
   fill_zeros(offsets);
   // Not using cumsum along *all* dims, since some outer dims may be left
   // untouched (no rebin).
-  for (const auto dim : data.dims().labels())
+  for (const auto dim : views::reverse(data.dims()))
     if (dims.contains(dim) && dims[dim] > 0) {
       subbin_sizes_add_intersection(
           offsets, subbin_sizes_cumsum_exclusive(output_bin_sizes, dim));
@@ -133,12 +137,13 @@ auto bin(const Variable &data, const Variable &indices,
         if (!is_bins(var))
           return copy(var);
         const auto &[input_indices, buffer_dim, in_buffer] =
-            var.template constituents<core::bin<Variable>>();
+            var.template constituents<Variable>();
         static_cast<void>(input_indices);
         auto out = resize_default_init(in_buffer, buffer_dim, total_size);
         transform_in_place(
             subspan_view(out, buffer_dim, filtered_input_bin_ranges), offsets,
-            as_subspan_view(var), as_subspan_view(indices), core::element::bin);
+            as_subspan_view(var), as_subspan_view(indices), core::element::bin,
+            "bin");
         return out;
       });
 
@@ -413,7 +418,7 @@ public:
   template <class Masks>
   HideMasked(const Variable &data, const Masks &masks, const Dimensions &dims) {
     const auto &[begin_end, buffer_dim, buffer] =
-        data.constituents<core::bin<DataArray>>();
+        data.constituents<DataArray>();
     auto [begin, end] = unzip(begin_end);
     for (const auto dim : dims.labels()) {
       auto mask = irreducible_mask(masks, dim);
@@ -438,7 +443,7 @@ public:
     // In some cases all events in an input bin map to the same output, but
     // right now bin<> cannot handle this and requires target bin indices for
     // every bin element.
-    const auto &[begin_end, dim, buffer] = var.constituents<core::bin<T>>();
+    const auto &[begin_end, dim, buffer] = var.constituents<T>();
     m_target_bins_buffer = (dims.volume() > std::numeric_limits<int32_t>::max())
                                ? makeVariable<int64_t>(buffer.dims())
                                : makeVariable<int32_t>(buffer.dims());
@@ -510,9 +515,7 @@ void validate_bin_args(const DataArray &array,
                        const std::vector<Variable> &edges,
                        const std::vector<Variable> &groups) {
   if ((is_bins(array) &&
-       std::get<2>(array.data().constituents<bucket<DataArray>>())
-               .dims()
-               .ndim() > 1) ||
+       std::get<2>(array.data().constituents<DataArray>()).dims().ndim() > 1) ||
       (!is_bins(array) && array.dims().ndim() > 1)) {
     throw except::BinnedDataError(
         "Binning is only implemented for 1-dimensional data. Consider using "

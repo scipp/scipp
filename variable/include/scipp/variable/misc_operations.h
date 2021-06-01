@@ -11,17 +11,10 @@ namespace scipp::variable {
 
 SCIPP_VARIABLE_EXPORT Variable astype(const Variable &var, const DType type);
 
-SCIPP_VARIABLE_EXPORT Variable masked_to_zero(const Variable &var,
-                                              const Variable &mask);
-
 namespace geometry {
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable position(const Variable &x,
                                                       const Variable &y,
                                                       const Variable &z);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable x(const Variable &pos);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable y(const Variable &pos);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable z(const Variable &pos);
-
 } // namespace geometry
 
 } // namespace scipp::variable

@@ -210,3 +210,10 @@ def fig_to_pngbytes(fig):
     plt.close(fig)
     buf.seek(0)
     return buf.getvalue()
+
+
+def to_dict(meta):
+    """
+    Convert a coords, meta, attrs or masks object to a python dict.
+    """
+    return {name: var for name, var in meta.items()}

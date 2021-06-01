@@ -11,7 +11,7 @@ using namespace scipp;
 
 namespace py = pybind11;
 
-template <typename T> void bind_@NAME@(py::module &m) {
+template <typename T> void bind_@OPNAME@(py::module &m) {
   m.def(
       "@NAME@", [](const T &x) { return @NAME@(x); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>());
@@ -22,7 +22,7 @@ template <typename T> void bind_@NAME@(py::module &m) {
         py::call_guard<py::gil_scoped_release>());
 }
 
-void init_@NAME@(py::module &m) {
-  bind_@NAME@<Variable>(m);
-  bind_@NAME@<DataArray>(m);
+void init_@OPNAME@(py::module &m) {
+  bind_@OPNAME@<Variable>(m);
+  bind_@OPNAME@<DataArray>(m);
 }

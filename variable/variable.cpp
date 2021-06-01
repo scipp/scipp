@@ -22,6 +22,7 @@ Variable::Variable(const Variable &parent, const Dimensions &dims)
     : m_dims(dims), m_strides(dims),
       m_object(parent.data().makeDefaultFromParent(dims.volume())) {}
 
+// TODO there is no size check here!
 Variable::Variable(const Dimensions &dims, VariableConceptHandle data)
     : m_dims(dims), m_strides(dims), m_object(std::move(data)) {}
 
@@ -53,15 +54,27 @@ void Variable::expectCanSetUnit(const units::Unit &unit) const {
 const units::Unit &Variable::unit() const { return m_object->unit(); }
 
 void Variable::setUnit(const units::Unit &unit) {
-  expectCanSetUnit(unit);
   expectWritable();
+  expectCanSetUnit(unit);
   m_object->setUnit(unit);
 }
 
 bool Variable::operator==(const Variable &other) const {
+  if (is_same(other))
+    return true;
   if (!is_valid() || !other.is_valid())
     return is_valid() == other.is_valid();
   // Note: Not comparing strides
+  if (unit() != other.unit())
+    return false;
+  if (dims() != other.dims())
+    return false;
+  if (dtype() != other.dtype())
+    return false;
+  if (hasVariances() != other.hasVariances())
+    return false;
+  if (dims().volume() == 0 && dims() == other.dims())
+    return true;
   return dims() == other.dims() && data().equals(*this, other);
 }
 
@@ -134,7 +147,7 @@ Variable &Variable::setSlice(const Slice params, const Variable &data) {
 
 Variable Variable::broadcast(const Dimensions &target) const {
   expect::includes(target, dims());
-  auto out = as_const();
+  auto out = target.volume() == dims().volume() ? *this : as_const();
   out.m_dims = target;
   scipp::index i = 0;
   for (const auto &d : target.labels())
@@ -184,6 +197,7 @@ bool Variable::is_same(const Variable &other) const noexcept {
 }
 
 void Variable::setVariances(const Variable &v) {
+  expectWritable();
   if (is_slice())
     throw except::VariancesError(
         "Cannot add variances via sliced view of Variable.");

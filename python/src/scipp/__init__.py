@@ -6,6 +6,7 @@
 # flake8: noqa
 
 from . import runtime_config
+
 user_configuration_filename = runtime_config.config_filename
 config = runtime_config.load()
 del runtime_config
@@ -69,6 +70,7 @@ setattr(DataArray, '_repr_html_', make_html)
 setattr(Dataset, '_repr_html_', make_html)
 
 from .io.hdf5 import to_hdf5 as _to_hdf5
+
 setattr(Variable, 'to_hdf5', _to_hdf5)
 setattr(DataArray, 'to_hdf5', _to_hdf5)
 setattr(Dataset, 'to_hdf5', _to_hdf5)
@@ -78,13 +80,25 @@ setattr(DataArray, 'sizes', property(_make_sizes))
 setattr(Dataset, 'sizes', property(_make_sizes))
 
 from ._bins import _bins, _set_bins, _events
+
 setattr(Variable, 'bins', property(_bins, _set_bins))
 setattr(DataArray, 'bins', property(_bins, _set_bins))
 setattr(Dataset, 'bins', property(_bins, _set_bins))
 setattr(Variable, 'events', property(_events))
 setattr(DataArray, 'events', property(_events))
 
+from ._structured import _fields
+
+setattr(
+    Variable, 'fields',
+    property(
+        _fields,
+        doc=
+        """Provides access to fields of structured types such as vectors or matrices."""
+    ))
+
 from ._bins import _groupby_bins
+
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
 setattr(GroupByDataset, 'bins', property(_groupby_bins))
 

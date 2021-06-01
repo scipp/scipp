@@ -737,18 +737,6 @@ TEST(VariableView, slice_binary_operations) {
   EXPECT_TRUE(equals(ratio.values<double>(), {1.0 / 2.0, 3.0 / 4.0}));
 }
 
-TEST(Variable, reverse) {
-  auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                  Values{1, 2, 3, 4, 5, 6});
-  auto reverseX = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                       Values{3, 2, 1, 6, 5, 4});
-  auto reverseY = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                       Values{4, 5, 6, 1, 2, 3});
-
-  EXPECT_EQ(reverse(var, Dim::X), reverseX);
-  EXPECT_EQ(reverse(var, Dim::Y), reverseY);
-}
-
 TEST(Variable, non_in_place_scalar_operations) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
 
@@ -912,50 +900,6 @@ TEST(VariableTest, zip_positions) {
   EXPECT_EQ(values[1], (Eigen::Vector3d{2, 2, 2}));
   EXPECT_EQ(values[2], (Eigen::Vector3d{3, 3, 3}));
 }
-TEST(VariableTest, unzip_x) {
-  const Variable pos = makeVariable<Eigen::Vector3d>(
-      Dims{Dim::X}, Shape{2}, units::m,
-      Values{Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{4, 5, 6}});
-  auto x_ = geometry::x(pos);
-  const auto expected_x =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.0, 4.0});
-  EXPECT_EQ(x_, expected_x);
-}
-
-TEST(VariableTest, unzip_y) {
-  const Variable pos = makeVariable<Eigen::Vector3d>(
-      Dims{Dim::X}, Shape{2}, units::m,
-      Values{Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{4, 5, 6}});
-  auto y_ = geometry::y(pos);
-  const auto expected_y =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 5.0});
-  EXPECT_EQ(y_, expected_y);
-}
-
-TEST(VariableTest, unzip_z) {
-  const Variable pos = makeVariable<Eigen::Vector3d>(
-      Dims{Dim::X}, Shape{2}, units::m,
-      Values{Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{4, 5, 6}});
-  auto z_ = geometry::z(pos);
-  const auto expected_z =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{3.0, 6.0});
-  EXPECT_EQ(z_, expected_z);
-}
-TEST(VariableTest, zip_unzip_positions) {
-  const Variable x_in =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 2, 3});
-  const Variable y_in =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{4, 5, 6});
-  const Variable z_in =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{7, 8, 9});
-  auto positions = geometry::position(x_in, y_in, z_in);
-  auto x_out = geometry::x(positions);
-  auto y_out = geometry::y(positions);
-  auto z_out = geometry::z(positions);
-  EXPECT_EQ(x_in, x_out);
-  EXPECT_EQ(y_in, y_out);
-  EXPECT_EQ(z_in, z_out);
-}
 
 TEST(VariableTest, rotate) {
   Eigen::Vector3d vec1(1, 2, 3);
@@ -1007,19 +951,6 @@ TEST(VariableTest, divide_vector) {
   auto scaled_vec = vec / scale;
 
   EXPECT_EQ(scaled_vec, expected_vec);
-}
-
-TEST(VariableTest, masked_to_zero) {
-  auto var =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 1, 1});
-  auto mask = makeVariable<bool>(Dims{Dim::X}, Shape{3}, units::one,
-                                 Values{true, false, true});
-  auto expected_var =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{0, 1, 0});
-
-  auto masked_var = masked_to_zero(var, mask);
-
-  EXPECT_EQ(masked_var, expected_var);
 }
 
 TEST(Variable, 6d) {

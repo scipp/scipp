@@ -5,8 +5,8 @@
 from .. import config
 from .controller2d import PlotController2d
 from .model2d import PlotModel2d
+from .objects import Plot
 from .profile import PlotProfile
-from .sciplot import SciPlot
 from .view2d import PlotView2d
 from .widgets import PlotWidgets
 
@@ -17,14 +17,14 @@ def plot2d(*args, filename=None, **kwargs):
     For every dimension above 2, a slider is created to adjust the position
     of the slice in that particular dimension.
     """
-    sp = SciPlot2d(*args, **kwargs)
+    sp = Plot2d(*args, **kwargs)
     if filename is not None:
         sp.savefig(filename)
     else:
         return sp
 
 
-class SciPlot2d(SciPlot):
+class Plot2d(Plot):
     """
     Class for 2 dimensional plots.
 
@@ -74,13 +74,15 @@ class SciPlot2d(SciPlot):
         self.validate()
 
         # Create control widgets (sliders and buttons)
-        self.widgets = PlotWidgets(axes=self.axes,
-                                   ndim=view_ndims,
-                                   name=self.name,
-                                   dim_to_shape=self.dim_to_shape,
-                                   dim_label_map=self.dim_label_map,
-                                   masks=self.masks,
-                                   multid_coord=self.model.get_multid_coord())
+        self.widgets = PlotWidgets(
+            axes=self.axes,
+            ndim=view_ndims,
+            name=self.name,
+            dim_to_shape=self.dim_to_shape,
+            dim_label_map=self.dim_label_map,
+            masks=self.masks,
+            multid_coord=self.model.get_multid_coord(),
+            is_binned_data=(scipp_obj_dict[self.name].bins is not None))
 
         # The view which will display the 2d image and send pick events back to
         # the controller

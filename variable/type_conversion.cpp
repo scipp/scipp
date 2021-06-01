@@ -29,7 +29,8 @@ struct MakeVariableWithType {
                                              static_cast<T>(x.variance)};
                 else
                   return static_cast<T>(x);
-              }});
+              }},
+          "astype");
     }
   };
   static Variable make(const Variable &var, DType type) {
@@ -39,7 +40,6 @@ struct MakeVariableWithType {
 };
 
 Variable astype(const Variable &var, DType type) {
-  return type == var.dtype() ? Variable(var)
-                             : MakeVariableWithType::make(var, type);
+  return type == var.dtype() ? var : MakeVariableWithType::make(var, type);
 }
 } // namespace scipp::variable

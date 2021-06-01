@@ -57,8 +57,6 @@ public:
   /// should be prefered where possible, since it generates less code.
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
-  Variable operator~() const;
-
   [[nodiscard]] const units::Unit &unit() const;
   void setUnit(const units::Unit &unit);
   void expectCanSetUnit(const units::Unit &) const;
@@ -97,11 +95,13 @@ public:
   void validateSlice(const Slice &s, const Variable &data) const;
   [[maybe_unused]] Variable &setSlice(Slice params, const Variable &data);
 
+  template <class T> Variable elements() const;
+  template <class T> Variable elements(const std::string &key) const;
+
   void rename(Dim from, Dim to);
 
   bool operator==(const Variable &other) const;
   bool operator!=(const Variable &other) const;
-  Variable operator-() const;
 
   [[nodiscard]] const VariableConcept &data() const && = delete;
   [[nodiscard]] const VariableConcept &data() const &;
@@ -118,14 +118,9 @@ public:
   template <class T> const T &bin_buffer() const;
   template <class T> T &bin_buffer();
 
-  template <class T>
-  std::tuple<Variable, Dim, typename T::const_element_type>
-  constituents() const;
-  template <class T>
-  std::tuple<Variable, Dim, typename T::element_type> constituents();
-
-  template <class T>
-  std::tuple<Variable, Dim, typename T::buffer_type> to_constituents();
+  template <class T> std::tuple<Variable, Dim, T> constituents() const;
+  template <class T> std::tuple<Variable, Dim, T> constituents();
+  template <class T> std::tuple<Variable, Dim, T> to_constituents();
 
   [[nodiscard]] Variable broadcast(const Dimensions &target) const;
   [[nodiscard]] Variable fold(const Dim dim, const Dimensions &target) const;
@@ -147,6 +142,8 @@ private:
                                                         const Variable &);
   template <class... Ts, class... Args>
   static Variable construct(const DType &type, Args &&... args);
+  template <class T, class... Index>
+  Variable elements_impl(Index... index) const;
 
   void expectWritable() const;
 
