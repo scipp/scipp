@@ -21,4 +21,7 @@ make_vectors(const Dimensions &dims, const units::Unit &unit,
 make_matrices(const Dimensions &dims, const units::Unit &unit,
               element_array<double> &&values);
 
+[[nodiscard]] SCIPP_VARIABLE_EXPORT std::vector<std::string>
+element_keys(const Variable &var);
+
 } // namespace scipp::variable

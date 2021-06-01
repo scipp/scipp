@@ -87,6 +87,16 @@ setattr(Dataset, 'bins', property(_bins, _set_bins))
 setattr(Variable, 'events', property(_events))
 setattr(DataArray, 'events', property(_events))
 
+from ._structured import _fields
+
+setattr(
+    Variable, 'fields',
+    property(
+        _fields,
+        doc=
+        """Provides access to fields of structured types such as vectors or matrices."""
+    ))
+
 from ._bins import _groupby_bins
 
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))

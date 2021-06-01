@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/eigen.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/structures.h"
 
 using namespace scipp;
@@ -29,18 +30,19 @@ TEST_F(VariableStructureTest, elem_access) {
     EXPECT_EQ(vectors.elements<Eigen::Vector3d>().slice(
                   {Dim::InternalStructureComponent, i}),
               elems.slice({Dim::X, i}));
-    EXPECT_EQ(vectors.elements<Eigen::Vector3d>(scipp::index(i)),
-              elems.slice({Dim::X, i}));
   }
+  EXPECT_EQ(vectors.elements<Eigen::Vector3d>("x"), elems.slice({Dim::X, 0}));
+  EXPECT_EQ(vectors.elements<Eigen::Vector3d>("y"), elems.slice({Dim::X, 1}));
+  EXPECT_EQ(vectors.elements<Eigen::Vector3d>("z"), elems.slice({Dim::X, 2}));
 }
 
 TEST_F(VariableStructureTest, matrices_elem_access) {
   // storage order is column-major
   EXPECT_EQ(
-      matrices.elements<Eigen::Matrix3d>(scipp::index(0), scipp::index(1)),
+      matrices.elements<Eigen::Matrix3d>("xy"),
       makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{4, 14}));
   EXPECT_EQ(
-      matrices.elements<Eigen::Matrix3d>(scipp::index(1), scipp::index(0)),
+      matrices.elements<Eigen::Matrix3d>("yx"),
       makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{2, 12}));
 }
 
@@ -59,4 +61,29 @@ TEST_F(VariableStructureTest, elem_access_unit_overwrite) {
 TEST_F(VariableStructureTest, readonly) {
   EXPECT_FALSE(vectors.elements<Eigen::Vector3d>().is_readonly());
   EXPECT_TRUE(vectors.as_const().elements<Eigen::Vector3d>().is_readonly());
+}
+
+TEST_F(VariableStructureTest, binned) {
+  Variable indices = makeVariable<scipp::index_pair>(
+      Dimensions(Dim::X, 2), Values{std::pair{0, 1}, std::pair{1, 2}});
+  Variable var = make_bins(indices, Dim::Y, vectors);
+  Variable elems = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                        units::m, Values{1, 2, 3, 4, 5, 6});
+  for (auto x : {0, 1}) {
+    for (auto i : {0, 1, 2}) {
+      EXPECT_EQ(var.elements<Eigen::Vector3d>()
+                    .values<core::bin<Variable>>()[x]
+                    .slice({Dim::InternalStructureComponent, i}),
+                elems.slice({Dim::X, i}).slice({Dim::Y, x, x + 1}));
+    }
+    EXPECT_EQ(
+        var.elements<Eigen::Vector3d>("x").values<core::bin<Variable>>()[x],
+        elems.slice({Dim::X, 0}).slice({Dim::Y, x, x + 1}));
+    EXPECT_EQ(
+        var.elements<Eigen::Vector3d>("y").values<core::bin<Variable>>()[x],
+        elems.slice({Dim::X, 1}).slice({Dim::Y, x, x + 1}));
+    EXPECT_EQ(
+        var.elements<Eigen::Vector3d>("z").values<core::bin<Variable>>()[x],
+        elems.slice({Dim::X, 2}).slice({Dim::Y, x, x + 1}));
+  }
 }
