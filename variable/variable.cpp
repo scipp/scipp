@@ -14,6 +14,21 @@
 #include "scipp/variable/variable_concept.h"
 
 namespace scipp::variable {
+namespace {
+[[nodiscard]] bool is_in(const Variable &var, const Variable &other) noexcept {
+  if (other.is_valid() && other.dtype() == dtype<Variable>) {
+    for (const Variable &nested : other.values<Variable>()) {
+      if (&var == &nested) {
+        return true;
+      }
+      if (is_in(var, nested)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+}
 
 /// Construct from parent with same dtype, unit, and hasVariances but new dims.
 ///
@@ -28,6 +43,30 @@ Variable::Variable(const Dimensions &dims, VariableConceptHandle data)
 
 Variable::Variable(const llnl::units::precise_measurement &m)
     : Variable(m.value() * units::Unit(m.units())) {}
+
+Variable &Variable::operator=(const Variable &other) {
+  if (is_in(*this, other)) {
+    throw std::invalid_argument("self nesting");
+  }
+  m_dims = other.m_dims;
+  m_strides = other.m_strides;
+  m_offset = other.m_offset;
+  m_object = other.m_object;
+  m_readonly = other.m_readonly;
+  return *this;
+}
+
+Variable &Variable::operator=(Variable &&other) {
+  if (is_in(*this, other)) {
+    throw std::invalid_argument("self nesting");
+  }
+  m_dims = std::move(other.m_dims);
+  m_strides = std::move(other.m_strides);
+  m_offset = std::move(other.m_offset);
+  m_object = std::move(other.m_object);
+  m_readonly = std::move(other.m_readonly);
+  return *this;
+}
 
 void Variable::setDataHandle(VariableConceptHandle object) {
   if (object->size() != m_object->size())
