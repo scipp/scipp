@@ -3,8 +3,25 @@
 Release Notes
 =============
 
-Since v0.6
+Since v0.7
 ----------
+
+Contributors
+~~~~~~~~~~~~
+
+Owen Arnold,
+Simon Heybrock,
+Neil Vaytet,
+and Jan-Lukas Wynen
+
+Features
+~~~~~~~~
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+v0.7.0 (June 2021)
+------------------
 
 Features
 ~~~~~~~~

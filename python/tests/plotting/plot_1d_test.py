@@ -5,7 +5,8 @@
 
 import numpy as np
 import scipp as sc
-from plot_helper import make_dense_dataset, plot
+from ..factory import make_dense_data_array, make_dense_dataset
+from .plot_helper import plot
 
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing
@@ -13,85 +14,75 @@ from plot_helper import make_dense_dataset, plot
 
 
 def test_plot_1d():
-    plot(make_dense_dataset(ndim=1))
+    plot(make_dense_data_array(ndim=1))
 
 
 def test_plot_1d_with_variances():
-    plot(make_dense_dataset(ndim=1, variances=True))
+    plot(make_dense_data_array(ndim=1, variances=True))
 
 
 def test_plot_1d_bin_edges():
-    plot(make_dense_dataset(ndim=1, binedges=True))
+    plot(make_dense_data_array(ndim=1, binedges=True))
 
 
 def test_plot_1d_with_labels():
-    plot(make_dense_dataset(ndim=1, labels=True), axes={"x": "somelabels"})
+    plot(make_dense_data_array(ndim=1, labels=True), axes={"x": "lab"})
 
 
 def test_plot_1d_with_attrs():
-    plot(make_dense_dataset(ndim=1, attrs=True), axes={"x": "attr"})
+    plot(make_dense_data_array(ndim=1, attrs=True), axes={"x": "attr"})
 
 
 def test_plot_1d_log_axes():
-    d = make_dense_dataset(ndim=1)
-    for key, val in d.items():
-        d[key] = sc.abs(val) + 1.0 * sc.units.counts
-    plot(d, scale={'tof': 'log'})
-    plot(d, norm='log')
-    plot(d, norm='log', scale={'tof': 'log'})
+    da = make_dense_data_array(ndim=1)
+    da = sc.abs(da) + 1.0 * sc.units.counts
+    plot(da, scale={'x': 'log'})
+    plot(da, norm='log')
+    plot(da, norm='log', scale={'x': 'log'})
 
 
 def test_plot_1d_bin_edges_with_variances():
-    plot(make_dense_dataset(ndim=1, variances=True, binedges=True))
+    plot(make_dense_data_array(ndim=1, variances=True, binedges=True))
 
 
 def test_plot_1d_two_separate_entries():
-    d = make_dense_dataset(ndim=1)
-    d["Background"] = sc.Variable(['tof'],
-                                  values=2.0 * np.random.random(50),
-                                  unit=sc.units.kg)
-    plot(d)
+    ds = make_dense_dataset(ndim=1)
+    ds['b'].unit = 'kg'
+    plot(ds)
 
 
 def test_plot_1d_two_entries_on_same_plot():
-    d = make_dense_dataset(ndim=1)
-    d["Background"] = sc.Variable(['tof'],
-                                  values=2.0 * np.random.random(50),
-                                  unit=sc.units.counts)
-    plot(d)
+    ds = make_dense_dataset(ndim=1)
+    plot(ds)
 
 
 def test_plot_1d_two_entries_hide_variances():
-    d = make_dense_dataset(ndim=1, variances=True)
-    d["Background"] = sc.Variable(['tof'],
-                                  values=2.0 * np.random.random(50),
-                                  unit=sc.units.counts)
-    plot(d, errorbars=False)
+    ds = make_dense_dataset(ndim=1, variances=True)
+    ds['b'].data.variances = None
+    plot(ds, errorbars=False)
     # When variances are not present, the plot does not fail, is silently does
     # not show variances
-    plot(d, errorbars={"Sample": False, "Background": True})
+    plot(ds, errorbars={"a": False, "b": True})
 
 
 def test_plot_1d_with_masks():
-    plot(make_dense_dataset(ndim=1, masks=True))
+    plot(make_dense_data_array(ndim=1, masks=True))
 
 
 def test_plot_collapse():
-    d = make_dense_dataset(ndim=2)
-    plot(sc.collapse(d["Sample"]['x', :10], keep='tof'))
+    da = make_dense_data_array(ndim=2)
+    plot(sc.collapse(da['y', :10], keep='x'))
 
 
 def test_plot_sliceviewer_with_1d_projection():
-    plot(make_dense_dataset(ndim=3), projection="1d")
+    plot(make_dense_data_array(ndim=3), projection="1d")
 
 
 def test_plot_sliceviewer_with_1d_projection_with_nans():
-    d = make_dense_dataset(ndim=3, binedges=True, variances=True)
-    d['Sample'].values = np.where(d['Sample'].values < 0.0, np.nan,
-                                  d['Sample'].values)
-    d['Sample'].variances = np.where(d['Sample'].values < 0.2, np.nan,
-                                     d['Sample'].variances)
-    plot(d, projection='1d')
+    da = make_dense_data_array(ndim=3, binedges=True, variances=True)
+    da.values = np.where(da.values < 0.0, np.nan, da.values)
+    da.variances = np.where(da.values < 0.2, np.nan, da.variances)
+    plot(da, projection='1d')
 
     # TODO: moving the sliders is disabled for now, because we are not in a
     # Jupyter backend and once the plot has returned, the widgets no longer
@@ -104,48 +95,27 @@ def test_plot_sliceviewer_with_1d_projection_with_nans():
 
 
 def test_plot_projection_1d_two_entries():
-    d = make_dense_dataset(ndim=2, unit='K')
-    d['Background'] = d['Sample'].data * 0.2
-    p = sc.plot(d, projection="1d")
+    ds = make_dense_dataset(ndim=2, unit='K')
+    p = sc.plot(ds, projection="1d")
     assert not hasattr(p, "len")
     p.close()
 
 
 def test_plot_projection_1d_two_entries_different_dims():
-    N = 100
-    M = 50
-    xx = np.arange(N, dtype=np.float64)
-    yy = np.arange(M, dtype=np.float64)
-    a = np.random.random([M, N])
-    d1 = sc.DataArray(data=sc.Variable(['y', 'x'], values=a, unit='K'),
-                      coords={
-                          'x': sc.Variable(['x'], values=xx, unit=sc.units.m),
-                          'y': sc.Variable(['y'], values=yy, unit=sc.units.m)
-                      })
-    d2 = sc.DataArray(data=sc.Variable(['y', 'z'], values=a + 2.0, unit='K'),
-                      coords={
-                          'z': sc.Variable(['z'], values=xx, unit=sc.units.m),
-                          'y': sc.Variable(['y'], values=yy, unit=sc.units.m)
-                      })
-    p = sc.plot({'a': d1, 'b': d2}, projection="1d")
+    da1 = make_dense_data_array(ndim=2, unit='K')
+    da2 = make_dense_data_array(ndim=2, dims=['z', 'y'], unit='K')
+    p = sc.plot({'a': da1, 'b': da2}, projection="1d")
     assert len(p) == 2
     p.close()
 
 
 def test_plot_variable_1d():
-    N = 50
-    v1d = sc.Variable(['tof'],
-                      values=np.random.random(N),
-                      unit=sc.units.counts)
-    plot(v1d)
+    plot(sc.arange('x', 50., unit='counts'))
 
 
 def test_plot_dict_of_variables_1d():
-    N = 50
-    v1 = sc.Variable(['tof'], values=np.random.random(N), unit=sc.units.counts)
-    v2 = sc.Variable(['tof'],
-                     values=5.0 * np.random.random(N),
-                     unit=sc.units.counts)
+    v1 = sc.arange('x', 50.0, unit='s')
+    v2 = 5.0 * v1
     plot({'v1': v1, 'v2': v2})
 
 
@@ -177,90 +147,95 @@ def test_plot_from_dict_data_array_1d():
 
 
 def test_plot_dataset_view():
-    d = make_dense_dataset(ndim=2)
-    plot(d['x', 0])
-
-
-def test_plot_data_array():
-    d = make_dense_dataset(ndim=1)
-    plot(d["Sample"])
+    ds = make_dense_dataset(ndim=2)
+    plot(ds['x', 0])
 
 
 def test_plot_vector_axis_labels_1d():
-    d = sc.Dataset()
     N = 10
-    d["Sample"] = sc.Variable(['x'],
-                              values=np.random.random(N),
-                              unit=sc.units.counts)
-    d.coords['x'] = sc.vectors(dims=['x'],
-                               values=np.random.random([N, 3]),
-                               unit=sc.units.m)
-    plot(d)
+    da = sc.DataArray(data=sc.Variable(['x'],
+                                       values=np.random.random(N),
+                                       unit='counts'),
+                      coords={
+                          'x':
+                          sc.vectors(dims=['x'],
+                                     values=np.random.random([N, 3]),
+                                     unit=sc.units.m)
+                      })
+    plot(da)
 
 
 def test_plot_string_axis_labels_1d():
-    d = sc.Dataset()
     N = 10
-    d["Sample"] = sc.Variable(['x'],
-                              values=np.random.random(N),
-                              unit=sc.units.counts)
-    d.coords['x'] = sc.Variable(
-        dims=['x'],
-        values=["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
-        unit=sc.units.m)
-    plot(d)
+    da = sc.DataArray(data=sc.Variable(['x'],
+                                       values=np.random.random(N),
+                                       unit='counts'),
+                      coords={
+                          'x':
+                          sc.Variable(dims=['x'],
+                                      values=[
+                                          "a", "b", "c", "d", "e", "f", "g",
+                                          "h", "i", "j"
+                                      ],
+                                      unit='m')
+                      })
+    plot(da)
 
 
 def test_plot_string_axis_labels_1d_short():
-    d = sc.Dataset()
     N = 5
-    d["Sample"] = sc.Variable(['x'],
-                              values=np.random.random(N),
-                              unit=sc.units.counts)
-    d.coords['x'] = sc.Variable(dims=['x'],
-                                values=["a", "b", "c", "d", "e"],
-                                unit=sc.units.m)
-    plot(d)
+    da = sc.DataArray(data=sc.Variable(['x'],
+                                       values=np.random.random(N),
+                                       unit='counts'),
+                      coords={
+                          'x':
+                          sc.Variable(dims=['x'],
+                                      values=["a", "b", "c", "d", "e"],
+                                      unit='m')
+                      })
+    plot(da)
 
 
 def test_plot_with_vector_labels():
     N = 10
-    d = sc.Dataset()
-    d["Sample"] = sc.Variable(['x'],
-                              values=np.random.random(N),
-                              unit=sc.units.counts)
-    d.coords['x'] = sc.Variable(['x'],
-                                values=np.arange(N, dtype=np.float64),
-                                unit=sc.units.m)
-    d.coords['labs'] = sc.vectors(dims=['x'],
-                                  values=np.random.random([N, 3]),
-                                  unit=sc.units.m)
-    plot(d)
+    da = sc.DataArray(data=sc.Variable(['x'],
+                                       values=np.random.random(N),
+                                       unit='counts'),
+                      coords={
+                          'x':
+                          sc.arange('x', float(N), unit='m'),
+                          'labs':
+                          sc.vectors(dims=['x'],
+                                     values=np.random.random([N, 3]),
+                                     unit='m')
+                      })
+    plot(da, axes={'x': 'labs'})
 
 
 def test_plot_vector_axis_with_labels():
-    d = sc.Dataset()
     N = 10
-    d["Sample"] = sc.Variable(['x'],
-                              values=np.random.random(N),
-                              unit=sc.units.counts)
-    d.coords['labs'] = sc.Variable(['x'],
-                                   values=np.arange(N, dtype=np.float64),
-                                   unit=sc.units.m)
-    d.coords['x'] = sc.vectors(dims=['x'],
-                               values=np.random.random([N, 3]),
-                               unit=sc.units.m)
-    plot(d)
+    da = sc.DataArray(data=sc.Variable(['x'],
+                                       values=np.random.random(N),
+                                       unit='counts'),
+                      coords={
+                          'labs':
+                          sc.arange('x', float(N), unit='m'),
+                          'x':
+                          sc.vectors(dims=['x'],
+                                     values=np.random.random([N, 3]),
+                                     unit='m')
+                      })
+    plot(da)
 
 
 def test_plot_customized_mpl_axes():
-    d = make_dense_dataset(ndim=1)
-    plot(d["Sample"], title="MyTitle", xlabel="MyXlabel", ylabel="MyYlabel")
+    da = make_dense_data_array(ndim=1)
+    plot(da, title="MyTitle", xlabel="MyXlabel", ylabel="MyYlabel")
 
 
 def test_plot_access_ax_and_fig():
-    d = make_dense_dataset(ndim=1)
-    out = sc.plot(d["Sample"], title="MyTitle")
+    da = make_dense_data_array(ndim=1)
+    out = sc.plot(da, title="MyTitle")
     out.ax.set_xlabel("MyXlabel")
     out.fig.set_dpi(120.)
     out.close()
@@ -268,35 +243,23 @@ def test_plot_access_ax_and_fig():
 
 def test_plot_access_ax_and_fig_two_entries():
     d = make_dense_dataset(ndim=1)
-    d["Background"] = sc.Variable(['tof'],
-                                  values=2.0 * np.random.random(50),
-                                  unit=sc.units.kg)
+    d['b'].unit = 'kg'
     out = sc.plot(d)
-    out["['tof'].counts"].ax.set_xlabel("MyXlabel")
-    out["['tof'].counts"].fig.set_dpi(120.)
+    out["['x'].counts"].ax.set_xlabel("MyXlabel")
+    out["['x'].counts"].fig.set_dpi(120.)
     out.close()
 
 
 def test_plot_with_integer_coord():
-    d = sc.Dataset()
-    N = 10
-    d["Sample"] = sc.Variable(['x'],
-                              values=np.random.random(N),
-                              unit=sc.units.counts)
-    d.coords['x'] = sc.Variable(['x'], values=np.arange(N), unit=sc.units.m)
-    plot(d)
+    da = make_dense_data_array(ndim=1)
+    da.coords['x'] = sc.arange('x', 50, unit='m')
+    plot(da)
 
 
 def test_plot_with_integer_coord_binedges():
-    d = sc.Dataset()
-    N = 10
-    d["Sample"] = sc.Variable(['x'],
-                              values=np.random.random(N),
-                              unit=sc.units.counts)
-    d.coords['x'] = sc.Variable(['x'],
-                                values=np.arange(N + 1),
-                                unit=sc.units.m)
-    plot(d)
+    da = make_dense_data_array(ndim=1, binedges=True)
+    da.coords['x'] = sc.arange('x', 51, unit='m')
+    plot(da)
 
 
 def test_plot_1d_datetime():
@@ -335,30 +298,28 @@ def test_plot_1d_datetime_with_labels():
 
 
 def test_plot_legend():
-    d = make_dense_dataset(ndim=1)
-    plot(d, legend=False)
-    plot(d, legend={"show": False})
-    plot(d, legend={"loc": 5})
-    plot(d, legend={"show": True, "loc": 4})
+    da = make_dense_data_array(ndim=1)
+    plot(da, legend=False)
+    plot(da, legend={"show": False})
+    plot(da, legend={"loc": 5})
+    plot(da, legend={"show": True, "loc": 4})
 
 
 def test_plot_redraw():
-    d = make_dense_dataset(ndim=1)
-    p = sc.plot(d)
-    assert p.view.figure.data_lines['Sample'].get_ydata(
-    )[2] == 10.0 * np.sin(2.0)
-    d['Sample'] *= 5.0
+    da = make_dense_data_array(ndim=1)
+    p = sc.plot(da)
+    assert p.view.figure.data_lines[''].get_ydata()[2] == 10.0 * np.sin(2.0)
+    da *= 5.0
     p.redraw()
-    assert p.view.figure.data_lines['Sample'].get_ydata(
-    )[2] == 50.0 * np.sin(2.0)
+    assert p.view.figure.data_lines[''].get_ydata()[2] == 50.0 * np.sin(2.0)
 
 
 def test_plot_redraw_int64():
-    d = make_dense_dataset(ndim=1, dtype=sc.dtype.int64)
-    p = sc.plot(d)
-    assert p.view.figure.data_lines['Sample'].get_ydata()[2] == int(
-        10.0 * np.sin(2.0))
-    d['Sample'] *= 5
+    da = make_dense_data_array(ndim=1, dtype=sc.dtype.int64)
+    p = sc.plot(da)
+    assert p.view.figure.data_lines[''].get_ydata()[2] == int(10.0 *
+                                                              np.sin(2.0))
+    da *= 5
     p.redraw()
-    assert p.view.figure.data_lines['Sample'].get_ydata()[2] == int(
-        50.0 * np.sin(2.0))
+    assert p.view.figure.data_lines[''].get_ydata()[2] == int(50.0 *
+                                                              np.sin(2.0))

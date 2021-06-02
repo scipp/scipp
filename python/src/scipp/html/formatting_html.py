@@ -8,7 +8,7 @@ from functools import partial, reduce
 from html import escape
 
 from .._scipp import core as sc
-from .._utils import is_data_array, is_dataset
+from ..utils import is_data_array, is_dataset
 from .resources import load_icons
 
 BIN_EDGE_LABEL = "[bin-edge]"

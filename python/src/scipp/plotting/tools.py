@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config
-from .._utils import name_with_unit
+from ..utils import name_with_unit
 from .._scipp import core as sc
 import numpy as np
 from copy import copy

@@ -5,7 +5,7 @@
 from .. import config
 from .toolbar import PlotToolbar3d
 from .tools import fig_to_pngbytes
-from .._utils import value_to_string
+from ..utils import value_to_string
 import numpy as np
 import ipywidgets as ipw
 from matplotlib import cm, ticker
