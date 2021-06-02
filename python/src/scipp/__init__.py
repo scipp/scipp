@@ -113,7 +113,6 @@ setattr(Dataset, 'plot', plot)
 for _obj in [Variable, DataArray, Dataset]:
     setattr(_obj, '__array_ufunc__', None)
 
-
 from ._scipp import core as tmp_core
 from .utils import get as tmp_get
 
