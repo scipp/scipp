@@ -6,6 +6,17 @@ Release Notes
 Since v0.7
 ----------
 
+Features
+~~~~~~~~
+
+* Added numpy-like ``sc.random()`` and ``sc.random_like()`` functions to create variables containing random data `#1951 <https://github.com/scipp/scipp/pull/1951>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
 Contributors
 ~~~~~~~~~~~~
 
@@ -13,12 +24,6 @@ Owen Arnold,
 Simon Heybrock,
 Neil Vaytet,
 and Jan-Lukas Wynen
-
-Features
-~~~~~~~~
-
-Breaking changes
-~~~~~~~~~~~~~~~~
 
 v0.7.0 (June 2021)
 ------------------
