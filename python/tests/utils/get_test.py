@@ -1,7 +1,4 @@
-import numpy as np
-import scipp as sc
 import scipp.utils as su
-import pytest
 
 
 class NoItemsKeysValues:
@@ -30,6 +27,7 @@ def test_dict_get():
     assert su.get(pydict, 'd') is None
     assert su.get(pydict, 'e', 'e') == pydict.get('e', 'e')
 
+
 def test_items_obj_get():
     pydict = dict(a=1, b=2., c='3')
     obj = OnlyItems(**pydict)
@@ -38,6 +36,7 @@ def test_items_obj_get():
     assert su.get(obj, 'c', 3) == pydict.get('c', 'c')
     assert su.get(obj, 'd') is None
     assert su.get(obj, 'e', 'e') == pydict.get('e', 'e')
+
 
 def test_keysvalues_obj_get():
     pydict = dict(a=1, b=2., c='3')
@@ -48,6 +47,7 @@ def test_keysvalues_obj_get():
     assert su.get(obj, 'd') is None
     assert su.get(obj, 'e', 'e') == pydict.get('e', 'e')
 
+
 def test_neither_obj_get():
     pydict = dict(a=1, b=2., c='3')
     obj = NoItemsKeysValues(**pydict)
@@ -56,5 +56,3 @@ def test_neither_obj_get():
     assert su.get(obj, 'c', 3) == 3
     assert su.get(obj, 'd') is None
     assert su.get(obj, 'e', 'e') == 'e'
-
-
