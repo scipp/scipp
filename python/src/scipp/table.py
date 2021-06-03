@@ -7,7 +7,7 @@ from html import escape
 
 # Scipp imports
 from . import config
-from . import _utils as su
+from . import utils as su
 from ._scipp import core as sc
 from .html.formatting_html import inject_style
 
