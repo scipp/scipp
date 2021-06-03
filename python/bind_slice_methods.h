@@ -201,7 +201,7 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   });
   c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, scipp::index>>);
   c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, py::slice>>);
-    c.def("__setitem__", &slicer<T>::template set<py::ellipsis>);
+  c.def("__setitem__", &slicer<T>::template set<py::ellipsis>);
   if constexpr (std::is_same_v<T, DataArray>) {
     c.def("__getitem__", &slicer<T>::get_by_value);
     c.def("__setitem__", &slicer<T>::template set_by_value<Variable>);
