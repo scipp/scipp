@@ -11,11 +11,14 @@ Contributors
 
 Owen Arnold,
 Simon Heybrock,
+Greg Tucker,
 Neil Vaytet,
 and Jan-Lukas Wynen
 
 Features
 ~~~~~~~~
+
+* Slicing syntax now supports ellipsis, e.g., ``da.data[...] = var`` `#1960 <https://github.com/scipp/scipp/pull/1960>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
