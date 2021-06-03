@@ -215,7 +215,7 @@ Variable::Variable(const DType &type, Ts &&... args)
 [[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var,
                                                      Variable &&out);
 
-inline const auto nested_in =
+inline auto nested_in =
     scipp::dyn::VirtualTrait<struct NestedIn,
                              bool(const Variable &, const Variable &)>{};
 } // namespace scipp::variable

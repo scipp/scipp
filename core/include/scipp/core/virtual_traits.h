@@ -15,54 +15,45 @@ scipp::DType get_dtype(V &&v, [[maybe_unused]] Args &&... args) {
   return std::forward<V>(v).dtype();
 }
 
-template <class, class, bool> struct VirtualTraitBase;
+template <class, class, bool> class VirtualTraitBase;
 
 template <class Tag, bool Noexcept, class R, class... Args>
-struct VirtualTraitBase<Tag, R(Args...), Noexcept> {
-  static auto &vtable() {
-    static std::unordered_map<scipp::core::DType,
-                              R (*)(Args...) noexcept(Noexcept)>
-        table;
-    return table;
+class VirtualTraitBase<Tag, R(Args...), Noexcept> {
+public:
+  template <typename Impl> void add(const DType &key, Impl &&impl) {
+    vtable.emplace(key, std::forward<Impl>(impl));
   }
 
-  static const auto &default_impl(R (*f)(Args...)) {
-    static R (*impl)(Args...);
-    if (f != nullptr) {
-      impl = f;
-    }
-    return impl;
-  }
-
-  template <typename Impl> static void add(const DType &key, Impl &&impl) {
-    vtable().template emplace(key, std::forward<Impl>(impl));
-  }
-
-  template <typename Impl> static void add_default(Impl &&impl) {
-    default_impl(std::forward<Impl>(impl));
+  template <typename Impl> void add_default(Impl &&impl) {
+    default_impl = std::forward<Impl>(impl);
   }
 
   R operator()(Args... args) const {
     if (const auto dtype = get_dtype(std::forward<Args>(args)...);
-        vtable().find(dtype) != vtable().end()) {
-      return vtable().at(dtype)(std::forward<Args>(args)...);
-    } else if (const auto &f = default_impl(nullptr); f != nullptr) {
-      return f(std::forward<Args>(args)...);
+        vtable.find(dtype) != vtable.end()) {
+      return vtable.at(dtype)(std::forward<Args>(args)...);
+    } else if (default_impl != nullptr) {
+      return default_impl(std::forward<Args>(args)...);
     }
     assert(false);
   }
+
+private:
+  std::unordered_map<scipp::core::DType, R (*)(Args...) noexcept(Noexcept)>
+      vtable;
+  R (*default_impl)(Args...);
 };
 } // namespace detail
 
-template <class, class> struct VirtualTrait;
+template <class, class> class VirtualTrait;
 
 template <class Tag, class R, class... Args>
-struct VirtualTrait<Tag, R(Args...)>
-    : detail::VirtualTraitBase<Tag, R(Args...), false> {};
+class VirtualTrait<Tag, R(Args...)>
+    : public detail::VirtualTraitBase<Tag, R(Args...), false> {};
 
 template <class Tag, class R, class... Args>
-struct VirtualTrait<Tag, R(Args...) noexcept>
-    : detail::VirtualTraitBase<Tag, R(Args...), true> {};
+class VirtualTrait<Tag, R(Args...) noexcept>
+    : public detail::VirtualTraitBase<Tag, R(Args...), true> {};
 
 struct Default;
 
