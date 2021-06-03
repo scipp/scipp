@@ -167,36 +167,19 @@ template <class T> struct slicer {
   // in the Python bindings directly.
   template <class IndexOrRange>
   static void set(T &self, const IndexOrRange &index, const py::object &data) {
-    if constexpr (std::is_same_v<T, Dataset>) {
-      if (py::isinstance<Dataset>(data)) {
-        set_from_view(self, index, py::cast<Dataset>(data));
-        return;
-      } else if (py::isinstance<Dataset>(data)) {
-        set_from_view(self, index, py::cast<Dataset>(data));
-        return;
-      }
-    } else if constexpr (std::is_same_v<T, DataArray>) {
-      if (py::isinstance<DataArray>(data)) {
-        set_from_view(self, index, py::cast<DataArray>(data));
-        return;
-      } else if (py::isinstance<DataArray>(data)) {
-        set_from_view(self, index, py::cast<DataArray>(data));
-        return;
-      }
-    }
+    if constexpr (std::is_same_v<T, Dataset>)
+      if (py::isinstance<Dataset>(data))
+        return set_from_view(self, index, py::cast<Dataset>(data));
 
-    if constexpr (!std::is_same_v<T, Dataset>) {
-      if (py::isinstance<Variable>(data)) {
-        set_from_view(self, index, py::cast<Variable>(data));
-        return;
-      } else if (py::isinstance<Variable>(data)) {
-        set_from_view(self, index, py::cast<Variable>(data));
-        return;
-      } else {
-        set_from_numpy(getitem(self, index), data);
-        return;
-      }
-    }
+    if constexpr (!std::is_same_v<T, Variable>)
+      if (py::isinstance<DataArray>(data))
+        return set_from_view(self, index, py::cast<DataArray>(data));
+
+    if (py::isinstance<Variable>(data))
+      return set_from_view(self, index, py::cast<Variable>(data));
+
+    if constexpr (!std::is_same_v<T, Dataset>)
+      return set_from_numpy(getitem(self, index), data);
 
     std::ostringstream oss;
     oss << "Cannot to assign a " << py::str(data.get_type())
