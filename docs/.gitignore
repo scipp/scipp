@@ -7,6 +7,3 @@ generated/
 
 # Plots
 visualization/*.pdf
-
-# CMake generated files
-index.rst
