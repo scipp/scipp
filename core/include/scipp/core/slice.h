@@ -14,6 +14,7 @@ namespace scipp::core {
 /// range
 class SCIPP_CORE_EXPORT Slice {
 public:
+  Slice() : m_dim(Dim::None), m_begin(-1), m_end(-1) {}
   Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_);
   Slice(const Dim dim_, const scipp::index begin_);
   Slice &operator=(const Slice &) = default;

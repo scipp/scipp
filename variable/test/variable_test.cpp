@@ -164,6 +164,11 @@ TEST(VariableTest, copy_and_move) {
   EXPECT_EQ(moved, reference);
 }
 
+TEST(Variable, full_slice) {
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2});
+  EXPECT_TRUE(var.is_same(var.slice({})));
+}
+
 TEST(Variable, copy_slice) {
   const auto parent = makeVariable<double>(
       Dims{Dim::X, Dim::Y, Dim::Z}, Shape{4, 2, 3},

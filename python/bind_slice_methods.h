@@ -127,8 +127,7 @@ template <class T> struct slicer {
   }
 
   static auto get_ellipsis(T &self, const py::ellipsis &) {
-    // TODO return DataArray::view()
-    return self;
+    return self.slice({});
   }
 
   static void set_from_numpy(T &self,
@@ -149,9 +148,9 @@ template <class T> struct slicer {
 
   static void set_from_numpy(T &self, const py::ellipsis &,
                              const py::object &obj) {
-    core::CallDType<double, float, int64_t, int32_t,
-                    bool>::apply<SetData<T>::template Impl>(self.dtype(), self,
-                                                            obj);
+    auto slice = self.slice({});
+    core::CallDType<double, float, int64_t, int32_t, bool>::apply<
+        SetData<decltype(slice)>::template Impl>(slice.dtype(), slice, obj);
   }
 
   template <class Other>
@@ -169,10 +168,7 @@ template <class T> struct slicer {
 
   template <class Other>
   static void set_from_view(T &self, const py::ellipsis &, const Other &data) {
-    if constexpr (std::is_same_v<T, Other>)
-      copy(data, self);
-    else
-      copy(data, self.data());
+    self.setSlice(Slice{}, data);
   }
 
   template <class Other>
