@@ -1,6 +1,3 @@
-..
-  ${GENERATED_FILE_WARNING}
-
 |data-structures| |plotting| |masking|
 |binning| |slicing| |scipp-neutron|
 
