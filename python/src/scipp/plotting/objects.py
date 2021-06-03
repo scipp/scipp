@@ -4,7 +4,6 @@
 
 from .tools import parse_params
 from .._scipp.core import DimensionError
-import ipywidgets as ipw
 
 
 class PlotDict():
@@ -252,6 +251,7 @@ class Plot:
         """
         Get the SciPlot object as an `ipywidget`.
         """
+        import ipywidgets as ipw
         widget_list = [self.view._to_widget()]
         if self.profile is not None:
             widget_list.append(self.profile._to_widget())
