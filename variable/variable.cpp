@@ -265,6 +265,10 @@ void Variable::expectWritable() const {
     throw except::VariableError("Read-only flag is set, cannot mutate data.");
 }
 
+scipp::dyn::VirtualTrait<struct NestedIn,
+                         bool(const Variable &, const Variable &)>
+    nested_in{};
+
 [[maybe_unused]] const auto nested_in_default_ =
     scipp::dyn::implement_trait_for<scipp::dyn::Default>(
         nested_in, []([[maybe_unused]] const Variable &container,
