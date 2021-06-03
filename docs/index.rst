@@ -55,7 +55,7 @@ Currently the only example for this is `scippneutron <https://scipp.github.io/sc
 News
 ----
 
-- [${SCIPP_RELEASE_MONTH}] `scipp-${SCIPP_VERSION} <about/release-notes.html>`_ has been released.
+- [|SCIPP_RELEASE_MONTH|] scipp-|SCIPP_VERSION| `has been released <about/release-notes.html>`_.
   Check out the `What's new <about/whats-new.html>`_ notebook for an overview of recent highlights and major changes.
 - Scipp changed from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
 - Looking for ``scipp.neutron``?

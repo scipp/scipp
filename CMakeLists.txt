@@ -194,7 +194,6 @@ include(scipp-functions)
 
 include(scipp-install)
 
-add_subdirectory(docs)
 add_subdirectory(common)
 add_subdirectory(benchmark)
 add_subdirectory(units)
