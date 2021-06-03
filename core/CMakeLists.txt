@@ -20,6 +20,7 @@ set(INC_FILES
     include/scipp/core/value_and_variance.h
     include/scipp/core/values_and_variances.h
     include/scipp/core/view_index.h
+    include/scipp/core/virtual_traits.h
     include/scipp/core/element/arg_list.h
     include/scipp/core/element/arithmetic.h
     include/scipp/core/element/comparison.h
