@@ -26,10 +26,6 @@ private:
     return this->buffer(var);
   }
   Variable data(Variable &var) const override { return this->buffer(var); }
-  bool contains(const Variable &container, const Variable &var) const override {
-    // Neither indices not buffer can hold a nested variable.
-    return false;
-  }
 };
 
 void expect_valid_bin_indices(const VariableConceptHandle &indices,

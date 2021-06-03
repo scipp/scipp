@@ -12,7 +12,6 @@
 #include "scipp/variable/except.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/variable_concept.h"
-#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
@@ -31,7 +30,7 @@ Variable::Variable(const llnl::units::precise_measurement &m)
     : Variable(m.value() * units::Unit(m.units())) {}
 
 Variable &Variable::operator=(const Variable &other) {
-  if (variableFactory().contains(other, *this)) {
+  if (nested_in(other, *this)) {
     throw std::invalid_argument("self nesting");
   }
   m_dims = other.m_dims;
@@ -43,9 +42,10 @@ Variable &Variable::operator=(const Variable &other) {
 }
 
 Variable &Variable::operator=(Variable &&other) {
-  if (variableFactory().contains(other, *this)) {
-    throw std::invalid_argument("self nesting");
-  }
+  // TODO WTF?!
+  //  if (nested_in(other, *this)) {
+  //    throw std::invalid_argument("self nesting");
+  //  }
   m_dims = std::move(other.m_dims);
   m_strides = std::move(other.m_strides);
   m_offset = std::move(other.m_offset);
@@ -265,4 +265,22 @@ void Variable::expectWritable() const {
     throw except::VariableError("Read-only flag is set, cannot mutate data.");
 }
 
+[[maybe_unused]] const auto nested_in_default_ =
+    scipp::dyn::implement_trait_for<scipp::dyn::Default>(
+        nested_in, []([[maybe_unused]] const Variable &container,
+                      [[maybe_unused]] const Variable &var) { return false; });
+
+[[maybe_unused]] const auto nested_in_variable_ =
+    scipp::dyn::implement_trait_for<Variable>(
+        nested_in, [](const Variable &container, const Variable &var) {
+          if (!container.is_valid()) {
+            return false;
+          }
+          for (const auto &nested : container.values<Variable>()) {
+            if (&var == &nested || nested_in(nested, var)) {
+              return true;
+            }
+          }
+          return false;
+        });
 } // namespace scipp::variable
