@@ -76,7 +76,6 @@ class PlotController:
         for key in self.model.get_data_names():
 
             self.xlims[key] = {}
-            self.coord_labels[key] = {}
             self.histograms[key] = {}
 
             # Iterate through axes and collect dimensions
@@ -107,7 +106,7 @@ class PlotController:
                         values=self.xlims[key][dim][scale],
                         unit=coord.unit)
 
-                self.coord_labels[key][dim] = label
+                self.coord_labels[dim] = label
                 self.coord_units[dim] = unit
 
         self.initialize_widgets(dim_to_shape[self.name])
@@ -496,7 +495,7 @@ class PlotController:
                     for name in self.histograms
                 },
                 "dim": dim,
-                "label": self.coord_labels[self.name][dim]
+                "label": self.coord_labels[dim]
             }
 
         return axparams
@@ -576,7 +575,7 @@ class PlotController:
                             for name in self.histograms
                         },
                         "dim": self.profile_dim,
-                        "label": self.coord_labels[self.name][self.profile_dim]
+                        "label": self.coord_labels[self.profile_dim]
                     }
                 }
 
