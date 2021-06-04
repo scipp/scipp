@@ -271,7 +271,7 @@ class PlotModel:
         else:
             return [None, None]
 
-    def slice_data(self, array, slices, keep_dims=False):
+    def slice_data(self, array, slices):
         """
         Slice the data array according to the dimensions and extents listed
         in slices.
@@ -288,8 +288,7 @@ class PlotModel:
                     array.data, dim, array.meta[dim],
                     sc.concatenate(array.meta[dim][dim, 0],
                                    array.meta[dim][dim, -1], dim))
-            if not keep_dims:
-                array = array[dim, 0]
+            array = array[dim, 0]
         return array
 
     def get_multid_coord(self):
