@@ -131,13 +131,11 @@ class PlotController:
         self.update_log_axes_buttons()
         self.update_norm_button(norm)
 
-    def get_dim_shape(self, dim, name=None):
+    def get_dim_shape(self, dim):
         """
         Get dimension shape.
         """
-        if name is None:
-            name = self.name
-        return self.dim_to_shape[name][dim]
+        return self.dim_to_shape[self.name][dim]
 
     def get_coord_unit(self, dim):
         """
