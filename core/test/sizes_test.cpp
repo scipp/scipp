@@ -108,3 +108,11 @@ TEST_F(SizesTest, clear) {
   EXPECT_TRUE(sizes.empty());
   EXPECT_EQ(sizes.begin(), sizes.end());
 }
+
+TEST_F(SizesTest, slice_none) {
+  Sizes sizes;
+  sizes.set(Dim::X, 2);
+  sizes.set(Dim::Y, 3);
+  sizes.set(Dim::Z, 4);
+  EXPECT_EQ(sizes.slice({}), sizes);
+}

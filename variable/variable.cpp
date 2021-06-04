@@ -105,6 +105,8 @@ core::ElementArrayViewParams Variable::array_params() const noexcept {
 Variable Variable::slice(const Slice params) const {
   core::expect::validSlice(dims(), params);
   Variable out(*this);
+  if (params == Slice{})
+    return out;
   const auto dim = params.dim();
   const auto begin = params.begin();
   const auto end = params.end();

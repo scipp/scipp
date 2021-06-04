@@ -154,7 +154,7 @@ Dict<Key, Value> Dict<Key, Value>::slice(const Slice &params) const {
 namespace {
 constexpr auto unaligned_by_dim_slice = [](const auto &item,
                                            const Slice &params) {
-  if (params.end() != -1)
+  if (params == Slice{} || params.end() != -1)
     return false;
   const Dim dim = params.dim();
   const auto &[key, var] = item;
