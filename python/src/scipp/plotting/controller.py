@@ -77,7 +77,6 @@ class PlotController:
 
             self.xlims[key] = {}
             self.coord_labels[key] = {}
-            self.coord_units[key] = {}
             self.histograms[key] = {}
 
             # Iterate through axes and collect dimensions
@@ -109,7 +108,7 @@ class PlotController:
                         unit=coord.unit)
 
                 self.coord_labels[key][dim] = label
-                self.coord_units[key][dim] = unit
+                self.coord_units[dim] = unit
 
         self.initialize_widgets(dim_to_shape[self.name])
         self.initialize_view()
@@ -141,13 +140,11 @@ class PlotController:
             name = self.name
         return self.dim_to_shape[name][dim]
 
-    def get_coord_unit(self, dim, name=None):
+    def get_coord_unit(self, dim):
         """
         Get dimension coordinate unit.
         """
-        if name is None:
-            name = self.name
-        return self.coord_units[name][dim]
+        return self.coord_units[dim]
 
     def initialize_widgets(self, dim_to_shape):
         """
@@ -158,8 +155,7 @@ class PlotController:
         for dim in self.widgets.get_slider_bounds():
             ranges[dim] = self.model.get_slice_coord_bounds(
                 self.name, dim, [0, 1])
-        self.widgets.initialize(dim_to_shape, ranges,
-                                self.coord_units[self.name])
+        self.widgets.initialize(dim_to_shape, ranges, self.coord_units)
 
     def initialize_view(self):
         """
