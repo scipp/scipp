@@ -73,7 +73,6 @@ class Plot1d(Plot):
         self.model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
                                  axes=self.axes,
                                  name=self.name,
-                                 dim_to_shape=self.dim_to_shape,
                                  dim_label_map=self.dim_label_map)
 
         # Run validation checks before rendering the plot.

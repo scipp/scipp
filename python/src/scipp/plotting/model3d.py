@@ -204,7 +204,7 @@ class PlotModel3d(PlotModel):
         """
         dx = [
             axparams["box_size"][i] /
-            self.dim_to_shape[self.name][axparams[xyz]["dim"]]
+            self.data_arrays[self.name].sizes[axparams[xyz]["dim"]]
             for i, xyz in enumerate("xyz")
         ]
         scaling = [axparams[xyz]["scaling"] for xyz in "xyz"]

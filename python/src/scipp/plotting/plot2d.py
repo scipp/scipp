@@ -65,7 +65,6 @@ class Plot2d(Plot):
         self.model = PlotModel2d(scipp_obj_dict=scipp_obj_dict,
                                  axes=self.axes,
                                  name=self.name,
-                                 dim_to_shape=self.dim_to_shape,
                                  dim_label_map=self.dim_label_map,
                                  resolution=resolution)
 

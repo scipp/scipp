@@ -292,7 +292,7 @@ class Plot:
             self.ax = self.view.figure.ax
 
     def _process_axes_dimensions(self,
-                                 array=None,
+                                 array,
                                  axes=None,
                                  view_ndims=None,
                                  positions=None):
@@ -344,6 +344,7 @@ class Plot:
         for key, dim in supplied_axes.items():
             dim_list = list(self.axes.values())
             key_list = list(self.axes.keys())
+            # TODO Should use dim if 2d dimension coord, might not be inner dim
             underlying_dim = array.meta[dim].dims[
                 -1] if dim in array.meta else dim
             if dim in dim_list:

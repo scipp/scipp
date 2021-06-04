@@ -44,7 +44,6 @@ class PlotModel:
                  scipp_obj_dict=None,
                  name=None,
                  axes=None,
-                 dim_to_shape=None,
                  dim_label_map=None):
 
         self.interface = {}
@@ -53,7 +52,6 @@ class PlotModel:
         self.data_arrays = {}
         self.backup = {}
         self.coord_info = {}
-        self.dim_to_shape = dim_to_shape
         self.axformatter = {}
 
         axes_dims = list(axes.values())
@@ -71,7 +69,7 @@ class PlotModel:
 
                 coord, formatter, label, unit, offset = \
                     self._axis_coord_and_formatter(
-                        dim, array, self.dim_to_shape[name], dim_label_map)
+                        dim, array, dim_label_map)
 
                 self.axformatter[name][dim] = formatter
                 self.coord_info[name][dim] = {"label": label, "unit": unit}
@@ -79,8 +77,7 @@ class PlotModel:
                 is_histogram = False
                 for i, d in enumerate(coord.dims):
                     if d == dim:
-                        is_histogram = self.dim_to_shape[name][
-                            d] == coord.shape[i] - 1
+                        is_histogram = array.sizes[d] == coord.shape[i] - 1
 
                 if is_histogram:
                     coord_list[dim] = coord
@@ -106,8 +103,7 @@ class PlotModel:
         # The main currently displayed data slice
         self.dslice = None
 
-    def _axis_coord_and_formatter(self, dim, data_array, dim_to_shape,
-                                  dim_label_map):
+    def _axis_coord_and_formatter(self, dim, data_array, dim_label_map):
         """
         Get dimensions from requested axis.
         Also return axes tick formatters and locators.
@@ -143,7 +139,7 @@ class PlotModel:
         # Get the coordinate from the DataArray or generate a fake one
         if has_no_coord or (kind[dim] == Kind.vector) or (kind[dim]
                                                           == Kind.string):
-            coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
+            coord = make_fake_coord(dim, data_array.sizes[dim] + 1)
             if not has_no_coord:
                 coord.unit = data_array.meta[dim].unit
         elif kind[dim] == Kind.datetime:
@@ -166,11 +162,11 @@ class PlotModel:
 
         if kind[key] == Kind.vector:
             form = VectorFormatter(data_array.meta[key].values,
-                                   dim_to_shape[dim]).formatter
+                                   data_array.sizes[dim]).formatter
             formatter["custom_locator"] = True
         elif kind[key] == Kind.string:
             form = StringFormatter(data_array.meta[key].values,
-                                   dim_to_shape[dim]).formatter
+                                   data_array.sizes[dim]).formatter
             formatter["custom_locator"] = True
         elif kind[key] == Kind.datetime:
             form = DateFormatter(offset, key, self.interface).formatter
@@ -180,7 +176,7 @@ class PlotModel:
                 # In this case we always have a bin-edge coord
                 coord_values = to_bin_centers(coord, dim).values
             else:
-                if data_array.meta[dim].shape[-1] == dim_to_shape[dim]:
+                if data_array.meta[dim].shape[-1] == data_array.sizes[dim]:
                     coord_values = to_bin_centers(coord, dim).values
             form = LabelFormatter(data_array.meta[dim_label_map[dim]].values,
                                   coord_values).formatter
