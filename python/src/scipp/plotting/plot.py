@@ -192,7 +192,6 @@ def plot(scipp_obj,
     output = PlotDict()
     for key, val in tobeplotted.items():
         output._items[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-                                      name=key,
                                       ndim=val["ndims"],
                                       projection=projection,
                                       axes=val["axes"],
