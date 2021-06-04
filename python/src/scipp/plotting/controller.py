@@ -29,7 +29,6 @@ class PlotController:
                  vmax=None,
                  norm=None,
                  scale=None,
-                 dim_to_shape=None,
                  coord_shapes=None,
                  multid_coord=None,
                  widgets=None,
@@ -46,7 +45,6 @@ class PlotController:
 
         self.axes = axes
         self.name = name
-        self.dim_to_shape = dim_to_shape
         self.update_data_lock = False
         self.axparams = {}
 
@@ -73,6 +71,8 @@ class PlotController:
         # Keep track if a coordinate with more than one dimension is present
         self.multid_coord = multid_coord
 
+        sizes = self.model.data_arrays[self.name].sizes
+
         for key in self.model.get_data_names():
 
             self.xlims[key] = {}
@@ -87,7 +87,7 @@ class PlotController:
                 # stored as dicts, with one key per dimension of the coordinate
                 self.histograms[key][dim] = {}
                 for i, d in enumerate(coord.dims):
-                    self.histograms[key][dim][d] = self.dim_to_shape[key][
+                    self.histograms[key][dim][d] = sizes[
                         d] == coord_shapes[key][dim][i] - 1
 
                 # The limits for each dimension
@@ -109,7 +109,7 @@ class PlotController:
                 self.coord_labels[dim] = label
                 self.coord_units[dim] = unit
 
-        self.initialize_widgets(dim_to_shape[self.name])
+        self._initialize_widgets(sizes)
         self.initialize_view()
         self.initialize_model()
         if self.profile is not None:
@@ -131,19 +131,13 @@ class PlotController:
         self.update_log_axes_buttons()
         self.update_norm_button(norm)
 
-    def get_dim_shape(self, dim):
-        """
-        Get dimension shape.
-        """
-        return self.dim_to_shape[self.name][dim]
-
     def get_coord_unit(self, dim):
         """
         Get dimension coordinate unit.
         """
         return self.coord_units[dim]
 
-    def initialize_widgets(self, dim_to_shape):
+    def _initialize_widgets(self, sizes):
         """
         Initialize widget parameters once the `PlotModel`, `PlotView` and
         `PlotController` have been created.
@@ -152,7 +146,7 @@ class PlotController:
         for dim in self.widgets.get_slider_bounds():
             ranges[dim] = self.model.get_slice_coord_bounds(
                 self.name, dim, [0, 1])
-        self.widgets.initialize(dim_to_shape, ranges, self.coord_units)
+        self.widgets.initialize(sizes, ranges, self.coord_units)
 
     def initialize_view(self):
         """
@@ -188,7 +182,6 @@ class PlotController:
             "toggle_profile_view": self.toggle_profile_view,
             "update_data": self.update_data,
             "toggle_mask": self.toggle_mask,
-            "get_dim_shape": self.get_dim_shape,
             "lock_update_data": self.lock_update_data,
             "unlock_update_data": self.unlock_update_data,
             "swap_dimensions": self.swap_dimensions,

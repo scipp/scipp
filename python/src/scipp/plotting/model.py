@@ -54,6 +54,7 @@ class PlotModel:
         self.coord_info = {}
         self.axformatter = {}
 
+        # maps, e.g., x,y,0 -> tof,spectrum,temperature
         axes_dims = list(axes.values())
 
         # Create dict of DataArrays using information from controller

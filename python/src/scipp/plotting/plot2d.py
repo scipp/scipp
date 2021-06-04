@@ -77,7 +77,6 @@ class Plot2d(Plot):
             axes=self.axes,
             ndim=view_ndims,
             name=self.name,
-            dim_to_shape=self.dim_to_shape,
             dim_label_map=self.dim_label_map,
             masks=self.masks,
             multid_coord=self.model.get_multid_coord(),
@@ -121,7 +120,6 @@ class Plot2d(Plot):
         self.controller = PlotController2d(
             axes=self.axes,
             name=self.name,
-            dim_to_shape=self.dim_to_shape,
             coord_shapes=self.coord_shapes,
             vmin=self.params["values"][self.name]["vmin"],
             vmax=self.params["values"][self.name]["vmax"],

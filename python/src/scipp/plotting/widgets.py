@@ -18,7 +18,6 @@ class PlotWidgets:
                  axes=None,
                  ndim=None,
                  name=None,
-                 dim_to_shape=None,
                  dim_label_map=None,
                  pos_dims=None,
                  masks=None,
@@ -271,7 +270,7 @@ class PlotWidgets:
         to lock the data update which is linked to the slider.
         """
         self.interface["lock_update_data"]()
-        self._set_slider_defaults(ind, self.interface["get_dim_shape"](dim))
+        self._set_slider_defaults(ind, self._sizes[dim])
         self.interface["unlock_update_data"]()
 
     def _set_slider_defaults(self, index, max_value):
@@ -318,7 +317,6 @@ class PlotWidgets:
             self.thickness_slider[index].observe(self.update_thickness,
                                                  names="value")
         self.interface["update_data"] = callbacks["update_data"]
-        self.interface["get_dim_shape"] = callbacks["get_dim_shape"]
         self.interface["lock_update_data"] = callbacks["lock_update_data"]
         self.interface["unlock_update_data"] = callbacks["unlock_update_data"]
         self.interface["swap_dimensions"] = callbacks["swap_dimensions"]
@@ -329,16 +327,17 @@ class PlotWidgets:
                 self.mask_checkboxes[name][m].observe(callbacks["toggle_mask"],
                                                       names="value")
 
-    def initialize(self, dim_to_shape, ranges, coord_units):
+    def initialize(self, sizes, ranges, coord_units):
         """
         Initialize widget parameters once the `PlotModel`, `PlotView` and
         `PlotController` have been created, since, for instance, slider limits
         depend on the dimensions of the input data, which are not known until
         the `PlotModel` is created.
         """
+        self._sizes = sizes
         for index in self.thickness_slider:
             dim = self.index_to_dim[index]
-            self._set_slider_defaults(index, dim_to_shape[dim])
+            self._set_slider_defaults(index, sizes[dim])
             lims = ranges[dim]
             val = self.slider[index].value
             self.update_slider_readout(index, lims[0], lims[1], [val, val + 1])
