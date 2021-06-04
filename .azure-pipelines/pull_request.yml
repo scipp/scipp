@@ -33,11 +33,11 @@ extends:
     verbose: ${{ parameters.verbose }}
     config:
       linux:
-        py_versions: ['3.7', '3.9']
+        py_versions: ['3.7']
         conda_env: 'scipp-developer.yml'
       osx:
-        py_versions: ['3.7', '3.9']
+        py_versions: ['3.7']
         conda_env: 'scipp-developer-minimal.yml'
       windows:
-        py_versions: ['3.7', '3.9']
+        py_versions: ['3.7']
         conda_env: 'scipp-developer-minimal.yml'
