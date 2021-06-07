@@ -29,10 +29,27 @@ Variable::Variable(const Dimensions &dims, VariableConceptHandle data)
 Variable::Variable(const llnl::units::precise_measurement &m)
     : Variable(m.value() * units::Unit(m.units())) {}
 
-Variable &Variable::operator=(const Variable &other) {
-  if (nested_in(other, *this)) {
-    throw std::invalid_argument("self nesting");
+namespace {
+void check_nested_in_assign(const Variable &lhs, const Variable &rhs) {
+  if (!rhs.is_valid() || rhs.dtype() != dtype<Variable>) {
+    return;
   }
+  // In principle we should also check when the RHS contains DataArrays or
+  // Datasets. But those are copied when stored in Variables,
+  // so no check needed here.
+  for (const auto &nested : rhs.values<Variable>()) {
+    if (&lhs == &nested) {
+      throw std::invalid_argument("Cannot assign Variable, the right hand side "
+                                  "contains a reference to the left hand side. "
+                                  "Reference cycles are not allowed.");
+    }
+    check_nested_in_assign(lhs, nested);
+  }
+}
+} // namespace
+
+Variable &Variable::operator=(const Variable &other) {
+  check_nested_in_assign(*this, other);
   m_dims = other.m_dims;
   m_strides = other.m_strides;
   m_offset = other.m_offset;
@@ -42,15 +59,12 @@ Variable &Variable::operator=(const Variable &other) {
 }
 
 Variable &Variable::operator=(Variable &&other) {
-  // TODO WTF?!
-  //  if (nested_in(other, *this)) {
-  //    throw std::invalid_argument("self nesting");
-  //  }
-  m_dims = std::move(other.m_dims);
-  m_strides = std::move(other.m_strides);
-  m_offset = std::move(other.m_offset);
+  check_nested_in_assign(*this, other);
+  m_dims = other.m_dims;
+  m_strides = other.m_strides;
+  m_offset = other.m_offset;
   m_object = std::move(other.m_object);
-  m_readonly = std::move(other.m_readonly);
+  m_readonly = other.m_readonly;
   return *this;
 }
 
@@ -264,27 +278,4 @@ void Variable::expectWritable() const {
   if (m_readonly)
     throw except::VariableError("Read-only flag is set, cannot mutate data.");
 }
-
-scipp::dyn::VirtualTrait<struct NestedIn,
-                         bool(const Variable &, const Variable &)>
-    nested_in{};
-
-[[maybe_unused]] const auto nested_in_default_ =
-    scipp::dyn::implement_trait_for<scipp::dyn::Default>(
-        nested_in, []([[maybe_unused]] const Variable &container,
-                      [[maybe_unused]] const Variable &var) { return false; });
-
-[[maybe_unused]] const auto nested_in_variable_ =
-    scipp::dyn::implement_trait_for<Variable>(
-        nested_in, [](const Variable &container, const Variable &var) {
-          if (!container.is_valid()) {
-            return false;
-          }
-          for (const auto &nested : container.values<Variable>()) {
-            if (&var == &nested || nested_in(nested, var)) {
-              return true;
-            }
-          }
-          return false;
-        });
 } // namespace scipp::variable

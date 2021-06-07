@@ -21,7 +21,6 @@
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/strides.h"
-#include "scipp/core/virtual_traits.h"
 
 #include "scipp/variable/variable_keyword_arg_constructor.h"
 
@@ -214,10 +213,6 @@ Variable::Variable(const DType &type, Ts &&... args)
                                                       Variable &out);
 [[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var,
                                                      Variable &&out);
-
-SCIPP_VARIABLE_EXPORT extern scipp::dyn::VirtualTrait<
-    struct NestedIn, bool(const Variable &, const Variable &)>
-    nested_in;
 } // namespace scipp::variable
 
 namespace scipp::core {
