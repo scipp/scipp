@@ -9,7 +9,7 @@ Since v0.7
 Features
 ~~~~~~~~
 
-* Added numpy-like ``sc.random()`` and ``sc.random_like()`` functions to create variables containing random data `#1951 <https://github.com/scipp/scipp/pull/1951>`_.
+* Added ``sizes`` argument to ``zeros``, ``ones``, and ``empty`` variable creation functions `#1951 <https://github.com/scipp/scipp/pull/1951>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~

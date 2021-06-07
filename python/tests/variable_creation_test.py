@@ -271,23 +271,3 @@ def test_empty_sizes():
                         sc.empty(sizes=dict(zip(dims, shape))))
     with pytest.raises(ValueError):
         sc.empty(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
-
-
-def test_random():
-    dims = ['x', 'y', 'z']
-    shape = [2, 3, 4]
-    unit = 's'
-    expected = sc.Variable(dims=dims, shape=shape, unit=unit)
-    _compare_properties(sc.random(dims=dims, shape=shape, unit=unit), expected)
-    _compare_properties(sc.random(sizes=dict(zip(dims, shape)), unit=unit),
-                        expected)
-    with pytest.raises(ValueError):
-        sc.random(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
-
-
-def test_random_like():
-    dims = ['x', 'y', 'z']
-    shape = [2, 3, 4]
-    unit = 's'
-    expected = sc.Variable(dims=dims, shape=shape, unit=unit)
-    _compare_properties(sc.random_like(expected), expected)
