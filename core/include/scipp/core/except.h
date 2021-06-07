@@ -45,6 +45,10 @@ struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
 
 template <>
 [[noreturn]] SCIPP_CORE_EXPORT void
+throw_mismatch_error(const core::Sizes &expected, const core::Sizes &actual);
+
+template <>
+[[noreturn]] SCIPP_CORE_EXPORT void
 throw_mismatch_error(const core::Dimensions &expected,
                      const core::Dimensions &actual);
 

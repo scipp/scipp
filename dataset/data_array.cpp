@@ -61,7 +61,8 @@ void DataArray::setData(const Variable &data) {
   if (m_data->is_same(data))
     return;
   expectWritable(*this);
-  core::expect::equals(static_cast<Sizes>(dims()), data.dims());
+  core::expect::equals(static_cast<Sizes>(dims()),
+                       static_cast<Sizes>(data.dims()));
   *m_data = data;
 }
 
