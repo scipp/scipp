@@ -115,13 +115,13 @@ def flatten(x, dims=None, to=None):
     return _call_cpp_func(_cpp.flatten, x, dims, to)
 
 
-def transpose(x, dims: _Sequence[str]):
-    """Transpose dimensions of a variable.
+def transpose(x, dims: _Sequence[str] = []):
+    """Transpose dimensions of a variable, an data array, or a dataset.
 
-    :param x: Variable to transpose.
+    :param x: Object to transpose.
     :param dims: List of dimensions in desired order. If default,
                         reverses existing order.
-    :type x: Variable
+    :type x: Variable, DataArray, or Dataset
     :type dims: list[str]
     :raises: If the dtype or unit does not match, or if the
              dimensions and shapes are incompatible.
