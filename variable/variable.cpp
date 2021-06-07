@@ -8,9 +8,7 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/creation.h"
 #include "scipp/variable/except.h"
-#include "scipp/variable/shape.h"
 #include "scipp/variable/variable_concept.h"
 
 namespace scipp::variable {
