@@ -32,12 +32,12 @@ class FileMover():
 
 if __name__ == '__main__':
 
-    # Search for a defined INSTALL_PREFIX env variable.
+    # Search for a defined SCIPP_INSTALL_PREFIX env variable.
     # If it exists, it points to a previously built target and we simply move
     # the files from there into the conda build directory.
     # If it is undefined, we build the C++ library by calling main() from
     # build_cpp.
-    source_root = os.environ.get('INSTALL_PREFIX')
+    source_root = os.environ.get('SCIPP_INSTALL_PREFIX')
     if source_root is None:
         source_root = os.path.abspath('scipp_install')
         build_cpp.main(prefix=source_root)
