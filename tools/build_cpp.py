@@ -10,8 +10,8 @@ import multiprocessing
 import sys
 
 parser = argparse.ArgumentParser(description='Build C++ library and run tests')
-parser.add_argument('--prefix', default='')
-parser.add_argument('--source_dir', default='..')
+parser.add_argument('--prefix', default='install')
+parser.add_argument('--source_dir', default='.')
 parser.add_argument('--build_dir', default='build')
 
 
@@ -23,7 +23,7 @@ def run_command(cmd, shell):
     return subprocess.check_call(cmd, stderr=subprocess.STDOUT, shell=shell)
 
 
-def main(prefix='', build_dir=''):
+def main(prefix='install', build_dir='build', source_dir='.'):
     """
     Platform-independent function to run cmake, build, install and C++ tests.
     """
@@ -31,9 +31,13 @@ def main(prefix='', build_dir=''):
     # Get the platform name: 'linux', 'darwin' (osx), or 'win32'.
     platform = sys.platform
 
+    # Set up absolute directory paths
+    source_dir = os.path.abspath(source_dir)
+    prefix = os.path.abspath(prefix)
+    build_dir = os.path.abspath(build_dir)
+
     # Default options
     shell = False
-    # ncores = str(multiprocessing.cpu_count())
     parallel_flag = '-j{}'.format(multiprocessing.cpu_count())
     build_config = ''
 
@@ -66,14 +70,12 @@ def main(prefix='', build_dir=''):
     if platform == 'win32':
         cmake_flags.update({'-G': 'Visual Studio 16 2019', '-A': 'x64'})
         shell = True
-        # parallel_flag = '-- /m:'
         build_config = 'Release'
 
     # Additional flags for --build commands
     build_flags = [parallel_flag]
     if len(build_config) > 0:
         build_flags += ['--config', build_config]
-    # build_flags += [parallel_flag + ncores]
 
     # Parse cmake flags
     flags_list = []
@@ -88,10 +90,10 @@ def main(prefix='', build_dir=''):
     os.chdir(build_dir)
 
     # Run cmake
-    run_command(['cmake'] + flags_list + [args.source_dir], shell=shell)
+    run_command(['cmake'] + flags_list + [source_dir], shell=shell)
 
     # Show cmake settings
-    run_command(['cmake', '-B', '.', '-S', '..', '-LA'], shell=shell)
+    run_command(['cmake', '-B', '.', '-S', source_dir, '-LA'], shell=shell)
 
     # Compile benchmarks
     run_command(['cmake', '--build', '.', '--target', 'all-benchmarks'] +
@@ -122,4 +124,6 @@ def main(prefix='', build_dir=''):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    main(prefix=args.prefix, build_dir=args.build_dir)
+    main(prefix=args.prefix,
+         build_dir=args.build_dir,
+         source_dir=args.source_dir)
