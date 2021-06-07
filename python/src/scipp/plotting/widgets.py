@@ -4,7 +4,7 @@
 
 from html import escape
 
-from .._utils import value_to_string
+from ..utils import value_to_string
 import ipywidgets as ipw
 
 

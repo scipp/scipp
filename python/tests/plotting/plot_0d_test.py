@@ -5,7 +5,7 @@
 
 import scipp as sc
 import pytest
-from plot_helper import plot
+from .plot_helper import plot
 
 
 def test_plot_0d_variable():

@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .._scipp import core as sc
-from .. import _utils as su
+from .. import utils as su
 from ..compat.dict import from_dict
 from .dispatch import dispatch
 from .objects import PlotDict

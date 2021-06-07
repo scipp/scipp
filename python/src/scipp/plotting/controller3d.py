@@ -4,7 +4,7 @@
 
 from .. import config
 from .controller import PlotController
-from .._utils import name_with_unit
+from ..utils import name_with_unit
 import numpy as np
 
 

@@ -4,7 +4,7 @@
 
 from .figure1d import PlotFigure1d
 from .view import PlotView
-from .._utils import make_random_color
+from ..utils import make_random_color
 
 
 class PlotView1d(PlotView):

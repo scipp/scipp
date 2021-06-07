@@ -60,6 +60,41 @@ TEST(Variable, move) {
   EXPECT_NE(moved, var);
 }
 
+TEST(Variable, is_readonly) {
+  auto var = makeVariable<double>(Values{1});
+  EXPECT_FALSE(var.is_readonly());
+  EXPECT_FALSE(Variable(var).is_readonly()); // propagated on copy
+  auto const_var = var.as_const();
+  EXPECT_TRUE(const_var.is_readonly());
+  EXPECT_TRUE(Variable(const_var).is_readonly()); // propagated on copy
+}
+
+TEST(Variable, is_valid) {
+  auto a = Variable();
+  EXPECT_FALSE(a.is_valid());
+  a = makeVariable<double>(Values{1});
+  EXPECT_TRUE(a.is_valid());
+}
+
+TEST(Variable, is_slice) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{1, 2, 3}, Shape{3});
+  EXPECT_FALSE(var.is_slice());
+  EXPECT_FALSE(var.slice({Dim::X, 0, 3}).is_slice());
+  EXPECT_TRUE(var.slice({Dim::X, 1, 3}).is_slice());
+  EXPECT_TRUE(var.slice({Dim::X, 0, 1}).is_slice());
+}
+
+TEST(Variable, is_same) {
+  auto a = makeVariable<double>(Dims{Dim::X}, Values{1, 2}, Shape{2});
+  EXPECT_TRUE(a.is_same(Variable(a)));
+  EXPECT_TRUE(a.is_same(a.as_const()));
+  EXPECT_FALSE(a.is_same(a.slice({Dim::X, 0, 1})));
+
+  auto b = makeVariable<double>(Dims{Dim::Y, Dim::X}, Values{1, 2, 3, 4},
+                                Shape{2, 2});
+  EXPECT_FALSE(b.is_same(b.transpose({Dim::X, Dim::Y})));
+}
+
 TEST(Variable, makeVariable_custom_type) {
   auto doubles = makeVariable<double>(Values{double{}});
   auto floats = makeVariable<float>(Values{float{}});
@@ -127,6 +162,11 @@ TEST(VariableTest, copy_and_move) {
 
   const auto moved(std::move(var));
   EXPECT_EQ(moved, reference);
+}
+
+TEST(Variable, full_slice) {
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2});
+  EXPECT_TRUE(var.is_same(var.slice({})));
 }
 
 TEST(Variable, copy_slice) {

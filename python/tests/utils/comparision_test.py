@@ -1,6 +1,6 @@
 import numpy as np
 import scipp as sc
-import scipp._utils as su
+import scipp.utils as su
 import pytest
 
 

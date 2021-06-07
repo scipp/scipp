@@ -44,9 +44,9 @@ from .plotting import plot
 from .extend_units import *
 from .html import to_html, make_html
 from .object_list import _repr_html_
-from ._utils import collapse, slices
-from ._utils.typing import is_variable, is_dataset, is_data_array, \
-                           is_dataset_or_array
+from .utils import collapse, slices
+from .utils.typing import is_variable, is_dataset, is_data_array, \
+                          is_dataset_or_array
 from .compat.dict import to_dict, from_dict
 from .sizes import _make_sizes
 
@@ -87,6 +87,16 @@ setattr(Dataset, 'bins', property(_bins, _set_bins))
 setattr(Variable, 'events', property(_events))
 setattr(DataArray, 'events', property(_events))
 
+from ._structured import _fields
+
+setattr(
+    Variable, 'fields',
+    property(
+        _fields,
+        doc=
+        """Provides access to fields of structured types such as vectors or matrices."""
+    ))
+
 from ._bins import _groupby_bins
 
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
@@ -102,3 +112,12 @@ setattr(Dataset, 'plot', plot)
 # functions.
 for _obj in [Variable, DataArray, Dataset]:
     setattr(_obj, '__array_ufunc__', None)
+
+from ._scipp import core as tmp_core
+from .utils import get as tmp_get
+
+for cls in [Dataset, tmp_core.Coords, tmp_core.Masks]:
+    setattr(cls, 'get', tmp_get)
+
+del tmp_get
+del tmp_core

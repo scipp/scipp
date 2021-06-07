@@ -151,6 +151,15 @@ def test_coords_keys():
     assert 'x' in d.coords.keys()
 
 
+def test_coords_get():
+    d = sc.Dataset()
+    d.coords['x'] = sc.Variable(1.0)
+    assert sc.identical(d.coords.get('x', sc.Variable(0.0)), d.coords['x'])
+    assert sc.identical(d.coords.get('z', d.coords['x']), d.coords['x'])
+    assert d.coords.get('z', None) is None
+    assert d.coords.get('z') is None
+
+
 def test_slice_item():
     d = sc.Dataset(
         coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})

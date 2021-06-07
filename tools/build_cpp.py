@@ -64,11 +64,7 @@ def main(prefix='', build_dir=''):
             })
 
     if platform == 'win32':
-        cmake_flags.update({
-            '-G': 'Visual Studio 16 2019',
-            '-A': 'x64',
-            '-DCMAKE_CXX_STANDARD': '20'
-        })
+        cmake_flags.update({'-G': 'Visual Studio 16 2019', '-A': 'x64'})
         shell = True
         parallel_flag = '-- /m:'
         build_config = 'Release'
