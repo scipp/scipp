@@ -6,6 +6,18 @@ Release Notes
 Since v0.7
 ----------
 
+Features
+~~~~~~~~
+
+* Added ``sizes`` argument to ``zeros``, ``ones``, and ``empty`` variable creation functions `#1951 <https://github.com/scipp/scipp/pull/1951>`_.
+* Slicing syntax now supports ellipsis, e.g., ``da.data[...] = var`` `#1960 <https://github.com/scipp/scipp/pull/1960>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
 Contributors
 ~~~~~~~~~~~~
 
@@ -14,14 +26,6 @@ Simon Heybrock,
 Greg Tucker,
 Neil Vaytet,
 and Jan-Lukas Wynen
-
-Features
-~~~~~~~~
-
-* Slicing syntax now supports ellipsis, e.g., ``da.data[...] = var`` `#1960 <https://github.com/scipp/scipp/pull/1960>`_.
-
-Breaking changes
-~~~~~~~~~~~~~~~~
 
 v0.7.0 (June 2021)
 ------------------
