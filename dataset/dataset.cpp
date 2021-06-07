@@ -3,12 +3,9 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/dataset.h"
-#include "scipp/common/index.h"
 #include "scipp/core/except.h"
 #include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
-
-#include "dataset_operations_common.h"
 
 namespace scipp::dataset {
 
