@@ -33,8 +33,8 @@ def main(prefix='', build_dir=''):
 
     # Default options
     shell = False
-    ncores = str(multiprocessing.cpu_count())
-    parallel_flag = '-j'
+    # ncores = str(multiprocessing.cpu_count())
+    parallel_flag = '-j{}'.format(multiprocessing.cpu_count())
     build_config = ''
 
     # Some flags use a syntax with a space separator instead of '='
@@ -66,14 +66,14 @@ def main(prefix='', build_dir=''):
     if platform == 'win32':
         cmake_flags.update({'-G': 'Visual Studio 16 2019', '-A': 'x64'})
         shell = True
-        parallel_flag = '-- /m:'
+        # parallel_flag = '-- /m:'
         build_config = 'Release'
 
     # Additional flags for --build commands
-    build_flags = []
+    build_flags = [parallel_flag]
     if len(build_config) > 0:
         build_flags += ['--config', build_config]
-    build_flags += [parallel_flag + ncores]
+    # build_flags += [parallel_flag + ncores]
 
     # Parse cmake flags
     flags_list = []
