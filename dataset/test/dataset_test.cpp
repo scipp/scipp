@@ -444,6 +444,24 @@ TEST(DatasetTest, item_name) {
   EXPECT_EQ(array.name(), "data_xyz");
 }
 
+TEST(DatasetTest, self_nesting) {
+  const auto make_dset = [](const std::string &name, const Variable &var) {
+    return Dataset{std::map{std::pair{name, var}}};
+  };
+  auto inner = make_dset(
+      "data", makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2}));
+  Variable var = makeVariable<Dataset>(Values{inner});
+
+  auto nested_in_data = make_dset("nested", var);
+  ASSERT_THROW_DISCARD(var.value<Dataset>() = nested_in_data,
+                       std::invalid_argument);
+
+  Dataset nested_in_coord;
+  nested_in_coord.coords().set(Dim::X, var);
+  ASSERT_THROW_DISCARD(var.value<Dataset>() = nested_in_coord,
+                       std::invalid_argument);
+}
+
 struct DatasetRenameTest : public ::testing::Test {
   DatasetRenameTest() {
     DatasetFactory3D factory(4, 5, 6, Dim::X);

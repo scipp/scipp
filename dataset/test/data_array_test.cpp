@@ -138,9 +138,10 @@ TEST_F(DataArrayTest, full_slice) {
   EXPECT_TRUE(slice.attrs()[Dim("attr")].is_same(a.attrs()[Dim("attr")]));
 }
 
-TEST_F(DataArrayTest, self_nesting_data) {
+TEST_F(DataArrayTest, self_nesting) {
   DataArray inner{makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2})};
   Variable var = makeVariable<DataArray>(Values{inner});
+
   DataArray nested_in_data{var};
   ASSERT_THROW_DISCARD(var.value<DataArray>() = nested_in_data,
                        std::invalid_argument);
