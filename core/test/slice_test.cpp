@@ -7,6 +7,11 @@
 
 using namespace scipp;
 
+TEST(SliceTest, test_default_construct) {
+  Slice slice;
+  EXPECT_EQ(slice.dim(), Dim::None);
+}
+
 TEST(SliceTest, test_construction) {
   Slice point(Dim::X, 0);
   EXPECT_EQ(point.dim(), Dim::X);

@@ -15,6 +15,7 @@ class SCIPP_UNITS_EXPORT Dim {
 public:
   enum class Id : uint16_t {
     Invalid,
+    None,
     InternalStructureComponent,
     InternalStructureRow,
     InternalStructureColumn,
@@ -35,6 +36,7 @@ public:
   };
 
   constexpr static auto Invalid = Id::Invalid;
+  constexpr static auto None = Id::None;
   constexpr static auto InternalStructureComponent =
       Id::InternalStructureComponent;
   constexpr static auto InternalStructureRow = Id::InternalStructureRow;

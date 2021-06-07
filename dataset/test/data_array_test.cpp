@@ -128,3 +128,12 @@ TEST_F(DataArrayTest, as_const) {
   EXPECT_TRUE(b.attrs()[Dim("attr")].is_readonly());
   EXPECT_EQ(a.name(), b.name());
 }
+
+TEST_F(DataArrayTest, full_slice) {
+  DataArray a(data, {{Dim::X, coord}}, {{"mask", mask}}, {{Dim("attr"), attr}});
+  const auto slice = a.slice({});
+  EXPECT_TRUE(slice.data().is_same(a.data()));
+  EXPECT_TRUE(slice.coords()[Dim::X].is_same(a.coords()[Dim::X]));
+  EXPECT_TRUE(slice.masks()["mask"].is_same(a.masks()["mask"]));
+  EXPECT_TRUE(slice.attrs()[Dim("attr")].is_same(a.attrs()[Dim("attr")]));
+}

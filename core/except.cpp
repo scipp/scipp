@@ -65,6 +65,8 @@ void dimensionMatches(const Dimensions &dims, const Dim dim,
 }
 
 void validSlice(const Sizes &dims, const Slice &slice) {
+  if (slice == Slice{})
+    return;
   const auto end = slice.end() < 0 ? slice.begin() + 1 : slice.end();
   if (!dims.contains(slice.dim()) || end > dims[slice.dim()])
     throw except::SliceError("Expected " + to_string(slice) + " to be in " +
