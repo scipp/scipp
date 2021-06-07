@@ -52,8 +52,65 @@ DataArray::DataArray(Variable data, typename Coords::holder_type coords,
       m_masks(std::make_shared<Masks>(dims(), std::move(masks))),
       m_attrs(std::make_shared<Attrs>(dims(), std::move(attrs))) {}
 
+namespace {
+[[noreturn]] void throw_nesting_error() {
+  throw std::invalid_argument("Cannot assign DataArray, the right hand side "
+                              "contains a reference to the left hand side. "
+                              "Reference cycles are not allowed.");
+}
+
+void check_nested_in_assign(const DataArray &lhs, const DataArray &rhs);
+
+template <class T>
+void check_nested_in_assign(const T &lhs, const Variable &rhs) {
+  if (rhs.dtype() == dtype<T>) {
+    for (const auto &nested : rhs.values<T>()) {
+      check_nested_in_assign(lhs, nested);
+    }
+  }
+}
+
+template <class T, class Key, class Value>
+void check_nested_in_assign(const T &lhs, const Dict<Key, Value> &rhs) {
+  for (const auto &[_, var] : rhs) {
+    check_nested_in_assign(lhs, var);
+  }
+}
+
+void check_nested_in_assign(const DataArray &lhs, const DataArray &rhs) {
+  if (!rhs.is_valid()) {
+    return;
+  }
+  if (&lhs == &rhs) {
+    throw_nesting_error();
+  }
+  check_nested_in_assign(lhs, rhs.data());
+  check_nested_in_assign(lhs, rhs.coords());
+  check_nested_in_assign(lhs, rhs.masks());
+  check_nested_in_assign(lhs, rhs.attrs());
+}
+} // namespace
+
 DataArray &DataArray::operator=(const DataArray &other) {
+  if (this == &other) {
+    return *this;
+  }
+  check_nested_in_assign(*this, other);
   return *this = DataArray(other);
+}
+
+DataArray &DataArray::operator=(DataArray &&other) {
+  if (this == &other) {
+    return *this;
+  }
+  check_nested_in_assign(*this, other);
+  m_name = std::move(other.m_name);
+  m_data = std::move(other.m_data);
+  m_coords = std::move(other.m_coords);
+  m_masks = std::move(other.m_masks);
+  m_attrs = std::move(other.m_attrs);
+  m_readonly = other.m_readonly;
+  return *this;
 }
 
 void DataArray::setData(const Variable &data) {
