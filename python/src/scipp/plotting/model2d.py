@@ -6,8 +6,6 @@
 from .. import config
 from .model import PlotModel
 from .resampling_model import resampling_model
-from .._scipp import core as sc
-import numpy as np
 
 
 class PlotModel2d(PlotModel):
@@ -59,30 +57,7 @@ class PlotModel2d(PlotModel):
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
 
-    def get_slice_values(self, mask_info, extent=None):
-        values = self.dslice.values
-        transpose = self.displayed_dims['x'] == self.dslice.dims[0]
-        if transpose:
-            values = np.transpose(values)
-        slice_values = {"values": values, "extent": extent}
-        # TODO duplication with model.py _make_masks
-        if len(mask_info[self.name]) > 0:
-            # Use automatic broadcasting in Scipp variables
-            msk = sc.Variable(dims=self.dslice.data.dims,
-                              values=np.zeros(self.dslice.data.shape,
-                                              dtype=np.int32))
-            for m, val in mask_info[self.name].items():
-                if val:
-                    msk += sc.Variable(
-                        dims=self.dslice.masks[m].dims,
-                        values=self.dslice.masks[m].values.astype(np.int32))
-            if transpose:
-                slice_values["masks"] = np.transpose(msk.values)
-            else:
-                slice_values["masks"] = msk.values
-        return slice_values
-
-    def _update_image(self, extent=None, mask_info=None):
+    def _update_image(self):
         """
         Resample 2d images to a fixed resolution to handle very large images.
         """
@@ -90,9 +65,9 @@ class PlotModel2d(PlotModel):
         for dim in self._squeeze:
             data = data[dim, 0]
         self.dslice = data
-        return self.get_slice_values(mask_info=mask_info, extent=extent)
+        return data
 
-    def update_data(self, slices, mask_info):
+    def update_data(self, slices):
         """
         Slice the data along dimension sliders that are not disabled for all
         entries in the dict of data arrays.
@@ -106,9 +81,9 @@ class PlotModel2d(PlotModel):
                 self._squeeze.append(dim)
                 self._model.resolution[dim] = 1
                 self._model.bounds[dim] = (start, stop)
-        return self._update_image(mask_info=mask_info)
+        return self._update_image()
 
-    def update_viewport(self, xylims, mask_info):
+    def update_viewport(self, xylims):
         """
         When an update to the viewport is requested on a zoom event, set new
         rebin edges and call for a resample of the image.
@@ -118,9 +93,7 @@ class PlotModel2d(PlotModel):
             self._model.resolution[dim] = self.image_resolution[xy]
             self._model.bounds[dim] = (xylims[xy][0] * unit,
                                        xylims[xy][1] * unit)
-        return self._update_image(extent=np.array(list(
-            xylims.values())).flatten(),
-                                  mask_info=mask_info)
+        return self._update_image()
 
     def update_profile_model(self,
                              visible=False,
@@ -170,11 +143,7 @@ class PlotModel2d(PlotModel):
             dimy: (y[dimy, iy], y[dimy, iy + 1]),
             profile_dim: None
         }
-        return {
-            self.name:
-            self._make_profile(self._profile_model.data[dimx, 0][dimy, 0],
-                               profile_dim, mask_info[self.name])
-        }
+        return {self.name: self._profile_model.data[dimx, 0][dimy, 0]}
 
     def reset_resampling_model(self):
         self._model.reset()

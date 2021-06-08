@@ -27,7 +27,7 @@ class PlotModel1d(PlotModel):
         """
         self.dim = axparams["x"]["dim"]
 
-    def update_data(self, slices, mask_info):
+    def update_data(self, slices):
         """
         Slice the data along dimension sliders that are not disabled for all
         entries in the dict of data arrays, and return a dict of 1d value
@@ -57,8 +57,7 @@ class PlotModel1d(PlotModel):
                        ydata=None,
                        slices=None,
                        axparams=None,
-                       profile_dim=None,
-                       mask_info=None):
+                       profile_dim=None):
         """
         Slice down all dimensions apart from the profile dimension, and send
         the data values, variances and masks back to the `PlotController`.

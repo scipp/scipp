@@ -42,17 +42,15 @@ class PlotView1d(PlotView):
     def _make_data(self, new_values, mask_info):
         out = {}
         for name, array in new_values.items():
-            dim = array.dims[0]
+            self._dim = array.dims[0]  # should be same for all items
             values = {"values": {}, "variances": {}, "masks": {}}
-            values["values"]["x"] = array.meta[dim].values.ravel()
+            values["values"]["x"] = array.meta[self._dim].values.ravel()
             values["values"]["y"] = array.values.ravel()
             if array.variances is not None:
                 values["variances"]["e"] = vars_to_err(array.variances.ravel())
             values["masks"] = self._make_masks(array,
                                                mask_info=mask_info[name])
             out[name] = values
-        print(new_values)
-        print(out)
         return out
 
     def toggle_mask(self, change):
@@ -107,6 +105,12 @@ class PlotView1d(PlotView):
         # => need to store self.data from update_data
         # => new_values should be data array (or list of data array)
         if event.inaxes == self.figure.ax:
+            # TODO
+            #  Find closest point to cursor
+            #  TODO: can we optimize this with new buckets?
+            # distance_to_cursor = np.abs(
+            #     self._data[self.name].meta[self._dim].values - event.xdata)
+            # ind = int(np.argmin(distance_to_cursor))
             self.interface["update_profile"](xdata=event.xdata)
             self.interface["toggle_hover_visibility"](True)
         else:

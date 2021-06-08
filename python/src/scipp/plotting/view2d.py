@@ -5,6 +5,7 @@
 from .figure2d import PlotFigure2d
 from .view import PlotView
 from ..utils import make_random_color
+from .. import dtype, zeros
 import numpy as np
 from matplotlib.collections import PathCollection
 
@@ -34,6 +35,31 @@ class PlotView2d(PlotView):
                                          self.check_for_xlim_update)
         self.figure.ax.callbacks.connect('ylim_changed',
                                          self.check_for_ylim_update)
+
+    def _make_data(self, new_values, mask_info):
+        values = new_values.values
+        # TODO
+        # transpose = self.displayed_dims['x'] == new_values.dims[0]
+        transpose = False
+        if transpose:
+            values = np.transpose(values)
+        slice_values = {
+            "values": values,
+            "extent": np.array(list(self.current_lims.values())).flatten()
+        }
+        # TODO duplication with model.py _make_masks
+        mask_info = next(iter(mask_info.values()))
+        if len(mask_info) > 0:
+            # Use automatic broadcasting in Scipp variables
+            msk = zeros(sizes=new_values.sizes, dtype='int32')
+            for m, val in mask_info.items():
+                if val:
+                    msk += new_values.masks[m].astype(dtype.int32)
+            if transpose:
+                slice_values["masks"] = np.transpose(msk.values)
+            else:
+                slice_values["masks"] = msk.values
+        return slice_values
 
     def check_for_xlim_update(self, event_ax):
         """

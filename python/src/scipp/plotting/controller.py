@@ -304,9 +304,11 @@ class PlotController:
         This is used when either vmin and vmax limits have been changed, or
         the normalization has been modified.
         """
-        new_values = self.model.get_slice_values(
-            mask_info=self.get_masks_info())
-        self.view.update_data(new_values, mask_info=self.get_masks_info())
+        # TODO mechanism to update masks?
+        pass
+        # new_values = self.model.get_slice_values(
+        #    mask_info=self.get_masks_info())
+        # self.view.update_data(new_values, mask_info=self.get_masks_info())
 
     def transpose(self, owner=None):
         """
@@ -434,8 +436,7 @@ class PlotController:
 
         info = {"slice_label": self._make_slice_label(slices, "")[1:]}
 
-        new_values = self.model.update_data(slices,
-                                            mask_info=self.get_masks_info())
+        new_values = self.model.update_data(slices)
         self.view.update_data(new_values,
                               info=info,
                               mask_info=self.get_masks_info())
@@ -617,8 +618,7 @@ class PlotController:
                                                ydata=ydata,
                                                slices=slices,
                                                axparams=self.profile_axparams,
-                                               profile_dim=self.profile_dim,
-                                               mask_info=self.get_masks_info())
+                                               profile_dim=self.profile_dim)
         # Send new values to the profile view
         self.profile.update_data(new_values,
                                  info=info,
