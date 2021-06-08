@@ -5,6 +5,8 @@ Classes
 
 .. autosummary::
    :toctree: ../generated
+   :template: scipp-class-template.rst
+   :recursive:
 
    Bins
    DataArray
