@@ -95,31 +95,18 @@ def main(prefix='install', build_dir='build', source_dir='.'):
     # Show cmake settings
     run_command(['cmake', '-B', '.', '-S', source_dir, '-LA'], shell=shell)
 
-    # Compile benchmarks
-    run_command(['cmake', '--build', '.', '--target', 'all-benchmarks'] +
-                build_flags,
-                shell=shell)
-
-    # Compile C++ tests
-    run_command(['cmake', '--build', '.', '--target', 'all-tests'] +
-                build_flags,
-                shell=shell)
-
-    # Compile Python library
-    run_command(['cmake', '--build', '.', '--target', 'install'] + build_flags,
-                shell=shell)
+    # Compile benchmarks, C++ tests, and python library
+    for target in ['all-benchmarks', 'all-tests', 'install']:
+        run_command(['cmake', '--build', '.', '--target', target] +
+                    build_flags,
+                    shell=shell)
 
     # Run C++ tests
-    run_command([os.path.join('bin', build_config, 'scipp-common-test')],
-                shell=shell)
-    run_command([os.path.join('bin', build_config, 'scipp-units-test')],
-                shell=shell)
-    run_command([os.path.join('bin', build_config, 'scipp-core-test')],
-                shell=shell)
-    run_command([os.path.join('bin', build_config, 'scipp-variable-test')],
-                shell=shell)
-    run_command([os.path.join('bin', build_config, 'scipp-dataset-test')],
-                shell=shell)
+    for test in [
+            'scipp-common-test', 'scipp-units-test', 'scipp-core-test',
+            'scipp-variable-test', 'scipp-dataset-test'
+    ]:
+        run_command([os.path.join('bin', build_config, test)], shell=shell)
 
 
 if __name__ == '__main__':
