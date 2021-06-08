@@ -306,7 +306,7 @@ class PlotController:
         """
         new_values = self.model.get_slice_values(
             mask_info=self.get_masks_info())
-        self.view.update_data(new_values)
+        self.view.update_data(new_values, mask_info=self.get_masks_info())
 
     def transpose(self, owner=None):
         """
@@ -436,7 +436,9 @@ class PlotController:
 
         new_values = self.model.update_data(slices,
                                             mask_info=self.get_masks_info())
-        self.view.update_data(new_values, info=info)
+        self.view.update_data(new_values,
+                              info=info,
+                              mask_info=self.get_masks_info())
         if self.panel is not None:
             self.panel.update_data(info)
         if self.profile_dim is not None:
@@ -618,7 +620,9 @@ class PlotController:
                                                profile_dim=self.profile_dim,
                                                mask_info=self.get_masks_info())
         # Send new values to the profile view
-        self.profile.update_data(new_values, info=info)
+        self.profile.update_data(new_values,
+                                 info=info,
+                                 mask_info=self.get_masks_info())
 
     def _make_slice_label(self, slices, label):
         # Add slice ranges to profile label

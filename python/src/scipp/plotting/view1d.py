@@ -5,6 +5,9 @@
 from .figure1d import PlotFigure1d
 from .view import PlotView
 from ..utils import make_random_color
+from .. import ones
+from .tools import vars_to_err
+from .._scipp import core as sc
 
 
 class PlotView1d(PlotView):
@@ -18,6 +21,39 @@ class PlotView1d(PlotView):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(figure=PlotFigure1d(*args, **kwargs))
+
+    def _make_masks(self, array, mask_info, transpose=False):
+        if not mask_info:
+            return {}
+        masks = {}
+        data = array.data
+        base_mask = ones(sizes=data.sizes, dtype=sc.dtype.int32)
+        for m in mask_info:
+            if m in array.masks:
+                msk = base_mask * sc.Variable(dims=array.masks[m].dims,
+                                              values=array.masks[m].values)
+                masks[m] = msk.values
+                if transpose:
+                    masks[m] = sc.transpose(msk).values
+            else:
+                masks[m] = None
+        return masks
+
+    def _make_data(self, new_values, mask_info):
+        out = {}
+        for name, array in new_values.items():
+            dim = array.dims[0]
+            values = {"values": {}, "variances": {}, "masks": {}}
+            values["values"]["x"] = array.meta[dim].values.ravel()
+            values["values"]["y"] = array.values.ravel()
+            if array.variances is not None:
+                values["variances"]["e"] = vars_to_err(array.variances.ravel())
+            values["masks"] = self._make_masks(array,
+                                               mask_info=mask_info[name])
+            out[name] = values
+        print(new_values)
+        print(out)
+        return out
 
     def toggle_mask(self, change):
         """
@@ -63,6 +99,13 @@ class PlotView1d(PlotView):
         TODO: optimize visibility update to that it only calls the function on
         a state change and not on every mouse movement.
         """
+        # Plan:
+        # want to use separate model for profile
+        # => want to refactor `model.update_profile` so it is same as
+        #    update_data
+        # => move cursor finding code from model here
+        # => need to store self.data from update_data
+        # => new_values should be data array (or list of data array)
         if event.inaxes == self.figure.ax:
             self.interface["update_profile"](xdata=event.xdata)
             self.interface["toggle_hover_visibility"](True)

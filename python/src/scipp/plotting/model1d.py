@@ -49,8 +49,7 @@ class PlotModel1d(PlotModel):
             for dim in squeeze:
                 data = data[dim, 0]
             self.dslice[name] = data
-            out[name] = self._make_profile(self.dslice[name], self.dim,
-                                           mask_info[name])
+            out[name] = data
         return out
 
     def update_profile(self,
@@ -72,9 +71,8 @@ class PlotModel1d(PlotModel):
         # Slice all dims apart from profile dim and currently displayed dim,
         # then currently displayed dim.
         return {
-            name: self._make_profile(
-                self.slice_data(self.data_arrays[name], slices)[self.dim, ind],
-                profile_dim, mask_info[name])
+            name: self.slice_data(self.data_arrays[name], slices)[self.dim,
+                                                                  ind]
             for name in self.data_arrays
         }
 

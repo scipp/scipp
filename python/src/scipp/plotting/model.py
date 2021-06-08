@@ -5,11 +5,9 @@
 from .formatters import VectorFormatter, StringFormatter, \
                         DateFormatter, LabelFormatter
 from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
-                   vars_to_err, find_limits, to_dict
-from ..utils import name_with_unit
-from ..typing import has_vector_type, has_string_type, has_datetime_type
+                   find_limits, to_dict
+from ..utils import name_with_unit, vector_type, string_type, datetime_type
 from .._scipp import core as sc
-import numpy as np
 import enum
 
 
@@ -196,34 +194,6 @@ class PlotModel:
             coord_unit = name_with_unit(var=coord, name="")
 
         return coord, formatter, coord_label, coord_unit, offset
-
-    def _make_masks(self, array, mask_info, transpose=False):
-        if not mask_info:
-            return {}
-        masks = {}
-        data = array.data
-        base_mask = sc.Variable(dims=data.dims,
-                                values=np.ones(data.shape, dtype=np.int32))
-        for m in mask_info:
-            if m in array.masks:
-                msk = base_mask * sc.Variable(dims=array.masks[m].dims,
-                                              values=array.masks[m].values)
-                masks[m] = msk.values
-                if transpose:
-                    masks[m] = np.transpose(masks[m])
-            else:
-                masks[m] = None
-        return masks
-
-    def _make_profile(self, profile, dim, mask_info):
-        values = {"values": {}, "variances": {}, "masks": {}}
-        values["values"]["x"] = profile.meta[dim].values.ravel()
-        values["values"]["y"] = profile.data.values.ravel()
-        if profile.data.variances is not None:
-            values["variances"]["e"] = vars_to_err(
-                profile.data.variances.ravel())
-        values["masks"] = self._make_masks(profile, mask_info=mask_info)
-        return values
 
     def update_data_arrays(self):
         for name, item in self.backup.items():
