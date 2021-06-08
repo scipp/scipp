@@ -14,7 +14,7 @@ resources:
     name: scipp/pipelines
     type: github
     endpoint: scipp
-    ref: test_predocs_python
+    ref: main
 
 trigger:
   branches:
