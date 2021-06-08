@@ -45,22 +45,25 @@ class ResamplingModel():
         return self._edges
 
     def _rebin(self, var, coords):
+        array = sc.DataArray(data=var,
+                             coords={key: coords[key]
+                                     for key in coords})
         plan = []
         for edge in self.edges:
             dim = edge.dims[-1]
             if dim not in var.dims:
                 continue
-            coord = coords[dim]
+            coord = array.meta[dim]
             if len(coord.dims) == 1:
-                plan.append((coord, edge))
+                plan.append(edge)
             else:
-                plan.insert(0, (coord, edge))
-        for coord, edge in plan:
+                plan.insert(0, edge)
+        for edge in plan:
             try:
-                var = sc.rebin(var, dim, coord, edge)
+                array = sc.rebin(array, dim, edge)
             except RuntimeError:  # Limitation of rebin for slice of inner dim
-                var = sc.rebin(var.copy(), edge.dims[-1], coord, edge)
-        return var
+                array = sc.rebin(array.copy(), edge.dims[-1], edge)
+        return array
 
     def _make_edges(self, params):
         edges = []
@@ -164,7 +167,7 @@ class ResamplingBinnedModel(ResamplingModel):
         else:
             a = sc.bin(array=array, edges=self.edges).bins.sum()
         for name, mask in array.masks.items():
-            a.masks[name] = self._rebin(mask, array.meta)
+            a.masks[name] = self._rebin(mask, array.meta).data
         return a
 
 
@@ -173,19 +176,10 @@ class ResamplingCountsModel(ResamplingModel):
         return array
 
     def _resample(self, array):
-        data = self._rebin(array.data, array.meta)
-        coords = {}
-        for edge in self.edges:
-            coords[edge.dims[-1]] = edge
-        for dim in data.dims:
-            if dim not in coords:
-                coords[dim] = array.meta[dim]
-        return sc.DataArray(data=data,
-                            coords=coords,
-                            masks={
-                                name: self._rebin(mask, array.meta)
-                                for name, mask in array.masks.items()
-                            })
+        a = self._rebin(array.data, array.meta)
+        for name, mask in array.masks.items():
+            a.masks[name] = self._rebin(mask, array.meta).data
+        return array
 
 
 class ResamplingDenseModel(ResamplingModel):
@@ -208,19 +202,10 @@ class ResamplingDenseModel(ResamplingModel):
         return data
 
     def _resample(self, array):
-        data = self._from_density(self._rebin(array.data, array.meta))
-        coords = {}
-        for edge in self.edges:
-            coords[edge.dims[-1]] = edge
-        for dim in data.dims:
-            if dim not in coords:
-                coords[dim] = array.meta[dim]
-        return sc.DataArray(data=data,
-                            coords=coords,
-                            masks={
-                                name: self._rebin(mask, array.meta)
-                                for name, mask in array.masks.items()
-                            })
+        a = self._from_density(self._rebin(array.data, array.meta))
+        for name, mask in array.masks.items():
+            a.masks[name] = self._rebin(mask, array.meta).data
+        return a
 
     def _make_array(self, array):
         # Scale by bin widths, so `rebin` is effectively performing a "mean"
