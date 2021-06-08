@@ -47,13 +47,7 @@ void check_nested_in_assign(const Variable &lhs, const Variable &rhs) {
 } // namespace
 
 Variable &Variable::operator=(const Variable &other) {
-  check_nested_in_assign(*this, other);
-  m_dims = other.m_dims;
-  m_strides = other.m_strides;
-  m_offset = other.m_offset;
-  m_object = other.m_object;
-  m_readonly = other.m_readonly;
-  return *this;
+  return *this = Variable(other);
 }
 
 Variable &Variable::operator=(Variable &&other) {
