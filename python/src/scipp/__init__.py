@@ -112,12 +112,10 @@ setattr(Dataset, 'plot', plot)
 # functions.
 for _obj in [Variable, DataArray, Dataset]:
     setattr(_obj, '__array_ufunc__', None)
+del _obj
 
-from ._scipp import core as tmp_core
-from .utils import get as tmp_get
-
-for cls in [Dataset, tmp_core.Coords, tmp_core.Masks]:
-    setattr(cls, 'get', tmp_get)
-
-del tmp_get
-del tmp_core
+from . import _binding
+_binding.bind_get()
+_binding.bind_functions_as_methods(Variable, globals(),
+                                   ['abs', 'sin'])
+del _binding
