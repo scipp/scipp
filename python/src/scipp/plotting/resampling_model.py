@@ -45,9 +45,10 @@ class ResamplingModel():
         return self._edges
 
     def _rebin(self, var, coords):
-        array = sc.DataArray(data=var,
-                             coords={key: coords[key]
-                                     for key in coords})
+        array = sc.DataArray(data=var)
+        for dim in coords:
+            if dim in var.dims:
+                array.coords[dim] = coords[dim]
         plan = []
         for edge in self.edges:
             dim = edge.dims[-1]
@@ -119,6 +120,8 @@ class ResamplingModel():
             self._resampled_params = params
             self._edges = self._make_edges(params)
             self._resampled = self._resample(out)
+            for name, mask in out.masks.items():
+                self._resampled.masks[name] = self._rebin(mask, out.meta).data
         if self._home is None:
             self._home = self._resampled
             self._home_params = self._resampled_params
@@ -163,12 +166,9 @@ class ResamplingBinnedModel(ResamplingModel):
             # below: If coord is ragged binning would throw otherwise.
             bounds = sc.concatenate(edges[dim, 0], edges[dim, -1], dim)
             binned = sc.bin(array=array, edges=self.edges[:-1] + [bounds])
-            a = sc.histogram(binned, edges)
+            return sc.histogram(binned, edges)
         else:
-            a = sc.bin(array=array, edges=self.edges).bins.sum()
-        for name, mask in array.masks.items():
-            a.masks[name] = self._rebin(mask, array.meta).data
-        return a
+            return sc.bin(array=array, edges=self.edges).bins.sum()
 
 
 class ResamplingCountsModel(ResamplingModel):
@@ -176,10 +176,7 @@ class ResamplingCountsModel(ResamplingModel):
         return array
 
     def _resample(self, array):
-        a = self._rebin(array.data, array.meta)
-        for name, mask in array.masks.items():
-            a.masks[name] = self._rebin(mask, array.meta).data
-        return array
+        return self._rebin(array.data, array.meta)
 
 
 class ResamplingDenseModel(ResamplingModel):
@@ -202,10 +199,7 @@ class ResamplingDenseModel(ResamplingModel):
         return data
 
     def _resample(self, array):
-        a = self._from_density(self._rebin(array.data, array.meta))
-        for name, mask in array.masks.items():
-            a.masks[name] = self._rebin(mask, array.meta).data
-        return a
+        return self._from_density(self._rebin(array.data, array.meta))
 
     def _make_array(self, array):
         # Scale by bin widths, so `rebin` is effectively performing a "mean"

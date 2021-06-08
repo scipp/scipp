@@ -38,7 +38,6 @@ class PlotModel1d(PlotModel):
         for name in self.data_arrays:
             squeeze = []
             model = resampling_model(self.data_arrays[name])
-            print(f'slices{slices}')
             for dim, [start, stop] in slices.items():
                 if start + 1 == stop:
                     model.bounds[dim] = start
