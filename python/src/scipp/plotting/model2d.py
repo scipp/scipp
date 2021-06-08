@@ -95,6 +95,7 @@ class PlotModel2d(PlotModel):
                                        xylims[xy][1] * unit)
         return self._update_image()
 
+    # TODO
     def update_profile_model(self,
                              visible=False,
                              slices=None,
@@ -115,35 +116,6 @@ class PlotModel2d(PlotModel):
             }
         else:
             self._profile_model = None
-
-    def update_profile(self,
-                       xdata=None,
-                       ydata=None,
-                       slices=None,
-                       axparams=None,
-                       profile_dim=None,
-                       mask_info=None):
-        """
-        Slice down all dimensions apart from the profile dimension, and send
-        the data values, variances and masks back to the `PlotController`.
-
-        TODO: remove duplicate code between this and update_profile in model1d.
-        """
-        # Find indices of pixel where cursor lies
-        dimx = self.displayed_dims['x']
-        dimy = self.displayed_dims['y']
-        x = self._model.data.meta[dimx]
-        y = self._model.data.meta[dimy]
-        # Note that xdata and ydata already have the left edge subtracted from
-        # them
-        ix = int(xdata / (x.values[1] - x.values[0]))
-        iy = int(ydata / (y.values[1] - y.values[0]))
-        self._profile_model.bounds = {
-            dimx: (x[dimx, ix], x[dimx, ix + 1]),
-            dimy: (y[dimy, iy], y[dimy, iy + 1]),
-            profile_dim: None
-        }
-        return {self.name: self._profile_model.data[dimx, 0][dimy, 0]}
 
     def reset_resampling_model(self):
         self._model.reset()

@@ -8,6 +8,7 @@ from ..utils import make_random_color
 from .. import ones
 from .tools import vars_to_err
 from .._scipp import core as sc
+import numpy as np
 
 
 class PlotView1d(PlotView):
@@ -105,13 +106,13 @@ class PlotView1d(PlotView):
         # => need to store self.data from update_data
         # => new_values should be data array (or list of data array)
         if event.inaxes == self.figure.ax:
-            # TODO
             #  Find closest point to cursor
             #  TODO: can we optimize this with new buckets?
-            # distance_to_cursor = np.abs(
-            #     self._data[self.name].meta[self._dim].values - event.xdata)
-            # ind = int(np.argmin(distance_to_cursor))
-            self.interface["update_profile"](xdata=event.xdata)
+            distance_to_cursor = np.abs(
+                self._data[self.name].meta[self._dim].values - event.xdata)
+            ind = int(np.argmin(distance_to_cursor))
+            slices = {self._dim: ind}
+            self.interface["update_profile"](slices)
             self.interface["toggle_hover_visibility"](True)
         else:
             self.interface["toggle_hover_visibility"](False)

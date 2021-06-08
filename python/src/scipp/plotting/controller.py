@@ -3,9 +3,10 @@
 # @author Neil Vaytet
 
 from .tools import find_limits, fix_empty_range
-from ..utils import value_to_string
+# from ..utils import value_to_string
 from .._scipp import core as sc
 import numpy as np
+from copy import copy
 
 
 class PlotController:
@@ -39,6 +40,8 @@ class PlotController:
 
         self.widgets = widgets
         self.model = model
+        # TODO calling copy here may not be enough to avoid interdependencies
+        self._profile_model = copy(model)
         self.panel = panel
         self.profile = profile
         self.view = view
@@ -305,10 +308,10 @@ class PlotController:
         the normalization has been modified.
         """
         # TODO mechanism to update masks?
-        pass
         # new_values = self.model.get_slice_values(
         #    mask_info=self.get_masks_info())
         # self.view.update_data(new_values, mask_info=self.get_masks_info())
+        self.view.figure.update_data(self.view._data)
 
     def transpose(self, owner=None):
         """
@@ -590,7 +593,7 @@ class PlotController:
                 self.name, self.profile_dim, slices[self.profile_dim])
             self.profile.update_slice_area(lower, upper)
 
-    def update_profile(self, xdata=None, ydata=None):
+    def update_profile(self, slices):
         """
         This is called from a mouse move event, which requires an update of the
         currently displayed profile.
@@ -599,27 +602,23 @@ class PlotController:
         the model to the profile view.
         """
         info = {"slice_label": ""}
-        ax_dims = {self.axparams[xyz]["dim"]: xyz for xyz in self.axparams}
-        xydata = {'x': xdata, 'y': ydata}
+        # ax_dims = {self.axparams[xyz]["dim"]: xyz for xyz in self.axparams}
+        # TODO fix labels
+        # xydata = {'x': xdata, 'y': ydata}
 
         slices = self.widgets.get_slider_bounds(exclude=self.profile_dim)
 
         # Add pixel locations to profile label
-        for dim in ax_dims:
-            info["slice_label"] = "{},{}:{}".format(
-                info["slice_label"], dim,
-                value_to_string(xydata[ax_dims[dim]], precision=1))
+        # for dim in ax_dims:
+        #    info["slice_label"] = "{},{}:{}".format(
+        #        info["slice_label"], dim,
+        #        value_to_string(xydata[ax_dims[dim]], precision=1))
 
         info["slice_label"] = self._make_slice_label(slices,
                                                      info["slice_label"])[1:]
 
-        # Get new values from model
-        new_values = self.model.update_profile(xdata=xdata,
-                                               ydata=ydata,
-                                               slices=slices,
-                                               axparams=self.profile_axparams,
-                                               profile_dim=self.profile_dim)
-        # Send new values to the profile view
+        slices[self.profile_dim] = None
+        new_values = self._profile_model.update_data(slices=slices)
         self.profile.update_data(new_values,
                                  info=info,
                                  mask_info=self.get_masks_info())

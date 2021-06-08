@@ -52,29 +52,6 @@ class PlotModel1d(PlotModel):
             out[name] = data
         return out
 
-    def update_profile(self,
-                       xdata=None,
-                       ydata=None,
-                       slices=None,
-                       axparams=None,
-                       profile_dim=None):
-        """
-        Slice down all dimensions apart from the profile dimension, and send
-        the data values, variances and masks back to the `PlotController`.
-        """
-        # Find closest point to cursor
-        # TODO: can we optimize this with new buckets?
-        distance_to_cursor = np.abs(
-            self.data_arrays[self.name].meta[self.dim].values - xdata)
-        ind = int(np.argmin(distance_to_cursor))
-        # Slice all dims apart from profile dim and currently displayed dim,
-        # then currently displayed dim.
-        return {
-            name: self.slice_data(self.data_arrays[name], slices)[self.dim,
-                                                                  ind]
-            for name in self.data_arrays
-        }
-
     def rescale_to_data(self, scale=None):
         """
         Get the min and max values of the currently displayed slice.
