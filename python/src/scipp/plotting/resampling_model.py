@@ -173,14 +173,19 @@ class ResamplingCountsModel(ResamplingModel):
         return array
 
     def _resample(self, array):
-        return sc.DataArray(
-            data=self._rebin(array.data, array.meta),
-            coords={edge.dims[-1]: edge
-                    for edge in self.edges},
-            masks={
-                name: self._rebin(mask, array.meta)
-                for name, mask in array.masks.items()
-            })
+        data = self._rebin(array.data, array.meta)
+        coords = {}
+        for edge in self.edges:
+            coords[edge.dims[-1]] = edge
+        for dim in data.dims:
+            if dim not in coords:
+                coords[dim] = array.meta[dim]
+        return sc.DataArray(data=data,
+                            coords=coords,
+                            masks={
+                                name: self._rebin(mask, array.meta)
+                                for name, mask in array.masks.items()
+                            })
 
 
 class ResamplingDenseModel(ResamplingModel):
@@ -203,14 +208,19 @@ class ResamplingDenseModel(ResamplingModel):
         return data
 
     def _resample(self, array):
-        return sc.DataArray(
-            data=self._from_density(self._rebin(array.data, array.meta)),
-            coords={edge.dims[-1]: edge
-                    for edge in self.edges},
-            masks={
-                name: self._rebin(mask, array.meta)
-                for name, mask in array.masks.items()
-            })
+        data = self._from_density(self._rebin(array.data, array.meta))
+        coords = {}
+        for edge in self.edges:
+            coords[edge.dims[-1]] = edge
+        for dim in data.dims:
+            if dim not in coords:
+                coords[dim] = array.meta[dim]
+        return sc.DataArray(data=data,
+                            coords=coords,
+                            masks={
+                                name: self._rebin(mask, array.meta)
+                                for name, mask in array.masks.items()
+                            })
 
     def _make_array(self, array):
         # Scale by bin widths, so `rebin` is effectively performing a "mean"

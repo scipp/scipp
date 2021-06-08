@@ -4,6 +4,7 @@
 
 from .model import PlotModel
 from .tools import find_limits
+from .resampling_model import resampling_model
 import numpy as np
 
 
@@ -35,7 +36,20 @@ class PlotModel1d(PlotModel):
         self.dslice = {}
         out = {}
         for name in self.data_arrays:
-            self.dslice[name] = self.slice_data(self.data_arrays[name], slices)
+            squeeze = []
+            model = resampling_model(self.data_arrays[name])
+            print(f'slices{slices}')
+            for dim, [start, stop] in slices.items():
+                if start + 1 == stop:
+                    model.bounds[dim] = start
+                else:
+                    squeeze.append(dim)
+                    model.resolution[dim] = 1
+                    model.bounds[dim] = (start, stop)
+            data = model.data
+            for dim in squeeze:
+                data = data[dim, 0]
+            self.dslice[name] = data
             out[name] = self._make_profile(self.dslice[name], self.dim,
                                            mask_info[name])
         return out
