@@ -817,7 +817,7 @@ TEST(Variable, self_nesting_scalar_copy) {
   Variable inner = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 3});
 
   // 1 level of nesting
-  Variable v1 = makeVariable<Variable>(Shape{}, Values{inner});
+  Variable v1 = makeVariable<Variable>(Shape{}, Values{copy(inner)});
   ASSERT_NO_THROW_DISCARD(v1 = v1);
   ASSERT_EQ(v1.value<Variable>(), inner);
   ASSERT_THROW_DISCARD(v1.value<Variable>() = v1, std::invalid_argument);
@@ -836,7 +836,7 @@ TEST(Variable, self_nesting_scalar_move) {
   Variable inner = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 3});
 
   // 1 level of nesting
-  Variable v1 = makeVariable<Variable>(Shape{}, Values{inner});
+  Variable v1 = makeVariable<Variable>(Shape{}, Values{copy(inner)});
   ASSERT_NO_THROW_DISCARD(v1 = std::move(v1));
   ASSERT_EQ(v1.value<Variable>(), inner);
   v1 = makeVariable<Variable>(Shape{}, Values{inner});
@@ -862,8 +862,8 @@ TEST(Variable, self_nesting_array) {
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
 
   // 1 level of nesting
-  Variable v1 =
-      makeVariable<Variable>(Dims{Dim::Z}, Shape{2}, Values{inner1, inner2});
+  Variable v1 = makeVariable<Variable>(Dims{Dim::Z}, Shape{2},
+                                       Values{copy(inner1), copy(inner2)});
   ASSERT_NO_THROW_DISCARD(v1 = v1);
   ASSERT_EQ(v1.values<Variable>().front(), inner1);
   ASSERT_THROW_DISCARD(v1.values<Variable>().front() = v1,
