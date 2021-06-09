@@ -58,19 +58,17 @@ def concatenate(x, y, dim):
       >>> c
       <scipp.Variable> (x: 6)      int64  [dimensionless]  [0, 1, ..., 100, 200]
       >>> c.values
-      [  0   1   2   0 100 200]
+      array([  0,   1,   2,   0, 100, 200])
 
       >>> d = sc.concatenate(a, b, dim='y')
       >>> d
       <scipp.Variable> (y: 2, x: 3)      int64  [dimensionless]  [0, 1, ..., 100, 200]
       >>> d.values
-      [[  0   1   2]
-       [  0 100 200]]
+      array([[  0,   1,   2],
+             [  0, 100, 200]])
        
-      >>> x = sc.DataArray(sc.arange('x', 3),
-                           coords={'x': sc.arange('x', 3)})
-      >>> y = sc.DataArray(100 * sc.arange('x', 3),
-                           coords={'x': 100 * sc.arange('x', 3)})
+      >>> x = sc.DataArray(sc.arange('x', 3), coords={'x': sc.arange('x', 3)})
+      >>> y = sc.DataArray(100 * sc.arange('x', 3), coords={'x': 100 * sc.arange('x', 3)})
       >>> z = sc.concatenate(x, y, dim='x')
       >>> z
       <scipp.DataArray>
@@ -80,8 +78,7 @@ def concatenate(x, y, dim):
       Data:
                                     int64  [dimensionless]  (x)  [0, 1, ..., 100, 200]
       >>> z.values
-      [  0   1   2   0 100 200]
-
+      array([  0,   1,   2,   0, 100, 200])
     """
     return _call_cpp_func(_cpp.concatenate, x, y, dim)
 
@@ -111,15 +108,14 @@ def fold(x, dim, sizes=None, dims=None, shape=None):
       >>> sc.fold(v, dim='x', sizes={'y': 2, 'z': 3})
       <scipp.Variable> (y: 2, z: 3)      int64  [dimensionless]  [0, 1, ..., 4, 5]
       >>> sc.fold(v, dim='x', sizes={'y': 2, 'z': 3}).values
-      [[0 1 2]
-       [3 4 5]]
+      array([[0, 1, 2],
+             [3, 4, 5]])
 
-      >>> sc.fold(a, dim='x', dims=['y', 'x'], shape=[2, 3])
+      >>> sc.fold(v, dim='x', dims=['y', 'z'], shape=[2, 3])
       <scipp.Variable> (y: 2, z: 3)      int64  [dimensionless]  [0, 1, ..., 4, 5]
 
-      >>> a = sc.DataArray(0.1 * sc.arange('x', 6),
-                           coords={'x': sc.arange('x', 6)})
-      >>> sc.fold(a, dim='x', dims={'y': 2, 'z': 3})
+      >>> a = sc.DataArray(0.1 * sc.arange('x', 6), coords={'x': sc.arange('x', 6)})
+      >>> sc.fold(a, dim='x', sizes={'y': 2, 'z': 3})
       <scipp.DataArray>
       Dimensions: Sizes[y:2, z:3, ]
       Coordinates:
@@ -127,11 +123,11 @@ def fold(x, dim, sizes=None, dims=None, shape=None):
       Data:
                                   float64  [dimensionless]  (y, z)  [0.000000, 0.100000, ..., 0.400000, 0.500000]
       >>> sc.fold(a, dim='x', sizes={'y': 2, 'z': 3}).data.values
-      [[0.  0.1 0.2]
-       [0.3 0.4 0.5]]
+      array([[0. , 0.1, 0.2],
+             [0.3, 0.4, 0.5]])
       >>> sc.fold(a, dim='x', sizes={'y': 2, 'z': 3}).coords['x'].values
-      [[0 1 2]
-       [3 4 5]]
+      array([[0, 1, 2],
+             [3, 4, 5]])
     """
     if sizes is not None:
         if (dims is not None) or (shape is not None):
@@ -174,7 +170,7 @@ def flatten(x, dims=None, to=None):
       >>> v = sc.array(dims=['x', 'y', 'z'], values=np.arange(24).reshape(2, 3, 4))
       >>> v
       <scipp.Variable> (x: 2, y: 3, z: 4)      int64  [dimensionless]  [0, 1, ..., 22, 23]
-      >>> c.flatten(v, to='u')
+      >>> sc.flatten(v, to='u')
       <scipp.Variable> (u: 24)      int64  [dimensionless]  [0, 1, ..., 22, 23]
       >>> sc.flatten(v, dims=['x', 'y'], to='u')
       <scipp.Variable> (u: 6, z: 4)      int64  [dimensionless]  [0, 1, ..., 22, 23]
@@ -182,10 +178,10 @@ def flatten(x, dims=None, to=None):
       <scipp.Variable> (x: 2, u: 12)      int64  [dimensionless]  [0, 1, ..., 22, 23]
 
       >>> a = sc.DataArray(0.1 * sc.array(dims=['x', 'y'], values=np.arange(6).reshape(2, 3)),
-                 coords={'x': sc.arange('x', 2),
-                         'y': sc.arange('y', 3),
-                         'xy': sc.array(dims=['x', 'y'],
-                                        values=np.arange(6).reshape(2, 3))})
+      ...        coords={'x': sc.arange('x', 2),
+      ...               'y': sc.arange('y', 3),
+      ...                'xy': sc.array(dims=['x', 'y'],
+      ...                               values=np.arange(6).reshape(2, 3))})
       >>> a
       <scipp.DataArray>
       Dimensions: Sizes[x:2, y:3, ]
