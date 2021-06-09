@@ -120,10 +120,10 @@ _binding.bind_get()
 for _cls in (Variable, DataArray):
     _binding.bind_functions_as_methods(
         _cls, globals(), ('broadcast', 'flatten', 'fold', 'transpose', 'all',
-                          'any', 'mean', 'sum'))
+                          'any', 'mean', 'sum', 'nanmean', 'nansum'))
 del _cls
 _binding.bind_functions_as_methods(Variable, globals(),
-                                   ('cumsum', 'max', 'min'))
+                                   ('cumsum', 'max', 'min', 'nanmax', 'nanmin'))
 _binding.bind_functions_as_methods(DataArray, globals(), ('groupby', ))
 _binding.bind_functions_as_methods(Dataset, globals(), ('groupby', ))
 del _binding

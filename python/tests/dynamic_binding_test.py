@@ -20,7 +20,7 @@ def make_containers():
     return var, da
 
 
-@pytest.mark.parametrize('func_name', ('cumsum', 'max', 'mean', 'min', 'sum'))
+@pytest.mark.parametrize('func_name', ('cumsum', 'max', 'mean', 'min', 'nanmax', 'nanmean', 'nanmin', 'nansum', 'sum'))
 def test_bound_methods_reduction_variable(func_name):
     var, _ = make_containers()
     func = getattr(sc, func_name)
@@ -35,7 +35,7 @@ def test_bound_methods_reduction_variable_bool(func_name):
     assert sc.identical(getattr(var, func_name)(), func(var))
 
 
-@pytest.mark.parametrize('func_name', ('mean', 'sum'))
+@pytest.mark.parametrize('func_name', ('mean', 'nanmean', 'nansum', 'sum'))
 def test_bound_methods_reduction_dataarray(func_name):
     _, da = make_containers()
     func = getattr(sc, func_name)
