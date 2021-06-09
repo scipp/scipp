@@ -11,6 +11,7 @@ Features
 
 * Added ``sizes`` argument to ``zeros``, ``ones``, and ``empty`` variable creation functions `#1951 <https://github.com/scipp/scipp/pull/1951>`_.
 * Slicing syntax now supports ellipsis, e.g., ``da.data[...] = var`` `#1960 <https://github.com/scipp/scipp/pull/1960>`_.
+* Added bound method equivalents to many free functions which take a single Variable or DataArray `#1969 <https://github.com/scipp/scipp/pull/1969>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
