@@ -45,7 +45,7 @@ class PlotModel1d(PlotModel):
                     model.bounds[dim] = bounds
                 else:
                     start, stop = bounds
-                    if start + 1 == stop:
+                    if isinstance(start, int) and start + 1 == stop:
                         model.bounds[dim] = start
                     else:
                         squeeze.append(dim)

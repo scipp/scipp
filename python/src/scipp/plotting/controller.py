@@ -7,7 +7,6 @@ from .tools import find_limits, fix_empty_range
 # from ..utils import value_to_string
 from .._scipp import core as sc
 import numpy as np
-from copy import copy
 
 
 class PlotController:
@@ -35,6 +34,7 @@ class PlotController:
                  multid_coord=None,
                  widgets=None,
                  model=None,
+                 profile_model=None,
                  panel=None,
                  profile=None,
                  view=None):
@@ -42,10 +42,10 @@ class PlotController:
         self.widgets = widgets
         self.model = model
         # TODO calling copy here may not be enough to avoid interdependencies
-        self._profile_model = copy(model)
+        self._profile_model = profile_model
         self.panel = panel
         self.profile = profile
-        self.profile_view = PlotView1d(figure=profile)
+        self._profile_view = PlotView1d(figure=profile)
         self.view = view
 
         self.axes = axes
@@ -617,9 +617,9 @@ class PlotController:
         # TODO is this required for profile with event data?
         # slices[self.profile_dim] = None
         new_values = self._profile_model.update_data(slices=slices)
-        self.profile_view.update_data(new_values,
-                                      info=info,
-                                      mask_info=self.get_masks_info())
+        self._profile_view.update_data(new_values,
+                                       info=info,
+                                       mask_info=self.get_masks_info())
 
     def _make_slice_label(self, slices, label):
         # Add slice ranges to profile label

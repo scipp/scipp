@@ -4,6 +4,7 @@
 
 from .. import config
 from .controller2d import PlotController2d
+from .model1d import PlotModel1d
 from .model2d import PlotModel2d
 from .objects import Plot
 from .profile import PlotProfile
@@ -68,6 +69,10 @@ class Plot2d(Plot):
                                  name=self.name,
                                  dim_label_map=self.dim_label_map,
                                  resolution=resolution)
+        profile_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
+                                    axes=self.axes,
+                                    name=self.name,
+                                    dim_label_map=self.dim_label_map)
 
         # Run validation checks before rendering the plot.
         # Note that validation needs to be run after model is created.
@@ -129,6 +134,7 @@ class Plot2d(Plot):
             scale=scale,
             widgets=self.widgets,
             model=self.model,
+            profile_model=profile_model,
             view=self.view,
             profile=self.profile,
             multid_coord=self.model.get_multid_coord())
