@@ -477,6 +477,23 @@ TEST_F(TransposeTest, data_array_2d) {
   EXPECT_EQ(transpose(a, {Dim::Y, Dim::X}), a);
 }
 
+TEST_F(TransposeTest, data_array_2d_meta_data) {
+  Variable edges = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3},
+                                        Values{1, 2, 3, 4, 5, 6, 7, 8, 9});
+  // Note: The 2-d coord must not be transposed, since this would break the
+  // association with its dimension. Mask may in principle be transposed but is
+  // not right now.
+  a.coords().set(Dim("edges"), edges);
+  a.masks().set("mask", xy);
+  a.attrs().set(Dim("attr"), xy);
+  auto transposed = transpose(a);
+  EXPECT_EQ(transposed.data(), transpose(a.data()));
+  transposed.setData(a.data());
+  EXPECT_EQ(transposed, a);
+  EXPECT_EQ(transpose(a, {Dim::X, Dim::Y}), transpose(a));
+  EXPECT_EQ(transpose(a, {Dim::Y, Dim::X}), a);
+}
+
 TEST_F(TransposeTest, dataset_no_order) {
   Dataset d;
   d.setData("a", a);
