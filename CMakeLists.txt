@@ -123,7 +123,8 @@ execute_process(
   COMMAND git describe --tag
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
   RESULT_VARIABLE HAVE_GIT_VERSION_INFO
-  OUTPUT_VARIABLE GIT_VERSION_INFO OUTPUT_STRIP_TRAILING_WHITESPACE
+  OUTPUT_VARIABLE GIT_VERSION_INFO
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
   message(STATUS "Got version from Git: ${GIT_VERSION_INFO}")
@@ -169,7 +170,11 @@ add_custom_target(all-tests)
 
 # Custom target for building documentation
 add_custom_target(
-  docs COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/make_docs.py
+  docs
+  COMMAND
+    ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/make_docs.py
+    --prefix=${CMAKE_CURRENT_BINARY_DIR}/docs
+    --work_dir=${CMAKE_CURRENT_BINARY_DIR}/docs/doctrees
 )
 
 include(GNUInstallDirs)
