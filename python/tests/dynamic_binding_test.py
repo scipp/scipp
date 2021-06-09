@@ -58,3 +58,14 @@ def test_bound_methods_shape():
             'a': 2,
             'b': 2
         }))
+
+
+def test_bound_methods_groupby():
+    rng = np.random.default_rng(1491)
+    _, da = make_containers()
+    da.coords['x'] = sc.array(dims=['x'],
+                              values=rng.choice([0, 1], da.coords['x'].shape))
+    assert sc.identical(da.groupby('x').sum('x'), sc.groupby(da, 'x').sum('x'))
+
+    ds = sc.Dataset({'item': da})
+    assert sc.identical(ds.groupby('x').sum('x'), sc.groupby(ds, 'x').sum('x'))
