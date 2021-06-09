@@ -9,6 +9,7 @@ from .objects import Plot
 from .panel1d import PlotPanel1d
 from .profile import PlotProfile
 from .view1d import PlotView1d
+from .figure1d import PlotFigure1d
 from .widgets import PlotWidgets
 
 
@@ -89,19 +90,20 @@ class Plot1d(Plot):
 
         # The view which will display the 1d plot and send pick events back to
         # the controller
-        self.view = PlotView1d(ax=ax,
-                               figsize=figsize,
-                               errorbars=self.errorbars,
-                               norm=norm,
-                               title=title,
-                               unit=self.params["values"][self.name]["unit"],
-                               masks=self.masks,
-                               mpl_line_params=mpl_line_params,
-                               picker=True,
-                               grid=grid,
-                               xlabel=xlabel,
-                               ylabel=ylabel,
-                               legend=legend)
+        self.view = PlotView1d(
+            figure=PlotFigure1d(ax=ax,
+                                figsize=figsize,
+                                errorbars=self.errorbars,
+                                norm=norm,
+                                title=title,
+                                unit=self.params["values"][self.name]["unit"],
+                                masks=self.masks,
+                                mpl_line_params=mpl_line_params,
+                                picker=True,
+                                grid=grid,
+                                xlabel=xlabel,
+                                ylabel=ylabel,
+                                legend=legend))
 
         # Profile view which displays an additional dimension as a 1d plot
         if self.ndim > 1:

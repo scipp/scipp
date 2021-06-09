@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .view1d import PlotView1d
 from .tools import find_limits, fix_empty_range
 # from ..utils import value_to_string
 from .._scipp import core as sc
@@ -44,6 +45,7 @@ class PlotController:
         self._profile_model = copy(model)
         self.panel = panel
         self.profile = profile
+        self.profile_view = PlotView1d(figure=profile)
         self.view = view
 
         self.axes = axes
@@ -597,11 +599,11 @@ class PlotController:
         the model to the profile view.
         """
         info = {"slice_label": ""}
+        # TODO
         # ax_dims = {self.axparams[xyz]["dim"]: xyz for xyz in self.axparams}
-        # TODO fix labels
         # xydata = {'x': xdata, 'y': ydata}
 
-        slices = self.widgets.get_slider_bounds(exclude=self.profile_dim)
+        slices.update(self.widgets.get_slider_bounds(exclude=self.profile_dim))
 
         # Add pixel locations to profile label
         # for dim in ax_dims:
@@ -609,14 +611,15 @@ class PlotController:
         #        info["slice_label"], dim,
         #        value_to_string(xydata[ax_dims[dim]], precision=1))
 
-        info["slice_label"] = self._make_slice_label(slices,
-                                                     info["slice_label"])[1:]
+        # info["slice_label"] = self._make_slice_label(slices,
+        #                                              info["slice_label"])[1:]
 
-        slices[self.profile_dim] = None
+        # TODO is this required for profile with event data?
+        # slices[self.profile_dim] = None
         new_values = self._profile_model.update_data(slices=slices)
-        self.profile.update_data(new_values,
-                                 info=info,
-                                 mask_info=self.get_masks_info())
+        self.profile_view.update_data(new_values,
+                                      info=info,
+                                      mask_info=self.get_masks_info())
 
     def _make_slice_label(self, slices, label):
         # Add slice ranges to profile label

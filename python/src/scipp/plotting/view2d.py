@@ -2,7 +2,6 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .figure2d import PlotFigure2d
 from .view import PlotView
 from ..utils import make_random_color
 from .. import dtype, zeros
@@ -21,9 +20,9 @@ class PlotView2d(PlotView):
     In addition, `PlotView2d` provides a dynamic image resampling for large
     input data.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, figure):
 
-        super().__init__(figure=PlotFigure2d(*args, **kwargs))
+        super().__init__(figure=figure)
 
         self.xlim_updated = False
         self.ylim_updated = False

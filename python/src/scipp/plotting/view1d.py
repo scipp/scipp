@@ -2,7 +2,6 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .figure1d import PlotFigure1d
 from .view import PlotView
 from ..utils import make_random_color
 from .. import ones
@@ -20,8 +19,8 @@ class PlotView1d(PlotView):
     with the `PlotProfile` plot displayed below the `PlotFigure1d`.
 
     """
-    def __init__(self, *args, **kwargs):
-        super().__init__(figure=PlotFigure1d(*args, **kwargs))
+    def __init__(self, figure):
+        super().__init__(figure=figure)
 
     def _make_masks(self, array, mask_info, transpose=False):
         if not mask_info:
@@ -109,7 +108,8 @@ class PlotView1d(PlotView):
             #  Find closest point to cursor
             #  TODO: can we optimize this with new buckets?
             distance_to_cursor = np.abs(
-                self._data[self.name].meta[self._dim].values - event.xdata)
+                next(iter(self._data.values())).meta[self._dim].values -
+                event.xdata)
             ind = int(np.argmin(distance_to_cursor))
             slices = {self._dim: ind}
             self.interface["update_profile"](slices)

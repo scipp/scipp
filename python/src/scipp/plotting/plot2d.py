@@ -8,6 +8,7 @@ from .model2d import PlotModel2d
 from .objects import Plot
 from .profile import PlotProfile
 from .view2d import PlotView2d
+from .figure2d import PlotFigure2d
 from .widgets import PlotWidgets
 
 
@@ -84,20 +85,21 @@ class Plot2d(Plot):
 
         # The view which will display the 2d image and send pick events back to
         # the controller
-        self.view = PlotView2d(ax=ax,
-                               cax=cax,
-                               figsize=figsize,
-                               aspect=aspect,
-                               cmap=self.params["values"][self.name]["cmap"],
-                               norm=self.params["values"][self.name]["norm"],
-                               name=self.name,
-                               cbar=self.params["values"][self.name]["cbar"],
-                               unit=self.params["values"][self.name]["unit"],
-                               masks=self.masks[self.name],
-                               extend=self.extend_cmap,
-                               title=title,
-                               xlabel=xlabel,
-                               ylabel=ylabel)
+        self.view = PlotView2d(
+            figure=PlotFigure2d(ax=ax,
+                                cax=cax,
+                                figsize=figsize,
+                                aspect=aspect,
+                                cmap=self.params["values"][self.name]["cmap"],
+                                norm=self.params["values"][self.name]["norm"],
+                                name=self.name,
+                                cbar=self.params["values"][self.name]["cbar"],
+                                unit=self.params["values"][self.name]["unit"],
+                                masks=self.masks[self.name],
+                                extend=self.extend_cmap,
+                                title=title,
+                                xlabel=xlabel,
+                                ylabel=ylabel))
 
         # Profile view which displays an additional dimension as a 1d plot
         if self.ndim > 2:
