@@ -123,7 +123,8 @@ execute_process(
   COMMAND git describe --tag
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
   RESULT_VARIABLE HAVE_GIT_VERSION_INFO
-  OUTPUT_VARIABLE GIT_VERSION_INFO OUTPUT_STRIP_TRAILING_WHITESPACE
+  OUTPUT_VARIABLE GIT_VERSION_INFO
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
   message(STATUS "Got version from Git: ${GIT_VERSION_INFO}")
@@ -167,10 +168,21 @@ enable_testing()
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
 
+# Custom install target for docs to depend on.
+add_custom_target(
+  install-scipp COMMAND cmake --build ${CMAKE_CURRENT_BINARY_DIR} --target
+                        install
+)
+
 # Custom target for building documentation
 add_custom_target(
-  docs COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/make_docs.py
+  docs
+  COMMAND
+    ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/make_docs.py
+    --prefix=${CMAKE_CURRENT_BINARY_DIR}/docs
+    --work_dir=${CMAKE_CURRENT_BINARY_DIR}/docs/doctrees
 )
+add_dependencies(docs install-scipp)
 
 include(GNUInstallDirs)
 set(PYTHONDIR scipp)
