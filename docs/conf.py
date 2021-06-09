@@ -218,7 +218,7 @@ nbsphinx_execute_arguments = [
     "--Session.metadata=scipp_docs_build=True",
 ]
 
-# -- Options for doctest ----------------------------------
+# -- Options for doctest --------------------------------------------------
 
 doctest_global_setup = '''
 import numpy as np
@@ -228,4 +228,5 @@ import scipp as sc
 # Using normalize whitespace because many __str__ functions in scipp produce
 # extraneous empty lines and it would look strange to include them in the docs.
 doctest_default_flags = doctest.ELLIPSIS | doctest.IGNORE_EXCEPTION_DETAIL | \
-                        doctest.DONT_ACCEPT_TRUE_FOR_1 | doctest.NORMALIZE_WHITESPACE
+                        doctest.DONT_ACCEPT_TRUE_FOR_1 | \
+                        doctest.NORMALIZE_WHITESPACE
