@@ -303,15 +303,10 @@ class PlotController:
 
     def refresh(self):
         """
-        Get current slice values from model and update the view.
-        This is used when either vmin and vmax limits have been changed, or
-        the normalization has been modified.
+        Update the view. This is used when either vmin and vmax limits have
+        been changed, or the normalization has been modified.
         """
-        # TODO mechanism to update masks?
-        # new_values = self.model.get_slice_values(
-        #    mask_info=self.get_masks_info())
-        # self.view.update_data(new_values, mask_info=self.get_masks_info())
-        self.view.figure.update_data(self.view._data)
+        self.view.refresh(mask_info=self.get_masks_info())
 
     def transpose(self, owner=None):
         """

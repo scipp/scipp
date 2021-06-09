@@ -47,7 +47,7 @@ class PlotView2d(PlotView):
             "values": values,
             "extent": np.array(list(self.current_lims.values())).flatten()
         }
-        # TODO duplication with model.py _make_masks
+        # TODO duplication with view1d.py _make_masks
         mask_info = next(iter(mask_info.values()))
         if len(mask_info) > 0:
             # Use automatic broadcasting in Scipp variables

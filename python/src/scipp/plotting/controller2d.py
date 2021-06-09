@@ -17,10 +17,9 @@ class PlotController2d(PlotController):
         When the view requests a viewport udpate, we get new image data from
         the model and send them back to the view which then updates the figure.
         """
-        new_values = self.model.update_viewport(
-            xylims, mask_info=self.get_masks_info())
+        new_values = self.model.update_viewport(xylims)
         if new_values is not None:
-            self.view.update_data(new_values)
+            self.view.update_data(new_values, mask_info=self.get_masks_info())
 
     def connect_view(self):
         """

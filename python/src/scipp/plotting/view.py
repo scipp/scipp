@@ -115,12 +115,17 @@ class PlotView:
     def _make_data(self, new_values, mask_info):
         return new_values
 
+    def refresh(self, mask_info):
+        self.figure.update_data(self._make_data(self._data, mask_info),
+                                self._info)
+
     def update_data(self, new_values, info=None, mask_info=None):
         """
         Forward data update to the `figure`.
         """
-        self._data = self._make_data(new_values, mask_info)
-        self.figure.update_data(self._data, info)
+        self._data = new_values
+        self._info = info
+        self.refresh(mask_info)
 
     def update_profile_connection(self, visible):
         """

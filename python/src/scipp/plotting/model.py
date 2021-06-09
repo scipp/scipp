@@ -241,6 +241,7 @@ class PlotModel:
         else:
             return [None, None]
 
+    # TODO remove ince model3d is refactored
     def slice_data(self, array, slices):
         """
         Slice the data array according to the dimensions and extents listed
