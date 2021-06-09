@@ -230,3 +230,9 @@ import scipp as sc
 doctest_default_flags = doctest.ELLIPSIS | doctest.IGNORE_EXCEPTION_DETAIL | \
                         doctest.DONT_ACCEPT_TRUE_FOR_1 | \
                         doctest.NORMALIZE_WHITESPACE
+
+
+# -- Options for linkcheck ------------------------------------------------
+
+# Links to specific lines in github blobs appear broken when they work.
+linkcheck_ignore = [r'https://github.com/.*/blob/[a-f0-9]+/.*#L\d+(-L\d+)?']
