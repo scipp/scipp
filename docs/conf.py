@@ -20,6 +20,8 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import doctest
+
 # -- Doxygen build configuration
 
 import os
@@ -44,6 +46,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
+    'sphinx.ext.doctest',
     'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
     'nbsphinx',
@@ -214,3 +217,15 @@ texinfo_documents = [
 nbsphinx_execute_arguments = [
     "--Session.metadata=scipp_docs_build=True",
 ]
+
+# -- Options for doctest ----------------------------------
+
+doctest_global_setup = '''
+import numpy as np
+import scipp as sc
+'''
+
+# Using normalize whitespace because many __str__ functions in scipp produce
+# extraneous empty lines and it would look strange to include them in the docs.
+doctest_default_flags = doctest.ELLIPSIS | doctest.IGNORE_EXCEPTION_DETAIL | \
+                        doctest.DONT_ACCEPT_TRUE_FOR_1 | doctest.NORMALIZE_WHITESPACE
