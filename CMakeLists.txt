@@ -167,10 +167,16 @@ enable_testing()
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
 
-# Custom target for building documentation
+# Custom install target for docs to depend on.
 add_custom_target(
-  docs COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/make_docs.py
+  install-scipp COMMAND cmake --build ${CMAKE_CURRENT_BINARY_DIR} --target
+                        install
 )
+
+include(docs)
+add_docs_target(docs BUILDER html DEPENDS install-scipp)
+add_docs_target(doctest BUILDER doctest DEPENDS docs)
+add_docs_target(linkcheck BUILDER linkcheck DEPENDS docs)
 
 include(GNUInstallDirs)
 set(PYTHONDIR scipp)
