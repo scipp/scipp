@@ -172,6 +172,7 @@ Geometric
    :toctree: ../generated
 
    geometry.position
+   geometry.rotation_matrix_from_quaternion_coeffs
 
 Group-by (split-apply-combine)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
