@@ -20,6 +20,34 @@ class PlotModel1d(PlotModel):
                     "1-D plots of binned data not implemented. Histogram "
                     "manually, e.g., using `plot(array.bins.sum())`")
         self.dim = None
+        self._resolution = None
+
+    def _make_1d_resampling_model(self, array):
+        model = resampling_model(array)
+        for dim in array.dims:
+            if dim is not self.dim:
+                model.resolution[dim] = 1
+            elif self.resolution is not None:
+                model.resolution[dim] = self.resolution
+                model.bounds[dim] = None
+        return model
+
+    def _resample(self, array, slices):
+        model = self._make_1d_resampling_model(array)
+        model.bounds.update(slices)
+        data = model.data
+        for dim in model.data.dims:
+            if dim is not self.dim:
+                data = data[dim, 0]
+        return data
+
+    @property
+    def resolution(self):
+        return self._resolution
+
+    @resolution.setter
+    def resolution(self, resolution):
+        self._resolution = resolution
 
     def update_axes(self, axparams):
         """
@@ -33,30 +61,11 @@ class PlotModel1d(PlotModel):
         entries in the dict of data arrays, and return a dict of 1d value
         arrays for data values, variances, and masks.
         """
-        self.dslice = {}
-        out = {}
-        for name in self.data_arrays:
-            squeeze = []
-            model = resampling_model(self.data_arrays[name])
-            # TODO use same slices API as in Resampling model so we can just
-            # pass it directly
-            for dim, bounds in slices.items():
-                if isinstance(bounds, int):
-                    model.bounds[dim] = bounds
-                else:
-                    start, stop = bounds
-                    if isinstance(start, int) and start + 1 == stop:
-                        model.bounds[dim] = start
-                    else:
-                        squeeze.append(dim)
-                        model.resolution[dim] = 1
-                        model.bounds[dim] = bounds
-            data = model.data
-            for dim in squeeze:
-                data = data[dim, 0]
-            self.dslice[name] = data
-            out[name] = data
-        return out
+        self.dslice = {
+            name: self._resample(array, slices)
+            for name, array in self.data_arrays.items()
+        }
+        return self.dslice
 
     def rescale_to_data(self, scale=None):
         """

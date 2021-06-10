@@ -95,7 +95,7 @@ class PlotModel2d(PlotModel):
                                        xylims[xy][1] * unit)
         return self._update_image()
 
-    # TODO
+    # TODO should this be something done in model1d update_axes?
     def update_profile_model(self,
                              visible=False,
                              slices=None,

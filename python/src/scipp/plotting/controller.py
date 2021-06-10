@@ -573,6 +573,7 @@ class PlotController:
                     }
                 }
 
+                self._profile_model.update_axes(axparams=self.profile_axparams)
                 self.profile.update_axes(axparams=self.profile_axparams)
             if not visible or self.profile.is_visible():
                 self.view.reset_profile()
