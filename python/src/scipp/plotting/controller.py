@@ -103,13 +103,9 @@ class PlotController:
                                                        order='descending'))
                 # Check if xmin == xmax
                 for scale in self.xlims[key][dim]:
-                    self.xlims[key][dim][scale] = fix_empty_range(
-                        self.xlims[key][dim][scale])
-
-                    self.xlims[key][dim][scale] = sc.Variable(
-                        [dim],
-                        values=self.xlims[key][dim][scale],
-                        unit=coord.unit)
+                    low, high = fix_empty_range(self.xlims[key][dim][scale])
+                    self.xlims[key][dim][scale] = sc.concatenate(
+                        low, high, dim)
 
                 self.coord_labels[dim] = label
                 self.coord_units[dim] = unit
@@ -574,6 +570,8 @@ class PlotController:
                 }
 
                 self._profile_model.update_axes(axparams=self.profile_axparams)
+                # TODO note how we can set resolution, e.g., for binned data
+                # self._profile_model.resolution = 10
                 self.profile.update_axes(axparams=self.profile_axparams)
             if not visible or self.profile.is_visible():
                 self.view.reset_profile()

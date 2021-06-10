@@ -154,8 +154,8 @@ def find_log_limits(x):
             else:
                 vmin = 1.0e-3 * vmax
     else:
-        vmin = hist.coords['order']['order', ar.min()].value
-        vmax = hist.coords['order']['order', ar.max() + 1].value
+        vmin = hist.coords['order']['order', ar.min()]
+        vmax = hist.coords['order']['order', ar.max() + 1]
     return [vmin, vmax]
 
 
@@ -163,7 +163,7 @@ def find_linear_limits(x):
     """
     Find variable min and max.
     """
-    return [sc.nanmin(x).value, sc.nanmax(x).value]
+    return [sc.values(sc.nanmin(x)), sc.values(sc.nanmax(x))]
 
 
 def find_limits(x, scale=None, flip=False):
@@ -187,14 +187,14 @@ def fix_empty_range(lims, replacement=None):
     """
     Range correction in case xmin == xmax
     """
-    dx = 0.0
-    if lims[0] == lims[1]:
+    dx = 0.0 * lims[0].unit
+    if lims[0].value == lims[1].value:
         if replacement is not None:
             dx = 0.5 * replacement
-        elif lims[0] == 0.0:
-            dx = 0.5
+        elif lims[0].value == 0.0:
+            dx = 0.5 * lims[0].unit
         else:
-            dx = 0.5 * abs(lims[0])
+            dx = 0.5 * sc.abs(lims[0])
     return [lims[0] - dx, lims[1] + dx]
 
 

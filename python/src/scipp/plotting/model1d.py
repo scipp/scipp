@@ -5,7 +5,7 @@
 from .model import PlotModel
 from .tools import find_limits
 from .resampling_model import resampling_model
-import numpy as np
+from .._scipp import core as sc
 
 
 class PlotModel1d(PlotModel):
@@ -71,11 +71,19 @@ class PlotModel1d(PlotModel):
         """
         Get the min and max values of the currently displayed slice.
         """
+        from functools import reduce, partial
         if self.dslice is not None:
-            limits = np.array([
-                find_limits(array.data, scale=scale)[scale]
+            low = [
+                find_limits(array.data, scale=scale)[scale][0]
                 for array in self.dslice.values()
-            ])
-            return [np.amin(limits[:, 0]), np.amax(limits[:, 1])]
+            ]
+            high = [
+                find_limits(array.data, scale=scale)[scale][1]
+                for array in self.dslice.values()
+            ]
+            return [
+                sc.min(reduce(partial(sc.concatenate, dim='dummy'), low)),
+                sc.max(reduce(partial(sc.concatenate, dim='dummy'), high))
+            ]
         else:
             return [None, None]

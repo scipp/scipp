@@ -82,7 +82,7 @@ class PlotView:
     def save_view(self, *args, **kwargs):
         self.figure.save_view(*args, **kwargs)
 
-    def rescale_to_data(self, *args, **kwargs):
+    def rescale_to_data(self, vmin, vmax):
         """
         Forward rescaling to the `figure`.
         """
@@ -92,7 +92,7 @@ class PlotView:
         # => find_vmin_vmax(self.data) here instead of controller
         # => need to store self.data from update_data
         # => new_values should be data array (or list of data array)
-        self.figure.rescale_to_data(*args, **kwargs)
+        self.figure.rescale_to_data(vmin.value, vmax.value)
 
     def toggle_mask(self, change=None):
         """
