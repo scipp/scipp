@@ -5,7 +5,9 @@
 function(add_docs_target name)
   set(oneValueArgs BUILDER)
   set(multiValueArgs DEPENDS)
-  cmake_parse_arguments(PARSE_ARGV 0 ADD_DOCS_TARGET "" "${oneValueArgs}" "${multiValueArgs}")
+  cmake_parse_arguments(
+    PARSE_ARGV 0 ADD_DOCS_TARGET "" "${oneValueArgs}" "${multiValueArgs}"
+  )
   add_custom_target(
     ${name}
     COMMAND
