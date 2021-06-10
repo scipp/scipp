@@ -110,14 +110,20 @@ setattr(Dataset, 'plot', plot)
 # __array_ufunc__ should be possible by converting non-scipp arguments to
 # variables. The most difficult part is probably mapping the ufunc to scipp
 # functions.
-for _obj in [Variable, DataArray, Dataset]:
-    setattr(_obj, '__array_ufunc__', None)
+for _cls in (Variable, DataArray, Dataset):
+    setattr(_cls, '__array_ufunc__', None)
+del _cls
 
-from ._scipp import core as tmp_core
-from .utils import get as tmp_get
+from . import _binding
 
-for cls in [Dataset, tmp_core.Coords, tmp_core.Masks]:
-    setattr(cls, 'get', tmp_get)
-
-del tmp_get
-del tmp_core
+_binding.bind_get()
+for _cls in (Variable, DataArray):
+    _binding.bind_functions_as_methods(
+        _cls, globals(), ('broadcast', 'flatten', 'fold', 'transpose', 'all',
+                          'any', 'mean', 'sum', 'nanmean', 'nansum'))
+del _cls
+_binding.bind_functions_as_methods(
+    Variable, globals(), ('cumsum', 'max', 'min', 'nanmax', 'nanmin'))
+_binding.bind_functions_as_methods(DataArray, globals(), ('groupby', ))
+_binding.bind_functions_as_methods(Dataset, globals(), ('groupby', ))
+del _binding
