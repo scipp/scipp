@@ -446,7 +446,9 @@ TEST(DatasetTest, item_name) {
 
 TEST(DatasetTest, self_nesting) {
   const auto make_dset = [](const std::string &name, const Variable &var) {
-    return Dataset{std::map{std::pair{name, var}}};
+    Dataset dset;
+    dset.setData(name, var);
+    return dset;
   };
   auto inner = make_dset(
       "data", makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2}));
