@@ -33,7 +33,8 @@ from ._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
                          DTypeError, NotFoundError, SizeError, SliceError, \
                          UnitError, VariableError, VariancesError
 # Import submodules
-from ._scipp.core import units, dtype, buckets, geometry
+from ._scipp.core import units, dtype, buckets
+from . import geometry
 # Import functions
 from ._scipp.core import choose, divide, floor_divide, logical_and, \
                          logical_or, logical_xor, minus, mod, plus, times
