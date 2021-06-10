@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/data_array.h"
+#include "scipp/dataset/dataset_util.h"
 #include "scipp/variable/misc_operations.h"
 
 #include "dataset_operations_common.h"
@@ -53,7 +54,25 @@ DataArray::DataArray(Variable data, typename Coords::holder_type coords,
       m_attrs(std::make_shared<Attrs>(dims(), std::move(attrs))) {}
 
 DataArray &DataArray::operator=(const DataArray &other) {
+  if (this == &other) {
+    return *this;
+  }
+  check_nested_in_assign(*this, other);
   return *this = DataArray(other);
+}
+
+DataArray &DataArray::operator=(DataArray &&other) {
+  if (this == &other) {
+    return *this;
+  }
+  check_nested_in_assign(*this, other);
+  m_name = std::move(other.m_name);
+  m_data = std::move(other.m_data);
+  m_coords = std::move(other.m_coords);
+  m_masks = std::move(other.m_masks);
+  m_attrs = std::move(other.m_attrs);
+  m_readonly = other.m_readonly;
+  return *this;
 }
 
 void DataArray::setData(const Variable &data) {

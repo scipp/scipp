@@ -11,7 +11,6 @@ namespace scipp::variable {
 
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(Dataset, scipp::dataset::Dataset)
 INSTANTIATE_ELEMENT_ARRAY_VARIABLE(DataArray, scipp::dataset::DataArray)
-
 } // namespace scipp::variable
 
 namespace scipp::dataset {

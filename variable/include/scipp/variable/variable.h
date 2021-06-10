@@ -57,6 +57,14 @@ public:
   /// should be prefered where possible, since it generates less code.
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
+  Variable(const Variable &other) = default;
+  Variable(Variable &&other) noexcept = default;
+
+  Variable &operator=(const Variable &other);
+  Variable &operator=(Variable &&other);
+
+  ~Variable() noexcept = default;
+
   [[nodiscard]] const units::Unit &unit() const;
   void setUnit(const units::Unit &unit);
   void expectCanSetUnit(const units::Unit &) const;
@@ -205,7 +213,6 @@ Variable::Variable(const DType &type, Ts &&... args)
                                                       Variable &out);
 [[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var,
                                                      Variable &&out);
-
 } // namespace scipp::variable
 
 namespace scipp::core {
