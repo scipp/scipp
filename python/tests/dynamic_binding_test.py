@@ -20,7 +20,9 @@ def make_containers():
     return var, da
 
 
-@pytest.mark.parametrize('func_name', ('cumsum', 'max', 'mean', 'min', 'nanmax', 'nanmean', 'nanmin', 'nansum', 'sum'))
+@pytest.mark.parametrize('func_name',
+                         ('cumsum', 'max', 'mean', 'min', 'nanmax', 'nanmean',
+                          'nanmin', 'nansum', 'sum'))
 def test_bound_methods_reduction_variable(func_name):
     var, _ = make_containers()
     func = getattr(sc, func_name)
