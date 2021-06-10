@@ -27,13 +27,20 @@ DimensionError::DimensionError(scipp::index expectedDim, scipp::index userDim)
                      " Requested size: " + std::to_string(userDim)) {}
 
 namespace {
-std::string format_dims(const core::Dimensions &dims) {
+template <class T> std::string format_dims(const T &dims) {
   if (dims.empty()) {
     return "a scalar";
   }
   return "dimensions " + to_string(dims);
 }
 } // namespace
+
+template <>
+void throw_mismatch_error(const core::Sizes &expected,
+                          const core::Sizes &actual) {
+  throw DimensionError("Expected " + format_dims(expected) + ", got " +
+                       format_dims(actual) + '.');
+}
 
 template <>
 void throw_mismatch_error(const core::Dimensions &expected,
