@@ -119,6 +119,10 @@ class PlotView:
         self.figure.update_data(self._make_data(self._data, mask_info),
                                 self._info)
 
+    # TODO
+    # - just delete masks that should not be displayed
+    # - only accept unchanged dims... check if same dims, if not update axes,
+    #   replacing separate update_axes
     def update_data(self, new_values, info=None, mask_info=None):
         """
         Forward data update to the `figure`.

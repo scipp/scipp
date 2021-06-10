@@ -38,11 +38,7 @@ class PlotModel:
     The model is where all operations on the data (slicing and resampling) are
     performed.
     """
-    def __init__(self,
-                 scipp_obj_dict=None,
-                 name=None,
-                 axes=None,
-                 dim_label_map=None):
+    def __init__(self, scipp_obj_dict=None, name=None, dim_label_map=None):
 
         self.interface = {}
 
@@ -51,9 +47,6 @@ class PlotModel:
         self.backup = {}
         self.coord_info = {}
         self.axformatter = {}
-
-        # maps, e.g., x,y,0 -> tof,spectrum,temperature
-        axes_dims = list(axes.values())
 
         # Create dict of DataArrays using information from controller
         for name, array in scipp_obj_dict.items():
@@ -64,8 +57,7 @@ class PlotModel:
             coord_list = {}
 
             # Iterate through axes and collect coordinates
-            for dim in axes_dims:
-
+            for dim in array.dims:
                 coord, formatter, label, unit, offset = \
                     self._axis_coord_and_formatter(
                         dim, array, dim_label_map)

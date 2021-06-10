@@ -65,12 +65,10 @@ class Plot2d(Plot):
 
         # The model which takes care of all heavy calculations
         self.model = PlotModel2d(scipp_obj_dict=scipp_obj_dict,
-                                 axes=self.axes,
                                  name=self.name,
                                  dim_label_map=self.dim_label_map,
                                  resolution=resolution)
         profile_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
-                                    axes=self.axes,
                                     name=self.name,
                                     dim_label_map=self.dim_label_map)
 
