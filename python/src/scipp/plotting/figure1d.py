@@ -114,13 +114,12 @@ class PlotFigure1d(PlotFigure):
             self.ax.set_xlim(
                 [xparams["lims"][0] - deltax, xparams["lims"][1] + deltax])
 
-        self.ax.set_xlabel(
-            xparams["label"] if self.xlabel is None else self.xlabel)
+        self.ax.set_xlabel(self._formatters['x']['label']
+                           if self.xlabel is None else self.xlabel)
 
-        self.ax.xaxis.set_major_locator(
-            self.axlocator[xparams["dim"]][xparams["scale"]])
+        self.ax.xaxis.set_major_locator(self.axlocator['x'][xparams["scale"]])
         self.ax.xaxis.set_major_formatter(
-            self.axformatter[xparams["dim"]][xparams["scale"]])
+            self.axformatter['x'][xparams["scale"]])
 
         for name, hist in xparams["hist"].items():
 

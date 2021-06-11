@@ -17,6 +17,7 @@ class PlotView3d(PlotView):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(figure=PlotFigure3d(*args, **kwargs))
+        self._axes = ['x', 'y', 'z']
 
     def update_opacity(self, *args, **kwargs):
         self.figure.update_opacity(*args, **kwargs)

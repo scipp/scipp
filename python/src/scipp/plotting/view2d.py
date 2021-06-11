@@ -21,8 +21,8 @@ class PlotView2d(PlotView):
     input data.
     """
     def __init__(self, figure):
-
         super().__init__(figure=figure)
+        self._axes = ['x', 'y']
 
         self.xlim_updated = False
         self.ylim_updated = False

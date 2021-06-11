@@ -13,8 +13,9 @@ class PlotView:
     `PlotView` also handles the communications with the `PlotController` that
     are to do with the `PlotProfile` plot displayed below the `PlotFigure`.
     """
-    def __init__(self, figure=None):
+    def __init__(self, figure, formatters):
         self.figure = figure
+        self.formatters = formatters
         self.interface = {}
         self.profile_hover_connection = None
         self.profile_pick_connection = None
@@ -52,12 +53,6 @@ class PlotView:
         Forward figure saving to the `figure`.
         """
         self.figure.savefig(*args, **kwargs)
-
-    def initialize(self, *args, **kwargs):
-        """
-        Forward figure initialization.
-        """
-        self.figure.initialize(*args, **kwargs)
 
     def connect(self, view_callbacks=None, figure_callbacks=None):
         """
@@ -106,11 +101,16 @@ class PlotView:
         """
         self.figure.toggle_norm(*args, **kwargs)
 
-    def update_axes(self, *args, **kwargs):
+    def update_axes(self, axparams, **kwargs):
         """
         Forward axes update to the `figure`.
         """
-        self.figure.update_axes(*args, **kwargs)
+        self.figure.initialize({
+            axis: self.formatters[axparams[axis]['dim']]
+            for axis in self._axes
+        })
+
+        self.figure.update_axes(**kwargs, axparams=axparams)
 
     def _make_data(self, new_values, mask_info):
         return new_values
@@ -156,12 +156,6 @@ class PlotView:
         Forward norm button update to the `figure`.
         """
         self.figure.update_norm_button(*args, **kwargs)
-
-    def get_axis_bounds(self, *args, **kwargs):
-        return self.figure.get_axis_bounds(*args, **kwargs)
-
-    def set_axis_label(self, *args, **kwargs):
-        return self.figure.set_axis_label(*args, **kwargs)
 
     def set_draw_no_delay(self, *args, **kwargs):
         """

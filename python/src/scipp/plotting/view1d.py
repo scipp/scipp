@@ -19,8 +19,9 @@ class PlotView1d(PlotView):
     with the `PlotProfile` plot displayed below the `PlotFigure1d`.
 
     """
-    def __init__(self, figure):
-        super().__init__(figure=figure)
+    def __init__(self, figure, formatters):
+        super().__init__(figure=figure, formatters=formatters)
+        self._axes = ['x']
 
     def _make_masks(self, array, mask_info, transpose=False):
         if not mask_info:

@@ -1,5 +1,9 @@
-from ..utils import value_to_string
+from ..utils import name_with_unit, value_to_string, vector_type, \
+        string_type, datetime_type
+from .tools import to_bin_centers, make_fake_coord
 from .._scipp.core import to_unit, Unit
+from .._scipp import core as sc
+import enum
 import numpy as np
 
 
@@ -7,9 +11,9 @@ class LabelFormatter:
     """
     Format ticks by replacing coord values with label values.
     """
-    def __init__(self, label_values, coord_values):
-        self.label_values = label_values
-        self.coord_values = coord_values
+    def __init__(self, labels, coord):
+        self.label_values = labels.values
+        self.coord_values = coord.values
 
     def formatter(self, val, pos):
         return value_to_string(self.label_values[np.abs(self.coord_values -
@@ -49,19 +53,18 @@ class DateFormatter:
     Format datetime ticks: adjust the time precision and update
     offset according to the currently displayed range.
     """
-    def __init__(self, offset, dim, interface):
+    def __init__(self, offset, dim):
         self.offset = offset
         self.dim = dim
-        self.interface = interface
         self.indicators = []
 
-    def formatter(self, val, pos):
+    def formatter(self, val, pos, dim, get_axis_bounds, set_axis_label):
         d = (self.offset + (int(val) * self.offset.unit)).value
         dt = str(d)
         trim = 0
-        bounds = self.interface["get_view_axis_bounds"](self.dim)
+        bounds = get_axis_bounds(dim)
         diff = (bounds[1] - bounds[0]) * self.offset.unit
-        label = self.dim
+        label = dim
         if pos == 0:
             self.indicators.clear()
 
@@ -122,7 +125,7 @@ class DateFormatter:
         if pos == 1:
             if trim > 0:
                 label += f" ({dt[:trim]})"
-            self.interface["set_view_axis_label"](self.dim, label)
+            set_axis_label(dim, label)
         return string
 
     def check_for_transition(self, pos, string, date_min, date_max, dt,
@@ -169,3 +172,73 @@ class DateFormatter:
                 self.indicators.append(dt[start:end])
 
         return string, trim
+
+
+class Kind(enum.Enum):
+    """
+    Small enum listing the special cases for the axis tick formatters.
+    """
+    vector = enum.auto()
+    string = enum.auto()
+    datetime = enum.auto()
+    other = enum.auto()
+
+
+def _dtype_kind(var):
+    if vector_type(var):
+        return Kind.vector
+    elif string_type(var):
+        return Kind.string
+    elif datetime_type(var):
+        return Kind.datetime
+    else:
+        return Kind.other
+
+
+def _get_or_make_coord(array, dim):
+    if dim in array.meta:
+        coord = array.meta[dim]
+        if _dtype_kind(coord) not in [Kind.vector, Kind.string]:
+            return coord
+    return make_fake_coord(dim, array.sizes[dim])
+
+
+def make_formatter(array, key):
+    """
+    Get dimensions from requested axis.
+    Also return axes tick formatters and locators.
+    """
+
+    # Create some default axis tick formatter, depending on linear or log
+    # scaling.
+    formatter = {"linear": None, "log": None, "custom_locator": False}
+
+    labels = None
+    dim = key
+    if key in array.meta:
+        labels = array.meta[key]
+        dim = key if key in labels.dims else labels.dims[-1]
+        kind = _dtype_kind(labels)
+        if kind == Kind.vector:
+            form = VectorFormatter(labels.values, array.sizes[dim]).formatter
+            formatter["custom_locator"] = True
+        elif kind == Kind.string:
+            form = StringFormatter(labels.values, array.sizes[dim]).formatter
+            formatter["custom_locator"] = True
+        elif kind == Kind.datetime:
+            coord = _get_or_make_coord(array, dim)
+            form = DateFormatter(offset=sc.min(coord), dim=key).formatter
+            formatter["need_callbacks"] = True
+        elif dim is not key:
+            coord = _get_or_make_coord(array, dim)
+            if coord.sizes[dim] != array.sizes[dim]:
+                coord = to_bin_centers(coord, dim)
+            form = LabelFormatter(labels, coord).formatter
+        else:
+            form = None
+        formatter.update({"linear": form, "log": form})
+    formatter['unit'] = name_with_unit(var=labels, name="")
+    formatter['label'] = name_with_unit(var=labels,
+                                        name=key if key is not dim else None)
+
+    return formatter

@@ -45,7 +45,9 @@ class PlotController:
         self._profile_model = profile_model
         self.panel = panel
         self.profile = profile
-        self._profile_view = PlotView1d(figure=profile)
+        if profile is not None:
+            self._profile_view = PlotView1d(figure=profile,
+                                            formatters=view.formatters)
         self.view = view
 
         self.axes = axes
@@ -68,9 +70,6 @@ class PlotController:
         self.profile_dim = None
         # Store coordinate min and max limits
         self.xlims = {}
-        # Store labels for sliders
-        self.coord_labels = {}
-        self.coord_units = {}
         # Record which variables are histograms along which dimension
         self.histograms = {}
         # Keep track if a coordinate with more than one dimension is present
@@ -86,7 +85,7 @@ class PlotController:
             # Iterate through axes and collect dimensions
             for dim in self.axes.values():
 
-                coord, label, unit = self.model.get_data_coord(key, dim)
+                coord = self.model.get_data_coord(key, dim)
 
                 # To allow for 2D coordinates, the histograms are
                 # stored as dicts, with one key per dimension of the coordinate
@@ -107,19 +106,13 @@ class PlotController:
                     self.xlims[key][dim][scale] = sc.concatenate(
                         low, high, dim)
 
-                self.coord_labels[dim] = label
-                self.coord_units[dim] = unit
-
         self._initialize_widgets(sizes)
-        self.initialize_view()
         self.initialize_model()
         if self.profile is not None:
-            self.initialize_profile()
             self.connect_profile()
 
         self.connect_widgets()
         self.connect_view()
-        self.connect_model()
         if self.panel is not None:
             self.connect_panel()
 
@@ -132,12 +125,6 @@ class PlotController:
         self.update_log_axes_buttons()
         self.update_norm_button(norm)
 
-    def get_coord_unit(self, dim):
-        """
-        Get dimension coordinate unit.
-        """
-        return self.coord_units[dim]
-
     def _initialize_widgets(self, sizes):
         """
         Initialize widget parameters once the `PlotModel`, `PlotView` and
@@ -147,27 +134,7 @@ class PlotController:
         for dim in self.widgets.get_slider_bounds():
             ranges[dim] = self.model.get_slice_coord_bounds(
                 self.name, dim, [0, 1])
-        self.widgets.initialize(sizes, ranges, self.coord_units)
-
-    def initialize_view(self):
-        """
-        Send axformatter information to the `PlotView`.
-        """
-        self.view.initialize(
-            axformatters={
-                dim: self.model.get_axformatter(self.name, dim)
-                for dim in self.axes.values()
-            })
-
-    def initialize_profile(self):
-        """
-        Send axformatter information to the `PlotProfile`.
-        """
-        self.profile.initialize(
-            axformatters={
-                dim: self.model.get_axformatter(self.name, dim)
-                for dim in self.axes.values()
-            })
+        self.widgets.initialize(sizes, ranges)
 
     def initialize_model(self):
         """
@@ -186,7 +153,6 @@ class PlotController:
             "lock_update_data": self.lock_update_data,
             "unlock_update_data": self.unlock_update_data,
             "swap_dimensions": self.swap_dimensions,
-            "get_coord_unit": self.get_coord_unit
         })
 
     def connect_view(self):
@@ -212,12 +178,6 @@ class PlotController:
         }
         self.view.connect(view_callbacks=view_callbacks,
                           figure_callbacks=figure_callbacks)
-
-    def connect_model(self):
-        self.model.connect({
-            "get_view_axis_bounds": self.get_view_axis_bounds,
-            "set_view_axis_label": self.set_view_axis_label
-        })
 
     def connect_panel(self):
         """
@@ -257,12 +217,6 @@ class PlotController:
 
     def save_view(self, button=None):
         self.view.save_view()
-
-    def get_view_axis_bounds(self, dim):
-        return self.view.get_axis_bounds(self._dim_to_axis()[dim])
-
-    def set_view_axis_label(self, dim, string):
-        return self.view.set_axis_label(self._dim_to_axis()[dim], string)
 
     def find_vmin_vmax(self, button=None):
         """
@@ -484,8 +438,7 @@ class PlotController:
                     name: self.histograms[name][dim][dim]
                     for name in self.histograms
                 },
-                "dim": dim,
-                "label": self.coord_labels[dim]
+                "dim": dim
             }
 
         return axparams
@@ -564,8 +517,7 @@ class PlotController:
                                 self.profile_dim]
                             for name in self.histograms
                         },
-                        "dim": self.profile_dim,
-                        "label": self.coord_labels[self.profile_dim]
+                        "dim": self.profile_dim
                     }
                 }
 

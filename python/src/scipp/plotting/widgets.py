@@ -16,6 +16,7 @@ class PlotWidgets:
     """
     def __init__(self,
                  axes=None,
+                 formatters=None,
                  ndim=None,
                  name=None,
                  dim_label_map=None,
@@ -23,6 +24,8 @@ class PlotWidgets:
                  masks=None,
                  multid_coord=None,
                  is_binned_data=False):
+
+        self._formatters = formatters
 
         self.multid_coord = multid_coord
         self.is_binned_data = is_binned_data
@@ -222,8 +225,7 @@ class PlotWidgets:
             self.dim_buttons[index][new_dim].disabled = True
             self.dim_buttons[index][old_dim].disabled = False
 
-        self.unit_labels[new_ind].value = self.interface["get_coord_unit"](
-            new_dim)
+        self.unit_labels[new_ind].value = self._formatters[new_dim].unit
         self.interface["swap_dimensions"](new_ind, old_dim, new_dim)
 
     def get_index_dim(self, index):
@@ -320,14 +322,13 @@ class PlotWidgets:
         self.interface["lock_update_data"] = callbacks["lock_update_data"]
         self.interface["unlock_update_data"] = callbacks["unlock_update_data"]
         self.interface["swap_dimensions"] = callbacks["swap_dimensions"]
-        self.interface["get_coord_unit"] = callbacks["get_coord_unit"]
 
         for name in self.mask_checkboxes:
             for m in self.mask_checkboxes[name]:
                 self.mask_checkboxes[name][m].observe(callbacks["toggle_mask"],
                                                       names="value")
 
-    def initialize(self, sizes, ranges, coord_units):
+    def initialize(self, sizes, ranges):
         """
         Initialize widget parameters once the `PlotModel`, `PlotView` and
         `PlotController` have been created, since, for instance, slider limits
@@ -341,7 +342,7 @@ class PlotWidgets:
             lims = ranges[dim]
             val = self.slider[index].value
             self.update_slider_readout(index, lims[0], lims[1], [val, val + 1])
-            self.unit_labels[index].value = coord_units[dim]
+            self.unit_labels[index].value = self._formatters[dim]['unit']
 
     def get_slider_bounds(self, exclude=None):
         """

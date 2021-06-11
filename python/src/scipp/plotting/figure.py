@@ -115,18 +115,25 @@ class PlotFigure:
         Initialize figure parameters once the model has been created, since
         the axes formatters are defined by the model.
         """
-        for dim in axformatters:
-            self.axformatter[dim] = {}
+        self._formatters = axformatters
+        for axis, formatter in self._formatters.items():
+            self.axformatter[axis] = {}
             for key in ["linear", "log"]:
-                if axformatters[dim][key] is None:
-                    self.axformatter[dim][key] = ticker.ScalarFormatter()
+                if formatter[key] is None:
+                    self.axformatter[axis][key] = ticker.ScalarFormatter()
                 else:
-                    self.axformatter[dim][key] = ticker.FuncFormatter(
-                        axformatters[dim][key])
-            self.axlocator[dim] = {
+                    form = formatter[key]
+                    if "need_callbacks" in formatter:
+                        from functools import partial
+                        form = partial(form,
+                                       dim=axis,
+                                       get_axis_bounds=self.get_axis_bounds,
+                                       set_axis_label=self.set_axis_label)
+                    self.axformatter[axis][key] = ticker.FuncFormatter(form)
+            self.axlocator[axis] = {
                 "linear":
                 ticker.MaxNLocator(integer=True) if
-                axformatters[dim]["custom_locator"] else ticker.AutoLocator(),
+                axformatters[axis]["custom_locator"] else ticker.AutoLocator(),
                 "log":
                 ticker.LogLocator()
             }

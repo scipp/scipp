@@ -71,12 +71,9 @@ class Plot1d(Plot):
                          view_ndims=view_ndims)
 
         # The model which takes care of all heavy calculations
-        self.model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
-                                 name=self.name,
-                                 dim_label_map=self.dim_label_map)
+        self.model = PlotModel1d(scipp_obj_dict=scipp_obj_dict, name=self.name)
         profile_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
-                                    name=self.name,
-                                    dim_label_map=self.dim_label_map)
+                                    name=self.name)
 
         # Run validation checks before rendering the plot.
         # Note that validation needs to be run after model is created.
@@ -84,6 +81,7 @@ class Plot1d(Plot):
 
         # Create control widgets (sliders and buttons)
         self.widgets = PlotWidgets(axes=self.axes,
+                                   formatters=self._formatters,
                                    ndim=view_ndims,
                                    name=self.name,
                                    dim_label_map=self.dim_label_map,
@@ -92,20 +90,21 @@ class Plot1d(Plot):
 
         # The view which will display the 1d plot and send pick events back to
         # the controller
-        self.view = PlotView1d(
-            figure=PlotFigure1d(ax=ax,
-                                figsize=figsize,
-                                errorbars=self.errorbars,
-                                norm=norm,
-                                title=title,
-                                unit=self.params["values"][self.name]["unit"],
-                                masks=self.masks,
-                                mpl_line_params=mpl_line_params,
-                                picker=True,
-                                grid=grid,
-                                xlabel=xlabel,
-                                ylabel=ylabel,
-                                legend=legend))
+        self.view = PlotView1d(figure=PlotFigure1d(
+            ax=ax,
+            figsize=figsize,
+            errorbars=self.errorbars,
+            norm=norm,
+            title=title,
+            unit=self.params["values"][self.name]["unit"],
+            masks=self.masks,
+            mpl_line_params=mpl_line_params,
+            picker=True,
+            grid=grid,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            legend=legend),
+                               formatters=self._formatters)
 
         # Profile view which displays an additional dimension as a 1d plot
         if self.ndim > 1:

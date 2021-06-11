@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .formatters import make_formatter
 from .tools import parse_params
 from .._scipp.core import DimensionError
 
@@ -144,6 +145,13 @@ class Plot:
         self.coord_shapes = {}
         self.dim_label_map = {}
         self.position_dims = None
+
+        # TODO use option to provide keys here
+        array = next(iter(scipp_obj_dict.values()))
+        self._formatters = {
+            dim: make_formatter(array, dim)
+            for dim in array.dims
+        }
 
         self.name = list(scipp_obj_dict.keys())[0]
         self._process_axes_dimensions(scipp_obj_dict[self.name],
