@@ -5,6 +5,8 @@ Classes
 
 .. autosummary::
    :toctree: ../generated
+   :template: scipp-class-template.rst
+   :recursive:
 
    Bins
    DataArray
@@ -172,6 +174,7 @@ Geometric
    :toctree: ../generated
 
    geometry.position
+   geometry.rotation_matrix_from_quaternion_coeffs
 
 Group-by (split-apply-combine)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
