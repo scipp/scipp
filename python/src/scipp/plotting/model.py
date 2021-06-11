@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import to_bin_edges, make_fake_coord, find_limits, to_dict
+from .tools import make_fake_coord, find_limits, to_dict
 from ..utils import vector_type, string_type, datetime_type
 from .._scipp import core as sc
 
@@ -34,22 +34,10 @@ class PlotModel:
 
         # Create dict of DataArrays using information from controller
         for name, array in scipp_obj_dict.items():
-            coord_list = {}
-
-            # Iterate through axes and collect coordinates
-            for dim in array.dims:
-                coord = self._axis_coord(array, dim)
-
-                is_histogram = False
-                for i, d in enumerate(coord.dims):
-                    if d == dim:
-                        is_histogram = array.sizes[d] == coord.shape[i] - 1
-
-                if is_histogram:
-                    coord_list[dim] = coord
-                else:
-                    coord_list[dim] = to_bin_edges(coord, dim)
-
+            coord_list = {
+                dim: self._axis_coord(array, dim)
+                for dim in array.dims
+            }
             self.backup.update({name: {"array": array, "coords": coord_list}})
 
         # Save a copy of the name for simpler access

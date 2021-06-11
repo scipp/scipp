@@ -70,8 +70,6 @@ class PlotController:
         self.profile_dim = None
         # Store coordinate min and max limits
         self.xlims = {}
-        # Record which variables are histograms along which dimension
-        self.histograms = {}
         # Keep track if a coordinate with more than one dimension is present
         self.multid_coord = multid_coord
 
@@ -80,19 +78,11 @@ class PlotController:
         for key in self.model.get_data_names():
 
             self.xlims[key] = {}
-            self.histograms[key] = {}
 
             # Iterate through axes and collect dimensions
             for dim in self.axes.values():
 
                 coord = self.model.get_data_coord(key, dim)
-
-                # To allow for 2D coordinates, the histograms are
-                # stored as dicts, with one key per dimension of the coordinate
-                self.histograms[key][dim] = {}
-                for i, d in enumerate(coord.dims):
-                    self.histograms[key][dim][d] = sizes[
-                        d] == coord_shapes[key][dim][i] - 1
 
                 # The limits for each dimension
                 self.xlims[key][dim] = find_limits(coord,
@@ -434,10 +424,6 @@ class PlotController:
             axparams[ax] = {
                 "lims": np.array([xmin, xmax]),
                 "scale": self.scale[dim],
-                "hist": {
-                    name: self.histograms[name][dim][dim]
-                    for name in self.histograms
-                },
                 "dim": dim
             }
 
@@ -512,11 +498,6 @@ class PlotController:
                     "x": {
                         "lims": [xmin, xmax],
                         "scale": self.scale[self.profile_dim],
-                        "hist": {
-                            name: self.histograms[name][self.profile_dim][
-                                self.profile_dim]
-                            for name in self.histograms
-                        },
                         "dim": self.profile_dim
                     }
                 }

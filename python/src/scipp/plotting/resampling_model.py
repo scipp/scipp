@@ -2,10 +2,9 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
-
-import numpy as np
 from .._scipp import core as sc
-from .tools import to_bin_centers
+from .._variable import linspace
+from .tools import to_bin_edges
 
 
 class ResamplingModel():
@@ -73,9 +72,8 @@ class ResamplingModel():
                 continue
             low, high, unit, res = par
             edges.append(
-                sc.Variable(dims=[dim],
-                            unit=unit,
-                            values=np.linspace(low, high, num=res + 1)))
+                linspace(dim=dim, unit=unit, start=low, stop=high,
+                         num=res + 1))
             # The order of edges matters. We need to put the length 1 edges
             # first to rebin these dims first and effectively slice them out,
             # otherwise we will rebin N-D variables on high resolution.
@@ -142,18 +140,7 @@ class ResamplingModel():
 
 class ResamplingBinnedModel(ResamplingModel):
     def _make_array(self, array):
-        """
-        TODO See #1469. This is a temporary hack to work around the
-        conversion of coords to edges in model.py.
-        """
-        new_array = array.copy(deep=False)
-        for name, var in new_array.coords.items():
-            if len(var.dims) == 0:
-                continue
-            dim = var.dims[-1]
-            if name not in new_array.bins.coords:
-                new_array.coords[name] = to_bin_centers(var, dim)
-        return new_array
+        return array
 
     def _resample(self, array):
         # We could bin with all edges and then use `bins.sum()` but especially
@@ -178,10 +165,28 @@ class ResamplingBinnedModel(ResamplingModel):
 
 class ResamplingCountsModel(ResamplingModel):
     def _make_array(self, array):
-        return array
+        new_array = array.copy(deep=False)
+        self._input_edges = {}
+        for dim, var in array.coords.items():
+            if var.sizes[dim] == array.sizes[dim]:
+                # TODO avoid dim label clashes
+                new_array.coords[f'{dim}_'] = to_bin_edges(var, dim)
+            else:
+                new_array.coords[f'{dim}_'] = var
+        return new_array
 
     def _resample(self, array):
-        return self._rebin(array.data, array.meta)
+        # TODO this does not work because array is sliced already
+        # instead:
+        # 1. add alternate coords in _make_array
+        # 2. pick here which to use
+        coords = {}
+        for dim in array.dims:
+            if dim in self.bounds:
+                coords[dim] = array.coords[f'{dim}_']
+            else:
+                coords[dim] = array.coords[dim]
+        return self._rebin(array.data, coords)
 
 
 class ResamplingDenseModel(ResamplingModel):
