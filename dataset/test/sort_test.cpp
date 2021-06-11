@@ -95,6 +95,17 @@ TEST(SortTest, data_array_1d_descending) {
   EXPECT_EQ(sort(table, Dim::X, SortOrder::Descending), sorted_table);
 }
 
+TEST(SortTest, data_array_key_overlap) {
+  Variable data =
+      makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4});
+  DataArray table =
+      DataArray(data.slice({Dim::Event, 0, 2}),
+                {{Dim::X, makeVariable<double>(Dims{Dim::Event}, Shape{2},
+                                               Values{4, 1})}});
+  EXPECT_THROW_DISCARD(sort(table, data.slice({Dim::Event, 2, 4})),
+                       std::invalid_argument);
+}
+
 TEST(SortTest, dataset_1d) {
   Dataset d;
   d.setData("a", makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,
@@ -145,4 +156,17 @@ TEST(SortTest, dataset_1d_descending) {
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{10, 20, -1});
 
   EXPECT_EQ(sort(d, key, SortOrder::Descending), expected);
+}
+
+TEST(SortTest, dataset_key_overlap) {
+  Dataset d;
+  Variable data =
+      makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4});
+  DataArray array =
+      DataArray(data.slice({Dim::Event, 0, 2}),
+                {{Dim::X, makeVariable<double>(Dims{Dim::Event}, Shape{2},
+                                               Values{4, 1})}});
+  d.setData("a", array);
+  EXPECT_THROW_DISCARD(sort(d, data.slice({Dim::Event, 2, 4})),
+                       std::invalid_argument);
 }
