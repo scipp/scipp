@@ -1,11 +1,15 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from typing import Optional
+
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .utils.typing import DataArrayLike
 
 
-def abs(x, out=None):
+def abs(x: DataArrayLike,
+        out: Optional[DataArrayLike] = None) -> DataArrayLike:
     """Element-wise absolute value.
 
     :param x: Input data.
@@ -17,21 +21,20 @@ def abs(x, out=None):
     return _call_cpp_func(_cpp.abs, x, out=out)
 
 
-def nan_to_num(x, nan=None, posinf=None, neginf=None, out=None):
+def nan_to_num(x: _cpp.Variable,
+               *,
+               nan: _cpp.Variable = None,
+               posinf: _cpp.Variable = None,
+               neginf: _cpp.Variable = None,
+               out: _cpp.Variable = None) -> _cpp.Variable:
     """Element-wise special value replacement.
 
     All elements in the output are identical to input except in the presence
     of a NaN, Inf or -Inf.
-    The function allows replacements to be separately specified for nan, inf
-    or -inf values.
+    The function allows replacements to be separately specified for NaN, Inf
+    or -Inf values.
     You can choose to replace a subset of those special values by providing
     just the required keyword arguments.
-    If the replacement is value-only and the input has variances, the variance
-    at the element(s) undergoing replacement are also replaced with the
-    replacement value.
-    If the replacement has a variance and the input has variances, the
-    variance at the element(s) undergoing replacement are also replaced with
-    the replacement variance.
 
     :param x: Input data.
     :param nan: Replacement values for NaN in the input.
@@ -39,12 +42,12 @@ def nan_to_num(x, nan=None, posinf=None, neginf=None, out=None):
     :param neginf: Replacement values for -Inf in the input.
     :param out: Optional output buffer.
     :raises: If the types of input and replacement do not match.
-    :return: Input elements are replaced in output with specified subsitutions.
+    :return: Input with specified substitutions.
     """
     return _call_cpp_func(_cpp.nan_to_num, x, nan, posinf, neginf, out=out)
 
 
-def norm(x):
+def norm(x: DataArrayLike) -> DataArrayLike:
     """Element-wise norm.
 
     :param x: Input data.
@@ -54,7 +57,8 @@ def norm(x):
     return _call_cpp_func(_cpp.norm, x, out=None)
 
 
-def reciprocal(x, out=None):
+def reciprocal(x: DataArrayLike,
+               out: Optional[DataArrayLike] = None) -> DataArrayLike:
     """Element-wise reciprocal.
 
     :param x: Input data.
@@ -65,7 +69,8 @@ def reciprocal(x, out=None):
     return _call_cpp_func(_cpp.reciprocal, x, out=out)
 
 
-def sqrt(x, out=None):
+def sqrt(x: DataArrayLike,
+         out: Optional[DataArrayLike] = None) -> DataArrayLike:
     """Element-wise square-root.
 
     :param x: Input data.
@@ -76,8 +81,9 @@ def sqrt(x, out=None):
     return _call_cpp_func(_cpp.sqrt, x, out=out)
 
 
-def exp(x, out=None):
-    """Element-wise exponentiation.
+def exp(x: DataArrayLike,
+        out: Optional[DataArrayLike] = None) -> DataArrayLike:
+    """Element-wise exponential.
 
     :param x: Input data.
     :param out: Optional output buffer.
@@ -86,7 +92,8 @@ def exp(x, out=None):
     return _call_cpp_func(_cpp.exp, x, out=out)
 
 
-def log(x, out=None):
+def log(x: DataArrayLike,
+        out: Optional[DataArrayLike] = None) -> DataArrayLike:
     """Element-wise natural logarithm.
 
     :param x: Input data.
@@ -96,7 +103,8 @@ def log(x, out=None):
     return _call_cpp_func(_cpp.log, x, out=out)
 
 
-def log10(x, out=None):
+def log10(x: DataArrayLike,
+          out: Optional[DataArrayLike] = None) -> DataArrayLike:
     """Element-wise base 10 logarithm.
 
     :param x: Input data.
