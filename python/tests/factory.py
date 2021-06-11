@@ -5,7 +5,7 @@
 import numpy as np
 import scipp as sc
 
-dim_list = ['xx', 'y', 'z', 'time', 'temperature']
+dim_list = ['xx', 'yy', 'zz', 'time', 'temperature']
 
 
 def make_scalar(variance=False, dtype=sc.dtype.float64, unit='counts'):

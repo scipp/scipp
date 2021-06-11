@@ -34,7 +34,8 @@ def test_plot_2d_with_log_and_variances():
 
 
 def test_plot_2d_with_vmin_vmax():
-    plot(make_dense_data_array(ndim=2), vmin=0.1, vmax=0.9)
+    da = make_dense_data_array(ndim=2)
+    plot(da, vmin=0.1 * da.unit, vmax=0.9 * da.unit)
 
 
 def test_plot_2d_with_unit():
@@ -42,19 +43,20 @@ def test_plot_2d_with_unit():
 
 
 def test_plot_2d_with_vmin_vmax_with_log():
-    plot(make_dense_data_array(ndim=2), vmin=0.1, vmax=0.9, norm='log')
+    da = make_dense_data_array(ndim=2)
+    plot(da, vmin=0.1 * da.unit, vmax=0.9 * da.unit, norm='log')
 
 
 def test_plot_2d_with_log_scale_x():
-    plot(make_dense_data_array(ndim=2), scale={'x': 'log'})
+    plot(make_dense_data_array(ndim=2), scale={'xx': 'log'})
 
 
 def test_plot_2d_with_log_scale_y():
-    plot(make_dense_data_array(ndim=2), scale={'y': 'log'})
+    plot(make_dense_data_array(ndim=2), scale={'yy': 'log'})
 
 
 def test_plot_2d_with_log_scale_xy():
-    plot(make_dense_data_array(ndim=2), scale={'x': 'log', 'y': 'log'})
+    plot(make_dense_data_array(ndim=2), scale={'xx': 'log', 'yy': 'log'})
 
 
 def test_plot_2d_with_aspect():
@@ -79,11 +81,11 @@ def test_plot_2d_with_cmap():
 
 
 def test_plot_2d_with_xaxis_specified():
-    plot(make_dense_data_array(ndim=2), axes={'x': 'y'})
+    plot(make_dense_data_array(ndim=2), axes={'x': 'yy'})
 
 
 def test_plot_2d_with_yaxis_specified():
-    plot(make_dense_data_array(ndim=2), axes={'y': 'x'})
+    plot(make_dense_data_array(ndim=2), axes={'y': 'xx'})
 
 
 def test_plot_2d_with_labels():
@@ -116,25 +118,25 @@ def test_plot_2d_with_masks_and_labels():
 
 def test_plot_2d_with_non_regular_bin_edges():
     da = make_dense_data_array(ndim=2, binedges=True)
-    da.coords['x'].values = da.coords['x'].values**2
+    da.coords['xx'].values = da.coords['xx'].values**2
     plot(da)
 
 
 def test_plot_2d_with_non_regular_bin_edges_resolution():
     da = make_dense_data_array(ndim=2, binedges=True)
-    da.coords['x'].values = da.coords['x'].values**2
+    da.coords['xx'].values = da.coords['xx'].values**2
     plot(da, resolution=128)
 
 
 def test_plot_2d_with_non_regular_bin_edges_with_masks():
     da = make_dense_data_array(ndim=2, masks=True, binedges=True)
-    da.coords['x'].values = da.coords['x'].values**2
+    da.coords['xx'].values = da.coords['xx'].values**2
     plot(da)
 
 
 def test_plot_variable_2d():
     N = 50
-    v2d = sc.Variable(['y', 'x'], values=np.random.rand(N, N), unit='K')
+    v2d = sc.Variable(['yy', 'xx'], values=np.random.rand(N, N), unit='K')
     plot(v2d)
 
 
@@ -147,22 +149,22 @@ def test_plot_dict_of_ndarrays_2d():
 
 
 def test_plot_from_dict_variable_2d():
-    plot({'dims': ['y', 'x'], 'values': np.random.random([20, 10])})
+    plot({'dims': ['yy', 'xx'], 'values': np.random.random([20, 10])})
 
 
 def test_plot_from_dict_data_array_2d():
     plot({
         'data': {
-            'dims': ['y', 'x'],
+            'dims': ['yy', 'xx'],
             'values': np.random.random([20, 10])
         },
         'coords': {
-            'x': {
-                'dims': ['x'],
+            'xx': {
+                'dims': ['xx'],
                 'values': np.arange(11)
             },
-            'y': {
-                'dims': ['y'],
+            'yy': {
+                'dims': ['yy'],
                 'values': np.arange(21)
             }
         }
@@ -175,14 +177,14 @@ def test_plot_string_and_vector_axis_labels_2d():
     vecs = []
     for i in range(N):
         vecs.append(np.random.random(3))
-    da = sc.DataArray(data=sc.Variable(['y', 'x'],
+    da = sc.DataArray(data=sc.Variable(['yy', 'xx'],
                                        values=np.random.random([M, N]),
                                        unit='counts'),
                       coords={
-                          'x':
-                          sc.vectors(dims=['x'], values=vecs, unit='m'),
-                          'y':
-                          sc.Variable(['y'],
+                          'xx':
+                          sc.vectors(dims=['xx'], values=vecs, unit='m'),
+                          'yy':
+                          sc.Variable(['yy'],
                                       values=['a', 'b', 'c', 'd', 'e'],
                                       unit='m')
                       })
@@ -196,24 +198,24 @@ def test_plot_2d_with_dimension_of_size_1():
     y = np.arange(M, dtype=np.float64)
     z = np.arange(M + 1, dtype=np.float64)
     d = sc.Dataset()
-    d['a'] = sc.Variable(['y', 'x'],
+    d['a'] = sc.Variable(['yy', 'xx'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
-    d['b'] = sc.Variable(['z', 'x'],
+    d['b'] = sc.Variable(['zz', 'xx'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
-    d.coords['x'] = sc.Variable(['x'], values=x, unit=sc.units.m)
-    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
-    d.coords['z'] = sc.Variable(['z'], values=z, unit=sc.units.m)
+    d.coords['xx'] = sc.Variable(['xx'], values=x, unit=sc.units.m)
+    d.coords['yy'] = sc.Variable(['yy'], values=y, unit=sc.units.m)
+    d.coords['zz'] = sc.Variable(['zz'], values=z, unit=sc.units.m)
     plot(d['a'])
     plot(d['b'])
 
 
 def test_plot_2d_with_dimension_of_size_2():
-    a = sc.DataArray(data=sc.Variable(dims=['y', 'x'], shape=[2, 4]),
+    a = sc.DataArray(data=sc.Variable(dims=['yy', 'xx'], shape=[2, 4]),
                      coords={
-                         'x': sc.Variable(dims=['x'], values=[1, 2, 3, 4]),
-                         'y': sc.Variable(dims=['y'], values=[1, 2])
+                         'xx': sc.Variable(dims=['xx'], values=[1, 2, 3, 4]),
+                         'yy': sc.Variable(dims=['yy'], values=[1, 2])
                      })
     plot(a)
 
@@ -232,16 +234,16 @@ def test_plot_2d_ragged_coord_with_masks():
 
 def test_plot_2d_with_labels_but_no_dimension_coord():
     da = make_dense_data_array(ndim=2, labels=True)
-    del da.coords['x']
+    del da.coords['xx']
     plot(da, axes={'x': 'lab'})
 
 
 def test_plot_2d_with_decreasing_edges():
-    a = sc.DataArray(data=sc.Variable(dims=['y', 'x'],
+    a = sc.DataArray(data=sc.Variable(dims=['yy', 'xx'],
                                       values=np.arange(12).reshape(3, 4)),
                      coords={
-                         'x': sc.Variable(dims=['x'], values=[4, 3, 2, 1]),
-                         'y': sc.Variable(dims=['y'], values=[1, 2, 3])
+                         'xx': sc.Variable(dims=['xx'], values=[4, 3, 2, 1]),
+                         'yy': sc.Variable(dims=['yy'], values=[1, 2, 3])
                      })
     plot(a)
 
@@ -261,7 +263,7 @@ def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
 def test_plot_3d_binned_data_where_inner_dimension_nas_no_event_coord():
     data = make_binned_data_array(ndim=2)
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
-    plot(data, axes={'x': 'run', 'y': 'x'})
+    plot(data, axes={'x': 'run', 'y': 'xx'})
 
 
 def test_plot_2d_binned_data_with_variances():
@@ -300,12 +302,12 @@ def test_plot_2d_int64_with_unit():
 def test_plot_2d_int_coords():
     N = 20
     M = 10
-    da = sc.DataArray(data=sc.Variable(['y', 'x'],
+    da = sc.DataArray(data=sc.Variable(['yy', 'xx'],
                                        values=np.random.random([M, N]),
                                        unit='K'),
                       coords={
-                          'x': sc.arange('x', N + 1, unit='m'),
-                          'y': sc.arange('y', M, unit='m')
+                          'xx': sc.arange('xx', N + 1, unit='m'),
+                          'yy': sc.arange('yy', M, unit='m')
                       })
     plot(da)
 
@@ -316,11 +318,12 @@ def test_plot_2d_datetime():
                         np.datetime64('2017-01-01T12:00:00'),
                         np.datetime64('2017-01-01T12:00:00.0001')))
     N, M = time.sizes['time'], 200
-    da = sc.DataArray(data=sc.array(dims=['time', 'x'],
+    da = sc.DataArray(data=sc.array(dims=['time', 'xx'],
                                     values=np.random.normal(0, 1, (N, M))),
                       coords={
                           'time': time,
-                          'x': sc.Variable(['x'], values=np.linspace(0, 10, M))
+                          'xx': sc.Variable(['xx'],
+                                            values=np.linspace(0, 10, M))
                       })
     da.plot().close()
 
@@ -373,26 +376,26 @@ def test_plot_redraw_binned():
 
 def test_plot_bad_2d_coord():
     def make_array(dims, coord_name):
-        return sc.DataArray(data=sc.fold(sc.arange('x', 2 * 10), 'x', {
+        return sc.DataArray(data=sc.fold(sc.arange('xx', 2 * 10), 'xx', {
             dims[0]: 10,
             dims[1]: 2
         }),
                             coords={
                                 coord_name:
-                                sc.fold(0.1 * sc.arange('x', 20), 'x', {
+                                sc.fold(0.1 * sc.arange('xx', 20), 'xx', {
                                     dims[0]: 10,
                                     dims[1]: 2
                                 })
                             })
 
     # Ill-formed
-    a = make_array(['x', 'y'], 'x')
+    a = make_array(['xx', 'yy'], 'xx')
     with pytest.raises(sc.DimensionError):
         plot(a)
     # Good dim order
-    b = make_array(['y', 'x'], 'x')
+    b = make_array(['yy', 'xx'], 'xx')
     plot(b)
     # Non-dim coord
-    c = make_array(['x', 'y'], 'z')
+    c = make_array(['xx', 'yy'], 'zz')
     plot(c)
-    plot(c, axes={'x': 'z'})
+    plot(c, axes={'xx': 'zz'})

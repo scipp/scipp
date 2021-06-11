@@ -524,7 +524,7 @@ class PlotController:
                 self._profile_model.update_axes(axparams=self.profile_axparams)
                 # TODO note how we can set resolution, e.g., for binned data
                 # self._profile_model.resolution = 10
-                self.profile.update_axes(axparams=self.profile_axparams)
+                self._profile_view.update_axes(axparams=self.profile_axparams)
             if not visible or self.profile.is_visible():
                 self.view.reset_profile()
 

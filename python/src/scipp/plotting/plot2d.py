@@ -77,6 +77,7 @@ class Plot2d(Plot):
         # Create control widgets (sliders and buttons)
         self.widgets = PlotWidgets(
             axes=self.axes,
+            formatters=self._formatters,
             ndim=view_ndims,
             name=self.name,
             dim_label_map=self.dim_label_map,
@@ -86,21 +87,22 @@ class Plot2d(Plot):
 
         # The view which will display the 2d image and send pick events back to
         # the controller
-        self.view = PlotView2d(
-            figure=PlotFigure2d(ax=ax,
-                                cax=cax,
-                                figsize=figsize,
-                                aspect=aspect,
-                                cmap=self.params["values"][self.name]["cmap"],
-                                norm=self.params["values"][self.name]["norm"],
-                                name=self.name,
-                                cbar=self.params["values"][self.name]["cbar"],
-                                unit=self.params["values"][self.name]["unit"],
-                                masks=self.masks[self.name],
-                                extend=self.extend_cmap,
-                                title=title,
-                                xlabel=xlabel,
-                                ylabel=ylabel))
+        self.view = PlotView2d(figure=PlotFigure2d(
+            ax=ax,
+            cax=cax,
+            figsize=figsize,
+            aspect=aspect,
+            cmap=self.params["values"][self.name]["cmap"],
+            norm=self.params["values"][self.name]["norm"],
+            name=self.name,
+            cbar=self.params["values"][self.name]["cbar"],
+            unit=self.params["values"][self.name]["unit"],
+            masks=self.masks[self.name],
+            extend=self.extend_cmap,
+            title=title,
+            xlabel=xlabel,
+            ylabel=ylabel),
+                               formatters=self._formatters)
 
         # Profile view which displays an additional dimension as a 1d plot
         if self.ndim > 2:

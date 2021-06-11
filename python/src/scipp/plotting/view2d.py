@@ -20,8 +20,8 @@ class PlotView2d(PlotView):
     In addition, `PlotView2d` provides a dynamic image resampling for large
     input data.
     """
-    def __init__(self, figure):
-        super().__init__(figure=figure)
+    def __init__(self, figure, formatters):
+        super().__init__(figure=figure, formatters=formatters)
         self._axes = ['x', 'y']
 
         self.xlim_updated = False
@@ -123,7 +123,7 @@ class PlotView2d(PlotView):
         self.current_lims['y'] = axparams["y"]["lims"]
         self.global_lims["x"] = axparams["x"]["lims"]
         self.global_lims["y"] = axparams["y"]["lims"]
-        self.figure.update_axes(axparams)
+        super().update_axes(axparams)
         self.reset_profile()
 
     def reset_profile(self):

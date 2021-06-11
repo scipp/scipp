@@ -78,7 +78,10 @@ def parse_params(params=None,
     else:
         raise RuntimeError("Unknown norm. Expected 'linear' or 'log', "
                            "got {}.".format(parsed["norm"]))
-    parsed["norm"] = norm(vmin=parsed["vmin"], vmax=parsed["vmax"])
+    vmin = parsed["vmin"]
+    vmax = parsed["vmax"]
+    parsed["norm"] = norm(vmin=vmin.value if vmin is not None else None,
+                          vmax=vmax.value if vmax is not None else None)
 
     # Convert color into custom colormap
     if parsed["color"] is not None:

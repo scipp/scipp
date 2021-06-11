@@ -109,7 +109,6 @@ class PlotView:
             axis: self.formatters[axparams[axis]['dim']]
             for axis in self._axes
         })
-
         self.figure.update_axes(**kwargs, axparams=axparams)
 
     def _make_data(self, new_values, mask_info):
