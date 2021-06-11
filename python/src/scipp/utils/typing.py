@@ -3,6 +3,8 @@
 # @file
 # @author Neil Vaytet
 
+import typing as _std_typing
+
 from .._scipp import core as sc
 
 
@@ -67,3 +69,6 @@ def numeric_type(obj):
     Return False if the dtype is either vector or string.
     """
     return (not vector_type(obj)) and (not string_type(obj))
+
+
+DataArrayLike = _std_typing.Union[sc.Variable, sc.DataArray]
