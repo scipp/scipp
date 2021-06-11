@@ -238,7 +238,6 @@ def make_formatter(array, key):
             form = None
         formatter.update({"linear": form, "log": form})
     formatter['unit'] = name_with_unit(var=labels, name="")
-    formatter['label'] = name_with_unit(var=labels,
-                                        name=key if key is not dim else None)
+    formatter['label'] = name_with_unit(var=labels, name=key)
 
     return formatter
