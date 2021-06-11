@@ -72,3 +72,4 @@ def numeric_type(obj):
 
 
 DataArrayLike = _std_typing.Union[sc.Variable, sc.DataArray]
+DatasetLike = _std_typing.Union[DataArrayLike, sc.Dataset]
