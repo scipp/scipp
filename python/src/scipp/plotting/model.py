@@ -83,7 +83,7 @@ class PlotModel:
             coord = make_fake_coord(dim, array.sizes[dim])
         # Convert the coordinate to float because rebin (used in 2d plots) does
         # not currently support integer coordinates
-        if coord.dtype in [sc.dtype.float32, sc.dtype.float64]:
+        if coord.dtype not in [sc.dtype.float32, sc.dtype.float64]:
             coord = coord.astype(sc.dtype.float64)
         return coord
 

@@ -378,22 +378,6 @@ class Plot:
             raise DimensionError("Duplicate entry in axes: {}".format(
                 self.axes))
 
-        # Protect against ill-formed data where multi-dimensional coord does
-        # not apply to inner dimension
-        if multid_coord is not None:
-            multid_coord_dims = self.model.get_data_coord(
-                self.name, multid_coord)[0].dims
-            if (multid_coord in multid_coord_dims) and (multid_coord !=
-                                                        multid_coord_dims[-1]):
-                raise DimensionError(
-                    "Plot input is ill-constructed. "
-                    "When using multi-dimensional coordinates, the named "
-                    "dimension of the coordinate must be the same as the "
-                    "inner/last dim. "
-                    "Here the named dimension is {}, "
-                    "while the inner dim is {}.".format(
-                        multid_coord, multid_coord_dims[-1]))
-
     def savefig(self, filename=None):
         """
         Save plot to file.

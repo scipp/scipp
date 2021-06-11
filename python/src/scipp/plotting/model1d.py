@@ -14,13 +14,11 @@ class PlotModel1d(PlotModel):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name, array in self.data_arrays.items():
-            if array.bins is not None:
-                raise RuntimeError(
-                    "1-D plots of binned data not implemented. Histogram "
-                    "manually, e.g., using `plot(array.bins.sum())`")
         self.dim = None
         self._resolution = None
+        for name, array in self.data_arrays.items():
+            if array.bins is not None:
+                self._resolution = 200
 
     def _make_1d_resampling_model(self, array):
         model = resampling_model(array)
