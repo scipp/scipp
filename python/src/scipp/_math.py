@@ -76,28 +76,31 @@ def sqrt(x, out=None):
     return _call_cpp_func(_cpp.sqrt, x, out=out)
 
 
-def exp(x):
+def exp(x, out=None):
     """Element-wise exponentiation.
 
     :param x: Input data.
+    :param out: Optional output buffer.
     :returns: e raised to the power of the input.
     """
-    return _call_cpp_func(_cpp.exp, x)
+    return _call_cpp_func(_cpp.exp, x, out=out)
 
 
-def log(x):
+def log(x, out=None):
     """Element-wise natural logarithm.
 
     :param x: Input data.
+    :param out: Optional output buffer.
     :returns: Base e logiarithm of the input.
     """
-    return _call_cpp_func(_cpp.log, x)
+    return _call_cpp_func(_cpp.log, x, out=out)
 
 
-def log10(x):
+def log10(x, out=None):
     """Element-wise base 10 logarithm.
 
     :param x: Input data.
+    :param out: Optional output buffer.
     :returns: Base 10 logarithm of the input.
     """
-    return _call_cpp_func(_cpp.log10, x)
+    return _call_cpp_func(_cpp.log10, x, out=out)
