@@ -71,7 +71,7 @@ def test_plot_1d_with_masks():
 
 def test_plot_collapse():
     da = make_dense_data_array(ndim=2)
-    plot(sc.collapse(da['y', :10], keep='x'))
+    plot(sc.collapse(da['y', :10], keep='xx'))
 
 
 def test_plot_sliceviewer_with_1d_projection():
@@ -110,11 +110,11 @@ def test_plot_projection_1d_two_entries_different_dims():
 
 
 def test_plot_variable_1d():
-    plot(sc.arange('x', 50., unit='counts'))
+    plot(sc.arange('xx', 50., unit='counts'))
 
 
 def test_plot_dict_of_variables_1d():
-    v1 = sc.arange('x', 50.0, unit='s')
+    v1 = sc.arange('xx', 50.0, unit='s')
     v2 = 5.0 * v1
     plot({'v1': v1, 'v2': v2})
 
@@ -148,17 +148,17 @@ def test_plot_from_dict_data_array_1d():
 
 def test_plot_dataset_view():
     ds = make_dense_dataset(ndim=2)
-    plot(ds['x', 0])
+    plot(ds['xx', 0])
 
 
 def test_plot_vector_axis_labels_1d():
     N = 10
-    da = sc.DataArray(data=sc.Variable(['x'],
+    da = sc.DataArray(data=sc.Variable(['xx'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
-                          'x':
-                          sc.vectors(dims=['x'],
+                          'xx':
+                          sc.vectors(dims=['xx'],
                                      values=np.random.random([N, 3]),
                                      unit=sc.units.m)
                       })
@@ -167,12 +167,12 @@ def test_plot_vector_axis_labels_1d():
 
 def test_plot_string_axis_labels_1d():
     N = 10
-    da = sc.DataArray(data=sc.Variable(['x'],
+    da = sc.DataArray(data=sc.Variable(['xx'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
-                          'x':
-                          sc.Variable(dims=['x'],
+                          'xx':
+                          sc.Variable(dims=['xx'],
                                       values=[
                                           "a", "b", "c", "d", "e", "f", "g",
                                           "h", "i", "j"
@@ -184,12 +184,12 @@ def test_plot_string_axis_labels_1d():
 
 def test_plot_string_axis_labels_1d_short():
     N = 5
-    da = sc.DataArray(data=sc.Variable(['x'],
+    da = sc.DataArray(data=sc.Variable(['xx'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
-                          'x':
-                          sc.Variable(dims=['x'],
+                          'xx':
+                          sc.Variable(dims=['xx'],
                                       values=["a", "b", "c", "d", "e"],
                                       unit='m')
                       })
@@ -198,30 +198,31 @@ def test_plot_string_axis_labels_1d_short():
 
 def test_plot_with_vector_labels():
     N = 10
-    da = sc.DataArray(data=sc.Variable(['x'],
+    da = sc.DataArray(data=sc.Variable(['xx'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
-                          'x':
-                          sc.arange('x', float(N), unit='m'),
+                          'xx':
+                          sc.arange('xx', float(N), unit='m'),
                           'labs':
-                          sc.vectors(dims=['x'],
+                          sc.vectors(dims=['xx'],
                                      values=np.random.random([N, 3]),
                                      unit='m')
                       })
+    # Note 'x' not 'xx'
     plot(da, axes={'x': 'labs'})
 
 
 def test_plot_vector_axis_with_labels():
     N = 10
-    da = sc.DataArray(data=sc.Variable(['x'],
+    da = sc.DataArray(data=sc.Variable(['xx'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
                           'labs':
-                          sc.arange('x', float(N), unit='m'),
-                          'x':
-                          sc.vectors(dims=['x'],
+                          sc.arange('xx', float(N), unit='m'),
+                          'xx':
+                          sc.vectors(dims=['xx'],
                                      values=np.random.random([N, 3]),
                                      unit='m')
                       })
@@ -245,20 +246,20 @@ def test_plot_access_ax_and_fig_two_entries():
     d = make_dense_dataset(ndim=1)
     d['b'].unit = 'kg'
     out = sc.plot(d)
-    out["['x'].counts"].ax.set_xlabel("MyXlabel")
-    out["['x'].counts"].fig.set_dpi(120.)
+    out["['xx'].counts"].ax.set_xlabel("MyXlabel")
+    out["['xx'].counts"].fig.set_dpi(120.)
     out.close()
 
 
 def test_plot_with_integer_coord():
     da = make_dense_data_array(ndim=1)
-    da.coords['x'] = sc.arange('x', 50, unit='m')
+    da.coords['xx'] = sc.arange('xx', 50, unit='m')
     plot(da)
 
 
 def test_plot_with_integer_coord_binedges():
     da = make_dense_data_array(ndim=1, binedges=True)
-    da.coords['x'] = sc.arange('x', 51, unit='m')
+    da.coords['xx'] = sc.arange('xx', 51, unit='m')
     plot(da)
 
 

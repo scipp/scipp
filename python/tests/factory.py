@@ -45,7 +45,7 @@ def make_scalar_array(variance=False,
 
     data = make_scalar(variance=variance, dtype=dtype, unit=unit)
 
-    coord_dict = {'x': make_scalar(dtype=dtype, unit=unit)}
+    coord_dict = {'xx': make_scalar(dtype=dtype, unit=unit)}
     attr_dict = {}
     mask_dict = {}
 

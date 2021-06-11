@@ -131,7 +131,7 @@ def find_log_limits(x):
     """
     from .. import flatten, ones
     volume = np.product(x.shape)
-    pixel = flatten(sc.values(x), to='pixel')
+    pixel = flatten(sc.values(x.astype(sc.dtype.float64)), to='pixel')
     weights = ones(dims=['pixel'], shape=[volume])
     hist = sc.histogram(sc.DataArray(data=weights, coords={'order': pixel}),
                         bins=sc.Variable(dims=['order'],
@@ -163,7 +163,10 @@ def find_linear_limits(x):
     """
     Find variable min and max.
     """
-    return [sc.values(sc.nanmin(x)), sc.values(sc.nanmax(x))]
+    return [
+        sc.values(sc.nanmin(x).astype(sc.dtype.float64)),
+        sc.values(sc.nanmax(x).astype(sc.dtype.float64))
+    ]
 
 
 def find_limits(x, scale=None, flip=False):
