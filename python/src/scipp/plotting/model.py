@@ -94,15 +94,9 @@ class PlotModel:
                                                   masks=to_dict(
                                                       item["array"].masks))
 
-    def get_axformatter(self, name, dim):
-        """
-        Get an axformatter for a given data name and dimension.
-        """
-        return self.axformatter[name][dim]
-
     def get_slice_coord_bounds(self, name, dim, bounds):
         """
-        Return the left, center, and right coordinates for a bin index.
+        Return the left and right coordinates for a bin index.
         """
         return self.data_arrays[name].meta[dim][
             dim,
@@ -132,7 +126,7 @@ class PlotModel:
         else:
             return [None, None]
 
-    # TODO remove ince model3d is refactored
+    # TODO remove once model3d is refactored
     def slice_data(self, array, slices):
         """
         Slice the data array according to the dimensions and extents listed
@@ -161,7 +155,3 @@ class PlotModel:
 
     def update_profile_model(self, *args, **kwargs):
         return
-
-    def connect(self, callbacks):
-        for name, func in callbacks.items():
-            self.interface[name] = func
