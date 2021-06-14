@@ -98,13 +98,6 @@ class PlotView1d(PlotView):
         TODO: optimize visibility update to that it only calls the function on
         a state change and not on every mouse movement.
         """
-        # Plan:
-        # want to use separate model for profile
-        # => want to refactor `model.update_profile` so it is same as
-        #    update_data
-        # => move cursor finding code from model here
-        # => need to store self.data from update_data
-        # => new_values should be data array (or list of data array)
         if event.inaxes == self.figure.ax:
             #  Find closest point to cursor
             #  TODO: can we optimize this with new buckets?
