@@ -102,18 +102,28 @@ TEST_F(GroupbyTest, copy_multiple_subgroups) {
 TEST_F(GroupbyTest, copy_nan) {
   constexpr auto nan = std::numeric_limits<double>::quiet_NaN();
   DataArray da{
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{0, 1, 2, 3})};
-  da.coords().set(
-      Dim("labels"),
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{0.0, nan, 1.0, 3.0}));
-  auto one_group = groupby(
+      makeVariable<double>(Dims{Dim::X}, Shape{6}, Values{0, 1, 2, 3, 4, 5})};
+  da.coords().set(Dim("labels"),
+                  makeVariable<double>(Dims{Dim::X}, Shape{6},
+                                       Values{0.0, nan, 1.0, 0.0, 3.0, 3.0}));
+
+  auto by_dim = groupby(da, Dim("labels"));
+  EXPECT_EQ(by_dim.size(), 3);
+  EXPECT_EQ(by_dim.copy(0).data(),
+            makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 3}));
+  EXPECT_EQ(by_dim.copy(1).data(),
+            makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{2}));
+  EXPECT_EQ(by_dim.copy(2).data(),
+            makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{4, 5}));
+
+  auto by_bins = groupby(
       da, Dim("labels"),
-      makeVariable<double>(Dims{Dim("labels")}, Shape{3}, Values{0, 2, 4}));
-  EXPECT_EQ(one_group.size(), 2);
-  EXPECT_EQ(one_group.copy(0).data(),
-            makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 2}));
-  EXPECT_EQ(one_group.copy(1).data(),
-            makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{3}));
+      makeVariable<double>(Dims{Dim("labels")}, Shape{3}, Values{0, 2, 5}));
+  EXPECT_EQ(by_bins.size(), 2);
+  EXPECT_EQ(by_bins.copy(0).data(),
+            makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 2, 3}));
+  EXPECT_EQ(by_bins.copy(1).data(),
+            makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{4, 5}));
 }
 
 TEST_F(GroupbyTest, fail_2d_coord) {
