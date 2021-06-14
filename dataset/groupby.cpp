@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #include <numeric>
 
+#include "scipp/common/numeric.h"
+
 #include "scipp/core/bucket.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/parallel.h"
@@ -241,7 +243,8 @@ template <class T> struct MakeGroups {
       // handling in follow-up "apply" steps.
       const auto begin = i;
       const auto &value = *it;
-      while (it != end && *it == value) {
+      while (it != end && (*it == value || (scipp::numeric::isnan(value) &&
+                                            scipp::numeric::isnan(*it)))) {
         ++it;
         ++i;
       }
