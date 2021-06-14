@@ -405,27 +405,28 @@ class PlotController:
         """
         return sorted(list(set(['x', 'y', 'z']) & set(self.axes.keys())))
 
+    def _make_axparam(self, dim):
+        xmin = np.Inf
+        xmax = np.NINF
+        for name in self.xlims:
+            xlims = self.xlims[name][dim][self.scale[dim]].values
+            xmin = min(xmin, xlims[0])
+            xmax = max(xmax, xlims[1])
+        return {
+            "lims": np.array([xmin, xmax]),
+            "scale": self.scale[dim],
+            "dim": dim
+        }
+
     def _make_axes_parameters(self):
         """
         Gather the information (dimensions, limits, etc...) about the (x, y, z)
         axes that are displayed on the plots.
         """
-        axparams = {}
-        for ax in self._get_xyz_axes():
-            dim = self.axes[ax]
-            xmin = np.Inf
-            xmax = np.NINF
-            for name in self.xlims:
-                xlims = self.xlims[name][dim][self.scale[dim]].values
-                xmin = min(xmin, xlims[0])
-                xmax = max(xmax, xlims[1])
-            axparams[ax] = {
-                "lims": np.array([xmin, xmax]),
-                "scale": self.scale[dim],
-                "dim": dim
-            }
-
-        return axparams
+        return {
+            ax: self._make_axparam(self.axes[ax])
+            for ax in self._get_xyz_axes()
+        }
 
     def get_masks_info(self):
         """
@@ -484,21 +485,7 @@ class PlotController:
                 visible = True
 
             if visible:
-                xmin = np.Inf
-                xmax = np.NINF
-                for name in self.xlims:
-                    xlims = self.xlims[name][self.profile_dim][self.scale[
-                        self.profile_dim]].values
-                    xmin = min(xmin, xlims[0])
-                    xmax = max(xmax, xlims[1])
-                profile_axparams = {
-                    "x": {
-                        "lims": [xmin, xmax],
-                        "scale": self.scale[self.profile_dim],
-                        "dim": self.profile_dim
-                    }
-                }
-
+                profile_axparams = {'x': self._make_axparam(self.profile_dim)}
                 self._profile_model.update_axes(axparams=profile_axparams)
                 self._profile_view.update_axes(axparams=profile_axparams)
             if not visible or self.profile.is_visible():
