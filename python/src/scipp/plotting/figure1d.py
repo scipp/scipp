@@ -177,6 +177,8 @@ class PlotFigure1d(PlotFigure):
                                           color=line.mpl_params["color"],
                                           zorder=10,
                                           fmt="none")
+        if self.show_legend():
+            self.ax.legend(loc=self.legend["loc"])
         return line
 
     def _preprocess_hist(self, name, vals):
