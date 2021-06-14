@@ -241,7 +241,7 @@ template <class T> struct NanSensitiveLess {
     return a < b;
   }
 };
-}
+} // namespace
 
 template <class T> struct MakeGroups {
   static auto apply(const Variable &key, const Dim targetDim) {
