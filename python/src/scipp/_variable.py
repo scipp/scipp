@@ -3,8 +3,10 @@
 # @author Matthew Andrew
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from typing import Any as _Any, Sequence as _Sequence, Union as _Union
+from typing import Any as _Any, Sequence as _Sequence, Union as _Union,\
+    Optional as _Optional
 import numpy as _np
+from numpy.typing import ArrayLike as _ArrayLike
 
 
 def _parse_dims_shape_sizes(dims, shape, sizes):
@@ -286,8 +288,8 @@ def vectors(*,
 
 def array(*,
           dims: _Sequence[str],
-          values: _Union[_np.ndarray, list],
-          variances: _Union[_np.ndarray, list] = None,
+          values: _ArrayLike,
+          variances: _Optional[_ArrayLike] = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
           dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
