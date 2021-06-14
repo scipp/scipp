@@ -231,13 +231,25 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   return out;
 }
 
+namespace {
+template <class T> struct NanSensitiveLess {
+  // Compare two values such that x < NaN for all x != NaN.
+  bool operator()(const T &a, const T &b) const {
+    if (scipp::numeric::isnan(b)) {
+      return true;
+    }
+    return a < b;
+  }
+};
+}
+
 template <class T> struct MakeGroups {
   static auto apply(const Variable &key, const Dim targetDim) {
     expect::isKey(key);
     const auto &values = key.values<T>();
 
     const auto dim = key.dims().inner();
-    std::map<T, GroupByGrouping::group> indices;
+    std::map<T, GroupByGrouping::group, NanSensitiveLess<T>> indices;
     const auto end = values.end();
     scipp::index i = 0;
     for (auto it = values.begin(); it != end;) {
@@ -245,13 +257,8 @@ template <class T> struct MakeGroups {
       // handling in follow-up "apply" steps.
       const auto begin = i;
       const auto &value = *it;
-      if (scipp::numeric::isnan(value)) {
-        // NaN's cannot be used as keys in std::map -> drop those elements.
-        ++it;
-        ++i;
-        continue;
-      }
-      while (it != end && *it == value) {
+      while (it != end && (*it == value || (scipp::numeric::isnan(value) &&
+                                            scipp::numeric::isnan(*it)))) {
         ++it;
         ++i;
       }
