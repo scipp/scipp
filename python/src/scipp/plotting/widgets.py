@@ -225,7 +225,7 @@ class PlotWidgets:
             self.dim_buttons[index][new_dim].disabled = True
             self.dim_buttons[index][old_dim].disabled = False
 
-        self.unit_labels[new_ind].value = self._formatters[new_dim].unit
+        self.unit_labels[new_ind].value = self._formatters[new_dim]['unit']
         self.interface["swap_dimensions"](new_ind, old_dim, new_dim)
 
     def get_index_dim(self, index):

@@ -37,10 +37,7 @@ class PlotView2d(PlotView):
 
     def _make_data(self, new_values, mask_info):
         values = new_values.values
-        # TODO
-        # transpose = self.displayed_dims['x'] == new_values.dims[0]
-        transpose = False
-        if transpose:
+        if self._transpose:
             values = np.transpose(values)
         slice_values = {
             "values": values,
@@ -54,7 +51,7 @@ class PlotView2d(PlotView):
             for m, val in mask_info.items():
                 if val:
                     msk += new_values.masks[m].astype(dtype.int32)
-            if transpose:
+            if self._transpose:
                 slice_values["masks"] = np.transpose(msk.values)
             else:
                 slice_values["masks"] = msk.values

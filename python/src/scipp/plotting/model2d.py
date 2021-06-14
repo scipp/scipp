@@ -18,8 +18,6 @@ class PlotModel2d(PlotModel):
 
         super().__init__(*args, **kwargs)
 
-        self.displayed_dims = {}
-
         if resolution is not None:
             if isinstance(resolution, int):
                 self.image_resolution = {"x": resolution, "y": resolution}
@@ -47,6 +45,7 @@ class PlotModel2d(PlotModel):
         Update axes parameters and coordinate edges for dynamic resampling on
         axis change.
         """
+        self.displayed_dims = {}
         for xy in "yx":
             dim = axparams[xy]["dim"]
             self.displayed_dims[xy] = dim

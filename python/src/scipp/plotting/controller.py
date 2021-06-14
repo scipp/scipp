@@ -256,6 +256,7 @@ class PlotController:
         keys = list(np.roll(xyz, 1))
         for i in range(len(dims)):
             self.axes[keys[i]] = dims[i]
+        self.view.toggle_transpose()
         self.update_axes()
         self.update_log_axes_buttons()
 
@@ -540,8 +541,6 @@ class PlotController:
         # info["slice_label"] = self._make_slice_label(slices,
         #                                              info["slice_label"])[1:]
 
-        # TODO is this required for profile with event data?
-        # slices[self.profile_dim] = None
         new_values = self._profile_model.update_data(slices=slices)
         self._profile_view.update_data(new_values,
                                        info=info,
