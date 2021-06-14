@@ -119,7 +119,6 @@ class Plot3d(Plot):
             axes=self.axes,
             aspect=aspect,
             name=self.name,
-            coord_shapes=self.coord_shapes,
             norm=norm,
             vmin=self.params["values"][self.name]["vmin"],
             vmax=self.params["values"][self.name]["vmax"],

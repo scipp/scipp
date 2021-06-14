@@ -30,7 +30,6 @@ class PlotController:
                  vmax=None,
                  norm=None,
                  scale=None,
-                 coord_shapes=None,
                  multid_coord=None,
                  widgets=None,
                  model=None,

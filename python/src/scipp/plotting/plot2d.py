@@ -125,7 +125,6 @@ class Plot2d(Plot):
         self.controller = PlotController2d(
             axes=self.axes,
             name=self.name,
-            coord_shapes=self.coord_shapes,
             vmin=self.params["values"][self.name]["vmin"],
             vmax=self.params["values"][self.name]["vmax"],
             norm=norm,

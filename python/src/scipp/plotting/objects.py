@@ -142,7 +142,6 @@ class Plot:
         self.axes = None
         self.masks = {}
         self.errorbars = {}
-        self.coord_shapes = {}
         self.dim_label_map = {}
         self.position_dims = None
 
@@ -212,19 +211,6 @@ class Plot:
             for dim in self.axes.values():
                 if dim not in array_dims:
                     array_dims[array_dims.index(self.dim_label_map[dim])] = dim
-
-            # TODO: once Dim has been replaced by strings, the str(dim) can
-            # then here be replaced by dim
-            self.coord_shapes[name] = {
-                str(dim): coord.shape
-                for dim, coord in array.coords.items()
-            }
-
-            # Add shapes for dims that have no coord in the original data.
-            # They will be replaced by fake coordinates in the model.
-            for dim in array_dims:
-                if dim not in self.coord_shapes[name]:
-                    self.coord_shapes[name][dim] = [array.sizes[dim]]
 
             # Determine whether error bars should be plotted or not
             has_variances = array.variances is not None
