@@ -47,6 +47,34 @@ TEST(SortTest, variable_2d) {
   EXPECT_EQ(sort(var, keyY), expectedY);
 }
 
+TEST(SortTest, variable_1d_nan) {
+  // The position of NaN's after sorting is undefined. So we check if the result
+  // is ascending / descending instead of comparing to a reference.
+  constexpr auto nan = std::numeric_limits<double>::quiet_NaN();
+  for (const auto &values : {std::vector<double>{4.0, nan, 1.0, 3.0},
+                             std::vector<double>{4.0, nan, 1.0, nan},
+                             std::vector<double>{4.0, nan, nan, 3.0}}) {
+    const auto var =
+        makeVariable<double>(Dims{Dim::X}, Shape{4}, Values(values));
+    const auto ascending = sort(var, var, SortOrder::Ascending);
+    for (scipp::index i = 1; i < ascending.dims().volume(); ++i) {
+      if (!std::isnan(ascending.values<double>()[i - 1]) &&
+          !std::isnan(ascending.values<double>()[i])) {
+        ASSERT_LE(ascending.values<double>()[i - 1],
+                  ascending.values<double>()[i]);
+      }
+    }
+    const auto descending = sort(var, var, SortOrder::Descending);
+    for (scipp::index i = 1; i < descending.dims().volume(); ++i) {
+      if (!std::isnan(descending.values<double>()[i - 1]) &&
+          !std::isnan(descending.values<double>()[i])) {
+        ASSERT_GE(descending.values<double>()[i - 1],
+                  descending.values<double>()[i]);
+      }
+    }
+  }
+}
+
 TEST(SortTest, data_array_1d) {
   Variable data = makeVariable<double>(
       Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 3, 2, 4});
