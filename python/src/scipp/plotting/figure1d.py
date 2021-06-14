@@ -42,16 +42,14 @@ class PlotFigure1d(PlotFigure):
                          ylabel=ylabel,
                          toolbar=PlotToolbar1d)
 
+        self._lines = {}
+
         if legend is None:
             legend = {"show": True}
         elif isinstance(legend, bool):
             legend = {"show": legend}
         elif "show" not in legend:
             legend["show"] = True
-        # Matplotlib line containers
-        self.data_lines = {}
-        self.mask_lines = {}
-        self.error_lines = {}
 
         self.errorbars = errorbars
         self.masks = masks
@@ -64,8 +62,7 @@ class PlotFigure1d(PlotFigure):
 
         self.grid = grid
 
-        # Save the line parameters (color, linewidth...)
-        self.mpl_line_params = mpl_line_params
+        self._mpl_line_params = mpl_line_params  # color, linewidth, ...
 
         for name in self.masks:
             if self.masks[name]["color"] is None:
@@ -78,29 +75,12 @@ class PlotFigure1d(PlotFigure):
         """
         xparams = axparams["x"]
         self._xparams = xparams
+        self._legend_labels = legend_labels
 
         if self.own_axes:
             title = self.ax.get_title()
             self.ax.clear()
             self.ax.set_title(title)
-
-        if self.mpl_line_params is None:
-            self.mpl_line_params = {
-                "color": {},
-                "marker": {},
-                "linestyle": {},
-                "linewidth": {}
-            }
-            # Hack to get all names
-            for i, name in enumerate(self.masks):
-                self.mpl_line_params["color"][name] = get_line_param(
-                    "color", i)
-                self.mpl_line_params["marker"][name] = get_line_param(
-                    "marker", i)
-                self.mpl_line_params["linestyle"][name] = get_line_param(
-                    "linestyle", i)
-                self.mpl_line_params["linewidth"][name] = get_line_param(
-                    "linewidth", i)
 
         self.ax.set_xscale(xparams["scale"])
         self.ax.set_yscale("log" if self.norm == "log" else "linear")
@@ -122,77 +102,82 @@ class PlotFigure1d(PlotFigure):
         self.ax.xaxis.set_major_formatter(
             self.axformatter['x'][xparams["scale"]])
 
-        for name in self.masks:
-            hist = False
-
-            label = None
-            if legend_labels and len(name) > 0:
-                label = name
-
-            self.mask_lines[name] = {}
-
-            if hist:
-                [self.data_lines[name]] = self.ax.step(
-                    [1, 2], [1, 2],
-                    label=label,
-                    zorder=10,
-                    picker=self.picker,
-                    **{
-                        key: self.mpl_line_params[key][name]
-                        for key in ["color", "linewidth"]
-                    })
-                for m in self.masks[name]["names"]:
-                    [self.mask_lines[name][m]] = self.ax.step(
-                        [1, 2], [1, 2],
-                        linewidth=self.mpl_line_params["linewidth"][name] *
-                        3.0,
-                        color=self.masks[name]["color"],
-                        zorder=9)
-                    # Abuse a mostly unused property `gid` of Line2D to
-                    # identify the line as a mask. We set gid to `onaxes`.
-                    # This is used by the profile viewer in the 2D plotter
-                    # to know whether to show the mask or not, depending on
-                    # whether the cursor is hovering over the 2D image or
-                    # not.
-                    self.mask_lines[name][m].set_gid("onaxes")
-            else:
-                [self.data_lines[name]] = self.ax.plot(
-                    [1, 2], [1, 2],
-                    label=label,
-                    zorder=10,
-                    picker=self.picker,
-                    **{
-                        key: self.mpl_line_params[key][name]
-                        for key in self.mpl_line_params.keys()
-                    })
-                for m in self.masks[name]["names"]:
-                    [self.mask_lines[name][m]] = self.ax.plot(
-                        [1, 2], [1, 2],
-                        zorder=11,
-                        mec=self.masks[name]["color"],
-                        mfc="None",
-                        mew=3.0,
-                        linestyle="none",
-                        marker=self.mpl_line_params["marker"][name])
-                    self.mask_lines[name][m].set_gid("onaxes")
-
-            if self.picker:
-                self.data_lines[name].set_pickradius(5.0)
-            self.data_lines[name].set_url(name)
-
-            # Add error bars
-            if self.errorbars[name]:
-                self.error_lines[name] = self.ax.errorbar(
-                    [1, 2], [1, 2],
-                    yerr=[1, 1],
-                    color=self.mpl_line_params["color"][name],
-                    zorder=10,
-                    fmt="none")
-
         if self.show_legend():
             self.ax.legend(loc=self.legend["loc"])
 
         self.fig.tight_layout(rect=self.padding)
+
+    def _make_line(self, name, hist):
+        class Line:
+            def __init__(self):
+                self.data = None
+                self.error = None
+                self.masks = {}
+                self.mpl_params = {}
+
+        index = len(self._lines)
+        line = Line()
+        line.mpl_params = {
+            key:
+            self._mpl_line_params.get(key,
+                                      {name: get_line_param(key, index)})[name]
+            for key in ["color", "marker", "linestyle", "linewidth"]
+        }
+        label = None
+        if self._legend_labels and len(name) > 0:
+            label = name
+
+        if hist:
+            line.data = self.ax.step([1, 2], [1, 2],
+                                     label=label,
+                                     zorder=10,
+                                     picker=self.picker,
+                                     **{
+                                         key: line.mpl_params[key]
+                                         for key in ["color", "linewidth"]
+                                     })[0]
+            for m in self.masks[name]["names"]:
+                line.masks[m] = self.ax.step(
+                    [1, 2], [1, 2],
+                    linewidth=line.mpl_params["linewidth"] * 3.0,
+                    color=self.masks[name]["color"],
+                    zorder=9)[0]
+                # Abuse a mostly unused property `gid` of Line2D to
+                # identify the line as a mask. We set gid to `onaxes`.
+                # This is used by the profile viewer in the 2D plotter
+                # to know whether to show the mask or not, depending on
+                # whether the cursor is hovering over the 2D image or
+                # not.
+                line.masks[m].set_gid("onaxes")
+        else:
+            line.data = self.ax.plot([1, 2], [1, 2],
+                                     label=label,
+                                     zorder=10,
+                                     picker=self.picker,
+                                     **line.mpl_params)[0]
+            for m in self.masks[name]["names"]:
+                line.masks[m] = self.ax.plot(
+                    [1, 2], [1, 2],
+                    zorder=11,
+                    mec=self.masks[name]["color"],
+                    mfc="None",
+                    mew=3.0,
+                    linestyle="none",
+                    marker=line.mpl_params["marker"])[0]
+                line.masks[m].set_gid("onaxes")
+
+        if self.picker:
+            line.data.set_pickradius(5.0)
+        line.data.set_url(name)
+
+        # Add error bars
+        if self.errorbars[name]:
+            line.error = self.ax.errorbar([1, 2], [1, 2],
+                                          yerr=[1, 1],
+                                          color=line.mpl_params["color"],
+                                          zorder=10,
+                                          fmt="none")
+        return line
 
     def _preprocess_hist(self, name, vals):
         """
@@ -201,15 +186,16 @@ class PlotFigure1d(PlotFigure):
         """
         x = vals["values"]["x"]
         y = vals["values"]["y"]
-        if len(x) == len(y):
-            vals["variances"]["x"] = x
-        else:
+        hist = len(x) != len(y)
+        if hist:
             vals["values"]["y"] = np.concatenate((y[0:1], y))
             for key, mask in vals["masks"].items():
                 vals["masks"][key] = np.concatenate((mask[0:1], mask))
             vals["variances"]["x"] = 0.5 * (x[1:] + x[:-1])
+        else:
+            vals["variances"]["x"] = x
         vals["variances"]["y"] = y
-        return vals
+        return vals, hist
 
     def update_data(self, new_values, info):
         """
@@ -217,20 +203,22 @@ class PlotFigure1d(PlotFigure):
         is received for display.
         """
         for name in new_values:
-            vals = self._preprocess_hist(name, new_values[name])
-            self.data_lines[name].set_data(vals["values"]["x"],
-                                           vals["values"]["y"])
+            vals, hist = self._preprocess_hist(name, new_values[name])
+            if name not in self._lines:
+                self._lines[name] = self._make_line(name, hist=hist)
+            line = self._lines[name]
+            line.data.set_data(vals["values"]["x"], vals["values"]["y"])
             lab = info["slice_label"] if len(info["slice_label"]) > 0 else name
-            self.data_lines[name].set_label(lab)
+            line.data.set_label(lab)
 
             for m in vals["masks"]:
-                self.mask_lines[name][m].set_data(
+                line.masks[m].set_data(
                     vals["values"]["x"],
                     np.where(vals["masks"][m], vals["values"]["y"],
                              None).astype(np.float32))
 
             if self.errorbars[name]:
-                coll = self.error_lines[name].get_children()[0]
+                coll = line.error.get_children()[0]
                 coll.set_segments(
                     self._change_segments_y(vals["variances"]["x"],
                                             vals["variances"]["y"],
@@ -244,7 +232,7 @@ class PlotFigure1d(PlotFigure):
         Triggered by a `PlotPanel1d` keep button or a `keep_profile` event.
         """
         # The main line
-        self.ax.lines.append(cp.copy(self.data_lines[name]))
+        self.ax.lines.append(cp.copy(self._lines[name].data))
         self.ax.lines[-1].set_url(line_id)
         self.ax.lines[-1].set_zorder(2)
         if self.ax.lines[-1].get_marker() == "None":
@@ -254,8 +242,8 @@ class PlotFigure1d(PlotFigure):
             self.ax.lines[-1].set_markeredgecolor("None")
 
         # The masks
-        for m in self.mask_lines[name]:
-            self.ax.lines.append(cp.copy(self.mask_lines[name][m]))
+        for m in self._lines[name].masks:
+            self.ax.lines.append(cp.copy(self._lines[name].masks[m]))
             self.ax.lines[-1].set_url(line_id)
             self.ax.lines[-1].set_gid(m)
             self.ax.lines[-1].set_zorder(3)
@@ -265,7 +253,7 @@ class PlotFigure1d(PlotFigure):
                 self.ax.lines[-1].set_zorder(1)
 
         if self.errorbars[name]:
-            err = self.error_lines[name].get_children()
+            err = self._lines[name].error.get_children()
             self.ax.collections.append(cp.copy(err[0]))
             self.ax.collections[-1].set_color(color)
             self.ax.collections[-1].set_url(line_id)
@@ -285,7 +273,7 @@ class PlotFigure1d(PlotFigure):
         Just before we show the legend, we need to reset the line
         name to its original name.
         """
-        self.data_lines[name].set_label(name)
+        self._lines[name].data.set_label(name)
 
     def remove_line(self, name, line_id):
         """
@@ -336,8 +324,8 @@ class PlotFigure1d(PlotFigure):
         """
         Show or hide a given mask.
         """
-        if mask_group in self.mask_lines:
-            msk = self.mask_lines[mask_group][mask_name]
+        if mask_group in self._lines:
+            msk = self._lines[mask_group].masks[mask_name]
             if msk.get_gid() == "onaxes":
                 msk.set_visible(value)
         # Also toggle masks on additional lines created by keep button
