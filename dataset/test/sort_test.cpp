@@ -48,29 +48,38 @@ TEST(SortTest, variable_2d) {
 }
 
 TEST(SortTest, variable_1d_nan) {
-  // The position of NaN's after sorting is undefined. So we check if the result
-  // is ascending / descending instead of comparing to a reference.
+  // We cannot compare the sorted results to reference variables because
+  // NaN != Nan. So make sure the non-NaN values are sorted and NaN's are
+  // at the beginning / end depending on the sorting order.
   constexpr auto nan = std::numeric_limits<double>::quiet_NaN();
-  for (const auto &values : {std::vector<double>{4.0, nan, 1.0, 3.0},
-                             std::vector<double>{4.0, nan, 1.0, nan},
-                             std::vector<double>{4.0, nan, nan, 3.0}}) {
+  std::vector test_values{std::vector<double>{4.0, nan, 1.0, 3.0},
+                          std::vector<double>{4.0, nan, 1.0, nan},
+                          std::vector<double>{4.0, nan, nan, 3.0}};
+  std::vector<scipp::index> n_nan{1, 2, 2};
+  for (scipp::index i_test = 0; i_test < scipp::size(test_values); ++i_test) {
+    const auto &values = test_values.at(i_test);
+    const auto n = n_nan.at(i_test);
     const auto var =
         makeVariable<double>(Dims{Dim::X}, Shape{4}, Values(values));
+
     const auto ascending = sort(var, var, SortOrder::Ascending);
-    for (scipp::index i = 1; i < ascending.dims().volume(); ++i) {
-      if (!std::isnan(ascending.values<double>()[i - 1]) &&
-          !std::isnan(ascending.values<double>()[i])) {
-        ASSERT_LE(ascending.values<double>()[i - 1],
-                  ascending.values<double>()[i]);
-      }
+    scipp::index i = 1;
+    for (; i < ascending.dims().volume() - n; ++i) {
+      ASSERT_LE(ascending.values<double>()[i - 1],
+                ascending.values<double>()[i]);
     }
+    for (; i < ascending.dims().volume(); ++i) {
+      ASSERT_TRUE(std::isnan(ascending.values<double>()[i]));
+    }
+
     const auto descending = sort(var, var, SortOrder::Descending);
-    for (scipp::index i = 1; i < descending.dims().volume(); ++i) {
-      if (!std::isnan(descending.values<double>()[i - 1]) &&
-          !std::isnan(descending.values<double>()[i])) {
-        ASSERT_GE(descending.values<double>()[i - 1],
-                  descending.values<double>()[i]);
-      }
+    for (i = 0; i < n; ++i) {
+      ASSERT_TRUE(std::isnan(descending.values<double>()[i]));
+    }
+    ++i; // move i - 1 past the last NaN
+    for (; i < descending.dims().volume(); ++i) {
+      ASSERT_GE(descending.values<double>()[i - 1],
+                descending.values<double>()[i]);
     }
   }
 }
