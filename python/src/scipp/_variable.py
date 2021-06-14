@@ -307,11 +307,21 @@ def array(*,
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
     """
-    return _cpp.Variable(dims=dims,
-                         values=values,
-                         variances=variances,
-                         unit=unit,
-                         dtype=dtype)
+    try:
+        return _cpp.Variable(dims=dims,
+                             values=values,
+                             variances=variances,
+                             unit=unit,
+                             dtype=dtype)
+    except RuntimeError as exc:
+        if 'Unable to cast' in exc.args[0]:
+            raise TypeError(
+                'Cannot convert data to an array. '
+                'Did you forget to wrap it in a list or numpy array?\n'
+                f'Got values = {type(values)}' +
+                (f'\n    variances = {type(variances)}'
+                 if variances is not None else '')) from None
+        raise
 
 
 def linspace(dim: str,
