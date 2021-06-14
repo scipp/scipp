@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #include <numeric>
 
+#include <iostream>
+
 #include "scipp/common/numeric.h"
 
 #include "scipp/core/bucket.h"
@@ -243,8 +245,13 @@ template <class T> struct MakeGroups {
       // handling in follow-up "apply" steps.
       const auto begin = i;
       const auto &value = *it;
-      while (it != end && (*it == value || (scipp::numeric::isnan(value) &&
-                                            scipp::numeric::isnan(*it)))) {
+      if (scipp::numeric::isnan(value)) {
+        // NaN's cannot be used as keys in std::map -> drop those elements.
+        ++it;
+        ++i;
+        continue;
+      }
+      while (it != end && *it == value) {
         ++it;
         ++i;
       }
