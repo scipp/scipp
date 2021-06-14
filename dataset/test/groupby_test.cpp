@@ -108,13 +108,15 @@ TEST_F(GroupbyTest, copy_nan) {
                                        Values{0.0, nan, 1.0, 0.0, 3.0, 3.0}));
 
   auto by_dim = groupby(da, Dim("labels"));
-  EXPECT_EQ(by_dim.size(), 3);
+  EXPECT_EQ(by_dim.size(), 4);
   EXPECT_EQ(by_dim.copy(0).data(),
             makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 3}));
   EXPECT_EQ(by_dim.copy(1).data(),
             makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{2}));
   EXPECT_EQ(by_dim.copy(2).data(),
             makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{4, 5}));
+  EXPECT_EQ(by_dim.copy(3).data(),
+            makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1}));
 
   auto by_bins = groupby(
       da, Dim("labels"),
