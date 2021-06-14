@@ -163,29 +163,30 @@ class ResamplingBinnedModel(ResamplingModel):
             return sc.bin(array=array, edges=self.edges).bins.sum()
 
 
+def _with_edges(array):
+    new_array = array.copy(deep=False)
+    prefix = ''.join(array.dims)
+    for dim, var in array.coords.items():
+        if var.sizes[dim] == array.sizes[dim]:
+            new_array.attrs[f'{prefix}_{dim}'] = var
+            new_array.coords[dim] = to_bin_edges(var, dim)
+    return new_array, prefix
+
+
+def _replace_edge_coords(array, bounds, prefix):
+    return {
+        dim: array.coords[dim if dim in bounds else f'{prefix}_{dim}']
+        for dim in array.dims
+    }
+
+
 class ResamplingCountsModel(ResamplingModel):
     def _make_array(self, array):
-        new_array = array.copy(deep=False)
-        self._input_edges = {}
-        for dim, var in array.coords.items():
-            if var.sizes[dim] == array.sizes[dim]:
-                # TODO avoid dim label clashes
-                new_array.coords[f'{dim}_'] = to_bin_edges(var, dim)
-            else:
-                new_array.coords[f'{dim}_'] = var
-        return new_array
+        array, self._prefix = _with_edges(array)
+        return array
 
     def _resample(self, array):
-        # TODO this does not work because array is sliced already
-        # instead:
-        # 1. add alternate coords in _make_array
-        # 2. pick here which to use
-        coords = {}
-        for dim in array.dims:
-            if dim in self.bounds:
-                coords[dim] = array.coords[f'{dim}_']
-            else:
-                coords[dim] = array.coords[dim]
+        coords = _replace_edge_coords(array, self.bounds, self._prefix)
         return self._rebin(array.data, coords)
 
 
@@ -209,9 +210,11 @@ class ResamplingDenseModel(ResamplingModel):
         return data
 
     def _resample(self, array):
-        return self._from_density(self._rebin(array.data, array.meta))
+        coords = _replace_edge_coords(array, self.bounds, self._prefix)
+        return self._from_density(self._rebin(array.data, coords))
 
     def _make_array(self, array):
+        array, self._prefix = _with_edges(array)
         # Scale by bin widths, so `rebin` is effectively performing a "mean"
         # operation instead of "sum".
         return self._to_density(array)
