@@ -5,6 +5,7 @@
 from .tools import make_fake_coord, find_limits, to_dict
 from ..utils import vector_type, string_type, datetime_type
 from .._scipp import core as sc
+import numpy as np
 
 
 class PlotModel:
@@ -25,6 +26,8 @@ class PlotModel:
     performed.
     """
     def __init__(self, scipp_obj_dict=None, name=None):
+
+        self._limits = {}
 
         self.interface = {}
 
@@ -57,6 +60,9 @@ class PlotModel:
         # The main currently displayed data slice
         self.dslice = None
 
+        self._limits['linear'] = self._make_limits('linear')
+        self._limits['log'] = self._make_limits('log')
+
     def _axis_coord(self, array, dim):
         """
         Get coord for requested dim.
@@ -75,6 +81,27 @@ class PlotModel:
             coord = coord.astype(sc.dtype.float64)
         return coord
 
+    def _make_limits(self, scale):
+        limits = {}
+        for dim in self.data_arrays[self.name].dims:
+            xmin = np.Inf
+            xmax = np.NINF
+            for name, array in self.data_arrays.items():
+                coord = array.coords[dim]
+                lims = find_limits(coord,
+                                   scale=scale,
+                                   flip=sc.issorted(coord,
+                                                    dim,
+                                                    order='descending'))[scale]
+                xmin = min(xmin, lims[0].value)
+                xmax = max(xmax, lims[1].value)
+            limits[dim] = np.array([xmin, xmax])
+        # Note: Not fixing empty range since this is not related to data/model
+        return limits
+
+    def limits(self, scale):
+        return self._limits[scale]
+
     def update_data_arrays(self):
         for name, item in self.backup.items():
             self.data_arrays[name] = sc.DataArray(data=item["array"].data,
@@ -90,20 +117,6 @@ class PlotModel:
             dim,
             bounds[0]].value, self.data_arrays[name].meta[dim][dim,
                                                                bounds[1]].value
-
-    def get_data_names(self):
-        """
-        List all names in dict of data arrays.
-        This is usually only a single name, but can be more than one for 1d
-        plots.
-        """
-        return list(self.data_arrays.keys())
-
-    def get_data_coord(self, name, dim):
-        """
-        Get a coordinate along a requested dimension.
-        """
-        return self.data_arrays[name].meta[dim]
 
     def rescale_to_data(self, scale=None):
         """

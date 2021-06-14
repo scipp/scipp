@@ -3,9 +3,6 @@
 # @author Neil Vaytet
 
 from .view1d import PlotView1d
-from .tools import find_limits, fix_empty_range
-# from ..utils import value_to_string
-from .._scipp import core as sc
 import numpy as np
 
 
@@ -65,33 +62,10 @@ class PlotController:
 
         # Save the current profile dimension
         self.profile_dim = None
-        # Store coordinate min and max limits
-        self.xlims = {}
         # Keep track if a coordinate with more than one dimension is present
         self.multid_coord = multid_coord
 
         sizes = self.model.data_arrays[self.name].sizes
-
-        for key in self.model.get_data_names():
-
-            self.xlims[key] = {}
-
-            # Iterate through axes and collect dimensions
-            for dim in self.axes.values():
-
-                coord = self.model.get_data_coord(key, dim)
-
-                # The limits for each dimension
-                self.xlims[key][dim] = find_limits(coord,
-                                                   flip=sc.issorted(
-                                                       coord,
-                                                       dim,
-                                                       order='descending'))
-                # Check if xmin == xmax
-                for scale in self.xlims[key][dim]:
-                    low, high = fix_empty_range(self.xlims[key][dim][scale])
-                    self.xlims[key][dim][scale] = sc.concatenate(
-                        low, high, dim)
 
         self._initialize_widgets(sizes)
         self.initialize_model()
@@ -406,14 +380,8 @@ class PlotController:
         return sorted(list(set(['x', 'y', 'z']) & set(self.axes.keys())))
 
     def _make_axparam(self, dim):
-        xmin = np.Inf
-        xmax = np.NINF
-        for name in self.xlims:
-            xlims = self.xlims[name][dim][self.scale[dim]].values
-            xmin = min(xmin, xlims[0])
-            xmax = max(xmax, xlims[1])
         return {
-            "lims": np.array([xmin, xmax]),
+            "lims": self.model.limits(scale=self.scale[dim])[dim],
             "scale": self.scale[dim],
             "dim": dim
         }
