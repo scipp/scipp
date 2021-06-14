@@ -71,7 +71,7 @@ def test_plot_1d_with_masks():
 
 def test_plot_collapse():
     da = make_dense_data_array(ndim=2)
-    plot(sc.collapse(da['y', :10], keep='xx'))
+    plot(sc.collapse(da['yy', :10], keep='xx'))
 
 
 def test_plot_sliceviewer_with_1d_projection():
@@ -103,7 +103,7 @@ def test_plot_projection_1d_two_entries():
 
 def test_plot_projection_1d_two_entries_different_dims():
     da1 = make_dense_data_array(ndim=2, unit='K')
-    da2 = make_dense_data_array(ndim=2, dims=['z', 'y'], unit='K')
+    da2 = make_dense_data_array(ndim=2, dims=['zz', 'yy'], unit='K')
     p = sc.plot({'a': da1, 'b': da2}, projection="1d")
     assert len(p) == 2
     p.close()

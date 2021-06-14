@@ -50,22 +50,20 @@ class PlotProfile(PlotFigure1d):
         displayed in the main subplot (as the title for 2d plots and as a
         legend entry for 1d plots).
         """
-        self.data_lines[name].set_label(None)
+        self._lines[name].data.set_label(None)
 
     def toggle_hover_visibility(self, value):
         """
         If the mouse moves off the image, we hide the profile. If it moves
         back onto the image, we show the profile.
         """
-        for name in self.data_lines:
-            self.data_lines[name].set_visible(value)
-        for name in self.error_lines:
+        for line in self._lines.values():
+            line.data.set_visible(value)
             # Need to get the 3rd element of the errorbar container, which
             # contains the vertical errorbars, and then the first element of
             # that because it is a tuple itself.
-            self.error_lines[name][2][0].set_visible(value)
-        for name, mlines in self.mask_lines.items():
-            for ml in mlines.values():
+            line.error[2][0].set_visible(value)
+            for ml in line.masks.values():
                 ml.set_visible(value)
                 ml.set_gid("onaxes" if value else "offaxes")
         if value != self.current_visible_state:
