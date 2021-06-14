@@ -11,6 +11,7 @@ import sys
 parser = argparse.ArgumentParser(description='Build doc pages with sphinx')
 parser.add_argument('--prefix', default='build')
 parser.add_argument('--work_dir', default='.doctrees')
+parser.add_argument('--builder', default='html')
 
 
 def get_abs_path(path, root):
@@ -21,7 +22,6 @@ def get_abs_path(path, root):
 
 
 if __name__ == '__main__':
-
     args = parser.parse_args()
 
     docs_dir = pathlib.Path(__file__).parent.absolute()
@@ -29,7 +29,9 @@ if __name__ == '__main__':
     prefix = get_abs_path(path=args.prefix, root=docs_dir)
 
     # Build the docs with sphinx-build
-    status = subprocess.check_call(
-        ['sphinx-build', '-v', '-d', work_dir, docs_dir, prefix],
-        stderr=subprocess.STDOUT,
-        shell=sys.platform == "win32")
+    subprocess.check_call([
+        'sphinx-build', '-v', '-b', args.builder, '-d', work_dir, docs_dir,
+        prefix
+    ],
+                          stderr=subprocess.STDOUT,
+                          shell=sys.platform == "win32")
