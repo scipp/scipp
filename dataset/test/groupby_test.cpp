@@ -25,7 +25,7 @@ struct GroupbyTest : public ::testing::Test {
                                         units::s, Values{1, 2, 3, 4, 5, 6}));
     d["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
     d.setCoord(Dim("labels1"), makeVariable<double>(Dimensions{Dim::X, 3},
-                                                    units::m, Values{1, 2, 3}));
+                                                    units::m, Values{1, 3, 2}));
     d.setCoord(Dim("labels2"), makeVariable<double>(Dimensions{Dim::X, 3},
                                                     units::m, Values{1, 1, 3}));
   }
@@ -97,6 +97,23 @@ TEST_F(GroupbyTest, copy_multiple_subgroups) {
   EXPECT_EQ(grouped.copy(0), da0);
   EXPECT_EQ(grouped.copy(1), da1);
   EXPECT_EQ(grouped.copy(2), da2);
+}
+
+TEST_F(GroupbyTest, copy_nan) {
+  constexpr auto nan = std::numeric_limits<double>::quiet_NaN();
+  DataArray da{
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{0, 1, 2, 3})};
+  da.coords().set(
+      Dim("labels"),
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{0.0, nan, 1.0, 3.0}));
+  auto one_group = groupby(
+      da, Dim("labels"),
+      makeVariable<double>(Dims{Dim("labels")}, Shape{3}, Values{0, 2, 4}));
+  EXPECT_EQ(one_group.size(), 2);
+  EXPECT_EQ(one_group.copy(0).data(),
+            makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 2}));
+  EXPECT_EQ(one_group.copy(1).data(),
+            makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{3}));
 }
 
 TEST_F(GroupbyTest, fail_2d_coord) {
