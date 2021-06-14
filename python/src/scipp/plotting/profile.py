@@ -62,7 +62,8 @@ class PlotProfile(PlotFigure1d):
             # Need to get the 3rd element of the errorbar container, which
             # contains the vertical errorbars, and then the first element of
             # that because it is a tuple itself.
-            line.error[2][0].set_visible(value)
+            if line.error is not None:
+                line.error[2][0].set_visible(value)
             for ml in line.masks.values():
                 ml.set_visible(value)
                 ml.set_gid("onaxes" if value else "offaxes")

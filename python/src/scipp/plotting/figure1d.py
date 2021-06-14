@@ -118,11 +118,13 @@ class PlotFigure1d(PlotFigure):
         index = len(self._lines)
         line = Line()
         line.mpl_params = {
-            key:
-            self._mpl_line_params.get(key,
-                                      {name: get_line_param(key, index)})[name]
+            key: get_line_param(key, index)
             for key in ["color", "marker", "linestyle", "linewidth"]
         }
+        if self._mpl_line_params is not None:
+            for key, item in self._mpl_line_params.items():
+                if name in item:
+                    line.mpl_params[key] = item[name]
         label = None
         if self._legend_labels and len(name) > 0:
             label = name
