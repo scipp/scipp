@@ -33,7 +33,8 @@ from ._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
                          DTypeError, NotFoundError, SizeError, SliceError, \
                          UnitError, VariableError, VariancesError
 # Import submodules
-from ._scipp.core import units, dtype, buckets, geometry
+from ._scipp.core import units, dtype, buckets
+from . import geometry
 # Import functions
 from ._scipp.core import choose, divide, floor_divide, logical_and, \
                          logical_or, logical_xor, minus, mod, plus, times
@@ -44,9 +45,9 @@ from .plotting import plot
 from .extend_units import *
 from .html import to_html, make_html
 from .object_list import _repr_html_
-from ._utils import collapse, slices
-from ._utils.typing import is_variable, is_dataset, is_data_array, \
-                           is_dataset_or_array
+from .utils import collapse, slices
+from .utils.typing import is_variable, is_dataset, is_data_array, \
+                          is_dataset_or_array
 from .compat.dict import to_dict, from_dict
 from .sizes import _make_sizes
 
@@ -87,6 +88,16 @@ setattr(Dataset, 'bins', property(_bins, _set_bins))
 setattr(Variable, 'events', property(_events))
 setattr(DataArray, 'events', property(_events))
 
+from ._structured import _fields
+
+setattr(
+    Variable, 'fields',
+    property(
+        _fields,
+        doc=
+        """Provides access to fields of structured types such as vectors or matrices."""
+    ))
+
 from ._bins import _groupby_bins
 
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
@@ -100,5 +111,20 @@ setattr(Dataset, 'plot', plot)
 # __array_ufunc__ should be possible by converting non-scipp arguments to
 # variables. The most difficult part is probably mapping the ufunc to scipp
 # functions.
-for _obj in [Variable, DataArray, Dataset]:
-    setattr(_obj, '__array_ufunc__', None)
+for _cls in (Variable, DataArray, Dataset):
+    setattr(_cls, '__array_ufunc__', None)
+del _cls
+
+from . import _binding
+
+_binding.bind_get()
+for _cls in (Variable, DataArray):
+    _binding.bind_functions_as_methods(
+        _cls, globals(), ('broadcast', 'flatten', 'fold', 'transpose', 'all',
+                          'any', 'mean', 'sum', 'nanmean', 'nansum'))
+del _cls
+_binding.bind_functions_as_methods(
+    Variable, globals(), ('cumsum', 'max', 'min', 'nanmax', 'nanmin'))
+_binding.bind_functions_as_methods(DataArray, globals(), ('groupby', ))
+_binding.bind_functions_as_methods(Dataset, globals(), ('groupby', ))
+del _binding

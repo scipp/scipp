@@ -145,7 +145,7 @@ class ResamplingBinnedModel(ResamplingModel):
             if len(var.dims) == 0:
                 continue
             dim = var.dims[-1]
-            if name not in new_array.data.bins.coords:
+            if name not in new_array.bins.coords:
                 new_array.coords[name] = to_bin_centers(var, dim)
         return new_array
 
@@ -155,7 +155,7 @@ class ResamplingBinnedModel(ResamplingModel):
         # is faster with the current implementation of `sc.bin`.
         edges = self.edges[-1]
         dim = edges.dims[-1]
-        if dim in array.data.bins.coords:
+        if dim in array.bins.coords:
             # Must specify bounds for final dim despite handling by `histogram`
             # below: If coord is ragged binning would throw otherwise.
             bounds = sc.concatenate(edges[dim, 0], edges[dim, -1], dim)

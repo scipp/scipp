@@ -8,9 +8,7 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/creation.h"
 #include "scipp/variable/except.h"
-#include "scipp/variable/shape.h"
 #include "scipp/variable/variable_concept.h"
 
 namespace scipp::variable {
@@ -28,6 +26,39 @@ Variable::Variable(const Dimensions &dims, VariableConceptHandle data)
 
 Variable::Variable(const llnl::units::precise_measurement &m)
     : Variable(m.value() * units::Unit(m.units())) {}
+
+namespace {
+void check_nested_in_assign(const Variable &lhs, const Variable &rhs) {
+  if (!rhs.is_valid() || rhs.dtype() != dtype<Variable>) {
+    return;
+  }
+  // In principle we should also check when the RHS contains DataArrays or
+  // Datasets. But those are copied when stored in Variables,
+  // so no check needed here.
+  for (const auto &nested : rhs.values<Variable>()) {
+    if (&lhs == &nested) {
+      throw std::invalid_argument("Cannot assign Variable, the right hand side "
+                                  "contains a reference to the left hand side. "
+                                  "Reference cycles are not allowed.");
+    }
+    check_nested_in_assign(lhs, nested);
+  }
+}
+} // namespace
+
+Variable &Variable::operator=(const Variable &other) {
+  return *this = Variable(other);
+}
+
+Variable &Variable::operator=(Variable &&other) {
+  check_nested_in_assign(*this, other);
+  m_dims = other.m_dims;
+  m_strides = other.m_strides;
+  m_offset = other.m_offset;
+  m_object = std::move(other.m_object);
+  m_readonly = other.m_readonly;
+  return *this;
+}
 
 void Variable::setDataHandle(VariableConceptHandle object) {
   if (object->size() != m_object->size())
@@ -105,6 +136,8 @@ core::ElementArrayViewParams Variable::array_params() const noexcept {
 Variable Variable::slice(const Slice params) const {
   core::expect::validSlice(dims(), params);
   Variable out(*this);
+  if (params == Slice{})
+    return out;
   const auto dim = params.dim();
   const auto begin = params.begin();
   const auto end = params.end();
@@ -237,5 +270,4 @@ void Variable::expectWritable() const {
   if (m_readonly)
     throw except::VariableError("Read-only flag is set, cannot mutate data.");
 }
-
 } // namespace scipp::variable

@@ -8,7 +8,7 @@ from functools import partial, reduce
 from html import escape
 
 from .._scipp import core as sc
-from .._utils import is_data_array, is_dataset
+from ..utils import is_data_array, is_dataset
 from .resources import load_icons
 
 BIN_EDGE_LABEL = "[bin-edge]"
@@ -73,7 +73,7 @@ def _get_events(var, variances, ellipsis_after, summary=False):
     dims = var.bins.constituents['data'].dims
     bin_dim = dict(zip(dims, range(len(dims))))[dim]
     s = []
-    if hasattr(var.values, '__len__'):
+    if not is_data_array(var.values):
         size = len(var.values)
         i = 0
 

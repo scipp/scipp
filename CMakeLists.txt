@@ -144,6 +144,7 @@ if(NOT WIN32)
     -Wold-style-cast
     -Wcast-qual
     -Wcast-align
+    -Werror=attributes
     -Werror=return-type
   )
   add_compile_options(
@@ -166,15 +167,21 @@ enable_testing()
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
 
-# Custom target for building documentation
-if(NOT WIN32)
-  add_custom_target(docs COMMAND ./docs_build.sh)
-else()
-  add_custom_target(docs COMMAND docs_build.bat)
-endif()
+# Custom install target for docs to depend on.
+add_custom_target(
+  install-scipp COMMAND cmake --build ${CMAKE_CURRENT_BINARY_DIR} --target
+                        install
+)
 
-configure_file(cmake/docs_build.bat.in docs_build.bat)
-configure_file(cmake/docs_build.sh.in docs_build.sh)
+# Custom target for building documentation
+add_custom_target(
+  docs
+  COMMAND
+    ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/make_docs.py
+    --prefix=${CMAKE_CURRENT_BINARY_DIR}/docs
+    --work_dir=${CMAKE_CURRENT_BINARY_DIR}/docs/doctrees
+)
+add_dependencies(docs install-scipp)
 
 include(GNUInstallDirs)
 set(PYTHONDIR scipp)

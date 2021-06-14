@@ -166,6 +166,8 @@ bool Sizes::includes(const Sizes &sizes) const {
 Sizes Sizes::slice(const Slice &params) const {
   core::expect::validSlice(*this, params);
   Sizes sliced(*this);
+  if (params == Slice{})
+    return sliced;
   if (params.isRange())
     sliced.resize(params.dim(), params.end() - params.begin());
   else

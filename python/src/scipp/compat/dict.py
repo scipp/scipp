@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .._variable import vector, vectors, matrix, matrices
-from .. import _utils as su
+from .. import utils as su
 from .._scipp import core as sc
 
 import numpy as np

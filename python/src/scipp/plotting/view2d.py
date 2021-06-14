@@ -4,7 +4,7 @@
 
 from .figure2d import PlotFigure2d
 from .view import PlotView
-from .._utils import make_random_color
+from ..utils import make_random_color
 import numpy as np
 from matplotlib.collections import PathCollection
 
@@ -155,6 +155,7 @@ class PlotView2d(PlotView):
         if self.profile_scatter is None:
             self.profile_scatter = self.figure.ax.scatter([xdata], [ydata],
                                                           c=[col],
+                                                          edgecolors="w",
                                                           picker=5,
                                                           zorder=10)
         else:

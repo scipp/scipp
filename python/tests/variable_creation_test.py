@@ -244,3 +244,30 @@ def test_arange():
                            unit='m',
                            dtype=sc.dtype.int32)
     assert sc.identical(var, expected)
+
+
+def test_zeros_sizes():
+    dims = ['x', 'y', 'z']
+    shape = [2, 3, 4]
+    assert sc.identical(sc.zeros(dims=dims, shape=shape),
+                        sc.zeros(sizes=dict(zip(dims, shape))))
+    with pytest.raises(ValueError):
+        sc.zeros(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
+
+
+def test_ones_sizes():
+    dims = ['x', 'y', 'z']
+    shape = [2, 3, 4]
+    assert sc.identical(sc.ones(dims=dims, shape=shape),
+                        sc.ones(sizes=dict(zip(dims, shape))))
+    with pytest.raises(ValueError):
+        sc.ones(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
+
+
+def test_empty_sizes():
+    dims = ['x', 'y', 'z']
+    shape = [2, 3, 4]
+    _compare_properties(sc.empty(dims=dims, shape=shape),
+                        sc.empty(sizes=dict(zip(dims, shape))))
+    with pytest.raises(ValueError):
+        sc.empty(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))

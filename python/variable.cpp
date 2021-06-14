@@ -15,6 +15,7 @@
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/structures.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/util.h"
@@ -134,35 +135,18 @@ void bind_structured_creation(py::module &m, const std::string &name) {
       py::arg("dims"), py::arg("values"), py::arg("unit") = units::one);
 }
 
-void require(const Variable &var, Eigen::Vector3d) {
-  if (var.dtype() != dtype<Eigen::Vector3d>)
-    throw except::TypeError(
-        "Vector element access properties `x1`, `x2`, and `x3` not "
-        "supported for dtype=" +
-        to_string(var.dtype()));
-}
+template <class T> struct GetElements {
+  static auto apply(Variable &var, const std::string &key) {
+    return var.elements<T>(key);
+  }
+};
 
-void require(const Variable &var, Eigen::Matrix3d) {
-  if (var.dtype() != dtype<Eigen::Matrix3d>)
-    throw except::TypeError(
-        "Matrix element access properties `x11`, `x12`, ... not "
-        "supported for dtype=" +
-        to_string(var.dtype()));
-}
-
-template <class T, scipp::index... I>
-void bind_elem_property(py::class_<Variable> &v, const char *name) {
-  v.def_property(
-      name,
-      [](Variable &self) {
-        require(self, T{});
-        return self.elements<T>(I...);
-      },
-      [](Variable &self, const Variable &elems) {
-        require(self, T{});
-        copy(elems, self.elements<T>(I...));
-      });
-}
+template <class T> struct SetElements {
+  static auto apply(Variable &var, const std::string &key,
+                    const Variable &elems) {
+    copy(elems, var.elements<T>(key));
+  }
+};
 
 void init_variable(py::module &m) {
   // Needed to let numpy arrays keep alive the scipp buffers.
@@ -279,16 +263,16 @@ of variances.)");
 
   bind_structured_creation<Eigen::Vector3d, double, 3>(m, "vectors");
   bind_structured_creation<Eigen::Matrix3d, double, 3, 3>(m, "matrices");
-  bind_elem_property<Eigen::Vector3d, 0>(variable, "x1");
-  bind_elem_property<Eigen::Vector3d, 1>(variable, "x2");
-  bind_elem_property<Eigen::Vector3d, 2>(variable, "x3");
-  bind_elem_property<Eigen::Matrix3d, 0, 0>(variable, "x11");
-  bind_elem_property<Eigen::Matrix3d, 0, 1>(variable, "x12");
-  bind_elem_property<Eigen::Matrix3d, 0, 2>(variable, "x13");
-  bind_elem_property<Eigen::Matrix3d, 1, 0>(variable, "x21");
-  bind_elem_property<Eigen::Matrix3d, 1, 1>(variable, "x22");
-  bind_elem_property<Eigen::Matrix3d, 1, 2>(variable, "x23");
-  bind_elem_property<Eigen::Matrix3d, 2, 0>(variable, "x31");
-  bind_elem_property<Eigen::Matrix3d, 2, 1>(variable, "x32");
-  bind_elem_property<Eigen::Matrix3d, 2, 2>(variable, "x33");
+
+  using structured_t = std::tuple<Eigen::Vector3d, Eigen::Matrix3d>;
+  m.def("_element_keys", element_keys);
+  m.def("_get_elements", [](Variable &self, const std::string &key) {
+    return core::callDType<GetElements>(
+        structured_t{}, variableFactory().elem_dtype(self), self, key);
+  });
+  m.def("_set_elements", [](Variable &self, const std::string &key,
+                            const Variable &elems) {
+    core::callDType<SetElements>(
+        structured_t{}, variableFactory().elem_dtype(self), self, key, elems);
+  });
 }

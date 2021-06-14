@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .tools import parse_params
-import ipywidgets as ipw
+from .._scipp.core import DimensionError
 
 
 class PlotDict():
@@ -251,6 +251,7 @@ class Plot:
         """
         Get the SciPlot object as an `ipywidget`.
         """
+        import ipywidgets as ipw
         widget_list = [self.view._to_widget()]
         if self.profile is not None:
             widget_list.append(self.profile._to_widget())
@@ -359,17 +360,35 @@ class Plot:
         """
         Validation checks before plotting.
         """
+        multid_coord = self.model.get_multid_coord()
 
         # Protect against having a multi-dimensional coord along a slider axis
         for ax, dim in self.axes.items():
-            if isinstance(ax, int) and (dim == self.model.get_multid_coord()):
-                raise RuntimeError("A ragged coordinate cannot lie along "
-                                   "a slider dimension, it must be one of "
-                                   "the displayed dimensions.")
+            if isinstance(ax, int) and (dim == multid_coord):
+                raise DimensionError("A ragged coordinate cannot lie along "
+                                     "a slider dimension, it must be one of "
+                                     "the displayed dimensions.")
 
         # Protect against duplicate entries in axes
         if len(self.axes.values()) != len(set(self.axes.values())):
-            raise RuntimeError("Duplicate entry in axes: {}".format(self.axes))
+            raise DimensionError("Duplicate entry in axes: {}".format(
+                self.axes))
+
+        # Protect against ill-formed data where multi-dimensional coord does
+        # not apply to inner dimension
+        if multid_coord is not None:
+            multid_coord_dims = self.model.get_data_coord(
+                self.name, multid_coord)[0].dims
+            if (multid_coord in multid_coord_dims) and (multid_coord !=
+                                                        multid_coord_dims[-1]):
+                raise DimensionError(
+                    "Plot input is ill-constructed. "
+                    "When using multi-dimensional coordinates, the named "
+                    "dimension of the coordinate must be the same as the "
+                    "inner/last dim. "
+                    "Here the named dimension is {}, "
+                    "while the inner dim is {}.".format(
+                        multid_coord, multid_coord_dims[-1]))
 
     def savefig(self, filename=None):
         """

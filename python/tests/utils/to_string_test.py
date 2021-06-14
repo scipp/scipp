@@ -5,7 +5,7 @@
 
 import numpy as np
 import scipp as sc
-import scipp._utils as su
+import scipp.utils as su
 
 
 def test_label_var_with_unit():

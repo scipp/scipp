@@ -8,18 +8,13 @@ import scipp as sc
 
 
 def test_plot_variable():
-    v = sc.Variable(['x'], values=np.arange(10.0), unit=sc.units.m)
+    v = sc.arange('x', 10.0, unit='m')
     v.plot().close()
 
 
 def test_plot_data_array():
     da = sc.DataArray(data=sc.Variable(['x'], values=np.random.random(10)),
-                      coords={
-                          'x':
-                          sc.Variable(['x'],
-                                      values=np.arange(10.0),
-                                      unit=sc.units.m)
-                      })
+                      coords={'x': sc.arange('x', 10.0, unit='m')})
     da.plot().close()
 
 
@@ -28,7 +23,7 @@ def test_plot_dataset():
     ds = sc.Dataset()
     ds['a'] = sc.Variable(['x'], values=np.random.random(N), unit=sc.units.K)
     ds['b'] = sc.Variable(['x'], values=np.random.random(N), unit=sc.units.K)
-    ds.coords['x'] = sc.Variable(['x'], values=np.arange(N), unit=sc.units.m)
+    ds.coords['x'] = sc.arange('x', float(N), unit='m')
     ds.plot().close()
 
 
@@ -36,13 +31,7 @@ def test_plot_data_array_with_kwargs():
     da = sc.DataArray(data=sc.Variable(['y', 'x'],
                                        values=np.random.random([10, 5])),
                       coords={
-                          'x':
-                          sc.Variable(['x'],
-                                      values=np.arange(5.0),
-                                      unit=sc.units.m),
-                          'y':
-                          sc.Variable(['y'],
-                                      values=np.arange(10.0),
-                                      unit=sc.units.m)
+                          'x': sc.arange('x', 5.0, unit='m'),
+                          'y': sc.arange('y', 10.0, unit='m')
                       })
     da.plot(cmap="magma", norm="log").close()

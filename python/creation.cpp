@@ -12,20 +12,27 @@ using namespace scipp;
 namespace py = pybind11;
 
 void init_creation(py::module &m) {
-  m.def("empty", [](const std::vector<Dim> &dims,
-                    const std::vector<scipp::index> &shape,
-                    const units::Unit &unit, const py::object &dtype,
-                    const bool variances) {
-    const auto dtype_ = scipp_dtype(dtype);
-    py::gil_scoped_release release;
-    return variable::empty(Dimensions(dims, shape), unit, dtype_, variances);
-  });
-  m.def("ones", [](const std::vector<Dim> &dims,
-                   const std::vector<scipp::index> &shape,
-                   const units::Unit &unit, const py::object &dtype,
-                   const bool variances) {
-    const auto dtype_ = scipp_dtype(dtype);
-    py::gil_scoped_release release;
-    return variable::ones(Dimensions(dims, shape), unit, dtype_, variances);
-  });
+  m.def(
+      "empty",
+      [](const std::vector<Dim> &dims, const std::vector<scipp::index> &shape,
+         const units::Unit &unit, const py::object &dtype,
+         const bool variances) {
+        const auto dtype_ = scipp_dtype(dtype);
+        py::gil_scoped_release release;
+        return variable::empty(Dimensions(dims, shape), unit, dtype_,
+                               variances);
+      },
+      py::arg("dims"), py::arg("shape"), py::arg("unit") = units::one,
+      py::arg("dtype") = py::none(), py::arg("variances") = std::nullopt);
+  m.def(
+      "ones",
+      [](const std::vector<Dim> &dims, const std::vector<scipp::index> &shape,
+         const units::Unit &unit, const py::object &dtype,
+         const bool variances) {
+        const auto dtype_ = scipp_dtype(dtype);
+        py::gil_scoped_release release;
+        return variable::ones(Dimensions(dims, shape), unit, dtype_, variances);
+      },
+      py::arg("dims"), py::arg("shape"), py::arg("unit") = units::one,
+      py::arg("dtype") = py::none(), py::arg("variances") = std::nullopt);
 }

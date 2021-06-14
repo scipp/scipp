@@ -32,7 +32,7 @@ public:
                      std::string_view name = "");
 
   DataArray &operator=(const DataArray &other);
-  DataArray &operator=(DataArray &&other) = default;
+  DataArray &operator=(DataArray &&other);
 
   bool is_valid() const noexcept { return m_data && m_data->is_valid(); }
 

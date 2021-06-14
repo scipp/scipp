@@ -594,6 +594,12 @@ TEST_F(GroupbyLogicalTest, all) {
                     makeVariable<double>(Dimensions{Dim("labels2"), 2},
                                          units::m, Values{1, 3}));
   EXPECT_EQ(groupby(d, Dim("labels2")).all(Dim::X), expected);
+  d["a"].masks().set("mask", makeVariable<bool>(Dimensions{Dim::X, 3},
+                                                Values{false, true, false}));
+  expected.setData(
+      "a", makeVariable<bool>(Dimensions{{Dim::Z, 2}, {Dim("labels2"), 2}},
+                              Values{true, false, true, false}));
+  EXPECT_EQ(groupby(d, Dim("labels2")).all(Dim::X), expected);
 }
 
 TEST_F(GroupbyLogicalTest, all_empty_bin) {
@@ -616,6 +622,12 @@ TEST_F(GroupbyLogicalTest, any) {
   expected.setCoord(Dim("labels2"),
                     makeVariable<double>(Dimensions{Dim("labels2"), 2},
                                          units::m, Values{1, 3}));
+  EXPECT_EQ(groupby(d, Dim("labels2")).any(Dim::X), expected);
+  d["a"].masks().set("mask", makeVariable<bool>(Dimensions{Dim::X, 3},
+                                                Values{true, false, false}));
+  expected.setData(
+      "a", makeVariable<bool>(Dimensions{{Dim::Z, 2}, {Dim("labels2"), 2}},
+                              Values{false, false, true, false}));
   EXPECT_EQ(groupby(d, Dim("labels2")).any(Dim::X), expected);
 }
 
@@ -661,6 +673,12 @@ TEST_F(GroupbyMinMaxTest, min) {
                     makeVariable<double>(Dimensions{Dim("labels2"), 2},
                                          units::m, Values{1, 3}));
   EXPECT_EQ(groupby(d, Dim("labels2")).min(Dim::X), expected);
+  d["a"].masks().set("mask", makeVariable<bool>(Dimensions{Dim::X, 3},
+                                                Values{true, false, false}));
+  expected.setData(
+      "a", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim("labels2"), 2}},
+                                Values{2, 3, 5, 6}));
+  EXPECT_EQ(groupby(d, Dim("labels2")).min(Dim::X), expected);
 }
 
 TEST_F(GroupbyMinMaxTest, min_empty_bin) {
@@ -683,6 +701,12 @@ TEST_F(GroupbyMinMaxTest, max) {
   expected.setCoord(Dim("labels2"),
                     makeVariable<double>(Dimensions{Dim("labels2"), 2},
                                          units::m, Values{1, 3}));
+  EXPECT_EQ(groupby(d, Dim("labels2")).max(Dim::X), expected);
+  d["a"].masks().set("mask", makeVariable<bool>(Dimensions{Dim::X, 3},
+                                                Values{false, true, false}));
+  expected.setData(
+      "a", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim("labels2"), 2}},
+                                Values{1, 3, 4, 6}));
   EXPECT_EQ(groupby(d, Dim("labels2")).max(Dim::X), expected);
 }
 

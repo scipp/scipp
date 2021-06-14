@@ -11,7 +11,7 @@ namespace scipp::variable {
 namespace scipp::dataset {
 
 DataArray @NAME@(const DataArray &a) {
-  return DataArray(@NAME@(a.data()), a.coords(), copy(a.masks()), a.attrs());
+  return DataArray(@NAME@(a.data()), a.coords(), copy(a.masks()), a.attrs(), a.name());
 }
 
 } // namespace scipp::dataset

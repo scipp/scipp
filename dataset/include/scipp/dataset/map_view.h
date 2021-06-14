@@ -70,6 +70,8 @@ auto slice_map(const Sizes &sizes, const T &map, const Slice &params) {
                                                   : params.end() + 1;
         out[key] = value.slice(Slice{params.dim(), params.begin(), end});
       }
+    } else if (params == Slice{}) {
+      out[key] = value;
     } else {
       out[key] = value.as_const();
     }

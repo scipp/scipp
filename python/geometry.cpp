@@ -23,18 +23,7 @@ void init_geometry(py::module &m) {
         return position(x, y, z);
       },
       py::arg("x"), py::arg("y"), py::arg("z"),
-      py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description(
-              "Element-wise zip functionality to produce a vector_3_float64.")
-          .raises("If the dtypes of inputs are not double precision floats.")
-          .returns(
-              "Zip of input x, y and z. Output unit is same as input unit.")
-          .rtype("Variable")
-          .param("x", "Variable containing x component.", "Variable")
-          .param("y", "Variable containing y component.", "Variable")
-          .param("z", "Variable containing z component.", "Variable")
-          .c_str());
+      py::call_guard<py::gil_scoped_release>());
 
   geom_m.def(
       "rotation_matrix_from_quaternion_coeffs", [](py::array_t<double> value) {

@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
+#include <functional>
 #include <unordered_map>
 
 #include "scipp-core_export.h"
@@ -118,3 +119,11 @@ namespace scipp {
 using core::DType;
 using core::dtype;
 } // namespace scipp
+
+namespace std {
+template <> struct hash<scipp::DType> {
+  std::size_t operator()(const scipp::DType &dt) const noexcept {
+    return std::hash<decltype(dt.index)>{}(dt.index);
+  }
+};
+} // namespace std
