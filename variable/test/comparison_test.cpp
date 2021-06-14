@@ -61,6 +61,27 @@ TEST(IsCloseTest, works_for_counts) {
   EXPECT_NO_THROW_DISCARD(isclose(a, a, rtol, atol));
 }
 
+TEST(AllCloseTest, allclose) {
+  const auto a =
+      makeVariable<double>(Values{1, 1}, Shape{2}, Dims{Dim::X}, units::one);
+  const auto b = a;
+  const auto rtol = 1e-5 * units::one;
+  const auto atol = 0.0 * units::one;
+  auto result = allclose(a, b, rtol, atol);
+  EXPECT_EQ(result, true * units::one);
+}
+
+TEST(AllCloseTest, notallclose) {
+  const auto a =
+      makeVariable<double>(Values{1, 1}, Shape{2}, Dims{Dim::X}, units::one);
+  const auto b =
+      makeVariable<double>(Values{0, 1}, Shape{2}, Dims{Dim::X}, units::one);
+  const auto rtol = 0.0 * units::one;
+  const auto atol = 0.99 * units::one;
+  auto result = allclose(a, b, rtol, atol);
+  EXPECT_EQ(result, false * units::one);
+}
+
 TEST(IsCloseTest, compare_variances_only) {
   // Tests setup so that value comparison does not affect output (a, b value
   // same)

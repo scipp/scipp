@@ -18,4 +18,9 @@ isclose(const Variable &a, const Variable &b, const Variable &rtol,
         const Variable &atol,
         const NanComparisons equal_nans = NanComparisons::NotEqual);
 
+SCIPP_VARIABLE_EXPORT Variable
+allclose(const Variable &a, const Variable &b, const Variable &rtol,
+         const Variable &atol,
+         const NanComparisons equal_nans = NanComparisons::NotEqual);
+
 } // namespace scipp::variable
