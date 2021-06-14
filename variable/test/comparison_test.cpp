@@ -61,9 +61,9 @@ TEST(IsCloseTest, works_for_counts) {
   EXPECT_NO_THROW_DISCARD(isclose(a, a, rtol, atol));
 }
 
-TEST(AllCloseTest, allclose) {
+TYPED_TEST(IsCloseTest, allclose) {
   const auto a =
-      makeVariable<double>(Values{1, 1}, Shape{2}, Dims{Dim::X}, units::one);
+      makeVariable<TypeParam>(Values{1, 1}, Dims{Dim::X}, Shape{2}, units::one);
   const auto b = a;
   const auto rtol = 1e-5 * units::one;
   const auto atol = 0.0 * units::one;
@@ -71,11 +71,12 @@ TEST(AllCloseTest, allclose) {
   EXPECT_EQ(result, true * units::one);
 }
 
-TEST(AllCloseTest, notallclose) {
+TYPED_TEST(IsCloseTest, notallclose) {
   const auto a =
-      makeVariable<double>(Values{1, 1}, Shape{2}, Dims{Dim::X}, units::one);
+      makeVariable<TypeParam>(Values{1, 1}, Dims{Dim::X}, Shape{2}, units::one);
   const auto b =
-      makeVariable<double>(Values{0, 1}, Shape{2}, Dims{Dim::X}, units::one);
+      makeVariable<TypeParam>(Values{0, 1}, Dims{Dim::X}, Shape{2}, units::one);
+  makeVariable<double>(Values{0, 1}, Shape{2}, Dims{Dim::X}, units::one);
   const auto rtol = 0.0 * units::one;
   const auto atol = 0.99 * units::one;
   auto result = allclose(a, b, rtol, atol);

@@ -16,6 +16,20 @@
 /// operations for Variable.
 namespace scipp::core::element {
 
+namespace detail {
+
+template <class T> struct make_args { using type = std::tuple<bool, T, T, T>; };
+
+template <class... T> struct make_args<std::tuple<T...>> {
+  using type = std::tuple<bool, T...>;
+};
+
+template <class... Ts> constexpr auto as_out_args(std::tuple<Ts...>) {
+  return std::tuple<typename make_args<Ts>::type...>{};
+}
+
+} // namespace detail
+
 using isclose_types_t = arg_list_t<
     double, float, int64_t, int32_t, std::tuple<float, float, double>,
     std::tuple<int64_t, int64_t, double>, std::tuple<int32_t, int32_t, double>,
@@ -23,6 +37,11 @@ using isclose_types_t = arg_list_t<
     std::tuple<int64_t, int32_t, int64_t>,
     std::tuple<int32_t, int32_t, int64_t>,
     std::tuple<int32_t, int64_t, int64_t>>;
+
+struct isclose_types_out_t {
+  constexpr void operator()() const noexcept;
+  using types = decltype(detail::as_out_args(isclose_types_t::types{}));
+};
 
 constexpr auto isclose_units = [](const units::Unit &x, const units::Unit &y,
                                   const units::Unit &t) {
@@ -51,6 +70,20 @@ constexpr auto isclose_equal_nan = overloaded{
         return true;
       return abs(x - y) <= t;
     }};
+
+constexpr auto isclose_out =
+    overloaded{transform_flags::expect_no_variance_arg_t<3>{}, isclose_units,
+               [](auto &&out, const auto &x, const auto &y, const auto &t) {
+                 out &= isclose(x, y, t);
+               },
+               isclose_types_out_t{}};
+
+constexpr auto isclose_equal_nan_out =
+    overloaded{transform_flags::expect_no_variance_arg_t<3>{},
+               [](auto &&out, const auto &a, const auto &b, const auto tol) {
+                 out &= isclose_equal_nan(a, b, tol);
+               },
+               isclose_types_out_t{}};
 
 struct comparison_types_t {
   constexpr void operator()() const noexcept;
