@@ -61,7 +61,9 @@ TEST(IsCloseTest, with_vectors) {
       makeVariable<Eigen::Vector3d>(Values{Eigen::Vector3d{1, 1, 1}});
   const auto rtol = 0.0 * units::one;
   const auto atol = 1.0 * units::one;
-  EXPECT_EQ(isclose(a, b, rtol, atol), true * units::one);
+  EXPECT_EQ(isclose(a, b, rtol, atol),
+            makeVariable<bool>(Dims{Dim::InternalStructureComponent}, Shape{3},
+                               Values{true, true, true}));
 }
 TEST(IsCloseTest, works_for_counts) {
   const auto a = makeVariable<double>(Values{1}, Variances{1}, units::counts);

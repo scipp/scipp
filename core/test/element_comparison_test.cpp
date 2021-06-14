@@ -197,17 +197,6 @@ TEST(IsCloseTest, units) {
   do_isclose_units_test(isclose_equal_nan);
 }
 
-TEST(IsCloseTest, vectors) {
-  auto a = Eigen::Vector3d{1, 1, 1};
-  auto b = Eigen::Vector3d{1, 1, 1};
-  auto c = Eigen::Vector3d{1, 1, 0};
-  EXPECT_TRUE(isclose(a, b, 1e-9));
-  EXPECT_FALSE(isclose(a, c, 1e-9));
-  EXPECT_FALSE(isclose(c, a, 1e-9));
-  EXPECT_TRUE(isclose(c, a, 1));
-  EXPECT_TRUE(isclose(a, c, 1));
-}
-
 constexpr auto check_inplace = [](auto op, auto a, auto b, auto expected) {
   op(a, b);
   EXPECT_EQ(a, expected);

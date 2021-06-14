@@ -3,6 +3,7 @@
 /// @file
 /// @author Piotr Rozyczko
 #include "scipp/core/element/comparison.h"
+#include "scipp/core/eigen.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/math.h"
 #include "scipp/variable/transform.h"
@@ -19,8 +20,12 @@ Variable _values(Variable &&in) { return in.hasVariances() ? values(in) : in; }
 
 Variable isclose(const Variable &a, const Variable &b, const Variable &rtol,
                  const Variable &atol, const NanComparisons equal_nans) {
-  Variable tol = b.dtype() == dtype<Eigen::Vector3d> ? atol + rtol * norm(b)
-                                                     : atol + rtol * abs(b);
+  // Element expansion comparison for vectors
+  if (a.dtype() == dtype<Eigen::Vector3d>)
+    return isclose(a.elements<Eigen::Vector3d>(), b.elements<Eigen::Vector3d>(),
+                   rtol, atol, equal_nans);
+
+  auto tol = atol + rtol * abs(b);
   if (a.hasVariances() && b.hasVariances()) {
     return isclose(values(a), values(b), rtol, atol, equal_nans) &
            isclose(stddevs(a), stddevs(b), rtol, atol, equal_nans);
