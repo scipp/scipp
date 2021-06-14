@@ -168,14 +168,14 @@ def _with_edges(array):
     prefix = ''.join(array.dims)
     for dim, var in array.coords.items():
         if var.sizes[dim] == array.sizes[dim]:
-            new_array.attrs[f'{prefix}_{dim}'] = var
+            new_array.coords[f'{prefix}_{dim}'] = var
             new_array.coords[dim] = to_bin_edges(var, dim)
     return new_array, prefix
 
 
 def _replace_edge_coords(array, bounds, prefix):
     return {
-        dim: array.coords[dim if dim in bounds else f'{prefix}_{dim}']
+        dim: array.meta[f'{prefix}_{dim}' if dim in bounds else dim]
         for dim in array.dims
     }
 

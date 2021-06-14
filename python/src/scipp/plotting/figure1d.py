@@ -91,7 +91,8 @@ class PlotFigure1d(PlotFigure):
                 "linestyle": {},
                 "linewidth": {}
             }
-            for i, name in enumerate(xparams["hist"]):
+            # Hack to get all names
+            for i, name in enumerate(self.masks):
                 self.mpl_line_params["color"][name] = get_line_param(
                     "color", i)
                 self.mpl_line_params["marker"][name] = get_line_param(
@@ -121,7 +122,8 @@ class PlotFigure1d(PlotFigure):
         self.ax.xaxis.set_major_formatter(
             self.axformatter['x'][xparams["scale"]])
 
-        for name, hist in xparams["hist"].items():
+        for name in self.masks:
+            hist = False
 
             label = None
             if legend_labels and len(name) > 0:
@@ -199,14 +201,13 @@ class PlotFigure1d(PlotFigure):
         """
         x = vals["values"]["x"]
         y = vals["values"]["y"]
-        centers = 0.5 * (x[1:] + x[:-1])
-        if not self._xparams["hist"][name]:
-            vals["values"]["x"] = centers
+        if len(x) == len(y):
+            vals["variances"]["x"] = x
         else:
             vals["values"]["y"] = np.concatenate((y[0:1], y))
             for key, mask in vals["masks"].items():
                 vals["masks"][key] = np.concatenate((mask[0:1], mask))
-        vals["variances"]["x"] = centers
+            vals["variances"]["x"] = 0.5 * (x[1:] + x[:-1])
         vals["variances"]["y"] = y
         return vals
 
