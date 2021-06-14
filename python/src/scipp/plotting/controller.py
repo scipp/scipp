@@ -55,8 +55,6 @@ class PlotController:
         self.update_data_lock = False
         self.axparams = {}
 
-        self.profile_axparams = {}
-
         self.vmin = vmin
         self.vmax = vmax
         self.norm = norm if norm is not None else "linear"
@@ -477,7 +475,6 @@ class PlotController:
             self.widgets.clear_profile_buttons()
         else:
             self.profile_dim = self.widgets.get_index_dim(owner.index)
-            self.profile_axparams.clear()
             if owner.button_style == "info":
                 owner.button_style = ""
                 visible = False
@@ -494,7 +491,7 @@ class PlotController:
                         self.profile_dim]].values
                     xmin = min(xmin, xlims[0])
                     xmax = max(xmax, xlims[1])
-                self.profile_axparams = {
+                profile_axparams = {
                     "x": {
                         "lims": [xmin, xmax],
                         "scale": self.scale[self.profile_dim],
@@ -502,10 +499,8 @@ class PlotController:
                     }
                 }
 
-                self._profile_model.update_axes(axparams=self.profile_axparams)
-                # TODO note how we can set resolution, e.g., for binned data
-                # self._profile_model.resolution = 10
-                self._profile_view.update_axes(axparams=self.profile_axparams)
+                self._profile_model.update_axes(axparams=profile_axparams)
+                self._profile_view.update_axes(axparams=profile_axparams)
             if not visible or self.profile.is_visible():
                 self.view.reset_profile()
 
