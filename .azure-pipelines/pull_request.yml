@@ -14,7 +14,7 @@ resources:
     name: scipp/pipelines
     type: github
     endpoint: scipp
-    ref: doctest
+    ref: main
 
 trigger:
   branches:
