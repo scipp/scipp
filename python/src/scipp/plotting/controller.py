@@ -373,11 +373,7 @@ class PlotController:
                                      change["owner"].mask_name, change["new"])
 
     def _make_axparam(self, dim):
-        return {
-            "lims": self.model.limits(scale=self.scale[dim])[dim],
-            "scale": self.scale[dim],
-            "dim": dim
-        }
+        return {"scale": self.scale[dim], "dim": dim}
 
     def _make_axes_parameters(self):
         """
