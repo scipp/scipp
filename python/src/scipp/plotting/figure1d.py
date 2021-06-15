@@ -89,12 +89,6 @@ class PlotFigure1d(PlotFigure):
         if self.grid:
             self.ax.grid()
 
-        deltax = 0.05 * (xparams["lims"][1] - xparams["lims"][0])
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=UserWarning)
-            self.ax.set_xlim(
-                [xparams["lims"][0] - deltax, xparams["lims"][1] + deltax])
-
         self.ax.set_xlabel(self._formatters['x']['label']
                            if self.xlabel is None else self.xlabel)
 
@@ -105,7 +99,7 @@ class PlotFigure1d(PlotFigure):
         if self.show_legend():
             self.ax.legend(loc=self.legend["loc"])
 
-        self.fig.tight_layout(rect=self.padding)
+        self._axes_updated = True
 
     def _make_line(self, name, hist):
         class Line:
@@ -206,6 +200,8 @@ class PlotFigure1d(PlotFigure):
         Update the x and y positions of the data points when a new data slice
         is received for display.
         """
+        xmin = np.Inf
+        xmax = np.NINF
         for name in new_values:
             vals, hist = self._preprocess_hist(name, new_values[name])
             if name not in self._lines:
@@ -227,6 +223,19 @@ class PlotFigure1d(PlotFigure):
                     self._change_segments_y(vals["variances"]["x"],
                                             vals["variances"]["y"],
                                             vals["variances"]["e"]))
+            coord = vals["values"]["x"]
+            low = min(coord[0], coord[-1])
+            high = max(coord[0], coord[-1])
+            xmin = min(xmin, low)
+            xmax = max(xmax, high)
+
+        deltax = 0.05 * (xmax - xmin)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            self.ax.set_xlim([xmin - deltax, xmax + deltax])
+        if self._axes_updated:
+            self._axes_updated = False
+            self.fig.tight_layout(rect=self.padding)
 
         self.draw()
 

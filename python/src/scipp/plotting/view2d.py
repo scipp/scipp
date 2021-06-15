@@ -4,7 +4,7 @@
 
 from .view import PlotView
 from ..utils import make_random_color
-from .. import dtype, zeros
+from .. import dtype, zeros, transpose
 import numpy as np
 from matplotlib.collections import PathCollection
 
@@ -26,8 +26,8 @@ class PlotView2d(PlotView):
 
         self.xlim_updated = False
         self.ylim_updated = False
-        self.current_lims = {"x": np.zeros(2), "y": np.zeros(2)}
-        self.global_lims = {"x": np.zeros(2), "y": np.zeros(2)}
+        self.current_lims = {}
+        self.global_lims = {}
 
         # Connect changes in axes limits to resampling function
         self.figure.ax.callbacks.connect('xlim_changed',
@@ -36,12 +36,21 @@ class PlotView2d(PlotView):
                                          self.check_for_ylim_update)
 
     def _make_data(self, new_values, mask_info):
-        values = new_values.values
         if self._transpose:
-            values = np.transpose(values)
+            new_values = transpose(new_values)
+        if not self.global_lims:
+            for axis, dim in zip(['y', 'x'], new_values.dims):
+                xmin = new_values.coords[dim].values[0]
+                xmax = new_values.coords[dim].values[-1]
+                self.global_lims[axis] = [xmin, xmax]
+                self.current_lims[axis] = [xmin, xmax]
+        values = new_values.values
         slice_values = {
-            "values": values,
-            "extent": np.array(list(self.current_lims.values())).flatten()
+            "values":
+            values,
+            "extent":
+            np.array([self.current_lims['x'],
+                      self.current_lims['y']]).flatten()
         }
         # TODO duplication with view1d.py _make_masks
         mask_info = next(iter(mask_info.values()))
@@ -116,10 +125,8 @@ class PlotView2d(PlotView):
         Update the current and global axes limits, before updating the figure
         axes.
         """
-        self.current_lims['x'] = axparams["x"]["lims"]
-        self.current_lims['y'] = axparams["y"]["lims"]
-        self.global_lims["x"] = axparams["x"]["lims"]
-        self.global_lims["y"] = axparams["y"]["lims"]
+        self.current_lims = {}
+        self.global_lims = {}
         super().update_axes(axparams)
         self.reset_profile()
 

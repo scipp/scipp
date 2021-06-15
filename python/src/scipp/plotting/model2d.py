@@ -49,10 +49,8 @@ class PlotModel2d(PlotModel):
         for xy in "yx":
             dim = axparams[xy]["dim"]
             self.displayed_dims[xy] = dim
-            unit = self.data_arrays[self.name].meta[dim].unit
             self._model.resolution[dim] = self.image_resolution[xy]
-            self._model.bounds[dim] = (axparams[xy]["lims"][0] * unit,
-                                       axparams[xy]["lims"][1] * unit)
+            self._model.bounds[dim] = None
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
 

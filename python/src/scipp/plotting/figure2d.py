@@ -116,15 +116,7 @@ class PlotFigure2d(PlotFigure):
             axis.set_major_formatter(self.axformatter[xy][param["scale"]])
             axis.set_major_locator(self.axlocator[xy][param["scale"]])
 
-        # Set axes limits and ticks
-        extent_array = np.array([axparams["x"]["lims"],
-                                 axparams["y"]["lims"]]).flatten()
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=UserWarning)
-            self.image_colors.set_extent(extent_array)
-            self.image_values.set_extent(extent_array)
-            self.ax.set_xlim(axparams["x"]["lims"])
-            self.ax.set_ylim(axparams["y"]["lims"])
+        self._limits_set = False
 
     def update_data(self, new_values, info=None):
         """
@@ -138,9 +130,14 @@ class PlotFigure2d(PlotFigure):
 
         self.image_colors.set_data(rgba)
         self.image_values.set_data(new_values["values"])
-        if new_values["extent"] is not None:
-            self.image_colors.set_extent(new_values["extent"])
-            self.image_values.set_extent(new_values["extent"])
+        self.image_colors.set_extent(new_values["extent"])
+        self.image_values.set_extent(new_values["extent"])
+        if not self._limits_set:
+            self._limits_set = True
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning)
+                self.ax.set_xlim(new_values["extent"][:2])
+                self.ax.set_ylim(new_values["extent"][2:])
         self.draw()
 
     def toggle_norm(self, norm=None, vmin=None, vmax=None):
