@@ -3,8 +3,10 @@
 # @author Matthew Andrew
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from typing import Any as _Any, Sequence as _Sequence, Union as _Union
+from typing import Any as _Any, Sequence as _Sequence, Union as _Union,\
+    Optional as _Optional
 import numpy as _np
+from numpy.typing import ArrayLike as _ArrayLike
 
 
 def _parse_dims_shape_sizes(dims, shape, sizes):
@@ -286,8 +288,8 @@ def vectors(*,
 
 def array(*,
           dims: _Sequence[str],
-          values: _Union[_np.ndarray, list],
-          variances: _Union[_np.ndarray, list] = None,
+          values: _ArrayLike,
+          variances: _Optional[_ArrayLike] = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
           dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
@@ -305,11 +307,21 @@ def array(*,
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
     """
-    return _cpp.Variable(dims=dims,
-                         values=values,
-                         variances=variances,
-                         unit=unit,
-                         dtype=dtype)
+    try:
+        return _cpp.Variable(dims=dims,
+                             values=values,
+                             variances=variances,
+                             unit=unit,
+                             dtype=dtype)
+    except RuntimeError as exc:
+        if 'Unable to cast' in exc.args[0]:
+            raise TypeError(
+                'Cannot convert data to an array. '
+                'Did you forget to wrap it in a list or numpy array?\n'
+                f'Got values = {type(values)}' +
+                (f'\n    variances = {type(variances)}'
+                 if variances is not None else '')) from None
+        raise
 
 
 def linspace(dim: str,

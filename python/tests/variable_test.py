@@ -3,6 +3,8 @@
 # @file
 # @author Simon Heybrock
 
+import itertools
+
 import numpy as np
 import pytest
 
@@ -154,6 +156,49 @@ def test_create_via_unit():
     expected = sc.Variable(1.2, unit=sc.units.m)
     var = 1.2 * sc.units.m
     assert sc.identical(var, expected)
+
+
+@pytest.mark.parametrize("types",
+                         itertools.product(*[(tuple, list, np.array)] * 2))
+def test_create_1d_array_like(types):
+    values_type, variances_type = types
+
+    values = np.arange(5.0)
+    expected = sc.Variable(dims=('x', ), values=values)
+    assert sc.identical(sc.Variable(dims=['x'], values=values_type(values)),
+                        expected)
+
+    variances = np.arange(5.0) * 0.1
+    expected = sc.Variable(dims=('x', ), values=values, variances=variances)
+    assert sc.identical(
+        sc.Variable(dims=['x'],
+                    values=values_type(values),
+                    variances=variances_type(variances)), expected)
+
+
+@pytest.mark.parametrize("types",
+                         itertools.product(*[(tuple, list, np.array)] * 4))
+def test_create_2d_array_like(types):
+    inner_values_type, outer_values_type, \
+      inner_variances_type, outer_variances_type = types
+
+    values = np.arange(15.0).reshape(3, 5)
+    expected = sc.Variable(dims=('x', 'y'), values=values)
+
+    assert sc.identical(
+        sc.Variable(dims=['x', 'y'],
+                    values=outer_values_type(
+                        [inner_values_type(val) for val in values])), expected)
+
+    variances = np.arange(15.0).reshape(3, 5) * 0.1
+    expected = sc.Variable(dims=('x', 'y'), values=values, variances=variances)
+    assert sc.identical(
+        sc.Variable(dims=['x', 'y'],
+                    values=outer_values_type(
+                        [inner_values_type(val) for val in values]),
+                    variances=outer_values_type(
+                        [inner_values_type(var) for var in variances])),
+        expected)
 
 
 def test_create_1D_string():
