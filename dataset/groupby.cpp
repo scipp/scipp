@@ -4,8 +4,6 @@
 /// @author Simon Heybrock
 #include <numeric>
 
-#include <iostream>
-
 #include "scipp/common/numeric.h"
 
 #include "scipp/core/bucket.h"
@@ -18,10 +16,8 @@
 
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/choose.h"
-#include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
-#include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
 
 #include "../variable/operations_common.h"
