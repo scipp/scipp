@@ -92,27 +92,5 @@ class PlotModel2d(PlotModel):
                                        xylims[xy][1] * unit)
         return self._update_image()
 
-    # TODO should this be something done in model1d update_axes?
-    def update_profile_model(self,
-                             visible=False,
-                             slices=None,
-                             profile_dim=None):
-        """
-        When the profile view gets activated, make a new resampling model.
-        """
-        if visible:
-            model_data = self.data_arrays[self.name]
-            for dim in set(slices.keys()) - set([profile_dim]):
-                [start, stop] = slices[dim]
-                model_data = model_data[dim, start:stop]
-            self._profile_model = resampling_model(model_data)
-            self._profile_model.resolution = {
-                self.displayed_dims['x']: 1,
-                self.displayed_dims['y']: 1,
-                profile_dim: 200
-            }
-        else:
-            self._profile_model = None
-
     def reset_resampling_model(self):
         self._model.reset()
