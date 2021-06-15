@@ -14,7 +14,6 @@ class PlotModel1d(PlotModel):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.dim = None
         self._resolution = None
         for name, array in self.data_arrays.items():
             if array.bins is not None:
@@ -23,7 +22,7 @@ class PlotModel1d(PlotModel):
     def _make_1d_resampling_model(self, array):
         model = resampling_model(array)
         for dim in array.dims:
-            if dim != self.dim:
+            if dim != self.dims[0]:
                 model.resolution[dim] = 1
             elif self.resolution is not None:
                 model.resolution[dim] = self.resolution
@@ -35,7 +34,7 @@ class PlotModel1d(PlotModel):
         model.bounds.update(slices)
         data = model.data
         for dim in model.data.dims:
-            if dim != self.dim:
+            if dim != self.dims[0]:
                 data = data[dim, 0]
         return data
 
@@ -46,12 +45,6 @@ class PlotModel1d(PlotModel):
     @resolution.setter
     def resolution(self, resolution):
         self._resolution = resolution
-
-    def update_axes(self, axparams):
-        """
-        Update axes parameters on axis change.
-        """
-        self.dim = axparams["x"]["dim"]
 
     def update_data(self, slices):
         """

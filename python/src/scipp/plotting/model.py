@@ -25,6 +25,7 @@ class PlotModel:
     performed.
     """
     def __init__(self, scipp_obj_dict=None, name=None):
+        self._dims = None
 
         self.interface = {}
 
@@ -56,6 +57,18 @@ class PlotModel:
 
         # The main currently displayed data slice
         self.dslice = None
+
+    def _dims_updated(self):
+        pass
+
+    @property
+    def dims(self):
+        return self._dims
+
+    @dims.setter
+    def dims(self, dims):
+        self._dims = dims
+        self._dims_updated()
 
     def _axis_coord(self, array, dim):
         """

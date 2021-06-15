@@ -13,23 +13,20 @@ class PlotModel2d(PlotModel):
     Model class for 2 dimensional plots.
     """
     def __init__(self, *args, resolution=None, **kwargs):
-
-        self._dims = None
         self._model = None
-
         super().__init__(*args, **kwargs)
-
-        if resolution is not None:
-            if isinstance(resolution, int):
-                self.image_resolution = {"x": resolution, "y": resolution}
-            else:
-                self.image_resolution = resolution
+        if resolution is None:
+            self._resolution = [config.plot.height, config.plot.width]
+        elif isinstance(resolution, int):
+            self._resolution = [resolution, resolution]
         else:
-            self.image_resolution = {
-                "x": config.plot.width,
-                "y": config.plot.height
-            }
+            self._resolution = [resolution[ax] for ax in 'yx']
         self._squeeze = []
+
+    def _dims_updated(self):
+        for dim, resolution in zip(self.dims, self._resolution):
+            self._model.resolution[dim] = resolution
+            self._model.bounds[dim] = None
 
     def update_data_arrays(self):
         """
@@ -40,21 +37,6 @@ class PlotModel2d(PlotModel):
             self._model = resampling_model(self.data_arrays[self.name])
         else:
             self._model.update_array(self.data_arrays[self.name])
-
-    def update_axes(self, axparams):
-        """
-        Update axes parameters and coordinate edges for dynamic resampling on
-        axis change.
-        """
-        self.displayed_dims = {}
-        self._dims = [axparams[ax]['dim'] for ax in "yx"]
-        for xy in "yx":
-            dim = axparams[xy]["dim"]
-            self.displayed_dims[xy] = dim
-            self._model.resolution[dim] = self.image_resolution[xy]
-            self._model.bounds[dim] = None
-            # TODO: if labels are used on a 2D coordinates, we need to update
-            # the axes tick formatter to use xyrebin coords
 
     def _update_image(self):
         """
@@ -82,16 +64,13 @@ class PlotModel2d(PlotModel):
                 self._model.bounds[dim] = (start, stop)
         return self._update_image()
 
-    def update_viewport(self, xylims):
+    def update_viewport(self, limits):
         """
         When an update to the viewport is requested on a zoom event, set new
         rebin edges and call for a resample of the image.
         """
-        for xy, dim in self.displayed_dims.items():
-            unit = self.data_arrays[self.name].meta[dim].unit
-            self._model.resolution[dim] = self.image_resolution[xy]
-            self._model.bounds[dim] = (xylims[xy][0] * unit,
-                                       xylims[xy][1] * unit)
+        for dim, lims in limits.items():
+            self._model.bounds[dim] = (lims[0], lims[1])
         return self._update_image()
 
     def reset_resampling_model(self):

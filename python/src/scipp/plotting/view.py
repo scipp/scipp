@@ -99,11 +99,11 @@ class PlotView:
         """
         return
 
-    def toggle_norm(self, *args, **kwargs):
+    def toggle_norm(self, norm, vmin, vmax):
         """
         Forward norm change to the `figure`.
         """
-        self.figure.toggle_norm(*args, **kwargs)
+        self.figure.toggle_norm(norm, vmin.value, vmax.value)
 
     def update_axes(self, axparams, **kwargs):
         """

@@ -44,6 +44,7 @@ class PlotModel3d(PlotModel):
         """
         self.cut_options = cut_options
 
+    # TODO controller does not call update_axes any more, need new mechanism
     def update_axes(self, axparams):
         """
         When axes are changed, a new meshgrid of positions is computed.

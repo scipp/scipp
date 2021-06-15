@@ -109,7 +109,12 @@ class PlotView2d(PlotView):
         # avoid too many updates while panning.
         if diff > 0.1:
             self.current_lims = xylims
-            self.interface["update_viewport"](xylims)
+            limits = {}
+            for dim, ax in zip(self._data.dims, "yx"):
+                low, high = xylims[ax]
+                unit = self._data.coords[dim].unit
+                limits[dim] = [low * unit, high * unit]
+            self.interface["update_viewport"](limits)
 
         # If we are zooming, rescale to data?
         if self.figure.rescale_on_zoom():

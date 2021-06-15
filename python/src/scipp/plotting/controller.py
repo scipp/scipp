@@ -311,9 +311,11 @@ class PlotController:
         and sends it over to the view for display.
         """
         self.axparams = self._make_axes_parameters()
-        other_params = self.model.update_axes(self.axparams)
-        if other_params is not None:
-            self.axparams.update(other_params)
+        self.model.dims = [p['dim'] for p in self.axparams.values()]
+        # TODO mechanism for params from 3d model
+        # other_params = self.model.update_axes(self.axparams)
+        # if other_params is not None:
+        #     self.axparams.update(other_params)
         self.view.update_axes(axparams=self.axparams)
         if self.panel is not None:
             self.panel.update_axes(axparams=self.axparams)
