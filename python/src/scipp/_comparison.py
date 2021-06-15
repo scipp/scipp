@@ -118,6 +118,7 @@ def identical(x: DatasetLike, y: DatasetLike) -> DatasetLike:
 
 def isclose(x: _cpp.Variable,
             y: _cpp.Variable,
+            *,
             rtol: _cpp.Variable = None,
             atol: _cpp.Variable = None,
             equal_nan: bool = False) -> _cpp.Variable:
