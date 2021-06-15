@@ -160,7 +160,7 @@ def isclose(x, y, rtol=None, atol=None, equal_nan=False):
 
 
 def allclose(x, y, rtol=None, atol=None, equal_nan=False):
-    """Compares values (x, y) element by element against tolerance absolute
+    """Compares values (x, y) element by element against absolute
     and relative tolerances (non-symmetric) then conjoined bitwise across
     all dimensions (&=) to give a boolean output. The element-wise
     comparision is as follows:
