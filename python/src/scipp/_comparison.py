@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+# flake8: noqa: E501
 
 from __future__ import annotations
 
@@ -125,7 +126,9 @@ def isclose(x: _cpp.Variable,
     """Compares values (x, y) element by element against absolute
     and relative tolerances (non-symmetric).
 
-    abs(x - y) <= atol + rtol * abs(y)
+    .. code-block:: python
+
+        abs(x - y) <= atol + rtol * abs(y)
 
     If both x and y have variances, the variances are also compared
     between elements. In this case, both values and variances must
@@ -133,9 +136,8 @@ def isclose(x: _cpp.Variable,
 
     .. code-block:: python
 
-        abs(x.value - y.value) <= atol + rtol * abs(y.value) and abs(
-            sqrt(x.variance) - sqrt(y.variance)) \
-                <= atol + rtol * abs(sqrt(y.variance))
+        abs(x.value - y.value) <= atol + rtol * abs(y.value) and
+          abs(sqrt(x.variance) - sqrt(y.variance)) <= atol + rtol * abs(sqrt(y.variance))
 
     :param x: Left input.
     :param y: Right input.
