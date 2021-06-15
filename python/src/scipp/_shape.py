@@ -3,12 +3,16 @@
 # @author Matthew Andrew
 # flake8: noqa: E501
 
+from __future__ import annotations
+from typing import Dict, List, Optional, Sequence, Tuple, Union
+
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from typing import Sequence as _Sequence
+from .utils.typing import DataArrayLike, DatasetLike
 
 
-def broadcast(x, dims, shape):
+def broadcast(x: _cpp.Variable, dims: Union[List[str], Tuple[str]],
+              shape: Sequence[int]) -> _cpp.Variable:
     """Broadcast a variable.
 
     Note that scipp operations broadcast automatically, so using this function
@@ -17,15 +21,12 @@ def broadcast(x, dims, shape):
     :param x: Variable to broadcast.
     :param dims: List of new dimensions.
     :param shape: New extents in each dimension.
-    :type x: Variable
-    :type dims: list[str]
-    :type shape: list[int]
     :return: New variable with requested dimension labels and shape.
     """
     return _call_cpp_func(_cpp.broadcast, x, dims, shape)
 
 
-def concatenate(x, y, dim):
+def concatenate(x: DatasetLike, y: DatasetLike, dim: str) -> DatasetLike:
     """Concatenate input arrays along the given dimension.
 
     Concatenation can happen in two ways:
@@ -43,9 +44,6 @@ def concatenate(x, y, dim):
     :param x: Left hand side input.
     :param y: Right hand side input.
     :param dim: Dimension along which to concatenate.
-    :type x: Dataset, DataArray or Variable. Must be same type as y
-    :type y: Dataset, DataArray or Variable. Must be same type as x
-    :type dim: str
     :raises: If the dtype or unit does not match, or if the
              dimensions and shapes are incompatible.
     :return: The absolute values of the input.
@@ -83,7 +81,11 @@ def concatenate(x, y, dim):
     return _call_cpp_func(_cpp.concatenate, x, y, dim)
 
 
-def fold(x, dim, sizes=None, dims=None, shape=None):
+def fold(x: DataArrayLike,
+         dim: str,
+         sizes: Optional[Dict[str, int]] = None,
+         dims: Optional[Union[List[str], Tuple[str]]] = None,
+         shape: Optional[Sequence[int]] = None) -> DataArrayLike:
     """Fold a single dimension of a variable or data array into multiple dims.
 
     :param x: Variable or DataArray to fold.
@@ -91,11 +93,6 @@ def fold(x, dim, sizes=None, dims=None, shape=None):
     :param sizes: A dict mapping new dims to new shapes.
     :param dims: A list of new dims labels.
     :param shape: A list of new dim shapes.
-    :type x: Variable or DataArray
-    :type dim: str
-    :type sizes: dict
-    :type dims: list[str]
-    :type shape: list[int]
     :raises: If the volume of the old shape is not equal to the
              volume of the new shape.
     :return: Variable or DataArray with requested dimension labels and shape.
@@ -143,7 +140,9 @@ def fold(x, dim, sizes=None, dims=None, shape=None):
         return _call_cpp_func(_cpp.fold, x, dim, dict(zip(dims, shape)))
 
 
-def flatten(x, dims=None, to=None):
+def flatten(x: DataArrayLike,
+            dims: Optional[Union[List[str], Tuple[str]]] = None,
+            to: Optional[str] = None) -> DataArrayLike:
     """Flatten multiple dimensions of a variable or data array into a single
     dimension. If dims is omitted, then we flatten all of the inputs dimensions
     into a single dim.
@@ -151,9 +150,6 @@ def flatten(x, dims=None, to=None):
     :param x: Variable or DataArray to flatten.
     :param dims: A list of dim labels that will be flattened.
     :param to: A single dim label for the resulting flattened dim.
-    :type x: Variable or DataArray
-    :type dims: list[str]
-    :type to: str
     :raises: If the bin edge coordinates cannot be stitched back together.
     :return: Variable or DataArray with requested dimension labels and shape.
 
@@ -179,7 +175,7 @@ def flatten(x, dims=None, to=None):
 
       >>> a = sc.DataArray(0.1 * sc.array(dims=['x', 'y'], values=np.arange(6).reshape(2, 3)),
       ...        coords={'x': sc.arange('x', 2),
-      ...               'y': sc.arange('y', 3),
+      ...                'y': sc.arange('y', 3),
       ...                'xy': sc.array(dims=['x', 'y'],
       ...                               values=np.arange(6).reshape(2, 3))})
       >>> a
@@ -213,16 +209,16 @@ def flatten(x, dims=None, to=None):
     return _call_cpp_func(_cpp.flatten, x, dims, to)
 
 
-def transpose(x, dims: _Sequence[str] = []):
+def transpose(
+        x: DatasetLike,
+        dims: Optional[Union[List[str], Tuple[str]]] = None) -> DatasetLike:
     """Transpose dimensions of a variable, an data array, or a dataset.
 
     :param x: Object to transpose.
     :param dims: List of dimensions in desired order. If default,
-                        reverses existing order.
-    :type x: Variable, DataArray, or Dataset
-    :type dims: list[str]
+                 reverses existing order.
     :raises: If the dtype or unit does not match, or if the
              dimensions and shapes are incompatible.
     :return: The absolute values of the input.
     """
-    return _call_cpp_func(_cpp.transpose, x, dims)
+    return _call_cpp_func(_cpp.transpose, x, dims if dims is not None else [])
