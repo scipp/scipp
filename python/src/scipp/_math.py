@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from __future__ import annotations
 from typing import Optional
 
 from ._scipp import core as _cpp
