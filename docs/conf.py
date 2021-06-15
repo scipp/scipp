@@ -48,7 +48,7 @@ extensions = [
 autodoc_typehints = 'description'
 
 intersphinx_mapping = {
-    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
     'xarray': ('https://xarray.pydata.org/en/stable/', None)
 }
 

@@ -8,13 +8,13 @@ The data array concept
 
 The core data structure of scipp is :py:class:`scipp.DataArray`.
 A data array is essentially a multi-dimensional array with associated dicts of coordinates, masks, and attributes.
-For a more detailed explanation we refer to the `documentation of DataArray <../user-guide/data-structures.html#DataArray>`_.
+For a more detailed explanation we refer to the `documentation of DataArray <../user-guide/data-structures.rst#DataArray>`_.
 
 Scipp labels dimensions and their associated coordinates with labels such as ``'x'``, ``'temperature'``, or ``'wavelength'``.
 
 Operations between data arrays "align" data items based on their names, dimension labels, and coordinate values.
 That is, if names or coordinates do not match, operations fail.
-Missing dimensions in the operands are automatically `broadcast <https://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_.
+Missing dimensions in the operands are automatically `broadcast <https://numpy.org/doc/stable/user/basics.broadcasting.html>`_.
 In general scipp does not support automatic re-alignment of data.
 
 Data arrays with aligned coordinates can be combined into datasets.
