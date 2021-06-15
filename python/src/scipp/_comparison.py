@@ -162,7 +162,7 @@ def isclose(x, y, rtol=None, atol=None, equal_nan=False):
 def allclose(x, y, rtol=None, atol=None, equal_nan=False):
     """Compares values (x, y) element by element against tolerance absolute
     and relative tolerances (non-symmetric) then conjoined bitwise across
-    all dimensions (&=) to produce as scalar boolean output. The elementwise
+    all dimensions (&=) to give a boolean output. The element-wise
     comparision is as follows:
 
     abs(x - y) <= atol + rtol * abs(y)
@@ -195,13 +195,12 @@ def allclose(x, y, rtol=None, atol=None, equal_nan=False):
     :type atol: Variable. May be a scalar or an array variable.
                 Cannot have variances.
     :type equal_nan: bool
-    :return: Variable same size as input.
-             Element True if absolute diff of value <= atol + rtol * abs(y),
+    :return: True if for all elements value <= atol + rtol * abs(y),
              otherwise False.
 
     See Also
     --------
-    isclose : comparing elementwise with specified tolerances
+    isclose : comparing element-wise with specified tolerances
     """
     if rtol is None:
         rtol = 1e-5 * _cpp.units.one

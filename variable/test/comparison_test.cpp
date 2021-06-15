@@ -68,7 +68,7 @@ TYPED_TEST(IsCloseTest, allclose) {
   const auto rtol = 1e-5 * units::one;
   const auto atol = 0.0 * units::one;
   auto result = allclose(a, b, rtol, atol);
-  EXPECT_EQ(result, true * units::one);
+  EXPECT_TRUE(result);
 }
 
 TYPED_TEST(IsCloseTest, notallclose) {
@@ -80,7 +80,7 @@ TYPED_TEST(IsCloseTest, notallclose) {
   const auto rtol = 0.0 * units::one;
   const auto atol = 0.99 * units::one;
   auto result = allclose(a, b, rtol, atol);
-  EXPECT_EQ(result, false * units::one);
+  EXPECT_FALSE(result);
 }
 
 TEST(IsCloseTest, compare_variances_only) {
