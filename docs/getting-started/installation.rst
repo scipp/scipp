@@ -8,7 +8,7 @@ Scipp requires Python 3.7 or above.
 Conda
 -----
 
-The easiest way to install ``scipp`` is using `conda <https://conda.io>`_.
+The easiest way to install ``scipp`` is using `conda <https://docs.conda.io>`_.
 Packages from `Anaconda Cloud <https://conda.anaconda.org/scipp>`_ are available for Linux, macOS, and Windows.
 It is recommended to create an environment rather than installing individual packages.
 
@@ -31,7 +31,7 @@ With the provided environment file
    Above, replace ``scipp.yml`` with the path to the download location you used to download the environment.
    Open the link printed by Jupyter in a browser if it does not open automatically.
 
-If you are new to scipp, continue reading with `Quick Start <quick-start.html>`_ and `Data Structures <../user-guide/data-structures.html>`_.
+If you are new to scipp, continue reading with `Quick Start <quick-start.rst>`_ and `Data Structures <../user-guide/data-structures.rst>`_.
 
 If you have previously installed scipp with conda we nevertheless recommend creating a fresh environment rather than trying to ``conda update``.
 You may want to remove your old environment first, e.g.,
@@ -67,7 +67,7 @@ For a more up-to-date version, the `scipp/label/dev` channel can be used instead
 
 .. note::
    Installing ``scipp`` on Windows requires ``Microsoft Visual Studio 2019 C++ Runtime`` installed.
-   Visit https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads for the up to date version of the library.
+   Visit https://support.microsoft.com/en-us/topic/the-latest-supported-visual-c-downloads-2647da03-1eea-4433-9aff-95f26a218cc0 for the up to date version of the library.
 
 After installation the module ``scipp`` can be imported in Python.
 Note that only the bare essential dependencies are installed.
