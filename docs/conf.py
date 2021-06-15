@@ -54,6 +54,11 @@ extensions = [
 
 autodoc_typehints = 'description'
 
+autodoc_type_aliases = {
+    'DataArrayLike': 'DataArrayLike',
+    'DatasetLike': 'DatasetLike',
+}
+
 rst_epilog = f"""
 .. |SCIPP_RELEASE_MONTH| replace:: {os.popen("git show -s --format=%cd --date=format:'%B %Y'").read()}
 .. |SCIPP_VERSION| replace:: {os.popen("git describe --tags --abbrev=0").read()}
