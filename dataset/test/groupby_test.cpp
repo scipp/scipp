@@ -25,7 +25,7 @@ struct GroupbyTest : public ::testing::Test {
                                         units::s, Values{1, 2, 3, 4, 5, 6}));
     d["a"].attrs().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
     d.setCoord(Dim("labels1"), makeVariable<double>(Dimensions{Dim::X, 3},
-                                                    units::m, Values{1, 3, 2}));
+                                                    units::m, Values{1, 2, 3}));
     d.setCoord(Dim("labels2"), makeVariable<double>(Dimensions{Dim::X, 3},
                                                     units::m, Values{1, 1, 3}));
   }
