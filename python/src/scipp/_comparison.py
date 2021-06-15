@@ -150,7 +150,7 @@ def isclose(x, y, rtol=None, atol=None, equal_nan=False):
              otherwise False.
     See Also
     --------
-    :py:func:`scipp.allclose` : isclose applied over all dimensions (&=) to give scalar output
+    :py:func:`scipp.allclose` : isclose applied over all dimensions
     """
     if rtol is None:
         rtol = 1e-5 * _cpp.units.one
@@ -160,10 +160,8 @@ def isclose(x, y, rtol=None, atol=None, equal_nan=False):
 
 
 def allclose(x, y, rtol=None, atol=None, equal_nan=False):
-    """Compares values (x, y) element by element against absolute
-    and relative tolerances (non-symmetric) then conjoined bitwise across
-    all dimensions (&=) to give a boolean output. The element-wise
-    comparision is as follows:
+    """
+    Verifies that ALL element-wise comparisons meet the condition:
 
     abs(x - y) <= atol + rtol * abs(y)
 
