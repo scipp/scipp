@@ -8,10 +8,9 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/creation.h"
 #include "scipp/variable/except.h"
-#include "scipp/variable/shape.h"
 #include "scipp/variable/variable_concept.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
@@ -28,6 +27,39 @@ Variable::Variable(const Dimensions &dims, VariableConceptHandle data)
 
 Variable::Variable(const llnl::units::precise_measurement &m)
     : Variable(m.value() * units::Unit(m.units())) {}
+
+namespace {
+void check_nested_in_assign(const Variable &lhs, const Variable &rhs) {
+  if (!rhs.is_valid() || rhs.dtype() != dtype<Variable>) {
+    return;
+  }
+  // In principle we should also check when the RHS contains DataArrays or
+  // Datasets. But those are copied when stored in Variables,
+  // so no check needed here.
+  for (const auto &nested : rhs.values<Variable>()) {
+    if (&lhs == &nested) {
+      throw std::invalid_argument("Cannot assign Variable, the right hand side "
+                                  "contains a reference to the left hand side. "
+                                  "Reference cycles are not allowed.");
+    }
+    check_nested_in_assign(lhs, nested);
+  }
+}
+} // namespace
+
+Variable &Variable::operator=(const Variable &other) {
+  return *this = Variable(other);
+}
+
+Variable &Variable::operator=(Variable &&other) {
+  check_nested_in_assign(*this, other);
+  m_dims = other.m_dims;
+  m_strides = other.m_strides;
+  m_offset = other.m_offset;
+  m_object = std::move(other.m_object);
+  m_readonly = other.m_readonly;
+  return *this;
+}
 
 void Variable::setDataHandle(VariableConceptHandle object) {
   if (object->size() != m_object->size())
@@ -122,23 +154,28 @@ Variable Variable::slice(const Slice params) const {
 
 void Variable::validateSlice(const Slice &s, const Variable &data) const {
   core::expect::validSlice(this->dims(), s);
-  if (data.hasVariances() != this->hasVariances()) {
+  if (variableFactory().hasVariances(data) !=
+      variableFactory().hasVariances(*this)) {
     auto variances_message = [](const auto &variable) {
-      return "does" + std::string(variable.hasVariances() ? "" : " NOT") +
+      return "does" +
+             std::string(variableFactory().hasVariances(variable) ? ""
+                                                                  : " NOT") +
              " have variances.";
     };
     throw except::VariancesError("Invalid slice operation. Slice " +
                                  variances_message(data) + "Variable " +
                                  variances_message(*this));
   }
-  if (data.unit() != this->unit())
+  if (variableFactory().elem_unit(data) != variableFactory().elem_unit(*this))
     throw except::UnitError(
-        "Invalid slice operation. Slice has unit: " + to_string(data.unit()) +
-        " Variable has unit: " + to_string(this->unit()));
-  if (data.dtype() != this->dtype())
+        "Invalid slice operation. Slice has unit: " +
+        to_string(variableFactory().elem_unit(data)) +
+        " Variable has unit: " + to_string(variableFactory().elem_unit(*this)));
+  if (variableFactory().elem_dtype(data) != variableFactory().elem_dtype(*this))
     throw except::TypeError("Invalid slice operation. Slice has dtype " +
-                            to_string(data.dtype()) + ". Variable has dtype " +
-                            to_string(this->dtype()));
+                            to_string(variableFactory().elem_dtype(data)) +
+                            ". Variable has dtype " +
+                            to_string(variableFactory().elem_dtype(*this)));
 }
 
 Variable &Variable::setSlice(const Slice params, const Variable &data) {
@@ -239,5 +276,4 @@ void Variable::expectWritable() const {
   if (m_readonly)
     throw except::VariableError("Read-only flag is set, cannot mutate data.");
 }
-
 } // namespace scipp::variable

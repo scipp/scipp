@@ -59,7 +59,7 @@ public:
   }
 
   Dataset &operator=(const Dataset &other);
-  Dataset &operator=(Dataset &&other) = default;
+  Dataset &operator=(Dataset &&other);
 
   void setCoords(Coords other);
 

@@ -178,3 +178,17 @@ TEST_F(VariableBinsTest, to_constituents) {
   EXPECT_EQ(dim1, Dim::X);
   EXPECT_EQ(buf1, buffer);
 }
+
+TEST_F(VariableBinsTest, setSlice) {
+  const auto dense = makeVariable<double>(indices.dims(), Values{1.1, 2.2});
+  var.setSlice({}, dense);
+  auto expected = make_bins(
+      indices, Dim::X,
+      makeVariable<double>(buffer.dims(), Values{1.1, 1.1, 2.2, 2.2}));
+  EXPECT_EQ(var, expected);
+  var.setSlice({Dim::Y, 1}, dense.slice({Dim::Y, 0}));
+  expected = make_bins(
+      indices, Dim::X,
+      makeVariable<double>(buffer.dims(), Values{1.1, 1.1, 1.1, 1.1}));
+  EXPECT_EQ(var, expected);
+}

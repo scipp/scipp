@@ -94,20 +94,6 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
       py::arg("unit") = units::one, py::arg("dtype") = py::none());
 }
 
-void bind_init_list(py::class_<Variable> &c) {
-  c.def(py::init([](const std::array<Dim, 1> &label, const py::list &values,
-                    const std::optional<py::list> &variances,
-                    const units::Unit &unit, py::object &dtype) {
-          auto arr = py::array(values);
-          auto varr =
-              variances ? std::optional(py::array(*variances)) : std::nullopt;
-          auto dims = std::vector<Dim>{label[0]};
-          return do_make_variable(dims, arr, varr, unit, dtype);
-        }),
-        py::arg("dims"), py::arg("values"), py::arg("variances") = std::nullopt,
-        py::arg("unit") = units::one, py::arg("dtype") = py::none());
-}
-
 template <class T, class Elem, int... N>
 void bind_structured_creation(py::module &m, const std::string &name) {
   m.def(
@@ -211,7 +197,6 @@ of variances.)");
         return size_of(self, SizeofTag::Underlying);
       });
 
-  bind_init_list(variable);
   // Order matters for pybind11's overload resolution. Do not change.
   bind_init_0D_numpy_types(variable);
   bind_init_0D_native_python_types<bool>(variable);

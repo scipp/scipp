@@ -28,7 +28,7 @@ We use ``sphinx`` (and ``nbsphinx``) to transform ``.rst`` files and Jupyter not
 
 #. On your local machine, to back to where you cloned the ``ess`` git repository. Create a new branch starting from the ``main`` branch: ``git checkout main`` then ``git checkout -b deploy_docs``.
 
-#. In that new branch, create a ``.azure-pipelines/documentation_deploy.yml`` script. The easiest way is to copy one from another repository, e.g. `ess-notebooks <https://github.com/scipp/ess-notebooks/blob/master/.azure-pipelines/documentation_deploy.yml>`_.
+#. In that new branch, create a ``.azure-pipelines/documentation_deploy.yml`` script. The easiest way is to copy one from another repository, e.g. `ess-notebooks <https://github.com/scipp/ess-notebooks/blob/main/.azure-pipelines/documentation_deploy.yml>`_.
 
 #. In that ``.azure-pipelines/documentation_deploy.yml`` file, replace the ``sshPublicKey`` with the contents of azure-ess-key.pub. Change the ``sshKeySecureFile`` to ``azure-ess-key``. Change ``git clone git@github.com:scipp/ess-notebooks`` to ``git clone git@github.com:scipp/ess``.
 

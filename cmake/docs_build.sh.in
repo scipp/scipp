@@ -1,4 +1,0 @@
-#!/bin/bash
-cmake --build @CMAKE_BINARY_DIR@ --target install
-mkdir -p docs
-PYTHONPATH=$PYTHONPATH:@CMAKE_INSTALL_PREFIX@ sphinx-build -v @CMAKE_SOURCE_DIR@/docs docs

@@ -3,19 +3,19 @@
 
 .. |data-structures| image:: _static/title-repr-html.png
    :width: 33%
-   :target: user-guide/data-structures.html
+   :target: user-guide/data-structures.rst
 
 .. |binning| image:: _static/title-binning.png
    :width: 33%
-   :target: user-guide/binned-data/binned-data.html
+   :target: user-guide/binned-data/binned-data.rst
 
 .. |masking| image:: _static/title-masking.png
    :width: 33%
-   :target: user-guide/masking.html
+   :target: user-guide/masking.rst
 
 .. |plotting| image:: _static/title-plotting.png
    :width: 33%
-   :target: visualization/plotting-overview.html
+   :target: visualization/plotting-overview.rst
 
 .. |scipp-neutron| image:: _static/title-instrument-view.png
    :width: 33%
@@ -23,7 +23,7 @@
 
 .. |slicing| image:: _static/title-show.png
    :width: 33%
-   :target: user-guide/slicing.html
+   :target: user-guide/slicing.rst
 
 scipp - Multi-dimensional data arrays with labeled dimensions
 =============================================================
@@ -52,8 +52,8 @@ Currently the only example for this is `scippneutron <https://scipp.github.io/sc
 News
 ----
 
-- [|SCIPP_RELEASE_MONTH|] scipp-|SCIPP_VERSION| `has been released <about/release-notes.html>`_.
-  Check out the `What's new <about/whats-new.html>`_ notebook for an overview of recent highlights and major changes.
+- [|SCIPP_RELEASE_MONTH|] scipp-|SCIPP_VERSION| `has been released <about/release-notes.rst>`_.
+  Check out the `What's new <about/whats-new.rst>`_ notebook for an overview of recent highlights and major changes.
 - Scipp changed from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
 - Looking for ``scipp.neutron``?
   This submodule has been moved into its own package, `scippneutron <https://scipp.github.io/scippneutron>`_.

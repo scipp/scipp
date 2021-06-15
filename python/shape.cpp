@@ -84,4 +84,6 @@ void init_shape(py::module &m) {
   bind_flatten<Variable>(m);
   bind_flatten<DataArray>(m);
   bind_transpose<Variable>(m);
+  bind_transpose<DataArray>(m);
+  bind_transpose<Dataset>(m);
 }
