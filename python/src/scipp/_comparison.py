@@ -150,7 +150,7 @@ def isclose(x, y, rtol=None, atol=None, equal_nan=False):
              otherwise False.
     See Also
     --------
-    allclose : isclose applied over all dimensions (&=) to give scalar output
+    :py:func:`scipp.allclose` : isclose applied over all dimensions (&=) to give scalar output
     """
     if rtol is None:
         rtol = 1e-5 * _cpp.units.one
