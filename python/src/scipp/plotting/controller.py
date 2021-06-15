@@ -225,7 +225,7 @@ class PlotController:
         """
         Transpose the displayed axes.
         """
-        xyz = self._get_xyz_axes()
+        xyz = self.view.axes
         dims = [self.axes[key] for key in xyz]
         keys = list(np.roll(xyz, 1))
         for i in range(len(dims)):
@@ -292,7 +292,7 @@ class PlotController:
         """
         self.view.update_log_axes_buttons(
             {ax: self.scale[self.axes[ax]]
-             for ax in self._get_xyz_axes()})
+             for ax in self.view.axes})
 
     def update_norm_button(self, *args, **kwargs):
         """
@@ -372,13 +372,6 @@ class PlotController:
             self.profile.toggle_mask(change["owner"].mask_group,
                                      change["owner"].mask_name, change["new"])
 
-    def _get_xyz_axes(self):
-        """
-        Get the list of displated axes for the current plot. This is ["x"] for
-        1d plots, ["x", "y"] for 2d plots, and ["x", "y", "z"] for 3d plots.
-        """
-        return sorted(list(set(['x', 'y', 'z']) & set(self.axes.keys())))
-
     def _make_axparam(self, dim):
         return {
             "lims": self.model.limits(scale=self.scale[dim])[dim],
@@ -391,10 +384,7 @@ class PlotController:
         Gather the information (dimensions, limits, etc...) about the (x, y, z)
         axes that are displayed on the plots.
         """
-        return {
-            ax: self._make_axparam(self.axes[ax])
-            for ax in self._get_xyz_axes()
-        }
+        return {ax: self._make_axparam(self.axes[ax]) for ax in self.view.axes}
 
     def get_masks_info(self):
         """
@@ -518,12 +508,6 @@ class PlotController:
         in the widgets.
         """
         self.profile.toggle_hover_visibility(value)
-
-    def _dim_to_axis(self):
-        """
-        Make a map from dim to axis
-        """
-        return {self.axes[key]: key for key in self._get_xyz_axes()}
 
     def redraw(self):
         """

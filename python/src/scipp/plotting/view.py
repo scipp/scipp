@@ -25,6 +25,10 @@ class PlotView:
         self.profile_ids = []
         self._transpose = False
 
+    @property
+    def axes(self):
+        return self._axes
+
     def _ipython_display_(self):
         """
         IPython display representation for Jupyter notebooks.
