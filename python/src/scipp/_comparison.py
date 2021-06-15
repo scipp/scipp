@@ -1,15 +1,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+
+from __future__ import annotations
+
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .utils.typing import DataArrayLike, DatasetLike
 
 
-def less(x, y):
+def less(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     """Element-wise '<' (less).
 
     Warning: If one or both of the operators have variances (uncertainties)
-    there are ignored silently, i.e., comparison is based exclusively on
+    they are ignored silently, i.e., comparison is based exclusively on
     the values.
 
     :param x: Left input.
@@ -21,11 +25,11 @@ def less(x, y):
     return _call_cpp_func(_cpp.less, x, y)
 
 
-def greater(x, y):
+def greater(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     """Element-wise '>' (greater).
 
     Warning: If one or both of the operators have variances (uncertainties)
-    there are ignored silently, i.e., comparison is based exclusively on
+    they are ignored silently, i.e., comparison is based exclusively on
     the values.
 
     :param x: Left input.
@@ -37,11 +41,11 @@ def greater(x, y):
     return _call_cpp_func(_cpp.greater, x, y)
 
 
-def less_equal(x, y):
+def less_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     """Element-wise '<=' (less_equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
-    there are ignored silently, i.e., comparison is based exclusively on
+    they are ignored silently, i.e., comparison is based exclusively on
     the values.
 
     :param x: Left input.
@@ -53,11 +57,11 @@ def less_equal(x, y):
     return _call_cpp_func(_cpp.less_equal, x, y)
 
 
-def greater_equal(x, y):
+def greater_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     """Element-wise '>=' (greater_equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
-    there are ignored silently, i.e., comparison is based exclusively on
+    they are ignored silently, i.e., comparison is based exclusively on
     the values.
 
     :param x: Left input.
@@ -69,11 +73,11 @@ def greater_equal(x, y):
     return _call_cpp_func(_cpp.greater_equal, x, y)
 
 
-def equal(x, y):
+def equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     """Element-wise '==' (equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
-    there are ignored silently, i.e., comparison is based exclusively on
+    they are ignored silently, i.e., comparison is based exclusively on
     the values.
 
     :param x: Left input.
@@ -85,11 +89,11 @@ def equal(x, y):
     return _call_cpp_func(_cpp.equal, x, y)
 
 
-def not_equal(x, y):
+def not_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     """Element-wise '!=' (not_equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
-    there are ignored silently, i.e., comparison is based exclusively on
+    they are ignored silently, i.e., comparison is based exclusively on
     the values.
 
     :param x: Left input.
@@ -101,7 +105,7 @@ def not_equal(x, y):
     return _call_cpp_func(_cpp.not_equal, x, y)
 
 
-def identical(x, y):
+def identical(x: DatasetLike, y: DatasetLike) -> DatasetLike:
     """Full comparison of x and y.
 
     :param x: Left input.
@@ -112,8 +116,12 @@ def identical(x, y):
     return _call_cpp_func(_cpp.identical, x, y)
 
 
-def isclose(x, y, rtol=None, atol=None, equal_nan=False):
-    """Compares values (x, y) element by element against tolerance absolute
+def isclose(x: _cpp.Variable,
+            y: _cpp.Variable,
+            rtol: _cpp.Variable = None,
+            atol: _cpp.Variable = None,
+            equal_nan: bool = False) -> _cpp.Variable:
+    """Compares values (x, y) element by element against absolute
     and relative tolerances (non-symmetric).
 
     abs(x - y) <= atol + rtol * abs(y)
@@ -138,13 +146,6 @@ def isclose(x, y, rtol=None, atol=None, equal_nan=False):
     :param equal_nan: if true, non-finite values at the same index in (x, y)
                       are treated as equal.
                       Signbit must match for infs.
-    :type x: Variable
-    :type y: Variable
-    :type rtol: Variable. May be a scalar or an array variable.
-                Cannot have variances.
-    :type atol: Variable. May be a scalar or an array variable.
-                Cannot have variances.
-    :type equal_nan: bool
     :return: Variable same size as input.
              Element True if absolute diff of value <= atol + rtol * abs(y),
              otherwise False.
