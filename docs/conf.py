@@ -60,6 +60,7 @@ rst_epilog = f"""
 """  # noqa: E501
 
 intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
     'xarray': ('https://xarray.pydata.org/en/stable/', None)
 }
