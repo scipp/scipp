@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from __future__ import annotations
+
 from typing import Optional
 
 from ._scipp import core as _cpp
@@ -102,7 +104,9 @@ def nansum(x: DatasetLike,
         return _call_cpp_func(_cpp.nansum, x, dim=dim, out=out)
 
 
-def min(x, dim=None, out=None):
+def min(x: _cpp.Variable,
+        dim: Optional[str] = None,
+        out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise min over the specified dimension or all dimensions if not
     provided.
 
@@ -121,7 +125,9 @@ def min(x, dim=None, out=None):
         return _call_cpp_func(_cpp.min, x, dim=dim, out=out)
 
 
-def max(x, dim=None, out=None):
+def max(x: _cpp.Variable,
+        dim: Optional[str] = None,
+        out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise max over the specified dimension or all dimensions if not
     provided.
 
@@ -140,7 +146,9 @@ def max(x, dim=None, out=None):
         return _call_cpp_func(_cpp.max, x, dim=dim, out=out)
 
 
-def nanmin(x, dim=None, out=None):
+def nanmin(x: _cpp.Variable,
+           dim: Optional[str] = None,
+           out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise min ignoring not at number values over the specified
     dimension or all dimensions if not provided.
 
@@ -159,7 +167,9 @@ def nanmin(x, dim=None, out=None):
         return _call_cpp_func(_cpp.nanmin, x, dim=dim, out=out)
 
 
-def nanmax(x, dim=None, out=None):
+def nanmax(x: _cpp.Variable,
+           dim: Optional[str] = None,
+           out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise max ignoring not a number values over the specified
     dimension or all dimensions if not provided.
 
@@ -178,7 +188,9 @@ def nanmax(x, dim=None, out=None):
         return _call_cpp_func(_cpp.nanmax, x, dim=dim, out=out)
 
 
-def all(x, dim=None, out=None):
+def all(x: _cpp.Variable,
+        dim: Optional[str] = None,
+        out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise AND over the specified dimension or all dimensions if not
     provided.
 
@@ -197,7 +209,9 @@ def all(x, dim=None, out=None):
         return _call_cpp_func(_cpp.all, x, dim=dim, out=out)
 
 
-def any(x, dim=None, out=None):
+def any(x: _cpp.Variable,
+        dim: Optional[str] = None,
+        out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise OR over the specified dimension or all dimensions if not
     provided.
 
