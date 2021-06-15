@@ -86,6 +86,7 @@ class PlotModel:
         """
         Return the left and right coordinates for a bin index.
         """
+        # TODO I believe this is now broken unless we have a bin-edge coord
         return self.data_arrays[name].meta[dim][
             dim,
             bounds[0]].value, self.data_arrays[name].meta[dim][dim,

@@ -4,7 +4,7 @@
 
 from .view import PlotView
 from ..utils import make_random_color
-from .. import dtype, zeros, transpose
+from .. import dtype, zeros
 import numpy as np
 from matplotlib.collections import PathCollection
 
@@ -36,8 +36,6 @@ class PlotView2d(PlotView):
                                          self.check_for_ylim_update)
 
     def _make_data(self, new_values, mask_info):
-        if self._transpose:
-            new_values = transpose(new_values)
         if not self.global_lims:
             for axis, dim in zip(['y', 'x'], new_values.dims):
                 xmin = new_values.coords[dim].values[0]
@@ -60,10 +58,7 @@ class PlotView2d(PlotView):
             for m, val in mask_info.items():
                 if val:
                     msk += new_values.masks[m].astype(dtype.int32)
-            if self._transpose:
-                slice_values["masks"] = np.transpose(msk.values)
-            else:
-                slice_values["masks"] = msk.values
+            slice_values["masks"] = msk.values
         return slice_values
 
     def check_for_xlim_update(self, event_ax):

@@ -230,7 +230,6 @@ class PlotController:
         keys = list(np.roll(xyz, 1))
         for i in range(len(dims)):
             self.axes[keys[i]] = dims[i]
-        self.view.toggle_transpose()
         self.update_axes()
         self.update_log_axes_buttons()
 

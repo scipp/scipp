@@ -3,7 +3,7 @@
 # @file
 # @author Neil Vaytet, Simon Heybrock
 
-from .. import config
+from .. import config, transpose
 from .model import PlotModel
 from .resampling_model import resampling_model
 
@@ -14,6 +14,7 @@ class PlotModel2d(PlotModel):
     """
     def __init__(self, *args, resolution=None, **kwargs):
 
+        self._dims = None
         self._model = None
 
         super().__init__(*args, **kwargs)
@@ -46,6 +47,7 @@ class PlotModel2d(PlotModel):
         axis change.
         """
         self.displayed_dims = {}
+        self._dims = [axparams[ax]['dim'] for ax in "yx"]
         for xy in "yx":
             dim = axparams[xy]["dim"]
             self.displayed_dims[xy] = dim
@@ -62,7 +64,7 @@ class PlotModel2d(PlotModel):
         for dim in self._squeeze:
             data = data[dim, 0]
         self.dslice = data
-        return data
+        return transpose(data, dims=self._dims)
 
     def update_data(self, slices):
         """

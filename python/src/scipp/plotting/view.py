@@ -23,7 +23,6 @@ class PlotView:
         self.profile_scatter = None
         self.profile_counter = -1
         self.profile_ids = []
-        self._transpose = False
 
     @property
     def axes(self):
@@ -166,9 +165,3 @@ class PlotView:
         Forward set_draw_no_delay to the `figure`.
         """
         self.figure.set_draw_no_delay(*args, **kwargs)
-
-    def toggle_transpose(self):
-        """
-        Toggle transpose flag
-        """
-        self._transpose = not self._transpose
