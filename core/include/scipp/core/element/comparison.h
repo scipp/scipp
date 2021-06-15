@@ -18,14 +18,19 @@ namespace scipp::core::element {
 
 namespace detail {
 
-template <class T> struct make_args { using type = std::tuple<bool, T, T, T>; };
+// Helper for making tuple out args Could be further generalised
+template <class T> struct make_out_args {
+  using type = std::tuple<bool, T, T, T>;
+};
 
-template <class... T> struct make_args<std::tuple<T...>> {
+// Specialized helper for making output args tuple from input args tuple
+template <class... T> struct make_out_args<std::tuple<T...>> {
   using type = std::tuple<bool, T...>;
 };
 
+// Convert tuple of input arg tuples to tuple of output args tuples
 template <class... Ts> constexpr auto as_out_args(std::tuple<Ts...>) {
-  return std::tuple<typename make_args<Ts>::type...>{};
+  return std::tuple<typename make_out_args<Ts>::type...>{};
 }
 
 } // namespace detail
