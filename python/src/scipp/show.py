@@ -1,12 +1,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from __future__ import annotations
 from html import escape
+from typing import Optional
+
 import numpy as np
+
 from ._scipp import core as sc
 from . import config
-from .utils import is_data_array, hex_to_rgb, rgb_to_hex
 from .html import inject_style
+from .utils import is_data_array, hex_to_rgb, rgb_to_hex
+from .utils.typing import DatasetLike
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -453,7 +458,8 @@ class DatasetDrawer:
                           height)
 
 
-def make_svg(container, content_only=False):
+def make_svg(container: DatasetLike,
+             content_only: Optional[bool] = False) -> str:
     """
     Return a svg representation of a variable or dataset.
     """
@@ -464,7 +470,7 @@ def make_svg(container, content_only=False):
     return draw.make_svg(content_only=content_only)
 
 
-def show(container):
+def show(container: DatasetLike):
     """
     Show a graphical representation of a variable or dataset.
     """
