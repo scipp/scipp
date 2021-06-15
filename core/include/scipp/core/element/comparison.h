@@ -79,14 +79,14 @@ constexpr auto isclose_equal_nan = overloaded{
 constexpr auto isclose_out =
     overloaded{transform_flags::expect_no_variance_arg_t<3>{}, isclose_units,
                [](auto &&out, const auto &x, const auto &y, const auto &t) {
-                 out &= isclose(x, y, t);
+                 out = out && isclose(x, y, t);
                },
                isclose_types_out_t{}};
 
 constexpr auto isclose_equal_nan_out =
     overloaded{transform_flags::expect_no_variance_arg_t<3>{},
                [](auto &&out, const auto &a, const auto &b, const auto tol) {
-                 out &= isclose_equal_nan(a, b, tol);
+                 out = out && isclose_equal_nan(a, b, tol);
                },
                isclose_types_out_t{}};
 
