@@ -1,11 +1,16 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+
+from typing import Optional
+
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
-def cumsum(a, dim=None, mode='inclusive'):
+def cumsum(a: _cpp.Variable,
+           dim: Optional[str] = None,
+           mode: Optional[str] = 'inclusive') -> _cpp.Variable:
     """Return the cumulative sum along the specified dimension.
 
     :param a: Input data.
