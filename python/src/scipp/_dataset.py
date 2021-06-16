@@ -27,16 +27,13 @@ def combine_masks(masks, labels, shape):
     return _call_cpp_func(_cpp.combine_masks, labels, shape)
 
 
-def merge(lhs, rhs):
+def merge(lhs: _cpp.Dataset, rhs: _cpp.Dataset) -> _cpp.Dataset:
     """Merge two datasets into one.
 
     :param lhs: First dataset.
     :param rhs: Second dataset.
-    :type lhs: Dataset
-    :type rhs: Dataset
     :raises: If there are conflicting items with different content.
     :return: A new dataset that contains the union of all data items,
              coords, masks and attributes.
-    :rtype: Dataset
     """
     return _call_cpp_func(_cpp.merge, lhs, rhs)
