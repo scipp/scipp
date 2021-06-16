@@ -2,24 +2,25 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from __future__ import annotations
+
 from .._variable import vector, vectors, matrix, matrices
 from .. import utils as su
+from ..utils.typing import DatasetLike
 from .._scipp import core as sc
 
 import numpy as np
 from collections import defaultdict
 
 
-def to_dict(scipp_obj):
+def to_dict(scipp_obj: DatasetLike) -> dict:
     """
     Convert a scipp object (Variable, DataArray or Dataset) to a python dict.
 
     :param scipp_obj: A Variable, DataArray or Dataset to be converted to a
                       python dict.
-    :type scipp_obj: Variable, DataArray, or Dataset
     :return: A dict containing all the information necessary to fully define
              the supplied scipp object.
-    :rtype: dict
     """
     if su.is_variable(scipp_obj):
         return _variable_to_dict(scipp_obj)
@@ -97,7 +98,7 @@ def _dims_to_strings(dims):
     return [str(dim) for dim in dims]
 
 
-def from_dict(dict_obj):
+def from_dict(dict_obj: dict) -> DatasetLike:
     """
     Convert a python dict to a scipp Variable, DataArray or Dataset.
     If the input keys contain both `'coords'` and `'data'`, then a DataArray is
@@ -107,9 +108,7 @@ def from_dict(dict_obj):
     Otherwise, a Dataset is returned.
 
     :param dict_obj: A python dict to be converted to a scipp object.
-    :type dict_obj: dict
     :return: A scipp Variable, DataArray or Dataset.
-    :rtype: Variable, DataArray, or Dataset
     """
     keys_as_set = set(dict_obj.keys())
     if {"coords", "data"}.issubset(keys_as_set):
