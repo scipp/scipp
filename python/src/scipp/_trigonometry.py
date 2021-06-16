@@ -7,7 +7,7 @@ from typing import Optional
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .utils.typing import DataArrayLike
+from .typing import DataArrayLike
 
 
 def sin(x: DataArrayLike,

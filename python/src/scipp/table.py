@@ -11,7 +11,8 @@ from . import config
 from . import utils as su
 from ._scipp import core as sc
 from .html.formatting_html import inject_style
-from .utils.typing import DatasetLike
+from .typing import is_dataset, is_dataset_or_array, is_variable,\
+    is_scalar, DatasetLike
 
 
 def _make_table_sections(dict_of_variables):
@@ -202,8 +203,8 @@ class TableViewer:
         self.headers = 0
         self.trigger_update = True
 
-        if su.is_dataset_or_array(scipp_obj):
-            if su.is_dataset(scipp_obj):
+        if is_dataset_or_array(scipp_obj):
+            if is_dataset(scipp_obj):
                 iterlist = scipp_obj
                 tag_names = ['coords', 'data']
                 tag_keys = [scipp_obj.coords, iterlist]
@@ -238,9 +239,9 @@ class TableViewer:
             ndims = len(scipp_obj.shape)
             if ndims < 2:
                 group = "{}D Variables".format(ndims)
-                if su.is_variable(scipp_obj):
+                if is_variable(scipp_obj):
                     self.headers = 1
-                    key = '' if su.is_scalar(scipp_obj) else str(
+                    key = '' if is_scalar(scipp_obj) else str(
                         scipp_obj.dims[0])
                     var = scipp_obj
                 else:

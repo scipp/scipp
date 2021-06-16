@@ -6,7 +6,8 @@ from .formatters import VectorFormatter, StringFormatter, \
                         DateFormatter, LabelFormatter
 from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
                    vars_to_err, find_limits, to_dict
-from ..utils import name_with_unit, has_vector_type, has_string_type, has_datetime_type
+from ..utils import name_with_unit
+from ..typing import has_vector_type, has_string_type, has_datetime_type
 from .._scipp import core as sc
 import numpy as np
 import enum

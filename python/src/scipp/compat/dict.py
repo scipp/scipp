@@ -5,8 +5,8 @@
 from __future__ import annotations
 
 from .._variable import vector, vectors, matrix, matrices
-from .. import utils as su
-from ..utils.typing import DatasetLike
+from ..typing import is_variable, is_data_array, is_dataset
+from ..typing import DatasetLike
 from .._scipp import core as sc
 
 import numpy as np
@@ -22,11 +22,11 @@ def to_dict(scipp_obj: DatasetLike) -> dict:
     :return: A dict containing all the information necessary to fully define
              the supplied scipp object.
     """
-    if su.is_variable(scipp_obj):
+    if is_variable(scipp_obj):
         return _variable_to_dict(scipp_obj)
-    elif su.is_data_array(scipp_obj):
+    elif is_data_array(scipp_obj):
         return _data_array_to_dict(scipp_obj)
-    elif su.is_dataset(scipp_obj):
+    elif is_dataset(scipp_obj):
         # TODO: This currently duplicates all coordinates that would otherwise
         # be at the Dataset level onto the individual DataArrays. We are also
         # manually duplicating all attributes, since these are not carried when

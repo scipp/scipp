@@ -5,7 +5,7 @@
 
 import typing as _std_typing
 
-from .._scipp import core as sc
+from ._scipp import core as sc
 
 
 def is_variable(obj: _std_typing.Any) -> bool:

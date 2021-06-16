@@ -7,7 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Union
 
-from ..utils.typing import DatasetLike
+from ..typing import DatasetLike
 
 
 def _dtype_lut():

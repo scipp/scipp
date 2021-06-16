@@ -6,7 +6,7 @@ from typing import Optional, Union
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .utils.typing import DataArrayLike, DatasetLike
+from .typing import DataArrayLike, DatasetLike
 
 
 def dot(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:

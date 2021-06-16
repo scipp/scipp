@@ -10,8 +10,8 @@ import numpy as np
 from ._scipp import core as sc
 from . import config
 from .html import inject_style
-from .utils import is_data_array, hex_to_rgb, rgb_to_hex
-from .utils.typing import DatasetLike
+from .utils import hex_to_rgb, rgb_to_hex
+from .typing import is_data_array, DatasetLike
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
