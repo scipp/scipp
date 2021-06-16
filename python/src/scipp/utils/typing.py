@@ -8,68 +8,72 @@ import typing as _std_typing
 from .._scipp import core as sc
 
 
-def is_variable(obj):
+def is_variable(obj: _std_typing.Any) -> bool:
     """
-    Return True if the input is of type scipp.core.Variable.
+    Return True if the input is of type scipp.Variable.
     """
     return isinstance(obj, sc.Variable)
 
 
-def is_scalar(obj):
+def is_scalar(obj: _std_typing.Any) -> bool:
     """
-    Return True if the input is a scalar
+    Return True if the input is a scalar.
     """
     return obj.dims == []
 
 
-def is_dataset(obj):
+def is_dataset(obj: _std_typing.Any) -> bool:
     """
-    Return True if the input is of type scipp.core.Variable.
+    Return True if the input is of type scipp.Dataset.
     """
     return isinstance(obj, sc.Dataset)
 
 
-def is_data_array(obj):
+def is_data_array(obj: _std_typing.Any) -> bool:
     """
-    Return True if the input is of type scipp.core.Variable.
+    Return True if the input is of type scipp.DataArray.
     """
     return isinstance(obj, sc.DataArray)
 
 
-def is_dataset_or_array(obj):
+def is_dataset_or_array(obj: _std_typing.Any) -> bool:
     """
-    Return True if the input object is either a Dataset or DataArray.
+    Return True if the input object is either a scipp.Dataset or DataArray.
     """
     return is_dataset(obj) or is_data_array(obj)
 
 
-def vector_type(obj):
+def has_vector_type(obj: _std_typing.Any) -> bool:
     """
     Return True if the object dtype is vector_3_float64.
     """
     return obj.dtype == sc.dtype.vector_3_float64
 
 
-def string_type(obj):
+def has_string_type(obj: _std_typing.Any) -> bool:
     """
     Return True if the object dtype is string.
     """
     return obj.dtype == sc.dtype.string
 
 
-def datetime_type(obj):
+def has_datetime_type(obj: _std_typing.Any) -> bool:
     """
     Return True if the object dtype is datetime64.
     """
     return obj.dtype == sc.dtype.datetime64
 
 
-def numeric_type(obj):
+def has_numeric_type(obj: _std_typing.Any) -> bool:
     """
     Return False if the dtype is either vector or string.
     """
-    return (not vector_type(obj)) and (not string_type(obj))
+    return (not has_vector_type(obj)) and (not has_string_type(obj))
 
 
+#: Any object that behaves like a scipp.DataArray in most operations.
+#: This explicitly excludes Datasets.
 DataArrayLike = _std_typing.Union[sc.Variable, sc.DataArray]
+
+#: Any object that behaves like a scipp.Dataset in most operations.
 DatasetLike = _std_typing.Union[DataArrayLike, sc.Dataset]
