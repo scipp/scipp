@@ -87,6 +87,32 @@ def test_create_with_variances_from_numpy_1d():
     np.testing.assert_array_equal(var.variances, np.arange(4, 8))
 
 
+def test_create_from_numpy_0d():
+    var = sc.Variable(value=np.array(1.0))
+    assert var.dtype == sc.dtype.float64
+    assert var.value == 1.0
+
+
+def test_create_with_variance_from_numpy_0d():
+    var = sc.Variable(value=np.array(1.0), variance=np.array(0.1))
+    assert var.dtype == sc.dtype.float64
+    assert var.value == 1.0
+    assert var.variance == 0.1
+
+
+def test_create_from_numpy_0d_string():
+    var = sc.Variable(value=np.array('a string'))
+    assert var.dtype == sc.dtype.string
+    assert var.value == 'a string'
+
+
+def test_create_from_numpy_0d_datetime():
+    var = sc.Variable(value=np.array(np.datetime64(0, 's')))
+    assert var.dtype == sc.dtype.datetime64
+    assert var.unit == sc.units.s
+    assert var.value == np.datetime64(0, 's')
+
+
 @pytest.mark.parametrize(
     "value",
     [1.2, np.float64(1.2), sc.Variable(1.2).value])
