@@ -71,7 +71,7 @@ Unit &Unit::operator*=(const Unit &other) { return *this = *this * other; }
 
 Unit &Unit::operator/=(const Unit &other) { return *this = *this / other; }
 
-Unit &Unit::operator%=(const Unit &other) { return operator/=(other); }
+Unit &Unit::operator%=([[maybe_unused]] const Unit &other) { return *this; }
 
 Unit operator+(const Unit &a, const Unit &b) {
   if (a == b)
@@ -100,7 +100,7 @@ Unit operator/(const Unit &a, const Unit &b) {
   return Unit{a.underlying() / b.underlying()};
 }
 
-Unit operator%(const Unit &a, const Unit &b) { return a / b; }
+Unit operator%(const Unit &a, [[maybe_unused]] const Unit &b) { return a; }
 
 Unit operator-(const Unit &a) { return a; }
 
