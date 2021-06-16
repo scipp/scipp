@@ -66,6 +66,13 @@ auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
     // solution for other types.
     // TODO Related to #290, we should properly support
     //  multi-dimensional input, and ignore bad shapes.
+    if (obj.attr("ndim").cast<int>() > 1) {
+      const auto &array = obj.cast<py::array>();
+      std::ostringstream oss;
+      oss << "Support for numpy arrays of dtype " << py::str(array.dtype())
+          << " of more than one dimension is not implemented.";
+      throw std::invalid_argument(oss.str());
+    }
     try {
       return obj.cast<const std::vector<PyType>>();
     } catch (std::runtime_error &) {
