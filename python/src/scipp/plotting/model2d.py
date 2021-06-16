@@ -22,6 +22,7 @@ class PlotModel2d(PlotModel):
         else:
             self._resolution = [resolution[ax] for ax in 'yx']
         self._squeeze = []
+        self.dims = next(iter(self.data_arrays.values())).dims[-2:]
 
     def _dims_updated(self):
         for dim, resolution in zip(self.dims, self._resolution):

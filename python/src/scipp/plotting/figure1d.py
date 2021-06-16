@@ -68,12 +68,12 @@ class PlotFigure1d(PlotFigure):
             if self.masks[name]["color"] is None:
                 self.masks[name]["color"] = "k"
 
-    def update_axes(self, axparams=None, legend_labels=True):
+    def update_axes(self, scale, legend_labels=True):
         """
         Wipe the figure and start over when the dimension to be displayed along
         the horizontal axis is changed.
         """
-        xparams = axparams["x"]
+        scale = scale['x']
         self._legend_labels = legend_labels
 
         if self.own_axes:
@@ -82,7 +82,7 @@ class PlotFigure1d(PlotFigure):
             self.ax.clear()
             self.ax.set_title(title)
 
-        self.ax.set_xscale(xparams["scale"])
+        self.ax.set_xscale(scale)
         self.ax.set_yscale("log" if self.norm == "log" else "linear")
         self.ax.set_ylabel(self.unit if self.ylabel is None else self.ylabel)
 
@@ -92,9 +92,8 @@ class PlotFigure1d(PlotFigure):
         self.ax.set_xlabel(self._formatters['x']['label']
                            if self.xlabel is None else self.xlabel)
 
-        self.ax.xaxis.set_major_locator(self.axlocator['x'][xparams["scale"]])
-        self.ax.xaxis.set_major_formatter(
-            self.axformatter['x'][xparams["scale"]])
+        self.ax.xaxis.set_major_locator(self.axlocator['x'][scale])
+        self.ax.xaxis.set_major_formatter(self.axformatter['x'][scale])
 
         if self.show_legend():
             self.ax.legend(loc=self.legend["loc"])

@@ -99,7 +99,7 @@ class PlotFigure2d(PlotFigure):
         """
         return
 
-    def update_axes(self, axparams=None):
+    def update_axes(self, scale):
         """
         Update axes labels, scales, tick locations and labels, as well as axes
         limits.
@@ -108,13 +108,13 @@ class PlotFigure2d(PlotFigure):
                            if self.xlabel is None else self.xlabel)
         self.ax.set_ylabel(self._formatters['y']["label"]
                            if self.ylabel is None else self.ylabel)
-        self.ax.set_xscale(axparams["x"]["scale"])
-        self.ax.set_yscale(axparams["y"]["scale"])
+        self.ax.set_xscale(scale['x'])
+        self.ax.set_yscale(scale['y'])
 
-        for xy, param in axparams.items():
-            axis = getattr(self.ax, "{}axis".format(xy))
-            axis.set_major_formatter(self.axformatter[xy][param["scale"]])
-            axis.set_major_locator(self.axlocator[xy][param["scale"]])
+        self.ax.xaxis.set_major_formatter(self.axformatter['x'][scale['x']])
+        self.ax.xaxis.set_major_locator(self.axlocator['x'][scale['x']])
+        self.ax.yaxis.set_major_formatter(self.axformatter['y'][scale['y']])
+        self.ax.yaxis.set_major_locator(self.axlocator['y'][scale['y']])
 
         self._limits_set = False
 

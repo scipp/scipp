@@ -14,6 +14,7 @@ class PlotView:
     are to do with the `PlotProfile` plot displayed below the `PlotFigure`.
     """
     def __init__(self, figure, formatters):
+        self._dims = None
         self.figure = figure
         self.formatters = formatters
         self.interface = {}
@@ -27,6 +28,14 @@ class PlotView:
     @property
     def axes(self):
         return self._axes
+
+    @property
+    def dims(self):
+        return self._dims
+
+    @dims.setter
+    def dims(self, dims):
+        self._dims = dims
 
     def _ipython_display_(self):
         """
@@ -105,15 +114,16 @@ class PlotView:
         """
         self.figure.toggle_norm(norm, vmin.value, vmax.value)
 
-    def update_axes(self, axparams, **kwargs):
+    def update_axes(self, scale, **kwargs):
         """
         Forward axes update to the `figure`.
         """
         self.figure.initialize({
-            axis: self.formatters[axparams[axis]['dim']]
-            for axis in self._axes
+            axis: self.formatters[dim]
+            for axis, dim in zip(self._axes, self.dims)
         })
-        self.figure.update_axes(**kwargs, axparams=axparams)
+        scale = {axis: scale[dim] for axis, dim in zip(self._axes, self.dims)}
+        self.figure.update_axes(**kwargs, scale=scale)
 
     def _make_data(self, new_values, mask_info):
         return new_values
@@ -132,7 +142,8 @@ class PlotView:
         """
         self._data = new_values
         self._info = info
-        self.figure.toolbar.dims = self._data.dims
+        if self.figure.toolbar is not None:
+            self.figure.toolbar.dims = self._data.dims
         self.refresh(mask_info)
 
     def update_profile_connection(self, visible):

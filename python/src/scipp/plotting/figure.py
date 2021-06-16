@@ -56,6 +56,10 @@ class PlotFigure:
         self.ylabel = ylabel
         self.draw_no_delay = False
 
+    def initialize_toolbar(self, log_axis_buttons):
+        if self.toolbar is not None:
+            self.toolbar.initialize(log_axis_buttons=log_axis_buttons)
+
     def is_widget(self):
         """
         Check whether we are using the Matplotlib widget backend or not.

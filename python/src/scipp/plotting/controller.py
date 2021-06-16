@@ -3,7 +3,6 @@
 # @author Neil Vaytet
 
 from .view1d import PlotView1d
-import numpy as np
 
 
 class PlotController:
@@ -223,12 +222,7 @@ class PlotController:
         """
         Transpose the displayed axes.
         """
-        xyz = self.view.axes
-        dims = [self.axes[key] for key in xyz]
-        keys = list(np.roll(xyz, 1))
-        for i in range(len(dims)):
-            self.axes[keys[i]] = dims[i]
-        self.update_axes()
+        self.update_axes(dims=self.model.dims[::-1])
 
     def toggle_dim_scale(self, dim):
         """
@@ -253,11 +247,9 @@ class PlotController:
         """
         Swap one dimension for another in the displayed axes.
         """
-        pos = list(self.axes.values()).index(new_dim)
-        key = list(self.axes.keys())[pos]
-        self.axes[key] = old_dim
-        self.axes[index] = new_dim
-        self.update_axes()
+        dims = self.model.dims
+        dims = [old_dim if dim == new_dim else dim for dim in dims]
+        self.update_axes(dims=dims)
         # Update the slider readout here because the widgets do not have access
         # to the model, which holds the coordinates.
         lower, upper = self.model.get_slice_coord_bounds(
@@ -271,7 +263,7 @@ class PlotController:
         """
         self.view.update_norm_button(*args, **kwargs)
 
-    def update_axes(self, change=None, normalize=True):
+    def update_axes(self, dims=None, normalize=True):
         """
         This function is called when a dimension that is displayed along a
         given axis is changed. This happens for instance when we want to
@@ -282,16 +274,19 @@ class PlotController:
         state to the model. If then gets the updated data back from the model
         and sends it over to the view for display.
         """
-        self.axparams = self._make_axes_parameters()
-        dims = [p['dim'] for p in self.axparams.values()]
-        self.model.dims = dims
+        if dims is None:
+            dims = self.model.dims
+        else:
+            self.model.dims = dims
+        self.view.dims = dims
         # TODO mechanism for params from 3d model
+        # TODO also for PlotPanel3d
         # other_params = self.model.update_axes(self.axparams)
         # if other_params is not None:
         #     self.axparams.update(other_params)
-        self.view.update_axes(axparams=self.axparams)
+        self.view.update_axes(scale=self.scale)
         if self.panel is not None:
-            self.panel.update_axes(axparams=self.axparams)
+            self.panel.update_axes()
         if self.profile is not None:
             self.toggle_profile_view()
         self.update_data()
@@ -348,13 +343,6 @@ class PlotController:
 
     def _make_axparam(self, dim):
         return {"scale": self.scale[dim], "dim": dim}
-
-    def _make_axes_parameters(self):
-        """
-        Gather the information (dimensions, limits, etc...) about the (x, y, z)
-        axes that are displayed on the plots.
-        """
-        return {ax: self._make_axparam(self.axes[ax]) for ax in self.view.axes}
 
     def get_masks_info(self):
         """

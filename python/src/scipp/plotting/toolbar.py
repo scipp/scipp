@@ -62,7 +62,7 @@ class PlotToolbar:
                 button.layout.display = ''
             else:
                 button.layout.display = 'none'
-        for ax, dim in zip('xy', dims):
+        for ax, dim in zip('yx', dims):
             self._log_axis[dim].description = f'log{ax}'
             self.members[f'toggle_{ax}axis_scale'] = self._log_axis[dim]
         self._update_container()

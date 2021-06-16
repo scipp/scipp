@@ -275,9 +275,9 @@ class Plot:
         Perform some initial calls to render the figure once all components
         have been created.
         """
-        self.view.figure.toolbar.initialize(log_axis_buttons=self._dims)
+        self.view.figure.initialize_toolbar(log_axis_buttons=self._dims)
         if self.profile is not None:
-            self.profile.toolbar.initialize(log_axis_buttons=self._dims)
+            self.profile.initialize_toolbar(log_axis_buttons=self._dims)
         self.controller.render(*args, **kwargs)
         if hasattr(self.view.figure, "fig"):
             self.fig = self.view.figure.fig

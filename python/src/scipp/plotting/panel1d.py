@@ -55,7 +55,7 @@ class PlotPanel1d(PlotPanel):
         }
         self.update_widgets()
 
-    def update_axes(self, axparams=None):
+    def update_axes(self):
         """
         Clear all widgets when figure axes are changed.
         """
