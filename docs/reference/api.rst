@@ -241,3 +241,25 @@ Compatibility
 
    to_dict
    from_dict
+
+
+Typing
+======
+
+.. autosummary::
+   :toctree: ../generated
+
+   is_variable
+   is_dataset
+   is_data_array
+   is_dataset_or_array
+   typing.is_scalar
+
+Type aliases
+~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   typing.DataArrayLike
+   typing.DatasetLike
