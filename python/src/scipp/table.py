@@ -3,6 +3,7 @@
 # @file
 # @author Igor Gudich & Neil Vaytet
 
+from __future__ import annotations
 from html import escape
 
 # Scipp imports
@@ -10,6 +11,7 @@ from . import config
 from . import utils as su
 from ._scipp import core as sc
 from .html.formatting_html import inject_style
+from .utils.typing import DatasetLike
 
 
 def _make_table_sections(dict_of_variables):
@@ -171,7 +173,7 @@ def _is_bin_centers(container, var, dim):
     return max(largest) == var.shape[0] + 1 if len(largest) > 0 else False
 
 
-def table(scipp_obj):
+def table(scipp_obj: DatasetLike):
     """
     Create a html table from the contents of a Dataset (0D and 1D Variables
     only), DataArray, Variable or raw numpy array.
