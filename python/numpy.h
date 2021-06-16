@@ -55,8 +55,7 @@ auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
     // pbj.cast<py::array_t<PyType> does not always work because
     // numpy.datetime64.__int__ delegates to datetime.datetime if the unit is
     // larger than ns and that cannot be converted to long.
-    return obj.cast<py::array>()
-        .attr("astype")(py::dtype::of<PyType>())
+    return obj.attr("astype")(py::dtype::of<PyType>())
         .template cast<py::array_t<PyType>>();
   } else if constexpr (std::is_pod_v<T>) {
     // Casting to py::array_t applies all sorts of automatic conversions
@@ -76,6 +75,20 @@ auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
           << " to " << scipp::core::dtype<T>;
       throw std::invalid_argument(oss.str());
     }
+  }
+}
+
+template <class T>
+auto cast_array_to_scalar(const py::object &obj, const units::Unit unit) {
+  using TM = ElementTypeMap<T>;
+  using PyType = typename TM::PyType;
+  TM::check_assignable(obj, unit);
+  if constexpr (std::is_same_v<T, core::time_point>) {
+    return obj.attr("astype")(py::dtype::of<PyType>())
+        .attr("item")()
+        .template cast<PyType>();
+  } else {
+    return obj.attr("item")().cast<PyType>();
   }
 }
 
