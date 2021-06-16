@@ -23,34 +23,52 @@
 #include "bind_data_access.h"
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
-#include "docstring.h"
 #include "dtype.h"
 #include "make_variable.h"
 #include "numpy.h"
+#include "py_object.h"
 #include "pybind11.h"
 #include "rename.h"
-#include "unit.h"
 
 using namespace scipp;
 using namespace scipp::variable;
 
 namespace py = pybind11;
 
+namespace {
+template <class T> void check_dtype_matches(const py::object &dtype) {
+  const auto requested_dtype = scipp_dtype(dtype);
+  const auto data_dtype =
+      scipp::dtype<std::conditional_t<std::is_same_v<T, py::object>,
+                                      scipp::python::PyObject, T>>;
+  if (requested_dtype != data_dtype) {
+    throw std::invalid_argument("Cannot convert values of type " +
+                                to_string(data_dtype) + " to " +
+                                to_string(requested_dtype));
+  }
+}
+} // namespace
+
 template <class T> void bind_init_0D(py::class_<Variable> &c) {
+  // Conversions are in general not possible. We have the dtype
+  // arguments only for symmetry with other constructors.
+
   c.def(py::init([](const T &value, const std::optional<T> &variance,
-                    const units::Unit &unit) {
+                    const units::Unit &unit, const py::object &dtype) {
+          check_dtype_matches<T>(dtype);
           return do_init_0D(value, variance, unit);
         }),
         py::arg("value"), py::arg("variance") = std::nullopt,
-        py::arg("unit") = units::one);
+        py::arg("unit") = units::one, py::arg("dtype") = py::none());
   if constexpr (std::is_same_v<T, Variable> || std::is_same_v<T, DataArray> ||
                 std::is_same_v<T, Dataset>) {
     c.def(py::init([](const T &value, const std::optional<T> &variance,
-                      const units::Unit &unit) {
+                      const units::Unit &unit, const py::object &dtype) {
+            check_dtype_matches<T>(dtype);
             return do_init_0D(copy(value), variance, unit);
           }),
           py::arg("value"), py::arg("variance") = std::nullopt,
-          py::arg("unit") = units::one);
+          py::arg("unit") = units::one, py::arg("dtype") = py::none());
   }
 }
 
@@ -59,7 +77,7 @@ template <class T> void bind_init_0D(py::class_<Variable> &c) {
 template <class T>
 void bind_init_0D_native_python_types(py::class_<Variable> &c) {
   c.def(py::init([](const T &value, const std::optional<T> &variance,
-                    const units::Unit &unit, py::object &dtype) {
+                    const units::Unit &unit, const py::object &dtype) {
           static_assert(std::is_same_v<T, int64_t> ||
                         std::is_same_v<T, double> || std::is_same_v<T, bool>);
           if (dtype.is_none())
