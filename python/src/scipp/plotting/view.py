@@ -132,6 +132,7 @@ class PlotView:
         """
         self._data = new_values
         self._info = info
+        self.figure.toolbar.dims = self._data.dims
         self.refresh(mask_info)
 
     def update_profile_connection(self, visible):
@@ -147,12 +148,6 @@ class PlotView:
                                            self.profile_hover_connection)
             self.profile_pick_connection = None
             self.profile_hover_connection = None
-
-    def update_log_axes_buttons(self, *args, **kwargs):
-        """
-        Forward log buttons update to the `figure`.
-        """
-        self.figure.update_log_axes_buttons(*args, **kwargs)
 
     def update_norm_button(self, *args, **kwargs):
         """

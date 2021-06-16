@@ -69,6 +69,12 @@ class PlotController:
 
         self._initialize_widgets(sizes)
         self.initialize_model()
+
+    def render(self, norm=None):
+        """
+        Update axes (and data) to render the figure once all components
+        have been created.
+        """
         if self.profile is not None:
             self.connect_profile()
 
@@ -76,14 +82,7 @@ class PlotController:
         self.connect_view()
         if self.panel is not None:
             self.connect_panel()
-
-    def render(self, norm=None):
-        """
-        Update axes (and data) to render the figure once all components
-        have been created.
-        """
         self.update_axes()
-        self.update_log_axes_buttons()
         self.update_norm_button(norm)
 
     def _initialize_widgets(self, sizes):
@@ -129,8 +128,7 @@ class PlotController:
         figure_callbacks = {
             "rescale_to_data": self.rescale_to_data,
             "transpose": self.transpose,
-            "toggle_xaxis_scale": self.toggle_xaxis_scale,
-            "toggle_yaxis_scale": self.toggle_yaxis_scale,
+            "toggle_dim_scale": self.toggle_dim_scale,
             "toggle_norm": self.toggle_norm,
             "home_view": self.home_view,
             "pan_view": self.pan_view,
@@ -231,31 +229,16 @@ class PlotController:
         for i in range(len(dims)):
             self.axes[keys[i]] = dims[i]
         self.update_axes()
-        self.update_log_axes_buttons()
 
-    def toggle_xaxis_scale(self, owner, normalize=False):
+    def toggle_dim_scale(self, dim):
         """
-        Toggle x-axis scale from toolbar button signal.
+        Toggle dim scale from toolbar button signal.
         """
-        dim = self.axes["x"]
-        self.scale[dim] = "log" if owner.value else "linear"
-        self.update_axes(normalize=normalize)
+        def toggle(change):
+            self.scale[dim] = "log" if change['new'] else "linear"
+            self.update_axes()
 
-    def toggle_yaxis_scale(self, owner, normalize=False):
-        """
-        Toggle y-axis scale from toolbar button signal.
-        """
-        dim = self.axes["y"]
-        self.scale[dim] = "log" if owner.value else "linear"
-        self.update_axes(normalize=normalize)
-
-    def toggle_zaxis_scale(self, owner, normalize=False):
-        """
-        Toggle z-axis scale from toolbar button signal.
-        """
-        dim = self.axes["z"]
-        self.scale[dim] = "log" if owner.value else "linear"
-        self.update_axes(normalize=normalize)
+        return toggle
 
     def toggle_norm(self, owner):
         """
@@ -275,23 +258,12 @@ class PlotController:
         self.axes[key] = old_dim
         self.axes[index] = new_dim
         self.update_axes()
-        self.update_log_axes_buttons()
         # Update the slider readout here because the widgets do not have access
         # to the model, which holds the coordinates.
         lower, upper = self.model.get_slice_coord_bounds(
             self.name, new_dim, [0, 1])
         self.widgets.update_slider_readout(index, lower, upper, [0, 1],
                                            new_dim == self.multid_coord)
-
-    def update_log_axes_buttons(self):
-        """
-        When either axes or dimensions are swapped, we need to update the
-        status (color and value) of the toolbar log buttons. We send this to
-        the view which in turn with forward it to the toolbar.
-        """
-        self.view.update_log_axes_buttons(
-            {ax: self.scale[self.axes[ax]]
-             for ax in self.view.axes})
 
     def update_norm_button(self, *args, **kwargs):
         """
@@ -311,7 +283,8 @@ class PlotController:
         and sends it over to the view for display.
         """
         self.axparams = self._make_axes_parameters()
-        self.model.dims = [p['dim'] for p in self.axparams.values()]
+        dims = [p['dim'] for p in self.axparams.values()]
+        self.model.dims = dims
         # TODO mechanism for params from 3d model
         # other_params = self.model.update_axes(self.axparams)
         # if other_params is not None:

@@ -30,20 +30,6 @@ class PlotController1d(PlotController):
             "update_line_color": self.update_line_color
         })
 
-    def toggle_xaxis_scale(self, owner):
-        """
-        Toggle x-axis scale from toolbar button signal.
-        """
-        super().toggle_xaxis_scale(owner)
-        self.rescale_to_data()
-
-    def toggle_yaxis_scale(self, owner):
-        """
-        Toggle x-axis scale from toolbar button signal.
-        """
-        super().toggle_yaxis_scale(owner)
-        self.rescale_to_data()
-
     def refresh(self):
         """
         Do nothing for refresh in case of 1d plot.

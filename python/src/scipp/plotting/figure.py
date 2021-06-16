@@ -42,8 +42,7 @@ class PlotFigure:
                 self.padding = config.plot.padding
             self.fig.tight_layout(rect=self.padding)
             if self.is_widget():
-                # We create a custom toolbar
-                self.toolbar = toolbar(canvas=self.fig.canvas)
+                self.toolbar = toolbar(mpl_toolbar=self.fig.canvas.toolbar)
                 self.fig.canvas.toolbar_visible = False
         else:
             self.own_axes = False
@@ -184,14 +183,6 @@ class PlotFigure:
             self.fig.canvas.mpl_disconnect(pick_connection)
         if hover_connection is not None:
             self.fig.canvas.mpl_disconnect(hover_connection)
-
-    def update_log_axes_buttons(self, *args, **kwargs):
-        """
-        Update the state (value and color) of toolbar log axes buttons when
-        axes or dimensions are swapped.
-        """
-        if self.toolbar is not None:
-            self.toolbar.update_log_axes_buttons(*args, **kwargs)
 
     def update_norm_button(self, *args, **kwargs):
         """

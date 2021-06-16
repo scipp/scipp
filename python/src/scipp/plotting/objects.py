@@ -153,6 +153,7 @@ class Plot:
         }
 
         self.name = list(scipp_obj_dict.keys())[0]
+        self._dims = scipp_obj_dict[self.name].dims
         self._process_axes_dimensions(scipp_obj_dict[self.name],
                                       axes=axes,
                                       view_ndims=view_ndims,
@@ -274,6 +275,9 @@ class Plot:
         Perform some initial calls to render the figure once all components
         have been created.
         """
+        self.view.figure.toolbar.initialize(log_axis_buttons=self._dims)
+        if self.profile is not None:
+            self.profile.toolbar.initialize(log_axis_buttons=self._dims)
         self.controller.render(*args, **kwargs)
         if hasattr(self.view.figure, "fig"):
             self.fig = self.view.figure.fig

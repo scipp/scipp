@@ -105,7 +105,7 @@ class PlotProfile(PlotFigure1d):
         """
         if self.toolbar is not None:
             self.toolbar.connect({
-                "toggle_xaxis_scale": self.toggle_xaxis_scale,
+                "toggle_dim_scale": self.toggle_dim_scale,
                 "toggle_norm": self.toggle_norm,
                 "home_view": self.home_view,
                 "pan_view": self.pan_view,
@@ -113,12 +113,15 @@ class PlotProfile(PlotFigure1d):
                 "save_view": self.save_view
             })
 
-    def toggle_xaxis_scale(self, owner):
+    def toggle_dim_scale(self, dim):
         """
         Toggle x-axis scale from toolbar button signal.
         """
-        self.ax.set_xscale("log" if owner.value else "linear")
-        self.draw()
+        def toggle(change):
+            self.ax.set_xscale("log" if change['new'] else "linear")
+            self.draw()
+
+        return toggle
 
     def toggle_norm(self, owner):
         """

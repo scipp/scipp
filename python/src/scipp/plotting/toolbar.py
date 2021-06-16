@@ -15,28 +15,57 @@ def set_button_color(button, selected=False):
         pass  # we do not have a color we can use
 
 
+def _make_toggle_button(**kwargs):
+    return ipw.ToggleButton(layout={
+        "width": "34px",
+        "padding": "0px 0px 0px 0px"
+    },
+                            **kwargs)
+
+
 class PlotToolbar:
     """
     Custom toolbar with additional buttons for controlling log scales and
     normalization, and with back/forward buttons removed.
     """
-    def __init__(self, canvas=None):
+    def __init__(self, mpl_toolbar):
+        self._dims = None
 
-        # Prepare containers
         self.container = ipw.VBox()
         self.members = {}
 
         # Keep a reference to the matplotlib toolbar so we can call the zoom
         # and pan methods
-        self.mpl_toolbar = None
-
-        if canvas is not None:
-            canvas.toolbar_visible = False
-            self.mpl_toolbar = canvas.toolbar
+        self.mpl_toolbar = mpl_toolbar
 
         self.add_button(name="home_view",
                         icon="home",
                         tooltip="Reset original view")
+
+    def initialize(self, log_axis_buttons):
+        self._log_axis = {
+            dim: _make_toggle_button(tooltip=f'log({dim})')
+            for dim in log_axis_buttons
+        }
+
+    @property
+    def dims(self):
+        return self._dims
+
+    @dims.setter
+    def dims(self, dims):
+        if self._dims == dims:
+            return
+        self._dims = dims
+        for dim, button in self._log_axis.items():
+            if dim in self.dims:
+                button.layout.display = ''
+            else:
+                button.layout.display = 'none'
+        for ax, dim in zip('xy', dims):
+            self._log_axis[dim].description = f'log{ax}'
+            self.members[f'toggle_{ax}axis_scale'] = self._log_axis[dim]
+        self._update_container()
 
     def _ipython_display_(self):
         """
@@ -95,6 +124,8 @@ class PlotToolbar:
         for key in callbacks:
             if key in self.members:
                 self.members[key].on_click(callbacks[key])
+        for dim, button in self._log_axis.items():
+            button.observe(callbacks['toggle_dim_scale'](dim), 'value')
 
     def _update_container(self):
         """
@@ -114,17 +145,6 @@ class PlotToolbar:
             if value is not None:
                 args[key] = value
         return args
-
-    def update_log_axes_buttons(self, axes_scales):
-        """
-        When axes are changed or swapped, update the value and color of the
-        custom togglebuttons without triggering a new update.
-        """
-        for xyz, scale in axes_scales.items():
-            key = "toggle_{}axis_scale".format(xyz)
-            if key in self.members:
-                self.toggle_button_color(self.members[key],
-                                         value=scale == "log")
 
     def update_norm_button(self, norm=None):
         """
@@ -170,14 +190,11 @@ class PlotToolbar1d(PlotToolbar):
         self.add_button(name="rescale_to_data",
                         icon="arrows-v",
                         tooltip="Rescale")
-        self.add_togglebutton(name="toggle_xaxis_scale",
-                              description="logx",
-                              tooltip="Log(x)")
+        self.members['toggle_xaxis_scale'] = None
         self.add_togglebutton(name="toggle_norm",
                               description="logy",
                               tooltip="Log(y)")
         self.add_button(name="save_view", icon="save", tooltip="Save")
-        self._update_container()
 
 
 class PlotToolbar2d(PlotToolbar):
@@ -196,17 +213,12 @@ class PlotToolbar2d(PlotToolbar):
                         icon="arrows-v",
                         tooltip="Rescale")
         self.add_button(name="transpose", icon="retweet", tooltip="Transpose")
-        self.add_togglebutton(name="toggle_xaxis_scale",
-                              description="logx",
-                              tooltip="Log(x)")
-        self.add_togglebutton(name="toggle_yaxis_scale",
-                              description="logy",
-                              tooltip="Log(y)")
+        self.members['toggle_xaxis_scale'] = None
+        self.members['toggle_yaxis_scale'] = None
         self.add_togglebutton(name="toggle_norm",
                               description="log",
                               tooltip="Log(data)")
         self.add_button(name="save_view", icon="save", tooltip="Save")
-        self._update_container()
 
 
 class PlotToolbar3d(PlotToolbar):
@@ -237,4 +249,3 @@ class PlotToolbar3d(PlotToolbar):
         self.add_togglebutton(name="toggle_norm",
                               description="log",
                               tooltip="Log(data)")
-        self._update_container()
