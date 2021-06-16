@@ -15,12 +15,11 @@ using namespace scipp::variable;
 namespace py = pybind11;
 
 template <class T> struct MakeVariable {
-  static Variable apply(const std::vector<Dim> &labels, py::array values,
+  static Variable apply(const std::vector<Dim> &labels, const py::array &values,
                         const std::optional<py::array> &variances,
                         const units::Unit unit) {
-    const auto valuesT = cast_to_array_like<T>(values, unit);
-    py::buffer_info info = valuesT.request();
-    Dimensions dims(labels, {info.shape.begin(), info.shape.end()});
+    scipp::span shape{values.shape(), static_cast<size_t>(values.ndim())};
+    Dimensions dims(labels, {shape.begin(), shape.end()});
     auto var = variances
                    ? makeVariable<T>(
                          Dimensions{dims},
@@ -30,10 +29,21 @@ template <class T> struct MakeVariable {
                          Dimensions(dims),
                          Values(dims.volume(), core::default_init_elements));
     var.setUnit(unit);
-    copy_array_into_view(valuesT, var.template values<T>(), dims);
-    if (variances) {
-      copy_array_into_view(cast_to_array_like<T>(*variances, unit),
-                           var.template variances<T>(), dims);
+    if (dims.empty()) {
+      copy_element<ElementTypeMap<T>::convert>(
+          cast_array_to_scalar<T>(values, unit), var.template value<T>());
+      if (variances) {
+        copy_element<ElementTypeMap<T>::convert>(
+            cast_array_to_scalar<T>(*variances, unit),
+            var.template variance<T>());
+      }
+    } else {
+      copy_array_into_view(cast_to_array_like<T>(values, unit),
+                           var.template values<T>(), dims);
+      if (variances) {
+        copy_array_into_view(cast_to_array_like<T>(*variances, unit),
+                             var.template variances<T>(), dims);
+      }
     }
     return var;
   }
@@ -155,7 +165,7 @@ Variable do_make_variable(const std::vector<Dim> &labels,
   }
 
   return core::CallDType<double, float, int64_t, int32_t, bool,
-                         scipp::core::time_point>::
+                         scipp::core::time_point, std::string>::
       apply<MakeVariable>(dtypeTag, labels, values_array,
                           variances.has_value()
                               ? std::optional{variances->cast<py::array>()}
