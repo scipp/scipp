@@ -28,7 +28,7 @@ template <class T> decltype(auto) format_item(T &&x) {
   return std::forward<T>(x);
 }
 
-std::string format_item(const scipp::units::Unit &unit) {
+inline std::string format_item(const scipp::units::Unit &unit) {
   return to_string(unit);
 }
 } // namespace detail

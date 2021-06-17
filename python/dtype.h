@@ -17,6 +17,13 @@ scipp::core::DType dtype_of(const pybind11::object &x);
 
 scipp::core::DType cast_dtype(const pybind11::object &dtype);
 
+void ensure_conversion_possible(scipp::core::DType from, scipp::core::DType to,
+                                const std::string &data_name);
+
+scipp::core::DType common_dtype(const pybind11::object &values,
+                                const pybind11::object &variances,
+                                scipp::core::DType dtype, bool plural);
+
 scipp::core::DType scipp_dtype(const pybind11::object &type);
 
 [[nodiscard]] scipp::units::Unit
