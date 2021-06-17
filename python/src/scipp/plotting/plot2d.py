@@ -76,7 +76,7 @@ class Plot2d(Plot):
 
         # Create control widgets (sliders and buttons)
         self.widgets = PlotWidgets(
-            axes=self.axes,
+            dims=self.dims,
             formatters=self._formatters,
             ndim=view_ndims,
             name=self.name,

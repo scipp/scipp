@@ -15,7 +15,7 @@ class PlotWidgets:
     It also provides buttons to hide/show masks.
     """
     def __init__(self,
-                 axes=None,
+                 dims,
                  formatters=None,
                  ndim=None,
                  name=None,
@@ -53,10 +53,10 @@ class PlotWidgets:
         self.all_masks_button = None
 
         slider_dims = {}
-        for ax, dim in axes.items():
+        for ax, dim in enumerate(dims[:-ndim]):
             if isinstance(ax, int):
                 slider_dims[ax] = dim
-        possible_dims = set(axes.values())
+        possible_dims = dims
         if pos_dims is not None:
             possible_dims -= set(pos_dims)
 

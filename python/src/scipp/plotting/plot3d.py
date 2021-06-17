@@ -85,7 +85,7 @@ class Plot3d(Plot):
         self.validate()
 
         # Create control widgets (sliders and buttons)
-        self.widgets = PlotWidgets(axes=self.axes,
+        self.widgets = PlotWidgets(dims=self.dims,
                                    ndim=view_ndims,
                                    name=self.name,
                                    dim_label_map=self.dim_label_map,
