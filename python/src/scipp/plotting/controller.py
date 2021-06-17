@@ -20,7 +20,7 @@ class PlotController:
 
     """
     def __init__(self,
-                 axes=None,
+                 dims,
                  name=None,
                  vmin=None,
                  vmax=None,
@@ -45,7 +45,7 @@ class PlotController:
                                             formatters=view.formatters)
         self.view = view
 
-        self.axes = axes
+        self._dims = dims
         self.name = name
         self.update_data_lock = False
 
@@ -53,7 +53,7 @@ class PlotController:
         self.vmax = vmax
         self.norm = norm if norm is not None else "linear"
 
-        self.scale = {dim: "linear" for dim in self.axes.values()}
+        self.scale = {dim: "linear" for dim in self._dims}
         if scale is not None:
             for dim, item in scale.items():
                 self.scale[dim] = item

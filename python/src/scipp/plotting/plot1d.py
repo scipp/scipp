@@ -129,7 +129,7 @@ class Plot1d(Plot):
 
         # The main controller module which contains the slider widgets
         self.controller = PlotController1d(
-            axes=self.axes,
+            dims=self.dims,
             name=self.name,
             vmin=self.params["values"][self.name]["vmin"],
             vmax=self.params["values"][self.name]["vmax"],

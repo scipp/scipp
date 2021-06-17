@@ -123,7 +123,7 @@ class Plot2d(Plot):
 
         # The main controller module which connects and controls all the parts
         self.controller = PlotController2d(
-            axes=self.axes,
+            dims=self.dims,
             name=self.name,
             vmin=self.params["values"][self.name]["vmin"],
             vmax=self.params["values"][self.name]["vmax"],

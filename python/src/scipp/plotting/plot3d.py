@@ -116,7 +116,7 @@ class Plot3d(Plot):
 
         # The main controller module which connects all the parts
         self.controller = PlotController3d(
-            axes=self.axes,
+            dims=self.dims,
             aspect=aspect,
             name=self.name,
             norm=norm,
