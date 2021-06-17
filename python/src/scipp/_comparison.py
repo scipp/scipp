@@ -200,8 +200,4 @@ def allclose(x, y, rtol=None, atol=None, equal_nan=False):
     --------
     :py:func:`scipp.isclose` : comparing element-wise with specified tolerances
     """
-    if rtol is None:
-        rtol = 1e-5 * _cpp.units.one
-    if atol is None:
-        atol = 1e-8 * y.unit
     return _call_cpp_func(_cpp.all, isclose(x, y, rtol, atol, equal_nan)).value
