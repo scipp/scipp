@@ -213,43 +213,31 @@ template <class T> struct MakeVariableScalar {
   static Variable apply(const py::object &value, const py::object &variance,
                         const units::Unit unit,
                         const std::optional<bool> with_variance) {
-    Variable var = [&]() {
-      if (value.is_none()) {
-        if (variance.is_none()) {
-          if (with_variance.value_or(false)) {
-            return makeVariable<T>(Values{}, Variances{});
-          } else {
-            return makeVariable<T>(Values{});
-          }
+    auto variable = [&]() {
+      auto val = [&]() {
+        if (value.is_none()) {
+          return element_array<T>();
         } else {
-          if (!with_variance.has_value() || *with_variance) {
-            return makeVariable<T>(
-                Values{}, Variances{extract_scalar<T>(variance, unit)});
-          } else {
-            return makeVariable<T>(Values{});
-          }
+          return element_array<T>(1, extract_scalar<T>(value, unit));
         }
-      } else { // !value.is_none
+      }();
+      auto var = [&]() {
         if (variance.is_none()) {
-          if (with_variance.value_or(false)) {
-            return makeVariable<T>(Values{extract_scalar<T>(value, unit)},
-                                   Variances{});
-          } else {
-            return makeVariable<T>(Values{extract_scalar<T>(value, unit)});
-          }
+          return element_array<T>();
         } else {
-          if (!with_variance.has_value() || *with_variance) {
-            return makeVariable<T>(
-                Values{extract_scalar<T>(value, unit)},
-                Variances{extract_scalar<T>(variance, unit)});
-          } else {
-            return makeVariable<T>(Values{extract_scalar<T>(value, unit)});
-          }
+          return element_array<T>(1, extract_scalar<T>(variance, unit));
         }
+      }();
+      if (with_variance.value_or(false)) {
+        return makeVariable<T>(Values(std::move(val)),
+                               Variances(std::move(var)));
+      } else {
+        return makeVariable<T>(Values(std::move(val)));
       }
     }();
-    var.setUnit(unit);
-    return var;
+
+    variable.setUnit(unit);
+    return variable;
   }
 };
 
