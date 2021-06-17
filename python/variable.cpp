@@ -37,6 +37,9 @@ namespace py = pybind11;
 
 namespace {
 template <class T> void check_dtype_matches(const py::object &dtype) {
+  if (dtype.is_none()) {
+    return;
+  }
   const auto requested_dtype = scipp_dtype(dtype);
   const auto data_dtype =
       scipp::dtype<std::conditional_t<std::is_same_v<T, py::object>,
