@@ -140,10 +140,11 @@ class PlotView:
         """
         Forward data update to the `figure`.
         """
+        # TODO check dims? redundant dims from data and dims property?
         self._data = new_values
         self._info = info
         if self.figure.toolbar is not None:
-            self.figure.toolbar.dims = self._data.dims
+            self.figure.toolbar.dims = self.dims
         self.refresh(mask_info)
 
     def update_profile_connection(self, visible):

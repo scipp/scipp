@@ -18,7 +18,7 @@ class PlotModel1d(PlotModel):
         for name, array in self.data_arrays.items():
             if array.bins is not None:
                 self._resolution = 200
-            self.dims = array.dims[-1]
+            self.dims = array.dims[-1:]
 
     def _make_1d_resampling_model(self, array):
         model = resampling_model(array)

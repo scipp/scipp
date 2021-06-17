@@ -48,7 +48,6 @@ class PlotController:
         self.axes = axes
         self.name = name
         self.update_data_lock = False
-        self.axparams = {}
 
         self.vmin = vmin
         self.vmax = vmax
@@ -341,9 +340,6 @@ class PlotController:
             self.profile.toggle_mask(change["owner"].mask_group,
                                      change["owner"].mask_name, change["new"])
 
-    def _make_axparam(self, dim):
-        return {"scale": self.scale[dim], "dim": dim}
-
     def get_masks_info(self):
         """
         Get information on masks from widgets.
@@ -401,9 +397,9 @@ class PlotController:
                 visible = True
 
             if visible:
-                profile_axparams = {'x': self._make_axparam(self.profile_dim)}
-                self._profile_model.update_axes(axparams=profile_axparams)
-                self._profile_view.update_axes(axparams=profile_axparams)
+                self._profile_model.dims = [self.profile_dim]
+                self._profile_view.dims = [self.profile_dim]
+                self._profile_view.update_axes(scale=self.scale)
             if not visible or self.profile.is_visible():
                 self.view.reset_profile()
 
