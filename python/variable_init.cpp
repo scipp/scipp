@@ -15,42 +15,6 @@ using namespace scipp::variable;
 
 namespace py = pybind11;
 
-DType dtype_of(const py::object &x) {
-  if (x.is_none()) {
-    return dtype<void>;
-  } else if (py::isinstance<py::buffer>(x)) {
-    // Cannot use hasattr(x, "dtype") as that would catch Variables as well.
-    return scipp_dtype(x.attr("dtype"));
-  } else if (py::isinstance<py::float_>(x)) {
-    return core::dtype<double>;
-  } else if (py::isinstance<py::int_>(x)) {
-    return core::dtype<int64_t>;
-  } else if (py::isinstance<py::bool_>(x)) {
-    return core::dtype<bool>;
-  } else if (py::isinstance<py::str>(x)) {
-    return core::dtype<std::string>;
-  } else if (py::isinstance<Variable>(x)) {
-    return core::dtype<Variable>;
-  } else if (py::isinstance<DataArray>(x)) {
-    return core::dtype<DataArray>;
-  } else if (py::isinstance<Dataset>(x)) {
-    return core::dtype<Dataset>;
-  } else {
-    return core::dtype<python::PyObject>;
-  }
-}
-
-DType cast_dtype(const py::object &dtype) {
-  // Check None first, then native scipp Dtype, then numpy.dtype
-  if (dtype.is_none())
-    return core::dtype<void>;
-  try {
-    return dtype.cast<DType>();
-  } catch (const py::cast_error &) {
-    return scipp_dtype(py::dtype::from_args(dtype));
-  }
-}
-
 // TODO replace scipp_dtype
 std::tuple<DType, units::Unit>
 cast_dtype_and_unit(const py::object &dtype,
