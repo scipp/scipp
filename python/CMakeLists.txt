@@ -30,6 +30,7 @@ pybind11_add_module(
   unit.cpp
   units.cpp
   variable.cpp
+  variable_init.cpp
   variable_instantiate_py_object.cpp
   element_array_view.cpp
   shape.cpp
