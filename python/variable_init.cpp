@@ -266,22 +266,29 @@ void bind_new_init(py::module &m, py::class_<Variable> &cls) {
 
         if (!values.is_none() || !variances.is_none()) {
           if (!value.is_none() || !variance.is_none()) {
-            // TODO
-            throw std::invalid_argument("make up your mind");
+            throw std::invalid_argument(
+                "Got arguments from both (values, variances) and (value, "
+                "variance). Those sets of arguments are mutually exclusive.");
           }
           if (dims.is_none()) {
-            // TODO
-            throw std::invalid_argument("need dims");
+            throw std::invalid_argument(
+                "Array constructor of variable missing dims argument. "
+                "Constructor type deduced from presence of values / variances "
+                "arguments.");
           }
           // make array (check shape)
         } else if (!value.is_none() || !variance.is_none()) {
           if (!dims.is_none()) {
-            // TODO
-            throw std::invalid_argument("no dims!");
+            throw std::invalid_argument(
+                "Argument dims is not allowed in scalar constructor of "
+                "variable. Constructor type deduced from presence of value / "
+                "variance arguments.");
           }
           if (!shape.is_none()) {
-            // TODO
-            throw std::invalid_argument("no shape!");
+            throw std::invalid_argument(
+                "Argument shape is not allowed in scalar constructor of "
+                "variable. Constructor type deduced from presence of value / "
+                "variance arguments.");
           }
           return make_variable_scalar(value, variance, actual_unit, scipp_dtype,
                                       with_variance);
