@@ -74,12 +74,12 @@ class PlotController:
         have been created.
         """
         if self.profile is not None:
-            self.connect_profile()
+            self.profile.connect()
 
-        self.connect_widgets()
-        self.connect_view()
+        self.widgets.connect(controller=self)
+        self.view.connect(controller=self)
         if self.panel is not None:
-            self.connect_panel()
+            self.panel.controller = self
         self.update_axes()
         self.update_norm_button(norm)
 
@@ -99,54 +99,6 @@ class PlotController:
         Dummy initialization for `PlotModel`.
         """
         return
-
-    def connect_widgets(self):
-        """
-        Connect callbacks to the `PlotWidgets` interface.
-        """
-        self.widgets.connect({
-            "toggle_profile_view": self.toggle_profile_view,
-            "update_data": self.update_data,
-            "toggle_mask": self.toggle_mask,
-            "lock_update_data": self.lock_update_data,
-            "unlock_update_data": self.unlock_update_data,
-            "swap_dimensions": self.swap_dimensions,
-        })
-
-    def connect_view(self):
-        """
-        Connect callbacks to the `PlotView` interface.
-        """
-        view_callbacks = {
-            "update_profile": self.update_profile,
-            "toggle_hover_visibility": self.toggle_hover_visibility,
-            "keep_line": self.keep_line,
-            "remove_line": self.remove_line
-        }
-        figure_callbacks = {
-            "rescale_to_data": self.rescale_to_data,
-            "transpose": self.transpose,
-            "toggle_dim_scale": self.toggle_dim_scale,
-            "toggle_norm": self.toggle_norm,
-            "home_view": self.home_view,
-            "pan_view": self.pan_view,
-            "zoom_view": self.zoom_view,
-            "save_view": self.save_view
-        }
-        self.view.connect(view_callbacks=view_callbacks,
-                          figure_callbacks=figure_callbacks)
-
-    def connect_panel(self):
-        """
-        Dummy connect for `PlotPanel`.
-        """
-        return
-
-    def connect_profile(self):
-        """
-        Connect callbacks to the `PlotWidgets` interface.
-        """
-        self.profile.connect()
 
     def lock_update_data(self):
         """

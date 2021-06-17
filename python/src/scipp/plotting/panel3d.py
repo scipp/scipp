@@ -173,7 +173,7 @@ class PlotPanel3d(PlotPanel):
         Take cut surface into account if present.
         """
         if self.cut_surface_buttons.value is None:
-            self.interface["update_opacity"](alpha=change["new"][1])
+            self.controller.update_opacity(alpha=change["new"][1])
         else:
             self._update_cut_surface()
 
@@ -197,7 +197,7 @@ class PlotPanel3d(PlotPanel):
             self.cut_unit.value = ""
             self._update_opacity({"new": self.opacity_slider.value})
         else:
-            self.interface["update_depth_test"](False)
+            self.controller.update_depth_test(False)
             if change["old"] is None:
                 self.cut_slider.disabled = False
                 self.cut_checkbox.disabled = False
@@ -224,7 +224,7 @@ class PlotPanel3d(PlotPanel):
         We also update the possible range for value-based slicing.
         """
         self.lock_surface_update = True
-        axparams = self.interface["get_axes_parameters"]()
+        axparams = self.controller.get_axes_parameters()
         # Cartesian X, Y, Z
         if self.cut_surface_buttons.value < self.cut_options["Xcylinder"]:
             minmax = self.xminmax["xyz"[self.cut_surface_buttons.value]]
@@ -234,7 +234,7 @@ class PlotPanel3d(PlotPanel):
             if self.positions is not None:
                 self.cut_unit.value = axparams["x"]["unit"]
             else:
-                self.cut_unit.value = self.interface["get_coord_unit"](
+                self.cut_unit.value = self.controller.get_coord_unit(
                     axparams[self.cut_surface_buttons.label.replace(
                         ' ', '').lower()]["dim"])
         # Cylindrical X, Y, Z
@@ -270,7 +270,7 @@ class PlotPanel3d(PlotPanel):
             self.cut_slider.description = "Value:"
             self.cut_unit.value = self.unit
         if self.cut_surface_buttons.value < self.cut_options["Value"]:
-            self.cut_slider.step = self.interface["get_pixel_size"]() * 1.1
+            self.cut_slider.step = self.controller.get_pixel_size() * 1.1
             self.cut_surface_thickness.max = (self.cut_slider.max -
                                               self.cut_slider.min)
         self.lock_surface_update = False
@@ -279,7 +279,7 @@ class PlotPanel3d(PlotPanel):
         """
         Ask the `PlotController3d` to update the pixel colors.
         """
-        self.interface["update_cut_surface"](
+        self.controller.update_cut_surface(
             target=self.cut_slider.value,
             button_value=self.cut_surface_buttons.value,
             surface_thickness=self.cut_surface_thickness.value,

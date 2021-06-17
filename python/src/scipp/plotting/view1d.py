@@ -106,10 +106,10 @@ class PlotView1d(PlotView):
                 event.xdata)
             ind = int(np.argmin(distance_to_cursor))
             slices = {self._dim: ind}
-            self.interface["update_profile"](slices)
-            self.interface["toggle_hover_visibility"](True)
+            self.controller.update_profile(slices)
+            self.controller.toggle_hover_visibility(True)
         else:
-            self.interface["toggle_hover_visibility"](False)
+            self.controller.toggle_hover_visibility(False)
 
     def keep_or_remove_profile(self, event):
         """
@@ -137,10 +137,10 @@ class PlotView1d(PlotView):
             line.set_pickradius(5.0)
             line.set_url("axvline")
             line.set_gid(line_id)
-            self.interface["keep_line"](target="profile",
-                                        name=line_name,
-                                        color=col,
-                                        line_id=line_id)
+            self.controller.keep_line(target="profile",
+                                      name=line_name,
+                                      color=col,
+                                      line_id=line_id)
 
     def remove_profile(self, event):
         """
@@ -155,4 +155,4 @@ class PlotView1d(PlotView):
         self.figure.ax.lines = new_lines
 
         # Also remove the line from the 1d plot
-        self.interface["remove_line"](target="profile", line_id=gid)
+        self.controller.remove_line(target="profile", line_id=gid)

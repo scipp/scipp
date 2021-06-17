@@ -141,14 +141,14 @@ class PlotFigure:
                 ticker.LogLocator()
             }
 
-    def connect(self, callbacks):
+    def connect(self, controller):
         """
         Connect the toolbar to callback from the controller. This includes
         rescaling the data norm, and change the scale (log or linear) on the
         axes.
         """
         if self.toolbar is not None:
-            self.toolbar.connect(callbacks)
+            self.toolbar.connect(controller=controller)
 
     def draw(self):
         """

@@ -42,19 +42,6 @@ class PlotController3d(PlotController):
         """
         self.model.initialize(self.panel.get_cut_options())
 
-    def connect_panel(self):
-        """
-        Establish connection to the panel interface.
-        """
-        self.panel.connect({
-            "update_opacity": self.update_opacity,
-            "update_depth_test": self.update_depth_test,
-            "update_cut_surface": self.update_cut_surface,
-            "get_pixel_size": self.get_pixel_size,
-            "get_axes_parameters": self.get_axes_parameters,
-            "get_coord_unit": self.get_coord_unit
-        })
-
     def _make_axes_parameters(self):
         """
         Gather the information (dimensions, limits, etc...) about the (x, y, z)

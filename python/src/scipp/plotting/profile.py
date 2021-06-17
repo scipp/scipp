@@ -104,14 +104,7 @@ class PlotProfile(PlotFigure1d):
         the scale on the matplotlib axes.
         """
         if self.toolbar is not None:
-            self.toolbar.connect({
-                "toggle_dim_scale": self.toggle_dim_scale,
-                "toggle_norm": self.toggle_norm,
-                "home_view": self.home_view,
-                "pan_view": self.pan_view,
-                "zoom_view": self.zoom_view,
-                "save_view": self.save_view
-            })
+            self.toolbar.connect(controller=self)
 
     def toggle_dim_scale(self, dim):
         """

@@ -17,7 +17,7 @@ class PlotView:
         self._dims = None
         self.figure = figure
         self.formatters = formatters
-        self.interface = {}
+        self.controller = {}
         self.profile_hover_connection = None
         self.profile_pick_connection = None
         self.profile_update_lock = False
@@ -67,16 +67,13 @@ class PlotView:
         """
         self.figure.savefig(*args, **kwargs)
 
-    def connect(self, view_callbacks=None, figure_callbacks=None):
+    def connect(self, controller=None):
         """
         Connect the view interface to the callbacks provided by the
         `controller`.
         """
-        if view_callbacks is not None:
-            for key, func in view_callbacks.items():
-                self.interface[key] = func
-        if figure_callbacks is not None:
-            self.figure.connect(figure_callbacks)
+        self.controller = controller
+        self.figure.connect(controller=controller)
 
     def home_view(self, *args, **kwargs):
         self.figure.home_view(*args, **kwargs)

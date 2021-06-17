@@ -20,16 +20,6 @@ class PlotController1d(PlotController):
         """
         self.view.update_line_color(line_id=line_id, color=color)
 
-    def connect_panel(self):
-        """
-        Establish connection to the panel interface.
-        """
-        self.panel.connect({
-            "keep_line": self.keep_line,
-            "remove_line": self.remove_line,
-            "update_line_color": self.update_line_color
-        })
-
     def refresh(self):
         """
         Do nothing for refresh in case of 1d plot.

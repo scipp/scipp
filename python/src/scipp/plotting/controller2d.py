@@ -21,17 +21,6 @@ class PlotController2d(PlotController):
         if new_values is not None:
             self.view.update_data(new_values, mask_info=self.get_masks_info())
 
-    def connect_view(self):
-        """
-        Connect the view interface to callbacks.
-        """
-        super().connect_view()
-        self.view.connect(
-            view_callbacks={
-                "update_viewport": self.update_viewport,
-                "rescale_to_data": self.rescale_to_data
-            })
-
     def redraw(self):
         """
         Update the model data dicts and re-draw the figure.

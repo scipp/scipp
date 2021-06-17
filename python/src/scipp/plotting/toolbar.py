@@ -30,6 +30,7 @@ class PlotToolbar:
     """
     def __init__(self, mpl_toolbar):
         self._dims = None
+        self.controller = None
 
         self.container = ipw.VBox()
         self.members = {}
@@ -117,15 +118,16 @@ class PlotToolbar:
             owner.value = value
         set_button_color(owner, selected=owner.value)
 
-    def connect(self, callbacks):
+    def connect(self, controller):
         """
         Connect callbacks to button clicks.
         """
-        for key in callbacks:
-            if key in self.members:
-                self.members[key].on_click(callbacks[key])
+        for key in self.members:
+            if hasattr(controller, key):
+                self.members[key].on_click(getattr(controller, key))
         for dim, button in self._log_axis.items():
-            button.observe(callbacks['toggle_dim_scale'](dim), 'value')
+            button.observe(
+                getattr(controller, 'toggle_dim_scale')(dim), 'value')
 
     def _update_container(self):
         """

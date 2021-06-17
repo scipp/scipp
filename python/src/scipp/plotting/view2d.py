@@ -114,11 +114,11 @@ class PlotView2d(PlotView):
                 low, high = xylims[ax]
                 unit = self._data.coords[dim].unit
                 limits[dim] = [low * unit, high * unit]
-            self.interface["update_viewport"](limits)
+            self.controller.update_viewport(limits)
 
         # If we are zooming, rescale to data?
         if self.figure.rescale_on_zoom():
-            self.interface["rescale_to_data"]()
+            self.controller.rescale_to_data()
 
     def update_axes(self, scale):
         """
@@ -165,10 +165,10 @@ class PlotView2d(PlotView):
                 dimx: (x[dimx, ix], x[dimx, ix + 1]),
                 dimy: (y[dimy, iy], y[dimy, iy + 1])
             }
-            self.interface["update_profile"](slices)
-            self.interface["toggle_hover_visibility"](True)
+            self.controller.update_profile(slices)
+            self.controller.toggle_hover_visibility(True)
         else:
-            self.interface["toggle_hover_visibility"](False)
+            self.controller.toggle_hover_visibility(False)
 
     def keep_or_remove_profile(self, event):
         """
@@ -210,9 +210,7 @@ class PlotView2d(PlotView):
             self.profile_scatter.set_offsets(new_offsets)
             self.profile_scatter.set_facecolors(new_colors)
 
-        self.interface["keep_line"](target="profile",
-                                    color=col,
-                                    line_id=line_id)
+        self.controller.keep_line(target="profile", color=col, line_id=line_id)
 
     def remove_profile(self, event):
         """
@@ -224,6 +222,6 @@ class PlotView2d(PlotView):
         self.profile_scatter.set_offsets(xy)
         self.profile_scatter.set_facecolors(c)
         # Also remove the line from the 1d plot
-        self.interface["remove_line"](target="profile",
-                                      line_id=self.profile_ids[ind])
+        self.controller.remove_line(target="profile",
+                                    line_id=self.profile_ids[ind])
         self.profile_ids.pop(ind)

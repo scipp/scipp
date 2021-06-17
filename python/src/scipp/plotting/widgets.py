@@ -25,13 +25,12 @@ class PlotWidgets:
                  multid_coord=None,
                  is_binned_data=False):
 
+        self._controller = None
         self._formatters = formatters
 
         self.multid_coord = multid_coord
         self.is_binned_data = is_binned_data
 
-        # Dict of callbacks passed on from the `PlotController`
-        self.interface = {}
         # The container list to hold all widgets
         self.container = []
         # unit_labels: label to display slider coordinate unit
@@ -226,7 +225,7 @@ class PlotWidgets:
             self.dim_buttons[index][old_dim].disabled = False
 
         self.unit_labels[new_ind].value = self._formatters[new_dim]['unit']
-        self.interface["swap_dimensions"](new_ind, old_dim, new_dim)
+        self._controller.swap_dimensions(new_ind, old_dim, new_dim)
 
     def get_index_dim(self, index):
         """
@@ -264,16 +263,16 @@ class PlotWidgets:
                                  change["new"],
                                  change["owner"].max - 1,
                                  set_value=False)
-        self.interface["update_data"](change)
+        self._controller.update_data(change)
 
     def update_thickness_slider_range(self, ind, dim):
         """
         Update the slider max and values. Before we update the value, we need
         to lock the data update which is linked to the slider.
         """
-        self.interface["lock_update_data"]()
+        self._controller.lock_update_data()
         self._set_slider_defaults(ind, self._sizes[dim])
-        self.interface["unlock_update_data"]()
+        self._controller.unlock_update_data()
 
     def _set_slider_defaults(self, index, max_value):
         """
@@ -307,25 +306,21 @@ class PlotWidgets:
             "Show all"
         return
 
-    def connect(self, callbacks):
+    def connect(self, controller):
         """
         Connect the widget interface to the callbacks provided by the
         `PlotController`.
         """
+        self._controller = controller
         for index in self.slider:
-            self.profile_button[index].on_click(
-                callbacks["toggle_profile_view"])
-            self.slider[index].observe(callbacks["update_data"], names="value")
+            self.profile_button[index].on_click(controller.toggle_profile_view)
+            self.slider[index].observe(controller.update_data, names="value")
             self.thickness_slider[index].observe(self.update_thickness,
                                                  names="value")
-        self.interface["update_data"] = callbacks["update_data"]
-        self.interface["lock_update_data"] = callbacks["lock_update_data"]
-        self.interface["unlock_update_data"] = callbacks["unlock_update_data"]
-        self.interface["swap_dimensions"] = callbacks["swap_dimensions"]
 
         for name in self.mask_checkboxes:
             for m in self.mask_checkboxes[name]:
-                self.mask_checkboxes[name][m].observe(callbacks["toggle_mask"],
+                self.mask_checkboxes[name][m].observe(controller.toggle_mask,
                                                       names="value")
 
     def initialize(self, sizes, ranges):
