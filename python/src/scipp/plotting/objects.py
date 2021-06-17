@@ -200,18 +200,18 @@ class Plot:
         for name, array in scipp_obj_dict.items():
 
             # Get the colormap and normalization
-            self.params["values"][name] = parse_params(globs=globs,
-                                                       variable=array.data,
-                                                       name=name)
+            self.params["values"] = parse_params(globs=globs,
+                                                 variable=array.data,
+                                                 name=name)
 
-            self.params["masks"][name] = parse_params(params=masks,
-                                                      defaults={
-                                                          "cmap": "gray",
-                                                          "cbar": False,
-                                                          "under_color": None,
-                                                          "over_color": None
-                                                      },
-                                                      globs=masks_globs)
+            self.params["masks"] = parse_params(params=masks,
+                                                defaults={
+                                                    "cmap": "gray",
+                                                    "cbar": False,
+                                                    "under_color": None,
+                                                    "over_color": None
+                                                },
+                                                globs=masks_globs)
 
             # Determine whether error bars should be plotted or not
             has_variances = array.variances is not None
@@ -223,13 +223,12 @@ class Plot:
             # Save masks information
             self.masks[name] = [m for m in array.masks]
             self.masks[name] = {
-                "color": self.params["masks"][name]["color"],
-                "cmap": self.params["masks"][name]["cmap"],
+                "color": self.params["masks"]["color"],
+                "cmap": self.params["masks"]["cmap"],
                 "names": {}
             }
             for m in array.masks:
-                self.masks[name]["names"][m] = self.params["masks"][name][
-                    "show"]
+                self.masks[name]["names"][m] = self.params["masks"]["show"]
 
     def _ipython_display_(self):
         """

@@ -96,7 +96,7 @@ class Plot1d(Plot):
             errorbars=self.errorbars,
             norm=norm,
             title=title,
-            unit=self.params["values"][self.name]["unit"],
+            unit=self.params["values"]["unit"],
             masks=self.masks,
             mpl_line_params=mpl_line_params,
             picker=True,
@@ -113,7 +113,7 @@ class Plot1d(Plot):
             self.profile = PlotProfile(
                 errorbars=self.errorbars,
                 ax=pax,
-                unit=self.params["values"][self.name]["unit"],
+                unit=self.params["values"]["unit"],
                 masks=self.masks,
                 figsize=(1.3 * config.plot.width / config.plot.dpi,
                          0.6 * config.plot.height / config.plot.dpi),
@@ -126,19 +126,18 @@ class Plot1d(Plot):
             self.panel = PlotPanel1d(data_names=list(scipp_obj_dict.keys()))
 
         # The main controller module which contains the slider widgets
-        self.controller = PlotController1d(
-            dims=self.dims,
-            name=self.name,
-            vmin=self.params["values"][self.name]["vmin"],
-            vmax=self.params["values"][self.name]["vmax"],
-            norm=norm,
-            scale=scale,
-            widgets=self.widgets,
-            model=self.model,
-            profile_model=profile_model,
-            view=self.view,
-            panel=self.panel,
-            profile=self.profile)
+        self.controller = PlotController1d(dims=self.dims,
+                                           name=self.name,
+                                           vmin=self.params["values"]["vmin"],
+                                           vmax=self.params["values"]["vmax"],
+                                           norm=norm,
+                                           scale=scale,
+                                           widgets=self.widgets,
+                                           model=self.model,
+                                           profile_model=profile_model,
+                                           view=self.view,
+                                           panel=self.panel,
+                                           profile=self.profile)
 
         # Render the figure once all components have been created.
         self.render(norm=norm)
