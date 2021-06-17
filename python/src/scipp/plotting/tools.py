@@ -3,7 +3,6 @@
 # @author Neil Vaytet
 
 from .. import config
-from ..utils import name_with_unit
 from .._scipp import core as sc
 import numpy as np
 from copy import copy
@@ -43,12 +42,7 @@ def to_bin_edges(x, dim):
         return sc.concatenate(sc.concatenate(left, center, dim), right, dim)
 
 
-def parse_params(params=None,
-                 defaults=None,
-                 globs=None,
-                 variable=None,
-                 array=None,
-                 name=None):
+def parse_params(params=None, defaults=None, globs=None, array=None):
     """
     Construct the colorbar settings using default and input values
     """
@@ -98,9 +92,6 @@ def parse_params(params=None,
         parsed["cmap"].set_over(parsed["cmap"](1.0))
     else:
         parsed["cmap"].set_over(parsed["over_color"])
-
-    if variable is not None:
-        parsed["unit"] = name_with_unit(var=variable, name="")
 
     return parsed
 

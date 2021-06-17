@@ -96,7 +96,6 @@ class Plot2d(Plot):
             norm=self.params["values"]["norm"],
             name=self.name,
             cbar=self.params["values"]["cbar"],
-            unit=self.params["values"]["unit"],
             masks=self.masks[self.name],
             extend=self.extend_cmap,
             title=title,
@@ -111,7 +110,6 @@ class Plot2d(Plot):
             self.profile = PlotProfile(
                 errorbars=self.errorbars,
                 ax=pax,
-                unit=self.params["values"]["unit"],
                 masks=self.masks,
                 figsize=(1.3 * config.plot.width / config.plot.dpi,
                          0.6 * config.plot.height / config.plot.dpi),

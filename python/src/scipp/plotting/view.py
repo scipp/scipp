@@ -15,6 +15,7 @@ class PlotView:
     """
     def __init__(self, figure, formatters):
         self._dims = None
+        self._scale = None
         self.figure = figure
         self.formatters = formatters
         self.controller = {}
@@ -33,9 +34,12 @@ class PlotView:
     def dims(self):
         return self._dims
 
-    @dims.setter
-    def dims(self, dims):
-        self._dims = dims
+    def set_scale(self, scale):
+        """
+        Set new scales for dims. Takes effect after update_data() is called.
+        """
+        self._dims = None  # flag for axis change
+        self._scale = scale
 
     def _ipython_display_(self):
         """
@@ -111,16 +115,19 @@ class PlotView:
         """
         self.figure.toggle_norm(norm, vmin.value, vmax.value)
 
-    def update_axes(self, scale, **kwargs):
+    def _update_axes(self):
         """
         Forward axes update to the `figure`.
         """
         self.figure.initialize({
             axis: self.formatters[dim]
-            for axis, dim in zip(self._axes, self.dims)
+            for axis, dim in zip(self._axes, self._dims)
         })
-        scale = {axis: scale[dim] for axis, dim in zip(self._axes, self.dims)}
-        self.figure.update_axes(**kwargs, scale=scale)
+        scale = {
+            axis: self._scale[dim]
+            for axis, dim in zip(self._axes, self._dims)
+        }
+        self.figure.update_axes(scale=scale, unit=f'[{self._data.unit}]')
 
     def _make_data(self, new_values, mask_info):
         return new_values
@@ -129,19 +136,17 @@ class PlotView:
         self.figure.update_data(self._make_data(self._data, mask_info),
                                 self._info)
 
-    # TODO
-    # - just delete masks that should not be displayed
-    # - only accept unchanged dims... check if same dims, if not update axes,
-    #   replacing separate update_axes
     def update_data(self, new_values, info=None, mask_info=None):
         """
         Forward data update to the `figure`.
         """
-        # TODO check dims? redundant dims from data and dims property?
         self._data = new_values
+        if self._dims != new_values.dims:
+            self._dims = new_values.dims
+            self._update_axes()
         self._info = info
         if self.figure.toolbar is not None:
-            self.figure.toolbar.dims = self.dims
+            self.figure.toolbar.dims = self._dims
         self.refresh(mask_info)
 
     def update_profile_connection(self, visible):

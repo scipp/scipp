@@ -192,12 +192,16 @@ class ResamplingCountsModel(ResamplingModel):
 
 class ResamplingDenseModel(ResamplingModel):
     def _to_density(self, array):
-        array = array.astype(sc.dtype.float64)
+        if array.dtype == sc.dtype.float64:
+            array = array.copy()
+        else:
+            array = array.astype(sc.dtype.float64)
         for dim in array.dims:
             coord = array.meta[dim]
             width = coord[dim, 1:] - coord[dim, :-1]
             width.unit = sc.units.one
             array.data *= width
+        self._unit = array.unit
         array.unit = sc.units.one
         return array
 
@@ -207,6 +211,7 @@ class ResamplingDenseModel(ResamplingModel):
             width = edge[dim, 1:] - edge[dim, :-1]
             width.unit = sc.units.one
             data /= width
+        data.unit = self._unit
         return data
 
     def _resample(self, array):

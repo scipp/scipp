@@ -120,14 +120,14 @@ class PlotView2d(PlotView):
         if self.figure.rescale_on_zoom():
             self.controller.rescale_to_data()
 
-    def update_axes(self, scale):
+    def _update_axes(self):
         """
         Update the current and global axes limits, before updating the figure
         axes.
         """
         self.current_lims = {}
         self.global_lims = {}
-        super().update_axes(scale)
+        super()._update_axes()
         self.reset_profile()
 
     def reset_profile(self):

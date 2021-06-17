@@ -57,7 +57,17 @@ class PlotModel1d(PlotModel):
             name: self._resample(array, slices)
             for name, array in self.data_arrays.items()
         }
-        return self.dslice
+
+        class DataArrayDict(dict):
+            @property
+            def dims(self):
+                return next(iter(self.values())).dims
+
+            @property
+            def unit(self):
+                return next(iter(self.values())).unit
+
+        return DataArrayDict(self.dslice)
 
     def rescale_to_data(self, scale=None):
         """

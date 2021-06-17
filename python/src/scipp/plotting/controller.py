@@ -57,6 +57,7 @@ class PlotController:
         if scale is not None:
             for dim, item in scale.items():
                 self.scale[dim] = item
+        self.view.set_scale(scale=self.scale)
 
         # Save the current profile dimension
         self.profile_dim = None
@@ -181,6 +182,7 @@ class PlotController:
         """
         def toggle(change):
             self.scale[dim] = "log" if change['new'] else "linear"
+            self.view.set_scale(scale=self.scale)
             self.update_axes()
 
         return toggle
@@ -229,13 +231,11 @@ class PlotController:
             dims = self.model.dims
         else:
             self.model.dims = dims
-        self.view.dims = dims
         # TODO mechanism for params from 3d model
         # TODO also for PlotPanel3d
         # other_params = self.model.update_axes(self.axparams)
         # if other_params is not None:
         #     self.axparams.update(other_params)
-        self.view.update_axes(scale=self.scale)
         if self.panel is not None:
             self.panel.update_axes()
         if self.profile is not None:
@@ -350,8 +350,7 @@ class PlotController:
 
             if visible:
                 self._profile_model.dims = [self.profile_dim]
-                self._profile_view.dims = [self.profile_dim]
-                self._profile_view.update_axes(scale=self.scale)
+                self._profile_view.set_scale(scale=self.scale)
             if not visible or self.profile.is_visible():
                 self.view.reset_profile()
 
@@ -366,6 +365,7 @@ class PlotController:
                                             profile_dim=self.profile_dim)
             lower, upper = self.model.get_slice_coord_bounds(
                 self.name, self.profile_dim, slices[self.profile_dim])
+            self.update_profile(slices={})
             self.profile.update_slice_area(lower, upper)
 
     def update_profile(self, slices):

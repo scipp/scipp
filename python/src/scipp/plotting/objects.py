@@ -197,21 +197,18 @@ class Plot:
                 raise TypeError("Unsupported type for argument "
                                 "'errorbars': {}".format(type(errorbars)))
 
+        # Get the colormap and normalization
+        self.params["values"] = parse_params(globs=globs)
+        self.params["masks"] = parse_params(params=masks,
+                                            defaults={
+                                                "cmap": "gray",
+                                                "cbar": False,
+                                                "under_color": None,
+                                                "over_color": None
+                                            },
+                                            globs=masks_globs)
+
         for name, array in scipp_obj_dict.items():
-
-            # Get the colormap and normalization
-            self.params["values"] = parse_params(globs=globs,
-                                                 variable=array.data,
-                                                 name=name)
-
-            self.params["masks"] = parse_params(params=masks,
-                                                defaults={
-                                                    "cmap": "gray",
-                                                    "cbar": False,
-                                                    "under_color": None,
-                                                    "over_color": None
-                                                },
-                                                globs=masks_globs)
 
             # Determine whether error bars should be plotted or not
             has_variances = array.variances is not None

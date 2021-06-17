@@ -96,7 +96,6 @@ class Plot1d(Plot):
             errorbars=self.errorbars,
             norm=norm,
             title=title,
-            unit=self.params["values"]["unit"],
             masks=self.masks,
             mpl_line_params=mpl_line_params,
             picker=True,
@@ -113,7 +112,6 @@ class Plot1d(Plot):
             self.profile = PlotProfile(
                 errorbars=self.errorbars,
                 ax=pax,
-                unit=self.params["values"]["unit"],
                 masks=self.masks,
                 figsize=(1.3 * config.plot.width / config.plot.dpi,
                          0.6 * config.plot.height / config.plot.dpi),

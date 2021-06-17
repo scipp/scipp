@@ -24,7 +24,6 @@ class PlotFigure2d(PlotFigure):
                  norm=None,
                  name=None,
                  cbar=None,
-                 unit=None,
                  masks=None,
                  resolution=None,
                  extend=None,
@@ -74,7 +73,6 @@ class PlotFigure2d(PlotFigure):
                                      ax=self.ax,
                                      cax=self.cax,
                                      extend=extend)
-            self.cbar.set_label(unit)
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.mask_image = {}
@@ -99,11 +97,12 @@ class PlotFigure2d(PlotFigure):
         """
         return
 
-    def update_axes(self, scale):
+    def update_axes(self, scale, unit):
         """
         Update axes labels, scales, tick locations and labels, as well as axes
         limits.
         """
+        self.cbar.set_label(unit)
         self.ax.set_xlabel(self._formatters['x']["label"]
                            if self.xlabel is None else self.xlabel)
         self.ax.set_ylabel(self._formatters['y']["label"]
