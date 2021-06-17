@@ -110,18 +110,20 @@ class Plot:
       - a `PlotController`: handles all the communication between all the
           pieces above.
     """
-    def __init__(self,
-                 scipp_obj_dict,
-                 axes=None,
-                 errorbars=None,
-                 cmap=None,
-                 norm=False,
-                 vmin=None,
-                 vmax=None,
-                 color=None,
-                 masks=None,
-                 positions=None,
-                 view_ndims=None):
+    def __init__(
+            self,
+            scipp_obj_dict,
+            labels=None,  # dim -> coord name
+            axes=None,
+            errorbars=None,
+            cmap=None,
+            norm=False,
+            vmin=None,
+            vmax=None,
+            color=None,
+            masks=None,
+            positions=None,
+            view_ndims=None):
 
         self.controller = None
         self.model = None
@@ -139,31 +141,36 @@ class Plot:
 
         # Get first item in dict and process dimensions.
         # Dimensions should be the same for all dict items.
-        self.axes = None
         self.masks = {}
         self.errorbars = {}
-        self.dim_label_map = {}
-        self.position_dims = None
 
         # TODO use option to provide keys here
         array = next(iter(scipp_obj_dict.values()))
-        self._formatters = {
-            dim: make_formatter(array, dim)
-            for dim in array.dims
-        }
 
         self.name = list(scipp_obj_dict.keys())[0]
         self.dims = scipp_obj_dict[self.name].dims
-        self._process_axes_dimensions(scipp_obj_dict[self.name],
-                                      axes=axes,
-                                      view_ndims=view_ndims,
-                                      positions=positions)
+        self.labels = {dim: dim for dim in self.dims}
+        if labels is not None:
+            self.labels.update(labels)
+        self._formatters = {
+            dim: make_formatter(array, self.labels[dim])
+            for dim in array.dims
+        }
+        if positions:
+            if not array.meta[positions].dims:
+                raise ValueError(f"{positions} cannot be 0 dimensional"
+                                 f" on input object\n\n{array}")
+            else:
+                self.position_dims = array.meta[positions].dims
+        else:
+            self.position_dims = None
 
         # Set cmap extend state: if we have sliders (= key "0" is found in
         # self.axes), then we need to extend.
         # We also need to extend if vmin or vmax are set.
         self.extend_cmap = "neither"
-        if (0 in self.axes) or ((vmin is not None) and (vmax is not None)):
+        if (len(self.dims) > view_ndims) or ((vmin is not None) and
+                                             (vmax is not None)):
             self.extend_cmap = "both"
         elif vmin is not None:
             self.extend_cmap = "min"
@@ -205,13 +212,6 @@ class Plot:
                                                           "over_color": None
                                                       },
                                                       globs=masks_globs)
-
-            # If non-dimension coord is requested as labels, replace name in
-            # dims
-            array_dims = array.dims
-            for dim in self.axes.values():
-                if dim not in array_dims:
-                    array_dims[array_dims.index(self.dim_label_map[dim])] = dim
 
             # Determine whether error bars should be plotted or not
             has_variances = array.variances is not None
@@ -284,72 +284,6 @@ class Plot:
         if hasattr(self.view.figure, "ax"):
             self.ax = self.view.figure.ax
 
-    def _process_axes_dimensions(self,
-                                 array,
-                                 axes=None,
-                                 view_ndims=None,
-                                 positions=None):
-        """
-        Assign dimensions of input object to figure axes.
-        If `axes` is not specified, the dimensions are assigned in the order
-        they appear in the input object.
-        """
-
-        if positions:
-            if not array.meta[positions].dims:
-                raise ValueError(f"{positions} cannot be 0 dimensional"
-                                 f" on input object\n\n{array}")
-            else:
-                self.position_dims = array.meta[positions].dims
-
-        array_dims = array.dims
-        self.ndim = len(array_dims)
-
-        base_axes = ["xyz"[i] for i in range(view_ndims)]
-
-        # Process axes dimensions
-        self.axes = {}
-        for i, dim in enumerate(array_dims[::-1]):
-            if positions is not None:
-                if (dim == positions) or (dim in array.meta[positions].dims):
-                    key = "xyz"[("x" in self.axes) + ("y" in self.axes) +
-                                ("z" in self.axes)]
-                else:
-                    key = i - ("x" in self.axes)
-            else:
-                if i < view_ndims:
-                    key = base_axes[i]
-                else:
-                    key = i - view_ndims
-            self.axes[key] = dim
-
-        # Replace axes with supplied axes dimensions
-        supplied_axes = {}
-        if axes is not None:
-            for dim in axes.values():
-                if (dim not in self.axes.values()) and (dim not in array.meta):
-                    raise RuntimeError("Requested dimension was not found in "
-                                       "input data: {}".format(dim))
-            supplied_axes.update(axes)
-        if positions is not None and (positions not in self.axes.values()):
-            supplied_axes.update({"x": positions})
-
-        for key, dim in supplied_axes.items():
-            dim_list = list(self.axes.values())
-            key_list = list(self.axes.keys())
-            # TODO Should use dim if 2d dimension coord, might not be inner dim
-            underlying_dim = array.meta[dim].dims[
-                -1] if dim in array.meta else dim
-            if dim in dim_list:
-                ind = dim_list.index(dim)
-            else:
-                # Non-dimension coordinate
-                self.dim_label_map[underlying_dim] = dim
-                self.dim_label_map[dim] = underlying_dim
-                ind = dim_list.index(underlying_dim)
-            self.axes[key_list[ind]] = self.axes[key]
-            self.axes[key] = underlying_dim  # dim
-
     def validate(self):
         """
         Validation checks before plotting.
@@ -357,16 +291,11 @@ class Plot:
         multid_coord = self.model.get_multid_coord()
 
         # Protect against having a multi-dimensional coord along a slider axis
-        for ax, dim in self.axes.items():
-            if isinstance(ax, int) and (dim == multid_coord):
+        for dim in self.dims:
+            if dim in self.model.dims and (dim == multid_coord):
                 raise DimensionError("A ragged coordinate cannot lie along "
                                      "a slider dimension, it must be one of "
                                      "the displayed dimensions.")
-
-        # Protect against duplicate entries in axes
-        if len(self.axes.values()) != len(set(self.axes.values())):
-            raise DimensionError("Duplicate entry in axes: {}".format(
-                self.axes))
 
     def savefig(self, filename=None):
         """

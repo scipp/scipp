@@ -38,7 +38,7 @@ class Plot3d(Plot):
     def __init__(self,
                  scipp_obj_dict=None,
                  positions=None,
-                 axes=None,
+                 labels=None,
                  figsize=None,
                  aspect=None,
                  masks=None,
@@ -64,7 +64,7 @@ class Plot3d(Plot):
         }
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
-                         axes=axes,
+                         labels=labels,
                          cmap=cmap,
                          norm=norm,
                          vmin=vmin,

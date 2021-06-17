@@ -35,7 +35,7 @@ class Plot2d(Plot):
     """
     def __init__(self,
                  scipp_obj_dict=None,
-                 axes=None,
+                 labels=None,
                  masks=None,
                  ax=None,
                  cax=None,
@@ -55,7 +55,7 @@ class Plot2d(Plot):
         view_ndims = 2
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
-                         axes=axes,
+                         labels=labels,
                          cmap=cmap,
                          norm=norm,
                          vmin=vmin,
@@ -80,7 +80,7 @@ class Plot2d(Plot):
             formatters=self._formatters,
             ndim=view_ndims,
             name=self.name,
-            dim_label_map=self.dim_label_map,
+            dim_label_map=self.labels,
             masks=self.masks,
             multid_coord=self.model.get_multid_coord(),
             is_binned_data=(scipp_obj_dict[self.name].bins is not None))
@@ -105,7 +105,7 @@ class Plot2d(Plot):
                                formatters=self._formatters)
 
         # Profile view which displays an additional dimension as a 1d plot
-        if self.ndim > 2:
+        if len(self.dims) > 2:
             pad = config.plot.padding.copy()
             pad[2] = 0.77
             self.profile = PlotProfile(

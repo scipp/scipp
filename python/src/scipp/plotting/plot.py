@@ -83,7 +83,6 @@ def _input_to_data_array(item, all_keys, key=None):
 
 def plot(scipp_obj,
          projection=None,
-         axes=None,
          color=None,
          marker=None,
          linestyle=None,
@@ -149,13 +148,7 @@ def plot(scipp_obj,
         ndims = len(var.dims)
         if (ndims > 0) and (np.sum(var.shape) > 0):
             if ndims == 1 or projection == "1d" or projection == "1D":
-                # Construct a key from the dimensions
-                if axes is not None:
-                    key = str(list(axes.values()))
-                else:
-                    key = str(var.dims)
-                # Add unit to key
-                key = "{}.{}".format(key, str(var.unit))
+                key = f"{var.dims}.{var.unit}"
                 line_count += 1
             else:
                 key = name
@@ -180,7 +173,6 @@ def plot(scipp_obj,
             if key not in tobeplotted.keys():
                 tobeplotted[key] = dict(ndims=ndims,
                                         scipp_obj_dict=dict(),
-                                        axes=axes,
                                         mpl_line_params=dict())
                 for n in mpl_line_params.keys():
                     tobeplotted[key]["mpl_line_params"][n] = {}
@@ -194,7 +186,6 @@ def plot(scipp_obj,
         output._items[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
                                       ndim=val["ndims"],
                                       projection=projection,
-                                      axes=val["axes"],
                                       mpl_line_params=val["mpl_line_params"],
                                       **kwargs)
 

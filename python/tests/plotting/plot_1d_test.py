@@ -26,11 +26,11 @@ def test_plot_1d_bin_edges():
 
 
 def test_plot_1d_with_labels():
-    plot(make_dense_data_array(ndim=1, labels=True), axes={"x": "lab"})
+    plot(make_dense_data_array(ndim=1, labels=True), labels={"xx": "lab"})
 
 
 def test_plot_1d_with_attrs():
-    plot(make_dense_data_array(ndim=1, attrs=True), axes={"x": "attr"})
+    plot(make_dense_data_array(ndim=1, attrs=True), labels={"xx": "attr"})
 
 
 def test_plot_1d_log_axes():
@@ -209,8 +209,7 @@ def test_plot_with_vector_labels():
                                      values=np.random.random([N, 3]),
                                      unit='m')
                       })
-    # Note 'x' not 'xx'
-    plot(da, axes={'x': 'labs'})
+    plot(da, labels={'xx': 'labs'})
 
 
 def test_plot_vector_axis_with_labels():

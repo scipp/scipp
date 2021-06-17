@@ -40,7 +40,7 @@ class Plot1d(Plot):
     """
     def __init__(self,
                  scipp_obj_dict=None,
-                 axes=None,
+                 labels=None,
                  errorbars=None,
                  masks=None,
                  ax=None,
@@ -62,7 +62,7 @@ class Plot1d(Plot):
         view_ndims = 1
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
-                         axes=axes,
+                         labels=labels,
                          norm=norm,
                          vmin=vmin,
                          vmax=vmax,
@@ -84,7 +84,7 @@ class Plot1d(Plot):
                                    formatters=self._formatters,
                                    ndim=view_ndims,
                                    name=self.name,
-                                   dim_label_map=self.dim_label_map,
+                                   dim_label_map=self.labels,
                                    masks=self.masks,
                                    multid_coord=self.model.get_multid_coord())
 
@@ -107,7 +107,7 @@ class Plot1d(Plot):
                                formatters=self._formatters)
 
         # Profile view which displays an additional dimension as a 1d plot
-        if self.ndim > 1:
+        if len(self.dims) > 1:
             pad = config.plot.padding.copy()
             pad[2] = 0.77
             self.profile = PlotProfile(
@@ -122,9 +122,7 @@ class Plot1d(Plot):
                     "show": True,
                     "loc": (1.02, 0.0)
                 })
-
-        # An additional panel view with widgets to save/remove lines
-        if self.ndim > 1:
+            # An additional panel view with widgets to save/remove lines
             self.panel = PlotPanel1d(data_names=list(scipp_obj_dict.keys()))
 
         # The main controller module which contains the slider widgets

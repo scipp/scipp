@@ -106,8 +106,7 @@ class PlotWidgets:
             self.dim_buttons[index] = {}
             for dim_ in possible_dims:
                 self.dim_buttons[index][dim_] = ipw.Button(
-                    description=dim_label_map[dim_]
-                    if dim_ in dim_label_map else dim_,
+                    description=dim_label_map[dim_],
                     button_style='info' if dim == dim_ else '',
                     disabled=((dim != dim_) and (dim_ in slider_dims.values())
                               or (dim_ == self.multid_coord)),

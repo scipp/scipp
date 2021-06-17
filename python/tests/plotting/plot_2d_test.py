@@ -79,20 +79,12 @@ def test_plot_2d_with_cmap():
     plot(make_dense_data_array(ndim=2), cmap='jet')
 
 
-def test_plot_2d_with_xaxis_specified():
-    plot(make_dense_data_array(ndim=2), axes={'x': 'yy'})
-
-
-def test_plot_2d_with_yaxis_specified():
-    plot(make_dense_data_array(ndim=2), axes={'y': 'xx'})
-
-
 def test_plot_2d_with_labels():
-    plot(make_dense_data_array(ndim=2, labels=True), axes={'x': 'lab'})
+    plot(make_dense_data_array(ndim=2, labels=True), labels={'xx': 'lab'})
 
 
 def test_plot_2d_with_attrs():
-    plot(make_dense_data_array(ndim=2, attrs=True), axes={'x': 'attr'})
+    plot(make_dense_data_array(ndim=2, attrs=True), labels={'xx': 'attr'})
 
 
 def test_plot_2d_with_filename():
@@ -112,7 +104,7 @@ def test_plot_2d_with_masks():
 
 def test_plot_2d_with_masks_and_labels():
     plot(make_dense_data_array(ndim=2, masks=True, labels=True),
-         axes={'x': 'lab'})
+         labels={'xx': 'lab'})
 
 
 def test_plot_2d_with_non_regular_bin_edges():
@@ -234,7 +226,7 @@ def test_plot_2d_ragged_coord_with_masks():
 def test_plot_2d_with_labels_but_no_dimension_coord():
     da = make_dense_data_array(ndim=2, labels=True)
     del da.coords['xx']
-    plot(da, axes={'x': 'lab'})
+    plot(da, labels={'xx': 'lab'})
 
 
 def test_plot_2d_with_decreasing_edges():
@@ -259,10 +251,10 @@ def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
     plot_obj.close()
 
 
-def test_plot_3d_binned_data_where_inner_dimension_nas_no_event_coord():
+def test_plot_3d_binned_data_where_inner_dimension_has_no_event_coord():
     data = make_binned_data_array(ndim=2)
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
-    plot(data, axes={'x': 'run', 'y': 'xx'})
+    plot(sc.transpose(data, dims=['yy', 'xx', 'run']))
 
 
 def test_plot_2d_binned_data_with_variances():
@@ -396,4 +388,4 @@ def test_plot_various_2d_coord():
     # Non-dim coord for yy
     c = make_array(['xx', 'yy'], 'zz')
     plot(c)
-    plot(c, axes={'x': 'zz'})  # x = yy
+    plot(c, labels={'yy': 'zz'})
