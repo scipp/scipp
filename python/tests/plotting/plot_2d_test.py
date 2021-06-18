@@ -134,7 +134,7 @@ def test_plot_2d_with_non_regular_bin_edges_with_masks():
 
 def test_plot_variable_2d():
     N = 50
-    v2d = sc.Variable(['y', 'x'], values=np.random.rand(N, N), unit='K')
+    v2d = sc.Variable(dims=['y', 'x'], values=np.random.rand(N, N), unit='K')
     plot(v2d)
 
 
@@ -175,14 +175,14 @@ def test_plot_string_and_vector_axis_labels_2d():
     vecs = []
     for i in range(N):
         vecs.append(np.random.random(3))
-    da = sc.DataArray(data=sc.Variable(['y', 'x'],
+    da = sc.DataArray(data=sc.Variable(dims=['y', 'x'],
                                        values=np.random.random([M, N]),
                                        unit='counts'),
                       coords={
                           'x':
                           sc.vectors(dims=['x'], values=vecs, unit='m'),
                           'y':
-                          sc.Variable(['y'],
+                          sc.Variable(dims=['y'],
                                       values=['a', 'b', 'c', 'd', 'e'],
                                       unit='m')
                       })
@@ -196,15 +196,15 @@ def test_plot_2d_with_dimension_of_size_1():
     y = np.arange(M, dtype=np.float64)
     z = np.arange(M + 1, dtype=np.float64)
     d = sc.Dataset()
-    d['a'] = sc.Variable(['y', 'x'],
+    d['a'] = sc.Variable(dims=['y', 'x'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
-    d['b'] = sc.Variable(['z', 'x'],
+    d['b'] = sc.Variable(dims=['z', 'x'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
-    d.coords['x'] = sc.Variable(['x'], values=x, unit=sc.units.m)
-    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
-    d.coords['z'] = sc.Variable(['z'], values=z, unit=sc.units.m)
+    d.coords['x'] = sc.Variable(dims=['x'], values=x, unit=sc.units.m)
+    d.coords['y'] = sc.Variable(dims=['y'], values=y, unit=sc.units.m)
+    d.coords['z'] = sc.Variable(dims=['z'], values=z, unit=sc.units.m)
     plot(d['a'])
     plot(d['b'])
 
@@ -300,7 +300,7 @@ def test_plot_2d_int64_with_unit():
 def test_plot_2d_int_coords():
     N = 20
     M = 10
-    da = sc.DataArray(data=sc.Variable(['y', 'x'],
+    da = sc.DataArray(data=sc.Variable(dims=['y', 'x'],
                                        values=np.random.random([M, N]),
                                        unit='K'),
                       coords={
@@ -319,8 +319,10 @@ def test_plot_2d_datetime():
     da = sc.DataArray(data=sc.array(dims=['time', 'x'],
                                     values=np.random.normal(0, 1, (N, M))),
                       coords={
-                          'time': time,
-                          'x': sc.Variable(['x'], values=np.linspace(0, 10, M))
+                          'time':
+                          time,
+                          'x':
+                          sc.Variable(dims=['x'], values=np.linspace(0, 10, M))
                       })
     da.plot().close()
 

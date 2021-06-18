@@ -367,14 +367,14 @@ identify_constructor(const py::object &dims, const py::object &shape,
   }
 }
 
-void bind_new_init(py::module &m, py::class_<Variable> &cls) {
-  m.def(
-      "make_variable",
-      [](const py::object &dims, const py::object &shape,
-         const py::object &values, const py::object &variances,
-         const py::object &value, const py::object &variance,
-         const std::optional<bool> with_variance,
-         const std::optional<units::Unit> unit, const py::object &dtype) {
+void bind_init(py::class_<Variable> &cls) {
+  cls.def(
+      py::init([](const py::object &dims, const py::object &shape,
+                  const py::object &values, const py::object &variances,
+                  const py::object &value, const py::object &variance,
+                  const std::optional<bool> with_variance,
+                  const std::optional<units::Unit> unit,
+                  const py::object &dtype) {
         const auto [scipp_dtype, actual_unit] =
             cast_dtype_and_unit(dtype, unit);
 
@@ -383,6 +383,7 @@ void bind_new_init(py::module &m, py::class_<Variable> &cls) {
         case ConstructorType::Array:
           return make_variable_array(dims, shape, values, variances,
                                      actual_unit, scipp_dtype, with_variance);
+          // TODO scalar not needed?!
         case ConstructorType::Scalar:
           return make_variable_scalar(value, variance, actual_unit, scipp_dtype,
                                       with_variance);
@@ -392,7 +393,7 @@ void bind_new_init(py::module &m, py::class_<Variable> &cls) {
         }
         // Unreachable but gcc complains about a missing return otherwise.
         std::terminate();
-      },
+      }),
       py::kw_only(), py::arg("dims") = py::none(),
       py::arg("shape") = py::none(), py::arg("values") = py::none(),
       py::arg("variances") = py::none(), py::arg("value") = py::none(),

@@ -153,7 +153,7 @@ def test_plot_dataset_view():
 
 def test_plot_vector_axis_labels_1d():
     N = 10
-    da = sc.DataArray(data=sc.Variable(['x'],
+    da = sc.DataArray(data=sc.Variable(dims=['x'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
@@ -167,7 +167,7 @@ def test_plot_vector_axis_labels_1d():
 
 def test_plot_string_axis_labels_1d():
     N = 10
-    da = sc.DataArray(data=sc.Variable(['x'],
+    da = sc.DataArray(data=sc.Variable(dims=['x'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
@@ -184,7 +184,7 @@ def test_plot_string_axis_labels_1d():
 
 def test_plot_string_axis_labels_1d_short():
     N = 5
-    da = sc.DataArray(data=sc.Variable(['x'],
+    da = sc.DataArray(data=sc.Variable(dims=['x'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
@@ -198,7 +198,7 @@ def test_plot_string_axis_labels_1d_short():
 
 def test_plot_with_vector_labels():
     N = 10
-    da = sc.DataArray(data=sc.Variable(['x'],
+    da = sc.DataArray(data=sc.Variable(dims=['x'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
@@ -214,7 +214,7 @@ def test_plot_with_vector_labels():
 
 def test_plot_vector_axis_with_labels():
     N = 10
-    da = sc.DataArray(data=sc.Variable(['x'],
+    da = sc.DataArray(data=sc.Variable(dims=['x'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={

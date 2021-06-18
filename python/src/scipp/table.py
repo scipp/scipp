@@ -244,7 +244,7 @@ class TableViewer:
                 else:
                     self.headers = 0
                     key = " "
-                    var = sc.Variable(['row'], values=scipp_obj)
+                    var = sc.Variable(dims=['row'], values=scipp_obj)
 
                 self.tabledict[group][key] = {"data": {key: var}}
                 self.is_bin_centers[group][key] = {"data": {key: False}}

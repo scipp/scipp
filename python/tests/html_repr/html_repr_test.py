@@ -26,7 +26,7 @@ def maybe_variances(variances, dtype):
     [sc.dtype.float64, sc.dtype.float32, sc.dtype.int64, sc.dtype.int32])
 @pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's', 'us'])
 def test_html_repr_scalar(variance, dtype, unit):
-    var = make_scalar(variance=maybe_variances(variance, dtype),
+    var = make_scalar(with_variance=maybe_variances(variance, dtype),
                       dtype=dtype,
                       unit=unit)
     sc.make_html(var)
@@ -41,7 +41,7 @@ def test_html_repr_scalar(variance, dtype, unit):
     [sc.dtype.float64, sc.dtype.float32, sc.dtype.int64, sc.dtype.int32])
 @pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
 def test_html_repr_scalar_array(variance, label, attr, mask, dtype, unit):
-    da = make_scalar_array(variance=maybe_variances(variance, dtype),
+    da = make_scalar_array(with_variance=maybe_variances(variance, dtype),
                            label=label,
                            attr=attr,
                            mask=mask,

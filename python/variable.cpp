@@ -134,7 +134,7 @@ template <class T> struct SetElements {
   }
 };
 
-void bind_new_init(py::module &m, py::class_<Variable> &cls);
+void bind_init(py::class_<Variable> &cls);
 
 void init_variable(py::module &m) {
   // Needed to let numpy arrays keep alive the scipp buffers.
@@ -147,23 +147,8 @@ void init_variable(py::module &m) {
 Array of values with dimension labels and a unit, optionally including an array
 of variances.)");
 
-  bind_new_init(m, variable);
-
-  bind_init_0D<Variable>(variable);
-  bind_init_0D<DataArray>(variable);
-  bind_init_0D<Dataset>(variable);
-  bind_init_0D<std::string>(variable);
+  bind_init(variable);
   variable
-      .def(py::init(&makeVariableDefaultInit),
-           py::arg("dims") = std::vector<Dim>{},
-           py::arg("shape") = std::vector<scipp::index>{},
-           py::arg("unit") = units::one,
-           py::arg("dtype") = py::dtype::of<double>(),
-           py::arg("variances").noconvert() = false)
-      .def(py::init(&do_make_variable), py::arg("dims"),
-           py::arg("values"), // py::array
-           py::arg("variances") = std::nullopt, py::arg("unit") = units::one,
-           py::arg("dtype") = py::none())
       .def("rename_dims", &rename_dims<Variable>, py::arg("dims_dict"),
            "Rename dimensions.")
       .def_property_readonly("dtype", &Variable::dtype)
@@ -201,14 +186,6 @@ of variances.)");
       .def("underlying_size", [](const Variable &self) {
         return size_of(self, SizeofTag::Underlying);
       });
-
-  // Order matters for pybind11's overload resolution. Do not change.
-  bind_init_0D_numpy_types(variable);
-  bind_init_0D_native_python_types<bool>(variable);
-  bind_init_0D_native_python_types<int64_t>(variable);
-  bind_init_0D_native_python_types<double>(variable);
-  bind_init_0D<py::object>(variable);
-  //------------------------------------
 
   bind_common_operators(variable);
 

@@ -28,7 +28,7 @@ def test_plot_0d_dataset():
 def test_plot_not_all_0d_dataset():
     ds = sc.Dataset(data={
         'a': sc.Variable(value=1),
-        'b': sc.Variable(['x'], values=[1, 2])
+        'b': sc.Variable(dims=['x'], values=[1, 2])
     })
     plot(ds)  # Throw nothing
 
@@ -50,20 +50,23 @@ def test_dict_of_0d_dataset():
 
 def test_dict_of_nd_variables():
     # 0D and 1D is OK
-    plot({'a': sc.Variable(value=1), 'b': sc.Variable(['x'], values=[1, 2])})
+    plot({
+        'a': sc.Variable(value=1),
+        'b': sc.Variable(dims=['x'], values=[1, 2])
+    })
 
 
 def test_dict_of_nd_data_array():
     # 0D and 1D is OK
     plot({
         'a': sc.DataArray(data=sc.Variable(value=1)),
-        'b': sc.DataArray(data=sc.Variable(['x'], values=[1, 2]))
+        'b': sc.DataArray(data=sc.Variable(dims=['x'], values=[1, 2]))
     })
 
 
 def test_dict_of_nd_dataset():
     # 0D and 1D is OK
-    ds1 = sc.Dataset(data={'a': sc.Variable(['x'], values=[1, 2])})
+    ds1 = sc.Dataset(data={'a': sc.Variable(dims=['x'], values=[1, 2])})
     ds2 = sc.Dataset(data={
         'a': sc.Variable(value=1),
     })

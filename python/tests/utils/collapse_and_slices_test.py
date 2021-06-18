@@ -17,12 +17,12 @@ def make_dataset():
     a[1, 1, :] = np.abs(10.0 * np.cos((x - b) * 2.0 / b))
     v = 0.1 * np.random.random([L, M, N])
     d = sc.Dataset()
-    d['sample'] = sc.Variable(['y', 'x', 'tof'], values=a, variances=v)
-    d.coords['tof'] = sc.Variable(['tof'], values=x, unit=sc.units.us)
-    d.coords['x'] = sc.Variable(['x'],
+    d['sample'] = sc.Variable(dims=['y', 'x', 'tof'], values=a, variances=v)
+    d.coords['tof'] = sc.Variable(dims=['tof'], values=x, unit=sc.units.us)
+    d.coords['x'] = sc.Variable(dims=['x'],
                                 values=np.arange(M).astype(np.float64),
                                 unit=sc.units.m)
-    d.coords['y'] = sc.Variable(['y'],
+    d.coords['y'] = sc.Variable(dims=['y'],
                                 values=np.arange(L).astype(np.float64),
                                 unit=sc.units.m)
     return d

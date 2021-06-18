@@ -230,7 +230,7 @@ def test_datetime_operations():
     np.testing.assert_array_equal(res.values, values + 1)
 
     shift = np.random.randint(0, 100, len(values))
-    res = var - (var - sc.Variable(['x'], values=shift, unit=sc.units.ns))
+    res = var - (var - sc.Variable(dims=['x'], values=shift, unit=sc.units.ns))
     assert res.dtype == sc.dtype.int64
     assert res.unit == sc.units.ns
     np.testing.assert_array_equal(res.values, shift)
@@ -244,7 +244,7 @@ def test_datetime_operations_mismatch():
     with pytest.raises(RuntimeError):
         var + 1 * sc.Unit('s')
     with pytest.raises(RuntimeError):
-        var + sc.Variable(['x'],
+        var + sc.Variable(dims=['x'],
                           values=np.random.randint(0, 100, len(values)),
                           unit=sc.units.us)
 
