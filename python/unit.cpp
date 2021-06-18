@@ -64,8 +64,9 @@ std::tuple<scipp::units::Unit, int64_t>
 common_unit<scipp::core::time_point>(const pybind11::object &values,
                                      const scipp::units::Unit unit) {
   using opt_unit = std::optional<scipp::units::Unit>;
-  const opt_unit value_unit =
-      values.is_none() ? opt_unit{} : parse_datetime_dtype(values);
+  const opt_unit value_unit = values.is_none() || !has_datetime_dtype(values)
+                                  ? opt_unit{}
+                                  : parse_datetime_dtype(values);
 
   if (!temporal_or_dimensionless(unit)) {
     throw std::invalid_argument("Invalid unit for dtype=datetime64: " +

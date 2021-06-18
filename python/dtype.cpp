@@ -155,6 +155,10 @@ scipp::core::DType scipp_dtype(const py::object &type) {
   }
 }
 
+bool has_datetime_dtype(const py::object &array) {
+  return array.attr("dtype").attr("kind").cast<char>() == 'M';
+}
+
 [[nodiscard]] scipp::units::Unit
 parse_datetime_dtype(const std::string &dtype_name) {
   static std::regex datetime_regex{R"(datetime64(\[(\w+)\])?)"};

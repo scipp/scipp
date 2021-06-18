@@ -26,6 +26,8 @@ scipp::core::DType common_dtype(const pybind11::object &values,
 
 scipp::core::DType scipp_dtype(const pybind11::object &type);
 
+bool has_datetime_dtype(const pybind11::object &array);
+
 [[nodiscard]] scipp::units::Unit
 parse_datetime_dtype(const std::string &dtype_name);
 [[nodiscard]] scipp::units::Unit
