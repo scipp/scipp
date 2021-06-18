@@ -131,7 +131,7 @@ core::time_point extract_scalar<core::time_point>(const py::object &obj,
 template <>
 python::PyObject extract_scalar<python::PyObject>(const py::object &obj,
                                                   const units::Unit unit) {
-  using TM = ElementTypeMap<core::time_point>;
+  using TM = ElementTypeMap<python::PyObject>;
   TM::check_assignable(obj, unit);
   return obj;
 }
