@@ -7,6 +7,7 @@ pybind11_add_module(
   SHARED
   SYSTEM
   ${python_SRC_FILES}
+  bind_units.cpp
   bins.cpp
   choose.cpp
   comparison.cpp
@@ -28,7 +29,6 @@ pybind11_add_module(
   trigonometry.cpp
   unary.cpp
   unit.cpp
-  units.cpp
   variable.cpp
   variable_init.cpp
   variable_instantiate_py_object.cpp
