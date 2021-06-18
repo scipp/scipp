@@ -71,11 +71,12 @@ const char *plural_s(const bool plural) { return plural ? "s" : ""; }
 
 void ensure_conversion_possible(const DType from, const DType to,
                                 const std::string &data_name) {
-  if (from != to &&
-      (!core::is_fundamental(from) || !core::is_fundamental(to))) {
-    throw std::invalid_argument(
-        format("Cannot convert ", data_name, " from type ", from, " to ", to));
+  if ((core::is_fundamental(from) && core::is_fundamental(to)) ||
+      (core::is_int(from) && to == dtype<core::time_point>)) {
+    return; // These are allowed.
   }
+  throw std::invalid_argument(
+      format("Cannot convert ", data_name, " from type ", from, " to ", to));
 }
 
 DType common_dtype(const py::object &values, const py::object &variances,
