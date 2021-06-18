@@ -81,6 +81,20 @@ def _input_to_data_array(item, all_keys, key=None):
     return to_plot
 
 
+class DataArrayDict(dict):
+    """
+    Dict of data arrays with matching dimension labels and units. Shape and
+    coordinates may mismatch.
+    """
+    @property
+    def dims(self):
+        return next(iter(self.values())).dims
+
+    @property
+    def unit(self):
+        return next(iter(self.values())).unit
+
+
 def plot(scipp_obj,
          projection=None,
          color=None,

@@ -19,7 +19,7 @@ class PlotFigure1d(PlotFigure):
     previously saved line.
     """
     def __init__(self,
-                 errorbars=None,
+                 errorbars,
                  ax=None,
                  mpl_line_params=None,
                  title=None,

@@ -4,6 +4,7 @@
 
 from .model import PlotModel
 from .tools import find_limits
+from .plot import DataArrayDict
 from .resampling_model import resampling_model
 from .._scipp import core as sc
 
@@ -57,15 +58,6 @@ class PlotModel1d(PlotModel):
             name: self._resample(array, slices)
             for name, array in self.data_arrays.items()
         }
-
-        class DataArrayDict(dict):
-            @property
-            def dims(self):
-                return next(iter(self.values())).dims
-
-            @property
-            def unit(self):
-                return next(iter(self.values())).unit
 
         return DataArrayDict(self.dslice)
 
