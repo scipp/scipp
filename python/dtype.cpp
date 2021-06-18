@@ -35,12 +35,13 @@ DType dtype_of(const py::object &x) {
   } else if (py::isinstance<py::buffer>(x)) {
     // Cannot use hasattr(x, "dtype") as that would catch Variables as well.
     return scipp_dtype(x.attr("dtype"));
+  } else if (py::isinstance<py::bool_>(x)) {
+    // bool needs to come before int because bools are instances of int.
+    return core::dtype<bool>;
   } else if (py::isinstance<py::float_>(x)) {
     return core::dtype<double>;
   } else if (py::isinstance<py::int_>(x)) {
     return core::dtype<int64_t>;
-  } else if (py::isinstance<py::bool_>(x)) {
-    return core::dtype<bool>;
   } else if (py::isinstance<py::str>(x)) {
     return core::dtype<std::string>;
   } else if (py::isinstance<variable::Variable>(x)) {
