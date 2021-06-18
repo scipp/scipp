@@ -125,8 +125,9 @@ def make_dense_data_array(ndim=1,
                         masks=mask_dict)
 
 
-def make_dense_dataset(entries=['a', 'b'], **kwargs):
-
+def make_dense_dataset(entries=None, **kwargs):
+    if entries is None:
+        entries = ['a', 'b']
     ds = sc.Dataset()
     for entry in entries:
         ds[entry] = make_dense_data_array(**kwargs)
