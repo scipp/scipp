@@ -85,7 +85,8 @@ def atan(x: DataArrayLike,
     return _call_cpp_func(_cpp.atan, x, out=out)
 
 
-def atan2(y: _cpp.Variable,
+def atan2(*,
+          y: _cpp.Variable,
           x: _cpp.Variable,
           out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise inverse tangent of y/x determining the correct quadrant.
