@@ -201,7 +201,10 @@ parse_datetime_dtype(const std::string &dtype_name) {
 
 [[nodiscard]] scipp::units::Unit
 parse_datetime_dtype(const pybind11::object &dtype) {
-  if (py::hasattr(dtype, "dtype")) {
+  if (py::isinstance<py::type>(dtype)) {
+    // This handles dtype=np.datetime64, i.e. passing the class.
+    return units::one;
+  } else if (py::hasattr(dtype, "dtype")) {
     return parse_datetime_dtype(dtype.attr("dtype"));
   } else if (py::hasattr(dtype, "name")) {
     return parse_datetime_dtype(dtype.attr("name").cast<std::string>());
