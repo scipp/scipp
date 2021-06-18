@@ -192,7 +192,8 @@ template <class T> struct MakeVariableScalar {
           return element_array<T>(1, extract_scalar<T>(variance, unit));
         }
       }();
-      if (with_variance.value_or(false)) {
+      if ((with_variance.has_value() && *with_variance)
+          || (!with_variance.has_value() && var)) {
         return makeVariable<T>(Values(std::move(val)),
                                Variances(std::move(var)));
       } else {
