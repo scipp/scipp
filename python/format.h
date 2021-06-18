@@ -23,19 +23,9 @@ std::ostream &operator<<(std::ostream &os, const std::vector<T> &v) {
   return os;
 }
 
-namespace detail {
-template <class T> decltype(auto) format_item(T &&x) {
-  return std::forward<T>(x);
-}
-
-inline std::string format_item(const scipp::units::Unit &unit) {
-  return to_string(unit);
-}
-} // namespace detail
-
 /// Format a string from all arguments.
 template <class... Args> std::string format(Args &&... args) {
   std::ostringstream oss;
-  (oss << ... << detail::format_item(std::forward<Args>(args)));
+  (oss << ... << std::forward<Args>(args));
   return oss.str();
 }
