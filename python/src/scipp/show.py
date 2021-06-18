@@ -11,7 +11,7 @@ from ._scipp import core as sc
 from . import config
 from .html import inject_style
 from .utils import hex_to_rgb, rgb_to_hex
-from .typing import is_data_array, DatasetLike
+from .typing import DatasetLike
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -324,7 +324,7 @@ class DatasetDrawer:
 
     def _dims(self):
         dims = self._dataset.dims
-        if is_data_array(self._dataset):
+        if isinstance(self._dataset, sc.DataArray):
             # Handle, e.g., bin edges of a slice, where data lacks the edge dim
             for item in self._dataset.meta.values():
                 for dim in item.dims:
@@ -366,7 +366,7 @@ class DatasetDrawer:
         area_z = []
         area_xy = []
         area_0d = []
-        if is_data_array(self._dataset):
+        if isinstance(self._dataset, sc.DataArray):
             area_xy.append(DrawerItem('', self._dataset,
                                       config.colors['data']))
         else:
@@ -390,7 +390,7 @@ class DatasetDrawer:
                     area_xy.append(item)
 
         ds = self._dataset
-        if is_data_array(ds):
+        if isinstance(ds, sc.DataArray):
             categories = zip(['coords', 'masks', 'attrs'],
                              [ds.coords, ds.masks, ds.attrs])
         else:

@@ -8,39 +8,11 @@ import typing as _std_typing
 from ._scipp import core as sc
 
 
-def is_variable(obj: _std_typing.Any) -> bool:
-    """
-    Return True if the input is of type scipp.Variable.
-    """
-    return isinstance(obj, sc.Variable)
-
-
 def is_scalar(obj: _std_typing.Any) -> bool:
     """
     Return True if the input is a scalar.
     """
     return obj.dims == []
-
-
-def is_dataset(obj: _std_typing.Any) -> bool:
-    """
-    Return True if the input is of type scipp.Dataset.
-    """
-    return isinstance(obj, sc.Dataset)
-
-
-def is_data_array(obj: _std_typing.Any) -> bool:
-    """
-    Return True if the input is of type scipp.DataArray.
-    """
-    return isinstance(obj, sc.DataArray)
-
-
-def is_dataset_or_array(obj: _std_typing.Any) -> bool:
-    """
-    Return True if the input object is either a scipp.Dataset or DataArray.
-    """
-    return is_dataset(obj) or is_data_array(obj)
 
 
 def has_vector_type(obj: _std_typing.Any) -> bool:
