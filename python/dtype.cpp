@@ -155,8 +155,14 @@ scipp::core::DType scipp_dtype(const py::object &type) {
   }
 }
 
-bool has_datetime_dtype(const py::object &array) {
-  return array.attr("dtype").attr("kind").cast<char>() == 'M';
+bool has_datetime_dtype(const py::object &obj) {
+  if (py::hasattr(obj, "dtype")) {
+    return obj.attr("dtype").attr("kind").cast<char>() == 'M';
+  } else {
+    // numpy.datetime64 and numpy.ndarray both have 'dtype' attributes.
+    // Mark everything else as not-datetime.
+    return false;
+  }
 }
 
 [[nodiscard]] scipp::units::Unit
