@@ -94,7 +94,7 @@ Variable make_variable_default_init(const py::object &dim_labels,
 
 void assert_is_scalar(const py::buffer &array) {
   if (const auto ndim = array.attr("ndim").cast<int64_t>(); ndim != 0) {
-    throw std::invalid_argument(
+    throw except::DimensionError(
         format("Cannot interpret ", ndim, "-dimensional array as a scalar."));
   }
 }
