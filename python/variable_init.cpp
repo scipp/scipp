@@ -1,14 +1,24 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+/// @file
+/// @author Jan-Lukas Wynen
+
+#include <sstream>
+
 #include "pybind11.h"
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/eigen.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/units/string.h"
 #include "scipp/variable/variable.h"
 
 #include "dtype.h"
+#include "format.h"
 #include "numpy.h"
 #include "py_object.h"
+#include "unit.h"
 
 using namespace scipp;
 using namespace scipp::variable;
@@ -23,10 +33,9 @@ cast_dtype_and_unit(const py::object &dtype,
   if (scipp_dtype == core::dtype<core::time_point>) {
     const units::Unit deduced_unit = parse_datetime_dtype(dtype);
     if (unit.has_value() && *unit != deduced_unit) {
-      throw std::invalid_argument(
-          "The unit encoded in the dtype (" + to_string(deduced_unit) +
-          ") conflicts with the explicitly specified unit (" +
-          to_string(*unit) + ").");
+      throw std::invalid_argument(format(
+          "The unit encoded in the dtype (", deduced_unit,
+          ") conflicts with the explicitly specified unit (", *unit, ")."));
     }
     return std::tuple{scipp_dtype, deduced_unit};
   } else {
@@ -79,59 +88,10 @@ Variable make_variable_default_init(const py::object &dim_labels,
                                                         with_variance);
 }
 
-const char *plural_s(const bool plural) { return plural ? "s" : ""; }
-
-void ensure_conversion_possible(const DType from, const DType to,
-                                const std::string &data_name) {
-  if (from != to &&
-      (!core::is_fundamental(from) || !core::is_fundamental(to))) {
-    throw std::invalid_argument("Cannot convert " + data_name + " from type " +
-                                to_string(from) + " to " + to_string(to));
-  }
-}
-
-DType common_dtype(const py::object &values, const py::object &variances,
-                   const DType dtype, const bool plural) {
-  const DType values_dtype = dtype_of(values);
-  const DType variances_dtype = dtype_of(variances);
-  if (dtype == core::dtype<void>) {
-    // Get dtype solely from data.
-    if (values_dtype == core::dtype<void>) {
-      if (variances_dtype == core::dtype<void>) {
-        // This would be an error of the caller of this function, not the user.
-        throw std::invalid_argument("Unable to deduce a dtype");
-      }
-      return variances_dtype;
-    } else {
-      if (variances_dtype != core::dtype<void> &&
-          values_dtype != variances_dtype) {
-        throw std::invalid_argument(
-            std::string("The dtypes of the value") + plural_s(plural) + " (" +
-            to_string(values_dtype) + ") and the variance" + plural_s(plural) +
-            " (" + to_string(variances_dtype) +
-            ") do not match. You can specify a dtype explicitly to trigger a "
-            "conversion if applicable.");
-      }
-      return values_dtype;
-    }
-  } else { // dtype != core::dtype<void>
-    // Combine data and explicit dtype with potential conversion.
-    if (values_dtype != core::dtype<void>) {
-      ensure_conversion_possible(values_dtype, dtype,
-                                 std::string("value") + plural_s(plural));
-    }
-    if (variances_dtype != core::dtype<void>) {
-      ensure_conversion_possible(variances_dtype, dtype,
-                                 std::string("variance") + plural_s(plural));
-    }
-    return dtype;
-  }
-}
-
 void assert_is_scalar(const py::buffer &array) {
   if (const auto ndim = array.attr("ndim").cast<int64_t>(); ndim != 0) {
-    throw std::invalid_argument("Cannot interpret " + std::to_string(ndim) +
-                                "-dimensional array as a scalar.");
+    throw std::invalid_argument(
+        format("Cannot interpret ", ndim, "-dimensional array as a scalar."));
   }
 }
 
@@ -168,7 +128,6 @@ template <>
 python::PyObject extract_scalar<python::PyObject>(const py::object &obj,
                                                   const units::Unit unit) {
   using TM = ElementTypeMap<core::time_point>;
-  using PyType = typename TM::PyType;
   TM::check_assignable(obj, unit);
   return obj;
 }
@@ -192,8 +151,8 @@ template <class T> struct MakeVariableScalar {
           return element_array<T>(1, extract_scalar<T>(variance, unit));
         }
       }();
-      if ((with_variance.has_value() && *with_variance)
-          || (!with_variance.has_value() && var)) {
+      if ((with_variance.has_value() && *with_variance) ||
+          (!with_variance.has_value() && var)) {
         return makeVariable<T>(Values(std::move(val)),
                                Variances(std::move(var)));
       } else {
@@ -218,6 +177,183 @@ Variable make_variable_scalar(const py::object &value,
                                                    with_variance);
 }
 
+Dimensions build_dimensions(const std::vector<Dim> &dim_labels,
+                            const py::object &shape,
+                            const std::optional<py::array> &values,
+                            const std::optional<py::array> &variances) {
+  const auto ndim = scipp::size(dim_labels);
+
+  const auto check_ndim = [&ndim](const std::optional<py::array> &array,
+                                  const char *name) {
+    if (array.has_value() && array->ndim() != ndim) {
+      throw except::DimensionError(format(
+          "The number of dimensions (", array->ndim(), ") of the ", name,
+          " does not match the number of dimension labels (", ndim, ")"));
+    }
+  };
+  check_ndim(values, "values");
+  check_ndim(variances, "variances");
+  if (!shape.is_none() && scipp::index(py::len(shape)) != ndim) {
+    throw except::DimensionError(
+        format("The number of dimensions in 'shape' (", py::len(shape),
+               ") does not match the number of dimension labels (", ndim, ")"));
+  }
+
+  // We cannot easily index into shape. Store it to compare to the data later.
+  const bool got_shape = !shape.is_none();
+  auto deduced_shape = got_shape ? shape.cast<std::vector<scipp::index>>()
+                                 : std::vector<scipp::index>(ndim);
+
+  for (scipp::index d = 0; d < ndim; ++d) {
+    scipp::index size = -1;
+    if (values.has_value()) {
+      if (variances.has_value() && values->shape(d) != variances->shape(d)) {
+        throw except::DimensionError(
+            format("The shapes of values and variances differ in dimension ", d,
+                   ": ", py::object(values->attr("shape")), " vs ",
+                   py::object(variances->attr("shape")), '.'));
+      }
+      size = values->shape(d);
+    } else {
+      if (variances.has_value()) {
+        size = variances->shape(d);
+      }
+    }
+    if (got_shape && deduced_shape[d] != size) {
+      throw except::DimensionError(format(
+          "The shape of the data differs from the given shape in dimension ", d,
+          ": ", py::object(values->attr("shape")), " vs ", deduced_shape, '.'));
+    } else {
+      deduced_shape[d] = size;
+    }
+  }
+
+  return Dimensions{dim_labels, deduced_shape};
+}
+template <class T> struct MakeVariableArray {
+  static Variable apply(const Dimensions &dims, const py::object &values,
+                        const py::object &variances, const units::Unit unit,
+                        const std::optional<bool> with_variance) {
+    auto variable =
+        ((with_variance.has_value() && *with_variance) ||
+         (!with_variance.has_value() && !variances.is_none()))
+            ? makeVariable<T>(
+                  dims, Values(dims.volume(), core::default_init_elements),
+                  Variances(dims.volume(), core::default_init_elements))
+            : makeVariable<T>(
+                  dims, Values(dims.volume(), core::default_init_elements));
+
+    const auto [actual_unit, conversion_factor] = common_unit<T>(values, unit);
+    variable.setUnit(actual_unit);
+    if (conversion_factor != 1) {
+      // TODO Triggered once common_unit implements conversions.
+      std::terminate();
+    }
+
+    copy_array_into_view(cast_to_array_like<T>(values, actual_unit),
+                         variable.template values<T>(), dims);
+    if (with_variance.value_or(true) && !variances.is_none()) {
+      copy_array_into_view(cast_to_array_like<T>(variances, actual_unit),
+                           variable.template variances<T>(), dims);
+    }
+    return variable;
+  }
+};
+
+Variable make_variable_array(const py::object &dim_labels,
+                             const py::object &shape, const py::object &values,
+                             const py::object &variances,
+                             const units::Unit unit, DType dtype,
+                             const std::optional<bool> with_variance) {
+  using opt_array = std::optional<py::array>;
+
+  // Let numpy figure out conversions from lists, tuples, etc.
+  const opt_array values_array{values.is_none() ? opt_array{}
+                                                : py::array(values)};
+  const opt_array variances_array{variances.is_none() ? opt_array{}
+                                                      : py::array(variances)};
+  dtype = common_dtype(
+      values_array ? py::object(*values_array) : py::none(),
+      variances_array ? py::object(*variances_array) : py::none(), dtype, true);
+  const auto dims = build_dimensions(dim_labels.cast<std::vector<Dim>>(), shape,
+                                     values_array, variances_array);
+  return core::CallDType<
+      double, float, int64_t, int32_t, bool, scipp::core::time_point,
+      std::string, Variable, DataArray, Dataset,
+      python::PyObject>::apply<MakeVariableArray>(dtype, dims, values,
+                                                  variances, unit,
+                                                  with_variance);
+}
+
+enum class ConstructorType { Array, Scalar, Default };
+
+std::string make_scalar_array_confict_message(const py::object &values,
+                                              const py::object &variances,
+                                              const py::object &value,
+                                              const py::object &variance) {
+  std::ostringstream oss;
+  oss << "Scalar and array arguments cannot both be used to initialize "
+         "variables. Got ";
+  bool first = true;
+  if (!values.is_none()) {
+    oss << "'values'";
+    first = false;
+  }
+  if (!variances.is_none()) {
+    if (!first)
+      oss << " and ";
+    oss << "'variances'";
+  }
+  oss << " which cannot be combined with ";
+  first = true;
+  if (!value.is_none()) {
+    oss << "'value'";
+    first = false;
+  }
+  if (!variance.is_none()) {
+    if (!first)
+      oss << " and ";
+    oss << "'variance'";
+  }
+  oss << '.';
+  return oss.str();
+}
+
+ConstructorType
+identify_constructor(const py::object &dims, const py::object &shape,
+                     const py::object &values, const py::object &variances,
+                     const py::object &value, const py::object &variance) {
+  if (!values.is_none() || !variances.is_none()) {
+    if (!value.is_none() || !variance.is_none()) {
+      throw std::invalid_argument(make_scalar_array_confict_message(
+          values, variances, value, variance));
+    }
+    if (dims.is_none()) {
+      throw std::invalid_argument(
+          "Array constructor of variable missing dims argument. "
+          "Constructor type deduced from presence of values / variances "
+          "arguments.");
+    }
+    return ConstructorType::Array;
+  } else if (!value.is_none() || !variance.is_none()) {
+    if (!dims.is_none() && py::len(dims) != 0) {
+      throw std::invalid_argument(
+          format("Too many dims for constructing a scalar: ", dims,
+                 ". Constructor type deduced from presence of value / "
+                 "variance arguments."));
+    }
+    if (!shape.is_none() && py::len(shape) != 0) {
+      throw std::invalid_argument(format(
+          "Too many dimensions in shape for constructing a scalar: ", shape,
+          ". Constructor type deduced from presence of value / "
+          "variance arguments."));
+    }
+    return ConstructorType::Scalar;
+  } else {
+    return ConstructorType::Default;
+  }
+}
+
 void bind_new_init(py::module &m, py::class_<Variable> &cls) {
   m.def(
       "make_variable",
@@ -229,40 +365,20 @@ void bind_new_init(py::module &m, py::class_<Variable> &cls) {
         const auto [scipp_dtype, actual_unit] =
             cast_dtype_and_unit(dtype, unit);
 
-        if (!values.is_none() || !variances.is_none()) {
-          if (!value.is_none() || !variance.is_none()) {
-            throw std::invalid_argument(
-                "Got arguments from both (values, variances) and (value, "
-                "variance). Those sets of arguments are mutually exclusive.");
-          }
-          if (dims.is_none()) {
-            throw std::invalid_argument(
-                "Array constructor of variable missing dims argument. "
-                "Constructor type deduced from presence of values / variances "
-                "arguments.");
-          }
-          // make array (check shape)
-        } else if (!value.is_none() || !variance.is_none()) {
-          if (!dims.is_none()) {
-            throw std::invalid_argument(
-                "Argument dims is not allowed in scalar constructor of "
-                "variable. Constructor type deduced from presence of value / "
-                "variance arguments.");
-          }
-          if (!shape.is_none()) {
-            throw std::invalid_argument(
-                "Argument shape is not allowed in scalar constructor of "
-                "variable. Constructor type deduced from presence of value / "
-                "variance arguments.");
-          }
+        switch (identify_constructor(dims, shape, values, variances, value,
+                                     variance)) {
+        case ConstructorType::Array:
+          return make_variable_array(dims, shape, values, variances,
+                                     actual_unit, scipp_dtype, with_variance);
+        case ConstructorType::Scalar:
           return make_variable_scalar(value, variance, actual_unit, scipp_dtype,
                                       with_variance);
-        } else {
+        case ConstructorType::Default:
           return make_variable_default_init(dims, shape, actual_unit,
                                             scipp_dtype, with_variance);
         }
-        // TODO unreachable
-        return Variable{};
+        // Unreachable but gcc complains about a missing return otherwise.
+        std::terminate();
       },
       py::kw_only(), py::arg("dims") = py::none(),
       py::arg("shape") = py::none(), py::arg("values") = py::none(),

@@ -134,6 +134,8 @@ template <class T> struct SetElements {
   }
 };
 
+void bind_new_init(py::module &m, py::class_<Variable> &cls);
+
 void init_variable(py::module &m) {
   // Needed to let numpy arrays keep alive the scipp buffers.
   // VariableConcept must ALWAYS be passed to Python by its handle.
@@ -144,6 +146,9 @@ void init_variable(py::module &m) {
                                 R"(
 Array of values with dimension labels and a unit, optionally including an array
 of variances.)");
+
+  bind_new_init(m, variable);
+
   bind_init_0D<Variable>(variable);
   bind_init_0D<DataArray>(variable);
   bind_init_0D<Dataset>(variable);
