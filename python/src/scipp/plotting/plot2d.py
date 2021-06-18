@@ -96,7 +96,7 @@ class Plot2d(Plot):
             norm=self.params["values"]["norm"],
             name=self.name,
             cbar=self.params["values"]["cbar"],
-            masks=self.masks[self.name],
+            mask_cmap=self.params['masks']['cmap'],
             extend=self.extend_cmap,
             title=title,
             xlabel=xlabel,
@@ -110,7 +110,7 @@ class Plot2d(Plot):
             self.profile = PlotProfile(
                 errorbars=self.errorbars,
                 ax=pax,
-                masks=self.masks,
+                mask_color=self.params['masks']['color'],
                 figsize=(1.3 * config.plot.width / config.plot.dpi,
                          0.6 * config.plot.height / config.plot.dpi),
                 padding=pad,

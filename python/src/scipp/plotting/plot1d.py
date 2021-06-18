@@ -96,7 +96,7 @@ class Plot1d(Plot):
             errorbars=self.errorbars,
             norm=norm,
             title=title,
-            masks=self.masks,
+            mask_color=self.params['masks']['color'],
             mpl_line_params=mpl_line_params,
             picker=True,
             grid=grid,
@@ -112,7 +112,7 @@ class Plot1d(Plot):
             self.profile = PlotProfile(
                 errorbars=self.errorbars,
                 ax=pax,
-                masks=self.masks,
+                mask_color=self.params['masks']['color'],
                 figsize=(1.3 * config.plot.width / config.plot.dpi,
                          0.6 * config.plot.height / config.plot.dpi),
                 padding=pad,

@@ -25,7 +25,7 @@ class PlotFigure1d(PlotFigure):
                  title=None,
                  norm=None,
                  grid=False,
-                 masks=None,
+                 mask_color=None,
                  figsize=None,
                  picker=False,
                  legend=None,
@@ -51,7 +51,7 @@ class PlotFigure1d(PlotFigure):
             legend["show"] = True
 
         self.errorbars = errorbars
-        self.masks = masks
+        self._mask_color = mask_color if mask_color is not None else 'k'
         self.picker = picker
         self.norm = norm
         self.legend = legend
@@ -61,10 +61,6 @@ class PlotFigure1d(PlotFigure):
         self.grid = grid
 
         self._mpl_line_params = mpl_line_params  # color, linewidth, ...
-
-        for name in self.masks:
-            if self.masks[name]["color"] is None:
-                self.masks[name]["color"] = "k"
 
     def update_axes(self, scale, unit, legend_labels=True):
         """
@@ -98,7 +94,7 @@ class PlotFigure1d(PlotFigure):
 
         self._axes_updated = True
 
-    def _make_line(self, name, hist):
+    def _make_line(self, name, masks, hist):
         class Line:
             def __init__(self):
                 self.data = None
@@ -129,11 +125,11 @@ class PlotFigure1d(PlotFigure):
                                          key: line.mpl_params[key]
                                          for key in ["color", "linewidth"]
                                      })[0]
-            for m in self.masks[name]["names"]:
+            for m in masks:
                 line.masks[m] = self.ax.step(
                     [1, 2], [1, 2],
                     linewidth=line.mpl_params["linewidth"] * 3.0,
-                    color=self.masks[name]["color"],
+                    color=self._mask_color,
                     zorder=9)[0]
                 # Abuse a mostly unused property `gid` of Line2D to
                 # identify the line as a mask. We set gid to `onaxes`.
@@ -148,11 +144,11 @@ class PlotFigure1d(PlotFigure):
                                      zorder=10,
                                      picker=self.picker,
                                      **line.mpl_params)[0]
-            for m in self.masks[name]["names"]:
+            for m in masks:
                 line.masks[m] = self.ax.plot(
                     [1, 2], [1, 2],
                     zorder=11,
-                    mec=self.masks[name]["color"],
+                    mec=self._mask_color,
                     mfc="None",
                     mew=3.0,
                     linestyle="none",
@@ -202,7 +198,9 @@ class PlotFigure1d(PlotFigure):
         for name in new_values:
             vals, hist = self._preprocess_hist(name, new_values[name])
             if name not in self._lines:
-                self._lines[name] = self._make_line(name, hist=hist)
+                self._lines[name] = self._make_line(name,
+                                                    masks=vals['masks'].keys(),
+                                                    hist=hist)
             line = self._lines[name]
             line.data.set_data(vals["values"]["x"], vals["values"]["y"])
             lab = info["slice_label"] if len(info["slice_label"]) > 0 else name

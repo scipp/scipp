@@ -21,10 +21,10 @@ class PlotFigure2d(PlotFigure):
                  figsize=None,
                  aspect=None,
                  cmap=None,
+                 mask_cmap=None,
                  norm=None,
                  name=None,
                  cbar=None,
-                 masks=None,
                  resolution=None,
                  extend=None,
                  title=None,
@@ -44,8 +44,8 @@ class PlotFigure2d(PlotFigure):
             aspect = config.plot.aspect
 
         self.cmap = cmap
+        self._mask_cmap = mask_cmap
         self.norm = norm
-        self.masks_cmap = masks["cmap"]
 
         ones = np.ones([2, 2])
         image_params = {
@@ -124,7 +124,7 @@ class PlotFigure2d(PlotFigure):
         rgba = self.cmap(self.norm(new_values["values"]))
         if "masks" in new_values:
             indices = np.where(new_values["masks"])
-            rgba[indices] = self.masks_cmap(
+            rgba[indices] = self._mask_cmap(
                 self.norm(new_values["values"][indices]))
 
         self.image_colors.set_data(rgba)

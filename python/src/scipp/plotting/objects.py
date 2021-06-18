@@ -217,16 +217,6 @@ class Plot:
             else:
                 self.errorbars[name] = has_variances
 
-            # Save masks information
-            self.masks[name] = [m for m in array.masks]
-            self.masks[name] = {
-                "color": self.params["masks"]["color"],
-                "cmap": self.params["masks"]["cmap"],
-                "names": {}
-            }
-            for m in array.masks:
-                self.masks[name]["names"][m] = self.params["masks"]["show"]
-
     def _ipython_display_(self):
         """
         IPython display representation for Jupyter notebooks.
