@@ -138,13 +138,20 @@ python::PyObject extract_scalar<python::PyObject>(const py::object &obj,
 
 template <class T> struct MakeVariableScalar {
   static Variable apply(const py::object &value, const py::object &variance,
-                        const units::Unit unit,
+                        units::Unit unit,
                         const std::optional<bool> with_variance) {
     auto variable = [&]() {
       auto val = [&]() {
         if (value.is_none()) {
           return element_array<T>();
         } else {
+          const auto [actual_unit, conversion_factor] =
+              common_unit<T>(value, unit);
+          unit = actual_unit;
+          if (conversion_factor != 1) {
+            // TODO Triggered once common_unit implements conversions.
+            std::terminate();
+          }
           return element_array<T>(1, extract_scalar<T>(value, unit));
         }
       }();
@@ -152,6 +159,8 @@ template <class T> struct MakeVariableScalar {
         if (variance.is_none()) {
           return element_array<T>();
         } else {
+          // No need to call common_unit as of now as it only matters for
+          // datetimes which cannot have variances.
           return element_array<T>(1, extract_scalar<T>(variance, unit));
         }
       }();
