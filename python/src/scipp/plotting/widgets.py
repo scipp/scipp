@@ -155,11 +155,11 @@ class PlotWidgets:
         self.mask_checkboxes = {}
         for name in masks:
             self.mask_checkboxes[name] = {}
-            if len(masks[name]["names"]) > 0:
+            if len(masks[name].masks) > 0:
                 masks_found = True
-                for key in masks[name]["names"]:
+                for key in masks[name].masks:
                     self.mask_checkboxes[name][key] = ipw.Checkbox(
-                        value=masks[name]["names"][key],
+                        value=True,
                         description="{}:{}".format(escape(name), escape(key)),
                         indent=False,
                         layout={"width": "initial"})

@@ -85,7 +85,7 @@ class Plot1d(Plot):
                                    ndim=view_ndims,
                                    name=self.name,
                                    dim_label_map=self.labels,
-                                   masks=self.masks,
+                                   masks=scipp_obj_dict,
                                    multid_coord=self.model.get_multid_coord())
 
         # The view which will display the 1d plot and send pick events back to

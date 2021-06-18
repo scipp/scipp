@@ -81,7 +81,7 @@ class Plot2d(Plot):
             ndim=view_ndims,
             name=self.name,
             dim_label_map=self.labels,
-            masks=self.masks,
+            masks=scipp_obj_dict,
             multid_coord=self.model.get_multid_coord(),
             is_binned_data=(scipp_obj_dict[self.name].bins is not None))
 
