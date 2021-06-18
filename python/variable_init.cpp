@@ -31,11 +31,15 @@ cast_dtype_and_unit(const py::object &dtype,
                     const std::optional<units::Unit> unit) {
   const auto scipp_dtype = cast_dtype(dtype);
   if (scipp_dtype == core::dtype<core::time_point>) {
-    const units::Unit deduced_unit = parse_datetime_dtype(dtype);
-    if (unit.has_value() && *unit != deduced_unit) {
-      throw std::invalid_argument(format(
-          "The unit encoded in the dtype (", deduced_unit,
-          ") conflicts with the explicitly specified unit (", *unit, ")."));
+    units::Unit deduced_unit = parse_datetime_dtype(dtype);
+    if (unit.has_value()) {
+      if (deduced_unit != units::one && *unit != deduced_unit) {
+        throw std::invalid_argument(format(
+            "The unit encoded in the dtype (", deduced_unit,
+            ") conflicts with the explicitly specified unit (", *unit, ")."));
+      } else {
+        deduced_unit = *unit;
+      }
     }
     return std::tuple{scipp_dtype, deduced_unit};
   } else {
