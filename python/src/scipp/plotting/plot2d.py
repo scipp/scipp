@@ -36,6 +36,7 @@ class Plot2d(Plot):
     def __init__(self,
                  scipp_obj_dict=None,
                  labels=None,
+                 errorbars=None,
                  masks=None,
                  ax=None,
                  cax=None,
@@ -60,6 +61,7 @@ class Plot2d(Plot):
                          norm=norm,
                          vmin=vmin,
                          vmax=vmax,
+                         errorbars=errorbars,
                          masks=masks,
                          view_ndims=view_ndims)
 
