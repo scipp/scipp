@@ -106,9 +106,9 @@ T extract_scalar(const py::object &obj, const units::Unit unit) {
   TM::check_assignable(obj, unit);
   if (py::isinstance<py::buffer>(obj)) {
     assert_is_scalar(obj);
-    return converting_cast<PyType>(obj.attr("item")());
+    return converting_cast<PyType>::cast(obj.attr("item")());
   } else {
-    return converting_cast<PyType>(obj);
+    return converting_cast<PyType>::cast(obj);
   }
 }
 
