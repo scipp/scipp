@@ -108,7 +108,7 @@ class PlotController:
         self.update_data_lock = False
 
     def home_view(self, button=None):
-        self.update_axes()
+        self.update_axes(dims=self.model.dims)
 
     def pan_view(self, button=None):
         self.view.pan_view()
