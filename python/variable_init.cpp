@@ -116,7 +116,7 @@ Dimensions build_dimensions(const std::vector<Dim> &dim_labels,
     if (got_shape && deduced_shape[d] != size) {
       throw except::DimensionError(format(
           "The shape of the data differs from the given shape in dimension ", d,
-          ": ", py::object(values->attr("shape")), " vs ", deduced_shape, '.'));
+          ": ", size, " vs ", deduced_shape[d], '.'));
     } else {
       deduced_shape[d] = size;
     }
