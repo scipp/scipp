@@ -95,12 +95,6 @@ class PlotView:
         """
         Forward rescaling to the `figure`.
         """
-        # want to use same code for update_profile as in update_data
-        # => want remove dslice
-        # => want to remove rescale_to_data from models
-        # => find_vmin_vmax(self.data) here instead of controller
-        # => need to store self.data from update_data
-        # => new_values should be data array (or list of data array)
         self.figure.rescale_to_data(vmin.value, vmax.value)
 
     def toggle_mask(self, change=None):

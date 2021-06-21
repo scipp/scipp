@@ -311,7 +311,7 @@ class PlotController:
         if owner is None:
             self.profile_dim = None
             visible = False
-            self.widgets.clear_profile_buttons()
+            self.widgets.clear_profile_button()
         else:
             assert len(dims) == 1  # TODO support 2d profiles
             self.profile_dim = dims[0]
@@ -320,7 +320,7 @@ class PlotController:
                 visible = False
             else:
                 owner.button_style = "info"
-                self.widgets.clear_profile_buttons()
+                self.widgets.clear_profile_button()
                 visible = True
 
             if visible:

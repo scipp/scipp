@@ -319,9 +319,9 @@ class PlotWidgets:
                 bounds[dim] = [lower, upper]
         return bounds
 
-    def clear_profile_buttons(self):
+    def clear_profile_button(self):
         """
-        Reset all profile buttons, when for example a new dimension is
+        Reset profile button, when for example a new dimension is
         displayed along one of the figure axes.
         """
         self.profile_button.button_style = ""
