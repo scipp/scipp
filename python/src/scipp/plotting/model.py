@@ -45,13 +45,6 @@ class PlotModel:
 
         self.update()
 
-        # Store dim of multi-dimensional coordinate if present
-        self.multid_coord = None
-        for array in self.data_arrays.values():
-            for dim, coord in array.meta.items():
-                if len(coord.dims) > 1:
-                    self.multid_coord = dim
-
         # The main currently displayed data slice
         self.dslice = None
 
@@ -110,9 +103,3 @@ class PlotModel:
                                    array.meta[dim][dim, -1], dim))
             array = array[dim, 0]
         return array
-
-    def get_multid_coord(self):
-        """
-        Return the multi-dimensional coordinate.
-        """
-        return self.multid_coord

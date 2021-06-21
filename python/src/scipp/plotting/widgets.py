@@ -19,8 +19,7 @@ class PlotWidgets:
                  ndim=None,
                  dim_label_map=None,
                  pos_dims=None,
-                 masks=None,
-                 multid_coord=None):
+                 masks=None):
 
         self._dims = dims
         self._labels = dim_label_map
@@ -28,8 +27,6 @@ class PlotWidgets:
         self._formatters = formatters
         # Dict of controls for each dim, one entry per dim of data
         self._controls = {}
-
-        self.multid_coord = multid_coord
 
         # The container list to hold all widgets
         self.container = []
@@ -50,6 +47,12 @@ class PlotWidgets:
         # profile picking is supported on 3D plots
         if ndim == 3:
             self.profile_button.layout.display = 'none'
+
+        multid_coord = None
+        for array in masks.values():
+            for dim, coord in array.meta.items():
+                if len(coord.dims) > 1:
+                    multid_coord = dim
 
         for dim in dims:
             slider = ipw.IntSlider(step=1,
@@ -73,7 +76,7 @@ class PlotWidgets:
                 layout={'width': "180px"},
                 style={'description_width': 'initial'})
             # If there is a multid coord, we only allow slices of thickness 1
-            if self.multid_coord is not None:
+            if multid_coord is not None:
                 thickness_slider.layout.display = 'none'
 
             slider_readout = ipw.Label()
@@ -98,7 +101,7 @@ class PlotWidgets:
                     description=dim_label_map[dim_],
                     button_style='info' if dim == dim_ else '',
                     disabled=((dim != dim_) and (dim_ in self._slider_dims)
-                              or (dim_ == self.multid_coord)),
+                              or (dim_ == multid_coord)),
                     layout={"width": 'initial'})
                 # Add observer to buttons
                 self.dim_buttons[index][dim_].on_click(
@@ -250,8 +253,7 @@ class PlotWidgets:
 
     def _set_slider_defaults(self, dim, max_value):
         controls = self._controls[dim]
-        controls[
-            'thickness'].max = max_value if self.multid_coord is None else 1
+        controls['thickness'].max = max_value
         controls['thickness'].value = 1
         self.update_slider_range(dim, controls['thickness'].value,
                                  max_value - 1)

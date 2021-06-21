@@ -24,7 +24,6 @@ class PlotController:
                  vmax=None,
                  norm=None,
                  scale=None,
-                 multid_coord=None,
                  widgets=None,
                  model=None,
                  profile_model=None,
@@ -59,8 +58,6 @@ class PlotController:
 
         # Save the current profile dimension
         self.profile_dim = None
-        # Keep track if a coordinate with more than one dimension is present
-        self.multid_coord = multid_coord
 
         sizes = self.model.data_arrays[self.name].sizes
 

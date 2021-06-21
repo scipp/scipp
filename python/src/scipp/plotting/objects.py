@@ -149,6 +149,11 @@ class Plot:
 
         self.name = list(scipp_obj_dict.keys())[0]
         self.dims = scipp_obj_dict[self.name].dims
+        for dim in self.dims[:-view_ndims]:
+            if dim in array.meta and len(array.meta[dim].dims) > 1:
+                raise DimensionError("A ragged coordinate cannot lie along "
+                                     "a slider dimension, it must be one of "
+                                     "the displayed dimensions.")
         self.labels = {dim: dim for dim in self.dims}
         if labels is not None:
             self.labels.update(labels)
@@ -269,19 +274,6 @@ class Plot:
             self.fig = self.view.figure.fig
         if hasattr(self.view.figure, "ax"):
             self.ax = self.view.figure.ax
-
-    def validate(self):
-        """
-        Validation checks before plotting.
-        """
-        multid_coord = self.model.get_multid_coord()
-
-        # Protect against having a multi-dimensional coord along a slider axis
-        for dim in self.dims:
-            if dim in self.model.dims and (dim == multid_coord):
-                raise DimensionError("A ragged coordinate cannot lie along "
-                                     "a slider dimension, it must be one of "
-                                     "the displayed dimensions.")
 
     def savefig(self, filename=None):
         """

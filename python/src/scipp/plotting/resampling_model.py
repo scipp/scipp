@@ -90,8 +90,9 @@ class ResamplingModel():
             dim = str(dim)
             if s is None:
                 coord = self._array.meta[dim]
-                low = coord.values[0]
-                high = coord.values[-1]
+                # TODO handle flipped coord
+                low = sc.min(coord[dim, 0]).value
+                high = sc.max(coord[dim, -1]).value
                 params[dim] = (low, high, coord.unit, self.resolution[dim])
             elif isinstance(s, int):
                 out = out[dim, s]

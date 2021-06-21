@@ -75,17 +75,12 @@ class Plot1d(Plot):
         profile_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
                                     name=self.name)
 
-        # Run validation checks before rendering the plot.
-        # Note that validation needs to be run after model is created.
-        self.validate()
-
         # Create control widgets (sliders and buttons)
         self.widgets = PlotWidgets(dims=self.dims,
                                    formatters=self._formatters,
                                    ndim=view_ndims,
                                    dim_label_map=self.labels,
-                                   masks=scipp_obj_dict,
-                                   multid_coord=self.model.get_multid_coord())
+                                   masks=scipp_obj_dict)
 
         # The view which will display the 1d plot and send pick events back to
         # the controller
