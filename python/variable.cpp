@@ -25,7 +25,6 @@
 #include "bind_slice_methods.h"
 #include "docstring.h"
 #include "dtype.h"
-#include "make_variable.h"
 #include "numpy.h"
 #include "pybind11.h"
 #include "rename.h"
@@ -35,64 +34,6 @@ using namespace scipp;
 using namespace scipp::variable;
 
 namespace py = pybind11;
-
-template <class T> void bind_init_0D(py::class_<Variable> &c) {
-  c.def(py::init([](const T &value, const std::optional<T> &variance,
-                    const units::Unit &unit) {
-          return do_init_0D(value, variance, unit);
-        }),
-        py::arg("value"), py::arg("variance") = std::nullopt,
-        py::arg("unit") = units::one);
-  if constexpr (std::is_same_v<T, Variable> || std::is_same_v<T, DataArray> ||
-                std::is_same_v<T, Dataset>) {
-    c.def(py::init([](const T &value, const std::optional<T> &variance,
-                      const units::Unit &unit) {
-            return do_init_0D(copy(value), variance, unit);
-          }),
-          py::arg("value"), py::arg("variance") = std::nullopt,
-          py::arg("unit") = units::one);
-  }
-}
-
-// This function is used only to bind native python types: pyInt -> int64_t;
-// pyFloat -> double; pyBool->bool
-template <class T>
-void bind_init_0D_native_python_types(py::class_<Variable> &c) {
-  c.def(py::init([](const T &value, const std::optional<T> &variance,
-                    const units::Unit &unit, py::object &dtype) {
-          static_assert(std::is_same_v<T, int64_t> ||
-                        std::is_same_v<T, double> || std::is_same_v<T, bool>);
-          if (dtype.is_none())
-            return do_init_0D(value, variance, unit);
-          else {
-            return MakeODFromNativePythonTypes<T>::make(unit, value, variance,
-                                                        dtype);
-          }
-        }),
-        py::arg("value").noconvert(), py::arg("variance") = std::nullopt,
-        py::arg("unit") = units::one, py::arg("dtype") = py::none());
-}
-
-void bind_init_0D_numpy_types(py::class_<Variable> &c) {
-  c.def(
-      py::init([](py::buffer &value, const std::optional<py::buffer> &variance,
-                  const units::Unit &unit, py::object &dtype) {
-        if (scipp_dtype(dtype) == scipp::dtype<python::PyObject>) {
-          // Allow storing numpy objects as-is instead of only their content.
-          return do_init_0D(value.cast<py::object>(),
-                            variance
-                                ? std::optional{variance->cast<py::object>()}
-                                : std::nullopt,
-                            unit);
-        }
-        return do_make_variable({}, py::array{value},
-                                variance ? std::optional{py::array(*variance)}
-                                         : std::nullopt,
-                                unit, dtype);
-      }),
-      py::arg("value").noconvert(), py::arg("variance") = std::nullopt,
-      py::arg("unit") = units::one, py::arg("dtype") = py::none());
-}
 
 template <class T, class Elem, int... N>
 void bind_structured_creation(py::module &m, const std::string &name) {
