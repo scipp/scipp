@@ -55,15 +55,20 @@ TYPED_TEST(IsCloseTest, rtol_when_variables_outside_tolerance) {
   EXPECT_EQ(isclose(a, b, rtol, atol), false * units::one);
 }
 TEST(IsCloseTest, with_vectors) {
-  const auto a =
+  const auto u =
+      makeVariable<Eigen::Vector3d>(Values{Eigen::Vector3d{0, 0, 0}});
+  const auto v =
       makeVariable<Eigen::Vector3d>(Values{Eigen::Vector3d{1, 1, 1}});
-  const auto b =
-      makeVariable<Eigen::Vector3d>(Values{Eigen::Vector3d{1, 1, 1}});
+  const auto w =
+      makeVariable<Eigen::Vector3d>(Values{Eigen::Vector3d{1, 1, 1.0001}});
   const auto rtol = 0.0 * units::one;
   const auto atol = 1.0 * units::one;
-  EXPECT_EQ(isclose(a, b, rtol, atol),
-            makeVariable<bool>(Dims{Dim::InternalStructureComponent}, Shape{3},
-                               Values{true, true, true}));
+  EXPECT_EQ(isclose(u, u, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, v, rtol, atol),
+
+            makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(v, w, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, w, rtol, atol), makeVariable<bool>(Values{false}));
 }
 TEST(IsCloseTest, works_for_counts) {
   const auto a = makeVariable<double>(Values{1}, Variances{1}, units::counts);

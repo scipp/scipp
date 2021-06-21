@@ -6,6 +6,7 @@
 #include "scipp/core/eigen.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/math.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
@@ -22,8 +23,9 @@ Variable isclose(const Variable &a, const Variable &b, const Variable &rtol,
                  const Variable &atol, const NanComparisons equal_nans) {
   // Element expansion comparison for vectors
   if (a.dtype() == dtype<Eigen::Vector3d>)
-    return isclose(a.elements<Eigen::Vector3d>(), b.elements<Eigen::Vector3d>(),
-                   rtol, atol, equal_nans);
+    return all(isclose(a.elements<Eigen::Vector3d>(),
+                       b.elements<Eigen::Vector3d>(), rtol, atol, equal_nans),
+               Dim::InternalStructureComponent);
 
   auto tol = atol + rtol * abs(b);
   if (a.hasVariances() && b.hasVariances()) {

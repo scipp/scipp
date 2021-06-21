@@ -49,6 +49,12 @@ def test_allclose():
     assert not sc.allclose(a, b, 0 * unit, 0 * unit)
 
 
+def test_allclose_vectors():
+    unit = sc.units.m
+    a = sc.vectors(dims=['x'], values=[[1, 2, 3]], unit=unit)
+    assert sc.allclose(a, a, atol=0 * unit)
+
+
 def test_allclose_atol_defaults():
     unit = sc.units.one
     a = sc.Variable(['x'], values=np.array([1, 2, 3]), unit=unit)
