@@ -11,6 +11,7 @@
 #include "scipp/core/parallel.h"
 #include "scipp/variable/variable.h"
 
+#include "py_object.h"
 #include "pybind11.h"
 
 namespace py = pybind11;
@@ -20,7 +21,6 @@ using namespace scipp;
 /// Map C++ types to Python types to perform conversion between scipp containers
 /// and numpy arrays.
 template <class T> struct ElementTypeMap {
-  using CppType = T;
   using PyType = T;
   constexpr static bool convert = false;
 
@@ -28,11 +28,17 @@ template <class T> struct ElementTypeMap {
 };
 
 template <> struct ElementTypeMap<scipp::core::time_point> {
-  using CppType = scipp::core::time_point;
   using PyType = int64_t;
   constexpr static bool convert = true;
 
   static void check_assignable(const py::object &obj, units::Unit unit);
+};
+
+template <> struct ElementTypeMap<scipp::python::PyObject> {
+  using PyType = py::object;
+  constexpr static bool convert = true;
+
+  static void check_assignable(const py::object &, const units::Unit &) {}
 };
 
 template <bool convert, class Source, class Destination>
