@@ -271,8 +271,10 @@ template <class T> struct MakeVariableArray {
       std::terminate();
     }
 
-    copy_array_into_view(cast_to_array_like<T>(values, actual_unit),
-                         variable.template values<T>(), dims);
+    if (!values.is_none()) {
+      copy_array_into_view(cast_to_array_like<T>(values, actual_unit),
+                           variable.template values<T>(), dims);
+    }
     if (with_variance.value_or(true) && !variances.is_none()) {
       copy_array_into_view(cast_to_array_like<T>(variances, actual_unit),
                            variable.template variances<T>(), dims);
