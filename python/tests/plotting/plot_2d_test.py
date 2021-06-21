@@ -22,7 +22,7 @@ def test_plot_2d_dataset():
 
 
 def test_plot_2d_with_variances():
-    plot(make_dense_data_array(ndim=2, variances=True))
+    plot(make_dense_data_array(ndim=2, with_variance=True))
 
 
 def test_plot_2d_with_log():
@@ -30,7 +30,7 @@ def test_plot_2d_with_log():
 
 
 def test_plot_2d_with_log_and_variances():
-    plot(make_dense_data_array(ndim=2, variances=True), norm='log')
+    plot(make_dense_data_array(ndim=2, with_variance=True), norm='log')
 
 
 def test_plot_2d_with_vmin_vmax():
@@ -265,11 +265,11 @@ def test_plot_3d_binned_data_where_inner_dimension_nas_no_event_coord():
 
 
 def test_plot_2d_binned_data_with_variances():
-    plot(make_binned_data_array(ndim=2, variances=True))
+    plot(make_binned_data_array(ndim=2, with_variance=True))
 
 
 def test_plot_2d_binned_data_with_variances_resolution():
-    plot(make_binned_data_array(ndim=2, variances=True), resolution=64)
+    plot(make_binned_data_array(ndim=2, with_variance=True), resolution=64)
 
 
 def test_plot_2d_binned_data_with_masks():

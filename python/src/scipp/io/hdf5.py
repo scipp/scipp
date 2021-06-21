@@ -190,7 +190,7 @@ class VariableIO:
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
         contents['dtype'] = cls._dtypes[values.attrs['dtype']]
         contents['unit'] = sc.Unit(values.attrs['unit'])
-        contents['variances'] = 'variances' in group
+        contents['with_variance'] = 'variances' in group
         if contents['dtype'] in [
                 d.VariableView, d.DataArrayView, d.DatasetView
         ]:

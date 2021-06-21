@@ -57,7 +57,7 @@ def test_html_repr_scalar_array(variance, label, attr, mask, dtype, unit):
 def test_html_repr_variable(ndim, variances, dtype, unit):
     print(ndim, variances, dtype, unit)
     var = make_variable(ndim=ndim,
-                        variances=maybe_variances(variances, dtype),
+                        with_variance=maybe_variances(variances, dtype),
                         dtype=dtype,
                         unit=unit)
     sc.make_html(var)
@@ -78,7 +78,7 @@ def test_html_repr_variable_vector():
 @pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
 def test_html_repr_data_array(ndim, with_all, dtype, unit):
     da = make_dense_data_array(ndim=ndim,
-                               variances=maybe_variances(with_all, dtype),
+                               with_variance=maybe_variances(with_all, dtype),
                                binedges=with_all,
                                labels=with_all,
                                attrs=with_all,
@@ -94,7 +94,9 @@ def test_html_repr_data_array(ndim, with_all, dtype, unit):
 @pytest.mark.parametrize("variances", [False, True])
 @pytest.mark.parametrize("masks", [False, True])
 def test_html_repr_binned_data_array(ndim, variances, masks):
-    da = make_binned_data_array(ndim=ndim, variances=variances, masks=masks)
+    da = make_binned_data_array(ndim=ndim,
+                                with_variance=variances,
+                                masks=masks)
     sc.make_html(da)
     sc.make_html(da['x', 1:10])
 
@@ -105,7 +107,7 @@ def test_html_repr_binned_data_array(ndim, variances, masks):
 @pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
 def test_html_repr_dataset(ndim, with_all, dtype, unit):
     da = make_dense_dataset(ndim=ndim,
-                            variances=maybe_variances(with_all, dtype),
+                            with_variance=maybe_variances(with_all, dtype),
                             binedges=with_all,
                             labels=with_all,
                             attrs=with_all,
