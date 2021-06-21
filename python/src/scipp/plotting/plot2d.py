@@ -77,15 +77,12 @@ class Plot2d(Plot):
         self.validate()
 
         # Create control widgets (sliders and buttons)
-        self.widgets = PlotWidgets(
-            dims=self.dims,
-            formatters=self._formatters,
-            ndim=view_ndims,
-            name=self.name,
-            dim_label_map=self.labels,
-            masks=scipp_obj_dict,
-            multid_coord=self.model.get_multid_coord(),
-            is_binned_data=(scipp_obj_dict[self.name].bins is not None))
+        self.widgets = PlotWidgets(dims=self.dims,
+                                   formatters=self._formatters,
+                                   ndim=view_ndims,
+                                   dim_label_map=self.labels,
+                                   masks=scipp_obj_dict,
+                                   multid_coord=self.model.get_multid_coord())
 
         # The view which will display the 2d image and send pick events back to
         # the controller

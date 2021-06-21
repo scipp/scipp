@@ -364,5 +364,5 @@ class PlotController:
         """
         Update the model data dicts and re-draw the figure.
         """
-        self.model.update_data_arrays()
+        self.model.update()
         self.update_data()

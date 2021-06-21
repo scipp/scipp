@@ -27,12 +27,7 @@ class PlotModel:
     """
     def __init__(self, scipp_obj_dict=None, name=None):
         self._dims = None
-
-        self.interface = {}
-
-        # The main container of DataArrays
         self.data_arrays = {}
-        self.backup = {}
 
         # Create dict of DataArrays using information from controller
         for name, array in scipp_obj_dict.items():
@@ -40,14 +35,15 @@ class PlotModel:
                 dim: self._axis_coord(array, dim)
                 for dim in array.dims
             }
-            self.backup.update({name: {"array": array, "coords": coord_list}})
+            self.data_arrays[name] = sc.DataArray(data=array.data,
+                                                  coords=coord_list,
+                                                  masks=to_dict(array.masks))
 
         # Save a copy of the name for simpler access
         # Note this needs to be done before calling update_data_arrays
         self.name = name
 
-        # Update the internal dict of arrays from the original input
-        self.update_data_arrays()
+        self.update()
 
         # Store dim of multi-dimensional coordinate if present
         self.multid_coord = None
@@ -84,13 +80,6 @@ class PlotModel:
         else:
             coord = arange(dim=dim, start=0, stop=array.sizes[dim])
         return coord
-
-    def update_data_arrays(self):
-        for name, item in self.backup.items():
-            self.data_arrays[name] = sc.DataArray(data=item["array"].data,
-                                                  coords=item["coords"],
-                                                  masks=to_dict(
-                                                      item["array"].masks))
 
     def rescale_to_data(self, scale=None):
         """

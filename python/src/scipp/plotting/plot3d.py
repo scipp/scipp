@@ -87,7 +87,6 @@ class Plot3d(Plot):
         # Create control widgets (sliders and buttons)
         self.widgets = PlotWidgets(dims=self.dims,
                                    ndim=view_ndims,
-                                   name=self.name,
                                    dim_label_map=self.dim_label_map,
                                    masks=scipp_obj_dict,
                                    pos_dims=self.position_dims,

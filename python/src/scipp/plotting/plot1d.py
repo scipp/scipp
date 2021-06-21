@@ -83,7 +83,6 @@ class Plot1d(Plot):
         self.widgets = PlotWidgets(dims=self.dims,
                                    formatters=self._formatters,
                                    ndim=view_ndims,
-                                   name=self.name,
                                    dim_label_map=self.labels,
                                    masks=scipp_obj_dict,
                                    multid_coord=self.model.get_multid_coord())

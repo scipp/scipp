@@ -29,11 +29,10 @@ class PlotModel2d(PlotModel):
             self._model.resolution[dim] = resolution
             self._model.bounds[dim] = None
 
-    def update_data_arrays(self):
+    def update(self):
         """
         Create or update the internal resampling model.
         """
-        super().update_data_arrays()
         if self._model is None:
             self._model = resampling_model(self.data_arrays[self.name])
         else:

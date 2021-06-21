@@ -17,12 +17,10 @@ class PlotWidgets:
                  dims,
                  formatters=None,
                  ndim=None,
-                 name=None,
                  dim_label_map=None,
                  pos_dims=None,
                  masks=None,
-                 multid_coord=None,
-                 is_binned_data=False):
+                 multid_coord=None):
 
         self._dims = dims
         self._labels = dim_label_map
@@ -32,7 +30,6 @@ class PlotWidgets:
         self._controls = {}
 
         self.multid_coord = multid_coord
-        self.is_binned_data = is_binned_data
 
         # The container list to hold all widgets
         self.container = []

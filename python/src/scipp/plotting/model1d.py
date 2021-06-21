@@ -48,6 +48,14 @@ class PlotModel1d(PlotModel):
     def resolution(self, resolution):
         self._resolution = resolution
 
+    def update(self):
+        """
+        Create or update the internal resampling model.
+        """
+        # PlotModel1d currently creates ResamplingModel from scratch every
+        # time update_data() is called, nothing to do here
+        pass
+
     def update_data(self, slices):
         """
         Slice the data along dimension sliders that are not disabled for all
