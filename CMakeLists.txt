@@ -173,15 +173,10 @@ add_custom_target(
                         install
 )
 
-# Custom target for building documentation
-add_custom_target(
-  docs
-  COMMAND
-    ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/make_docs.py
-    --prefix=${CMAKE_CURRENT_BINARY_DIR}/docs
-    --work_dir=${CMAKE_CURRENT_BINARY_DIR}/docs/doctrees
-)
-add_dependencies(docs install-scipp)
+include(docs)
+add_docs_target(docs BUILDER html DEPENDS install-scipp)
+add_docs_target(doctest BUILDER doctest DEPENDS docs)
+add_docs_target(linkcheck BUILDER linkcheck DEPENDS docs)
 
 include(GNUInstallDirs)
 set(PYTHONDIR scipp)

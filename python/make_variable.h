@@ -114,18 +114,26 @@ auto do_init_0D(const T &value, const std::optional<T> &variance,
   return var;
 }
 
+// If we use py::array as the type of values and variances, then pybind11 only
+// accepts exactly numpy.array as input and not types that are convertible to
+// an array (e.g. list). But doing the conversion manually using .cast<py:array>
+// allows this function to work with anything that can be converted to an array.
+// The downside is that we make an extra copy if the input is not already an
+// array. But that is likely not important as lists / tuples should not contain
+// large data.
 Variable do_make_variable(const std::vector<Dim> &labels,
-                          const py::array &values,
-                          const std::optional<py::array> &variances,
+                          const py::object &values,
+                          const std::optional<py::object> &variances,
                           units::Unit unit, const py::object &dtype) {
+  const auto &values_array = values.cast<py::array>();
   // Use custom dtype, otherwise dtype of data.
   const auto dtypeTag =
-      dtype.is_none() ? scipp_dtype(values.dtype()) : scipp_dtype(dtype);
+      dtype.is_none() ? scipp_dtype(values_array.dtype()) : scipp_dtype(dtype);
 
   if (labels.size() == 1 && !variances) {
     if (dtypeTag == core::dtype<std::string>) {
-      std::vector<scipp::index> shape(values.shape(),
-                                      values.shape() + values.ndim());
+      std::vector<scipp::index> shape(
+          values_array.shape(), values_array.shape() + values_array.ndim());
       return init_1D_no_variance(labels, shape,
                                  values.cast<std::vector<std::string>>(), unit);
     }
@@ -135,7 +143,8 @@ Variable do_make_variable(const std::vector<Dim> &labels,
     if (variances.has_value()) {
       throw except::VariancesError("datetimes cannot have variances.");
     }
-    const auto [actual_unit, value_factor] = get_time_unit(values, dtype, unit);
+    const auto [actual_unit, value_factor] =
+        get_time_unit(values_array, dtype, unit);
 
     if (value_factor != 1) {
       throw std::invalid_argument(
@@ -145,10 +154,13 @@ Variable do_make_variable(const std::vector<Dim> &labels,
     unit = actual_unit;
   }
 
-  return core::CallDType<
-      double, float, int64_t, int32_t, bool,
-      scipp::core::time_point>::apply<MakeVariable>(dtypeTag, labels, values,
-                                                    variances, unit);
+  return core::CallDType<double, float, int64_t, int32_t, bool,
+                         scipp::core::time_point>::
+      apply<MakeVariable>(dtypeTag, labels, values_array,
+                          variances.has_value()
+                              ? std::optional{variances->cast<py::array>()}
+                              : std::optional<py::array>{},
+                          unit);
 }
 
 Variable makeVariableDefaultInit(const std::vector<Dim> &labels,

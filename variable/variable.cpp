@@ -10,6 +10,7 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/variable_concept.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
@@ -153,23 +154,28 @@ Variable Variable::slice(const Slice params) const {
 
 void Variable::validateSlice(const Slice &s, const Variable &data) const {
   core::expect::validSlice(this->dims(), s);
-  if (data.hasVariances() != this->hasVariances()) {
+  if (variableFactory().hasVariances(data) !=
+      variableFactory().hasVariances(*this)) {
     auto variances_message = [](const auto &variable) {
-      return "does" + std::string(variable.hasVariances() ? "" : " NOT") +
+      return "does" +
+             std::string(variableFactory().hasVariances(variable) ? ""
+                                                                  : " NOT") +
              " have variances.";
     };
     throw except::VariancesError("Invalid slice operation. Slice " +
                                  variances_message(data) + "Variable " +
                                  variances_message(*this));
   }
-  if (data.unit() != this->unit())
+  if (variableFactory().elem_unit(data) != variableFactory().elem_unit(*this))
     throw except::UnitError(
-        "Invalid slice operation. Slice has unit: " + to_string(data.unit()) +
-        " Variable has unit: " + to_string(this->unit()));
-  if (data.dtype() != this->dtype())
+        "Invalid slice operation. Slice has unit: " +
+        to_string(variableFactory().elem_unit(data)) +
+        " Variable has unit: " + to_string(variableFactory().elem_unit(*this)));
+  if (variableFactory().elem_dtype(data) != variableFactory().elem_dtype(*this))
     throw except::TypeError("Invalid slice operation. Slice has dtype " +
-                            to_string(data.dtype()) + ". Variable has dtype " +
-                            to_string(this->dtype()));
+                            to_string(variableFactory().elem_dtype(data)) +
+                            ". Variable has dtype " +
+                            to_string(variableFactory().elem_dtype(*this)));
 }
 
 Variable &Variable::setSlice(const Slice params, const Variable &data) {
