@@ -25,7 +25,7 @@ template <class T> decltype(auto) converting_cast(const pybind11::object &obj) {
 }
 
 template <>
-decltype(auto) converting_cast<int64_t>(const pybind11::object &obj) {
+inline decltype(auto) converting_cast<int64_t>(const pybind11::object &obj) {
   if (dtype_of(obj) == scipp::dtype<double>) {
     // This conversion is not implemented in pybind11 v2.6.2
     return obj.cast<pybind11::int_>().cast<int64_t>();
