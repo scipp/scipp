@@ -55,14 +55,45 @@ DType dtype_of(const py::object &x) {
   }
 }
 
-DType cast_dtype(const py::object &dtype) {
+scipp::core::DType scipp_dtype(const py::dtype &type) {
+  if (type.is(py::dtype::of<double>()))
+    return scipp::core::dtype<double>;
+  if (type.is(py::dtype::of<float>()))
+    return scipp::core::dtype<float>;
+  // See https://github.com/pybind/pybind11/pull/1329, int64_t not
+  // matching numpy.int64 correctly.
+  if (type.is(py::dtype::of<std::int64_t>()) ||
+      (type.kind() == 'i' && type.itemsize() == 8))
+    return scipp::core::dtype<int64_t>;
+  if (type.is(py::dtype::of<std::int32_t>()) ||
+      (type.kind() == 'i' && type.itemsize() == 4))
+    return scipp::core::dtype<int32_t>;
+  if (type.is(py::dtype::of<bool>()))
+    return scipp::core::dtype<bool>;
+  if (type.kind() == 'U')
+    return scipp::core::dtype<std::string>;
+  if (type.kind() == 'M') {
+    return scipp::core::dtype<scipp::core::time_point>;
+  }
+  if (type.kind() == 'O') {
+    return scipp::core::dtype<scipp::python::PyObject>;
+  }
+  throw std::runtime_error(
+      "Unsupported numpy dtype: " +
+      py::str(static_cast<py::handle>(type)).cast<std::string>() +
+      "\n"
+      "Supported types are: bool, float32, float64,"
+      " int32, int64, string, datetime64, and object");
+}
+
+scipp::core::DType scipp_dtype(const py::object &type) {
   // Check None first, then native scipp Dtype, then numpy.dtype
-  if (dtype.is_none())
-    return core::dtype<void>;
+  if (type.is_none())
+    return dtype<void>;
   try {
-    return dtype.cast<DType>();
+    return type.cast<DType>();
   } catch (const py::cast_error &) {
-    return scipp_dtype(py::dtype::from_args(dtype));
+    return scipp_dtype(py::dtype::from_args(type));
   }
 }
 
@@ -115,45 +146,6 @@ DType common_dtype(const py::object &values, const py::object &variances,
                                  std::string("variance") + plural_s(plural));
     }
     return dtype;
-  }
-}
-
-scipp::core::DType scipp_dtype(const py::dtype &type) {
-  if (type.is(py::dtype::of<double>()))
-    return scipp::core::dtype<double>;
-  if (type.is(py::dtype::of<float>()))
-    return scipp::core::dtype<float>;
-  // See https://github.com/pybind/pybind11/pull/1329, int64_t not
-  // matching numpy.int64 correctly.
-  if (type.is(py::dtype::of<std::int64_t>()) ||
-      (type.kind() == 'i' && type.itemsize() == 8))
-    return scipp::core::dtype<int64_t>;
-  if (type.is(py::dtype::of<std::int32_t>()) ||
-      (type.kind() == 'i' && type.itemsize() == 4))
-    return scipp::core::dtype<int32_t>;
-  if (type.is(py::dtype::of<bool>()))
-    return scipp::core::dtype<bool>;
-  if (type.kind() == 'U')
-    return scipp::core::dtype<std::string>;
-  if (type.kind() == 'M') {
-    return scipp::core::dtype<scipp::core::time_point>;
-  }
-  throw std::runtime_error(
-      "Unsupported numpy dtype: " +
-      py::str(static_cast<py::handle>(type)).cast<std::string>() +
-      "\n"
-      "Supported types are: bool, float32, float64,"
-      " int32, int64, string, and datetime64");
-}
-
-scipp::core::DType scipp_dtype(const py::object &type) {
-  // Check None first, then native scipp Dtype, then numpy.dtype
-  if (type.is_none())
-    return dtype<void>;
-  try {
-    return type.cast<DType>();
-  } catch (const py::cast_error &) {
-    return scipp_dtype(py::dtype::from_args(type));
   }
 }
 

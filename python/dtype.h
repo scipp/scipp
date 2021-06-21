@@ -15,7 +15,7 @@ class dtype;
 
 scipp::core::DType dtype_of(const pybind11::object &x);
 
-scipp::core::DType cast_dtype(const pybind11::object &dtype);
+scipp::core::DType scipp_dtype(const pybind11::object &type);
 
 void ensure_conversion_possible(scipp::core::DType from, scipp::core::DType to,
                                 const std::string &data_name);
@@ -43,8 +43,6 @@ struct converting_cast<T, std::enable_if_t<std::is_integral_v<T>>> {
 scipp::core::DType common_dtype(const pybind11::object &values,
                                 const pybind11::object &variances,
                                 scipp::core::DType dtype, bool plural);
-
-scipp::core::DType scipp_dtype(const pybind11::object &type);
 
 bool has_datetime_dtype(const pybind11::object &obj);
 

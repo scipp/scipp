@@ -23,12 +23,9 @@
 #include "bind_data_access.h"
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
-#include "docstring.h"
-#include "dtype.h"
 #include "numpy.h"
 #include "pybind11.h"
 #include "rename.h"
-#include "unit.h"
 
 using namespace scipp;
 using namespace scipp::variable;

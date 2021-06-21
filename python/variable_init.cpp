@@ -25,11 +25,11 @@ using namespace scipp::variable;
 
 namespace py = pybind11;
 
-// TODO replace scipp_dtype
+namespace {
 std::tuple<DType, units::Unit>
 cast_dtype_and_unit(const py::object &dtype,
                     const std::optional<units::Unit> unit) {
-  const auto scipp_dtype = cast_dtype(dtype);
+  const auto scipp_dtype = ::scipp_dtype(dtype);
   if (scipp_dtype == core::dtype<core::time_point>) {
     units::Unit deduced_unit = parse_datetime_dtype(dtype);
     if (unit.has_value()) {
@@ -64,10 +64,115 @@ Dimensions build_dimensions(const py::object &labels, const py::object &shape) {
   }
 }
 
+void ensure_consistent_ndim(const std::vector<Dim> &dim_labels,
+                            const py::object &shape,
+                            const std::optional<py::array> &values,
+                            const std::optional<py::array> &variances) {
+  const auto ndim = scipp::size(dim_labels);
+  const auto check_ndim = [&ndim](const std::optional<py::array> &array,
+                                  const char *name) {
+    if (array.has_value() && array->ndim() != ndim) {
+      throw except::DimensionError(format(
+          "The number of dimensions (", array->ndim(), ") of the ", name,
+          " does not match the number of dimension labels (", ndim, ")"));
+    }
+  };
+  check_ndim(values, "values");
+  check_ndim(variances, "variances");
+  if (!shape.is_none() && scipp::index(py::len(shape)) != ndim) {
+    throw except::DimensionError(
+        format("The number of dimensions in 'shape' (", py::len(shape),
+               ") does not match the number of dimension labels (", ndim, ")"));
+  }
+}
+
+Dimensions build_dimensions(const std::vector<Dim> &dim_labels,
+                            const py::object &shape,
+                            const std::optional<py::array> &values,
+                            const std::optional<py::array> &variances) {
+  ensure_consistent_ndim(dim_labels, shape, values, variances);
+  const auto ndim = scipp::size(dim_labels);
+
+  // We cannot easily index into shape. Store it to compare to the data later.
+  const bool got_shape = !shape.is_none();
+  auto deduced_shape = got_shape ? shape.cast<std::vector<scipp::index>>()
+                                 : std::vector<scipp::index>(ndim);
+
+  for (scipp::index d = 0; d < ndim; ++d) {
+    scipp::index size = -1;
+    if (values.has_value()) {
+      if (variances.has_value() && values->shape(d) != variances->shape(d)) {
+        throw except::DimensionError(
+            format("The shapes of values and variances differ in dimension ", d,
+                   ": ", py::object(values->attr("shape")), " vs ",
+                   py::object(variances->attr("shape")), '.'));
+      }
+      size = values->shape(d);
+    } else {
+      if (variances.has_value()) {
+        size = variances->shape(d);
+      }
+    }
+    if (got_shape && deduced_shape[d] != size) {
+      throw except::DimensionError(format(
+          "The shape of the data differs from the given shape in dimension ", d,
+          ": ", py::object(values->attr("shape")), " vs ", deduced_shape, '.'));
+    } else {
+      deduced_shape[d] = size;
+    }
+  }
+
+  return Dimensions{dim_labels, deduced_shape};
+}
+
+void ensure_is_scalar(const py::buffer &array) {
+  if (const auto ndim = array.attr("ndim").cast<int64_t>(); ndim != 0) {
+    throw except::DimensionError(
+        format("Cannot interpret ", ndim, "-dimensional array as a scalar."));
+  }
+}
+
+template <class T>
+T extract_scalar(const py::object &obj, const units::Unit unit) {
+  using TM = ElementTypeMap<T>;
+  using PyType = typename TM::PyType;
+  TM::check_assignable(obj, unit);
+  if (py::isinstance<py::buffer>(obj)) {
+    ensure_is_scalar(obj);
+    return converting_cast<PyType>::cast(obj.attr("item")());
+  } else {
+    return converting_cast<PyType>::cast(obj);
+  }
+}
+
+template <>
+core::time_point extract_scalar<core::time_point>(const py::object &obj,
+                                                  const units::Unit unit) {
+  using TM = ElementTypeMap<core::time_point>;
+  using PyType = typename TM::PyType;
+  TM::check_assignable(obj, unit);
+  if (py::isinstance<py::buffer>(obj)) {
+    ensure_is_scalar(obj);
+    return core::time_point{obj.attr("astype")(py::dtype::of<PyType>())
+                                .attr("item")()
+                                .template cast<PyType>()};
+  } else {
+    return core::time_point{obj.cast<PyType>()};
+  }
+}
+
+template <>
+python::PyObject extract_scalar<python::PyObject>(const py::object &obj,
+                                                  const units::Unit unit) {
+  using TM = ElementTypeMap<python::PyObject>;
+  TM::check_assignable(obj, unit);
+  return obj;
+}
+
 template <class T> struct MakeVariableDefaultInit {
   static Variable apply(const Dimensions &dims, const units::Unit unit,
                         const std::optional<bool> with_variance) {
-    auto var = with_variance.template value_or(false)
+    auto var = with_variance.value_or(false)
                    ? makeVariable<T>(Dimensions{dims}, Values{}, Variances{})
                    : makeVariable<T>(Dimensions{dims});
     var.setUnit(unit);
@@ -90,50 +195,6 @@ Variable make_variable_default_init(const py::object &dim_labels,
       Eigen::Matrix3d,
       python::PyObject>::apply<MakeVariableDefaultInit>(dtype, dims, unit,
                                                         with_variance);
-}
-
-void assert_is_scalar(const py::buffer &array) {
-  if (const auto ndim = array.attr("ndim").cast<int64_t>(); ndim != 0) {
-    throw except::DimensionError(
-        format("Cannot interpret ", ndim, "-dimensional array as a scalar."));
-  }
-}
-
-template <class T>
-T extract_scalar(const py::object &obj, const units::Unit unit) {
-  using TM = ElementTypeMap<T>;
-  using PyType = typename TM::PyType;
-  TM::check_assignable(obj, unit);
-  if (py::isinstance<py::buffer>(obj)) {
-    assert_is_scalar(obj);
-    return converting_cast<PyType>::cast(obj.attr("item")());
-  } else {
-    return converting_cast<PyType>::cast(obj);
-  }
-}
-
-template <>
-core::time_point extract_scalar<core::time_point>(const py::object &obj,
-                                                  const units::Unit unit) {
-  using TM = ElementTypeMap<core::time_point>;
-  using PyType = typename TM::PyType;
-  TM::check_assignable(obj, unit);
-  if (py::isinstance<py::buffer>(obj)) {
-    assert_is_scalar(obj);
-    return core::time_point{obj.attr("astype")(py::dtype::of<PyType>())
-                                .attr("item")()
-                                .template cast<PyType>()};
-  } else {
-    return core::time_point{obj.cast<PyType>()};
-  }
-}
-
-template <>
-python::PyObject extract_scalar<python::PyObject>(const py::object &obj,
-                                                  const units::Unit unit) {
-  using TM = ElementTypeMap<python::PyObject>;
-  TM::check_assignable(obj, unit);
-  return obj;
 }
 
 template <class T> struct MakeVariableScalar {
@@ -190,59 +251,6 @@ Variable make_variable_scalar(const py::object &value,
                                                    with_variance);
 }
 
-Dimensions build_dimensions(const std::vector<Dim> &dim_labels,
-                            const py::object &shape,
-                            const std::optional<py::array> &values,
-                            const std::optional<py::array> &variances) {
-  const auto ndim = scipp::size(dim_labels);
-
-  const auto check_ndim = [&ndim](const std::optional<py::array> &array,
-                                  const char *name) {
-    if (array.has_value() && array->ndim() != ndim) {
-      throw except::DimensionError(format(
-          "The number of dimensions (", array->ndim(), ") of the ", name,
-          " does not match the number of dimension labels (", ndim, ")"));
-    }
-  };
-  check_ndim(values, "values");
-  check_ndim(variances, "variances");
-  if (!shape.is_none() && scipp::index(py::len(shape)) != ndim) {
-    throw except::DimensionError(
-        format("The number of dimensions in 'shape' (", py::len(shape),
-               ") does not match the number of dimension labels (", ndim, ")"));
-  }
-
-  // We cannot easily index into shape. Store it to compare to the data later.
-  const bool got_shape = !shape.is_none();
-  auto deduced_shape = got_shape ? shape.cast<std::vector<scipp::index>>()
-                                 : std::vector<scipp::index>(ndim);
-
-  for (scipp::index d = 0; d < ndim; ++d) {
-    scipp::index size = -1;
-    if (values.has_value()) {
-      if (variances.has_value() && values->shape(d) != variances->shape(d)) {
-        throw except::DimensionError(
-            format("The shapes of values and variances differ in dimension ", d,
-                   ": ", py::object(values->attr("shape")), " vs ",
-                   py::object(variances->attr("shape")), '.'));
-      }
-      size = values->shape(d);
-    } else {
-      if (variances.has_value()) {
-        size = variances->shape(d);
-      }
-    }
-    if (got_shape && deduced_shape[d] != size) {
-      throw except::DimensionError(format(
-          "The shape of the data differs from the given shape in dimension ", d,
-          ": ", py::object(values->attr("shape")), " vs ", deduced_shape, '.'));
-    } else {
-      deduced_shape[d] = size;
-    }
-  }
-
-  return Dimensions{dim_labels, deduced_shape};
-}
 template <class T> struct MakeVariableArray {
   static Variable apply(const Dimensions &dims, const py::object &values,
                         const py::object &variances, const units::Unit unit,
@@ -279,7 +287,6 @@ Variable make_variable_array(const py::object &dim_labels,
                              const units::Unit unit, DType dtype,
                              const std::optional<bool> with_variance) {
   using opt_array = std::optional<py::array>;
-
   // Let numpy figure out conversions from lists, tuples, etc.
   const opt_array values_array{values.is_none() ? opt_array{}
                                                 : py::array(values)};
@@ -292,18 +299,16 @@ Variable make_variable_array(const py::object &dim_labels,
                                      values_array, variances_array);
   return core::CallDType<
       double, float, int64_t, int32_t, bool, scipp::core::time_point,
-      std::string, Variable, DataArray, Dataset,
-      python::PyObject>::apply<MakeVariableArray>(dtype, dims, values,
-                                                  variances, unit,
-                                                  with_variance);
+      std::string, python::PyObject>::apply<MakeVariableArray>(dtype, dims,
+                                                               values,
+                                                               variances, unit,
+                                                               with_variance);
 }
 
-enum class ConstructorType { Array, Scalar, Default };
-
-std::string make_scalar_array_confict_message(const py::object &values,
-                                              const py::object &variances,
-                                              const py::object &value,
-                                              const py::object &variance) {
+std::string make_scalar_array_conflict_message(const py::object &values,
+                                               const py::object &variances,
+                                               const py::object &value,
+                                               const py::object &variance) {
   std::ostringstream oss;
   oss << "Scalar and array arguments cannot both be used to initialize "
          "variables. Got ";
@@ -332,13 +337,15 @@ std::string make_scalar_array_confict_message(const py::object &values,
   return oss.str();
 }
 
+enum class ConstructorType { Array, Scalar, Default };
+
 ConstructorType
 identify_constructor(const py::object &dims, const py::object &shape,
                      const py::object &values, const py::object &variances,
                      const py::object &value, const py::object &variance) {
   if (!values.is_none() || !variances.is_none()) {
     if (!value.is_none() || !variance.is_none()) {
-      throw std::invalid_argument(make_scalar_array_confict_message(
+      throw std::invalid_argument(make_scalar_array_conflict_message(
           values, variances, value, variance));
     }
     if (dims.is_none()) {
@@ -366,6 +373,7 @@ identify_constructor(const py::object &dims, const py::object &shape,
     return ConstructorType::Default;
   }
 }
+} // namespace
 
 void bind_init(py::class_<Variable> &cls) {
   cls.def(
@@ -383,7 +391,6 @@ void bind_init(py::class_<Variable> &cls) {
         case ConstructorType::Array:
           return make_variable_array(dims, shape, values, variances,
                                      actual_unit, scipp_dtype, with_variance);
-          // TODO scalar not needed?!
         case ConstructorType::Scalar:
           return make_variable_scalar(value, variance, actual_unit, scipp_dtype,
                                       with_variance);
