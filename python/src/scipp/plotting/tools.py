@@ -96,18 +96,6 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
     return parsed
 
 
-def make_fake_coord(dim, size, unit=None):
-    """
-    Make a Variable with indices as values, to be used as a fake coordinate
-    for either missing coordinates or non-number coordinates (e.g. vector or
-    string coordinates).
-    """
-    kwargs = {"values": np.arange(size, dtype=np.float64)}
-    if unit is not None:
-        kwargs["unit"] = unit
-    return sc.Variable(dims=[dim], **kwargs)
-
-
 def vars_to_err(v):
     """
     Convert variances to errors.

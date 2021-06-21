@@ -117,7 +117,7 @@ class PlotFigure2d(PlotFigure):
 
         self._limits_set = False
 
-    def update_data(self, new_values, info=None):
+    def update_data(self, new_values):
         """
         Update image array with new values.
         """

@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-# @author Neil Vaytet
-
 from .view1d import PlotView1d
 
 
@@ -89,11 +87,7 @@ class PlotController:
         Initialize widget parameters once the `PlotModel`, `PlotView` and
         `PlotController` have been created.
         """
-        ranges = {}
-        for dim in self.widgets.get_slider_bounds():
-            ranges[dim] = self.model.get_slice_coord_bounds(
-                self.name, dim, [0, 1])
-        self.widgets.initialize(sizes, ranges)
+        self.widgets.initialize(sizes=sizes)
 
     def initialize_model(self):
         """
@@ -203,12 +197,6 @@ class PlotController:
         dims = self.model.dims
         dims = [old_dim if dim == new_dim else dim for dim in dims]
         self.update_axes(dims=dims)
-        # Update the slider readout here because the widgets do not have access
-        # to the model, which holds the coordinates.
-        lower, upper = self.model.get_slice_coord_bounds(
-            self.name, new_dim, [0, 1])
-        self.widgets.update_slider_readout(index, lower, upper, [0, 1],
-                                           new_dim == self.multid_coord)
 
     def update_norm_button(self, *args, **kwargs):
         """
@@ -252,35 +240,24 @@ class PlotController:
         called when update_axes is called since the displayed data needs to be
         updated when the axes have changed.
         """
-        owner_dim = None
-
         if self.update_data_lock:
             return
 
         slices = self.widgets.get_slider_bounds()
-        if change is not None:
-            owner_dim = self.widgets.get_index_dim(change["owner"].index)
-            lower, upper = self.model.get_slice_coord_bounds(
-                self.name, owner_dim, slices[owner_dim])
-            self.widgets.update_slider_readout(change["owner"].index, lower,
-                                               upper, slices[owner_dim],
-                                               owner_dim == self.multid_coord)
-
-        info = {"slice_label": self._make_slice_label(slices, "")[1:]}
-
         new_values = self.model.update_data(slices)
-        self.view.update_data(new_values,
-                              info=info,
-                              mask_info=self.get_masks_info())
+        self.widgets.update_slider_readout(new_values.meta)
+
+        self.view.update_data(new_values, mask_info=self.get_masks_info())
         if self.panel is not None:
-            self.panel.update_data(info)
+            self.panel.update_data(new_values)
         if self.profile_dim is not None:
-            if owner_dim == self.profile_dim:
-                self.profile.update_slice_area(lower, upper)
+            bounds = new_values.meta[self.profile_dim]
+            if len(bounds.dims) == 1:
+                xstart, xend = bounds.values
             else:
-                self.model.update_profile_model(visible=True,
-                                                slices=slices,
-                                                profile_dim=self.profile_dim)
+                xstart = bounds.value
+                xend = bounds.value
+            self.profile.update_slice_area(xstart, xend)
 
     def toggle_mask(self, change):
         """
@@ -327,7 +304,7 @@ class PlotController:
         else:
             self.view.remove_line(name=name, line_id=line_id)
 
-    def toggle_profile_view(self, owner=None):
+    def toggle_profile_view(self, owner=None, dims=None):
         """
         Show or hide the 1d plot displaying the profile along an additional
         dimension.
@@ -339,13 +316,14 @@ class PlotController:
             visible = False
             self.widgets.clear_profile_buttons()
         else:
-            self.profile_dim = self.widgets.get_index_dim(owner.index)
+            assert len(dims) == 1  # TODO support 2d profiles
+            self.profile_dim = dims[0]
             if owner.button_style == "info":
                 owner.button_style = ""
                 visible = False
             else:
                 owner.button_style = "info"
-                self.widgets.clear_profile_buttons(exclude=owner.index)
+                self.widgets.clear_profile_buttons()
                 visible = True
 
             if visible:
@@ -359,14 +337,8 @@ class PlotController:
         self.view.update_profile_connection(visible=visible)
 
         if visible:
-            slices = self.widgets.get_slider_bounds()
-            self.model.update_profile_model(visible=visible,
-                                            slices=slices,
-                                            profile_dim=self.profile_dim)
-            lower, upper = self.model.get_slice_coord_bounds(
-                self.name, self.profile_dim, slices[self.profile_dim])
             self.update_profile(slices={})
-            self.profile.update_slice_area(lower, upper)
+            self.update_data()
 
     def update_profile(self, slices):
         """
@@ -376,37 +348,10 @@ class PlotController:
         ask the model to slice down the data, and send the new data returned by
         the model to the profile view.
         """
-        info = {"slice_label": ""}
-        # TODO
-        # ax_dims = {self.axparams[xyz]["dim"]: xyz for xyz in self.axparams}
-        # xydata = {'x': xdata, 'y': ydata}
-
         slices.update(self.widgets.get_slider_bounds(exclude=self.profile_dim))
-
-        # Add pixel locations to profile label
-        # for dim in ax_dims:
-        #    info["slice_label"] = "{},{}:{}".format(
-        #        info["slice_label"], dim,
-        #        value_to_string(xydata[ax_dims[dim]], precision=1))
-
-        # info["slice_label"] = self._make_slice_label(slices,
-        #                                              info["slice_label"])[1:]
-
         new_values = self._profile_model.update_data(slices=slices)
         self._profile_view.update_data(new_values,
-                                       info=info,
                                        mask_info=self.get_masks_info())
-
-    def _make_slice_label(self, slices, label):
-        # Add slice ranges to profile label
-        for dim in slices:
-            lower, upper = self.model.get_slice_coord_bounds(
-                self.name, dim, slices[dim])
-            label = "{},{}[{}]".format(
-                label, dim,
-                self.widgets.get_slice_extent(lower, upper, slices[dim],
-                                              dim == self.multid_coord))
-        return label
 
     def toggle_hover_visibility(self, value):
         """

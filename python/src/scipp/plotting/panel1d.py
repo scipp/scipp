@@ -4,6 +4,7 @@
 
 from .panel import PlotPanel
 from ..utils import make_random_color
+from .view1d import _make_label
 import ipywidgets as ipw
 
 
@@ -63,12 +64,12 @@ class PlotPanel1d(PlotPanel):
         self.make_keep_button()
         self.update_widgets()
 
-    def update_data(self, info):
+    def update_data(self, array):
         """
         Save label (slice position and thickness) of current line so that it
         can be labeled accordingly when the "keep" button is pressed.
         """
-        self.slice_label = info["slice_label"]
+        self.slice_label = _make_label(array)
 
     def update_widgets(self):
         """

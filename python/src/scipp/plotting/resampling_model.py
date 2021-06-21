@@ -46,8 +46,10 @@ class ResamplingModel():
     def _rebin(self, var, coords):
         array = sc.DataArray(data=var)
         for dim in coords:
-            if dim in var.dims:
+            try:
                 array.coords[dim] = coords[dim]
+            except sc.DimensionError:  # Masks may be lower-dimensional
+                pass
         plan = []
         for edge in self.edges:
             dim = edge.dims[-1]
@@ -173,11 +175,17 @@ def _with_edges(array):
     return new_array, prefix
 
 
-def _replace_edge_coords(array, bounds, prefix):
-    return {
-        dim: array.meta[dim if dim in bounds else f'{prefix}_{dim}']
-        for dim in array.dims
-    }
+def _replace_edge_coords(array, dims, bounds, prefix):
+    coords = {}
+    for dim in dims:
+        if dim in bounds:
+            if isinstance(bounds[dim], int):
+                coords[dim] = array.meta[f'{prefix}_{dim}']
+            else:
+                coords[dim] = array.meta[dim]
+        else:
+            coords[dim] = array.meta[f'{prefix}_{dim}']
+    return coords
 
 
 class ResamplingCountsModel(ResamplingModel):
@@ -186,7 +194,8 @@ class ResamplingCountsModel(ResamplingModel):
         return array
 
     def _resample(self, array):
-        coords = _replace_edge_coords(array, self.bounds, self._prefix)
+        coords = _replace_edge_coords(array, self._array.dims, self.bounds,
+                                      self._prefix)
         return self._rebin(array.data, coords)
 
 
@@ -215,7 +224,8 @@ class ResamplingDenseModel(ResamplingModel):
         return data
 
     def _resample(self, array):
-        coords = _replace_edge_coords(array, self.bounds, self._prefix)
+        coords = _replace_edge_coords(array, self._array.dims, self.bounds,
+                                      self._prefix)
         return self._from_density(self._rebin(array.data, coords))
 
     def _make_array(self, array):

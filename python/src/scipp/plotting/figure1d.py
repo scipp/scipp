@@ -188,7 +188,7 @@ class PlotFigure1d(PlotFigure):
         vals["variances"]["y"] = y
         return vals, hist
 
-    def update_data(self, new_values, info):
+    def update_data(self, new_values):
         """
         Update the x and y positions of the data points when a new data slice
         is received for display.
@@ -203,7 +203,7 @@ class PlotFigure1d(PlotFigure):
                                                     hist=hist)
             line = self._lines[name]
             line.data.set_data(vals["values"]["x"], vals["values"]["y"])
-            lab = info["slice_label"] if len(info["slice_label"]) > 0 else name
+            lab = vals["label"] if len(vals["label"]) > 0 else name
             line.data.set_label(lab)
 
             for m in vals["masks"]:

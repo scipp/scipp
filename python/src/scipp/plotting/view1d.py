@@ -10,6 +10,14 @@ from .._scipp import core as sc
 import numpy as np
 
 
+def _make_label(array):
+    labels = []
+    for dim, coord in array.meta.items():
+        if dim not in array.dims:
+            labels.append(f'({dim}={coord.values} {coord.unit})')
+    return ','.join(labels)
+
+
 class PlotView1d(PlotView):
     """
     View object for 1 dimensional plots. Contains a `PlotFigure1d`.
@@ -45,6 +53,7 @@ class PlotView1d(PlotView):
         for name, array in new_values.items():
             self._dim = array.dims[0]  # should be same for all items
             values = {"values": {}, "variances": {}, "masks": {}}
+            values['label'] = _make_label(array)
             values["values"]["x"] = array.meta[self._dim].values.ravel()
             values["values"]["y"] = array.values.ravel()
             if array.variances is not None:

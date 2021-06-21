@@ -7,21 +7,9 @@ from .. import typing as st
 from ..compat.dict import from_dict
 from .dispatch import dispatch
 from .objects import PlotDict
-from .tools import make_fake_coord, get_line_param
+from .tools import get_line_param
 import numpy as np
 import itertools
-
-
-def _variable_to_data_array(variable):
-    """
-    Convert a Variable to a DataArray by giving it some fake integer
-    coordinates, which makes it possible to write generic code in the rest of
-    the plotting library.
-    """
-    coords = {}
-    for dim, size in zip(variable.dims, variable.shape):
-        coords[dim] = make_fake_coord(dim, size)
-    return sc.DataArray(data=variable, coords=coords)
 
 
 def _ndarray_to_variable(ndarray):
@@ -60,18 +48,17 @@ def _input_to_data_array(item, all_keys, key=None):
         if st.has_numeric_type(item):
             if key is None:
                 key = _brief_str(item)
-            to_plot[_make_plot_key(key,
-                                   all_keys)] = _variable_to_data_array(item)
-    elif isinstance(item, sc.DataArray):
-        if st.has_numeric_type(item):
+            to_plot[_make_plot_key(key, all_keys)] = sc.DataArray(data=item)
+    elif su.is_data_array(item):
+        if su.numeric_type(item):
             if key is None:
                 key = item.name
             to_plot[_make_plot_key(key, all_keys)] = item
     elif isinstance(item, np.ndarray):
         if key is None:
             key = str(type(item))
-        to_plot[_make_plot_key(key, all_keys)] = _variable_to_data_array(
-            _ndarray_to_variable(item))
+        to_plot[_make_plot_key(
+            key, all_keys)] = sc.DataArray(data=_ndarray_to_variable(item))
     else:
         raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
                            "a Dataset, a DataArray, a Variable (and their "
@@ -93,6 +80,10 @@ class DataArrayDict(dict):
     @property
     def unit(self):
         return next(iter(self.values())).unit
+
+    @property
+    def meta(self):
+        return next(iter(self.values())).meta
 
 
 def plot(scipp_obj,

@@ -133,10 +133,9 @@ class PlotView:
         return new_values
 
     def refresh(self, mask_info):
-        self.figure.update_data(self._make_data(self._data, mask_info),
-                                self._info)
+        self.figure.update_data(self._make_data(self._data, mask_info))
 
-    def update_data(self, new_values, info=None, mask_info=None):
+    def update_data(self, new_values, mask_info=None):
         """
         Forward data update to the `figure`.
         """
@@ -144,7 +143,6 @@ class PlotView:
         if self._dims != new_values.dims:
             self._dims = new_values.dims
             self._update_axes()
-        self._info = info
         if self.figure.toolbar is not None:
             self.figure.toolbar.dims = self._dims
         self.refresh(mask_info)

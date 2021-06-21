@@ -2,9 +2,10 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import make_fake_coord, find_limits, to_dict
+from .tools import find_limits, to_dict
 from ..utils import vector_type, string_type, datetime_type
 from .._scipp import core as sc
+from .._variable import arange
 
 
 class PlotModel:
@@ -77,15 +78,11 @@ class PlotModel:
         if dim in array.meta:
             coord = array.meta[dim]
             if vector_type(coord) or string_type(coord):
-                coord = make_fake_coord(dim, array.sizes[dim])
+                coord = arange(dim=dim, start=0, stop=array.sizes[dim])
             elif datetime_type(coord):
                 coord = coord - sc.min(coord)
         else:
-            coord = make_fake_coord(dim, array.sizes[dim])
-        # Convert the coordinate to float because rebin (used in 2d plots) does
-        # not currently support integer coordinates
-        if coord.dtype not in [sc.dtype.float32, sc.dtype.float64]:
-            coord = coord.astype(sc.dtype.float64)
+            coord = arange(dim=dim, start=0, stop=array.sizes[dim])
         return coord
 
     def update_data_arrays(self):
@@ -94,16 +91,6 @@ class PlotModel:
                                                   coords=item["coords"],
                                                   masks=to_dict(
                                                       item["array"].masks))
-
-    def get_slice_coord_bounds(self, name, dim, bounds):
-        """
-        Return the left and right coordinates for a bin index.
-        """
-        # TODO I believe this is now broken unless we have a bin-edge coord
-        return self.data_arrays[name].meta[dim][
-            dim,
-            bounds[0]].value, self.data_arrays[name].meta[dim][dim,
-                                                               bounds[1]].value
 
     def rescale_to_data(self, scale=None):
         """
@@ -140,6 +127,3 @@ class PlotModel:
         Return the multi-dimensional coordinate.
         """
         return self.multid_coord
-
-    def update_profile_model(self, *args, **kwargs):
-        return

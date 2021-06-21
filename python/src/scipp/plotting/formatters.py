@@ -1,8 +1,9 @@
 from ..utils import name_with_unit, value_to_string, vector_type, \
         string_type, datetime_type
-from .tools import to_bin_centers, make_fake_coord
+from .tools import to_bin_centers
 from .._scipp.core import to_unit, Unit
 from .._scipp import core as sc
+from .._variable import arange
 import enum
 import numpy as np
 
@@ -200,7 +201,7 @@ def _get_or_make_coord(array, dim):
         coord = array.meta[dim]
         if _dtype_kind(coord) not in [Kind.vector, Kind.string]:
             return coord
-    return make_fake_coord(dim, array.sizes[dim])
+    return arange(dim=dim, start=0, stop=array.sizes[dim])
 
 
 def make_formatter(array, key):
