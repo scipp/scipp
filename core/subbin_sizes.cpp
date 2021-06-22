@@ -100,7 +100,7 @@ SubbinSizes binary(const SubbinSizes &a, const SubbinSizes &b, Op op) {
 }
 
 SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
-  return binary(a, b, element::plus_equals);
+  return binary(a, b, element::add_equals);
 }
 
 SubbinSizes operator-(const SubbinSizes &a, const SubbinSizes &b) {

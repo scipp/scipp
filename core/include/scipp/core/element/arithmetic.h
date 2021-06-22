@@ -23,10 +23,10 @@ constexpr auto add_inplace_types =
              std::tuple<float, int64_t>, std::tuple<float, int32_t>,
              std::tuple<int64_t, bool>>;
 
-constexpr auto plus_equals =
+constexpr auto add_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a += b; }};
 
-constexpr auto nan_plus_equals =
+constexpr auto nan_add_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) {
                  using numeric::isnan;
                  if (isnan(a))
@@ -120,7 +120,7 @@ struct remainder_types_t {
   using types = arithmetic_type_pairs;
 };
 
-constexpr auto plus =
+constexpr auto add =
     overloaded{add_types_t{}, [](const auto a, const auto b) { return a + b; }};
 constexpr auto minus = overloaded{
     minus_types_t{}, [](const auto a, const auto b) { return a - b; }};
