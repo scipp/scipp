@@ -33,8 +33,8 @@ def test_create_default_with_numpy_dtype():
 
 
 def test_create_default_with_class_dtype():
-    var = sc.Variable(dims=['x'], shape=[2], dtype=int)
-    assert var.dtype == sc.dtype.int64
+    var = sc.Variable(dims=['x'], shape=[2], dtype=str)
+    assert var.dtype == sc.dtype.string
 
 
 def test_create_default_with_unit():
@@ -131,7 +131,7 @@ def test_create_scalar_with_value(args):
     assert var.unit == sc.units.dimensionless
 
 
-@pytest.mark.parametrize('args', ((sc.dtype.int64, 1), (sc.dtype.bool, True),
+@pytest.mark.parametrize('args', ((sc.dtype.bool, True),
                                   (sc.dtype.string, 'a')))
 def test_create_scalar_with_value_array(args):
     dtype, value = args
@@ -139,6 +139,15 @@ def test_create_scalar_with_value_array(args):
     assert var.value == value
     assert var.dims == []
     assert var.dtype == dtype
+    assert var.unit == sc.units.dimensionless
+
+
+def test_create_scalar_with_value_array_int():
+    var = sc.Variable(value=np.array(2))
+    assert var.value == 2
+    assert var.dims == []
+    # The dtype varies between Windows and Linux / MacOS.
+    assert var.dtype in (sc.dtype.int32, sc.dtype.int64)
     assert var.unit == sc.units.dimensionless
 
 
@@ -250,7 +259,11 @@ def test_create_1d_size_4():
                                               (sc.dtype.string, ['a', 'bc'])))
 def test_create_1d_dtype(values_type, dtype_and_values):
     def check(v):
-        assert v.dtype == dtype
+        if dtype == sc.dtype.int64:
+            # The dtype varies between Windows and Linux / MacOS.
+            assert v.dtype in (sc.dtype.int32, sc.dtype.int64)
+        else:
+            assert v.dtype == dtype
         np.testing.assert_array_equal(v.values, values)
 
     dtype, values = dtype_and_values
