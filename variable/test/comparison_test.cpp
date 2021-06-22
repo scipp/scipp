@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+#include "scipp/core/eigen.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
 #include "test_macros.h"
@@ -45,6 +46,7 @@ TYPED_TEST(IsCloseTest, rtol_when_variables_within_tolerance) {
   const auto atol = makeVariable<TypeParam>(Values{0});
   EXPECT_EQ(isclose(a, b, rtol, atol), true * units::one);
 }
+
 TYPED_TEST(IsCloseTest, rtol_when_variables_outside_tolerance) {
   const auto a = makeVariable<TypeParam>(Values{7});
   const auto b = makeVariable<TypeParam>(Values{9});
@@ -54,6 +56,22 @@ TYPED_TEST(IsCloseTest, rtol_when_variables_outside_tolerance) {
   EXPECT_EQ(isclose(a, b, rtol, atol), false * units::one);
 }
 
+TEST(IsCloseTest, with_vectors) {
+  const auto u =
+      makeVariable<Eigen::Vector3d>(Values{Eigen::Vector3d{0, 0, 0}});
+  const auto v =
+      makeVariable<Eigen::Vector3d>(Values{Eigen::Vector3d{1, 1, 1}});
+  const auto w =
+      makeVariable<Eigen::Vector3d>(Values{Eigen::Vector3d{1, 1, 1.0001}});
+  const auto rtol = 0.0 * units::one;
+  const auto atol = 1.0 * units::one;
+  EXPECT_EQ(isclose(u, u, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, v, rtol, atol),
+
+            makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(v, w, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, w, rtol, atol), makeVariable<bool>(Values{false}));
+}
 TEST(IsCloseTest, works_for_counts) {
   const auto a = makeVariable<double>(Values{1}, Variances{1}, units::counts);
   const auto rtol = 1e-5 * units::one;
@@ -103,6 +121,18 @@ TEST(IsCloseTest, compare_values_and_variances) {
                     makeVariable<double>(Values{1.0})),
             true * units::one);
 }
+
+TEST(IsCloseTest, rtol_units) {
+  auto unit = scipp::units::m;
+  const auto a = makeVariable<double>(Values{1.0}, Variances{1.0}, unit);
+  // This is fine
+  EXPECT_EQ(isclose(a, a, 1.0 * scipp::units::one, 1.0 * unit),
+            true * scipp::units::one);
+  // Now rtol has units m
+  EXPECT_THROW_DISCARD(isclose(a, a, 1.0 * unit, 1.0 * unit),
+                       except::UnitError);
+}
+
 TEST(ComparisonTest, variances_test) {
   const auto a = makeVariable<float>(Values{1.0}, Variances{1.0});
   const auto b = makeVariable<float>(Values{2.0}, Variances{2.0});
