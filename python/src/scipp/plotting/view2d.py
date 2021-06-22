@@ -22,6 +22,7 @@ class PlotView2d(PlotView):
     def __init__(self, figure, formatters):
         super().__init__(figure=figure, formatters=formatters)
         self._axes = ['y', 'x']
+        self._marker_index = []
 
         self.xlim_updated = False
         self.ylim_updated = False
@@ -144,7 +145,7 @@ class PlotView2d(PlotView):
         is picked.
         """
         if isinstance(event.artist, PathCollection):
-            return event.ind[0]
+            return self._marker_index[event.ind[0]]
 
     def _do_mark(self, index, color, x, y):
         """
@@ -163,14 +164,17 @@ class PlotView2d(PlotView):
                 (self.profile_scatter.get_facecolors(), [color]), axis=0)
             self.profile_scatter.set_offsets(new_offsets)
             self.profile_scatter.set_facecolors(new_colors)
+        self._marker_index.append(index)
         self.figure.draw()
 
     def remove_mark(self, index):
         """
         Remove a marker (scatter point).
         """
-        xy = np.delete(self.profile_scatter.get_offsets(), index, axis=0)
-        c = np.delete(self.profile_scatter.get_facecolors(), index, axis=0)
+        i = self._marker_index.index(index)
+        xy = np.delete(self.profile_scatter.get_offsets(), i, axis=0)
+        c = np.delete(self.profile_scatter.get_facecolors(), i, axis=0)
         self.profile_scatter.set_offsets(xy)
         self.profile_scatter.set_facecolors(c)
+        self._marker_index.remove(index)
         self.figure.draw()
