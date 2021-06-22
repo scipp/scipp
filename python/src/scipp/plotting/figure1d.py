@@ -273,20 +273,8 @@ class PlotFigure1d(PlotFigure):
                 self.ax.collections[-1].set_zorder(2)
 
             if self.show_legend():
-                self._reset_line_label(name)
                 self.ax.legend(loc=self.legend["loc"])
             self.draw()
-
-    def _reset_line_label(self, name):
-        """
-        When a line is saved, it is useful to see its parameters (location and
-        thickness of slice that correspond to the line). The main line label
-        is thus constantly updated by the `PlotModel` when a dimension slider
-        is being moved. This can then easily be duplicated in `keep_line()`.
-        Just before we show the legend, we need to reset the line
-        name to its original name.
-        """
-        self._lines[name].data.set_label(name)
 
     def remove_line(self, line_id, names=None):
         """
@@ -307,7 +295,6 @@ class PlotFigure1d(PlotFigure):
             self.ax.lines = lines
             self.ax.collections = collections
             if self.show_legend():
-                self._reset_line_label(name)
                 self.ax.legend(loc=self.legend["loc"])
             self.draw()
 
