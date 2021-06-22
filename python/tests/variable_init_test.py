@@ -17,6 +17,15 @@ def test_create_default():
     assert var.value == 0.0
 
 
+def test_create_default_variance():
+    var = sc.Variable(with_variance=True)
+    assert var.dims == []
+    assert var.dtype == sc.dtype.float64
+    assert var.unit == sc.units.dimensionless
+    assert var.value == 0.0
+    assert var.variance == 0.0
+
+
 def test_create_default_dtype():
     var = sc.Variable(dims=['x'], shape=[4])
     assert var.dtype == sc.dtype.float64
@@ -111,6 +120,7 @@ def test_create_scalar_with_float_value(value):
      np.array(1.2)])
 def test_create_scalar_with_float_variance(variance):
     var = sc.Variable(variance=variance)
+    assert var.value == 0.0
     assert var.variance == variance
     assert var.dims == []
     assert var.dtype == sc.dtype.float64
@@ -323,6 +333,7 @@ def test_create_1d_variances_array_like(variances_type):
     variances = np.arange(5.0)
     var = sc.Variable(dims=['x'], variances=variances_type(variances))
     assert var.dtype == sc.dtype.float64
+    np.testing.assert_array_equal(var.values, np.zeros_like(variances))
     np.testing.assert_array_equal(var.variances, variances)
 
 
@@ -439,6 +450,7 @@ def test_create_2d_variances_array_like(inner_variances_type,
     var = sc.Variable(dims=['x', 'y'],
                       variances=outer_variances_type(
                           [inner_variances_type(val) for val in variances]))
+    np.testing.assert_array_equal(var.values, np.zeros_like(variances))
     np.testing.assert_array_equal(var.variances, variances)
 
 
