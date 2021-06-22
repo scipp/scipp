@@ -340,7 +340,7 @@ class PlotController:
                 self._profile_model.dims = [self.profile_dim]
                 self._profile_view.set_scale(scale=self.scale)
             if not visible or self.profile.is_visible():
-                self.view.reset_profile()
+                self.view.clear_marks()
 
         self.profile.toggle_view(visible=visible)
         self.toggle_hover_visibility(False)

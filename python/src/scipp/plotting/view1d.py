@@ -87,15 +87,14 @@ class PlotView1d(PlotView):
         """
         self.figure.update_line_color(*args, **kwargs)
 
-    def reset_profile(self):
+    def clear_marks(self):
         """
-        Remove all vertical lines (=profile location markers).
+        Remove all markers (axvline).
         """
-        new_lines = []
-        for line in self.figure.ax.lines:
-            if not (line.get_url() == "axvline"):
-                new_lines.append(line)
-        self.figure.ax.lines = new_lines
+        self.figure.ax.lines = [
+            line for line in self.figure.ax.lines
+            if isinstance(line.get_gid(), int)
+        ]
         self.figure.draw()
 
     def _do_handle_pick(self, event):

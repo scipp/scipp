@@ -23,6 +23,7 @@ class PlotView2d(PlotView):
         super().__init__(figure=figure, formatters=formatters)
         self._axes = ['y', 'x']
         self._marker_index = []
+        self._marks_scatter = None
 
         self.xlim_updated = False
         self.ylim_updated = False
@@ -128,14 +129,14 @@ class PlotView2d(PlotView):
         self.current_lims = {}
         self.global_lims = {}
         super()._update_axes()
-        self.reset_profile()
+        self.clear_marks()
 
-    def reset_profile(self):
+    def clear_marks(self):
         """
         Reset all scatter markers when a profile is reset.
         """
-        if self.profile_scatter is not None:
-            self.profile_scatter = None
+        if self._marks_scatter is not None:
+            self._marks_scatter = None
             self.figure.ax.collections = []
             self.figure.draw()
 
@@ -151,19 +152,19 @@ class PlotView2d(PlotView):
         """
         Add a marker (colored scatter point).
         """
-        if self.profile_scatter is None:
-            self.profile_scatter = self.figure.ax.scatter([x], [y],
-                                                          c=[color],
-                                                          edgecolors="w",
-                                                          picker=5,
-                                                          zorder=10)
+        if self._marks_scatter is None:
+            self._marks_scatter = self.figure.ax.scatter([x], [y],
+                                                         c=[color],
+                                                         edgecolors="w",
+                                                         picker=5,
+                                                         zorder=10)
         else:
             new_offsets = np.concatenate(
-                (self.profile_scatter.get_offsets(), [[x, y]]), axis=0)
+                (self._marks_scatter.get_offsets(), [[x, y]]), axis=0)
             new_colors = np.concatenate(
-                (self.profile_scatter.get_facecolors(), [color]), axis=0)
-            self.profile_scatter.set_offsets(new_offsets)
-            self.profile_scatter.set_facecolors(new_colors)
+                (self._marks_scatter.get_facecolors(), [color]), axis=0)
+            self._marks_scatter.set_offsets(new_offsets)
+            self._marks_scatter.set_facecolors(new_colors)
         self._marker_index.append(index)
         self.figure.draw()
 
@@ -172,9 +173,9 @@ class PlotView2d(PlotView):
         Remove a marker (scatter point).
         """
         i = self._marker_index.index(index)
-        xy = np.delete(self.profile_scatter.get_offsets(), i, axis=0)
-        c = np.delete(self.profile_scatter.get_facecolors(), i, axis=0)
-        self.profile_scatter.set_offsets(xy)
-        self.profile_scatter.set_facecolors(c)
+        xy = np.delete(self._marks_scatter.get_offsets(), i, axis=0)
+        c = np.delete(self._marks_scatter.get_facecolors(), i, axis=0)
+        self._marks_scatter.set_offsets(xy)
+        self._marks_scatter.set_facecolors(c)
         self._marker_index.remove(index)
         self.figure.draw()

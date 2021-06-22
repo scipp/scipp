@@ -31,7 +31,6 @@ class PlotView:
         self.formatters = formatters
         self.controller = {}
         self._pick_lock = False
-        self.profile_scatter = None
 
     @property
     def axes(self):
