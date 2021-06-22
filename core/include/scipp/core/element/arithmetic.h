@@ -35,7 +35,7 @@ constexpr auto nan_add_equals =
                    a += b;
                }};
 
-constexpr auto minus_equals =
+constexpr auto subtract_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a -= b; }};
 
 constexpr auto mul_inplace_types = arg_list<
@@ -75,7 +75,7 @@ struct add_types_t {
           std::tuple<int64_t, time_point>, std::tuple<int32_t, time_point>>{}));
 };
 
-struct minus_types_t {
+struct subtract_types_t {
   constexpr void operator()() const noexcept;
   using types = decltype(
       std::tuple_cat(std::declval<arithmetic_and_matrix_type_pairs>(),
@@ -122,8 +122,8 @@ struct remainder_types_t {
 
 constexpr auto add =
     overloaded{add_types_t{}, [](const auto a, const auto b) { return a + b; }};
-constexpr auto minus = overloaded{
-    minus_types_t{}, [](const auto a, const auto b) { return a - b; }};
+constexpr auto subtract = overloaded{
+    subtract_types_t{}, [](const auto a, const auto b) { return a - b; }};
 constexpr auto times = overloaded{
     times_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,

@@ -104,7 +104,7 @@ SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
 }
 
 SubbinSizes operator-(const SubbinSizes &a, const SubbinSizes &b) {
-  return binary(a, b, element::minus_equals);
+  return binary(a, b, element::subtract_equals);
 }
 
 } // namespace scipp::core
