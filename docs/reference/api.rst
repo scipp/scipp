@@ -72,19 +72,19 @@ Math
    :toctree: ../generated
 
    abs
+   add
    divide
    dot
    exp
    floor_divide
    log
    log10
-   minus
    mod
+   multiply
    norm
-   plus
    reciprocal
    sqrt
-   times
+   subtract
 
 Shape
 ~~~~~
