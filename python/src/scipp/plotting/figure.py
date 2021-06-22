@@ -149,9 +149,11 @@ class PlotFigure:
         """
         if self.toolbar is not None:
             self.toolbar.connect(controller=controller)
-        self.fig.canvas.mpl_connect('pick_event', event_handler.pick)
+        self.fig.canvas.mpl_connect('button_press_event',
+                                    event_handler.handle_button_press)
+        self.fig.canvas.mpl_connect('pick_event', event_handler.handle_pick)
         self.fig.canvas.mpl_connect('motion_notify_event',
-                                    event_handler.motion_notify)
+                                    event_handler.handle_motion_notify)
 
     def draw(self):
         """

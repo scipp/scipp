@@ -3,7 +3,6 @@
 # @author Neil Vaytet
 
 from .view import PlotView
-from ..utils import make_random_color
 from .. import dtype, zeros
 import numpy as np
 from matplotlib.collections import PathCollection
@@ -139,35 +138,29 @@ class PlotView2d(PlotView):
             self.figure.ax.collections = []
             self.figure.draw()
 
-    def pick2(self, event):
+    def handle_pick(self, event):
         """
         Forward the keep or remove event to the correct function.
         """
-        if isinstance(event.artist, PathCollection):
-            self.remove_profile(event)
-            # We need a profile lock to catch the second time the function is
-            # called because the pick event is registed by both the scatter
-            # points and the image
-            self.profile_update_lock = True
-        elif self.profile_update_lock:
-            self.profile_update_lock = False
-        else:
-            self.keep_profile(event)
-        self.figure.draw()
+        if event.mouseevent.button == 1 and isinstance(event.artist,
+                                                       PathCollection):
+            self._pick_lock = True
+            self.controller.pick(index=event.artist.get_gid())
 
-    def keep_profile(self, event):
+    def mark(self, index, color, slices):
         """
-        Add a colored scatter point to mark the location of the saved profile.
+        Add a marker (colored scatter point).
         """
-        xdata = event.mouseevent.xdata
-        ydata = event.mouseevent.ydata
-        col = make_random_color(fmt='rgba')
-        self.profile_counter += 1
-        line_id = self.profile_counter
-        self.profile_ids.append(line_id)
+        assert len(slices) == 2
+        loc = {}
+        for ax, dim in zip(self.axes, self.dims):
+            low, high = slices[dim]
+            loc[ax] = 0.5 * (low.value + high.value)
+        xdata = loc['x']
+        ydata = loc['y']
         if self.profile_scatter is None:
             self.profile_scatter = self.figure.ax.scatter([xdata], [ydata],
-                                                          c=[col],
+                                                          c=[color],
                                                           edgecolors="w",
                                                           picker=5,
                                                           zorder=10)
@@ -175,22 +168,17 @@ class PlotView2d(PlotView):
             new_offsets = np.concatenate(
                 (self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
             new_colors = np.concatenate(
-                (self.profile_scatter.get_facecolors(), [col]), axis=0)
+                (self.profile_scatter.get_facecolors(), [color]), axis=0)
             self.profile_scatter.set_offsets(new_offsets)
             self.profile_scatter.set_facecolors(new_colors)
+        self.figure.draw()
 
-        self.controller.keep_line(target="profile", color=col, line_id=line_id)
-
-    def remove_profile(self, event):
+    def remove_mark(self, index):
         """
-        Remove a scatter point corresponding to a saved profile.
+        Remove a marker (scatter point).
         """
-        ind = event.ind[0]
-        xy = np.delete(self.profile_scatter.get_offsets(), ind, axis=0)
-        c = np.delete(self.profile_scatter.get_facecolors(), ind, axis=0)
+        xy = np.delete(self.profile_scatter.get_offsets(), index, axis=0)
+        c = np.delete(self.profile_scatter.get_facecolors(), index, axis=0)
         self.profile_scatter.set_offsets(xy)
         self.profile_scatter.set_facecolors(c)
-        # Also remove the line from the 1d plot
-        self.controller.remove_line(target="profile",
-                                    line_id=self.profile_ids[ind])
-        self.profile_ids.pop(ind)
+        self.figure.draw()

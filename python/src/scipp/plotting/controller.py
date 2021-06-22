@@ -3,6 +3,22 @@
 from .view1d import PlotView1d
 
 
+class MarkerModel:
+    def __init__(self):
+        self._counter = -1
+        self._markers = {}
+
+    def generate(self):
+        from ..utils import make_random_color
+        color = make_random_color(fmt='rgba')
+        self._counter += 1
+        self._markers[self._counter] = color
+        return self._counter, color
+
+    def __delitem__(self, key):
+        del self._markers[key]
+
+
 class PlotController:
     """
     Main controller class.
@@ -35,6 +51,7 @@ class PlotController:
         self.model = model
         # TODO calling copy here may not be enough to avoid interdependencies
         self._profile_model = profile_model
+        self._profile_markers = MarkerModel()
         self.panel = panel
         self.profile = profile
         if profile is not None:
@@ -343,6 +360,19 @@ class PlotController:
                 self.profile.toggle_hover_visibility(True)
             else:
                 self.profile.toggle_hover_visibility(False)
+
+    def click(self, slices):
+        if self.profile is not None and self.profile.is_visible():
+            index, color = self._profile_markers.generate()
+            self.profile.keep_line(color=color, line_id=index)
+            self.profile.rescale_to_data()
+            self.view.mark(color=color, index=index, slices=slices)
+
+    def pick(self, index):
+        if self.profile is not None and self.profile.is_visible():
+            del self._profile_markers[index]
+            self.profile.remove_line(line_id=index)
+            self.view.remove_mark(index=index)
 
     def update_profile(self, slices):
         """

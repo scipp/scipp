@@ -30,10 +30,8 @@ class PlotView:
         self.figure = figure
         self.formatters = formatters
         self.controller = {}
-        self.profile_update_lock = False
+        self._pick_lock = False
         self.profile_scatter = None
-        self.profile_counter = -1
-        self.profile_ids = []
 
     @property
     def axes(self):
@@ -88,24 +86,24 @@ class PlotView:
         self.controller = controller
         self.figure.connect(controller=controller, event_handler=self)
 
-    def motion_notify(self, event):
-        """
-        Called from figure by motion events.
-        """
+    def _slices_from_event(self, event):
         slices = {}
         if event.inaxes == self.figure.ax:
             loc = {'x': event.xdata, 'y': event.ydata}
             for dim, axis in zip(self.dims, self.axes):
                 # Find limits of hovered *display* pixel
                 slices[dim] = _slice_params(self._data, dim, loc[axis])
-        self.controller.hover(slices)
+        return slices
 
-    def pick(self, event):
-        # TODO
-        # - distinguish clicking data or line/points on top
-        # - avoid view acting as model for points?
-        print(f'pick {event}')
-        raise RuntimeError('pick')
+    def handle_motion_notify(self, event):
+        self.controller.hover(self._slices_from_event(event))
+
+    def handle_button_press(self, event):
+        if self._pick_lock:
+            self._pick_lock = False
+            return
+        if event.button == 1:
+            self.controller.click(self._slices_from_event(event))
 
     def home_view(self, *args, **kwargs):
         self.figure.home_view(*args, **kwargs)

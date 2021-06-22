@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
+from matplotlib.lines import Line2D
 
 from .view import PlotView
-from ..utils import make_random_color
 from .. import ones
 from .tools import vars_to_err
 from .._scipp import core as sc
@@ -98,48 +98,33 @@ class PlotView1d(PlotView):
         self.figure.ax.lines = new_lines
         self.figure.draw()
 
-    def pick(self, event):
+    def handle_pick(self, event):
         """
         Forward the keep or remove event to the correct function.
         """
-        line_url = event.artist.get_url()
-        if line_url == "axvline":
-            self.remove_profile(event)
-        else:
-            self.keep_profile(event, line_url)
+        if event.mouseevent.button == 1 and isinstance(event.artist, Line2D):
+            # Avoid matching data or mask lines
+            if isinstance(event.artist.get_gid(), int):
+                self._pick_lock = True
+                self.controller.pick(index=event.artist.get_gid())
+
+    def mark(self, index, color, slices):
+        """
+        Add a marker (axvline).
+        """
+        assert len(slices) == 1
+        dim, i = next(iter(slices.items()))
+        loc = self._data.meta[dim][dim, i].value
+        line = self.figure.ax.axvline(loc, color=color, picker=True)
+        line.set_pickradius(5.0)
+        line.set_gid(index)
         self.figure.draw()
 
-    def keep_profile(self, event, line_name):
+    def remove_mark(self, index):
         """
-        Add a vertical line to mark the location of the saved profile.
+        Remove a marker (axvline).
         """
-        # TODO: The names of the data variables are stored in the masks
-        # information. This is not very clean.
-        if line_name in self.figure.masks:
-            xdata = event.mouseevent.xdata
-            col = make_random_color(fmt='hex')
-            self.profile_counter += 1
-            line_id = self.profile_counter
-            line = self.figure.ax.axvline(xdata, color=col, picker=True)
-            line.set_pickradius(5.0)
-            line.set_url("axvline")
-            line.set_gid(line_id)
-            self.controller.keep_line(target="profile",
-                                      name=line_name,
-                                      color=col,
-                                      line_id=line_id)
-
-    def remove_profile(self, event):
-        """
-        Remove a vertical line corresponding to a saved profile.
-        """
-        new_lines = []
-        gid = event.artist.get_gid()
-        url = event.artist.get_url()
-        for line in self.figure.ax.lines:
-            if not ((line.get_gid() == gid) and (line.get_url() == url)):
-                new_lines.append(line)
-        self.figure.ax.lines = new_lines
-
-        # Also remove the line from the 1d plot
-        self.controller.remove_line(target="profile", line_id=gid)
+        self.figure.ax.lines = [
+            line for line in self.figure.ax.lines if line.get_gid() != index
+        ]
+        self.figure.draw()
