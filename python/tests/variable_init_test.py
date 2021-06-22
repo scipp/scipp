@@ -37,6 +37,11 @@ def test_create_default_with_class_dtype():
     assert var.dtype == sc.dtype.string
 
 
+def test_create_default_with_str_dtype():
+    var = sc.Variable(dims=['x'], shape=[2], dtype='float32')
+    assert var.dtype == sc.dtype.float32
+
+
 def test_create_default_with_dtype_datetime():
     var = sc.Variable(dtype=sc.dtype.datetime64)
     assert var.dtype == sc.dtype.datetime64
