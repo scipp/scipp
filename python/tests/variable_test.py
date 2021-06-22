@@ -3,8 +3,6 @@
 # @file
 # @author Simon Heybrock
 
-import itertools
-
 import numpy as np
 import pytest
 
@@ -20,217 +18,6 @@ def make_variables():
     a_slice = a['x', :]
     b_slice = b['x', :]
     return a, b, a_slice, b_slice, data
-
-
-def test_create_default():
-    var = sc.Variable()
-    assert var.dims == []
-    assert var.dtype == sc.dtype.float64
-    assert var.unit == sc.units.dimensionless
-    assert var.value == 0.0
-
-
-def test_create_default_dtype():
-    var = sc.Variable(dims=['x'], shape=[4])
-    assert var.dtype == sc.dtype.float64
-
-
-def test_create_with_dtype():
-    var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.float32)
-    assert var.dtype == sc.dtype.float32
-
-
-def test_create_with_numpy_dtype():
-    var = sc.Variable(dims=['x'], shape=[2], dtype=np.dtype(np.float32))
-    assert var.dtype == sc.dtype.float32
-
-
-def test_create_with_unit_as_string():
-    var = sc.Variable(dims=['x'], unit='meV', values=np.arange(2))
-    assert var.unit == sc.units.meV
-    var.unit = 'm/s'
-    assert var.unit == sc.units.m / sc.units.s
-
-
-def test_create_with_variances():
-    assert sc.Variable(dims=['x'], shape=[2]).variances is None
-    assert sc.Variable(dims=['x'], shape=[2],
-                       with_variance=False).variances is None
-    assert sc.Variable(dims=['x'], shape=[2],
-                       with_variance=True).variances is not None
-
-
-def test_create_with_shape_and_variances():
-    sc.Variable(dims=['x'], shape=[2], variances=np.arange(2.0))
-
-
-def test_create_from_numpy_1d():
-    var = sc.Variable(dims=['x'], values=np.arange(4.0))
-    assert var.dtype == sc.dtype.float64
-    np.testing.assert_array_equal(var.values, np.arange(4))
-
-
-def test_create_from_numpy_1d_bool():
-    var = sc.Variable(dims=['x'], values=np.array([True, False, True]))
-    assert var.dtype == sc.dtype.bool
-    np.testing.assert_array_equal(var.values, np.array([True, False, True]))
-
-
-def test_create_with_variances_from_numpy_1d():
-    var = sc.Variable(dims=['x'],
-                      values=np.arange(4.0),
-                      variances=np.arange(4.0, 8.0))
-    assert var.dtype == sc.dtype.float64
-    np.testing.assert_array_equal(var.values, np.arange(4))
-    np.testing.assert_array_equal(var.variances, np.arange(4, 8))
-
-
-@pytest.mark.parametrize(
-    "value",
-    [1.2, np.float64(1.2), sc.Variable(value=1.2).value])
-def test_create_scalar(value):
-    var = sc.Variable(value=value)
-    assert var.value == value
-    assert var.dims == []
-    assert var.dtype == sc.dtype.float64
-    assert var.unit == sc.units.dimensionless
-
-
-@pytest.mark.parametrize("unit", [
-    sc.units.m,
-    sc.Unit('m'), 'm',
-    sc.Variable(value=1.2, unit=sc.units.m).unit
-])
-def test_create_scalar_with_unit(unit):
-    var = sc.Variable(value=1.2, unit=unit)
-    assert var.value == 1.2
-    assert var.dims == []
-    assert var.dtype == sc.dtype.float64
-    assert var.unit == sc.units.m
-
-
-def test_create_scalar_Variable():
-    elem = sc.Variable(dims=['x'], values=np.arange(4.0))
-    var = sc.Variable(value=elem)
-    assert sc.identical(var.value, elem)
-    assert var.dims == []
-    assert var.dtype == sc.dtype.Variable
-    assert var.unit == sc.units.dimensionless
-    var = sc.Variable(value=elem['x', 1:3])
-    assert var.dtype == sc.dtype.Variable
-
-
-def test_create_scalar_DataArray():
-    elem = sc.DataArray(data=sc.Variable(dims=['x'], values=np.arange(4.0)))
-    var = sc.Variable(value=elem)
-    assert sc.identical(var.value, elem)
-    assert var.dims == []
-    assert var.dtype == sc.dtype.DataArray
-    assert var.unit == sc.units.dimensionless
-    var = sc.Variable(value=elem['x', 1:3])
-    assert var.dtype == sc.dtype.DataArray
-
-
-def test_create_scalar_Dataset():
-    elem = sc.Dataset({'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
-    var = sc.Variable(value=elem)
-    assert sc.identical(var.value, elem)
-    assert var.dims == []
-    assert var.dtype == sc.dtype.Dataset
-    assert var.unit == sc.units.dimensionless
-    var = sc.Variable(value=elem['x', 1:3])
-    assert var.dtype == sc.dtype.Dataset
-
-
-def test_create_scalar_quantity():
-    var = sc.Variable(value=1.2, unit=sc.units.m)
-    assert var.value == 1.2
-    assert var.dims == []
-    assert var.dtype == sc.dtype.float64
-    assert var.unit == sc.units.m
-
-
-def test_create_via_unit():
-    expected = sc.Variable(value=1.2, unit=sc.units.m)
-    var = 1.2 * sc.units.m
-    assert sc.identical(var, expected)
-
-
-@pytest.mark.parametrize("types",
-                         itertools.product(*[(tuple, list, np.array)] * 2))
-def test_create_1d_array_like(types):
-    values_type, variances_type = types
-
-    values = np.arange(5.0)
-    expected = sc.Variable(dims=('x', ), values=values)
-    assert sc.identical(sc.Variable(dims=['x'], values=values_type(values)),
-                        expected)
-
-    variances = np.arange(5.0) * 0.1
-    expected = sc.Variable(dims=('x', ), values=values, variances=variances)
-    assert sc.identical(
-        sc.Variable(dims=['x'],
-                    values=values_type(values),
-                    variances=variances_type(variances)), expected)
-
-
-@pytest.mark.parametrize("types",
-                         itertools.product(*[(tuple, list, np.array)] * 4))
-def test_create_2d_array_like(types):
-    inner_values_type, outer_values_type, \
-      inner_variances_type, outer_variances_type = types
-
-    values = np.arange(15.0).reshape(3, 5)
-    expected = sc.Variable(dims=('x', 'y'), values=values)
-
-    assert sc.identical(
-        sc.Variable(dims=['x', 'y'],
-                    values=outer_values_type(
-                        [inner_values_type(val) for val in values])), expected)
-
-    variances = np.arange(15.0).reshape(3, 5) * 0.1
-    expected = sc.Variable(dims=('x', 'y'), values=values, variances=variances)
-    assert sc.identical(
-        sc.Variable(dims=['x', 'y'],
-                    values=outer_values_type(
-                        [inner_values_type(val) for val in values]),
-                    variances=outer_values_type(
-                        [inner_values_type(var) for var in variances])),
-        expected)
-
-
-def test_create_1D_string():
-    var = sc.Variable(dims=['row'], values=['a', 'bb'], unit=sc.units.m)
-    assert len(var.values) == 2
-    assert var.values[0] == 'a'
-    assert var.values[1] == 'bb'
-    assert var.dims == ['row']
-    assert var.dtype == sc.dtype.string
-    assert var.unit == sc.units.m
-
-
-def test_create_1D_vector_3_float64():
-    var = sc.vectors(dims=['x'],
-                     values=[[1, 2, 3], [4, 5, 6]],
-                     unit=sc.units.m)
-    assert len(var.values) == 2
-    np.testing.assert_array_equal(var.values[0], [1, 2, 3])
-    np.testing.assert_array_equal(var.values[1], [4, 5, 6])
-    assert var.dims == ['x']
-    assert var.dtype == sc.dtype.vector_3_float64
-    assert var.unit == sc.units.m
-
-
-def test_create_2D_inner_size_3():
-    var = sc.Variable(dims=['x', 'y'],
-                      values=np.arange(6.0).reshape(2, 3),
-                      unit=sc.units.m)
-    assert var.shape == [2, 3]
-    np.testing.assert_array_equal(var.values[0], [0, 1, 2])
-    np.testing.assert_array_equal(var.values[1], [3, 4, 5])
-    assert var.dims == ['x', 'y']
-    assert var.dtype == sc.dtype.float64
-    assert var.unit == sc.units.m
 
 
 def test_astype():
@@ -361,25 +148,6 @@ def test_2D_access_variances():
     assert np.array_equal(var.variances, np.zeros(shape=(2, 3)))
     var.variances = np.ones(shape=(2, 3))
     assert np.array_equal(var.variances, np.ones(shape=(2, 3)))
-
-
-def test_create_dtype():
-    var = sc.Variable(dims=['x'], values=np.arange(4).astype(np.int64))
-    assert var.dtype == sc.dtype.int64
-    var = sc.Variable(dims=['x'], values=np.arange(4).astype(np.int32))
-    assert var.dtype == sc.dtype.int32
-    var = sc.Variable(dims=['x'], values=np.arange(4).astype(np.float64))
-    assert var.dtype == sc.dtype.float64
-    var = sc.Variable(dims=['x'], values=np.arange(4).astype(np.float32))
-    assert var.dtype == sc.dtype.float32
-    var = sc.Variable(dims=['x'], shape=(4, ), dtype=np.dtype(np.float64))
-    assert var.dtype == sc.dtype.float64
-    var = sc.Variable(dims=['x'], shape=(4, ), dtype=np.dtype(np.float32))
-    assert var.dtype == sc.dtype.float32
-    var = sc.Variable(dims=['x'], shape=(4, ), dtype=np.dtype(np.int64))
-    assert var.dtype == sc.dtype.int64
-    var = sc.Variable(dims=['x'], shape=(4, ), dtype=np.dtype(np.int32))
-    assert var.dtype == sc.dtype.int32
 
 
 def test_getitem():
@@ -858,11 +626,6 @@ def test_rename_dims():
     zy = sc.Variable(dims=['z', 'y'], values=values)
     xy.rename_dims({'x': 'z'})
     assert sc.identical(xy, zy)
-
-
-def test_create_1d_with_strings():
-    v = sc.Variable(dims=['x'], values=["aaa", "ff", "bb"])
-    assert np.all(v.values == np.array(["aaa", "ff", "bb"]))
 
 
 def test_bool_variable_repr():
