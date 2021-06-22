@@ -204,4 +204,6 @@ def allclose(x, y, rtol=None, atol=None, equal_nan=False):
     --------
     :py:func:`scipp.isclose` : comparing element-wise with specified tolerances
     """
-    return _call_cpp_func(_cpp.all, isclose(x, y, rtol, atol, equal_nan)).value
+    return _call_cpp_func(
+        _cpp.all, isclose(x, y, rtol=rtol, atol=atol,
+                          equal_nan=equal_nan)).value
