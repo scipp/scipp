@@ -37,6 +37,17 @@ def test_create_default_with_class_dtype():
     assert var.dtype == sc.dtype.string
 
 
+def test_create_default_with_dtype_datetime():
+    var = sc.Variable(dtype=sc.dtype.datetime64)
+    assert var.dtype == sc.dtype.datetime64
+    var = sc.Variable(dtype=np.datetime64)
+    assert var.dtype == sc.dtype.datetime64
+    var = sc.Variable(dtype=np.datetime64(0, 's'))
+    assert var.dtype == sc.dtype.datetime64
+    var = sc.Variable(dtype='datetime64')
+    assert var.dtype == sc.dtype.datetime64
+
+
 def test_create_default_with_unit():
     var = sc.Variable(dims=['x'], unit=sc.units.m, values=np.arange(2))
     assert var.unit == sc.units.m
