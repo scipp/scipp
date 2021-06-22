@@ -33,8 +33,8 @@ TEST_F(ElementArithmeticTest, subtract_equals) {
   EXPECT_EQ(val, a - b);
 }
 
-TEST_F(ElementArithmeticTest, times_equals) {
-  times_equals(val, b);
+TEST_F(ElementArithmeticTest, multiply_equals) {
+  multiply_equals(val, b);
   EXPECT_EQ(val, a * b);
 }
 
@@ -46,7 +46,7 @@ TEST_F(ElementArithmeticTest, divide_equals) {
 TEST_F(ElementArithmeticTest, non_in_place) {
   EXPECT_EQ(add(a, b), a + b);
   EXPECT_EQ(subtract(a, b), a - b);
-  EXPECT_EQ(times(a, b), a * b);
+  EXPECT_EQ(multiply(a, b), a * b);
   EXPECT_EQ(divide(a, b), a / b);
 }
 

@@ -57,7 +57,7 @@ constexpr auto div_inplace_types = arg_list<
     std::tuple<Eigen::Vector3d, double>, std::tuple<Eigen::Vector3d, float>,
     std::tuple<Eigen::Vector3d, int64_t>, std::tuple<Eigen::Vector3d, int32_t>>;
 
-constexpr auto times_equals =
+constexpr auto multiply_equals =
     overloaded{mul_inplace_types, [](auto &&a, const auto &b) { a *= b; }};
 constexpr auto divide_equals =
     overloaded{div_inplace_types, [](auto &&a, const auto &b) { a /= b; }};
@@ -84,7 +84,7 @@ struct subtract_types_t {
                                 std::tuple<time_point, time_point>>{}));
 };
 
-struct times_types_t {
+struct multiplies_types_t {
   constexpr void operator()() const noexcept;
   using types = decltype(
       std::tuple_cat(std::declval<arithmetic_type_pairs_with_bool>(),
@@ -124,8 +124,8 @@ constexpr auto add =
     overloaded{add_types_t{}, [](const auto a, const auto b) { return a + b; }};
 constexpr auto subtract = overloaded{
     subtract_types_t{}, [](const auto a, const auto b) { return a - b; }};
-constexpr auto times = overloaded{
-    times_types_t{},
+constexpr auto multiply = overloaded{
+    multiplies_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
     [](const auto a, const auto b) { return a * b; }};
 
