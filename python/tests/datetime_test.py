@@ -61,6 +61,13 @@ def test_construct_0d_datetime(unit):
         assert var.value.dtype == dtype
 
 
+def test_construct_0d_datetime_array():
+    var = sc.Variable(value=np.array(np.datetime64(123, 's')))
+    assert var.dtype == sc.dtype.datetime64
+    assert var.unit == sc.units.s
+    assert var.value == np.datetime64(123, 's')
+
+
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
 def test_construct_0d_datetime_from_int(unit):
     value = np.random.randint(0, 1000)
