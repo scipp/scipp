@@ -146,26 +146,19 @@ class PlotView2d(PlotView):
         if isinstance(event.artist, PathCollection):
             return event.ind[0]
 
-    def mark(self, index, color, slices):
+    def _do_mark(self, index, color, x, y):
         """
         Add a marker (colored scatter point).
         """
-        assert len(slices) == 2
-        loc = {}
-        for ax, dim in zip(self.axes, self.dims):
-            low, high = slices[dim]
-            loc[ax] = 0.5 * (low.value + high.value)
-        xdata = loc['x']
-        ydata = loc['y']
         if self.profile_scatter is None:
-            self.profile_scatter = self.figure.ax.scatter([xdata], [ydata],
+            self.profile_scatter = self.figure.ax.scatter([x], [y],
                                                           c=[color],
                                                           edgecolors="w",
                                                           picker=5,
                                                           zorder=10)
         else:
             new_offsets = np.concatenate(
-                (self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
+                (self.profile_scatter.get_offsets(), [[x, y]]), axis=0)
             new_colors = np.concatenate(
                 (self.profile_scatter.get_facecolors(), [color]), axis=0)
             self.profile_scatter.set_offsets(new_offsets)

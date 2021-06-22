@@ -107,14 +107,11 @@ class PlotView1d(PlotView):
             if isinstance(event.artist.get_gid(), int):
                 return event.artist.get_gid()
 
-    def mark(self, index, color, slices):
+    def _do_mark(self, index, color, x):
         """
         Add a marker (axvline).
         """
-        assert len(slices) == 1
-        dim, i = next(iter(slices.items()))
-        loc = self._data.meta[dim][dim, i].value
-        line = self.figure.ax.axvline(loc, color=color, picker=True)
+        line = self.figure.ax.axvline(x, color=color, picker=True)
         line.set_pickradius(5.0)
         line.set_gid(index)
         self.figure.draw()

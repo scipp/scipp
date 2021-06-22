@@ -185,3 +185,15 @@ class PlotView:
         Forward set_draw_no_delay to the `figure`.
         """
         self.figure.set_draw_no_delay(*args, **kwargs)
+
+    def mark(self, index, color, slices):
+        """
+        Add a marker (colored scatter point).
+        """
+        loc = {}
+        for ax, (dim, params) in zip(self.axes, slices.items()):
+            if isinstance(params, int):
+                loc[ax] = self._data.meta[dim][dim, params].value
+            else:  # bin edges
+                loc[ax] = 0.5 * (params[0].value + params[1].value)
+        self._do_mark(index, color, **loc)
