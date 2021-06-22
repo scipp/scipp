@@ -234,43 +234,44 @@ class PlotFigure1d(PlotFigure):
 
         self.draw()
 
-    def keep_line(self, name, color, line_id):
+    def keep_line(self, color, line_id):
         """
         Duplicate the current main line and give it an arbitrary color.
         Triggered by a `PlotPanel1d` keep button or a `keep_profile` event.
         """
-        # The main line
-        self.ax.lines.append(cp.copy(self._lines[name].data))
-        self.ax.lines[-1].set_url(line_id)
-        self.ax.lines[-1].set_zorder(2)
-        if self.ax.lines[-1].get_marker() == "None":
-            self.ax.lines[-1].set_color(color)
-        else:
-            self.ax.lines[-1].set_markerfacecolor(color)
-            self.ax.lines[-1].set_markeredgecolor("None")
-
-        # The masks
-        for m in self._lines[name].masks:
-            self.ax.lines.append(cp.copy(self._lines[name].masks[m]))
+        for name in self._lines:
+            # The main line
+            self.ax.lines.append(cp.copy(self._lines[name].data))
             self.ax.lines[-1].set_url(line_id)
-            self.ax.lines[-1].set_gid(m)
-            self.ax.lines[-1].set_zorder(3)
-            if self.ax.lines[-1].get_marker() != "None":
-                self.ax.lines[-1].set_zorder(3)
+            self.ax.lines[-1].set_zorder(2)
+            if self.ax.lines[-1].get_marker() == "None":
+                self.ax.lines[-1].set_color(color)
             else:
-                self.ax.lines[-1].set_zorder(1)
+                self.ax.lines[-1].set_markerfacecolor(color)
+                self.ax.lines[-1].set_markeredgecolor("None")
 
-        if self.errorbars[name]:
-            err = self._lines[name].error.get_children()
-            self.ax.collections.append(cp.copy(err[0]))
-            self.ax.collections[-1].set_color(color)
-            self.ax.collections[-1].set_url(line_id)
-            self.ax.collections[-1].set_zorder(2)
+            # The masks
+            for m in self._lines[name].masks:
+                self.ax.lines.append(cp.copy(self._lines[name].masks[m]))
+                self.ax.lines[-1].set_url(line_id)
+                self.ax.lines[-1].set_gid(m)
+                self.ax.lines[-1].set_zorder(3)
+                if self.ax.lines[-1].get_marker() != "None":
+                    self.ax.lines[-1].set_zorder(3)
+                else:
+                    self.ax.lines[-1].set_zorder(1)
 
-        if self.show_legend():
-            self._reset_line_label(name)
-            self.ax.legend(loc=self.legend["loc"])
-        self.draw()
+            if self.errorbars[name]:
+                err = self._lines[name].error.get_children()
+                self.ax.collections.append(cp.copy(err[0]))
+                self.ax.collections[-1].set_color(color)
+                self.ax.collections[-1].set_url(line_id)
+                self.ax.collections[-1].set_zorder(2)
+
+            if self.show_legend():
+                self._reset_line_label(name)
+                self.ax.legend(loc=self.legend["loc"])
+            self.draw()
 
     def _reset_line_label(self, name):
         """
@@ -283,25 +284,26 @@ class PlotFigure1d(PlotFigure):
         """
         self._lines[name].data.set_label(name)
 
-    def remove_line(self, name, line_id):
+    def remove_line(self, line_id):
         """
         Remove a previously saved line.
         Triggered by a `PlotPanel1d` remove button or a `remove_profile` event.
         """
-        lines = []
-        for line in self.ax.lines:
-            if line.get_url() != line_id:
-                lines.append(line)
-        collections = []
-        for coll in self.ax.collections:
-            if coll.get_url() != line_id:
-                collections.append(coll)
-        self.ax.lines = lines
-        self.ax.collections = collections
-        if self.show_legend():
-            self._reset_line_label(name)
-            self.ax.legend(loc=self.legend["loc"])
-        self.draw()
+        for name in self._lines:
+            lines = []
+            for line in self.ax.lines:
+                if line.get_url() != line_id:
+                    lines.append(line)
+            collections = []
+            for coll in self.ax.collections:
+                if coll.get_url() != line_id:
+                    collections.append(coll)
+            self.ax.lines = lines
+            self.ax.collections = collections
+            if self.show_legend():
+                self._reset_line_label(name)
+                self.ax.legend(loc=self.legend["loc"])
+            self.draw()
 
     def update_line_color(self, line_id, color):
         """

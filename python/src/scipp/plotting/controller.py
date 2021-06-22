@@ -279,13 +279,11 @@ class PlotController:
         Send the message to the appropriate target: either the view1d or the
         profile view.
         """
-        if name is None:
-            name = self.name
         if target == "profile":
-            self.profile.keep_line(name=name, color=color, line_id=line_id)
+            self.profile.keep_line(color=color, line_id=line_id)
             self.profile.rescale_to_data()
         else:
-            self.view.keep_line(name=name, color=color, line_id=line_id)
+            self.view.keep_line(color=color, line_id=line_id)
 
     def remove_line(self, target=None, name=None, line_id=None):
         """
@@ -294,12 +292,10 @@ class PlotController:
         Send the message to the appropriate target: either the view1d or the
         profile view.
         """
-        if name is None:
-            name = self.name
         if target == "profile":
-            self.profile.remove_line(name=name, line_id=line_id)
+            self.profile.remove_line(line_id=line_id)
         else:
-            self.view.remove_line(name=name, line_id=line_id)
+            self.view.remove_line(line_id=line_id)
 
     def toggle_profile_view(self, owner=None, dims=None):
         """
@@ -337,7 +333,7 @@ class PlotController:
             self.update_data()
 
     def hover(self, slices):
-        if self.profile.is_visible():
+        if self.profile is not None and self.profile.is_visible():
             if slices:
                 slices.update(
                     self.widgets.get_slider_bounds(exclude=self.profile_dim))

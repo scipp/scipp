@@ -30,8 +30,6 @@ class PlotView:
         self.figure = figure
         self.formatters = formatters
         self.controller = {}
-        self.profile_hover_connection = None
-        self.profile_pick_connection = None
         self.profile_update_lock = False
         self.profile_scatter = None
         self.profile_counter = -1
