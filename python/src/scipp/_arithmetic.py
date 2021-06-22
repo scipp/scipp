@@ -9,7 +9,7 @@ from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .typing import DataArrayLike
 
 
-def add(a: DataArrayLike, b:DataArrayLike) -> DataArrayLike:
+def add(a: DataArrayLike, b: DataArrayLike) -> DataArrayLike:
     """Element-wise addition.
 
     Equivalent to
@@ -122,7 +122,27 @@ def mod(dividend: DataArrayLike, divisor: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.mod, dividend, divisor)
 
 
-def subtract(minuend: DataArrayLike, subtrahend:DataArrayLike) -> DataArrayLike:
+def multiply(a: DataArrayLike, b: DataArrayLike) -> DataArrayLike:
+    """Element-wise product.
+
+    Equivalent to
+
+    .. code-block:: python
+
+        a * b
+
+    In cases where the order of the operands matters, e.g. with vectors
+    or matrices, it is as shown above.
+
+    :param a: Left factor
+    :param b: Right factor.
+    :return: Product of ``a`` and ``b``.
+    """
+    return _call_cpp_func(_cpp.multiply, a, b)
+
+
+def subtract(minuend: DataArrayLike,
+             subtrahend: DataArrayLike) -> DataArrayLike:
     """Element-wise difference.
 
     Equivalent to
