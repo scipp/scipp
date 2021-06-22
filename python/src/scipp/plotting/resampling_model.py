@@ -216,6 +216,7 @@ class ResamplingDenseModel(ResamplingModel):
         return array
 
     def _from_density(self, data):
+        data = data.copy()
         for edge in self.edges:
             dim = edge.dims[-1]
             width = edge[dim, 1:] - edge[dim, :-1]

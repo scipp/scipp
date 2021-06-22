@@ -139,38 +139,7 @@ class PlotView2d(PlotView):
             self.figure.ax.collections = []
             self.figure.draw()
 
-    def update_profile(self, event):
-        """
-        If mouse is hovering inside the axes, show and update profile.
-        Otherwise, hide profile.
-
-        TODO: optimize visibility update to that it only calls the function on
-        a state change and not on every mouse movement.
-        """
-        if event.inaxes == self.figure.ax:
-            # TODO if we handle tranposition by transposing plot input
-            # then we can just assume data dims are [y,x]
-            # we do this here, even though the mechanism was not
-            # refactored yet
-            dimx = self._data.dims[-1]
-            dimy = self._data.dims[-2]
-            x = self._data.meta[dimx]
-            y = self._data.meta[dimy]
-            xdata = event.xdata - self.current_lims["x"][0]
-            ydata = event.ydata - self.current_lims["y"][0]
-            # Note that xdata and ydata already have the left edge subtracted
-            ix = int(xdata / (x.values[1] - x.values[0]))
-            iy = int(ydata / (y.values[1] - y.values[0]))
-            slices = {
-                dimx: (x[dimx, ix], x[dimx, ix + 1]),
-                dimy: (y[dimy, iy], y[dimy, iy + 1])
-            }
-            self.controller.update_profile(slices)
-            self.controller.toggle_hover_visibility(True)
-        else:
-            self.controller.toggle_hover_visibility(False)
-
-    def keep_or_remove_profile(self, event):
+    def pick2(self, event):
         """
         Forward the keep or remove event to the correct function.
         """

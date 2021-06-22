@@ -1,6 +1,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-# @author Neil Vaytet
+from .._scipp import core
+import numpy as np
+
+
+def _slice_params(array, dim, loc):
+    coord = array.meta[dim]
+    if array.sizes[dim] + 1 == coord.sizes[dim]:
+        _, i = core.get_slice_params(array.data, coord, loc * coord.unit)
+        return coord[dim, i], coord[dim, i + 1]
+    else:
+        # get_slice_params only handles *exact* matches
+        return int(np.argmin(np.abs(coord.values - loc)))
 
 
 class PlotView:
@@ -77,7 +88,26 @@ class PlotView:
         `controller`.
         """
         self.controller = controller
-        self.figure.connect(controller=controller)
+        self.figure.connect(controller=controller, event_handler=self)
+
+    def motion_notify(self, event):
+        """
+        Called from figure by motion events.
+        """
+        slices = {}
+        if event.inaxes == self.figure.ax:
+            loc = {'x': event.xdata, 'y': event.ydata}
+            for dim, axis in zip(self.dims, self.axes):
+                # Find limits of hovered *display* pixel
+                slices[dim] = _slice_params(self._data, dim, loc[axis])
+        self.controller.hover(slices)
+
+    def pick(self, event):
+        # TODO
+        # - distinguish clicking data or line/points on top
+        # - avoid view acting as model for points?
+        print(f'pick {event}')
+        raise RuntimeError('pick')
 
     def home_view(self, *args, **kwargs):
         self.figure.home_view(*args, **kwargs)
@@ -140,20 +170,6 @@ class PlotView:
         if self.figure.toolbar is not None:
             self.figure.toolbar.dims = self._dims
         self.refresh(mask_info)
-
-    def update_profile_connection(self, visible):
-        """
-        Connect or disconnect profile pick and hover events.
-        """
-        if visible:
-            self.profile_pick_connection, self.profile_hover_connection = \
-                self.figure.connect_profile(
-                    self.keep_or_remove_profile, self.update_profile)
-        else:
-            self.figure.disconnect_profile(self.profile_pick_connection,
-                                           self.profile_hover_connection)
-            self.profile_pick_connection = None
-            self.profile_hover_connection = None
 
     def update_norm_button(self, *args, **kwargs):
         """

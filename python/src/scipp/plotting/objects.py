@@ -138,10 +138,6 @@ class Plot:
         # Shortcut access to the underlying figure for easier modification
         self.fig = None
         self.ax = None
-
-        # Get first item in dict and process dimensions.
-        # Dimensions should be the same for all dict items.
-        self.masks = {}
         self.errorbars = {}
 
         # TODO use option to provide keys here
@@ -214,7 +210,6 @@ class Plot:
                                             globs=masks_globs)
 
         for name, array in scipp_obj_dict.items():
-
             # Determine whether error bars should be plotted or not
             has_variances = array.variances is not None
             if name in self.errorbars:

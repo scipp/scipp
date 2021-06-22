@@ -74,6 +74,13 @@ void init_operations(py::module &m) {
   bind_sort_dim<Dataset>(m);
   bind_issorted(m);
 
+  m.def(
+      "get_slice_params",
+      [](const Variable &var, const Variable &coord, const Variable &value) {
+        const auto [dim, index] = get_slice_params(var.dims(), coord, value);
+        return std::tuple{dim.name(), index};
+      },
+      py::call_guard<py::gil_scoped_release>());
   m.def("get_slice_params", [](const Variable &var, const Variable &coord,
                                const Variable &begin, const Variable &end) {
     const auto [dim, start, stop] =

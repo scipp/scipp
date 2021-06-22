@@ -78,12 +78,20 @@ class DataArrayDict(dict):
         return next(iter(self.values())).dims
 
     @property
+    def sizes(self):
+        return next(iter(self.values())).sizes
+
+    @property
     def unit(self):
         return next(iter(self.values())).unit
 
     @property
     def meta(self):
         return next(iter(self.values())).meta
+
+    @property
+    def data(self):
+        return next(iter(self.values())).data
 
 
 def plot(scipp_obj,

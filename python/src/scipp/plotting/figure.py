@@ -141,7 +141,7 @@ class PlotFigure:
                 ticker.LogLocator()
             }
 
-    def connect(self, controller):
+    def connect(self, controller, event_handler):
         """
         Connect the toolbar to callback from the controller. This includes
         rescaling the data norm, and change the scale (log or linear) on the
@@ -149,6 +149,9 @@ class PlotFigure:
         """
         if self.toolbar is not None:
             self.toolbar.connect(controller=controller)
+        self.fig.canvas.mpl_connect('pick_event', event_handler.pick)
+        self.fig.canvas.mpl_connect('motion_notify_event',
+                                    event_handler.motion_notify)
 
     def draw(self):
         """
@@ -167,26 +170,6 @@ class PlotFigure:
             self.fig.canvas.draw()
         else:
             self.fig.canvas.draw_idle()
-
-    def connect_profile(self, pick_callback=None, hover_callback=None):
-        """
-        Connect the figure to provided callbacks to handle profile picking and
-        hovering updates.
-        """
-        pick_connection = self.fig.canvas.mpl_connect('pick_event',
-                                                      pick_callback)
-        hover_connection = self.fig.canvas.mpl_connect('motion_notify_event',
-                                                       hover_callback)
-        return pick_connection, hover_connection
-
-    def disconnect_profile(self, pick_connection=None, hover_connection=None):
-        """
-        Disconnect profile events when the profile is hidden.
-        """
-        if pick_connection is not None:
-            self.fig.canvas.mpl_disconnect(pick_connection)
-        if hover_connection is not None:
-            self.fig.canvas.mpl_disconnect(hover_connection)
 
     def update_norm_button(self, *args, **kwargs):
         """

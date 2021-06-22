@@ -331,11 +331,22 @@ class PlotController:
 
         self.profile.toggle_view(visible=visible)
         self.toggle_hover_visibility(False)
-        self.view.update_profile_connection(visible=visible)
 
         if visible:
             self.update_profile(slices={})
             self.update_data()
+
+    def hover(self, slices):
+        if self.profile.is_visible():
+            if slices:
+                slices.update(
+                    self.widgets.get_slider_bounds(exclude=self.profile_dim))
+                new_values = self._profile_model.update_data(slices=slices)
+                self._profile_view.update_data(new_values,
+                                               mask_info=self.get_masks_info())
+                self.profile.toggle_hover_visibility(True)
+            else:
+                self.profile.toggle_hover_visibility(False)
 
     def update_profile(self, slices):
         """

@@ -7,7 +7,6 @@ from ..utils import make_random_color
 from .. import ones
 from .tools import vars_to_err
 from .._scipp import core as sc
-import numpy as np
 
 
 def _make_label(array):
@@ -99,28 +98,7 @@ class PlotView1d(PlotView):
         self.figure.ax.lines = new_lines
         self.figure.draw()
 
-    def update_profile(self, event):
-        """
-        If mouse is hovering inside the axes, show and update profile.
-        Otherwise, hide profile.
-
-        TODO: optimize visibility update to that it only calls the function on
-        a state change and not on every mouse movement.
-        """
-        if event.inaxes == self.figure.ax:
-            #  Find closest point to cursor
-            #  TODO: can we optimize this with new buckets?
-            distance_to_cursor = np.abs(
-                next(iter(self._data.values())).meta[self._dim].values -
-                event.xdata)
-            ind = int(np.argmin(distance_to_cursor))
-            slices = {self._dim: ind}
-            self.controller.update_profile(slices)
-            self.controller.toggle_hover_visibility(True)
-        else:
-            self.controller.toggle_hover_visibility(False)
-
-    def keep_or_remove_profile(self, event):
+    def pick(self, event):
         """
         Forward the keep or remove event to the correct function.
         """

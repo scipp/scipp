@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .plot import DataArrayDict
 from .tools import find_limits, to_dict
 from ..utils import vector_type, string_type, datetime_type
 from .._scipp import core as sc
@@ -38,6 +39,7 @@ class PlotModel:
             self.data_arrays[name] = sc.DataArray(data=array.data,
                                                   coords=coord_list,
                                                   masks=to_dict(array.masks))
+        self._data_arrays = DataArrayDict(self.data_arrays)
 
         # Save a copy of the name for simpler access
         # Note this needs to be done before calling update_data_arrays
