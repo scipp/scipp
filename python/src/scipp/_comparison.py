@@ -152,9 +152,56 @@ def isclose(x: _cpp.Variable,
     :return: Variable same size as input.
              Element True if absolute diff of value <= atol + rtol * abs(y),
              otherwise False.
+    See Also
+    --------
+    :py:func:`scipp.allclose` : isclose applied over all dimensions
     """
     if rtol is None:
         rtol = 1e-5 * _cpp.units.one
     if atol is None:
         atol = 1e-8 * y.unit
     return _call_cpp_func(_cpp.isclose, x, y, rtol, atol, equal_nan)
+
+
+def allclose(x, y, rtol=None, atol=None, equal_nan=False):
+    """
+    Verifies that ALL element-wise comparisons meet the condition:
+
+    abs(x - y) <= atol + rtol * abs(y)
+
+    If both x and y have variances, the variances are also compared
+    between elements. In this case, both values and variances must
+    be within the computed tolerance limits. That is:
+
+    .. code-block:: python
+
+        abs(x.value - y.value) <= atol + rtol * abs(y.value) and abs(
+            sqrt(x.variance) - sqrt(y.variance)) \
+                <= atol + rtol * abs(sqrt(y.variance))
+
+
+    :param x: Left input.
+    :param y: Right input.
+    :param rtol: Tolerance value relative (to y).
+                 Can be a scalar or non-scalar.
+                 Defaults to scalar 1e-5 if unset.
+    :param atol: Tolerance value absolute. Can be a scalar or non-scalar.
+                 Defaults to scalar 1e-8 if unset and takes units from y arg.
+    :param equal_nan: if true, non-finite values at the same index in (x, y)
+                      are treated as equal.
+                      Signbit must match for infs.
+    :type x: Variable
+    :type y: Variable
+    :type rtol: Variable. May be a scalar or an array variable.
+                Cannot have variances.
+    :type atol: Variable. May be a scalar or an array variable.
+                Cannot have variances.
+    :type equal_nan: bool
+    :return: True if for all elements value <= atol + rtol * abs(y),
+             otherwise False.
+
+    See Also
+    --------
+    :py:func:`scipp.isclose` : comparing element-wise with specified tolerances
+    """
+    return _call_cpp_func(_cpp.all, isclose(x, y, rtol, atol, equal_nan)).value

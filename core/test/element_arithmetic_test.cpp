@@ -189,7 +189,7 @@ TYPED_TEST(ElementArithmeticDivisionTest, remainder) {
 TEST(ElementArithmeticDivisionTest, units) {
   EXPECT_EQ(divide(units::m, units::s), units::m / units::s);
   EXPECT_EQ(floor_divide(units::m, units::s), units::m / units::s);
-  EXPECT_EQ(mod(units::m, units::s), units::m / units::s);
+  EXPECT_EQ(mod(units::m, units::s), units::m);
 }
 
 class ElementNanArithmeticTest : public ::testing::Test {
