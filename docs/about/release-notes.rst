@@ -17,6 +17,8 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* Changed Variable init method, major change: all arguments are keyword-only (not in ``array`` and ``scalar``) `#1994 <https://github.com/scipp/scipp/pull/1994>`_.
+
 Bugfixes
 ~~~~~~~~
 
