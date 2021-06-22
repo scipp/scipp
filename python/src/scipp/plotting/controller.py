@@ -362,6 +362,8 @@ class PlotController:
                 self.profile.toggle_hover_visibility(False)
 
     def click(self, slices):
+        if not slices:
+            return
         if self.profile is not None and self.profile.is_visible():
             index, color = self._profile_markers.generate()
             self.profile.keep_line(color=color, line_id=index)

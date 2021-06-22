@@ -8,6 +8,8 @@ def _slice_params(array, dim, loc):
     coord = array.meta[dim]
     if array.sizes[dim] + 1 == coord.sizes[dim]:
         _, i = core.get_slice_params(array.data, coord, loc * coord.unit)
+        if i < 0 or i + 1 >= coord.sizes[dim]:
+            return None
         return coord[dim, i], coord[dim, i + 1]
     else:
         # get_slice_params only handles *exact* matches
@@ -91,7 +93,10 @@ class PlotView:
             loc = {'x': event.xdata, 'y': event.ydata}
             for dim, axis in zip(self.dims, self.axes):
                 # Find limits of hovered *display* pixel
-                slices[dim] = _slice_params(self._data, dim, loc[axis])
+                params = _slice_params(self._data, dim, loc[axis])
+                if params is None:
+                    return {}
+                slices[dim] = params
         return slices
 
     def handle_motion_notify(self, event):
