@@ -12,9 +12,9 @@
 
 namespace scipp::core {
 
-/// Replacement for C++20 std::make_unique_default_init
+/// Create a unique pointer to an array of default initialized elements.
 template <class T> auto make_unique_default_init(const scipp::index size) {
-  return std::unique_ptr<T>(new std::remove_extent_t<T>[size]);
+  return std::unique_ptr<T>(new std::remove_extent_t<T>[size]());
 }
 
 /// Tag for requesting default-initialization in methods of class element_array.
