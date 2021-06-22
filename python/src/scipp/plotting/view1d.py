@@ -98,15 +98,14 @@ class PlotView1d(PlotView):
         self.figure.ax.lines = new_lines
         self.figure.draw()
 
-    def handle_pick(self, event):
+    def _do_handle_pick(self, event):
         """
-        Forward the keep or remove event to the correct function.
+        Return the index of the picked line, None if something else is picked.
         """
-        if event.mouseevent.button == 1 and isinstance(event.artist, Line2D):
+        if isinstance(event.artist, Line2D):
             # Avoid matching data or mask lines
             if isinstance(event.artist.get_gid(), int):
-                self._pick_lock = True
-                self.controller.pick(index=event.artist.get_gid())
+                return event.artist.get_gid()
 
     def mark(self, index, color, slices):
         """

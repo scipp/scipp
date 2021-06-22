@@ -105,6 +105,13 @@ class PlotView:
         if event.button == 1:
             self.controller.click(self._slices_from_event(event))
 
+    def handle_pick(self, event):
+        if event.mouseevent.button == 1:
+            result = self._do_handle_pick(event)
+            if result is not None:
+                self._pick_lock = True
+                self.controller.pick(index=result)
+
     def home_view(self, *args, **kwargs):
         self.figure.home_view(*args, **kwargs)
 

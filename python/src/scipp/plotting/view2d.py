@@ -138,14 +138,13 @@ class PlotView2d(PlotView):
             self.figure.ax.collections = []
             self.figure.draw()
 
-    def handle_pick(self, event):
+    def _do_handle_pick(self, event):
         """
-        Forward the keep or remove event to the correct function.
+        Return the index of the picked scatter point, None if something else
+        is picked.
         """
-        if event.mouseevent.button == 1 and isinstance(event.artist,
-                                                       PathCollection):
-            self._pick_lock = True
-            self.controller.pick(index=event.artist.get_gid())
+        if isinstance(event.artist, PathCollection):
+            return event.ind[0]
 
     def mark(self, index, color, slices):
         """
