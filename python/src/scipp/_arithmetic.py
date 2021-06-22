@@ -120,3 +120,19 @@ def mod(dividend: DataArrayLike, divisor: DataArrayLike) -> DataArrayLike:
     [0 1 2 0 1 2 0 1]
     """
     return _call_cpp_func(_cpp.mod, dividend, divisor)
+
+
+def subtract(minuend: DataArrayLike, subtrahend:DataArrayLike) -> DataArrayLike:
+    """Element-wise difference.
+
+    Equivalent to
+
+    .. code-block:: python
+
+        minuend - subtrahend
+
+    :param minuend: Minuend.
+    :param subtrahend: Subtrahend.
+    :return: ``subtrahend`` subtracted from ``minuend``.
+    """
+    return _call_cpp_func(_cpp.subtract, minuend, subtrahend)
