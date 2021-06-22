@@ -291,19 +291,13 @@ class PlotController:
 
     def keep_line(self, target=None, name=None, color=None, line_id=None):
         """
-        Get a message from either a panel (1d plot) or a view (picking) to keep
-        the currently displayed line or profile.
-        Send the message to the appropriate target: either the view1d or the
-        profile view.
+        Keep the currently displayed line.
         """
         self.view.keep_line(color=color, line_id=line_id, names=[name])
 
     def remove_line(self, target=None, name=None, line_id=None):
         """
-        Get a message from either a panel (1d plot) or a view (picking) to
-        remove a given line or profile.
-        Send the message to the appropriate target: either the view1d or the
-        profile view.
+        Remove a line previously added using `keep_line`.
         """
         self.view.remove_line(line_id=line_id, names=[name])
 

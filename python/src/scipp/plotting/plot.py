@@ -89,10 +89,6 @@ class DataArrayDict(dict):
     def meta(self):
         return next(iter(self.values())).meta
 
-    @property
-    def data(self):
-        return next(iter(self.values())).data
-
 
 def plot(scipp_obj,
          projection=None,

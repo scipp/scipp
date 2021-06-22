@@ -6,6 +6,10 @@ import numpy as np
 
 def _slice_params(array, dim, loc):
     coord = array.meta[dim]
+    # Use first entry. Note that this is problematic if ranges overlap only
+    # partially.
+    if not isinstance(array, core.DataArray):
+        array = next(iter(array.values()))
     if array.sizes[dim] + 1 == coord.sizes[dim]:
         _, i = core.get_slice_params(array.data, coord, loc * coord.unit)
         if i < 0 or i + 1 >= coord.sizes[dim]:
