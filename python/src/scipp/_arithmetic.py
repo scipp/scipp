@@ -9,6 +9,22 @@ from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .typing import DataArrayLike
 
 
+def add(a: DataArrayLike, b:DataArrayLike) -> DataArrayLike:
+    """Element-wise addition.
+
+    Equivalent to
+
+    .. code-block:: python
+
+        a + b
+
+    :param a: First summand.
+    :param b: Second summand.
+    :return: Sum of ``a`` and ``b``.
+    """
+    return _call_cpp_func(_cpp.add, a, b)
+
+
 def divide(dividend: DataArrayLike, divisor: DataArrayLike) -> DataArrayLike:
     """Element-wise true division.
 
