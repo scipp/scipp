@@ -242,3 +242,13 @@ Compatibility
 
    to_dict
    from_dict
+
+
+Typing
+======
+
+.. autosummary::
+   :toctree: ../generated
+
+   typing.DataArrayLike
+   typing.DatasetLike

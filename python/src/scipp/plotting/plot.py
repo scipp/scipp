@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .._scipp import core as sc
-from .. import utils as su
+from .. import typing as st
 from ..compat.dict import from_dict
 from .dispatch import dispatch
 from .objects import PlotDict
@@ -51,19 +51,19 @@ def _input_to_data_array(item, all_keys, key=None):
     DataArrays.
     """
     to_plot = {}
-    if su.is_dataset(item):
+    if isinstance(item, sc.Dataset):
         for name in sorted(item.keys()):
-            if su.numeric_type(item[name]):
+            if st.has_numeric_type(item[name]):
                 proto_plt_key = f'{key}_{name}' if key else name
                 to_plot[_make_plot_key(proto_plt_key, all_keys)] = item[name]
-    elif su.is_variable(item):
-        if su.numeric_type(item):
+    elif isinstance(item, sc.Variable):
+        if st.has_numeric_type(item):
             if key is None:
                 key = _brief_str(item)
             to_plot[_make_plot_key(key,
                                    all_keys)] = _variable_to_data_array(item)
-    elif su.is_data_array(item):
-        if su.numeric_type(item):
+    elif isinstance(item, sc.DataArray):
+        if st.has_numeric_type(item):
             if key is None:
                 key = item.name
             to_plot[_make_plot_key(key, all_keys)] = item

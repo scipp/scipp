@@ -994,7 +994,7 @@ def test_isneginf():
 def test_nan_to_num():
     a = sc.Variable(dims=['x'], values=np.array([1, np.nan]))
     replace = sc.Variable(value=0.0)
-    b = sc.nan_to_num(a, replace)
+    b = sc.nan_to_num(a, nan=replace)
     expected = sc.Variable(dims=['x'], values=np.array([1, replace.value]))
     assert sc.identical(b, expected)
 
