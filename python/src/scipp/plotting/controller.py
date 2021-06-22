@@ -296,11 +296,7 @@ class PlotController:
         Send the message to the appropriate target: either the view1d or the
         profile view.
         """
-        if target == "profile":
-            self.profile.keep_line(color=color, line_id=line_id)
-            self.profile.rescale_to_data()
-        else:
-            self.view.keep_line(color=color, line_id=line_id)
+        self.view.keep_line(color=color, line_id=line_id, names=[name])
 
     def remove_line(self, target=None, name=None, line_id=None):
         """
@@ -309,10 +305,7 @@ class PlotController:
         Send the message to the appropriate target: either the view1d or the
         profile view.
         """
-        if target == "profile":
-            self.profile.remove_line(line_id=line_id)
-        else:
-            self.view.remove_line(line_id=line_id)
+        self.view.remove_line(line_id=line_id, names=[name])
 
     def toggle_profile_view(self, owner=None, dims=None):
         """

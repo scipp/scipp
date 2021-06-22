@@ -44,14 +44,6 @@ class PlotProfile(PlotFigure1d):
         super().update_axes(*args, legend_labels=False, **kwargs)
         self.slice_area = self.ax.axvspan(1, 2, alpha=0.5, color='lightgrey')
 
-    def _reset_line_label(self, name):
-        """
-        In the profile plot, we do not repeat the data name, as it is already
-        displayed in the main subplot (as the title for 2d plots and as a
-        legend entry for 1d plots).
-        """
-        self._lines[name].data.set_label(None)
-
     def toggle_hover_visibility(self, value):
         """
         If the mouse moves off the image, we hide the profile. If it moves

@@ -204,7 +204,7 @@ class PlotFigure1d(PlotFigure):
             line = self._lines[name]
             line.data.set_data(vals["values"]["x"], vals["values"]["y"])
             lab = vals["label"] if len(vals["label"]) > 0 else name
-            line.data.set_label(lab)
+            line.label = f'{name}[{lab}]'  # used later if line is kept
 
             for m in vals["masks"]:
                 line.masks[m].set_data(
@@ -234,14 +234,18 @@ class PlotFigure1d(PlotFigure):
 
         self.draw()
 
-    def keep_line(self, color, line_id):
+    def keep_line(self, color, line_id, names=None):
         """
         Duplicate the current main line and give it an arbitrary color.
         Triggered by a `PlotPanel1d` keep button or a `keep_profile` event.
         """
-        for name in self._lines:
+        if names is None:
+            names = self._lines
+        for name in names:
             # The main line
-            self.ax.lines.append(cp.copy(self._lines[name].data))
+            line = self._lines[name]
+            self.ax.lines.append(cp.copy(line.data))
+            self.ax.lines[-1].set_label(line.label)
             self.ax.lines[-1].set_url(line_id)
             self.ax.lines[-1].set_zorder(2)
             if self.ax.lines[-1].get_marker() == "None":
@@ -284,12 +288,14 @@ class PlotFigure1d(PlotFigure):
         """
         self._lines[name].data.set_label(name)
 
-    def remove_line(self, line_id):
+    def remove_line(self, line_id, names=None):
         """
         Remove a previously saved line.
         Triggered by a `PlotPanel1d` remove button or a `remove_profile` event.
         """
-        for name in self._lines:
+        if names is None:
+            names = self._lines
+        for name in names:
             lines = []
             for line in self.ax.lines:
                 if line.get_url() != line_id:
