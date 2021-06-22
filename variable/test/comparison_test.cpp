@@ -46,6 +46,7 @@ TYPED_TEST(IsCloseTest, rtol_when_variables_within_tolerance) {
   const auto atol = makeVariable<TypeParam>(Values{0});
   EXPECT_EQ(isclose(a, b, rtol, atol), true * units::one);
 }
+
 TYPED_TEST(IsCloseTest, rtol_when_variables_outside_tolerance) {
   const auto a = makeVariable<TypeParam>(Values{7});
   const auto b = makeVariable<TypeParam>(Values{9});
@@ -54,6 +55,7 @@ TYPED_TEST(IsCloseTest, rtol_when_variables_outside_tolerance) {
   const auto atol = makeVariable<TypeParam>(Values{0});
   EXPECT_EQ(isclose(a, b, rtol, atol), false * units::one);
 }
+
 TEST(IsCloseTest, with_vectors) {
   const auto u =
       makeVariable<Eigen::Vector3d>(Values{Eigen::Vector3d{0, 0, 0}});
@@ -119,6 +121,18 @@ TEST(IsCloseTest, compare_values_and_variances) {
                     makeVariable<double>(Values{1.0})),
             true * units::one);
 }
+
+TEST(IsCloseTest, rtol_units) {
+  auto unit = scipp::units::m;
+  const auto a = makeVariable<double>(Values{1.0}, Variances{1.0}, unit);
+  // This is fine
+  EXPECT_EQ(isclose(a, a, 1.0 * scipp::units::one, 1.0 * unit),
+            true * scipp::units::one);
+  // Now rtol has units m
+  EXPECT_THROW_DISCARD(isclose(a, a, 1.0 * unit, 1.0 * unit),
+                       except::UnitError);
+}
+
 TEST(ComparisonTest, variances_test) {
   const auto a = makeVariable<float>(Values{1.0}, Variances{1.0});
   const auto b = makeVariable<float>(Values{2.0}, Variances{2.0});

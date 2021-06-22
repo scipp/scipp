@@ -4,6 +4,7 @@
 /// @author Piotr Rozyczko
 #include "scipp/core/element/comparison.h"
 #include "scipp/core/eigen.h"
+#include "scipp/units/string.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/math.h"
 #include "scipp/variable/reduction.h"
@@ -21,6 +22,9 @@ Variable _values(Variable &&in) { return in.hasVariances() ? values(in) : in; }
 
 Variable isclose(const Variable &a, const Variable &b, const Variable &rtol,
                  const Variable &atol, const NanComparisons equal_nans) {
+  if (rtol.unit() != scipp::units::dimensionless)
+    throw except::UnitError("rtol arg must be dimensionless, but has unit " +
+                            to_string(rtol.unit()));
   // Element expansion comparison for vectors
   if (a.dtype() == dtype<Eigen::Vector3d>)
     return all(isclose(a.elements<Eigen::Vector3d>(),
