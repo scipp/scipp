@@ -18,6 +18,6 @@ struct SCIPP_UNITS_EXPORT UnitError : public Error<units::Unit> {
 template <>
 [[noreturn]] SCIPP_UNITS_EXPORT void
 throw_mismatch_error(const units::Unit &expected, const units::Unit &actual,
-                     std::string optional_message);
+                     const std::string &optional_message);
 
 } // namespace scipp::except

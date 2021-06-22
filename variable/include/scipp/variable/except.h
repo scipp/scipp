@@ -21,7 +21,7 @@ template <>
 [[noreturn]] SCIPP_VARIABLE_EXPORT void
 throw_mismatch_error(const variable::Variable &expected,
                      const variable::Variable &actual,
-                     std::string optional_message);
+                     const std::string &optional_message);
 
 } // namespace scipp::except
 

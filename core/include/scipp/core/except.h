@@ -37,7 +37,7 @@ struct SCIPP_CORE_EXPORT TypeError : public Error<core::DType> {
 template <>
 [[noreturn]] SCIPP_CORE_EXPORT void
 throw_mismatch_error(const core::DType &expected, const core::DType &actual,
-                     std::string optional_message);
+                     const std::string &optional_message);
 
 struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
   explicit DimensionError(const std::string &msg);
@@ -47,13 +47,13 @@ struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
 template <>
 [[noreturn]] SCIPP_CORE_EXPORT void
 throw_mismatch_error(const core::Sizes &expected, const core::Sizes &actual,
-                     std::string optional_message);
+                     const std::string &optional_message);
 
 template <>
 [[noreturn]] SCIPP_CORE_EXPORT void
 throw_mismatch_error(const core::Dimensions &expected,
                      const core::Dimensions &actual,
-                     std::string optional_message);
+                     const std::string &optional_message);
 
 [[noreturn]] SCIPP_CORE_EXPORT void
 throw_dimension_length_error(const core::Dimensions &expected, Dim actual,

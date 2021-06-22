@@ -10,7 +10,7 @@ UnitError::UnitError(const std::string &msg) : Error{msg} {}
 template <>
 void throw_mismatch_error(const units::Unit &expected,
                           const units::Unit &actual,
-                          std::string optional_message) {
+                          const std::string &optional_message) {
   throw UnitError("Expected unit " + to_string(expected) + ", got " +
                   to_string(actual) + '.' + optional_message);
 }

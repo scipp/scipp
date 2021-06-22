@@ -20,7 +20,7 @@ template <class T> struct Error : public std::runtime_error {
 template <class Expected, class Actual>
 [[noreturn]] void throw_mismatch_error(const Expected &expected,
                                        const Actual &actual,
-                                       std::string optional_message) {
+                                       const std::string &optional_message) {
   throw Error<std::decay_t<Expected>>("Expected  " + to_string(expected) +
                                       " to be equal to " + to_string(actual) +
                                       '.' + optional_message);

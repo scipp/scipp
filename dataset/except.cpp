@@ -12,7 +12,7 @@ DataArrayError::DataArrayError(const std::string &msg) : Error{msg} {}
 template <>
 void throw_mismatch_error(const dataset::DataArray &expected,
                           const dataset::DataArray &actual,
-                          std::string optional_message) {
+                          const std::string &optional_message) {
   throw DataArrayError("Expected DataArray " + to_string(expected) + ", got " +
                        to_string(actual) + '.' + optional_message);
 }
@@ -22,7 +22,7 @@ DatasetError::DatasetError(const std::string &msg) : Error{msg} {}
 template <>
 void throw_mismatch_error(const dataset::Dataset &expected,
                           const dataset::Dataset &actual,
-                          std::string optional_message) {
+                          const std::string &optional_message) {
   throw DatasetError("Expected Dataset " + to_string(expected) + ", got " +
                      to_string(actual) + '.' + optional_message);
 }

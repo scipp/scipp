@@ -31,7 +31,7 @@ template <>
 [[noreturn]] SCIPP_DATASET_EXPORT void
 throw_mismatch_error(const dataset::DataArray &expected,
                      const dataset::DataArray &actual,
-                     std::string optional_message);
+                     const std::string &optional_message);
 
 struct SCIPP_DATASET_EXPORT DatasetError : public Error<dataset::Dataset> {
   explicit DatasetError(const std::string &msg);
@@ -41,7 +41,7 @@ template <>
 [[noreturn]] SCIPP_DATASET_EXPORT void
 throw_mismatch_error(const dataset::Dataset &expected,
                      const dataset::Dataset &actual,
-                     std::string optional_message);
+                     const std::string &optional_message);
 
 struct SCIPP_DATASET_EXPORT CoordMismatchError : public DatasetError {
   CoordMismatchError(const Dim dim, const Variable &expected,
