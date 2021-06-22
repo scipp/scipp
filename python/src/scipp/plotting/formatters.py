@@ -1,5 +1,5 @@
-from ..utils import name_with_unit, value_to_string, vector_type, \
-        string_type, datetime_type
+from .. import typing
+from ..utils import name_with_unit, value_to_string
 from .tools import to_bin_centers
 from .._scipp.core import to_unit, Unit
 from .._scipp import core as sc
@@ -186,11 +186,11 @@ class Kind(enum.Enum):
 
 
 def _dtype_kind(var):
-    if vector_type(var):
+    if typing.has_vector_type(var):
         return Kind.vector
-    elif string_type(var):
+    elif typing.has_string_type(var):
         return Kind.string
-    elif datetime_type(var):
+    elif typing.has_datetime_type(var):
         return Kind.datetime
     else:
         return Kind.other

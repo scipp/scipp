@@ -4,7 +4,7 @@
 
 from .plot import DataArrayDict
 from .tools import find_limits, to_dict
-from ..utils import vector_type, string_type, datetime_type
+from .. import typing
 from .._scipp import core as sc
 from .._variable import arange
 
@@ -68,9 +68,9 @@ class PlotModel:
         """
         if dim in array.meta:
             coord = array.meta[dim]
-            if vector_type(coord) or string_type(coord):
+            if typing.has_vector_type(coord) or typing.has_string_type(coord):
                 coord = arange(dim=dim, start=0, stop=array.sizes[dim])
-            elif datetime_type(coord):
+            elif typing.has_datetime_type(coord):
                 coord = coord - sc.min(coord)
         else:
             coord = arange(dim=dim, start=0, stop=array.sizes[dim])
