@@ -75,7 +75,7 @@ Contributors
 
 Owen Arnold<sup>b, c</sup>,
 Simon Heybrock<sup>a</sup>,
-Matthew D. Jonesr<sup>b, c</sup>,
+Matthew D. Jones<sup>b, c</sup>,
 Neil Vaytet<sup>a</sup>,
 and Jan-Lukas Wynen<sup>a</sup>
 
