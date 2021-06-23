@@ -41,14 +41,14 @@ def divide(dividend: DataArrayLike, divisor: DataArrayLike) -> DataArrayLike:
     Examples:
 
     >>> sc.divide(sc.arange('x', -2, 3), sc.scalar(2)).values
-    [-1.  -0.5  0.   0.5  1. ]
+    array([-1. , -0.5,  0. ,  0.5,  1. ])
     >>> sc.divide(sc.arange('x', -2.0, 3.0), sc.scalar(2.0)).values
-    [-1.  -0.5  0.   0.5  1. ]
+    array([-1. , -0.5,  0. ,  0.5,  1. ])
 
     Of equivalently in operator notation
 
     >>> (sc.arange('x', -2.0, 3.0) / sc.scalar(2.0)).values
-    [-1.  -0.5  0.   0.5  1. ]
+    array([-1. , -0.5,  0. ,  0.5,  1. ])
     """
     return _call_cpp_func(_cpp.divide, dividend, divisor)
 
@@ -69,14 +69,14 @@ def floor_divide(dividend: DataArrayLike,
     Examples:
 
     >>> sc.floor_divide(sc.arange('x', -2, 3), sc.scalar(2)).values
-    [-1 -1  0  0  1]
+    array([-1, -1,  0,  0,  1])
     >>> sc.floor_divide(sc.arange('x', -2.0, 3.0), sc.scalar(2.0)).values
-    [-1. -1.  0.  0.  1.]
+    array([-1., -1.,  0.,  0.,  1.])
 
     Of equivalently in operator notation
 
     >>> (sc.arange('x', -2.0, 3.0) // sc.scalar(2.0)).values
-    [-1. -1.  0.  0.  1.]
+    array([-1., -1.,  0.,  0.,  1.])
     """
     return _call_cpp_func(_cpp.floor_divide, dividend, divisor)
 
@@ -110,14 +110,14 @@ def mod(dividend: DataArrayLike, divisor: DataArrayLike) -> DataArrayLike:
     Examples:
 
     >>> sc.mod(sc.arange('x', -3, 5), sc.scalar(3)).values
-    [0 1 2 0 1 2 0 1]
+    array([0, 1, 2, 0, 1, 2, 0, 1])
     >>> sc.mod(sc.arange('x', -3, 5), sc.scalar(-3)).values
-    [ 0 -2 -1  0 -2 -1  0 -2]
+    array([ 0, -2, -1,  0, -2, -1,  0, -2])
 
     Of equivalently in operator notation
 
     >>> (sc.arange('x', -3, 5) % sc.scalar(3)).values
-    [0 1 2 0 1 2 0 1]
+    array([0, 1, 2, 0, 1, 2, 0, 1])
     """
     return _call_cpp_func(_cpp.mod, dividend, divisor)
 
