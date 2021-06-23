@@ -18,9 +18,9 @@ This is also the place to ask new questions that have not been answered yet, by 
 
 If you are interested in developing Scipp, please see the [developer getting started guide](https://scipp.github.io/developer/getting-started.html).
 
-## Sponsors
+## Contributing Organizations
 
-The following organisations have made major contributions to the development of scipp, and other developments in the [scipp ecosystem](../../../):
+The following organizations have made major contributions to the development of scipp, and other developments in the [scipp ecosystem](../../../):
 
 * [European Spallation Source ERIC](https://europeanspallationsource.se/), Sweden
 * [Science and Technology Funding Council](https://stfc.ukri.org/councils/stfc), UK

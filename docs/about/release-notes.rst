@@ -323,7 +323,7 @@ Limitations:
 * Numerous "edge cases" not supported yet.
 * While tested, probably far from bug-free.
 
-Contributing Organisations
+Contributing Organizations
 --------------------------
 * <sup>a</sup> `European Spallation Source ERIC <https://europeanspallationsource.se/>`_ Sweden
 * <sup>b</sup> `Science and Technology Facilities Council <https://www.ukri.org/councils/stfc/>`_ UK
