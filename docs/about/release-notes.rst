@@ -73,11 +73,11 @@ Breaking changes
 Contributors
 ~~~~~~~~~~~~
 
-Owen Arnold,
-Simon Heybrock,
-Matthew D. Jones,
-Neil Vaytet,
-and Jan-Lukas Wynen
+* Owen Arnold @UKRI,
+* Simon Heybrock @ESS,
+* Matthew D. Jones @UKRI,
+* Neil Vaytet @ESS,
+* and Jan-Lukas Wynen @ESS
 
 v0.6.1 (April 2021)
 -------------------
