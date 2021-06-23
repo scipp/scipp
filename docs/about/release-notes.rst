@@ -323,8 +323,8 @@ Limitations:
 * Numerous "edge cases" not supported yet.
 * While tested, probably far from bug-free.
 
-Contributing Facilities
------------------------
+Contributing Organisations
+--------------------------
 * <sup>a</sup> **Data Management and Software Centre, European Spallation Source, Sweden**
 * <sup>b</sup> **UK Research and Innovation, UK**
 * <sup>c</sup> **Tessella, UK**
