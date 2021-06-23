@@ -21,14 +21,14 @@ template <class T> struct MakeVariable {
     const auto valuesT = cast_to_array_like<T>(values, unit);
     py::buffer_info info = valuesT.request();
     Dimensions dims(labels, {info.shape.begin(), info.shape.end()});
-    auto var = variances
-                   ? makeVariable<T>(
-                         Dimensions{dims},
-                         Values(dims.volume(), core::init_for_overwrite),
-                         Variances(dims.volume(), core::init_for_overwrite))
-                   : makeVariable<T>(
-                         Dimensions(dims),
-                         Values(dims.volume(), core::init_for_overwrite));
+    auto var =
+        variances
+            ? makeVariable<T>(
+                  Dimensions{dims},
+                  Values(dims.volume(), core::init_for_overwrite),
+                  Variances(dims.volume(), core::init_for_overwrite))
+            : makeVariable<T>(Dimensions(dims),
+                              Values(dims.volume(), core::init_for_overwrite));
     var.setUnit(unit);
     copy_array_into_view(valuesT, var.template values<T>(), dims);
     if (variances) {

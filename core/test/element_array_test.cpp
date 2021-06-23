@@ -7,8 +7,8 @@
 
 #include "scipp/core/element_array.h"
 
-using scipp::core::init_for_overwrite;
 using scipp::core::element_array;
+using scipp::core::init_for_overwrite;
 
 static auto make_element_array() {
   std::vector<double> v{1.1, 2.2, 3.3};
