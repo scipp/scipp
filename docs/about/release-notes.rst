@@ -23,11 +23,11 @@ Bugfixes
 Contributors
 ~~~~~~~~~~~~
 
-Owen Arnold,
-Simon Heybrock,
-Greg Tucker,
-Neil Vaytet,
-and Jan-Lukas Wynen
+Owen Arnold<sup>b, c</sup>,
+Simon Heybrock<sup>a</sup>,
+Greg Tucker<sup>a</sup>,
+Neil Vaytet<sup>a</sup>,
+and Jan-Lukas Wynen<sup>a</sup>
 
 v0.7.0 (June 2021)
 ------------------
@@ -322,3 +322,10 @@ Limitations:
 * Limited performance and no parallelization.
 * Numerous "edge cases" not supported yet.
 * While tested, probably far from bug-free.
+
+Contributing Facilities
+-----------------------
+* <sup>a</sup> **Data Management and Software Centre, European Spallation Source, Sweden**
+* <sup>b</sup> **UK Research and Innovation, UK**
+* <sup>c</sup> **Tessella, UK**
+* <sup>d</sup> **Institut Laue-Langevin, France**
