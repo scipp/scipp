@@ -47,18 +47,21 @@ cast_dtype_and_unit(const py::object &dtype,
   }
 }
 
+auto len_or_0(const py::object &sequence) {
+  return sequence.is_none() ? 0 : py::len(sequence);
+}
+
+// TODO merge build_dimensions?
 Dimensions build_dimensions(const py::object &labels, const py::object &shape) {
-  if (labels.is_none()) {
-    if (!shape.is_none()) {
-      throw std::invalid_argument(
-          "Cannot determine dimensions, got a shape but no dimension labels.");
-    }
+  const auto n_labels = len_or_0(labels);
+  const auto n_shape = len_or_0(shape);
+  if (n_labels != n_shape) {
+    throw std::invalid_argument(
+        format("Inconsistent dimension labels and shape. Got ", n_labels,
+               " labels and ", n_shape, " sizes."));
+  } else if (n_labels == 0) {
     return Dimensions{};
   } else {
-    if (shape.is_none()) {
-      throw std::invalid_argument(
-          "Cannot determine dimensions, got dimension labels but no shape.");
-    }
     return Dimensions(labels.cast<std::vector<Dim>>(),
                       shape.cast<std::vector<scipp::index>>());
   }
@@ -272,127 +275,60 @@ Variable make_variable_array(const py::object &dim_labels,
                                                      with_variance);
 }
 
-void ensure_consistent_variance_args(const py::object &variance,
-                                     const py::object &variances,
+void ensure_consistent_variance_args(const py::object &variances,
                                      const std::optional<bool> with_variance) {
-  const auto throw_message = [](std::string_view name) {
-    throw std::invalid_argument(format(
-        "Arguments '", name, "' and 'with_variance' are mutually exclusive."));
-  };
-
-  if (with_variance.has_value()) {
-    if (!variance.is_none()) {
-      throw_message("variance");
-    }
-    if (!variances.is_none()) {
-      throw_message("variances");
-    }
+  if (with_variance.has_value() && !variances.is_none()) {
+    throw std::invalid_argument(
+        "Arguments 'variances' and 'with_variance' are mutually exclusive.");
   }
-}
-
-std::string make_scalar_array_conflict_message(const py::object &values,
-                                               const py::object &variances,
-                                               const py::object &value,
-                                               const py::object &variance) {
-  std::ostringstream oss;
-  oss << "Scalar and array arguments cannot both be used to initialize "
-         "variables. Got ";
-  bool first = true;
-  if (!values.is_none()) {
-    oss << "'values'";
-    first = false;
-  }
-  if (!variances.is_none()) {
-    if (!first)
-      oss << " and ";
-    oss << "'variances'";
-  }
-  oss << " which cannot be combined with ";
-  first = true;
-  if (!value.is_none()) {
-    oss << "'value'";
-    first = false;
-  }
-  if (!variance.is_none()) {
-    if (!first)
-      oss << " and ";
-    oss << "'variance'";
-  }
-  oss << '.';
-  return oss.str();
 }
 
 enum class ConstructorType { Array, Scalar, Default };
 
-ConstructorType
-identify_constructor(const py::object &dims, const py::object &shape,
-                     const py::object &values, const py::object &variances,
-                     const py::object &value, const py::object &variance) {
-  if (!values.is_none() || !variances.is_none()) {
-    if (!value.is_none() || !variance.is_none()) {
-      throw std::invalid_argument(make_scalar_array_conflict_message(
-          values, variances, value, variance));
-    }
-    if (dims.is_none()) {
-      throw std::invalid_argument(
-          "Array constructor of variable missing dims argument. "
-          "Constructor type deduced from presence of values / variances "
-          "arguments.");
-    }
-    return ConstructorType::Array;
-  } else if (!value.is_none() || !variance.is_none()) {
-    if (!dims.is_none() && py::len(dims) != 0) {
-      throw std::invalid_argument(
-          format("Too many dims for constructing a scalar: ", dims,
-                 ". Constructor type deduced from presence of value / "
-                 "variance arguments."));
-    }
-    if (!shape.is_none() && py::len(shape) != 0) {
-      throw std::invalid_argument(format(
-          "Too many dimensions in shape for constructing a scalar: ", shape,
-          ". Constructor type deduced from presence of value / "
-          "variance arguments."));
-    }
-    return ConstructorType::Scalar;
-  } else {
+ConstructorType identify_constructor(const py::object &dim_labels,
+                                     const py::object &values,
+                                     const py::object &variances) {
+  if (values.is_none() && variances.is_none()) {
     return ConstructorType::Default;
+  } else if (py::bool_{dim_labels}) {
+    return ConstructorType::Array;
+  } else {
+    return ConstructorType::Scalar;
   }
 }
 } // namespace
 
 void bind_init(py::class_<Variable> &cls) {
-  cls.def(
-      py::init([](const py::object &dims, const py::object &shape,
-                  const py::object &values, const py::object &variances,
-                  const py::object &value, const py::object &variance,
-                  const std::optional<bool> with_variance,
-                  const std::optional<units::Unit> unit,
-                  const py::object &dtype) {
-        ensure_consistent_variance_args(variance, variances, with_variance);
-        const auto [scipp_dtype, actual_unit] =
-            cast_dtype_and_unit(dtype, unit);
+  cls.def(py::init([](const py::object &dim_labels, const py::object &shape,
+                      const py::object &values, const py::object &variances,
+                      const std::optional<bool> with_variance,
+                      const std::optional<units::Unit> unit,
+                      const py::object &dtype) {
+            ensure_consistent_variance_args(variances, with_variance);
+            const auto [scipp_dtype, actual_unit] =
+                cast_dtype_and_unit(dtype, unit);
 
-        switch (identify_constructor(dims, shape, values, variances, value,
-                                     variance)) {
-        case ConstructorType::Array:
-          return make_variable_array(dims, shape, values, variances,
-                                     actual_unit, scipp_dtype, with_variance);
-        case ConstructorType::Scalar:
-          return make_variable_scalar(value, variance, actual_unit, scipp_dtype,
-                                      with_variance);
-        case ConstructorType::Default:
-          return make_variable_default_init(dims, shape, actual_unit,
-                                            scipp_dtype, with_variance);
-        }
-        // Unreachable but gcc complains about a missing return otherwise.
-        std::terminate();
-      }),
-      py::kw_only(), py::arg("dims") = py::none(),
-      py::arg("shape") = py::none(), py::arg("values") = py::none(),
-      py::arg("variances") = py::none(), py::arg("value") = py::none(),
-      py::arg("variance") = py::none(), py::arg("with_variance") = std::nullopt,
-      py::arg("unit") = std::nullopt, py::arg("dtype") = py::none(),
-      R"raw(
+            switch (identify_constructor(dim_labels, values, variances)) {
+            case ConstructorType::Array:
+              return make_variable_array(dim_labels, shape, values, variances,
+                                         actual_unit, scipp_dtype,
+                                         with_variance);
+            case ConstructorType::Scalar:
+              return make_variable_scalar(values, variances, actual_unit,
+                                          scipp_dtype, with_variance);
+            case ConstructorType::Default:
+              return make_variable_default_init(dim_labels, shape, actual_unit,
+                                                scipp_dtype, with_variance);
+            }
+            // Unreachable but gcc complains about a missing return otherwise.
+            std::terminate();
+          }),
+          py::kw_only(), py::arg("dims"), py::arg("shape") = py::none(),
+          py::arg("values") = py::none(), py::arg("variances") = py::none(),
+          py::arg("with_variance") = std::nullopt,
+          py::arg("unit") = std::nullopt, py::arg("dtype") = py::none(),
+          // TODO fix docs
+          R"raw(
 Initialize a variable.
 
 Constructing variables can be tricky because there are many arguments, some of

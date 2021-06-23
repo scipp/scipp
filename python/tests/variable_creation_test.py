@@ -20,8 +20,9 @@ def test_scalar_with_dtype():
     unit = sc.units.m
     dtype = sc.dtype.float64
     var = sc.scalar(value=value, variance=variance, unit=unit, dtype=dtype)
-    expected = sc.Variable(value=value,
-                           variance=variance,
+    expected = sc.Variable(dims=(),
+                           values=value,
+                           variances=variance,
                            unit=unit,
                            dtype=dtype)
     assert sc.identical(var, expected)
@@ -30,7 +31,7 @@ def test_scalar_with_dtype():
 def test_scalar_without_dtype():
     value = 'temp'
     var = sc.scalar(value)
-    expected = sc.Variable(value=value)
+    expected = sc.Variable(dims=(), values=value)
     assert sc.identical(var, expected)
 
 

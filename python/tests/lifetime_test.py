@@ -63,7 +63,7 @@ def test_lifetime_items_iter():
 
 def test_lifetime_single_value():
     d = sc.Dataset({'a': sc.Variable(dims=['x'], values=np.arange(10))})
-    var = sc.Variable(value=d)
+    var = sc.scalar(d)
     assert var.value['a'].values[-1] == 9
     assert var.copy().values['a'].values[-1] == 9
 
@@ -77,7 +77,7 @@ def test_lifetime_coord_values():
 
 
 def test_lifetime_scalar_py_object():
-    var = sc.Variable(value=[1] * 100000)
+    var = sc.scalar([1] * 100000)
     assert var.dtype == sc.dtype.PyObject
     val = var.copy().value
     import gc
@@ -106,7 +106,7 @@ def test_lifetime_scalar_nested_string():
 
 def test_lifetime_scalar():
     elem = sc.Variable(dims=['x'], values=np.arange(100000))
-    var = sc.Variable(value=elem)
+    var = sc.scalar(elem)
     assert sc.identical(var.values, elem)
     vals = var.copy().values
     import gc

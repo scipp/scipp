@@ -43,12 +43,12 @@ def test_operation_with_scalar_quantity():
     reference.unit = sc.units.kg
 
     var = sc.Variable(dims=['x'], values=np.arange(4.0))
-    var *= sc.Variable(value=1.5, unit=sc.units.kg)
+    var *= sc.scalar(1.5, unit=sc.units.kg)
     assert sc.identical(reference, var)
 
 
 def test_0D_scalar_access():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert var.value == 0.0
     var.value = 1.2
     assert var.value == 1.2
@@ -57,10 +57,10 @@ def test_0D_scalar_access():
 
 
 def test_0D_scalar_string():
-    var = sc.Variable(value='a')
+    var = sc.scalar('a')
     assert var.value == 'a'
     var.value = 'b'
-    assert sc.identical(var, sc.Variable(value='b'))
+    assert sc.identical(var, sc.scalar('b'))
 
 
 def test_1D_scalar_access_fail():
@@ -160,7 +160,7 @@ def test_getitem():
 
 def test_setitem_broadcast():
     var = sc.Variable(dims=['x'], values=[1, 2, 3, 4], dtype=sc.dtype.int64)
-    var['x', 1:3] = sc.Variable(value=5, dtype=sc.dtype.int64)
+    var['x', 1:3] = sc.scalar(5, dtype=sc.dtype.int64)
     assert sc.identical(
         var, sc.Variable(dims=['x'], values=[1, 5, 5, 4],
                          dtype=sc.dtype.int64))
@@ -176,7 +176,7 @@ def test_slicing():
 
 
 def test_sizes():
-    a = sc.Variable(value=1)
+    a = sc.scalar(1)
     assert a.sizes == {}
     a = sc.Variable(dims=['x'], shape=[2])
     assert a.sizes == {'x': 2}
@@ -185,8 +185,8 @@ def test_sizes():
 
 
 def test_iadd():
-    expected = sc.Variable(value=2.2)
-    a = sc.Variable(value=1.2)
+    expected = sc.scalar(2.2)
+    a = sc.scalar(1.2)
     b = a
     a += 1.0
     assert sc.identical(a, expected)
@@ -200,8 +200,8 @@ def test_iadd():
 
 
 def test_isub():
-    expected = sc.Variable(value=2.2 - 1.0)
-    a = sc.Variable(value=2.2)
+    expected = sc.scalar(2.2 - 1.0)
+    a = sc.scalar(2.2)
     b = a
     a -= 1.0
     assert sc.identical(a, expected)
@@ -211,8 +211,8 @@ def test_isub():
 
 
 def test_imul():
-    expected = sc.Variable(value=2.4)
-    a = sc.Variable(value=1.2)
+    expected = sc.scalar(2.4)
+    a = sc.scalar(1.2)
     b = a
     a *= 2.0
     assert sc.identical(a, expected)
@@ -222,8 +222,8 @@ def test_imul():
 
 
 def test_idiv():
-    expected = sc.Variable(value=1.2)
-    a = sc.Variable(value=2.4)
+    expected = sc.scalar(1.2)
+    a = sc.scalar(2.4)
     b = a
     a /= 2.0
     assert sc.identical(a, expected)
@@ -233,35 +233,35 @@ def test_idiv():
 
 
 def test_iand():
-    expected = sc.Variable(value=False)
-    a = sc.Variable(value=True)
+    expected = sc.scalar(False)
+    a = sc.scalar(True)
     b = a
-    a &= sc.Variable(value=False)
+    a &= sc.scalar(False)
     assert sc.identical(a, expected)
     assert sc.identical(b, expected)
-    a |= sc.Variable(value=True)
+    a |= sc.scalar(True)
     assert sc.identical(a, b)
 
 
 def test_ior():
-    expected = sc.Variable(value=True)
-    a = sc.Variable(value=False)
+    expected = sc.scalar(True)
+    a = sc.scalar(False)
     b = a
-    a |= sc.Variable(value=True)
+    a |= sc.scalar(True)
     assert sc.identical(a, expected)
     assert sc.identical(b, expected)
-    a &= sc.Variable(value=True)
+    a &= sc.scalar(True)
     assert sc.identical(a, b)
 
 
 def test_ixor():
-    expected = sc.Variable(value=True)
-    a = sc.Variable(value=False)
+    expected = sc.scalar(True)
+    a = sc.scalar(False)
     b = a
-    a ^= sc.Variable(value=True)
+    a ^= sc.scalar(True)
     assert sc.identical(a, expected)
     assert sc.identical(b, expected)
-    a ^= sc.Variable(value=True)
+    a ^= sc.scalar(True)
     assert sc.identical(a, b)
 
 
@@ -330,10 +330,10 @@ def test_binary_divide():
 
 
 def test_in_place_binary_or():
-    a = sc.Variable(value=False)
-    b = sc.Variable(value=True)
+    a = sc.scalar(False)
+    b = sc.scalar(True)
     a |= b
-    assert sc.identical(a, sc.Variable(value=True))
+    assert sc.identical(a, sc.scalar(True))
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
@@ -343,9 +343,9 @@ def test_in_place_binary_or():
 
 
 def test_binary_or():
-    a = sc.Variable(value=False)
-    b = sc.Variable(value=True)
-    assert sc.identical((a | b), sc.Variable(value=True))
+    a = sc.scalar(False)
+    b = sc.scalar(True)
+    assert sc.identical((a | b), sc.scalar(True))
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
@@ -356,10 +356,10 @@ def test_binary_or():
 
 
 def test_in_place_binary_and():
-    a = sc.Variable(value=False)
-    b = sc.Variable(value=True)
+    a = sc.scalar(False)
+    b = sc.scalar(True)
     a &= b
-    assert sc.identical(a, sc.Variable(value=False))
+    assert sc.identical(a, sc.scalar(False))
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
@@ -370,9 +370,9 @@ def test_in_place_binary_and():
 
 
 def test_binary_and():
-    a = sc.Variable(value=False)
-    b = sc.Variable(value=True)
-    assert sc.identical((a & b), sc.Variable(value=False))
+    a = sc.scalar(False)
+    b = sc.scalar(True)
+    assert sc.identical((a & b), sc.scalar(False))
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
@@ -382,10 +382,10 @@ def test_binary_and():
 
 
 def test_in_place_binary_xor():
-    a = sc.Variable(value=False)
-    b = sc.Variable(value=True)
+    a = sc.scalar(False)
+    b = sc.scalar(True)
     a ^= b
-    assert sc.identical(a, sc.Variable(value=True))
+    assert sc.identical(a, sc.scalar(True))
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
@@ -396,9 +396,9 @@ def test_in_place_binary_xor():
 
 
 def test_binary_xor():
-    a = sc.Variable(value=False)
-    b = sc.Variable(value=True)
-    assert sc.identical((a ^ b), sc.Variable(value=True))
+    a = sc.scalar(False)
+    b = sc.scalar(True)
+    assert sc.identical((a ^ b), sc.scalar(True))
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
@@ -439,47 +439,48 @@ def test_binary_not_equal():
 
 
 def test_abs():
-    assert_export(sc.abs, sc.Variable())
+    assert_export(sc.abs, sc.Variable(dims=()))
 
 
 def test_abs_out():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.abs, var, out=var)
 
 
 def test_dot():
-    assert_export(sc.dot, sc.Variable(), sc.Variable())
+    assert_export(sc.dot, sc.Variable(dims=()), sc.Variable(dims=()))
 
 
 def test_concatenate():
-    assert_export(sc.concatenate, sc.Variable(), sc.Variable(), 'x')
+    assert_export(sc.concatenate, sc.Variable(dims=()), sc.Variable(dims=()),
+                  'x')
 
 
 def test_mean():
-    assert_export(sc.mean, sc.Variable(), 'x')
+    assert_export(sc.mean, sc.Variable(dims=()), 'x')
 
 
 def test_mean_in_place():
-    var = sc.Variable()
-    assert_export(sc.mean, sc.Variable(), 'x', var)
+    var = sc.Variable(dims=())
+    assert_export(sc.mean, sc.Variable(dims=()), 'x', var)
 
 
 def test_norm():
-    assert_export(sc.norm, sc.Variable())
+    assert_export(sc.norm, sc.Variable(dims=()))
 
 
 def test_sqrt():
-    assert_export(sc.sqrt, sc.Variable())
+    assert_export(sc.sqrt, sc.Variable(dims=()))
 
 
 def test_sqrt_out():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.sqrt, var, var)
 
 
 def test_values_variances():
-    assert_export(sc.values, sc.Variable())
-    assert_export(sc.variances, sc.Variable())
+    assert_export(sc.values, sc.Variable(dims=()))
+    assert_export(sc.variances, sc.Variable(dims=()))
 
 
 def test_sum():
@@ -508,7 +509,7 @@ def test_sum_in_place():
 
 
 def test_variance_acess():
-    v = sc.Variable()
+    v = sc.Variable(dims=())
     assert v.variance is None
     assert v.variances is None
 
@@ -575,19 +576,19 @@ def test_set_variance_convert_dtype():
 
 def test_sum_mean():
     var = sc.Variable(dims=['x'], values=np.arange(5, dtype=np.int64))
-    assert sc.identical(sc.sum(var, 'x'), sc.Variable(value=10))
+    assert sc.identical(sc.sum(var, 'x'), sc.scalar(10))
     var = sc.Variable(dims=['x'], values=np.arange(6, dtype=np.int64))
-    assert sc.identical(sc.mean(var, 'x'), sc.Variable(value=2.5))
+    assert sc.identical(sc.mean(var, 'x'), sc.scalar(2.5))
 
 
 def test_make_variable_from_unit_scalar_mult_div():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     var.unit = sc.units.m
     assert sc.identical(var, 0.0 * sc.units.m)
     var.unit = sc.units.m**(-1)
     assert sc.identical(var, 0.0 / sc.units.m)
 
-    var = sc.Variable(value=np.float32())
+    var = sc.scalar(np.float32())
     var.unit = sc.units.m
     assert sc.identical(var, np.float32(0.0) * sc.units.m)
     var.unit = sc.units.m**(-1)
@@ -597,7 +598,7 @@ def test_make_variable_from_unit_scalar_mult_div():
 def test_construct_0d_numpy():
     v = sc.Variable(dims=['x'], values=np.array([0]), dtype=np.float32)
     var = v['x', 0].copy()
-    assert sc.identical(var, sc.Variable(value=np.float32()))
+    assert sc.identical(var, sc.scalar(np.float32()))
 
     v = sc.Variable(dims=['x'], values=np.array([0]), dtype=np.float32)
     var = v['x', 0].copy()
@@ -608,16 +609,15 @@ def test_construct_0d_numpy():
 
 
 def test_construct_0d_native_python_types():
-    assert sc.Variable(value=2).dtype == sc.dtype.int64
-    assert sc.Variable(value=2.0).dtype == sc.dtype.float64
-    assert sc.Variable(value=True).dtype == sc.dtype.bool
+    assert sc.scalar(2).dtype == sc.dtype.int64
+    assert sc.scalar(2.0).dtype == sc.dtype.float64
+    assert sc.scalar(True).dtype == sc.dtype.bool
 
 
 def test_construct_0d_dtype():
-    assert sc.Variable(value=2, dtype=np.int32).dtype == sc.dtype.int32
-    assert sc.Variable(value=np.float64(2),
-                       dtype=np.float32).dtype == sc.dtype.float32
-    assert sc.Variable(value=1, dtype=bool).dtype == sc.dtype.bool
+    assert sc.scalar(2, dtype=np.int32).dtype == sc.dtype.int32
+    assert sc.scalar(np.float64(2), dtype=np.float32).dtype == sc.dtype.float32
+    assert sc.scalar(1, dtype=bool).dtype == sc.dtype.bool
 
 
 def test_rename_dims():
@@ -635,85 +635,85 @@ def test_bool_variable_repr():
 
 
 def test_reciprocal():
-    assert_export(sc.reciprocal, sc.Variable())
+    assert_export(sc.reciprocal, sc.Variable(dims=()))
 
 
 def test_reciprocal_out():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.reciprocal, var, var)
 
 
 def test_exp():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.exp, x=var)
 
 
 def test_log():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.log, x=var)
 
 
 def test_log10():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.log10, x=var)
 
 
 def test_sin():
-    assert_export(sc.sin, sc.Variable())
+    assert_export(sc.sin, sc.Variable(dims=()))
 
 
 def test_sin_out():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.sin, var, out=var)
 
 
 def test_cos():
-    assert_export(sc.cos, sc.Variable())
+    assert_export(sc.cos, sc.Variable(dims=()))
 
 
 def test_cos_out():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.cos, var, out=var)
 
 
 def test_tan():
-    assert_export(sc.tan, sc.Variable())
+    assert_export(sc.tan, sc.Variable(dims=()))
 
 
 def test_tan_out():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.tan, var, out=var)
 
 
 def test_asin():
-    assert_export(sc.asin, sc.Variable())
+    assert_export(sc.asin, sc.Variable(dims=()))
 
 
 def test_asin_out():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.asin, var, out=var)
 
 
 def test_acos():
-    assert_export(sc.acos, sc.Variable())
+    assert_export(sc.acos, sc.Variable(dims=()))
 
 
 def test_acos_out():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.acos, var, out=var)
 
 
 def test_atan():
-    assert_export(sc.atan, sc.Variable())
+    assert_export(sc.atan, sc.Variable(dims=()))
 
 
 def test_atan_out():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.atan, var, out=var)
 
 
 def test_atan2():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.atan2, y=var, x=var)
     assert_export(sc.atan2, y=var, x=var, out=var)
 
@@ -761,7 +761,7 @@ def test_isneginf():
 
 def test_nan_to_num():
     a = sc.Variable(dims=['x'], values=np.array([1, np.nan]))
-    replace = sc.Variable(value=0.0)
+    replace = sc.scalar(0.0)
     b = sc.nan_to_num(a, replace)
     expected = sc.Variable(dims=['x'], values=np.array([1, replace.value]))
     assert sc.identical(b, expected)
@@ -769,7 +769,7 @@ def test_nan_to_num():
 
 def test_nan_to_nan_with_pos_inf():
     a = sc.Variable(dims=['x'], values=np.array([1, np.inf]))
-    replace = sc.Variable(value=0.0)
+    replace = sc.scalar(0.0)
     b = sc.nan_to_num(a, posinf=replace)
     expected = sc.Variable(dims=['x'], values=np.array([1, replace.value]))
     assert sc.identical(b, expected)
@@ -777,7 +777,7 @@ def test_nan_to_nan_with_pos_inf():
 
 def test_nan_to_nan_with_neg_inf():
     a = sc.Variable(dims=['x'], values=np.array([1, -np.inf]))
-    replace = sc.Variable(value=0.0)
+    replace = sc.scalar(0.0)
     b = sc.nan_to_num(a, neginf=replace)
     expected = sc.Variable(dims=['x'], values=np.array([1, replace.value]))
     assert sc.identical(b, expected)
@@ -785,9 +785,9 @@ def test_nan_to_nan_with_neg_inf():
 
 def test_nan_to_nan_with_multiple_special_replacements():
     a = sc.Variable(dims=['x'], values=np.array([1, np.nan, np.inf, -np.inf]))
-    replace_nan = sc.Variable(value=-1.0)
-    replace_pos_inf = sc.Variable(value=-2.0)
-    replace_neg_inf = sc.Variable(value=-3.0)
+    replace_nan = sc.scalar(-1.0)
+    replace_pos_inf = sc.scalar(-2.0)
+    replace_neg_inf = sc.scalar(-3.0)
     b = sc.nan_to_num(a,
                       nan=replace_nan,
                       posinf=replace_pos_inf,
@@ -805,7 +805,7 @@ def test_nan_to_nan_with_multiple_special_replacements():
 def test_nan_to_num_out():
     a = sc.Variable(dims=['x'], values=np.array([1, np.nan]))
     out = sc.Variable(dims=['x'], values=np.zeros(2))
-    replace = sc.Variable(value=0.0)
+    replace = sc.scalar(0.0)
     sc.nan_to_num(a, nan=replace, out=out)
     expected = sc.Variable(dims=['x'], values=np.array([1, replace.value]))
     assert sc.identical(out, expected)
@@ -814,7 +814,7 @@ def test_nan_to_num_out():
 def test_nan_to_num_out_with_multiple_special_replacements():
     a = sc.Variable(dims=['x'], values=np.array([1, np.inf, -np.inf, np.nan]))
     out = sc.Variable(dims=['x'], values=np.zeros(4))
-    replace = sc.Variable(value=0.0)
+    replace = sc.scalar(0.0)
     # just replace nans
     sc.nan_to_num(a, nan=replace, out=out)
     expected = sc.Variable(dims=['x'],
@@ -835,12 +835,12 @@ def test_nan_to_num_out_with_multiple_special_replacements():
 
 
 def test_position():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.geometry.position, x=var, y=var, z=var)
 
 
 def test_comparison():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.less, x=var, y=var)
     assert_export(sc.greater, x=var, y=var)
     assert_export(sc.greater_equal, x=var, y=var)
@@ -874,6 +874,6 @@ def test_rtruediv_int():
 
 
 def test_sort():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert_export(sc.sort, x=var, dim='x', order='ascending')
     assert_export(sc.issorted, x=var, dim='x', order='ascending')

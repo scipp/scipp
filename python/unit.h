@@ -20,8 +20,7 @@ get_time_unit(const pybind11::buffer &value, const pybind11::object &dtype,
 
 template <class T>
 std::tuple<scipp::units::Unit, int64_t>
-common_unit([[maybe_unused]] const pybind11::object &values,
-            const scipp::units::Unit unit) {
+common_unit(const pybind11::object &, const scipp::units::Unit unit) {
   // In the general case, values and variances do not encode units themselves.
   return std::tuple{unit, 1l};
 }

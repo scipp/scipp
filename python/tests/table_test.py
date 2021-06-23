@@ -63,7 +63,7 @@ def test_dataset_with_1d_data_with_units():
 
 def test_dataset_with_0d_data():
     d = sc.Dataset()
-    d['Scalar'] = sc.Variable(value=1.2)
+    d['Scalar'] = sc.scalar(1.2)
     sc.table(d)
 
 
@@ -75,7 +75,7 @@ def test_dataset_with_everything():
                               values=10.0 * np.random.rand(N),
                               unit=sc.units.m,
                               variances=np.random.rand(N))
-    d['Scalar'] = sc.Variable(value=1.2)
+    d['Scalar'] = sc.scalar(1.2)
     d.coords['tof'] = sc.Variable(dims=['tof'],
                                   values=np.arange(N).astype(np.float64),
                                   unit=sc.units.us,

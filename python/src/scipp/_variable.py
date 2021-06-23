@@ -66,14 +66,16 @@ def scalar(value: _Any,
                         f'variance of different types. Got {type(value)} '
                         f'and {type(variance)}.') from None
     if dtype is None:
-        return _cpp.Variable(value=value,
-                             variance=variance,
+        return _cpp.Variable(dims=(),
+                             values=value,
+                             variances=variance,
                              unit=unit,
                              with_variance=with_variance)
     else:
         try:
-            return _cpp.Variable(value=value,
-                                 variance=variance,
+            return _cpp.Variable(dims=(),
+                                 values=value,
+                                 variances=variance,
                                  unit=unit,
                                  dtype=dtype,
                                  with_variance=with_variance)

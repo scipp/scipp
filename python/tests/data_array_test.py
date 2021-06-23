@@ -66,7 +66,7 @@ def test_init_from_variable_views():
     a = sc.DataArray(data=var,
                      coords={'x': var},
                      attrs={'meta': var},
-                     masks={'mask1': sc.less(var, sc.Variable(value=3))})
+                     masks={'mask1': sc.less(var, sc.scalar(3))})
     b = sc.DataArray(data=a.data,
                      coords={'x': a.coords['x']},
                      attrs={'meta': a.attrs['meta']},

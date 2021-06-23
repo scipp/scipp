@@ -10,7 +10,7 @@ import scipp as sc
 
 
 def test_create_default():
-    var = sc.Variable()
+    var = sc.Variable(dims=())
     assert var.dims == []
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.dimensionless
@@ -18,7 +18,7 @@ def test_create_default():
 
 
 def test_create_default_variance():
-    var = sc.Variable(with_variance=True)
+    var = sc.Variable(dims=(), with_variance=True)
     assert var.dims == []
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.dimensionless
@@ -52,23 +52,23 @@ def test_create_default_with_str_dtype():
 
 
 def test_create_default_with_dtype_datetime():
-    var = sc.Variable(dtype=sc.dtype.datetime64)
+    var = sc.Variable(dims=(), dtype=sc.dtype.datetime64)
     assert var.dtype == sc.dtype.datetime64
-    var = sc.Variable(dtype=np.datetime64)
+    var = sc.Variable(dims=(), dtype=np.datetime64)
     assert var.dtype == sc.dtype.datetime64
-    var = sc.Variable(dtype=np.datetime64(0, 's'))
+    var = sc.Variable(dims=(), dtype=np.datetime64(0, 's'))
     assert var.dtype == sc.dtype.datetime64
-    var = sc.Variable(dtype='datetime64')
+    var = sc.Variable(dims=(), dtype='datetime64')
     assert var.dtype == sc.dtype.datetime64
 
 
 def test_create_default_with_unit():
-    var = sc.Variable(dims=['x'], unit=sc.units.m, values=np.arange(2))
+    var = sc.Variable(dims=['x'], shape=[32], unit=sc.units.m)
     assert var.unit == sc.units.m
 
 
 def test_create_default_with_unit_as_string():
-    var = sc.Variable(dims=['x'], unit='meV', values=np.arange(2))
+    var = sc.Variable(dims=['x'], shape=[2], unit='meV')
     assert var.unit == sc.units.meV
 
 
@@ -81,49 +81,48 @@ def test_create_default_with_variances():
 
 
 def test_create_default_dims_shape_mismatch():
-    with pytest.raises(sc.DimensionError):
+    with pytest.raises(ValueError):
         sc.Variable(dims=[], shape=[2])
-    with pytest.raises(sc.DimensionError):
+    with pytest.raises(ValueError):
         sc.Variable(dims=['x'], shape=[])
-    with pytest.raises(sc.DimensionError):
+    with pytest.raises(ValueError):
         sc.Variable(dims=['x', 'y'], shape=[2])
 
 
 def test_create_mutually_exclusive_arguments():
     with pytest.raises(ValueError):
-        sc.Variable(value=1, values=[3, 4])
+        sc.Variable(dims=(), variances=[1, 2], with_variance=False)
     with pytest.raises(ValueError):
-        sc.Variable(value=1, variances=[3, 4])
-    with pytest.raises(ValueError):
-        sc.Variable(variance=1, values=[3, 4])
-    with pytest.raises(ValueError):
-        sc.Variable(variance=1, variances=[3, 4])
-    with pytest.raises(ValueError):
-        sc.Variable(variance=1, with_variance=True)
-    with pytest.raises(ValueError):
-        sc.Variable(variances=[1, 2], with_variance=False)
+        sc.Variable(dims=(), variances=[1, 2], with_variance=True)
+    # TODO enable
+    # with pytest.raises(ValueError):
+    #     sc.Variable(dims=['x'], shape=[2], values=[1, 2])
+    # with pytest.raises(ValueError):
+    #     sc.Variable(dims=['x'], shape=[2], variances=[1, 2])
 
 
-@pytest.mark.parametrize(
-    "value",
-    [1.2, np.float64(1.2),
-     sc.Variable(value=1.2).value,
-     np.array(1.2)])
+@pytest.mark.parametrize("value", [
+    1.2,
+    np.float64(1.2),
+    sc.Variable(dims=(), values=1.2).value,
+    np.array(1.2)
+])
 def test_create_scalar_with_float_value(value):
-    var = sc.Variable(value=value)
+    var = sc.Variable(dims=(), values=value)
     assert var.value == value
     assert var.dims == []
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.dimensionless
 
 
-@pytest.mark.parametrize(
-    "variance",
-    [1.2, np.float64(1.2),
-     sc.Variable(value=1.2).value,
-     np.array(1.2)])
+@pytest.mark.parametrize("variance", [
+    1.2,
+    np.float64(1.2),
+    sc.Variable(dims=(), values=1.2).value,
+    np.array(1.2)
+])
 def test_create_scalar_with_float_variance(variance):
-    var = sc.Variable(variance=variance)
+    var = sc.Variable(dims=(), variances=variance)
     assert var.value == 0.0
     assert var.variance == variance
     assert var.dims == []
@@ -131,18 +130,20 @@ def test_create_scalar_with_float_variance(variance):
     assert var.unit == sc.units.dimensionless
 
 
-@pytest.mark.parametrize(
-    "value",
-    [1.2, np.float64(1.2),
-     sc.Variable(value=1.2).value,
-     np.array(1.2)])
-@pytest.mark.parametrize(
-    "variance",
-    [3.4, np.float64(3.4),
-     sc.Variable(value=3.4).value,
-     np.array(3.4)])
+@pytest.mark.parametrize("value", [
+    1.2,
+    np.float64(1.2),
+    sc.Variable(dims=(), values=1.2).value,
+    np.array(1.2)
+])
+@pytest.mark.parametrize("variance", [
+    3.4,
+    np.float64(3.4),
+    sc.Variable(dims=(), values=3.4).value,
+    np.array(3.4)
+])
 def test_create_scalar_with_float_value_and_variance(value, variance):
-    var = sc.Variable(value=value, variance=variance)
+    var = sc.Variable(dims=(), values=value, variances=variance)
     assert var.value == value
     assert var.variance == variance
     assert var.dims == []
@@ -154,7 +155,7 @@ def test_create_scalar_with_float_value_and_variance(value, variance):
                                   (sc.dtype.string, 'a')))
 def test_create_scalar_with_value(args):
     dtype, value = args
-    var = sc.Variable(value=value)
+    var = sc.Variable(dims=(), values=value)
     assert var.value == value
     assert var.dims == []
     assert var.dtype == dtype
@@ -165,7 +166,7 @@ def test_create_scalar_with_value(args):
                          ((sc.dtype.bool, True), (sc.dtype.string, 'a')))
 def test_create_scalar_with_value_array(args):
     dtype, value = args
-    var = sc.Variable(value=np.array(value))
+    var = sc.Variable(dims=(), values=np.array(value))
     assert var.value == value
     assert var.dims == []
     assert var.dtype == dtype
@@ -173,7 +174,7 @@ def test_create_scalar_with_value_array(args):
 
 
 def test_create_scalar_with_value_array_int():
-    var = sc.Variable(value=np.array(2))
+    var = sc.Variable(dims=(), values=np.array(2))
     assert var.value == 2
     assert var.dims == []
     # The dtype varies between Windows and Linux / MacOS.
@@ -181,26 +182,27 @@ def test_create_scalar_with_value_array_int():
     assert var.unit == sc.units.dimensionless
 
 
-@pytest.mark.parametrize('variance', (1, True, 'a', sc.Variable(value=1.2)))
+@pytest.mark.parametrize('variance',
+                         (1, True, 'a', sc.Variable(dims=(), values=1.2)))
 def test_create_scalar_invalid_variance(variance):
     with pytest.raises(sc.VariancesError):
-        sc.Variable(variance=variance)
+        sc.Variable(dims=(), variances=variance)
 
 
 @pytest.mark.parametrize("unit", [
     sc.units.m,
     sc.Unit('m'), 'm',
-    sc.Variable(value=1.2, unit=sc.units.m).unit
+    sc.Variable(dims=(), values=1.2, unit=sc.units.m).unit
 ])
 def test_create_scalar_with_unit(unit):
-    var = sc.Variable(unit=unit)
+    var = sc.Variable(dims=(), unit=unit)
     assert var.dims == []
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.m
 
 
 def test_create_scalar_quantity():
-    var = sc.Variable(value=1.2, unit=sc.units.m)
+    var = sc.Variable(dims=(), values=1.2, unit=sc.units.m)
     assert var.value == 1.2
     assert var.dims == []
     assert var.dtype == sc.dtype.float64
@@ -208,7 +210,7 @@ def test_create_scalar_quantity():
 
 
 def test_create_via_unit():
-    expected = sc.Variable(value=1.2, unit=sc.units.m)
+    expected = sc.Variable(dims=(), values=1.2, unit=sc.units.m)
     var = 1.2 * sc.units.m
     assert sc.identical(var, expected)
 
@@ -216,36 +218,36 @@ def test_create_via_unit():
 @pytest.mark.parametrize("dtype", (None, sc.dtype.Variable))
 def test_create_scalar_dtype_Variable(dtype):
     elem = sc.Variable(dims=['x'], values=np.arange(4.0))
-    var = sc.Variable(value=elem, dtype=dtype)
+    var = sc.Variable(dims=(), values=elem, dtype=dtype)
     assert sc.identical(var.value, elem)
     assert var.dims == []
     assert var.dtype == sc.dtype.Variable
     assert var.unit == sc.units.dimensionless
-    var = sc.Variable(value=elem['x', 1:3], dtype=dtype)
+    var = sc.Variable(dims=(), values=elem['x', 1:3], dtype=dtype)
     assert var.dtype == sc.dtype.Variable
 
 
 @pytest.mark.parametrize("dtype", (None, sc.dtype.DataArray))
 def test_create_scalar_dtype_DataArray(dtype):
     elem = sc.DataArray(data=sc.Variable(dims=['x'], values=np.arange(4.0)))
-    var = sc.Variable(value=elem, dtype=dtype)
+    var = sc.Variable(dims=(), values=elem, dtype=dtype)
     assert sc.identical(var.value, elem)
     assert var.dims == []
     assert var.dtype == sc.dtype.DataArray
     assert var.unit == sc.units.dimensionless
-    var = sc.Variable(value=elem['x', 1:3], dtype=dtype)
+    var = sc.Variable(dims=(), values=elem['x', 1:3], dtype=dtype)
     assert var.dtype == sc.dtype.DataArray
 
 
 @pytest.mark.parametrize("dtype", (None, sc.dtype.Dataset))
 def test_create_scalar_dtype_Dataset(dtype):
     elem = sc.Dataset({'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
-    var = sc.Variable(value=elem, dtype=dtype)
+    var = sc.Variable(dims=(), values=elem, dtype=dtype)
     assert sc.identical(var.value, elem)
     assert var.dims == []
     assert var.dtype == sc.dtype.Dataset
     assert var.unit == sc.units.dimensionless
-    var = sc.Variable(value=elem['x', 1:3], dtype=dtype)
+    var = sc.Variable(dims=(), values=elem['x', 1:3], dtype=dtype)
     assert var.dtype == sc.dtype.Dataset
 
 
@@ -254,7 +256,7 @@ def test_create_scalar_dtype_Dataset(dtype):
                          (np.int32, np.int64, np.float32, np.float64, bool))
 def test_create_scalar_conversion(value, dtype):
     converted = np.array(value, dtype=dtype).item()
-    var = sc.Variable(value=value, dtype=dtype)
+    var = sc.Variable(dims=(), values=value, dtype=dtype)
     assert var.value == converted
 
 
@@ -262,7 +264,7 @@ def test_create_scalar_conversion(value, dtype):
 @pytest.mark.parametrize('dtype', (sc.dtype.string, sc.dtype.Variable))
 def test_create_scalar_invalid_conversion_numeric(value, dtype):
     with pytest.raises(ValueError):
-        sc.Variable(value=value, dtype=dtype)
+        sc.Variable(dims=(), values=value, dtype=dtype)
 
 
 @pytest.mark.parametrize(
@@ -270,7 +272,10 @@ def test_create_scalar_invalid_conversion_numeric(value, dtype):
     (sc.dtype.int32, sc.dtype.int64, sc.dtype.float64, sc.dtype.Variable))
 def test_create_scalar_invalid_conversion_str(dtype):
     with pytest.raises(ValueError):
-        sc.Variable(value='abc', dtype=dtype)
+        sc.Variable(dims=(), values='abc', dtype=dtype)
+
+
+# TODO sc.Variable(dims=[], values=[1, 2])
 
 
 def test_create_1d_size_4():
@@ -389,7 +394,7 @@ def test_create_1d_dtype_object(values_type):
 def test_create_1d_override_dtype(dtype, values):
     var = sc.Variable(dims=['x'], values=values, dtype=dtype)
     converted = np.array(values).astype(dtype)
-    scipp_dtype = sc.Variable(dtype=dtype).dtype
+    scipp_dtype = sc.Variable(dims=(), dtype=dtype).dtype
     assert var.dtype == scipp_dtype
     np.testing.assert_array_equal(var.values, converted)
 
@@ -406,18 +411,7 @@ def test_create_1D_vector_3_float64():
     assert var.unit == sc.units.m
 
 
-def test_create_1d_shape_mismatch():
-    with pytest.raises(sc.DimensionError):
-        sc.Variable(dims=['x'], shape=[3], values=[1, 2])
-    with pytest.raises(sc.DimensionError):
-        sc.Variable(dims=['x'], shape=[3], variances=[1, 2])
-    with pytest.raises(sc.DimensionError):
-        sc.Variable(dims=['x'], values=[1, 2, 3], variances=[1, 2])
-
-
 def test_create_1d_bad_dims():
-    with pytest.raises(ValueError):
-        sc.Variable(values=[1, 2])
     with pytest.raises(sc.DimensionError):
         sc.Variable(dims=['x', 'y'], values=[1, 2])
 

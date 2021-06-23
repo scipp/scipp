@@ -26,7 +26,7 @@ def test_variable_0D_to_dict():
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == []
     assert var_dict["shape"] == []
-    assert var_dict["value"] == 12.0
+    assert var_dict["values"] == 12.0
 
 
 def test_variable_vector_to_dict():
@@ -43,7 +43,7 @@ def test_variable_0D_vector_to_dict():
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == []
     assert var_dict["shape"] == []
-    assert np.array_equal(var_dict["value"], [1, 2, 3])
+    assert np.array_equal(var_dict["values"], [1, 2, 3])
     assert var_dict["dtype"] == sc.dtype.vector_3_float64
 
 
@@ -66,7 +66,8 @@ def test_variable_0D_matrix_to_dict():
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == []
     assert var_dict["shape"] == []
-    assert np.array_equal(var_dict["value"], [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    assert np.array_equal(var_dict["values"],
+                          [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     assert var_dict["dtype"] == sc.dtype.matrix_3_float64
 
 
@@ -85,7 +86,7 @@ def test_variable_from_dict():
 
 
 def test_variable_0D_from_dict():
-    var_dict = {"value": 17., "variance": 0.2}
+    var_dict = {"dims": [], "values": 17., "variances": 0.2}
     var = sc.from_dict(var_dict)
     assert var.dims == []
     assert var.shape == []
@@ -109,7 +110,7 @@ def test_variable_vector_from_dict():
 
 
 def test_variable_0D_vector_from_dict():
-    var_dict = {"value": [1, 2, 3], "dtype": "vector_3_float64"}
+    var_dict = {"dims": [], "values": [1, 2, 3], "dtype": "vector_3_float64"}
     var = sc.from_dict(var_dict)
     assert var.dims == []
     assert var.shape == []
@@ -134,13 +135,14 @@ def test_variable_matrix_from_dict():
 
 def test_variable_0D_matrix_from_dict():
     var_dict = {
-        "value": np.arange(9).reshape(3, 3),
+        "dims": [],
+        "values": np.arange(9).reshape(3, 3),
         "dtype": "matrix_3_float64"
     }
     var = sc.from_dict(var_dict)
     assert var.dims == []
     assert var.shape == []
-    assert np.array_equal(np.array(var.value), var_dict["value"])
+    assert np.array_equal(np.array(var.value), var_dict["values"])
     assert var.unit == sc.units.one
     assert var.dtype == sc.dtype.matrix_3_float64
 
