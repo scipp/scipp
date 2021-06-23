@@ -149,10 +149,10 @@ def ones(*,
 
     :param dims: Optional (if sizes is specified), dimension labels.
     :param shape: Optional (if sizes is specified), dimension sizes.
-    :param sizes: Optional, imension label to size map.
+    :param sizes: Optional, dimension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
-    :param wiht_variance: Optional, boolean flag, if True includes variances
+    :param with_variance: Optional, boolean flag, if True includes variances
                       initialized to 1. Default=False
     """
     return _cpp.ones(**_parse_dims_shape_sizes(dims, shape, sizes),
