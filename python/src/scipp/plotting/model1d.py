@@ -23,22 +23,15 @@ class PlotModel1d(PlotModel):
 
     def _make_1d_resampling_model(self, array):
         model = resampling_model(array)
-        for dim in array.dims:
-            if dim != self.dims[0]:
-                model.resolution[dim] = 1
-            elif self.resolution is not None:
-                model.resolution[dim] = self.resolution
-                model.bounds[dim] = None
+        if self.resolution is not None:
+            model.resolution[self.dims[0]] = self.resolution
+            model.bounds[self.dims[0]] = None
         return model
 
     def _resample(self, array, slices):
         model = self._make_1d_resampling_model(array)
         model.bounds.update(slices)
-        data = model.data
-        for dim in model.data.dims:
-            if dim != self.dims[0]:
-                data = data[dim, 0]
-        return data
+        return model.data
 
     @property
     def resolution(self):

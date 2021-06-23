@@ -316,7 +316,11 @@ class PlotWidgets:
                 delta = self._controls[dim]['thickness'].value
                 lower = pos - (delta // 2) + ((delta + 1) % 2)
                 upper = pos + (delta // 2) + 1
-                bounds[dim] = [lower, upper]
+                if lower + 1 == upper:
+                    # Just slice without rebin
+                    bounds[dim] = lower
+                else:
+                    bounds[dim] = [lower, upper]
         return bounds
 
     def clear_profile_button(self):

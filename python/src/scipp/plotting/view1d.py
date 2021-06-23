@@ -13,7 +13,8 @@ def _make_label(array):
     labels = []
     for dim, coord in array.meta.items():
         if dim not in array.dims:
-            labels.append(f'({dim}={coord.values} {coord.unit})')
+            labels.append(
+                f'({dim}={coord.values.round(decimals=2)} {coord.unit})')
     return ','.join(labels)
 
 

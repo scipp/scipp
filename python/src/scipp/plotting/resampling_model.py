@@ -24,6 +24,10 @@ class ResamplingModel():
 
     @resolution.setter
     def resolution(self, res):
+        """
+        If bounds for a given dim are provided but not resolution (or if
+        resolution is None), the dimension is squeezed out.
+        """
         self._resolution = res
 
     @property
@@ -73,6 +77,8 @@ class ResamplingModel():
             if isinstance(par, int):
                 continue
             low, high, unit, res = par
+            if res is None:
+                res = 1
             edges.append(
                 linspace(dim=dim, unit=unit, start=low, stop=high,
                          num=res + 1))
@@ -109,7 +115,7 @@ class ResamplingModel():
                         out = out[sc.get_slice_params(out.data, out.meta[dim],
                                                       low, high)]
                 params[dim] = (low.value, high.value, low.unit,
-                               self.resolution[dim])
+                               self.resolution.get(dim, None))
         if params == self._home_params:
             # This is a crude caching mechanism for past views. Currently we
             # have the "back" buttons disabled in the matplotlib toolbar, so
@@ -123,6 +129,11 @@ class ResamplingModel():
             self._resampled = self._resample(out)
             for name, mask in out.masks.items():
                 self._resampled.masks[name] = self._rebin(mask, out.meta).data
+            for dim in params:
+                size_one = self._resampled.sizes.get(dim, None) == 1
+                no_resolution = self.resolution.get(dim, None) is None
+                if size_one and no_resolution:
+                    self._resampled = self._resampled[dim, 0]
         if self._home is None:
             self._home = self._resampled
             self._home_params = self._resampled_params

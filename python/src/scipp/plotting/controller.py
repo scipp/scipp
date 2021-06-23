@@ -332,10 +332,6 @@ class PlotController:
         self.profile.toggle_view(visible=visible)
         self.toggle_hover_visibility(False)
 
-        if visible:
-            self.update_profile(slices={})
-            self.update_data()
-
     def hover(self, slices):
         if self.profile is not None and self.profile.is_visible():
             if slices:

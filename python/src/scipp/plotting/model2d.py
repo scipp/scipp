@@ -21,10 +21,11 @@ class PlotModel2d(PlotModel):
             self._resolution = [resolution, resolution]
         else:
             self._resolution = [resolution[ax] for ax in 'yx']
-        self._squeeze = []
         self.dims = next(iter(self.data_arrays.values())).dims[-2:]
 
     def _dims_updated(self):
+        self._model.bounds = {}
+        self._model.resolution = {}
         for dim, resolution in zip(self.dims, self._resolution):
             self._model.resolution[dim] = resolution
             self._model.bounds[dim] = None
@@ -42,11 +43,8 @@ class PlotModel2d(PlotModel):
         """
         Resample 2d images to a fixed resolution to handle very large images.
         """
-        data = self._model.data
-        for dim in self._squeeze:
-            data = data[dim, 0]
-        self.dslice = data
-        return transpose(data, dims=self._dims)
+        self.dslice = self._model.data
+        return transpose(self.dslice, dims=self._dims)
 
     def update_data(self, slices):
         """
@@ -54,14 +52,8 @@ class PlotModel2d(PlotModel):
         entries in the dict of data arrays.
         Then perform dynamic image resampling based on current viewport.
         """
-        self._squeeze = []
-        for dim, [start, stop] in slices.items():
-            if start + 1 == stop:
-                self._model.bounds[dim] = start
-            else:
-                self._squeeze.append(dim)
-                self._model.resolution[dim] = 1
-                self._model.bounds[dim] = (start, stop)
+        for dim, bounds in slices.items():
+            self._model.bounds[dim] = bounds
         return self._update_image()
 
     def update_viewport(self, limits):
