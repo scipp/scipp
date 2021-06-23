@@ -30,6 +30,18 @@ class PlotModel1d(PlotModel):
 
     def _resample(self, array, slices):
         model = self._make_1d_resampling_model(array)
+        # Extend slice to full input "pixel" sizes
+        for dim in slices:
+            if not isinstance(slices[dim], tuple) or not isinstance(
+                    slices[dim][0], sc.Variable):
+                continue
+            start, stop = slices[dim]
+            s = sc.get_slice_params(model._array.data, model._array.meta[dim],
+                                    start, stop)[1]
+            if s.start + 1 == s.stop:
+                slices[dim] = s.start
+            else:
+                slices[dim] = (s.start, s.stop)
         model.bounds.update(slices)
         return model.data
 
