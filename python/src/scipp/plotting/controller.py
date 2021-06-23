@@ -47,6 +47,7 @@ class PlotController:
                  profile=None,
                  view=None):
 
+        self._dims = dims
         self.widgets = widgets
         self.model = model
         # TODO calling copy here may not be enough to avoid interdependencies
@@ -57,9 +58,9 @@ class PlotController:
         if profile is not None:
             self._profile_view = PlotView1d(figure=profile,
                                             formatters=view.formatters)
+            self._profile_model.dims = self._dims[:-len(self.model.dims)]
         self.view = view
 
-        self._dims = dims
         self.name = name
         self.update_data_lock = False
 
@@ -72,9 +73,6 @@ class PlotController:
             for dim, item in scale.items():
                 self.scale[dim] = item
         self.view.set_scale(scale=self.scale)
-
-        # Save the current profile dimension
-        self.profile_dim = None
 
         sizes = self.model.data_arrays[self.name].sizes
 
@@ -264,14 +262,19 @@ class PlotController:
         self.view.update_data(new_values, mask_info=self.get_masks_info())
         if self.panel is not None:
             self.panel.update_data(new_values)
-        if self.profile_dim is not None:
-            bounds = new_values.meta[self.profile_dim]
-            if len(bounds.dims) == 1:
-                xstart, xend = bounds.values
-            else:
-                xstart = bounds.value
-                xend = bounds.value
-            self.profile.update_slice_area(xstart, xend)
+        if self.profile is not None:
+            self._update_slice_area()
+
+    def _update_slice_area(self):
+        data = self.view.data
+        assert len(self._profile_model.dims) == 1
+        bounds = data.meta[self._profile_model.dims[0]]
+        if len(bounds.dims) == 1:
+            xstart, xend = bounds.values
+        else:
+            xstart = bounds.value
+            xend = bounds.value
+        self.profile.update_slice_area(xstart, xend)
 
     def toggle_mask(self, change):
         """
@@ -309,12 +312,10 @@ class PlotController:
         view area to be displayed.
         """
         if owner is None:
-            self.profile_dim = None
             visible = False
             self.widgets.clear_profile_button()
         else:
             assert len(dims) == 1  # TODO support 2d profiles
-            self.profile_dim = dims[0]
             if owner.button_style == "info":
                 owner.button_style = ""
                 visible = False
@@ -324,7 +325,7 @@ class PlotController:
                 visible = True
 
             if visible:
-                self._profile_model.dims = [self.profile_dim]
+                self._profile_model.dims = dims
                 self._profile_view.set_scale(scale=self.scale)
             if not visible or self.profile.is_visible():
                 self.view.clear_marks()
@@ -336,7 +337,8 @@ class PlotController:
         if self.profile is not None and self.profile.is_visible():
             if slices:
                 slices.update(
-                    self.widgets.get_slider_bounds(exclude=self.profile_dim))
+                    self.widgets.get_slider_bounds(
+                        exclude=self._profile_model.dims))
                 new_values = self._profile_model.update_data(slices=slices)
                 self._profile_view.update_data(new_values,
                                                mask_info=self.get_masks_info())
@@ -367,7 +369,8 @@ class PlotController:
         ask the model to slice down the data, and send the new data returned by
         the model to the profile view.
         """
-        slices.update(self.widgets.get_slider_bounds(exclude=self.profile_dim))
+        slices.update(
+            self.widgets.get_slider_bounds(exclude=self.profile_model.dims))
         new_values = self._profile_model.update_data(slices=slices)
         self._profile_view.update_data(new_values,
                                        mask_info=self.get_masks_info())

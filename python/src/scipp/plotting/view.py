@@ -37,6 +37,7 @@ class PlotView:
         self.formatters = formatters
         self.controller = {}
         self._pick_lock = False
+        self._data = None
 
     @property
     def axes(self):
@@ -45,6 +46,10 @@ class PlotView:
     @property
     def dims(self):
         return self._dims
+
+    @property
+    def data(self):
+        return self._data
 
     def set_scale(self, scale):
         """

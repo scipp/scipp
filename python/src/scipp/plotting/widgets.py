@@ -311,7 +311,7 @@ class PlotWidgets:
         """
         bounds = {}
         for dim in self._slider_dims:
-            if dim != exclude:
+            if exclude is None or dim not in exclude:
                 pos = self._controls[dim]['slider'].value
                 delta = self._controls[dim]['thickness'].value
                 lower = pos - (delta // 2) + ((delta + 1) % 2)

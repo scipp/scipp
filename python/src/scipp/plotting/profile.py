@@ -25,6 +25,8 @@ class PlotProfile(PlotFigure1d):
         self.current_visible_state = False
         self.slice_area = None
         self.visible = False
+        self._xstart = 1
+        self._xend = 2
 
     def _to_widget(self):
         """
@@ -42,7 +44,11 @@ class PlotProfile(PlotFigure1d):
         Upon axes update, we reset the slice area indicator.
         """
         super().update_axes(*args, legend_labels=False, **kwargs)
-        self.slice_area = self.ax.axvspan(1, 2, alpha=0.5, color='lightgrey')
+        # PlotFigure1d.update_axes clears self.ax
+        self.slice_area = self.ax.axvspan(self._xstart,
+                                          self._xend,
+                                          alpha=0.5,
+                                          color='lightgrey')
 
     def toggle_hover_visibility(self, value):
         """
@@ -69,10 +75,13 @@ class PlotProfile(PlotFigure1d):
         When the data slice is updated (position or thickness), we update the
         slice area indicator.
         """
-        new_xy = np.array([[xstart, 0.0], [xstart, 1.0], [xend, 1.0],
-                           [xend, 0.0], [xstart, 0.0]])
-        self.slice_area.set_xy(new_xy)
-        self.draw()
+        self._xstart = xstart
+        self._xend = xend
+        if self.slice_area is not None:
+            new_xy = np.array([[xstart, 0.0], [xstart, 1.0], [xend, 1.0],
+                               [xend, 0.0], [xstart, 0.0]])
+            self.slice_area.set_xy(new_xy)
+            self.draw()
 
     def toggle_view(self, visible=True):
         """
