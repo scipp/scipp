@@ -158,6 +158,11 @@ class PlotToolbar:
     def home_view(self):
         self.mpl_toolbar.home()
 
+    @property
+    def tool_active(self):
+        return self.members["zoom_view"].value or \
+                self.members["pan_view"].value
+
     def pan_view(self):
         # In case the zoom button is selected, we need to de-select it
         if self.members["zoom_view"].value:

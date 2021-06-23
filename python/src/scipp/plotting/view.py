@@ -115,7 +115,7 @@ class PlotView:
         if self._pick_lock:
             self._pick_lock = False
             return
-        if event.button == 1:
+        if event.button == 1 and not self.figure.toolbar.tool_active:
             self.controller.click(self._slices_from_event(event))
 
     def handle_pick(self, event):
