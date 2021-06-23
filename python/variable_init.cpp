@@ -307,6 +307,24 @@ Variable make_variable_array(const py::object &dim_labels,
                                                                with_variance);
 }
 
+void ensure_consistent_variance_args(const py::object &variance,
+                                     const py::object &variances,
+                                     const std::optional<bool> with_variance) {
+  const auto throw_message = [](std::string_view name) {
+    throw std::invalid_argument(format(
+        "Arguments '", name, "' and 'with_variance' are mutually exclusive."));
+  };
+
+  if (with_variance.has_value()) {
+    if (!variance.is_none()) {
+      throw_message("variance");
+    }
+    if (!variances.is_none()) {
+      throw_message("variances");
+    }
+  }
+}
+
 std::string make_scalar_array_conflict_message(const py::object &values,
                                                const py::object &variances,
                                                const py::object &value,
@@ -385,6 +403,7 @@ void bind_init(py::class_<Variable> &cls) {
                   const std::optional<bool> with_variance,
                   const std::optional<units::Unit> unit,
                   const py::object &dtype) {
+        ensure_consistent_variance_args(variance, variances, with_variance);
         const auto [scipp_dtype, actual_unit] =
             cast_dtype_and_unit(dtype, unit);
 
