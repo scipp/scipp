@@ -22,8 +22,8 @@ If you are interested in developing Scipp, please see the [developer getting sta
 
 The following organisations have contributed development effort into the production of scipp and other developments in the [scipp ecosystem](../../../):
 
-* [European Spallation Source](https://europeanspallationsource.se/) 
-* [ISIS Neutron and Muon Source](https://stfc.ukri.org/research/our-science-facilities/isis-neutron-and-muon-source/)
-* [Institut Laue-Langevin](https://www.ill.eu/)
+* [Data Management and Software Centre, European Spallation Source, Sweden](https://europeanspallationsource.se/) 
+* [UKRI, UK](https://stfc.ukri.org/research/our-science-facilities/isis-neutron-and-muon-source/)
+* [Institut Laue-Langevin, France](https://www.ill.eu/)
 
 See individual [release notes](https://scipp.github.io/about/release-notes.html) for the individual contributors to each release 
