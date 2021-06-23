@@ -89,7 +89,7 @@ def test_create_default_dims_shape_mismatch():
         sc.Variable(dims=['x', 'y'], shape=[2])
 
 
-def test_create_default_array_mismatch():
+def test_create_mutually_exclusive_arguments():
     with pytest.raises(ValueError):
         sc.Variable(value=1, values=[3, 4])
     with pytest.raises(ValueError):
@@ -98,6 +98,10 @@ def test_create_default_array_mismatch():
         sc.Variable(variance=1, values=[3, 4])
     with pytest.raises(ValueError):
         sc.Variable(variance=1, variances=[3, 4])
+    with pytest.raises(ValueError):
+        sc.Variable(variance=1, with_variance=True)
+    with pytest.raises(ValueError):
+        sc.Variable(variances=[1, 2], with_variance=False)
 
 
 @pytest.mark.parametrize(
@@ -157,8 +161,8 @@ def test_create_scalar_with_value(args):
     assert var.unit == sc.units.dimensionless
 
 
-@pytest.mark.parametrize('args', ((sc.dtype.bool, True),
-                                  (sc.dtype.string, 'a')))
+@pytest.mark.parametrize('args',
+                         ((sc.dtype.bool, True), (sc.dtype.string, 'a')))
 def test_create_scalar_with_value_array(args):
     dtype, value = args
     var = sc.Variable(value=np.array(value))
