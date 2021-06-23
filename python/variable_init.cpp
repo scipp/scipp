@@ -251,34 +251,38 @@ Variable make_variable_scalar(const py::object &value,
                                                    with_variance);
 }
 
+template <class T>
+auto make_element_array(const Dimensions &dims, const py::object &source,
+                        const units::Unit unit) {
+  if (source.is_none()) {
+    return element_array<T>();
+  } else {
+    element_array<T> array(dims.volume(), core::default_init_elements);
+    copy_array_into_view(cast_to_array_like<T>(source, unit), array, dims);
+    return array;
+  }
+}
+
 template <class T> struct MakeVariableArray {
   static Variable apply(const Dimensions &dims, const py::object &values,
                         const py::object &variances, const units::Unit unit,
                         const std::optional<bool> with_variance) {
-    auto variable =
-        ((with_variance.has_value() && *with_variance) ||
-         (!with_variance.has_value() && !variances.is_none()))
-            ? makeVariable<T>(
-                  dims, Values(dims.volume(), core::default_init_elements),
-                  Variances(dims.volume(), core::default_init_elements))
-            : makeVariable<T>(
-                  dims, Values(dims.volume(), core::default_init_elements));
-
     const auto [actual_unit, conversion_factor] = common_unit<T>(values, unit);
-    variable.setUnit(actual_unit);
     if (conversion_factor != 1) {
       // TODO Triggered once common_unit implements conversions.
       std::terminate();
     }
 
-    if (!values.is_none()) {
-      copy_array_into_view(cast_to_array_like<T>(values, actual_unit),
-                           variable.template values<T>(), dims);
-    }
-    if (with_variance.value_or(true) && !variances.is_none()) {
-      copy_array_into_view(cast_to_array_like<T>(variances, actual_unit),
-                           variable.template variances<T>(), dims);
-    }
+    auto values_array =
+        Values(make_element_array<T>(dims, values, actual_unit));
+    const bool use_variances =
+        (with_variance.has_value() && *with_variance) || !variances.is_none();
+    auto variable = use_variances
+                        ? makeVariable<T>(dims, std::move(values_array),
+                                          Variances(make_element_array<T>(
+                                              dims, variances, actual_unit)))
+                        : makeVariable<T>(dims, std::move(values_array));
+    variable.setUnit(actual_unit);
     return variable;
   }
 };
