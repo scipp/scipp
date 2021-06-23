@@ -266,15 +266,17 @@ class PlotController:
             self._update_slice_area()
 
     def _update_slice_area(self):
-        data = self.view.data
-        assert len(self._profile_model.dims) == 1
-        bounds = data.meta[self._profile_model.dims[0]]
-        if len(bounds.dims) == 1:
-            xstart, xend = bounds.values
-        else:
-            xstart = bounds.value
-            xend = bounds.value
-        self.profile.update_slice_area(xstart, xend)
+        if len(self._profile_model.dims) != 1:
+            return
+        for dim in self._profile_model.dims:
+            bounds = self.view.data.meta[dim]
+            if len(bounds.dims) == 1:
+                xstart, xend = bounds.values
+            else:
+                xstart = bounds.value
+                xend = bounds.value
+            # TODO Once profiles != 1d are supported, handle axes here
+            self.profile.set_slice_area(xstart, xend)
 
     def toggle_mask(self, change):
         """

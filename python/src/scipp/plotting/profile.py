@@ -70,7 +70,7 @@ class PlotProfile(PlotFigure1d):
                 self.rescale_to_data()
             self.current_visible_state = value
 
-    def update_slice_area(self, xstart, xend):
+    def set_slice_area(self, xstart, xend):
         """
         When the data slice is updated (position or thickness), we update the
         slice area indicator.

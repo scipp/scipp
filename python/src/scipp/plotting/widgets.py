@@ -47,6 +47,8 @@ class PlotWidgets:
         # profile picking is supported on 3D plots
         if ndim == 3:
             self.profile_button.layout.display = 'none'
+        if len(self._slider_dims) != 1:
+            self.profile_button.layout.display = 'none'
 
         multid_coord = None
         for array in masks.values():
