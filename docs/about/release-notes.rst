@@ -325,7 +325,7 @@ Limitations:
 
 Contributing Organisations
 --------------------------
-* <sup>a</sup> **Data Management and Software Centre, European Spallation Source, Sweden**
-* <sup>b</sup> **UK Research and Innovation, UK**
-* <sup>c</sup> **Tessella, UK**
-* <sup>d</sup> **Institut Laue-Langevin, France**
+* <sup>a</sup> `European Spallation Source ERIC <https://europeanspallationsource.se/>`_ Sweden
+* <sup>b</sup> `Science and Technology Facilities Council <https://www.ukri.org/councils/stfc/>`_ UK
+* <sup>c</sup> `Tessella <https://www.tessella.com/>`_ UK
+* <sup>d</sup> `Institut Laue-Langevin <https://www.ill.eu/>`_ France
