@@ -197,55 +197,42 @@ Variable make_variable_default_init(const py::object &dim_labels,
                                                         with_variance);
 }
 
-template <class T> struct MakeScalarElementArray {
-  static auto apply(const Dimensions &, const py::object source,
-                    const units::Unit unit) {
-    if (source.is_none()) {
-      return element_array<T>();
-    } else {
-      return element_array<T>(1, extract_scalar<T>(source, unit));
-    }
+template <class T>
+auto make_element_array(const Dimensions &dims, const py::object &source,
+                        const units::Unit unit) {
+  if (source.is_none()) {
+    return element_array<T>();
+  } else if (dims.ndim() == 0) {
+    return element_array<T>(1, extract_scalar<T>(source, unit));
+  } else {
+    element_array<T> array(dims.volume(), core::default_init_elements);
+    copy_array_into_view(cast_to_array_like<T>(source, unit), array, dims);
+    return array;
   }
-};
+}
 
-template <class T> struct MakeArrayElementArray {
-  static auto apply(const Dimensions &dims, const py::object &source,
-                    const units::Unit unit) {
-    if (source.is_none()) {
-      return element_array<T>();
-    } else {
-      element_array<T> array(dims.volume(), core::default_init_elements);
-      copy_array_into_view(cast_to_array_like<T>(source, unit), array, dims);
-      return array;
+template <class T> struct MakeVariableWithData {
+  static Variable apply(const Dimensions &dims, const py::object &values,
+                        const py::object &variances, const units::Unit unit,
+                        const std::optional<bool> with_variance) {
+    const auto [actual_unit, conversion_factor] = common_unit<T>(values, unit);
+    if (conversion_factor != 1) {
+      // TODO Triggered once common_unit implements conversions.
+      std::terminate();
     }
-  }
-};
 
-template <template <class> class MakeElementArray> struct MakeVariableWithData {
-  template <class T> struct Impl {
-    static Variable apply(const Dimensions &dims, const py::object &values,
-                          const py::object &variances, const units::Unit unit,
-                          const std::optional<bool> with_variance) {
-      const auto [actual_unit, conversion_factor] =
-          common_unit<T>(values, unit);
-      if (conversion_factor != 1) {
-        // TODO Triggered once common_unit implements conversions.
-        std::terminate();
-      }
-
-      auto values_array =
-          Values(MakeElementArray<T>::apply(dims, values, actual_unit));
-      const bool use_variances =
-          (with_variance.has_value() && *with_variance) || !variances.is_none();
-      auto variable =
-          use_variances ? makeVariable<T>(dims, std::move(values_array),
-                                          Variances(MakeElementArray<T>::apply(
+    auto values_array =
+        Values(make_element_array<T>(dims, values, actual_unit));
+    const bool use_variances =
+        (with_variance.has_value() && *with_variance) || !variances.is_none();
+    auto variable = use_variances
+                        ? makeVariable<T>(dims, std::move(values_array),
+                                          Variances(make_element_array<T>(
                                               dims, variances, actual_unit)))
                         : makeVariable<T>(dims, std::move(values_array));
-      variable.setUnit(actual_unit);
-      return variable;
-    }
-  };
+    variable.setUnit(actual_unit);
+    return variable;
+  }
 };
 
 Variable make_variable_scalar(const py::object &value,
@@ -253,11 +240,12 @@ Variable make_variable_scalar(const py::object &value,
                               const units::Unit unit, DType dtype,
                               const std::optional<bool> with_variance) {
   dtype = common_dtype(value, variance, dtype, false);
-  return core::CallDType<double, float, int64_t, int32_t, bool,
-                         scipp::core::time_point, std::string, Variable,
-                         DataArray, Dataset, python::PyObject>::
-      apply<MakeVariableWithData<MakeScalarElementArray>::Impl>(
-          dtype, Dimensions{}, value, variance, unit, with_variance);
+  return core::CallDType<
+      double, float, int64_t, int32_t, bool, scipp::core::time_point,
+      std::string, Variable, DataArray, Dataset,
+      python::PyObject>::apply<MakeVariableWithData>(dtype, Dimensions{}, value,
+                                                     variance, unit,
+                                                     with_variance);
 }
 
 Variable make_variable_array(const py::object &dim_labels,
@@ -276,11 +264,12 @@ Variable make_variable_array(const py::object &dim_labels,
       variances_array ? py::object(*variances_array) : py::none(), dtype, true);
   const auto dims = build_dimensions(dim_labels.cast<std::vector<Dim>>(), shape,
                                      values_array, variances_array);
-  return core::CallDType<double, float, int64_t, int32_t, bool,
-                         scipp::core::time_point, std::string,
-                         python::PyObject>::
-      apply<MakeVariableWithData<MakeArrayElementArray>::Impl>(
-          dtype, dims, values, variances, unit, with_variance);
+  return core::CallDType<
+      double, float, int64_t, int32_t, bool, scipp::core::time_point,
+      std::string,
+      python::PyObject>::apply<MakeVariableWithData>(dtype, dims, values,
+                                                     variances, unit,
+                                                     with_variance);
 }
 
 void ensure_consistent_variance_args(const py::object &variance,
