@@ -20,10 +20,9 @@ If you are interested in developing Scipp, please see the [developer getting sta
 
 ## Sponsors
 
-The following organisations have contributed development effort into the production of scipp and other developments in the [scipp ecosystem](../../../):
+The following organisations have made major contributions to the development of scipp, and other developments in the [scipp ecosystem](../../../):
 
 * [European Spallation Source ERIC](https://europeanspallationsource.se/), Sweden
 * [Science and Technology Funding Council](https://stfc.ukri.org/councils/stfc), UK
-* [Institut Laue-Langevin, France](https://www.ill.eu/), France
 
 See individual [release notes](https://scipp.github.io/about/release-notes.html) for the individual contributors to each release 
