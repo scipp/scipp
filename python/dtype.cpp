@@ -19,6 +19,20 @@ using namespace scipp::core;
 
 namespace py = pybind11;
 
+namespace {
+/// 'kind' character codes for numpy dtypes
+enum class DTypeKind : char {
+  Datetime = 'M',
+  Int = 'i',
+  Object = 'O',
+  String = 'U',
+};
+
+constexpr bool operator==(const char a, const DTypeKind b) {
+  return a == static_cast<char>(b);
+}
+} // namespace
+
 void init_dtype(py::module &m) {
   py::class_<DType>(m, "_DType")
       .def(py::self == py::self)
@@ -63,19 +77,19 @@ scipp::core::DType scipp_dtype(const py::dtype &type) {
   // See https://github.com/pybind/pybind11/pull/1329, int64_t not
   // matching numpy.int64 correctly.
   if (type.is(py::dtype::of<std::int64_t>()) ||
-      (type.kind() == 'i' && type.itemsize() == 8))
+      (type.kind() == DTypeKind::Int && type.itemsize() == 8))
     return scipp::core::dtype<int64_t>;
   if (type.is(py::dtype::of<std::int32_t>()) ||
-      (type.kind() == 'i' && type.itemsize() == 4))
+      (type.kind() == DTypeKind::Int && type.itemsize() == 4))
     return scipp::core::dtype<int32_t>;
   if (type.is(py::dtype::of<bool>()))
     return scipp::core::dtype<bool>;
-  if (type.kind() == 'U')
+  if (type.kind() == DTypeKind::String)
     return scipp::core::dtype<std::string>;
-  if (type.kind() == 'M') {
+  if (type.kind() == DTypeKind::Datetime) {
     return scipp::core::dtype<scipp::core::time_point>;
   }
-  if (type.kind() == 'O') {
+  if (type.kind() == DTypeKind::Object) {
     return scipp::core::dtype<scipp::python::PyObject>;
   }
   throw std::runtime_error(
@@ -151,7 +165,7 @@ DType common_dtype(const py::object &values, const py::object &variances,
 
 bool has_datetime_dtype(const py::object &obj) {
   if (py::hasattr(obj, "dtype")) {
-    return obj.attr("dtype").attr("kind").cast<char>() == 'M';
+    return obj.attr("dtype").attr("kind").cast<char>() == DTypeKind::Datetime;
   } else {
     // numpy.datetime64 and numpy.ndarray both have 'dtype' attributes.
     // Mark everything else as not-datetime.
