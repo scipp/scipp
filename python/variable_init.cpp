@@ -197,44 +197,36 @@ Variable make_variable_default_init(const py::object &dim_labels,
                                                         with_variance);
 }
 
+template <class T>
+auto make_scalar_element_array(const py::object source,
+                               const units::Unit unit) {
+  if (source.is_none()) {
+    return element_array<T>();
+  } else {
+    return element_array<T>(1, extract_scalar<T>(source, unit));
+  }
+}
+
 template <class T> struct MakeVariableScalar {
   static Variable apply(const py::object &value, const py::object &variance,
-                        units::Unit unit,
+                        const units::Unit unit,
                         const std::optional<bool> with_variance) {
-    auto variable = [&]() {
-      auto val = [&]() {
-        if (value.is_none()) {
-          return element_array<T>();
-        } else {
-          const auto [actual_unit, conversion_factor] =
-              common_unit<T>(value, unit);
-          unit = actual_unit;
-          if (conversion_factor != 1) {
-            // TODO Triggered once common_unit implements conversions.
-            std::terminate();
-          }
-          return element_array<T>(1, extract_scalar<T>(value, unit));
-        }
-      }();
-      auto var = [&]() {
-        if (variance.is_none()) {
-          return element_array<T>();
-        } else {
-          // No need to call common_unit as of now as it only matters for
-          // datetimes which cannot have variances.
-          return element_array<T>(1, extract_scalar<T>(variance, unit));
-        }
-      }();
-      if ((with_variance.has_value() && *with_variance) ||
-          (!with_variance.has_value() && var)) {
-        return makeVariable<T>(Values(std::move(val)),
-                               Variances(std::move(var)));
-      } else {
-        return makeVariable<T>(Values(std::move(val)));
-      }
-    }();
+    const auto [actual_unit, conversion_factor] = common_unit<T>(value, unit);
+    if (conversion_factor != 1) {
+      // TODO Triggered once common_unit implements conversions.
+      std::terminate();
+    }
 
-    variable.setUnit(unit);
+    auto values_array =
+        Values(make_scalar_element_array<T>(value, actual_unit));
+    const bool use_variances =
+        (with_variance.has_value() && *with_variance) || !variance.is_none();
+    auto variable =
+        use_variances ? makeVariable<T>(std::move(values_array),
+                                        Variances(make_scalar_element_array<T>(
+                                            variance, actual_unit)))
+                      : makeVariable<T>(std::move(values_array));
+    variable.setUnit(actual_unit);
     return variable;
   }
 };
