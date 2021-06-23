@@ -17,7 +17,7 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
-* Changed Variable init method, major change: all arguments are keyword-only (not in ``array`` and ``scalar``) `#1994 <https://github.com/scipp/scipp/pull/1994>`_.
+* Changed Variable init method, major changes: all arguments are keyword-only, new argument ``with_variance`` replacing boolean meaning of ``variances`` `#1994 <https://github.com/scipp/scipp/pull/1994>`_.
 
 Bugfixes
 ~~~~~~~~
