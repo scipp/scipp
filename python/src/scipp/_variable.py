@@ -60,7 +60,6 @@ def scalar(value: _Any,
     """
     if value is not None and variance is not None \
             and not isinstance(variance, type(value)):
-        # TODO still needed?
         # This case would make pybind11's overload resolution fail.
         # We can provide a better error message here.
         raise TypeError('Cannot construct scalar from value and '
