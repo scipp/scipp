@@ -47,87 +47,83 @@ cast_dtype_and_unit(const py::object &dtype,
   }
 }
 
-auto len_or_0(const py::object &sequence) {
-  return sequence.is_none() ? 0 : py::len(sequence);
-}
-
-// TODO merge build_dimensions?
-Dimensions build_dimensions(const py::object &labels, const py::object &shape) {
-  const auto n_labels = len_or_0(labels);
-  const auto n_shape = len_or_0(shape);
-  if (n_labels != n_shape) {
-    throw std::invalid_argument(
-        format("Inconsistent dimension labels and shape. Got ", n_labels,
-               " labels and ", n_shape, " sizes."));
-  } else if (n_labels == 0) {
-    return Dimensions{};
-  } else {
-    return Dimensions(labels.cast<std::vector<Dim>>(),
-                      shape.cast<std::vector<scipp::index>>());
+void ensure_same_shape(const std::optional<py::array> &values,
+                       const std::optional<py::array> &variances) {
+  if (!values.has_value() || !variances.has_value()) {
+    return;
   }
-}
 
-scipp::index get_ndim(const std::vector<Dim> &dim_labels,
-                      const py::object &shape,
-                      const std::optional<py::array> &values,
-                      const std::optional<py::array> &variances) {
-  const auto ndim = scipp::size(dim_labels);
-  if (!shape.is_none() && scipp::index(py::len(shape)) != ndim) {
+  if (values->ndim() != variances->ndim()) {
     throw except::DimensionError(
-        format("The number of dimensions in 'shape' (", py::len(shape),
-               ") does not match the number of dimension labels (", ndim, ")"));
+        format("The number of dimensions of 'values' (", values->ndim(),
+               ") does not match the number of dimensions of 'variances' (",
+               variances->ndim(), ")"));
   }
 
-  const auto check_ndim = [&ndim](const std::optional<py::array> &array,
-                                  const char *name) {
-    if (array.has_value() && array->ndim() != ndim) {
-      throw except::DimensionError(format(
-          "The number of dimensions (", array->ndim(), ") of the ", name,
-          " does not match the number of dimension labels (", ndim, ")"));
-    }
+  const auto shape_end = [](const py::array &array) {
+    return std::next(array.shape(), array.ndim());
   };
-  check_ndim(values, "values");
-  check_ndim(variances, "variances");
-
-  return ndim;
+  const auto values_shape_end = shape_end(*values);
+  const auto bad_dims =
+      std::mismatch(values->shape(), values_shape_end, variances->shape(),
+                    shape_end(*variances));
+  if (bad_dims.first != values_shape_end) {
+    throw std::invalid_argument(
+        format("The shapes of 'values' and 'variances' differ in dimension ",
+               std::distance(values->shape(), bad_dims.first), ": ",
+               *bad_dims.first, " vs ", *bad_dims.second, '.'));
+  }
 }
 
-Dimensions build_dimensions(const std::vector<Dim> &dim_labels,
+namespace detail {
+scipp::index to_index(const py::handle &x) { return x.cast<scipp::index>(); }
+
+scipp::index to_index(const scipp::index x) { return x; }
+
+template <class ShapeRange>
+Dimensions build_dimensions(py::iterator &&label_it,
+                            const ShapeRange &shape_range,
+                            const std::string_view shape_name) {
+  Dimensions dims;
+  auto shape_it = shape_range.begin();
+  scipp::index dim = 0;
+  for (; label_it != label_it.end() && shape_it != shape_range.end();
+       ++label_it, ++shape_it, ++dim) {
+    dims.addInner(label_it->cast<Dim>(), to_index(*shape_it));
+  }
+  if (label_it != label_it.end() || shape_it != shape_range.end()) {
+    throw std::invalid_argument(
+        format("The number of dimension labels (",
+               dim + std::distance(label_it, label_it.end()),
+               ") does not match the number of dimensions in '", shape_name,
+               "' (", dim + std::distance(shape_it, shape_range.end()), ")."));
+  }
+  return dims;
+}
+} // namespace detail
+
+Dimensions build_dimensions(const py::object &dim_labels,
                             const py::object &shape,
                             const std::optional<py::array> &values,
                             const std::optional<py::array> &variances) {
-  const auto ndim = get_ndim(dim_labels, shape, values, variances);
-
-  // We cannot easily index into shape. Store it to compare to the data later.
-  const bool got_shape = !shape.is_none();
-  auto deduced_shape = got_shape ? shape.cast<std::vector<scipp::index>>()
-                                 : std::vector<scipp::index>(ndim);
-
-  for (scipp::index d = 0; d < ndim; ++d) {
-    scipp::index size = -1;
+  if (!shape.is_none()) {
+    return detail::build_dimensions(py::iter(dim_labels), py::iter(shape),
+                                    "shape");
+  } else {
+    ensure_same_shape(values, variances);
     if (values.has_value()) {
-      if (variances.has_value() && values->shape(d) != variances->shape(d)) {
-        throw except::DimensionError(
-            format("The shapes of values and variances differ in dimension ", d,
-                   ": ", py::object(values->attr("shape")), " vs ",
-                   py::object(variances->attr("shape")), '.'));
-      }
-      size = values->shape(d);
+      return detail::build_dimensions(
+          py::iter(dim_labels),
+          scipp::span{values->shape(), static_cast<size_t>(values->ndim())},
+          "values");
     } else {
-      if (variances.has_value()) {
-        size = variances->shape(d);
-      }
-    }
-    if (got_shape && deduced_shape[d] != size) {
-      throw except::DimensionError(format(
-          "The shape of the data differs from the given shape in dimension ", d,
-          ": ", size, " vs ", deduced_shape[d], '.'));
-    } else {
-      deduced_shape[d] = size;
+      return detail::build_dimensions(
+          py::iter(dim_labels),
+          scipp::span{variances->shape(),
+                      static_cast<size_t>(variances->ndim())},
+          "variances");
     }
   }
-
-  return Dimensions{dim_labels, deduced_shape};
 }
 
 void ensure_is_scalar(const py::buffer &array) {
@@ -189,7 +185,8 @@ Variable make_variable_default_init(const py::object &dim_labels,
                                     const py::object &shape,
                                     const units::Unit unit, DType dtype,
                                     const std::optional<bool> with_variance) {
-  const auto dims = build_dimensions(dim_labels, shape);
+  const auto dims =
+      build_dimensions(dim_labels, shape, std::nullopt, std::nullopt);
   if (dtype == core::dtype<void>) {
     // When there is no way to deduce the dtype, default to double.
     dtype = core::dtype<double>;
@@ -267,8 +264,8 @@ Variable make_variable_array(const py::object &dim_labels,
   dtype = common_dtype(
       values_array ? py::object(*values_array) : py::none(),
       variances_array ? py::object(*variances_array) : py::none(), dtype, true);
-  const auto dims = build_dimensions(dim_labels.cast<std::vector<Dim>>(), shape,
-                                     values_array, variances_array);
+  const auto dims =
+      build_dimensions(dim_labels, shape, values_array, variances_array);
   return core::CallDType<
       double, float, int64_t, int32_t, bool, scipp::core::time_point,
       std::string,
