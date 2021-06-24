@@ -2,7 +2,8 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .objects import Plot, make_params, make_errorbar_params, make_profile
+from .objects import Plot, make_params, make_errorbar_params, make_profile, \
+        make_formatters
 from .view2d import PlotView2d
 from .figure2d import PlotFigure2d
 
@@ -40,8 +41,8 @@ def plot2d(scipp_obj_dict,
                          vmax=vmax,
                          masks=masks)
     errorbars = make_errorbar_params(scipp_obj_dict, errorbars)
+    labels, formatters = make_formatters(scipp_obj_dict, labels)
     sp = Plot(scipp_obj_dict=scipp_obj_dict,
-              labels=labels,
               norm=norm,
               scale=scale,
               view_ndims=2)
@@ -62,7 +63,7 @@ def plot2d(scipp_obj_dict,
                                              title=title,
                                              xlabel=xlabel,
                                              ylabel=ylabel),
-                         formatters=sp._formatters)
+                         formatters=formatters)
 
     # Profile view which displays an additional dimension as a 1d plot
     if len(sp.dims) > 2:
@@ -73,7 +74,9 @@ def plot2d(scipp_obj_dict,
     sp.controller = sp._make_controller(norm=norm,
                                         scale=scale,
                                         resolution=resolution,
-                                        params=params)
+                                        params=params,
+                                        formatters=formatters,
+                                        labels=labels)
 
     # Render the figure once all components have been created.
     sp.render()

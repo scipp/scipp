@@ -74,6 +74,15 @@ def make_errorbar_params(arrays, errorbars):
     return params
 
 
+def make_formatters(arrays, labels):
+    array = next(iter(arrays.values()))
+    labs = {dim: dim for dim in array.dims}
+    if labels is not None:
+        labs.update(labels)
+    formatters = {dim: make_formatter(array, labs[dim]) for dim in array.dims}
+    return labs, formatters
+
+
 def make_profile(ax, errorbars, mask_color):
     from .profile import PlotProfile
     pad = config.plot.padding.copy()
@@ -215,15 +224,13 @@ class Plot:
       - a `PlotController`: handles all the communication between all the
           pieces above.
     """
-    def __init__(
-            self,
-            scipp_obj_dict,
-            labels=None,  # dim -> coord name
-            axes=None,
-            norm=False,
-            scale=None,
-            positions=None,
-            view_ndims=None):
+    def __init__(self,
+                 scipp_obj_dict,
+                 axes=None,
+                 norm=False,
+                 scale=None,
+                 positions=None,
+                 view_ndims=None):
 
         self._scipp_obj_dict = scipp_obj_dict
         self.controller = None
@@ -250,13 +257,6 @@ class Plot:
                 raise DimensionError("A ragged coordinate cannot lie along "
                                      "a slider dimension, it must be one of "
                                      "the displayed dimensions.")
-        self.labels = {dim: dim for dim in self.dims}
-        if labels is not None:
-            self.labels.update(labels)
-        self._formatters = {
-            dim: make_formatter(array, self.labels[dim])
-            for dim in array.dims
-        }
         if positions:
             if not array.meta[positions].dims:
                 raise ValueError(f"{positions} cannot be 0 dimensional"
@@ -356,7 +356,8 @@ class Plot:
         if self.profile is not None:
             self.profile.set_draw_no_delay(value)
 
-    def _make_controller(self, norm, scale, resolution, params):
+    def _make_controller(self, norm, scale, resolution, params, formatters,
+                         labels):
         from .model1d import PlotModel1d
         from .model2d import PlotModel2d
         from .widgets import PlotWidgets
@@ -367,9 +368,9 @@ class Plot:
         profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict,
                                     name=self.name)
         self.widgets = PlotWidgets(dims=self.dims,
-                                   formatters=self._formatters,
+                                   formatters=formatters,
                                    ndim=self.view_ndims,
-                                   dim_label_map=self.labels,
+                                   dim_label_map=labels,
                                    masks=self._scipp_obj_dict)
         Controller = {
             1: PlotController1d,
