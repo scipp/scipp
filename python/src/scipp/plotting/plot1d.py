@@ -2,10 +2,8 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .objects import Plot, make_params, make_errorbar_params, make_profile, \
-        make_formatters
+from .objects import Plot, make_params, make_profile
 from .panel1d import PlotPanel1d
-from .view1d import PlotView1d
 from .figure1d import PlotFigure1d
 
 
@@ -17,16 +15,16 @@ def plot1d(scipp_obj_dict,
            ax=None,
            pax=None,
            figsize=None,
-           mpl_line_params=None,
            norm=None,
+           scale=None,
            vmin=None,
            vmax=None,
            resolution=None,
-           scale=None,
-           grid=False,
            title=None,
            xlabel=None,
            ylabel=None,
+           mpl_line_params=None,
+           grid=False,
            legend=None):
     """
     Plot one or more Scipp data objects as a 1 dimensional line plot.
@@ -45,46 +43,41 @@ def plot1d(scipp_obj_dict,
         masks = {"color": "k"}
 
     params = make_params(norm=norm, vmin=vmin, vmax=vmax, masks=masks)
-    errorbars = make_errorbar_params(scipp_obj_dict, errorbars)
-    labels, formatters = make_formatters(scipp_obj_dict, labels)
+
+    dims = next(iter(scipp_obj_dict.values())).dims
+    if len(dims) > 1:
+        profile_figure = make_profile(ax=pax,
+                                      mask_color=params['masks']['color'])
+        # An additional panel view with widgets to save/remove lines
+        panel = PlotPanel1d(data_names=list(scipp_obj_dict.keys()))
+    else:
+        profile_figure = None
+        panel = None
+
+    figure = PlotFigure1d(ax=ax,
+                          figsize=figsize,
+                          norm=norm,
+                          title=title,
+                          mask_color=params['masks']['color'],
+                          mpl_line_params=mpl_line_params,
+                          picker=True,
+                          grid=grid,
+                          xlabel=xlabel,
+                          ylabel=ylabel,
+                          legend=legend)
+
     sp = Plot(scipp_obj_dict=scipp_obj_dict,
+              figure=figure,
+              profile_figure=profile_figure,
+              errorbars=errorbars,
+              panel=panel,
+              labels=labels,
+              resolution=resolution,
+              params=params,
               norm=norm,
               scale=scale,
               view_ndims=1)
-    # The view which will display the 1d plot and send pick events back to
-    # the controller
-    sp.view = PlotView1d(figure=PlotFigure1d(
-        ax=ax,
-        figsize=figsize,
-        errorbars=errorbars,
-        norm=norm,
-        title=title,
-        mask_color=params['masks']['color'],
-        mpl_line_params=mpl_line_params,
-        picker=True,
-        grid=grid,
-        xlabel=xlabel,
-        ylabel=ylabel,
-        legend=legend),
-                         formatters=formatters)
 
-    # Profile view which displays an additional dimension as a 1d plot
-    if len(sp.dims) > 1:
-        sp.profile = make_profile(ax=pax,
-                                  errorbars=errorbars,
-                                  mask_color=params['masks']['color'])
-        # An additional panel view with widgets to save/remove lines
-        sp.panel = PlotPanel1d(data_names=list(scipp_obj_dict.keys()))
-
-    sp.controller = sp._make_controller(norm=norm,
-                                        scale=scale,
-                                        resolution=resolution,
-                                        params=params,
-                                        formatters=formatters,
-                                        labels=labels)
-
-    # Render the figure once all components have been created.
-    sp.render()
     if filename is not None:
         sp.savefig(filename)
     else:

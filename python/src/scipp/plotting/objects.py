@@ -8,6 +8,9 @@ from .tools import parse_params
 from .._scipp.core import DimensionError
 from .controller1d import PlotController1d
 from .controller2d import PlotController2d
+from .view1d import PlotView1d
+from .view2d import PlotView2d
+from .widgets import PlotWidgets
 
 
 def make_params(*,
@@ -83,12 +86,11 @@ def make_formatters(arrays, labels):
     return labs, formatters
 
 
-def make_profile(ax, errorbars, mask_color):
+def make_profile(ax, mask_color):
     from .profile import PlotProfile
     pad = config.plot.padding.copy()
     pad[2] = 0.77
-    return PlotProfile(errorbars=errorbars,
-                       ax=ax,
+    return PlotProfile(ax=ax,
                        mask_color=mask_color,
                        figsize=(1.3 * config.plot.width / config.plot.dpi,
                                 0.6 * config.plot.height / config.plot.dpi),
@@ -226,6 +228,13 @@ class Plot:
     """
     def __init__(self,
                  scipp_obj_dict,
+                 figure,
+                 profile_figure=None,
+                 errorbars=None,
+                 panel=None,
+                 labels=None,
+                 resolution=None,
+                 params=None,
                  axes=None,
                  norm=False,
                  scale=None,
@@ -235,7 +244,7 @@ class Plot:
         self._scipp_obj_dict = scipp_obj_dict
         self.controller = None
         self.model = None
-        self.panel = None
+        self.panel = panel
         self.profile = None
         self.view = None
         self.widgets = None
@@ -271,6 +280,27 @@ class Plot:
             self._tool_button_states['toggle_norm'] = True
         for dim in {} if scale is None else scale:
             self._tool_button_states[f'log_{dim}'] = scale[dim] == 'log'
+
+        errorbars = make_errorbar_params(scipp_obj_dict, errorbars)
+        figure.errorbars = errorbars
+        if profile_figure is not None:
+            profile_figure.errorbars = errorbars
+        labels, formatters = make_formatters(scipp_obj_dict, labels)
+        View = {1: PlotView1d, 2: PlotView2d}[view_ndims]
+        self.view = View(figure=figure, formatters=formatters)
+        self.profile = profile_figure
+
+        self.widgets = PlotWidgets(dims=self.dims,
+                                   formatters=formatters,
+                                   ndim=self.view_ndims,
+                                   dim_label_map=labels,
+                                   masks=self._scipp_obj_dict)
+
+        self.controller = self._make_controller(norm=norm,
+                                                scale=scale,
+                                                resolution=resolution,
+                                                params=params)
+        self._render()
 
     def _ipython_display_(self):
         """
@@ -311,7 +341,7 @@ class Plot:
         """
         self.view.show()
 
-    def render(self):
+    def _render(self):
         """
         Perform some initial calls to render the figure once all components
         have been created.
@@ -356,22 +386,15 @@ class Plot:
         if self.profile is not None:
             self.profile.set_draw_no_delay(value)
 
-    def _make_controller(self, norm, scale, resolution, params, formatters,
-                         labels):
+    def _make_controller(self, norm, scale, resolution, params):
         from .model1d import PlotModel1d
         from .model2d import PlotModel2d
-        from .widgets import PlotWidgets
         Model = {1: PlotModel1d, 2: PlotModel2d}[self.view_ndims]
         model = Model(scipp_obj_dict=self._scipp_obj_dict,
                       name=self.name,
                       resolution=resolution)
         profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict,
                                     name=self.name)
-        self.widgets = PlotWidgets(dims=self.dims,
-                                   formatters=formatters,
-                                   ndim=self.view_ndims,
-                                   dim_label_map=labels,
-                                   masks=self._scipp_obj_dict)
         Controller = {
             1: PlotController1d,
             2: PlotController2d

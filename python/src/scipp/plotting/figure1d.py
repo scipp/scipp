@@ -19,7 +19,6 @@ class PlotFigure1d(PlotFigure):
     previously saved line.
     """
     def __init__(self,
-                 errorbars,
                  ax=None,
                  mpl_line_params=None,
                  title=None,
@@ -50,7 +49,6 @@ class PlotFigure1d(PlotFigure):
         elif "show" not in legend:
             legend["show"] = True
 
-        self.errorbars = errorbars
         self._mask_color = mask_color if mask_color is not None else 'k'
         self.picker = picker
         self.norm = norm

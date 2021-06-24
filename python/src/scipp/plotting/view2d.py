@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .view import PlotView
-from .. import dtype, zeros
+from .._variable import zeros
 import numpy as np
 from matplotlib.collections import PathCollection
 
@@ -58,7 +58,7 @@ class PlotView2d(PlotView):
             msk = zeros(sizes=new_values.sizes, dtype='int32')
             for m, val in mask_info.items():
                 if val:
-                    msk += new_values.masks[m].astype(dtype.int32)
+                    msk += new_values.masks[m].astype(msk.dtype)
             slice_values["masks"] = msk.values
         return slice_values
 

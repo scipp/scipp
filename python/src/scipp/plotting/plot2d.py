@@ -2,9 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .objects import Plot, make_params, make_errorbar_params, make_profile, \
-        make_formatters
-from .view2d import PlotView2d
+from .objects import Plot, make_params, make_profile
 from .figure2d import PlotFigure2d
 
 
@@ -40,46 +38,40 @@ def plot2d(scipp_obj_dict,
                          vmin=vmin,
                          vmax=vmax,
                          masks=masks)
-    errorbars = make_errorbar_params(scipp_obj_dict, errorbars)
-    labels, formatters = make_formatters(scipp_obj_dict, labels)
+
+    dims = next(iter(scipp_obj_dict.values())).dims
+    if len(dims) > 2:
+        params['extend_cmap'] = 'both'
+        profile_figure = make_profile(ax=pax,
+                                      mask_color=params['masks']['color'])
+    else:
+        profile_figure = None
+
+    figure = PlotFigure2d(ax=ax,
+                          cax=cax,
+                          figsize=figsize,
+                          aspect=aspect,
+                          cmap=params["values"]["cmap"],
+                          norm=params["values"]["norm"],
+                          name=next(iter(scipp_obj_dict)),
+                          cbar=params["values"]["cbar"],
+                          mask_cmap=params['masks']['cmap'],
+                          extend=params['extend_cmap'],
+                          title=title,
+                          xlabel=xlabel,
+                          ylabel=ylabel)
+
     sp = Plot(scipp_obj_dict=scipp_obj_dict,
+              figure=figure,
+              profile_figure=profile_figure,
+              errorbars=errorbars,
+              labels=labels,
+              resolution=resolution,
+              params=params,
               norm=norm,
               scale=scale,
               view_ndims=2)
-    # The view which will display the 2d image and send pick events back to
-    # the controller
-    if len(sp.dims) > 2:
-        params['extend_cmap'] = 'both'
-    sp.view = PlotView2d(figure=PlotFigure2d(ax=ax,
-                                             cax=cax,
-                                             figsize=figsize,
-                                             aspect=aspect,
-                                             cmap=params["values"]["cmap"],
-                                             norm=params["values"]["norm"],
-                                             name=sp.name,
-                                             cbar=params["values"]["cbar"],
-                                             mask_cmap=params['masks']['cmap'],
-                                             extend=params['extend_cmap'],
-                                             title=title,
-                                             xlabel=xlabel,
-                                             ylabel=ylabel),
-                         formatters=formatters)
 
-    # Profile view which displays an additional dimension as a 1d plot
-    if len(sp.dims) > 2:
-        sp.profile = make_profile(ax=pax,
-                                  errorbars=errorbars,
-                                  mask_color=params['masks']['color'])
-
-    sp.controller = sp._make_controller(norm=norm,
-                                        scale=scale,
-                                        resolution=resolution,
-                                        params=params,
-                                        formatters=formatters,
-                                        labels=labels)
-
-    # Render the figure once all components have been created.
-    sp.render()
     if filename is not None:
         sp.savefig(filename)
     else:
