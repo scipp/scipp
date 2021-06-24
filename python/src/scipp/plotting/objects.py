@@ -10,6 +10,70 @@ from .controller1d import PlotController1d
 from .controller2d import PlotController2d
 
 
+def make_params(*,
+                cmap=None,
+                norm=None,
+                vmin=None,
+                vmax=None,
+                masks=None,
+                color=None):
+    # Scan the input data and collect information
+    params = {"values": {}, "masks": {}}
+    globs = {
+        "cmap": cmap,
+        "norm": norm,
+        "vmin": vmin,
+        "vmax": vmax,
+        "color": color
+    }
+    masks_globs = {"norm": norm, "vmin": vmin, "vmax": vmax}
+    # Get the colormap and normalization
+    params["values"] = parse_params(globs=globs)
+    params["masks"] = parse_params(params=masks,
+                                   defaults={
+                                       "cmap": "gray",
+                                       "cbar": False,
+                                       "under_color": None,
+                                       "over_color": None
+                                   },
+                                   globs=masks_globs)
+    # Set cmap extend state: if we have sliders then we need to extend.
+    # We also need to extend if vmin or vmax are set.
+    extend_cmap = "neither"
+    if (vmin is not None) and (vmax is not None):
+        extend_cmap = "both"
+    elif vmin is not None:
+        extend_cmap = "min"
+    elif vmax is not None:
+        extend_cmap = "max"
+
+    params['extend_cmap'] = extend_cmap
+    return params
+
+
+def make_errorbar_params(arrays, errorbars):
+    """
+    Determine whether error bars should be plotted or not.
+    """
+    if errorbars is None:
+        params = {}
+    else:
+        if isinstance(errorbars, bool):
+            params = {name: errorbars for name in arrays}
+        elif isinstance(errorbars, dict):
+            params = errorbars
+        else:
+            raise TypeError("Unsupported type for argument "
+                            "'errorbars': {}".format(type(errorbars)))
+    for name, array in arrays.items():
+        has_variances = array.variances is not None
+        if name in params:
+            params[name] &= has_variances
+        else:
+            params[name] = has_variances
+    return params
+
+
 class DataArrayDict(dict):
     """
     Dict of data arrays with matching dimension labels and units. Shape and
@@ -140,14 +204,8 @@ class Plot:
             scipp_obj_dict,
             labels=None,  # dim -> coord name
             axes=None,
-            errorbars=None,
-            cmap=None,
             norm=False,
             scale=None,
-            vmin=None,
-            vmax=None,
-            color=None,
-            masks=None,
             positions=None,
             view_ndims=None):
 
@@ -165,7 +223,6 @@ class Plot:
         # Shortcut access to the underlying figure for easier modification
         self.fig = None
         self.ax = None
-        self.errorbars = {}
 
         # TODO use option to provide keys here
         array = next(iter(scipp_obj_dict.values()))
@@ -192,57 +249,6 @@ class Plot:
                 self.position_dims = array.meta[positions].dims
         else:
             self.position_dims = None
-
-        # Set cmap extend state: if we have sliders (= key "0" is found in
-        # self.axes), then we need to extend.
-        # We also need to extend if vmin or vmax are set.
-        self.extend_cmap = "neither"
-        if (len(self.dims) > view_ndims) or ((vmin is not None) and
-                                             (vmax is not None)):
-            self.extend_cmap = "both"
-        elif vmin is not None:
-            self.extend_cmap = "min"
-        elif vmax is not None:
-            self.extend_cmap = "max"
-
-        # Scan the input data and collect information
-        self.params = {"values": {}, "masks": {}}
-        globs = {
-            "cmap": cmap,
-            "norm": norm,
-            "vmin": vmin,
-            "vmax": vmax,
-            "color": color
-        }
-        masks_globs = {"norm": norm, "vmin": vmin, "vmax": vmax}
-
-        if errorbars is not None:
-            if isinstance(errorbars, bool):
-                self.errorbars = {name: errorbars for name in scipp_obj_dict}
-            elif isinstance(errorbars, dict):
-                self.errorbars = errorbars
-            else:
-                raise TypeError("Unsupported type for argument "
-                                "'errorbars': {}".format(type(errorbars)))
-
-        # Get the colormap and normalization
-        self.params["values"] = parse_params(globs=globs)
-        self.params["masks"] = parse_params(params=masks,
-                                            defaults={
-                                                "cmap": "gray",
-                                                "cbar": False,
-                                                "under_color": None,
-                                                "over_color": None
-                                            },
-                                            globs=masks_globs)
-
-        for name, array in scipp_obj_dict.items():
-            # Determine whether error bars should be plotted or not
-            has_variances = array.variances is not None
-            if name in self.errorbars:
-                self.errorbars[name] &= has_variances
-            else:
-                self.errorbars[name] = has_variances
 
         self._tool_button_states = {}
         if norm:
@@ -334,7 +340,7 @@ class Plot:
         if self.profile is not None:
             self.profile.set_draw_no_delay(value)
 
-    def _make_controller(self, norm, scale, resolution):
+    def _make_controller(self, norm, scale, resolution, params):
         from .model1d import PlotModel1d
         from .model2d import PlotModel2d
         from .widgets import PlotWidgets
@@ -355,8 +361,8 @@ class Plot:
         }[self.view_ndims]
         return Controller(dims=self.dims,
                           name=self.name,
-                          vmin=self.params["values"]["vmin"],
-                          vmax=self.params["values"]["vmax"],
+                          vmin=params["values"]["vmin"],
+                          vmax=params["values"]["vmax"],
                           norm=norm,
                           scale=scale,
                           widgets=self.widgets,
@@ -366,14 +372,14 @@ class Plot:
                           panel=self.panel,
                           profile=self.profile)
 
-    def _make_profile(self, ax):
+    def _make_profile(self, ax, errorbars, params):
         from .profile import PlotProfile
         pad = config.plot.padding.copy()
         pad[2] = 0.77
         return PlotProfile(
-            errorbars=self.errorbars,
+            errorbars=errorbars,
             ax=ax,
-            mask_color=self.params['masks']['color'],
+            mask_color=params['masks']['color'],
             figsize=(1.3 * config.plot.width / config.plot.dpi,
                      0.6 * config.plot.height / config.plot.dpi),
             padding=pad,
