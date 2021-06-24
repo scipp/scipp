@@ -8,6 +8,8 @@ from .tools import parse_params
 from .._scipp.core import DimensionError
 from .controller1d import PlotController1d
 from .controller2d import PlotController2d
+from .model1d import PlotModel1d
+from .model2d import PlotModel2d
 from .view1d import PlotView1d
 from .view2d import PlotView2d
 from .widgets import PlotWidgets
@@ -54,7 +56,7 @@ def make_params(*,
     return params
 
 
-def make_errorbar_params(arrays, errorbars):
+def _make_errorbar_params(arrays, errorbars):
     """
     Determine whether error bars should be plotted or not.
     """
@@ -77,7 +79,7 @@ def make_errorbar_params(arrays, errorbars):
     return params
 
 
-def make_formatters(arrays, labels):
+def _make_formatters(arrays, labels):
     array = next(iter(arrays.values()))
     labs = {dim: dim for dim in array.dims}
     if labels is not None:
@@ -99,28 +101,6 @@ def make_profile(ax, mask_color):
                            "show": True,
                            "loc": (1.02, 0.0)
                        })
-
-
-class DataArrayDict(dict):
-    """
-    Dict of data arrays with matching dimension labels and units. Shape and
-    coordinates may mismatch.
-    """
-    @property
-    def dims(self):
-        return next(iter(self.values())).dims
-
-    @property
-    def sizes(self):
-        return next(iter(self.values())).sizes
-
-    @property
-    def unit(self):
-        return next(iter(self.values())).unit
-
-    @property
-    def meta(self):
-        return next(iter(self.values())).meta
 
 
 class PlotDict():
@@ -234,7 +214,8 @@ class Plot:
                  panel=None,
                  labels=None,
                  resolution=None,
-                 params=None,
+                 vmin=None,
+                 vmax=None,
                  axes=None,
                  norm=False,
                  scale=None,
@@ -281,11 +262,11 @@ class Plot:
         for dim in {} if scale is None else scale:
             self._tool_button_states[f'log_{dim}'] = scale[dim] == 'log'
 
-        errorbars = make_errorbar_params(scipp_obj_dict, errorbars)
+        errorbars = _make_errorbar_params(scipp_obj_dict, errorbars)
         figure.errorbars = errorbars
         if profile_figure is not None:
             profile_figure.errorbars = errorbars
-        labels, formatters = make_formatters(scipp_obj_dict, labels)
+        labels, formatters = _make_formatters(scipp_obj_dict, labels)
         View = {1: PlotView1d, 2: PlotView2d}[view_ndims]
         self.view = View(figure=figure, formatters=formatters)
         self.profile = profile_figure
@@ -296,10 +277,28 @@ class Plot:
                                    dim_label_map=labels,
                                    masks=self._scipp_obj_dict)
 
-        self.controller = self._make_controller(norm=norm,
-                                                scale=scale,
-                                                resolution=resolution,
-                                                params=params)
+        Model = {1: PlotModel1d, 2: PlotModel2d}[self.view_ndims]
+        model = Model(scipp_obj_dict=self._scipp_obj_dict,
+                      name=self.name,
+                      resolution=resolution)
+        profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict,
+                                    name=self.name)
+        Controller = {
+            1: PlotController1d,
+            2: PlotController2d
+        }[self.view_ndims]
+        self.controller = Controller(dims=self.dims,
+                                     name=self.name,
+                                     vmin=vmin,
+                                     vmax=vmax,
+                                     norm=norm,
+                                     scale=scale,
+                                     widgets=self.widgets,
+                                     model=model,
+                                     profile_model=profile_model,
+                                     view=self.view,
+                                     panel=self.panel,
+                                     profile=self.profile)
         self._render()
 
     def _ipython_display_(self):
@@ -386,28 +385,25 @@ class Plot:
         if self.profile is not None:
             self.profile.set_draw_no_delay(value)
 
-    def _make_controller(self, norm, scale, resolution, params):
-        from .model1d import PlotModel1d
-        from .model2d import PlotModel2d
-        Model = {1: PlotModel1d, 2: PlotModel2d}[self.view_ndims]
-        model = Model(scipp_obj_dict=self._scipp_obj_dict,
-                      name=self.name,
-                      resolution=resolution)
-        profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict,
-                                    name=self.name)
-        Controller = {
-            1: PlotController1d,
-            2: PlotController2d
-        }[self.view_ndims]
-        return Controller(dims=self.dims,
-                          name=self.name,
-                          vmin=params["values"]["vmin"],
-                          vmax=params["values"]["vmax"],
-                          norm=norm,
-                          scale=scale,
-                          widgets=self.widgets,
-                          model=model,
-                          profile_model=profile_model,
-                          view=self.view,
-                          panel=self.panel,
-                          profile=self.profile)
+
+def make_plot(builder,
+              scipp_obj_dict,
+              filename=None,
+              labels=None,
+              errorbars=None,
+              norm=None,
+              scale=None,
+              resolution=None,
+              **kwargs):
+    dims = next(iter(scipp_obj_dict.values())).dims
+    sp = Plot(scipp_obj_dict=scipp_obj_dict,
+              **builder(dims=dims, norm=norm, **kwargs),
+              errorbars=errorbars,
+              labels=labels,
+              resolution=resolution,
+              norm=norm,
+              scale=scale)
+    if filename is not None:
+        sp.savefig(filename)
+    else:
+        return sp

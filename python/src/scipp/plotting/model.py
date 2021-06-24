@@ -2,11 +2,32 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .objects import DataArrayDict
 from .tools import find_limits, to_dict
 from .. import typing
 from .._scipp import core as sc
 from .._variable import arange
+
+
+class DataArrayDict(dict):
+    """
+    Dict of data arrays with matching dimension labels and units. Shape and
+    coordinates may mismatch.
+    """
+    @property
+    def dims(self):
+        return next(iter(self.values())).dims
+
+    @property
+    def sizes(self):
+        return next(iter(self.values())).sizes
+
+    @property
+    def unit(self):
+        return next(iter(self.values())).unit
+
+    @property
+    def meta(self):
+        return next(iter(self.values())).meta
 
 
 class PlotModel:

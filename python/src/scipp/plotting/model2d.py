@@ -3,7 +3,8 @@
 # @file
 # @author Neil Vaytet, Simon Heybrock
 
-from .. import config, transpose
+from .. import config
+from .._shape import transpose
 from .model import PlotModel
 from .resampling_model import resampling_model
 

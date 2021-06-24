@@ -79,7 +79,7 @@ class PlotController:
         self._initialize_widgets(sizes)
         self.initialize_model()
 
-    def render(self, norm=None):
+    def render(self):
         """
         Update axes (and data) to render the figure once all components
         have been created.

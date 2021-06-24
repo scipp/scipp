@@ -2,9 +2,8 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .model import PlotModel
+from .model import PlotModel, DataArrayDict
 from .tools import find_limits
-from .objects import DataArrayDict
 from .resampling_model import resampling_model
 from .._scipp import core as sc
 

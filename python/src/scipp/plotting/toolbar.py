@@ -154,13 +154,6 @@ class PlotToolbar:
                 args[key] = value
         return args
 
-    def update_norm_button(self, norm=None):
-        """
-        Change state of norm button according to supplied norm value.
-        """
-        self.toggle_button_color(self.members["toggle_norm"],
-                                 value=norm == "log")
-
     @property
     def tool_active(self):
         return self.members["zoom_view"].value or \
