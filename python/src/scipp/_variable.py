@@ -62,32 +62,12 @@ def scalar(value: _Any,
     :returns: A scalar (zero-dimensional) Variable.
     :rtype: Variable
     """
-    if value is not None and variance is not None \
-            and not isinstance(variance, type(value)):
-        # This case would make pybind11's overload resolution fail.
-        # We can provide a better error message here.
-        raise TypeError('Cannot construct scalar from value and '
-                        f'variance of different types. Got {type(value)} '
-                        f'and {type(variance)}.') from None
-    if dtype is None:
-        return _cpp.Variable(dims=(),
-                             values=value,
-                             variances=variance,
-                             unit=unit,
-                             with_variance=with_variance)
-    else:
-        try:
-            return _cpp.Variable(dims=(),
-                                 values=value,
-                                 variances=variance,
-                                 unit=unit,
-                                 dtype=dtype,
-                                 with_variance=with_variance)
-        except TypeError:
-            # Raise a more comprehensible error message in the case
-            # where a dtype cannot be specified.
-            raise TypeError(f"Cannot convert {value} to {dtype}. "
-                            f"Try omitting the 'dtype=' parameter.") from None
+    return _cpp.Variable(dims=(),
+                         values=value,
+                         variances=variance,
+                         unit=unit,
+                         dtype=dtype,
+                         with_variance=with_variance)
 
 
 def zeros(*,
@@ -325,21 +305,11 @@ def array(*,
     if not dims:
         raise ValueError("The dims of an array must not be empty. "
                          "Use sc.scalar to construct a scalar variable.")
-    try:
-        return _cpp.Variable(dims=dims,
-                             values=values,
-                             variances=variances,
-                             unit=unit,
-                             dtype=dtype)
-    except RuntimeError as exc:
-        if 'Unable to cast' in exc.args[0]:
-            raise TypeError(
-                'Cannot convert data to an array. '
-                'Did you forget to wrap it in a list or numpy array?\n'
-                f'Got values = {type(values)}' +
-                (f'\n    variances = {type(variances)}'
-                 if variances is not None else '')) from None
-        raise
+    return _cpp.Variable(dims=dims,
+                         values=values,
+                         variances=variances,
+                         unit=unit,
+                         dtype=dtype)
 
 
 def linspace(dim: str,
