@@ -138,6 +138,13 @@ def test_array_creates_correct_variable():
     assert sc.identical(var, expected)
 
 
+def test_array_needs_nonempty_dims():
+    with pytest.raises(ValueError):
+        sc.array(dims=[], values=[])
+    with pytest.raises(ValueError):
+        sc.array(dims=None, values=[])
+
+
 def test_zeros_like():
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
     expected = sc.zeros(dims=['x', 'y', 'z'], shape=[1, 2, 3])

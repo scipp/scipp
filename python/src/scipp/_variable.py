@@ -1,12 +1,16 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
-from ._scipp import core as _cpp
-from ._cpp_wrapper_util import call_func as _call_cpp_func
-from typing import Any as _Any, Sequence as _Sequence, Union as _Union,\
+
+from collections.abc import Iterable as _Iterable
+from typing import Any as _Any, Sequence as _Sequence, Union as _Union, \
     Optional as _Optional
+
 import numpy as _np
 from numpy.typing import ArrayLike as _ArrayLike
+
+from ._scipp import core as _cpp
+from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
 def _parse_dims_shape_sizes(dims, shape, sizes):
@@ -298,7 +302,7 @@ def vectors(*,
 
 
 def array(*,
-          dims: _Sequence[str],
+          dims: _Iterable[str],
           values: _ArrayLike,
           variances: _Optional[_ArrayLike] = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
@@ -310,7 +314,7 @@ def array(*,
     :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
               :py:func:`scipp.empty` :py:func:`scipp.scalar`
 
-    :param dims: Dimension labels.
+    :param dims: Dimension labels, nonempty.
     :param values: Initial values.
     :param variances: Optional, initial variances, must be same shape
       and size as values. Default=None
@@ -318,6 +322,9 @@ def array(*,
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
     """
+    if not dims:
+        raise ValueError("The dims of an array must not be empty. "
+                         "Use sc.scalar to construct a scalar variable.")
     try:
         return _cpp.Variable(dims=dims,
                              values=values,
