@@ -24,17 +24,12 @@ class PlotView2d(PlotView):
         self._axes = ['y', 'x']
         self._marker_index = []
         self._marks_scatter = None
-
-        self.xlim_updated = False
-        self.ylim_updated = False
+        self._lim_updated = False
         self.current_lims = {}
         self.global_lims = {}
 
-        # Connect changes in axes limits to resampling function
-        self.figure.ax.callbacks.connect('xlim_changed',
-                                         self.check_for_xlim_update)
-        self.figure.ax.callbacks.connect('ylim_changed',
-                                         self.check_for_ylim_update)
+        for event in ['xlim_changed', 'ylim_changed']:
+            self.figure.ax.callbacks.connect(event, self._lims_changed)
 
     def _make_data(self, new_values, mask_info):
         if not self.global_lims:
@@ -62,35 +57,19 @@ class PlotView2d(PlotView):
             slice_values["masks"] = msk.values
         return slice_values
 
-    def check_for_xlim_update(self, event_ax):
+    def _lims_changed(self, *args):
         """
+        Update limits and resample the image according to new viewport.
+
         When we use the zoom tool, the event listener on the displayed axes
         limits detects two separate events: one for the x axis and another for
         the y axis. We use a small locking mechanism here to trigger only a
         single resampling update by waiting for the y limits to also change.
         """
-        self.xlim_updated = True
-        if self.ylim_updated:
-            self.update_bins_from_axes_limits()
-
-    def check_for_ylim_update(self, event_ax):
-        """
-        When we use the zoom tool, the event listener on the displayed axes
-        limits detects two separate events: one for the x axis and another for
-        the y axis. We use a small locking mechanism here to trigger only a
-        single resampling update by waiting for the x limits to also change.
-        """
-        self.ylim_updated = True
-        if self.xlim_updated:
-            self.update_bins_from_axes_limits()
-
-    def update_bins_from_axes_limits(self):
-        """
-        Update the axis limits and resample the image according to new
-        viewport.
-        """
-        self.xlim_updated = False
-        self.ylim_updated = False
+        if not self._lim_updated:
+            self._lim_updated = True
+            return
+        self._lim_updated = False
 
         # Make sure we don't overrun the original array bounds
         xylims = {
