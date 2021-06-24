@@ -4,7 +4,7 @@
 
 from .model import PlotModel
 from .tools import find_limits
-from .plot import DataArrayDict
+from .objects import DataArrayDict
 from .resampling_model import resampling_model
 from .._scipp import core as sc
 
@@ -13,9 +13,9 @@ class PlotModel1d(PlotModel):
     """
     Model class for 1 dimensional plots.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, resolution=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self._resolution = None
+        self._resolution = resolution
         for name, array in self.data_arrays.items():
             if array.bins is not None:
                 self._resolution = 200

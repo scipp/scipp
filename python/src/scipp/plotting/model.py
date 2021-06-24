@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .plot import DataArrayDict
+from .objects import DataArrayDict
 from .tools import find_limits, to_dict
 from .. import typing
 from .._scipp import core as sc

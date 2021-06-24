@@ -2,15 +2,10 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .. import config
-from .controller1d import PlotController1d
-from .model1d import PlotModel1d
 from .objects import Plot
 from .panel1d import PlotPanel1d
-from .profile import PlotProfile
 from .view1d import PlotView1d
 from .figure1d import PlotFigure1d
-from .widgets import PlotWidgets
 
 
 def plot1d(*args, filename=None, **kwargs):
@@ -50,6 +45,7 @@ class Plot1d(Plot):
                  norm=None,
                  vmin=None,
                  vmax=None,
+                 resolution=None,
                  scale=None,
                  grid=False,
                  title=None,
@@ -59,7 +55,6 @@ class Plot1d(Plot):
 
         if masks is None:
             masks = {"color": "k"}
-        view_ndims = 1
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          labels=labels,
@@ -69,19 +64,7 @@ class Plot1d(Plot):
                          vmax=vmax,
                          errorbars=errorbars,
                          masks=masks,
-                         view_ndims=view_ndims)
-
-        # The model which takes care of all heavy calculations
-        self.model = PlotModel1d(scipp_obj_dict=scipp_obj_dict, name=self.name)
-        profile_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
-                                    name=self.name)
-
-        # Create control widgets (sliders and buttons)
-        self.widgets = PlotWidgets(dims=self.dims,
-                                   formatters=self._formatters,
-                                   ndim=view_ndims,
-                                   dim_label_map=self.labels,
-                                   masks=scipp_obj_dict)
+                         view_ndims=1)
 
         # The view which will display the 1d plot and send pick events back to
         # the controller
@@ -102,35 +85,13 @@ class Plot1d(Plot):
 
         # Profile view which displays an additional dimension as a 1d plot
         if len(self.dims) > 1:
-            pad = config.plot.padding.copy()
-            pad[2] = 0.77
-            self.profile = PlotProfile(
-                errorbars=self.errorbars,
-                ax=pax,
-                mask_color=self.params['masks']['color'],
-                figsize=(1.3 * config.plot.width / config.plot.dpi,
-                         0.6 * config.plot.height / config.plot.dpi),
-                padding=pad,
-                legend={
-                    "show": True,
-                    "loc": (1.02, 0.0)
-                })
+            self.profile = self._make_profile(ax=pax)
             # An additional panel view with widgets to save/remove lines
             self.panel = PlotPanel1d(data_names=list(scipp_obj_dict.keys()))
 
-        # The main controller module which contains the slider widgets
-        self.controller = PlotController1d(dims=self.dims,
-                                           name=self.name,
-                                           vmin=self.params["values"]["vmin"],
-                                           vmax=self.params["values"]["vmax"],
-                                           norm=norm,
-                                           scale=scale,
-                                           widgets=self.widgets,
-                                           model=self.model,
-                                           profile_model=profile_model,
-                                           view=self.view,
-                                           panel=self.panel,
-                                           profile=self.profile)
+        self.controller = self._make_controller(norm=norm,
+                                                scale=scale,
+                                                resolution=resolution)
 
         # Render the figure once all components have been created.
         self.render()

@@ -2,9 +2,34 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .. import config
 from .formatters import make_formatter
 from .tools import parse_params
 from .._scipp.core import DimensionError
+from .controller1d import PlotController1d
+from .controller2d import PlotController2d
+
+
+class DataArrayDict(dict):
+    """
+    Dict of data arrays with matching dimension labels and units. Shape and
+    coordinates may mismatch.
+    """
+    @property
+    def dims(self):
+        return next(iter(self.values())).dims
+
+    @property
+    def sizes(self):
+        return next(iter(self.values())).sizes
+
+    @property
+    def unit(self):
+        return next(iter(self.values())).unit
+
+    @property
+    def meta(self):
+        return next(iter(self.values())).meta
 
 
 class PlotDict():
@@ -126,6 +151,7 @@ class Plot:
             positions=None,
             view_ndims=None):
 
+        self._scipp_obj_dict = scipp_obj_dict
         self.controller = None
         self.model = None
         self.panel = None
@@ -307,3 +333,51 @@ class Plot:
         self.view.set_draw_no_delay(value)
         if self.profile is not None:
             self.profile.set_draw_no_delay(value)
+
+    def _make_controller(self, norm, scale, resolution):
+        from .model1d import PlotModel1d
+        from .model2d import PlotModel2d
+        from .widgets import PlotWidgets
+        Model = {1: PlotModel1d, 2: PlotModel2d}[self.view_ndims]
+        model = Model(scipp_obj_dict=self._scipp_obj_dict,
+                      name=self.name,
+                      resolution=resolution)
+        profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict,
+                                    name=self.name)
+        self.widgets = PlotWidgets(dims=self.dims,
+                                   formatters=self._formatters,
+                                   ndim=self.view_ndims,
+                                   dim_label_map=self.labels,
+                                   masks=self._scipp_obj_dict)
+        Controller = {
+            1: PlotController1d,
+            2: PlotController2d
+        }[self.view_ndims]
+        return Controller(dims=self.dims,
+                          name=self.name,
+                          vmin=self.params["values"]["vmin"],
+                          vmax=self.params["values"]["vmax"],
+                          norm=norm,
+                          scale=scale,
+                          widgets=self.widgets,
+                          model=model,
+                          profile_model=profile_model,
+                          view=self.view,
+                          panel=self.panel,
+                          profile=self.profile)
+
+    def _make_profile(self, ax):
+        from .profile import PlotProfile
+        pad = config.plot.padding.copy()
+        pad[2] = 0.77
+        return PlotProfile(
+            errorbars=self.errorbars,
+            ax=ax,
+            mask_color=self.params['masks']['color'],
+            figsize=(1.3 * config.plot.width / config.plot.dpi,
+                     0.6 * config.plot.height / config.plot.dpi),
+            padding=pad,
+            legend={
+                "show": True,
+                "loc": (1.02, 0.0)
+            })

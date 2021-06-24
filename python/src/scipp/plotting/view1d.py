@@ -4,7 +4,7 @@
 from matplotlib.lines import Line2D
 
 from .view import PlotView
-from .. import ones
+from .._variable import ones
 from .tools import vars_to_err
 from .._scipp import core as sc
 
