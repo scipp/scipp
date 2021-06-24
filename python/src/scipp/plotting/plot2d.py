@@ -59,6 +59,7 @@ class Plot2d(Plot):
                          labels=labels,
                          cmap=cmap,
                          norm=norm,
+                         scale=scale,
                          vmin=vmin,
                          vmax=vmax,
                          errorbars=errorbars,
@@ -127,4 +128,4 @@ class Plot2d(Plot):
                                            profile=self.profile)
 
         # Render the figure once all components have been created.
-        self.render(norm=norm)
+        self.render()

@@ -118,6 +118,7 @@ class Plot:
             errorbars=None,
             cmap=None,
             norm=False,
+            scale=None,
             vmin=None,
             vmax=None,
             color=None,
@@ -217,6 +218,12 @@ class Plot:
             else:
                 self.errorbars[name] = has_variances
 
+        self._tool_button_states = {}
+        if norm:
+            self._tool_button_states['toggle_norm'] = True
+        for dim in {} if scale is None else scale:
+            self._tool_button_states[f'log_{dim}'] = scale[dim] == 'log'
+
     def _ipython_display_(self):
         """
         IPython display representation for Jupyter notebooks.
@@ -256,15 +263,18 @@ class Plot:
         """
         self.view.show()
 
-    def render(self, *args, **kwargs):
+    def render(self):
         """
         Perform some initial calls to render the figure once all components
         have been created.
         """
-        self.view.figure.initialize_toolbar(log_axis_buttons=self.dims)
+        self.view.figure.initialize_toolbar(
+            log_axis_buttons=self.dims, button_states=self._tool_button_states)
         if self.profile is not None:
-            self.profile.initialize_toolbar(log_axis_buttons=self.dims)
-        self.controller.render(*args, **kwargs)
+            self.profile.initialize_toolbar(
+                log_axis_buttons=self.dims,
+                button_states=self._tool_button_states)
+        self.controller.render()
         if hasattr(self.view.figure, "fig"):
             self.fig = self.view.figure.fig
         if hasattr(self.view.figure, "ax"):

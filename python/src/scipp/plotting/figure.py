@@ -56,9 +56,9 @@ class PlotFigure:
         self.ylabel = ylabel
         self.draw_no_delay = False
 
-    def initialize_toolbar(self, log_axis_buttons):
+    def initialize_toolbar(self, **kwargs):
         if self.toolbar is not None:
-            self.toolbar.initialize(log_axis_buttons=log_axis_buttons)
+            self.toolbar.initialize(**kwargs)
 
     def is_widget(self):
         """
@@ -172,13 +172,6 @@ class PlotFigure:
             self.fig.canvas.draw()
         else:
             self.fig.canvas.draw_idle()
-
-    def update_norm_button(self, *args, **kwargs):
-        """
-        Change state of norm button in toolbar.
-        """
-        if self.toolbar is not None:
-            self.toolbar.update_norm_button(*args, **kwargs)
 
     def get_axis_bounds(self, axis):
         return getattr(self.ax, "get_{}lim".format(axis))()

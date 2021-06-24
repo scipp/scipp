@@ -92,7 +92,6 @@ class PlotController:
         if self.panel is not None:
             self.panel.controller = self
         self.update_axes()
-        self.update_norm_button(norm)
 
     def _initialize_widgets(self, sizes):
         """
@@ -197,12 +196,6 @@ class PlotController:
         dims = self.model.dims
         dims = [old_dim if dim == new_dim else dim for dim in dims]
         self.update_axes(dims=dims)
-
-    def update_norm_button(self, *args, **kwargs):
-        """
-        Change state of norm button according to supplied norm value.
-        """
-        self.view.update_norm_button(*args, **kwargs)
 
     def update_axes(self, dims=None, normalize=True):
         """

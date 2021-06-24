@@ -447,15 +447,3 @@ void main() {
         self.scalar_map.set_norm(new_norm)
         self.masks_scalar_map.set_norm(new_norm)
         self.update_colorbar()
-
-    def update_log_axes_buttons(self, *args, **kwargs):
-        """
-        Update the state (value and color) of toolbar log axes buttons when
-        axes or dimensions are swapped.
-        """
-        if self.toolbar is not None:
-            self.toolbar.update_log_axes_buttons(*args, **kwargs)
-
-    def update_norm_button(self, *args, **kwargs):
-        if self.toolbar is not None:
-            self.toolbar.update_norm_button(*args, **kwargs)

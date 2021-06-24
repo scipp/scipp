@@ -43,11 +43,15 @@ class PlotToolbar:
                         icon="home",
                         tooltip="Reset original view")
 
-    def initialize(self, log_axis_buttons):
+    def initialize(self, log_axis_buttons, button_states):
         self._log_axis = {
             dim: _make_toggle_button(tooltip=f'log({dim})')
             for dim in log_axis_buttons
         }
+        for name, state in button_states.items():
+            button = self._log_axis[name[4:]] if name.startswith(
+                'log_') else self.members[name]
+            self.toggle_button_color(button, value=state)
 
     @property
     def dims(self):
@@ -201,8 +205,8 @@ class PlotToolbar1d(PlotToolbar):
                         tooltip="Rescale")
         self.members['toggle_xaxis_scale'] = None
         self.add_togglebutton(name="toggle_norm",
-                              description="logy",
-                              tooltip="Log(y)")
+                              description="log",
+                              tooltip="log(data)")
         self.add_button(name="save_view", icon="save", tooltip="Save")
 
 
@@ -226,7 +230,7 @@ class PlotToolbar2d(PlotToolbar):
         self.members['toggle_yaxis_scale'] = None
         self.add_togglebutton(name="toggle_norm",
                               description="log",
-                              tooltip="Log(data)")
+                              tooltip="log(data)")
         self.add_button(name="save_view", icon="save", tooltip="Save")
 
 
@@ -257,4 +261,4 @@ class PlotToolbar3d(PlotToolbar):
                         tooltip="Rescale")
         self.add_togglebutton(name="toggle_norm",
                               description="log",
-                              tooltip="Log(data)")
+                              tooltip="log(data)")

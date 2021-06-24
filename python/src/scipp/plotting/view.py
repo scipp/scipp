@@ -175,12 +175,6 @@ class PlotView:
             self.figure.toolbar.dims = self._dims
         self.refresh(mask_info)
 
-    def update_norm_button(self, *args, **kwargs):
-        """
-        Forward norm button update to the `figure`.
-        """
-        self.figure.update_norm_button(*args, **kwargs)
-
     def set_draw_no_delay(self, *args, **kwargs):
         """
         Forward set_draw_no_delay to the `figure`.

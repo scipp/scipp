@@ -64,6 +64,7 @@ class Plot1d(Plot):
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          labels=labels,
                          norm=norm,
+                         scale=scale,
                          vmin=vmin,
                          vmax=vmax,
                          errorbars=errorbars,
@@ -132,4 +133,4 @@ class Plot1d(Plot):
                                            profile=self.profile)
 
         # Render the figure once all components have been created.
-        self.render(norm=norm)
+        self.render()
