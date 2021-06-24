@@ -33,7 +33,7 @@ def divide(dividend: DataArrayLike, divisor: DataArrayLike) -> DataArrayLike:
 
     This function corresponds to the ``__truediv__`` dunder method, i.e.
     ``dividend / divisor``.
-    The result always contains factional parts even when
+    The result always contains fractional parts even when
     the inputs are integers:
 
     :param dividend: Dividend of the quotient.
