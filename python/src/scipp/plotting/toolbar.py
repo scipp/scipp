@@ -125,6 +125,8 @@ class PlotToolbar:
         for key in self.members:
             if hasattr(controller, key):
                 self.members[key].on_click(getattr(controller, key))
+            elif self.members[key] is not None:
+                self.members[key].on_click(getattr(self, key))
         for dim, button in self._log_axis.items():
             button.observe(
                 getattr(controller, 'toggle_dim_scale')(dim), 'value')
@@ -155,27 +157,27 @@ class PlotToolbar:
         self.toggle_button_color(self.members["toggle_norm"],
                                  value=norm == "log")
 
-    def home_view(self):
-        self.mpl_toolbar.home()
-
     @property
     def tool_active(self):
         return self.members["zoom_view"].value or \
                 self.members["pan_view"].value
 
-    def pan_view(self):
+    def home_view(self, button):
+        self.mpl_toolbar.home()
+
+    def pan_view(self, button):
         # In case the zoom button is selected, we need to de-select it
         if self.members["zoom_view"].value:
             self.toggle_button_color(self.members["zoom_view"])
         self.mpl_toolbar.pan()
 
-    def zoom_view(self):
+    def zoom_view(self, button):
         # In case the pan button is selected, we need to de-select it
         if self.members["pan_view"].value:
             self.toggle_button_color(self.members["pan_view"])
         self.mpl_toolbar.zoom()
 
-    def save_view(self):
+    def save_view(self, button):
         self.mpl_toolbar.save_figure()
 
     def rescale_on_zoom(self):

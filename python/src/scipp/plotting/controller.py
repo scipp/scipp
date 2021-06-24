@@ -122,18 +122,6 @@ class PlotController:
         """
         self.update_data_lock = False
 
-    def home_view(self, button=None):
-        self.view.home_view()
-
-    def pan_view(self, button=None):
-        self.view.pan_view()
-
-    def zoom_view(self, button=None):
-        self.view.zoom_view()
-
-    def save_view(self, button=None):
-        self.view.save_view()
-
     def find_vmin_vmax(self, button=None):
         """
         Find sensible min and max values for the data.

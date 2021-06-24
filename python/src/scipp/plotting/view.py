@@ -125,18 +125,6 @@ class PlotView:
                 self._pick_lock = True
                 self.controller.pick(index=result)
 
-    def home_view(self):
-        self.figure.home_view()
-
-    def pan_view(self, *args, **kwargs):
-        self.figure.pan_view(*args, **kwargs)
-
-    def zoom_view(self, *args, **kwargs):
-        self.figure.zoom_view(*args, **kwargs)
-
-    def save_view(self, *args, **kwargs):
-        self.figure.save_view(*args, **kwargs)
-
     def rescale_to_data(self, vmin, vmax):
         """
         Forward rescaling to the `figure`.
