@@ -23,11 +23,11 @@ Bugfixes
 Contributors
 ~~~~~~~~~~~~
 
-Owen Arnold,
-Simon Heybrock,
-Greg Tucker,
-Neil Vaytet,
-and Jan-Lukas Wynen
+Owen Arnold<sup>b, c</sup>,
+Simon Heybrock<sup>a</sup>,
+Greg Tucker<sup>a</sup>,
+Neil Vaytet<sup>a</sup>,
+and Jan-Lukas Wynen<sup>a</sup>
 
 v0.7.0 (June 2021)
 ------------------
@@ -73,11 +73,11 @@ Breaking changes
 Contributors
 ~~~~~~~~~~~~
 
-Owen Arnold,
-Simon Heybrock,
-Matthew D. Jones,
-Neil Vaytet,
-and Jan-Lukas Wynen
+Owen Arnold<sup>b, c</sup>,
+Simon Heybrock<sup>a</sup>,
+Matthew D. Jones<sup>b, c</sup>,
+Neil Vaytet<sup>a</sup>,
+and Jan-Lukas Wynen<sup>a</sup>
 
 v0.6.1 (April 2021)
 -------------------
@@ -322,3 +322,9 @@ Limitations:
 * Limited performance and no parallelization.
 * Numerous "edge cases" not supported yet.
 * While tested, probably far from bug-free.
+
+Contributing Organizations
+--------------------------
+* <sup>a</sup> `European Spallation Source ERIC <https://europeanspallationsource.se/>`_ Sweden
+* <sup>b</sup> `Science and Technology Facilities Council <https://www.ukri.org/councils/stfc/>`_ UK
+* <sup>c</sup> `Tessella <https://www.tessella.com/>`_ UK
