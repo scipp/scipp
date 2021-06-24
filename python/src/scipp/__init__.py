@@ -36,8 +36,7 @@ from ._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
 from ._scipp.core import units, dtype, buckets
 from . import geometry
 # Import functions
-from ._scipp.core import choose, divide, floor_divide, logical_and, \
-                         logical_or, logical_xor, minus, mod, plus, times
+from ._scipp.core import choose, logical_and, logical_or, logical_xor
 # Import python functions
 from .show import show, make_svg
 from .table import table
@@ -50,6 +49,7 @@ from .compat.dict import to_dict, from_dict
 from .sizes import _make_sizes
 
 # Wrappers for free functions from _scipp.core
+from ._arithmetic import *
 from ._bins import *
 from ._counts import *
 from ._comparison import *

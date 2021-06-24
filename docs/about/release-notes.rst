@@ -17,6 +17,10 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+.. include:: <isonum.txt>
+
+* Changes names of arithmetic functions to match numpy's names: ``plus`` |rarr| :func:`scipp.add`, ``minus`` |rarr| :func:`scipp.subtract`, ``times`` |rarr| :func:`scipp.multiply` `#1999 <https://github.com/scipp/scipp/pull/1999>`_.
+
 Bugfixes
 ~~~~~~~~
 

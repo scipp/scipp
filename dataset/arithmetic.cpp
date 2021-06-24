@@ -125,15 +125,15 @@ auto apply_with_broadcast(const Op &op, const Variable &a, const B &b) {
 } // namespace
 
 Dataset &Dataset::operator+=(const DataArray &other) {
-  return apply_with_delay(core::element::plus_equals, *this, other);
+  return apply_with_delay(core::element::add_equals, *this, other);
 }
 
 Dataset &Dataset::operator-=(const DataArray &other) {
-  return apply_with_delay(core::element::minus_equals, *this, other);
+  return apply_with_delay(core::element::subtract_equals, *this, other);
 }
 
 Dataset &Dataset::operator*=(const DataArray &other) {
-  return apply_with_delay(core::element::times_equals, *this, other);
+  return apply_with_delay(core::element::multiply_equals, *this, other);
 }
 
 Dataset &Dataset::operator/=(const DataArray &other) {
@@ -141,15 +141,15 @@ Dataset &Dataset::operator/=(const DataArray &other) {
 }
 
 Dataset &Dataset::operator+=(const Variable &other) {
-  return apply_with_delay(core::element::plus_equals, *this, other);
+  return apply_with_delay(core::element::add_equals, *this, other);
 }
 
 Dataset &Dataset::operator-=(const Variable &other) {
-  return apply_with_delay(core::element::minus_equals, *this, other);
+  return apply_with_delay(core::element::subtract_equals, *this, other);
 }
 
 Dataset &Dataset::operator*=(const Variable &other) {
-  return apply_with_delay(core::element::times_equals, *this, other);
+  return apply_with_delay(core::element::multiply_equals, *this, other);
 }
 
 Dataset &Dataset::operator/=(const Variable &other) {
@@ -157,15 +157,15 @@ Dataset &Dataset::operator/=(const Variable &other) {
 }
 
 Dataset &Dataset::operator+=(const Dataset &other) {
-  return apply(core::element::plus_equals, *this, other);
+  return apply(core::element::add_equals, *this, other);
 }
 
 Dataset &Dataset::operator-=(const Dataset &other) {
-  return apply(core::element::minus_equals, *this, other);
+  return apply(core::element::subtract_equals, *this, other);
 }
 
 Dataset &Dataset::operator*=(const Dataset &other) {
-  return apply(core::element::times_equals, *this, other);
+  return apply(core::element::multiply_equals, *this, other);
 }
 
 Dataset &Dataset::operator/=(const Dataset &other) {
@@ -173,63 +173,63 @@ Dataset &Dataset::operator/=(const Dataset &other) {
 }
 
 Dataset operator+(const Dataset &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(core::element::plus, lhs, rhs);
+  return apply_with_broadcast(core::element::add, lhs, rhs);
 }
 
 Dataset operator+(const Dataset &lhs, const DataArray &rhs) {
-  return apply_with_broadcast(core::element::plus, lhs, rhs);
+  return apply_with_broadcast(core::element::add, lhs, rhs);
 }
 
 Dataset operator+(const DataArray &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(core::element::plus, lhs, rhs);
+  return apply_with_broadcast(core::element::add, lhs, rhs);
 }
 
 Dataset operator+(const Dataset &lhs, const Variable &rhs) {
-  return apply_with_broadcast(core::element::plus, lhs, rhs);
+  return apply_with_broadcast(core::element::add, lhs, rhs);
 }
 
 Dataset operator+(const Variable &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(core::element::plus, lhs, rhs);
+  return apply_with_broadcast(core::element::add, lhs, rhs);
 }
 
 Dataset operator-(const Dataset &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(core::element::minus, lhs, rhs);
+  return apply_with_broadcast(core::element::subtract, lhs, rhs);
 }
 
 Dataset operator-(const Dataset &lhs, const DataArray &rhs) {
-  return apply_with_broadcast(core::element::minus, lhs, rhs);
+  return apply_with_broadcast(core::element::subtract, lhs, rhs);
 }
 
 Dataset operator-(const DataArray &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(core::element::minus, lhs, rhs);
+  return apply_with_broadcast(core::element::subtract, lhs, rhs);
 }
 
 Dataset operator-(const Dataset &lhs, const Variable &rhs) {
-  return apply_with_broadcast(core::element::minus, lhs, rhs);
+  return apply_with_broadcast(core::element::subtract, lhs, rhs);
 }
 
 Dataset operator-(const Variable &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(core::element::minus, lhs, rhs);
+  return apply_with_broadcast(core::element::subtract, lhs, rhs);
 }
 
 Dataset operator*(const Dataset &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(core::element::times, lhs, rhs);
+  return apply_with_broadcast(core::element::multiply, lhs, rhs);
 }
 
 Dataset operator*(const Dataset &lhs, const DataArray &rhs) {
-  return apply_with_broadcast(core::element::times, lhs, rhs);
+  return apply_with_broadcast(core::element::multiply, lhs, rhs);
 }
 
 Dataset operator*(const DataArray &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(core::element::times, lhs, rhs);
+  return apply_with_broadcast(core::element::multiply, lhs, rhs);
 }
 
 Dataset operator*(const Dataset &lhs, const Variable &rhs) {
-  return apply_with_broadcast(core::element::times, lhs, rhs);
+  return apply_with_broadcast(core::element::multiply, lhs, rhs);
 }
 
 Dataset operator*(const Variable &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(core::element::times, lhs, rhs);
+  return apply_with_broadcast(core::element::multiply, lhs, rhs);
 }
 
 Dataset operator/(const Dataset &lhs, const Dataset &rhs) {
