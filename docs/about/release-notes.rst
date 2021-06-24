@@ -17,6 +17,8 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* Changes names of arithmetic functions to match numpy's names: ``add``, ``subtract``, ``multiply`` `#1999 <https://github.com/scipp/scipp/pull/1999>`_.
+
 Bugfixes
 ~~~~~~~~
 
