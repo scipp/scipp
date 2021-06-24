@@ -36,7 +36,8 @@ struct SCIPP_CORE_EXPORT TypeError : public Error<core::DType> {
 
 template <>
 [[noreturn]] SCIPP_CORE_EXPORT void
-throw_mismatch_error(const core::DType &expected, const core::DType &actual);
+throw_mismatch_error(const core::DType &expected, const core::DType &actual,
+                     const std::string &optional_message);
 
 struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
   explicit DimensionError(const std::string &msg);
@@ -45,12 +46,14 @@ struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
 
 template <>
 [[noreturn]] SCIPP_CORE_EXPORT void
-throw_mismatch_error(const core::Sizes &expected, const core::Sizes &actual);
+throw_mismatch_error(const core::Sizes &expected, const core::Sizes &actual,
+                     const std::string &optional_message);
 
 template <>
 [[noreturn]] SCIPP_CORE_EXPORT void
 throw_mismatch_error(const core::Dimensions &expected,
-                     const core::Dimensions &actual);
+                     const core::Dimensions &actual,
+                     const std::string &optional_message);
 
 [[noreturn]] SCIPP_CORE_EXPORT void
 throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
@@ -101,9 +104,10 @@ template <class A, class B> void includes(const A &a, const B &b) {
 } // namespace scipp::expect
 
 namespace scipp::core::expect {
-template <class A, class B> void equals(const A &a, const B &b) {
+template <class A, class B>
+void equals(const A &a, const B &b, std::string optional_message = "") {
   if (a != b)
-    scipp::except::throw_mismatch_error(a, b);
+    scipp::except::throw_mismatch_error(a, b, optional_message);
 }
 
 template <class A, class B>
@@ -123,8 +127,10 @@ void sizeMatches(const T &range, const Ts &... other) {
 
 inline auto to_string(const std::string &s) { return s; }
 
-template <class T> void unit(const T &object, const units::Unit &unit) {
-  expect::equals(object.unit(), unit);
+template <class T>
+void unit(const T &object, const units::Unit &unit,
+          std::string optional_message = "") {
+  expect::equals(object.unit(), unit, optional_message);
 }
 
 template <class T>

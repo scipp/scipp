@@ -106,8 +106,7 @@ void bind_structured_creation(py::module &m, const std::string &name) {
             Dimensions(labels,
                        std::vector<scipp::index>(
                            values.shape(), values.shape() + labels.size())),
-            unit,
-            element_array<Elem>(values.size(), core::default_init_elements));
+            unit, element_array<Elem>(values.size(), core::init_for_overwrite));
         auto elems = var.template elements<T>();
         if constexpr (sizeof...(N) != 1)
           elems = fold(elems, Dim::InternalStructureComponent,
