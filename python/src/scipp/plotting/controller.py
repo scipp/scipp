@@ -225,7 +225,7 @@ class PlotController:
         if normalize:
             self.rescale_to_data()
 
-    def update_data(self, change=None):
+    def update_data(self, limits=None):
         """
         This function is called when the data in the displayed 1D plot or 2D
         image is to be updated. This happens for instance when we move a slider
@@ -236,7 +236,10 @@ class PlotController:
         if self.update_data_lock:
             return
 
-        slices = self.widgets.get_slider_bounds()
+        if limits is None:
+            slices = self.widgets.get_slider_bounds()
+        else:
+            slices = limits
         new_values = self.model.update_data(slices)
         self.widgets.update_slider_readout(new_values.meta)
 

@@ -115,7 +115,7 @@ class PlotView2d(PlotView):
                 low, high = xylims[ax]
                 unit = self._data.coords[dim].unit
                 limits[dim] = [low * unit, high * unit]
-            self.controller.update_viewport(limits)
+            self.controller.update_data(limits=limits)
 
         # If we are zooming, rescale to data?
         if self.figure.rescale_on_zoom():

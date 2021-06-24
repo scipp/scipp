@@ -57,14 +57,5 @@ class PlotModel2d(PlotModel):
             self._model.bounds[dim] = bounds
         return self._update_image()
 
-    def update_viewport(self, limits):
-        """
-        When an update to the viewport is requested on a zoom event, set new
-        rebin edges and call for a resample of the image.
-        """
-        for dim, lims in limits.items():
-            self._model.bounds[dim] = (lims[0], lims[1])
-        return self._update_image()
-
     def reset_resampling_model(self):
         self._model.reset()
