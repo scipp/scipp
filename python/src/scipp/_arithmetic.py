@@ -21,6 +21,9 @@ def add(a: DataArrayLike, b: DataArrayLike) -> DataArrayLike:
     :param a: First summand.
     :param b: Second summand.
     :return: Sum of ``a`` and ``b``.
+
+    See the guide on `computation <../user-guide/computation.rst>`_ for
+    general concepts and broadcasting behavior.
     """
     return _call_cpp_func(_cpp.add, a, b)
 
@@ -49,6 +52,9 @@ def divide(dividend: DataArrayLike, divisor: DataArrayLike) -> DataArrayLike:
 
     >>> (sc.arange('x', -2.0, 3.0) / sc.scalar(2.0)).values
     array([-1. , -0.5,  0. ,  0.5,  1. ])
+
+    See the guide on `computation <../user-guide/computation.rst>`_ for
+    general concepts and broadcasting behavior.
     """
     return _call_cpp_func(_cpp.divide, dividend, divisor)
 
@@ -77,6 +83,9 @@ def floor_divide(dividend: DataArrayLike,
 
     >>> (sc.arange('x', -2.0, 3.0) // sc.scalar(2.0)).values
     array([-1., -1.,  0.,  0.,  1.])
+
+    See the guide on `computation <../user-guide/computation.rst>`_ for
+    general concepts and broadcasting behavior.
     """
     return _call_cpp_func(_cpp.floor_divide, dividend, divisor)
 
@@ -118,6 +127,9 @@ def mod(dividend: DataArrayLike, divisor: DataArrayLike) -> DataArrayLike:
 
     >>> (sc.arange('x', -3, 5) % sc.scalar(3)).values
     array([0, 1, 2, 0, 1, 2, 0, 1])
+
+    See the guide on `computation <../user-guide/computation.rst>`_ for
+    general concepts and broadcasting behavior.
     """
     return _call_cpp_func(_cpp.mod, dividend, divisor)
 
@@ -137,6 +149,9 @@ def multiply(a: DataArrayLike, b: DataArrayLike) -> DataArrayLike:
     :param a: Left factor
     :param b: Right factor.
     :return: Product of ``a`` and ``b``.
+
+    See the guide on `computation <../user-guide/computation.rst>`_ for
+    general concepts and broadcasting behavior.
     """
     return _call_cpp_func(_cpp.multiply, a, b)
 
@@ -154,5 +169,8 @@ def subtract(minuend: DataArrayLike,
     :param minuend: Minuend.
     :param subtrahend: Subtrahend.
     :return: ``subtrahend`` subtracted from ``minuend``.
+
+    See the guide on `computation <../user-guide/computation.rst>`_ for
+    general concepts and broadcasting behavior.
     """
     return _call_cpp_func(_cpp.subtract, minuend, subtrahend)
