@@ -23,11 +23,11 @@ Bugfixes
 Contributors
 ~~~~~~~~~~~~
 
-Owen Arnold<sup>b, c</sup>,
-Simon Heybrock<sup>a</sup>,
-Greg Tucker<sup>a</sup>,
-Neil Vaytet<sup>a</sup>,
-and Jan-Lukas Wynen<sup>a</sup>
+Owen Arnold :sup:`b, c`\ ,
+Simon Heybrock :sup:`a`\ ,
+Greg Tucker :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas :sup:`a`\ 
 
 v0.7.0 (June 2021)
 ------------------
@@ -73,11 +73,11 @@ Breaking changes
 Contributors
 ~~~~~~~~~~~~
 
-Owen Arnold<sup>b, c</sup>,
-Simon Heybrock<sup>a</sup>,
-Matthew D. Jones<sup>b, c</sup>,
-Neil Vaytet<sup>a</sup>,
-and Jan-Lukas Wynen<sup>a</sup>
+Owen Arnold :sup:`b, c`\, 
+Simon Heybrock :sup:`a`\,
+Matthew D. Jones :sup:`b, c`\,
+Neil Vaytet :sup:`a`\,
+and Jan-Lukas Wynen :sup:`a`\
 
 v0.6.1 (April 2021)
 -------------------
@@ -325,6 +325,6 @@ Limitations:
 
 Contributing Organizations
 --------------------------
-* <sup>a</sup> `European Spallation Source ERIC <https://europeanspallationsource.se/>`_ Sweden
-* <sup>b</sup> `Science and Technology Facilities Council <https://www.ukri.org/councils/stfc/>`_ UK
-* <sup>c</sup> `Tessella <https://www.tessella.com/>`_ UK
+* :sup:`a`\  `European Spallation Source ERIC <https://europeanspallationsource.se/>`_, Sweden
+* :sup:`b`\  `Science and Technology Facilities Council <https://www.ukri.org/councils/stfc/>`_, UK
+* :sup:`c`\  `Tessella <https://www.tessella.com/>`_, UK
