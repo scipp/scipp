@@ -46,15 +46,12 @@ add_executable(
   test_data_arrays.cpp
   sum_test.cpp
 )
-include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(
   ${TARGET_NAME}
   LINK_PRIVATE
   scipp-dataset
-  gtest_main
   scipp_test_helpers
-  ${GTEST_LIBRARIES}
-  ${GMOCK_LIBRARIES}
+  CONAN_PKG::gtest
 )
 
 if(WIN32)

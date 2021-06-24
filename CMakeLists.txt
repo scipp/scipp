@@ -57,16 +57,33 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
+# Conan dependencies
+include(conan)
+set(DYNAMIC_LIB_TRUE_FALSE "False")
+if(${DYNAMIC_LIB})
+  set(DYNAMIC_LIB_TRUE_FALSE "True")
+endif()
+
+# Detect compiler, build type etc from cmake settings
+conan_cmake_autodetect(conan_settings)
+conan_cmake_run(REQUIRES eigen/3.3.9
+                         gtest/1.11.0
+                         benchmark/1.5.3
+        OPTIONS gtest:shared=${DYNAMIC_LIB_TRUE_FALSE}
+                benchmark:shared=${DYNAMIC_LIB_TRUE_FALSE}
+        SETTINGS ${conan_settings}
+        BASIC_SETUP CMAKE_TARGETS
+        BUILD outdated
+        KEEP_RPATHS)
+
 find_package(Sanitizers REQUIRED)
 
 # MP : Parallel compile, add before any targets so all use it
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-MP>)
 
-include(GTest)
+include(GoogleTest)
 include(LLNL-units)
-include(Eigen)
 include(pybind11)
-include(GoogleBenchmark)
 include(GenerateExportHeader)
 find_package(Boost 1.67 REQUIRED)
 
@@ -100,12 +117,12 @@ else()
   )
 endif()
 
-if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.5")
-  message(
-    FATAL_ERROR
-      "Python v3 interpreter must be greater than or equal to 3.5. Found ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}"
-  )
-endif()
+#if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.5")
+#  message(
+#    FATAL_ERROR
+#      "Python v3 interpreter must be greater than or equal to 3.5. Found ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}"
+#  )
+#endif()
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)
 option(DYNAMIC_LIB "Build shared libraries" ON)

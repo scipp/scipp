@@ -10,9 +10,7 @@ target_link_libraries(
   LINK_PRIVATE
   scipp-units
   scipp_test_helpers
-  gtest_main
-  ${GTEST_LIBRARIES}
-  ${GMOCK_LIBRARIES}
+  CONAN_PKG::gtest
 )
 set_property(
   TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION

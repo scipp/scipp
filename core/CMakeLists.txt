@@ -58,7 +58,7 @@ endif(DYNAMIC_LIB)
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
 target_link_libraries(
-  ${TARGET_NAME} PUBLIC scipp-common scipp-units Boost::boost
+  ${TARGET_NAME} PUBLIC scipp-common scipp-units Boost::boost CONAN_PKG::eigen
 )
 if(TBB_FOUND AND NOT DISABLE_MULTI_THREADING)
   target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
@@ -72,9 +72,9 @@ target_include_directories(
          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
-target_include_directories(
-  ${TARGET_NAME} SYSTEM PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/Eigen-src>
-)
+#target_include_directories(
+#  ${TARGET_NAME} SYSTEM PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/Eigen-src>
+#)
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 set_target_properties(${TARGET_NAME} PROPERTIES EXPORT_NAME core)
@@ -91,8 +91,8 @@ add_subdirectory(test)
 
 scipp_install_component(TARGET ${TARGET_NAME} INSTALL_GENERATED)
 
-if(DYNAMIC_LIB)
-  install(DIRECTORY ${PROJECT_BINARY_DIR}/Eigen-src/Eigen
-          DESTINATION ${INCLUDEDIR}
-  )
-endif(DYNAMIC_LIB)
+#if(DYNAMIC_LIB)
+#  install(DIRECTORY ${PROJECT_BINARY_DIR}/Eigen-src/Eigen
+#          DESTINATION ${INCLUDEDIR}
+#  )
+#endif(DYNAMIC_LIB)

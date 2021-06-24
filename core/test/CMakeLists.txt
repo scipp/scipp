@@ -32,15 +32,12 @@ add_executable(
   view_index_test.cpp
   transform_common_test.cpp
 )
-include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(
   ${TARGET_NAME}
   LINK_PRIVATE
   scipp-core
-  gtest_main
   scipp_test_helpers
-  ${GTEST_LIBRARIES}
-  ${GMOCK_LIBRARIES}
+  CONAN_PKG::gtest
 )
 
 if(WIN32)
