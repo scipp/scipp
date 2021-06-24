@@ -12,6 +12,7 @@ dependencies:
   - boost-cpp=1.75 # see https://github.com/scipp/scipp/issues/1888
   - ninja
   - tbb-devel
+  - conan
 
   # Run
   - appdirs
