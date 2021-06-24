@@ -74,6 +74,22 @@ def make_errorbar_params(arrays, errorbars):
     return params
 
 
+def make_profile(ax, errorbars, mask_color):
+    from .profile import PlotProfile
+    pad = config.plot.padding.copy()
+    pad[2] = 0.77
+    return PlotProfile(errorbars=errorbars,
+                       ax=ax,
+                       mask_color=mask_color,
+                       figsize=(1.3 * config.plot.width / config.plot.dpi,
+                                0.6 * config.plot.height / config.plot.dpi),
+                       padding=pad,
+                       legend={
+                           "show": True,
+                           "loc": (1.02, 0.0)
+                       })
+
+
 class DataArrayDict(dict):
     """
     Dict of data arrays with matching dimension labels and units. Shape and
@@ -371,19 +387,3 @@ class Plot:
                           view=self.view,
                           panel=self.panel,
                           profile=self.profile)
-
-    def _make_profile(self, ax, errorbars, params):
-        from .profile import PlotProfile
-        pad = config.plot.padding.copy()
-        pad[2] = 0.77
-        return PlotProfile(
-            errorbars=errorbars,
-            ax=ax,
-            mask_color=params['masks']['color'],
-            figsize=(1.3 * config.plot.width / config.plot.dpi,
-                     0.6 * config.plot.height / config.plot.dpi),
-            padding=pad,
-            legend={
-                "show": True,
-                "loc": (1.02, 0.0)
-            })

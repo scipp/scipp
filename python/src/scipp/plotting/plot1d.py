@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .objects import Plot, make_params, make_errorbar_params
+from .objects import Plot, make_params, make_errorbar_params, make_profile
 from .panel1d import PlotPanel1d
 from .view1d import PlotView1d
 from .figure1d import PlotFigure1d
@@ -69,9 +69,9 @@ def plot1d(scipp_obj_dict,
 
     # Profile view which displays an additional dimension as a 1d plot
     if len(sp.dims) > 1:
-        sp.profile = sp._make_profile(ax=pax,
-                                      errorbars=errorbars,
-                                      params=params)
+        sp.profile = make_profile(ax=pax,
+                                  errorbars=errorbars,
+                                  mask_color=params['masks']['color'])
         # An additional panel view with widgets to save/remove lines
         sp.panel = PlotPanel1d(data_names=list(scipp_obj_dict.keys()))
 

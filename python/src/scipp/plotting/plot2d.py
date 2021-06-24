@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .objects import Plot, make_params, make_errorbar_params
+from .objects import Plot, make_params, make_errorbar_params, make_profile
 from .view2d import PlotView2d
 from .figure2d import PlotFigure2d
 
@@ -66,9 +66,9 @@ def plot2d(scipp_obj_dict,
 
     # Profile view which displays an additional dimension as a 1d plot
     if len(sp.dims) > 2:
-        sp.profile = sp._make_profile(ax=pax,
-                                      errorbars=errorbars,
-                                      params=params)
+        sp.profile = make_profile(ax=pax,
+                                  errorbars=errorbars,
+                                  mask_color=params['masks']['color'])
 
     sp.controller = sp._make_controller(norm=norm,
                                         scale=scale,
