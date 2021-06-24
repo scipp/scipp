@@ -94,11 +94,10 @@ def test_create_mutually_exclusive_arguments():
         sc.Variable(dims=(), variances=[1, 2], with_variance=False)
     with pytest.raises(ValueError):
         sc.Variable(dims=(), variances=[1, 2], with_variance=True)
-    # TODO enable
-    # with pytest.raises(ValueError):
-    #     sc.Variable(dims=['x'], shape=[2], values=[1, 2])
-    # with pytest.raises(ValueError):
-    #     sc.Variable(dims=['x'], shape=[2], variances=[1, 2])
+    with pytest.raises(ValueError):
+        sc.Variable(dims=['x'], shape=[2], values=[1, 2])
+    with pytest.raises(ValueError):
+        sc.Variable(dims=['x'], shape=[2], variances=[1, 2])
 
 
 @pytest.mark.parametrize("value", [

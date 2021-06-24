@@ -67,11 +67,17 @@ Dimensions build_dimensions(const py::object &labels, const py::object &shape) {
   }
 }
 
-void ensure_consistent_ndim(const std::vector<Dim> &dim_labels,
-                            const py::object &shape,
-                            const std::optional<py::array> &values,
-                            const std::optional<py::array> &variances) {
+scipp::index get_ndim(const std::vector<Dim> &dim_labels,
+                      const py::object &shape,
+                      const std::optional<py::array> &values,
+                      const std::optional<py::array> &variances) {
   const auto ndim = scipp::size(dim_labels);
+  if (!shape.is_none() && scipp::index(py::len(shape)) != ndim) {
+    throw except::DimensionError(
+        format("The number of dimensions in 'shape' (", py::len(shape),
+               ") does not match the number of dimension labels (", ndim, ")"));
+  }
+
   const auto check_ndim = [&ndim](const std::optional<py::array> &array,
                                   const char *name) {
     if (array.has_value() && array->ndim() != ndim) {
@@ -82,19 +88,15 @@ void ensure_consistent_ndim(const std::vector<Dim> &dim_labels,
   };
   check_ndim(values, "values");
   check_ndim(variances, "variances");
-  if (!shape.is_none() && scipp::index(py::len(shape)) != ndim) {
-    throw except::DimensionError(
-        format("The number of dimensions in 'shape' (", py::len(shape),
-               ") does not match the number of dimension labels (", ndim, ")"));
-  }
+
+  return ndim;
 }
 
 Dimensions build_dimensions(const std::vector<Dim> &dim_labels,
                             const py::object &shape,
                             const std::optional<py::array> &values,
                             const std::optional<py::array> &variances) {
-  ensure_consistent_ndim(dim_labels, shape, values, variances);
-  const auto ndim = scipp::size(dim_labels);
+  const auto ndim = get_ndim(dim_labels, shape, values, variances);
 
   // We cannot easily index into shape. Store it to compare to the data later.
   const bool got_shape = !shape.is_none();
@@ -275,11 +277,18 @@ Variable make_variable_array(const py::object &dim_labels,
                                                      with_variance);
 }
 
-void ensure_consistent_variance_args(const py::object &variances,
-                                     const std::optional<bool> with_variance) {
-  if (with_variance.has_value() && !variances.is_none()) {
-    throw std::invalid_argument(
-        "Arguments 'variances' and 'with_variance' are mutually exclusive.");
+bool is_arg_present(const py::object &arg) { return !arg.is_none(); }
+
+template <class T> bool is_arg_present(const std::optional<T> &arg) {
+  return arg.has_value();
+}
+
+template <class A, class B>
+void ensure_mutual_exclusivity(const A &a, const std::string_view a_name,
+                               const B &b, const std::string_view b_name) {
+  if (is_arg_present(a) && is_arg_present(b)) {
+    throw std::invalid_argument(format("Passed mutually exclusive arguments '",
+                                       a_name, "' and '", b_name, "'."));
   }
 }
 
@@ -298,13 +307,21 @@ ConstructorType identify_constructor(const py::object &dim_labels,
 }
 } // namespace
 
+/*
+ * It is the init method's responsibility to check that the combination
+ * of arguments is valid. Functions down the line do not check again.
+ */
 void bind_init(py::class_<Variable> &cls) {
   cls.def(py::init([](const py::object &dim_labels, const py::object &shape,
                       const py::object &values, const py::object &variances,
                       const std::optional<bool> with_variance,
                       const std::optional<units::Unit> unit,
                       const py::object &dtype) {
-            ensure_consistent_variance_args(variances, with_variance);
+            ensure_mutual_exclusivity(variances, "variances", with_variance,
+                                      "with_variance");
+            ensure_mutual_exclusivity(shape, "shape", values, "values");
+            ensure_mutual_exclusivity(shape, "shape", variances, "variances");
+
             const auto [scipp_dtype, actual_unit] =
                 cast_dtype_and_unit(dtype, unit);
 
