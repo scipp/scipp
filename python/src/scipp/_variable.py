@@ -282,7 +282,7 @@ def vectors(*,
 
 
 def array(*,
-          dims: _Iterable[str],
+          dims: _Iterable,
           values: _ArrayLike,
           variances: _Optional[_ArrayLike] = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
