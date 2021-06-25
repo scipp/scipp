@@ -116,12 +116,16 @@ Dimensions build_dimensions(const py::object &dim_labels,
           py::iter(dim_labels),
           scipp::span{values->shape(), static_cast<size_t>(values->ndim())},
           "values");
-    } else {
+    } else if (variances.has_value()) {
       return detail::build_dimensions(
           py::iter(dim_labels),
           scipp::span{variances->shape(),
                       static_cast<size_t>(variances->ndim())},
           "variances");
+    } else {
+      throw std::invalid_argument(
+          "Missing shape information to construct Variable. "
+          "Use either the 'shape' argument or 'values' and / or 'variances'.");
     }
   }
 }
