@@ -47,6 +47,13 @@ cast_dtype_and_unit(const py::object &dtype,
   }
 }
 
+bool is_empty(const py::object &sequence) {
+  if (py::isinstance<py::buffer>(sequence)) {
+    return sequence.attr("ndim").cast<scipp::index>() == 0;
+  }
+  return py::bool_{sequence};
+}
+
 void ensure_same_shape(const std::optional<py::array> &values,
                        const std::optional<py::array> &variances) {
   if (!values.has_value() || !variances.has_value()) {
@@ -123,9 +130,13 @@ Dimensions build_dimensions(const py::object &dim_labels,
                       static_cast<size_t>(variances->ndim())},
           "variances");
     } else {
-      throw std::invalid_argument(
-          "Missing shape information to construct Variable. "
-          "Use either the 'shape' argument or 'values' and / or 'variances'.");
+      if (is_empty(dim_labels)) {
+        throw std::invalid_argument(
+            "Missing shape information to construct Variable. "
+            "Use either the 'shape' argument or 'values' and / or "
+            "'variances'.");
+      }
+      return Dimensions{};
     }
   }
 }
@@ -174,35 +185,6 @@ python::PyObject extract_scalar<python::PyObject>(const py::object &obj,
   return obj;
 }
 
-template <class T> struct MakeVariableDefaultInit {
-  static Variable apply(const Dimensions &dims, const units::Unit unit,
-                        const std::optional<bool> with_variance) {
-    auto var = with_variance.value_or(false)
-                   ? makeVariable<T>(Dimensions{dims}, Values{}, Variances{})
-                   : makeVariable<T>(Dimensions{dims});
-    var.setUnit(unit);
-    return var;
-  }
-};
-
-Variable make_variable_default_init(const py::object &dim_labels,
-                                    const py::object &shape,
-                                    const units::Unit unit, DType dtype,
-                                    const std::optional<bool> with_variance) {
-  const auto dims =
-      build_dimensions(dim_labels, shape, std::nullopt, std::nullopt);
-  if (dtype == core::dtype<void>) {
-    // When there is no way to deduce the dtype, default to double.
-    dtype = core::dtype<double>;
-  }
-  return core::CallDType<
-      double, float, int64_t, int32_t, bool, scipp::core::time_point,
-      std::string, Variable, DataArray, Dataset, Eigen::Vector3d,
-      Eigen::Matrix3d,
-      python::PyObject>::apply<MakeVariableDefaultInit>(dtype, dims, unit,
-                                                        with_variance);
-}
-
 template <class T>
 auto make_element_array(const Dimensions &dims, const py::object &source,
                         const units::Unit unit) {
@@ -241,15 +223,19 @@ template <class T> struct MakeVariableWithData {
   }
 };
 
-Variable make_variable_scalar(const py::object &value,
+Variable make_variable_scalar(const py::object &dim_labels,
+                              const py::object &shape, const py::object &value,
                               const py::object &variance,
                               const units::Unit unit, DType dtype,
                               const std::optional<bool> with_variance) {
   dtype = common_dtype(value, variance, dtype, false);
+  const auto dims =
+      build_dimensions(dim_labels, shape, std::nullopt, std::nullopt);
   return core::CallDType<
       double, float, int64_t, int32_t, bool, scipp::core::time_point,
-      std::string, Variable, DataArray, Dataset,
-      python::PyObject>::apply<MakeVariableWithData>(dtype, Dimensions{}, value,
+      std::string, Variable, DataArray, Dataset, Eigen::Vector3d,
+      Eigen::Matrix3d,
+      python::PyObject>::apply<MakeVariableWithData>(dtype, dims, value,
                                                      variance, unit,
                                                      with_variance);
 }
@@ -272,7 +258,8 @@ Variable make_variable_array(const py::object &dim_labels,
       build_dimensions(dim_labels, shape, values_array, variances_array);
   return core::CallDType<
       double, float, int64_t, int32_t, bool, scipp::core::time_point,
-      std::string,
+      std::string, Variable, DataArray, Dataset, Eigen::Vector3d,
+      Eigen::Matrix3d,
       python::PyObject>::apply<MakeVariableWithData>(dtype, dims, values,
                                                      variances, unit,
                                                      with_variance);
@@ -293,14 +280,10 @@ void ensure_mutual_exclusivity(const A &a, const std::string_view a_name,
   }
 }
 
-enum class ConstructorType { Array, Scalar, Default };
+enum class ConstructorType { Array, Scalar };
 
-ConstructorType identify_constructor(const py::object &dim_labels,
-                                     const py::object &values,
-                                     const py::object &variances) {
-  if (values.is_none() && variances.is_none()) {
-    return ConstructorType::Default;
-  } else if (py::bool_{dim_labels}) {
+ConstructorType identify_constructor(const py::object &dim_labels) {
+  if (is_empty(dim_labels)) {
     return ConstructorType::Array;
   } else {
     return ConstructorType::Scalar;
@@ -313,40 +296,37 @@ ConstructorType identify_constructor(const py::object &dim_labels,
  * of arguments is valid. Functions down the line do not check again.
  */
 void bind_init(py::class_<Variable> &cls) {
-  cls.def(py::init([](const py::object &dim_labels, const py::object &shape,
-                      const py::object &values, const py::object &variances,
-                      const std::optional<bool> with_variance,
-                      const std::optional<units::Unit> unit,
-                      const py::object &dtype) {
-            ensure_mutual_exclusivity(variances, "variances", with_variance,
-                                      "with_variance");
-            ensure_mutual_exclusivity(shape, "shape", values, "values");
-            ensure_mutual_exclusivity(shape, "shape", variances, "variances");
+  cls.def(
+      py::init([](const py::object &dim_labels, const py::object &shape,
+                  const py::object &values, const py::object &variances,
+                  const std::optional<bool> with_variance,
+                  const std::optional<units::Unit> unit,
+                  const py::object &dtype) {
+        ensure_mutual_exclusivity(variances, "variances", with_variance,
+                                  "with_variance");
+        ensure_mutual_exclusivity(shape, "shape", values, "values");
+        ensure_mutual_exclusivity(shape, "shape", variances, "variances");
 
-            const auto [scipp_dtype, actual_unit] =
-                cast_dtype_and_unit(dtype, unit);
+        const auto [scipp_dtype, actual_unit] =
+            cast_dtype_and_unit(dtype, unit);
 
-            switch (identify_constructor(dim_labels, values, variances)) {
-            case ConstructorType::Array:
-              return make_variable_array(dim_labels, shape, values, variances,
-                                         actual_unit, scipp_dtype,
-                                         with_variance);
-            case ConstructorType::Scalar:
-              return make_variable_scalar(values, variances, actual_unit,
-                                          scipp_dtype, with_variance);
-            case ConstructorType::Default:
-              return make_variable_default_init(dim_labels, shape, actual_unit,
-                                                scipp_dtype, with_variance);
-            }
-            // Unreachable but gcc complains about a missing return otherwise.
-            std::terminate();
-          }),
-          py::kw_only(), py::arg("dims"), py::arg("shape") = py::none(),
-          py::arg("values") = py::none(), py::arg("variances") = py::none(),
-          py::arg("with_variance") = std::nullopt,
-          py::arg("unit") = std::nullopt, py::arg("dtype") = py::none(),
-          // TODO fix docs
-          R"raw(
+        switch (identify_constructor(dim_labels)) {
+        case ConstructorType::Array:
+          return make_variable_array(dim_labels, shape, values, variances,
+                                     actual_unit, scipp_dtype, with_variance);
+        case ConstructorType::Scalar:
+          return make_variable_scalar(dim_labels, shape, values, variances,
+                                      actual_unit, scipp_dtype, with_variance);
+        }
+        // Unreachable but gcc complains about a missing return otherwise.
+        std::terminate();
+      }),
+      py::kw_only(), py::arg("dims"), py::arg("shape") = py::none(),
+      py::arg("values") = py::none(), py::arg("variances") = py::none(),
+      py::arg("with_variance") = std::nullopt, py::arg("unit") = std::nullopt,
+      py::arg("dtype") = py::none(),
+      // TODO fix docs
+      R"raw(
 Initialize a variable.
 
 Constructing variables can be tricky because there are many arguments, some of

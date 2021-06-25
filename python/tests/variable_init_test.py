@@ -274,9 +274,6 @@ def test_create_scalar_invalid_conversion_str(dtype):
         sc.Variable(dims=(), values='abc', dtype=dtype)
 
 
-# TODO sc.Variable(dims=[], values=[1, 2])
-
-
 def test_create_1d_size_4():
     var = sc.Variable(dims=['x'], values=np.arange(4.0), unit=sc.units.m)
     assert var.shape == [4]
@@ -411,7 +408,7 @@ def test_create_1D_vector_3_float64():
 
 
 def test_create_1d_bad_dims():
-    with pytest.raises(sc.DimensionError):
+    with pytest.raises(ValueError):
         sc.Variable(dims=['x', 'y'], values=[1, 2])
 
 

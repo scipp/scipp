@@ -127,15 +127,15 @@ void ensure_conversion_possible(const DType from, const DType to,
 }
 
 DType common_dtype(const py::object &values, const py::object &variances,
-                   const DType dtype, const bool plural) {
+                   const DType dtype, const bool plural,
+                   const DType default_dtype) {
   const DType values_dtype = dtype_of(values);
   const DType variances_dtype = dtype_of(variances);
   if (dtype == core::dtype<void>) {
     // Get dtype solely from data.
     if (values_dtype == core::dtype<void>) {
       if (variances_dtype == core::dtype<void>) {
-        // This would be an error by the caller of this function, not the user.
-        throw std::invalid_argument("Unable to deduce a dtype");
+        return default_dtype;
       }
       return variances_dtype;
     } else {
