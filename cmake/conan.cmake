@@ -1,3 +1,4 @@
+# cmake-format: off
 # The MIT License (MIT)
 
 # Copyright (c) 2018 JFrog
@@ -900,3 +901,4 @@ macro(conan_config_install)
         message(FATAL_ERROR "Conan config failed='${return_code}'")
     endif()
 endmacro()
+# cmake-format: on

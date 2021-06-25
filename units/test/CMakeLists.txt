@@ -6,11 +6,7 @@ set(TARGET_NAME "scipp-units-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(${TARGET_NAME} EXCLUDE_FROM_ALL dim_test.cpp unit_test.cpp)
 target_link_libraries(
-  ${TARGET_NAME}
-  LINK_PRIVATE
-  scipp-units
-  scipp_test_helpers
-  CONAN_PKG::gtest
+  ${TARGET_NAME} LINK_PRIVATE scipp-units scipp_test_helpers CONAN_PKG::gtest
 )
 set_property(
   TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION

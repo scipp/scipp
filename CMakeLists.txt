@@ -66,15 +66,19 @@ endif()
 
 # Detect compiler, build type etc from cmake settings
 conan_cmake_autodetect(conan_settings)
-conan_cmake_run(REQUIRES eigen/3.3.9
-                         gtest/1.11.0
-                         benchmark/1.5.3
-        OPTIONS gtest:shared=${DYNAMIC_LIB_TRUE_FALSE}
-                benchmark:shared=${DYNAMIC_LIB_TRUE_FALSE}
-        SETTINGS ${conan_settings}
-        BASIC_SETUP CMAKE_TARGETS
-        BUILD outdated
-        KEEP_RPATHS)
+# cmake-format: off
+conan_cmake_run(
+  REQUIRES eigen/3.3.9
+           gtest/1.11.0
+           benchmark/1.5.3
+  OPTIONS gtest:shared=${DYNAMIC_LIB_TRUE_FALSE}
+          benchmark:shared=${DYNAMIC_LIB_TRUE_FALSE}
+  SETTINGS ${conan_settings}
+  BASIC_SETUP
+  CMAKE_TARGETS
+  BUILD outdated
+  KEEP_RPATHS)
+# cmake-format: on
 
 find_package(Sanitizers REQUIRED)
 
@@ -117,12 +121,14 @@ else()
   )
 endif()
 
-#if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.5")
+# ~~~
+# if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.5")
 #  message(
 #    FATAL_ERROR
 #      "Python v3 interpreter must be greater than or equal to 3.5. Found ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}"
 #  )
-#endif()
+# endif()
+# ~~~
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)
 option(DYNAMIC_LIB "Build shared libraries" ON)
@@ -140,7 +146,8 @@ execute_process(
   COMMAND git describe --tag
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
   RESULT_VARIABLE HAVE_GIT_VERSION_INFO
-  OUTPUT_VARIABLE GIT_VERSION_INFO OUTPUT_STRIP_TRAILING_WHITESPACE
+  OUTPUT_VARIABLE GIT_VERSION_INFO
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
   message(STATUS "Got version from Git: ${GIT_VERSION_INFO}")

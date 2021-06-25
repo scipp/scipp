@@ -33,11 +33,7 @@ add_executable(
   transform_common_test.cpp
 )
 target_link_libraries(
-  ${TARGET_NAME}
-  LINK_PRIVATE
-  scipp-core
-  scipp_test_helpers
-  CONAN_PKG::gtest
+  ${TARGET_NAME} LINK_PRIVATE scipp-core scipp_test_helpers CONAN_PKG::gtest
 )
 
 if(WIN32)

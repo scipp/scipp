@@ -8,11 +8,7 @@ add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL index_test.cpp islinspace_test.cpp
 )
 target_link_libraries(
-  ${TARGET_NAME}
-  LINK_PRIVATE
-  scipp-common
-  scipp_test_helpers
-  CONAN_PKG::gtest
+  ${TARGET_NAME} LINK_PRIVATE scipp-common scipp_test_helpers CONAN_PKG::gtest
 )
 set_property(
   TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION

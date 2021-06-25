@@ -47,11 +47,7 @@ add_executable(
   sum_test.cpp
 )
 target_link_libraries(
-  ${TARGET_NAME}
-  LINK_PRIVATE
-  scipp-dataset
-  scipp_test_helpers
-  CONAN_PKG::gtest
+  ${TARGET_NAME} LINK_PRIVATE scipp-dataset scipp_test_helpers CONAN_PKG::gtest
 )
 
 if(WIN32)

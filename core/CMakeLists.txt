@@ -72,9 +72,8 @@ target_include_directories(
          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
-#target_include_directories(
-#  ${TARGET_NAME} SYSTEM PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/Eigen-src>
-#)
+# target_include_directories( ${TARGET_NAME} SYSTEM PUBLIC
+# $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/Eigen-src> )
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 set_target_properties(${TARGET_NAME} PROPERTIES EXPORT_NAME core)
@@ -91,8 +90,5 @@ add_subdirectory(test)
 
 scipp_install_component(TARGET ${TARGET_NAME} INSTALL_GENERATED)
 
-#if(DYNAMIC_LIB)
-#  install(DIRECTORY ${PROJECT_BINARY_DIR}/Eigen-src/Eigen
-#          DESTINATION ${INCLUDEDIR}
-#  )
-#endif(DYNAMIC_LIB)
+# if(DYNAMIC_LIB) install(DIRECTORY ${PROJECT_BINARY_DIR}/Eigen-src/Eigen
+# DESTINATION ${INCLUDEDIR} ) endif(DYNAMIC_LIB)
