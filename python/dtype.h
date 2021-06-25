@@ -42,7 +42,7 @@ struct converting_cast<T, std::enable_if_t<std::is_integral_v<T>>> {
 
 scipp::core::DType
 common_dtype(const pybind11::object &values, const pybind11::object &variances,
-             scipp::core::DType dtype, bool plural,
+             scipp::core::DType dtype,
              scipp::core::DType default_dtype = scipp::core::dtype<double>);
 
 bool has_datetime_dtype(const pybind11::object &obj);

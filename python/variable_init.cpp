@@ -228,7 +228,7 @@ Variable make_variable_scalar(const py::object &dim_labels,
                               const py::object &variance,
                               const units::Unit unit, DType dtype,
                               const std::optional<bool> with_variance) {
-  dtype = common_dtype(value, variance, dtype, false);
+  dtype = common_dtype(value, variance, dtype);
   const auto dims =
       build_dimensions(dim_labels, shape, std::nullopt, std::nullopt);
   return core::CallDType<
@@ -253,7 +253,7 @@ Variable make_variable_array(const py::object &dim_labels,
                                                       : py::array(variances)};
   dtype = common_dtype(
       values_array ? py::object(*values_array) : py::none(),
-      variances_array ? py::object(*variances_array) : py::none(), dtype, true);
+      variances_array ? py::object(*variances_array) : py::none(), dtype);
   const auto dims =
       build_dimensions(dim_labels, shape, values_array, variances_array);
   return core::CallDType<

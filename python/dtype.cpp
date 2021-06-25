@@ -111,10 +111,6 @@ scipp::core::DType scipp_dtype(const py::object &type) {
   }
 }
 
-namespace {
-const char *plural_s(const bool plural) { return plural ? "s" : ""; }
-} // namespace
-
 void ensure_conversion_possible(const DType from, const DType to,
                                 const std::string &data_name) {
   if (from == to || (core::is_fundamental(from) && core::is_fundamental(to)) ||
@@ -127,8 +123,7 @@ void ensure_conversion_possible(const DType from, const DType to,
 }
 
 DType common_dtype(const py::object &values, const py::object &variances,
-                   const DType dtype, const bool plural,
-                   const DType default_dtype) {
+                   const DType dtype, const DType default_dtype) {
   const DType values_dtype = dtype_of(values);
   const DType variances_dtype = dtype_of(variances);
   if (dtype == core::dtype<void>) {
@@ -142,8 +137,8 @@ DType common_dtype(const py::object &values, const py::object &variances,
       if (variances_dtype != core::dtype<void> &&
           values_dtype != variances_dtype) {
         throw std::invalid_argument(format(
-            "The dtypes of the value", plural_s(plural), " (", values_dtype,
-            ") and the variance", plural_s(plural), " (", variances_dtype,
+            "The dtypes of the values (", values_dtype, ") and the variances (",
+            variances_dtype,
             ") do not match. You can specify a dtype explicitly to trigger a "
             "conversion if applicable."));
       }
@@ -152,12 +147,10 @@ DType common_dtype(const py::object &values, const py::object &variances,
   } else { // dtype != core::dtype<void>
     // Combine data and explicit dtype with potential conversion.
     if (values_dtype != core::dtype<void>) {
-      ensure_conversion_possible(values_dtype, dtype,
-                                 std::string("value") + plural_s(plural));
+      ensure_conversion_possible(values_dtype, dtype, "values");
     }
     if (variances_dtype != core::dtype<void>) {
-      ensure_conversion_possible(variances_dtype, dtype,
-                                 std::string("variance") + plural_s(plural));
+      ensure_conversion_possible(variances_dtype, dtype, "variances");
     }
     return dtype;
   }
