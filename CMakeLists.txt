@@ -74,6 +74,7 @@ conan_cmake_run(
   OPTIONS gtest:shared=${DYNAMIC_LIB_TRUE_FALSE}
           benchmark:shared=${DYNAMIC_LIB_TRUE_FALSE}
   SETTINGS ${conan_settings}
+  IMPORTS include/eigen3,*->./eigen-src
   BASIC_SETUP
   CMAKE_TARGETS
   BUILD outdated
