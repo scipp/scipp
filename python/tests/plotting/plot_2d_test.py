@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
-
+import pytest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import numpy as np
@@ -247,7 +247,7 @@ def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
     data = make_binned_data_array(ndim=2)
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
     plot_obj = sc.plot(data)
-    plot_obj.widgets.slider[0].value = 1
+    plot_obj.widgets._controls['run']['slider'].value = 1
     plot_obj.close()
 
 
@@ -350,6 +350,18 @@ def test_plot_redraw_counts():
 
 
 def test_plot_redraw_binned():
+    da = make_binned_data_array(ndim=2)
+    p = sc.plot(da, resolution=64)
+    before = p.view.figure.image_values.get_array().sum()
+    da *= 5.0
+    p.redraw()
+    assert np.isclose(p.view.figure.image_values.get_array().sum(),
+                      5.0 * before)
+    p.close()
+
+
+@pytest.mark.skip(reason="Require in-place concatenate")
+def test_plot_redraw_binned_concat_inplace():
     a = make_binned_data_array(ndim=2)
     pa = sc.plot(a, resolution=64)
     asum = pa.view.figure.image_values.get_array().sum()
@@ -357,6 +369,7 @@ def test_plot_redraw_binned():
     pb = sc.plot(b, resolution=64)
     bsum = pb.view.figure.image_values.get_array().sum()
 
+    # TODO would need to change data inplace rather than replacing
     a.data = a.bins.concatenate(b).data
     pa.redraw()
     assert np.isclose(pa.view.figure.image_values.get_array().sum(),
