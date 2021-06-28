@@ -201,7 +201,7 @@ class PlotController:
         if self.panel is not None:
             self.panel.update_axes()
         if self.profile is not None:
-            self.toggle_profile_view()
+            self.toggle_profile_view(dims=list(set(self._dims) - set(dims)))
         self.update_data()
         if normalize:
             self.rescale_to_data()
@@ -273,6 +273,7 @@ class PlotController:
         As we do this, we also collect some information on the limits of the
         view area to be displayed.
         """
+        self._profile_model.dims = dims
         if owner is None:
             visible = False
             self.widgets.clear_profile_button()
@@ -287,7 +288,6 @@ class PlotController:
                 visible = True
 
             if visible:
-                self._profile_model.dims = dims
                 self._profile_view.set_scale(scale=self.scale)
             if not visible or self.profile.is_visible():
                 self.view.clear_marks()
