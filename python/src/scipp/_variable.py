@@ -38,8 +38,7 @@ def islinspace(x: _cpp.Variable) -> bool:
 def scalar(value: _Any,
            variance: _Any = None,
            unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
-           dtype: type(_cpp.dtype.float64) = None,
-           with_variance: bool = None) -> _cpp.Variable:
+           dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
     """Constructs a zero dimensional :class:`Variable` with a unit and optional
     variance.
 
@@ -53,10 +52,6 @@ def scalar(value: _Any,
       in which case type is inferred from value input.
       Cannot be specified for value types of
       str, Dataset or DataArray.
-    :param with_variance: Optional, boolean flag, if True includes variances
-      initialized to the default value for dtype.
-      For example for a float type values and variances would all be
-      initialized to 0.0. Default=False
     :returns: A scalar (zero-dimensional) Variable.
     :rtype: Variable
     """
@@ -64,8 +59,7 @@ def scalar(value: _Any,
                          values=value,
                          variances=variance,
                          unit=unit,
-                         dtype=dtype,
-                         with_variances=with_variance)
+                         dtype=dtype)
 
 
 def zeros(*,
