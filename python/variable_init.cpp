@@ -319,14 +319,7 @@ Argument dependencies:
 :param variances: Sequence of variances for constructing an array variable.
 :param value: A single value for constructing a scalar variable.
 :param variance: A single variance for constructing a scalar variable.
-:param with_variances: - If True, either store variance(s) given by args
-                        ``variances`` or ``variance`` or if those are None,
-                        create default initialized variances.
-                      - If False, no variances are stored even if ``variances``
-                        or ``variance`` are given.
-                      - If left unspecified, the arguments ``variances`` and
-                        ``variance`` control whether the resulting variable has
-                        any variances.
+:param with_variances: If True, store zero-initialized variances.
 :param unit: Physical unit, defaults to ``scipp.units.dimensionless``.
 :param dtype: Type of the variable's elements. Is deduced from other arguments
               in most cases. Defaults to ``sc.dtype.float64`` if no deduction is
