@@ -141,13 +141,16 @@ def test_2D_access_bad_shape_fail():
 
 
 def test_2D_access_variances():
-    var = sc.Variable(dims=['x', 'y'], shape=(2, 3), with_variances=True)
+    shape = (2, 3)
+    var = sc.Variable(dims=['x', 'y'],
+                      values=np.full(shape, 29.0),
+                      variances=np.zeros(shape))
     assert var.values.shape == (2, 3)
     assert var.variances.shape == (2, 3)
     var.values[1] = 1.2
-    assert np.array_equal(var.variances, np.zeros(shape=(2, 3)))
-    var.variances = np.ones(shape=(2, 3))
-    assert np.array_equal(var.variances, np.ones(shape=(2, 3)))
+    assert np.array_equal(var.variances, np.zeros(shape=shape))
+    var.variances = np.ones(shape=shape)
+    assert np.array_equal(var.variances, np.ones(shape=shape))
 
 
 def test_getitem():

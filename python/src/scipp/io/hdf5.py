@@ -202,7 +202,7 @@ class VariableIO:
         ]:
             var = BinDataIO.read(group)
         else:
-            var = sc.Variable(**contents)
+            var = sc.empty(**contents)
             cls._read_data(group, var)
         return var
 

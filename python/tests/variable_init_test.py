@@ -15,15 +15,7 @@ def test_create_valueless():
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.dimensionless
     assert var.value == 0.0
-
-
-def test_create_valueless_variance():
-    var = sc.Variable(dims=(), with_variances=True)
-    assert var.dims == []
-    assert var.dtype == sc.dtype.float64
-    assert var.unit == sc.units.dimensionless
-    assert var.value == 0.0
-    assert var.variance == 0.0
+    assert var.variance is None
 
 
 def test_create_valueless_dtype():
@@ -72,14 +64,6 @@ def test_create_valueless_with_unit_as_string():
     assert var.unit == sc.units.meV
 
 
-def test_create_valueless_with_variances():
-    assert sc.Variable(dims=['x'], shape=[2]).variances is None
-    assert sc.Variable(dims=['x'], shape=[2],
-                       with_variances=False).variances is None
-    assert sc.Variable(dims=['x'], shape=[2],
-                       with_variances=True).variances is not None
-
-
 def test_create_valueless_dims_shape_mismatch():
     with pytest.raises(ValueError):
         sc.Variable(dims=[], shape=[2])
@@ -90,10 +74,6 @@ def test_create_valueless_dims_shape_mismatch():
 
 
 def test_create_mutually_exclusive_arguments():
-    with pytest.raises(ValueError):
-        sc.Variable(dims=(), variances=[1, 2], with_variances=False)
-    with pytest.raises(ValueError):
-        sc.Variable(dims=(), variances=[1, 2], with_variances=True)
     with pytest.raises(ValueError):
         sc.Variable(dims=['x'], shape=[2], values=[1, 2])
     with pytest.raises(ValueError):
