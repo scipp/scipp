@@ -86,7 +86,7 @@ class ResamplingModel():
             # first to rebin these dims first and effectively slice them out,
             # otherwise we will rebin N-D variables on high resolution.
             if res == 1:
-                edges.insert(0, edges.pop(i))
+                edges.insert(0, edges.pop(-1))
         return edges
 
     def _call_resample(self):

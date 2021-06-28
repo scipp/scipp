@@ -299,24 +299,24 @@ class PlotWidgets:
             self._set_slider_defaults(dim, sizes[dim])
 
     def _slider_moved(self, _):
-        self._controller.update_data(limits=self.get_slider_bounds())
+        self._controller.update_data(slices=self.slices)
 
-    def get_slider_bounds(self, exclude=None):
+    @property
+    def slices(self):
         """
-        Get the current range covered by the thick slice (in integers).
+        Get the current range covered by the thick slice.
         """
         bounds = {}
         for dim in self._slider_dims:
-            if exclude is None or dim not in exclude:
-                pos = self._controls[dim]['slider'].value
-                delta = self._controls[dim]['thickness'].value
-                lower = pos - (delta // 2) + ((delta + 1) % 2)
-                upper = pos + (delta // 2) + 1
-                if lower + 1 == upper:
-                    # Just slice without rebin
-                    bounds[dim] = lower
-                else:
-                    bounds[dim] = [lower, upper]
+            pos = self._controls[dim]['slider'].value
+            delta = self._controls[dim]['thickness'].value
+            lower = pos - (delta // 2) + ((delta + 1) % 2)
+            upper = pos + (delta // 2) + 1
+            if lower + 1 == upper:
+                # Just slice without rebin
+                bounds[dim] = lower
+            else:
+                bounds[dim] = [lower, upper]
         return bounds
 
     def clear_profile_button(self):

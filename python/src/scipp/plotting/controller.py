@@ -209,7 +209,7 @@ class PlotController:
         if normalize:
             self.rescale_to_data()
 
-    def update_data(self, *, limits=None):
+    def update_data(self, *, slices=None):
         """
         This function is called when the data in the displayed 1D plot or 2D
         image is to be updated. This happens for instance when we move a slider
@@ -217,10 +217,8 @@ class PlotController:
         called when update_axes is called since the displayed data needs to be
         updated when the axes have changed.
         """
-        if limits is None:
-            slices = self.widgets.get_slider_bounds()
-        else:
-            slices = limits
+        if slices is None:
+            slices = self.widgets.slices
         new_values = self.model.update_data(slices)
         self.widgets.update_slider_readout(new_values.meta)
 
@@ -303,9 +301,9 @@ class PlotController:
     def hover(self, slices):
         if self.profile is not None and self.profile.is_visible():
             if slices:
-                slices.update(
-                    self.widgets.get_slider_bounds(
-                        exclude=self._profile_model.dims))
+                slices.update(self.widgets.slices)
+                for dim in self._profile_model.dims:
+                    del slices[dim]
                 new_values = self._profile_model.update_data(slices=slices)
                 self._profile_view.update_data(new_values,
                                                mask_info=self.get_masks_info())
@@ -336,8 +334,9 @@ class PlotController:
         ask the model to slice down the data, and send the new data returned by
         the model to the profile view.
         """
-        slices.update(
-            self.widgets.get_slider_bounds(exclude=self.profile_model.dims))
+        slices.update(self.widgets.slices)
+        for dim in self._profile_model.dims:
+            del slices[dim]
         new_values = self._profile_model.update_data(slices=slices)
         self._profile_view.update_data(new_values,
                                        mask_info=self.get_masks_info())
