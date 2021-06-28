@@ -137,10 +137,10 @@ DType common_dtype(const py::object &values, const py::object &variances,
       if (variances_dtype != core::dtype<void> &&
           values_dtype != variances_dtype) {
         throw std::invalid_argument(format(
-            "The dtypes of the values (", values_dtype, ") and the variances (",
+            "The dtypes of the 'values' (", values_dtype, ") and 'variances' (",
             variances_dtype,
-            ") do not match. You can specify a dtype explicitly to trigger a "
-            "conversion if applicable."));
+            ") arguments do not match. You can specify a dtype explicitly to"
+            " trigger a conversion if applicable."));
       }
       return values_dtype;
     }
