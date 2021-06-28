@@ -9,77 +9,6 @@ import pytest
 import scipp as sc
 
 
-def test_create_valueless():
-    var = sc.Variable(dims=())
-    assert var.dims == []
-    assert var.dtype == sc.dtype.float64
-    assert var.unit == sc.units.dimensionless
-    assert var.value == 0.0
-    assert var.variance is None
-
-
-def test_create_valueless_dtype():
-    var = sc.Variable(dims=['x'], shape=[4])
-    assert var.dtype == sc.dtype.float64
-
-
-def test_create_valueless_with_dtype():
-    var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.float32)
-    assert var.dtype == sc.dtype.float32
-
-
-def test_create_valueless_with_numpy_dtype():
-    var = sc.Variable(dims=['x'], shape=[2], dtype=np.dtype(np.float32))
-    assert var.dtype == sc.dtype.float32
-
-
-def test_create_valueless_with_class_dtype():
-    var = sc.Variable(dims=['x'], shape=[2], dtype=str)
-    assert var.dtype == sc.dtype.string
-
-
-def test_create_valueless_with_str_dtype():
-    var = sc.Variable(dims=['x'], shape=[2], dtype='float32')
-    assert var.dtype == sc.dtype.float32
-
-
-def test_create_valueless_with_dtype_datetime():
-    var = sc.Variable(dims=(), dtype=sc.dtype.datetime64)
-    assert var.dtype == sc.dtype.datetime64
-    var = sc.Variable(dims=(), dtype=np.datetime64)
-    assert var.dtype == sc.dtype.datetime64
-    var = sc.Variable(dims=(), dtype=np.datetime64(0, 's'))
-    assert var.dtype == sc.dtype.datetime64
-    var = sc.Variable(dims=(), dtype='datetime64')
-    assert var.dtype == sc.dtype.datetime64
-
-
-def test_create_valueless_with_unit():
-    var = sc.Variable(dims=['x'], shape=[32], unit=sc.units.m)
-    assert var.unit == sc.units.m
-
-
-def test_create_valueless_with_unit_as_string():
-    var = sc.Variable(dims=['x'], shape=[2], unit='meV')
-    assert var.unit == sc.units.meV
-
-
-def test_create_valueless_dims_shape_mismatch():
-    with pytest.raises(ValueError):
-        sc.Variable(dims=[], shape=[2])
-    with pytest.raises(ValueError):
-        sc.Variable(dims=['x'], shape=[])
-    with pytest.raises(ValueError):
-        sc.Variable(dims=['x', 'y'], shape=[2])
-
-
-def test_create_mutually_exclusive_arguments():
-    with pytest.raises(ValueError):
-        sc.Variable(dims=['x'], shape=[2], values=[1, 2])
-    with pytest.raises(ValueError):
-        sc.Variable(dims=['x'], shape=[2], variances=[1, 2])
-
-
 @pytest.mark.parametrize("value", [
     1.2,
     np.float64(1.2),
@@ -294,13 +223,21 @@ def test_create_1d_dtype_precision():
     assert var.dtype == sc.dtype.float64
     var = sc.Variable(dims=['x'], values=np.arange(4).astype(np.float32))
     assert var.dtype == sc.dtype.float32
-    var = sc.Variable(dims=['x'], shape=(4, ), dtype=np.dtype(np.float64))
+    var = sc.Variable(dims=['x'],
+                      values=np.arange(4),
+                      dtype=np.dtype(np.float64))
     assert var.dtype == sc.dtype.float64
-    var = sc.Variable(dims=['x'], shape=(4, ), dtype=np.dtype(np.float32))
+    var = sc.Variable(dims=['x'],
+                      values=np.arange(4),
+                      dtype=np.dtype(np.float32))
     assert var.dtype == sc.dtype.float32
-    var = sc.Variable(dims=['x'], shape=(4, ), dtype=np.dtype(np.int64))
+    var = sc.Variable(dims=['x'],
+                      values=np.arange(4),
+                      dtype=np.dtype(np.int64))
     assert var.dtype == sc.dtype.int64
-    var = sc.Variable(dims=['x'], shape=(4, ), dtype=np.dtype(np.int32))
+    var = sc.Variable(dims=['x'],
+                      values=np.arange(4),
+                      dtype=np.dtype(np.int32))
     assert var.dtype == sc.dtype.int32
 
 

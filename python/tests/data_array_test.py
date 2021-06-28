@@ -84,7 +84,7 @@ def test_init_from_variable_views():
 
 @pytest.mark.parametrize("make", [lambda x: x, sc.DataArray])
 def test_builtin_len(make):
-    var = sc.Variable(dims=['x', 'y'], shape=[3, 2])
+    var = sc.empty(dims=['x', 'y'], shape=[3, 2])
     obj = make(var)
     assert len(obj) == 3
     assert len(obj['x', 0]) == 2

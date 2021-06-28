@@ -64,7 +64,7 @@ def test_0D_scalar_string():
 
 
 def test_1D_scalar_access_fail():
-    var = sc.Variable(dims=['x'], shape=(1, ))
+    var = sc.empty(dims=['x'], shape=(1, ))
     with pytest.raises(RuntimeError):
         assert var.value == 0.0
     with pytest.raises(RuntimeError):
@@ -72,13 +72,13 @@ def test_1D_scalar_access_fail():
 
 
 def test_1D_access_shape_mismatch_fail():
-    var = sc.Variable(dims=['x'], shape=(2, ))
+    var = sc.empty(dims=['x'], shape=(2, ))
     with pytest.raises(RuntimeError):
         var.values = 1.2
 
 
 def test_1D_access():
-    var = sc.Variable(dims=['x'], shape=(2, ))
+    var = sc.empty(dims=['x'], shape=(2, ))
     assert len(var.values) == 2
     assert var.values.shape == (2, )
     var.values[1] = 1.2
@@ -86,7 +86,7 @@ def test_1D_access():
 
 
 def test_1D_set_from_list():
-    var = sc.Variable(dims=['x'], shape=(2, ))
+    var = sc.empty(dims=['x'], shape=(2, ))
     var.values = [1.0, 2.0]
     assert sc.identical(var, sc.Variable(dims=['x'], values=[1.0, 2.0]))
 
@@ -108,7 +108,7 @@ def test_1D_converting():
 
 
 def test_1D_dataset():
-    var = sc.Variable(dims=['x'], shape=(2, ), dtype=sc.dtype.Dataset)
+    var = sc.empty(dims=['x'], shape=(2, ), dtype=sc.dtype.Dataset)
     d1 = sc.Dataset({'a': 1.5 * sc.units.m})
     d2 = sc.Dataset({'a': 2.5 * sc.units.m})
     var.values = [d1, d2]
@@ -117,13 +117,13 @@ def test_1D_dataset():
 
 
 def test_1D_access_bad_shape_fail():
-    var = sc.Variable(dims=['x'], shape=(2, ))
+    var = sc.empty(dims=['x'], shape=(2, ))
     with pytest.raises(RuntimeError):
         var.values = np.arange(3)
 
 
 def test_2D_access():
-    var = sc.Variable(dims=['x', 'y'], shape=(2, 3))
+    var = sc.empty(dims=['x', 'y'], shape=(2, 3))
     assert var.values.shape == (2, 3)
     assert len(var.values) == 2
     assert len(var.values[0]) == 3
@@ -135,7 +135,7 @@ def test_2D_access():
 
 
 def test_2D_access_bad_shape_fail():
-    var = sc.Variable(dims=['x', 'y'], shape=(2, 3))
+    var = sc.empty(dims=['x', 'y'], shape=(2, 3))
     with pytest.raises(RuntimeError):
         var.values = np.ones(shape=(3, 2))
 
@@ -181,9 +181,9 @@ def test_slicing():
 def test_sizes():
     a = sc.scalar(1)
     assert a.sizes == {}
-    a = sc.Variable(dims=['x'], shape=[2])
+    a = sc.empty(dims=['x'], shape=[2])
     assert a.sizes == {'x': 2}
-    a = sc.Variable(dims=['y', 'z'], shape=[3, 4])
+    a = sc.empty(dims=['y', 'z'], shape=[3, 4])
     assert a.sizes == {'y': 3, 'z': 4}
 
 

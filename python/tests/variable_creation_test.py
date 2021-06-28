@@ -14,6 +14,16 @@ def _compare_properties(a, b):
     assert (a.variances is None) == (b.variances is None)
 
 
+def make_dummy(dims, shape, with_variances=False, **kwargs):
+    # Not using empty to avoid a copy from uninitialized memory in `expected`.
+    if with_variances:
+        return sc.Variable(dims=dims,
+                           values=np.full(shape, 63.0),
+                           variances=np.full(shape, 12.0),
+                           **kwargs)
+    return sc.Variable(dims=dims, values=np.full(shape, 81.0), **kwargs)
+
+
 def test_scalar_with_dtype():
     value = 1.0
     variance = 5.0
@@ -51,7 +61,7 @@ def test_scalar_of_numpy_array():
 
 def test_zeros_creates_variable_with_correct_dims_and_shape():
     var = sc.zeros(dims=['x', 'y', 'z'], shape=[1, 2, 3])
-    expected = sc.Variable(dims=['x', 'y', 'z'], shape=[1, 2, 3])
+    expected = sc.Variable(dims=['x', 'y', 'z'], values=np.zeros([1, 2, 3]))
     assert sc.identical(var, expected)
 
 
@@ -97,16 +107,15 @@ def test_ones_with_dtype_and_unit():
 
 def test_empty_creates_variable_with_correct_dims_and_shape():
     var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3])
-    expected = sc.Variable(dims=['x', 'y', 'z'], shape=[1, 2, 3])
+    expected = make_dummy(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     _compare_properties(var, expected)
 
 
 def test_empty_with_variances():
-    shape = [1, 2, 3]
-    # Not using empty to avoid a copy from uninitialized memory in `expected`.
-    a = np.full(shape, 63.0)
-    var = sc.empty(dims=['x', 'y', 'z'], shape=shape, with_variances=True)
-    expected = sc.Variable(dims=['x', 'y', 'z'], values=a, variances=a)
+    var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variances=True)
+    expected = make_dummy(dims=['x', 'y', 'z'],
+                          shape=[1, 2, 3],
+                          with_variances=True)
     _compare_properties(var, expected)
 
 
@@ -188,24 +197,21 @@ def test_ones_like_with_variances():
 
 def test_empty_like():
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
-    expected = sc.Variable(dims=['x', 'y', 'z'], shape=[1, 2, 3])
+    expected = make_dummy(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     _compare_properties(sc.empty_like(var), expected)
 
 
 def test_empty_like_with_variances():
-    shape = [1, 2, 3]
     var = sc.Variable(dims=['x', 'y', 'z'],
-                      values=np.random.random(shape),
-                      variances=np.random.random(shape),
+                      values=np.random.random([1, 2, 3]),
+                      variances=np.random.random([1, 2, 3]),
                       unit='m',
                       dtype=sc.dtype.float32)
-    # Not using empty to avoid a copy from uninitialized memory in `expected`.
-    a = np.full(shape, 82.0)
-    expected = sc.Variable(dims=['x', 'y', 'z'],
-                           values=a,
-                           variances=a,
-                           unit='m',
-                           dtype=sc.dtype.float32)
+    expected = make_dummy(dims=['x', 'y', 'z'],
+                          shape=[1, 2, 3],
+                          with_variances=True,
+                          unit='m',
+                          dtype=sc.dtype.float32)
     _compare_properties(sc.empty_like(var), expected)
 
 

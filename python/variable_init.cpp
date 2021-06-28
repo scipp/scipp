@@ -120,16 +120,10 @@ Dimensions build_dimensions(py::iterator &&label_it, py::iterator &&shape_it,
 } // namespace detail
 
 Dimensions build_dimensions(const py::object &dim_labels,
-                            const py::object &shape, const py::object &values,
+                            const py::object &values,
                             const py::object &variances) {
   if (is_empty(dim_labels)) {
-    if (!is_empty(shape)) {
-      throw_ndim_mismatch_error(0, "dims", py::len(shape), "shape");
-    }
     return Dimensions{};
-  } else if (!shape.is_none()) {
-    return detail::build_dimensions(py::iter(dim_labels), py::iter(shape),
-                                    "shape");
   } else {
     ensure_same_shape(values, variances);
     if (!values.is_none()) {
@@ -236,14 +230,14 @@ template <class T> struct MakeVariable {
   }
 };
 
-Variable make_variable(const py::object &dim_labels, const py::object &shape,
-                       const py::object &values, const py::object &variances,
-                       const units::Unit unit, DType dtype) {
+Variable make_variable(const py::object &dim_labels, const py::object &values,
+                       const py::object &variances, const units::Unit unit,
+                       DType dtype) {
   const auto converted_values = parse_data_sequence(dim_labels, values);
   const auto converted_variances = parse_data_sequence(dim_labels, variances);
   dtype = common_dtype(converted_values, converted_variances, dtype);
-  const auto dims = build_dimensions(dim_labels, shape, converted_values,
-                                     converted_variances);
+  const auto dims =
+      build_dimensions(dim_labels, converted_values, converted_variances);
   return core::CallDType<double, float, int64_t, int32_t, bool,
                          scipp::core::time_point, std::string, Variable,
                          DataArray, Dataset, Eigen::Vector3d, Eigen::Matrix3d,
@@ -252,17 +246,6 @@ Variable make_variable(const py::object &dim_labels, const py::object &shape,
                                                                 variances,
                                                                 unit);
 }
-
-bool is_arg_present(const py::object &arg) { return !arg.is_none(); }
-
-template <class A, class B>
-void ensure_mutual_exclusivity(const A &a, const std::string_view a_name,
-                               const B &b, const std::string_view b_name) {
-  if (is_arg_present(a) && is_arg_present(b)) {
-    throw std::invalid_argument(format("Passed mutually exclusive arguments '",
-                                       a_name, "' and '", b_name, "'."));
-  }
-}
 } // namespace
 
 /*
@@ -270,21 +253,18 @@ void ensure_mutual_exclusivity(const A &a, const std::string_view a_name,
  * of arguments is valid. Functions down the line do not check again.
  */
 void bind_init(py::class_<Variable> &cls) {
-  cls.def(py::init([](const py::object &dim_labels, const py::object &shape,
-                      const py::object &values, const py::object &variances,
+  cls.def(py::init([](const py::object &dim_labels, const py::object &values,
+                      const py::object &variances,
                       const std::optional<units::Unit> unit,
                       const py::object &dtype) {
-            ensure_mutual_exclusivity(shape, "shape", values, "values");
-            ensure_mutual_exclusivity(shape, "shape", variances, "variances");
-
             const auto [scipp_dtype, actual_unit] =
                 cast_dtype_and_unit(dtype, unit);
-            return make_variable(dim_labels, shape, values, variances,
-                                 actual_unit, scipp_dtype);
+            return make_variable(dim_labels, values, variances, actual_unit,
+                                 scipp_dtype);
           }),
-          py::kw_only(), py::arg("dims"), py::arg("shape") = py::none(),
-          py::arg("values") = py::none(), py::arg("variances") = py::none(),
-          py::arg("unit") = std::nullopt, py::arg("dtype") = py::none(),
+          py::kw_only(), py::arg("dims"), py::arg("values") = py::none(),
+          py::arg("variances") = py::none(), py::arg("unit") = std::nullopt,
+          py::arg("dtype") = py::none(),
           R"raw(
 Initialize a variable.
 
@@ -293,15 +273,7 @@ which are mutually exclusive or require certain (combinations of) other
 arguments. Because of this, it is recommended to use the dedicated creation
 functions :py:func:`scipp.array` and :py:func:`scipp.scalar`.
 
-Argument dependencies:
-
-- Empty ``dims`` requires empty ``shape``.
-- Non-empty ``dims`` requires either non-empty ``shape`` or one or both of
-  ``values`` and ``variances``.
-- ``shape`` cannot be combined with ``values`` or ``variances``.
-
 :param dims: Dimension labels.
-:param shape: Size in each dimension.
 :param values: Sequence of values for constructing an array variable.
 :param variances: Sequence of variances for constructing an array variable.
 :param value: A single value for constructing a scalar variable.
@@ -312,7 +284,6 @@ Argument dependencies:
               possible.
 
 :type dims: Sequence[str]
-:type shape: Sequence[int]
 :type values: numpy.ArrayLike
 :type variances: numpy.ArrayLike
 :type value: Any

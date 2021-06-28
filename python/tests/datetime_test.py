@@ -131,7 +131,6 @@ def test_0d_datetime_setter_mismatch(unit1, unit2):
 def test_construct_datetime(unit):
     dtype = f'datetime64[{unit}]'
     values = _make_arrays(unit, 1)
-    shape = [len(values)]
     # with values
     for var in (sc.Variable(dims=['x'], dtype=dtype, unit=unit, values=values),
                 sc.Variable(dims=['x'], unit=unit, values=values),
@@ -142,14 +141,6 @@ def test_construct_datetime(unit):
         assert var.unit == unit
         assert var.values.dtype == dtype
         np.testing.assert_array_equal(var.values, values)
-    # default init
-    for var in (sc.Variable(dims=['x'], shape=shape, dtype=dtype, unit=unit),
-                sc.Variable(dims=['x'], shape=shape, dtype=dtype)):
-        assert var.dims == ['x']
-        assert var.shape == shape
-        assert str(var.dtype) == 'datetime64'
-        assert var.unit == unit
-        assert var.values.dtype == dtype
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
@@ -180,7 +171,7 @@ def test_construct_datetime_mismatch(unit1, unit2):
 def test_construct_datetime_nounit():
     # Can make a datetime variable without unit but cannot do anything
     # with it except set its unit.
-    var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.datetime64)
+    var = sc.Variable(dims=['x'], values=[1, 2], dtype=sc.dtype.datetime64)
     assert var.dtype == sc.dtype.datetime64
     assert var.unit == sc.units.one
     with pytest.raises(sc.UnitError):

@@ -210,7 +210,7 @@ def test_plot_2d_with_dimension_of_size_1():
 
 
 def test_plot_2d_with_dimension_of_size_2():
-    a = sc.DataArray(data=sc.Variable(dims=['y', 'x'], shape=[2, 4]),
+    a = sc.DataArray(data=sc.zeros(dims=['y', 'x'], shape=[2, 4]),
                      coords={
                          'x': sc.Variable(dims=['x'], values=[1, 2, 3, 4]),
                          'y': sc.Variable(dims=['y'], values=[1, 2])
