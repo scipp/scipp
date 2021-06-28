@@ -9,7 +9,7 @@ import pytest
 import scipp as sc
 
 
-def test_create_default():
+def test_create_valueless():
     var = sc.Variable(dims=())
     assert var.dims == []
     assert var.dtype == sc.dtype.float64
@@ -17,7 +17,7 @@ def test_create_default():
     assert var.value == 0.0
 
 
-def test_create_default_variance():
+def test_create_valueless_variance():
     var = sc.Variable(dims=(), with_variances=True)
     assert var.dims == []
     assert var.dtype == sc.dtype.float64
@@ -26,32 +26,32 @@ def test_create_default_variance():
     assert var.variance == 0.0
 
 
-def test_create_default_dtype():
+def test_create_valueless_dtype():
     var = sc.Variable(dims=['x'], shape=[4])
     assert var.dtype == sc.dtype.float64
 
 
-def test_create_default_with_dtype():
+def test_create_valueless_with_dtype():
     var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.float32)
     assert var.dtype == sc.dtype.float32
 
 
-def test_create_default_with_numpy_dtype():
+def test_create_valueless_with_numpy_dtype():
     var = sc.Variable(dims=['x'], shape=[2], dtype=np.dtype(np.float32))
     assert var.dtype == sc.dtype.float32
 
 
-def test_create_default_with_class_dtype():
+def test_create_valueless_with_class_dtype():
     var = sc.Variable(dims=['x'], shape=[2], dtype=str)
     assert var.dtype == sc.dtype.string
 
 
-def test_create_default_with_str_dtype():
+def test_create_valueless_with_str_dtype():
     var = sc.Variable(dims=['x'], shape=[2], dtype='float32')
     assert var.dtype == sc.dtype.float32
 
 
-def test_create_default_with_dtype_datetime():
+def test_create_valueless_with_dtype_datetime():
     var = sc.Variable(dims=(), dtype=sc.dtype.datetime64)
     assert var.dtype == sc.dtype.datetime64
     var = sc.Variable(dims=(), dtype=np.datetime64)
@@ -62,17 +62,17 @@ def test_create_default_with_dtype_datetime():
     assert var.dtype == sc.dtype.datetime64
 
 
-def test_create_default_with_unit():
+def test_create_valueless_with_unit():
     var = sc.Variable(dims=['x'], shape=[32], unit=sc.units.m)
     assert var.unit == sc.units.m
 
 
-def test_create_default_with_unit_as_string():
+def test_create_valueless_with_unit_as_string():
     var = sc.Variable(dims=['x'], shape=[2], unit='meV')
     assert var.unit == sc.units.meV
 
 
-def test_create_default_with_variances():
+def test_create_valueless_with_variances():
     assert sc.Variable(dims=['x'], shape=[2]).variances is None
     assert sc.Variable(dims=['x'], shape=[2],
                        with_variances=False).variances is None
@@ -80,7 +80,7 @@ def test_create_default_with_variances():
                        with_variances=True).variances is not None
 
 
-def test_create_default_dims_shape_mismatch():
+def test_create_valueless_dims_shape_mismatch():
     with pytest.raises(ValueError):
         sc.Variable(dims=[], shape=[2])
     with pytest.raises(ValueError):
