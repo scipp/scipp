@@ -54,77 +54,77 @@ bool is_empty(const py::object &sequence) {
   return !py::bool_{sequence};
 }
 
+auto shape_of(const py::object &array) { return py::iter(array.attr("shape")); }
+
+scipp::index n_remaining(const py::iterator &it) {
+  return std::distance(it, it.end());
+}
+
+[[noreturn]] void throw_ndim_mismatch_error(const scipp::index a_ndim,
+                                            const std::string_view a_name,
+                                            const scipp::index b_ndim,
+                                            const std::string_view b_name) {
+  throw std::invalid_argument(
+      format("The number of dimensions in '", a_name, "' (", a_ndim,
+             ") does not match the number of dimensions in '", b_name, "' (",
+             b_ndim, ")."));
+}
+
 void ensure_same_shape(const py::object &values, const py::object &variances) {
   if (values.is_none() || variances.is_none()) {
     return;
   }
 
-  const auto val_array = py::array(values);
-  const auto var_array = py::array(variances);
+  auto val_shape = shape_of(values);
+  auto var_shape = shape_of(variances);
 
-  if (val_array.ndim() != var_array.ndim()) {
-    throw except::DimensionError(
-        format("The number of dimensions of 'values' (", val_array.ndim(),
-               ") does not match the number of dimensions of 'variances' (",
-               var_array.ndim(), ")"));
+  scipp::index dim = 0;
+  std::tuple<scipp::index, scipp::index, scipp::index> mismatch{-1, -1, -1};
+  for (; val_shape != val_shape.end() && var_shape != var_shape.end();
+       ++val_shape, ++var_shape, ++dim) {
+    if (val_shape->cast<scipp::index>() != var_shape->cast<scipp::index>()) {
+      if (std::get<0>(mismatch) == -1) {
+        // Defer throwing to let ndim error take precedence.
+        mismatch = std::tuple{dim, val_shape->cast<scipp::index>(),
+                              var_shape->cast<scipp::index>()};
+      }
+    }
   }
-
-  const auto shape_end = [](const py::array &array) {
-    return std::next(array.shape(), array.ndim());
-  };
-  const auto values_shape_end = shape_end(val_array);
-  const auto bad_dims = std::mismatch(val_array.shape(), values_shape_end,
-                                      var_array.shape(), shape_end(var_array));
-  if (bad_dims.first != values_shape_end) {
+  if (val_shape != val_shape.end() || var_shape != var_shape.end()) {
+    throw_ndim_mismatch_error(dim + n_remaining(val_shape), "values",
+                              dim + n_remaining(var_shape), "variances");
+  }
+  if (std::get<0>(mismatch) != -1) {
     throw std::invalid_argument(
         format("The shapes of 'values' and 'variances' differ in dimension ",
-               std::distance(val_array.shape(), bad_dims.first), ": ",
-               *bad_dims.first, " vs ", *bad_dims.second, '.'));
+               std::get<0>(mismatch), ": ", std::get<1>(mismatch), " vs ",
+               std::get<2>(mismatch), '.'));
   }
-}
-
-[[noreturn]] void throw_ndim_mismatch_error(const scipp::index ndim_labels,
-                                            const scipp::index ndim_shape,
-                                            const std::string_view shape_name) {
-  throw std::invalid_argument(
-      format("The number of dimension labels (", ndim_labels,
-             ") does not match the number of dimensions in '", shape_name,
-             "' (", ndim_shape, ")."));
 }
 
 namespace detail {
-scipp::index to_index(const py::handle &x) { return x.cast<scipp::index>(); }
-
-scipp::index to_index(const scipp::index x) { return x; }
-
-template <class ShapeRange>
-Dimensions build_dimensions(py::iterator &&label_it,
-                            const ShapeRange &shape_range,
+Dimensions build_dimensions(py::iterator &&label_it, py::iterator &&shape_it,
                             const std::string_view shape_name) {
   Dimensions dims;
-  auto shape_it = shape_range.begin();
   scipp::index dim = 0;
-  for (; label_it != label_it.end() && shape_it != shape_range.end();
+  for (; label_it != label_it.end() && shape_it != shape_it.end();
        ++label_it, ++shape_it, ++dim) {
-    dims.addInner(label_it->cast<Dim>(), to_index(*shape_it));
+    dims.addInner(label_it->cast<Dim>(), shape_it->cast<scipp::index>());
   }
-  if (label_it != label_it.end() || shape_it != shape_range.end()) {
-    throw_ndim_mismatch_error(dim + std::distance(label_it, label_it.end()),
-                              dim + std::distance(shape_it, shape_range.end()),
-                              shape_name);
+  if (label_it != label_it.end() || shape_it != shape_it.end()) {
+    throw_ndim_mismatch_error(dim + n_remaining(label_it), "dims",
+                              dim + n_remaining(shape_it), shape_name);
   }
   return dims;
 }
 } // namespace detail
-
-auto shape_of(const py::object &array) { return py::iter(array.attr("shape")); }
 
 Dimensions build_dimensions(const py::object &dim_labels,
                             const py::object &shape, const py::object &values,
                             const py::object &variances) {
   if (is_empty(dim_labels)) {
     if (!is_empty(shape)) {
-      throw_ndim_mismatch_error(0, py::len(shape), "shape");
+      throw_ndim_mismatch_error(0, "dims", py::len(shape), "shape");
     }
     return Dimensions{};
   } else if (!shape.is_none()) {
@@ -144,6 +144,16 @@ Dimensions build_dimensions(const py::object &dim_labels,
           "Use either the 'shape' argument or 'values' and / or "
           "'variances'.");
     }
+  }
+}
+
+py::object parse_data_sequence(const py::object &dim_labels,
+                               const py::object &data) {
+  // Need to check for None because py::array does not preserve it.
+  if (is_empty(dim_labels) || data.is_none()) {
+    return data;
+  } else {
+    return py::array(data);
   }
 }
 
@@ -228,17 +238,6 @@ template <class T> struct MakeVariable {
     return variable;
   }
 };
-
-py::object parse_data_sequence(const py::object &dim_labels,
-                               const py::object &data) {
-  if (is_empty(dim_labels)) {
-    return data;
-  } else if (data.is_none()) {
-    return data; // py::array does not preserve None.
-  } else {
-    return py::array(data);
-  }
-}
 
 Variable make_variable(const py::object &dim_labels, const py::object &shape,
                        const py::object &values, const py::object &variances,
