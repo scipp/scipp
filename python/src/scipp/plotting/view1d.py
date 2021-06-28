@@ -10,12 +10,13 @@ from .._scipp import core as sc
 
 
 def _make_label(array):
+    # TODO use formatter
     labels = []
     for dim, coord in array.meta.items():
+        unit = '' if coord.unit == sc.units.dimensionless else f' {coord.unit}'
         if dim not in array.dims:
-            labels.append(
-                f'({dim}={coord.values.round(decimals=2)} {coord.unit})')
-    return ','.join(labels)
+            labels.append(f'{dim}={coord.values.round(decimals=2)}{unit}')
+    return ', '.join(labels)
 
 
 class PlotView1d(PlotView):

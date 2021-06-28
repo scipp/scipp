@@ -346,4 +346,5 @@ class PlotWidgets:
         # TODO This is using dimension coord rather than labels
         # TODO use ..utils.value_to_string?
         for dim in self._slider_dims:
+            # label = self._labels[dim]
             self._controls[dim]['value'].value = str(bounds[dim].values)
