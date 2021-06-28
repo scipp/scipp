@@ -62,7 +62,6 @@ class PlotController:
         self.view = view
 
         self.name = name
-        self.update_data_lock = False
 
         self.vmin = vmin
         self.vmax = vmax
@@ -105,21 +104,6 @@ class PlotController:
         Dummy initialization for `PlotModel`.
         """
         return
-
-    def lock_update_data(self):
-        """
-        When the thickness slider is changed, the range, and possibly the
-        value, of the position slider are changed. We therefore temporary lock
-        data updates until all slider ranges and values have been updated
-        before manually updating the displayed data slice.
-        """
-        self.update_data_lock = True
-
-    def unlock_update_data(self):
-        """
-        Release the data update lock.
-        """
-        self.update_data_lock = False
 
     def find_vmin_vmax(self, button=None):
         """
@@ -225,7 +209,7 @@ class PlotController:
         if normalize:
             self.rescale_to_data()
 
-    def update_data(self, limits=None):
+    def update_data(self, *, limits=None):
         """
         This function is called when the data in the displayed 1D plot or 2D
         image is to be updated. This happens for instance when we move a slider
@@ -233,9 +217,6 @@ class PlotController:
         called when update_axes is called since the displayed data needs to be
         updated when the axes have changed.
         """
-        if self.update_data_lock:
-            return
-
         if limits is None:
             slices = self.widgets.get_slider_bounds()
         else:

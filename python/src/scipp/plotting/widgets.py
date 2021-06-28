@@ -244,15 +244,6 @@ class PlotWidgets:
 
         return _update
 
-    def update_thickness_slider_range(self, dim):
-        """
-        Update the slider max and values. Before we update the value, we need
-        to lock the data update which is linked to the slider.
-        """
-        self._controller.lock_update_data()
-        self._set_slider_defaults(dim, self._sizes[dim])
-        self._controller.unlock_update_data()
-
     def _set_slider_defaults(self, dim, max_value):
         controls = self._controls[dim]
         controls['thickness'].max = max_value
@@ -286,7 +277,7 @@ class PlotWidgets:
         self.profile_button.on_click(
             partial(controller.toggle_profile_view, dims=self._slider_dims))
         for dim in self._controls:
-            self._controls[dim]['slider'].observe(controller.update_data,
+            self._controls[dim]['slider'].observe(self._slider_moved,
                                                   names="value")
             self._controls[dim]['thickness'].observe(
                 self.update_thickness(dim), names="value")
@@ -306,6 +297,9 @@ class PlotWidgets:
         self._sizes = sizes
         for dim in sizes:
             self._set_slider_defaults(dim, sizes[dim])
+
+    def _slider_moved(self, _):
+        self._controller.update_data(limits=self.get_slider_bounds())
 
     def get_slider_bounds(self, exclude=None):
         """
