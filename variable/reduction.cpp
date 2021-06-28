@@ -39,11 +39,11 @@ Variable make_accumulant(const Variable &var, const Dim dim,
 } // namespace
 
 void sum_impl(Variable &summed, const Variable &var) {
-  accumulate_in_place(summed, var, element::plus_equals, "sum");
+  accumulate_in_place(summed, var, element::add_equals, "sum");
 }
 
 void nansum_impl(Variable &summed, const Variable &var) {
-  accumulate_in_place(summed, var, element::nan_plus_equals, "nansum");
+  accumulate_in_place(summed, var, element::nan_add_equals, "nansum");
 }
 
 template <typename Op>

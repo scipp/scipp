@@ -3,7 +3,7 @@
 # @author Matthew Andrew
 
 from collections.abc import Iterable as _Iterable
-from typing import Any as _Any, Sequence as _Sequence, Union as _Union, \
+from typing import Any as _Any, Sequence as _Sequence, Union as _Union,\
     Optional as _Optional
 
 import numpy as _np
@@ -24,15 +24,13 @@ def _parse_dims_shape_sizes(dims, shape, sizes):
     return {"dims": dims, "shape": shape}
 
 
-def islinspace(x):
+def islinspace(x: _cpp.Variable) -> bool:
     """
     Check if the values of a variable are evenly spaced.
 
     :param x: Variable to check.
-    :type x: Variable
     :returns: True if the variable contains regularly spaced values,
       False otherwise.
-    :rtype: bool
     """
     return _call_cpp_func(_cpp.islinspace, x)
 

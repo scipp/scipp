@@ -160,7 +160,7 @@ def test_lifetime_inverse_trigonometry_out_arg(func):
 
 def test_lifetime_atan2_out_arg():
     var = 1.0 * sc.units.one
-    var = sc.atan2(var, var, out=var)
+    var = sc.atan2(y=var, x=var, out=var)
     var *= 1.0  # var would be an invalid view is keep_alive not correct
 
 

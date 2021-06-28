@@ -25,7 +25,7 @@ def test_comparison_op_exports_for_variable():
 def test_isclose():
     unit = sc.units.one
     a = sc.Variable(dims=['x'], values=np.array([1, 2, 3]), unit=unit)
-    assert sc.all(sc.isclose(a, a, 0 * unit, 0 * unit)).value
+    assert sc.all(sc.isclose(a, a, rtol=0 * unit, atol=0 * unit)).value
 
 
 def test_isclose_atol_defaults():

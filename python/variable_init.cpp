@@ -209,7 +209,7 @@ auto make_element_array(const Dimensions &dims, const py::object &source,
   } else if (dims.ndim() == 0) {
     return element_array<T>(1, extract_scalar<T>(source, unit));
   } else {
-    element_array<T> array(dims.volume(), core::default_init_elements);
+    element_array<T> array(dims.volume(), core::init_for_overwrite);
     copy_array_into_view(cast_to_array_like<T>(source, unit), array, dims);
     return array;
   }

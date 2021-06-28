@@ -3,6 +3,12 @@
 # @file
 # @author Simon Heybrock
 
+from __future__ import annotations
+from pathlib import Path
+from typing import Union
+
+from ..typing import DatasetLike
+
 
 def _dtype_lut():
     from .._scipp.core import dtype as d
@@ -269,7 +275,7 @@ class HDF5IO:
         return cls._handlers[group.attrs['scipp-type']].read(group)
 
 
-def to_hdf5(obj, filename):
+def to_hdf5(obj: DatasetLike, filename: Union[str, Path]):
     """
     Writes object out to file in hdf5 format.
     """
@@ -278,7 +284,7 @@ def to_hdf5(obj, filename):
         HDF5IO.write(f, obj)
 
 
-def open_hdf5(filename):
+def open_hdf5(filename: Union[str, Path]) -> DatasetLike:
     import h5py
     with h5py.File(filename, 'r') as f:
         return HDF5IO.read(f)

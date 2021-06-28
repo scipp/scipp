@@ -54,12 +54,18 @@ extensions = [
 
 autodoc_typehints = 'description'
 
+autodoc_type_aliases = {
+    'DataArrayLike': 'DataArrayLike',
+    'DatasetLike': 'DatasetLike',
+}
+
 rst_epilog = f"""
 .. |SCIPP_RELEASE_MONTH| replace:: {os.popen("git show -s --format=%cd --date=format:'%B %Y'").read()}
 .. |SCIPP_VERSION| replace:: {os.popen("git describe --tags --abbrev=0").read()}
 """  # noqa: E501
 
 intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
     'xarray': ('https://xarray.pydata.org/en/stable/', None)
 }
