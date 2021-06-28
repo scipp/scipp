@@ -120,7 +120,7 @@ def test_variable_binned_data_array():
 
 
 def test_variable_binned_dataset():
-    d = sc.Dataset({'a': array_1d, 'b': array_1d})
+    d = sc.Dataset(data={'a': array_1d, 'b': array_1d})
     binned = sc.bins(dim='x', data=d)
     check_roundtrip(binned)
 
@@ -158,7 +158,7 @@ def test_data_array_dtype_scipp_container():
     a.coords['1d'].values[1] = sc.DataArray(data=1.0 * sc.units.m)
     a.coords['1d'].values[2] = sc.DataArray(data=2.0 * sc.units.m)
     a.coords['1d'].values[3] = sc.DataArray(data=3.0 * sc.units.m)
-    a.coords['dataset'] = sc.Variable(value=sc.Dataset({
+    a.coords['dataset'] = sc.Variable(value=sc.Dataset(data={
         'a': array_1d,
         'b': array_2d
     }))
@@ -185,5 +185,5 @@ def test_data_array_unsupported_PyObject_coord():
 
 
 def test_dataset():
-    d = sc.Dataset({'a': array_1d, 'b': array_2d})
+    d = sc.Dataset(data={'a': array_1d, 'b': array_2d})
     check_roundtrip(d)

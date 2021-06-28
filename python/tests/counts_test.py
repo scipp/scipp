@@ -7,7 +7,7 @@ def test_round_trip_dataset():
     data = sc.Variable(['tof'], values=[10., 10.], unit=sc.units.counts)
     tof = sc.Variable(['tof'], values=[1., 2., 3.], unit=sc.units.us)
 
-    d = sc.Dataset({'data': data}, coords={'tof': tof})
+    d = sc.Dataset(data={'data': data}, coords={'tof': tof})
 
     dd = sc.density_to_counts(sc.counts_to_density(d, 'tof'), 'tof')
     assert sc.identical(dd, d)

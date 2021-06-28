@@ -73,7 +73,7 @@ def test_numpy_self_assign_shift_2d_flip_second():
 a = np.arange(2)
 var = sc.Variable(dims=['x'], values=a)
 arr = sc.DataArray(var)
-ds = sc.Dataset({'a': arr})
+ds = sc.Dataset(data={'a': arr})
 
 
 @pytest.mark.parametrize("obj",

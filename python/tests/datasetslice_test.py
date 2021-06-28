@@ -94,7 +94,7 @@ class TestDatasetSlice:
     def test_slice_and_dimensions_items_dataset(self):
         da = sc.DataArray(
             sc.Variable(['x', 'y'], values=np.arange(50).reshape(5, 10)))
-        ds = sc.Dataset({'a': da})
+        ds = sc.Dataset(data={'a': da})
         assert (np.allclose(ds['x', 0]['a'].values,
                             ds['x', 0:1]['a'].values[0],
                             atol=1e-9))

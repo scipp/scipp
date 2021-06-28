@@ -199,7 +199,7 @@ def test_binary_with_broadcast():
 
 
 def test_view_in_place_binary_with_scalar():
-    d = sc.Dataset({'data': sc.Variable(dims=['x'], values=[10.0])},
+    d = sc.Dataset(data={'data': sc.Variable(dims=['x'], values=[10.0])},
                    coords={'x': sc.Variable(dims=['x'], values=[10])})
     copy = d.copy()
 

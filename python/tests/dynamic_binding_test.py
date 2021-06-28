@@ -69,5 +69,5 @@ def test_bound_methods_groupby():
                               values=rng.choice([0, 1], da.coords['x'].shape))
     assert sc.identical(da.groupby('x').sum('x'), sc.groupby(da, 'x').sum('x'))
 
-    ds = sc.Dataset({'item': da})
+    ds = sc.Dataset(data={'item': da})
     assert sc.identical(ds.groupby('x').sum('x'), sc.groupby(ds, 'x').sum('x'))
