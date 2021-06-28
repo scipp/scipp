@@ -35,7 +35,6 @@ class PlotController:
     """
     def __init__(self,
                  dims,
-                 name=None,
                  vmin=None,
                  vmax=None,
                  norm=None,
@@ -61,8 +60,6 @@ class PlotController:
             self._profile_model.dims = self._dims[:-len(self.model.dims)]
         self.view = view
 
-        self.name = name
-
         self.vmin = vmin
         self.vmax = vmax
         self.norm = norm if norm is not None else "linear"
@@ -73,7 +70,7 @@ class PlotController:
                 self.scale[dim] = item
         self.view.set_scale(scale=self.scale)
 
-        sizes = self.model.data_arrays[self.name].sizes
+        sizes = self.model.data_arrays.sizes
 
         self._initialize_widgets(sizes)
         self.initialize_model()

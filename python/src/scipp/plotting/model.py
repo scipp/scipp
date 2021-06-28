@@ -60,7 +60,7 @@ class PlotModel:
             self.data_arrays[name] = sc.DataArray(data=array.data,
                                                   coords=coord_list,
                                                   masks=to_dict(array.masks))
-        self._data_arrays = DataArrayDict(self.data_arrays)
+        self.data_arrays = DataArrayDict(self.data_arrays)
 
         # Save a copy of the name for simpler access
         # Note this needs to be done before calling update_data_arrays

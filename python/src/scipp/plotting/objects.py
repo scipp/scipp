@@ -288,7 +288,6 @@ class Plot:
             2: PlotController2d
         }[self.view_ndims]
         self.controller = Controller(dims=self.dims,
-                                     name=self.name,
                                      vmin=vmin,
                                      vmax=vmax,
                                      norm=norm,
