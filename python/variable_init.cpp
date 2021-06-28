@@ -268,10 +268,8 @@ void bind_init(py::class_<Variable> &cls) {
       R"raw(
 Initialize a variable with values and/or variances.
 
-Constructing variables can be tricky because there are many arguments, some of
-which are mutually exclusive or require certain (combinations of) other
-arguments. Because of this, it is recommended to use the dedicated creation
-functions :py:func:`scipp.array` and :py:func:`scipp.scalar`.
+At least one argument of ``values`` and ``variances`` must be used.
+if you want to preallocate memory to fill later, use :py:func:`scipp.empty`.
 
 :param dims: Dimension labels.
 :param values: Sequence of values for constructing an array variable.
@@ -290,5 +288,8 @@ functions :py:func:`scipp.array` and :py:func:`scipp.scalar`.
 :type variance: Any
 :type unit: scipp.Unit
 :type dtype: Any
+
+:seealso: Specialized `creation functions <../reference/api.rst#creation-functions>`_,
+ in particular :py:func:`scipp.array` and :py:func:`scipp.scalar`.
 )raw");
 }
