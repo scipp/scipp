@@ -51,7 +51,7 @@ bool is_empty(const py::object &sequence) {
   if (py::isinstance<py::buffer>(sequence)) {
     return sequence.attr("ndim").cast<scipp::index>() == 0;
   }
-  return py::bool_{sequence};
+  return !py::bool_{sequence};
 }
 
 void ensure_same_shape(const std::optional<py::array> &values,
