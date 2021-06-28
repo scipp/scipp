@@ -56,10 +56,10 @@ def test_zeros_creates_variable_with_correct_dims_and_shape():
 
 
 def test_zeros_with_variances():
-    var = sc.zeros(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variance=True)
+    var = sc.zeros(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variances=True)
     expected = sc.Variable(dims=['x', 'y', 'z'],
                            shape=[1, 2, 3],
-                           with_variance=True)
+                           with_variances=True)
     assert sc.identical(var, expected)
 
 
@@ -79,7 +79,7 @@ def test_ones_creates_variable_with_correct_dims_and_shape():
 
 
 def test_ones_with_variances():
-    var = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variance=True)
+    var = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variances=True)
     expected = sc.Variable(dims=['x', 'y', 'z'],
                            values=np.ones([1, 2, 3]),
                            variances=np.ones([1, 2, 3]))
@@ -102,10 +102,10 @@ def test_empty_creates_variable_with_correct_dims_and_shape():
 
 
 def test_empty_with_variances():
-    var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variance=True)
+    var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variances=True)
     expected = sc.Variable(dims=['x', 'y', 'z'],
                            shape=[1, 2, 3],
-                           with_variance=True)
+                           with_variances=True)
     _compare_properties(var, expected)
 
 
@@ -159,7 +159,7 @@ def test_zeros_like_with_variances():
                       dtype=sc.dtype.float32)
     expected = sc.zeros(dims=['x', 'y', 'z'],
                         shape=[1, 2, 3],
-                        with_variance=True,
+                        with_variances=True,
                         unit='m',
                         dtype=sc.dtype.float32)
     _compare_properties(sc.zeros_like(var), expected)
@@ -179,7 +179,7 @@ def test_ones_like_with_variances():
                       dtype=sc.dtype.float32)
     expected = sc.ones(dims=['x', 'y', 'z'],
                        shape=[1, 2, 3],
-                       with_variance=True,
+                       with_variances=True,
                        unit='m',
                        dtype=sc.dtype.float32)
     _compare_properties(sc.ones_like(var), expected)
@@ -199,7 +199,7 @@ def test_empty_like_with_variances():
                       dtype=sc.dtype.float32)
     expected = sc.Variable(dims=['x', 'y', 'z'],
                            shape=[1, 2, 3],
-                           with_variance=True,
+                           with_variances=True,
                            unit='m',
                            dtype=sc.dtype.float32)
     _compare_properties(sc.empty_like(var), expected)

@@ -208,7 +208,7 @@ auto make_element_array(const Dimensions &dims, const py::object &source,
 template <class T> struct MakeVariable {
   static Variable apply(const Dimensions &dims, const py::object &values,
                         const py::object &variances, const units::Unit unit,
-                        const std::optional<bool> with_variance) {
+                        const std::optional<bool> with_variances) {
     const auto [actual_unit, conversion_factor] = common_unit<T>(values, unit);
     if (conversion_factor != 1) {
       // TODO Triggered once common_unit implements conversions.
@@ -218,7 +218,7 @@ template <class T> struct MakeVariable {
     auto values_array =
         Values(make_element_array<T>(dims, values, actual_unit));
     const bool use_variances =
-        (with_variance.has_value() && *with_variance) || !variances.is_none();
+        (with_variances.has_value() && *with_variances) || !variances.is_none();
     auto variable = use_variances
                         ? makeVariable<T>(dims, std::move(values_array),
                                           Variances(make_element_array<T>(
@@ -243,7 +243,7 @@ py::object parse_data_sequence(const py::object &dim_labels,
 Variable make_variable(const py::object &dim_labels, const py::object &shape,
                        const py::object &values, const py::object &variances,
                        const units::Unit unit, DType dtype,
-                       const std::optional<bool> with_variance) {
+                       const std::optional<bool> with_variances) {
   const auto converted_values = parse_data_sequence(dim_labels, values);
   const auto converted_variances = parse_data_sequence(dim_labels, variances);
   dtype = common_dtype(converted_values, converted_variances, dtype);
@@ -255,7 +255,7 @@ Variable make_variable(const py::object &dim_labels, const py::object &shape,
                          python::PyObject>::apply<MakeVariable>(dtype, dims,
                                                                 values,
                                                                 variances, unit,
-                                                                with_variance);
+                                                                with_variances);
 }
 
 bool is_arg_present(const py::object &arg) { return !arg.is_none(); }
@@ -281,24 +281,24 @@ void ensure_mutual_exclusivity(const A &a, const std::string_view a_name,
 void bind_init(py::class_<Variable> &cls) {
   cls.def(py::init([](const py::object &dim_labels, const py::object &shape,
                       const py::object &values, const py::object &variances,
-                      const std::optional<bool> with_variance,
+                      const std::optional<bool> with_variances,
                       const std::optional<units::Unit> unit,
                       const py::object &dtype) {
-            ensure_mutual_exclusivity(variances, "variances", with_variance,
-                                      "with_variance");
+            ensure_mutual_exclusivity(variances, "variances", with_variances,
+                                      "with_variances");
             ensure_mutual_exclusivity(shape, "shape", values, "values");
             ensure_mutual_exclusivity(shape, "shape", variances, "variances");
 
             const auto [scipp_dtype, actual_unit] =
                 cast_dtype_and_unit(dtype, unit);
             return make_variable(dim_labels, shape, values, variances,
-                                 actual_unit, scipp_dtype, with_variance);
+                                 actual_unit, scipp_dtype, with_variances);
             // Unreachable but gcc complains about a missing return otherwise.
             std::terminate();
           }),
           py::kw_only(), py::arg("dims"), py::arg("shape") = py::none(),
           py::arg("values") = py::none(), py::arg("variances") = py::none(),
-          py::arg("with_variance") = std::nullopt,
+          py::arg("with_variances") = std::nullopt,
           py::arg("unit") = std::nullopt, py::arg("dtype") = py::none(),
           R"raw(
 Initialize a variable.
@@ -322,7 +322,7 @@ Argument dependencies:
 :param variances: Sequence of variances for constructing an array variable.
 :param value: A single value for constructing a scalar variable.
 :param variance: A single variance for constructing a scalar variable.
-:param with_variance: - If True, either store variance(s) given by args
+:param with_variances: - If True, either store variance(s) given by args
                         ``variances`` or ``variance`` or if those are None,
                         create default initialized variances.
                       - If False, no variances are stored even if ``variances``
@@ -341,7 +341,7 @@ Argument dependencies:
 :type variances: numpy.ArrayLike
 :type value: Any
 :type variance: Any
-:type with_variance: bool
+:type with_variances: bool
 :type unit: scipp.Unit
 :type dtype: Any
 )raw");

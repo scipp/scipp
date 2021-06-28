@@ -18,7 +18,7 @@ def test_create_default():
 
 
 def test_create_default_variance():
-    var = sc.Variable(dims=(), with_variance=True)
+    var = sc.Variable(dims=(), with_variances=True)
     assert var.dims == []
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.dimensionless
@@ -75,9 +75,9 @@ def test_create_default_with_unit_as_string():
 def test_create_default_with_variances():
     assert sc.Variable(dims=['x'], shape=[2]).variances is None
     assert sc.Variable(dims=['x'], shape=[2],
-                       with_variance=False).variances is None
+                       with_variances=False).variances is None
     assert sc.Variable(dims=['x'], shape=[2],
-                       with_variance=True).variances is not None
+                       with_variances=True).variances is not None
 
 
 def test_create_default_dims_shape_mismatch():
@@ -91,9 +91,9 @@ def test_create_default_dims_shape_mismatch():
 
 def test_create_mutually_exclusive_arguments():
     with pytest.raises(ValueError):
-        sc.Variable(dims=(), variances=[1, 2], with_variance=False)
+        sc.Variable(dims=(), variances=[1, 2], with_variances=False)
     with pytest.raises(ValueError):
-        sc.Variable(dims=(), variances=[1, 2], with_variance=True)
+        sc.Variable(dims=(), variances=[1, 2], with_variances=True)
     with pytest.raises(ValueError):
         sc.Variable(dims=['x'], shape=[2], values=[1, 2])
     with pytest.raises(ValueError):

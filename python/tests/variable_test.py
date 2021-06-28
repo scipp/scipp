@@ -141,7 +141,7 @@ def test_2D_access_bad_shape_fail():
 
 
 def test_2D_access_variances():
-    var = sc.Variable(dims=['x', 'y'], shape=(2, 3), with_variance=True)
+    var = sc.Variable(dims=['x', 'y'], shape=(2, 3), with_variances=True)
     assert var.values.shape == (2, 3)
     assert var.variances.shape == (2, 3)
     var.values[1] = 1.2
