@@ -23,6 +23,18 @@ TEST(CreationTest, empty) {
   EXPECT_EQ(var2.hasVariances(), false);
 }
 
+TEST(CreationTest, zeros) {
+  const auto dims = Dimensions(Dim::X, 2);
+  EXPECT_EQ(
+      variable::zeros(dims, units::m, dtype<double>, true),
+      makeVariable<double>(dims, units::m, Values{0, 0}, Variances{0, 0}));
+  EXPECT_EQ(variable::zeros(dims, units::s, dtype<int32_t>),
+            makeVariable<int32_t>(dims, units::s, Values{0, 0}));
+  // Not a broadcast of a scalar
+  EXPECT_FALSE(
+      variable::zeros(dims, units::m, dtype<double>, true).is_readonly());
+}
+
 TEST(CreationTest, ones) {
   const auto dims = Dimensions(Dim::X, 2);
   EXPECT_EQ(

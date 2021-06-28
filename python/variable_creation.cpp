@@ -25,6 +25,18 @@ void init_creation(py::module &m) {
       py::arg("dims"), py::arg("shape"), py::arg("unit") = units::one,
       py::arg("dtype") = py::none(), py::arg("with_variances") = std::nullopt);
   m.def(
+      "zeros",
+      [](const std::vector<Dim> &dims, const std::vector<scipp::index> &shape,
+         const units::Unit &unit, const py::object &dtype,
+         const bool with_variances) {
+        const auto dtype_ = scipp_dtype(dtype);
+        py::gil_scoped_release release;
+        return variable::zeros(Dimensions(dims, shape), unit, dtype_,
+                               with_variances);
+      },
+      py::arg("dims"), py::arg("shape"), py::arg("unit") = units::one,
+      py::arg("dtype") = py::none(), py::arg("with_variances") = std::nullopt);
+  m.def(
       "ones",
       [](const std::vector<Dim> &dims, const std::vector<scipp::index> &shape,
          const units::Unit &unit, const py::object &dtype,

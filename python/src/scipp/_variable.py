@@ -89,10 +89,10 @@ def zeros(*,
       initialized to 0.0. Default=False
     """
 
-    return _cpp.Variable(**_parse_dims_shape_sizes(dims, shape, sizes),
-                         unit=unit,
-                         dtype=dtype,
-                         with_variances=with_variances)
+    return _cpp.zeros(**_parse_dims_shape_sizes(dims, shape, sizes),
+                      unit=unit,
+                      dtype=dtype,
+                      with_variances=with_variances)
 
 
 def zeros_like(var: _cpp.Variable) -> _cpp.Variable:
