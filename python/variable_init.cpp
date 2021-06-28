@@ -293,8 +293,6 @@ void bind_init(py::class_<Variable> &cls) {
                 cast_dtype_and_unit(dtype, unit);
             return make_variable(dim_labels, shape, values, variances,
                                  actual_unit, scipp_dtype, with_variances);
-            // Unreachable but gcc complains about a missing return otherwise.
-            std::terminate();
           }),
           py::kw_only(), py::arg("dims"), py::arg("shape") = py::none(),
           py::arg("values") = py::none(), py::arg("variances") = py::none(),
@@ -310,11 +308,11 @@ functions :py:func:`scipp.array` and :py:func:`scipp.scalar`.
 
 Argument dependencies:
 
-- Array variable: ``dims``, and at least one of ``shape``, ``values``,
-  ``variances`` are required. But ``value`` and ``variance`` are not allowed.
-- Scalar variable: ``dims`` and ``shape`` must be absent or empty.
-  ``value`` and ``variance`` are used to optionally set initial values.
-  ``values`` and ``variances`` are not allowed.
+- Empty ``dims`` requires empty ``shape``.
+- Non-empty ``dims`` requires either non-empty ``shape`` or one or both of
+  ``values`` and ``variances``.
+- ``shape`` cannot be combined with ``values`` or ``variances``.
+- ``with_variances`` cannot be combined with ``variances``.
 
 :param dims: Dimension labels.
 :param shape: Size in each dimension.
