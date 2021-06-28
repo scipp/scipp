@@ -125,18 +125,13 @@ Dimensions build_dimensions(const py::object &dim_labels,
   if (is_empty(dim_labels)) {
     return Dimensions{};
   } else {
-    ensure_same_shape(values, variances);
     if (!values.is_none()) {
+      ensure_same_shape(values, variances);
       return detail::build_dimensions(py::iter(dim_labels), shape_of(values),
                                       "values");
-    } else if (!variances.is_none()) {
+    } else {
       return detail::build_dimensions(py::iter(dim_labels), shape_of(variances),
                                       "variances");
-    } else {
-      throw std::invalid_argument(
-          "Missing shape information to construct Variable. "
-          "Use either the 'shape' argument or 'values' and / or "
-          "'variances'.");
     }
   }
 }
@@ -253,20 +248,25 @@ Variable make_variable(const py::object &dim_labels, const py::object &values,
  * of arguments is valid. Functions down the line do not check again.
  */
 void bind_init(py::class_<Variable> &cls) {
-  cls.def(py::init([](const py::object &dim_labels, const py::object &values,
-                      const py::object &variances,
-                      const std::optional<units::Unit> unit,
-                      const py::object &dtype) {
-            const auto [scipp_dtype, actual_unit] =
-                cast_dtype_and_unit(dtype, unit);
-            return make_variable(dim_labels, values, variances, actual_unit,
-                                 scipp_dtype);
-          }),
-          py::kw_only(), py::arg("dims"), py::arg("values") = py::none(),
-          py::arg("variances") = py::none(), py::arg("unit") = std::nullopt,
-          py::arg("dtype") = py::none(),
-          R"raw(
-Initialize a variable.
+  cls.def(
+      py::init([](const py::object &dim_labels, const py::object &values,
+                  const py::object &variances,
+                  const std::optional<units::Unit> unit,
+                  const py::object &dtype) {
+        if (values.is_none() && variances.is_none()) {
+          throw std::invalid_argument(
+              "At least one argument of 'values' and 'variances' is required.");
+        }
+        const auto [scipp_dtype, actual_unit] =
+            cast_dtype_and_unit(dtype, unit);
+        return make_variable(dim_labels, values, variances, actual_unit,
+                             scipp_dtype);
+      }),
+      py::kw_only(), py::arg("dims"), py::arg("values") = py::none(),
+      py::arg("variances") = py::none(), py::arg("unit") = std::nullopt,
+      py::arg("dtype") = py::none(),
+      R"raw(
+Initialize a variable with values and/or variances.
 
 Constructing variables can be tricky because there are many arguments, some of
 which are mutually exclusive or require certain (combinations of) other
