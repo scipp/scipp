@@ -279,9 +279,11 @@ class Plot:
 
         Model = {1: PlotModel1d, 2: PlotModel2d}[self.view_ndims]
         model = Model(scipp_obj_dict=self._scipp_obj_dict,
+                      labels=labels,
                       name=self.name,
                       resolution=resolution)
         profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict,
+                                    labels=labels,
                                     name=self.name)
         Controller = {
             1: PlotController1d,

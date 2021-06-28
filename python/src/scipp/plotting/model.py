@@ -47,7 +47,7 @@ class PlotModel:
     The model is where all operations on the data (slicing and resampling) are
     performed.
     """
-    def __init__(self, scipp_obj_dict=None, name=None):
+    def __init__(self, *, scipp_obj_dict, labels, name):
         self._dims = None
         self.data_arrays = {}
 
@@ -57,6 +57,9 @@ class PlotModel:
                 dim: self._axis_coord(array, dim)
                 for dim in array.dims
             }
+            for label in labels.values():
+                if label in array.meta:
+                    coord_list[label] = array.meta[label]
             self.data_arrays[name] = sc.DataArray(data=array.data,
                                                   coords=coord_list,
                                                   masks=to_dict(array.masks))

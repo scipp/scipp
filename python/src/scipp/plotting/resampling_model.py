@@ -179,8 +179,9 @@ class ResamplingBinnedModel(ResamplingModel):
 
 def _with_edges(array):
     new_array = array.copy(deep=False)
-    prefix = ''.join(array.dims)
-    for dim, var in array.coords.items():
+    prefix = ''.join(array.meta)
+    for dim in array.dims:
+        var = array.coords[dim]
         new_array.coords[f'{prefix}_{dim}'] = var
         if var.sizes[dim] == array.sizes[dim]:
             new_array.coords[dim] = to_bin_edges(var, dim)
@@ -192,14 +193,17 @@ def _with_edges(array):
 
 def _replace_edge_coords(array, dims, bounds, prefix):
     coords = {}
-    for dim in dims:
+    for dim in array.meta:
         if dim in bounds:
             if isinstance(bounds[dim], int):
                 coords[dim] = array.meta[f'{prefix}_{dim}']
             else:
                 coords[dim] = array.meta[dim]
         else:
-            coords[dim] = array.meta[f'{prefix}_{dim}']
+            if f'{prefix}_{dim}' in array.meta:
+                coords[dim] = array.meta[f'{prefix}_{dim}']
+            else:
+                coords[dim] = array.meta[dim]
     return coords
 
 

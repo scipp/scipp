@@ -240,7 +240,7 @@ class PlotWidgets:
                                      change["new"],
                                      change["owner"].max - 1,
                                      set_value=False)
-            self._controller.update_data(change)
+            self._controller.update_data(slices=self.slices)
 
         return _update
 
@@ -343,8 +343,14 @@ class PlotWidgets:
         """
         Update the slider readout with new slider bounds.
         """
-        # TODO This is using dimension coord rather than labels
         # TODO use ..utils.value_to_string?
         for dim in self._slider_dims:
-            # label = self._labels[dim]
-            self._controls[dim]['value'].value = str(bounds[dim].values)
+            label = self._labels[dim]
+            if label != dim and label not in bounds:
+                # Getting sensible labels in nontrivial in this case. For now
+                # we use underlying coord but make sure to indicate this to
+                # the user.
+                bound = f'{dim}={bounds[dim].values}'
+            else:
+                bound = f'{bounds[label].values}'
+            self._controls[dim]['value'].value = bound
