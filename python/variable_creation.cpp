@@ -49,10 +49,9 @@ void init_creation(py::module &m) {
         py::gil_scoped_release release;
         return core::CallDType<
             double, float, int64_t, int32_t, bool, scipp::core::time_point,
-            std::string, Variable, dataset::DataArray, dataset::Dataset,
-            Eigen::Vector3d, Eigen::Matrix3d,
-            python::PyObject>::apply<MakeZeros>(dtype_, dims, shape, unit,
-                                                with_variances);
+            std::string, Eigen::Vector3d,
+            Eigen::Matrix3d>::apply<MakeZeros>(dtype_, dims, shape, unit,
+                                               with_variances);
       },
       py::arg("dims"), py::arg("shape"), py::arg("unit") = units::one,
       py::arg("dtype") = py::none(), py::arg("with_variances") = std::nullopt);
