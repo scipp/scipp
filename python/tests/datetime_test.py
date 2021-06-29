@@ -54,12 +54,6 @@ def test_construct_0d_datetime(unit):
         assert var.unit == unit
         assert var.value.dtype == dtype
         assert var.value == value
-    # default init
-    for var in (sc.Variable(dims=(), dtype=dtype,
-                            unit=unit), sc.Variable(dims=(), dtype=dtype)):
-        assert var.dtype == sc.dtype.datetime64
-        assert var.unit == unit
-        assert var.value.dtype == dtype
 
 
 def test_construct_0d_datetime_array():
@@ -97,7 +91,7 @@ def test_construct_0d_datetime_mismatch(unit1, unit2):
 def test_construct_0d_datetime_nounit():
     # Can make a datetime variable without unit but cannot do anything
     # with it except set its unit.
-    var = sc.Variable(dims=(), dtype=sc.dtype.datetime64)
+    var = sc.Variable(dims=(), values=1, dtype=sc.dtype.datetime64)
     assert var.dtype == sc.dtype.datetime64
     assert var.unit == sc.units.one
     with pytest.raises(sc.UnitError):

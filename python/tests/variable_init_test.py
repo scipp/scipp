@@ -103,8 +103,9 @@ def test_create_scalar_invalid_variance(variance):
     sc.Variable(dims=(), values=1.2, unit=sc.units.m).unit
 ])
 def test_create_scalar_with_unit(unit):
-    var = sc.Variable(dims=(), unit=unit)
+    var = sc.Variable(dims=(), values=1.0, unit=unit)
     assert var.dims == []
+    assert var.value == 1.0
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.m
 
@@ -307,7 +308,7 @@ def test_create_1d_dtype_object(values_type):
 def test_create_1d_override_dtype(dtype, values):
     var = sc.Variable(dims=['x'], values=values, dtype=dtype)
     converted = np.array(values).astype(dtype)
-    scipp_dtype = sc.Variable(dims=(), dtype=dtype).dtype
+    scipp_dtype = sc.Variable(dims=['x'], values=converted).dtype
     assert var.dtype == scipp_dtype
     np.testing.assert_array_equal(var.values, converted)
 

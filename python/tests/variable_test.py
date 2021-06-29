@@ -48,7 +48,7 @@ def test_operation_with_scalar_quantity():
 
 
 def test_0D_scalar_access():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert var.value == 0.0
     var.value = 1.2
     assert var.value == 1.2
@@ -442,48 +442,49 @@ def test_binary_not_equal():
 
 
 def test_abs():
-    assert_export(sc.abs, sc.Variable(dims=()))
+    assert_export(sc.abs, sc.Variable(dims=(), values=0.0))
 
 
 def test_abs_out():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.abs, var, out=var)
 
 
 def test_dot():
-    assert_export(sc.dot, sc.Variable(dims=()), sc.Variable(dims=()))
+    assert_export(sc.dot, sc.Variable(dims=(), values=0.0),
+                  sc.Variable(dims=(), values=0.0))
 
 
 def test_concatenate():
-    assert_export(sc.concatenate, sc.Variable(dims=()), sc.Variable(dims=()),
-                  'x')
+    assert_export(sc.concatenate, sc.Variable(dims=(), values=0.0),
+                  sc.Variable(dims=(), values=0.0), 'x')
 
 
 def test_mean():
-    assert_export(sc.mean, sc.Variable(dims=()), 'x')
+    assert_export(sc.mean, sc.Variable(dims=(), values=0.0), 'x')
 
 
 def test_mean_in_place():
-    var = sc.Variable(dims=())
-    assert_export(sc.mean, sc.Variable(dims=()), 'x', var)
+    var = sc.Variable(dims=(), values=0.0)
+    assert_export(sc.mean, sc.Variable(dims=(), values=0.0), 'x', var)
 
 
 def test_norm():
-    assert_export(sc.norm, sc.Variable(dims=()))
+    assert_export(sc.norm, sc.Variable(dims=(), values=0.0))
 
 
 def test_sqrt():
-    assert_export(sc.sqrt, sc.Variable(dims=()))
+    assert_export(sc.sqrt, sc.Variable(dims=(), values=0.0))
 
 
 def test_sqrt_out():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.sqrt, var, var)
 
 
 def test_values_variances():
-    assert_export(sc.values, sc.Variable(dims=()))
-    assert_export(sc.variances, sc.Variable(dims=()))
+    assert_export(sc.values, sc.Variable(dims=(), values=0.0))
+    assert_export(sc.variances, sc.Variable(dims=(), values=0.0))
 
 
 def test_sum():
@@ -512,7 +513,7 @@ def test_sum_in_place():
 
 
 def test_variance_acess():
-    v = sc.Variable(dims=())
+    v = sc.Variable(dims=(), values=0.0)
     assert v.variance is None
     assert v.variances is None
 
@@ -585,7 +586,7 @@ def test_sum_mean():
 
 
 def test_make_variable_from_unit_scalar_mult_div():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     var.unit = sc.units.m
     assert sc.identical(var, 0.0 * sc.units.m)
     var.unit = sc.units.m**(-1)
@@ -638,85 +639,85 @@ def test_bool_variable_repr():
 
 
 def test_reciprocal():
-    assert_export(sc.reciprocal, sc.Variable(dims=()))
+    assert_export(sc.reciprocal, sc.Variable(dims=(), values=0.0))
 
 
 def test_reciprocal_out():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.reciprocal, var, var)
 
 
 def test_exp():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.exp, x=var)
 
 
 def test_log():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.log, x=var)
 
 
 def test_log10():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.log10, x=var)
 
 
 def test_sin():
-    assert_export(sc.sin, sc.Variable(dims=()))
+    assert_export(sc.sin, sc.Variable(dims=(), values=0.0))
 
 
 def test_sin_out():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.sin, var, out=var)
 
 
 def test_cos():
-    assert_export(sc.cos, sc.Variable(dims=()))
+    assert_export(sc.cos, sc.Variable(dims=(), values=0.0))
 
 
 def test_cos_out():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.cos, var, out=var)
 
 
 def test_tan():
-    assert_export(sc.tan, sc.Variable(dims=()))
+    assert_export(sc.tan, sc.Variable(dims=(), values=0.0))
 
 
 def test_tan_out():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.tan, var, out=var)
 
 
 def test_asin():
-    assert_export(sc.asin, sc.Variable(dims=()))
+    assert_export(sc.asin, sc.Variable(dims=(), values=0.0))
 
 
 def test_asin_out():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.asin, var, out=var)
 
 
 def test_acos():
-    assert_export(sc.acos, sc.Variable(dims=()))
+    assert_export(sc.acos, sc.Variable(dims=(), values=0.0))
 
 
 def test_acos_out():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.acos, var, out=var)
 
 
 def test_atan():
-    assert_export(sc.atan, sc.Variable(dims=()))
+    assert_export(sc.atan, sc.Variable(dims=(), values=0.0))
 
 
 def test_atan_out():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.atan, var, out=var)
 
 
 def test_atan2():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.atan2, y=var, x=var)
     assert_export(sc.atan2, y=var, x=var, out=var)
 
@@ -838,12 +839,12 @@ def test_nan_to_num_out_with_multiple_special_replacements():
 
 
 def test_position():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.geometry.position, x=var, y=var, z=var)
 
 
 def test_comparison():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.less, x=var, y=var)
     assert_export(sc.greater, x=var, y=var)
     assert_export(sc.greater_equal, x=var, y=var)
@@ -877,6 +878,6 @@ def test_rtruediv_int():
 
 
 def test_sort():
-    var = sc.Variable(dims=())
+    var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.sort, x=var, dim='x', order='ascending')
     assert_export(sc.issorted, x=var, dim='x', order='ascending')
