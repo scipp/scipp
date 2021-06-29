@@ -15,23 +15,13 @@ Variable empty(const Dimensions &dims, const units::Unit &unit,
   return variableFactory().create(type, dims, unit, with_variances);
 }
 
-Variable full(const Dimensions &dims, const int value, const units::Unit &unit,
-              const DType type, const std::optional<int> variance) {
-  const auto prototype =
-      variance.has_value() ? Variable{type, Dimensions{}, unit, Values{value},
-                                      Variances{*variance}}
-                           : Variable{type, Dimensions{}, unit, Values{value}};
-  return copy(broadcast(prototype, dims));
-}
-
-Variable zeros(const Dimensions &dims, const units::Unit &unit,
-               const DType type, const bool with_variances) {
-  return full(dims, 0, unit, type, with_variances ? 0 : std::optional<int>{});
-}
-
 Variable ones(const Dimensions &dims, const units::Unit &unit, const DType type,
               const bool with_variances) {
-  return full(dims, 1, unit, type, with_variances ? 1 : std::optional<int>{});
+  const auto prototype =
+      with_variances
+          ? Variable{type, Dimensions{}, unit, Values{1}, Variances{0}}
+          : Variable{type, Dimensions{}, unit, Values{1}};
+  return copy(broadcast(prototype, dims));
 }
 
 /// Create empty (uninitialized) variable with same parameters as prototype.

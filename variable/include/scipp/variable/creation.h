@@ -17,10 +17,6 @@ empty(const Dimensions &dims, const units::Unit &unit, const DType type,
       const bool with_variances = false);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-zeros(const Dimensions &dims, const units::Unit &unit, const DType type,
-      const bool with_variances = false);
-
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 ones(const Dimensions &dims, const units::Unit &unit, const DType type,
      const bool with_variances = false);
 
