@@ -82,6 +82,20 @@ def test_zeros_with_dtype_and_unit():
     assert var.unit == 'm'
 
 
+def test_zeros_dtypes():
+    for dtype in (int, float, bool):
+        assert sc.zeros(dims=(), shape=(), dtype=dtype).value == dtype(0)
+    assert sc.zeros(dims=(), shape=(), unit='s',
+                    dtype='datetime64').value == np.datetime64(0, 's')
+    assert sc.zeros(dims=(), shape=(), dtype=str).value == ''
+    np.testing.assert_array_equal(
+        sc.zeros(dims=(), shape=(), dtype=sc.dtype.vector_3_float64).value,
+        np.zeros(3))
+    np.testing.assert_array_equal(
+        sc.zeros(dims=(), shape=(), dtype=sc.dtype.matrix_3_float64).value,
+        np.zeros((3, 3)))
+
+
 def test_ones_creates_variable_with_correct_dims_and_shape():
     var = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     expected = sc.Variable(dims=['x', 'y', 'z'], values=np.ones([1, 2, 3]))
