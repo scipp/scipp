@@ -2,7 +2,6 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .figure3d import PlotFigure3d
 from .view import PlotView
 
 
@@ -15,8 +14,8 @@ class PlotView3d(PlotView):
 
     This will also be handling profile picking events in the future.
     """
-    def __init__(self, *args, **kwargs):
-        super().__init__(figure=PlotFigure3d(*args, **kwargs))
+    def __init__(self, figure, formatters):
+        super().__init__(figure=figure, formatters=formatters)
         self._axes = ['z', 'y', 'x']
 
     def update_opacity(self, *args, **kwargs):

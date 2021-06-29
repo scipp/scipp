@@ -40,13 +40,6 @@ class PlotModel2d(PlotModel):
         else:
             self._model.update_array(self.data_arrays[self.name])
 
-    def _update_image(self):
-        """
-        Resample 2d images to a fixed resolution to handle very large images.
-        """
-        self.dslice = self._model.data
-        return transpose(self.dslice, dims=self._dims)
-
     def update_data(self, slices):
         """
         Slice the data along dimension sliders that are not disabled for all
@@ -55,7 +48,8 @@ class PlotModel2d(PlotModel):
         """
         for dim, bounds in slices.items():
             self._model.bounds[dim] = bounds
-        return self._update_image()
+        self.dslice = self._model.data
+        return transpose(self.dslice, dims=self._dims)
 
     def reset_resampling_model(self):
         self._model.reset()

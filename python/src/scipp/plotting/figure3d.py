@@ -23,20 +23,22 @@ class PlotFigure3d:
     It renders an interactive scene containing a point cloud using `pythreejs`.
     """
     def __init__(self,
-                 cmap=None,
-                 norm=None,
-                 figsize=None,
-                 unit=None,
-                 log=None,
-                 nan_color=None,
-                 masks=None,
-                 tick_size=None,
                  background=None,
-                 show_outline=True,
+                 cmap=None,
                  extend=None,
+                 figsize=None,
+                 mask_cmap=None,
+                 nan_color=None,
+                 norm=None,
+                 pixel_size=None,
+                 show_outline=True,
+                 tick_size=None,
+                 unit=None,
                  xlabel=None,
                  ylabel=None,
                  zlabel=None):
+
+        # TODO pixel_size
 
         if figsize is None:
             figsize = (config.plot.width, config.plot.height)
@@ -49,11 +51,10 @@ class PlotFigure3d:
         self.cmap.set_bad(color=nan_color)
         self.scalar_map = cm.ScalarMappable(norm=norm, cmap=self.cmap)
         self.masks_scalar_map = None
-        if len(masks) > 0:
-            self.masks_cmap = masks["cmap"]
-            self.masks_cmap.set_bad(color=nan_color)
-            self.masks_scalar_map = cm.ScalarMappable(norm=norm,
-                                                      cmap=self.masks_cmap)
+        self.masks_cmap = mask_cmap
+        self.masks_cmap.set_bad(color=nan_color)
+        self.masks_scalar_map = cm.ScalarMappable(norm=norm,
+                                                  cmap=self.masks_cmap)
 
         self.axlabels = {"x": xlabel, "y": ylabel, "z": zlabel}
         self.positions = None

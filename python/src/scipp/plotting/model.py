@@ -108,24 +108,3 @@ class PlotModel:
             return find_limits(self.dslice.data, scale=scale)[scale]
         else:
             return [None, None]
-
-    # TODO remove once model3d is refactored
-    def slice_data(self, array, slices):
-        """
-        Slice the data array according to the dimensions and extents listed
-        in slices.
-        """
-        for dim, [lower, upper] in slices.items():
-            # TODO: Could this be optimized for performance?
-            # Note: we use the range 1 [dim, i:i+1] slicing here instead of
-            # index slicing [dim, i] so that we hit the correct branch in
-            # rebin, because in the case of slicing an outer dim, rebin-inner
-            # cannot deal with non-continuous data as an input.
-            array = array[dim, lower:upper]
-            if (upper - lower) > 1:
-                array.data = sc.rebin(
-                    array.data, dim, array.meta[dim],
-                    sc.concatenate(array.meta[dim][dim, 0],
-                                   array.meta[dim][dim, -1], dim))
-            array = array[dim, 0]
-        return array

@@ -15,16 +15,11 @@ class PlotController3d(PlotController):
     It handles some additional events from the cut surface panel, compared to
     the base class controller.
     """
-    def __init__(self,
-                 *args,
-                 pixel_size=None,
-                 positions=None,
-                 aspect=None,
-                 **kwargs):
+    def __init__(self, *args, positions=None, aspect=None, **kwargs):
 
+        # TODO aspect move to figure?
         super().__init__(*args, **kwargs)
         self.positions = positions
-        self.pixel_size = pixel_size
         self.aspect = aspect
         if self.aspect is None:
             if positions is not None:
@@ -54,6 +49,7 @@ class PlotController3d(PlotController):
         """
         if self.positions is not None:
             extents = self.model.get_positions_extents(self.pixel_size)
+            # TODO replace by min and max calls on position components in fig
             axparams = {
                 xyz: {
                     "lims": ex["lims"],
@@ -66,12 +62,14 @@ class PlotController3d(PlotController):
         else:
             axparams = super()._make_axes_parameters()
 
+        # TODO move to figure
         axparams["box_size"] = np.array([
             axparams['x']["lims"][1] - axparams['x']["lims"][0],
             axparams['y']["lims"][1] - axparams['y']["lims"][0],
             axparams['z']["lims"][1] - axparams['z']["lims"][0]
         ])
 
+        # TODO move to figure?
         for i, xyz in enumerate("xyz"):
             axparams[xyz]["scaling"] = 1.0 / axparams["box_size"][
                 i] if self.aspect == "auto" else 1.0
@@ -82,12 +80,14 @@ class PlotController3d(PlotController):
             axparams['z']["scaling"]
         ])
 
+        # TODO move to figure
         axparams["center"] = [
             0.5 * np.sum(axparams['x']["lims"]),
             0.5 * np.sum(axparams['y']["lims"]),
             0.5 * np.sum(axparams['z']["lims"])
         ]
 
+        # TODO move to figure
         if self.pixel_size is not None:
             axparams["pixel_size"] = self.pixel_size
             axparams["pixel_scaling"] = 1.0
