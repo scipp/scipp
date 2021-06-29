@@ -3,8 +3,6 @@
 /// @file
 /// @author Jan-Lukas Wynen
 
-#include <sstream>
-
 #include "pybind11.h"
 
 #include "scipp/core/dtype.h"
