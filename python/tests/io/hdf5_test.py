@@ -151,6 +151,11 @@ def test_data_array_dtype_scipp_container():
     a = sc.DataArray(data=x)
     a.coords['variable'] = sc.scalar(x)
     a.coords['scalar'] = sc.scalar(a)
+    a.coords['1d'] = sc.empty(dims=x.dims,
+                              shape=x.shape,
+                              dtype=sc.dtype.DataArray)
+    for i in range(4):
+        a.coords['1d'].values[i] = sc.DataArray(float(i) * sc.units.m)
     a.coords['dataset'] = sc.scalar(sc.Dataset({'a': array_1d, 'b': array_2d}))
     check_roundtrip(a)
 
