@@ -257,7 +257,9 @@ class DatasetIO:
     def read(group):
         _check_scipp_header(group, 'Dataset')
         from .._scipp import core as sc
-        return sc.Dataset({name: HDF5IO.read(group[name]) for name in group})
+        return sc.Dataset(
+            data={name: HDF5IO.read(group[name])
+                  for name in group})
 
 
 class HDF5IO:

@@ -13,6 +13,6 @@ def test_bool_raises():
     da = sc.DataArray(var)
     with pytest.raises(RuntimeError):
         da and da
-    ds = sc.Dataset({'a': da})
+    ds = sc.Dataset(data={'a': da})
     with pytest.raises(RuntimeError):
         ds and ds

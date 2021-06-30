@@ -109,8 +109,8 @@ def test_1D_converting():
 
 def test_1D_dataset():
     var = sc.empty(dims=['x'], shape=(2, ), dtype=sc.dtype.Dataset)
-    d1 = sc.Dataset({'a': 1.5 * sc.units.m})
-    d2 = sc.Dataset({'a': 2.5 * sc.units.m})
+    d1 = sc.Dataset(data={'a': 1.5 * sc.units.m})
+    d2 = sc.Dataset(data={'a': 2.5 * sc.units.m})
     var.values = [d1, d2]
     assert sc.identical(var.values[0], d1)
     assert sc.identical(var.values[1], d2)

@@ -121,7 +121,7 @@ def test_bins_view():
 
 def test_bins_arithmetic():
     var = sc.Variable(dims=['event'], values=[1.0, 2.0, 3.0, 4.0])
-    table = sc.DataArray(var, {'x': var})
+    table = sc.DataArray(var, coords={'x': var})
     binned = sc.bin(table, [sc.Variable(dims=['x'], values=[1.0, 5.0])])
     hist = sc.DataArray(
         data=sc.Variable(dims=['x'], values=[1.0, 2.0]),
