@@ -217,7 +217,7 @@ def bin(x, edges=None, groups=None, erase=None):
     return _call_cpp_func(_cpp.bin, x, edges, groups, erase)
 
 
-def bins(*args, **kwargs):
+def bins(*, data, dim, begin=None, end=None):
     """Create binned data, i.e., a variable with elements that are bins.
 
     The elements of the returned variable are "bins", defined as views into
@@ -244,4 +244,4 @@ def bins(*args, **kwargs):
     :seealso: :py:func:`scipp.bin` for creating such variables based on
               binning of coord value instead of explicitly given index ranges.
     """
-    return _call_cpp_func(_cpp.bins, *args, **kwargs)
+    return _call_cpp_func(_cpp.bins, begin, end, dim, data)
