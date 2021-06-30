@@ -49,3 +49,6 @@ DataArrayLike = _std_typing.Union[sc.Variable, sc.DataArray]
 
 #: Any object that behaves like a scipp.Dataset in most operations.
 DatasetLike = _std_typing.Union[DataArrayLike, sc.Dataset]
+
+#: dict-like object mapping dimension labels to Variables.
+MetaDataMap = _std_typing.MutableMapping[str, sc.Variable]

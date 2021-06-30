@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from typing import Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Union
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import DatasetLike
+from .typing import DatasetLike, MetaDataMap
 
 
 class lookup:
@@ -49,37 +49,37 @@ class Bins:
         return self
 
     @property
-    def coords(self):
+    def coords(self) -> MetaDataMap:
         """Coords of the bins"""
         return _cpp._bins_view(self._data()).coords
 
     @property
-    def meta(self):
+    def meta(self) -> MetaDataMap:
         """Coords and attrs of the bins"""
         return _cpp._bins_view(self._data()).meta
 
     @property
-    def attrs(self):
+    def attrs(self) -> MetaDataMap:
         """Coords of the bins"""
         return _cpp._bins_view(self._data()).attrs
 
     @property
-    def masks(self):
+    def masks(self) -> MetaDataMap:
         """Masks of the bins"""
         return _cpp._bins_view(self._data()).masks
 
     @property
-    def data(self):
+    def data(self) -> _cpp.Variable:
         """Data of the bins"""
         return _cpp._bins_view(self._data()).data
 
     @data.setter
-    def data(self, data):
+    def data(self, data: _cpp.Variable):
         """Set data of the bins"""
         _cpp._bins_view(self._data()).data = data
 
     @property
-    def constituents(self):
+    def constituents(self) -> Dict[str, Union[_cpp.Variable, _cpp.DataArray]]:
         """Constituents of binned data, as supported by :py:func:`sc.bins`."""
         begin_end = _cpp.bins_begin_end(self._data())
         return {
@@ -89,7 +89,7 @@ class Bins:
             'data': _cpp.bins_data(self._data())
         }
 
-    def sum(self):
+    def sum(self) -> _cpp.DataArray:
         """Sum of each bin.
 
         :return: The sum of each of the input bins.
@@ -97,14 +97,18 @@ class Bins:
         """
         return _call_cpp_func(_cpp.buckets.sum, self._obj)
 
-    def size(self):
+    def size(self) -> _cpp.DataArray:
         """Number of events or elements in a bin.
 
         :return: The number of elements in each of the input bins.
         """
         return _call_cpp_func(_cpp.bin_size, self._obj)
 
-    def concatenate(self, other=None, dim=None, out=None):
+    def concatenate(self,
+                    other: Optional[Union[_cpp.Variable,
+                                          _cpp.DataArray]] = None,
+                    dim: Optional[str] = None,
+                    out: Optional[_cpp.DataArray] = None) -> _cpp.DataArray:
         """Concatenate bins element-wise by concatenating bin contents along
         their internal bin dimension.
 
