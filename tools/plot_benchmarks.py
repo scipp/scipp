@@ -126,6 +126,8 @@ def plot(data, xname, yname, ignored, xscale='log'):
 
     designations = designate_columns(data, (xname, yname), ignored)
     n_subplots, groups = group_plots(data, designations)
+    if n_subplots == 0:
+        return
 
     fig = plt.figure()
     fig.suptitle(data.name.unique()[0])

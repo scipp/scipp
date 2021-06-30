@@ -11,15 +11,16 @@
 namespace scipp::variable {
 
 Variable empty(const Dimensions &dims, const units::Unit &unit,
-               const DType type, const bool variances) {
-  return variableFactory().create(type, dims, unit, variances);
+               const DType type, const bool with_variances) {
+  return variableFactory().create(type, dims, unit, with_variances);
 }
 
 Variable ones(const Dimensions &dims, const units::Unit &unit, const DType type,
-              const bool variances) {
+              const bool with_variances) {
   const auto prototype =
-      variances ? Variable{type, Dimensions{}, unit, Values{1}, Variances{1}}
-                : Variable{type, Dimensions{}, unit, Values{1}};
+      with_variances
+          ? Variable{type, Dimensions{}, unit, Values{1}, Variances{1}}
+          : Variable{type, Dimensions{}, unit, Values{1}};
   return copy(broadcast(prototype, dims));
 }
 

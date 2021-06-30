@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
 
+from collections.abc import Iterable as _Iterable
 from typing import Any as _Any, Sequence as _Sequence, Union as _Union,\
     Optional as _Optional
 
@@ -54,26 +55,11 @@ def scalar(value: _Any,
     :returns: A scalar (zero-dimensional) Variable.
     :rtype: Variable
     """
-    if value is not None and variance is not None \
-            and not isinstance(variance, type(value)):
-        # This case would make pybind11's overload resolution fail.
-        # We cna provide a better error message here.
-        raise TypeError('Cannot construct scalar from value and '
-                        f'variance of different types. Got {type(value)} '
-                        f'and {type(variance)}.') from None
-    if dtype is None:
-        return _cpp.Variable(value=value, variance=variance, unit=unit)
-    else:
-        try:
-            return _cpp.Variable(value=value,
-                                 variance=variance,
-                                 unit=unit,
-                                 dtype=dtype)
-        except TypeError:
-            # Raise a more comprehensible error message in the case
-            # where a dtype cannot be specified.
-            raise TypeError(f"Cannot convert {value} to {dtype}. "
-                            f"Try omitting the 'dtype=' parameter.") from None
+    return _cpp.Variable(dims=(),
+                         values=value,
+                         variances=variance,
+                         unit=unit,
+                         dtype=dtype)
 
 
 def zeros(*,
@@ -82,7 +68,7 @@ def zeros(*,
           sizes: dict = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
           dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
-          variances: bool = False) -> _cpp.Variable:
+          with_variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with default initialized values with
     given dimension labels and shape.
     The dims and shape can also be specified using a sizes dict.
@@ -97,16 +83,16 @@ def zeros(*,
     :param sizes: Optional, imension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
-    :param variances: Optional, boolean flag, if True includes variances
+    :param with_variances: Optional, boolean flag, if True includes variances
       initialized to the default value for dtype.
       For example for a float type values and variances would all be
       initialized to 0.0. Default=False
     """
 
-    return _cpp.Variable(**_parse_dims_shape_sizes(dims, shape, sizes),
-                         unit=unit,
-                         dtype=dtype,
-                         variances=variances)
+    return _cpp.zeros(**_parse_dims_shape_sizes(dims, shape, sizes),
+                      unit=unit,
+                      dtype=dtype,
+                      with_variances=with_variances)
 
 
 def zeros_like(var: _cpp.Variable) -> _cpp.Variable:
@@ -122,7 +108,7 @@ def zeros_like(var: _cpp.Variable) -> _cpp.Variable:
                  shape=var.shape,
                  unit=var.unit,
                  dtype=var.dtype,
-                 variances=var.variances is not None)
+                 with_variances=var.variances is not None)
 
 
 def ones(*,
@@ -131,7 +117,7 @@ def ones(*,
          sizes: dict = None,
          unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
          dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
-         variances: bool = False) -> _cpp.Variable:
+         with_variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values initialized to 1 with
     given dimension labels and shape.
     The dims and shape can also be specified using a sizes dict.
@@ -141,16 +127,16 @@ def ones(*,
 
     :param dims: Optional (if sizes is specified), dimension labels.
     :param shape: Optional (if sizes is specified), dimension sizes.
-    :param sizes: Optional, imension label to size map.
+    :param sizes: Optional, dimension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
-    :param variances: Optional, boolean flag, if True includes variances
+    :param with_variances: Optional, boolean flag, if True includes variances
                       initialized to 1. Default=False
     """
     return _cpp.ones(**_parse_dims_shape_sizes(dims, shape, sizes),
                      unit=unit,
                      dtype=dtype,
-                     variances=variances)
+                     with_variances=with_variances)
 
 
 def ones_like(var: _cpp.Variable) -> _cpp.Variable:
@@ -166,7 +152,7 @@ def ones_like(var: _cpp.Variable) -> _cpp.Variable:
                 shape=var.shape,
                 unit=var.unit,
                 dtype=var.dtype,
-                variances=var.variances is not None)
+                with_variances=var.variances is not None)
 
 
 def empty(*,
@@ -175,7 +161,7 @@ def empty(*,
           sizes: dict = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
           dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
-          variances: bool = False) -> _cpp.Variable:
+          with_variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with uninitialized values with given
     dimension labels and shape.
     The dims and shape can also be specified using a sizes dict.
@@ -188,16 +174,16 @@ def empty(*,
 
     :param dims: Optional (if sizes is specified), dimension labels.
     :param shape: Optional (if sizes is specified), dimension sizes.
-    :param sizes: Optional, imension label to size map.
+    :param sizes: Optional, dimension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
-    :param variances: Optional, boolean flag, if True includes uninitialized
-                      variances. Default=False
+    :param with_variances: Optional, boolean flag, if True includes
+                    uninitialized variances. Default=False
     """
     return _cpp.empty(**_parse_dims_shape_sizes(dims, shape, sizes),
                       unit=unit,
                       dtype=dtype,
-                      variances=variances)
+                      with_variances=with_variances)
 
 
 def empty_like(var: _cpp.Variable) -> _cpp.Variable:
@@ -214,7 +200,7 @@ def empty_like(var: _cpp.Variable) -> _cpp.Variable:
                  shape=var.shape,
                  unit=var.unit,
                  dtype=var.dtype,
-                 variances=var.variances is not None)
+                 with_variances=var.variances is not None)
 
 
 def _to_eigen_layout(a):
@@ -288,7 +274,7 @@ def vectors(*,
 
 
 def array(*,
-          dims: _Sequence[str],
+          dims: _Iterable,
           values: _ArrayLike,
           variances: _Optional[_ArrayLike] = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
@@ -300,7 +286,7 @@ def array(*,
     :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
               :py:func:`scipp.empty` :py:func:`scipp.scalar`
 
-    :param dims: Dimension labels.
+    :param dims: Dimension labels, nonempty.
     :param values: Initial values.
     :param variances: Optional, initial variances, must be same shape
       and size as values. Default=None
@@ -308,21 +294,14 @@ def array(*,
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
     """
-    try:
-        return _cpp.Variable(dims=dims,
-                             values=values,
-                             variances=variances,
-                             unit=unit,
-                             dtype=dtype)
-    except RuntimeError as exc:
-        if 'Unable to cast' in exc.args[0]:
-            raise TypeError(
-                'Cannot convert data to an array. '
-                'Did you forget to wrap it in a list or numpy array?\n'
-                f'Got values = {type(values)}' +
-                (f'\n    variances = {type(variances)}'
-                 if variances is not None else '')) from None
-        raise
+    if not dims:
+        raise ValueError("The dims of an array must not be empty. "
+                         "Use sc.scalar to construct a scalar variable.")
+    return _cpp.Variable(dims=dims,
+                         values=values,
+                         variances=variances,
+                         unit=unit,
+                         dtype=dtype)
 
 
 def linspace(dim: str,
