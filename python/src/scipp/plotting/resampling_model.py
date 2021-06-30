@@ -7,6 +7,32 @@ from .._variable import linspace
 from .tools import to_bin_edges
 
 
+def _resample(array, dim, edges):
+    if array.unit == sc.units.counts:
+        return sc.rebin(array, dim, edges)
+    if array.dtype == sc.dtype.float64:
+        array = array.copy()
+    else:
+        array = array.astype(sc.dtype.float64)
+    # Scale by bin widths, so `rebin` is effectively performing a "mean"
+    # operation instead of "sum".
+    # Note that it is inefficient to do this repeatedly. Rather than working
+    # around that here we should look into supporting an alternative to
+    # `rebin` that works on non-counts data
+    coord = array.coords[dim]
+    width = coord[dim, 1:] - coord[dim, :-1]
+    width.unit = sc.units.one
+    array.data *= width
+    unit = array.unit
+    array.unit = sc.units.counts
+    array = _resample(array, dim, edges)
+    width = edges[dim, 1:] - edges[dim, :-1]
+    width.unit = sc.units.one
+    array /= width
+    array.unit = unit
+    return array
+
+
 class ResamplingModel():
     def __init__(self, array, resolution=None, bounds=None):
         self._resolution = {} if resolution is None else resolution
@@ -66,9 +92,9 @@ class ResamplingModel():
                 plan.insert(0, edge)
         for edge in plan:
             try:
-                array = sc.rebin(array, dim, edge)
+                array = _resample(array, dim, edge)
             except RuntimeError:  # Limitation of rebin for slice of inner dim
-                array = sc.rebin(array.copy(), edge.dims[-1], edge)
+                array = _resample(array.copy(), edge.dims[-1], edge)
         return array
 
     def _make_edges(self, params):
@@ -207,7 +233,7 @@ def _replace_edge_coords(array, dims, bounds, prefix):
     return coords
 
 
-class ResamplingCountsModel(ResamplingModel):
+class ResamplingDenseModel(ResamplingModel):
     def _make_array(self, array):
         array, self._prefix = _with_edges(array)
         return array
@@ -218,48 +244,8 @@ class ResamplingCountsModel(ResamplingModel):
         return self._rebin(array.data, coords)
 
 
-class ResamplingDenseModel(ResamplingModel):
-    def _to_density(self, array):
-        if array.dtype == sc.dtype.float64:
-            array = array.copy()
-        else:
-            array = array.astype(sc.dtype.float64)
-        for dim in array.dims:
-            coord = array.meta[dim]
-            width = coord[dim, 1:] - coord[dim, :-1]
-            width.unit = sc.units.one
-            array.data *= width
-        self._unit = array.unit
-        array.unit = sc.units.one
-        return array
-
-    def _from_density(self, data):
-        data = data.copy()
-        for edge in self.edges:
-            dim = edge.dims[-1]
-            width = edge[dim, 1:] - edge[dim, :-1]
-            width.unit = sc.units.one
-            data /= width
-        data.unit = self._unit
-        return data
-
-    def _resample(self, array):
-        coords = _replace_edge_coords(array, self._array.dims, self.bounds,
-                                      self._prefix)
-        return self._from_density(self._rebin(array.data, coords))
-
-    def _make_array(self, array):
-        array, self._prefix = _with_edges(array)
-        # Scale by bin widths, so `rebin` is effectively performing a "mean"
-        # operation instead of "sum".
-        return self._to_density(array)
-
-
 def resampling_model(array, **kwargs):
     if array.data.bins is None:
-        if array.data.unit == sc.units.counts:
-            return ResamplingCountsModel(array, **kwargs)
-        else:
-            return ResamplingDenseModel(array, **kwargs)
+        return ResamplingDenseModel(array, **kwargs)
     else:
         return ResamplingBinnedModel(array, **kwargs)
