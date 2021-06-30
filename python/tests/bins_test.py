@@ -122,7 +122,7 @@ def test_bins_view():
 def test_bins_arithmetic():
     var = sc.Variable(dims=['event'], values=[1.0, 2.0, 3.0, 4.0])
     table = sc.DataArray(var, coords={'x': var})
-    binned = sc.bin(table, [sc.Variable(dims=['x'], values=[1.0, 5.0])])
+    binned = sc.bin(table, bins=[sc.Variable(dims=['x'], values=[1.0, 5.0])])
     hist = sc.DataArray(
         data=sc.Variable(dims=['x'], values=[1.0, 2.0]),
         coords={'x': sc.Variable(dims=['x'], values=[1.0, 3.0, 5.0])})
@@ -203,5 +203,5 @@ def test_bins_sum_with_masked_buffer():
                         values=[True, False, True, False, True])
         })
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
-    binned = sc.bin(data, [xbins])
+    binned = sc.bin(data, bins=[xbins])
     assert binned.bins.sum().values[0] == 2
