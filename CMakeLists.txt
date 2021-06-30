@@ -77,6 +77,12 @@ set(DYNAMIC_LIB_TRUE_FALSE "False")
 if(${DYNAMIC_LIB})
   set(DYNAMIC_LIB_TRUE_FALSE "True")
 endif()
+set(BENCHMARK_DYNAMIC_LIB_TRUE_FALSE ${DYNAMIC_LIB_TRUE_FALSE})
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
+  # shared library not supported on Windows, see
+  # https://github.com/google/benchmark/issues/639
+  set(BENCHMARK_DYNAMIC_LIB_TRUE_FALSE "False")
+endif()
 
 # Detect compiler, build type etc from cmake settings
 conan_cmake_autodetect(conan_settings)
@@ -86,7 +92,7 @@ conan_cmake_run(
            gtest/1.11.0
            benchmark/1.5.3
   OPTIONS gtest:shared=${DYNAMIC_LIB_TRUE_FALSE}
-          benchmark:shared=${DYNAMIC_LIB_TRUE_FALSE}
+          benchmark:shared=${BENCHMARK_DYNAMIC_LIB_TRUE_FALSE}
   SETTINGS ${conan_settings}
   IMPORTS include/eigen3,*->./eigen-src
   BASIC_SETUP
