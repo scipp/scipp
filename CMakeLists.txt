@@ -92,7 +92,7 @@ conan_cmake_run(
            gtest/1.11.0
            benchmark/1.5.3
   OPTIONS gtest:shared=${DYNAMIC_LIB_TRUE_FALSE}
-          benchmark:shared=${BENCHMARK_DYNAMIC_LIB_TRUE_FALSE}
+          benchmark:shared=False
   SETTINGS ${conan_settings}
   IMPORTS include/eigen3,*->./eigen-src
   BASIC_SETUP
