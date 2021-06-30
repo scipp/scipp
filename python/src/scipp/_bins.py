@@ -1,8 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from typing import Optional, Sequence, Union
+
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .typing import DatasetLike
 
 
 class lookup:
@@ -185,20 +188,23 @@ def _groupby_bins(obj):
     return GroupbyBins(obj)
 
 
-def histogram(x, bins):
+def histogram(x: Union[_cpp.DataArray, _cpp.Dataset],
+              bins: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Create dense data by histogramming data along all dimension given by
     edges.
 
-    :return: DataArray with values equal to the sum of values in each given
-             bin.
+    :return: DataArray / Dataset with values equal to the sum
+             of values in each given bin.
     :seealso: :py:func:`scipp.bin` for binning data.
     """
     return _call_cpp_func(_cpp.histogram, x, bins)
 
 
-def bin(x, edges=None, groups=None, erase=None):
-    """Create binned data by binning data along all dimensions given by edges.
-    Can specify dimensions with existing binning to erase.
+def bin(x: _cpp.DataArray,
+        edges: Optional[Sequence[_cpp.Variable]] = None,
+        groups: Optional[Sequence[_cpp.Variable]] = None,
+        erase: Optional[Sequence[_cpp.Variable]] = None) -> _cpp.DataArray:
+    """Create binned data by binning input along all dimensions given by edges.
 
     This does not histogram the data, each output bin will contain a "list" of
     input values.
@@ -217,7 +223,11 @@ def bin(x, edges=None, groups=None, erase=None):
     return _call_cpp_func(_cpp.bin, x, edges, groups, erase)
 
 
-def bins(*, data, dim, begin=None, end=None):
+def bins(*,
+         data: DatasetLike,
+         dim: str,
+         begin: Optional[_cpp.Variable] = None,
+         end: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Create binned data, i.e., a variable with elements that are bins.
 
     The elements of the returned variable are "bins", defined as views into
