@@ -10,6 +10,7 @@
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/units/string.h"
+#include "scipp/variable/to_unit.h"
 #include "scipp/variable/variable.h"
 
 #include "dtype.h"
@@ -205,21 +206,16 @@ auto make_element_array(const Dimensions &dims, const py::object &source,
 template <class T> struct MakeVariable {
   static Variable apply(const Dimensions &dims, const py::object &values,
                         const py::object &variances, const units::Unit unit) {
-    const auto [actual_unit, conversion_factor] = common_unit<T>(values, unit);
-    if (conversion_factor != 1) {
-      // TODO Triggered once common_unit implements conversions.
-      std::terminate();
-    }
-
+    const auto [values_unit, final_unit] = common_unit<T>(values, unit);
     auto values_array =
-        Values(make_element_array<T>(dims, values, actual_unit));
+        Values(make_element_array<T>(dims, values, values_unit));
     auto variable = variances.is_none()
                         ? makeVariable<T>(dims, std::move(values_array))
                         : makeVariable<T>(dims, std::move(values_array),
                                           Variances(make_element_array<T>(
-                                              dims, variances, actual_unit)));
-    variable.setUnit(actual_unit);
-    return variable;
+                                              dims, variances, values_unit)));
+    variable.setUnit(values_unit);
+    return to_unit(variable, final_unit);
   }
 };
 
