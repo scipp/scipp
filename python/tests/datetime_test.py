@@ -46,25 +46,30 @@ def test_construct_0d_datetime(unit):
     dtype = f'datetime64[{unit}]'
     value = _make_datetimes(unit, 1)
     # with value
-    for var in (sc.Variable(dtype=dtype, unit=unit,
-                            value=value), sc.Variable(unit=unit, value=value),
-                sc.Variable(dtype=dtype,
-                            value=value), sc.Variable(value=value)):
+    for var in (sc.Variable(dims=(), dtype=dtype, unit=unit, values=value),
+                sc.Variable(dims=(), unit=unit, values=value),
+                sc.Variable(dims=(), dtype=dtype,
+                            values=value), sc.Variable(dims=(), values=value)):
         assert var.dtype == sc.dtype.datetime64
         assert var.unit == unit
         assert var.value.dtype == dtype
         assert var.value == value
-    # default init
-    for var in (sc.Variable(dtype=dtype, unit=unit), sc.Variable(dtype=dtype)):
-        assert var.dtype == sc.dtype.datetime64
-        assert var.unit == unit
-        assert var.value.dtype == dtype
+
+
+def test_construct_0d_datetime_array():
+    var = sc.Variable(dims=(), values=np.array(np.datetime64(123, 's')))
+    assert var.dtype == sc.dtype.datetime64
+    assert var.unit == sc.units.s
+    assert var.value == np.datetime64(123, 's')
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
 def test_construct_0d_datetime_from_int(unit):
     value = np.random.randint(0, 1000)
-    var = sc.Variable(dtype=sc.dtype.datetime64, unit=unit, value=value)
+    var = sc.Variable(dims=(),
+                      dtype=sc.dtype.datetime64,
+                      unit=unit,
+                      values=value)
     assert var.dtype == sc.dtype.datetime64
     assert var.unit == unit
     assert var.value.dtype == f'datetime64[{unit}]'
@@ -74,18 +79,19 @@ def test_construct_0d_datetime_from_int(unit):
 @pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
 def test_construct_0d_datetime_mismatch(unit1, unit2):
     with pytest.raises(ValueError):
-        sc.Variable(unit=unit1, dtype=f'datetime64[{unit2}]')
+        sc.Variable(dims=(), unit=unit1, dtype=f'datetime64[{unit2}]')
     with pytest.raises(RuntimeError):
-        sc.Variable(value=np.datetime64('now', unit1),
+        sc.Variable(dims=(),
+                    values=np.datetime64('now', unit1),
                     dtype=f'datetime64[{unit2}]')
     with pytest.raises(RuntimeError):
-        sc.Variable(value=np.datetime64('now', unit1), unit=unit2)
+        sc.Variable(dims=(), values=np.datetime64('now', unit1), unit=unit2)
 
 
 def test_construct_0d_datetime_nounit():
     # Can make a datetime variable without unit but cannot do anything
     # with it except set its unit.
-    var = sc.Variable(dtype=sc.dtype.datetime64)
+    var = sc.Variable(dims=(), values=1, dtype=sc.dtype.datetime64)
     assert var.dtype == sc.dtype.datetime64
     assert var.unit == sc.units.one
     with pytest.raises(sc.UnitError):
@@ -96,21 +102,21 @@ def test_construct_0d_datetime_nounit():
     var.unit = sc.units.s
     value = np.datetime64(123, 's')
     var.value = value
-    assert sc.identical(var, sc.Variable(value=value))
+    assert sc.identical(var, sc.Variable(dims=(), values=value))
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
 def test_0d_datetime_setter(unit):
     initial, replacement = _make_datetimes(unit, 2)
-    var = sc.Variable(value=initial)
+    var = sc.Variable(dims=(), values=initial)
     var.value = replacement
-    assert sc.identical(var, sc.Variable(value=replacement))
+    assert sc.identical(var, sc.Variable(dims=(), values=replacement))
 
 
 @pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
 def test_0d_datetime_setter_mismatch(unit1, unit2):
     initial, replacement = _make_datetimes((unit1, unit2), 2)
-    var1 = sc.Variable(value=initial)
+    var1 = sc.Variable(dims=(), values=initial)
     with pytest.raises(ValueError):
         var1.value = replacement
 
@@ -119,7 +125,6 @@ def test_0d_datetime_setter_mismatch(unit1, unit2):
 def test_construct_datetime(unit):
     dtype = f'datetime64[{unit}]'
     values = _make_arrays(unit, 1)
-    shape = [len(values)]
     # with values
     for var in (sc.Variable(dims=['x'], dtype=dtype, unit=unit, values=values),
                 sc.Variable(dims=['x'], unit=unit, values=values),
@@ -130,14 +135,6 @@ def test_construct_datetime(unit):
         assert var.unit == unit
         assert var.values.dtype == dtype
         np.testing.assert_array_equal(var.values, values)
-    # default init
-    for var in (sc.Variable(dims=['x'], shape=shape, dtype=dtype, unit=unit),
-                sc.Variable(dims=['x'], shape=shape, dtype=dtype)):
-        assert var.dims == ['x']
-        assert var.shape == shape
-        assert str(var.dtype) == 'datetime64'
-        assert var.unit == unit
-        assert var.values.dtype == dtype
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
@@ -168,7 +165,7 @@ def test_construct_datetime_mismatch(unit1, unit2):
 def test_construct_datetime_nounit():
     # Can make a datetime variable without unit but cannot do anything
     # with it except set its unit.
-    var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.datetime64)
+    var = sc.Variable(dims=['x'], values=[1, 2], dtype=sc.dtype.datetime64)
     assert var.dtype == sc.dtype.datetime64
     assert var.unit == sc.units.one
     with pytest.raises(sc.UnitError):
@@ -204,7 +201,8 @@ def test_datetime_slicing(unit):
     values1, values2 = _make_arrays(unit, 2, minsize=4)
     var = sc.Variable(dims=['x'], values=values1)
     for i in range(len(values1)):
-        assert sc.identical(var['x', i], sc.Variable(value=values1[i]))
+        assert sc.identical(var['x', i], sc.Variable(dims=(),
+                                                     values=values1[i]))
     for i in range(len(values1) - 2):
         for j in range(i + 1, len(values1)):
             assert sc.identical(var['x', i:j],
@@ -230,7 +228,7 @@ def test_datetime_operations():
     np.testing.assert_array_equal(res.values, values + 1)
 
     shift = np.random.randint(0, 100, len(values))
-    res = var - (var - sc.Variable(['x'], values=shift, unit=sc.units.ns))
+    res = var - (var - sc.Variable(dims=['x'], values=shift, unit=sc.units.ns))
     assert res.dtype == sc.dtype.int64
     assert res.unit == sc.units.ns
     np.testing.assert_array_equal(res.values, shift)
@@ -244,7 +242,7 @@ def test_datetime_operations_mismatch():
     with pytest.raises(RuntimeError):
         var + 1 * sc.Unit('s')
     with pytest.raises(RuntimeError):
-        var + sc.Variable(['x'],
+        var + sc.Variable(dims=['x'],
                           values=np.random.randint(0, 100, len(values)),
                           unit=sc.units.us)
 

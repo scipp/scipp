@@ -12,7 +12,7 @@ class TestUnits():
         assert repr(u) == "\u212B" or repr(u) == "\u00C5"
 
     def test_variable_unit_repr(self):
-        var1 = sc.Variable(['x'], values=np.arange(4))
+        var1 = sc.Variable(dims=['x'], values=np.arange(4))
         u = sc.units.angstrom
         var1.unit = u
         assert repr(var1.unit) == "\u212B" or repr(var1.unit) == "\u00C5"

@@ -9,7 +9,7 @@ def test_setitem_required_for_inplace_ops():
     # Test that all required __setitem__ overloads for in-place operations
     # are available.
 
-    var = sc.Variable(dims=['x', 'y'], shape=[2, 3])
+    var = sc.empty(dims=['x', 'y'], shape=[2, 3])
     var *= 1.5  # not setitem, just assigns python variable
     var['x', 1:] *= 1.5  # Variable.__setitem__
     var['x', 1:]['y', 1:] *= 1.5  # VariableView.__setitem__

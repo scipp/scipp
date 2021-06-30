@@ -149,19 +149,18 @@ def test_data_array_2d():
 
 def test_data_array_dtype_scipp_container():
     a = sc.DataArray(data=x)
-    a.coords['variable'] = sc.Variable(value=x)
-    a.coords['scalar'] = sc.Variable(value=a)
-    a.coords['1d'] = sc.Variable(dims=a.dims,
-                                 shape=a.shape,
-                                 dtype=sc.dtype.DataArray)
-    a.coords['1d'].values[0] = sc.DataArray(data=0.0 * sc.units.m)
-    a.coords['1d'].values[1] = sc.DataArray(data=1.0 * sc.units.m)
-    a.coords['1d'].values[2] = sc.DataArray(data=2.0 * sc.units.m)
-    a.coords['1d'].values[3] = sc.DataArray(data=3.0 * sc.units.m)
-    a.coords['dataset'] = sc.Variable(value=sc.Dataset(data={
-        'a': array_1d,
-        'b': array_2d
-    }))
+    a.coords['variable'] = sc.scalar(x)
+    a.coords['scalar'] = sc.scalar(a)
+    a.coords['1d'] = sc.empty(dims=x.dims,
+                              shape=x.shape,
+                              dtype=sc.dtype.DataArray)
+    for i in range(4):
+        a.coords['1d'].values[i] = sc.DataArray(float(i) * sc.units.m)
+    a.coords['dataset'] = sc.scalar(
+        sc.Dataset(data={
+            'a': array_1d,
+            'b': array_2d
+        }))
     check_roundtrip(a)
 
 
@@ -172,7 +171,7 @@ def test_data_array_dtype_string():
 
 
 def test_data_array_unsupported_PyObject_coord():
-    obj = sc.Variable(value=dict())
+    obj = sc.scalar(dict())
     a = sc.DataArray(data=x, coords={'obj': obj})
     b = roundtrip(a)
     assert not sc.identical(a, b)

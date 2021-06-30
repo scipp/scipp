@@ -20,7 +20,7 @@ def make_data_array_with_position_vectors():
     z = r * np.cos(theta)
     time = np.arange(M, dtype=np.float64)
     a = np.arange(M * N).reshape([M, N]) * np.sin(y)
-    da = sc.DataArray(data=sc.Variable(['time', 'xyz'], values=a),
+    da = sc.DataArray(data=sc.Variable(dims=['time', 'xyz'], values=a),
                       coords={
                           'xyz':
                           sc.vectors(dims=['xyz'],
@@ -29,7 +29,7 @@ def make_data_array_with_position_vectors():
                           sc.vectors(dims=['xyz'],
                                      values=np.array([x, y, z]).T + 20.0),
                           'time':
-                          sc.Variable(['time'], values=time)
+                          sc.Variable(dims=['time'], values=time)
                       })
     return da
 
@@ -82,7 +82,7 @@ def test_plot_projection_3d_with_vectors_with_aspect():
 
 def test_plot_variable_3d():
     N = 50
-    v3d = sc.Variable(['time', 'y', 'x'],
+    v3d = sc.Variable(dims=['time', 'y', 'x'],
                       values=np.random.rand(N, N, N),
                       unit=sc.units.m)
     plot(v3d, projection="3d")
@@ -116,7 +116,7 @@ def test_plot_3d_with_2d_position_coordinate():
     xx, yy = np.meshgrid(np.arange(nx, dtype=np.float64),
                          np.arange(ny, dtype=np.float64))
     da = sc.DataArray(
-        data=sc.Variable(['x', 'y', 't'],
+        data=sc.Variable(dims=['x', 'y', 't'],
                          values=np.arange(nx * ny * nt).reshape(nx, ny, nt)),
         coords={
             'pos':

@@ -3,19 +3,19 @@
 
 .. |data-structures| image:: _static/title-repr-html.png
    :width: 33%
-   :target: user-guide/data-structures.rst
+   :target: user-guide/data-structures.html
 
 .. |binning| image:: _static/title-binning.png
    :width: 33%
-   :target: user-guide/binned-data/binned-data.rst
+   :target: user-guide/binned-data/binned-data.html
 
 .. |masking| image:: _static/title-masking.png
    :width: 33%
-   :target: user-guide/masking.rst
+   :target: user-guide/masking.html
 
 .. |plotting| image:: _static/title-plotting.png
    :width: 33%
-   :target: visualization/plotting-overview.rst
+   :target: visualization/plotting-overview.html
 
 .. |scipp-neutron| image:: _static/title-instrument-view.png
    :width: 33%
@@ -23,7 +23,7 @@
 
 .. |slicing| image:: _static/title-show.png
    :width: 33%
-   :target: user-guide/slicing.rst
+   :target: user-guide/slicing.html
 
 scipp - Multi-dimensional data arrays with labeled dimensions
 =============================================================
