@@ -19,7 +19,7 @@ Variable ones(const Dimensions &dims, const units::Unit &unit, const DType type,
               const bool with_variances) {
   const auto prototype =
       with_variances
-          ? Variable{type, Dimensions{}, unit, Values{1}, Variances{0}}
+          ? Variable{type, Dimensions{}, unit, Values{1}, Variances{1}}
           : Variable{type, Dimensions{}, unit, Values{1}};
   return copy(broadcast(prototype, dims));
 }
