@@ -24,7 +24,7 @@ def _make_arrays(units, num_arrays, minsize=1):
     units = units if isinstance(units, (tuple, list)) else [units] * num_arrays
     res = [
         np.array([
-            np.datetime64(np.random.randint(0, 1000), unit)
+            np.datetime64(np.random.randint(0, 100000), unit)
             for _ in range(size)
         ]) for unit in units
     ]
@@ -80,12 +80,18 @@ def test_construct_0d_datetime_from_int(unit):
 def test_construct_0d_datetime_mismatch(unit1, unit2):
     with pytest.raises(ValueError):
         sc.Variable(dims=(), unit=unit1, dtype=f'datetime64[{unit2}]')
-    with pytest.raises(RuntimeError):
-        sc.Variable(dims=(),
-                    values=np.datetime64('now', unit1),
-                    dtype=f'datetime64[{unit2}]')
-    with pytest.raises(RuntimeError):
-        sc.Variable(dims=(), values=np.datetime64('now', unit1), unit=unit2)
+
+
+@pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(
+    ('s', 'ms', 'us', 'ns')))
+def test_construct_0d_datetime_unit_conversion(unit1, unit2):
+    value = np.datetime64(2315169201, unit1)
+    expected = sc.to_unit(sc.Variable(dims=(), values=value), unit2)
+    assert sc.identical(sc.Variable(dims=(), values=value, unit=unit2),
+                        expected)
+    assert sc.identical(
+        sc.Variable(dims=(), values=value, dtype=f'datetime64[{unit2}]'),
+        expected)
 
 
 def test_construct_0d_datetime_nounit():
@@ -153,13 +159,20 @@ def test_construct_datetime_from_int(unit):
 
 @pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
 def test_construct_datetime_mismatch(unit1, unit2):
-    values = _make_arrays(unit1, 1)
     with pytest.raises(ValueError):
         sc.Variable(dims=['x'], unit=unit1, dtype=f'datetime64[{unit2}]')
-    with pytest.raises(RuntimeError):
-        sc.Variable(dims=['x'], values=values, dtype=f'datetime64[{unit2}]')
-    with pytest.raises(RuntimeError):
-        sc.Variable(dims=['x'], values=values, unit=unit2)
+
+
+@pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(
+    ('s', 'ms', 'us', 'ns')))
+def test_construct_datetime_unit_conversion(unit1, unit2):
+    values = _make_arrays(unit1, 1)
+    expected = sc.to_unit(sc.Variable(dims=['x'], values=values), unit2)
+    assert sc.identical(sc.Variable(dims=['x'], values=values, unit=unit2),
+                        expected)
+    assert sc.identical(
+        sc.Variable(dims=['x'], values=values, dtype=f'datetime64[{unit2}]'),
+        expected)
 
 
 def test_construct_datetime_nounit():
