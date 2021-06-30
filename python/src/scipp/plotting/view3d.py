@@ -30,3 +30,11 @@ class PlotView3d(PlotView):
         figures.
         """
         return
+
+    def update_data(self, new_values, mask_info=None):
+        """
+        Forward data update to the `figure`.
+        """
+        self._data = new_values
+        # self._dims = []
+        self.refresh(mask_info)

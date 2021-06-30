@@ -255,3 +255,15 @@ class PlotToolbar3d(PlotToolbar):
         self.add_togglebutton(name="toggle_norm",
                               description="log",
                               tooltip="log(data)")
+
+    def home_view(self, button):
+        self.mpl_toolbar.reset_camera()
+
+    def camera_x_normal(self, button):
+        self.mpl_toolbar.camera_x_normal()
+
+    def camera_y_normal(self, button):
+        self.mpl_toolbar.camera_y_normal()
+
+    def camera_z_normal(self, button):
+        self.mpl_toolbar.camera_z_normal()

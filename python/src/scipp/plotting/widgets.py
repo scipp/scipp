@@ -13,13 +13,7 @@ class PlotWidgets:
     buttons to modify the currently displayed axes.
     It also provides buttons to hide/show masks.
     """
-    def __init__(self,
-                 dims,
-                 formatters=None,
-                 ndim=None,
-                 dim_label_map=None,
-                 pos_dims=None,
-                 masks=None):
+    def __init__(self, *, dims, formatters, ndim, dim_label_map, masks):
 
         self._dims = dims
         self._labels = dim_label_map
@@ -36,9 +30,6 @@ class PlotWidgets:
         self.all_masks_button = None
 
         self._slider_dims = dims[:-ndim]
-        possible_dims = dims
-        if pos_dims is not None:
-            possible_dims -= set(pos_dims)
 
         self.profile_button = ipw.Button(description="Profile",
                                          button_style="",
@@ -98,7 +89,7 @@ class PlotWidgets:
         for index, dim in enumerate(self._slider_dims):
             # Add one set of buttons per dimension
             self.dim_buttons[index] = {}
-            for dim_ in possible_dims:
+            for dim_ in self.dims:
                 self.dim_buttons[index][dim_] = ipw.Button(
                     description=dim_label_map[dim_],
                     button_style='info' if dim == dim_ else '',
@@ -295,7 +286,7 @@ class PlotWidgets:
         the `PlotModel` is created.
         """
         self._sizes = sizes
-        for dim in sizes:
+        for dim in self._dims:
             self._set_slider_defaults(dim, sizes[dim])
 
     def _slider_moved(self, _):

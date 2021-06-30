@@ -207,6 +207,8 @@ def _with_edges(array):
     new_array = array.copy(deep=False)
     prefix = ''.join(array.meta)
     for dim in array.dims:
+        if dim not in array.coords:
+            continue
         var = array.coords[dim]
         new_array.coords[f'{prefix}_{dim}'] = var
         if var.sizes[dim] == array.sizes[dim]:

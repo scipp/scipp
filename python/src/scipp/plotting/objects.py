@@ -77,12 +77,12 @@ def _make_errorbar_params(arrays, errorbars):
     return params
 
 
-def _make_formatters(arrays, labels):
+def _make_formatters(*, dims, arrays, labels):
     array = next(iter(arrays.values()))
-    labs = {dim: dim for dim in array.dims}
+    labs = {dim: dim for dim in dims}
     if labels is not None:
         labs.update(labels)
-    formatters = {dim: make_formatter(array, labs[dim]) for dim in array.dims}
+    formatters = {dim: make_formatter(array, labs[dim]) for dim in dims}
     return labs, formatters
 
 
@@ -206,19 +206,20 @@ class Plot:
     """
     def __init__(self,
                  scipp_obj_dict,
+                 controller,
                  figure,
                  profile_figure=None,
                  errorbars=None,
                  panel=None,
                  labels=None,
                  resolution=None,
+                 dims=None,
                  view=None,
                  vmin=None,
                  vmax=None,
                  axes=None,
                  norm=False,
                  scale=None,
-                 positions=None,
                  view_ndims=None):
 
         self._scipp_obj_dict = scipp_obj_dict
@@ -239,20 +240,15 @@ class Plot:
         array = next(iter(scipp_obj_dict.values()))
 
         self.name = list(scipp_obj_dict.keys())[0]
-        self.dims = scipp_obj_dict[self.name].dims
+        if dims is None:
+            self.dims = scipp_obj_dict[self.name].dims
+        else:
+            self.dims = dims
         for dim in self.dims[:-view_ndims]:
             if dim in array.meta and len(array.meta[dim].dims) > 1:
                 raise DimensionError("A ragged coordinate cannot lie along "
                                      "a slider dimension, it must be one of "
                                      "the displayed dimensions.")
-        if positions:
-            if not array.meta[positions].dims:
-                raise ValueError(f"{positions} cannot be 0 dimensional"
-                                 f" on input object\n\n{array}")
-            else:
-                self.position_dims = array.meta[positions].dims
-        else:
-            self.position_dims = None
 
         self._tool_button_states = {}
         if norm:
@@ -264,7 +260,9 @@ class Plot:
         figure.errorbars = errorbars
         if profile_figure is not None:
             profile_figure.errorbars = errorbars
-        labels, formatters = _make_formatters(scipp_obj_dict, labels)
+        labels, formatters = _make_formatters(arrays=scipp_obj_dict,
+                                              labels=labels,
+                                              dims=self.dims)
         self.profile = profile_figure
         self.view = view(figure=figure, formatters=formatters)
 
@@ -282,11 +280,7 @@ class Plot:
         profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict,
                                     labels=labels,
                                     name=self.name)
-        Controller = {
-            1: PlotController1d,
-            2: PlotController2d
-        }[self.view_ndims]
-        self.controller = Controller(dims=self.dims,
+        self.controller = controller(dims=self.dims,
                                      vmin=vmin,
                                      vmax=vmax,
                                      norm=norm,
@@ -343,6 +337,7 @@ class Plot:
         Perform some initial calls to render the figure once all components
         have been created.
         """
+        print(self.dims)
         self.view.figure.initialize_toolbar(
             log_axis_buttons=self.dims, button_states=self._tool_button_states)
         if self.profile is not None:

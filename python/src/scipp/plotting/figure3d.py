@@ -21,6 +21,7 @@ def _position_extents(pos):
     """
     Find the extents of the box that contains all the positions.
     """
+    print(pos)
     extents = {}
     pos = pos.fields
     for xyz, x in zip(['x', 'y', 'z'], [pos.x, pos.y, pos.z]):
@@ -30,17 +31,16 @@ def _position_extents(pos):
     return extents
 
 
-def _estimate_pixel_size(self, box_size):
+def _estimate_pixel_size(self, *array, box_size):
     """
     Find the smallest pixel in the grid.
     """
-    raise RuntimeError("TODO")
+    # TODO use flattened dims rather than xyz to get sizes
     dx = [
-        axparams["box_size"][i] /
-        self.data_arrays[self.name].sizes[axparams[xyz]["dim"]]
+        box_size[i] / self.data_arrays[self.name].sizes[xyz]
         for i, xyz in enumerate("xyz")
     ]
-    scaling = [axparams[xyz]["scaling"] for xyz in "xyz"]
+    scaling = [scaling[xyz] for xyz in "xyz"]
     ind = np.argmin(dx)
     return dx[ind], scaling[ind]
 
@@ -79,7 +79,7 @@ class PlotFigure3d:
             figsize = (config.plot.width, config.plot.height)
 
         # Figure toolbar
-        self.toolbar = PlotToolbar3d()
+        self.toolbar = PlotToolbar3d(mpl_toolbar=self)
 
         # Prepare colormaps
         self.cmap = cmap
@@ -174,7 +174,7 @@ class PlotFigure3d:
         #    "camera_y_normal": self.camera_y_normal,
         #    "camera_z_normal": self.camera_z_normal
         #})
-        #self.toolbar.connect(callbacks)
+        self.toolbar.connect(controller=controller)
 
     def update_axes(self, scale, unit):
         """
@@ -190,6 +190,7 @@ class PlotFigure3d:
             self.scene.remove(self.axticks)
 
     def _setup(self, array):
+        self._unit = array.unit
         limits = _position_extents(array.meta[self._positions])
         center = [
             0.5 * np.sum(limits['x']), 0.5 * np.sum(limits['y']),
@@ -441,10 +442,9 @@ void main() {
         container.
         """
         self.scalar_map.set_clim(vmin, vmax)
-        return
-        self.update_colorbar()
+        self._update_colorbar()
 
-    def update_colorbar(self):
+    def _update_colorbar(self):
         """
         Create the colorbar figure and save it to png and update the image
         widget.
@@ -459,31 +459,31 @@ void main() {
                          cmap=self.scalar_map.get_cmap(),
                          norm=self.scalar_map.norm,
                          extend=self.extend)
-        cbar_ax.set_ylabel(self.unit)
+        cbar_ax.set_ylabel(self._unit)
         cbar_ax.yaxis.set_label_coords(-0.9, 0.5)
         self.cbar_image.value = fig_to_pngbytes(cbar_fig)
 
-    def reset_camera(self, owner=None):
+    def reset_camera(self):
         """
         Reset the camera position.
         """
         self.move_camera(position=self.camera_backup["reset"])
 
-    def camera_x_normal(self, owner=None):
+    def camera_x_normal(self):
         """
         View scene along the X normal.
         """
         self.camera_normal(position=self.camera_backup["x_normal"].copy(),
                            ind=0)
 
-    def camera_y_normal(self, owner=None):
+    def camera_y_normal(self):
         """
         View scene along the Y normal.
         """
         self.camera_normal(position=self.camera_backup["y_normal"].copy(),
                            ind=1)
 
-    def camera_z_normal(self, owner=None):
+    def camera_z_normal(self):
         """
         View scene along the Z normal.
         """
@@ -514,4 +514,4 @@ void main() {
                                                                   vmax=vmax)
         self.scalar_map.set_norm(new_norm)
         self.masks_scalar_map.set_norm(new_norm)
-        self.update_colorbar()
+        self._update_colorbar()

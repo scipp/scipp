@@ -6,6 +6,7 @@ from .objects import make_params, make_plot
 from .panel3d import PlotPanel3d
 from .view3d import PlotView3d
 from .figure3d import PlotFigure3d
+from .controller3d import PlotController3d
 from .._shape import flatten
 
 
@@ -35,7 +36,14 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
                 xlabel=None,
                 ylabel=None,
                 zlabel=None):
-        out = {'view_ndims': 1, 'view': PlotView3d}
+        array = next(iter(scipp_obj_dict.values()))
+        # TODO use unique dimension labels + ['z', 'y', 'x']
+        out = {
+            'view_ndims': 1,
+            'dims': list(set(array.dims) - set(array.meta[positions].dims)),
+            'view': PlotView3d,
+            'controller': PlotController3d
+        }
         params = make_params(cmap=cmap,
                              norm=norm,
                              vmin=vmin,

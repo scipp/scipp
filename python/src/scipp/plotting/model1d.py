@@ -30,6 +30,7 @@ class PlotModel1d(PlotModel):
     def _resample(self, array, slices):
         model = self._make_1d_resampling_model(array)
         # Extend slice to full input "pixel" sizes
+        # TODO isn't the resampling model doing this now, or is this for something else?
         for dim in slices:
             if not isinstance(slices[dim], tuple) or not isinstance(
                     slices[dim][0], sc.Variable):
@@ -66,6 +67,7 @@ class PlotModel1d(PlotModel):
         entries in the dict of data arrays, and return a dict of 1d value
         arrays for data values, variances, and masks.
         """
+        print(slices)
         self.dslice = {
             name: self._resample(array, slices)
             for name, array in self.data_arrays.items()

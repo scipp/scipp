@@ -2,10 +2,8 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .. import config
 from .controller import PlotController
 from ..utils import name_with_unit
-import numpy as np
 
 
 class PlotController3d(PlotController):
@@ -24,7 +22,8 @@ class PlotController3d(PlotController):
         """
         Give the model3d the list of available options for the cut surface.
         """
-        self.model.initialize(self.panel.get_cut_options())
+        pass
+        # self.model.initialize(self.panel.get_cut_options())
 
     def _make_axes_parameters(self):
         """

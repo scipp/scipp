@@ -53,10 +53,10 @@ class PlotModel:
 
         # Create dict of DataArrays using information from controller
         for name, array in scipp_obj_dict.items():
-            coord_list = {
-                dim: self._axis_coord(array, dim)
-                for dim in array.dims
-            }
+            # TODO for the 3d scatter plot this is problematic:
+            # we never touch any of the pos dims, so we don't want to replace coords
+            # should model only consider "other" data dims?
+            coord_list = {dim: self._axis_coord(array, dim) for dim in labels}
             for label in labels.values():
                 if label in array.meta:
                     coord_list[label] = array.meta[label]
