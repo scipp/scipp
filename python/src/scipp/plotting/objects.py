@@ -10,8 +10,6 @@ from .controller1d import PlotController1d
 from .controller2d import PlotController2d
 from .model1d import PlotModel1d
 from .model2d import PlotModel2d
-from .view1d import PlotView1d
-from .view2d import PlotView2d
 from .widgets import PlotWidgets
 
 
@@ -214,6 +212,7 @@ class Plot:
                  panel=None,
                  labels=None,
                  resolution=None,
+                 view=None,
                  vmin=None,
                  vmax=None,
                  axes=None,
@@ -227,7 +226,6 @@ class Plot:
         self.model = None
         self.panel = panel
         self.profile = None
-        self.view = None
         self.widgets = None
 
         self.show_widgets = True
@@ -267,9 +265,8 @@ class Plot:
         if profile_figure is not None:
             profile_figure.errorbars = errorbars
         labels, formatters = _make_formatters(scipp_obj_dict, labels)
-        View = {1: PlotView1d, 2: PlotView2d}[view_ndims]
-        self.view = View(figure=figure, formatters=formatters)
         self.profile = profile_figure
+        self.view = view(figure=figure, formatters=formatters)
 
         self.widgets = PlotWidgets(dims=self.dims,
                                    formatters=formatters,

@@ -4,6 +4,7 @@
 
 from .objects import make_params, make_profile, make_plot
 from .panel1d import PlotPanel1d
+from .view1d import PlotView1d
 from .figure1d import PlotFigure1d
 
 
@@ -36,7 +37,10 @@ def plot1d(scipp_obj_dict, **kwargs):
                 mpl_line_params=None,
                 grid=False,
                 legend=None):
-        out = {'view_ndims': 1}
+        out = {
+            'view_ndims': 1,
+            'view': PlotView1d,
+        }
         if masks is None:
             masks = {"color": "k"}
         params = make_params(norm=norm, vmin=vmin, vmax=vmax, masks=masks)

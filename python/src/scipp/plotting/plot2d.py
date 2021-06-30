@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 from .objects import make_params, make_profile, make_plot
+from .view2d import PlotView2d
 from .figure2d import PlotFigure2d
 
 
@@ -31,7 +32,7 @@ def plot2d(scipp_obj_dict, **kwargs):
                 title=None,
                 xlabel=None,
                 ylabel=None):
-        out = {'view_ndims': 2}
+        out = {'view_ndims': 2, 'view': PlotView2d}
         params = make_params(cmap=cmap,
                              norm=norm,
                              vmin=vmin,

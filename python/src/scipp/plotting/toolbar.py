@@ -28,7 +28,7 @@ class PlotToolbar:
     Custom toolbar with additional buttons for controlling log scales and
     normalization, and with back/forward buttons removed.
     """
-    def __init__(self, mpl_toolbar):
+    def __init__(self, mpl_toolbar=None):
         self._dims = None
         self.controller = None
 

@@ -15,21 +15,10 @@ class PlotController3d(PlotController):
     It handles some additional events from the cut surface panel, compared to
     the base class controller.
     """
-    def __init__(self, *args, positions=None, aspect=None, **kwargs):
+    def __init__(self, *args, positions=None, **kwargs):
 
-        # TODO aspect move to figure?
         super().__init__(*args, **kwargs)
         self.positions = positions
-        self.aspect = aspect
-        if self.aspect is None:
-            if positions is not None:
-                self.aspect = "equal"
-            else:
-                self.aspect = config.plot.aspect
-        if self.aspect not in ["equal", "auto"]:
-            raise RuntimeError(
-                "Invalid aspect requested. Expected 'auto' or "
-                "'equal', got", self.aspect)
 
     def initialize_model(self):
         """
@@ -61,47 +50,6 @@ class PlotController3d(PlotController):
             }
         else:
             axparams = super()._make_axes_parameters()
-
-        # TODO move to figure
-        axparams["box_size"] = np.array([
-            axparams['x']["lims"][1] - axparams['x']["lims"][0],
-            axparams['y']["lims"][1] - axparams['y']["lims"][0],
-            axparams['z']["lims"][1] - axparams['z']["lims"][0]
-        ])
-
-        # TODO move to figure?
-        for i, xyz in enumerate("xyz"):
-            axparams[xyz]["scaling"] = 1.0 / axparams["box_size"][
-                i] if self.aspect == "auto" else 1.0
-            axparams[xyz]["lims"] *= axparams[xyz]["scaling"]
-
-        axparams["box_size"] *= np.array([
-            axparams['x']["scaling"], axparams['y']["scaling"],
-            axparams['z']["scaling"]
-        ])
-
-        # TODO move to figure
-        axparams["center"] = [
-            0.5 * np.sum(axparams['x']["lims"]),
-            0.5 * np.sum(axparams['y']["lims"]),
-            0.5 * np.sum(axparams['z']["lims"])
-        ]
-
-        # TODO move to figure
-        if self.pixel_size is not None:
-            axparams["pixel_size"] = self.pixel_size
-            axparams["pixel_scaling"] = 1.0
-        else:
-            if self.positions is not None:
-                # Note the value of 0.05 is arbitrary here. It is a sensible
-                # guess to render a plot that is not too crowded and shows
-                # individual pixels.
-                psize = 0.05 * np.mean(axparams["box_size"])
-                pscale = axparams["x"]["scaling"]
-            else:
-                psize, pscale = self.model.estimate_pixel_size(axparams)
-            axparams["pixel_size"] = psize
-            axparams["pixel_scaling"] = pscale
 
         return axparams
 

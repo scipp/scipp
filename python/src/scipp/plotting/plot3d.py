@@ -4,6 +4,7 @@
 
 from .objects import make_params, make_plot
 from .panel3d import PlotPanel3d
+from .view3d import PlotView3d
 from .figure3d import PlotFigure3d
 from .._shape import flatten
 
@@ -34,7 +35,7 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
                 xlabel=None,
                 ylabel=None,
                 zlabel=None):
-        out = {'view_ndims': 1}
+        out = {'view_ndims': 1, 'view': PlotView3d}
         params = make_params(cmap=cmap,
                              norm=norm,
                              vmin=vmin,
@@ -44,9 +45,8 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
         out['vmax'] = params["values"]["vmax"]
         if len(dims) > 2:
             params['extend_cmap'] = 'both'
-        out['panel'] = PlotPanel3d(data_names=list(scipp_obj_dict.keys()))
         # TODO enable panel once refactored
-        del out['panel']
+        #out['panel'] = PlotPanel3d(data_names=list(scipp_obj_dict.keys()))
         out['figure'] = PlotFigure3d(background=background,
                                      cmap=params["values"]["cmap"],
                                      extend=params['extend_cmap'],
@@ -57,7 +57,7 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
                                      pixel_size=pixel_size,
                                      show_outline=show_outline,
                                      tick_size=tick_size,
-                                     unit=params["values"]["unit"],
+                                     positions=positions,
                                      xlabel=xlabel,
                                      ylabel=ylabel,
                                      zlabel=zlabel)
@@ -67,9 +67,14 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
     # TODO if positions not given, make fake coords first
     # Use subclass of PlotModel1d
     # - PlotModel makes fake coords, then flatten in init
-    scipp_obj_dict = {
-        key: flatten(array, dims=positions.dims, to=''.join(array.dims))
-        for key, array in scipp_obj_dict.items()
-    }
+    if isinstance(positions, str):
+        pos = next(iter(scipp_obj_dict.values())).coords[positions]
+    else:
+        pos = positions
+    print(pos)
+    #scipp_obj_dict = {
+    #    key: flatten(array, dims=pos.dims, to=''.join(array.dims))
+    #    for key, array in scipp_obj_dict.items()
+    #}
 
     return make_plot(builder, scipp_obj_dict, **kwargs)
