@@ -105,6 +105,7 @@ class Bins:
         return _call_cpp_func(_cpp.bin_size, self._obj)
 
     def concatenate(self,
+                    *,
                     other: Optional[Union[_cpp.Variable,
                                           _cpp.DataArray]] = None,
                     dim: Optional[str] = None,
