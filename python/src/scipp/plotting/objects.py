@@ -206,6 +206,7 @@ class Plot:
                  scipp_obj_dict,
                  controller,
                  figure,
+                 controller_args=None,
                  profile_figure=None,
                  errorbars=None,
                  panel=None,
@@ -221,7 +222,6 @@ class Plot:
                  view_ndims=None):
 
         self._scipp_obj_dict = scipp_obj_dict
-        self.controller = None
         self.model = None
         self.panel = panel
         self.profile = None
@@ -280,7 +280,10 @@ class Plot:
                       resolution=resolution)
         profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict,
                                     name=self.name)
-        self.controller = controller(dims=self.dims,
+        if controller_args is None:
+            controller_args = {}
+        self.controller = controller(**controller_args,
+                                     dims=self.dims,
                                      vmin=vmin,
                                      vmax=vmax,
                                      norm=norm,

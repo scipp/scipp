@@ -11,11 +11,10 @@ class PlotPanel3d(PlotPanel):
     Additional widgets that control the position, opacity and shape of the
     cut surface in the 3d plot.
     """
-    def __init__(self, position_model, unit):
+    def __init__(self, unit):
         super().__init__()
 
-        self._position_model = position_model
-        self.unit = unit
+        self._unit = unit
         self.current_cut_surface_value = None
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
         self.lock_surface_update = False
@@ -91,8 +90,8 @@ class PlotPanel3d(PlotPanel):
             ],
             icons=(['cube'] * 3) + ['circle-o'] + (['toggle-on'] * 3) +
             ['magic'],
-            style={"button_width": "55px"},
-            layout={'width': '350px'})
+            style={"button_width": "35px"},
+            )
         self.cut_surface_buttons.observe(self._update_cut_surface_buttons,
                                          names="value")
         # Add a capture for a click event: if the active button is clicked,
@@ -135,17 +134,19 @@ class PlotPanel3d(PlotPanel):
             (self.cut_slider, 'step'), (self.cut_surface_thickness, 'value'))
         self.cut_slider.observe(self._update_cut_surface, names="value")
 
-        # Put widgets into boxes
-        self.container.children = (ipw.HBox(
-            [self.opacity_slider, self.opacity_checkbox]),
-                                   ipw.HBox([
-                                       self.cut_surface_buttons,
-                                       ipw.VBox([
+        self._cut_controls = ipw.HBox([
                                            ipw.HBox([
                                                self.cut_slider, self.cut_unit,
                                                self.cut_checkbox
                                            ]), self.cut_surface_thickness
                                        ])
+        self._cut_controls.layout.display = 'none'
+        # Put widgets into boxes
+        self.container.children = (ipw.HBox(
+            [self.opacity_slider, self.opacity_checkbox]),
+                                   ipw.VBox([
+                                       self.cut_surface_buttons,
+                                       self._cut_controls
                                    ]))
 
     def get_cut_options(self):
@@ -156,15 +157,20 @@ class PlotPanel3d(PlotPanel):
         """
         return self.cut_options
 
-    def update_axes(self):
-        """
-        Reset axes limits and cut surface buttons.
-        """
+    def set_position_unit(self, unit):
+        self._position_unit = unit
+
+    def set_limits(self, limits):
         #self.xminmax["x"] = axparams['x']['lims'] / axparams['x']['scaling']
         #self.xminmax["y"] = axparams['y']['lims'] / axparams['y']['scaling']
         #self.xminmax["z"] = axparams['z']['lims'] / axparams['z']['scaling']
         # TODO scaling?
-        self.xminmax = self._position_model.limits
+        self.xminmax = limits
+
+    def update_axes(self):
+        """
+        Reset axes limits and cut surface buttons.
+        """
         self.cut_surface_buttons.value = None
         self.current_cut_surface_value = None
 
@@ -192,12 +198,10 @@ class PlotPanel3d(PlotPanel):
         Handle button update when the type of cut surface is changed.
         """
         if change["new"] is None:
-            self.cut_slider.disabled = True
-            self.cut_checkbox.disabled = True
-            self.cut_surface_thickness.disabled = True
-            self.cut_unit.value = ""
+            self._cut_controls.layout.display = 'none'
             self._update_opacity({"new": self.opacity_slider.value})
         else:
+            self._cut_controls.layout.display = ''
             self.controller.update_depth_test(False)
             if change["old"] is None:
                 self.cut_slider.disabled = False
@@ -231,9 +235,8 @@ class PlotPanel3d(PlotPanel):
             self._safe_cut_slider_range_update(minmax[0], minmax[1])
             self.cut_slider.value = 0.5 * (minmax[0] + minmax[1])
             self.cut_slider.description = "Position:"
-            # TODO query model
-            if self._position_model is not None:
-                self.cut_unit.value = str(self._position_model.unit)
+            if self._position_unit is not None:
+                self.cut_unit.value = str(self._position_unit)
             else:
                 self.cut_unit.value = self.controller.get_coord_unit(
                     axparams[self.cut_surface_buttons.label.replace(
@@ -269,7 +272,7 @@ class PlotPanel3d(PlotPanel):
             self.cut_slider.step = (self.cut_slider.max -
                                     self.cut_slider.min) / 10.0
             self.cut_slider.description = "Value:"
-            self.cut_unit.value = str(self.unit)
+            self.cut_unit.value = str(self._unit)
         if self.cut_surface_buttons.value < self.cut_options["Value"]:
             self.cut_slider.step = self.controller.get_pixel_size() * 1.1
             self.cut_surface_thickness.max = (self.cut_slider.max -
@@ -310,8 +313,7 @@ class PlotPanel3d(PlotPanel):
         slider unit to None as the unit may be ill-defined if the coordinates
         of the dense data do no all have the same dimension.
         """
-        # TODO query model
-        if self._position_model is not None:
-            self.cut_unit.value = str(self._position_model.unit)
+        if self._position_unit is not None:
+            self.cut_unit.value = str(self._position_unit)
         else:
             self.cut_unit.value = ""

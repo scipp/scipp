@@ -33,10 +33,9 @@ class PlotFigure3d:
     It renders an interactive scene containing a point cloud using `pythreejs`.
     """
     def __init__(self, *, background, cmap, extend, figsize, mask_cmap,
-                 nan_color, norm, pixel_size, show_outline, tick_size,
-                 position_model, xlabel, ylabel, zlabel):
+                 nan_color, norm, pixel_size, show_outline, tick_size, xlabel,
+                 ylabel, zlabel):
 
-        self._position_model = position_model
         self._pixel_size = pixel_size
         if pixel_size is not None:
             self._pixel_size = pixel_size
@@ -47,8 +46,8 @@ class PlotFigure3d:
 
         self.aspect = None
         if self.aspect is None:
-            # TODO query model instead
-            if position_model is not None:  # TODO is this check still ok?
+            # TODO
+            if True:
                 self.aspect = "equal"
             else:
                 self.aspect = config.plot.aspect
@@ -164,12 +163,11 @@ class PlotFigure3d:
         if self.axticks is not None:
             self.scene.remove(self.axticks)
 
-    def _setup(self, array):
-        self._unit = array.unit
-        limits = self._position_model.limits
-        center = self._position_model.center
+    def set_position_params(self, params):
+        limits = params.limits
+        center = params.center
         # TODO grow by pixel size and avoid empty
-        box_size = self._position_model.box_size
+        box_size = params.box_size
         scaling = {}
         for i, xyz in enumerate("xyz"):
             scaling[xyz] = 1.0 / box_size[i] if self.aspect == "auto" else 1.0
@@ -178,7 +176,7 @@ class PlotFigure3d:
 
         self._create_outline(limits=limits, box_size=box_size, center=center)
 
-        positions = self._position_model.positions
+        positions = params.positions
         self.axticks = self._generate_axis_ticks_and_labels(
             box_size=box_size,
             scaling=scaling,
@@ -187,7 +185,7 @@ class PlotFigure3d:
 
         if self._pixel_size is None:
             # TODO
-            if self._position_model is not None:
+            if params is not None:
                 # Note the value of 0.05 is arbitrary here. It is a sensible
                 # guess to render a plot that is not too crowded and shows
                 # individual pixels.
@@ -393,9 +391,7 @@ void main() {
         """
         array = new_values['data']
         colors = self.scalar_map.to_rgba(array.values)
-
-        if self.points_geometry is None:
-            self._setup(array)
+        self._unit = array.unit
 
         if 'mask' in new_values:
             # We change the colors of the points in-place where masks are True

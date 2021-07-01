@@ -57,6 +57,10 @@ class PlotView3d(PlotView):
         self.figure.toolbar.dims = []
         self.refresh(mask_info)
 
+    def set_position_params(self, params):
+        self._positions = params.positions
+        self.figure.set_position_params(params)
+
     def update_cut_surface(self,
                            target=None,
                            button_value=None,
@@ -67,8 +71,7 @@ class PlotView3d(PlotView):
         Compute new opacities based on positions of the cut surface.
         """
         array = next(iter(self._data.values()))
-        # TODO
-        pos_array = self.figure._position_model.positions.values
+        pos_array = self._positions.values
 
         # Cartesian X, Y, Z
         if button_value < self.cut_options["Xcylinder"]:

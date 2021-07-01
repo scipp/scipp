@@ -38,13 +38,15 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
                 ylabel=None,
                 zlabel=None):
         array = next(iter(scipp_obj_dict.values()))
-        position_model = ScatterPointModel(array.meta[positions])
         # TODO use unique dimension labels + ['z', 'y', 'x']
         out = {
             'view_ndims': 0,
             'dims': list(set(array.dims) - set(array.meta[positions].dims)),
             'view': PlotView3d,
-            'controller': PlotController3d
+            'controller': PlotController3d,
+            'controller_args': {
+                'position_model': ScatterPointModel(array.meta[positions])
+            }
         }
         params = make_params(cmap=cmap,
                              norm=norm,
@@ -56,8 +58,7 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
         # TODO
         if len(dims) > 2:
             params['extend_cmap'] = 'both'
-        out['panel'] = PlotPanel3d(position_model=position_model,
-                                   unit=array.unit)
+        out['panel'] = PlotPanel3d(unit=array.unit)
         out['figure'] = PlotFigure3d(background=background,
                                      cmap=params["values"]["cmap"],
                                      extend=params['extend_cmap'],
@@ -68,7 +69,6 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
                                      pixel_size=pixel_size,
                                      show_outline=show_outline,
                                      tick_size=tick_size,
-                                     position_model=position_model,
                                      xlabel=xlabel,
                                      ylabel=ylabel,
                                      zlabel=zlabel)
