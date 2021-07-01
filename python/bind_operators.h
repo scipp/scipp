@@ -47,6 +47,7 @@ void bind_astype(py::class_<T, Ignored...> &c) {
                       copy ? scipp::CopyPolicy::Always
                            : scipp::CopyPolicy::TryAvoid);
       },
+      py::arg("type"), py::kw_only(), py::arg("copy") = false,
       py::call_guard<py::gil_scoped_release>(),
       R"(
         Converts a Variable or DataArray to a different dtype.
