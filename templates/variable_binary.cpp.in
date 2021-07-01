@@ -24,15 +24,15 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-Variable @NAME @(const Variable &a, const Variable &b) {
-  return transform(preprocess(a), preprocess(b), element::@OPNAME @,
+Variable @NAME@(const Variable &a, const Variable &b) {
+  return transform(preprocess(a), preprocess(b), element::@OPNAME@,
                    std::string_view("@OPNAME@"));
 }
 
 #ifdef GENERATE_OUT
-Variable &@NAME @(const Variable &a, const Variable &b, Variable &out) {
+Variable &@NAME@(const Variable &a, const Variable &b, Variable &out) {
   transform_in_place(
-      out, preprocess(a), preprocess(b), assign_unary { element::@OPNAME @ },
+      out, preprocess(a), preprocess(b), assign_unary { element::@OPNAME@ },
       std::string_view("@OPNAME@"));
   return out;
 }
