@@ -5,5 +5,5 @@
 #pragma once
 
 #include "scipp-variable_export.h"
-#include "scipp/variable/variable.h"
 #include "scipp/variable/generated_trigonometry.h"
+#include "scipp/variable/variable.h"

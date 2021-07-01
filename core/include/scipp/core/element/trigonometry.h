@@ -17,19 +17,19 @@ constexpr auto trig = overloaded{arg_list<double, float>,
                                  transform_flags::expect_no_variance_arg<2>};
 
 constexpr auto sin = overloaded{trig, [](const auto &x) {
-                                          using std::sin;
-                                          return sin(x);
-                                        }};
+                                  using std::sin;
+                                  return sin(x);
+                                }};
 
 constexpr auto cos = overloaded{trig, [](const auto &x) {
-                                          using std::cos;
-                                          return cos(x);
-                                        }};
+                                  using std::cos;
+                                  return cos(x);
+                                }};
 
 constexpr auto tan = overloaded{trig, [](const auto &x) {
-                                          using std::tan;
-                                          return tan(x);
-                                        }};
+                                  using std::tan;
+                                  return tan(x);
+                                }};
 
 constexpr auto asin = overloaded{trig, [](const auto x) {
                                    using std::asin;
@@ -47,8 +47,8 @@ constexpr auto atan = overloaded{trig, [](const auto x) {
                                  }};
 
 constexpr auto atan2 = overloaded{trig, [](const auto y, const auto x) {
-      using std::atan2;
-      return atan2(y, x);
-    }};
+                                    using std::atan2;
+                                    return atan2(y, x);
+                                  }};
 
 } // namespace scipp::core::element
