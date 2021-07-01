@@ -233,7 +233,6 @@ def make_formatter(array, key):
         elif dim is not key:
             coord = _get_or_make_coord(array, dim)
             if coord.sizes[dim] != array.sizes[dim]:
-                # Ensure every tick within bin has same label
                 coord = to_bin_centers(coord, dim)
             form = LabelFormatter(labels, coord).formatter
         else:

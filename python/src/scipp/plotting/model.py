@@ -47,19 +47,19 @@ class PlotModel:
     The model is where all operations on the data (slicing and resampling) are
     performed.
     """
-    def __init__(self, *, scipp_obj_dict, labels, name):
+    def __init__(self, scipp_obj_dict=None, name=None):
         self._dims = None
         self.data_arrays = {}
 
         # Create dict of DataArrays using information from controller
         for name, array in scipp_obj_dict.items():
-            # TODO for the 3d scatter plot this is problematic:
-            # we never touch any of the pos dims, so we don't want to replace coords
+            # TODO for the 3d scatter plot this is problematic: we never
+            # touch any of the pos dims, so we don't want to replace coords
             # should model only consider "other" data dims?
-            coord_list = {dim: self._axis_coord(array, dim) for dim in labels}
-            for label in labels.values():
-                if label in array.meta:
-                    coord_list[label] = array.meta[label]
+            coord_list = {
+                dim: self._axis_coord(array, dim)
+                for dim in array.dims
+            }
             self.data_arrays[name] = sc.DataArray(data=array.data,
                                                   coords=coord_list,
                                                   masks=to_dict(array.masks))
