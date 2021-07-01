@@ -25,7 +25,7 @@ scipp_unary(trigonometry tan SKIP_VARIABLE)
 scipp_unary(trigonometry asin)
 scipp_unary(trigonometry acos)
 scipp_unary(trigonometry atan)
-#scipp_binary(trigonometry atan2)
+scipp_binary(trigonometry atan2)
 setup_scipp_category(trigonometry)
 
 scipp_unary(special_values isnan NO_OUT)

@@ -51,13 +51,4 @@ Variable &tan(const Variable &var, Variable &out) {
   return out;
 }
 
-Variable atan2(const Variable &y, const Variable &x) {
-  return transform(y, x, element::atan2, "atan2");
-}
-
-Variable &atan2(const Variable &y, const Variable &x, Variable &out) {
-  transform_in_place(out, y, x, element::atan2_out_arg, "atan2");
-  return out;
-}
-
 } // namespace scipp::variable

@@ -6,6 +6,7 @@
 
 #include "scipp-variable_export.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/generated_trigonometry.h"
 
 namespace scipp::variable {
 
@@ -15,15 +16,5 @@ SCIPP_VARIABLE_EXPORT Variable &sin(const Variable &var, Variable &out);
 SCIPP_VARIABLE_EXPORT Variable &cos(const Variable &var, Variable &out);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable tan(const Variable &var);
 SCIPP_VARIABLE_EXPORT Variable &tan(const Variable &var, Variable &out);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable asin(const Variable &var);
-SCIPP_VARIABLE_EXPORT Variable &asin(const Variable &var, Variable &out);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable acos(const Variable &var);
-SCIPP_VARIABLE_EXPORT Variable &acos(const Variable &var, Variable &out);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable atan(const Variable &var);
-SCIPP_VARIABLE_EXPORT Variable &atan(const Variable &var, Variable &out);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable atan2(const Variable &y,
-                                                   const Variable &x);
-SCIPP_VARIABLE_EXPORT Variable &atan2(const Variable &y, const Variable &x,
-                                      Variable &out);
 
 } // namespace scipp::variable
