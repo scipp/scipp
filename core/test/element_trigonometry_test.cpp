@@ -6,19 +6,16 @@
 #include "scipp/core/element/trigonometry.h"
 #include "scipp/units/unit.h"
 
+#include "test_macros.h"
 #include "fix_typed_test_suite_warnings.h"
 
 using namespace scipp;
 using namespace scipp::core;
 
 TEST(ElementSinOutArgTest, unit_rad) {
-  const units::Unit rad(units::rad);
-  EXPECT_EQ(element::sin(rad), units::sin(rad));
-}
-
-TEST(ElementSinOutArgTest, unit_deg) {
-  const units::Unit deg(units::deg);
-  EXPECT_EQ(element::sin(deg), units::sin(deg));
+  EXPECT_EQ(element::sin(units::rad), units::sin(units::rad));
+  EXPECT_EQ(element::sin(units::deg), units::sin(units::deg));
+  EXPECT_THROW_DISCARD(element::sin(units::one), except::UnitError);
 }
 
 TEST(ElementSinOutArgTest, value_double) {
@@ -36,13 +33,9 @@ TEST(ElementSinOutArgTest, supported_types) {
 }
 
 TEST(ElementCosOutArgTest, unit_rad) {
-  const units::Unit rad(units::rad);
-  EXPECT_EQ(element::cos(rad), units::cos(rad));
-}
-
-TEST(ElementCosOutArgTest, unit_deg) {
-  const units::Unit deg(units::deg);
-  EXPECT_EQ(element::cos(deg), units::cos(deg));
+  EXPECT_EQ(element::cos(units::rad), units::cos(units::rad));
+  EXPECT_EQ(element::cos(units::deg), units::cos(units::deg));
+  EXPECT_THROW_DISCARD(element::cos(units::one), except::UnitError);
 }
 
 TEST(ElementCosOutArgTest, value_double) {
@@ -59,14 +52,11 @@ TEST(ElementCosOutArgTest, supported_types) {
   std::get<float>(supported);
 }
 
-TEST(ElementTanOutArgTest, unit_rad) {
-  const units::Unit rad(units::rad);
-  EXPECT_EQ(element::tan(rad), units::tan(rad));
-}
 
-TEST(ElementTanOutArgTest, unit_deg) {
-  const units::Unit deg(units::deg);
-  EXPECT_EQ(element::tan(deg), units::tan(deg));
+TEST(ElementTanOutArgTest, unit_rad) {
+  EXPECT_EQ(element::tan(units::rad), units::tan(units::rad));
+  EXPECT_EQ(element::tan(units::deg), units::tan(units::deg));
+  EXPECT_THROW_DISCARD(element::tan(units::one), except::UnitError);
 }
 
 TEST(ElementTanOutArgTest, value_double) {
