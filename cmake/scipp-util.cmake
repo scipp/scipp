@@ -70,8 +70,8 @@ macro(scipp_unary)
   scipp_function("unary" ${ARGV})
 endmacro()
 
-macro(scipp_binary category function_name)
-  scipp_function("binary" ${category} ${function_name})
+macro(scipp_binary)
+  scipp_function("binary" ${ARGV})
 endmacro()
 
 function(setup_scipp_category category)
