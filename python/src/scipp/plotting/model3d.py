@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
-
+from .._scipp import core as sc
 import numpy as np
 
 # pos = [xyz]
@@ -37,44 +37,35 @@ import numpy as np
 # - Toolbar
 
 
-def update_cut_surface(self,
-                       target=None,
-                       button_value=None,
-                       surface_thickness=None,
-                       opacity_lower=None,
-                       opacity_upper=None):
-    """
-    Compute new opacities based on positions of the cut surface.
-    """
+class ScatterPointModel:
+    def __init__(self, positions):
+        self._axes = ['z', 'y', 'x']
+        self._positions = positions
 
-    # Cartesian X, Y, Z
-    if button_value < self.cut_options["Xcylinder"]:
-        return np.where(
-            np.abs(self.pos_array[:, button_value] - target) <
-            0.5 * surface_thickness, opacity_upper, opacity_lower)
-    # Cylindrical X, Y, Z
-    elif button_value < self.cut_options["Sphere"]:
-        axis = button_value - 3
-        remaining_inds = [(axis + 1) % 3, (axis + 2) % 3]
-        return np.where(
-            np.abs(
-                np.sqrt(self.pos_array[:, remaining_inds[0]] *
-                        self.pos_array[:, remaining_inds[0]] +
-                        self.pos_array[:, remaining_inds[1]] *
-                        self.pos_array[:, remaining_inds[1]]) - target) <
-            0.5 * surface_thickness, opacity_upper, opacity_lower)
-    # Spherical
-    elif button_value == self.cut_options["Sphere"]:
-        return np.where(
-            np.abs(
-                np.sqrt(self.pos_array[:, 0] * self.pos_array[:, 0] +
-                        self.pos_array[:, 1] * self.pos_array[:, 1] +
-                        self.pos_array[:, 2] * self.pos_array[:, 2]) - target)
-            < 0.5 * surface_thickness, opacity_upper, opacity_lower)
-    # Value iso-surface
-    elif button_value == self.cut_options["Value"]:
-        return np.where(
-            np.abs(self.dslice.data.values.ravel() - target) <
-            0.5 * surface_thickness, opacity_upper, opacity_lower)
-    else:
-        raise RuntimeError("Unknown cut surface type {}".format(button_value))
+    @property
+    def limits(self):
+        """
+        Extents of the box that contains all the positions.
+        """
+        extents = {}
+        pos = self._positions.fields
+        for xyz, x in zip(self._axes, [pos.z, pos.y, pos.x]):
+            xmin = sc.min(x).value
+            xmax = sc.max(x).value
+            extents[xyz] = np.array([xmin, xmax])
+        return extents
+
+    @property
+    def center(self):
+        return [
+            0.5 * np.sum(self.limits['x']), 0.5 * np.sum(self.limits['y']),
+            0.5 * np.sum(self.limits['z'])
+        ]
+
+    @property
+    def box_size(self):
+        return np.array([
+            self.limits['x'][1] - self.limits['x'][0],
+            self.limits['y'][1] - self.limits['y'][0],
+            self.limits['z'][1] - self.limits['z'][0]
+        ])

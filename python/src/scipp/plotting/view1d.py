@@ -32,7 +32,7 @@ class PlotView1d(PlotView):
         super().__init__(figure=figure, formatters=formatters)
         self._axes = ['x']
 
-    def _make_masks(self, array, mask_info, transpose=False):
+    def _make_masks(self, array, mask_info):
         if not mask_info:
             return {}
         masks = {}
@@ -43,8 +43,6 @@ class PlotView1d(PlotView):
                 msk = base_mask * sc.Variable(dims=array.masks[m].dims,
                                               values=array.masks[m].values)
                 masks[m] = msk.values
-                if transpose:
-                    masks[m] = sc.transpose(msk).values
             else:
                 masks[m] = None
         return masks

@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .model3d import ScatterPointModel
 from .panel import PlotPanel
 import ipywidgets as ipw
 import numpy as np
@@ -16,6 +17,7 @@ class PlotPanel3d(PlotPanel):
         super().__init__()
 
         self.positions = positions
+        self._model = ScatterPointModel(positions)
         self.unit = unit
         self.current_cut_surface_value = None
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
@@ -157,13 +159,15 @@ class PlotPanel3d(PlotPanel):
         """
         return self.cut_options
 
-    def update_axes(self, axparams):
+    def update_axes(self):
         """
         Reset axes limits and cut surface buttons.
         """
-        self.xminmax["x"] = axparams['x']['lims'] / axparams['x']['scaling']
-        self.xminmax["y"] = axparams['y']['lims'] / axparams['y']['scaling']
-        self.xminmax["z"] = axparams['z']['lims'] / axparams['z']['scaling']
+        #self.xminmax["x"] = axparams['x']['lims'] / axparams['x']['scaling']
+        #self.xminmax["y"] = axparams['y']['lims'] / axparams['y']['scaling']
+        #self.xminmax["z"] = axparams['z']['lims'] / axparams['z']['scaling']
+        # TODO scaling?
+        self.xminmax = self._model.limits
         self.cut_surface_buttons.value = None
         self.current_cut_surface_value = None
 
@@ -224,7 +228,6 @@ class PlotPanel3d(PlotPanel):
         We also update the possible range for value-based slicing.
         """
         self.lock_surface_update = True
-        axparams = self.controller.get_axes_parameters()
         # Cartesian X, Y, Z
         if self.cut_surface_buttons.value < self.cut_options["Xcylinder"]:
             minmax = self.xminmax["xyz"[self.cut_surface_buttons.value]]
@@ -232,7 +235,7 @@ class PlotPanel3d(PlotPanel):
             self.cut_slider.value = 0.5 * (minmax[0] + minmax[1])
             self.cut_slider.description = "Position:"
             if self.positions is not None:
-                self.cut_unit.value = axparams["x"]["unit"]
+                self.cut_unit.value = str(self.positions.unit)
             else:
                 self.cut_unit.value = self.controller.get_coord_unit(
                     axparams[self.cut_surface_buttons.label.replace(
@@ -250,14 +253,14 @@ class PlotPanel3d(PlotPanel):
             self._safe_cut_slider_range_update(0, rmax)
             self.cut_slider.value = 0.5 * self.cut_slider.max
             self.cut_slider.description = "Radius:"
-            self._set_cylindrical_or_spherical_unit(axparams)
+            self._set_cylindrical_or_spherical_unit()
         # Spherical
         elif self.cut_surface_buttons.value == self.cut_options["Sphere"]:
             rmax = np.abs(list(self.xminmax.values())).max() * np.sqrt(3.0)
             self._safe_cut_slider_range_update(0, rmax)
             self.cut_slider.value = 0.5 * self.cut_slider.max
             self.cut_slider.description = "Radius:"
-            self._set_cylindrical_or_spherical_unit(axparams)
+            self._set_cylindrical_or_spherical_unit()
         # Value iso-surface
         elif self.cut_surface_buttons.value == self.cut_options["Value"]:
             self.cut_surface_thickness.max = self.vmax - self.vmin
@@ -268,7 +271,7 @@ class PlotPanel3d(PlotPanel):
             self.cut_slider.step = (self.cut_slider.max -
                                     self.cut_slider.min) / 10.0
             self.cut_slider.description = "Value:"
-            self.cut_unit.value = self.unit
+            self.cut_unit.value = str(self.unit)
         if self.cut_surface_buttons.value < self.cut_options["Value"]:
             self.cut_slider.step = self.controller.get_pixel_size() * 1.1
             self.cut_surface_thickness.max = (self.cut_slider.max -
@@ -298,18 +301,18 @@ class PlotPanel3d(PlotPanel):
         """
         Update the pixel colors using new colorbar limits.
         """
-        self.vmin = vmin
-        self.vmax = vmax
+        self.vmin = vmin.value
+        self.vmax = vmax.value
         if self.cut_surface_buttons.value == self.cut_options["Value"]:
             self._update_cut_slider_bounds()
 
-    def _set_cylindrical_or_spherical_unit(self, axparams):
+    def _set_cylindrical_or_spherical_unit(self):
         """
         For cylindrical and spherical cut surfaces, if the data is dense, set
         slider unit to None as the unit may be ill-defined if the coordinates
         of the dense data do no all have the same dimension.
         """
         if self.positions is not None:
-            self.cut_unit.value = axparams["x"]["unit"]
+            self.cut_unit.value = str(self.positions.unit)
         else:
             self.cut_unit.value = ""

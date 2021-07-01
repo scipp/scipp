@@ -67,12 +67,10 @@ class PlotModel1d(PlotModel):
         entries in the dict of data arrays, and return a dict of 1d value
         arrays for data values, variances, and masks.
         """
-        print(slices)
         self.dslice = {
             name: self._resample(array, slices)
             for name, array in self.data_arrays.items()
         }
-
         return DataArrayDict(self.dslice)
 
     def rescale_to_data(self, scale=None):

@@ -3,7 +3,6 @@
 # @author Neil Vaytet
 
 from .controller import PlotController
-from ..utils import name_with_unit
 
 
 class PlotController3d(PlotController):
@@ -13,50 +12,14 @@ class PlotController3d(PlotController):
     It handles some additional events from the cut surface panel, compared to
     the base class controller.
     """
-    def __init__(self, *args, positions=None, **kwargs):
-
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.positions = positions
 
     def initialize_model(self):
         """
         Give the model3d the list of available options for the cut surface.
         """
-        pass
-        # self.model.initialize(self.panel.get_cut_options())
-
-    def _make_axes_parameters(self):
-        """
-        Gather the information (dimensions, limits, etc...) about the (x, y, z)
-        axes that are displayed on the plots.
-        If `positions` is specified, the axes never change and we simply return
-        some axes parameters that were set upon creation.
-        In addition, we give the center of the positions as half-way between
-        the axes limits, as well as the extent of the positions which will be
-        use to show an outline/box around the points in space.
-        """
-        if self.positions is not None:
-            extents = self.model.get_positions_extents(self.pixel_size)
-            # TODO replace by min and max calls on position components in fig
-            axparams = {
-                xyz: {
-                    "lims": ex["lims"],
-                    "label": name_with_unit(1.0 * ex["unit"],
-                                            name=xyz.upper()),
-                    "unit": name_with_unit(1.0 * ex["unit"], name="")
-                }
-                for xyz, ex in extents.items()
-            }
-        else:
-            axparams = super()._make_axes_parameters()
-
-        return axparams
-
-    def get_axes_parameters(self):
-        """
-        Getter function for the current axes parameters.
-        """
-        return self.axparams
+        self.view.cut_options = self.panel.get_cut_options()
 
     def update_opacity(self, alpha):
         """
@@ -85,11 +48,11 @@ class PlotController3d(PlotController):
         `PlotModel3d` and send them to the `PlotView3d` for updating the color
         array.
         """
-        alpha = self.model.update_cut_surface(*args, **kwargs)
+        alpha = self.view.update_cut_surface(*args, **kwargs)
         self.view.update_opacity(alpha=alpha)
 
     def get_pixel_size(self):
         """
         Getter function for the pixel size.
         """
-        return self.axparams["pixel_size"] / self.axparams["pixel_scaling"]
+        return self.view.figure._pixel_size / self.view.figure._pixel_scaling

@@ -6,6 +6,7 @@ from .objects import make_params, make_profile, make_plot
 from .panel1d import PlotPanel1d
 from .view1d import PlotView1d
 from .figure1d import PlotFigure1d
+from .controller1d import PlotController1d
 
 
 def plot1d(scipp_obj_dict, **kwargs):
@@ -40,6 +41,7 @@ def plot1d(scipp_obj_dict, **kwargs):
         out = {
             'view_ndims': 1,
             'view': PlotView1d,
+            'controller': PlotController1d
         }
         if masks is None:
             masks = {"color": "k"}

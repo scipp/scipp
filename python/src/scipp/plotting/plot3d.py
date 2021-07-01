@@ -18,6 +18,11 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
     It is possible to add cut surfaces as cartesian, cylindrical or spherical
     planes.
     """
+    if isinstance(positions, str):
+        pos = next(iter(scipp_obj_dict.values())).coords[positions]
+    else:
+        pos = positions
+
     def builder(*,
                 dims,
                 norm=None,
@@ -39,7 +44,7 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
         array = next(iter(scipp_obj_dict.values()))
         # TODO use unique dimension labels + ['z', 'y', 'x']
         out = {
-            'view_ndims': 1,
+            'view_ndims': 0,
             'dims': list(set(array.dims) - set(array.meta[positions].dims)),
             'view': PlotView3d,
             'controller': PlotController3d
@@ -51,10 +56,10 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
                              masks=masks)
         out['vmin'] = params["values"]["vmin"]
         out['vmax'] = params["values"]["vmax"]
+        # TODO
         if len(dims) > 2:
             params['extend_cmap'] = 'both'
-        # TODO enable panel once refactored
-        #out['panel'] = PlotPanel3d(data_names=list(scipp_obj_dict.keys()))
+        out['panel'] = PlotPanel3d(positions=pos, unit=array.unit)
         out['figure'] = PlotFigure3d(background=background,
                                      cmap=params["values"]["cmap"],
                                      extend=params['extend_cmap'],
@@ -75,11 +80,6 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
     # TODO if positions not given, make fake coords first
     # Use subclass of PlotModel1d
     # - PlotModel makes fake coords, then flatten in init
-    if isinstance(positions, str):
-        pos = next(iter(scipp_obj_dict.values())).coords[positions]
-    else:
-        pos = positions
-    print(pos)
     #scipp_obj_dict = {
     #    key: flatten(array, dims=pos.dims, to=''.join(array.dims))
     #    for key, array in scipp_obj_dict.items()

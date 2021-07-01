@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
-
-from .._scipp import core as sc
 from .. import config
 from .toolbar import PlotToolbar3d
+from .model3d import ScatterPointModel
 from .tools import fig_to_pngbytes
 from ..utils import value_to_string
 import numpy as np
@@ -17,29 +16,12 @@ import pythreejs as p3
 from copy import copy
 
 
-def _position_extents(pos):
-    """
-    Find the extents of the box that contains all the positions.
-    """
-    print(pos)
-    extents = {}
-    pos = pos.fields
-    for xyz, x in zip(['x', 'y', 'z'], [pos.x, pos.y, pos.z]):
-        xmin = sc.min(x).value
-        xmax = sc.max(x).value
-        extents[xyz] = np.array([xmin, xmax])
-    return extents
-
-
-def _estimate_pixel_size(self, *array, box_size):
+def _estimate_pixel_size(self, *, array, box_size, scaling):
     """
     Find the smallest pixel in the grid.
     """
     # TODO use flattened dims rather than xyz to get sizes
-    dx = [
-        box_size[i] / self.data_arrays[self.name].sizes[xyz]
-        for i, xyz in enumerate("xyz")
-    ]
+    dx = [box_size[i] / array.sizes[xyz] for i, xyz in enumerate("xyz")]
     scaling = [scaling[xyz] for xyz in "xyz"]
     ind = np.argmin(dx)
     return dx[ind], scaling[ind]
@@ -168,12 +150,6 @@ class PlotFigure3d:
         """
         Connect the toolbar Home button to reset the camera position.
         """
-        #callbacks.update({
-        #    "home_view": self.reset_camera,
-        #    "camera_x_normal": self.camera_x_normal,
-        #    "camera_y_normal": self.camera_y_normal,
-        #    "camera_z_normal": self.camera_z_normal
-        #})
         self.toolbar.connect(controller=controller)
 
     def update_axes(self, scale, unit):
@@ -191,16 +167,11 @@ class PlotFigure3d:
 
     def _setup(self, array):
         self._unit = array.unit
-        limits = _position_extents(array.meta[self._positions])
-        center = [
-            0.5 * np.sum(limits['x']), 0.5 * np.sum(limits['y']),
-            0.5 * np.sum(limits['z'])
-        ]
+        model = ScatterPointModel(array.meta[self._positions])
+        limits = model.limits
+        center = model.center
         # TODO grow by pixel size and avoid empty
-        box_size = np.array([
-            limits['x'][1] - limits['x'][0], limits['y'][1] - limits['y'][0],
-            limits['z'][1] - limits['z'][0]
-        ])
+        box_size = model.box_size
         scaling = {}
         for i, xyz in enumerate("xyz"):
             scaling[xyz] = 1.0 / box_size[i] if self.aspect == "auto" else 1.0
@@ -209,9 +180,11 @@ class PlotFigure3d:
 
         self._create_outline(limits=limits, box_size=box_size, center=center)
 
-        self.axticks = self._generate_axis_ticks_and_labels(box_size=box_size,
-                                                            scaling=scaling,
-                                                            limits=limits)
+        self.axticks = self._generate_axis_ticks_and_labels(
+            box_size=box_size,
+            scaling=scaling,
+            limits=limits,
+            positions=array.meta[self._positions])
 
         if self._pixel_size is None:
             if self._positions is not None:
@@ -221,7 +194,9 @@ class PlotFigure3d:
                 psize = 0.05 * np.mean(box_size)
                 pscale = scaling['x']
             else:
-                psize, pscale = _estimate_pixel_size(box_size)
+                psize, pscale = _estimate_pixel_size(array=array,
+                                                     box_size=box_size,
+                                                     scaling=scaling)
             self._pixel_size = psize
             self._pixel_scaling = pscale
         self._create_points_material()
@@ -346,7 +321,8 @@ void main() {
                          position=position,
                          scale=[size, size, size])
 
-    def _generate_axis_ticks_and_labels(self, *, limits, scaling, box_size):
+    def _generate_axis_ticks_and_labels(self, *, limits, scaling, box_size,
+                                        positions):
         """
         Create ticklabels on outline edges
         """
@@ -372,15 +348,15 @@ void main() {
                             tick, precision=1),
                                              position=tick_pos.tolist(),
                                              size=self.tick_size))
-            #TODO
-            axis_label = 'abc'
-            #axis_label = axparams[x][
-            #    "label"] if self.axlabels[x] is None else self.axlabels[x]
+            coord = getattr(positions.fields, x)
+            axis_label = f'{x} [{coord.unit}]' if self.axlabels[
+                x] is None else self.axlabels[x]
+            # Offset labels 5% beyond axis ticks to reduce overlap
             ticks_and_labels.add(
                 self._make_axis_tick(
                     string=axis_label,
                     position=(iden[axis] * 0.5 * np.sum(limits[x]) +
-                              offsets[x]).tolist(),
+                              1.05 * np.array(offsets[x])).tolist(),
                     size=self.tick_size * 0.3 * len(axis_label)))
 
         return ticks_and_labels
@@ -416,19 +392,18 @@ void main() {
         """
         Update colors of points.
         """
-        new_values = next(iter(new_values.values()))
-        colors = self.scalar_map.to_rgba(new_values.values)
+        array = new_values['data']
+        colors = self.scalar_map.to_rgba(array.values)
 
         if self.points_geometry is None:
-            # TODO could handle multiple clouds here?
-            self._setup(new_values)
+            self._setup(array)
 
-        #if "masks" in new_values:
-        #    # We change the colors of the points in-place where masks are True
-        #    masks_inds = np.where(new_values["masks"])
-        #    masks_colors = self.masks_scalar_map.to_rgba(
-        #        new_values["values"][masks_inds])
-        #    colors[masks_inds] = masks_colors
+        if 'mask' in new_values:
+            # We change the colors of the points in-place where masks are True
+            masks_inds = np.where(new_values['mask'].values)
+            masks_colors = self.masks_scalar_map.to_rgba(
+                array.values[masks_inds])
+            colors[masks_inds] = masks_colors
 
         colors[:, 3] = self.points_geometry.attributes["rgba_color"].array[:,
                                                                            3]
@@ -459,6 +434,7 @@ void main() {
                          cmap=self.scalar_map.get_cmap(),
                          norm=self.scalar_map.norm,
                          extend=self.extend)
+        # TODO Why does this not show up?
         cbar_ax.set_ylabel(self._unit)
         cbar_ax.yaxis.set_label_coords(-0.9, 0.5)
         self.cbar_image.value = fig_to_pngbytes(cbar_fig)

@@ -29,7 +29,7 @@ class PlotWidgets:
         # all_masks_button: button to hide/show all masks in a single click
         self.all_masks_button = None
 
-        self._slider_dims = dims[:-ndim]
+        self._slider_dims = dims[:len(dims) - ndim]
 
         self.profile_button = ipw.Button(description="Profile",
                                          button_style="",
@@ -89,7 +89,7 @@ class PlotWidgets:
         for index, dim in enumerate(self._slider_dims):
             # Add one set of buttons per dimension
             self.dim_buttons[index] = {}
-            for dim_ in self.dims:
+            for dim_ in self._dims:
                 self.dim_buttons[index][dim_] = ipw.Button(
                     description=dim_label_map[dim_],
                     button_style='info' if dim == dim_ else '',
