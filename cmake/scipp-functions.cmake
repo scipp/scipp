@@ -4,6 +4,15 @@
 # ~~~
 include(scipp-util)
 
+set(convert_to_rad
+    "#include \"scipp/variable/to_unit.h\"
+namespace {
+decltype(auto) preprocess(const scipp::variable::Variable &var) {
+  return to_unit(var, scipp::units::rad)\;
+}
+}"
+)
+
 scipp_unary(math abs)
 scipp_unary(math exp)
 scipp_unary(math log)
@@ -19,9 +28,9 @@ scipp_unary(util variances NO_OUT)
 scipp_unary(util stddevs NO_OUT)
 setup_scipp_category(util)
 
-scipp_unary(trigonometry sin SKIP_VARIABLE)
-scipp_unary(trigonometry cos SKIP_VARIABLE)
-scipp_unary(trigonometry tan SKIP_VARIABLE)
+scipp_unary(trigonometry sin PREPROCESS_VARIABLE "${convert_to_rad}")
+scipp_unary(trigonometry cos PREPROCESS_VARIABLE "${convert_to_rad}")
+scipp_unary(trigonometry tan PREPROCESS_VARIABLE "${convert_to_rad}")
 scipp_unary(trigonometry asin)
 scipp_unary(trigonometry acos)
 scipp_unary(trigonometry atan)

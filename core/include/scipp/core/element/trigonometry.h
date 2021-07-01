@@ -16,19 +16,19 @@ constexpr auto trig = overloaded{arg_list<double, float>,
                                  transform_flags::expect_no_variance_arg<1>,
                                  transform_flags::expect_no_variance_arg<2>};
 
-constexpr auto sin_out_arg = overloaded{trig, [](auto &x, const auto y) {
+constexpr auto sin = overloaded{trig, [](const auto &x) {
                                           using std::sin;
-                                          x = sin(y);
+                                          return sin(x);
                                         }};
 
-constexpr auto cos_out_arg = overloaded{trig, [](auto &x, const auto y) {
+constexpr auto cos = overloaded{trig, [](const auto &x) {
                                           using std::cos;
-                                          x = cos(y);
+                                          return cos(x);
                                         }};
 
-constexpr auto tan_out_arg = overloaded{trig, [](auto &x, const auto y) {
+constexpr auto tan = overloaded{trig, [](const auto &x) {
                                           using std::tan;
-                                          x = tan(y);
+                                          return tan(x);
                                         }};
 
 constexpr auto asin = overloaded{trig, [](const auto x) {
