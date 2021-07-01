@@ -7,10 +7,10 @@ from __future__ import annotations
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import DataArrayLike, DatasetLike
+from .typing import LabeledArray, LabeledArray
 
 
-def less(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
+def less(x: LabeledArray, y: LabeledArray) -> LabeledArray:
     """Element-wise '<' (less).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -26,7 +26,7 @@ def less(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.less, x, y)
 
 
-def greater(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
+def greater(x: LabeledArray, y: LabeledArray) -> LabeledArray:
     """Element-wise '>' (greater).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -42,7 +42,7 @@ def greater(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.greater, x, y)
 
 
-def less_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
+def less_equal(x: LabeledArray, y: LabeledArray) -> LabeledArray:
     """Element-wise '<=' (less_equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -58,7 +58,7 @@ def less_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.less_equal, x, y)
 
 
-def greater_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
+def greater_equal(x: LabeledArray, y: LabeledArray) -> LabeledArray:
     """Element-wise '>=' (greater_equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -74,7 +74,7 @@ def greater_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.greater_equal, x, y)
 
 
-def equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
+def equal(x: LabeledArray, y: LabeledArray) -> LabeledArray:
     """Element-wise '==' (equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -90,7 +90,7 @@ def equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.equal, x, y)
 
 
-def not_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
+def not_equal(x: LabeledArray, y: LabeledArray) -> LabeledArray:
     """Element-wise '!=' (not_equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -106,7 +106,7 @@ def not_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.not_equal, x, y)
 
 
-def identical(x: DatasetLike, y: DatasetLike) -> DatasetLike:
+def identical(x: LabeledArray, y: LabeledArray) -> LabeledArray:
     """Full comparison of x and y.
 
     :param x: Left input.

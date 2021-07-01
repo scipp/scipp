@@ -7,11 +7,10 @@ from typing import Optional
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import DataArrayLike
+from .typing import LabeledArray
 
 
-def sin(x: DataArrayLike,
-        out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def sin(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise sine.
 
     :param x: Input data.
@@ -23,8 +22,7 @@ def sin(x: DataArrayLike,
     return _call_cpp_func(_cpp.sin, x, out=out)
 
 
-def cos(x: DataArrayLike,
-        out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def cos(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise cosine.
 
     :param x: Input data.
@@ -36,8 +34,7 @@ def cos(x: DataArrayLike,
     return _call_cpp_func(_cpp.cos, x, out=out)
 
 
-def tan(x: DataArrayLike,
-        out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def tan(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise tangent.
 
     :param x: Input data.
@@ -49,8 +46,7 @@ def tan(x: DataArrayLike,
     return _call_cpp_func(_cpp.tan, x, out=out)
 
 
-def asin(x: DataArrayLike,
-         out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def asin(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise inverse sine.
 
     :param x: Input data.
@@ -61,8 +57,7 @@ def asin(x: DataArrayLike,
     return _call_cpp_func(_cpp.asin, x, out=out)
 
 
-def acos(x: DataArrayLike,
-         out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def acos(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise inverse cosine.
 
     :param x: Input data.
@@ -73,8 +68,7 @@ def acos(x: DataArrayLike,
     return _call_cpp_func(_cpp.acos, x, out=out)
 
 
-def atan(x: DataArrayLike,
-         out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def atan(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise inverse tangent.
 
     :param x: Input data.

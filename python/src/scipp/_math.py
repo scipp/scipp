@@ -6,11 +6,10 @@ from typing import Optional
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import DataArrayLike
+from .typing import LabeledArray
 
 
-def abs(x: DataArrayLike,
-        out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def abs(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise absolute value.
 
     :param x: Input data.
@@ -48,7 +47,7 @@ def nan_to_num(x: _cpp.Variable,
     return _call_cpp_func(_cpp.nan_to_num, x, nan, posinf, neginf, out=out)
 
 
-def norm(x: DataArrayLike) -> DataArrayLike:
+def norm(x: LabeledArray) -> LabeledArray:
     """Element-wise norm.
 
     :param x: Input data.
@@ -58,8 +57,8 @@ def norm(x: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.norm, x, out=None)
 
 
-def reciprocal(x: DataArrayLike,
-               out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def reciprocal(x: LabeledArray,
+               out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise reciprocal.
 
     :param x: Input data.
@@ -70,8 +69,7 @@ def reciprocal(x: DataArrayLike,
     return _call_cpp_func(_cpp.reciprocal, x, out=out)
 
 
-def sqrt(x: DataArrayLike,
-         out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def sqrt(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise square-root.
 
     :param x: Input data.
@@ -82,8 +80,7 @@ def sqrt(x: DataArrayLike,
     return _call_cpp_func(_cpp.sqrt, x, out=out)
 
 
-def exp(x: DataArrayLike,
-        out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def exp(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise exponential.
 
     :param x: Input data.
@@ -93,8 +90,7 @@ def exp(x: DataArrayLike,
     return _call_cpp_func(_cpp.exp, x, out=out)
 
 
-def log(x: DataArrayLike,
-        out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def log(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise natural logarithm.
 
     :param x: Input data.
@@ -104,8 +100,7 @@ def log(x: DataArrayLike,
     return _call_cpp_func(_cpp.log, x, out=out)
 
 
-def log10(x: DataArrayLike,
-          out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def log10(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise base 10 logarithm.
 
     :param x: Input data.

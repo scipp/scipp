@@ -229,6 +229,5 @@ Typing
 .. autosummary::
    :toctree: ../generated
 
-   typing.DataArrayLike
-   typing.DatasetLike
+   typing.LabeledArray
    typing.MetaDataMap

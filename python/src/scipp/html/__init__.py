@@ -5,12 +5,12 @@
 
 from __future__ import annotations
 
-from ..typing import DatasetLike
+from ..typing import LabeledArray
 from .._scipp import core as sc
 from .formatting_html import dataset_repr, inject_style, variable_repr
 
 
-def make_html(container: DatasetLike) -> str:
+def make_html(container: LabeledArray) -> str:
     inject_style()
     if isinstance(container, sc.Variable):
         return variable_repr(container)
@@ -18,6 +18,6 @@ def make_html(container: DatasetLike) -> str:
         return dataset_repr(container)
 
 
-def to_html(container: DatasetLike):
+def to_html(container: LabeledArray):
     from IPython.display import display, HTML
     display(HTML(make_html(container)))
