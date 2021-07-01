@@ -51,33 +51,6 @@ Variable &tan(const Variable &var, Variable &out) {
   return out;
 }
 
-Variable asin(const Variable &var) {
-  return transform(var, element::asin, "asin");
-}
-
-Variable &asin(const Variable &var, Variable &out) {
-  transform_in_place(out, var, element::asin_out_arg, "asin");
-  return out;
-}
-
-Variable acos(const Variable &var) {
-  return transform(var, element::acos, "acos");
-}
-
-Variable &acos(const Variable &var, Variable &out) {
-  transform_in_place(out, var, element::acos_out_arg, "acos");
-  return out;
-}
-
-Variable atan(const Variable &var) {
-  return transform(var, element::atan, "atan");
-}
-
-Variable &atan(const Variable &var, Variable &out) {
-  transform_in_place(out, var, element::atan_out_arg, "atan");
-  return out;
-}
-
 Variable atan2(const Variable &y, const Variable &x) {
   return transform(y, x, element::atan2, "atan2");
 }
