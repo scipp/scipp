@@ -209,7 +209,7 @@ def histogram(x: Union[_cpp.DataArray, _cpp.Dataset], *,
 
 def bin(x: _cpp.DataArray,
         *,
-        bins: Optional[Sequence[_cpp.Variable]] = None,
+        edges: Optional[Sequence[_cpp.Variable]] = None,
         groups: Optional[Sequence[_cpp.Variable]] = None,
         erase: Optional[Sequence[_cpp.Variable]] = None) -> _cpp.DataArray:
     """Create binned data by binning input along all dimensions given by edges.
@@ -220,7 +220,7 @@ def bin(x: _cpp.DataArray,
     At least one argument of ``edges`` and ``groups`` is required.
 
     :param x: Input data.
-    :param bins: Bin edges, one per dimension to bin in.
+    :param edges: Bin edges, one per dimension to bin in.
     :param groups: Keys to group input by one per dimension to group in.
     :param erase: Dimension labels to remove from output.
     :return: Binned ``x``.
@@ -232,9 +232,9 @@ def bin(x: _cpp.DataArray,
         erase = []
     if groups is None:
         groups = []
-    if bins is None:
-        bins = []
-    return _call_cpp_func(_cpp.bin, x, bins, groups, erase)
+    if edges is None:
+        edges = []
+    return _call_cpp_func(_cpp.bin, x, edges, groups, erase)
 
 
 def bins(*,

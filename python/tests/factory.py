@@ -165,7 +165,7 @@ def make_binned_data_array(ndim=1, with_variance=False, masks=False):
                         unit=sc.units.m,
                         values=np.linspace(0.1, 0.9, M - i)))
 
-    binned = sc.bin(da, bins=bin_list)
+    binned = sc.bin(da, edges=bin_list)
 
     if masks:
         # Make a checkerboard mask, see https://stackoverflow.com/a/51715491
