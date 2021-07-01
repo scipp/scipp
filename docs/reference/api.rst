@@ -231,3 +231,4 @@ Typing
 
    typing.DataArrayLike
    typing.DatasetLike
+   typing.MetaDataMap
