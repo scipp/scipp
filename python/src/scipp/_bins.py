@@ -107,8 +107,8 @@ class Bins:
 
     def concatenate(
         self,
-        *,
         other: Optional[Union[_cpp.Variable, _cpp.DataArray]] = None,
+        *,
         dim: Optional[str] = None,
         out: Optional[_cpp.DataArray] = None
     ) -> Union[_cpp.Variable, _cpp.DataArray]:
