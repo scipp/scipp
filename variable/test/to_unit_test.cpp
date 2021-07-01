@@ -30,6 +30,18 @@ TEST(ToUnitTest, same) {
   EXPECT_EQ(to_unit(var, var.unit()), var);
 }
 
+TEST(ToUnitTest, copy) {
+  const Dimensions dims(Dim::X, 2);
+  const auto var = makeVariable<float>(dims, units::Unit("m"), Values{1, 2});
+  const auto no_copy = to_unit(var, var.unit(), CopyPolicy::TryAvoid);
+  EXPECT_EQ(no_copy.values<float>().data(), var.values<float>().data());
+  const auto force_copy = to_unit(var, var.unit(), CopyPolicy::Always);
+  EXPECT_NE(force_copy.values<float>().data(), var.values<float>().data());
+  const auto required_copy =
+      to_unit(var, units::Unit("mm"), CopyPolicy::TryAvoid);
+  EXPECT_NE(required_copy.values<float>().data(), var.values<float>().data());
+}
+
 TEST(ToUnitTest, m_to_mm) {
   const Dimensions dims(Dim::X, 2);
   const auto var = makeVariable<float>(dims, units::Unit("m"), Values{1, 2});
