@@ -6,8 +6,8 @@
 #include "scipp/core/element/trigonometry.h"
 #include "scipp/units/unit.h"
 
-#include "test_macros.h"
 #include "fix_typed_test_suite_warnings.h"
+#include "test_macros.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -51,7 +51,6 @@ TEST(ElementCosOutArgTest, supported_types) {
   std::get<double>(supported);
   std::get<float>(supported);
 }
-
 
 TEST(ElementTanOutArgTest, unit_rad) {
   EXPECT_EQ(element::tan(units::rad), units::tan(units::rad));
