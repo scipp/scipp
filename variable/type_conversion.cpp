@@ -39,7 +39,9 @@ struct MakeVariableWithType {
   }
 };
 
-Variable astype(const Variable &var, DType type) {
-  return type == var.dtype() ? var : MakeVariableWithType::make(var, type);
+Variable astype(const Variable &var, DType type, const CopyPolicy copy) {
+  return type == var.dtype() && copy == CopyPolicy::TryAvoid
+             ? var
+             : MakeVariableWithType::make(var, type);
 }
 } // namespace scipp::variable
