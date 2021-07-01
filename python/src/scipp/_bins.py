@@ -79,7 +79,8 @@ class Bins:
         _cpp._bins_view(self._data()).data = data
 
     @property
-    def constituents(self) -> Dict[str, Union[_cpp.Variable, _cpp.DataArray]]:
+    def constituents(
+            self) -> Dict[str, Union[str, _cpp.Variable, _cpp.DataArray]]:
         """Constituents of binned data, as supported by :py:func:`sc.bins`."""
         begin_end = _cpp.bins_begin_end(self._data())
         return {
@@ -89,7 +90,7 @@ class Bins:
             'data': _cpp.bins_data(self._data())
         }
 
-    def sum(self) -> _cpp.DataArray:
+    def sum(self) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Sum of each bin.
 
         :return: The sum of each of the input bins.
@@ -97,19 +98,20 @@ class Bins:
         """
         return _call_cpp_func(_cpp.buckets.sum, self._obj)
 
-    def size(self) -> _cpp.DataArray:
+    def size(self) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Number of events or elements in a bin.
 
         :return: The number of elements in each of the input bins.
         """
         return _call_cpp_func(_cpp.bin_size, self._obj)
 
-    def concatenate(self,
-                    *,
-                    other: Optional[Union[_cpp.Variable,
-                                          _cpp.DataArray]] = None,
-                    dim: Optional[str] = None,
-                    out: Optional[_cpp.DataArray] = None) -> _cpp.DataArray:
+    def concatenate(
+        self,
+        *,
+        other: Optional[Union[_cpp.Variable, _cpp.DataArray]] = None,
+        dim: Optional[str] = None,
+        out: Optional[_cpp.DataArray] = None
+    ) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Concatenate bins element-wise by concatenating bin contents along
         their internal bin dimension.
 
