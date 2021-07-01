@@ -43,6 +43,14 @@ class ScatterPointModel:
         self._positions = positions
 
     @property
+    def positions(self):
+        return self._positions
+
+    @property
+    def unit(self):
+        return self._positions.unit
+
+    @property
     def limits(self):
         """
         Extents of the box that contains all the positions.

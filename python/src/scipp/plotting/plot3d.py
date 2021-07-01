@@ -7,6 +7,7 @@ from .panel3d import PlotPanel3d
 from .view3d import PlotView3d
 from .figure3d import PlotFigure3d
 from .controller3d import PlotController3d
+from .model3d import ScatterPointModel
 from .._shape import flatten
 
 
@@ -18,11 +19,6 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
     It is possible to add cut surfaces as cartesian, cylindrical or spherical
     planes.
     """
-    if isinstance(positions, str):
-        pos = next(iter(scipp_obj_dict.values())).coords[positions]
-    else:
-        pos = positions
-
     def builder(*,
                 dims,
                 norm=None,
@@ -42,6 +38,7 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
                 ylabel=None,
                 zlabel=None):
         array = next(iter(scipp_obj_dict.values()))
+        position_model = ScatterPointModel(array.meta[positions])
         # TODO use unique dimension labels + ['z', 'y', 'x']
         out = {
             'view_ndims': 0,
@@ -59,7 +56,8 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
         # TODO
         if len(dims) > 2:
             params['extend_cmap'] = 'both'
-        out['panel'] = PlotPanel3d(positions=pos, unit=array.unit)
+        out['panel'] = PlotPanel3d(position_model=position_model,
+                                   unit=array.unit)
         out['figure'] = PlotFigure3d(background=background,
                                      cmap=params["values"]["cmap"],
                                      extend=params['extend_cmap'],
@@ -70,7 +68,7 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
                                      pixel_size=pixel_size,
                                      show_outline=show_outline,
                                      tick_size=tick_size,
-                                     positions=positions,
+                                     position_model=position_model,
                                      xlabel=xlabel,
                                      ylabel=ylabel,
                                      zlabel=zlabel)

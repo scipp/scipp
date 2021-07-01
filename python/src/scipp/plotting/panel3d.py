@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
-
-from .model3d import ScatterPointModel
 from .panel import PlotPanel
 import ipywidgets as ipw
 import numpy as np
@@ -13,11 +11,10 @@ class PlotPanel3d(PlotPanel):
     Additional widgets that control the position, opacity and shape of the
     cut surface in the 3d plot.
     """
-    def __init__(self, positions=None, unit=None):
+    def __init__(self, position_model, unit):
         super().__init__()
 
-        self.positions = positions
-        self._model = ScatterPointModel(positions)
+        self._position_model = position_model
         self.unit = unit
         self.current_cut_surface_value = None
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
@@ -167,7 +164,7 @@ class PlotPanel3d(PlotPanel):
         #self.xminmax["y"] = axparams['y']['lims'] / axparams['y']['scaling']
         #self.xminmax["z"] = axparams['z']['lims'] / axparams['z']['scaling']
         # TODO scaling?
-        self.xminmax = self._model.limits
+        self.xminmax = self._position_model.limits
         self.cut_surface_buttons.value = None
         self.current_cut_surface_value = None
 
@@ -234,8 +231,9 @@ class PlotPanel3d(PlotPanel):
             self._safe_cut_slider_range_update(minmax[0], minmax[1])
             self.cut_slider.value = 0.5 * (minmax[0] + minmax[1])
             self.cut_slider.description = "Position:"
-            if self.positions is not None:
-                self.cut_unit.value = str(self.positions.unit)
+            # TODO query model
+            if self._position_model is not None:
+                self.cut_unit.value = str(self._position_model.unit)
             else:
                 self.cut_unit.value = self.controller.get_coord_unit(
                     axparams[self.cut_surface_buttons.label.replace(
@@ -312,7 +310,8 @@ class PlotPanel3d(PlotPanel):
         slider unit to None as the unit may be ill-defined if the coordinates
         of the dense data do no all have the same dimension.
         """
-        if self.positions is not None:
-            self.cut_unit.value = str(self.positions.unit)
+        # TODO query model
+        if self._position_model is not None:
+            self.cut_unit.value = str(self._position_model.unit)
         else:
             self.cut_unit.value = ""

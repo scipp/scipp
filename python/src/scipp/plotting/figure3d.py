@@ -3,7 +3,6 @@
 # @author Neil Vaytet
 from .. import config
 from .toolbar import PlotToolbar3d
-from .model3d import ScatterPointModel
 from .tools import fig_to_pngbytes
 from ..utils import value_to_string
 import numpy as np
@@ -35,9 +34,9 @@ class PlotFigure3d:
     """
     def __init__(self, *, background, cmap, extend, figsize, mask_cmap,
                  nan_color, norm, pixel_size, show_outline, tick_size,
-                 positions, xlabel, ylabel, zlabel):
+                 position_model, xlabel, ylabel, zlabel):
 
-        self._positions = positions  # name of position coord
+        self._position_model = position_model
         self._pixel_size = pixel_size
         if pixel_size is not None:
             self._pixel_size = pixel_size
@@ -48,7 +47,8 @@ class PlotFigure3d:
 
         self.aspect = None
         if self.aspect is None:
-            if positions is not None:  # TODO is this check still ok?
+            # TODO query model instead
+            if position_model is not None:  # TODO is this check still ok?
                 self.aspect = "equal"
             else:
                 self.aspect = config.plot.aspect
@@ -74,7 +74,6 @@ class PlotFigure3d:
                                                   cmap=self.masks_cmap)
 
         self.axlabels = {"x": xlabel, "y": ylabel, "z": zlabel}
-        self.positions = None
         self.tick_size = tick_size
         self.show_outline = show_outline
 
@@ -167,11 +166,10 @@ class PlotFigure3d:
 
     def _setup(self, array):
         self._unit = array.unit
-        model = ScatterPointModel(array.meta[self._positions])
-        limits = model.limits
-        center = model.center
+        limits = self._position_model.limits
+        center = self._position_model.center
         # TODO grow by pixel size and avoid empty
-        box_size = model.box_size
+        box_size = self._position_model.box_size
         scaling = {}
         for i, xyz in enumerate("xyz"):
             scaling[xyz] = 1.0 / box_size[i] if self.aspect == "auto" else 1.0
@@ -180,14 +178,16 @@ class PlotFigure3d:
 
         self._create_outline(limits=limits, box_size=box_size, center=center)
 
+        positions = self._position_model.positions
         self.axticks = self._generate_axis_ticks_and_labels(
             box_size=box_size,
             scaling=scaling,
             limits=limits,
-            positions=array.meta[self._positions])
+            positions=positions)
 
         if self._pixel_size is None:
-            if self._positions is not None:
+            # TODO
+            if self._position_model is not None:
                 # Note the value of 0.05 is arbitrary here. It is a sensible
                 # guess to render a plot that is not too crowded and shows
                 # individual pixels.
@@ -200,8 +200,7 @@ class PlotFigure3d:
             self._pixel_size = psize
             self._pixel_scaling = pscale
         self._create_points_material()
-        self._create_point_cloud(positions=array.meta[self._positions].values,
-                                 scaling=scaling)
+        self._create_point_cloud(positions=positions.values, scaling=scaling)
 
         # Set camera controller target
         distance_from_center = 1.2

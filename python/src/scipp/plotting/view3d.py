@@ -67,7 +67,8 @@ class PlotView3d(PlotView):
         Compute new opacities based on positions of the cut surface.
         """
         array = next(iter(self._data.values()))
-        pos_array = array.meta[self.figure._positions].values
+        # TODO
+        pos_array = self.figure._position_model.positions.values
 
         # Cartesian X, Y, Z
         if button_value < self.cut_options["Xcylinder"]:
