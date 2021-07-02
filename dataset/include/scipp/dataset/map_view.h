@@ -21,7 +21,7 @@ namespace detail {
 using slice_list =
     boost::container::small_vector<std::pair<Slice, scipp::index>, 2>;
 
-static constexpr auto make_key_value = [](auto &&view) {
+inline constexpr auto make_key_value = [](auto &&view) {
   using In = decltype(view);
   using View =
       std::conditional_t<std::is_rvalue_reference_v<In>, std::decay_t<In>, In>;
@@ -29,11 +29,11 @@ static constexpr auto make_key_value = [](auto &&view) {
                                       std::forward<decltype(view)>(view));
 };
 
-static constexpr auto make_key = [](auto &&view) -> decltype(auto) {
+inline constexpr auto make_key = [](auto &&view) -> decltype(auto) {
   return view.first;
 };
 
-static constexpr auto make_value = [](auto &&view) -> decltype(auto) {
+inline constexpr auto make_value = [](auto &&view) -> decltype(auto) {
   return view.second;
 };
 
