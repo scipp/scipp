@@ -68,6 +68,6 @@ void init_unary(py::module &m) {
         return variable::to_unit(
             x, unit, copy ? CopyPolicy::Always : CopyPolicy::TryAvoid);
       },
-      py::arg("x"), py::arg("unit"), py::arg("copy") = false,
+      py::arg("x"), py::arg("unit"), py::arg("copy") = true,
       py::call_guard<py::gil_scoped_release>());
 }

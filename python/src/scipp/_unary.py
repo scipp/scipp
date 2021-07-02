@@ -45,7 +45,7 @@ def isneginf(x: _cpp.Variable) -> _cpp.Variable:
 def to_unit(x: _cpp.Variable,
             unit: _Union[_cpp.Unit, str],
             *,
-            copy: bool = False) -> _cpp.Variable:
+            copy: bool = True) -> _cpp.Variable:
     """
     Convert the variable to a different unit.
 
