@@ -22,8 +22,8 @@ Variable sin(const Variable &var) {
 }
 
 Variable &sin(const Variable &var, Variable &out) {
-  transform_in_place(out, to_unit(var, units::rad), element::sin_out_arg,
-                     "sin");
+  transform_in_place(out, to_unit(var, units::rad, CopyPolicy::TryAvoid),
+                     element::sin_out_arg, "sin");
   return out;
 }
 
@@ -34,8 +34,8 @@ Variable cos(const Variable &var) {
 }
 
 Variable &cos(const Variable &var, Variable &out) {
-  transform_in_place(out, to_unit(var, units::rad), element::cos_out_arg,
-                     "cos");
+  transform_in_place(out, to_unit(var, units::rad, CopyPolicy::TryAvoid),
+                     element::cos_out_arg, "cos");
   return out;
 }
 
@@ -46,8 +46,8 @@ Variable tan(const Variable &var) {
 }
 
 Variable &tan(const Variable &var, Variable &out) {
-  transform_in_place(out, to_unit(var, units::rad), element::tan_out_arg,
-                     "tan");
+  transform_in_place(out, to_unit(var, units::rad, CopyPolicy::TryAvoid),
+                     element::tan_out_arg, "tan");
   return out;
 }
 
