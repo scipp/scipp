@@ -11,31 +11,25 @@
 #include "scipp/core/transform_common.h"
 
 namespace scipp::core::element {
-
-constexpr auto trig_out_arg = overloaded{
-    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
-    transform_flags::expect_no_variance_arg<1>};
-
 constexpr auto trig = overloaded{arg_list<double, float>,
-                                 transform_flags::expect_no_variance_arg<0>};
+                                 transform_flags::expect_no_variance_arg<0>,
+                                 transform_flags::expect_no_variance_arg<1>,
+                                 transform_flags::expect_no_variance_arg<2>};
 
-constexpr auto sin_out_arg =
-    overloaded{trig_out_arg, [](auto &x, const auto y) {
-                 using std::sin;
-                 x = sin(y);
-               }};
+constexpr auto sin = overloaded{trig, [](const auto &x) {
+                                  using std::sin;
+                                  return sin(x);
+                                }};
 
-constexpr auto cos_out_arg =
-    overloaded{trig_out_arg, [](auto &x, const auto y) {
-                 using std::cos;
-                 x = cos(y);
-               }};
+constexpr auto cos = overloaded{trig, [](const auto &x) {
+                                  using std::cos;
+                                  return cos(x);
+                                }};
 
-constexpr auto tan_out_arg =
-    overloaded{trig_out_arg, [](auto &x, const auto y) {
-                 using std::tan;
-                 x = tan(y);
-               }};
+constexpr auto tan = overloaded{trig, [](const auto &x) {
+                                  using std::tan;
+                                  return tan(x);
+                                }};
 
 constexpr auto asin = overloaded{trig, [](const auto x) {
                                    using std::asin;
@@ -52,38 +46,9 @@ constexpr auto atan = overloaded{trig, [](const auto x) {
                                    return atan(x);
                                  }};
 
-constexpr auto asin_out_arg =
-    overloaded{trig_out_arg, [](auto &x, const auto y) {
-                 using std::asin;
-                 x = asin(y);
-               }};
-
-constexpr auto acos_out_arg =
-    overloaded{trig_out_arg, [](auto &x, const auto y) {
-                 using std::acos;
-                 x = acos(y);
-               }};
-
-constexpr auto atan_out_arg =
-    overloaded{trig_out_arg, [](auto &x, const auto y) {
-                 using std::atan;
-                 x = atan(y);
-               }};
-
-constexpr auto atan2 = overloaded{
-    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
-    transform_flags::expect_no_variance_arg<1>, [](const auto y, const auto x) {
-      using std::atan2;
-      return atan2(y, x);
-    }};
-
-constexpr auto atan2_out_arg = overloaded{
-    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
-    transform_flags::expect_no_variance_arg<1>,
-    transform_flags::expect_no_variance_arg<2>,
-    [](auto &out, const auto y, const auto x) {
-      using std::atan2;
-      out = atan2(y, x);
-    }};
+constexpr auto atan2 = overloaded{trig, [](const auto y, const auto x) {
+                                    using std::atan2;
+                                    return atan2(y, x);
+                                  }};
 
 } // namespace scipp::core::element
