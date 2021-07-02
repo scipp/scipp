@@ -37,7 +37,8 @@ from ._scipp.core import units, dtype, buckets
 from . import geometry
 # Import functions
 from ._scipp.core import choose, divide, floor_divide, logical_and, \
-                         logical_or, logical_xor, minus, mod, plus, times
+                         logical_or, logical_xor, minus, mod, plus, times, \
+                         where
 # Import python functions
 from .show import show, make_svg
 from .table import table

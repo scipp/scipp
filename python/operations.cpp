@@ -88,4 +88,7 @@ void init_operations(py::module &m) {
     // Do NOT release GIL since using py::slice
     return std::tuple{dim.name(), py::slice(start, stop, 1)};
   });
+
+  m.def("where", &variable::where, py::arg("condition"), py::arg("x"),
+        py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
