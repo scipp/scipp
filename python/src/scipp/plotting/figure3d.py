@@ -244,8 +244,8 @@ class PlotFigure3d:
         """
         rgba_shape = list(positions.shape)
         rgba_shape[1] += 1
-        pos_array = positions * np.array(list(scaling.values()),
-                                         dtype=np.float32)
+        pos_array = positions.astype('int32') * np.array(
+            list(scaling.values()), dtype=np.float32)
         self.points_geometry = p3.BufferGeometry(
             attributes={
                 'position':

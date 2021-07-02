@@ -10,29 +10,15 @@ class PlotPanel3d(PlotPanel):
     Additional widgets that control the position, opacity and shape of the
     cut surface in the 3d plot.
     """
-    def __init__(self, unit):
+    def __init__(self):
         super().__init__()
 
-        self._unit = unit
         self.current_cut_surface_value = None
-        self.vmin = None
-        self.vmax = None
-        self.cut_options = {
-            "Xplane": 0,
-            "Yplane": 1,
-            "Zplane": 2,
-            "Xcylinder": 3,
-            "Ycylinder": 4,
-            "Zcylinder": 5,
-            "Sphere": 6,
-            "Value": 7
-        }
         self.options = [
-            'x', 'y', 'z', 'radius_x', 'radius_y', 'radius_z', 'radius',
+            'x', 'y', 'z', 'radius', 'radius_x', 'radius_y', 'radius_z',
             'value'
         ]
         self._cut_sliders = {}
-        self._cut_units = {}
         self._cut_surface_thicknesses = {}
         self._current_cut = None
 
@@ -57,7 +43,7 @@ class PlotPanel3d(PlotPanel):
                                      max=high.value,
                                      step=0.5 * cut_surface_thickness.value,
                                      description=f'{key}:',
-                                     value=0.5,
+                                     value=0.5 * (high + low).value,
                                      layout={"width": "350px"})
         cut_unit = ipw.Label(value=str(low.unit))
         cut_checkbox = ipw.Checkbox(value=True,
@@ -69,7 +55,6 @@ class PlotPanel3d(PlotPanel):
         cut_slider.observe(self._update_cut_surface, names="value")
 
         self._cut_sliders[key] = cut_slider
-        self._cut_units[key] = cut_unit
         self._cut_surface_thicknesses[key] = cut_surface_thickness
         controls = ipw.HBox([
             ipw.HBox([cut_slider, cut_unit, cut_checkbox]),
@@ -117,14 +102,9 @@ class PlotPanel3d(PlotPanel):
         # Note additional spaces required in cylindrical names because
         # options must be unique.
         self.cut_surface_buttons = ipw.ToggleButtons(
-            options=[('X ', self.cut_options["Xplane"]),
-                     ('Y ', self.cut_options["Yplane"]),
-                     ('Z ', self.cut_options["Zplane"]),
-                     ('R ', self.cut_options["Sphere"]),
-                     (' X ', self.cut_options["Xcylinder"]),
-                     (' Y ', self.cut_options["Ycylinder"]),
-                     (' Z ', self.cut_options["Zcylinder"]),
-                     ('', self.cut_options["Value"])],
+            options=dict(
+                zip(['X ', 'Y ', 'Z ', 'R ', ' X ', ' Y ', ' Z ', ''],
+                    range(len(self.options)))),
             value=None,
             description='Cut surface:',
             button_style='',
@@ -188,12 +168,12 @@ class PlotPanel3d(PlotPanel):
         """
         if change['old'] is not None:
             self._cut_controls[change['old']].layout.display = 'none'
-        if change['new'] is not None:
-            self._current_cut = self.options[change['new']]
-            self._cut_controls[change['new']].layout.display = ''
         if change["new"] is None:
+            self._current_cut = None
             self._update_opacity({"new": self.opacity_slider.value})
         else:
+            self._current_cut = self.options[change['new']]
+            self._cut_controls[change['new']].layout.display = ''
             self.controller.update_depth_test(False)
             self._update_cut_surface()
 
@@ -215,14 +195,19 @@ class PlotPanel3d(PlotPanel):
         If we are currently using value-based slicing, the cut surface needs an
         update when a data update is performed when a slider is moved.
         """
-        if self.cut_surface_buttons.value == self.cut_options["Value"]:
+        if self._current_cut == 'value':
             self._update_cut_surface()
 
     def rescale_to_data(self, vmin=None, vmax=None, mask_info=None):
         """
         Update the pixel colors using new colorbar limits.
         """
-        self.vmin = vmin.value
-        self.vmax = vmax.value
-        if self.cut_surface_buttons.value == self.cut_options["Value"]:
-            self._update_cut_slider_bounds()
+        controls = self._make_cut_controls('value', vmin, vmax)
+        if len(self._cut_controls) != len(self.options):
+            self._cut_controls.append(controls)
+            self._cut_controls_box.children += (controls, )
+        else:
+            controls.layout.display = self._cut_controls[-1].layout.display
+            self._cut_controls[-1] = controls
+            children = self._cut_controls_box.children[:-1] + (controls, )
+            self._cut_controls_box.children = children

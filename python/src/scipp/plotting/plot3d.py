@@ -58,7 +58,7 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
         # TODO
         if len(dims) > 2:
             params['extend_cmap'] = 'both'
-        out['panel'] = PlotPanel3d(unit=array.unit)
+        out['panel'] = PlotPanel3d()
         out['figure'] = PlotFigure3d(background=background,
                                      cmap=params["values"]["cmap"],
                                      extend=params['extend_cmap'],

@@ -88,9 +88,3 @@ class ScatterPointModel:
     @lru_cache(maxsize=None)
     def radius(self):
         return sc.norm(self._positions)
-
-    @property
-    @lru_cache(maxsize=None)
-    def value(self):
-        # TODO
-        return sc.norm(self._positions)

@@ -19,8 +19,7 @@ class PlotController3d(PlotController):
         self._position_model = position_model
         # TODO could be different for every axis
         self.view.set_position_params(self._position_model)
-        for key in self.panel.options:
-            # TODO vmin vmax
+        for key in self.panel.options[:-1]:
             value = getattr(self._position_model, key)
             self.panel.set_range(key, sc.min(value), sc.max(value))
 
