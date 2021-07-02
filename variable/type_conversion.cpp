@@ -13,13 +13,30 @@
 namespace scipp::variable {
 
 struct MakeVariableWithType {
+  using AllSourceTypes = std::tuple<double, float, int64_t, int32_t, bool>;
+
   template <class T> struct Maker {
-    static Variable apply(const Variable &parent) {
+    template <size_t I, class... Types> constexpr static auto source_types() {
+      if constexpr (I == std::tuple_size_v<AllSourceTypes>) {
+        return std::tuple<Types...>{};
+      } else {
+        using Next = typename std::tuple_element<I, AllSourceTypes>::type;
+        if constexpr (std::is_same_v<Next, T>) {
+          return source_types<I + 1, Types...>();
+        } else {
+          return source_types<I + 1, Types..., Next>();
+        }
+      }
+    }
+
+    template <class... SourceTypes>
+    static Variable apply_impl(const Variable &parent,
+                               std::tuple<SourceTypes...>) {
       using namespace core::transform_flags;
       constexpr auto expect_input_variances =
           conditional_flag<!core::canHaveVariances<T>()>(
               expect_no_variance_arg<0>);
-      return transform<double, float, int64_t, int32_t, bool>(
+      return transform<SourceTypes...>(
           parent,
           overloaded{
               expect_input_variances, [](const units::Unit &x) { return x; },
@@ -32,7 +49,12 @@ struct MakeVariableWithType {
               }},
           "astype");
     }
+
+    static Variable apply(const Variable &parent) {
+      return apply_impl(parent, source_types<0>());
+    }
   };
+
   static Variable make(const Variable &var, DType type) {
     return core::CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(
         type, var);
@@ -40,8 +62,8 @@ struct MakeVariableWithType {
 };
 
 Variable astype(const Variable &var, DType type, const CopyPolicy copy) {
-  return type == var.dtype() && copy == CopyPolicy::TryAvoid
-             ? var
+  return type == var.dtype()
+             ? (copy == CopyPolicy::TryAvoid ? var : variable::copy(var))
              : MakeVariableWithType::make(var, type);
 }
 } // namespace scipp::variable
