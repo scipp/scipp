@@ -12,7 +12,7 @@
 namespace scipp::variable {
 
 SCIPP_VARIABLE_EXPORT Variable astype(const Variable &var, const DType type,
-                                      CopyPolicy copy = CopyPolicy::TryAvoid);
+                                      CopyPolicy copy = CopyPolicy::Always);
 
 namespace geometry {
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable position(const Variable &x,
