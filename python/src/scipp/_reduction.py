@@ -12,6 +12,7 @@ from .typing import LabeledArray
 
 def mean(x: LabeledArray,
          dim: Optional[str] = None,
+         *,
          out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise mean over the specified dimension.
 
@@ -39,6 +40,7 @@ def mean(x: LabeledArray,
 
 def nanmean(x: LabeledArray,
             dim: Optional[str] = None,
+            *,
             out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise mean over the specified dimension ignoring NaNs.
 
@@ -66,6 +68,7 @@ def nanmean(x: LabeledArray,
 
 def sum(x: LabeledArray,
         dim: Optional[str] = None,
+        *,
         out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise sum over the specified dimension.
 
@@ -86,6 +89,7 @@ def sum(x: LabeledArray,
 
 def nansum(x: LabeledArray,
            dim: Optional[str] = None,
+           *,
            out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise sum over the specified dimension; NaNs are treated as zero.
 
@@ -106,6 +110,7 @@ def nansum(x: LabeledArray,
 
 def min(x: _cpp.Variable,
         dim: Optional[str] = None,
+        *,
         out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise min over the specified dimension or all dimensions if not
     provided.
@@ -127,6 +132,7 @@ def min(x: _cpp.Variable,
 
 def max(x: _cpp.Variable,
         dim: Optional[str] = None,
+        *,
         out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise max over the specified dimension or all dimensions if not
     provided.
@@ -148,6 +154,7 @@ def max(x: _cpp.Variable,
 
 def nanmin(x: _cpp.Variable,
            dim: Optional[str] = None,
+           *,
            out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise min ignoring not at number values over the specified
     dimension or all dimensions if not provided.
@@ -169,6 +176,7 @@ def nanmin(x: _cpp.Variable,
 
 def nanmax(x: _cpp.Variable,
            dim: Optional[str] = None,
+           *,
            out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise max ignoring not a number values over the specified
     dimension or all dimensions if not provided.
@@ -190,6 +198,7 @@ def nanmax(x: _cpp.Variable,
 
 def all(x: _cpp.Variable,
         dim: Optional[str] = None,
+        *,
         out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise AND over the specified dimension or all dimensions if not
     provided.
@@ -211,6 +220,7 @@ def all(x: _cpp.Variable,
 
 def any(x: _cpp.Variable,
         dim: Optional[str] = None,
+        *,
         out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise OR over the specified dimension or all dimensions if not
     provided.

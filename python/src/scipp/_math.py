@@ -9,7 +9,9 @@ from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .typing import LabeledArray
 
 
-def abs(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
+def abs(x: LabeledArray,
+        *,
+        out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise absolute value.
 
     :param x: Input data.
@@ -44,7 +46,12 @@ def nan_to_num(x: _cpp.Variable,
     :raises: If the types of input and replacement do not match.
     :return: Input with specified substitutions.
     """
-    return _call_cpp_func(_cpp.nan_to_num, x, nan, posinf, neginf, out=out)
+    return _call_cpp_func(_cpp.nan_to_num,
+                          x,
+                          nan=nan,
+                          posinf=posinf,
+                          neginf=neginf,
+                          out=out)
 
 
 def norm(x: LabeledArray) -> LabeledArray:
@@ -58,6 +65,7 @@ def norm(x: LabeledArray) -> LabeledArray:
 
 
 def reciprocal(x: LabeledArray,
+               *,
                out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise reciprocal.
 
@@ -69,7 +77,9 @@ def reciprocal(x: LabeledArray,
     return _call_cpp_func(_cpp.reciprocal, x, out=out)
 
 
-def sqrt(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
+def sqrt(x: LabeledArray,
+         *,
+         out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise square-root.
 
     :param x: Input data.
@@ -80,7 +90,9 @@ def sqrt(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     return _call_cpp_func(_cpp.sqrt, x, out=out)
 
 
-def exp(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
+def exp(x: LabeledArray,
+        *,
+        out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise exponential.
 
     :param x: Input data.
@@ -90,7 +102,9 @@ def exp(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     return _call_cpp_func(_cpp.exp, x, out=out)
 
 
-def log(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
+def log(x: LabeledArray,
+        *,
+        out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise natural logarithm.
 
     :param x: Input data.
@@ -100,7 +114,9 @@ def log(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     return _call_cpp_func(_cpp.log, x, out=out)
 
 
-def log10(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
+def log10(x: LabeledArray,
+          *,
+          out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise base 10 logarithm.
 
     :param x: Input data.

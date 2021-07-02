@@ -35,7 +35,7 @@ template <typename T> void bind_nan_to_num(py::module &m) {
           negative_inf_to_num(out, *neginf, out);
         return out;
       },
-      py::arg("x"), py::arg("nan") = std::optional<Variable>(),
+      py::arg("x"), py::kw_only(), py::arg("nan") = std::optional<Variable>(),
       py::arg("posinf") = std::optional<Variable>(),
       py::arg("neginf") = std::optional<Variable>(),
       py::call_guard<py::gil_scoped_release>());
@@ -53,7 +53,7 @@ template <typename T> void bind_nan_to_num(py::module &m) {
           negative_inf_to_num(x, *neginf, out);
         return out;
       },
-      py::arg("x"), py::arg("nan") = std::optional<Variable>(),
+      py::arg("x"), py::kw_only(), py::arg("nan") = std::optional<Variable>(),
       py::arg("posinf") = std::optional<Variable>(),
       py::arg("neginf") = std::optional<Variable>(), py::arg("out"),
       py::call_guard<py::gil_scoped_release>());

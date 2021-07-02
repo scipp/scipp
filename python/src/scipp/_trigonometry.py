@@ -10,7 +10,9 @@ from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .typing import LabeledArray
 
 
-def sin(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
+def sin(x: LabeledArray,
+        *,
+        out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise sine.
 
     :param x: Input data.
@@ -22,7 +24,9 @@ def sin(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     return _call_cpp_func(_cpp.sin, x, out=out)
 
 
-def cos(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
+def cos(x: LabeledArray,
+        *,
+        out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise cosine.
 
     :param x: Input data.
@@ -34,7 +38,9 @@ def cos(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     return _call_cpp_func(_cpp.cos, x, out=out)
 
 
-def tan(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
+def tan(x: LabeledArray,
+        *,
+        out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise tangent.
 
     :param x: Input data.
@@ -46,7 +52,9 @@ def tan(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     return _call_cpp_func(_cpp.tan, x, out=out)
 
 
-def asin(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
+def asin(x: LabeledArray,
+         *,
+         out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise inverse sine.
 
     :param x: Input data.
@@ -57,7 +65,9 @@ def asin(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     return _call_cpp_func(_cpp.asin, x, out=out)
 
 
-def acos(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
+def acos(x: LabeledArray,
+         *,
+         out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise inverse cosine.
 
     :param x: Input data.
@@ -68,7 +78,9 @@ def acos(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
     return _call_cpp_func(_cpp.acos, x, out=out)
 
 
-def atan(x: LabeledArray, out: Optional[LabeledArray] = None) -> LabeledArray:
+def atan(x: LabeledArray,
+         *,
+         out: Optional[LabeledArray] = None) -> LabeledArray:
     """Element-wise inverse tangent.
 
     :param x: Input data.
@@ -93,4 +105,4 @@ def atan2(*,
               `here <https://en.cppreference.com/w/c/numeric/math/atan2>`_.
               Note that domain errors are *not* propagated to Python.
     """
-    return _call_cpp_func(_cpp.atan2, y, x, out=out)
+    return _call_cpp_func(_cpp.atan2, y=y, x=x, out=out)
