@@ -7,12 +7,12 @@ from typing import Optional
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import LabeledArray
+from .typing import VariableLike
 
 
-def sin(x: LabeledArray,
+def sin(x: VariableLike,
         *,
-        out: Optional[LabeledArray] = None) -> LabeledArray:
+        out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise sine.
 
     :param x: Input data.
@@ -24,9 +24,9 @@ def sin(x: LabeledArray,
     return _call_cpp_func(_cpp.sin, x, out=out)
 
 
-def cos(x: LabeledArray,
+def cos(x: VariableLike,
         *,
-        out: Optional[LabeledArray] = None) -> LabeledArray:
+        out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise cosine.
 
     :param x: Input data.
@@ -38,9 +38,9 @@ def cos(x: LabeledArray,
     return _call_cpp_func(_cpp.cos, x, out=out)
 
 
-def tan(x: LabeledArray,
+def tan(x: VariableLike,
         *,
-        out: Optional[LabeledArray] = None) -> LabeledArray:
+        out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise tangent.
 
     :param x: Input data.
@@ -52,9 +52,9 @@ def tan(x: LabeledArray,
     return _call_cpp_func(_cpp.tan, x, out=out)
 
 
-def asin(x: LabeledArray,
+def asin(x: VariableLike,
          *,
-         out: Optional[LabeledArray] = None) -> LabeledArray:
+         out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise inverse sine.
 
     :param x: Input data.
@@ -65,9 +65,9 @@ def asin(x: LabeledArray,
     return _call_cpp_func(_cpp.asin, x, out=out)
 
 
-def acos(x: LabeledArray,
+def acos(x: VariableLike,
          *,
-         out: Optional[LabeledArray] = None) -> LabeledArray:
+         out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise inverse cosine.
 
     :param x: Input data.
@@ -78,9 +78,9 @@ def acos(x: LabeledArray,
     return _call_cpp_func(_cpp.acos, x, out=out)
 
 
-def atan(x: LabeledArray,
+def atan(x: VariableLike,
          *,
-         out: Optional[LabeledArray] = None) -> LabeledArray:
+         out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise inverse tangent.
 
     :param x: Input data.

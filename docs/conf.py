@@ -55,7 +55,7 @@ extensions = [
 autodoc_typehints = 'description'
 
 autodoc_type_aliases = {
-    'LabeledArray': 'LabeledArray',
+    'VariableLike': 'VariableLike',
     'MetaDataMap': 'MetaDataMap',
 }
 

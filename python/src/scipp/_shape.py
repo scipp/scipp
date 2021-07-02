@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import LabeledArray
+from .typing import VariableLike
 
 
 def broadcast(x: _cpp.Variable, dims: Union[List[str], Tuple[str]],
@@ -26,7 +26,7 @@ def broadcast(x: _cpp.Variable, dims: Union[List[str], Tuple[str]],
     return _call_cpp_func(_cpp.broadcast, x, dims, shape)
 
 
-def concatenate(x: LabeledArray, y: LabeledArray, dim: str) -> LabeledArray:
+def concatenate(x: VariableLike, y: VariableLike, dim: str) -> VariableLike:
     """Concatenate input arrays along the given dimension.
 
     Concatenation can happen in two ways:
@@ -81,11 +81,11 @@ def concatenate(x: LabeledArray, y: LabeledArray, dim: str) -> LabeledArray:
     return _call_cpp_func(_cpp.concatenate, x, y, dim)
 
 
-def fold(x: LabeledArray,
+def fold(x: VariableLike,
          dim: str,
          sizes: Optional[Dict[str, int]] = None,
          dims: Optional[Union[List[str], Tuple[str]]] = None,
-         shape: Optional[Sequence[int]] = None) -> LabeledArray:
+         shape: Optional[Sequence[int]] = None) -> VariableLike:
     """Fold a single dimension of a variable or data array into multiple dims.
 
     :param x: Variable or DataArray to fold.
@@ -140,9 +140,9 @@ def fold(x: LabeledArray,
         return _call_cpp_func(_cpp.fold, x, dim, dict(zip(dims, shape)))
 
 
-def flatten(x: LabeledArray,
+def flatten(x: VariableLike,
             dims: Optional[Union[List[str], Tuple[str]]] = None,
-            to: Optional[str] = None) -> LabeledArray:
+            to: Optional[str] = None) -> VariableLike:
     """Flatten multiple dimensions of a variable or data array into a single
     dimension. If dims is omitted, then we flatten all of the inputs dimensions
     into a single dim.
@@ -210,8 +210,8 @@ def flatten(x: LabeledArray,
 
 
 def transpose(
-        x: LabeledArray,
-        dims: Optional[Union[List[str], Tuple[str]]] = None) -> LabeledArray:
+        x: VariableLike,
+        dims: Optional[Union[List[str], Tuple[str]]] = None) -> VariableLike:
     """Transpose dimensions of a variable, an data array, or a dataset.
 
     :param x: Object to transpose.

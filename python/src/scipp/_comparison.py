@@ -7,10 +7,10 @@ from __future__ import annotations
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import LabeledArray, LabeledArray
+from .typing import VariableLike, VariableLike
 
 
-def less(x: LabeledArray, y: LabeledArray) -> LabeledArray:
+def less(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise '<' (less).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -26,7 +26,7 @@ def less(x: LabeledArray, y: LabeledArray) -> LabeledArray:
     return _call_cpp_func(_cpp.less, x, y)
 
 
-def greater(x: LabeledArray, y: LabeledArray) -> LabeledArray:
+def greater(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise '>' (greater).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -42,7 +42,7 @@ def greater(x: LabeledArray, y: LabeledArray) -> LabeledArray:
     return _call_cpp_func(_cpp.greater, x, y)
 
 
-def less_equal(x: LabeledArray, y: LabeledArray) -> LabeledArray:
+def less_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise '<=' (less_equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -58,7 +58,7 @@ def less_equal(x: LabeledArray, y: LabeledArray) -> LabeledArray:
     return _call_cpp_func(_cpp.less_equal, x, y)
 
 
-def greater_equal(x: LabeledArray, y: LabeledArray) -> LabeledArray:
+def greater_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise '>=' (greater_equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -74,7 +74,7 @@ def greater_equal(x: LabeledArray, y: LabeledArray) -> LabeledArray:
     return _call_cpp_func(_cpp.greater_equal, x, y)
 
 
-def equal(x: LabeledArray, y: LabeledArray) -> LabeledArray:
+def equal(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise '==' (equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -90,7 +90,7 @@ def equal(x: LabeledArray, y: LabeledArray) -> LabeledArray:
     return _call_cpp_func(_cpp.equal, x, y)
 
 
-def not_equal(x: LabeledArray, y: LabeledArray) -> LabeledArray:
+def not_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise '!=' (not_equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -106,7 +106,7 @@ def not_equal(x: LabeledArray, y: LabeledArray) -> LabeledArray:
     return _call_cpp_func(_cpp.not_equal, x, y)
 
 
-def identical(x: LabeledArray, y: LabeledArray) -> LabeledArray:
+def identical(x: VariableLike, y: VariableLike) -> VariableLike:
     """Full comparison of x and y.
 
     :param x: Left input.

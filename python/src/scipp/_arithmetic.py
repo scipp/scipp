@@ -6,10 +6,10 @@ from __future__ import annotations
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import LabeledArray
+from .typing import VariableLike
 
 
-def add(a: LabeledArray, b: LabeledArray) -> LabeledArray:
+def add(a: VariableLike, b: VariableLike) -> VariableLike:
     """Element-wise addition.
 
     Equivalent to
@@ -28,7 +28,7 @@ def add(a: LabeledArray, b: LabeledArray) -> LabeledArray:
     return _call_cpp_func(_cpp.add, a, b)
 
 
-def divide(dividend: LabeledArray, divisor: LabeledArray) -> LabeledArray:
+def divide(dividend: VariableLike, divisor: VariableLike) -> VariableLike:
     """Element-wise true division.
 
     This function corresponds to the ``__truediv__`` dunder method, i.e.
@@ -59,8 +59,8 @@ def divide(dividend: LabeledArray, divisor: LabeledArray) -> LabeledArray:
     return _call_cpp_func(_cpp.divide, dividend, divisor)
 
 
-def floor_divide(dividend: LabeledArray,
-                 divisor: LabeledArray) -> LabeledArray:
+def floor_divide(dividend: VariableLike,
+                 divisor: VariableLike) -> VariableLike:
     """Element-wise floor division.
 
     This function corresponds to the ``__floordiv__`` dunder method, i.e.
@@ -90,7 +90,7 @@ def floor_divide(dividend: LabeledArray,
     return _call_cpp_func(_cpp.floor_divide, dividend, divisor)
 
 
-def mod(dividend: LabeledArray, divisor: LabeledArray) -> LabeledArray:
+def mod(dividend: VariableLike, divisor: VariableLike) -> VariableLike:
     """Element-wise remainder.
 
     This function corresponds to the modulus operator ``dividend % divisor``.
@@ -134,7 +134,7 @@ def mod(dividend: LabeledArray, divisor: LabeledArray) -> LabeledArray:
     return _call_cpp_func(_cpp.mod, dividend, divisor)
 
 
-def multiply(a: LabeledArray, b: LabeledArray) -> LabeledArray:
+def multiply(a: VariableLike, b: VariableLike) -> VariableLike:
     """Element-wise product.
 
     Equivalent to
@@ -156,7 +156,7 @@ def multiply(a: LabeledArray, b: LabeledArray) -> LabeledArray:
     return _call_cpp_func(_cpp.multiply, a, b)
 
 
-def subtract(minuend: LabeledArray, subtrahend: LabeledArray) -> LabeledArray:
+def subtract(minuend: VariableLike, subtrahend: VariableLike) -> VariableLike:
     """Element-wise difference.
 
     Equivalent to

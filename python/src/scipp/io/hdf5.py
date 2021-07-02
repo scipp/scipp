@@ -7,7 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Union
 
-from ..typing import LabeledArray
+from ..typing import VariableLike
 
 
 def _dtype_lut():
@@ -277,7 +277,7 @@ class HDF5IO:
         return cls._handlers[group.attrs['scipp-type']].read(group)
 
 
-def to_hdf5(obj: LabeledArray, filename: Union[str, Path]):
+def to_hdf5(obj: VariableLike, filename: Union[str, Path]):
     """
     Writes object out to file in hdf5 format.
     """
@@ -286,7 +286,7 @@ def to_hdf5(obj: LabeledArray, filename: Union[str, Path]):
         HDF5IO.write(f, obj)
 
 
-def open_hdf5(filename: Union[str, Path]) -> LabeledArray:
+def open_hdf5(filename: Union[str, Path]) -> VariableLike:
     import h5py
     with h5py.File(filename, 'r') as f:
         return HDF5IO.read(f)

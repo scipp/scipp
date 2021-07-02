@@ -11,7 +11,7 @@ from ._scipp import core as sc
 from . import config
 from .html import inject_style
 from .utils import hex_to_rgb, rgb_to_hex
-from .typing import LabeledArray
+from .typing import VariableLike
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -458,7 +458,7 @@ class DatasetDrawer:
                           height)
 
 
-def make_svg(container: LabeledArray,
+def make_svg(container: VariableLike,
              content_only: Optional[bool] = False) -> str:
     """
     Return a svg representation of a variable or dataset.
@@ -470,7 +470,7 @@ def make_svg(container: LabeledArray,
     return draw.make_svg(content_only=content_only)
 
 
-def show(container: LabeledArray):
+def show(container: VariableLike):
     """
     Show a graphical representation of a variable or dataset.
     """

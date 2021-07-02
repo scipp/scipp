@@ -7,13 +7,13 @@ from typing import Optional
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import LabeledArray
+from .typing import VariableLike
 
 
-def mean(x: LabeledArray,
+def mean(x: VariableLike,
          dim: Optional[str] = None,
          *,
-         out: Optional[LabeledArray] = None) -> LabeledArray:
+         out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise mean over the specified dimension.
 
     If the input has variances, the variances stored in the output are based on
@@ -38,10 +38,10 @@ def mean(x: LabeledArray,
         return _call_cpp_func(_cpp.mean, x, dim=dim, out=out)
 
 
-def nanmean(x: LabeledArray,
+def nanmean(x: VariableLike,
             dim: Optional[str] = None,
             *,
-            out: Optional[LabeledArray] = None) -> LabeledArray:
+            out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise mean over the specified dimension ignoring NaNs.
 
     If the input has variances, the variances stored in the ouput are based on
@@ -66,10 +66,10 @@ def nanmean(x: LabeledArray,
         return _call_cpp_func(_cpp.nanmean, x, dim=dim, out=out)
 
 
-def sum(x: LabeledArray,
+def sum(x: VariableLike,
         dim: Optional[str] = None,
         *,
-        out: Optional[LabeledArray] = None) -> LabeledArray:
+        out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise sum over the specified dimension.
 
     :param x: Input data.
@@ -87,10 +87,10 @@ def sum(x: LabeledArray,
         return _call_cpp_func(_cpp.sum, x, dim=dim, out=out)
 
 
-def nansum(x: LabeledArray,
+def nansum(x: VariableLike,
            dim: Optional[str] = None,
            *,
-           out: Optional[LabeledArray] = None) -> LabeledArray:
+           out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise sum over the specified dimension; NaNs are treated as zero.
 
     :param x: Input data.

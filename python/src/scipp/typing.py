@@ -45,7 +45,7 @@ def has_numeric_type(obj: _std_typing.Any) -> bool:
 
 #: Any object that behaves like a scipp.Variable,
 #:  that is an array with labeled dimensions.
-LabeledArray = _std_typing.Union[sc.Variable, sc.DataArray, sc.Dataset]
+VariableLike = _std_typing.Union[sc.Variable, sc.DataArray, sc.Dataset]
 
 #: dict-like object mapping dimension labels to Variables.
 MetaDataMap = _std_typing.MutableMapping[str, sc.Variable]

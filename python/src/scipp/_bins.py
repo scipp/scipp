@@ -5,7 +5,7 @@ from typing import Dict, Optional, Sequence, Union
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import LabeledArray, MetaDataMap
+from .typing import VariableLike, MetaDataMap
 
 
 class lookup:
@@ -238,7 +238,7 @@ def bin(x: _cpp.DataArray,
 
 
 def bins(*,
-         data: LabeledArray,
+         data: VariableLike,
          dim: str,
          begin: Optional[_cpp.Variable] = None,
          end: Optional[_cpp.Variable] = None) -> _cpp.Variable:

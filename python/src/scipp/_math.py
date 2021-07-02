@@ -6,12 +6,12 @@ from typing import Optional
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import LabeledArray
+from .typing import VariableLike
 
 
-def abs(x: LabeledArray,
+def abs(x: VariableLike,
         *,
-        out: Optional[LabeledArray] = None) -> LabeledArray:
+        out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise absolute value.
 
     :param x: Input data.
@@ -54,7 +54,7 @@ def nan_to_num(x: _cpp.Variable,
                           out=out)
 
 
-def norm(x: LabeledArray) -> LabeledArray:
+def norm(x: VariableLike) -> VariableLike:
     """Element-wise norm.
 
     :param x: Input data.
@@ -64,9 +64,9 @@ def norm(x: LabeledArray) -> LabeledArray:
     return _call_cpp_func(_cpp.norm, x, out=None)
 
 
-def reciprocal(x: LabeledArray,
+def reciprocal(x: VariableLike,
                *,
-               out: Optional[LabeledArray] = None) -> LabeledArray:
+               out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise reciprocal.
 
     :param x: Input data.
@@ -77,9 +77,9 @@ def reciprocal(x: LabeledArray,
     return _call_cpp_func(_cpp.reciprocal, x, out=out)
 
 
-def sqrt(x: LabeledArray,
+def sqrt(x: VariableLike,
          *,
-         out: Optional[LabeledArray] = None) -> LabeledArray:
+         out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise square-root.
 
     :param x: Input data.
@@ -90,9 +90,9 @@ def sqrt(x: LabeledArray,
     return _call_cpp_func(_cpp.sqrt, x, out=out)
 
 
-def exp(x: LabeledArray,
+def exp(x: VariableLike,
         *,
-        out: Optional[LabeledArray] = None) -> LabeledArray:
+        out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise exponential.
 
     :param x: Input data.
@@ -102,9 +102,9 @@ def exp(x: LabeledArray,
     return _call_cpp_func(_cpp.exp, x, out=out)
 
 
-def log(x: LabeledArray,
+def log(x: VariableLike,
         *,
-        out: Optional[LabeledArray] = None) -> LabeledArray:
+        out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise natural logarithm.
 
     :param x: Input data.
@@ -114,9 +114,9 @@ def log(x: LabeledArray,
     return _call_cpp_func(_cpp.log, x, out=out)
 
 
-def log10(x: LabeledArray,
+def log10(x: VariableLike,
           *,
-          out: Optional[LabeledArray] = None) -> LabeledArray:
+          out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise base 10 logarithm.
 
     :param x: Input data.
