@@ -56,7 +56,6 @@ set(SRC_FILES
     structures.cpp
     subspan_view.cpp
     to_unit.cpp
-    trigonometry.cpp
     type_conversion.cpp
     util.cpp
     variable_concept.cpp

@@ -2,11 +2,8 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/variable/@OPNAME@.h"
 #include "scipp/dataset/@OPNAME@.h"
-
-namespace scipp::variable {
-[[nodiscard]] Variable @NAME@(const Variable &var);
-}
 
 namespace scipp::dataset {
 
