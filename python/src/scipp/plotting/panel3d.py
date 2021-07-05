@@ -31,7 +31,7 @@ class PlotPanel3d(PlotPanel):
         step = float(f'{length/1000:.0e}')
         unit = '' if low.unit == sc.units.dimensionless else f' [{low.unit}]'
         cut_surface_thickness = ipw.BoundedFloatText(
-            value=50 * step,  # about 5% of total
+            value=100 * step,  # about 10% of total
             min=0,
             max=length,
             step=step,

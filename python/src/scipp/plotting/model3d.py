@@ -16,23 +16,22 @@ class ScatterPointModel:
     def __init__(self, *, positions, scipp_obj_dict, resolution):
         self._axes = ['z', 'y', 'x']
         array = next(iter(scipp_obj_dict.values()))
-        self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
-                                       resolution=resolution)
         if positions is None:
             pos_dims = array.dims[:3]
             # TODO avoid name clashes
-            arrays = {
+            model = PlotModel1d(scipp_obj_dict=scipp_obj_dict)
+            scipp_obj_dict = {
                 key: flatten(array, dims=pos_dims, to=''.join(array.dims))
-                for key, array in self._data_model.data_arrays.items()
+                for key, array in model.data_arrays.items()
             }
-            self._data_model = PlotModel1d(scipp_obj_dict=arrays,
-                                           resolution=resolution)
-            array = next(iter(arrays.values()))
             self._positions = sc.geometry.position(*[
-                array.coords[dim].astype(sc.dtype.float64) for dim in pos_dims
+                next(iter(scipp_obj_dict.values())).meta[dim].astype(
+                    sc.dtype.float64) for dim in pos_dims
             ])
         else:
             self._positions = array.meta[positions]
+        self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
+                                       resolution=resolution)
 
     @property
     def positions(self):
