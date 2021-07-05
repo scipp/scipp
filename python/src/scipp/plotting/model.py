@@ -47,7 +47,7 @@ class PlotModel:
     The model is where all operations on the data (slicing and resampling) are
     performed.
     """
-    def __init__(self, scipp_obj_dict=None, name=None):
+    def __init__(self, scipp_obj_dict=None):
         self._dims = None
         self.data_arrays = {}
 

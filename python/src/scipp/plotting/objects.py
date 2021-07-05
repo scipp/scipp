@@ -7,7 +7,6 @@ from .formatters import make_formatter
 from .tools import parse_params
 from .._scipp.core import DimensionError
 from .model1d import PlotModel1d
-from .model2d import PlotModel2d
 from .widgets import PlotWidgets
 
 
@@ -206,7 +205,7 @@ class Plot:
                  scipp_obj_dict,
                  controller,
                  figure,
-                 controller_args=None,
+                 model=None,
                  profile_figure=None,
                  errorbars=None,
                  panel=None,
@@ -222,7 +221,6 @@ class Plot:
                  view_ndims=None):
 
         self._scipp_obj_dict = scipp_obj_dict
-        self.model = None
         self.panel = panel
         self.profile = None
         self.widgets = None
@@ -270,26 +268,16 @@ class Plot:
                                    dim_label_map=labels,
                                    masks=self._scipp_obj_dict)
 
-        Model = {
-            0: PlotModel1d,
-            1: PlotModel1d,
-            2: PlotModel2d
-        }[self.view_ndims]
-        model = Model(scipp_obj_dict=self._scipp_obj_dict,
-                      name=self.name,
-                      resolution=resolution)
-        profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict,
-                                    name=self.name)
-        if controller_args is None:
-            controller_args = {}
-        self.controller = controller(**controller_args,
-                                     dims=self.dims,
+        self.model = model(scipp_obj_dict=self._scipp_obj_dict,
+                           resolution=resolution)
+        profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict)
+        self.controller = controller(dims=self.dims,
                                      vmin=vmin,
                                      vmax=vmax,
                                      norm=norm,
                                      scale=scale,
                                      widgets=self.widgets,
-                                     model=model,
+                                     model=self.model,
                                      profile_model=profile_model,
                                      view=self.view,
                                      panel=self.panel,

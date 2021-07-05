@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 from functools import lru_cache
 from .._scipp import core as sc
+from .model1d import PlotModel1d
 import numpy as np
 
 
@@ -11,9 +12,11 @@ def _planar_norm(a, b):
 
 
 class ScatterPointModel:
-    def __init__(self, positions):
+    def __init__(self, *, positions, scipp_obj_dict, resolution):
         self._axes = ['z', 'y', 'x']
         self._positions = positions
+        self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
+                                       resolution=resolution)
 
     @property
     def positions(self):
@@ -88,3 +91,6 @@ class ScatterPointModel:
     @lru_cache(maxsize=None)
     def radius(self):
         return sc.norm(self._positions)
+
+    def __getattr__(self, attr):
+        return getattr(self._data_model, attr)

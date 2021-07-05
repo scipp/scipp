@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
-
+from functools import partial
 from .objects import make_params, make_plot
 from .panel3d import PlotPanel3d
 from .view3d import PlotView3d
@@ -42,11 +42,10 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
         out = {
             'view_ndims': 0,
             'dims': list(set(array.dims) - set(array.meta[positions].dims)),
+            'model': partial(ScatterPointModel,
+                             positions=array.meta[positions]),
             'view': PlotView3d,
-            'controller': PlotController3d,
-            'controller_args': {
-                'position_model': ScatterPointModel(array.meta[positions])
-            }
+            'controller': PlotController3d
         }
         params = make_params(cmap=cmap,
                              norm=norm,
