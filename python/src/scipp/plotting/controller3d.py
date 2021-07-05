@@ -22,9 +22,6 @@ class PlotController3d(PlotController):
             value = getattr(self.model, key)
             self.panel.set_range(key, sc.min(value), sc.max(value))
 
-    def initialize_model(self):
-        pass
-
     def update_opacity(self, alpha):
         """
         When the opacity slider in the panel is changed, ask the view to update

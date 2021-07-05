@@ -69,7 +69,6 @@ class PlotController:
             for dim, item in scale.items():
                 self.scale[dim] = item
         self.view.set_scale(scale=self.scale)
-        self.initialize_model()
 
     def render(self):
         """
@@ -84,12 +83,6 @@ class PlotController:
         if self.panel is not None:
             self.panel.controller = self
         self.update_axes()
-
-    def initialize_model(self):
-        """
-        Dummy initialization for `PlotModel`.
-        """
-        return
 
     def find_vmin_vmax(self, button=None):
         """
