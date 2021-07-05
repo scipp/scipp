@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 from functools import lru_cache
 from .._scipp import core as sc
+from .._shape import flatten
 from .model1d import PlotModel1d
 import numpy as np
 
@@ -14,9 +15,24 @@ def _planar_norm(a, b):
 class ScatterPointModel:
     def __init__(self, *, positions, scipp_obj_dict, resolution):
         self._axes = ['z', 'y', 'x']
-        self._positions = positions
+        array = next(iter(scipp_obj_dict.values()))
         self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
                                        resolution=resolution)
+        if positions is None:
+            pos_dims = array.dims[:3]
+            # TODO avoid name clashes
+            arrays = {
+                key: flatten(array, dims=pos_dims, to=''.join(array.dims))
+                for key, array in self._data_model.data_arrays.items()
+            }
+            self._data_model = PlotModel1d(scipp_obj_dict=arrays,
+                                           resolution=resolution)
+            array = next(iter(arrays.values()))
+            self._positions = sc.geometry.position(*[
+                array.coords[dim].astype(sc.dtype.float64) for dim in pos_dims
+            ])
+        else:
+            self._positions = array.meta[positions]
 
     @property
     def positions(self):

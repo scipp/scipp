@@ -8,10 +8,9 @@ from .view3d import PlotView3d
 from .figure3d import PlotFigure3d
 from .controller3d import PlotController3d
 from .model3d import ScatterPointModel
-from .._shape import flatten
 
 
-def plot3d(scipp_obj_dict, positions, **kwargs):
+def plot3d(scipp_obj_dict, positions=None, **kwargs):
     """
     Plot a 3D point cloud through a N dimensional dataset.
     For every dimension above 3, a slider is created to adjust the position of
@@ -39,11 +38,15 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
                 zlabel=None):
         array = next(iter(scipp_obj_dict.values()))
         # TODO use unique dimension labels + ['z', 'y', 'x']
+        # TODO support switching
+        if positions is None:
+            _dims = array.dims[3:]
+        else:
+            _dims = list(set(array.dims) - set(array.meta[positions].dims))
         out = {
             'view_ndims': 0,
-            'dims': list(set(array.dims) - set(array.meta[positions].dims)),
-            'model': partial(ScatterPointModel,
-                             positions=array.meta[positions]),
+            'dims': _dims,
+            'model': partial(ScatterPointModel, positions=positions),
             'view': PlotView3d,
             'controller': PlotController3d
         }
@@ -73,13 +76,5 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
                                      zlabel=zlabel)
 
         return out
-
-    # TODO if positions not given, make fake coords first
-    # Use subclass of PlotModel1d
-    # - PlotModel makes fake coords, then flatten in init
-    #scipp_obj_dict = {
-    #    key: flatten(array, dims=pos.dims, to=''.join(array.dims))
-    #    for key, array in scipp_obj_dict.items()
-    #}
 
     return make_plot(builder, scipp_obj_dict, **kwargs)

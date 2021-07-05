@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 from .panel import PlotPanel
 import ipywidgets as ipw
+from .._scipp import core as sc
 
 
 class PlotPanel3d(PlotPanel):
@@ -28,13 +29,14 @@ class PlotPanel3d(PlotPanel):
         length = (high - low).value
         # 1000 steps, truncated for readable display
         step = float(f'{length/1000:.0e}')
+        unit = '' if low.unit == sc.units.dimensionless else f' [{low.unit}]'
         cut_surface_thickness = ipw.BoundedFloatText(
             value=50 * step,  # about 5% of total
             min=0,
             max=length,
             step=step,
             layout={"width": "200px"},
-            description=f'Thickness [{low.unit}]:',
+            description=f'Δ{key}{unit}:',
             style={'description_width': 'initial'})
         cut_surface_thickness.observe(self._update_cut_surface, names="value")
 
@@ -75,8 +77,8 @@ class PlotPanel3d(PlotPanel):
         self.opacity_slider = ipw.FloatRangeSlider(
             min=0.0,
             max=1.0,
-            value=[0.05, 1],
-            step=0.05,
+            value=[0.03, 1],
+            step=0.03,
             description="Opacity slider: When no cut surface is active, the "
             "max value of the range slider controls the overall opacity, "
             "and the lower value has no effect. When a cut surface is "
