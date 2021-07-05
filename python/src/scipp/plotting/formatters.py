@@ -1,6 +1,5 @@
 from .. import typing
 from ..utils import name_with_unit, value_to_string
-from .tools import to_bin_centers
 from .._scipp.core import to_unit, Unit
 from .._scipp import core as sc
 from .._variable import arange
@@ -232,8 +231,6 @@ def make_formatter(array, key):
             formatter["need_callbacks"] = True
         elif dim is not key:
             coord = _get_or_make_coord(array, dim)
-            if coord.sizes[dim] != array.sizes[dim]:
-                coord = to_bin_centers(coord, dim)
             form = LabelFormatter(labels, coord).formatter
         else:
             form = None

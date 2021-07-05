@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 from functools import partial
 from html import escape
-
+from ..utils import value_to_string
 import ipywidgets as ipw
 
 
@@ -232,7 +232,7 @@ class PlotWidgets:
                                      change["new"],
                                      change["owner"].max - 1,
                                      set_value=False)
-            self._controller.update_data(change)
+            self._controller.update_data()
 
         return _update
 
@@ -336,8 +336,16 @@ class PlotWidgets:
         """
         Update the slider readout with new slider bounds.
         """
-        # TODO This is using dimension coord rather than labels
-        # TODO use ..utils.value_to_string?
         for dim in self._slider_dims:
-            # label = self._labels[dim]
-            self._controls[dim]['value'].value = str(bounds[dim].values)
+
+            def format(val):
+                if self._formatters[dim]['linear'] is None:
+                    return value_to_string(val)
+                return self._formatters[dim]['linear'](val, None)
+
+            if bounds[dim].values.ndim == 0:
+                bound = f'{format(bounds[dim].value)}'
+            else:
+                low, high = bounds[dim].values
+                bound = f'[{format(low)} {format(high)}]'
+            self._controls[dim]['value'].value = bound
