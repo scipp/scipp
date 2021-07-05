@@ -24,12 +24,17 @@ class ScatterPointModel:
                 key: flatten(array, dims=pos_dims, to=''.join(array.dims))
                 for key, array in model.data_arrays.items()
             }
-            self._positions = sc.geometry.position(*[
-                next(iter(scipp_obj_dict.values())).meta[dim].astype(
-                    sc.dtype.float64) for dim in pos_dims
-            ])
+            array = next(iter(scipp_obj_dict.values()))
+            self._components = {dim: array.meta[dim] for dim in pos_dims}
+            comps = []
+            for field in self._components.values():
+                comp = field.astype(sc.dtype.float64).copy()
+                comp.unit = ''
+                comps.append(comp)
+            self._positions = sc.geometry.position(*comps)
         else:
             self._positions = array.meta[positions]
+            self._components = {'x': self.x, 'y': self.y, 'z': self.z}
         self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
                                        resolution=resolution)
 
@@ -58,10 +63,7 @@ class ScatterPointModel:
     @property
     @lru_cache(maxsize=None)
     def center(self):
-        return [
-            0.5 * np.sum(self.limits['x']), 0.5 * np.sum(self.limits['y']),
-            0.5 * np.sum(self.limits['z'])
-        ]
+        return np.array([0.5 * np.sum(self.limits[dim]) for dim in 'xyz'])
 
     @property
     @lru_cache(maxsize=None)
@@ -71,6 +73,11 @@ class ScatterPointModel:
             self.limits['y'][1] - self.limits['y'][0],
             self.limits['z'][1] - self.limits['z'][0]
         ])
+
+    @property
+    @lru_cache(maxsize=None)
+    def components(self):
+        return self._components
 
     @property
     @lru_cache(maxsize=None)

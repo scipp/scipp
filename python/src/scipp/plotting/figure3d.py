@@ -32,7 +32,7 @@ class PlotFigure3d:
 
     It renders an interactive scene containing a point cloud using `pythreejs`.
     """
-    def __init__(self, *, background, cmap, extend, figsize, mask_cmap,
+    def __init__(self, *, aspect, background, cmap, extend, figsize, mask_cmap,
                  nan_color, norm, pixel_size, show_outline, tick_size, xlabel,
                  ylabel, zlabel):
 
@@ -44,7 +44,7 @@ class PlotFigure3d:
             self._pixel_size = None
             self._pixel_scaling = None
 
-        self.aspect = None
+        self.aspect = aspect
         if self.aspect is None:
             # TODO
             if True:
@@ -173,15 +173,15 @@ class PlotFigure3d:
             scaling[xyz] = 1.0 / box_size[i] if self.aspect == "auto" else 1.0
             limits[xyz] *= scaling[xyz]
         box_size *= np.array(list(scaling.values()))
+        center *= np.array(list(scaling.values()))
 
         self._create_outline(limits=limits, box_size=box_size, center=center)
 
-        positions = params.positions
         self.axticks = self._generate_axis_ticks_and_labels(
             box_size=box_size,
             scaling=scaling,
             limits=limits,
-            positions=positions)
+            components=params.components)
 
         if self._pixel_size is None:
             # TODO
@@ -198,7 +198,8 @@ class PlotFigure3d:
             self._pixel_size = psize
             self._pixel_scaling = pscale
         self._create_points_material()
-        self._create_point_cloud(positions=positions.values, scaling=scaling)
+        self._create_point_cloud(positions=params.positions.values,
+                                 scaling=scaling)
 
         # Set camera controller target
         distance_from_center = 1.2
@@ -208,12 +209,12 @@ class PlotFigure3d:
         box_mean_size = np.linalg.norm(box_size)
         self.camera.near = 0.01 * box_mean_size
         self.camera.far = 5.0 * cam_pos_norm
-        self.controls.target = center
-        self.camera.lookAt(center)
+        self.controls.target = tuple(center)
+        self.camera.lookAt(tuple(center))
 
         # Save camera settings
         self.camera_backup["reset"] = copy(self.camera.position)
-        self.camera_backup["center"] = copy(center)
+        self.camera_backup["center"] = tuple(copy(center))
         self.camera_backup["x_normal"] = [
             center[0] - distance_from_center * box_mean_size, center[1],
             center[2]
@@ -244,7 +245,7 @@ class PlotFigure3d:
         """
         rgba_shape = list(positions.shape)
         rgba_shape[1] += 1
-        pos_array = positions.astype('int32') * np.array(
+        pos_array = positions.astype('float32') * np.array(
             list(scaling.values()), dtype=np.float32)
         self.points_geometry = p3.BufferGeometry(
             attributes={
@@ -303,7 +304,7 @@ void main() {
         self.outline = p3.LineSegments(
             geometry=edges,
             material=p3.LineBasicMaterial(color='#000000'),
-            position=center)
+            position=tuple(center))
 
     def _make_axis_tick(self, string, position, color="black", size=1.0):
         """
@@ -319,7 +320,7 @@ void main() {
                          scale=[size, size, size])
 
     def _generate_axis_ticks_and_labels(self, *, limits, scaling, box_size,
-                                        positions):
+                                        components):
         """
         Create ticklabels on outline edges
         """
@@ -335,7 +336,7 @@ void main() {
             'z': [limits['x'][0], limits['y'][0], 0]
         }
 
-        for axis, x in enumerate('xyz'):
+        for axis, (x, dim) in enumerate(zip('xyz', components)):
             ticks = ticker_.tick_values(lims[x][0], lims[x][1])
             for tick in ticks:
                 if lims[x][0] <= tick <= lims[x][1]:
@@ -345,8 +346,8 @@ void main() {
                             tick, precision=1),
                                              position=tick_pos.tolist(),
                                              size=self.tick_size))
-            coord = getattr(positions.fields, x)
-            axis_label = f'{x} [{coord.unit}]' if self.axlabels[
+            coord = components[dim]
+            axis_label = f'{dim} [{coord.unit}]' if self.axlabels[
                 x] is None else self.axlabels[x]
             # Offset labels 5% beyond axis ticks to reduce overlap
             ticks_and_labels.add(

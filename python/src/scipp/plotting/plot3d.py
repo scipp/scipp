@@ -20,6 +20,7 @@ def plot3d(scipp_obj_dict, positions=None, **kwargs):
     """
     def builder(*,
                 dims,
+                aspect=None,
                 norm=None,
                 masks=None,
                 ax=None,
@@ -61,7 +62,8 @@ def plot3d(scipp_obj_dict, positions=None, **kwargs):
         if len(dims) > 2:
             params['extend_cmap'] = 'both'
         out['panel'] = PlotPanel3d()
-        out['figure'] = PlotFigure3d(background=background,
+        out['figure'] = PlotFigure3d(aspect=aspect,
+                                     background=background,
                                      cmap=params["values"]["cmap"],
                                      extend=params['extend_cmap'],
                                      figsize=figsize,
