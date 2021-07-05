@@ -262,11 +262,14 @@ class Plot:
         self.profile = profile_figure
         self.view = view(figure=figure, formatters=formatters)
 
-        self.widgets = PlotWidgets(dims=self.dims,
-                                   formatters=formatters,
-                                   ndim=self.view_ndims,
-                                   dim_label_map=labels,
-                                   masks=self._scipp_obj_dict)
+        self.widgets = PlotWidgets(
+            dims=self.dims,
+            formatters=formatters,
+            ndim=self.view_ndims,
+            dim_label_map=labels,
+            masks=self._scipp_obj_dict,
+            sizes={dim: array.sizes[dim]
+                   for dim in self.dims})
 
         self.model = model(scipp_obj_dict=self._scipp_obj_dict,
                            resolution=resolution)

@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 from .objects import make_params, make_profile, make_plot
+from .model1d import PlotModel1d
 from .panel1d import PlotPanel1d
 from .view1d import PlotView1d
 from .figure1d import PlotFigure1d
@@ -40,6 +41,7 @@ def plot1d(scipp_obj_dict, **kwargs):
                 legend=None):
         out = {
             'view_ndims': 1,
+            'model': PlotModel1d,
             'view': PlotView1d,
             'controller': PlotController1d
         }

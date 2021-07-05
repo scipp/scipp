@@ -5,6 +5,7 @@ from functools import lru_cache
 from .._scipp import core as sc
 from .._shape import flatten
 from .model1d import PlotModel1d
+from .model import DataArrayDict
 import numpy as np
 
 
@@ -15,28 +16,51 @@ def _planar_norm(a, b):
 class ScatterPointModel:
     def __init__(self, *, positions, scipp_obj_dict, resolution):
         self._axes = ['z', 'y', 'x']
-        array = next(iter(scipp_obj_dict.values()))
-        if positions is None:
-            pos_dims = array.dims[:3]
-            # TODO avoid name clashes
-            model = PlotModel1d(scipp_obj_dict=scipp_obj_dict)
-            scipp_obj_dict = {
-                key: flatten(array, dims=pos_dims, to=''.join(array.dims))
-                for key, array in model.data_arrays.items()
-            }
-            array = next(iter(scipp_obj_dict.values()))
-            self._components = {dim: array.meta[dim] for dim in pos_dims}
-            comps = []
-            for field in self._components.values():
-                comp = field.astype(sc.dtype.float64).copy()
-                comp.unit = ''
-                comps.append(comp)
-            self._positions = sc.geometry.position(*comps)
-        else:
-            self._positions = array.meta[positions]
-            self._components = {'x': self.x, 'y': self.y, 'z': self.z}
+        # TODO use resolution=None?
         self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
                                        resolution=resolution)
+        array = next(iter(scipp_obj_dict.values()))
+        self._data = array
+        if positions is None:
+            self._make_components(dims=array.dims[-3:])
+        else:
+            # TODO Get dim labels from field names
+            self._scatter_dims = ['x', 'y', 'z']
+            self._positions = array.meta[positions]
+            self._components = {'x': self.x, 'y': self.y, 'z': self.z}
+
+    def update_data(self, slices):
+        arrays = self._data_model.update_data(slices=slices)
+        # TODO avoid name clashes
+        return DataArrayDict({
+            key: flatten(array,
+                         dims=self._scatter_dims,
+                         to=''.join(array.dims))
+            for key, array in arrays.items()
+        })
+
+    def _make_components(self, dims):
+        slice_dims = [dim for dim in self._data.dims if dim not in dims]
+        self._scatter_dims = dims
+        array = self._data
+        for dim in slice_dims:
+            array = array[dim, 0]
+        array = flatten(array, dims=self._scatter_dims, to=''.join(array.dims))
+        self._components = {dim: array.meta[dim] for dim in self._scatter_dims}
+        comps = []
+        for field in self._components.values():
+            comp = field.astype(sc.dtype.float64).copy()
+            comp.unit = ''
+            comps.append(comp)
+        self._positions = sc.geometry.position(*comps)
+
+    @property
+    def dims(self):
+        return self._scatter_dims
+
+    @dims.setter
+    def dims(self, dims):
+        self._make_components(dims)
 
     @property
     def positions(self):
@@ -74,6 +98,7 @@ class ScatterPointModel:
             self.limits['z'][1] - self.limits['z'][0]
         ])
 
+    # TODO replace x,y,z? use dims
     @property
     @lru_cache(maxsize=None)
     def components(self):

@@ -69,10 +69,6 @@ class PlotController:
             for dim, item in scale.items():
                 self.scale[dim] = item
         self.view.set_scale(scale=self.scale)
-
-        sizes = self.model.data_arrays.sizes
-
-        self._initialize_widgets(sizes)
         self.initialize_model()
 
     def render(self):
@@ -88,13 +84,6 @@ class PlotController:
         if self.panel is not None:
             self.panel.controller = self
         self.update_axes()
-
-    def _initialize_widgets(self, sizes):
-        """
-        Initialize widget parameters once the `PlotModel`, `PlotView` and
-        `PlotController` have been created.
-        """
-        self.widgets.initialize(sizes=sizes)
 
     def initialize_model(self):
         """
@@ -193,11 +182,6 @@ class PlotController:
             dims = self.model.dims
         else:
             self.model.dims = dims
-        # TODO mechanism for params from 3d model
-        # TODO also for PlotPanel3d
-        # other_params = self.model.update_axes(self.axparams)
-        # if other_params is not None:
-        #     self.axparams.update(other_params)
         if self.panel is not None:
             self.panel.update_axes()
         if self.profile is not None:

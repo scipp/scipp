@@ -38,14 +38,13 @@ def plot3d(scipp_obj_dict, positions=None, **kwargs):
                 ylabel=None,
                 zlabel=None):
         array = next(iter(scipp_obj_dict.values()))
-        # TODO use unique dimension labels + ['z', 'y', 'x']
         # TODO support switching
         if positions is None:
-            _dims = array.dims[3:]
+            _dims = array.dims
         else:
             _dims = list(set(array.dims) - set(array.meta[positions].dims))
         out = {
-            'view_ndims': 0,
+            'view_ndims': 3 if positions is None else 0,
             'dims': _dims,
             'model': partial(ScatterPointModel, positions=positions),
             'view': PlotView3d,

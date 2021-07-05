@@ -13,7 +13,7 @@ class PlotWidgets:
     buttons to modify the currently displayed axes.
     It also provides buttons to hide/show masks.
     """
-    def __init__(self, *, dims, formatters, ndim, dim_label_map, masks):
+    def __init__(self, *, dims, formatters, ndim, dim_label_map, masks, sizes):
 
         self._dims = dims
         self._labels = dim_label_map
@@ -109,6 +109,7 @@ class PlotWidgets:
             self.container.append(ipw.HBox(row))
 
         self._add_masks_controls(masks)
+        self.initialize(sizes=sizes)
 
     def _ipython_display_(self):
         """
@@ -243,6 +244,7 @@ class PlotWidgets:
                                  max_value - 1)
 
         # Disable slider and profile button if there is only a single bin
+        # TODO did we break this for event data (previously fixed)?
         disabled = max_value == 1
         controls['slider'].disabled = disabled
         controls['continuous'].disabled = disabled

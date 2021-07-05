@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 from .objects import make_params, make_profile, make_plot
+from .model2d import PlotModel2d
 from .view2d import PlotView2d
 from .figure2d import PlotFigure2d
 from .controller2d import PlotController2d
@@ -35,6 +36,7 @@ def plot2d(scipp_obj_dict, **kwargs):
                 ylabel=None):
         out = {
             'view_ndims': 2,
+            'model': PlotModel2d,
             'view': PlotView2d,
             'controller': PlotController2d
         }
