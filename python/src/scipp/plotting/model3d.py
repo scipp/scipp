@@ -14,6 +14,9 @@ def _planar_norm(a, b):
 
 
 class ScatterPointModel:
+    """
+    Model representing scattered data.
+    """
     def __init__(self, *, positions, scipp_obj_dict, resolution):
         self._axes = ['z', 'y', 'x']
         # TODO use resolution=None?
@@ -25,16 +28,14 @@ class ScatterPointModel:
         else:
             # TODO Get dim labels from field names
             self._scatter_dims = ['x', 'y', 'z']
-            self._positions = array.meta[positions]
+            self._positions = flatten(array.meta[positions],
+                                      to=''.join(array.dims))
             self._components = {'x': self.x, 'y': self.y, 'z': self.z}
 
     def update_data(self, slices):
         arrays = self._data_model.update_data(slices=slices)
-        # TODO avoid name clashes
         return DataArrayDict({
-            key: flatten(array,
-                         dims=self._scatter_dims,
-                         to=''.join(array.dims))
+            key: flatten(array, to=''.join(array.dims))
             for key, array in arrays.items()
         })
 
@@ -44,7 +45,7 @@ class ScatterPointModel:
         self._scatter_dims = dims
         for dim in slice_dims:
             array = array[dim, 0]
-        array = flatten(array, dims=self._scatter_dims, to=''.join(array.dims))
+        array = flatten(array, to=''.join(array.dims))
         self._components = {dim: array.meta[dim] for dim in self._scatter_dims}
         comps = []
         for field in self._components.values():
@@ -139,4 +140,7 @@ class ScatterPointModel:
         return sc.norm(self._positions)
 
     def __getattr__(self, attr):
+        """
+        Forward some methods from internal PlotModel1d.
+        """
         return getattr(self._data_model, attr)
