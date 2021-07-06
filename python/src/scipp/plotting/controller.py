@@ -261,7 +261,6 @@ class PlotController:
                 visible = False
             else:
                 owner.button_style = "info"
-                self.widgets.clear_profile_button()
                 visible = True
 
             if visible:
@@ -270,7 +269,7 @@ class PlotController:
                 self.view.clear_marks()
 
         self.profile.toggle_view(visible=visible)
-        self.toggle_hover_visibility(False)
+        self.profile.toggle_hover_visibility(False)
 
     def hover(self, slices):
         if self.profile is not None and self.profile.is_visible():
@@ -314,13 +313,6 @@ class PlotController:
         new_values = self._profile_model.update_data(slices=slices)
         self._profile_view.update_data(new_values,
                                        mask_info=self.get_masks_info())
-
-    def toggle_hover_visibility(self, value):
-        """
-        Show/hide the profile view depending on the value of the profile button
-        in the widgets.
-        """
-        self.profile.toggle_hover_visibility(value)
 
     def redraw(self):
         """
