@@ -61,7 +61,7 @@ def test_html_repr_variable(ndim, variances, dtype, unit):
                         dtype=dtype,
                         unit=unit)
     sc.make_html(var)
-    sc.make_html(var['x', 1:10])
+    sc.make_html(var['xx', 1:10])
 
 
 def test_html_repr_variable_strings():
@@ -87,7 +87,7 @@ def test_html_repr_data_array(ndim, with_all, dtype, unit):
                                dtype=dtype,
                                unit=unit)
     sc.make_html(da)
-    sc.make_html(da['x', 1:10])
+    sc.make_html(da['xx', 1:10])
 
 
 @pytest.mark.parametrize("ndim", [1, 2, 3, 4])
@@ -98,7 +98,7 @@ def test_html_repr_binned_data_array(ndim, variances, masks):
                                 with_variance=variances,
                                 masks=masks)
     sc.make_html(da)
-    sc.make_html(da['x', 1:10])
+    sc.make_html(da['xx', 1:10])
 
 
 @pytest.mark.parametrize("ndim", [1, 2, 3, 4])
@@ -116,4 +116,4 @@ def test_html_repr_dataset(ndim, with_all, dtype, unit):
                             dtype=dtype,
                             unit=unit)
     sc.make_html(da)
-    sc.make_html(da['x', 1:10])
+    sc.make_html(da['xx', 1:10])
