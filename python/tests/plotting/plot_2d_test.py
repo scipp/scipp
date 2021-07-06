@@ -21,7 +21,7 @@ def test_plot_2d_dataset():
 
 
 def test_plot_2d_with_variances():
-    plot(make_dense_data_array(ndim=2, variances=True))
+    plot(make_dense_data_array(ndim=2, with_variance=True))
 
 
 def test_plot_2d_with_log():
@@ -29,7 +29,7 @@ def test_plot_2d_with_log():
 
 
 def test_plot_2d_with_log_and_variances():
-    plot(make_dense_data_array(ndim=2, variances=True), norm='log')
+    plot(make_dense_data_array(ndim=2, with_variance=True), norm='log')
 
 
 def test_plot_2d_with_vmin_vmax():
@@ -127,7 +127,7 @@ def test_plot_2d_with_non_regular_bin_edges_with_masks():
 
 def test_plot_variable_2d():
     N = 50
-    v2d = sc.Variable(['yy', 'xx'], values=np.random.rand(N, N), unit='K')
+    v2d = sc.Variable(dims=['yy', 'xx'], values=np.random.rand(N, N), unit='K')
     plot(v2d)
 
 
@@ -168,14 +168,14 @@ def test_plot_string_and_vector_axis_labels_2d():
     vecs = []
     for i in range(N):
         vecs.append(np.random.random(3))
-    da = sc.DataArray(data=sc.Variable(['yy', 'xx'],
+    da = sc.DataArray(data=sc.Variable(dims=['yy', 'xx'],
                                        values=np.random.random([M, N]),
                                        unit='counts'),
                       coords={
                           'xx':
                           sc.vectors(dims=['xx'], values=vecs, unit='m'),
                           'yy':
-                          sc.Variable(['yy'],
+                          sc.Variable(dims=['yy'],
                                       values=['a', 'b', 'c', 'd', 'e'],
                                       unit='m')
                       })
@@ -189,21 +189,21 @@ def test_plot_2d_with_dimension_of_size_1():
     y = np.arange(M, dtype=np.float64)
     z = np.arange(M + 1, dtype=np.float64)
     d = sc.Dataset()
-    d['a'] = sc.Variable(['yy', 'xx'],
+    d['a'] = sc.Variable(dims=['yy', 'xx'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
-    d['b'] = sc.Variable(['zz', 'xx'],
+    d['b'] = sc.Variable(dims=['zz', 'xx'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
-    d.coords['xx'] = sc.Variable(['xx'], values=x, unit=sc.units.m)
-    d.coords['yy'] = sc.Variable(['yy'], values=y, unit=sc.units.m)
-    d.coords['zz'] = sc.Variable(['zz'], values=z, unit=sc.units.m)
+    d.coords['xx'] = sc.Variable(dims=['xx'], values=x, unit=sc.units.m)
+    d.coords['yy'] = sc.Variable(dims=['yy'], values=y, unit=sc.units.m)
+    d.coords['zz'] = sc.Variable(dims=['zz'], values=z, unit=sc.units.m)
     plot(d['a'])
     plot(d['b'])
 
 
 def test_plot_2d_with_dimension_of_size_2():
-    a = sc.DataArray(data=sc.Variable(dims=['yy', 'xx'], shape=[2, 4]),
+    a = sc.DataArray(data=sc.zeros(dims=['yy', 'xx'], shape=[2, 4]),
                      coords={
                          'xx': sc.Variable(dims=['xx'], values=[1, 2, 3, 4]),
                          'yy': sc.Variable(dims=['yy'], values=[1, 2])
@@ -258,11 +258,11 @@ def test_plot_3d_binned_data_where_inner_dimension_has_no_event_coord():
 
 
 def test_plot_2d_binned_data_with_variances():
-    plot(make_binned_data_array(ndim=2, variances=True))
+    plot(make_binned_data_array(ndim=2, with_variance=True))
 
 
 def test_plot_2d_binned_data_with_variances_resolution():
-    plot(make_binned_data_array(ndim=2, variances=True), resolution=64)
+    plot(make_binned_data_array(ndim=2, with_variance=True), resolution=64)
 
 
 def test_plot_2d_binned_data_with_masks():
@@ -293,7 +293,7 @@ def test_plot_2d_int64_with_unit():
 def test_plot_2d_int_coords():
     N = 20
     M = 10
-    da = sc.DataArray(data=sc.Variable(['yy', 'xx'],
+    da = sc.DataArray(data=sc.Variable(dims=['yy', 'xx'],
                                        values=np.random.random([M, N]),
                                        unit='K'),
                       coords={
@@ -312,9 +312,11 @@ def test_plot_2d_datetime():
     da = sc.DataArray(data=sc.array(dims=['time', 'xx'],
                                     values=np.random.normal(0, 1, (N, M))),
                       coords={
-                          'time': time,
-                          'xx': sc.Variable(['xx'],
-                                            values=np.linspace(0, 10, M))
+                          'time':
+                          time,
+                          'xx':
+                          sc.Variable(dims=['xx'],
+                                      values=np.linspace(0, 10, M))
                       })
     da.plot().close()
 

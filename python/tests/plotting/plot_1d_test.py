@@ -18,7 +18,7 @@ def test_plot_1d():
 
 
 def test_plot_1d_with_variances():
-    plot(make_dense_data_array(ndim=1, variances=True))
+    plot(make_dense_data_array(ndim=1, with_variance=True))
 
 
 def test_plot_1d_bin_edges():
@@ -42,7 +42,7 @@ def test_plot_1d_log_axes():
 
 
 def test_plot_1d_bin_edges_with_variances():
-    plot(make_dense_data_array(ndim=1, variances=True, binedges=True))
+    plot(make_dense_data_array(ndim=1, with_variance=True, binedges=True))
 
 
 def test_plot_1d_two_separate_entries():
@@ -57,7 +57,7 @@ def test_plot_1d_two_entries_on_same_plot():
 
 
 def test_plot_1d_two_entries_hide_variances():
-    ds = make_dense_dataset(ndim=1, variances=True)
+    ds = make_dense_dataset(ndim=1, with_variance=True)
     ds['b'].data.variances = None
     plot(ds, errorbars=False)
     # When variances are not present, the plot does not fail, is silently does
@@ -79,7 +79,7 @@ def test_plot_sliceviewer_with_1d_projection():
 
 
 def test_plot_sliceviewer_with_1d_projection_with_nans():
-    da = make_dense_data_array(ndim=3, binedges=True, variances=True)
+    da = make_dense_data_array(ndim=3, binedges=True, with_variance=True)
     da.values = np.where(da.values < 0.0, np.nan, da.values)
     da.variances = np.where(da.values < 0.2, np.nan, da.variances)
     plot(da, projection='1d')
@@ -153,7 +153,7 @@ def test_plot_dataset_view():
 
 def test_plot_vector_axis_labels_1d():
     N = 10
-    da = sc.DataArray(data=sc.Variable(['xx'],
+    da = sc.DataArray(data=sc.Variable(dims=['xx'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
@@ -167,7 +167,7 @@ def test_plot_vector_axis_labels_1d():
 
 def test_plot_string_axis_labels_1d():
     N = 10
-    da = sc.DataArray(data=sc.Variable(['xx'],
+    da = sc.DataArray(data=sc.Variable(dims=['xx'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
@@ -184,7 +184,7 @@ def test_plot_string_axis_labels_1d():
 
 def test_plot_string_axis_labels_1d_short():
     N = 5
-    da = sc.DataArray(data=sc.Variable(['xx'],
+    da = sc.DataArray(data=sc.Variable(dims=['xx'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
@@ -198,7 +198,7 @@ def test_plot_string_axis_labels_1d_short():
 
 def test_plot_with_vector_labels():
     N = 10
-    da = sc.DataArray(data=sc.Variable(['xx'],
+    da = sc.DataArray(data=sc.Variable(dims=['xx'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
@@ -214,7 +214,7 @@ def test_plot_with_vector_labels():
 
 def test_plot_vector_axis_with_labels():
     N = 10
-    da = sc.DataArray(data=sc.Variable(['xx'],
+    da = sc.DataArray(data=sc.Variable(dims=['xx'],
                                        values=np.random.random(N),
                                        unit='counts'),
                       coords={
