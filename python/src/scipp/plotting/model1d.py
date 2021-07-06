@@ -30,8 +30,11 @@ class PlotModel1d(PlotModel):
     def _resample(self, array, slices):
         model = self._make_1d_resampling_model(array)
         # Extend slice to full input "pixel" sizes
-        # TODO isn't the resampling model doing this now, or is this for something else?
         for dim in slices:
+            # TODO Unfortunately we cannot extendi n this manner when there
+            # are 2-d coords
+            if len(model._array.meta[dim].dims) != 1:
+                continue
             if not isinstance(slices[dim], tuple) or not isinstance(
                     slices[dim][0], sc.Variable):
                 continue

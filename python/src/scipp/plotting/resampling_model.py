@@ -137,7 +137,11 @@ class ResamplingModel():
                     high = out.meta[dim][dim, -1]
                 else:
                     # cannot pre-select bins for multi-dim coords
-                    if len(out.meta[dim].dims) == 1:
+                    # Note we use self._array, not out for selection:
+                    # out's coord may have turned 1-d due to prior slicing,
+                    # yielding length-0 slice here if limits are outside
+                    # range on this slice, which rebin cannot handle.
+                    if len(self._array.meta[dim].dims) == 1:
                         out = out[sc.get_slice_params(out.data, out.meta[dim],
                                                       low, high)]
                 params[dim] = (low.value, high.value, low.unit,
@@ -212,6 +216,7 @@ def _with_edges(array):
             new_array.coords[dim] = to_bin_edges(var, dim)
         elif var.dtype not in [sc.dtype.float32, sc.dtype.float64]:
             # rebin does not support int coords right now
+            # TODO use copy=False
             new_array.coords[dim] = var.astype(sc.dtype.float64)
     return new_array, prefix
 
