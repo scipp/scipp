@@ -6,11 +6,23 @@ from .._scipp import core as sc
 from .._shape import flatten
 from .model1d import PlotModel1d
 from .model import DataArrayDict
+from .tools import to_bin_centers
 import numpy as np
 
 
 def _planar_norm(a, b):
     return sc.sqrt(a * a + b * b)
+
+
+def _to_centers(array):
+    array = array.copy(deep=False)
+    for dim in array.dims:
+        if dim not in array.meta:
+            continue
+        # Cannot flatten with bin edges, use centers as positions
+        if array.meta[dim].sizes[dim] == array.sizes[dim] + 1:
+            array.coords[dim] = to_bin_centers(array.meta[dim], dim)
+    return array
 
 
 class ScatterPointModel:
@@ -20,6 +32,11 @@ class ScatterPointModel:
     def __init__(self, *, positions, scipp_obj_dict, resolution):
         self._axes = ['z', 'y', 'x']
         # TODO use resolution=None?
+        if positions is None:
+            scipp_obj_dict = {
+                key: _to_centers(array)
+                for key, array in scipp_obj_dict.items()
+            }
         self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
                                        resolution=resolution)
         array = next(iter(scipp_obj_dict.values()))
