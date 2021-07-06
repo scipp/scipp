@@ -15,17 +15,6 @@ import pythreejs as p3
 from copy import copy
 
 
-def _estimate_pixel_size(self, *, array, box_size, scaling):
-    """
-    Find the smallest pixel in the grid.
-    """
-    # TODO use flattened dims rather than xyz to get sizes
-    dx = [box_size[i] / array.sizes[xyz] for i, xyz in enumerate("xyz")]
-    scaling = [scaling[xyz] for xyz in "xyz"]
-    ind = np.argmin(dx)
-    return dx[ind], scaling[ind]
-
-
 class PlotFigure3d:
     """
     Class for 3 dimensional plots.
@@ -184,19 +173,11 @@ class PlotFigure3d:
             components=params.components)
 
         if self._pixel_size is None:
-            # TODO
-            if params is not None:
-                # Note the value of 0.05 is arbitrary here. It is a sensible
-                # guess to render a plot that is not too crowded and shows
-                # individual pixels.
-                psize = 0.05 * np.mean(box_size)
-                pscale = scaling['x']
-            else:
-                psize, pscale = _estimate_pixel_size(array=array,
-                                                     box_size=box_size,
-                                                     scaling=scaling)
-            self._pixel_size = psize
-            self._pixel_scaling = pscale
+            # Note the value of 0.05 is arbitrary here. It is a sensible
+            # guess to render a plot that is not too crowded and shows
+            # individual pixels.
+            self._pixel_size = 0.05 * np.mean(box_size)
+            self._pixel_scaling = scaling['x']
         self._create_points_material()
         self._create_point_cloud(positions=params.positions.values,
                                  scaling=scaling)
