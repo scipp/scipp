@@ -26,24 +26,17 @@ def test_plot_sliceviewer_2d_with_two_sliders():
     plot(make_dense_data_array(ndim=4))
 
 
-def test_plot_sliceviewer_2d_with_axes():
-    plot(make_dense_data_array(ndim=3), axes={'y': 'x'})
-
-
-def test_plot_sliceviewer_2d_with_axes_redundant():
-    plot(make_dense_data_array(ndim=3), axes={'y': 'x', 'x': 'y'})
-
-
-def test_plot_sliceviewer_2d_with_two_axes():
-    plot(make_dense_data_array(ndim=3), axes={'x': 'y', 'y': 'z'})
+def test_plot_sliceviewer_2d_transposed_axes():
+    plot(sc.transpose(make_dense_data_array(ndim=3), dims=['xx', 'zz', 'yy']))
+    plot(sc.transpose(make_dense_data_array(ndim=3), dims=['yy', 'xx', 'zz']))
 
 
 def test_plot_sliceviewer_2d_with_labels():
-    plot(make_dense_data_array(ndim=3, labels=True), axes={'x': 'lab'})
+    plot(make_dense_data_array(ndim=3, labels=True), labels={'xx': 'lab'})
 
 
 def test_plot_sliceviewer_2d_with_attrs():
-    plot(make_dense_data_array(ndim=3, attrs=True), axes={'x': 'attr'})
+    plot(make_dense_data_array(ndim=3, attrs=True), labels={'xx': 'attr'})
 
 
 def test_plot_sliceviewer_2d_with_binedges():
@@ -67,7 +60,10 @@ def test_plot_4d_with_masks_no_coords():
     da.masks['tube_ends'] = sc.Variable(dims=['pixel'],
                                         values=np.where(a > 0.5, True, False))
     plot(da)
-    plot(da, axes={'y': 'tube'})
+    plot(sc.transpose(da, dims=['pack', 'tube', 'straw', 'pixel']))
+    plot(sc.transpose(da, dims=['pack', 'straw', 'tube', 'pixel']))
+    plot(sc.transpose(da, dims=['pack', 'tube', 'pixel', 'straw']))
+    plot(sc.transpose(da, dims=['straw', 'pixel', 'pack', 'tube']))
 
 
 def test_plot_3d_data_ragged():
@@ -79,7 +75,7 @@ def test_plot_3d_data_ragged():
     # Also check that it raises an error if we try to have ragged coord along
     # slider dim
     with pytest.raises(RuntimeError) as e:
-        plot(da, axes={'x': 'y', 'y': 'z'})
+        plot(sc.transpose(da))
     assert str(e.value) == ('A ragged coordinate cannot lie along '
                             'a slider dimension, it must be one of '
                             'the displayed dimensions.')
