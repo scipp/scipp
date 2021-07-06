@@ -20,7 +20,6 @@ class ScatterPointModel:
         self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
                                        resolution=resolution)
         array = next(iter(scipp_obj_dict.values()))
-        self._data = array
         if positions is None:
             self._make_components(dims=array.dims[-3:])
         else:
@@ -40,9 +39,9 @@ class ScatterPointModel:
         })
 
     def _make_components(self, dims):
-        slice_dims = [dim for dim in self._data.dims if dim not in dims]
+        array = next(iter(self._data_model.data_arrays.values()))
+        slice_dims = [dim for dim in array.dims if dim not in dims]
         self._scatter_dims = dims
-        array = self._data
         for dim in slice_dims:
             array = array[dim, 0]
         array = flatten(array, dims=self._scatter_dims, to=''.join(array.dims))
