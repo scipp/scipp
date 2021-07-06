@@ -61,6 +61,8 @@ class DateFormatter:
     def formatter(self, val, pos, dim, get_axis_bounds, set_axis_label):
         d = (self.offset + (int(val) * self.offset.unit)).value
         dt = str(d)
+        if pos is None:  # Return full string, not split into label + offset
+            return dt
         trim = 0
         bounds = get_axis_bounds(dim)
         diff = (bounds[1] - bounds[0]) * self.offset.unit

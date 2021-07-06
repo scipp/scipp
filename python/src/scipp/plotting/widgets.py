@@ -339,9 +339,13 @@ class PlotWidgets:
         for dim in self._slider_dims:
 
             def format(val):
-                if self._formatters[dim]['linear'] is None:
+                form = self._formatters[dim]['linear']
+                if form is None:
                     return value_to_string(val)
-                return self._formatters[dim]['linear'](val, None)
+                # pos=None causes datetime formatter to return full string
+                # rather than attempting to set a separate label and returning
+                # offset
+                return form(val, pos=None)
 
             if bounds[dim].values.ndim == 0:
                 bound = f'{format(bounds[dim].value)}'
