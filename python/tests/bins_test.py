@@ -121,7 +121,7 @@ def test_bins_view():
 
 def test_bins_arithmetic():
     var = sc.Variable(dims=['event'], values=[1.0, 2.0, 3.0, 4.0])
-    table = sc.DataArray(var, {'x': var})
+    table = sc.DataArray(var, coords={'x': var})
     binned = sc.bin(table, [sc.Variable(dims=['x'], values=[1.0, 5.0])])
     hist = sc.DataArray(
         data=sc.Variable(dims=['x'], values=[1.0, 2.0]),
@@ -140,23 +140,26 @@ def test_load_events_bins():
         event_group = event_data_groups[0]
         event_index_np = event_group["event_index"][...]
         event_time_offset = sc.Variable(
-            ['event'], values=event_group["event_time_offset"][...])
-        event_id = sc.Variable(['event'], values=event_group["event_id"][...])
-        event_index = sc.Variable(['pulse'],
+            dims=['event'], values=event_group["event_time_offset"][...])
+        event_id = sc.Variable(dims=['event'],
+                               values=event_group["event_id"][...])
+        event_index = sc.Variable(dims=['pulse'],
                                   values=event_index_np,
                                   dtype=np.int64)
         event_time_zero = sc.Variable(
-            ['pulse'], values=event_group["event_time_zero"][...])
+            dims=['pulse'], values=event_group["event_time_zero"][...])
 
     # Calculate the end index for each pulse
     # The end index for a pulse is the start index of the next pulse
     end_indices = event_index_np.astype(np.int64)
     end_indices = np.roll(end_indices, -1)
     end_indices[-1] = event_id.shape[0]
-    end_indices = sc.Variable(['pulse'], values=end_indices, dtype=np.int64)
+    end_indices = sc.Variable(dims=['pulse'],
+                              values=end_indices,
+                              dtype=np.int64)
 
     # Weights are not stored in NeXus, so use 1s
-    weights = sc.Variable(['event'],
+    weights = sc.Variable(dims=['event'],
                           values=np.ones(event_id.shape),
                           dtype=np.float32)
     data = sc.DataArray(data=weights,

@@ -17,17 +17,23 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+.. include:: <isonum.txt>
+
+* Changed names of arithmetic functions to match numpy's names: ``plus`` |rarr| :func:`scipp.add`, ``minus`` |rarr| :func:`scipp.subtract`, ``times`` |rarr| :func:`scipp.multiply` `#1999 <https://github.com/scipp/scipp/pull/1999>`_.
+* Changed Variable init method, all arguments are keyword-only, special overloads which default-initialize data were removed `#1994 <https://github.com/scipp/scipp/pull/1994>`_.
+* Made most arguments of ``DataArray`` and ``Dataset`` constructors keyword-only `#2008 <https://github.com/scipp/scipp/pull/2008>`_.
+
 Bugfixes
 ~~~~~~~~
 
 Contributors
 ~~~~~~~~~~~~
 
-Owen Arnold,
-Simon Heybrock,
-Greg Tucker,
-Neil Vaytet,
-and Jan-Lukas Wynen
+Owen Arnold :sup:`b, c`\ ,
+Simon Heybrock :sup:`a`\ ,
+Greg Tucker :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas :sup:`a`\ 
 
 v0.7.0 (June 2021)
 ------------------
@@ -73,11 +79,11 @@ Breaking changes
 Contributors
 ~~~~~~~~~~~~
 
-Owen Arnold,
-Simon Heybrock,
-Matthew D. Jones,
-Neil Vaytet,
-and Jan-Lukas Wynen
+Owen Arnold :sup:`b, c`\, 
+Simon Heybrock :sup:`a`\,
+Matthew D. Jones :sup:`b, c`\,
+Neil Vaytet :sup:`a`\,
+and Jan-Lukas Wynen :sup:`a`\
 
 v0.6.1 (April 2021)
 -------------------
@@ -322,3 +328,9 @@ Limitations:
 * Limited performance and no parallelization.
 * Numerous "edge cases" not supported yet.
 * While tested, probably far from bug-free.
+
+Contributing Organizations
+--------------------------
+* :sup:`a`\  `European Spallation Source ERIC <https://europeanspallationsource.se/>`_, Sweden
+* :sup:`b`\  `Science and Technology Facilities Council <https://www.ukri.org/councils/stfc/>`_, UK
+* :sup:`c`\  `Tessella <https://www.tessella.com/>`_, UK

@@ -211,14 +211,14 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   // 3. sum/N -> mean
   if constexpr (std::is_same_v<T, Dataset>) {
     for (auto &&item : out) {
-      if (isInt(item.data().dtype()))
+      if (is_int(item.data().dtype()))
         out.setData(item.name(), item.data() * get_scale(m_data[item.name()]),
                     AttrPolicy::Keep);
       else
         item *= get_scale(m_data[item.name()]);
     }
   } else {
-    if (isInt(out.data().dtype()))
+    if (is_int(out.data().dtype()))
       out.setData(out.data() * get_scale(m_data));
     else
       out *= get_scale(m_data);

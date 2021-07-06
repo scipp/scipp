@@ -14,12 +14,11 @@ namespace scipp::variable {
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 empty(const Dimensions &dims, const units::Unit &unit, const DType type,
-      const bool variances = false);
+      const bool with_variances = false);
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable ones(const Dimensions &dims,
-                                                  const units::Unit &unit,
-                                                  const DType type,
-                                                  const bool variances = false);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+ones(const Dimensions &dims, const units::Unit &unit, const DType type,
+     const bool with_variances = false);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 empty_like(const Variable &prototype,

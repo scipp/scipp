@@ -68,10 +68,10 @@ def _variable_to_dict(v):
 
     # Check if variable is 0D:
     suffix = "s" if len(out["dims"]) > 0 else ""
-    out["value" + suffix] = dtype_parser[str_dtype](getattr(
-        v, "value" + suffix), v.shape)
+    out["values"] = dtype_parser[str_dtype](getattr(v, "value" + suffix),
+                                            v.shape)
     var = getattr(v, "variance" + suffix)
-    out["variance" + suffix] = dtype_parser[str_dtype](
+    out["variances"] = dtype_parser[str_dtype](
         var, v.shape) if var is not None else None
     return out
 
@@ -113,10 +113,8 @@ def from_dict(dict_obj: dict) -> DatasetLike:
     if {"coords", "data"}.issubset(keys_as_set):
         # Case of a DataArray-like dict (most-likely)
         return _dict_to_data_array(dict_obj)
-    elif (keys_as_set.issubset(
-        {"dims", "values", "variances", "unit", "dtype", "shape"})
-          or keys_as_set.issubset(
-              {"value", "variance", "unit", "dtype", "shape", "dims"})):
+    elif keys_as_set.issubset({"dims", "values", "variances",
+                               "unit", "dtype", "shape"}):  # yapf: disable
         # Case of a Variable-like dict (most-likely)
         return _dict_to_variable(dict_obj)
     else:
@@ -133,14 +131,8 @@ def _dict_to_variable(d):
     """
     d = dict(d)
     # The Variable constructor does not accept both `shape` and `values`. If
-    # `values` is present, remove `shape` from the list. Also remove `dims` in
-    # the case of a 0D variable.
+    # `values` is present, remove `shape` from the list.
     keylist = list(d.keys())
-    if "value" in keylist:
-        if "shape" in keylist:
-            keylist.remove("shape")
-        if "dims" in keylist:
-            keylist.remove("dims")
     if "values" in keylist and "shape" in keylist:
         keylist.remove("shape")
     out = {}
@@ -151,12 +143,16 @@ def _dict_to_variable(d):
         else:
             out[key] = d[key]
     # Hack for types that cannot be directly constructed using sc.Variable()
-    if 'value' in out:
-        init = {'vector_3_float64': vector, 'matrix_3_float64': matrix}
-    else:
+    if out['dims']:
         init = {'vector_3_float64': vectors, 'matrix_3_float64': matrices}
+    else:
+        init = {'vector_3_float64': vector, 'matrix_3_float64': matrix}
     make_var = init.get(str(out.get('dtype', None)), sc.Variable)
     if make_var != sc.Variable:
+        if not out['dims']:
+            out['value'] = out['values']
+            del out['values']
+            del out['dims']
         for key in ['dtype', 'variance', 'variances']:
             if key in out:
                 del out[key]

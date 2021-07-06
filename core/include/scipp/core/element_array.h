@@ -12,14 +12,14 @@
 
 namespace scipp::core {
 
-/// Replacement for C++20 std::make_unique_default_init
-template <class T> auto make_unique_default_init(const scipp::index size) {
+/// Replacement for C++20 std::make_unique_for_overwrite
+template <class T> auto make_unique_for_overwrite(const scipp::index size) {
   return std::unique_ptr<T>(new std::remove_extent_t<T>[size]);
 }
 
 /// Tag for requesting default-initialization in methods of class element_array.
-struct default_init_elements_t {};
-static constexpr auto default_init_elements = default_init_elements_t{};
+struct init_for_overwrite_t {};
+static constexpr auto init_for_overwrite = init_for_overwrite_t{};
 
 /// Internal data container for Variable.
 ///
@@ -40,16 +40,17 @@ public:
   element_array() noexcept = default;
 
   explicit element_array(const scipp::index new_size, const T &value = T()) {
-    resize(new_size, default_init_elements);
+    resize(new_size, init_for_overwrite);
     parallel::parallel_for(
         parallel::blocked_range(0, size()), [&](const auto &range) {
           std::fill(data() + range.begin(), data() + range.end(), value);
         });
   }
 
-  /// Construct with default-initialized elements. Use with care.
-  element_array(const scipp::index new_size, const default_init_elements_t &) {
-    resize(new_size, default_init_elements);
+  /// Construct with default-initialized elements.
+  /// Use with care, fundamental types are not initialized.
+  element_array(const scipp::index new_size, const init_for_overwrite_t &) {
+    resize(new_size, init_for_overwrite);
   }
 
   template <
@@ -58,7 +59,7 @@ public:
           std::is_assignable<T &, decltype(*std::declval<Iter>())>{}, int> = 0>
   element_array(Iter first, Iter last) {
     const scipp::index size = std::distance(first, last);
-    resize(size, default_init_elements);
+    resize(size, init_for_overwrite);
     parallel::parallel_for(
         parallel::blocked_range(0, size), [&](const auto &range) {
           std::copy(first + range.begin(), first + range.end(),
@@ -119,12 +120,12 @@ public:
   void resize(const scipp::index new_size) { *this = element_array(new_size); }
 
   /// Resize with default-initialized elements. Use with care.
-  void resize(const scipp::index new_size, const default_init_elements_t &) {
+  void resize(const scipp::index new_size, const init_for_overwrite_t &) {
     if (new_size == 0) {
       m_data.reset();
       m_size = 0;
     } else if (new_size != size()) {
-      m_data = make_unique_default_init<T[]>(new_size);
+      m_data = make_unique_for_overwrite<T[]>(new_size);
       m_size = new_size;
     }
   }

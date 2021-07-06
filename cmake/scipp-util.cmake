@@ -4,7 +4,7 @@
 # ~~~
 function(scipp_function template category function_name)
   set(options SKIP_VARIABLE NO_OUT)
-  set(oneValueArgs OP)
+  set(oneValueArgs OP PREPROCESS_VARIABLE)
   cmake_parse_arguments(
     PARSE_ARGV 3 SCIPP_FUNCTION "${options}" "${oneValueArgs}" ""
   )
@@ -21,6 +21,9 @@ function(scipp_function template category function_name)
     set(OPNAME ${SCIPP_FUNCTION_OP})
   else()
     set(OPNAME ${NAME})
+  endif()
+  if(DEFINED SCIPP_FUNCTION_PREPROCESS_VARIABLE)
+    set(PREPROCESS_VARIABLE ${SCIPP_FUNCTION_PREPROCESS_VARIABLE})
   endif()
   set(src ${OPNAME}.cpp)
 
@@ -70,8 +73,8 @@ macro(scipp_unary)
   scipp_function("unary" ${ARGV})
 endmacro()
 
-macro(scipp_binary category function_name)
-  scipp_function("binary" ${category} ${function_name})
+macro(scipp_binary)
+  scipp_function("binary" ${ARGV})
 endmacro()
 
 function(setup_scipp_category category)

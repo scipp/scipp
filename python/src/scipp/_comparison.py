@@ -152,9 +152,8 @@ def isclose(x: _cpp.Variable,
     :return: Variable same size as input.
              Element True if absolute diff of value <= atol + rtol * abs(y),
              otherwise False.
-    See Also
-    --------
-    :py:func:`scipp.allclose` : isclose applied over all dimensions
+
+    :seealso: :py:func:`scipp.allclose` : isclose applied over all dimensions
     """
     if rtol is None:
         rtol = 1e-5 * _cpp.units.one
@@ -200,9 +199,7 @@ def allclose(x, y, rtol=None, atol=None, equal_nan=False):
     :return: True if for all elements value <= atol + rtol * abs(y),
              otherwise False.
 
-    See Also
-    --------
-    :py:func:`scipp.isclose` : comparing element-wise with specified tolerances
+    :seealso: :py:func:`scipp.isclose` : comparing element-wise with specified tolerances
     """
     return _call_cpp_func(
         _cpp.all, isclose(x, y, rtol=rtol, atol=atol,
