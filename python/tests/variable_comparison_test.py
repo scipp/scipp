@@ -4,7 +4,7 @@
 # @author Simon Heybrock
 import scipp as sc
 import numpy as np
-from .common import assert_export
+from common import assert_export
 
 
 def _check_comparison_ops_on(obj):

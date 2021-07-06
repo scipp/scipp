@@ -8,7 +8,7 @@ import pytest
 
 import scipp as sc
 
-from .common import assert_export
+from common import assert_export
 
 
 def make_variables():

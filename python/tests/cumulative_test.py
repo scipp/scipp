@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 import scipp as sc
 
-from .common import assert_export
+from common import assert_export
 
 
 def test_cumsum():

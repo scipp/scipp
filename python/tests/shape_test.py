@@ -4,7 +4,7 @@
 
 import numpy as np
 import scipp as sc
-from .common import assert_export
+from common import assert_export
 
 
 def test_fold():
