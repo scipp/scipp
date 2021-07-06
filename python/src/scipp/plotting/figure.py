@@ -24,7 +24,7 @@ class PlotFigure:
                  ylabel=None,
                  toolbar=None):
         self.fig = None
-        self.image = None
+        self.closed = False
         self.ax = ax
         self.cax = cax
         self.own_axes = True
@@ -90,22 +90,26 @@ class PlotFigure:
         Image container.
         """
         if self.is_widget():
-            if self.image is not None:
-                return ipw.HBox([self.toolbar._to_widget(), self.image])
-            else:
-                return ipw.HBox([self.toolbar._to_widget(), self.fig.canvas])
+            return ipw.HBox([
+                self.toolbar._to_widget(),
+                self._to_image() if self.closed else self.fig.canvas
+            ])
         else:
-            if self.image is None:
-                self._to_image()
-            return self.image
+            return self._to_image()
 
     def _to_image(self):
         """
         Convert the Matplotlib figure to a static image.
         """
-        self.image = ipw.Image(value=fig_to_pngbytes(self.fig),
-                               width=config.plot.width,
-                               height=config.plot.height)
+        return ipw.Image(value=fig_to_pngbytes(self.fig),
+                         width=config.plot.width,
+                         height=config.plot.height)
+
+    def close(self):
+        """
+        Set the closed flag to True to output static images.
+        """
+        self.closed = True
 
     def show(self):
         """

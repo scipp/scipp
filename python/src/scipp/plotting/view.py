@@ -74,7 +74,7 @@ class PlotView:
         """
         Close the figure.
         """
-        return self.figure._to_image()
+        self.figure.close()
 
     def show(self):
         """
