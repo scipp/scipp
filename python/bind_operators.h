@@ -42,17 +42,25 @@ template <class T, class... Ignored>
 void bind_astype(py::class_<T, Ignored...> &c) {
   c.def(
       "astype",
-      [](const T &self, const scipp::DType type) { return astype(self, type); },
+      [](const T &self, const scipp::DType type, const bool copy) {
+        return astype(self, type,
+                      copy ? scipp::CopyPolicy::Always
+                           : scipp::CopyPolicy::TryAvoid);
+      },
+      py::arg("type"), py::kw_only(), py::arg("copy") = true,
       py::call_guard<py::gil_scoped_release>(),
       R"(
         Converts a Variable or DataArray to a different dtype.
 
-        If the dtype is unchanged the object is returned without making a
-        deep copy.
+        If the dtype is unchanged and ``copy`` is `False`, the object
+        is returned without making a deep copy.
 
-        :raises: If the variable cannot be converted to the requested dtype.
+        :param type: Target dtype.
+        :param copy: If `False`, return the input object if possible.
+                     If `True`, the function always returns a new object.
+        :raises: If the data cannot be converted to the requested dtype.
         :return: New variable or data array with specified dtype.
-        :rtype: Variable or DataArray)");
+        :rtype: Union[scipp.Variable, scipp.DataArray])");
 }
 
 template <class Other, class T, class... Ignored>

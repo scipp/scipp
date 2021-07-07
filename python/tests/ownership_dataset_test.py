@@ -208,7 +208,7 @@ def test_own_dset_set_access_through_dataarray():
         coords={'x': sc.array(dims=['x'], values=[1, -2], unit='s')},
         attrs={'a': sc.array(dims=['x'], values=[-100, -200])},
         masks={'m': sc.array(dims=['x'], values=[False, True])})
-    assert sc.identical(dset, sc.Dataset({'da1': expected}))
+    assert sc.identical(dset, sc.Dataset(data={'da1': expected}))
     assert sc.identical(da, expected)
 
 
@@ -231,7 +231,7 @@ def test_own_dset_set_access_through_scalar_slice():
         coords={'x': sc.array(dims=['x'], values=[1, 2], unit='s')},
         attrs={'a': sc.array(dims=['x'], values=[-100, 200])},
         masks={'m': sc.array(dims=['x'], values=[False, False])})
-    assert sc.identical(dset, sc.Dataset({'da1': expected}))
+    assert sc.identical(dset, sc.Dataset(data={'da1': expected}))
     assert sc.identical(da, expected)
 
 
@@ -251,7 +251,7 @@ def test_own_dset_set_access_through_range_slice():
         coords={'x': sc.array(dims=['x'], values=[1, 2], unit='s')},
         attrs={'a': sc.array(dims=['x'], values=[-100, 200])},
         masks={'m': sc.array(dims=['x'], values=[False, False])})
-    assert sc.identical(dset, sc.Dataset({'da1': expected}))
+    assert sc.identical(dset, sc.Dataset(data={'da1': expected}))
     assert sc.identical(da, expected)
 
 
@@ -264,7 +264,7 @@ def test_own_dset_set_access_through_coords():
 
     expected, *_ = make_data_array()
     expected.coords['x']['x', 0] = -1
-    assert sc.identical(dset, sc.Dataset({'da1': expected}))
+    assert sc.identical(dset, sc.Dataset(data={'da1': expected}))
     assert sc.identical(da, expected)
 
 
@@ -279,5 +279,5 @@ def test_own_dset_set_access_through_range_slice_coords():
     expected, *_ = make_data_array()
     expected['x', 0] = -10
     expected.coords['x']['x', 0] = -1
-    assert sc.identical(dset, sc.Dataset({'da1': expected}))
+    assert sc.identical(dset, sc.Dataset(data={'da1': expected}))
     assert sc.identical(da, expected)

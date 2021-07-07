@@ -6,12 +6,36 @@
 #include "scipp/variable/@OPNAME@.h"
 #include "scipp/variable/transform.h"
 
+#cmakedefine GENERATE_OUT
+
+#cmakedefine PREPROCESS_VARIABLE
+
+#ifdef PREPROCESS_VARIABLE
+@PREPROCESS_VARIABLE@
+#else
+namespace {
+const auto &preprocess(const scipp::variable::Variable &var) noexcept {
+  return var;
+}
+} // namespace
+#endif
+
 using namespace scipp::core;
 
 namespace scipp::variable {
 
 Variable @NAME@(const Variable &a, const Variable &b) {
-  return transform(a, b, element::@OPNAME@, std::string_view("@OPNAME@"));
+  return transform(preprocess(a), preprocess(b), element::@OPNAME@,
+                   std::string_view("@OPNAME@"));
 }
+
+#ifdef GENERATE_OUT
+Variable &@NAME@(const Variable &a, const Variable &b, Variable &out) {
+  transform_in_place(
+      out, preprocess(a), preprocess(b), assign_unary { element::@OPNAME@ },
+      std::string_view("@OPNAME@"));
+  return out;
+}
+#endif
 
 } // namespace scipp::variable

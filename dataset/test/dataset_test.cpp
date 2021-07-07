@@ -3,6 +3,8 @@
 #include "scipp/common/index.h"
 #include "scipp/core/except.h"
 #include "test_macros.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
 #include <numeric>
@@ -292,6 +294,30 @@ TEST(DatasetTest, const_iterators_return_types) {
   const Dataset d;
   ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataArray>));
   ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataArray>));
+}
+
+TEST(DatasetTest, iterators) {
+  DataArray da1(makeVariable<double>(Dims{Dim::X}, Shape{2}));
+  DataArray da2(makeVariable<double>(Dims{Dim::Y}, Shape{2}));
+  da2.coords().set(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2}));
+  Dataset d;
+  d.setData("data1", da1);
+  d.setData("data2", da2);
+
+  const std::vector data_arrays{std::ref(da1), std::ref(da2)};
+  for (auto it = d.begin(); it != d.end(); ++it) {
+    EXPECT_THAT(data_arrays, ::testing::Contains(*it));
+  }
+
+  const std::vector names{"data1", "data2"};
+  for (auto it = d.keys_begin(); it != d.keys_end(); ++it) {
+    EXPECT_THAT(names, ::testing::Contains(*it));
+  }
+
+  for (auto it = d.items_begin(); it != d.items_end(); ++it) {
+    EXPECT_THAT(names, ::testing::Contains(it->first));
+    EXPECT_THAT(data_arrays, ::testing::Contains(it->second));
+  }
 }
 
 TEST(DatasetTest, slice_temporary) {

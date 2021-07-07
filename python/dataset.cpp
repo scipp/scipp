@@ -145,9 +145,10 @@ void init_dataset(py::module &m) {
                       std::unordered_map<std::string, Variable> masks,
                       std::unordered_map<Dim, Variable> attrs,
                       const std::string &name) {
-            return DataArray{data, coords, masks, attrs, name};
+            return DataArray{data, std::move(coords), std::move(masks),
+                             std::move(attrs), name};
           }),
-          py::arg("data"),
+          py::arg("data"), py::kw_only(),
           py::arg("coords") = std::unordered_map<Dim, Variable>{},
           py::arg("masks") = std::unordered_map<std::string, Variable>{},
           py::arg("attrs") = std::unordered_map<Dim, Variable>{},
@@ -193,9 +194,10 @@ void init_dataset(py::module &m) {
           std::visit(visitor, item);
         }
         for (auto &&[dim, coord] : coords)
-          d.setCoord(dim, std::move(coord));
+          d.setCoord(dim, coord);
         return d;
       }),
+      py::kw_only(),
       py::arg("data") =
           std::map<std::string, std::variant<Variable, DataArray>>{},
       py::arg("coords") = std::map<Dim, Variable>{},

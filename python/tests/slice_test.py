@@ -26,7 +26,7 @@ def test_setitem_ellipsis_data_array():
 def test_setitem_ellipsis_dataset():
     var = sc.ones(dims=['x'], shape=[2])
     da = sc.DataArray(data=var)
-    ds = sc.Dataset({'a': da})
+    ds = sc.Dataset(data={'a': da})
     expected = ds + 0.2 * sc.units.one
     ds[...] = 1.2 * sc.units.one
     assert sc.identical(ds, expected)

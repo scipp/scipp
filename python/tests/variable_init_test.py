@@ -150,7 +150,8 @@ def test_create_scalar_dtype_DataArray(dtype):
 
 @pytest.mark.parametrize("dtype", (None, sc.dtype.Dataset))
 def test_create_scalar_dtype_Dataset(dtype):
-    elem = sc.Dataset({'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
+    elem = sc.Dataset(
+        data={'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
     var = sc.Variable(dims=(), values=elem, dtype=dtype)
     assert sc.identical(var.value, elem)
     assert var.dims == []

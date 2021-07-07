@@ -4,7 +4,7 @@ Classes
 =======
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/classes
    :template: scipp-class-template.rst
    :recursive:
 
@@ -20,7 +20,7 @@ Creation functions
 ==================
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/functions
 
    array
    arange
@@ -46,7 +46,7 @@ General
 ~~~~~~~
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/functions
 
    bin
    bins
@@ -69,7 +69,7 @@ Math
 ~~~~
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/functions
 
    abs
    add
@@ -90,7 +90,7 @@ Shape
 ~~~~~
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/functions
 
    broadcast
    concatenate
@@ -104,7 +104,7 @@ Comparison
 Comparison operators compare element-wise and *ignore variances*.
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/functions
 
    less
    greater
@@ -125,7 +125,7 @@ Special-value (`inf` and `nan`) checks.
 `inf` and `nan` in the *variances is ignored*.
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/functions
 
    isnan
    isinf
@@ -140,7 +140,7 @@ Reduction
 Reduction operations are operations to remove one or more dimension, e.g., by performing a sum over all elements along a dimension.
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/functions
 
    all
    any
@@ -158,7 +158,7 @@ Trigonometric
 ~~~~~~~~~~~~~
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/functions
 
    sin
    cos
@@ -172,7 +172,7 @@ Geometric
 ~~~~~~~~~
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/functions
 
    geometry.position
    geometry.rotation_matrix_from_quaternion_coeffs
@@ -184,7 +184,7 @@ Reduction
 ---------
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/functions
 
    groupby
    GroupByDataArray.all
@@ -204,7 +204,7 @@ Other
 -----
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/functions
 
    GroupByDataArray.copy
    GroupByDataset.copy
@@ -217,7 +217,7 @@ It is also known as frequency.
 This can be converted into a counts (frequency) density, e.g., for visualization purposes.
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/functions
 
    counts_to_density
    density_to_counts
@@ -226,7 +226,7 @@ Visualization
 ~~~~~~~~~~~~~
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/functions
 
    show
    table
@@ -238,7 +238,7 @@ Compatibility
 ~~~~~~~~~~~~~
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/functions
 
    to_dict
    from_dict

@@ -21,6 +21,8 @@ Breaking changes
 
 * Changed names of arithmetic functions to match numpy's names: ``plus`` |rarr| :func:`scipp.add`, ``minus`` |rarr| :func:`scipp.subtract`, ``times`` |rarr| :func:`scipp.multiply` `#1999 <https://github.com/scipp/scipp/pull/1999>`_.
 * Changed Variable init method, all arguments are keyword-only, special overloads which default-initialize data were removed `#1994 <https://github.com/scipp/scipp/pull/1994>`_.
+* Made most arguments of ``DataArray`` and ``Dataset`` constructors keyword-only `#2008 <https://github.com/scipp/scipp/pull/2008>`_.
+* ``astype`` and ``to_unit`` now copy the input by default even when no transformation is required, use the new ``copy`` argument to avoid `#2016 <https://github.com/scipp/scipp/pull/2016>`_.
 
 Bugfixes
 ~~~~~~~~
