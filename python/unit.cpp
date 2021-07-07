@@ -60,30 +60,24 @@ std::tuple<units::Unit, int64_t> get_time_unit(const py::buffer &value,
 }
 
 template <>
-std::tuple<scipp::units::Unit, int64_t>
+std::tuple<scipp::units::Unit, scipp::units::Unit>
 common_unit<scipp::core::time_point>(const pybind11::object &values,
                                      const scipp::units::Unit unit) {
-  using opt_unit = std::optional<scipp::units::Unit>;
-  const opt_unit value_unit = values.is_none() || !has_datetime_dtype(values)
-                                  ? opt_unit{}
-                                  : parse_datetime_dtype(values);
-
   if (!temporal_or_dimensionless(unit)) {
     throw std::invalid_argument("Invalid unit for dtype=datetime64: " +
                                 to_string(unit));
   }
-  units::Unit actual_unit = units::one;
-  if (unit != units::one)
-    actual_unit = unit;
-  else if (value_unit.has_value())
-    actual_unit = *value_unit;
 
-  // TODO implement
-  if (value_unit && value_unit != actual_unit) {
-    throw std::runtime_error("Conversion of time units is not implemented.");
+  if (values.is_none() || !has_datetime_dtype(values)) {
+    return std::tuple{unit, unit};
   }
 
-  return {actual_unit, 1};
+  const auto value_unit = parse_datetime_dtype(values);
+  if (unit == units::one) {
+    return std::tuple{value_unit, value_unit};
+  } else {
+    return std::tuple{value_unit, unit};
+  }
 }
 
 std::string to_numpy_time_string(const scipp::units::Unit unit) {
