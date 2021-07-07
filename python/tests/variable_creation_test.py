@@ -172,7 +172,9 @@ def test_array_needs_nonempty_dims():
 def test_zeros_like():
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
     expected = sc.zeros(dims=['x', 'y', 'z'], shape=[1, 2, 3])
-    _compare_properties(sc.zeros_like(var), expected)
+    zeros = sc.zeros_like(var)
+    _compare_properties(zeros, expected)
+    np.testing.assert_array_equal(zeros.values, 0)
 
 
 def test_zeros_like_with_variances():
@@ -186,13 +188,18 @@ def test_zeros_like_with_variances():
                         with_variances=True,
                         unit='m',
                         dtype=sc.dtype.float32)
-    _compare_properties(sc.zeros_like(var), expected)
+    zeros = sc.zeros_like(var)
+    _compare_properties(zeros, expected)
+    np.testing.assert_array_equal(zeros.values, 0)
+    np.testing.assert_array_equal(zeros.variances, 0)
 
 
 def test_ones_like():
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
     expected = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3])
+    ones = sc.ones_like(var)
     _compare_properties(sc.ones_like(var), expected)
+    np.testing.assert_array_equal(ones.values, 1)
 
 
 def test_ones_like_with_variances():
@@ -206,7 +213,10 @@ def test_ones_like_with_variances():
                        with_variances=True,
                        unit='m',
                        dtype=sc.dtype.float32)
-    _compare_properties(sc.ones_like(var), expected)
+    ones = sc.ones_like(var)
+    _compare_properties(ones, expected)
+    np.testing.assert_array_equal(ones.values, 1)
+    np.testing.assert_array_equal(ones.variances, 1)
 
 
 def test_empty_like():
