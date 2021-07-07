@@ -119,6 +119,15 @@ def test_ones_with_dtype_and_unit():
     assert var.unit == 's'
 
 
+def test_ones_dtypes():
+    for dtype in (int, float, bool):
+        assert sc.ones(dims=(), shape=(), dtype=dtype).value == dtype(1)
+    assert sc.ones(dims=(), shape=(), unit='s',
+                   dtype='datetime64').value == np.datetime64(1, 's')
+    with pytest.raises(ValueError):
+        sc.ones(dims=(), shape=(), dtype=str)
+
+
 def test_empty_creates_variable_with_correct_dims_and_shape():
     var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     expected = make_dummy(dims=['x', 'y', 'z'], shape=[1, 2, 3])
