@@ -68,17 +68,21 @@ Variable subspan_view_impl(Var &var, const Dim dim, Args &&... args) {
       var.dtype(), var, dim, args...);
 }
 
+auto make_range(const scipp::index num, const scipp::index stride,
+                const Dim dim) {
+  return cumsum(broadcast(stride * units::one, {dim, num}), dim,
+                CumSumMode::Exclusive);
+}
+
 Variable make_indices(const Variable &var, const Dim dim) {
   auto dims = var.dims();
-  const auto len = dims[dim];
   dims.erase(dim);
-  Dimensions data_dims;
-  for (const auto &label : dims.labels())
-    if (var.strides()[var.dims().index(label)] != 0)
-      data_dims.addInner(label, dims[label]);
-  const auto base = len * units::one;
-  const auto end = cumsum(broadcast(base, data_dims));
-  return broadcast(zip(end - base, end), dims);
+  auto start = scipp::index(0) * units::one;
+  for (const auto &label : dims) {
+    const auto stride = var.strides()[var.dims().index(label)];
+    start = start + make_range(dims[label], stride, label);
+  }
+  return zip(start, start + var.dims()[dim] * units::one);
 }
 
 } // namespace
