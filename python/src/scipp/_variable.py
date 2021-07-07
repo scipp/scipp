@@ -387,8 +387,8 @@ def logspace(dim: str,
 
 
 def arange(dim: str,
-           start: _Union[int, float],
-           stop: _Union[int, float] = None,
+           start: _Union[int, float, _np.datetime64],
+           stop: _Union[int, float, _np.datetime64] = None,
            step: _Union[int, float] = 1,
            *,
            unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
@@ -404,7 +404,7 @@ def arange(dim: str,
     :param dim: Dimension label.
     :param start: Optional, the starting value of the sequence. Default=0.
     :param stop: End of interval. The interval does not include this value,
-      except in some (rare) cases where step is not an integer and floating
+      except in some (rare) cases where step is not an integer and floating-
       point round-off can come into play.
     :param step: Optional, spacing between values. Default=1.
     :param unit: Optional, data unit. Default=dimensionless
