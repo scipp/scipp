@@ -65,6 +65,8 @@ class PlotView2d(PlotView):
         the y axis. We use a small locking mechanism here to trigger only a
         single resampling update by waiting for the y limits to also change.
         """
+        if not self.global_lims:
+            return
         if not self._lim_updated:
             self._lim_updated = True
             return
