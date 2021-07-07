@@ -8,6 +8,8 @@
 
 namespace scipp {
 
+enum class SCIPP_CORE_EXPORT CopyPolicy { Always, TryAvoid };
+
 enum class SCIPP_CORE_EXPORT FillValue {
   Default,
   ZeroNotBool,

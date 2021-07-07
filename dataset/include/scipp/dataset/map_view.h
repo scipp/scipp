@@ -21,20 +21,20 @@ namespace detail {
 using slice_list =
     boost::container::small_vector<std::pair<Slice, scipp::index>, 2>;
 
-static constexpr auto make_key_value = [](auto &&view) {
-  using In = decltype(view);
-  using View =
-      std::conditional_t<std::is_rvalue_reference_v<In>, std::decay_t<In>, In>;
-  return std::pair<std::string, View>(view.name(),
-                                      std::forward<decltype(view)>(view));
+struct make_key_value {
+  template <class T> auto operator()(T &&view) const {
+    using View =
+        std::conditional_t<std::is_rvalue_reference_v<T>, std::decay_t<T>, T>;
+    return std::pair<std::string, View>(view.name(), std::forward<T>(view));
+  }
 };
 
-static constexpr auto make_key = [](auto &&view) -> decltype(auto) {
-  return view.first;
+struct make_key {
+  template <class T> auto operator()(T &&view) const { return view.first; }
 };
 
-static constexpr auto make_value = [](auto &&view) -> decltype(auto) {
-  return view.second;
+struct make_value {
+  template <class T> auto operator()(T &&view) const { return view.second; }
 };
 
 } // namespace detail
@@ -131,23 +131,23 @@ public:
   auto keys_begin() const && = delete;
   /// Return const iterator to the beginning of all keys.
   auto keys_begin() const &noexcept {
-    return boost::make_transform_iterator(begin(), detail::make_key);
+    return boost::make_transform_iterator(begin(), detail::make_key{});
   }
   auto keys_end() const && = delete;
   /// Return const iterator to the end of all keys.
   auto keys_end() const &noexcept {
-    return boost::make_transform_iterator(end(), detail::make_key);
+    return boost::make_transform_iterator(end(), detail::make_key{});
   }
 
   auto values_begin() const && = delete;
   /// Return const iterator to the beginning of all values.
   auto values_begin() const &noexcept {
-    return boost::make_transform_iterator(begin(), detail::make_value);
+    return boost::make_transform_iterator(begin(), detail::make_value{});
   }
   auto values_end() const && = delete;
   /// Return const iterator to the end of all values.
   auto values_end() const &noexcept {
-    return boost::make_transform_iterator(end(), detail::make_value);
+    return boost::make_transform_iterator(end(), detail::make_value{});
   }
 
   bool operator==(const Dict &other) const;

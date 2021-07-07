@@ -62,6 +62,12 @@ template <typename T> void bind_nan_to_num(py::module &m) {
 void init_unary(py::module &m) {
   bind_norm<Variable>(m);
   bind_nan_to_num<Variable>(m);
-  m.def("to_unit", variable::to_unit, py::arg("x"), py::arg("unit"),
-        py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "to_unit",
+      [](const Variable &x, const units::Unit unit, const bool copy) {
+        return variable::to_unit(
+            x, unit, copy ? CopyPolicy::Always : CopyPolicy::TryAvoid);
+      },
+      py::arg("x"), py::arg("unit"), py::arg("copy") = true,
+      py::call_guard<py::gil_scoped_release>());
 }
