@@ -61,7 +61,7 @@ class DateFormatter:
     def formatter(self,
                   val,
                   pos,
-                  dim=None,
+                  axis=None,
                   get_axis_bounds=None,
                   set_axis_label=None):
         d = (self.offset + (int(val) * self.offset.unit)).value
@@ -69,9 +69,9 @@ class DateFormatter:
         if pos is None:  # Return full string, not split into label + offset
             return dt
         trim = 0
-        bounds = get_axis_bounds(dim)
+        bounds = get_axis_bounds(axis)
         diff = (bounds[1] - bounds[0]) * self.offset.unit
-        label = dim
+        label = self.dim
         if pos == 0:
             self.indicators.clear()
 
@@ -132,7 +132,7 @@ class DateFormatter:
         if pos == 1:
             if trim > 0:
                 label += f" ({dt[:trim]})"
-            set_axis_label(dim, label)
+            set_axis_label(axis, label)
         return string
 
     def check_for_transition(self, pos, string, date_min, date_max, dt,

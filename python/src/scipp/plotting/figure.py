@@ -133,7 +133,7 @@ class PlotFigure:
                     if "need_callbacks" in formatter:
                         from functools import partial
                         form = partial(form,
-                                       dim=axis,
+                                       axis=axis,
                                        get_axis_bounds=self.get_axis_bounds,
                                        set_axis_label=self.set_axis_label)
                     self.axformatter[axis][key] = ticker.FuncFormatter(form)
