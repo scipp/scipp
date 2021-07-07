@@ -215,7 +215,7 @@ template <class T> struct MakeVariable {
                                           Variances(make_element_array<T>(
                                               dims, variances, values_unit)));
     variable.setUnit(values_unit);
-    return to_unit(variable, final_unit);
+    return to_unit(variable, final_unit, CopyPolicy::TryAvoid);
   }
 };
 
