@@ -151,6 +151,20 @@ def test_empty_with_dtype_and_unit():
     assert var.unit == 's'
 
 
+def test_empty_dtypes():
+    for dtype in (int, float, bool):
+        var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=dtype)
+        expected = make_dummy(dims=['x', 'y', 'z'],
+                              shape=[1, 2, 3],
+                              dtype=dtype)
+        _compare_properties(var, expected)
+    var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype='datetime64')
+    expected = sc.Variable(dims=['x', 'y', 'z'],
+                           values=np.full([1, 2, 3], 83),
+                           dtype='datetime64')
+    _compare_properties(var, expected)
+
+
 def test_array_creates_correct_variable():
     dims = ['x']
     values = [1, 2, 3]
