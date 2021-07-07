@@ -77,8 +77,9 @@ scipp::index size_of(const Dataset &dataset, const SizeofTag tag) {
   return size;
 }
 
-DataArray astype(const DataArray &var, const DType type) {
-  return DataArray(astype(var.data(), type), var.coords(), var.masks(),
+DataArray astype(const DataArray &var, const DType type,
+                 const CopyPolicy copy) {
+  return DataArray(astype(var.data(), type, copy), var.coords(), var.masks(),
                    var.attrs(), var.name());
 }
 

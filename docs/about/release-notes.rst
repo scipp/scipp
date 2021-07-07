@@ -26,6 +26,7 @@ Breaking changes
 * The ``axes`` keyword arg of ``plot`` has been removed.
   Use ``labels`` to define labels and ``transpose`` to transpose instead `#2018 <https://github.com/scipp/scipp/pull/2018>`_.
 * The ``redraw`` method of plots does not support replacing data variables of data arrays any more, but only updates of data values `#2018 <https://github.com/scipp/scipp/pull/2018>`_.
+* ``astype`` and ``to_unit`` now copy the input by default even when no transformation is required, use the new ``copy`` argument to avoid `#2016 <https://github.com/scipp/scipp/pull/2016>`_.
 
 Bugfixes
 ~~~~~~~~

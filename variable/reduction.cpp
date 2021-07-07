@@ -105,7 +105,7 @@ Variable &mean_impl(const Variable &var, const Dim dim, const Variable &count,
     throw except::TypeError(
         "Cannot calculate mean in-place when output dtype is integer");
   sum(var, dim, out);
-  out *= reciprocal(astype(count, core::dtype<double>));
+  out *= reciprocal(astype(count, core::dtype<double>, CopyPolicy::TryAvoid));
   return out;
 }
 
@@ -115,8 +115,7 @@ Variable &nanmean_impl(const Variable &var, const Dim dim,
     throw except::TypeError(
         "Cannot calculate nanmean in-place when output dtype is integer");
   nansum(var, dim, out);
-  auto scale = reciprocal(astype(count, core::dtype<double>));
-  out *= scale;
+  out *= reciprocal(astype(count, core::dtype<double>, CopyPolicy::TryAvoid));
   return out;
 }
 

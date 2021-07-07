@@ -42,7 +42,10 @@ def isneginf(x: _cpp.Variable) -> _cpp.Variable:
     return _call_cpp_func(_cpp.isneginf, x)
 
 
-def to_unit(x: _cpp.Variable, unit: _Union[_cpp.Unit, str]) -> _cpp.Variable:
+def to_unit(x: _cpp.Variable,
+            unit: _Union[_cpp.Unit, str],
+            *,
+            copy: bool = True) -> _cpp.Variable:
     """
     Convert the variable to a different unit.
 
@@ -53,7 +56,8 @@ def to_unit(x: _cpp.Variable, unit: _Union[_cpp.Unit, str]) -> _cpp.Variable:
         var = 1.2 * sc.Unit('m')
         var_in_mm = sc.to_unit(var, unit='mm')
 
-    If the unit us unchanged the object is returned without making a deep copy.
+    If the unit us unchanged and ``copy`` is `False`, the object
+    is returned without making a deep copy.
 
     Raises an error if the input unit is not compatible with the provided
     unit, e.g., `m` cannot be converted to `s`.
@@ -63,5 +67,7 @@ def to_unit(x: _cpp.Variable, unit: _Union[_cpp.Unit, str]) -> _cpp.Variable:
 
     :param x: Input variable.
     :param unit: Desired target unit.
+    :param copy: If `False`, return the input object if possible.
+                 If `True`, the function always returns a new object.
     """
-    return _call_cpp_func(_cpp.to_unit, x=x, unit=unit)
+    return _call_cpp_func(_cpp.to_unit, x=x, unit=unit, copy=copy)
