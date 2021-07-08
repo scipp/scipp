@@ -4,12 +4,12 @@
 /// @author Simon Heybrock
 #include <algorithm>
 
-#include "scipp/dataset/histogram.h"
 #include "scipp/core/element/histogram.h"
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
+#include "scipp/dataset/histogram.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/transform_subspan.h"
