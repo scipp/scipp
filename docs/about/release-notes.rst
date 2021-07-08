@@ -32,6 +32,7 @@ Breaking changes
 
 .. include:: <isonum.txt>
 
+* Keyword arg ``to`` of ``flatten`` function renamed to ``dim``, far consistency with ``fold``.
 * Changed names of arithmetic functions to match numpy's names: ``plus`` |rarr| :func:`scipp.add`, ``minus`` |rarr| :func:`scipp.subtract`, ``times`` |rarr| :func:`scipp.multiply` `#1999 <https://github.com/scipp/scipp/pull/1999>`_.
 * Changed Variable init method, all arguments are keyword-only, special overloads which default-initialize data were removed `#1994 <https://github.com/scipp/scipp/pull/1994>`_.
 * The ``axes`` keyword arg of ``plot`` has been removed.
