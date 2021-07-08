@@ -25,8 +25,9 @@ def test_astype():
                       values=np.array([1, 2, 3, 4], dtype=np.int64))
     assert var.dtype == sc.dtype.int64
 
-    var_as_float = var.astype(sc.dtype.float32)
-    assert var_as_float.dtype == sc.dtype.float32
+    for target_dtype in (sc.dtype.float64, float, 'float64'):
+        var_as_float = var.astype(target_dtype)
+        assert var_as_float.dtype == sc.dtype.float64
 
 
 def test_astype_bad_conversion():
@@ -34,8 +35,9 @@ def test_astype_bad_conversion():
                       values=np.array([1, 2, 3, 4], dtype=np.int64))
     assert var.dtype == sc.dtype.int64
 
-    with pytest.raises(sc.DTypeError):
-        var.astype(sc.dtype.string)
+    for target_dtype in (sc.dtype.string, str, 'str'):
+        with pytest.raises(sc.DTypeError):
+            var.astype(target_dtype)
 
 
 def test_operation_with_scalar_quantity():
