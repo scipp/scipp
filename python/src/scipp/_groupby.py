@@ -11,6 +11,7 @@ from ._cpp_wrapper_util import call_func as _call_cpp_func
 def groupby(
     data: Union[_cpp.DataArray, _cpp.Dataset],
     group: Union[_cpp.Variable, str],
+    *,
     bins: Optional[_cpp.Variable] = None
 ) -> Union[_cpp.GroupByDataArray, _cpp.GroupByDataset]:
     """Group dataset or data array based on values of specified labels.
@@ -18,7 +19,7 @@ def groupby(
     :param data: Input data to reduce.
     :param group: Name of labels to use for grouping
       or Variable to use for grouping
-    :param bins: Optional Bins for grouping label values.
+    :param bins: Optional bins for grouping label values.
     :return: GroupBy helper object.
     """
     if bins is None:

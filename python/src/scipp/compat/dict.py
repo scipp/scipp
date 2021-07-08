@@ -5,14 +5,14 @@
 from __future__ import annotations
 
 from .._variable import vector, vectors, matrix, matrices
-from ..typing import DatasetLike
+from ..typing import VariableLike
 from .._scipp import core as sc
 
 import numpy as np
 from collections import defaultdict
 
 
-def to_dict(scipp_obj: DatasetLike) -> dict:
+def to_dict(scipp_obj: VariableLike) -> dict:
     """
     Convert a scipp object (Variable, DataArray or Dataset) to a python dict.
 
@@ -97,7 +97,7 @@ def _dims_to_strings(dims):
     return [str(dim) for dim in dims]
 
 
-def from_dict(dict_obj: dict) -> DatasetLike:
+def from_dict(dict_obj: dict) -> VariableLike:
     """
     Convert a python dict to a scipp Variable, DataArray or Dataset.
     If the input keys contain both `'coords'` and `'data'`, then a DataArray is

@@ -55,8 +55,8 @@ extensions = [
 autodoc_typehints = 'description'
 
 autodoc_type_aliases = {
-    'DataArrayLike': 'DataArrayLike',
-    'DatasetLike': 'DatasetLike',
+    'VariableLike': 'VariableLike',
+    'MetaDataMap': 'MetaDataMap',
 }
 
 rst_epilog = f"""

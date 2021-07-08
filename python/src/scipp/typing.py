@@ -43,9 +43,9 @@ def has_numeric_type(obj: _std_typing.Any) -> bool:
     return (not has_vector_type(obj)) and (not has_string_type(obj))
 
 
-#: Any object that behaves like a scipp.DataArray in most operations.
-#: This explicitly excludes Datasets.
-DataArrayLike = _std_typing.Union[sc.Variable, sc.DataArray]
+#: Any object that behaves like a scipp.Variable,
+#:  that is an array with labeled dimensions.
+VariableLike = _std_typing.Union[sc.Variable, sc.DataArray, sc.Dataset]
 
-#: Any object that behaves like a scipp.Dataset in most operations.
-DatasetLike = _std_typing.Union[DataArrayLike, sc.Dataset]
+#: dict-like object mapping dimension labels to Variables.
+MetaDataMap = _std_typing.MutableMapping[str, sc.Variable]
