@@ -203,10 +203,12 @@ constexpr auto check_inplace = [](auto op, auto a, auto b, auto expected) {
 };
 
 TEST(ComparisonTest, min_max_support_time_point) {
-  std::get<core::time_point>(decltype(max_equals)::types{});
-  std::get<core::time_point>(decltype(min_equals)::types{});
-  std::get<core::time_point>(decltype(nanmax_equals)::types{});
-  std::get<core::time_point>(decltype(nanmin_equals)::types{});
+  static_cast<void>(std::get<core::time_point>(decltype(max_equals)::types{}));
+  static_cast<void>(std::get<core::time_point>(decltype(min_equals)::types{}));
+  static_cast<void>(
+      std::get<core::time_point>(decltype(nanmax_equals)::types{}));
+  static_cast<void>(
+      std::get<core::time_point>(decltype(nanmin_equals)::types{}));
 }
 
 TEST(ComparisonTest, max_equals) {
