@@ -25,6 +25,7 @@ set(INC_FILES
     include/scipp/dataset/shape.h
     include/scipp/dataset/sort.h
     include/scipp/dataset/string.h
+    include/scipp/dataset/to_unit.h
 )
 
 set(SRC_FILES
@@ -47,6 +48,7 @@ set(SRC_FILES
     slice.cpp
     sort.cpp
     string.cpp
+    to_unit.cpp
     variable_instantiate_bin_elements.cpp
     variable_instantiate_dataset.cpp
     variable_reduction.cpp

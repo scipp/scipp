@@ -4,8 +4,10 @@
 
 #include "scipp/dataset/data_array.h"
 #include "scipp/dataset/except.h"
+#include "scipp/dataset/to_unit.h"
 #include "scipp/dataset/util.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/to_unit.h"
 
 #include "test_macros.h"
 
@@ -97,6 +99,16 @@ TEST_F(DataArrayTest, astype) {
       {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6})}});
   const auto x = astype(a, dtype<double>);
   EXPECT_EQ(x.data(), astype(a.data(), dtype<double>));
+}
+
+TEST_F(DataArrayTest, to_unit) {
+  DataArray a(makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                   Values{1.0, 2.0, 3.0}, units::m),
+              {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3},
+                                          Values{4, 5, 6}, units::s)}});
+  const auto x = to_unit(a, units::mm);
+  EXPECT_EQ(x.data(), to_unit(a.data(), units::mm));
+  EXPECT_EQ(x.coords()[Dim::X].unit(), units::s);
 }
 
 TEST_F(DataArrayTest, view) {
