@@ -9,6 +9,8 @@
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
+#include "scipp/variable/arithmetic.h"
+#include "scipp/variable/comparison.h"
 #include "scipp/variable/shape.h"
 
 using namespace scipp;
@@ -252,4 +254,35 @@ TEST(HistogramTest, dense_vs_binned) {
     EXPECT_EQ(histogram(table, edges),
               histogram(binned_y.slice({Dim::Y, 0}), edges));
   }
+}
+
+struct Histogram1DTest : public ::testing::Test {
+protected:
+  Histogram1DTest() {
+    data = makeVariable<double>(Dims{Dim::X}, Shape{10},
+                                Values{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    coord = makeVariable<double>(Dims{Dim::X}, Shape{10},
+                                 Values{1, 2, 1, 2, 3, 4, 3, 2, 1, 1});
+    mask = less(data, 4.0 * units::one);
+  }
+  Variable data;
+  Variable coord;
+  Variable mask;
+};
+
+TEST_F(Histogram1DTest, coord_name_matches_dim) {
+  DataArray da(data, {{Dim::X, coord}}, {{"mask", mask}});
+  const auto edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  EXPECT_EQ(histogram(da, edges).data(),
+            makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{19, 12, 12}));
+}
+
+TEST_F(Histogram1DTest, coord_name_differs_dim) {
+  // Ensure `histogram` considers masks that depend on Dim::X rather than Dim::Y
+  DataArray da(data, {{Dim::Y, coord}}, {{"mask", mask}});
+  const auto edges =
+      makeVariable<double>(Dims{Dim::Y}, Shape{4}, Values{1, 2, 3, 4});
+  EXPECT_EQ(histogram(da, edges).data(),
+            makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{19, 12, 12}));
 }

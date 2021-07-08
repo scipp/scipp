@@ -39,13 +39,12 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
     const auto data_dim = events.dims().inner();
     result = apply_and_drop_dim(
         events,
-        [](const DataArray &events_, const Dim data_dim_,
-           const Variable &binEdges_) {
-          const auto dim_ = binEdges_.dims().inner();
-          const auto data = masked_data(events_, dim_);
+        [dim](const DataArray &events_, const Dim data_dim_,
+              const Variable &binEdges_) {
+          const auto data = masked_data(events_, data_dim_);
           return transform_subspan(
-              events_.dtype(), dim_, binEdges_.dims()[dim_] - 1,
-              subspan_view(events_.coords()[dim_], data_dim_),
+              events_.dtype(), dim, binEdges_.dims()[dim] - 1,
+              subspan_view(events_.coords()[dim], data_dim_),
               subspan_view(data, data_dim_), binEdges_, element::histogram,
               "histogram");
         },
