@@ -286,3 +286,65 @@ TEST_F(Histogram1DTest, coord_name_differs_dim) {
   EXPECT_EQ(histogram(da, edges).data(),
             makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{19, 12, 12}));
 }
+
+struct Histogram2DTest : public ::testing::Test {
+protected:
+  Histogram2DTest() {
+    data = makeVariable<double>(
+        Dims{Dim::Y, Dim::X}, Shape{3, 4},
+        Values{11, 12, 13, 14, 21, 22, 23, 24, 31, 32, 33, 34});
+    coord = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
+                                 Values{1, 2, 1, 2, 3, 4, 3, 2, 1, 1, 2, 3});
+  }
+  Variable data;
+  Variable coord;
+};
+
+TEST_F(Histogram2DTest, outer_1d_coord) {
+  DataArray da(data, {{Dim::Y, coord.slice({Dim::X, 0})}});
+  // data:
+  // 11, 12, 13, 14
+  // 21, 22, 23, 24
+  // 31, 32, 33, 34
+  // coord: 1, 3, 1 => [sum of rows 1 and 3, row 2]
+  const auto edges =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1.0, 2.5, 5.0});
+  EXPECT_EQ(histogram(da, edges).data(),
+            makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 2},
+                                 Values{42, 21, 44, 22, 46, 23, 48, 24}));
+}
+
+TEST_F(Histogram2DTest, outer_2d_coord) {
+  DataArray da(data, {{Dim::Y, coord}});
+  // data:
+  // 11, 12, 13, 14
+  // 21, 22, 23, 24
+  // 31, 32, 33, 34
+  // coord:
+  // 1, 2, 1, 2
+  // 3, 4, 3, 2
+  // 1, 1, 2, 3
+  const auto edges =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1.0, 2.5, 5.0});
+  EXPECT_EQ(histogram(da, edges).data(),
+            makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 2},
+                                 Values{42, 21, 44, 22, 46, 23, 38, 34}));
+}
+
+TEST_F(Histogram2DTest, outer_2d_coord_tranposed) {
+  // Histogramming dim is outer dim of data but inner dim of coord in `da2`
+  DataArray da1(data, {{Dim::Y, coord}});
+  DataArray da2(data, {{Dim::Y, copy(transpose(coord))}});
+  const auto edges =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1.0, 2.5, 5.0});
+  EXPECT_EQ(histogram(da1, edges), histogram(da2, edges));
+}
+
+TEST_F(Histogram2DTest, noncontiguous_slice) {
+  DataArray da(data, {{Dim::Y, coord}});
+  const auto edges =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1.0, 2.5, 5.0});
+  // 1d histogram but along Dim::Y which has stride 4 since based on slice
+  const auto slice = da.slice({Dim::X, 0});
+  EXPECT_EQ(histogram(slice, edges), histogram(copy(slice), edges));
+}
