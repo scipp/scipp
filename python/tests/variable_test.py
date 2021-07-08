@@ -32,6 +32,7 @@ def test_astype():
         assert var_as_float.dtype == sc.dtype.float64
         assert var_as_float.unit == sc.units.s
 
+
 def test_astype_bad_conversion():
     var = sc.Variable(dims=['x'],
                       values=np.array([1, 2, 3, 4], dtype=np.int64))
@@ -40,6 +41,22 @@ def test_astype_bad_conversion():
     for target_dtype in (sc.dtype.string, str, 'str'):
         with pytest.raises(sc.DTypeError):
             var.astype(target_dtype)
+
+
+def test_astype_datetime():
+    var = sc.arange('x', np.datetime64(1, 's'), np.datetime64(5, 's'))
+    assert var.dtype == sc.dtype.datetime64
+    assert var.unit == sc.units.s
+
+    for target_dtype in (sc.dtype.datetime64, np.datetime64, 'datetime64'):
+        same = var.astype(target_dtype)
+        assert same.dtype == sc.dtype.datetime64
+        assert same.unit == sc.units.s
+
+    in_microseconds = var.astype('datetime64[us]')
+    assert in_microseconds.dtype == sc.dtype.datetime64
+    assert in_microseconds.unit == sc.units.us
+    assert sc.identical(in_microseconds, sc.to_unit(var, 'us'))
 
 
 def test_operation_with_scalar_quantity():
