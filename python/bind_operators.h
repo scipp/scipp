@@ -4,13 +4,16 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "dtype.h"
 #include "pybind11.h"
 #include "scipp/dataset/arithmetic.h"
 #include "scipp/dataset/generated_comparison.h"
 #include "scipp/dataset/generated_logical.h"
+#include "scipp/dataset/to_unit.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/logical.h"
+#include "scipp/variable/to_unit.h"
 
 namespace py = pybind11;
 
@@ -42,13 +45,18 @@ template <class T, class... Ignored>
 void bind_astype(py::class_<T, Ignored...> &c) {
   c.def(
       "astype",
-      [](const T &self, const scipp::DType type, const bool copy) {
-        return astype(self, type,
-                      copy ? scipp::CopyPolicy::Always
-                           : scipp::CopyPolicy::TryAvoid);
+      [](const T &self, const py::object &type, const bool copy) {
+        const auto [scipp_dtype, dtype_unit] =
+            cast_dtype_and_unit(type, std::nullopt);
+        const auto unit =
+            dtype_unit == scipp::units::one ? self.unit() : dtype_unit;
+        [[maybe_unused]] py::gil_scoped_release release;
+        return to_unit(astype(self, scipp_dtype,
+                              copy ? scipp::CopyPolicy::Always
+                                   : scipp::CopyPolicy::TryAvoid),
+                       unit, scipp::CopyPolicy::TryAvoid);
       },
       py::arg("type"), py::kw_only(), py::arg("copy") = true,
-      py::call_guard<py::gil_scoped_release>(),
       R"(
         Converts a Variable or DataArray to a different dtype.
 
