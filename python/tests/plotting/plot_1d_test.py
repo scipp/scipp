@@ -323,3 +323,10 @@ def test_plot_redraw_int64():
     p.redraw()
     assert p.view.figure._lines[''].data.get_ydata()[2] == int(50.0 *
                                                                np.sin(2.0))
+
+
+def test_scale_arg_subplots_independent_dims():
+    d = sc.Dataset()
+    d['a'] = sc.DataArray(sc.arange('x', 10), coords={'x': sc.arange('x', 10)})
+    d['b'] = sc.DataArray(sc.arange('y', 5), coords={'y': sc.arange('y', 5)})
+    d.plot(scale={'x': 'log'}).close()

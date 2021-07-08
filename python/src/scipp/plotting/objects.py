@@ -250,7 +250,8 @@ class Plot:
         if norm:
             self._tool_button_states['toggle_norm'] = True
         for dim in {} if scale is None else scale:
-            self._tool_button_states[f'log_{dim}'] = scale[dim] == 'log'
+            if dim in self.dims:
+                self._tool_button_states[f'log_{dim}'] = scale[dim] == 'log'
 
         errorbars = _make_errorbar_params(scipp_obj_dict, errorbars)
         figure.errorbars = errorbars
