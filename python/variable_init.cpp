@@ -25,27 +25,6 @@ using namespace scipp::variable;
 namespace py = pybind11;
 
 namespace {
-std::tuple<DType, units::Unit>
-cast_dtype_and_unit(const py::object &dtype,
-                    const std::optional<units::Unit> unit) {
-  const auto scipp_dtype = ::scipp_dtype(dtype);
-  if (scipp_dtype == core::dtype<core::time_point>) {
-    units::Unit deduced_unit = parse_datetime_dtype(dtype);
-    if (unit.has_value()) {
-      if (deduced_unit != units::one && *unit != deduced_unit) {
-        throw std::invalid_argument(format(
-            "The unit encoded in the dtype (", deduced_unit,
-            ") conflicts with the explicitly specified unit (", *unit, ")."));
-      } else {
-        deduced_unit = *unit;
-      }
-    }
-    return std::tuple{scipp_dtype, deduced_unit};
-  } else {
-    return std::tuple{scipp_dtype, unit.value_or(units::one)};
-  }
-}
-
 bool is_empty(const py::object &sequence) {
   if (py::isinstance<py::buffer>(sequence)) {
     return sequence.attr("ndim").cast<scipp::index>() == 0;

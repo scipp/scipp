@@ -111,6 +111,27 @@ scipp::core::DType scipp_dtype(const py::object &type) {
   }
 }
 
+std::tuple<scipp::core::DType, scipp::units::Unit>
+cast_dtype_and_unit(const pybind11::object &dtype,
+                    const std::optional<scipp::units::Unit> unit) {
+  const auto scipp_dtype = ::scipp_dtype(dtype);
+  if (scipp_dtype == core::dtype<core::time_point>) {
+    units::Unit deduced_unit = parse_datetime_dtype(dtype);
+    if (unit.has_value()) {
+      if (deduced_unit != units::one && *unit != deduced_unit) {
+        throw std::invalid_argument(
+            format("The unit encoded in the dtype (", deduced_unit,
+                   ") conflicts with the given unit (", *unit, ")."));
+      } else {
+        deduced_unit = *unit;
+      }
+    }
+    return std::tuple{scipp_dtype, deduced_unit};
+  } else {
+    return std::tuple{scipp_dtype, unit.value_or(units::one)};
+  }
+}
+
 void ensure_conversion_possible(const DType from, const DType to,
                                 const std::string &data_name) {
   if (from == to || (core::is_fundamental(from) && core::is_fundamental(to)) ||
