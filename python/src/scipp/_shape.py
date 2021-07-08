@@ -82,6 +82,7 @@ def concatenate(x: VariableLike, y: VariableLike, dim: str) -> VariableLike:
 
 
 def fold(x: VariableLike,
+         *,
          dim: str,
          sizes: Optional[Dict[str, int]] = None,
          dims: Optional[Union[List[str], Tuple[str]]] = None,
@@ -140,9 +141,12 @@ def fold(x: VariableLike,
         return _call_cpp_func(_cpp.fold, x, dim, dict(zip(dims, shape)))
 
 
-def flatten(x: VariableLike,
-            dims: Optional[Union[List[str], Tuple[str]]] = None,
-            to: Optional[str] = None) -> VariableLike:
+def flatten(
+    x: VariableLike,
+    *,
+    to: str,
+    dims: Optional[Union[List[str], Tuple[str]]] = None,
+) -> VariableLike:
     """Flatten multiple dimensions of a variable or data array into a single
     dimension. If dims is omitted, then we flatten all of the inputs dimensions
     into a single dim.
@@ -198,12 +202,6 @@ def flatten(x: VariableLike,
                                   float64  [dimensionless]  (u)  [0.000000, 0.100000, ..., 0.400000, 0.500000]
 
     """
-    if to is None:
-        # Note that this is a result of the fact that we want to support
-        # calling flatten without kwargs, and that in this case it semantically
-        # makes more sense for the dims that we want to flatten to come first
-        # in the argument list.
-        raise RuntimeError("The final flattened dimension is required.")
     if dims is None:
         dims = x.dims
     return _call_cpp_func(_cpp.flatten, x, dims, to)
