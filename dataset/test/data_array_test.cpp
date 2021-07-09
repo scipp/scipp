@@ -4,9 +4,6 @@
 
 #include "scipp/dataset/data_array.h"
 #include "scipp/dataset/except.h"
-#include "scipp/dataset/to_unit.h"
-#include "scipp/dataset/util.h"
-#include "scipp/variable/operations.h"
 #include "scipp/variable/to_unit.h"
 
 #include "test_macros.h"
@@ -91,64 +88,6 @@ TEST_F(DataArrayTest, shadow_attr) {
   EXPECT_THROW_DISCARD(a.meta(), except::DataArrayError);
   a.attrs().erase(Dim::X);
   EXPECT_EQ(a.meta()[Dim::X], var1);
-}
-
-namespace {
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
-void check_astype(const DataArray &original, const DType target_dtype,
-                  const CopyPolicy copy_policy, const bool expect_copy) {
-  const auto converted = astype(original, target_dtype, copy_policy);
-
-  EXPECT_EQ(converted.data(), astype(original.data(), target_dtype));
-  EXPECT_EQ(converted.masks(), original.masks());
-
-  EXPECT_TRUE(converted.coords()[Dim::X].is_same(original.coords()[Dim::X]));
-  EXPECT_EQ(converted.data().is_same(original.data()), !expect_copy);
-  EXPECT_EQ(converted.masks()["m"].is_same(original.masks()["m"]),
-            !expect_copy);
-}
-} // namespace
-
-TEST_F(DataArrayTest, astype) {
-  DataArray a(
-      makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}),
-      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6})}},
-      {{"m", makeVariable<bool>(Dims{Dim::X}, Shape{3},
-                                Values{false, true, true})}});
-  check_astype(a, dtype<double>, CopyPolicy::TryAvoid, true);
-  check_astype(a, dtype<double>, CopyPolicy::Always, true);
-  check_astype(a, dtype<int>, CopyPolicy::TryAvoid, false);
-  check_astype(a, dtype<int>, CopyPolicy::Always, true);
-}
-
-namespace {
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
-void check_to_unit(const DataArray &original, const units::Unit target_unit,
-                   const CopyPolicy copy_policy, const bool expect_copy) {
-  const auto converted = to_unit(original, target_unit, copy_policy);
-
-  EXPECT_EQ(converted.data(), to_unit(original.data(), target_unit));
-  EXPECT_EQ(converted.coords()[Dim::X].unit(), units::s);
-  EXPECT_EQ(converted.masks(), original.masks());
-
-  EXPECT_TRUE(converted.coords()[Dim::X].is_same(original.coords()[Dim::X]));
-  EXPECT_EQ(converted.data().is_same(original.data()), !expect_copy);
-  EXPECT_EQ(converted.masks()["m"].is_same(original.masks()["m"]),
-            !expect_copy);
-}
-} // namespace
-
-TEST_F(DataArrayTest, to_unit) {
-  DataArray a(makeVariable<double>(Dims{Dim::X}, Shape{3},
-                                   Values{1.0, 2.0, 3.0}, units::m),
-              {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3},
-                                          Values{4, 5, 6}, units::s)}},
-              {{"m", makeVariable<bool>(Dims{Dim::X}, Shape{3},
-                                        Values{true, false, true})}});
-  check_to_unit(a, units::mm, CopyPolicy::TryAvoid, true);
-  check_to_unit(a, units::mm, CopyPolicy::Always, true);
-  check_to_unit(a, units::m, CopyPolicy::TryAvoid, false);
-  check_to_unit(a, units::m, CopyPolicy::Always, true);
 }
 
 TEST_F(DataArrayTest, view) {
