@@ -51,7 +51,7 @@ def main(prefix='install', build_dir='build', source_dir='.'):
         '-DCMAKE_INSTALL_PREFIX': prefix,
         '-DWITH_CTEST': 'OFF',
         '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'OFF',
-        '-DCMAKE_BUILD_TYPE':'Debug'
+        '-DCMAKE_BUILD_TYPE': 'Debug'
     }
 
     if platform == 'darwin':
@@ -98,15 +98,16 @@ def main(prefix='install', build_dir='build', source_dir='.'):
 
     # Compile benchmarks, C++ tests, and python library
     for target in ['install']:
-        run_command(['cmake', '--build', '.', '--target', target, '--parallel', '6'] +
-                    build_flags,
-                    shell=shell)
+        run_command(
+            ['cmake', '--build', '.', '--target', target, '--parallel', '6'] +
+            build_flags,
+            shell=shell)
 
     # Run C++ tests
-    #for test in [
+    # for test in [
     #        'scipp-common-test', 'scipp-units-test', 'scipp-core-test',
     #        'scipp-variable-test', 'scipp-dataset-test'
-    #]:
+    # ]:
     #    run_command([os.path.join('bin', build_config, test)], shell=shell)
 
 
