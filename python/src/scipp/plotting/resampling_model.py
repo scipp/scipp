@@ -8,7 +8,14 @@ from .tools import to_bin_edges
 
 
 def _resample(array, dim, edges):
-    if array.unit == sc.units.counts:
+    # TODO Note that there are some inconsistencies here and in `rebin`. Should
+    # dimensionless be handled like counts? `rebin` does, but at some point we
+    # had decided that the plotting code should not. Furthermore, `rebin`
+    # handling `bool` as "non-counts", i.e., it does not sum but "average"
+    # (using `or`). What we need here works currently, since masks are
+    # dimensionless and we want `bool` as output, but this needs to be
+    # revisited.
+    if array.unit == sc.units.counts or array.unit == sc.units.dimensionless:
         return sc.rebin(array, dim, edges)
     if array.dtype == sc.dtype.float64:
         array = array.copy()
