@@ -50,7 +50,8 @@ def main(prefix='install', build_dir='build', source_dir='.'):
         '-DPYTHON_EXECUTABLE': shutil.which("python"),
         '-DCMAKE_INSTALL_PREFIX': prefix,
         '-DWITH_CTEST': 'OFF',
-        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'ON'
+        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'OFF',
+        '-DCMAKE_BUILD_TYPE':'Debug'
     }
 
     if platform == 'darwin':
@@ -96,17 +97,17 @@ def main(prefix='install', build_dir='build', source_dir='.'):
     run_command(['cmake', '-B', '.', '-S', source_dir, '-LA'], shell=shell)
 
     # Compile benchmarks, C++ tests, and python library
-    for target in ['all-benchmarks', 'all-tests', 'install']:
-        run_command(['cmake', '--build', '.', '--target', target] +
+    for target in ['install']:
+        run_command(['cmake', '--build', '.', '--target', target, '--parallel', '6'] +
                     build_flags,
                     shell=shell)
 
     # Run C++ tests
-    for test in [
-            'scipp-common-test', 'scipp-units-test', 'scipp-core-test',
-            'scipp-variable-test', 'scipp-dataset-test'
-    ]:
-        run_command([os.path.join('bin', build_config, test)], shell=shell)
+    #for test in [
+    #        'scipp-common-test', 'scipp-units-test', 'scipp-core-test',
+    #        'scipp-variable-test', 'scipp-dataset-test'
+    #]:
+    #    run_command([os.path.join('bin', build_config, test)], shell=shell)
 
 
 if __name__ == '__main__':
