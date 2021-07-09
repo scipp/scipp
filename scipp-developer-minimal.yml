@@ -11,6 +11,7 @@ channels:
 dependencies:
   # Build
   - ninja
+  - tbb-devel
   - conan
 
   # Run

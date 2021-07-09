@@ -60,8 +60,8 @@ generate_export_header(${TARGET_NAME})
 target_link_libraries(
   ${TARGET_NAME} PUBLIC scipp-common scipp-units CONAN_PKG::boost CONAN_PKG::eigen
 )
-if(NOT DISABLE_MULTI_THREADING)
-  target_link_libraries(${TARGET_NAME} PUBLIC CONAN_PKG::tbb)
+if(TBB_FOUND AND NOT DISABLE_MULTI_THREADING)
+  target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
 endif()
 
 # Include tcb/span as system header to avoid compiler warnings.
