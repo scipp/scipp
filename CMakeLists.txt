@@ -88,10 +88,12 @@ endif()
 conan_cmake_autodetect(conan_settings)
 # cmake-format: off
 conan_cmake_run(
-  REQUIRES eigen/3.3.9
+  REQUIRES boost/1.76.0
+           eigen/3.3.9
            gtest/1.11.0
            benchmark/1.5.3
-  OPTIONS gtest:shared=False
+  OPTIONS boost:header_only=True
+          gtest:shared=False
           benchmark:shared=False
   SETTINGS ${conan_settings}
   IMPORTS include/eigen3,*->./eigen-src
@@ -110,7 +112,6 @@ include(GoogleTest)
 include(LLNL-units)
 include(pybind11)
 include(GenerateExportHeader)
-find_package(Boost 1.67 REQUIRED)
 
 option(DISABLE_MULTI_THREADING "Disable multi threading" OFF)
 if(NOT DISABLE_MULTI_THREADING)
