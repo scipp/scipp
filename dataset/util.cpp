@@ -4,7 +4,6 @@
 /// @author Matthew Andrew
 #include "scipp/dataset/util.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_concept.h"
@@ -76,15 +75,4 @@ scipp::index size_of(const Dataset &dataset, const SizeofTag tag) {
   }
   return size;
 }
-
-DataArray astype(const DataArray &array, const DType type,
-                 const CopyPolicy copy) {
-  auto new_data = astype(array.data(), type, copy);
-  auto new_masks = new_data.is_same(array.data())
-                       ? array.masks()
-                       : dataset::copy(array.masks());
-  return DataArray(std::move(new_data), array.coords(), std::move(new_masks),
-                   array.attrs(), array.name());
-}
-
 } // namespace scipp

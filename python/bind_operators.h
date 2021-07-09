@@ -5,11 +5,13 @@
 #pragma once
 
 #include "scipp/dataset/arithmetic.h"
+#include "scipp/dataset/astype.h"
 #include "scipp/dataset/generated_comparison.h"
 #include "scipp/dataset/generated_logical.h"
 #include "scipp/dataset/to_unit.h"
 #include "scipp/units/except.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/logical.h"
 #include "scipp/variable/to_unit.h"

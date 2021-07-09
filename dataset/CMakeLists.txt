@@ -5,6 +5,7 @@
 set(TARGET_NAME "scipp-dataset")
 set(INC_FILES
     ${dataset_INC_FILES}
+    include/scipp/dataset/astype.h
     include/scipp/dataset/bin.h
     include/scipp/dataset/bins.h
     include/scipp/dataset/choose.h
@@ -31,6 +32,7 @@ set(INC_FILES
 set(SRC_FILES
     ${dataset_SRC_FILES}
     arithmetic.cpp
+    astype.cpp
     bin.cpp
     bins.cpp
     counts.cpp

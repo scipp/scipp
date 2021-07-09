@@ -9,9 +9,9 @@
 #include "scipp/core/element/logical.h"
 #include "scipp/variable/accumulate.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/math.h"
-#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/special_values.h"
 
 #include "operations_common.h"
