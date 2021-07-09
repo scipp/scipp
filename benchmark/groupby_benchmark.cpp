@@ -7,7 +7,7 @@
 
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/groupby.h"
-#include "scipp/variable/operations.h"
+#include "scipp/variable/astype.h"
 
 using namespace scipp;
 using namespace scipp::variable;
