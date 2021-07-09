@@ -77,10 +77,14 @@ scipp::index size_of(const Dataset &dataset, const SizeofTag tag) {
   return size;
 }
 
-DataArray astype(const DataArray &var, const DType type,
+DataArray astype(const DataArray &array, const DType type,
                  const CopyPolicy copy) {
-  return DataArray(astype(var.data(), type, copy), var.coords(), var.masks(),
-                   var.attrs(), var.name());
+  auto new_data = astype(array.data(), type, copy);
+  auto new_masks = new_data.is_same(array.data())
+                       ? array.masks()
+                       : dataset::copy(array.masks());
+  return DataArray(std::move(new_data), array.coords(), std::move(new_masks),
+                   array.attrs(), array.name());
 }
 
 } // namespace scipp

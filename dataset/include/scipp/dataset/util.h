@@ -21,7 +21,7 @@ SCIPP_DATASET_EXPORT scipp::index size_of(const Dataset &dataset,
                                           SizeofTag tag);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-astype(const DataArray &var, const DType type,
+astype(const DataArray &array, const DType type,
        CopyPolicy copy = CopyPolicy::Always);
 
 } // namespace scipp

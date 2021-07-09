@@ -96,9 +96,27 @@ TEST_F(DataArrayTest, shadow_attr) {
 TEST_F(DataArrayTest, astype) {
   DataArray a(
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}),
-      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6})}});
-  const auto x = astype(a, dtype<double>);
-  EXPECT_EQ(x.data(), astype(a.data(), dtype<double>));
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6})}},
+      {{"m", makeVariable<bool>(Dims{Dim::X}, Shape{3},
+                                Values{false, true, true})}});
+
+  const auto required_copy = astype(a, dtype<double>);
+  EXPECT_EQ(required_copy.data(), astype(a.data(), dtype<double>));
+  EXPECT_EQ(required_copy.masks(), a.masks());
+  EXPECT_FALSE(required_copy.data().is_same(a.data()));
+  EXPECT_FALSE(required_copy.masks()["m"].is_same(a.masks()["m"]));
+
+  const auto same = astype(a, dtype<int>, CopyPolicy::TryAvoid);
+  EXPECT_EQ(same.data(), astype(a.data(), dtype<int>));
+  EXPECT_EQ(same.masks(), a.masks());
+  EXPECT_TRUE(same.data().is_same(a.data()));
+  EXPECT_TRUE(same.masks()["m"].is_same(a.masks()["m"]));
+
+  const auto force_copy = astype(a, dtype<int>, CopyPolicy::Always);
+  EXPECT_EQ(force_copy.data(), astype(a.data(), dtype<int>));
+  EXPECT_EQ(force_copy.masks(), a.masks());
+  EXPECT_FALSE(force_copy.data().is_same(a.data()));
+  EXPECT_FALSE(force_copy.masks()["m"].is_same(a.masks()["m"]));
 }
 
 TEST_F(DataArrayTest, to_unit) {
