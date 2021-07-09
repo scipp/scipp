@@ -43,9 +43,9 @@ scipp::index n_remaining(const py::iterator &it) {
                                             const scipp::index b_ndim,
                                             const std::string_view b_name) {
   throw std::invalid_argument(
-      format("The number of dimensions in '", a_name, "' (", a_ndim,
-             ") does not match the number of dimensions in '", b_name, "' (",
-             b_ndim, ")."));
+      python::format("The number of dimensions in '", a_name, "' (", a_ndim,
+                     ") does not match the number of dimensions in '", b_name,
+                     "' (", b_ndim, ")."));
 }
 
 void ensure_same_shape(const py::object &values, const py::object &variances) {
@@ -73,10 +73,10 @@ void ensure_same_shape(const py::object &values, const py::object &variances) {
                               dim + n_remaining(var_shape), "variances");
   }
   if (std::get<0>(mismatch) != -1) {
-    throw std::invalid_argument(
-        format("The shapes of 'values' and 'variances' differ in dimension ",
-               std::get<0>(mismatch), ": ", std::get<1>(mismatch), " vs ",
-               std::get<2>(mismatch), '.'));
+    throw std::invalid_argument(python::format(
+        "The shapes of 'values' and 'variances' differ in dimension ",
+        std::get<0>(mismatch), ": ", std::get<1>(mismatch), " vs ",
+        std::get<2>(mismatch), '.'));
   }
 }
 
@@ -126,8 +126,8 @@ py::object parse_data_sequence(const py::object &dim_labels,
 
 void ensure_is_scalar(const py::buffer &array) {
   if (const auto ndim = array.attr("ndim").cast<int64_t>(); ndim != 0) {
-    throw except::DimensionError(
-        format("Cannot interpret ", ndim, "-dimensional array as a scalar."));
+    throw except::DimensionError(python::format(
+        "Cannot interpret ", ndim, "-dimensional array as a scalar."));
   }
 }
 

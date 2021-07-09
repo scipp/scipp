@@ -120,8 +120,8 @@ cast_dtype_and_unit(const pybind11::object &dtype,
     if (unit.has_value()) {
       if (deduced_unit != units::one && *unit != deduced_unit) {
         throw std::invalid_argument(
-            format("The unit encoded in the dtype (", deduced_unit,
-                   ") conflicts with the given unit (", *unit, ")."));
+            python::format("The unit encoded in the dtype (", deduced_unit,
+                           ") conflicts with the given unit (", *unit, ")."));
       } else {
         deduced_unit = *unit;
       }
@@ -139,8 +139,8 @@ void ensure_conversion_possible(const DType from, const DType to,
       (core::is_int(from) && to == dtype<core::time_point>)) {
     return; // These are allowed.
   }
-  throw std::invalid_argument(
-      format("Cannot convert ", data_name, " from type ", from, " to ", to));
+  throw std::invalid_argument(python::format("Cannot convert ", data_name,
+                                             " from type ", from, " to ", to));
 }
 
 DType common_dtype(const py::object &values, const py::object &variances,
@@ -157,7 +157,7 @@ DType common_dtype(const py::object &values, const py::object &variances,
     } else {
       if (variances_dtype != core::dtype<void> &&
           values_dtype != variances_dtype) {
-        throw std::invalid_argument(format(
+        throw std::invalid_argument(python::format(
             "The dtypes of the 'values' (", values_dtype, ") and 'variances' (",
             variances_dtype,
             ") arguments do not match. You can specify a dtype explicitly to"
