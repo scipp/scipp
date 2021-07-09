@@ -18,10 +18,18 @@ TEST(ToUnitTest, not_compatible) {
 TEST(ToUnitTest, buffer_handling) {
   const Dimensions dims(Dim::X, 2);
   const auto var = makeVariable<float>(dims, units::Unit("m"), Values{1, 2});
-  const auto same = to_unit(var, var.unit());
-  EXPECT_TRUE(same.is_same(var)); // not modified => not copied
-  const auto different = to_unit(var, units::Unit("mm"));
-  EXPECT_FALSE(different.is_same(var)); // modified => copied
+  const auto force_copy = to_unit(var, var.unit());
+  EXPECT_FALSE(force_copy.is_same(var));
+  EXPECT_EQ(force_copy.values<float>(), var.values<float>());
+  const auto force_copy_explicit = to_unit(var, var.unit(), CopyPolicy::Always);
+  EXPECT_FALSE(force_copy_explicit.is_same(var));
+  EXPECT_EQ(force_copy_explicit.values<float>(), var.values<float>());
+  const auto no_copy = to_unit(var, var.unit(), CopyPolicy::TryAvoid);
+  EXPECT_TRUE(no_copy.is_same(var));
+  EXPECT_EQ(no_copy.values<float>(), var.values<float>());
+  const auto required_copy =
+      to_unit(var, units::Unit("mm"), CopyPolicy::TryAvoid);
+  EXPECT_FALSE(required_copy.is_same(var));
 }
 
 TEST(ToUnitTest, same) {

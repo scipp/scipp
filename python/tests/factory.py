@@ -8,15 +8,15 @@ import scipp as sc
 dim_list = ['x', 'y', 'z', 'time', 'temperature']
 
 
-def make_scalar(variance=False, dtype=sc.dtype.float64, unit='counts'):
+def make_scalar(with_variance=False, dtype=sc.dtype.float64, unit='counts'):
     var = sc.scalar(10.0 * np.random.rand(), unit=unit, dtype=dtype)
-    if variance:
+    if with_variance:
         var.variance = np.random.rand()
     return var
 
 
 def make_variable(ndim=1,
-                  variances=False,
+                  with_variance=False,
                   dims=None,
                   dtype=sc.dtype.float64,
                   unit='counts'):
@@ -30,20 +30,20 @@ def make_variable(ndim=1,
 
     print(dims, a, unit, dtype)
     var = sc.array(dims=dims, values=a, unit=unit, dtype=dtype)
-    if variances:
+    if with_variance:
         var.variances = np.abs(np.random.normal(a * 0.1, 0.05))
 
     return var
 
 
-def make_scalar_array(variance=False,
+def make_scalar_array(with_variance=False,
                       label=False,
                       mask=False,
                       attr=False,
                       dtype=sc.dtype.float64,
                       unit='counts'):
 
-    data = make_scalar(variance=variance, dtype=dtype, unit=unit)
+    data = make_scalar(with_variance=with_variance, dtype=dtype, unit=unit)
 
     coord_dict = {'x': make_scalar(dtype=dtype, unit=unit)}
     attr_dict = {}
@@ -63,7 +63,7 @@ def make_scalar_array(variance=False,
 
 
 def make_dense_data_array(ndim=1,
-                          variances=False,
+                          with_variance=False,
                           binedges=False,
                           labels=False,
                           masks=False,
@@ -76,7 +76,7 @@ def make_dense_data_array(ndim=1,
     coord_units = dict(zip(dim_list, ['m', 'm', 'm', 's', 'K']))
 
     data = make_variable(ndim=ndim,
-                         variances=variances,
+                         with_variance=with_variance,
                          dims=dims,
                          dtype=dtype,
                          unit=unit)
@@ -104,7 +104,7 @@ def make_dense_data_array(ndim=1,
                                         data.shape[0],
                                         unit='s')
     if masks:
-        mask_dict["mask"] = sc.Variable(data.dims,
+        mask_dict["mask"] = sc.Variable(dims=data.dims,
                                         values=np.where(
                                             data.values > 0, True, False))
 
@@ -116,7 +116,7 @@ def make_dense_data_array(ndim=1,
             else:
                 grid.append(coord_dict[dim].values)
         mesh = np.meshgrid(*grid, indexing="ij")
-        coord_dict[data.dims[-1]] = sc.Variable(data.dims,
+        coord_dict[data.dims[-1]] = sc.Variable(dims=data.dims,
                                                 values=mesh[-1] +
                                                 np.indices(mesh[-1].shape)[0])
     return sc.DataArray(data=data,
@@ -125,8 +125,9 @@ def make_dense_data_array(ndim=1,
                         masks=mask_dict)
 
 
-def make_dense_dataset(entries=['a', 'b'], **kwargs):
-
+def make_dense_dataset(entries=None, **kwargs):
+    if entries is None:
+        entries = ['a', 'b']
     ds = sc.Dataset()
     for entry in entries:
         ds[entry] = make_dense_data_array(**kwargs)
@@ -134,7 +135,7 @@ def make_dense_dataset(entries=['a', 'b'], **kwargs):
     return ds
 
 
-def make_binned_data_array(ndim=1, variances=False, masks=False):
+def make_binned_data_array(ndim=1, with_variance=False, masks=False):
 
     N = 50
     M = 10
@@ -151,7 +152,7 @@ def make_binned_data_array(ndim=1, variances=False, masks=False):
                               values=['site-{}'.format(i) for i in range(N)])
                       })
 
-    if variances:
+    if with_variance:
         da.variances = values
 
     bin_list = []
@@ -164,7 +165,7 @@ def make_binned_data_array(ndim=1, variances=False, masks=False):
                         unit=sc.units.m,
                         values=np.linspace(0.1, 0.9, M - i)))
 
-    binned = sc.bin(da, bin_list)
+    binned = sc.bin(da, edges=bin_list)
 
     if masks:
         # Make a checkerboard mask, see https://stackoverflow.com/a/51715491

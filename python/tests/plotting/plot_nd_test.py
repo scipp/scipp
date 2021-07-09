@@ -52,7 +52,7 @@ def test_plot_sliceviewer_2d_with_binedges():
 
 def test_plot_variable_3d():
     N = 50
-    v3d = sc.Variable(['z', 'y', 'x'],
+    v3d = sc.Variable(dims=['z', 'y', 'x'],
                       values=np.random.rand(N, N, N),
                       unit=sc.units.m)
     plot(v3d)

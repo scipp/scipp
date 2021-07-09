@@ -7,12 +7,13 @@ from typing import Optional
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import DatasetLike
+from .typing import VariableLike
 
 
-def mean(x: DatasetLike,
+def mean(x: VariableLike,
          dim: Optional[str] = None,
-         out: Optional[DatasetLike] = None) -> DatasetLike:
+         *,
+         out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise mean over the specified dimension.
 
     If the input has variances, the variances stored in the output are based on
@@ -37,9 +38,10 @@ def mean(x: DatasetLike,
         return _call_cpp_func(_cpp.mean, x, dim=dim, out=out)
 
 
-def nanmean(x: DatasetLike,
+def nanmean(x: VariableLike,
             dim: Optional[str] = None,
-            out: Optional[DatasetLike] = None) -> DatasetLike:
+            *,
+            out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise mean over the specified dimension ignoring NaNs.
 
     If the input has variances, the variances stored in the ouput are based on
@@ -64,9 +66,10 @@ def nanmean(x: DatasetLike,
         return _call_cpp_func(_cpp.nanmean, x, dim=dim, out=out)
 
 
-def sum(x: DatasetLike,
+def sum(x: VariableLike,
         dim: Optional[str] = None,
-        out: Optional[DatasetLike] = None) -> DatasetLike:
+        *,
+        out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise sum over the specified dimension.
 
     :param x: Input data.
@@ -84,9 +87,10 @@ def sum(x: DatasetLike,
         return _call_cpp_func(_cpp.sum, x, dim=dim, out=out)
 
 
-def nansum(x: DatasetLike,
+def nansum(x: VariableLike,
            dim: Optional[str] = None,
-           out: Optional[DatasetLike] = None) -> DatasetLike:
+           *,
+           out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise sum over the specified dimension; NaNs are treated as zero.
 
     :param x: Input data.
@@ -106,6 +110,7 @@ def nansum(x: DatasetLike,
 
 def min(x: _cpp.Variable,
         dim: Optional[str] = None,
+        *,
         out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise min over the specified dimension or all dimensions if not
     provided.
@@ -127,6 +132,7 @@ def min(x: _cpp.Variable,
 
 def max(x: _cpp.Variable,
         dim: Optional[str] = None,
+        *,
         out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise max over the specified dimension or all dimensions if not
     provided.
@@ -148,6 +154,7 @@ def max(x: _cpp.Variable,
 
 def nanmin(x: _cpp.Variable,
            dim: Optional[str] = None,
+           *,
            out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise min ignoring not at number values over the specified
     dimension or all dimensions if not provided.
@@ -169,6 +176,7 @@ def nanmin(x: _cpp.Variable,
 
 def nanmax(x: _cpp.Variable,
            dim: Optional[str] = None,
+           *,
            out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise max ignoring not a number values over the specified
     dimension or all dimensions if not provided.
@@ -190,6 +198,7 @@ def nanmax(x: _cpp.Variable,
 
 def all(x: _cpp.Variable,
         dim: Optional[str] = None,
+        *,
         out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise AND over the specified dimension or all dimensions if not
     provided.
@@ -211,6 +220,7 @@ def all(x: _cpp.Variable,
 
 def any(x: _cpp.Variable,
         dim: Optional[str] = None,
+        *,
         out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise OR over the specified dimension or all dimensions if not
     provided.

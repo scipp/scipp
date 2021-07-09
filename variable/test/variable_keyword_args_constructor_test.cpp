@@ -134,14 +134,15 @@ TEST(VariableUniversalConstructorTest, no_copy_on_matched_types) {
 TEST(VariableUniversalConstructorTest, convertable_types) {
   using namespace scipp::variable::detail;
   auto data = std::vector<double>{1.0, 4.5, 2.7, 5.0, 7.0, 6.7};
+  std::vector<float> float_data(data.size());
+  std::transform(data.begin(), data.end(), float_data.begin(),
+                 [](const double x) { return static_cast<float>(x); });
   auto variable = Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3},
                            Values(data), units::kg, Variances(data));
 
   EXPECT_EQ(variable.dtype(), dtype<float>);
-  EXPECT_TRUE(equals(variable.values<float>(),
-                     std::vector<float>(data.begin(), data.end())));
-  EXPECT_TRUE(equals(variable.variances<float>(),
-                     std::vector<float>(data.begin(), data.end())));
+  EXPECT_TRUE(equals(variable.values<float>(), float_data));
+  EXPECT_TRUE(equals(variable.variances<float>(), float_data));
 }
 
 TEST(VariableUniversalConstructorTest, unconvertable_types) {

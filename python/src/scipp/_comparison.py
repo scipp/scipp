@@ -7,10 +7,10 @@ from __future__ import annotations
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import DataArrayLike, DatasetLike
+from .typing import VariableLike, VariableLike
 
 
-def less(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
+def less(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise '<' (less).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -26,7 +26,7 @@ def less(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.less, x, y)
 
 
-def greater(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
+def greater(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise '>' (greater).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -42,7 +42,7 @@ def greater(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.greater, x, y)
 
 
-def less_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
+def less_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise '<=' (less_equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -58,7 +58,7 @@ def less_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.less_equal, x, y)
 
 
-def greater_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
+def greater_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise '>=' (greater_equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -74,7 +74,7 @@ def greater_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.greater_equal, x, y)
 
 
-def equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
+def equal(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise '==' (equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -90,7 +90,7 @@ def equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.equal, x, y)
 
 
-def not_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
+def not_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise '!=' (not_equal).
 
     Warning: If one or both of the operators have variances (uncertainties)
@@ -106,7 +106,7 @@ def not_equal(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.not_equal, x, y)
 
 
-def identical(x: DatasetLike, y: DatasetLike) -> DatasetLike:
+def identical(x: VariableLike, y: VariableLike) -> VariableLike:
     """Full comparison of x and y.
 
     :param x: Left input.
@@ -152,9 +152,8 @@ def isclose(x: _cpp.Variable,
     :return: Variable same size as input.
              Element True if absolute diff of value <= atol + rtol * abs(y),
              otherwise False.
-    See Also
-    --------
-    :py:func:`scipp.allclose` : isclose applied over all dimensions
+
+    :seealso: :py:func:`scipp.allclose` : isclose applied over all dimensions
     """
     if rtol is None:
         rtol = 1e-5 * _cpp.units.one
@@ -200,9 +199,7 @@ def allclose(x, y, rtol=None, atol=None, equal_nan=False):
     :return: True if for all elements value <= atol + rtol * abs(y),
              otherwise False.
 
-    See Also
-    --------
-    :py:func:`scipp.isclose` : comparing element-wise with specified tolerances
+    :seealso: :py:func:`scipp.isclose` : comparing element-wise with specified tolerances
     """
     return _call_cpp_func(
         _cpp.all, isclose(x, y, rtol=rtol, atol=atol,

@@ -7,7 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Union
 
-from ..typing import DatasetLike
+from ..typing import VariableLike
 
 
 def _dtype_lut():
@@ -196,13 +196,13 @@ class VariableIO:
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
         contents['dtype'] = cls._dtypes[values.attrs['dtype']]
         contents['unit'] = sc.Unit(values.attrs['unit'])
-        contents['variances'] = 'variances' in group
+        contents['with_variances'] = 'variances' in group
         if contents['dtype'] in [
                 d.VariableView, d.DataArrayView, d.DatasetView
         ]:
             var = BinDataIO.read(group)
         else:
-            var = sc.Variable(**contents)
+            var = sc.empty(**contents)
             cls._read_data(group, var)
         return var
 
@@ -257,7 +257,9 @@ class DatasetIO:
     def read(group):
         _check_scipp_header(group, 'Dataset')
         from .._scipp import core as sc
-        return sc.Dataset({name: HDF5IO.read(group[name]) for name in group})
+        return sc.Dataset(
+            data={name: HDF5IO.read(group[name])
+                  for name in group})
 
 
 class HDF5IO:
@@ -275,7 +277,7 @@ class HDF5IO:
         return cls._handlers[group.attrs['scipp-type']].read(group)
 
 
-def to_hdf5(obj: DatasetLike, filename: Union[str, Path]):
+def to_hdf5(obj: VariableLike, filename: Union[str, Path]):
     """
     Writes object out to file in hdf5 format.
     """
@@ -284,7 +286,7 @@ def to_hdf5(obj: DatasetLike, filename: Union[str, Path]):
         HDF5IO.write(f, obj)
 
 
-def open_hdf5(filename: Union[str, Path]) -> DatasetLike:
+def open_hdf5(filename: Union[str, Path]) -> VariableLike:
     import h5py
     with h5py.File(filename, 'r') as f:
         return HDF5IO.read(f)

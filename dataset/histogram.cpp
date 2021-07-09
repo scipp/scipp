@@ -2,13 +2,16 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/dataset/histogram.h"
+#include <algorithm>
+
 #include "scipp/core/element/histogram.h"
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
+#include "scipp/dataset/histogram.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/transform_subspan.h"
 
 #include "dataset_operations_common.h"
@@ -17,6 +20,19 @@ using namespace scipp::core;
 using namespace scipp::variable;
 
 namespace scipp::dataset {
+
+namespace {
+/// Return `var` unchanged if stride along `dim` is 1, else move `dim` to inner
+/// dim and return copy such that stride is 1.
+auto as_contiguous(const Variable &var, const Dim dim) {
+  if (var.strides()[var.dims().index(dim)] == 1)
+    return var;
+  std::vector<Dim> dims(var.dims().begin(), var.dims().end());
+  const auto it = std::find(dims.begin(), dims.end(), dim);
+  std::rotate(it, it + 1, dims.end());
+  return copy(transpose(var, dims));
+}
+} // namespace
 
 DataArray histogram(const DataArray &events, const Variable &binEdges) {
   using namespace scipp::core;
@@ -36,20 +52,25 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
         },
         dim, binEdges);
   } else if (!is_histogram(events, dim)) {
-    const auto data_dim = events.dims().inner();
+    const auto event_dim = dim_of_coord(events.coords()[dim], dim);
     result = apply_and_drop_dim(
         events,
-        [](const DataArray &events_, const Dim data_dim_,
-           const Variable &binEdges_) {
-          const auto dim_ = binEdges_.dims().inner();
-          const auto data = masked_data(events_, dim_);
+        [dim](const DataArray &events_, const Dim event_dim_,
+              const Variable &binEdges_) {
+          const auto data = masked_data(events_, event_dim_);
+          // Warning: Don't try to move the `as_contiguous` into `subspan_view`
+          // without special care: It may return a new variable which will go
+          // out of scope, leading to subtle bugs. Here on the other hand the
+          // returned temporary is kept alive until the end of the
+          // full-expression.
           return transform_subspan(
-              events_.dtype(), dim_, binEdges_.dims()[dim_] - 1,
-              subspan_view(events_.coords()[dim_], data_dim_),
-              subspan_view(data, data_dim_), binEdges_, element::histogram,
-              "histogram");
+              events_.dtype(), dim, binEdges_.dims()[dim] - 1,
+              subspan_view(as_contiguous(events_.coords()[dim], event_dim_),
+                           event_dim_),
+              subspan_view(as_contiguous(data, event_dim_), event_dim_),
+              binEdges_, element::histogram, "histogram");
         },
-        data_dim, binEdges);
+        event_dim, binEdges);
   } else {
     throw except::BinEdgeError(
         "Data is already histogrammed. Expected event data or dense point "

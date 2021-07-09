@@ -6,10 +6,10 @@ from typing import Optional, Union
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import DataArrayLike, DatasetLike
+from .typing import VariableLike
 
 
-def dot(x: DataArrayLike, y: DataArrayLike) -> DataArrayLike:
+def dot(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise dot product.
 
     :param x: Left hand side operand.
@@ -41,9 +41,9 @@ def issorted(x: _cpp.Variable,
     return _call_cpp_func(_cpp.issorted, x, dim, order)
 
 
-def sort(x: DatasetLike,
+def sort(x: VariableLike,
          key: Union[str, _cpp.Variable],
-         order: Optional[str] = 'ascending') -> DatasetLike:
+         order: Optional[str] = 'ascending') -> VariableLike:
     """Sort variable along a dimension by a sort key or dimension label
 
     - If ``order`` is 'ascending',
@@ -62,7 +62,7 @@ def sort(x: DatasetLike,
     return _call_cpp_func(_cpp.sort, x, key, order)
 
 
-def values(x: DataArrayLike) -> DataArrayLike:
+def values(x: VariableLike) -> VariableLike:
     """Return the object without variances.
 
     :param x: Variable or DataArray
@@ -71,7 +71,7 @@ def values(x: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.values, x)
 
 
-def variances(x: DataArrayLike) -> DataArrayLike:
+def variances(x: VariableLike) -> VariableLike:
     """Return object containing the variances of the input as values.
 
     :param x: Variable or DataArray
@@ -80,7 +80,7 @@ def variances(x: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.variances, x)
 
 
-def stddevs(x: DataArrayLike) -> DataArrayLike:
+def stddevs(x: VariableLike) -> VariableLike:
     """Return object containing the stddevs of the input as values.
 
     This is essentially `sqrt(variances(x))`
@@ -91,10 +91,10 @@ def stddevs(x: DataArrayLike) -> DataArrayLike:
     return _call_cpp_func(_cpp.stddevs, x)
 
 
-def rebin(x: DataArrayLike,
+def rebin(x: VariableLike,
           dim: str,
           bins: _cpp.Variable,
-          old: Optional[_cpp.Variable] = None) -> DataArrayLike:
+          old: Optional[_cpp.Variable] = None) -> VariableLike:
     """
     Rebin a dimension of a variable or a data array.
 

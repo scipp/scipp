@@ -776,10 +776,18 @@ TYPED_TEST(AsTypeTest, variable_astype) {
 
 TEST(AsTypeTest, buffer_handling) {
   const auto var = makeVariable<float>(Values{1});
-  const auto same = astype(var, dtype<float>);
-  EXPECT_TRUE(same.is_same(var)); // not modified => not copied
-  const auto different = astype(var, dtype<double>);
-  EXPECT_FALSE(different.is_same(var)); // modified => copied
+  const auto force_copy = astype(var, dtype<float>);
+  EXPECT_FALSE(force_copy.is_same(var));
+  EXPECT_EQ(force_copy, var);
+  const auto force_copy_explicit =
+      astype(var, dtype<float>, CopyPolicy::Always);
+  EXPECT_FALSE(force_copy_explicit.is_same(var));
+  EXPECT_EQ(force_copy_explicit, var);
+  const auto no_copy = astype(var, dtype<float>, CopyPolicy::TryAvoid);
+  EXPECT_TRUE(no_copy.is_same(var));
+  EXPECT_EQ(no_copy, var);
+  const auto required_copy = astype(var, dtype<double>, CopyPolicy::TryAvoid);
+  EXPECT_FALSE(required_copy.is_same(var));
 }
 
 TEST(VariableTest, array_params) {

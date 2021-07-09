@@ -4,12 +4,15 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/core/flags.h"
+
 #include "scipp-variable_export.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {
 
-SCIPP_VARIABLE_EXPORT Variable astype(const Variable &var, const DType type);
+SCIPP_VARIABLE_EXPORT Variable astype(const Variable &var, const DType type,
+                                      CopyPolicy copy = CopyPolicy::Always);
 
 namespace geometry {
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable position(const Variable &x,

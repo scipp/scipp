@@ -9,17 +9,17 @@ import scipp.utils as su
 
 
 def test_label_var_with_unit():
-    var = sc.Variable(['x'], values=np.random.random(10), unit=sc.units.m)
+    var = sc.Variable(dims=['x'], values=np.random.random(10), unit=sc.units.m)
     assert su.name_with_unit(var) == 'x [m]'
 
 
 def test_label_var_with_unit_with_log():
-    var = sc.Variable(['x'], values=np.random.random(10), unit=sc.units.m)
+    var = sc.Variable(dims=['x'], values=np.random.random(10), unit=sc.units.m)
     assert su.name_with_unit(var, log=True) == 'log\u2081\u2080(x) [m]'
 
 
 def test_label_var_no_unit():
-    var = sc.Variable(['x'], values=np.random.random(10))
+    var = sc.Variable(dims=['x'], values=np.random.random(10))
     assert su.name_with_unit(var) == 'x [dimensionless]'
 
 
@@ -28,7 +28,9 @@ def test_label_name_only():
 
 
 def test_label_name_with_unit():
-    var = sc.Variable(['x'], values=np.random.random(10), unit=sc.units.counts)
+    var = sc.Variable(dims=['x'],
+                      values=np.random.random(10),
+                      unit=sc.units.counts)
     assert su.name_with_unit(var, name='sample') == 'sample [counts]'
 
 

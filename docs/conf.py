@@ -55,8 +55,8 @@ extensions = [
 autodoc_typehints = 'description'
 
 autodoc_type_aliases = {
-    'DataArrayLike': 'DataArrayLike',
-    'DatasetLike': 'DatasetLike',
+    'VariableLike': 'VariableLike',
+    'MetaDataMap': 'MetaDataMap',
 }
 
 rst_epilog = f"""
@@ -238,3 +238,10 @@ import scipp as sc
 doctest_default_flags = doctest.ELLIPSIS | doctest.IGNORE_EXCEPTION_DETAIL | \
                         doctest.DONT_ACCEPT_TRUE_FOR_1 | \
                         doctest.NORMALIZE_WHITESPACE
+
+# -- Options for linkcheck ------------------------------------------------
+
+linkcheck_ignore = [
+    # Specific lines in Github blobs cannot be found by linkcheck.
+    r'https?://github\.com/.*?/blob/[a-f0-9]+/.+?#'
+]

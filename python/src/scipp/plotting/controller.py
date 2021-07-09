@@ -104,7 +104,7 @@ class PlotController:
                         self.xlims[key][dim][scale])
 
                     self.xlims[key][dim][scale] = sc.Variable(
-                        [dim],
+                        dims=[dim],
                         values=self.xlims[key][dim][scale],
                         unit=coord.unit)
 

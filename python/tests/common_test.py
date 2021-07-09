@@ -7,12 +7,12 @@ import scipp as sc
 
 def test_bool_raises():
     # Truth values of arrays are undefined
-    var = sc.Variable(value=True)
+    var = sc.scalar(True)
     with pytest.raises(RuntimeError):
         var and var
     da = sc.DataArray(var)
     with pytest.raises(RuntimeError):
         da and da
-    ds = sc.Dataset({'a': da})
+    ds = sc.Dataset(data={'a': da})
     with pytest.raises(RuntimeError):
         ds and ds
