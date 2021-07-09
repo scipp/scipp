@@ -2,9 +2,9 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Jan-Lukas Wynen
-#include <units/units.hpp>
 
 #include "scipp/dataset/to_unit.h"
+#include "scipp/units/unit.h"
 #include "scipp/variable/to_unit.h"
 
 namespace scipp::dataset {
