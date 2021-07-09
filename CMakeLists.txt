@@ -90,6 +90,7 @@ conan_cmake_autodetect(conan_settings)
 conan_cmake_run(
   REQUIRES boost/1.76.0
            eigen/3.3.9
+           tbb/2020.3
            gtest/1.11.0
            benchmark/1.5.3
   OPTIONS boost:header_only=True
@@ -115,9 +116,6 @@ include(GenerateExportHeader)
 
 option(DISABLE_MULTI_THREADING "Disable multi threading" OFF)
 if(NOT DISABLE_MULTI_THREADING)
-  find_package(TBB CONFIG)
-endif()
-if(TBB_FOUND)
   option(ENABLE_THREAD_LIMIT
          "Limit the number TBB threads. Limit number set via THREAD_LIMIT" OFF
   )
