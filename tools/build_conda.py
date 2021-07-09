@@ -49,23 +49,25 @@ if __name__ == '__main__':
 
     # Depending on the platform, directories have different names.
     if sys.platform == "win32":
+        pylib_dest = 'lib'
         lib_dest = 'lib'
         bin_src = 'bin'
         lib_src = 'Lib'
         inc_src = 'include'
     else:
-        lib_dest = os.path.join('lib', 'python*')
+        lib_dest = 'lib'
+        pylib_dest = os.path.join('lib', 'python*')
         bin_src = None
         lib_src = 'lib'
         inc_src = 'include'
 
-    m.move(['scipp'], [lib_dest])
+    m.move(['scipp'], [pylib_dest])
     if bin_src is not None:
         m.move([bin_src, 'scipp-*.dll'], [bin_src])
         m.move([bin_src, 'units-shared.dll'], [bin_src])
-    m.move([lib_src, '*scipp*'], [lib_src])
-    m.move([lib_src, '*units-shared*'], [lib_src])
-    m.move([lib_src, 'cmake', 'scipp'], [lib_src, 'cmake'])
+    m.move([lib_src, '*scipp*'], [lib_dest])
+    m.move([lib_src, '*units-shared*'], [lib_dest])
+    m.move([lib_src, 'cmake', 'scipp'], [lib_dest, 'cmake'])
     m.move([inc_src, 'Eigen'], [inc_src])
     m.move([inc_src, 'scipp*'], [inc_src])
     m.move([inc_src, 'units'], [inc_src])
