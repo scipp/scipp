@@ -119,14 +119,38 @@ TEST_F(DataArrayTest, astype) {
   EXPECT_FALSE(force_copy.masks()["m"].is_same(a.masks()["m"]));
 }
 
+namespace {
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+void check_to_unit(const DataArray &original, const units::Unit target_unit,
+                   const CopyPolicy copy_policy, const bool expect_copy) {
+  const auto converted = to_unit(original, target_unit, copy_policy);
+
+  EXPECT_EQ(converted.data(), to_unit(original.data(), target_unit));
+  EXPECT_EQ(converted.coords()[Dim::X].unit(), units::s);
+  EXPECT_EQ(converted.masks(), original.masks());
+
+  EXPECT_TRUE(converted.coords()[Dim::X].is_same(original.coords()[Dim::X]));
+  if (expect_copy) {
+    EXPECT_FALSE(converted.data().is_same(original.data()));
+    EXPECT_FALSE(converted.masks()["m"].is_same(original.masks()["m"]));
+  } else {
+    EXPECT_TRUE(converted.data().is_same(original.data()));
+    EXPECT_TRUE(converted.masks()["m"].is_same(original.masks()["m"]));
+  }
+}
+} // namespace
+
 TEST_F(DataArrayTest, to_unit) {
   DataArray a(makeVariable<double>(Dims{Dim::X}, Shape{3},
                                    Values{1.0, 2.0, 3.0}, units::m),
               {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3},
-                                          Values{4, 5, 6}, units::s)}});
-  const auto x = to_unit(a, units::mm);
-  EXPECT_EQ(x.data(), to_unit(a.data(), units::mm));
-  EXPECT_EQ(x.coords()[Dim::X].unit(), units::s);
+                                          Values{4, 5, 6}, units::s)}},
+              {{"m", makeVariable<bool>(Dims{Dim::X}, Shape{3},
+                                        Values{true, false, true})}});
+  check_to_unit(a, units::mm, CopyPolicy::TryAvoid, true);
+  check_to_unit(a, units::mm, CopyPolicy::Always, true);
+  check_to_unit(a, units::m, CopyPolicy::TryAvoid, false);
+  check_to_unit(a, units::m, CopyPolicy::Always, true);
 }
 
 TEST_F(DataArrayTest, view) {
