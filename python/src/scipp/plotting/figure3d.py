@@ -155,7 +155,6 @@ class PlotFigure3d:
     def set_position_params(self, params):
         limits = params.limits
         center = params.center
-        # TODO grow by pixel size and avoid empty
         box_size = params.box_size
         scaling = {}
         for i, xyz in enumerate("xyz"):
@@ -163,6 +162,14 @@ class PlotFigure3d:
             limits[xyz] *= scaling[xyz]
         box_size *= np.array(list(scaling.values()))
         center *= np.array(list(scaling.values()))
+
+        if self._pixel_size is None:
+            # Note the value of 0.05 is arbitrary here. It is a sensible
+            # guess to render a plot that is not too crowded and shows
+            # individual pixels.
+            self._pixel_size = 0.05 * np.mean(box_size)
+            self._pixel_scaling = scaling['x']
+        box_size += self._pixel_size
 
         self._create_outline(limits=limits, box_size=box_size, center=center)
 
@@ -172,12 +179,6 @@ class PlotFigure3d:
             limits=limits,
             components=params.components)
 
-        if self._pixel_size is None:
-            # Note the value of 0.05 is arbitrary here. It is a sensible
-            # guess to render a plot that is not too crowded and shows
-            # individual pixels.
-            self._pixel_size = 0.05 * np.mean(box_size)
-            self._pixel_scaling = scaling['x']
         self._create_points_material()
         self._create_point_cloud(positions=params.positions.values,
                                  scaling=scaling)
