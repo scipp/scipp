@@ -48,15 +48,18 @@ def test_astype_datetime():
     assert var.dtype == sc.dtype.datetime64
     assert var.unit == sc.units.s
 
-    for target_dtype in (sc.dtype.datetime64, np.datetime64, 'datetime64'):
+    for target_dtype in (sc.dtype.datetime64, np.datetime64, 'datetime64',
+                         'datetime64[s]'):
         same = var.astype(target_dtype)
         assert same.dtype == sc.dtype.datetime64
         assert same.unit == sc.units.s
 
-    in_microseconds = var.astype('datetime64[us]')
-    assert in_microseconds.dtype == sc.dtype.datetime64
-    assert in_microseconds.unit == sc.units.us
-    assert sc.identical(in_microseconds, sc.to_unit(var, 'us'))
+
+def test_astype_datetime_different_unit():
+    var = sc.arange('x', np.datetime64(1, 's'), np.datetime64(5, 's'))
+    assert var.unit == sc.units.s
+    with pytest.raises(sc.UnitError):
+        var.astype('datetime64[ms]')
 
 
 def test_operation_with_scalar_quantity():
