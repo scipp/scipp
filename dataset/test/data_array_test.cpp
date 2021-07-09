@@ -93,30 +93,36 @@ TEST_F(DataArrayTest, shadow_attr) {
   EXPECT_EQ(a.meta()[Dim::X], var1);
 }
 
+namespace {
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+void check_astype(const DataArray &original, const DType target_dtype,
+                  const CopyPolicy copy_policy, const bool expect_copy) {
+  const auto converted = astype(original, target_dtype, copy_policy);
+
+  EXPECT_EQ(converted.data(), astype(original.data(), target_dtype));
+  EXPECT_EQ(converted.masks(), original.masks());
+
+  EXPECT_TRUE(converted.coords()[Dim::X].is_same(original.coords()[Dim::X]));
+  if (expect_copy) {
+    EXPECT_FALSE(converted.data().is_same(original.data()));
+    EXPECT_FALSE(converted.masks()["m"].is_same(original.masks()["m"]));
+  } else {
+    EXPECT_TRUE(converted.data().is_same(original.data()));
+    EXPECT_TRUE(converted.masks()["m"].is_same(original.masks()["m"]));
+  }
+}
+} // namespace
+
 TEST_F(DataArrayTest, astype) {
   DataArray a(
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}),
       {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6})}},
       {{"m", makeVariable<bool>(Dims{Dim::X}, Shape{3},
                                 Values{false, true, true})}});
-
-  const auto required_copy = astype(a, dtype<double>);
-  EXPECT_EQ(required_copy.data(), astype(a.data(), dtype<double>));
-  EXPECT_EQ(required_copy.masks(), a.masks());
-  EXPECT_FALSE(required_copy.data().is_same(a.data()));
-  EXPECT_FALSE(required_copy.masks()["m"].is_same(a.masks()["m"]));
-
-  const auto same = astype(a, dtype<int>, CopyPolicy::TryAvoid);
-  EXPECT_EQ(same.data(), astype(a.data(), dtype<int>));
-  EXPECT_EQ(same.masks(), a.masks());
-  EXPECT_TRUE(same.data().is_same(a.data()));
-  EXPECT_TRUE(same.masks()["m"].is_same(a.masks()["m"]));
-
-  const auto force_copy = astype(a, dtype<int>, CopyPolicy::Always);
-  EXPECT_EQ(force_copy.data(), astype(a.data(), dtype<int>));
-  EXPECT_EQ(force_copy.masks(), a.masks());
-  EXPECT_FALSE(force_copy.data().is_same(a.data()));
-  EXPECT_FALSE(force_copy.masks()["m"].is_same(a.masks()["m"]));
+  check_astype(a, dtype<double>, CopyPolicy::TryAvoid, true);
+  check_astype(a, dtype<double>, CopyPolicy::Always, true);
+  check_astype(a, dtype<int>, CopyPolicy::TryAvoid, false);
+  check_astype(a, dtype<int>, CopyPolicy::Always, true);
 }
 
 namespace {
