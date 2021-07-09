@@ -103,13 +103,9 @@ void check_astype(const DataArray &original, const DType target_dtype,
   EXPECT_EQ(converted.masks(), original.masks());
 
   EXPECT_TRUE(converted.coords()[Dim::X].is_same(original.coords()[Dim::X]));
-  if (expect_copy) {
-    EXPECT_FALSE(converted.data().is_same(original.data()));
-    EXPECT_FALSE(converted.masks()["m"].is_same(original.masks()["m"]));
-  } else {
-    EXPECT_TRUE(converted.data().is_same(original.data()));
-    EXPECT_TRUE(converted.masks()["m"].is_same(original.masks()["m"]));
-  }
+  EXPECT_EQ(converted.data().is_same(original.data()), !expect_copy);
+  EXPECT_EQ(converted.masks()["m"].is_same(original.masks()["m"]),
+            !expect_copy);
 }
 } // namespace
 
@@ -136,13 +132,9 @@ void check_to_unit(const DataArray &original, const units::Unit target_unit,
   EXPECT_EQ(converted.masks(), original.masks());
 
   EXPECT_TRUE(converted.coords()[Dim::X].is_same(original.coords()[Dim::X]));
-  if (expect_copy) {
-    EXPECT_FALSE(converted.data().is_same(original.data()));
-    EXPECT_FALSE(converted.masks()["m"].is_same(original.masks()["m"]));
-  } else {
-    EXPECT_TRUE(converted.data().is_same(original.data()));
-    EXPECT_TRUE(converted.masks()["m"].is_same(original.masks()["m"]));
-  }
+  EXPECT_EQ(converted.data().is_same(original.data()), !expect_copy);
+  EXPECT_EQ(converted.masks()["m"].is_same(original.masks()["m"]),
+            !expect_copy);
 }
 } // namespace
 
