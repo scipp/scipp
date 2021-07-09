@@ -7,3 +7,6 @@
 include("${CMAKE_CURRENT_LIST_DIR}/scipp-targets.cmake")
 
 check_required_components(scipp-targets)
+
+include(CMakeFindDependencyMacro)
+find_dependency(TBB)
