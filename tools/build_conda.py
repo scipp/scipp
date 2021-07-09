@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     # Depending on the platform, directories have different names.
     if sys.platform == "win32":
-        lib_dest = 'lib'
+        lib_dest = 'Lib'
         bin_src = 'bin'
         lib_src = 'Lib'
         inc_src = 'include'
