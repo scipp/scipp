@@ -16,11 +16,13 @@ def set_button_color(button, selected=False):
 
 
 def _make_toggle_button(**kwargs):
-    return ipw.ToggleButton(layout={
+    button = ipw.ToggleButton(layout={
         "width": "34px",
         "padding": "0px 0px 0px 0px"
     },
-                            **kwargs)
+                              **kwargs)
+    set_button_color(button)
+    return button
 
 
 class PlotToolbar:
@@ -198,7 +200,7 @@ class PlotToolbar1d(PlotToolbar):
                         tooltip="Rescale")
         self.members['toggle_xaxis_scale'] = None
         self.add_togglebutton(name="toggle_norm",
-                              description="log",
+                              description="logy",
                               tooltip="log(data)")
         self.add_button(name="save_view", icon="save", tooltip="Save")
 
