@@ -53,7 +53,6 @@ class PlotPanel3d(PlotPanel):
                                     indent=False,
                                     layout={"width": "20px"})
         ipw.jslink((cut_checkbox, 'value'), (cut_slider, 'continuous_update'))
-        ipw.jslink((cut_slider, 'step'), (cut_surface_thickness, 'value'))
         cut_slider.observe(self._update_cut_surface, names="value")
 
         self._cut_sliders[key] = cut_slider
@@ -116,7 +115,7 @@ class PlotPanel3d(PlotPanel):
             ],
             icons=(['cube'] * 3) + ['circle-o'] + (['toggle-on'] * 3) +
             ['magic'],
-            style={"button_width": "35px"},
+            style={"button_width": "50px"},
         )
         self.cut_surface_buttons.observe(self._update_cut_surface_buttons,
                                          names="value")
@@ -185,10 +184,12 @@ class PlotPanel3d(PlotPanel):
         """
         if self._current_cut is None:
             return
+        delta = self._cut_surface_thicknesses[self._current_cut].value
+        self._cut_sliders[self._current_cut].step = 0.5 * delta
         self.controller.update_cut_surface(
             key=self.options[self.cut_surface_buttons.value],
             center=self._cut_sliders[self._current_cut].value,
-            delta=self._cut_surface_thicknesses[self._current_cut].value,
+            delta=delta,
             inactive=self.opacity_slider.lower,
             active=self.opacity_slider.upper)
 
