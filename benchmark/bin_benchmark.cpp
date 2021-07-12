@@ -40,7 +40,9 @@ static void BM_bin_table(benchmark::State &state) {
   state.counters["ybins"] = edges_y.dims().volume() - 1;
   state.counters["events"] = nEvent;
 }
-BENCHMARK(BM_bin_table)->RangeMultiplier(10)->Ranges({{10, 1e6}, {1e5, 1e8}});
+BENCHMARK(BM_bin_table)
+    ->RangeMultiplier(10)
+    ->Ranges({{10, 2ul << 19ul}, {2ul << 16ul, 2ul << 15ul}});
 
 static void BM_rebin_outer(benchmark::State &state) {
   const scipp::index nx = state.range(0);
@@ -59,6 +61,9 @@ static void BM_rebin_outer(benchmark::State &state) {
   state.counters["ybins"] = edges_y.dims().volume() - 1;
   state.counters["events"] = nEvent;
 }
-BENCHMARK(BM_rebin_outer)->RangeMultiplier(10)->Ranges({{10, 1e6}, {1e5, 1e8}});
+BENCHMARK(BM_rebin_outer)
+    ->RangeMultiplier(10)
+    ->Ranges({{10, static_cast<int64_t>(1e6)},
+              {static_cast<int64_t>(1e5), static_cast<int64_t>(1e8)}});
 
 BENCHMARK_MAIN();

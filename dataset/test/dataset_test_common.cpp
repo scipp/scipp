@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/misc_operations.h"
+#include "scipp/variable/astype.h"
 
 #include "dataset_test_common.h"
 

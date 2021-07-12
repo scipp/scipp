@@ -111,6 +111,27 @@ scipp::core::DType scipp_dtype(const py::object &type) {
   }
 }
 
+std::tuple<scipp::core::DType, scipp::units::Unit>
+cast_dtype_and_unit(const pybind11::object &dtype,
+                    const std::optional<scipp::units::Unit> unit) {
+  const auto scipp_dtype = ::scipp_dtype(dtype);
+  if (scipp_dtype == core::dtype<core::time_point>) {
+    units::Unit deduced_unit = parse_datetime_dtype(dtype);
+    if (unit.has_value()) {
+      if (deduced_unit != units::one && *unit != deduced_unit) {
+        throw std::invalid_argument(
+            python::format("The unit encoded in the dtype (", deduced_unit,
+                           ") conflicts with the given unit (", *unit, ")."));
+      } else {
+        deduced_unit = *unit;
+      }
+    }
+    return std::tuple{scipp_dtype, deduced_unit};
+  } else {
+    return std::tuple{scipp_dtype, unit.value_or(units::one)};
+  }
+}
+
 void ensure_conversion_possible(const DType from, const DType to,
                                 const std::string &data_name) {
   if (from == to || (core::is_fundamental(from) && core::is_fundamental(to)) ||
@@ -118,8 +139,8 @@ void ensure_conversion_possible(const DType from, const DType to,
       (core::is_int(from) && to == dtype<core::time_point>)) {
     return; // These are allowed.
   }
-  throw std::invalid_argument(
-      format("Cannot convert ", data_name, " from type ", from, " to ", to));
+  throw std::invalid_argument(python::format("Cannot convert ", data_name,
+                                             " from type ", from, " to ", to));
 }
 
 DType common_dtype(const py::object &values, const py::object &variances,
@@ -136,7 +157,7 @@ DType common_dtype(const py::object &values, const py::object &variances,
     } else {
       if (variances_dtype != core::dtype<void> &&
           values_dtype != variances_dtype) {
-        throw std::invalid_argument(format(
+        throw std::invalid_argument(python::format(
             "The dtypes of the 'values' (", values_dtype, ") and 'variances' (",
             variances_dtype,
             ") arguments do not match. You can specify a dtype explicitly to"

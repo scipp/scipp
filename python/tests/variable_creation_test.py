@@ -119,6 +119,15 @@ def test_ones_with_dtype_and_unit():
     assert var.unit == 's'
 
 
+def test_ones_dtypes():
+    for dtype in (int, float, bool):
+        assert sc.ones(dims=(), shape=(), dtype=dtype).value == dtype(1)
+    assert sc.ones(dims=(), shape=(), unit='s',
+                   dtype='datetime64').value == np.datetime64(1, 's')
+    with pytest.raises(ValueError):
+        sc.ones(dims=(), shape=(), dtype=str)
+
+
 def test_empty_creates_variable_with_correct_dims_and_shape():
     var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     expected = make_dummy(dims=['x', 'y', 'z'], shape=[1, 2, 3])
@@ -140,6 +149,20 @@ def test_empty_with_dtype_and_unit():
                    unit='s')
     assert var.dtype == sc.dtype.int32
     assert var.unit == 's'
+
+
+def test_empty_dtypes():
+    for dtype in (int, float, bool):
+        var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=dtype)
+        expected = make_dummy(dims=['x', 'y', 'z'],
+                              shape=[1, 2, 3],
+                              dtype=dtype)
+        _compare_properties(var, expected)
+    var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype='datetime64')
+    expected = sc.Variable(dims=['x', 'y', 'z'],
+                           values=np.full([1, 2, 3], 83),
+                           dtype='datetime64')
+    _compare_properties(var, expected)
 
 
 def test_array_creates_correct_variable():
@@ -172,7 +195,9 @@ def test_array_needs_nonempty_dims():
 def test_zeros_like():
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
     expected = sc.zeros(dims=['x', 'y', 'z'], shape=[1, 2, 3])
-    _compare_properties(sc.zeros_like(var), expected)
+    zeros = sc.zeros_like(var)
+    _compare_properties(zeros, expected)
+    np.testing.assert_array_equal(zeros.values, 0)
 
 
 def test_zeros_like_with_variances():
@@ -186,13 +211,18 @@ def test_zeros_like_with_variances():
                         with_variances=True,
                         unit='m',
                         dtype=sc.dtype.float32)
-    _compare_properties(sc.zeros_like(var), expected)
+    zeros = sc.zeros_like(var)
+    _compare_properties(zeros, expected)
+    np.testing.assert_array_equal(zeros.values, 0)
+    np.testing.assert_array_equal(zeros.variances, 0)
 
 
 def test_ones_like():
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
     expected = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3])
+    ones = sc.ones_like(var)
     _compare_properties(sc.ones_like(var), expected)
+    np.testing.assert_array_equal(ones.values, 1)
 
 
 def test_ones_like_with_variances():
@@ -206,7 +236,10 @@ def test_ones_like_with_variances():
                        with_variances=True,
                        unit='m',
                        dtype=sc.dtype.float32)
-    _compare_properties(sc.ones_like(var), expected)
+    ones = sc.ones_like(var)
+    _compare_properties(ones, expected)
+    np.testing.assert_array_equal(ones.values, 1)
+    np.testing.assert_array_equal(ones.variances, 1)
 
 
 def test_empty_like():

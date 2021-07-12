@@ -66,7 +66,7 @@ def test_sum():
     assert sc.identical(sc.sum(var, 'x'),
                         sc.Variable(dims=['y'], values=[2.0, 4.0]))
     out = sc.Variable(dims=['y'], values=np.zeros(2), dtype=sc.dtype.float64)
-    sc.sum(var, 'x', out)
+    sc.sum(var, 'x', out=out)
     assert sc.identical(out, sc.Variable(dims=['y'], values=[2.0, 4.0]))
 
 
@@ -77,7 +77,7 @@ def test_nansum():
     assert sc.identical(sc.nansum(var, 'x'),
                         sc.Variable(dims=['y'], values=[2.0, 1.0]))
     out = sc.Variable(dims=['y'], values=np.zeros(2), dtype=sc.dtype.float64)
-    sc.nansum(var, 'x', out)
+    sc.nansum(var, 'x', out=out)
     assert sc.identical(out, sc.Variable(dims=['y'], values=[2.0, 1.0]))
 
 
@@ -87,7 +87,7 @@ def test_mean():
     assert sc.identical(sc.mean(var, 'x'),
                         sc.Variable(dims=['y'], values=[1.0, 2.0]))
     out = sc.Variable(dims=['y'], values=np.zeros(2), dtype=sc.dtype.float64)
-    sc.mean(var, 'x', out)
+    sc.mean(var, 'x', out=out)
     assert sc.identical(out, sc.Variable(dims=['y'], values=[1.0, 2.0]))
 
 
@@ -98,5 +98,5 @@ def test_nanmean():
     assert sc.identical(sc.nanmean(var, 'x'),
                         sc.Variable(dims=['y'], values=[1.0, 1.0]))
     out = sc.Variable(dims=['y'], values=np.zeros(2), dtype=sc.dtype.float64)
-    sc.mean(var, 'x', out)
+    sc.mean(var, 'x', out=out)
     assert sc.identical(out, sc.Variable(dims=['y'], values=[1.0, 1.0]))

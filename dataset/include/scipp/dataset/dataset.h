@@ -127,37 +127,37 @@ public:
   auto items_begin() const && = delete;
   auto items_begin() && = delete;
   auto items_begin() const &noexcept {
-    return boost::make_transform_iterator(begin(), detail::make_key_value);
+    return boost::make_transform_iterator(begin(), detail::make_key_value{});
   }
   auto items_begin() &noexcept {
-    return boost::make_transform_iterator(begin(), detail::make_key_value);
+    return boost::make_transform_iterator(begin(), detail::make_key_value{});
   }
   auto items_end() const && = delete;
   auto items_end() && = delete;
   auto items_end() const &noexcept {
-    return boost::make_transform_iterator(end(), detail::make_key_value);
+    return boost::make_transform_iterator(end(), detail::make_key_value{});
   }
 
   auto items_end() &noexcept {
-    return boost::make_transform_iterator(end(), detail::make_key_value);
+    return boost::make_transform_iterator(end(), detail::make_key_value{});
   }
 
   auto keys_begin() const && = delete;
   auto keys_begin() && = delete;
   auto keys_begin() const &noexcept {
-    return boost::make_transform_iterator(m_data.begin(), detail::make_key);
+    return boost::make_transform_iterator(m_data.begin(), detail::make_key{});
   }
   auto keys_begin() &noexcept {
-    return boost::make_transform_iterator(m_data.begin(), detail::make_key);
+    return boost::make_transform_iterator(m_data.begin(), detail::make_key{});
   }
   auto keys_end() const && = delete;
   auto keys_end() && = delete;
   auto keys_end() const &noexcept {
-    return boost::make_transform_iterator(m_data.end(), detail::make_key);
+    return boost::make_transform_iterator(m_data.end(), detail::make_key{});
   }
 
   auto keys_end() &noexcept {
-    return boost::make_transform_iterator(m_data.end(), detail::make_key);
+    return boost::make_transform_iterator(m_data.end(), detail::make_key{});
   }
 
   void setCoord(const Dim dim, Variable coord);

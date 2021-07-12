@@ -365,7 +365,7 @@ def test_plot_redraw_binned():
     pb = sc.plot(b, resolution=64)
     bsum = pb.view.figure.image_values.get_array().sum()
 
-    a.data = a.bins.concatenate(b).data
+    a.data = a.bins.concatenate(other=b).data
     pa.redraw()
     assert np.isclose(pa.view.figure.image_values.get_array().sum(),
                       asum + bsum)

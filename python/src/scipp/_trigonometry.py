@@ -7,11 +7,12 @@ from typing import Optional
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import DataArrayLike
+from .typing import VariableLike
 
 
-def sin(x: DataArrayLike,
-        out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def sin(x: VariableLike,
+        *,
+        out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise sine.
 
     :param x: Input data.
@@ -23,8 +24,9 @@ def sin(x: DataArrayLike,
     return _call_cpp_func(_cpp.sin, x, out=out)
 
 
-def cos(x: DataArrayLike,
-        out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def cos(x: VariableLike,
+        *,
+        out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise cosine.
 
     :param x: Input data.
@@ -36,8 +38,9 @@ def cos(x: DataArrayLike,
     return _call_cpp_func(_cpp.cos, x, out=out)
 
 
-def tan(x: DataArrayLike,
-        out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def tan(x: VariableLike,
+        *,
+        out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise tangent.
 
     :param x: Input data.
@@ -49,8 +52,9 @@ def tan(x: DataArrayLike,
     return _call_cpp_func(_cpp.tan, x, out=out)
 
 
-def asin(x: DataArrayLike,
-         out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def asin(x: VariableLike,
+         *,
+         out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise inverse sine.
 
     :param x: Input data.
@@ -61,8 +65,9 @@ def asin(x: DataArrayLike,
     return _call_cpp_func(_cpp.asin, x, out=out)
 
 
-def acos(x: DataArrayLike,
-         out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def acos(x: VariableLike,
+         *,
+         out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise inverse cosine.
 
     :param x: Input data.
@@ -73,8 +78,9 @@ def acos(x: DataArrayLike,
     return _call_cpp_func(_cpp.acos, x, out=out)
 
 
-def atan(x: DataArrayLike,
-         out: Optional[DataArrayLike] = None) -> DataArrayLike:
+def atan(x: VariableLike,
+         *,
+         out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise inverse tangent.
 
     :param x: Input data.
@@ -99,4 +105,4 @@ def atan2(*,
               `here <https://en.cppreference.com/w/c/numeric/math/atan2>`_.
               Note that domain errors are *not* propagated to Python.
     """
-    return _call_cpp_func(_cpp.atan2, y, x, out=out)
+    return _call_cpp_func(_cpp.atan2, y=y, x=x, out=out)

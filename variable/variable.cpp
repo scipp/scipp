@@ -249,7 +249,7 @@ void Variable::setVariances(const Variable &v) {
 
 namespace detail {
 void throw_keyword_arg_constructor_bad_dtype(const DType dtype) {
-  throw except::TypeError("Can't create the Variable with type " +
+  throw except::TypeError("Cannot create the Variable with type " +
                           to_string(dtype) +
                           " with such values and/or variances.");
 }
