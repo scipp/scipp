@@ -130,7 +130,9 @@ class PlotController:
         """
         Transpose the displayed axes.
         """
-        self.update_axes(dims=self.model.dims[::-1])
+        # Keep current zoom state
+        self.update_axes(dims=self.model.dims[::-1],
+                         slices=self.view.current_limits)
 
     def toggle_dim_scale(self, dim):
         """
@@ -160,7 +162,7 @@ class PlotController:
         dims = [old_dim if dim == new_dim else dim for dim in dims]
         self.update_axes(dims=dims)
 
-    def update_axes(self, dims=None, normalize=True):
+    def update_axes(self, dims=None, normalize=True, slices=None):
         """
         This function is called when a dimension that is displayed along a
         given axis is changed. This happens for instance when we want to
@@ -179,7 +181,7 @@ class PlotController:
             self.panel.update_axes()
         if self.profile is not None:
             self.toggle_profile_view(dims=list(set(self._dims) - set(dims)))
-        self.update_data()
+        self.update_data(slices=slices)
         if normalize:
             self.rescale_to_data()
 
@@ -193,6 +195,8 @@ class PlotController:
         """
         if slices is None:
             slices = self.widgets.slices
+        else:
+            slices.update(self.widgets.slices)
         new_values = self.model.update_data(slices)
         self.widgets.update_slider_readout(new_values.meta)
 
