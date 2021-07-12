@@ -11,6 +11,7 @@ pybind11_add_module(
   bins.cpp
   choose.cpp
   comparison.cpp
+  convolution.cpp
   counts.cpp
   variable_creation.cpp
   cumulative.cpp
