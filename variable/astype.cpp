@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
-/// @author Igor Gudich
+/// @author Jan-Lukas Wynen
 #include <cmath>
 
 #include "scipp/core/tag_util.h"
 #include "scipp/core/transform_common.h"
-#include "scipp/variable/misc_operations.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 

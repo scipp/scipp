@@ -8,9 +8,7 @@
 #include "test_macros.h"
 
 #include "scipp/core/except.h"
-#include "scipp/variable/bins.h"
-#include "scipp/variable/operations.h"
-#include "scipp/variable/shape.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
