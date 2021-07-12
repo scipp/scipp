@@ -16,9 +16,9 @@ if os.name == "nt" and "CONDA_PREFIX" in os.environ:
     # https://github.com/conda-forge/python-feedstock/blob/289b2a8017ddd000896e525f18867f4caacec6f2/recipe/patches/0020-Add-CondaEcosystemModifyDllSearchPath.patch
     #
     import pathlib
-    dll_directory = os.path.abspath(os.path.join(pathlib.Path(__file__).parent.resolve(), "..", "bin"))
+    dll_directory = os.path.abspath(
+        os.path.join(pathlib.Path(__file__).parent.resolve(), "..", "bin"))
     os.environ["PATH"] += os.pathsep + dll_directory
-
 
 from . import runtime_config
 
