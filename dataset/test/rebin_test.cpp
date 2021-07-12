@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-#include "test_macros.h"
+
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/rebin.h"
-#include "scipp/variable/misc_operations.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/shape.h"
 

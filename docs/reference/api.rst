@@ -187,27 +187,6 @@ Reduction
    :toctree: ../generated/functions
 
    groupby
-   GroupByDataArray.all
-   GroupByDataArray.any
-   GroupByDataArray.max
-   GroupByDataArray.mean
-   GroupByDataArray.min
-   GroupByDataArray.sum
-   GroupByDataset.all
-   GroupByDataset.any
-   GroupByDataset.max
-   GroupByDataset.mean
-   GroupByDataset.min
-   GroupByDataset.sum
-
-Other
------
-
-.. autosummary::
-   :toctree: ../generated/functions
-
-   GroupByDataArray.copy
-   GroupByDataset.copy
 
 Counts
 ~~~~~~
@@ -250,5 +229,5 @@ Typing
 .. autosummary::
    :toctree: ../generated
 
-   typing.DataArrayLike
-   typing.DatasetLike
+   typing.LabeledArray
+   typing.MetaDataMap

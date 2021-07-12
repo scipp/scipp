@@ -17,6 +17,8 @@ def bind_functions_as_methods(cls, namespace, func_names):
     for func_name, func in map(lambda n: (n, namespace[n]), func_names):
         method = types.FunctionType(func.__code__, func.__globals__, func_name,
                                     func.__defaults__, func.__closure__)
+        method.__kwdefaults__ = func.__kwdefaults__
+        method.__annotations__ = func.__annotations__
         # Extract the summary from the docstring.
         # This relies on check W293 in flake8 to avoid implementing a more
         # sophisticate / expensive parser that running during import of scipp.

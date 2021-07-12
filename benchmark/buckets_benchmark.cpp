@@ -48,7 +48,7 @@ static void BM_buckets_concatenate(benchmark::State &state) {
 }
 BENCHMARK(BM_buckets_concatenate)
     ->RangeMultiplier(4)
-    ->Ranges({{64, 1e6}, {2 << 20, 1e9}});
+    ->Ranges({{64, 2ul << 19ul}, {2ul << 20ul, 2ul << 29ul}});
 
 auto make_table(const scipp::index size) {
   Dimensions dims(Dim::Event, size);
@@ -73,6 +73,6 @@ static void BM_bucketby(benchmark::State &state) {
   state.SetItemsProcessed(state.iterations() * nEvent);
   state.counters["events"] = nEvent;
 }
-BENCHMARK(BM_bucketby)->RangeMultiplier(4)->Ranges({{64, 1e7}});
+BENCHMARK(BM_bucketby)->RangeMultiplier(4)->Ranges({{64, 2ul << 23ul}});
 
 BENCHMARK_MAIN();

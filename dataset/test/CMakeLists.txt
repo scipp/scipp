@@ -6,6 +6,7 @@ set(TARGET_NAME "scipp-dataset-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
+  astype_test.cpp
   attributes_test.cpp
   binned_arithmetic_test.cpp
   binned_creation_test.cpp
@@ -45,6 +46,7 @@ add_executable(
   string_test.cpp
   test_data_arrays.cpp
   sum_test.cpp
+  to_unit_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(

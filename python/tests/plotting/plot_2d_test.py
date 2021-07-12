@@ -371,8 +371,10 @@ def test_plot_redraw_binned_concat_inplace():
     pb = sc.plot(b, resolution=64)
     bsum = pb.view.figure.image_values.get_array().sum()
 
-    # TODO would need to change data inplace rather than replacing
     a.data = a.bins.concatenate(b).data
+    a.data = a.bins.concatenate(b).data
+    # TODO would need to change data inplace rather than replacing
+    a.data = a.bins.concatenate(other=b).data
     pa.redraw()
     assert np.isclose(pa.view.figure.image_values.get_array().sum(),
                       asum + bsum)

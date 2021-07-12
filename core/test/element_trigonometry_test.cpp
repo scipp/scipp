@@ -28,8 +28,8 @@ TEST(ElementSinOutArgTest, value_float) {
 
 TEST(ElementSinOutArgTest, supported_types) {
   auto supported = decltype(element::sin)::types{};
-  std::get<double>(supported);
-  std::get<float>(supported);
+  static_cast<void>(std::get<double>(supported));
+  static_cast<void>(std::get<float>(supported));
 }
 
 TEST(ElementCosOutArgTest, unit_rad) {
@@ -48,8 +48,8 @@ TEST(ElementCosOutArgTest, value_float) {
 
 TEST(ElementCosOutArgTest, supported_types) {
   auto supported = decltype(element::cos)::types{};
-  std::get<double>(supported);
-  std::get<float>(supported);
+  static_cast<void>(std::get<double>(supported));
+  static_cast<void>(std::get<float>(supported));
 }
 
 TEST(ElementTanOutArgTest, unit_rad) {
@@ -68,8 +68,8 @@ TEST(ElementTanOutArgTest, value_float) {
 
 TEST(ElementTanOutArgTest, supported_types) {
   auto supported = decltype(element::tan)::types{};
-  std::get<double>(supported);
-  std::get<float>(supported);
+  static_cast<void>(std::get<double>(supported));
+  static_cast<void>(std::get<float>(supported));
 }
 
 TEST(ElementAsinTest, unit) {
@@ -101,8 +101,8 @@ TEST(ElementAsinOutArgTest, value_float) {
 
 TEST(ElementAsinOutArgTest, supported_types) {
   auto supported = decltype(element::asin)::types{};
-  std::get<double>(supported);
-  std::get<float>(supported);
+  static_cast<void>(std::get<double>(supported));
+  static_cast<void>(std::get<float>(supported));
 }
 
 TEST(ElementAcosTest, unit) {
@@ -134,8 +134,8 @@ TEST(ElementAcosOutArgTest, value_float) {
 
 TEST(ElementAcosOutArgTest, supported_types) {
   auto supported = decltype(element::acos)::types{};
-  std::get<double>(supported);
-  std::get<float>(supported);
+  static_cast<void>(std::get<double>(supported));
+  static_cast<void>(std::get<float>(supported));
 }
 
 TEST(ElementAtanTest, unit) {
@@ -165,8 +165,8 @@ TEST(ElementAtanOutArgTest, value_float) {
 
 TEST(ElementAtanOutArgTest, supported_types) {
   auto supported = decltype(element::atan)::types{};
-  std::get<double>(supported);
-  std::get<float>(supported);
+  static_cast<void>(std::get<double>(supported));
+  static_cast<void>(std::get<float>(supported));
 }
 
 template <typename T> class ElementAtan2Test : public ::testing::Test {};
