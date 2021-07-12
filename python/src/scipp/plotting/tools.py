@@ -191,7 +191,7 @@ def fig_to_pngbytes(fig):
     """
     import matplotlib.pyplot as plt
     buf = io.BytesIO()
-    fig.savefig(buf, format='png')
+    fig.savefig(buf, format='png', bbox_inches='tight')
     plt.close(fig)
     buf.seek(0)
     return buf.getvalue()

@@ -412,9 +412,10 @@ void main() {
                          cmap=self.scalar_map.get_cmap(),
                          norm=self.scalar_map.norm,
                          extend=self.extend)
-        # TODO Why does this not show up?
         cbar_ax.set_ylabel(self._unit)
-        cbar_ax.yaxis.set_label_coords(-0.9, 0.5)
+        # TODO If we set this position it is clipped somewhere. For now we
+        # leave the default, which places unit to the right of the colorbar.
+        # cbar_ax.yaxis.set_label_coords(-0.9, 0.5)
         self.cbar_image.value = fig_to_pngbytes(cbar_fig)
 
     def reset_camera(self):
