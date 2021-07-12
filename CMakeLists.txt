@@ -88,13 +88,7 @@ endif()
 conan_cmake_autodetect(conan_settings)
 # cmake-format: off
 conan_cmake_run(
-  REQUIRES boost/1.76.0
-           eigen/3.3.9
-           gtest/1.11.0
-           benchmark/1.5.3
-  OPTIONS boost:header_only=True
-          gtest:shared=False
-          benchmark:shared=False
+  CONANFILE conanfile.txt
   SETTINGS ${conan_settings}
   IMPORTS include/eigen3,*->./eigen-src
   BASIC_SETUP
