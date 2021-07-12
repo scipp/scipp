@@ -31,7 +31,7 @@ class PlotModel1d(PlotModel):
         model = self._make_1d_resampling_model(array)
         # Extend slice to full input "pixel" sizes
         for dim in slices:
-            # TODO Unfortunately we cannot extendi n this manner when there
+            # TODO Unfortunately we cannot extend in this manner when there
             # are 2-d coords
             if len(model._array.meta[dim].dims) != 1:
                 continue
