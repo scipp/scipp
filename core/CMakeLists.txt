@@ -88,9 +88,3 @@ endif()
 add_subdirectory(test)
 
 scipp_install_component(TARGET ${TARGET_NAME} INSTALL_GENERATED)
-
-if(DYNAMIC_LIB)
-  install(DIRECTORY ${PROJECT_BINARY_DIR}/eigen-src/Eigen
-          DESTINATION ${INCLUDEDIR}
-  )
-endif(DYNAMIC_LIB)
