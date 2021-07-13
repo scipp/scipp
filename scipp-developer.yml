@@ -36,7 +36,7 @@ dependencies:
 
   # Docs
   - pandoc
-  - sphinx
+  - sphinx=4.0.2 # see https://github.com/sphinx-doc/sphinx/issues/9438
   - sphinx_rtd_theme
   - nbsphinx
   - docutils=0.16 # see https://github.com/spatialaudio/nbsphinx/issues/549
