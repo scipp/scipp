@@ -106,7 +106,7 @@ def main(prefix='install', build_dir='build', source_dir='.'):
             'scipp-common-test', 'scipp-units-test', 'scipp-core-test',
             'scipp-variable-test', 'scipp-dataset-test'
     ]:
-        run_command([os.path.join('bin', test)], shell=shell)
+        run_command([os.path.join('bin', build_config, test)], shell=shell)
 
 
 if __name__ == '__main__':
