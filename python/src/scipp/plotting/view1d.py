@@ -1,10 +1,22 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
+from matplotlib.lines import Line2D
 
-from .figure1d import PlotFigure1d
 from .view import PlotView
-from ..utils import make_random_color
+from .._variable import ones
+from .tools import vars_to_err
+from .._scipp import core as sc
+
+
+def _make_label(array):
+    # TODO use formatter
+    labels = []
+    for dim, coord in array.meta.items():
+        unit = '' if coord.unit == sc.units.dimensionless else f' {coord.unit}'
+        if dim not in array.dims:
+            labels.append(f'{dim}={coord.values.round(decimals=2)}{unit}')
+    return ', '.join(labels)
 
 
 class PlotView1d(PlotView):
@@ -16,8 +28,39 @@ class PlotView1d(PlotView):
     with the `PlotProfile` plot displayed below the `PlotFigure1d`.
 
     """
-    def __init__(self, *args, **kwargs):
-        super().__init__(figure=PlotFigure1d(*args, **kwargs))
+    def __init__(self, figure, formatters):
+        super().__init__(figure=figure, formatters=formatters)
+        self._axes = ['x']
+
+    def _make_masks(self, array, mask_info):
+        if not mask_info:
+            return {}
+        masks = {}
+        data = array.data
+        base_mask = ones(sizes=data.sizes, dtype=sc.dtype.int32)
+        for m in mask_info:
+            if m in array.masks:
+                msk = base_mask * sc.Variable(dims=array.masks[m].dims,
+                                              values=array.masks[m].values)
+                masks[m] = msk.values
+            else:
+                masks[m] = None
+        return masks
+
+    def _make_data(self, new_values, mask_info):
+        out = {}
+        for name, array in new_values.items():
+            self._dim = array.dims[0]  # should be same for all items
+            values = {"values": {}, "variances": {}, "masks": {}}
+            values['label'] = _make_label(array)
+            values["values"]["x"] = array.meta[self._dim].values.ravel()
+            values["values"]["y"] = array.values.ravel()
+            if array.variances is not None:
+                values["variances"]["e"] = vars_to_err(array.variances.ravel())
+            values["masks"] = self._make_masks(array,
+                                               mask_info=mask_info[name])
+            out[name] = values
+        return out
 
     def toggle_mask(self, change):
         """
@@ -44,73 +87,39 @@ class PlotView1d(PlotView):
         """
         self.figure.update_line_color(*args, **kwargs)
 
-    def reset_profile(self):
+    def clear_marks(self):
         """
-        Remove all vertical lines (=profile location markers).
+        Remove all markers (axvline).
         """
-        new_lines = []
-        for line in self.figure.ax.lines:
-            if not (line.get_url() == "axvline"):
-                new_lines.append(line)
-        self.figure.ax.lines = new_lines
+        self.figure.ax.lines = [
+            line for line in self.figure.ax.lines
+            if isinstance(line.get_gid(), int)
+        ]
         self.figure.draw()
 
-    def update_profile(self, event):
+    def _do_handle_pick(self, event):
         """
-        If mouse is hovering inside the axes, show and update profile.
-        Otherwise, hide profile.
+        Return the index of the picked line, None if something else is picked.
+        """
+        if isinstance(event.artist, Line2D):
+            # Avoid matching data or mask lines
+            if isinstance(event.artist.get_gid(), int):
+                return event.artist.get_gid()
 
-        TODO: optimize visibility update to that it only calls the function on
-        a state change and not on every mouse movement.
+    def _do_mark(self, index, color, x):
         """
-        if event.inaxes == self.figure.ax:
-            self.interface["update_profile"](xdata=event.xdata)
-            self.interface["toggle_hover_visibility"](True)
-        else:
-            self.interface["toggle_hover_visibility"](False)
-
-    def keep_or_remove_profile(self, event):
+        Add a marker (axvline).
         """
-        Forward the keep or remove event to the correct function.
-        """
-        line_url = event.artist.get_url()
-        if line_url == "axvline":
-            self.remove_profile(event)
-        else:
-            self.keep_profile(event, line_url)
+        line = self.figure.ax.axvline(x, color=color, picker=True)
+        line.set_pickradius(5.0)
+        line.set_gid(index)
         self.figure.draw()
 
-    def keep_profile(self, event, line_name):
+    def remove_mark(self, index):
         """
-        Add a vertical line to mark the location of the saved profile.
+        Remove a marker (axvline).
         """
-        # TODO: The names of the data variables are stored in the masks
-        # information. This is not very clean.
-        if line_name in self.figure.masks:
-            xdata = event.mouseevent.xdata
-            col = make_random_color(fmt='hex')
-            self.profile_counter += 1
-            line_id = self.profile_counter
-            line = self.figure.ax.axvline(xdata, color=col, picker=True)
-            line.set_pickradius(5.0)
-            line.set_url("axvline")
-            line.set_gid(line_id)
-            self.interface["keep_line"](target="profile",
-                                        name=line_name,
-                                        color=col,
-                                        line_id=line_id)
-
-    def remove_profile(self, event):
-        """
-        Remove a vertical line corresponding to a saved profile.
-        """
-        new_lines = []
-        gid = event.artist.get_gid()
-        url = event.artist.get_url()
-        for line in self.figure.ax.lines:
-            if not ((line.get_gid() == gid) and (line.get_url() == url)):
-                new_lines.append(line)
-        self.figure.ax.lines = new_lines
-
-        # Also remove the line from the 1d plot
-        self.interface["remove_line"](target="profile", line_id=gid)
+        self.figure.ax.lines = [
+            line for line in self.figure.ax.lines if line.get_gid() != index
+        ]
+        self.figure.draw()

@@ -12,30 +12,22 @@ class PlotController2d(PlotController):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def update_viewport(self, xylims):
-        """
-        When the view requests a viewport udpate, we get new image data from
-        the model and send them back to the view which then updates the figure.
-        """
-        new_values = self.model.update_viewport(
-            xylims, mask_info=self.get_masks_info())
-        if new_values is not None:
-            self.view.update_data(new_values)
-
-    def connect_view(self):
-        """
-        Connect the view interface to callbacks.
-        """
-        super().connect_view()
-        self.view.connect(
-            view_callbacks={
-                "update_viewport": self.update_viewport,
-                "rescale_to_data": self.rescale_to_data
-            })
-
     def redraw(self):
         """
         Update the model data dicts and re-draw the figure.
         """
         self.model.reset_resampling_model()
         super().redraw()
+
+    def home_view(self, button):
+        # TODO There appears to be an issue with the mechanism of how the
+        # matplotlib "home" button works. While I am not sure I understand
+        # what is happening, "home" appears to remember the *initial* xlim
+        # and ylim values. However, when we switch dims or transpose we
+        # change these limits. See in particular PlotFigure2d.update_data.
+        # I could not figure out where matplotlib stores the "home" limits.
+        # We use limits stored in the view to handle this ourselves. Note
+        # current hack with figure._limits_set due to shortcomings of how
+        # axis lim changes are detected.
+        self.view.figure._limits_set = False
+        self.update_axes(slices=self.view.global_limits)

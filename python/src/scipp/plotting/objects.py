@@ -2,8 +2,100 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .. import config
+from .formatters import make_formatter
 from .tools import parse_params
 from .._scipp.core import DimensionError
+from .model1d import PlotModel1d
+from .widgets import PlotWidgets
+
+
+def make_params(*,
+                cmap=None,
+                norm=None,
+                vmin=None,
+                vmax=None,
+                masks=None,
+                color=None):
+    # Scan the input data and collect information
+    params = {"values": {}, "masks": {}}
+    globs = {
+        "cmap": cmap,
+        "norm": norm,
+        "vmin": vmin,
+        "vmax": vmax,
+        "color": color
+    }
+    masks_globs = {"norm": norm, "vmin": vmin, "vmax": vmax}
+    # Get the colormap and normalization
+    params["values"] = parse_params(globs=globs)
+    params["masks"] = parse_params(params=masks,
+                                   defaults={
+                                       "cmap": "gray",
+                                       "cbar": False,
+                                       "under_color": None,
+                                       "over_color": None
+                                   },
+                                   globs=masks_globs)
+    # Set cmap extend state: if we have sliders then we need to extend.
+    # We also need to extend if vmin or vmax are set.
+    extend_cmap = "neither"
+    if (vmin is not None) and (vmax is not None):
+        extend_cmap = "both"
+    elif vmin is not None:
+        extend_cmap = "min"
+    elif vmax is not None:
+        extend_cmap = "max"
+
+    params['extend_cmap'] = extend_cmap
+    return params
+
+
+def _make_errorbar_params(arrays, errorbars):
+    """
+    Determine whether error bars should be plotted or not.
+    """
+    if errorbars is None:
+        params = {}
+    else:
+        if isinstance(errorbars, bool):
+            params = {name: errorbars for name in arrays}
+        elif isinstance(errorbars, dict):
+            params = errorbars
+        else:
+            raise TypeError("Unsupported type for argument "
+                            "'errorbars': {}".format(type(errorbars)))
+    for name, array in arrays.items():
+        has_variances = array.variances is not None
+        if name in params:
+            params[name] &= has_variances
+        else:
+            params[name] = has_variances
+    return params
+
+
+def _make_formatters(*, dims, arrays, labels):
+    array = next(iter(arrays.values()))
+    labs = {dim: dim for dim in dims}
+    if labels is not None:
+        labs.update(labels)
+    formatters = {dim: make_formatter(array, labs[dim]) for dim in dims}
+    return labs, formatters
+
+
+def make_profile(ax, mask_color):
+    from .profile import PlotProfile
+    pad = config.plot.padding.copy()
+    pad[2] = 0.77
+    return PlotProfile(ax=ax,
+                       mask_color=mask_color,
+                       figsize=(1.3 * config.plot.width / config.plot.dpi,
+                                0.6 * config.plot.height / config.plot.dpi),
+                       padding=pad,
+                       legend={
+                           "show": True,
+                           "loc": (1.02, 0.0)
+                       })
 
 
 class PlotDict():
@@ -111,22 +203,26 @@ class Plot:
     """
     def __init__(self,
                  scipp_obj_dict,
-                 axes=None,
+                 controller,
+                 figure,
+                 model=None,
+                 profile_figure=None,
                  errorbars=None,
-                 cmap=None,
-                 norm=False,
+                 panel=None,
+                 labels=None,
+                 resolution=None,
+                 dims=None,
+                 view=None,
                  vmin=None,
                  vmax=None,
-                 color=None,
-                 masks=None,
-                 positions=None,
+                 axes=None,
+                 norm=False,
+                 scale=None,
                  view_ndims=None):
 
-        self.controller = None
-        self.model = None
-        self.panel = None
+        self._scipp_obj_dict = scipp_obj_dict
+        self.panel = panel
         self.profile = None
-        self.view = None
         self.widgets = None
 
         self.show_widgets = True
@@ -136,110 +232,61 @@ class Plot:
         self.fig = None
         self.ax = None
 
-        # Get first item in dict and process dimensions.
-        # Dimensions should be the same for all dict items.
-        self.axes = None
-        self.masks = {}
-        self.errorbars = {}
-        self.dim_to_shape = {}
-        self.coord_shapes = {}
-        self.dim_label_map = {}
-        self.position_dims = None
+        # TODO use option to provide keys here
+        array = next(iter(scipp_obj_dict.values()))
 
         self.name = list(scipp_obj_dict.keys())[0]
-        self._process_axes_dimensions(scipp_obj_dict[self.name],
-                                      axes=axes,
-                                      view_ndims=view_ndims,
-                                      positions=positions)
+        if dims is None:
+            self.dims = scipp_obj_dict[self.name].dims
+        else:
+            self.dims = dims
+        for dim in self.dims[:-view_ndims]:
+            if dim in array.meta and len(array.meta[dim].dims) > 1:
+                raise DimensionError("A ragged coordinate cannot lie along "
+                                     "a slider dimension, it must be one of "
+                                     "the displayed dimensions.")
 
-        # Set cmap extend state: if we have sliders (= key "0" is found in
-        # self.axes), then we need to extend.
-        # We also need to extend if vmin or vmax are set.
-        self.extend_cmap = "neither"
-        if (0 in self.axes) or ((vmin is not None) and (vmax is not None)):
-            self.extend_cmap = "both"
-        elif vmin is not None:
-            self.extend_cmap = "min"
-        elif vmax is not None:
-            self.extend_cmap = "max"
+        self._tool_button_states = {}
+        if norm:
+            self._tool_button_states['toggle_norm'] = True
+        for dim in {} if scale is None else scale:
+            if dim in self.dims:
+                self._tool_button_states[f'log_{dim}'] = scale[dim] == 'log'
 
-        # Scan the input data and collect information
-        self.params = {"values": {}, "masks": {}}
-        globs = {
-            "cmap": cmap,
-            "norm": norm,
-            "vmin": vmin,
-            "vmax": vmax,
-            "color": color
-        }
-        masks_globs = {"norm": norm, "vmin": vmin, "vmax": vmax}
+        errorbars = _make_errorbar_params(scipp_obj_dict, errorbars)
+        figure.errorbars = errorbars
+        if profile_figure is not None:
+            profile_figure.errorbars = errorbars
+        labels, formatters = _make_formatters(arrays=scipp_obj_dict,
+                                              labels=labels,
+                                              dims=self.dims)
+        self.profile = profile_figure
+        self.view = view(figure=figure, formatters=formatters)
 
-        if errorbars is not None:
-            if isinstance(errorbars, bool):
-                self.errorbars = {name: errorbars for name in scipp_obj_dict}
-            elif isinstance(errorbars, dict):
-                self.errorbars = errorbars
-            else:
-                raise TypeError("Unsupported type for argument "
-                                "'errorbars': {}".format(type(errorbars)))
+        self.widgets = PlotWidgets(
+            dims=self.dims,
+            formatters=formatters,
+            ndim=self.view_ndims,
+            dim_label_map=labels,
+            masks=self._scipp_obj_dict,
+            sizes={dim: array.sizes[dim]
+                   for dim in self.dims})
 
-        for name, array in scipp_obj_dict.items():
-
-            # Get the colormap and normalization
-            self.params["values"][name] = parse_params(globs=globs,
-                                                       variable=array.data,
-                                                       name=name)
-
-            self.params["masks"][name] = parse_params(params=masks,
-                                                      defaults={
-                                                          "cmap": "gray",
-                                                          "cbar": False,
-                                                          "under_color": None,
-                                                          "over_color": None
-                                                      },
-                                                      globs=masks_globs)
-
-            # If non-dimension coord is requested as labels, replace name in
-            # dims
-            array_dims = array.dims
-            for dim in self.axes.values():
-                if dim not in array_dims:
-                    array_dims[array_dims.index(self.dim_label_map[dim])] = dim
-
-            # Create a useful map from dim to shape
-            self.dim_to_shape[name] = dict(zip(array_dims, array.shape))
-            # TODO: once Dim has been replaced by strings, the str(dim) can
-            # then here be replaced by dim
-            self.coord_shapes[name] = {
-                str(dim): coord.shape
-                for dim, coord in array.coords.items()
-            }
-
-            # Add shapes for dims that have no coord in the original data.
-            # They will be replaced by fake coordinates in the model.
-            for dim in array_dims:
-                if dim not in self.coord_shapes[name]:
-                    self.coord_shapes[name][dim] = [
-                        self.dim_to_shape[name][dim]
-                    ]
-
-            # Determine whether error bars should be plotted or not
-            has_variances = array.variances is not None
-            if name in self.errorbars:
-                self.errorbars[name] &= has_variances
-            else:
-                self.errorbars[name] = has_variances
-
-            # Save masks information
-            self.masks[name] = [m for m in array.masks]
-            self.masks[name] = {
-                "color": self.params["masks"][name]["color"],
-                "cmap": self.params["masks"][name]["cmap"],
-                "names": {}
-            }
-            for m in array.masks:
-                self.masks[name]["names"][m] = self.params["masks"][name][
-                    "show"]
+        self.model = model(scipp_obj_dict=self._scipp_obj_dict,
+                           resolution=resolution)
+        profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict)
+        self.controller = controller(dims=self.dims,
+                                     vmin=vmin,
+                                     vmax=vmax,
+                                     norm=norm,
+                                     scale=scale,
+                                     widgets=self.widgets,
+                                     model=self.model,
+                                     profile_model=profile_model,
+                                     view=self.view,
+                                     panel=self.panel,
+                                     profile=self.profile)
+        self._render()
 
     def _ipython_display_(self):
         """
@@ -280,115 +327,22 @@ class Plot:
         """
         self.view.show()
 
-    def render(self, *args, **kwargs):
+    def _render(self):
         """
         Perform some initial calls to render the figure once all components
         have been created.
         """
-        self.controller.render(*args, **kwargs)
+        self.view.figure.initialize_toolbar(
+            log_axis_buttons=self.dims, button_states=self._tool_button_states)
+        if self.profile is not None:
+            self.profile.initialize_toolbar(
+                log_axis_buttons=self.dims,
+                button_states=self._tool_button_states)
+        self.controller.render()
         if hasattr(self.view.figure, "fig"):
             self.fig = self.view.figure.fig
         if hasattr(self.view.figure, "ax"):
             self.ax = self.view.figure.ax
-
-    def _process_axes_dimensions(self,
-                                 array=None,
-                                 axes=None,
-                                 view_ndims=None,
-                                 positions=None):
-        """
-        Assign dimensions of input object to figure axes.
-        If `axes` is not specified, the dimensions are assigned in the order
-        they appear in the input object.
-        """
-
-        if positions:
-            if not array.meta[positions].dims:
-                raise ValueError(f"{positions} cannot be 0 dimensional"
-                                 f" on input object\n\n{array}")
-            else:
-                self.position_dims = array.meta[positions].dims
-
-        array_dims = array.dims
-        self.ndim = len(array_dims)
-
-        base_axes = ["xyz"[i] for i in range(view_ndims)]
-
-        # Process axes dimensions
-        self.axes = {}
-        for i, dim in enumerate(array_dims[::-1]):
-            if positions is not None:
-                if (dim == positions) or (dim in array.meta[positions].dims):
-                    key = "xyz"[("x" in self.axes) + ("y" in self.axes) +
-                                ("z" in self.axes)]
-                else:
-                    key = i - ("x" in self.axes)
-            else:
-                if i < view_ndims:
-                    key = base_axes[i]
-                else:
-                    key = i - view_ndims
-            self.axes[key] = dim
-
-        # Replace axes with supplied axes dimensions
-        supplied_axes = {}
-        if axes is not None:
-            for dim in axes.values():
-                if (dim not in self.axes.values()) and (dim not in array.meta):
-                    raise RuntimeError("Requested dimension was not found in "
-                                       "input data: {}".format(dim))
-            supplied_axes.update(axes)
-        if positions is not None and (positions not in self.axes.values()):
-            supplied_axes.update({"x": positions})
-
-        for key, dim in supplied_axes.items():
-            dim_list = list(self.axes.values())
-            key_list = list(self.axes.keys())
-            underlying_dim = array.meta[dim].dims[
-                -1] if dim in array.meta else dim
-            if dim in dim_list:
-                ind = dim_list.index(dim)
-            else:
-                # Non-dimension coordinate
-                self.dim_label_map[underlying_dim] = dim
-                self.dim_label_map[dim] = underlying_dim
-                ind = dim_list.index(underlying_dim)
-            self.axes[key_list[ind]] = self.axes[key]
-            self.axes[key] = underlying_dim  # dim
-
-    def validate(self):
-        """
-        Validation checks before plotting.
-        """
-        multid_coord = self.model.get_multid_coord()
-
-        # Protect against having a multi-dimensional coord along a slider axis
-        for ax, dim in self.axes.items():
-            if isinstance(ax, int) and (dim == multid_coord):
-                raise DimensionError("A ragged coordinate cannot lie along "
-                                     "a slider dimension, it must be one of "
-                                     "the displayed dimensions.")
-
-        # Protect against duplicate entries in axes
-        if len(self.axes.values()) != len(set(self.axes.values())):
-            raise DimensionError("Duplicate entry in axes: {}".format(
-                self.axes))
-
-        # Protect against ill-formed data where multi-dimensional coord does
-        # not apply to inner dimension
-        if multid_coord is not None:
-            multid_coord_dims = self.model.get_data_coord(
-                self.name, multid_coord)[0].dims
-            if (multid_coord in multid_coord_dims) and (multid_coord !=
-                                                        multid_coord_dims[-1]):
-                raise DimensionError(
-                    "Plot input is ill-constructed. "
-                    "When using multi-dimensional coordinates, the named "
-                    "dimension of the coordinate must be the same as the "
-                    "inner/last dim. "
-                    "Here the named dimension is {}, "
-                    "while the inner dim is {}.".format(
-                        multid_coord, multid_coord_dims[-1]))
 
     def savefig(self, filename=None):
         """
@@ -417,3 +371,26 @@ class Plot:
         self.view.set_draw_no_delay(value)
         if self.profile is not None:
             self.profile.set_draw_no_delay(value)
+
+
+def make_plot(builder,
+              scipp_obj_dict,
+              filename=None,
+              labels=None,
+              errorbars=None,
+              norm=None,
+              scale=None,
+              resolution=None,
+              **kwargs):
+    dims = next(iter(scipp_obj_dict.values())).dims
+    sp = Plot(scipp_obj_dict=scipp_obj_dict,
+              **builder(dims=dims, norm=norm, **kwargs),
+              errorbars=errorbars,
+              labels=labels,
+              resolution=resolution,
+              norm=norm,
+              scale=scale)
+    if filename is not None:
+        sp.savefig(filename)
+    else:
+        return sp

@@ -13,6 +13,7 @@ Features
 * Slicing syntax now supports ellipsis, e.g., ``da.data[...] = var`` `#1960 <https://github.com/scipp/scipp/pull/1960>`_.
 * Added bound method equivalents to many free functions which take a single Variable or DataArray `#1969 <https://github.com/scipp/scipp/pull/1969>`_.
 * Variables can now be constructed directly from multi dimensional lists and tuples `#1977 <https://github.com/scipp/scipp/pull/1977>`_.
+* Plotting 1-D event data is now supported `#2018 <https://github.com/scipp/scipp/pull/2018>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -21,11 +22,17 @@ Breaking changes
 
 * Changed names of arithmetic functions to match numpy's names: ``plus`` |rarr| :func:`scipp.add`, ``minus`` |rarr| :func:`scipp.subtract`, ``times`` |rarr| :func:`scipp.multiply` `#1999 <https://github.com/scipp/scipp/pull/1999>`_.
 * Changed Variable init method, all arguments are keyword-only, special overloads which default-initialize data were removed `#1994 <https://github.com/scipp/scipp/pull/1994>`_.
+* The ``axes`` keyword arg of ``plot`` has been removed.
+  Use ``labels`` to define labels and ``transpose`` to transpose instead `#2018 <https://github.com/scipp/scipp/pull/2018>`_.
+* The ``redraw`` method of plots does not support replacing data variables of data arrays any more, but only updates of data values `#2018 <https://github.com/scipp/scipp/pull/2018>`_.
+* Made most arguments of ``DataArray`` and ``Dataset`` constructors keyword-only `#2008 <https://github.com/scipp/scipp/pull/2008>`_.
 * Made arguments of many functions keyword-only, e.g. constructors of ``DataArray`` and ``Dataset``, ``bin``, and ``atan2`` `#1983 <https://github.com/scipp/scipp/pull/1983>`_, `#2008 <https://github.com/scipp/scipp/pull/2008>`_, `#2012 <https://github.com/scipp/scipp/pull/2012>`_.
 * ``astype`` and ``to_unit`` now copy the input by default even when no transformation is required, use the new ``copy`` argument to avoid `#2016 <https://github.com/scipp/scipp/pull/2016>`_.
 
 Bugfixes
 ~~~~~~~~
+
+* Various fixes in ``plot``, see  `#2018 <https://github.com/scipp/scipp/pull/2018>`_ for details.
 
 Contributors
 ~~~~~~~~~~~~

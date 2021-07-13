@@ -85,11 +85,10 @@ def plot(*args, **kwargs):
         only). Defaults to `None`.
     :type ax: matplotlib.axes.Axes, optional
 
-    :param axes: Specify which input dimension should be shown along which
-        figure axis. E.g. to show the `"tof"` dimension along the vertical
-        axis of a 2d image, use `axes={"y": "tof"}`.
-        Defaults to `None`.
-    :type axes: dict, optional
+    :param labels: Dict specifying which coordinate should be used to label
+        the tics for a dimension. If not specifified the dimension coordinate
+        is used. `labels={"time": "time-labels"}`. Defaults to `None`.
+    :type labels: dict, optional
 
     :param cax: Attach colorbar to supplied Matplotlib axes.
         Defaults to `None`.

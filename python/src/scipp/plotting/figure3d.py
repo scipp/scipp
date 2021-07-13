@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
-
 from .. import config
 from .toolbar import PlotToolbar3d
 from .tools import fig_to_pngbytes
@@ -22,44 +21,49 @@ class PlotFigure3d:
 
     It renders an interactive scene containing a point cloud using `pythreejs`.
     """
-    def __init__(self,
-                 cmap=None,
-                 norm=None,
-                 figsize=None,
-                 unit=None,
-                 log=None,
-                 nan_color=None,
-                 masks=None,
-                 tick_size=None,
-                 background=None,
-                 show_outline=True,
-                 extend=None,
-                 xlabel=None,
-                 ylabel=None,
-                 zlabel=None):
+    def __init__(self, *, aspect, background, cmap, extend, figsize, mask_cmap,
+                 nan_color, norm, pixel_size, show_outline, tick_size, xlabel,
+                 ylabel, zlabel):
+
+        self._pixel_size = pixel_size
+        if pixel_size is not None:
+            self._pixel_size = pixel_size
+            self._pixel_scaling = 1.0
+        else:
+            self._pixel_size = None
+            self._pixel_scaling = None
+
+        self.aspect = aspect
+        if self.aspect is None:
+            # TODO
+            if True:
+                self.aspect = "equal"
+            else:
+                self.aspect = config.plot.aspect
+        if self.aspect not in ["equal", "auto"]:
+            raise RuntimeError(
+                "Invalid aspect requested. Expected 'auto' or "
+                "'equal', got", self.aspect)
 
         if figsize is None:
             figsize = (config.plot.width, config.plot.height)
 
         # Figure toolbar
-        self.toolbar = PlotToolbar3d()
+        self.toolbar = PlotToolbar3d(mpl_toolbar=self)
 
         # Prepare colormaps
         self.cmap = cmap
         self.cmap.set_bad(color=nan_color)
         self.scalar_map = cm.ScalarMappable(norm=norm, cmap=self.cmap)
         self.masks_scalar_map = None
-        if len(masks) > 0:
-            self.masks_cmap = masks["cmap"]
-            self.masks_cmap.set_bad(color=nan_color)
-            self.masks_scalar_map = cm.ScalarMappable(norm=norm,
-                                                      cmap=self.masks_cmap)
+        self.masks_cmap = mask_cmap
+        self.masks_cmap.set_bad(color=nan_color)
+        self.masks_scalar_map = cm.ScalarMappable(norm=norm,
+                                                  cmap=self.masks_cmap)
 
         self.axlabels = {"x": xlabel, "y": ylabel, "z": zlabel}
-        self.positions = None
         self.tick_size = tick_size
         self.show_outline = show_outline
-        self.unit = unit
 
         # Create the colorbar image
         self.cbar_image = ipw.Image()
@@ -96,6 +100,9 @@ class PlotFigure3d:
                                     width=figsize[0],
                                     height=figsize[1])
 
+    def initialize_toolbar(self, **kwargs):
+        self.toolbar.initialize(**kwargs)
+
     def _ipython_display_(self):
         """
         IPython display representation for Jupyter notebooks.
@@ -126,19 +133,13 @@ class PlotFigure3d:
         """
         return
 
-    def connect(self, callbacks):
+    def connect(self, controller, event_handler):
         """
         Connect the toolbar Home button to reset the camera position.
         """
-        callbacks.update({
-            "home_view": self.reset_camera,
-            "camera_x_normal": self.camera_x_normal,
-            "camera_y_normal": self.camera_y_normal,
-            "camera_z_normal": self.camera_z_normal
-        })
-        self.toolbar.connect(callbacks)
+        self.toolbar.connect(controller=controller)
 
-    def update_axes(self, axparams):
+    def update_axes(self, scale, unit):
         """
         When a point cloud is created, one cannot modify the number of points.
         Hence, when axes are updated, we have to remove the point cloud from
@@ -151,37 +152,62 @@ class PlotFigure3d:
         if self.axticks is not None:
             self.scene.remove(self.axticks)
 
-        self._create_outline(axparams)
-        self._create_points_material(axparams)
-        self._create_point_cloud(axparams)
+    def set_position_params(self, params):
+        limits = params.limits
+        center = params.center
+        box_size = params.box_size
+        scaling = {}
+        for i, xyz in enumerate("xyz"):
+            scaling[xyz] = 1.0 / box_size[i] if self.aspect == "auto" else 1.0
+            limits[xyz] *= scaling[xyz]
+        box_size *= np.array(list(scaling.values()))
+        center *= np.array(list(scaling.values()))
+
+        if self._pixel_size is None:
+            # Note the value of 0.05 is arbitrary here. It is a sensible
+            # guess to render a plot that is not too crowded and shows
+            # individual pixels.
+            self._pixel_size = 0.05 * np.mean(box_size)
+            self._pixel_scaling = scaling['x']
+        box_size += self._pixel_size
+
+        self._create_outline(limits=limits, box_size=box_size, center=center)
+
+        self.axticks = self._generate_axis_ticks_and_labels(
+            box_size=box_size,
+            scaling=scaling,
+            limits=limits,
+            components=params.components)
+
+        self._create_points_material()
+        self._create_point_cloud(positions=params.positions.values,
+                                 scaling=scaling)
 
         # Set camera controller target
         distance_from_center = 1.2
         self.camera.position = list(
-            np.array(axparams["center"]) +
-            distance_from_center * axparams["box_size"])
+            np.array(center) + distance_from_center * box_size)
         cam_pos_norm = np.linalg.norm(self.camera.position)
-        box_mean_size = np.linalg.norm(axparams["box_size"])
+        box_mean_size = np.linalg.norm(box_size)
         self.camera.near = 0.01 * box_mean_size
         self.camera.far = 5.0 * cam_pos_norm
-        self.controls.target = axparams["center"]
-        self.camera.lookAt(axparams["center"])
+        self.controls.target = tuple(center)
+        self.camera.lookAt(tuple(center))
 
         # Save camera settings
         self.camera_backup["reset"] = copy(self.camera.position)
-        self.camera_backup["center"] = copy(axparams["center"])
+        self.camera_backup["center"] = tuple(copy(center))
         self.camera_backup["x_normal"] = [
-            axparams["center"][0] - distance_from_center * box_mean_size,
-            axparams["center"][1], axparams["center"][2]
+            center[0] - distance_from_center * box_mean_size, center[1],
+            center[2]
         ]
         self.camera_backup["y_normal"] = [
-            axparams["center"][0],
-            axparams["center"][1] - distance_from_center * box_mean_size,
-            axparams["center"][2]
+            center[0], center[1] - distance_from_center * box_mean_size,
+            center[2]
         ]
         self.camera_backup["z_normal"] = [
-            axparams["center"][0], axparams["center"][1],
-            axparams["center"][2] - distance_from_center * box_mean_size
+            center[0], center[1],
+            center[2] - distance_from_center * box_mean_size
         ]
 
         # Rescale axes helper
@@ -195,17 +221,14 @@ class PlotFigure3d:
         self.outline.visible = self.show_outline
         self.axticks.visible = self.show_outline
 
-    def _create_point_cloud(self, axparams):
+    def _create_point_cloud(self, positions, scaling):
         """
         Make a PointsGeometry using pythreejs
         """
-        rgba_shape = list(axparams["positions"].shape)
+        rgba_shape = list(positions.shape)
         rgba_shape[1] += 1
-        pos_array = axparams["positions"] * np.array([
-            axparams["x"]["scaling"], axparams["y"]["scaling"],
-            axparams["z"]["scaling"]
-        ],
-                                                     dtype=np.float32)
+        pos_array = positions.astype('float32') * np.array(
+            list(scaling.values()), dtype=np.float32)
         self.points_geometry = p3.BufferGeometry(
             attributes={
                 'position':
@@ -216,7 +239,7 @@ class PlotFigure3d:
         self.point_cloud = p3.Points(geometry=self.points_geometry,
                                      material=self.points_material)
 
-    def _create_points_material(self, axparams):
+    def _create_points_material(self):
         """
         Define custom raw shader for point cloud to allow to RGBA color format.
         Note that the value of 580 was obtained from trial and error.
@@ -242,7 +265,7 @@ void main(){
     delta = pow(xDelta + yDelta + zDelta, 0.5);
     gl_PointSize = %f / delta;
 }
-''' % (580.0 * axparams["pixel_size"] * pixel_ratio, ),
+''' % (580.0 * self._pixel_size * pixel_ratio, ),
                                                  fragmentShader='''
 precision highp float;
 varying vec4 vColor;
@@ -254,22 +277,16 @@ void main() {
                                                  transparent=True,
                                                  depthTest=True)
 
-    def _create_outline(self, axparams):
+    def _create_outline(self, *, limits, box_size, center):
         """
         Make a wireframe cube with tick labels
         """
-
-        box_geometry = p3.BoxBufferGeometry(
-            axparams['x']["lims"][1] - axparams['x']["lims"][0],
-            axparams['y']["lims"][1] - axparams['y']["lims"][0],
-            axparams['z']["lims"][1] - axparams['z']["lims"][0])
+        box_geometry = p3.BoxBufferGeometry(*list(box_size))
         edges = p3.EdgesGeometry(box_geometry)
         self.outline = p3.LineSegments(
             geometry=edges,
             material=p3.LineBasicMaterial(color='#000000'),
-            position=axparams["center"])
-
-        self.axticks = self._generate_axis_ticks_and_labels(axparams)
+            position=tuple(center))
 
     def _make_axis_tick(self, string, position, color="black", size=1.0):
         """
@@ -284,40 +301,42 @@ void main() {
                          position=position,
                          scale=[size, size, size])
 
-    def _generate_axis_ticks_and_labels(self, axparams):
+    def _generate_axis_ticks_and_labels(self, *, limits, scaling, box_size,
+                                        components):
         """
         Create ticklabels on outline edges
         """
         if self.tick_size is None:
-            self.tick_size = 0.05 * np.mean(axparams["box_size"])
+            self.tick_size = 0.05 * np.mean(box_size)
         ticks_and_labels = p3.Group()
         iden = np.identity(3, dtype=np.float32)
         ticker_ = ticker.MaxNLocator(5)
-        lims = {x: axparams[x]["lims"] / axparams[x]["scaling"] for x in "xyz"}
+        lims = {x: limits[x] / scaling[x] for x in "xyz"}
         offsets = {
-            'x': [0, axparams['y']["lims"][0], axparams['z']["lims"][0]],
-            'y': [axparams['x']["lims"][0], 0, axparams['z']["lims"][0]],
-            'z': [axparams['x']["lims"][0], axparams['y']["lims"][0], 0]
+            'x': [0, limits['y'][0], limits['z'][0]],
+            'y': [limits['x'][0], 0, limits['z'][0]],
+            'z': [limits['x'][0], limits['y'][0], 0]
         }
 
-        for axis, x in enumerate('xyz'):
+        for axis, (x, dim) in enumerate(zip('xyz', components)):
             ticks = ticker_.tick_values(lims[x][0], lims[x][1])
             for tick in ticks:
                 if lims[x][0] <= tick <= lims[x][1]:
-                    tick_pos = iden[axis] * tick * axparams[x][
-                        "scaling"] + offsets[x]
+                    tick_pos = iden[axis] * tick * scaling[x] + offsets[x]
                     ticks_and_labels.add(
                         self._make_axis_tick(string=value_to_string(
                             tick, precision=1),
                                              position=tick_pos.tolist(),
                                              size=self.tick_size))
-            axis_label = axparams[x][
-                "label"] if self.axlabels[x] is None else self.axlabels[x]
+            coord = components[dim]
+            axis_label = f'{dim} [{coord.unit}]' if self.axlabels[
+                x] is None else self.axlabels[x]
+            # Offset labels 5% beyond axis ticks to reduce overlap
             ticks_and_labels.add(
                 self._make_axis_tick(
                     string=axis_label,
-                    position=(iden[axis] * 0.5 * np.sum(axparams[x]["lims"]) +
-                              offsets[x]).tolist(),
+                    position=(iden[axis] * 0.5 * np.sum(limits[x]) +
+                              1.05 * np.array(offsets[x])).tolist(),
                     size=self.tick_size * 0.3 * len(axis_label)))
 
         return ticks_and_labels
@@ -353,13 +372,15 @@ void main() {
         """
         Update colors of points.
         """
-        colors = self.scalar_map.to_rgba(new_values["values"])
+        array = new_values['data']
+        colors = self.scalar_map.to_rgba(array.values)
+        self._unit = array.unit
 
-        if "masks" in new_values:
+        if 'mask' in new_values:
             # We change the colors of the points in-place where masks are True
-            masks_inds = np.where(new_values["masks"])
+            masks_inds = np.where(new_values['mask'].values)
             masks_colors = self.masks_scalar_map.to_rgba(
-                new_values["values"][masks_inds])
+                array.values[masks_inds])
             colors[masks_inds] = masks_colors
 
         colors[:, 3] = self.points_geometry.attributes["rgba_color"].array[:,
@@ -374,9 +395,9 @@ void main() {
         container.
         """
         self.scalar_map.set_clim(vmin, vmax)
-        self.update_colorbar()
+        self._update_colorbar()
 
-    def update_colorbar(self):
+    def _update_colorbar(self):
         """
         Create the colorbar figure and save it to png and update the image
         widget.
@@ -391,31 +412,33 @@ void main() {
                          cmap=self.scalar_map.get_cmap(),
                          norm=self.scalar_map.norm,
                          extend=self.extend)
-        cbar_ax.set_ylabel(self.unit)
-        cbar_ax.yaxis.set_label_coords(-0.9, 0.5)
+        cbar_ax.set_ylabel(self._unit)
+        # TODO If we set this position it is clipped somewhere. For now we
+        # leave the default, which places unit to the right of the colorbar.
+        # cbar_ax.yaxis.set_label_coords(-0.9, 0.5)
         self.cbar_image.value = fig_to_pngbytes(cbar_fig)
 
-    def reset_camera(self, owner=None):
+    def reset_camera(self):
         """
         Reset the camera position.
         """
         self.move_camera(position=self.camera_backup["reset"])
 
-    def camera_x_normal(self, owner=None):
+    def camera_x_normal(self):
         """
         View scene along the X normal.
         """
         self.camera_normal(position=self.camera_backup["x_normal"].copy(),
                            ind=0)
 
-    def camera_y_normal(self, owner=None):
+    def camera_y_normal(self):
         """
         View scene along the Y normal.
         """
         self.camera_normal(position=self.camera_backup["y_normal"].copy(),
                            ind=1)
 
-    def camera_z_normal(self, owner=None):
+    def camera_z_normal(self):
         """
         View scene along the Z normal.
         """
@@ -446,16 +469,4 @@ void main() {
                                                                   vmax=vmax)
         self.scalar_map.set_norm(new_norm)
         self.masks_scalar_map.set_norm(new_norm)
-        self.update_colorbar()
-
-    def update_log_axes_buttons(self, *args, **kwargs):
-        """
-        Update the state (value and color) of toolbar log axes buttons when
-        axes or dimensions are swapped.
-        """
-        if self.toolbar is not None:
-            self.toolbar.update_log_axes_buttons(*args, **kwargs)
-
-    def update_norm_button(self, *args, **kwargs):
-        if self.toolbar is not None:
-            self.toolbar.update_norm_button(*args, **kwargs)
+        self._update_colorbar()
