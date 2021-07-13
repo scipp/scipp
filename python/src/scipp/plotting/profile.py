@@ -25,6 +25,8 @@ class PlotProfile(PlotFigure1d):
         self.current_visible_state = False
         self.slice_area = None
         self.visible = False
+        self._xstart = 1
+        self._xend = 2
 
     def _to_widget(self):
         """
@@ -42,30 +44,25 @@ class PlotProfile(PlotFigure1d):
         Upon axes update, we reset the slice area indicator.
         """
         super().update_axes(*args, legend_labels=False, **kwargs)
-        self.slice_area = self.ax.axvspan(1, 2, alpha=0.5, color='lightgrey')
-
-    def _reset_line_label(self, name):
-        """
-        In the profile plot, we do not repeat the data name, as it is already
-        displayed in the main subplot (as the title for 2d plots and as a
-        legend entry for 1d plots).
-        """
-        self.data_lines[name].set_label(None)
+        # PlotFigure1d.update_axes clears self.ax
+        self.slice_area = self.ax.axvspan(self._xstart,
+                                          self._xend,
+                                          alpha=0.5,
+                                          color='lightgrey')
 
     def toggle_hover_visibility(self, value):
         """
         If the mouse moves off the image, we hide the profile. If it moves
         back onto the image, we show the profile.
         """
-        for name in self.data_lines:
-            self.data_lines[name].set_visible(value)
-        for name in self.error_lines:
+        for line in self._lines.values():
+            line.data.set_visible(value)
             # Need to get the 3rd element of the errorbar container, which
             # contains the vertical errorbars, and then the first element of
             # that because it is a tuple itself.
-            self.error_lines[name][2][0].set_visible(value)
-        for name, mlines in self.mask_lines.items():
-            for ml in mlines.values():
+            if line.error is not None:
+                line.error[2][0].set_visible(value)
+            for ml in line.masks.values():
                 ml.set_visible(value)
                 ml.set_gid("onaxes" if value else "offaxes")
         if value != self.current_visible_state:
@@ -73,15 +70,18 @@ class PlotProfile(PlotFigure1d):
                 self.rescale_to_data()
             self.current_visible_state = value
 
-    def update_slice_area(self, xstart, xend):
+    def set_slice_area(self, xstart, xend):
         """
         When the data slice is updated (position or thickness), we update the
         slice area indicator.
         """
-        new_xy = np.array([[xstart, 0.0], [xstart, 1.0], [xend, 1.0],
-                           [xend, 0.0], [xstart, 0.0]])
-        self.slice_area.set_xy(new_xy)
-        self.draw()
+        self._xstart = xstart
+        self._xend = xend
+        if self.slice_area is not None:
+            new_xy = np.array([[xstart, 0.0], [xstart, 1.0], [xend, 1.0],
+                               [xend, 0.0], [xstart, 0.0]])
+            self.slice_area.set_xy(new_xy)
+            self.draw()
 
     def toggle_view(self, visible=True):
         """
@@ -105,21 +105,17 @@ class PlotProfile(PlotFigure1d):
         the scale on the matplotlib axes.
         """
         if self.toolbar is not None:
-            self.toolbar.connect({
-                "toggle_xaxis_scale": self.toggle_xaxis_scale,
-                "toggle_norm": self.toggle_norm,
-                "home_view": self.home_view,
-                "pan_view": self.pan_view,
-                "zoom_view": self.zoom_view,
-                "save_view": self.save_view
-            })
+            self.toolbar.connect(controller=self)
 
-    def toggle_xaxis_scale(self, owner):
+    def toggle_dim_scale(self, dim):
         """
         Toggle x-axis scale from toolbar button signal.
         """
-        self.ax.set_xscale("log" if owner.value else "linear")
-        self.draw()
+        def toggle(change):
+            self.ax.set_xscale("log" if change['new'] else "linear")
+            self.draw()
+
+        return toggle
 
     def toggle_norm(self, owner):
         """

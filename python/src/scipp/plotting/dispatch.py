@@ -5,7 +5,6 @@
 
 def dispatch(scipp_obj_dict,
              ndim=0,
-             name=None,
              projection=None,
              mpl_line_params=None,
              **kwargs):

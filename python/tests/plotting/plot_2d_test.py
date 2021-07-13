@@ -2,10 +2,9 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
-
+import pytest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import pytest
 import numpy as np
 import scipp as sc
 from ..factory import make_dense_data_array, make_dense_dataset, \
@@ -34,7 +33,8 @@ def test_plot_2d_with_log_and_variances():
 
 
 def test_plot_2d_with_vmin_vmax():
-    plot(make_dense_data_array(ndim=2), vmin=0.1, vmax=0.9)
+    da = make_dense_data_array(ndim=2)
+    plot(da, vmin=0.1 * da.unit, vmax=0.9 * da.unit)
 
 
 def test_plot_2d_with_unit():
@@ -42,19 +42,20 @@ def test_plot_2d_with_unit():
 
 
 def test_plot_2d_with_vmin_vmax_with_log():
-    plot(make_dense_data_array(ndim=2), vmin=0.1, vmax=0.9, norm='log')
+    da = make_dense_data_array(ndim=2)
+    plot(da, vmin=0.1 * da.unit, vmax=0.9 * da.unit, norm='log')
 
 
 def test_plot_2d_with_log_scale_x():
-    plot(make_dense_data_array(ndim=2), scale={'x': 'log'})
+    plot(make_dense_data_array(ndim=2), scale={'xx': 'log'})
 
 
 def test_plot_2d_with_log_scale_y():
-    plot(make_dense_data_array(ndim=2), scale={'y': 'log'})
+    plot(make_dense_data_array(ndim=2), scale={'yy': 'log'})
 
 
 def test_plot_2d_with_log_scale_xy():
-    plot(make_dense_data_array(ndim=2), scale={'x': 'log', 'y': 'log'})
+    plot(make_dense_data_array(ndim=2), scale={'xx': 'log', 'yy': 'log'})
 
 
 def test_plot_2d_with_aspect():
@@ -78,20 +79,12 @@ def test_plot_2d_with_cmap():
     plot(make_dense_data_array(ndim=2), cmap='jet')
 
 
-def test_plot_2d_with_xaxis_specified():
-    plot(make_dense_data_array(ndim=2), axes={'x': 'y'})
-
-
-def test_plot_2d_with_yaxis_specified():
-    plot(make_dense_data_array(ndim=2), axes={'y': 'x'})
-
-
 def test_plot_2d_with_labels():
-    plot(make_dense_data_array(ndim=2, labels=True), axes={'x': 'lab'})
+    plot(make_dense_data_array(ndim=2, labels=True), labels={'xx': 'lab'})
 
 
 def test_plot_2d_with_attrs():
-    plot(make_dense_data_array(ndim=2, attrs=True), axes={'x': 'attr'})
+    plot(make_dense_data_array(ndim=2, attrs=True), labels={'xx': 'attr'})
 
 
 def test_plot_2d_with_filename():
@@ -111,30 +104,30 @@ def test_plot_2d_with_masks():
 
 def test_plot_2d_with_masks_and_labels():
     plot(make_dense_data_array(ndim=2, masks=True, labels=True),
-         axes={'x': 'lab'})
+         labels={'xx': 'lab'})
 
 
 def test_plot_2d_with_non_regular_bin_edges():
     da = make_dense_data_array(ndim=2, binedges=True)
-    da.coords['x'].values = da.coords['x'].values**2
+    da.coords['xx'].values = da.coords['xx'].values**2
     plot(da)
 
 
 def test_plot_2d_with_non_regular_bin_edges_resolution():
     da = make_dense_data_array(ndim=2, binedges=True)
-    da.coords['x'].values = da.coords['x'].values**2
+    da.coords['xx'].values = da.coords['xx'].values**2
     plot(da, resolution=128)
 
 
 def test_plot_2d_with_non_regular_bin_edges_with_masks():
     da = make_dense_data_array(ndim=2, masks=True, binedges=True)
-    da.coords['x'].values = da.coords['x'].values**2
+    da.coords['xx'].values = da.coords['xx'].values**2
     plot(da)
 
 
 def test_plot_variable_2d():
     N = 50
-    v2d = sc.Variable(dims=['y', 'x'], values=np.random.rand(N, N), unit='K')
+    v2d = sc.Variable(dims=['yy', 'xx'], values=np.random.rand(N, N), unit='K')
     plot(v2d)
 
 
@@ -147,22 +140,22 @@ def test_plot_dict_of_ndarrays_2d():
 
 
 def test_plot_from_dict_variable_2d():
-    plot({'dims': ['y', 'x'], 'values': np.random.random([20, 10])})
+    plot({'dims': ['yy', 'xx'], 'values': np.random.random([20, 10])})
 
 
 def test_plot_from_dict_data_array_2d():
     plot({
         'data': {
-            'dims': ['y', 'x'],
+            'dims': ['yy', 'xx'],
             'values': np.random.random([20, 10])
         },
         'coords': {
-            'x': {
-                'dims': ['x'],
+            'xx': {
+                'dims': ['xx'],
                 'values': np.arange(11)
             },
-            'y': {
-                'dims': ['y'],
+            'yy': {
+                'dims': ['yy'],
                 'values': np.arange(21)
             }
         }
@@ -175,14 +168,14 @@ def test_plot_string_and_vector_axis_labels_2d():
     vecs = []
     for i in range(N):
         vecs.append(np.random.random(3))
-    da = sc.DataArray(data=sc.Variable(dims=['y', 'x'],
+    da = sc.DataArray(data=sc.Variable(dims=['yy', 'xx'],
                                        values=np.random.random([M, N]),
                                        unit='counts'),
                       coords={
-                          'x':
-                          sc.vectors(dims=['x'], values=vecs, unit='m'),
-                          'y':
-                          sc.Variable(dims=['y'],
+                          'xx':
+                          sc.vectors(dims=['xx'], values=vecs, unit='m'),
+                          'yy':
+                          sc.Variable(dims=['yy'],
                                       values=['a', 'b', 'c', 'd', 'e'],
                                       unit='m')
                       })
@@ -196,24 +189,24 @@ def test_plot_2d_with_dimension_of_size_1():
     y = np.arange(M, dtype=np.float64)
     z = np.arange(M + 1, dtype=np.float64)
     d = sc.Dataset()
-    d['a'] = sc.Variable(dims=['y', 'x'],
+    d['a'] = sc.Variable(dims=['yy', 'xx'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
-    d['b'] = sc.Variable(dims=['z', 'x'],
+    d['b'] = sc.Variable(dims=['zz', 'xx'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
-    d.coords['x'] = sc.Variable(dims=['x'], values=x, unit=sc.units.m)
-    d.coords['y'] = sc.Variable(dims=['y'], values=y, unit=sc.units.m)
-    d.coords['z'] = sc.Variable(dims=['z'], values=z, unit=sc.units.m)
+    d.coords['xx'] = sc.Variable(dims=['xx'], values=x, unit=sc.units.m)
+    d.coords['yy'] = sc.Variable(dims=['yy'], values=y, unit=sc.units.m)
+    d.coords['zz'] = sc.Variable(dims=['zz'], values=z, unit=sc.units.m)
     plot(d['a'])
     plot(d['b'])
 
 
 def test_plot_2d_with_dimension_of_size_2():
-    a = sc.DataArray(data=sc.zeros(dims=['y', 'x'], shape=[2, 4]),
+    a = sc.DataArray(data=sc.zeros(dims=['yy', 'xx'], shape=[2, 4]),
                      coords={
-                         'x': sc.Variable(dims=['x'], values=[1, 2, 3, 4]),
-                         'y': sc.Variable(dims=['y'], values=[1, 2])
+                         'xx': sc.Variable(dims=['xx'], values=[1, 2, 3, 4]),
+                         'yy': sc.Variable(dims=['yy'], values=[1, 2])
                      })
     plot(a)
 
@@ -232,16 +225,16 @@ def test_plot_2d_ragged_coord_with_masks():
 
 def test_plot_2d_with_labels_but_no_dimension_coord():
     da = make_dense_data_array(ndim=2, labels=True)
-    del da.coords['x']
-    plot(da, axes={'x': 'lab'})
+    del da.coords['xx']
+    plot(da, labels={'xx': 'lab'})
 
 
 def test_plot_2d_with_decreasing_edges():
-    a = sc.DataArray(data=sc.Variable(dims=['y', 'x'],
+    a = sc.DataArray(data=sc.Variable(dims=['yy', 'xx'],
                                       values=np.arange(12).reshape(3, 4)),
                      coords={
-                         'x': sc.Variable(dims=['x'], values=[4, 3, 2, 1]),
-                         'y': sc.Variable(dims=['y'], values=[1, 2, 3])
+                         'xx': sc.Variable(dims=['xx'], values=[4, 3, 2, 1]),
+                         'yy': sc.Variable(dims=['yy'], values=[1, 2, 3])
                      })
     plot(a)
 
@@ -254,14 +247,14 @@ def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
     data = make_binned_data_array(ndim=2)
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
     plot_obj = sc.plot(data)
-    plot_obj.widgets.slider[0].value = 1
+    plot_obj.widgets._controls['run']['slider'].value = 1
     plot_obj.close()
 
 
-def test_plot_3d_binned_data_where_inner_dimension_nas_no_event_coord():
+def test_plot_3d_binned_data_where_inner_dimension_has_no_event_coord():
     data = make_binned_data_array(ndim=2)
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
-    plot(data, axes={'x': 'run', 'y': 'x'})
+    plot(sc.transpose(data, dims=['yy', 'xx', 'run']))
 
 
 def test_plot_2d_binned_data_with_variances():
@@ -300,12 +293,12 @@ def test_plot_2d_int64_with_unit():
 def test_plot_2d_int_coords():
     N = 20
     M = 10
-    da = sc.DataArray(data=sc.Variable(dims=['y', 'x'],
+    da = sc.DataArray(data=sc.Variable(dims=['yy', 'xx'],
                                        values=np.random.random([M, N]),
                                        unit='K'),
                       coords={
-                          'x': sc.arange('x', N + 1, unit='m'),
-                          'y': sc.arange('y', M, unit='m')
+                          'xx': sc.arange('xx', N + 1, unit='m'),
+                          'yy': sc.arange('yy', M, unit='m')
                       })
     plot(da)
 
@@ -316,13 +309,14 @@ def test_plot_2d_datetime():
                         np.datetime64('2017-01-01T12:00:00'),
                         np.datetime64('2017-01-01T12:00:00.0001')))
     N, M = time.sizes['time'], 200
-    da = sc.DataArray(data=sc.array(dims=['time', 'x'],
+    da = sc.DataArray(data=sc.array(dims=['time', 'xx'],
                                     values=np.random.normal(0, 1, (N, M))),
                       coords={
                           'time':
                           time,
-                          'x':
-                          sc.Variable(dims=['x'], values=np.linspace(0, 10, M))
+                          'xx':
+                          sc.Variable(dims=['xx'],
+                                      values=np.linspace(0, 10, M))
                       })
     da.plot().close()
 
@@ -358,6 +352,18 @@ def test_plot_redraw_counts():
 
 
 def test_plot_redraw_binned():
+    da = make_binned_data_array(ndim=2)
+    p = sc.plot(da, resolution=64)
+    before = p.view.figure.image_values.get_array().sum()
+    da *= 5.0
+    p.redraw()
+    assert np.isclose(p.view.figure.image_values.get_array().sum(),
+                      5.0 * before)
+    p.close()
+
+
+@pytest.mark.skip(reason="Require in-place concatenate")
+def test_plot_redraw_binned_concat_inplace():
     a = make_binned_data_array(ndim=2)
     pa = sc.plot(a, resolution=64)
     asum = pa.view.figure.image_values.get_array().sum()
@@ -365,6 +371,9 @@ def test_plot_redraw_binned():
     pb = sc.plot(b, resolution=64)
     bsum = pb.view.figure.image_values.get_array().sum()
 
+    a.data = a.bins.concatenate(b).data
+    a.data = a.bins.concatenate(b).data
+    # TODO would need to change data inplace rather than replacing
     a.data = a.bins.concatenate(other=b).data
     pa.redraw()
     assert np.isclose(pa.view.figure.image_values.get_array().sum(),
@@ -373,28 +382,27 @@ def test_plot_redraw_binned():
     pb.close()
 
 
-def test_plot_bad_2d_coord():
+def test_plot_various_2d_coord():
     def make_array(dims, coord_name):
-        return sc.DataArray(data=sc.fold(sc.arange('x', 2 * 10), 'x', {
+        return sc.DataArray(data=sc.fold(sc.arange('xx', 2 * 10), 'xx', {
             dims[0]: 10,
             dims[1]: 2
         }),
                             coords={
                                 coord_name:
-                                sc.fold(0.1 * sc.arange('x', 20), 'x', {
+                                sc.fold(0.1 * sc.arange('xx', 20), 'xx', {
                                     dims[0]: 10,
                                     dims[1]: 2
                                 })
                             })
 
-    # Ill-formed
-    a = make_array(['x', 'y'], 'x')
-    with pytest.raises(sc.DimensionError):
-        plot(a)
-    # Good dim order
-    b = make_array(['y', 'x'], 'x')
+    # Dimension coord for xx
+    a = make_array(['xx', 'yy'], 'xx')
+    plot(a)
+    # Dimension coord for xx
+    b = make_array(['yy', 'xx'], 'xx')
     plot(b)
-    # Non-dim coord
-    c = make_array(['x', 'y'], 'z')
+    # Non-dim coord for yy
+    c = make_array(['xx', 'yy'], 'zz')
     plot(c)
-    plot(c, axes={'x': 'z'})
+    plot(c, labels={'yy': 'zz'})

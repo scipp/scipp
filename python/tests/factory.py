@@ -5,7 +5,7 @@
 import numpy as np
 import scipp as sc
 
-dim_list = ['x', 'y', 'z', 'time', 'temperature']
+dim_list = ['xx', 'yy', 'zz', 'time', 'temperature']
 
 
 def make_scalar(with_variance=False, dtype=sc.dtype.float64, unit='counts'):
@@ -45,7 +45,7 @@ def make_scalar_array(with_variance=False,
 
     data = make_scalar(with_variance=with_variance, dtype=dtype, unit=unit)
 
-    coord_dict = {'x': make_scalar(dtype=dtype, unit=unit)}
+    coord_dict = {'xx': make_scalar(dtype=dtype, unit=unit)}
     attr_dict = {}
     mask_dict = {}
 

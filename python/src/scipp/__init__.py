@@ -51,7 +51,7 @@ from ._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
 from ._scipp.core import units, dtype, buckets
 from . import geometry
 # Import functions
-from ._scipp.core import choose, logical_and, logical_or, logical_xor
+from ._scipp.core import choose, logical_and, logical_or, logical_xor, where
 # Import python functions
 from .show import show, make_svg
 from .table import table
