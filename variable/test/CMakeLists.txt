@@ -39,8 +39,7 @@ add_executable(
   variable_test.cpp
 )
 target_link_libraries(
-  ${TARGET_NAME} LINK_PRIVATE scipp-variable scipp_test_helpers
-  CONAN_PKG::gtest
+  ${TARGET_NAME} LINK_PRIVATE scipp-variable scipp_test_helpers GTest::GTest
 )
 
 if(WIN32)

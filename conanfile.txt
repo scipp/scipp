@@ -8,3 +8,6 @@ benchmark/1.5.3
 boost:header_only=True
 gtest:shared=False
 benchmark:shared=False
+
+[generators]
+cmake_find_package_multi

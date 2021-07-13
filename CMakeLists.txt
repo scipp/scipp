@@ -84,20 +84,20 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
   set(BENCHMARK_DYNAMIC_LIB_TRUE_FALSE "False")
 endif()
 
-# Detect compiler, build type etc from cmake settings
-conan_cmake_autodetect(conan_settings)
-# cmake-format: off
-conan_cmake_run(
-  CONANFILE conanfile.txt
-  SETTINGS ${conan_settings}
-  IMPORTS include/eigen3,*->./eigen-src
-  BASIC_SETUP
-  CMAKE_TARGETS
-  BUILD outdated
-  KEEP_RPATHS)
-# cmake-format: on
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
 
+conan_cmake_autodetect(conan_settings)
+conan_cmake_install(
+  PATH_OR_REFERENCE ${CMAKE_SOURCE_DIR} SETTINGS ${conan_settings} BUILD
+  outdated
+)
+
+find_package(Benchmark)
+find_package(Boost 1.67 REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(Sanitizers REQUIRED)
+find_package(GTest REQUIRED)
 
 # MP : Parallel compile, add before any targets so all use it
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-MP>)
