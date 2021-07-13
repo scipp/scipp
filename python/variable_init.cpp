@@ -25,27 +25,6 @@ using namespace scipp::variable;
 namespace py = pybind11;
 
 namespace {
-std::tuple<DType, units::Unit>
-cast_dtype_and_unit(const py::object &dtype,
-                    const std::optional<units::Unit> unit) {
-  const auto scipp_dtype = ::scipp_dtype(dtype);
-  if (scipp_dtype == core::dtype<core::time_point>) {
-    units::Unit deduced_unit = parse_datetime_dtype(dtype);
-    if (unit.has_value()) {
-      if (deduced_unit != units::one && *unit != deduced_unit) {
-        throw std::invalid_argument(format(
-            "The unit encoded in the dtype (", deduced_unit,
-            ") conflicts with the explicitly specified unit (", *unit, ")."));
-      } else {
-        deduced_unit = *unit;
-      }
-    }
-    return std::tuple{scipp_dtype, deduced_unit};
-  } else {
-    return std::tuple{scipp_dtype, unit.value_or(units::one)};
-  }
-}
-
 bool is_empty(const py::object &sequence) {
   if (py::isinstance<py::buffer>(sequence)) {
     return sequence.attr("ndim").cast<scipp::index>() == 0;
@@ -64,9 +43,9 @@ scipp::index n_remaining(const py::iterator &it) {
                                             const scipp::index b_ndim,
                                             const std::string_view b_name) {
   throw std::invalid_argument(
-      format("The number of dimensions in '", a_name, "' (", a_ndim,
-             ") does not match the number of dimensions in '", b_name, "' (",
-             b_ndim, ")."));
+      python::format("The number of dimensions in '", a_name, "' (", a_ndim,
+                     ") does not match the number of dimensions in '", b_name,
+                     "' (", b_ndim, ")."));
 }
 
 void ensure_same_shape(const py::object &values, const py::object &variances) {
@@ -94,10 +73,10 @@ void ensure_same_shape(const py::object &values, const py::object &variances) {
                               dim + n_remaining(var_shape), "variances");
   }
   if (std::get<0>(mismatch) != -1) {
-    throw std::invalid_argument(
-        format("The shapes of 'values' and 'variances' differ in dimension ",
-               std::get<0>(mismatch), ": ", std::get<1>(mismatch), " vs ",
-               std::get<2>(mismatch), '.'));
+    throw std::invalid_argument(python::format(
+        "The shapes of 'values' and 'variances' differ in dimension ",
+        std::get<0>(mismatch), ": ", std::get<1>(mismatch), " vs ",
+        std::get<2>(mismatch), '.'));
   }
 }
 
@@ -147,8 +126,8 @@ py::object parse_data_sequence(const py::object &dim_labels,
 
 void ensure_is_scalar(const py::buffer &array) {
   if (const auto ndim = array.attr("ndim").cast<int64_t>(); ndim != 0) {
-    throw except::DimensionError(
-        format("Cannot interpret ", ndim, "-dimensional array as a scalar."));
+    throw except::DimensionError(python::format(
+        "Cannot interpret ", ndim, "-dimensional array as a scalar."));
   }
 }
 

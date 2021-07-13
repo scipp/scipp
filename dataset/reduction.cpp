@@ -4,9 +4,9 @@
 /// @author Simon Heybrock
 #include "scipp/dataset/reduction.h"
 #include "scipp/core/element/util.h"
-#include "scipp/dataset/math.h"
+#include "scipp/dataset/astype.h"
+#include "scipp/dataset/math.h" // needed by operations_common.h
 #include "scipp/dataset/special_values.h"
-#include "scipp/dataset/util.h"
 
 #include "../variable/operations_common.h"
 #include "dataset_operations_common.h"

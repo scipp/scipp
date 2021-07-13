@@ -4,8 +4,7 @@
 
 #include "scipp/dataset/data_array.h"
 #include "scipp/dataset/except.h"
-#include "scipp/dataset/util.h"
-#include "scipp/variable/operations.h"
+#include "scipp/variable/to_unit.h"
 
 #include "test_macros.h"
 
@@ -89,14 +88,6 @@ TEST_F(DataArrayTest, shadow_attr) {
   EXPECT_THROW_DISCARD(a.meta(), except::DataArrayError);
   a.attrs().erase(Dim::X);
   EXPECT_EQ(a.meta()[Dim::X], var1);
-}
-
-TEST_F(DataArrayTest, astype) {
-  DataArray a(
-      makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}),
-      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6})}});
-  const auto x = astype(a, dtype<double>);
-  EXPECT_EQ(x.data(), astype(a.data(), dtype<double>));
 }
 
 TEST_F(DataArrayTest, view) {

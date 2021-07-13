@@ -5,6 +5,7 @@
 set(TARGET_NAME "scipp-variable")
 set(INC_FILES
     ${variable_INC_FILES}
+    include/scipp/variable/astype.h
     include/scipp/variable/arithmetic.h
     include/scipp/variable/bins.h
     include/scipp/variable/bin_util.h
@@ -37,6 +38,7 @@ set(INC_FILES
 
 set(SRC_FILES
     ${variable_SRC_FILES}
+    astype.cpp
     bins.cpp
     bin_array_variable.cpp
     bin_detail.cpp
@@ -56,7 +58,6 @@ set(SRC_FILES
     structures.cpp
     subspan_view.cpp
     to_unit.cpp
-    type_conversion.cpp
     util.cpp
     variable_concept.cpp
     variable_factory.cpp

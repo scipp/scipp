@@ -2,8 +2,8 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/variable/astype.h"
 #include "scipp/variable/bins.h"
-#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/variable.h"
 
