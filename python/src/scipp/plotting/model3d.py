@@ -17,7 +17,6 @@ class ScatterPointModel:
     Model representing scattered data.
     """
     def __init__(self, *, positions, scipp_obj_dict, resolution):
-        self._axes = ['z', 'y', 'x']
         scipp_obj_dict = {
             key: flatten(array,
                          dims=array.meta[positions].dims,
@@ -27,10 +26,11 @@ class ScatterPointModel:
         self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
                                        resolution=resolution)
         array = next(iter(scipp_obj_dict.values()))
+        self._positions = array.meta[positions]
         # TODO Get dim labels from field names
         self._scatter_dims = ['x', 'y', 'z']
-        self._positions = array.meta[positions]
-        self._components = {'x': self.x, 'y': self.y, 'z': self.z}
+        fields = self._positions.fields
+        self._components = dict(zip(self.dims, [fields.x, fields.y, fields.z]))
 
     @property
     def dims(self):
@@ -51,62 +51,33 @@ class ScatterPointModel:
         Extents of the box that contains all the positions.
         """
         extents = {}
-        pos = self._positions.fields
-        for xyz, x in zip(self._axes, [pos.z, pos.y, pos.x]):
+        for dim, x in self.components.items():
             xmin = sc.min(x).value
             xmax = sc.max(x).value
-            extents[xyz] = np.array([xmin, xmax])
+            extents[dim] = np.array([xmin, xmax])
         return extents
 
     @property
     @lru_cache(maxsize=None)
     def center(self):
-        return np.array([0.5 * np.sum(self.limits[dim]) for dim in 'xyz'])
+        return np.array([0.5 * np.sum(self.limits[dim]) for dim in self.dims])
 
     @property
     @lru_cache(maxsize=None)
     def box_size(self):
-        return np.array([
-            self.limits['x'][1] - self.limits['x'][0],
-            self.limits['y'][1] - self.limits['y'][0],
-            self.limits['z'][1] - self.limits['z'][0]
-        ])
+        return np.array(
+            [self.limits[dim][1] - self.limits[dim][0] for dim in self.dims])
 
-    # TODO replace x,y,z? use dims
     @property
     @lru_cache(maxsize=None)
     def components(self):
         return self._components
 
-    @property
     @lru_cache(maxsize=None)
-    def x(self):
-        return self._positions.fields.x
-
-    @property
-    @lru_cache(maxsize=None)
-    def y(self):
-        return self._positions.fields.y
-
-    @property
-    @lru_cache(maxsize=None)
-    def z(self):
-        return self._positions.fields.z
-
-    @property
-    @lru_cache(maxsize=None)
-    def radius_x(self):
-        return _planar_norm(self._positions.fields.y, self._positions.fields.z)
-
-    @property
-    @lru_cache(maxsize=None)
-    def radius_y(self):
-        return _planar_norm(self._positions.fields.x, self._positions.fields.z)
-
-    @property
-    @lru_cache(maxsize=None)
-    def radius_z(self):
-        return _planar_norm(self._positions.fields.x, self._positions.fields.y)
+    def planar_radius(self, axis):
+        return _planar_norm(
+            *
+            [comp for dim, comp in self.components.items() if dim is not axis])
 
     @property
     @lru_cache(maxsize=None)
