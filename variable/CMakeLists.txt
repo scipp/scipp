@@ -84,7 +84,7 @@ generate_export_header(${TARGET_NAME})
 target_compile_definitions(
   ${TARGET_NAME} PRIVATE SCIPP_EXPORT=SCIPP_VARIABLE_EXPORT
 )
-target_link_libraries(${TARGET_NAME} PUBLIC scipp-core Boost::boost)
+target_link_libraries(${TARGET_NAME} PUBLIC scipp-core)
 if(TBB_FOUND AND NOT DISABLE_MULTI_THREADING)
   target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
 endif()

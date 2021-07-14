@@ -68,6 +68,5 @@ if __name__ == '__main__':
     m.move([lib_src, '*scipp*'], [lib_src])
     m.move([lib_src, '*units-shared*'], [lib_src])
     m.move([lib_src, 'cmake', 'scipp'], [lib_src, 'cmake'])
-    m.move([inc_src, 'Eigen'], [inc_src])
     m.move([inc_src, 'scipp*'], [inc_src])
     m.move([inc_src, 'units'], [inc_src])

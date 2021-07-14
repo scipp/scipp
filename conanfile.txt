@@ -1,0 +1,14 @@
+[requires]
+benchmark/1.5.3
+boost/1.76.0
+eigen/3.3.9
+gtest/1.11.0
+pybind11/2.6.2
+
+[options]
+boost:header_only=True
+gtest:shared=False
+benchmark:shared=False
+
+[generators]
+cmake_find_package_multi
