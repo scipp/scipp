@@ -218,7 +218,6 @@ if(NOT APPLE)
   set(CMAKE_INSTALL_RPATH $ORIGIN)
 else()
   set(CMAKE_INSTALL_RPATH @loader_path)
-  set(CMAKE_SKIP_RPATH 1)
 endif()
 
 # Generate files for free scipp API functions
