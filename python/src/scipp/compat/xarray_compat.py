@@ -5,6 +5,17 @@ import scipp
 
 
 def from_xarray(xarray_obj: typing.Union[xarray.DataArray, xarray.Dataset]):
+    """
+    Convenience method to convert an xarray object into the corresponding
+    scipp object.
+
+    If you know in advance what type of object you need to convert, you can
+    also call from_xarray_dataarray or from_xarray_dataset directly.
+
+    :param xarray_obj: the xarray object to convert; must be either an xarray
+        DataArray or Dataset object.
+    :return: the converted scipp object.
+    """
     if isinstance(xarray_obj, xarray.DataArray):
         return from_xarray_dataarray(xarray_obj)
     elif isinstance(xarray_obj, xarray.Dataset):
@@ -16,6 +27,13 @@ def from_xarray(xarray_obj: typing.Union[xarray.DataArray, xarray.Dataset]):
 
 def from_xarray_dataarray(
         xarray_dataarray: xarray.DataArray) -> scipp.DataArray:
+    """
+    Converts an xarray.DataArray object to a scipp.DataArray object.
+
+    :param xarray_dataset: an xarray.DataArray object to be converted.
+    :return: the converted scipp DataArray object.
+    """
+
     sc_coords = {}
     sc_attribs = {}
 
@@ -38,6 +56,17 @@ def from_xarray_dataarray(
 def from_xarray_dataset(xarray_dataset: xarray.Dataset,
                         *,
                         attrib_prefix="attrib_") -> scipp.Dataset:
+    """
+    Converts an xarray.Dataset object to a scipp.Dataset object.
+
+    :param xarray_dataset: an xarray.Dataset object to be converted.
+    :param attrib_prefix: customisable prefix for xarray attributes.
+        xarray attributes are stored as scalar values in scipp with
+        a name corresponding to a prefix + the attribute name in
+        xarray.
+
+    :return: the converted scipp dataset object.
+    """
     sc_data = {}
     sc_coords = {}
 

@@ -7,6 +7,13 @@ import typing
 def from_pandas(
     dataframe: typing.Union[pandas.DataFrame,
                             pandas.Series]) -> scipp.DataArray:
+    """
+    Converts a pandas.DataFrame or pandas.Series object into a
+    scipp DataArray.
+
+    :param dataframe: the Dataframe to convert
+    :return: the converted scipp object.
+    """
     sc_attribs = {}
 
     for attr in dataframe.attrs:
