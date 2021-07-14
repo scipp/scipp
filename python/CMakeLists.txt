@@ -4,8 +4,7 @@
 # ~~~
 pybind11_add_module(
   _scipp
-  SHARED
-  SYSTEM
+  MODULE
   ${python_SRC_FILES}
   bind_units.cpp
   bins.cpp

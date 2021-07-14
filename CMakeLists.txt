@@ -98,7 +98,8 @@ find_package(Boost 1.67 REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Sanitizers REQUIRED)
 find_package(GTest REQUIRED)
-find_package(pybind11 REQUIRED)
+find_package(Python 3.7 REQUIRED COMPONENTS Interpreter Development)
+find_package(pybind11 CONFIG REQUIRED)
 
 # MP : Parallel compile, add before any targets so all use it
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-MP>)
