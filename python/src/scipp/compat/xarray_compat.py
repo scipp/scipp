@@ -1,10 +1,10 @@
-from typing import Union
+import typing
 
 import xarray
 import scipp
 
 
-def from_xarray(xarray_obj: Union[xarray.DataArray, xarray.Dataset]):
+def from_xarray(xarray_obj: typing.Union[xarray.DataArray, xarray.Dataset]):
     if isinstance(xarray_obj, xarray.DataArray):
         return from_xarray_dataarray(xarray_obj)
     elif isinstance(xarray_obj, xarray.Dataset):
