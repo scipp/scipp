@@ -76,7 +76,7 @@ def plot(*args, **kwargs):
     For more details, see
     https://scipp.github.io/visualization/plotting-overview.html
 
-    :param aspect: Specify the aspect ratio for 2d images and 3d renderings.
+    :param aspect: Specify the aspect ratio for 2d images.
          Possible values are `"auto"` or `"equal"`.
          Defaults to `"auto"`.
     :type aspect: str, optional
