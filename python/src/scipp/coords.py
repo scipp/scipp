@@ -8,9 +8,12 @@ from . import Variable, DataArray, Dataset
 
 
 def _add_coords(*, name, obj, tree):
-    func = tree[name]
-    args = inspect.getfullargspec(func).kwonlyargs
-    out = func(**{arg: _get_coord(arg, obj, tree) for arg in args})
+    if isinstance(tree[name], str):
+        out = _get_coord(tree[name], obj, tree)
+    else:
+        func = tree[name]
+        args = inspect.getfullargspec(func).kwonlyargs
+        out = func(**{arg: _get_coord(arg, obj, tree) for arg in args})
     if isinstance(out, Variable):
         obj.coords[name] = out
     else:
@@ -34,7 +37,15 @@ def _get_coord(name, obj, tree):
 
 def transform_coords(obj: Union[DataArray, Dataset], coords,
                      tree: dict) -> Union[DataArray, Dataset]:
+    # Keys in tree may be lists or tuple to define multiple outputs
+    simple_tree = {}
+    for key in tree:
+        if isinstance(key, str):
+            simple_tree[key] = tree[key]
+        else:
+            for k in key:
+                simple_tree[k] = tree[key]
     obj = obj.copy(deep=False)
     for name in coords:
-        _add_coords(name=name, obj=obj, tree=tree)
+        _add_coords(name=name, obj=obj, tree=simple_tree)
     return obj
