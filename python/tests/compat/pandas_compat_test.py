@@ -15,7 +15,6 @@ def _make_1d_reference_ds(row_name, data_name, values, coords, dtype="int64"):
 
 
 def _make_2d_reference_ds(row_name, row_coords, data, dtype="int64"):
-
     return sc.Dataset(
         data={
             key: sc.Variable(dims=[row_name], values=value, dtype=dtype)
@@ -34,9 +33,9 @@ def test_1d_dataframe():
 
     sc_ds = from_pandas(pd_df)
 
-    reference_da = _make_1d_reference_ds("row", "", [1, 2, 3], [0, 1, 2])
+    reference_ds = _make_1d_reference_ds("row", "", [1, 2, 3], [0, 1, 2])
 
-    assert sc.identical(sc_ds, reference_da)
+    assert sc.identical(sc_ds, reference_ds)
 
 
 def test_1d_dataframe_with_named_axis():
@@ -44,10 +43,10 @@ def test_1d_dataframe_with_named_axis():
 
     sc_ds = from_pandas(pd_df)
 
-    reference_da = _make_1d_reference_ds("row", "series1", [1, 2, 3],
+    reference_ds = _make_1d_reference_ds("row", "series1", [1, 2, 3],
                                          [0, 1, 2])
 
-    assert sc.identical(sc_ds, reference_da)
+    assert sc.identical(sc_ds, reference_ds)
 
 
 def test_2d_dataframe():
@@ -55,13 +54,13 @@ def test_2d_dataframe():
 
     sc_ds = from_pandas(pd_df)
 
-    reference_da = _make_2d_reference_ds("row", [0, 1],
+    reference_ds = _make_2d_reference_ds("row", [0, 1],
                                          data={
                                              "col1": (2, 3),
                                              "col2": (5, 6)
                                          })
 
-    assert sc.identical(sc_ds, reference_da)
+    assert sc.identical(sc_ds, reference_ds)
 
 
 def test_2d_dataframe_with_named_axes():
@@ -70,25 +69,10 @@ def test_2d_dataframe_with_named_axes():
 
     sc_ds = from_pandas(pd_df)
 
-    reference_da = _make_2d_reference_ds("my-name-for-rows", [0, 1],
+    reference_ds = _make_2d_reference_ds("my-name-for-rows", [0, 1],
                                          data={
                                              "col1": (2, 3),
                                              "col2": (5, 6)
                                          })
 
-    assert sc.identical(sc_ds, reference_da)
-
-
-# def test_attrs():
-#     pd_df = pandas.DataFrame(data={})
-#     pd_df.attrs = {
-#         "attrib_int": 5,
-#         "attrib_float": 6.54321,
-#         "attrib_str": "test-string",
-#     }
-#
-#     sc_da = from_pandas(pd_df)
-#
-#     assert sc_da.attrs["attrib_int"].values == 5
-#     assert sc_da.attrs["attrib_float"].values == 6.54321
-#     assert sc_da.attrs["attrib_str"].values == "test-string"
+    assert sc.identical(sc_ds, reference_ds)
