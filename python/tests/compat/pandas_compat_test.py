@@ -14,10 +14,7 @@ def _make_1d_reference_ds(row_name, data_name, values, coords, dtype="int64"):
     )
 
 
-def _make_2d_reference_ds(row_name,
-                          row_coords,
-                          data: dict[str, list],
-                          dtype="int64"):
+def _make_2d_reference_ds(row_name, row_coords, data, dtype="int64"):
 
     return sc.Dataset(
         data={
