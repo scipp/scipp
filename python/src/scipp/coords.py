@@ -15,19 +15,21 @@ def _add_coord(*, name, obj, tree):
         args = inspect.getfullargspec(func).kwonlyargs
         out = func(**{arg: _get_coord(arg, obj, tree) for arg in args})
     if isinstance(out, Variable):
-        obj.coords[name] = out
-    else:
-        for key, coord in out.items():
-            obj.coords[key] = coord
+        out = {name: out}
+    for key, coord in out.items():
+        obj.coords[key] = coord
+
+
+def _consume_coord(obj, name):
+    if name in obj.coords:
+        obj.attrs[name] = obj.coords[name]
+        del obj.coords[name]
+    return obj.attrs[name]
 
 
 def _get_coord(name, obj, tree):
     if name in obj.meta:
-        # Consume coord => switch to attr
-        if name in obj.coords:
-            obj.attrs[name] = obj.coords[name]
-            del obj.coords[name]
-        return obj.attrs[name]
+        return _consume_coord(obj, name)
     else:
         _add_coord(name=name, obj=obj, tree=tree)
         return _get_coord(name, obj, tree)
@@ -40,11 +42,8 @@ def transform_coords(obj: Union[DataArray, Dataset], coords,
     # Keys in tree may be tuple to define multiple outputs
     simple_tree = {}
     for key in tree:
-        if isinstance(key, str):
-            simple_tree[key] = tree[key]
-        else:
-            for k in key:
-                simple_tree[k] = tree[key]
+        for k in [key] if isinstance(key, str) else key:
+            simple_tree[k] = tree[key]
     obj = obj.copy(deep=False)
     for name in [coords] if isinstance(coords, str) else coords:
         _add_coord(name=name, obj=obj, tree=simple_tree)
