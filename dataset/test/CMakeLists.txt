@@ -48,15 +48,8 @@ add_executable(
   sum_test.cpp
   to_unit_test.cpp
 )
-include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(
-  ${TARGET_NAME}
-  LINK_PRIVATE
-  scipp-dataset
-  gtest_main
-  scipp_test_helpers
-  ${GTEST_LIBRARIES}
-  ${GMOCK_LIBRARIES}
+  ${TARGET_NAME} LINK_PRIVATE scipp-dataset scipp_test_helpers GTest::GTest
 )
 
 if(WIN32)
