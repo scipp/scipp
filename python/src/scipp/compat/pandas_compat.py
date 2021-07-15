@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Union, TYPE_CHECKING
 
-from .. import DataArray, scalar, Variable
+from .. import Dataset, DataArray, Variable
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -16,34 +16,36 @@ def from_pandas(df: Union[pd.DataFrame, pd.Series]) -> DataArray:
     :param df: the Dataframe to convert
     :return: the converted scipp object.
     """
-    sc_attribs = {}
-
-    for attr in df.attrs:
-        sc_attribs[attr] = scalar(df.attrs[attr])
 
     row_index = df.axes[0]
     rows_index_name = row_index.name or "row"
 
-    sc_dims = [rows_index_name]
-    sc_coords = {
-        rows_index_name: Variable(
-            dims=[rows_index_name],
-            values=row_index,
-        )
-    }
+    sc_data = {}
 
     if df.ndim == 2:
-        column_index = df.axes[1]
-        column_index_name = column_index.name or "column"
+        column_names = df.axes[1]
+    else:
+        column_names = [df.name]
 
-        sc_dims.append(column_index_name)
-        sc_coords[column_index_name] = Variable(
-            dims=[column_index_name],
-            values=column_index,
-        )
+    for column_name in column_names:
+        if column_name is None:
+            if df.ndim != 1:
+                raise ValueError("from_pandas: got unnamed column "
+                                 "in dataframe with multiple columns")
+            column_name = ""
 
-    return DataArray(
-        data=Variable(values=df.to_numpy(), dims=sc_dims),
-        coords=sc_coords,
-        attrs=sc_attribs,
-    )
+        sc_data[column_name] = DataArray(data=Variable(
+            values=df[column_name].values if df.ndim == 2 else df.values,
+            dims=[rows_index_name]),
+                                         coords={
+                                             rows_index_name:
+                                             Variable(dims=[rows_index_name],
+                                                      values=row_index)
+                                         },
+                                         name=column_name or "")
+
+    return Dataset(data=sc_data,
+                   coords={
+                       rows_index_name:
+                       Variable(dims=[rows_index_name], values=row_index)
+                   })

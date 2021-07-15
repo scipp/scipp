@@ -19,7 +19,7 @@ def test_empty_attrs_dataarray():
 
 def test_attrs_dataarray():
     xr_da = xarray.DataArray(data=numpy.zeros((1, )),
-                             dims={"x"},
+                             dims=["x"],
                              attrs={
                                  "attrib_int": 5,
                                  "attrib_float": 6.54321,
@@ -44,7 +44,7 @@ def test_named_dataarray():
 
 
 def test_1d_1_element_dataarray():
-    xr_da = xarray.DataArray(data=numpy.zeros((1, )), dims={"x"}, attrs={})
+    xr_da = xarray.DataArray(data=numpy.zeros((1, )), dims=["x"], attrs={})
 
     sc_da = from_xarray(xr_da)
 
@@ -53,7 +53,7 @@ def test_1d_1_element_dataarray():
 
 
 def test_1d_100_element_dataarray():
-    xr_da = xarray.DataArray(data=numpy.zeros((100, )), dims={"x"}, attrs={})
+    xr_da = xarray.DataArray(data=numpy.zeros((100, )), dims=["x"], attrs={})
 
     sc_da = from_xarray(xr_da)
 
@@ -63,7 +63,7 @@ def test_1d_100_element_dataarray():
 
 def test_2d_100x100_element_dataarray():
     xr_da = xarray.DataArray(data=numpy.zeros((100, 100)),
-                             dims={"x", "y"},
+                             dims=["x", "y"],
                              attrs={})
 
     sc_da = from_xarray(xr_da)
@@ -84,9 +84,9 @@ def test_dataset_with_data():
     xr_ds = xarray.Dataset(
         data_vars={
             "array1":
-            xarray.DataArray(data=numpy.zeros((100, )), dims={"x"}, attrs={}),
+            xarray.DataArray(data=numpy.zeros((100, )), dims=["x"], attrs={}),
             "array2":
-            xarray.DataArray(data=numpy.zeros((50, )), dims={"y"}, attrs={}),
+            xarray.DataArray(data=numpy.zeros((50, )), dims=["y"], attrs={}),
         })
 
     sc_ds = from_xarray(xr_ds)
