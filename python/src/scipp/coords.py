@@ -8,6 +8,8 @@ from . import Variable, DataArray, Dataset
 
 
 def _add_coord(*, name, obj, tree):
+    if name in obj.meta:
+        return _produce_coord(obj, name)
     if isinstance(tree[name], str):
         out = _get_coord(tree[name], obj, tree)
     else:
@@ -25,6 +27,13 @@ def _consume_coord(obj, name):
         obj.attrs[name] = obj.coords[name]
         del obj.coords[name]
     return obj.attrs[name]
+
+
+def _produce_coord(obj, name):
+    if name in obj.attrs:
+        obj.coords[name] = obj.attrs[name]
+        del obj.attrs[name]
+    return obj.coords[name]
 
 
 def _get_coord(name, obj, tree):
