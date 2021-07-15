@@ -12,21 +12,22 @@ def _planar_norm(a, b):
     return sc.sqrt(a * a + b * b)
 
 
+def _flatten(da, dims):
+    return flatten(da, dims=dims, to='_'.join(dims))
+
+
 class ScatterPointModel:
     """
     Model representing scattered data.
     """
     def __init__(self, *, positions, scipp_obj_dict, resolution):
         scipp_obj_dict = {
-            key: flatten(array,
-                         dims=array.meta[positions].dims,
-                         to='_'.join(array.meta[positions].dims))
+            key: _flatten(array, dims=positions.dims)
             for key, array in scipp_obj_dict.items()
         }
         self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
                                        resolution=resolution)
-        array = next(iter(scipp_obj_dict.values()))
-        self._positions = array.meta[positions]
+        self._positions = _flatten(positions, dims=positions.dims)
         # TODO Get dim labels from field names
         self._scatter_dims = ['x', 'y', 'z']
         fields = self._positions.fields

@@ -10,7 +10,7 @@ from .controller3d import PlotController3d
 from .model3d import ScatterPointModel
 
 
-def plot3d(scipp_obj_dict, positions, **kwargs):
+def plot3d(scipp_obj_dict, *, positions, **kwargs):
     """
     Plot a 3D point cloud through a N dimensional dataset.
     For every dimension above 3, a slider is created to adjust the position of
@@ -37,10 +37,12 @@ def plot3d(scipp_obj_dict, positions, **kwargs):
                 ylabel=None,
                 zlabel=None):
         array = next(iter(scipp_obj_dict.values()))
+        pos = array.meta[positions] if isinstance(positions,
+                                                  str) else positions
         out = {
             'view_ndims': 0,
-            'dims': list(set(array.dims) - set(array.meta[positions].dims)),
-            'model': partial(ScatterPointModel, positions=positions),
+            'dims': list(set(array.dims) - set(pos.dims)),
+            'model': partial(ScatterPointModel, positions=pos),
             'view': PlotView3d,
             'controller': PlotController3d
         }
