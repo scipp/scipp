@@ -6,7 +6,7 @@ This is a list of the tooling (i.e. compilers, static analysis, etc.) that are u
 Misc
 ~~~~
 
-- CMake >= 3.13
+- CMake >= 3.16
 - Conda
 
 Note: Ubuntu users can use the `Kitware Repo <https://apt.kitware.com/>`_ to obtain the latest version.
