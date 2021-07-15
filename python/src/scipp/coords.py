@@ -7,7 +7,8 @@ from typing import Union
 from . import Variable, DataArray, Dataset
 
 
-def _add_coords(*, name, obj, func, tree):
+def _add_coords(*, name, obj, tree):
+    func = tree[name]
     args = inspect.getfullargspec(func).kwonlyargs
     out = func(**{arg: _get_coord(arg, obj, tree) for arg in args})
     if isinstance(out, Variable):
@@ -27,13 +28,13 @@ def _get_coord(name, obj, tree):
     elif isinstance(tree[name], str):
         return _get_coord(tree[name], obj, tree)
     else:
-        func = tree[name]
-        _add_coords(name=name, obj=obj, func=func, tree=tree)
+        _add_coords(name=name, obj=obj, tree=tree)
         return _get_coord(name, obj, tree)
 
 
-def transform_coords(obj: Union[DataArray, Dataset], converter,
+def transform_coords(obj: Union[DataArray, Dataset], coords,
                      tree: dict) -> Union[DataArray, Dataset]:
     obj = obj.copy(deep=False)
-    _add_coords(name=None, obj=obj, func=converter, tree=tree)
+    for name in coords:
+        _add_coords(name=name, obj=obj, tree=tree)
     return obj
