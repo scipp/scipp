@@ -12,6 +12,25 @@ def _make_1d_reference_da(row_name, values, coords, dtype="int64"):
     )
 
 
+def _make_2d_reference_da(row_name,
+                          column_name,
+                          values,
+                          row_coords,
+                          column_coords,
+                          dtype="int64"):
+    return sc.DataArray(
+        data=sc.Variable(dims=[row_name, column_name],
+                         values=values,
+                         dtype=dtype),
+        coords={
+            row_name:
+            sc.Variable(dims=[row_name], values=row_coords, dtype=dtype),
+            column_name:
+            sc.Variable(dims=[column_name], values=column_coords, dtype=dtype),
+        },
+    )
+
+
 def test_1d_dataframe():
     pd_df = pandas.Series(data=[1, 2, 3])
 
@@ -34,25 +53,34 @@ def test_1d_dataframe_with_named_axis():
     assert sc.identical(sc_da, reference_da)
 
 
-# def test_2d_dataframe():
-#     pd_df = pandas.DataFrame(data={1: (2, 3), 4: (5, 6)})
-#
-#     sc_da = from_pandas(pd_df)
-#
-#     assert sc.identical(sc_da,
-#         sc.DataArray(dims=["row", "column"], data=[(2, 5), (3, 6)]))
-#
-#
-# def test_2d_dataframe_with_named_axes():
-#     pd_df = pandas.DataFrame(data={1: (2, 3), 4: (5, 6)})
-#     pd_df.rename_axis("my-name-for-rows", inplace=True)
-#     pd_df.rename_axis("my-name-for-columns", axis="columns", inplace=True)
-#
-#     sc_da = from_pandas(pd_df)
-#
-#     assert sc.identical(sc_da, sc.DataArray(
-#         dims=["my-name-for-rows", "my-name-for-columns"],
-#         values=[(2, 5), (3, 6)]))
+def test_2d_dataframe():
+    pd_df = pandas.DataFrame(data={1: (2, 3), 4: (5, 6)})
+
+    sc_da = from_pandas(pd_df)
+
+    reference_da = _make_2d_reference_da("row",
+                                         "column",
+                                         values=[(2, 5), (3, 6)],
+                                         row_coords=[0, 1],
+                                         column_coords=[1, 4])
+
+    assert sc.identical(sc_da, reference_da)
+
+
+def test_2d_dataframe_with_named_axes():
+    pd_df = pandas.DataFrame(data={1: (2, 3), 4: (5, 6)})
+    pd_df.rename_axis("my-name-for-rows", inplace=True)
+    pd_df.rename_axis("my-name-for-columns", axis="columns", inplace=True)
+
+    sc_da = from_pandas(pd_df)
+
+    reference_da = _make_2d_reference_da("my-name-for-rows",
+                                         "my-name-for-columns",
+                                         values=[(2, 5), (3, 6)],
+                                         row_coords=[0, 1],
+                                         column_coords=[1, 4])
+
+    assert sc.identical(sc_da, reference_da)
 
 
 def test_attrs():

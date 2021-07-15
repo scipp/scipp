@@ -30,6 +30,13 @@ def from_xarray(obj: Union[xr.DataArray, xr.Dataset]):
         raise ValueError(f"from_xarray: cannot convert type '{type(obj)}'")
 
 
+def _to_scipp_coords(xr_coords: xr.Coordinate):
+    return {
+        coord: Variable(dims=[coord], values=xr_coords[coord].values)
+        for coord in xr_coords
+    }
+
+
 def from_xarray_dataarray(da: xr.DataArray) -> DataArray:
     """
     Converts an xarray.DataArray object to a scipp.DataArray object.
@@ -37,20 +44,13 @@ def from_xarray_dataarray(da: xr.DataArray) -> DataArray:
     :param da: an xarray.DataArray object to be converted.
     :return: the converted scipp DataArray object.
     """
-    sc_coords = {}
     sc_attribs = {}
-
-    for coord in da.coords:
-        sc_coords[coord] = Variable(
-            dims=[coord],
-            values=da.coords[coord].values,
-        )
 
     for attrib in da.attrs:
         sc_attribs[attrib] = scalar(da.attrs[attrib])
 
     return DataArray(data=Variable(values=da.values, dims=da.dims),
-                     coords=sc_coords,
+                     coords=_to_scipp_coords(da.coords),
                      attrs=sc_attribs,
                      name=da.name or "")
 
@@ -62,16 +62,8 @@ def from_xarray_dataset(ds: xr.Dataset) -> Dataset:
     :param ds: an xarray.Dataset object to be converted.
     :return: the converted scipp dataset object.
     """
-    sc_coords = {}
-
-    for coord in ds.coords:
-        sc_coords[coord] = Variable(
-            dims=[coord],
-            values=ds.coords[coord].values,
-        )
-
     return Dataset(
         data={key: from_xarray(var)
               for key, var in ds.data_vars.items()},
-        coords=sc_coords,
+        coords=_to_scipp_coords(ds.coords),
     )
