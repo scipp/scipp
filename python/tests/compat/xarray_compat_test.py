@@ -98,3 +98,46 @@ def test_dataset_with_data():
         })
 
     assert sc.identical(sc_ds, reference_ds)
+
+
+def test_dataset_with_non_indexed_coords():
+    xr_ds = xarray.Dataset(
+        data_vars={
+            "array1":
+            xarray.DataArray(data=numpy.zeros((100, )),
+                             dims=["x"],
+                             coords={
+                                 "x": numpy.arange(100),
+                             }),
+            "array2":
+            xarray.DataArray(
+                data=numpy.zeros((50, )),
+                dims=["y"],
+                coords={
+                    "y": numpy.arange(50),
+                    "z": ("y",
+                          numpy.arange(0, 100, 2)),  # z is a non-index coord
+                }),
+        })
+
+    sc_ds = from_xarray(xr_ds)
+
+    print(sc_ds)
+
+    reference_ds = sc.Dataset(data={
+        "array1":
+        sc.DataArray(
+            data=sc.zeros(dims=["x"], shape=(100, ), dtype="float64")),
+        "array2":
+        sc.DataArray(
+            data=sc.zeros(dims=["y"], shape=(50, ), dtype="float64"),
+            attrs={"coord_z": sc.arange("y", 0, 100, 2, dtype="int32")}),
+    },
+                              coords={
+                                  "x": sc.arange("x", 100),
+                                  "y": sc.arange("y", 50),
+                              })
+
+    print(reference_ds)
+
+    assert sc.identical(sc_ds, reference_ds)
