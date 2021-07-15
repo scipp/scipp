@@ -72,18 +72,8 @@ if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
     TLS_VERIFY ON
   )
 endif()
-include(${CMAKE_BINARY_DIR}/conan.cmake)
-set(DYNAMIC_LIB_TRUE_FALSE "False")
-if(${DYNAMIC_LIB})
-  set(DYNAMIC_LIB_TRUE_FALSE "True")
-endif()
-set(BENCHMARK_DYNAMIC_LIB_TRUE_FALSE ${DYNAMIC_LIB_TRUE_FALSE})
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
-  # shared library not supported on Windows, see
-  # https://github.com/google/benchmark/issues/639
-  set(BENCHMARK_DYNAMIC_LIB_TRUE_FALSE "False")
-endif()
 
+include(${CMAKE_BINARY_DIR}/conan.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
 
