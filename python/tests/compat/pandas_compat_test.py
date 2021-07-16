@@ -3,7 +3,7 @@ import scipp as sc
 from scipp.compat.pandas_compat import from_pandas
 
 
-def _make_reference_da(row_name, data_name, row_coords, values, dtype="int64"):
+def _make_reference_da(row_name, row_coords, values, dtype="int64"):
     return sc.DataArray(
         data=sc.Variable(dims=[row_name], values=values, dtype=dtype),
         coords={
@@ -45,19 +45,18 @@ def test_series():
 
     sc_ds = from_pandas(pd_df)
 
-    reference_da = _make_reference_da("row", "", [0, 1, 2], [1, 2, 3])
+    reference_da = _make_reference_da("row", [0, 1, 2], [1, 2, 3])
 
     assert sc.identical(sc_ds, reference_da)
 
 
 def test_series_with_named_axis():
-    pd_df = pandas.Series(data=[1, 2, 3], name="data-name")
+    pd_df = pandas.Series(data=[1, 2, 3])
     pd_df.rename_axis("row-name", inplace=True)
 
     sc_ds = from_pandas(pd_df)
 
-    reference_da = _make_reference_da("row-name", "data-name", [0, 1, 2],
-                                      [1, 2, 3])
+    reference_da = _make_reference_da("row-name", [0, 1, 2], [1, 2, 3])
 
     assert sc.identical(sc_ds, reference_da)
 
