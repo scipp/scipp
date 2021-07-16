@@ -61,7 +61,20 @@ def bc(*, b, c):
     return b + c
 
 
+def test_dim_rename_merge_single_dim_coord():
+    # *a    b
+    #   \  /
+    #    *ab
+    var = sc.arange(dim='a', start=0, stop=4)
+    original = sc.DataArray(data=var, coords={'a': var, 'b': var})
+    da = original.transform_coords(['ab'], tree={'ab': ab})
+    assert da.dims == ['ab']
+
+
 def test_dim_rename_split_dim_coord():
+    # a   *b    c
+    #  \  / \  /
+    #   ab   bc
     var = sc.arange(dim='b', start=0, stop=4)
     original = sc.DataArray(data=var, coords={'a': var, 'b': var, 'c': var})
     # Only b is dimension-coord, but it is split => no rename of b
@@ -70,6 +83,9 @@ def test_dim_rename_split_dim_coord():
 
 
 def test_dim_rename_merge_two_dim_coords():
+    # *a   *b
+    #   \  /
+    #    ab
     a = sc.arange(dim='a', start=0, stop=4)
     b = sc.arange(dim='b', start=0, stop=4)
     original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
@@ -78,6 +94,9 @@ def test_dim_rename_merge_two_dim_coords():
     assert da.dims == ['a', 'b']
     # Split combined with merge: Ensure the b2 does not cause rename of b
     # which in turn would enable rename of a to ab
+    # *a   *b
+    #   \  / \
+    #    ab   b2
     da = original.transform_coords(['ab', 'b2'], tree={'ab': ab, 'b2': 'b'})
     assert da.dims == ['a', 'b']
     da = original.transform_coords(['b2', 'ab'], tree={'ab': ab, 'b2': 'b'})
@@ -85,6 +104,11 @@ def test_dim_rename_merge_two_dim_coords():
 
 
 def test_dim_rename_multi_level_merge():
+    # *b   *a
+    #  |   / \
+    #  |  c   a2
+    #   \ |
+    #    *bc
     a = sc.arange(dim='a', start=0, stop=4)
     b = sc.arange(dim='b', start=0, stop=4)
     original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
