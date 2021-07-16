@@ -100,6 +100,32 @@ def test_dataset_with_data():
     assert sc.identical(sc_ds, reference_ds)
 
 
+def test_dataset_with_units():
+    xr_ds = xarray.Dataset(
+        data_vars={
+            "array1":
+            xarray.DataArray(
+                data=numpy.zeros((100, )), dims=["x"], attrs={"units": "m"}),
+            "array2":
+            xarray.DataArray(
+                data=numpy.zeros((50, )), dims=["y"], attrs={"units": "s"}),
+        })
+
+    sc_ds = from_xarray(xr_ds)
+
+    reference_ds = sc.Dataset(
+        data={
+            "array1":
+            sc.DataArray(
+                data=sc.zeros(dims=["x"], shape=(100, ), unit=sc.Unit("m"))),
+            "array2":
+            sc.DataArray(
+                data=sc.zeros(dims=["y"], shape=(50, ), unit=sc.Unit("s"))),
+        })
+
+    assert sc.identical(sc_ds, reference_ds)
+
+
 def test_dataset_with_non_indexed_coords():
     xr_ds = xarray.Dataset(
         data_vars={

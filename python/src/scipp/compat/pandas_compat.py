@@ -44,8 +44,4 @@ def from_pandas(df: Union[pd.DataFrame, pd.Series]) -> DataArray:
                                          },
                                          name=column_name or "")
 
-    return Dataset(data=sc_data,
-                   coords={
-                       rows_index_name:
-                       Variable(dims=[rows_index_name], values=row_index)
-                   })
+    return Dataset(data=sc_data)
