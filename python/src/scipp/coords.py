@@ -11,15 +11,25 @@ def _add_coord(*, name, obj, tree):
     if name in obj.meta:
         return _produce_coord(obj, name)
     if isinstance(tree[name], str):
-        out = _get_coord(tree[name], obj, tree)
+        out, dim = _get_coord(tree[name], obj, tree)
     else:
         func = tree[name]
         args = inspect.getfullargspec(func).kwonlyargs
-        out = func(**{arg: _get_coord(arg, obj, tree) for arg in args})
+        params = {}
+        dims = []
+        for arg in args:
+            coord, dim = _get_coord(arg, obj, tree)
+            params[arg] = coord
+            dims += [] if dim is None else [dim]
+        dim = dims[0] if len(dims) == 1 else None
+        out = func(**params)
     if isinstance(out, Variable):
         out = {name: out}
     for key, coord in out.items():
         obj.coords[key] = coord
+    # TODO How can we prevent rename if there are multiple consumers?
+    if dim is not None:
+        obj.rename_dims({dim: name})
 
 
 def _consume_coord(obj, name):
@@ -38,7 +48,9 @@ def _produce_coord(obj, name):
 
 def _get_coord(name, obj, tree):
     if name in obj.meta:
-        return _consume_coord(obj, name)
+        coord = _consume_coord(obj, name)
+        dim = name if name in coord.dims else None
+        return coord, dim
     else:
         _add_coord(name=name, obj=obj, tree=tree)
         return _get_coord(name, obj, tree)
