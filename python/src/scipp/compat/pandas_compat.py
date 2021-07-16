@@ -2,46 +2,56 @@ from __future__ import annotations
 
 from typing import Union, TYPE_CHECKING
 
-from .. import Dataset, DataArray, Variable
+from .. import Dataset, DataArray, Variable, VariableLike
 
 if TYPE_CHECKING:
     import pandas as pd
 
 
-def from_pandas(df: Union[pd.DataFrame, pd.Series]) -> DataArray:
-    """
-    Converts a pandas.DataFrame or pandas.Series object into a
-    scipp DataArray.
+def from_pandas_series(se: pd.Series) -> DataArray:
+    row_index = se.axes[0]
+    row_index_name = row_index.name or "row"
 
-    :param df: the Dataframe to convert
-    :return: the converted scipp object.
-    """
+    return DataArray(data=Variable(values=se.values, dims=[row_index_name]),
+                     coords={
+                         row_index_name:
+                         Variable(dims=[row_index_name], values=row_index)
+                     },
+                     name=se.name or "")
+
+
+def from_pandas_dataframe(df: pd.DataFrame) -> Dataset:
+    import pandas as pd
 
     row_index = df.axes[0]
-    rows_index_name = row_index.name or "row"
+    row_index_name = row_index.name or "row"
+
+    if df.ndim == 1:
+        # Special case for 1d dataframes, treat them as a series, but still
+        # wrap them in a dataset object for consistency of return types.
+        return Dataset(
+            data={row_index_name: from_pandas_series(pd.Series(df))})
 
     sc_data = {}
-
-    if df.ndim == 2:
-        column_names = df.axes[1]
-    else:
-        column_names = [df.name]
-
-    for column_name in column_names:
-        if column_name is None:
-            if df.ndim != 1:
-                raise ValueError("from_pandas: got unnamed column "
-                                 "in dataframe with multiple columns")
-            column_name = ""
-
-        sc_data[column_name] = DataArray(data=Variable(
-            values=df[column_name].values if df.ndim == 2 else df.values,
-            dims=[rows_index_name]),
-                                         coords={
-                                             rows_index_name:
-                                             Variable(dims=[rows_index_name],
-                                                      values=row_index)
-                                         },
-                                         name=column_name or "")
+    for column_name in df.axes[1]:
+        sc_data[f"{column_name}"] = from_pandas_series(
+            pd.Series(df[column_name]))
 
     return Dataset(data=sc_data)
+
+
+def from_pandas(pd_obj: Union[pd.DataFrame, pd.Series]) -> VariableLike:
+    """
+    Converts a pandas.DataFrame or pandas.Series object into a
+    scipp Dataset or DataArray respectively.
+
+    :param pd_obj: the Dataframe or Series to convert
+    :return: the converted scipp object.
+    """
+    import pandas as pd
+    if isinstance(pd_obj, pd.DataFrame):
+        return from_pandas_dataframe(pd_obj)
+    elif isinstance(pd_obj, pd.Series):
+        return from_pandas_series(pd_obj)
+    else:
+        raise ValueError(f"from_pandas: cannot convert type '{type(pd_obj)}'")
