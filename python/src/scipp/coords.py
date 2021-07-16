@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-# @author Simon Heybrock
+# @author Simon Heybrock, Jan-Lukas Wynen
 
 import inspect
 from typing import Union

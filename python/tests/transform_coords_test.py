@@ -110,5 +110,5 @@ def test_dim_rename_multi_level_merge_multi_output():
     original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
     da = original.transform_coords(['bc'], tree={'bc': bc, 'c': split_a})
     # Similar to test_dim_rename_multi_level_merge above, but now an implicit
-    # intermediate result prevent conversion of a to c
+    # intermediate result prevents conversion of a to c
     assert da.dims == ['a', 'bc']
