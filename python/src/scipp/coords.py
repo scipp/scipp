@@ -9,6 +9,7 @@ from . import Variable, DataArray, Dataset
 
 def _add_coord(*, name, obj, tree):
     if name in obj.meta:
+        # TODO This must return a dim, but cannot find the correct one
         return _produce_coord(obj, name)
     if isinstance(tree[name], str):
         out, dim = _get_coord(tree[name], obj, tree)
@@ -28,8 +29,9 @@ def _add_coord(*, name, obj, tree):
     for key, coord in out.items():
         obj.coords[key] = coord
     # TODO How can we prevent rename if there are multiple consumers?
-    if dim is not None:
-        obj.rename_dims({dim: name})
+    return dim
+    # if dim is not None:
+    #     obj.rename_dims({dim: name})
 
 
 def _consume_coord(obj, name):
@@ -46,14 +48,30 @@ def _produce_coord(obj, name):
     return obj.coords[name]
 
 
-def _get_coord(name, obj, tree):
+# y -> y_square -> abc
+# _add_coord(name='abc')
+#     _get_coord(name='y_square')
+#         _add_coord(name='y_square')
+#             _get_coord(name='y')
+#                 return dim='y'
+#             return dim='y'
+#         _get_coord(name='y_square', dim_name='y')
+#             dims=['y']
+#             return dim='y'
+#         return dim='y'
+#
+#
+
+
+def _get_coord(name, obj, tree, dim_name=None):
     if name in obj.meta:
         coord = _consume_coord(obj, name)
-        dim = name if name in coord.dims else None
+        dim_name = name if dim_name is None else dim_name
+        dim = dim_name if dim_name in coord.dims else None
         return coord, dim
     else:
-        _add_coord(name=name, obj=obj, tree=tree)
-        return _get_coord(name, obj, tree)
+        dim = _add_coord(name=name, obj=obj, tree=tree)
+        return _get_coord(name, obj, tree, dim_name=dim)
 
 
 def transform_coords(obj: Union[DataArray, Dataset], coords,
@@ -66,6 +84,13 @@ def transform_coords(obj: Union[DataArray, Dataset], coords,
         for k in [key] if isinstance(key, str) else key:
             simple_tree[k] = tree[key]
     obj = obj.copy(deep=False)
+    rename = {}
     for name in [coords] if isinstance(coords, str) else coords:
-        _add_coord(name=name, obj=obj, tree=simple_tree)
+        dim = _add_coord(name=name, obj=obj, tree=simple_tree)
+        print(dim)
+        rename.setdefault(dim, []).append(name)
+        print(rename)
+    for dim in rename:
+        if len(rename[dim]) == 1:
+            obj.rename_dims({dim: rename[dim][0]})
     return obj
