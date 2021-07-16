@@ -6,7 +6,7 @@ This is a list of the tooling (i.e. compilers, static analysis, etc.) that are u
 Misc
 ~~~~
 
-- CMake >= 3.13
+- CMake >= 3.16
 - Conda
 
 Note: Ubuntu users can use the `Kitware Repo <https://apt.kitware.com/>`_ to obtain the latest version.
@@ -24,7 +24,7 @@ Static Analysis and Formatters
 - ``clang-format`` 10.0
 - ``cmake-format`` 0.6.9
 - ``flake8``
-- ``yapf`` 0.29.0
+- ``yapf`` 0.30.0
 
 ``clang-format`` may be installed via the LLVM repositories.
 
@@ -35,4 +35,4 @@ Static Analysis and Formatters
   pip install \
     cmake-format==0.6.9 \
     flake8 \
-    yapf==0.29.0
+    yapf==0.30.0
