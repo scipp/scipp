@@ -12,7 +12,7 @@ def _add_coord(*, name, obj, tree, rename):
         return _produce_coord(obj, name)
     if isinstance(tree[name], str):
         out = _get_coord(tree[name], obj, tree, rename)
-        dim = tree[name]
+        dim = (tree[name], )
     else:
         func = tree[name]
         args = inspect.getfullargspec(func).kwonlyargs
@@ -39,21 +39,6 @@ def _produce_coord(obj, name):
     return obj.coords[name]
 
 
-# y -> y_square -> abc
-# _add_coord(name='abc')
-#     _get_coord(name='y_square')
-#         _add_coord(name='y_square')
-#             _get_coord(name='y')
-#                 return dim='y'
-#             return dim='y'
-#         _get_coord(name='y_square', dim_name='y')
-#             dims=['y']
-#             return dim='y'
-#         return dim='y'
-#
-#
-
-
 def _get_coord(name, obj, tree, rename):
     if name in obj.meta:
         return _consume_coord(obj, name)
@@ -65,7 +50,7 @@ def _get_coord(name, obj, tree, rename):
 def _get_splitting_nodes(graph):
     nodes = {}
     for key in graph:
-        for start in [key] if isinstance(key, str) else key:
+        for start in key:
             nodes[start] = nodes.get(start, 0) + 1
     return [node for node in nodes if nodes[node] > 1]
 
@@ -86,12 +71,8 @@ def transform_coords(obj: Union[DataArray, Dataset], coords,
     blacklist = _get_splitting_nodes(rename)
     for key in rename:
         if len(rename[key]) == 1:
-            if isinstance(key, str):
-                if key in obj.dims and key not in blacklist:
-                    obj.rename_dims({key: rename[key][0]})
-            else:  # tuple of input dims
-                found = [k for k in key if k in obj.dims]
-                # rename if exactly one input is dimension-coord
-                if len(found) == 1:
-                    obj.rename_dims({found[0]: rename[key][0]})
+            found = [k for k in key if k in obj.dims]
+            # rename if exactly one input is dimension-coord
+            if len(found) == 1 and found[0] not in blacklist:
+                obj.rename_dims({found[0]: rename[key][0]})
     return obj
