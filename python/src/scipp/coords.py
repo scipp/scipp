@@ -7,31 +7,22 @@ from typing import Union
 from . import Variable, DataArray, Dataset
 
 
-def _add_coord(*, name, obj, tree):
+def _add_coord(*, name, obj, tree, rename):
     if name in obj.meta:
-        # TODO This must return a dim, but cannot find the correct one
         return _produce_coord(obj, name)
     if isinstance(tree[name], str):
-        out, dim = _get_coord(tree[name], obj, tree)
+        out = _get_coord(tree[name], obj, tree, rename)
+        dim = tree[name]
     else:
         func = tree[name]
         args = inspect.getfullargspec(func).kwonlyargs
-        params = {}
-        dims = []
-        for arg in args:
-            coord, dim = _get_coord(arg, obj, tree)
-            params[arg] = coord
-            dims += [] if dim is None else [dim]
-        dim = dims[0] if len(dims) == 1 else None
-        out = func(**params)
+        out = func(**{arg: _get_coord(arg, obj, tree, rename) for arg in args})
+        dim = tuple(args)
     if isinstance(out, Variable):
         out = {name: out}
+    rename.setdefault(dim, []).extend(out.keys())
     for key, coord in out.items():
         obj.coords[key] = coord
-    # TODO How can we prevent rename if there are multiple consumers?
-    return dim
-    # if dim is not None:
-    #     obj.rename_dims({dim: name})
 
 
 def _consume_coord(obj, name):
@@ -63,15 +54,20 @@ def _produce_coord(obj, name):
 #
 
 
-def _get_coord(name, obj, tree, dim_name=None):
+def _get_coord(name, obj, tree, rename):
     if name in obj.meta:
-        coord = _consume_coord(obj, name)
-        dim_name = name if dim_name is None else dim_name
-        dim = dim_name if dim_name in coord.dims else None
-        return coord, dim
+        return _consume_coord(obj, name)
     else:
-        dim = _add_coord(name=name, obj=obj, tree=tree)
-        return _get_coord(name, obj, tree, dim_name=dim)
+        _add_coord(name=name, obj=obj, tree=tree, rename=rename)
+        return _get_coord(name, obj, tree, rename=rename)
+
+
+def _get_splitting_nodes(graph):
+    nodes = {}
+    for key in graph:
+        for start in [key] if isinstance(key, str) else key:
+            nodes[start] = nodes.get(start, 0) + 1
+    return [node for node in nodes if nodes[node] > 1]
 
 
 def transform_coords(obj: Union[DataArray, Dataset], coords,
@@ -86,11 +82,16 @@ def transform_coords(obj: Union[DataArray, Dataset], coords,
     obj = obj.copy(deep=False)
     rename = {}
     for name in [coords] if isinstance(coords, str) else coords:
-        dim = _add_coord(name=name, obj=obj, tree=simple_tree)
-        print(dim)
-        rename.setdefault(dim, []).append(name)
-        print(rename)
-    for dim in rename:
-        if len(rename[dim]) == 1:
-            obj.rename_dims({dim: rename[dim][0]})
+        _add_coord(name=name, obj=obj, tree=simple_tree, rename=rename)
+    blacklist = _get_splitting_nodes(rename)
+    for key in rename:
+        if len(rename[key]) == 1:
+            if isinstance(key, str):
+                if key in obj.dims and key not in blacklist:
+                    obj.rename_dims({key: rename[key][0]})
+            else:  # tuple of input dims
+                found = [k for k in key if k in obj.dims]
+                # rename if exactly one input is dimension-coord
+                if len(found) == 1:
+                    obj.rename_dims({found[0]: rename[key][0]})
     return obj
