@@ -4,6 +4,21 @@
 # @author Simon Heybrock
 
 # flake8: noqa
+import os
+
+if os.name == "nt" and "CONDA_PREFIX" in os.environ:
+    # Due to https://github.com/conda-forge/python-feedstock/issues/444 , combinations of Python3, Anaconda and Windows
+    # don't respect os.add_dll_path(...), which is python's mechanism for setting DLL search directories. Instead we
+    # need to explicitly add it to the PATH environment variable. For non-conda versions of python we want to keep using
+    # the usual python mechanism.
+    #
+    # This is probably due to the following patch in conda-built versions of python:
+    # https://github.com/conda-forge/python-feedstock/blob/289b2a8017ddd000896e525f18867f4caacec6f2/recipe/patches/0020-Add-CondaEcosystemModifyDllSearchPath.patch
+    #
+    import importlib.resources
+    with importlib.resources.path("scipp", "__init__.py") as path:
+        dll_directory = (path.parent.parent / "bin").resolve()
+        os.environ["PATH"] += os.pathsep + str(dll_directory)
 
 from . import runtime_config
 
@@ -33,10 +48,10 @@ from ._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
                          DTypeError, NotFoundError, SizeError, SliceError, \
                          UnitError, VariableError, VariancesError
 # Import submodules
-from ._scipp.core import units, dtype, buckets, geometry
+from ._scipp.core import units, dtype, buckets
+from . import geometry
 # Import functions
-from ._scipp.core import choose, divide, floor_divide, logical_and, \
-                         logical_or, logical_xor, minus, mod, plus, times
+from ._scipp.core import choose, logical_and, logical_or, logical_xor, where
 # Import python functions
 from .show import show, make_svg
 from .table import table
@@ -44,13 +59,12 @@ from .plotting import plot
 from .extend_units import *
 from .html import to_html, make_html
 from .object_list import _repr_html_
-from ._utils import collapse, slices
-from ._utils.typing import is_variable, is_dataset, is_data_array, \
-                           is_dataset_or_array
+from .utils import collapse, slices
 from .compat.dict import to_dict, from_dict
 from .sizes import _make_sizes
 
 # Wrappers for free functions from _scipp.core
+from ._arithmetic import *
 from ._bins import *
 from ._counts import *
 from ._comparison import *
@@ -87,6 +101,16 @@ setattr(Dataset, 'bins', property(_bins, _set_bins))
 setattr(Variable, 'events', property(_events))
 setattr(DataArray, 'events', property(_events))
 
+from ._structured import _fields
+
+setattr(
+    Variable, 'fields',
+    property(
+        _fields,
+        doc=
+        """Provides access to fields of structured types such as vectors or matrices."""
+    ))
+
 from ._bins import _groupby_bins
 
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
@@ -100,5 +124,20 @@ setattr(Dataset, 'plot', plot)
 # __array_ufunc__ should be possible by converting non-scipp arguments to
 # variables. The most difficult part is probably mapping the ufunc to scipp
 # functions.
-for _obj in [Variable, DataArray, Dataset]:
-    setattr(_obj, '__array_ufunc__', None)
+for _cls in (Variable, DataArray, Dataset):
+    setattr(_cls, '__array_ufunc__', None)
+del _cls
+
+from . import _binding
+
+_binding.bind_get()
+for _cls in (Variable, DataArray):
+    _binding.bind_functions_as_methods(
+        _cls, globals(), ('broadcast', 'flatten', 'fold', 'transpose', 'all',
+                          'any', 'mean', 'sum', 'nanmean', 'nansum'))
+del _cls
+_binding.bind_functions_as_methods(
+    Variable, globals(), ('cumsum', 'max', 'min', 'nanmax', 'nanmin'))
+_binding.bind_functions_as_methods(DataArray, globals(), ('groupby', ))
+_binding.bind_functions_as_methods(Dataset, globals(), ('groupby', ))
+del _binding

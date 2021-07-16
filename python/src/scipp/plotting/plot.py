@@ -3,25 +3,13 @@
 # @author Neil Vaytet
 
 from .._scipp import core as sc
-from .. import _utils as su
+from .. import typing
 from ..compat.dict import from_dict
 from .dispatch import dispatch
 from .objects import PlotDict
-from .tools import make_fake_coord, get_line_param
+from .tools import get_line_param
 import numpy as np
 import itertools
-
-
-def _variable_to_data_array(variable):
-    """
-    Convert a Variable to a DataArray by giving it some fake integer
-    coordinates, which makes it possible to write generic code in the rest of
-    the plotting library.
-    """
-    coords = {}
-    for dim, size in zip(variable.dims, variable.shape):
-        coords[dim] = make_fake_coord(dim, size)
-    return sc.DataArray(data=variable, coords=coords)
 
 
 def _ndarray_to_variable(ndarray):
@@ -51,27 +39,26 @@ def _input_to_data_array(item, all_keys, key=None):
     DataArrays.
     """
     to_plot = {}
-    if su.is_dataset(item):
+    if isinstance(item, sc.Dataset):
         for name in sorted(item.keys()):
-            if su.numeric_type(item[name]):
+            if typing.has_numeric_type(item[name]):
                 proto_plt_key = f'{key}_{name}' if key else name
                 to_plot[_make_plot_key(proto_plt_key, all_keys)] = item[name]
-    elif su.is_variable(item):
-        if su.numeric_type(item):
+    elif isinstance(item, sc.Variable):
+        if typing.has_numeric_type(item):
             if key is None:
                 key = _brief_str(item)
-            to_plot[_make_plot_key(key,
-                                   all_keys)] = _variable_to_data_array(item)
-    elif su.is_data_array(item):
-        if su.numeric_type(item):
+            to_plot[_make_plot_key(key, all_keys)] = sc.DataArray(data=item)
+    elif isinstance(item, sc.DataArray):
+        if typing.has_numeric_type(item):
             if key is None:
                 key = item.name
             to_plot[_make_plot_key(key, all_keys)] = item
     elif isinstance(item, np.ndarray):
         if key is None:
             key = str(type(item))
-        to_plot[_make_plot_key(key, all_keys)] = _variable_to_data_array(
-            _ndarray_to_variable(item))
+        to_plot[_make_plot_key(
+            key, all_keys)] = sc.DataArray(data=_ndarray_to_variable(item))
     else:
         raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
                            "a Dataset, a DataArray, a Variable (and their "
@@ -83,7 +70,6 @@ def _input_to_data_array(item, all_keys, key=None):
 
 def plot(scipp_obj,
          projection=None,
-         axes=None,
          color=None,
          marker=None,
          linestyle=None,
@@ -149,13 +135,7 @@ def plot(scipp_obj,
         ndims = len(var.dims)
         if (ndims > 0) and (np.sum(var.shape) > 0):
             if ndims == 1 or projection == "1d" or projection == "1D":
-                # Construct a key from the dimensions
-                if axes is not None:
-                    key = str(list(axes.values()))
-                else:
-                    key = str(var.dims)
-                # Add unit to key
-                key = "{}.{}".format(key, str(var.unit))
+                key = f"{var.dims}.{var.unit}"
                 line_count += 1
             else:
                 key = name
@@ -180,7 +160,6 @@ def plot(scipp_obj,
             if key not in tobeplotted.keys():
                 tobeplotted[key] = dict(ndims=ndims,
                                         scipp_obj_dict=dict(),
-                                        axes=axes,
                                         mpl_line_params=dict())
                 for n in mpl_line_params.keys():
                     tobeplotted[key]["mpl_line_params"][n] = {}
@@ -192,10 +171,8 @@ def plot(scipp_obj,
     output = PlotDict()
     for key, val in tobeplotted.items():
         output._items[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-                                      name=key,
                                       ndim=val["ndims"],
                                       projection=projection,
-                                      axes=val["axes"],
                                       mpl_line_params=val["mpl_line_params"],
                                       **kwargs)
 

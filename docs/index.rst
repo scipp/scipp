@@ -52,9 +52,13 @@ Currently the only example for this is `scippneutron <https://scipp.github.io/sc
 News
 ----
 
+- [|SCIPP_RELEASE_MONTH|] scipp-|SCIPP_VERSION| `has been released <about/release-notes.rst>`_.
+  Check out the `What's new <about/whats-new.rst>`_ notebook for an overview of recent highlights and major changes.
 - Scipp changed from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
 - Looking for ``scipp.neutron``?
   This submodule has been moved into its own package, `scippneutron <https://scipp.github.io/scippneutron>`_.
+- [June 2021] `scipp-0.7 <https://scipp.github.io/about/release-notes.html#v0-7-0-june-2021>`_ has been released.
+  The `What's new 0.7 <https://scipp.github.io/release/0.7.0/about/whats-new/whats-new-0.7.0.html>`_ notebook provides an overview of the highlights and major changes.
 - [March 2021] `scipp-0.6 <https://scipp.github.io/about/release-notes.html#v0-6-0-march-2021>`_ has been released.
   The `What's new 0.6 <https://scipp.github.io/release/0.6.0/about/whats-new/whats-new-0.6.0.html>`_ notebook provides an overview of the highlights and major changes.
 - [Janunary 2021] `scipp-0.5 <https://scipp.github.io/about/release-notes.html#v0-5-0-january-2021>`_ has been released.

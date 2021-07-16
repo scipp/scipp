@@ -57,6 +57,14 @@ public:
   /// should be prefered where possible, since it generates less code.
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
+  Variable(const Variable &other) = default;
+  Variable(Variable &&other) noexcept = default;
+
+  Variable &operator=(const Variable &other);
+  Variable &operator=(Variable &&other);
+
+  ~Variable() noexcept = default;
+
   [[nodiscard]] const units::Unit &unit() const;
   void setUnit(const units::Unit &unit);
   void expectCanSetUnit(const units::Unit &) const;
@@ -95,7 +103,8 @@ public:
   void validateSlice(const Slice &s, const Variable &data) const;
   [[maybe_unused]] Variable &setSlice(Slice params, const Variable &data);
 
-  template <class T, class... Index> Variable elements(Index... index) const;
+  template <class T> Variable elements() const;
+  template <class T> Variable elements(const std::string &key) const;
 
   void rename(Dim from, Dim to);
 
@@ -141,6 +150,8 @@ private:
                                                         const Variable &);
   template <class... Ts, class... Args>
   static Variable construct(const DType &type, Args &&... args);
+  template <class T, class... Index>
+  Variable elements_impl(Index... index) const;
 
   void expectWritable() const;
 
@@ -202,7 +213,6 @@ Variable::Variable(const DType &type, Ts &&... args)
                                                       Variable &out);
 [[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var,
                                                      Variable &&out);
-
 } // namespace scipp::variable
 
 namespace scipp::core {

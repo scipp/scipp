@@ -7,8 +7,8 @@
 
 #include "scipp/core/element_array.h"
 
-using scipp::core::default_init_elements;
 using scipp::core::element_array;
+using scipp::core::init_for_overwrite;
 
 static auto make_element_array() {
   std::vector<double> v{1.1, 2.2, 3.3};
@@ -75,7 +75,7 @@ TEST(ElementArrayTest, construct_size_and_value_empty) {
 }
 
 TEST(ElementArrayTest, construct_size_default_init) {
-  element_array<int64_t> x(2, default_init_elements);
+  element_array<int64_t> x(2, init_for_overwrite);
   ASSERT_TRUE(x);
   ASSERT_EQ(x.size(), 2);
   ASSERT_FALSE(x.empty());
@@ -83,7 +83,7 @@ TEST(ElementArrayTest, construct_size_default_init) {
 }
 
 TEST(ElementArrayTest, construct_size_default_init_empty) {
-  element_array<int64_t> x(0, default_init_elements);
+  element_array<int64_t> x(0, init_for_overwrite);
   check_empty_element_array(x);
 }
 
@@ -169,7 +169,7 @@ TEST(ElementArrayTest, resize) {
 
 TEST(ElementArrayTest, resize_default_init) {
   auto x = make_element_array();
-  x.resize(2, default_init_elements);
+  x.resize(2, init_for_overwrite);
   ASSERT_TRUE(x);
   ASSERT_EQ(x.size(), 2);
   ASSERT_NE(x.data(), nullptr);
@@ -177,6 +177,6 @@ TEST(ElementArrayTest, resize_default_init) {
   // Data values could be anything, no assert.
 
   ASSERT_FALSE(x.empty());
-  x.resize(0, default_init_elements);
+  x.resize(0, init_for_overwrite);
   check_empty_element_array(x);
 }

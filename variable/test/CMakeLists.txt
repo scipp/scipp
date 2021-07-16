@@ -38,15 +38,8 @@ add_executable(
   variable_structure_test.cpp
   variable_test.cpp
 )
-include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(
-  ${TARGET_NAME}
-  LINK_PRIVATE
-  scipp-variable
-  gtest_main
-  scipp_test_helpers
-  ${GTEST_LIBRARIES}
-  ${GMOCK_LIBRARIES}
+  ${TARGET_NAME} LINK_PRIVATE scipp-variable scipp_test_helpers GTest::GTest
 )
 
 if(WIN32)

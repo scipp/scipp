@@ -7,14 +7,10 @@
 #include "scipp-variable_export.h"
 #include "scipp/variable/variable.h"
 
-namespace scipp::variable {
+namespace scipp::variable::geometry {
 
-SCIPP_VARIABLE_EXPORT Variable astype(const Variable &var, const DType type);
-
-namespace geometry {
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable position(const Variable &x,
                                                       const Variable &y,
                                                       const Variable &z);
-} // namespace geometry
 
-} // namespace scipp::variable
+} // namespace scipp::variable::geometry

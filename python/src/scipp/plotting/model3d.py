@@ -1,212 +1,163 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
-
-from .model import PlotModel
-from .tools import to_bin_centers, fix_empty_range, to_dict
+from functools import lru_cache
 from .._scipp import core as sc
+from .._shape import flatten
+from .model1d import PlotModel1d
+from .model import DataArrayDict
+from .tools import to_bin_centers
 import numpy as np
 
 
-class PlotModel3d(PlotModel):
+def _planar_norm(a, b):
+    return sc.sqrt(a * a + b * b)
+
+
+def _to_centers(array):
+    array = array.copy(deep=False)
+    for dim in array.dims:
+        if dim not in array.meta:
+            continue
+        # Cannot flatten with bin edges, use centers as positions
+        if array.meta[dim].sizes[dim] == array.sizes[dim] + 1:
+            array.coords[dim] = to_bin_centers(array.meta[dim], dim)
+    return array
+
+
+class ScatterPointModel:
     """
-    Model class for 3 dimensional plots.
-
-    It handles updating the data values when using dimension sliders as well as
-    updating opacities for the cut surfaces.
+    Model representing scattered data.
     """
-    def __init__(self, *args, scipp_obj_dict=None, positions=None, **kwargs):
-
-        super().__init__(*args, scipp_obj_dict=scipp_obj_dict, **kwargs)
-
-        self.displayed_dims = {}
-        self.positions = positions
-        self.pos_array = None
-        self.pos_coord = None
-        self.pos_unit = None
-        self.cut_options = None
-
-        # If positions are specified, then the x, y, z points positions can
-        # never change
-        if self.positions is not None:
-            self.pos_coord = scipp_obj_dict[self.name].meta[self.positions]
-            # TODO Something expects a flat position array?
-            self.pos_coord = sc.flatten(self.pos_coord,
-                                        dims=self.pos_coord.dims,
-                                        to='dummy')
-            self.pos_array = np.array(self.pos_coord.values, dtype=np.float32)
-
-    def initialize(self, cut_options):
-        """
-        The model handles calculations of opacities for the cut surface, so it
-        needs to know which are the possible cut surface options. Those are set
-        once the `PlotPanel3d` has been created.
-        """
-        self.cut_options = cut_options
-
-    def update_axes(self, axparams):
-        """
-        When axes are changed, a new meshgrid of positions is computed.
-        """
-
-        # If no positions are supplied, create a meshgrid from coordinates
-        if self.positions is None:
-
-            for xyz in "zyx":
-                self.displayed_dims[xyz] = axparams[xyz]["dim"]
-
-            z, y, x = np.meshgrid(
-                to_bin_centers(
-                    self.data_arrays[self.name].meta[axparams['z']["dim"]],
-                    axparams["z"]["dim"]).values,
-                to_bin_centers(
-                    self.data_arrays[self.name].meta[axparams['y']["dim"]],
-                    axparams["y"]["dim"]).values,
-                to_bin_centers(
-                    self.data_arrays[self.name].meta[axparams['x']["dim"]],
-                    axparams["x"]["dim"]).values,
-                indexing='ij')
-
-            self.pos_array = np.array(
-                [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
-
-        return {"positions": self.pos_array}
-
-    def get_slice_values(self, mask_info):
-        """
-        Get data and mask values as numpy arrays.
-        """
-        new_values = {
-            "values": self.dslice.data.values.astype(np.float32).ravel()
-        }
-
-        # Handle masks
-        if len(mask_info[self.name]) > 0:
-            # Use automatic broadcasting in Scipp variables
-            msk = sc.Variable(dims=self.dslice.data.dims,
-                              values=np.zeros(self.dslice.data.shape,
-                                              dtype=np.int32))
-            for m, val in mask_info[self.name].items():
-                if val:
-                    msk += sc.Variable(
-                        dims=self.dslice.masks[m].dims,
-                        values=self.dslice.masks[m].values.astype(np.int32))
-            new_values["masks"] = msk.values.ravel()
-        return new_values
-
-    def update_data(self, slices, mask_info):
-        """
-        Get new slice of data and send it back to the controller.
-        """
-        data_slice = self.slice_data(self.data_arrays[self.name], slices)
-
-        # Use automatic broadcast if positions are not used
-        if self.positions is None:
-            shape = [
-                data_slice.meta[self.displayed_dims["z"]].shape[0] - 1,
-                data_slice.meta[self.displayed_dims["y"]].shape[0] - 1,
-                data_slice.meta[self.displayed_dims["x"]].shape[0] - 1
-            ]
-
-            self.dslice = sc.DataArray(
-                coords={
-                    self.displayed_dims["z"]:
-                    data_slice.meta[self.displayed_dims["z"]],
-                    self.displayed_dims["y"]:
-                    data_slice.meta[self.displayed_dims["y"]],
-                    self.displayed_dims["x"]:
-                    data_slice.meta[self.displayed_dims["x"]]
-                },
-                data=sc.Variable(dims=[
-                    self.displayed_dims["z"], self.displayed_dims["y"],
-                    self.displayed_dims["x"]
-                ],
-                                 values=np.ones(shape),
-                                 variances=np.zeros(shape),
-                                 dtype=data_slice.data.dtype,
-                                 unit=sc.units.one),
-                masks=to_dict(data_slice.masks))
-
-            self.dslice *= data_slice.data
+    def __init__(self, *, positions, scipp_obj_dict, resolution):
+        self._axes = ['z', 'y', 'x']
+        # TODO use resolution=None?
+        if positions is None:
+            scipp_obj_dict = {
+                key: _to_centers(array)
+                for key, array in scipp_obj_dict.items()
+            }
+        self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
+                                       resolution=resolution)
+        array = next(iter(scipp_obj_dict.values()))
+        if positions is None:
+            self._make_components(dims=array.dims[-3:])
         else:
-            self.dslice = data_slice
+            # TODO Get dim labels from field names
+            self._scatter_dims = ['x', 'y', 'z']
+            self._positions = flatten(array.meta[positions],
+                                      to=''.join(array.dims))
+            self._components = {'x': self.x, 'y': self.y, 'z': self.z}
 
-        return self.get_slice_values(mask_info)
+    def update_data(self, slices):
+        arrays = self._data_model.update_data(slices=slices)
+        return DataArrayDict({
+            key: flatten(array, to=''.join(array.dims))
+            for key, array in arrays.items()
+        })
 
-    def update_cut_surface(self,
-                           target=None,
-                           button_value=None,
-                           surface_thickness=None,
-                           opacity_lower=None,
-                           opacity_upper=None):
+    def _make_components(self, dims):
+        array = next(iter(self._data_model.data_arrays.values()))
+        slice_dims = [dim for dim in array.dims if dim not in dims]
+        self._scatter_dims = dims
+        for dim in slice_dims:
+            array = array[dim, 0]
+        array = flatten(array, to=''.join(array.dims))
+        self._components = {dim: array.meta[dim] for dim in self._scatter_dims}
+        comps = []
+        for field in self._components.values():
+            comp = field.astype(sc.dtype.float64).copy()
+            comp.unit = ''
+            comps.append(comp)
+        self._positions = sc.geometry.position(*comps)
+
+    @property
+    def dims(self):
+        return self._scatter_dims
+
+    @dims.setter
+    def dims(self, dims):
+        self._make_components(dims)
+
+    @property
+    def positions(self):
+        return self._positions
+
+    @property
+    def unit(self):
+        return self._positions.unit
+
+    @property
+    @lru_cache(maxsize=None)
+    def limits(self):
         """
-        Compute new opacities based on positions of the cut surface.
-        """
-
-        # Cartesian X, Y, Z
-        if button_value < self.cut_options["Xcylinder"]:
-            return np.where(
-                np.abs(self.pos_array[:, button_value] - target) <
-                0.5 * surface_thickness, opacity_upper, opacity_lower)
-        # Cylindrical X, Y, Z
-        elif button_value < self.cut_options["Sphere"]:
-            axis = button_value - 3
-            remaining_inds = [(axis + 1) % 3, (axis + 2) % 3]
-            return np.where(
-                np.abs(
-                    np.sqrt(self.pos_array[:, remaining_inds[0]] *
-                            self.pos_array[:, remaining_inds[0]] +
-                            self.pos_array[:, remaining_inds[1]] *
-                            self.pos_array[:, remaining_inds[1]]) - target) <
-                0.5 * surface_thickness, opacity_upper, opacity_lower)
-        # Spherical
-        elif button_value == self.cut_options["Sphere"]:
-            return np.where(
-                np.abs(
-                    np.sqrt(self.pos_array[:, 0] * self.pos_array[:, 0] +
-                            self.pos_array[:, 1] * self.pos_array[:, 1] +
-                            self.pos_array[:, 2] * self.pos_array[:, 2]) -
-                    target) < 0.5 * surface_thickness, opacity_upper,
-                opacity_lower)
-        # Value iso-surface
-        elif button_value == self.cut_options["Value"]:
-            return np.where(
-                np.abs(self.dslice.data.values.ravel() - target) <
-                0.5 * surface_thickness, opacity_upper, opacity_lower)
-        else:
-            raise RuntimeError(
-                "Unknown cut surface type {}".format(button_value))
-
-    def get_positions_extents(self, pixel_size=None):
-        """
-        Find the extents of the box that contains all the positions.
+        Extents of the box that contains all the positions.
         """
         extents = {}
-        pos = self.pos_coord
-        for xyz, x in zip(['x', 'y', 'z'], [pos.x1, pos.x2, pos.x3]):
+        pos = self._positions.fields
+        for xyz, x in zip(self._axes, [pos.z, pos.y, pos.x]):
             xmin = sc.min(x).value
             xmax = sc.max(x).value
-            if pixel_size is not None:
-                xmin -= 0.5 * pixel_size
-                xmax += 0.5 * pixel_size
-            extents[xyz] = {
-                "lims":
-                np.array(fix_empty_range([xmin, xmax],
-                                         replacement=pixel_size)),
-                "unit":
-                self.pos_coord.unit
-            }
+            extents[xyz] = np.array([xmin, xmax])
         return extents
 
-    def estimate_pixel_size(self, axparams):
+    @property
+    @lru_cache(maxsize=None)
+    def center(self):
+        return np.array([0.5 * np.sum(self.limits[dim]) for dim in 'xyz'])
+
+    @property
+    @lru_cache(maxsize=None)
+    def box_size(self):
+        return np.array([
+            self.limits['x'][1] - self.limits['x'][0],
+            self.limits['y'][1] - self.limits['y'][0],
+            self.limits['z'][1] - self.limits['z'][0]
+        ])
+
+    # TODO replace x,y,z? use dims
+    @property
+    @lru_cache(maxsize=None)
+    def components(self):
+        return self._components
+
+    @property
+    @lru_cache(maxsize=None)
+    def x(self):
+        return self._positions.fields.x
+
+    @property
+    @lru_cache(maxsize=None)
+    def y(self):
+        return self._positions.fields.y
+
+    @property
+    @lru_cache(maxsize=None)
+    def z(self):
+        return self._positions.fields.z
+
+    @property
+    @lru_cache(maxsize=None)
+    def radius_x(self):
+        return _planar_norm(self._positions.fields.y, self._positions.fields.z)
+
+    @property
+    @lru_cache(maxsize=None)
+    def radius_y(self):
+        return _planar_norm(self._positions.fields.x, self._positions.fields.z)
+
+    @property
+    @lru_cache(maxsize=None)
+    def radius_z(self):
+        return _planar_norm(self._positions.fields.x, self._positions.fields.y)
+
+    @property
+    @lru_cache(maxsize=None)
+    def radius(self):
+        return sc.norm(self._positions)
+
+    def __getattr__(self, attr):
         """
-        Find the smallest pixel in the grid.
+        Forward some methods from internal PlotModel1d.
         """
-        dx = [
-            axparams["box_size"][i] /
-            self.dim_to_shape[self.name][axparams[xyz]["dim"]]
-            for i, xyz in enumerate("xyz")
-        ]
-        scaling = [axparams[xyz]["scaling"] for xyz in "xyz"]
-        ind = np.argmin(dx)
-        return dx[ind], scaling[ind]
+        return getattr(self._data_model, attr)

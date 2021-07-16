@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #include <numeric>
 
+#include "scipp/common/numeric.h"
+
 #include "scipp/core/bucket.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/parallel.h"
@@ -14,10 +16,8 @@
 
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/choose.h"
-#include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
-#include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
 
 #include "../variable/operations_common.h"
@@ -211,14 +211,14 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   // 3. sum/N -> mean
   if constexpr (std::is_same_v<T, Dataset>) {
     for (auto &&item : out) {
-      if (isInt(item.data().dtype()))
+      if (is_int(item.data().dtype()))
         out.setData(item.name(), item.data() * get_scale(m_data[item.name()]),
                     AttrPolicy::Keep);
       else
         item *= get_scale(m_data[item.name()]);
     }
   } else {
-    if (isInt(out.data().dtype()))
+    if (is_int(out.data().dtype()))
       out.setData(out.data() * get_scale(m_data));
     else
       out *= get_scale(m_data);
@@ -227,13 +227,25 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   return out;
 }
 
+namespace {
+template <class T> struct NanSensitiveLess {
+  // Compare two values such that x < NaN for all x != NaN.
+  bool operator()(const T &a, const T &b) const {
+    if (scipp::numeric::isnan(b)) {
+      return true;
+    }
+    return a < b;
+  }
+};
+} // namespace
+
 template <class T> struct MakeGroups {
   static auto apply(const Variable &key, const Dim targetDim) {
     expect::isKey(key);
     const auto &values = key.values<T>();
 
     const auto dim = key.dims().inner();
-    std::map<T, GroupByGrouping::group> indices;
+    std::map<T, GroupByGrouping::group, NanSensitiveLess<T>> indices;
     const auto end = values.end();
     scipp::index i = 0;
     for (auto it = values.begin(); it != end;) {
@@ -241,7 +253,8 @@ template <class T> struct MakeGroups {
       // handling in follow-up "apply" steps.
       const auto begin = i;
       const auto &value = *it;
-      while (it != end && *it == value) {
+      while (it != end && (*it == value || (scipp::numeric::isnan(value) &&
+                                            scipp::numeric::isnan(*it)))) {
         ++it;
         ++i;
       }

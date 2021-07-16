@@ -8,9 +8,7 @@
 #include "test_macros.h"
 
 #include "scipp/core/except.h"
-#include "scipp/variable/bins.h"
-#include "scipp/variable/operations.h"
-#include "scipp/variable/shape.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
@@ -58,6 +56,41 @@ TEST(Variable, move) {
   Variable moved(std::move(var));
   EXPECT_FALSE(var.is_valid());
   EXPECT_NE(moved, var);
+}
+
+TEST(Variable, is_readonly) {
+  auto var = makeVariable<double>(Values{1});
+  EXPECT_FALSE(var.is_readonly());
+  EXPECT_FALSE(Variable(var).is_readonly()); // propagated on copy
+  auto const_var = var.as_const();
+  EXPECT_TRUE(const_var.is_readonly());
+  EXPECT_TRUE(Variable(const_var).is_readonly()); // propagated on copy
+}
+
+TEST(Variable, is_valid) {
+  auto a = Variable();
+  EXPECT_FALSE(a.is_valid());
+  a = makeVariable<double>(Values{1});
+  EXPECT_TRUE(a.is_valid());
+}
+
+TEST(Variable, is_slice) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{1, 2, 3}, Shape{3});
+  EXPECT_FALSE(var.is_slice());
+  EXPECT_FALSE(var.slice({Dim::X, 0, 3}).is_slice());
+  EXPECT_TRUE(var.slice({Dim::X, 1, 3}).is_slice());
+  EXPECT_TRUE(var.slice({Dim::X, 0, 1}).is_slice());
+}
+
+TEST(Variable, is_same) {
+  auto a = makeVariable<double>(Dims{Dim::X}, Values{1, 2}, Shape{2});
+  EXPECT_TRUE(a.is_same(Variable(a)));
+  EXPECT_TRUE(a.is_same(a.as_const()));
+  EXPECT_FALSE(a.is_same(a.slice({Dim::X, 0, 1})));
+
+  auto b = makeVariable<double>(Dims{Dim::Y, Dim::X}, Values{1, 2, 3, 4},
+                                Shape{2, 2});
+  EXPECT_FALSE(b.is_same(b.transpose({Dim::X, Dim::Y})));
 }
 
 TEST(Variable, makeVariable_custom_type) {
@@ -127,6 +160,11 @@ TEST(VariableTest, copy_and_move) {
 
   const auto moved(std::move(var));
   EXPECT_EQ(moved, reference);
+}
+
+TEST(Variable, full_slice) {
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2});
+  EXPECT_TRUE(var.is_same(var.slice({})));
 }
 
 TEST(Variable, copy_slice) {
@@ -736,10 +774,18 @@ TYPED_TEST(AsTypeTest, variable_astype) {
 
 TEST(AsTypeTest, buffer_handling) {
   const auto var = makeVariable<float>(Values{1});
-  const auto same = astype(var, dtype<float>);
-  EXPECT_TRUE(same.is_same(var)); // not modified => not copied
-  const auto different = astype(var, dtype<double>);
-  EXPECT_FALSE(different.is_same(var)); // modified => copied
+  const auto force_copy = astype(var, dtype<float>);
+  EXPECT_FALSE(force_copy.is_same(var));
+  EXPECT_EQ(force_copy, var);
+  const auto force_copy_explicit =
+      astype(var, dtype<float>, CopyPolicy::Always);
+  EXPECT_FALSE(force_copy_explicit.is_same(var));
+  EXPECT_EQ(force_copy_explicit, var);
+  const auto no_copy = astype(var, dtype<float>, CopyPolicy::TryAvoid);
+  EXPECT_TRUE(no_copy.is_same(var));
+  EXPECT_EQ(no_copy, var);
+  const auto required_copy = astype(var, dtype<double>, CopyPolicy::TryAvoid);
+  EXPECT_FALSE(required_copy.is_same(var));
 }
 
 TEST(VariableTest, array_params) {
@@ -771,4 +817,85 @@ TEST(Variable, nested_Variable_copy) {
   EXPECT_EQ(inner, one);
   EXPECT_EQ(outer.value<Variable>(), one);
   EXPECT_EQ(copied.value<Variable>(), two);
+}
+
+TEST(Variable, self_nesting_scalar_copy) {
+  Variable inner = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 3});
+
+  // 1 level of nesting
+  Variable v1 = makeVariable<Variable>(Shape{}, Values{copy(inner)});
+  ASSERT_NO_THROW_DISCARD(v1 = v1);
+  ASSERT_EQ(v1.value<Variable>(), inner);
+  ASSERT_THROW_DISCARD(v1.value<Variable>() = v1, std::invalid_argument);
+  ASSERT_EQ(v1.value<Variable>(), inner);
+
+  // 2 levels of nesting
+  Variable v2 = makeVariable<Variable>(Shape{}, Values{v1});
+  ASSERT_THROW_DISCARD(v1.value<Variable>() = v2, std::invalid_argument);
+
+  // Works, replace content of v1 => not self nested.
+  ASSERT_NO_THROW_DISCARD(v1 = v2);
+  ASSERT_EQ(v1.value<Variable>().value<Variable>(), inner);
+}
+
+TEST(Variable, self_nesting_scalar_move) {
+  Variable inner = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 3});
+
+  // 1 level of nesting
+  Variable v1 = makeVariable<Variable>(Shape{}, Values{copy(inner)});
+  ASSERT_NO_THROW_DISCARD(v1 = std::move(v1));
+  ASSERT_EQ(v1.value<Variable>(), inner);
+  v1 = makeVariable<Variable>(Shape{}, Values{inner});
+  ASSERT_THROW_DISCARD(v1.value<Variable>() = std::move(v1),
+                       std::invalid_argument);
+  ASSERT_EQ(v1.value<Variable>(), inner);
+  v1 = makeVariable<Variable>(Shape{}, Values{inner});
+
+  // 2 levels of nesting
+  Variable v2 = makeVariable<Variable>(Shape{}, Values{v1});
+  ASSERT_THROW_DISCARD(v1.value<Variable>() = std::move(v2),
+                       std::invalid_argument);
+  v2 = makeVariable<Variable>(Shape{}, Values{v1});
+
+  // Works, replace content of v1 => not self nested.
+  ASSERT_NO_THROW_DISCARD(v1 = std::move(v2));
+  ASSERT_EQ(v1.value<Variable>().value<Variable>(), inner);
+}
+
+TEST(Variable, self_nesting_array) {
+  Variable inner1 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 3});
+  Variable inner2 =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
+
+  // 1 level of nesting
+  Variable v1 = makeVariable<Variable>(Dims{Dim::Z}, Shape{2},
+                                       Values{copy(inner1), copy(inner2)});
+  ASSERT_NO_THROW_DISCARD(v1 = v1);
+  ASSERT_EQ(v1.values<Variable>().front(), inner1);
+  ASSERT_THROW_DISCARD(v1.values<Variable>().front() = v1,
+                       std::invalid_argument);
+  ASSERT_EQ(v1.values<Variable>().front(), inner1);
+  for (auto &v : v1.values<Variable>()) {
+    ASSERT_THROW_DISCARD(v = v1, std::invalid_argument);
+  }
+  ASSERT_EQ(v1.values<Variable>()[0], inner1);
+  ASSERT_EQ(v1.values<Variable>()[1], inner2);
+
+  // 2 levels of nesting
+  Variable v2 =
+      makeVariable<Variable>(Dims{Dim::Row}, Shape{2}, Values{v1, inner2});
+  ASSERT_THROW_DISCARD(v1.values<Variable>()[0] = v2, std::invalid_argument);
+  ASSERT_THROW_DISCARD(v1.values<Variable>()[1] = v2, std::invalid_argument);
+  ASSERT_THROW_DISCARD(v2.values<Variable>()[0].values<Variable>()[0] = v2,
+                       std::invalid_argument);
+  ASSERT_THROW_DISCARD(v1.values<Variable>()[0] = v2.values<Variable>()[0],
+                       std::invalid_argument);
+  ASSERT_NO_THROW_DISCARD(v1.values<Variable>()[0] = v2.values<Variable>()[1]);
+  ASSERT_EQ(v1.values<Variable>()[0], inner2);
+
+  // Works, replace content of v1 => not self nested.
+  ASSERT_NO_THROW_DISCARD(v1 = v2);
+  ASSERT_EQ(v1.values<Variable>()[0].values<Variable>()[0], inner2);
+  ASSERT_EQ(v1.values<Variable>()[0].values<Variable>()[1], inner2);
+  ASSERT_EQ(v1.values<Variable>()[1], inner2);
 }

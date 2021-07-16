@@ -10,9 +10,9 @@ import scipp as sc
 @pytest.fixture(params=['Dataset', 'DatasetView'])
 def dataset_abc(request):
     d = sc.Dataset()
-    d['a'] = sc.Variable(['x'], values=[1, 2])
-    d['b'] = sc.Variable(['x'], values=[3, 4])
-    d['c'] = sc.Variable(['x'], values=[5, 6])
+    d['a'] = sc.Variable(dims=['x'], values=[1, 2])
+    d['b'] = sc.Variable(dims=['x'], values=[3, 4])
+    d['c'] = sc.Variable(dims=['x'], values=[5, 6])
     # Using yield so `d` does not go out of scope when returning slice
     if request.param == 'Dataset':
         yield d

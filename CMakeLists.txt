@@ -57,18 +57,46 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
+# Conan dependencies
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+  message(
+    STATUS
+      "Downloading conan.cmake from https://github.com/conan-io/cmake-conan"
+  )
+  file(
+    DOWNLOAD
+    "https://raw.githubusercontent.com/conan-io/cmake-conan/v0.16.1/conan.cmake"
+    "${CMAKE_BINARY_DIR}/conan.cmake"
+    EXPECTED_HASH
+      SHA256=396e16d0f5eabdc6a14afddbcfff62a54a7ee75c6da23f32f7a31bc85db23484
+    TLS_VERIFY ON
+  )
+endif()
+
+include(${CMAKE_BINARY_DIR}/conan.cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
+
+conan_cmake_autodetect(conan_settings)
+conan_cmake_install(
+  PATH_OR_REFERENCE ${CMAKE_SOURCE_DIR} SETTINGS ${conan_settings} BUILD
+  outdated
+)
+
+find_package(Benchmark)
+find_package(Boost 1.67 REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(Sanitizers REQUIRED)
+find_package(GTest REQUIRED)
+find_package(Python 3.7 REQUIRED COMPONENTS Interpreter Development)
+find_package(pybind11 CONFIG REQUIRED)
 
 # MP : Parallel compile, add before any targets so all use it
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-MP>)
 
-include(GTest)
+include(GoogleTest)
 include(LLNL-units)
-include(Eigen)
-include(pybind11)
-include(GoogleBenchmark)
 include(GenerateExportHeader)
-find_package(Boost 1.67 REQUIRED)
 
 option(DISABLE_MULTI_THREADING "Disable multi threading" OFF)
 if(NOT DISABLE_MULTI_THREADING)
@@ -97,13 +125,6 @@ else()
   configure_file(
     core/include/scipp/core/parallel-fallback.h
     core/include/scipp/core/parallel.h COPYONLY
-  )
-endif()
-
-if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.5")
-  message(
-    FATAL_ERROR
-      "Python v3 interpreter must be greater than or equal to 3.5. Found ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}"
   )
 endif()
 
@@ -167,15 +188,16 @@ enable_testing()
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
 
-# Custom target for building documentation
-if(NOT WIN32)
-  add_custom_target(docs COMMAND ./docs_build.sh)
-else()
-  add_custom_target(docs COMMAND docs_build.bat)
-endif()
+# Custom install target for docs to depend on.
+add_custom_target(
+  install-scipp COMMAND cmake --build ${CMAKE_CURRENT_BINARY_DIR} --target
+                        install
+)
 
-configure_file(cmake/docs_build.bat.in docs_build.bat)
-configure_file(cmake/docs_build.sh.in docs_build.sh)
+include(docs)
+add_docs_target(docs BUILDER html DEPENDS install-scipp)
+add_docs_target(doctest BUILDER doctest DEPENDS docs)
+add_docs_target(linkcheck BUILDER linkcheck DEPENDS docs)
 
 include(GNUInstallDirs)
 set(PYTHONDIR scipp)

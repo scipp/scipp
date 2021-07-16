@@ -3,9 +3,11 @@
 /// @file
 /// @author Matthew Andrew
 #pragma once
-#include <scipp/dataset/dataset.h>
-#include <scipp/variable/variable.h>
 
+#include "scipp/variable/variable.h"
+
+#include "scipp-dataset_export.h"
+#include "scipp/dataset/dataset.h"
 #include "scipp/dataset/generated_util.h"
 
 namespace scipp {
@@ -18,8 +20,4 @@ SCIPP_DATASET_EXPORT scipp::index size_of(const DataArray &dataarray,
                                           bool include_aligned_coords = true);
 SCIPP_DATASET_EXPORT scipp::index size_of(const Dataset &dataset,
                                           SizeofTag tag);
-
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray astype(const DataArray &var,
-                                                    const DType type);
-
 } // namespace scipp

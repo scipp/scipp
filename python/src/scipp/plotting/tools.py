@@ -3,7 +3,6 @@
 # @author Neil Vaytet
 
 from .. import config
-from .._utils import name_with_unit
 from .._scipp import core as sc
 import numpy as np
 from copy import copy
@@ -43,12 +42,7 @@ def to_bin_edges(x, dim):
         return sc.concatenate(sc.concatenate(left, center, dim), right, dim)
 
 
-def parse_params(params=None,
-                 defaults=None,
-                 globs=None,
-                 variable=None,
-                 array=None,
-                 name=None):
+def parse_params(params=None, defaults=None, globs=None, array=None):
     """
     Construct the colorbar settings using default and input values
     """
@@ -78,7 +72,10 @@ def parse_params(params=None,
     else:
         raise RuntimeError("Unknown norm. Expected 'linear' or 'log', "
                            "got {}.".format(parsed["norm"]))
-    parsed["norm"] = norm(vmin=parsed["vmin"], vmax=parsed["vmax"])
+    vmin = parsed["vmin"]
+    vmax = parsed["vmax"]
+    parsed["norm"] = norm(vmin=vmin.value if vmin is not None else None,
+                          vmax=vmax.value if vmax is not None else None)
 
     # Convert color into custom colormap
     if parsed["color"] is not None:
@@ -96,22 +93,7 @@ def parse_params(params=None,
     else:
         parsed["cmap"].set_over(parsed["over_color"])
 
-    if variable is not None:
-        parsed["unit"] = name_with_unit(var=variable, name="")
-
     return parsed
-
-
-def make_fake_coord(dim, size, unit=None):
-    """
-    Make a Variable with indices as values, to be used as a fake coordinate
-    for either missing coordinates or non-number coordinates (e.g. vector or
-    string coordinates).
-    """
-    kwargs = {"values": np.arange(size, dtype=np.float64)}
-    if unit is not None:
-        kwargs["unit"] = unit
-    return sc.Variable(dims=[dim], **kwargs)
 
 
 def vars_to_err(v):
@@ -131,7 +113,7 @@ def find_log_limits(x):
     """
     from .. import flatten, ones
     volume = np.product(x.shape)
-    pixel = flatten(sc.values(x), to='pixel')
+    pixel = flatten(sc.values(x.astype(sc.dtype.float64)), to='pixel')
     weights = ones(dims=['pixel'], shape=[volume])
     hist = sc.histogram(sc.DataArray(data=weights, coords={'order': pixel}),
                         bins=sc.Variable(dims=['order'],
@@ -154,8 +136,8 @@ def find_log_limits(x):
             else:
                 vmin = 1.0e-3 * vmax
     else:
-        vmin = hist.coords['order']['order', ar.min()].value
-        vmax = hist.coords['order']['order', ar.max() + 1].value
+        vmin = hist.coords['order']['order', ar.min()]
+        vmax = hist.coords['order']['order', ar.max() + 1]
     return [vmin, vmax]
 
 
@@ -163,7 +145,10 @@ def find_linear_limits(x):
     """
     Find variable min and max.
     """
-    return [sc.nanmin(x).value, sc.nanmax(x).value]
+    return [
+        sc.values(sc.nanmin(x).astype(sc.dtype.float64)),
+        sc.values(sc.nanmax(x).astype(sc.dtype.float64))
+    ]
 
 
 def find_limits(x, scale=None, flip=False):
@@ -187,14 +172,14 @@ def fix_empty_range(lims, replacement=None):
     """
     Range correction in case xmin == xmax
     """
-    dx = 0.0
-    if lims[0] == lims[1]:
+    dx = 0.0 * lims[0].unit
+    if lims[0].value == lims[1].value:
         if replacement is not None:
             dx = 0.5 * replacement
-        elif lims[0] == 0.0:
-            dx = 0.5
+        elif lims[0].value == 0.0:
+            dx = 0.5 * lims[0].unit
         else:
-            dx = 0.5 * abs(lims[0])
+            dx = 0.5 * sc.abs(lims[0])
     return [lims[0] - dx, lims[1] + dx]
 
 
@@ -206,7 +191,7 @@ def fig_to_pngbytes(fig):
     """
     import matplotlib.pyplot as plt
     buf = io.BytesIO()
-    fig.savefig(buf, format='png')
+    fig.savefig(buf, format='png', bbox_inches='tight')
     plt.close(fig)
     buf.seek(0)
     return buf.getvalue()

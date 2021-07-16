@@ -3,6 +3,8 @@
 #include "scipp/common/index.h"
 #include "scipp/core/except.h"
 #include "test_macros.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
 #include <numeric>
@@ -294,6 +296,30 @@ TEST(DatasetTest, const_iterators_return_types) {
   ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataArray>));
 }
 
+TEST(DatasetTest, iterators) {
+  DataArray da1(makeVariable<double>(Dims{Dim::X}, Shape{2}));
+  DataArray da2(makeVariable<double>(Dims{Dim::Y}, Shape{2}));
+  da2.coords().set(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{2}));
+  Dataset d;
+  d.setData("data1", da1);
+  d.setData("data2", da2);
+
+  const std::vector data_arrays{std::ref(da1), std::ref(da2)};
+  for (auto it = d.begin(); it != d.end(); ++it) {
+    EXPECT_THAT(data_arrays, ::testing::Contains(*it));
+  }
+
+  const std::vector names{"data1", "data2"};
+  for (auto it = d.keys_begin(); it != d.keys_end(); ++it) {
+    EXPECT_THAT(names, ::testing::Contains(*it));
+  }
+
+  for (auto it = d.items_begin(); it != d.items_end(); ++it) {
+    EXPECT_THAT(names, ::testing::Contains(it->first));
+    EXPECT_THAT(data_arrays, ::testing::Contains(it->second));
+  }
+}
+
 TEST(DatasetTest, slice_temporary) {
   DatasetFactory3D factory;
   auto dataset = factory.make().slice({Dim::X, 1});
@@ -442,6 +468,26 @@ TEST(DatasetTest, item_name) {
   // Comparison ignores the name, so this is tested separately.
   EXPECT_EQ(dataset["data_xyz"].name(), "data_xyz");
   EXPECT_EQ(array.name(), "data_xyz");
+}
+
+TEST(DatasetTest, self_nesting) {
+  const auto make_dset = [](const std::string &name, const Variable &var) {
+    Dataset dset;
+    dset.setData(name, var);
+    return dset;
+  };
+  auto inner = make_dset(
+      "data", makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2}));
+  Variable var = makeVariable<Dataset>(Values{inner});
+
+  auto nested_in_data = make_dset("nested", var);
+  ASSERT_THROW_DISCARD(var.value<Dataset>() = nested_in_data,
+                       std::invalid_argument);
+
+  Dataset nested_in_coord;
+  nested_in_coord.coords().set(Dim::X, var);
+  ASSERT_THROW_DISCARD(var.value<Dataset>() = nested_in_coord,
+                       std::invalid_argument);
 }
 
 struct DatasetRenameTest : public ::testing::Test {

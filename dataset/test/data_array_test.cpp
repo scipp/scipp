@@ -4,8 +4,7 @@
 
 #include "scipp/dataset/data_array.h"
 #include "scipp/dataset/except.h"
-#include "scipp/dataset/util.h"
-#include "scipp/variable/operations.h"
+#include "scipp/variable/to_unit.h"
 
 #include "test_macros.h"
 
@@ -35,6 +34,21 @@ TEST_F(DataArrayTest, copy_shares) {
   EXPECT_TRUE(a.coords()[Dim::X].is_same(b.coords()[Dim::X]));
   EXPECT_TRUE(a.masks()["mask"].is_same(b.masks()["mask"]));
   EXPECT_TRUE(a.attrs()[Dim("attr")].is_same(b.attrs()[Dim("attr")]));
+  // Meta data may be shallow-copied but dicts are not shared
+  EXPECT_NE(&a.coords(), &b.coords());
+  EXPECT_NE(&a.masks(), &b.masks());
+  EXPECT_NE(&a.attrs(), &b.attrs());
+}
+
+TEST_F(DataArrayTest, copy_assign_shares) {
+  DataArray a(data, {{Dim::X, coord}}, {{"mask", mask}}, {{Dim("attr"), attr}});
+  DataArray b{coord};
+  b = a;
+  EXPECT_TRUE(a.data().is_same(b.data()));
+  EXPECT_TRUE(a.coords()[Dim::X].is_same(b.coords()[Dim::X]));
+  EXPECT_TRUE(a.masks()["mask"].is_same(b.masks()["mask"]));
+  EXPECT_TRUE(a.attrs()[Dim("attr")].is_same(b.attrs()[Dim("attr")]));
+  // Meta data may be shallow-copied but dicts are not shared
   EXPECT_NE(&a.coords(), &b.coords());
   EXPECT_NE(&a.masks(), &b.masks());
   EXPECT_NE(&a.attrs(), &b.attrs());
@@ -76,14 +90,6 @@ TEST_F(DataArrayTest, shadow_attr) {
   EXPECT_EQ(a.meta()[Dim::X], var1);
 }
 
-TEST_F(DataArrayTest, astype) {
-  DataArray a(
-      makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}),
-      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6})}});
-  const auto x = astype(a, dtype<double>);
-  EXPECT_EQ(x.data(), astype(a.data(), dtype<double>));
-}
-
 TEST_F(DataArrayTest, view) {
   const auto var = makeVariable<double>(Values{1});
   const DataArray a(copy(var), {{Dim::X, copy(var)}}, {{"mask", copy(var)}},
@@ -101,6 +107,7 @@ TEST_F(DataArrayTest, as_const) {
   const auto var = makeVariable<double>(Values{1});
   const DataArray a(copy(var), {{Dim::X, copy(var)}}, {{"mask", copy(var)}},
                     {{Dim("attr"), copy(var)}});
+  EXPECT_FALSE(var.is_readonly());
   const auto b = a.as_const();
   EXPECT_EQ(a, b);
   EXPECT_TRUE(b.is_readonly());
@@ -111,4 +118,40 @@ TEST_F(DataArrayTest, as_const) {
   EXPECT_TRUE(b.masks()["mask"].is_readonly());
   EXPECT_TRUE(b.attrs()[Dim("attr")].is_readonly());
   EXPECT_EQ(a.name(), b.name());
+}
+
+TEST_F(DataArrayTest, full_slice) {
+  DataArray a(data, {{Dim::X, coord}}, {{"mask", mask}}, {{Dim("attr"), attr}});
+  const auto slice = a.slice({});
+  EXPECT_TRUE(slice.data().is_same(a.data()));
+  EXPECT_TRUE(slice.coords()[Dim::X].is_same(a.coords()[Dim::X]));
+  EXPECT_TRUE(slice.masks()["mask"].is_same(a.masks()["mask"]));
+  EXPECT_TRUE(slice.attrs()[Dim("attr")].is_same(a.attrs()[Dim("attr")]));
+}
+
+TEST_F(DataArrayTest, self_nesting) {
+  DataArray inner{makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2})};
+  Variable var = makeVariable<DataArray>(Values{inner});
+
+  DataArray nested_in_data{var};
+  ASSERT_THROW_DISCARD(var.value<DataArray>() = nested_in_data,
+                       std::invalid_argument);
+
+  DataArray nested_in_coord{
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{3, 4})};
+  nested_in_coord.coords().set(Dim::X, var);
+  ASSERT_THROW_DISCARD(var.value<DataArray>() = nested_in_coord,
+                       std::invalid_argument);
+
+  DataArray nested_in_mask{
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{3, 4})};
+  nested_in_coord.masks().set("mask", var);
+  ASSERT_THROW_DISCARD(var.value<DataArray>() = nested_in_coord,
+                       std::invalid_argument);
+
+  DataArray nested_in_attr{
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{3, 4})};
+  nested_in_coord.attrs().set(Dim::X, var);
+  ASSERT_THROW_DISCARD(var.value<DataArray>() = nested_in_coord,
+                       std::invalid_argument);
 }

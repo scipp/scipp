@@ -1,8 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from typing import Dict, Optional, Sequence, Union
+
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .typing import VariableLike, MetaDataMap
 
 
 class lookup:
@@ -46,37 +49,38 @@ class Bins:
         return self
 
     @property
-    def coords(self):
+    def coords(self) -> MetaDataMap:
         """Coords of the bins"""
         return _cpp._bins_view(self._data()).coords
 
     @property
-    def meta(self):
+    def meta(self) -> MetaDataMap:
         """Coords and attrs of the bins"""
         return _cpp._bins_view(self._data()).meta
 
     @property
-    def attrs(self):
+    def attrs(self) -> MetaDataMap:
         """Coords of the bins"""
         return _cpp._bins_view(self._data()).attrs
 
     @property
-    def masks(self):
+    def masks(self) -> MetaDataMap:
         """Masks of the bins"""
         return _cpp._bins_view(self._data()).masks
 
     @property
-    def data(self):
+    def data(self) -> _cpp.Variable:
         """Data of the bins"""
         return _cpp._bins_view(self._data()).data
 
     @data.setter
-    def data(self, data):
+    def data(self, data: _cpp.Variable):
         """Set data of the bins"""
         _cpp._bins_view(self._data()).data = data
 
     @property
-    def constituents(self):
+    def constituents(
+            self) -> Dict[str, Union[str, _cpp.Variable, _cpp.DataArray]]:
         """Constituents of binned data, as supported by :py:func:`sc.bins`."""
         begin_end = _cpp.bins_begin_end(self._data())
         return {
@@ -86,7 +90,7 @@ class Bins:
             'data': _cpp.bins_data(self._data())
         }
 
-    def sum(self):
+    def sum(self) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Sum of each bin.
 
         :return: The sum of each of the input bins.
@@ -94,14 +98,20 @@ class Bins:
         """
         return _call_cpp_func(_cpp.buckets.sum, self._obj)
 
-    def size(self):
+    def size(self) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Number of events or elements in a bin.
 
         :return: The number of elements in each of the input bins.
         """
         return _call_cpp_func(_cpp.bin_size, self._obj)
 
-    def concatenate(self, other=None, dim=None, out=None):
+    def concatenate(
+        self,
+        other: Optional[Union[_cpp.Variable, _cpp.DataArray]] = None,
+        *,
+        dim: Optional[str] = None,
+        out: Optional[_cpp.DataArray] = None
+    ) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Concatenate bins element-wise by concatenating bin contents along
         their internal bin dimension.
 
@@ -185,25 +195,35 @@ def _groupby_bins(obj):
     return GroupbyBins(obj)
 
 
-def histogram(x, bins):
+def histogram(x: Union[_cpp.DataArray, _cpp.Dataset], *,
+              bins: _cpp.Variable) -> Union[_cpp.DataArray, _cpp.Dataset]:
     """Create dense data by histogramming data along all dimension given by
     edges.
 
-    :return: DataArray with values equal to the sum of values in each given
-             bin.
+    :return: DataArray / Dataset with values equal to the sum
+             of values in each given bin.
     :seealso: :py:func:`scipp.bin` for binning data.
     """
     return _call_cpp_func(_cpp.histogram, x, bins)
 
 
-def bin(x, edges=None, groups=None, erase=None):
-    """Create binned data by binning data along all dimensions given by edges.
-    Can specify dimensions with existing binning to erase.
+def bin(x: _cpp.DataArray,
+        *,
+        edges: Optional[Sequence[_cpp.Variable]] = None,
+        groups: Optional[Sequence[_cpp.Variable]] = None,
+        erase: Optional[Sequence[_cpp.Variable]] = None) -> _cpp.DataArray:
+    """Create binned data by binning input along all dimensions given by edges.
 
     This does not histogram the data, each output bin will contain a "list" of
     input values.
 
-    :return: Variable containing data in bins.
+    At least one argument of ``edges`` and ``groups`` is required.
+
+    :param x: Input data.
+    :param edges: Bin edges, one per dimension to bin in.
+    :param groups: Keys to group input by one per dimension to group in.
+    :param erase: Dimension labels to remove from output.
+    :return: Binned ``x``.
     :seealso: :py:func:`scipp.histogram` for histogramming data,
               :py:func:`scipp.bins` for creating binned data based on
               explicitly given index ranges.
@@ -217,31 +237,35 @@ def bin(x, edges=None, groups=None, erase=None):
     return _call_cpp_func(_cpp.bin, x, edges, groups, erase)
 
 
-def bins(*args, **kwargs):
-    """Create binned data, i.e., a variable with elements that are bins.
+def bins(*,
+         data: VariableLike,
+         dim: str,
+         begin: Optional[_cpp.Variable] = None,
+         end: Optional[_cpp.Variable] = None) -> _cpp.Variable:
+    """Create a binned variable from bin indices.
 
     The elements of the returned variable are "bins", defined as views into
-    `data`. The returned variable keeps and manages a copy of `data`
+    ``data``. The returned variable keeps and manages a copy of ``data``
     internally.
 
-    The variables `begin` and `end` must have the same dims and shape and
-    `dtype=sc.dtype.int64`. The output dims and shape are given by `begin`.
-    If only `begin` is given, each bucket is a slice containing a non-range
-    slice of `data` at the given indices. If neither `begin` nor `end` are
-    given, the output has `dims=[dim]` and contains all non-range slices along
-    that dimension.
+    The variables ``begin`` and ``end`` must have the same dims and shape and
+    ``dtype=sc.dtype.int64``. The output dims and shape are given by ``begin``.
+    If only ``begin`` is given, each bucket is a slice containing a non-range
+    slice of ``data`` at the given indices. If neither ``begin`` nor ``end``
+    are given, the output has ``dims=[dim]`` and contains all non-range slices
+    along that dimension.
 
-    :param begin: Optional begin indices of bins, used for slicing `data`.
-                  If not provided each row of `data` is mapped to a different
+    :param begin: Optional begin indices of bins, used for slicing ``data``.
+                  If not provided each row of ``data`` is mapped to a different
                   bin.
-    :param end: Optional end indices of bins, used for slicing `data`. If not
-                provided this is assumed to be begin + 1.
-    :param dim: Dimension of `data` that will be sliced to obtain data for any
-                given bin.
+    :param end: Optional end indices of bins, used for slicing ``data``. If not
+                provided this is assumed to be ``begin + 1``.
+    :param dim: Dimension of ``data`` that will be sliced to obtain data for
+                any given bin.
     :param data: A variable, data array, or dataset containing combined data
                  of all bins.
     :return: Variable containing data in bins.
-    :seealso: :py:func:`scipp.bin` for creating such variables based on
+    :seealso: :py:func:`scipp.bin` for creating DataArrays based on
               binning of coord value instead of explicitly given index ranges.
     """
-    return _call_cpp_func(_cpp.bins, *args, **kwargs)
+    return _call_cpp_func(_cpp.bins, begin, end, dim, data)

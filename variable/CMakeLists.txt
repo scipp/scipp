@@ -5,6 +5,7 @@
 set(TARGET_NAME "scipp-variable")
 set(INC_FILES
     ${variable_INC_FILES}
+    include/scipp/variable/astype.h
     include/scipp/variable/arithmetic.h
     include/scipp/variable/bins.h
     include/scipp/variable/bin_util.h
@@ -37,6 +38,7 @@ set(INC_FILES
 
 set(SRC_FILES
     ${variable_SRC_FILES}
+    astype.cpp
     bins.cpp
     bin_array_variable.cpp
     bin_detail.cpp
@@ -56,8 +58,6 @@ set(SRC_FILES
     structures.cpp
     subspan_view.cpp
     to_unit.cpp
-    trigonometry.cpp
-    type_conversion.cpp
     util.cpp
     variable_concept.cpp
     variable_factory.cpp
@@ -84,7 +84,7 @@ generate_export_header(${TARGET_NAME})
 target_compile_definitions(
   ${TARGET_NAME} PRIVATE SCIPP_EXPORT=SCIPP_VARIABLE_EXPORT
 )
-target_link_libraries(${TARGET_NAME} PUBLIC scipp-core Boost::boost)
+target_link_libraries(${TARGET_NAME} PUBLIC scipp-core)
 if(TBB_FOUND AND NOT DISABLE_MULTI_THREADING)
   target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
 endif()

@@ -85,9 +85,8 @@ get_slice_params(const Sizes &dims, const Variable &coord_,
   if (begin.is_valid())
     first = get_index(coord, dim, begin, ascending, bin_edges);
   if (end.is_valid())
-    last = get_index(coord, dim, end, ascending, bin_edges);
-  // Note: Here the bin containing `end` is included
-  return {dim, first, std::min(dims[dim], last + (bin_edges ? 1 : 0))};
+    last = get_index(coord, dim, end, ascending, false);
+  return {dim, first, std::min(dims[dim], last)};
 }
 
 } // namespace scipp::variable

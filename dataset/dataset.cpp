@@ -3,11 +3,9 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/dataset.h"
-#include "scipp/common/index.h"
 #include "scipp/core/except.h"
+#include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
-
-#include "dataset_operations_common.h"
 
 namespace scipp::dataset {
 
@@ -26,6 +24,17 @@ Dataset::Dataset(const DataArray &data) { setData(data.name(), data); }
 
 Dataset &Dataset::operator=(const Dataset &other) {
   return *this = Dataset(other);
+}
+
+Dataset &Dataset::operator=(Dataset &&other) {
+  if (this == &other) {
+    return *this;
+  }
+  check_nested_in_assign(*this, other);
+  m_coords = std::move(other.m_coords);
+  m_data = std::move(other.m_data);
+  m_readonly = other.m_readonly;
+  return *this;
 }
 
 /// Removes all data items from the Dataset.

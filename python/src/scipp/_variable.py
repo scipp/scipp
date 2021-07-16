@@ -1,21 +1,36 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
+
+from collections.abc import Iterable as _Iterable
+from typing import Any as _Any, Sequence as _Sequence, Union as _Union,\
+    Optional as _Optional
+
+import numpy as _np
+from numpy.typing import ArrayLike as _ArrayLike
+
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from typing import Any as _Any, Sequence as _Sequence, Union as _Union
-import numpy as _np
 
 
-def islinspace(x):
+def _parse_dims_shape_sizes(dims, shape, sizes):
+    if sizes is not None:
+        if dims is not None or shape is not None:
+            raise ValueError("When sizes is specified, dims and shape must "
+                             "both be None. Got dims: {}, shape: {}".format(
+                                 dims, shape))
+        dims = list(sizes.keys())
+        shape = list(sizes.values())
+    return {"dims": dims, "shape": shape}
+
+
+def islinspace(x: _cpp.Variable) -> bool:
     """
     Check if the values of a variable are evenly spaced.
 
     :param x: Variable to check.
-    :type x: Variable
     :returns: True if the variable contains regularly spaced values,
       False otherwise.
-    :rtype: bool
     """
     return _call_cpp_func(_cpp.islinspace, x)
 
@@ -40,49 +55,44 @@ def scalar(value: _Any,
     :returns: A scalar (zero-dimensional) Variable.
     :rtype: Variable
     """
-    if dtype is None:
-        return _cpp.Variable(value=value, variance=variance, unit=unit)
-    else:
-        try:
-            return _cpp.Variable(value=value,
-                                 variance=variance,
-                                 unit=unit,
-                                 dtype=dtype)
-        except TypeError:
-            # Raise a more comprehensible error message in the case
-            # where a dtype cannot be specified.
-            raise TypeError(f"Cannot convert {value} to {dtype}. "
-                            f"Try omitting the 'dtype=' parameter.") from None
+    return _cpp.Variable(dims=(),
+                         values=value,
+                         variances=variance,
+                         unit=unit,
+                         dtype=dtype)
 
 
 def zeros(*,
-          dims: _Sequence[str],
-          shape: _Sequence[int],
+          dims: _Sequence[str] = None,
+          shape: _Sequence[int] = None,
+          sizes: dict = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
           dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
-          variances: bool = False) -> _cpp.Variable:
+          with_variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with default initialized values with
     given dimension labels and shape.
+    The dims and shape can also be specified using a sizes dict.
     Optionally can add default initialized variances.
     Only keyword arguments accepted.
 
     :seealso: :py:func:`scipp.ones` :py:func:`scipp.empty`
               :py:func:`scipp.scalar` :py:func:`scipp.array`
 
-    :param dims: Dimension labels.
-    :param shape: Dimension sizes.
+    :param dims: Optional (if sizes is specified), dimension labels.
+    :param shape: Optional (if sizes is specified), dimension sizes.
+    :param sizes: Optional, imension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
-    :param variances: Optional, boolean flag, if True includes variances
+    :param with_variances: Optional, boolean flag, if True includes variances
       initialized to the default value for dtype.
       For example for a float type values and variances would all be
       initialized to 0.0. Default=False
     """
-    return _cpp.Variable(dims=dims,
-                         shape=shape,
-                         unit=unit,
-                         dtype=dtype,
-                         variances=variances)
+
+    return _cpp.zeros(**_parse_dims_shape_sizes(dims, shape, sizes),
+                      unit=unit,
+                      dtype=dtype,
+                      with_variances=with_variances)
 
 
 def zeros_like(var: _cpp.Variable) -> _cpp.Variable:
@@ -98,29 +108,35 @@ def zeros_like(var: _cpp.Variable) -> _cpp.Variable:
                  shape=var.shape,
                  unit=var.unit,
                  dtype=var.dtype,
-                 variances=var.variances is not None)
+                 with_variances=var.variances is not None)
 
 
 def ones(*,
-         dims: _Sequence[str],
-         shape: _Sequence[int],
+         dims: _Sequence[str] = None,
+         shape: _Sequence[int] = None,
+         sizes: dict = None,
          unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
          dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
-         variances: bool = False) -> _cpp.Variable:
+         with_variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values initialized to 1 with
     given dimension labels and shape.
+    The dims and shape can also be specified using a sizes dict.
 
     :seealso: :py:func:`scipp.zeros` :py:func:`scipp.empty`
               :py:func:`scipp.scalar` :py:func:`scipp.array`
 
-    :param dims: Dimension labels.
-    :param shape: Dimension sizes.
+    :param dims: Optional (if sizes is specified), dimension labels.
+    :param shape: Optional (if sizes is specified), dimension sizes.
+    :param sizes: Optional, dimension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
-    :param variances: Optional, boolean flag, if True includes variances
+    :param with_variances: Optional, boolean flag, if True includes variances
                       initialized to 1. Default=False
     """
-    return _cpp.ones(dims, shape, unit, dtype, variances)
+    return _cpp.ones(**_parse_dims_shape_sizes(dims, shape, sizes),
+                     unit=unit,
+                     dtype=dtype,
+                     with_variances=with_variances)
 
 
 def ones_like(var: _cpp.Variable) -> _cpp.Variable:
@@ -136,31 +152,55 @@ def ones_like(var: _cpp.Variable) -> _cpp.Variable:
                 shape=var.shape,
                 unit=var.unit,
                 dtype=var.dtype,
-                variances=var.variances is not None)
+                with_variances=var.variances is not None)
 
 
 def empty(*,
-          dims: _Sequence[str],
-          shape: _Sequence[int],
+          dims: _Sequence[str] = None,
+          shape: _Sequence[int] = None,
+          sizes: dict = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
           dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
-          variances: bool = False) -> _cpp.Variable:
+          with_variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with uninitialized values with given
-    dimension labels and shape. USE WITH CARE! Uninitialized means that values
-    have undetermined values. Consider using :py:func:`scipp.zeros` unless you
+    dimension labels and shape.
+    The dims and shape can also be specified using a sizes dict.
+    USE WITH CARE! Uninitialized means that values have undetermined values.
+    Consider using :py:func:`scipp.zeros` unless you
     know what you are doing and require maximum performance.
 
     :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
               :py:func:`scipp.scalar` :py:func:`scipp.array`
 
-    :param dims: Dimension labels.
-    :param shape: Dimension sizes.
+    :param dims: Optional (if sizes is specified), dimension labels.
+    :param shape: Optional (if sizes is specified), dimension sizes.
+    :param sizes: Optional, dimension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=float64
-    :param variances: Optional, boolean flag, if True includes uninitialized
-                      variances. Default=False
+    :param with_variances: Optional, boolean flag, if True includes
+                    uninitialized variances. Default=False
     """
-    return _cpp.empty(dims, shape, unit, dtype, variances)
+    return _cpp.empty(**_parse_dims_shape_sizes(dims, shape, sizes),
+                      unit=unit,
+                      dtype=dtype,
+                      with_variances=with_variances)
+
+
+def empty_like(var: _cpp.Variable) -> _cpp.Variable:
+    """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
+    as the input variable, but with uninitialized values. If the input
+    has variances, all variances in the output exist but are uninitialized.
+
+    :seealso: :py:func:`scipp.empty` :py:func:`scipp.zeros_like`
+              :py:func:`scipp.ones_like`
+
+    :param var: Input variable.
+    """
+    return empty(dims=var.dims,
+                 shape=var.shape,
+                 unit=var.unit,
+                 dtype=var.dtype,
+                 with_variances=var.variances is not None)
 
 
 def _to_eigen_layout(a):
@@ -233,27 +273,10 @@ def vectors(*,
     return _cpp.vectors(dims=dims, unit=unit, values=values)
 
 
-def empty_like(var: _cpp.Variable) -> _cpp.Variable:
-    """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
-    as the input variable, but with uninitialized values. If the input
-    has variances, all variances in the output exist but are uninitialized.
-
-    :seealso: :py:func:`scipp.empty` :py:func:`scipp.zeros_like`
-              :py:func:`scipp.ones_like`
-
-    :param var: Input variable.
-    """
-    return empty(dims=var.dims,
-                 shape=var.shape,
-                 unit=var.unit,
-                 dtype=var.dtype,
-                 variances=var.variances is not None)
-
-
 def array(*,
-          dims: _Sequence[str],
-          values: _Union[_np.ndarray, list],
-          variances: _Union[_np.ndarray, list] = None,
+          dims: _Iterable,
+          values: _ArrayLike,
+          variances: _Optional[_ArrayLike] = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
           dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
@@ -263,7 +286,7 @@ def array(*,
     :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
               :py:func:`scipp.empty` :py:func:`scipp.scalar`
 
-    :param dims: Dimension labels.
+    :param dims: Dimension labels, nonempty.
     :param values: Initial values.
     :param variances: Optional, initial variances, must be same shape
       and size as values. Default=None
@@ -271,6 +294,9 @@ def array(*,
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
     """
+    if not dims:
+        raise ValueError("The dims of an array must not be empty. "
+                         "Use sc.scalar to construct a scalar variable.")
     return _cpp.Variable(dims=dims,
                          values=values,
                          variances=variances,
@@ -361,8 +387,8 @@ def logspace(dim: str,
 
 
 def arange(dim: str,
-           start: _Union[int, float],
-           stop: _Union[int, float] = None,
+           start: _Union[int, float, _np.datetime64],
+           stop: _Union[int, float, _np.datetime64] = None,
            step: _Union[int, float] = 1,
            *,
            unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
@@ -378,7 +404,7 @@ def arange(dim: str,
     :param dim: Dimension label.
     :param start: Optional, the starting value of the sequence. Default=0.
     :param stop: End of interval. The interval does not include this value,
-      except in some (rare) cases where step is not an integer and floating
+      except in some (rare) cases where step is not an integer and floating-
       point round-off can come into play.
     :param step: Optional, spacing between values. Default=1.
     :param unit: Optional, data unit. Default=dimensionless

@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/element/creation.h"
+#include "scipp/core/time_point.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/transform.h"
@@ -11,16 +12,25 @@
 namespace scipp::variable {
 
 Variable empty(const Dimensions &dims, const units::Unit &unit,
-               const DType type, const bool variances) {
-  return variableFactory().create(type, dims, unit, variances);
+               const DType type, const bool with_variances) {
+  return variableFactory().create(type, dims, unit, with_variances);
 }
 
 Variable ones(const Dimensions &dims, const units::Unit &unit, const DType type,
-              const bool variances) {
-  const auto prototype =
-      variances ? Variable{type, Dimensions{}, unit, Values{1}, Variances{1}}
-                : Variable{type, Dimensions{}, unit, Values{1}};
-  return copy(broadcast(prototype, dims));
+              const bool with_variances) {
+  const auto make_prototype = [&](auto &&one) {
+    return with_variances
+               ? Variable{type, Dimensions{}, unit, Values{one}, Variances{one}}
+               : Variable{type, Dimensions{}, unit, Values{one}};
+  };
+  if (type == dtype<core::time_point>) {
+    return copy(broadcast(make_prototype(core::time_point{1}), dims));
+  } else if (type == dtype<std::string>) {
+    // This would result in a Variable containing (char)1.
+    throw std::invalid_argument("Cannot construct 'ones' of strings.");
+  } else {
+    return copy(broadcast(make_prototype(1), dims));
+  }
 }
 
 /// Create empty (uninitialized) variable with same parameters as prototype.

@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/core/flags.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {
@@ -30,7 +32,8 @@ template <class T> T normalize_impl(const T &nominator, const T &denominator) {
   // This approach would be wrong if we supported vectors of float
   const auto type =
       nominator.dtype() == dtype<float> ? dtype<float> : dtype<double>;
-  return nominator * reciprocal(astype(denominator, type));
+  return nominator *
+         reciprocal(astype(denominator, type, CopyPolicy::TryAvoid));
 }
 
 SCIPP_VARIABLE_EXPORT void

@@ -26,8 +26,8 @@ TEST(ElementAbsTest, value_and_variance) {
 
 TEST(ElementAbsTest, supported_types) {
   auto supported = decltype(element::abs)::types{};
-  std::get<double>(supported);
-  std::get<float>(supported);
+  static_cast<void>(std::get<double>(supported));
+  static_cast<void>(std::get<float>(supported));
 }
 
 TEST(ElementNormTest, unit) {
@@ -63,8 +63,8 @@ TEST(ElementSqrtTest, value_and_variance) {
 
 TEST(ElementSqrtTest, supported_types) {
   auto supported = decltype(element::sqrt)::types{};
-  std::get<double>(supported);
-  std::get<float>(supported);
+  static_cast<void>(std::get<double>(supported));
+  static_cast<void>(std::get<float>(supported));
 }
 
 TEST(ElementDotTest, unit) {

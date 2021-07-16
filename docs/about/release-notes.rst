@@ -3,8 +3,48 @@
 Release Notes
 =============
 
-Since v0.6
+Since v0.7
 ----------
+
+Features
+~~~~~~~~
+
+* Added ``sizes`` argument to ``zeros``, ``ones``, and ``empty`` variable creation functions `#1951 <https://github.com/scipp/scipp/pull/1951>`_.
+* Slicing syntax now supports ellipsis, e.g., ``da.data[...] = var`` `#1960 <https://github.com/scipp/scipp/pull/1960>`_.
+* Added bound method equivalents to many free functions which take a single Variable or DataArray `#1969 <https://github.com/scipp/scipp/pull/1969>`_.
+* Variables can now be constructed directly from multi dimensional lists and tuples `#1977 <https://github.com/scipp/scipp/pull/1977>`_.
+* Plotting 1-D event data is now supported `#2018 <https://github.com/scipp/scipp/pull/2018>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+.. include:: <isonum.txt>
+
+* Changed names of arithmetic functions to match numpy's names: ``plus`` |rarr| :func:`scipp.add`, ``minus`` |rarr| :func:`scipp.subtract`, ``times`` |rarr| :func:`scipp.multiply` `#1999 <https://github.com/scipp/scipp/pull/1999>`_.
+* Changed Variable init method, all arguments are keyword-only, special overloads which default-initialize data were removed `#1994 <https://github.com/scipp/scipp/pull/1994>`_.
+* The ``axes`` keyword arg of ``plot`` has been removed.
+  Use ``labels`` to define labels and ``transpose`` to transpose instead `#2018 <https://github.com/scipp/scipp/pull/2018>`_.
+* The ``redraw`` method of plots does not support replacing data variables of data arrays any more, but only updates of data values `#2018 <https://github.com/scipp/scipp/pull/2018>`_.
+* Made most arguments of ``DataArray`` and ``Dataset`` constructors keyword-only `#2008 <https://github.com/scipp/scipp/pull/2008>`_.
+* Made arguments of many functions keyword-only, e.g. constructors of ``DataArray`` and ``Dataset``, ``bin``, and ``atan2`` `#1983 <https://github.com/scipp/scipp/pull/1983>`_, `#2008 <https://github.com/scipp/scipp/pull/2008>`_, `#2012 <https://github.com/scipp/scipp/pull/2012>`_.
+* ``astype`` and ``to_unit`` now copy the input by default even when no transformation is required, use the new ``copy`` argument to avoid `#2016 <https://github.com/scipp/scipp/pull/2016>`_.
+
+Bugfixes
+~~~~~~~~
+
+* Various fixes in ``plot``, see  `#2018 <https://github.com/scipp/scipp/pull/2018>`_ for details.
+
+Contributors
+~~~~~~~~~~~~
+
+Owen Arnold :sup:`b, c`\ ,
+Simon Heybrock :sup:`a`\ ,
+Greg Tucker :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas :sup:`a`\ 
+
+v0.7.0 (June 2021)
+------------------
 
 Features
 ~~~~~~~~
@@ -26,7 +66,8 @@ Features
   * Direct creation and initialization of 2-D (or higher) arrays of matrices and vectors is now possible from numpy arrays.
   * Fix extremely slow initialization of array of vectors or matrices from numpy arrays.
   * The ``values`` property now returns a numpy array with ``ndim+1`` (vectors) or ``ndim+2``` (matrices) axes, with the inner 1 (vectors) or 2 (matrices) axes corresponding o the vector or matrix axes.
-  * Vector or matrix element can now be accessed and modified directly using the new properties of ``Variable``, ``x1``, ``x2``, ``x3`` (for variables containing vectors) or ``x11``, ``x12``, ..., ``x33`` (for matrices).
+  * Vector or matrix element can now be accessed and modified directly using the new ``fields`` property of ``Variable``.
+    The ``fields`` property provides properties ``x``, ``y``, ``z`` (for variables containing vectors) or ``xx``, ``xy``, ..., ``zz`` (for matrices) that can be read as well as set.
 
 * Reduction operations such as ``sum`` and ``mean`` are now also multi-threaded and thus considerably faster `#1923 <https://github.com/scipp/scipp/pull/1923>`_.
 
@@ -41,16 +82,16 @@ Breaking changes
 * Scipp's data structures now behave mostly like normal nested Python objects, i.e., copies are shallow by default `#1823 <https://github.com/scipp/scipp/pull/1823>`_.
 * ``filter`` and ``split`` removed. Identical functionality can be achieved using ``groupby`` and/or slicing.
 * ``reshape`` has been removed. Use ``fold`` and ``flatten`` instead `#1861 <https://github.com/scipp/scipp/pull/1861>`_.
-* ``geometry.x``, ``geometry.y``, and ``geometry.z`` have been removed. Use the ``x1``, ``x2``, and ``x3`` properties instead `#1925 <https://github.com/scipp/scipp/pull/1925>`_.
+* ``geometry.x``, ``geometry.y``, and ``geometry.z`` have been removed. Use the ``Variable.fields`` property instead `#1925 <https://github.com/scipp/scipp/pull/1925>`_.
 
 Contributors
 ~~~~~~~~~~~~
 
-Owen Arnold,
-Simon Heybrock,
-Matthew D. Jones,
-Neil Vaytet,
-and Jan-Lukas Wynen
+Owen Arnold :sup:`b, c`\, 
+Simon Heybrock :sup:`a`\,
+Matthew D. Jones :sup:`b, c`\,
+Neil Vaytet :sup:`a`\,
+and Jan-Lukas Wynen :sup:`a`\
 
 v0.6.1 (April 2021)
 -------------------
@@ -295,3 +336,9 @@ Limitations:
 * Limited performance and no parallelization.
 * Numerous "edge cases" not supported yet.
 * While tested, probably far from bug-free.
+
+Contributing Organizations
+--------------------------
+* :sup:`a`\  `European Spallation Source ERIC <https://europeanspallationsource.se/>`_, Sweden
+* :sup:`b`\  `Science and Technology Facilities Council <https://www.ukri.org/councils/stfc/>`_, UK
+* :sup:`c`\  `Tessella <https://www.tessella.com/>`_, UK

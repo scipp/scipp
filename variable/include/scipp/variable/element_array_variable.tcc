@@ -17,17 +17,17 @@ Variable make_default_init(const Dimensions &dims, const units::Unit &unit,
   if constexpr (std::is_same_v<model_t<T>, ElementArrayModel<T>>) {
     if (variances)
       model = std::make_shared<model_t<T>>(
-          volume, unit, element_array<T>(volume, core::default_init_elements),
-          element_array<T>(volume, core::default_init_elements));
+          volume, unit, element_array<T>(volume, core::init_for_overwrite),
+          element_array<T>(volume, core::init_for_overwrite));
     else
       model = std::make_shared<model_t<T>>(
-          volume, unit, element_array<T>(volume, core::default_init_elements));
+          volume, unit, element_array<T>(volume, core::init_for_overwrite));
   } else {
     using Elem = typename model_t<T>::element_type;
     model = std::make_shared<model_t<T>>(
         volume, unit,
         element_array<Elem>(model_t<T>::element_count * volume,
-                            core::default_init_elements));
+                            core::init_for_overwrite));
   }
   return Variable(dims, std::move(model));
 }

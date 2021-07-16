@@ -9,9 +9,9 @@
 #include "scipp/core/element/logical.h"
 #include "scipp/variable/accumulate.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/math.h"
-#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/special_values.h"
 
 #include "operations_common.h"
@@ -39,11 +39,11 @@ Variable make_accumulant(const Variable &var, const Dim dim,
 } // namespace
 
 void sum_impl(Variable &summed, const Variable &var) {
-  accumulate_in_place(summed, var, element::plus_equals, "sum");
+  accumulate_in_place(summed, var, element::add_equals, "sum");
 }
 
 void nansum_impl(Variable &summed, const Variable &var) {
-  accumulate_in_place(summed, var, element::nan_plus_equals, "nansum");
+  accumulate_in_place(summed, var, element::nan_add_equals, "nansum");
 }
 
 template <typename Op>
@@ -101,22 +101,21 @@ Variable nanmean_impl(const Variable &var, const Dim dim,
 
 Variable &mean_impl(const Variable &var, const Dim dim, const Variable &count,
                     Variable &out) {
-  if (isInt(out.dtype()))
+  if (is_int(out.dtype()))
     throw except::TypeError(
         "Cannot calculate mean in-place when output dtype is integer");
   sum(var, dim, out);
-  out *= reciprocal(astype(count, core::dtype<double>));
+  out *= reciprocal(astype(count, core::dtype<double>, CopyPolicy::TryAvoid));
   return out;
 }
 
 Variable &nanmean_impl(const Variable &var, const Dim dim,
                        const Variable &count, Variable &out) {
-  if (isInt(out.dtype()))
+  if (is_int(out.dtype()))
     throw except::TypeError(
         "Cannot calculate nanmean in-place when output dtype is integer");
   nansum(var, dim, out);
-  auto scale = reciprocal(astype(count, core::dtype<double>));
-  out *= scale;
+  out *= reciprocal(astype(count, core::dtype<double>, CopyPolicy::TryAvoid));
   return out;
 }
 

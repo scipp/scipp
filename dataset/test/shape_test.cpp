@@ -451,3 +451,68 @@ TEST(ReshapeTest, round_trip_with_all) {
   EXPECT_EQ(flatten(reshaped, std::vector<Dim>{Dim::Row, Dim::Time}, Dim::X),
             a);
 }
+
+class TransposeTest : public ::testing::Test {
+protected:
+  TransposeTest() : a(xy) {
+    a.coords().set(Dim::X, x);
+    a.coords().set(Dim::Y, y);
+    a.masks().set("mask-x", x);
+    a.masks().set("mask-y", y);
+    a.masks().set("mask-xy", xy);
+  }
+  Variable xy = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 2},
+                                     Values{1, 2, 3, 4, 5, 6});
+  Variable x = xy.slice({Dim::Y, 0});
+  Variable y = xy.slice({Dim::X, 0});
+  DataArray a;
+};
+
+TEST_F(TransposeTest, data_array_2d) {
+  auto transposed = transpose(a);
+  EXPECT_EQ(transposed.data(), transpose(a.data()));
+  transposed.setData(a.data());
+  EXPECT_EQ(transposed, a);
+  EXPECT_EQ(transpose(a, {Dim::X, Dim::Y}), transpose(a));
+  EXPECT_EQ(transpose(a, {Dim::Y, Dim::X}), a);
+}
+
+TEST_F(TransposeTest, data_array_2d_meta_data) {
+  Variable edges = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3},
+                                        Values{1, 2, 3, 4, 5, 6, 7, 8, 9});
+  // Note: The 2-d coord must not be transposed, since this would break the
+  // association with its dimension. Mask may in principle be transposed but is
+  // not right now.
+  a.coords().set(Dim("edges"), edges);
+  a.masks().set("mask", xy);
+  a.attrs().set(Dim("attr"), xy);
+  auto transposed = transpose(a);
+  EXPECT_EQ(transposed.data(), transpose(a.data()));
+  transposed.setData(a.data());
+  EXPECT_EQ(transposed, a);
+  EXPECT_EQ(transpose(a, {Dim::X, Dim::Y}), transpose(a));
+  EXPECT_EQ(transpose(a, {Dim::Y, Dim::X}), a);
+}
+
+TEST_F(TransposeTest, dataset_no_order) {
+  Dataset d;
+  d.setData("a", a);
+  d.setData("b", transpose(a));
+  d.setData("c", a.slice({Dim::X, 0}));
+  // Slightly unusual but "simple" behavior if no dim order given
+  auto transposed = transpose(d);
+  EXPECT_EQ(transposed["a"], d["b"]);
+  EXPECT_EQ(transposed["b"], d["a"]);
+  EXPECT_EQ(transposed["c"], d["c"]);
+}
+
+TEST_F(TransposeTest, dataset_2d) {
+  Dataset d;
+  d.setData("a", a);
+  d.setData("b", transpose(a));
+  auto transposed = transpose(d, {Dim::X, Dim::Y});
+  EXPECT_EQ(transposed["a"], d["b"]);
+  EXPECT_EQ(transposed["b"], d["b"]);
+  d.setData("c", a.slice({Dim::X, 0}));
+  EXPECT_THROW_DISCARD(transpose(d, {Dim::X, Dim::Y}), except::DimensionError);
+}

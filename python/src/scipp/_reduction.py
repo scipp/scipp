@@ -1,19 +1,26 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+
+from __future__ import annotations
+from typing import Optional
+
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .typing import VariableLike
 
 
-def mean(x, dim=None, out=None):
-    """Element-wise mean over the specified dimension, if variances are
-    present, the new variance is computed as standard-deviation of the mean.
+def mean(x: VariableLike,
+         dim: Optional[str] = None,
+         *,
+         out: Optional[VariableLike] = None) -> VariableLike:
+    """Element-wise mean over the specified dimension.
 
-    If the input has variances, the variances stored in the ouput are based on
+    If the input has variances, the variances stored in the output are based on
     the "standard deviation of the mean", i.e.,
     :math:`\\sigma_{mean} = \\sigma / \\sqrt{N}`.
     :math:`N` is the length of the input dimension.
-    :math:`sigma` is estimated as the average of the standard deviations of
+    :math:`\\sigma` is estimated as the average of the standard deviations of
     the input elements along that dimension.
 
     :param x: Input data.
@@ -23,6 +30,7 @@ def mean(x, dim=None, out=None):
     :raises: If the dimension does not exist, or the dtype cannot be summed,
              e.g., if it is a string.
     :return: The mean of the input values.
+    :seealso: :py:func:`scipp.nanmean`.
     """
     if dim is None:
         return _call_cpp_func(_cpp.mean, x, out=out)
@@ -30,16 +38,17 @@ def mean(x, dim=None, out=None):
         return _call_cpp_func(_cpp.mean, x, dim=dim, out=out)
 
 
-def nanmean(x, dim=None, out=None):
-    """Element-wise mean over the specified dimension, if variances are
-    present, the new variance is computed as standard-deviation of the mean.
-    NaNs are ignored.
+def nanmean(x: VariableLike,
+            dim: Optional[str] = None,
+            *,
+            out: Optional[VariableLike] = None) -> VariableLike:
+    """Element-wise mean over the specified dimension ignoring NaNs.
 
     If the input has variances, the variances stored in the ouput are based on
     the "standard deviation of the mean", i.e.,
     :math:`\\sigma_{mean} = \\sigma / \\sqrt{N}`.
     :math:`N` is the length of the input dimension.
-    :math:`sigma` is estimated as the average of the standard deviations of
+    :math:`\\sigma` is estimated as the average of the standard deviations of
     the input elements along that dimension.
 
     :param x: Input data.
@@ -49,6 +58,7 @@ def nanmean(x, dim=None, out=None):
     :raises: If the dimension does not exist, or the dtype cannot be summed,
              e.g., if it is a string.
     :return: The mean of the input values.
+    :seealso: :py:func:`scipp.mean`.
     """
     if dim is None:
         return _call_cpp_func(_cpp.nanmean, x, out=out)
@@ -56,7 +66,10 @@ def nanmean(x, dim=None, out=None):
         return _call_cpp_func(_cpp.nanmean, x, dim=dim, out=out)
 
 
-def sum(x, dim=None, out=None):
+def sum(x: VariableLike,
+        dim: Optional[str] = None,
+        *,
+        out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise sum over the specified dimension.
 
     :param x: Input data.
@@ -66,6 +79,7 @@ def sum(x, dim=None, out=None):
     :raises: If the dimension does not exist, or the dtype cannot be summed,
              e.g., if it is a string.
     :return: The sum of the input values.
+    :seealso: :py:func:`scipp.nansum`.
     """
     if dim is None:
         return _call_cpp_func(_cpp.sum, x, out=out)
@@ -73,8 +87,11 @@ def sum(x, dim=None, out=None):
         return _call_cpp_func(_cpp.sum, x, dim=dim, out=out)
 
 
-def nansum(x, dim=None, out=None):
-    """Element-wise sum over the specified dimension. NaNs are treated as zero.
+def nansum(x: VariableLike,
+           dim: Optional[str] = None,
+           *,
+           out: Optional[VariableLike] = None) -> VariableLike:
+    """Element-wise sum over the specified dimension; NaNs are treated as zero.
 
     :param x: Input data.
     :param dim: Optional dimension along which to calculate the sum. If not
@@ -83,6 +100,7 @@ def nansum(x, dim=None, out=None):
     :raises: If the dimension does not exist, or the dtype cannot be summed,
              e.g., if it is a string.
     :return: The sum of the input values with NaNs set to zero.
+    :seealso: :py:func:`scipp.sum`.
     """
     if dim is None:
         return _call_cpp_func(_cpp.nansum, x, out=out)
@@ -90,7 +108,10 @@ def nansum(x, dim=None, out=None):
         return _call_cpp_func(_cpp.nansum, x, dim=dim, out=out)
 
 
-def min(x, dim=None, out=None):
+def min(x: _cpp.Variable,
+        dim: Optional[str] = None,
+        *,
+        out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise min over the specified dimension or all dimensions if not
     provided.
 
@@ -101,6 +122,7 @@ def min(x, dim=None, out=None):
     :raises: If the dimension does not exist, or the dtype cannot be summed,
              e.g., if it is a string.
     :return: The min of the input values.
+    :seealso: :py:func:`scipp.nanmin`, :py:func:`scipp.nanmax`.
     """
     if dim is None:
         return _call_cpp_func(_cpp.min, x, out=out)
@@ -108,7 +130,10 @@ def min(x, dim=None, out=None):
         return _call_cpp_func(_cpp.min, x, dim=dim, out=out)
 
 
-def max(x, dim=None, out=None):
+def max(x: _cpp.Variable,
+        dim: Optional[str] = None,
+        *,
+        out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise max over the specified dimension or all dimensions if not
     provided.
 
@@ -119,6 +144,7 @@ def max(x, dim=None, out=None):
     :raises: If the dimension does not exist, or the dtype cannot be summed,
              e.g., if it is a string.
     :return: The max of the input values.
+    :seealso: :py:func:`scipp.nanmax`, :py:func:`scipp.min`.
     """
     if dim is None:
         return _call_cpp_func(_cpp.max, x, out=out)
@@ -126,7 +152,10 @@ def max(x, dim=None, out=None):
         return _call_cpp_func(_cpp.max, x, dim=dim, out=out)
 
 
-def nanmin(x, dim=None, out=None):
+def nanmin(x: _cpp.Variable,
+           dim: Optional[str] = None,
+           *,
+           out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise min ignoring not at number values over the specified
     dimension or all dimensions if not provided.
 
@@ -137,6 +166,7 @@ def nanmin(x, dim=None, out=None):
     :raises: If the dimension does not exist, or the dtype cannot be summed,
              e.g., if it is a string.
     :return: The min of the input values.
+    :seealso: :py:func:`scipp.min`, :py:func:`scipp.nanmax`.
     """
     if dim is None:
         return _call_cpp_func(_cpp.nanmin, x, out=out)
@@ -144,7 +174,10 @@ def nanmin(x, dim=None, out=None):
         return _call_cpp_func(_cpp.nanmin, x, dim=dim, out=out)
 
 
-def nanmax(x, dim=None, out=None):
+def nanmax(x: _cpp.Variable,
+           dim: Optional[str] = None,
+           *,
+           out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise max ignoring not a number values over the specified
     dimension or all dimensions if not provided.
 
@@ -155,6 +188,7 @@ def nanmax(x, dim=None, out=None):
     :raises: If the dimension does not exist, or the dtype cannot be summed,
              e.g., if it is a string.
     :return: The max of the input values.
+    :seealso: :py:func:`scipp.max`, :py:func:`scipp.nanmin`.
     """
     if dim is None:
         return _call_cpp_func(_cpp.nanmax, x, out=out)
@@ -162,7 +196,10 @@ def nanmax(x, dim=None, out=None):
         return _call_cpp_func(_cpp.nanmax, x, dim=dim, out=out)
 
 
-def all(x, dim=None, out=None):
+def all(x: _cpp.Variable,
+        dim: Optional[str] = None,
+        *,
+        out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise AND over the specified dimension or all dimensions if not
     provided.
 
@@ -173,6 +210,7 @@ def all(x, dim=None, out=None):
     :raises: If the dimension does not exist, or the dtype cannot be summed,
              e.g., if it is a string.
     :return: The AND of the input values.
+    :seealso: :py:func:`scipp.any`.
     """
     if dim is None:
         return _call_cpp_func(_cpp.all, x, out=out)
@@ -180,7 +218,10 @@ def all(x, dim=None, out=None):
         return _call_cpp_func(_cpp.all, x, dim=dim, out=out)
 
 
-def any(x, dim=None, out=None):
+def any(x: _cpp.Variable,
+        dim: Optional[str] = None,
+        *,
+        out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise OR over the specified dimension or all dimensions if not
     provided.
 
@@ -191,6 +232,7 @@ def any(x, dim=None, out=None):
     :raises: If the dimension does not exist, or the dtype cannot be summed,
              e.g., if it is a string.
     :return: The OR of the input values.
+    :seealso: :py:func:`scipp.all`.
     """
     if dim is None:
         return _call_cpp_func(_cpp.any, x, out=out)

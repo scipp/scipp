@@ -3,13 +3,15 @@
 # @file
 # @author Igor Gudich & Neil Vaytet
 
+from __future__ import annotations
 from html import escape
 
 # Scipp imports
 from . import config
-from . import _utils as su
+from . import utils as su
 from ._scipp import core as sc
 from .html.formatting_html import inject_style
+from .typing import is_scalar, VariableLike
 
 
 def _make_table_sections(dict_of_variables):
@@ -171,7 +173,7 @@ def _is_bin_centers(container, var, dim):
     return max(largest) == var.shape[0] + 1 if len(largest) > 0 else False
 
 
-def table(scipp_obj):
+def table(scipp_obj: VariableLike):
     """
     Create a html table from the contents of a Dataset (0D and 1D Variables
     only), DataArray, Variable or raw numpy array.
@@ -200,8 +202,8 @@ class TableViewer:
         self.headers = 0
         self.trigger_update = True
 
-        if su.is_dataset_or_array(scipp_obj):
-            if su.is_dataset(scipp_obj):
+        if isinstance(scipp_obj, (sc.DataArray, sc.Dataset)):
+            if isinstance(scipp_obj, sc.Dataset):
                 iterlist = scipp_obj
                 tag_names = ['coords', 'data']
                 tag_keys = [scipp_obj.coords, iterlist]
@@ -236,15 +238,15 @@ class TableViewer:
             ndims = len(scipp_obj.shape)
             if ndims < 2:
                 group = "{}D Variables".format(ndims)
-                if su.is_variable(scipp_obj):
+                if isinstance(scipp_obj, sc.Variable):
                     self.headers = 1
-                    key = '' if su.is_scalar(scipp_obj) else str(
+                    key = '' if is_scalar(scipp_obj) else str(
                         scipp_obj.dims[0])
                     var = scipp_obj
                 else:
                     self.headers = 0
                     key = " "
-                    var = sc.Variable(['row'], values=scipp_obj)
+                    var = sc.Variable(dims=['row'], values=scipp_obj)
 
                 self.tabledict[group][key] = {"data": {key: var}}
                 self.is_bin_centers[group][key] = {"data": {key: False}}
