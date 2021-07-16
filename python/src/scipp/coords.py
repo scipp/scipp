@@ -69,10 +69,9 @@ def transform_coords(obj: Union[DataArray, Dataset], coords,
     for name in [coords] if isinstance(coords, str) else coords:
         _add_coord(name=name, obj=obj, tree=simple_tree, rename=rename)
     blacklist = _get_splitting_nodes(rename)
-    for key in rename:
-        if len(rename[key]) == 1:
-            found = [k for k in key if k in obj.dims]
-            # rename if exactly one input is dimension-coord
-            if len(found) == 1 and found[0] not in blacklist:
-                obj.rename_dims({found[0]: rename[key][0]})
+    for key, val in rename.items():
+        found = [k for k in key if k in obj.dims]
+        # rename if exactly one input is dimension-coord
+        if len(val) == 1 and len(found) == 1 and found[0] not in blacklist:
+            obj.rename_dims({found[0]: val[0]})
     return obj
