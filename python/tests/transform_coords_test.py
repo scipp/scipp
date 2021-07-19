@@ -181,7 +181,21 @@ def test_binned():
     def convert(*, x2, y):
         return {'yy': y * y, 'xy': y * x2}
 
-    da = binned.transform_coords('xy', graph={'xy': convert, 'x2': 'x'})
-    assert 'xy' not in binned.events.coords  # Ensure buffer was copied
-    assert 'xy' in da.events.coords
-    assert 'yy' not in da.events.coords
+    def check(da, original):
+        y = original.coords['y']
+        assert 'xy' not in original.events.coords  # Buffer was copied
+        assert 'x' in original.events.coords  # Buffer was copied for consume
+        expected = y * original.bins.coords['x']
+        expected.rename_dims({'x': 'x2'})
+        assert sc.identical(da.bins.coords['xy'], expected)
+        assert 'yy' not in da.events.coords
+        assert sc.identical(da.coords['yy'], y * y)
+
+    graph = {'xy': convert, 'x2': 'x'}
+    da = binned.transform_coords('xy', graph=graph)
+    check(da, binned)
+    # If input is sliced, transform_coords has to copy the buffer
+    da = binned['y', 0:1].transform_coords('xy', graph=graph)
+    check(da, binned['y', 0:1])
+    da = binned['y', 1:2].transform_coords('xy', graph=graph)
+    check(da, binned['y', 1:2])

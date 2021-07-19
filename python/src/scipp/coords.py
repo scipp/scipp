@@ -4,7 +4,7 @@
 
 import inspect
 from typing import Union
-from . import Variable, DataArray, Dataset, bins
+from . import Variable, DataArray, Dataset, bins, VariableError
 
 
 def _consume_coord(obj, name):
@@ -26,15 +26,27 @@ class CoordTransform:
         self.obj = obj
         self._events_copied = False
 
-    def _add_event_coords(self, coords):
+    def _consume_event_coord(self, name):
+        """Consume event coord, but avoid changing input"""
         if not self._events_copied:
+            self._events_copied = True
             bins_args = self.obj.bins.constituents
             self.obj.data = bins(**bins_args)
+        return _consume_coord(self.obj.bins, name)
+
+    def _add_event_coord(self, key, coord):
+        try:
+            self.obj.bins.coords[key] = coord
+        except VariableError:  # Thrown on mismatching bin indices, e.g. slice
+            self.obj.data = self.obj.data.copy()
+            self.obj.bins.coords[key] = coord
+
+    def _add_event_coords(self, coords):
         for key, coord in coords.items():
             # Non-binned coord should be duplicate of dense handling above,
             # if present => ignored.
             if coord.bins is not None:
-                self.obj.bins.coords[key] = coord
+                self._add_event_coord(key, coord)
 
     def _add_coord(self, *, name, graph, rename):
         if name in self.obj.meta:
@@ -45,7 +57,7 @@ class CoordTransform:
                 # Calls to _get_coord for dense coord handling take care of
                 # recursion and add also event coords, here and below we thus
                 # simply consume the event coord.
-                out_bins = _consume_coord(self.obj.bins, graph[name])
+                out_bins = self._consume_event_coord(graph[name])
             dim = (graph[name], )
         else:
             func = graph[name]
@@ -57,7 +69,7 @@ class CoordTransform:
             out = func(**args)
             if self.obj.bins is not None:
                 args.update({
-                    arg: _consume_coord(self.obj.bins, arg)
+                    arg: self._consume_event_coord(arg)
                     for arg in argnames if arg in self.obj.bins.coords
                 })
                 out_bins = func(**args)
