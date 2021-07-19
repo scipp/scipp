@@ -24,9 +24,9 @@ const char *name = "transform_test";
 template <typename T>
 auto make_variable_for_test(const Shape &shape, bool variances) {
   auto ndim = shape.data.size();
-  auto dims = ndim == 1 ? Dims{Dim::X}
-                        : ndim == 2 ? Dims{Dim::X, Dim::Y}
-                                    : Dims{Dim::X, Dim::Y, Dim::Z};
+  auto dims = ndim == 1   ? Dims{Dim::X}
+              : ndim == 2 ? Dims{Dim::X, Dim::Y}
+                          : Dims{Dim::X, Dim::Y, Dim::Z};
   auto var = variances ? makeVariable<T>(dims, shape, Values{}, Variances{})
                        : makeVariable<T>(dims, shape, Values{});
 
@@ -770,8 +770,7 @@ TEST_F(TransformInPlaceBucketsDryRunTest, unchanged_if_success) {
 }
 
 TEST(TransformFlagsTest, no_variance_on_arg) {
-  auto var_with_variance =
-      makeVariable<double>(Values{1}, Variances{1});
+  auto var_with_variance = makeVariable<double>(Values{1}, Variances{1});
   auto var_no_variance = makeVariable<double>(Values{1});
   constexpr auto binary_op = [](auto x, auto y) { return x + y; };
   constexpr auto op_arg_0_has_flags =
