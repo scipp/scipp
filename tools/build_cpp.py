@@ -27,6 +27,10 @@ def main(prefix='install', build_dir='build', source_dir='.'):
     """
     Platform-independent function to run cmake, build, install and C++ tests.
     """
+    debug_build = "SCIPP_DEBUG_BUILD" in os.environ
+
+    print("Building in {} configuration".format(
+        "debug" if debug_build else "release"))
 
     # Get the platform name: 'linux', 'darwin' (osx), or 'win32'.
     platform = sys.platform
@@ -50,8 +54,12 @@ def main(prefix='install', build_dir='build', source_dir='.'):
         '-DPYTHON_EXECUTABLE': shutil.which("python"),
         '-DCMAKE_INSTALL_PREFIX': prefix,
         '-DWITH_CTEST': 'OFF',
-        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'ON'
+        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'OFF' if debug_build else "ON",
+        '-DCMAKE_BUILD_TYPE': 'Debug' if debug_build else "Release",
     }
+
+    if debug_build:
+        cmake_flags["-DDYNAMIC_LIB"] = "ON"
 
     if platform == 'darwin':
         cmake_flags.update({'-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'OFF'})
@@ -70,7 +78,10 @@ def main(prefix='install', build_dir='build', source_dir='.'):
     if platform == 'win32':
         cmake_flags.update({'-G': 'Visual Studio 16 2019', '-A': 'x64'})
         shell = True
-        build_config = 'Release'
+        if debug_build:
+            build_config = 'Debug'
+        else:
+            build_config = 'Release'
 
     # Additional flags for --build commands
     build_flags = [parallel_flag]
@@ -95,18 +106,15 @@ def main(prefix='install', build_dir='build', source_dir='.'):
     # Show cmake settings
     run_command(['cmake', '-B', '.', '-S', source_dir, '-LA'], shell=shell)
 
-    # Compile benchmarks, C++ tests, and python library
-    for target in ['all-benchmarks', 'all-tests', 'install']:
+    # Compile C++ tests and python library
+    for target in ['pipelines-test', 'install']:
         run_command(['cmake', '--build', '.', '--target', target] +
                     build_flags,
                     shell=shell)
 
     # Run C++ tests
-    for test in [
-            'scipp-common-test', 'scipp-units-test', 'scipp-core-test',
-            'scipp-variable-test', 'scipp-dataset-test'
-    ]:
-        run_command([os.path.join('bin', build_config, test)], shell=shell)
+    run_command([os.path.join('.', build_config, 'pipelines-test')],
+                shell=shell)
 
 
 if __name__ == '__main__':
