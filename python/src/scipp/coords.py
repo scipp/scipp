@@ -4,7 +4,7 @@
 
 import inspect
 from typing import Union, List, Dict, Tuple, Callable
-from . import Variable, DataArray, Dataset, VariableError
+from . import Variable, DataArray, Dataset, bins, VariableError
 
 
 def _consume_coord(obj, name):
@@ -51,7 +51,8 @@ class CoordTransform:
                 # Calls to _get_coord for dense coord handling take care of
                 # recursion and add also event coords, here and below we thus
                 # simply consume the event coord.
-                out_bins = self._consume_event_coord(graph[name])
+                if graph[name] in self.obj.meta:
+                    out_bins = _consume_coord(self.obj.bins, graph[name])
             dim = (graph[name], )
         else:
             func = graph[name]
@@ -101,6 +102,10 @@ def _transform_data_array(obj: DataArray, coords, graph: dict) -> DataArray:
         for k in [key] if isinstance(key, str) else key:
             simple_graph[k] = graph[key]
     obj = obj.copy(deep=False)
+    # TODO We manually shallow-copy the buffer, until we have a better
+    # solution for how shallow copies also shallow-copy event buffers.
+    if obj.bins is not None:
+        obj.data = bins(**obj.bins.constituents)
     rename = {}
     transform = CoordTransform(obj)
     for name in [coords] if isinstance(coords, str) else coords:

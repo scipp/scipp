@@ -59,7 +59,6 @@ public:
   BinArrayModel(const VariableConceptHandle &indices, const Dim dim, T buffer);
 
   [[nodiscard]] VariableConceptHandle clone() const override;
-  [[nodiscard]] VariableConceptHandle clone_shallow() const override;
 
   bool operator==(const BinArrayModel &other) const noexcept;
 

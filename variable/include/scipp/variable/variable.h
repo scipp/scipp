@@ -57,7 +57,7 @@ public:
   /// should be prefered where possible, since it generates less code.
   template <class... Ts> Variable(const DType &type, Ts &&... args);
 
-  Variable(const Variable &other);
+  Variable(const Variable &other) = default;
   Variable(Variable &&other) noexcept = default;
 
   Variable &operator=(const Variable &other);

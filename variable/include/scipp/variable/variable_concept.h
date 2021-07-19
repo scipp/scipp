@@ -37,9 +37,6 @@ public:
   virtual ~VariableConcept() = default;
 
   virtual VariableConceptHandle clone() const = 0;
-  virtual VariableConceptHandle clone_shallow() const {
-    throw std::invalid_argument("Cannot shallow-clone non-binned data");
-  }
   virtual VariableConceptHandle
   makeDefaultFromParent(const scipp::index size) const = 0;
   virtual VariableConceptHandle
