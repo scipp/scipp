@@ -174,8 +174,7 @@ if(NOT WIN32)
   )
 else()
   add_compile_options(
-    $<$<COMPILE_LANGUAGE:CXX>:/W4>
-    $<$<COMPILE_LANGUAGE:CXX>:/bigobj>
+    $<$<COMPILE_LANGUAGE:CXX>:/W4> $<$<COMPILE_LANGUAGE:CXX>:/bigobj>
   )
 endif(NOT WIN32)
 # This is currently causing to many warnings, reenable when appropriate.
