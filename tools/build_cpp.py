@@ -106,15 +106,18 @@ def main(prefix='install', build_dir='build', source_dir='.'):
     # Show cmake settings
     run_command(['cmake', '-B', '.', '-S', source_dir, '-LA'], shell=shell)
 
-    # Compile C++ tests and python library
-    for target in ['pipelines-test', 'install']:
+    # Compile benchmarks, C++ tests, and python library
+    for target in ['all-benchmarks', 'all-tests', 'install']:
         run_command(['cmake', '--build', '.', '--target', target] +
                     build_flags,
                     shell=shell)
 
     # Run C++ tests
-    run_command([os.path.join('.', build_config, 'pipelines-test')],
-                shell=shell)
+    for test in [
+            'scipp-common-test', 'scipp-units-test', 'scipp-core-test',
+            'scipp-variable-test', 'scipp-dataset-test'
+    ]:
+        run_command([os.path.join('bin', build_config, test)], shell=shell)
 
 
 if __name__ == '__main__':
