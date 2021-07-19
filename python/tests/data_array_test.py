@@ -222,8 +222,13 @@ def test_view_in_place_binary_with_scalar():
 def test_rename_dims():
     d = make_dataarray('x', 'y', seed=0)
     d.rename_dims({'y': 'z'})
+    d.coords['z'] = d.coords['y']
+    del d.coords['y']
     assert sc.identical(d, make_dataarray('x', 'z', seed=0))
     d.rename_dims(dims_dict={'x': 'y', 'z': 'x'})
+    d.coords['y'] = d.coords['x']
+    d.coords['x'] = d.coords['z']
+    del d.coords['z']
     assert sc.identical(d, make_dataarray('y', 'x', seed=0))
 
 
