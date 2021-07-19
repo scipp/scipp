@@ -24,9 +24,9 @@ const char *name = "transform_test";
 template <typename T>
 auto make_variable_for_test(const Shape &shape, bool variances) {
   auto ndim = shape.data.size();
-  auto dims = ndim == 1   ? Dims{Dim::X}
-              : ndim == 2 ? Dims{Dim::X, Dim::Y}
-                          : Dims{Dim::X, Dim::Y, Dim::Z};
+  auto dims = ndim == 1 ? Dims{Dim::X}
+                        : ndim == 2 ? Dims{Dim::X, Dim::Y}
+                                    : Dims{Dim::X, Dim::Y, Dim::Z};
   auto var = variances ? makeVariable<T>(dims, shape, Values{}, Variances{})
                        : makeVariable<T>(dims, shape, Values{});
 
