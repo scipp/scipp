@@ -139,6 +139,21 @@ def test_dim_rename_multi_level_merge_multi_output():
     assert da.dims == ['a', 'bc']
 
 
+def test_inplace():
+    a = sc.arange(dim='x', start=0, stop=4)
+    b = sc.arange(dim='x', start=0, stop=4)
+    original = sc.DataArray(data=a.copy(), coords={'a': a, 'b': b})
+
+    def ab_inplace(*, a, b):
+        a += b
+        return a
+
+    da = original.copy().transform_coords(['ab'], graph={'ab': ab_inplace})
+    assert da.dims == ['x']
+    assert sc.identical(da.coords['ab'], a + b)
+    assert sc.identical(da.attrs['a'], a + b)
+
+
 def test_binned():
     N = 50
     data = sc.DataArray(data=sc.ones(dims=['event'],
