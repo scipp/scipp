@@ -7,16 +7,18 @@ from typing import Union
 from . import Variable, DataArray, Dataset
 
 
-def _add_coord(*, name, obj, tree, rename):
+def _add_coord(*, name, obj, graph, rename):
     if name in obj.meta:
         return _produce_coord(obj, name)
-    if isinstance(tree[name], str):
-        out = _get_coord(tree[name], obj, tree, rename)
-        dim = (tree[name], )
+    if isinstance(graph[name], str):
+        out = _get_coord(graph[name], obj, graph, rename)
+        dim = (graph[name], )
     else:
-        func = tree[name]
+        func = graph[name]
         args = inspect.getfullargspec(func).kwonlyargs
-        out = func(**{arg: _get_coord(arg, obj, tree, rename) for arg in args})
+        out = func(
+            **{arg: _get_coord(arg, obj, graph, rename)
+               for arg in args})
         dim = tuple(args)
     if isinstance(out, Variable):
         out = {name: out}
@@ -39,12 +41,12 @@ def _produce_coord(obj, name):
     return obj.coords[name]
 
 
-def _get_coord(name, obj, tree, rename):
+def _get_coord(name, obj, graph, rename):
     if name in obj.meta:
         return _consume_coord(obj, name)
     else:
-        _add_coord(name=name, obj=obj, tree=tree, rename=rename)
-        return _get_coord(name, obj, tree, rename=rename)
+        _add_coord(name=name, obj=obj, graph=graph, rename=rename)
+        return _get_coord(name, obj, graph, rename=rename)
 
 
 def _get_splitting_nodes(graph):
@@ -56,18 +58,18 @@ def _get_splitting_nodes(graph):
 
 
 def transform_coords(obj: Union[DataArray, Dataset], coords,
-                     tree: dict) -> Union[DataArray, Dataset]:
+                     graph: dict) -> Union[DataArray, Dataset]:
     """
     """
-    # Keys in tree may be tuple to define multiple outputs
-    simple_tree = {}
-    for key in tree:
+    # Keys in graph may be tuple to define multiple outputs
+    simple_graph = {}
+    for key in graph:
         for k in [key] if isinstance(key, str) else key:
-            simple_tree[k] = tree[key]
+            simple_graph[k] = graph[key]
     obj = obj.copy(deep=False)
     rename = {}
     for name in [coords] if isinstance(coords, str) else coords:
-        _add_coord(name=name, obj=obj, tree=simple_tree, rename=rename)
+        _add_coord(name=name, obj=obj, graph=simple_graph, rename=rename)
     blacklist = _get_splitting_nodes(rename)
     for key, val in rename.items():
         found = [k for k in key if k in obj.dims]
