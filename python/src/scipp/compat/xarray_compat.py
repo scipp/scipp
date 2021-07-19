@@ -52,7 +52,7 @@ def from_xarray_dataarray(da: xr.DataArray) -> DataArray:
         if name in da.indexes:
             coords[name] = _var_from_xarray(coord)
         else:
-            attrs[f"coord_{name}"] = _var_from_xarray(coord)
+            attrs[f"{name}"] = _var_from_xarray(coord)
 
     return DataArray(data=_var_from_xarray(da),
                      coords=coords,

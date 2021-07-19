@@ -153,9 +153,8 @@ def test_dataset_with_non_indexed_coords():
         sc.DataArray(
             data=sc.zeros(dims=["x"], shape=(100, ), dtype="float64")),
         "array2":
-        sc.DataArray(
-            data=sc.zeros(dims=["y"], shape=(50, ), dtype="float64"),
-            attrs={"coord_z": sc.arange("y", 0, 100, 2, dtype="int64")}),
+        sc.DataArray(data=sc.zeros(dims=["y"], shape=(50, ), dtype="float64"),
+                     attrs={"z": sc.arange("y", 0, 100, 2, dtype="int64")}),
     },
                               coords={
                                   "x": sc.arange("x", 100, dtype="int64"),
