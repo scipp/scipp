@@ -33,7 +33,7 @@ def test_rename_2_steps():
                                               'y2': 'y'
                                           })
     assert da.dims == ['x', 'y3']
-    original.rename_dims({'y': 'y3'})
+    original = original.rename_dims({'y': 'y3'})
     assert sc.identical(da.coords['y3'], original.coords['y'])
     assert sc.identical(da.attrs['y2'], original.coords['y'])
     assert sc.identical(da.attrs['y'], original.coords['y'])
@@ -154,6 +154,14 @@ def test_inplace():
     assert sc.identical(da.attrs['a'], a + b)
 
 
+def test_dataset():
+    x = sc.arange(dim='x', start=0, stop=4)
+    da = sc.DataArray(data=x.copy(), coords={'x': x.copy()})
+    ds = sc.Dataset(data={'a': da.copy(), 'b': da + da})
+    transformed = ds.transform_coords('y', graph={'y': 'x'})
+    assert sc.identical(transformed['a'].attrs['x'], x.rename_dims({'x': 'y'}))
+
+
 def test_binned():
     N = 50
     data = sc.DataArray(data=sc.ones(dims=['event'],
@@ -185,9 +193,9 @@ def test_binned():
         y = original.coords['y']
         assert 'xy' not in original.events.coords  # Buffer was copied
         assert 'x' in original.events.coords  # Buffer was copied for consume
-        expected = y * original.bins.coords['x']
-        expected.rename_dims({'x': 'x2'})
-        assert sc.identical(da.bins.coords['xy'], expected)
+        assert sc.identical(da.bins.coords['xy'],
+                            (y * original.bins.coords['x']).rename_dims(
+                                {'x': 'x2'}))
         assert 'yy' not in da.events.coords
         assert sc.identical(da.coords['yy'], y * y)
 

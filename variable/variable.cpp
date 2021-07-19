@@ -47,6 +47,15 @@ void check_nested_in_assign(const Variable &lhs, const Variable &rhs) {
 }
 } // namespace
 
+Variable::Variable(const Variable &other)
+    : m_dims(other.m_dims), m_strides(other.m_strides),
+      m_offset(other.m_offset), m_object(other.m_object),
+      m_readonly(other.m_readonly) {
+  // Shallow copy bins buffer, to avoid sharing meta-data dicts, etc.
+  if (m_object && is_bins(*this))
+    m_object = m_object->clone_shallow();
+}
+
 Variable &Variable::operator=(const Variable &other) {
   return *this = Variable(other);
 }

@@ -176,6 +176,11 @@ template <class T> VariableConceptHandle BinArrayModel<T>::clone() const {
 }
 
 template <class T>
+VariableConceptHandle BinArrayModel<T>::clone_shallow() const {
+  return std::make_shared<BinArrayModel<T>>(*this);
+}
+
+template <class T>
 bool BinArrayModel<T>::operator==(const BinArrayModel &other) const noexcept {
   if (indices()->dtype() != core::dtype<scipp::index_pair> ||
       other.indices()->dtype() != core::dtype<scipp::index_pair>)

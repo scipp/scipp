@@ -3,8 +3,8 @@
 # @author Simon Heybrock, Jan-Lukas Wynen
 
 import inspect
-from typing import Union
-from . import Variable, DataArray, Dataset, bins, VariableError
+from typing import Union, List, Dict, Tuple, Callable
+from . import Variable, DataArray, Dataset, VariableError
 
 
 def _consume_coord(obj, name):
@@ -22,17 +22,11 @@ def _produce_coord(obj, name):
 
 
 class CoordTransform:
+    Graph = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
+
     def __init__(self, obj):
         self.obj = obj
         self._events_copied = False
-
-    def _consume_event_coord(self, name):
-        """Consume event coord, but avoid changing input"""
-        if not self._events_copied:
-            self._events_copied = True
-            bins_args = self.obj.bins.constituents
-            self.obj.data = bins(**bins_args)
-        return _consume_coord(self.obj.bins, name)
 
     def _add_event_coord(self, key, coord):
         try:
@@ -69,8 +63,8 @@ class CoordTransform:
             out = func(**args)
             if self.obj.bins is not None:
                 args.update({
-                    arg: self._consume_event_coord(arg)
-                    for arg in argnames if arg in self.obj.bins.coords
+                    arg: _consume_coord(self.obj.bins, arg)
+                    for arg in argnames if arg in self.obj.bins.meta
                 })
                 out_bins = func(**args)
             dim = tuple(argnames)
@@ -100,10 +94,7 @@ def _get_splitting_nodes(graph):
     return [node for node in nodes if nodes[node] > 1]
 
 
-def transform_coords(obj: Union[DataArray, Dataset], coords,
-                     graph: dict) -> Union[DataArray, Dataset]:
-    """
-    """
+def _transform_data_array(obj: DataArray, coords, graph: dict) -> DataArray:
     # Keys in graph may be tuple to define multiple outputs
     simple_graph = {}
     for key in graph:
@@ -119,5 +110,37 @@ def transform_coords(obj: Union[DataArray, Dataset], coords,
         found = [k for k in key if k in obj.dims]
         # rename if exactly one input is dimension-coord
         if len(val) == 1 and len(found) == 1 and found[0] not in blacklist:
-            obj.rename_dims({found[0]: val[0]})
+            obj = obj.rename_dims({found[0]: val[0]})
     return obj
+
+
+def _transform_dataset(obj: Dataset, coords, graph: dict) -> Dataset:
+    # Note the inefficiency here in datasets with multiple items: Coord
+    # transform is repeated for every item rather than sharing what is
+    # possible. Implementing this would be tricky and likely error-prone,
+    # since different items may have different attributes. Unless we have
+    # clear performance requirements we therefore go with the safe and
+    # simple solution
+    return Dataset(
+        data={
+            name: _transform_data_array(obj[name], coords=coords, graph=graph)
+            for name in obj
+        })
+
+
+def transform_coords(x: Union[DataArray, Dataset], coords: Union[str,
+                                                                 List[str]],
+                     graph: CoordTransform.Graph) -> Union[DataArray, Dataset]:
+    """Compute new coords based on transformation of input coords.
+
+    :param x: Input object with coords.
+    :param coords: Name or list of names of desired output coords.
+    :param graph: A graph defining how new coords can be computed from existing
+                  coords. This may be done in multiple steps.
+    :return: New object with desired coords. Existing data and meta-data is
+             shallow-copied.
+    """
+    if isinstance(x, DataArray):
+        return _transform_data_array(x, coords=coords, graph=graph)
+    else:
+        return _transform_dataset(x, coords=coords, graph=graph)
