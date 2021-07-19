@@ -12,19 +12,37 @@ def _add_coord(*, name, obj, graph, rename):
         return _produce_coord(obj, name)
     if isinstance(graph[name], str):
         out = _get_coord(graph[name], obj, graph, rename)
+        if obj.bins is not None:
+            # Calls to _get_coord for dense coord handling take care of
+            # recursion and add also event coords, here and below we thus
+            # simply consume the event coord.
+            out_bins = _consume_coord(obj.bins, graph[name])
         dim = (graph[name], )
     else:
         func = graph[name]
-        args = inspect.getfullargspec(func).kwonlyargs
-        out = func(
-            **{arg: _get_coord(arg, obj, graph, rename)
-               for arg in args})
-        dim = tuple(args)
+        argnames = inspect.getfullargspec(func).kwonlyargs
+        args = {arg: _get_coord(arg, obj, graph, rename) for arg in argnames}
+        out = func(**args)
+        if obj.bins is not None:
+            args.update({
+                arg: _consume_coord(obj.bins, arg)
+                for arg in argnames if arg in obj.bins.coords
+            })
+            out_bins = func(**args)
+        dim = tuple(argnames)
     if isinstance(out, Variable):
         out = {name: out}
     rename.setdefault(dim, []).extend(out.keys())
     for key, coord in out.items():
         obj.coords[key] = coord
+    if obj.bins is not None:
+        if isinstance(out_bins, Variable):
+            out_bins = {name: out_bins}
+        for key, coord in out_bins.items():
+            # Non-binned coord should be duplicate of dense handling above, if
+            # present => ignored.
+            if coord.bins is not None:
+                obj.bins.coords[key] = coord
 
 
 def _consume_coord(obj, name):

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+import numpy as np
 import scipp as sc
 
 
@@ -136,3 +137,35 @@ def test_dim_rename_multi_level_merge_multi_output():
     # Similar to test_dim_rename_multi_level_merge above, but now an implicit
     # intermediate result prevents conversion of a to c
     assert da.dims == ['a', 'bc']
+
+
+def test_binned():
+    N = 50
+    data = sc.DataArray(data=sc.ones(dims=['event'],
+                                     unit=sc.units.counts,
+                                     shape=[N]),
+                        coords={
+                            'x':
+                            sc.array(dims=['event'],
+                                     unit=sc.units.m,
+                                     values=np.random.rand(N)),
+                            'y':
+                            sc.array(dims=['event'],
+                                     unit=sc.units.m,
+                                     values=np.random.rand(N))
+                        })
+    xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
+    ybins = sc.Variable(dims=['y'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
+    binned = sc.bin(data, edges=[xbins, ybins])
+    del binned.events.coords['y']
+    del binned.coords['y']
+    binned.coords['y'] = sc.arange(dim='y', start=0, stop=2)
+
+    # TODO Avoid dimension error if we write `x*y`, provided that it is
+    # temporary before rename
+    def convert(*, x2, y):
+        return {'yy': y * y, 'xy': y * x2}
+
+    da = binned.transform_coords('xy', graph={'xy': convert, 'x2': 'x'})
+    assert 'xy' in binned.events.coords
+    assert 'yy' not in binned.events.coords
