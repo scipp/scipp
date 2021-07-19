@@ -8,3 +8,6 @@ cmake-build-*
 .idea/
 .vscode/
 *.ipynb_checkpoints
+__pycache__/
+CMakeSettings.json
+.vs/
