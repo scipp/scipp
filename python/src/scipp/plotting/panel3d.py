@@ -77,7 +77,7 @@ class PlotPanel3d(PlotPanel):
             min=0.0,
             max=1.0,
             value=[0.03, 1],
-            step=0.03,
+            step=0.01,
             description="Opacity slider: When no cut surface is active, the "
             "max value of the range slider controls the overall opacity, "
             "and the lower value has no effect. When a cut surface is "
