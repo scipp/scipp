@@ -167,5 +167,6 @@ def test_binned():
         return {'yy': y * y, 'xy': y * x2}
 
     da = binned.transform_coords('xy', graph={'xy': convert, 'x2': 'x'})
-    assert 'xy' in binned.events.coords
-    assert 'yy' not in binned.events.coords
+    assert 'xy' not in binned.events.coords  # Ensure buffer was copied
+    assert 'xy' in da.events.coords
+    assert 'yy' not in da.events.coords
