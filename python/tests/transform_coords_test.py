@@ -27,17 +27,22 @@ def _make_xy():
 
 def test_rename_2_steps():
     original = _make_xy()
+    graph = {'y4': 'y', 'y3': 'y2', 'y2': 'y'}
     da = original.copy().transform_coords(['y3'],
-                                          graph={
-                                              'y4': 'y',
-                                              'y3': 'y2',
-                                              'y2': 'y'
-                                          })
+                                          graph=graph,
+                                          remove_aliases=False)
     assert da.dims == ['x', 'y3']
     original = original.rename_dims({'y': 'y3'})
     assert sc.identical(da.coords['y3'], original.coords['y'])
     assert sc.identical(da.attrs['y2'], original.coords['y'])
     assert sc.identical(da.attrs['y'], original.coords['y'])
+
+    da = original.copy().transform_coords(['y3'],
+                                          graph=graph,
+                                          remove_aliases=True)
+    assert 'y3' in da.coords  # alias, but requested explicitly
+    assert 'y2' not in da.attrs  # alias for y => removed
+    assert 'y' in da.attrs
 
 
 def test_rename_multi_output():
@@ -47,7 +52,8 @@ def test_rename_multi_output():
                                               'y4': 'y',
                                               'y3': 'y2',
                                               'y2': 'y'
-                                          })
+                                          },
+                                          remove_aliases=False)
     assert da.dims == ['x', 'y']  # y4 also depends on y so dim not renamed
     assert sc.identical(da.coords['y4'], original.coords['y'])
     assert sc.identical(da.coords['y3'], original.coords['y'])
