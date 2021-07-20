@@ -335,3 +335,8 @@ def test_unconsumed_outputs():
     assert 'aux' in da.coords
     assert 'b' in da.coords
     assert 'c' not in da.coords
+    # 'c' not explicitly requested but named as output in graph => preserved
+    da = original.transform_coords(['b'], graph={('b', 'c'): func})
+    assert 'aux' in da.coords
+    assert 'b' in da.coords
+    assert 'c' in da.coords

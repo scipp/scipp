@@ -27,6 +27,9 @@ class Graph:
     def __getitem__(self, name):
         return self._graph[name]
 
+    def __contains__(self, name):
+        return name in self._graph
+
     def show(self):
         from graphviz import Digraph
         dot = Digraph(strict=True)
@@ -174,7 +177,8 @@ class CoordTransform:
         unconsumed = set(self.obj.coords) - set(self._original.meta) - set(
             self._outputs)
         for name in unconsumed:
-            self._del_coord(name)
+            if name not in self._graph:
+                self._del_coord(name)
         if rename_dims:
             blacklist = _get_splitting_nodes(self._rename)
             for key, val in self._rename.items():
