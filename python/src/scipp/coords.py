@@ -142,26 +142,39 @@ class CoordTransform:
             self._add_coord(name=name)
             return self._get_coord(name)
 
+    def _del_attr(self, name):
+        if name in self.obj.attrs:
+            del self.obj.attrs[name]
+        if self.obj.bins is not None:
+            if name in self.obj.bins.attrs:
+                del self.obj.bins.attrs[name]
+
+    def _del_coord(self, name):
+        if name in self.obj.coords:
+            del self.obj.coords[name]
+        if self.obj.bins is not None:
+            if name in self.obj.bins.coords:
+                del self.obj.bins.coords[name]
+
     def finalize(self, *, include_aliases, rename_dims, keep_intermediate,
                  keep_inputs):
         for name in self._outputs:
             self._add_coord(name=name)
         if not include_aliases:
             for name in self._aliases:
-                if name in self.obj.attrs:
-                    del self.obj.attrs[name]
+                self._del_attr(name)
         for name in self._consumed:
             if name not in self.obj.attrs:
                 continue
             if name in self._original.meta:
                 if not keep_inputs:
-                    del self.obj.attrs[name]
+                    self._del_attr(name)
             elif not keep_intermediate:
-                del self.obj.attrs[name]
+                self._del_attr(name)
         unconsumed = set(self.obj.coords) - set(self._original.meta) - set(
             self._outputs)
         for name in unconsumed:
-            del self.obj.coords[name]
+            self._del_coord(name)
         if rename_dims:
             blacklist = _get_splitting_nodes(self._rename)
             for key, val in self._rename.items():
