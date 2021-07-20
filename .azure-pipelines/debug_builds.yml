@@ -1,3 +1,9 @@
+parameters:
+- name: verbose
+  displayName: Verbose
+  type: boolean
+  default: false
+
 trigger:
   branches:
     exclude:
