@@ -27,6 +27,7 @@ class CoordTransform:
     def __init__(self, obj):
         self.obj = obj
         self._events_copied = False
+        self._rename = {}
 
     def _add_event_coord(self, key, coord):
         try:
@@ -42,11 +43,11 @@ class CoordTransform:
             if coord.bins is not None:
                 self._add_event_coord(key, coord)
 
-    def _add_coord(self, *, name, graph, rename):
+    def _add_coord(self, *, name, graph):
         if name in self.obj.meta:
             return _produce_coord(self.obj, name)
         if isinstance(graph[name], str):
-            out = self._get_coord(graph[name], graph, rename)
+            out = self._get_coord(graph[name], graph)
             if self.obj.bins is not None:
                 # Calls to _get_coord for dense coord handling take care of
                 # recursion and add also event coords, here and below we thus
@@ -57,10 +58,7 @@ class CoordTransform:
         else:
             func = graph[name]
             argnames = inspect.getfullargspec(func).kwonlyargs
-            args = {
-                arg: self._get_coord(arg, graph, rename)
-                for arg in argnames
-            }
+            args = {arg: self._get_coord(arg, graph) for arg in argnames}
             out = func(**args)
             if self.obj.bins is not None:
                 args.update({
@@ -71,7 +69,7 @@ class CoordTransform:
             dim = tuple(argnames)
         if isinstance(out, Variable):
             out = {name: out}
-        rename.setdefault(dim, []).extend(out.keys())
+        self._rename.setdefault(dim, []).extend(out.keys())
         for key, coord in out.items():
             self.obj.coords[key] = coord
         if self.obj.bins is not None:
@@ -79,12 +77,21 @@ class CoordTransform:
                 out_bins = {name: out_bins}
             self._add_event_coords(out_bins)
 
-    def _get_coord(self, name, graph, rename):
+    def _get_coord(self, name, graph):
         if name in self.obj.meta:
             return _consume_coord(self.obj, name)
         else:
-            self._add_coord(name=name, graph=graph, rename=rename)
-            return self._get_coord(name, graph, rename=rename)
+            self._add_coord(name=name, graph=graph)
+            return self._get_coord(name, graph)
+
+    def finalize(self):
+        blacklist = _get_splitting_nodes(self._rename)
+        for key, val in self._rename.items():
+            found = [k for k in key if k in self.obj.dims]
+            # rename if exactly one input is dimension-coord
+            if len(val) == 1 and len(found) == 1 and found[0] not in blacklist:
+                self.obj = self.obj.rename_dims({found[0]: val[0]})
+        return self.obj
 
 
 def _get_splitting_nodes(graph):
@@ -106,17 +113,10 @@ def _transform_data_array(obj: DataArray, coords, graph: dict) -> DataArray:
     # solution for how shallow copies also shallow-copy event buffers.
     if obj.bins is not None:
         obj.data = bins(**obj.bins.constituents)
-    rename = {}
     transform = CoordTransform(obj)
     for name in [coords] if isinstance(coords, str) else coords:
-        transform._add_coord(name=name, graph=simple_graph, rename=rename)
-    blacklist = _get_splitting_nodes(rename)
-    for key, val in rename.items():
-        found = [k for k in key if k in obj.dims]
-        # rename if exactly one input is dimension-coord
-        if len(val) == 1 and len(found) == 1 and found[0] not in blacklist:
-            obj = obj.rename_dims({found[0]: val[0]})
-    return obj
+        transform._add_coord(name=name, graph=simple_graph)
+    return transform.finalize()
 
 
 def _transform_dataset(obj: Dataset, coords, graph: dict) -> Dataset:
