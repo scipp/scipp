@@ -91,7 +91,10 @@ class CoordTransform:
     def _get_coord(self, name):
         if name in self.obj.meta:
             self._consumed.append(name)
-            return _consume_coord(self.obj, name)
+            if name in self._outputs:
+                return self.obj.meta[name]
+            else:
+                return _consume_coord(self.obj, name)
         else:
             if name in self._memo:
                 raise ValueError("Cycle detected in conversion graph.")

@@ -69,6 +69,21 @@ def bc(*, b, c):
     return b + c
 
 
+def test_avoid_consume_of_requested_outputs():
+    var = sc.arange(dim='a', start=0, stop=4)
+    original = sc.DataArray(data=var, coords={'a': var})
+
+    def split(*, a):
+        return {'b': a, 'c': a}
+
+    graph = {('b', 'c'): split, 'ab': ab}
+    da = original.transform_coords(['ab', 'b'], graph=graph)
+    assert 'b' in da.coords
+    # Second requested output must not consume first
+    da = original.transform_coords(['b', 'ab'], graph=graph)
+    assert 'b' in da.coords
+
+
 def test_dim_rename_merge_single_dim_coord():
     # *a    b
     #   \  /
