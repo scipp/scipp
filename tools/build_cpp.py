@@ -76,11 +76,12 @@ def main(prefix='install', build_dir='build', source_dir='.'):
             })
 
     if platform == 'win32':
-        cmake_flags.update({'-G': 'Visual Studio 16 2019', '-A': 'x64',
-                            '-DDISABLE_MULTI_THREADING': 'ON'})
+        cmake_flags.update({'-G': 'Visual Studio 16 2019', '-A': 'x64'})
         shell = True
         if debug_build:
             build_config = 'Debug'
+            # TBB not available for windows-debug
+            cmake_flags['-DDISABLE_MULTI_THREADING'] = "ON"
         else:
             build_config = 'Release'
 
