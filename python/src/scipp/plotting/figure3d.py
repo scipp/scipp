@@ -21,29 +21,15 @@ class PlotFigure3d:
 
     It renders an interactive scene containing a point cloud using `pythreejs`.
     """
-    def __init__(self, *, aspect, background, cmap, extend, figsize, mask_cmap,
+    def __init__(self, *, background, cmap, extend, figsize, mask_cmap,
                  nan_color, norm, pixel_size, show_outline, tick_size, xlabel,
                  ylabel, zlabel):
 
         self._pixel_size = pixel_size
         if pixel_size is not None:
             self._pixel_size = pixel_size
-            self._pixel_scaling = 1.0
         else:
             self._pixel_size = None
-            self._pixel_scaling = None
-
-        self.aspect = aspect
-        if self.aspect is None:
-            # TODO
-            if True:
-                self.aspect = "equal"
-            else:
-                self.aspect = config.plot.aspect
-        if self.aspect not in ["equal", "auto"]:
-            raise RuntimeError(
-                "Invalid aspect requested. Expected 'auto' or "
-                "'equal', got", self.aspect)
 
         if figsize is None:
             figsize = (config.plot.width, config.plot.height)
@@ -156,32 +142,21 @@ class PlotFigure3d:
         limits = params.limits
         center = params.center
         box_size = params.box_size
-        scaling = {}
-        for i, xyz in enumerate("xyz"):
-            scaling[xyz] = 1.0 / box_size[i] if self.aspect == "auto" else 1.0
-            limits[xyz] *= scaling[xyz]
-        box_size *= np.array(list(scaling.values()))
-        center *= np.array(list(scaling.values()))
 
         if self._pixel_size is None:
             # Note the value of 0.05 is arbitrary here. It is a sensible
             # guess to render a plot that is not too crowded and shows
             # individual pixels.
             self._pixel_size = 0.05 * np.mean(box_size)
-            self._pixel_scaling = scaling['x']
         box_size += self._pixel_size
 
         self._create_outline(limits=limits, box_size=box_size, center=center)
 
         self.axticks = self._generate_axis_ticks_and_labels(
-            box_size=box_size,
-            scaling=scaling,
-            limits=limits,
-            components=params.components)
+            box_size=box_size, limits=limits, components=params.components)
 
         self._create_points_material()
-        self._create_point_cloud(positions=params.positions.values,
-                                 scaling=scaling)
+        self._create_point_cloud(positions=params.positions.values)
 
         # Set camera controller target
         distance_from_center = 1.2
@@ -221,14 +196,13 @@ class PlotFigure3d:
         self.outline.visible = self.show_outline
         self.axticks.visible = self.show_outline
 
-    def _create_point_cloud(self, positions, scaling):
+    def _create_point_cloud(self, positions):
         """
         Make a PointsGeometry using pythreejs
         """
         rgba_shape = list(positions.shape)
         rgba_shape[1] += 1
-        pos_array = positions.astype('float32') * np.array(
-            list(scaling.values()), dtype=np.float32)
+        pos_array = positions.astype('float32')
         self.points_geometry = p3.BufferGeometry(
             attributes={
                 'position':
@@ -301,8 +275,7 @@ void main() {
                          position=position,
                          scale=[size, size, size])
 
-    def _generate_axis_ticks_and_labels(self, *, limits, scaling, box_size,
-                                        components):
+    def _generate_axis_ticks_and_labels(self, *, limits, box_size, components):
         """
         Create ticklabels on outline edges
         """
@@ -311,7 +284,7 @@ void main() {
         ticks_and_labels = p3.Group()
         iden = np.identity(3, dtype=np.float32)
         ticker_ = ticker.MaxNLocator(5)
-        lims = {x: limits[x] / scaling[x] for x in "xyz"}
+        lims = {x: limits[x] for x in "xyz"}
         offsets = {
             'x': [0, limits['y'][0], limits['z'][0]],
             'y': [limits['x'][0], 0, limits['z'][0]],
@@ -322,7 +295,7 @@ void main() {
             ticks = ticker_.tick_values(lims[x][0], lims[x][1])
             for tick in ticks:
                 if lims[x][0] <= tick <= lims[x][1]:
-                    tick_pos = iden[axis] * tick * scaling[x] + offsets[x]
+                    tick_pos = iden[axis] * tick + offsets[x]
                     ticks_and_labels.add(
                         self._make_axis_tick(string=value_to_string(
                             tick, precision=1),
