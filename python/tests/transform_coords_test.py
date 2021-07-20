@@ -261,12 +261,12 @@ def test_binned():
         assert sc.identical(da.coords['yy'], y * y)
 
     graph = {'xy': convert, 'x2': 'x'}
-    da = binned.transform_coords('xy', graph=graph)
+    da = binned.transform_coords(['xy', 'yy'], graph=graph)
     check(da, binned)
     # If input is sliced, transform_coords has to copy the buffer
-    da = binned['y', 0:1].transform_coords('xy', graph=graph)
+    da = binned['y', 0:1].transform_coords(['xy', 'yy'], graph=graph)
     check(da, binned['y', 0:1])
-    da = binned['y', 1:2].transform_coords('xy', graph=graph)
+    da = binned['y', 1:2].transform_coords(['xy', 'yy'], graph=graph)
     check(da, binned['y', 1:2])
 
 
@@ -323,3 +323,15 @@ def test_arg_vs_kwarg_kwonly():
     assert sc.identical(da.coords['b'], original.coords['a'])
     assert sc.identical(da.coords['c'], original.coords['a'])
     assert sc.identical(da.coords['d'], original.coords['a'])
+
+
+def test_unconsumed_outputs():
+    def func(a):
+        return {'b': a, 'c': a}
+
+    var = sc.arange(dim='a', start=0, stop=4)
+    original = sc.DataArray(data=var, coords={'a': var, 'aux': var})
+    da = original.transform_coords(['b'], graph={'b': func})
+    assert 'aux' in da.coords
+    assert 'b' in da.coords
+    assert 'c' not in da.coords

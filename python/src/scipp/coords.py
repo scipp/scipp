@@ -158,6 +158,10 @@ class CoordTransform:
                     del self.obj.attrs[name]
             elif not keep_intermediate:
                 del self.obj.attrs[name]
+        unconsumed = set(self.obj.coords) - set(self._original.meta) - set(
+            self._outputs)
+        for name in unconsumed:
+            del self.obj.coords[name]
         if rename_dims:
             blacklist = _get_splitting_nodes(self._rename)
             for key, val in self._rename.items():
