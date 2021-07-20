@@ -10,7 +10,7 @@ schedules:
     displayName: 'Nightly debug builds'
     branches:
       include:
-        - 'main'
+        - fix-windows-debug-build # HACK, delete this and include main only
     always: true
 
 
