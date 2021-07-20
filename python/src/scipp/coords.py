@@ -7,6 +7,37 @@ from typing import Union, List, Dict, Tuple, Callable
 from . import Variable, DataArray, Dataset, bins, VariableError
 
 
+class Graph:
+    def __init__(self, graph):
+        # Keys in graph may be tuple to define multiple outputs
+        self._graph = {}
+        for key in graph:
+            for k in [key] if isinstance(key, str) else key:
+                self._graph[k] = graph[key]
+
+    def __getitem__(self, name):
+        return self._graph[name]
+
+    def show(self):
+        from graphviz import Digraph
+        dot = Digraph(strict=True)
+        dot.attr('node', shape='box')
+        for output, producer in self._graph.items():
+            if isinstance(producer, str):  # rename
+                dot.edge(producer, output)
+            else:
+                name = f'{producer.__name__}(...)'
+                dot.node(name,
+                         shape='ellipse',
+                         style='filled',
+                         color='lightgrey')
+                dot.edge(name, output)
+                argnames = inspect.getfullargspec(producer).kwonlyargs
+                for arg in argnames:
+                    dot.edge(arg, name)
+        return dot
+
+
 def _consume_coord(obj, name):
     if name in obj.coords:
         obj.attrs[name] = obj.coords[name]
@@ -139,14 +170,9 @@ def _get_splitting_nodes(graph):
 
 def _transform_data_array(obj: DataArray, coords, graph: dict, *,
                           kwargs) -> DataArray:
-    # Keys in graph may be tuple to define multiple outputs
-    simple_graph = {}
-    for key in graph:
-        for k in [key] if isinstance(key, str) else key:
-            simple_graph[k] = graph[key]
     transform = CoordTransform(
         obj,
-        graph=simple_graph,
+        graph=Graph(graph),
         outputs=[coords] if isinstance(coords, str) else coords)
     return transform.finalize(**kwargs)
 
@@ -206,3 +232,7 @@ def transform_coords(x: Union[DataArray, Dataset],
                                      kwargs=kwargs)
     else:
         return _transform_dataset(x, coords=coords, graph=graph, kwargs=kwargs)
+
+
+def show_graph(graph):
+    return Graph(graph).show()

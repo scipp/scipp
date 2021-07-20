@@ -130,7 +130,7 @@ del _cls
 
 from . import _binding
 
-from .coords import transform_coords
+from .coords import transform_coords, show_graph
 
 _binding.bind_get()
 for _cls in (Variable, DataArray):
