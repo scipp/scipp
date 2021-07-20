@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+import pytest
 import numpy as np
 import scipp as sc
 
@@ -207,3 +208,18 @@ def test_binned():
     check(da, binned['y', 0:1])
     da = binned['y', 1:2].transform_coords('xy', graph=graph)
     check(da, binned['y', 1:2])
+
+
+def test_cycles():
+    var = sc.arange(dim='a', start=0, stop=4)
+    original = sc.DataArray(data=var, coords={'a': var, 'b': var})
+    with pytest.raises(ValueError):
+        original.transform_coords(['c'], graph={'c': 'c'})
+    with pytest.raises(ValueError):
+        original.transform_coords(['c'], graph={'c': 'd', 'd': 'c'})
+    with pytest.raises(ValueError):
+        original.transform_coords(['c'], graph={'c': 'd', 'd': 'e', 'e': 'c'})
+    with pytest.raises(ValueError):
+        original.transform_coords(['c'], graph={'c': bc})
+    with pytest.raises(ValueError):
+        original.transform_coords(['c'], graph={'c': 'd', 'd': bc})

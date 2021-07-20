@@ -28,6 +28,7 @@ class CoordTransform:
         self.obj = obj
         self._events_copied = False
         self._rename = {}
+        self._memo = []
 
     def _add_event_coord(self, key, coord):
         try:
@@ -81,6 +82,9 @@ class CoordTransform:
         if name in self.obj.meta:
             return _consume_coord(self.obj, name)
         else:
+            if name in self._memo:
+                raise ValueError("Cycle detected in conversion graph.")
+            self._memo.append(name)
             self._add_coord(name=name, graph=graph)
             return self._get_coord(name, graph)
 
