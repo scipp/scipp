@@ -31,13 +31,13 @@ schedules:
         - fix-windows-debug-build # HACK, delete this and include main only
     always: true
 
+variables:
+  scipp_debug_build: 1
 
 extends:
   template: stages.yml@SharedPipelines
   parameters:
     verbose: ${{ parameters.verbose }}
-    env:
-      SCIPP_DEBUG_BUILD: 1
     config:
       linux:
         py_versions: ['3.7']
