@@ -7,6 +7,15 @@ from typing import Union, List, Dict, Tuple, Callable
 from . import Variable, DataArray, Dataset, bins, VariableError
 
 
+def _argnames(func):
+    spec = inspect.getfullargspec(func)
+    if spec.varargs is not None or spec.varkw is not None:
+        raise ValueError(
+            "Function with variable arguments not allowed in conversion graph."
+        )
+    return spec.args + spec.kwonlyargs
+
+
 class Graph:
     def __init__(self, graph):
         # Keys in graph may be tuple to define multiple outputs
@@ -32,7 +41,7 @@ class Graph:
                          style='filled',
                          color='lightgrey')
                 dot.edge(name, output)
-                argnames = inspect.getfullargspec(producer).kwonlyargs
+                argnames = _argnames(producer)
                 for arg in argnames:
                     dot.edge(arg, name)
         return dot
@@ -99,7 +108,7 @@ class CoordTransform:
             dim = (self._graph[name], )
         else:
             func = self._graph[name]
-            argnames = inspect.getfullargspec(func).kwonlyargs
+            argnames = _argnames(func)
             args = {arg: self._get_coord(arg) for arg in argnames}
             out = func(**args)
             if self.obj.bins is not None:

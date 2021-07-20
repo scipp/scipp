@@ -283,3 +283,43 @@ def test_cycles():
         original.transform_coords(['c'], graph={'c': bc})
     with pytest.raises(ValueError):
         original.transform_coords(['c'], graph={'c': 'd', 'd': bc})
+
+
+def test_vararg_fail():
+    var = sc.arange(dim='a', start=0, stop=4)
+    original = sc.DataArray(data=var, coords={'a': var})
+
+    def func(*args):
+        pass
+
+    with pytest.raises(ValueError):
+        original.transform_coords(['b'], graph={'b': func})
+
+    def func(**kwargs):
+        pass
+
+    with pytest.raises(ValueError):
+        original.transform_coords(['b'], graph={'b': func})
+
+
+def test_arg_vs_kwarg_kwonly():
+    def arg(a):
+        return a
+
+    def kwarg(a=None):
+        return a
+
+    def kwonly(*, a):
+        return a
+
+    var = sc.arange(dim='a', start=0, stop=4)
+    original = sc.DataArray(data=var, coords={'a': var})
+    da = original.transform_coords(['b', 'c', 'd'],
+                                   graph={
+                                       'b': arg,
+                                       'c': kwarg,
+                                       'd': kwonly
+                                   })
+    assert sc.identical(da.coords['b'], original.coords['a'])
+    assert sc.identical(da.coords['c'], original.coords['a'])
+    assert sc.identical(da.coords['d'], original.coords['a'])
