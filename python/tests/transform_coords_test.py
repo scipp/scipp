@@ -30,7 +30,7 @@ def test_rename_2_steps():
     graph = {'y4': 'y', 'y3': 'y2', 'y2': 'y'}
     da = original.copy().transform_coords(['y3'],
                                           graph=graph,
-                                          remove_aliases=False)
+                                          include_aliases=True)
     assert da.dims == ['x', 'y3']
     original = original.rename_dims({'y': 'y3'})
     assert sc.identical(da.coords['y3'], original.coords['y'])
@@ -39,7 +39,7 @@ def test_rename_2_steps():
 
     da = original.copy().transform_coords(['y3'],
                                           graph=graph,
-                                          remove_aliases=True)
+                                          include_aliases=False)
     assert 'y3' in da.coords  # alias, but requested explicitly
     assert 'y2' not in da.attrs  # alias for y => removed
     assert 'y' in da.attrs
@@ -53,7 +53,7 @@ def test_rename_multi_output():
                                               'y3': 'y2',
                                               'y2': 'y'
                                           },
-                                          remove_aliases=False)
+                                          include_aliases=True)
     assert da.dims == ['x', 'y']  # y4 also depends on y so dim not renamed
     assert sc.identical(da.coords['y4'], original.coords['y'])
     assert sc.identical(da.coords['y3'], original.coords['y'])
@@ -144,6 +144,15 @@ def test_dim_rename_multi_level_merge_multi_output():
     # Similar to test_dim_rename_multi_level_merge above, but now an implicit
     # intermediate result prevents conversion of a to c
     assert da.dims == ['a', 'bc']
+
+
+def test_rename_dims_param():
+    var = sc.arange(dim='a', start=0, stop=4)
+    original = sc.DataArray(data=var, coords={'a': var})
+    da = original.transform_coords(['b'], graph={'b': 'a'})
+    assert da.dims == ['b']
+    da = original.transform_coords(['b'], graph={'b': 'a'}, rename_dims=False)
+    assert da.dims == ['a']
 
 
 def test_inplace():

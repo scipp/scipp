@@ -90,8 +90,8 @@ class CoordTransform:
             self._add_coord(name=name, graph=graph)
             return self._get_coord(name, graph)
 
-    def finalize(self, *, remove_aliases=True, rename_dims=True):
-        if remove_aliases:
+    def finalize(self, *, include_aliases=False, rename_dims=True):
+        if not include_aliases:
             for name in self._aliases:
                 if name in self.obj.attrs:
                     del self.obj.attrs[name]
@@ -115,7 +115,7 @@ def _get_splitting_nodes(graph):
 
 
 def _transform_data_array(obj: DataArray, coords, graph: dict, *,
-                          remove_aliases) -> DataArray:
+                          kwargs) -> DataArray:
     # Keys in graph may be tuple to define multiple outputs
     simple_graph = {}
     for key in graph:
@@ -129,11 +129,11 @@ def _transform_data_array(obj: DataArray, coords, graph: dict, *,
     transform = CoordTransform(obj)
     for name in [coords] if isinstance(coords, str) else coords:
         transform._add_coord(name=name, graph=simple_graph)
-    return transform.finalize(remove_aliases=remove_aliases)
+    return transform.finalize(**kwargs)
 
 
 def _transform_dataset(obj: Dataset, coords, graph: dict, *,
-                       remove_aliases) -> Dataset:
+                       kwargs) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord
     # transform is repeated for every item rather than sharing what is
     # possible. Implementing this would be tricky and likely error-prone,
@@ -142,10 +142,8 @@ def _transform_dataset(obj: Dataset, coords, graph: dict, *,
     # simple solution
     return Dataset(
         data={
-            name: _transform_data_array(obj[name],
-                                        coords=coords,
-                                        graph=graph,
-                                        remove_aliases=remove_aliases)
+            name: _transform_data_array(
+                obj[name], coords=coords, graph=graph, kwargs=kwargs)
             for name in obj
         })
 
@@ -154,23 +152,24 @@ def transform_coords(x: Union[DataArray, Dataset],
                      coords: Union[str, List[str]],
                      graph: CoordTransform.Graph,
                      *,
-                     remove_aliases=True) -> Union[DataArray, Dataset]:
+                     include_aliases=True,
+                     rename_dims=True) -> Union[DataArray, Dataset]:
     """Compute new coords based on transformation of input coords.
 
     :param x: Input object with coords.
     :param coords: Name or list of names of desired output coords.
     :param graph: A graph defining how new coords can be computed from existing
                   coords. This may be done in multiple steps.
+    :param include_aliases: If True, aliases for coords defined in graph are
+                            included in the output. Default is False.
     :return: New object with desired coords. Existing data and meta-data is
              shallow-copied.
     """
+    kwargs = {'include_aliases': include_aliases, 'rename_dims': rename_dims}
     if isinstance(x, DataArray):
         return _transform_data_array(x,
                                      coords=coords,
                                      graph=graph,
-                                     remove_aliases=remove_aliases)
+                                     kwargs=kwargs)
     else:
-        return _transform_dataset(x,
-                                  coords=coords,
-                                  graph=graph,
-                                  remove_aliases=remove_aliases)
+        return _transform_dataset(x, coords=coords, graph=graph, kwargs=kwargs)
