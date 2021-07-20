@@ -155,6 +155,36 @@ def test_rename_dims_param():
     assert da.dims == ['a']
 
 
+def test_keep_intermediate_keep_inputs():
+    a = sc.arange(dim='x', start=0, stop=4)
+    b = sc.arange(dim='x', start=0, stop=4)
+    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
+
+    def func(*, ab):
+        return 2 * ab
+
+    graph = {'c': func, 'ab': ab}
+    da = original.transform_coords(['c'], graph=graph)
+    assert 'ab' in da.attrs
+    assert 'a' in da.attrs
+    assert 'b' in da.attrs
+    da = original.transform_coords(['c'], graph=graph, keep_intermediate=False)
+    assert 'ab' not in da.meta
+    assert 'a' in da.attrs
+    assert 'b' in da.attrs
+    da = original.transform_coords(['c'], graph=graph, keep_inputs=False)
+    assert 'ab' in da.meta
+    assert 'a' not in da.attrs
+    assert 'b' not in da.attrs
+    da = original.transform_coords(['c'],
+                                   graph=graph,
+                                   keep_intermediate=False,
+                                   keep_inputs=False)
+    assert 'ab' not in da.meta
+    assert 'a' not in da.attrs
+    assert 'b' not in da.attrs
+
+
 def test_inplace():
     a = sc.arange(dim='x', start=0, stop=4)
     b = sc.arange(dim='x', start=0, stop=4)

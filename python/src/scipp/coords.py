@@ -24,12 +24,20 @@ def _produce_coord(obj, name):
 class CoordTransform:
     Graph = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 
-    def __init__(self, obj):
-        self.obj = obj
+    def __init__(self, obj, *, graph, outputs):
+        self.obj = obj.copy(deep=False)
+        # TODO We manually shallow-copy the buffer, until we have a better
+        # solution for how shallow copies also shallow-copy event buffers.
+        if self.obj.bins is not None:
+            self.obj.data = bins(**self.obj.bins.constituents)
+        self._original = obj
         self._events_copied = False
         self._rename = {}
-        self._memo = []
-        self._aliases = []
+        self._memo = []  # names of product for cycle detection
+        self._aliases = []  # names that alias other names
+        self._consumed = []  # names that have been consumed
+        self._outputs = outputs  # names of outputs
+        self._graph = graph
 
     def _add_event_coord(self, key, coord):
         try:
@@ -45,23 +53,23 @@ class CoordTransform:
             if coord.bins is not None:
                 self._add_event_coord(key, coord)
 
-    def _add_coord(self, *, name, graph):
+    def _add_coord(self, *, name):
         if name in self.obj.meta:
             return _produce_coord(self.obj, name)
-        if isinstance(graph[name], str):
+        if isinstance(self._graph[name], str):
             self._aliases.append(name)
-            out = self._get_coord(graph[name], graph)
+            out = self._get_coord(self._graph[name])
             if self.obj.bins is not None:
                 # Calls to _get_coord for dense coord handling take care of
                 # recursion and add also event coords, here and below we thus
                 # simply consume the event coord.
-                if graph[name] in self.obj.meta:
-                    out_bins = _consume_coord(self.obj.bins, graph[name])
-            dim = (graph[name], )
+                if self._graph[name] in self.obj.meta:
+                    out_bins = _consume_coord(self.obj.bins, self._graph[name])
+            dim = (self._graph[name], )
         else:
-            func = graph[name]
+            func = self._graph[name]
             argnames = inspect.getfullargspec(func).kwonlyargs
-            args = {arg: self._get_coord(arg, graph) for arg in argnames}
+            args = {arg: self._get_coord(arg) for arg in argnames}
             out = func(**args)
             if self.obj.bins is not None:
                 args.update({
@@ -80,21 +88,33 @@ class CoordTransform:
                 out_bins = {name: out_bins}
             self._add_event_coords(out_bins)
 
-    def _get_coord(self, name, graph):
+    def _get_coord(self, name):
         if name in self.obj.meta:
+            self._consumed.append(name)
             return _consume_coord(self.obj, name)
         else:
             if name in self._memo:
                 raise ValueError("Cycle detected in conversion graph.")
             self._memo.append(name)
-            self._add_coord(name=name, graph=graph)
-            return self._get_coord(name, graph)
+            self._add_coord(name=name)
+            return self._get_coord(name)
 
-    def finalize(self, *, include_aliases=False, rename_dims=True):
+    def finalize(self, *, include_aliases, rename_dims, keep_intermediate,
+                 keep_inputs):
+        for name in self._outputs:
+            self._add_coord(name=name)
         if not include_aliases:
             for name in self._aliases:
                 if name in self.obj.attrs:
                     del self.obj.attrs[name]
+        for name in self._consumed:
+            if name not in self.obj.attrs:
+                continue
+            if name in self._original.meta:
+                if not keep_inputs:
+                    del self.obj.attrs[name]
+            elif not keep_intermediate:
+                del self.obj.attrs[name]
         if rename_dims:
             blacklist = _get_splitting_nodes(self._rename)
             for key, val in self._rename.items():
@@ -121,14 +141,10 @@ def _transform_data_array(obj: DataArray, coords, graph: dict, *,
     for key in graph:
         for k in [key] if isinstance(key, str) else key:
             simple_graph[k] = graph[key]
-    obj = obj.copy(deep=False)
-    # TODO We manually shallow-copy the buffer, until we have a better
-    # solution for how shallow copies also shallow-copy event buffers.
-    if obj.bins is not None:
-        obj.data = bins(**obj.bins.constituents)
-    transform = CoordTransform(obj)
-    for name in [coords] if isinstance(coords, str) else coords:
-        transform._add_coord(name=name, graph=simple_graph)
+    transform = CoordTransform(
+        obj,
+        graph=simple_graph,
+        outputs=[coords] if isinstance(coords, str) else coords)
     return transform.finalize(**kwargs)
 
 
@@ -152,20 +168,34 @@ def transform_coords(x: Union[DataArray, Dataset],
                      coords: Union[str, List[str]],
                      graph: CoordTransform.Graph,
                      *,
+                     rename_dims=True,
                      include_aliases=True,
-                     rename_dims=True) -> Union[DataArray, Dataset]:
+                     keep_intermediate=True,
+                     keep_inputs=True) -> Union[DataArray, Dataset]:
     """Compute new coords based on transformation of input coords.
 
     :param x: Input object with coords.
     :param coords: Name or list of names of desired output coords.
     :param graph: A graph defining how new coords can be computed from existing
                   coords. This may be done in multiple steps.
+    :param rename_dims: Rename dimensions if products of dimension coord are
+                        fully consumed and consumer consumes exectly one
+                        dimension coordinate. Default is True.
     :param include_aliases: If True, aliases for coords defined in graph are
                             included in the output. Default is False.
+    :param keep_intermediate: Keep attributes created as intermediate results.
+                              Default is True.
+    :param keep_inputs: Keep consumed input coordinates or attributes.
+                        Default is True.
     :return: New object with desired coords. Existing data and meta-data is
              shallow-copied.
     """
-    kwargs = {'include_aliases': include_aliases, 'rename_dims': rename_dims}
+    kwargs = {
+        'rename_dims': rename_dims,
+        'include_aliases': include_aliases,
+        'keep_intermediate': keep_intermediate,
+        'keep_inputs': keep_inputs
+    }
     if isinstance(x, DataArray):
         return _transform_data_array(x,
                                      coords=coords,
