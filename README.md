@@ -7,7 +7,7 @@
 
 | Downstream Project  | Status |
 | ------------------- | ------ |
-| scippneutron        | [![Build Status](https://dev.azure.com/scipp/scippneutron/_apis/build/status/Main?branchName=main)](https://dev.azure.com/scipp/scippneutron/_build/latest?definitionId=44&branchName=main)       |
+| scippneutron (next) | [![Build Status](https://dev.azure.com/scipp/scippneutron/_apis/build/status/Next?repoName=scipp%2Fscippneutron&branchName=next)](https://dev.azure.com/scipp/scippneutron/_build/latest?definitionId=56&repoName=scipp%2Fscippneutron&branchName=next)       |
 
 # Scipp
 
@@ -17,3 +17,12 @@ See [here](https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquesti
 This is also the place to ask new questions that have not been answered yet, by [opening](https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=) a new **Question** issue.
 
 If you are interested in developing Scipp, please see the [developer getting started guide](https://scipp.github.io/developer/getting-started.html).
+
+## Contributing Organizations
+
+The following organizations have made major contributions to the development of scipp, and other developments in the [scipp ecosystem](../../../):
+
+* [European Spallation Source ERIC](https://europeanspallationsource.se/), Sweden
+* [Science and Technology Funding Council](https://stfc.ukri.org/councils/stfc), UK
+
+See individual [release notes](https://scipp.github.io/about/release-notes.html) for the individual contributors to each release 

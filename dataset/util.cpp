@@ -4,7 +4,6 @@
 /// @author Matthew Andrew
 #include "scipp/dataset/util.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_concept.h"
@@ -12,8 +11,9 @@
 using namespace scipp::variable;
 namespace scipp {
 
+namespace {
 template <class T>
-scipp::index size_of_bucket_impl(const Variable &view, const SizeofTag tag) {
+scipp::index size_of_bins(const Variable &view, const SizeofTag tag) {
   const auto &[indices, dim, buffer] = view.constituents<T>();
   double scale = 1;
   if (tag == SizeofTag::ViewOnly) {
@@ -24,16 +24,17 @@ scipp::index size_of_bucket_impl(const Variable &view, const SizeofTag tag) {
   }
   return size_of(indices, tag) + size_of(buffer, tag) * scale;
 }
+} // namespace
 
 scipp::index size_of(const Variable &view, const SizeofTag tag) {
   if (view.dtype() == dtype<bucket<Variable>>) {
-    return size_of_bucket_impl<bucket<Variable>>(view, tag);
+    return size_of_bins<Variable>(view, tag);
   }
   if (view.dtype() == dtype<bucket<DataArray>>) {
-    return size_of_bucket_impl<bucket<DataArray>>(view, tag);
+    return size_of_bins<DataArray>(view, tag);
   }
   if (view.dtype() == dtype<bucket<Dataset>>) {
-    return size_of_bucket_impl<bucket<Dataset>>(view, tag);
+    return size_of_bins<Dataset>(view, tag);
   }
 
   const auto value_size = view.data().dtype_size();
@@ -74,10 +75,4 @@ scipp::index size_of(const Dataset &dataset, const SizeofTag tag) {
   }
   return size;
 }
-
-DataArray astype(const DataArray &var, const DType type) {
-  return DataArray(astype(var.data(), type), var.coords(), var.masks(),
-                   var.attrs(), var.name());
-}
-
 } // namespace scipp

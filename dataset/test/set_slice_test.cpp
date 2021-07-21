@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
+#include <numeric>
 
+#include "scipp/dataset/astype.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
-#include "scipp/dataset/util.h"
 #include "test_macros.h"
-#include <numeric>
 
 using namespace scipp;
 using namespace scipp::dataset;

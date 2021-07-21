@@ -6,6 +6,7 @@ set(TARGET_NAME "scipp-dataset-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
+  astype_test.cpp
   attributes_test.cpp
   binned_arithmetic_test.cpp
   binned_creation_test.cpp
@@ -16,6 +17,7 @@ add_executable(
   coords_view_test.cpp
   copy_test.cpp
   counts_test.cpp
+  data_array_arithmetic_test.cpp
   data_array_comparison_test.cpp
   data_array_test.cpp
   dataset_arithmetic_test.cpp
@@ -27,10 +29,10 @@ add_executable(
   data_view_test.cpp
   event_data_operations_consistency_test.cpp
   except_test.cpp
+  generated_test.cpp
   groupby_test.cpp
   histogram_test.cpp
-  masks_view_test.cpp
-  math_test.cpp
+  masks_test.cpp
   mean_test.cpp
   merge_test.cpp
   rebin_test.cpp
@@ -42,17 +44,12 @@ add_executable(
   slice_test.cpp
   sort_test.cpp
   string_test.cpp
+  test_data_arrays.cpp
   sum_test.cpp
+  to_unit_test.cpp
 )
-include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(
-  ${TARGET_NAME}
-  LINK_PRIVATE
-  scipp-dataset
-  gtest_main
-  scipp_test_helpers
-  ${GTEST_LIBRARIES}
-  ${GMOCK_LIBRARIES}
+  ${TARGET_NAME} LINK_PRIVATE scipp-dataset scipp_test_helpers GTest::GTest
 )
 
 if(WIN32)

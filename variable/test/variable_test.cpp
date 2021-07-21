@@ -8,9 +8,7 @@
 #include "test_macros.h"
 
 #include "scipp/core/except.h"
-#include "scipp/variable/bins.h"
-#include "scipp/variable/operations.h"
-#include "scipp/variable/shape.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
@@ -43,11 +41,56 @@ TEST(Variable, construct_fail) {
   ASSERT_ANY_THROW(makeVariable<double>(Dims{Dim::X}, Shape{3}, Values(2)));
 }
 
+TEST(Variable, copy) {
+  const auto var =
+      makeVariable<double>(Dimensions{Dim::X, 3}, Values{}, Variances{});
+  const Variable view(var);
+  EXPECT_EQ(var.unit(), view.unit());
+  EXPECT_EQ(var.dims(), view.dims());
+  EXPECT_EQ(var.values<double>().data(), view.values<double>().data());
+  EXPECT_EQ(var.variances<double>().data(), view.variances<double>().data());
+}
+
 TEST(Variable, move) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{2});
   Variable moved(std::move(var));
   EXPECT_FALSE(var.is_valid());
   EXPECT_NE(moved, var);
+}
+
+TEST(Variable, is_readonly) {
+  auto var = makeVariable<double>(Values{1});
+  EXPECT_FALSE(var.is_readonly());
+  EXPECT_FALSE(Variable(var).is_readonly()); // propagated on copy
+  auto const_var = var.as_const();
+  EXPECT_TRUE(const_var.is_readonly());
+  EXPECT_TRUE(Variable(const_var).is_readonly()); // propagated on copy
+}
+
+TEST(Variable, is_valid) {
+  auto a = Variable();
+  EXPECT_FALSE(a.is_valid());
+  a = makeVariable<double>(Values{1});
+  EXPECT_TRUE(a.is_valid());
+}
+
+TEST(Variable, is_slice) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{1, 2, 3}, Shape{3});
+  EXPECT_FALSE(var.is_slice());
+  EXPECT_FALSE(var.slice({Dim::X, 0, 3}).is_slice());
+  EXPECT_TRUE(var.slice({Dim::X, 1, 3}).is_slice());
+  EXPECT_TRUE(var.slice({Dim::X, 0, 1}).is_slice());
+}
+
+TEST(Variable, is_same) {
+  auto a = makeVariable<double>(Dims{Dim::X}, Values{1, 2}, Shape{2});
+  EXPECT_TRUE(a.is_same(Variable(a)));
+  EXPECT_TRUE(a.is_same(a.as_const()));
+  EXPECT_FALSE(a.is_same(a.slice({Dim::X, 0, 1})));
+
+  auto b = makeVariable<double>(Dims{Dim::Y, Dim::X}, Values{1, 2, 3, 4},
+                                Shape{2, 2});
+  EXPECT_FALSE(b.is_same(b.transpose({Dim::X, Dim::Y})));
 }
 
 TEST(Variable, makeVariable_custom_type) {
@@ -101,165 +144,6 @@ TEST(Variable, span_references_Variable) {
   EXPECT_EQ(observer[0], 1.0);
 }
 
-class Variable_comparison_operators : public ::testing::Test {
-private:
-  template <class A, class B>
-  void expect_eq_impl(const A &a, const B &b) const {
-    EXPECT_TRUE(a == b);
-    EXPECT_TRUE(b == a);
-    EXPECT_FALSE(a != b);
-    EXPECT_FALSE(b != a);
-  }
-  template <class A, class B>
-  void expect_ne_impl(const A &a, const B &b) const {
-    EXPECT_TRUE(a != b);
-    EXPECT_TRUE(b != a);
-    EXPECT_FALSE(a == b);
-    EXPECT_FALSE(b == a);
-  }
-
-protected:
-  void expect_eq(const Variable &a, const Variable &b) const {
-    expect_eq_impl(a, Variable(b));
-    expect_eq_impl(Variable(a), b);
-    expect_eq_impl(Variable(a), Variable(b));
-    expect_eq_impl(a, copy(b));
-    expect_eq_impl(copy(a), b);
-    expect_eq_impl(copy(a), copy(b));
-  }
-  void expect_ne(const Variable &a, const Variable &b) const {
-    expect_ne_impl(a, Variable(b));
-    expect_ne_impl(Variable(a), b);
-    expect_ne_impl(Variable(a), Variable(b));
-    expect_ne_impl(a, copy(b));
-    expect_ne_impl(copy(a), b);
-    expect_ne_impl(copy(a), copy(b));
-  }
-};
-
-TEST_F(Variable_comparison_operators, values_0d) {
-  const auto base = makeVariable<double>(Values{1.1});
-  expect_eq(base, base);
-  expect_eq(base, makeVariable<double>(Values{1.1}));
-  expect_ne(base, makeVariable<double>(Values{1.2}));
-}
-
-TEST_F(Variable_comparison_operators, values_1d) {
-  const auto base =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
-  expect_eq(base, base);
-  expect_eq(base,
-            makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2}));
-  expect_ne(base,
-            makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.3}));
-}
-
-TEST_F(Variable_comparison_operators, values_2d) {
-  const auto base =
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1}, Values{1.1, 2.2});
-  expect_eq(base, base);
-  expect_eq(base, makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1},
-                                       Values{1.1, 2.2}));
-  expect_ne(base, makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1},
-                                       Values{1.1, 2.3}));
-}
-
-TEST_F(Variable_comparison_operators, variances_0d) {
-  const auto base = makeVariable<double>(Values{1.1}, Variances{0.1});
-  expect_eq(base, base);
-  expect_eq(base, makeVariable<double>(Values{1.1}, Variances{0.1}));
-  expect_ne(base, makeVariable<double>(Values{1.1}));
-  expect_ne(base, makeVariable<double>(Values{1.1}, Variances{0.2}));
-}
-
-TEST_F(Variable_comparison_operators, variances_1d) {
-  const auto base = makeVariable<double>(Dims{Dim::X}, Shape{2},
-                                         Values{1.1, 2.2}, Variances{0.1, 0.2});
-  expect_eq(base, base);
-  expect_eq(base, makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2},
-                                       Variances{0.1, 0.2}));
-  expect_ne(base,
-            makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2}));
-  expect_ne(base, makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2},
-                                       Variances{0.1, 0.3}));
-}
-
-TEST_F(Variable_comparison_operators, variances_2d) {
-  const auto base = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1},
-                                         Values{1.1, 2.2}, Variances{0.1, 0.2});
-  expect_eq(base, base);
-  expect_eq(base, makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1},
-                                       Values{1.1, 2.2}, Variances{0.1, 0.2}));
-  expect_ne(base, makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1},
-                                       Values{1.1, 2.2}));
-  expect_ne(base, makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1},
-                                       Values{1.1, 2.2}, Variances{0.1, 0.3}));
-}
-
-TEST_F(Variable_comparison_operators, dimension_mismatch) {
-  expect_ne(makeVariable<double>(Values{1.1}),
-            makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.1}));
-  expect_ne(makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.1}),
-            makeVariable<double>(Dims{Dim::Y}, Shape{1}, Values{1.1}));
-}
-
-TEST_F(Variable_comparison_operators, dimension_transpose) {
-  expect_ne(
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{1, 1}, Values{1.1}),
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1, 1}, Values{1.1}));
-}
-
-TEST_F(Variable_comparison_operators, dimension_length) {
-  expect_ne(makeVariable<double>(Dims{Dim::X}, Shape{1}),
-            makeVariable<double>(Dims{Dim::X}, Shape{2}));
-}
-
-TEST_F(Variable_comparison_operators, unit) {
-  const auto m =
-      makeVariable<double>(Dims{Dim::X}, Shape{1}, units::m, Values{1.1});
-  const auto s =
-      makeVariable<double>(Dims{Dim::X}, Shape{1}, units::s, Values{1.1});
-  expect_eq(m, m);
-  expect_ne(m, s);
-}
-
-TEST_F(Variable_comparison_operators, dtype) {
-  const auto base = makeVariable<double>(Values{1.0});
-  expect_ne(base, makeVariable<float>(Values{1.0}));
-}
-
-TEST_F(Variable_comparison_operators, dense_events) {
-  Dimensions dims{Dim::Y, 2};
-  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
-      dims, Values{std::pair{0, 2}, std::pair{2, 4}});
-  auto buf = makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
-  auto events = make_bins(indices, Dim::X, buf);
-  auto dense = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, 0l});
-  expect_ne(dense, events);
-}
-
-TEST_F(Variable_comparison_operators, events) {
-  Dimensions dims{Dim::Y, 2};
-  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
-      dims, Values{std::pair{0, 2}, std::pair{2, 4}});
-  Variable indices2 = makeVariable<std::pair<scipp::index, scipp::index>>(
-      dims, Values{std::pair{0, 3}, std::pair{3, 4}});
-  auto buf = makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
-  auto buf_with_vars = makeVariable<double>(Dims{Dim::X}, Shape{4},
-                                            Values{1, 2, 3, 4}, Variances{});
-  auto a = make_bins(indices, Dim::X, buf);
-  auto b = make_bins(indices, Dim::X, buf);
-  auto c = make_bins(indices, Dim::X, buf * (2.0 * units::one));
-  auto d = make_bins(indices2, Dim::X, buf);
-  auto a_with_vars = make_bins(indices, Dim::X, buf_with_vars);
-
-  expect_eq(a, a);
-  expect_eq(a, b);
-  expect_ne(a, c);
-  expect_ne(a, d);
-  expect_ne(a, a_with_vars);
-}
-
 TEST(VariableTest, copy_and_move) {
   const auto reference =
       makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 1}, units::m,
@@ -276,6 +160,11 @@ TEST(VariableTest, copy_and_move) {
 
   const auto moved(std::move(var));
   EXPECT_EQ(moved, reference);
+}
+
+TEST(Variable, full_slice) {
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2});
+  EXPECT_TRUE(var.is_same(var.slice({})));
 }
 
 TEST(Variable, copy_slice) {
@@ -506,21 +395,6 @@ TEST_F(VariableTest_3d, slice_range) {
                                  Variances(vars_z13.begin(), vars_z13.end())));
 }
 
-TEST(VariableView, full_const_view) {
-  const auto var =
-      makeVariable<double>(Dimensions{Dim::X, 3}, Values{}, Variances{});
-  const Variable view(var);
-  EXPECT_EQ(&var.values<double>()[0], &view.values<double>()[0]);
-  EXPECT_EQ(&var.variances<double>()[0], &view.variances<double>()[0]);
-}
-
-TEST(VariableView, full_mutable_view) {
-  auto var = makeVariable<double>(Dimensions{Dim::X, 3}, Values{}, Variances{});
-  auto view(var);
-  EXPECT_EQ(&var.values<double>()[0], &view.values<double>()[0]);
-  EXPECT_EQ(&var.variances<double>()[0], &view.variances<double>()[0]);
-}
-
 TEST(VariableView, strides) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
   EXPECT_TRUE(equals(var.slice({Dim::X, 0}).strides(), {3}));
@@ -731,7 +605,9 @@ TEST(VariableTest, rename) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                   Values{1, 2, 3, 4, 5, 6},
                                   Variances{7, 8, 9, 10, 11, 12});
-  const Variable expected(reshape(var, {{Dim::X, 2}, {Dim::Z, 3}}));
+  const auto expected = makeVariable<double>(Dims{Dim::X, Dim::Z}, Shape{2, 3},
+                                             Values{1, 2, 3, 4, 5, 6},
+                                             Variances{7, 8, 9, 10, 11, 12});
 
   Variable view(var);
   view.rename(Dim::Y, Dim::Z);
@@ -896,73 +772,20 @@ TYPED_TEST(AsTypeTest, variable_astype) {
   ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
 }
 
-TEST(TransposeTest, make_transposed_2d) {
-  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
-                                  Values{1, 2, 3, 4, 5, 6},
-                                  Variances{11, 12, 13, 14, 15, 16});
-
-  const auto constVar = copy(var);
-
-  auto ref = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                  Values{1, 3, 5, 2, 4, 6},
-                                  Variances{11, 13, 15, 12, 14, 16});
-  EXPECT_EQ(transpose(var, {Dim::Y, Dim::X}), ref);
-  EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::X}), ref);
-
-  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
-                       except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y}), except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
-                       except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(var, {Dim::Z}), except::DimensionError);
-}
-
-TEST(TransposeTest, make_transposed_multiple_d) {
-  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z}, Shape{3, 2, 1},
-                                  Values{1, 2, 3, 4, 5, 6},
-                                  Variances{11, 12, 13, 14, 15, 16});
-
-  const auto constVar = copy(var);
-
-  auto ref = makeVariable<double>(Dims{Dim::Y, Dim::Z, Dim::X}, Shape{2, 1, 3},
-                                  Values{1, 3, 5, 2, 4, 6},
-                                  Variances{11, 13, 15, 12, 14, 16});
-  EXPECT_EQ(transpose(var, {Dim::Y, Dim::Z, Dim::X}), ref);
-  EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::Z, Dim::X}), ref);
-
-  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
-                       except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y}), except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(var, {Dim::Y, Dim::Z}),
-                       except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(var, {Dim::Z}), except::DimensionError);
-}
-
-TEST(TransposeTest, reverse) {
-  Variable var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
-                                      Values{1, 2, 3, 4, 5, 6},
-                                      Variances{11, 12, 13, 14, 15, 16});
-  const Variable constVar = makeVariable<double>(
-      Dims{Dim::X, Dim::Y}, Shape{3, 2}, Values{1, 2, 3, 4, 5, 6},
-      Variances{11, 12, 13, 14, 15, 16});
-  auto ref = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                  Values{1, 3, 5, 2, 4, 6},
-                                  Variances{11, 13, 15, 12, 14, 16});
-  auto tvar = transpose(var);
-  auto tconstVar = transpose(constVar);
-  EXPECT_EQ(tvar, ref);
-  EXPECT_EQ(tconstVar, ref);
-  auto v = transpose(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
-                                          Values{1, 2, 3, 4, 5, 6},
-                                          Variances{11, 12, 13, 14, 15, 16}));
-  EXPECT_EQ(v, ref);
-
-  EXPECT_EQ(transpose(transpose(var)), var);
-  EXPECT_EQ(transpose(transpose(constVar)), var);
-
-  Variable dummy = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 1},
-                                        Values{0, 0}, Variances{1, 1});
-  EXPECT_NO_THROW(copy(dummy, tvar.slice({Dim::X, 0, 1})));
+TEST(AsTypeTest, buffer_handling) {
+  const auto var = makeVariable<float>(Values{1});
+  const auto force_copy = astype(var, dtype<float>);
+  EXPECT_FALSE(force_copy.is_same(var));
+  EXPECT_EQ(force_copy, var);
+  const auto force_copy_explicit =
+      astype(var, dtype<float>, CopyPolicy::Always);
+  EXPECT_FALSE(force_copy_explicit.is_same(var));
+  EXPECT_EQ(force_copy_explicit, var);
+  const auto no_copy = astype(var, dtype<float>, CopyPolicy::TryAvoid);
+  EXPECT_TRUE(no_copy.is_same(var));
+  EXPECT_EQ(no_copy, var);
+  const auto required_copy = astype(var, dtype<double>, CopyPolicy::TryAvoid);
+  EXPECT_FALSE(required_copy.is_same(var));
 }
 
 TEST(VariableTest, array_params) {
@@ -994,4 +817,85 @@ TEST(Variable, nested_Variable_copy) {
   EXPECT_EQ(inner, one);
   EXPECT_EQ(outer.value<Variable>(), one);
   EXPECT_EQ(copied.value<Variable>(), two);
+}
+
+TEST(Variable, self_nesting_scalar_copy) {
+  Variable inner = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 3});
+
+  // 1 level of nesting
+  Variable v1 = makeVariable<Variable>(Shape{}, Values{copy(inner)});
+  ASSERT_NO_THROW_DISCARD(v1 = v1);
+  ASSERT_EQ(v1.value<Variable>(), inner);
+  ASSERT_THROW_DISCARD(v1.value<Variable>() = v1, std::invalid_argument);
+  ASSERT_EQ(v1.value<Variable>(), inner);
+
+  // 2 levels of nesting
+  Variable v2 = makeVariable<Variable>(Shape{}, Values{v1});
+  ASSERT_THROW_DISCARD(v1.value<Variable>() = v2, std::invalid_argument);
+
+  // Works, replace content of v1 => not self nested.
+  ASSERT_NO_THROW_DISCARD(v1 = v2);
+  ASSERT_EQ(v1.value<Variable>().value<Variable>(), inner);
+}
+
+TEST(Variable, self_nesting_scalar_move) {
+  Variable inner = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 3});
+
+  // 1 level of nesting
+  Variable v1 = makeVariable<Variable>(Shape{}, Values{copy(inner)});
+  ASSERT_NO_THROW_DISCARD(v1 = std::move(v1));
+  ASSERT_EQ(v1.value<Variable>(), inner);
+  v1 = makeVariable<Variable>(Shape{}, Values{inner});
+  ASSERT_THROW_DISCARD(v1.value<Variable>() = std::move(v1),
+                       std::invalid_argument);
+  ASSERT_EQ(v1.value<Variable>(), inner);
+  v1 = makeVariable<Variable>(Shape{}, Values{inner});
+
+  // 2 levels of nesting
+  Variable v2 = makeVariable<Variable>(Shape{}, Values{v1});
+  ASSERT_THROW_DISCARD(v1.value<Variable>() = std::move(v2),
+                       std::invalid_argument);
+  v2 = makeVariable<Variable>(Shape{}, Values{v1});
+
+  // Works, replace content of v1 => not self nested.
+  ASSERT_NO_THROW_DISCARD(v1 = std::move(v2));
+  ASSERT_EQ(v1.value<Variable>().value<Variable>(), inner);
+}
+
+TEST(Variable, self_nesting_array) {
+  Variable inner1 = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 3});
+  Variable inner2 =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{4, 5, 6});
+
+  // 1 level of nesting
+  Variable v1 = makeVariable<Variable>(Dims{Dim::Z}, Shape{2},
+                                       Values{copy(inner1), copy(inner2)});
+  ASSERT_NO_THROW_DISCARD(v1 = v1);
+  ASSERT_EQ(v1.values<Variable>().front(), inner1);
+  ASSERT_THROW_DISCARD(v1.values<Variable>().front() = v1,
+                       std::invalid_argument);
+  ASSERT_EQ(v1.values<Variable>().front(), inner1);
+  for (auto &v : v1.values<Variable>()) {
+    ASSERT_THROW_DISCARD(v = v1, std::invalid_argument);
+  }
+  ASSERT_EQ(v1.values<Variable>()[0], inner1);
+  ASSERT_EQ(v1.values<Variable>()[1], inner2);
+
+  // 2 levels of nesting
+  Variable v2 =
+      makeVariable<Variable>(Dims{Dim::Row}, Shape{2}, Values{v1, inner2});
+  ASSERT_THROW_DISCARD(v1.values<Variable>()[0] = v2, std::invalid_argument);
+  ASSERT_THROW_DISCARD(v1.values<Variable>()[1] = v2, std::invalid_argument);
+  ASSERT_THROW_DISCARD(v2.values<Variable>()[0].values<Variable>()[0] = v2,
+                       std::invalid_argument);
+  ASSERT_THROW_DISCARD(v1.values<Variable>()[0] = v2.values<Variable>()[0],
+                       std::invalid_argument);
+  ASSERT_NO_THROW_DISCARD(v1.values<Variable>()[0] = v2.values<Variable>()[1]);
+  ASSERT_EQ(v1.values<Variable>()[0], inner2);
+
+  // Works, replace content of v1 => not self nested.
+  ASSERT_NO_THROW_DISCARD(v1 = v2);
+  ASSERT_EQ(v1.values<Variable>()[0].values<Variable>()[0], inner2);
+  ASSERT_EQ(v1.values<Variable>()[0].values<Variable>()[1], inner2);
+  ASSERT_EQ(v1.values<Variable>()[1], inner2);
 }

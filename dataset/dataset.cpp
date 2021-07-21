@@ -3,26 +3,51 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/dataset.h"
-#include "scipp/common/index.h"
 #include "scipp/core/except.h"
+#include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
-
-#include "dataset_operations_common.h"
 
 namespace scipp::dataset {
 
+namespace {
+template <class T> void expectWritable(const T &dict) {
+  if (dict.is_readonly())
+    throw except::DatasetError(
+        "Read-only flag is set, cannot insert new or erase existing items.");
+}
+} // namespace
+
+Dataset::Dataset(const Dataset &other)
+    : m_coords(other.m_coords), m_data(other.m_data), m_readonly(false) {}
+
 Dataset::Dataset(const DataArray &data) { setData(data.name(), data); }
+
+Dataset &Dataset::operator=(const Dataset &other) {
+  return *this = Dataset(other);
+}
+
+Dataset &Dataset::operator=(Dataset &&other) {
+  if (this == &other) {
+    return *this;
+  }
+  check_nested_in_assign(*this, other);
+  m_coords = std::move(other.m_coords);
+  m_data = std::move(other.m_data);
+  m_readonly = other.m_readonly;
+  return *this;
+}
 
 /// Removes all data items from the Dataset.
 ///
 /// Coordinates are not modified.
 void Dataset::clear() {
+  expectWritable(*this);
   m_data.clear();
   rebuildDims();
 }
 
 void Dataset::setCoords(Coords other) {
-  scipp::expect::contains(other.sizes(), m_coords.sizes());
+  scipp::expect::includes(other.sizes(), m_coords.sizes());
   m_coords = std::move(other);
 }
 /// Return a const view to all coordinates of the dataset.
@@ -44,6 +69,7 @@ bool Dataset::contains(const std::string &name) const noexcept {
 ///
 /// Coordinates are not modified.
 void Dataset::erase(const std::string &name) {
+  expectWritable(*this);
   scipp::expect::contains(*this, name);
   m_data.erase(std::string(name));
   rebuildDims();
@@ -73,21 +99,22 @@ DataArray Dataset::operator[](const std::string &name) const {
 /// extent of a replaced item is not excluded from the check, so even if that
 /// replaced item is the only one in the dataset with that dimension it cannot
 /// be "resized" in this way.
-void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
-  if (coordDim != Dim::Invalid && is_edges(m_coords.sizes(), dims, coordDim))
+void Dataset::setSizes(const Sizes &sizes, const Dim coordDim) {
+  if (coordDim != Dim::Invalid && is_edges(m_coords.sizes(), sizes, coordDim))
     return;
-  m_coords.setSizes(merge(m_coords.sizes(), Sizes(dims)));
+  m_coords.setSizes(merge(m_coords.sizes(), sizes));
 }
 
 void Dataset::rebuildDims() {
   m_coords.rebuildSizes();
   for (const auto &d : *this)
-    setDims(d.dims());
+    setSizes(d.dims());
 }
 
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
-  setDims(coord.dims(), dim_of_coord(coord, dim));
+  expectWritable(*this);
+  setSizes(coord.dims(), dim_of_coord(coord, dim));
   m_coords.set(dim, std::move(coord));
 }
 
@@ -98,7 +125,8 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 /// AttrPolicy::Keep is specified.
 void Dataset::setData(const std::string &name, Variable data,
                       const AttrPolicy attrPolicy) {
-  setDims(data.dims());
+  expectWritable(*this);
+  setSizes(data.dims());
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
     m_data[name] = DataArray(data, {}, m_data[name].masks().items(),
@@ -114,9 +142,16 @@ void Dataset::setData(const std::string &name, Variable data,
 /// Coordinates, masks, and attributes of the data array are added to the
 /// dataset. Throws if there are existing but mismatching coords, masks, or
 /// attributes. Throws if the provided data brings the dataset into an
-/// inconsistent state (mismatching dtype, unit, or dimensions).
+/// inconsistent state (mismatching dimensions).
 void Dataset::setData(const std::string &name, const DataArray &data) {
-  setDims(data.dims());
+  // Return early on self assign to avoid exceptions from Python inplace ops
+  if (const auto it = find(name); it != end()) {
+    if (it->data().is_same(data.data()) && it->masks() == data.masks() &&
+        it->attrs() == data.attrs() && it->coords() == data.coords())
+      return;
+  }
+  expectWritable(*this);
+  setSizes(data.dims());
   for (auto &&[dim, coord] : data.coords()) {
     if (const auto it = m_coords.find(dim); it != m_coords.end())
       core::expect::equals(coord, it->second);
@@ -139,19 +174,17 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
 /// Return slice of the dataset along given dimension with given extents.
 Dataset Dataset::slice(const Slice s) const {
   Dataset out;
-  out.m_coords = m_coords.slice(s);
   out.m_data = slice_map(m_coords.sizes(), m_data, s);
-  Attrs out_attrs(out.m_coords.sizes(), {});
-  for (auto it = m_coords.begin(); it != m_coords.end(); ++it)
-    if (unaligned_by_dim_slice(*it, s))
-      out_attrs.set(it->first, out.m_coords.extract(it->first));
+  auto [coords, attrs] = m_coords.slice_coords(s);
+  out.m_coords = std::move(coords);
   for (auto &item : out.m_data) {
     Attrs item_attrs(out.m_coords.sizes(), {});
-    for (const auto &[dim, coord] : out_attrs)
+    for (const auto &[dim, coord] : attrs)
       if (m_coords.item_applies_to(dim, m_data.at(item.first).dims()))
         item_attrs.set(dim, coord.as_const());
     item.second.attrs() = item.second.attrs().merge_from(item_attrs);
   }
+  out.m_readonly = true;
   return out;
 }
 
@@ -189,7 +222,8 @@ void Dataset::rename(const Dim from, const Dim to) {
     throw except::DimensionError("Duplicate dimension.");
   m_coords.rename(from, to);
   for (auto &item : m_data)
-    item.second.rename(from, to);
+    if (item.second.dims().contains(from))
+      item.second.rename(from, to);
 }
 
 /// Return true if the datasets have identical content.
@@ -212,6 +246,8 @@ bool Dataset::operator!=(const Dataset &other) const {
 const Sizes &Dataset::sizes() const { return m_coords.sizes(); }
 const Sizes &Dataset::dims() const { return sizes(); }
 
+bool Dataset::is_readonly() const noexcept { return m_readonly; }
+
 typename Masks::holder_type union_or(const Masks &currentMasks,
                                      const Masks &otherMasks) {
   typename Masks::holder_type out;
@@ -221,7 +257,7 @@ typename Masks::holder_type union_or(const Masks &currentMasks,
     const auto it = currentMasks.find(key);
     if (it == currentMasks.end())
       out.emplace(key, copy(item));
-    else if (out[key].dims().contains(item.dims()))
+    else if (out[key].dims().includes(item.dims()))
       out[key] |= item;
     else
       out[key] = out[key] | item;

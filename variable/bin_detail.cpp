@@ -6,6 +6,7 @@
 #include "scipp/core/element/util.h" // fill_zeros
 #include "scipp/core/subbin_sizes.h"
 
+#include "scipp/variable/accumulate.h"
 #include "scipp/variable/bin_detail.h"
 #include "scipp/variable/bin_util.h"
 #include "scipp/variable/subspan_view.h"
@@ -25,7 +26,7 @@ Variable begin_edge(const Variable &coord, const Variable &edges) {
     return indices;
   auto bin = copy(indices.slice({dim, 0}));
   accumulate_in_place(bin, indices, coord, subspan_view(edges, dim),
-                      core::element::begin_edge);
+                      core::element::begin_edge, "scipp.bin.begin_edge");
   return indices;
 }
 
@@ -41,7 +42,7 @@ Variable end_edge(const Variable &coord, const Variable &edges) {
     return indices;
   auto bin = copy(indices.slice({dim, 0}));
   accumulate_in_place(bin, indices, coord, subspan_view(edges, dim),
-                      core::element::end_edge);
+                      core::element::end_edge, "scipp.bin.end_edge");
   return indices;
 }
 
@@ -49,13 +50,16 @@ Variable cumsum_exclusive_subbin_sizes(const Variable &var) {
   return transform<core::SubbinSizes>(
       var,
       overloaded{[](const units::Unit &u) { return u; },
-                 [](const auto &sizes) { return sizes.cumsum_exclusive(); }});
+                 [](const auto &sizes) { return sizes.cumsum_exclusive(); }},
+      "scipp.bin.cumsum_exclusive");
 }
 
 Variable sum_subbin_sizes(const Variable &var) {
   return transform<core::SubbinSizes>(
-      var, overloaded{[](const units::Unit &u) { return u; },
-                      [](const auto &sizes) { return sizes.sum(); }});
+      var,
+      overloaded{[](const units::Unit &u) { return u; },
+                 [](const auto &sizes) { return sizes.sum(); }},
+      "scipp.bin.sum_subbin_sizes");
 }
 
 std::vector<scipp::index> flatten_subbin_sizes(const Variable &var,
@@ -76,12 +80,14 @@ Variable subbin_sizes_cumsum_exclusive(const Variable &var, const Dim dim) {
   fill_zeros(cumulative);
   auto out = copy(var);
   accumulate_in_place(cumulative, out,
-                      core::element::subbin_sizes_exclusive_scan);
+                      core::element::subbin_sizes_exclusive_scan,
+                      "scipp.bin.subbin_sizes_cumsum_exclusive");
   return out;
 }
 
 void subbin_sizes_add_intersection(Variable &a, const Variable &b) {
-  transform_in_place(a, b, core::element::subbin_sizes_add_intersection);
+  transform_in_place(a, b, core::element::subbin_sizes_add_intersection,
+                     "scipp.bin.subbin_sizes_add_intersection");
 }
 
 } // namespace scipp::variable::bin_detail

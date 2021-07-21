@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #include <numeric>
 
+#include "scipp/common/numeric.h"
+
 #include "scipp/core/bucket.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/parallel.h"
@@ -14,10 +16,8 @@
 
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/choose.h"
-#include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
-#include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
 
 #include "../variable/operations_common.h"
@@ -75,14 +75,15 @@ T GroupBy<T>::copy(const scipp::index group,
 /// - Delete anything (but data) that depends on the reduction dimension.
 /// - Default-init data.
 template <class T>
-T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
+T GroupBy<T>::makeReductionOutput(const Dim reductionDim,
+                                  const FillValue fill) const {
   T out;
   if (is_bins(m_data)) {
     const auto out_sizes =
         GroupBy(bucket_sizes(m_data), {key(), groups()}).sum(reductionDim);
     out = resize(m_data, reductionDim, out_sizes);
   } else {
-    out = resize(m_data, reductionDim, size());
+    out = resize(m_data, reductionDim, size(), fill);
     out.rename(reductionDim, dim());
   }
   out.coords().set(dim(), key());
@@ -92,15 +93,22 @@ T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
 namespace {
 template <class Op, class Groups>
 void reduce_(Op op, const Dim reductionDim, const Variable &out_data,
-             const DataArray &data, const Dim dim, const Groups &groups) {
+             const DataArray &data, const Dim dim, const Groups &groups,
+             const FillValue fill) {
+  const auto mask_replacement =
+      special_like(Variable(data.data(), Dimensions{}), fill);
   auto mask = irreducible_mask(data.masks(), reductionDim);
-  if (mask.is_valid())
-    mask = ~mask; // `op` multiplies mask into data to zero masked elements
   const auto process = [&](const auto &range) {
     // Apply to each group, storing result in output slice
     for (scipp::index group = range.begin(); group != range.end(); ++group) {
       auto out_slice = out_data.slice({dim, group});
-      op(out_slice, data, groups[group], reductionDim, mask);
+      for (const auto &slice : groups[group]) {
+        const auto data_slice = data.data().slice(slice);
+        if (mask.is_valid())
+          op(out_slice, where(mask.slice(slice), mask_replacement, data_slice));
+        else
+          op(out_slice, data_slice);
+      }
     }
   };
   core::parallel::parallel_for(core::parallel::blocked_range(0, groups.size()),
@@ -110,55 +118,18 @@ void reduce_(Op op, const Dim reductionDim, const Variable &out_data,
 
 template <class T>
 template <class Op>
-T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
-  auto out = makeReductionOutput(reductionDim);
+T GroupBy<T>::reduce(Op op, const Dim reductionDim,
+                     const FillValue fill) const {
+  auto out = makeReductionOutput(reductionDim, fill);
   if constexpr (std::is_same_v<T, Dataset>) {
     for (const auto &item : m_data)
-      reduce_(op, reductionDim, out[item.name()].data(), item, dim(), groups());
+      reduce_(op, reductionDim, out[item.name()].data(), item, dim(), groups(),
+              fill);
   } else {
-    reduce_(op, reductionDim, out.data(), m_data, dim(), groups());
+    reduce_(op, reductionDim, out.data(), m_data, dim(), groups(), fill);
   }
   return out;
 }
-
-namespace groupby_detail {
-
-static constexpr auto sum = [](Variable &out, const auto &data_container,
-                               const GroupByGrouping::group &group, const Dim,
-                               const Variable &mask) {
-  for (const auto &slice : group) {
-    const auto data_slice = data_container.data().slice(slice);
-    if (mask.is_valid())
-      sum_impl(out, data_slice * mask.slice(slice));
-    else
-      sum_impl(out, data_slice);
-  }
-};
-
-template <void (*Func)(Variable &, const Variable &)>
-// The msvc compiler was failing to pass the templated function correctly
-// requiring the introduction of a wrapping struct to aid compiler
-// resolution.
-struct wrap {
-  static constexpr auto reduce_idempotent =
-      [](auto &&out, const auto &data_container,
-         const GroupByGrouping::group &group, const Dim reductionDim,
-         const Variable &mask) {
-        bool first = true;
-        for (const auto &slice : group) {
-          const auto data_slice = data_container.data().slice(slice);
-          if (mask.is_valid())
-            throw std::runtime_error(
-                "This operation does not support masks yet.");
-          if (first) {
-            copy(data_slice.slice({reductionDim, 0}), out);
-            first = false;
-          }
-          Func(out, data_slice);
-        }
-      };
-};
-} // namespace groupby_detail
 
 /// Reduce each group by concatenating elements and return combined data.
 ///
@@ -179,31 +150,27 @@ template <class T> T GroupBy<T>::concatenate(const Dim reductionDim) const {
 
 /// Reduce each group using `sum` and return combined data.
 template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
-  return reduce(groupby_detail::sum, reductionDim);
+  return reduce(sum_impl, reductionDim, FillValue::ZeroNotBool);
 }
 
 /// Reduce each group using `all` and return combined data.
 template <class T> T GroupBy<T>::all(const Dim reductionDim) const {
-  return reduce(groupby_detail::wrap<all_impl>::reduce_idempotent,
-                reductionDim);
+  return reduce(all_impl, reductionDim, FillValue::True);
 }
 
 /// Reduce each group using `any` and return combined data.
 template <class T> T GroupBy<T>::any(const Dim reductionDim) const {
-  return reduce(groupby_detail::wrap<any_impl>::reduce_idempotent,
-                reductionDim);
+  return reduce(any_impl, reductionDim, FillValue::False);
 }
 
 /// Reduce each group using `max` and return combined data.
 template <class T> T GroupBy<T>::max(const Dim reductionDim) const {
-  return reduce(groupby_detail::wrap<max_impl>::reduce_idempotent,
-                reductionDim);
+  return reduce(max_impl, reductionDim, FillValue::Lowest);
 }
 
 /// Reduce each group using `min` and return combined data.
 template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
-  return reduce(groupby_detail::wrap<min_impl>::reduce_idempotent,
-                reductionDim);
+  return reduce(min_impl, reductionDim, FillValue::Max);
 }
 
 /// Combine groups without changes, effectively sorting data.
@@ -244,14 +211,14 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   // 3. sum/N -> mean
   if constexpr (std::is_same_v<T, Dataset>) {
     for (auto &&item : out) {
-      if (isInt(item.data().dtype()))
+      if (is_int(item.data().dtype()))
         out.setData(item.name(), item.data() * get_scale(m_data[item.name()]),
                     AttrPolicy::Keep);
       else
         item *= get_scale(m_data[item.name()]);
     }
   } else {
-    if (isInt(out.data().dtype()))
+    if (is_int(out.data().dtype()))
       out.setData(out.data() * get_scale(m_data));
     else
       out *= get_scale(m_data);
@@ -260,13 +227,25 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   return out;
 }
 
+namespace {
+template <class T> struct NanSensitiveLess {
+  // Compare two values such that x < NaN for all x != NaN.
+  bool operator()(const T &a, const T &b) const {
+    if (scipp::numeric::isnan(b)) {
+      return true;
+    }
+    return a < b;
+  }
+};
+} // namespace
+
 template <class T> struct MakeGroups {
   static auto apply(const Variable &key, const Dim targetDim) {
     expect::isKey(key);
     const auto &values = key.values<T>();
 
     const auto dim = key.dims().inner();
-    std::map<T, GroupByGrouping::group> indices;
+    std::map<T, GroupByGrouping::group, NanSensitiveLess<T>> indices;
     const auto end = values.end();
     scipp::index i = 0;
     for (auto it = values.begin(); it != end;) {
@@ -274,7 +253,8 @@ template <class T> struct MakeGroups {
       // handling in follow-up "apply" steps.
       const auto begin = i;
       const auto &value = *it;
-      while (it != end && *it == value) {
+      while (it != end && (*it == value || (scipp::numeric::isnan(value) &&
+                                            scipp::numeric::isnan(*it)))) {
         ++it;
         ++i;
       }
@@ -370,7 +350,7 @@ GroupBy<DataArray> groupby(const DataArray &array, const Dim dim,
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArray &array, const Variable &key,
                            const Variable &bins) {
-  if (!array.dims().contains(key.dims()))
+  if (!array.dims().includes(key.dims()))
     throw except::DimensionError("Size of Group-by key is incorrect.");
 
   return call_groupby(array, key, bins);
@@ -404,9 +384,9 @@ GroupBy<Dataset> groupby(const Dataset &dataset, const Dim dim,
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<Dataset> groupby(const Dataset &dataset, const Variable &key,
                          const Variable &bins) {
-  for (const auto &n : dataset.sizes()) {
-    Dimensions dims(n.first, n.second);
-    if (dims.contains(key.dims()))
+  for (const auto &dim : dataset.sizes()) {
+    Dimensions dims(dim, dataset.sizes()[dim]);
+    if (dims.includes(key.dims()))
       // Found compatible Dimension.
       return call_groupby(dataset, key, bins);
   }

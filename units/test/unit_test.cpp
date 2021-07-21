@@ -39,7 +39,6 @@ TEST(UnitTest, overflows) {
   EXPECT_THROW(m64 * m64, except::UnitError);
   EXPECT_THROW(units::one / inv_m128, except::UnitError);
   EXPECT_THROW(inv_m128 / units::m, except::UnitError);
-  EXPECT_THROW(inv_m128 % units::m, except::UnitError);
   EXPECT_THROW(pow(units::m, 128), except::UnitError);
 }
 
@@ -108,6 +107,16 @@ TEST(UnitTest, divide) {
 TEST(UnitTest, divide_counts) {
   Unit counts{units::counts};
   EXPECT_EQ(counts / counts, units::dimensionless);
+}
+
+TEST(UnitTest, modulo) {
+  Unit one{units::dimensionless};
+  Unit l{units::m};
+  Unit t{units::s};
+  EXPECT_EQ(l % one, l);
+  EXPECT_EQ(t % one, t);
+  EXPECT_EQ(l % l, l);
+  EXPECT_EQ(l % t, l);
 }
 
 TEST(UnitTest, pow) {

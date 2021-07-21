@@ -3,7 +3,8 @@
 # @author Neil Vaytet
 
 from .panel import PlotPanel
-from .._utils import make_random_color
+from ..utils import make_random_color
+from .view1d import _make_label
 import ipywidgets as ipw
 
 
@@ -55,7 +56,7 @@ class PlotPanel1d(PlotPanel):
         }
         self.update_widgets()
 
-    def update_axes(self, axparams=None):
+    def update_axes(self):
         """
         Clear all widgets when figure axes are changed.
         """
@@ -63,12 +64,12 @@ class PlotPanel1d(PlotPanel):
         self.make_keep_button()
         self.update_widgets()
 
-    def update_data(self, info):
+    def update_data(self, array):
         """
         Save label (slice position and thickness) of current line so that it
         can be labeled accordingly when the "keep" button is pressed.
         """
-        self.slice_label = info["slice_label"]
+        self.slice_label = _make_label(array)
 
     def update_widgets(self):
         """
@@ -93,7 +94,7 @@ class PlotPanel1d(PlotPanel):
         Send a "keep line" event to the `PlotController`.
         """
         name = self.keep_buttons[owner.id]["dropdown"].value
-        self.interface["keep_line"](
+        self.controller.keep_line(
             name=name,
             color=self.keep_buttons[owner.id]["colorpicker"].value,
             line_id=owner.id)
@@ -106,7 +107,7 @@ class PlotPanel1d(PlotPanel):
         """
         Send a "remove line" event to the `PlotController`.
         """
-        self.interface["remove_line"](line_id=owner.id)
+        self.controller.remove_line(line_id=owner.id)
         del self.keep_buttons[owner.id]
         self.update_widgets()
 
@@ -114,4 +115,4 @@ class PlotPanel1d(PlotPanel):
         """
         Send a "update line color" event to the `PlotController`.
         """
-        self.interface["update_line_color"](change["owner"].id, change["new"])
+        self.controller.update_line_color(change["owner"].id, change["new"])

@@ -9,9 +9,9 @@ channels:
 
 dependencies:
   # Build
-  - boost-cpp=1.75 # see https://github.com/scipp/scipp/issues/1888
   - ninja
   - tbb-devel
+  - conan
 
   # Run
   - appdirs
@@ -28,6 +28,8 @@ dependencies:
   # Test
   - h5py
   - pytest
+  - xarray  # For testing xarray <-> scipp conversion
+  - pandas  # For testing pandas <-> scipp conversion
 
   # Formatting & static analysis
   - pre-commit
@@ -35,9 +37,8 @@ dependencies:
   - flake8
 
   # Docs
-  - ipython=7.2.0
   - pandoc
-  - sphinx=3.4.3 # see https://github.com/sphinx-doc/sphinx/issues/8885
+  - sphinx
   - sphinx_rtd_theme
   - nbsphinx
   - docutils=0.16 # see https://github.com/spatialaudio/nbsphinx/issues/549

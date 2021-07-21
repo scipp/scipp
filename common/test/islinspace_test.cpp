@@ -63,7 +63,7 @@ TEST(IsLinspaceTest, std_iota) {
 TEST(IsLinspaceTest, generate_addition) {
   std::vector<double> range;
   double current = 345.4564675;
-  std::generate_n(std::back_inserter(range), 1e5, [&current]() {
+  std::generate_n(std::back_inserter(range), 2ul << 16ul, [&current]() {
     const double step = 0.0034674;
     current += step;
     return current;

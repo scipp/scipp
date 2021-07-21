@@ -11,9 +11,7 @@
 #include "scipp-core_export.h"
 #include "scipp/common/except.h"
 #include "scipp/common/index.h"
-#include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/sizes.h"
 #include "scipp/core/string.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
@@ -21,6 +19,7 @@
 namespace scipp::core {
 
 class Dimensions;
+class Sizes;
 class Slice;
 
 } // namespace scipp::core
@@ -37,7 +36,8 @@ struct SCIPP_CORE_EXPORT TypeError : public Error<core::DType> {
 
 template <>
 [[noreturn]] SCIPP_CORE_EXPORT void
-throw_mismatch_error(const core::DType &expected, const core::DType &actual);
+throw_mismatch_error(const core::DType &expected, const core::DType &actual,
+                     const std::string &optional_message);
 
 struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
   explicit DimensionError(const std::string &msg);
@@ -46,11 +46,14 @@ struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
 
 template <>
 [[noreturn]] SCIPP_CORE_EXPORT void
-throw_mismatch_error(const core::Dimensions &expected,
-                     const core::Dimensions &actual);
+throw_mismatch_error(const core::Sizes &expected, const core::Sizes &actual,
+                     const std::string &optional_message);
 
+template <>
 [[noreturn]] SCIPP_CORE_EXPORT void
-throw_dimension_not_found_error(const core::Dimensions &expected, Dim actual);
+throw_mismatch_error(const core::Dimensions &expected,
+                     const core::Dimensions &actual,
+                     const std::string &optional_message);
 
 [[noreturn]] SCIPP_CORE_EXPORT void
 throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
@@ -79,6 +82,10 @@ struct SCIPP_CORE_EXPORT BinEdgeError : public std::runtime_error {
 struct SCIPP_CORE_EXPORT NotFoundError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
+
+[[noreturn]] SCIPP_CORE_EXPORT void
+throw_cannot_have_variances(const DType type);
+
 } // namespace scipp::except
 
 namespace scipp::expect {
@@ -88,12 +95,19 @@ template <class A, class B> void contains(const A &a, const B &b) {
     throw except::NotFoundError("Expected " + to_string(a) + " to contain " +
                                 to_string(b) + ".");
 }
+template <class A, class B> void includes(const A &a, const B &b) {
+  using core::to_string;
+  if (!a.includes(b))
+    throw except::NotFoundError("Expected " + to_string(a) + " to include " +
+                                to_string(b) + ".");
+}
 } // namespace scipp::expect
 
 namespace scipp::core::expect {
-template <class A, class B> void equals(const A &a, const B &b) {
+template <class A, class B>
+void equals(const A &a, const B &b, std::string optional_message = "") {
   if (a != b)
-    scipp::except::throw_mismatch_error(a, b);
+    scipp::except::throw_mismatch_error(a, b, optional_message);
 }
 
 template <class A, class B>
@@ -113,8 +127,10 @@ void sizeMatches(const T &range, const Ts &... other) {
 
 inline auto to_string(const std::string &s) { return s; }
 
-template <class T> void unit(const T &object, const units::Unit &unit) {
-  expect::equals(object.unit(), unit);
+template <class T>
+void unit(const T &object, const units::Unit &unit,
+          std::string optional_message = "") {
+  expect::equals(object.unit(), unit, optional_message);
 }
 
 template <class T>
@@ -129,11 +145,14 @@ template <class T> void countsOrCountsDensity(const T &object) {
 }
 
 // TODO maybe just provide a `slice` function/method and check via that?
-void SCIPP_CORE_EXPORT validSlice(const Dimensions &dims, const Slice &slice);
 void SCIPP_CORE_EXPORT validSlice(const Sizes &sizes, const Slice &slice);
 
 void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);
+template <class T> void canHaveVariances() {
+  if (!core::canHaveVariances<T>())
+    except::throw_cannot_have_variances(dtype<T>);
+}
 
 } // namespace scipp::core::expect

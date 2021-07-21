@@ -50,7 +50,7 @@ Plotting
 How can I set axis limits when creating a plot?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This can be achieved indirectly with scipp's `generic slicing functionality <../user-guide/slicing.html>`_ and `label-based indexing <../user-guide/slicing.html#Label-based-indexing>`_ in particular.
+This can be achieved indirectly with scipp's `generic slicing functionality <../user-guide/slicing.rst>`_ and `label-based indexing <../user-guide/slicing.ipynb#Label-based-indexing>`_ in particular.
 Example:
 
 .. code-block:: python
@@ -76,4 +76,4 @@ On Windows, after installing ``scipp`` using ``conda``, attempting to ``import s
 
 This issue is Windows specific and fixing it requires downloading and installing a recent version of the Microsoft Visual C++ Redistributable for
 Visual Studio 2019.
-It can be downloaded from `Microsoft's official site <https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads>`_.
+It can be downloaded from `Microsoft's official site <https://support.microsoft.com/en-us/topic/the-latest-supported-visual-c-downloads-2647da03-1eea-4433-9aff-95f26a218cc0>`_.

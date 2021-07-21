@@ -8,7 +8,6 @@ from functools import partial, reduce
 from html import escape
 
 from .._scipp import core as sc
-from .._utils import is_data_array, is_dataset
 from .resources import load_icons
 
 BIN_EDGE_LABEL = "[bin-edge]"
@@ -27,7 +26,7 @@ def _format_array(data, size, ellipsis_after, do_ellide=True):
         if hasattr(elem, "__round__"):
             if not hasattr(data, "dtype") or data.dtype != bool:
                 elem = round(elem, 2)
-        if is_data_array(elem):
+        if isinstance(elem, sc.DataArray):
             dims = ', '.join(f'{dim}: {s}' for dim, s in elem.sizes.items())
             coords = ', '.join(elem.coords)
             if elem.unit == sc.units.one:
@@ -47,15 +46,12 @@ def _make_row(data_html, variances_html=None):
 
 def _format_non_events(var, has_variances):
     size = reduce(operator.mul, var.shape, 1)
+    if len(var.dims):
+        var = sc.flatten(var, var.dims, 'ignored')
     data = retrieve(var, variances=has_variances)
     # avoid unintentional indexing into value of 0-D data
     if len(var.shape) == 0:
-        data = [
-            data,
-        ]
-    # ravel avoids displaying square brackets in the output
-    if hasattr(data, 'ravel'):
-        data = data.ravel()
+        data = [data]
     s = _format_array(data, size, ellipsis_after=2)
     if has_variances:
         s = f'{VARIANCE_PREFIX}{s}'
@@ -76,7 +72,7 @@ def _get_events(var, variances, ellipsis_after, summary=False):
     dims = var.bins.constituents['data'].dims
     bin_dim = dict(zip(dims, range(len(dims))))[dim]
     s = []
-    if hasattr(var.values, '__len__'):
+    if not isinstance(var.values, sc.DataArray):
         size = len(var.values)
         i = 0
 
@@ -117,7 +113,10 @@ def _ordered_dict(data):
 
 def inline_variable_repr(var, has_variances=False):
     if var.bins is None:
-        return _format_non_events(var, has_variances)
+        if isinstance(var, sc.DataArray):
+            return _format_non_events(var.data, has_variances)
+        else:
+            return _format_non_events(var, has_variances)
     else:
         return _format_events(var, has_variances)
 
@@ -342,7 +341,7 @@ def summarize_variable(name,
 
 
 def summarize_data(dataset):
-    has_attrs = is_dataset(dataset)
+    has_attrs = isinstance(dataset, sc.Dataset)
     vars_li = "".join("<li class='sc-var-item'>{}</li>".format(
         summarize_variable(name,
                            var,
@@ -381,7 +380,7 @@ def _mapping_section(mapping,
                      details_func=None,
                      max_items_collapse=None,
                      enabled=True):
-    n_items = 1 if is_data_array(mapping) else len(mapping)
+    n_items = 1 if isinstance(mapping, sc.DataArray) else len(mapping)
     collapsed = n_items >= max_items_collapse
 
     return collapsible_section(
@@ -478,9 +477,10 @@ def dataset_repr(ds):
     if len(ds.coords) > 0:
         sections.append(coord_section(ds.coords, ds))
 
-    sections.append(data_section(ds if is_dataset(ds) else {'': ds}))
+    sections.append(
+        data_section(ds if isinstance(ds, sc.Dataset) else {'': ds}))
 
-    if not is_dataset(ds):
+    if not isinstance(ds, sc.Dataset):
         if len(ds.masks) > 0:
             sections.append(mask_section(ds.masks, ds))
         if len(ds.attrs) > 0:

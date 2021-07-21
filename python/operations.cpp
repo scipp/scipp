@@ -64,28 +64,20 @@ void bind_issorted(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
 }
 
-template <typename T> void bind_sort_variable(py::module &m) {
-  m.def(
-      "sort",
-      [](const T &x, const Dim dim, const std::string &order) {
-        return sort(x, dim, get_sort_order(order));
-      },
-      py::arg("x"), py::arg("key"), py::arg("order") = "ascending",
-      py::call_guard<py::gil_scoped_release>());
-}
-
 void bind_experimental(py::module &m) {
   m.def("experimental_transform",
         [](py::object const &kernel, const Variable &a) {
           auto fptr_address = kernel.attr("address").cast<intptr_t>();
           auto fptr = reinterpret_cast<double (*)(double)>(fptr_address);
           return variable::transform<double>(
-              a, overloaded{core::transform_flags::expect_no_variance_arg<0>,
-                            [&kernel](const units::Unit &u) {
-                              py::gil_scoped_acquire acquire;
-                              return py::cast<units::Unit>(kernel(u));
-                            },
-                            [fptr](const auto &x) { return fptr(x); }});
+              a,
+              overloaded{core::transform_flags::expect_no_variance_arg<0>,
+                         [&kernel](const units::Unit &u) {
+                           py::gil_scoped_acquire acquire;
+                           return py::cast<units::Unit>(kernel(u));
+                         },
+                         [fptr](const auto &x) { return fptr(x); }},
+              "custom");
         });
 
   m.def("experimental_transform", [](py::object const &kernel,
@@ -94,14 +86,14 @@ void bind_experimental(py::module &m) {
     auto fptr = reinterpret_cast<double (*)(double, double)>(fptr_address);
     return variable::transform<double>(
         a, b,
-        overloaded{
-            core::transform_flags::expect_no_variance_arg<0>,
-            core::transform_flags::expect_no_variance_arg<1>,
-            [&kernel](const units::Unit &x, const units::Unit &y) {
-              py::gil_scoped_acquire acquire;
-              return py::cast<units::Unit>(kernel(x, y));
-            },
-            [fptr](const auto &x, const auto &y) { return fptr(x, y); }});
+        overloaded{core::transform_flags::expect_no_variance_arg<0>,
+                   core::transform_flags::expect_no_variance_arg<1>,
+                   [&kernel](const units::Unit &x, const units::Unit &y) {
+                     py::gil_scoped_acquire acquire;
+                     return py::cast<units::Unit>(kernel(x, y));
+                   },
+                   [fptr](const auto &x, const auto &y) { return fptr(x, y); }},
+        "custom");
   });
 
   m.def("experimental_transform", [](py::object const &kernel,
@@ -120,7 +112,8 @@ void bind_experimental(py::module &m) {
                      py::gil_scoped_acquire acquire;
                      return py::cast<units::Unit>(kernel(x, y, z));
                    },
-                   [fptr](const auto &... args) { return fptr(args...); }});
+                   [fptr](const auto &... args) { return fptr(args...); }},
+        "custom");
   });
 }
 
@@ -130,12 +123,18 @@ void init_operations(py::module &m) {
   bind_sort<Variable>(m);
   bind_sort<DataArray>(m);
   bind_sort<Dataset>(m);
+  bind_sort_dim<Variable>(m);
   bind_sort_dim<DataArray>(m);
   bind_sort_dim<Dataset>(m);
-
-  bind_sort_variable<Variable>(m);
   bind_issorted(m);
 
+  m.def(
+      "get_slice_params",
+      [](const Variable &var, const Variable &coord, const Variable &value) {
+        const auto [dim, index] = get_slice_params(var.dims(), coord, value);
+        return std::tuple{dim.name(), index};
+      },
+      py::call_guard<py::gil_scoped_release>());
   m.def("get_slice_params", [](const Variable &var, const Variable &coord,
                                const Variable &begin, const Variable &end) {
     const auto [dim, start, stop] =
@@ -143,6 +142,9 @@ void init_operations(py::module &m) {
     // Do NOT release GIL since using py::slice
     return std::tuple{dim.name(), py::slice(start, stop, 1)};
   });
+
+  m.def("where", &variable::where, py::arg("condition"), py::arg("x"),
+        py::arg("y"), py::call_guard<py::gil_scoped_release>());
 
   bind_experimental(m);
 }

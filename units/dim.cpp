@@ -15,10 +15,17 @@ namespace scipp::units {
 namespace {
 const auto &builtin_ids() {
   static std::unordered_map<std::string, Dim::Id> ids{
+      {"<invalid>", Dim::Invalid},
+      {"<none>", Dim::None},
+      {"<internal_structure_component>", Dim::InternalStructureComponent},
+      {"<internal_structure_row>", Dim::InternalStructureRow},
+      {"<internal_structure_column>", Dim::InternalStructureColumn},
+      {"<internal_histogram>", Dim::InternalHistogram},
+      {"<internal_sort>", Dim::InternalSort},
+      {"<internal_accumulate>", Dim::InternalAccumulate},
       {"energy", Dim::Energy},
       {"event", Dim::Event},
       {"group", Dim::Group},
-      {"<invalid>", Dim::Invalid},
       {"position", Dim::Position},
       {"row", Dim::Row},
       {"temperature", Dim::Temperature},

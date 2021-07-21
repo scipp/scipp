@@ -14,6 +14,14 @@ namespace scipp::units {
 class SCIPP_UNITS_EXPORT Dim {
 public:
   enum class Id : uint16_t {
+    Invalid,
+    None,
+    InternalStructureComponent,
+    InternalStructureRow,
+    InternalStructureColumn,
+    InternalHistogram,
+    InternalSort,
+    InternalAccumulate,
     Energy,
     Event,
     Group,
@@ -24,14 +32,22 @@ public:
     Wavelength,
     X,
     Y,
-    Z,
-    Invalid
+    Z
   };
+
+  constexpr static auto Invalid = Id::Invalid;
+  constexpr static auto None = Id::None;
+  constexpr static auto InternalStructureComponent =
+      Id::InternalStructureComponent;
+  constexpr static auto InternalStructureRow = Id::InternalStructureRow;
+  constexpr static auto InternalStructureColumn = Id::InternalStructureColumn;
+  constexpr static auto InternalHistogram = Id::InternalHistogram;
+  constexpr static auto InternalSort = Id::InternalSort;
+  constexpr static auto InternalAccumulate = Id::InternalAccumulate;
 
   constexpr static auto Energy = Id::Energy;
   constexpr static auto Event = Id::Event;
   constexpr static auto Group = Id::Group;
-  constexpr static auto Invalid = Id::Invalid;
   constexpr static auto Position = Id::Position;
   constexpr static auto Row = Id::Row;
   constexpr static auto Temperature = Id::Temperature;

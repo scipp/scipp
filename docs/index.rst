@@ -52,13 +52,17 @@ Currently the only example for this is `scippneutron <https://scipp.github.io/sc
 News
 ----
 
+- [|SCIPP_RELEASE_MONTH|] scipp-|SCIPP_VERSION| `has been released <about/release-notes.rst>`_.
+  Check out the `What's new <about/whats-new.rst>`_ notebook for an overview of recent highlights and major changes.
 - Scipp changed from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
 - Looking for ``scipp.neutron``?
   This submodule has been moved into its own package, `scippneutron <https://scipp.github.io/scippneutron>`_.
+- [June 2021] `scipp-0.7 <https://scipp.github.io/about/release-notes.html#v0-7-0-june-2021>`_ has been released.
+  The `What's new 0.7 <https://scipp.github.io/release/0.7.0/about/whats-new/whats-new-0.7.0.html>`_ notebook provides an overview of the highlights and major changes.
 - [March 2021] `scipp-0.6 <https://scipp.github.io/about/release-notes.html#v0-6-0-march-2021>`_ has been released.
-  The `What's new <https://scipp.github.io/release/0.6.0/about/whats-new/whats-new-0.6.0.html>`_ notebook provides an overview of the highlights and major changes.
+  The `What's new 0.6 <https://scipp.github.io/release/0.6.0/about/whats-new/whats-new-0.6.0.html>`_ notebook provides an overview of the highlights and major changes.
 - [Janunary 2021] `scipp-0.5 <https://scipp.github.io/about/release-notes.html#v0-5-0-january-2021>`_ has been released.
-  The `What's new <https://scipp.github.io/release/0.5.0/about/whats-new/whats-new-0.5.0.html>`_ notebook provides an overview of the highlights and major changes.
+  The `What's new 0.5 <https://scipp.github.io/release/0.5.0/about/whats-new/whats-new-0.5.0.html>`_ notebook provides an overview of the highlights and major changes.
 
 Where can I get help?
 ---------------------
@@ -82,9 +86,9 @@ Documentation
    :maxdepth: 3
 
    getting-started/overview
-   getting-started/faq
    getting-started/installation
    getting-started/quick-start
+   getting-started/faq
 
 .. toctree::
    :caption: User Guide
@@ -109,39 +113,23 @@ Documentation
    visualization/plotting-in-depth
 
 .. toctree::
+   :caption: Reference
+   :maxdepth: 3
+
+   reference/api
+   reference/linear-algebra
+   reference/dtype
+   reference/units
+   reference/error-propagation
+   reference/runtime-configuration
+   reference/developer-documentation
+
+.. toctree::
    :caption: Tutorials
    :maxdepth: 3
 
    tutorials/introduction
    tutorials/multi-d-datasets
-
-.. toctree::
-   :caption: Reference
-   :maxdepth: 3
-
-   python-reference/api
-   python-reference/dtype
-   python-reference/units
-   python-reference/error-propagation
-   python-reference/runtime-configuration
-
-.. toctree::
-   :caption: Developer Documentation
-   :maxdepth: 2
-
-   developer/getting-started
-   developer/tooling
-   developer/dependencies
-   developer/coding-conventions
-   developer/how-to
-   developer/transform
-   developer/constructing_variables
-   developer/variable_implementation
-   developer/customizing
-   developer/api
-   developer/concepts
-   developer/architecture-decision-records
-   developer/deployment
 
 .. toctree::
    :caption: About

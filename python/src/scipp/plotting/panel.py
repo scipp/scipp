@@ -12,7 +12,7 @@ class PlotPanel:
     """
     def __init__(self):
         self.container = ipw.VBox()
-        self.interface = {}
+        self.controller = None
 
     def _ipython_display_(self):
         """
@@ -25,14 +25,6 @@ class PlotPanel:
         Get the panel widgets in a single container box for display.
         """
         return self.container
-
-    def connect(self, callbacks):
-        """
-        Connect the panel interface to the callbacks provided by the
-        `PlotController`.
-        """
-        for key, func in callbacks.items():
-            self.interface[key] = func
 
     def rescale_to_data(self, vmin=None, vmax=None, mask_info=None):
         """

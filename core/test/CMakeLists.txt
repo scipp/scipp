@@ -23,6 +23,8 @@ add_executable(
   element_trigonometry_test.cpp
   element_util_test.cpp
   multi_index_test.cpp
+  slice_test.cpp
+  sizes_test.cpp
   string_test.cpp
   subbin_sizes_test.cpp
   time_point_test.cpp
@@ -30,15 +32,8 @@ add_executable(
   view_index_test.cpp
   transform_common_test.cpp
 )
-include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(
-  ${TARGET_NAME}
-  LINK_PRIVATE
-  scipp-core
-  gtest_main
-  scipp_test_helpers
-  ${GTEST_LIBRARIES}
-  ${GMOCK_LIBRARIES}
+  ${TARGET_NAME} LINK_PRIVATE scipp-core scipp_test_helpers GTest::GTest
 )
 
 if(WIN32)

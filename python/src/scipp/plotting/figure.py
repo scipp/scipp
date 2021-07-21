@@ -24,7 +24,7 @@ class PlotFigure:
                  ylabel=None,
                  toolbar=None):
         self.fig = None
-        self.image = None
+        self.closed = False
         self.ax = ax
         self.cax = cax
         self.own_axes = True
@@ -42,8 +42,7 @@ class PlotFigure:
                 self.padding = config.plot.padding
             self.fig.tight_layout(rect=self.padding)
             if self.is_widget():
-                # We create a custom toolbar
-                self.toolbar = toolbar(canvas=self.fig.canvas)
+                self.toolbar = toolbar(mpl_toolbar=self.fig.canvas.toolbar)
                 self.fig.canvas.toolbar_visible = False
         else:
             self.own_axes = False
@@ -55,6 +54,11 @@ class PlotFigure:
         self.axlocator = {}
         self.xlabel = xlabel
         self.ylabel = ylabel
+        self.draw_no_delay = False
+
+    def initialize_toolbar(self, **kwargs):
+        if self.toolbar is not None:
+            self.toolbar.initialize(**kwargs)
 
     def is_widget(self):
         """
@@ -86,22 +90,26 @@ class PlotFigure:
         Image container.
         """
         if self.is_widget():
-            if self.image is not None:
-                return ipw.HBox([self.toolbar._to_widget(), self.image])
-            else:
-                return ipw.HBox([self.toolbar._to_widget(), self.fig.canvas])
+            return ipw.HBox([
+                self.toolbar._to_widget(),
+                self._to_image() if self.closed else self.fig.canvas
+            ])
         else:
-            if self.image is None:
-                self._to_image()
-            return self.image
+            return self._to_image()
 
     def _to_image(self):
         """
         Convert the Matplotlib figure to a static image.
         """
-        self.image = ipw.Image(value=fig_to_pngbytes(self.fig),
-                               width=config.plot.width,
-                               height=config.plot.height)
+        return ipw.Image(value=fig_to_pngbytes(self.fig),
+                         width=config.plot.width,
+                         height=config.plot.height)
+
+    def close(self):
+        """
+        Set the closed flag to True to output static images.
+        """
+        self.closed = True
 
     def show(self):
         """
@@ -114,30 +122,42 @@ class PlotFigure:
         Initialize figure parameters once the model has been created, since
         the axes formatters are defined by the model.
         """
-        for dim in axformatters:
-            self.axformatter[dim] = {}
+        self._formatters = axformatters
+        for axis, formatter in self._formatters.items():
+            self.axformatter[axis] = {}
             for key in ["linear", "log"]:
-                if axformatters[dim][key] is None:
-                    self.axformatter[dim][key] = ticker.ScalarFormatter()
+                if formatter[key] is None:
+                    self.axformatter[axis][key] = ticker.ScalarFormatter()
                 else:
-                    self.axformatter[dim][key] = ticker.FuncFormatter(
-                        axformatters[dim][key])
-            self.axlocator[dim] = {
+                    form = formatter[key]
+                    if "need_callbacks" in formatter:
+                        from functools import partial
+                        form = partial(form,
+                                       axis=axis,
+                                       get_axis_bounds=self.get_axis_bounds,
+                                       set_axis_label=self.set_axis_label)
+                    self.axformatter[axis][key] = ticker.FuncFormatter(form)
+            self.axlocator[axis] = {
                 "linear":
                 ticker.MaxNLocator(integer=True) if
-                axformatters[dim]["custom_locator"] else ticker.AutoLocator(),
+                axformatters[axis]["custom_locator"] else ticker.AutoLocator(),
                 "log":
                 ticker.LogLocator()
             }
 
-    def connect(self, callbacks):
+    def connect(self, controller, event_handler):
         """
         Connect the toolbar to callback from the controller. This includes
         rescaling the data norm, and change the scale (log or linear) on the
         axes.
         """
         if self.toolbar is not None:
-            self.toolbar.connect(callbacks)
+            self.toolbar.connect(controller=controller)
+        self.fig.canvas.mpl_connect('button_press_event',
+                                    event_handler.handle_button_press)
+        self.fig.canvas.mpl_connect('pick_event', event_handler.handle_pick)
+        self.fig.canvas.mpl_connect('motion_notify_event',
+                                    event_handler.handle_motion_notify)
 
     def draw(self):
         """
@@ -146,58 +166,22 @@ class PlotFigure:
         draws are performed on the canvas. Matplotlib's automatic drawing
         (which we have disabled by using `plt.ioff()`) can degrade performance
         significantly.
+        Matplotlib's `draw()` is slightly more expensive than `draw_idle()`
+        but won't update inside a loop (only when the loop has finished
+        executing).
+        If `draw_no_delay` has been set to True (via `set_draw_no_delay`,
+        then we use `draw()` instead of `draw_idle()`.
         """
-        self.fig.canvas.draw_idle()
-
-    def connect_profile(self, pick_callback=None, hover_callback=None):
-        """
-        Connect the figure to provided callbacks to handle profile picking and
-        hovering updates.
-        """
-        pick_connection = self.fig.canvas.mpl_connect('pick_event',
-                                                      pick_callback)
-        hover_connection = self.fig.canvas.mpl_connect('motion_notify_event',
-                                                       hover_callback)
-        return pick_connection, hover_connection
-
-    def disconnect_profile(self, pick_connection=None, hover_connection=None):
-        """
-        Disconnect profile events when the profile is hidden.
-        """
-        if pick_connection is not None:
-            self.fig.canvas.mpl_disconnect(pick_connection)
-        if hover_connection is not None:
-            self.fig.canvas.mpl_disconnect(hover_connection)
-
-    def update_log_axes_buttons(self, *args, **kwargs):
-        """
-        Update the state (value and color) of toolbar log axes buttons when
-        axes or dimensions are swapped.
-        """
-        if self.toolbar is not None:
-            self.toolbar.update_log_axes_buttons(*args, **kwargs)
-
-    def update_norm_button(self, *args, **kwargs):
-        """
-        Change state of norm button in toolbar.
-        """
-        if self.toolbar is not None:
-            self.toolbar.update_norm_button(*args, **kwargs)
-
-    def home_view(self, *args, **kwargs):
-        self.toolbar.home_view()
-
-    def pan_view(self, *args, **kwargs):
-        self.toolbar.pan_view()
-
-    def zoom_view(self, *args, **kwargs):
-        self.toolbar.zoom_view()
-
-    def save_view(self, *args, **kwargs):
-        self.toolbar.save_view()
+        if self.draw_no_delay:
+            self.fig.canvas.draw()
+        else:
+            self.fig.canvas.draw_idle()
 
     def get_axis_bounds(self, axis):
         return getattr(self.ax, "get_{}lim".format(axis))()
 
     def set_axis_label(self, axis, string):
         getattr(self.ax, "set_{}label".format(axis))(string)
+
+    def set_draw_no_delay(self, value):
+        self.draw_no_delay = value

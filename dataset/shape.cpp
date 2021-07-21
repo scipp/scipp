@@ -36,8 +36,8 @@ namespace {
 constexpr auto is_bin_edges = [](const auto &coord, const auto &dims,
                                  const Dim dim) {
   return coord.dims().contains(dim) &&
-         ((dims.count(dim) == 1) ? coord.dims()[dim] != dims.at(dim)
-                                 : coord.dims()[dim] == 2);
+         ((dims.contains(dim) == 1) ? coord.dims()[dim] != dims.at(dim)
+                                    : coord.dims()[dim] == 2);
 };
 template <class T1, class T2, class DimT>
 auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
@@ -48,8 +48,7 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
       if (is_bin_edges(a_, dimsA, dim) != is_bin_edges(b[key], dimsB, dim)) {
         throw except::BinEdgeError(
             "Either both or neither of the inputs must be bin edges.");
-      } else if (a_.dims()[dim] ==
-                 ((dimsA.count(dim) == 1) ? dimsA.at(dim) : 1)) {
+      } else if (a_.dims()[dim] == (dimsA.contains(dim) ? dimsA.at(dim) : 1)) {
         out.emplace(key, concatenate(a_, b[key], dim));
       } else {
         out.emplace(key, join_edges(a_, b[key], dim));
@@ -63,11 +62,11 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
         out.emplace(
             key,
             concatenate(
-                broadcast(a_, merge(dimsA.count(dim)
+                broadcast(a_, merge(dimsA.contains(dim)
                                         ? Dimensions(dim, dimsA.at(dim))
                                         : Dimensions(),
                                     a_.dims())),
-                broadcast(b[key], merge(dimsB.count(dim)
+                broadcast(b[key], merge(dimsB.contains(dim)
                                             ? Dimensions(dim, dimsB.at(dim))
                                             : Dimensions(),
                                         b[key].dims())),
@@ -101,11 +100,11 @@ Dataset concatenate(const Dataset &a, const Dataset &b, const Dim dim) {
   // coords to dataset (which is not desirable for a variety of reasons). It is
   // unlikely that this will cause trouble in practice. Users can just use a
   // range slice of thickness 1.
-  auto result =
-      a.empty()
-          ? Dataset(std::map<std::string, Variable>(),
-                    concat(a.coords(), b.coords(), dim, a.sizes(), b.sizes()))
-          : Dataset();
+  Dataset result;
+  if (a.empty())
+    result.setCoords(
+        Coords(concatenate(a.sizes(), b.sizes(), dim),
+               concat(a.coords(), b.coords(), dim, a.sizes(), b.sizes())));
   for (const auto &item : a)
     if (b.contains(item.name())) {
       if (!item.dims().contains(dim) && item == b[item.name()])
@@ -116,14 +115,16 @@ Dataset concatenate(const Dataset &a, const Dataset &b, const Dim dim) {
   return result;
 }
 
-DataArray resize(const DataArray &a, const Dim dim, const scipp::index size) {
+DataArray resize(const DataArray &a, const Dim dim, const scipp::index size,
+                 const FillValue fill) {
   return apply_to_data_and_drop_dim(
-      a, [](auto &&... _) { return resize(_...); }, dim, size);
+      a, [](auto &&... _) { return resize(_...); }, dim, size, fill);
 }
 
-Dataset resize(const Dataset &d, const Dim dim, const scipp::index size) {
+Dataset resize(const Dataset &d, const Dim dim, const scipp::index size,
+               const FillValue fill) {
   return apply_to_items(
-      d, [](auto &&... _) { return resize(_...); }, dim, size);
+      d, [](auto &&... _) { return resize(_...); }, dim, size, fill);
 }
 
 DataArray resize(const DataArray &a, const Dim dim, const DataArray &shape) {
@@ -172,26 +173,11 @@ Variable maybe_broadcast(const Variable &var,
 /// Special handling for folding coord along a dim that contains bin edges.
 Variable fold_bin_edge(const Variable &var, const Dim from_dim,
                        const Dimensions &to_dims) {
-  // The size of the bin edge dim
-  const auto bin_edge_size = var.dims()[from_dim];
-  // inner_size is the size of the inner dimensions in to_dims
-  const auto inner_size = to_dims[to_dims.inner()];
-  // Make the bulk slice of the coord, leaving out the last bin edge
-  const auto base = var.slice({from_dim, 0, bin_edge_size - 1});
-  // The new_dims are the reshaped dims, as if the variable was not bin edges
-  const auto new_dims = core::fold(base.dims(), from_dim, to_dims);
-  auto out_dims = Dimensions(new_dims);
-  // To make the container of the right size, we increase the inner dim by 1
-  out_dims.resize(to_dims.inner(), inner_size + 1);
-  // Create output container
-  auto out = empty(out_dims, var.unit(), var.dtype(), var.hasVariances());
-  // Copy the bulk of the variable into the output, omitting the last bin edge
-  copy(reshape(base, new_dims), out.slice({to_dims.inner(), 0, inner_size}));
-  // Copy the 'end-cap' or final bin edge into the out container, by offsetting
-  // the slicing indices by 1
-  copy(reshape(var.slice({from_dim, 1, bin_edge_size}), new_dims)
-           .slice({to_dims.inner(), inner_size - 1}),
-       out.slice({to_dims.inner(), inner_size}));
+  auto out = var.slice({from_dim, 0, var.dims()[from_dim] - 1})
+                 .fold(from_dim, to_dims) // fold non-overlapping part
+                 .as_const();             // mark readonly since we add overlap
+  // Increase dims without changing strides to obtain first == last
+  out.unchecked_dims().resize(to_dims.inner(), to_dims[to_dims.inner()] + 1);
   return out;
 }
 
@@ -212,19 +198,15 @@ Variable flatten_bin_edge(const Variable &var,
         "Flatten: the bin edges cannot be joined together.");
 
   // Make the bulk slice of the coord, leaving out the last bin edge
-  const auto base = var.slice({bin_edge_dim, 0, data_shape});
-  // The new_dims are the reshaped dims, as if the variable was not bin edges
-  const auto new_dims = core::flatten(base.dims(), from_labels, to_dim);
-  auto out_dims = Dimensions(new_dims);
+  const auto bulk =
+      flatten(var.slice({bin_edge_dim, 0, data_shape}), from_labels, to_dim);
+  auto out_dims = bulk.dims();
   // To make the container of the right size, we increase to_dim by 1
-  out_dims.resize(to_dim, new_dims[to_dim] + 1);
-  // Create output container
+  out_dims.resize(to_dim, out_dims[to_dim] + 1);
   auto out = empty(out_dims, var.unit(), var.dtype(), var.hasVariances());
-  // Copy the bulk of the variable into the output, omitting the last bin edge
-  copy(reshape(base, new_dims), out.slice({to_dim, 0, new_dims[to_dim]}));
-  // Copy the back slice (or final bin edge) into the out container
+  copy(bulk, out.slice({to_dim, 0, out_dims[to_dim] - 1}));
   copy(back_flat.slice({to_dim, back.dims().volume() - 1}),
-       out.slice({to_dim, new_dims[to_dim]}));
+       out.slice({to_dim, out_dims[to_dim] - 1}));
   return out;
 }
 
@@ -239,68 +221,47 @@ Dim bin_edge_in_from_labels(const Variable &var, const Dimensions &array_dims,
 
 } // end anonymous namespace
 
-/// Fold a single dimension into multiple dimensions:
+/// Fold a single dimension into multiple dimensions
 /// ['x': 6] -> ['y': 2, 'z': 3]
 DataArray fold(const DataArray &a, const Dim from_dim,
                const Dimensions &to_dims) {
-  auto folded = DataArray(fold(a.data(), from_dim, to_dims));
-
-  for (auto &&[name, coord] : a.coords()) {
-    if (is_bin_edges(coord, a.dims(), from_dim))
-      folded.coords().set(name, fold_bin_edge(coord, from_dim, to_dims));
+  return dataset::transform(a, [&](const auto &var) {
+    if (is_bin_edges(var, a.dims(), from_dim))
+      return fold_bin_edge(var, from_dim, to_dims);
+    else if (var.dims().contains(from_dim))
+      return fold(var, from_dim, to_dims);
     else
-      folded.coords().set(name, fold(coord, from_dim, to_dims));
-  }
-
-  for (auto &&[name, attr] : a.attrs())
-    if (is_bin_edges(attr, a.dims(), from_dim))
-      folded.attrs().set(name, fold_bin_edge(attr, from_dim, to_dims));
-    else
-      folded.attrs().set(name, fold(attr, from_dim, to_dims));
-
-  // Note that we assume bin-edge masks do not exist
-  for (auto &&[name, mask] : a.masks())
-    folded.masks().set(name, fold(mask, from_dim, to_dims));
-
-  return folded;
+      return var;
+  });
 }
 
 /// Flatten multiple dimensions into a single dimension:
 /// ['y', 'z'] -> ['x']
 DataArray flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
                   const Dim to_dim) {
-  auto flattened = DataArray(flatten(a.data(), from_labels, to_dim));
-
-  for (auto &&[name, coord] : a.coords()) {
+  return dataset::transform(a, [&](const auto &in) {
+    const auto var =
+        (&in == &a.data()) ? in : maybe_broadcast(in, from_labels, a.dims());
     const auto bin_edge_dim =
-        bin_edge_in_from_labels(coord, a.dims(), from_labels);
-    const auto var = maybe_broadcast(coord, from_labels, a.dims());
+        bin_edge_in_from_labels(in, a.dims(), from_labels);
     if (bin_edge_dim != Dim::Invalid) {
-      flattened.coords().set(
-          name, flatten_bin_edge(var, from_labels, to_dim, bin_edge_dim));
+      return flatten_bin_edge(var, from_labels, to_dim, bin_edge_dim);
+    } else if (var.dims().contains(from_labels.front())) {
+      return flatten(var, from_labels, to_dim);
     } else {
-      flattened.coords().set(name, flatten(var, from_labels, to_dim));
+      return var;
     }
-  }
+  });
+}
 
-  for (auto &&[name, attr] : a.attrs()) {
-    const auto bin_edge_dim =
-        bin_edge_in_from_labels(attr, a.dims(), from_labels);
-    const auto var = maybe_broadcast(attr, from_labels, a.dims());
-    if (bin_edge_dim != Dim::Invalid) {
-      flattened.attrs().set(
-          name, flatten_bin_edge(var, from_labels, to_dim, bin_edge_dim));
-    } else {
-      flattened.attrs().set(name, flatten(var, from_labels, to_dim));
-    }
-  }
+DataArray transpose(const DataArray &a, const std::vector<Dim> &dims) {
+  return {transpose(a.data(), dims), a.coords(), a.masks(), a.attrs(),
+          a.name()};
+}
 
-  for (auto &&[name, mask] : a.masks())
-    flattened.masks().set(name,
-                          flatten(maybe_broadcast(mask, from_labels, a.dims()),
-                                  from_labels, to_dim));
-
-  return flattened;
+Dataset transpose(const Dataset &d, const std::vector<Dim> &dims) {
+  return apply_to_items(
+      d, [](auto &&... _) { return transpose(_...); }, dims);
 }
 
 } // namespace scipp::dataset

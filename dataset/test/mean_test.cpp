@@ -1,14 +1,31 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-#include "fix_typed_test_suite_warnings.h"
-#include "scipp/dataset/reduction.h"
-#include "test_nans.h"
 #include <gtest/gtest.h>
-#include <scipp/common/overloaded.h>
+
+#include "scipp/common/overloaded.h"
+#include "scipp/dataset/reduction.h"
+
+#include "fix_typed_test_suite_warnings.h"
+#include "test_nans.h"
+
+using namespace scipp;
+
+TEST(DatasetTest, sum_and_mean) {
+  Dataset ds;
+  ds.setData("a", makeVariable<float>(Dimensions{Dim::X, 3}, units::one,
+                                      Values{1, 2, 3}, Variances{12, 15, 18}));
+  EXPECT_EQ(sum(ds, Dim::X)["a"].data(),
+            makeVariable<float>(Values{6}, Variances{45}));
+  EXPECT_EQ(sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+            makeVariable<float>(Values{3}, Variances{27}));
+
+  EXPECT_EQ(mean(ds, Dim::X)["a"].data(),
+            makeVariable<float>(Values{2}, Variances{5.0}));
+  EXPECT_EQ(mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+            makeVariable<float>(Values{1.5}, Variances{6.75}));
+}
 
 namespace {
-using namespace scipp;
-using namespace scipp::dataset;
 
 using MeanTestTypes = testing::Types<int32_t, int64_t, float, double>;
 TYPED_TEST_SUITE(MeanTest, MeanTestTypes);
@@ -140,7 +157,7 @@ TYPED_TEST(MeanTest, nanmean_masked_data_with_nans) {
     // First element NaN, second NaN AND masked, third masked, forth non-masked
     // finite number
     const auto mean = makeVariable<typename TestFixture::ReturnType>(
-        units::m, Shape{1}, Values{(0.0 + 0.0 + 0.0 + 4.0) / 1});
+        units::m, Values{(0.0 + 0.0 + 0.0 + 4.0) / 1});
     EXPECT_EQ(nanmean(a).data(), mean);
   }
 }
@@ -217,4 +234,14 @@ TYPED_TEST(MeanTest, nanmean_all_dims) {
     da.values<TypeParam>()[3] = TypeParam(NAN);
     EXPECT_EQ(nanmean(da).data(), makeVariable<TypeParam>(Values{2.0}));
   }
+}
+
+TEST(NanMeanTest, masked) {
+  DataArray da{makeVariable<double>(
+      Dims{Dim::X}, Shape{5}, Values{double(NAN), 2.0, 3.0, double(NAN), 5.0})};
+  da.masks().set("mask",
+                 makeVariable<bool>(Dims{Dim::X}, Shape{5},
+                                    Values{false, false, true, true, false}));
+  EXPECT_EQ(nanmean(da, Dim::X), nanmean(da));
+  EXPECT_EQ(nanmean(da, Dim::X).data(), makeVariable<double>(Values{3.5}));
 }

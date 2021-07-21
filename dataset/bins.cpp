@@ -13,14 +13,13 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
-#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/cumulative.h"
-#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/transform_subspan.h"
+#include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bin.h"
@@ -139,13 +138,6 @@ Dataset resize_default_init(const Dataset &parent, const Dim dim,
   return buffer;
 }
 
-template <class T>
-Variable make_bins_impl(Variable indices, const Dim dim, T &&buffer) {
-  indices.setDataHandle(std::make_unique<variable::DataModel<bucket<T>>>(
-      indices.data_handle(), dim, std::move(buffer)));
-  return indices;
-}
-
 /// Construct a bin-variable over a data array.
 ///
 /// Each bin is represented by a Variable slice. `indices` defines the array of
@@ -161,7 +153,7 @@ Variable make_bins(Variable indices, const Dim dim, DataArray buffer) {
 /// bins is acceptable.
 Variable make_bins_no_validate(Variable indices, const Dim dim,
                                DataArray buffer) {
-  return make_bins_impl(std::move(indices), dim, std::move(buffer));
+  return variable::make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
 /// Construct a bin-variable over a dataset.
@@ -169,8 +161,7 @@ Variable make_bins_no_validate(Variable indices, const Dim dim,
 /// Each bin is represented by a Variable slice. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
-  expect_valid_bin_indices(indices.data_handle(), dim,
-                           Dimensions(buffer.sizes()));
+  expect_valid_bin_indices(indices.data_handle(), dim, buffer.sizes());
   return make_bins_no_validate(std::move(indices), dim, std::move(buffer));
 }
 
@@ -180,7 +171,7 @@ Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
 /// bins is acceptable.
 Variable make_bins_no_validate(Variable indices, const Dim dim,
                                Dataset buffer) {
-  return make_bins_impl(std::move(indices), dim, std::move(buffer));
+  return variable::make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
 namespace {
@@ -223,8 +214,8 @@ namespace scipp::dataset::buckets {
 namespace {
 
 template <class T> auto combine(const Variable &var0, const Variable &var1) {
-  const auto &[indices0, dim0, buffer0] = var0.constituents<bucket<T>>();
-  const auto &[indices1, dim1, buffer1] = var1.constituents<bucket<T>>();
+  const auto &[indices0, dim0, buffer0] = var0.constituents<T>();
+  const auto &[indices1, dim1, buffer1] = var1.constituents<T>();
   static_cast<void>(buffer1);
   static_cast<void>(dim1);
   const Dim dim = dim0;
@@ -242,38 +233,15 @@ template <class T> auto combine(const Variable &var0, const Variable &var1) {
   auto buffer = resize_default_init(buffer0, dim, total_size);
   copy_slices(buffer0, buffer, dim, indices0, zip(begin, end - sizes1));
   copy_slices(buffer1, buffer, dim, indices1, zip(begin + sizes0, end));
-  return std::make_shared<variable::DataModel<bucket<T>>>(
-      zip(begin, end).data_handle(), dim, std::move(buffer));
+  return make_bins_no_validate(zip(begin, end), dim, std::move(buffer));
 }
 
 template <class T>
 auto concatenate_impl(const Variable &var0, const Variable &var1) {
-  return Variable{merge(var0.dims(), var1.dims()), combine<T>(var0, var1)};
-}
-
-template <class T> void reserve_impl(Variable &var, const Variable &shape) {
-  // TODO this only reserves in the bins, but assumes buffer has enough space
-  auto &&[indices, dim, buffer] = var.constituents<bucket<T>>();
-  static_cast<void>(dim);
-  static_cast<void>(buffer);
-  variable::transform_in_place(
-      indices, shape,
-      overloaded{
-          core::element::arg_list<std::tuple<scipp::index_pair, scipp::index>>,
-          core::keep_unit,
-          [](auto &begin_end, auto &size) { begin_end.second += size; }});
+  return combine<T>(var0, var1);
 }
 
 } // namespace
-
-void reserve(Variable &var, const Variable &shape) {
-  if (var.dtype() == dtype<bucket<Variable>>)
-    return reserve_impl<Variable>(var, shape);
-  else if (var.dtype() == dtype<bucket<DataArray>>)
-    return reserve_impl<DataArray>(var, shape);
-  else
-    return reserve_impl<Dataset>(var, shape);
-}
 
 Variable concatenate(const Variable &var0, const Variable &var1) {
   if (var0.dtype() == dtype<bucket<Variable>>)
@@ -309,11 +277,11 @@ DataArray concatenate(const DataArray &array, const Dim dim) {
 
 void append(Variable &var0, const Variable &var1) {
   if (var0.dtype() == dtype<bucket<Variable>>)
-    var0.setDataHandle(combine<Variable>(var0, var1));
+    var0.setDataHandle(combine<Variable>(var0, var1).data_handle());
   else if (var0.dtype() == dtype<bucket<DataArray>>)
-    var0.setDataHandle(combine<DataArray>(var0, var1));
+    var0.setDataHandle(combine<DataArray>(var0, var1).data_handle());
   else
-    var0.setDataHandle(combine<Dataset>(var0, var1));
+    var0.setDataHandle(combine<Dataset>(var0, var1).data_handle());
 }
 
 void append(Variable &&var0, const Variable &var1) { append(var0, var1); }
@@ -329,23 +297,22 @@ void append(DataArray &a, const DataArray &b) {
 Variable histogram(const Variable &data, const Variable &binEdges) {
   using namespace scipp::core;
   auto hist_dim = binEdges.dims().inner();
-  auto &&[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
+  auto &&[indices, dim, buffer] = data.constituents<DataArray>();
   // `hist_dim` may be the same as a dim of data if there is existing binning.
   // We rename to a dummy to avoid duplicate dimensions, perform histogramming,
   // and then sum over the dummy dimensions, i.e., sum contributions from all
   // inputs bins to the same output histogram. This also allows for threading of
   // 1-D histogramming provided that the input has multiple bins along
   // `hist_dim`.
-  std::string nonclashing_name("dummy");
-  for (const auto &d : indices.dims().labels())
-    nonclashing_name += d.name();
-  const Dim dummy = Dim(nonclashing_name);
-  indices.rename(hist_dim, dummy);
+  const Dim dummy = Dim::InternalHistogram;
+  if (indices.dims().contains(hist_dim))
+    indices.rename(hist_dim, dummy);
   const auto masked = masked_data(buffer, dim);
   auto hist = variable::transform_subspan(
       buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
       subspan_view(buffer.meta()[hist_dim], dim, indices),
-      subspan_view(masked, dim, indices), binEdges, element::histogram);
+      subspan_view(masked, dim, indices), binEdges, element::histogram,
+      "histogram");
   if (hist.dims().contains(dummy))
     return sum(hist, dummy);
   else
@@ -361,12 +328,12 @@ Variable map(const DataArray &function, const Variable &x, Dim dim) {
   const auto weights = subspan_view(data, dim);
   if (all(islinspace(edges, dim)).value<bool>()) {
     return variable::transform(coord, subspan_view(edges, dim), weights,
-                               core::element::event::map_linspace);
+                               core::element::event::map_linspace, "map");
   } else {
     if (!issorted(edges, dim))
       throw except::BinEdgeError("Bin edges of histogram must be sorted.");
     return variable::transform(coord, subspan_view(edges, dim), weights,
-                               core::element::event::map_sorted_edges);
+                               core::element::event::map_sorted_edges, "map");
   }
 }
 
@@ -384,21 +351,23 @@ void scale(DataArray &array, const DataArray &histogram, Dim dim) {
   const auto weights = subspan_view(masked, dim);
   if (all(islinspace(edges, dim)).value<bool>()) {
     transform_in_place(data, coord, subspan_view(edges, dim), weights,
-                       core::element::event::map_and_mul_linspace);
+                       core::element::event::map_and_mul_linspace,
+                       "bins.scale");
   } else {
     if (!issorted(edges, dim))
       throw except::BinEdgeError("Bin edges of histogram must be sorted.");
     transform_in_place(data, coord, subspan_view(edges, dim), weights,
-                       core::element::event::map_and_mul_sorted_edges);
+                       core::element::event::map_and_mul_sorted_edges,
+                       "bins.scale");
   }
 }
 
 namespace {
 Variable applyMask(const DataArray &buffer, const Variable &indices,
-                   const Dim dim, const Variable &masks) {
-  auto indices_copy = copy(indices);
-  auto masked_data = scipp::variable::masked_to_zero(buffer.data(), masks);
-  return make_bins(std::move(indices_copy), dim, std::move(masked_data));
+                   const Dim dim, const Variable &mask) {
+  return make_bins(
+      indices, dim,
+      where(mask, Variable(buffer.data(), Dimensions{}), buffer.data()));
 }
 
 } // namespace
@@ -414,8 +383,7 @@ Variable sum(const Variable &data) {
     summed = Variable(type, data.dims(), unit, Values{});
 
   if (data.dtype() == dtype<bucket<DataArray>>) {
-    const auto &&[indices, dim, buffer] =
-        data.constituents<bucket<DataArray>>();
+    const auto &&[indices, dim, buffer] = data.constituents<DataArray>();
     if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
         mask_union.is_valid()) {
       variable::sum_impl(summed, applyMask(buffer, indices, dim, mask_union));

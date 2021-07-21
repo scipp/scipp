@@ -18,11 +18,11 @@ DataArray @NAME@(const DataArray &a, const DataArray &b) {
 }
 
 DataArray @NAME@(const DataArray &a, const Variable &b) {
-  return DataArray(@NAME@(a.data(), b), a.coords(), a.masks(), a.attrs());
+  return DataArray(@NAME@(a.data(), b), a.coords(), copy(a.masks()), a.attrs());
 }
 
 DataArray @NAME@(const Variable &a, const DataArray &b) {
-  return DataArray(@NAME@(a, b.data()), b.coords(), b.masks(), b.attrs());
+  return DataArray(@NAME@(a, b.data()), b.coords(), copy(b.masks()), b.attrs());
 }
 
 } // namespace scipp::dataset

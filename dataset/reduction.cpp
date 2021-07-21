@@ -2,15 +2,16 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/common/reduction.h"
-#include "dataset_operations_common.h"
-#include "scipp/core/element/util.h"
-#include "scipp/dataset/math.h"
 #include "scipp/dataset/reduction.h"
+#include "scipp/core/element/util.h"
+#include "scipp/dataset/astype.h"
+#include "scipp/dataset/math.h" // needed by operations_common.h
 #include "scipp/dataset/special_values.h"
-#include "scipp/dataset/util.h"
 
-using scipp::common::reduce_all_dims;
+#include "../variable/operations_common.h"
+#include "dataset_operations_common.h"
+
+using scipp::variable::reduce_all_dims;
 
 namespace scipp::dataset {
 
@@ -45,10 +46,6 @@ DataArray nansum(const DataArray &a, const Dim dim) {
 }
 
 Dataset nansum(const Dataset &d, const Dim dim) {
-  // Currently not supporting sum/mean of dataset if one or more items do not
-  // depend on the input dimension. The definition is ambiguous (return
-  // unchanged, vs. compute sum of broadcast) so it is better to avoid this for
-  // now.
   return apply_to_items(
       d, [](auto &&... _) { return nansum(_...); }, dim);
 }
@@ -63,10 +60,7 @@ DataArray mean(const DataArray &a, const Dim dim) {
 }
 
 DataArray mean(const DataArray &a) {
-  if (isInt(a.data().dtype()))
-    return sum(a) * reciprocal(astype(sum(isfinite(a)), dtype<double>));
-  else
-    return sum(a) * reciprocal(astype(sum(isfinite(a)), a.dtype()));
+  return variable::normalize_impl(sum(a), sum(isfinite(a)));
 }
 
 Dataset mean(const Dataset &d, const Dim dim) {
@@ -84,10 +78,7 @@ DataArray nanmean(const DataArray &a, const Dim dim) {
 }
 
 DataArray nanmean(const DataArray &a) {
-  if (isInt(a.dtype()))
-    return mean(a);
-  else
-    return nansum(a) * reciprocal(astype(sum(isfinite(a)), a.dtype()));
+  return variable::normalize_impl(nansum(a), sum(isfinite(a)));
 }
 
 Dataset nanmean(const Dataset &d, const Dim dim) {

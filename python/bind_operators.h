@@ -4,13 +4,21 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include "pybind11.h"
 #include "scipp/dataset/arithmetic.h"
+#include "scipp/dataset/astype.h"
 #include "scipp/dataset/generated_comparison.h"
 #include "scipp/dataset/generated_logical.h"
+#include "scipp/dataset/to_unit.h"
+#include "scipp/units/except.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/logical.h"
+#include "scipp/variable/to_unit.h"
+
+#include "dtype.h"
+#include "format.h"
+#include "pybind11.h"
 
 namespace py = pybind11;
 
@@ -34,7 +42,7 @@ void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
       "__copy__", [](T &self) { return self; },
       py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.");
   c.def(
-      "__deepcopy__", [](T &self, py::dict) { return copy(self); },
+      "__deepcopy__", [](T &self, const py::dict &) { return copy(self); },
       py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
 }
 
@@ -42,14 +50,34 @@ template <class T, class... Ignored>
 void bind_astype(py::class_<T, Ignored...> &c) {
   c.def(
       "astype",
-      [](const T &self, const scipp::DType type) { return astype(self, type); },
-      py::call_guard<py::gil_scoped_release>(),
+      [](const T &self, const py::object &type, const bool copy) {
+        const auto [scipp_dtype, dtype_unit] =
+            cast_dtype_and_unit(type, std::nullopt);
+        if (dtype_unit != scipp::units::one && dtype_unit != self.unit()) {
+          throw scipp::except::UnitError(scipp::python::format(
+              "Conversion of units via the dtype is not allowed. Occurred when "
+              "trying to change dtype from ",
+              self.dtype(), " to ", type,
+              ". Use to_unit in combination with astype."));
+        }
+        [[maybe_unused]] py::gil_scoped_release release;
+        return astype(self, scipp_dtype,
+                      copy ? scipp::CopyPolicy::Always
+                           : scipp::CopyPolicy::TryAvoid);
+      },
+      py::arg("type"), py::kw_only(), py::arg("copy") = true,
       R"(
-        Converts a Variable or DataArray to a different type.
+        Converts a Variable or DataArray to a different dtype.
 
-        :raises: If the variable cannot be converted to the requested dtype.
+        If the dtype is unchanged and ``copy`` is `False`, the object
+        is returned without making a deep copy.
+
+        :param type: Target dtype.
+        :param copy: If `False`, return the input object if possible.
+                     If `True`, the function always returns a new object.
+        :raises: If the data cannot be converted to the requested dtype.
         :return: New variable or data array with specified dtype.
-        :rtype: Variable or DataArray)");
+        :rtype: Union[scipp.Variable, scipp.DataArray])");
 }
 
 template <class Other, class T, class... Ignored>

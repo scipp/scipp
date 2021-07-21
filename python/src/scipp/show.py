@@ -1,12 +1,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from __future__ import annotations
 from html import escape
+from typing import Optional
+
 import numpy as np
+
 from ._scipp import core as sc
 from . import config
-from ._utils import is_data_array, hex_to_rgb, rgb_to_hex
 from .html import inject_style
+from .utils import hex_to_rgb, rgb_to_hex
+from .typing import VariableLike
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -319,7 +324,7 @@ class DatasetDrawer:
 
     def _dims(self):
         dims = self._dataset.dims
-        if is_data_array(self._dataset):
+        if isinstance(self._dataset, sc.DataArray):
             # Handle, e.g., bin edges of a slice, where data lacks the edge dim
             for item in self._dataset.meta.values():
                 for dim in item.dims:
@@ -361,7 +366,7 @@ class DatasetDrawer:
         area_z = []
         area_xy = []
         area_0d = []
-        if is_data_array(self._dataset):
+        if isinstance(self._dataset, sc.DataArray):
             area_xy.append(DrawerItem('', self._dataset,
                                       config.colors['data']))
         else:
@@ -385,7 +390,7 @@ class DatasetDrawer:
                     area_xy.append(item)
 
         ds = self._dataset
-        if is_data_array(ds):
+        if isinstance(ds, sc.DataArray):
             categories = zip(['coords', 'masks', 'attrs'],
                              [ds.coords, ds.masks, ds.attrs])
         else:
@@ -453,7 +458,8 @@ class DatasetDrawer:
                           height)
 
 
-def make_svg(container, content_only=False):
+def make_svg(container: VariableLike,
+             content_only: Optional[bool] = False) -> str:
     """
     Return a svg representation of a variable or dataset.
     """
@@ -464,7 +470,7 @@ def make_svg(container, content_only=False):
     return draw.make_svg(content_only=content_only)
 
 
-def show(container):
+def show(container: VariableLike):
     """
     Show a graphical representation of a variable or dataset.
     """

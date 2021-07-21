@@ -5,6 +5,7 @@
 set(TARGET_NAME "scipp-variable")
 set(INC_FILES
     ${variable_INC_FILES}
+    include/scipp/variable/astype.h
     include/scipp/variable/arithmetic.h
     include/scipp/variable/bins.h
     include/scipp/variable/bin_util.h
@@ -21,6 +22,7 @@ set(INC_FILES
     include/scipp/variable/sort.h
     include/scipp/variable/special_values.h
     include/scipp/variable/string.h
+    include/scipp/variable/structures.h
     include/scipp/variable/subspan_view.h
     include/scipp/variable/transform.h
     include/scipp/variable/transform_subspan.h
@@ -36,16 +38,15 @@ set(INC_FILES
 
 set(SRC_FILES
     ${variable_SRC_FILES}
-    arithmetic.cpp
+    astype.cpp
     bins.cpp
+    bin_array_variable.cpp
     bin_detail.cpp
     bin_util.cpp
     comparison.cpp
     creation.cpp
     cumulative.cpp
     except.cpp
-    logical.cpp
-    math.cpp
     operations.cpp
     rebin.cpp
     reduction.cpp
@@ -54,16 +55,16 @@ set(SRC_FILES
     sort.cpp
     special_values.cpp
     string.cpp
+    structures.cpp
     subspan_view.cpp
     to_unit.cpp
-    trigonometry.cpp
-    type_conversion.cpp
     util.cpp
     variable_concept.cpp
     variable_factory.cpp
     variable.cpp
     variable_instantiate_basic.cpp
     variable_instantiate_bin_elements.cpp
+    variable_instantiate_linalg.cpp
     variable_instantiate_map_elements.cpp
     variable_instantiate_view_elements.cpp
 )
@@ -83,7 +84,7 @@ generate_export_header(${TARGET_NAME})
 target_compile_definitions(
   ${TARGET_NAME} PRIVATE SCIPP_EXPORT=SCIPP_VARIABLE_EXPORT
 )
-target_link_libraries(${TARGET_NAME} PUBLIC scipp-core Boost::boost)
+target_link_libraries(${TARGET_NAME} PUBLIC scipp-core)
 if(TBB_FOUND AND NOT DISABLE_MULTI_THREADING)
   target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
 endif()

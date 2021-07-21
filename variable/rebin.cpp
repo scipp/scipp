@@ -6,8 +6,7 @@
 #include "scipp/core/parallel.h"
 #include "scipp/units/except.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/except.h"
-#include "scipp/variable/misc_operations.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/transform_subspan.h"
@@ -18,8 +17,7 @@ using namespace scipp::core::element;
 namespace scipp::variable {
 
 bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
-  edges.resize(dim, edges[dim] - 1);
-  return edges[dim] == toMatch[dim];
+  return edges[dim] - 1 == toMatch[dim];
 }
 
 // Workaround VS C7526 (undefined inline variable) with dtype<> in template.
@@ -122,7 +120,7 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
                       issorted(newCoord, dim, SortOrder::Descending)))
     throw except::BinEdgeError(
         "Rebin: The old or new bin edges are not sorted.");
-  const auto out_type = isInt(var.dtype()) ? dtype<double> : var.dtype();
+  const auto out_type = is_int(var.dtype()) ? dtype<double> : var.dtype();
   if (var.dims().inner() == dim) {
     if (ascending) {
       return transform_subspan<transform_args>(

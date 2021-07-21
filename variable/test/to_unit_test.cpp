@@ -15,6 +15,23 @@ TEST(ToUnitTest, not_compatible) {
   EXPECT_THROW_DISCARD(to_unit(var, units::Unit("s")), except::UnitError);
 }
 
+TEST(ToUnitTest, buffer_handling) {
+  const Dimensions dims(Dim::X, 2);
+  const auto var = makeVariable<float>(dims, units::Unit("m"), Values{1, 2});
+  const auto force_copy = to_unit(var, var.unit());
+  EXPECT_FALSE(force_copy.is_same(var));
+  EXPECT_EQ(force_copy.values<float>(), var.values<float>());
+  const auto force_copy_explicit = to_unit(var, var.unit(), CopyPolicy::Always);
+  EXPECT_FALSE(force_copy_explicit.is_same(var));
+  EXPECT_EQ(force_copy_explicit.values<float>(), var.values<float>());
+  const auto no_copy = to_unit(var, var.unit(), CopyPolicy::TryAvoid);
+  EXPECT_TRUE(no_copy.is_same(var));
+  EXPECT_EQ(no_copy.values<float>(), var.values<float>());
+  const auto required_copy =
+      to_unit(var, units::Unit("mm"), CopyPolicy::TryAvoid);
+  EXPECT_FALSE(required_copy.is_same(var));
+}
+
 TEST(ToUnitTest, same) {
   const Dimensions dims(Dim::X, 2);
   const auto var = makeVariable<float>(dims, units::Unit("m"), Values{1, 2});
@@ -74,9 +91,9 @@ TEST(ToUnitTest, time_point) {
 }
 
 TEST(ToUnitTest, time_point_bad_units) {
-  const auto do_to_unit = [](const char *initial, const char *final) {
+  const auto do_to_unit = [](const char *initial, const char *target) {
     return to_unit(makeVariable<core::time_point>(Dims{}, units::Unit(initial)),
-                   units::Unit(final));
+                   units::Unit(target));
   };
 
   // Conversions to or from time points with unit day or larger are complicated
@@ -84,19 +101,22 @@ TEST(ToUnitTest, time_point_bad_units) {
   const auto small_unit_names = {"h", "min", "s", "ns"};
   const auto large_unit_names = {"Y", "M", "D"};
   for (const char *initial : small_unit_names) {
-    for (const char *final : small_unit_names) {
-      EXPECT_NO_THROW_DISCARD(do_to_unit(initial, final));
+    for (const char *target : small_unit_names) {
+      EXPECT_NO_THROW_DISCARD(do_to_unit(initial, target));
     }
-    for (const char *final : large_unit_names) {
-      EXPECT_THROW_DISCARD(do_to_unit(initial, final), except::UnitError);
+    for (const char *target : large_unit_names) {
+      EXPECT_THROW_DISCARD(do_to_unit(initial, target), except::UnitError);
     }
   }
   for (const char *initial : large_unit_names) {
-    for (const char *final : small_unit_names) {
-      EXPECT_THROW_DISCARD(do_to_unit(initial, final), except::UnitError);
+    for (const char *target : small_unit_names) {
+      EXPECT_THROW_DISCARD(do_to_unit(initial, target), except::UnitError);
     }
-    for (const char *final : large_unit_names) {
-      EXPECT_THROW_DISCARD(do_to_unit(initial, final), except::UnitError);
+    for (const char *target : large_unit_names) {
+      if (initial == target)
+        EXPECT_NO_THROW_DISCARD(do_to_unit(initial, target));
+      else
+        EXPECT_THROW_DISCARD(do_to_unit(initial, target), except::UnitError);
     }
   }
 }

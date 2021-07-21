@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/core/flags.h"
 #include "scipp/dataset/dataset.h"
 
 namespace scipp::dataset {
@@ -15,12 +16,12 @@ namespace scipp::dataset {
                                                        const Dataset &b,
                                                        const Dim dim);
 
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray resize(const DataArray &a,
-                                                    const Dim dim,
-                                                    const scipp::index size);
-[[nodiscard]] SCIPP_DATASET_EXPORT Dataset resize(const Dataset &d,
-                                                  const Dim dim,
-                                                  const scipp::index size);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+resize(const DataArray &a, const Dim dim, const scipp::index size,
+       const FillValue fill = FillValue::Default);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset
+resize(const Dataset &d, const Dim dim, const scipp::index size,
+       const FillValue fill = FillValue::Default);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray resize(const DataArray &a,
                                                     const Dim dim,
@@ -35,5 +36,10 @@ namespace scipp::dataset {
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
         const Dim to_dim);
+
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+transpose(const DataArray &a, const std::vector<Dim> &dims = {});
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset
+transpose(const Dataset &d, const std::vector<Dim> &dims = {});
 
 } // namespace scipp::dataset

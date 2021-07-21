@@ -59,6 +59,27 @@ std::tuple<units::Unit, int64_t> get_time_unit(const py::buffer &value,
       unit);
 }
 
+template <>
+std::tuple<scipp::units::Unit, scipp::units::Unit>
+common_unit<scipp::core::time_point>(const pybind11::object &values,
+                                     const scipp::units::Unit unit) {
+  if (!temporal_or_dimensionless(unit)) {
+    throw std::invalid_argument("Invalid unit for dtype=datetime64: " +
+                                to_string(unit));
+  }
+
+  if (values.is_none() || !has_datetime_dtype(values)) {
+    return std::tuple{unit, unit};
+  }
+
+  const auto value_unit = parse_datetime_dtype(values);
+  if (unit == units::one) {
+    return std::tuple{value_unit, value_unit};
+  } else {
+    return std::tuple{value_unit, unit};
+  }
+}
+
 std::string to_numpy_time_string(const scipp::units::Unit unit) {
   return unit == units::us
              ? std::string("us")

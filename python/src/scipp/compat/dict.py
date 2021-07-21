@@ -2,29 +2,30 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .. import _utils as su
+from __future__ import annotations
+
+from .._variable import vector, vectors, matrix, matrices
+from ..typing import VariableLike
 from .._scipp import core as sc
 
 import numpy as np
 from collections import defaultdict
 
 
-def to_dict(scipp_obj):
+def to_dict(scipp_obj: VariableLike) -> dict:
     """
     Convert a scipp object (Variable, DataArray or Dataset) to a python dict.
 
     :param scipp_obj: A Variable, DataArray or Dataset to be converted to a
                       python dict.
-    :type scipp_obj: Variable, DataArray, or Dataset
     :return: A dict containing all the information necessary to fully define
              the supplied scipp object.
-    :rtype: dict
     """
-    if su.is_variable(scipp_obj):
+    if isinstance(scipp_obj, sc.Variable):
         return _variable_to_dict(scipp_obj)
-    elif su.is_data_array(scipp_obj):
+    elif isinstance(scipp_obj, sc.DataArray):
         return _data_array_to_dict(scipp_obj)
-    elif su.is_dataset(scipp_obj):
+    elif isinstance(scipp_obj, sc.Dataset):
         # TODO: This currently duplicates all coordinates that would otherwise
         # be at the Dataset level onto the individual DataArrays. We are also
         # manually duplicating all attributes, since these are not carried when
@@ -67,10 +68,10 @@ def _variable_to_dict(v):
 
     # Check if variable is 0D:
     suffix = "s" if len(out["dims"]) > 0 else ""
-    out["value" + suffix] = dtype_parser[str_dtype](getattr(
-        v, "value" + suffix), v.shape)
+    out["values"] = dtype_parser[str_dtype](getattr(v, "value" + suffix),
+                                            v.shape)
     var = getattr(v, "variance" + suffix)
-    out["variance" + suffix] = dtype_parser[str_dtype](
+    out["variances"] = dtype_parser[str_dtype](
         var, v.shape) if var is not None else None
     return out
 
@@ -96,7 +97,7 @@ def _dims_to_strings(dims):
     return [str(dim) for dim in dims]
 
 
-def from_dict(dict_obj):
+def from_dict(dict_obj: dict) -> VariableLike:
     """
     Convert a python dict to a scipp Variable, DataArray or Dataset.
     If the input keys contain both `'coords'` and `'data'`, then a DataArray is
@@ -106,18 +107,14 @@ def from_dict(dict_obj):
     Otherwise, a Dataset is returned.
 
     :param dict_obj: A python dict to be converted to a scipp object.
-    :type dict_obj: dict
     :return: A scipp Variable, DataArray or Dataset.
-    :rtype: Variable, DataArray, or Dataset
     """
     keys_as_set = set(dict_obj.keys())
     if {"coords", "data"}.issubset(keys_as_set):
         # Case of a DataArray-like dict (most-likely)
         return _dict_to_data_array(dict_obj)
-    elif (keys_as_set.issubset(
-        {"dims", "values", "variances", "unit", "dtype", "shape"})
-          or keys_as_set.issubset(
-              {"value", "variance", "unit", "dtype", "shape", "dims"})):
+    elif keys_as_set.issubset({"dims", "values", "variances",
+                               "unit", "dtype", "shape"}):  # yapf: disable
         # Case of a Variable-like dict (most-likely)
         return _dict_to_variable(dict_obj)
     else:
@@ -134,14 +131,8 @@ def _dict_to_variable(d):
     """
     d = dict(d)
     # The Variable constructor does not accept both `shape` and `values`. If
-    # `values` is present, remove `shape` from the list. Also remove `dims` in
-    # the case of a 0D variable.
+    # `values` is present, remove `shape` from the list.
     keylist = list(d.keys())
-    if "value" in keylist:
-        if "shape" in keylist:
-            keylist.remove("shape")
-        if "dims" in keylist:
-            keylist.remove("dims")
     if "values" in keylist and "shape" in keylist:
         keylist.remove("shape")
     out = {}
@@ -151,7 +142,21 @@ def _dict_to_variable(d):
             out[key] = getattr(sc.dtype, d[key])
         else:
             out[key] = d[key]
-    return sc.Variable(**out)
+    # Hack for types that cannot be directly constructed using sc.Variable()
+    if out['dims']:
+        init = {'vector_3_float64': vectors, 'matrix_3_float64': matrices}
+    else:
+        init = {'vector_3_float64': vector, 'matrix_3_float64': matrix}
+    make_var = init.get(str(out.get('dtype', None)), sc.Variable)
+    if make_var != sc.Variable:
+        if not out['dims']:
+            out['value'] = out['values']
+            del out['values']
+            del out['dims']
+        for key in ['dtype', 'variance', 'variances']:
+            if key in out:
+                del out[key]
+    return make_var(**out)
 
 
 def _dict_to_data_array(d):

@@ -4,6 +4,18 @@ parameters:
   type: boolean
   default: false
 
+# Note: the 'endpoint' refers to the Azure service connection, which can be
+# found on the Azure pipelines web interface under
+# scipp > scipp > Settings > Service connections
+
+resources:
+  repositories:
+  - repository: SharedPipelines
+    name: scipp/pipelines
+    type: github
+    endpoint: scipp
+    ref: main
+
 trigger:
   tags:
     include:
@@ -12,13 +24,19 @@ trigger:
 pr: none
 
 extends:
-  template: templates/stages.yml
+  template: stages.yml@SharedPipelines
   parameters:
     verbose: ${{ parameters.verbose }}
-    py_versions:
-      linux: ['3.7', '3.8']
-      osx: ['3.7', '3.8']
-      windows: ['3.7', '3.8']
+    config:
+      linux:
+        py_versions: ['3.7', '3.8', '3.9']
+        conda_env: 'scipp-developer.yml'
+      osx:
+        py_versions: ['3.7', '3.8', '3.9']
+        conda_env: 'scipp-developer-minimal.yml'
+      windows:
+        py_versions: ['3.7', '3.8', '3.9']
+        conda_env: 'scipp-developer-minimal.yml'
     deploy: true
     conda_label: 'main'
     release: true

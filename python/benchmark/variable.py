@@ -10,7 +10,7 @@ import numpy as np
 def assign_from_numpy_1d(size):
     a = np.arange(size, dtype=np.float64)
 
-    v = sc.Variable([Dim.X], a)
+    v = sc.Variable(dims=[Dim.X], values=a)
 
     n_iterations = 10
     total_time = 0

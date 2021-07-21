@@ -21,11 +21,10 @@ class PlotFigure2d(PlotFigure):
                  figsize=None,
                  aspect=None,
                  cmap=None,
+                 mask_cmap=None,
                  norm=None,
                  name=None,
                  cbar=None,
-                 unit=None,
-                 masks=None,
                  resolution=None,
                  extend=None,
                  title=None,
@@ -45,8 +44,8 @@ class PlotFigure2d(PlotFigure):
             aspect = config.plot.aspect
 
         self.cmap = cmap
+        self._mask_cmap = mask_cmap
         self.norm = norm
-        self.masks_cmap = masks["cmap"]
 
         ones = np.ones([2, 2])
         image_params = {
@@ -74,7 +73,6 @@ class PlotFigure2d(PlotFigure):
                                      ax=self.ax,
                                      cax=self.cax,
                                      extend=extend)
-            self.cbar.set_label(unit)
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.mask_image = {}
@@ -99,50 +97,46 @@ class PlotFigure2d(PlotFigure):
         """
         return
 
-    def update_axes(self, axparams=None):
+    def update_axes(self, scale, unit):
         """
         Update axes labels, scales, tick locations and labels, as well as axes
         limits.
         """
-        self.ax.set_xlabel(
-            axparams["x"]["label"] if self.xlabel is None else self.xlabel)
-        self.ax.set_ylabel(
-            axparams["y"]["label"] if self.ylabel is None else self.ylabel)
-        self.ax.set_xscale(axparams["x"]["scale"])
-        self.ax.set_yscale(axparams["y"]["scale"])
+        self.cbar.set_label(unit)
+        self.ax.set_xlabel(self._formatters['x']["label"]
+                           if self.xlabel is None else self.xlabel)
+        self.ax.set_ylabel(self._formatters['y']["label"]
+                           if self.ylabel is None else self.ylabel)
+        self.ax.set_xscale(scale['x'])
+        self.ax.set_yscale(scale['y'])
 
-        for xy, param in axparams.items():
-            axis = getattr(self.ax, "{}axis".format(xy))
-            axis.set_major_formatter(
-                self.axformatter[param["dim"]][param["scale"]])
-            axis.set_major_locator(
-                self.axlocator[param["dim"]][param["scale"]])
+        self.ax.xaxis.set_major_formatter(self.axformatter['x'][scale['x']])
+        self.ax.xaxis.set_major_locator(self.axlocator['x'][scale['x']])
+        self.ax.yaxis.set_major_formatter(self.axformatter['y'][scale['y']])
+        self.ax.yaxis.set_major_locator(self.axlocator['y'][scale['y']])
 
-        # Set axes limits and ticks
-        extent_array = np.array([axparams["x"]["lims"],
-                                 axparams["y"]["lims"]]).flatten()
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=UserWarning)
-            self.image_colors.set_extent(extent_array)
-            self.image_values.set_extent(extent_array)
-            self.ax.set_xlim(axparams["x"]["lims"])
-            self.ax.set_ylim(axparams["y"]["lims"])
+        self._limits_set = False
 
-    def update_data(self, new_values, info=None):
+    def update_data(self, new_values):
         """
         Update image array with new values.
         """
         rgba = self.cmap(self.norm(new_values["values"]))
         if "masks" in new_values:
             indices = np.where(new_values["masks"])
-            rgba[indices] = self.masks_cmap(
+            rgba[indices] = self._mask_cmap(
                 self.norm(new_values["values"][indices]))
 
         self.image_colors.set_data(rgba)
         self.image_values.set_data(new_values["values"])
-        if new_values["extent"] is not None:
-            self.image_colors.set_extent(new_values["extent"])
-            self.image_values.set_extent(new_values["extent"])
+        self.image_colors.set_extent(new_values["extent"])
+        self.image_values.set_extent(new_values["extent"])
+        if not self._limits_set:
+            self._limits_set = True
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning)
+                self.ax.set_xlim(new_values["extent"][:2])
+                self.ax.set_ylim(new_values["extent"][2:])
         self.draw()
 
     def toggle_norm(self, norm=None, vmin=None, vmax=None):

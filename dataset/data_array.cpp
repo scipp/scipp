@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/data_array.h"
+#include "scipp/dataset/dataset_util.h"
 #include "scipp/variable/misc_operations.h"
 
 #include "dataset_operations_common.h"
@@ -10,6 +11,11 @@
 namespace scipp::dataset {
 
 namespace {
+template <class T> void expectWritable(const T &dict) {
+  if (dict.is_readonly())
+    throw except::DataArrayError("Read-only flag is set, cannot set new data.");
+}
+
 template <class T> auto copy_shared(const std::shared_ptr<T> &obj) {
   return obj ? std::make_shared<T>(*obj) : obj;
 }
@@ -20,7 +26,8 @@ DataArray::DataArray(const DataArray &other, const AttrPolicy attrPolicy)
       m_coords(copy_shared(other.m_coords)),
       m_masks(copy_shared(other.m_masks)),
       m_attrs(attrPolicy == AttrPolicy::Keep ? copy_shared(other.m_attrs)
-                                             : std::make_shared<Attrs>()) {}
+                                             : std::make_shared<Attrs>()),
+      m_readonly(false) {}
 
 DataArray::DataArray(const DataArray &other)
     : DataArray(other, AttrPolicy::Keep) {}
@@ -47,11 +54,34 @@ DataArray::DataArray(Variable data, typename Coords::holder_type coords,
       m_attrs(std::make_shared<Attrs>(dims(), std::move(attrs))) {}
 
 DataArray &DataArray::operator=(const DataArray &other) {
+  if (this == &other) {
+    return *this;
+  }
+  check_nested_in_assign(*this, other);
   return *this = DataArray(other);
 }
 
+DataArray &DataArray::operator=(DataArray &&other) {
+  if (this == &other) {
+    return *this;
+  }
+  check_nested_in_assign(*this, other);
+  m_name = std::move(other.m_name);
+  m_data = std::move(other.m_data);
+  m_coords = std::move(other.m_coords);
+  m_masks = std::move(other.m_masks);
+  m_attrs = std::move(other.m_attrs);
+  m_readonly = other.m_readonly;
+  return *this;
+}
+
 void DataArray::setData(const Variable &data) {
-  core::expect::equals(dims(), data.dims());
+  // Return early on self assign to avoid exceptions from Python inplace ops
+  if (m_data->is_same(data))
+    return;
+  expectWritable(*this);
+  core::expect::equals(static_cast<Sizes>(dims()),
+                       static_cast<Sizes>(data.dims()));
   *m_data = data;
 }
 
@@ -83,14 +113,11 @@ void DataArray::setName(const std::string_view name) { m_name = name; }
 Coords DataArray::meta() const { return attrs().merge_from(coords()); }
 
 DataArray DataArray::slice(const Slice &s) const {
-  auto out_coords = m_coords->slice(s);
-  Attrs out_attrs(out_coords.sizes(), {});
-  for (auto &coord : *m_coords) {
-    if (unaligned_by_dim_slice(coord, s))
-      out_attrs.set(coord.first, out_coords.extract(coord.first));
-  }
-  return {m_data->slice(s), std::move(out_coords), m_masks->slice(s),
-          m_attrs->slice(s).merge_from(out_attrs), m_name};
+  auto [coords, attrs] = m_coords->slice_coords(s);
+  auto out = DataArray{m_data->slice(s), std::move(coords), m_masks->slice(s),
+                       m_attrs->slice(s).merge_from(attrs), m_name};
+  out.m_readonly = true;
+  return out;
 }
 
 void DataArray::validateSlice(const Slice &s, const DataArray &array) const {
@@ -124,18 +151,21 @@ DataArray DataArray::view() const {
 }
 
 DataArray DataArray::view_with_coords(const Coords &coords,
-                                      const std::string &name) const {
+                                      const std::string &name,
+                                      const bool readonly) const {
   DataArray out;
   out.m_data = m_data; // share data
   const Sizes sizes(dims());
-  out.m_coords =
-      std::make_shared<Coords>(sizes, typename Coords::holder_type{});
+  typename Coords::holder_type selected;
   for (const auto &[dim, coord] : coords)
     if (coords.item_applies_to(dim, dims()))
-      out.m_coords->set(dim, coord.as_const());
+      selected[dim] = coord.as_const();
+  const bool readonly_coords = true;
+  out.m_coords = std::make_shared<Coords>(sizes, selected, readonly_coords);
   out.m_masks = m_masks; // share masks
   out.m_attrs = m_attrs; // share attrs
   out.m_name = name;
+  out.m_readonly = readonly;
   return out;
 }
 
@@ -149,10 +179,12 @@ void DataArray::rename(const Dim from, const Dim to) {
 }
 
 DataArray DataArray::as_const() const {
-  return DataArray(data().as_const(), coords().as_const(), masks().as_const(),
-                   attrs().as_const(), name());
+  auto out = DataArray(data().as_const(), coords().as_const(),
+                       masks().as_const(), attrs().as_const(), name());
+  out.m_readonly = true;
+  return out;
 }
 
-bool DataArray::is_readonly() const noexcept { return m_data->is_readonly(); }
+bool DataArray::is_readonly() const noexcept { return m_readonly; }
 
 } // namespace scipp::dataset

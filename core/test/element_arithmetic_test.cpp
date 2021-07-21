@@ -23,18 +23,18 @@ protected:
   double val = a;
 };
 
-TEST_F(ElementArithmeticTest, plus_equals) {
-  plus_equals(val, b);
+TEST_F(ElementArithmeticTest, add_equals) {
+  add_equals(val, b);
   EXPECT_EQ(val, a + b);
 }
 
-TEST_F(ElementArithmeticTest, minus_equals) {
-  minus_equals(val, b);
+TEST_F(ElementArithmeticTest, subtract_equals) {
+  subtract_equals(val, b);
   EXPECT_EQ(val, a - b);
 }
 
-TEST_F(ElementArithmeticTest, times_equals) {
-  times_equals(val, b);
+TEST_F(ElementArithmeticTest, multiply_equals) {
+  multiply_equals(val, b);
   EXPECT_EQ(val, a * b);
 }
 
@@ -44,9 +44,9 @@ TEST_F(ElementArithmeticTest, divide_equals) {
 }
 
 TEST_F(ElementArithmeticTest, non_in_place) {
-  EXPECT_EQ(plus(a, b), a + b);
-  EXPECT_EQ(minus(a, b), a - b);
-  EXPECT_EQ(times(a, b), a * b);
+  EXPECT_EQ(add(a, b), a + b);
+  EXPECT_EQ(subtract(a, b), a - b);
+  EXPECT_EQ(multiply(a, b), a * b);
   EXPECT_EQ(divide(a, b), a / b);
 }
 
@@ -189,7 +189,7 @@ TYPED_TEST(ElementArithmeticDivisionTest, remainder) {
 TEST(ElementArithmeticDivisionTest, units) {
   EXPECT_EQ(divide(units::m, units::s), units::m / units::s);
   EXPECT_EQ(floor_divide(units::m, units::s), units::m / units::s);
-  EXPECT_EQ(mod(units::m, units::s), units::m / units::s);
+  EXPECT_EQ(mod(units::m, units::s), units::m);
 }
 
 class ElementNanArithmeticTest : public ::testing::Test {
@@ -199,47 +199,47 @@ protected:
   double dNaN = std::numeric_limits<double>::quiet_NaN();
 };
 
-TEST_F(ElementNanArithmeticTest, plus_equals) {
+TEST_F(ElementNanArithmeticTest, add_equals) {
   auto expected = x + y;
-  nan_plus_equals(x, y);
+  nan_add_equals(x, y);
   EXPECT_EQ(expected, x);
 }
 
-TEST_F(ElementNanArithmeticTest, plus_equals_with_rhs_nan) {
+TEST_F(ElementNanArithmeticTest, add_equals_with_rhs_nan) {
   auto expected = x + 0;
-  nan_plus_equals(x, dNaN);
+  nan_add_equals(x, dNaN);
   EXPECT_EQ(expected, x);
 }
-TEST_F(ElementNanArithmeticTest, plus_equals_with_lhs_nan) {
+TEST_F(ElementNanArithmeticTest, add_equals_with_lhs_nan) {
   auto expected = y + 0;
   auto lhs = dNaN;
-  nan_plus_equals(lhs, y);
+  nan_add_equals(lhs, y);
   EXPECT_EQ(expected, lhs);
 }
-TEST_F(ElementNanArithmeticTest, plus_equals_with_both_nan) {
+TEST_F(ElementNanArithmeticTest, add_equals_with_both_nan) {
   auto lhs = dNaN;
-  nan_plus_equals(lhs, dNaN);
+  nan_add_equals(lhs, dNaN);
   EXPECT_EQ(0, lhs);
 }
-TEST_F(ElementNanArithmeticTest, plus_equals_with_rhs_nan_ValueAndVariance) {
+TEST_F(ElementNanArithmeticTest, add_equals_with_rhs_nan_ValueAndVariance) {
   ValueAndVariance<double> asNaN{dNaN, 0};
   ValueAndVariance<double> z{1, 0};
   auto expected = z + ValueAndVariance<double>{0, 0};
-  nan_plus_equals(z, asNaN);
+  nan_add_equals(z, asNaN);
   EXPECT_EQ(expected, z);
 }
-TEST_F(ElementNanArithmeticTest, plus_equals_with_lhs_nan_rhs_int) {
+TEST_F(ElementNanArithmeticTest, add_equals_with_lhs_nan_rhs_int) {
   auto lhs = dNaN;
-  nan_plus_equals(lhs, 1);
+  nan_add_equals(lhs, 1);
   EXPECT_EQ(1.0, lhs);
 }
-TEST_F(ElementNanArithmeticTest, plus_equals_with_rhs_int_lhs_nan) {
+TEST_F(ElementNanArithmeticTest, add_equals_with_rhs_int_lhs_nan) {
   auto lhs = 1;
-  nan_plus_equals(lhs, dNaN);
+  nan_add_equals(lhs, dNaN);
   EXPECT_EQ(1, lhs);
 }
-TEST_F(ElementNanArithmeticTest, plus_equals_with_rhs_int_lhs_int) {
+TEST_F(ElementNanArithmeticTest, add_equals_with_rhs_int_lhs_int) {
   auto lhs = 1;
-  nan_plus_equals(lhs, 2);
+  nan_add_equals(lhs, 2);
   EXPECT_EQ(3, lhs);
 }

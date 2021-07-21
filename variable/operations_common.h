@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/core/flags.h"
+#include "scipp/variable/astype.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {
@@ -24,5 +26,30 @@ SCIPP_VARIABLE_EXPORT Variable nanmean_impl(const Variable &var, const Dim dim,
 SCIPP_VARIABLE_EXPORT Variable &nanmean_impl(const Variable &var, const Dim dim,
                                              const Variable &masks_sum,
                                              Variable &out);
+
+template <class T> T normalize_impl(const T &nominator, const T &denominator) {
+  // Nominator may be and int or a Eigen::Vector3d => use double
+  // This approach would be wrong if we supported vectors of float
+  const auto type =
+      nominator.dtype() == dtype<float> ? dtype<float> : dtype<double>;
+  return nominator *
+         reciprocal(astype(denominator, type, CopyPolicy::TryAvoid));
+}
+
+SCIPP_VARIABLE_EXPORT void
+expect_valid_bin_indices(const VariableConceptHandle &indices, const Dim dim,
+                         const Sizes &buffer_sizes);
+
+template <class T>
+Variable make_bins_impl(Variable indices, const Dim dim, T &&buffer);
+
+template <class T, class Op> auto reduce_all_dims(const T &obj, const Op &op) {
+  if (obj.dims().empty())
+    return copy(obj);
+  auto out = op(obj, obj.dims().inner());
+  while (!out.dims().empty())
+    out = op(out, out.dims().inner());
+  return out;
+}
 
 } // namespace scipp::variable

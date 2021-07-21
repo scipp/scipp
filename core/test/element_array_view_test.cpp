@@ -409,3 +409,51 @@ TEST(ElementArrayViewTest, view_of_view_bad_broadcast) {
   EXPECT_THROW(ElementArrayView<const int32_t>(base, dims2),
                except::DimensionError);
 }
+
+void expect_contiguous(const Dimensions &dims, const Strides &strides,
+                       const bool contiguous) {
+  ElementArrayView<double> view(nullptr, 0, dims, strides);
+  if (contiguous)
+    EXPECT_NO_THROW_DISCARD(view.as_span());
+  else
+    EXPECT_THROW(view.as_span(), std::runtime_error);
+}
+
+TEST(ElementArrayViewTest, requireContiguous) {
+  Dimensions parent({{Dim::Z, 2}, {Dim::Y, 3}, {Dim::X, 4}});
+  expect_contiguous({Dim::X, 0}, {1}, true);
+  expect_contiguous({Dim::X, 1}, {1}, true);
+  expect_contiguous({Dim::X, 2}, {1}, true);
+  expect_contiguous({Dim::X, 2}, {-1}, false);
+  expect_contiguous({Dim::X, 2}, {0}, false);
+  expect_contiguous({Dim::X, 2}, {2}, false);
+
+  expect_contiguous({{Dim::Y, Dim::X}, {0, 4}}, {4, 1}, true);
+  expect_contiguous({{Dim::Y, Dim::X}, {1, 4}}, {4, 1}, true);
+  expect_contiguous({{Dim::Y, Dim::X}, {2, 4}}, {4, 1}, true);
+  expect_contiguous({{Dim::Y, Dim::X}, {2, 2}}, {4, 0}, false);
+  expect_contiguous({{Dim::Y, Dim::X}, {2, 2}}, {4, -1}, false);
+  expect_contiguous({{Dim::Y, Dim::X}, {2, 2}}, {4, 2}, false);
+  expect_contiguous({{Dim::X, Dim::Y}, {4, 3}}, {1, 4}, false); // transpose
+  expect_contiguous({{Dim::Y, Dim::X}, {3, 4}}, {3, 1}, false); // overlap
+  expect_contiguous({{Dim::Y, Dim::X}, {3, 4}}, {5, 1},
+                    false); // gap between rows
+
+  expect_contiguous({{Dim::Z, Dim::Y, Dim::X}, {0, 3, 4}}, {12, 4, 1}, true);
+  expect_contiguous({{Dim::Z, Dim::Y, Dim::X}, {1, 3, 4}}, {12, 4, 1}, true);
+  expect_contiguous({{Dim::Z, Dim::Y, Dim::X}, {2, 3, 4}}, {12, 4, 1}, true);
+  expect_contiguous({{Dim::Z, Dim::Y, Dim::X}, {2, 3, 4}}, {12, 3, 1},
+                    false); // row overlap
+  expect_contiguous({{Dim::Z, Dim::Y, Dim::X}, {2, 3, 4}}, {12, 5, 1},
+                    false); // gap between rows
+  expect_contiguous({{Dim::Z, Dim::X, Dim::Y}, {2, 4, 3}}, {12, 1, 4},
+                    false); // transpose
+  expect_contiguous({{Dim::X, Dim::Y, Dim::Z}, {4, 3, 2}}, {1, 4, 12},
+                    false); // transpose
+  expect_contiguous({{Dim::Y, Dim::Z, Dim::X}, {3, 2, 4}}, {4, 12, 1},
+                    false); // transpose
+  expect_contiguous({{Dim::Z, Dim::Y, Dim::X}, {2, 3, 4}}, {11, 4, 1},
+                    false); // slab overlap
+  expect_contiguous({{Dim::Z, Dim::Y, Dim::X}, {2, 3, 4}}, {13, 4, 1},
+                    false); // gap between slabs
+}

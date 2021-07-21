@@ -2,25 +2,32 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .helpers import PlotArray
-from .formatters import VectorFormatter, StringFormatter, \
-                        DateFormatter, LabelFormatter
-from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
-                   vars_to_err, find_limits
-from .._utils import name_with_unit, vector_type, string_type, datetime_type
+from .tools import find_limits, to_dict
+from .. import typing
 from .._scipp import core as sc
-import numpy as np
-import enum
+from .._variable import arange
 
 
-class Kind(enum.Enum):
+class DataArrayDict(dict):
     """
-    Small enum listing the special cases for the axis tick formatters.
+    Dict of data arrays with matching dimension labels and units. Shape and
+    coordinates may mismatch.
     """
-    vector = enum.auto()
-    string = enum.auto()
-    datetime = enum.auto()
-    other = enum.auto()
+    @property
+    def dims(self):
+        return next(iter(self.values())).dims
+
+    @property
+    def sizes(self):
+        return next(iter(self.values())).sizes
+
+    @property
+    def unit(self):
+        return next(iter(self.values())).unit
+
+    @property
+    def meta(self):
+        return next(iter(self.values())).meta
 
 
 class PlotModel:
@@ -40,224 +47,58 @@ class PlotModel:
     The model is where all operations on the data (slicing and resampling) are
     performed.
     """
-    def __init__(self,
-                 scipp_obj_dict=None,
-                 name=None,
-                 axes=None,
-                 dim_to_shape=None,
-                 dim_label_map=None):
-
-        self.interface = {}
-
-        # The main container of DataArrays
+    def __init__(self, scipp_obj_dict=None):
+        self._dims = None
         self.data_arrays = {}
-        self.coord_info = {}
-        self.dim_to_shape = dim_to_shape
-        self.axformatter = {}
-
-        axes_dims = list(axes.values())
 
         # Create dict of DataArrays using information from controller
         for name, array in scipp_obj_dict.items():
+            # TODO for the 3d scatter plot this is problematic: we never
+            # touch any of the pos dims, so we don't want to replace coords
+            # should model only consider "other" data dims?
+            coord_list = {
+                dim: self._axis_coord(array, dim)
+                for dim in array.dims
+            }
+            self.data_arrays[name] = sc.DataArray(data=array.data,
+                                                  coords=coord_list,
+                                                  masks=to_dict(array.masks))
+        self.data_arrays = DataArrayDict(self.data_arrays)
 
-            # Store axis tick formatters
-            self.axformatter[name] = {}
-            self.coord_info[name] = {}
-            coord_list = {}
+        # Save a copy of the name for simpler access
+        # Note this needs to be done before calling update_data_arrays
+        self.name = name
 
-            # Iterate through axes and collect coordinates
-            for dim in axes_dims:
-
-                coord, formatter, label, unit, offset = \
-                    self._axis_coord_and_formatter(
-                        dim, array, self.dim_to_shape[name], dim_label_map)
-
-                self.axformatter[name][dim] = formatter
-                self.coord_info[name][dim] = {"label": label, "unit": unit}
-
-                is_histogram = False
-                for i, d in enumerate(coord.dims):
-                    if d == dim:
-                        is_histogram = self.dim_to_shape[name][
-                            d] == coord.shape[i] - 1
-
-                if is_histogram:
-                    coord_list[dim] = coord
-                else:
-                    coord_list[dim] = to_bin_edges(coord, dim)
-
-            # Create a PlotArray helper object that supports slicing where new
-            # bin-edge coordinates can be attached to the data
-            self.data_arrays[name] = PlotArray(data=array.data,
-                                               meta=coord_list)
-
-            # Include masks
-            for m in array.masks:
-                self.data_arrays[name].masks[m] = array.masks[m]
-
-        # Store dim of multi-dimensional coordinate if present
-        self.multid_coord = None
-        for array in self.data_arrays.values():
-            for dim, coord in array.meta.items():
-                if len(coord.dims) > 1:
-                    self.multid_coord = dim
+        self.update()
 
         # The main currently displayed data slice
         self.dslice = None
-        # Save a copy of the name for simpler access
-        self.name = name
 
-    def _axis_coord_and_formatter(self, dim, data_array, dim_to_shape,
-                                  dim_label_map):
+    def _dims_updated(self):
+        pass
+
+    @property
+    def dims(self):
+        return self._dims
+
+    @dims.setter
+    def dims(self, dims):
+        self._dims = dims
+        self._dims_updated()
+
+    def _axis_coord(self, array, dim):
         """
-        Get dimensions from requested axis.
-        Also return axes tick formatters and locators.
+        Get coord for requested dim.
         """
-
-        # Create some default axis tick formatter, depending on linear or log
-        # scaling.
-        formatter = {"linear": None, "log": None, "custom_locator": False}
-
-        kind = {}
-        offset = 0.0
-        coord_label = None
-        form = None
-
-        has_no_coord = dim not in data_array.meta
-        kind[dim] = Kind.other
-        keys = []
-        if not has_no_coord:
-            keys.append(dim)
-        if dim in dim_label_map:
-            keys.append(dim_label_map[dim])
-
-        for key in keys:
-            if vector_type(data_array.meta[key]):
-                kind[key] = Kind.vector
-            elif string_type(data_array.meta[key]):
-                kind[key] = Kind.string
-            elif datetime_type(data_array.meta[key]):
-                kind[key] = Kind.datetime
-            else:
-                kind[key] = Kind.other
-
-        # Get the coordinate from the DataArray or generate a fake one
-        if has_no_coord or (kind[dim] == Kind.vector) or (kind[dim]
-                                                          == Kind.string):
-            coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
-            if not has_no_coord:
-                coord.unit = data_array.meta[dim].unit
-        elif kind[dim] == Kind.datetime:
-            coord = data_array.meta[dim]
-            offset = sc.min(coord)
-            coord = coord - offset
+        if dim in array.meta:
+            coord = array.meta[dim]
+            if typing.has_vector_type(coord) or typing.has_string_type(coord):
+                coord = arange(dim=dim, start=0, stop=array.sizes[dim])
+            elif typing.has_datetime_type(coord):
+                coord = coord - sc.min(coord)
         else:
-            coord = data_array.meta[dim]
-        # Convert the coordinate to float because rebin (used in 2d plots) does
-        # not currently support integer coordinates
-        if (coord.dtype != sc.dtype.float32) and (coord.dtype !=
-                                                  sc.dtype.float64):
-            coord = coord.astype(sc.dtype.float64)
-
-        # Set up tick formatters
-        if dim in dim_label_map:
-            key = dim_label_map[dim]
-        else:
-            key = dim
-
-        if kind[key] == Kind.vector:
-            form = VectorFormatter(data_array.meta[key].values,
-                                   dim_to_shape[dim]).formatter
-            formatter["custom_locator"] = True
-        elif kind[key] == Kind.string:
-            form = StringFormatter(data_array.meta[key].values,
-                                   dim_to_shape[dim]).formatter
-            formatter["custom_locator"] = True
-        elif kind[key] == Kind.datetime:
-            form = DateFormatter(offset, key, self.interface).formatter
-        elif dim in dim_label_map:
-            coord_values = coord.values
-            if has_no_coord:
-                # In this case we always have a bin-edge coord
-                coord_values = to_bin_centers(coord, dim).values
-            else:
-                if data_array.meta[dim].shape[-1] == dim_to_shape[dim]:
-                    coord_values = to_bin_centers(coord, dim).values
-            form = LabelFormatter(data_array.meta[dim_label_map[dim]].values,
-                                  coord_values).formatter
-
-        if form is not None:
-            formatter.update({"linear": form, "log": form})
-
-        if dim in dim_label_map:
-            coord_label = name_with_unit(
-                var=data_array.meta[dim_label_map[dim]],
-                name=dim_label_map[dim])
-            coord_unit = name_with_unit(
-                var=data_array.meta[dim_label_map[dim]], name="")
-        else:
-            coord_label = name_with_unit(var=coord)
-            coord_unit = name_with_unit(var=coord, name="")
-
-        return coord, formatter, coord_label, coord_unit, offset
-
-    def _make_masks(self, array, mask_info, transpose=False):
-        if not mask_info:
-            return {}
-        masks = {}
-        data = array.data
-        base_mask = sc.Variable(dims=data.dims,
-                                values=np.ones(data.shape, dtype=np.int32))
-        for m in mask_info:
-            if m in array.masks:
-                msk = base_mask * sc.Variable(dims=array.masks[m].dims,
-                                              values=array.masks[m].values)
-                masks[m] = msk.values
-                if transpose:
-                    masks[m] = np.transpose(masks[m])
-            else:
-                masks[m] = None
-        return masks
-
-    def _make_profile(self, profile, dim, mask_info):
-        values = {"values": {}, "variances": {}, "masks": {}}
-        values["values"]["x"] = profile.meta[dim].values.ravel()
-        values["values"]["y"] = profile.data.values.ravel()
-        if profile.data.variances is not None:
-            values["variances"]["e"] = vars_to_err(
-                profile.data.variances.ravel())
-        values["masks"] = self._make_masks(profile, mask_info=mask_info)
-        return values
-
-    def get_axformatter(self, name, dim):
-        """
-        Get an axformatter for a given data name and dimension.
-        """
-        return self.axformatter[name][dim]
-
-    def get_slice_coord_bounds(self, name, dim, bounds):
-        """
-        Return the left, center, and right coordinates for a bin index.
-        """
-        return self.data_arrays[name].meta[dim][
-            dim,
-            bounds[0]].value, self.data_arrays[name].meta[dim][dim,
-                                                               bounds[1]].value
-
-    def get_data_names(self):
-        """
-        List all names in dict of data arrays.
-        This is usually only a single name, but can be more than one for 1d
-        plots.
-        """
-        return list(self.data_arrays.keys())
-
-    def get_data_coord(self, name, dim):
-        """
-        Get a coordinate along a requested dimension.
-        """
-        return self.data_arrays[name].meta[dim], self.coord_info[name][dim][
-            "label"], self.coord_info[name][dim]["unit"]
+            coord = arange(dim=dim, start=0, stop=array.sizes[dim])
+        return coord
 
     def rescale_to_data(self, scale=None):
         """
@@ -267,37 +108,3 @@ class PlotModel:
             return find_limits(self.dslice.data, scale=scale)[scale]
         else:
             return [None, None]
-
-    def slice_data(self, array, slices, keep_dims=False):
-        """
-        Slice the data array according to the dimensions and extents listed
-        in slices.
-        """
-        for dim, [lower, upper] in slices.items():
-            # TODO: Could this be optimized for performance?
-            # Note: we use the range 1 [dim, i:i+1] slicing here instead of
-            # index slicing [dim, i] so that we hit the correct branch in
-            # rebin, because in the case of slicing an outer dim, rebin-inner
-            # cannot deal with non-continuous data as an input.
-            array = array[dim, lower:upper]
-            if (upper - lower) > 1:
-                array.data = sc.rebin(
-                    array.data, dim, array.meta[dim],
-                    sc.concatenate(array.meta[dim][dim, 0],
-                                   array.meta[dim][dim, -1], dim))
-            if not keep_dims:
-                array = array[dim, 0]
-        return array
-
-    def get_multid_coord(self):
-        """
-        Return the multi-dimensional coordinate.
-        """
-        return self.multid_coord
-
-    def update_profile_model(self, *args, **kwargs):
-        return
-
-    def connect(self, callbacks):
-        for name, func in callbacks.items():
-            self.interface[name] = func
