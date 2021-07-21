@@ -67,4 +67,24 @@ void init_creation(py::module &m) {
       },
       py::arg("dims"), py::arg("shape"), py::arg("unit") = units::one,
       py::arg("dtype") = py::none(), py::arg("with_variances") = std::nullopt);
+
+  m.def(
+      "fill",
+      [](const std::vector<Dim> &dims, const std::vector<scipp::index> &shape,
+         const units::Unit &unit, const py::object &fillValue,
+         const py::object &fillVariance, const py::object &dtype) {
+
+
+        const auto dtype_ = common_dtype(fillValue, fillVariance, scipp_dtype(dtype));
+
+        py::gil_scoped_release release;
+
+        return variable::fill(static_cast<double>(py::float_(fillValue)),
+                              static_cast<double>(py::float_(fillVariance)),
+                                  Dimensions(dims, shape),
+                              unit,
+                              dtype_);
+      },
+      py::arg("dims"), py::arg("shape"), py::arg("unit") = units::one, py::arg("value") = std::nullopt, 
+          py::arg("variance") = std::nullopt, py::arg("dtype") = std::nullopt);
 }

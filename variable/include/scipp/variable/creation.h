@@ -25,6 +25,15 @@ empty_like(const Variable &prototype,
            const std::optional<Dimensions> &shape = std::nullopt,
            const Variable &sizes = {});
 
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable 
+fill(const float &fillValue,
+     const Dimensions &dims,
+     const units::Unit &unit, DType dtype);
+
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable 
+fill(const float &fillValue, const float &fillVariance,
+     const Dimensions &dims, const units::Unit &unit, DType dtype);
+
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 special_like(const Variable &prototype, const FillValue &fill);
 
