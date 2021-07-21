@@ -1,9 +1,3 @@
-parameters:
-- name: verbose
-  displayName: Verbose
-  type: boolean
-  default: false
-
 # Note: the 'endpoint' refers to the Azure service connection, which can be
 # found on the Azure pipelines web interface under
 # scipp > scipp > Settings > Service connections
@@ -14,7 +8,7 @@ resources:
     name: scipp/pipelines
     type: github
     endpoint: scipp
-    ref: main
+    ref: fix-windows-debug-build # HACK, delete this and include main only
 
 trigger:
   branches:
@@ -31,12 +25,10 @@ schedules:
         - fix-windows-debug-build # HACK, delete this and include main only
     always: true
 
-variables:
-  scipp_debug_build: 1
-
 extends:
   template: stages.yml@SharedPipelines
   parameters:
+    build_type: debug
     verbose: ${{ parameters.verbose }}
     config:
       linux:

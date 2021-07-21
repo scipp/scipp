@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser(description='Build C++ library and run tests')
 parser.add_argument('--prefix', default='install')
 parser.add_argument('--source_dir', default='.')
 parser.add_argument('--build_dir', default='build')
+parser.add_argument('--build_type', default='release')
 
 
 def run_command(cmd, shell):
@@ -23,14 +24,20 @@ def run_command(cmd, shell):
     return subprocess.check_call(cmd, stderr=subprocess.STDOUT, shell=shell)
 
 
-def main(prefix='install', build_dir='build', source_dir='.'):
+def main(prefix='install', build_dir='build', source_dir='.',
+         build_type="release"):
     """
     Platform-independent function to run cmake, build, install and C++ tests.
     """
-    debug_build = "SCIPP_DEBUG_BUILD" in os.environ
+    if build_type == "release":
+        debug_build = False
+    elif build_type == "debug":
+        debug_build = True
+    else:
+        print(f"build_cpp.py: Unsupported build type: {build_type}")
+        sys.exit(1)
 
-    print("Building in {} configuration".format(
-        "debug" if debug_build else "release"))
+    print(f"Building in {build_type} configuration")
 
     # Get the platform name: 'linux', 'darwin' (osx), or 'win32'.
     platform = sys.platform
@@ -126,4 +133,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     main(prefix=args.prefix,
          build_dir=args.build_dir,
-         source_dir=args.source_dir)
+         source_dir=args.source_dir,
+         build_type=args.build_type)
