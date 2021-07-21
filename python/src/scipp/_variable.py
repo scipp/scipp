@@ -155,20 +155,20 @@ def ones_like(var: _cpp.Variable) -> _cpp.Variable:
                 with_variances=var.variances is not None)
 
 
-def fill(*,
-         dims: _Sequence[str] = None,
-         shape: _Sequence[int] = None,
-         sizes: dict = None,
-         unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
-         value: _Union[float],
-         variance: _Union[float],
-         dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64) -> _cpp.Variable:
-    """Constructs a :class:`Variable` with values initialized to 1 with
-    given dimension labels and shape.
+def fill(
+        *,
+        dims: _Sequence[str] = None,
+        shape: _Sequence[int] = None,
+        sizes: dict = None,
+        unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+        value: float,
+        variance: float = 0.0,
+        dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64) -> _cpp.Variable:
+    """Constructs a :class:`Variable` with values initialized to the specified
+    value given dimension labels and shape.
     The dims and shape can also be specified using a sizes dict.
 
-    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.empty`
-              :py:func:`scipp.scalar` :py:func:`scipp.array`
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
 
     :param dims: Optional (if sizes is specified), dimension labels.
     :param shape: Optional (if sizes is specified), dimension sizes.
@@ -179,10 +179,13 @@ def fill(*,
     :param dtype: Optional, type of underlying data. Default=float64
     """
     return _cpp.fill(**_parse_dims_shape_sizes(dims, shape, sizes),
-                     unit=unit, value=value, variance=variance, dtype=dtype)
+                     unit=unit,
+                     value=value,
+                     variance=variance,
+                     dtype=dtype)
 
 
-def fill_like(var: _cpp.Variable) -> _cpp.Variable:
+def fill_like(var: _cpp.Variable, value) -> _cpp.Variable:
     """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
     as the input variable, but with all values initialized to 1. If the input
     has variances, all variances in the output are set to 1.
@@ -191,9 +194,7 @@ def fill_like(var: _cpp.Variable) -> _cpp.Variable:
 
     :param var: Input variable.
     """
-    return fill(dims=var.dims,
-                shape=var.shape,
-                unit=var.unit, value=value)
+    return fill(dims=var.dims, shape=var.shape, unit=var.unit, value=value)
 
 
 def empty(*,

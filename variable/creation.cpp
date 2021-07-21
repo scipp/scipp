@@ -33,29 +33,6 @@ Variable ones(const Dimensions &dims, const units::Unit &unit, const DType type,
   }
 }
 
-Variable fill(const float &fillValue, const Dimensions &dims,
-              const units::Unit &unit, DType dtype) {
-  return fill(fillValue, fillValue, dims, unit, dtype);
-}
-
-Variable fill(const float &fillValue, const float &fillVariance,
-              const Dimensions &dims,
-              const units::Unit &unit, DType type) {
-
-  const auto make_prototype = [&](auto &&values) {
-    return Variable{type, Dimensions{}, unit, Values{values}, Variances{fillVariance}};
-  };
-
-  /* if (type == dtype<core::time_point>) {
-    return copy(broadcast(make_prototype(core::time_point{fillValue}), dims));
-  } else */if (type == dtype<std::string>) {
-    throw std::invalid_argument("Cannot construct 'fill' with strings.");
-  } else {
-    return copy(broadcast(make_prototype(fillValue), dims));
-  }
-}
-
-
 
 /// Create empty (uninitialized) variable with same parameters as prototype.
 ///

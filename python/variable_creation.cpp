@@ -74,17 +74,17 @@ void init_creation(py::module &m) {
          const units::Unit &unit, const py::object &fillValue,
          const py::object &fillVariance, const py::object &dtype) {
 
+        py::gil_scoped_release release;
 
         const auto dtype_ = common_dtype(fillValue, fillVariance, scipp_dtype(dtype));
 
-        py::gil_scoped_release release;
+        const auto make_prototype = [&]() {
+          return Variable{dtype_, Dimensions{}, unit, Values{py::float_(fillValue)},
+                          Variances{py::float_(fillVariance)}};
+        };
 
-        return variable::fill(static_cast<double>(py::float_(fillValue)),
-                              static_cast<double>(py::float_(fillVariance)),
-                                  Dimensions(dims, shape),
-                              unit,
-                              dtype_);
+        return copy(make_prototype().broadcast(Dimensions{dims, shape}));
       },
       py::arg("dims"), py::arg("shape"), py::arg("unit") = units::one, py::arg("value") = std::nullopt, 
           py::arg("variance") = std::nullopt, py::arg("dtype") = std::nullopt);
-}
+        }
