@@ -30,10 +30,11 @@ class Graph:
     def __contains__(self, name):
         return name in self._graph
 
-    def show(self):
+    def show(self, size=None):
         from graphviz import Digraph
         dot = Digraph(strict=True)
-        dot.attr('node', shape='box')
+        dot.attr('node', shape='box', height='0.1')
+        dot.attr(size=size)
         for output, producer in self._graph.items():
             if isinstance(producer, str):  # rename
                 dot.edge(producer, output)
@@ -264,5 +265,5 @@ def transform_coords(x: Union[DataArray, Dataset],
         return _transform_dataset(x, coords=coords, graph=graph, kwargs=kwargs)
 
 
-def show_graph(graph):
-    return Graph(graph).show()
+def show_graph(graph, size=None):
+    return Graph(graph).show(size=size)
