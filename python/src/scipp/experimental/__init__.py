@@ -11,6 +11,14 @@ Contents of this submodule are subject to changes and removal without
 notice.
 """
 
+import math
+
+from numba import types
+from numba.extending import overload
+
+from .. import _math as sc_math
+from .. import _trigonometry as sc_trigonometry
+
 
 def transform_kernel(dtype='float64'):
     if dtype != 'float64':
@@ -41,3 +49,27 @@ def transform(kernel, *args):
     if not hasattr(kernel, 'address'):
         kernel = transform_kernel()(kernel)
     return experimental_transform(kernel, *args)
+
+
+# need extra function so that resolver is a new function for each wrapped func
+# if inlined in make_numba_overloads, the repeated defs overwrite each other
+def make_numba_overload(sc_func, impl):
+    @overload(sc_func, inline='always')
+    def resolver(x):
+        if isinstance(x, types.Float):
+
+            def impl_wrapper(x):
+                return impl(x)
+
+            return impl_wrapper
+
+
+def make_numba_overloads(func_tuples):
+    for sc_func, impl in func_tuples:
+        make_numba_overload(sc_func, impl)
+
+
+# TODO This is just an example,
+#      apart from sqrt, the scipp functions do not support units.
+make_numba_overloads([(sc_math.sqrt, math.sqrt), (sc_math.abs, abs),
+                      (sc_trigonometry.sin, math.sin)])
