@@ -14,7 +14,7 @@ Features
 * Added bound method equivalents to many free functions which take a single Variable or DataArray `#1969 <https://github.com/scipp/scipp/pull/1969>`_.
 * Variables can now be constructed directly from multi dimensional lists and tuples `#1977 <https://github.com/scipp/scipp/pull/1977>`_.
 * Plotting 1-D event data is now supported `#2018 <https://github.com/scipp/scipp/pull/2018>`_.
-* Added ``full`` and ``full_like`` variable creation functions ``_.
+* Added ``full`` and ``full_like`` variable creation functions `#2069 <https://github.com/scipp/scipp/pull/2069>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
