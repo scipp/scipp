@@ -18,18 +18,14 @@ def _make_xy():
 def test_rename_2_steps():
     original = _make_xy()
     graph = {'y4': 'y', 'y3': 'y2', 'y2': 'y'}
-    da = original.copy().transform_coords(['y3'],
-                                          graph=graph,
-                                          include_aliases=True)
+    da = original.copy().transform_coords(['y3'], graph=graph, include_aliases=True)
     assert da.dims == ['x', 'y3']
     original = original.rename_dims({'y': 'y3'})
     assert sc.identical(da.coords['y3'], original.coords['y'])
     assert sc.identical(da.attrs['y2'], original.coords['y'])
     assert sc.identical(da.attrs['y'], original.coords['y'])
 
-    da = original.copy().transform_coords(['y3'],
-                                          graph=graph,
-                                          include_aliases=False)
+    da = original.copy().transform_coords(['y3'], graph=graph, include_aliases=False)
     assert 'y3' in da.coords  # alias, but requested explicitly
     assert 'y2' not in da.attrs  # alias for y => removed
     assert 'y' in da.attrs
@@ -133,12 +129,7 @@ def test_dim_rename_multi_level_merge():
     #   \ |
     #    *bc
     original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
-    da = original.transform_coords(['bc', 'a2'],
-                                   graph={
-                                       'bc': bc,
-                                       'c': 'a',
-                                       'a2': 'a'
-                                   })
+    da = original.transform_coords(['bc', 'a2'], graph={'bc': bc, 'c': 'a', 'a2': 'a'})
     # a2 prevents conversion of a to c
     # => c is not a dimension coord
     # => bc depends on single dimension coord
@@ -211,16 +202,13 @@ def test_dataset():
     da = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
     ds = sc.Dataset(data={'item1': da.copy(), 'item2': da + da})
     transformed = ds.transform_coords('b', graph={'b': 'a'})
-    assert sc.identical(transformed['item1'].attrs['a'],
-                        a.rename_dims({'a': 'b'}))
+    assert sc.identical(transformed['item1'].attrs['a'], a.rename_dims({'a': 'b'}))
     assert sc.identical(transformed.coords['b'], a.rename_dims({'a': 'b'}))
 
 
 def test_binned():
     N = 50
-    data = sc.DataArray(data=sc.ones(dims=['event'],
-                                     unit=sc.units.counts,
-                                     shape=[N]),
+    data = sc.DataArray(data=sc.ones(dims=['event'], unit=sc.units.counts, shape=[N]),
                         coords={
                             'x':
                             sc.array(dims=['event'],
@@ -248,8 +236,7 @@ def test_binned():
         assert 'xy' not in original.events.coords  # Buffer was copied
         assert 'x' in original.events.coords  # Buffer was copied for consume
         assert sc.identical(da.bins.coords['xy'],
-                            (y * original.bins.coords['x']).rename_dims(
-                                {'x': 'x2'}))
+                            (y * original.bins.coords['x']).rename_dims({'x': 'x2'}))
         assert 'yy' not in da.events.coords
         assert sc.identical(da.coords['yy'], y * y)
 
