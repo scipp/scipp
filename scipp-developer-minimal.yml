@@ -29,5 +29,6 @@ dependencies:
   # Test
   - h5py
   - pytest
+  - python-graphviz
   - xarray  # For testing xarray <-> scipp conversion
   - pandas  # For testing pandas <-> scipp conversion

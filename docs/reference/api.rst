@@ -64,6 +64,7 @@ General
    sort
    stddevs
    to_unit
+   transform_coords
    values
    variances
 
@@ -210,6 +211,7 @@ Visualization
    :toctree: ../generated/functions
 
    show
+   show_graph
    table
    to_html
    plot
@@ -223,6 +225,8 @@ Compatibility
 
    to_dict
    from_dict
+   from_pandas
+   from_xarray
 
 
 Typing
