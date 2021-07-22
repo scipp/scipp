@@ -6,22 +6,12 @@ import scipp as sc
 
 
 def _make_xy():
-    Nx = 40
-    Ny = 60
-    return sc.DataArray(data=sc.ones(dims=['x', 'y'], shape=[Nx, Ny]),
+    x = sc.linspace(dim='x', unit='m', start=0.1, stop=0.2, num=3)
+    y = sc.linspace(dim='y', unit='m', start=0.1, stop=0.3, num=4)
+    return sc.DataArray(data=sc.ones(dims=['x', 'y'], shape=[3, 4]),
                         coords={
-                            'x':
-                            sc.linspace(dim='x',
-                                        unit='m',
-                                        start=0.1,
-                                        stop=0.2,
-                                        num=Nx),
-                            'y':
-                            sc.linspace(dim='y',
-                                        unit='m',
-                                        start=0.1,
-                                        stop=0.3,
-                                        num=Ny),
+                            'x': x,
+                            'y': y
                         })
 
 
@@ -66,25 +56,27 @@ def ab(*, a, b):
 
 
 def bc(*, b, c):
-    return b + c
+    return b * c
 
 
 def split(*, a):
     return {'b': a, 'c': 2 * a}
 
 
+a = sc.arange(dim='a', start=0, stop=4)
+b = sc.arange(dim='b', start=2, stop=6)
+c = sc.arange(dim='c', start=4, stop=8)
+
+
 def test_diamond_graph():
-    var = sc.arange(dim='a', start=0, stop=4)
-    original = sc.DataArray(data=var, coords={'a': var})
+    original = sc.DataArray(data=a, coords={'a': a})
     graph = {'b': split, 'c': split, 'd': bc}
     da = original.transform_coords(['d'], graph=graph)
-    assert sc.identical(da.coords['d'], var + 2 * var)
+    assert sc.identical(da.coords['d'], a * (2 * a))
 
 
 def test_avoid_consume_of_requested_outputs():
-    var = sc.arange(dim='a', start=0, stop=4)
-    original = sc.DataArray(data=var, coords={'a': var})
-
+    original = sc.DataArray(data=a, coords={'a': a})
     graph = {'b': split, 'c': split, 'ab': ab}
     da = original.transform_coords(['ab', 'b'], graph=graph)
     assert 'b' in da.coords
@@ -97,29 +89,28 @@ def test_dim_rename_merge_single_dim_coord():
     # *a    b
     #   \  /
     #    *ab
-    var = sc.arange(dim='a', start=0, stop=4)
-    original = sc.DataArray(data=var, coords={'a': var, 'b': var})
+    original = sc.DataArray(data=a, coords={'a': a, 'b': 2 * a})
     da = original.transform_coords(['ab'], graph={'ab': ab})
     assert da.dims == ['ab']
+    assert sc.identical(da.coords['ab'], (a + 2 * a).rename_dims({'a': 'ab'}))
 
 
 def test_dim_rename_split_dim_coord():
     # a   *b    c
     #  \  / \  /
     #   ab   bc
-    var = sc.arange(dim='b', start=0, stop=4)
-    original = sc.DataArray(data=var, coords={'a': var, 'b': var, 'c': var})
+    original = sc.DataArray(data=b, coords={'a': b, 'b': 2 * b, 'c': 4 * b})
     # Only b is dimension-coord, but it is split => no rename of b
     da = original.transform_coords(['ab', 'bc'], graph={'ab': ab, 'bc': bc})
     assert da.dims == ['b']
+    assert sc.identical(da.coords['ab'], b + 2 * b)
+    assert sc.identical(da.coords['bc'], (2 * b) * (4 * b))
 
 
 def test_dim_rename_merge_two_dim_coords():
     # *a   *b
     #   \  /
     #    ab
-    a = sc.arange(dim='a', start=0, stop=4)
-    b = sc.arange(dim='b', start=0, stop=4)
     original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
     # ab depends on two dimension coords => no rename of a
     da = original.transform_coords(['ab'], graph={'ab': ab})
@@ -141,8 +132,6 @@ def test_dim_rename_multi_level_merge():
     #  |  c   a2
     #   \ |
     #    *bc
-    a = sc.arange(dim='a', start=0, stop=4)
-    b = sc.arange(dim='b', start=0, stop=4)
     original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
     da = original.transform_coords(['bc', 'a2'],
                                    graph={
@@ -161,8 +150,6 @@ def test_dim_rename_multi_level_merge_multi_output():
     def split_a(*, a):
         return {'a2': a, 'c': a}
 
-    a = sc.arange(dim='a', start=0, stop=4)
-    b = sc.arange(dim='b', start=0, stop=4)
     original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
     da = original.transform_coords(['bc'], graph={'bc': bc, 'c': split_a})
     # Similar to test_dim_rename_multi_level_merge above, but now an implicit
@@ -171,8 +158,7 @@ def test_dim_rename_multi_level_merge_multi_output():
 
 
 def test_rename_dims_param():
-    var = sc.arange(dim='a', start=0, stop=4)
-    original = sc.DataArray(data=var, coords={'a': var})
+    original = sc.DataArray(data=a, coords={'a': a})
     da = original.transform_coords(['b'], graph={'b': 'a'})
     assert da.dims == ['b']
     da = original.transform_coords(['b'], graph={'b': 'a'}, rename_dims=False)
@@ -180,9 +166,7 @@ def test_rename_dims_param():
 
 
 def test_keep_intermediate_keep_inputs():
-    a = sc.arange(dim='x', start=0, stop=4)
-    b = sc.arange(dim='x', start=0, stop=4)
-    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
+    original = sc.DataArray(data=1 * c, coords={'a': 2 * c, 'b': 3 * c})
 
     def func(*, ab):
         return 2 * ab
@@ -210,26 +194,26 @@ def test_keep_intermediate_keep_inputs():
 
 
 def test_inplace():
-    a = sc.arange(dim='x', start=0, stop=4)
-    b = sc.arange(dim='x', start=0, stop=4)
-    original = sc.DataArray(data=a.copy(), coords={'a': a, 'b': b})
+    original = sc.DataArray(data=1 * c, coords={'a': 2 * c, 'b': 3 * c})
 
+    # This is maybe not recommended usage, but it works.
     def ab_inplace(*, a, b):
         a += b
         return a
 
     da = original.copy().transform_coords(['ab'], graph={'ab': ab_inplace})
-    assert da.dims == ['x']
-    assert sc.identical(da.coords['ab'], a + b)
-    assert sc.identical(da.attrs['a'], a + b)
+    assert da.dims == ['c']
+    assert sc.identical(da.coords['ab'], 2 * c + 3 * c)
+    assert sc.identical(da.attrs['a'], 2 * c + 3 * c)
 
 
 def test_dataset():
-    x = sc.arange(dim='x', start=0, stop=4)
-    da = sc.DataArray(data=x.copy(), coords={'x': x.copy()})
-    ds = sc.Dataset(data={'a': da.copy(), 'b': da + da})
-    transformed = ds.transform_coords('y', graph={'y': 'x'})
-    assert sc.identical(transformed['a'].attrs['x'], x.rename_dims({'x': 'y'}))
+    da = sc.DataArray(data=a.copy(), coords={'a': a.copy()})
+    ds = sc.Dataset(data={'item1': da.copy(), 'item2': da + da})
+    transformed = ds.transform_coords('b', graph={'b': 'a'})
+    assert sc.identical(transformed['item1'].attrs['a'],
+                        a.rename_dims({'a': 'b'}))
+    assert sc.identical(transformed.coords['b'], a.rename_dims({'a': 'b'}))
 
 
 def test_binned():
@@ -280,8 +264,7 @@ def test_binned():
 
 
 def test_cycles():
-    var = sc.arange(dim='a', start=0, stop=4)
-    original = sc.DataArray(data=var, coords={'a': var, 'b': var})
+    original = sc.DataArray(data=a, coords={'a': a, 'b': a})
     with pytest.raises(ValueError):
         original.transform_coords(['c'], graph={'c': 'c'})
     with pytest.raises(ValueError):
@@ -295,8 +278,7 @@ def test_cycles():
 
 
 def test_vararg_fail():
-    var = sc.arange(dim='a', start=0, stop=4)
-    original = sc.DataArray(data=var, coords={'a': var})
+    original = sc.DataArray(data=a, coords={'a': a})
 
     def func(*args):
         pass
@@ -321,8 +303,7 @@ def test_arg_vs_kwarg_kwonly():
     def kwonly(*, a):
         return a
 
-    var = sc.arange(dim='a', start=0, stop=4)
-    original = sc.DataArray(data=var, coords={'a': var})
+    original = sc.DataArray(data=a, coords={'a': a})
     da = original.transform_coords(['b', 'c', 'd'],
                                    graph={
                                        'b': arg,
@@ -338,8 +319,7 @@ def test_unconsumed_outputs():
     def func(a):
         return {'b': a, 'c': a}
 
-    var = sc.arange(dim='a', start=0, stop=4)
-    original = sc.DataArray(data=var, coords={'a': var, 'aux': var})
+    original = sc.DataArray(data=a, coords={'a': a, 'aux': a})
     da = original.transform_coords(['b'], graph={'b': func})
     assert 'aux' in da.coords
     assert 'b' in da.coords
