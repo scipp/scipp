@@ -15,6 +15,7 @@ Features
 * Variables can now be constructed directly from multi dimensional lists and tuples `#1977 <https://github.com/scipp/scipp/pull/1977>`_.
 * Plotting 1-D event data is now supported `#2018 <https://github.com/scipp/scipp/pull/2018>`_.
 * Add ``transform_coords`` for (multi-step) transformations based on existing coords, with support of event coords `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
+* Add ``from_pandas`` and ``from_xarray`` for conversion of pandas dataframes, xarray data arrays and dataset to scipp objects `#2054 <https://github.com/scipp/scipp/pull/2054>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -44,7 +45,8 @@ Owen Arnold :sup:`b, c`\ ,
 Simon Heybrock :sup:`a`\ ,
 Greg Tucker :sup:`a`\ ,
 Neil Vaytet :sup:`a`\ ,
-and Jan-Lukas :sup:`a`\ 
+Tom Willemsen :sup:`b, c`\ ,
+and Jan-Lukas Wynen :sup:`a`\
 
 v0.7.0 (June 2021)
 ------------------
