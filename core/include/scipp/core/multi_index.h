@@ -96,33 +96,6 @@ private:
                       const Dimensions &bin_dims, const Params &... params);
 
 public:
-  MultiIndex(const MultiIndex &other)
-      : m_buffer{other.copy_buffer()}, m_data_index{other.m_data_index},
-        m_stride{other.m_stride}, m_coord{other.m_coord},
-        m_shape{other.m_shape}, m_inner_ndim{other.m_inner_ndim},
-        m_ndim{other.m_ndim}, m_bin_stride{other.m_bin_stride},
-        m_nested_dim_index{other.m_nested_dim_index}, m_bin{other.m_bin} {}
-
-  MultiIndex(MultiIndex &&) noexcept = default;
-
-  MultiIndex &operator=(const MultiIndex &other) {
-    m_buffer = other.copy_buffer();
-    m_data_index = other.m_data_index;
-    m_stride = other.m_stride;
-    m_coord = other.m_coord;
-    m_shape = other.m_shape;
-    m_inner_ndim = other.m_inner_ndim;
-    m_ndim = other.m_ndim;
-    m_bin_stride = other.m_bin_stride;
-    m_nested_dim_index = other.m_nested_dim_index;
-    m_bin = other.m_bin;
-    return *this;
-  }
-
-  MultiIndex &operator=(MultiIndex &&) noexcept = default;
-
-  ~MultiIndex() noexcept = default;
-
   void increment_outer() noexcept {
     // Go through all nested dims (with bins) / all dims (without bins)
     // where we have reached the end.
@@ -207,7 +180,7 @@ public:
 
   bool operator==(const MultiIndex &other) const noexcept {
     // Assuming the number dimensions match to make the check cheaper.
-    return std::equal(coord_it(), coord_end(), other.coord_it());
+    return m_coord == other.m_coord;
   }
   bool operator!=(const MultiIndex &other) const noexcept {
     return !(*this == other);
@@ -393,31 +366,26 @@ private:
 
   /// Shape of the iteration dimensions for both bin and inner dims.
   [[nodiscard]] scipp::index &shape(const scipp::index dim) noexcept {
-    return *shape_it(dim);
+    return m_shape[dim];
   }
 
   [[nodiscard]] const scipp::index &
   shape(const scipp::index dim) const noexcept {
-    return *shape_it(dim);
+    return m_shape[dim];
   }
 
   [[nodiscard]] auto shape_it(const scipp::index dim = 0) const noexcept {
-    return m_buffer.get() + (std::max(m_ndim, scipp::index{2}) * (N + 1) + dim);
+    return m_shape.begin() + dim;
   }
 
-  [[nodiscard]] auto shape_end() const noexcept {
-    return m_buffer.get() + (std::max(m_ndim, scipp::index{2}) * (N + 2));
+  [[nodiscard]] auto shape_end() const noexcept { return m_shape.end(); }
+
+  [[nodiscard]] auto shape_it(const scipp::index dim = 0) noexcept {
+    return m_shape.begin() + dim;
   }
 
-  [[nodiscard]] auto copy_buffer() const {
-    const auto size = detail::get_buffer_size<N>(m_ndim);
-    auto new_buffer = std::make_unique<scipp::index[]>(size);
-    std::copy(m_buffer.get(), m_buffer.get() + size, new_buffer.get());
-    return new_buffer;
-  }
+  [[nodiscard]] auto shape_end() noexcept { return m_shape.end(); }
 
-  /// Container for strides, coords, shape.
-  std::unique_ptr<scipp::index[]> m_buffer;
   /// Current flat index into the operands.
   std::array<scipp::index, N> m_data_index = {};
   // This does *not* 0-init the inner arrays!
