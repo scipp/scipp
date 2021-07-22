@@ -46,8 +46,10 @@ bool can_be_flattened(const scipp::index dim, const scipp::index size,
 // But the inner dimensions always have the same layout.
 template <class... StridesArgs>
 [[nodiscard]] scipp::index
-flatten_dims(scipp::index *const out_strides, scipp::index *const out_shape,
-             const Dimensions &dims, const scipp::index non_flattenable_dim,
+flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
+                 &out_strides,
+             scipp::index *const out_shape, const Dimensions &dims,
+             const scipp::index non_flattenable_dim,
              const StridesArgs &... strides) {
   constexpr scipp::index N = sizeof...(StridesArgs);
   std::array strides_array{std::ref(strides)...};
@@ -62,7 +64,7 @@ flatten_dims(scipp::index *const out_strides, scipp::index *const out_shape,
     } else {
       out_shape[dim_write] = size;
       for (scipp::index data = 0; data < N; ++data) {
-        out_strides[data + dim_write * N] = strides_array[data].get()[dim_read];
+        out_strides[dim_write][data] = strides_array[data].get()[dim_read];
       }
       ++dim_write;
     }
@@ -82,15 +84,13 @@ MultiIndex<N>::MultiIndex(const Dimensions &iter_dims,
 
   const auto temp_buffer =
       std::make_unique<scipp::index[]>(strides_buffer_size + shape_buffer_size);
-  scipp::index *const strides_buffer = temp_buffer.get();
-  scipp::index *const shape_buffer = strides_buffer + strides_buffer_size;
-  m_ndim = detail::flatten_dims(strides_buffer, shape_buffer, iter_dims, 0,
-                                strides...);
+  scipp::index *const shape_buffer = temp_buffer.get() + strides_buffer_size;
+  m_ndim = detail::flatten_dims(scipp::span{m_stride.begin(), NDIM_MAX},
+                                shape_buffer, iter_dims, 0, strides...);
   m_inner_ndim = m_ndim;
 
   m_buffer =
       std::make_unique<scipp::index[]>(detail::get_buffer_size<N>(m_ndim));
-  std::copy(strides_buffer, strides_buffer + N * m_ndim, &stride(0, 0));
   std::copy(shape_buffer, shape_buffer + m_ndim, shape_it());
 }
 
@@ -124,21 +124,18 @@ MultiIndex<N>::MultiIndex(binned_tag, const Dimensions &inner_dims,
       bin_strides_buffer + bin_strides_buffer_size;
 
   m_inner_ndim = detail::flatten_dims(
-      inner_strides_buffer, inner_shape_buffer, inner_dims,
+      scipp::span{m_stride.begin(), NDIM_MAX}, inner_shape_buffer, inner_dims,
       inner_dims.index(slice_dim),
       params.bucketParams() ? Strides{inner_dims} : Strides{}...);
-  m_ndim =
-      m_inner_ndim + detail::flatten_dims(bin_strides_buffer, bin_shape_buffer,
-                                          bin_dims, 0, params.strides()...);
+  m_ndim = m_inner_ndim +
+           detail::flatten_dims(
+               scipp::span{m_stride.begin() + m_inner_ndim,
+                           static_cast<size_t>(NDIM_MAX - m_inner_ndim)},
+               bin_shape_buffer, bin_dims, 0, params.strides()...);
 
   m_buffer =
       std::make_unique<scipp::index[]>(detail::get_buffer_size<N>(m_ndim));
   // using manual size here because the max in get_* would overflow the buffer
-  std::copy(inner_strides_buffer, inner_strides_buffer + N * m_inner_ndim,
-            &stride(0, 0));
-  std::copy(bin_strides_buffer,
-            bin_strides_buffer + N * (m_ndim - m_inner_ndim),
-            &stride(m_inner_ndim, 0));
   std::copy(inner_shape_buffer, inner_shape_buffer + m_inner_ndim, shape_it());
   std::copy(bin_shape_buffer, bin_shape_buffer + (m_ndim - m_inner_ndim),
             shape_it(m_inner_ndim));

@@ -98,8 +98,9 @@ private:
 public:
   MultiIndex(const MultiIndex &other)
       : m_buffer{other.copy_buffer()}, m_data_index{other.m_data_index},
-        m_inner_ndim{other.m_inner_ndim}, m_ndim{other.m_ndim},
-        m_bin_stride{other.m_bin_stride},
+        m_stride{other.m_stride}, m_coord{other.m_coord},
+        m_shape{other.m_shape}, m_inner_ndim{other.m_inner_ndim},
+        m_ndim{other.m_ndim}, m_bin_stride{other.m_bin_stride},
         m_nested_dim_index{other.m_nested_dim_index}, m_bin{other.m_bin} {}
 
   MultiIndex(MultiIndex &&) noexcept = default;
@@ -107,6 +108,9 @@ public:
   MultiIndex &operator=(const MultiIndex &other) {
     m_buffer = other.copy_buffer();
     m_data_index = other.m_data_index;
+    m_stride = other.m_stride;
+    m_coord = other.m_coord;
+    m_shape = other.m_shape;
     m_inner_ndim = other.m_inner_ndim;
     m_ndim = other.m_ndim;
     m_bin_stride = other.m_bin_stride;
@@ -357,12 +361,12 @@ private:
   /// Stride for each operand in each dimension.
   [[nodiscard]] scipp::index &stride(const scipp::index dim,
                                      const scipp::index data) noexcept {
-    return m_buffer[data + dim * N];
+    return m_stride[dim][data];
   }
 
   [[nodiscard]] const scipp::index &
   stride(const scipp::index dim, const scipp::index data) const noexcept {
-    return m_buffer[data + dim * N];
+    return m_stride[dim][data];
   }
 
   /// Current index in iteration dimensions for both bin and inner dims.
@@ -412,6 +416,10 @@ private:
   std::unique_ptr<scipp::index[]> m_buffer;
   /// Current flat index into the operands.
   std::array<scipp::index, N> m_data_index = {};
+  // This does *not* 0-init the inner arrays!
+  std::array<std::array<scipp::index, N>, NDIM_MAX> m_stride = {};
+  std::array<scipp::index, NDIM_MAX + 1> m_coord = {};
+  std::array<scipp::index, NDIM_MAX + 1> m_shape = {};
   /// Number of dense dimensions, i.e. same as m_ndim when not binned,
   /// else number of dims in bins.
   scipp::index m_inner_ndim{0};
