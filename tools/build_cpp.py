@@ -50,7 +50,8 @@ def main(prefix='install', build_dir='build', source_dir='.'):
         '-DPYTHON_EXECUTABLE': shutil.which("python"),
         '-DCMAKE_INSTALL_PREFIX': prefix,
         '-DWITH_CTEST': 'OFF',
-        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'ON'
+        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'ON',
+        '-DCMAKE_FIND_PACKAGE_PREFER_CONFIG': 'ON'
     }
 
     if platform == 'darwin':
