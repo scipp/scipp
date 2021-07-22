@@ -76,7 +76,7 @@ def split(*, a):
 def test_diamond_graph():
     var = sc.arange(dim='a', start=0, stop=4)
     original = sc.DataArray(data=var, coords={'a': var})
-    graph = {('b', 'c'): split, 'd': bc}
+    graph = {'b': split, 'c': split, 'd': bc}
     da = original.transform_coords(['d'], graph=graph)
     assert sc.identical(da.coords['d'], var + 2 * var)
 
@@ -85,7 +85,7 @@ def test_avoid_consume_of_requested_outputs():
     var = sc.arange(dim='a', start=0, stop=4)
     original = sc.DataArray(data=var, coords={'a': var})
 
-    graph = {('b', 'c'): split, 'ab': ab}
+    graph = {'b': split, 'c': split, 'ab': ab}
     da = original.transform_coords(['ab', 'b'], graph=graph)
     assert 'b' in da.coords
     # Second requested output must not consume first
@@ -345,7 +345,7 @@ def test_unconsumed_outputs():
     assert 'b' in da.coords
     assert 'c' not in da.coords
     # 'c' not explicitly requested but named as output in graph => preserved
-    da = original.transform_coords(['b'], graph={('b', 'c'): func})
+    da = original.transform_coords(['b'], graph={'b': func, 'c': func})
     assert 'aux' in da.coords
     assert 'b' in da.coords
     assert 'c' in da.coords
