@@ -68,11 +68,10 @@ def _variable_to_dict(v):
 
     # Check if variable is 0D:
     suffix = "s" if len(out["dims"]) > 0 else ""
-    out["values"] = dtype_parser[str_dtype](getattr(v, "value" + suffix),
-                                            v.shape)
+    out["values"] = dtype_parser[str_dtype](getattr(v, "value" + suffix), v.shape)
     var = getattr(v, "variance" + suffix)
-    out["variances"] = dtype_parser[str_dtype](
-        var, v.shape) if var is not None else None
+    out["variances"] = dtype_parser[str_dtype](var,
+                                               v.shape) if var is not None else None
     return out
 
 

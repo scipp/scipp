@@ -29,9 +29,7 @@ if __name__ == '__main__':
     prefix = get_abs_path(path=args.prefix, root=docs_dir)
 
     # Build the docs with sphinx-build
-    subprocess.check_call([
-        'sphinx-build', '-v', '-b', args.builder, '-d', work_dir, docs_dir,
-        prefix
-    ],
-                          stderr=subprocess.STDOUT,
-                          shell=sys.platform == "win32")
+    subprocess.check_call(
+        ['sphinx-build', '-v', '-b', args.builder, '-d', work_dir, docs_dir, prefix],
+        stderr=subprocess.STDOUT,
+        shell=sys.platform == "win32")

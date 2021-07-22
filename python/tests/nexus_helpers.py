@@ -63,12 +63,13 @@ def in_memory_nexus_file_with_event_data() -> Iterator[h5py.File]:
         event_time_offset_ds = event_group.create_dataset(
             "event_time_offset", data=np.array([456, 743, 347, 345, 632]))
         event_time_offset_ds.attrs["units"] = "ns"
-        event_time_zero_ds = event_group.create_dataset(
-            "event_time_zero",
-            data=np.array([
-                1600766730000000000, 1600766731000000000, 1600766732000000000,
-                1600766733000000000
-            ]))
+        event_time_zero_ds = event_group.create_dataset("event_time_zero",
+                                                        data=np.array([
+                                                            1600766730000000000,
+                                                            1600766731000000000,
+                                                            1600766732000000000,
+                                                            1600766733000000000
+                                                        ]))
         event_time_zero_ds.attrs["units"] = "ns"
         event_group.create_dataset("event_index", data=np.array([0, 3, 3, 5]))
 

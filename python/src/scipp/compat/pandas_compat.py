@@ -12,12 +12,10 @@ def from_pandas_series(se: pd.Series) -> DataArray:
     row_index = se.axes[0]
     row_index_name = row_index.name or "row"
 
-    return DataArray(data=Variable(values=se.values, dims=[row_index_name]),
-                     coords={
-                         row_index_name:
-                         Variable(dims=[row_index_name], values=row_index)
-                     },
-                     name=se.name or "")
+    return DataArray(
+        data=Variable(values=se.values, dims=[row_index_name]),
+        coords={row_index_name: Variable(dims=[row_index_name], values=row_index)},
+        name=se.name or "")
 
 
 def from_pandas_dataframe(df: pd.DataFrame) -> Dataset:
@@ -29,13 +27,11 @@ def from_pandas_dataframe(df: pd.DataFrame) -> Dataset:
     if df.ndim == 1:
         # Special case for 1d dataframes, treat them as a series, but still
         # wrap them in a dataset object for consistency of return types.
-        return Dataset(
-            data={row_index_name: from_pandas_series(pd.Series(df))})
+        return Dataset(data={row_index_name: from_pandas_series(pd.Series(df))})
 
     sc_data = {}
     for column_name in df.axes[1]:
-        sc_data[f"{column_name}"] = from_pandas_series(
-            pd.Series(df[column_name]))
+        sc_data[f"{column_name}"] = from_pandas_series(pd.Series(df[column_name]))
 
     return Dataset(data=sc_data)
 

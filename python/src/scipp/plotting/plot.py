@@ -63,8 +63,7 @@ def _input_to_data_array(item, all_keys, key=None):
         raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
                            "a Dataset, a DataArray, a Variable (and their "
                            "respective views), a numpy ndarray, and a dict of "
-                           "Variables, DataArrays or ndarrays".format(
-                               type(item)))
+                           "Variables, DataArrays or ndarrays".format(type(item)))
     return to_plot
 
 
@@ -101,17 +100,13 @@ def plot(scipp_obj,
     if isinstance(scipp_obj, dict):
         try:
             inventory.update(
-                _input_to_data_array(from_dict(scipp_obj),
-                                     all_keys=inventory.keys()))
+                _input_to_data_array(from_dict(scipp_obj), all_keys=inventory.keys()))
         except:  # noqa: E722
             for key, item in scipp_obj.items():
                 inventory.update(
-                    _input_to_data_array(item,
-                                         all_keys=inventory.keys(),
-                                         key=key))
+                    _input_to_data_array(item, all_keys=inventory.keys(), key=key))
     else:
-        inventory.update(
-            _input_to_data_array(scipp_obj, all_keys=inventory.keys()))
+        inventory.update(_input_to_data_array(scipp_obj, all_keys=inventory.keys()))
 
     # Prepare container for matplotlib line parameters
     line_params = {
@@ -154,8 +149,8 @@ def plot(scipp_obj,
                 else:
                     mpl_line_params[n] = p
                 if isinstance(mpl_line_params[n], int):
-                    mpl_line_params[n] = get_line_param(
-                        name=n, index=mpl_line_params[n])
+                    mpl_line_params[n] = get_line_param(name=n,
+                                                        index=mpl_line_params[n])
 
             if key not in tobeplotted.keys():
                 tobeplotted[key] = dict(ndims=ndims,

@@ -51,8 +51,8 @@ def plot1d(scipp_obj_dict, **kwargs):
         out['vmin'] = params["values"]["vmin"]
         out['vmax'] = params["values"]["vmax"]
         if len(dims) > 1:
-            out['profile_figure'] = make_profile(
-                ax=pax, mask_color=params['masks']['color'])
+            out['profile_figure'] = make_profile(ax=pax,
+                                                 mask_color=params['masks']['color'])
             # An additional panel view with widgets to save/remove lines
             out['panel'] = PlotPanel1d(data_names=list(scipp_obj_dict.keys()))
 

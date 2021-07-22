@@ -16,11 +16,7 @@ class TestSliceByValue:
         values_b = sc.Variable(dims=['x'],
                                values=[1.0, 2.0, 3.0, 4.0, 5.0],
                                unit=sc.units.m)
-        self._d = sc.Dataset(data={
-            'a': values_a,
-            'b': values_b
-        },
-                             coords={'x': var})
+        self._d = sc.Dataset(data={'a': values_a, 'b': values_b}, coords={'x': var})
 
     def test_slice_by_single_value(self):
         def test(sliceable):
@@ -38,8 +34,8 @@ class TestSliceByValue:
 
     def test_assigning_to_slice_by_value_dataset(self):
         self._d['x',
-                0.5 * sc.units.dimensionless] = self._d['x', 1.5 *
-                                                        sc.units.dimensionless]
+                0.5 * sc.units.dimensionless] = self._d['x',
+                                                        1.5 * sc.units.dimensionless]
         assert self._d['x', 0]['a'].value == self._d['x', 1]['a'].value
 
     def test_modifying_slice_in_place(self):
@@ -82,9 +78,7 @@ class TestSliceByValue:
         with pytest.raises(sc.DataArrayError):  # readonly
             self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
                          sc.units.dimensionless].data = sc.Variable(
-                             dims=['x'],
-                             values=[6.0, 6.0, 6.0],
-                             unit=sc.units.m)
+                             dims=['x'], values=[6.0, 6.0, 6.0], unit=sc.units.m)
 
     def test_assign_variable_to_range_dataset_fails(self):
         with pytest.raises(sc.DataArrayError):  # readonly
@@ -94,15 +88,17 @@ class TestSliceByValue:
 
     def test_on_dataarray_modify_range_in_place_from_variable(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
-                     sc.units.dimensionless].data += sc.Variable(
-                         dims=['x'], values=[2.0, 2.0, 2.0], unit=sc.units.m)
+                     sc.units.dimensionless].data += sc.Variable(dims=['x'],
+                                                                 values=[2.0, 2.0, 2.0],
+                                                                 unit=sc.units.m)
 
         assert self._d['a'].data.values.tolist() == [1.0, 3.1, 3.2, 3.3, 1.4]
 
     def test_on_dataset_modify_range_in_place_from_variable(self):
         self._d['x', 1.5 * sc.units.dimensionless:4.5 *
-                sc.units.dimensionless]['a'].data += sc.Variable(
-                    dims=['x'], values=[2.0, 2.0, 2.0], unit=sc.units.m)
+                sc.units.dimensionless]['a'].data += sc.Variable(dims=['x'],
+                                                                 values=[2.0, 2.0, 2.0],
+                                                                 unit=sc.units.m)
 
         assert self._d['a'].data.values.tolist() == [1.0, 3.1, 3.2, 3.3, 1.4]
 
@@ -140,8 +136,9 @@ class TestSliceByValue:
     def test_assign_incompatable_variable_throws(self):
         with pytest.raises(RuntimeError) as e_info:
             self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
-                         sc.units.dimensionless] = sc.Variable(
-                             dims=['x'], values=[6.0, 6.0], unit=sc.units.m)
+                         sc.units.dimensionless] = sc.Variable(dims=['x'],
+                                                               values=[6.0, 6.0],
+                                                               unit=sc.units.m)
         assert str(e_info.value) == 'Expected (x: 3) to include (x: 2).'
 
     def test_assign_incompatible_dataarray(self):
@@ -152,8 +149,7 @@ class TestSliceByValue:
     def test_range_slice_with_step_throws(self):
         with pytest.raises(RuntimeError) as e_info:
             self._d['a']['x', 1.5 * sc.units.m:4.5 * sc.units.m:4]
-        assert str(e_info.value
-                   ) == "Step cannot be specified for value based slicing."
+        assert str(e_info.value) == "Step cannot be specified for value based slicing."
 
     def test_range_start_only(self):
         by_value = self._d['a']['x', 1.5 * sc.units.dimensionless:]

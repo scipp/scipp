@@ -24,7 +24,6 @@ def bind_functions_as_methods(cls, namespace, func_names):
         # sophisticate / expensive parser that running during import of scipp.
         # Line feeds are replaced because they mess with the
         # reST parser of autosummary.
-        method.__doc__ = (
-            func.__doc__.split('\n\n', 1)[0].replace('\n', ' ') +
-            f'\n\n:seealso: Details in :py:meth:`scipp.{func_name}`')
+        method.__doc__ = (func.__doc__.split('\n\n', 1)[0].replace('\n', ' ') +
+                          f'\n\n:seealso: Details in :py:meth:`scipp.{func_name}`')
         setattr(cls, func_name, method)

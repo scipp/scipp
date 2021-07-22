@@ -89,8 +89,7 @@ def test_zeros_dtypes():
                     dtype='datetime64').value == np.datetime64(0, 's')
     assert sc.zeros(dims=(), shape=(), dtype=str).value == ''
     np.testing.assert_array_equal(
-        sc.zeros(dims=(), shape=(), dtype=sc.dtype.vector_3_float64).value,
-        np.zeros(3))
+        sc.zeros(dims=(), shape=(), dtype=sc.dtype.vector_3_float64).value, np.zeros(3))
     np.testing.assert_array_equal(
         sc.zeros(dims=(), shape=(), dtype=sc.dtype.matrix_3_float64).value,
         np.zeros((3, 3)))
@@ -111,10 +110,7 @@ def test_ones_with_variances():
 
 
 def test_ones_with_dtype_and_unit():
-    var = sc.ones(dims=['x', 'y', 'z'],
-                  shape=[1, 2, 3],
-                  dtype=sc.dtype.int64,
-                  unit='s')
+    var = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=sc.dtype.int64, unit='s')
     assert var.dtype == sc.dtype.int64
     assert var.unit == 's'
 
@@ -130,16 +126,12 @@ def test_ones_dtypes():
 
 def test_full_creates_variable_with_correct_dims_and_shape():
     var = sc.full(dims=['x', 'y', 'z'], shape=[1, 2, 3], value=12.34)
-    expected = sc.Variable(dims=['x', 'y', 'z'],
-                           values=np.full([1, 2, 3], 12.34))
+    expected = sc.Variable(dims=['x', 'y', 'z'], values=np.full([1, 2, 3], 12.34))
     assert sc.identical(var, expected)
 
 
 def test_full_with_variances():
-    var = sc.full(dims=['x', 'y', 'z'],
-                  shape=[1, 2, 3],
-                  value=12.34,
-                  variance=56.78)
+    var = sc.full(dims=['x', 'y', 'z'], shape=[1, 2, 3], value=12.34, variance=56.78)
     expected = sc.Variable(dims=['x', 'y', 'z'],
                            values=np.full([1, 2, 3], 12.34),
                            variances=np.full([1, 2, 3], 56.78))
@@ -193,9 +185,7 @@ def test_empty_creates_variable_with_correct_dims_and_shape():
 
 def test_empty_with_variances():
     var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variances=True)
-    expected = make_dummy(dims=['x', 'y', 'z'],
-                          shape=[1, 2, 3],
-                          with_variances=True)
+    expected = make_dummy(dims=['x', 'y', 'z'], shape=[1, 2, 3], with_variances=True)
     _compare_properties(var, expected)
 
 
@@ -211,9 +201,7 @@ def test_empty_with_dtype_and_unit():
 def test_empty_dtypes():
     for dtype in (int, float, bool):
         var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=dtype)
-        expected = make_dummy(dims=['x', 'y', 'z'],
-                              shape=[1, 2, 3],
-                              dtype=dtype)
+        expected = make_dummy(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=dtype)
         _compare_properties(var, expected)
     var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype='datetime64')
     expected = sc.Variable(dims=['x', 'y', 'z'],
@@ -322,20 +310,14 @@ def test_empty_like_with_variances():
 def test_linspace():
     values = np.linspace(1.2, 103., 51)
     var = sc.linspace('x', 1.2, 103., 51, unit='m', dtype=sc.dtype.float32)
-    expected = sc.Variable(dims=['x'],
-                           values=values,
-                           unit='m',
-                           dtype=sc.dtype.float32)
+    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.dtype.float32)
     assert sc.identical(var, expected)
 
 
 def test_logspace():
     values = np.logspace(2.0, 3.0, num=4)
     var = sc.logspace('y', 2.0, 3.0, num=4, unit='s')
-    expected = sc.Variable(dims=['y'],
-                           values=values,
-                           unit='s',
-                           dtype=sc.dtype.float64)
+    expected = sc.Variable(dims=['y'], values=values, unit='s', dtype=sc.dtype.float64)
     assert sc.identical(var, expected)
 
 
@@ -349,22 +331,11 @@ def test_geomspace():
 def test_arange():
     values = np.arange(21)
     var = sc.arange('x', 21, unit='m', dtype=sc.dtype.int32)
-    expected = sc.Variable(dims=['x'],
-                           values=values,
-                           unit='m',
-                           dtype=sc.dtype.int32)
+    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.dtype.int32)
     assert sc.identical(var, expected)
     values = np.arange(10, 21, 2)
-    var = sc.arange(dim='x',
-                    start=10,
-                    stop=21,
-                    step=2,
-                    unit='m',
-                    dtype=sc.dtype.int32)
-    expected = sc.Variable(dims=['x'],
-                           values=values,
-                           unit='m',
-                           dtype=sc.dtype.int32)
+    var = sc.arange(dim='x', start=10, stop=21, step=2, unit='m', dtype=sc.dtype.int32)
+    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.dtype.int32)
     assert sc.identical(var, expected)
 
 

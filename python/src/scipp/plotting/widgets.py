@@ -57,17 +57,15 @@ class PlotWidgets:
                                              description="Continuous update",
                                              indent=False,
                                              layout={"width": "20px"})
-            ipw.jslink((continuous_update, 'value'),
-                       (slider, 'continuous_update'))
+            ipw.jslink((continuous_update, 'value'), (slider, 'continuous_update'))
 
-            thickness_slider = ipw.IntSlider(
-                min=1,
-                step=1,
-                description="Thickness",
-                continuous_update=False,
-                readout=False,
-                layout={'width': "180px"},
-                style={'description_width': 'initial'})
+            thickness_slider = ipw.IntSlider(min=1,
+                                             step=1,
+                                             description="Thickness",
+                                             continuous_update=False,
+                                             readout=False,
+                                             layout={'width': "180px"},
+                                             style={'description_width': 'initial'})
             # If there is a multid coord, we only allow slices of thickness 1
             if multid_coord is not None:
                 thickness_slider.layout.display = 'none'
@@ -140,20 +138,18 @@ class PlotWidgets:
                         description="{}:{}".format(escape(name), escape(key)),
                         indent=False,
                         layout={"width": "initial"})
-                    setattr(self.mask_checkboxes[name][key], "mask_group",
-                            name)
+                    setattr(self.mask_checkboxes[name][key], "mask_group", name)
                     setattr(self.mask_checkboxes[name][key], "mask_name", key)
 
         if masks_found:
             self.masks_lab = ipw.Label(value="Masks:")
 
             # Add a master button to control all masks in one go
-            self.all_masks_button = ipw.ToggleButton(
-                value=True,
-                description="Hide all",
-                disabled=False,
-                button_style="",
-                layout={"width": "initial"})
+            self.all_masks_button = ipw.ToggleButton(value=True,
+                                                     description="Hide all",
+                                                     disabled=False,
+                                                     button_style="",
+                                                     layout={"width": "initial"})
             self.all_masks_button.observe(self.toggle_all_masks, names="value")
 
             box_layout = ipw.Layout(display='flex',
@@ -168,8 +164,7 @@ class PlotWidgets:
             self.masks_box = ipw.Box(children=mask_list, layout=box_layout)
 
             self.container += [
-                ipw.HBox(
-                    [self.masks_lab, self.all_masks_button, self.masks_box])
+                ipw.HBox([self.masks_lab, self.all_masks_button, self.masks_box])
             ]
 
     def update_buttons(self, index, dim):
@@ -240,8 +235,7 @@ class PlotWidgets:
         controls = self._controls[dim]
         controls['thickness'].max = max_value
         controls['thickness'].value = 1
-        self.update_slider_range(dim, controls['thickness'].value,
-                                 max_value - 1)
+        self.update_slider_range(dim, controls['thickness'].value, max_value - 1)
 
         # Disable slider and profile button if there is only a single bin
         # TODO did we break this for event data (previously fixed)?
@@ -270,10 +264,9 @@ class PlotWidgets:
         self.profile_button.on_click(
             partial(controller.toggle_profile_view, dims=self._slider_dims))
         for dim in self._controls:
-            self._controls[dim]['slider'].observe(self._slider_moved,
-                                                  names="value")
-            self._controls[dim]['thickness'].observe(
-                self.update_thickness(dim), names="value")
+            self._controls[dim]['slider'].observe(self._slider_moved, names="value")
+            self._controls[dim]['thickness'].observe(self.update_thickness(dim),
+                                                     names="value")
 
         for name in self.mask_checkboxes:
             for m in self.mask_checkboxes[name]:

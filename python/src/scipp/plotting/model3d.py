@@ -77,8 +77,7 @@ class ScatterPointModel:
     @lru_cache(maxsize=None)
     def planar_radius(self, axis):
         return _planar_norm(
-            *
-            [comp for dim, comp in self.components.items() if dim is not axis])
+            *[comp for dim, comp in self.components.items() if dim is not axis])
 
     @property
     @lru_cache(maxsize=None)

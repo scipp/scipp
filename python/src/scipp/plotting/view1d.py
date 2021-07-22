@@ -57,8 +57,7 @@ class PlotView1d(PlotView):
             values["values"]["y"] = array.values.ravel()
             if array.variances is not None:
                 values["variances"]["e"] = vars_to_err(array.variances.ravel())
-            values["masks"] = self._make_masks(array,
-                                               mask_info=mask_info[name])
+            values["masks"] = self._make_masks(array, mask_info=mask_info[name])
             out[name] = values
         return out
 
@@ -66,8 +65,8 @@ class PlotView1d(PlotView):
         """
         Forward mask toggling to the `figure`.
         """
-        self.figure.toggle_mask(change["owner"].mask_group,
-                                change["owner"].mask_name, change["new"])
+        self.figure.toggle_mask(change["owner"].mask_group, change["owner"].mask_name,
+                                change["new"])
 
     def keep_line(self, *args, **kwargs):
         """
@@ -92,8 +91,7 @@ class PlotView1d(PlotView):
         Remove all markers (axvline).
         """
         self.figure.ax.lines = [
-            line for line in self.figure.ax.lines
-            if isinstance(line.get_gid(), int)
+            line for line in self.figure.ax.lines if isinstance(line.get_gid(), int)
         ]
         self.figure.draw()
 

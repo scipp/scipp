@@ -20,13 +20,12 @@ import pandas as pd
 TABLE_HEADER_PATTERN = re.compile(r'^name,iterations,.*')
 # Regex to turn full names (BM_xxx/yyy_zzz) into base names (xxx)
 # and 'aggregates' (zzz).
-NAME_PATTERN = re.compile(
-    r'(BM_)?(?P<name>[^/]+)(/[^_]*)?(_(?P<aggregate>\w+))?')
+NAME_PATTERN = re.compile(r'(BM_)?(?P<name>[^/]+)(/[^_]*)?(_(?P<aggregate>\w+))?')
 
 # Table columns written by Google Benchmark by default.
 DEFAULT_COLUMN_NAMES = [
-    'name', 'iterations', 'real_time', 'cpu_time', 'time_unit',
-    'bytes_per_second', 'items_per_second', 'label'
+    'name', 'iterations', 'real_time', 'cpu_time', 'time_unit', 'bytes_per_second',
+    'items_per_second', 'label'
 ]
 
 
@@ -84,8 +83,7 @@ def load_file(fname):
 
 def load_data(fnames, name_filter):
     """Load multiple files and merge their contents."""
-    return preprocess(pd.concat([load_file(fname) for fname in fnames]),
-                      name_filter)
+    return preprocess(pd.concat([load_file(fname) for fname in fnames]), name_filter)
 
 
 def designate_columns(data, plot_dims, ignored):
@@ -100,9 +98,7 @@ def designate_columns(data, plot_dims, ignored):
 
 def group_plots(data, designations):
     """Return the number of distinct plot groups and the groups themselves."""
-    meta_columns = [
-        c for c, d in zip(data.columns, designations) if d == 'meta'
-    ]
+    meta_columns = [c for c, d in zip(data.columns, designations) if d == 'meta']
     groups = data.groupby(meta_columns)
     return len(groups), [group for _, group in groups]
 
@@ -110,8 +106,7 @@ def group_plots(data, designations):
 def plot_title(data, designations):
     """Format a title for a plot of ``data``."""
     return ', '.join(f'{c}={data[c].unique()[0]}'
-                     for c, d in zip(data.columns, designations)
-                     if d == 'meta')
+                     for c, d in zip(data.columns, designations) if d == 'meta')
 
 
 def get_unit(data, name):
@@ -202,11 +197,7 @@ def main():
     args = parse_args()
     data = load_data(args.infile, args.names)
     for _, benchmark_data in data.groupby('name'):
-        plot(benchmark_data,
-             args.xaxis,
-             args.yaxis,
-             args.ignore,
-             xscale=args.xscale)
+        plot(benchmark_data, args.xaxis, args.yaxis, args.ignore, xscale=args.xscale)
     plt.show()
 
 
