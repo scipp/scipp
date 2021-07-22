@@ -26,6 +26,8 @@ Creation functions
    arange
    empty
    empty_like
+   full
+   full_like
    geomspace
    linspace
    logspace

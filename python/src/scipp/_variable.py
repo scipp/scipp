@@ -203,6 +203,54 @@ def empty_like(var: _cpp.Variable) -> _cpp.Variable:
                  with_variances=var.variances is not None)
 
 
+def full(*,
+         dims: _Sequence[str] = None,
+         shape: _Sequence[int] = None,
+         sizes: dict = None,
+         unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
+         dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
+         value: _Any,
+         variance: _Any = None):
+    """
+    Constructs a :class:`Variable` with values initialized to the specified
+    value with given dimension labels and shape.
+    The dims and shape can also be specified using a sizes dict.
+
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
+
+    :param dims: Optional (if sizes is specified), dimension labels.
+    :param shape: Optional (if sizes is specified), dimension sizes.
+    :param sizes: Optional, dimension label to size map.
+    :param unit: Optional, unit of contents. Default=dimensionless
+    :param dtype: Optional, type of underlying data. Default=float64
+    :param value: The value to fill the Variable with
+    :param variance: Optional, the variance to fill the Variable with. If None
+        or not provided, the variances will not be set.
+    """
+    return scalar(value=value, variance=variance, unit=unit, dtype=dtype)\
+        .broadcast(**_parse_dims_shape_sizes(dims, shape, sizes)).copy()
+
+
+def full_like(var: _cpp.Variable, value: _Any, variance: _Any = None):
+    """
+    Constructs a :class:`Variable` with values initialized to the specified
+    value with dimensions labels and shape provided by an existing variable.
+
+    :seealso: :py:func:`scipp.zeros_like` :py:func:`scipp.ones_like`
+
+    :param var: Input variable to copy dimensions, sizes, unit and dtype from.
+    :param value: The value to fill the Variable with
+    :param variance: Optional, the variance to fill the Variable with. If None
+        or not provided, the variances will not be set.
+    """
+    return full(dims=var.dims,
+                shape=var.shape,
+                unit=var.unit,
+                dtype=var.dtype,
+                value=value,
+                variance=variance)
+
+
 def _to_eigen_layout(a):
     # Numpy and scipp use row-major, but Eigen matrices use column-major,
     # transpose matrix axes for copying values.
