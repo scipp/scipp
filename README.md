@@ -1,13 +1,9 @@
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
+[![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
 [![Build Status](https://dev.azure.com/scipp/scipp/_apis/build/status/main?branchName=main)](https://dev.azure.com/scipp/scipp/_build?definitionId=42)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4019/badge)](https://bestpractices.coreinfrastructure.org/projects/4019)
 [![Anaconda-Server Badge](https://anaconda.org/scipp/scipp/badges/installer/conda.svg)](https://conda.anaconda.org/scipp/label/dev)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/scipp/scipp/main?filepath=docs%2Fgetting-started%2Fquick-start.ipynb)
 [![Questions](https://img.shields.io/github/issues/scipp/scipp/question?color=%23d876e3&label=questions)](https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion)
-
-| Downstream Project  | Status |
-| ------------------- | ------ |
-| scippneutron (next) | [![Build Status](https://dev.azure.com/scipp/scippneutron/_apis/build/status/Next?repoName=scipp%2Fscippneutron&branchName=next)](https://dev.azure.com/scipp/scippneutron/_build/latest?definitionId=56&repoName=scipp%2Fscippneutron&branchName=next)       |
 
 # Scipp
 
