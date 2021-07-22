@@ -70,14 +70,14 @@ c = sc.arange(dim='c', start=4, stop=8)
 
 def test_diamond_graph():
     original = sc.DataArray(data=a, coords={'a': a})
-    graph = {'b': split, 'c': split, 'd': bc}
+    graph = {('b', 'c'): split, 'd': bc}
     da = original.transform_coords(['d'], graph=graph)
     assert sc.identical(da.coords['d'], a * (2 * a))
 
 
 def test_avoid_consume_of_requested_outputs():
     original = sc.DataArray(data=a, coords={'a': a})
-    graph = {'b': split, 'c': split, 'ab': ab}
+    graph = {('b', 'c'): split, 'ab': ab}
     da = original.transform_coords(['ab', 'b'], graph=graph)
     assert 'b' in da.coords
     # Second requested output must not consume first
@@ -325,7 +325,24 @@ def test_unconsumed_outputs():
     assert 'b' in da.coords
     assert 'c' not in da.coords
     # 'c' not explicitly requested but named as output in graph => preserved
-    da = original.transform_coords(['b'], graph={'b': func, 'c': func})
+    da = original.transform_coords(['b'], graph={('b', 'c'): func})
     assert 'aux' in da.coords
     assert 'b' in da.coords
     assert 'c' in da.coords
+
+
+def test_duplicate_output_keys():
+    original = sc.DataArray(data=a, coords={'a': a})
+
+    def to_bc(*, a):
+        return {'b': a, 'c': a}
+
+    def to_bd(*, a):
+        return {'b': a, 'd': a}
+
+    with pytest.raises(ValueError):
+        graph = {'b': 'a', ('b', 'c'): to_bc}
+        original.transform_coords(['b'], graph=graph)
+    with pytest.raises(ValueError):
+        graph = {('b', 'd'): to_bd, ('b', 'c'): to_bc}
+        original.transform_coords(['b'], graph=graph)
