@@ -273,11 +273,15 @@ def transform_coords(x: Union[DataArray, Dataset],
         return _transform_dataset(x, coords=coords, graph=graph, kwargs=kwargs)
 
 
-def show_graph(graph, size=None):
+def show_graph(graph, size: str = None):
     """
     Show graphical representation of a graph as required by
     :py:func:`transform_coords`
 
     Requires `python-graphviz` package.
+
+    :param size: Size forwarded to graphviz, must be a string, "width,height"
+                 or "size". In the latter case, the same value is used for
+                 both width and height.
     """
     return Graph(graph).show(size=size)
