@@ -128,6 +128,63 @@ def test_ones_dtypes():
         sc.ones(dims=(), shape=(), dtype=str)
 
 
+def test_full_creates_variable_with_correct_dims_and_shape():
+    var = sc.full(dims=['x', 'y', 'z'], shape=[1, 2, 3], value=12.34)
+    expected = sc.Variable(dims=['x', 'y', 'z'],
+                           values=np.full([1, 2, 3], 12.34))
+    assert sc.identical(var, expected)
+
+
+def test_full_with_variances():
+    var = sc.full(dims=['x', 'y', 'z'],
+                  shape=[1, 2, 3],
+                  value=12.34,
+                  variance=56.78)
+    expected = sc.Variable(dims=['x', 'y', 'z'],
+                           values=np.full([1, 2, 3], 12.34),
+                           variances=np.full([1, 2, 3], 56.78))
+    assert sc.identical(var, expected)
+
+
+def test_full_with_dtype_and_unit():
+    var = sc.full(dims=['x', 'y', 'z'],
+                  shape=[1, 2, 3],
+                  dtype=sc.dtype.int64,
+                  unit='s',
+                  value=1)
+    assert var.dtype == sc.dtype.int64
+    assert var.unit == 's'
+
+
+def test_full_and_ones_equivalent():
+    assert sc.identical(
+        sc.full(dims=["x", "y"], shape=(2, 2), unit="m", value=1.0),
+        sc.ones(dims=["x", "y"], shape=(2, 2), unit="m"),
+    )
+
+
+def test_full_and_zeros_equivalent():
+    assert sc.identical(
+        sc.full(dims=["x", "y"], shape=(2, 2), unit="m", value=0.0),
+        sc.zeros(dims=["x", "y"], shape=(2, 2), unit="m"),
+    )
+
+
+def test_full_like():
+    to_copy = sc.zeros(dims=["x", "y"], shape=(2, 2))
+
+    assert sc.identical(sc.full_like(to_copy, value=123.45),
+                        sc.full(dims=["x", "y"], shape=(2, 2), value=123.45))
+
+
+def test_full_like_with_variance():
+    to_copy = sc.zeros(dims=["x", "y"], shape=(2, 2))
+
+    assert sc.identical(
+        sc.full_like(to_copy, value=123.45, variance=67.89),
+        sc.full(dims=["x", "y"], shape=(2, 2), value=123.45, variance=67.89))
+
+
 def test_empty_creates_variable_with_correct_dims_and_shape():
     var = sc.empty(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     expected = make_dummy(dims=['x', 'y', 'z'], shape=[1, 2, 3])
