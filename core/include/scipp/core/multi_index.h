@@ -483,26 +483,6 @@ private:
     return m_buffer[data + dim * N];
   }
 
-  template <size_t... I, class... StridesArgs>
-  void store_strides_impl(const scipp::index ndim, const scipp::index first_dim,
-                          std::index_sequence<I...>,
-                          const StridesArgs &... strides) noexcept {
-    (
-        [&]() {
-          for (scipp::index dim = 0; dim < ndim; ++dim) {
-            stride(first_dim + dim, I) = strides[ndim - 1 - dim];
-          }
-        }(),
-        ...);
-  }
-
-  template <class... StridesArgs>
-  void store_strides(const scipp::index ndim, const scipp::index first_dim,
-                     const StridesArgs &... strides) noexcept {
-    store_strides_impl(ndim, first_dim,
-                       std::index_sequence_for<StridesArgs...>(), strides...);
-  }
-
   /// Current index in iteration dimensions for both bin and inner dims.
   [[nodiscard]] scipp::index &coord(const scipp::index dim) noexcept {
     return *coord_it(dim);
