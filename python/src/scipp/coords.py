@@ -12,8 +12,7 @@ def _argnames(func):
     spec = inspect.getfullargspec(func)
     if spec.varargs is not None or spec.varkw is not None:
         raise ValueError(
-            "Function with variable arguments not allowed in conversion graph."
-        )
+            "Function with variable arguments not allowed in conversion graph.")
     return spec.args + spec.kwonlyargs
 
 
@@ -24,8 +23,7 @@ class Graph:
         for key in graph:
             for k in [key] if isinstance(key, str) else key:
                 if k in self._graph:
-                    raise ValueError(
-                        "Duplicate output name define in conversion graph")
+                    raise ValueError("Duplicate output name define in conversion graph")
                 self._graph[k] = graph[key]
 
     def __getitem__(self, name):
@@ -38,9 +36,8 @@ class Graph:
         try:
             from graphviz import Digraph
         except ImportError:
-            warnings.warn(
-                "Failed to import `graphviz`, please install `graphviz` if "
-                "using `pip`, or `python-graphviz` if using `conda`.")
+            warnings.warn("Failed to import `graphviz`, please install `graphviz` if "
+                          "using `pip`, or `python-graphviz` if using `conda`.")
         dot = Digraph(strict=True)
         dot.attr('node', shape='box', height='0.1')
         dot.attr(size=size)
@@ -49,10 +46,7 @@ class Graph:
                 dot.edge(producer, output)
             else:
                 name = f'{producer.__name__}(...)'
-                dot.node(name,
-                         shape='ellipse',
-                         style='filled',
-                         color='lightgrey')
+                dot.node(name, shape='ellipse', style='filled', color='lightgrey')
                 dot.edge(name, output)
                 argnames = _argnames(producer)
                 for arg in argnames:
@@ -169,8 +163,7 @@ class CoordTransform:
             if name in self.obj.bins.coords:
                 del self.obj.bins.coords[name]
 
-    def finalize(self, *, include_aliases, rename_dims, keep_intermediate,
-                 keep_inputs):
+    def finalize(self, *, include_aliases, rename_dims, keep_intermediate, keep_inputs):
         for name in self._outputs:
             self._add_coord(name=name)
         if not include_aliases:
@@ -194,8 +187,7 @@ class CoordTransform:
             for key, val in self._rename.items():
                 found = [k for k in key if k in self.obj.dims]
                 # rename if exactly one input is dimension-coord
-                if len(val) == 1 and len(
-                        found) == 1 and found[0] not in blacklist:
+                if len(val) == 1 and len(found) == 1 and found[0] not in blacklist:
                     self.obj = self.obj.rename_dims({found[0]: val[0]})
         return self.obj
 
@@ -208,17 +200,14 @@ def _get_splitting_nodes(graph):
     return [node for node in nodes if nodes[node] > 1]
 
 
-def _transform_data_array(obj: DataArray, coords, graph: dict, *,
-                          kwargs) -> DataArray:
-    transform = CoordTransform(
-        obj,
-        graph=Graph(graph),
-        outputs=[coords] if isinstance(coords, str) else coords)
+def _transform_data_array(obj: DataArray, coords, graph: dict, *, kwargs) -> DataArray:
+    transform = CoordTransform(obj,
+                               graph=Graph(graph),
+                               outputs=[coords] if isinstance(coords, str) else coords)
     return transform.finalize(**kwargs)
 
 
-def _transform_dataset(obj: Dataset, coords, graph: dict, *,
-                       kwargs) -> Dataset:
+def _transform_dataset(obj: Dataset, coords, graph: dict, *, kwargs) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord
     # transform is repeated for every item rather than sharing what is
     # possible. Implementing this would be tricky and likely error-prone,
@@ -273,10 +262,7 @@ def transform_coords(x: Union[DataArray, Dataset],
         'keep_inputs': keep_inputs
     }
     if isinstance(x, DataArray):
-        return _transform_data_array(x,
-                                     coords=coords,
-                                     graph=graph,
-                                     kwargs=kwargs)
+        return _transform_data_array(x, coords=coords, graph=graph, kwargs=kwargs)
     else:
         return _transform_dataset(x, coords=coords, graph=graph, kwargs=kwargs)
 
