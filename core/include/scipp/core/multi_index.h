@@ -371,21 +371,25 @@ private:
 
   /// Current index in iteration dimensions for both bin and inner dims.
   [[nodiscard]] scipp::index &coord(const scipp::index dim) noexcept {
-    return *coord_it(dim);
+    return m_coord[dim];
   }
 
   [[nodiscard]] const scipp::index &
   coord(const scipp::index dim) const noexcept {
-    return *coord_it(dim);
+    return m_coord[dim];
   }
 
   [[nodiscard]] auto coord_it(const scipp::index dim = 0) const noexcept {
-    return m_buffer.get() + (std::max(m_ndim, scipp::index{2}) * N + dim);
+    return m_coord.begin() + dim;
   }
 
-  [[nodiscard]] auto coord_end() const noexcept {
-    return m_buffer.get() + (std::max(m_ndim, scipp::index{2}) * (N + 1));
+  [[nodiscard]] auto coord_end() const noexcept { return m_coord.end(); }
+
+  [[nodiscard]] auto coord_it(const scipp::index dim = 0) noexcept {
+    return m_coord.begin() + dim;
   }
+
+  [[nodiscard]] auto coord_end() noexcept { return m_coord.end(); }
 
   /// Shape of the iteration dimensions for both bin and inner dims.
   [[nodiscard]] scipp::index &shape(const scipp::index dim) noexcept {
