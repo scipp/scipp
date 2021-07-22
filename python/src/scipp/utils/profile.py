@@ -17,8 +17,7 @@ def time(method):
         end = _time.time()
         ms = (end - start) * 1000
         time.counter -= 1
-        os.write(1,
-                 f'{"  " * indent}exit {method.__name__}  {ms} ms\n'.encode())
+        os.write(1, f'{"  " * indent}exit {method.__name__}  {ms} ms\n'.encode())
         return result
 
     return timed

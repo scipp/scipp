@@ -12,8 +12,7 @@ from .plot_helper import plot
 def _with_fake_pos(*args, **kwargs):
     da = make_dense_data_array(*args, **kwargs)
     da.coords['pos'] = sc.geometry.position(da.coords['xx'], da.coords['yy'],
-                                            da.coords['zz']).transpose(
-                                                da.dims[:3])
+                                            da.coords['zz']).transpose(da.dims[:3])
     return da
 
 
@@ -31,11 +30,9 @@ def make_data_array_with_position_vectors():
     da = sc.DataArray(data=sc.Variable(dims=['time', 'xyz'], values=a),
                       coords={
                           'xyz':
-                          sc.vectors(dims=['xyz'],
-                                     values=np.array([x, y, z]).T),
+                          sc.vectors(dims=['xyz'], values=np.array([x, y, z]).T),
                           'pos':
-                          sc.vectors(dims=['xyz'],
-                                     values=np.array([x, y, z]).T + 20.0),
+                          sc.vectors(dims=['xyz'], values=np.array([x, y, z]).T + 20.0),
                           'time':
                           sc.Variable(dims=['time'], values=time)
                       })
@@ -62,15 +59,11 @@ def test_plot_projection_3d_with_masks():
 
 
 def test_plot_projection_3d_with_vectors():
-    plot(make_data_array_with_position_vectors(),
-         projection="3d",
-         positions="xyz")
+    plot(make_data_array_with_position_vectors(), projection="3d", positions="xyz")
 
 
 def test_plot_projection_3d_with_vectors_non_dim_coord():
-    plot(make_data_array_with_position_vectors(),
-         projection="3d",
-         positions="pos")
+    plot(make_data_array_with_position_vectors(), projection="3d", positions="pos")
 
 
 def test_plot_variable_3d():
@@ -90,10 +83,9 @@ def test_plot_4d_with_masks_projection_3d():
     da += sc.Variable(dims=['pixel'], values=a)
     da.masks['tube_ends'] = sc.Variable(dims=['pixel'],
                                         values=np.where(a > 0.5, True, False))
-    da.coords['pos'] = sc.geometry.position(
-        sc.arange(dim='pack', start=0., stop=2),
-        sc.arange(dim='tube', start=0., stop=8),
-        sc.arange(dim='straw', start=0., stop=7))
+    da.coords['pos'] = sc.geometry.position(sc.arange(dim='pack', start=0., stop=2),
+                                            sc.arange(dim='tube', start=0., stop=8),
+                                            sc.arange(dim='straw', start=0., stop=7))
     plot(da, positions='pos', projection="3d")
 
 
@@ -112,16 +104,16 @@ def test_plot_3d_with_2d_position_coordinate():
     ny = 40
     nt = 10
 
-    xx, yy = np.meshgrid(np.arange(nx, dtype=np.float64),
-                         np.arange(ny, dtype=np.float64))
+    xx, yy = np.meshgrid(np.arange(nx, dtype=np.float64), np.arange(ny,
+                                                                    dtype=np.float64))
     da = sc.DataArray(
         data=sc.Variable(dims=['x', 'y', 't'],
                          values=np.arange(nx * ny * nt).reshape(nx, ny, nt)),
         coords={
             'pos':
             sc.vectors(dims=['x', 'y'],
-                       values=np.array([xx, yy, np.zeros_like(xx)
-                                        ]).T.reshape(nx, ny, 3)),
+                       values=np.array([xx, yy,
+                                        np.zeros_like(xx)]).T.reshape(nx, ny, 3)),
             't':
             sc.arange('t', nt + 1, dtype=np.float64)
         })

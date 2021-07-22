@@ -56,8 +56,7 @@ def test_numpy_self_assign_shift_2d_flip_first():
     var = sc.Variable(dims=['y', 'x'], values=np.arange(9).reshape(3, 3))
     expected = sc.Variable(dims=['y', 'x'],
                            values=np.array([[0, 1, 2], [3, 3, 4], [6, 0, 1]]))
-    var['y', 1:3]['x', 1:3].values = np.flip(var['y', 0:2]['x', 0:2].values,
-                                             axis=0)
+    var['y', 1:3]['x', 1:3].values = np.flip(var['y', 0:2]['x', 0:2].values, axis=0)
     assert sc.identical(var, expected)
 
 
@@ -65,8 +64,7 @@ def test_numpy_self_assign_shift_2d_flip_second():
     var = sc.Variable(dims=['y', 'x'], values=np.arange(9).reshape(3, 3))
     expected = sc.Variable(dims=['y', 'x'],
                            values=np.array([[0, 1, 2], [3, 1, 0], [6, 4, 3]]))
-    var['y', 1:3]['x', 1:3].values = np.flip(var['y', 0:2]['x', 0:2].values,
-                                             axis=1)
+    var['y', 1:3]['x', 1:3].values = np.flip(var['y', 0:2]['x', 0:2].values, axis=1)
     assert sc.identical(var, expected)
 
 
@@ -76,8 +74,7 @@ arr = sc.DataArray(var)
 ds = sc.Dataset(data={'a': arr})
 
 
-@pytest.mark.parametrize("obj",
-                         [var, var['x', :], arr, arr['x', :], ds, ds['x', :]])
+@pytest.mark.parametrize("obj", [var, var['x', :], arr, arr['x', :], ds, ds['x', :]])
 def test__array_ufunc___disabled(obj):
     with pytest.raises(TypeError, match="does not support ufuncs"):
         obj + a

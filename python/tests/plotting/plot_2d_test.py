@@ -103,8 +103,7 @@ def test_plot_2d_with_masks():
 
 
 def test_plot_2d_with_masks_and_labels():
-    plot(make_dense_data_array(ndim=2, masks=True, labels=True),
-         labels={'xx': 'lab'})
+    plot(make_dense_data_array(ndim=2, masks=True, labels=True), labels={'xx': 'lab'})
 
 
 def test_plot_2d_with_non_regular_bin_edges():
@@ -305,18 +304,14 @@ def test_plot_2d_int_coords():
 
 def test_plot_2d_datetime():
     time = sc.array(dims=['time'],
-                    values=np.arange(
-                        np.datetime64('2017-01-01T12:00:00'),
-                        np.datetime64('2017-01-01T12:00:00.0001')))
+                    values=np.arange(np.datetime64('2017-01-01T12:00:00'),
+                                     np.datetime64('2017-01-01T12:00:00.0001')))
     N, M = time.sizes['time'], 200
     da = sc.DataArray(data=sc.array(dims=['time', 'xx'],
                                     values=np.random.normal(0, 1, (N, M))),
                       coords={
-                          'time':
-                          time,
-                          'xx':
-                          sc.Variable(dims=['xx'],
-                                      values=np.linspace(0, 10, M))
+                          'time': time,
+                          'xx': sc.Variable(dims=['xx'], values=np.linspace(0, 10, M))
                       })
     da.plot().close()
 
@@ -357,8 +352,7 @@ def test_plot_redraw_binned():
     before = p.view.figure.image_values.get_array().sum()
     da *= 5.0
     p.redraw()
-    assert np.isclose(p.view.figure.image_values.get_array().sum(),
-                      5.0 * before)
+    assert np.isclose(p.view.figure.image_values.get_array().sum(), 5.0 * before)
     p.close()
 
 
@@ -376,8 +370,7 @@ def test_plot_redraw_binned_concat_inplace():
     # TODO would need to change data inplace rather than replacing
     a.data = a.bins.concatenate(other=b).data
     pa.redraw()
-    assert np.isclose(pa.view.figure.image_values.get_array().sum(),
-                      asum + bsum)
+    assert np.isclose(pa.view.figure.image_values.get_array().sum(), asum + bsum)
     pa.close()
     pb.close()
 

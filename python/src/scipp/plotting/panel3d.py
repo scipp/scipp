@@ -16,8 +16,7 @@ class PlotPanel3d(PlotPanel):
 
         self.current_cut_surface_value = None
         self.options = [
-            'x', 'y', 'z', 'radius', 'radius_x', 'radius_y', 'radius_z',
-            'value'
+            'x', 'y', 'z', 'radius', 'radius_x', 'radius_y', 'radius_z', 'value'
         ]
         self._cut_sliders = {}
         self._cut_surface_thicknesses = {}
@@ -57,10 +56,8 @@ class PlotPanel3d(PlotPanel):
 
         self._cut_sliders[key] = cut_slider
         self._cut_surface_thicknesses[key] = cut_surface_thickness
-        controls = ipw.HBox([
-            ipw.HBox([cut_slider, cut_unit, cut_checkbox]),
-            cut_surface_thickness
-        ])
+        controls = ipw.HBox(
+            [ipw.HBox([cut_slider, cut_unit, cut_checkbox]), cut_surface_thickness])
         controls.layout.display = 'none'
         return controls
 
@@ -110,11 +107,10 @@ class PlotPanel3d(PlotPanel):
             description='Cut surface:',
             button_style='',
             tooltips=[
-                'X-plane', 'Y-plane', 'Z-plane', 'Sphere', 'Cylinder-X',
-                'Cylinder-Y', 'Cylinder-Z', 'Value'
+                'X-plane', 'Y-plane', 'Z-plane', 'Sphere', 'Cylinder-X', 'Cylinder-Y',
+                'Cylinder-Z', 'Value'
             ],
-            icons=(['cube'] * 3) + ['circle-o'] + (['toggle-on'] * 3) +
-            ['magic'],
+            icons=(['cube'] * 3) + ['circle-o'] + (['toggle-on'] * 3) + ['magic'],
             style={"button_width": "50px"},
         )
         self.cut_surface_buttons.observe(self._update_cut_surface_buttons,
@@ -127,8 +123,7 @@ class PlotPanel3d(PlotPanel):
         self._cut_controls = []
         self._cut_controls_box = ipw.VBox([self.cut_surface_buttons])
         self.container.children = (ipw.HBox(
-            [self.opacity_slider,
-             self.opacity_checkbox]), self._cut_controls_box)
+            [self.opacity_slider, self.opacity_checkbox]), self._cut_controls_box)
 
     def set_range(self, key, low, high):
         # TODO scaling? See old impl:

@@ -37,8 +37,7 @@ def plot3d(scipp_obj_dict, *, positions, **kwargs):
                 ylabel=None,
                 zlabel=None):
         array = next(iter(scipp_obj_dict.values()))
-        pos = array.meta[positions] if isinstance(positions,
-                                                  str) else positions
+        pos = array.meta[positions] if isinstance(positions, str) else positions
         out = {
             'view_ndims': 0,
             'dims': list(set(array.dims) - set(pos.dims)),
@@ -46,11 +45,7 @@ def plot3d(scipp_obj_dict, *, positions, **kwargs):
             'view': PlotView3d,
             'controller': PlotController3d
         }
-        params = make_params(cmap=cmap,
-                             norm=norm,
-                             vmin=vmin,
-                             vmax=vmax,
-                             masks=masks)
+        params = make_params(cmap=cmap, norm=norm, vmin=vmin, vmax=vmax, masks=masks)
         out['vmin'] = params["values"]["vmin"]
         out['vmax'] = params["values"]["vmax"]
         # TODO

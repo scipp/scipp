@@ -209,9 +209,8 @@ def flatten(x: VariableLike,
     return _call_cpp_func(_cpp.flatten, x, dims, to)
 
 
-def transpose(
-        x: VariableLike,
-        dims: Optional[Union[List[str], Tuple[str]]] = None) -> VariableLike:
+def transpose(x: VariableLike,
+              dims: Optional[Union[List[str], Tuple[str]]] = None) -> VariableLike:
     """Transpose dimensions of a variable, an data array, or a dataset.
 
     :param x: Object to transpose.

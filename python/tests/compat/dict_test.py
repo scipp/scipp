@@ -66,8 +66,7 @@ def test_variable_0D_matrix_to_dict():
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == []
     assert var_dict["shape"] == []
-    assert np.array_equal(var_dict["values"],
-                          [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    assert np.array_equal(var_dict["values"], [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     assert var_dict["dtype"] == sc.dtype.matrix_3_float64
 
 
@@ -194,8 +193,7 @@ def test_data_array_to_dict():
             "y": sc.Variable(dims=["y"], values=np.arange(5), unit=sc.units.m),
         },
         masks={
-            "amask":
-            sc.Variable(dims=["y"], values=[True, True, False, True, False])
+            "amask": sc.Variable(dims=["y"], values=[True, True, False, True, False])
         },
         attrs={"attr1": sc.Variable(dims=["x"], values=np.random.random(10))},
         data=sc.Variable(dims=["y", "x"], values=np.random.random([5, 10])))
@@ -208,10 +206,8 @@ def test_data_array_to_dict():
     assert da_dict["data"]["dtype"] == da.dtype
     assert sc.identical(sc.from_dict(da_dict["coords"]["x"]), da.coords["x"])
     assert sc.identical(sc.from_dict(da_dict["coords"]["y"]), da.coords["y"])
-    assert sc.identical(sc.from_dict(da_dict["masks"]["amask"]),
-                        da.masks["amask"])
-    assert sc.identical(sc.from_dict(da_dict["attrs"]["attr1"]),
-                        da.attrs["attr1"])
+    assert sc.identical(sc.from_dict(da_dict["masks"]["amask"]), da.masks["amask"])
+    assert sc.identical(sc.from_dict(da_dict["attrs"]["attr1"]), da.attrs["attr1"])
 
 
 def test_data_array_from_dict():
@@ -247,10 +243,8 @@ def test_data_array_from_dict():
     da = sc.from_dict(da_dict)
     assert sc.identical(da.coords["x"], sc.from_dict(da_dict["coords"]["x"]))
     assert sc.identical(da.coords["y"], sc.from_dict(da_dict["coords"]["y"]))
-    assert sc.identical(da.masks["amask"],
-                        sc.from_dict(da_dict["masks"]["amask"]))
-    assert sc.identical(da.attrs["attr1"],
-                        sc.from_dict(da_dict["attrs"]["attr1"]))
+    assert sc.identical(da.masks["amask"], sc.from_dict(da_dict["masks"]["amask"]))
+    assert sc.identical(da.attrs["attr1"], sc.from_dict(da_dict["attrs"]["attr1"]))
     assert sc.identical(da.data, sc.from_dict(da_dict["data"]))
 
 
@@ -279,11 +273,9 @@ def test_dataset_to_dict():
                           variances=np.random.random([5, 10]),
                           unit=sc.units.s)
     ds.coords["x"] = sc.Variable(dims=["x"], values=np.arange(10))
-    ds.coords["y"] = sc.Variable(dims=["y"],
-                                 values=np.arange(5),
-                                 unit=sc.units.m)
-    ds["a"].masks["amask"] = sc.Variable(
-        dims=["y"], values=[True, True, False, True, False])
+    ds.coords["y"] = sc.Variable(dims=["y"], values=np.arange(5), unit=sc.units.m)
+    ds["a"].masks["amask"] = sc.Variable(dims=["y"],
+                                         values=[True, True, False, True, False])
     # Note that attributes complicate things here, as they are duplicated in
     # each entry during the conversion to dict. So for now, we leave attributes
     # out.
@@ -355,11 +347,9 @@ def test_dataset_round_trip():
                           variances=np.random.random([5, 10]),
                           unit=sc.units.s)
     ds.coords["x"] = sc.Variable(dims=["x"], values=np.arange(10))
-    ds.coords["y"] = sc.Variable(dims=["y"],
-                                 values=np.arange(5),
-                                 unit=sc.units.m)
-    ds["a"].masks["amask"] = sc.Variable(
-        dims=["y"], values=[True, True, False, True, False])
+    ds.coords["y"] = sc.Variable(dims=["y"], values=np.arange(5), unit=sc.units.m)
+    ds["a"].masks["amask"] = sc.Variable(dims=["y"],
+                                         values=[True, True, False, True, False])
     # Note that round trip would not work if attrs are present, since they get
     # become a per-item attribute during the conversion to dict.
     assert sc.identical(ds, sc.from_dict(sc.to_dict(ds)))

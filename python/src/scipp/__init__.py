@@ -135,13 +135,12 @@ from .coords import transform_coords, show_graph
 _binding.bind_get()
 for _cls in (Variable, DataArray):
     _binding.bind_functions_as_methods(
-        _cls, globals(), ('broadcast', 'flatten', 'fold', 'transpose', 'all',
-                          'any', 'mean', 'sum', 'nanmean', 'nansum'))
+        _cls, globals(), ('broadcast', 'flatten', 'fold', 'transpose', 'all', 'any',
+                          'mean', 'sum', 'nanmean', 'nansum'))
 del _cls
-_binding.bind_functions_as_methods(
-    Variable, globals(), ('cumsum', 'max', 'min', 'nanmax', 'nanmin'))
+_binding.bind_functions_as_methods(Variable, globals(),
+                                   ('cumsum', 'max', 'min', 'nanmax', 'nanmin'))
 for _cls in (DataArray, Dataset):
-    _binding.bind_functions_as_methods(_cls, globals(),
-                                       ('groupby', 'transform_coords'))
+    _binding.bind_functions_as_methods(_cls, globals(), ('groupby', 'transform_coords'))
 del _cls
 del _binding

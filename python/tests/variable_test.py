@@ -34,8 +34,7 @@ def test_astype():
 
 
 def test_astype_bad_conversion():
-    var = sc.Variable(dims=['x'],
-                      values=np.array([1, 2, 3, 4], dtype=np.int64))
+    var = sc.Variable(dims=['x'], values=np.array([1, 2, 3, 4], dtype=np.int64))
     assert var.dtype == sc.dtype.int64
 
     for target_dtype in (sc.dtype.string, str, 'str'):
@@ -181,22 +180,22 @@ def test_getitem():
     var = sc.Variable(dims=['x', 'y'], values=np.arange(0, 8).reshape(2, 4))
     var_slice = var['x', 1:2]
     assert sc.identical(
-        var_slice,
-        sc.Variable(dims=['x', 'y'], values=np.arange(4, 8).reshape(1, 4)))
+        var_slice, sc.Variable(dims=['x', 'y'], values=np.arange(4, 8).reshape(1, 4)))
 
 
 def test_setitem_broadcast():
     var = sc.Variable(dims=['x'], values=[1, 2, 3, 4], dtype=sc.dtype.int64)
     var['x', 1:3] = sc.scalar(5, dtype=sc.dtype.int64)
     assert sc.identical(
-        var, sc.Variable(dims=['x'], values=[1, 5, 5, 4],
-                         dtype=sc.dtype.int64))
+        var, sc.Variable(dims=['x'], values=[1, 5, 5, 4], dtype=sc.dtype.int64))
 
 
 def test_slicing():
     var = sc.Variable(dims=['x'], values=np.arange(0, 3))
-    for slice_, expected in ((slice(0, 2), [0, 1]), (slice(-3, -1), [0, 1]),
-                             (slice(2, 1), [])):
+    for slice_, expected in ((slice(0, 2), [0, 1]), (slice(-3,
+                                                           -1), [0,
+                                                                 1]), (slice(2,
+                                                                             1), [])):
         var_slice = var[('x', slice_)]
         assert len(var_slice.values) == len(expected)
         assert np.array_equal(var_slice.values, np.array(expected))
@@ -378,8 +377,7 @@ def test_binary_or():
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
     assert sc.identical((a | b),
                         sc.Variable(dims=['x'],
-                                    values=np.array([False, True, True,
-                                                     True])))
+                                    values=np.array([False, True, True, True])))
 
 
 def test_in_place_binary_and():
@@ -392,8 +390,7 @@ def test_in_place_binary_and():
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
     a &= b
     assert sc.identical(
-        a, sc.Variable(dims=['x'],
-                       values=np.array([False, False, False, True])))
+        a, sc.Variable(dims=['x'], values=np.array([False, False, False, True])))
 
 
 def test_binary_and():
@@ -403,9 +400,9 @@ def test_binary_and():
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
-    assert sc.identical(
-        (a & b),
-        sc.Variable(dims=['x'], values=np.array([False, False, False, True])))
+    assert sc.identical((a & b),
+                        sc.Variable(dims=['x'],
+                                    values=np.array([False, False, False, True])))
 
 
 def test_in_place_binary_xor():
@@ -418,8 +415,7 @@ def test_in_place_binary_xor():
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
     a ^= b
     assert sc.identical(
-        a, sc.Variable(dims=['x'], values=np.array([False, True, True,
-                                                    False])))
+        a, sc.Variable(dims=['x'], values=np.array([False, True, True, False])))
 
 
 def test_binary_xor():
@@ -431,8 +427,7 @@ def test_binary_xor():
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
     assert sc.identical((a ^ b),
                         sc.Variable(dims=['x'],
-                                    values=np.array([False, True, True,
-                                                     False])))
+                                    values=np.array([False, True, True, False])))
 
 
 def test_in_place_binary_with_scalar():
@@ -515,9 +510,7 @@ def test_sum():
     var = sc.Variable(dims=['x', 'y'],
                       values=np.array([[0.1, 0.3], [0.2, 0.6]]),
                       unit=sc.units.m)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([0.4, 0.8]),
-                           unit=sc.units.m)
+    expected = sc.Variable(dims=['x'], values=np.array([0.4, 0.8]), unit=sc.units.m)
     assert sc.identical(sc.sum(var, 'y'), expected)
 
 
@@ -525,12 +518,8 @@ def test_sum_in_place():
     var = sc.Variable(dims=['x', 'y'],
                       values=np.array([[0.1, 0.3], [0.2, 0.6]]),
                       unit=sc.units.m)
-    out_var = sc.Variable(dims=['x'],
-                          values=np.array([0.0, 0.0]),
-                          unit=sc.units.m)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([0.4, 0.8]),
-                           unit=sc.units.m)
+    out_var = sc.Variable(dims=['x'], values=np.array([0.0, 0.0]), unit=sc.units.m)
+    expected = sc.Variable(dims=['x'], values=np.array([0.4, 0.8]), unit=sc.units.m)
     out_view = sc.sum(var, 'y', out=out_var)
     assert sc.identical(out_var, expected)
     assert sc.identical(out_view, expected)
@@ -658,8 +647,7 @@ def test_rename_dims():
 
 
 def test_bool_variable_repr():
-    a = sc.Variable(dims=['x'],
-                    values=np.array([False, True, True, False, True]))
+    a = sc.Variable(dims=['x'], values=np.array([False, True, True, False, True]))
     assert [expected in repr(a) for expected in ["True", "False", "..."]]
 
 
@@ -761,30 +749,26 @@ def test_isnan():
 
 def test_isinf():
     assert sc.identical(
-        sc.isinf(sc.Variable(dims=['x'], values=np.array([1, -np.inf,
-                                                          np.inf]))),
+        sc.isinf(sc.Variable(dims=['x'], values=np.array([1, -np.inf, np.inf]))),
         sc.Variable(dims=['x'], values=[False, True, True]))
 
 
 def test_isfinite():
     assert sc.identical(
         sc.isfinite(
-            sc.Variable(dims=['x'],
-                        values=np.array([1, -np.inf, np.inf, np.nan]))),
+            sc.Variable(dims=['x'], values=np.array([1, -np.inf, np.inf, np.nan]))),
         sc.Variable(dims=['x'], values=[True, False, False, False]))
 
 
 def test_isposinf():
     assert sc.identical(
-        sc.isposinf(
-            sc.Variable(dims=['x'], values=np.array([1, -np.inf, np.inf]))),
+        sc.isposinf(sc.Variable(dims=['x'], values=np.array([1, -np.inf, np.inf]))),
         sc.Variable(dims=['x'], values=[False, False, True]))
 
 
 def test_isneginf():
     assert sc.identical(
-        sc.isneginf(
-            sc.Variable(dims=['x'], values=np.array([1, -np.inf, np.inf]))),
+        sc.isneginf(sc.Variable(dims=['x'], values=np.array([1, -np.inf, np.inf]))),
         sc.Variable(dims=['x'], values=[False, True, False]))
 
 
@@ -824,10 +808,9 @@ def test_nan_to_nan_with_multiple_special_replacements():
 
     expected = sc.Variable(
         dims=['x'],
-        values=np.array([1] + [
-            repl.value
-            for repl in [replace_nan, replace_pos_inf, replace_neg_inf]
-        ]))
+        values=np.array(
+            [1] +
+            [repl.value for repl in [replace_nan, replace_pos_inf, replace_neg_inf]]))
     assert sc.identical(b, expected)
 
 
@@ -847,19 +830,16 @@ def test_nan_to_num_out_with_multiple_special_replacements():
     # just replace nans
     sc.nan_to_num(a, nan=replace, out=out)
     expected = sc.Variable(dims=['x'],
-                           values=np.array([1, np.inf, -np.inf,
-                                            replace.value]))
+                           values=np.array([1, np.inf, -np.inf, replace.value]))
     assert sc.identical(out, expected)
     # replace neg inf
     sc.nan_to_num(out, neginf=replace, out=out)
     expected = sc.Variable(dims=['x'],
-                           values=np.array(
-                               [1, np.inf, replace.value, replace.value]))
+                           values=np.array([1, np.inf, replace.value, replace.value]))
     assert sc.identical(out, expected)
     # replace pos inf
     sc.nan_to_num(out, posinf=replace, out=out)
-    expected = sc.Variable(dims=['x'],
-                           values=np.array([1] + [replace.value] * 3))
+    expected = sc.Variable(dims=['x'], values=np.array([1] + [replace.value] * 3))
     assert sc.identical(out, expected)
 
 

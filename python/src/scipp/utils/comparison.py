@@ -39,8 +39,8 @@ def isnear(x,
     same_data = sc.all(
         sc.isclose(x.data, y.data, rtol=rtol, atol=atol,
                    equal_nan=equal_nan)).value if include_data else True
-    same_len = len(x.meta) == len(y.meta) if include_attrs else len(
-        x.coords) == len(y.coords)
+    same_len = len(x.meta) == len(y.meta) if include_attrs else len(x.coords) == len(
+        y.coords)
     if not same_len:
         raise RuntimeError('Different number of items'
                            f' in meta {len(x.meta)} {len(y.meta)}')
@@ -50,11 +50,9 @@ def isnear(x,
         if a.shape != b.shape:
             raise sc.CoordError(
                 f'Coord (or attr) with key {key} have different'
-                f' shapes. For x, shape is {a.shape}. For y, shape = {b.shape}'
-            )
+                f' shapes. For x, shape is {a.shape}. For y, shape = {b.shape}')
         if val.dtype in [sc.dtype.float64, sc.dtype.float32]:
-            if not sc.all(
-                    sc.isclose(a, b, rtol=rtol, atol=atol,
-                               equal_nan=equal_nan)).value:
+            if not sc.all(sc.isclose(a, b, rtol=rtol, atol=atol,
+                                     equal_nan=equal_nan)).value:
                 return False
     return same_data

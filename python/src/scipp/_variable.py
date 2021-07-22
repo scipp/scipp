@@ -231,9 +231,7 @@ def full(*,
         .broadcast(**_parse_dims_shape_sizes(dims, shape, sizes)).copy()
 
 
-def full_like(var: _cpp.Variable,
-              value: _Any,
-              variance: _Any = None) -> _cpp.Variable:
+def full_like(var: _cpp.Variable, value: _Any, variance: _Any = None) -> _cpp.Variable:
     """
     Constructs a :class:`Variable` with values initialized to the specified
     value with dimensions labels and shape provided by an existing variable.

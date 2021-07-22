@@ -22,8 +22,7 @@ def maybe_variances(variances, dtype):
 
 @pytest.mark.parametrize("variance", [False, True])
 @pytest.mark.parametrize(
-    "dtype",
-    [sc.dtype.float64, sc.dtype.float32, sc.dtype.int64, sc.dtype.int32])
+    "dtype", [sc.dtype.float64, sc.dtype.float32, sc.dtype.int64, sc.dtype.int32])
 @pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's', 'us'])
 def test_html_repr_scalar(variance, dtype, unit):
     var = make_scalar(with_variance=maybe_variances(variance, dtype),
@@ -37,8 +36,7 @@ def test_html_repr_scalar(variance, dtype, unit):
 @pytest.mark.parametrize("attr", [False, True])
 @pytest.mark.parametrize("mask", [False, True])
 @pytest.mark.parametrize(
-    "dtype",
-    [sc.dtype.float64, sc.dtype.float32, sc.dtype.int64, sc.dtype.int32])
+    "dtype", [sc.dtype.float64, sc.dtype.float32, sc.dtype.int64, sc.dtype.int32])
 @pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
 def test_html_repr_scalar_array(variance, label, attr, mask, dtype, unit):
     da = make_scalar_array(with_variance=maybe_variances(variance, dtype),
@@ -94,9 +92,7 @@ def test_html_repr_data_array(ndim, with_all, dtype, unit):
 @pytest.mark.parametrize("variances", [False, True])
 @pytest.mark.parametrize("masks", [False, True])
 def test_html_repr_binned_data_array(ndim, variances, masks):
-    da = make_binned_data_array(ndim=ndim,
-                                with_variance=variances,
-                                masks=masks)
+    da = make_binned_data_array(ndim=ndim, with_variance=variances, masks=masks)
     sc.make_html(da)
     sc.make_html(da['xx', 1:10])
 
