@@ -62,8 +62,7 @@ def _repr_item(s, bin_dim, item, ellipsis_after, do_ellide, summary):
     if summary:
         s.append(SPARSE_PREFIX.format(shape))
     else:
-        s.append('events({})'.format(
-            _format_array(item, shape, ellipsis_after, do_ellide)))
+        s.append('events({})'.format(_format_array(item, shape, ellipsis_after, do_ellide)))
 
 
 def _get_events(var, variances, ellipsis_after, summary=False):
@@ -75,9 +74,8 @@ def _get_events(var, variances, ellipsis_after, summary=False):
         size = len(var.values)
         i = 0
 
-        do_ellide = summary or size > 1000 or sum([
-            len(retrieve(var, variances=variances)[i]) for i in range(min(size, 1000))
-        ]) > 1000
+        do_ellide = summary or size > 1000 or sum(
+            [len(retrieve(var, variances=variances)[i]) for i in range(min(size, 1000))]) > 1000
 
         data = retrieve(var, variances=variances)
         while i < size:
@@ -99,8 +97,7 @@ def _format_events(var, has_variances):
 
 
 def _ordered_dict(data):
-    data_ordered = collections.OrderedDict(sorted(data.items(),
-                                                  key=lambda t: str(t[0])))
+    data_ordered = collections.OrderedDict(sorted(data.items(), key=lambda t: str(t[0])))
     return data_ordered
 
 
@@ -126,8 +123,7 @@ def _short_data_repr_html_non_events(var, variances=False):
 
 
 def _short_data_repr_html_events(var, variances=False):
-    return "binned data([" + ",\n       ".join(
-        _get_events(var, variances, ellipsis_after=3)) + "])"
+    return "binned data([" + ",\n       ".join(_get_events(var, variances, ellipsis_after=3)) + "])"
 
 
 def short_data_repr_html(var, variances=False):
@@ -140,10 +136,7 @@ def format_dims(dims, sizes, coords):
     if not dims:
         return ""
 
-    dim_css_map = {
-        dim: " class='sc-has-index'" if dim in coords else ""
-        for dim in dims
-    }
+    dim_css_map = {dim: " class='sc-has-index'" if dim in coords else "" for dim in dims}
 
     dims_li = "".join(f"<li><span{dim_css_map[dim]}>"
                       f"{escape(str(dim))}</span>: "
@@ -203,11 +196,8 @@ def summarize_masks(masks, ds=None):
 
 def summarize_attrs(attrs, embedded_in=None):
     attrs_li = "".join("<li class='sc-var-item'>{}</li>".format(
-        summarize_variable(name,
-                           var,
-                           has_attrs=False,
-                           embedded_in=embedded_in,
-                           is_index=name in var.dims))
+        summarize_variable(
+            name, var, has_attrs=False, embedded_in=embedded_in, is_index=name in var.dims))
                        for name, var in _ordered_dict(attrs).items())
     return f"<ul class='sc-var-list'>{attrs_li}</ul>"
 
@@ -248,10 +238,9 @@ def _make_dim_labels(dim, size, bin_edges=None):
 
 
 def _make_dim_str(var, bin_edges, add_dim_size=False):
-    dims_text = ', '.join(
-        '{}{}{}'.format(str(dim), _make_dim_labels(dim, size, bin_edges),
-                        f': {size}' if add_dim_size and size is not None else '')
-        for dim, size in zip(var.dims, var.shape))
+    dims_text = ', '.join('{}{}{}'.format(str(dim), _make_dim_labels(dim, size, bin_edges),
+                                          f': {size}' if add_dim_size and size is not None else '')
+                          for dim, size in zip(var.dims, var.shape))
     return dims_text
 
 
@@ -279,10 +268,9 @@ def summarize_variable(name,
     displayed) or as part of a dataset.
     """
     dims_str = "({})".format(
-        _make_dim_str(
-            var,
-            find_bin_edges(var, embedded_in) if embedded_in is not None else None,
-            add_dim_size))
+        _make_dim_str(var,
+                      find_bin_edges(var, embedded_in) if embedded_in is not None else None,
+                      add_dim_size))
     unit = '' if var.unit == sc.units.dimensionless else repr(var.unit)
 
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs, embedded_in)
@@ -311,8 +299,8 @@ def summarize_variable(name,
         f"<div class='sc-var-dtype'>{escape(repr(var.dtype))}</div>",
         f"<div class='sc-var-unit'>{escape(unit)}</div>",
         f"<div class='sc-value-preview sc-preview'><span>{preview}</span>",
-        "{}</div>".format(f'<span>{variances_preview}</span>'
-                          if variances_preview is not None else ''),
+        "{}</div>".format(
+            f'<span>{variances_preview}</span>' if variances_preview is not None else ''),
         f"<input id='{attrs_id}' class='sc-var-attrs-in' ",
         f"type='checkbox' {disabled}>",
         f"<label for='{attrs_id}' "
@@ -382,10 +370,7 @@ def dim_section(dataset):
     coords = dataset.coords if hasattr(dataset, "coords") else dict()
     dim_list = format_dims(dataset.dims, dataset.shape, coords)
 
-    return collapsible_section("Dimensions",
-                               inline_details=dim_list,
-                               enabled=False,
-                               collapsed=True)
+    return collapsible_section("Dimensions", inline_details=dim_list, enabled=False, collapsed=True)
 
 
 def summarize_array(var, is_variable=False):
