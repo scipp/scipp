@@ -24,10 +24,7 @@ def run_command(cmd, shell):
     return subprocess.check_call(cmd, stderr=subprocess.STDOUT, shell=shell)
 
 
-def main(prefix='install',
-         build_dir='build',
-         source_dir='.',
-         build_type="release"):
+def main(prefix='install', build_dir='build', source_dir='.', build_type="release"):
     """
     Platform-independent function to run cmake, build, install and C++ tests.
     """
