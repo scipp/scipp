@@ -324,14 +324,6 @@ private:
 
   [[nodiscard]] auto coord_end() noexcept { return m_coord.begin() + m_ndim; }
 
-  [[nodiscard]] auto shape_it(const scipp::index dim = 0) const noexcept {
-    return m_shape.begin() + dim;
-  }
-
-  [[nodiscard]] auto shape_end() const noexcept {
-    return m_shape.begin() + m_ndim;
-  }
-
   [[nodiscard]] auto shape_it(const scipp::index dim = 0) noexcept {
     return std::next(m_shape.begin(), dim);
   }
