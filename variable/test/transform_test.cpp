@@ -161,6 +161,28 @@ TEST_F(TransformUnaryTest, slice) {
   }
 }
 
+TEST_F(TransformUnaryTest, transpose) {
+  for (bool variances : {false, true}) {
+    const auto initial_buffer =
+        make_variable_for_test<double>({3, 4}, variances);
+    const auto initial = transpose(initial_buffer);
+
+    const auto result_return = transform<double>(initial, op, name);
+    auto result_in_place = copy(initial);
+    transform_in_place<double>(result_in_place, op_in_place, name);
+
+    EXPECT_TRUE(equals(result_return.values<double>(),
+                       op_manual_values(initial.values<double>())));
+    if (variances) {
+      EXPECT_TRUE(equals(result_return.variances<double>(),
+                         op_manual_variances(initial.values<double>(),
+                                             initial.variances<double>())));
+    }
+    // In-place transform used to check result of non-in-place transform.
+    EXPECT_EQ(result_return, result_in_place);
+  }
+}
+
 TEST_F(TransformUnaryTest, elements_of_bins) {
   for (const auto &shape : shapes) {
     for (scipp::index bin_dim = 0;
@@ -332,6 +354,33 @@ TEST_F(TransformBinaryTest, var_with_view) {
                                           name);
 
   EXPECT_TRUE(equals(a.values<double>(), {1.1 * 3.3, 2.2 * 3.3}));
+  EXPECT_EQ(ab, a);
+}
+
+TEST_F(TransformBinaryTest, transpose) {
+  auto a =
+      makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{2, 2}, Values{1, 2, 3, 4});
+  const auto b = transpose(
+      makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{2, 2}, Values{5, 6, 7, 8}),
+      {Dim::Y, Dim::X});
+
+  const auto ab = transform<int>(a, b, op, name);
+  transform_in_place<int>(a, b, op_in_place, name);
+
+  EXPECT_TRUE(equals(a.values<int>(), {5, 12, 21, 32}));
+  EXPECT_EQ(ab, a);
+}
+
+TEST_F(TransformBinaryTest, transposed_layout) {
+  auto a =
+      makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{2, 2}, Values{1, 2, 3, 4});
+  const auto b =
+      makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{2, 2}, Values{5, 7, 6, 8});
+
+  const auto ab = transform<int>(a, b, op, name);
+  transform_in_place<int>(a, b, op_in_place, name);
+
+  EXPECT_TRUE(equals(a.values<int>(), {5, 12, 21, 32}));
   EXPECT_EQ(ab, a);
 }
 
