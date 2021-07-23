@@ -103,12 +103,12 @@ public:
       for (scipp::index data = 0; data < N; ++data) {
         m_data_index[data] +=
             // take a step in dimension d+1
-            stride(d + 1, data)
+            m_stride[d + 1][data]
             // rewind dimension d (coord(d) == m_shape[d])
-            - coord(d) * stride(d, data);
+            - m_coord[d] * m_stride[d][data];
       }
-      ++coord(d + 1);
-      coord(d) = 0;
+      ++m_coord[d + 1];
+      m_coord[d] = 0;
     }
     // Nested dims incremented, move on to bins.
     // Note that we do not check whether there are any bins but whether
@@ -120,30 +120,30 @@ public:
 
   void increment() noexcept {
     for (scipp::index data = 0; data < N; ++data)
-      m_data_index[data] += stride(0, data);
-    ++coord(0);
+      m_data_index[data] += m_stride[0][data];
+    ++m_coord[0];
     if (dim_at_end(0))
       increment_outer();
   }
 
   void increment_inner_by(const scipp::index distance) noexcept {
     for (scipp::index data = 0; data < N; ++data) {
-      m_data_index[data] += distance * stride(0, data);
+      m_data_index[data] += distance * m_stride[0][data];
     }
-    coord(0) += distance;
+    m_coord[0] += distance;
   }
 
   [[nodiscard]] auto inner_strides() const noexcept {
-    return scipp::span<const scipp::index>(&stride(0, 0), N);
+    return scipp::span<const scipp::index>(m_stride[0].begin(), N);
   }
 
   [[nodiscard]] scipp::index inner_distance_to_end() const noexcept {
-    return shape(0) - coord(0);
+    return m_shape[0] - m_coord[0];
   }
 
   [[nodiscard]] scipp::index
   inner_distance_to(const MultiIndex &other) const noexcept {
-    return other.coord(0) - coord(0);
+    return other.m_coord[0] - m_coord[0];
   }
 
   /// Set the absolute index. In the special case of iteration with bins,
@@ -165,10 +165,10 @@ public:
       set_to_end_bin();
     } else {
       if (m_inner_ndim == 0) {
-        coord(0) = 1;
+        m_coord[0] = 1;
       } else {
         std::fill(coord_it(0), coord_it(m_inner_ndim - 1), 0);
-        coord(m_inner_ndim - 1) = shape(m_inner_ndim - 1);
+        m_coord[m_inner_ndim - 1] = m_shape[m_inner_ndim - 1];
       }
       for (scipp::index data = 0; data < N; ++data) {
         m_data_index[data] = flat_index(data, 0, m_inner_ndim);
@@ -190,14 +190,14 @@ public:
   in_same_chunk(const MultiIndex &other,
                 const scipp::index first_dim) const noexcept {
     for (scipp::index dim = first_dim; dim < m_ndim; ++dim) {
-      if (coord(dim) != other.coord(dim)) {
+      if (m_coord[dim] != other.m_coord[dim]) {
         return false;
       }
     }
     return true;
   }
 
-  [[nodiscard]] auto inner_size() const noexcept { return shape(0); }
+  [[nodiscard]] auto inner_size() const noexcept { return m_shape[0]; }
 
   [[nodiscard]] auto begin() const noexcept {
     auto it(*this);
@@ -218,14 +218,14 @@ public:
   /// Return true if the first subindex has a 0 stride
   [[nodiscard]] bool has_stride_zero() const noexcept {
     for (scipp::index dim = 0; dim < m_ndim; ++dim)
-      if (stride(dim, 0) == 0)
+      if (m_stride[dim][0] == 0)
         return true;
     return false;
   }
 
 private:
   [[nodiscard]] auto dim_at_end(const scipp::index dim) const noexcept {
-    return coord(dim) == std::max(shape(dim), scipp::index{1});
+    return m_coord[dim] == std::max(m_shape[dim], scipp::index{1});
   }
 
   [[nodiscard]] constexpr auto bin_ndim() const noexcept {
@@ -249,22 +249,22 @@ private:
       for (scipp::index data = 0; data < N; ++data) {
         m_bin[data].m_bin_index +=
             // take a step in dimension dim+1
-            stride(dim + 1, data)
+            m_stride[dim + 1][data]
             // rewind dimension dim (coord(d) == m_shape[d])
-            - coord(dim) * stride(dim, data);
+            - m_coord[dim] * m_stride[dim][data];
       }
-      ++coord(dim + 1);
-      coord(dim) = 0;
+      ++m_coord[dim + 1];
+      m_coord[dim] = 0;
     }
   }
 
   void increment_bins() noexcept {
     const auto dim = m_inner_ndim;
     for (scipp::index data = 0; data < N; ++data) {
-      m_bin[data].m_bin_index += stride(dim, data);
+      m_bin[data].m_bin_index += m_stride[dim][data];
     }
     std::fill(coord_it(), coord_it(m_inner_ndim), 0);
-    ++coord(dim);
+    ++m_coord[dim];
     if (dim_at_end(dim))
       increment_outer_bins();
     if (!dim_at_end(m_ndim - 1)) {
@@ -277,7 +277,7 @@ private:
   void seek_bin() noexcept {
     do {
       increment_bins();
-    } while (shape(m_nested_dim_index) == 0 && !dim_at_end(m_ndim - 1));
+    } while (m_shape[m_nested_dim_index] == 0 && !dim_at_end(m_ndim - 1));
   }
 
   void load_bin_params(const scipp::index data) noexcept {
@@ -287,7 +287,7 @@ private:
       // All bins are guaranteed to have the same size.
       // Use common m_shape and m_nested_stride for all.
       const auto [begin, end] = m_bin[data].m_indices[m_bin[data].m_bin_index];
-      shape(m_nested_dim_index) = end - begin;
+      m_shape[m_nested_dim_index] = end - begin;
       m_data_index[data] = m_bin_stride * begin;
     }
     // else: at end of bins
@@ -296,7 +296,7 @@ private:
   void set_bins_index(const scipp::index index) noexcept {
     std::fill(coord_it(0), coord_it(m_inner_ndim), 0);
     if (bin_ndim() == 0 && index != 0) {
-      coord(m_nested_dim_index) = shape(m_nested_dim_index);
+      m_coord[m_nested_dim_index] = m_shape[m_nested_dim_index];
     } else {
       extract_indices(index, shape_it(m_inner_ndim), shape_end(),
                       coord_it(m_inner_ndim));
@@ -306,18 +306,18 @@ private:
       m_bin[data].m_bin_index = flat_index(data, m_inner_ndim, m_ndim);
       load_bin_params(data);
     }
-    if (shape(m_nested_dim_index) == 0 && !dim_at_end(m_ndim - 1))
+    if (m_shape[m_nested_dim_index] == 0 && !dim_at_end(m_ndim - 1))
       seek_bin();
   }
 
   void set_to_end_bin() noexcept {
     std::fill(coord_it(), coord_end(), 0);
     const auto last_dim = (bin_ndim() == 0 ? m_nested_dim_index : m_ndim - 1);
-    coord(last_dim) = shape(last_dim);
+    m_coord[last_dim] = m_shape[last_dim];
 
     for (scipp::index data = 0; data < N; ++data) {
       // Only one dim contributes, all others have coord = 0.
-      m_bin[data].m_bin_index = coord(last_dim) * stride(last_dim, data);
+      m_bin[data].m_bin_index = m_coord[last_dim] * m_stride[last_dim][data];
       load_bin_params(data);
     }
   }
@@ -326,30 +326,9 @@ private:
                           const scipp::index end_index) {
     scipp::index res = 0;
     for (; begin_index < end_index; ++begin_index) {
-      res += coord(begin_index) * stride(begin_index, i_data);
+      res += m_coord[begin_index] * m_stride[begin_index][i_data];
     }
     return res;
-  }
-
-  /// Stride for each operand in each dimension.
-  [[nodiscard]] scipp::index &stride(const scipp::index dim,
-                                     const scipp::index data) noexcept {
-    return m_stride[dim][data];
-  }
-
-  [[nodiscard]] const scipp::index &
-  stride(const scipp::index dim, const scipp::index data) const noexcept {
-    return m_stride[dim][data];
-  }
-
-  /// Current index in iteration dimensions for both bin and inner dims.
-  [[nodiscard]] scipp::index &coord(const scipp::index dim) noexcept {
-    return m_coord[dim];
-  }
-
-  [[nodiscard]] const scipp::index &
-  coord(const scipp::index dim) const noexcept {
-    return m_coord[dim];
   }
 
   [[nodiscard]] auto coord_it(const scipp::index dim = 0) const noexcept {
@@ -365,16 +344,6 @@ private:
   }
 
   [[nodiscard]] auto coord_end() noexcept { return m_coord.begin() + m_ndim; }
-
-  /// Shape of the iteration dimensions for both bin and inner dims.
-  [[nodiscard]] scipp::index &shape(const scipp::index dim) noexcept {
-    return m_shape[dim];
-  }
-
-  [[nodiscard]] const scipp::index &
-  shape(const scipp::index dim) const noexcept {
-    return m_shape[dim];
-  }
 
   [[nodiscard]] auto shape_it(const scipp::index dim = 0) const noexcept {
     return m_shape.begin() + dim;
@@ -393,8 +362,11 @@ private:
   /// Current flat index into the operands.
   std::array<scipp::index, N> m_data_index = {};
   // This does *not* 0-init the inner arrays!
+  /// Stride for each operand in each dimension.
   std::array<std::array<scipp::index, N>, NDIM_MAX> m_stride = {};
+  /// Current index in iteration dimensions for both bin and inner dims.
   std::array<scipp::index, NDIM_MAX + 1> m_coord = {};
+  /// Shape of the iteration dimensions for both bin and inner dims.
   std::array<scipp::index, NDIM_MAX + 1> m_shape = {};
   /// Number of dense dimensions, i.e. same as m_ndim when not binned,
   /// else number of dims in bins.

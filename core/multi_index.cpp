@@ -116,7 +116,7 @@ MultiIndex<N>::MultiIndex(binned_tag, const Dimensions &inner_dims,
   for (scipp::index data = 0; data < N; ++data) {
     load_bin_params(data);
   }
-  if (shape(m_nested_dim_index) == 0)
+  if (m_shape[m_nested_dim_index] == 0)
     seek_bin();
 }
 

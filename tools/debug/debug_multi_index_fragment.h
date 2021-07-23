@@ -12,19 +12,19 @@ friend std::ostream &operator<<(std::ostream &os, const MultiIndex<N> &index) {
        ++dim) {
     os << '[';
     for (scipp::index data = 0; data < N; ++data)
-      os << index.stride(dim, data) << ' ';
+      os << index.m_stride[dim][data] << ' ';
     os << "] ";
   }
   os << "]\n";
   os << "  coord = [";
   for (scipp::index dim = 0; dim < std::max(index.m_ndim, scipp::index{2});
        ++dim)
-    os << index.coord(dim) << ' ';
+    os << index.m_coord[dim] << ' ';
   os << "]\n";
   os << "  shape = [";
   for (scipp::index dim = 0; dim < std::max(index.m_ndim, scipp::index{2});
        ++dim)
-    os << index.shape(dim) << ' ';
+    os << index.m_shape[dim] << ' ';
   os << "]\n";
   os << "  inner_ndim = " << index.m_inner_ndim << '\n';
   os << "  bin_stride = " << index.m_bin_stride << '\n';
