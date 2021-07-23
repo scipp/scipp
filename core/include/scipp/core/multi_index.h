@@ -46,25 +46,6 @@ template <class T, class... Ts>
 auto get_slice_dim(const T &param, const Ts &... params) {
   return param ? param.dim : get_slice_dim(params...);
 }
-
-template <scipp::index N_Operands>
-constexpr auto get_strides_buffer_size(const scipp::index ndim) noexcept {
-  return std::max(ndim, scipp::index{2}) * N_Operands;
-}
-
-constexpr auto get_shape_buffer_size(const scipp::index ndim) noexcept {
-  return std::max(ndim, scipp::index{2});
-}
-
-constexpr auto get_coord_buffer_size(const scipp::index ndim) noexcept {
-  return std::max(ndim, scipp::index{2});
-}
-
-template <scipp::index N_Operands>
-constexpr auto get_buffer_size(const scipp::index ndim) noexcept {
-  return get_strides_buffer_size<N_Operands>(ndim) +
-         get_shape_buffer_size(ndim) + get_coord_buffer_size(ndim);
-}
 } // namespace detail
 
 template <scipp::index N> class SCIPP_CORE_EXPORT MultiIndex {
