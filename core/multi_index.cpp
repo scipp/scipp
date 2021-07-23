@@ -7,7 +7,7 @@
 
 namespace scipp::core {
 
-namespace detail {
+namespace {
 void validate_bin_indices_impl(const ElementArrayViewParams &param0,
                                const ElementArrayViewParams &param1) {
   const auto iterDims = param0.dims();
@@ -29,13 +29,41 @@ void validate_bin_indices_impl(const ElementArrayViewParams &param0,
   }
 }
 
+template <class Param> void validate_bin_indices(const Param &) {}
+
+/// Check that corresponding bins have matching sizes.
+template <class Param0, class Param1, class... Params>
+void validate_bin_indices(const Param0 &param0, const Param1 &param1,
+                          const Params &... params) {
+  if (param0.bucketParams() && param1.bucketParams())
+    validate_bin_indices_impl(param0, param1);
+  if (param0.bucketParams())
+    validate_bin_indices(param0, params...);
+  else
+    validate_bin_indices(param1, params...);
+}
+
+inline auto get_slice_dim() { return Dim::Invalid; }
+
+template <class T, class... Ts>
+auto get_slice_dim(const T &param, const Ts &... params) {
+  return param ? param.dim : get_slice_dim(params...);
+}
+
+template <class T>
+[[nodiscard]] auto make_span(T &&array, const scipp::index begin) {
+  return scipp::span{array.begin() + begin,
+                     static_cast<size_t>(NDIM_MAX - begin)};
+}
+
 template <size_t... I, class... StridesArgs>
-bool can_be_flattened(const scipp::index dim, const scipp::index size,
-                      std::index_sequence<I...>,
-                      std::array<scipp::index, sizeof...(I)> &rewind,
-                      const StridesArgs &... strides) {
-  const bool res = ((strides[dim] == rewind[I] && strides[dim] != 0) && ...);
-  ((rewind[I] = size * strides[dim]), ...);
+bool can_be_flattened(
+    const scipp::index dim, const scipp::index size, std::index_sequence<I...>,
+    std::array<scipp::index, sizeof...(I)> &strides_for_contiguous,
+    const StridesArgs &... strides) {
+  const bool res =
+      ((strides[dim] == strides_for_contiguous[I] && strides[dim] != 0) && ...);
+  ((strides_for_contiguous[I] = size * strides[dim]), ...);
   return res;
 }
 
@@ -53,13 +81,13 @@ flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
              const StridesArgs &... strides) {
   constexpr scipp::index N = sizeof...(StridesArgs);
   std::array strides_array{std::ref(strides)...};
-  std::array<scipp::index, N> rewind{};
+  std::array<scipp::index, N> strides_for_contiguous{};
   scipp::index dim_write = 0;
   for (scipp::index dim_read = dims.ndim() - 1; dim_read >= 0; --dim_read) {
     const auto size = dims.size(dim_read);
     if (dim_read > non_flattenable_dim &&
-        detail::can_be_flattened(dim_read, size, std::make_index_sequence<N>{},
-                                 rewind, strides...)) {
+        can_be_flattened(dim_read, size, std::make_index_sequence<N>{},
+                         strides_for_contiguous, strides...)) {
       out_shape[dim_write - 1] *= size;
     } else {
       out_shape[dim_write] = size;
@@ -71,39 +99,34 @@ flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
   }
   return dim_write;
 }
-} // namespace detail
+} // namespace
 
 template <scipp::index N>
 template <class... StridesArgs>
 MultiIndex<N>::MultiIndex(const Dimensions &iter_dims,
-                          const StridesArgs &... strides) {
-  m_ndim = detail::flatten_dims(scipp::span{m_stride.begin(), NDIM_MAX},
-                                scipp::span{m_shape.begin(), NDIM_MAX},
-                                iter_dims, 0, strides...);
-  m_inner_ndim = m_ndim;
-}
+                          const StridesArgs &... strides)
+    : m_ndim{flatten_dims(make_span(m_stride, 0), make_span(m_shape, 0),
+                          iter_dims, 0, strides...)},
+      m_inner_ndim{m_ndim} {}
 
 template <scipp::index N>
 template <class... Params>
 MultiIndex<N>::MultiIndex(binned_tag, const Dimensions &inner_dims,
                           const Dimensions &bin_dims, const Params &... params)
     : m_bin{BinIterator(params)...} {
-  detail::validate_bin_indices(params...);
+  validate_bin_indices(params...);
 
-  const Dim slice_dim = detail::get_slice_dim(params.bucketParams()...);
+  const Dim slice_dim = get_slice_dim(params.bucketParams()...);
 
-  m_inner_ndim = detail::flatten_dims(
-      scipp::span{m_stride.begin(), NDIM_MAX},
-      scipp::span{m_shape.begin(), NDIM_MAX}, inner_dims,
-      inner_dims.index(slice_dim),
-      params.bucketParams() ? Strides{inner_dims} : Strides{}...);
-  m_ndim = m_inner_ndim +
-           detail::flatten_dims(
-               scipp::span{m_stride.begin() + m_inner_ndim,
-                           static_cast<size_t>(NDIM_MAX - m_inner_ndim)},
-               scipp::span{m_shape.begin() + m_inner_ndim,
-                           static_cast<size_t>(NDIM_MAX - m_inner_ndim)},
-               bin_dims, 0, params.strides()...);
+  // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
+  m_inner_ndim =
+      flatten_dims(make_span(m_stride, 0), make_span(m_shape, 0), inner_dims,
+                   inner_dims.index(slice_dim),
+                   params.bucketParams() ? Strides{inner_dims} : Strides{}...);
+  // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
+  m_ndim = m_inner_ndim + flatten_dims(make_span(m_stride, m_inner_ndim),
+                                       make_span(m_shape, m_inner_ndim),
+                                       bin_dims, 0, params.strides()...);
 
   // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
   m_bin_stride = inner_dims.offset(slice_dim);

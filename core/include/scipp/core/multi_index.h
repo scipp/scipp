@@ -16,35 +16,12 @@
 
 namespace scipp::core {
 namespace detail {
-SCIPP_CORE_EXPORT void
-validate_bin_indices_impl(const ElementArrayViewParams &param0,
-                          const ElementArrayViewParams &param1);
-
-template <class Param> void validate_bin_indices(const Param &) {}
-
-/// Check that corresponding bins have matching sizes.
-template <class Param0, class Param1, class... Params>
-void validate_bin_indices(const Param0 &param0, const Param1 &param1,
-                          const Params &... params) {
-  if (param0.bucketParams() && param1.bucketParams())
-    detail::validate_bin_indices_impl(param0, param1);
-  if (param0.bucketParams())
-    validate_bin_indices(param0, params...);
-  else
-    validate_bin_indices(param1, params...);
-}
-
 inline auto get_nested_dims() { return Dimensions(); }
+
 template <class T, class... Ts>
 auto get_nested_dims(const T &param, const Ts &... params) {
   const auto &bin_param = param.bucketParams();
   return bin_param ? bin_param.dims : get_nested_dims(params...);
-}
-
-inline auto get_slice_dim() { return Dim::Invalid; }
-template <class T, class... Ts>
-auto get_slice_dim(const T &param, const Ts &... params) {
-  return param ? param.dim : get_slice_dim(params...);
 }
 } // namespace detail
 
@@ -159,8 +136,9 @@ public:
     // Assuming the number dimensions match to make the check cheaper.
     return m_coord == other.m_coord;
   }
+
   bool operator!=(const MultiIndex &other) const noexcept {
-    return !(*this == other);
+    return !(*this == other); // NOLINT
   }
 
   [[nodiscard]] bool
@@ -173,8 +151,6 @@ public:
     }
     return true;
   }
-
-  [[nodiscard]] auto inner_size() const noexcept { return m_shape[0]; }
 
   [[nodiscard]] auto begin() const noexcept {
     auto it(*this);
@@ -339,11 +315,11 @@ private:
   std::array<scipp::index, NDIM_MAX + 1> m_coord = {};
   /// Shape of the iteration dimensions for both bin and inner dims.
   std::array<scipp::index, NDIM_MAX + 1> m_shape = {};
+  /// Total number of dimensions.
+  scipp::index m_ndim{0};
   /// Number of dense dimensions, i.e. same as m_ndim when not binned,
   /// else number of dims in bins.
   scipp::index m_inner_ndim{0};
-  /// Total number of dimensions.
-  scipp::index m_ndim{0};
   /// Stride from one bin to the next.
   scipp::index m_bin_stride = {};
   /// Index of dim referred to by bin indices to distinguish, e.g., 2D bins
