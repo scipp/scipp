@@ -14,44 +14,36 @@ class TestDatasetSlice:
 
     def test_slice_with_range_datasetview_then_dataarrayview(self):
         sl = self._d['x', 1:-1]['a'].data
-        ref = sc.Variable(dims=['x'],
-                          values=np.array([1, 2, 3], dtype=np.int64))
+        ref = sc.Variable(dims=['x'], values=np.array([1, 2, 3], dtype=np.int64))
         assert sc.identical(ref, sl)
         # omitting range end
         sl = self._d['x', 1:]['a'].data
-        ref = sc.Variable(dims=['x'],
-                          values=np.array([1, 2, 3, 4], dtype=np.int64))
+        ref = sc.Variable(dims=['x'], values=np.array([1, 2, 3, 4], dtype=np.int64))
         assert sc.identical(ref, sl)
         # omitting range begin
         sl = self._d['x', :-1]['a'].data
-        ref = sc.Variable(dims=['x'],
-                          values=np.array([0, 1, 2, 3], dtype=np.int64))
+        ref = sc.Variable(dims=['x'], values=np.array([0, 1, 2, 3], dtype=np.int64))
         assert sc.identical(ref, sl)
         # omitting range both begin and end
         sl = self._d['x', :]['b'].data
-        ref = sc.Variable(dims=['x'],
-                          values=np.array([0, 1, 2, 3, 4], dtype=np.int64))
+        ref = sc.Variable(dims=['x'], values=np.array([0, 1, 2, 3, 4], dtype=np.int64))
         assert sc.identical(ref, sl)
 
     def test_slice_with_range_dataarrayview_then_dataarrayview(self):
         sl = self._d['a']['x', 1:-1].data
-        ref = sc.Variable(dims=['x'],
-                          values=np.array([1, 2, 3], dtype=np.int64))
+        ref = sc.Variable(dims=['x'], values=np.array([1, 2, 3], dtype=np.int64))
         assert sc.identical(ref, sl)
         # omitting range end
         sl = self._d['a']['x', 1:].data
-        ref = sc.Variable(dims=['x'],
-                          values=np.array([1, 2, 3, 4], dtype=np.int64))
+        ref = sc.Variable(dims=['x'], values=np.array([1, 2, 3, 4], dtype=np.int64))
         assert sc.identical(ref, sl)
         # omitting range begin
         sl = self._d['a']['x', :-1].data
-        ref = sc.Variable(dims=['x'],
-                          values=np.array([0, 1, 2, 3], dtype=np.int64))
+        ref = sc.Variable(dims=['x'], values=np.array([0, 1, 2, 3], dtype=np.int64))
         assert sc.identical(ref, sl)
         # omitting range both begin and end
         sl = self._d['b']['x', :].data
-        ref = sc.Variable(dims=['x'],
-                          values=np.array([0, 1, 2, 3, 4], dtype=np.int64))
+        ref = sc.Variable(dims=['x'], values=np.array([0, 1, 2, 3, 4], dtype=np.int64))
         assert sc.identical(ref, sl)
 
     def test_slice_single_index(self):
@@ -71,10 +63,8 @@ class TestDatasetSlice:
         N = 6
         M = 4
         d1 = sc.Dataset()
-        d1['x'] = sc.Variable(dims=['x'],
-                              values=np.arange(N).astype(np.float64))
-        d1['y'] = sc.Variable(dims=['y'],
-                              values=np.arange(M).astype(np.float64))
+        d1['x'] = sc.Variable(dims=['x'], values=np.arange(N).astype(np.float64))
+        d1['y'] = sc.Variable(dims=['y'], values=np.arange(M).astype(np.float64))
         arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
         d1['a'] = sc.Variable(dims=['x', 'y'], values=arr1)
         d1 = d1['x', 1:2]

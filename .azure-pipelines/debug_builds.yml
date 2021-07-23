@@ -3,6 +3,9 @@ parameters:
   displayName: Verbose
   type: boolean
   default: false
+- name: build_type
+  type: string
+  default: debug
 
 # Note: the 'endpoint' refers to the Azure service connection, which can be
 # found on the Azure pipelines web interface under

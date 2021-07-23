@@ -39,11 +39,10 @@ if ipy is not None:
             # see https://github.com/matplotlib/ipympl/issues/229
             Canvas.header_visible.default_value = False
         except ImportError:
-            warnings.warn(
-                "The ipympl backend, which is required for "
-                "interactive plots in Jupyter, was not found. "
-                "Falling back to a static backend. Use "
-                "conda install -c conda-forge ipympl to install ipympl.")
+            warnings.warn("The ipympl backend, which is required for "
+                          "interactive plots in Jupyter, was not found. "
+                          "Falling back to a static backend. Use "
+                          "conda install -c conda-forge ipympl to install ipympl.")
 
 # Note: due to some strange behavior when importing matplotlib and pyplot in
 # different order, we need to import pyplot after switching to the ipympl
@@ -76,7 +75,7 @@ def plot(*args, **kwargs):
     For more details, see
     https://scipp.github.io/visualization/plotting-overview.html
 
-    :param aspect: Specify the aspect ratio for 2d images and 3d renderings.
+    :param aspect: Specify the aspect ratio for 2d images.
          Possible values are `"auto"` or `"equal"`.
          Defaults to `"auto"`.
     :type aspect: str, optional

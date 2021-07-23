@@ -10,8 +10,7 @@ def test_dataset_with_1d_data():
     d = sc.Dataset()
     N = 10
     d['Counts'] = sc.Variable(dims=['tof'], values=10.0 * np.random.rand(N))
-    d.coords['tof'] = sc.Variable(dims=['tof'],
-                                  values=np.arange(N).astype(np.float64))
+    d.coords['tof'] = sc.Variable(dims=['tof'], values=np.arange(N).astype(np.float64))
     sc.table(d)
 
 
@@ -30,8 +29,7 @@ def test_dataset_with_1d_data_with_variances():
     d['Counts'] = sc.Variable(dims=['tof'],
                               values=10.0 * np.random.rand(N),
                               variances=np.random.rand(N))
-    d.coords['tof'] = sc.Variable(dims=['tof'],
-                                  values=np.arange(N).astype(np.float64))
+    d.coords['tof'] = sc.Variable(dims=['tof'], values=np.arange(N).astype(np.float64))
     sc.table(d)
 
 
@@ -136,41 +134,31 @@ def test_dataset_with_masks():
 def test_dataset_histogram_with_masks():
     N = 10
 
-    d = sc.Dataset(
-        data={
-            "Counts":
-            sc.Variable(dims=['x'],
-                        values=10.0 * np.random.rand(N),
-                        variances=np.random.rand(N))
-        },
-        coords={'x': sc.Variable(dims=['x'], values=np.arange(N + 1))})
+    d = sc.Dataset(data={
+        "Counts":
+        sc.Variable(dims=['x'],
+                    values=10.0 * np.random.rand(N),
+                    variances=np.random.rand(N))
+    },
+                   coords={'x': sc.Variable(dims=['x'], values=np.arange(N + 1))})
     d.coords["Normalized"] = sc.Variable(dims=['x'], values=np.arange(N))
 
-    d['Counts'].masks["Mask"] = sc.Variable(dims=['x'],
-                                            values=np.zeros(N, dtype=bool))
+    d['Counts'].masks["Mask"] = sc.Variable(dims=['x'], values=np.zeros(N, dtype=bool))
 
     sc.table(d)
 
 
 def test_display_when_only_non_dim_coords_is_bin_edges():
-    da = sc.DataArray(coords={
-        'lab':
-        sc.Variable(dims=['x'], values=np.arange(11), unit=sc.units.m)
-    },
-                      data=sc.Variable(dims=['x'],
-                                       values=np.random.random(10),
-                                       unit=sc.units.counts))
+    da = sc.DataArray(
+        coords={'lab': sc.Variable(dims=['x'], values=np.arange(11), unit=sc.units.m)},
+        data=sc.Variable(dims=['x'], values=np.random.random(10), unit=sc.units.counts))
     sc.table(da)
 
 
 def test_display_when_only_attr_is_bin_edges():
-    da = sc.DataArray(attrs={
-        'attr0':
-        sc.Variable(dims=['x'], values=np.arange(11), unit=sc.units.m)
-    },
-                      data=sc.Variable(dims=['x'],
-                                       values=np.random.random(10),
-                                       unit=sc.units.counts))
+    da = sc.DataArray(
+        attrs={'attr0': sc.Variable(dims=['x'], values=np.arange(11), unit=sc.units.m)},
+        data=sc.Variable(dims=['x'], values=np.random.random(10), unit=sc.units.counts))
     sc.table(da)
 
 
@@ -197,8 +185,5 @@ def test_with_scalar_dataarray():
 
 
 def test_with_scalar_dataset():
-    ds = sc.Dataset(data={
-        'a': sc.scalar(value=1.0),
-        'b': sc.scalar(value=2.0)
-    })
+    ds = sc.Dataset(data={'a': sc.scalar(value=1.0), 'b': sc.scalar(value=2.0)})
     sc.table(ds)

@@ -78,8 +78,8 @@ class PlotProfile(PlotFigure1d):
         self._xstart = xstart
         self._xend = xend
         if self.slice_area is not None:
-            new_xy = np.array([[xstart, 0.0], [xstart, 1.0], [xend, 1.0],
-                               [xend, 0.0], [xstart, 0.0]])
+            new_xy = np.array([[xstart, 0.0], [xstart, 1.0], [xend, 1.0], [xend, 0.0],
+                               [xstart, 0.0]])
             self.slice_area.set_xy(new_xy)
             self.draw()
 

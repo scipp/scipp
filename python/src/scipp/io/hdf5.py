@@ -197,9 +197,7 @@ class VariableIO:
         contents['dtype'] = cls._dtypes[values.attrs['dtype']]
         contents['unit'] = sc.Unit(values.attrs['unit'])
         contents['with_variances'] = 'variances' in group
-        if contents['dtype'] in [
-                d.VariableView, d.DataArrayView, d.DatasetView
-        ]:
+        if contents['dtype'] in [d.VariableView, d.DataArrayView, d.DatasetView]:
             var = BinDataIO.read(group)
         else:
             var = sc.empty(**contents)
@@ -257,15 +255,12 @@ class DatasetIO:
     def read(group):
         _check_scipp_header(group, 'Dataset')
         from .._scipp import core as sc
-        return sc.Dataset(
-            data={name: HDF5IO.read(group[name])
-                  for name in group})
+        return sc.Dataset(data={name: HDF5IO.read(group[name]) for name in group})
 
 
 class HDF5IO:
     _handlers = dict(
-        zip(['Variable', 'DataArray', 'Dataset'],
-            [VariableIO, DataArrayIO, DatasetIO]))
+        zip(['Variable', 'DataArray', 'Dataset'], [VariableIO, DataArrayIO, DatasetIO]))
 
     @classmethod
     def write(cls, group, data):

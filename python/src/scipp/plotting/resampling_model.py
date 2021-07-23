@@ -112,9 +112,8 @@ class ResamplingModel():
             low, high, unit, res = par
             if res is None:
                 res = 1
-            edges.append(
-                linspace(dim=dim, unit=unit, start=low, stop=high,
-                         num=res + 1))
+            edges.append(linspace(dim=dim, unit=unit, start=low, stop=high,
+                                  num=res + 1))
             # The order of edges matters. We need to put the length 1 edges
             # first to rebin these dims first and effectively slice them out,
             # otherwise we will rebin N-D variables on high resolution.
@@ -149,8 +148,8 @@ class ResamplingModel():
                     # yielding length-0 slice here if limits are outside
                     # range on this slice, which rebin cannot handle.
                     if len(self._array.meta[dim].dims) == 1:
-                        out = out[sc.get_slice_params(out.data, out.meta[dim],
-                                                      low, high)]
+                        out = out[sc.get_slice_params(out.data, out.meta[dim], low,
+                                                      high)]
                 params[dim] = (low.value, high.value, low.unit,
                                self.resolution.get(dim, None))
         if params == self._home_params:

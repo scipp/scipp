@@ -41,9 +41,7 @@ class PlotToolbar:
         # and pan methods
         self.mpl_toolbar = mpl_toolbar
 
-        self.add_button(name="home_view",
-                        icon="home",
-                        tooltip="Reset original view")
+        self.add_button(name="home_view", icon="home", tooltip="Reset original view")
 
     def initialize(self, log_axis_buttons, button_states):
         self._log_axis = {
@@ -134,8 +132,7 @@ class PlotToolbar:
             elif self.members[key] is not None:
                 self.members[key].on_click(getattr(self, key))
         for dim, button in self._log_axis.items():
-            button.observe(
-                getattr(controller, 'toggle_dim_scale')(dim), 'value')
+            button.observe(getattr(controller, 'toggle_dim_scale')(dim), 'value')
 
     def _update_container(self):
         """
@@ -192,12 +189,8 @@ class PlotToolbar1d(PlotToolbar):
         super().__init__(*args, **kwargs)
 
         self.add_togglebutton(name="pan_view", icon="arrows", tooltip="Pan")
-        self.add_togglebutton(name="zoom_view",
-                              icon="square-o",
-                              tooltip="Zoom")
-        self.add_button(name="rescale_to_data",
-                        icon="arrows-v",
-                        tooltip="Rescale")
+        self.add_togglebutton(name="zoom_view", icon="square-o", tooltip="Zoom")
+        self.add_button(name="rescale_to_data", icon="arrows-v", tooltip="Rescale")
         self.members['toggle_xaxis_scale'] = None
         self.add_togglebutton(name="toggle_norm",
                               description="logy",
@@ -214,12 +207,8 @@ class PlotToolbar2d(PlotToolbar):
         super().__init__(*args, **kwargs)
 
         self.add_togglebutton(name="pan_view", icon="arrows", tooltip="Pan")
-        self.add_togglebutton(name="zoom_view",
-                              icon="square-o",
-                              tooltip="Zoom")
-        self.add_button(name="rescale_to_data",
-                        icon="arrows-v",
-                        tooltip="Rescale")
+        self.add_togglebutton(name="zoom_view", icon="square-o", tooltip="Zoom")
+        self.add_button(name="rescale_to_data", icon="arrows-v", tooltip="Rescale")
         self.add_button(name="transpose", icon="retweet", tooltip="Transpose")
         self.members['toggle_xaxis_scale'] = None
         self.members['toggle_yaxis_scale'] = None
@@ -251,9 +240,7 @@ class PlotToolbar3d(PlotToolbar):
                         description="Z",
                         tooltip="Camera to Z normal. "
                         "Click twice to flip the view direction.")
-        self.add_button(name="rescale_to_data",
-                        icon="arrows-v",
-                        tooltip="Rescale")
+        self.add_button(name="rescale_to_data", icon="arrows-v", tooltip="Rescale")
         self.add_togglebutton(name="toggle_norm",
                               description="log",
                               tooltip="log(data)")

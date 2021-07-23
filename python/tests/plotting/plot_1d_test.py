@@ -172,12 +172,10 @@ def test_plot_string_axis_labels_1d():
                                        unit='counts'),
                       coords={
                           'xx':
-                          sc.Variable(dims=['xx'],
-                                      values=[
-                                          "a", "b", "c", "d", "e", "f", "g",
-                                          "h", "i", "j"
-                                      ],
-                                      unit='m')
+                          sc.Variable(
+                              dims=['xx'],
+                              values=["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
+                              unit='m')
                       })
     plot(da)
 
@@ -267,8 +265,7 @@ def test_plot_1d_datetime():
                     values=np.arange(np.datetime64('2017-01-01T12:00:00'),
                                      np.datetime64('2017-01-01T13:00:00')))
     da = sc.DataArray(data=sc.array(dims=['time'],
-                                    values=np.random.random(
-                                        time.sizes['time'])),
+                                    values=np.random.random(time.sizes['time'])),
                       coords={'time': time})
     da.plot().close()
 
@@ -278,10 +275,9 @@ def test_plot_1d_datetime_binedges():
                     values=np.arange(np.datetime64('2017-01-01T12:00:00'),
                                      np.datetime64('2017-01-01T13:00:00'), 20))
 
-    da = sc.DataArray(data=sc.array(
-        dims=['time'],
-        values=np.random.random(time.sizes['time'] - 1),
-        unit="K"),
+    da = sc.DataArray(data=sc.array(dims=['time'],
+                                    values=np.random.random(time.sizes['time'] - 1),
+                                    unit="K"),
                       coords={'time': time})
     da.plot().close()
 
@@ -291,8 +287,7 @@ def test_plot_1d_datetime_with_labels():
                     values=np.arange(np.datetime64('2017-01-01T12:00:00'),
                                      np.datetime64('2017-01-01T13:00:00')))
     da = sc.DataArray(data=sc.array(dims=['time'],
-                                    values=np.random.random(
-                                        time.sizes['time'])),
+                                    values=np.random.random(time.sizes['time'])),
                       coords={'time2': time})
     da.plot().close()
 
@@ -317,12 +312,10 @@ def test_plot_redraw():
 def test_plot_redraw_int64():
     da = make_dense_data_array(ndim=1, dtype=sc.dtype.int64)
     p = sc.plot(da)
-    assert p.view.figure._lines[''].data.get_ydata()[2] == int(10.0 *
-                                                               np.sin(2.0))
+    assert p.view.figure._lines[''].data.get_ydata()[2] == int(10.0 * np.sin(2.0))
     da *= 5
     p.redraw()
-    assert p.view.figure._lines[''].data.get_ydata()[2] == int(50.0 *
-                                                               np.sin(2.0))
+    assert p.view.figure._lines[''].data.get_ydata()[2] == int(50.0 * np.sin(2.0))
 
 
 def test_scale_arg_subplots_independent_dims():
