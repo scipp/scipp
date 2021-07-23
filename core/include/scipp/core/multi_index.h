@@ -356,13 +356,15 @@ private:
     return m_coord.begin() + dim;
   }
 
-  [[nodiscard]] auto coord_end() const noexcept { return m_coord.end(); }
+  [[nodiscard]] auto coord_end() const noexcept {
+    return m_coord.begin() + m_ndim;
+  }
 
   [[nodiscard]] auto coord_it(const scipp::index dim = 0) noexcept {
     return m_coord.begin() + dim;
   }
 
-  [[nodiscard]] auto coord_end() noexcept { return m_coord.end(); }
+  [[nodiscard]] auto coord_end() noexcept { return m_coord.begin() + m_ndim; }
 
   /// Shape of the iteration dimensions for both bin and inner dims.
   [[nodiscard]] scipp::index &shape(const scipp::index dim) noexcept {
@@ -378,13 +380,15 @@ private:
     return m_shape.begin() + dim;
   }
 
-  [[nodiscard]] auto shape_end() const noexcept { return m_shape.end(); }
-
-  [[nodiscard]] auto shape_it(const scipp::index dim = 0) noexcept {
-    return m_shape.begin() + dim;
+  [[nodiscard]] auto shape_end() const noexcept {
+    return m_shape.begin() + m_ndim;
   }
 
-  [[nodiscard]] auto shape_end() noexcept { return m_shape.end(); }
+  [[nodiscard]] auto shape_it(const scipp::index dim = 0) noexcept {
+    return std::next(m_shape.begin(), dim);
+  }
+
+  [[nodiscard]] auto shape_end() noexcept { return m_shape.begin() + m_ndim; }
 
   /// Current flat index into the operands.
   std::array<scipp::index, N> m_data_index = {};
