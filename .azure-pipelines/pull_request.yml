@@ -14,7 +14,7 @@ resources:
     name: scipp/pipelines
     type: github
     endpoint: scipp
-    ref: main
+    ref: clcache # TODO change back to main after piplines branch merged in that repo
 
 trigger:
   branches:
