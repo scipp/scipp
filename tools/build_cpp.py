@@ -114,4 +114,7 @@ def main(prefix='install', build_dir='build', source_dir='.', caching=False):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    main(prefix=args.prefix, build_dir=args.build_dir, source_dir=args.source_dir,caching=args.caching)
+    main(prefix=args.prefix,
+         build_dir=args.build_dir,
+         source_dir=args.source_dir,
+         caching=args.caching)
