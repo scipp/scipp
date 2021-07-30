@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import multiprocessing
 import sys
+import time
 
 parser = argparse.ArgumentParser(description='Build C++ library and run tests')
 parser.add_argument('--prefix', default='install')
@@ -100,9 +101,12 @@ def main(prefix='install', build_dir='build', source_dir='.', caching=False):
     run_command(['cmake', '-B', '.', '-S', source_dir, '-LA'], shell=shell)
 
     # Compile benchmarks, C++ tests, and python library
+    start = time.time()
     for target in ['all-benchmarks', 'all-tests', 'install']:
         run_command(['cmake', '--build', '.', '--target', target] + build_flags,
                     shell=shell)
+    end = time.time()
+    print('Compilation took ', end - start, ' seconds')
 
     # Run C++ tests
     for test in [
