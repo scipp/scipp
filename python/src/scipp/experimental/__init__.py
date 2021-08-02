@@ -54,8 +54,7 @@ def transform_kernel(dtype='float64'):
 
     def decorator(function):
         narg = len(signature(function).parameters)
-        cfunc = numba.cfunc(dtype + '(' + ','.join([dtype] * narg) +
-                            ')')(function)
+        cfunc = numba.cfunc(dtype + '(' + ','.join([dtype] * narg) + ')')(function)
 
         def unit_func(*args):
             return function(*(process_unit(unit) for unit in args))
