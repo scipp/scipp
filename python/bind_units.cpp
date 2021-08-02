@@ -67,6 +67,7 @@ void init_units(py::module &m) {
   py::class_<units::Unit>(m, "Unit", "A physical unit.", py::dynamic_attr())
       .def(py::init())
       .def(py::init<const std::string &>())
+      .def("__copy__", [](const units::Unit &u) { return u; })
       .def("__repr__", [](const units::Unit &u) { return u.name(); })
       .def_property_readonly("name", &units::Unit::name,
                              "A read-only string describing the "
