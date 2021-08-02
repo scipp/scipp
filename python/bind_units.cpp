@@ -64,7 +64,7 @@ void init_units(py::module &m) {
       .def(hash(py::self))
       .def("__repr__", [](const Dim &dim) { return dim.name(); });
 
-  py::class_<units::Unit>(m, "Unit", "A physical unit.")
+  py::class_<units::Unit>(m, "Unit", "A physical unit.", py::dynamic_attr())
       .def(py::init())
       .def(py::init<const std::string &>())
       .def("__repr__", [](const units::Unit &u) { return u.name(); })
