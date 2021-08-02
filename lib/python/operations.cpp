@@ -125,7 +125,8 @@ void bind_experimental(py::module &m) {
                    [&kernel](const units::Unit &x, const units::Unit &y,
                              const units::Unit &z) {
                      py::gil_scoped_acquire acquire;
-                     return py::cast<units::Unit>(kernel(x, y, z));
+                     return py::cast<units::Unit>(
+                         kernel.attr("unit_func")(x, y, z));
                    },
                    [fptr](const auto &... args) { return fptr(args...); }});
   });

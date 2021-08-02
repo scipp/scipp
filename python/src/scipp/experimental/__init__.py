@@ -11,13 +11,37 @@ Contents of this submodule are subject to changes and removal without
 notice.
 """
 
+from copy import copy
 import math
+from types import MethodType
 
-from numba import types
+from numba import types as nbtypes
 from numba.extending import overload
 
+from .._scipp.core import Unit
 from .. import _math as sc_math
 from .. import _trigonometry as sc_trigonometry
+
+
+def kernel_unit_rmul(self, other):
+    if isinstance(other, Unit):
+        return self.__regular_rmul(other)
+    return self
+
+
+def kernel_unit_rtruediv(self, other):
+    if isinstance(other, Unit):
+        return self.__regular_rtruediv(other)
+    return self
+
+
+def process_unit(unit):
+    unit = copy(unit)
+    setattr(unit, '__regular_rmul', unit.__rmul)
+    setattr(unit, '__rmul', MethodType(kernel_unit_rmul, unit))
+    setattr(unit, '__regular_rtruediv', unit.__rtruediv)
+    setattr(unit, '__rtruediv', MethodType(kernel_unit_rtruediv, unit))
+    return unit
 
 
 def transform_kernel(dtype='float64'):
@@ -30,8 +54,14 @@ def transform_kernel(dtype='float64'):
 
     def decorator(function):
         narg = len(signature(function).parameters)
-        return numba.cfunc(dtype + '(' + ','.join([dtype] * narg) +
-                           ')')(function)
+        cfunc = numba.cfunc(dtype + '(' + ','.join([dtype] * narg) +
+                            ')')(function)
+
+        def unit_func(*args):
+            return function(*(process_unit(unit) for unit in args))
+
+        cfunc.unit_func = unit_func
+        return cfunc
 
     return decorator
 
@@ -56,7 +86,7 @@ def transform(kernel, *args):
 def make_numba_overload(sc_func, impl):
     @overload(sc_func, inline='always')
     def resolver(x):
-        if isinstance(x, types.Float):
+        if isinstance(x, nbtypes.Float):
 
             def impl_wrapper(x):
                 return impl(x)
