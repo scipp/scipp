@@ -41,7 +41,6 @@ def main(prefix='install', build_dir='build', source_dir='.', caching=False):
     # Default options
     shell = False
     parallel_flag = '-j{}'.format(multiprocessing.cpu_count())
-    parallel_flag = '-j{}'.format(2)  # HACK
     build_config = ''
 
     # Some flags use a syntax with a space separator instead of '='
