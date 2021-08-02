@@ -45,9 +45,8 @@ def _truncate_long_string(long_string: str) -> str:
 
 
 def _build_svg(content, left, top, width, height):
-    return (
-        f'<svg width={_svg_width}em viewBox="{left} {top} {width} {height}">'
-        f'{content}</svg>')
+    return (f'<svg width={_svg_width}em viewBox="{left} {top} {width} {height}">'
+            f'{content}</svg>')
 
 
 class VariableDrawer:
@@ -59,8 +58,7 @@ class VariableDrawer:
             self._target_dims = self._dims()
         self._x_stride = 1
         if len(self._dims()) > 3:
-            raise RuntimeError("Cannot visualize {}-D data".format(
-                len(self._dims())))
+            raise RuntimeError("Cannot visualize {}-D data".format(len(self._dims())))
 
     def _dims(self):
         dims = self._variable.dims
@@ -80,10 +78,8 @@ class VariableDrawer:
             'style="fill:{};stroke:#000;stroke-width:0.05;stroke-linejoin:round"',  # noqa #501
             'd="m origin_x origin_y m xlen 0 l 0.3 -0.3 v 1 l -0.3 0.3 z"',
             'id="path2" />'
-        ]).format(*_color_variants(color)).replace(
-            "origin_x",
-            str(origin_x)).replace("origin_y",
-                                   str(origin_y)).replace("xlen", str(xlen))
+        ]).format(*_color_variants(color)).replace("origin_x", str(origin_x)).replace(
+            "origin_y", str(origin_y)).replace("xlen", str(xlen))
 
     def _draw_dots(self, x0, y0):
         dots = ""
@@ -148,8 +144,7 @@ class VariableDrawer:
                     # Do not draw hidden boxes
                     if z != lz - 1 and y != 0 and x != lx - 1:
                         continue
-                    origin_x = dx + x * x_scale + self._margin + 0.3 * (lz -
-                                                                        z - 1)
+                    origin_x = dx + x * x_scale + self._margin + 0.3 * (lz - z - 1)
                     origin_y = dy + y + 2 * self._margin + 0.3 * z
                     svg += self._draw_box(origin_x, origin_y, color, x_scale)
                     if events:
@@ -202,8 +197,8 @@ class VariableDrawer:
         except Exception:
             unit = '(undefined)'
         details = 'dims={}, shape={}, unit={}, variances={}'.format(
-            self._variable.dims, self._variable.shape, unit,
-            self._variable.variances is not None)
+            self._variable.dims, self._variable.shape, unit, self._variable.variances
+            is not None)
         x_pos = offset[0]
         y_pos = offset[1] + 0.6
         if title is not None:
@@ -231,8 +226,7 @@ class VariableDrawer:
         svg += f'<line x1={x0} y1={y0+1} x2={x0+2} y2={y0+2} {style}/>'
         svg += '<g transform="translate({},{}) scale(0.5)">{}</g>'.format(
             self.size()[0] + 1, 0,
-            make_svg(self._variable.bins.constituents['data'],
-                     content_only=True))
+            make_svg(self._variable.bins.constituents['data'], content_only=True))
         return svg
 
     def draw(self, color, offset=np.zeros(2), title=None):
@@ -257,12 +251,10 @@ class VariableDrawer:
             svg += self._draw_labels(offset=offset)
         svg += '</g>'
         svg += self._draw_bins_buffer()
-        return svg.replace('#normal-font',
-                           '{}px'.format(_normal_font)).replace(
-                               '#small-font',
-                               '{}px'.format(_small_font)).replace(
-                                   '#smaller-font',
-                                   '{}px'.format(_smaller_font))
+        return svg.replace('#normal-font', '{}px'.format(_normal_font)).replace(
+            '#small-font',
+            '{}px'.format(_small_font)).replace('#smaller-font',
+                                                '{}px'.format(_smaller_font))
 
     def make_svg(self, content_only=False):
         if content_only:
@@ -279,12 +271,10 @@ class DrawerItem:
         self._data = data
         self._color = color
 
-    def append_to_svg(self, content, width, height, offset, layout_direction,
-                      margin, dims):
+    def append_to_svg(self, content, width, height, offset, layout_direction, margin,
+                      dims):
         drawer = VariableDrawer(self._data, margin, target_dims=dims)
-        content += drawer.draw(color=self._color,
-                               offset=offset,
-                               title=self._name)
+        content += drawer.draw(color=self._color, offset=offset, title=self._name)
         size = drawer.size()
         width, height, offset = _new_size_and_offset(size, width, height,
                                                      layout_direction)
@@ -293,16 +283,15 @@ class DrawerItem:
 
 class EllipsisItem:
     @staticmethod
-    def append_to_svg(content, width, height, offset, layout_direction,
-                      *unused):
+    def append_to_svg(content, width, height, offset, layout_direction, *unused):
         x_pos = offset[0] + 0.3
         y_pos = offset[1] + 2.0
         content += f'<text x="{x_pos}" y="{y_pos}" class="sc-label" \
                     style="font-size:{_large_font}px"> ... </text>'
 
         ellipsis_size = [1.5, 2.0]
-        width, height, offset = _new_size_and_offset(ellipsis_size, width,
-                                                     height, layout_direction)
+        width, height, offset = _new_size_and_offset(ellipsis_size, width, height,
+                                                     layout_direction)
         return content, width, height, offset
 
 
@@ -367,8 +356,7 @@ class DatasetDrawer:
         area_xy = []
         area_0d = []
         if isinstance(self._dataset, sc.DataArray):
-            area_xy.append(DrawerItem('', self._dataset,
-                                      config.colors['data']))
+            area_xy.append(DrawerItem('', self._dataset, config.colors['data']))
         else:
             # Render highest-dimension items last so coords are optically
             # aligned
@@ -421,8 +409,7 @@ class DatasetDrawer:
                 area = reversed(area)
             for item in area:
                 content, width, height, offset = item.append_to_svg(
-                    content, width, height, offset, layout_direction, margin,
-                    dims)
+                    content, width, height, offset, layout_direction, margin, dims)
             return content, width, height
 
         top = 0
@@ -436,16 +423,14 @@ class DatasetDrawer:
         width += max(w, w_x)
 
         c, w, h = draw_area(area_z, 'x')
-        content += '<g transform="translate({},{})">{}</g>'.format(
-            width, height - h, c)
+        content += '<g transform="translate({},{})">{}</g>'.format(width, height - h, c)
         width += w
 
         content += '<g transform="translate({},{})">{}</g>'.format(
             -w_y, height - h_y, c_y)
 
         c, w_0d, h_0d = draw_area(area_0d, 'x', reverse=True, truncate=True)
-        content += '<g transform="translate({},{})">{}</g>'.format(
-            -w_0d, height, c)
+        content += '<g transform="translate({},{})">{}</g>'.format(-w_0d, height, c)
         width += max(w_y, w_0d)
         left -= max(w_y, w_0d)
 
@@ -454,12 +439,10 @@ class DatasetDrawer:
 
         if content_only:
             return content
-        return _build_svg(content, left, top, max(_cubes_in_full_width, width),
-                          height)
+        return _build_svg(content, left, top, max(_cubes_in_full_width, width), height)
 
 
-def make_svg(container: VariableLike,
-             content_only: Optional[bool] = False) -> str:
+def make_svg(container: VariableLike, content_only: Optional[bool] = False) -> str:
     """
     Return a svg representation of a variable or dataset.
     """

@@ -43,10 +43,7 @@ def from_xarray_dataarray(da: xr.DataArray) -> DataArray:
     :return: the converted scipp DataArray object.
     """
     coords = {}
-    attrs = {
-        attr: scalar(da.attrs[attr])
-        for attr in da.attrs if attr != "units"
-    }
+    attrs = {attr: scalar(da.attrs[attr]) for attr in da.attrs if attr != "units"}
 
     for name, coord in da.coords.items():
         if name in da.indexes:

@@ -48,9 +48,8 @@ def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
     #   [[Dim.Y, 3], [Dim.Z, 1]],
     # ...
     # ]
-    slice_list = np.reshape(
-        np.transpose(np.array(slice_list, dtype=np.dtype('O'))),
-        (volume, len(slice_dims), 2))
+    slice_list = np.reshape(np.transpose(np.array(slice_list, dtype=np.dtype('O'))),
+                            (volume, len(slice_dims), 2))
 
     # Extract each entry from the slice_list
     for i, line in enumerate(slice_list):

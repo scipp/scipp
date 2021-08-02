@@ -79,8 +79,7 @@ class Bins:
         _cpp._bins_view(self._data()).data = data
 
     @property
-    def constituents(
-            self) -> Dict[str, Union[str, _cpp.Variable, _cpp.DataArray]]:
+    def constituents(self) -> Dict[str, Union[str, _cpp.Variable, _cpp.DataArray]]:
         """Constituents of binned data, as supported by :py:func:`sc.bins`."""
         begin_end = _cpp.bins_begin_end(self._data())
         return {
@@ -106,11 +105,11 @@ class Bins:
         return _call_cpp_func(_cpp.bin_size, self._obj)
 
     def concatenate(
-        self,
-        other: Optional[Union[_cpp.Variable, _cpp.DataArray]] = None,
-        *,
-        dim: Optional[str] = None,
-        out: Optional[_cpp.DataArray] = None
+            self,
+            other: Optional[Union[_cpp.Variable, _cpp.DataArray]] = None,
+            *,
+            dim: Optional[str] = None,
+            out: Optional[_cpp.DataArray] = None
     ) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Concatenate bins element-wise by concatenating bin contents along
         their internal bin dimension.
@@ -133,18 +132,15 @@ class Bins:
                 "`concatenate` requires `other` or a `dim`, but not both.")
         if other is not None:
             if out is None:
-                return _call_cpp_func(_cpp.buckets.concatenate, self._obj,
-                                      other)
+                return _call_cpp_func(_cpp.buckets.concatenate, self._obj, other)
             else:
                 if self._obj is out:
                     _call_cpp_func(_cpp.buckets.append, self._obj, other)
                 else:
-                    out = _call_cpp_func(_cpp.buckets.concatenate, self._obj,
-                                         other)
+                    out = _call_cpp_func(_cpp.buckets.concatenate, self._obj, other)
                 return out
         if out is not None:
-            raise RuntimeError(
-                "`out` arg not supported for concatenate along dim")
+            raise RuntimeError("`out` arg not supported for concatenate along dim")
         if dim is not None:
             return _call_cpp_func(_cpp.buckets.concatenate, self._obj, dim)
         raise RuntimeError("Reduction along all dims not supported yet.")

@@ -78,11 +78,8 @@ class PlotView2d(PlotView):
         dimx = self.dims[1]
         dimy = self.dims[0]
         xylims = {
-            dimx:
-            np.clip(self.figure.ax.get_xlim(),
-                    *sorted(self.global_lims[dimx])),
-            dimy:
-            np.clip(self.figure.ax.get_ylim(), *sorted(self.global_lims[dimy]))
+            dimx: np.clip(self.figure.ax.get_xlim(), *sorted(self.global_lims[dimx])),
+            dimy: np.clip(self.figure.ax.get_ylim(), *sorted(self.global_lims[dimy]))
         }
 
         dx = np.abs(self.current_lims[dimx][1] - self.current_lims[dimx][0])
@@ -158,10 +155,10 @@ class PlotView2d(PlotView):
                                                          picker=5,
                                                          zorder=10)
         else:
-            new_offsets = np.concatenate(
-                (self._marks_scatter.get_offsets(), [[x, y]]), axis=0)
-            new_colors = np.concatenate(
-                (self._marks_scatter.get_facecolors(), [color]), axis=0)
+            new_offsets = np.concatenate((self._marks_scatter.get_offsets(), [[x, y]]),
+                                         axis=0)
+            new_colors = np.concatenate((self._marks_scatter.get_facecolors(), [color]),
+                                        axis=0)
             self._marks_scatter.set_offsets(new_offsets)
             self._marks_scatter.set_facecolors(new_colors)
         self._marker_index.append(index)

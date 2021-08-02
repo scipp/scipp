@@ -103,10 +103,10 @@ class PlotFigure2d(PlotFigure):
         limits.
         """
         self.cbar.set_label(unit)
-        self.ax.set_xlabel(self._formatters['x']["label"]
-                           if self.xlabel is None else self.xlabel)
-        self.ax.set_ylabel(self._formatters['y']["label"]
-                           if self.ylabel is None else self.ylabel)
+        self.ax.set_xlabel(
+            self._formatters['x']["label"] if self.xlabel is None else self.xlabel)
+        self.ax.set_ylabel(
+            self._formatters['y']["label"] if self.ylabel is None else self.ylabel)
         self.ax.set_xscale(scale['x'])
         self.ax.set_yscale(scale['y'])
 
@@ -124,8 +124,7 @@ class PlotFigure2d(PlotFigure):
         rgba = self.cmap(self.norm(new_values["values"]))
         if "masks" in new_values:
             indices = np.where(new_values["masks"])
-            rgba[indices] = self._mask_cmap(
-                self.norm(new_values["values"][indices]))
+            rgba[indices] = self._mask_cmap(self.norm(new_values["values"][indices]))
 
         self.image_colors.set_data(rgba)
         self.image_values.set_data(new_values["values"])
@@ -140,9 +139,8 @@ class PlotFigure2d(PlotFigure):
         self.draw()
 
     def toggle_norm(self, norm=None, vmin=None, vmax=None):
-        self.norm = LogNorm(
-            vmin=vmin, vmax=vmax) if norm == "log" else Normalize(vmin=vmin,
-                                                                  vmax=vmax)
+        self.norm = LogNorm(vmin=vmin, vmax=vmax) if norm == "log" else Normalize(
+            vmin=vmin, vmax=vmax)
         self.image_values.set_norm(self.norm)
         self.opacify_colorbar()
 

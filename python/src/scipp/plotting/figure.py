@@ -34,10 +34,7 @@ class PlotFigure:
             if figsize is None:
                 figsize = (config.plot.width / config.plot.dpi,
                            config.plot.height / config.plot.dpi)
-            self.fig, self.ax = plt.subplots(1,
-                                             1,
-                                             figsize=figsize,
-                                             dpi=config.plot.dpi)
+            self.fig, self.ax = plt.subplots(1, 1, figsize=figsize, dpi=config.plot.dpi)
             if self.padding is None:
                 self.padding = config.plot.padding
             self.fig.tight_layout(rect=self.padding)
@@ -139,8 +136,8 @@ class PlotFigure:
                     self.axformatter[axis][key] = ticker.FuncFormatter(form)
             self.axlocator[axis] = {
                 "linear":
-                ticker.MaxNLocator(integer=True) if
-                axformatters[axis]["custom_locator"] else ticker.AutoLocator(),
+                ticker.MaxNLocator(integer=True)
+                if axformatters[axis]["custom_locator"] else ticker.AutoLocator(),
                 "log":
                 ticker.LogLocator()
             }

@@ -44,12 +44,9 @@ def test_own_var_scalar_copy():
     v.unit = 's'
     assert sc.identical(v, make_variable(2.0, variance=20.0, unit='s'))
     assert sc.identical(v_copy, make_variable(2.0, variance=20.0, unit='s'))
-    assert sc.identical(v_deepcopy, make_variable(1.0, variance=10.0,
-                                                  unit='m'))
-    assert sc.identical(v_methcopy, make_variable(2.0, variance=20.0,
-                                                  unit='s'))
-    assert sc.identical(v_methdeepcopy,
-                        make_variable(1.0, variance=10.0, unit='m'))
+    assert sc.identical(v_deepcopy, make_variable(1.0, variance=10.0, unit='m'))
+    assert sc.identical(v_methcopy, make_variable(2.0, variance=20.0, unit='s'))
+    assert sc.identical(v_methdeepcopy, make_variable(1.0, variance=10.0, unit='m'))
 
 
 def test_own_var_scalar_pyobj_set():
@@ -127,8 +124,8 @@ def test_own_var_scalar_nested_set():
     inner['x', 2] = -3
     inner.unit = 's'
     a[3] = -4
-    assert sc.identical(
-        outer, make_variable(make_variable([-1, -2, -3, 3, 4], unit='s')))
+    assert sc.identical(outer, make_variable(make_variable([-1, -2, -3, 3, 4],
+                                                           unit='s')))
     assert sc.identical(inner, make_variable([-1, -2, -3, 3, 4], unit='s'))
     np.testing.assert_array_equal(a, [0, 1, 2, -4, 4])
 
@@ -136,8 +133,7 @@ def test_own_var_scalar_nested_set():
     new_inner = make_variable(np.arange(5, 8), unit='kg')
     outer.value = new_inner
     outer.value['x', 0] = -5
-    assert sc.identical(outer,
-                        make_variable(make_variable([-5, 6, 7], unit='kg')))
+    assert sc.identical(outer, make_variable(make_variable([-5, 6, 7], unit='kg')))
     assert sc.identical(new_inner, make_variable([-5, 6, 7], unit='kg'))
     assert sc.identical(inner, make_variable([-1, -2, -3, 3, 4], unit='s'))
 
@@ -202,8 +198,8 @@ def test_own_var_scalar_nested_str_get():
     outer.value = make_variable(np.array(['ghi', 'jkl', 'mno']))
     outer.value['x', 0] = sc.scalar('asd')
     inner['x', 1] = sc.scalar('qwe')
-    assert sc.identical(
-        outer, make_variable(make_variable(np.array(['asd', 'qwe', 'mno']))))
+    assert sc.identical(outer,
+                        make_variable(make_variable(np.array(['asd', 'qwe', 'mno']))))
     assert sc.identical(inner, make_variable(np.array(['asd', 'qwe', 'mno'])))
     np.testing.assert_array_equal(a, ['abc', 'def'])
 
@@ -321,10 +317,8 @@ def test_own_var_1d_pyobj_get():
     x_expected = {'num': -1, 'list': [-2, 3]}
     y_expected = {'num': -5, 'list': [-6, 6]}
     assert sc.identical(
-        v,
-        sc.concatenate(make_variable(x_expected),
-                       make_variable(y_expected),
-                       dim='x'))
+        v, sc.concatenate(make_variable(x_expected), make_variable(y_expected),
+                          dim='x'))
     assert x == x_expected
     assert y == y_expected
 
@@ -341,18 +335,8 @@ def test_own_var_1d_pyobj_copy():
 
     v.values[0]['num'] = -1
     v.values[0]['list'][0] = -2
-    modified = sc.concatenate(make_variable({
-        'num': -1,
-        'list': [-2, 3]
-    }),
-                              y,
-                              dim='x')
-    original = sc.concatenate(make_variable({
-        'num': 1,
-        'list': [2, 3]
-    }),
-                              y,
-                              dim='x')
+    modified = sc.concatenate(make_variable({'num': -1, 'list': [-2, 3]}), y, dim='x')
+    original = sc.concatenate(make_variable({'num': 1, 'list': [2, 3]}), y, dim='x')
     assert sc.identical(v, modified)
     assert sc.identical(v_copy, modified)
     assert sc.identical(v_deepcopy, original)
@@ -398,8 +382,7 @@ def test_own_var_1d_str_copy():
     assert sc.identical(v_copy, make_variable(np.array(['asd', 'qwe'])))
     assert sc.identical(v_deepcopy, make_variable(np.array(['abc', 'def'])))
     assert sc.identical(v_methcopy, make_variable(np.array(['asd', 'qwe'])))
-    assert sc.identical(v_methdeepcopy, make_variable(np.array(['abc',
-                                                                'def'])))
+    assert sc.identical(v_methdeepcopy, make_variable(np.array(['abc', 'def'])))
 
 
 def test_own_var_1d_bin_set():
@@ -505,8 +488,8 @@ def test_own_var_2d_set():
     v.values[1] = -30
     v['y', 3:]['x', 1] = [-40, -50]
     a[0, 0] = -100
-    assert sc.identical(
-        v, make_variable([[0, -1, -2, -3, -4], [-30, -30, -30, -40, -50]]))
+    assert sc.identical(v,
+                        make_variable([[0, -1, -2, -3, -4], [-30, -30, -30, -40, -50]]))
     np.testing.assert_array_equal(a, [[-100, 1, 2, 3, 4], [5, 6, 7, 8, 9]])
 
 
@@ -535,8 +518,7 @@ def test_own_var_2d_copy():
     v.values[1] = -30
     v['y', 1:]['x', 1] = [-40, -50]
     v.unit = 's'
-    modified = make_variable(np.reshape([0, -1, -2, -30, -40, -50], (2, 3)),
-                             unit='s')
+    modified = make_variable(np.reshape([0, -1, -2, -30, -40, -50], (2, 3)), unit='s')
     original = make_variable(np.arange(6).reshape(2, 3), unit='m')
     assert sc.identical(v, modified)
     assert sc.identical(v_copy, modified)

@@ -6,23 +6,15 @@ from scipp.compat.pandas_compat import from_pandas
 def _make_reference_da(row_name, row_coords, values, dtype="int64"):
     return sc.DataArray(
         data=sc.Variable(dims=[row_name], values=values, dtype=dtype),
-        coords={
-            row_name: sc.Variable(dims=[row_name],
-                                  values=row_coords,
-                                  dtype=dtype)
-        },
+        coords={row_name: sc.Variable(dims=[row_name], values=row_coords, dtype=dtype)},
         name=row_name,
     )
 
 
 def _make_1d_reference_ds(row_name, data_name, values, coords, dtype="int64"):
     return sc.Dataset(
-        data={
-            data_name: sc.Variable(dims=[row_name], values=values, dtype=dtype)
-        },
-        coords={
-            row_name: sc.Variable(dims=[row_name], values=coords, dtype=dtype)
-        },
+        data={data_name: sc.Variable(dims=[row_name], values=values, dtype=dtype)},
+        coords={row_name: sc.Variable(dims=[row_name], values=coords, dtype=dtype)},
     )
 
 
@@ -33,9 +25,7 @@ def _make_2d_reference_ds(row_name, row_coords, data, dtype="int64"):
             for key, value in data.items()
         },
         coords={
-            row_name: sc.Variable(dims=[row_name],
-                                  values=row_coords,
-                                  dtype=dtype),
+            row_name: sc.Variable(dims=[row_name], values=row_coords, dtype=dtype),
         },
     )
 
@@ -77,8 +67,7 @@ def test_1d_dataframe_with_named_axis():
 
     sc_ds = from_pandas(pd_df)
 
-    reference_ds = _make_1d_reference_ds("1d_df", "my-column", [1, 2, 3],
-                                         [0, 1, 2])
+    reference_ds = _make_1d_reference_ds("1d_df", "my-column", [1, 2, 3], [0, 1, 2])
 
     assert sc.identical(sc_ds, reference_ds)
 

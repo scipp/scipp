@@ -21,9 +21,8 @@ class PlotFigure3d:
 
     It renders an interactive scene containing a point cloud using `pythreejs`.
     """
-    def __init__(self, *, background, cmap, extend, figsize, mask_cmap,
-                 nan_color, norm, pixel_size, show_outline, tick_size, xlabel,
-                 ylabel, zlabel):
+    def __init__(self, *, background, cmap, extend, figsize, mask_cmap, nan_color, norm,
+                 pixel_size, show_outline, tick_size, xlabel, ylabel, zlabel):
 
         self._pixel_size = pixel_size
         if pixel_size is not None:
@@ -44,8 +43,7 @@ class PlotFigure3d:
         self.masks_scalar_map = None
         self.masks_cmap = mask_cmap
         self.masks_cmap.set_bad(color=nan_color)
-        self.masks_scalar_map = cm.ScalarMappable(norm=norm,
-                                                  cmap=self.masks_cmap)
+        self.masks_scalar_map = cm.ScalarMappable(norm=norm, cmap=self.masks_cmap)
 
         self.axlabels = {"x": xlabel, "y": ylabel, "z": zlabel}
         self.tick_size = tick_size
@@ -99,10 +97,9 @@ class PlotFigure3d:
         """
         Return the renderer and the colorbar into a widget box.
         """
-        return ipw.HBox([
-            self.toolbar._to_widget(),
-            ipw.HBox([self.renderer]), self.cbar_image
-        ])
+        return ipw.HBox(
+            [self.toolbar._to_widget(),
+             ipw.HBox([self.renderer]), self.cbar_image])
 
     def savefig(self, filename=None):
         """
@@ -160,8 +157,7 @@ class PlotFigure3d:
 
         # Set camera controller target
         distance_from_center = 1.2
-        self.camera.position = list(
-            np.array(center) + distance_from_center * box_size)
+        self.camera.position = list(np.array(center) + distance_from_center * box_size)
         cam_pos_norm = np.linalg.norm(self.camera.position)
         box_mean_size = np.linalg.norm(box_size)
         self.camera.near = 0.01 * box_mean_size
@@ -173,16 +169,13 @@ class PlotFigure3d:
         self.camera_backup["reset"] = copy(self.camera.position)
         self.camera_backup["center"] = tuple(copy(center))
         self.camera_backup["x_normal"] = [
-            center[0] - distance_from_center * box_mean_size, center[1],
-            center[2]
+            center[0] - distance_from_center * box_mean_size, center[1], center[2]
         ]
         self.camera_backup["y_normal"] = [
-            center[0], center[1] - distance_from_center * box_mean_size,
-            center[2]
+            center[0], center[1] - distance_from_center * box_mean_size, center[2]
         ]
         self.camera_backup["z_normal"] = [
-            center[0], center[1],
-            center[2] - distance_from_center * box_mean_size
+            center[0], center[1], center[2] - distance_from_center * box_mean_size
         ]
 
         # Rescale axes helper
@@ -257,10 +250,9 @@ void main() {
         """
         box_geometry = p3.BoxBufferGeometry(*list(box_size))
         edges = p3.EdgesGeometry(box_geometry)
-        self.outline = p3.LineSegments(
-            geometry=edges,
-            material=p3.LineBasicMaterial(color='#000000'),
-            position=tuple(center))
+        self.outline = p3.LineSegments(geometry=edges,
+                                       material=p3.LineBasicMaterial(color='#000000'),
+                                       position=tuple(center))
 
     def _make_axis_tick(self, string, position, color="black", size=1.0):
         """
@@ -271,9 +263,7 @@ void main() {
                                                   size=300,
                                                   squareTexture=True),
                                transparent=True)
-        return p3.Sprite(material=sm,
-                         position=position,
-                         scale=[size, size, size])
+        return p3.Sprite(material=sm, position=position, scale=[size, size, size])
 
     def _generate_axis_ticks_and_labels(self, *, limits, box_size, components):
         """
@@ -297,8 +287,7 @@ void main() {
                 if lims[x][0] <= tick <= lims[x][1]:
                     tick_pos = iden[axis] * tick + offsets[x]
                     ticks_and_labels.add(
-                        self._make_axis_tick(string=value_to_string(
-                            tick, precision=1),
+                        self._make_axis_tick(string=value_to_string(tick, precision=1),
                                              position=tick_pos.tolist(),
                                              size=self.tick_size))
             coord = components[dim]
@@ -306,11 +295,10 @@ void main() {
                 x] is None else self.axlabels[x]
             # Offset labels 5% beyond axis ticks to reduce overlap
             ticks_and_labels.add(
-                self._make_axis_tick(
-                    string=axis_label,
-                    position=(iden[axis] * 0.5 * np.sum(limits[x]) +
-                              1.05 * np.array(offsets[x])).tolist(),
-                    size=self.tick_size * 0.3 * len(axis_label)))
+                self._make_axis_tick(string=axis_label,
+                                     position=(iden[axis] * 0.5 * np.sum(limits[x]) +
+                                               1.05 * np.array(offsets[x])).tolist(),
+                                     size=self.tick_size * 0.3 * len(axis_label)))
 
         return ticks_and_labels
 
@@ -352,14 +340,11 @@ void main() {
         if 'mask' in new_values:
             # We change the colors of the points in-place where masks are True
             masks_inds = np.where(new_values['mask'].values)
-            masks_colors = self.masks_scalar_map.to_rgba(
-                array.values[masks_inds])
+            masks_colors = self.masks_scalar_map.to_rgba(array.values[masks_inds])
             colors[masks_inds] = masks_colors
 
-        colors[:, 3] = self.points_geometry.attributes["rgba_color"].array[:,
-                                                                           3]
-        self.points_geometry.attributes["rgba_color"].array = colors.astype(
-            np.float32)
+        colors[:, 3] = self.points_geometry.attributes["rgba_color"].array[:, 3]
+        self.points_geometry.attributes["rgba_color"].array = colors.astype(np.float32)
 
     def rescale_to_data(self, vmin=None, vmax=None):
         """
@@ -401,22 +386,19 @@ void main() {
         """
         View scene along the X normal.
         """
-        self.camera_normal(position=self.camera_backup["x_normal"].copy(),
-                           ind=0)
+        self.camera_normal(position=self.camera_backup["x_normal"].copy(), ind=0)
 
     def camera_y_normal(self):
         """
         View scene along the Y normal.
         """
-        self.camera_normal(position=self.camera_backup["y_normal"].copy(),
-                           ind=1)
+        self.camera_normal(position=self.camera_backup["y_normal"].copy(), ind=1)
 
     def camera_z_normal(self):
         """
         View scene along the Z normal.
         """
-        self.camera_normal(position=self.camera_backup["z_normal"].copy(),
-                           ind=2)
+        self.camera_normal(position=self.camera_backup["z_normal"].copy(), ind=2)
 
     def camera_normal(self, position, ind):
         """
@@ -424,8 +406,7 @@ void main() {
         to the requested position.
         """
         if np.allclose(self.camera.position, position):
-            position[
-                ind] = 2.0 * self.camera_backup["center"][ind] - position[ind]
+            position[ind] = 2.0 * self.camera_backup["center"][ind] - position[ind]
         self.move_camera(position=position)
 
     def move_camera(self, position):
@@ -437,9 +418,8 @@ void main() {
         """
         Toggle color normalization when toolbar button is clicked.
         """
-        new_norm = LogNorm(
-            vmin=vmin, vmax=vmax) if norm == "log" else Normalize(vmin=vmin,
-                                                                  vmax=vmax)
+        new_norm = LogNorm(vmin=vmin, vmax=vmax) if norm == "log" else Normalize(
+            vmin=vmin, vmax=vmax)
         self.scalar_map.set_norm(new_norm)
         self.masks_scalar_map.set_norm(new_norm)
         self._update_colorbar()

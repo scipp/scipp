@@ -33,11 +33,9 @@ def test_setitem_coords_required_for_inplace_ops():
     da = sc.DataArray(data=var)
     da.coords['x'] = var
     da.coords['x']['x', 2:] += 1
-    assert sc.identical(
-        da.coords['x'],
-        sc.array(dims=['x'], dtype=sc.dtype.int64, values=[0, 0, 1, 1]))
+    assert sc.identical(da.coords['x'],
+                        sc.array(dims=['x'], dtype=sc.dtype.int64, values=[0, 0, 1, 1]))
     ds = sc.Dataset(data={'a': da})
     ds.coords['x']['x', 2:] += 1
-    assert sc.identical(
-        ds.coords['x'],
-        sc.array(dims=['x'], dtype=sc.dtype.int64, values=[0, 0, 2, 2]))
+    assert sc.identical(ds.coords['x'],
+                        sc.array(dims=['x'], dtype=sc.dtype.int64, values=[0, 0, 2, 2]))
