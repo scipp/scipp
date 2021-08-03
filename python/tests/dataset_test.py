@@ -158,6 +158,16 @@ def test_coords_get():
     assert d.coords.get('z') is None
 
 
+def test_coords_pop():
+    d = sc.Dataset()
+    d.coords['x'] = sc.scalar(1.0)
+    d.coords['y'] = sc.scalar(2.0)
+    assert sc.identical(d.coords.pop('x'), sc.scalar(1.0))
+    assert list(d.coords.keys()) == ['y']
+    assert sc.identical(d.coords.pop('y'), sc.scalar(2.0))
+    assert len(list(d.coords.keys())) == 0
+
+
 def test_slice_item():
     d = sc.Dataset(coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'], values=np.arange(4))

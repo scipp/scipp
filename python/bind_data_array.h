@@ -71,7 +71,8 @@ void bind_mutable_view(py::module &m, const std::string &name) {
       .def(
           "items", [](T &self) { return items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
-          R"(view on self's items)");
+          R"(view on self's items)")
+      .def("pop", &T::extract);
 }
 
 template <class T>
@@ -93,7 +94,8 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name) {
       .def(
           "items", [](T &self) { return str_items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
-          R"(view on self's items)");
+          R"(view on self's items)")
+      .def("pop", &T::extract);
 }
 
 template <class T, class... Ignored>
