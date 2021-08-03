@@ -71,8 +71,14 @@ def main(prefix='install', build_dir='build', source_dir='.'):
         shell = True
         build_config = 'Release'
 
+        # cmake --build --parallel is detrimental to build performance on windows
+        # see https://github.com/scipp/scipp/issues/2078 for details
+        build_flags = []
+    else:
+        # For other platforms we do want to add the parallel build flag.
+        build_flags = [parallel_flag]
+
     # Additional flags for --build commands
-    build_flags = [parallel_flag]
     if len(build_config) > 0:
         build_flags += ['--config', build_config]
 
