@@ -164,6 +164,8 @@ def test_coords_pop():
     d.coords['y'] = sc.scalar(2.0)
     assert sc.identical(d.coords.pop('x'), sc.scalar(1.0))
     assert list(d.coords.keys()) == ['y']
+    assert sc.identical(d.coords.pop('z', sc.scalar(3.0)), sc.scalar(3.0))
+    assert list(d.coords.keys()) == ['y']
     assert sc.identical(d.coords.pop('y'), sc.scalar(2.0))
     assert len(list(d.coords.keys())) == 0
 

@@ -139,7 +139,11 @@ void Dict<Key, Value>::erase(const key_type &key) {
 }
 
 template <class Key, class Value>
-Value Dict<Key, Value>::extract(const key_type &key) {
+Value Dict<Key, Value>::extract(const key_type &key,
+                                const mapped_type *const default_value) {
+  if (default_value != nullptr && !contains(key)) {
+    return *default_value;
+  }
   auto extracted = at(key);
   erase(key);
   return extracted;
