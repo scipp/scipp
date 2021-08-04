@@ -46,6 +46,50 @@ TEST(ElementNormTest, value) {
   EXPECT_EQ(element::norm(v2), 5);
 }
 
+TEST(ElementPowTest, types) {
+  constexpr auto check = [](auto a, auto b, auto e) {
+    static_assert(std::is_same_v<std::decay_t<decltype(element::pow(a, b))>,
+                                 decltype(e)>);
+  };
+  const double d = 1.0;
+  const int64_t i = 2;
+  check(d, d, d);
+  check(d, i, d);
+  check(i, d, d);
+  check(i, i, i);
+}
+
+TEST(ElementPowTest, value_float_exponent) {
+  EXPECT_NEAR(element::pow(3.0, 2.0), 9.0, 1e-10);
+  EXPECT_NEAR(element::pow(int64_t{2}, 4.0), 16.0, 1e-10);
+  EXPECT_NEAR(element::pow(3.0, -2.0), 1.0 / 9.0, 1e-10);
+  EXPECT_NEAR(element::pow(int64_t{2}, -4.0), 1.0 / 16.0, 1e-10);
+  EXPECT_NEAR(element::pow(-3.0, 2.0), 9.0, 1e-10);
+  EXPECT_NEAR(element::pow(int64_t{-2}, 4.0), 16.0, 1e-10);
+  EXPECT_NEAR(element::pow(-3.0, -2.0), 1.0 / 9.0, 1e-10);
+  EXPECT_NEAR(element::pow(int64_t{-2}, -4.0), 1.0 / 16.0, 1e-10);
+  EXPECT_NEAR(element::pow(-3.0, 3.0), -27.0, 1e-10);
+  EXPECT_NEAR(element::pow(int64_t{-2}, 5.0), -32.0, 1e-10);
+  EXPECT_NEAR(element::pow(-3.0, -3.0), -1.0 / 27.0, 1e-10);
+  EXPECT_NEAR(element::pow(int64_t{-2}, -5.0), -1.0 / 32.0, 1e-10);
+  EXPECT_TRUE(numeric::isnan(element::pow(-3.0, 3.2)));
+  EXPECT_TRUE(numeric::isnan(element::pow(-3, 3.2)));
+  EXPECT_TRUE(numeric::isnan(element::pow(-3.0, -3.2)));
+  EXPECT_TRUE(numeric::isnan(element::pow(-3, -3.2)));
+}
+
+TEST(ElementPowTest, value_integer_base_integer_exponent) {
+  for (int64_t base : {-5, -3, -2, -1, 0, 1, 2, 5, 10}) {
+    EXPECT_EQ(element::pow(base, int64_t{0}), int64_t{1});
+    EXPECT_EQ(element::pow(base, int64_t{1}), base);
+    EXPECT_EQ(element::pow(base, int64_t{2}), base * base);
+    EXPECT_EQ(element::pow(base, int64_t{3}), base * base * base);
+  }
+  // TODO negative power
+}
+
+// TODO float_base_integer_exponent
+
 TEST(ElementSqrtTest, unit) {
   const units::Unit m2(units::m * units::m);
   EXPECT_EQ(element::sqrt(m2), units::sqrt(m2));
