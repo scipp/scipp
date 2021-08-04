@@ -47,7 +47,7 @@ def main(prefix='install', build_dir='build', source_dir='.'):
     # Default cmake flags
     cmake_flags = {
         '-G': 'Ninja',
-        '-DPYTHON_EXECUTABLE': shutil.which("python"),
+        '-DPython_EXECUTABLE': shutil.which("python"),
         '-DCMAKE_INSTALL_PREFIX': prefix,
         '-DWITH_CTEST': 'OFF',
         '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'ON'
