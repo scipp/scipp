@@ -112,6 +112,44 @@ TYPED_TEST(VariablePowTest, pow_unit) {
   EXPECT_THROW_DISCARD(pow(base_s, exp_m), except::UnitError);
 }
 
+TYPED_TEST(VariablePowTest, pow_dims) {
+  using B = std::tuple_element_t<0, TypeParam>;
+  using E = std::tuple_element_t<1, TypeParam>;
+
+  Dimensions x{{Dim::X, 2}};
+  Dimensions y{{Dim::Y, 3}};
+  Dimensions xy{{Dim::X, 2}, {Dim::Y, 3}};
+
+  for (auto &&base_unit : {units::one, units::m, units::s}) {
+    const auto base_scalar = makeVariable<B>(Dims{}, base_unit);
+    const auto base_x = makeVariable<B>(x, base_unit);
+    const auto base_y = makeVariable<B>(y, base_unit);
+    const auto base_xy = makeVariable<B>(xy, base_unit);
+    const auto exp_scalar = makeVariable<E>(Dims{});
+    const auto exp_x = makeVariable<E>(x);
+    const auto exp_y = makeVariable<E>(y);
+    const auto exp_xy = makeVariable<E>(xy);
+
+    EXPECT_EQ(pow(base_scalar, exp_scalar).dims().ndim(), 0);
+
+    EXPECT_EQ(pow(base_x, exp_scalar).dims(), x);
+    if (base_unit == units::one) {
+      EXPECT_EQ(pow(base_scalar, exp_x).dims(), x);
+      EXPECT_EQ(pow(base_x, exp_x).dims(), x);
+      EXPECT_EQ(pow(base_x, exp_y).dims(), xy);
+
+      EXPECT_EQ(pow(base_xy, exp_x).dims(), xy);
+      EXPECT_EQ(pow(base_xy, exp_y).dims(), xy);
+      EXPECT_EQ(pow(base_x, exp_xy).dims(), xy);
+      EXPECT_EQ(pow(base_y, exp_xy).dims(), xy);
+    }
+
+    EXPECT_THROW_DISCARD(
+        pow(makeVariable<B>(Dims{Dim::X}, Shape{4}, base_unit), exp_x),
+        except::DimensionError);
+  }
+}
+
 namespace {
 template <class B, class E> void pow_check_negative_exponent_allowed() {
   const Variable base = makeVariable<B>(Dims{}, Values{2});
