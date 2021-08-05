@@ -6,6 +6,7 @@
 
 #include <cmath>
 
+#include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
@@ -23,39 +24,13 @@ constexpr auto norm = overloaded{arg_list<Eigen::Vector3d>,
                                  [](const auto &x) { return x.norm(); },
                                  [](const units::Unit &x) { return x; }};
 
-namespace {
-template <class B, class E>
-constexpr auto integer_pow_pos_exponent(const B &base, const E exponent) {
-  static_assert(std::is_integral_v<std::decay_t<E>>);
-
-  if (exponent == 0)
-    return static_cast<B>(1);
-  if (exponent == 1)
-    return base;
-
-  const auto aux = integer_pow_pos_exponent(base, exponent / 2);
-  if (exponent % 2 == 0)
-    return aux * aux;
-  return base * aux * aux;
-}
-} // namespace
-
 constexpr auto pow = overloaded{
     arg_list<std::tuple<double, double>, std::tuple<double, int32_t>,
              std::tuple<double, int64_t>, std::tuple<int64_t, int64_t>>,
-    dimensionless_unit_check_return,
+    transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>, dimensionless_unit_check_return,
     [](const auto &base, const auto &exponent) {
-      if constexpr (std::is_integral_v<std::decay_t<decltype(exponent)>>) {
-        if (exponent >= 0) {
-          return integer_pow_pos_exponent(base, exponent);
-        } else {
-          return static_cast<std::decay_t<decltype(base)>>(1) /
-                 integer_pow_pos_exponent(base, -exponent);
-        }
-      } else {
-        using std::pow;
-        return pow(base, exponent);
-      }
+      return numeric::pow(base, exponent);
     }};
 
 constexpr auto pow_in_place =
@@ -63,7 +38,12 @@ constexpr auto pow_in_place =
                         std::tuple<double, double, int32_t>,
                         std::tuple<double, double, int64_t>,
                         std::tuple<int64_t, int64_t, int64_t>>,
+               transform_flags::expect_no_variance_arg<0>,
+               transform_flags::expect_no_variance_arg<1>,
+               transform_flags::expect_no_variance_arg<2>,
                [](auto &out, const auto &base, const auto &exponent) {
+                 // Use element::pow instead of numeric::pow to inherit unit
+                 // handling.
                  out = element::pow(base, exponent);
                }};
 
