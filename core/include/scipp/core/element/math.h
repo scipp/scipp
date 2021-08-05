@@ -58,6 +58,15 @@ constexpr auto pow = overloaded{
       }
     }};
 
+constexpr auto pow_in_place =
+    overloaded{arg_list<std::tuple<double, double, double>,
+                        std::tuple<double, double, int32_t>,
+                        std::tuple<double, double, int64_t>,
+                        std::tuple<int64_t, int64_t, int64_t>>,
+               [](auto &out, const auto &base, const auto &exponent) {
+                 out = element::pow(base, exponent);
+               }};
+
 constexpr auto sqrt = overloaded{arg_list<double, float>, [](const auto x) {
                                    using std::sqrt;
                                    return sqrt(x);
