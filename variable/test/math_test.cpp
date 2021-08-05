@@ -10,6 +10,7 @@
 
 #include "scipp/core/element/math.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/comparison.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
@@ -183,6 +184,27 @@ TEST(Variable, pow_negative_exponent) {
   pow_check_negative_exponent_allowed<int64_t, double>();
   pow_check_negative_exponent_allowed<double, double>();
   pow_check_negative_exponent_allowed<int64_t, double>();
+}
+
+TEST(Variable, pow_value) {
+  for (auto &&base_unit : {units::one, units::m}) {
+    EXPECT_NEAR(pow(3.0 * base_unit, 4.0 * units::one).value<double>(), 81.0,
+                1e-12);
+    EXPECT_NEAR(pow(int64_t{3} * base_unit, 4.0 * units::one).value<double>(),
+                81.0, 1e-12);
+    EXPECT_NEAR(pow(3.0 * base_unit, int64_t{4} * units::one).value<double>(),
+                81.0, 1e-12);
+    EXPECT_EQ(
+        pow(int64_t{3} * base_unit, int64_t{4} * units::one).value<int64_t>(),
+        int64_t{81});
+
+    EXPECT_NEAR(pow(3.0 * base_unit, -4.0 * units::one).value<double>(),
+                1.0 / 81.0, 1e-12);
+    EXPECT_NEAR(pow(int64_t{3} * base_unit, -4.0 * units::one).value<double>(),
+                1.0 / 81.0, 1e-12);
+    EXPECT_NEAR(pow(3.0 * base_unit, int64_t{-4} * units::one).value<double>(),
+                1.0 / 81.0, 1e-12);
+  }
 }
 
 TYPED_TEST(VariableMathTest, sqrt) {
