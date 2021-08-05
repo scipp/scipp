@@ -24,16 +24,15 @@ constexpr auto norm = overloaded{arg_list<Eigen::Vector3d>,
                                  [](const units::Unit &x) { return x; }};
 
 template <class B, class E>
-constexpr auto integer_pow(const B &base, const E exponent) {
+constexpr auto integer_pow_pos_exponent(const B &base, const E exponent) {
   static_assert(std::is_integral_v<std::decay_t<E>>);
-  // TODO exponent < 0
 
   if (exponent == 0)
     return static_cast<B>(1);
   if (exponent == 1)
     return base;
 
-  const auto aux = integer_pow(base, exponent / 2);
+  const auto aux = integer_pow_pos_exponent(base, exponent / 2);
   if (exponent % 2 == 0)
     return aux * aux;
   return base * aux * aux;
@@ -44,7 +43,12 @@ constexpr auto pow = overloaded{
              std::tuple<double, int64_t>, std::tuple<int64_t, int64_t>>,
     [](const auto &base, const auto &exponent) {
       if constexpr (std::is_integral_v<std::decay_t<decltype(exponent)>>) {
-        return integer_pow(base, exponent);
+        if (exponent >= 0) {
+          return integer_pow_pos_exponent(base, exponent);
+        } else {
+          return static_cast<std::decay_t<decltype(base)>>(1) /
+                 integer_pow_pos_exponent(base, -exponent);
+        }
       } else {
         using std::pow;
         return pow(base, exponent);
