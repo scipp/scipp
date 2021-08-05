@@ -70,6 +70,14 @@ TEST(Variable, pow_unit_exponent_dims) {
   EXPECT_THROW_DISCARD(pow(base, array_exponent), except::DimensionError);
 }
 
+TEST(Variable, pow_unit_float_exponent) {
+  EXPECT_NO_THROW_DISCARD(pow(1.0 * units::one, 2.2 * units::one));
+  EXPECT_THROW_DISCARD(pow(1.0 * units::m, 2.2 * units::one),
+                       except::UnitError);
+  EXPECT_THROW_DISCARD(pow(int64_t{1} * units::m, 2.2 * units::one),
+                       except::UnitError);
+}
+
 template <typename T> class VariablePowTest : public ::testing::Test {};
 using PowTypes =
     ::testing::Types<std::tuple<double, double>, std::tuple<double, int64_t>,
