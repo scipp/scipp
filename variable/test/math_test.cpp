@@ -62,6 +62,49 @@ TEST(Variable, norm_of_vector) {
   EXPECT_EQ(norm(var), reference);
 }
 
+TEST(Variable, pow_unit_exponent_dims) {
+  const Variable base = 2.0 * units::m;
+  const Variable scalar_exponent = 3.0 * units::one;
+  const Variable array_exponent = makeVariable<double>(Dims{Dim::X}, Shape{2});
+  EXPECT_NO_THROW_DISCARD(pow(base, scalar_exponent));
+  EXPECT_THROW_DISCARD(pow(base, array_exponent), except::DimensionError);
+}
+
+namespace {
+template <class B, class E> void pow_check_negative_exponent_allowed() {
+  const Variable base = makeVariable<B>(Dims{}, Values{2});
+  EXPECT_NO_THROW_DISCARD(pow(base, makeVariable<double>(Dims{}, Values{3})));
+  EXPECT_NO_THROW_DISCARD(pow(base, makeVariable<double>(Dims{}, Values{-3})));
+
+  for (auto &&values : {Values{-3, 4}, Values{-3, -4}, Values{3, -4}}) {
+    EXPECT_NO_THROW_DISCARD(
+        pow(base, makeVariable<E>(Dims{Dim::X}, Shape{2}, Values(values))));
+  }
+}
+} // namespace
+
+TEST(Variable, pow_negative_exponent) {
+  // Negative powers are *not* allowed when both arguments are integers.
+  const Variable int_base = makeVariable<int64_t>(Dims{}, Values{2});
+  EXPECT_NO_THROW_DISCARD(
+      pow(int_base, makeVariable<int64_t>(Dims{}, Values{3})));
+  EXPECT_THROW_DISCARD(pow(int_base, makeVariable<int64_t>(Dims{}, Values{-3})),
+                       std::invalid_argument);
+  EXPECT_NO_THROW_DISCARD(pow(
+      int_base, makeVariable<int64_t>(Dims{Dim::X}, Shape{2}, Values{3, 4})));
+  for (auto &&values : {Values{-3, 4}, Values{-3, -4}, Values{3, -4}}) {
+    EXPECT_THROW_DISCARD(
+        pow(int_base,
+            makeVariable<int64_t>(Dims{Dim::X}, Shape{2}, Values(values))),
+        std::invalid_argument);
+  }
+
+  // Negative powers are allowed when floats are involved.
+  pow_check_negative_exponent_allowed<int64_t, double>();
+  pow_check_negative_exponent_allowed<double, double>();
+  pow_check_negative_exponent_allowed<int64_t, double>();
+}
+
 TYPED_TEST(VariableMathTest, sqrt) {
   for (TypeParam x : {0.0, 1.23, 1.23456789, 3.45}) {
     for (auto [uin, uout] :
