@@ -47,7 +47,7 @@ def main(prefix='install', build_dir='build', source_dir='.'):
     # Default cmake flags
     cmake_flags = {
         '-G': 'Ninja',
-        '-DPYTHON_EXECUTABLE': shutil.which("python"),
+        '-DPython_EXECUTABLE': shutil.which("python"),
         '-DCMAKE_INSTALL_PREFIX': prefix,
         '-DWITH_CTEST': 'OFF',
         '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'ON'
@@ -71,8 +71,14 @@ def main(prefix='install', build_dir='build', source_dir='.'):
         shell = True
         build_config = 'Release'
 
+        # cmake --build --parallel is detrimental to build performance on windows
+        # see https://github.com/scipp/scipp/issues/2078 for details
+        build_flags = []
+    else:
+        # For other platforms we do want to add the parallel build flag.
+        build_flags = [parallel_flag]
+
     # Additional flags for --build commands
-    build_flags = [parallel_flag]
     if len(build_config) > 0:
         build_flags += ['--config', build_config]
 
