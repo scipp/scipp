@@ -60,22 +60,23 @@ TEST(ElementPowTest, types) {
 }
 
 TEST(ElementPowTest, value_float_exponent) {
-  EXPECT_NEAR(element::pow(3.0, 2.0), 9.0, 1e-10);
-  EXPECT_NEAR(element::pow(int64_t{2}, 4.0), 16.0, 1e-10);
-  EXPECT_NEAR(element::pow(3.0, -2.0), 1.0 / 9.0, 1e-10);
-  EXPECT_NEAR(element::pow(int64_t{2}, -4.0), 1.0 / 16.0, 1e-10);
-  EXPECT_NEAR(element::pow(-3.0, 2.0), 9.0, 1e-10);
-  EXPECT_NEAR(element::pow(int64_t{-2}, 4.0), 16.0, 1e-10);
-  EXPECT_NEAR(element::pow(-3.0, -2.0), 1.0 / 9.0, 1e-10);
-  EXPECT_NEAR(element::pow(int64_t{-2}, -4.0), 1.0 / 16.0, 1e-10);
-  EXPECT_NEAR(element::pow(-3.0, 3.0), -27.0, 1e-10);
-  EXPECT_NEAR(element::pow(int64_t{-2}, 5.0), -32.0, 1e-10);
-  EXPECT_NEAR(element::pow(-3.0, -3.0), -1.0 / 27.0, 1e-10);
-  EXPECT_NEAR(element::pow(int64_t{-2}, -5.0), -1.0 / 32.0, 1e-10);
+  EXPECT_NEAR(element::pow(3.0, 2.0), 9.0, 1e-12);
+  EXPECT_NEAR(element::pow(int64_t{2}, 4.0), 16.0, 1e-12);
+  EXPECT_NEAR(element::pow(3.0, -2.0), 1.0 / 9.0, 1e-12);
+  EXPECT_NEAR(element::pow(int64_t{2}, -4.0), 1.0 / 16.0, 1e-12);
+  EXPECT_NEAR(element::pow(-3.0, 2.0), 9.0, 1e-12);
+  EXPECT_NEAR(element::pow(int64_t{-2}, 4.0), 16.0, 1e-12);
+  EXPECT_NEAR(element::pow(-3.0, -2.0), 1.0 / 9.0, 1e-12);
+  EXPECT_NEAR(element::pow(int64_t{-2}, -4.0), 1.0 / 16.0, 1e-12);
+  EXPECT_NEAR(element::pow(-3.0, 3.0), -27.0, 1e-12);
+  EXPECT_NEAR(element::pow(int64_t{-2}, 5.0), -32.0, 1e-12);
+  EXPECT_NEAR(element::pow(-3.0, -3.0), -1.0 / 27.0, 1e-12);
+  EXPECT_NEAR(element::pow(int64_t{-2}, -5.0), -1.0 / 32.0, 1e-12);
   EXPECT_TRUE(numeric::isnan(element::pow(-3.0, 3.2)));
   EXPECT_TRUE(numeric::isnan(element::pow(-3, 3.2)));
   EXPECT_TRUE(numeric::isnan(element::pow(-3.0, -3.2)));
   EXPECT_TRUE(numeric::isnan(element::pow(-3, -3.2)));
+  EXPECT_TRUE(numeric::isinf(element::pow(0, -3.2)));
 }
 
 TEST(ElementPowTest, value_integer_base_integer_exponent) {
@@ -85,10 +86,34 @@ TEST(ElementPowTest, value_integer_base_integer_exponent) {
     EXPECT_EQ(element::pow(base, int64_t{2}), base * base);
     EXPECT_EQ(element::pow(base, int64_t{3}), base * base * base);
   }
-  // TODO negative power
+  EXPECT_EQ(element::pow(int64_t{2}, int64_t{40}), 1099511627776);
+  EXPECT_EQ(element::pow(int64_t{7}, int64_t{15}), 4747561509943);
+  // The maximum recursion depth which still produces a number representable as
+  // int64_t (except for base=1).
+  EXPECT_EQ(element::pow(int64_t{2}, int64_t{62}), 4611686018427387904);
+
+  // exponent < 0 is undefined behavior because the result
+  // is not representable as integer.
 }
 
-// TODO float_base_integer_exponent
+TEST(ElementPowTest, value_float_base_integer_exponent) {
+  for (double base : {-5, -3, -2, -1, 1, 2, 5, 10}) {
+    EXPECT_NEAR(element::pow(base, int64_t{0}), int64_t{1}, 1e-12);
+    EXPECT_NEAR(element::pow(base, int64_t{1}), base, 1e-12);
+    EXPECT_NEAR(element::pow(base, int64_t{2}), base * base, 1e-12);
+    EXPECT_NEAR(element::pow(base, int64_t{3}), base * base * base, 1e-12);
+    EXPECT_NEAR(element::pow(base, int64_t{-1}), 1.0 / base, 1e-12);
+    EXPECT_NEAR(element::pow(base, int64_t{-2}), 1.0 / (base * base), 1e-12);
+    EXPECT_NEAR(element::pow(base, int64_t{-3}), 1.0 / (base * base * base),
+                1e-12);
+  }
+  EXPECT_NEAR(element::pow(0.0, int64_t{0}), 1.0, 1e-16);
+  EXPECT_NEAR(element::pow(0.0, int64_t{1}), 0.0, 1e-16);
+  EXPECT_NEAR(element::pow(0.0, int64_t{6}), 0.0, 1e-16);
+  EXPECT_TRUE(std::isinf(element::pow(0.0, int64_t{-1})));
+  EXPECT_NEAR(element::pow(4.125, int64_t{13}), 100117820.6814957, 1e-12);
+  EXPECT_NEAR(element::pow(9.247, int64_t{26}), 1.3062379536886155e+25, 1e11););
+}
 
 TEST(ElementSqrtTest, unit) {
   const units::Unit m2(units::m * units::m);
