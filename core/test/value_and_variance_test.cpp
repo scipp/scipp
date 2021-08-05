@@ -120,7 +120,7 @@ TEST(ValueAndVarianceTest, binary_divide_equals) {
             lhs.variance);
 }
 
-TEST(ValueAndVariableTest, binary_pow) {
+TEST(ValueAndVarianceTest, binary_pow) {
   const ValueAndVariance base{3.0, 2.0};
   auto result = pow(base, 3);
   EXPECT_NEAR(27.0, result.value, 1e-15);
