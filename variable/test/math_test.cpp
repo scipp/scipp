@@ -70,6 +70,40 @@ TEST(Variable, pow_unit_exponent_dims) {
   EXPECT_THROW_DISCARD(pow(base, array_exponent), except::DimensionError);
 }
 
+template <typename T> class VariablePowTest : public ::testing::Test {};
+using PowTypes =
+    ::testing::Types<std::tuple<double, double>, std::tuple<double, int64_t>,
+                     std::tuple<int64_t, double>, std::tuple<int64_t, int64_t>>;
+TYPED_TEST_SUITE(VariablePowTest, PowTypes);
+
+TYPED_TEST(VariablePowTest, pow_unit) {
+  using B = std::tuple_element_t<0, TypeParam>;
+  using E = std::tuple_element_t<1, TypeParam>;
+
+  const auto base_one = static_cast<B>(1) * units::one;
+  const auto exp_one = static_cast<E>(1) * units::one;
+  const auto exp_two = static_cast<E>(2) * units::one;
+  const auto exp_three = static_cast<E>(3) * units::one;
+  const auto exp_four = static_cast<E>(4) * units::one;
+
+  const auto base_m = static_cast<B>(1) * units::m;
+  const auto exp_m = static_cast<E>(1) * units::m;
+  const auto base_s = static_cast<B>(1) * units::s;
+  const auto exp_s = static_cast<E>(1) * units::s;
+
+  EXPECT_EQ(pow(base_one, exp_one).unit(), units::one);
+  EXPECT_EQ(pow(base_m, exp_one).unit(), units::m);
+  EXPECT_EQ(pow(base_s, exp_one).unit(), units::s);
+  EXPECT_EQ(pow(base_m, exp_two).unit(), units::m * units::m);
+  EXPECT_EQ(pow(base_s, exp_two).unit(), units::s * units::s);
+  EXPECT_EQ(pow(base_m, exp_three).unit(), units::m * units::m * units::m);
+  EXPECT_EQ(pow(base_s, exp_four).unit(),
+            units::s * units::s * units::s * units::s);
+  EXPECT_THROW_DISCARD(pow(base_one, exp_m), except::UnitError);
+  EXPECT_THROW_DISCARD(pow(base_one, exp_s), except::UnitError);
+  EXPECT_THROW_DISCARD(pow(base_s, exp_m), except::UnitError);
+}
+
 namespace {
 template <class B, class E> void pow_check_negative_exponent_allowed() {
   const Variable base = makeVariable<B>(Dims{}, Values{2});
