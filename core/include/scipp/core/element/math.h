@@ -23,6 +23,7 @@ constexpr auto norm = overloaded{arg_list<Eigen::Vector3d>,
                                  [](const auto &x) { return x.norm(); },
                                  [](const units::Unit &x) { return x; }};
 
+namespace {
 template <class B, class E>
 constexpr auto integer_pow_pos_exponent(const B &base, const E exponent) {
   static_assert(std::is_integral_v<std::decay_t<E>>);
@@ -37,10 +38,12 @@ constexpr auto integer_pow_pos_exponent(const B &base, const E exponent) {
     return aux * aux;
   return base * aux * aux;
 }
+} // namespace
 
 constexpr auto pow = overloaded{
     arg_list<std::tuple<double, double>, std::tuple<double, int32_t>,
              std::tuple<double, int64_t>, std::tuple<int64_t, int64_t>>,
+    dimensionless_unit_check_return,
     [](const auto &base, const auto &exponent) {
       if constexpr (std::is_integral_v<std::decay_t<decltype(exponent)>>) {
         if (exponent >= 0) {

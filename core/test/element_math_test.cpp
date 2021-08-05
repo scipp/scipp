@@ -5,6 +5,7 @@
 #include "scipp/core/element/math.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/units/unit.h"
+#include "test_macros.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -46,32 +47,23 @@ TEST(ElementNormTest, value) {
   EXPECT_EQ(element::norm(v2), 5);
 }
 
-TEST(ElementPowTest, types) {
-  constexpr auto check = [](auto a, auto b, auto e) {
-    static_assert(std::is_same_v<std::decay_t<decltype(element::pow(a, b))>,
-                                 decltype(e)>);
-  };
-  const double d = 1.0;
-  const int64_t i = 2;
-  check(d, d, d);
-  check(d, i, d);
-  check(i, d, d);
-  check(i, i, i);
+TEST(ElementPowTest, unit) {
+  // element::pow cannot handle units itself as that requires the unit of the
+  // base but the *value* of the exponent. This does not fit into the usual
+  // transform framework.
+  EXPECT_EQ(element::pow(units::one, units::one), units::one);
+  EXPECT_THROW_DISCARD(element::pow(units::one, units::m), except::UnitError);
+  EXPECT_THROW_DISCARD(element::pow(units::s, units::one), except::UnitError);
+  EXPECT_THROW_DISCARD(element::pow(units::K, units::kg), except::UnitError);
 }
 
 TEST(ElementPowTest, value_float_exponent) {
   EXPECT_NEAR(element::pow(3.0, 2.0), 9.0, 1e-12);
-  EXPECT_NEAR(element::pow(int64_t{2}, 4.0), 16.0, 1e-12);
   EXPECT_NEAR(element::pow(3.0, -2.0), 1.0 / 9.0, 1e-12);
-  EXPECT_NEAR(element::pow(int64_t{2}, -4.0), 1.0 / 16.0, 1e-12);
   EXPECT_NEAR(element::pow(-3.0, 2.0), 9.0, 1e-12);
-  EXPECT_NEAR(element::pow(int64_t{-2}, 4.0), 16.0, 1e-12);
   EXPECT_NEAR(element::pow(-3.0, -2.0), 1.0 / 9.0, 1e-12);
-  EXPECT_NEAR(element::pow(int64_t{-2}, -4.0), 1.0 / 16.0, 1e-12);
   EXPECT_NEAR(element::pow(-3.0, 3.0), -27.0, 1e-12);
-  EXPECT_NEAR(element::pow(int64_t{-2}, 5.0), -32.0, 1e-12);
   EXPECT_NEAR(element::pow(-3.0, -3.0), -1.0 / 27.0, 1e-12);
-  EXPECT_NEAR(element::pow(int64_t{-2}, -5.0), -1.0 / 32.0, 1e-12);
   EXPECT_TRUE(numeric::isnan(element::pow(-3.0, 3.2)));
   EXPECT_TRUE(numeric::isnan(element::pow(-3, 3.2)));
   EXPECT_TRUE(numeric::isnan(element::pow(-3.0, -3.2)));
@@ -112,7 +104,7 @@ TEST(ElementPowTest, value_float_base_integer_exponent) {
   EXPECT_NEAR(element::pow(0.0, int64_t{6}), 0.0, 1e-16);
   EXPECT_TRUE(std::isinf(element::pow(0.0, int64_t{-1})));
   EXPECT_NEAR(element::pow(4.125, int64_t{13}), 100117820.6814957, 1e-12);
-  EXPECT_NEAR(element::pow(9.247, int64_t{26}), 1.3062379536886155e+25, 1e11););
+  EXPECT_NEAR(element::pow(9.247, int64_t{26}), 1.3062379536886155e+25, 1e11);
 }
 
 TEST(ElementSqrtTest, unit) {
