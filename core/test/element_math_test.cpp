@@ -64,23 +64,9 @@ TEST(ElementPowTest, value) {
   EXPECT_EQ(element::pow(int64_t{3}, int64_t{2}), 9);
 }
 
-TEST(ElementPowTest, value_float_base_integer_exponent) {
-  for (double base : {-5, -3, -2, -1, 1, 2, 5, 10}) {
-    EXPECT_NEAR(element::pow(base, int64_t{0}), int64_t{1}, 1e-12);
-    EXPECT_NEAR(element::pow(base, int64_t{1}), base, 1e-12);
-    EXPECT_NEAR(element::pow(base, int64_t{2}), base * base, 1e-12);
-    EXPECT_NEAR(element::pow(base, int64_t{3}), base * base * base, 1e-12);
-    EXPECT_NEAR(element::pow(base, int64_t{-1}), 1.0 / base, 1e-12);
-    EXPECT_NEAR(element::pow(base, int64_t{-2}), 1.0 / (base * base), 1e-12);
-    EXPECT_NEAR(element::pow(base, int64_t{-3}), 1.0 / (base * base * base),
-                1e-12);
-  }
-  EXPECT_NEAR(element::pow(0.0, int64_t{0}), 1.0, 1e-16);
-  EXPECT_NEAR(element::pow(0.0, int64_t{1}), 0.0, 1e-16);
-  EXPECT_NEAR(element::pow(0.0, int64_t{6}), 0.0, 1e-16);
-  EXPECT_TRUE(std::isinf(element::pow(0.0, int64_t{-1})));
-  EXPECT_NEAR(element::pow(4.125, int64_t{13}), 100117820.6814957, 1e-12);
-  EXPECT_NEAR(element::pow(9.247, int64_t{26}), 1.3062379536886155e+25, 1e11);
+TEST(ElementPowTest, value_and_variance) {
+  const ValueAndVariance base{3.0, 2.0};
+  EXPECT_EQ(element::pow(base, int64_t{3}), pow(base, int64_t{3}));
 }
 
 TEST(ElementSqrtTest, unit) {

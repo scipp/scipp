@@ -120,6 +120,25 @@ TEST(ValueAndVarianceTest, binary_divide_equals) {
             lhs.variance);
 }
 
+TEST(ValueAndVariableTest, binary_pow) {
+  const ValueAndVariance base{3.0, 2.0};
+  auto result = pow(base, 3);
+  EXPECT_NEAR(27.0, result.value, 1e-15);
+  EXPECT_NEAR(729.0 * base.variance, result.variance, 1e-13);
+
+  result = pow(base, 1);
+  EXPECT_NEAR(base.value, result.value, 1e-15);
+  EXPECT_NEAR(base.variance, result.variance, 1e-15);
+
+  result = pow(base, 0);
+  EXPECT_NEAR(1.0, result.value, 1e-15);
+  EXPECT_NEAR(0.0, result.variance, 1e-15);
+
+  result = pow(base, -2);
+  EXPECT_NEAR(1.0 / 9.0, result.value, 1e-16);
+  EXPECT_NEAR(0.0054869684499314125 * base.variance, result.variance, 1e-16);
+}
+
 TEST(ValueAndVarianceTest, comparison) {
   ValueAndVariance a1{1.0, 2.0};
   ValueAndVariance a2{1.0, 3.0}; // same as a1 but difference variance
