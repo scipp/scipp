@@ -10,4 +10,6 @@
 namespace scipp::variable {
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable pow(const Variable &base,
                                                  const Variable &exponent);
-}
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable &
+pow(const Variable &base, const Variable &exponent, Variable &out);
+} // namespace scipp::variable

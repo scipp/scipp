@@ -44,7 +44,7 @@ template <class T> struct PowUnit {
 
 template <class V>
 Variable pow_handle_unit(V &&base, const Variable &exponent,
-                         const bool safe_for_in_place) {
+                         const bool in_place) {
   if (exponent.unit() != units::one) {
     throw except::UnitError("Powers must be dimensionless, got exponent.unit=" +
                             to_string(exponent.unit()) + ".");
@@ -61,26 +61,31 @@ Variable pow_handle_unit(V &&base, const Variable &exponent,
                                  to_string(exponent.dims()) + ".");
   }
 
-  Variable res =
-      safe_for_in_place ? std::forward<V>(base) : copy(std::forward<V>(base));
+  Variable res = in_place ? std::forward<V>(base) : copy(std::forward<V>(base));
   res.setUnit(units::one);
   pow_do_transform(res, exponent);
-  res.setUnit(core::CallDType<double, int64_t>::apply<PowUnit>(
+  res.setUnit(core::CallDType<double, float, int64_t, int32_t>::apply<PowUnit>(
       exponent.dtype(), base_unit, exponent));
   return res;
 }
 
-Variable pow_handle_dtype(const Variable &base, const Variable &exponent) {
+bool has_negative_value(const Variable &var) {
+  return astype(min(var), dtype<int64_t>, CopyPolicy::TryAvoid)
+             .value<int64_t>() < 0l;
+}
+
+template <class V>
+Variable pow_handle_dtype(V &&base, const Variable &exponent,
+                          const bool in_place) {
   if (!is_int(base.dtype())) {
-    return pow_handle_unit(base, exponent, false);
+    return pow_handle_unit(std::forward<V>(base), exponent, in_place);
   }
   if (is_int(exponent.dtype())) {
-    if (astype(min(exponent), dtype<int64_t>, CopyPolicy::TryAvoid)
-            .value<int64_t>() < 0l) {
+    if (has_negative_value(exponent)) {
       throw std::invalid_argument(
           "Integers to negative powers are not allowed.");
     }
-    return pow_handle_unit(base, exponent, false);
+    return pow_handle_unit(std::forward<V>(base), exponent, in_place);
   }
   // Base has integer dtype but exponent does not.
   return pow_handle_unit(astype(base, exponent.dtype()), exponent, true);
@@ -89,6 +94,12 @@ Variable pow_handle_dtype(const Variable &base, const Variable &exponent) {
 
 Variable pow(const Variable &base, const Variable &exponent) {
   return pow_handle_dtype(base.broadcast(merge(base.dims(), exponent.dims())),
-                          exponent);
+                          exponent, false);
+}
+
+Variable &pow(const Variable &base, const Variable &exponent, Variable &out) {
+  out = astype(base, out.dtype(), CopyPolicy::Always);
+  pow_handle_dtype(out, exponent, true);
+  return out;
 }
 } // namespace scipp::variable
