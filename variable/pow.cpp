@@ -3,7 +3,7 @@
 /// @file
 /// @author Jan-Lukas Wynen
 
-#include "scipp/variable/math.h"
+#include "scipp/variable/pow.h"
 
 #include "scipp/core/element/math.h"
 #include "scipp/core/tag_util.h"

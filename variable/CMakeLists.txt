@@ -47,7 +47,7 @@ set(SRC_FILES
     creation.cpp
     cumulative.cpp
     except.cpp
-    math.cpp
+    pow.cpp
     operations.cpp
     rebin.cpp
     reduction.cpp

@@ -10,7 +10,7 @@
 
 #include "scipp/core/element/math.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/comparison.h"
+#include "scipp/variable/pow.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
