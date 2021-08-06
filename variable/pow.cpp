@@ -34,7 +34,7 @@ template <class T> struct PowUnit {
     if constexpr (std::is_floating_point_v<T>) {
       if (static_cast<T>(static_cast<int64_t>(val)) != val) {
         throw except::UnitError("Powers of dimension-full variables must be "
-                                "integers or integer values floats. Got " +
+                                "integers or integer valued floats. Got " +
                                 std::to_string(val) + ".");
       }
     }
