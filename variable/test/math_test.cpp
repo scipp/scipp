@@ -183,14 +183,14 @@ TYPED_TEST(VariablePowTest, pow_dims_in_place) {
     auto out_scalar = makeVariable<O>(Dims{});
     auto out_x = makeVariable<O>(x);
     EXPECT_EQ(pow(base_scalar, exp_scalar, out_scalar).dims().ndim(), 0);
-    EXPECT_THROW_DISCARD(pow(base_x, exp_scalar, out_scalar), except::DimensionError);
+    EXPECT_THROW_DISCARD(pow(base_x, exp_scalar, out_scalar),
+                         except::DimensionError);
     EXPECT_EQ(pow(base_x, exp_scalar, out_x).dims(), x);
     if (base_unit == units::one) {
       EXPECT_THROW_DISCARD(pow(base_scalar, exp_x, out_scalar),
                            except::DimensionError);
-        EXPECT_EQ(pow(base_scalar, exp_x, out_x).dims(), x);
+      EXPECT_EQ(pow(base_scalar, exp_x, out_x).dims(), x);
     }
-
   }
 }
 

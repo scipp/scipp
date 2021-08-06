@@ -18,7 +18,8 @@ namespace scipp::variable {
 
 namespace {
 template <class V>
-Variable pow_do_transform(V &&base, const Variable &exponent, const bool in_place) {
+Variable pow_do_transform(V &&base, const Variable &exponent,
+                          const bool in_place) {
   if (!in_place) {
     return variable::transform(base, exponent, element::pow, "pow");
   } else {
