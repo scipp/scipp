@@ -91,43 +91,43 @@ of variances.)");
       .def_property_readonly("dtype", &Variable::dtype)
       .def(
           "__radd__", [](Variable &a, double &b) { return a + b * units::one; },
-          py::is_operator())
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__radd__", [](Variable &a, int &b) { return a + b * units::one; },
-          py::is_operator())
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rsub__", [](Variable &a, double &b) { return b * units::one - a; },
-          py::is_operator())
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rsub__", [](Variable &a, int &b) { return b * units::one - a; },
-          py::is_operator())
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rmul__",
           [](Variable &a, double &b) { return a * (b * units::one); },
-          py::is_operator())
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rmul__", [](Variable &a, int &b) { return a * (b * units::one); },
-          py::is_operator())
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rtruediv__",
           [](Variable &a, double &b) { return (b * units::one) / a; },
-          py::is_operator())
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rtruediv__",
           [](Variable &a, int &b) { return (b * units::one) / a; },
-          py::is_operator())
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rpow__",
           [](Variable &exponent, int64_t &base) {
             return pow(base * units::one, exponent);
           },
-          py::is_operator())
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rpow__",
           [](Variable &exponent, double &base) {
             return pow(base * units::one, exponent);
           },
-          py::is_operator())
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def("__sizeof__",
            [](const Variable &self) {
              return size_of(self, SizeofTag::ViewOnly);
