@@ -6,6 +6,7 @@
 #include "scipp/variable/pow.h"
 
 #include "scipp/core/element/math.h"
+#include "scipp/core/except.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/variable/astype.h"
 #include "scipp/variable/reduction.h"
@@ -17,13 +18,17 @@ namespace scipp::variable {
 
 namespace {
 template <class V>
-Variable pow_do_transform(V &&base, const Variable &exponent) {
-  if constexpr (std::is_const_v<std::remove_reference_t<V>>) {
+Variable pow_do_transform(V &&base, const Variable &exponent, const bool in_place) {
+  if (!in_place) {
     return variable::transform(base, exponent, element::pow, "pow");
   } else {
-    variable::transform_in_place(base, base, exponent, element::pow_in_place,
-                                 "pow");
-    return std::forward<V>(base);
+    if constexpr (std::is_const_v<std::remove_reference_t<V>>) {
+      return variable::transform(base, exponent, element::pow, "pow");
+    } else {
+      variable::transform_in_place(base, base, exponent, element::pow_in_place,
+                                   "pow");
+      return std::forward<V>(base);
+    }
   }
 }
 
@@ -52,7 +57,7 @@ Variable pow_handle_unit(V &&base, const Variable &exponent,
 
   const auto base_unit = base.unit();
   if (base_unit == units::one) {
-    return pow_do_transform(std::forward<V>(base), exponent);
+    return pow_do_transform(std::forward<V>(base), exponent, in_place);
   }
   if (exponent.dims().ndim() != 0) {
     throw except::DimensionError("Exponents must be scalar if the base is not "
@@ -63,7 +68,7 @@ Variable pow_handle_unit(V &&base, const Variable &exponent,
 
   Variable res = in_place ? std::forward<V>(base) : copy(std::forward<V>(base));
   res.setUnit(units::one);
-  pow_do_transform(res, exponent);
+  pow_do_transform(res, exponent, true);
   res.setUnit(core::CallDType<double, float, int64_t, int32_t>::apply<PowUnit>(
       exponent.dtype(), base_unit, exponent));
   return res;
@@ -98,7 +103,9 @@ Variable pow(const Variable &base, const Variable &exponent) {
 }
 
 Variable &pow(const Variable &base, const Variable &exponent, Variable &out) {
-  out = astype(base, out.dtype(), CopyPolicy::Always);
+  const auto target_dims = merge(base.dims(), exponent.dims());
+  core::expect::equals(target_dims, out.dims());
+  out = astype(base.broadcast(target_dims), out.dtype(), CopyPolicy::Always);
   pow_handle_dtype(out, exponent, true);
   return out;
 }
