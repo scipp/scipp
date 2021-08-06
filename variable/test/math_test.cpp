@@ -207,6 +207,18 @@ TEST(Variable, pow_value) {
   }
 }
 
+TEST(Variable, pow_value_and_variance) {
+  const auto base = makeVariable<double>(Dims{}, Values{4.0}, Variances{2.0});
+  const auto result = pow(base, int64_t{2} * units::one);
+  EXPECT_NEAR(result.value<double>(), 16.0, 1e-14);
+  EXPECT_NEAR(result.variance<double>(), 64.0 * base.variance<double>(), 1e-14);
+
+  const auto exponent_with_variance =
+      makeVariable<double>(Dims{}, Values{2.0}, Variances{2.0});
+  EXPECT_THROW_DISCARD(pow(base, exponent_with_variance),
+                       except::VariancesError);
+}
+
 TYPED_TEST(VariableMathTest, sqrt) {
   for (TypeParam x : {0.0, 1.23, 1.23456789, 3.45}) {
     for (auto [uin, uout] :
