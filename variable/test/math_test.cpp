@@ -77,12 +77,19 @@ TEST(Variable, pow_unit_float_exponent) {
                        except::UnitError);
   EXPECT_THROW_DISCARD(pow(int64_t{1} * units::m, 2.2 * units::one),
                        except::UnitError);
+
+  auto out = -1.0 * units::one;
+  EXPECT_NO_THROW_DISCARD(pow(1.0 * units::one, 2.2 * units::one, out));
+  EXPECT_THROW_DISCARD(pow(1.0 * units::m, 2.2 * units::one, out),
+                       except::UnitError);
 }
 
 template <typename T> class VariablePowTest : public ::testing::Test {};
 using PowTypes =
-    ::testing::Types<std::tuple<double, double>, std::tuple<double, int64_t>,
-                     std::tuple<int64_t, double>, std::tuple<int64_t, int64_t>>;
+    ::testing::Types<std::tuple<double, double>, std::tuple<double, float>,
+                     std::tuple<double, int64_t>, std::tuple<int64_t, double>,
+                     std::tuple<int64_t, int64_t>,
+                     std::tuple<int64_t, int32_t>>;
 TYPED_TEST_SUITE(VariablePowTest, PowTypes);
 
 TYPED_TEST(VariablePowTest, pow_unit) {
@@ -111,6 +118,18 @@ TYPED_TEST(VariablePowTest, pow_unit) {
   EXPECT_THROW_DISCARD(pow(base_one, exp_m), except::UnitError);
   EXPECT_THROW_DISCARD(pow(base_one, exp_s), except::UnitError);
   EXPECT_THROW_DISCARD(pow(base_s, exp_m), except::UnitError);
+}
+
+TYPED_TEST(VariablePowTest, pow_unit_in_place) {
+  using B = std::tuple_element_t<0, TypeParam>;
+  using E = std::tuple_element_t<1, TypeParam>;
+  using O = std::common_type_t<B, E>;
+
+  auto out = static_cast<O>(-1) * units::one;
+  auto ret =
+      pow(static_cast<B>(1) * units::m, static_cast<E>(2) * units::one, out);
+  EXPECT_EQ(out.unit(), units::m * units::m);
+  EXPECT_EQ(ret.unit(), units::m * units::m);
 }
 
 TYPED_TEST(VariablePowTest, pow_dims) {
@@ -148,6 +167,30 @@ TYPED_TEST(VariablePowTest, pow_dims) {
     EXPECT_THROW_DISCARD(
         pow(makeVariable<B>(Dims{Dim::X}, Shape{4}, base_unit), exp_x),
         except::DimensionError);
+  }
+}
+
+TYPED_TEST(VariablePowTest, pow_dims_in_place) {
+  using B = std::tuple_element_t<0, TypeParam>;
+  using E = std::tuple_element_t<1, TypeParam>;
+  using O = std::common_type_t<B, E>;
+  Dimensions x{{Dim::X, 2}};
+  for (auto &&base_unit : {units::one, units::m, units::s}) {
+    const auto base_scalar = makeVariable<B>(Dims{}, base_unit);
+    const auto base_x = makeVariable<B>(x, base_unit);
+    const auto exp_scalar = makeVariable<E>(Dims{});
+    const auto exp_x = makeVariable<E>(x);
+    auto out_scalar = makeVariable<O>(Dims{});
+    auto out_x = makeVariable<O>(x);
+    EXPECT_EQ(pow(base_scalar, exp_scalar, out_scalar).dims().ndim(), 0);
+    EXPECT_THROW_DISCARD(pow(base_x, exp_scalar, out_scalar), except::DimensionError);
+    EXPECT_EQ(pow(base_x, exp_scalar, out_x).dims(), x);
+    if (base_unit == units::one) {
+      EXPECT_THROW_DISCARD(pow(base_scalar, exp_x, out_scalar),
+                           except::DimensionError);
+        EXPECT_EQ(pow(base_scalar, exp_x, out_x).dims(), x);
+    }
+
   }
 }
 
@@ -205,6 +248,18 @@ TEST(Variable, pow_value) {
     EXPECT_NEAR(pow(3.0 * base_unit, int64_t{-4} * units::one).value<double>(),
                 1.0 / 81.0, 1e-12);
   }
+}
+
+TEST(Variable, pow_value_in_place) {
+  auto base = 3.0 * units::one;
+  const auto exponent = 2.0 * units::one;
+  auto out = -1.0 * units::one;
+  auto ret = pow(base, exponent, out);
+  EXPECT_NEAR(out.value<double>(), 9.0, 1e-15);
+  EXPECT_TRUE(ret.is_same(out));
+  ret = pow(base, exponent, base);
+  EXPECT_NEAR(base.value<double>(), 9.0, 1e-15);
+  EXPECT_TRUE(ret.is_same(base));
 }
 
 TEST(Variable, pow_value_and_variance) {
