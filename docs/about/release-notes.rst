@@ -17,6 +17,7 @@ Features
 * Add ``transform_coords`` for (multi-step) transformations based on existing coords, with support of event coords `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
 * Add ``from_pandas`` and ``from_xarray`` for conversion of pandas dataframes, xarray data arrays and dataset to scipp objects `#2054 <https://github.com/scipp/scipp/pull/2054>`_.
 * Added ``full`` and ``full_like`` variable creation functions `#2069 <https://github.com/scipp/scipp/pull/2069>`_.
+* Added a power function and support for the ``**`` operator `#2083 <https://github.com/scipp/scipp/pull/2083>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
