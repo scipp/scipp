@@ -29,7 +29,8 @@ constexpr auto pow = overloaded{
              std::tuple<double, int64_t>, std::tuple<int64_t, int64_t>>,
     transform_flags::expect_no_variance_arg<1>, dimensionless_unit_check_return,
     [](const auto &base, const auto &exponent) {
-      return numeric::pow(base, exponent);
+      using numeric::pow;
+      return pow(base, exponent);
     }};
 
 constexpr auto pow_in_place =
