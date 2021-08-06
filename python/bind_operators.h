@@ -170,6 +170,15 @@ template <class RHSSetup> struct OpBinder {
             return a;
           },
           py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      if constexpr (!(std::is_same_v<T, DataArray> ||
+                      std::is_same_v<Other, DataArray>)) {
+        c.def(
+            "__ipow__",
+            [](T &base, Other &exponent) {
+              return pow(base, RHSSetup{}(exponent), base);
+            },
+            py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      }
     }
   }
 
