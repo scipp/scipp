@@ -25,8 +25,9 @@ constexpr auto norm = overloaded{arg_list<Eigen::Vector3d>,
                                  [](const units::Unit &x) { return x; }};
 
 constexpr auto pow = overloaded{
-    arg_list<std::tuple<double, double>, std::tuple<double, int32_t>,
-             std::tuple<double, int64_t>, std::tuple<int64_t, int64_t>>,
+    arg_list<std::tuple<double, double>, std::tuple<double, float>,
+             std::tuple<double, int32_t>, std::tuple<double, int64_t>,
+             std::tuple<int64_t, int64_t>, std::tuple<int64_t, int32_t>>,
     transform_flags::expect_no_variance_arg<1>, dimensionless_unit_check_return,
     [](const auto &base, const auto &exponent) {
       using numeric::pow;
@@ -35,9 +36,11 @@ constexpr auto pow = overloaded{
 
 constexpr auto pow_in_place =
     overloaded{arg_list<std::tuple<double, double, double>,
+                        std::tuple<double, double, float>,
                         std::tuple<double, double, int32_t>,
                         std::tuple<double, double, int64_t>,
-                        std::tuple<int64_t, int64_t, int64_t>>,
+                        std::tuple<int64_t, int64_t, int64_t>,
+                        std::tuple<int64_t, int64_t, int32_t>>,
                transform_flags::expect_in_variance_if_out_variance,
                transform_flags::expect_no_variance_arg<2>,
                [](auto &out, const auto &base, const auto &exponent) {
