@@ -20,6 +20,7 @@ scipp_unary(math log10)
 scipp_unary(math reciprocal)
 scipp_unary(math sqrt)
 scipp_unary(math norm NO_OUT)
+scipp_binary(math pow SKIP_VARIABLE NO_OUT)
 scipp_binary(math dot NO_OUT)
 setup_scipp_category(math)
 
