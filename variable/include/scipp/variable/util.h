@@ -20,9 +20,13 @@ namespace scipp::variable {
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable islinspace(const Variable &var,
                                                         const Dim dim);
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT bool
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 issorted(const Variable &x, const Dim dim,
          const SortOrder order = SortOrder::Ascending);
+
+[[nodiscard]] SCIPP_VARIABLE_EXPORT bool
+allsorted(const Variable &x, const Dim dim,
+          const SortOrder order = SortOrder::Ascending);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable zip(const Variable &first,
                                                  const Variable &second);

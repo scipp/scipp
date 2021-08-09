@@ -20,7 +20,27 @@ def dot(x: VariableLike, y: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.dot, x, y)
 
 
-def issorted(x: _cpp.Variable, dim: str, order: Optional[str] = 'ascending') -> bool:
+def issorted(x: _cpp.Variable, dim: str, order: Optional[str] = 'ascending') -> VariableLike:
+    """
+    Check if the values of a variable are sorted.
+
+    - If ``order`` is 'ascending',
+      check if values are non-decreasing along ``dim``.
+    - If ``order`` is 'descending',
+      check if values are non-increasing along ``dim``.
+
+    :param x: Variable to check.
+    :param dim: Dimension along which order is checked.
+    :param order: Sorting order. Valid options are 'ascending' and
+      'descending'. Default is 'ascending'.
+    :return: Variable with value True if the variable values are
+      monotonously ascending or descending (depending on the
+      requested order), with value False otherwise.
+    """
+    return _call_cpp_func(_cpp.issorted, x, dim, order)
+
+
+def allsorted(x: _cpp.Variable, dim: str, order: Optional[str] = 'ascending') -> bool:
     """
     Check if the values of a variable are sorted.
 
@@ -36,7 +56,7 @@ def issorted(x: _cpp.Variable, dim: str, order: Optional[str] = 'ascending') -> 
     :return: True if the variable values are monotonously ascending or
       descending (depending on the requested order), False otherwise.
     """
-    return _call_cpp_func(_cpp.issorted, x, dim, order)
+    return _call_cpp_func(_cpp.allsorted, x, dim, order)
 
 
 def sort(x: VariableLike,

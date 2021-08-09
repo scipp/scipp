@@ -47,15 +47,15 @@ Variable islinspace(const Variable &var, const Dim dim) {
                    "islinspace");
 }
 
-/// Return true if variable values are sorted along given dim.
+/// Return a variable of bool, if variable values are sorted along given dim.
 ///
 /// If `order` is SortOrder::Ascending, checks if values are non-decreasing.
 /// If `order` is SortOrder::Descending, checks if values are non-increasing.
-bool issorted(const Variable &x, const Dim dim, const SortOrder order) {
+Variable issorted(const Variable &x, const Dim dim, const SortOrder order) {
   const auto size = x.dims()[dim];
   if (size < 2)
-    return true;
-  auto out = makeVariable<bool>(Values{true});
+    return makeVariable<bool>(true);
+  auto out = makeVariable<bool>(true);
   if (order == SortOrder::Ascending)
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
@@ -64,6 +64,15 @@ bool issorted(const Variable &x, const Dim dim, const SortOrder order) {
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
                         core::element::issorted_nonascending, "issorted");
+  return out;
+}
+
+/// Return true if variable values are sorted along given dim.
+///
+/// If `order` is SortOrder::Ascending, checks if values are non-decreasing.
+/// If `order` is SortOrder::Descending, checks if values are non-increasing.
+bool allsorted(const Variable &x, const Dim dim, const SortOrder order) {
+  auto out = issorted(x, dim, order);
   return out.value<bool>();
 }
 
