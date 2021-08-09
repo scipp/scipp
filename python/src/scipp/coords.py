@@ -6,6 +6,7 @@ import inspect
 import warnings
 from typing import Union, List, Dict, Tuple, Callable
 from . import Variable, DataArray, Dataset, bins, VariableError
+from .utils.dimensions import find_bin_edges
 
 
 def _argnames(func):
