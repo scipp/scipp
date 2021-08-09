@@ -274,7 +274,7 @@ public:
         // every input event. This is unrelated and varies independently,
         // depending on parameters of the input.
         if (bin_coords.count(dim) && m_offsets.dims().empty() &&
-            issorted(bin_coords.at(dim), dim)) {
+            allsorted(bin_coords.at(dim), dim)) {
           const auto &bin_coord = bin_coords.at(dim);
           const bool histogram =
               bin_coord.dims()[dim] == indices.dims()[dim] + 1;
@@ -530,7 +530,7 @@ void validate_bin_args(const DataArray &array,
     if (edge.dims()[dim] < 2)
       throw except::BinEdgeError("Not enough bin edges in dim " +
                                  to_string(dim) + ". Need at least 2.");
-    if (!issorted(edge, dim))
+    if (!allsorted(edge, dim))
       throw except::BinEdgeError("Bin edges in dim " + to_string(dim) +
                                  " must be sorted.");
   }

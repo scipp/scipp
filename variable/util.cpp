@@ -54,8 +54,8 @@ Variable islinspace(const Variable &var, const Dim dim) {
 Variable issorted(const Variable &x, const Dim dim, const SortOrder order) {
   const auto size = x.dims()[dim];
   if (size < 2)
-    return makeVariable<bool>(true);
-  auto out = makeVariable<bool>(true);
+    return makeVariable<bool>(Values{true});
+  auto out = makeVariable<bool>(Values{true});
   if (order == SortOrder::Ascending)
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
