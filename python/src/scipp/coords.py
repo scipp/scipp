@@ -68,6 +68,24 @@ def _produce_coord(obj, name):
     return obj.coords[name]
 
 
+def _move_to_back(lis, val):
+    lis.remove(val)
+    lis.append(val)
+    return lis
+
+
+def _store_coord(obj, name, coord):
+    edges = find_bin_edges(coord, obj)
+    if not edges:
+        obj.coords[name] = coord
+    elif len(edges) == 1:
+        obj.coords[name] = coord.transpose(_move_to_back(coord.dims, edges[0]))
+    else:
+        raise NotImplementedError(
+            'Coordinates with more than one bin-edge dimension are not supported. '
+            f'Got coord {coord} with bin edges {edges}.')
+
+
 class CoordTransform:
     Graph = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 
@@ -129,7 +147,7 @@ class CoordTransform:
             out = {name: out}
         self._rename.setdefault(dim, []).extend(out.keys())
         for key, coord in out.items():
-            self.obj.coords[key] = coord
+            _store_coord(self.obj, key, coord)
         if self.obj.bins is not None:
             if isinstance(out_bins, Variable):
                 out_bins = {name: out_bins}
