@@ -915,3 +915,4 @@ def test_sort():
     var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.sort, x=var, dim='x', order='ascending')
     assert_export(sc.issorted, x=var, dim='x', order='ascending')
+    assert_export(sc.allsorted, x=var, dim='x', order='ascending')

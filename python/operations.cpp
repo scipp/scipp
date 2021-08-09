@@ -83,6 +83,7 @@ void init_operations(py::module &m) {
   bind_sort_dim<DataArray>(m);
   bind_sort_dim<Dataset>(m);
   bind_issorted(m);
+  bind_allsorted(m);
 
   m.def(
       "get_slice_params",
