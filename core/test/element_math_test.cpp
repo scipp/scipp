@@ -48,9 +48,9 @@ TEST(ElementNormTest, value) {
 }
 
 TEST(ElementPowTest, unit) {
-  // element::pow cannot handle units itself as that requires the unit of the
-  // base but the *value* of the exponent. This does not fit into the usual
-  // transform framework.
+  // element::pow cannot handle units itself as that requires the *value* of the
+  // exponent and not its unit. This does not fit into the usual transform
+  // framework.
   EXPECT_EQ(element::pow(units::one, units::one), units::one);
   EXPECT_THROW_DISCARD(element::pow(units::one, units::m), except::UnitError);
   EXPECT_THROW_DISCARD(element::pow(units::s, units::one), except::UnitError);
