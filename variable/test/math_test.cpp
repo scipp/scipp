@@ -216,7 +216,8 @@ TEST(Variable, pow_negative_exponent) {
                        std::invalid_argument);
   EXPECT_NO_THROW_DISCARD(pow(
       int_base, makeVariable<int64_t>(Dims{Dim::X}, Shape{2}, Values{3, 4})));
-  for (auto &&values : {Values{-3, 4}, Values{-3, -4}, Values{3, -4}}) {
+  for (auto &&values :
+       {std::vector{-3, 4}, std::vector{-3, -4}, std::vector{3, -4}}) {
     EXPECT_THROW_DISCARD(
         pow(int_base,
             makeVariable<int64_t>(Dims{Dim::X}, Shape{2}, Values(values))),
