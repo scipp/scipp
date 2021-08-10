@@ -266,6 +266,7 @@ TEST(Variable, pow_value_and_variance) {
   const auto base = makeVariable<double>(Dims{}, Values{4.0}, Variances{2.0});
   const auto result = pow(base, int64_t{2} * units::one);
   EXPECT_NEAR(result.value<double>(), 16.0, 1e-14);
+  // pow.var = (2 * (base.val ^ 1)) ^ 2 * base.var
   EXPECT_NEAR(result.variance<double>(), 64.0 * base.variance<double>(), 1e-14);
 
   const auto exponent_with_variance =
