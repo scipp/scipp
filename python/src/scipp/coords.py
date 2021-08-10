@@ -299,7 +299,7 @@ def show_graph(graph, size: str = None, simplified: bool = False):
     :param size: Size forwarded to graphviz, must be a string, "width,height"
                  or "size". In the latter case, the same value is used for
                  both width and height.
-    :param simplified: If ``True``, do not show the conversion functions but
+    :param simplified: If ``True``, do not show the conversion functions,
                        only the potential input and output coordinates.
     """
     return Graph(graph).show(size=size, simplified=simplified)
