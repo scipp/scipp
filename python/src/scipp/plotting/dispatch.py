@@ -3,11 +3,7 @@
 # @author Neil Vaytet
 
 
-def dispatch(scipp_obj_dict,
-             ndim=0,
-             projection=None,
-             mpl_line_params=None,
-             **kwargs):
+def dispatch(scipp_obj_dict, ndim=0, projection=None, mpl_line_params=None, **kwargs):
     """
     Function to automatically dispatch the dict of DataArrays to the
     appropriate plotting function, depending on the number of dimensions.
@@ -27,9 +23,7 @@ def dispatch(scipp_obj_dict,
 
     if projection == "1d":
         from .plot1d import plot1d
-        return plot1d(scipp_obj_dict,
-                      mpl_line_params=mpl_line_params,
-                      **kwargs)
+        return plot1d(scipp_obj_dict, mpl_line_params=mpl_line_params, **kwargs)
     elif projection == "2d":
         from .plot2d import plot2d
         return plot2d(scipp_obj_dict, **kwargs)

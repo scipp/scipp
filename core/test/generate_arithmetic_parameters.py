@@ -56,9 +56,8 @@ def main():
         outf.write('namespace {\n')
 
         name_and_dtype = (("int", int), ("float", float))
-        for (a_name, a_dtype), (b_name,
-                                b_dtype) in product(name_and_dtype,
-                                                    name_and_dtype):
+        for (a_name, a_dtype), (b_name, b_dtype) in product(name_and_dtype,
+                                                            name_and_dtype):
             outf.write('template <class Params>\n')
             outf.write('constexpr inline auto '
                        f'division_params_{a_name}_{b_name} = std::array{{\n')

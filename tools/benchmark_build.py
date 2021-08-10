@@ -63,8 +63,7 @@ TOUCH = [
 ##############################
 
 # apply default config
-SRCDIR = Path(
-    Path(__file__).resolve().parent.parent if SRCDIR is None else SRCDIR)
+SRCDIR = Path(Path(__file__).resolve().parent.parent if SRCDIR is None else SRCDIR)
 
 
 def make_dirs(base_dir):
@@ -88,12 +87,12 @@ def grope(paths):
 
 def configure(case, build_dir, install_dir):
     cmake_args = [
-        f'-D{key}={val}' for key, val in chain(COMMON_CMAKE_ARGS.items(),
-                                               case.cmake_args.items()) if val
+        f'-D{key}={val}'
+        for key, val in chain(COMMON_CMAKE_ARGS.items(), case.cmake_args.items()) if val
     ]
     cmake_args.extend([
         f'-DCMAKE_INSTALL_PREFIX={install_dir}',
-        f'-DPYTHON_EXECUTABLE={sys.executable}',
+        f'-DPython_EXECUTABLE={sys.executable}',
         str(SRCDIR)
     ])
 
@@ -119,8 +118,7 @@ class Times:
         time_pattern = re.compile(r'(real|user|sys)\s+(\d+)m(\d+)[,.]?(\d*)s')
         times_dict = dict()
         for line in msg.rsplit(
-                '\n', 10
-        )[1:]:  # do not look at all of the output, it can get very long
+                '\n', 10)[1:]:  # do not look at all of the output, it can get very long
             match = time_pattern.match(line)
             if match:
                 # Truncate sub second results, those will not be reliable.
@@ -156,14 +154,13 @@ def build(case, build_dir):
 def report(results):
     print('Result:\n')
     results = sorted(sorted(results, key=lambda t: t[0]),
-                     key=lambda t: ' '.join(''
-                                            if t[1] == 'clean' else str(t[1])))
+                     key=lambda t: ' '.join('' if t[1] == 'clean' else str(t[1])))
     printed_names = False
     for touch, group in groupby(results, key=lambda t: t[1]):
         names, _, times = zip(*group)
         if not printed_names:
-            print('                      ' +
-                  '  '.join(f'{name:20s}' for name in names) + '\n')
+            print('                      ' + '  '.join(f'{name:20s}'
+                                                       for name in names) + '\n')
             printed_names = True
         if touch:
             for path in touch[:-1]:
@@ -174,8 +171,8 @@ def report(results):
             f'U{time.user.seconds // 60:2d}m{time.user.seconds % 60:02d}s'
             for time in times
         ]
-        print(f'{str(touch)[-20::]:20s}  ' +
-              '  '.join(f'{time:20s}' for time in time_strs) + '\n')
+        print(f'{str(touch)[-20::]:20s}  ' + '  '.join(f'{time:20s}'
+                                                       for time in time_strs) + '\n')
 
 
 def main():

@@ -56,10 +56,7 @@ class PlotModel:
             # TODO for the 3d scatter plot this is problematic: we never
             # touch any of the pos dims, so we don't want to replace coords
             # should model only consider "other" data dims?
-            coord_list = {
-                dim: self._axis_coord(array, dim)
-                for dim in array.dims
-            }
+            coord_list = {dim: self._axis_coord(array, dim) for dim in array.dims}
             self.data_arrays[name] = sc.DataArray(data=array.data,
                                                   coords=coord_list,
                                                   masks=to_dict(array.masks))

@@ -4,8 +4,7 @@
 import pytest
 import scipp as sc
 import numpy as np
-from .nexus_helpers import (find_by_nx_class,
-                            in_memory_nexus_file_with_event_data)
+from .nexus_helpers import (find_by_nx_class, in_memory_nexus_file_with_event_data)
 
 
 def test_dense_data_properties_are_none():
@@ -123,13 +122,11 @@ def test_bins_arithmetic():
     var = sc.Variable(dims=['event'], values=[1.0, 2.0, 3.0, 4.0])
     table = sc.DataArray(var, coords={'x': var})
     binned = sc.bin(table, edges=[sc.Variable(dims=['x'], values=[1.0, 5.0])])
-    hist = sc.DataArray(
-        data=sc.Variable(dims=['x'], values=[1.0, 2.0]),
-        coords={'x': sc.Variable(dims=['x'], values=[1.0, 3.0, 5.0])})
+    hist = sc.DataArray(data=sc.Variable(dims=['x'], values=[1.0, 2.0]),
+                        coords={'x': sc.Variable(dims=['x'], values=[1.0, 3.0, 5.0])})
     binned.bins *= sc.lookup(func=hist, dim='x')
-    assert sc.identical(
-        binned.events.data,
-        sc.Variable(dims=['event'], values=[1.0, 2.0, 6.0, 8.0]))
+    assert sc.identical(binned.events.data,
+                        sc.Variable(dims=['event'], values=[1.0, 2.0, 6.0, 8.0]))
 
 
 def test_load_events_bins():
@@ -139,24 +136,19 @@ def test_load_events_bins():
         # Load only the first event data group we found
         event_group = event_data_groups[0]
         event_index_np = event_group["event_index"][...]
-        event_time_offset = sc.Variable(
-            dims=['event'], values=event_group["event_time_offset"][...])
-        event_id = sc.Variable(dims=['event'],
-                               values=event_group["event_id"][...])
-        event_index = sc.Variable(dims=['pulse'],
-                                  values=event_index_np,
-                                  dtype=np.int64)
-        event_time_zero = sc.Variable(
-            dims=['pulse'], values=event_group["event_time_zero"][...])
+        event_time_offset = sc.Variable(dims=['event'],
+                                        values=event_group["event_time_offset"][...])
+        event_id = sc.Variable(dims=['event'], values=event_group["event_id"][...])
+        event_index = sc.Variable(dims=['pulse'], values=event_index_np, dtype=np.int64)
+        event_time_zero = sc.Variable(dims=['pulse'],
+                                      values=event_group["event_time_zero"][...])
 
     # Calculate the end index for each pulse
     # The end index for a pulse is the start index of the next pulse
     end_indices = event_index_np.astype(np.int64)
     end_indices = np.roll(end_indices, -1)
     end_indices[-1] = event_id.shape[0]
-    end_indices = sc.Variable(dims=['pulse'],
-                              values=end_indices,
-                              dtype=np.int64)
+    end_indices = sc.Variable(dims=['pulse'], values=end_indices, dtype=np.int64)
 
     # Weights are not stored in NeXus, so use 1s
     weights = sc.Variable(dims=['event'],
@@ -182,26 +174,29 @@ def test_load_events_bins():
 def test_bins_sum_with_masked_buffer():
     N = 5
     values = np.ones(N)
-    data = sc.DataArray(
-        data=sc.Variable(dims=['position'],
-                         unit=sc.units.counts,
-                         values=values,
-                         variances=values),
-        coords={
-            'position':
-            sc.Variable(dims=['position'],
-                        values=['site-{}'.format(i) for i in range(N)]),
-            'x':
-            sc.Variable(dims=['position'], unit=sc.units.m, values=[0.2] * 5),
-            'y':
-            sc.Variable(dims=['position'], unit=sc.units.m, values=[0.2] * 5)
-        },
-        masks={
-            'test-mask':
-            sc.Variable(dims=['position'],
-                        unit=sc.units.one,
-                        values=[True, False, True, False, True])
-        })
+    data = sc.DataArray(data=sc.Variable(dims=['position'],
+                                         unit=sc.units.counts,
+                                         values=values,
+                                         variances=values),
+                        coords={
+                            'position':
+                            sc.Variable(dims=['position'],
+                                        values=['site-{}'.format(i) for i in range(N)]),
+                            'x':
+                            sc.Variable(dims=['position'],
+                                        unit=sc.units.m,
+                                        values=[0.2] * 5),
+                            'y':
+                            sc.Variable(dims=['position'],
+                                        unit=sc.units.m,
+                                        values=[0.2] * 5)
+                        },
+                        masks={
+                            'test-mask':
+                            sc.Variable(dims=['position'],
+                                        unit=sc.units.one,
+                                        values=[True, False, True, False, True])
+                        })
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
     binned = sc.bin(data, edges=[xbins])
     assert binned.bins.sum().values[0] == 2

@@ -55,8 +55,7 @@ class PlotController:
         self.panel = panel
         self.profile = profile
         if profile is not None:
-            self._profile_view = PlotView1d(figure=profile,
-                                            formatters=view.formatters)
+            self._profile_view = PlotView1d(figure=profile, formatters=view.formatters)
             self._profile_model.dims = self._dims[:-len(self.model.dims)]
         self.view = view
 
@@ -131,8 +130,7 @@ class PlotController:
         Transpose the displayed axes.
         """
         # Keep current zoom state
-        self.update_axes(dims=self.model.dims[::-1],
-                         slices=self.view.current_limits)
+        self.update_axes(dims=self.model.dims[::-1], slices=self.view.current_limits)
 
     def toggle_dim_scale(self, dim):
         """
@@ -315,8 +313,7 @@ class PlotController:
         for dim in self._profile_model.dims:
             del slices[dim]
         new_values = self._profile_model.update_data(slices=slices)
-        self._profile_view.update_data(new_values,
-                                       mask_info=self.get_masks_info())
+        self._profile_view.update_data(new_values, mask_info=self.get_masks_info())
 
     def redraw(self):
         """

@@ -23,9 +23,7 @@ def test_variable_0D_vector_3_float64_from_numpy():
 
 
 def test_variable_1D_vector_3_float64_from_list():
-    var = sc.vectors(dims=['x'],
-                     values=[[1, 2, 3], [4, 5, 6]],
-                     unit=sc.units.m)
+    var = sc.vectors(dims=['x'], values=[[1, 2, 3], [4, 5, 6]], unit=sc.units.m)
     assert len(var.values) == 2
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
     np.testing.assert_array_equal(var.values[1], [4, 5, 6])
@@ -69,14 +67,11 @@ def test_vector_elements():
                      values=np.array([[1, 2, 3], [4, 5, 6]]),
                      unit=sc.units.m)
     assert sc.identical(
-        var.fields.x,
-        sc.array(dims=['x'], values=np.array([1., 4.]), unit=sc.units.m))
+        var.fields.x, sc.array(dims=['x'], values=np.array([1., 4.]), unit=sc.units.m))
     assert sc.identical(
-        var.fields.y,
-        sc.array(dims=['x'], values=np.array([2., 5.]), unit=sc.units.m))
+        var.fields.y, sc.array(dims=['x'], values=np.array([2., 5.]), unit=sc.units.m))
     assert sc.identical(
-        var.fields.z,
-        sc.array(dims=['x'], values=np.array([3., 6.]), unit=sc.units.m))
+        var.fields.z, sc.array(dims=['x'], values=np.array([3., 6.]), unit=sc.units.m))
 
 
 def test_vector_elements_setter():
@@ -84,26 +79,20 @@ def test_vector_elements_setter():
                      values=np.array([[1, 2, 3], [4, 5, 6]]),
                      unit=sc.units.m)
 
-    var.fields.x = sc.array(dims=['x'],
-                            values=np.array([7., 8.]),
-                            unit=sc.units.m)
+    var.fields.x = sc.array(dims=['x'], values=np.array([7., 8.]), unit=sc.units.m)
     expected = sc.vectors(dims=['x'],
                           values=np.array([[7, 2, 3], [8, 5, 6]]),
                           unit=sc.units.m)
     assert sc.identical(var, expected)
 
-    var.fields.y = sc.array(dims=['x'],
-                            values=np.array([7., 8.]),
-                            unit=sc.units.m)
+    var.fields.y = sc.array(dims=['x'], values=np.array([7., 8.]), unit=sc.units.m)
     assert not sc.identical(var, expected)
     expected = sc.vectors(dims=['x'],
                           values=np.array([[7, 7, 3], [8, 8, 6]]),
                           unit=sc.units.m)
     assert sc.identical(var, expected)
 
-    var.fields.z = sc.array(dims=['x'],
-                            values=np.array([7., 8.]),
-                            unit=sc.units.m)
+    var.fields.z = sc.array(dims=['x'], values=np.array([7., 8.]), unit=sc.units.m)
     assert not sc.identical(var, expected)
     expected = sc.vectors(dims=['x'],
                           values=np.array([[7, 7, 7], [8, 8, 8]]),
@@ -155,12 +144,9 @@ def test_variable_1D_matrix_from_numpy():
     ])
     var = sc.matrices(dims=['x'], values=data, unit=sc.units.us)
     assert len(var.values) == 3
-    np.testing.assert_array_equal(var.values[0],
-                                  [[0, 1, 2], [3, 4, 5], [6, 7, 8]])
-    np.testing.assert_array_equal(var.values[1],
-                                  [[5, 6, 7], [8, 9, 10], [11, 12, 13]])
-    np.testing.assert_array_equal(var.values[2],
-                                  [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    np.testing.assert_array_equal(var.values[0], [[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+    np.testing.assert_array_equal(var.values[1], [[5, 6, 7], [8, 9, 10], [11, 12, 13]])
+    np.testing.assert_array_equal(var.values[2], [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     assert var.dims == ['x']
     assert var.dtype == sc.dtype.matrix_3_float64
     assert var.unit == sc.units.us
@@ -185,36 +171,28 @@ def test_set_matrices_values():
 
 
 def test_matrix_elements():
-    m = sc.matrices(dims=['x'],
-                    values=np.arange(18).reshape(2, 3, 3),
-                    unit=sc.units.m)
+    m = sc.matrices(dims=['x'], values=np.arange(18).reshape(2, 3, 3), unit=sc.units.m)
     f = m.fields
     elems = [f.xx, f.xy, f.xz, f.yx, f.yy, f.yz, f.zx, f.zy, f.zz]
     offsets = range(9)
     for elem, offset in zip(elems, offsets):
         assert sc.identical(
             elem,
-            sc.array(dims=['x'],
-                     values=np.array([0., 9.]) + offset,
-                     unit=sc.units.m))
+            sc.array(dims=['x'], values=np.array([0., 9.]) + offset, unit=sc.units.m))
 
 
 def test_matrix_elements_setter():
     values = np.arange(18).reshape(2, 3, 3)
     m = sc.matrices(dims=['x'], values=values, unit=sc.units.m)
 
-    m.fields.xx = sc.array(dims=['x'],
-                           values=np.array([1., 1.]),
-                           unit=sc.units.m)
+    m.fields.xx = sc.array(dims=['x'], values=np.array([1., 1.]), unit=sc.units.m)
     expected = sc.matrices(dims=['x'], values=values, unit=sc.units.m)
     assert not sc.identical(m, expected)
     values[:, 0, 0] = 1
     expected = sc.matrices(dims=['x'], values=values, unit=sc.units.m)
     assert sc.identical(m, expected)
 
-    m.fields.yz = sc.array(dims=['x'],
-                           values=np.array([1., 1.]),
-                           unit=sc.units.m)
+    m.fields.yz = sc.array(dims=['x'], values=np.array([1., 1.]), unit=sc.units.m)
     assert not sc.identical(m, expected)
     values[:, 1, 2] = 1
     expected = sc.matrices(dims=['x'], values=values, unit=sc.units.m)

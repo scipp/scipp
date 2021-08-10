@@ -81,8 +81,8 @@ class PlotFigure1d(PlotFigure):
         if self.grid:
             self.ax.grid()
 
-        self.ax.set_xlabel(self._formatters['x']['label']
-                           if self.xlabel is None else self.xlabel)
+        self.ax.set_xlabel(
+            self._formatters['x']['label'] if self.xlabel is None else self.xlabel)
 
         self.ax.xaxis.set_major_locator(self.axlocator['x'][scale])
         self.ax.xaxis.set_major_formatter(self.axformatter['x'][scale])
@@ -115,20 +115,19 @@ class PlotFigure1d(PlotFigure):
             label = name
 
         if hist:
-            line.data = self.ax.step([1, 2], [1, 2],
-                                     label=label,
-                                     zorder=10,
-                                     picker=self.picker,
-                                     **{
-                                         key: line.mpl_params[key]
-                                         for key in ["color", "linewidth"]
-                                     })[0]
+            line.data = self.ax.step(
+                [1, 2], [1, 2],
+                label=label,
+                zorder=10,
+                picker=self.picker,
+                **{key: line.mpl_params[key]
+                   for key in ["color", "linewidth"]})[0]
             for m in masks:
-                line.masks[m] = self.ax.step(
-                    [1, 2], [1, 2],
-                    linewidth=line.mpl_params["linewidth"] * 3.0,
-                    color=self._mask_color,
-                    zorder=9)[0]
+                line.masks[m] = self.ax.step([1, 2], [1, 2],
+                                             linewidth=line.mpl_params["linewidth"] *
+                                             3.0,
+                                             color=self._mask_color,
+                                             zorder=9)[0]
                 # Abuse a mostly unused property `gid` of Line2D to
                 # identify the line as a mask. We set gid to `onaxes`.
                 # This is used by the profile viewer in the 2D plotter
@@ -143,14 +142,13 @@ class PlotFigure1d(PlotFigure):
                                      picker=self.picker,
                                      **line.mpl_params)[0]
             for m in masks:
-                line.masks[m] = self.ax.plot(
-                    [1, 2], [1, 2],
-                    zorder=11,
-                    mec=self._mask_color,
-                    mfc="None",
-                    mew=3.0,
-                    linestyle="none",
-                    marker=line.mpl_params["marker"])[0]
+                line.masks[m] = self.ax.plot([1, 2], [1, 2],
+                                             zorder=11,
+                                             mec=self._mask_color,
+                                             mfc="None",
+                                             mew=3.0,
+                                             linestyle="none",
+                                             marker=line.mpl_params["marker"])[0]
                 line.masks[m].set_gid("onaxes")
 
         if self.picker:
@@ -351,8 +349,7 @@ class PlotFigure1d(PlotFigure):
         """
         Only display legend if there is least 1 line in the plot.
         """
-        return self.legend["show"] and len(
-            self.ax.get_legend_handles_labels()[1]) > 0
+        return self.legend["show"] and len(self.ax.get_legend_handles_labels()[1]) > 0
 
     def toggle_norm(self, norm=None, vmin=None, vmax=None):
         """

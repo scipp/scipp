@@ -10,8 +10,7 @@ from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
-def position(x: _cpp.Variable, y: _cpp.Variable,
-             z: _cpp.Variable) -> _cpp.Variable:
+def position(x: _cpp.Variable, y: _cpp.Variable, z: _cpp.Variable) -> _cpp.Variable:
     """Element-wise zip functionality to produce a 3 element vector.
 
     :param x: Variable containing x components.
@@ -32,5 +31,4 @@ def rotation_matrix_from_quaternion_coeffs(
     :raises: If the input size is not 4.
     :return: 3x3 rotation matrix
     """
-    return _call_cpp_func(_cpp.geometry.rotation_matrix_from_quaternion_coeffs,
-                          value)
+    return _call_cpp_func(_cpp.geometry.rotation_matrix_from_quaternion_coeffs, value)
