@@ -100,3 +100,42 @@ This is invisible from the outside but reduces the loop lengths in both ``ViewIn
 
 Contiguous layouts are identified by ``delta[dim] == 0 and strides[dim] != 0`` (with ``dim == y`` in this case).
 The condition on strides is required to support broadcasting where the extra dimension needs to be retained.
+
+
+MultiIndex
+----------
+
+``MultiIndex`` is used by ``transform`` to iterate over all inputs and outputs at the same time.
+It functions in a similar way to ``ViewIndex`` but also supports iteration over multiple variables
+as well as binned data.
+The handling of the latter is described in `Binned Data`_.
+
+In contrast to ``ViewIndex``, ``MultiIndex`` does not use ``delta`` but instead computes the step lengths
+in the various ``increment_*`` functions on the fly from ``m_strides`` and ``m_shape``.
+This is because ``delta`` would need to be recomputed for every bin.
+
+``MultiIndex::m_data_index`` corresponds to ``ViewIndex::m_memory_index``.
+But there is no equivalent of ``ViewIndex::m_view_index`` as that is not required by ``transform``.
+
+Similarly to ``ViewIndex``, ``MultiIndex`` flattens dimensions during construction but only
+if the corresponding memory layout is contiguous in all operands.
+Iteration functions in much the same way as described in `Incrementing`_ above.
+
+.. image:: ../../images/multi_dimensional_indexing/multi_index_dense_setups.svg
+  :width: 640
+  :alt: Example setups of MultiIndex with dense data
+
+∅
+
+
+Binned Data
+^^^^^^^^^^^
+
+.. image:: ../../images/multi_dimensional_indexing/multi_index_binned_1d_setups.svg
+  :width: 640
+  :alt: Example setups of MultiIndex with data with 1 dimensional bins
+
+
+.. image:: ../../images/multi_dimensional_indexing/multi_index_binned_2d_setups.svg
+  :width: 640
+  :alt: Example setups of MultiIndex with data with 2 dimensional bins
