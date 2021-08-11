@@ -107,10 +107,12 @@ def test_coords():
 
 def test_masks():
     da = make_dataarray()
-    da.masks['mask1'] = sc.Variable(dims=['x'],
-                                    values=np.array([False, True], dtype=bool))
+    mask = sc.Variable(dims=['x'], values=np.array([False, True], dtype=bool))
+    da.masks['mask1'] = mask
     assert len(dict(da.masks)) == 1
     assert 'mask1' in da.masks
+    assert sc.identical(da.masks.pop('mask1'), mask)
+    assert (len(dict(da.masks))) == 0
 
 
 def test_name():

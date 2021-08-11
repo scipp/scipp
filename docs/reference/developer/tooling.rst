@@ -14,7 +14,7 @@ Note: Ubuntu users can use the `Kitware Repo <https://apt.kitware.com/>`_ to obt
 Compilers
 ~~~~~~~~~
 
-- GCC >= 7
+- GCC >= 9
 - LLVM Clang >= 7
 - XCode >= 10.2
 

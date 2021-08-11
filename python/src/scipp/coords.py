@@ -6,6 +6,7 @@ import inspect
 import warnings
 from typing import Union, List, Dict, Tuple, Callable
 from . import Variable, DataArray, Dataset, bins, VariableError
+from .utils.dimensions import find_bin_edges
 
 
 def _argnames(func):
@@ -32,7 +33,7 @@ class Graph:
     def __contains__(self, name):
         return name in self._graph
 
-    def show(self, size=None):
+    def show(self, size=None, simplified=False):
         try:
             from graphviz import Digraph
         except ImportError:
@@ -45,9 +46,12 @@ class Graph:
             if isinstance(producer, str):  # rename
                 dot.edge(producer, output)
             else:
-                name = f'{producer.__name__}(...)'
-                dot.node(name, shape='ellipse', style='filled', color='lightgrey')
-                dot.edge(name, output)
+                if not simplified:
+                    name = f'{producer.__name__}(...)'
+                    dot.node(name, shape='ellipse', style='filled', color='lightgrey')
+                    dot.edge(name, output)
+                else:
+                    name = output
                 argnames = _argnames(producer)
                 for arg in argnames:
                     dot.edge(arg, name)
@@ -66,6 +70,28 @@ def _produce_coord(obj, name):
         obj.coords[name] = obj.attrs[name]
         del obj.attrs[name]
     return obj.coords[name]
+
+
+def _move_to_back(lis, val):
+    lis.remove(val)
+    lis.append(val)
+    return lis
+
+
+def _move_bin_edge_to_innermost(var, edge_dim):
+    return var.transpose(_move_to_back(var.dims, edge_dim))
+
+
+def _store_coord(obj, name, coord):
+    edges = find_bin_edges(coord, obj)
+    if not edges:
+        obj.coords[name] = coord
+    elif len(edges) == 1:
+        obj.coords[name] = _move_bin_edge_to_innermost(coord, edges[0])
+    else:
+        raise NotImplementedError(
+            'Coordinates with more than one bin-edge dimension are not supported. '
+            f'Got coord {coord} with bin edges {edges}.')
 
 
 class CoordTransform:
@@ -129,7 +155,7 @@ class CoordTransform:
             out = {name: out}
         self._rename.setdefault(dim, []).extend(out.keys())
         for key, coord in out.items():
-            self.obj.coords[key] = coord
+            _store_coord(self.obj, key, coord)
         if self.obj.bins is not None:
             if isinstance(out_bins, Variable):
                 out_bins = {name: out_bins}
@@ -267,7 +293,7 @@ def transform_coords(x: Union[DataArray, Dataset],
         return _transform_dataset(x, coords=coords, graph=graph, kwargs=kwargs)
 
 
-def show_graph(graph, size: str = None):
+def show_graph(graph, size: str = None, simplified: bool = False):
     """
     Show graphical representation of a graph as required by
     :py:func:`transform_coords`
@@ -277,5 +303,7 @@ def show_graph(graph, size: str = None):
     :param size: Size forwarded to graphviz, must be a string, "width,height"
                  or "size". In the latter case, the same value is used for
                  both width and height.
+    :param simplified: If ``True``, do not show the conversion functions,
+                       only the potential input and output coordinates.
     """
-    return Graph(graph).show(size=size)
+    return Graph(graph).show(size=size, simplified=simplified)

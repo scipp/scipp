@@ -146,6 +146,15 @@ Value Dict<Key, Value>::extract(const key_type &key) {
 }
 
 template <class Key, class Value>
+Value Dict<Key, Value>::extract(const key_type &key,
+                                const mapped_type &default_value) {
+  if (contains(key)) {
+    return extract(key);
+  }
+  return default_value;
+}
+
+template <class Key, class Value>
 Dict<Key, Value> Dict<Key, Value>::slice(const Slice &params) const {
   const bool readonly = true;
   return {m_sizes.slice(params), slice_map(m_sizes, m_items, params), readonly};
