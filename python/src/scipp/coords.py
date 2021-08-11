@@ -78,20 +78,25 @@ def _move_to_back(lis, val):
     return lis
 
 
-def _move_bin_edge_to_innermost(var, edge_dim):
-    return var.transpose(_move_to_back(var.dims, edge_dim))
-
-
-def _store_coord(obj, name, coord):
+def _move_bin_edge_to_innermost(obj, coord):
     edges = find_bin_edges(coord, obj)
     if not edges:
-        obj.coords[name] = coord
+        return coord
     elif len(edges) == 1:
-        obj.coords[name] = _move_bin_edge_to_innermost(coord, edges[0])
+        return coord.transpose(_move_to_back(coord.dims, edges[0]))
     else:
         raise NotImplementedError(
             'Coordinates with more than one bin-edge dimension are not supported. '
             f'Got coord {coord} with bin edges {edges}.')
+
+
+def _store_coord(obj, name, coord):
+    obj.coords[name] = _move_bin_edge_to_innermost(obj, coord)
+    if name in obj.attrs:
+        # If name is both an input and output to a function,
+        # the input handling made it an attr, but since it is
+        # an output, we want to store it as a coord (and only as a coord).
+        del obj.attrs[name]
 
 
 class CoordTransform:
