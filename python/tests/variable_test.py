@@ -355,6 +355,30 @@ def test_binary_divide():
     assert np.array_equal(c.values, 2.0 / data)
 
 
+def test_binary_pow():
+    a, b, a_slice, b_slice, data = make_variables()
+    c = a**b
+    assert np.array_equal(c.values, data**data)
+    c **= b
+    assert np.array_equal(c.values, (data**data)**data)
+    c = a**3
+    assert np.array_equal(c.values, data**3)
+    c **= 3
+    assert np.array_equal(c.values, (data**3)**3)
+    c = a**3.0
+    assert np.array_equal(c.values, data**3.0)
+    c **= 3.0
+    assert np.array_equal(c.values, (data**3.0)**3.0)
+    c = a**b_slice
+    assert np.array_equal(c.values, data**data)
+    c **= b_slice
+    assert np.array_equal(c.values, (data**data)**data)
+    c = 2**b
+    assert np.array_equal(c.values, 2**data)
+    c = 2.0**b
+    assert np.array_equal(c.values, 2.0**data)
+
+
 def test_in_place_binary_or():
     a = sc.scalar(False)
     b = sc.scalar(True)
@@ -490,6 +514,11 @@ def test_mean_in_place():
 
 def test_norm():
     assert_export(sc.norm, sc.Variable(dims=(), values=0.0))
+
+
+def test_pow():
+    assert_export(sc.pow, sc.Variable(dims=(), values=0.0),
+                  sc.Variable(dims=(), values=0.0))
 
 
 def test_sqrt():
