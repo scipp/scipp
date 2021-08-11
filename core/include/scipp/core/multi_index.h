@@ -14,7 +14,6 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
 
-
 #ifdef _WIN32
 #define SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
 #define SCIPP_CORE_EXPORT_TEMPLATE_DEFINITION SCIPP_CORE_EXPORT
@@ -34,7 +33,8 @@ auto get_nested_dims(const T &param, const Ts &... params) {
 }
 } // namespace detail
 
-template <scipp::index N> class SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION MultiIndex {
+template <scipp::index N>
+class SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION MultiIndex {
 public:
   /// Determine from arguments if binned.
   template <class... Params>
