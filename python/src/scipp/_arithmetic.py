@@ -59,8 +59,7 @@ def divide(dividend: VariableLike, divisor: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.divide, dividend, divisor)
 
 
-def floor_divide(dividend: VariableLike,
-                 divisor: VariableLike) -> VariableLike:
+def floor_divide(dividend: VariableLike, divisor: VariableLike) -> VariableLike:
     """Element-wise floor division.
 
     This function corresponds to the ``__floordiv__`` dunder method, i.e.

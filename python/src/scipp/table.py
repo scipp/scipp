@@ -123,16 +123,14 @@ def _table_from_dict_of_variables(dict_of_variables,
         html += "<tr>"
         html += _make_table_unit_headers(dict_of_variables)
         html += "</tr><tr>"
-        html += _make_table_subsections(dict_of_variables,
-                                        group == "1D Variables")
+        html += _make_table_subsections(dict_of_variables, group == "1D Variables")
         html += "</tr>"
 
     if size is None:  # handle 0D variable
         html += "<tr>"
         for key, section in dict_of_variables.items():
             for name, val in section.items():
-                html += "<td>{}</td>".format(
-                    escape(su.value_to_string(val.value)))
+                html += "<td>{}</td>".format(escape(su.value_to_string(val.value)))
                 if val.variances is not None:
                     html += "<td>{}</td>".format(
                         escape(su.value_to_string(val.variance)))
@@ -144,12 +142,10 @@ def _table_from_dict_of_variables(dict_of_variables,
             html += _make_overflow_row(dict_of_variables)
         for i in range(row_start, row_end):
             html += "<tr>"
-            html += _make_value_rows(dict_of_variables, is_bin_centers, i,
-                                     row_start)
+            html += _make_value_rows(dict_of_variables, is_bin_centers, i, row_start)
             html += "</tr><tr>"
             # If there are bin edges, we need to add trailing cells
-            html += _make_trailing_cells(dict_of_variables, is_bin_centers, i,
-                                         row_end)
+            html += _make_trailing_cells(dict_of_variables, is_bin_centers, i, row_end)
             html += "</tr>"
         # If we are not ending at the last row, add overflow
         if row_end != size:
@@ -211,8 +207,7 @@ class TableViewer:
                 iterlist = {scipp_obj.name: scipp_obj}
                 tag_names = ['coords', 'attrs', 'masks', 'data']
                 tag_keys = [
-                    scipp_obj.coords, scipp_obj.attrs, scipp_obj.masks,
-                    iterlist
+                    scipp_obj.coords, scipp_obj.attrs, scipp_obj.masks, iterlist
                 ]
             self.headers = len(tag_names)
             for tag, cat in zip(tag_names, tag_keys):
@@ -240,8 +235,7 @@ class TableViewer:
                 group = "{}D Variables".format(ndims)
                 if isinstance(scipp_obj, sc.Variable):
                     self.headers = 1
-                    key = '' if is_scalar(scipp_obj) else str(
-                        scipp_obj.dims[0])
+                    key = '' if is_scalar(scipp_obj) else str(scipp_obj.dims[0])
                     var = scipp_obj
                 else:
                     self.headers = 0
@@ -263,12 +257,11 @@ class TableViewer:
                         size_is_defined = True
                 self.sizes[group][key] = max_size if size_is_defined else None
 
-        title = str(type(scipp_obj)).replace("<class '", "").replace(
-            "scipp._scipp.core.", "").replace("'>", "")
+        title = str(type(scipp_obj)).replace("<class '",
+                                             "").replace("scipp._scipp.core.",
+                                                         "").replace("'>", "")
 
-        self.box = [
-            self.widgets.HTML(value=f"<span class='sc-title'>{title}</span>")
-        ]
+        self.box = [self.widgets.HTML(value=f"<span class='sc-title'>{title}</span>")]
         self.tables = {}
         self.sliders = {}
         self.readouts = {}
@@ -301,8 +294,7 @@ class TableViewer:
                     self.tabs = self.widgets.Tab(layout=self.widgets.Layout(
                         width="initial"))
                     self.tabs.children = children
-                    for i, key in enumerate(
-                            sorted(self.tabledict[group].keys())):
+                    for i, key in enumerate(sorted(self.tabledict[group].keys())):
                         self.tabs.set_title(i, key)
                     vbox.append(self.tabs)
                 else:
@@ -311,11 +303,10 @@ class TableViewer:
                 self.box.append(self.widgets.VBox(vbox))
 
         self.box = self.widgets.VBox(self.box,
-                                     layout=self.widgets.Layout(
-                                         border="solid 1px",
-                                         width="auto",
-                                         display='flex',
-                                         flex_flow='column'))
+                                     layout=self.widgets.Layout(border="solid 1px",
+                                                                width="auto",
+                                                                display='flex',
+                                                                flex_flow='column'))
         return
 
     def make_dict(self):
@@ -354,12 +345,11 @@ class TableViewer:
                 self.sliders[key].observe(self.update_table, names="value")
                 hbox = self.widgets.HBox([
                     hbox,
-                    self.widgets.VBox(
-                        [
-                            self.widgets.HBox([self.nrows[key], self.label]),
-                            self.sliders[key], self.readouts[key]
-                        ],
-                        layout=self.widgets.Layout(align_items="center"))
+                    self.widgets.VBox([
+                        self.widgets.HBox([self.nrows[key], self.label]),
+                        self.sliders[key], self.readouts[key]
+                    ],
+                                      layout=self.widgets.Layout(align_items="center"))
                 ])
         return hbox
 

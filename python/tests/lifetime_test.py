@@ -21,15 +21,13 @@ def test_lifetime_values_of_py_array_t_item_of_temporary():
 
 
 def test_lifetime_values_of_item():
-    d = sc.Dataset(
-        data={'a': sc.Variable(dims=['x'], values=["aa", "bb", "cc"])})
+    d = sc.Dataset(data={'a': sc.Variable(dims=['x'], values=["aa", "bb", "cc"])})
     assert d['a'].values[2] == "cc"
 
 
 def test_lifetime_values_of_item_of_temporary():
-    d = sc.Dataset(
-        data={'a': sc.Variable(dims=['x'], values=np.arange(3))},
-        coords={'x': sc.Variable(dims=['x'], values=["aa", "bb", "cc"])})
+    d = sc.Dataset(data={'a': sc.Variable(dims=['x'], values=np.arange(3))},
+                   coords={'x': sc.Variable(dims=['x'], values=["aa", "bb", "cc"])})
     vals = (d + d).coords['x'].values
     d + d  # do something allocating memory to trigger potential segfault
     assert vals[2] == "cc"
@@ -137,8 +135,7 @@ def test_lifetime_string_array():
     assert vals[100000] == 'ab'
 
 
-@pytest.mark.parametrize("func",
-                         [sc.abs, sc.sqrt, sc.reciprocal, sc.nan_to_num])
+@pytest.mark.parametrize("func", [sc.abs, sc.sqrt, sc.reciprocal, sc.nan_to_num])
 def test_lifetime_out_arg(func):
     var = 1.0 * sc.units.one
     var = func(var, out=var)

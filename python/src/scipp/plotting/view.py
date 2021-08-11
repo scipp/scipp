@@ -147,14 +147,10 @@ class PlotView:
         """
         Forward axes update to the `figure`.
         """
-        self.figure.initialize({
-            axis: self.formatters[dim]
-            for axis, dim in zip(self._axes, self._dims)
-        })
-        scale = {
-            axis: self._scale[dim]
-            for axis, dim in zip(self._axes, self._dims)
-        }
+        self.figure.initialize(
+            {axis: self.formatters[dim]
+             for axis, dim in zip(self._axes, self._dims)})
+        scale = {axis: self._scale[dim] for axis, dim in zip(self._axes, self._dims)}
         self.figure.update_axes(scale=scale, unit=f'[{self._data.unit}]')
 
     def _make_data(self, new_values, mask_info):

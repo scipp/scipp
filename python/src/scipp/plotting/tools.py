@@ -117,9 +117,7 @@ def find_log_limits(x):
     weights = ones(dims=['pixel'], shape=[volume])
     hist = sc.histogram(sc.DataArray(data=weights, coords={'order': pixel}),
                         bins=sc.Variable(dims=['order'],
-                                         values=np.geomspace(1e-30,
-                                                             1e30,
-                                                             num=61),
+                                         values=np.geomspace(1e-30, 1e30, num=61),
                                          unit=x.unit))
     # Find the first and the last non-zero bins
     inds = np.nonzero((hist.data > 0.0 * sc.units.one).values)

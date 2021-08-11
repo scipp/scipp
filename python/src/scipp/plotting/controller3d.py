@@ -16,11 +16,20 @@ class PlotController3d(PlotController):
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # TODO could be different for every axis
         self.view.set_position_params(self.model)
         for key in self.panel.options[:-1]:
-            value = getattr(self.model, key)
+            value = self._get_cut(key)
             self.panel.set_range(key, sc.min(value), sc.max(value))
+
+    def _get_cut(self, key):
+        # PlotPanel3d currently uses hard-coded keys/labels for cut buttons
+        dim = dict(zip(['x', 'y', 'z'], self.model.dims))
+        if key == 'radius':
+            return self.model.radius
+        elif key in ['x', 'y', 'z']:
+            return self.model.components[dim[key]]
+        else:
+            return self.model.planar_radius(axis=dim[key[7:]])
 
     def update_opacity(self, alpha):
         """
@@ -52,7 +61,7 @@ class PlotController3d(PlotController):
         if key == 'value':
             value = next(iter(self.view.data.values())).data
         else:
-            value = getattr(self.model, key)
+            value = self._get_cut(key)
         u = value.unit
         alpha = sc.where(
             sc.abs(value - center * u) < 0.5 * delta * u, scalar(active),

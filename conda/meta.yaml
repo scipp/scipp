@@ -31,6 +31,9 @@ test:
     - matplotlib-base
     - pytest
     - pythreejs
+    - python-graphviz
+    - xarray
+    - pandas
   source_files:
     - python/tests
   commands:

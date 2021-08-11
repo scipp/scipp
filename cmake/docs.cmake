@@ -11,7 +11,7 @@ function(add_docs_target name)
   add_custom_target(
     ${name}
     COMMAND
-      ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/build_docs.py
+      ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/build_docs.py
       --builder=${ADD_DOCS_TARGET_BUILDER}
       --prefix=${CMAKE_CURRENT_BINARY_DIR}/docs
       --work_dir=${CMAKE_CURRENT_BINARY_DIR}/docs/doctrees

@@ -20,9 +20,7 @@ def dot(x: VariableLike, y: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.dot, x, y)
 
 
-def issorted(x: _cpp.Variable,
-             dim: str,
-             order: Optional[str] = 'ascending') -> bool:
+def issorted(x: _cpp.Variable, dim: str, order: Optional[str] = 'ascending') -> bool:
     """
     Check if the values of a variable are sorted.
 

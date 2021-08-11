@@ -161,6 +161,7 @@ public:
   void set(const key_type &key, mapped_type coord);
   void erase(const key_type &key);
   mapped_type extract(const key_type &key);
+  mapped_type extract(const key_type &key, const mapped_type &default_value);
 
   Dict slice(const Slice &params) const;
   std::tuple<Dict, Dict> slice_coords(const Slice &params) const;

@@ -28,9 +28,7 @@ def test_label_name_only():
 
 
 def test_label_name_with_unit():
-    var = sc.Variable(dims=['x'],
-                      values=np.random.random(10),
-                      unit=sc.units.counts)
+    var = sc.Variable(dims=['x'], values=np.random.random(10), unit=sc.units.counts)
     assert su.name_with_unit(var, name='sample') == 'sample [counts]'
 
 

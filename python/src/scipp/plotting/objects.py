@@ -10,22 +10,10 @@ from .model1d import PlotModel1d
 from .widgets import PlotWidgets
 
 
-def make_params(*,
-                cmap=None,
-                norm=None,
-                vmin=None,
-                vmax=None,
-                masks=None,
-                color=None):
+def make_params(*, cmap=None, norm=None, vmin=None, vmax=None, masks=None, color=None):
     # Scan the input data and collect information
     params = {"values": {}, "masks": {}}
-    globs = {
-        "cmap": cmap,
-        "norm": norm,
-        "vmin": vmin,
-        "vmax": vmax,
-        "color": color
-    }
+    globs = {"cmap": cmap, "norm": norm, "vmin": vmin, "vmax": vmax, "color": color}
     masks_globs = {"norm": norm, "vmin": vmin, "vmax": vmax}
     # Get the colormap and normalization
     params["values"] = parse_params(globs=globs)
@@ -263,17 +251,15 @@ class Plot:
         self.profile = profile_figure
         self.view = view(figure=figure, formatters=formatters)
 
-        self.widgets = PlotWidgets(
-            dims=self.dims,
-            formatters=formatters,
-            ndim=self.view_ndims,
-            dim_label_map=labels,
-            masks=self._scipp_obj_dict,
-            sizes={dim: array.sizes[dim]
-                   for dim in self.dims})
+        self.widgets = PlotWidgets(dims=self.dims,
+                                   formatters=formatters,
+                                   ndim=self.view_ndims,
+                                   dim_label_map=labels,
+                                   masks=self._scipp_obj_dict,
+                                   sizes={dim: array.sizes[dim]
+                                          for dim in self.dims})
 
-        self.model = model(scipp_obj_dict=self._scipp_obj_dict,
-                           resolution=resolution)
+        self.model = model(scipp_obj_dict=self._scipp_obj_dict, resolution=resolution)
         profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict)
         self.controller = controller(dims=self.dims,
                                      vmin=vmin,
@@ -332,12 +318,11 @@ class Plot:
         Perform some initial calls to render the figure once all components
         have been created.
         """
-        self.view.figure.initialize_toolbar(
-            log_axis_buttons=self.dims, button_states=self._tool_button_states)
+        self.view.figure.initialize_toolbar(log_axis_buttons=self.dims,
+                                            button_states=self._tool_button_states)
         if self.profile is not None:
-            self.profile.initialize_toolbar(
-                log_axis_buttons=self.dims,
-                button_states=self._tool_button_states)
+            self.profile.initialize_toolbar(log_axis_buttons=self.dims,
+                                            button_states=self._tool_button_states)
         self.controller.render()
         if hasattr(self.view.figure, "fig"):
             self.fig = self.view.figure.fig

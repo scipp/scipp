@@ -53,11 +53,26 @@ void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
       .def("__contains__", &T::contains);
 }
 
+template <class T, class... Ignored>
+void bind_pop(pybind11::class_<T, Ignored...> &view) {
+  view.def(
+      "pop",
+      [](T &self, const typename T::key_type &key,
+         const typename T::mapped_type *const default_value) {
+        if (default_value == nullptr) {
+          return self.extract(key);
+        }
+        return self.extract(key, *default_value);
+      },
+      py::arg("k"), py::arg("d") = nullptr);
+}
+
 template <class T>
 void bind_mutable_view(py::module &m, const std::string &name) {
   py::class_<T> view(m, name.c_str());
   bind_common_mutable_view_operators<T>(view);
   bind_inequality_to_operator<T>(view);
+  bind_pop(view);
   view.def(
           "__iter__",
           [](T &self) {
@@ -79,6 +94,7 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name) {
   py::class_<T> view(m, name.c_str());
   bind_common_mutable_view_operators<T>(view);
   bind_inequality_to_operator<T>(view);
+  bind_pop(view);
   view.def(
           "__iter__",
           [](T &self) {

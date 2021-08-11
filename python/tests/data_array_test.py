@@ -10,24 +10,26 @@ import scipp as sc
 def make_dataarray(dim1='x', dim2='y', seed=None):
     if seed is not None:
         np.random.seed(seed)
-    return sc.DataArray(
-        data=sc.Variable(dims=[dim1, dim2], values=np.random.rand(2, 3)),
-        coords={
-            dim1: sc.Variable(dims=[dim1],
-                              values=np.arange(2.0),
-                              unit=sc.units.m),
-            dim2: sc.Variable(dims=[dim2],
-                              values=np.arange(3.0),
-                              unit=sc.units.m),
-            'aux': sc.Variable(dims=[dim2], values=np.random.rand(3))
-        },
-        attrs={'meta': sc.Variable(dims=[dim2], values=np.arange(3))})
+    return sc.DataArray(data=sc.Variable(dims=[dim1, dim2], values=np.random.rand(2,
+                                                                                  3)),
+                        coords={
+                            dim1:
+                            sc.Variable(dims=[dim1],
+                                        values=np.arange(2.0),
+                                        unit=sc.units.m),
+                            dim2:
+                            sc.Variable(dims=[dim2],
+                                        values=np.arange(3.0),
+                                        unit=sc.units.m),
+                            'aux':
+                            sc.Variable(dims=[dim2], values=np.random.rand(3))
+                        },
+                        attrs={'meta': sc.Variable(dims=[dim2], values=np.arange(3))})
 
 
 def test_slice_init():
-    orig = sc.DataArray(
-        data=sc.Variable(dims=['x'], values=np.arange(2.0)),
-        coords={'x': sc.Variable(dims=['x'], values=np.arange(3.0))})
+    orig = sc.DataArray(data=sc.Variable(dims=['x'], values=np.arange(2.0)),
+                        coords={'x': sc.Variable(dims=['x'], values=np.arange(3.0))})
     a = orig['x', :].copy()
     assert sc.identical(a, orig)
     b = orig['x', 1:].copy()
@@ -47,9 +49,7 @@ def test_init():
             'lib1': sc.Variable(dims=['x'], values=np.random.rand(3))
         },
         attrs={'met1': sc.Variable(dims=['x'], values=np.arange(3))},
-        masks={
-            'mask1': sc.Variable(dims=['x'], values=np.ones(3, dtype=bool))
-        })
+        masks={'mask1': sc.Variable(dims=['x'], values=np.ones(3, dtype=bool))})
     assert len(d.meta) == 3
     assert len(d.coords) == 2
     assert len(d.attrs) == 1
@@ -107,10 +107,12 @@ def test_coords():
 
 def test_masks():
     da = make_dataarray()
-    da.masks['mask1'] = sc.Variable(dims=['x'],
-                                    values=np.array([False, True], dtype=bool))
+    mask = sc.Variable(dims=['x'], values=np.array([False, True], dtype=bool))
+    da.masks['mask1'] = mask
     assert len(dict(da.masks)) == 1
     assert 'mask1' in da.masks
+    assert sc.identical(da.masks.pop('mask1'), mask)
+    assert (len(dict(da.masks))) == 0
 
 
 def test_name():
@@ -155,9 +157,8 @@ def test_copy():
 
 
 def test_in_place_binary_with_variable():
-    a = sc.DataArray(
-        data=sc.Variable(dims=['x'], values=np.arange(10.0)),
-        coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
+    a = sc.DataArray(data=sc.Variable(dims=['x'], values=np.arange(10.0)),
+                     coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
     copy = a.copy()
 
     a += 2.0 * sc.units.dimensionless
@@ -195,12 +196,8 @@ def test_binary_with_broadcast():
     da = sc.DataArray(data=sc.Variable(dims=['x', 'y'],
                                        values=np.arange(20).reshape(5, 4)),
                       coords={
-                          'x':
-                          sc.Variable(dims=['x'],
-                                      values=np.arange(0.0, 0.6, 0.1)),
-                          'y':
-                          sc.Variable(dims=['y'],
-                                      values=np.arange(0.0, 0.5, 0.1))
+                          'x': sc.Variable(dims=['x'], values=np.arange(0.0, 0.6, 0.1)),
+                          'y': sc.Variable(dims=['y'], values=np.arange(0.0, 0.5, 0.1))
                       })
     d2 = da - da['x', 0]
     da -= da['x', 0]
@@ -221,10 +218,17 @@ def test_view_in_place_binary_with_scalar():
 
 def test_rename_dims():
     d = make_dataarray('x', 'y', seed=0)
-    d.rename_dims({'y': 'z'})
-    assert sc.identical(d, make_dataarray('x', 'z', seed=0))
-    d.rename_dims(dims_dict={'x': 'y', 'z': 'x'})
-    assert sc.identical(d, make_dataarray('y', 'x', seed=0))
+    original = d.copy()
+    renamed = d.rename_dims({'y': 'z'})
+    assert sc.identical(d, original)
+    renamed.coords['z'] = renamed.coords['y']
+    del renamed.coords['y']
+    assert sc.identical(renamed, make_dataarray('x', 'z', seed=0))
+    renamed = renamed.rename_dims(dims_dict={'x': 'y', 'z': 'x'})
+    renamed.coords['y'] = renamed.coords['x']
+    renamed.coords['x'] = renamed.coords['z']
+    del renamed.coords['z']
+    assert sc.identical(renamed, make_dataarray('y', 'x', seed=0))
 
 
 def test_coord_setitem_can_change_dtype():
@@ -242,9 +246,9 @@ def test_setitem_works_for_view_and_array():
 
 
 def test_astype():
-    a = sc.DataArray(
-        data=sc.Variable(dims=['x'], values=np.arange(10.0, dtype=np.int64)),
-        coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
+    a = sc.DataArray(data=sc.Variable(dims=['x'],
+                                      values=np.arange(10.0, dtype=np.int64)),
+                     coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
     assert a.dtype == sc.dtype.int64
 
     a_as_float = a.astype(sc.dtype.float32)
@@ -252,9 +256,9 @@ def test_astype():
 
 
 def test_astype_bad_conversion():
-    a = sc.DataArray(
-        data=sc.Variable(dims=['x'], values=np.arange(10.0, dtype=np.int64)),
-        coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
+    a = sc.DataArray(data=sc.Variable(dims=['x'],
+                                      values=np.arange(10.0, dtype=np.int64)),
+                     coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
     assert a.dtype == sc.dtype.int64
 
     with pytest.raises(sc.DTypeError):

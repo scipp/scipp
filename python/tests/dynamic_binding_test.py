@@ -20,9 +20,9 @@ def make_containers():
     return var, da
 
 
-@pytest.mark.parametrize('func_name',
-                         ('cumsum', 'max', 'mean', 'min', 'nanmax', 'nanmean',
-                          'nanmin', 'nansum', 'sum'))
+@pytest.mark.parametrize(
+    'func_name',
+    ('cumsum', 'max', 'mean', 'min', 'nanmax', 'nanmean', 'nanmin', 'nansum', 'sum'))
 def test_bound_methods_reduction_variable(func_name):
     var, _ = make_containers()
     func = getattr(sc, func_name)
@@ -48,8 +48,7 @@ def test_bound_methods_shape():
     var, da = make_containers()
     assert sc.identical(var.broadcast(['x', 'y', 'z'], [4, 3, 2]),
                         sc.broadcast(var, ['x', 'y', 'z'], [4, 3, 2]))
-    assert sc.identical(var.transpose(['y', 'x']),
-                        sc.transpose(var, ['y', 'x']))
+    assert sc.identical(var.transpose(['y', 'x']), sc.transpose(var, ['y', 'x']))
     for obj in (var, da):
         assert sc.identical(obj.flatten(dims=['x', 'y'], to='z'),
                             sc.flatten(obj, dims=['x', 'y'], to='z'))

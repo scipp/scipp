@@ -25,8 +25,7 @@ def make_variable(ndim=1,
     if dims is None:
         dims = dim_list[:ndim][::-1]
 
-    a = 10.0 * np.sin(
-        np.arange(np.prod(shapes), dtype=np.float64).reshape(*shapes))
+    a = 10.0 * np.sin(np.arange(np.prod(shapes), dtype=np.float64).reshape(*shapes))
 
     print(dims, a, unit, dtype)
     var = sc.array(dims=dims, values=a, unit=unit, dtype=dtype)
@@ -56,10 +55,7 @@ def make_scalar_array(with_variance=False,
     if mask:
         mask_dict["mask"] = make_scalar(dtype=dtype, unit=unit)
 
-    return sc.DataArray(data=data,
-                        coords=coord_dict,
-                        attrs=attr_dict,
-                        masks=mask_dict)
+    return sc.DataArray(data=data, coords=coord_dict, attrs=attr_dict, masks=mask_dict)
 
 
 def make_dense_data_array(ndim=1,
@@ -98,15 +94,10 @@ def make_dense_data_array(ndim=1,
                                         data.shape[0],
                                         unit='s')
     if attrs:
-        attr_dict["attr"] = sc.linspace(data.dims[0],
-                                        10.,
-                                        77.,
-                                        data.shape[0],
-                                        unit='s')
+        attr_dict["attr"] = sc.linspace(data.dims[0], 10., 77., data.shape[0], unit='s')
     if masks:
         mask_dict["mask"] = sc.Variable(dims=data.dims,
-                                        values=np.where(
-                                            data.values > 0, True, False))
+                                        values=np.where(data.values > 0, True, False))
 
     if ragged:
         grid = []
@@ -119,10 +110,7 @@ def make_dense_data_array(ndim=1,
         coord_dict[data.dims[-1]] = sc.Variable(dims=data.dims,
                                                 values=mesh[-1] +
                                                 np.indices(mesh[-1].shape)[0])
-    return sc.DataArray(data=data,
-                        coords=coord_dict,
-                        attrs=attr_dict,
-                        masks=mask_dict)
+    return sc.DataArray(data=data, coords=coord_dict, attrs=attr_dict, masks=mask_dict)
 
 
 def make_dense_dataset(entries=None, **kwargs):
@@ -147,9 +135,8 @@ def make_binned_data_array(ndim=1, with_variance=False, masks=False):
                                        values=values),
                       coords={
                           'position':
-                          sc.Variable(
-                              dims=['position'],
-                              values=['site-{}'.format(i) for i in range(N)])
+                          sc.Variable(dims=['position'],
+                                      values=['site-{}'.format(i) for i in range(N)])
                       })
 
     if with_variance:

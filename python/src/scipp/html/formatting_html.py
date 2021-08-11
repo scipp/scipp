@@ -9,6 +9,7 @@ from html import escape
 
 from .._scipp import core as sc
 from .resources import load_icons
+from ..utils.dimensions import find_bin_edges
 
 BIN_EDGE_LABEL = "[bin-edge]"
 VARIANCE_PREFIX = "σ² = "
@@ -32,8 +33,7 @@ def _format_array(data, size, ellipsis_after, do_ellide=True):
             if elem.unit == sc.units.one:
                 s.append(f'{{dims=[{dims}], coords=[{coords}]}}')
             else:
-                s.append(
-                    f'{{dims=[{dims}], unit={elem.unit}, coords=[{coords}]}}')
+                s.append(f'{{dims=[{dims}], unit={elem.unit}, coords=[{coords}]}}')
         else:
             s.append(str(elem))
         i += 1
@@ -77,8 +77,7 @@ def _get_events(var, variances, ellipsis_after, summary=False):
         i = 0
 
         do_ellide = summary or size > 1000 or sum([
-            len(retrieve(var, variances=variances)[i])
-            for i in range(min(size, 1000))
+            len(retrieve(var, variances=variances)[i]) for i in range(min(size, 1000))
         ]) > 1000
 
         data = retrieve(var, variances=variances)
@@ -91,12 +90,7 @@ def _get_events(var, variances, ellipsis_after, summary=False):
             _repr_item(s, bin_dim, item, ellipsis_after, do_ellide, summary)
             i += 1
     else:
-        _repr_item(s,
-                   bin_dim,
-                   var,
-                   ellipsis_after,
-                   do_ellide=False,
-                   summary=summary)
+        _repr_item(s, bin_dim, var, ellipsis_after, do_ellide=False, summary=summary)
     return s
 
 
@@ -106,8 +100,8 @@ def _format_events(var, has_variances):
 
 
 def _ordered_dict(data):
-    data_ordered = collections.OrderedDict(
-        sorted(data.items(), key=lambda t: str(t[0])))
+    data_ordered = collections.OrderedDict(sorted(data.items(),
+                                                  key=lambda t: str(t[0])))
     return data_ordered
 
 
@@ -177,36 +171,17 @@ def summarize_mask(dim, var, ds=None):
     return summarize_variable(str(dim), var, is_index=False, embedded_in=ds)
 
 
-def find_bin_edges(var, ds):
-    """
-    Checks if the coordinate contains bin-edges.
-    """
-    bin_edges = []
-    for idx, dim in enumerate(var.dims):
-        length = var.shape[idx]
-        if not ds.dims:
-            # Have a scalar slice.
-            # Cannot match dims, just assume length 2 attributes are bin-edge
-            if length == 2:
-                bin_edges.append(dim)
-        elif dim in ds.dims and ds.shape[ds.dims.index(dim)] + 1 == length:
-            bin_edges.append(dim)
-    return bin_edges
-
-
 def summarize_coords(coords, ds=None):
     vars_li = "".join("<li class='sc-var-item'>"
                       f"{summarize_coord(dim, var, ds)}"
-                      "</span></li>"
-                      for dim, var in _ordered_dict(coords).items())
+                      "</span></li>" for dim, var in _ordered_dict(coords).items())
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
 def summarize_masks(masks, ds=None):
     vars_li = "".join("<li class='sc-var-item'>"
                       f"{summarize_mask(dim, var, ds)}"
-                      "</span></li>"
-                      for dim, var in _ordered_dict(masks).items())
+                      "</span></li>" for dim, var in _ordered_dict(masks).items())
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
@@ -237,9 +212,8 @@ def _make_inline_attributes(var, has_attrs, embedded_in):
             disabled = ""
 
     if len(attrs_sections) > 0:
-        attrs_sections = "".join(
-            f"<li class='sc-section-item sc-subsection'>{s}</li>"
-            for s in attrs_sections)
+        attrs_sections = "".join(f"<li class='sc-section-item sc-subsection'>{s}</li>"
+                                 for s in attrs_sections)
         attrs_ul = "<div class='sc-wrap'>"\
             f"<ul class='sc-sections'>{attrs_sections}</ul>"\
             "</div>"
@@ -258,10 +232,10 @@ def _make_dim_labels(dim, size, bin_edges=None):
 
 
 def _make_dim_str(var, bin_edges, add_dim_size=False):
-    dims_text = ', '.join('{}{}{}'.format(
-        str(dim), _make_dim_labels(dim, size, bin_edges),
-        f': {size}' if add_dim_size and size is not None else '')
-                          for dim, size in zip(var.dims, var.shape))
+    dims_text = ', '.join(
+        '{}{}{}'.format(str(dim), _make_dim_labels(dim, size, bin_edges),
+                        f': {size}' if add_dim_size and size is not None else '')
+        for dim, size in zip(var.dims, var.shape))
     return dims_text
 
 
@@ -291,8 +265,8 @@ def summarize_variable(name,
     dims_str = "({})".format(
         _make_dim_str(
             var,
-            find_bin_edges(var, embedded_in)
-            if embedded_in is not None else None, add_dim_size))
+            find_bin_edges(var, embedded_in) if embedded_in is not None else None,
+            add_dim_size))
     unit = '' if var.unit == sc.units.dimensionless else repr(var.unit)
 
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs, embedded_in)
@@ -305,8 +279,7 @@ def summarize_variable(name,
         data_repr += f"<br><br>Variances:<br>\
                        <div>{short_data_repr_html(var)}</div>"
 
-    cssclass_idx, attrs_id, attrs_icon, data_id, data_icon = _format_common(
-        is_index)
+    cssclass_idx, attrs_id, attrs_icon, data_id, data_icon = _format_common(is_index)
 
     if name is None:
         html = [
@@ -316,8 +289,7 @@ def summarize_variable(name,
     else:
         html = [
             f"<div class='sc-var-name'><span{cssclass_idx}>{escape(str(name))}"
-            "</span></div>",
-            f"<div class='sc-var-dims'>{escape(dims_str)}</div>"
+            "</span></div>", f"<div class='sc-var-dims'>{escape(dims_str)}</div>"
         ]
     html += [
         f"<div class='sc-var-dtype'>{escape(repr(var.dtype))}</div>",
@@ -343,10 +315,8 @@ def summarize_variable(name,
 def summarize_data(dataset):
     has_attrs = isinstance(dataset, sc.Dataset)
     vars_li = "".join("<li class='sc-var-item'>{}</li>".format(
-        summarize_variable(name,
-                           var,
-                           has_attrs=has_attrs,
-                           embedded_in=dataset if has_attrs else None))
+        summarize_variable(
+            name, var, has_attrs=has_attrs, embedded_in=dataset if has_attrs else None))
                       for name, var in _ordered_dict(dataset).items())
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
@@ -403,9 +373,8 @@ def dim_section(dataset):
 
 
 def summarize_array(var, is_variable=False):
-    vars_li = "".join(
-        "<li class='sc-var-item'>"
-        f"{summarize_variable(None, var, add_dim_size=is_variable)}</li>")
+    vars_li = "".join("<li class='sc-var-item'>"
+                      f"{summarize_variable(None, var, add_dim_size=is_variable)}</li>")
     return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
@@ -443,8 +412,7 @@ attr_section = partial(
 def _obj_repr(header_components, sections):
     header = f"<div class='sc-header'>"\
         f"{''.join(h for h in header_components)}</div>"
-    sections = "".join(f"<li class='sc-section-item'>{s}</li>"
-                       for s in sections)
+    sections = "".join(f"<li class='sc-section-item'>{s}</li>" for s in sections)
 
     return ("<div>"
             f"{load_icons()}"
@@ -468,8 +436,7 @@ def _format_size(obj):
 def dataset_repr(ds):
     obj_type = "scipp.{}".format(type(ds).__name__)
     header_components = [
-        f"<div class='sc-obj-type'>{escape(obj_type)} " + _format_size(ds) +
-        "</div>"
+        f"<div class='sc-obj-type'>{escape(obj_type)} " + _format_size(ds) + "</div>"
     ]
 
     sections = [dim_section(ds)]
@@ -477,8 +444,7 @@ def dataset_repr(ds):
     if len(ds.coords) > 0:
         sections.append(coord_section(ds.coords, ds))
 
-    sections.append(
-        data_section(ds if isinstance(ds, sc.Dataset) else {'': ds}))
+    sections.append(data_section(ds if isinstance(ds, sc.Dataset) else {'': ds}))
 
     if not isinstance(ds, sc.Dataset):
         if len(ds.masks) > 0:
@@ -493,8 +459,7 @@ def variable_repr(var):
     obj_type = "scipp.{}".format(type(var).__name__)
 
     header_components = [
-        f"<div class='sc-obj-type'>{escape(obj_type)} " + _format_size(var) +
-        "</div>"
+        f"<div class='sc-obj-type'>{escape(obj_type)} " + _format_size(var) + "</div>"
     ]
 
     sections = [variable_section(var)]

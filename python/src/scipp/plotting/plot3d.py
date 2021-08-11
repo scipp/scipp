@@ -10,7 +10,7 @@ from .controller3d import PlotController3d
 from .model3d import ScatterPointModel
 
 
-def plot3d(scipp_obj_dict, positions=None, **kwargs):
+def plot3d(scipp_obj_dict, *, positions, **kwargs):
     """
     Plot a 3D point cloud through a N dimensional dataset.
     For every dimension above 3, a slider is created to adjust the position of
@@ -20,7 +20,6 @@ def plot3d(scipp_obj_dict, positions=None, **kwargs):
     """
     def builder(*,
                 dims,
-                aspect=None,
                 norm=None,
                 masks=None,
                 ax=None,
@@ -38,31 +37,22 @@ def plot3d(scipp_obj_dict, positions=None, **kwargs):
                 ylabel=None,
                 zlabel=None):
         array = next(iter(scipp_obj_dict.values()))
-        # TODO support switching
-        if positions is None:
-            _dims = array.dims
-        else:
-            _dims = list(set(array.dims) - set(array.meta[positions].dims))
+        pos = array.meta[positions] if isinstance(positions, str) else positions
         out = {
-            'view_ndims': 3 if positions is None else 0,
-            'dims': _dims,
-            'model': partial(ScatterPointModel, positions=positions),
+            'view_ndims': 0,
+            'dims': list(set(array.dims) - set(pos.dims)),
+            'model': partial(ScatterPointModel, positions=pos),
             'view': PlotView3d,
             'controller': PlotController3d
         }
-        params = make_params(cmap=cmap,
-                             norm=norm,
-                             vmin=vmin,
-                             vmax=vmax,
-                             masks=masks)
+        params = make_params(cmap=cmap, norm=norm, vmin=vmin, vmax=vmax, masks=masks)
         out['vmin'] = params["values"]["vmin"]
         out['vmax'] = params["values"]["vmax"]
         # TODO
         if len(dims) > 2:
             params['extend_cmap'] = 'both'
         out['panel'] = PlotPanel3d()
-        out['figure'] = PlotFigure3d(aspect=aspect,
-                                     background=background,
+        out['figure'] = PlotFigure3d(background=background,
                                      cmap=params["values"]["cmap"],
                                      extend=params['extend_cmap'],
                                      figsize=figsize,
