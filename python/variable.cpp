@@ -16,6 +16,7 @@
 #include "scipp/variable/structures.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable_factory.h"
+#include "scipp/variable/util.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/util.h"
@@ -162,13 +163,16 @@ of variances.)");
 
   m.def(
       "islinspace",
-      [](const Variable &x) {
-        if (x.dims().ndim() != 1)
+      [](const Variable &x, const std::optional<Dim> dim=std::optional<Dim>()) {
+        if (!dim.has_value() && x.dims().ndim() != 1)
           throw scipp::except::VariableError(
-              "islinspace can only be called on a 1D Variable.");
-        else
-          return scipp::numeric::islinspace(x.template values<double>());
+              "islinspace can only be called on a 1D Variable, or with a Dim as an optional parameter.");
+         else if (dim.has_value())
+          return scipp::variable::islinspace(x, dim.value());
+         else
+          return makeVariable<bool>(Values{scipp::numeric::islinspace(x.template values<double>())});
       },
+      py::arg("x"), py::arg("dim") = py::none(),
       py::call_guard<py::gil_scoped_release>());
 
   m.def("rebin",

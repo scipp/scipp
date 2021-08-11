@@ -30,6 +30,7 @@ allsorted(const Variable &x, const Dim dim,
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable zip(const Variable &first,
                                                  const Variable &second);
+
 [[nodiscard]] SCIPP_VARIABLE_EXPORT std::pair<Variable, Variable>
 unzip(const Variable &var);
 
