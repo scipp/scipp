@@ -73,6 +73,18 @@ def reciprocal(x: VariableLike, *, out: Optional[VariableLike] = None) -> Variab
     return _call_cpp_func(_cpp.reciprocal, x, out=out)
 
 
+def pow(base: VariableLike, exp: VariableLike) -> VariableLike:
+    """Element-wise power.
+
+    If the base has a unit, the exponent must be scalar in order to get
+    a well defined unit in the result.
+
+    :raises: If the dtype does not have a power, e.g., if it is a string.
+    :return: ``base`` raised to the power of ``exp``.
+    """
+    return _call_cpp_func(_cpp.pow, base, exp)
+
+
 def sqrt(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise square-root.
 

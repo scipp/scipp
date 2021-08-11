@@ -357,3 +357,10 @@ def test_duplicate_output_keys():
     with pytest.raises(ValueError):
         graph = {('b', 'd'): to_bd, ('b', 'c'): to_bc}
         original.transform_coords(['b'], graph=graph)
+
+
+def test_prioritize_coords_attrs_conflict():
+    original = sc.DataArray(data=a, coords={'a': a}, attrs={'a': -1 * a})
+
+    with pytest.raises(sc.DataArrayError):
+        original.transform_coords(['b'], graph={'b': 'a'})

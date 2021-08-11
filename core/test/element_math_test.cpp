@@ -5,6 +5,7 @@
 #include "scipp/core/element/math.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/units/unit.h"
+#include "test_macros.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -44,6 +45,28 @@ TEST(ElementNormTest, value) {
   Eigen::Vector3d v2(3, 0, -4);
   EXPECT_EQ(element::norm(v1), 5);
   EXPECT_EQ(element::norm(v2), 5);
+}
+
+TEST(ElementPowTest, unit) {
+  // element::pow cannot handle units itself as that requires the *value* of the
+  // exponent and not its unit. This does not fit into the usual transform
+  // framework.
+  EXPECT_EQ(element::pow(units::one, units::one), units::one);
+  EXPECT_THROW_DISCARD(element::pow(units::one, units::m), except::UnitError);
+  EXPECT_THROW_DISCARD(element::pow(units::s, units::one), except::UnitError);
+  EXPECT_THROW_DISCARD(element::pow(units::K, units::kg), except::UnitError);
+}
+
+TEST(ElementPowTest, value) {
+  EXPECT_NEAR(element::pow(3.0, 2.0), 9.0, 1e-15);
+  EXPECT_NEAR(element::pow(int64_t{3}, 2.0), 9.0, 1e-15);
+  EXPECT_NEAR(element::pow(3.0, int64_t{2}), 9.0, 1e-15);
+  EXPECT_EQ(element::pow(int64_t{3}, int64_t{2}), 9);
+}
+
+TEST(ElementPowTest, value_and_variance) {
+  const ValueAndVariance base{3.0, 2.0};
+  EXPECT_EQ(element::pow(base, int64_t{3}), pow(base, int64_t{3}));
 }
 
 TEST(ElementSqrtTest, unit) {
