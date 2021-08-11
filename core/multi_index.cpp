@@ -171,11 +171,9 @@ template MultiIndex<4>::MultiIndex(binned_tag, const Dimensions &,
                                    const ElementArrayViewParams &,
                                    const ElementArrayViewParams &);
 
-template class MultiIndex<1>;
-template class MultiIndex<2>;
-template class MultiIndex<3>;
-template class MultiIndex<4>;
-template class MultiIndex<5>;
-template class MultiIndex<6>;
+template class SCIPP_CORE_EXPORT MultiIndex<1>;
+template class SCIPP_CORE_EXPORT MultiIndex<2>;
+template class SCIPP_CORE_EXPORT MultiIndex<3>;
+template class SCIPP_CORE_EXPORT MultiIndex<4>;
 
 } // namespace scipp::core
