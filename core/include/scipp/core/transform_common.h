@@ -47,18 +47,18 @@ static constexpr auto keep_unit =
 
 static constexpr auto dimensionless_unit_check =
     [](units::Unit &varUnit, const units::Unit &otherUnit) {
-      expect::equals(varUnit, units::dimensionless);
-      expect::equals(otherUnit, units::dimensionless);
+      expect::equals(units::one, varUnit);
+      expect::equals(units::one, otherUnit);
     };
 
 static constexpr auto dimensionless_unit_check_return =
     overloaded{[](const units::Unit &a) {
-                 expect::equals(a, units::one);
+                 expect::equals(units::one, a);
                  return units::one;
                },
                [](const units::Unit &a, const units::Unit &b) {
-                 expect::equals(a, units::one);
-                 expect::equals(b, units::one);
+                 expect::equals(units::one, a);
+                 expect::equals(units::one, b);
                  return units::one;
                }};
 
