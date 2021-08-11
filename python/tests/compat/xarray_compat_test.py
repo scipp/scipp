@@ -1,7 +1,7 @@
 import numpy
 import xarray
 import scipp as sc
-from scipp.compat.xarray_compat import from_xarray
+from scipp.compat import from_xarray
 
 
 def test_empty_attrs_dataarray():
