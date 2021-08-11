@@ -52,7 +52,7 @@ auto get_slice_dim(const T &param, const Ts &... params) {
 
 template <class T>
 [[nodiscard]] auto make_span(T &&array, const scipp::index begin) {
-  return scipp::span{array.begin() + begin,
+  return scipp::span{array.data() + begin,
                      static_cast<size_t>(NDIM_MAX - begin)};
 }
 
