@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Union, TYPE_CHECKING
 
-from .. import Dataset, DataArray, Variable, VariableLike
+from .._scipp.core import Dataset, DataArray, Variable
+from ..typing import VariableLike
 
 if TYPE_CHECKING:
     import pandas as pd
