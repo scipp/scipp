@@ -49,7 +49,7 @@ To build a debug version of the library:
   cmake \
     -GNinja \
     -DCMAKE_BUILD_TYPE=Debug \
-    -DPYTHON_EXECUTABLE=$(command -v python3) \
+    -DPython_EXECUTABLE=$(command -v python3) \
     -DCMAKE_INSTALL_PREFIX=../install \
     -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
     -DDYNAMIC_LIB=ON \
@@ -70,7 +70,7 @@ Alternatively, to build a release version with all optimizations enabled:
 
   cmake \
     -GNinja \
-    -DPYTHON_EXECUTABLE=$(command -v python3) \
+    -DPython_EXECUTABLE=$(command -v python3) \
     -DCMAKE_INSTALL_PREFIX=../install \
     -DCMAKE_BUILD_TYPE=Release \
     ..

@@ -92,7 +92,7 @@ def configure(case, build_dir, install_dir):
     ]
     cmake_args.extend([
         f'-DCMAKE_INSTALL_PREFIX={install_dir}',
-        f'-DPYTHON_EXECUTABLE={sys.executable}',
+        f'-DPython_EXECUTABLE={sys.executable}',
         str(SRCDIR)
     ])
 
