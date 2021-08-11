@@ -78,12 +78,16 @@ def _move_to_back(lis, val):
     return lis
 
 
+def _move_bin_edge_to_innermost(var, edge_dim):
+    return var.transpose(_move_to_back(var.dims, edge_dim))
+
+
 def _store_coord(obj, name, coord):
     edges = find_bin_edges(coord, obj)
     if not edges:
         obj.coords[name] = coord
     elif len(edges) == 1:
-        obj.coords[name] = coord.transpose(_move_to_back(coord.dims, edges[0]))
+        obj.coords[name] = _move_bin_edge_to_innermost(coord, edges[0])
     else:
         raise NotImplementedError(
             'Coordinates with more than one bin-edge dimension are not supported. '

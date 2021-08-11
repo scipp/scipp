@@ -9,8 +9,7 @@ def find_bin_edges(var, ds):
     var is a coord or attr of ds.
     """
     bin_edges = []
-    for idx, dim in enumerate(var.dims):
-        length = var.shape[idx]
+    for dim, length in var.sizes.items():
         if not ds.dims:
             # Have a scalar slice.
             # Cannot match dims, just assume length 2 attributes are bin-edge
