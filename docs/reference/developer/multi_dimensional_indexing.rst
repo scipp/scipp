@@ -121,21 +121,49 @@ Similarly to ``ViewIndex``, ``MultiIndex`` flattens dimensions during constructi
 if the corresponding memory layout is contiguous in all operands.
 Iteration functions in much the same way as described in `Incrementing`_ above.
 
+The image below shows some examples of possible states of ``MultiIndex`` (without flattening contiguous dimensions).
+Square brackets denote arrays in the number of dimensions and round parentheses denote arrays in the number of operands.
+The left and center case correspond to unary operations and the one to the right to a binary operation
+with broadcasting in the second operand.
+Note that there is always one additional operand, e.g. on the left, ``data_index`` has two elements,
+the one listed first is the output ``Variable``.
+
 .. image:: ../../images/multi_dimensional_indexing/multi_index_dense_setups.svg
   :width: 640
   :alt: Example setups of MultiIndex with dense data
 
-∅
+Here, '∅' denotes ignored members.
 
 
 Binned Data
 ^^^^^^^^^^^
 
+Conceptually, binned data is handled by nesting two MultiIndices, the inner iterates over the contents of a bin,
+while the outer iterates over bin indices.
+Every time the outer moves to another bin, it loads the corresponding parameters and initializes the inner index.
+
+In practice, the implementation inlines the inner index into the outer such that ``m_ndim`` is the total number of
+dimensions and arrays like ``m_shape`` have elements for both inner and outer dimensions.
+Dimensions inside the bins come first in those arrays.
+
+The images below show examples of ``MultiIndex`` with binned data.
+Gray boxes denote bin indices and yellow boxes denote bin contents.
+Arrows show which bins the indices refer to.
+
+The left and center cases show one-dimensional indices with one-dimensional bins.
+Note how the ``shape`` varies between the two cases because a different bin has been loaded (``bin.bin_index``).
+Multi-dimensional indices with one-dimensional bins are handled in the same way.
+
 .. image:: ../../images/multi_dimensional_indexing/multi_index_binned_1d_setups.svg
   :width: 640
   :alt: Example setups of MultiIndex with data with 1 dimensional bins
 
+Multi-dimensional bins are more complicated.
+The image on the left shows bins of a buffer that was sliced in the inner dimension and on the right
+it has been sliced in the outer dimension.
+This is indicated by ``m_nested_dim_index`` and ``m_bin_stride`` is the distance in memory
+when incrementing ``m_nested_dim_index``.
 
 .. image:: ../../images/multi_dimensional_indexing/multi_index_binned_2d_setups.svg
-  :width: 640
+  :width: 480
   :alt: Example setups of MultiIndex with data with 2 dimensional bins
