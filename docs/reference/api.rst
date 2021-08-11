@@ -225,8 +225,8 @@ Compatibility
 
    to_dict
    from_dict
-   from_pandas
-   from_xarray
+   compat.from_pandas
+   compat.from_xarray
 
 
 Typing

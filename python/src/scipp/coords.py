@@ -33,7 +33,7 @@ class Graph:
     def __contains__(self, name):
         return name in self._graph
 
-    def show(self, size=None):
+    def show(self, size=None, simplified=False):
         try:
             from graphviz import Digraph
         except ImportError:
@@ -46,9 +46,12 @@ class Graph:
             if isinstance(producer, str):  # rename
                 dot.edge(producer, output)
             else:
-                name = f'{producer.__name__}(...)'
-                dot.node(name, shape='ellipse', style='filled', color='lightgrey')
-                dot.edge(name, output)
+                if not simplified:
+                    name = f'{producer.__name__}(...)'
+                    dot.node(name, shape='ellipse', style='filled', color='lightgrey')
+                    dot.edge(name, output)
+                else:
+                    name = output
                 argnames = _argnames(producer)
                 for arg in argnames:
                     dot.edge(arg, name)
@@ -290,7 +293,7 @@ def transform_coords(x: Union[DataArray, Dataset],
         return _transform_dataset(x, coords=coords, graph=graph, kwargs=kwargs)
 
 
-def show_graph(graph, size: str = None):
+def show_graph(graph, size: str = None, simplified: bool = False):
     """
     Show graphical representation of a graph as required by
     :py:func:`transform_coords`
@@ -300,5 +303,7 @@ def show_graph(graph, size: str = None):
     :param size: Size forwarded to graphviz, must be a string, "width,height"
                  or "size". In the latter case, the same value is used for
                  both width and height.
+    :param simplified: If ``True``, do not show the conversion functions,
+                       only the potential input and output coordinates.
     """
-    return Graph(graph).show(size=size)
+    return Graph(graph).show(size=size, simplified=simplified)
