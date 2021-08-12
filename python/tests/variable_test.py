@@ -916,3 +916,15 @@ def test_sort():
     assert_export(sc.sort, x=var, dim='x', order='ascending')
     assert_export(sc.issorted, x=var, dim='x', order='ascending')
     assert_export(sc.allsorted, x=var, dim='x', order='ascending')
+
+
+def test_islinspace_true():
+    x = sc.Variable(dims=['x'], values=np.arange(5.), unit=sc.units.m)
+    assert sc.islinspace(x, 'x').value
+    assert sc.islinspace(x).value
+
+
+def test_islinspace_false():
+    x = sc.Variable(dims=['x'], values=(1, 1.5, 4), unit=sc.units.m)
+    assert not sc.islinspace(x, 'x').value
+    assert not sc.islinspace(x).value
