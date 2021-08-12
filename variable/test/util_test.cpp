@@ -86,6 +86,67 @@ TEST(UtilTest, values_variances) {
   EXPECT_EQ(variances(var), 2.0 * (units::m * units::m));
 }
 
+TEST(UtilTest, issorted_sorted_variable_ascending_expect_true) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{1, 2, 3}, Shape{3});
+  EXPECT_TRUE(issorted(var, Dim::X, SortOrder::Ascending).value<bool>());
+}
+
+TEST(UtilTest, issorted_sorted_variable_ascending_expect_false) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{3, 2, 1}, Shape{3});
+  EXPECT_FALSE(issorted(var, Dim::X, SortOrder::Ascending).value<bool>());
+}
+
+TEST(UtilTest, issorted_sorted_variable_descending_expect_true) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{3, 2, 1}, Shape{3});
+  EXPECT_TRUE(issorted(var, Dim::X, SortOrder::Descending).value<bool>());
+}
+
+TEST(UtilTest, issorted_sorted_variable_descending_expect_false) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{1, 2, 3}, Shape{3});
+  EXPECT_FALSE(issorted(var, Dim::X, SortOrder::Descending).value<bool>());
+}
+
+TEST(UtilTest, issorted_unsorted_variable_ascending) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{1, 3, 2}, Shape{3});
+  EXPECT_FALSE(issorted(var, Dim::X, SortOrder::Ascending).value<bool>());
+}
+
+TEST(UtilTest, issorted_unsorted_variable_descending) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{1, 3, 2}, Shape{3});
+  EXPECT_FALSE(issorted(var, Dim::X, SortOrder::Descending).value<bool>());
+}
+
+TEST(UtilTest, allsorted_sorted_variable_ascending_expect_true) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{1, 2, 3}, Shape{3});
+  EXPECT_TRUE(allsorted(var, Dim::X, SortOrder::Ascending));
+}
+
+TEST(UtilTest, allsorted_sorted_variable_ascending_expect_false) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{3, 2, 1}, Shape{3});
+  EXPECT_FALSE(allsorted(var, Dim::X, SortOrder::Ascending));
+}
+
+TEST(UtilTest, allsorted_sorted_variable_descending_expect_true) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{3, 2, 1}, Shape{3});
+  EXPECT_TRUE(allsorted(var, Dim::X, SortOrder::Descending));
+}
+
+TEST(UtilTest, allsorted_sorted_variable_descending_expect_false) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{1, 2, 3}, Shape{3});
+  EXPECT_FALSE(allsorted(var, Dim::X, SortOrder::Descending));
+}
+
+TEST(UtilTest, allsorted_unsorted_variable_ascending) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{1, 3, 2}, Shape{3});
+  EXPECT_FALSE(allsorted(var, Dim::X, SortOrder::Ascending));
+}
+
+TEST(UtilTest, allsorted_unsorted_variable_descending) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{1, 3, 2}, Shape{3});
+  EXPECT_FALSE(allsorted(var, Dim::X, SortOrder::Descending));
+}
+
+
 TEST(VariableTest, where) {
   auto var =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 2, 3});
