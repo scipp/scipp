@@ -204,10 +204,19 @@ void init_buckets(py::module &m) {
       "sum", [](const Variable &x) { return dataset::buckets::sum(x); },
       py::call_guard<py::gil_scoped_release>());
   buckets.def(
+      "mean", [](const Variable &x) { return dataset::buckets::mean(x); },
+      py::call_guard<py::gil_scoped_release>());
+  buckets.def(
       "sum", [](const DataArray &x) { return dataset::buckets::sum(x); },
       py::call_guard<py::gil_scoped_release>());
   buckets.def(
+      "mean", [](const DataArray &x) { return dataset::buckets::mean(x); },
+      py::call_guard<py::gil_scoped_release>());
+  buckets.def(
       "sum", [](const Dataset &x) { return dataset::buckets::sum(x); },
+      py::call_guard<py::gil_scoped_release>());
+  buckets.def(
+      "mean", [](const Dataset &x) { return dataset::buckets::mean(x); },
       py::call_guard<py::gil_scoped_release>());
 
   m.def(

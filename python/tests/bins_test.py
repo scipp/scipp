@@ -4,6 +4,7 @@
 import pytest
 import scipp as sc
 import numpy as np
+from math import isnan
 from .nexus_helpers import (find_by_nx_class, in_memory_nexus_file_with_event_data)
 
 
@@ -200,3 +201,55 @@ def test_bins_sum_with_masked_buffer():
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
     binned = sc.bin(data, edges=[xbins])
     assert binned.bins.sum().values[0] == 2
+
+
+def test_bins_mean():
+    data = sc.DataArray(data=sc.Variable(dims=['position'],
+                                         unit=sc.units.counts,
+                                         values=[0.1, 0.2, 0.3, 0.4, 0.5]),
+                        coords={
+                            'x':
+                            sc.Variable(dims=['position'],
+                                        unit=sc.units.m,
+                                        values=[1, 2, 3, 4, 5])
+                        })
+    xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0, 5, 6, 7])
+    binned = sc.bin(data, edges=[xbins])
+
+    # Mean of [0.1, 0.2, 0.3, 0.4]
+    assert binned.bins.mean().values[0] == 0.25
+
+    # Mean of [0.5]
+    assert binned.bins.mean().values[1] == 0.5
+
+    # Mean of last (empty) bin should be NaN
+    assert isnan(binned.bins.mean().values[2])
+
+
+def test_bins_mean_with_masks():
+    data = sc.DataArray(data=sc.Variable(dims=['position'],
+                                         unit=sc.units.counts,
+                                         values=[0.1, 0.2, 0.3, 0.4, 0.5]),
+                        coords={
+                            'x':
+                            sc.Variable(dims=['position'],
+                                        unit=sc.units.m,
+                                        values=[1, 2, 3, 4, 5])
+                        },
+                        masks={
+                            'test-mask':
+                            sc.Variable(dims=['position'],
+                                        unit=sc.units.one,
+                                        values=[False, True, False, True, False])
+                        })
+    xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0, 5, 6, 7])
+    binned = sc.bin(data, edges=[xbins])
+
+    # Mean of [0.1, 0.3] (0.2 and 0.4 are masked)
+    assert binned.bins.mean().values[0] == 0.2
+
+    # Mean of [0.5]
+    assert binned.bins.mean().values[1] == 0.5
+
+    # Mean of last (empty) bin should be NaN
+    assert isnan(binned.bins.mean().values[2])
