@@ -17,6 +17,7 @@ Features
 * Add ``transform_coords`` for (multi-step) transformations based on existing coords, with support of event coords `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
 * Add ``from_pandas`` and ``from_xarray`` for conversion of pandas dataframes, xarray data arrays and dataset to scipp objects `#2054 <https://github.com/scipp/scipp/pull/2054>`_.
 * Added ``full`` and ``full_like`` variable creation functions `#2069 <https://github.com/scipp/scipp/pull/2069>`_.
+* ``islinspace`` can now take multi-dimensional variables aslong as you pass the dimension to be checked `#2094 https://github.com/scipp/scipp/pull/2094`
 * Added a power function and support for the ``**`` operator `#2083 <https://github.com/scipp/scipp/pull/2083>`_.
 
 Breaking changes
@@ -34,6 +35,7 @@ Breaking changes
 * ``astype`` and ``to_unit`` now copy the input by default even when no transformation is required, use the new ``copy`` argument to avoid `#2016 <https://github.com/scipp/scipp/pull/2016>`_.
 * ``rename_dims`` does not rename dimension-coords any more, only dims will be renamed `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
 * ``rename_dims`` does not modify the input anymore but returns a new object with renamed dims `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
+* ``issorted`` and ``islinspace`` return a variable of type boolean instead of a boolean `#2094 https://github.com/scipp/scipp/pull/2094
 
 Bugfixes
 ~~~~~~~~
