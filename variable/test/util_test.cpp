@@ -146,7 +146,6 @@ TEST(UtilTest, allsorted_unsorted_variable_descending) {
   EXPECT_FALSE(allsorted(var, Dim::X, SortOrder::Descending));
 }
 
-
 TEST(VariableTest, where) {
   auto var =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 2, 3});
