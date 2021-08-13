@@ -420,7 +420,6 @@ Variable mean(const Variable &data) {
     const auto &&[indices, dim, buffer] = data.constituents<DataArray>();
     if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
         mask_union.is_valid()) {
-
       const auto masked = applyMask(buffer, indices, dim, mask_union);
       variable::sum_impl(means, masked);
 
@@ -447,7 +446,8 @@ Variable mean(const Variable &data) {
 }
 
 DataArray mean(const DataArray &data) {
-  return {buckets::mean(data.data()), data.coords(), data.masks(), data.attrs()};
+  return {buckets::mean(data.data()), data.coords(), data.masks(), 
+          data.attrs()};
 }
 
 Dataset mean(const Dataset &d) {
