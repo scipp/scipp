@@ -253,3 +253,17 @@ def test_bins_mean_with_masks():
 
     # Mean of last (empty) bin should be NaN
     assert isnan(binned.bins.mean().values[2])
+
+
+def test_bins_mean_using_bins():
+    # Call to sc.bins gives different data structure compared to sc.bin
+
+    buffer = sc.arange('event', 5, unit=sc.units.ns, dtype=sc.dtype.float64)
+    begin = sc.array(dims=['x'], values=[0, 2], dtype=sc.dtype.int64)
+    end = sc.array(dims=['x'], values=[2, 5], dtype=sc.dtype.int64)
+    binned = sc.bins(data=buffer, dim='event', begin=begin, end=end)
+    means = binned.bins.mean()
+
+    assert sc.identical(
+        means,
+        sc.array(dims=["x"], values=[0.5, 3], unit=sc.units.ns, dtype=sc.dtype.float64))
