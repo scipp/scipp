@@ -446,7 +446,7 @@ Variable mean(const Variable &data) {
 }
 
 DataArray mean(const DataArray &data) {
-  return {buckets::mean(data.data()), data.coords(), data.masks(), 
+  return {buckets::mean(data.data()), data.coords(), data.masks(),
           data.attrs()};
 }
 
