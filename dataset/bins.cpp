@@ -405,7 +405,7 @@ Dataset sum(const Dataset &d) {
   return apply_to_items(d, [](auto &&... _) { return buckets::sum(_...); });
 }
 
-Variable mean(const Variable& data) {
+Variable mean(const Variable &data) {
   auto type = variable::variableFactory().elem_dtype(data);
   type = type == dtype<bool> ? dtype<int64_t> : type;
   const auto unit = variable::variableFactory().elem_unit(data);
@@ -421,16 +421,16 @@ Variable mean(const Variable& data) {
     if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
         mask_union.is_valid()) {
 
-        const auto masked = applyMask(buffer, indices, dim, mask_union);
-        variable::sum_impl(means, masked);
+      const auto masked = applyMask(buffer, indices, dim, mask_union);
+      variable::sum_impl(means, masked);
 
-        // Trick to get the sizes of bins if masks are present - bin the masks
-        // using the same dimension & indices as the data, and then sum the
-        // inverse of the mask to get the number of unmasked entries.
-        auto sizes = makeVariable<int64_t>(masked.dims());
-        variable::sum_impl(sizes, make_bins(indices, dim, ~mask_union));
+      // Trick to get the sizes of bins if masks are present - bin the masks
+      // using the same dimension & indices as the data, and then sum the
+      // inverse of the mask to get the number of unmasked entries.
+      auto sizes = makeVariable<int64_t>(masked.dims());
+      variable::sum_impl(sizes, make_bins(indices, dim, ~mask_union));
 
-        means /= astype(sizes, dtype<double>);
+      means /= astype(sizes, dtype<double>);
 
     } else {
       variable::sum_impl(means, data);
