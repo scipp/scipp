@@ -346,33 +346,35 @@ template <class... Params>
 MultiIndex(const ElementArrayViewParams &, const Params &...)
     -> MultiIndex<sizeof...(Params) + 1>;
 
-extern template MultiIndex<1>::MultiIndex(const Dimensions &, const Strides &);
-extern template MultiIndex<2>::MultiIndex(const Dimensions &, const Strides &,
-                                          const Strides &);
-extern template MultiIndex<3>::MultiIndex(const Dimensions &, const Strides &,
-                                          const Strides &, const Strides &);
-extern template MultiIndex<4>::MultiIndex(const Dimensions &, const Strides &,
-                                          const Strides &, const Strides &,
-                                          const Strides &);
+extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
+MultiIndex<1>::MultiIndex(const Dimensions &, const Strides &);
+extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
+MultiIndex<2>::MultiIndex(const Dimensions &, const Strides &, const Strides &);
+extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
+MultiIndex<3>::MultiIndex(const Dimensions &, const Strides &, const Strides &,
+                          const Strides &);
+extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
+MultiIndex<4>::MultiIndex(const Dimensions &, const Strides &, const Strides &,
+                          const Strides &, const Strides &);
 
-extern template MultiIndex<1>::MultiIndex(binned_tag, const Dimensions &,
-                                          const Dimensions &,
-                                          const ElementArrayViewParams &);
-extern template MultiIndex<2>::MultiIndex(binned_tag, const Dimensions &,
-                                          const Dimensions &,
-                                          const ElementArrayViewParams &,
-                                          const ElementArrayViewParams &);
-extern template MultiIndex<3>::MultiIndex(binned_tag, const Dimensions &,
-                                          const Dimensions &,
-                                          const ElementArrayViewParams &,
-                                          const ElementArrayViewParams &,
-                                          const ElementArrayViewParams &);
-extern template MultiIndex<4>::MultiIndex(binned_tag, const Dimensions &,
-                                          const Dimensions &,
-                                          const ElementArrayViewParams &,
-                                          const ElementArrayViewParams &,
-                                          const ElementArrayViewParams &,
-                                          const ElementArrayViewParams &);
+extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
+MultiIndex<1>::MultiIndex(binned_tag, const Dimensions &, const Dimensions &,
+                          const ElementArrayViewParams &);
+extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
+MultiIndex<2>::MultiIndex(binned_tag, const Dimensions &, const Dimensions &,
+                          const ElementArrayViewParams &,
+                          const ElementArrayViewParams &);
+extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
+MultiIndex<3>::MultiIndex(binned_tag, const Dimensions &, const Dimensions &,
+                          const ElementArrayViewParams &,
+                          const ElementArrayViewParams &,
+                          const ElementArrayViewParams &);
+extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
+MultiIndex<4>::MultiIndex(binned_tag, const Dimensions &, const Dimensions &,
+                          const ElementArrayViewParams &,
+                          const ElementArrayViewParams &,
+                          const ElementArrayViewParams &,
+                          const ElementArrayViewParams &);
 
 extern template class MultiIndex<1>;
 extern template class MultiIndex<2>;
