@@ -4,6 +4,7 @@
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
+#include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
@@ -131,7 +132,8 @@ TEST_F(GroupbyTest, copy_nan) {
 TEST_F(GroupbyTest, fail_2d_coord) {
   d.setCoord(Dim("2d"), makeVariable<float>(Dims{Dim::X, Dim::Z}, Shape{3, 2}));
   EXPECT_NO_THROW(groupby(d, Dim("labels2")));
-  EXPECT_THROW(groupby(d, Dim("labels2")).sum(Dim::X), except::DimensionError);
+  EXPECT_THROW(groupby(d, Dim("labels2")).sum(Dim::X),
+               except::CoordMismatchError);
 }
 
 TEST_F(GroupbyTest, dataset_1d_and_2d) {

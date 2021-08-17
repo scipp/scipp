@@ -32,20 +32,14 @@ Variable join_edges(const View &a, const View &b, const Dim dim) {
 }
 
 namespace {
-// TODO near-duplicate of is_edges in core/sizes.cpp
-constexpr auto is_bin_edges = [](const auto &coord, const auto &dims,
-                                 const Dim dim) {
-  return coord.dims().contains(dim) &&
-         ((dims.contains(dim) == 1) ? coord.dims()[dim] != dims.at(dim)
-                                    : coord.dims()[dim] == 2);
-};
 template <class T1, class T2, class DimT>
 auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
             const DimT &dimsB) {
   std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
   for (const auto [key, a_] : a) {
     if (a.dim_of(key) == dim) {
-      if (is_bin_edges(a_, dimsA, dim) != is_bin_edges(b[key], dimsB, dim)) {
+      if (is_edges(dimsA, a_.dims(), dim) !=
+          is_edges(dimsB, b[key].dims(), dim)) {
         throw except::BinEdgeError(
             "Either both or neither of the inputs must be bin edges.");
       } else if (a_.dims()[dim] == (dimsA.contains(dim) ? dimsA.at(dim) : 1)) {
@@ -214,7 +208,7 @@ Variable flatten_bin_edge(const Variable &var,
 Dim bin_edge_in_from_labels(const Variable &var, const Dimensions &array_dims,
                             const scipp::span<const Dim> &from_labels) {
   for (const auto &dim : from_labels)
-    if (is_bin_edges(var, array_dims, dim))
+    if (is_edges(array_dims, var.dims(), dim))
       return dim;
   return Dim::Invalid;
 }
@@ -226,7 +220,7 @@ Dim bin_edge_in_from_labels(const Variable &var, const Dimensions &array_dims,
 DataArray fold(const DataArray &a, const Dim from_dim,
                const Dimensions &to_dims) {
   return dataset::transform(a, [&](const auto &var) {
-    if (is_bin_edges(var, a.dims(), from_dim))
+    if (is_edges(a.dims(), var.dims(), from_dim))
       return fold_bin_edge(var, from_dim, to_dims);
     else if (var.dims().contains(from_dim))
       return fold(var, from_dim, to_dims);

@@ -52,11 +52,11 @@ static inline void expectAlignedCoord(const Dim coord_dim, const Variable &var,
   // possibility that the coordinates actually align along the operation
   // dimension.
   if (var.dims().ndim() > 1 && var.dims().contains(operation_dim))
-    throw except::DimensionError("Coordinate " + to_string(coord_dim) +
-                                 " contains the operation dim " +
-                                 to_string(operation_dim) +
-                                 ", but has more than one dimension. It will "
-                                 "thus not be reduced by the operation.");
+    throw except::CoordMismatchError(
+        "Coordinate " + to_string(coord_dim) + " contains the operation dim " +
+        to_string(operation_dim) +
+        ", but has more than one dimension. Data must be rebinned before "
+        "operation is possible.");
 }
 
 template <bool ApplyToData, class Func, class... Args>

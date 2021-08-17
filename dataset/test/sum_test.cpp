@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+#include "scipp/dataset/except.h"
 #include "scipp/dataset/reduction.h"
 
 #include <gtest/gtest.h>
@@ -94,11 +95,11 @@ TEST_F(Sum2dCoordTest, data_array_2d_labels) {
 TEST_F(Sum2dCoordTest, data_array_bad_2d_coord_fail) {
   DataArray a(var, {{Dim::X, var}});
   // Values being summed have different X coord -> fail.
-  EXPECT_THROW(sum(a, Dim::Y), except::DimensionError);
+  EXPECT_THROW(sum(a, Dim::Y), except::CoordMismatchError);
 }
 
 TEST_F(Sum2dCoordTest, data_array_bad_2d_labels_fail) {
   DataArray a(var, {{Dim("xlabels"), var}});
   // Values being summed have different x labels -> fail.
-  EXPECT_THROW(sum(a, Dim::Y), except::DimensionError);
+  EXPECT_THROW(sum(a, Dim::Y), except::CoordMismatchError);
 }

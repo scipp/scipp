@@ -113,6 +113,9 @@ Dim Dict<Key, Value>::dim_of(const Key &key) const {
   if (var.dims().ndim() == 1)
     return var.dims().inner();
   if constexpr (std::is_same_v<Key, Dim>) {
+    for (const auto &dim : var.dims())
+      if (is_edges(sizes(), var.dims(), dim))
+        return dim;
     if (var.dims().contains(key))
       return key; // dimension coord
   }
