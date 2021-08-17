@@ -15,8 +15,8 @@ Compilers
 ~~~~~~~~~
 
 - GCC >= 9
-- LLVM Clang >= 7
-- XCode >= 10.2
+- XCode >= 12.4
+- MSVC >= 16 (2019)
 
 Static Analysis and Formatters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
