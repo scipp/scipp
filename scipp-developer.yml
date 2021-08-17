@@ -13,6 +13,7 @@ dependencies:
   - tbb-devel
   - conan
   - cmake
+  - pip
 
   # Run
   - appdirs
