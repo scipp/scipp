@@ -68,7 +68,7 @@ DataArray apply_or_copy_dim_impl(const DataArray &a, Func func, const Dim dim,
     // operator can be moved. Without `copy`, the result of `func` is always
     // copied.
     for (auto &&[d, coord] : view)
-      if (coord.dims().ndim() == 0 || dim_of_coord(coord, d) != dim) {
+      if (coord.dims().ndim() == 0 || view.dim_of(d) != dim) {
         if (aligned)
           expectAlignedCoord(d, coord, dim);
         if constexpr (ApplyToData) {

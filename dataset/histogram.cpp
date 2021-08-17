@@ -52,7 +52,7 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
         },
         dim, binEdges);
   } else if (!is_histogram(events, dim)) {
-    const auto event_dim = dim_of_coord(events.coords()[dim], dim);
+    const auto event_dim = events.coords().dim_of(dim);
     result = apply_and_drop_dim(
         events,
         [dim](const DataArray &events_, const Dim event_dim_,

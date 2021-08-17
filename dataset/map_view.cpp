@@ -98,6 +98,27 @@ template <class Key, class Value> Value Dict<Key, Value>::at(const Key &key) {
   return std::as_const(*this).at(key);
 }
 
+/// Return the dimension for given coord.
+/// @param var Coordinate variable
+/// @param key Key of the coordinate in a coord dict
+///
+/// For dimension-coords, this is the same as the key, for non-dimension-coords
+/// (labels) we adopt the convention that they are "label" their inner
+/// dimension. Returns Dim::Invalid for 0-D var.
+template <class Key, class Value>
+Dim Dict<Key, Value>::dim_of(const Key &key) const {
+  const auto &var = at(key);
+  if (var.dims().ndim() == 0)
+    return Dim::Invalid;
+  if (var.dims().ndim() == 1)
+    return var.dims().inner();
+  if constexpr (std::is_same_v<Key, Dim>) {
+    if (var.dims().contains(key))
+      return key; // dimension coord
+  }
+  return Dim::Invalid;
+}
+
 template <class Key, class Value>
 void Dict<Key, Value>::setSizes(const Sizes &sizes) {
   scipp::expect::includes(sizes, m_sizes);
@@ -127,8 +148,13 @@ void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
   expectWritable(*this);
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
-  if (!m_sizes.includes(coord.dims()) &&
-      !is_edges(m_sizes, coord.dims(), dim_of_coord(coord, key)))
+  auto dims = coord.dims();
+  for (const auto &dim : coord.dims())
+    if (!sizes().contains(dim) && dims[dim] == 2) // bin edge along extra dim
+      dims.erase(dim);
+    else if (dims[dim] == sizes()[dim] + 1)
+      dims.resize(dim, sizes()[dim]);
+  if (!m_sizes.includes(dims))
     throw except::DimensionError("Cannot add coord exceeding DataArray dims");
   m_items.insert_or_assign(key, std::move(coord));
 }
@@ -163,13 +189,13 @@ Dict<Key, Value> Dict<Key, Value>::slice(const Slice &params) const {
 }
 
 namespace {
-constexpr auto unaligned_by_dim_slice = [](const auto &item,
+constexpr auto unaligned_by_dim_slice = [](const auto &coords, const auto &item,
                                            const Slice &params) {
   if (params == Slice{} || params.end() != -1)
     return false;
   const Dim dim = params.dim();
   const auto &[key, var] = item;
-  return var.dims().contains(dim) && dim_of_coord(var, key) == dim;
+  return var.dims().contains(dim) && coords.dim_of(key) == dim;
 };
 }
 
@@ -180,7 +206,7 @@ Dict<Key, Value>::slice_coords(const Slice &params) const {
   coords.m_readonly = false;
   Dict<Key, Value> attrs(coords.sizes(), {});
   for (auto &coord : *this)
-    if (unaligned_by_dim_slice(coord, params))
+    if (unaligned_by_dim_slice(*this, coord, params))
       attrs.set(coord.first, coords.extract(coord.first));
   coords.m_readonly = true;
   return {std::move(coords), std::move(attrs)};

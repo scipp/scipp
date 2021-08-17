@@ -44,7 +44,7 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
             const DimT &dimsB) {
   std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
   for (const auto [key, a_] : a) {
-    if (dim_of_coord(a_, key) == dim) {
+    if (a.dim_of(key) == dim) {
       if (is_bin_edges(a_, dimsA, dim) != is_bin_edges(b[key], dimsB, dim)) {
         throw except::BinEdgeError(
             "Either both or neither of the inputs must be bin edges.");

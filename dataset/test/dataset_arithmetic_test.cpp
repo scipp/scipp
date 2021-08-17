@@ -177,8 +177,8 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, slice_lhs_with_variance) {
       // operations between misaligned data in case a coordinate is
       // multi-dimensional.
       const auto coords = item.coords();
-      if (std::all_of(coords.begin(), coords.end(), [dim](const auto &coord) {
-            return dim_of_coord(coord.second, coord.first) == dim ||
+      if (std::all_of(coords.begin(), coords.end(), [&](const auto &coord) {
+            return coords.dim_of(coord.first) == dim ||
                    !coord.second.dims().contains(dim);
           })) {
         ASSERT_NO_THROW(TestFixture::op(target, item.slice({dim, 2})));
