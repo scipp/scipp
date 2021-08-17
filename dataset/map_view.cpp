@@ -2,8 +2,10 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/dataset/map_view.h"
+#include <algorithm>
+
 #include "scipp/dataset/except.h"
+#include "scipp/dataset/map_view.h"
 
 namespace scipp::dataset {
 
@@ -266,9 +268,8 @@ template <class Key, class Value>
 bool Dict<Key, Value>::item_applies_to(const Key &key,
                                        const Dimensions &dims) const {
   const auto &val = m_items.at(key);
-  return dims.includes(val.dims()) ||
-         (!sizes().includes(val.dims()) &&
-          is_edges(Sizes(dims), val.dims(), dim_of_coord(val, key)));
+  return std::all_of(val.dims().begin(), val.dims().end(),
+                     [&dims](const Dim dim) { return dims.contains(dim); });
 }
 
 template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;
