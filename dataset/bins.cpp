@@ -416,7 +416,6 @@ Variable mean(const Variable &data) {
     const auto &&[indices, dim, buffer] = data.constituents<DataArray>();
     if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
         mask_union.is_valid()) {
-
       // Trick to get the sizes of bins if masks are present - bin the masks
       // using the same dimension & indices as the data, and then sum the
       // inverse of the mask to get the number of unmasked entries.
@@ -426,10 +425,8 @@ Variable mean(const Variable &data) {
                  type, CopyPolicy::TryAvoid);
 
     } else {
-      return astype(buckets::sum(data),
-             type, CopyPolicy::TryAvoid) / 
-          astype(bucket_sizes(data), 
-              type, CopyPolicy::TryAvoid);
+      return astype(buckets::sum(data), type, CopyPolicy::TryAvoid) / 
+          astype(bucket_sizes(data), type, CopyPolicy::TryAvoid);
     }
   } else {
     return astype(buckets::sum(data), type, CopyPolicy::TryAvoid) / 
