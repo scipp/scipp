@@ -425,11 +425,11 @@ Variable mean(const Variable &data) {
                  type, CopyPolicy::TryAvoid);
 
     } else {
-      return astype(buckets::sum(data), type, CopyPolicy::TryAvoid) / 
+      return astype(buckets::sum(data), type, CopyPolicy::TryAvoid) /
              astype(bucket_sizes(data), type, CopyPolicy::TryAvoid);
     }
   } else {
-    return astype(buckets::sum(data), type, CopyPolicy::TryAvoid) / 
+    return astype(buckets::sum(data), type, CopyPolicy::TryAvoid) /
            astype(bucket_sizes(data), type, CopyPolicy::TryAvoid);
   }
 }
