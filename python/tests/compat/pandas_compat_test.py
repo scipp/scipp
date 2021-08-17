@@ -1,6 +1,6 @@
 import pandas
 import scipp as sc
-from scipp.compat.pandas_compat import from_pandas
+from scipp.compat import from_pandas
 
 
 def _make_reference_da(row_name, row_coords, values, dtype="int64"):

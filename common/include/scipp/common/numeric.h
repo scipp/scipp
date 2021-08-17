@@ -65,6 +65,39 @@ template <class T, class U> auto remainder(const T &a, const U &b) {
   }
 }
 
+namespace {
+template <class B, class E>
+constexpr auto integer_pow_pos_exponent(const B &base,
+                                        const E exponent) noexcept {
+  static_assert(std::is_integral_v<std::decay_t<E>>);
+
+  if (exponent == 0)
+    return static_cast<B>(1);
+  if (exponent == 1)
+    return base;
+
+  const auto aux = integer_pow_pos_exponent(base, exponent / 2);
+  if (exponent % 2 == 0)
+    return aux * aux;
+  return base * aux * aux;
+}
+} // namespace
+
+template <class B, class E>
+constexpr auto pow(const B base, const E exponent) noexcept {
+  if constexpr (std::is_integral_v<std::decay_t<E>>) {
+    if (exponent >= 0) {
+      return integer_pow_pos_exponent(base, exponent);
+    } else {
+      return static_cast<std::decay_t<B>>(1) /
+             integer_pow_pos_exponent(base, -exponent);
+    }
+  } else {
+    using std::pow;
+    return pow(base, exponent);
+  }
+}
+
 template <class T> bool isnan([[maybe_unused]] T x) {
   if constexpr (std::is_floating_point_v<std::decay_t<T>>)
     return std::isnan(x);

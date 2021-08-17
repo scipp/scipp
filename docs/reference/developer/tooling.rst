@@ -14,9 +14,9 @@ Note: Ubuntu users can use the `Kitware Repo <https://apt.kitware.com/>`_ to obt
 Compilers
 ~~~~~~~~~
 
-- GCC >= 7
-- LLVM Clang >= 7
-- XCode >= 10.2
+- GCC >= 9
+- XCode >= 12.4
+- MSVC >= 16 (2019)
 
 Static Analysis and Formatters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

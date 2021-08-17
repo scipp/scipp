@@ -51,6 +51,10 @@ def ab(*, a, b):
     return a + b
 
 
+def ba(b, a):
+    return b + a
+
+
 def bc(*, b, c):
     return b * c
 
@@ -146,6 +150,26 @@ def test_dim_rename_multi_level_merge_multi_output():
     # Similar to test_dim_rename_multi_level_merge above, but now an implicit
     # intermediate result prevents conversion of a to c
     assert da.dims == ['a', 'bc']
+
+
+def test_dim_merge_two_transposed():
+    # *a   *b
+    #   \  /
+    #    ab
+    # without bin-edge
+    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
+    # ab depends on two dimension coords => no rename of a
+    da = original.transform_coords(['ba'], graph={'ba': ba})
+    assert da.dims == ['a', 'b']
+    assert sc.identical(da.coords['ba'], sc.transpose(b + a, ['b', 'a']))
+
+    # without bin-edge
+    bin_edge = sc.arange('b', 0, b.shape[0] + 1)
+    original = sc.DataArray(data=a + b, coords={'a': a, 'b': bin_edge})
+    # ab depends on two dimension coords => no rename of a
+    da = original.transform_coords(['ba'], graph={'ba': ba})
+    assert da.dims == ['a', 'b']
+    assert sc.identical(da.coords['ba'], sc.transpose(bin_edge + a, ['a', 'b']))
 
 
 def test_rename_dims_param():
@@ -333,3 +357,10 @@ def test_duplicate_output_keys():
     with pytest.raises(ValueError):
         graph = {('b', 'd'): to_bd, ('b', 'c'): to_bc}
         original.transform_coords(['b'], graph=graph)
+
+
+def test_prioritize_coords_attrs_conflict():
+    original = sc.DataArray(data=a, coords={'a': a}, attrs={'a': -1 * a})
+
+    with pytest.raises(sc.DataArrayError):
+        original.transform_coords(['b'], graph={'b': 'a'})
