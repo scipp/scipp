@@ -34,6 +34,8 @@
 #include "bin_common.h"
 #include "dataset_operations_common.h"
 
+#include <iostream>
+
 namespace scipp::dataset {
 namespace {
 constexpr auto copy_or_match = [](const auto &a, auto &&b, const Dim dim,
@@ -407,42 +409,32 @@ Dataset sum(const Dataset &d) {
 
 Variable mean(const Variable &data) {
   auto type = variable::variableFactory().elem_dtype(data);
-  type = type == dtype<bool> ? dtype<int64_t> : type;
-  const auto unit = variable::variableFactory().elem_unit(data);
-
-  Variable means;
-  if (variable::variableFactory().hasVariances(data))
-    means = Variable(type, data.dims(), unit, Values{}, Variances{});
-  else
-    means = Variable(type, data.dims(), unit, Values{});
+  // Convert everything other than float to dtype<double>.
+  type = type == dtype<float> ? dtype<float> : dtype<double>;
 
   if (data.dtype() == dtype<bucket<DataArray>>) {
     const auto &&[indices, dim, buffer] = data.constituents<DataArray>();
     if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
         mask_union.is_valid()) {
-      const auto masked = applyMask(buffer, indices, dim, mask_union);
-      variable::sum_impl(means, masked);
 
       // Trick to get the sizes of bins if masks are present - bin the masks
       // using the same dimension & indices as the data, and then sum the
       // inverse of the mask to get the number of unmasked entries.
-      auto sizes = makeVariable<int64_t>(masked.dims());
-      variable::sum_impl(sizes, make_bins(indices, dim, ~mask_union));
-
-      means /= astype(sizes, dtype<double>);
+      return astype(buckets::sum(data), type, CopyPolicy::TryAvoid) /
+             astype(
+                 buckets::sum(make_bins_no_validate(indices, dim, ~mask_union)),
+                 type, CopyPolicy::TryAvoid);
 
     } else {
-      variable::sum_impl(means, data);
-      means = astype(means, dtype<double>, CopyPolicy::TryAvoid) /
-              astype(bucket_sizes(data), dtype<double>, CopyPolicy::TryAvoid);
+      return astype(buckets::sum(data),
+             type, CopyPolicy::TryAvoid) / 
+          astype(bucket_sizes(data), 
+              type, CopyPolicy::TryAvoid);
     }
   } else {
-    variable::sum_impl(means, data);
-    means = astype(means, dtype<double>, CopyPolicy::TryAvoid) /
-            astype(bucket_sizes(data), dtype<double>, CopyPolicy::TryAvoid);
+    return astype(buckets::sum(data), type, CopyPolicy::TryAvoid) / 
+        astype(bucket_sizes(data), type, CopyPolicy::TryAvoid);
   }
-
-  return means;
 }
 
 DataArray mean(const DataArray &data) {
