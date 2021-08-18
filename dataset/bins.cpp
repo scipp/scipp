@@ -34,8 +34,6 @@
 #include "bin_common.h"
 #include "dataset_operations_common.h"
 
-#include <iostream>
-
 namespace scipp::dataset {
 namespace {
 constexpr auto copy_or_match = [](const auto &a, auto &&b, const Dim dim,
@@ -424,14 +422,10 @@ Variable mean(const Variable &data) {
                  buckets::sum(make_bins_no_validate(indices, dim, ~mask_union)),
                  type, CopyPolicy::TryAvoid);
 
-    } else {
-      return astype(buckets::sum(data), type, CopyPolicy::TryAvoid) /
-             astype(bucket_sizes(data), type, CopyPolicy::TryAvoid);
     }
-  } else {
-    return astype(buckets::sum(data), type, CopyPolicy::TryAvoid) /
-           astype(bucket_sizes(data), type, CopyPolicy::TryAvoid);
   }
+  return astype(buckets::sum(data), type, CopyPolicy::TryAvoid) /
+         astype(bucket_sizes(data), type, CopyPolicy::TryAvoid);
 }
 
 DataArray mean(const DataArray &data) {

@@ -226,6 +226,7 @@ def test_bins_mean():
     assert isnan(binned.bins.mean().values[2])
 
     assert binned.bins.mean().dims == ["x"]
+    assert binned.bins.mean().shape == [3]
     assert binned.bins.mean().unit == sc.units.counts
 
 
@@ -258,6 +259,7 @@ def test_bins_mean_with_masks():
     assert isnan(binned.bins.mean().values[2])
 
     assert binned.bins.mean().dims == ["x"]
+    assert binned.bins.mean().shape == [3]
     assert binned.bins.mean().unit == sc.units.counts
 
 
