@@ -85,21 +85,21 @@ TEST_F(Sum2dCoordTest, data_array_2d_coord) {
   EXPECT_FALSE(sum(a, Dim::X).coords().contains(Dim::X));
 }
 
-TEST_F(Sum2dCoordTest, data_array_2d_labels) {
+TEST_F(Sum2dCoordTest, data_array_2d_labels_dropped) {
   DataArray a(var, {{Dim("xlabels"), var}});
-  // Labels are for summed dimension -> drop. Note that associated dimension for
-  // labels is their inner dim, X in this case.
+  // Coord depend on summed dimension -> drop.
   EXPECT_FALSE(sum(a, Dim::X).coords().contains(Dim("xlabels")));
+  EXPECT_FALSE(sum(a, Dim::Y).coords().contains(Dim("xlabels")));
+  // Drops even dimension coords
+  EXPECT_FALSE(sum(a, Dim::Y).coords().contains(Dim::X));
 }
 
-TEST_F(Sum2dCoordTest, data_array_bad_2d_coord_fail) {
-  DataArray a(var, {{Dim::X, var}});
-  // Values being summed have different X coord -> fail.
-  EXPECT_THROW(sum(a, Dim::Y), except::CoordMismatchError);
-}
-
-TEST_F(Sum2dCoordTest, data_array_bad_2d_labels_fail) {
-  DataArray a(var, {{Dim("xlabels"), var}});
-  // Values being summed have different x labels -> fail.
-  EXPECT_THROW(sum(a, Dim::Y), except::CoordMismatchError);
+TEST_F(Sum2dCoordTest, data_array_independent_2d_labels_preserved) {
+  Variable var3d{makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X},
+                                      Shape{1, 2, 2},
+                                      Values{1.0, 2.0, 3.0, 4.0})};
+  DataArray a(var3d, {{Dim::X, var}});
+  EXPECT_FALSE(sum(a, Dim::X).coords().contains(Dim::X));
+  EXPECT_FALSE(sum(a, Dim::Y).coords().contains(Dim::X));
+  EXPECT_TRUE(sum(a, Dim::Z).coords().contains(Dim::X));
 }

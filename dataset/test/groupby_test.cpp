@@ -129,11 +129,11 @@ TEST_F(GroupbyTest, copy_nan) {
             makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{4, 5}));
 }
 
-TEST_F(GroupbyTest, fail_2d_coord) {
+TEST_F(GroupbyTest, drop_2d_coord) {
   d.setCoord(Dim("2d"), makeVariable<float>(Dims{Dim::X, Dim::Z}, Shape{3, 2}));
   EXPECT_NO_THROW(groupby(d, Dim("labels2")));
-  EXPECT_THROW(groupby(d, Dim("labels2")).sum(Dim::X),
-               except::CoordMismatchError);
+  EXPECT_FALSE(
+      groupby(d, Dim("labels2")).sum(Dim::X).coords().contains(Dim("2d")));
 }
 
 TEST_F(GroupbyTest, dataset_1d_and_2d) {
