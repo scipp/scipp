@@ -46,7 +46,6 @@ throw_mismatch_error(const dataset::Dataset &expected,
 struct SCIPP_DATASET_EXPORT CoordMismatchError : public DatasetError {
   CoordMismatchError(const Dim dim, const Variable &expected,
                      const Variable &actual);
-  CoordMismatchError(const std::string &message);
 };
 
 } // namespace scipp::except

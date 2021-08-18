@@ -33,9 +33,6 @@ CoordMismatchError::CoordMismatchError(const Dim dim, const Variable &expected,
                    "', expected\n" + format_variable(expected) + ", got\n" +
                    format_variable(actual)} {}
 
-CoordMismatchError::CoordMismatchError(const std::string &message)
-    : DatasetError{message} {}
-
 } // namespace scipp::except
 
 namespace scipp::dataset::expect {

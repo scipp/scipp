@@ -4,7 +4,6 @@
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
-#include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
