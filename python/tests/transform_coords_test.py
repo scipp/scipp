@@ -226,10 +226,8 @@ def test_binned():
     del binned.coords['y']
     binned.coords['y'] = sc.arange(dim='y', start=0, stop=2)
 
-    # TODO Avoid dimension error if we write `x2*y`, provided that it is
-    # temporary before rename. May be fixed automatically via fix for #2057.
     def convert(*, x2, y):
-        return {'yy': y * y, 'xy': y * x2}
+        return {'yy': y * y, 'xy': x2 * y}
 
     def check(da, original):
         y = original.coords['y']
