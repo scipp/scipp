@@ -225,6 +225,108 @@ TEST(UtilTest, allsorted2D_unsorted_variable_descending) {
   EXPECT_FALSE(allsorted(var, Dim::Y, SortOrder::Descending));
 }
 
+TEST(UtilTest, issorted3D_sorted_variable_ascending_expect_true) {
+  auto var =
+      makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}},
+                          Values{1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2,
+                                 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3});
+  EXPECT_TRUE(
+      variable::all(issorted(var, Dim::Z, SortOrder::Ascending)).value<bool>());
+}
+
+TEST(UtilTest, issorted3D_sorted_variable_ascending_expect_false) {
+  auto var =
+      makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}},
+                          Values{3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2,
+                                 1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2, 1});
+  EXPECT_FALSE(
+      variable::any(issorted(var, Dim::Z, SortOrder::Ascending)).value<bool>());
+}
+
+TEST(UtilTest, issorted3D_sorted_variable_descending_expect_true) {
+  auto var =
+      makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}},
+                          Values{3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2,
+                                 1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2, 1});
+  EXPECT_TRUE(variable::all(issorted(var, Dim::Z, SortOrder::Descending))
+                  .value<bool>());
+}
+
+TEST(UtilTest, issorted3D_sorted_variable_descending_expect_false) {
+  auto var =
+      makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}},
+                          Values{1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2,
+                                 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3});
+  EXPECT_FALSE(variable::any(issorted(var, Dim::Z, SortOrder::Descending))
+                   .value<bool>());
+}
+
+TEST(UtilTest, issorted3D_unsorted_variable_ascending) {
+  auto var =
+      makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}},
+                          Values{2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3,
+                                 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1});
+  EXPECT_FALSE(
+      variable::any(issorted(var, Dim::Z, SortOrder::Ascending)).value<bool>());
+}
+
+TEST(UtilTest, issorted3D_unsorted_variable_descending) {
+  auto var =
+      makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}},
+                          Values{1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3,
+                                 2, 1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2});
+  EXPECT_FALSE(variable::any(issorted(var, Dim::Z, SortOrder::Descending))
+                   .value<bool>());
+}
+
+TEST(UtilTest, allsorted3D_sorted_variable_ascending_expect_true) {
+  auto var =
+      makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}},
+                          Values{1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2,
+                                 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3});
+  EXPECT_TRUE(allsorted(var, Dim::Z, SortOrder::Ascending));
+}
+
+TEST(UtilTest, allsorted3D_sorted_variable_ascending_expect_false) {
+  auto var =
+      makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}},
+                          Values{3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2,
+                                 1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2, 1});
+  EXPECT_FALSE(allsorted(var, Dim::Z, SortOrder::Ascending));
+}
+
+TEST(UtilTest, allsorted3D_sorted_variable_descending_expect_true) {
+  auto var =
+      makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}},
+                          Values{3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2,
+                                 1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2, 1});
+  EXPECT_TRUE(allsorted(var, Dim::Z, SortOrder::Descending));
+}
+
+TEST(UtilTest, allsorted3D_sorted_variable_descending_expect_false) {
+  auto var =
+      makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}},
+                          Values{1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2,
+                                 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3});
+  EXPECT_FALSE(allsorted(var, Dim::Z, SortOrder::Descending));
+}
+
+TEST(UtilTest, allsorted3D_unsorted_variable_ascending) {
+  auto var =
+      makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}},
+                          Values{2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3,
+                                 1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3, 1});
+  EXPECT_FALSE(allsorted(var, Dim::Z, SortOrder::Ascending));
+}
+
+TEST(UtilTest, allsorted3D_unsorted_variable_descending) {
+  auto var =
+      makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}, {Dim::Z, 3}},
+                          Values{1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3,
+                                 2, 1, 3, 2, 1, 3, 2, 1, 3, 2, 1, 3, 2});
+  EXPECT_FALSE(allsorted(var, Dim::Z, SortOrder::Descending));
+}
+
 TEST(VariableTest, where) {
   auto var =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 2, 3});
