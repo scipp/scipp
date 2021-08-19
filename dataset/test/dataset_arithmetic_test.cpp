@@ -332,7 +332,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
-  auto dataset = datasetFactory().make();
+  auto dataset = datasetFactory().make()["data_xyz"];
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
   ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::X, 3})),
@@ -521,7 +521,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest,
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_slice_coord_mismatch) {
-  auto dataset = datasetFactory().make();
+  auto dataset = datasetFactory().make()["data_xyz"];
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
   ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::X, 3})),
