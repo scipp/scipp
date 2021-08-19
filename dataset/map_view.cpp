@@ -99,12 +99,15 @@ template <class Key, class Value> Value Dict<Key, Value>::at(const Key &key) {
 }
 
 /// Return the dimension for given coord.
-/// @param var Coordinate variable
 /// @param key Key of the coordinate in a coord dict
 ///
-/// For dimension-coords, this is the same as the key, for non-dimension-coords
-/// (labels) we adopt the convention that they are "label" their inner
-/// dimension. Returns Dim::Invalid for 0-D var.
+/// Return the dimension of the coord for 1-D coords or Dim::Invalid for 0-D
+/// coords. In the special case of multi-dimension coords the following applies,
+/// in this order:
+/// - For bin-edge coords return the dimension in which the coord dimension
+///   exceeds the data dimensions.
+/// - Else, for dimension coords (key matching a dimension), return the key.
+/// - Else, return Dim::Invalid.
 template <class Key, class Value>
 Dim Dict<Key, Value>::dim_of(const Key &key) const {
   const auto &var = at(key);
