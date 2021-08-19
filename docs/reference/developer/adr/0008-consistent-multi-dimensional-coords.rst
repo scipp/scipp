@@ -39,6 +39,9 @@ Positive:
 - Fix inconsistent behavior.
 - Bin-edges work as expected in more cases.
 - Transposing is not necessary any more to work around limitations.
+- Reduction operations now drop multi-dimensional coords that depend on the reduction dimension.
+  This makes the operations more flexible while at the same time ensuring consistency, by dropping rather than preserving the coordinate.
+  Note that in rare cases this may lead to undesirable consequences, e.g., if the result of the reduction is later add to other that where the coord is present, which would be wrong.
 
 Negative:
 ~~~~~~~~~
