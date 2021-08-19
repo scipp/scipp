@@ -58,7 +58,7 @@ Variable issorted(const Variable &x, const Dim dim, const SortOrder order) {
     return makeVariable<bool>(Values{true});
   auto dims = x.dims();
   dims.erase(dim);
-  auto out = makeVariable<bool>(Dimensions{dims});
+  auto out = variable::ones(dims, units::one, dtype<bool>);
   if (order == SortOrder::Ascending)
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
