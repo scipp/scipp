@@ -35,9 +35,10 @@ def issorted(x: _cpp.Variable,
     :param dim: Dimension along which order is checked.
     :param order: Sorting order. Valid options are 'ascending' and
       'descending'. Default is 'ascending'.
-    :return: Variable with value True if the variable values are
-      monotonously ascending or descending (depending on the
-      requested order), with value False otherwise.
+    :return: Variable containing one less dim, than the original
+     variable with the corresponding boolean value for whether or
+     not it was sorted along the given dim for the other
+     dimensions.
     """
     return _call_cpp_func(_cpp.issorted, x, dim, order)
 
