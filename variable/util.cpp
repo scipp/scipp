@@ -8,6 +8,7 @@
 #include "scipp/variable/accumulate.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/astype.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 
@@ -52,18 +53,12 @@ Variable islinspace(const Variable &var, const Dim dim) {
 /// If `order` is SortOrder::Ascending, checks if values are non-decreasing.
 /// If `order` is SortOrder::Descending, checks if values are non-increasing.
 Variable issorted(const Variable &x, const Dim dim, const SortOrder order) {
-  return makeVariable<bool>(Values{allsorted(x, dim, order)});
-}
-
-/// Return true if variable values are sorted along given dim.
-///
-/// If `order` is SortOrder::Ascending, checks if values are non-decreasing.
-/// If `order` is SortOrder::Descending, checks if values are non-increasing.
-bool allsorted(const Variable &x, const Dim dim, const SortOrder order) {
   const auto size = x.dims()[dim];
   if (size < 2)
-    return true;
-  auto out = makeVariable<bool>(Values{true});
+    return makeVariable<bool>(Values{true});
+  auto dims = x.dims();
+  dims.erase(dim);
+  auto out = makeVariable<bool>(Dimensions{dims});
   if (order == SortOrder::Ascending)
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
@@ -72,7 +67,15 @@ bool allsorted(const Variable &x, const Dim dim, const SortOrder order) {
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
                         core::element::issorted_nonascending, "issorted");
-  return out.value<bool>();
+  return out;
+}
+
+/// Return true if variable values are sorted along given dim.
+///
+/// If `order` is SortOrder::Ascending, checks if values are non-decreasing.
+/// If `order` is SortOrder::Descending, checks if values are non-increasing.
+bool allsorted(const Variable &x, const Dim dim, const SortOrder order) {
+  return variable::all(issorted(x, dim, order)).value<bool>();
 }
 
 /// Zip elements of two variables into a variable where each element is a pair.
