@@ -23,6 +23,15 @@ def test_operation_with_python_int32():
     assert sc.identical(a + b, a + sc.scalar(b))
 
 
+def test_reverse_operation_with_python_int32():
+    a = sc.scalar(3, dtype='int32')
+    b = 2
+    assert sc.identical(b + a, sc.scalar(b) + a)
+    assert sc.identical(b - a, sc.scalar(b) - a)
+    assert sc.identical(b * a, sc.scalar(b) * a)
+    assert sc.identical(b / a, sc.scalar(b) / a)
+
+
 def test_inplace_operation_with_python_int32():
     a = sc.scalar(3, dtype='int32')
     b = 2
