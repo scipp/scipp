@@ -228,6 +228,16 @@ Compatibility
    compat.from_pandas
    compat.from_xarray
 
+Modules
+=======
+
+.. autosummary::
+   :toctree: ../generated/modules
+   :template: scipp-module-template.rst
+   :recursive:
+
+   constants
+
 
 Typing
 ======

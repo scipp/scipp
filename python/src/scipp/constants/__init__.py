@@ -1,16 +1,9 @@
 # flake8: noqa: E501
 r"""
-==================================
-Constants (:mod:`scipp.constants`)
-==================================
+Physical and mathematical constants with units.
+This is a wrapper around `scipy.constants <https://docs.scipy.org/doc/scipy/reference/constants.html>`_.
 
-.. currentmodule:: scipp.constants
-
-Physical and mathematical constants and units.
-This is a wrapper around ``scipy.constants``.
-
-Mathematical constants
-======================
+Mathematical constants:
 
 ================  =================================================================
 ``pi``            Pi
@@ -18,8 +11,7 @@ Mathematical constants
 ``golden_ratio``  Golden ratio
 ================  =================================================================
 
-Physical constants
-==================
+Physical constants:
 
 ===========================  =============================================
 ``c``                        speed of light in vacuum
@@ -55,16 +47,11 @@ Physical constants
 ``neutron_mass``             neutron mass
 ===========================  =============================================
 
-Constants database
-------------------
-
 In addition to the above variables, :mod:`scipp.constants` also contains the
 2018 CODATA recommended values [CODATA2018]_ database containing more physical
 constants.
 The database is accessed using :py:func:`scipp.constants.physical_constants`.
 
-References
-==========
 .. [CODATA2018] CODATA Recommended Values of the Fundamental
    Physical Constants 2018.
    https://physics.nist.gov/cuu/Constants/
@@ -75,11 +62,13 @@ from .. import scalar, Variable
 
 def physical_constants(key: str, with_variance: bool = False) -> Variable:
     """
-    Returns the CODATA recommended value of the requested physical constant.
+    Returns the CODATA recommended value with unit of the requested physical constant.
 
     :param key: Key of the requested constant. See `scipy.constants.physical_constants <https://docs.scipy.org/doc/scipy/reference/constants.html#scipy.constants.physical_constants>`_ for an overview.
     :param with_variance: Optional, if True, the uncertainty if the constant is
                           included as the variance. Default is False.
+    :returns: Scalar variable with unit and optional variance.
+    :rtype: Variable
     """
     from scipy.constants import physical_constants as _cd
     value, unit, uncertainty = _cd[key]
