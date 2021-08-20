@@ -1,7 +1,8 @@
 # flake8: noqa: E501
 r"""
 Physical and mathematical constants with units.
-This is a wrapper around `scipy.constants <https://docs.scipy.org/doc/scipy/reference/constants.html>`_.
+This module a wrapper around `scipy.constants <https://docs.scipy.org/doc/scipy/reference/constants.html>`_
+and requires the ``scipy`` package to be installed.
 
 Mathematical constants:
 

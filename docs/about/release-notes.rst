@@ -40,6 +40,7 @@ Bugfixes
 ~~~~~~~~
 
 * Various fixes in ``plot``, see  `#2018 <https://github.com/scipp/scipp/pull/2018>`_ for details.
+* Operations with Python floats to long interpret the float as 32-bit float `#2101 <https://github.com/scipp/scipp/pull/2101>`_.
 
 Contributors
 ~~~~~~~~~~~~
