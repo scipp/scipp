@@ -23,3 +23,12 @@ def test_physical_constants():
     assert var.variance is None
     var = ours.physical_constants('speed of light in vacuum', with_variance=True)
     assert var.variance == e * e
+
+
+@pytest.mark.parametrize(
+    "var", [ours.m_e, ours.physical_constants('speed of light in vacuum')])
+def test_constants_cannot_be_modified(var):
+    original = var.copy()
+    with pytest.raises(sc.VariableError):
+        var *= 2.0
+    assert sc.identical(var, original)
