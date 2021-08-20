@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-from scipp.spatial.transform import from_rotvec
+from scipp.spatial.transform import from_rotvec, as_rotvec
 import scipp as sc
 import numpy as np
 
@@ -32,3 +32,17 @@ def test_from_rotvec_rad():
     deg = sc.vector(value=[90, 0, 0], unit='deg')
     rad = sc.to_unit(deg, 'rad')
     assert np.allclose(from_rotvec(deg).values, from_rotvec(rad).values)
+
+
+def test_as_rotvec_bad_unit():
+    rotvec = sc.vector(value=[1.2, -2.3, 3.4], unit='deg')
+    rot = from_rotvec(rotvec)
+    with pytest.raises(sc.UnitError):
+        as_rotvec(rot, unit='m')
+
+
+def test_as_rotvec():
+    deg = sc.vector(value=[1.2, -2.3, 3.4], unit='deg')
+    rad = sc.to_unit(deg, 'rad')
+    assert sc.allclose(as_rotvec(from_rotvec(deg), unit='deg'), deg)
+    assert sc.allclose(as_rotvec(from_rotvec(deg), unit='rad'), rad)
