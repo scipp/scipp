@@ -228,17 +228,13 @@ static void bind_binary(pybind11::class_<T, Ignored...> &c) {
 
 template <class T, class... Ignored>
 void bind_in_place_binary_scalars(pybind11::class_<T, Ignored...> &c) {
-  OpBinder<ScalarToVariable>::in_place_binary<float>(c);
   OpBinder<ScalarToVariable>::in_place_binary<double>(c);
-  OpBinder<ScalarToVariable>::in_place_binary<int32_t>(c);
   OpBinder<ScalarToVariable>::in_place_binary<int64_t>(c);
 }
 
 template <class T, class... Ignored>
 void bind_binary_scalars(pybind11::class_<T, Ignored...> &c) {
-  OpBinder<ScalarToVariable>::binary<float>(c);
   OpBinder<ScalarToVariable>::binary<double>(c);
-  OpBinder<ScalarToVariable>::binary<int32_t>(c);
   OpBinder<ScalarToVariable>::binary<int64_t>(c);
 }
 

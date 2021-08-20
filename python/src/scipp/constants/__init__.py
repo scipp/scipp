@@ -80,8 +80,8 @@ def physical_constants(key: str, with_variance: bool = False) -> Variable:
 
 
 # mathematical constants
-pi = _math.pi
-golden = golden_ratio = (1 + _math.sqrt(5)) / 2
+pi = scalar(_math.pi)
+golden = golden_ratio = scalar((1 + _math.sqrt(5)) / 2)
 
 # physical constants
 c = speed_of_light = physical_constants('speed of light in vacuum')
