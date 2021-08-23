@@ -10,7 +10,7 @@ Context
 
 In the special case of non-dimension coords that have more than 1 dimension, they are considered to be labels for their inner dimension.
 This causes trouble in many cases, e.g., after computation of ``phi`` and ``radius`` for 2-D data from ``x`` and ``y`` coords.
-If for example ``phi.dims = ['x', 'y']`` and ``radius.dims = ['y', 'x']`` then and ``x`` slice will:
+If for example ``phi.dims = ['x', 'y']`` and ``radius.dims = ['y', 'x']`` then an ``x`` slice will:
 
 - Convert ``radius`` to an attribute because it is considered a coordinate of ``x``.
 - Keep ``phi`` as a coordinate because it is considered a coordinate of ``y``.
