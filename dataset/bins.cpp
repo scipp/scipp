@@ -415,9 +415,8 @@ Variable mean(const Variable &data) {
       // using the same dimension & indices as the data, and then sum the
       // inverse of the mask to get the number of unmasked entries.
       return normalize_impl(
-          buckets::sum(data), 
+          buckets::sum(data),
           buckets::sum(make_bins_no_validate(indices, dim, ~mask_union)));
-
     }
   }
   return normalize_impl(buckets::sum(data), bucket_sizes(data));
