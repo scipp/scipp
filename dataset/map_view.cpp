@@ -155,11 +155,15 @@ void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
   auto dims = coord.dims();
-  for (const auto &dim : coord.dims())
-    if (!sizes().contains(dim) && dims[dim] == 2) // bin edge along extra dim
+  for (const auto &dim : coord.dims()) {
+    if (!sizes().contains(dim) && dims[dim] == 2) { // bin edge along extra dim
       dims.erase(dim);
-    else if (dims[dim] == sizes()[dim] + 1)
+      break;
+    } else if (dims[dim] == sizes()[dim] + 1) {
       dims.resize(dim, sizes()[dim]);
+      break;
+    }
+  }
   if (!m_sizes.includes(dims))
     throw except::DimensionError("Cannot add coord exceeding DataArray dims");
   m_items.insert_or_assign(key, std::move(coord));

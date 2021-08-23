@@ -130,3 +130,19 @@ TEST(MutableCoordsViewTest, item_write) {
   ASSERT_EQ(coords[Dim::X], x_reference);
   ASSERT_EQ(coords[Dim::Y], y_reference);
 }
+
+TEST(DictTest, set_bin_edges) {
+  const auto x2y3 = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3});
+  const auto x2y4 = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 4});
+  const auto x3y3 = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 3});
+  const auto x3y4 = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 4});
+  // Single bin in extra dim, not dim of data
+  const auto x2_extra = makeVariable<double>(Dims{Dim::X, Dim::Z}, Shape{2, 2});
+  const auto x3_extra = makeVariable<double>(Dims{Dim::X, Dim::Z}, Shape{3, 2});
+  DataArray da(x2y3);
+  ASSERT_NO_THROW(da.coords().set(Dim::X, x2y4));
+  ASSERT_NO_THROW(da.coords().set(Dim::X, x3y3));
+  ASSERT_NO_THROW(da.coords().set(Dim::X, x2_extra));
+  ASSERT_THROW(da.coords().set(Dim::X, x3y4), except::DimensionError);
+  ASSERT_THROW(da.coords().set(Dim::X, x3_extra), except::DimensionError);
+}
