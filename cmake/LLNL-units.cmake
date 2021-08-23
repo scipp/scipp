@@ -37,4 +37,4 @@ add_subdirectory(
   EXCLUDE_FROM_ALL
 )
 
-set_target_properties(units-shared PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(units PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
