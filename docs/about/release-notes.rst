@@ -20,6 +20,7 @@ Features
 * Added a power function and support for the ``**`` operator `#2083 <https://github.com/scipp/scipp/pull/2083>`_.
 * Add ``scipp.constants`` module for physical constants `#2101 <https://github.com/scipp/scipp/pull/2101>`_.
 * Add ``scipp.spatial.transform`` module providing ``from_rotvec`` and ``as_rotvec`` `#2102 <https://github.com/scipp/scipp/pull/2102>`_.
+* Add ``cross`` function to complementing existing ``dot`` function `#2109 <https://github.com/scipp/scipp/pull/2109>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
