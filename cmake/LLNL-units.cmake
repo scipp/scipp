@@ -31,6 +31,7 @@ set(UNITS_NAMESPACE
     CACHE STRING "" FORCE
 )
 set(UNITS_BUILD_SHARED_LIBRARY ON)
+set(UNITS_BUILD_STATIC_LIBRARY OFF)
 set(UNITS_BASE_TYPE uint64_t)
 add_subdirectory(
   ${CMAKE_BINARY_DIR}/llnl-units-src ${CMAKE_BINARY_DIR}/llnl-units-build
