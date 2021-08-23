@@ -494,8 +494,11 @@ def test_abs_out():
 
 
 def test_dot():
-    assert_export(sc.dot, sc.Variable(dims=(), values=0.0),
-                  sc.Variable(dims=(), values=0.0))
+    assert_export(sc.dot, sc.vector(value=[0, 0, 1]), sc.vector(value=[0, 0, 1]))
+
+
+def test_cross():
+    assert_export(sc.cross, sc.vector(value=[0, 0, 1]), sc.vector(value=[0, 0, 1]))
 
 
 def test_concatenate():

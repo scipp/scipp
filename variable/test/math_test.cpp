@@ -310,6 +310,24 @@ TEST(Variable, dot_of_vector) {
   EXPECT_EQ(dot(var, var), reference);
 }
 
+TEST(Variable, cross_of_vector) {
+  Eigen::Vector3d v1(1, 0, 0);
+  Eigen::Vector3d v2(0, 1, 0);
+  Eigen::Vector3d v3(0, 0, 1);
+  Eigen::Vector3d v4(0, 0, -1);
+  Eigen::Vector3d v5(0, 0, 0);
+
+  auto reference = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{3}, units::Unit(units::m) * units::Unit(units::m),
+      Values{element::cross(v1, v2), element::cross(v2, v1),
+             element::cross(v2, v2)});
+  auto var1 = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{v1, v2, v2});
+  auto var2 = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{v2, v1, v2});
+  EXPECT_EQ(cross(var1, var2), reference);
+}
+
 TEST(Variable, reciprocal) {
   auto var1 = makeVariable<double>(Values{2});
   auto var2 = makeVariable<double>(Values{0.5});

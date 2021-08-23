@@ -59,6 +59,11 @@ constexpr auto dot = overloaded{
     [](const auto &a, const auto &b) { return a.dot(b); },
     [](const units::Unit &a, const units::Unit &b) { return a * b; }};
 
+constexpr auto cross = overloaded{
+    arg_list<Eigen::Vector3d>,
+    [](const auto &a, const auto &b) { return a.cross(b); },
+    [](const units::Unit &a, const units::Unit &b) { return a * b; }};
+
 constexpr auto reciprocal = overloaded{
     arg_list<double, float>,
     [](const auto &x) { return static_cast<std::decay_t<decltype(x)>>(1) / x; },

@@ -76,6 +76,7 @@ Math
 
    abs
    add
+   cross
    divide
    dot
    exp
