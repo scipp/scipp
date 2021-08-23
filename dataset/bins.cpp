@@ -20,6 +20,7 @@
 #include "scipp/variable/transform.h"
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable.h"
 #include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bin.h"
@@ -417,15 +418,13 @@ Variable mean(const Variable &data) {
       // Trick to get the sizes of bins if masks are present - bin the masks
       // using the same dimension & indices as the data, and then sum the
       // inverse of the mask to get the number of unmasked entries.
-      return astype(buckets::sum(data), type, CopyPolicy::TryAvoid) /
-             astype(
-                 buckets::sum(make_bins_no_validate(indices, dim, ~mask_union)),
-                 type, CopyPolicy::TryAvoid);
+      return normalize_impl(
+          buckets::sum(data), 
+          buckets::sum(make_bins_no_validate(indices, dim, ~mask_union)));
 
     }
   }
-  return astype(buckets::sum(data), type, CopyPolicy::TryAvoid) /
-         astype(bucket_sizes(data), type, CopyPolicy::TryAvoid);
+  return normalize_impl(buckets::sum(data), bucket_sizes(data));
 }
 
 DataArray mean(const DataArray &data) {
