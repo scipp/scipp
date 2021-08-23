@@ -19,6 +19,7 @@ Features
 * Added ``full`` and ``full_like`` variable creation functions `#2069 <https://github.com/scipp/scipp/pull/2069>`_.
 * Added a power function and support for the ``**`` operator `#2083 <https://github.com/scipp/scipp/pull/2083>`_.
 * Add ``scipp.constants`` module for physical constants `#2101 <https://github.com/scipp/scipp/pull/2101>`_.
+* Add ``scipp.spatial.transform`` module providing ``from_rotvec`` and ``as_rotvec`` `#2102 <https://github.com/scipp/scipp/pull/2102>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~

@@ -237,6 +237,7 @@ Modules
    :recursive:
 
    constants
+   spatial
 
 
 Typing
