@@ -889,20 +889,20 @@ def test_comparison():
 
 def test_radd_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var + 1).dtype == var.dtype
-    assert (1 + var).dtype == var.dtype
+    assert (var + 1).dtype == sc.dtype.int64
+    assert (1 + var).dtype == sc.dtype.int64
 
 
 def test_rsub_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var - 1).dtype == var.dtype
-    assert (1 - var).dtype == var.dtype
+    assert (var - 1).dtype == sc.dtype.int64
+    assert (1 - var).dtype == sc.dtype.int64
 
 
 def test_rmul_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var * 1).dtype == var.dtype
-    assert (1 * var).dtype == var.dtype
+    assert (var * 1).dtype == sc.dtype.int64
+    assert (1 * var).dtype == sc.dtype.int64
 
 
 def test_rtruediv_int():
