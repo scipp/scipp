@@ -407,10 +407,6 @@ Dataset sum(const Dataset &d) {
 }
 
 Variable mean(const Variable &data) {
-  auto type = variable::variableFactory().elem_dtype(data);
-  // Convert everything other than float to dtype<double>.
-  type = type == dtype<float> ? dtype<float> : dtype<double>;
-
   if (data.dtype() == dtype<bucket<DataArray>>) {
     const auto &&[indices, dim, buffer] = data.constituents<DataArray>();
     if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
