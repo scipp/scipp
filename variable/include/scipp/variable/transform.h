@@ -479,7 +479,7 @@ template <bool dry_run> struct in_place {
       // The output has a dimension with stride zero so parallelization must
       // be done differently. See parallelization in accumulate.h.
       auto indices = begin;
-      auto end = std::move(begin);
+      auto end = begin;
       end.set_index(arg.size());
       run(indices, end);
     } else {
