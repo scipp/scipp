@@ -8,6 +8,7 @@
 #include <limits>
 
 #include "scipp/common/overloaded.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/time_point.h"
 #include "scipp/core/transform_common.h"
@@ -39,7 +40,8 @@ constexpr auto round = [](const auto x) {
 
 constexpr auto to_unit = overloaded{
     arg_list<double, std::tuple<float, double>, std::tuple<int64_t, double>,
-             std::tuple<int32_t, double>, std::tuple<time_point, double>>,
+             std::tuple<int32_t, double>, std::tuple<time_point, double>,
+             std::tuple<Eigen::Vector3d, double>>,
     transform_flags::expect_no_variance_arg<1>,
     [](const units::Unit &, const units::Unit &target) { return target; },
     [](const auto &x, const auto &scale) {
