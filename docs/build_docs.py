@@ -22,7 +22,7 @@ def get_abs_path(path, root):
 
 
 if __name__ == '__main__':
-    args = parser.parse_known_args()
+    args = parser.parse_known_args()[0]
 
     docs_dir = pathlib.Path(__file__).parent.absolute()
     work_dir = get_abs_path(path=args.work_dir, root=docs_dir)
