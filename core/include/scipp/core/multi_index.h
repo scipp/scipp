@@ -5,7 +5,6 @@
 #pragma once
 
 #include <functional>
-#include <memory>
 #include <numeric>
 #include <optional>
 
