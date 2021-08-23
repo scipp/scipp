@@ -53,12 +53,12 @@ Variable islinspace(const Variable &var, const Dim dim) {
 /// If `order` is SortOrder::Ascending, checks if values are non-decreasing.
 /// If `order` is SortOrder::Descending, checks if values are non-increasing.
 Variable issorted(const Variable &x, const Dim dim, const SortOrder order) {
-  const auto size = x.dims()[dim];
-  if (size < 2)
-    return makeVariable<bool>(Values{true});
   auto dims = x.dims();
   dims.erase(dim);
   auto out = variable::ones(dims, units::one, dtype<bool>);
+  const auto size = x.dims()[dim];
+  if (size < 2)
+    return out;
   if (order == SortOrder::Ascending)
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
