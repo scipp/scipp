@@ -4,13 +4,13 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <cmath>
-
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
+#include <Eigen/Geometry>
+#include <cmath>
 
 namespace scipp::core::element {
 
@@ -57,6 +57,11 @@ constexpr auto sqrt = overloaded{arg_list<double, float>, [](const auto x) {
 constexpr auto dot = overloaded{
     arg_list<Eigen::Vector3d>,
     [](const auto &a, const auto &b) { return a.dot(b); },
+    [](const units::Unit &a, const units::Unit &b) { return a * b; }};
+
+constexpr auto cross = overloaded{
+    arg_list<Eigen::Vector3d>,
+    [](const auto &a, const auto &b) { return a.cross(b); },
     [](const units::Unit &a, const units::Unit &b) { return a * b; }};
 
 constexpr auto reciprocal = overloaded{

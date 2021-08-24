@@ -90,15 +90,27 @@ TEST(ElementSqrtTest, supported_types) {
   static_cast<void>(std::get<float>(supported));
 }
 
-TEST(ElementDotTest, unit) {
+template <class T> void element_vector_op_units_test(T op) {
   const units::Unit m(units::m);
   const units::Unit m2(units::m * units::m);
   const units::Unit dimless(units::dimensionless);
-  EXPECT_EQ(element::dot(m, m), m2);
-  EXPECT_EQ(element::dot(dimless, dimless), dimless);
+  EXPECT_EQ(op(m, m), m2);
+  EXPECT_EQ(op(dimless, dimless), dimless);
 }
 
+TEST(ElementDotTest, unit) { element_vector_op_units_test(element::dot); }
+
 TEST(ElementDotTest, value) {
+  Eigen::Vector3d v1(0, 0, 1);
+  Eigen::Vector3d v2(1, 0, 0);
+  EXPECT_EQ(element::cross(v1, v2), Eigen::Vector3d(0, 1, 0));
+  EXPECT_EQ(element::cross(v2, v1), Eigen::Vector3d(0, -1, 0));
+  EXPECT_EQ(element::cross(v2, v2), Eigen::Vector3d(0, 0, 0));
+}
+
+TEST(ElementCrossTest, unit) { element_vector_op_units_test(element::cross); }
+
+TEST(ElementCrossTest, value) {
   Eigen::Vector3d v1(0, 3, -4);
   Eigen::Vector3d v2(1, 1, -1);
   EXPECT_EQ(element::dot(v1, v1), 25);
