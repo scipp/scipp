@@ -99,9 +99,7 @@ DataArray Dataset::operator[](const std::string &name) const {
 /// extent of a replaced item is not excluded from the check, so even if that
 /// replaced item is the only one in the dataset with that dimension it cannot
 /// be "resized" in this way.
-void Dataset::setSizes(const Sizes &sizes, const Dim coordDim) {
-  if (coordDim != Dim::Invalid && is_edges(m_coords.sizes(), sizes, coordDim))
-    return;
+void Dataset::setSizes(const Sizes &sizes) {
   m_coords.setSizes(merge(m_coords.sizes(), sizes));
 }
 
@@ -114,7 +112,12 @@ void Dataset::rebuildDims() {
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
   expectWritable(*this);
-  setSizes(coord.dims(), dim_of_coord(coord, dim));
+  bool set_sizes = true;
+  for (const auto &coord_dim : coord.dims())
+    if (is_edges(m_coords.sizes(), coord.dims(), coord_dim))
+      set_sizes = false;
+  if (set_sizes)
+    setSizes(coord.dims());
   m_coords.set(dim, std::move(coord));
 }
 

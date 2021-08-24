@@ -71,6 +71,11 @@ template <class T> void bind_to_unit(py::module &m) {
       py::arg("x"), py::arg("unit"), py::arg("copy") = true,
       py::call_guard<py::gil_scoped_release>());
 }
+
+template <class T> void bind_as_const(py::module &m) {
+  m.def(
+      "as_const", [](const T &x) { return x.as_const(); }, py::arg("x"));
+}
 } // namespace
 
 void init_unary(py::module &m) {
@@ -78,4 +83,6 @@ void init_unary(py::module &m) {
   bind_nan_to_num<Variable>(m);
   bind_to_unit<Variable>(m);
   bind_to_unit<DataArray>(m);
+  bind_as_const<Variable>(m);
+  bind_as_const<DataArray>(m);
 }

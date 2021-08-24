@@ -33,6 +33,7 @@ dependencies:
   - python-graphviz
   - xarray  # For testing xarray <-> scipp conversion
   - pandas  # For testing pandas <-> scipp conversion
+  - scipy
 
   # Formatting & static analysis
   - pre-commit

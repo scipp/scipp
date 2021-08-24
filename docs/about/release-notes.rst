@@ -19,6 +19,9 @@ Features
 * Added ``full`` and ``full_like`` variable creation functions `#2069 <https://github.com/scipp/scipp/pull/2069>`_.
 * ``islinspace`` can now take multi-dimensional variables aslong as you pass the dimension to be checked `#2094 https://github.com/scipp/scipp/pull/2094`
 * Added a power function and support for the ``**`` operator `#2083 <https://github.com/scipp/scipp/pull/2083>`_.
+* Binned data now has a ``mean`` method as well as ``sum``, which returns the mean of each element within a bin.
+* Add ``scipp.constants`` module for physical constants `#2101 <https://github.com/scipp/scipp/pull/2101>`_.
+* Add ``scipp.spatial.transform`` module providing ``from_rotvec`` and ``as_rotvec`` `#2102 <https://github.com/scipp/scipp/pull/2102>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -36,11 +39,15 @@ Breaking changes
 * ``rename_dims`` does not rename dimension-coords any more, only dims will be renamed `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
 * ``rename_dims`` does not modify the input anymore but returns a new object with renamed dims `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
 * ``issorted`` and ``islinspace`` return a variable of type boolean instead of a boolean `#2094 https://github.com/scipp/scipp/pull/2094
+* Multi-dimensional coordinates are no longer associated with their inner dimension, which affects the behavior when slicing:
+  Such coords will no longer be turned into attributes during a slice operation on the inner dimension `#2098 <https://github.com/scipp/scipp/pull/2098>`_.
 
 Bugfixes
 ~~~~~~~~
 
 * Various fixes in ``plot``, see  `#2018 <https://github.com/scipp/scipp/pull/2018>`_ for details.
+* Operations with Python floats to long interpret the float as 32-bit float `#2101 <https://github.com/scipp/scipp/pull/2101>`_.
+* Multi-dimensional bin-edge coordinates may now be edges for a non-inner dimension `#2098 <https://github.com/scipp/scipp/pull/2098>`_.
 
 Contributors
 ~~~~~~~~~~~~

@@ -94,20 +94,23 @@ of variances.)");
           "__radd__", [](Variable &a, double &b) { return a + b * units::one; },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
-          "__radd__", [](Variable &a, int &b) { return a + b * units::one; },
+          "__radd__",
+          [](Variable &a, int64_t &b) { return a + b * units::one; },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rsub__", [](Variable &a, double &b) { return b * units::one - a; },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
-          "__rsub__", [](Variable &a, int &b) { return b * units::one - a; },
+          "__rsub__",
+          [](Variable &a, int64_t &b) { return b * units::one - a; },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rmul__",
           [](Variable &a, double &b) { return a * (b * units::one); },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
-          "__rmul__", [](Variable &a, int &b) { return a * (b * units::one); },
+          "__rmul__",
+          [](Variable &a, int64_t &b) { return a * (b * units::one); },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rtruediv__",
@@ -115,7 +118,7 @@ of variances.)");
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rtruediv__",
-          [](Variable &a, int &b) { return (b * units::one) / a; },
+          [](Variable &a, int64_t &b) { return (b * units::one) / a; },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rpow__",

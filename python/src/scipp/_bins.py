@@ -97,6 +97,14 @@ class Bins:
         """
         return _call_cpp_func(_cpp.buckets.sum, self._obj)
 
+    def mean(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+        """Mean of each bin.
+
+        :return: The mean of each of the input bins.
+        :seealso: :py:func:`scipp.mean` for calculating the mean of non-bin data
+        """
+        return _call_cpp_func(_cpp.buckets.mean, self._obj)
+
     def size(self) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Number of events or elements in a bin.
 
