@@ -69,12 +69,6 @@ template <class T> void bind_bins(pybind11::module &m) {
                                         // implicit conversions in functor
 }
 
-template <class T> void bind_bin_size(pybind11::module &m) {
-  m.def(
-      "bin_size", [](const T &x) { return dataset::bucket_sizes(x); },
-      py::call_guard<py::gil_scoped_release>());
-}
-
 template <class T> auto bin_begin_end(const Variable &var) {
   auto &&[indices, dim, buffer] = var.constituents<T>();
   static_cast<void>(dim);
@@ -116,10 +110,6 @@ void init_buckets(py::module &m) {
   bind_bins<Variable>(m);
   bind_bins<DataArray>(m);
   bind_bins<Dataset>(m);
-
-  bind_bin_size<Variable>(m);
-  bind_bin_size<DataArray>(m);
-  bind_bin_size<Dataset>(m);
 
   m.def("is_bins", variable::is_bins);
   m.def("is_bins",
@@ -200,24 +190,6 @@ void init_buckets(py::module &m) {
               py::call_guard<py::gil_scoped_release>());
   buckets.def("scale", dataset::buckets::scale,
               py::call_guard<py::gil_scoped_release>());
-  buckets.def(
-      "sum", [](const Variable &x) { return dataset::buckets::sum(x); },
-      py::call_guard<py::gil_scoped_release>());
-  buckets.def(
-      "mean", [](const Variable &x) { return dataset::buckets::mean(x); },
-      py::call_guard<py::gil_scoped_release>());
-  buckets.def(
-      "sum", [](const DataArray &x) { return dataset::buckets::sum(x); },
-      py::call_guard<py::gil_scoped_release>());
-  buckets.def(
-      "mean", [](const DataArray &x) { return dataset::buckets::mean(x); },
-      py::call_guard<py::gil_scoped_release>());
-  buckets.def(
-      "sum", [](const Dataset &x) { return dataset::buckets::sum(x); },
-      py::call_guard<py::gil_scoped_release>());
-  buckets.def(
-      "mean", [](const Dataset &x) { return dataset::buckets::mean(x); },
-      py::call_guard<py::gil_scoped_release>());
 
   m.def(
       "bin",
