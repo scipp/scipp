@@ -245,32 +245,20 @@ TEST_F(ElementNanArithmeticTest, add_equals_with_rhs_int_lhs_int) {
   EXPECT_EQ(3, lhs);
 }
 
-class ElementMatrixArithmeticTest : public ::testing::Test {
+class ElementMatrixMatrixArithmeticTest : public ::testing::Test {
 protected:
   Eigen::Matrix3d x = Eigen::Matrix3d::Identity();
   Eigen::Matrix3d y = Eigen::Matrix3d::Identity();
-  Eigen::Vector3d vector = {1, 0, 0};
 };
 
-TEST_F(ElementMatrixArithmeticTest, matrix_matrix_add_equals) {
-  Eigen::Matrix3d expected = x + y;
-  add_equals(x, y);
-  EXPECT_EQ(expected, x);
-}
-
-TEST_F(ElementMatrixArithmeticTest, matrix_matrix_subtract_equals) {
-  Eigen::Matrix3d expected = x - y;
-  subtract_equals(x, y);
-  EXPECT_EQ(expected, x);
-}
-
-TEST_F(ElementMatrixArithmeticTest, matrix_matrix_multiply_equals) {
+TEST_F(ElementMatrixMatrixArithmeticTest, multiply_equals) {
   Eigen::Matrix3d expected = x * y;
+  multiply_equals(x, x);
+  EXPECT_EQ(expected, x);
+}
+
+TEST_F(ElementMatrixMatrixArithmeticTest, multiply_equals_self_assign) {
+  Eigen::Matrix3d expected = x * x.eval();
   multiply_equals(x, y);
   EXPECT_EQ(expected, x);
-}
-
-TEST_F(ElementMatrixArithmeticTest, matrix_vector_multiply) {
-  Eigen::Vector3d scaled = x * vector;
-  EXPECT_EQ(scaled, vector);
 }
