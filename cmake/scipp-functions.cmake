@@ -22,6 +22,7 @@ scipp_unary(math sqrt)
 scipp_unary(math norm NO_OUT)
 scipp_binary(math pow SKIP_VARIABLE)
 scipp_binary(math dot NO_OUT)
+scipp_binary(math cross NO_OUT)
 setup_scipp_category(math)
 
 scipp_unary(util values NO_OUT)
