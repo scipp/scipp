@@ -37,12 +37,15 @@ Breaking changes
 * ``astype`` and ``to_unit`` now copy the input by default even when no transformation is required, use the new ``copy`` argument to avoid `#2016 <https://github.com/scipp/scipp/pull/2016>`_.
 * ``rename_dims`` does not rename dimension-coords any more, only dims will be renamed `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
 * ``rename_dims`` does not modify the input anymore but returns a new object with renamed dims `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
+* Multi-dimensional coordinates are no longer associated with their inner dimension, which affects the behavior when slicing:
+  Such coords will no longer be turned into attributes during a slice operation on the inner dimension `#2098 <https://github.com/scipp/scipp/pull/2098>`_.
 
 Bugfixes
 ~~~~~~~~
 
 * Various fixes in ``plot``, see  `#2018 <https://github.com/scipp/scipp/pull/2018>`_ for details.
 * Operations with Python floats to long interpret the float as 32-bit float `#2101 <https://github.com/scipp/scipp/pull/2101>`_.
+* Multi-dimensional bin-edge coordinates may now be edges for a non-inner dimension `#2098 <https://github.com/scipp/scipp/pull/2098>`_.
 
 Contributors
 ~~~~~~~~~~~~
