@@ -20,18 +20,30 @@ def dot(x: VariableLike, y: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.dot, x, y)
 
 
-def cross(x: VariableLike, y: VariableLike) -> VariableLike:
-    """Element-wise cross product.
-
-    :param x: Left hand side operand.
-    :param y: Right hand side operand.
-    :raises: If the dtype of the input is not vector_3_float64.
-    :return: The cross product of the input vectors.
+def issorted(x: _cpp.Variable,
+             dim: str,
+             order: Optional[str] = 'ascending') -> VariableLike:
     """
-    return _call_cpp_func(_cpp.cross, x, y)
+    Check if the values of a variable are sorted.
+
+    - If ``order`` is 'ascending',
+      check if values are non-decreasing along ``dim``.
+    - If ``order`` is 'descending',
+      check if values are non-increasing along ``dim``.
+
+    :param x: Variable to check.
+    :param dim: Dimension along which order is checked.
+    :param order: Sorting order. Valid options are 'ascending' and
+      'descending'. Default is 'ascending'.
+    :return: Variable containing one less dim, than the original
+     variable with the corresponding boolean value for whether or
+     not it was sorted along the given dim for the other
+     dimensions.
+    """
+    return _call_cpp_func(_cpp.issorted, x, dim, order)
 
 
-def issorted(x: _cpp.Variable, dim: str, order: Optional[str] = 'ascending') -> bool:
+def allsorted(x: _cpp.Variable, dim: str, order: Optional[str] = 'ascending') -> bool:
     """
     Check if the values of a variable are sorted.
 
@@ -47,7 +59,18 @@ def issorted(x: _cpp.Variable, dim: str, order: Optional[str] = 'ascending') -> 
     :return: True if the variable values are monotonously ascending or
       descending (depending on the requested order), False otherwise.
     """
-    return _call_cpp_func(_cpp.issorted, x, dim, order)
+    return _call_cpp_func(_cpp.allsorted, x, dim, order)
+
+
+def cross(x: VariableLike, y: VariableLike) -> VariableLike:
+    """Element-wise cross product.
+
+    :param x: Left hand side operand.
+    :param y: Right hand side operand.
+    :raises: If the dtype of the input is not vector_3_float64.
+    :return: The cross product of the input vectors.
+    """
+    return _call_cpp_func(_cpp.cross, x, y)
 
 
 def sort(x: VariableLike,

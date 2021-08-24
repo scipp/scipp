@@ -63,6 +63,16 @@ void bind_issorted(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
 }
 
+void bind_allsorted(py::module &m) {
+  m.def(
+      "allsorted",
+      [](const Variable &x, const Dim dim, const std::string &order) {
+        return allsorted(x, dim, get_sort_order(order));
+      },
+      py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
+      py::call_guard<py::gil_scoped_release>());
+}
+
 void init_operations(py::module &m) {
   bind_dot<Variable>(m);
 
@@ -73,6 +83,7 @@ void init_operations(py::module &m) {
   bind_sort_dim<DataArray>(m);
   bind_sort_dim<Dataset>(m);
   bind_issorted(m);
+  bind_allsorted(m);
 
   m.def(
       "get_slice_params",
