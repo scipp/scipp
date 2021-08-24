@@ -13,6 +13,9 @@ class lookup:
         self.func = func
         self.dim = dim
 
+    def __getitem__(self, var):
+        return _cpp.buckets.map(self.func, var, self.dim)
+
 
 class Bins:
     """

@@ -296,17 +296,16 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
 Variable map(const DataArray &function, const Variable &x, Dim dim) {
   if (dim == Dim::Invalid)
     dim = edge_dimension(function);
-  const auto &coord = bins_view<DataArray>(x).meta()[dim];
   const auto &edges = function.meta()[dim];
   const auto data = masked_data(function, dim);
   const auto weights = subspan_view(data, dim);
   if (all(islinspace(edges, dim)).value<bool>()) {
-    return variable::transform(coord, subspan_view(edges, dim), weights,
+    return variable::transform(x, subspan_view(edges, dim), weights,
                                core::element::event::map_linspace, "map");
   } else {
     if (!allsorted(edges, dim))
       throw except::BinEdgeError("Bin edges of histogram must be sorted.");
-    return variable::transform(coord, subspan_view(edges, dim), weights,
+    return variable::transform(x, subspan_view(edges, dim), weights,
                                core::element::event::map_sorted_edges, "map");
   }
 }

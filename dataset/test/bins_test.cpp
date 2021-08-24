@@ -5,6 +5,7 @@
 #include "test_macros.h"
 
 #include "scipp/dataset/bins.h"
+#include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/histogram.h"
@@ -204,7 +205,8 @@ protected:
 };
 
 TEST_F(DataArrayBinsMapTest, map) {
-  const auto out = buckets::map(histogram, buckets, Dim::Z);
+  const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
+  const auto out = buckets::map(histogram, coord, Dim::Z);
   // event coords 1,2,3,4
   // histogram:
   // | 1 | 2 | 4 |
@@ -222,15 +224,16 @@ TEST_F(DataArrayBinsMapTest, map) {
   histogram.setUnit(units::one); // cannot change unit of slice
   auto partial = buckets;
   for (auto s : {Slice(Dim::Y, 0), Slice(Dim::Y, 1)})
-    partial.slice(s) *= buckets::map(histogram, buckets.slice(s), Dim::Z);
+    partial.slice(s) *= buckets::map(histogram, coord.slice(s), Dim::Z);
   variable::variableFactory().set_elem_unit(partial, units::K);
   EXPECT_EQ(partial, expected);
 }
 
 TEST_F(DataArrayBinsMapTest, map_masked) {
+  const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
   histogram.masks().set(
       "mask", makeVariable<bool>(histogram.dims(), Values{false, true, false}));
-  const auto out = buckets::map(histogram, buckets, Dim::Z);
+  const auto out = buckets::map(histogram, coord, Dim::Z);
   const auto expected_scale = makeVariable<double>(
       Dims{Dim::X}, Shape{4}, units::K, Values{0, 4, 4, 0});
   EXPECT_EQ(out, make_bins(indices, Dim::X, expected_scale));
