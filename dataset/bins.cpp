@@ -20,6 +20,7 @@
 #include "scipp/variable/transform.h"
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable.h"
 #include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bin.h"
@@ -403,6 +404,31 @@ DataArray sum(const DataArray &data) {
 
 Dataset sum(const Dataset &d) {
   return apply_to_items(d, [](auto &&... _) { return buckets::sum(_...); });
+}
+
+Variable mean(const Variable &data) {
+  if (data.dtype() == dtype<bucket<DataArray>>) {
+    const auto &&[indices, dim, buffer] = data.constituents<DataArray>();
+    if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
+        mask_union.is_valid()) {
+      // Trick to get the sizes of bins if masks are present - bin the masks
+      // using the same dimension & indices as the data, and then sum the
+      // inverse of the mask to get the number of unmasked entries.
+      return normalize_impl(
+          buckets::sum(data),
+          buckets::sum(make_bins_no_validate(indices, dim, ~mask_union)));
+    }
+  }
+  return normalize_impl(buckets::sum(data), bucket_sizes(data));
+}
+
+DataArray mean(const DataArray &data) {
+  return {buckets::mean(data.data()), data.coords(), data.masks(),
+          data.attrs()};
+}
+
+Dataset mean(const Dataset &d) {
+  return apply_to_items(d, [](auto &&... _) { return buckets::mean(_...); });
 }
 
 } // namespace scipp::dataset::buckets

@@ -71,4 +71,8 @@ SCIPP_DATASET_EXPORT void scale(DataArray &data, const DataArray &histogram,
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray sum(const DataArray &data);
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset sum(const Dataset &data);
 
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable mean(const Variable &data);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray mean(const DataArray &data);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset mean(const Dataset &data);
+
 } // namespace scipp::dataset::buckets
