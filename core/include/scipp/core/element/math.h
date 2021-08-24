@@ -4,13 +4,13 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <cmath>
-
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
+#include <Eigen/Geometry>
+#include <cmath>
 
 namespace scipp::core::element {
 

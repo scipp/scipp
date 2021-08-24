@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #pragma once
 #include <Eigen/Core>
-#include <Eigen/Geometry>
 
 #include "scipp/core/dtype.h"
 
