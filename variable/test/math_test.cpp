@@ -314,8 +314,6 @@ TEST(Variable, cross_of_vector) {
   Eigen::Vector3d v1(1, 0, 0);
   Eigen::Vector3d v2(0, 1, 0);
   Eigen::Vector3d v3(0, 0, 1);
-  Eigen::Vector3d v4(0, 0, -1);
-  Eigen::Vector3d v5(0, 0, 0);
 
   auto reference = makeVariable<Eigen::Vector3d>(
       Dims{Dim::X}, Shape{3}, units::Unit(units::m) * units::Unit(units::m),
