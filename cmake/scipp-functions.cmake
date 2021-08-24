@@ -77,7 +77,31 @@ scipp_function("inplace" logical operator&= OP logical_and_equals)
 scipp_function("inplace" logical operator^= OP logical_xor_equals)
 setup_scipp_category(logical)
 
-scipp_function("unary" bins bin_sizes SKIP_VARIABLE NO_OUT BASE_INCLUDE dataset/bins.h)
-scipp_function("unary" bins bins_sum SKIP_VARIABLE NO_OUT BASE_INCLUDE dataset/bins.h)
-scipp_function("unary" bins bins_mean SKIP_VARIABLE NO_OUT BASE_INCLUDE dataset/bins.h)
+scipp_function(
+  "unary"
+  bins
+  bin_sizes
+  SKIP_VARIABLE
+  NO_OUT
+  BASE_INCLUDE
+  dataset/bins.h
+)
+scipp_function(
+  "unary"
+  bins
+  bins_sum
+  SKIP_VARIABLE
+  NO_OUT
+  BASE_INCLUDE
+  dataset/bins.h
+)
+scipp_function(
+  "unary"
+  bins
+  bins_mean
+  SKIP_VARIABLE
+  NO_OUT
+  BASE_INCLUDE
+  dataset/bins.h
+)
 setup_scipp_category(bins)
