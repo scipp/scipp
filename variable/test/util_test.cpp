@@ -3,7 +3,9 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/except.h"
+#include "scipp/units/unit.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
 
 #include "test_macros.h"
@@ -84,6 +86,68 @@ TEST(UtilTest, values_variances) {
   const auto var = makeVariable<double>(Values{1}, Variances{2}, units::m);
   EXPECT_EQ(values(var), 1.0 * units::m);
   EXPECT_EQ(variances(var), 2.0 * (units::m * units::m));
+}
+
+TEST(UtilTest, issorted_unknown_dim) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{1, 2, 3}, Shape{3});
+  EXPECT_THROW_DISCARD(issorted(var, Dim::Y, SortOrder::Ascending),
+                       except::DimensionError);
+  var = makeVariable<double>(Values{1});
+  EXPECT_THROW_DISCARD(issorted(var, Dim::Y, SortOrder::Ascending),
+                       except::DimensionError);
+}
+
+TEST(UtilTest, issorted) {
+  auto var = makeVariable<float>(Dimensions{{Dim::X, 3}, {Dim::Y, 3}}, units::m,
+                                 Values{1, 2, 3, 1, 3, 2, 2, 2, 2});
+  EXPECT_EQ(issorted(var.slice({Dim::Y, 1, 1}), Dim::X, SortOrder::Ascending),
+            makeVariable<bool>(Dimensions{{Dim::Y, 0}}, Values{}));
+  EXPECT_EQ(
+      issorted(var, Dim::X, SortOrder::Ascending),
+      makeVariable<bool>(Dimensions{{Dim::Y, 3}}, Values{true, false, false}));
+  EXPECT_EQ(
+      issorted(var, Dim::X, SortOrder::Descending),
+      makeVariable<bool>(Dimensions{{Dim::Y, 3}}, Values{false, false, true}));
+  EXPECT_EQ(
+      issorted(var, Dim::Y, SortOrder::Ascending),
+      makeVariable<bool>(Dimensions{{Dim::X, 3}}, Values{true, false, true}));
+  EXPECT_EQ(
+      issorted(var, Dim::Y, SortOrder::Descending),
+      makeVariable<bool>(Dimensions{{Dim::X, 3}}, Values{false, false, true}));
+}
+
+TEST(UtilTest, issorted_small_dimensions) {
+  auto var = makeVariable<float>(Dimensions{{Dim::X, 1}, {Dim::Y, 1}}, units::m,
+                                 Values{1});
+  EXPECT_EQ(issorted(var, Dim::X, SortOrder::Ascending),
+            makeVariable<bool>(Dimensions{{Dim::Y, 1}}, Values{true}));
+  EXPECT_EQ(issorted(var, Dim::X, SortOrder::Descending),
+            makeVariable<bool>(Dimensions{{Dim::Y, 1}}, Values{true}));
+  EXPECT_EQ(issorted(var, Dim::Y, SortOrder::Ascending),
+            makeVariable<bool>(Dimensions{{Dim::X, 1}}, Values{true}));
+  EXPECT_EQ(issorted(var, Dim::Y, SortOrder::Descending),
+            makeVariable<bool>(Dimensions{{Dim::X, 1}}, Values{true}));
+}
+
+TEST(UtilTest, allsorted_single_dimension_ascending) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{1, 2, 3}, Shape{3});
+  EXPECT_TRUE(allsorted(var, Dim::X, SortOrder::Ascending));
+  EXPECT_FALSE(allsorted(var, Dim::X, SortOrder::Descending));
+}
+
+TEST(UtilTest, allsorted_single_dimension_descending) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Values{3, 2, 1}, Shape{3});
+  EXPECT_FALSE(allsorted(var, Dim::X, SortOrder::Ascending));
+  EXPECT_TRUE(allsorted(var, Dim::X, SortOrder::Descending));
+}
+
+TEST(UtilTest, allsorted_multidimensional) {
+  auto var = makeVariable<float>(Dimensions{{Dim::X, 2}, {Dim::Y, 2}},
+                                 Values{1, 2, 0, 1});
+  EXPECT_TRUE(allsorted(var, Dim::Y, SortOrder::Ascending));
+  EXPECT_FALSE(allsorted(var, Dim::X, SortOrder::Ascending));
+  EXPECT_FALSE(allsorted(var, Dim::Y, SortOrder::Descending));
+  EXPECT_TRUE(allsorted(var, Dim::X, SortOrder::Descending));
 }
 
 TEST(VariableTest, where) {

@@ -24,15 +24,19 @@ def _parse_dims_shape_sizes(dims, shape, sizes):
     return {"dims": dims, "shape": shape}
 
 
-def islinspace(x: _cpp.Variable) -> bool:
+def islinspace(x: _cpp.Variable, dim: str = None) -> _cpp.Variable:
     """
     Check if the values of a variable are evenly spaced.
 
     :param x: Variable to check.
-    :returns: True if the variable contains regularly spaced values,
-      False otherwise.
+    :param dim: Optional variable for the dim to check from the Variable.
+    :returns: Variable of value True if the variable contains regularly
+    spaced values, variable of value False otherwise.
     """
-    return _call_cpp_func(_cpp.islinspace, x)
+    if dim is None:
+        return _call_cpp_func(_cpp.islinspace, x)
+    else:
+        return _call_cpp_func(_cpp.islinspace, x, dim)
 
 
 def scalar(value: _Any,
