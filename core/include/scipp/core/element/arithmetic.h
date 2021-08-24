@@ -10,12 +10,13 @@
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/subbin_sizes.h"
 #include "scipp/core/transform_common.h"
+#include <tuple>
 
 namespace scipp::core::element {
 
-constexpr auto add_inplace_types =
-    arg_list<double, float, int64_t, int32_t, Eigen::Vector3d, Eigen::Matrix3d,
-             SubbinSizes, std::tuple<scipp::core::time_point, int64_t>,
+constexpr auto add_nan_inplace_types =
+    arg_list<double, float, int64_t, int32_t, Eigen::Vector3d, SubbinSizes,
+             std::tuple<scipp::core::time_point, int64_t>,
              std::tuple<scipp::core::time_point, int32_t>,
              std::tuple<double, float>, std::tuple<float, double>,
              std::tuple<int64_t, int32_t>, std::tuple<int32_t, int64_t>,
@@ -23,11 +24,18 @@ constexpr auto add_inplace_types =
              std::tuple<float, int64_t>, std::tuple<float, int32_t>,
              std::tuple<int64_t, bool>>;
 
+struct add_inplace_types_t {
+  constexpr void operator()() const noexcept {}
+  using types = decltype(std::tuple_cat(
+      decltype(add_nan_inplace_types)::types{}, std::tuple<Eigen::Matrix3d>{}));
+};
+constexpr auto add_inplace_types = add_inplace_types_t{};
+
 constexpr auto add_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a += b; }};
 
 constexpr auto nan_add_equals =
-    overloaded{add_inplace_types, [](auto &&a, const auto &b) {
+    overloaded{add_nan_inplace_types, [](auto &&a, const auto &b) {
                  using numeric::isnan;
                  if (isnan(a))
                    a = std::decay_t<decltype(a)>{0}; // Force zero
