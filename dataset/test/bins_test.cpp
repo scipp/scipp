@@ -71,10 +71,9 @@ TEST(DataArrayBins2dTest, concatenate_dim_2d) {
 
   EXPECT_EQ(buckets::concatenate(zy, Dim::Y), z);
   EXPECT_EQ(buckets::concatenate(zy, Dim::Z), y);
-  EXPECT_EQ(buckets::sum(
-                buckets::concatenate(buckets::concatenate(zy, Dim::Y), Dim::Z)),
-            buckets::sum(buckets::concatenate(buckets::concatenate(zy, Dim::Z),
-                                              Dim::Y)));
+  EXPECT_EQ(
+      bins_sum(buckets::concatenate(buckets::concatenate(zy, Dim::Y), Dim::Z)),
+      bins_sum(buckets::concatenate(buckets::concatenate(zy, Dim::Z), Dim::Y)));
 }
 
 TEST_F(DataArrayBinsTest, concatenate) {
@@ -172,8 +171,7 @@ TEST_F(DataArrayBinsTest, histogram_existing_dim) {
 }
 
 TEST_F(DataArrayBinsTest, sum) {
-  EXPECT_EQ(buckets::sum(var),
-            makeVariable<double>(indices.dims(), Values{3, 7}));
+  EXPECT_EQ(bins_sum(var), makeVariable<double>(indices.dims(), Values{3, 7}));
 }
 
 TEST_F(DataArrayBinsTest, operations_on_empty) {
@@ -378,16 +376,14 @@ protected:
 };
 
 TEST_F(DataArrayBinsPlusMinusTest, plus) {
-  using buckets::sum;
-  EXPECT_EQ(sum(buckets::concatenate(a, b)), sum(a) + sum(b));
+  EXPECT_EQ(bins_sum(buckets::concatenate(a, b)), bins_sum(a) + bins_sum(b));
 }
 
 TEST_F(DataArrayBinsPlusMinusTest, minus) {
-  using buckets::sum;
   auto tmp = -b;
   EXPECT_EQ(b.unit(), units::one);
   EXPECT_EQ(tmp.unit(), units::one);
-  EXPECT_EQ(sum(buckets::concatenate(a, -b)), sum(a) - sum(b));
+  EXPECT_EQ(bins_sum(buckets::concatenate(a, -b)), bins_sum(a) - bins_sum(b));
 }
 
 TEST_F(DataArrayBinsPlusMinusTest, plus_equals) {
@@ -396,7 +392,7 @@ TEST_F(DataArrayBinsPlusMinusTest, plus_equals) {
   EXPECT_EQ(out, buckets::concatenate(a, b));
   buckets::append(out, -b);
   EXPECT_NE(out, a); // events not removed by "undo" of addition
-  EXPECT_NE(buckets::sum(out), buckets::sum(a)); // mismatching variances
+  EXPECT_NE(bins_sum(out), bins_sum(a)); // mismatching variances
   EXPECT_EQ(out, buckets::concatenate(buckets::concatenate(a, b), -b));
 }
 
