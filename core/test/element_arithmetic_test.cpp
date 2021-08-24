@@ -12,6 +12,7 @@
 
 #include "arithmetic_parameters.h"
 #include "fix_typed_test_suite_warnings.h"
+#include "scipp/core/eigen.h"
 
 using namespace scipp;
 using namespace scipp::core::element;
@@ -242,4 +243,34 @@ TEST_F(ElementNanArithmeticTest, add_equals_with_rhs_int_lhs_int) {
   auto lhs = 1;
   nan_add_equals(lhs, 2);
   EXPECT_EQ(3, lhs);
+}
+
+class ElementMatrixArithmeticTest : public ::testing::Test {
+protected:
+  Eigen::Matrix3d x = Eigen::Matrix3d::Identity();
+  Eigen::Matrix3d y = Eigen::Matrix3d::Identity();
+  Eigen::Vector3d vector = {1, 0, 0};
+};
+
+TEST_F(ElementMatrixArithmeticTest, matrix_matrix_add_equals) {
+  Eigen::Matrix3d expected = x + y;
+  add_equals(x, y);
+  EXPECT_EQ(expected, x);
+}
+
+TEST_F(ElementMatrixArithmeticTest, matrix_matrix_subtract_equals) {
+  Eigen::Matrix3d expected = x - y;
+  subtract_equals(x, y);
+  EXPECT_EQ(expected, x);
+}
+
+TEST_F(ElementMatrixArithmeticTest, matrix_matrix_multiply_equals) {
+  Eigen::Matrix3d expected = x * y;
+  multiply_equals(x, y);
+  EXPECT_EQ(expected, x);
+}
+
+TEST_F(ElementMatrixArithmeticTest, matrix_vector_multiply) {
+  Eigen::Vector3d scaled = x * vector;
+  EXPECT_EQ(scaled, vector);
 }
