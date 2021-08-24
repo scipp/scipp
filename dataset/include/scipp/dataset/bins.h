@@ -66,7 +66,7 @@ SCIPP_DATASET_EXPORT void scale(DataArray &data, const DataArray &histogram,
 } // namespace scipp::dataset::buckets
 
 // These functions are placed in scipp::variable for ADL but cannot be easily
-// moved into thatcompilation module since the implementation requires
+// moved into that compilation module since the implementation requires
 // DataArray.
 namespace scipp::variable {
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable bin_sizes(const Variable &var);
