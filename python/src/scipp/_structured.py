@@ -40,7 +40,7 @@ def _fields(obj):
             return _set_elements(self._var, key, x)
 
         def keys(self):
-            return self._keys
+            yield from self._keys
 
         def values(self):
             yield from (self[key] for key in self)

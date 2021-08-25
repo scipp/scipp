@@ -26,7 +26,7 @@ def test_structured_fields_dict_like():
 
 
 def test_structured_fields_keys_values():
-    keys = var.fields.keys()
+    keys = list(var.fields.keys())
     values = list(var.fields.values())
     for items in [dict(zip(keys, values)), dict(var.fields.items())]:
         assert len(keys) == 3
