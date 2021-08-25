@@ -73,7 +73,9 @@ def main(prefix='install', build_dir='build', source_dir='.', caching=False):
         # clcache conda installed to env Scripts dir in env if present
         scripts = os.path.join(os.environ.get('CONDA_PREFIX'), 'Scripts')
         if caching and os.path.exists(os.path.join(scripts, 'clcache.exe')):
-            cmake_flags.update({'-DCLCACHE_PATH': scripts})
+            # HACK
+            print('You attempted to use clcache, which has been disabled')
+            # cmake_flags.update({'-DCLCACHE_PATH': scripts})
         shell = True
         build_config = 'Release'
 
