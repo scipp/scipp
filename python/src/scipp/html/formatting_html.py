@@ -13,6 +13,7 @@ from .resources import load_icons
 
 BIN_EDGE_LABEL = "[bin-edge]"
 STDDEV_PREFIX = "σ = "
+VARIANCES_SYMBOL = "σ²"
 SPARSE_PREFIX = "len={}"
 
 
@@ -296,7 +297,7 @@ def summarize_variable(name,
     variances_preview = None
     if var.variances is not None:
         variances_preview = inline_variable_repr(var, has_variances=True)
-        data_repr += f"<br><br>Variances:<br>\
+        data_repr += f"<br><br>Variances ({VARIANCES_SYMBOL}):<br>\
 {short_data_repr_html(var, variances=True)}"
 
     cssclass_idx, attrs_id, attrs_icon, data_id, data_icon = _format_common(is_index)
