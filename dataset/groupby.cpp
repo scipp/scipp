@@ -80,7 +80,7 @@ T GroupBy<T>::makeReductionOutput(const Dim reductionDim,
   T out;
   if (is_bins(m_data)) {
     const auto out_sizes =
-        GroupBy(bucket_sizes(m_data), {key(), groups()}).sum(reductionDim);
+        GroupBy(bin_sizes(m_data), {key(), groups()}).sum(reductionDim);
     out = resize(m_data, reductionDim, out_sizes);
   } else {
     out = resize(m_data, reductionDim, size(), fill);

@@ -11,4 +11,7 @@ namespace scipp::dataset {
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 @NAME@(const DataArray &a);
 
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset
+@NAME@(const Dataset &ds);
+
 } // namespace scipp::dataset
