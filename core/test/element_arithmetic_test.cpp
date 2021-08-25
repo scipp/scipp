@@ -247,18 +247,23 @@ TEST_F(ElementNanArithmeticTest, add_equals_with_rhs_int_lhs_int) {
 
 class ElementMatrixMatrixArithmeticTest : public ::testing::Test {
 protected:
-  Eigen::Matrix3d x = Eigen::Matrix3d::Identity();
-  Eigen::Matrix3d y = Eigen::Matrix3d::Identity();
+  Eigen::Matrix3d x = Eigen::Matrix3d::Constant(3, 3, 1);
+  Eigen::Matrix3d y = Eigen::Matrix3d::Constant(3, 3, 2);
+
+public:
+  ElementMatrixMatrixArithmeticTest() {
+    y.col(0) = Eigen::Vector3d::LinSpaced(3, 0, 2);
+  }
 };
 
 TEST_F(ElementMatrixMatrixArithmeticTest, multiply_equals) {
   Eigen::Matrix3d expected = x * y;
-  multiply_equals(x, x);
+  multiply_equals(x, y);
   EXPECT_EQ(expected, x);
 }
 
 TEST_F(ElementMatrixMatrixArithmeticTest, multiply_equals_self_assign) {
   Eigen::Matrix3d expected = x * x.eval();
-  multiply_equals(x, y);
+  multiply_equals(x, x);
   EXPECT_EQ(expected, x);
 }
