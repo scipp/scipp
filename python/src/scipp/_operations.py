@@ -7,6 +7,7 @@ from typing import Optional, Union
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from .typing import VariableLike
+from . import Variable
 
 
 def dot(x: VariableLike, y: VariableLike) -> VariableLike:
@@ -148,3 +149,16 @@ def rebin(x: VariableLike,
         return _call_cpp_func(_cpp.rebin, x, dim, bins)
     else:
         return _call_cpp_func(_cpp.rebin, x, dim, old, bins)
+
+
+def where(condition: Variable, x: Variable, y: Variable) -> Variable:
+    """Return elements chosen from x or y depending on condition.
+
+    :param condition: Variable with dtype=bool. Where True, yield x, otherwise yield y.
+    :param x: Variable with values from which to choose.
+    :param y: Variable with values from which to choose.
+    :return: Variable with elements from x where condition is True, and elements from y
+             elsewhere.
+    :seealso: :py:func:`scipp.choose`
+    """
+    return _call_cpp_func(_cpp.where, condition, x, y)
