@@ -43,10 +43,10 @@ def _fields(obj):
             return self._keys
 
         def values(self):
-            return [self[key] for key in self]
+            yield from (self[key] for key in self)
 
         def items(self):
-            return {key: self[key] for key in self}
+            yield from ((key, self[key]) for key in self)
 
     if is_structured(obj):
         keys = _element_keys(obj)

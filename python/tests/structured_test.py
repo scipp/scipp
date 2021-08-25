@@ -27,8 +27,8 @@ def test_structured_fields_dict_like():
 
 def test_structured_fields_keys_values():
     keys = var.fields.keys()
-    values = var.fields.values()
-    for items in [dict(zip(keys, values)), var.fields.items()]:
+    values = list(var.fields.values())
+    for items in [dict(zip(keys, values)), dict(var.fields.items())]:
         assert len(keys) == 3
         assert len(values) == 3
         assert sc.identical(items['x'], 1.0 * sc.units.m)
