@@ -10,7 +10,7 @@ from html import escape
 from . import config
 from . import utils as su
 from ._scipp import core as sc
-from .html.formatting_html import inject_style
+from ._styling import inject_style
 from .typing import is_scalar, VariableLike
 
 
