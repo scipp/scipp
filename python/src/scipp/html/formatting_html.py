@@ -293,7 +293,7 @@ def summarize_variable(name,
     if var.variances is not None:
         variances_preview = inline_variable_repr(var, has_variances=True)
         data_repr += f"<br><br>Variances:<br>\
-                       <div>{short_data_repr_html(var)}</div>"
+                       <div>{short_data_repr_html(var, variances=True)}</div>"
 
     cssclass_idx, attrs_id, attrs_icon, data_id, data_icon = _format_common(is_index)
 
