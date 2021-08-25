@@ -10,7 +10,8 @@ pybind11/2.6.2
 benchmark:shared=False
 boost:header_only=True
 gtest:shared=False
-LLNL-Units:shared=True
+LLNL-Units:shared=False
+LLNL-Units:fPIC=True
 LLNL-Units:base_type=uint64_t
 LLNL-Units:namespace=llnl::units
 
