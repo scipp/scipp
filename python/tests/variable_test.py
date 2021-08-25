@@ -494,8 +494,11 @@ def test_abs_out():
 
 
 def test_dot():
-    assert_export(sc.dot, sc.Variable(dims=(), values=0.0),
-                  sc.Variable(dims=(), values=0.0))
+    assert_export(sc.dot, sc.vector(value=[0, 0, 1]), sc.vector(value=[0, 0, 1]))
+
+
+def test_cross():
+    assert_export(sc.cross, sc.vector(value=[0, 0, 1]), sc.vector(value=[0, 0, 1]))
 
 
 def test_concatenate():
@@ -889,20 +892,20 @@ def test_comparison():
 
 def test_radd_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var + 1).dtype == var.dtype
-    assert (1 + var).dtype == var.dtype
+    assert (var + 1).dtype == sc.dtype.int64
+    assert (1 + var).dtype == sc.dtype.int64
 
 
 def test_rsub_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var - 1).dtype == var.dtype
-    assert (1 - var).dtype == var.dtype
+    assert (var - 1).dtype == sc.dtype.int64
+    assert (1 - var).dtype == sc.dtype.int64
 
 
 def test_rmul_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var * 1).dtype == var.dtype
-    assert (1 * var).dtype == var.dtype
+    assert (var * 1).dtype == sc.dtype.int64
+    assert (1 * var).dtype == sc.dtype.int64
 
 
 def test_rtruediv_int():
@@ -915,3 +918,16 @@ def test_sort():
     var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.sort, x=var, dim='x', order='ascending')
     assert_export(sc.issorted, x=var, dim='x', order='ascending')
+    assert_export(sc.allsorted, x=var, dim='x', order='ascending')
+
+
+def test_islinspace_true():
+    x = sc.Variable(dims=['x'], values=np.arange(5.), unit=sc.units.m)
+    assert sc.islinspace(x, 'x').value
+    assert sc.islinspace(x).value
+
+
+def test_islinspace_false():
+    x = sc.Variable(dims=['x'], values=(1, 1.5, 4), unit=sc.units.m)
+    assert not sc.islinspace(x, 'x').value
+    assert not sc.islinspace(x).value

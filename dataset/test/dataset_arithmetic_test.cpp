@@ -177,8 +177,8 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, slice_lhs_with_variance) {
       // operations between misaligned data in case a coordinate is
       // multi-dimensional.
       const auto coords = item.coords();
-      if (std::all_of(coords.begin(), coords.end(), [dim](const auto &coord) {
-            return dim_of_coord(coord.second, coord.first) == dim ||
+      if (std::all_of(coords.begin(), coords.end(), [&](const auto &coord) {
+            return coords.dim_of(coord.first) == dim ||
                    !coord.second.dims().contains(dim);
           })) {
         ASSERT_NO_THROW(TestFixture::op(target, item.slice({dim, 2})));
@@ -332,7 +332,7 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_self_overlap) {
 }
 
 TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
-  auto dataset = datasetFactory().make();
+  auto dataset = datasetFactory().make()["data_xyz"];
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
   ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::X, 3})),
@@ -521,7 +521,7 @@ TYPED_TEST(DatasetViewBinaryEqualsOpTest,
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, rhs_slice_coord_mismatch) {
-  auto dataset = datasetFactory().make();
+  auto dataset = datasetFactory().make()["data_xyz"];
 
   // Non-range sliced throws for X and Y due to multi-dimensional coords.
   ASSERT_THROW(TestFixture::op(dataset, dataset.slice({Dim::X, 3})),

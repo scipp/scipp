@@ -135,11 +135,11 @@ protected:
 
   void expect_near(const DataArray &a, const DataArray &b) {
     const auto tolerance =
-        values(max(buckets::sum(a.data())) * (1e-14 * units::one));
-    EXPECT_TRUE(all(isclose(values(buckets::sum(a.data())),
-                            values(buckets::sum(b.data())), 0.0 * units::one,
-                            tolerance))
-                    .value<bool>());
+        values(max(bins_sum(a.data())) * (1e-14 * units::one));
+    EXPECT_TRUE(
+        all(isclose(values(bins_sum(a.data())), values(bins_sum(b.data())),
+                    0.0 * units::one, tolerance))
+            .value<bool>());
     EXPECT_EQ(a.masks(), b.masks());
     EXPECT_EQ(a.coords(), b.coords());
     EXPECT_EQ(a.attrs(), b.attrs());
@@ -300,13 +300,13 @@ TEST_P(BinTest, rebin_masked) {
   auto binned = bin(table, {edges_x_coarse});
   binned.masks().set("x-mask", makeVariable<bool>(Dims{Dim::X}, Shape{2},
                                                   Values{false, true}));
-  EXPECT_EQ(buckets::sum(bin(binned, {edges_x})), histogram(binned, edges_x));
+  EXPECT_EQ(bins_sum(bin(binned, {edges_x})), histogram(binned, edges_x));
   if (table.dims().volume() > 0) {
     EXPECT_NE(bin(binned, {edges_x}), bin(table, {edges_x}));
-    EXPECT_NE(buckets::sum(bin(binned, {edges_x})), histogram(table, edges_x));
+    EXPECT_NE(bins_sum(bin(binned, {edges_x})), histogram(table, edges_x));
     binned.masks().erase("x-mask");
     EXPECT_EQ(bin(binned, {edges_x}), bin(table, {edges_x}));
-    EXPECT_EQ(buckets::sum(bin(binned, {edges_x})), histogram(table, edges_x));
+    EXPECT_EQ(bins_sum(bin(binned, {edges_x})), histogram(table, edges_x));
   }
 }
 

@@ -13,6 +13,9 @@ class lookup:
         self.func = func
         self.dim = dim
 
+    def __getitem__(self, var):
+        return _cpp.buckets.map(self.func, var, self.dim)
+
 
 class Bins:
     """
@@ -95,14 +98,22 @@ class Bins:
         :return: The sum of each of the input bins.
         :seealso: :py:func:`scipp.sum` for summing non-bin data
         """
-        return _call_cpp_func(_cpp.buckets.sum, self._obj)
+        return _call_cpp_func(_cpp.bins_sum, self._obj)
+
+    def mean(self) -> Union[_cpp.Variable, _cpp.DataArray]:
+        """Mean of each bin.
+
+        :return: The mean of each of the input bins.
+        :seealso: :py:func:`scipp.mean` for calculating the mean of non-bin data
+        """
+        return _call_cpp_func(_cpp.bins_mean, self._obj)
 
     def size(self) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Number of events or elements in a bin.
 
         :return: The number of elements in each of the input bins.
         """
-        return _call_cpp_func(_cpp.bin_size, self._obj)
+        return _call_cpp_func(_cpp.bin_sizes, self._obj)
 
     def concatenate(
             self,

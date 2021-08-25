@@ -67,6 +67,7 @@ General
    transform_coords
    values
    variances
+   where
 
 Math
 ~~~~
@@ -76,6 +77,7 @@ Math
 
    abs
    add
+   cross
    divide
    dot
    exp
@@ -227,6 +229,17 @@ Compatibility
    from_dict
    compat.from_pandas
    compat.from_xarray
+
+Modules
+=======
+
+.. autosummary::
+   :toctree: ../generated/modules
+   :template: scipp-module-template.rst
+   :recursive:
+
+   constants
+   spatial
 
 
 Typing

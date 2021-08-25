@@ -48,10 +48,10 @@ from ._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
                          DTypeError, NotFoundError, SizeError, SliceError, \
                          UnitError, VariableError, VariancesError
 # Import submodules
-from ._scipp.core import units, dtype, buckets
+from ._scipp.core import units, dtype
 from . import geometry
 # Import functions
-from ._scipp.core import choose, logical_and, logical_or, logical_xor, where
+from ._scipp.core import as_const, choose, logical_and, logical_or, logical_xor, where
 # Import python functions
 from .show import show, make_svg
 from .table import table

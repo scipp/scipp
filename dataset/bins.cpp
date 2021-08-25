@@ -20,6 +20,7 @@
 #include "scipp/variable/transform.h"
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable.h"
 #include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bin.h"
@@ -174,33 +175,6 @@ Variable make_bins_no_validate(Variable indices, const Dim dim,
   return variable::make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
-namespace {
-template <class T> Variable bucket_sizes_impl(const Variable &view) {
-  const auto [begin, end] = unzip(view.bin_indices());
-  return end - begin;
-}
-} // namespace
-
-Variable bucket_sizes(const Variable &var) {
-  if (var.dtype() == dtype<bucket<Variable>>)
-    return bucket_sizes_impl<Variable>(var);
-  else if (var.dtype() == dtype<bucket<DataArray>>)
-    return bucket_sizes_impl<DataArray>(var);
-  else if (var.dtype() == dtype<bucket<Dataset>>)
-    return bucket_sizes_impl<Dataset>(var);
-  else
-    return makeVariable<scipp::index>(var.dims());
-}
-
-DataArray bucket_sizes(const DataArray &array) {
-  return {bucket_sizes(array.data()), array.coords(), array.masks(),
-          array.attrs()};
-}
-
-Dataset bucket_sizes(const Dataset &dataset) {
-  return apply_to_items(dataset, [](auto &&_) { return bucket_sizes(_); });
-}
-
 bool is_bins(const DataArray &array) { return is_bins(array.data()); }
 
 bool is_bins(const Dataset &dataset) {
@@ -322,17 +296,16 @@ Variable histogram(const Variable &data, const Variable &binEdges) {
 Variable map(const DataArray &function, const Variable &x, Dim dim) {
   if (dim == Dim::Invalid)
     dim = edge_dimension(function);
-  const auto &coord = bins_view<DataArray>(x).meta()[dim];
   const auto &edges = function.meta()[dim];
   const auto data = masked_data(function, dim);
   const auto weights = subspan_view(data, dim);
   if (all(islinspace(edges, dim)).value<bool>()) {
-    return variable::transform(coord, subspan_view(edges, dim), weights,
+    return variable::transform(x, subspan_view(edges, dim), weights,
                                core::element::event::map_linspace, "map");
   } else {
-    if (!issorted(edges, dim))
+    if (!allsorted(edges, dim))
       throw except::BinEdgeError("Bin edges of histogram must be sorted.");
-    return variable::transform(coord, subspan_view(edges, dim), weights,
+    return variable::transform(x, subspan_view(edges, dim), weights,
                                core::element::event::map_sorted_edges, "map");
   }
 }
@@ -354,12 +327,32 @@ void scale(DataArray &array, const DataArray &histogram, Dim dim) {
                        core::element::event::map_and_mul_linspace,
                        "bins.scale");
   } else {
-    if (!issorted(edges, dim))
+    if (!allsorted(edges, dim))
       throw except::BinEdgeError("Bin edges of histogram must be sorted.");
     transform_in_place(data, coord, subspan_view(edges, dim), weights,
                        core::element::event::map_and_mul_sorted_edges,
                        "bins.scale");
   }
+}
+} // namespace scipp::dataset::buckets
+
+namespace scipp::variable {
+namespace {
+template <class T> Variable bin_sizes_impl(const Variable &view) {
+  const auto [begin, end] = unzip(view.bin_indices());
+  return end - begin;
+}
+} // namespace
+
+Variable bin_sizes(const Variable &var) {
+  if (var.dtype() == dtype<bucket<Variable>>)
+    return bin_sizes_impl<Variable>(var);
+  else if (var.dtype() == dtype<bucket<DataArray>>)
+    return bin_sizes_impl<DataArray>(var);
+  else if (var.dtype() == dtype<bucket<Dataset>>)
+    return bin_sizes_impl<Dataset>(var);
+  else
+    return makeVariable<scipp::index>(var.dims());
 }
 
 namespace {
@@ -372,7 +365,7 @@ Variable applyMask(const DataArray &buffer, const Variable &indices,
 
 } // namespace
 
-Variable sum(const Variable &data) {
+Variable bins_sum(const Variable &data) {
   auto type = variable::variableFactory().elem_dtype(data);
   type = type == dtype<bool> ? dtype<int64_t> : type;
   const auto unit = variable::variableFactory().elem_unit(data);
@@ -397,12 +390,19 @@ Variable sum(const Variable &data) {
   return summed;
 }
 
-DataArray sum(const DataArray &data) {
-  return {buckets::sum(data.data()), data.coords(), data.masks(), data.attrs()};
+Variable bins_mean(const Variable &data) {
+  if (data.dtype() == dtype<bucket<DataArray>>) {
+    const auto &&[indices, dim, buffer] = data.constituents<DataArray>();
+    if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
+        mask_union.is_valid()) {
+      // Trick to get the sizes of bins if masks are present - bin the masks
+      // using the same dimension & indices as the data, and then sum the
+      // inverse of the mask to get the number of unmasked entries.
+      return normalize_impl(bins_sum(data), bins_sum(make_bins_no_validate(
+                                                indices, dim, ~mask_union)));
+    }
+  }
+  return normalize_impl(bins_sum(data), bin_sizes(data));
 }
 
-Dataset sum(const Dataset &d) {
-  return apply_to_items(d, [](auto &&... _) { return buckets::sum(_...); });
-}
-
-} // namespace scipp::dataset::buckets
+} // namespace scipp::variable
