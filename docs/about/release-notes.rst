@@ -24,6 +24,7 @@ Features
 * Add ``scipp.spatial.transform`` module providing ``from_rotvec`` and ``as_rotvec`` `#2102 <https://github.com/scipp/scipp/pull/2102>`_.
 * Add ``cross`` function to complementing existing ``dot`` function `#2109 <https://github.com/scipp/scipp/pull/2109>`_.
 * Unary operations such as ``sin`` are now available for datasets as well `#2112 https://github.com/scipp/scipp/pull/2112`_.
+* The ``fields`` property of structured variables (vector and matrix dtypes) can now be iterated and provides dict-like access `#2116 https://github.com/scipp/scipp/pull/2116`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
