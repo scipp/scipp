@@ -3,7 +3,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
 function(scipp_function template category function_name)
-  set(options SKIP_VARIABLE NO_OUT)
+  set(options SKIP_VARIABLE OUT)
   set(oneValueArgs OP PREPROCESS_VARIABLE BASE_INCLUDE)
   cmake_parse_arguments(
     PARSE_ARGV 3 SCIPP_FUNCTION "${options}" "${oneValueArgs}" ""
@@ -12,10 +12,10 @@ function(scipp_function template category function_name)
   message("Generating files for ${function_name}")
   set(NAME ${function_name})
   set(ELEMENT_INCLUDE ${category})
-  if(SCIPP_FUNCTION_NO_OUT)
-    set(GENERATE_OUT "false")
-  else()
+  if(SCIPP_FUNCTION_OUT)
     set(GENERATE_OUT "true")
+  else()
+    set(GENERATE_OUT "false")
   endif()
   if(DEFINED SCIPP_FUNCTION_OP)
     set(OPNAME ${SCIPP_FUNCTION_OP})
