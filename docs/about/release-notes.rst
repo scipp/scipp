@@ -58,6 +58,7 @@ Contributors
 
 Owen Arnold :sup:`b, c`\ ,
 Simon Heybrock :sup:`a`\ ,
+Samuel Jones :sup:`b`\ ,
 Greg Tucker :sup:`a`\ ,
 Neil Vaytet :sup:`a`\ ,
 Tom Willemsen :sup:`b, c`\ ,
