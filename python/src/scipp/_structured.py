@@ -23,11 +23,34 @@ def is_structured(obj):
 
 def _fields(obj):
     class Fields():
-        def __init__(self, var):
+        def __init__(self, keys, var):
             self._var = var
+            self._keys = keys
+
+        def __contains__(self, key):
+            return key in self._keys
+
+        def __iter__(self):
+            return self._keys.__iter__()
+
+        def __getitem__(self, key):
+            return _get_elements(self._var, key)
+
+        def __setitem__(self, key, x):
+            return _set_elements(self._var, key, x)
+
+        def keys(self):
+            yield from self._keys
+
+        def values(self):
+            yield from (self[key] for key in self)
+
+        def items(self):
+            yield from ((key, self[key]) for key in self)
 
     if is_structured(obj):
-        for key in _element_keys(obj):
+        keys = _element_keys(obj)
+        for key in keys:
             setattr(Fields, key, _prop(key))
-        return Fields(obj)
+        return Fields(keys=keys, var=obj)
     return None
