@@ -7,6 +7,10 @@ from .._variable import linspace
 from .tools import to_bin_edges
 
 
+def _unit_requires_mean(obj):
+    return obj.unit != sc.units.counts and obj.unit != sc.units.dimensionless
+
+
 def _resample(array, dim, edges):
     # TODO Note that there are some inconsistencies here and in `rebin`. Should
     # dimensionless be handled like counts? `rebin` does, but at some point we
@@ -15,7 +19,7 @@ def _resample(array, dim, edges):
     # (using `or`). What we need here works currently, since masks are
     # dimensionless and we want `bool` as output, but this needs to be
     # revisited.
-    if array.unit == sc.units.counts or array.unit == sc.units.dimensionless:
+    if not _unit_requires_mean(array):
         return sc.rebin(array, dim, edges)
     if array.dtype == sc.dtype.float64:
         array = array.copy()
@@ -208,7 +212,13 @@ class ResamplingBinnedModel(ResamplingModel):
             # below: If coord is ragged binning would throw otherwise.
             bounds = sc.concatenate(edges[dim, 0], edges[dim, -1], dim)
             binned = sc.bin(array=array, edges=self.edges[:-1] + [bounds])
-            return sc.histogram(binned, edges)
+            # TODO Use histogramming with "mean" mode once implemented
+            if _unit_requires_mean(binned.events):
+                return sc.bin(array=binned, edges=self.edges).bins.mean()
+            else:
+                return sc.histogram(binned, edges)
+        elif _unit_requires_mean(array.events):
+            return sc.bin(array=array, edges=self.edges).bins.mean()
         else:
             return sc.bin(array=array, edges=self.edges).bins.sum()
 
