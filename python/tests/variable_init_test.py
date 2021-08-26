@@ -9,6 +9,34 @@ import pytest
 import scipp as sc
 
 
+# Tuples (dtype, expected, val) where
+# - dtype: Object to pass as `dtype` to functions
+# - expected: dtype of the return value of the function
+# - val: Value of a matching type
+DTYPE_INPUT_TO_EXPECTED = (
+    (int, sc.dtype.int64, 0),
+    (float, sc.dtype.float64, 1.2),
+    (bool, sc.dtype.bool, True),
+    (str, sc.dtype.string, 'abc'),
+    (sc.dtype.int32, sc.dtype.int32, 2),
+    (sc.dtype.int64, sc.dtype.int64, 3),
+    (sc.dtype.float32, sc.dtype.float32, 4.5),
+    (sc.dtype.float64, sc.dtype.float64, 5.6),
+    (sc.dtype.bool, sc.dtype.bool, False),
+    (sc.dtype.string, sc.dtype.string, 'def'),
+    (sc.dtype.datetime64, sc.dtype.datetime64, 123),
+    (sc.dtype.PyObject, sc.dtype.PyObject, dict()),
+    (np.int32, sc.dtype.int32, 6),
+    (np.int64, sc.dtype.int64, 7),
+    (np.float32, sc.dtype.float32, 8.9),
+    (np.float64, sc.dtype.float64, 9.1),
+    (np.dtype(bool), sc.dtype.bool, True),
+    (np.dtype(str), sc.dtype.string, 'ghi'),
+    (np.dtype('datetime64'), sc.dtype.datetime64, 456),
+    (np.dtype('datetime64[ns]'), sc.dtype.datetime64, 789),
+)
+
+
 @pytest.mark.parametrize(
     "value",
     [1.2, np.float64(1.2),
@@ -116,6 +144,12 @@ def test_create_via_unit():
     expected = sc.Variable(dims=(), values=1.2, unit=sc.units.m)
     var = 1.2 * sc.units.m
     assert sc.identical(var, expected)
+
+
+def test_create_scalar_dtypes():
+    for dtype, expected, val in DTYPE_INPUT_TO_EXPECTED:
+        unit = 'ns' if expected == sc.dtype.datetime64 else 'one'
+        assert sc.scalar(val, dtype=dtype, unit=unit).dtype == expected
 
 
 @pytest.mark.parametrize("dtype", (None, sc.dtype.Variable))
