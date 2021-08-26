@@ -15,6 +15,8 @@ Classes
    GroupByDataset
    Unit
    Variable
+   typing.VariableLike
+   typing.MetaDataMap
 
 Creation functions
 ==================
@@ -242,12 +244,3 @@ Modules
    constants
    spatial
 
-
-Typing
-======
-
-.. autosummary::
-   :toctree: ../generated
-
-   typing.VariableLike
-   typing.MetaDataMap
