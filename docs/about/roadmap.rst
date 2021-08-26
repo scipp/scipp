@@ -6,7 +6,7 @@ Roadmap
 Overview
 --------
 
-As of spring 2021 scipp is still in an "early preview" state.
+As of summer 2021 scipp is still in an "early preview" state.
 The overall plan for the coming releases is to:
 
 - Consolidate the existing generic functionality.
@@ -19,15 +19,7 @@ Instead we publish new releases when major feature additions or breaking changes
 Upcoming milestones
 -------------------
 
-v0.7
-~~~~
-
-The main change in this release will be scipp's approach to sharing data between objects.
-Our current approach is to always copy, which prevents unintentional modification of data of one object via another objects.
-However, this introduces a number of other ownership and lifetime issues, and is unlike the behavior of, e.g., Python's `dict` or xarray's data array objects.
-
-With this release scipp will adopt the Python-like shallow-copy approach.
-
+None planned.
 
 Future direction and plans
 --------------------------
