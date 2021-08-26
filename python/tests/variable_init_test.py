@@ -8,7 +8,6 @@ import pytest
 
 import scipp as sc
 
-
 # Tuples (dtype, expected, val) where
 # - dtype: Object to pass as `dtype` to functions
 # - expected: dtype of the return value of the function
