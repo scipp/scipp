@@ -39,7 +39,7 @@ constexpr auto subtract_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a -= b; }};
 
 constexpr auto mul_inplace_types = arg_list<
-    double, float, int64_t, int32_t, std::tuple<double, float>,
+    double, float, int64_t, int32_t, Eigen::Matrix3d, std::tuple<double, float>,
     std::tuple<float, double>, std::tuple<int64_t, int32_t>,
     std::tuple<int64_t, bool>, std::tuple<int32_t, int64_t>,
     std::tuple<double, int64_t>, std::tuple<double, int32_t>,
