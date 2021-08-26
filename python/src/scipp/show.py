@@ -9,7 +9,7 @@ import numpy as np
 
 from ._scipp import core as sc
 from . import config
-from .html import inject_style
+from ._styling import inject_style
 from .utils import hex_to_rgb, rgb_to_hex
 from .typing import VariableLike
 
