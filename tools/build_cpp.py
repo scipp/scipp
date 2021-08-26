@@ -70,6 +70,7 @@ def main(prefix='install', build_dir='build', source_dir='.', caching=False):
 
     if platform == 'win32':
         cmake_flags.update({'-G': 'Visual Studio 16 2019', '-A': 'x64'})
+        cmake_flags.update({'-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'OFF'})
         # clcache conda installed to env Scripts dir in env if present
         scripts = os.path.join(os.environ.get('CONDA_PREFIX'), 'Scripts')
         if caching and os.path.exists(os.path.join(scripts, 'clcache.exe')):
@@ -108,9 +109,10 @@ def main(prefix='install', build_dir='build', source_dir='.', caching=False):
 
     # Compile benchmarks, C++ tests, and python library
     start = time.time()
-    for target in ['all-benchmarks', 'all-tests', 'install']:
-        run_command(['cmake', '--build', '.', '--target', target] + build_flags,
-                    shell=shell)
+    run_command(
+        ['cmake', '--build', '.', '--target', 'all-benchmarks', 'all-tests', 'install'
+         ] + build_flags,
+        shell=shell)
     end = time.time()
     print('Compilation took ', end - start, ' seconds')
 

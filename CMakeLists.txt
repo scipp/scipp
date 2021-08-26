@@ -132,7 +132,9 @@ option(WITH_CTEST "Enable ctest integration of tests" ON)
 option(DYNAMIC_LIB "Build shared libraries" ON)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-include(IPO)
+if(NOT WIN32)
+  include(IPO)
+endif()
 
 # Optimization flags
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
@@ -172,7 +174,14 @@ if(NOT WIN32)
     $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
     $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
   )
-endif(NOT WIN32)
+else ()
+  add_compile_options(
+    $<$<COMPILE_LANGUAGE:CXX>:/GL->
+  )
+  add_link_options(
+    LINKER:/LTCG:INCREMENTAL
+  )
+endif()
 # This is currently causing to many warnings, reenable when appropriate.
 # add_compile_options ( -Wconversion )
 
