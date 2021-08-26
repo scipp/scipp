@@ -175,12 +175,8 @@ if(NOT WIN32)
     $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
   )
 else ()
-  add_compile_options(
-    $<$<COMPILE_LANGUAGE:CXX>:/GL->
-  )
-  add_link_options(
-    LINKER:/LTCG:INCREMENTAL
-  )
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/GL->)
+  add_link_options(LINKER:/LTCG:INCREMENTAL)
 endif()
 # This is currently causing to many warnings, reenable when appropriate.
 # add_compile_options ( -Wconversion )
