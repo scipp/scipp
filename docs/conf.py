@@ -57,6 +57,7 @@ autodoc_typehints = 'description'
 autodoc_type_aliases = {
     'VariableLike': 'VariableLike',
     'MetaDataMap': 'MetaDataMap',
+    'array_like': 'array_like',
 }
 
 rst_epilog = f"""
