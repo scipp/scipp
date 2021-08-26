@@ -113,6 +113,19 @@ def test_create_scalar_with_value_array_int():
     assert var.unit == sc.units.dimensionless
 
 
+def test_create_scalar_numpy():
+    v = sc.Variable(dims=['x'], values=np.array([0]), dtype=np.float32)
+    var = v['x', 0].copy()
+    assert sc.identical(var, sc.scalar(np.float32()))
+
+    v = sc.Variable(dims=['x'], values=np.array([0]), dtype=np.float32)
+    var = v['x', 0].copy()
+    var.unit = sc.units.m
+    assert sc.identical(var, np.float32(0.0) * sc.units.m)
+    var.unit = sc.units.m**(-1)
+    assert sc.identical(var, np.float32(0.0) / sc.units.m)
+
+
 @pytest.mark.parametrize('variance', (1, True, 'a', sc.Variable(dims=(), values=1.2)))
 def test_create_scalar_invalid_variance(variance):
     with pytest.raises(sc.VariancesError):

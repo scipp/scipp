@@ -630,45 +630,6 @@ def test_sum_mean():
     assert sc.identical(sc.mean(var, 'x'), sc.scalar(2.5))
 
 
-def test_make_variable_from_unit_scalar_mult_div():
-    var = sc.Variable(dims=(), values=0.0)
-    var.unit = sc.units.m
-    assert sc.identical(var, 0.0 * sc.units.m)
-    var.unit = sc.units.m**(-1)
-    assert sc.identical(var, 0.0 / sc.units.m)
-
-    var = sc.scalar(np.float32())
-    var.unit = sc.units.m
-    assert sc.identical(var, np.float32(0.0) * sc.units.m)
-    var.unit = sc.units.m**(-1)
-    assert sc.identical(var, np.float32(0.0) / sc.units.m)
-
-
-def test_construct_0d_numpy():
-    v = sc.Variable(dims=['x'], values=np.array([0]), dtype=np.float32)
-    var = v['x', 0].copy()
-    assert sc.identical(var, sc.scalar(np.float32()))
-
-    v = sc.Variable(dims=['x'], values=np.array([0]), dtype=np.float32)
-    var = v['x', 0].copy()
-    var.unit = sc.units.m
-    assert sc.identical(var, np.float32(0.0) * sc.units.m)
-    var.unit = sc.units.m**(-1)
-    assert sc.identical(var, np.float32(0.0) / sc.units.m)
-
-
-def test_construct_0d_native_python_types():
-    assert sc.scalar(2).dtype == sc.dtype.int64
-    assert sc.scalar(2.0).dtype == sc.dtype.float64
-    assert sc.scalar(True).dtype == sc.dtype.bool
-
-
-def test_construct_0d_dtype():
-    assert sc.scalar(2, dtype=np.int32).dtype == sc.dtype.int32
-    assert sc.scalar(np.float64(2), dtype=np.float32).dtype == sc.dtype.float32
-    assert sc.scalar(1, dtype=bool).dtype == sc.dtype.bool
-
-
 def test_rename_dims():
     values = np.arange(6).reshape(2, 3)
     xy = sc.Variable(dims=['x', 'y'], values=values)
