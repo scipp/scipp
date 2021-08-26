@@ -174,7 +174,7 @@ if(NOT WIN32)
     $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
     $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
   )
-else ()
+else()
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/GL->)
   add_link_options(LINKER:/LTCG:INCREMENTAL)
 endif()
