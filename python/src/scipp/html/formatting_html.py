@@ -8,10 +8,12 @@ from functools import partial, reduce
 from html import escape
 
 from .._scipp import core as sc
+from .. import stddevs
 from .resources import load_icons
 
 BIN_EDGE_LABEL = "[bin-edge]"
-VARIANCE_PREFIX = "σ² = "
+STDDEV_PREFIX = "σ = "
+VARIANCES_SYMBOL = "σ²"
 SPARSE_PREFIX = "len={}"
 
 
@@ -47,13 +49,16 @@ def _format_non_events(var, has_variances):
     size = reduce(operator.mul, var.shape, 1)
     if len(var.dims):
         var = sc.flatten(var, var.dims, 'ignored')
-    data = retrieve(var, variances=has_variances)
+    if has_variances:
+        data = stddevs(var).values
+    else:
+        data = var.values
     # avoid unintentional indexing into value of 0-D data
     if len(var.shape) == 0:
         data = [data]
     s = _format_array(data, size, ellipsis_after=2)
     if has_variances:
-        s = f'{VARIANCE_PREFIX}{s}'
+        s = f'{STDDEV_PREFIX}{s}'
     return _make_row(s)
 
 
@@ -292,8 +297,8 @@ def summarize_variable(name,
     variances_preview = None
     if var.variances is not None:
         variances_preview = inline_variable_repr(var, has_variances=True)
-        data_repr += f"<br><br>Variances:<br>\
-                       <div>{short_data_repr_html(var, variances=True)}</div>"
+        data_repr += f"<br><br>Variances ({VARIANCES_SYMBOL}):<br>\
+{short_data_repr_html(var, variances=True)}"
 
     cssclass_idx, attrs_id, attrs_icon, data_id, data_icon = _format_common(is_index)
 
@@ -492,28 +497,3 @@ def human_readable_size(size_in_bytes):
         return f'{size_in_bytes/(1024):.2f} KB'
 
     return f'{size_in_bytes} Bytes'
-
-
-def inject_style():
-    """
-    Add our CSS style to the HTML head so that it can be used by all
-    HTML and SVG output without duplicating it in every cell.
-    This also preserves the style when the output in Jupyter is cleared.
-
-    The style is only injected once per session.
-    """
-    if not inject_style._has_been_injected:
-        from IPython.display import display, Javascript
-        from .resources import load_style
-        # `display` claims that its parameter should be a tuple, but
-        # that does not seem to work in the case of Javascript.
-        display(
-            Javascript(f"""
-            const style = document.createElement('style');
-            style.textContent = String.raw`{load_style()}`;
-            document.head.append(style);
-            """))
-    inject_style._has_been_injected = True
-
-
-inject_style._has_been_injected = False

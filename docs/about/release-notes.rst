@@ -10,20 +10,21 @@ Features
 ~~~~~~~~
 
 * Added ``sizes`` argument to ``zeros``, ``ones``, and ``empty`` variable creation functions `#1951 <https://github.com/scipp/scipp/pull/1951>`_.
-* Slicing syntax now supports ellipsis, e.g., ``da.data[...] = var`` `#1960 <https://github.com/scipp/scipp/pull/1960>`_.
+* Slicing syntax now supports ellipsis, e.g., ``da.data[...] = var`` `#1961 <https://github.com/scipp/scipp/pull/1961>`_.
 * Added bound method equivalents to many free functions which take a single Variable or DataArray `#1969 <https://github.com/scipp/scipp/pull/1969>`_.
 * Variables can now be constructed directly from multi dimensional lists and tuples `#1977 <https://github.com/scipp/scipp/pull/1977>`_.
 * Plotting 1-D event data is now supported `#2018 <https://github.com/scipp/scipp/pull/2018>`_.
 * Add ``transform_coords`` for (multi-step) transformations based on existing coords, with support of event coords `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
 * Add ``from_pandas`` and ``from_xarray`` for conversion of pandas dataframes, xarray data arrays and dataset to scipp objects `#2054 <https://github.com/scipp/scipp/pull/2054>`_.
 * Added ``full`` and ``full_like`` variable creation functions `#2069 <https://github.com/scipp/scipp/pull/2069>`_.
-* ``islinspace`` can now take multi-dimensional variables aslong as you pass the dimension to be checked `#2094 https://github.com/scipp/scipp/pull/2094`_.
+* ``islinspace`` can now take multi-dimensional variables aslong as you pass the dimension to be checked `#2094 <https://github.com/scipp/scipp/pull/2094>`_.
 * Added a power function and support for the ``**`` operator `#2083 <https://github.com/scipp/scipp/pull/2083>`_.
 * Binned data now has a ``mean`` method as well as ``sum``, which returns the mean of each element within a bin.
 * Add ``scipp.constants`` module for physical constants `#2101 <https://github.com/scipp/scipp/pull/2101>`_.
 * Add ``scipp.spatial.transform`` module providing ``from_rotvec`` and ``as_rotvec`` `#2102 <https://github.com/scipp/scipp/pull/2102>`_.
 * Add ``cross`` function to complementing existing ``dot`` function `#2109 <https://github.com/scipp/scipp/pull/2109>`_.
-* Unary operations such as ``sin`` are now available for datasets as well `#2112 https://github.com/scipp/scipp/pull/2112`_.
+* Add ``where`` function.
+* Unary operations such as ``sin`` are now available for datasets as well `#2112 <https://github.com/scipp/scipp/pull/2112>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -40,10 +41,10 @@ Breaking changes
 * ``astype`` and ``to_unit`` now copy the input by default even when no transformation is required, use the new ``copy`` argument to avoid `#2016 <https://github.com/scipp/scipp/pull/2016>`_.
 * ``rename_dims`` does not rename dimension-coords any more, only dims will be renamed `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
 * ``rename_dims`` does not modify the input anymore but returns a new object with renamed dims `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
-* ``issorted`` and ``islinspace`` return a variable of type boolean instead of a boolean `#2094 https://github.com/scipp/scipp/pull/2094`_.
+* ``issorted`` and ``islinspace`` return a variable of type boolean instead of a boolean `#2094 <https://github.com/scipp/scipp/pull/2094>`_.
 * Multi-dimensional coordinates are no longer associated with their inner dimension, which affects the behavior when slicing:
   Such coords will no longer be turned into attributes during a slice operation on the inner dimension `#2098 <https://github.com/scipp/scipp/pull/2098>`_.
-* ``buckets.map(histogram, da.data, 'time')`` has been replaced by ``lookup(histogram, 'time')[da.bins.coords['time']]`` `#2112 https://github.com/scipp/scipp/pull/2112`_.
+* ``buckets.map(histogram, da.data, 'time')`` has been replaced by ``lookup(histogram, 'time')[da.bins.coords['time']]`` `#2112 <https://github.com/scipp/scipp/pull/2112>`_.
 
 Bugfixes
 ~~~~~~~~
@@ -57,6 +58,7 @@ Contributors
 
 Owen Arnold :sup:`b, c`\ ,
 Simon Heybrock :sup:`a`\ ,
+Samuel Jones :sup:`b`\ ,
 Greg Tucker :sup:`a`\ ,
 Neil Vaytet :sup:`a`\ ,
 Tom Willemsen :sup:`b, c`\ ,
