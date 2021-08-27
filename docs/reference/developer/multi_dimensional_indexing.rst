@@ -58,9 +58,9 @@ Meaning of delta
 ``delta`` is the step length per dimension to be used in calls to ``ViewIndex::increment``.
 
 Starting at a) in the figure below, calling ``increment`` moves to b) by adding ``delta[x]`` to ``m_memory_index``.
-In the next step, ``increment`` moves to element 2 (c) by adding ``delta[x]`` again.
+In the next step, ``increment`` moves to element 2 in c) by adding ``delta[x]`` again.
 This is is out of bounds and therefore ``increment_outer`` is called which moves to
-element 3 (d) by adding ``delta[y]`` and returns.
+element 3 in d) by adding ``delta[y]`` and returns.
 Skipping some steps, at the end of dimension y going from e) to f), ``increment``
 calls ``increment_outer`` again which first moves to 9 and then 12.
 Note that states c), f), and g) are only intermediate and not visible from the outside.
