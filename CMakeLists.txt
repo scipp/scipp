@@ -249,3 +249,6 @@ if(DYNAMIC_LIB)
     DESTINATION lib/cmake/scipp
   )
 endif(DYNAMIC_LIB)
+
+add_custom_target(all-targets)
+add_dependencies(all-targets all-benchmarks all-tests install)
