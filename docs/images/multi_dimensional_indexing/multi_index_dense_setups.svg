@@ -24,10 +24,10 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="1.0998546"
-     inkscape:cx="545.98126"
-     inkscape:cy="349.59166"
-     inkscape:window-width="2560"
-     inkscape:window-height="1410"
+     inkscape:cx="1350.6331"
+     inkscape:cy="241.85015"
+     inkscape:window-width="1920"
+     inkscape:window-height="1055"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -287,7 +287,7 @@
            style="stroke-width:0.264583"
            x="976.54889"
            y="194.96318"
-           id="tspan191881">stride = [(1, 4), (1, 4)]</tspan><tspan
+           id="tspan191881">stride = [(1, 1), (4, 4)]</tspan><tspan
            sodipodi:role="line"
            style="stroke-width:0.264583"
            x="976.54889"
@@ -494,7 +494,7 @@
            style="stroke-width:0.264583"
            x="1175.1177"
            y="232.93129"
-           id="tspan196707">stride = [(1, 2), (1, 4)]</tspan><tspan
+           id="tspan196707">stride = [(1, 1), (2, 4)]</tspan><tspan
            sodipodi:role="line"
            style="stroke-width:0.264583"
            x="1175.1177"
@@ -701,7 +701,7 @@
            style="stroke-width:0.264583"
            x="1285.22"
            y="-13.807365"
-           id="tspan199949">stride = [(1, 2), (1, 4), (0, 1)]</tspan><tspan
+           id="tspan199949">stride = [(1, 1, 0), (2, 4, 1)]</tspan><tspan
            sodipodi:role="line"
            style="stroke-width:0.264583"
            x="1285.22"
