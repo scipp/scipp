@@ -122,7 +122,6 @@ if the corresponding memory layout is contiguous in all operands.
 Iteration functions in much the same way as described in `Incrementing`_ above.
 
 The image below shows some examples of possible states of ``MultiIndex`` (without flattening contiguous dimensions).
-Square brackets denote arrays in the number of dimensions and round parentheses denote arrays in the number of operands.
 The left and center case correspond to unary operations and the one to the right to a binary operation
 with broadcasting in the second operand.
 Note that there is always one additional operand, e.g. on the left, ``data_index`` has two elements,
@@ -133,6 +132,7 @@ the one listed first is the output ``Variable``.
   :alt: Example setups of MultiIndex with dense data
 
 Here, '∅' denotes ignored members.
+Square brackets denote arrays in the number of dimensions and round parentheses denote arrays in the number of operands.
 
 
 Binned Data
