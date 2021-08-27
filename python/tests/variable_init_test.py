@@ -3,17 +3,26 @@
 # @file
 # @author Jan-Lukas Wynen
 
+import platform
+
 import numpy as np
 import pytest
 
 import scipp as sc
+
+
+def representation_of_native_int():
+    if platform.system() == 'Windows':
+        return sc.dtype.int32
+    return sc.dtype.int64
+
 
 # Tuples (dtype, expected, val) where
 # - dtype: Object to pass as `dtype` to functions
 # - expected: dtype of the return value of the function
 # - val: Value of a matching type
 DTYPE_INPUT_TO_EXPECTED = (
-    (int, sc.dtype.int64, 0),
+    (int, representation_of_native_int(), 0),
     (float, sc.dtype.float64, 1.2),
     (bool, sc.dtype.bool, True),
     (str, sc.dtype.string, 'abc'),
