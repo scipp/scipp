@@ -5,8 +5,10 @@
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 
+#include "scipp/variable/creation.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/util.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
@@ -107,9 +109,10 @@ Dataset copy(const Dataset &dataset, Dataset &&out,
 /// Only in the latter case a copy is returned.
 Variable masked_data(const DataArray &array, const Dim dim) {
   const auto mask = irreducible_mask(array.masks(), dim);
-  if (mask.is_valid())
-    return array.data() * ~mask;
-  else
+  if (mask.is_valid()) {
+    const auto &data = array.data();
+    return where(mask, zeros_like(data), data);
+  } else
     return array.data();
 }
 
