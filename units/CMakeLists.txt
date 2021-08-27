@@ -20,7 +20,7 @@ target_compile_definitions(
   ${TARGET_NAME} PUBLIC SCIPP_UNITS_${SCIPP_UNITS_SYSTEM}
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
-target_link_libraries(${TARGET_NAME} PUBLIC scipp-common units::units)
+target_link_libraries(${TARGET_NAME} PUBLIC scipp-common LLNL-Units::LLNL-Units)
 target_include_directories(
   ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
@@ -38,15 +38,3 @@ endif()
 add_subdirectory(test)
 
 scipp_install_component(TARGET ${TARGET_NAME})
-
-if(DYNAMIC_LIB)
-  install(TARGETS compile_flags_target EXPORT ${EXPORT_NAME})
-  install(TARGETS units EXPORT ${EXPORT_NAME})
-  install(
-    FILES ${PROJECT_BINARY_DIR}/llnl-units-src/units/unit_definitions.hpp
-          ${PROJECT_BINARY_DIR}/llnl-units-src/units/units_decl.hpp
-          ${PROJECT_BINARY_DIR}/llnl-units-src/units/units.hpp
-          ${PROJECT_BINARY_DIR}/llnl-units-build/units/units_export.h
-    DESTINATION ${INCLUDEDIR}/units
-  )
-endif(DYNAMIC_LIB)
