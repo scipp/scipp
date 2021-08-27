@@ -71,6 +71,15 @@ def _produce_coord(obj, name):
     return obj.coords[name]
 
 
+def _store_coord(obj, name, coord):
+    obj.coords[name] = coord
+    if name in obj.attrs:
+        # If name is both an input and output to a function,
+        # the input handling made it an attr, but since it is
+        # an output, we want to store it as a coord (and only as a coord).
+        del obj.attrs[name]
+
+
 class CoordTransform:
     Graph = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 
@@ -132,7 +141,7 @@ class CoordTransform:
             out = {name: out}
         self._rename.setdefault(dim, []).extend(out.keys())
         for key, coord in out.items():
-            self.obj.coords[key] = coord
+            _store_coord(self.obj, key, coord)
         if self.obj.bins is not None:
             if isinstance(out_bins, Variable):
                 out_bins = {name: out_bins}

@@ -71,7 +71,7 @@ auto make_variable(const Dimensions &dims) {
 }
 
 TEST_F(AccumulateTest, 1d_to_scalar) {
-  const auto var = make_variable({{Dim::X}, {24}});
+  const auto var = make_variable({{Dim::X}, 24});
   const auto expected = makeVariable<int64_t>(Values{300});
   auto result = makeVariable<int64_t>(Values{0});
   accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);

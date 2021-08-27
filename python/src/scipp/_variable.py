@@ -2,12 +2,13 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
 
+from __future__ import annotations
 from collections.abc import Iterable as _Iterable
 from typing import Any as _Any, Sequence as _Sequence, Union as _Union,\
     Optional as _Optional
 
 import numpy as _np
-from numpy.typing import ArrayLike as _ArrayLike
+from numpy.typing import ArrayLike as array_like
 
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
@@ -327,8 +328,8 @@ def vectors(*,
 
 def array(*,
           dims: _Iterable,
-          values: _ArrayLike,
-          variances: _Optional[_ArrayLike] = None,
+          values: array_like,
+          variances: _Optional[array_like] = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
           dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
