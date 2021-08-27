@@ -22,14 +22,27 @@ namespace py = pybind11;
 namespace {
 /// 'kind' character codes for numpy dtypes
 enum class DTypeKind : char {
-  Datetime = 'M',
+  Float = 'f',
   Int = 'i',
+  Bool = 'b',
+  Datetime = 'M',
   Object = 'O',
   String = 'U',
 };
 
 constexpr bool operator==(const char a, const DTypeKind b) {
   return a == static_cast<char>(b);
+}
+
+enum class DTypeSize : ssize_t {
+  Float64 = 8,
+  Float32 = 4,
+  Int64 = 8,
+  Int32 = 4,
+};
+
+constexpr bool operator==(const ssize_t a, const DTypeSize b) {
+  return a == static_cast<ssize_t>(b);
 }
 } // namespace
 
@@ -70,19 +83,19 @@ DType dtype_of(const py::object &x) {
 }
 
 scipp::core::DType scipp_dtype(const py::dtype &type) {
-  if (type.is(py::dtype::of<double>()))
-    return scipp::core::dtype<double>;
-  if (type.is(py::dtype::of<float>()))
-    return scipp::core::dtype<float>;
-  // See https://github.com/pybind/pybind11/pull/1329, int64_t not
-  // matching numpy.int64 correctly.
-  if (type.is(py::dtype::of<std::int64_t>()) ||
-      (type.kind() == DTypeKind::Int && type.itemsize() == 8))
-    return scipp::core::dtype<int64_t>;
-  if (type.is(py::dtype::of<std::int32_t>()) ||
-      (type.kind() == DTypeKind::Int && type.itemsize() == 4))
-    return scipp::core::dtype<int32_t>;
-  if (type.is(py::dtype::of<bool>()))
+  if (type.kind() == DTypeKind::Float) {
+    if (type.itemsize() == DTypeSize::Float64)
+      return scipp::core::dtype<double>;
+    if (type.itemsize() == DTypeSize::Float32)
+      return scipp::core::dtype<float>;
+  }
+  if (type.kind() == DTypeKind::Int) {
+    if (type.itemsize() == DTypeSize::Int64)
+      return scipp::core::dtype<std::int64_t>;
+    if (type.itemsize() == DTypeSize::Int32)
+      return scipp::core::dtype<std::int32_t>;
+  }
+  if (type.kind() == DTypeKind::Bool)
     return scipp::core::dtype<bool>;
   if (type.kind() == DTypeKind::String)
     return scipp::core::dtype<std::string>;
