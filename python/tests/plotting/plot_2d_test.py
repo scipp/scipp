@@ -239,7 +239,21 @@ def test_plot_2d_with_decreasing_edges():
 
 
 def test_plot_2d_binned_data():
-    plot(make_binned_data_array(ndim=2))
+    da = make_binned_data_array(ndim=2)
+    plot(da)
+    # Try without event-coord so implementation cannot use `histogram`
+    del da.bins.coords['yy']
+    da.coords['yy'] = da.coords['yy']['yy', 1:]
+
+
+def test_plot_2d_binned_data_non_counts():
+    da = make_binned_data_array(ndim=2)
+    da.events.unit = 'K'
+    plot(da)
+    # Try without event-coord so implementation cannot use `histogram`
+    del da.bins.coords['yy']
+    da.coords['yy'] = da.coords['yy']['yy', 1:]
+    plot(da)
 
 
 def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
