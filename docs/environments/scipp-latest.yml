@@ -16,3 +16,4 @@ dependencies:
   - nodejs
   - pythreejs
   - scipp
+  - scipy
