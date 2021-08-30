@@ -15,6 +15,8 @@ Classes
    GroupByDataset
    Unit
    Variable
+   typing.VariableLike
+   typing.MetaDataMap
 
 Creation functions
 ==================
@@ -111,17 +113,18 @@ Comparison operators compare element-wise and *ignore variances*.
 .. autosummary::
    :toctree: ../generated/functions
 
-   less
-   greater
-   less_equal
-   greater_equal
-   equal
-   not_equal
-   isclose
    allclose
+   allsorted
+   equal
+   greater
+   greater_equal
    identical
+   isclose
    islinspace
    issorted
+   less
+   less_equal
+   not_equal
 
 `inf` and `nan` handling
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -241,12 +244,3 @@ Modules
    constants
    spatial
 
-
-Typing
-======
-
-.. autosummary::
-   :toctree: ../generated
-
-   typing.VariableLike
-   typing.MetaDataMap

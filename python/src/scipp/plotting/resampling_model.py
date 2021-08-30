@@ -222,8 +222,7 @@ def _with_edges(array):
             new_array.coords[dim] = to_bin_edges(var, dim)
         elif var.dtype not in [sc.dtype.float32, sc.dtype.float64]:
             # rebin does not support int coords right now
-            # TODO use copy=False
-            new_array.coords[dim] = var.astype(sc.dtype.float64)
+            new_array.coords[dim] = var.astype(sc.dtype.float64, copy=False)
     return new_array, prefix
 
 
