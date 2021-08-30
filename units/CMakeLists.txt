@@ -29,7 +29,7 @@ target_include_directories(
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
-set_target_properties(${TARGET_NAME} PROPERTIES EXPORT_NAME units)
+set_target_properties(${TARGET_NAME} PROPERTIES EXPORT_NAME scipp-units)
 
 if(PRECOMPILED_HEADERS)
   target_precompile_headers(${TARGET_NAME} PUBLIC ${INC_FILES})
