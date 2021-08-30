@@ -15,10 +15,10 @@ namespace scipp::dataset {
 template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
   std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
 
-  for (const auto [key, item] : a)
+  for (const auto &[key, item] : a)
     out.emplace(key, item);
 
-  for (const auto item : b) {
+  for (const auto &item : b) {
     if (const auto it = a.find(item.first); it != a.end()) {
       expect::matchingCoord(it->first, it->second, item.second);
     } else
@@ -31,7 +31,7 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 /// have matching content.
 template <class Map> auto intersection(const Map &a, const Map &b) {
   std::unordered_map<typename Map::key_type, Variable> out;
-  for (const auto [key, item] : a)
+  for (const auto &[key, item] : a)
     if (const auto it = b.find(key); it != b.end() && it->second == item)
       out.emplace(key, item);
   return out;
@@ -40,7 +40,7 @@ template <class Map> auto intersection(const Map &a, const Map &b) {
 /// Return a copy of map-like objects such as CoordView.
 template <class T> auto copy_map(const T &map) {
   std::unordered_map<typename T::key_type, typename T::mapped_type> out;
-  for (const auto [key, item] : map)
+  for (const auto &[key, item] : map)
     out.emplace(key, copy(item));
   return out;
 }
