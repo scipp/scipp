@@ -14,7 +14,7 @@ resources:
     name: scipp/pipelines
     type: github
     endpoint: scipp
-    ref: main
+    ref: gcc11  # TODO revert to main
 
 trigger:
   branches:
