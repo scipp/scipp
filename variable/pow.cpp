@@ -44,7 +44,7 @@ template <class T> struct PowUnit {
                                 std::to_string(exp_val) + ".");
       }
     }
-    return pow(base_unit, val);
+    return pow(base_unit, exp_val);
   }
 };
 
