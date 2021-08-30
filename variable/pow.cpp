@@ -36,15 +36,15 @@ Variable pow_do_transform(V &&base, const Variable &exponent,
 template <class T> struct PowUnit {
   static units::Unit apply(const units::Unit base_unit,
                            const Variable &exponent) {
-    const auto val = exponent.value<T>();
+    const auto exp_val = exponent.value<T>();
     if constexpr (std::is_floating_point_v<T>) {
-      if (static_cast<T>(static_cast<int64_t>(val)) != val) {
+      if (static_cast<T>(static_cast<int64_t>(exp_val)) != exp_val) {
         throw except::UnitError("Powers of dimension-full variables must be "
                                 "integers or integer valued floats. Got " +
-                                std::to_string(val) + ".");
+                                std::to_string(exp_val) + ".");
       }
     }
-    return pow(base_unit, exponent.value<T>());
+    return pow(base_unit, val);
   }
 };
 
