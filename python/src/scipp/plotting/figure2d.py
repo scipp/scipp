@@ -8,6 +8,7 @@ from .toolbar import PlotToolbar2d
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, LogNorm
+import math
 import warnings
 
 
@@ -73,6 +74,7 @@ class PlotFigure2d(PlotFigure):
                                      ax=self.ax,
                                      cax=self.cax,
                                      extend=extend)
+            self.cbar.formatter.set_useOffset(False)
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.mask_image = {}
@@ -81,6 +83,10 @@ class PlotFigure2d(PlotFigure):
         """
         Rescale the colorbar limits according to the supplied values.
         """
+        if math.isclose(vmin, vmax):
+            offset = 0.1 * max(abs(vmin), abs(vmax))
+            vmin -= offset
+            vmax += offset
         self.norm.vmin = vmin
         self.norm.vmax = vmax
         self.image_values.set_clim(vmin, vmax)
