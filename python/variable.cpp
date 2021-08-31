@@ -201,4 +201,12 @@ of variances.)");
     core::callDType<SetElements>(
         structured_t{}, variableFactory().elem_dtype(self), self, key, elems);
   });
+
+  m.def("variable_typeid", [](Variable &v) {
+    std::cout << "typeid(scipp::variable::Variable) = "
+              << typeid(scipp::variable::Variable).hash_code() << " '"
+              << typeid(scipp::variable::Variable).name() << "'\n";
+    std::cout << "typeid(arg) =                       " << typeid(v).hash_code()
+              << " '" << typeid(v).name() << "'\n";
+  });
 }
