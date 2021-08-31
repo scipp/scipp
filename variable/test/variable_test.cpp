@@ -841,17 +841,8 @@ TEST(Variable, self_nesting_scalar_copy) {
 TEST(Variable, self_nesting_scalar_move) {
   Variable inner = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 3});
 
-  // 1 level of nesting
-  Variable v1 = makeVariable<Variable>(Shape{}, Values{copy(inner)});
-  ASSERT_NO_THROW_DISCARD(v1 = std::move(v1));
-  ASSERT_EQ(v1.value<Variable>(), inner);
-  v1 = makeVariable<Variable>(Shape{}, Values{inner});
-  ASSERT_THROW_DISCARD(v1.value<Variable>() = std::move(v1),
-                       std::invalid_argument);
-  ASSERT_EQ(v1.value<Variable>(), inner);
-  v1 = makeVariable<Variable>(Shape{}, Values{inner});
-
   // 2 levels of nesting
+  Variable v1 = makeVariable<Variable>(Shape{}, Values{inner});
   Variable v2 = makeVariable<Variable>(Shape{}, Values{v1});
   ASSERT_THROW_DISCARD(v1.value<Variable>() = std::move(v2),
                        std::invalid_argument);
