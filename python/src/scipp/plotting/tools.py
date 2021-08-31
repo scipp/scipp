@@ -4,6 +4,7 @@
 
 from .. import config
 from .._scipp import core as sc
+from .._variable import scalar
 import numpy as np
 from copy import copy
 import io
@@ -127,10 +128,10 @@ def find_log_limits(x):
     # limits are negative.
     if len(ar) == 0:
         [vmin, vmax] = find_linear_limits(x)
-        if vmin <= 0.0:
-            if vmax <= 0.0:
-                vmin = 0.1
-                vmax = 1.0
+        if vmin.value <= 0.0:
+            if vmax.value <= 0.0:
+                vmin = scalar(0.1)
+                vmax = scalar(1.0)
             else:
                 vmin = 1.0e-3 * vmax
     else:
