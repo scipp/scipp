@@ -296,7 +296,8 @@ TEST_P(BinTest, group_and_bin) {
 }
 
 TEST_P(BinTest, rebin_masked) {
-  const auto table = GetParam();
+  auto table = GetParam();
+  table.setUnit(units::counts); // we want to use `histogram` for comparison
   auto binned = bin(table, {edges_x_coarse});
   binned.masks().set("x-mask", makeVariable<bool>(Dims{Dim::X}, Shape{2},
                                                   Values{false, true}));
