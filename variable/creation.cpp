@@ -62,6 +62,9 @@ Variable special_like(const Variable &prototype, const FillValue &fill) {
   throw std::runtime_error("Unsupported fill value.");
 }
 
-Variable zero_like(const Variable &var) { return {var, Dimensions{}}; }
+/// Create scalar variable containing 0 with same parameters as prototype.
+Variable zero_like(const Variable &prototype) {
+  return {prototype, Dimensions{}};
+}
 
 } // namespace scipp::variable
