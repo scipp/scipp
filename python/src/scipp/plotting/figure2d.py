@@ -85,7 +85,7 @@ class PlotFigure2d(PlotFigure):
 
     def _make_limits(self, vmin, vmax):
         if math.isclose(vmin, vmax):
-            offset = 0.1 * max(abs(vmin), abs(vmax))
+            offset = 0.001 * max(abs(vmin), abs(vmax))
             vmin -= offset
             vmax += offset
         return vmin, vmax
