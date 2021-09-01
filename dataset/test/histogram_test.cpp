@@ -240,8 +240,9 @@ TEST(HistogramTest, dense_vs_binned) {
   using testdata::make_table;
   auto table_no_variance = make_table(100);
   table_no_variance.data().setVariances(Variable{});
-  for (const auto &table :
+  for (auto table :
        {make_table(0), make_table(100), make_table(1000), table_no_variance}) {
+    table.setUnit(units::counts);
     const auto binned_x =
         bin(table, {makeVariable<double>(Dims{Dim::X}, Shape{5},
                                          Values{-2, -1, 0, 1, 2})});
@@ -260,11 +261,11 @@ TEST(HistogramTest, dense_vs_binned) {
 struct Histogram1DTest : public ::testing::Test {
 protected:
   Histogram1DTest() {
-    data = makeVariable<double>(Dims{Dim::X}, Shape{10},
+    data = makeVariable<double>(Dims{Dim::X}, Shape{10}, units::counts,
                                 Values{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
     coord = makeVariable<double>(Dims{Dim::X}, Shape{10},
                                  Values{1, 2, 1, 2, 3, 4, 3, 2, 1, 1});
-    mask = less(data, 4.0 * units::one);
+    mask = less(data, 4.0 * units::counts);
   }
   Variable data;
   Variable coord;
@@ -276,7 +277,8 @@ TEST_F(Histogram1DTest, coord_name_matches_dim) {
   const auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   EXPECT_EQ(histogram(da, edges).data(),
-            makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{19, 12, 12}));
+            makeVariable<double>(Dims{Dim::X}, Shape{3}, units::counts,
+                                 Values{19, 12, 12}));
 }
 
 TEST_F(Histogram1DTest, coord_name_differs_dim) {
@@ -285,14 +287,15 @@ TEST_F(Histogram1DTest, coord_name_differs_dim) {
   const auto edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{4}, Values{1, 2, 3, 4});
   EXPECT_EQ(histogram(da, edges).data(),
-            makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{19, 12, 12}));
+            makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::counts,
+                                 Values{19, 12, 12}));
 }
 
 struct Histogram2DTest : public ::testing::Test {
 protected:
   Histogram2DTest() {
     data = makeVariable<double>(
-        Dims{Dim::Y, Dim::X}, Shape{3, 4},
+        Dims{Dim::Y, Dim::X}, Shape{3, 4}, units::counts,
         Values{11, 12, 13, 14, 21, 22, 23, 24, 31, 32, 33, 34});
     coord = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
                                  Values{1, 2, 1, 2, 3, 4, 3, 2, 1, 1, 2, 3});
@@ -312,6 +315,7 @@ TEST_F(Histogram2DTest, outer_1d_coord) {
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1.0, 2.5, 5.0});
   EXPECT_EQ(histogram(da, edges).data(),
             makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 2},
+                                 units::counts,
                                  Values{42, 21, 44, 22, 46, 23, 48, 24}));
 }
 
@@ -329,6 +333,7 @@ TEST_F(Histogram2DTest, outer_2d_coord) {
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1.0, 2.5, 5.0});
   EXPECT_EQ(histogram(da, edges).data(),
             makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 2},
+                                 units::counts,
                                  Values{42, 21, 44, 22, 46, 23, 38, 34}));
 }
 

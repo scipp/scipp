@@ -100,9 +100,9 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
   // to avoid this since it increases complexity. Instead, densities could
   // always be computed on-the-fly for visualization, if required.
   if (var.dtype() == dtype<bool>)
-    core::expect::unit_any_of(var, {units::one});
+    core::expect::equals(var.unit(), units::one);
   else
-    core::expect::unit_any_of(var, {units::counts});
+    core::expect::equals(var.unit(), units::counts);
   if (!isBinEdge(dim, oldCoord.dims(), var.dims()))
     throw except::BinEdgeError(
         "The input does not have coordinates with bin-edges.");
