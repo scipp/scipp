@@ -69,7 +69,7 @@ static constexpr auto rebin = overloaded{
             "Input and output bin edges must have the same unit.");
       // TODO No check of data unit until we have separate rebin and resample.
       // As it is now we resample bool but rebin counts, so we cannot have a
-      // sensbiel check here.
+      // sensible check here.
       return data;
     },
     transform_flags::expect_in_variance_if_out_variance,
