@@ -26,6 +26,7 @@
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/except.h"
 
+#include "bins_util.h"
 #include "dataset_operations_common.h"
 
 using namespace scipp::variable::bin_detail;
@@ -413,30 +414,6 @@ auto axis_actions(const Variable &data, const Coords &coords,
   return builder;
 }
 
-class HideMasked {
-public:
-  template <class Masks>
-  HideMasked(const Variable &data, const Masks &masks, const Dimensions &dims) {
-    const auto &[begin_end, buffer_dim, buffer] =
-        data.constituents<DataArray>();
-    auto [begin, end] = unzip(begin_end);
-    for (const auto dim : dims.labels()) {
-      auto mask = irreducible_mask(masks, dim);
-      if (mask.is_valid()) {
-        begin *= ~mask;
-        end *= ~mask;
-      }
-    }
-    m_indices = zip(begin, end);
-    m_data = make_bins_no_validate(m_indices, buffer_dim, buffer);
-  }
-  Variable operator()() const { return m_data; }
-
-private:
-  Variable m_indices; // keep alive indices
-  Variable m_data;
-};
-
 template <class T> class TargetBins {
 public:
   TargetBins(const Variable &var, const Dimensions &dims) {
@@ -501,8 +478,8 @@ DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
         builder.existing(dim, array.dims()[dim]);
     }
 
-  HideMasked hide_masked(array.data(), array.masks(), builder.dims());
-  const auto masked = hide_masked();
+  const auto masked =
+      hide_masked(array.data(), array.masks(), builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
   builder.build(*target_bins, array.coords());
   return add_metadata(bin<DataArray>(masked, *target_bins, builder),
@@ -592,8 +569,7 @@ DataArray bin(const Variable &data, const Coords &coords, const Masks &masks,
               const std::vector<Variable> &groups,
               const std::vector<Dim> &erase) {
   auto builder = axis_actions(data, coords, edges, groups, erase);
-  HideMasked hide_masked(data, masks, builder.dims());
-  const auto masked = hide_masked();
+  const auto masked = hide_masked(data, masks, builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
   builder.build(*target_bins, bins_view<DataArray>(masked).coords(), coords);
   return add_metadata(bin<DataArray>(masked, *target_bins, builder), coords,
