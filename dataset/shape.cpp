@@ -36,7 +36,7 @@ template <class T1, class T2, class DimT>
 auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
             const DimT &dimsB) {
   std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
-  for (const auto [key, a_] : a) {
+  for (const auto &[key, a_] : a) {
     if (a.dim_of(key) == dim) {
       if (is_edges(dimsA, a_.dims(), dim) !=
           is_edges(dimsB, b[key].dims(), dim)) {
