@@ -67,9 +67,9 @@ static constexpr auto rebin = overloaded{
       if (target_edges != edges)
         throw except::UnitError(
             "Input and output bin edges must have the same unit.");
-      if (data != units::counts && data != units::one)
-        throw except::UnitError("Only count-data (units::counts or "
-                                "units::dimensionless) can be rebinned.");
+      // TODO No check of data unit until we have separate rebin and resample.
+      // As it is now we resample bool but rebin counts, so we cannot have a
+      // sensbiel check here.
       return data;
     },
     transform_flags::expect_in_variance_if_out_variance,

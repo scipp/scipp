@@ -8,17 +8,10 @@ from .tools import to_bin_edges
 
 
 def _unit_requires_mean(obj):
-    return obj.unit != sc.units.counts and obj.unit != sc.units.dimensionless
+    return obj.unit != sc.units.counts
 
 
 def _resample(array, dim, edges):
-    # TODO Note that there are some inconsistencies here and in `rebin`. Should
-    # dimensionless be handled like counts? `rebin` does, but at some point we
-    # had decided that the plotting code should not. Furthermore, `rebin`
-    # handling `bool` as "non-counts", i.e., it does not sum but "average"
-    # (using `or`). What we need here works currently, since masks are
-    # dimensionless and we want `bool` as output, but this needs to be
-    # revisited.
     if not _unit_requires_mean(array):
         return sc.rebin(array, dim, edges)
     if array.dtype == sc.dtype.float64:
@@ -27,6 +20,7 @@ def _resample(array, dim, edges):
         array = array.astype(sc.dtype.float64)
     # Scale by bin widths, so `rebin` is effectively performing a "mean"
     # operation instead of "sum".
+    # TODO
     # Note that it is inefficient to do this repeatedly. Rather than working
     # around that here we should look into supporting an alternative to
     # `rebin` that works on non-counts data
