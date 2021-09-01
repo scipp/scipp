@@ -115,13 +115,13 @@ def find_log_limits(x):
     from .. import flatten, ones
     volume = np.product(x.shape)
     pixel = flatten(sc.values(x.astype(sc.dtype.float64)), to='pixel')
-    weights = ones(dims=['pixel'], shape=[volume])
+    weights = ones(dims=['pixel'], shape=[volume], unit='counts')
     hist = sc.histogram(sc.DataArray(data=weights, coords={'order': pixel}),
                         bins=sc.Variable(dims=['order'],
                                          values=np.geomspace(1e-30, 1e30, num=61),
                                          unit=x.unit))
     # Find the first and the last non-zero bins
-    inds = np.nonzero((hist.data > 0.0 * sc.units.one).values)
+    inds = np.nonzero((hist.data > 0.0 * sc.units.counts).values)
     ar = np.arange(hist.data.shape[0])[inds]
     # Safety check in case there are no values in range 1.0e-30:1.0e+30:
     # fall back to the linear method and replace with arbitrary values if the
