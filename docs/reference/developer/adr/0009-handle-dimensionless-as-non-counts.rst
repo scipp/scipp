@@ -1,7 +1,7 @@
 ADR 0009: Handle dimensionless as non-counts
 ============================================
 
-- Status: proposed
+- Status: accepted
 - Deciders: Jan-Lukas, Neil, Owen, Simon
 - Date: 2021-09-01
 
@@ -16,7 +16,7 @@ Should "dimensionless" be handled similar to counts?
 Let us consider which quantities may be dimensionless, or how they arise:
 
 - `Wikipedia's list of dimensionless quantities <https://en.wikipedia.org/wiki/List_of_dimensionless_quantities>`_ is long and none of them appears to be "count-like".
-- Dimensionless quantities naturally arise when we compute the ration of to quantities with identical units.
+- Dimensionless quantities naturally arise when we compute the ratio of two quantities with identical units.
   Treating ratios as counts in, e.g., ``rebin`` is obviously incorrect.
 
 Decision
