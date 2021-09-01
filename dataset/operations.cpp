@@ -111,7 +111,7 @@ Variable masked_data(const DataArray &array, const Dim dim) {
   const auto mask = irreducible_mask(array.masks(), dim);
   if (mask.is_valid()) {
     const auto &data = array.data();
-    return where(mask, zeros_like(data), data);
+    return where(mask, zero_like(data), data);
   } else
     return array.data();
 }
