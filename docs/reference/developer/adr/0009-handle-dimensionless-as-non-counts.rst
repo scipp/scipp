@@ -12,6 +12,8 @@ Repeatedly there is doubt over how dimensionless quantities should be handled in
 This is primarily ``rebin`` and ``histogram``, but the effect is most visible in ``plot`` which internally rebins or resamples data.
 
 There is no "counts" unit in the SI base unit system but we have included "counts" in the scipp unit system from early on, since distinguishing dimensionless quantities from (neutron) counts is often essential.
+For example, an explicit unit for "counts" prevents addition of "counts" with a ratio of counts.
+
 Should "dimensionless" be handled similar to counts?
 Let us consider which quantities may be dimensionless, or how they arise:
 
