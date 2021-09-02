@@ -431,20 +431,26 @@ TEST(Variable, log10_bad_unit) {
   EXPECT_THROW_DISCARD(log10(1.0 * units::s), except::UnitError);
 }
 
-TEST(Variable, rint_round) {
-  auto preRoundedVar = makeVariable<double>(Values{1.2, 2.9, 1.5, 2.5});
-  auto roundedVar = makeVariable<double>(Values{1, 3, 2, 2});
+TEST(Variable, rint) {
+  auto preRoundedVar = makeVariable<double>(
+      Dims{scipp::units::Dim::X}, Values{1.2, 2.9, 1.5, 2.5}, Shape{4});
+  auto roundedVar = makeVariable<double>(Dims{scipp::units::Dim::X},
+                                         Values{1, 3, 2, 2}, Shape{4});
   EXPECT_EQ(rint(preRoundedVar), roundedVar);
 }
 
-TEST(Variable, ceil_round) {
-  auto preRoundedVar = makeVariable<double>(Values{1.2, 2.9, 1.5, 2.5});
-  auto roundedVar = makeVariable<double>(Values{2, 3, 2, 3});
+TEST(Variable, ceil) {
+  auto preRoundedVar = makeVariable<double>(
+      Dims{scipp::units::Dim::X}, Values{1.2, 2.9, 1.5, 2.5}, Shape{4});
+  auto roundedVar = makeVariable<double>(Dims{scipp::units::Dim::X},
+                                         Values{2, 3, 2, 3}, Shape{4});
   EXPECT_EQ(ceil(preRoundedVar), roundedVar);
 }
 
-TEST(Variable, floor_round) {
-  auto preRoundedVar = makeVariable<double>(Values{1.2, 2.9, 1.5, 2.5});
-  auto roundedVar = makeVariable<double>(Values{1, 2, 1, 2});
+TEST(Variable, floor) {
+  auto preRoundedVar = makeVariable<double>(
+      Dims{scipp::units::Dim::X}, Values{1.2, 2.9, 1.5, 2.5}, Shape{4});
+  auto roundedVar = makeVariable<double>(Dims{scipp::units::Dim::X},
+                                         Values{1, 2, 1, 2}, Shape{4});
   EXPECT_EQ(floor(preRoundedVar), roundedVar);
 }
