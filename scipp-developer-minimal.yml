@@ -14,6 +14,7 @@ dependencies:
   - tbb-devel
   - conan
   - cmake
+  - gxx_linux-64 11.1.* [linux64]
 
   # Run
   - appdirs
