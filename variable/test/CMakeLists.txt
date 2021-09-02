@@ -20,6 +20,7 @@ add_executable(
   rebin_test.cpp
   reduce_logical_test.cpp
   reduce_various_test.cpp
+  rounding_test.cpp
   shape_test.cpp
   sort_test.cpp
   special_values_test.cpp
