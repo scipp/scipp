@@ -3,8 +3,23 @@
 Release Notes
 =============
 
-Since v0.7
+Since v0.8
 ----------
+
+Features
+~~~~~~~~
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+v0.8.0 (September 2021)
+-----------------------
 
 Features
 ~~~~~~~~
