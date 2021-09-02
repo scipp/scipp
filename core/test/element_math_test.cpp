@@ -192,9 +192,9 @@ TEST(ElementRoundingTest, rint) {
   EXPECT_EQ(element::rint(2.7), 3);
   EXPECT_EQ(element::rint(2.3), 2);
 
-  EXPECT_EQ(element::ceil(2.15), 2);
-  EXPECT_EQ(element::ceil(2.617), 3);
-  EXPECT_EQ(element::ceil(2.32133), 2);
+  EXPECT_EQ(element::rint(2.15), 2);
+  EXPECT_EQ(element::rint(2.617), 3);
+  EXPECT_EQ(element::rint(2.32133), 2);
 
   // In the middle of two integers prefer the even number (numpy does this)
   EXPECT_EQ(element::rint(1.5), 2);
