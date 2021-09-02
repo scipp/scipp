@@ -17,7 +17,7 @@ def _flatten(da, dims):
     flat = flatten(da, dims=dims, to='_'.join(dims))
     if flat.bins is None:
         return flat
-    if _unit_requires_mean(flat):
+    if _unit_requires_mean(flat.events):
         return flat.bins.mean()
     else:
         return flat.bins.sum()
