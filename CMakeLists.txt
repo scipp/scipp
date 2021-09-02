@@ -9,7 +9,11 @@ execute_process(
   OUTPUT_VARIABLE SCIPP_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-project(scipp VERSION ${SCIPP_VERSION})
+project(
+  scipp
+  VERSION ${SCIPP_VERSION}
+  LANGUAGES CXX
+)
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -78,6 +82,9 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
 
 conan_cmake_autodetect(conan_settings)
+conan_add_remote(
+  NAME scipp URL https://artifactoryconan.esss.dk/artifactory/api/conan/scipp
+)
 conan_cmake_install(
   PATH_OR_REFERENCE ${CMAKE_SOURCE_DIR} SETTINGS ${conan_settings} BUILD
   outdated
@@ -90,12 +97,12 @@ find_package(Sanitizers REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 find_package(Python 3.7 REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 CONFIG REQUIRED)
+find_package(LLNL-Units REQUIRED)
 
 # MP : Parallel compile, add before any targets so all use it
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-MP>)
 
 include(GoogleTest)
-include(LLNL-units)
 include(GenerateExportHeader)
 
 option(DISABLE_MULTI_THREADING "Disable multi threading" OFF)

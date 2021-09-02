@@ -44,10 +44,10 @@ protected:
 };
 
 TEST_F(LinalgMatrixTest, range_check) {
-  for (const std::string &key :
+  for (const std::string key :
        {"xx", "xy", "xz", "yx", "yy", "yz", "zx", "zy", "zz"})
     EXPECT_NO_THROW_DISCARD(matrices.elements<Eigen::Matrix3d>(key));
-  for (const std::string &key : {"x", "y", "z", "XX"})
+  for (const std::string key : {"x", "y", "z", "XX"})
     EXPECT_THROW_DISCARD(matrices.elements<Eigen::Matrix3d>(key),
                          std::out_of_range);
 }

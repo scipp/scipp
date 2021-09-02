@@ -14,6 +14,7 @@
 #include "scipp/variable/shape.h"
 #include "scipp/variable/transform_subspan.h"
 
+#include "bins_util.h"
 #include "dataset_operations_common.h"
 
 using namespace scipp::core;
@@ -47,8 +48,10 @@ DataArray histogram(const DataArray &events, const Variable &binEdges) {
         events,
         [](const DataArray &events_, const Dim dim_,
            const Variable &binEdges_) {
-          // TODO Creating a full copy of event data here is very inefficient
-          return buckets::histogram(masked_data(events_, dim_), binEdges_);
+          return buckets::histogram(
+              hide_masked(events_.data(), events_.masks(),
+                          scipp::span<const Dim>{&dim_, 1}),
+              binEdges_);
         },
         dim, binEdges);
   } else if (!is_histogram(events, dim)) {

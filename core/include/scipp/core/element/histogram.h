@@ -79,9 +79,8 @@ static constexpr auto histogram = overloaded{
       if (events_unit != edge_unit)
         throw except::UnitError(
             "Bin edges must have same unit as the input coordinate.");
-      if (weights_unit != units::counts && weights_unit != units::dimensionless)
-        throw except::UnitError(
-            "Data to histogram must have unit `counts` or `dimensionless`.");
+      if (weights_unit != units::counts)
+        throw except::UnitError("Data to histogram must have unit `counts`.");
       return weights_unit;
     },
     transform_flags::expect_in_variance_if_out_variance,
