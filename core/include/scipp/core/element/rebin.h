@@ -22,7 +22,7 @@ static constexpr auto rebin = overloaded{
     [](const auto &data_new, const auto &xnew, const auto &data_old,
        const auto &xold) {
       using T = decltype(xold[0] + (xold[0] - xnew[0]));
-      constexpr Less less;
+      const Less less;
       zero(data_new);
       const auto oldSize = scipp::size(xold) - 1;
       const auto newSize = scipp::size(xnew) - 1;
