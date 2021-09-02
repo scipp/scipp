@@ -236,6 +236,25 @@ TEST(HistogramTest, weight_lists) {
   EXPECT_EQ(dataset::histogram(events, edges), expected);
 }
 
+TEST(HistogramTest, non_finite_values) {
+  const auto data = makeVariable<double>(
+      Dims{Dim::Event}, Shape{6},
+      Values{1.0, 2.0, 3.0, std::numeric_limits<double>::quiet_NaN(), 4.0,
+             std::numeric_limits<double>::infinity()});
+  const auto coord = makeVariable<double>(Dims{Dim::Event}, Shape{6},
+                                          Values{0.0, 1.0, 2.0, 3.0, 4.0, 5.0});
+  const auto mask =
+      makeVariable<bool>(Dims{Dim::Event}, Shape{6},
+                         Values{false, true, false, true, false, true});
+  const DataArray events{data, {{Dim::X, coord}}, {{"m", mask}}};
+  const auto edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{0.0, 2.0, 4.0, 6.0});
+  const auto expected = make_expected(
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.0, 3.0, 4.0}),
+      edges);
+  EXPECT_EQ(dataset::histogram(events, edges), expected);
+}
+
 TEST(HistogramTest, dense_vs_binned) {
   using testdata::make_table;
   auto table_no_variance = make_table(100);

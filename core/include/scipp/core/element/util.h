@@ -121,7 +121,8 @@ constexpr auto where = overloaded{
     core::element::arg_list<
         std::tuple<bool, double, double>, std::tuple<bool, float, float>,
         std::tuple<bool, int64_t, int64_t>, std::tuple<bool, int32_t, int32_t>,
-        std::tuple<bool, bool, bool>, std::tuple<bool, time_point, time_point>>,
+        std::tuple<bool, bool, bool>, std::tuple<bool, time_point, time_point>,
+        std::tuple<bool, scipp::index_pair, scipp::index_pair>>,
     [](const auto &condition, const auto &x, const auto &y) {
       return condition ? x : y;
     },
