@@ -17,7 +17,6 @@ set(INC_FILES
     include/scipp/variable/operations.h
     include/scipp/variable/rebin.h
     include/scipp/variable/reduction.h
-    include/scipp/variable/rounding.h
     include/scipp/variable/shape.h
     include/scipp/variable/slice.h
     include/scipp/variable/sort.h
@@ -52,7 +51,6 @@ set(SRC_FILES
     operations.cpp
     rebin.cpp
     reduction.cpp
-    rounding.cpp
     shape.cpp
     slice.cpp
     sort.cpp

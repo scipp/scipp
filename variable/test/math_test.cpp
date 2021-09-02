@@ -430,3 +430,21 @@ TEST(Variable, log10_out_arg) {
 TEST(Variable, log10_bad_unit) {
   EXPECT_THROW_DISCARD(log10(1.0 * units::s), except::UnitError);
 }
+
+TEST(Variable, rint_round) {
+  auto preRoundedVar = makeVariable<double>(Values{1.2, 2.9, 1.5, 2.5});
+  auto roundedVar = makeVariable<double>(Values{1, 3, 2, 2});
+  EXPECT_EQ(round(preRoundedVar), roundedVar);
+}
+
+TEST(Variable, ceil_round) {
+  auto preRoundedVar = makeVariable<double>(Values{1.2, 2.9, 1.5, 2.5});
+  auto roundedVar = makeVariable<double>(Values{2, 3, 2, 3});
+  EXPECT_EQ(ceil(preRoundedVar), roundedVar);
+}
+
+TEST(Variable, floor_round) {
+  auto preRoundedVar = makeVariable<double>(Values{1.2, 2.9, 1.5, 2.5});
+  auto roundedVar = makeVariable<double>(Values{1, 2, 1, 2});
+  EXPECT_EQ(floor(preRoundedVar), roundedVar);
+}
