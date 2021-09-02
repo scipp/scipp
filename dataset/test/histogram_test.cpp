@@ -238,7 +238,7 @@ TEST(HistogramTest, weight_lists) {
 
 TEST(HistogramTest, non_finite_values) {
   const auto data = makeVariable<double>(
-      Dims{Dim::Event}, Shape{6},
+      Dims{Dim::Event}, Shape{6}, units::counts,
       Values{1.0, 2.0, 3.0, std::numeric_limits<double>::quiet_NaN(), 4.0,
              std::numeric_limits<double>::infinity()});
   const auto coord = makeVariable<double>(Dims{Dim::Event}, Shape{6},
@@ -249,9 +249,10 @@ TEST(HistogramTest, non_finite_values) {
   const DataArray events{data, {{Dim::X, coord}}, {{"m", mask}}};
   const auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{0.0, 2.0, 4.0, 6.0});
-  const auto expected = make_expected(
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.0, 3.0, 4.0}),
-      edges);
+  const auto expected =
+      make_expected(makeVariable<double>(Dims{Dim::X}, Shape{3}, units::counts,
+                                         Values{1.0, 3.0, 4.0}),
+                    edges);
   EXPECT_EQ(dataset::histogram(events, edges), expected);
 }
 
