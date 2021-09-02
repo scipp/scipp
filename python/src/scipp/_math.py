@@ -124,3 +124,60 @@ def log10(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLik
     :returns: Base 10 logarithm of the input.
     """
     return _call_cpp_func(_cpp.log10, x, out=out)
+
+
+def around(x: VariableLike,
+           decimals: int = 0,
+           *,
+           out: Optional[VariableLike] = None) -> VariableLike:
+    """
+    Round to the nearest integer if no decimals is provided, otherwise round to the
+    nearest decimal given.
+
+    Note: if the number being rounded is halfway between two integers/decimals it
+    will round to the nearest even number. For example 1.5 and 2.5 will both round
+    to 2.0, -0.5 and 0.5 will both round to 0.0.
+
+    :param x: Input data.
+    :param decimals: Number of decimal places to round to.
+    :param out: Optional output buffer.
+    :returns: Rounded version of the data passed to the decimals given, if given,
+    else to the nearest integer.
+    """
+    if out is not None:
+        # Copy x to out, if out != x.
+        out[...] = x
+    else:
+        out = x
+    multiplier = 10.0**decimals
+    out = out * multiplier
+    _cpp.round(out, out=out)
+    out /= multiplier
+    return out
+
+
+# Add an alias like numpy to allow users to call round_ instead of around, as it
+# may be clearer to users.
+round_ = around
+
+
+def floor(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+    """
+    Round down to the nearest integer of all values passed in x.
+
+    :param x: Input data.
+    :param out: Optional output buffer.
+    :returns: Rounded down version of the data passed.
+    """
+    return _call_cpp_func(_cpp.floor, x, out=out)
+
+
+def ceil(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+    """
+    Round up to the nearest integer of all values passed in x.
+
+    :param x: Input data.
+    :param out: Optional output buffer.
+    :returns: Rounded up version of the data passed.
+    """
+    return _call_cpp_func(_cpp.ceil, x, out=out)
