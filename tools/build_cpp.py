@@ -55,6 +55,8 @@ def main(prefix='install', build_dir='build', source_dir='.', caching=False):
         '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'ON'
     }
 
+    targets = ['all-benchmarks', 'all-tests', 'install']
+
     if platform == 'darwin':
         cmake_flags.update({'-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'OFF'})
         osxversion = os.environ.get('OSX_VERSION')
@@ -80,6 +82,8 @@ def main(prefix='install', build_dir='build', source_dir='.', caching=False):
         # cmake --build --parallel is detrimental to build performance on windows
         # see https://github.com/scipp/scipp/issues/2078 for details
         build_flags = []
+        # Avoid excessive re-compilations
+        targets.remove('all-benchmarks')
     else:
         # For other platforms we do want to add the parallel build flag.
         build_flags = [parallel_flag]
@@ -108,7 +112,7 @@ def main(prefix='install', build_dir='build', source_dir='.', caching=False):
 
     # Compile benchmarks, C++ tests, and python library
     start = time.time()
-    for target in ['all-benchmarks', 'all-tests', 'install']:
+    for target in targets:
         run_command(['cmake', '--build', '.', '--target', target] + build_flags,
                     shell=shell)
     end = time.time()
