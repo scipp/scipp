@@ -231,10 +231,13 @@ def test_array_creates_correct_variable():
 
 
 def test_array_empty_dims():
-    assert sc.identical(sc.array(dims=[], values=[1]), sc.scalar([1]))
+    assert sc.identical(sc.array(dims=[], values=[1]),
+                        sc.scalar([1], dtype=sc.dtype.PyObject))
     a = np.asarray(1.1)
     assert sc.identical(sc.array(dims=None, values=a), sc.scalar(1.1))
     assert sc.identical(sc.array(dims=[], values=a), sc.scalar(1.1))
+    assert sc.identical(sc.array(dims=[], values=a, variances=a),
+                        sc.scalar(1.1, variance=1.1))
 
 
 def test_zeros_like():
