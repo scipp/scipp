@@ -65,5 +65,5 @@ if __name__ == '__main__':
     if dll_src is not None:
         m.move([dll_src, 'scipp-*'], [dll_dest])
     m.move([lib_src, '*scipp*'], [lib_src])
-    m.move([lib_src, 'cmake', 'scipp'], [lib_src, 'cmake'])
+    m.move([lib_src, 'cmake', 'scipp'], [lib_src, 'cmake', 'scipp'])
     m.move([inc_src, 'scipp*'], [inc_src])
