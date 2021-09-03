@@ -126,34 +126,19 @@ def log10(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLik
     return _call_cpp_func(_cpp.log10, x, out=out)
 
 
-def round(x: VariableLike,
-          decimals: int = 0,
-          *,
-          out: Optional[VariableLike] = None) -> VariableLike:
+def round(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
     """
-    Round to the nearest integer if no decimals is provided, otherwise round to the
-    nearest decimal given.
+    Round to the nearest integer if all values passed in x.
 
     Note: if the number being rounded is halfway between two integers/decimals it
     will round to the nearest even number. For example 1.5 and 2.5 will both round
     to 2.0, -0.5 and 0.5 will both round to 0.0.
 
     :param x: Input data.
-    :param decimals: Number of decimal places to round to.
     :param out: Optional output buffer.
-    :returns: Rounded version of the data passed to the decimals given, if given,
-    else to the nearest integer.
+    :returns: Rounded version of the data passed to the nearest integer.
     """
-    if out is not None:
-        # Copy x to out, if out != x.
-        out[...] = x
-    else:
-        out = x
-    multiplier = 10.0**decimals
-    out = out * multiplier
-    _cpp.round(out, out=out)
-    out /= multiplier
-    return out
+    return _call_cpp_func(_cpp.round, x, out=out)
 
 
 def floor(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
