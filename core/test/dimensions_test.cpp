@@ -2,9 +2,7 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include <span>
 #include <type_traits>
-#include <vector>
 
 #include "test_macros.h"
 
@@ -15,8 +13,6 @@ using namespace scipp;
 using namespace scipp::core;
 
 TEST(DimensionsTest, footprint) {
-  std::vector<double> v{1, 2, 3, 4};
-  std::span s(v);
   EXPECT_EQ(sizeof(Dimensions), 64ul);
   // TODO Do we want to align this? Need to run benchmarks when implementation
   // is more mature.
