@@ -50,7 +50,7 @@ if __name__ == '__main__':
     # Depending on the platform, directories have different names.
     if sys.platform == "win32":
         lib_dest = 'lib'
-        dll_src = 'bin'
+        dll_src = os.path.join("lib", "scipp")
         dll_dest = os.path.join("bin")
         lib_src = 'Lib'
         inc_src = 'include'
