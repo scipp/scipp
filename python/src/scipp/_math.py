@@ -156,11 +156,6 @@ def around(x: VariableLike,
     return out
 
 
-# Add an alias like numpy to allow users to call round_ instead of around, as it
-# may be clearer to users.
-round_ = around
-
-
 def floor(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
     """
     Round down to the nearest integer of all values passed in x.
