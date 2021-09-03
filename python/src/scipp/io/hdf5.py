@@ -227,7 +227,7 @@ class DataArrayIO:
     @staticmethod
     def read(group):
         _check_scipp_header(group, 'DataArray')
-        from .._scipp import core as sc
+        from ..core import DataArray
         contents = dict()
         contents['name'] = group.attrs['name']
         contents['data'] = VariableIO.read(group['data'])
@@ -236,7 +236,7 @@ class DataArrayIO:
             for name in group[category]:
                 g = group[category][name]
                 contents[category][name] = VariableIO.read(g)
-        return sc.DataArray(**contents)
+        return DataArray(**contents)
 
 
 class DatasetIO:

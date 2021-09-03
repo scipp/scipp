@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from . import dtype
+from .core import dtype
 from ._scipp.core import _element_keys, _get_elements, _set_elements
 
 
