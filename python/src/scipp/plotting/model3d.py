@@ -60,8 +60,8 @@ class ScatterPointModel:
         """
         extents = {}
         for dim, x in self.components.items():
-            xmin = sc.min(x).value
-            xmax = sc.max(x).value
+            xmin = sc.amin(x).value
+            xmax = sc.amax(x).value
             extents[dim] = np.array([xmin, xmax])
         return extents
 

@@ -35,12 +35,12 @@ def test_any_with_dim():
 
 def test_min():
     var = sc.Variable(dims=['x'], values=[1.0, 2.0, 3.0])
-    assert sc.identical(sc.min(var, 'x'), sc.scalar(1.0))
+    assert sc.identical(sc.amin(var, 'x'), sc.scalar(1.0))
 
 
 def test_max():
     var = sc.Variable(dims=['x'], values=[1.0, 2.0, 3.0])
-    assert sc.identical(sc.max(var, 'x'), sc.scalar(3.0))
+    assert sc.identical(sc.amax(var, 'x'), sc.scalar(3.0))
 
 
 def test_nanmin():

@@ -108,10 +108,10 @@ def nansum(x: VariableLike,
         return _call_cpp_func(_cpp.nansum, x, dim=dim, out=out)
 
 
-def min(x: _cpp.Variable,
-        dim: Optional[str] = None,
-        *,
-        out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
+def amin(x: _cpp.Variable,
+         dim: Optional[str] = None,
+         *,
+         out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise min over the specified dimension or all dimensions if not
     provided.
 
@@ -130,10 +130,10 @@ def min(x: _cpp.Variable,
         return _call_cpp_func(_cpp.min, x, dim=dim, out=out)
 
 
-def max(x: _cpp.Variable,
-        dim: Optional[str] = None,
-        *,
-        out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
+def amax(x: _cpp.Variable,
+         dim: Optional[str] = None,
+         *,
+         out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise max over the specified dimension or all dimensions if not
     provided.
 

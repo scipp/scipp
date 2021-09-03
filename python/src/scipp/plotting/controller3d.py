@@ -19,7 +19,7 @@ class PlotController3d(PlotController):
         self.view.set_position_params(self.model)
         for key in self.panel.options[:-1]:
             value = self._get_cut(key)
-            self.panel.set_range(key, sc.min(value), sc.max(value))
+            self.panel.set_range(key, sc.amin(value), sc.amax(value))
 
     def _get_cut(self, key):
         # PlotPanel3d currently uses hard-coded keys/labels for cut buttons

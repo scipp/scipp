@@ -91,8 +91,8 @@ class PlotModel1d(PlotModel):
                 for array in self.dslice.values()
             ]
             return [
-                sc.min(reduce(partial(sc.concatenate, dim='dummy'), low)),
-                sc.max(reduce(partial(sc.concatenate, dim='dummy'), high))
+                sc.amin(reduce(partial(sc.concatenate, dim='dummy'), low)),
+                sc.amax(reduce(partial(sc.concatenate, dim='dummy'), high))
             ]
         else:
             return [None, None]

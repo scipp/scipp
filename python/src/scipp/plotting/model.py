@@ -92,7 +92,7 @@ class PlotModel:
             if typing.has_vector_type(coord) or typing.has_string_type(coord):
                 coord = arange(dim=dim, start=0, stop=array.sizes[dim])
             elif typing.has_datetime_type(coord):
-                coord = coord - sc.min(coord)
+                coord = coord - sc.amin(coord)
         else:
             coord = arange(dim=dim, start=0, stop=array.sizes[dim])
         return coord
