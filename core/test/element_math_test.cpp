@@ -167,38 +167,28 @@ TEST(ElementLog10Test, unit) {
 
 TEST(ElementLog10Test, bad_unit) { EXPECT_ANY_THROW(element::log10(units::m)); }
 
-TEST(ElementRoundingTest, floor) {
-  EXPECT_EQ(element::floor(2.5), 2);
-  EXPECT_EQ(element::floor(2.7), 2);
-  EXPECT_EQ(element::floor(2.3), 2);
+namespace {
+template <class T>
+void elementRoundingTest(T rounding_function, const std::vector<float> &input,
+                         const std::vector<float> &output) {
+  for (auto i = 0u; i < input.size(); i++) {
+    EXPECT_EQ(rounding_function(input[i]), output[i]);
+  }
+}
+} // namespace
 
-  EXPECT_EQ(element::floor(2.15), 2);
-  EXPECT_EQ(element::floor(2.617), 2);
-  EXPECT_EQ(element::floor(2.32133), 2);
+TEST(ElementRoundingTest, floor) {
+  elementRoundingTest(element::floor, {2.5, 2.7, 2.3, 2.15, 2.617, 2.32133},
+                      {2., 2., 2., 2., 2., 2.});
 }
 
 TEST(ElementRoundingTest, ceil) {
-  EXPECT_EQ(element::ceil(2.5), 3);
-  EXPECT_EQ(element::ceil(2.7), 3);
-  EXPECT_EQ(element::ceil(2.3), 3);
-
-  EXPECT_EQ(element::ceil(2.15), 3);
-  EXPECT_EQ(element::ceil(2.617), 3);
-  EXPECT_EQ(element::ceil(2.32133), 3);
+  elementRoundingTest(element::ceil, {2.5, 2.7, 2.3, 2.15, 2.617, 2.32133},
+                      {3., 3., 3., 3., 3., 3.});
 }
 
 TEST(ElementRoundingTest, rint) {
-  EXPECT_EQ(element::rint(2.01), 2);
-  EXPECT_EQ(element::rint(2.7), 3);
-  EXPECT_EQ(element::rint(2.3), 2);
-
-  EXPECT_EQ(element::rint(2.15), 2);
-  EXPECT_EQ(element::rint(2.617), 3);
-  EXPECT_EQ(element::rint(2.32133), 2);
-
-  // In the middle of two integers prefer the even number (numpy does this)
-  EXPECT_EQ(element::rint(1.5), 2);
-  EXPECT_EQ(element::rint(2.5), 2);
-  EXPECT_EQ(element::rint(3.5), 4);
-  EXPECT_EQ(element::rint(4.5), 4);
+  elementRoundingTest(
+      element::rint, {2.01, 2.7, 2.3, 2.15, 2.617, 2.32133, 1.5, 2.5, 3.5, 4.5},
+      {2., 3., 2., 2., 3., 2., 2., 2., 4., 4.});
 }

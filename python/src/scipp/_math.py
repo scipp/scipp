@@ -130,15 +130,15 @@ def round(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLik
     """
     Round to the nearest integer if all values passed in x.
 
-    Note: if the number being rounded is halfway between two integers/decimals it
-    will round to the nearest even number. For example 1.5 and 2.5 will both round
+    Note: if the number being rounded is halfway between two integers it will
+    round to the nearest even number. For example 1.5 and 2.5 will both round
     to 2.0, -0.5 and 0.5 will both round to 0.0.
 
     :param x: Input data.
     :param out: Optional output buffer.
     :returns: Rounded version of the data passed to the nearest integer.
     """
-    return _call_cpp_func(_cpp.round, x, out=out)
+    return _call_cpp_func(_cpp.rint, x, out=out)
 
 
 def floor(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
