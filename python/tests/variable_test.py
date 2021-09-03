@@ -900,6 +900,24 @@ def test_round():
     assert sc.identical(sc.round(x), expected)
 
 
+def test_round_decimals():
+    x = sc.Variable(dims=['x'],
+                    values=(1.123, 1.50, 2.50, 4.745, 5.0, 5.00006),
+                    unit=sc.units.m)
+    expected_1 = sc.Variable(dims=['x'],
+                             values=(1.1, 2.0, 2.0, 4.7, 5.0, 5.0),
+                             unit=sc.units.m)
+    expected_2 = sc.Variable(dims=['x'],
+                             values=(1.12, 1.5, 2.5, 4.74, 5.0, 5.0),
+                             unit=sc.units.m)
+    expected_4 = sc.Variable(dims=['x'],
+                             values=(1.123, 1.5, 2., 4.745, 5.0, 5.0001),
+                             unit=sc.units.m)
+    assert sc.identical(sc.round(x, decimals=1), expected_1)
+    assert sc.identical(sc.round(x, decimals=2), expected_2)
+    assert sc.identical(sc.round(x, decimals=4), expected_4)
+
+
 def test_ceil():
     x = sc.Variable(dims=['x'], values=(1.1, 1.5, 2.5, 4.7), unit=sc.units.m)
     expected = sc.Variable(dims=['x'], values=(2, 2, 3, 5), unit=sc.units.m)
