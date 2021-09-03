@@ -47,6 +47,7 @@ Breaking changes
   Such coords will no longer be turned into attributes during a slice operation on the inner dimension `#2098 <https://github.com/scipp/scipp/pull/2098>`_.
 * ``buckets.map(histogram, da.data, 'time')`` has been replaced by ``lookup(histogram, 'time')[da.bins.coords['time']]`` `#2112 <https://github.com/scipp/scipp/pull/2112>`_.
 * ``rebin`` and ``histogram`` do not support dimensionless units any more, only "counts" is supported `#2141 <https://github.com/scipp/scipp/pull/2141>`_.
+* ``min`` and ``max`` free functions renamed to ``amin`` and ``amax`` respectively to better reflect other python libraries `#2155 <https://github.com/scipp/scipp/pull/2155>`_.
 
 Bugfixes
 ~~~~~~~~
