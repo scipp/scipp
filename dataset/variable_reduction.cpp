@@ -6,6 +6,7 @@
 
 #include "../variable/operations_common.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/special_values.h"
 #include "scipp/variable/transform.h"
@@ -14,10 +15,6 @@
 #include "dataset_operations_common.h"
 
 namespace scipp::dataset {
-
-namespace {
-Variable zero_like(const Variable &var) { return {var, Dimensions{}}; }
-} // namespace
 
 Variable sum(const Variable &var, const Dim dim, const Masks &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim);

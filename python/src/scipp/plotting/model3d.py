@@ -5,6 +5,7 @@ from functools import lru_cache
 from .._scipp import core as sc
 from .._shape import flatten
 from .model1d import PlotModel1d
+from .resampling_model import _unit_requires_mean
 import numpy as np
 
 
@@ -13,7 +14,13 @@ def _planar_norm(a, b):
 
 
 def _flatten(da, dims):
-    return flatten(da, dims=dims, to='_'.join(dims))
+    flat = flatten(da, dims=dims, to='_'.join(dims))
+    if flat.bins is None:
+        return flat
+    if _unit_requires_mean(flat.events):
+        return flat.bins.mean()
+    else:
+        return flat.bins.sum()
 
 
 class ScatterPointModel:

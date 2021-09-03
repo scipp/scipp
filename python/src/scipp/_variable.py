@@ -339,7 +339,7 @@ def array(*,
     :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
               :py:func:`scipp.empty` :py:func:`scipp.scalar`
 
-    :param dims: Dimension labels, nonempty.
+    :param dims: Dimension labels
     :param values: Initial values.
     :param variances: Optional, initial variances, must be same shape
       and size as values. Default=None
@@ -347,9 +347,6 @@ def array(*,
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
     """
-    if not dims:
-        raise ValueError("The dims of an array must not be empty. "
-                         "Use sc.scalar to construct a scalar variable.")
     return _cpp.Variable(dims=dims,
                          values=values,
                          variances=variances,

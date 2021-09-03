@@ -4,6 +4,7 @@
 
 from .. import config
 from .._scipp import core as sc
+from .._variable import scalar
 import numpy as np
 from copy import copy
 import io
@@ -114,23 +115,23 @@ def find_log_limits(x):
     from .. import flatten, ones
     volume = np.product(x.shape)
     pixel = flatten(sc.values(x.astype(sc.dtype.float64)), to='pixel')
-    weights = ones(dims=['pixel'], shape=[volume])
+    weights = ones(dims=['pixel'], shape=[volume], unit='counts')
     hist = sc.histogram(sc.DataArray(data=weights, coords={'order': pixel}),
                         bins=sc.Variable(dims=['order'],
                                          values=np.geomspace(1e-30, 1e30, num=61),
                                          unit=x.unit))
     # Find the first and the last non-zero bins
-    inds = np.nonzero((hist.data > 0.0 * sc.units.one).values)
+    inds = np.nonzero((hist.data > 0.0 * sc.units.counts).values)
     ar = np.arange(hist.data.shape[0])[inds]
     # Safety check in case there are no values in range 1.0e-30:1.0e+30:
     # fall back to the linear method and replace with arbitrary values if the
     # limits are negative.
     if len(ar) == 0:
         [vmin, vmax] = find_linear_limits(x)
-        if vmin <= 0.0:
-            if vmax <= 0.0:
-                vmin = 0.1
-                vmax = 1.0
+        if vmin.value <= 0.0:
+            if vmax.value <= 0.0:
+                vmin = scalar(0.1)
+                vmax = scalar(1.0)
             else:
                 vmin = 1.0e-3 * vmax
     else:

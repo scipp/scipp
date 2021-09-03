@@ -15,6 +15,7 @@ dependencies:
   - cmake
   - pip
   - scipp::scippbuildtools
+  - gxx_linux-64 11.1.*
 
   # Run
   - appdirs

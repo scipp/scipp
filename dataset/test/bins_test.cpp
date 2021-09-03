@@ -117,8 +117,9 @@ TEST_F(DataArrayBinsTest, concatenate_with_broadcast) {
 }
 
 TEST_F(DataArrayBinsTest, histogram) {
-  Variable weights = makeVariable<double>(
-      Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
+  Variable weights =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, units::counts,
+                           Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   DataArray events = DataArray(weights, {{Dim::Z, data}});
   Variable buckets = make_bins(indices, Dim::X, events);
   // `buckets` *does not* depend on the histogramming dimension
@@ -126,13 +127,14 @@ TEST_F(DataArrayBinsTest, histogram) {
       makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{0, 1, 2, 4});
   EXPECT_EQ(buckets::histogram(buckets, bin_edges),
             makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 3},
-                                 Values{0, 1, 2, 0, 0, 3},
+                                 units::counts, Values{0, 1, 2, 0, 0, 3},
                                  Variances{0, 1, 2, 0, 0, 3}));
 }
 
 TEST_F(DataArrayBinsTest, histogram_masked) {
-  Variable weights = makeVariable<double>(
-      Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
+  Variable weights =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, units::counts,
+                           Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   Variable mask = makeVariable<bool>(Dims{Dim::X}, Shape{4},
                                      Values{false, false, true, false});
   DataArray events = DataArray(weights, {{Dim::Z, data}}, {{"mask", mask}});
@@ -142,20 +144,22 @@ TEST_F(DataArrayBinsTest, histogram_masked) {
       makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{0, 1, 2, 4});
   EXPECT_EQ(buckets::histogram(buckets, bin_edges),
             makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 3},
-                                 Values{0, 1, 2, 0, 0, 0},
+                                 units::counts, Values{0, 1, 2, 0, 0, 0},
                                  Variances{0, 1, 2, 0, 0, 0}));
 }
 
 TEST_F(DataArrayBinsTest, histogram_existing_dim) {
-  Variable weights = makeVariable<double>(
-      Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
+  Variable weights =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, units::counts,
+                           Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   DataArray events = DataArray(weights, {{Dim::Y, data}});
   Variable buckets = make_bins(indices, Dim::X, events);
   // `buckets` *does* depend on the histogramming dimension
   const auto bin_edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{4}, Values{0, 1, 2, 4});
-  const auto expected = makeVariable<double>(
-      Dims{Dim::Y}, Shape{3}, Values{0, 1, 5}, Variances{0, 1, 5});
+  const auto expected =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::counts,
+                           Values{0, 1, 5}, Variances{0, 1, 5});
   EXPECT_EQ(buckets::histogram(buckets, bin_edges), expected);
 
   // Histogram data array containing binned variable
@@ -165,10 +169,11 @@ TEST_F(DataArrayBinsTest, histogram_existing_dim) {
   // Masked data array
   a.masks().set(
       "mask", makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{false, true}));
-  EXPECT_EQ(histogram(a, bin_edges),
-            DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{3},
-                                           Values{0, 1, 2}, Variances{0, 1, 2}),
-                      {{Dim::Y, bin_edges}}));
+  EXPECT_EQ(
+      histogram(a, bin_edges),
+      DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::counts,
+                                     Values{0, 1, 2}, Variances{0, 1, 2}),
+                {{Dim::Y, bin_edges}}));
 }
 
 TEST_F(DataArrayBinsTest, sum) {
