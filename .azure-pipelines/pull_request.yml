@@ -14,7 +14,7 @@ resources:
     name: scipp/pipelines
     type: github
     endpoint: scipp
-    ref: main
+    ref: with_scippbuildtools
 
 trigger:
   branches:
@@ -28,7 +28,7 @@ pr:
       - '*'
 
 extends:
-  template: stages.yml@SharedPipelines
+  template: pipelines/stages.yml@SharedPipelines
   parameters:
     verbose: ${{ parameters.verbose }}
     config:
