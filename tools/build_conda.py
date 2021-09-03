@@ -51,7 +51,7 @@ if __name__ == '__main__':
     if sys.platform == "win32":
         lib_dest = 'lib'
         dll_src = 'bin'
-        dll_dest = os.path.join("lib", "scipp")
+        dll_dest = os.path.join("bin")
         lib_src = 'Lib'
         inc_src = 'include'
     else:
