@@ -126,10 +126,10 @@ def log10(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLik
     return _call_cpp_func(_cpp.log10, x, out=out)
 
 
-def around(x: VariableLike,
-           decimals: int = 0,
-           *,
-           out: Optional[VariableLike] = None) -> VariableLike:
+def round(x: VariableLike,
+          decimals: int = 0,
+          *,
+          out: Optional[VariableLike] = None) -> VariableLike:
     """
     Round to the nearest integer if no decimals is provided, otherwise round to the
     nearest decimal given.

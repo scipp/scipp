@@ -92,8 +92,7 @@ Math
    multiply
    norm
    reciprocal
-   around
-   round_
+   round
    sqrt
    subtract
 
