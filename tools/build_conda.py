@@ -50,8 +50,8 @@ if __name__ == '__main__':
     # Depending on the platform, directories have different names.
     if sys.platform == "win32":
         lib_dest = 'lib'
-        dll_src = 'bin'
-        dll_dest = os.path.join("lib", "scipp")
+        dll_src = os.path.join("Lib", "scipp")
+        dll_dest = os.path.join("Lib", "scipp")
         lib_src = 'Lib'
         inc_src = 'include'
     else:
@@ -64,6 +64,7 @@ if __name__ == '__main__':
     m.move(['scipp'], [lib_dest])
     if dll_src is not None:
         m.move([dll_src, 'scipp-*'], [dll_dest])
-    m.move([lib_src, '*scipp*'], [lib_src])
+    else:
+        m.move([lib_src, '*scipp*'], [lib_src])
     m.move([lib_src, 'cmake', 'scipp'], [lib_src, 'cmake', 'scipp'])
     m.move([inc_src, 'scipp*'], [inc_src])
