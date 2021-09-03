@@ -230,11 +230,14 @@ def test_array_creates_correct_variable():
     assert sc.identical(var, expected)
 
 
-def test_array_needs_nonempty_dims():
-    with pytest.raises(ValueError):
-        sc.array(dims=[], values=[])
-    with pytest.raises(ValueError):
-        sc.array(dims=None, values=[])
+def test_array_empty_dims():
+    assert sc.identical(sc.array(dims=[], values=[1]),
+                        sc.scalar([1], dtype=sc.dtype.PyObject))
+    a = np.asarray(1.1)
+    assert sc.identical(sc.array(dims=None, values=a), sc.scalar(1.1))
+    assert sc.identical(sc.array(dims=[], values=a), sc.scalar(1.1))
+    assert sc.identical(sc.array(dims=[], values=a, variances=a),
+                        sc.scalar(1.1, variance=1.1))
 
 
 def test_zeros_like():
