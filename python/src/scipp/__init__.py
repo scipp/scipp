@@ -72,12 +72,15 @@ from ._cumulative import *
 from ._dataset import *
 from ._groupby import *
 from ._math import *
-from ._operations import *
+from .core.operations import dot, islinspace, issorted, allsorted, cross, sort, \
+        values, variances, stddevs, rebin, where
 from ._unary import *
 from ._reduction import *
 from ._shape import *
 from ._trigonometry import *
-from ._variable import *
+from .core.variable import scalar, zeros, zeros_like, ones, ones_like, empty, \
+        empty_like, full, full_like, matrix, matrices, vector, vectors, array, \
+        linspace, geomspace, logspace, arange
 
 setattr(Variable, '_repr_html_', make_html)
 setattr(DataArray, '_repr_html_', make_html)

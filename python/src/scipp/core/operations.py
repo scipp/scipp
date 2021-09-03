@@ -4,10 +4,10 @@
 from __future__ import annotations
 from typing import Optional, Union
 
-from ._scipp import core as _cpp
-from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import VariableLike
-from . import Variable
+from .._scipp import core as _cpp
+from .._cpp_wrapper_util import call_func as _call_cpp_func
+from ..typing import VariableLike
+from .. import Variable
 
 
 def dot(x: VariableLike, y: VariableLike) -> VariableLike:
@@ -19,6 +19,21 @@ def dot(x: VariableLike, y: VariableLike) -> VariableLike:
     :return: The dot product of the input vectors.
     """
     return _call_cpp_func(_cpp.dot, x, y)
+
+
+def islinspace(x: _cpp.Variable, dim: str = None) -> _cpp.Variable:
+    """
+    Check if the values of a variable are evenly spaced.
+
+    :param x: Variable to check.
+    :param dim: Optional variable for the dim to check from the Variable.
+    :returns: Variable of value True if the variable contains regularly
+    spaced values, variable of value False otherwise.
+    """
+    if dim is None:
+        return _call_cpp_func(_cpp.islinspace, x)
+    else:
+        return _call_cpp_func(_cpp.islinspace, x, dim)
 
 
 def issorted(x: _cpp.Variable,

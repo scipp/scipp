@@ -249,7 +249,7 @@ def test_datetime_operations_mismatch():
 def test_datetime_formatting():
     def fmt(time_point, scale, unit):
         var = sc.scalar(int(time_point.timestamp() * scale),
-                        dtype=sc.datetime64,
+                        dtype='datetime64',
                         unit=unit)
         match = re.search(r'\[[\dT\-:\.]+]', str(var))
         assert match

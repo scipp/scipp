@@ -10,8 +10,7 @@ from typing import Any as _Any, Sequence as _Sequence, Union as _Union,\
 import numpy as _np
 from numpy.typing import ArrayLike as array_like
 
-from ._scipp import core as _cpp
-from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .._scipp import core as _cpp
 
 
 def _parse_dims_shape_sizes(dims, shape, sizes):
@@ -23,21 +22,6 @@ def _parse_dims_shape_sizes(dims, shape, sizes):
         dims = list(sizes.keys())
         shape = list(sizes.values())
     return {"dims": dims, "shape": shape}
-
-
-def islinspace(x: _cpp.Variable, dim: str = None) -> _cpp.Variable:
-    """
-    Check if the values of a variable are evenly spaced.
-
-    :param x: Variable to check.
-    :param dim: Optional variable for the dim to check from the Variable.
-    :returns: Variable of value True if the variable contains regularly
-    spaced values, variable of value False otherwise.
-    """
-    if dim is None:
-        return _call_cpp_func(_cpp.islinspace, x)
-    else:
-        return _call_cpp_func(_cpp.islinspace, x, dim)
 
 
 def scalar(value: _Any,
@@ -468,7 +452,3 @@ def arange(dim: str,
                  values=_np.arange(start, stop, step),
                  unit=unit,
                  dtype=dtype)
-
-
-# Wrapper to make datetime usable without importing numpy manually.
-datetime64 = _np.datetime64
