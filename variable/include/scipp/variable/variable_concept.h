@@ -6,7 +6,6 @@
 
 #include "scipp-variable_export.h"
 #include "scipp/common/index.h"
-#include "scipp/common/span.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
 #include "scipp/units/unit.h"

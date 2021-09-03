@@ -34,7 +34,7 @@ resize(const Dataset &d, const Dim dim, const scipp::index size,
                                                   const Dim from_dim,
                                                   const Dimensions &to_dims);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
+flatten(const DataArray &a, const std::span<const Dim> &from_labels,
         const Dim to_dim);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray

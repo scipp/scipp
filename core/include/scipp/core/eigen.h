@@ -11,7 +11,8 @@ namespace scipp::core {
 
 template <> inline constexpr DType dtype<Eigen::Vector3d>{4000};
 template <> inline constexpr DType dtype<Eigen::Matrix3d>{4001};
-template <> inline constexpr DType dtype<span<const Eigen::Vector3d>>{4100};
-template <> inline constexpr DType dtype<span<Eigen::Vector3d>>{4200};
+template <>
+inline constexpr DType dtype<std::span<const Eigen::Vector3d>>{4100};
+template <> inline constexpr DType dtype<std::span<Eigen::Vector3d>>{4200};
 
 } // namespace scipp::core

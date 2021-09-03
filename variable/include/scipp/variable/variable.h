@@ -5,13 +5,13 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "scipp-variable_export.h"
 #include "scipp/common/index.h"
-#include "scipp/common/span.h"
 #include "scipp/units/unit.h"
 
 #include "scipp/core/dimensions.h"
@@ -74,7 +74,7 @@ public:
 
   [[nodiscard]] DType dtype() const;
 
-  [[nodiscard]] scipp::span<const scipp::index> strides() const;
+  [[nodiscard]] std::span<const scipp::index> strides() const;
   [[nodiscard]] scipp::index stride(const Dim dim) const;
   [[nodiscard]] scipp::index offset() const;
 
