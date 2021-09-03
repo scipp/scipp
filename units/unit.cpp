@@ -106,6 +106,12 @@ Unit operator-(const Unit &a) { return a; }
 
 Unit abs(const Unit &a) { return a; }
 
+Unit floor(const Unit &a) { return a; }
+
+Unit ceil(const Unit &a) { return a; }
+
+Unit rint(const Unit &a) { return a; }
+
 Unit sqrt(const Unit &a) {
   if (llnl::units::is_error(sqrt(a.underlying())))
     throw except::UnitError("Unsupported unit as result of sqrt: sqrt(" +

@@ -155,6 +155,21 @@ TEST(UnitFunctionsTest, abs) {
   EXPECT_EQ(abs(units::m), units::m);
 }
 
+TEST(UnitFunctionsTest, ceil) {
+  EXPECT_EQ(ceil(units::one), units::one);
+  EXPECT_EQ(ceil(units::m), units::m);
+}
+
+TEST(UnitFunctionsTest, floor) {
+  EXPECT_EQ(floor(units::one), units::one);
+  EXPECT_EQ(floor(units::m), units::m);
+}
+
+TEST(UnitFunctionsTest, rint) {
+  EXPECT_EQ(rint(units::one), units::one);
+  EXPECT_EQ(rint(units::m), units::m);
+}
+
 TEST(UnitFunctionsTest, sqrt) {
   EXPECT_EQ(sqrt(units::m * units::m), units::m);
   EXPECT_EQ(sqrt(units::counts * units::counts), units::counts);

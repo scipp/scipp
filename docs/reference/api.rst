@@ -79,10 +79,12 @@ Math
 
    abs
    add
+   ceil
    cross
    divide
    dot
    exp
+   floor
    floor_divide
    log
    log10
@@ -90,6 +92,7 @@ Math
    multiply
    norm
    reciprocal
+   round
    sqrt
    subtract
 

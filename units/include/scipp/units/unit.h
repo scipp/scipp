@@ -58,6 +58,9 @@ SCIPP_UNITS_EXPORT Unit asin(const Unit &a);
 SCIPP_UNITS_EXPORT Unit acos(const Unit &a);
 SCIPP_UNITS_EXPORT Unit atan(const Unit &a);
 SCIPP_UNITS_EXPORT Unit atan2(const Unit &y, const Unit &x);
+SCIPP_UNITS_EXPORT Unit floor(const Unit &a);
+SCIPP_UNITS_EXPORT Unit ceil(const Unit &a);
+SCIPP_UNITS_EXPORT Unit rint(const Unit &a);
 
 constexpr Unit dimensionless{llnl::units::precise::one};
 constexpr Unit one{llnl::units::precise::one}; /// alias for dimensionless

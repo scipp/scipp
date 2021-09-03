@@ -166,3 +166,29 @@ TEST(ElementLog10Test, unit) {
 }
 
 TEST(ElementLog10Test, bad_unit) { EXPECT_ANY_THROW(element::log10(units::m)); }
+
+namespace {
+template <class T>
+void elementRoundingTest(T rounding_function, const std::vector<float> &input,
+                         const std::vector<float> &output) {
+  for (auto i = 0u; i < input.size(); i++) {
+    EXPECT_EQ(rounding_function(input[i]), output[i]);
+  }
+}
+} // namespace
+
+TEST(ElementRoundingTest, floor) {
+  elementRoundingTest(element::floor, {2.5, 2.7, 2.3, 2.15, 2.617, 2.32133},
+                      {2., 2., 2., 2., 2., 2.});
+}
+
+TEST(ElementRoundingTest, ceil) {
+  elementRoundingTest(element::ceil, {2.5, 2.7, 2.3, 2.15, 2.617, 2.32133},
+                      {3., 3., 3., 3., 3., 3.});
+}
+
+TEST(ElementRoundingTest, rint) {
+  elementRoundingTest(
+      element::rint, {2.01, 2.7, 2.3, 2.15, 2.617, 2.32133, 1.5, 2.5, 3.5, 4.5},
+      {2., 3., 2., 2., 3., 2., 2., 2., 4., 4.});
+}

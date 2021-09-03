@@ -892,3 +892,24 @@ def test_islinspace_false():
     x = sc.Variable(dims=['x'], values=(1, 1.5, 4), unit=sc.units.m)
     assert not sc.islinspace(x, 'x').value
     assert not sc.islinspace(x).value
+
+
+def _test_rounding(rounding_function, input_, output):
+    x = sc.Variable(dims=['x'], values=input_)
+    x_out = sc.Variable(dims=['x'], values=input_)
+    expected = sc.Variable(dims=['x'], values=output)
+    assert sc.identical(rounding_function(x), expected)
+    rounding_function(x, out=x_out)
+    assert sc.identical(x_out, expected)
+
+
+def test_round():
+    _test_rounding(sc.round, (1.1, 1.5, 2.5, 4.7), (1., 2., 2., 5.))
+
+
+def test_ceil():
+    _test_rounding(sc.ceil, (1.1, 1.5, 2.5, 4.7), (2., 2., 3., 5.))
+
+
+def test_floor():
+    _test_rounding(sc.floor, (1.1, 1.5, 2.5, 4.7), (1., 1., 2., 4.))
