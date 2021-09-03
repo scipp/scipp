@@ -26,6 +26,7 @@ Features
 * The ``fields`` property of structured variables (vector and matrix dtypes) can now be iterated and provides dict-like access `#2116 <https://github.com/scipp/scipp/pull/2116>`_.
 * Add ``where`` function.
 * Unary operations such as ``sin`` are now available for datasets as well `#2112 <https://github.com/scipp/scipp/pull/2112>`_.
+* Add rounding functions ``floor``, ``ceil``, and ``round`` that performs similarly to numpy equivelants `#2147 <https://github.com/scipp/scipp/pull/2147>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~

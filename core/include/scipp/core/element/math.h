@@ -90,4 +90,28 @@ constexpr auto log10 =
                  return log10(x);
                }};
 
+constexpr auto floor =
+    overloaded{transform_flags::expect_no_variance_arg<0>,
+               transform_flags::expect_no_variance_arg<1>,
+               core::element::arg_list<double, float>, [](const auto &a) {
+                 using std::floor;
+                 return floor(a);
+               }};
+
+constexpr auto ceil =
+    overloaded{transform_flags::expect_no_variance_arg<0>,
+               transform_flags::expect_no_variance_arg<1>,
+               core::element::arg_list<double, float>, [](const auto &a) {
+                 using std::ceil;
+                 return ceil(a);
+               }};
+
+constexpr auto rint =
+    overloaded{transform_flags::expect_no_variance_arg<0>,
+               transform_flags::expect_no_variance_arg<1>,
+               core::element::arg_list<double, float>, [](const auto &a) {
+                 using std::rint;
+                 return rint(a);
+               }};
+
 } // namespace scipp::core::element
