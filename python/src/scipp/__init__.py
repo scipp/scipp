@@ -133,11 +133,13 @@ from . import _binding
 from .coords import transform_coords, show_graph
 
 _binding.bind_get()
+# Assign method binding for both Variable and DataArray
 for _cls in (Variable, DataArray):
     _binding.bind_functions_as_methods(
         _cls, globals(), ('broadcast', 'flatten', 'fold', 'transpose', 'all', 'any',
-                          'mean', 'sum', 'nanmean', 'nansum'))
+                          'mean', 'sum', 'nanmean', 'nansum', 'floor', 'ceil', 'round'))
 del _cls
+# Assign method binding for JUST Variable
 _binding.bind_functions_as_methods(Variable, globals(),
                                    ('cumsum', 'max', 'min', 'nanmax', 'nanmin'))
 for _cls in (DataArray, Dataset):
