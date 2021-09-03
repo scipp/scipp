@@ -43,6 +43,10 @@ def test_plot_projection_3d():
     plot(_with_fake_pos(ndim=3), positions='pos', projection="3d")
 
 
+def test_plot_projection_3d_log_norm():
+    plot(_with_fake_pos(ndim=3), positions='pos', projection="3d", norm='log')
+
+
 def test_plot_projection_3d_dataset():
     plot(_with_fake_pos(ndim=3), positions='pos', projection="3d")
 

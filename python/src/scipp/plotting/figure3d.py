@@ -370,7 +370,8 @@ void main() {
                          cmap=self.scalar_map.get_cmap(),
                          norm=self.scalar_map.norm,
                          extend=self.extend)
-        _.formatter.set_useOffset(False)
+        if not isinstance(self.scalar_map.norm, LogNorm):
+            _.formatter.set_useOffset(False)
         cbar_ax.set_ylabel(self._unit)
         # TODO If we set this position it is clipped somewhere. For now we
         # leave the default, which places unit to the right of the colorbar.
