@@ -26,6 +26,8 @@ from .._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
 # Import submodules
 from .._scipp.core import units, dtype
 
+from .._scipp.core import get_slice_params
+
 from ..html import make_html
 
 setattr(Variable, '_repr_html_', make_html)
@@ -44,7 +46,7 @@ setattr(Variable, 'sizes', property(_make_sizes))
 setattr(DataArray, 'sizes', property(_make_sizes))
 setattr(Dataset, 'sizes', property(_make_sizes))
 
-from .._bins import _bins, _set_bins, _events
+from .bins import _bins, _set_bins, _events
 
 setattr(Variable, 'bins', property(_bins, _set_bins))
 setattr(DataArray, 'bins', property(_bins, _set_bins))
@@ -52,7 +54,7 @@ setattr(Dataset, 'bins', property(_bins, _set_bins))
 setattr(Variable, 'events', property(_events))
 setattr(DataArray, 'events', property(_events))
 
-from .._structured import _fields
+from .structured import _fields
 
 setattr(
     Variable, 'fields',
@@ -62,16 +64,10 @@ setattr(
         """Provides access to fields of structured types such as vectors or matrices."""
     ))
 
-from .._bins import _groupby_bins
+from .bins import _groupby_bins
 
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
 setattr(GroupByDataset, 'bins', property(_groupby_bins))
-
-from ..plotting import plot
-
-setattr(Variable, 'plot', plot)
-setattr(DataArray, 'plot', plot)
-setattr(Dataset, 'plot', plot)
 
 # Prevent unwanted conversion to numpy arrays by operations. Properly defining
 # __array_ufunc__ should be possible by converting non-scipp arguments to
@@ -80,3 +76,18 @@ setattr(Dataset, 'plot', plot)
 for _cls in (Variable, DataArray, Dataset):
     setattr(_cls, '__array_ufunc__', None)
 del _cls
+
+from .arithmetic import add, divide, floor_divide, mod, multiply, subtract
+from .bins import lookup, histogram, bin, bins
+from .comparison import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
+from .counts import counts_to_density, density_to_counts
+from .cumulative import cumsum
+from .dataset import combine_masks, merge
+from .groupby import groupby
+from .math import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10
+from .operations import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where
+from .reduction import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
+from .shape import broadcast, concatenate, fold, flatten, transpose
+from .trigonometry import sin, cos, tan, asin, acos, atan, atan2
+from .unary import isnan, isinf, isfinite, isposinf, isneginf, to_unit
+from .variable import scalar, zeros, zeros_like, ones, ones_like, empty, empty_like, full, full_like, matrix, matrices, vector, vectors, array, linspace, geomspace, logspace, arange

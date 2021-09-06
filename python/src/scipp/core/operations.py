@@ -5,9 +5,8 @@ from __future__ import annotations
 from typing import Optional, Union
 
 from .._scipp import core as _cpp
-from .._cpp_wrapper_util import call_func as _call_cpp_func
+from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLike
-from .. import Variable
 
 
 def dot(x: VariableLike, y: VariableLike) -> VariableLike:
@@ -166,7 +165,8 @@ def rebin(x: VariableLike,
         return _call_cpp_func(_cpp.rebin, x, dim, old, bins)
 
 
-def where(condition: Variable, x: Variable, y: Variable) -> Variable:
+def where(condition: _cpp.Variable, x: _cpp.Variable,
+          y: _cpp.Variable) -> _cpp.Variable:
     """Return elements chosen from x or y depending on condition.
 
     :param condition: Variable with dtype=bool. Where True, yield x, otherwise yield y.

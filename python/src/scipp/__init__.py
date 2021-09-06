@@ -42,35 +42,36 @@ from ._scipp.core import as_const, choose, logical_and, logical_or, logical_xor
 # Import python functions
 from .show import show, make_svg
 from .table import table
+
 from .plotting import plot
+setattr(Variable, 'plot', plot)
+setattr(DataArray, 'plot', plot)
+setattr(Dataset, 'plot', plot)
+
 from .extend_units import *
 from .html import to_html, make_html
 from .object_list import _repr_html_
 from .utils import collapse, slices
 from .compat.dict import to_dict, from_dict
 
-# Wrappers for free functions from _scipp.core
-from ._arithmetic import *
-from ._bins import *
-from ._counts import *
-from ._comparison import *
-from ._cumulative import *
-from ._dataset import *
-from ._groupby import *
-from ._math import *
-from .core.operations import dot, islinspace, issorted, allsorted, cross, sort, \
-        values, variances, stddevs, rebin, where
-from ._unary import *
-from ._reduction import *
-from ._shape import *
-from ._trigonometry import *
-from .core.variable import scalar, zeros, zeros_like, ones, ones_like, empty, \
-        empty_like, full, full_like, matrix, matrices, vector, vectors, array, \
-        linspace, geomspace, logspace, arange
+from .coords import transform_coords, show_graph
+
+from .core import add, divide, floor_divide, mod, multiply, subtract
+from .core import lookup, histogram, bin, bins
+from .core import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
+from .core import counts_to_density, density_to_counts
+from .core import cumsum
+from .core import combine_masks, merge
+from .core import groupby
+from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10
+from .core import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where
+from .core import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
+from .core import broadcast, concatenate, fold, flatten, transpose
+from .core import sin, cos, tan, asin, acos, atan, atan2
+from .core import isnan, isinf, isfinite, isposinf, isneginf, to_unit
+from .core import scalar, zeros, zeros_like, ones, ones_like, empty, empty_like, full, full_like, matrix, matrices, vector, vectors, array, linspace, geomspace, logspace, arange
 
 from . import _binding
-
-from .coords import transform_coords, show_graph
 
 _binding.bind_get()
 # Assign method binding for both Variable and DataArray

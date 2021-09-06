@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Union, TYPE_CHECKING
 
-from .._scipp.core import Dataset, DataArray, Unit, Variable
+from ..core import Dataset, DataArray, Unit, Variable
+from ..core import scalar
 from ..typing import VariableLike
-from .._variable import scalar
 
 if TYPE_CHECKING:
     import xarray as xr

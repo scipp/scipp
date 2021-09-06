@@ -5,9 +5,9 @@
 
 from __future__ import annotations
 
-from ._scipp import core as _cpp
+from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import VariableLike, VariableLike
+from ..typing import VariableLike, VariableLike
 
 
 def less(x: VariableLike, y: VariableLike) -> VariableLike:

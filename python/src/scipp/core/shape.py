@@ -6,9 +6,9 @@
 from __future__ import annotations
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
-from ._scipp import core as _cpp
+from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import VariableLike
+from ..typing import VariableLike
 
 
 def broadcast(x: _cpp.Variable, dims: Union[List[str], Tuple[str]],

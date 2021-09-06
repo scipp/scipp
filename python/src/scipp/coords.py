@@ -5,7 +5,7 @@
 import inspect
 import warnings
 from typing import Union, List, Dict, Tuple, Callable
-from . import Variable, DataArray, Dataset, bins, VariableError
+from .core import Variable, DataArray, Dataset, bins, VariableError
 
 
 def _argnames(func):
