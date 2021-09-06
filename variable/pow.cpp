@@ -51,12 +51,13 @@ template <class T> struct PowUnit {
 template <class V>
 Variable pow_handle_unit(V &&base, const Variable &exponent,
                          const bool in_place) {
-  if (exponent.unit() != units::one) {
+  if (const auto exp_unit = variableFactory().elem_unit(exponent);
+      exp_unit != units::one) {
     throw except::UnitError("Powers must be dimensionless, got exponent.unit=" +
-                            to_string(exponent.unit()) + ".");
+                            to_string(exp_unit) + ".");
   }
 
-  const auto base_unit = base.unit();
+  const auto base_unit = variableFactory().elem_unit(base);
   if (base_unit == units::one) {
     return pow_do_transform(std::forward<V>(base), exponent, in_place);
   }
@@ -68,10 +69,11 @@ Variable pow_handle_unit(V &&base, const Variable &exponent,
   }
 
   Variable res = in_place ? std::forward<V>(base) : copy(std::forward<V>(base));
-  res.setUnit(units::one);
+  variableFactory().set_elem_unit(res, units::one);
   pow_do_transform(res, exponent, true);
-  res.setUnit(core::CallDType<double, float, int64_t, int32_t>::apply<PowUnit>(
-      exponent.dtype(), base_unit, exponent));
+  variableFactory().set_elem_unit(
+      res, core::CallDType<double, float, int64_t, int32_t>::apply<PowUnit>(
+               exponent.dtype(), base_unit, exponent));
   return res;
 }
 
@@ -83,6 +85,9 @@ bool has_negative_value(const Variable &var) {
 template <class V>
 Variable pow_handle_dtype(V &&base, const Variable &exponent,
                           const bool in_place) {
+  if (is_bins(exponent)) {
+    throw std::invalid_argument("Binned exponents are not supported by pow.");
+  }
   if (!is_int(base.dtype())) {
     return pow_handle_unit(std::forward<V>(base), exponent, in_place);
   }
