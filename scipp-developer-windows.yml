@@ -1,0 +1,48 @@
+# This is used for incremental CI builds and local development.
+# All dependencies should be installed here (i.e. the union of build, run, test and documentation build dependencies).
+# See https://scipp.github.io/developer/dependencies.html
+
+name: scipp-developer
+
+channels:
+  - conda-forge
+
+dependencies:
+  # Build
+  - ninja
+  - tbb-devel
+  - conan
+  - cmake
+  - pip
+
+  # Run
+  - appdirs
+  - ipympl
+  - ipywidgets
+  - matplotlib-base
+  - numpy >=1.15.3
+  - python
+  - python-configuration
+  - pythreejs
+  - pyyaml
+  - tbb
+
+  # Test
+  - h5py
+  - pytest
+  - python-graphviz
+  - xarray  # For testing xarray <-> scipp conversion
+  - pandas  # For testing pandas <-> scipp conversion
+  - scipy
+
+  # Formatting & static analysis
+  - pre-commit
+  - yapf
+  - flake8
+
+  # Docs
+  - pandoc
+  - sphinx
+  - sphinx_rtd_theme
+  - nbsphinx
+  - docutils=0.16 # see https://github.com/spatialaudio/nbsphinx/issues/549

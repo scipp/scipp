@@ -28,7 +28,7 @@ extends:
     config:
       linux:
         py_versions: ['3.7']
-        conda_env: 'scipp-developer.yml'
+        conda_env: 'scipp-developer-linux.yml'
       osx:
         py_versions: ['3.7']
         conda_env: 'scipp-developer-minimal.yml'

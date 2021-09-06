@@ -10,7 +10,7 @@ Places where dependencies are specified:
 Conda packages
 ##############
 
-Required conda packages to reproduce the build environment are fully specified in `scipp-developer.yml <https://github.com/scipp/scipp/blob/main/scipp-developer.yml>`_
+Required conda packages to reproduce the build environment are fully specified in `scipp-developer-<platform>.yml <https://github.com/scipp/scipp/blob/main/scipp-developer-linux.yml>`_
 These include runtime dependencies for scipp
   
 Conan

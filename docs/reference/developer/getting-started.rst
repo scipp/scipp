@@ -5,7 +5,7 @@ Prerequisites
 ~~~~~~~~~~~~~
 
 All non-optional build dependencies are installed automatically through Conan when running CMake.
-Conan itself can be installed manually but we recommend using the provided ``scipp-developer.yml``
+Conan itself can be installed manually but we recommend using the provided ``scipp-developer-<platform>.yml``
 for installing this and other dependencies in a ``conda`` environment (see below).
 Alternatively you can refer to this file for a full list of dependencies.
 
@@ -39,7 +39,7 @@ To build and install the library:
   cd build
 
   # Create Conda environment with dependencies and development tools
-  conda env create -f ../scipp-developer.yml            # For Linux
+  conda env create -f ../scipp-developer-linux.yml            # For Linux
   conda activate scipp-developer
 
 To build a debug version of the library:
