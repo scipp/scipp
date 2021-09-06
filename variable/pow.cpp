@@ -85,6 +85,9 @@ bool has_negative_value(const Variable &var) {
 template <class V>
 Variable pow_handle_dtype(V &&base, const Variable &exponent,
                           const bool in_place) {
+  if (is_bins(exponent)) {
+    throw std::invalid_argument("Binned exponents are not supported by pow.");
+  }
   if (!is_int(base.dtype())) {
     return pow_handle_unit(std::forward<V>(base), exponent, in_place);
   }
