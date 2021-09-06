@@ -10,6 +10,7 @@
 
 #include "scipp/core/element/math.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/pow.h"
 #include "scipp/variable/variable.h"
 
@@ -274,6 +275,22 @@ TEST(Variable, pow_value_and_variance) {
       makeVariable<double>(Dims{}, Values{2.0}, Variances{2.0});
   EXPECT_THROW_DISCARD(pow(base, exponent_with_variance),
                        except::VariancesError);
+}
+
+TEST(Variable, pow_binned_variable) {
+  const auto buffer = makeVariable<double>(
+      Dims{Dim::Event}, Shape{5}, Values{1.0, 2.0, 3.0, 4.0, 5.0}, units::m);
+  const auto indices = makeVariable<index_pair>(
+      Dims{Dim::X}, Shape{2}, Values{index_pair{0, 2}, index_pair{2, 5}});
+  const auto base = make_bins(indices, Dim::Event, buffer);
+  const auto result = pow(base, int64_t{2} * units::one);
+
+  const auto expected_buffer = makeVariable<double>(
+      Dims{Dim::Event}, Shape{5}, Values{1.0, 4.0, 9.0, 16.0, 25.0},
+      units::m * units::m);
+  const auto expected = make_bins(indices, Dim::Event, expected_buffer);
+
+  EXPECT_EQ(result, expected);
 }
 
 TYPED_TEST(VariableMathTest, sqrt) {
