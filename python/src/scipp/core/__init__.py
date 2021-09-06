@@ -28,19 +28,7 @@ from .._scipp.core import units, dtype
 
 from .._scipp.core import get_slice_params
 
-from ..html import make_html
-
-setattr(Variable, '_repr_html_', make_html)
-setattr(DataArray, '_repr_html_', make_html)
-setattr(Dataset, '_repr_html_', make_html)
-
-from ..io.hdf5 import to_hdf5 as _to_hdf5
-
-setattr(Variable, 'to_hdf5', _to_hdf5)
-setattr(DataArray, 'to_hdf5', _to_hdf5)
-setattr(Dataset, 'to_hdf5', _to_hdf5)
-
-from ..sizes import _make_sizes
+from .sizes import _make_sizes
 
 setattr(Variable, 'sizes', property(_make_sizes))
 setattr(DataArray, 'sizes', property(_make_sizes))
@@ -64,7 +52,7 @@ setattr(
         """Provides access to fields of structured types such as vectors or matrices."""
     ))
 
-from .bins import _groupby_bins
+from .bins import _groupby_bins, Bins
 
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
 setattr(GroupByDataset, 'bins', property(_groupby_bins))

@@ -48,8 +48,21 @@ setattr(Variable, 'plot', plot)
 setattr(DataArray, 'plot', plot)
 setattr(Dataset, 'plot', plot)
 
-from .extend_units import *
 from .html import to_html, make_html
+
+setattr(Variable, '_repr_html_', make_html)
+setattr(DataArray, '_repr_html_', make_html)
+setattr(Dataset, '_repr_html_', make_html)
+del make_html
+
+from .io.hdf5 import to_hdf5 as _to_hdf5
+
+setattr(Variable, 'to_hdf5', _to_hdf5)
+setattr(DataArray, 'to_hdf5', _to_hdf5)
+setattr(Dataset, 'to_hdf5', _to_hdf5)
+del _to_hdf5
+
+from .extend_units import *
 from .object_list import _repr_html_
 from .utils import collapse, slices
 from .compat.dict import to_dict, from_dict
@@ -70,6 +83,9 @@ from .core import broadcast, concatenate, fold, flatten, transpose
 from .core import sin, cos, tan, asin, acos, atan, atan2
 from .core import isnan, isinf, isfinite, isposinf, isneginf, to_unit
 from .core import scalar, zeros, zeros_like, ones, ones_like, empty, empty_like, full, full_like, matrix, matrices, vector, vectors, array, linspace, geomspace, logspace, arange
+
+# Mainly imported for docs
+from .core import Bins, GroupByDataset, GroupByDataArray
 
 from . import _binding
 
