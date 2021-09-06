@@ -53,7 +53,6 @@ from .html import to_html, make_html
 setattr(Variable, '_repr_html_', make_html)
 setattr(DataArray, '_repr_html_', make_html)
 setattr(Dataset, '_repr_html_', make_html)
-del make_html
 
 from .io.hdf5 import to_hdf5 as _to_hdf5
 
@@ -76,7 +75,7 @@ from .core import counts_to_density, density_to_counts
 from .core import cumsum
 from .core import combine_masks, merge
 from .core import groupby
-from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10
+from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil
 from .core import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where
 from .core import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
 from .core import broadcast, concatenate, fold, flatten, transpose
