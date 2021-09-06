@@ -293,6 +293,16 @@ TEST(Variable, pow_binned_variable) {
   EXPECT_EQ(result, expected);
 }
 
+TEST(Variable, pow_binned_variable_exp) {
+  const auto buffer = makeVariable<double>(
+      Dims{Dim::Event}, Shape{5}, Values{1.0, 2.0, 3.0, 4.0, 5.0}, units::m);
+  const auto indices = makeVariable<index_pair>(
+      Dims{Dim::X}, Shape{2}, Values{index_pair{0, 2}, index_pair{2, 5}});
+  const auto exponent = make_bins(indices, Dim::Event, buffer);
+  EXPECT_THROW_DISCARD(pow(int64_t{2} * units::one, exponent),
+                       std::invalid_argument);
+}
+
 TYPED_TEST(VariableMathTest, sqrt) {
   for (TypeParam x : {0.0, 1.23, 1.23456789, 3.45}) {
     for (auto [uin, uout] :
