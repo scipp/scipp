@@ -477,6 +477,9 @@ DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
       hide_masked(array.data(), array.masks(), builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
   builder.build(*target_bins, array.coords());
+  // Note: Unlike in the other cases below we do not call
+  // `drop_grouped_event_coords` here. Grouping is based on a bin-coord rather
+  // than event-coord so we do not touch the latter.
   return add_metadata(bin<DataArray>(masked, *target_bins, builder),
                       array.coords(), array.masks(), array.attrs(),
                       builder.edges(), builder.groups(), {reductionDim});
