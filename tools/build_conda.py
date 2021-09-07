@@ -29,8 +29,10 @@ class FileMover():
             dst = glob.glob(dst)[-1]
         if '*' in src:
             for f in glob.glob(src):
+                os.makedirs(dst, exist_ok=True)
                 self.move_file(f, os.path.join(dst, os.path.split(f)[1]))
         else:
+            os.makedirs(dst, exist_ok=True)
             self.move_file(src, os.path.join(dst, os.path.split(src)[1]))
 
 
@@ -69,5 +71,5 @@ if __name__ == '__main__':
     if dll_src is not None:
         m.move([dll_src, 'scipp-*'], [dll_dest])
     m.move([lib_src, '*scipp*'], [lib_src])
-    m.move([lib_src, 'cmake', 'scipp'], [lib_src, 'cmake', 'scipp'])
+    m.move([lib_src, 'cmake', 'scipp', '*'], [lib_src, 'cmake', 'scipp'])
     m.move([inc_src, 'scipp*'], [inc_src])
