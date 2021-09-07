@@ -193,12 +193,6 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
   bin_sizes = squeeze(bin_sizes, erase);
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
-  // Do not preserve event coords used for grouping since this is redundant
-  // information and leads to waste of memory and compute in follow-up
-  // operations.
-  for (const auto &var : groups)
-    if (buffer.coords().contains(var.dims().inner()))
-      buffer.coords().erase(var.dims().inner());
   std::set<Dim> dims(erase.begin(), erase.end());
   const auto rebinned = [&](const auto &var) {
     for (const auto &dim : var.dims().labels())
@@ -513,6 +507,19 @@ void validate_bin_args(const DataArray &array,
                                  " must be sorted.");
   }
 }
+
+auto drop_grouped_event_coords(const Variable &data,
+                               const std::vector<Variable> &groups) {
+  auto [indices, dim, buffer] = data.constituents<DataArray>();
+  // Do not preserve event coords used for grouping since this is redundant
+  // information and leads to waste of memory and compute in follow-up
+  // operations.
+  for (const auto &var : groups)
+    if (buffer.coords().contains(var.dims().inner()))
+      buffer.coords().erase(var.dims().inner());
+  return make_bins_no_validate(indices, dim, buffer);
+}
+
 } // namespace
 
 DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
@@ -546,8 +553,10 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
     builder.build(target_bins_buffer, coords);
     const auto target_bins =
         make_bins_no_validate(indices, dim, target_bins_buffer);
-    return add_metadata(bin<DataArray>(tmp, target_bins, builder), coords,
-                        masks, attrs, builder.edges(), builder.groups(), erase);
+    return add_metadata(bin<DataArray>(drop_grouped_event_coords(tmp, groups),
+                                       target_bins, builder),
+                        coords, masks, attrs, builder.edges(), builder.groups(),
+                        erase);
   }
 }
 
@@ -573,8 +582,10 @@ DataArray bin(const Variable &data, const Coords &coords, const Masks &masks,
   const auto masked = hide_masked(data, masks, builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
   builder.build(*target_bins, bins_view<DataArray>(masked).coords(), coords);
-  return add_metadata(bin<DataArray>(masked, *target_bins, builder), coords,
-                      masks, attrs, builder.edges(), builder.groups(), erase);
+  return add_metadata(bin<DataArray>(drop_grouped_event_coords(masked, groups),
+                                     *target_bins, builder),
+                      coords, masks, attrs, builder.edges(), builder.groups(),
+                      erase);
 }
 
 template SCIPP_DATASET_EXPORT DataArray
