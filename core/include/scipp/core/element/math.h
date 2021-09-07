@@ -40,7 +40,7 @@ constexpr auto pow_in_place = overloaded{
     arg_list<
         std::tuple<double, double, double>, std::tuple<double, double, float>,
         std::tuple<double, double, int32_t>,
-        std::tuple<double, double, int64_t>, std::tuple<double, float, double>,
+        std::tuple<double, double, int64_t>, std::tuple<float, float, double>,
         std::tuple<float, float, float>, std::tuple<float, float, int32_t>,
         std::tuple<float, float, int64_t>,
         std::tuple<int64_t, int64_t, int64_t>,
