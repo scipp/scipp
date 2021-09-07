@@ -109,13 +109,15 @@ TEST(BinGroupTest, 1d) {
   Variable groups =
       makeVariable<std::string>(Dims{Dim("label")}, Shape{2}, Values{"a", "c"});
   const auto binned = bin(table, {}, {groups});
+  auto expected = copy(table);
+  expected.coords().erase(Dim("label"));
   EXPECT_EQ(binned.dims(), groups.dims());
   EXPECT_EQ(binned.values<core::bin<DataArray>>()[1],
-            table.slice({Dim::Row, 2, 3}));
+            expected.slice({Dim::Row, 2, 3}));
   EXPECT_EQ(binned.values<core::bin<DataArray>>()[0].slice({Dim::Row, 0}),
-            table.slice({Dim::Row, 0}));
+            expected.slice({Dim::Row, 0}));
   EXPECT_EQ(binned.values<core::bin<DataArray>>()[0].slice({Dim::Row, 1}),
-            table.slice({Dim::Row, 4}));
+            expected.slice({Dim::Row, 4}));
 }
 
 class BinTest : public ::testing::TestWithParam<DataArray> {
@@ -343,10 +345,6 @@ TEST_P(BinTest, rebinned_meta_data_dropped) {
 TEST_P(BinTest, bin_by_group) {
   const auto table = GetParam();
   auto binned = bin(table, {}, {groups});
-  // Currently `bin` is not removing coords used for grouping, see TODO.
-  std::get<2>(binned.data().constituents<DataArray>())
-      .coords()
-      .erase(Dim("group"));
   // Using bin coord (instead of event coord) for binning.
   // Edges giving same grouping as existing => data matches
   auto edges = makeVariable<double>(Dims{Dim("group")}, Shape{6},
