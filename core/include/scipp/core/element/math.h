@@ -27,6 +27,8 @@ constexpr auto norm = overloaded{arg_list<Eigen::Vector3d>,
 constexpr auto pow = overloaded{
     arg_list<std::tuple<double, double>, std::tuple<double, float>,
              std::tuple<double, int32_t>, std::tuple<double, int64_t>,
+             std::tuple<float, double>, std::tuple<float, float>,
+             std::tuple<float, int32_t>, std::tuple<float, int64_t>,
              std::tuple<int64_t, int64_t>, std::tuple<int64_t, int32_t>>,
     transform_flags::expect_no_variance_arg<1>, dimensionless_unit_check_return,
     [](const auto &base, const auto &exponent) {
@@ -34,20 +36,22 @@ constexpr auto pow = overloaded{
       return pow(base, exponent);
     }};
 
-constexpr auto pow_in_place =
-    overloaded{arg_list<std::tuple<double, double, double>,
-                        std::tuple<double, double, float>,
-                        std::tuple<double, double, int32_t>,
-                        std::tuple<double, double, int64_t>,
-                        std::tuple<int64_t, int64_t, int64_t>,
-                        std::tuple<int64_t, int64_t, int32_t>>,
-               transform_flags::expect_in_variance_if_out_variance,
-               transform_flags::expect_no_variance_arg<2>,
-               [](auto &out, const auto &base, const auto &exponent) {
-                 // Use element::pow instead of numeric::pow to inherit unit
-                 // handling.
-                 out = element::pow(base, exponent);
-               }};
+constexpr auto pow_in_place = overloaded{
+    arg_list<
+        std::tuple<double, double, double>, std::tuple<double, double, float>,
+        std::tuple<double, double, int32_t>,
+        std::tuple<double, double, int64_t>, std::tuple<float, float, double>,
+        std::tuple<float, float, float>, std::tuple<float, float, int32_t>,
+        std::tuple<float, float, int64_t>,
+        std::tuple<int64_t, int64_t, int64_t>,
+        std::tuple<int64_t, int64_t, int32_t>>,
+    transform_flags::expect_in_variance_if_out_variance,
+    transform_flags::expect_no_variance_arg<2>,
+    [](auto &out, const auto &base, const auto &exponent) {
+      // Use element::pow instead of numeric::pow to inherit unit
+      // handling.
+      out = element::pow(base, exponent);
+    }};
 
 constexpr auto sqrt = overloaded{arg_list<double, float>, [](const auto x) {
                                    using std::sqrt;
