@@ -193,11 +193,12 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
   bin_sizes = squeeze(bin_sizes, erase);
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
-  // TODO We probably want to omit the coord used for grouping in the non-edge
-  // case, since it just contains the same value duplicated for every row in the
-  // bin.
-  // Note that we should then also recreate that variable in concatenate, to
-  // ensure that those operations are reversible.
+  // Do not preserve event coords used for grouping since this is redundant
+  // information and leads to waste of memory and compute in follow-up
+  // operations.
+  for (const auto &var : groups)
+    if (buffer.coords().contains(var.dims().inner()))
+      buffer.coords().erase(var.dims().inner());
   std::set<Dim> dims(erase.begin(), erase.end());
   const auto rebinned = [&](const auto &var) {
     for (const auto &dim : var.dims().labels())
