@@ -256,6 +256,15 @@ def test_plot_2d_binned_data_non_counts():
     plot(da)
 
 
+def test_plot_2d_binned_data_float32_coord():
+    da = make_binned_data_array(ndim=2)
+    da.events.coords['xx'] = da.events.coords['xx'].astype('float32')
+    plot(da)
+    # Try without event-coord so implementation cannot use `histogram`
+    del da.bins.coords['yy']
+    da.coords['yy'] = da.coords['yy']['yy', 1:]
+
+
 def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
     data = make_binned_data_array(ndim=2)
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')

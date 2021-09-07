@@ -38,6 +38,8 @@ static constexpr auto update_indices_by_binning = overloaded{
                       update_indices_by_binning_arg<int32_t, int64_t, double>,
                       update_indices_by_binning_arg<int64_t, int32_t, double>,
                       update_indices_by_binning_arg<int32_t, int32_t, double>,
+                      update_indices_by_binning_arg<int64_t, float, double>,
+                      update_indices_by_binning_arg<int32_t, float, double>,
                       update_indices_by_binning_arg<int64_t, int32_t, int64_t>,
                       update_indices_by_binning_arg<int32_t, int32_t, int64_t>>,
     [](units::Unit &indices, const units::Unit &coord,
