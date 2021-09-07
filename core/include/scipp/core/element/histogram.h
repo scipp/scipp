@@ -37,6 +37,7 @@ using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
 static constexpr auto histogram = overloaded{
     element::arg_list<
         histogram_detail::args<float, double, float, double>,
+        histogram_detail::args<float, float, float, double>,
         histogram_detail::args<float, int64_t, float, double>,
         histogram_detail::args<float, int32_t, float, double>,
         histogram_detail::args<double, double, double, double>,
