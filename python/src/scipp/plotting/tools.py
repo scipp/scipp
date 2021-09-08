@@ -3,7 +3,8 @@
 # @author Neil Vaytet
 
 from .. import config
-from ..core import scalar, concatenate, values, dtype, units, nanmin, nanmax, histogram
+from ..core import concatenate, values, dtype, units, nanmin, nanmax, histogram, \
+        full_like
 from ..core import Variable, DataArray
 from ..core import abs as abs_
 import numpy as np
@@ -131,8 +132,8 @@ def find_log_limits(x):
         [vmin, vmax] = find_linear_limits(x)
         if vmin.value <= 0.0:
             if vmax.value <= 0.0:
-                vmin = scalar(0.1)
-                vmax = scalar(1.0)
+                vmin = full_like(vmin, 0.1)
+                vmax = full_like(vmax, 1.0)
             else:
                 vmin = 1.0e-3 * vmax
     else:

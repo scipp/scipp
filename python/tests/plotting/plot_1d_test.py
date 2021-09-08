@@ -65,6 +65,12 @@ def test_plot_1d_two_entries_hide_variances():
     plot(ds, errorbars={"a": False, "b": True})
 
 
+def test_plot_1d_log_axes_two_entries_zero_data():
+    a = sc.linspace(dim='xx', unit='K', start=1, stop=2, num=4)
+    b = sc.zeros_like(a)  # zero data triggers special branch in limit finding
+    plot({'a': a, 'b': b}, norm='log')
+
+
 def test_plot_1d_with_masks():
     plot(make_dense_data_array(ndim=1, masks=True))
 
