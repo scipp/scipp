@@ -99,8 +99,8 @@ class PlotModel:
                     coord = coord - coord.min()
                 coord_list[dim] = coord
         tmp['data'] = DataArray(data=array.data,
-                                   coords=coord_list,
-                                   masks=to_dict(array.masks))
+                                coords=coord_list,
+                                masks=to_dict(array.masks))
         return bins(**tmp)
 
     def _axis_coord(self, array, dim):
