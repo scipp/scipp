@@ -209,7 +209,6 @@ class ResamplingBinnedModel(ResamplingModel):
             binned = bin_(array, edges=self.edges[:-1] + [bounds])
             # TODO Use histogramming with "mean" mode once implemented
             if _unit_requires_mean(binned.events):
-                return bin_(binned, edges=self.edges).bins.mean()
                 return bin_(binned, edges=[edges]).bins.mean()
             else:
                 return histogram(binned, bins=edges)
