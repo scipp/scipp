@@ -52,6 +52,12 @@ auto make_range(const scipp::index begin, const scipp::index end,
 void update_indices_by_binning(Variable &indices, const Variable &key,
                                const Variable &edges, const bool linspace) {
   const auto dim = edges.dims().inner();
+  if (!indices.dims().includes(key.dims()))
+    throw except::BinEdgeError(
+        "Requested binning in dimension '" + to_string(dim) +
+        "' but input contains a bin-edge coordinate with no corresponding "
+        "event-coordinate. Provide an event coordinate or convert the "
+        "bin-edge coordinate to a non-edge coordinate.");
   const auto &edge_view =
       is_bins(edges) ? as_subspan_view(edges) : subspan_view(edges, dim);
   if (linspace) {
