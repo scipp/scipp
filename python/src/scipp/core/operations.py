@@ -4,10 +4,9 @@
 from __future__ import annotations
 from typing import Optional, Union
 
-from ._scipp import core as _cpp
+from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import VariableLike
-from . import Variable
+from ..typing import VariableLike
 
 
 def dot(x: VariableLike, y: VariableLike) -> VariableLike:
@@ -19,6 +18,21 @@ def dot(x: VariableLike, y: VariableLike) -> VariableLike:
     :return: The dot product of the input vectors.
     """
     return _call_cpp_func(_cpp.dot, x, y)
+
+
+def islinspace(x: _cpp.Variable, dim: str = None) -> _cpp.Variable:
+    """
+    Check if the values of a variable are evenly spaced.
+
+    :param x: Variable to check.
+    :param dim: Optional variable for the dim to check from the Variable.
+    :returns: Variable of value True if the variable contains regularly
+    spaced values, variable of value False otherwise.
+    """
+    if dim is None:
+        return _call_cpp_func(_cpp.islinspace, x)
+    else:
+        return _call_cpp_func(_cpp.islinspace, x, dim)
 
 
 def issorted(x: _cpp.Variable,
@@ -151,7 +165,8 @@ def rebin(x: VariableLike,
         return _call_cpp_func(_cpp.rebin, x, dim, old, bins)
 
 
-def where(condition: Variable, x: Variable, y: Variable) -> Variable:
+def where(condition: _cpp.Variable, x: _cpp.Variable,
+          y: _cpp.Variable) -> _cpp.Variable:
     """Return elements chosen from x or y depending on condition.
 
     :param condition: Variable with dtype=bool. Where True, yield x, otherwise yield y.

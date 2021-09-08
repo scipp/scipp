@@ -7,7 +7,7 @@ from typing import Union
 import numpy as np
 
 from ._scipp import core as _cpp
-from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .core._cpp_wrapper_util import call_func as _call_cpp_func
 
 
 def position(x: _cpp.Variable, y: _cpp.Variable, z: _cpp.Variable) -> _cpp.Variable:

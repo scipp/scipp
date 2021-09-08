@@ -54,7 +54,6 @@ class NumpyDataIO:
 class BinDataIO:
     @staticmethod
     def write(group, data):
-        from .. import sum as sc_sum
         bins = data.bins.constituents
         buffer_len = bins['data'].sizes[bins['dim']]
         # Crude mechanism to avoid writing large buffers, e.g., from
@@ -62,7 +61,7 @@ class BinDataIO:
         # copy causes some overhead, but so would the (much mor complicated)
         # solution to extract contents bin-by-bin. This approach will likely
         # need to be revisited in the future.
-        if buffer_len > 1.5 * sc_sum(data.bins.size()).value:
+        if buffer_len > 1.5 * data.bins.size().sum().value:
             data = data.copy()
             bins = data.bins.constituents
         values = group.create_group('values')
@@ -228,7 +227,7 @@ class DataArrayIO:
     @staticmethod
     def read(group):
         _check_scipp_header(group, 'DataArray')
-        from .._scipp import core as sc
+        from ..core import DataArray
         contents = dict()
         contents['name'] = group.attrs['name']
         contents['data'] = VariableIO.read(group['data'])
@@ -237,7 +236,7 @@ class DataArrayIO:
             for name in group[category]:
                 g = group[category][name]
                 contents[category][name] = VariableIO.read(g)
-        return sc.DataArray(**contents)
+        return DataArray(**contents)
 
 
 class DatasetIO:

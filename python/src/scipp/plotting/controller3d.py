@@ -2,8 +2,8 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .._scipp import core as sc
-from .._variable import scalar
+from ..core import scalar, where
+from ..core import abs as abs_
 from .controller import PlotController
 
 
@@ -19,7 +19,7 @@ class PlotController3d(PlotController):
         self.view.set_position_params(self.model)
         for key in self.panel.options[:-1]:
             value = self._get_cut(key)
-            self.panel.set_range(key, sc.min(value), sc.max(value))
+            self.panel.set_range(key, value.min(), value.max())
 
     def _get_cut(self, key):
         # PlotPanel3d currently uses hard-coded keys/labels for cut buttons
@@ -63,8 +63,8 @@ class PlotController3d(PlotController):
         else:
             value = self._get_cut(key)
         u = value.unit
-        alpha = sc.where(
-            sc.abs(value - center * u) < 0.5 * delta * u, scalar(active),
+        alpha = where(
+            abs_(value - center * u) < 0.5 * delta * u, scalar(active),
             scalar(inactive))
         self.view.update_opacity(alpha=alpha)
 

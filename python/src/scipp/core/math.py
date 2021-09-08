@@ -4,9 +4,9 @@
 from __future__ import annotations
 from typing import Optional
 
-from ._scipp import core as _cpp
+from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import VariableLike
+from ..typing import VariableLike
 
 
 def abs(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:

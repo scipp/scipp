@@ -4,16 +4,15 @@
 from matplotlib.lines import Line2D
 
 from .view import PlotView
-from .._variable import ones
 from .tools import vars_to_err
-from .._scipp import core as sc
+from ..core import ones, units, Variable
 
 
 def _make_label(array):
     # TODO use formatter
     labels = []
     for dim, coord in array.meta.items():
-        unit = '' if coord.unit == sc.units.dimensionless else f' {coord.unit}'
+        unit = '' if coord.unit == units.dimensionless else f' {coord.unit}'
         if dim not in array.dims:
             labels.append(f'{dim}={coord.values.round(decimals=2)}{unit}')
     return ', '.join(labels)
@@ -37,11 +36,11 @@ class PlotView1d(PlotView):
             return {}
         masks = {}
         data = array.data
-        base_mask = ones(sizes=data.sizes, dtype=sc.dtype.int32)
+        base_mask = ones(sizes=data.sizes, dtype='int32')
         for m in mask_info:
             if m in array.masks:
-                msk = base_mask * sc.Variable(dims=array.masks[m].dims,
-                                              values=array.masks[m].values)
+                msk = base_mask * Variable(dims=array.masks[m].dims,
+                                           values=array.masks[m].values)
                 masks[m] = msk.values
             else:
                 masks[m] = None

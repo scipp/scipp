@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .view import PlotView
-from .._variable import zeros
+from ..core import zeros
 import numpy as np
 from matplotlib.collections import PathCollection
 

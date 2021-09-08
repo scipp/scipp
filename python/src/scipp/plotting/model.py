@@ -4,8 +4,8 @@
 
 from .tools import find_limits, to_dict
 from .. import typing
-from .._scipp import core as sc
-from .._variable import arange
+from ..core import DataArray
+from ..core import arange
 
 
 class DataArrayDict(dict):
@@ -57,9 +57,9 @@ class PlotModel:
             # touch any of the pos dims, so we don't want to replace coords
             # should model only consider "other" data dims?
             coord_list = {dim: self._axis_coord(array, dim) for dim in array.dims}
-            self.data_arrays[name] = sc.DataArray(data=array.data,
-                                                  coords=coord_list,
-                                                  masks=to_dict(array.masks))
+            self.data_arrays[name] = DataArray(data=array.data,
+                                               coords=coord_list,
+                                               masks=to_dict(array.masks))
         self.data_arrays = DataArrayDict(self.data_arrays)
 
         # Save a copy of the name for simpler access
@@ -92,7 +92,7 @@ class PlotModel:
             if typing.has_vector_type(coord) or typing.has_string_type(coord):
                 coord = arange(dim=dim, start=0, stop=array.sizes[dim])
             elif typing.has_datetime_type(coord):
-                coord = coord - sc.min(coord)
+                coord = coord - coord.min()
         else:
             coord = arange(dim=dim, start=0, stop=array.sizes[dim])
         return coord

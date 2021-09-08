@@ -2,15 +2,14 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 from functools import lru_cache
-from .._scipp import core as sc
-from .._shape import flatten
+from ..core import flatten, sqrt, norm
 from .model1d import PlotModel1d
 from .resampling_model import _unit_requires_mean
 import numpy as np
 
 
 def _planar_norm(a, b):
-    return sc.sqrt(a * a + b * b)
+    return sqrt(a * a + b * b)
 
 
 def _flatten(da, dims):
@@ -60,8 +59,8 @@ class ScatterPointModel:
         """
         extents = {}
         for dim, x in self.components.items():
-            xmin = sc.min(x).value
-            xmax = sc.max(x).value
+            xmin = x.min().value
+            xmax = x.max().value
             extents[dim] = np.array([xmin, xmax])
         return extents
 
@@ -89,7 +88,7 @@ class ScatterPointModel:
     @property
     @lru_cache(maxsize=None)
     def radius(self):
-        return sc.norm(self._positions)
+        return norm(self._positions)
 
     def __getattr__(self, attr):
         """

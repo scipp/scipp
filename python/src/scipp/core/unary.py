@@ -3,7 +3,7 @@
 # @author Matthew Andrew
 from typing import Union as _Union
 
-from ._scipp import core as _cpp
+from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 

@@ -1,8 +1,6 @@
 from .. import typing
 from ..utils import name_with_unit, value_to_string
-from .._scipp.core import to_unit, Unit
-from .._scipp import core as sc
-from .._variable import arange
+from ..core import arange, to_unit, Unit
 import enum
 import numpy as np
 
@@ -227,7 +225,7 @@ def make_formatter(array, key):
             formatter["custom_locator"] = True
         elif kind == Kind.datetime:
             coord = _get_or_make_coord(array, dim)
-            form = DateFormatter(offset=sc.min(coord), dim=key).formatter
+            form = DateFormatter(offset=coord.min(), dim=key).formatter
             formatter["need_callbacks"] = True
         elif dim is not key:
             coord = _get_or_make_coord(array, dim)
