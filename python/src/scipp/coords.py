@@ -73,7 +73,7 @@ def _consume_coord(obj, name):
         if name in obj.events.coords:
             obj.bins.attrs[name] = obj.bins.coords[name]
             del obj.bins.coords[name]
-        return obj.attrs[name], obj.bins.attrs.get(name, None)
+        return obj.attrs.get(name, None), obj.bins.attrs.get(name, None)
     return obj.attrs[name], None
 
 
@@ -85,13 +85,14 @@ def _produce_coord(obj, name):
         if name in obj.events.attrs:
             obj.bins.coords[name] = obj.bins.attrs[name]
             del obj.bins.attrs[name]
-        return obj.coords[name], obj.bins.coords.get(name, None)
+        return obj.coords.get(name, None), obj.bins.coords.get(name, None)
     return obj.coords[name], None
 
 
 def _store_coord(obj, name, coord):
     dense_coord, event_coord = coord
-    obj.coords[name] = dense_coord
+    if dense_coord is not None:
+        obj.coords[name] = dense_coord
     if name in obj.attrs:
         # If name is both an input and output to a function,
         # the input handling made it an attr, but since it is
@@ -99,7 +100,10 @@ def _store_coord(obj, name, coord):
         del obj.attrs[name]
     if event_coord is not None:
         if event_coord.bins is None:
-            assert identical(event_coord, dense_coord)
+            if dense_coord is None:
+                obj.coords[name] = event_coord
+            else:
+                assert identical(event_coord, dense_coord)
         else:
             _add_event_coord(obj, name, event_coord)
 
@@ -123,7 +127,7 @@ class CoordTransform:
         self._graph = graph
 
     def _add_coord(self, *, name):
-        if name in self.obj.meta:
+        if self._exists(name):
             return _produce_coord(self.obj, name)
         if isinstance(self._graph[name], str):
             self._aliases.append(name)
@@ -133,8 +137,12 @@ class CoordTransform:
             func = self._graph[name]
             argnames = _argnames(func)
             args = {arg: self._get_coord(arg) for arg in argnames}
-            dense_args = {k: v[0] for k, v in args.items()}
-            out = func(**dense_args)
+            all_dense_inputs = all([v[0] is not None for v in args.values()])
+            if all_dense_inputs:
+                dense_args = {k: v[0] for k, v in args.items()}
+                out = func(**dense_args)
+            else:
+                out = None
             if not isinstance(out, dict):
                 out = {name: out}
             have_event_inputs = any([v[1] is not None for v in args.values()])
@@ -160,7 +168,7 @@ class CoordTransform:
 
     def _get_existing(self, name):
         events = None if self.obj.events is None else self.bins.meta[name]
-        return self.obj.meta[name], events
+        return self.obj.meta.get(name, None), events
 
     def _get_coord(self, name):
         if self._exists(name):
