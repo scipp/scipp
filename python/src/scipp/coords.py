@@ -5,7 +5,7 @@
 import inspect
 import warnings
 from typing import Union, List, Dict, Tuple, Callable
-from .core import Variable, DataArray, Dataset, bins, VariableError
+from .core import DataArray, Dataset, bins, VariableError
 
 
 def _argnames(func):
@@ -114,20 +114,31 @@ class CoordTransform:
             return _produce_coord(self.obj, name)
         if isinstance(self._graph[name], str):
             self._aliases.append(name)
-            out = self._get_coord(self._graph[name])[0]
+            out = {name: self._get_coord(self._graph[name])}
             dim = (self._graph[name], )
         else:
             func = self._graph[name]
             argnames = _argnames(func)
             args = {arg: self._get_coord(arg) for arg in argnames}
-            dense_args = {arg: args[arg][0] for arg in args}
+            dense_args = {k: v[0] for k, v in args.items()}
             out = func(**dense_args)
+            if not isinstance(out, dict):
+                out = {name: out}
+            if self.obj.bins is not None:
+                event_args = {
+                    k: v[0] if v[1] is None else v[1]
+                    for k, v in args.items()
+                }
+                out_bins = func(**event_args)
+                if not isinstance(out_bins, dict):
+                    out_bins = {name: out_bins}
+            else:
+                out_bins = {}
+            out = {k: (out[k], out_bins.get(k, None)) for k in out.keys()}
             dim = tuple(argnames)
-        if isinstance(out, Variable):
-            out = {name: out}
         self._rename.setdefault(dim, []).extend(out.keys())
         for key, coord in out.items():
-            _store_coord(self.obj, key, (coord, None))
+            _store_coord(self.obj, key, coord)
 
     def _exists(self, name):
         in_events = self.obj.events is not None and name in self.obj.events.meta
