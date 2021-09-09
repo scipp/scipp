@@ -56,18 +56,11 @@ void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
 template <class T, class... Ignored>
 void bind_pop(pybind11::class_<T, Ignored...> &view) {
   view.def(
-      "pop",
-      [](T &self, const typename T::key_type &key,
-         const typename T::mapped_type *const default_value) {
-        if (default_value == nullptr) {
-          return py::cast(self.extract(key));
-        }
-        if (self.contains(key))
-          return py::cast(self.extract(key));
-        else
-          return py::cast(default_value);
+      "_pop",
+      [](T &self, const typename T::key_type &key) {
+        return py::cast(self.extract(key));
       },
-      py::arg("k"), py::arg("d") = nullptr);
+      py::arg("k"));
 }
 
 template <class T>

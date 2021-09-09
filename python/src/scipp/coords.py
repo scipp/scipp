@@ -58,24 +58,17 @@ class Graph:
 
 
 def _consume_coord(obj, name):
-    if obj is None:
-        return None
     if name in obj.coords:
         obj.attrs[name] = obj.coords[name]
         del obj.coords[name]
-    event_attr = _consume_coord(obj.bins, name)
-    return (obj.attrs.get(name, None), event_attr)
+    return obj.attrs[name]
 
 
 def _produce_coord(obj, name):
-    if obj is None:
-        return None
     if name in obj.attrs:
         obj.coords[name] = obj.attrs[name]
         del obj.attrs[name]
-    event_coord = _consume_coord(obj.bins, name)
-    # TODO actualy return value is unused
-    return (obj.coords.get(name, None), event_coord)
+    return obj.coords[name]
 
 
 def _store_coord(obj, name, coord):
@@ -130,7 +123,7 @@ class CoordTransform:
                 # recursion and add also event coords, here and below we thus
                 # simply consume the event coord.
                 if self._graph[name] in self.obj.meta:
-                    out_bins = _consume_coord(self.obj.bins, self._graph[name])[0]
+                    out_bins = _consume_coord(self.obj.bins, self._graph[name])
             dim = (self._graph[name], )
         else:
             func = self._graph[name]
@@ -139,7 +132,7 @@ class CoordTransform:
             out = func(**args)
             if self.obj.bins is not None:
                 args.update({
-                    arg: _consume_coord(self.obj.bins, arg)[0]
+                    arg: _consume_coord(self.obj.bins, arg)
                     for arg in argnames if arg in self.obj.bins.meta
                 })
                 out_bins = func(**args)
@@ -160,7 +153,7 @@ class CoordTransform:
             if name in self._outputs:
                 return self.obj.meta[name]
             else:
-                return _consume_coord(self.obj, name)[0]
+                return _consume_coord(self.obj, name)
         else:
             if name in self._memo:
                 raise ValueError("Cycle detected in conversion graph.")

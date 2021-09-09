@@ -7,13 +7,29 @@ import types
 from ._scipp import core
 from .utils import get
 
+_dict_likes = [
+    core.Dataset, core.Coords, core.Masks, core._BinsMeta, core._BinsCoords,
+    core._BinsMasks, core._BinsAttrs
+]
+
 
 def bind_get():
-    for cls in [
-            core.Dataset, core.Coords, core.Masks, core._BinsMeta, core._BinsCoords,
-            core._BinsMasks, core._BinsAttrs
-    ]:
+    for cls in _dict_likes:
         setattr(cls, 'get', get)
+
+
+_NO_DEFAULT = object()
+
+
+def _pop(obj, name, default=_NO_DEFAULT):
+    if name not in obj and default is not _NO_DEFAULT:
+        return default
+    return obj._pop(name)
+
+
+def bind_pop():
+    for cls in _dict_likes:
+        setattr(cls, 'pop', _pop)
 
 
 def bind_functions_as_methods(cls, namespace, func_names):
