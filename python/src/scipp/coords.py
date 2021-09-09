@@ -99,13 +99,7 @@ def _store_coord(obj, name, coord):
         # an output, we want to store it as a coord (and only as a coord).
         del obj.attrs[name]
     if event_coord is not None:
-        if event_coord.bins is None:
-            if dense_coord is None:
-                obj.coords[name] = event_coord
-            else:
-                assert identical(event_coord, dense_coord)
-        else:
-            _add_event_coord(obj, name, event_coord)
+        _add_event_coord(obj, name, event_coord)
 
 
 class CoordTransform:
@@ -137,14 +131,14 @@ class CoordTransform:
             func = self._graph[name]
             argnames = _argnames(func)
             args = {arg: self._get_coord(arg) for arg in argnames}
-            all_dense_inputs = all([v[0] is not None for v in args.values()])
-            if all_dense_inputs:
+            have_all_dense_inputs = all([v[0] is not None for v in args.values()])
+            if have_all_dense_inputs:
                 dense_args = {k: v[0] for k, v in args.items()}
                 out = func(**dense_args)
+                if not isinstance(out, dict):
+                    out = {name: out}
             else:
-                out = None
-            if not isinstance(out, dict):
-                out = {name: out}
+                out = {}
             have_event_inputs = any([v[1] is not None for v in args.values()])
             if self.obj.bins is not None and have_event_inputs:
                 event_args = {
@@ -154,9 +148,21 @@ class CoordTransform:
                 out_bins = func(**event_args)
                 if not isinstance(out_bins, dict):
                     out_bins = {name: out_bins}
+                # Dense outputs may be produced as side effects of processing event
+                # coords.
+                for name in list(out_bins.keys()):
+                    if out_bins[name].events is None:
+                        coord = out_bins.pop(name)
+                        if name in out:
+                            assert identical(out[name], coord)
+                        else:
+                            out[name] = coord
             else:
                 out_bins = {}
-            out = {k: (out[k], out_bins.get(k, None)) for k in out.keys()}
+            out = {
+                k: (out.get(k, None), out_bins.get(k, None))
+                for k in list(out.keys()) + list(out_bins.keys())
+            }
             dim = tuple(argnames)
         self._rename.setdefault(dim, []).extend(out.keys())
         for key, coord in out.items():

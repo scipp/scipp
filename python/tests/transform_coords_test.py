@@ -264,6 +264,10 @@ def test_binned_no_dense_coord():
     graph = {('xy', 'yy'): convert, 'x2': 'x'}
     da = binned.transform_coords(['xy', 'yy'], graph=graph)
     check_binned(da, binned)
+    # works also without explicit request of 'yy' in graph
+    graph = {'xy': convert, 'x2': 'x'}
+    da = binned.transform_coords(['xy', 'yy'], graph=graph)
+    check_binned(da, binned)
 
 
 def test_cycles():
