@@ -265,6 +265,21 @@ def test_plot_2d_binned_data_float32_coord():
     da.coords['yy'] = da.coords['yy']['yy', 1:]
 
 
+def test_plot_2d_binned_data_datetime64():
+    da = make_binned_data_array(ndim=2)
+    start = sc.scalar(np.datetime64('now'))
+    offset = (1000 * da.coords['xx']).astype('int64')
+    offset.unit = 's'
+    da.coords['xx'] = start + offset
+    offset = (1000 * da.events.coords['xx']).astype('int64')
+    offset.unit = 's'
+    da.events.coords['xx'] = start + offset
+    plot(da)
+    # Try without event-coord so implementation cannot use `histogram`
+    del da.bins.coords['yy']
+    da.coords['yy'] = da.coords['yy']['yy', 1:]
+
+
 def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
     data = make_binned_data_array(ndim=2)
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')

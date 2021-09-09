@@ -5,7 +5,7 @@
 from .tools import find_limits, to_dict
 from .. import typing
 from ..core import DataArray
-from ..core import arange
+from ..core import arange, bins
 
 
 class DataArrayDict(dict):
@@ -56,10 +56,7 @@ class PlotModel:
             # TODO for the 3d scatter plot this is problematic: we never
             # touch any of the pos dims, so we don't want to replace coords
             # should model only consider "other" data dims?
-            coord_list = {dim: self._axis_coord(array, dim) for dim in array.dims}
-            self.data_arrays[name] = DataArray(data=array.data,
-                                               coords=coord_list,
-                                               masks=to_dict(array.masks))
+            self.data_arrays[name] = self._setup_coords(array)
         self.data_arrays = DataArrayDict(self.data_arrays)
 
         # Save a copy of the name for simpler access
@@ -82,6 +79,29 @@ class PlotModel:
     def dims(self, dims):
         self._dims = dims
         self._dims_updated()
+
+    def _setup_coords(self, array):
+        data = array.data
+        if array.bins is not None:
+            data = self._setup_event_coords(data)
+        coord_list = {dim: self._axis_coord(array, dim) for dim in array.dims}
+        return DataArray(data=data, coords=coord_list, masks=to_dict(array.masks))
+
+    def _setup_event_coords(self, data):
+        tmp = data.bins.constituents
+        coord_list = {}
+        array = tmp['data']
+        for dim in data.dims:
+            # Drop any coords not required for resampling to save memory and compute
+            if dim in array.meta:
+                coord = array.meta[dim]
+                if typing.has_datetime_type(coord):
+                    coord = coord - coord.min()
+                coord_list[dim] = coord
+        tmp['data'] = DataArray(data=array.data,
+                                coords=coord_list,
+                                masks=to_dict(array.masks))
+        return bins(**tmp)
 
     def _axis_coord(self, array, dim):
         """
