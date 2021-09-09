@@ -5,7 +5,7 @@
 import inspect
 import warnings
 from typing import Union, List, Dict, Tuple, Callable
-from .core import Variable, DataArray, Dataset, bins, VariableError
+from .core import Variable, DataArray, Dataset, bins, VariableError, scalar
 
 
 def _argnames(func):
@@ -63,15 +63,19 @@ def _consume_coord(obj, name):
     if name in obj.coords:
         obj.attrs[name] = obj.coords[name]
         del obj.coords[name]
-    event_coord = _consume_coord(obj.bins, name)
-    return (obj.attrs.get(name, None), event_coord)
+    event_attr = _consume_coord(obj.bins, name)
+    return (obj.attrs.get(name, None), event_attr)
 
 
 def _produce_coord(obj, name):
+    if obj is None:
+        return None
     if name in obj.attrs:
         obj.coords[name] = obj.attrs[name]
         del obj.attrs[name]
-    return obj.coords[name]
+    event_coord = _consume_coord(obj.bins, name)
+    # TODO actualy return value is unused
+    return (obj.coords.get(name, None), event_coord)
 
 
 def _store_coord(obj, name, coord):
@@ -165,18 +169,16 @@ class CoordTransform:
             return self._get_coord(name)
 
     def _del_attr(self, name):
-        if name in self.obj.attrs:
-            del self.obj.attrs[name]
-        if self.obj.bins is not None:
-            if name in self.obj.bins.attrs:
-                del self.obj.bins.attrs[name]
+        # TODO Fix `pop` so the default can be `None`
+        self.obj.attrs.pop(name, scalar(0))
+        if self.obj.events is not None:
+            self.obj.events.attrs.pop(name, scalar(0))
 
     def _del_coord(self, name):
-        if name in self.obj.coords:
-            del self.obj.coords[name]
-        if self.obj.bins is not None:
-            if name in self.obj.bins.coords:
-                del self.obj.bins.coords[name]
+        # TODO Fix `pop` so the default can be `None`
+        self.obj.coords.pop(name, scalar(0))
+        if self.obj.events is not None:
+            self.obj.events.coords.pop(name, scalar(0))
 
     def finalize(self, *, include_aliases, rename_dims, keep_intermediate, keep_inputs):
         for name in self._outputs:
