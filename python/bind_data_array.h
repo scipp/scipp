@@ -60,9 +60,12 @@ void bind_pop(pybind11::class_<T, Ignored...> &view) {
       [](T &self, const typename T::key_type &key,
          const typename T::mapped_type *const default_value) {
         if (default_value == nullptr) {
-          return self.extract(key);
+          return py::cast(self.extract(key));
         }
-        return self.extract(key, *default_value);
+        if (self.contains(key))
+          return py::cast(self.extract(key));
+        else
+          return py::cast(default_value);
       },
       py::arg("k"), py::arg("d") = nullptr);
 }

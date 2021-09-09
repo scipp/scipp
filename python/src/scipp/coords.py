@@ -5,7 +5,7 @@
 import inspect
 import warnings
 from typing import Union, List, Dict, Tuple, Callable
-from .core import Variable, DataArray, Dataset, bins, VariableError, scalar
+from .core import Variable, DataArray, Dataset, bins, VariableError
 
 
 def _argnames(func):
@@ -169,16 +169,14 @@ class CoordTransform:
             return self._get_coord(name)
 
     def _del_attr(self, name):
-        # TODO Fix `pop` so the default can be `None`
-        self.obj.attrs.pop(name, scalar(0))
+        self.obj.attrs.pop(name, None)
         if self.obj.events is not None:
-            self.obj.events.attrs.pop(name, scalar(0))
+            self.obj.events.attrs.pop(name, None)
 
     def _del_coord(self, name):
-        # TODO Fix `pop` so the default can be `None`
-        self.obj.coords.pop(name, scalar(0))
+        self.obj.coords.pop(name, None)
         if self.obj.events is not None:
-            self.obj.events.coords.pop(name, scalar(0))
+            self.obj.events.coords.pop(name, None)
 
     def finalize(self, *, include_aliases, rename_dims, keep_intermediate, keep_inputs):
         for name in self._outputs:
