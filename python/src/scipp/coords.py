@@ -5,7 +5,7 @@
 import inspect
 import warnings
 from typing import Union, List, Dict, Tuple, Callable
-from .core import DataArray, Dataset, bins, VariableError
+from .core import DataArray, Dataset, bins, VariableError, identical
 
 
 def _argnames(func):
@@ -69,6 +69,11 @@ def _consume_coord(obj, name):
     if name in obj.coords:
         obj.attrs[name] = obj.coords[name]
         del obj.coords[name]
+    if obj.events is not None:
+        if name in obj.events.coords:
+            obj.bins.attrs[name] = obj.bins.coords[name]
+            del obj.bins.coords[name]
+        return obj.attrs[name], obj.bins.attrs.get(name, None)
     return obj.attrs[name], None
 
 
@@ -76,6 +81,11 @@ def _produce_coord(obj, name):
     if name in obj.attrs:
         obj.coords[name] = obj.attrs[name]
         del obj.attrs[name]
+    if obj.events is not None:
+        if name in obj.events.attrs:
+            obj.bins.coords[name] = obj.bins.attrs[name]
+            del obj.bins.attrs[name]
+        return obj.coords[name], obj.bins.coords.get(name, None)
     return obj.coords[name], None
 
 
@@ -88,7 +98,10 @@ def _store_coord(obj, name, coord):
         # an output, we want to store it as a coord (and only as a coord).
         del obj.attrs[name]
     if event_coord is not None:
-        _add_event_coord(obj, name, event_coord)
+        if event_coord.bins is None:
+            assert identical(event_coord, dense_coord)
+        else:
+            _add_event_coord(obj, name, event_coord)
 
 
 class CoordTransform:
@@ -124,7 +137,8 @@ class CoordTransform:
             out = func(**dense_args)
             if not isinstance(out, dict):
                 out = {name: out}
-            if self.obj.bins is not None:
+            have_event_inputs = any([v[1] is not None for v in args.values()])
+            if self.obj.bins is not None and have_event_inputs:
                 event_args = {
                     k: v[0] if v[1] is None else v[1]
                     for k, v in args.items()
@@ -145,7 +159,7 @@ class CoordTransform:
         return name in self.obj.meta or in_events
 
     def _get_existing(self, name):
-        events = None if self.obj.events is None else self.events.meta[name]
+        events = None if self.obj.events is None else self.bins.meta[name]
         return self.obj.meta[name], events
 
     def _get_coord(self, name):
