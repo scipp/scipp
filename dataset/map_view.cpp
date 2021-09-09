@@ -264,6 +264,12 @@ void Dict<Key, Value>::rename(const Dim from, const Dim to) {
       item.second.rename(from, to);
 }
 
+/// Mark the dict as readonly. Does not imply that items are readonly.
+template <class Key, class Value>
+void Dict<Key, Value>::set_readonly() noexcept {
+  m_readonly = true;
+}
+
 /// Return true if the dict is readonly. Does not imply that items are readonly.
 template <class Key, class Value>
 bool Dict<Key, Value>::is_readonly() const noexcept {

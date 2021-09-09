@@ -154,6 +154,7 @@ public:
 
   void rename(const Dim from, const Dim to);
 
+  void set_readonly() noexcept;
   bool is_readonly() const noexcept;
   [[nodiscard]] Dict as_const() const;
   [[nodiscard]] Dict merge_from(const Dict &other) const;
