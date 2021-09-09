@@ -57,6 +57,14 @@ class Graph:
         return dot
 
 
+def _add_event_coord(obj, key, coord):
+    try:
+        obj.bins.coords[key] = coord
+    except VariableError:  # Thrown on mismatching bin indices, e.g. slice
+        obj.data = obj.data.copy()
+        obj.bins.coords[key] = coord
+
+
 def _consume_coord(obj, name):
     if name in obj.coords:
         obj.attrs[name] = obj.coords[name]
@@ -72,12 +80,15 @@ def _produce_coord(obj, name):
 
 
 def _store_coord(obj, name, coord):
-    obj.coords[name] = coord
+    dense_coord, event_coord = coord
+    obj.coords[name] = dense_coord
     if name in obj.attrs:
         # If name is both an input and output to a function,
         # the input handling made it an attr, but since it is
         # an output, we want to store it as a coord (and only as a coord).
         del obj.attrs[name]
+    if event_coord is not None:
+        _add_event_coord(obj, name, event_coord)
 
 
 class CoordTransform:
@@ -98,54 +109,24 @@ class CoordTransform:
         self._outputs = outputs  # names of outputs
         self._graph = graph
 
-    def _add_event_coord(self, key, coord):
-        try:
-            self.obj.bins.coords[key] = coord
-        except VariableError:  # Thrown on mismatching bin indices, e.g. slice
-            self.obj.data = self.obj.data.copy()
-            self.obj.bins.coords[key] = coord
-
-    def _add_event_coords(self, coords):
-        for key, coord in coords.items():
-            # Non-binned coord should be duplicate of dense handling above,
-            # if present => ignored.
-            if coord.bins is not None:
-                self._add_event_coord(key, coord)
-
     def _add_coord(self, *, name):
         if name in self.obj.meta:
             return _produce_coord(self.obj, name)
         if isinstance(self._graph[name], str):
             self._aliases.append(name)
             out = self._get_coord(self._graph[name])
-            if self.obj.bins is not None:
-                # Calls to _get_coord for dense coord handling take care of
-                # recursion and add also event coords, here and below we thus
-                # simply consume the event coord.
-                if self._graph[name] in self.obj.meta:
-                    out_bins = _consume_coord(self.obj.bins, self._graph[name])
             dim = (self._graph[name], )
         else:
             func = self._graph[name]
             argnames = _argnames(func)
             args = {arg: self._get_coord(arg) for arg in argnames}
             out = func(**args)
-            if self.obj.bins is not None:
-                args.update({
-                    arg: _consume_coord(self.obj.bins, arg)
-                    for arg in argnames if arg in self.obj.bins.meta
-                })
-                out_bins = func(**args)
             dim = tuple(argnames)
         if isinstance(out, Variable):
             out = {name: out}
         self._rename.setdefault(dim, []).extend(out.keys())
         for key, coord in out.items():
-            _store_coord(self.obj, key, coord)
-        if self.obj.bins is not None:
-            if isinstance(out_bins, Variable):
-                out_bins = {name: out_bins}
-            self._add_event_coords(out_bins)
+            _store_coord(self.obj, key, (coord, None))
 
     def _exists(self, name):
         in_events = self.obj.events is not None and name in self.obj.events.meta
