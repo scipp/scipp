@@ -52,14 +52,6 @@ class Bins:
         return self
 
     @property
-    def bins(self):
-        return None
-
-    @property
-    def events(self):
-        return None
-
-    @property
     def coords(self) -> MetaDataMap:
         """Coords of the bins"""
         return _cpp._bins_view(self._data()).coords
