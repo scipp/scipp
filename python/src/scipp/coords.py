@@ -69,14 +69,14 @@ def _consume_coord(obj, name):
     if name in obj.coords:
         obj.attrs[name] = obj.coords[name]
         del obj.coords[name]
-    return obj.attrs[name]
+    return obj.attrs[name], None
 
 
 def _produce_coord(obj, name):
     if name in obj.attrs:
         obj.coords[name] = obj.attrs[name]
         del obj.attrs[name]
-    return obj.coords[name]
+    return obj.coords[name], None
 
 
 def _store_coord(obj, name, coord):
@@ -114,13 +114,14 @@ class CoordTransform:
             return _produce_coord(self.obj, name)
         if isinstance(self._graph[name], str):
             self._aliases.append(name)
-            out = self._get_coord(self._graph[name])
+            out = self._get_coord(self._graph[name])[0]
             dim = (self._graph[name], )
         else:
             func = self._graph[name]
             argnames = _argnames(func)
             args = {arg: self._get_coord(arg) for arg in argnames}
-            out = func(**args)
+            dense_args = {arg: args[arg][0] for arg in args}
+            out = func(**dense_args)
             dim = tuple(argnames)
         if isinstance(out, Variable):
             out = {name: out}
@@ -140,7 +141,7 @@ class CoordTransform:
         if self._exists(name):
             self._consumed.append(name)
             if name in self._outputs:
-                return self._get_existing(name)[0]
+                return self._get_existing(name)
             else:
                 return _consume_coord(self.obj, name)
         else:
