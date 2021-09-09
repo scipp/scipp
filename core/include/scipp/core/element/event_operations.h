@@ -32,19 +32,48 @@ using args = std::tuple<Coord, span<const Edge>, span<const Weight>>;
 constexpr auto map = overloaded{
     element::arg_list<map_detail::args<int64_t, int64_t, double>,
                       map_detail::args<int64_t, int64_t, float>,
+                      map_detail::args<int64_t, int64_t, int64_t>,
+                      map_detail::args<int64_t, int64_t, int32_t>,
+                      map_detail::args<int64_t, int64_t, bool>,
                       map_detail::args<int32_t, int32_t, double>,
                       map_detail::args<int32_t, int32_t, float>,
-                      map_detail::args<time_point, time_point, double>,
-                      map_detail::args<time_point, time_point, float>,
+                      map_detail::args<int32_t, int32_t, int64_t>,
+                      map_detail::args<int32_t, int32_t, int32_t>,
+                      map_detail::args<int32_t, int32_t, bool>,
                       map_detail::args<int64_t, double, double>,
                       map_detail::args<int64_t, double, float>,
+                      map_detail::args<int64_t, double, int64_t>,
+                      map_detail::args<int64_t, double, int32_t>,
+                      map_detail::args<int64_t, double, bool>,
                       map_detail::args<int32_t, double, double>,
                       map_detail::args<int32_t, double, float>,
+                      map_detail::args<int32_t, double, int64_t>,
+                      map_detail::args<int32_t, double, int32_t>,
+                      map_detail::args<int32_t, double, bool>,
+                      map_detail::args<time_point, time_point, double>,
+                      map_detail::args<time_point, time_point, float>,
+                      map_detail::args<time_point, time_point, int64_t>,
+                      map_detail::args<time_point, time_point, int32_t>,
+                      map_detail::args<time_point, time_point, bool>,
                       map_detail::args<double, double, double>,
                       map_detail::args<double, double, float>,
+                      map_detail::args<double, double, int64_t>,
+                      map_detail::args<double, double, int32_t>,
+                      map_detail::args<double, double, bool>,
                       map_detail::args<float, double, double>,
+                      map_detail::args<float, double, float>,
+                      map_detail::args<float, double, int64_t>,
+                      map_detail::args<float, double, int32_t>,
+                      map_detail::args<float, double, bool>,
                       map_detail::args<float, float, float>,
-                      map_detail::args<double, float, float>>,
+                      map_detail::args<float, float, int64_t>,
+                      map_detail::args<float, float, int32_t>,
+                      map_detail::args<float, float, bool>,
+                      map_detail::args<double, float, double>,
+                      map_detail::args<double, float, float>,
+                      map_detail::args<double, float, int64_t>,
+                      map_detail::args<double, float, int32_t>,
+                      map_detail::args<double, float, bool>>,
     transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>,
     [](const units::Unit &x, const units::Unit &edges,
@@ -57,14 +86,16 @@ constexpr auto map_linspace = overloaded{
     map, [](const auto &coord, const auto &edges, const auto &weights) {
       const auto [offset, nbin, factor] = linear_edge_params(edges);
       const auto bin = (coord - offset) * factor;
-      return (bin < 0.0 || bin >= nbin) ? 0.0 : get(weights, bin);
+      using T = std::decay_t<decltype(get(weights, 0))>;
+      return (bin < 0.0 || bin >= nbin) ? T{0} : get(weights, bin);
     }};
 
 constexpr auto map_sorted_edges = overloaded{
     map, [](const auto &coord, const auto &edges, const auto &weights) {
       auto it = std::upper_bound(edges.begin(), edges.end(), coord);
+      using T = std::decay_t<decltype(get(weights, 0))>;
       return (it == edges.end() || it == edges.begin())
-                 ? 0.0
+                 ? T{0}
                  : get(weights, --it - edges.begin());
     }};
 
