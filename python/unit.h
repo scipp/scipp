@@ -9,6 +9,9 @@
 #include "scipp/core/time_point.h"
 #include "scipp/units/unit.h"
 
+std::optional<scipp::units::Unit>
+to_scipp_unit(const pybind11::object &py_unit);
+
 std::tuple<scipp::units::Unit, int64_t>
 get_time_unit(std::optional<scipp::units::Unit> value_unit,
               std::optional<scipp::units::Unit> dtype_unit,

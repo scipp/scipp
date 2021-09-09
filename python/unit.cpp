@@ -10,6 +10,13 @@
 using namespace scipp;
 namespace py = pybind11;
 
+std::optional<scipp::units::Unit> to_scipp_unit(const py::object &py_unit) {
+  if (py_unit.is_none()) {
+    return std::nullopt;
+  }
+  return {py_unit.cast<scipp::units::Unit>()};
+}
+
 namespace {
 bool temporal_or_dimensionless(const units::Unit unit) {
   return unit == units::one || unit.has_same_base(units::s);

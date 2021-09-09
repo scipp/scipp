@@ -223,15 +223,14 @@ Variable make_variable(const py::object &dim_labels, const py::object &values,
 void bind_init(py::class_<Variable> &cls) {
   cls.def(
       py::init([](const py::object &dim_labels, const py::object &values,
-                  const py::object &variances,
-                  const std::optional<units::Unit> unit,
+                  const py::object &variances, const py::object &unit,
                   const py::object &dtype) {
         if (values.is_none() && variances.is_none()) {
           throw std::invalid_argument(
               "At least one argument of 'values' and 'variances' is required.");
         }
         const auto [scipp_dtype, actual_unit] =
-            cast_dtype_and_unit(dtype, unit);
+            cast_dtype_and_unit(dtype, to_scipp_unit(unit));
         return make_variable(dim_labels, values, variances, actual_unit,
                              scipp_dtype);
       }),
