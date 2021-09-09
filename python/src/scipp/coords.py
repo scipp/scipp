@@ -67,24 +67,20 @@ def _add_event_coord(obj, key, coord):
 
 def _consume_coord(obj, name):
     if name in obj.coords:
-        obj.attrs[name] = obj.coords[name]
-        del obj.coords[name]
+        obj.attrs[name] = obj.coords.pop(name)
     if obj.events is not None:
         if name in obj.events.coords:
-            obj.bins.attrs[name] = obj.bins.coords[name]
-            del obj.bins.coords[name]
+            obj.bins.attrs[name] = obj.bins.coords.pop(name)
         return obj.attrs.get(name, None), obj.bins.attrs.get(name, None)
     return obj.attrs[name], None
 
 
 def _produce_coord(obj, name):
     if name in obj.attrs:
-        obj.coords[name] = obj.attrs[name]
-        del obj.attrs[name]
+        obj.coords[name] = obj.attrs.pop(name)
     if obj.events is not None:
         if name in obj.events.attrs:
-            obj.bins.coords[name] = obj.bins.attrs[name]
-            del obj.bins.attrs[name]
+            obj.bins.coords[name] = obj.bins.attrs.pop(name)
         return obj.coords.get(name, None), obj.bins.coords.get(name, None)
     return obj.coords[name], None
 

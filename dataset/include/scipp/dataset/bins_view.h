@@ -68,7 +68,9 @@ public:
     return this->make(mapView()[key]);
   }
   void erase(const key_type &key) { return mapView().erase(key); }
-  auto extract(const key_type &key) { return mapView().extract(key); }
+  auto extract(const key_type &key) {
+    return this->make(mapView().extract(key));
+  }
   void set(const key_type &key, const Variable &var) {
     mapView().set(key, this->check_and_get_buf(var));
   }
