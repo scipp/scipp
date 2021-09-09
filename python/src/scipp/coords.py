@@ -57,14 +57,6 @@ class Graph:
         return dot
 
 
-def _add_event_coord(obj, key, coord):
-    try:
-        obj.bins.coords[key] = coord
-    except VariableError:  # Thrown on mismatching bin indices, e.g. slice
-        obj.data = obj.data.copy()
-        obj.bins.coords[key] = coord
-
-
 def _consume_coord(obj, name):
     if name in obj.coords:
         obj.attrs[name] = obj.coords.pop(name)
@@ -85,6 +77,16 @@ def _produce_coord(obj, name):
     return obj.coords[name], None
 
 
+def _store_event_coord(obj, name, coord):
+    try:
+        obj.bins.coords[name] = coord
+    except VariableError:  # Thrown on mismatching bin indices, e.g. slice
+        obj.data = obj.data.copy()
+        obj.bins.coords[name] = coord
+    if name in obj.bins.attrs:
+        del obj.bins.attrs[name]
+
+
 def _store_coord(obj, name, coord):
     dense_coord, event_coord = coord
     if dense_coord is not None:
@@ -95,7 +97,7 @@ def _store_coord(obj, name, coord):
         # an output, we want to store it as a coord (and only as a coord).
         del obj.attrs[name]
     if event_coord is not None:
-        _add_event_coord(obj, name, event_coord)
+        _store_event_coord(obj, name, event_coord)
 
 
 class CoordTransform:
@@ -136,7 +138,7 @@ class CoordTransform:
             else:
                 out = {}
             have_event_inputs = any([v[1] is not None for v in args.values()])
-            if self.obj.bins is not None and have_event_inputs:
+            if have_event_inputs:
                 event_args = {
                     k: v[0] if v[1] is None else v[1]
                     for k, v in args.items()
