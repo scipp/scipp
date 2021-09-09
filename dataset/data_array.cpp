@@ -110,7 +110,11 @@ const std::string &DataArray::name() const { return m_name; }
 
 void DataArray::setName(const std::string_view name) { m_name = name; }
 
-Coords DataArray::meta() const { return attrs().merge_from(coords()); }
+Coords DataArray::meta() const {
+  auto out = attrs().merge_from(coords());
+  out.set_readonly();
+  return out;
+}
 
 DataArray DataArray::slice(const Slice &s) const {
   auto [coords, attrs] = m_coords->slice_coords(s);
