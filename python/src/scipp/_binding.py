@@ -9,7 +9,10 @@ from .utils import get
 
 
 def bind_get():
-    for cls in [core.Dataset, core.Coords, core.Masks]:
+    for cls in [
+            core.Dataset, core.Coords, core.Masks, core._BinsMeta, core._BinsCoords,
+            core._BinsMasks, core._BinsAttrs
+    ]:
         setattr(cls, 'get', get)
 
 
