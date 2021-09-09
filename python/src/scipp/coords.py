@@ -147,11 +147,19 @@ class CoordTransform:
                 out_bins = {name: out_bins}
             self._add_event_coords(out_bins)
 
+    def _exists(self, name):
+        in_events = self.obj.events is not None and name in self.obj.events.meta
+        return name in self.obj.meta or in_events
+
+    def _get_existing(self, name):
+        events = None if self.obj.events is None else self.events.meta[name]
+        return self.obj.meta[name], events
+
     def _get_coord(self, name):
-        if name in self.obj.meta:
+        if self._exists(name):
             self._consumed.append(name)
             if name in self._outputs:
-                return self.obj.meta[name]
+                return self._get_existing(name)[0]
             else:
                 return _consume_coord(self.obj, name)
         else:
