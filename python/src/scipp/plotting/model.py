@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import find_limits, to_dict
+from .tools import find_limits, to_dict, to_bin_centers
 from .. import typing
 from ..core import DataArray
 from ..core import arange, bins
@@ -113,6 +113,13 @@ class PlotModel:
                 coord = arange(dim=dim, start=0, stop=array.sizes[dim])
             elif typing.has_datetime_type(coord):
                 coord = coord - coord.min()
+            # TODO This hack looks "wrong". This may be an indicator that resampling
+            # may not be the correct default choice.
+            # If there is a bin-edge coord but no corresponding event-coord then `bin`
+            # cannot handle this. We could first bin without this and then use `rebin`.
+            if coord.sizes[dim] != array.sizes[dim]:
+                if array.events is not None and dim not in array.events.coords:
+                    coord = to_bin_centers(coord, dim)
         else:
             coord = arange(dim=dim, start=0, stop=array.sizes[dim])
         return coord

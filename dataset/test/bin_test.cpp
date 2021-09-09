@@ -170,6 +170,13 @@ TEST_P(BinTest, edges_too_short) {
   EXPECT_THROW(bin(table, {edges}), except::BinEdgeError);
 }
 
+TEST_P(BinTest, rebin_no_event_coord) {
+  const auto table = GetParam();
+  const auto x = bin(table, {edges_x_coarse});
+  bins_view<DataArray>(x.data()).coords().erase(Dim::X);
+  EXPECT_THROW_DISCARD(bin(x, {edges_x}), except::BinEdgeError);
+}
+
 TEST_P(BinTest, rebin_coarse_to_fine_1d) {
   const auto table = GetParam();
   EXPECT_EQ(bin(table, {edges_x}),
