@@ -2,7 +2,6 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 from .view1d import PlotView1d
 from .resampling_model import ResamplingMode
-from ..core import units
 
 
 class MarkerModel:
@@ -19,12 +18,6 @@ class MarkerModel:
 
     def __delitem__(self, key):
         del self._markers[key]
-
-
-def _guess_resampling_mode(array):
-    if array.unit in [units.counts, units.one]:
-        return ResamplingMode.sum
-    return ResamplingMode.mean
 
 
 class PlotController:
@@ -46,6 +39,7 @@ class PlotController:
                  vmin=None,
                  vmax=None,
                  norm=None,
+                 resampling_mode=None,
                  scale=None,
                  widgets=None,
                  model=None,
@@ -61,14 +55,14 @@ class PlotController:
         self._profile_model = profile_model
         self._profile_markers = MarkerModel()
         self.panel = panel
-        mode = _guess_resampling_mode(self.model.data_arrays)
-        self.model.mode = mode
-        view.figure.toolbar.set_resampling_mode_display(self.model.is_resampling)
+        self.model.mode = resampling_mode
+        if view.figure.toolbar is not None:
+            view.figure.toolbar.set_resampling_mode_display(self.model.is_resampling)
         self.profile = profile
         if profile is not None:
             self._profile_view = PlotView1d(figure=profile, formatters=view.formatters)
             self._profile_model.dims = self._dims[:-len(self.model.dims)]
-            self._profile_model.mode = mode
+            self._profile_model.mode = resampling_mode
         self.view = view
 
         self.vmin = vmin

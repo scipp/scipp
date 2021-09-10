@@ -12,10 +12,11 @@ def _planar_norm(a, b):
     return sqrt(a * a + b * b)
 
 
-def _flatten(da, *, mode: ResamplingMode, dims):
+def _flatten(da, *, dims, mode=None):
     flat = flatten(da, dims=dims, to='_'.join(dims))
     if flat.bins is None:
         return flat
+    mode = ResamplingMode(mode)
     if mode == ResamplingMode.mean:
         return flat.bins.mean()
     else:
@@ -27,13 +28,10 @@ class ScatterPointModel:
     Model representing scattered data.
     """
     def __init__(self, *, positions, scipp_obj_dict, resolution):
-        scipp_obj_dict = {
-            key: _flatten(array, dims=positions.dims)
-            for key, array in scipp_obj_dict.items()
-        }
-        self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
-                                       resolution=resolution)
-        self._positions = _flatten(positions, dims=positions.dims)
+        self._scipp_obj_dict = scipp_obj_dict
+        self._positions_dims = positions.dims
+        self._resolution = resolution
+        self._positions = _flatten(positions, dims=self._positions_dims)
         # TODO Get dim labels from field names
         self._scatter_dims = ['x', 'y', 'z']
         fields = self._positions.fields
@@ -43,12 +41,34 @@ class ScatterPointModel:
         self._data_model.mode = self.mode
 
     @property
+    def is_resampling(self):
+        return next(iter(self._scipp_obj_dict.values())).bins is not None
+
+    def _initialize(self):
+        scipp_obj_dict = {
+            key: _flatten(array, dims=self._positions_dims, mode=self.mode)
+            for key, array in self._scipp_obj_dict.items()
+        }
+        self._data_model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
+                                       resolution=self._resolution)
+        self._data_model.mode = self._mode
+
+    @property
     def dims(self):
         return self._scatter_dims
 
     @property
     def positions(self):
         return self._positions
+
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, m: ResamplingMode):
+        self._mode = m
+        self._initialize()
 
     @property
     def unit(self):

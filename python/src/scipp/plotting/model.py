@@ -71,6 +71,10 @@ class PlotModel:
         pass
 
     @property
+    def unit(self):
+        return self.data_arrays.unit
+
+    @property
     def dims(self):
         return self._dims
 

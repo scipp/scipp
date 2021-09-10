@@ -5,9 +5,11 @@
 from .. import config
 from .formatters import make_formatter
 from .tools import parse_params
-from .._scipp.core import DimensionError
+from ..core import DimensionError
 from .model1d import PlotModel1d
 from .widgets import PlotWidgets
+from .resampling_model import ResamplingMode
+from ..core import units
 
 
 def make_params(*, cmap=None, norm=None, vmin=None, vmax=None, masks=None, color=None):
@@ -166,6 +168,13 @@ class PlotDict():
             item.set_draw_no_delay(value)
 
 
+def _guess_resampling_mode(array):
+    unit = array.unit if array.events is None else array.events.unit
+    if unit in [units.counts, units.one]:
+        return ResamplingMode.sum
+    return ResamplingMode.mean
+
+
 class Plot:
     """
     Base class for plot objects. It uses the Model-View-Controller pattern to
@@ -205,6 +214,7 @@ class Plot:
                  vmax=None,
                  axes=None,
                  norm=False,
+                 resampling_mode=None,
                  scale=None,
                  view_ndims=None):
 
@@ -241,6 +251,14 @@ class Plot:
             if dim in self.dims:
                 self._tool_button_states[f'log_{dim}'] = scale[dim] == 'log'
 
+        if resampling_mode is None:
+            resampling_mode = _guess_resampling_mode(array)
+        else:
+            resampling_mode = {
+                'sum': ResamplingMode.sum,
+                'mean': ResamplingMode.mean
+            }[resampling_mode]
+
         errorbars = _make_errorbar_params(scipp_obj_dict, errorbars)
         figure.errorbars = errorbars
         if profile_figure is not None:
@@ -265,6 +283,7 @@ class Plot:
                                      vmin=vmin,
                                      vmax=vmax,
                                      norm=norm,
+                                     resampling_mode=resampling_mode,
                                      scale=scale,
                                      widgets=self.widgets,
                                      model=self.model,

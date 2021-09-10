@@ -22,6 +22,7 @@ class PlotModel1d(PlotModel):
 
     def _make_1d_resampling_model(self, array):
         model = resampling_model(array)
+        model.mode = self.mode
         if self.resolution is not None:
             model.resolution[self.dims[0]] = self.resolution
             model.bounds[self.dims[0]] = None

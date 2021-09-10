@@ -274,7 +274,7 @@ class PlotToolbar3d(PlotToolbar):
         self.add_togglebutton(name="toggle_norm",
                               description="log",
                               tooltip="log(data)")
-        self.members['toggle_resampling_mode'] = None
+        self.members['resampling_mode'] = None
 
     def home_view(self, button):
         self.mpl_toolbar.reset_camera()
