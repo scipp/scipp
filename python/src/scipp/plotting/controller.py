@@ -63,6 +63,7 @@ class PlotController:
         self.panel = panel
         mode = _guess_resampling_mode(self.model.data_arrays)
         self.model.mode = mode
+        view.figure.toolbar.set_resampling_mode_display(self.model.is_resampling)
         self.profile = profile
         if profile is not None:
             self._profile_view = PlotView1d(figure=profile, formatters=view.formatters)
@@ -172,8 +173,9 @@ class PlotController:
         self.model.mode = mode
         if self._profile_model:
             self._profile_model.mode = mode
-        self.update_data()
-        self.rescale_to_data()
+        # Call update_axes to update data and rescale. Also turns profile view off,
+        # since updating it would be complicated if there are saved lines.
+        self.update_axes()
 
     def swap_dimensions(self, index, old_dim, new_dim):
         """

@@ -5,6 +5,7 @@
 import ipywidgets as ipw
 
 from .. import config
+from .resampling_model import ResamplingMode
 
 
 def set_button_color(button, selected=False):
@@ -42,10 +43,22 @@ class PlotToolbar:
         self.mpl_toolbar = mpl_toolbar
 
         self.add_button(name="home_view", icon="home", tooltip="Reset original view")
-        self._resampling_mode = _make_toggle_button(description='sum', tooltip='xxx')
+        self._resampling_mode = _make_toggle_button(
+            description='',
+            tooltip="Switch current resampling mode. Options are 'sum' and 'mean'."
+            "The correct mode depends on the interpretation of data")
 
     def initialize(self, log_axis_buttons, button_states):
         self.members['resampling_mode'] = self._resampling_mode
+        if 'resampling_mode' in button_states:
+            resampling_modes = {
+                ResamplingMode.mean: (True, 'mean'),
+                ResamplingMode.sum: (False, 'sum')
+            }
+            mode = button_states.pop('resampling_mode')
+            state, description = resampling_modes[mode]
+            self._resampling_mode.description = description
+            self.toggle_button_color(self._resampling_mode, value=state)
         self._log_axis = {
             dim: _make_toggle_button(tooltip=f'log({dim})')
             for dim in log_axis_buttons
@@ -136,8 +149,8 @@ class PlotToolbar:
                     self.members[key].on_click(getattr(self, key))
         for dim, button in self._log_axis.items():
             button.observe(getattr(controller, 'toggle_dim_scale')(dim), 'value')
-        if 'resampling_mode' in self.members:
-            self._resampling_mode.observe(self.toggle_resampling_mode, 'value')
+        self._resampling_mode.observe(self.toggle_resampling_mode, 'value')
+        if hasattr(controller, 'toggle_resampling_mode'):
             self._resampling_mode.observe(controller.toggle_resampling_mode, 'value')
 
     def _update_container(self):
@@ -185,8 +198,8 @@ class PlotToolbar:
     def rescale_on_zoom(self):
         return self.members["zoom_view"].value
 
-    def hide_resampling_mode(self):
-        del self.members['resampling_mode']
+    def set_resampling_mode_display(self, display):
+        self._resampling_mode.layout.display = 'block' if display else 'none'
 
     def toggle_resampling_mode(self, button):
         if self._resampling_mode.value:

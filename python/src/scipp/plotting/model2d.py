@@ -34,6 +34,10 @@ class PlotModel2d(PlotModel):
     def _mode_updated(self):
         self._model.mode = self.mode
 
+    @property
+    def is_resampling(self):
+        return True
+
     def update(self):
         """
         Create or update the internal resampling model.

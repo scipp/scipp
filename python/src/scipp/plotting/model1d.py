@@ -49,6 +49,10 @@ class PlotModel1d(PlotModel):
         return model.data
 
     @property
+    def is_resampling(self):
+        return self._resolution is not None or len(self.data_arrays.dims) != 1
+
+    @property
     def resolution(self):
         return self._resolution
 
