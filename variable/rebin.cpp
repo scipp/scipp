@@ -114,6 +114,11 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
   using transform_args = std::tuple<
       args<double, double, int64_t, double>,
       args<double, double, int32_t, double>,
+      args<double, core::time_point, double, core::time_point>,
+      args<float, core::time_point, float, core::time_point>,
+      args<double, core::time_point, int64_t, core::time_point>,
+      args<double, core::time_point, int32_t, core::time_point>,
+      args<bool, core::time_point, bool, core::time_point>,
       args<double, double, double, double>, args<float, float, float, float>,
       args<float, double, float, double>, args<float, float, float, double>,
       args<bool, double, bool, double>>;
@@ -129,11 +134,11 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
     if (ascending) {
       return transform_subspan<transform_args>(
           out_type, dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
-          core::element::rebin<Less>);
+          core::element::rebin<Less>, "rebin");
     } else {
       return transform_subspan<transform_args>(
           out_type, dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
-          core::element::rebin<Greater>);
+          core::element::rebin<Greater>, "rebin");
     }
   } else {
     auto dims = var.dims();
