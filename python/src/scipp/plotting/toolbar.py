@@ -46,7 +46,9 @@ class PlotToolbar:
         self._resampling_mode = _make_toggle_button(
             description='',
             tooltip="Switch current resampling mode. Options are 'sum' and 'mean'."
-            "The correct mode depends on the interpretation of data")
+            " The correct mode depends on the interpretation of data."
+            " The default value is guessed based on the data unit but in practice"
+            " the automatic selection cannot always be relied on.")
 
     def initialize(self, log_axis_buttons, button_states):
         self.members['resampling_mode'] = self._resampling_mode

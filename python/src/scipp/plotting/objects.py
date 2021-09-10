@@ -384,6 +384,7 @@ def make_plot(builder,
               labels=None,
               errorbars=None,
               norm=None,
+              resampling_mode=None,
               scale=None,
               resolution=None,
               **kwargs):
@@ -394,6 +395,7 @@ def make_plot(builder,
               labels=labels,
               resolution=resolution,
               norm=norm,
+              resampling_mode=resampling_mode,
               scale=scale)
     if filename is not None:
         sp.savefig(filename)
