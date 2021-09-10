@@ -8,6 +8,7 @@ from .tools import parse_params
 from .._scipp.core import DimensionError
 from .model1d import PlotModel1d
 from .widgets import PlotWidgets
+from .resampling_model import ResamplingMode
 
 
 def make_params(*, cmap=None, norm=None, vmin=None, vmax=None, masks=None, color=None):
@@ -272,6 +273,8 @@ class Plot:
                                      view=self.view,
                                      panel=self.panel,
                                      profile=self.profile)
+        self._tool_button_states[
+            'resampling_mode'] = self.model.mode == ResamplingMode.mean
         self._render()
 
     def _ipython_display_(self):

@@ -105,6 +105,7 @@ class PlotProfile(PlotFigure1d):
         the scale on the matplotlib axes.
         """
         if self.toolbar is not None:
+            self.toolbar.hide_resampling_mode()
             self.toolbar.connect(controller=self)
 
     def toggle_dim_scale(self, dim):

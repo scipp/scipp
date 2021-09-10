@@ -163,6 +163,18 @@ class PlotController:
         self.view.toggle_norm(self.norm, vmin, vmax)
         self.refresh()
 
+    def toggle_resampling_mode(self, change):
+        """
+        Toggle data resampling mode from toolbar button signal.
+        """
+        value = change['owner'].value
+        mode = ResamplingMode.mean if value else ResamplingMode.sum
+        self.model.mode = mode
+        if self._profile_model:
+            self._profile_model.mode = mode
+        self.update_data()
+        self.rescale_to_data()
+
     def swap_dimensions(self, index, old_dim, new_dim):
         """
         Swap one dimension for another in the displayed axes.

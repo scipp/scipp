@@ -65,6 +65,7 @@ class ResamplingModel():
     @mode.setter
     def mode(self, m: ResamplingMode):
         self._mode = ResamplingMode(m)
+        self.reset()
 
     @property
     def resolution(self):
