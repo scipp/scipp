@@ -62,7 +62,7 @@ Breaking changes
 * Multi-dimensional coordinates are no longer associated with their inner dimension, which affects the behavior when slicing:
   Such coords will no longer be turned into attributes during a slice operation on the inner dimension `#2098 <https://github.com/scipp/scipp/pull/2098>`_.
 * ``buckets.map(histogram, da.data, 'time')`` has been replaced by ``lookup(histogram, 'time')[da.bins.coords['time']]`` `#2112 <https://github.com/scipp/scipp/pull/2112>`_.
-* ``rebin`` and ``histogram`` do not support dimensionless units any more, only "counts" is supported `#2141 <https://github.com/scipp/scipp/pull/2141>`_.
+* ``rebin`` and ``histogram`` now support any unit. ``plot()`` guesses which resampling mode to use and provides a button to toggle this `#2180 <https://github.com/scipp/scipp/pull/2180>`_.
 
 Bugfixes
 ~~~~~~~~
