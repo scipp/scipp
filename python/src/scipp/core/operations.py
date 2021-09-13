@@ -138,31 +138,20 @@ def stddevs(x: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.stddevs, x)
 
 
-def rebin(x: VariableLike,
-          dim: str,
-          bins: _cpp.Variable,
-          old: Optional[_cpp.Variable] = None) -> VariableLike:
+def rebin(x: VariableLike, dim: str, bins: _cpp.Variable) -> VariableLike:
     """
-    Rebin a dimension of a variable or a data array.
+    Rebin a dimension of a data array or dataset.
 
-    In the case of a Variable, both the old and the new bin edges have to be
-    supplied.
-    In the case of a DataArray, only the new edges are needed, as the
-    coordinate associated with dim will be used as the old bin edges.
+    The input must contain bin edges for the given dimension `dim`.
 
     :param x: Data to rebin.
     :param dim: Dimension to rebin over.
     :param bins: New bin edges.
-    :param old: Old bin edges.
-    :raises: If data cannot be rebinned, e.g., if the unit is not
-             counts, or the existing coordinate is not a bin-edge
-             coordinate.
+    :raises: If data cannot be rebinned, e.g., if the existing coordinate is not a
+             bin-edge coordinate.
     :return: Data rebinned according to the new bin edges.
     """
-    if old is None:
-        return _call_cpp_func(_cpp.rebin, x, dim, bins)
-    else:
-        return _call_cpp_func(_cpp.rebin, x, dim, old, bins)
+    return _call_cpp_func(_cpp.rebin, x, dim, bins)
 
 
 def where(condition: _cpp.Variable, x: _cpp.Variable,
