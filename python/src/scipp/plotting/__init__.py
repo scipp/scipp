@@ -142,11 +142,6 @@ def plot(*args, **kwargs):
         `"log"`. Defaults to `"linear"`.
     :type norm: str, optional
 
-    :param resampling_mode: Resampling mode. Possible choices are `"sum"` and
-        `"mean"`. This applies only to binned event data and non-1d data.
-        Defaults to `"mean"` unless the unit is 'counts' or 'dimensionless'.
-    :type resampling_mode: str, optional
-
     :param pax: Attach profile plot to supplied Matplotlib axes.
         Defaults to `None`.
     :type pax: matplotlib.axes.Axes, optional
@@ -164,6 +159,11 @@ def plot(*args, **kwargs):
         `"1d"`, `"2d"`, or `"3d"`. Defaults to `"2d"` if the number of
         dimensions of the input is >= 2.
     :type projection: str, optional
+
+    :param resampling_mode: Resampling mode. Possible choices are `"sum"` and
+        `"mean"`. This applies only to binned event data and non-1d data.
+        Defaults to `"mean"` unless the unit is 'counts' or 'dimensionless'.
+    :type resampling_mode: str, optional
 
     :param scale: Specify the scale (`"linear"` or `"log"`) for a displayed
         dimension axis. E.g. `scale={"tof": "log"}`. Defaults to None.
