@@ -30,7 +30,6 @@ def plot2d(scipp_obj_dict, **kwargs):
                 cmap=None,
                 vmin=None,
                 vmax=None,
-                resolution=None,
                 title=None,
                 xlabel=None,
                 ylabel=None):
