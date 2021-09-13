@@ -13,7 +13,10 @@ from .plot_helper import plot
 
 
 def test_plot_2d():
-    plot(make_dense_data_array(ndim=2))
+    da = make_dense_data_array(ndim=2)
+    plot(da)
+    plot(da, resampling_mode='sum')
+    plot(da, resampling_mode='mean')
 
 
 def test_plot_2d_dataset():
@@ -25,11 +28,17 @@ def test_plot_2d_with_variances():
 
 
 def test_plot_2d_with_log():
-    plot(make_dense_data_array(ndim=2), norm='log')
+    da = make_dense_data_array(ndim=2)
+    plot(da, norm='log')
+    plot(da, norm='log', resampling_mode='sum')
+    plot(da, norm='log', resampling_mode='mean')
 
 
 def test_plot_2d_with_log_and_variances():
-    plot(make_dense_data_array(ndim=2, with_variance=True), norm='log')
+    da = make_dense_data_array(ndim=2, with_variance=True)
+    plot(da, norm='log')
+    plot(da, norm='log', resampling_mode='sum')
+    plot(da, norm='log', resampling_mode='mean')
 
 
 def test_plot_2d_with_vmin_vmax():
@@ -241,6 +250,8 @@ def test_plot_2d_with_decreasing_edges():
 def test_plot_2d_binned_data():
     da = make_binned_data_array(ndim=2)
     plot(da)
+    plot(da, resampling_mode='sum')
+    plot(da, resampling_mode='mean')
     # Try without event-coord so implementation cannot use `histogram`
     for dim in ['xx', 'yy']:
         copy = da.copy()
