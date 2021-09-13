@@ -51,6 +51,12 @@ class PlotModel1d(PlotModel):
 
     @property
     def is_resampling(self):
+        # Two relevant cases where ndim != 1 leads to resampling:
+        # - Profile plot of higher-dimensional data.
+        # - projection='1d', with non-trivial thickness (set via slider).
+        # In the latter case there is strictly speaking no resampling if thickness is 1
+        # but in that case sum==mean and we avoid hiding/showing the toolbar button
+        # depending on selected thickness.
         return self._resolution is not None or len(self.data_arrays.dims) != 1
 
     @property
