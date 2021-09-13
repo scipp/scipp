@@ -12,7 +12,6 @@
 #include "scipp/core/time_point.h"
 
 #include "scipp/variable/operations.h"
-#include "scipp/variable/rebin.h"
 #include "scipp/variable/structures.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
@@ -180,12 +179,6 @@ of variances.)");
       },
       py::arg("x"), py::arg("dim") = py::none(),
       py::call_guard<py::gil_scoped_release>());
-
-  m.def("rebin",
-        py::overload_cast<const Variable &, const Dim, const Variable &,
-                          const Variable &>(&rebin),
-        py::arg("x"), py::arg("dim"), py::arg("old"), py::arg("new"),
-        py::call_guard<py::gil_scoped_release>());
 
   bind_structured_creation<Eigen::Vector3d, double, 3>(m, "vectors");
   bind_structured_creation<Eigen::Matrix3d, double, 3, 3>(m, "matrices");
