@@ -5,7 +5,7 @@
 import inspect
 import warnings
 from typing import Union, List, Dict, Tuple, Callable
-from .core import Variable, DataArray, Dataset, bins, VariableError
+from .core import DataArray, Dataset, bins, VariableError, identical
 
 
 def _argnames(func):
@@ -59,25 +59,45 @@ class Graph:
 
 def _consume_coord(obj, name):
     if name in obj.coords:
-        obj.attrs[name] = obj.coords[name]
-        del obj.coords[name]
-    return obj.attrs[name]
+        obj.attrs[name] = obj.coords.pop(name)
+    if obj.events is not None:
+        if name in obj.events.coords:
+            obj.bins.attrs[name] = obj.bins.coords.pop(name)
+        return obj.attrs.get(name, None), obj.bins.attrs.get(name, None)
+    return obj.attrs[name], None
 
 
 def _produce_coord(obj, name):
     if name in obj.attrs:
-        obj.coords[name] = obj.attrs[name]
-        del obj.attrs[name]
-    return obj.coords[name]
+        obj.coords[name] = obj.attrs.pop(name)
+    if obj.events is not None:
+        if name in obj.events.attrs:
+            obj.bins.coords[name] = obj.bins.attrs.pop(name)
+        return obj.coords.get(name, None), obj.bins.coords.get(name, None)
+    return obj.coords[name], None
+
+
+def _store_event_coord(obj, name, coord):
+    try:
+        obj.bins.coords[name] = coord
+    except VariableError:  # Thrown on mismatching bin indices, e.g. slice
+        obj.data = obj.data.copy()
+        obj.bins.coords[name] = coord
+    if name in obj.bins.attrs:
+        del obj.bins.attrs[name]
 
 
 def _store_coord(obj, name, coord):
-    obj.coords[name] = coord
+    dense_coord, event_coord = coord
+    if dense_coord is not None:
+        obj.coords[name] = dense_coord
     if name in obj.attrs:
         # If name is both an input and output to a function,
         # the input handling made it an attr, but since it is
         # an output, we want to store it as a coord (and only as a coord).
         del obj.attrs[name]
+    if event_coord is not None:
+        _store_event_coord(obj, name, event_coord)
 
 
 class CoordTransform:
@@ -98,60 +118,67 @@ class CoordTransform:
         self._outputs = outputs  # names of outputs
         self._graph = graph
 
-    def _add_event_coord(self, key, coord):
-        try:
-            self.obj.bins.coords[key] = coord
-        except VariableError:  # Thrown on mismatching bin indices, e.g. slice
-            self.obj.data = self.obj.data.copy()
-            self.obj.bins.coords[key] = coord
-
-    def _add_event_coords(self, coords):
-        for key, coord in coords.items():
-            # Non-binned coord should be duplicate of dense handling above,
-            # if present => ignored.
-            if coord.bins is not None:
-                self._add_event_coord(key, coord)
-
     def _add_coord(self, *, name):
-        if name in self.obj.meta:
+        if self._exists(name):
             return _produce_coord(self.obj, name)
         if isinstance(self._graph[name], str):
             self._aliases.append(name)
-            out = self._get_coord(self._graph[name])
-            if self.obj.bins is not None:
-                # Calls to _get_coord for dense coord handling take care of
-                # recursion and add also event coords, here and below we thus
-                # simply consume the event coord.
-                if self._graph[name] in self.obj.meta:
-                    out_bins = _consume_coord(self.obj.bins, self._graph[name])
+            out = {name: self._get_coord(self._graph[name])}
             dim = (self._graph[name], )
         else:
             func = self._graph[name]
             argnames = _argnames(func)
             args = {arg: self._get_coord(arg) for arg in argnames}
-            out = func(**args)
-            if self.obj.bins is not None:
-                args.update({
-                    arg: _consume_coord(self.obj.bins, arg)
-                    for arg in argnames if arg in self.obj.bins.meta
-                })
-                out_bins = func(**args)
+            have_all_dense_inputs = all([v[0] is not None for v in args.values()])
+            if have_all_dense_inputs:
+                dense_args = {k: v[0] for k, v in args.items()}
+                out = func(**dense_args)
+                if not isinstance(out, dict):
+                    out = {name: out}
+            else:
+                out = {}
+            have_event_inputs = any([v[1] is not None for v in args.values()])
+            if have_event_inputs:
+                event_args = {
+                    k: v[0] if v[1] is None else v[1]
+                    for k, v in args.items()
+                }
+                out_bins = func(**event_args)
+                if not isinstance(out_bins, dict):
+                    out_bins = {name: out_bins}
+                # Dense outputs may be produced as side effects of processing event
+                # coords.
+                for name in list(out_bins.keys()):
+                    if out_bins[name].events is None:
+                        coord = out_bins.pop(name)
+                        if name in out:
+                            assert identical(out[name], coord)
+                        else:
+                            out[name] = coord
+            else:
+                out_bins = {}
+            out = {
+                k: (out.get(k, None), out_bins.get(k, None))
+                for k in list(out.keys()) + list(out_bins.keys())
+            }
             dim = tuple(argnames)
-        if isinstance(out, Variable):
-            out = {name: out}
         self._rename.setdefault(dim, []).extend(out.keys())
         for key, coord in out.items():
             _store_coord(self.obj, key, coord)
-        if self.obj.bins is not None:
-            if isinstance(out_bins, Variable):
-                out_bins = {name: out_bins}
-            self._add_event_coords(out_bins)
+
+    def _exists(self, name):
+        in_events = self.obj.events is not None and name in self.obj.events.meta
+        return name in self.obj.meta or in_events
+
+    def _get_existing(self, name):
+        events = None if self.obj.events is None else self.bins.meta[name]
+        return self.obj.meta.get(name, None), events
 
     def _get_coord(self, name):
-        if name in self.obj.meta:
+        if self._exists(name):
             self._consumed.append(name)
             if name in self._outputs:
-                return self.obj.meta[name]
+                return self._get_existing(name)
             else:
                 return _consume_coord(self.obj, name)
         else:
@@ -162,18 +189,14 @@ class CoordTransform:
             return self._get_coord(name)
 
     def _del_attr(self, name):
-        if name in self.obj.attrs:
-            del self.obj.attrs[name]
-        if self.obj.bins is not None:
-            if name in self.obj.bins.attrs:
-                del self.obj.bins.attrs[name]
+        self.obj.attrs.pop(name, None)
+        if self.obj.events is not None:
+            self.obj.events.attrs.pop(name, None)
 
     def _del_coord(self, name):
-        if name in self.obj.coords:
-            del self.obj.coords[name]
-        if self.obj.bins is not None:
-            if name in self.obj.bins.coords:
-                del self.obj.bins.coords[name]
+        self.obj.coords.pop(name, None)
+        if self.obj.events is not None:
+            self.obj.events.coords.pop(name, None)
 
     def finalize(self, *, include_aliases, rename_dims, keep_intermediate, keep_inputs):
         for name in self._outputs:

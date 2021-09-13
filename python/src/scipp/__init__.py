@@ -89,6 +89,7 @@ from .core import Bins, GroupByDataset, GroupByDataArray
 from . import _binding
 
 _binding.bind_get()
+_binding.bind_pop()
 # Assign method binding for both Variable and DataArray
 for _cls in (Variable, DataArray):
     _binding.bind_functions_as_methods(
