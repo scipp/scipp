@@ -32,6 +32,7 @@ test:
     - pytest
     - pythreejs
     - python-graphviz
+    - ipykernel = 6.3.1  # issue with pythreejs 3d plotting, see https://github.com/ipython/ipykernel/issues/771
     - xarray
     - pandas
     - scipy
