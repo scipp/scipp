@@ -35,14 +35,9 @@ TEST(ElementHistogramTest, event_and_edge_unit_must_match) {
                except::UnitError);
 }
 
-TEST(ElementHistogramTest, weight_unit_must_be_counts) {
-  EXPECT_NO_THROW(element::histogram(units::m, units::counts, units::m));
-  EXPECT_THROW(element::histogram(units::m, units::one, units::m),
-               except::UnitError);
-  EXPECT_THROW(element::histogram(units::m, units::s, units::m),
-               except::UnitError);
-  EXPECT_THROW(element::histogram(units::m, units::m, units::m),
-               except::UnitError);
+TEST(ElementHistogramTest, weight_unit_propagates) {
+  for (const auto &unit : {units::m, units::counts, units::one})
+    EXPECT_EQ(element::histogram(units::m, unit, units::m), unit);
 }
 
 TEST(ElementHistogramTest, values) {

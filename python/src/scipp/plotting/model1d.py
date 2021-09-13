@@ -22,6 +22,7 @@ class PlotModel1d(PlotModel):
 
     def _make_1d_resampling_model(self, array):
         model = resampling_model(array)
+        model.mode = self.mode
         if self.resolution is not None:
             model.resolution[self.dims[0]] = self.resolution
             model.bounds[self.dims[0]] = None
@@ -47,6 +48,16 @@ class PlotModel1d(PlotModel):
                 slices[dim] = (s.start, s.stop)
         model.bounds.update(slices)
         return model.data
+
+    @property
+    def is_resampling(self):
+        # Two relevant cases where ndim != 1 leads to resampling:
+        # - Profile plot of higher-dimensional data.
+        # - projection='1d', with non-trivial thickness (set via slider).
+        # In the latter case there is strictly speaking no resampling if thickness is 1
+        # but in that case sum==mean and we avoid hiding/showing the toolbar button
+        # depending on selected thickness.
+        return self._resolution is not None or len(self.data_arrays.dims) != 1
 
     @property
     def resolution(self):

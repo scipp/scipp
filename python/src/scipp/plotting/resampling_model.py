@@ -2,6 +2,8 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+from enum import Enum
+
 from ..core import bin as bin_
 from ..core import dtype, units
 from ..core import linspace, rebin, get_slice_params, concatenate, histogram
@@ -9,12 +11,13 @@ from ..core import DataArray, DimensionError
 from .tools import to_bin_edges
 
 
-def _unit_requires_mean(obj):
-    return obj.unit != units.counts
+class ResamplingMode(Enum):
+    sum = 0
+    mean = 1
 
 
-def _resample(array, dim, edges):
-    if not _unit_requires_mean(array):
+def _resample(array, mode: ResamplingMode, dim, edges):
+    if mode == ResamplingMode.sum:
         return rebin(array, dim, edges)
     if array.dtype == dtype.float64:
         array = array.copy()
@@ -32,7 +35,7 @@ def _resample(array, dim, edges):
     array.data *= width
     unit = array.unit
     array.unit = units.counts
-    array = _resample(array, dim, edges)
+    array = rebin(array, dim, edges)
     width = edges[dim, 1:] - edges[dim, :-1]
     width.unit = units.one
     array /= width
@@ -41,7 +44,11 @@ def _resample(array, dim, edges):
 
 
 class ResamplingModel():
-    def __init__(self, array, resolution=None, bounds=None):
+    def __init__(self, array, *, resolution=None, bounds=None):
+        """
+        Model over a data array providing unified resampling functionality.
+        """
+        self._mode = None
         self._resolution = {} if resolution is None else resolution
         self._bounds = {} if bounds is None else bounds
         self._resampled = None
@@ -50,6 +57,15 @@ class ResamplingModel():
         self._home = None
         self._home_params = None
         self.update_array(array)
+
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, m: ResamplingMode):
+        self._mode = ResamplingMode(m)
+        self.reset()
 
     @property
     def resolution(self):
@@ -99,9 +115,9 @@ class ResamplingModel():
                 plan.insert(0, edge)
         for edge in plan:
             try:
-                array = _resample(array, dim, edge)
+                array = _resample(array, self.mode, dim, edge)
             except RuntimeError:  # Limitation of rebin for slice of inner dim
-                array = _resample(array.copy(), edge.dims[-1], edge)
+                array = _resample(array.copy(), self.mode, edge.dims[-1], edge)
         return array
 
     def _make_edges(self, params):
@@ -208,11 +224,11 @@ class ResamplingBinnedModel(ResamplingModel):
             bounds = concatenate(edges[dim, 0], edges[dim, -1], dim)
             binned = bin_(array, edges=self.edges[:-1] + [bounds])
             # TODO Use histogramming with "mean" mode once implemented
-            if _unit_requires_mean(binned.events):
+            if self.mode == ResamplingMode.mean:
                 return bin_(binned, edges=[edges]).bins.mean()
             else:
                 return histogram(binned, bins=edges)
-        elif _unit_requires_mean(array.events):
+        elif self.mode == ResamplingMode.mean:
             return bin_(array, edges=self.edges).bins.mean()
         else:
             return bin_(array, edges=self.edges).bins.sum()

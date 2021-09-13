@@ -7,6 +7,8 @@
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/variable.h"
 
+#include "test_macros.h"
+
 using namespace scipp;
 
 TEST(RebinTest, inner) {
@@ -226,9 +228,7 @@ TEST(Variable, rebin_mask_outer_single) {
   ASSERT_EQ(result, expected);
 }
 
-// TODO Enable this once we have `resample`. Right now this fails with
-// UnitError, not the "desired" TypeError.
-TEST(Variable, DISABLED_check_rebin_cannot_be_used_on_bin_data) {
+TEST(Variable, check_rebin_cannot_be_used_on_bin_data) {
   Dimensions dims{Dim::Y, 1};
   Variable buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
@@ -239,6 +239,5 @@ TEST(Variable, DISABLED_check_rebin_cannot_be_used_on_bin_data) {
       makeVariable<double>(Dimensions{Dim::Y, 2}, Values{1, 4});
   const auto newEdge =
       makeVariable<double>(Dimensions{Dim::Y, 4}, Values{0, 1, 2, 3});
-  EXPECT_THROW([[maybe_unused]] auto res = rebin(var, Dim::Y, oldEdge, newEdge),
-               except::TypeError);
+  EXPECT_THROW_DISCARD(rebin(var, Dim::Y, oldEdge, newEdge), except::TypeError);
 }

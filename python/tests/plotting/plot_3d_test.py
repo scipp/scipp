@@ -40,7 +40,10 @@ def make_data_array_with_position_vectors():
 
 
 def test_plot_projection_3d():
-    plot(_with_fake_pos(ndim=3), positions='pos', projection="3d")
+    da = _with_fake_pos(ndim=3)
+    plot(da, positions='pos', projection="3d")
+    plot(da, positions='pos', projection="3d", resampling_mode='sum')
+    plot(da, positions='pos', projection="3d", resampling_mode='mean')
 
 
 def test_plot_projection_3d_log_norm():
@@ -129,6 +132,8 @@ def test_plot_3d_binned_data():
     da = make_binned_data_array(ndim=1)
     pos = sc.vectors(dims=da.dims, values=np.random.rand(da.sizes[da.dims[0]], 3))
     plot(da, projection='3d', positions=pos)
+    plot(da, projection='3d', positions=pos, resampling_mode='sum')
+    plot(da, projection='3d', positions=pos, resampling_mode='mean')
 
 
 def test_plot_redraw():

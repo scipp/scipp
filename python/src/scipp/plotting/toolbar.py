@@ -5,6 +5,7 @@
 import ipywidgets as ipw
 
 from .. import config
+from .resampling_model import ResamplingMode
 
 
 def set_button_color(button, selected=False):
@@ -42,8 +43,24 @@ class PlotToolbar:
         self.mpl_toolbar = mpl_toolbar
 
         self.add_button(name="home_view", icon="home", tooltip="Reset original view")
+        self._resampling_mode = _make_toggle_button(
+            description='',
+            tooltip="Switch current resampling mode. Options are 'sum' and 'mean'."
+            " The correct mode depends on the interpretation of data."
+            " The default value is guessed based on the data unit but in practice"
+            " the automatic selection cannot always be relied on.")
 
     def initialize(self, log_axis_buttons, button_states):
+        self.members['resampling_mode'] = self._resampling_mode
+        if 'resampling_mode' in button_states:
+            resampling_modes = {
+                ResamplingMode.mean: (True, 'mean'),
+                ResamplingMode.sum: (False, 'sum')
+            }
+            mode = button_states.pop('resampling_mode')
+            state, description = resampling_modes[mode]
+            self._resampling_mode.description = description
+            self.toggle_button_color(self._resampling_mode, value=state)
         self._log_axis = {
             dim: _make_toggle_button(tooltip=f'log({dim})')
             for dim in log_axis_buttons
@@ -130,9 +147,13 @@ class PlotToolbar:
             if hasattr(controller, key):
                 self.members[key].on_click(getattr(controller, key))
             elif self.members[key] is not None:
-                self.members[key].on_click(getattr(self, key))
+                if not isinstance(self.members[key], ipw.ToggleButton):
+                    self.members[key].on_click(getattr(self, key))
         for dim, button in self._log_axis.items():
             button.observe(getattr(controller, 'toggle_dim_scale')(dim), 'value')
+        self._resampling_mode.observe(self.toggle_resampling_mode, 'value')
+        if hasattr(controller, 'toggle_resampling_mode'):
+            self._resampling_mode.observe(controller.toggle_resampling_mode, 'value')
 
     def _update_container(self):
         """
@@ -179,6 +200,15 @@ class PlotToolbar:
     def rescale_on_zoom(self):
         return self.members["zoom_view"].value
 
+    def set_resampling_mode_display(self, display):
+        self._resampling_mode.layout.display = 'block' if display else 'none'
+
+    def toggle_resampling_mode(self, button):
+        if self._resampling_mode.value:
+            self._resampling_mode.description = 'mean'
+        else:
+            self._resampling_mode.description = 'sum'
+
 
 class PlotToolbar1d(PlotToolbar):
     """
@@ -195,6 +225,7 @@ class PlotToolbar1d(PlotToolbar):
         self.add_togglebutton(name="toggle_norm",
                               description="logy",
                               tooltip="log(data)")
+        self.members['resampling_mode'] = None
         self.add_button(name="save_view", icon="save", tooltip="Save")
 
 
@@ -215,6 +246,7 @@ class PlotToolbar2d(PlotToolbar):
         self.add_togglebutton(name="toggle_norm",
                               description="log",
                               tooltip="log(data)")
+        self.members['resampling_mode'] = None
         self.add_button(name="save_view", icon="save", tooltip="Save")
 
 
@@ -244,6 +276,7 @@ class PlotToolbar3d(PlotToolbar):
         self.add_togglebutton(name="toggle_norm",
                               description="log",
                               tooltip="log(data)")
+        self.members['resampling_mode'] = None
 
     def home_view(self, button):
         self.mpl_toolbar.reset_camera()

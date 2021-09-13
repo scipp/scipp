@@ -31,6 +31,13 @@ class PlotModel2d(PlotModel):
             self._model.resolution[dim] = resolution
             self._model.bounds[dim] = None
 
+    def _mode_updated(self):
+        self._model.mode = self.mode
+
+    @property
+    def is_resampling(self):
+        return True
+
     def update(self):
         """
         Create or update the internal resampling model.

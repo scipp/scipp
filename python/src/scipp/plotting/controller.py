@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 from .view1d import PlotView1d
+from .resampling_model import ResamplingMode
 
 
 class MarkerModel:
@@ -38,6 +39,7 @@ class PlotController:
                  vmin=None,
                  vmax=None,
                  norm=None,
+                 resampling_mode=None,
                  scale=None,
                  widgets=None,
                  model=None,
@@ -53,10 +55,14 @@ class PlotController:
         self._profile_model = profile_model
         self._profile_markers = MarkerModel()
         self.panel = panel
+        self.model.mode = resampling_mode
+        if view.figure.toolbar is not None:
+            view.figure.toolbar.set_resampling_mode_display(self.model.is_resampling)
         self.profile = profile
         if profile is not None:
             self._profile_view = PlotView1d(figure=profile, formatters=view.formatters)
             self._profile_model.dims = self._dims[:-len(self.model.dims)]
+            self._profile_model.mode = resampling_mode
         self.view = view
 
         self.vmin = vmin
@@ -151,6 +157,19 @@ class PlotController:
         vmin, vmax = self.find_vmin_vmax()
         self.view.toggle_norm(self.norm, vmin, vmax)
         self.refresh()
+
+    def toggle_resampling_mode(self, change):
+        """
+        Toggle data resampling mode from toolbar button signal.
+        """
+        value = change['owner'].value
+        mode = ResamplingMode.mean if value else ResamplingMode.sum
+        self.model.mode = mode
+        if self._profile_model:
+            self._profile_model.mode = mode
+        # Call update_axes to update data and rescale. Also turns profile view off,
+        # since updating it would be complicated if there are saved lines.
+        self.update_axes()
 
     def swap_dimensions(self, index, old_dim, new_dim):
         """
