@@ -18,6 +18,7 @@ dependencies:
 
   # Run
   - appdirs
+  - ipykernel = 6.3.1  # issue with pythreejs 3d plotting
   - ipympl
   - ipywidgets
   - matplotlib-base
