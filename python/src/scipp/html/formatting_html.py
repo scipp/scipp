@@ -63,7 +63,7 @@ def _format_non_events(var, has_variances):
 
 
 def _repr_item(s, bin_dim, item, ellipsis_after, do_ellide, summary):
-    shape = 0 if item.shape == [] else item.shape[bin_dim]
+    shape = item.shape[bin_dim]
     if summary:
         s.append(SPARSE_PREFIX.format(shape))
     else:
@@ -94,7 +94,12 @@ def _get_events(var, variances, ellipsis_after, summary=False):
             _repr_item(s, bin_dim, item, ellipsis_after, do_ellide, summary)
             i += 1
     else:
-        _repr_item(s, bin_dim, var, ellipsis_after, do_ellide=False, summary=summary)
+        _repr_item(s,
+                   bin_dim,
+                   var.value,
+                   ellipsis_after,
+                   do_ellide=False,
+                   summary=summary)
     return s
 
 
