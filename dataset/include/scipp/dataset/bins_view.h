@@ -22,11 +22,13 @@ constexpr auto get_masks = [](auto &&a) -> decltype(auto) { return a.masks(); };
 namespace bins_view_detail {
 template <class T, class View> class BinsCommon {
 public:
-  BinsCommon(const View &var) : m_var(var) {}
+  BinsCommon(const View &var)
+      : m_var(var),
+        m_buffer(std::make_shared<T>(m_var.template bin_buffer<T>())) {}
   auto indices() const { return std::get<0>(get()); }
   auto dim() const { return std::get<1>(get()); }
-  auto &buffer() const { return m_var.template bin_buffer<T>(); }
-  auto &buffer() { return m_var.template bin_buffer<T>(); }
+  const auto &buffer() const { return *m_buffer; }
+  auto &buffer() { return *m_buffer; }
 
 protected:
   auto make(const View &view) const {
@@ -42,6 +44,15 @@ protected:
 private:
   auto get() const { return m_var.template constituents<T>(); }
   View m_var;
+  // bin_buffer returns by value. If it is a DataArray we want to get, e.g.,
+  // buf.coords(), which returns by reference. To avoid going out of scope we
+  // thus store the buffer here instead of calling bin_buffer() directly in
+  // buffer(). A shared_ptr must be used here since copying BinsCommon occurs,
+  // e.g., when using bins_view<DataArray>(var).coords(), i.e., we copy
+  // construct the base class of BinsMapView. Copy-constructing DataArray makes
+  // a copy of the coord dicts, which has to be avoided since we want to modify
+  // the original.
+  std::shared_ptr<T> m_buffer;
 };
 
 template <class T, class View, class MapGetter>

@@ -45,14 +45,9 @@ template <class T> std::tuple<Variable, Dim, T> Variable::constituents() {
   return {bin_indices(), model.bin_dim(), model.buffer()};
 }
 
-template <class T> const T &Variable::bin_buffer() const {
+template <class T> T Variable::bin_buffer() const {
   auto &model = requireT<const BinArrayModel<T>>(data());
-  return model.buffer();
-}
-
-template <class T> T &Variable::bin_buffer() {
-  auto &model = requireT<BinArrayModel<T>>(data());
-  return model.buffer();
+  return is_slice() ? model.buffer().as_const() : model.buffer().view();
 }
 
 template <class T> class BinVariableMakerCommon : public AbstractVariableMaker {
@@ -238,9 +233,7 @@ Variable make_bins_impl(Variable indices, const Dim dim, T &&buffer) {
   INSTANTIATE_VARIABLE_BASE(name, core::bin<__VA_ARGS__>)                      \
   template SCIPP_EXPORT std::tuple<Variable, Dim, __VA_ARGS__>                 \
   Variable::constituents<__VA_ARGS__>() const;                                 \
-  template SCIPP_EXPORT const __VA_ARGS__ &Variable::bin_buffer<__VA_ARGS__>() \
-      const;                                                                   \
-  template SCIPP_EXPORT __VA_ARGS__ &Variable::bin_buffer<__VA_ARGS__>();      \
+  template SCIPP_EXPORT __VA_ARGS__ Variable::bin_buffer<__VA_ARGS__>() const; \
   template SCIPP_EXPORT std::tuple<Variable, Dim, __VA_ARGS__>                 \
   Variable::constituents<__VA_ARGS__>();                                       \
   template SCIPP_EXPORT std::tuple<Variable, Dim, __VA_ARGS__>                 \
