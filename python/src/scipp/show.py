@@ -38,8 +38,7 @@ def _color_variants(hex_color):
     return light, hex_color, dark
 
 
-def _truncate_long_string(long_string: str) -> str:
-    max_title_length = 13
+def _truncate_long_string(long_string: str, max_title_length) -> str:
     return (long_string[:max_title_length] +
             '..') if len(long_string) > max_title_length else long_string
 
@@ -106,6 +105,18 @@ class VariableDrawer:
                 e.append(1)
         return [1] * (3 - len(e)) + e
 
+    def _events_height(self):
+        if self._variable.events is None:
+            return 0
+        events = self._variable.events
+        # Rough estimate of vertical space taken by depiction of events buffer
+        if isinstance(events, sc.Variable):
+            return 1
+        elif isinstance(events, sc.DataArray):
+            return 1 + 1.3 * (len(events.meta) + len(events.masks))
+        else:
+            return len(events) + 1.3 * len(events.meta)
+
     def size(self):
         """Return the size (width and height) of the rendered output"""
         width = 2 * self._margin
@@ -125,6 +136,7 @@ class VariableDrawer:
         depth += extra_item_count * (depth + 1)
         width += 0.3 * depth
         height += 0.3 * depth
+        height = max(height, self._events_height())
         return [width, height]
 
     def _draw_array(self, color, offset=None, events=False):
@@ -202,12 +214,13 @@ class VariableDrawer:
         x_pos = offset[0]
         y_pos = offset[1] + 0.6
         if title is not None:
-            title = _truncate_long_string(str(title))
+            # Crudely avoid label overlap, ignoring actual character width
+            brief_title = _truncate_long_string(str(title), int(2.5 * self.size()[0]))
             svg = f'<text x="{x_pos}" y="{y_pos}" \
                     class="sc-name" style="font-size:#normal-font"> \
-                    {escape(title)}</text>'
+                    {escape(brief_title)}</text>'
 
-            svg += f'<title>{escape(details)}</title>'
+            svg += f'<title>{title}({escape(details)})</title>'
         else:
             svg = f'<text x="{x_pos}" y="{y_pos}" \
                     class="sc-name" style="font-size:#small-font"> \
@@ -221,9 +234,10 @@ class VariableDrawer:
         svg = ''
         x0 = self._margin + self._extents()[-1]
         y0 = 2 * self._margin + 0.3 * self._extents()[-3]
+        height = self._events_height()
         style = 'class="sc-inset-line"'
         svg += f'<line x1={x0} y1={y0+0} x2={x0+2} y2={y0-1} {style}/>'
-        svg += f'<line x1={x0} y1={y0+1} x2={x0+2} y2={y0+2} {style}/>'
+        svg += f'<line x1={x0} y1={y0+1} x2={x0+2} y2={y0+height} {style}/>'
         svg += '<g transform="translate({},{}) scale(0.5)">{}</g>'.format(
             self.size()[0] + 1, 0,
             make_svg(self._variable.bins.constituents['data'], content_only=True))
