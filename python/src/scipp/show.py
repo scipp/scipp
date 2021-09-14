@@ -110,7 +110,12 @@ class VariableDrawer:
             return 0
         events = self._variable.events
         # Rough estimate of vertical space taken by depiction of events buffer
-        return 1 + 1.3 * (len(events.meta) + len(events.masks))
+        if isinstance(events, sc.Variable):
+            return 1
+        elif isinstance(events, sc.DataArray):
+            return 1 + 1.3 * (len(events.meta) + len(events.masks))
+        else:
+            return len(events) + 1.3 * len(events.meta)
 
     def size(self):
         """Return the size (width and height) of the rendered output"""
