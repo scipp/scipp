@@ -7,6 +7,7 @@
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -36,6 +37,19 @@ TEST_F(BinsViewTest, insert) {
   EXPECT_FALSE(da.coords().contains(Dim::Y));
   view.coords().set(Dim::Y, view.coords()[Dim::X]);
   EXPECT_TRUE(da.coords().contains(Dim::Y));
+}
+
+TEST_F(BinsViewTest, slice_readonly) {
+  auto slice = var.slice({Dim::Y, 0});
+  auto view = bins_view<DataArray>(slice);
+  ASSERT_THROW(view.coords().erase(Dim::X), except::DataArrayError);
+  auto buffer = slice.bin_buffer<DataArray>();
+  ASSERT_THROW(buffer.coords().erase(Dim::X), except::DataArrayError);
+  EXPECT_TRUE(buffer.is_readonly());
+  EXPECT_TRUE(buffer.coords().is_readonly());
+  EXPECT_TRUE(buffer.masks().is_readonly());
+  EXPECT_TRUE(buffer.attrs().is_readonly());
+  EXPECT_TRUE(buffer.meta().is_readonly());
 }
 
 TEST_F(BinsViewTest, constituents_erase) {
