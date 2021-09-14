@@ -213,11 +213,15 @@ class ResamplingBinnedModel(ResamplingModel):
         # is faster with the current implementation of `sc.bin`.
         edges = self.edges[-1]
         dim = edges.dims[-1]
-        # TODO `bin` applies masks, but later we add rebinned masks. This is
+        # `bin` applies masks, but later we add rebinned masks. This would be
         # inconsistent with how dense data is handled, where data is preserved
-        # even if masked, but masks grow. Note that manual masks handling for
-        # dense data in _call_resample is thus redundant, if it could be
-        # handled consistently here.
+        # even if masked, but masks grow. Therefore, we remove masks here. They
+        # get handled in _call_resample.
+        array = DataArray(data=array.data,
+                          coords={k: v
+                                  for k, v in array.coords.items()},
+                          attrs={k: v
+                                 for k, v in array.attrs.items()})
         if dim in array.bins.coords:
             # Must specify bounds for final dim despite handling by `histogram`
             # below: If coord is ragged binning would throw otherwise.
