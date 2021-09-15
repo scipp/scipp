@@ -4,6 +4,7 @@
 from functools import partial
 from html import escape
 from ..utils import value_to_string
+import ipywidgets as ipw
 
 
 class PlotWidgets:
@@ -14,7 +15,6 @@ class PlotWidgets:
     """
     def __init__(self, *, dims, formatters, ndim, dim_label_map, masks, sizes):
 
-        import ipywidgets as ipw
         self._dims = dims
         self._labels = dim_label_map
         self._controller = None
@@ -119,7 +119,6 @@ class PlotWidgets:
         """
         Gather all widgets in a single container box.
         """
-        import ipywidgets as ipw
         return ipw.VBox(self.container)
 
     def _add_masks_controls(self, masks):
@@ -127,7 +126,6 @@ class PlotWidgets:
         Add checkboxes for individual masks, as well as a global hide/show all
         toggle button.
         """
-        import ipywidgets as ipw
         masks_found = False
         self.mask_checkboxes = {}
         for name in masks:
