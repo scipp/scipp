@@ -333,7 +333,14 @@ def test_plot_2d_binned_data_with_variances_resolution():
 
 
 def test_plot_2d_binned_data_with_masks():
-    plot(make_binned_data_array(ndim=2, masks=True))
+    da = make_binned_data_array(ndim=2, masks=True)
+    p = da.plot()
+    unmasked = p.view.figure.image_values.get_array()
+    da.masks['all'] = da.data.bins.sum() == da.data.bins.sum()
+    p = da.plot()
+    # Bin masks are *not* applied
+    assert np.allclose(p.view.figure.image_values.get_array(), unmasked)
+    assert not np.isclose(p.view.figure.image_values.get_array().sum(), 0.0)
 
 
 def test_plot_customized_mpl_axes():
@@ -417,10 +424,10 @@ def test_plot_redraw_counts():
 def test_plot_redraw_binned():
     da = make_binned_data_array(ndim=2)
     p = sc.plot(da, resolution=64)
-    before = p.view.figure.image_values.get_array().sum()
+    before = p.view.figure.image_values.get_array()
     da *= 5.0
     p.redraw()
-    assert np.isclose(p.view.figure.image_values.get_array().sum(), 5.0 * before)
+    assert np.allclose(p.view.figure.image_values.get_array(), 5.0 * before)
     p.close()
 
 

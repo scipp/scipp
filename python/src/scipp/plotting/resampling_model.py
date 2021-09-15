@@ -207,17 +207,23 @@ class ResamplingBinnedModel(ResamplingModel):
     def _make_array(self, array):
         return array
 
+    def _strip_masks(self, array):
+        array = array.copy(deep=False)
+        for name in list(array.masks.keys()):
+            del array.masks[name]
+        return array
+
     def _resample(self, array):
         # We could bin with all edges and then use `bins.sum()` but especially
         # for inputs with many bins handling the final edges using `histogram`
         # is faster with the current implementation of `sc.bin`.
         edges = self.edges[-1]
         dim = edges.dims[-1]
-        # TODO `bin` applies masks, but later we add rebinned masks. This is
+        # `bin` applies masks, but later we add rebinned masks. This would be
         # inconsistent with how dense data is handled, where data is preserved
-        # even if masked, but masks grow. Note that manual masks handling for
-        # dense data in _call_resample is thus redundant, if it could be
-        # handled consistently here.
+        # even if masked, but masks grow. Therefore, we remove masks here. They
+        # get handled in _call_resample.
+        array = self._strip_masks(array)
         if dim in array.bins.coords:
             # Must specify bounds for final dim despite handling by `histogram`
             # below: If coord is ragged binning would throw otherwise.
