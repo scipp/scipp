@@ -22,6 +22,71 @@ public:
     return data;
   }
   void seed(const uint32_t value) { mt.seed(value); }
+
+  /**
+   * Generate a random k-subset of the integer interval [0, n].
+   * Uses a very inefficient implementation only suitable for small n.
+   */
+  std::vector<scipp::index> random_subset_of_interval(const scipp::index n,
+                                                      const scipp::index k) {
+    if (k == 0) {
+      return {};
+    }
+    if (k > n) {
+      throw std::invalid_argument("k > n not allowed");
+    }
+    if (n == 0) {
+      throw std::invalid_argument("n must not be 0");
+    }
+
+    std::vector<scipp::index> available(static_cast<size_t>(n));
+    std::iota(available.begin(), available.end(), 0);
+
+    std::vector<scipp::index> selected(static_cast<size_t>(k));
+    std::generate(
+        selected.begin(), selected.end(), [&available, this]() mutable {
+          std::uniform_int_distribution<size_t> int_dist(1,
+                                                         available.size() - 1);
+          const auto index = int_dist(this->mt);
+          const auto val = available.at(index);
+          available.erase(available.cbegin() + static_cast<ssize_t>(index));
+          return val;
+        });
+    return selected;
+  }
+
+  /**
+   * Generate a random partition of the integer n into k parts.
+   *
+   * Implements algorithm 'RANCOM' from
+   * 'Combinatorial Algorithms for Computers and Calculators'
+   * by A. Nijenhuis, H. S. Wilf.
+   *
+   * See also index_pairs_from_sizes.
+   */
+  std::vector<scipp::index> random_int_partition(const scipp::index n,
+                                                 const scipp::index k) {
+    if (k == 0) {
+      return {};
+    }
+    if (k > n) {
+      throw std::invalid_argument("k > n not allowed");
+    }
+    if (n == 0) {
+      throw std::invalid_argument("n must not be 0");
+    }
+
+    auto a = random_subset_of_interval(n + k - 1, k - 1);
+    std::sort(a.begin(), a.end());
+    std::vector<scipp::index> r(static_cast<size_t>(k));
+    std::transform(a.begin(), a.end(), r.begin(),
+                   [previous = 0](const auto aj) mutable {
+                     auto res = aj - std::exchange(previous, aj) - 1;
+                     return res;
+                   });
+    r.back() = n + k - 1 - (!a.empty() ? a.back() : 0);
+    return r;
+  }
 };
 
 class RandomBool {

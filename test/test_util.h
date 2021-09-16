@@ -14,3 +14,21 @@ inline Variable arange(const Dim dim, const scipp::index shape) {
     values[i] = i;
   return makeVariable<double>(Dims{dim}, Shape{shape}, Values(values));
 }
+
+/**
+ * Convert an array of sizes into index pairs for partitions of the given sizes.
+ * Example:
+ *  index_pairs_from_int_partition({2, 4, 0, 1})
+ *  -> {<0,2>, <2,6>, <6,6>, <6,7>}
+ */
+inline auto index_pairs_from_sizes(const std::vector<scipp::index> &partition) {
+  std::vector<scipp::index_pair> index_pairs;
+  index_pairs.reserve(partition.size());
+  std::transform(partition.begin(), partition.end(),
+                 std::back_inserter(index_pairs),
+                 [lower = 0](const auto n) mutable {
+                   const auto upper = lower + n;
+                   return scipp::index_pair{std::exchange(lower, upper), upper};
+                 });
+  return index_pairs;
+}
