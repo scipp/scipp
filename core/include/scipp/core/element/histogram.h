@@ -37,6 +37,7 @@ using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
 static constexpr auto histogram = overloaded{
     element::arg_list<
         histogram_detail::args<float, double, float, double>,
+        histogram_detail::args<float, float, float, double>,
         histogram_detail::args<float, int64_t, float, double>,
         histogram_detail::args<float, int32_t, float, double>,
         histogram_detail::args<double, double, double, double>,
@@ -79,9 +80,8 @@ static constexpr auto histogram = overloaded{
       if (events_unit != edge_unit)
         throw except::UnitError(
             "Bin edges must have same unit as the input coordinate.");
-      if (weights_unit != units::counts && weights_unit != units::dimensionless)
-        throw except::UnitError(
-            "Data to histogram must have unit `counts` or `dimensionless`.");
+      if (weights_unit != units::counts)
+        throw except::UnitError("Data to histogram must have unit `counts`.");
       return weights_unit;
     },
     transform_flags::expect_in_variance_if_out_variance,

@@ -109,13 +109,15 @@ TEST(BinGroupTest, 1d) {
   Variable groups =
       makeVariable<std::string>(Dims{Dim("label")}, Shape{2}, Values{"a", "c"});
   const auto binned = bin(table, {}, {groups});
+  auto expected = copy(table);
+  expected.coords().erase(Dim("label"));
   EXPECT_EQ(binned.dims(), groups.dims());
   EXPECT_EQ(binned.values<core::bin<DataArray>>()[1],
-            table.slice({Dim::Row, 2, 3}));
+            expected.slice({Dim::Row, 2, 3}));
   EXPECT_EQ(binned.values<core::bin<DataArray>>()[0].slice({Dim::Row, 0}),
-            table.slice({Dim::Row, 0}));
+            expected.slice({Dim::Row, 0}));
   EXPECT_EQ(binned.values<core::bin<DataArray>>()[0].slice({Dim::Row, 1}),
-            table.slice({Dim::Row, 4}));
+            expected.slice({Dim::Row, 4}));
 }
 
 class BinTest : public ::testing::TestWithParam<DataArray> {
@@ -135,11 +137,11 @@ protected:
 
   void expect_near(const DataArray &a, const DataArray &b) {
     const auto tolerance =
-        values(max(buckets::sum(a.data())) * (1e-14 * units::one));
-    EXPECT_TRUE(all(isclose(values(buckets::sum(a.data())),
-                            values(buckets::sum(b.data())), 0.0 * units::one,
-                            tolerance))
-                    .value<bool>());
+        values(max(bins_sum(a.data())) * (1e-14 * units::one));
+    EXPECT_TRUE(
+        all(isclose(values(bins_sum(a.data())), values(bins_sum(b.data())),
+                    0.0 * units::one, tolerance))
+            .value<bool>());
     EXPECT_EQ(a.masks(), b.masks());
     EXPECT_EQ(a.coords(), b.coords());
     EXPECT_EQ(a.attrs(), b.attrs());
@@ -166,6 +168,13 @@ TEST_P(BinTest, edges_too_short) {
   const auto table = GetParam();
   const auto edges = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1});
   EXPECT_THROW(bin(table, {edges}), except::BinEdgeError);
+}
+
+TEST_P(BinTest, rebin_no_event_coord) {
+  const auto table = GetParam();
+  const auto x = bin(table, {edges_x_coarse});
+  bins_view<DataArray>(x.data()).coords().erase(Dim::X);
+  EXPECT_THROW_DISCARD(bin(x, {edges_x}), except::BinEdgeError);
 }
 
 TEST_P(BinTest, rebin_coarse_to_fine_1d) {
@@ -296,17 +305,18 @@ TEST_P(BinTest, group_and_bin) {
 }
 
 TEST_P(BinTest, rebin_masked) {
-  const auto table = GetParam();
+  auto table = GetParam();
+  table.setUnit(units::counts); // we want to use `histogram` for comparison
   auto binned = bin(table, {edges_x_coarse});
   binned.masks().set("x-mask", makeVariable<bool>(Dims{Dim::X}, Shape{2},
                                                   Values{false, true}));
-  EXPECT_EQ(buckets::sum(bin(binned, {edges_x})), histogram(binned, edges_x));
+  EXPECT_EQ(bins_sum(bin(binned, {edges_x})), histogram(binned, edges_x));
   if (table.dims().volume() > 0) {
     EXPECT_NE(bin(binned, {edges_x}), bin(table, {edges_x}));
-    EXPECT_NE(buckets::sum(bin(binned, {edges_x})), histogram(table, edges_x));
+    EXPECT_NE(bins_sum(bin(binned, {edges_x})), histogram(table, edges_x));
     binned.masks().erase("x-mask");
     EXPECT_EQ(bin(binned, {edges_x}), bin(table, {edges_x}));
-    EXPECT_EQ(buckets::sum(bin(binned, {edges_x})), histogram(table, edges_x));
+    EXPECT_EQ(bins_sum(bin(binned, {edges_x})), histogram(table, edges_x));
   }
 }
 
@@ -342,10 +352,6 @@ TEST_P(BinTest, rebinned_meta_data_dropped) {
 TEST_P(BinTest, bin_by_group) {
   const auto table = GetParam();
   auto binned = bin(table, {}, {groups});
-  // Currently `bin` is not removing coords used for grouping, see TODO.
-  std::get<2>(binned.data().constituents<DataArray>())
-      .coords()
-      .erase(Dim("group"));
   // Using bin coord (instead of event coord) for binning.
   // Edges giving same grouping as existing => data matches
   auto edges = makeVariable<double>(Dims{Dim("group")}, Shape{6},

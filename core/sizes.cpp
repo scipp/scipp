@@ -189,7 +189,7 @@ Sizes merge(const Sizes &a, const Sizes &b) {
 }
 
 bool is_edges(const Sizes &sizes, const Sizes &dataSizes, const Dim dim) {
-  if (dim == Dim::Invalid)
+  if (dim == Dim::Invalid || !dataSizes.contains(dim))
     return false;
   for (const auto &d : dataSizes)
     if (d != dim && !(sizes.contains(d) && sizes[d] == dataSizes[d]))

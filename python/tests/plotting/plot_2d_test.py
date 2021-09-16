@@ -239,7 +239,64 @@ def test_plot_2d_with_decreasing_edges():
 
 
 def test_plot_2d_binned_data():
-    plot(make_binned_data_array(ndim=2))
+    da = make_binned_data_array(ndim=2)
+    plot(da)
+    # Try without event-coord so implementation cannot use `histogram`
+    for dim in ['xx', 'yy']:
+        copy = da.copy()
+        del copy.bins.coords[dim]
+        # With edge coord, cannot use `bin` directly
+        plot(copy)
+        copy.coords[dim] = copy.coords[dim][dim, 1:]
+        plot(copy)
+
+
+def test_plot_2d_binned_data_non_counts():
+    da = make_binned_data_array(ndim=2)
+    da.events.unit = 'K'
+    plot(da)
+    # Try without event-coord so implementation cannot use `histogram`
+    for dim in ['xx', 'yy']:
+        copy = da.copy()
+        del copy.bins.coords[dim]
+        # With edge coord, cannot use `bin` directly
+        plot(copy)
+        copy.coords[dim] = copy.coords[dim][dim, 1:]
+        plot(copy)
+
+
+def test_plot_2d_binned_data_float32_coord():
+    da = make_binned_data_array(ndim=2)
+    da.events.coords['xx'] = da.events.coords['xx'].astype('float32')
+    plot(da)
+    # Try without event-coord so implementation cannot use `histogram`
+    for dim in ['xx', 'yy']:
+        copy = da.copy()
+        del copy.bins.coords[dim]
+        # With edge coord, cannot use `bin` directly
+        plot(copy)
+        copy.coords[dim] = copy.coords[dim][dim, 1:]
+        plot(copy)
+
+
+def test_plot_2d_binned_data_datetime64():
+    da = make_binned_data_array(ndim=2)
+    start = sc.scalar(np.datetime64('now'))
+    offset = (1000 * da.coords['xx']).astype('int64')
+    offset.unit = 's'
+    da.coords['xx'] = start + offset
+    offset = (1000 * da.events.coords['xx']).astype('int64')
+    offset.unit = 's'
+    da.events.coords['xx'] = start + offset
+    plot(da)
+    # Try without event-coord so implementation cannot use `histogram`
+    for dim in ['xx', 'yy']:
+        copy = da.copy()
+        del copy.bins.coords[dim]
+        # With edge coord, cannot use `bin` directly
+        plot(copy)
+        copy.coords[dim] = copy.coords[dim][dim, 1:]
+        plot(copy)
 
 
 def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():

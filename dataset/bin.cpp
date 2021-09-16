@@ -26,6 +26,7 @@
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/except.h"
 
+#include "bins_util.h"
 #include "dataset_operations_common.h"
 
 using namespace scipp::variable::bin_detail;
@@ -51,6 +52,12 @@ auto make_range(const scipp::index begin, const scipp::index end,
 void update_indices_by_binning(Variable &indices, const Variable &key,
                                const Variable &edges, const bool linspace) {
   const auto dim = edges.dims().inner();
+  if (!indices.dims().includes(key.dims()))
+    throw except::BinEdgeError(
+        "Requested binning in dimension '" + to_string(dim) +
+        "' but input contains a bin-edge coordinate with no corresponding "
+        "event-coordinate. Provide an event coordinate or convert the "
+        "bin-edge coordinate to a non-edge coordinate.");
   const auto &edge_view =
       is_bins(edges) ? as_subspan_view(edges) : subspan_view(edges, dim);
   if (linspace) {
@@ -192,11 +199,6 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
   bin_sizes = squeeze(bin_sizes, erase);
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
-  // TODO We probably want to omit the coord used for grouping in the non-edge
-  // case, since it just contains the same value duplicated for every row in the
-  // bin.
-  // Note that we should then also recreate that variable in concatenate, to
-  // ensure that those operations are reversible.
   std::set<Dim> dims(erase.begin(), erase.end());
   const auto rebinned = [&](const auto &var) {
     for (const auto &dim : var.dims().labels())
@@ -274,7 +276,7 @@ public:
         // every input event. This is unrelated and varies independently,
         // depending on parameters of the input.
         if (bin_coords.count(dim) && m_offsets.dims().empty() &&
-            issorted(bin_coords.at(dim), dim)) {
+            allsorted(bin_coords.at(dim), dim)) {
           const auto &bin_coord = bin_coords.at(dim);
           const bool histogram =
               bin_coord.dims()[dim] == indices.dims()[dim] + 1;
@@ -413,30 +415,6 @@ auto axis_actions(const Variable &data, const Coords &coords,
   return builder;
 }
 
-class HideMasked {
-public:
-  template <class Masks>
-  HideMasked(const Variable &data, const Masks &masks, const Dimensions &dims) {
-    const auto &[begin_end, buffer_dim, buffer] =
-        data.constituents<DataArray>();
-    auto [begin, end] = unzip(begin_end);
-    for (const auto dim : dims.labels()) {
-      auto mask = irreducible_mask(masks, dim);
-      if (mask.is_valid()) {
-        begin *= ~mask;
-        end *= ~mask;
-      }
-    }
-    m_indices = zip(begin, end);
-    m_data = make_bins_no_validate(m_indices, buffer_dim, buffer);
-  }
-  Variable operator()() const { return m_data; }
-
-private:
-  Variable m_indices; // keep alive indices
-  Variable m_data;
-};
-
 template <class T> class TargetBins {
 public:
   TargetBins(const Variable &var, const Dimensions &dims) {
@@ -501,10 +479,13 @@ DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
         builder.existing(dim, array.dims()[dim]);
     }
 
-  HideMasked hide_masked(array.data(), array.masks(), builder.dims());
-  const auto masked = hide_masked();
+  const auto masked =
+      hide_masked(array.data(), array.masks(), builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
   builder.build(*target_bins, array.coords());
+  // Note: Unlike in the other cases below we do not call
+  // `drop_grouped_event_coords` here. Grouping is based on a bin-coord rather
+  // than event-coord so we do not touch the latter.
   return add_metadata(bin<DataArray>(masked, *target_bins, builder),
                       array.coords(), array.masks(), array.attrs(),
                       builder.edges(), builder.groups(), {reductionDim});
@@ -530,11 +511,24 @@ void validate_bin_args(const DataArray &array,
     if (edge.dims()[dim] < 2)
       throw except::BinEdgeError("Not enough bin edges in dim " +
                                  to_string(dim) + ". Need at least 2.");
-    if (!issorted(edge, dim))
+    if (!allsorted(edge, dim))
       throw except::BinEdgeError("Bin edges in dim " + to_string(dim) +
                                  " must be sorted.");
   }
 }
+
+auto drop_grouped_event_coords(const Variable &data,
+                               const std::vector<Variable> &groups) {
+  auto [indices, dim, buffer] = data.constituents<DataArray>();
+  // Do not preserve event coords used for grouping since this is redundant
+  // information and leads to waste of memory and compute in follow-up
+  // operations.
+  for (const auto &var : groups)
+    if (buffer.coords().contains(var.dims().inner()))
+      buffer.coords().erase(var.dims().inner());
+  return make_bins_no_validate(indices, dim, buffer);
+}
+
 } // namespace
 
 DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
@@ -568,8 +562,10 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
     builder.build(target_bins_buffer, coords);
     const auto target_bins =
         make_bins_no_validate(indices, dim, target_bins_buffer);
-    return add_metadata(bin<DataArray>(tmp, target_bins, builder), coords,
-                        masks, attrs, builder.edges(), builder.groups(), erase);
+    return add_metadata(bin<DataArray>(drop_grouped_event_coords(tmp, groups),
+                                       target_bins, builder),
+                        coords, masks, attrs, builder.edges(), builder.groups(),
+                        erase);
   }
 }
 
@@ -592,12 +588,13 @@ DataArray bin(const Variable &data, const Coords &coords, const Masks &masks,
               const std::vector<Variable> &groups,
               const std::vector<Dim> &erase) {
   auto builder = axis_actions(data, coords, edges, groups, erase);
-  HideMasked hide_masked(data, masks, builder.dims());
-  const auto masked = hide_masked();
+  const auto masked = hide_masked(data, masks, builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
   builder.build(*target_bins, bins_view<DataArray>(masked).coords(), coords);
-  return add_metadata(bin<DataArray>(masked, *target_bins, builder), coords,
-                      masks, attrs, builder.edges(), builder.groups(), erase);
+  return add_metadata(bin<DataArray>(drop_grouped_event_coords(masked, groups),
+                                     *target_bins, builder),
+                      coords, masks, attrs, builder.edges(), builder.groups(),
+                      erase);
 }
 
 template SCIPP_DATASET_EXPORT DataArray

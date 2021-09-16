@@ -15,6 +15,8 @@ Classes
    GroupByDataset
    Unit
    Variable
+   typing.VariableLike
+   typing.MetaDataMap
 
 Creation functions
 ==================
@@ -67,6 +69,7 @@ General
    transform_coords
    values
    variances
+   where
 
 Math
 ~~~~
@@ -76,9 +79,12 @@ Math
 
    abs
    add
+   ceil
+   cross
    divide
    dot
    exp
+   floor
    floor_divide
    log
    log10
@@ -86,6 +92,7 @@ Math
    multiply
    norm
    reciprocal
+   round
    sqrt
    subtract
 
@@ -109,17 +116,18 @@ Comparison operators compare element-wise and *ignore variances*.
 .. autosummary::
    :toctree: ../generated/functions
 
-   less
-   greater
-   less_equal
-   greater_equal
-   equal
-   not_equal
-   isclose
    allclose
+   allsorted
+   equal
+   greater
+   greater_equal
    identical
+   isclose
    islinspace
    issorted
+   less
+   less_equal
+   not_equal
 
 `inf` and `nan` handling
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -228,12 +236,14 @@ Compatibility
    compat.from_pandas
    compat.from_xarray
 
-
-Typing
-======
+Modules
+=======
 
 .. autosummary::
-   :toctree: ../generated
+   :toctree: ../generated/modules
+   :template: scipp-module-template.rst
+   :recursive:
 
-   typing.VariableLike
-   typing.MetaDataMap
+   constants
+   spatial
+

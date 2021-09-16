@@ -90,15 +90,27 @@ TEST(ElementSqrtTest, supported_types) {
   static_cast<void>(std::get<float>(supported));
 }
 
-TEST(ElementDotTest, unit) {
+template <class T> void element_vector_op_units_test(T op) {
   const units::Unit m(units::m);
   const units::Unit m2(units::m * units::m);
   const units::Unit dimless(units::dimensionless);
-  EXPECT_EQ(element::dot(m, m), m2);
-  EXPECT_EQ(element::dot(dimless, dimless), dimless);
+  EXPECT_EQ(op(m, m), m2);
+  EXPECT_EQ(op(dimless, dimless), dimless);
 }
 
+TEST(ElementDotTest, unit) { element_vector_op_units_test(element::dot); }
+
 TEST(ElementDotTest, value) {
+  Eigen::Vector3d v1(0, 0, 1);
+  Eigen::Vector3d v2(1, 0, 0);
+  EXPECT_EQ(element::cross(v1, v2), Eigen::Vector3d(0, 1, 0));
+  EXPECT_EQ(element::cross(v2, v1), Eigen::Vector3d(0, -1, 0));
+  EXPECT_EQ(element::cross(v2, v2), Eigen::Vector3d(0, 0, 0));
+}
+
+TEST(ElementCrossTest, unit) { element_vector_op_units_test(element::cross); }
+
+TEST(ElementCrossTest, value) {
   Eigen::Vector3d v1(0, 3, -4);
   Eigen::Vector3d v2(1, 1, -1);
   EXPECT_EQ(element::dot(v1, v1), 25);
@@ -154,3 +166,29 @@ TEST(ElementLog10Test, unit) {
 }
 
 TEST(ElementLog10Test, bad_unit) { EXPECT_ANY_THROW(element::log10(units::m)); }
+
+namespace {
+template <class T>
+void elementRoundingTest(T rounding_function, const std::vector<float> &input,
+                         const std::vector<float> &output) {
+  for (auto i = 0u; i < input.size(); i++) {
+    EXPECT_EQ(rounding_function(input[i]), output[i]);
+  }
+}
+} // namespace
+
+TEST(ElementRoundingTest, floor) {
+  elementRoundingTest(element::floor, {2.5, 2.7, 2.3, 2.15, 2.617, 2.32133},
+                      {2., 2., 2., 2., 2., 2.});
+}
+
+TEST(ElementRoundingTest, ceil) {
+  elementRoundingTest(element::ceil, {2.5, 2.7, 2.3, 2.15, 2.617, 2.32133},
+                      {3., 3., 3., 3., 3., 3.});
+}
+
+TEST(ElementRoundingTest, rint) {
+  elementRoundingTest(
+      element::rint, {2.01, 2.7, 2.3, 2.15, 2.617, 2.32133, 1.5, 2.5, 3.5, 4.5},
+      {2., 3., 2., 2., 3., 2., 2., 2., 4., 4.});
+}

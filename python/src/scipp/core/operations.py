@@ -4,9 +4,9 @@
 from __future__ import annotations
 from typing import Optional, Union
 
-from ._scipp import core as _cpp
+from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import VariableLike
+from ..typing import VariableLike
 
 
 def dot(x: VariableLike, y: VariableLike) -> VariableLike:
@@ -20,7 +20,45 @@ def dot(x: VariableLike, y: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.dot, x, y)
 
 
-def issorted(x: _cpp.Variable, dim: str, order: Optional[str] = 'ascending') -> bool:
+def islinspace(x: _cpp.Variable, dim: str = None) -> _cpp.Variable:
+    """
+    Check if the values of a variable are evenly spaced.
+
+    :param x: Variable to check.
+    :param dim: Optional variable for the dim to check from the Variable.
+    :returns: Variable of value True if the variable contains regularly
+    spaced values, variable of value False otherwise.
+    """
+    if dim is None:
+        return _call_cpp_func(_cpp.islinspace, x)
+    else:
+        return _call_cpp_func(_cpp.islinspace, x, dim)
+
+
+def issorted(x: _cpp.Variable,
+             dim: str,
+             order: Optional[str] = 'ascending') -> VariableLike:
+    """
+    Check if the values of a variable are sorted.
+
+    - If ``order`` is 'ascending',
+      check if values are non-decreasing along ``dim``.
+    - If ``order`` is 'descending',
+      check if values are non-increasing along ``dim``.
+
+    :param x: Variable to check.
+    :param dim: Dimension along which order is checked.
+    :param order: Sorting order. Valid options are 'ascending' and
+      'descending'. Default is 'ascending'.
+    :return: Variable containing one less dim, than the original
+     variable with the corresponding boolean value for whether or
+     not it was sorted along the given dim for the other
+     dimensions.
+    """
+    return _call_cpp_func(_cpp.issorted, x, dim, order)
+
+
+def allsorted(x: _cpp.Variable, dim: str, order: Optional[str] = 'ascending') -> bool:
     """
     Check if the values of a variable are sorted.
 
@@ -36,7 +74,18 @@ def issorted(x: _cpp.Variable, dim: str, order: Optional[str] = 'ascending') -> 
     :return: True if the variable values are monotonously ascending or
       descending (depending on the requested order), False otherwise.
     """
-    return _call_cpp_func(_cpp.issorted, x, dim, order)
+    return _call_cpp_func(_cpp.allsorted, x, dim, order)
+
+
+def cross(x: VariableLike, y: VariableLike) -> VariableLike:
+    """Element-wise cross product.
+
+    :param x: Left hand side operand.
+    :param y: Right hand side operand.
+    :raises: If the dtype of the input is not vector_3_float64.
+    :return: The cross product of the input vectors.
+    """
+    return _call_cpp_func(_cpp.cross, x, y)
 
 
 def sort(x: VariableLike,
@@ -114,3 +163,17 @@ def rebin(x: VariableLike,
         return _call_cpp_func(_cpp.rebin, x, dim, bins)
     else:
         return _call_cpp_func(_cpp.rebin, x, dim, old, bins)
+
+
+def where(condition: _cpp.Variable, x: _cpp.Variable,
+          y: _cpp.Variable) -> _cpp.Variable:
+    """Return elements chosen from x or y depending on condition.
+
+    :param condition: Variable with dtype=bool. Where True, yield x, otherwise yield y.
+    :param x: Variable with values from which to choose.
+    :param y: Variable with values from which to choose.
+    :return: Variable with elements from x where condition is True, and elements from y
+             elsewhere.
+    :seealso: :py:func:`scipp.choose`
+    """
+    return _call_cpp_func(_cpp.where, condition, x, y)

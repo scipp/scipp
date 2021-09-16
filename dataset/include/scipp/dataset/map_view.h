@@ -39,23 +39,6 @@ struct make_value {
 
 } // namespace detail
 
-/// Return the dimension for given coord.
-/// @param var Coordinate variable
-/// @param key Key of the coordinate in a coord dict
-///
-/// For dimension-coords, this is the same as the key, for non-dimension-coords
-/// (labels) we adopt the convention that they are "label" their inner
-/// dimension. Returns Dim::Invalid for 0-D var.
-template <class T, class Key> Dim dim_of_coord(const T &var, const Key &key) {
-  if (var.dims().ndim() == 0)
-    return Dim::Invalid;
-  if constexpr (std::is_same_v<Key, Dim>) {
-    const bool is_dimension_coord = var.dims().contains(key);
-    return is_dimension_coord ? key : var.dims().inner();
-  } else
-    return var.dims().inner();
-}
-
 template <class T>
 auto slice_map(const Sizes &sizes, const T &map, const Slice &params) {
   T out;
@@ -110,6 +93,7 @@ public:
   // invariants.
   mapped_type operator[](const Key &key);
   mapped_type at(const Key &key);
+  Dim dim_of(const Key &key) const;
 
   auto find(const Key &k) const noexcept { return m_items.find(k); }
   auto find(const Key &k) noexcept { return m_items.find(k); }
@@ -170,6 +154,7 @@ public:
 
   void rename(const Dim from, const Dim to);
 
+  void set_readonly() noexcept;
   bool is_readonly() const noexcept;
   [[nodiscard]] Dict as_const() const;
   [[nodiscard]] Dict merge_from(const Dict &other) const;

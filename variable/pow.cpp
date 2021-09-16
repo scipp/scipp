@@ -36,27 +36,28 @@ Variable pow_do_transform(V &&base, const Variable &exponent,
 template <class T> struct PowUnit {
   static units::Unit apply(const units::Unit base_unit,
                            const Variable &exponent) {
-    const auto val = exponent.value<T>();
+    const auto exp_val = exponent.value<T>();
     if constexpr (std::is_floating_point_v<T>) {
-      if (static_cast<T>(static_cast<int64_t>(val)) != val) {
+      if (static_cast<T>(static_cast<int64_t>(exp_val)) != exp_val) {
         throw except::UnitError("Powers of dimension-full variables must be "
                                 "integers or integer valued floats. Got " +
-                                std::to_string(val) + ".");
+                                std::to_string(exp_val) + ".");
       }
     }
-    return pow(base_unit, exponent.value<T>());
+    return pow(base_unit, exp_val);
   }
 };
 
 template <class V>
 Variable pow_handle_unit(V &&base, const Variable &exponent,
                          const bool in_place) {
-  if (exponent.unit() != units::one) {
+  if (const auto exp_unit = variableFactory().elem_unit(exponent);
+      exp_unit != units::one) {
     throw except::UnitError("Powers must be dimensionless, got exponent.unit=" +
-                            to_string(exponent.unit()) + ".");
+                            to_string(exp_unit) + ".");
   }
 
-  const auto base_unit = base.unit();
+  const auto base_unit = variableFactory().elem_unit(base);
   if (base_unit == units::one) {
     return pow_do_transform(std::forward<V>(base), exponent, in_place);
   }
@@ -68,10 +69,11 @@ Variable pow_handle_unit(V &&base, const Variable &exponent,
   }
 
   Variable res = in_place ? std::forward<V>(base) : copy(std::forward<V>(base));
-  res.setUnit(units::one);
+  variableFactory().set_elem_unit(res, units::one);
   pow_do_transform(res, exponent, true);
-  res.setUnit(core::CallDType<double, float, int64_t, int32_t>::apply<PowUnit>(
-      exponent.dtype(), base_unit, exponent));
+  variableFactory().set_elem_unit(
+      res, core::CallDType<double, float, int64_t, int32_t>::apply<PowUnit>(
+               exponent.dtype(), base_unit, exponent));
   return res;
 }
 
@@ -83,6 +85,9 @@ bool has_negative_value(const Variable &var) {
 template <class V>
 Variable pow_handle_dtype(V &&base, const Variable &exponent,
                           const bool in_place) {
+  if (is_bins(exponent)) {
+    throw std::invalid_argument("Binned exponents are not supported by pow.");
+  }
   if (!is_int(base.dtype())) {
     return pow_handle_unit(std::forward<V>(base), exponent, in_place);
   }

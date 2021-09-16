@@ -51,10 +51,6 @@ def ab(*, a, b):
     return a + b
 
 
-def ba(b, a):
-    return b + a
-
-
 def bc(*, b, c):
     return b * c
 
@@ -152,26 +148,6 @@ def test_dim_rename_multi_level_merge_multi_output():
     assert da.dims == ['a', 'bc']
 
 
-def test_dim_merge_two_transposed():
-    # *a   *b
-    #   \  /
-    #    ab
-    # without bin-edge
-    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
-    # ab depends on two dimension coords => no rename of a
-    da = original.transform_coords(['ba'], graph={'ba': ba})
-    assert da.dims == ['a', 'b']
-    assert sc.identical(da.coords['ba'], sc.transpose(b + a, ['b', 'a']))
-
-    # without bin-edge
-    bin_edge = sc.arange('b', 0, b.shape[0] + 1)
-    original = sc.DataArray(data=a + b, coords={'a': a, 'b': bin_edge})
-    # ab depends on two dimension coords => no rename of a
-    da = original.transform_coords(['ba'], graph={'ba': ba})
-    assert da.dims == ['a', 'b']
-    assert sc.identical(da.coords['ba'], sc.transpose(bin_edge + a, ['a', 'b']))
-
-
 def test_rename_dims_param():
     original = sc.DataArray(data=a, coords={'a': a})
     da = original.transform_coords(['b'], graph={'b': 'a'})
@@ -250,10 +226,8 @@ def test_binned():
     del binned.coords['y']
     binned.coords['y'] = sc.arange(dim='y', start=0, stop=2)
 
-    # TODO Avoid dimension error if we write `x2*y`, provided that it is
-    # temporary before rename. May be fixed automatically via fix for #2057.
     def convert(*, x2, y):
-        return {'yy': y * y, 'xy': y * x2}
+        return {'yy': y * y, 'xy': x2 * y}
 
     def check(da, original):
         y = original.coords['y']
@@ -357,6 +331,35 @@ def test_duplicate_output_keys():
     with pytest.raises(ValueError):
         graph = {('b', 'd'): to_bd, ('b', 'c'): to_bc}
         original.transform_coords(['b'], graph=graph)
+
+
+def test_pass_through_unary():
+    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
+    expected = original.copy()
+    assert sc.identical(original.transform_coords(['a'], graph={'a': 'a'}), expected)
+
+    with_a_as_attr = original.copy()
+    with_a_as_attr.attrs['a'] = with_a_as_attr.coords.pop('a')
+    assert sc.identical(with_a_as_attr.transform_coords(['a'], graph={'a': 'a'}),
+                        expected)
+
+
+def test_pass_through_binary():
+    def ac(a, b):
+        return {'a': a, 'c': b, 'd': a}
+
+    graph = {('a', 'c', 'd'): ac}
+
+    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
+    expected = sc.DataArray(data=a + b, coords={'a': a, 'c': b, 'd': a}, attrs={'b': b})
+    assert sc.identical(original.transform_coords(['a'], graph=graph), original)
+    assert sc.identical(original.transform_coords(['c'], graph=graph), expected)
+
+    with_a_as_attr = original.copy()
+    with_a_as_attr.attrs['a'] = with_a_as_attr.coords.pop('a')
+    assert sc.identical(with_a_as_attr.transform_coords(['a'], graph=graph), original)
+    assert sc.identical(with_a_as_attr.transform_coords(['c'], graph=graph), expected)
+    assert sc.identical(with_a_as_attr.transform_coords(['d'], graph=graph), expected)
 
 
 def test_prioritize_coords_attrs_conflict():

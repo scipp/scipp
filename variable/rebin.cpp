@@ -95,10 +95,14 @@ struct Less {
 
 Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
                const Variable &newCoord) {
+  // TODO Note that this currently rebins counts but resamples bool
   // Rebin could also implemented for count-densities. However, it may be better
   // to avoid this since it increases complexity. Instead, densities could
   // always be computed on-the-fly for visualization, if required.
-  core::expect::unit_any_of(var, {units::counts, units::one});
+  if (var.dtype() == dtype<bool>)
+    core::expect::equals(var.unit(), units::one);
+  else
+    core::expect::equals(var.unit(), units::counts);
   if (!isBinEdge(dim, oldCoord.dims(), var.dims()))
     throw except::BinEdgeError(
         "The input does not have coordinates with bin-edges.");
@@ -114,10 +118,10 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
       args<float, double, float, double>, args<float, float, float, double>,
       args<bool, double, bool, double>>;
 
-  const bool ascending = issorted(oldCoord, dim, SortOrder::Ascending) &&
-                         issorted(newCoord, dim, SortOrder::Ascending);
-  if (!ascending && !(issorted(oldCoord, dim, SortOrder::Descending) &&
-                      issorted(newCoord, dim, SortOrder::Descending)))
+  const bool ascending = allsorted(oldCoord, dim, SortOrder::Ascending) &&
+                         allsorted(newCoord, dim, SortOrder::Ascending);
+  if (!ascending && !(allsorted(oldCoord, dim, SortOrder::Descending) &&
+                      allsorted(newCoord, dim, SortOrder::Descending)))
     throw except::BinEdgeError(
         "Rebin: The old or new bin edges are not sorted.");
   const auto out_type = is_int(var.dtype()) ? dtype<double> : var.dtype();

@@ -11,7 +11,7 @@
 
 namespace scipp::dataset {
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT DataArray
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 to_unit(const DataArray &array, const units::Unit &unit,
         CopyPolicy copy = CopyPolicy::Always);
 

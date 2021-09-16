@@ -3,7 +3,10 @@
 # @author Neil Vaytet
 
 from .. import config
-from .._scipp import core as sc
+from ..core import concatenate, values, dtype, units, nanmin, nanmax, histogram, \
+        full_like
+from ..core import Variable, DataArray
+from ..core import abs as abs_
 import numpy as np
 from copy import copy
 import io
@@ -32,14 +35,14 @@ def to_bin_edges(x, dim):
     idim = x.dims.index(dim)
     if x.shape[idim] < 2:
         one = 1.0 * x.unit
-        return sc.concatenate(x[dim, 0:1] - one, x[dim, 0:1] + one, dim)
+        return concatenate(x[dim, 0:1] - one, x[dim, 0:1] + one, dim)
     else:
         center = to_bin_centers(x, dim)
         # Note: use range of 0:1 to keep dimension dim in the slice to avoid
         # switching round dimension order in concatenate step.
         left = center[dim, 0:1] - (x[dim, 1] - x[dim, 0])
         right = center[dim, -1] + (x[dim, -1] - x[dim, -2])
-        return sc.concatenate(sc.concatenate(left, center, dim), right, dim)
+        return concatenate(concatenate(left, center, dim), right, dim)
 
 
 def parse_params(params=None, defaults=None, globs=None, array=None):
@@ -113,24 +116,24 @@ def find_log_limits(x):
     """
     from .. import flatten, ones
     volume = np.product(x.shape)
-    pixel = flatten(sc.values(x.astype(sc.dtype.float64)), to='pixel')
-    weights = ones(dims=['pixel'], shape=[volume])
-    hist = sc.histogram(sc.DataArray(data=weights, coords={'order': pixel}),
-                        bins=sc.Variable(dims=['order'],
-                                         values=np.geomspace(1e-30, 1e30, num=61),
-                                         unit=x.unit))
+    pixel = flatten(values(x.astype(dtype.float64)), to='pixel')
+    weights = ones(dims=['pixel'], shape=[volume], unit='counts')
+    hist = histogram(DataArray(data=weights, coords={'order': pixel}),
+                     bins=Variable(dims=['order'],
+                                   values=np.geomspace(1e-30, 1e30, num=61),
+                                   unit=x.unit))
     # Find the first and the last non-zero bins
-    inds = np.nonzero((hist.data > 0.0 * sc.units.one).values)
+    inds = np.nonzero((hist.data > 0.0 * units.counts).values)
     ar = np.arange(hist.data.shape[0])[inds]
     # Safety check in case there are no values in range 1.0e-30:1.0e+30:
     # fall back to the linear method and replace with arbitrary values if the
     # limits are negative.
     if len(ar) == 0:
         [vmin, vmax] = find_linear_limits(x)
-        if vmin <= 0.0:
-            if vmax <= 0.0:
-                vmin = 0.1
-                vmax = 1.0
+        if vmin.value <= 0.0:
+            if vmax.value <= 0.0:
+                vmin = full_like(vmin, 0.1)
+                vmax = full_like(vmax, 1.0)
             else:
                 vmin = 1.0e-3 * vmax
     else:
@@ -144,8 +147,8 @@ def find_linear_limits(x):
     Find variable min and max.
     """
     return [
-        sc.values(sc.nanmin(x).astype(sc.dtype.float64)),
-        sc.values(sc.nanmax(x).astype(sc.dtype.float64))
+        values(nanmin(x).astype(dtype.float64)),
+        values(nanmax(x).astype(dtype.float64))
     ]
 
 
@@ -177,7 +180,7 @@ def fix_empty_range(lims, replacement=None):
         elif lims[0].value == 0.0:
             dx = 0.5 * lims[0].unit
         else:
-            dx = 0.5 * sc.abs(lims[0])
+            dx = 0.5 * abs_(lims[0])
     return [lims[0] - dx, lims[1] + dx]
 
 

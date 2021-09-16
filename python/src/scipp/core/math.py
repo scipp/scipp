@@ -4,9 +4,9 @@
 from __future__ import annotations
 from typing import Optional
 
-from ._scipp import core as _cpp
+from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from .typing import VariableLike
+from ..typing import VariableLike
 
 
 def abs(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
@@ -124,3 +124,40 @@ def log10(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLik
     :returns: Base 10 logarithm of the input.
     """
     return _call_cpp_func(_cpp.log10, x, out=out)
+
+
+def round(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+    """
+    Round to the nearest integer if all values passed in x.
+
+    Note: if the number being rounded is halfway between two integers it will
+    round to the nearest even number. For example 1.5 and 2.5 will both round
+    to 2.0, -0.5 and 0.5 will both round to 0.0.
+
+    :param x: Input data.
+    :param out: Optional output buffer.
+    :returns: Rounded version of the data passed to the nearest integer.
+    """
+    return _call_cpp_func(_cpp.rint, x, out=out)
+
+
+def floor(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+    """
+    Round down to the nearest integer of all values passed in x.
+
+    :param x: Input data.
+    :param out: Optional output buffer.
+    :returns: Rounded down version of the data passed.
+    """
+    return _call_cpp_func(_cpp.floor, x, out=out)
+
+
+def ceil(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+    """
+    Round up to the nearest integer of all values passed in x.
+
+    :param x: Input data.
+    :param out: Optional output buffer.
+    :returns: Rounded up version of the data passed.
+    """
+    return _call_cpp_func(_cpp.ceil, x, out=out)

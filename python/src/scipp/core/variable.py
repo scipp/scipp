@@ -2,15 +2,15 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
 
+from __future__ import annotations
 from collections.abc import Iterable as _Iterable
 from typing import Any as _Any, Sequence as _Sequence, Union as _Union,\
     Optional as _Optional
 
 import numpy as _np
-from numpy.typing import ArrayLike as _ArrayLike
+from numpy.typing import ArrayLike as array_like
 
-from ._scipp import core as _cpp
-from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .._scipp import core as _cpp
 
 
 def _parse_dims_shape_sizes(dims, shape, sizes):
@@ -22,17 +22,6 @@ def _parse_dims_shape_sizes(dims, shape, sizes):
         dims = list(sizes.keys())
         shape = list(sizes.values())
     return {"dims": dims, "shape": shape}
-
-
-def islinspace(x: _cpp.Variable) -> bool:
-    """
-    Check if the values of a variable are evenly spaced.
-
-    :param x: Variable to check.
-    :returns: True if the variable contains regularly spaced values,
-      False otherwise.
-    """
-    return _call_cpp_func(_cpp.islinspace, x)
 
 
 def scalar(value: _Any,
@@ -323,8 +312,8 @@ def vectors(*,
 
 def array(*,
           dims: _Iterable,
-          values: _ArrayLike,
-          variances: _Optional[_ArrayLike] = None,
+          values: array_like,
+          variances: _Optional[array_like] = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
           dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
@@ -334,7 +323,7 @@ def array(*,
     :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
               :py:func:`scipp.empty` :py:func:`scipp.scalar`
 
-    :param dims: Dimension labels, nonempty.
+    :param dims: Dimension labels
     :param values: Initial values.
     :param variances: Optional, initial variances, must be same shape
       and size as values. Default=None
@@ -342,9 +331,6 @@ def array(*,
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
     """
-    if not dims:
-        raise ValueError("The dims of an array must not be empty. "
-                         "Use sc.scalar to construct a scalar variable.")
     return _cpp.Variable(dims=dims,
                          values=values,
                          variances=variances,
@@ -466,7 +452,3 @@ def arange(dim: str,
                  values=_np.arange(start, stop, step),
                  unit=unit,
                  dtype=dtype)
-
-
-# Wrapper to make datetime usable without importing numpy manually.
-datetime64 = _np.datetime64

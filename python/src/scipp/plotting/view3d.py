@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .._variable import zeros
+from ..core import zeros
 from .view import PlotView
 
 

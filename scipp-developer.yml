@@ -13,6 +13,8 @@ dependencies:
   - tbb-devel
   - conan
   - cmake
+  - pip
+  - gxx_linux-64 11.1.*
 
   # Run
   - appdirs
@@ -32,6 +34,7 @@ dependencies:
   - python-graphviz
   - xarray  # For testing xarray <-> scipp conversion
   - pandas  # For testing pandas <-> scipp conversion
+  - scipy
 
   # Formatting & static analysis
   - pre-commit

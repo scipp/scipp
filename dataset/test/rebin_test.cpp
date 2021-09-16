@@ -148,6 +148,7 @@ TEST_F(RebinTest, rebin_with_ragged_coord) {
 TEST(RebinWithMaskTest, preserves_unrelated_mask) {
   Dataset ds;
   ds.setData("data_xy", broadcast(makeVariable<double>(Dimensions{Dim::X, 5},
+                                                       units::counts,
                                                        Values{1, 2, 3, 4, 5}),
                                   Dimensions({Dim::Y, Dim::X}, {5, 5})));
   ds.setCoord(Dim::X, makeVariable<double>(Dimensions{Dim::X, 6},
@@ -165,7 +166,8 @@ TEST(RebinWithMaskTest, preserves_unrelated_mask) {
   const Dataset result = rebin(ds, Dim::X, edges);
 
   ASSERT_EQ(result["data_xy"].data(),
-            broadcast(makeVariable<double>(Dimensions{Dim::X, 2}, Values{3, 7}),
+            broadcast(makeVariable<double>(Dimensions{Dim::X, 2}, units::counts,
+                                           Values{3, 7}),
                       Dimensions({Dim::Y, Dim::X}, {5, 2})));
   ASSERT_EQ(result["data_xy"].masks()["mask_x"],
             makeVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true}));

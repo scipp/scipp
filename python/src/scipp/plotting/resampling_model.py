@@ -2,39 +2,39 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
-from .._scipp import core as sc
-from .._variable import linspace
+from ..core import bin as bin_
+from ..core import dtype, units
+from ..core import linspace, rebin, get_slice_params, concatenate, histogram
+from ..core import DataArray, DimensionError
 from .tools import to_bin_edges
 
 
+def _unit_requires_mean(obj):
+    return obj.unit != units.counts
+
+
 def _resample(array, dim, edges):
-    # TODO Note that there are some inconsistencies here and in `rebin`. Should
-    # dimensionless be handled like counts? `rebin` does, but at some point we
-    # had decided that the plotting code should not. Furthermore, `rebin`
-    # handling `bool` as "non-counts", i.e., it does not sum but "average"
-    # (using `or`). What we need here works currently, since masks are
-    # dimensionless and we want `bool` as output, but this needs to be
-    # revisited.
-    if array.unit == sc.units.counts or array.unit == sc.units.dimensionless:
-        return sc.rebin(array, dim, edges)
-    if array.dtype == sc.dtype.float64:
+    if not _unit_requires_mean(array):
+        return rebin(array, dim, edges)
+    if array.dtype == dtype.float64:
         array = array.copy()
     else:
-        array = array.astype(sc.dtype.float64)
+        array = array.astype(dtype.float64)
     # Scale by bin widths, so `rebin` is effectively performing a "mean"
     # operation instead of "sum".
+    # TODO
     # Note that it is inefficient to do this repeatedly. Rather than working
     # around that here we should look into supporting an alternative to
     # `rebin` that works on non-counts data
     coord = array.coords[dim]
     width = coord[dim, 1:] - coord[dim, :-1]
-    width.unit = sc.units.one
+    width.unit = units.one
     array.data *= width
     unit = array.unit
-    array.unit = sc.units.counts
+    array.unit = units.counts
     array = _resample(array, dim, edges)
     width = edges[dim, 1:] - edges[dim, :-1]
-    width.unit = sc.units.one
+    width.unit = units.one
     array /= width
     array.unit = unit
     return array
@@ -81,11 +81,11 @@ class ResamplingModel():
         return self._edges
 
     def _rebin(self, var, coords):
-        array = sc.DataArray(data=var)
+        array = DataArray(data=var)
         for dim in coords:
             try:
                 array.coords[dim] = coords[dim]
-            except sc.DimensionError:  # Masks may be lower-dimensional
+            except DimensionError:  # Masks may be lower-dimensional
                 pass
         plan = []
         for edge in self.edges:
@@ -129,8 +129,8 @@ class ResamplingModel():
             if s is None:
                 coord = self._array.meta[dim]
                 # TODO handle flipped coord
-                low = sc.min(coord[dim, 0]).value
-                high = sc.max(coord[dim, -1]).value
+                low = coord[dim, 0].min().value
+                high = coord[dim, -1].max().value
                 params[dim] = (low, high, coord.unit, self.resolution[dim])
             elif isinstance(s, int):
                 out = out[dim, s]
@@ -148,8 +148,7 @@ class ResamplingModel():
                     # yielding length-0 slice here if limits are outside
                     # range on this slice, which rebin cannot handle.
                     if len(self._array.meta[dim].dims) == 1:
-                        out = out[sc.get_slice_params(out.data, out.meta[dim], low,
-                                                      high)]
+                        out = out[get_slice_params(out.data, out.meta[dim], low, high)]
                 params[dim] = (low.value, high.value, low.unit,
                                self.resolution.get(dim, None))
         if params == self._home_params:
@@ -206,11 +205,17 @@ class ResamplingBinnedModel(ResamplingModel):
         if dim in array.bins.coords:
             # Must specify bounds for final dim despite handling by `histogram`
             # below: If coord is ragged binning would throw otherwise.
-            bounds = sc.concatenate(edges[dim, 0], edges[dim, -1], dim)
-            binned = sc.bin(array=array, edges=self.edges[:-1] + [bounds])
-            return sc.histogram(binned, edges)
+            bounds = concatenate(edges[dim, 0], edges[dim, -1], dim)
+            binned = bin_(array, edges=self.edges[:-1] + [bounds])
+            # TODO Use histogramming with "mean" mode once implemented
+            if _unit_requires_mean(binned.events):
+                return bin_(binned, edges=[edges]).bins.mean()
+            else:
+                return histogram(binned, bins=edges)
+        elif _unit_requires_mean(array.events):
+            return bin_(array, edges=self.edges).bins.mean()
         else:
-            return sc.bin(array=array, edges=self.edges).bins.sum()
+            return bin_(array, edges=self.edges).bins.sum()
 
 
 def _with_edges(array):
@@ -220,10 +225,9 @@ def _with_edges(array):
         new_array.coords[f'{prefix}_{dim}'] = var
         if var.sizes[dim] == array.sizes[dim]:
             new_array.coords[dim] = to_bin_edges(var, dim)
-        elif var.dtype not in [sc.dtype.float32, sc.dtype.float64]:
+        elif var.dtype not in [dtype.float32, dtype.float64]:
             # rebin does not support int coords right now
-            # TODO use copy=False
-            new_array.coords[dim] = var.astype(sc.dtype.float64)
+            new_array.coords[dim] = var.astype(dtype.float64, copy=False)
     return new_array, prefix
 
 

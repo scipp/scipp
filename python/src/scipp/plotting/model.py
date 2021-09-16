@@ -2,10 +2,10 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import find_limits, to_dict
+from .tools import find_limits, to_dict, to_bin_centers
 from .. import typing
-from .._scipp import core as sc
-from .._variable import arange
+from ..core import DataArray
+from ..core import arange, bins
 
 
 class DataArrayDict(dict):
@@ -56,10 +56,7 @@ class PlotModel:
             # TODO for the 3d scatter plot this is problematic: we never
             # touch any of the pos dims, so we don't want to replace coords
             # should model only consider "other" data dims?
-            coord_list = {dim: self._axis_coord(array, dim) for dim in array.dims}
-            self.data_arrays[name] = sc.DataArray(data=array.data,
-                                                  coords=coord_list,
-                                                  masks=to_dict(array.masks))
+            self.data_arrays[name] = self._setup_coords(array)
         self.data_arrays = DataArrayDict(self.data_arrays)
 
         # Save a copy of the name for simpler access
@@ -83,6 +80,29 @@ class PlotModel:
         self._dims = dims
         self._dims_updated()
 
+    def _setup_coords(self, array):
+        data = array.data
+        if array.bins is not None:
+            data = self._setup_event_coords(data)
+        coord_list = {dim: self._axis_coord(array, dim) for dim in array.dims}
+        return DataArray(data=data, coords=coord_list, masks=to_dict(array.masks))
+
+    def _setup_event_coords(self, data):
+        tmp = data.bins.constituents
+        coord_list = {}
+        array = tmp['data']
+        for dim in data.dims:
+            # Drop any coords not required for resampling to save memory and compute
+            if dim in array.meta:
+                coord = array.meta[dim]
+                if typing.has_datetime_type(coord):
+                    coord = coord - coord.min()
+                coord_list[dim] = coord
+        tmp['data'] = DataArray(data=array.data,
+                                coords=coord_list,
+                                masks=to_dict(array.masks))
+        return bins(**tmp)
+
     def _axis_coord(self, array, dim):
         """
         Get coord for requested dim.
@@ -92,7 +112,14 @@ class PlotModel:
             if typing.has_vector_type(coord) or typing.has_string_type(coord):
                 coord = arange(dim=dim, start=0, stop=array.sizes[dim])
             elif typing.has_datetime_type(coord):
-                coord = coord - sc.min(coord)
+                coord = coord - coord.min()
+            # TODO This hack looks "wrong". This may be an indicator that resampling
+            # may not be the correct default choice.
+            # If there is a bin-edge coord but no corresponding event-coord then `bin`
+            # cannot handle this. We could first bin without this and then use `rebin`.
+            if coord.sizes[dim] != array.sizes[dim]:
+                if array.events is not None and dim not in array.events.coords:
+                    coord = to_bin_centers(coord, dim)
         else:
             coord = arange(dim=dim, start=0, stop=array.sizes[dim])
         return coord

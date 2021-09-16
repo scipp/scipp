@@ -10,6 +10,7 @@
 
 #include "scipp/core/element/math.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/pow.h"
 #include "scipp/variable/variable.h"
 
@@ -276,6 +277,32 @@ TEST(Variable, pow_value_and_variance) {
                        except::VariancesError);
 }
 
+TEST(Variable, pow_binned_variable) {
+  const auto buffer = makeVariable<double>(
+      Dims{Dim::Event}, Shape{5}, Values{1.0, 2.0, 3.0, 4.0, 5.0}, units::m);
+  const auto indices = makeVariable<index_pair>(
+      Dims{Dim::X}, Shape{2}, Values{index_pair{0, 2}, index_pair{2, 5}});
+  const auto base = make_bins(indices, Dim::Event, buffer);
+  const auto result = pow(base, int64_t{2} * units::one);
+
+  const auto expected_buffer = makeVariable<double>(
+      Dims{Dim::Event}, Shape{5}, Values{1.0, 4.0, 9.0, 16.0, 25.0},
+      units::m * units::m);
+  const auto expected = make_bins(indices, Dim::Event, expected_buffer);
+
+  EXPECT_EQ(result, expected);
+}
+
+TEST(Variable, pow_binned_variable_exp) {
+  const auto buffer = makeVariable<double>(
+      Dims{Dim::Event}, Shape{5}, Values{1.0, 2.0, 3.0, 4.0, 5.0}, units::m);
+  const auto indices = makeVariable<index_pair>(
+      Dims{Dim::X}, Shape{2}, Values{index_pair{0, 2}, index_pair{2, 5}});
+  const auto exponent = make_bins(indices, Dim::Event, buffer);
+  EXPECT_THROW_DISCARD(pow(int64_t{2} * units::one, exponent),
+                       std::invalid_argument);
+}
+
 TYPED_TEST(VariableMathTest, sqrt) {
   for (TypeParam x : {0.0, 1.23, 1.23456789, 3.45}) {
     for (auto [uin, uout] :
@@ -308,6 +335,22 @@ TEST(Variable, dot_of_vector) {
   auto var = makeVariable<Eigen::Vector3d>(
       Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{v1, v2, v3});
   EXPECT_EQ(dot(var, var), reference);
+}
+
+TEST(Variable, cross_of_vector) {
+  Eigen::Vector3d v1(1, 0, 0);
+  Eigen::Vector3d v2(0, 1, 0);
+  Eigen::Vector3d v3(0, 0, 1);
+
+  auto reference = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{3}, units::Unit(units::m) * units::Unit(units::m),
+      Values{element::cross(v1, v2), element::cross(v2, v1),
+             element::cross(v2, v2)});
+  auto var1 = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{v1, v2, v2});
+  auto var2 = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{3}, units::Unit(units::m), Values{v2, v1, v2});
+  EXPECT_EQ(cross(var1, var2), reference);
 }
 
 TEST(Variable, reciprocal) {
@@ -413,4 +456,28 @@ TEST(Variable, log10_out_arg) {
 
 TEST(Variable, log10_bad_unit) {
   EXPECT_THROW_DISCARD(log10(1.0 * units::s), except::UnitError);
+}
+
+TEST(Variable, rint) {
+  auto preRoundedVar = makeVariable<double>(
+      Dims{scipp::units::Dim::X}, Values{1.2, 2.9, 1.5, 2.5}, Shape{4});
+  auto roundedVar = makeVariable<double>(Dims{scipp::units::Dim::X},
+                                         Values{1, 3, 2, 2}, Shape{4});
+  EXPECT_EQ(rint(preRoundedVar), roundedVar);
+}
+
+TEST(Variable, ceil) {
+  auto preRoundedVar = makeVariable<double>(
+      Dims{scipp::units::Dim::X}, Values{1.2, 2.9, 1.5, 2.5}, Shape{4});
+  auto roundedVar = makeVariable<double>(Dims{scipp::units::Dim::X},
+                                         Values{2, 3, 2, 3}, Shape{4});
+  EXPECT_EQ(ceil(preRoundedVar), roundedVar);
+}
+
+TEST(Variable, floor) {
+  auto preRoundedVar = makeVariable<double>(
+      Dims{scipp::units::Dim::X}, Values{1.2, 2.9, 1.5, 2.5}, Shape{4});
+  auto roundedVar = makeVariable<double>(Dims{scipp::units::Dim::X},
+                                         Values{1, 2, 1, 2}, Shape{4});
+  EXPECT_EQ(floor(preRoundedVar), roundedVar);
 }

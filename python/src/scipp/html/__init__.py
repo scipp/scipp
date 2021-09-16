@@ -6,13 +6,14 @@
 from __future__ import annotations
 
 from ..typing import VariableLike
-from .._scipp import core as sc
-from .formatting_html import dataset_repr, inject_style, variable_repr
+from ..core import Variable
 
 
 def make_html(container: VariableLike) -> str:
+    from .formatting_html import dataset_repr, variable_repr
+    from .._styling import inject_style
     inject_style()
-    if isinstance(container, sc.Variable):
+    if isinstance(container, Variable):
         return variable_repr(container)
     else:
         return dataset_repr(container)

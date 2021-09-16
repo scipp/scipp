@@ -62,10 +62,12 @@ TEST_F(Dataset3DTest, dimension_extent_check_prevents_setting_edge_data) {
                except::DimensionError);
 }
 
-TEST_F(Dataset3DTest, dimension_extent_check_non_coord_dimension_fail) {
-  // This is the Y coordinate but has extra extent in X.
-  ASSERT_THROW(dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 5}, {Dim::Y, 5}})),
-               except::DimensionError);
+TEST_F(Dataset3DTest, dimension_extent_check_non_coord_dimension) {
+  // This is the Y coordinate but has extra extent in X. It is interpreted as a
+  // coord for X.
+  ASSERT_NO_THROW(
+      dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
+  ASSERT_EQ(dataset.coords().dim_of(Dim::Y), Dim::X);
 }
 
 TEST_F(Dataset3DTest,
@@ -74,14 +76,8 @@ TEST_F(Dataset3DTest,
   // only be edges for this dim.
   ASSERT_NO_THROW(dataset.setCoord(Dim("edge_labels"),
                                    makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
-  ASSERT_THROW(dataset.setCoord(Dim("bad_edges_for_non_inner_dim"),
-                                makeRandom({{Dim::X, 5}, {Dim::Y, 5}})),
-               except::DimensionError);
-  dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 4}, {Dim::Y, 6}}));
-  dataset.setCoord(Dim::X, makeRandom({Dim::X, 5}));
-  ASSERT_THROW(dataset.setCoord(Dim("bad_even_if_coord_on_edges"),
-                                makeRandom({{Dim::X, 5}, {Dim::Y, 5}})),
-               except::DimensionError);
+  ASSERT_NO_THROW(dataset.setCoord(Dim("edges_for_non_inner_dim"),
+                                   makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
   ASSERT_THROW(dataset.setCoord(Dim("bad_edges_for_both_dims"),
                                 makeRandom({{Dim::X, 5}, {Dim::Y, 6}})),
                except::DimensionError);
@@ -244,11 +240,6 @@ TEST_P(Dataset3DTest_slice_y, slice) {
   reference.setData("data_xy", dataset["data_xy"].slice({Dim::Y, pos}));
   reference.setData("data_zyx", dataset["data_zyx"].slice({Dim::Y, pos}));
   reference.setData("data_xyz", dataset["data_xyz"].slice({Dim::Y, pos}));
-  for (const auto &name : {"data_xy", "data_zyx", "data_xyz"}) {
-    for (const auto &attr : {"y", "labels_xy"})
-      reference[name].attrs().set(
-          Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::Y, pos}));
-  }
   for (const auto &item : dataset)
     if (!reference.contains(item.name()))
       reference.setData(item.name(), copy(item));
