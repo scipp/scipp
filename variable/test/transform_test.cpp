@@ -65,13 +65,14 @@ const std::vector<Shape> shapes{Shape{1},       Shape{2},       Shape{3},
                                 Shape{1, 5, 1}, Shape{7, 1, 1}, Shape{2, 8, 4}};
 
 auto make_slices(const Shape &shape) {
-  std::vector<Slice> res{Slice{Dim::X, 0, shape.data.at(0) - 1},
-                         Slice{Dim::X, 0, shape.data.at(0) / 2}};
-  if (shape.data.size() > 1 && shape.data.at(1) > 1) {
-    res.emplace_back(Dim::Y, 0, shape.data.at(1) / 2);
-  }
-  if (shape.data.at(0) >= 2) {
-    res.emplace_back(Dim::X, 2, shape.data.at(0));
+  std::vector<Slice> res;
+  const std::vector dim_labels{Dim::X, Dim::Y, Dim::Z};
+  for (size_t dim = 0; dim < 3; ++dim) {
+    if (shape.data.size() > dim && shape.data.at(dim) > 1) {
+      res.emplace_back(dim_labels.at(dim), 0, shape.data.at(dim) - 1);
+      res.emplace_back(dim_labels.at(dim), 0, shape.data.at(dim) / 2);
+      res.emplace_back(dim_labels.at(dim), 2, shape.data.at(dim));
+    }
   }
   return res;
 }
