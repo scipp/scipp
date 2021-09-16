@@ -159,24 +159,26 @@ TEST_F(TransformUnaryTest, slice) {
 }
 
 TEST_F(TransformUnaryTest, transpose) {
-  for (bool variances : {false, true}) {
-    const auto initial_buffer =
-        make_variable_for_test<double>({3, 4}, variances);
-    const auto initial = transpose(initial_buffer);
+  for (auto &shape : shapes) {
+    for (bool variances : {false, true}) {
+      const auto initial_buffer =
+          make_variable_for_test<double>(shape, variances);
+      const auto initial = transpose(initial_buffer);
 
-    const auto result_return = transform<double>(initial, op, name);
-    auto result_in_place = copy(initial);
-    transform_in_place<double>(result_in_place, op_in_place, name);
+      const auto result_return = transform<double>(initial, op, name);
+      auto result_in_place = copy(initial);
+      transform_in_place<double>(result_in_place, op_in_place, name);
 
-    EXPECT_TRUE(equals(result_return.values<double>(),
-                       op_manual_values(initial.values<double>())));
-    if (variances) {
-      EXPECT_TRUE(equals(result_return.variances<double>(),
-                         op_manual_variances(initial.values<double>(),
-                                             initial.variances<double>())));
+      EXPECT_TRUE(equals(result_return.values<double>(),
+                         op_manual_values(initial.values<double>())));
+      if (variances) {
+        EXPECT_TRUE(equals(result_return.variances<double>(),
+                           op_manual_variances(initial.values<double>(),
+                                               initial.variances<double>())));
+      }
+      // In-place transform used to check result of non-in-place transform.
+      EXPECT_EQ(result_return, result_in_place);
     }
-    // In-place transform used to check result of non-in-place transform.
-    EXPECT_EQ(result_return, result_in_place);
   }
 }
 
