@@ -3,7 +3,9 @@
 #include <gtest/gtest.h>
 #include <vector>
 
+#include "random.h"
 #include "test_macros.h"
+#include "test_util.h"
 
 #include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
@@ -43,19 +45,43 @@ auto make_variable_for_test(const Shape &shape, bool variances) {
   return var;
 }
 
-// TODO irregular partitions
-auto make_bin_indices(const scipp::index size, const scipp::index n_bins) {
-  std::vector<index_pair> aux(n_bins);
-  std::generate(begin(aux), end(aux),
+auto make_uniform_bin_indices(const scipp::index size,
+                              const scipp::index n_bins) {
+  std::vector<index_pair> index_pairs(n_bins);
+  std::generate(begin(index_pairs), end(index_pairs),
                 [lower = scipp::index{0}, size, n_bins]() mutable {
-                  const scipp::index upper = static_cast<scipp::index>(
-                      lower + (static_cast<double>(size) / n_bins));
+                  const auto upper = lower + static_cast<scipp::index>(
+                                                 (static_cast<double>(size) /
+                                                  static_cast<double>(n_bins)));
                   const index_pair res{lower, upper};
                   lower = upper;
                   return res;
                 });
-  aux.back().second = size;
-  return makeVariable<index_pair>(Dims{Dim::Event}, Shape{n_bins}, Values(aux));
+  index_pairs.back().second = size;
+  return makeVariable<index_pair>(Dims{Dim::Event}, Shape{n_bins},
+                                  Values(index_pairs));
+}
+
+auto make_random_bin_indices(const scipp::index size,
+                             const scipp::index n_bins) {
+  if (size == 0) {
+    return makeVariable<index_pair>(Dims{Dim::Event}, Shape{n_bins},
+                                    Values{index_pair{0, 0}});
+  }
+  Random rng;
+  const auto index_pairs =
+      index_pairs_from_sizes(rng.random_int_partition(size, n_bins));
+  return makeVariable<index_pair>(Dims{Dim::Event}, Shape{n_bins},
+                                  Values(index_pairs));
+}
+
+enum PartitionType { UNIFORM, RANDOM };
+
+auto make_bin_indices(const scipp::index size, const scipp::index n_bins,
+                      const PartitionType partition_type) {
+  return partition_type == PartitionType::UNIFORM
+             ? make_uniform_bin_indices(size, n_bins)
+             : make_random_bin_indices(size, n_bins);
 }
 
 const std::vector<Shape> shapes{Shape{1},       Shape{2},       Shape{3},
@@ -67,8 +93,8 @@ const std::vector<Shape> shapes{Shape{1},       Shape{2},       Shape{3},
 auto make_slices(const Shape &shape) {
   std::vector<Slice> res;
   const std::vector dim_labels{Dim::X, Dim::Y, Dim::Z};
-  for (size_t dim = 0; dim < 3; ++dim) {
-    if (shape.data.size() > dim && shape.data.at(dim) > 1) {
+  for (scipp::index dim = 0; dim < 3; ++dim) {
+    if (scipp::size(shape.data) > dim && shape.data.at(dim) > 1) {
       res.emplace_back(dim_labels.at(dim), 0, shape.data.at(dim) - 1);
       res.emplace_back(dim_labels.at(dim), 0, shape.data.at(dim) / 2);
       res.emplace_back(dim_labels.at(dim), 2, shape.data.at(dim));
@@ -184,28 +210,33 @@ TEST_F(TransformUnaryTest, transpose) {
 
 TEST_F(TransformUnaryTest, elements_of_bins) {
   for (const auto &shape : shapes) {
-    for (scipp::index bin_dim = 0;
-         bin_dim < static_cast<scipp::index>(shape.data.size()); ++bin_dim) {
+    for (scipp::index bin_dim = 0; bin_dim < scipp::size(shape.data);
+         ++bin_dim) {
       for (scipp::index n_bins : {1, 2, 4, 5}) {
         if (n_bins > shape.data[bin_dim]) {
           continue;
         }
-        for (bool variances : {false, true}) {
-          const auto buffer = make_variable_for_test<double>(shape, variances);
-          const auto bin_dim_label = buffer.dims().labels()[bin_dim];
-          const auto indices = make_bin_indices(shape.data[bin_dim], n_bins);
-          auto var = make_bins(indices, bin_dim_label, copy(buffer));
+        for (const auto partition_type :
+             {PartitionType::UNIFORM, PartitionType::RANDOM}) {
+          for (bool variances : {false, true}) {
+            const auto buffer =
+                make_variable_for_test<double>(shape, variances);
+            const auto bin_dim_label = buffer.dims().labels()[bin_dim];
+            const auto indices =
+                make_bin_indices(shape.data[bin_dim], n_bins, partition_type);
+            auto var = make_bins(indices, bin_dim_label, copy(buffer));
 
-          const auto result = transform<double>(var, op, name);
-          transform_in_place<double>(var, op_in_place, name);
+            const auto result = transform<double>(var, op, name);
+            transform_in_place<double>(var, op_in_place, name);
 
-          const auto expected = transform<double>(buffer, op, name);
-          for (scipp::index bin = 0; bin < n_bins; ++bin) {
-            const auto [lower, upper] = indices.values<index_pair>()[bin];
-            EXPECT_EQ(var.values<bucket<Variable>>()[bin],
-                      expected.slice({bin_dim_label, lower, upper}));
+            const auto expected = transform<double>(buffer, op, name);
+            for (scipp::index bin = 0; bin < n_bins; ++bin) {
+              const auto [lower, upper] = indices.values<index_pair>()[bin];
+              EXPECT_EQ(var.values<bucket<Variable>>()[bin],
+                        expected.slice({bin_dim_label, lower, upper}));
+            }
+            EXPECT_EQ(result, var);
           }
-          EXPECT_EQ(result, var);
         }
       }
     }
