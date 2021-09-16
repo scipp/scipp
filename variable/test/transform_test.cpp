@@ -132,10 +132,6 @@ TEST_F(TransformUnaryTest, dense) {
 
 TEST_F(TransformUnaryTest, slice) {
   for (const auto &shape : shapes) {
-    if (shape.data.size() == 1) {
-      continue; // cannot construct strided slices of 1D Variables
-    }
-
     for (bool variances : {false, true}) {
       const auto initial_buffer =
           make_variable_for_test<double>(shape, variances);
