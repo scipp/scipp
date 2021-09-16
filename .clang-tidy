@@ -2,6 +2,7 @@
 Checks:            '*,
                     -android-*,
                     -altera-struct-pack-align,
+                    -altera-unroll-loops,
                     -bugprone-bool-pointer-implicit-conversion,
                     -bugprone-exception-escape,
                     -bugprone-infinite-loop,
