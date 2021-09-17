@@ -71,6 +71,11 @@ Bugfixes
 * Operations with Python floats to long interpret the float as 32-bit float `#2101 <https://github.com/scipp/scipp/pull/2101>`_.
 * Multi-dimensional bin-edge coordinates may now be edges for a non-inner dimension `#2098 <https://github.com/scipp/scipp/pull/2098>`_.
 
+Deprecations
+~~~~~~~~~~~~
+
+* The ``events`` property is deprecated and is scheduled for removal with v0.9.
+
 Contributors
 ~~~~~~~~~~~~
 
