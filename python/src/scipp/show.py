@@ -106,9 +106,9 @@ class VariableDrawer:
         return [1] * (3 - len(e)) + e
 
     def _events_height(self):
-        if self._variable.events is None:
+        if self._variable.bins is None:
             return 0
-        events = self._variable.events
+        events = self._variable.bins.constituents['data']
         # Rough estimate of vertical space taken by depiction of events buffer
         if isinstance(events, sc.Variable):
             return 1

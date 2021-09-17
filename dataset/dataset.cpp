@@ -7,8 +7,6 @@
 #include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
 
-#include "dataset_operations_common.h"
-
 namespace scipp::dataset {
 
 namespace {
@@ -252,21 +250,6 @@ const Sizes &Dataset::sizes() const { return m_coords.sizes(); }
 const Sizes &Dataset::dims() const { return sizes(); }
 
 bool Dataset::is_readonly() const noexcept { return m_readonly; }
-
-Dataset Dataset::as_const() const {
-  Dataset out;
-  out.m_coords = m_coords.as_const();
-  for (const auto &[k, v] : m_data)
-    out.m_data[k] = v.as_const();
-  out.m_readonly = true;
-  return out;
-}
-
-Dataset Dataset::view() const {
-  // TODO Cannot return view right now, would require wrapping fields of Dataset
-  // in shared_ptr. We return as_const for now to avoid breakage.
-  return as_const();
-}
 
 typename Masks::holder_type union_or(const Masks &currentMasks,
                                      const Masks &otherMasks) {

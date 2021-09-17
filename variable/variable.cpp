@@ -272,8 +272,6 @@ Variable Variable::as_const() const {
   return out;
 }
 
-Variable Variable::view() const { return *this; }
-
 void Variable::expectWritable() const {
   if (m_readonly)
     throw except::VariableError("Read-only flag is set, cannot mutate data.");
