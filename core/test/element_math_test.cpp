@@ -192,3 +192,15 @@ TEST(ElementRoundingTest, rint) {
       element::rint, {2.01, 2.7, 2.3, 2.15, 2.617, 2.32133, 1.5, 2.5, 3.5, 4.5},
       {2., 3., 2., 2., 3., 2., 2., 2., 4., 4.});
 }
+
+TEST(ElementMathTest, erf) {
+  EXPECT_EQ(element::erf(1.1), std::erf(1.1));
+  EXPECT_EQ(element::erf(units::one), units::one);
+  EXPECT_THROW_DISCARD(element::erf(units::m), except::UnitError);
+}
+
+TEST(ElementMathTest, erfc) {
+  EXPECT_EQ(element::erfc(1.1), std::erfc(1.1));
+  EXPECT_EQ(element::erfc(units::one), units::one);
+  EXPECT_THROW_DISCARD(element::erfc(units::m), except::UnitError);
+}

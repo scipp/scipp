@@ -161,3 +161,17 @@ def ceil(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike
     :returns: Rounded up version of the data passed.
     """
     return _call_cpp_func(_cpp.ceil, x, out=out)
+
+
+def erf(x: VariableLike) -> VariableLike:
+    """
+    Computes the error function.
+    """
+    return _cpp.erf(x)
+
+
+def erfc(x: VariableLike) -> VariableLike:
+    """
+    Computes the complementary error function.
+    """
+    return _cpp.erfc(x)

@@ -83,6 +83,8 @@ Math
    cross
    divide
    dot
+   erf
+   erfc
    exp
    floor
    floor_divide
