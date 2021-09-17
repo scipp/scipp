@@ -24,8 +24,8 @@ class DataArrayDict(dict):
 
     @property
     def unit(self):
-        array = next(iter(self.values()))
-        return array.unit if array.events is None else array.events.unit
+        da = next(iter(self.values()))
+        return da.unit if da.bins is None else da.bins.constituents['data'].unit
 
     @property
     def meta(self):
@@ -133,7 +133,7 @@ class PlotModel:
             # If there is a bin-edge coord but no corresponding event-coord then `bin`
             # cannot handle this. We could first bin without this and then use `rebin`.
             if coord.sizes[dim] != array.sizes[dim]:
-                if array.events is not None and dim not in array.events.coords:
+                if array.bins is not None and dim not in array.bins.coords:
                     coord = to_bin_centers(coord, dim)
         else:
             coord = arange(dim=dim, start=0, stop=array.sizes[dim])

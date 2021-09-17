@@ -169,7 +169,8 @@ class PlotDict():
 
 
 def _guess_resampling_mode(array):
-    unit = array.unit if array.events is None else array.events.unit
+    unit = array.unit if array.bins is None \
+            else array.bins.constituents['data'].unit
     if unit in [units.counts, units.one]:
         return ResamplingMode.sum
     return ResamplingMode.mean
