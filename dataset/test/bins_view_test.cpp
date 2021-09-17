@@ -38,7 +38,7 @@ TEST_F(BinsViewTest, insert) {
 }
 
 // TODO Currently disabled until we have proper handling of readonly flags when
-// slicing binend variables. We need to set a readonly flag on the buffer, but
+// slicing binned variables. We need to set a readonly flag on the buffer, but
 // not on the buffer columns, such that insert/erase of columns is prohibited
 // but value modification is supported.
 TEST_F(BinsViewTest, DISABLED_slice_readonly) {
