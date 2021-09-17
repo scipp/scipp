@@ -123,7 +123,8 @@ public:
   [[nodiscard]] core::ElementArrayViewParams array_params() const noexcept;
 
   [[nodiscard]] Variable bin_indices() const;
-  template <class T> T bin_buffer() const;
+  template <class T> const T &bin_buffer() const;
+  template <class T> T &bin_buffer();
 
   template <class T> std::tuple<Variable, Dim, T> constituents() const;
   template <class T> std::tuple<Variable, Dim, T> constituents();
@@ -139,7 +140,6 @@ public:
   [[nodiscard]] bool is_same(const Variable &other) const noexcept;
 
   [[nodiscard]] Variable as_const() const;
-  [[nodiscard]] Variable view() const;
 
   auto &unchecked_dims() { return m_dims; }
   auto &unchecked_strides() { return m_strides; }

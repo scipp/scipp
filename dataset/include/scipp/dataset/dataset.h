@@ -195,9 +195,6 @@ public:
 
   bool is_readonly() const noexcept;
 
-  [[nodiscard]] Dataset as_const() const;
-  [[nodiscard]] Dataset view() const;
-
 private:
   // Declared friend so gtest recognizes it
   friend SCIPP_DATASET_EXPORT std::ostream &operator<<(std::ostream &,
