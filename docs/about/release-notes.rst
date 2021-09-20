@@ -3,11 +3,13 @@
 Release Notes
 =============
 
-Since v0.8
-----------
+v0.9.0 (unreleased)
+-------------------
 
 Features
 ~~~~~~~~
+
+* Add ``erf`` and ``erfc`` functions `#2195 <https://github.com/scipp/scipp/pull/2195>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -17,6 +19,11 @@ Bugfixes
 
 Contributors
 ~~~~~~~~~~~~
+
+Owen Arnold :sup:`b, c`\ ,
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas Wynen :sup:`a`\
 
 v0.8.0 (September 2021)
 -----------------------

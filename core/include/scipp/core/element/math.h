@@ -118,4 +118,18 @@ constexpr auto rint =
                  return rint(a);
                }};
 
+constexpr auto special = overloaded{arg_list<double, float, int64_t, int32_t>,
+                                    dimensionless_unit_check_return,
+                                    transform_flags::expect_no_variance_arg<0>};
+
+constexpr auto erf = overloaded{special, [](const auto &x) {
+                                  using std::erf;
+                                  return erf(x);
+                                }};
+
+constexpr auto erfc = overloaded{special, [](const auto &x) {
+                                   using std::erfc;
+                                   return erfc(x);
+                                 }};
+
 } // namespace scipp::core::element
