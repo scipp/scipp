@@ -69,12 +69,6 @@ def test_events_property():
     assert 'coord' in binned.events.coords
     assert 'mask' in binned.events.masks
     assert 'attr' in binned.events.attrs
-    with pytest.raises(sc.DataArrayError):
-        # readonly because slice
-        del binned['y', 0].events.coords['coord']
-    # not readonly if not a slice
-    del binned['y', :].events.coords['coord']
-    assert 'coord' not in binned.events.coords
 
 
 def test_bins():

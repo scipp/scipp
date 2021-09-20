@@ -15,8 +15,8 @@ def _prop(key):
 
 
 def is_structured(obj):
-    if obj.events is not None:
-        return is_structured(obj.events)
+    if obj.bins is not None:
+        return is_structured(obj.bins.constituents['data'])
     return obj.dtype in [dtype.vector_3_float64, dtype.matrix_3_float64]
 
 

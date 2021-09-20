@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from typing import Dict, Optional, Sequence, Union
+import warnings
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
@@ -173,6 +174,8 @@ def _events(obj):
     Returns the data underlying the bins stored in the object, or None if the
     object stores dense data.
     """
+    warnings.warn("The 'events' property is deprecated; use 'bins'.",
+                  DeprecationWarning)
     if _cpp.is_bins(obj):
         if isinstance(obj, _cpp.Variable):
             return _cpp.bins_data(obj)

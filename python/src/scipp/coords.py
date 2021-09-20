@@ -60,8 +60,8 @@ class Graph:
 def _consume_coord(obj, name):
     if name in obj.coords:
         obj.attrs[name] = obj.coords.pop(name)
-    if obj.events is not None:
-        if name in obj.events.coords:
+    if obj.bins is not None:
+        if name in obj.bins.coords:
             obj.bins.attrs[name] = obj.bins.coords.pop(name)
         return obj.attrs.get(name, None), obj.bins.attrs.get(name, None)
     return obj.attrs[name], None
@@ -70,8 +70,8 @@ def _consume_coord(obj, name):
 def _produce_coord(obj, name):
     if name in obj.attrs:
         obj.coords[name] = obj.attrs.pop(name)
-    if obj.events is not None:
-        if name in obj.events.attrs:
+    if obj.bins is not None:
+        if name in obj.bins.attrs:
             obj.bins.coords[name] = obj.bins.attrs.pop(name)
         return obj.coords.get(name, None), obj.bins.coords.get(name, None)
     return obj.coords[name], None
@@ -149,7 +149,7 @@ class CoordTransform:
                 # Dense outputs may be produced as side effects of processing event
                 # coords.
                 for name in list(out_bins.keys()):
-                    if out_bins[name].events is None:
+                    if out_bins[name].bins is None:
                         coord = out_bins.pop(name)
                         if name in out:
                             assert identical(out[name], coord)
@@ -167,11 +167,11 @@ class CoordTransform:
             _store_coord(self.obj, key, coord)
 
     def _exists(self, name):
-        in_events = self.obj.events is not None and name in self.obj.events.meta
+        in_events = self.obj.bins is not None and name in self.obj.bins.meta
         return name in self.obj.meta or in_events
 
     def _get_existing(self, name):
-        events = None if self.obj.events is None else self.bins.meta[name]
+        events = None if self.obj.bins is None else self.bins.meta[name]
         return self.obj.meta.get(name, None), events
 
     def _get_coord(self, name):
@@ -190,13 +190,13 @@ class CoordTransform:
 
     def _del_attr(self, name):
         self.obj.attrs.pop(name, None)
-        if self.obj.events is not None:
-            self.obj.events.attrs.pop(name, None)
+        if self.obj.bins is not None:
+            self.obj.bins.attrs.pop(name, None)
 
     def _del_coord(self, name):
         self.obj.coords.pop(name, None)
-        if self.obj.events is not None:
-            self.obj.events.coords.pop(name, None)
+        if self.obj.bins is not None:
+            self.obj.bins.coords.pop(name, None)
 
     def finalize(self, *, include_aliases, rename_dims, keep_intermediate, keep_inputs):
         for name in self._outputs:

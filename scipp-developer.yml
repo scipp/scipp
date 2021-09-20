@@ -45,6 +45,6 @@ dependencies:
   # Docs
   - pandoc
   - sphinx
-  - sphinx_rtd_theme
+  - sphinx_rtd_theme=0.5.2 # 1.0.0 broken CSS?
   - nbsphinx
   - docutils=0.16 # see https://github.com/spatialaudio/nbsphinx/issues/549
