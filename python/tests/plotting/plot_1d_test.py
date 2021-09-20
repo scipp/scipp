@@ -317,6 +317,10 @@ def test_plot_legend():
     plot(da, legend={"show": True, "loc": 4})
 
 
+def test_plot_1d_with_grid():
+    plot(make_dense_data_array(ndim=1), grid=True)
+
+
 def test_plot_redraw():
     da = make_dense_data_array(ndim=1)
     p = sc.plot(da)

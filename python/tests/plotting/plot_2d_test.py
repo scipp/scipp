@@ -72,6 +72,10 @@ def test_plot_2d_with_aspect():
     plot(make_dense_data_array(ndim=2), aspect='auto')
 
 
+def test_plot_2d_with_grid():
+    plot(make_dense_data_array(ndim=2), grid=True)
+
+
 def test_plot_2d_with_with_nan():
     da = make_dense_data_array(ndim=2)
     da.values[0, 0] = np.nan
