@@ -30,7 +30,8 @@ class PlotFigure2d(PlotFigure):
                  extend=None,
                  title=None,
                  xlabel=None,
-                 ylabel=None):
+                 ylabel=None,
+                 grid=False):
 
         super().__init__(ax=ax,
                          cax=cax,
@@ -39,7 +40,8 @@ class PlotFigure2d(PlotFigure):
                          ndim=2,
                          xlabel=xlabel,
                          ylabel=ylabel,
-                         toolbar=PlotToolbar2d)
+                         toolbar=PlotToolbar2d,
+                         grid=grid)
 
         if aspect is None:
             aspect = config.plot.aspect

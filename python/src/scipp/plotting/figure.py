@@ -22,7 +22,8 @@ class PlotFigure:
                  ndim=1,
                  xlabel=None,
                  ylabel=None,
-                 toolbar=None):
+                 toolbar=None,
+                 grid=False):
         self.fig = None
         self.closed = False
         self.ax = ax
@@ -46,6 +47,8 @@ class PlotFigure:
             self.fig = self.ax.get_figure()
 
         self.ax.set_title(title)
+        if grid:
+            self.ax.grid()
 
         self.axformatter = {}
         self.axlocator = {}
