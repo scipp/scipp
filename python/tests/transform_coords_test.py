@@ -222,7 +222,7 @@ def make_binned():
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
     ybins = sc.Variable(dims=['y'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
     binned = sc.bin(data, edges=[xbins, ybins])
-    del binned.events.coords['y']
+    del binned.bins.coords['y']
     del binned.coords['y']
     binned.coords['y'] = sc.arange(dim='y', start=0, stop=2)
     return binned
@@ -230,11 +230,11 @@ def make_binned():
 
 def check_binned(da, original):
     y = original.coords['y']
-    assert 'xy' not in original.events.coords  # Buffer was copied
-    assert 'x' in original.events.coords  # Buffer was copied for consume
+    assert 'xy' not in original.bins.coords  # Buffer was copied
+    assert 'x' in original.bins.coords  # Buffer was copied for consume
     assert sc.identical(da.bins.coords['xy'],
                         (y * original.bins.coords['x']).rename_dims({'x': 'x2'}))
-    assert 'yy' not in da.events.coords
+    assert 'yy' not in da.bins.coords
     assert sc.identical(da.coords['yy'], y * y)
 
 
@@ -268,6 +268,21 @@ def test_binned_no_dense_coord():
     graph = {'xy': convert, 'x2': 'x'}
     da = binned.transform_coords(['xy', 'yy'], graph=graph)
     check_binned(da, binned)
+
+
+def test_binned_request_existing_consumed():
+    binned = make_binned()
+
+    def xy(*, x, y):
+        return x * y
+
+    def unused(x):
+        pass
+
+    graph = {'xy': xy, 'x': unused}
+    # Regression test, this used to throw due to an untested branch when
+    # requesting a previously consumed event coord
+    binned.transform_coords(['xy', 'x'], graph=graph)
 
 
 def test_cycles():

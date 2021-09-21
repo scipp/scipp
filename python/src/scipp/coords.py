@@ -171,7 +171,7 @@ class CoordTransform:
         return name in self.obj.meta or in_events
 
     def _get_existing(self, name):
-        events = None if self.obj.bins is None else self.bins.meta[name]
+        events = None if self.obj.bins is None else self.obj.bins.meta[name]
         return self.obj.meta.get(name, None), events
 
     def _get_coord(self, name):
