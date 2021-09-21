@@ -295,7 +295,7 @@ def test_plot_2d_binned_data_float32_coord():
 
 
 def test_plot_2d_binned_data_datetime64():
-    da = make_binned_data_array(ndim=2)
+    da = make_binned_data_array(ndim=2, masks=True)
     start = sc.scalar(np.datetime64('now'))
     offset = (1000 * da.coords['xx']).astype('int64')
     offset.unit = 's'
