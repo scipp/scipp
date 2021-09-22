@@ -268,7 +268,7 @@ def test_plot_2d_binned_data():
 
 def test_plot_2d_binned_data_non_counts():
     da = make_binned_data_array(ndim=2)
-    da.events.unit = 'K'
+    da.bins.unit = 'K'
     plot(da)
     # Try without event-coord so implementation cannot use `histogram`
     for dim in ['xx', 'yy']:
@@ -282,7 +282,7 @@ def test_plot_2d_binned_data_non_counts():
 
 def test_plot_2d_binned_data_float32_coord():
     da = make_binned_data_array(ndim=2)
-    da.events.coords['xx'] = da.events.coords['xx'].astype('float32')
+    da.bins.coords['xx'] = da.bins.coords['xx'].astype('float32')
     plot(da)
     # Try without event-coord so implementation cannot use `histogram`
     for dim in ['xx', 'yy']:
@@ -300,9 +300,8 @@ def test_plot_2d_binned_data_datetime64():
     offset = (1000 * da.coords['xx']).astype('int64')
     offset.unit = 's'
     da.coords['xx'] = start + offset
-    offset = (1000 * da.events.coords['xx']).astype('int64')
-    offset.unit = 's'
-    da.events.coords['xx'] = start + offset
+    offset = (1000 * da.bins.coords['xx']).astype('int64') * sc.scalar(1, unit='s/m')
+    da.bins.coords['xx'] = start + offset
     plot(da)
     # Try without event-coord so implementation cannot use `histogram`
     for dim in ['xx', 'yy']:
