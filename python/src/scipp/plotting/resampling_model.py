@@ -96,13 +96,25 @@ class ResamplingModel():
     def edges(self):
         return self._edges
 
-    def _rebin(self, var, coords):
+    def _rebin(self, var, coords, *, sanitize=False):
+        """
+        Rebin a variable with given coords to new edges.
+
+        The `sanitize` parameter is an unfortunate artifact from mixing binned and
+        dense data in the case of masks of binned data. The called to _with_edges
+        below is done during setup of ResamplingDenseModel but not
+        ResamplingBinnedModel. A proper solution would likely include support for
+        non-edge inputs in `rebin`, or rather a function with similar constraits
+        such as `bin`, but for dense data.
+        """
         array = DataArray(data=var)
         for dim in coords:
             try:
                 array.coords[dim] = coords[dim]
             except DimensionError:  # Masks may be lower-dimensional
                 pass
+        if sanitize:
+            array, _ = _with_edges(array)
         plan = []
         for edge in self.edges:
             dim = edge.dims[-1]
@@ -122,7 +134,7 @@ class ResamplingModel():
 
     def _make_edges(self, params):
         edges = []
-        for i, (dim, par) in enumerate(params.items()):
+        for dim, par in params.items():
             if isinstance(par, int):
                 continue
             low, high, unit, res = par
@@ -179,7 +191,9 @@ class ResamplingModel():
             self._edges = self._make_edges(params)
             self._resampled = self._resample(out)
             for name, mask in out.masks.items():
-                self._resampled.masks[name] = self._rebin(mask, out.meta).data
+                self._resampled.masks[name] = self._rebin(
+                    mask, out.meta, sanitize=isinstance(self,
+                                                        ResamplingBinnedModel)).data
             for dim in params:
                 size_one = self._resampled.sizes.get(dim, None) == 1
                 no_resolution = self.resolution.get(dim, None) is None
@@ -217,18 +231,29 @@ class ResamplingBinnedModel(ResamplingModel):
         # We could bin with all edges and then use `bins.sum()` but especially
         # for inputs with many bins handling the final edges using `histogram`
         # is faster with the current implementation of `sc.bin`.
-        edges = self.edges[-1]
-        dim = edges.dims[-1]
+        # To avoid excessive memory use by `bin` we have to ensure that the
+        # dimension handled by `histogram` is not a dimension with many bins.
+        # We therefore select the smallest dimension of the input array for
+        # handling with `histogram`.
+        sizes = {}
+        for edges in self.edges:
+            dim = edges.dims[-1]
+            sizes[dim] = array.sizes[dim]
+        dim = min(sizes, key=sizes.get)
         # `bin` applies masks, but later we add rebinned masks. This would be
         # inconsistent with how dense data is handled, where data is preserved
         # even if masked, but masks grow. Therefore, we remove masks here. They
         # get handled in _call_resample.
         array = self._strip_masks(array)
         if dim in array.bins.coords:
+            index = list(sizes.keys()).index(dim)
+            edges = self.edges[index]
             # Must specify bounds for final dim despite handling by `histogram`
             # below: If coord is ragged binning would throw otherwise.
             bounds = concatenate(edges[dim, 0], edges[dim, -1], dim)
-            binned = bin_(array, edges=self.edges[:-1] + [bounds])
+            binned = bin_(
+                array,
+                edges=[bounds if i == index else e for i, e in enumerate(self.edges)])
             # TODO Use histogramming with "mean" mode once implemented
             if self.mode == ResamplingMode.mean:
                 return bin_(binned, edges=[edges]).bins.mean()
@@ -244,6 +269,8 @@ def _with_edges(array):
     new_array = array.copy(deep=False)
     prefix = ''.join(array.dims)
     for dim, var in array.coords.items():
+        if dim not in array.dims:
+            continue
         new_array.coords[f'{prefix}_{dim}'] = var
         if var.sizes[dim] == array.sizes[dim]:
             new_array.coords[dim] = to_bin_edges(var, dim)

@@ -268,7 +268,7 @@ def test_plot_2d_binned_data():
 
 def test_plot_2d_binned_data_non_counts():
     da = make_binned_data_array(ndim=2)
-    da.events.unit = 'K'
+    da.bins.unit = 'K'
     plot(da)
     # Try without event-coord so implementation cannot use `histogram`
     for dim in ['xx', 'yy']:
@@ -282,7 +282,7 @@ def test_plot_2d_binned_data_non_counts():
 
 def test_plot_2d_binned_data_float32_coord():
     da = make_binned_data_array(ndim=2)
-    da.events.coords['xx'] = da.events.coords['xx'].astype('float32')
+    da.bins.coords['xx'] = da.bins.coords['xx'].astype('float32')
     plot(da)
     # Try without event-coord so implementation cannot use `histogram`
     for dim in ['xx', 'yy']:
@@ -295,14 +295,13 @@ def test_plot_2d_binned_data_float32_coord():
 
 
 def test_plot_2d_binned_data_datetime64():
-    da = make_binned_data_array(ndim=2)
+    da = make_binned_data_array(ndim=2, masks=True)
     start = sc.scalar(np.datetime64('now'))
     offset = (1000 * da.coords['xx']).astype('int64')
     offset.unit = 's'
     da.coords['xx'] = start + offset
-    offset = (1000 * da.events.coords['xx']).astype('int64')
-    offset.unit = 's'
-    da.events.coords['xx'] = start + offset
+    offset = (1000 * da.bins.coords['xx']).astype('int64') * sc.scalar(1, unit='s/m')
+    da.bins.coords['xx'] = start + offset
     plot(da)
     # Try without event-coord so implementation cannot use `histogram`
     for dim in ['xx', 'yy']:
@@ -315,7 +314,7 @@ def test_plot_2d_binned_data_datetime64():
 
 
 def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
-    data = make_binned_data_array(ndim=2)
+    data = make_binned_data_array(ndim=2, masks=True)
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
     plot_obj = sc.plot(data)
     plot_obj.widgets._controls['run']['slider'].value = 1
