@@ -134,7 +134,7 @@ class ResamplingModel():
 
     def _make_edges(self, params):
         edges = []
-        for i, (dim, par) in enumerate(params.items()):
+        for dim, par in params.items():
             if isinstance(par, int):
                 continue
             low, high, unit, res = par
@@ -179,6 +179,11 @@ class ResamplingModel():
                         out = out[get_slice_params(out.data, out.meta[dim], low, high)]
                 params[dim] = (low.value, high.value, low.unit,
                                self.resolution.get(dim, None))
+        # Order params as in original data. This is particularely important for binned
+        # data since ResamplingBinnedModel uses some optimization to avoid many bins
+        # for the inner dimension. If params (and thus edges) were out of order we can
+        # run into big memory and/or performance issues.
+        params = {dim: params[dim] for dim in self._array.dims if dim in self.bounds}
         if params == self._home_params:
             # This is a crude caching mechanism for past views. Currently we
             # have the "back" buttons disabled in the matplotlib toolbar, so
