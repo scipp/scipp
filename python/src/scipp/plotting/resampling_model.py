@@ -179,11 +179,6 @@ class ResamplingModel():
                         out = out[get_slice_params(out.data, out.meta[dim], low, high)]
                 params[dim] = (low.value, high.value, low.unit,
                                self.resolution.get(dim, None))
-        # Order params as in original data. This is particularely important for binned
-        # data since ResamplingBinnedModel uses some optimization to avoid many bins
-        # for the inner dimension. If params (and thus edges) were out of order we can
-        # run into big memory and/or performance issues.
-        params = {dim: params[dim] for dim in self._array.dims if dim in self.bounds}
         if params == self._home_params:
             # This is a crude caching mechanism for past views. Currently we
             # have the "back" buttons disabled in the matplotlib toolbar, so
@@ -236,18 +231,29 @@ class ResamplingBinnedModel(ResamplingModel):
         # We could bin with all edges and then use `bins.sum()` but especially
         # for inputs with many bins handling the final edges using `histogram`
         # is faster with the current implementation of `sc.bin`.
-        edges = self.edges[-1]
-        dim = edges.dims[-1]
+        # To avoid excessive memory use by `bin` we have to ensure that the
+        # dimension handled by `histogram` is not a dimension with many bins.
+        # We therefore select the smallest dimension of the input array for
+        # handling with `histogram`.
+        sizes = {}
+        for edges in self.edges:
+            dim = edges.dims[-1]
+            sizes[dim] = array.sizes[dim]
+        dim = min(sizes, key=sizes.get)
         # `bin` applies masks, but later we add rebinned masks. This would be
         # inconsistent with how dense data is handled, where data is preserved
         # even if masked, but masks grow. Therefore, we remove masks here. They
         # get handled in _call_resample.
         array = self._strip_masks(array)
         if dim in array.bins.coords:
+            index = list(sizes.keys()).index(dim)
+            edges = self.edges[index]
             # Must specify bounds for final dim despite handling by `histogram`
             # below: If coord is ragged binning would throw otherwise.
             bounds = concatenate(edges[dim, 0], edges[dim, -1], dim)
-            binned = bin_(array, edges=self.edges[:-1] + [bounds])
+            binned = bin_(
+                array,
+                edges=[bounds if i == index else e for i, e in enumerate(self.edges)])
             # TODO Use histogramming with "mean" mode once implemented
             if self.mode == ResamplingMode.mean:
                 return bin_(binned, edges=[edges]).bins.mean()
