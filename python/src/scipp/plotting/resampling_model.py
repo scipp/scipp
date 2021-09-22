@@ -263,6 +263,8 @@ def _with_edges(array):
     new_array = array.copy(deep=False)
     prefix = ''.join(array.dims)
     for dim, var in array.coords.items():
+        if dim not in array.dims:
+            continue
         new_array.coords[f'{prefix}_{dim}'] = var
         if var.sizes[dim] == array.sizes[dim]:
             new_array.coords[dim] = to_bin_edges(var, dim)

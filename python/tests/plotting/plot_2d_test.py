@@ -315,7 +315,7 @@ def test_plot_2d_binned_data_datetime64():
 
 
 def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
-    data = make_binned_data_array(ndim=2)
+    data = make_binned_data_array(ndim=2, masks=True)
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
     plot_obj = sc.plot(data)
     plot_obj.widgets._controls['run']['slider'].value = 1
