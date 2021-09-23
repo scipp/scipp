@@ -14,7 +14,7 @@ resources:
     name: scipp/pipelines
     type: github
     endpoint: scipp
-    ref: main
+    ref: d4c1de408043b22ae75563058b670333de0a0085
 
 trigger:
   tags:
