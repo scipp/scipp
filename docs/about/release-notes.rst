@@ -20,6 +20,14 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+v0.7.2 (September 2021)
+-----------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix serious correctness bug in ``groupby.sum`` and ``groupby.mean`` `#2200 <https://github.com/scipp/scipp/pull/2200>`_.
+
 v0.7.0 (June 2021)
 ------------------
 
