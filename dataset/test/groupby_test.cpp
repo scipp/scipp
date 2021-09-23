@@ -8,6 +8,7 @@
 #include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/shape.h"
 
 #include "test_macros.h"
 
@@ -724,8 +725,8 @@ TEST_F(GroupbyMinMaxTest, max_empty_bin) {
 
 TEST(GroupbyLargeTest, sum) {
   const scipp::index large = 114688;
-  auto data = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{large, 100}) +
-              makeVariable<double>(Values{100});
+  auto data = broadcast(makeVariable<double>(Values{1}),
+                        {{Dim::X, Dim::Y}, {large, 10}});
   auto z = makeVariable<int32_t>(Dims{Dim::X}, Shape{large});
   for (scipp::index i = 0; i < large; ++i)
     z.values<int32_t>()[i] = (i / 6000) % 13;
