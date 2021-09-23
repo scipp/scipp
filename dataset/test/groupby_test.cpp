@@ -751,3 +751,16 @@ TEST_F(GroupbyMinMaxTest, max_empty_bin) {
   expected.setCoord(Dim("labels2"), edges);
   EXPECT_EQ(groupby(d, Dim("labels2"), edges).max(Dim::X), expected);
 }
+
+TEST(GroupbyLargeTest, sum) {
+  const scipp::index large = 114688;
+  auto data = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{large, 100}) +
+              makeVariable<double>(Values{100});
+  auto z = makeVariable<int32_t>(Dims{Dim::X}, Shape{large});
+  for (scipp::index i = 0; i < large; ++i)
+    z.values<int32_t>()[i] = (i / 6000) % 13;
+  DataArray da(data);
+  da.coords().set(Dim::Z, z);
+  auto grouped = groupby(da, Dim::Z).sum(Dim::X);
+  EXPECT_EQ(sum(grouped), sum(da));
+}
