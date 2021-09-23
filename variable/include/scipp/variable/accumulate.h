@@ -19,7 +19,7 @@ static void do_accumulate(const std::tuple<Ts...> &types, Op op,
   // - `other` are small, to avoid overhead (important for groupby), limit set
   //   by tuning BM_groupby_large_table
   // - reduction to scalar with more than 1 `other`
-  const scipp::index small_input = 16384;
+  constexpr scipp::index small_input = 16384;
   if ((!other.dims().includes(var.dims()) || ...) ||
       ((other.dims().volume() < small_input) && ...) ||
       (sizeof...(other) != 1 && var.dims().ndim() == 0))
@@ -61,7 +61,7 @@ static void do_accumulate(const std::tuple<Ts...> &types, Op op,
     // This value is found from benchmarks reducing the outer dimension. Making
     // it larger can improve parallelism further, but increases the overhead
     // from copies. May need further tuning.
-    const scipp::index chunking_limit = 65536;
+    constexpr scipp::index chunking_limit = 65536;
     if (var.dims().ndim() == 0 ||
         (reduce_outer && var.dims()[*var.dims().begin()] < chunking_limit)) {
       // For small output sizes, especially with reduction along the outer
@@ -75,6 +75,20 @@ static void do_accumulate(const std::tuple<Ts...> &types, Op op,
       const auto chunk_size = (outer_size + nchunk - 1) / nchunk;
       auto v = copy(
           broadcast(var, merge({Dim::InternalAccumulate, nchunk}, var.dims())));
+      // The threading approach in used here is possible only under the
+      // assumption that op(var, broadcast(var, ...)) leaves var unchanged. This
+      // is true for "idempotent" *operations* such as `min` and `max` as well
+      // as for the output (initial) *values* used for, e.g., `sum` (zero).
+      // However there are situations where *neither* is the case, most notably
+      // groupby(...).sum which calls accumulate multiple times *with the same
+      // output*.
+      // We could still support threading in such cases if the caller can
+      // provide an initial value to use for initializing the output buffer
+      // (instead of a broadcast of the output). For now we simply bail out if
+      // we detect non-idempotent initial values.
+      auto out = copy(var);
+      if (in_place<false>::transform_data(types, op, name, out, v); var != out)
+        return in_place<false>::transform_data(types, op, name, var, other...);
       const auto reduce = [&](const auto &range) {
         for (scipp::index i = range.begin(); i < range.end(); ++i) {
           const Slice slice(outer_dim, std::min(i * chunk_size, outer_size),
