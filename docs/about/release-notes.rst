@@ -25,6 +25,14 @@ Simon Heybrock :sup:`a`\ ,
 Neil Vaytet :sup:`a`\ ,
 and Jan-Lukas Wynen :sup:`a`\
 
+v0.8.3 (September 2021)
+-----------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix serious correctness bug in ``groupby.sum`` and ``groupby.mean`` `#2200 <https://github.com/scipp/scipp/pull/2200>`_.
+
 v0.8.0 (September 2021)
 -----------------------
 
@@ -94,6 +102,15 @@ Neil Vaytet :sup:`a`\ ,
 Tom Willemsen :sup:`b, c`\ ,
 and Jan-Lukas Wynen :sup:`a`\
 
+v0.7.2 (September 2021)
+-----------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix serious correctness bug in ``groupby.sum`` and ``groupby.mean`` `#2200 <https://github.com/scipp/scipp/pull/2200>`_.
+
+>>>>>>> f83b3b7ed... 0.7.2 release notes
 v0.7.0 (June 2021)
 ------------------
 
