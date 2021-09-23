@@ -73,8 +73,6 @@ static void do_accumulate(const std::tuple<Ts...> &types, Op op,
       const auto outer_size = (other.dims()[outer_dim], ...);
       const auto nchunk = std::min(scipp::index(24), outer_size);
       const auto chunk_size = (outer_size + nchunk - 1) / nchunk;
-      auto v = copy(
-          broadcast(var, merge({Dim::InternalAccumulate, nchunk}, var.dims())));
       // The threading approach in used here is possible only under the
       // assumption that op(var, broadcast(var, ...)) leaves var unchanged. This
       // is true for "idempotent" *operations* such as `min` and `max` as well
@@ -86,9 +84,11 @@ static void do_accumulate(const std::tuple<Ts...> &types, Op op,
       // provide an initial value to use for initializing the output buffer
       // (instead of a broadcast of the output). For now we simply bail out if
       // we detect non-idempotent initial values.
-      auto out = copy(var);
-      if (in_place<false>::transform_data(types, op, name, out, v); var != out)
+      auto v = copy(var);
+      if (in_place<false>::transform_data(types, op, name, v, var); var != v)
         return in_place<false>::transform_data(types, op, name, var, other...);
+      v = copy(
+          broadcast(var, merge({Dim::InternalAccumulate, nchunk}, var.dims())));
       const auto reduce = [&](const auto &range) {
         for (scipp::index i = range.begin(); i < range.end(); ++i) {
           const Slice slice(outer_dim, std::min(i * chunk_size, outer_size),
