@@ -29,7 +29,8 @@ std::string map_unit_string(const std::string &unit) {
 } // namespace
 
 Unit::Unit(const std::string &unit)
-    : Unit(llnl::units::unit_from_string(map_unit_string(unit))) {
+    : Unit(llnl::units::unit_from_string(map_unit_string(unit),
+                                         llnl::units::strict_si)) {
   if (!is_valid(m_unit))
     throw except::UnitError("Failed to convert string `" + unit +
                             "` to valid unit.");
