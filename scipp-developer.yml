@@ -22,7 +22,7 @@ dependencies:
   - ipympl
   - ipywidgets
   - matplotlib-base
-  - numpy >=1.15.3
+  - numpy>=1.20.0
   - python
   - python-configuration
   - pythreejs
@@ -35,7 +35,7 @@ dependencies:
   - python-graphviz
   - xarray  # For testing xarray <-> scipp conversion
   - pandas  # For testing pandas <-> scipp conversion
-  - scipy
+  - scipy>=1.7.0
 
   # Formatting & static analysis
   - pre-commit
