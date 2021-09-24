@@ -16,6 +16,12 @@ bool temporal_or_dimensionless(const units::Unit unit) {
 }
 } // namespace
 
+units::Unit make_unit(const ProtoUnit &unit) {
+  if (std::holds_alternative<std::string>(unit))
+    return units::Unit(std::get<std::string>(unit));
+  return std::get<units::Unit>(unit);
+}
+
 std::tuple<units::Unit, int64_t>
 get_time_unit(const std::optional<scipp::units::Unit> value_unit,
               const std::optional<scipp::units::Unit> dtype_unit,

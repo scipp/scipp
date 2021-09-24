@@ -20,6 +20,18 @@ def make_variables():
     return a, b, a_slice, b_slice, data
 
 
+def test_unit():
+    var = sc.Variable(dims=(), values=1)
+    var.unit = 'm'
+    assert var.unit == sc.Unit('m')
+    var.unit = sc.Unit('s')
+    assert var.unit == sc.Unit('s')
+    with pytest.raises(sc.UnitError):
+        var.unit = 'abcdef'  # does not parse
+    with pytest.raises(TypeError):
+        var.unit = 5  # neither str nor Unit
+
+
 def test_astype():
     var = sc.Variable(dims=['x'],
                       values=np.array([1, 2, 3, 4], dtype=np.int64),
