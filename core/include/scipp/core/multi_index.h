@@ -13,14 +13,6 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
 
-#ifdef _WIN32
-#define SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION SCIPP_CORE_EXPORT
-#define SCIPP_CORE_EXPORT_TEMPLATE_DEFINITION SCIPP_CORE_EXPORT
-#else
-#define SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION SCIPP_CORE_EXPORT
-#define SCIPP_CORE_EXPORT_TEMPLATE_DEFINITION
-#endif
-
 namespace scipp::core {
 namespace detail {
 inline auto get_nested_dims() { return Dimensions(); }
@@ -32,8 +24,7 @@ auto get_nested_dims(const T &param, const Ts &... params) {
 }
 } // namespace detail
 
-template <scipp::index N>
-class SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION MultiIndex {
+template <scipp::index N> class SCIPP_CORE_EXPORT MultiIndex {
 public:
   /// Determine from arguments if binned.
   template <class... Params>
@@ -344,40 +335,5 @@ MultiIndex(const Dimensions &, const StridesArgs &...)
 template <class... Params>
 MultiIndex(const ElementArrayViewParams &, const Params &...)
     -> MultiIndex<sizeof...(Params) + 1>;
-
-extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
-MultiIndex<1>::MultiIndex(const Dimensions &, const Strides &);
-extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
-MultiIndex<2>::MultiIndex(const Dimensions &, const Strides &, const Strides &);
-extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
-MultiIndex<3>::MultiIndex(const Dimensions &, const Strides &, const Strides &,
-                          const Strides &);
-extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
-MultiIndex<4>::MultiIndex(const Dimensions &, const Strides &, const Strides &,
-                          const Strides &, const Strides &);
-
-extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
-MultiIndex<1>::MultiIndex(binned_tag, const Dimensions &, const Dimensions &,
-                          const ElementArrayViewParams &);
-extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
-MultiIndex<2>::MultiIndex(binned_tag, const Dimensions &, const Dimensions &,
-                          const ElementArrayViewParams &,
-                          const ElementArrayViewParams &);
-extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
-MultiIndex<3>::MultiIndex(binned_tag, const Dimensions &, const Dimensions &,
-                          const ElementArrayViewParams &,
-                          const ElementArrayViewParams &,
-                          const ElementArrayViewParams &);
-extern template SCIPP_CORE_EXPORT_TEMPLATE_DECLARATION
-MultiIndex<4>::MultiIndex(binned_tag, const Dimensions &, const Dimensions &,
-                          const ElementArrayViewParams &,
-                          const ElementArrayViewParams &,
-                          const ElementArrayViewParams &,
-                          const ElementArrayViewParams &);
-
-extern template class MultiIndex<1>;
-extern template class MultiIndex<2>;
-extern template class MultiIndex<3>;
-extern template class MultiIndex<4>;
 
 } // namespace scipp::core
