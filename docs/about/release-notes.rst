@@ -110,7 +110,6 @@ Bugfixes
 
 * Fix serious correctness bug in ``groupby.sum`` and ``groupby.mean`` `#2200 <https://github.com/scipp/scipp/pull/2200>`_.
 
->>>>>>> f83b3b7ed... 0.7.2 release notes
 v0.7.0 (June 2021)
 ------------------
 
