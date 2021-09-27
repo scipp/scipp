@@ -116,7 +116,7 @@ class PlotFigure3d:
         """
         return
 
-    def connect(self, controller, event_handler):
+    def connect(self, controller):
         """
         Connect the toolbar Home button to reset the camera position.
         """

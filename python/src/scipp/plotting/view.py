@@ -94,7 +94,7 @@ class PlotView:
         `controller`.
         """
         self.controller = controller
-        self.figure.connect(controller=controller, event_handler=self)
+        self.figure.connect(controller=controller)
 
     def _slices_from_event(self, event):
         slices = {}
@@ -107,6 +107,9 @@ class PlotView:
                     return {}
                 slices[dim] = params
         return slices
+
+    def toggle_mouse_events(self, active):
+        self.figure.toggle_mouse_events(active=active, event_handler=self)
 
     def handle_motion_notify(self, event):
         self.controller.hover(self._slices_from_event(event))
