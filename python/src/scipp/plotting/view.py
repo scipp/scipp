@@ -108,8 +108,8 @@ class PlotView:
                 slices[dim] = params
         return slices
 
-    def toggle_profile_connection(self, visible):
-        self.figure.toggle_profile_connection(visible=visible, event_handler=self)
+    def toggle_mouse_events(self, active):
+        self.figure.toggle_mouse_events(active=active, event_handler=self)
 
     def handle_motion_notify(self, event):
         self.controller.hover(self._slices_from_event(event))

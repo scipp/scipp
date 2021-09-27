@@ -155,8 +155,8 @@ class PlotFigure:
         if self.toolbar is not None:
             self.toolbar.connect(controller=controller)
 
-    def toggle_profile_connection(self, visible, event_handler):
-        if visible:
+    def toggle_mouse_events(self, active, event_handler):
+        if active:
             self.event_connections['button_press_event'] = self.fig.canvas.mpl_connect(
                 'button_press_event', event_handler.handle_button_press)
             self.event_connections['pick_event'] = self.fig.canvas.mpl_connect(
