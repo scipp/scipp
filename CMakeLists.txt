@@ -62,7 +62,7 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 execute_process(
-  COMMAND conan create . scipp/stable
+  COMMAND conan export .
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.conan-recipes/llnl-units"
                     COMMAND_ECHO STDOUT
 )
