@@ -10,7 +10,8 @@ CMAKE_PROJECT_STR = """project(
 
 class UnitsConan(ConanFile):
     name = "LLNL-Units"
-    version = "0.5.0"
+    # Version past patch is ours, increment when moving branch/commit forward
+    version = "0.5.0.1"
     license = "BSD-3"
     url = "https://github.com/scipp/conan-llnl-units"
     homepage = "https://units.readthedocs.io"
@@ -38,6 +39,7 @@ class UnitsConan(ConanFile):
     def source(self):
         git = tools.Git("units")
         git.clone("https://github.com/SimonHeybrock/units.git")
+        git.checkout('9fc2d62')
 
         cmake_project_str = (CMAKE_PROJECT_STR.replace("\n", os.linesep)
                              if self.settings.os == "Windows" else CMAKE_PROJECT_STR)
