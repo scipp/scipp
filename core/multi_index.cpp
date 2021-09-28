@@ -148,32 +148,33 @@ MultiIndex<N>::MultiIndex(binned_tag, const Dimensions &inner_dims,
     seek_bin();
 }
 
-template MultiIndex<1>::MultiIndex(const Dimensions &, const Strides &);
-template MultiIndex<2>::MultiIndex(const Dimensions &, const Strides &,
-                                   const Strides &);
-template MultiIndex<3>::MultiIndex(const Dimensions &, const Strides &,
-                                   const Strides &, const Strides &);
-template MultiIndex<4>::MultiIndex(const Dimensions &, const Strides &,
-                                   const Strides &, const Strides &,
-                                   const Strides &);
+template SCIPP_CORE_EXPORT MultiIndex<1>::MultiIndex(const Dimensions &,
+                                                     const Strides &);
+template SCIPP_CORE_EXPORT
+MultiIndex<2>::MultiIndex(const Dimensions &, const Strides &, const Strides &);
+template SCIPP_CORE_EXPORT MultiIndex<3>::MultiIndex(const Dimensions &,
+                                                     const Strides &,
+                                                     const Strides &,
+                                                     const Strides &);
+template SCIPP_CORE_EXPORT
+MultiIndex<4>::MultiIndex(const Dimensions &, const Strides &, const Strides &,
+                          const Strides &, const Strides &);
 
-template MultiIndex<1>::MultiIndex(binned_tag, const Dimensions &,
-                                   const Dimensions &,
-                                   const ElementArrayViewParams &);
-template MultiIndex<2>::MultiIndex(binned_tag, const Dimensions &,
-                                   const Dimensions &,
-                                   const ElementArrayViewParams &,
-                                   const ElementArrayViewParams &);
-template MultiIndex<3>::MultiIndex(binned_tag, const Dimensions &,
-                                   const Dimensions &,
-                                   const ElementArrayViewParams &,
-                                   const ElementArrayViewParams &,
-                                   const ElementArrayViewParams &);
-template MultiIndex<4>::MultiIndex(binned_tag, const Dimensions &,
-                                   const Dimensions &,
-                                   const ElementArrayViewParams &,
-                                   const ElementArrayViewParams &,
-                                   const ElementArrayViewParams &,
-                                   const ElementArrayViewParams &);
+template SCIPP_CORE_EXPORT
+MultiIndex<1>::MultiIndex(binned_tag, const Dimensions &, const Dimensions &,
+                          const ElementArrayViewParams &);
+template SCIPP_CORE_EXPORT
+MultiIndex<2>::MultiIndex(binned_tag, const Dimensions &, const Dimensions &,
+                          const ElementArrayViewParams &,
+                          const ElementArrayViewParams &);
+template SCIPP_CORE_EXPORT
+MultiIndex<3>::MultiIndex(binned_tag, const Dimensions &, const Dimensions &,
+                          const ElementArrayViewParams &,
+                          const ElementArrayViewParams &,
+                          const ElementArrayViewParams &);
+template SCIPP_CORE_EXPORT MultiIndex<4>::MultiIndex(
+    binned_tag, const Dimensions &, const Dimensions &,
+    const ElementArrayViewParams &, const ElementArrayViewParams &,
+    const ElementArrayViewParams &, const ElementArrayViewParams &);
 
 } // namespace scipp::core
