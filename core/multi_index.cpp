@@ -7,6 +7,11 @@
 
 namespace scipp::core {
 
+template class SCIPP_CORE_EXPORT MultiIndex<1>;
+template class SCIPP_CORE_EXPORT MultiIndex<2>;
+template class SCIPP_CORE_EXPORT MultiIndex<3>;
+template class SCIPP_CORE_EXPORT MultiIndex<4>;
+
 namespace {
 void validate_bin_indices_impl(const ElementArrayViewParams &param0,
                                const ElementArrayViewParams &param1) {
