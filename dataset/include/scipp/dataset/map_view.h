@@ -77,7 +77,7 @@ public:
   Dict &operator=(Dict &&other) noexcept;
 
   /// Return the number of coordinates in the view.
-  index size() const noexcept { return scipp::size(m_items); }
+  [[nodiscard]] index size() const noexcept { return scipp::size(m_items); }
   /// Return true if there are 0 coordinates in the view.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
@@ -134,8 +134,8 @@ public:
   bool operator==(const Dict &other) const;
   bool operator!=(const Dict &other) const;
 
-  const Sizes &sizes() const noexcept { return m_sizes; }
-  const auto &items() const noexcept { return m_items; }
+  [[nodiscard]] const Sizes &sizes() const noexcept { return m_sizes; }
+  [[nodiscard]] const auto &items() const noexcept { return m_items; }
 
   void setSizes(const Sizes &sizes);
   void rebuildSizes();
@@ -152,7 +152,7 @@ public:
   void rename(const Dim from, const Dim to);
 
   void set_readonly() noexcept;
-  bool is_readonly() const noexcept;
+  [[nodiscard]] bool is_readonly() const noexcept;
   [[nodiscard]] Dict as_const() const;
   [[nodiscard]] Dict merge_from(const Dict &other) const;
 

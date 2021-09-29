@@ -27,27 +27,30 @@ public:
   bool operator==(const small_stable_map &other) const noexcept;
   bool operator!=(const small_stable_map &other) const noexcept;
 
-  auto begin() const noexcept { return m_keys.begin(); }
-  auto end() const noexcept { return m_keys.begin() + size(); }
-  auto rbegin() const noexcept { return m_keys.rbegin() - size() + NDIM_MAX; }
-  auto rend() const noexcept { return m_keys.rend(); }
-  typename std::array<Key, Capacity>::const_iterator find(const Key &key) const;
+  [[nodiscard]] auto begin() const noexcept { return m_keys.begin(); }
+  [[nodiscard]] auto end() const noexcept { return m_keys.begin() + size(); }
+  [[nodiscard]] auto rbegin() const noexcept {
+    return m_keys.rbegin() - size() + NDIM_MAX;
+  }
+  [[nodiscard]] auto rend() const noexcept { return m_keys.rend(); }
+  [[nodiscard]] typename std::array<Key, Capacity>::const_iterator
+  find(const Key &key) const;
   [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
-  constexpr scipp::index size() const noexcept { return m_size; }
-  bool contains(const Key &key) const;
-  scipp::index index(const Key &key) const;
-  const Value &operator[](const Key &key) const;
-  const Value &at(const Key &key) const;
+  [[nodiscard]] constexpr scipp::index size() const noexcept { return m_size; }
+  [[nodiscard]] bool contains(const Key &key) const;
+  [[nodiscard]] scipp::index index(const Key &key) const;
+  [[nodiscard]] const Value &operator[](const Key &key) const;
+  [[nodiscard]] const Value &at(const Key &key) const;
   void assign(const Key &key, const Value &value);
   void insert_left(const Key &key, const Value &value);
   void insert_right(const Key &key, const Value &value);
   void erase(const Key &key);
   void clear() noexcept;
   void replace_key(const Key &from, const Key &to);
-  constexpr scipp::span<const Key> keys() const &noexcept {
+  [[nodiscard]] constexpr scipp::span<const Key> keys() const &noexcept {
     return {m_keys.data(), static_cast<size_t>(size())};
   }
-  constexpr scipp::span<const Value> values() const &noexcept {
+  [[nodiscard]] constexpr scipp::span<const Value> values() const &noexcept {
     return {m_values.data(), static_cast<size_t>(size())};
   }
 
@@ -73,13 +76,13 @@ public:
 
   void set(const Dim dim, const scipp::index size);
   void resize(const Dim dim, const scipp::index size);
-  bool includes(const Sizes &sizes) const;
-  Sizes slice(const Slice &params) const;
+  [[nodiscard]] bool includes(const Sizes &sizes) const;
+  [[nodiscard]] Sizes slice(const Slice &params) const;
 
   /// Return the labels of the space defined by *this.
-  constexpr auto labels() const &noexcept { return keys(); }
+  [[nodiscard]] constexpr auto labels() const &noexcept { return keys(); }
   /// Return the shape of the space defined by *this.
-  constexpr auto sizes() const &noexcept { return values(); }
+  [[nodiscard]] constexpr auto sizes() const &noexcept { return values(); }
 };
 
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes concatenate(const Sizes &a,
