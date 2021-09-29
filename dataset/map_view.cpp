@@ -37,7 +37,7 @@ Dict<Key, Value>::Dict(const Dict &other)
     : Dict(other.m_sizes, other.m_items, false) {}
 
 template <class Key, class Value>
-Dict<Key, Value>::Dict(Dict &&other)
+Dict<Key, Value>::Dict(Dict &&other) noexcept
     : Dict(std::move(other.m_sizes), std::move(other.m_items),
            other.m_readonly) {}
 
@@ -45,7 +45,7 @@ template <class Key, class Value>
 Dict<Key, Value> &Dict<Key, Value>::operator=(const Dict &other) = default;
 
 template <class Key, class Value>
-Dict<Key, Value> &Dict<Key, Value>::operator=(Dict &&other) = default;
+Dict<Key, Value> &Dict<Key, Value>::operator=(Dict &&other) noexcept = default;
 
 template <class Key, class Value>
 bool Dict<Key, Value>::operator==(const Dict &other) const {

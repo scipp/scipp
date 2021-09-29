@@ -75,9 +75,9 @@ public:
        const bool readonly = false);
   Dict(const Sizes &sizes, holder_type items, const bool readonly = false);
   Dict(const Dict &other);
-  Dict(Dict &&other);
+  Dict(Dict &&other) noexcept;
   Dict &operator=(const Dict &other);
-  Dict &operator=(Dict &&other);
+  Dict &operator=(Dict &&other) noexcept;
 
   /// Return the number of coordinates in the view.
   index size() const noexcept { return scipp::size(m_items); }
