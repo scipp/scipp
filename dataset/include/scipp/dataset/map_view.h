@@ -18,9 +18,6 @@
 namespace scipp::dataset {
 
 namespace detail {
-using slice_list =
-    boost::container::small_vector<std::pair<Slice, scipp::index>, 2>;
-
 struct make_key_value {
   template <class T> auto operator()(T &&view) const {
     using View =
