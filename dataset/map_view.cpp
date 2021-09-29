@@ -51,10 +51,10 @@ template <class Key, class Value>
 bool Dict<Key, Value>::operator==(const Dict &other) const {
   if (size() != other.size())
     return false;
-  for (const auto [name, data] : *this)
-    if (!other.contains(name) || data != other[name])
-      return false;
-  return true;
+  return std::all_of(this->begin(), this->end(), [&other](const auto &item) {
+    const auto &[name, data] = item;
+    return other.contains(name) && data == other[name];
+  });
 }
 
 template <class Key, class Value>
