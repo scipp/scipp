@@ -26,10 +26,9 @@ Dict<Key, Value>::Dict(const Sizes &sizes,
 template <class Key, class Value>
 Dict<Key, Value>::Dict(const Sizes &sizes, holder_type items,
                        const bool readonly)
-    : m_sizes(sizes) {
+    : m_sizes(sizes), m_readonly(readonly) {
   for (auto &&[key, value] : items)
     set(key, std::move(value));
-  m_readonly = readonly;
 }
 
 template <class Key, class Value>
