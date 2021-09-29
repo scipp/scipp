@@ -72,7 +72,7 @@ protected:
   using base::insert_right;
 
 public:
-  Sizes() = default;
+  constexpr Sizes() noexcept = default;
 
   void set(const Dim dim, const scipp::index size);
   void resize(const Dim dim, const scipp::index size);

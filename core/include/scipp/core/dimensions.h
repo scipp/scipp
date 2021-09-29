@@ -19,7 +19,7 @@ namespace scipp::core {
 /// dimension is inner dimension.
 class SCIPP_CORE_EXPORT Dimensions : public Sizes {
 public:
-  constexpr Dimensions() noexcept {}
+  constexpr Dimensions() noexcept = default;
   Dimensions(const Dim dim, const scipp::index size)
       : Dimensions({{dim, size}}) {}
   Dimensions(const std::vector<Dim> &labels,
