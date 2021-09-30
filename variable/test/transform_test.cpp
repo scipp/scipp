@@ -78,7 +78,8 @@ auto make_slices(const Shape &shape) {
 }
 } // namespace
 
-class TransformUnaryTest : public ::testing::Test {
+class TransformUnaryTest
+    : public ::testing::TestWithParam<std::tuple<Shape, bool>> {
 protected:
   static constexpr auto op_in_place{
       overloaded{[](auto &x) { x *= 2.0; }, [](units::Unit &) {}}};
@@ -108,106 +109,96 @@ protected:
   }
 };
 
-TEST_F(TransformUnaryTest, dense) {
-  for (const auto &shape : shapes) {
-    for (bool variances : {false, true}) {
-      const auto initial = make_variable_for_test<double>(shape, variances);
+INSTANTIATE_TEST_SUITE_P(ShapeVariances, TransformUnaryTest,
+                         testing::Combine(testing::ValuesIn(shapes),
+                                          testing::Bool()));
 
-      const auto result_return = transform<double>(initial, op, name);
-      Variable result_in_place = copy(initial);
-      transform_in_place<double>(result_in_place, op_in_place, name);
+TEST_P(TransformUnaryTest, dense) {
+  const auto &[shape, variances] = GetParam();
+  const auto initial = make_variable_for_test<double>(shape, variances);
 
-      EXPECT_TRUE(equals(result_in_place.values<double>(),
-                         op_manual_values(initial.values<double>())));
-      if (variances) {
-        EXPECT_TRUE(equals(result_in_place.variances<double>(),
-                           op_manual_variances(initial.values<double>(),
-                                               initial.variances<double>())));
-      }
-      // In-place transform used to check result of non-in-place transform.
-      EXPECT_EQ(result_return, result_in_place);
+  const auto result_return = transform<double>(initial, op, name);
+  Variable result_in_place = copy(initial);
+  transform_in_place<double>(result_in_place, op_in_place, name);
+
+  EXPECT_TRUE(equals(result_in_place.values<double>(),
+                     op_manual_values(initial.values<double>())));
+  if (variances) {
+    EXPECT_TRUE(equals(result_in_place.variances<double>(),
+                       op_manual_variances(initial.values<double>(),
+                                           initial.variances<double>())));
+  }
+  // In-place transform used to check result of non-in-place transform.
+  EXPECT_EQ(result_return, result_in_place);
+}
+
+TEST_P(TransformUnaryTest, slice) {
+  const auto &[shape, variances] = GetParam();
+  const auto initial_buffer = make_variable_for_test<double>(shape, variances);
+
+  for (const Slice &slice : make_slices(shape)) {
+    const auto initial = initial_buffer.slice(slice);
+
+    const auto result_return = transform<double>(initial, op, name);
+    Variable result_in_place_buffer = copy(initial_buffer);
+    auto result_in_place = result_in_place_buffer.slice(slice);
+    transform_in_place<double>(result_in_place, op_in_place, name);
+
+    EXPECT_TRUE(equals(result_return.values<double>(),
+                       op_manual_values(initial.values<double>())));
+    if (variances) {
+      EXPECT_TRUE(equals(result_return.variances<double>(),
+                         op_manual_variances(initial.values<double>(),
+                                             initial.variances<double>())));
     }
+    // In-place transform used to check result of non-in-place transform.
+    EXPECT_EQ(result_return, result_in_place);
   }
 }
 
-TEST_F(TransformUnaryTest, slice) {
-  for (const auto &shape : shapes) {
-    for (bool variances : {false, true}) {
-      const auto initial_buffer =
-          make_variable_for_test<double>(shape, variances);
+TEST_P(TransformUnaryTest, transpose) {
+  const auto &[shape, variances] = GetParam();
+  const auto initial_buffer = make_variable_for_test<double>(shape, variances);
+  const auto initial = transpose(initial_buffer);
 
-      for (const Slice &slice : make_slices(shape)) {
-        const auto initial = initial_buffer.slice(slice);
+  const auto result_return = transform<double>(initial, op, name);
+  auto result_in_place = copy(initial);
+  transform_in_place<double>(result_in_place, op_in_place, name);
 
-        const auto result_return = transform<double>(initial, op, name);
-        Variable result_in_place_buffer = copy(initial_buffer);
-        auto result_in_place = result_in_place_buffer.slice(slice);
-        transform_in_place<double>(result_in_place, op_in_place, name);
-
-        EXPECT_TRUE(equals(result_return.values<double>(),
-                           op_manual_values(initial.values<double>())));
-        if (variances) {
-          EXPECT_TRUE(equals(result_return.variances<double>(),
-                             op_manual_variances(initial.values<double>(),
-                                                 initial.variances<double>())));
-        }
-        // In-place transform used to check result of non-in-place transform.
-        EXPECT_EQ(result_return, result_in_place);
-      }
-    }
+  EXPECT_TRUE(equals(result_return.values<double>(),
+                     op_manual_values(initial.values<double>())));
+  if (variances) {
+    EXPECT_TRUE(equals(result_return.variances<double>(),
+                       op_manual_variances(initial.values<double>(),
+                                           initial.variances<double>())));
   }
-}
-
-TEST_F(TransformUnaryTest, transpose) {
-  for (auto &shape : shapes) {
-    for (bool variances : {false, true}) {
-      const auto initial_buffer =
-          make_variable_for_test<double>(shape, variances);
-      const auto initial = transpose(initial_buffer);
-
-      const auto result_return = transform<double>(initial, op, name);
-      auto result_in_place = copy(initial);
-      transform_in_place<double>(result_in_place, op_in_place, name);
-
-      EXPECT_TRUE(equals(result_return.values<double>(),
-                         op_manual_values(initial.values<double>())));
-      if (variances) {
-        EXPECT_TRUE(equals(result_return.variances<double>(),
-                           op_manual_variances(initial.values<double>(),
-                                               initial.variances<double>())));
-      }
-      // In-place transform used to check result of non-in-place transform.
-      EXPECT_EQ(result_return, result_in_place);
-    }
-  }
+  // In-place transform used to check result of non-in-place transform.
+  EXPECT_EQ(result_return, result_in_place);
 }
 
 TEST_F(TransformUnaryTest, elements_of_bins) {
-  for (const auto &shape : shapes) {
-    for (scipp::index bin_dim = 0;
-         bin_dim < static_cast<scipp::index>(shape.data.size()); ++bin_dim) {
-      for (scipp::index n_bins : {1, 2, 4, 5}) {
-        if (n_bins > shape.data[bin_dim]) {
-          continue;
-        }
-        for (bool variances : {false, true}) {
-          const auto buffer = make_variable_for_test<double>(shape, variances);
-          const auto bin_dim_label = buffer.dims().labels()[bin_dim];
-          const auto indices = make_bin_indices(shape.data[bin_dim], n_bins);
-          auto var = make_bins(indices, bin_dim_label, copy(buffer));
-
-          const auto result = transform<double>(var, op, name);
-          transform_in_place<double>(var, op_in_place, name);
-
-          const auto expected = transform<double>(buffer, op, name);
-          for (scipp::index bin = 0; bin < n_bins; ++bin) {
-            const auto [lower, upper] = indices.values<index_pair>()[bin];
-            EXPECT_EQ(var.values<bucket<Variable>>()[bin],
-                      expected.slice({bin_dim_label, lower, upper}));
-          }
-          EXPECT_EQ(result, var);
-        }
+  const auto &[shape, variances] = GetParam();
+  for (scipp::index bin_dim = 0;
+       bin_dim < static_cast<scipp::index>(shape.data.size()); ++bin_dim) {
+    for (scipp::index n_bins : {1, 2, 4, 5}) {
+      if (n_bins > shape.data[bin_dim]) {
+        continue;
       }
+      const auto buffer = make_variable_for_test<double>(shape, variances);
+      const auto bin_dim_label = buffer.dims().labels()[bin_dim];
+      const auto indices = make_bin_indices(shape.data[bin_dim], n_bins);
+      auto var = make_bins(indices, bin_dim_label, copy(buffer));
+
+      const auto result = transform<double>(var, op, name);
+      transform_in_place<double>(var, op_in_place, name);
+
+      const auto expected = transform<double>(buffer, op, name);
+      for (scipp::index bin = 0; bin < n_bins; ++bin) {
+        const auto [lower, upper] = indices.values<index_pair>()[bin];
+        EXPECT_EQ(var.values<bucket<Variable>>()[bin],
+                  expected.slice({bin_dim_label, lower, upper}));
+      }
+      EXPECT_EQ(result, var);
     }
   }
 }
