@@ -2,7 +2,9 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+
 #include "scipp/core/multi_index.h"
+#include "scipp-core_export.h"
 #include "scipp/core/except.h"
 
 namespace scipp::core {

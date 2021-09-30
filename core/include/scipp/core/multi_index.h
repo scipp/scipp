@@ -8,7 +8,6 @@
 #include <numeric>
 #include <optional>
 
-#include "scipp-core_export.h"
 #include "scipp/common/index_composition.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
