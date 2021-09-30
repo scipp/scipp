@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "test_macros.h"
+#include "test_print_variable.h"
 
 #include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
@@ -110,8 +111,8 @@ protected:
 };
 
 INSTANTIATE_TEST_SUITE_P(ShapeVariances, TransformUnaryTest,
-                         testing::Combine(testing::ValuesIn(shapes),
-                                          testing::Bool()));
+                         ::testing::Combine(::testing::ValuesIn(shapes),
+                                            ::testing::Bool()));
 
 TEST_P(TransformUnaryTest, dense) {
   const auto &[shape, variances] = GetParam();
