@@ -22,27 +22,6 @@ using namespace scipp::variable;
 
 namespace {
 const char *name = "transform_test";
-template <typename T>
-auto make_variable_for_test(const Shape &shape, bool variances) {
-  auto ndim = shape.data.size();
-  auto dims = ndim == 1 ? Dims{Dim::X}
-                        : ndim == 2 ? Dims{Dim::X, Dim::Y}
-                                    : Dims{Dim::X, Dim::Y, Dim::Z};
-  auto var = variances ? makeVariable<T>(dims, shape, Values{}, Variances{})
-                       : makeVariable<T>(dims, shape, Values{});
-
-  const auto total_size = var.dims().volume();
-  std::iota(var.template values<T>().begin(), var.template values<T>().end(),
-            -total_size / 2.0);
-  if (variances) {
-    std::generate(var.template variances<T>().begin(),
-                  var.template variances<T>().end(),
-                  [x = -total_size / 20.0, total_size]() mutable {
-                    return x += 10.0 / total_size;
-                  });
-  }
-  return var;
-}
 
 // TODO irregular partitions
 auto make_bin_indices(const scipp::index size, const scipp::index n_bins) {
@@ -65,14 +44,14 @@ const std::vector<Shape> shapes{Shape{1},       Shape{2},       Shape{3},
                                 Shape{5, 7},    Shape{1, 1, 1}, Shape{1, 1, 4},
                                 Shape{1, 5, 1}, Shape{7, 1, 1}, Shape{2, 8, 4}};
 
-auto make_slices(const Shape &shape) {
+auto make_slices(const scipp::span<const scipp::index> &shape) {
   std::vector<Slice> res;
   const std::vector dim_labels{Dim::X, Dim::Y, Dim::Z};
   for (size_t dim = 0; dim < 3; ++dim) {
-    if (shape.data.size() > dim && shape.data.at(dim) > 1) {
-      res.emplace_back(dim_labels.at(dim), 0, shape.data.at(dim) - 1);
-      res.emplace_back(dim_labels.at(dim), 0, shape.data.at(dim) / 2);
-      res.emplace_back(dim_labels.at(dim), 2, shape.data.at(dim));
+    if (shape.size() > dim && shape[dim] > 1) {
+      res.emplace_back(dim_labels.at(dim), 0, shape[dim] - 1);
+      res.emplace_back(dim_labels.at(dim), 0, shape[dim] / 2);
+      res.emplace_back(dim_labels.at(dim), 2, shape[dim]);
     }
   }
   return res;
@@ -87,6 +66,32 @@ protected:
   static constexpr auto op{
       overloaded{[](const auto x) { return x * 2.0; },
                  [](const units::Unit &unit) { return unit; }}};
+
+  const Variable input_var;
+
+  TransformUnaryTest() : input_var{make_dense_variable<double>()} {}
+
+  template <class T> static Variable make_dense_variable() {
+    const auto &[shape, variances] = GetParam();
+    const auto ndim = shape.data.size();
+    const auto dims = ndim == 1 ? Dims{Dim::X}
+                                : ndim == 2 ? Dims{Dim::X, Dim::Y}
+                                            : Dims{Dim::X, Dim::Y, Dim::Z};
+    auto var = variances ? makeVariable<T>(dims, shape, Values{}, Variances{})
+                         : makeVariable<T>(dims, shape, Values{});
+
+    const auto total_size = var.dims().volume();
+    std::iota(var.template values<T>().begin(), var.template values<T>().end(),
+              -total_size / 2.0);
+    if (variances) {
+      std::generate(var.template variances<T>().begin(),
+                    var.template variances<T>().end(),
+                    [x = -total_size / 20.0, total_size]() mutable {
+                      return x += 10.0 / total_size;
+                    });
+    }
+    return var;
+  }
 
   template <typename T>
   static auto op_manual_values(const ElementArrayView<T> values) {
@@ -115,39 +120,33 @@ INSTANTIATE_TEST_SUITE_P(ShapeVariances, TransformUnaryTest,
                                             ::testing::Bool()));
 
 TEST_P(TransformUnaryTest, dense) {
-  const auto &[shape, variances] = GetParam();
-  const auto initial = make_variable_for_test<double>(shape, variances);
-
-  const auto result_return = transform<double>(initial, op, name);
-  Variable result_in_place = copy(initial);
+  const auto result_return = transform<double>(input_var, op, name);
+  Variable result_in_place = copy(input_var);
   transform_in_place<double>(result_in_place, op_in_place, name);
 
   EXPECT_TRUE(equals(result_in_place.values<double>(),
-                     op_manual_values(initial.values<double>())));
-  if (variances) {
+                     op_manual_values(input_var.values<double>())));
+  if (input_var.hasVariances()) {
     EXPECT_TRUE(equals(result_in_place.variances<double>(),
-                       op_manual_variances(initial.values<double>(),
-                                           initial.variances<double>())));
+                       op_manual_variances(input_var.values<double>(),
+                                           input_var.variances<double>())));
   }
   // In-place transform used to check result of non-in-place transform.
   EXPECT_EQ(result_return, result_in_place);
 }
 
 TEST_P(TransformUnaryTest, slice) {
-  const auto &[shape, variances] = GetParam();
-  const auto initial_buffer = make_variable_for_test<double>(shape, variances);
-
-  for (const Slice &slice : make_slices(shape)) {
-    const auto initial = initial_buffer.slice(slice);
+  for (const Slice &slice : make_slices(input_var.dims().shape())) {
+    const auto initial = input_var.slice(slice);
 
     const auto result_return = transform<double>(initial, op, name);
-    Variable result_in_place_buffer = copy(initial_buffer);
+    Variable result_in_place_buffer = copy(input_var);
     auto result_in_place = result_in_place_buffer.slice(slice);
     transform_in_place<double>(result_in_place, op_in_place, name);
 
     EXPECT_TRUE(equals(result_return.values<double>(),
                        op_manual_values(initial.values<double>())));
-    if (variances) {
+    if (initial.hasVariances()) {
       EXPECT_TRUE(equals(result_return.variances<double>(),
                          op_manual_variances(initial.values<double>(),
                                              initial.variances<double>())));
@@ -158,9 +157,7 @@ TEST_P(TransformUnaryTest, slice) {
 }
 
 TEST_P(TransformUnaryTest, transpose) {
-  const auto &[shape, variances] = GetParam();
-  const auto initial_buffer = make_variable_for_test<double>(shape, variances);
-  const auto initial = transpose(initial_buffer);
+  const auto initial = transpose(input_var);
 
   const auto result_return = transform<double>(initial, op, name);
   auto result_in_place = copy(initial);
@@ -168,7 +165,7 @@ TEST_P(TransformUnaryTest, transpose) {
 
   EXPECT_TRUE(equals(result_return.values<double>(),
                      op_manual_values(initial.values<double>())));
-  if (variances) {
+  if (initial.hasVariances()) {
     EXPECT_TRUE(equals(result_return.variances<double>(),
                        op_manual_variances(initial.values<double>(),
                                            initial.variances<double>())));
@@ -178,16 +175,16 @@ TEST_P(TransformUnaryTest, transpose) {
 }
 
 TEST_P(TransformUnaryTest, elements_of_bins) {
-  const auto &[shape, variances] = GetParam();
+  const auto &shape = input_var.dims().shape();
   for (scipp::index bin_dim = 0;
-       bin_dim < static_cast<scipp::index>(shape.data.size()); ++bin_dim) {
+       bin_dim < static_cast<scipp::index>(shape.size()); ++bin_dim) {
     for (scipp::index n_bins : {1, 2, 4, 5}) {
-      if (n_bins > shape.data[bin_dim]) {
+      if (n_bins > shape[bin_dim]) {
         continue;
       }
-      const auto buffer = make_variable_for_test<double>(shape, variances);
+      const auto buffer = input_var;
       const auto bin_dim_label = buffer.dims().labels()[bin_dim];
-      const auto indices = make_bin_indices(shape.data[bin_dim], n_bins);
+      const auto indices = make_bin_indices(shape[bin_dim], n_bins);
       auto var = make_bins(indices, bin_dim_label, copy(buffer));
 
       const auto result = transform<double>(var, op, name);
@@ -204,7 +201,7 @@ TEST_P(TransformUnaryTest, elements_of_bins) {
   }
 }
 
-TEST_F(TransformUnaryTest, in_place_unit_change) {
+TEST(TransformTest, unary_in_place_unit_change) {
   const auto var =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.0, 2.0});
   const auto expected =
@@ -221,6 +218,18 @@ TEST_F(TransformUnaryTest, in_place_unit_change) {
   result = copy(var);
   EXPECT_THROW(transform_in_place<double>(result.slice({Dim::X, 1}), op_, name),
                except::UnitError);
+}
+
+TEST(TransformUnaryTest, unary_drop_variances_when_not_supported_on_out_type) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2},
+                                  Variances{1.1, 2.2});
+  const auto result =
+      transform<double>(var,
+                        overloaded{[](const units::Unit &unit) { return unit; },
+                                   [](const auto) { return true; }},
+                        name);
+  EXPECT_EQ(result,
+            makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true}));
 }
 
 TEST(TransformTest, apply_unary_implicit_conversion) {
@@ -1031,16 +1040,4 @@ TEST_F(TransformBinElementsTest, single_arg_in_place) {
       name);
   Variable expected = make_bins(indices, Dim::X, buffer * buffer);
   EXPECT_EQ(var, expected);
-}
-
-TEST_F(TransformUnaryTest, drop_variances_when_not_supported_on_out_type) {
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2},
-                                  Variances{1.1, 2.2});
-  const auto result =
-      transform<double>(var,
-                        overloaded{[](const units::Unit &unit) { return unit; },
-                                   [](const auto) { return true; }},
-                        name);
-  EXPECT_EQ(result,
-            makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true}));
 }
