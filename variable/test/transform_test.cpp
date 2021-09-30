@@ -176,7 +176,7 @@ TEST_P(TransformUnaryTest, transpose) {
   EXPECT_EQ(result_return, result_in_place);
 }
 
-TEST_F(TransformUnaryTest, elements_of_bins) {
+TEST_P(TransformUnaryTest, elements_of_bins) {
   const auto &[shape, variances] = GetParam();
   for (scipp::index bin_dim = 0;
        bin_dim < static_cast<scipp::index>(shape.data.size()); ++bin_dim) {
