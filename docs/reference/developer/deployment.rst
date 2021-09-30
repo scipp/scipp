@@ -20,17 +20,19 @@ We use ``sphinx`` (and ``nbsphinx``) to transform ``.rst`` files and Jupyter not
 
 #. On Github, go to the repository ``Settings > Pages`` (you will need admin rights to see the ``Settings`` tab). You should see that it is now saying "Your site is published at ``https://scipp.github.io/ess/``". It should also be saying it is using the ``gh-pages`` branch and the ``/root`` folder.
 
-#. On your local machine, generate a ssh key, without an email or passphrase: ``ssh-keygen -t rsa -b 4096``. When prompted for a file name, use ``azure-ess-key`` (where ``ess`` is the name of the github repository).
+#. On your local machine, generate a ssh key, without an email or passphrase: ``ssh-keygen -t rsa -b 4096``. When prompted for a file name, use ``gh_pages_deploy_key``.
 
-#. Go to the repository's ``Settings > Deploy keys``. Add a new key, and copy the contents of the ``azure-ess-key.pub`` file. Remember to also give the key ``write`` access to the repository.
+#. Go to the repository's ``Settings > Deploy keys``. Add a new key, and copy the contents of the ``gh_pages_deploy_key.pub`` file. Remember to also give the key ``write`` access to the repository.
 
-#. Go to the project page on Azure. Go to ``Pipelines > Library > Secure Files``. Upload the ``azure-ess-key`` (the private key of the pair without the ``.pub``) file as a secure file.
+#. Go to the project page on Azure. Go to ``Pipelines > Library``. Open the Variable Group named ``tokens`` if it already exists, if not create one.
+
+#. Copy/paste the contents of the ``gh_pages_deploy_key.pub`` file into a new secret variable named ``gh_pages_deploy_key_public``.
+
+#. Still in the Azure project's library, go to ``Pipelines > Library > Secure Files``. Upload the ``gh_pages_deploy_key`` (the private key of the pair without the ``.pub``) file as a secure file.
 
 #. On your local machine, to back to where you cloned the ``ess`` git repository. Create a new branch starting from the ``main`` branch: ``git checkout main`` then ``git checkout -b deploy_docs``.
 
-#. In that new branch, create a ``.azure-pipelines/documentation_deploy.yml`` script. The easiest way is to copy one from another repository, e.g. `ess-notebooks <https://github.com/scipp/ess-notebooks/blob/main/.azure-pipelines/documentation_deploy.yml>`_.
-
-#. In that ``.azure-pipelines/documentation_deploy.yml`` file, replace the ``sshPublicKey`` with the contents of azure-ess-key.pub. Change the ``sshKeySecureFile`` to ``azure-ess-key``. Change ``git clone git@github.com:scipp/ess-notebooks`` to ``git clone git@github.com:scipp/ess``.
+#. In that new branch, enable docs deployment in the ``.azure-pipelines/main.yml`` and ``.azure-pipelines/release.yml`` files, by simply setting ``deploy: true``.
 
 #. Push the changes to github (``git push origin deploy_docs``) and create a pull request. Hopefully, once the pull request is merged into ``main`` the pages will show up on `https://scipp.github.io/ess <https://scipp.github.io/ess>`_.
 

@@ -61,6 +61,12 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
+execute_process(
+  COMMAND conan export .
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.conan-recipes/llnl-units"
+                    COMMAND_ECHO STDOUT
+)
+
 # Conan dependencies
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
   message(
@@ -82,9 +88,6 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
 
 conan_cmake_autodetect(conan_settings)
-conan_add_remote(
-  NAME scipp URL https://artifactoryconan.esss.dk/artifactory/api/conan/scipp
-)
 conan_cmake_install(
   PATH_OR_REFERENCE ${CMAKE_SOURCE_DIR} SETTINGS ${conan_settings} BUILD
   outdated
@@ -254,5 +257,8 @@ if(DYNAMIC_LIB)
     FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
           "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
     DESTINATION lib/cmake/scipp
+  )
+  install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/.conan-recipes"
+          DESTINATION lib/cmake/scipp
   )
 endif(DYNAMIC_LIB)

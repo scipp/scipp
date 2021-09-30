@@ -6,6 +6,7 @@ from .tools import find_limits, to_dict, to_bin_centers
 from .. import typing
 from ..core import DataArray
 from ..core import arange, bins
+from .resampling_model import ResamplingMode
 
 
 class DataArrayDict(dict):
@@ -23,7 +24,8 @@ class DataArrayDict(dict):
 
     @property
     def unit(self):
-        return next(iter(self.values())).unit
+        da = next(iter(self.values()))
+        return da.unit if da.bins is None else da.bins.constituents['data'].unit
 
     @property
     def meta(self):
@@ -32,14 +34,10 @@ class DataArrayDict(dict):
 
 class PlotModel:
     """
-    Base class for `model`.
+    Base class for plot models.
 
     Upon creation, it:
     - makes a copy of the input data array (including masks)
-    - units of the original data are saved, and units of the copy are set to
-        counts, because `rebin` is used for resampling and only accepts counts.
-    - it replaces all coordinates with corresponding bin-edges, which allows
-        for much more generic plotting code
     - coordinates that contain strings or vectors are converted to fake
         integer coordinates, and axes formatters are updated with lambda
         function formatters.
@@ -49,6 +47,7 @@ class PlotModel:
     """
     def __init__(self, scipp_obj_dict=None):
         self._dims = None
+        self._mode = None
         self.data_arrays = {}
 
         # Create dict of DataArrays using information from controller
@@ -72,6 +71,10 @@ class PlotModel:
         pass
 
     @property
+    def unit(self):
+        return self.data_arrays.unit
+
+    @property
     def dims(self):
         return self._dims
 
@@ -79,6 +82,18 @@ class PlotModel:
     def dims(self, dims):
         self._dims = dims
         self._dims_updated()
+
+    def _mode_updated(self):
+        pass
+
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, m: ResamplingMode):
+        self._mode = m
+        self._mode_updated()
 
     def _setup_coords(self, array):
         data = array.data
@@ -118,7 +133,7 @@ class PlotModel:
             # If there is a bin-edge coord but no corresponding event-coord then `bin`
             # cannot handle this. We could first bin without this and then use `rebin`.
             if coord.sizes[dim] != array.sizes[dim]:
-                if array.events is not None and dim not in array.events.coords:
+                if array.bins is not None and dim not in array.bins.coords:
                     coord = to_bin_centers(coord, dim)
         else:
             coord = arange(dim=dim, start=0, stop=array.sizes[dim])

@@ -224,7 +224,7 @@ void bind_init(py::class_<Variable> &cls) {
   cls.def(
       py::init([](const py::object &dim_labels, const py::object &values,
                   const py::object &variances,
-                  const std::optional<units::Unit> unit,
+                  const std::optional<ProtoUnit> unit,
                   const py::object &dtype) {
         if (values.is_none() && variances.is_none()) {
           throw std::invalid_argument(

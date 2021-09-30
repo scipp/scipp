@@ -3,7 +3,7 @@ benchmark/1.5.3
 boost/1.76.0
 eigen/3.3.9
 gtest/1.11.0
-LLNL-Units/0.5.0@scipp/stable
+LLNL-Units/0.5.0.1
 pybind11/2.6.2
 
 [options]

@@ -13,7 +13,10 @@ from .plot_helper import plot
 
 
 def test_plot_2d():
-    plot(make_dense_data_array(ndim=2))
+    da = make_dense_data_array(ndim=2)
+    plot(da)
+    plot(da, resampling_mode='sum')
+    plot(da, resampling_mode='mean')
 
 
 def test_plot_2d_dataset():
@@ -25,11 +28,17 @@ def test_plot_2d_with_variances():
 
 
 def test_plot_2d_with_log():
-    plot(make_dense_data_array(ndim=2), norm='log')
+    da = make_dense_data_array(ndim=2)
+    plot(da, norm='log')
+    plot(da, norm='log', resampling_mode='sum')
+    plot(da, norm='log', resampling_mode='mean')
 
 
 def test_plot_2d_with_log_and_variances():
-    plot(make_dense_data_array(ndim=2, with_variance=True), norm='log')
+    da = make_dense_data_array(ndim=2, with_variance=True)
+    plot(da, norm='log')
+    plot(da, norm='log', resampling_mode='sum')
+    plot(da, norm='log', resampling_mode='mean')
 
 
 def test_plot_2d_with_vmin_vmax():
@@ -61,6 +70,10 @@ def test_plot_2d_with_log_scale_xy():
 def test_plot_2d_with_aspect():
     plot(make_dense_data_array(ndim=2), aspect='equal')
     plot(make_dense_data_array(ndim=2), aspect='auto')
+
+
+def test_plot_2d_with_grid():
+    plot(make_dense_data_array(ndim=2), grid=True)
 
 
 def test_plot_2d_with_with_nan():
@@ -241,6 +254,8 @@ def test_plot_2d_with_decreasing_edges():
 def test_plot_2d_binned_data():
     da = make_binned_data_array(ndim=2)
     plot(da)
+    plot(da, resampling_mode='sum')
+    plot(da, resampling_mode='mean')
     # Try without event-coord so implementation cannot use `histogram`
     for dim in ['xx', 'yy']:
         copy = da.copy()
@@ -253,7 +268,7 @@ def test_plot_2d_binned_data():
 
 def test_plot_2d_binned_data_non_counts():
     da = make_binned_data_array(ndim=2)
-    da.events.unit = 'K'
+    da.bins.unit = 'K'
     plot(da)
     # Try without event-coord so implementation cannot use `histogram`
     for dim in ['xx', 'yy']:
@@ -267,7 +282,7 @@ def test_plot_2d_binned_data_non_counts():
 
 def test_plot_2d_binned_data_float32_coord():
     da = make_binned_data_array(ndim=2)
-    da.events.coords['xx'] = da.events.coords['xx'].astype('float32')
+    da.bins.coords['xx'] = da.bins.coords['xx'].astype('float32')
     plot(da)
     # Try without event-coord so implementation cannot use `histogram`
     for dim in ['xx', 'yy']:
@@ -280,14 +295,13 @@ def test_plot_2d_binned_data_float32_coord():
 
 
 def test_plot_2d_binned_data_datetime64():
-    da = make_binned_data_array(ndim=2)
+    da = make_binned_data_array(ndim=2, masks=True)
     start = sc.scalar(np.datetime64('now'))
     offset = (1000 * da.coords['xx']).astype('int64')
     offset.unit = 's'
     da.coords['xx'] = start + offset
-    offset = (1000 * da.events.coords['xx']).astype('int64')
-    offset.unit = 's'
-    da.events.coords['xx'] = start + offset
+    offset = (1000 * da.bins.coords['xx']).astype('int64') * sc.scalar(1, unit='s/m')
+    da.bins.coords['xx'] = start + offset
     plot(da)
     # Try without event-coord so implementation cannot use `histogram`
     for dim in ['xx', 'yy']:
@@ -300,7 +314,7 @@ def test_plot_2d_binned_data_datetime64():
 
 
 def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
-    data = make_binned_data_array(ndim=2)
+    data = make_binned_data_array(ndim=2, masks=True)
     data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
     plot_obj = sc.plot(data)
     plot_obj.widgets._controls['run']['slider'].value = 1
@@ -322,7 +336,14 @@ def test_plot_2d_binned_data_with_variances_resolution():
 
 
 def test_plot_2d_binned_data_with_masks():
-    plot(make_binned_data_array(ndim=2, masks=True))
+    da = make_binned_data_array(ndim=2, masks=True)
+    p = da.plot()
+    unmasked = p.view.figure.image_values.get_array()
+    da.masks['all'] = da.data.bins.sum() == da.data.bins.sum()
+    p = da.plot()
+    # Bin masks are *not* applied
+    assert np.allclose(p.view.figure.image_values.get_array(), unmasked)
+    assert not np.isclose(p.view.figure.image_values.get_array().sum(), 0.0)
 
 
 def test_plot_customized_mpl_axes():
@@ -406,10 +427,10 @@ def test_plot_redraw_counts():
 def test_plot_redraw_binned():
     da = make_binned_data_array(ndim=2)
     p = sc.plot(da, resolution=64)
-    before = p.view.figure.image_values.get_array().sum()
+    before = p.view.figure.image_values.get_array()
     da *= 5.0
     p.redraw()
-    assert np.isclose(p.view.figure.image_values.get_array().sum(), 5.0 * before)
+    assert np.allclose(p.view.figure.image_values.get_array(), 5.0 * before)
     p.close()
 
 

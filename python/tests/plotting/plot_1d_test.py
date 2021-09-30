@@ -14,7 +14,10 @@ from .plot_helper import plot
 
 
 def test_plot_1d():
-    plot(make_dense_data_array(ndim=1))
+    da = make_dense_data_array(ndim=1)
+    plot(da)
+    plot(da, resampling_mode='sum')
+    plot(da, resampling_mode='mean')
 
 
 def test_plot_1d_with_variances():
@@ -22,7 +25,10 @@ def test_plot_1d_with_variances():
 
 
 def test_plot_1d_bin_edges():
-    plot(make_dense_data_array(ndim=1, binedges=True))
+    da = make_dense_data_array(ndim=1, binedges=True)
+    plot(da)
+    plot(da, resampling_mode='sum')
+    plot(da, resampling_mode='mean')
 
 
 def test_plot_1d_with_labels():
@@ -39,6 +45,8 @@ def test_plot_1d_log_axes():
     plot(da, scale={'x': 'log'})
     plot(da, norm='log')
     plot(da, norm='log', scale={'x': 'log'})
+    plot(da, norm='log', scale={'x': 'log'}, resampling_mode='sum')
+    plot(da, norm='log', scale={'x': 'log'}, resampling_mode='mean')
 
 
 def test_plot_1d_bin_edges_with_variances():
@@ -81,7 +89,10 @@ def test_plot_collapse():
 
 
 def test_plot_sliceviewer_with_1d_projection():
-    plot(make_dense_data_array(ndim=3), projection="1d")
+    da = make_dense_data_array(ndim=3)
+    plot(da, projection="1d")
+    plot(da, projection="1d", resampling_mode='sum')
+    plot(da, projection="1d", resampling_mode='mean')
 
 
 def test_plot_sliceviewer_with_1d_projection_with_nans():
@@ -304,6 +315,10 @@ def test_plot_legend():
     plot(da, legend={"show": False})
     plot(da, legend={"loc": 5})
     plot(da, legend={"show": True, "loc": 4})
+
+
+def test_plot_1d_with_grid():
+    plot(make_dense_data_array(ndim=1), grid=True)
 
 
 def test_plot_redraw():

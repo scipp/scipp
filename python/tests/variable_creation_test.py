@@ -50,6 +50,11 @@ def test_scalar_throws_if_wrong_dtype_provided_for_str_types():
         sc.scalar(value='temp', unit=sc.units.one, dtype=sc.dtype.float64)
 
 
+def test_scalar_throws_UnitError_if_not_parsable():
+    with pytest.raises(sc.UnitError):
+        sc.scalar(value=1, unit='abcdef')
+
+
 def test_scalar_of_numpy_array():
     value = np.array([1, 2, 3])
     with pytest.raises(sc.DimensionError):

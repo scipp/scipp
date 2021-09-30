@@ -38,7 +38,8 @@ class PlotFigure1d(PlotFigure):
                          padding=padding,
                          xlabel=xlabel,
                          ylabel=ylabel,
-                         toolbar=PlotToolbar1d)
+                         toolbar=PlotToolbar1d,
+                         grid=grid)
 
         self._lines = {}
 
@@ -56,8 +57,6 @@ class PlotFigure1d(PlotFigure):
         if "loc" not in self.legend:
             self.legend["loc"] = 0
 
-        self.grid = grid
-
         self._mpl_line_params = mpl_line_params  # color, linewidth, ...
 
     def update_axes(self, scale, unit, legend_labels=True):
@@ -71,15 +70,15 @@ class PlotFigure1d(PlotFigure):
         if self.own_axes:
             self._lines = {}
             title = self.ax.get_title()
+            need_grid = self.ax.xaxis.get_gridlines()[0]._visible
             self.ax.clear()
             self.ax.set_title(title)
+            if need_grid:
+                self.ax.grid()
 
         self.ax.set_xscale(scale)
         self.ax.set_yscale("log" if self.norm == "log" else "linear")
         self.ax.set_ylabel(unit if self.ylabel is None else self.ylabel)
-
-        if self.grid:
-            self.ax.grid()
 
         self.ax.set_xlabel(
             self._formatters['x']['label'] if self.xlabel is None else self.xlabel)

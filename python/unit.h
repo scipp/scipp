@@ -3,11 +3,15 @@
 #pragma once
 
 #include <tuple>
+#include <variant>
 
 #include "pybind11.h"
 
 #include "scipp/core/time_point.h"
 #include "scipp/units/unit.h"
+
+using ProtoUnit = std::variant<std::string, scipp::units::Unit>;
+scipp::units::Unit make_unit(const ProtoUnit &unit);
 
 std::tuple<scipp::units::Unit, int64_t>
 get_time_unit(std::optional<scipp::units::Unit> value_unit,

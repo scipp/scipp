@@ -160,6 +160,11 @@ def plot(*args, **kwargs):
         dimensions of the input is >= 2.
     :type projection: str, optional
 
+    :param resampling_mode: Resampling mode. Possible choices are `"sum"` and
+        `"mean"`. This applies only to binned event data and non-1d data.
+        Defaults to `"mean"` unless the unit is 'counts' or 'dimensionless'.
+    :type resampling_mode: str, optional
+
     :param scale: Specify the scale (`"linear"` or `"log"`) for a displayed
         dimension axis. E.g. `scale={"tof": "log"}`. Defaults to None.
     :type scale: dict, optional

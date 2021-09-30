@@ -3,8 +3,38 @@
 Release Notes
 =============
 
-Since v0.7
-----------
+v0.9.0 (unreleased)
+-------------------
+
+Features
+~~~~~~~~
+
+* Add ``erf`` and ``erfc`` functions `#2195 <https://github.com/scipp/scipp/pull/2195>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Owen Arnold :sup:`b, c`\ ,
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas Wynen :sup:`a`\
+
+v0.8.3 (September 2021)
+-----------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix serious correctness bug in ``groupby.sum`` and ``groupby.mean`` `#2200 <https://github.com/scipp/scipp/pull/2200>`_.
+
+v0.8.0 (September 2021)
+-----------------------
 
 Features
 ~~~~~~~~
@@ -47,7 +77,7 @@ Breaking changes
 * Multi-dimensional coordinates are no longer associated with their inner dimension, which affects the behavior when slicing:
   Such coords will no longer be turned into attributes during a slice operation on the inner dimension `#2098 <https://github.com/scipp/scipp/pull/2098>`_.
 * ``buckets.map(histogram, da.data, 'time')`` has been replaced by ``lookup(histogram, 'time')[da.bins.coords['time']]`` `#2112 <https://github.com/scipp/scipp/pull/2112>`_.
-* ``rebin`` and ``histogram`` do not support dimensionless units any more, only "counts" is supported `#2141 <https://github.com/scipp/scipp/pull/2141>`_.
+* ``rebin`` and ``histogram`` now support any unit. ``plot()`` guesses which resampling mode to use and provides a button to toggle this `#2180 <https://github.com/scipp/scipp/pull/2180>`_.
 
 Bugfixes
 ~~~~~~~~
@@ -55,6 +85,11 @@ Bugfixes
 * Various fixes in ``plot``, see  `#2018 <https://github.com/scipp/scipp/pull/2018>`_ for details.
 * Operations with Python floats to long interpret the float as 32-bit float `#2101 <https://github.com/scipp/scipp/pull/2101>`_.
 * Multi-dimensional bin-edge coordinates may now be edges for a non-inner dimension `#2098 <https://github.com/scipp/scipp/pull/2098>`_.
+
+Deprecations
+~~~~~~~~~~~~
+
+* The ``events`` property is deprecated and is scheduled for removal with v0.9.
 
 Contributors
 ~~~~~~~~~~~~
@@ -66,6 +101,14 @@ Greg Tucker :sup:`a`\ ,
 Neil Vaytet :sup:`a`\ ,
 Tom Willemsen :sup:`b, c`\ ,
 and Jan-Lukas Wynen :sup:`a`\
+
+v0.7.2 (September 2021)
+-----------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix serious correctness bug in ``groupby.sum`` and ``groupby.mean`` `#2200 <https://github.com/scipp/scipp/pull/2200>`_.
 
 v0.7.0 (June 2021)
 ------------------

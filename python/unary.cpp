@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "pybind11.h"
+#include "unit.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/to_unit.h"
@@ -64,8 +65,8 @@ template <typename T> void bind_nan_to_num(py::module &m) {
 template <class T> void bind_to_unit(py::module &m) {
   m.def(
       "to_unit",
-      [](const T &x, const units::Unit unit, const bool copy) {
-        return to_unit(x, unit,
+      [](const T &x, const ProtoUnit &unit, const bool copy) {
+        return to_unit(x, make_unit(unit),
                        copy ? CopyPolicy::Always : CopyPolicy::TryAvoid);
       },
       py::arg("x"), py::arg("unit"), py::arg("copy") = true,

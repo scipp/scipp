@@ -18,10 +18,11 @@ dependencies:
 
   # Run
   - appdirs
+  - ipykernel = 6.3.1  # issue with pythreejs 3d plotting
   - ipympl
   - ipywidgets
   - matplotlib-base
-  - numpy >=1.15.3
+  - numpy>=1.20.0
   - python
   - python-configuration
   - pythreejs
@@ -34,7 +35,7 @@ dependencies:
   - python-graphviz
   - xarray  # For testing xarray <-> scipp conversion
   - pandas  # For testing pandas <-> scipp conversion
-  - scipy
+  - scipy>=1.7.0
 
   # Formatting & static analysis
   - pre-commit
@@ -44,6 +45,6 @@ dependencies:
   # Docs
   - pandoc
   - sphinx
-  - sphinx_rtd_theme
+  - sphinx_rtd_theme=0.5.2 # 1.0.0 broken CSS?
   - nbsphinx
   - docutils=0.16 # see https://github.com/spatialaudio/nbsphinx/issues/549

@@ -22,7 +22,8 @@ class PlotFigure:
                  ndim=1,
                  xlabel=None,
                  ylabel=None,
-                 toolbar=None):
+                 toolbar=None,
+                 grid=False):
         self.fig = None
         self.closed = False
         self.ax = ax
@@ -46,12 +47,15 @@ class PlotFigure:
             self.fig = self.ax.get_figure()
 
         self.ax.set_title(title)
+        if grid:
+            self.ax.grid()
 
         self.axformatter = {}
         self.axlocator = {}
         self.xlabel = xlabel
         self.ylabel = ylabel
         self.draw_no_delay = False
+        self.event_connections = {}
 
     def initialize_toolbar(self, **kwargs):
         if self.toolbar is not None:
@@ -142,7 +146,7 @@ class PlotFigure:
                 ticker.LogLocator()
             }
 
-    def connect(self, controller, event_handler):
+    def connect(self, controller):
         """
         Connect the toolbar to callback from the controller. This includes
         rescaling the data norm, and change the scale (log or linear) on the
@@ -150,11 +154,19 @@ class PlotFigure:
         """
         if self.toolbar is not None:
             self.toolbar.connect(controller=controller)
-        self.fig.canvas.mpl_connect('button_press_event',
-                                    event_handler.handle_button_press)
-        self.fig.canvas.mpl_connect('pick_event', event_handler.handle_pick)
-        self.fig.canvas.mpl_connect('motion_notify_event',
-                                    event_handler.handle_motion_notify)
+
+    def toggle_mouse_events(self, active, event_handler):
+        if active:
+            self.event_connections['button_press_event'] = self.fig.canvas.mpl_connect(
+                'button_press_event', event_handler.handle_button_press)
+            self.event_connections['pick_event'] = self.fig.canvas.mpl_connect(
+                'pick_event', event_handler.handle_pick)
+            self.event_connections['motion_notify_event'] = self.fig.canvas.mpl_connect(
+                'motion_notify_event', event_handler.handle_motion_notify)
+        else:
+            for cid in self.event_connections.values():
+                self.fig.canvas.mpl_disconnect(cid)
+            self.event_connections.clear()
 
     def draw(self):
         """
