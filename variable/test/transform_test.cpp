@@ -23,21 +23,6 @@ using namespace scipp::variable;
 namespace {
 const char *name = "transform_test";
 
-// TODO irregular partitions
-auto make_bin_indices(const scipp::index size, const scipp::index n_bins) {
-  std::vector<index_pair> aux(n_bins);
-  std::generate(begin(aux), end(aux),
-                [lower = scipp::index{0}, size, n_bins]() mutable {
-                  const scipp::index upper = static_cast<scipp::index>(
-                      lower + (static_cast<double>(size) / n_bins));
-                  const index_pair res{lower, upper};
-                  lower = upper;
-                  return res;
-                });
-  aux.back().second = size;
-  return makeVariable<index_pair>(Dims{Dim::Event}, Shape{n_bins}, Values(aux));
-}
-
 const std::vector<Shape> shapes{Shape{1},       Shape{2},       Shape{3},
                                 Shape{5},       Shape{16},      Shape{1, 1},
                                 Shape{1, 2},    Shape{3, 1},    Shape{2, 8},
@@ -56,6 +41,39 @@ auto make_slices(const scipp::span<const scipp::index> &shape) {
   }
   return res;
 }
+
+auto make_dim_labels(const scipp::index ndim,
+                     std::initializer_list<Dim> choices) {
+  assert(ndim <= scipp::size(choices));
+  Dims result(choices);
+  result.data.resize(ndim);
+  return result;
+}
+
+auto volume(const Shape &shape) {
+  return std::accumulate(shape.data.begin(), shape.data.end(), 1,
+                         std::multiplies<scipp::index>{});
+}
+
+// TODO irregular partitions
+auto make_regular_bin_indices(const scipp::index size, const Shape &shape,
+                              const scipp::index ndim) {
+  const auto n_bins = volume(shape);
+  std::vector<index_pair> aux(n_bins);
+  std::generate(begin(aux), end(aux),
+                [lower = scipp::index{0}, d_size = static_cast<double>(size),
+                 d_n_bins = static_cast<double>(n_bins)]() mutable {
+                  const auto upper = static_cast<scipp::index>(
+                      static_cast<double>(lower) + d_size / d_n_bins);
+                  const index_pair res{lower, upper};
+                  lower = upper;
+                  return res;
+                });
+  aux.back().second = size;
+  return makeVariable<index_pair>(
+      make_dim_labels(ndim, {Dim{"e0"}, Dim{"e1"}, Dim{"e2"}}), shape,
+      Values(aux));
+}
 } // namespace
 
 class TransformUnaryTest
@@ -69,14 +87,18 @@ protected:
 
   const Variable input_var;
 
-  TransformUnaryTest() : input_var{make_dense_variable<double>()} {}
+  TransformUnaryTest() : input_var{make_dense_variable()} {}
 
-  template <class T> static Variable make_dense_variable() {
+  static Variable make_dense_variable() {
     const auto &[shape, variances] = GetParam();
+    return make_dense_variable<double>(shape, variances);
+  }
+
+  template <class T>
+  static Variable make_dense_variable(const Shape &shape,
+                                      const bool variances) {
     const auto ndim = shape.data.size();
-    const auto dims = ndim == 1 ? Dims{Dim::X}
-                                : ndim == 2 ? Dims{Dim::X, Dim::Y}
-                                            : Dims{Dim::X, Dim::Y, Dim::Z};
+    const auto dims = make_dim_labels(ndim, {Dim::X, Dim::Y, Dim::Z});
     auto var = variances ? makeVariable<T>(dims, shape, Values{}, Variances{})
                          : makeVariable<T>(dims, shape, Values{});
 
@@ -169,27 +191,26 @@ TEST_P(TransformUnaryTest, transpose) {
 }
 
 TEST_P(TransformUnaryTest, elements_of_bins) {
-  const auto &shape = input_var.dims().shape();
-  for (scipp::index bin_dim = 0;
-       bin_dim < static_cast<scipp::index>(shape.size()); ++bin_dim) {
-    for (scipp::index n_bins : {1, 2, 4, 5}) {
-      if (n_bins > shape[bin_dim]) {
-        continue;
-      }
-      const auto buffer = input_var;
+  const auto &[base_event_shape, variances] = GetParam();
+  for (const auto &bin_shape : shapes) {
+    const auto n_bin = volume(bin_shape);
+    for (scipp::index bin_dim = 0; bin_dim < scipp::size(base_event_shape.data);
+         ++bin_dim) {
+      auto event_shape = base_event_shape;
+      event_shape.data.at(bin_dim) *= n_bin;
+
+      const auto buffer = make_dense_variable<double>(event_shape, variances);
       const auto bin_dim_label = buffer.dims().labels()[bin_dim];
-      const auto indices = make_bin_indices(shape[bin_dim], n_bins);
+      const auto indices = make_regular_bin_indices(
+          event_shape.data.at(bin_dim), bin_shape, scipp::size(bin_shape.data));
       auto var = make_bins(indices, bin_dim_label, copy(buffer));
 
       const auto result = transform<double>(var, op, name);
       transform_in_place<double>(var, op_in_place, name);
 
-      const auto expected = transform<double>(buffer, op, name);
-      for (scipp::index bin = 0; bin < n_bins; ++bin) {
-        const auto [lower, upper] = indices.values<index_pair>()[bin];
-        EXPECT_EQ(var.values<bucket<Variable>>()[bin],
-                  expected.slice({bin_dim_label, lower, upper}));
-      }
+      const auto expected = make_bins(indices, bin_dim_label,
+                                      transform<double>(buffer, op, name));
+      EXPECT_EQ(result, expected);
       EXPECT_EQ(result, var);
     }
   }
