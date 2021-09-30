@@ -163,14 +163,8 @@ TEST_P(TransformUnaryTest, transpose) {
   auto result_in_place = copy(initial);
   transform_in_place<double>(result_in_place, op_in_place, name);
 
-  EXPECT_TRUE(equals(result_return.values<double>(),
-                     op_manual_values(initial.values<double>())));
-  if (initial.hasVariances()) {
-    EXPECT_TRUE(equals(result_return.variances<double>(),
-                       op_manual_variances(initial.values<double>(),
-                                           initial.variances<double>())));
-  }
-  // In-place transform used to check result of non-in-place transform.
+  const auto expected = transpose(transform<double>(input_var, op, name));
+  EXPECT_EQ(result_return, expected);
   EXPECT_EQ(result_return, result_in_place);
 }
 
