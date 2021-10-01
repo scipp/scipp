@@ -10,6 +10,7 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
@@ -53,7 +54,26 @@ auto volume(const Shape &shape) {
                          std::multiplies<scipp::index>{});
 }
 
-// TODO irregular partitions
+template <class T>
+static Variable make_dense_variable(const Shape &shape, const bool variances) {
+  const auto ndim = scipp::size(shape.data);
+  const auto dims = make_dim_labels(ndim, {Dim::X, Dim::Y, Dim::Z});
+  auto var = variances ? makeVariable<T>(dims, shape, Values{}, Variances{})
+                       : makeVariable<T>(dims, shape, Values{});
+
+  const auto total_size = var.dims().volume();
+  std::iota(var.template values<T>().begin(), var.template values<T>().end(),
+            -total_size / 2.0);
+  if (variances) {
+    std::generate(var.template variances<T>().begin(),
+                  var.template variances<T>().end(),
+                  [x = -total_size / 20.0, total_size]() mutable {
+                    return x += 10.0 / total_size;
+                  });
+  }
+  return var;
+}
+
 auto make_regular_bin_indices(const scipp::index size, const Shape &shape,
                               const scipp::index ndim) {
   const auto n_bins = volume(shape);
@@ -69,49 +89,18 @@ auto make_regular_bin_indices(const scipp::index size, const Shape &shape,
                 });
   aux.back().second = size;
   return makeVariable<index_pair>(
-      make_dim_labels(ndim, {Dim{"e0"}, Dim{"e1"}, Dim{"e2"}}), shape,
+      make_dim_labels(ndim, {Dim{"i0"}, Dim{"i1"}, Dim{"i2"}}), shape,
       Values(aux));
 }
 } // namespace
 
-class TransformUnaryTest
-    : public ::testing::TestWithParam<std::tuple<Shape, bool>> {
+class BaseTransformUnaryTest : public ::testing::Test {
 protected:
   static constexpr auto op_in_place{
       overloaded{[](auto &x) { x *= 2.0; }, [](units::Unit &) {}}};
   static constexpr auto op{
       overloaded{[](const auto x) { return x * 2.0; },
                  [](const units::Unit &unit) { return unit; }}};
-
-  const Variable input_var;
-
-  TransformUnaryTest() : input_var{make_dense_variable()} {}
-
-  static Variable make_dense_variable() {
-    const auto &[shape, variances] = GetParam();
-    return make_dense_variable<double>(shape, variances);
-  }
-
-  template <class T>
-  static Variable make_dense_variable(const Shape &shape,
-                                      const bool variances) {
-    const auto ndim = scipp::size(shape.data);
-    const auto dims = make_dim_labels(ndim, {Dim::X, Dim::Y, Dim::Z});
-    auto var = variances ? makeVariable<T>(dims, shape, Values{}, Variances{})
-                         : makeVariable<T>(dims, shape, Values{});
-
-    const auto total_size = var.dims().volume();
-    std::iota(var.template values<T>().begin(), var.template values<T>().end(),
-              -total_size / 2.0);
-    if (variances) {
-      std::generate(var.template variances<T>().begin(),
-                    var.template variances<T>().end(),
-                    [x = -total_size / 20.0, total_size]() mutable {
-                      return x += 10.0 / total_size;
-                    });
-    }
-    return var;
-  }
 
   template <typename T>
   static auto op_manual_values(const ElementArrayView<T> values) {
@@ -132,6 +121,20 @@ protected:
           return op(ValueAndVariance<double>{value, variance}).variance;
         });
     return res;
+  }
+};
+
+class TransformUnaryTest
+    : public BaseTransformUnaryTest,
+      public ::testing::WithParamInterface<std::tuple<Shape, bool>> {
+protected:
+  const Variable input_var;
+
+  TransformUnaryTest() : input_var{make_input_variable()} {}
+
+  static Variable make_input_variable() {
+    const auto &[shape, variances] = GetParam();
+    return make_dense_variable<double>(shape, variances);
   }
 };
 
@@ -212,6 +215,84 @@ TEST_P(TransformUnaryTest, elements_of_bins) {
       EXPECT_EQ(result, var);
     }
   }
+}
+
+class TransformUnaryIrregularBinsTest
+    : public BaseTransformUnaryTest,
+      public ::testing::WithParamInterface<std::tuple<Variable, bool>> {
+protected:
+  static constexpr auto op_in_place{
+      overloaded{[](auto &x) { x *= 2.0; }, [](units::Unit &) {}}};
+  static constexpr auto op{
+      overloaded{[](const auto x) { return x * 2.0; },
+                 [](const units::Unit &unit) { return unit; }}};
+
+  const Variable indices;
+  const Variable input_buffer;
+  const Variable input;
+
+  TransformUnaryIrregularBinsTest()
+      : indices{std::get<Variable>(GetParam())},
+        input_buffer{make_dense_variable<double>(Shape{index_volume(indices)},
+                                                 std::get<bool>(GetParam()))},
+        input{make_bins(indices, Dim::X, input_buffer)} {}
+
+  static scipp::index index_volume(const Variable &indices) {
+    const auto &values = indices.values<index_pair>();
+    if (values.begin() == values.end())
+      return scipp::index{0};
+
+    const auto min = std::min_element(values.begin(), values.end(),
+                                      [](const auto a, const auto b) {
+                                        return a.first < b.first;
+                                      })
+                         ->first;
+    const auto max = std::max_element(values.begin(), values.end(),
+                                      [](const auto a, const auto b) {
+                                        return a.second < b.second;
+                                      })
+                         ->second;
+    return max - min;
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    OneDIndices, TransformUnaryIrregularBinsTest,
+    ::testing::Combine(
+        ::testing::Values(
+            makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{2},
+                                     Values{index_pair{0, 2},
+                                            index_pair{2, 3}}),
+            makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{2},
+                                     Values{index_pair{0, 0},
+                                            index_pair{0, 3}}),
+            makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{2},
+                                     Values{index_pair{0, 4},
+                                            index_pair{4, 4}}),
+            makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{3},
+                                     Values{index_pair{0, 2}, index_pair{2, 2},
+                                            index_pair{2, 3}}),
+            makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{3},
+                                     Values{index_pair{0, 1}, index_pair{1, 3},
+                                            index_pair{3, 5}})),
+        ::testing::Bool()));
+
+INSTANTIATE_TEST_SUITE_P(
+    TwoDIndices, TransformUnaryIrregularBinsTest,
+    ::testing::Combine(::testing::Values(makeVariable<index_pair>(
+                           Dims{Dim{"i0"}, Dim{"i1"}}, Shape{2, 2},
+                           Values{index_pair{0, 2}, index_pair{2, 3},
+                                  index_pair{3, 5}, index_pair{5, 6}})),
+                       ::testing::Bool()));
+
+TEST_P(TransformUnaryIrregularBinsTest, elements_of_bins) {
+  const auto result = transform<double>(input, op, name);
+  const auto expected =
+      make_bins(indices, Dim::X, transform<double>(input_buffer, op, name));
+  EXPECT_EQ(result, expected);
+  auto result_in_place = copy(input);
+  transform_in_place<double>(result_in_place, op_in_place, name);
+  EXPECT_EQ(result_in_place, expected);
 }
 
 TEST(TransformUnaryTest, in_place_unit_change) {
