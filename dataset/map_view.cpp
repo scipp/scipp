@@ -29,7 +29,8 @@ Dict<Key, Value>::Dict(const Sizes &sizes, holder_type items,
     : m_sizes(sizes) {
   for (auto &&[key, value] : items)
     set(key, std::move(value));
-  m_readonly = readonly;
+  // `set` requires Dict to be writable, set readonly flag at the end.
+  m_readonly = readonly; // NOLINT(cppcoreguidelines-prefer-member-initializer)
 }
 
 template <class Key, class Value>
@@ -37,7 +38,7 @@ Dict<Key, Value>::Dict(const Dict &other)
     : Dict(other.m_sizes, other.m_items, false) {}
 
 template <class Key, class Value>
-Dict<Key, Value>::Dict(Dict &&other)
+Dict<Key, Value>::Dict(Dict &&other) noexcept
     : Dict(std::move(other.m_sizes), std::move(other.m_items),
            other.m_readonly) {}
 
@@ -45,16 +46,16 @@ template <class Key, class Value>
 Dict<Key, Value> &Dict<Key, Value>::operator=(const Dict &other) = default;
 
 template <class Key, class Value>
-Dict<Key, Value> &Dict<Key, Value>::operator=(Dict &&other) = default;
+Dict<Key, Value> &Dict<Key, Value>::operator=(Dict &&other) noexcept = default;
 
 template <class Key, class Value>
 bool Dict<Key, Value>::operator==(const Dict &other) const {
   if (size() != other.size())
     return false;
-  for (const auto [name, data] : *this)
-    if (!other.contains(name) || data != other[name])
-      return false;
-  return true;
+  return std::all_of(this->begin(), this->end(), [&other](const auto &item) {
+    const auto &[name, data] = item;
+    return other.contains(name) && data == other[name];
+  });
 }
 
 template <class Key, class Value>

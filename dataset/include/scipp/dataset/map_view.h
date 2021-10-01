@@ -18,9 +18,6 @@
 namespace scipp::dataset {
 
 namespace detail {
-using slice_list =
-    boost::container::small_vector<std::pair<Slice, scipp::index>, 2>;
-
 struct make_key_value {
   template <class T> auto operator()(T &&view) const {
     using View =
@@ -75,12 +72,12 @@ public:
        const bool readonly = false);
   Dict(const Sizes &sizes, holder_type items, const bool readonly = false);
   Dict(const Dict &other);
-  Dict(Dict &&other);
+  Dict(Dict &&other) noexcept;
   Dict &operator=(const Dict &other);
-  Dict &operator=(Dict &&other);
+  Dict &operator=(Dict &&other) noexcept;
 
   /// Return the number of coordinates in the view.
-  index size() const noexcept { return scipp::size(m_items); }
+  [[nodiscard]] index size() const noexcept { return scipp::size(m_items); }
   /// Return true if there are 0 coordinates in the view.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
@@ -137,8 +134,8 @@ public:
   bool operator==(const Dict &other) const;
   bool operator!=(const Dict &other) const;
 
-  const Sizes &sizes() const noexcept { return m_sizes; }
-  const auto &items() const noexcept { return m_items; }
+  [[nodiscard]] const Sizes &sizes() const noexcept { return m_sizes; }
+  [[nodiscard]] const auto &items() const noexcept { return m_items; }
 
   void setSizes(const Sizes &sizes);
   void rebuildSizes();
@@ -155,7 +152,7 @@ public:
   void rename(const Dim from, const Dim to);
 
   void set_readonly() noexcept;
-  bool is_readonly() const noexcept;
+  [[nodiscard]] bool is_readonly() const noexcept;
   [[nodiscard]] Dict as_const() const;
   [[nodiscard]] Dict merge_from(const Dict &other) const;
 
@@ -183,8 +180,5 @@ template <class Masks>
 
 SCIPP_DATASET_EXPORT Variable masks_merge_if_contained(const Masks &masks,
                                                        const Dimensions &dims);
-
-[[nodiscard]] SCIPP_DATASET_EXPORT Coords copy(const Coords &coords);
-[[nodiscard]] SCIPP_DATASET_EXPORT Masks copy(const Masks &masks);
 
 } // namespace scipp::dataset
