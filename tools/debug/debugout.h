@@ -20,7 +20,7 @@ std::ostream &operator<<(std::ostream &os, const std::array<T, N> &a) {
   return os;
 }
 
-template <typename T, size_t N>
+template <typename T>
 std::ostream &operator<<(std::ostream &os, const std::vector<T> &v) {
   os << '[';
   for (size_t i = 0; i + 1 < std::size(v); ++i) {
