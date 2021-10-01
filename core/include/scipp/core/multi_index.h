@@ -224,7 +224,7 @@ private:
     for (scipp::index data = 0; data < N; ++data) {
       m_bin[data].m_bin_index += m_stride[dim][data];
     }
-    std::fill(coord_it(), coord_it(m_inner_ndim), 0);
+    zero_out_coords(m_inner_ndim);
     ++m_coord[dim];
     if (dim_at_end(dim))
       increment_outer_bins();
@@ -255,7 +255,7 @@ private:
   }
 
   void set_bins_index(const scipp::index index) noexcept {
-    std::fill(coord_it(0), coord_it(m_inner_ndim), 0);
+    zero_out_coords(m_inner_ndim);
     if (bin_ndim() == 0 && index != 0) {
       m_coord[m_nested_dim_index] = m_shape[m_nested_dim_index];
     } else {
@@ -272,7 +272,7 @@ private:
   }
 
   void set_to_end_bin() noexcept {
-    std::fill(coord_it(), coord_end(), 0);
+    zero_out_coords(m_ndim);
     const auto last_dim = (bin_ndim() == 0 ? m_nested_dim_index : m_ndim - 1);
     m_coord[last_dim] = m_shape[last_dim];
 
@@ -290,6 +290,12 @@ private:
       res += m_coord[begin_index] * m_stride[begin_index][i_data];
     }
     return res;
+  }
+
+  void zero_out_coords(const scipp::index ndim) noexcept {
+    for (auto it = coord_it(); it != coord_it(ndim); ++it) {
+      *it = 0;
+    }
   }
 
   [[nodiscard]] auto coord_it(const scipp::index dim = 0) noexcept {
