@@ -10,7 +10,6 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
-#include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
