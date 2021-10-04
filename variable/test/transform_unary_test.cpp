@@ -137,8 +137,12 @@ protected:
   }
 };
 
-INSTANTIATE_TEST_SUITE_P(ShapeVariances, TransformUnaryTest,
+INSTANTIATE_TEST_SUITE_P(Array, TransformUnaryTest,
                          ::testing::Combine(::testing::ValuesIn(shapes),
+                                            ::testing::Bool()));
+
+INSTANTIATE_TEST_SUITE_P(Scalar, TransformUnaryTest,
+                         ::testing::Combine(::testing::Values(Shape{0}),
                                             ::testing::Bool()));
 
 TEST_P(TransformUnaryTest, dense) {
