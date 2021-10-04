@@ -10,8 +10,10 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
@@ -241,21 +243,10 @@ protected:
         input{make_bins(indices, Dim::X, input_buffer)} {}
 
   static scipp::index index_volume(const Variable &indices) {
-    const auto &values = indices.values<index_pair>();
-    if (values.begin() == values.end())
-      return scipp::index{0};
-
-    const auto min = std::min_element(values.begin(), values.end(),
-                                      [](const auto a, const auto b) {
-                                        return a.first < b.first;
-                                      })
-                         ->first;
-    const auto max = std::max_element(values.begin(), values.end(),
-                                      [](const auto a, const auto b) {
-                                        return a.second < b.second;
-                                      })
-                         ->second;
-    return max - min;
+    if (indices.dims().empty())
+      return 0;
+    const auto &&[begin, end] = unzip(indices);
+    return (max(end) - min(begin)).value<scipp::index>();
   }
 };
 
