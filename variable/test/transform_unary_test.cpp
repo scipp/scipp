@@ -259,6 +259,7 @@ INSTANTIATE_TEST_SUITE_P(
     OneDIndices, TransformUnaryIrregularBinsTest,
     ::testing::Combine(
         ::testing::Values(
+            makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{0}, Values{}),
             makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{2},
                                      Values{index_pair{0, 2},
                                             index_pair{2, 3}}),
@@ -278,11 +279,22 @@ INSTANTIATE_TEST_SUITE_P(
 
 INSTANTIATE_TEST_SUITE_P(
     TwoDIndices, TransformUnaryIrregularBinsTest,
-    ::testing::Combine(::testing::Values(makeVariable<index_pair>(
-                           Dims{Dim{"i0"}, Dim{"i1"}}, Shape{2, 2},
-                           Values{index_pair{0, 2}, index_pair{2, 3},
-                                  index_pair{3, 5}, index_pair{5, 6}})),
-                       ::testing::Bool()));
+    ::testing::Combine(
+        ::testing::Values(
+            makeVariable<index_pair>(Dims{Dim{"i0"}, Dim{"i1"}}, Shape{2, 2},
+                                     Values{index_pair{0, 2}, index_pair{2, 3},
+                                            index_pair{3, 5},
+                                            index_pair{5, 6}}),
+            makeVariable<index_pair>(Dims{Dim{"i0"}, Dim{"i1"}}, Shape{1, 2},
+                                     Values{index_pair{0, 1},
+                                            index_pair{1, 4}}),
+            makeVariable<index_pair>(Dims{Dim{"i0"}, Dim{"i1"}}, Shape{2, 2},
+                                     Values{index_pair{0, 1}, index_pair{2, 4},
+                                            index_pair{4, 4},
+                                            index_pair{6, 7}}),
+            makeVariable<index_pair>(Dims{Dim{"i0"}, Dim{"i1"}}, Shape{0, 0},
+                                     Values{})),
+        ::testing::Bool()));
 
 TEST_P(TransformUnaryIrregularBinsTest, elements_of_bins) {
   const auto result = transform<double>(input, op, name);
