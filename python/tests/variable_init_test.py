@@ -54,6 +54,7 @@ def test_create_scalar_with_float_value(value):
     var = sc.Variable(dims=(), values=value)
     assert var.value == value
     assert var.dims == []
+    assert var.ndim == 0
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.dimensionless
 
@@ -68,6 +69,7 @@ def test_create_scalar_with_float_variance(variance):
     assert var.value == 0.0
     assert var.variance == variance
     assert var.dims == []
+    assert var.ndim == 0
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.dimensionless
 
@@ -87,6 +89,7 @@ def test_create_scalar_with_float_value_and_variance(value, variance):
     assert var.value == value
     assert var.variance == variance
     assert var.dims == []
+    assert var.ndim == 0
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.dimensionless
 
@@ -98,6 +101,7 @@ def test_create_scalar_with_value(args):
     var = sc.Variable(dims=(), values=value)
     assert var.value == value
     assert var.dims == []
+    assert var.ndim == 0
     assert var.dtype == dtype
     assert var.unit == sc.units.dimensionless
 
@@ -108,6 +112,7 @@ def test_create_scalar_with_value_array(args):
     var = sc.Variable(dims=(), values=np.array(value))
     assert var.value == value
     assert var.dims == []
+    assert var.ndim == 0
     assert var.dtype == dtype
     assert var.unit == sc.units.dimensionless
 
@@ -116,6 +121,7 @@ def test_create_scalar_with_value_array_int():
     var = sc.Variable(dims=(), values=np.array(2))
     assert var.value == 2
     assert var.dims == []
+    assert var.ndim == 0
     # The dtype varies between Windows and Linux / MacOS.
     assert var.dtype in (sc.dtype.int32, sc.dtype.int64)
     assert var.unit == sc.units.dimensionless
@@ -148,6 +154,7 @@ def test_create_scalar_invalid_variance(variance):
 def test_create_scalar_with_unit(unit):
     var = sc.Variable(dims=(), values=1.0, unit=unit)
     assert var.dims == []
+    assert var.ndim == 0
     assert var.value == 1.0
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.m
@@ -157,6 +164,7 @@ def test_create_scalar_quantity():
     var = sc.Variable(dims=(), values=1.2, unit=sc.units.m)
     assert var.value == 1.2
     assert var.dims == []
+    assert var.ndim == 0
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.m
 
@@ -179,6 +187,7 @@ def test_create_scalar_dtype_Variable(dtype):
     var = sc.Variable(dims=(), values=elem, dtype=dtype)
     assert sc.identical(var.value, elem)
     assert var.dims == []
+    assert var.ndim == 0
     assert var.dtype == sc.dtype.Variable
     assert var.unit == sc.units.dimensionless
     var = sc.Variable(dims=(), values=elem['x', 1:3], dtype=dtype)
@@ -191,6 +200,7 @@ def test_create_scalar_dtype_DataArray(dtype):
     var = sc.Variable(dims=(), values=elem, dtype=dtype)
     assert sc.identical(var.value, elem)
     assert var.dims == []
+    assert var.ndim == 0
     assert var.dtype == sc.dtype.DataArray
     assert var.unit == sc.units.dimensionless
     var = sc.Variable(dims=(), values=elem['x', 1:3], dtype=dtype)
@@ -203,6 +213,7 @@ def test_create_scalar_dtype_Dataset(dtype):
     var = sc.Variable(dims=(), values=elem, dtype=dtype)
     assert sc.identical(var.value, elem)
     assert var.dims == []
+    assert var.ndim == 0
     assert var.dtype == sc.dtype.Dataset
     assert var.unit == sc.units.dimensionless
     var = sc.Variable(dims=(), values=elem['x', 1:3], dtype=dtype)
@@ -236,6 +247,7 @@ def test_create_1d_size_4():
     assert var.shape == [4]
     np.testing.assert_array_equal(var.values, [0, 1, 2, 3])
     assert var.dims == ['x']
+    assert var.ndim == 1
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.m
 
@@ -357,6 +369,7 @@ def test_create_1D_vector_3_float64():
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
     np.testing.assert_array_equal(var.values[1], [4, 5, 6])
     assert var.dims == ['x']
+    assert var.ndim == 1
     assert var.dtype == sc.dtype.vector_3_float64
     assert var.unit == sc.units.m
 
@@ -374,6 +387,7 @@ def test_create_2d_inner_size_3():
     np.testing.assert_array_equal(var.values[0], [0, 1, 2])
     np.testing.assert_array_equal(var.values[1], [3, 4, 5])
     assert var.dims == ['x', 'y']
+    assert var.ndim == 2
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.m
 
