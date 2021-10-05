@@ -16,6 +16,8 @@
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
+#include "test_variables.h"
+
 using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::variable;
@@ -42,37 +44,9 @@ auto make_slices(const scipp::span<const scipp::index> &shape) {
   return res;
 }
 
-auto make_dim_labels(const scipp::index ndim,
-                     std::initializer_list<Dim> choices) {
-  assert(ndim <= scipp::size(choices));
-  Dims result(choices);
-  result.data.resize(ndim);
-  return result;
-}
-
 auto volume(const Shape &shape) {
   return std::accumulate(shape.data.begin(), shape.data.end(), 1,
                          std::multiplies<scipp::index>{});
-}
-
-template <class T>
-static Variable make_dense_variable(const Shape &shape, const bool variances) {
-  const auto ndim = scipp::size(shape.data);
-  const auto dims = make_dim_labels(ndim, {Dim::X, Dim::Y, Dim::Z});
-  auto var = variances ? makeVariable<T>(dims, shape, Values{}, Variances{})
-                       : makeVariable<T>(dims, shape, Values{});
-
-  const auto total_size = var.dims().volume();
-  std::iota(var.template values<T>().begin(), var.template values<T>().end(),
-            -total_size / 2.0);
-  if (variances) {
-    std::generate(var.template variances<T>().begin(),
-                  var.template variances<T>().end(),
-                  [x = -total_size / 20.0, total_size]() mutable {
-                    return x += 10.0 / total_size;
-                  });
-  }
-  return var;
 }
 
 auto make_regular_bin_indices(const scipp::index size, const Shape &shape,
