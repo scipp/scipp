@@ -24,7 +24,13 @@ using namespace scipp::variable;
 
 namespace {
 const char *name = "transform_test";
-}
+
+const std::vector<Shape> shapes{Shape{1},       Shape{2},       Shape{3},
+                                Shape{5},       Shape{16},      Shape{1, 1},
+                                Shape{1, 2},    Shape{3, 1},    Shape{2, 8},
+                                Shape{5, 7},    Shape{1, 1, 1}, Shape{1, 1, 4},
+                                Shape{1, 5, 1}, Shape{7, 1, 1}, Shape{2, 8, 4}};
+} // namespace
 
 class TransformBinaryTest : public ::testing::Test {
 protected:
@@ -81,7 +87,7 @@ protected:
 };
 
 INSTANTIATE_TEST_SUITE_P(Scalar, DenseTransformBinaryTest,
-                         ::testing::Combine(::testing::Values(Shape{2}),
+                         ::testing::Combine(::testing::ValuesIn(shapes),
                                             ::testing::Bool()));
 
 TEST_P(DenseTransformBinaryTest, matching_shapes) {
