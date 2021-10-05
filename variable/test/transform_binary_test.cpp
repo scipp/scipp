@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+#include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 #include <vector>
 
@@ -15,6 +16,8 @@
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
+#include "test_variables.h"
+
 using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::variable;
@@ -27,20 +30,81 @@ class TransformBinaryTest : public ::testing::Test {
 protected:
   static constexpr auto op_in_place{[](auto &x, const auto &y) { x *= y; }};
   static constexpr auto op{[](const auto &x, const auto &y) { return x * y; }};
+
+  template <class T, class U>
+  static auto op_manual_values(const Variable &a, const Variable &b) {
+    assert(a.dims() == b.dims());
+
+    std::vector<decltype(std::declval<T>() * std::declval<U>())> res;
+    res.reserve(a.dims().volume());
+    const auto &a_values = a.values<T>();
+    const auto &b_values = b.values<U>();
+    std::transform(a_values.begin(), a_values.end(), b_values.begin(),
+                   std::back_inserter(res), op);
+    return res;
+  }
+
+  template <class T, class U>
+  static auto op_manual_variances(const Variable &a, const Variable &b) {
+    assert(a.dims() == b.dims());
+    std::vector<decltype(std::declval<T>() * std::declval<U>())> res;
+    res.reserve(a.dims().volume());
+    const auto &a_values = a.values<T>();
+    const auto &b_values = b.values<U>();
+    const auto &a_variances = a.variances<T>();
+    const auto &b_variances = b.variances<U>();
+    for (auto aval = a_values.begin(), avar = a_variances.begin(),
+              bval = b_values.begin(), bvar = b_variances.begin();
+         aval != a_values.end(); ++aval, ++avar, ++bval, ++bvar) {
+      res.push_back(op(ValueAndVariance<T>(*aval, *avar),
+                       ValueAndVariance<U>(*bval, *bvar))
+                        .variance);
+    }
+    return res;
+  }
 };
 
-TEST_F(TransformBinaryTest, dense) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
-  const auto b = makeVariable<double>(Values{3.3});
+class DenseTransformBinaryTest
+    : public TransformBinaryTest,
+      public ::testing::WithParamInterface<std::tuple<Shape, bool>> {
+protected:
+  const Variable input1;
+  const Variable input2;
 
-  const auto ab = transform<pair_self_t<double>>(a, b, op, name);
-  const auto ba = transform<pair_self_t<double>>(b, a, op, name);
-  transform_in_place<pair_self_t<double>>(a, b, op_in_place, name);
+  DenseTransformBinaryTest()
+      : input1{make_input_variable(0, 1)}, input2{make_input_variable(10, 2)} {}
 
-  EXPECT_TRUE(equals(a.values<double>(), {1.1 * 3.3, 2.2 * 3.3}));
-  EXPECT_EQ(ab, ba);
-  EXPECT_EQ(ab, a);
-  EXPECT_EQ(ba, a);
+  static Variable make_input_variable(const double offset, const double scale) {
+    const auto &[shape, variances] = GetParam();
+    return make_dense_variable<double>(shape, variances, offset, scale);
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(Scalar, DenseTransformBinaryTest,
+                         ::testing::Combine(::testing::Values(Shape{2}),
+                                            ::testing::Bool()));
+
+TEST_P(DenseTransformBinaryTest, matching_shapes) {
+  const auto ab = transform<pair_self_t<double>>(input1, input2, op, name);
+  EXPECT_TRUE(equals(ab.values<double>(),
+                     op_manual_values<double, double>(input1, input2)));
+  if (std::get<bool>(GetParam())) {
+    EXPECT_TRUE(equals(ab.variances<double>(),
+                       op_manual_variances<double, double>(input1, input2)));
+  }
+
+  const auto ba = transform<pair_self_t<double>>(input2, input1, op, name);
+  EXPECT_TRUE(equals(ba.values<double>(),
+                     op_manual_values<double, double>(input2, input1)));
+  if (std::get<bool>(GetParam())) {
+    EXPECT_TRUE(equals(ba.variances<double>(),
+                       op_manual_variances<double, double>(input2, input1)));
+  }
+
+  auto result_in_place = copy(input1);
+  transform_in_place<pair_self_t<double>>(result_in_place, input2, op_in_place,
+                                          name);
+  EXPECT_EQ(result_in_place, ab);
 }
 
 TEST_F(TransformBinaryTest, dims_and_shape_fail_in_place) {
