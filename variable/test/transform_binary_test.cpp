@@ -107,6 +107,34 @@ TEST_P(DenseTransformBinaryTest, matching_shapes) {
   EXPECT_EQ(result_in_place, ab);
 }
 
+TEST_P(DenseTransformBinaryTest, scalar_and_array) {
+  const auto s = std::get<bool>(GetParam())
+                     ? makeVariable<double>(Values{2.1}, Variances{1.3})
+                     : makeVariable<double>(Values{2.1});
+  const auto b = s.broadcast(input1.dims());
+
+  const auto as = transform<pair_self_t<double>>(input1, s, op, name);
+  EXPECT_TRUE(
+      equals(as.values<double>(), op_manual_values<double, double>(input1, b)));
+  if (std::get<bool>(GetParam())) {
+    EXPECT_TRUE(equals(as.variances<double>(),
+                       op_manual_variances<double, double>(input1, b)));
+  }
+
+  const auto sa = transform<pair_self_t<double>>(s, input1, op, name);
+  EXPECT_TRUE(
+      equals(sa.values<double>(), op_manual_values<double, double>(b, input1)));
+  if (std::get<bool>(GetParam())) {
+    EXPECT_TRUE(equals(sa.variances<double>(),
+                       op_manual_variances<double, double>(b, input1)));
+  }
+
+  auto result_in_place = copy(input1);
+  transform_in_place<pair_self_t<double>>(result_in_place, s, op_in_place,
+                                          name);
+  EXPECT_EQ(result_in_place, as);
+}
+
 TEST_F(TransformBinaryTest, dims_and_shape_fail_in_place) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2});
   auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2});
