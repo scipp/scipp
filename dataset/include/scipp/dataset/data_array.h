@@ -53,6 +53,7 @@ public:
   Coords meta() const;
 
   Dimensions dims() const { return m_data->dims(); }
+  scipp::index ndim() const { return m_data->ndim(); }
   DType dtype() const { return m_data->dtype(); }
   units::Unit unit() const { return m_data->unit(); }
 
