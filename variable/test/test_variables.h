@@ -6,6 +6,8 @@
 
 #include <numeric>
 
+#include "random.h"
+
 #include "scipp/units/dim.h"
 #include "scipp/variable/variable.h"
 
@@ -22,7 +24,8 @@ inline auto make_dim_labels(const scipp::index ndim,
 
 template <class T>
 scipp::variable::Variable
-make_dense_variable(const scipp::variable::Shape &shape, const bool variances) {
+make_dense_variable(const scipp::variable::Shape &shape, const bool variances,
+                    const T offset = T{0}, const T scale = T{1}) {
   using namespace scipp;
   using namespace scipp::variable;
 
@@ -32,13 +35,16 @@ make_dense_variable(const scipp::variable::Shape &shape, const bool variances) {
                        : makeVariable<T>(dims, shape, Values{});
 
   const auto total_size = var.dims().volume();
-  std::iota(var.template values<T>().begin(), var.template values<T>().end(),
-            -total_size / 2.0);
+  std::generate(
+      var.template values<T>().begin(), var.template values<T>().end(),
+      [x = -scale * (total_size / 2.0 + offset), total_size, offset,
+       scale]() mutable { return x += scale * (1.0 / total_size + offset); });
   if (variances) {
     std::generate(var.template variances<T>().begin(),
                   var.template variances<T>().end(),
-                  [x = -total_size / 20.0, total_size]() mutable {
-                    return x += 10.0 / total_size;
+                  [x = -scale * (total_size / 20.0 + offset), total_size,
+                   offset, scale]() mutable {
+                    return x += scale * (10.0 / total_size + offset);
                   });
   }
   return var;
