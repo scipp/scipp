@@ -73,7 +73,7 @@ const Dimensions &Variable::dims() const {
   return m_dims;
 }
 
-const scipp::index Variable::ndim() const {
+scipp::index Variable::ndim() const {
   if (!is_valid())
     throw std::runtime_error("invalid variable");
   return m_dims.ndim();
