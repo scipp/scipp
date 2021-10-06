@@ -9,6 +9,7 @@
 #include "scipp/variable/astype.h"
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
 
@@ -128,21 +129,21 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
     throw except::BinEdgeError(
         "Rebin: The old or new bin edges are not sorted.");
   const auto out_type = is_int(var.dtype()) ? dtype<double> : var.dtype();
+  Variable rebinned;
   if (var.stride(dim) == 1) {
     if (ascending) {
-      return transform_subspan<transform_args>(
+      rebinned = transform_subspan<transform_args>(
           out_type, dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
           core::element::rebin<Less>, "rebin");
     } else {
-      return transform_subspan<transform_args>(
+      rebinned = transform_subspan<transform_args>(
           out_type, dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
           core::element::rebin<Greater>, "rebin");
     }
   } else {
     auto dims = var.dims();
     dims.resize(dim, newCoord.dims()[dim] - 1);
-    auto rebinned =
-        Variable(astype(Variable(var, Dimensions{}), out_type), dims);
+    rebinned = Variable(astype(Variable(var, Dimensions{}), out_type), dims);
     if (newCoord.dims().ndim() > 1)
       throw std::runtime_error(
           "Not inner rebin works only for 1d coordinates for now.");
@@ -161,8 +162,12 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
       throw except::TypeError("Rebinning is possible only for coords of types "
                               "`float64` or `float32`.");
     }
-    return rebinned;
   }
+  // If rebinned dimension has stride 1 but is not an inner dimension then we
+  // need to transpose the output of transform_subspan to retain the input
+  // dimension order.
+  const auto &order = var.dims().labels();
+  return transpose(rebinned, {order.begin(), order.end()});
 }
 
 } // namespace scipp::variable

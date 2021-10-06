@@ -43,7 +43,7 @@ TEST_F(RebinTest, outer_stride1_data_array) {
   DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                           units::counts, Values{3, 7, 11, 15}),
                      {{Dim::X, edges}, {Dim::Y, y}}, {});
-  ASSERT_EQ(rebin(transpose(array), Dim::X, edges), expected);
+  ASSERT_EQ(rebin(transpose(array), Dim::X, edges), transpose(expected));
 }
 
 TEST_F(RebinTest, inner_data_array_with_variances) {
