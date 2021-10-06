@@ -134,6 +134,10 @@ scipp::span<const scipp::index> Variable::strides() const {
                                          &*m_strides.begin() + dims().ndim());
 }
 
+scipp::index Variable::stride(const Dim dim) const {
+  return m_strides[dims().index(dim)];
+}
+
 scipp::index Variable::offset() const { return m_offset; }
 
 core::ElementArrayViewParams Variable::array_params() const noexcept {

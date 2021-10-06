@@ -128,7 +128,7 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
     throw except::BinEdgeError(
         "Rebin: The old or new bin edges are not sorted.");
   const auto out_type = is_int(var.dtype()) ? dtype<double> : var.dtype();
-  if (var.dims().inner() == dim) {
+  if (var.stride(dim) == 1) {
     if (ascending) {
       return transform_subspan<transform_args>(
           out_type, dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
