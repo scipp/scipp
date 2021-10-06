@@ -70,7 +70,7 @@ public:
   void expectCanSetUnit(const units::Unit &) const;
 
   [[nodiscard]] const Dimensions &dims() const;
-  [[nodiscard]] const scipp::index ndim() const;
+  [[nodiscard]] scipp::index ndim() const;
 
   [[nodiscard]] DType dtype() const;
 
