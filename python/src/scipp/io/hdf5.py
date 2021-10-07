@@ -42,13 +42,20 @@ class NumpyDataIO:
 
     @staticmethod
     def read(group, data):
-        if (data.values.flags['C_CONTIGUOUS']):
+        # h5py's read_direct method fails if any dim has zero size.
+        # see https://github.com/h5py/h5py/issues/870
+        all_dims_have_nonzero_size = all(x > 0 for x in data.values.shape)
+
+        if data.values.flags['C_CONTIGUOUS'] and all_dims_have_nonzero_size:
             group['values'].read_direct(_as_hdf5_type(data.values))
         else:
             # Values of Eigen matrices are transposed
             data.values = group['values']
         if 'variances' in group:
-            group['variances'].read_direct(data.variances)
+            if all_dims_have_nonzero_size:
+                group['variances'].read_direct(data.variances)
+            else:
+                data.values = group['variances']
 
 
 class BinDataIO:
