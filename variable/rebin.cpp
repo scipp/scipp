@@ -112,6 +112,7 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
   // This is likely a rare case in practice so a slow transpose of input and
   // output should be sufficient for now.
   if (var.stride(dim) != 1 && (oldCoord.ndim() != 1 || newCoord.ndim() != 1))
+    // We *copy* the transpose to ensure that memory order of dims matches input
     return copy(
         transpose(rebin(as_contiguous(var, dim), dim, oldCoord, newCoord),
                   {var.dims().begin(), var.dims().end()}));
