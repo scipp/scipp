@@ -10,12 +10,6 @@
 #include "scipp/core/sizes.h"
 
 namespace scipp::core {
-
-void expectUnique(const Dimensions &dims, const Dim label) {
-  if (dims.contains(label))
-    throw except::DimensionError("Duplicate dimension.");
-}
-
 Dimensions::Dimensions(const scipp::span<const Dim> labels,
                        const scipp::span<const scipp::index> shape) {
   if (labels.size() != shape.size())
