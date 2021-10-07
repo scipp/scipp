@@ -16,8 +16,8 @@ void expectUnique(const Dimensions &dims, const Dim label) {
     throw except::DimensionError("Duplicate dimension.");
 }
 
-Dimensions::Dimensions(const std::vector<Dim> &labels,
-                       const std::vector<scipp::index> &shape) {
+Dimensions::Dimensions(const scipp::span<const Dim> labels,
+                       const scipp::span<const scipp::index> shape) {
   if (labels.size() != shape.size())
     throw except::DimensionError(
         "Constructing Dimensions: Number of dimensions "

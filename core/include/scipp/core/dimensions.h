@@ -22,8 +22,12 @@ public:
   constexpr Dimensions() noexcept = default;
   Dimensions(const Dim dim, const scipp::index size)
       : Dimensions({{dim, size}}) {}
-  Dimensions(const std::vector<Dim> &labels,
-             const std::vector<scipp::index> &shape);
+  Dimensions(scipp::span<const Dim> labels,
+             scipp::span<const scipp::index> shape);
+  Dimensions(const std::initializer_list<Dim> labels,
+             const std::initializer_list<scipp::index> shape)
+      : Dimensions({labels.begin(), labels.end()},
+                   {shape.begin(), shape.end()}) {}
   Dimensions(const std::initializer_list<std::pair<Dim, scipp::index>> dims) {
     for (const auto &[label, size] : dims)
       addInner(label, size);
