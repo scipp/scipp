@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-#include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
 #include <vector>
 
@@ -86,8 +85,12 @@ protected:
   }
 };
 
-INSTANTIATE_TEST_SUITE_P(Scalar, DenseTransformBinaryTest,
+INSTANTIATE_TEST_SUITE_P(Array, DenseTransformBinaryTest,
                          ::testing::Combine(::testing::ValuesIn(shapes),
+                                            ::testing::Bool()));
+
+INSTANTIATE_TEST_SUITE_P(Scalar, DenseTransformBinaryTest,
+                         ::testing::Combine(::testing::Values(Shape{0}),
                                             ::testing::Bool()));
 
 TEST_P(DenseTransformBinaryTest, matching_shapes) {
