@@ -4,8 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <span>
 #include <array>
+#include <span>
 
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
