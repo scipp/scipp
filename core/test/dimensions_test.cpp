@@ -101,10 +101,10 @@ TEST(DimensionsTest, index_access) {
   Dimensions denseXY({Dim::X, Dim::Y}, {2, 3});
   Dimensions denseXYZ({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4});
 
-  ASSERT_THROW(denseXY[Dim::Invalid], except::DimensionError);
-  ASSERT_THROW(denseXYZ[Dim::Invalid], except::DimensionError);
-  ASSERT_THROW(denseXY[Dim::Z], except::DimensionError);
-  ASSERT_NO_THROW(denseXYZ[Dim::Z]);
+  ASSERT_THROW_DISCARD(denseXY[Dim::Invalid], except::DimensionError);
+  ASSERT_THROW_DISCARD(denseXYZ[Dim::Invalid], except::DimensionError);
+  ASSERT_THROW_DISCARD(denseXY[Dim::Z], except::DimensionError);
+  ASSERT_NO_THROW_DISCARD(denseXYZ[Dim::Z]);
 }
 
 TEST(DimensionsTest, duplicate) {
@@ -225,8 +225,8 @@ TEST(DimensionsTest, intersection) {
 
 TEST(DimensionsTest, index) {
   Dimensions dims({Dim::X, Dim::Y}, {1, 2});
-  ASSERT_THROW(dims.index(Dim::Invalid), except::DimensionError);
-  ASSERT_THROW(dims.index(Dim::Z), except::DimensionError);
+  ASSERT_THROW_DISCARD(dims.index(Dim::Invalid), except::DimensionError);
+  ASSERT_THROW_DISCARD(dims.index(Dim::Z), except::DimensionError);
   EXPECT_EQ(dims.index(Dim::X), 0);
   EXPECT_EQ(dims.index(Dim::Y), 1);
 }
