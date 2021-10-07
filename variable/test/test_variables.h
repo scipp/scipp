@@ -61,6 +61,7 @@ inline auto make_slices(const scipp::span<const scipp::index> &shape) {
       res.emplace_back(dim_labels.at(dim), 0, shape[dim] - 1);
       res.emplace_back(dim_labels.at(dim), 0, shape[dim] / 2);
       res.emplace_back(dim_labels.at(dim), 2, shape[dim]);
+      res.emplace_back(dim_labels.at(dim), 1);
     }
   }
   return res;
