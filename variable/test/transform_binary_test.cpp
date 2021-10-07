@@ -52,6 +52,7 @@ protected:
   template <class T, class U>
   static auto op_manual_variances(const Variable &a, const Variable &b) {
     assert(a.dims() == b.dims());
+
     std::vector<decltype(std::declval<T>() * std::declval<U>())> res;
     res.reserve(a.dims().volume());
     const auto &a_values = a.values<T>();
@@ -84,7 +85,8 @@ protected:
     return make_dense_variable<double>(shape, variances, offset, scale);
   }
 
-  void check_transform_combinations(const Variable &a, const Variable &b) {
+  static void check_transform_combinations(const Variable &a,
+                                           const Variable &b) {
     const auto b_for_manual = b.dims() == a.dims() ? b : b.broadcast(a.dims());
 
     const auto ab = transform<pair_self_t<double>>(a, b, op, name);
@@ -103,10 +105,17 @@ protected:
                          op_manual_variances<double, double>(b_for_manual, a)));
     }
 
-    auto result_in_place = copy(a);
-    transform_in_place<pair_self_t<double>>(result_in_place, b, op_in_place,
-                                            name);
-    EXPECT_EQ(result_in_place, ab);
+    if (a.dims().includes(b.dims())) {
+      auto a_in_place = copy(a);
+      transform_in_place<pair_self_t<double>>(a_in_place, b, op_in_place, name);
+      EXPECT_EQ(a_in_place, ab);
+    }
+
+    if (b.dims().includes(a.dims())) {
+      auto b_in_place = copy(b);
+      transform_in_place<pair_self_t<double>>(b_in_place, a, op_in_place, name);
+      EXPECT_EQ(b_in_place, ba);
+    }
   }
 };
 
@@ -152,6 +161,36 @@ TEST_P(DenseTransformBinaryTest, slice_and_full) {
   }
 }
 
+TEST_P(DenseTransformBinaryTest, transpose) {
+  const auto b = transpose(copy(transpose(input2)));
+  check_transform_combinations(input1, b);
+}
+
+TEST_P(DenseTransformBinaryTest, transposed_layout) {
+  const auto b = copy(transpose(input2));
+
+  const auto ab = transform<pair_self_t<double>>(input1, b, op, name);
+  const auto ab_expected =
+      transform<pair_self_t<double>>(input1, input2, op, name);
+  EXPECT_EQ(ab, ab_expected);
+
+  const auto ba = transform<pair_self_t<double>>(b, input1, op, name);
+  // TODO simplify
+  const auto ba_dims = ba.dims().labels();
+  const auto ba_expected =
+      transpose(transform<pair_self_t<double>>(input2, input1, op, name),
+                std::vector<Dim>(ba_dims.begin(), ba_dims.end()));
+  EXPECT_EQ(ba, ba_expected);
+
+  auto a_in_place = copy(input1);
+  transform_in_place<double>(a_in_place, b, op_in_place, name);
+  EXPECT_EQ(a_in_place, ab);
+
+  auto b_in_place = copy(b);
+  transform_in_place<double>(b_in_place, input1, op_in_place, name);
+  EXPECT_EQ(b_in_place, ba);
+}
+
 TEST_F(TransformBinaryTest, dims_and_shape_fail_in_place) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2});
   auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2});
@@ -187,33 +226,6 @@ TEST_F(TransformBinaryTest, dense_mixed_type) {
   EXPECT_EQ(ab, ba);
   EXPECT_EQ(ab, a);
   EXPECT_EQ(ba, a);
-}
-
-TEST_F(TransformBinaryTest, transpose) {
-  auto a =
-      makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{2, 2}, Values{1, 2, 3, 4});
-  const auto b = transpose(
-      makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{2, 2}, Values{5, 6, 7, 8}),
-      {Dim::Y, Dim::X});
-
-  const auto ab = transform<int>(a, b, op, name);
-  transform_in_place<int>(a, b, op_in_place, name);
-
-  EXPECT_TRUE(equals(a.values<int>(), {5, 12, 21, 32}));
-  EXPECT_EQ(ab, a);
-}
-
-TEST_F(TransformBinaryTest, transposed_layout) {
-  auto a =
-      makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{2, 2}, Values{1, 2, 3, 4});
-  const auto b =
-      makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{2, 2}, Values{5, 7, 6, 8});
-
-  const auto ab = transform<int>(a, b, op, name);
-  transform_in_place<int>(a, b, op_in_place, name);
-
-  EXPECT_TRUE(equals(a.values<int>(), {5, 12, 21, 32}));
-  EXPECT_EQ(ab, a);
 }
 
 TEST_F(TransformBinaryTest, in_place_self_overlap_without_variance_1d) {
