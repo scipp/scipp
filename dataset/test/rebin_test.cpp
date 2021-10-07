@@ -38,6 +38,16 @@ TEST_F(RebinTest, inner_stride1_data_array) {
   ASSERT_EQ(rebin(array, Dim::X, edges), expected);
 }
 
+TEST_F(RebinTest, inner_stride1_strided_edges) {
+  auto buffer = makeVariable<double>(Dims{Dim::X, Dim::Z}, Shape{3, 2},
+                                     Values{1, 0, 3, 0, 5, 0});
+  auto edges = buffer.slice({Dim::Z, 0});
+  DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                          units::counts, Values{3, 7, 11, 15}),
+                     {{Dim::X, edges}, {Dim::Y, y}}, {});
+  ASSERT_EQ(rebin(array, Dim::X, edges), expected);
+}
+
 TEST_F(RebinTest, outer_stride1_data_array) {
   auto edges = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 3, 5});
   DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
