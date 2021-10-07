@@ -248,12 +248,12 @@ DataArray flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
   });
 }
 
-DataArray transpose(const DataArray &a, const std::vector<Dim> &dims) {
+DataArray transpose(const DataArray &a, const scipp::span<const Dim> dims) {
   return {transpose(a.data(), dims), a.coords(), a.masks(), a.attrs(),
           a.name()};
 }
 
-Dataset transpose(const Dataset &d, const std::vector<Dim> &dims) {
+Dataset transpose(const Dataset &d, const scipp::span<const Dim> dims) {
   return apply_to_items(
       d, [](auto &&... _) { return transpose(_...); }, dims);
 }
