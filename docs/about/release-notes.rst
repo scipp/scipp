@@ -17,6 +17,8 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
+* Fixed a python exception that was thrown when importing empty datasets from HDF5 files using ``open_hdf5`` `#2216 https://github.com/scipp/scipp/pull/2216`_.
+
 Contributors
 ~~~~~~~~~~~~
 
