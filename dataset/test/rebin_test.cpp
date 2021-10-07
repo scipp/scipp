@@ -153,6 +153,49 @@ TEST_F(RebinTest, rebin_with_ragged_coord) {
   ASSERT_EQ(rebin(da, Dim::Z, edges), expected);
 }
 
+class RebinRaggedTest : public ::testing::Test {
+protected:
+  Variable counts =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3}, units::counts,
+                           Values{1, 2, 3, 4, 5, 6});
+  Variable x = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 4},
+                                    Values{1, 2, 3, 4, 5, 6, 7, 8});
+  DataArray da{counts, {{Dim::X, x}}};
+  Variable edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 3, 7});
+};
+
+TEST_F(RebinRaggedTest, stride1_data_and_edges) {
+  DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                          units::counts, Values{3, 3, 0, 9}),
+                     {{Dim::X, edges}});
+  ASSERT_EQ(rebin(da, Dim::X, edges), expected);
+  ASSERT_EQ(rebin(transpose(da), Dim::X, edges), transpose(expected));
+}
+
+TEST_F(RebinRaggedTest, stride1_edges) {
+  DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                          units::counts, Values{3, 3, 0, 9}),
+                     {{Dim::X, edges}});
+  ASSERT_EQ(rebin(copy(transpose(da)), Dim::X, edges), transpose(expected));
+}
+
+TEST_F(RebinRaggedTest, stride1_data) {
+  da.coords().set(Dim::X, copy(transpose(x)));
+  DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                          units::counts, Values{3, 3, 0, 9}),
+                     {{Dim::X, edges}});
+  ASSERT_EQ(rebin(da, Dim::X, edges), expected);
+}
+
+TEST_F(RebinRaggedTest, no_stride1) {
+  da.coords().set(Dim::X, copy(transpose(x)));
+  DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                          units::counts, Values{3, 3, 0, 9}),
+                     {{Dim::X, edges}});
+  ASSERT_EQ(rebin(copy(transpose(da)), Dim::X, edges), transpose(expected));
+}
+
 TEST(RebinWithMaskTest, preserves_unrelated_mask) {
   Dataset ds;
   ds.setData("data_xy", broadcast(makeVariable<double>(Dimensions{Dim::X, 5},
