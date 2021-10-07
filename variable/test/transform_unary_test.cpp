@@ -16,7 +16,7 @@
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
-#include "test_variables.h"
+#include "transform_test_helpers.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -24,36 +24,6 @@ using namespace scipp::variable;
 
 namespace {
 const char *name = "transform_test";
-
-const std::vector<Shape> shapes{Shape{1},       Shape{2},       Shape{3},
-                                Shape{5},       Shape{16},      Shape{1, 1},
-                                Shape{1, 2},    Shape{3, 1},    Shape{2, 8},
-                                Shape{5, 7},    Shape{1, 1, 1}, Shape{1, 1, 4},
-                                Shape{1, 5, 1}, Shape{7, 1, 1}, Shape{2, 8, 4}};
-
-auto volume(const Shape &shape) {
-  return std::accumulate(shape.data.begin(), shape.data.end(), 1,
-                         std::multiplies<scipp::index>{});
-}
-
-auto make_regular_bin_indices(const scipp::index size, const Shape &shape,
-                              const scipp::index ndim) {
-  const auto n_bins = volume(shape);
-  std::vector<index_pair> aux(n_bins);
-  std::generate(begin(aux), end(aux),
-                [lower = scipp::index{0}, d_size = static_cast<double>(size),
-                 d_n_bins = static_cast<double>(n_bins)]() mutable {
-                  const auto upper = static_cast<scipp::index>(
-                      static_cast<double>(lower) + d_size / d_n_bins);
-                  const index_pair res{lower, upper};
-                  lower = upper;
-                  return res;
-                });
-  aux.back().second = size;
-  return makeVariable<index_pair>(
-      make_dim_labels(ndim, {Dim{"i0"}, Dim{"i1"}, Dim{"i2"}}), shape,
-      Values(aux));
-}
 } // namespace
 
 class BaseTransformUnaryTest : public ::testing::Test {
@@ -101,7 +71,7 @@ protected:
 };
 
 INSTANTIATE_TEST_SUITE_P(Array, TransformUnaryTest,
-                         ::testing::Combine(::testing::ValuesIn(shapes),
+                         ::testing::Combine(::testing::ValuesIn(shapes()),
                                             ::testing::Bool()));
 
 INSTANTIATE_TEST_SUITE_P(Scalar, TransformUnaryTest,
@@ -158,25 +128,20 @@ TEST_P(TransformUnaryTest, transpose) {
 }
 
 TEST_P(TransformUnaryTest, elements_of_bins) {
-  const auto &[base_event_shape, variances] = GetParam();
-  for (const auto &bin_shape : shapes) {
-    const auto n_bin = volume(bin_shape);
-    for (scipp::index bin_dim = 0; bin_dim < scipp::size(base_event_shape.data);
+  const auto &[event_shape, variances] = GetParam();
+  for (const auto &bin_shape : shapes()) {
+    for (scipp::index bin_dim = 0; bin_dim < scipp::size(event_shape.data);
          ++bin_dim) {
-      auto event_shape = base_event_shape;
-      event_shape.data.at(bin_dim) *= n_bin;
-
-      const auto buffer = make_dense_variable<double>(event_shape, variances);
-      const auto bin_dim_label = buffer.dims().labels()[bin_dim];
-      const auto indices = make_regular_bin_indices(
-          event_shape.data.at(bin_dim), bin_shape, scipp::size(bin_shape.data));
-      auto var = make_bins(indices, bin_dim_label, copy(buffer));
+      auto var = make_binned_variable<double>(event_shape, bin_shape, bin_dim,
+                                              variances);
+      const auto bin_dim_label =
+          var.bin_buffer<Variable>().dims().label(bin_dim);
+      const auto expected =
+          make_bins(var.bin_indices(), bin_dim_label,
+                    transform<double>(var.bin_buffer<Variable>(), op, name));
 
       const auto result = transform<double>(var, op, name);
       transform_in_place<double>(var, op_in_place, name);
-
-      const auto expected = make_bins(indices, bin_dim_label,
-                                      transform<double>(buffer, op, name));
       EXPECT_EQ(result, expected);
       EXPECT_EQ(result, var);
     }

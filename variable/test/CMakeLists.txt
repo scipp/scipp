@@ -29,6 +29,7 @@ add_executable(
   to_unit_test.cpp
   transform_test.cpp
   transform_binary_test.cpp
+  transform_test_helpers.h
   transform_unary_test.cpp
   trigonometry_test.cpp
   util_test.cpp
