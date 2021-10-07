@@ -31,19 +31,6 @@ const std::vector<Shape> shapes{Shape{1},       Shape{2},       Shape{3},
                                 Shape{5, 7},    Shape{1, 1, 1}, Shape{1, 1, 4},
                                 Shape{1, 5, 1}, Shape{7, 1, 1}, Shape{2, 8, 4}};
 
-auto make_slices(const scipp::span<const scipp::index> &shape) {
-  std::vector<Slice> res;
-  const std::vector dim_labels{Dim::X, Dim::Y, Dim::Z};
-  for (size_t dim = 0; dim < 3; ++dim) {
-    if (shape.size() > dim && shape[dim] > 1) {
-      res.emplace_back(dim_labels.at(dim), 0, shape[dim] - 1);
-      res.emplace_back(dim_labels.at(dim), 0, shape[dim] / 2);
-      res.emplace_back(dim_labels.at(dim), 2, shape[dim]);
-    }
-  }
-  return res;
-}
-
 auto volume(const Shape &shape) {
   return std::accumulate(shape.data.begin(), shape.data.end(), 1,
                          std::multiplies<scipp::index>{});
