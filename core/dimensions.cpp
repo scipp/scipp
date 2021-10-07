@@ -111,7 +111,7 @@ Dimensions intersection(const Dimensions &a, const Dimensions &b) {
 
 namespace {
 Dimensions transpose_impl(const Dimensions &dims,
-                          const std::vector<Dim> &labels) {
+                          const scipp::span<const Dim> labels) {
   if (scipp::size(labels) != dims.ndim())
     throw except::DimensionError("Cannot transpose: Requested new dimension "
                                  "order contains different number of labels.");
@@ -122,7 +122,8 @@ Dimensions transpose_impl(const Dimensions &dims,
 }
 } // namespace
 
-Dimensions transpose(const Dimensions &dims, const std::vector<Dim> &labels) {
+Dimensions transpose(const Dimensions &dims,
+                     const scipp::span<const Dim> labels) {
   if (labels.empty()) {
     std::vector<Dim> default_labels{dims.labels().rbegin(),
                                     dims.labels().rend()};

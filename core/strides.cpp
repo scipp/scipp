@@ -42,7 +42,7 @@ Strides transpose(const Strides &strides, Dimensions from,
   scipp::index i = 0;
   for (const auto &dim : from)
     from.resize(dim, strides[i++]);
-  from = core::transpose(from, std::vector<Dim>{order.begin(), order.end()});
+  from = core::transpose(from, order);
   return Strides(from.shape());
 }
 
