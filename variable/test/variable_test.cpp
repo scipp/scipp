@@ -90,7 +90,7 @@ TEST(Variable, is_same) {
 
   auto b = makeVariable<double>(Dims{Dim::Y, Dim::X}, Values{1, 2, 3, 4},
                                 Shape{2, 2});
-  EXPECT_FALSE(b.is_same(b.transpose({Dim::X, Dim::Y})));
+  EXPECT_FALSE(b.is_same(b.transpose(std::vector<Dim>{Dim::X, Dim::Y})));
 }
 
 TEST(Variable, makeVariable_custom_type) {

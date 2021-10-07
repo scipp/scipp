@@ -135,14 +135,14 @@ TEST_F(SubspanViewOfSliceTest, broadcast) {
 }
 
 TEST_F(SubspanViewOfSliceTest, tranpose) {
-  var = var.transpose({Dim::Y, Dim::Z, Dim::X});
+  var = var.transpose(std::vector<Dim>{Dim::Y, Dim::Z, Dim::X});
   auto view = subspan_view(var, Dim::X);
   EXPECT_TRUE(equals(view.values<span<double>>()[0], {1, 2, 3}));
   EXPECT_TRUE(equals(view.values<span<double>>()[1], {10, 11, 12}));
 }
 
 TEST_F(SubspanViewOfSliceTest, slice_tranpose) {
-  var = var.transpose({Dim::Y, Dim::Z, Dim::X});
+  var = var.transpose(std::vector<Dim>{Dim::Y, Dim::Z, Dim::X});
   for (auto dim : {Dim::X, Dim::Y, Dim::Z})
     var = var.slice({dim, 1, 3});
   auto view = subspan_view(var, Dim::X);

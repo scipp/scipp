@@ -215,7 +215,7 @@ Variable Variable::fold(const Dim dim, const Dimensions &target) const {
   return out;
 }
 
-Variable Variable::transpose(const std::vector<Dim> &order) const {
+Variable Variable::transpose(const scipp::span<const Dim> order) const {
   auto transposed(*this);
   transposed.m_strides = core::transpose(m_strides, dims(), order);
   transposed.m_dims = core::transpose(dims(), order);

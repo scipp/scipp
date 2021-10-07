@@ -138,7 +138,7 @@ Variable flatten(const Variable &view,
   return out;
 }
 
-Variable transpose(const Variable &var, const std::vector<Dim> &dims) {
+Variable transpose(const Variable &var, const scipp::span<const Dim> dims) {
   return var.transpose(dims);
 }
 
