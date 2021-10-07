@@ -4,6 +4,7 @@
 
 #include "scipp/core/eigen.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/string.h"
 #include "scipp/variable/variable.h"
 
@@ -76,4 +77,16 @@ TEST(VectorReduceTest, mean_vector) {
       Dims{}, Shape{1}, units::m, Values{Eigen::Vector3d{2.5, 3.5, 4.5}});
   auto averaged = mean(vector_var, Dim::X);
   EXPECT_EQ(averaged, expected);
+}
+
+TEST(SumPrecisionTest, sum_float) {
+  const float init = 100000000.0;
+  scipp::index N = 100;
+  Variable var = broadcast(makeVariable<float>(Values{1.0}), {{Dim::X}, {N}});
+  var = concatenate(makeVariable<float>(Values{init}), var, Dim::X);
+  EXPECT_EQ(sum(var, Dim::X), makeVariable<float>(Values{init + N * 1.0}));
+  for (scipp::index i = 1; i < N; i += 2)
+    var.values<float>()[i] = NAN;
+  EXPECT_EQ(nansum(var, Dim::X),
+            makeVariable<float>(Values{init + (N / 2) * 1.0}));
 }

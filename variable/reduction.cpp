@@ -39,11 +39,23 @@ Variable make_accumulant(const Variable &var, const Dim dim,
 } // namespace
 
 void sum_impl(Variable &summed, const Variable &var) {
-  accumulate_in_place(summed, var, element::add_equals, "sum");
+  if (summed.dtype() == dtype<float>) {
+    auto accum = astype(summed, dtype<double>);
+    sum_impl(accum, var);
+    copy(astype(accum, dtype<float>), summed);
+  } else {
+    accumulate_in_place(summed, var, element::add_equals, "sum");
+  }
 }
 
 void nansum_impl(Variable &summed, const Variable &var) {
-  accumulate_in_place(summed, var, element::nan_add_equals, "nansum");
+  if (summed.dtype() == dtype<float>) {
+    auto accum = astype(summed, dtype<double>);
+    nansum_impl(accum, var);
+    copy(astype(accum, dtype<float>), summed);
+  } else {
+    accumulate_in_place(summed, var, element::nan_add_equals, "nansum");
+  }
 }
 
 template <typename Op>
