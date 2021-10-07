@@ -138,7 +138,7 @@ TEST_P(DenseTransformBinaryTest, scalar_and_array) {
   check_transform_combinations(input1, s);
 }
 
-TEST_P(DenseTransformBinaryTest, slice_and_slice) {
+TEST_P(DenseTransformBinaryTest, slice_with_slice) {
   for (const Slice &slice : make_slices(input1.dims().shape())) {
     const auto a = input1.slice(slice);
     const auto b = input2.slice(slice);
@@ -148,7 +148,7 @@ TEST_P(DenseTransformBinaryTest, slice_and_slice) {
   }
 }
 
-TEST_P(DenseTransformBinaryTest, slice_and_full) {
+TEST_P(DenseTransformBinaryTest, slice_with_full) {
   for (const Slice &slice : make_slices(input1.dims().shape())) {
     const auto a = input1.slice(slice);
     auto b = copy(a);
@@ -262,26 +262,6 @@ TEST_F(TransformBinaryTest, in_place_self_overlap_with_variance) {
   transform_in_place<pair_self_t<double>>(a, a.slice({Dim::X, 1}), op_in_place,
                                           name);
   ASSERT_EQ(a, reference);
-}
-
-TEST_F(TransformBinaryTest, view_with_var) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
-  const auto b = makeVariable<double>(Values{3.3});
-
-  transform_in_place<pair_self_t<double>>(a.slice({Dim::X, 1}), b, op_in_place,
-                                          name);
-
-  EXPECT_TRUE(equals(a.values<double>(), {1.1, 2.2 * 3.3}));
-}
-
-TEST_F(TransformBinaryTest, view_with_view) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
-  const auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0.1, 3.3});
-
-  transform_in_place<pair_self_t<double>>(
-      a.slice({Dim::X, 1}), b.slice({Dim::Y, 1}), op_in_place, name);
-
-  EXPECT_TRUE(equals(a.values<double>(), {1.1, 2.2 * 3.3}));
 }
 
 TEST_F(TransformBinaryTest, dense_events) {
