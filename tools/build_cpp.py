@@ -11,7 +11,8 @@ import sys
 import time
 
 parser = argparse.ArgumentParser(description='Build C++ library and run tests')
-parser.add_argument('--prefix', default='install')
+parser.add_argument('--prefix', default=os.environ.get('PREFIX', 'install'))
+parser.add_argument('--site-packages-dir', default=os.environ.get('SP_DIR', ''))
 parser.add_argument('--source_dir', default='.')
 parser.add_argument('--build_dir', default='build')
 parser.add_argument('--caching', action='store_true', default=False)
@@ -25,7 +26,12 @@ def run_command(cmd, shell):
     return subprocess.check_call(cmd, stderr=subprocess.STDOUT, shell=shell)
 
 
-def main(prefix='install', build_dir='build', source_dir='.', caching=False):
+def main(*,
+         prefix='install',
+         site_packages_dir,
+         build_dir='build',
+         source_dir='.',
+         caching=False):
     """
     Platform-independent function to run cmake, build, install and C++ tests.
     """
@@ -51,23 +57,19 @@ def main(prefix='install', build_dir='build', source_dir='.', caching=False):
         '-G': 'Ninja',
         '-DPython_EXECUTABLE': shutil.which("python"),
         '-DCMAKE_INSTALL_PREFIX': prefix,
+        '-DSITE_PACKAGES_DIR': site_packages_dir,
         '-DWITH_CTEST': 'OFF',
         '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'ON'
     }
 
     if platform == 'darwin':
-        cmake_flags.update({'-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'OFF'})
-        osxversion = os.environ.get('OSX_VERSION')
-        if osxversion is not None:
-            cmake_flags.update({
-                '-DCMAKE_OSX_DEPLOYMENT_TARGET':
-                osxversion,
-                '-DCMAKE_OSX_SYSROOT':
-                os.path.join('/Applications', 'Xcode.app', 'Contents', 'Developer',
-                             'Platforms', 'MacOSX.platform', 'Developer', 'SDKs',
-                             'MacOSX{}.sdk'.format(osxversion))
-            })
-
+        # Note 10.14 is the minimum supported osx version
+        # conda-build otherwise defaults to 10.9
+        osxversion = os.getenv('OSX_VERSION', '10.14')
+        cmake_flags.update({
+            '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'OFF',
+            '-DCMAKE_OSX_DEPLOYMENT_TARGET': osxversion
+        })
     if platform == 'win32':
         cmake_flags.update({'-G': 'Visual Studio 16 2019', '-A': 'x64'})
         # clcache conda installed to env Scripts dir in env if present
@@ -76,15 +78,14 @@ def main(prefix='install', build_dir='build', source_dir='.', caching=False):
             cmake_flags.update({'-DCLCACHE_PATH': scripts})
         shell = True
         build_config = 'Release'
-
-        # cmake --build --parallel is detrimental to build performance on windows
-        # see https://github.com/scipp/scipp/issues/2078 for details
+        # cmake --build --parallel is detrimental to build performance on
+        # windows, see https://github.com/scipp/scipp/issues/2078 for
+        # details
         build_flags = []
     else:
         # For other platforms we do want to add the parallel build flag.
         build_flags = [parallel_flag]
 
-    # Additional flags for --build commands
     if len(build_config) > 0:
         build_flags += ['--config', build_config]
 
@@ -125,6 +126,7 @@ def main(prefix='install', build_dir='build', source_dir='.', caching=False):
 if __name__ == '__main__':
     args = parser.parse_args()
     main(prefix=args.prefix,
+         site_packages_dir=args.site_packages_dir,
          build_dir=args.build_dir,
          source_dir=args.source_dir,
          caching=args.caching)
