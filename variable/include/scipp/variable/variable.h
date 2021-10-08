@@ -134,6 +134,9 @@ public:
   [[nodiscard]] Variable broadcast(const Dimensions &target) const;
   [[nodiscard]] Variable fold(const Dim dim, const Dimensions &target) const;
   [[nodiscard]] Variable transpose(scipp::span<const Dim> order) const;
+  [[nodiscard]] Variable transpose(std::initializer_list<Dim> order) const {
+    return transpose({order.begin(), order.end()});
+  }
 
   [[nodiscard]] bool is_valid() const noexcept;
   [[nodiscard]] bool is_slice() const;
