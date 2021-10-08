@@ -216,10 +216,10 @@ set(SITE_PACKAGES_DIR
           "Python site-packages directory to use for installing Python module."
 )
 if("${SITE_PACKAGES_DIR}" STREQUAL "")
-  set(PYTHONDIR scippneutron)
+  set(PYTHONDIR scipp)
   set(ARCHIVEDIR .)
 else()
-  file(TO_CMAKE_PATH ${SITE_PACKAGES_DIR}/scippneutron PYTHONDIR)
+  file(TO_CMAKE_PATH ${SITE_PACKAGES_DIR}/scipp PYTHONDIR)
   file(TO_CMAKE_PATH ${SITE_PACKAGES_DIR} ARCHIVEDIR)
 endif()
 set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
