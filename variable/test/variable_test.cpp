@@ -9,6 +9,7 @@
 
 #include "scipp/core/except.h"
 #include "scipp/variable/astype.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
@@ -418,6 +419,21 @@ TEST(VariableView, strides) {
   EXPECT_TRUE(
       equals(var3D.slice({Dim::X, 0, 1}).slice({Dim::Z, 0, 1}).strides(),
              std::vector<scipp::index>{6, 2, 1}));
+}
+
+TEST(VariableView, stride) {
+  auto var = makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{2, 3, 4});
+  EXPECT_EQ(var.stride(Dim::X), 1);
+  EXPECT_EQ(var.stride(Dim::Y), 4);
+  EXPECT_EQ(var.stride(Dim::Z), 12);
+  var = transpose(var);
+  EXPECT_EQ(var.stride(Dim::X), 1);
+  EXPECT_EQ(var.stride(Dim::Y), 4);
+  EXPECT_EQ(var.stride(Dim::Z), 12);
+  var = copy(var);
+  EXPECT_EQ(var.stride(Dim::X), 6);
+  EXPECT_EQ(var.stride(Dim::Y), 2);
+  EXPECT_EQ(var.stride(Dim::Z), 1);
 }
 
 TEST(VariableView, values_and_variances) {
