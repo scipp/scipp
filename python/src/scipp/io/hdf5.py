@@ -49,11 +49,8 @@ class NumpyDataIO:
         else:
             # Values of Eigen matrices are transposed
             data.values = group['values']
-        if 'variances' in group:
-            if data.variances.size > 0:
-                group['variances'].read_direct(data.variances)
-            else:
-                data.values = group['variances']
+        if 'variances' in group and data.variances.size > 0:
+            group['variances'].read_direct(data.variances)
 
 
 class BinDataIO:
