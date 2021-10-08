@@ -30,7 +30,14 @@ schedules:
     always: false
 
 
-pr: none
+#TODO turn of PR package builds once working
+#pr: none
+pr:
+  autoCancel: true
+  branches:
+    include:
+      - '*'
+
 
 extends:
   template: stages.yml@SharedPipelines
@@ -38,15 +45,18 @@ extends:
     verbose: ${{ parameters.verbose }}
     config:
       linux:
-        py_versions: ['3.7', '3.8', '3.9']
+        py_versions: ['3.7']
+        #py_versions: ['3.7', '3.8', '3.9']
         conda_env: 'scipp-developer.yml'
       osx:
-        py_versions: ['3.7', '3.8', '3.9']
+        py_versions: ['3.7']
+        #py_versions: ['3.7', '3.8', '3.9']
         conda_env: 'scipp-developer-minimal.yml'
       windows:
-        py_versions: ['3.7', '3.8', '3.9']
+        py_versions: ['3.7']
+        #py_versions: ['3.7', '3.8', '3.9']
         conda_env: 'scipp-developer-minimal.yml'
-    deploy: true
+    deploy: false  # TODO turn back to true when PR builds disabled
     ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:  # nightly
       conda_label: 'dev'
     ${{ if ne(variables['Build.SourceBranchName'], 'main') }}:  # tagged release
