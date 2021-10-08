@@ -15,7 +15,7 @@
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
-#include "test_variables.h"
+#include "transform_test_helpers.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -23,12 +23,6 @@ using namespace scipp::variable;
 
 namespace {
 const char *name = "transform_test";
-
-const std::vector<Shape> shapes{Shape{1},       Shape{2},       Shape{3},
-                                Shape{5},       Shape{16},      Shape{1, 1},
-                                Shape{1, 2},    Shape{3, 1},    Shape{2, 8},
-                                Shape{5, 7},    Shape{1, 1, 1}, Shape{1, 1, 4},
-                                Shape{1, 5, 1}, Shape{7, 1, 1}, Shape{2, 8, 4}};
 } // namespace
 
 class TransformBinaryTest : public ::testing::Test {
@@ -120,7 +114,7 @@ protected:
 };
 
 INSTANTIATE_TEST_SUITE_P(Array, DenseTransformBinaryTest,
-                         ::testing::Combine(::testing::ValuesIn(shapes),
+                         ::testing::Combine(::testing::ValuesIn(shapes()),
                                             ::testing::Bool()));
 
 INSTANTIATE_TEST_SUITE_P(Scalar, DenseTransformBinaryTest,
@@ -264,45 +258,6 @@ TEST_F(TransformBinaryTest, in_place_self_overlap_with_variance) {
   ASSERT_EQ(a, reference);
 }
 
-TEST_F(TransformBinaryTest, dense_events) {
-  const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
-      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 4}});
-  const auto table =
-      makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4});
-  auto events = make_bins(indices, Dim::Event, copy(table));
-  auto dense = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.5, 0.5});
-
-  const auto ab = transform<pair_self_t<double>>(events, dense, op, name);
-  const auto ba = transform<pair_self_t<double>>(dense, events, op, name);
-  transform_in_place<pair_self_t<double>>(events, dense, op_in_place, name);
-
-  const auto expected = transform<double>(events, dense, op, name);
-  EXPECT_EQ(events.values<bucket<Variable>>()[0],
-            transform<pair_self_t<double>>(dense.slice({Dim::X, 0}),
-                                           table.slice({Dim::Event, 0, 3}), op,
-                                           name));
-  EXPECT_EQ(events.values<bucket<Variable>>()[1],
-            transform<pair_self_t<double>>(dense.slice({Dim::X, 1}),
-                                           table.slice({Dim::Event, 3, 4}), op,
-                                           name));
-  EXPECT_EQ(ab, events);
-  EXPECT_EQ(ba, events);
-}
-
-TEST_F(TransformBinaryTest, events_size_fail) {
-  const auto indicesA = makeVariable<std::pair<scipp::index, scipp::index>>(
-      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{3, 4}});
-  const auto indicesB = makeVariable<std::pair<scipp::index, scipp::index>>(
-      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 3}});
-  const auto table = makeVariable<double>(Dims{Dim::Event}, Shape{4});
-  auto a = make_bins(indicesA, Dim::Event, table);
-  auto b = make_bins(indicesB, Dim::Event, table);
-  ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, b, op, name),
-                       except::BinnedDataError);
-  ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place, name),
-               except::BinnedDataError);
-}
-
 TEST_F(TransformBinaryTest, in_place_unit_change) {
   const auto var =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1.0, 2.0});
@@ -349,74 +304,118 @@ TEST(TransformTest, binary_dtype_bool) {
             makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true}));
 }
 
-class TransformBinsBinaryTest : public TransformBinaryTest {
+class BinsTransformBinaryTest
+    : public TransformBinaryTest,
+      public ::testing::WithParamInterface<std::tuple<Shape, // event shape
+                                                      Shape, // bin shape
+                                                      scipp::index, // bin dim
+                                                      bool          // variances
+                                                      >> {
 protected:
-  Variable indicesY = makeVariable<std::pair<scipp::index, scipp::index>>(
-      Dims{Dim::Y}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 4}});
-  Variable tableA =
-      makeVariable<double>(Dims{Dim::Event}, Shape{4}, units::m,
-                           Values{1, 2, 3, 4}, Variances{5, 6, 7, 8});
-  Variable tableB = makeVariable<double>(Dims{Dim::Event}, Shape{4},
-                                         Values{0.1, 0.2, 0.3, 0.4},
-                                         Variances{0.5, 0.6, 0.7, 0.8});
-  Variable a = make_bins(indicesY, Dim::Event, copy(tableA));
-  Variable b = make_bins(indicesY, Dim::Event, copy(tableB));
+  Variable binned1;
+  Variable binned2;
+
+  BinsTransformBinaryTest()
+      : binned1{make_input_variable(0, 1)}, binned2{
+                                                make_input_variable(3, 10)} {}
+
+  static Variable make_input_variable(const double offset, const double scale) {
+    const auto &[event_shape, bin_shape, bin_dim, variances] = GetParam();
+    return make_binned_variable<double>(event_shape, bin_shape, bin_dim,
+                                        variances, offset, scale);
+  }
+
+  static Variable compute_on_buffer(const Variable &a, const Variable &b) {
+    const auto bin_dim_label =
+        a.bin_buffer<Variable>().dims().label(std::get<2>(GetParam()));
+    return make_bins(a.bin_indices(), bin_dim_label,
+                     transform<double>(a.bin_buffer<Variable>(),
+                                       b.bin_buffer<Variable>(), op, name));
+  }
+
+  static Variable make_dense_bin_dims() {
+    auto var = make_dense_variable<double>(std::get<1>(GetParam()),
+                                           std::get<3>(GetParam()), 2.1, 3.2);
+    var.rename(Dim::X, Dim{"i0"});
+    if (var.dims().ndim() > 1)
+      var.rename(Dim::Y, Dim{"i1"});
+    if (var.dims().ndim() > 2)
+      var.rename(Dim::Z, Dim{"i2"});
+    return var;
+  }
+
+  static Variable element_as_scalar(const Variable &var, const scipp::index i) {
+    const auto val = var.values<double>()[i];
+    if (var.hasVariances())
+      return makeVariable<double>(Shape{}, Values{val},
+                                  Variances{var.variances<double>()[i]});
+    return makeVariable<double>(Shape{}, Values{val});
+  }
 };
 
-TEST_F(TransformBinsBinaryTest, events_val_var_with_events_val_var) {
-  const auto ab = transform<pair_self_t<double>>(a, b, op, name);
-  transform_in_place<pair_self_t<double>>(a, b, op_in_place, name);
-  // We rely on correctness of *dense* operations (Variable multiplication is
-  // also built on transform).
-  EXPECT_EQ(a, make_bins(indicesY, Dim::Event, tableA * tableB));
-  EXPECT_EQ(ab, a);
+INSTANTIATE_TEST_SUITE_P(OneD, BinsTransformBinaryTest,
+                         ::testing::Combine(::testing::ValuesIn(shapes(1)),
+                                            ::testing::ValuesIn(shapes()),
+                                            ::testing::Range(0l, 1l),
+                                            ::testing::Bool()));
+
+INSTANTIATE_TEST_SUITE_P(TwoD, BinsTransformBinaryTest,
+                         ::testing::Combine(::testing::ValuesIn(shapes(2)),
+                                            ::testing::ValuesIn(shapes()),
+                                            ::testing::Range(0l, 2l),
+                                            ::testing::Bool()));
+
+INSTANTIATE_TEST_SUITE_P(ThreeD, BinsTransformBinaryTest,
+                         ::testing::Combine(::testing::ValuesIn(shapes(3)),
+                                            ::testing::ValuesIn(shapes()),
+                                            ::testing::Range(0l, 3l),
+                                            ::testing::Bool()));
+
+TEST_P(BinsTransformBinaryTest, binned_with_binned) {
+  const auto ab = transform<double>(binned1, binned2, op, name);
+  EXPECT_EQ(ab, compute_on_buffer(binned1, binned2));
+
+  transform_in_place<double>(binned1, binned2, op_in_place, name);
+  EXPECT_EQ(binned1, ab);
 }
 
-TEST_F(TransformBinsBinaryTest, events_val_var_with_events_val) {
-  const auto table = values(tableB);
-  b = make_bins(indicesY, Dim::Event, table);
-  const auto ab = transform<pair_self_t<double>>(a, b, op, name);
-  transform_in_place<pair_self_t<double>>(a, b, op_in_place, name);
-  EXPECT_EQ(a, make_bins(indicesY, Dim::Event, tableA * table));
-  EXPECT_EQ(ab, a);
+// TODO broadcasting
+
+TEST_P(BinsTransformBinaryTest, binned_with_dense) {
+  const auto indices = binned1.bin_indices();
+  const auto &buffer = binned1.bin_buffer<Variable>();
+  const auto dense = make_dense_bin_dims();
+
+  const auto binned_dense = transform<double>(binned1, dense, op, name);
+  const auto dense_binned = transform<double>(dense, binned1, op, name);
+
+  for (scipp::index i = 0; i < indices.dims().volume(); ++i) {
+    const auto &[begin, end] = indices.values<index_pair>()[i];
+    const auto bin_dim = buffer.dims().label(std::get<2>(GetParam()));
+    const auto bin = buffer.slice(Slice{bin_dim, begin, end});
+    const auto dense_slice = element_as_scalar(dense, i);
+    EXPECT_EQ(binned_dense.values<bucket<Variable>>()[i],
+              transform<double>(bin, dense_slice, op, name));
+    EXPECT_EQ(dense_binned.values<bucket<Variable>>()[i],
+              transform<double>(dense_slice, bin, op, name));
+  }
+
+  transform_in_place<double>(binned1, dense, op_in_place, name);
+  EXPECT_EQ(binned1, binned_dense);
 }
 
-TEST_F(TransformBinsBinaryTest, events_val_var_with_val_var) {
-  b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 1.6},
-                           Variances{1.7, 1.8});
-
-  const auto ab = transform<pair_self_t<double>>(a, b, op, name);
-  transform_in_place<pair_self_t<double>>(a, b, op_in_place, name);
-
-  tableA.slice({Dim::Event, 0, 3}) *= b.slice({Dim::Y, 0});
-  tableA.slice({Dim::Event, 3, 4}) *= b.slice({Dim::Y, 1});
-  EXPECT_EQ(a, make_bins(indicesY, Dim::Event, tableA));
-  EXPECT_EQ(ab, a);
-}
-
-TEST_F(TransformBinsBinaryTest, events_val_var_with_val) {
-  b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 1.6});
-
-  const auto ab = transform<pair_self_t<double>>(a, b, op, name);
-  transform_in_place<pair_self_t<double>>(a, b, op_in_place, name);
-
-  tableA.slice({Dim::Event, 0, 3}) *= b.slice({Dim::Y, 0});
-  tableA.slice({Dim::Event, 3, 4}) *= b.slice({Dim::Y, 1});
-  EXPECT_EQ(a, make_bins(indicesY, Dim::Event, tableA));
-  EXPECT_EQ(ab, a);
-}
-
-TEST_F(TransformBinsBinaryTest, broadcast_events_val_var_with_val) {
-  b = makeVariable<float>(Dims{Dim::Z}, Shape{2}, Values{1.5, 1.6});
-
-  const auto ab =
-      transform<pair_custom_t<std::tuple<double, float>>>(a, b, op, name);
-
-  EXPECT_EQ(ab.slice({Dim::Z, 0}),
-            make_bins(indicesY, Dim::Event, tableA * b.slice({Dim::Z, 0})));
-  EXPECT_EQ(ab.slice({Dim::Z, 1}),
-            make_bins(indicesY, Dim::Event, tableA * b.slice({Dim::Z, 1})));
-  EXPECT_EQ(ab.dims(), Dimensions({Dim::Y, Dim::Z}, {2, 2}));
+TEST_F(TransformBinaryTest, events_size_fail) {
+  const auto indicesA = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{3, 4}});
+  const auto indicesB = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 3}});
+  const auto table = makeVariable<double>(Dims{Dim::Event}, Shape{4});
+  auto a = make_bins(indicesA, Dim::Event, table);
+  auto b = make_bins(indicesB, Dim::Event, table);
+  ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, b, op, name),
+                       except::BinnedDataError);
+  ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place, name),
+               except::BinnedDataError);
 }
 
 class TransformTest_events_binary_values_variances_size_fail
