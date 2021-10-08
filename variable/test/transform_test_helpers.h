@@ -9,12 +9,24 @@
 #include "scipp/units/dim.h"
 #include "scipp/variable/variable.h"
 
-inline std::vector<scipp::Shape> shapes() {
+inline std::vector<scipp::Shape>
+shapes(std::optional<scipp::index> ndim = std::nullopt) {
   using namespace scipp;
-  return {Shape{1},       Shape{2},       Shape{3},       Shape{5},
-          Shape{16},      Shape{1, 1},    Shape{1, 2},    Shape{3, 1},
-          Shape{2, 8},    Shape{5, 7},    Shape{1, 1, 1}, Shape{1, 1, 4},
-          Shape{1, 5, 1}, Shape{7, 1, 1}, Shape{2, 8, 4}};
+  static const std::array all_shapes{
+      std::array{Shape{1}, Shape{2}, Shape{3}, Shape{5}, Shape{16}},
+      std::array{Shape{1, 1}, Shape{1, 2}, Shape{3, 1}, Shape{2, 8},
+                 Shape{5, 7}},
+      std::array{Shape{1, 1, 1}, Shape{1, 1, 4}, Shape{1, 5, 1}, Shape{7, 1, 1},
+                 Shape{2, 8, 4}}};
+
+  std::vector<Shape> res;
+  for (scipp::index n = 1; n < 4; ++n) {
+    if (ndim.value_or(n) == n) {
+      std::copy(all_shapes.at(n - 1).begin(), all_shapes.at(n - 1).end(),
+                std::back_inserter(res));
+    }
+  }
+  return res;
 }
 
 inline auto make_dim_labels(const scipp::index ndim,
