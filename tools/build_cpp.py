@@ -53,13 +53,14 @@ def main(*,
     use_space = ['-G', '-A']
 
     # Default cmake flags
+    ipo = os.getenv('CMAKE_INTERPROCEDURAL_OPTIMIZATION', 'OFF')
     cmake_flags = {
         '-G': 'Ninja',
         '-DPython_EXECUTABLE': shutil.which("python"),
         '-DCMAKE_INSTALL_PREFIX': prefix,
         '-DSITE_PACKAGES_DIR': site_packages_dir,
         '-DWITH_CTEST': 'OFF',
-        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': 'ON'
+        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': ipo
     }
 
     if platform == 'darwin':
