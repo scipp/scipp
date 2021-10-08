@@ -56,6 +56,7 @@ extends:
         py_versions: ['3.7']
         #py_versions: ['3.7', '3.8', '3.9']
         conda_env: 'scipp-developer-minimal.yml'
+    package: true
     deploy: false  # TODO turn back to true when PR builds disabled
     ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:  # nightly
       conda_label: 'dev'
