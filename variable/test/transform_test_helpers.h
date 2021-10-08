@@ -111,14 +111,16 @@ inline auto make_regular_bin_indices(const scipp::index size,
 template <class T>
 scipp::variable::Variable
 make_binned_variable(scipp::Shape event_shape, const scipp::Shape &bin_shape,
-                     const scipp::index bin_dim, const bool variances) {
+                     const scipp::index bin_dim, const bool variances,
+                     const T offset = T{0}, const T scale = T{1}) {
   using namespace scipp;
 
   const auto n_bin = volume(bin_shape);
   // Make events large enough to accommodate all bins.
   event_shape.data.at(bin_dim) *= n_bin;
 
-  const auto buffer = make_dense_variable<T>(event_shape, variances);
+  const auto buffer =
+      make_dense_variable<T>(event_shape, variances, offset, scale);
   const auto bin_dim_label = buffer.dims().label(bin_dim);
   const auto indices = make_regular_bin_indices(
       event_shape.data.at(bin_dim), bin_shape, scipp::size(bin_shape.data));
