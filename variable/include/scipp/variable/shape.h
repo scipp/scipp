@@ -31,7 +31,7 @@ flatten(const Variable &view, const scipp::span<const Dim> &from_labels,
 transpose(const Variable &var, scipp::span<const Dim> dims = {});
 [[nodiscard]] SCIPP_VARIABLE_EXPORT inline Variable
 transpose(const Variable &var, std::initializer_list<Dim> dims) {
-  return transpose(var, {dims.begin(), dims.end()});
+  return transpose(var, scipp::span<const Dim>{dims.begin(), dims.end()});
 }
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
