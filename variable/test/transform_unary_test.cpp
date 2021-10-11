@@ -69,6 +69,25 @@ protected:
     const auto &[shape, variances] = GetParam();
     return make_dense_variable<double>(shape, variances);
   }
+
+  /// Note that this function modifies its input!
+  // This is needed because we cannot make a copy for the input of
+  // transform_in_place as that would result in a dense memory layout
+  // which would prevent testing slicing / transposition.
+  static void check_transform(Variable &var) {
+    const auto result_return = transform<double>(var, op, name);
+    EXPECT_TRUE(equals(result_return.values<double>(),
+                       op_manual_values(var.values<double>())));
+    if (var.hasVariances()) {
+      EXPECT_TRUE(equals(
+          result_return.variances<double>(),
+          op_manual_variances(var.values<double>(), var.variances<double>())));
+    }
+
+    transform_in_place<double>(var, op_in_place, name);
+    // Non-in-place transform used to check result of in-place transform.
+    EXPECT_EQ(var, result_return);
+  }
 };
 
 INSTANTIATE_TEST_SUITE_P(Array, TransformUnaryTest,
@@ -80,39 +99,15 @@ INSTANTIATE_TEST_SUITE_P(Scalar, TransformUnaryTest,
                                             ::testing::Bool()));
 
 TEST_P(TransformUnaryTest, dense) {
-  const auto result_return = transform<double>(input_var, op, name);
-  auto result_in_place = copy(input_var);
-  transform_in_place<double>(result_in_place, op_in_place, name);
-
-  EXPECT_TRUE(equals(result_in_place.values<double>(),
-                     op_manual_values(input_var.values<double>())));
-  if (input_var.hasVariances()) {
-    EXPECT_TRUE(equals(result_in_place.variances<double>(),
-                       op_manual_variances(input_var.values<double>(),
-                                           input_var.variances<double>())));
-  }
-  // In-place transform used to check result of non-in-place transform.
-  EXPECT_EQ(result_return, result_in_place);
+  auto a = copy(input_var);
+  check_transform(a);
 }
 
 TEST_P(TransformUnaryTest, slice) {
   for (const auto &slices :
        scipp::testing::make_slice_combinations(input_var.dims().shape())) {
-    const auto initial = slice(input_var, slices);
-
-    const auto result_return = transform<double>(initial, op, name);
-    auto result_in_place = slice(copy(input_var), slices);
-    transform_in_place<double>(result_in_place, op_in_place, name);
-
-    EXPECT_TRUE(equals(result_return.values<double>(),
-                       op_manual_values(initial.values<double>())));
-    if (initial.hasVariances()) {
-      EXPECT_TRUE(equals(result_return.variances<double>(),
-                         op_manual_variances(initial.values<double>(),
-                                             initial.variances<double>())));
-    }
-    // In-place transform used to check result of non-in-place transform.
-    EXPECT_EQ(result_return, result_in_place);
+    auto a = slice(copy(input_var), slices);
+    check_transform(a);
   }
 }
 
