@@ -20,6 +20,7 @@
 using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::variable;
+using namespace scipp::testing;
 
 namespace {
 const char *name = "transform_test";
@@ -135,12 +136,8 @@ TEST_P(DenseTransformBinaryTest, scalar_and_array) {
 TEST_P(DenseTransformBinaryTest, slices) {
   for (const auto &slices :
        scipp::testing::make_slice_combinations(input1.dims().shape())) {
-    auto a = copy(input1);
-    auto b = copy(input2);
-    for (const auto &slice : slices) {
-      a = a.slice(slice);
-      b = b.slice(slice);
-    }
+    const auto a = slice(input1, slices);
+    const auto b = slice(input2, slices);
     check_transform_combinations(a, b);
     // Make one input a full view of its data.
     check_transform_combinations(copy(a), b);

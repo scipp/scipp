@@ -9,40 +9,27 @@
 #include "scipp/units/dim.h"
 #include "scipp/variable/variable.h"
 
-inline std::vector<scipp::Shape>
-shapes(std::optional<scipp::index> ndim = std::nullopt) {
-  using namespace scipp;
-  static const std::array all_shapes{
-      std::array{Shape{1}, Shape{2}, Shape{3}, Shape{5}, Shape{16}},
-      std::array{Shape{1, 1}, Shape{1, 2}, Shape{3, 1}, Shape{2, 8},
-                 Shape{5, 7}},
-      std::array{Shape{1, 1, 1}, Shape{1, 1, 4}, Shape{1, 5, 1}, Shape{7, 1, 1},
-                 Shape{2, 8, 4}}};
+namespace scipp::testing {
+std::vector<scipp::Shape>
+shapes(std::optional<scipp::index> ndim = std::nullopt);
 
-  std::vector<Shape> res;
-  for (scipp::index n = 1; n < 4; ++n) {
-    if (ndim.value_or(n) == n) {
-      std::copy(all_shapes.at(n - 1).begin(), all_shapes.at(n - 1).end(),
-                std::back_inserter(res));
-    }
-  }
-  return res;
-}
+scipp::index volume(const scipp::Shape &shape);
 
-inline auto make_dim_labels(const scipp::index ndim,
-                            std::initializer_list<scipp::Dim> choices) {
-  assert(ndim <= scipp::size(choices));
-  scipp::Dims result(choices);
-  result.data.resize(ndim);
-  return result;
-}
+Dims make_dim_labels(scipp::index ndim,
+                     std::initializer_list<scipp::Dim> choices);
+
+Variable make_regular_bin_indices(scipp::index size, const scipp::Shape &shape,
+                                  scipp::index ndim);
+
+std::vector<std::vector<Slice>>
+make_slice_combinations(const scipp::span<const scipp::index> &shape);
+
+Variable slice(Variable var, scipp::span<const Slice> slices);
 
 template <class T>
 scipp::variable::Variable
 make_dense_variable(const scipp::Shape &shape, const bool variances,
                     const T offset = T{0}, const T scale = T{1}) {
-  using namespace scipp;
-
   const auto ndim = scipp::size(shape.data);
   const auto dims = make_dim_labels(ndim, {Dim::X, Dim::Y, Dim::Z});
   auto var = variances ? makeVariable<T>(dims, shape, Values{}, Variances{})
@@ -64,57 +51,11 @@ make_dense_variable(const scipp::Shape &shape, const bool variances,
   return var;
 }
 
-inline auto make_slices(const scipp::span<const scipp::index> &shape) {
-  using namespace scipp;
-  using namespace scipp::variable;
-
-  std::vector<Slice> res;
-  const std::vector dim_labels{Dim::X, Dim::Y, Dim::Z};
-  for (size_t dim = 0; dim < 3; ++dim) {
-    if (shape.size() > dim && shape[dim] > 1) {
-      res.emplace_back(dim_labels.at(dim), 0, shape[dim] - 1);
-      res.emplace_back(dim_labels.at(dim), 0, shape[dim] / 2);
-      res.emplace_back(dim_labels.at(dim), 2, shape[dim]);
-      res.emplace_back(dim_labels.at(dim), 1);
-    }
-  }
-  return res;
-}
-
-inline auto volume(const scipp::Shape &shape) {
-  return std::accumulate(shape.data.begin(), shape.data.end(), 1,
-                         std::multiplies<scipp::index>{});
-}
-
-inline auto make_regular_bin_indices(const scipp::index size,
-                                     const scipp::Shape &shape,
-                                     const scipp::index ndim) {
-  using namespace scipp;
-
-  const auto n_bins = volume(shape);
-  std::vector<index_pair> aux(n_bins);
-  std::generate(begin(aux), end(aux),
-                [lower = scipp::index{0}, d_size = static_cast<double>(size),
-                 d_n_bins = static_cast<double>(n_bins)]() mutable {
-                  const auto upper = static_cast<scipp::index>(
-                      static_cast<double>(lower) + d_size / d_n_bins);
-                  const index_pair res{lower, upper};
-                  lower = upper;
-                  return res;
-                });
-  aux.back().second = size;
-  return makeVariable<index_pair>(
-      make_dim_labels(ndim, {Dim{"i0"}, Dim{"i1"}, Dim{"i2"}}), shape,
-      Values(aux));
-}
-
 template <class T>
 scipp::variable::Variable
 make_binned_variable(scipp::Shape event_shape, const scipp::Shape &bin_shape,
                      const scipp::index bin_dim, const bool variances,
                      const T offset = T{0}, const T scale = T{1}) {
-  using namespace scipp;
-
   const auto n_bin = volume(bin_shape);
   // Make events large enough to accommodate all bins.
   event_shape.data.at(bin_dim) *= n_bin;
@@ -126,8 +67,4 @@ make_binned_variable(scipp::Shape event_shape, const scipp::Shape &bin_shape,
       event_shape.data.at(bin_dim), bin_shape, scipp::size(bin_shape.data));
   return make_bins(indices, bin_dim_label, copy(buffer));
 }
-
-namespace scipp::testing {
-std::vector<std::vector<Slice>>
-make_slice_combinations(const scipp::span<const scipp::index> &shape);
-}
+} // namespace scipp::testing

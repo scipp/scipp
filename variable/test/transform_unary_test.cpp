@@ -21,6 +21,7 @@
 using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::variable;
+using namespace scipp::testing;
 
 namespace {
 const char *name = "transform_test";
@@ -95,12 +96,13 @@ TEST_P(TransformUnaryTest, dense) {
 }
 
 TEST_P(TransformUnaryTest, slice) {
-  for (const Slice &slice : make_slices(input_var.dims().shape())) {
-    const auto initial = input_var.slice(slice);
+  for (const auto &slices :
+       scipp::testing::make_slice_combinations(input_var.dims().shape())) {
+    const auto initial = slice(input_var, slices);
 
     const auto result_return = transform<double>(initial, op, name);
     Variable result_in_place_buffer = copy(input_var);
-    auto result_in_place = result_in_place_buffer.slice(slice);
+    auto result_in_place = slice(result_in_place_buffer, slices);
     transform_in_place<double>(result_in_place, op_in_place, name);
 
     EXPECT_TRUE(equals(result_return.values<double>(),
@@ -129,7 +131,7 @@ TEST_P(TransformUnaryTest, transpose) {
 
 TEST_P(TransformUnaryTest, elements_of_bins) {
   const auto &[event_shape, variances] = GetParam();
-  for (const auto &bin_shape : shapes()) {
+  for (const auto &bin_shape : scipp::testing::shapes()) {
     for (scipp::index bin_dim = 0; bin_dim < scipp::size(event_shape.data);
          ++bin_dim) {
       auto var = make_binned_variable<double>(event_shape, bin_shape, bin_dim,
