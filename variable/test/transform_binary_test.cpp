@@ -65,14 +65,14 @@ protected:
   }
 };
 
-class DenseTransformBinaryTest
+class TransformBinaryDenseTest
     : public TransformBinaryTest,
       public ::testing::WithParamInterface<std::tuple<Shape, bool>> {
 protected:
   const Variable input1;
   const Variable input2;
 
-  DenseTransformBinaryTest()
+  TransformBinaryDenseTest()
       : input1{make_input_variable(0, 1)}, input2{make_input_variable(10, 2)} {}
 
   static Variable make_input_variable(const double offset, const double scale) {
@@ -112,21 +112,21 @@ protected:
   }
 };
 
-INSTANTIATE_TEST_SUITE_P(Array, DenseTransformBinaryTest,
+INSTANTIATE_TEST_SUITE_P(Array, TransformBinaryDenseTest,
                          ::testing::Combine(::testing::ValuesIn(shapes()),
                                             ::testing::Bool()));
 
-INSTANTIATE_TEST_SUITE_P(Scalar, DenseTransformBinaryTest,
+INSTANTIATE_TEST_SUITE_P(Scalar, TransformBinaryDenseTest,
                          ::testing::Combine(::testing::Values(Shape{0}),
                                             ::testing::Bool()));
 
-TEST_P(DenseTransformBinaryTest, matching_shapes) {
+TEST_P(TransformBinaryDenseTest, matching_shapes) {
   auto a = copy(input1);
   auto b = copy(input2);
   check_transform_combinations(a, b);
 }
 
-TEST_P(DenseTransformBinaryTest, scalar_and_array) {
+TEST_P(TransformBinaryDenseTest, scalar_and_array) {
   auto a = copy(input1);
   auto s = std::get<bool>(GetParam())
                ? makeVariable<double>(Values{2.1}, Variances{1.3})
@@ -134,7 +134,7 @@ TEST_P(DenseTransformBinaryTest, scalar_and_array) {
   check_transform_combinations(a, s);
 }
 
-TEST_P(DenseTransformBinaryTest, slices) {
+TEST_P(TransformBinaryDenseTest, slices) {
   for (const auto &slices :
        scipp::testing::make_slice_combinations(input1.dims().shape())) {
     auto a = slice(copy(input1), slices);
@@ -146,13 +146,13 @@ TEST_P(DenseTransformBinaryTest, slices) {
   }
 }
 
-TEST_P(DenseTransformBinaryTest, transpose) {
+TEST_P(TransformBinaryDenseTest, transpose) {
   auto a = copy(input1);
   auto b = transpose(copy(transpose(input2)));
   check_transform_combinations(a, b);
 }
 
-TEST_P(DenseTransformBinaryTest, transposed_layout) {
+TEST_P(TransformBinaryDenseTest, transposed_layout) {
   const auto b = copy(transpose(input2));
 
   const auto ab = transform<pair_self_t<double>>(input1, b, op, name);
@@ -299,8 +299,9 @@ TEST(TransformTest, binary_dtype_bool) {
 namespace {
 template <class Op>
 Variable compute_on_bin_buffer(const Variable &a, const Variable &b,
-                               const scipp::index bin_dim, const Op &op) {
-  const auto bin_dim_label = a.bin_buffer<Variable>().dims().label(bin_dim);
+                               const scipp::index bin_dim_index, const Op &op) {
+  const auto bin_dim_label =
+      a.bin_buffer<Variable>().dims().label(bin_dim_index);
   return make_bins(a.bin_indices(), bin_dim_label,
                    transform<double>(a.bin_buffer<Variable>(),
                                      b.bin_buffer<Variable>(), op, name));

@@ -25,7 +25,7 @@ namespace {
 const char *name = "transform_test";
 } // namespace
 
-class BaseTransformUnaryTest : public ::testing::Test {
+class TransformUnaryTest : public ::testing::Test {
 protected:
   static constexpr auto op_in_place{
       overloaded{[](auto &x) { x *= 2.0; }, [](units::Unit &) {}}};
@@ -55,13 +55,13 @@ protected:
   }
 };
 
-class TransformUnaryTest
-    : public BaseTransformUnaryTest,
+class TransformUnaryDenseTest
+    : public TransformUnaryTest,
       public ::testing::WithParamInterface<std::tuple<Shape, bool>> {
 protected:
   const Variable input_var;
 
-  TransformUnaryTest() : input_var{make_input_variable()} {}
+  TransformUnaryDenseTest() : input_var{make_input_variable()} {}
 
   static Variable make_input_variable() {
     const auto &[shape, variances] = GetParam();
@@ -88,20 +88,20 @@ protected:
   }
 };
 
-INSTANTIATE_TEST_SUITE_P(Array, TransformUnaryTest,
+INSTANTIATE_TEST_SUITE_P(Array, TransformUnaryDenseTest,
                          ::testing::Combine(::testing::ValuesIn(shapes()),
                                             ::testing::Bool()));
 
-INSTANTIATE_TEST_SUITE_P(Scalar, TransformUnaryTest,
+INSTANTIATE_TEST_SUITE_P(Scalar, TransformUnaryDenseTest,
                          ::testing::Combine(::testing::Values(Shape{0}),
                                             ::testing::Bool()));
 
-TEST_P(TransformUnaryTest, dense) {
+TEST_P(TransformUnaryDenseTest, dense) {
   auto a = copy(input_var);
   check_transform(a);
 }
 
-TEST_P(TransformUnaryTest, slice) {
+TEST_P(TransformUnaryDenseTest, slice) {
   for (const auto &slices :
        scipp::testing::make_slice_combinations(input_var.dims().shape())) {
     auto a = slice(copy(input_var), slices);
@@ -109,7 +109,7 @@ TEST_P(TransformUnaryTest, slice) {
   }
 }
 
-TEST_P(TransformUnaryTest, transpose) {
+TEST_P(TransformUnaryDenseTest, transpose) {
   const auto initial = transpose(input_var);
 
   const auto result_return = transform<double>(initial, op, name);
@@ -121,29 +121,68 @@ TEST_P(TransformUnaryTest, transpose) {
   EXPECT_EQ(result_return, result_in_place);
 }
 
-TEST_P(TransformUnaryTest, elements_of_bins) {
-  const auto &[event_shape, variances] = GetParam();
-  for (const auto &bin_shape : scipp::testing::shapes()) {
-    for (scipp::index bin_dim = 0; bin_dim < scipp::size(event_shape.data);
-         ++bin_dim) {
-      auto var = make_binned_variable<double>(event_shape, bin_shape, bin_dim,
-                                              variances);
-      const auto bin_dim_label =
-          var.bin_buffer<Variable>().dims().label(bin_dim);
-      const auto expected =
-          make_bins(var.bin_indices(), bin_dim_label,
-                    transform<double>(var.bin_buffer<Variable>(), op, name));
+namespace {
+template <class Op>
+Variable compute_on_buffer(const Variable &var,
+                           const scipp::index bin_dim_index, const Op &op) {
+  const auto bin_dim_label =
+      var.bin_buffer<Variable>().dims().label(bin_dim_index);
+  return make_bins(var.bin_indices(), bin_dim_label,
+                   transform<double>(var.bin_buffer<Variable>(), op, name));
+}
+} // namespace
 
-      const auto result = transform<double>(var, op, name);
-      transform_in_place<double>(var, op_in_place, name);
-      EXPECT_EQ(result, expected);
-      EXPECT_EQ(result, var);
-    }
+class TransformUnaryRegularBinsTest
+    : public TransformUnaryTest,
+      public ::testing::WithParamInterface<std::tuple<Shape, // event shape
+                                                      Shape, // bin shape
+                                                      scipp::index, // bin dim
+                                                      bool          // variances
+                                                      >> {
+protected:
+  Variable binned;
+
+  TransformUnaryRegularBinsTest() : binned{make_input_variable()} {}
+
+  static Variable make_input_variable() {
+    const auto &[event_shape, bin_shape, bin_dim, variances] = GetParam();
+    return make_binned_variable<double>(event_shape, bin_shape, bin_dim,
+                                        variances);
   }
+
+  static Variable compute_on_buffer(const Variable &var) {
+    return ::compute_on_buffer(var, std::get<2>(GetParam()), op);
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(OneD, TransformUnaryRegularBinsTest,
+                         ::testing::Combine(::testing::ValuesIn(shapes(1)),
+                                            ::testing::ValuesIn(shapes()),
+                                            ::testing::Range(0l, 1l),
+                                            ::testing::Bool()));
+
+INSTANTIATE_TEST_SUITE_P(TwoD, TransformUnaryRegularBinsTest,
+                         ::testing::Combine(::testing::ValuesIn(shapes(2)),
+                                            ::testing::ValuesIn(shapes()),
+                                            ::testing::Range(0l, 2l),
+                                            ::testing::Bool()));
+
+INSTANTIATE_TEST_SUITE_P(ThreeD, TransformUnaryRegularBinsTest,
+                         ::testing::Combine(::testing::ValuesIn(shapes(3)),
+                                            ::testing::ValuesIn(shapes()),
+                                            ::testing::Range(0l, 3l),
+                                            ::testing::Bool()));
+
+TEST_P(TransformUnaryRegularBinsTest, full) {
+  const auto result_return = transform<double>(binned, op, name);
+  EXPECT_EQ(result_return, compute_on_buffer(binned));
+
+  transform_in_place<double>(binned, op_in_place, name);
+  EXPECT_EQ(binned, result_return);
 }
 
 class TransformUnaryIrregularBinsTest
-    : public BaseTransformUnaryTest,
+    : public TransformUnaryTest,
       public ::testing::WithParamInterface<std::tuple<Variable, bool>> {
 protected:
   static constexpr auto op_in_place{
