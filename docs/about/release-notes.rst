@@ -10,6 +10,7 @@ Features
 ~~~~~~~~
 
 * Add ``erf`` and ``erfc`` functions `#2195 <https://github.com/scipp/scipp/pull/2195>`_.
+* Reduction operations such as ``sum``, ``nansum``, and ``cumsum`` of single precision (float32) data now use double precision (float64) internally to reduce rounding errors `#2218 <https://github.com/scipp/scipp/pull/2218>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
