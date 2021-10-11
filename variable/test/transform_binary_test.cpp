@@ -296,7 +296,51 @@ TEST(TransformTest, binary_dtype_bool) {
             makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true}));
 }
 
-class BinsTransformBinaryTest
+namespace {
+template <class Op>
+Variable compute_on_bin_buffer(const Variable &a, const Variable &b,
+                               const scipp::index bin_dim, const Op &op) {
+  const auto bin_dim_label = a.bin_buffer<Variable>().dims().label(bin_dim);
+  return make_bins(a.bin_indices(), bin_dim_label,
+                   transform<double>(a.bin_buffer<Variable>(),
+                                     b.bin_buffer<Variable>(), op, name));
+}
+
+Variable element_as_scalar(const Variable &var, const scipp::index i) {
+  const auto val = var.values<double>()[i];
+  if (var.hasVariances())
+    return makeVariable<double>(Shape{}, Values{val},
+                                Variances{var.variances<double>()[i]});
+  return makeVariable<double>(Shape{}, Values{val});
+}
+
+template <class Op, class OpInPlace>
+void check_binned_with_dense(Variable &binned, const Variable &dense,
+                             const scipp::index bin_dim_index, const Op &op,
+                             const OpInPlace &op_in_place) {
+  const auto indices = binned.bin_indices();
+  const auto &buffer = binned.bin_buffer<Variable>();
+
+  const auto binned_dense = transform<double>(binned, dense, op, name);
+  const auto dense_binned = transform<double>(dense, binned, op, name);
+
+  for (scipp::index i = 0; i < indices.dims().volume(); ++i) {
+    const auto &[begin, end] = indices.values<index_pair>()[i];
+    const auto bin_dim = buffer.dims().label(bin_dim_index);
+    const auto bin = buffer.slice(Slice{bin_dim, begin, end});
+    const auto dense_slice = element_as_scalar(dense, i);
+    EXPECT_EQ(binned_dense.template values<bucket<Variable>>()[i],
+              transform<double>(bin, dense_slice, op, name));
+    EXPECT_EQ(dense_binned.template values<bucket<Variable>>()[i],
+              transform<double>(dense_slice, bin, op, name));
+  }
+
+  transform_in_place<double>(binned, dense, op_in_place, name);
+  EXPECT_EQ(binned, binned_dense);
+}
+} // namespace
+
+class TransformBinaryRegularBinsTest
     : public TransformBinaryTest,
       public ::testing::WithParamInterface<std::tuple<Shape, // event shape
                                                       Shape, // bin shape
@@ -307,7 +351,7 @@ protected:
   Variable binned1;
   Variable binned2;
 
-  BinsTransformBinaryTest()
+  TransformBinaryRegularBinsTest()
       : binned1{make_input_variable(0, 1)}, binned2{
                                                 make_input_variable(3, 10)} {}
 
@@ -318,11 +362,7 @@ protected:
   }
 
   static Variable compute_on_buffer(const Variable &a, const Variable &b) {
-    const auto bin_dim_label =
-        a.bin_buffer<Variable>().dims().label(std::get<2>(GetParam()));
-    return make_bins(a.bin_indices(), bin_dim_label,
-                     transform<double>(a.bin_buffer<Variable>(),
-                                       b.bin_buffer<Variable>(), op, name));
+    return compute_on_bin_buffer(a, b, std::get<2>(GetParam()), op);
   }
 
   static Variable make_dense_bin_dims() {
@@ -335,35 +375,27 @@ protected:
       var.rename(Dim::Z, Dim{"i2"});
     return var;
   }
-
-  static Variable element_as_scalar(const Variable &var, const scipp::index i) {
-    const auto val = var.values<double>()[i];
-    if (var.hasVariances())
-      return makeVariable<double>(Shape{}, Values{val},
-                                  Variances{var.variances<double>()[i]});
-    return makeVariable<double>(Shape{}, Values{val});
-  }
 };
 
-INSTANTIATE_TEST_SUITE_P(OneD, BinsTransformBinaryTest,
+INSTANTIATE_TEST_SUITE_P(OneD, TransformBinaryRegularBinsTest,
                          ::testing::Combine(::testing::ValuesIn(shapes(1)),
                                             ::testing::ValuesIn(shapes()),
                                             ::testing::Range(0l, 1l),
                                             ::testing::Bool()));
 
-INSTANTIATE_TEST_SUITE_P(TwoD, BinsTransformBinaryTest,
+INSTANTIATE_TEST_SUITE_P(TwoD, TransformBinaryRegularBinsTest,
                          ::testing::Combine(::testing::ValuesIn(shapes(2)),
                                             ::testing::ValuesIn(shapes()),
                                             ::testing::Range(0l, 2l),
                                             ::testing::Bool()));
 
-INSTANTIATE_TEST_SUITE_P(ThreeD, BinsTransformBinaryTest,
+INSTANTIATE_TEST_SUITE_P(ThreeD, TransformBinaryRegularBinsTest,
                          ::testing::Combine(::testing::ValuesIn(shapes(3)),
                                             ::testing::ValuesIn(shapes()),
                                             ::testing::Range(0l, 3l),
                                             ::testing::Bool()));
 
-TEST_P(BinsTransformBinaryTest, binned_with_binned) {
+TEST_P(TransformBinaryRegularBinsTest, binned_with_binned) {
   const auto ab = transform<double>(binned1, binned2, op, name);
   EXPECT_EQ(ab, compute_on_buffer(binned1, binned2));
 
@@ -373,27 +405,69 @@ TEST_P(BinsTransformBinaryTest, binned_with_binned) {
 
 // TODO broadcasting
 
-TEST_P(BinsTransformBinaryTest, binned_with_dense) {
-  const auto indices = binned1.bin_indices();
-  const auto &buffer = binned1.bin_buffer<Variable>();
-  const auto dense = make_dense_bin_dims();
+TEST_P(TransformBinaryRegularBinsTest, binned_with_dense) {
+  check_binned_with_dense(binned1, make_dense_bin_dims(),
+                          std::get<2>(GetParam()), op, op_in_place);
+}
 
-  const auto binned_dense = transform<double>(binned1, dense, op, name);
-  const auto dense_binned = transform<double>(dense, binned1, op, name);
+class TransformBinaryIrregularBinsTest
+    : public TransformBinaryTest,
+      public ::testing::WithParamInterface<std::tuple<Variable, bool>> {
+protected:
+  const Variable indices;
+  const Variable buffer1;
+  const Variable buffer2;
+  Variable binned1;
+  Variable binned2;
 
-  for (scipp::index i = 0; i < indices.dims().volume(); ++i) {
-    const auto &[begin, end] = indices.values<index_pair>()[i];
-    const auto bin_dim = buffer.dims().label(std::get<2>(GetParam()));
-    const auto bin = buffer.slice(Slice{bin_dim, begin, end});
-    const auto dense_slice = element_as_scalar(dense, i);
-    EXPECT_EQ(binned_dense.values<bucket<Variable>>()[i],
-              transform<double>(bin, dense_slice, op, name));
-    EXPECT_EQ(dense_binned.values<bucket<Variable>>()[i],
-              transform<double>(dense_slice, bin, op, name));
+  TransformBinaryIrregularBinsTest()
+      : indices{std::get<Variable>(GetParam())},
+        buffer1{make_dense_variable<double>(Shape{index_volume(indices)},
+                                            std::get<bool>(GetParam()), 0, 1)},
+        buffer2{make_dense_variable<double>(
+            Shape{index_volume(indices)}, std::get<bool>(GetParam()), 3.1, 10)},
+        binned1{make_bins(indices, Dim::X, buffer1)}, binned2{make_bins(
+                                                          indices, Dim::X,
+                                                          buffer2)} {}
+
+  static Variable compute_on_buffer(const Variable &a, const Variable &b) {
+    return compute_on_bin_buffer(a, b, 0, op);
   }
 
-  transform_in_place<double>(binned1, dense, op_in_place, name);
-  EXPECT_EQ(binned1, binned_dense);
+  Variable make_dense_bin_dims() {
+    const auto bin_shape = indices.dims().shape();
+    auto var = make_dense_variable<double>(
+        Shape(std::vector(bin_shape.begin(), bin_shape.end())),
+        std::get<bool>(GetParam()), 2.3, 4.02);
+    var.rename(Dim::X, Dim{"i0"});
+    if (var.dims().ndim() > 1)
+      var.rename(Dim::Y, Dim{"i1"});
+    if (var.dims().ndim() > 2)
+      var.rename(Dim::Z, Dim{"i2"});
+    return var;
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    OneDIndices, TransformBinaryIrregularBinsTest,
+    ::testing::Combine(::testing::ValuesIn(irregular_bin_indices_1d()),
+                       ::testing::Bool()));
+
+INSTANTIATE_TEST_SUITE_P(
+    TwoDIndices, TransformBinaryIrregularBinsTest,
+    ::testing::Combine(::testing::ValuesIn(irregular_bin_indices_2d()),
+                       ::testing::Bool()));
+
+TEST_P(TransformBinaryIrregularBinsTest, binned_with_binned) {
+  const auto ab = transform<double>(binned1, binned2, op, name);
+  EXPECT_EQ(ab, compute_on_buffer(binned1, binned2));
+
+  transform_in_place<double>(binned1, binned2, op_in_place, name);
+  EXPECT_EQ(binned1, ab);
+}
+
+TEST_P(TransformBinaryIrregularBinsTest, binned_with_dense) {
+  check_binned_with_dense(binned1, make_dense_bin_dims(), 0, op, op_in_place);
 }
 
 TEST_F(TransformBinaryTest, events_size_fail) {

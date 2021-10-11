@@ -13,6 +13,10 @@ namespace scipp::testing {
 std::vector<scipp::Shape>
 shapes(std::optional<scipp::index> ndim = std::nullopt);
 
+std::vector<Variable> irregular_bin_indices_1d();
+
+std::vector<Variable> irregular_bin_indices_2d();
+
 scipp::index volume(const scipp::Shape &shape);
 
 Dims make_dim_labels(scipp::index ndim,

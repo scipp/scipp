@@ -30,6 +30,35 @@ std::vector<scipp::Shape> shapes(std::optional<scipp::index> ndim) {
   return res;
 }
 
+std::vector<Variable> irregular_bin_indices_1d() {
+  return {makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{0}, Values{}),
+          makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{2},
+                                   Values{index_pair{0, 2}, index_pair{2, 3}}),
+          makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{2},
+                                   Values{index_pair{0, 0}, index_pair{0, 3}}),
+          makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{2},
+                                   Values{index_pair{0, 4}, index_pair{4, 4}}),
+          makeVariable<index_pair>(
+              Dims{Dim{"i0"}}, Shape{3},
+              Values{index_pair{0, 2}, index_pair{2, 2}, index_pair{2, 3}}),
+          makeVariable<index_pair>(
+              Dims{Dim{"i0"}}, Shape{3},
+              Values{index_pair{0, 1}, index_pair{1, 3}, index_pair{3, 5}})};
+}
+
+std::vector<Variable> irregular_bin_indices_2d() {
+  return {makeVariable<index_pair>(Dims{Dim{"i0"}, Dim{"i1"}}, Shape{2, 2},
+                                   Values{index_pair{0, 2}, index_pair{2, 3},
+                                          index_pair{3, 5}, index_pair{5, 6}}),
+          makeVariable<index_pair>(Dims{Dim{"i0"}, Dim{"i1"}}, Shape{1, 2},
+                                   Values{index_pair{0, 1}, index_pair{1, 4}}),
+          makeVariable<index_pair>(Dims{Dim{"i0"}, Dim{"i1"}}, Shape{2, 2},
+                                   Values{index_pair{0, 1}, index_pair{2, 4},
+                                          index_pair{4, 4}, index_pair{6, 7}}),
+          makeVariable<index_pair>(Dims{Dim{"i0"}, Dim{"i1"}}, Shape{0, 0},
+                                   Values{})};
+}
+
 Dims make_dim_labels(const scipp::index ndim,
                      std::initializer_list<scipp::Dim> choices) {
   assert(ndim <= scipp::size(choices));
