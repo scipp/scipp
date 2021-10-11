@@ -9,6 +9,7 @@
 #include "scipp/variable/astype.h"
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
 
@@ -25,13 +26,16 @@ bool is_dtype_bool(const Variable &var) { return var.dtype() == dtype<bool>; }
 
 template <typename T, class Less>
 void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,
-                     const Variable &oldCoordT, const Variable &newCoordT) {
+                     const Variable &oldCoord, const Variable &newCoord) {
+  if (oldCoord.ndim() != 1 || newCoord.ndim() != 1)
+    throw std::invalid_argument(
+        "Internal error in rebin, this should be unreachable.");
   constexpr Less less;
   const auto oldSize = oldT.dims()[dim];
   const auto newSize = newT.dims()[dim];
 
-  const auto *xold = oldCoordT.values<T>().data();
-  const auto *xnew = newCoordT.values<T>().data();
+  const auto *xold = oldCoord.values<T>().data();
+  const auto *xnew = newCoord.values<T>().data();
 
   auto add_from_bin = [&](auto &&slice, const auto xn_low, const auto xn_high,
                           const scipp::index iold) {
@@ -91,10 +95,27 @@ struct Less {
     return a < b;
   }
 };
+
+auto as_contiguous(const Variable &var, const Dim dim) {
+  if (var.stride(dim) == 1)
+    return var;
+  auto dims = var.dims();
+  dims.erase(dim);
+  dims.addInner(dim, var.dims()[dim]);
+  return copy(transpose(var, {dims.begin(), dims.end()}));
+}
 } // namespace
 
 Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
                const Variable &newCoord) {
+  // The code branch dealing with non-stride-1 data cannot handle non-1D edges.
+  // This is likely a rare case in practice so a slow transpose of input and
+  // output should be sufficient for now.
+  if (var.stride(dim) != 1 && (oldCoord.ndim() != 1 || newCoord.ndim() != 1))
+    // We *copy* the transpose to ensure that memory order of dims matches input
+    return copy(
+        transpose(rebin(as_contiguous(var, dim), dim, oldCoord, newCoord),
+                  {var.dims().begin(), var.dims().end()}));
   // TODO Note that this currently rebins counts but resamples bool
   // Rebin could also implemented for count-densities. However, it may be better
   // to avoid this since it increases complexity. Instead, densities could
@@ -128,41 +149,48 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
     throw except::BinEdgeError(
         "Rebin: The old or new bin edges are not sorted.");
   const auto out_type = is_int(var.dtype()) ? dtype<double> : var.dtype();
-  if (var.dims().inner() == dim) {
+  // Both code branches below require stride 1 for input and output edges.
+  const auto oldEdges = as_contiguous(oldCoord, dim);
+  const auto newEdges = as_contiguous(newCoord, dim);
+  Variable rebinned;
+  if (var.stride(dim) == 1) {
     if (ascending) {
-      return transform_subspan<transform_args>(
-          out_type, dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
+      rebinned = transform_subspan<transform_args>(
+          out_type, dim, newEdges.dims()[dim] - 1, newEdges, var, oldEdges,
           core::element::rebin<Less>, "rebin");
     } else {
-      return transform_subspan<transform_args>(
-          out_type, dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
+      rebinned = transform_subspan<transform_args>(
+          out_type, dim, newEdges.dims()[dim] - 1, newEdges, var, oldEdges,
           core::element::rebin<Greater>, "rebin");
     }
   } else {
     auto dims = var.dims();
-    dims.resize(dim, newCoord.dims()[dim] - 1);
-    auto rebinned =
-        Variable(astype(Variable(var, Dimensions{}), out_type), dims);
-    if (newCoord.dims().ndim() > 1)
+    dims.resize(dim, newEdges.dims()[dim] - 1);
+    rebinned = Variable(astype(Variable(var, Dimensions{}), out_type), dims);
+    if (newEdges.dims().ndim() > 1)
       throw std::runtime_error(
           "Not inner rebin works only for 1d coordinates for now.");
-    if (oldCoord.dtype() == dtype<double>) {
+    if (oldEdges.dtype() == dtype<double>) {
       if (ascending)
-        rebin_non_inner<double, Less>(dim, var, rebinned, oldCoord, newCoord);
+        rebin_non_inner<double, Less>(dim, var, rebinned, oldEdges, newEdges);
       else
-        rebin_non_inner<double, Greater>(dim, var, rebinned, oldCoord,
-                                         newCoord);
-    } else if (oldCoord.dtype() == dtype<float>) {
+        rebin_non_inner<double, Greater>(dim, var, rebinned, oldEdges,
+                                         newEdges);
+    } else if (oldEdges.dtype() == dtype<float>) {
       if (ascending)
-        rebin_non_inner<float, Less>(dim, var, rebinned, oldCoord, newCoord);
+        rebin_non_inner<float, Less>(dim, var, rebinned, oldEdges, newEdges);
       else
-        rebin_non_inner<float, Greater>(dim, var, rebinned, oldCoord, newCoord);
+        rebin_non_inner<float, Greater>(dim, var, rebinned, oldEdges, newEdges);
     } else {
       throw except::TypeError("Rebinning is possible only for coords of types "
                               "`float64` or `float32`.");
     }
-    return rebinned;
   }
+  // If rebinned dimension has stride 1 but is not an inner dimension then we
+  // need to transpose the output of transform_subspan to retain the input
+  // dimension order.
+  const auto &order = var.dims().labels();
+  return transpose(rebinned, {order.begin(), order.end()});
 }
 
 } // namespace scipp::variable

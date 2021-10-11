@@ -18,6 +18,8 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
+* Fix bugs in ``rebin`` if data and/or edges had strides other than 1 along rebinned dimension, typically only occuring with multi-dimensional (ragged) coordinates `#2211 <https://github.com/scipp/scipp/pull/2211>`_.
+
 Contributors
 ~~~~~~~~~~~~
 
