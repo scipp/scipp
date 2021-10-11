@@ -80,37 +80,35 @@ protected:
     return make_dense_variable<double>(shape, variances, offset, scale);
   }
 
-  static void check_transform_combinations(const Variable &a,
-                                           const Variable &b) {
-    const auto b_for_manual = b.dims() == a.dims() ? b : b.broadcast(a.dims());
+  /// Note that this function modifies its inputs!
+  // This is needed because we cannot make a copy for the input of
+  // transform_in_place as that would result in a dense memory layout
+  // which would prevent testing slicing / transposition.
+  static void check_transform_combinations(Variable &a, Variable &b) {
+    const auto do_check = [](Variable &x, Variable &y) {
+      if (!x.dims().includes(y.dims())) {
+        // Cannot broadcast y to x, therefore cannot use manual op.
+        return false;
+      }
 
-    const auto ab = transform<pair_self_t<double>>(a, b, op, name);
-    EXPECT_TRUE(equals(ab.values<double>(),
-                       op_manual_values<double, double>(a, b_for_manual)));
-    if (std::get<bool>(GetParam())) {
-      EXPECT_TRUE(equals(ab.variances<double>(),
-                         op_manual_variances<double, double>(a, b_for_manual)));
-    }
+      const auto y_for_manual =
+          y.dims() == x.dims() ? y : y.broadcast(x.dims());
+      const auto xy = transform<pair_self_t<double>>(x, y, op, name);
+      EXPECT_TRUE(equals(xy.values<double>(),
+                         op_manual_values<double, double>(x, y_for_manual)));
+      if (std::get<bool>(GetParam())) {
+        EXPECT_TRUE(
+            equals(xy.variances<double>(),
+                   op_manual_variances<double, double>(x, y_for_manual)));
+      }
 
-    const auto ba = transform<pair_self_t<double>>(b, a, op, name);
-    EXPECT_TRUE(equals(ba.values<double>(),
-                       op_manual_values<double, double>(b_for_manual, a)));
-    if (std::get<bool>(GetParam())) {
-      EXPECT_TRUE(equals(ba.variances<double>(),
-                         op_manual_variances<double, double>(b_for_manual, a)));
-    }
+      transform_in_place<pair_self_t<double>>(x, y, op_in_place, name);
+      EXPECT_EQ(x, xy);
+      return true;
+    };
 
-    if (a.dims().includes(b.dims())) {
-      auto a_in_place = copy(a);
-      transform_in_place<pair_self_t<double>>(a_in_place, b, op_in_place, name);
-      EXPECT_EQ(a_in_place, ab);
-    }
-
-    if (b.dims().includes(a.dims())) {
-      auto b_in_place = copy(b);
-      transform_in_place<pair_self_t<double>>(b_in_place, a, op_in_place, name);
-      EXPECT_EQ(b_in_place, ba);
-    }
+    // The assertion ensures that at least one combination of tests is run.
+    assert(do_check(a, b) || do_check(b, a));
   }
 };
 
@@ -123,30 +121,35 @@ INSTANTIATE_TEST_SUITE_P(Scalar, DenseTransformBinaryTest,
                                             ::testing::Bool()));
 
 TEST_P(DenseTransformBinaryTest, matching_shapes) {
-  check_transform_combinations(input1, input2);
+  auto a = copy(input1);
+  auto b = copy(input2);
+  check_transform_combinations(a, b);
 }
 
 TEST_P(DenseTransformBinaryTest, scalar_and_array) {
-  const auto s = std::get<bool>(GetParam())
-                     ? makeVariable<double>(Values{2.1}, Variances{1.3})
-                     : makeVariable<double>(Values{2.1});
-  check_transform_combinations(input1, s);
+  auto a = copy(input1);
+  auto s = std::get<bool>(GetParam())
+               ? makeVariable<double>(Values{2.1}, Variances{1.3})
+               : makeVariable<double>(Values{2.1});
+  check_transform_combinations(a, s);
 }
 
 TEST_P(DenseTransformBinaryTest, slices) {
   for (const auto &slices :
        scipp::testing::make_slice_combinations(input1.dims().shape())) {
-    const auto a = slice(input1, slices);
-    const auto b = slice(input2, slices);
+    auto a = slice(copy(input1), slices);
+    auto b = slice(copy(input2), slices);
     check_transform_combinations(a, b);
     // Make one input a full view of its data.
-    check_transform_combinations(copy(a), b);
+    auto dense_a = copy(a);
+    check_transform_combinations(dense_a, b);
   }
 }
 
 TEST_P(DenseTransformBinaryTest, transpose) {
-  const auto b = transpose(copy(transpose(input2)));
-  check_transform_combinations(input1, b);
+  auto a = copy(input1);
+  auto b = transpose(copy(transpose(input2)));
+  check_transform_combinations(a, b);
 }
 
 TEST_P(DenseTransformBinaryTest, transposed_layout) {

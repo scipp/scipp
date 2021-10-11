@@ -81,7 +81,7 @@ INSTANTIATE_TEST_SUITE_P(Scalar, TransformUnaryTest,
 
 TEST_P(TransformUnaryTest, dense) {
   const auto result_return = transform<double>(input_var, op, name);
-  Variable result_in_place = copy(input_var);
+  auto result_in_place = copy(input_var);
   transform_in_place<double>(result_in_place, op_in_place, name);
 
   EXPECT_TRUE(equals(result_in_place.values<double>(),
@@ -101,8 +101,7 @@ TEST_P(TransformUnaryTest, slice) {
     const auto initial = slice(input_var, slices);
 
     const auto result_return = transform<double>(initial, op, name);
-    Variable result_in_place_buffer = copy(input_var);
-    auto result_in_place = slice(result_in_place_buffer, slices);
+    auto result_in_place = slice(copy(input_var), slices);
     transform_in_place<double>(result_in_place, op_in_place, name);
 
     EXPECT_TRUE(equals(result_return.values<double>(),
