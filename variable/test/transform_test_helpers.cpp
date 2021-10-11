@@ -5,6 +5,9 @@
 
 #include "transform_test_helpers.h"
 
+#include "scipp/variable/reduction.h"
+#include "scipp/variable/util.h"
+
 using namespace scipp;
 using namespace scipp::variable;
 
@@ -58,6 +61,13 @@ Variable make_regular_bin_indices(const scipp::index size,
   return makeVariable<index_pair>(
       make_dim_labels(ndim, {Dim{"i0"}, Dim{"i1"}, Dim{"i2"}}), shape,
       Values(aux));
+}
+
+scipp::index index_volume(const Variable &indices) {
+  if (indices.dims().empty())
+    return 0;
+  const auto &&[begin, end] = unzip(indices);
+  return (max(end) - min(begin)).value<scipp::index>();
 }
 
 namespace {

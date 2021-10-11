@@ -21,6 +21,8 @@ Dims make_dim_labels(scipp::index ndim,
 Variable make_regular_bin_indices(scipp::index size, const scipp::Shape &shape,
                                   scipp::index ndim);
 
+scipp::index index_volume(const Variable &indices);
+
 std::vector<std::vector<Slice>>
 make_slice_combinations(const scipp::span<const scipp::index> &shape);
 

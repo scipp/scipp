@@ -10,10 +10,8 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
-#include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
 #include "transform_test_helpers.h"
@@ -163,13 +161,6 @@ protected:
         input_buffer{make_dense_variable<double>(Shape{index_volume(indices)},
                                                  std::get<bool>(GetParam()))},
         input{make_bins(indices, Dim::X, input_buffer)} {}
-
-  static scipp::index index_volume(const Variable &indices) {
-    if (indices.dims().empty())
-      return 0;
-    const auto &&[begin, end] = unzip(indices);
-    return (max(end) - min(begin)).value<scipp::index>();
-  }
 };
 
 INSTANTIATE_TEST_SUITE_P(
