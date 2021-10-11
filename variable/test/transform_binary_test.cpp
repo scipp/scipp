@@ -142,19 +142,6 @@ TEST_P(DenseTransformBinaryTest, slice_with_slice) {
   }
 }
 
-TEST_P(DenseTransformBinaryTest, slice_with_full) {
-  for (const Slice &slice : make_slices(input1.dims().shape())) {
-    const auto a = input1.slice(slice);
-    auto b = copy(a);
-    std::generate(b.values<double>().begin(), b.values<double>().end(),
-                  [x = 0.0, size = b.dims().volume()]() mutable {
-                    return x += static_cast<double>(size) / 4.0;
-                  });
-
-    check_transform_combinations(a, b);
-  }
-}
-
 TEST_P(DenseTransformBinaryTest, transpose) {
   const auto b = transpose(copy(transpose(input2)));
   check_transform_combinations(input1, b);
