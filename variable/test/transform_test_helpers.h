@@ -126,3 +126,8 @@ make_binned_variable(scipp::Shape event_shape, const scipp::Shape &bin_shape,
       event_shape.data.at(bin_dim), bin_shape, scipp::size(bin_shape.data));
   return make_bins(indices, bin_dim_label, copy(buffer));
 }
+
+namespace scipp::testing {
+std::vector<std::vector<Slice>>
+make_slice_combinations(const scipp::span<const scipp::index> &shape);
+}

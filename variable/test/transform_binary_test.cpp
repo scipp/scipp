@@ -132,10 +132,15 @@ TEST_P(DenseTransformBinaryTest, scalar_and_array) {
   check_transform_combinations(input1, s);
 }
 
-TEST_P(DenseTransformBinaryTest, slice_with_slice) {
-  for (const Slice &slice : make_slices(input1.dims().shape())) {
-    const auto a = input1.slice(slice);
-    const auto b = input2.slice(slice);
+TEST_P(DenseTransformBinaryTest, slices) {
+  for (const auto &slices :
+       scipp::testing::make_slice_combinations(input1.dims().shape())) {
+    auto a = copy(input1);
+    auto b = copy(input2);
+    for (const auto &slice : slices) {
+      a = a.slice(slice);
+      b = b.slice(slice);
+    }
     check_transform_combinations(a, b);
     // Make one input a full view of its data.
     check_transform_combinations(copy(a), b);
