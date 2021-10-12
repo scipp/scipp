@@ -73,10 +73,6 @@ def main(*,
             '-DCMAKE_OSX_DEPLOYMENT_TARGET': osxversion
         })
     if platform == 'win32':
-        cmake_flags.update({
-            '-DCMAKE_CXX_COMPILER': 'cl.exe',
-            '-DMSVC_TOOLSET_VERSION': '142'
-        })
         # clcache conda installed to env Scripts dir in env if present
         scripts = os.path.join(os.environ.get('CONDA_PREFIX'), 'Scripts')
         if caching and os.path.exists(os.path.join(scripts, 'clcache.exe')):
@@ -107,6 +103,14 @@ def main(*,
     os.chdir(build_dir)
 
     # Run cmake
+    cmake = ['cmake']
+    if platform == 'win32':
+        cmake = [
+            os.path.join([
+                'C:', 'Program Files (x86)', 'Microsoft Visual Studio', '2019',
+                'Enterprise', 'VC', 'vcvarsall.bat'
+            ]), 'x86'
+        ] + cmake
     run_command(['cmake'] + flags_list + [source_dir], shell=shell)
 
     # Show cmake settings
