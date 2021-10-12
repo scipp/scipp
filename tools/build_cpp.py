@@ -73,7 +73,11 @@ def main(*,
             '-DCMAKE_OSX_DEPLOYMENT_TARGET': osxversion
         })
     if platform == 'win32':
-        cmake_flags.update({'-G': 'Visual Studio 16 2019', '-A': 'x64'})
+        cmake_flags.update({
+            '-A': 'x64',
+            'CMAKE_CXX_COMPILER': 'cl.exe',
+            'MSVC_TOOLSET_VERSION': '142'
+        })
         # clcache conda installed to env Scripts dir in env if present
         scripts = os.path.join(os.environ.get('CONDA_PREFIX'), 'Scripts')
         if caching and os.path.exists(os.path.join(scripts, 'clcache.exe')):
