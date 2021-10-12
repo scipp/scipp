@@ -44,3 +44,6 @@ find_package(scipp ${PKG_VERSION} REQUIRED)
 
 add_executable(test main.cpp)
 target_link_libraries(test PUBLIC scipp::dataset)
+target_include_directories(
+  test PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+)
