@@ -1,7 +1,7 @@
 ADR 0010: Acknowledge stability and maintainability tasks
 =========================================================
 
-- Status: proposed
+- Status: accepted
 - Deciders: Jan-Lukas, Neil, Simon
 - Date: 2021-10-12
 
