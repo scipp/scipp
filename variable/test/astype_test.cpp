@@ -4,10 +4,8 @@
 
 #include "test_macros.h"
 
-#include "scipp/core/except.h"
 #include "scipp/variable/astype.h"
-#include "scipp/variable/shape.h"
-#include "scipp/variable/variable.h"
+#include "scipp/variable/bins.h"
 
 using namespace scipp;
 
@@ -15,10 +13,10 @@ template <class T> class AsTypeTest : public ::testing::Test {};
 
 using type_pairs =
     ::testing::Types<std::pair<float, double>, std::pair<double, float>,
-                     std::pair<int32_t, float>>;
+                     std::pair<int32_t, float>, std::pair<double, double>>;
 TYPED_TEST_SUITE(AsTypeTest, type_pairs);
 
-TYPED_TEST(AsTypeTest, variable_astype) {
+TYPED_TEST(AsTypeTest, dense) {
   using T1 = typename TypeParam::first_type;
   using T2 = typename TypeParam::second_type;
   Variable var1;
@@ -36,7 +34,30 @@ TYPED_TEST(AsTypeTest, variable_astype) {
       makeVariable<T1>(Dims{Dim::X}, Shape{3}, units::m, Values{1.0, 2.0, 3.0});
   var2 =
       makeVariable<T2>(Dims{Dim::X}, Shape{3}, units::m, Values{1.0, 2.0, 3.0});
+
   ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
+  ASSERT_FALSE(astype(var1, core::dtype<T2>, CopyPolicy::Always).is_same(var1));
+  ASSERT_EQ(astype(var1, core::dtype<T2>, CopyPolicy::TryAvoid).is_same(var1),
+            (std::is_same_v<T1, T2>));
+}
+
+TYPED_TEST(AsTypeTest, binned) {
+  using T1 = typename TypeParam::first_type;
+  using T2 = typename TypeParam::second_type;
+  auto var1 =
+      makeVariable<T1>(Dims{Dim::X}, Shape{3}, units::m, Values{1.0, 2.0, 3.0});
+  auto var2 =
+      makeVariable<T2>(Dims{Dim::X}, Shape{3}, units::m, Values{1.0, 2.0, 3.0});
+  auto indices =
+      makeVariable<scipp::index_pair>(Values{scipp::index_pair{0, 3}});
+  auto binned1 = make_bins(indices, Dim::X, var1);
+  auto binned2 = make_bins(indices, Dim::X, var2);
+  ASSERT_EQ(astype(binned1, core::dtype<T2>), binned2);
+  ASSERT_FALSE(
+      astype(binned1, core::dtype<T2>, CopyPolicy::Always).is_same(binned1));
+  ASSERT_EQ(
+      astype(binned1, core::dtype<T2>, CopyPolicy::TryAvoid).is_same(binned1),
+      (std::is_same_v<T1, T2>));
 }
 
 TEST(AsTypeTest, buffer_handling) {
