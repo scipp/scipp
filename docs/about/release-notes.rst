@@ -10,6 +10,7 @@ Features
 ~~~~~~~~
 
 * Add ``erf`` and ``erfc`` functions `#2195 <https://github.com/scipp/scipp/pull/2195>`_.
+* Reduction operations such as ``sum``, ``nansum``, and ``cumsum`` of single precision (float32) data now use double precision (float64) internally to reduce rounding errors `#2218 <https://github.com/scipp/scipp/pull/2218>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -17,7 +18,8 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
-* Fixed a python exception that was thrown when importing empty datasets from HDF5 files using ``open_hdf5`` `#2216 https://github.com/scipp/scipp/pull/2216`_.
+* Fix bugs in ``rebin`` if data and/or edges had strides other than 1 along rebinned dimension, typically only occuring with multi-dimensional (ragged) coordinates `#2211 <https://github.com/scipp/scipp/pull/2211>`_.
+* Fix an exception that was thrown when importing empty datasets from HDF5 files using ``open_hdf5`` `#2216 https://github.com/scipp/scipp/pull/2216`_.
 
 Contributors
 ~~~~~~~~~~~~

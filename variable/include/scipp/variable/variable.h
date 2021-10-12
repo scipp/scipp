@@ -75,6 +75,7 @@ public:
   [[nodiscard]] DType dtype() const;
 
   [[nodiscard]] scipp::span<const scipp::index> strides() const;
+  [[nodiscard]] scipp::index stride(const Dim dim) const;
   [[nodiscard]] scipp::index offset() const;
 
   [[nodiscard]] bool hasVariances() const;

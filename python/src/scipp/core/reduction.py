@@ -23,6 +23,8 @@ def mean(x: VariableLike,
     :math:`\\sigma` is estimated as the average of the standard deviations of
     the input elements along that dimension.
 
+    See :py:func:`scipp.sum` on how rounding errors for float32 inputs are handled.
+
     :param x: Input data.
     :param dim: Dimension along which to calculate the mean. If not
                 given, the mean over all dimensions is calculated.
@@ -51,6 +53,8 @@ def nanmean(x: VariableLike,
     :math:`\\sigma` is estimated as the average of the standard deviations of
     the input elements along that dimension.
 
+    See :py:func:`scipp.sum` on how rounding errors for float32 inputs are handled.
+
     :param x: Input data.
     :param dim: Dimension along which to calculate the mean. If not
                 given, the nanmean over all dimensions is calculated.
@@ -72,6 +76,12 @@ def sum(x: VariableLike,
         out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise sum over the specified dimension.
 
+    If the input data is in single precision (dtype='float32') this internally uses
+    double precision (dtype='float64') to reduce the effect of accumulated rounding
+    errors. If multiple dimensions are reduced, the current implementation casts back
+    to float32 after handling each dimension, i.e., the result is equivalent to what
+    would be obtained from manually summing individual dimensions.
+
     :param x: Input data.
     :param dim: Optional dimension along which to calculate the sum. If not
                 given, the sum over all dimensions is calculated.
@@ -91,7 +101,9 @@ def nansum(x: VariableLike,
            dim: Optional[str] = None,
            *,
            out: Optional[VariableLike] = None) -> VariableLike:
-    """Element-wise sum over the specified dimension; NaNs are treated as zero.
+    """Element-wise sum over the specified dimension; NaNs ignored.
+
+    See :py:func:`scipp.sum` on how rounding errors for float32 inputs are handled.
 
     :param x: Input data.
     :param dim: Optional dimension along which to calculate the sum. If not

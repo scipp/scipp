@@ -5,6 +5,7 @@
 #include "scipp/core/except.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/cumulative.h"
+#include "scipp/variable/shape.h"
 
 using namespace scipp;
 
@@ -39,4 +40,25 @@ TEST(CumulativeTest, cumsum_bins) {
   EXPECT_EQ(cumsum_bins(var, CumSumMode::Exclusive),
             make_bins(indices, Dim::Row,
                       makeVariable<int64_t>(buffer.dims(), Values{0, 1, 3})));
+}
+
+class CumulativePrecisionTest : public ::testing::Test {
+protected:
+  const float init = 100000000.0;
+  Variable var = makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                                     Values{init, 1.f, 1.f, 1.f, 1.f, 1.f});
+  Variable expected =
+      makeVariable<float>(var.dims(), Values{init + 0, init + 1, init + 2,
+                                             init + 3, init + 4, init + 5});
+};
+
+TEST_F(CumulativePrecisionTest, cumsum) { EXPECT_EQ(cumsum(var), expected); }
+
+TEST_F(CumulativePrecisionTest, cumsum_bins) {
+  const auto indices =
+      makeVariable<scipp::index_pair>(Values{scipp::index_pair{0, 6}});
+  const auto buffer = flatten(var, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Row);
+  var = make_bins(indices, Dim::Row, buffer);
+  expected = flatten(expected, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Row);
+  EXPECT_EQ(cumsum_bins(var), make_bins(indices, Dim::Row, expected));
 }

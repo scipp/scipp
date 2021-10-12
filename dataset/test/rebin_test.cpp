@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/rebin.h"
+#include "scipp/dataset/shape.h"
 #include "scipp/variable/astype.h"
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/shape.h"
@@ -29,13 +30,30 @@ protected:
       {}};
 };
 
-TEST_F(RebinTest, inner_data_array) {
+TEST_F(RebinTest, inner_stride1_data_array) {
   auto edges = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 3, 5});
   DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                           units::counts, Values{3, 7, 11, 15}),
                      {{Dim::X, edges}, {Dim::Y, y}}, {});
-
   ASSERT_EQ(rebin(array, Dim::X, edges), expected);
+}
+
+TEST_F(RebinTest, inner_stride1_strided_edges) {
+  auto buffer = makeVariable<double>(Dims{Dim::X, Dim::Z}, Shape{3, 2},
+                                     Values{1, 0, 3, 0, 5, 0});
+  auto edges = buffer.slice({Dim::Z, 0});
+  DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                          units::counts, Values{3, 7, 11, 15}),
+                     {{Dim::X, edges}, {Dim::Y, y}}, {});
+  ASSERT_EQ(rebin(array, Dim::X, edges), expected);
+}
+
+TEST_F(RebinTest, outer_stride1_data_array) {
+  auto edges = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 3, 5});
+  DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                          units::counts, Values{3, 7, 11, 15}),
+                     {{Dim::X, edges}, {Dim::Y, y}}, {});
+  ASSERT_EQ(rebin(transpose(array), Dim::X, edges), transpose(expected));
 }
 
 TEST_F(RebinTest, inner_data_array_with_variances) {
@@ -143,6 +161,49 @@ TEST_F(RebinTest, rebin_with_ragged_coord) {
       {{Dim::Z, edges}, {Dim::X, var_x}, {Dim::Y, var_y}}, {});
 
   ASSERT_EQ(rebin(da, Dim::Z, edges), expected);
+}
+
+class RebinRaggedTest : public ::testing::Test {
+protected:
+  Variable counts =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3}, units::counts,
+                           Values{1, 2, 3, 4, 5, 6});
+  Variable x = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 4},
+                                    Values{1, 2, 3, 4, 5, 6, 7, 8});
+  DataArray da{counts, {{Dim::X, x}}};
+  Variable edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 3, 7});
+};
+
+TEST_F(RebinRaggedTest, stride1_data_and_edges) {
+  DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                          units::counts, Values{3, 3, 0, 9}),
+                     {{Dim::X, edges}});
+  ASSERT_EQ(rebin(da, Dim::X, edges), expected);
+  ASSERT_EQ(rebin(transpose(da), Dim::X, edges), transpose(expected));
+}
+
+TEST_F(RebinRaggedTest, stride1_edges) {
+  DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                          units::counts, Values{3, 3, 0, 9}),
+                     {{Dim::X, edges}});
+  ASSERT_EQ(rebin(copy(transpose(da)), Dim::X, edges), transpose(expected));
+}
+
+TEST_F(RebinRaggedTest, stride1_data) {
+  da.coords().set(Dim::X, copy(transpose(x)));
+  DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                          units::counts, Values{3, 3, 0, 9}),
+                     {{Dim::X, edges}});
+  ASSERT_EQ(rebin(da, Dim::X, edges), expected);
+}
+
+TEST_F(RebinRaggedTest, no_stride1) {
+  da.coords().set(Dim::X, copy(transpose(x)));
+  DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                          units::counts, Values{3, 3, 0, 9}),
+                     {{Dim::X, edges}});
+  ASSERT_EQ(rebin(copy(transpose(da)), Dim::X, edges), transpose(expected));
 }
 
 TEST(RebinWithMaskTest, preserves_unrelated_mask) {
