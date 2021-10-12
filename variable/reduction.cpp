@@ -144,7 +144,7 @@ template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
     if constexpr (sizeof...(dim) == 0)
       return var.dims().volume() * units::one;
     else
-      return var.dims()[(dim, ...)] * units::one;
+      return ((var.dims()[dim] * units::one) * ...);
   }
   const auto [begin, end] = unzip(var.bin_indices());
   return sum(end - begin, dim...);

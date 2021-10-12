@@ -137,23 +137,35 @@ TYPED_TEST(NansumTest, nansum_with_dim_out) {
 
 class ReduceBinnedTest : public ::testing::Test {
 protected:
-  Variable indices = makeVariable<index_pair>(
-      Dims{Dim::Y}, Shape{3},
-      Values{std::pair{0, 2}, std::pair{2, 2}, std::pair{2, 5}});
-  Variable buffer =
-      makeVariable<double>(Dims{Dim::X}, Shape{5}, units::m,
-                           Values{1, 2, 3, 4, 5}, Variances{1, 2, 3, 4, 5});
+  Variable indices =
+      makeVariable<index_pair>(Dims{Dim::Y, Dim::Z}, Shape{2, 2},
+                               Values{std::pair{0, 2}, std::pair{2, 2},
+                                      std::pair{2, 5}, std::pair{5, 6}});
+  Variable buffer = makeVariable<double>(Dims{Dim::X}, Shape{6}, units::m,
+                                         Values{1, 2, 3, 4, 5, 6},
+                                         Variances{1, 2, 3, 4, 5, 6});
   Variable binned = make_bins(indices, Dim::X, buffer);
 };
 
-TEST_F(ReduceBinnedTest, basics) {
+TEST_F(ReduceBinnedTest, all_dims) {
   EXPECT_EQ(sum(binned), sum(buffer));
   EXPECT_EQ(max(binned), max(buffer));
   EXPECT_EQ(min(binned), min(binned));
-  EXPECT_EQ(sum(binned, Dim::Y), sum(buffer));
-  EXPECT_EQ(sum(binned.slice({Dim::Y, 1, 3})),
-            sum(buffer.slice({Dim::X, 2, 5})));
+}
+
+TEST_F(ReduceBinnedTest, one_dim) {
+  EXPECT_EQ(sum(binned, Dim::Y),
+            makeVariable<double>(Dims{Dim::Z}, Shape{2}, units::m,
+                                 Values{15, 6}, Variances{15, 6}));
+  EXPECT_EQ(sum(binned, Dim::Z),
+            makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m,
+                                 Values{3, 18}, Variances{3, 18}));
   EXPECT_EQ(mean(binned), mean(buffer));
-  EXPECT_EQ(mean(binned.slice({Dim::Y, 1, 3})),
-            mean(buffer.slice({Dim::X, 2, 5})));
+}
+
+TEST_F(ReduceBinnedTest, slice) {
+  EXPECT_EQ(sum(binned.slice({Dim::Y, 1, 2})),
+            sum(buffer.slice({Dim::X, 2, 6})));
+  EXPECT_EQ(mean(binned.slice({Dim::Y, 1, 2})),
+            mean(buffer.slice({Dim::X, 2, 6})));
 }
