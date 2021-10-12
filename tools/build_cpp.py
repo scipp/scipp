@@ -74,7 +74,6 @@ def main(*,
         })
     if platform == 'win32':
         cmake_flags.update({
-            '-A': 'x64',
             'CMAKE_CXX_COMPILER': 'cl.exe',
             'MSVC_TOOLSET_VERSION': '142'
         })
