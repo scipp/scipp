@@ -144,12 +144,13 @@ TEST(ReduceTest, binned) {
                            Values{1, 2, 3, 4, 5}, Variances{1, 2, 3, 4, 5});
   auto binned = make_bins(indices, Dim::X, buffer);
 
-  EXPECT_EQ(sum(binned),
-            makeVariable<double>(units::m, Values{15}, Variances{15}));
-  EXPECT_EQ(max(binned),
-            makeVariable<double>(units::m, Values{5}, Variances{5}));
-  EXPECT_EQ(min(binned),
-            makeVariable<double>(units::m, Values{1}, Variances{1}));
-  EXPECT_EQ(sum(binned, Dim::Y),
-            makeVariable<double>(units::m, Values{15}, Variances{15}));
+  EXPECT_EQ(sum(binned), sum(buffer));
+  EXPECT_EQ(max(binned), max(buffer));
+  EXPECT_EQ(min(binned), min(binned));
+  EXPECT_EQ(sum(binned, Dim::Y), sum(buffer));
+  EXPECT_EQ(sum(binned.slice({Dim::Y, 1, 3})),
+            sum(buffer.slice({Dim::X, 2, 5})));
+  EXPECT_EQ(mean(binned), mean(buffer));
+  EXPECT_EQ(mean(binned.slice({Dim::Y, 1, 3})),
+            mean(buffer.slice({Dim::X, 2, 5})));
 }
