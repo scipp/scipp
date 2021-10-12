@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-#include "fix_typed_test_suite_warnings.h"
-#include "scipp/core/except.h"
-#include "scipp/variable/reduction.h"
-#include "scipp/variable/variable.h"
 #include <gtest/gtest.h>
 
+#include "fix_typed_test_suite_warnings.h"
 #include "test_macros.h"
+
+#include "scipp/core/except.h"
+#include "scipp/variable/bins.h"
+#include "scipp/variable/reduction.h"
+#include "scipp/variable/variable.h"
 
 using namespace scipp;
 
@@ -131,4 +133,23 @@ TYPED_TEST(NansumTest, nansum_with_dim_out) {
     nansum(x, Dim::X, out);
     EXPECT_EQ(out, expected);
   }
+}
+
+TEST(ReduceTest, binned) {
+  Variable indices = makeVariable<index_pair>(
+      Dims{Dim::Y}, Shape{3},
+      Values{std::pair{0, 2}, std::pair{2, 2}, std::pair{2, 5}});
+  Variable buffer =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, units::m,
+                           Values{1, 2, 3, 4, 5}, Variances{1, 2, 3, 4, 5});
+  auto binned = make_bins(indices, Dim::X, buffer);
+
+  EXPECT_EQ(sum(binned),
+            makeVariable<double>(units::m, Values{15}, Variances{15}));
+  EXPECT_EQ(max(binned),
+            makeVariable<double>(units::m, Values{5}, Variances{5}));
+  EXPECT_EQ(min(binned),
+            makeVariable<double>(units::m, Values{1}, Variances{1}));
+  EXPECT_EQ(sum(binned, Dim::Y),
+            makeVariable<double>(units::m, Values{15}, Variances{15}));
 }

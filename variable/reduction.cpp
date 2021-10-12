@@ -13,6 +13,7 @@
 #include "scipp/variable/creation.h"
 #include "scipp/variable/math.h"
 #include "scipp/variable/special_values.h"
+#include "scipp/variable/variable_factory.h"
 
 #include "operations_common.h"
 
@@ -32,8 +33,10 @@ Variable make_accumulant(const Variable &var, const Dim dim,
                          const FillValue &init) {
   auto dims = var.dims();
   dims.erase(dim);
-  return special_like(
-      var.dims()[dim] == 0 ? Variable(var, dims) : var.slice({dim, 0}), init);
+  auto prototype = empty(dims, variableFactory().elem_unit(var),
+                         variableFactory().elem_dtype(var),
+                         variableFactory().hasVariances(var));
+  return special_like(prototype, init);
 }
 
 } // namespace
