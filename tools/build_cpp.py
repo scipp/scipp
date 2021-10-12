@@ -74,8 +74,8 @@ def main(*,
         })
     if platform == 'win32':
         cmake_flags.update({
-            'CMAKE_CXX_COMPILER': 'cl.exe',
-            'MSVC_TOOLSET_VERSION': '142'
+            '-DCMAKE_CXX_COMPILER': 'cl.exe',
+            '-DMSVC_TOOLSET_VERSION': '142'
         })
         # clcache conda installed to env Scripts dir in env if present
         scripts = os.path.join(os.environ.get('CONDA_PREFIX'), 'Scripts')
