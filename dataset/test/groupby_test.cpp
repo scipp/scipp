@@ -544,6 +544,24 @@ struct GroupbyBinnedTest : public ::testing::Test {
       {{Dim("scalar_attr"), makeVariable<double>(Values{1.2})}}};
 };
 
+TEST_F(GroupbyBinnedTest, sum_data_array) {
+  expected.setData(
+      makeVariable<double>(expected.dims(), Values{8, 5}, Variances{14, 8}));
+  EXPECT_EQ(groupby(a, Dim("labels")).sum(Dim::Y), expected);
+}
+
+TEST_F(GroupbyBinnedTest, min_data_array) {
+  expected.setData(
+      makeVariable<double>(expected.dims(), Values{1, 1}, Variances{1, 1}));
+  EXPECT_EQ(groupby(a, Dim("labels")).min(Dim::Y), expected);
+}
+
+TEST_F(GroupbyBinnedTest, max_data_array) {
+  expected.setData(
+      makeVariable<double>(expected.dims(), Values{3, 4}, Variances{6, 7}));
+  EXPECT_EQ(groupby(a, Dim("labels")).max(Dim::Y), expected);
+}
+
 TEST_F(GroupbyBinnedTest, concatenate_data_array) {
   EXPECT_EQ(groupby(a, Dim("labels")).concatenate(Dim::Y), expected);
 }

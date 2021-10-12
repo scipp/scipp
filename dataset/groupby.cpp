@@ -13,6 +13,7 @@
 
 #include "scipp/variable/operations.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/choose.h"
@@ -69,6 +70,19 @@ T GroupBy<T>::copy(const scipp::index group,
   return copy_impl(groups()[group], m_data, dim(), attrPolicy);
 }
 
+namespace {
+auto resize_array(const DataArray &da, const Dim reductionDim,
+                  const scipp::index size, const FillValue fill) {
+  if (!is_bins(da))
+    return resize(da, reductionDim, size, fill);
+  DataArray dense_dummy(da);
+  dense_dummy.setData(empty(da.dims(), variableFactory().elem_unit(da.data()),
+                            variableFactory().elem_dtype(da.data()),
+                            variableFactory().hasVariances(da.data())));
+  return resize_array(dense_dummy, reductionDim, size, fill);
+}
+} // namespace
+
 /// Helper for creating output for "combine" step for "apply" steps that reduce
 /// a dimension.
 ///
@@ -78,14 +92,12 @@ template <class T>
 T GroupBy<T>::makeReductionOutput(const Dim reductionDim,
                                   const FillValue fill) const {
   T out;
-  if (is_bins(m_data)) {
-    const auto out_sizes =
-        GroupBy(bin_sizes(m_data), {key(), groups()}).sum(reductionDim);
-    out = resize(m_data, reductionDim, out_sizes);
+  if constexpr (std::is_same_v<T, Dataset>) {
+    out = apply_to_items(m_data, resize_array, reductionDim, size(), fill);
   } else {
-    out = resize(m_data, reductionDim, size(), fill);
-    out.rename(reductionDim, dim());
+    out = resize_array(m_data, reductionDim, size(), fill);
   }
+  out.rename(reductionDim, dim());
   out.coords().set(dim(), key());
   return out;
 }
