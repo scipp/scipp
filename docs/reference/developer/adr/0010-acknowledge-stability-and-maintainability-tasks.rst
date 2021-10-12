@@ -25,6 +25,8 @@ Publicly acknowledge work and developers that contribute to long-term project ma
 - Add a new section to the release notes, named "Stability, Maintainability, and Testing".
 - Add entries to this section for tasks that address such issues or improve the current situation.
   This includes improving unit testing, improving CI, improving documentation, and more.
+- Reviewers of PRs should consider to add such entries (and push to the original PR branch) if not done by PR author.
+  This is a clear statement "I think what you did deserves public acknowledgement".
 - Consider adding names to all entries in the release notes (not just in the new section).
 
 Consequences
