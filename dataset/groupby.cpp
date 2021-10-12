@@ -75,6 +75,9 @@ auto resize_array(const DataArray &da, const Dim reductionDim,
                   const scipp::index size, const FillValue fill) {
   if (!is_bins(da))
     return resize(da, reductionDim, size, fill);
+  if (variableFactory().has_masks(da.data()))
+    throw except::BinnedDataError("Reduction operations for binned data with "
+                                  "event masks not supported yet.");
   DataArray dense_dummy(da);
   dense_dummy.setData(empty(da.dims(), variableFactory().elem_unit(da.data()),
                             variableFactory().elem_dtype(da.data()),

@@ -32,6 +32,9 @@ bool is_dtype_int64(const Variable &var) {
 
 Variable make_accumulant(const Variable &var, const Dim dim,
                          const FillValue &init) {
+  if (variableFactory().has_masks(var))
+    throw except::BinnedDataError("Reduction operations for binned data with "
+                                  "event masks not supported yet.");
   auto dims = var.dims();
   dims.erase(dim);
   auto prototype = empty(dims, variableFactory().elem_unit(var),

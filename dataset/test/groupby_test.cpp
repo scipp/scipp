@@ -4,10 +4,12 @@
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
+#include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/comparison.h"
 #include "scipp/variable/shape.h"
 
 #include "test_macros.h"
@@ -564,6 +566,14 @@ TEST_F(GroupbyBinnedTest, sum_data_array) {
 
 TEST_F(GroupbyBinnedTest, mean_data_array) {
   EXPECT_THROW_DISCARD(groupby(a, Dim("labels")).mean(Dim::Y),
+                       except::BinnedDataError);
+}
+
+TEST_F(GroupbyBinnedTest, sum_with_event_mask) {
+  auto bins = bins_view<DataArray>(a.data());
+  bins.masks().set("mask", equal(bins.data(), bins.data()));
+  // Event masks not supported yet in reduction ops.
+  EXPECT_THROW_DISCARD(groupby(a, Dim("labels")).sum(Dim::Y),
                        except::BinnedDataError);
 }
 

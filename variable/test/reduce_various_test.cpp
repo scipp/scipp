@@ -135,15 +135,18 @@ TYPED_TEST(NansumTest, nansum_with_dim_out) {
   }
 }
 
-TEST(ReduceTest, binned) {
+class ReduceBinnedTest : public ::testing::Test {
+protected:
   Variable indices = makeVariable<index_pair>(
       Dims{Dim::Y}, Shape{3},
       Values{std::pair{0, 2}, std::pair{2, 2}, std::pair{2, 5}});
   Variable buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{5}, units::m,
                            Values{1, 2, 3, 4, 5}, Variances{1, 2, 3, 4, 5});
-  auto binned = make_bins(indices, Dim::X, buffer);
+  Variable binned = make_bins(indices, Dim::X, buffer);
+};
 
+TEST_F(ReduceBinnedTest, basics) {
   EXPECT_EQ(sum(binned), sum(buffer));
   EXPECT_EQ(max(binned), max(buffer));
   EXPECT_EQ(min(binned), min(binned));
