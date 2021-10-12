@@ -204,6 +204,11 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
 
   // 2. Compute number of slices N contributing to each out slice
   const auto get_scale = [&](const auto &data) {
+    // TODO Supporting binned data requires generalized approach to compute
+    // scale factor.
+    if (is_bins(data))
+      throw except::BinnedDataError(
+          "groupby.mean does not support binned data yet.");
     auto scale = makeVariable<double>(Dims{dim()}, Shape{size()});
     const auto scaleT = scale.template values<double>();
     const auto mask = irreducible_mask(data.masks(), reductionDim);
