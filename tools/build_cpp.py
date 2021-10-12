@@ -60,7 +60,8 @@ def main(*,
         '-DCMAKE_INSTALL_PREFIX': prefix,
         '-DSITE_PACKAGES_DIR': site_packages_dir,
         '-DWITH_CTEST': 'OFF',
-        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': ipo
+        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': ipo,
+        '-DCMAKE_VERBOSE_MAKEFILE': 'ON',
     }
 
     if platform == 'darwin':
