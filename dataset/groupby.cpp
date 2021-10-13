@@ -328,7 +328,7 @@ GroupBy<T> call_groupby(const T &array, const Variable &key, const Dim &dim) {
 /// Grouping will create a new coordinate for the dimension of the grouping
 /// coord in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArray &array, const Dim dim) {
-  const auto &key = array.coords()[dim];
+  const auto &key = array.meta()[dim];
   return call_groupby(array, key, dim);
 }
 
@@ -339,7 +339,7 @@ GroupBy<DataArray> groupby(const DataArray &array, const Dim dim) {
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArray &array, const Dim dim,
                            const Variable &bins) {
-  const auto &key = array.coords()[dim];
+  const auto &key = array.meta()[dim];
   return groupby(array, key, bins);
 }
 
@@ -362,7 +362,7 @@ GroupBy<DataArray> groupby(const DataArray &array, const Variable &key,
 /// Grouping will create a new coordinate for the dimension of the grouping
 /// coord in a later apply/combine step.
 GroupBy<Dataset> groupby(const Dataset &dataset, const Dim dim) {
-  const auto &key = dataset.coords()[dim];
+  const auto &key = dataset.meta()[dim];
   return call_groupby(dataset, key, dim);
 }
 
@@ -373,7 +373,7 @@ GroupBy<Dataset> groupby(const Dataset &dataset, const Dim dim) {
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<Dataset> groupby(const Dataset &dataset, const Dim dim,
                          const Variable &bins) {
-  const auto &key = dataset.coords()[dim];
+  const auto &key = dataset.meta()[dim];
   return groupby(dataset, key, bins);
 }
 
@@ -400,7 +400,7 @@ template class GroupBy<Dataset>;
 constexpr auto slice_by_value = [](const auto &x, const Dim dim,
                                    const auto &key) {
   const auto size = x.dims()[dim];
-  const auto &coord = x.coords()[dim];
+  const auto &coord = x.meta()[dim];
   for (scipp::index i = 0; i < size; ++i)
     if (coord.slice({dim, i}) == key)
       return x.slice({dim, i});
