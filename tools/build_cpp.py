@@ -108,8 +108,8 @@ def main(*,
         cmake = [
             os.path.join('C:', os.sep, 'Program Files (x86)', 'Microsoft Visual Studio',
                          '2019', 'Enterprise', 'VC', 'Auxiliary', 'Build',
-                         'vcvarsall.bat'), 'x86\n'
-        ] + cmake
+                         'vcvarsall.bat'), 'x86\ncmake'
+        ]
     run_command(cmake + flags_list + [source_dir], shell=shell)
 
     # Show cmake settings
