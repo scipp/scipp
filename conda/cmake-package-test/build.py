@@ -20,7 +20,8 @@ if sys.platform == 'darwin':
     cmake_flags.append(
         f'-DCMAKE_OSX_DEPLOYMENT_TARGET={os.getenv("OSX_VERSION", "10.14")}')
 if sys.platform == 'win32':
-    cmake_flags.update({'-G': 'Visual Studio 16 2019', '-A': 'x64'})
+    cmake_flags.append('-G Visual Studio 16 2019')
+    cmake_flags.append('-A x64')
 
 subprocess.check_call(['cmake'] + cmake_flags + ['..'],
                       stderr=subprocess.STDOUT,
