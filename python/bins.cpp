@@ -105,6 +105,26 @@ template <class T> void bind_bins_view(py::module &m) {
   m.def("_bins_view", [](Variable &var) { return dataset::bins_view<T>(var); });
 }
 
+template <class T, class Data>
+auto bins_like(const Variable &bins, const Data &data) {
+  auto &&[idx, dim, buf] = bins.constituents<T>();
+  auto out = make_bins_no_validate(idx, dim, empty_like(data, buf.dims()));
+  out.setSlice(Slice{}, data);
+  return out;
+}
+
+template <class Data> void bind_bins_like(py::module &m) {
+  m.def("bins_like", [](const Variable &bins, const Data &data) {
+    if (bins.dtype() == dtype<bucket<Variable>>)
+      return bins_like<Variable>(bins, data);
+    if (bins.dtype() == dtype<bucket<DataArray>>)
+      return bins_like<DataArray>(bins, data);
+    throw except::TypeError(
+        "In `bins_like`: Prototype must contain binned data but got dtype=" +
+        to_string(bins.dtype()));
+  });
+}
+
 } // namespace
 
 void init_buckets(py::module &m) {
@@ -112,18 +132,13 @@ void init_buckets(py::module &m) {
   bind_bins<DataArray>(m);
   bind_bins<Dataset>(m);
 
+  bind_bins_like<Variable>(m);
+
   m.def("is_bins", variable::is_bins);
   m.def("is_bins",
         [](const DataArray &array) { return dataset::is_bins(array); });
   m.def("is_bins",
         [](const Dataset &dataset) { return dataset::is_bins(dataset); });
-
-  m.def("bins_like", [](const Variable &bins, const Variable &data) {
-    auto &&[idx, dim, buf] = bins.constituents<DataArray>();
-    auto out = make_bins_no_validate(idx, dim, empty_like(data, buf.dims()));
-    out.setSlice(Slice{}, data);
-    return out;
-  });
 
   m.def("bins_begin_end", [](const Variable &var) -> py::object {
     if (var.dtype() == dtype<bucket<Variable>>)
