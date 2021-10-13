@@ -107,7 +107,8 @@ def main(*,
     if platform == 'win32':
         cmake = [
             os.path.join('C:', os.sep, 'Program Files (x86)', 'Microsoft Visual Studio',
-                         '2019', 'Enterprise', 'VC', 'vcvarsall.bat'), 'x86'
+                         '2019', 'Enterprise', 'VC', 'Auxiliary', 'Build',
+                         'vcvarsall.bat'), 'x86'
         ] + cmake
     run_command(cmake + flags_list + [source_dir], shell=shell)
 
