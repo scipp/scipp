@@ -11,6 +11,7 @@ Features
 
 * Add ``erf`` and ``erfc`` functions `#2195 <https://github.com/scipp/scipp/pull/2195>`_.
 * Reduction operations such as ``sum``, ``nansum``, and ``cumsum`` of single precision (float32) data now use double precision (float64) internally to reduce rounding errors `#2218 <https://github.com/scipp/scipp/pull/2218>`_.
+* Add ``bins_like`` for broadcasting dense variables to binned variables, e.g., for converting bin coordinates into event coordinates `#2225 <https://github.com/scipp/scipp/pull/2225>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -27,7 +28,9 @@ Contributors
 
 Owen Arnold :sup:`b, c`\ ,
 Simon Heybrock :sup:`a`\ ,
+Samuel Jones :sup:`b`\ ,
 Neil Vaytet :sup:`a`\ ,
+Tom Willemsen :sup:`b, c`\ ,
 and Jan-Lukas Wynen :sup:`a`\
 
 v0.8.3 (September 2021)
