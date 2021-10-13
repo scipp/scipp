@@ -118,6 +118,13 @@ void init_buckets(py::module &m) {
   m.def("is_bins",
         [](const Dataset &dataset) { return dataset::is_bins(dataset); });
 
+  m.def("bins_like", [](const Variable &bins, const Variable &data) {
+    auto &&[idx, dim, buf] = bins.constituents<DataArray>();
+    auto out = make_bins_no_validate(idx, dim, empty_like(data, buf.dims()));
+    out.setSlice(Slice{}, data);
+    return out;
+  });
+
   m.def("bins_begin_end", [](const Variable &var) -> py::object {
     if (var.dtype() == dtype<bucket<Variable>>)
       return bin_begin_end<Variable>(var);
