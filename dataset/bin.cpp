@@ -471,10 +471,10 @@ DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
   builder.erase(reductionDim);
   const auto dims = array.dims();
   for (const auto &dim : dims.labels())
-    if (array.coords().contains(dim)) {
-      if (array.coords()[dim].dims().ndim() != 1 &&
-          array.coords()[dim].dims().contains(reductionDim))
-        builder.join(dim, array.coords()[dim]);
+    if (array.meta().contains(dim)) {
+      if (array.meta()[dim].dims().ndim() != 1 &&
+          array.meta()[dim].dims().contains(reductionDim))
+        builder.join(dim, array.meta()[dim]);
       else if (dim != reductionDim)
         builder.existing(dim, array.dims()[dim]);
     }
@@ -482,7 +482,7 @@ DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
   const auto masked =
       hide_masked(array.data(), array.masks(), builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
-  builder.build(*target_bins, array.coords());
+  builder.build(*target_bins, array.meta());
   // Note: Unlike in the other cases below we do not call
   // `drop_grouped_event_coords` here. Grouping is based on a bin-coord rather
   // than event-coord so we do not touch the latter.

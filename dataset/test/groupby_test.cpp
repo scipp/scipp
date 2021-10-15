@@ -557,6 +557,14 @@ TEST_F(GroupbyBinnedTest, concatenate_data_array) {
   EXPECT_EQ(groupby(a, Dim("labels")).concatenate(Dim::Y), expected);
 }
 
+TEST_F(GroupbyBinnedTest, concatenate_by_attr) {
+  const auto key = Dim("labels");
+  const auto grouped_coord = groupby(a, key).concatenate(Dim::Y);
+  a.attrs().set(key, a.coords().extract(key));
+  const auto grouped_attr = groupby(a, key).concatenate(Dim::Y);
+  EXPECT_EQ(grouped_coord, grouped_attr);
+}
+
 TEST_F(GroupbyBinnedTest, concatenate_data_array_2d) {
   a = bin(a, {makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 8})});
   auto grouped = groupby(a, Dim("labels")).concatenate(Dim::Y);
