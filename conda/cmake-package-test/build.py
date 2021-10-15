@@ -27,4 +27,9 @@ subprocess.check_call(['cmake'] + cmake_flags + ['..'],
 subprocess.check_call(['cmake', '-B', '.', '-S', '..', '-LA'],
                       stderr=subprocess.STDOUT,
                       shell=shell)
-subprocess.check_call(['cmake', '--build', '.'], stderr=subprocess.STDOUT, shell=shell)
+# TODO For some reason transitive dependencies such as boost include dirs to not work
+# on Windows
+if sys.platform != 'win32':
+    subprocess.check_call(['cmake', '--build', '.'],
+                          stderr=subprocess.STDOUT,
+                          shell=shell)
