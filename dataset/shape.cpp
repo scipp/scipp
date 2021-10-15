@@ -122,21 +122,13 @@ constexpr auto get_sizes = [](auto &&_) { return _.sizes(); };
 
 } // namespace
 
-DataArray concatenate(const DataArray &a, const DataArray &b, const Dim dim) {
-  return concat(std::vector{a, b}, dim);
-}
-
-Dataset concatenate(const Dataset &a, const Dataset &b, const Dim dim) {
-  return concat(std::vector{a, b}, dim);
-}
-
 DataArray concat(const scipp::span<const DataArray> das, const Dim dim) {
   auto out = DataArray(concat(get(das, get_data), dim), {},
                        concat_maps(get(das, get_masks), dim));
   const auto &coords = get(das, get_coords);
   for (auto &&[d, coord] : concat_maps(get(das, get_meta), dim)) {
     if (d == dim || std::any_of(coords.begin(), coords.end(),
-                                [d](auto &_) { return _.contains(d); }))
+                                [&](auto &_) { return _.contains(d); }))
       out.coords().set(d, std::move(coord));
     else
       out.attrs().set(d, std::move(coord));

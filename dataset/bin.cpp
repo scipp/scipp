@@ -345,7 +345,7 @@ public:
 
   void join(const Dim dim, const Variable &coord) {
     m_dims.addInner(dim, 1);
-    m_joined.emplace_back(concatenate(min(coord), max(coord), dim));
+    m_joined.emplace_back(concat(std::vector{min(coord), max(coord)}, dim));
     m_actions.emplace_back(AxisAction::Join, dim, m_joined.back());
   }
 
