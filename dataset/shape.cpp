@@ -84,7 +84,7 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
     if (a.dim_of(key) == dim) {
       if (!equal_is_edges(maps, key, dim)) {
         throw except::BinEdgeError(
-            "Either both or neither of the inputs must be bin edges.");
+            "Either all or none of the inputs must have bin edge coordinates.");
       } else if (!all_is_edges(maps, key, dim)) {
         out.emplace(key, concat(vars, dim));
       } else {
