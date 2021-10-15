@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 from typing import Dict, List, Optional, Sequence, Tuple, Union
+import warnings
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
@@ -24,6 +25,10 @@ def broadcast(x: _cpp.Variable, dims: Union[List[str], Tuple[str]],
     :return: New variable with requested dimension labels and shape.
     """
     return _call_cpp_func(_cpp.broadcast, x, dims, shape)
+
+
+def concat(x: Sequence[VariableLike], dim: str) -> VariableLike:
+    return _call_cpp_func(_cpp.concat, x, dim)
 
 
 def concatenate(x: VariableLike, y: VariableLike, dim: str) -> VariableLike:
@@ -78,6 +83,8 @@ def concatenate(x: VariableLike, y: VariableLike, dim: str) -> VariableLike:
       >>> z.values
       array([  0,   1,   2,   0, 100, 200])
     """
+    warnings.warn("`concatenate(a, b, dim)` is deprecated; use `concat([a, b,], dim).",
+                  DeprecationWarning)
     return _call_cpp_func(_cpp.concatenate, x, y, dim)
 
 

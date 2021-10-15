@@ -41,6 +41,10 @@ template <class T> void bind_concatenate(py::module &m) {
       },
       py::arg("x"), py::arg("y"), py::arg("dim"),
       py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "concat",
+      [](const std::vector<T> &x, const Dim dim) { return concat(x, dim); },
+      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_fold(pybind11::module &mod) {
