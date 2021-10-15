@@ -181,6 +181,13 @@ Sizes concatenate(const Sizes &a, const Sizes &b, const Dim dim) {
   return out;
 }
 
+Sizes concat(const scipp::span<const Sizes> sizes, const Dim dim) {
+  auto out = sizes.front();
+  for (scipp::index i = 1; i < scipp::size(sizes); ++i)
+    out = concatenate(out, sizes[i], dim);
+  return out;
+}
+
 Sizes merge(const Sizes &a, const Sizes &b) {
   auto out(a);
   for (const auto &dim : b)

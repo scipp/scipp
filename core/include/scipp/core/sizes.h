@@ -88,6 +88,8 @@ public:
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes concatenate(const Sizes &a,
                                                   const Sizes &b,
                                                   const Dim dim);
+[[nodiscard]] SCIPP_CORE_EXPORT Sizes
+concat(const scipp::span<const Sizes> sizes, const Dim dim);
 
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes merge(const Sizes &a, const Sizes &b);
 
