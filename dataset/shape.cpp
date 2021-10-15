@@ -57,10 +57,6 @@ bool all_is_edges(const T &maps, const Key &key, const Dim dim) {
     return is_edges(var.sizes(), var[key].dims(), dim);
   });
 }
-template <class T> bool all_equal(const T &vars) {
-  return std::all_of(vars.begin(), vars.end(),
-                     [&](auto &var) { return var == vars.front(); });
-}
 template <class T, class Key>
 auto broadcast_along_dim(const T &maps, const Key &key, const Dim dim) {
   std::vector<Variable> vars;
@@ -95,10 +91,10 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
         out.emplace(key, join_edges(vars, dim));
       }
     } else {
-      // 1D coord is kept only if both inputs have matching 1D coords.
-      if (std::any_of(vars.begin(), vars.end(),
-                      [dim](auto &var) { return var.dims().contains(dim); }) ||
-          !all_equal(vars)) {
+      // 1D coord is kept only if all inputs have matching 1D coords.
+      if (std::any_of(vars.begin(), vars.end(), [dim, &vars](auto &var) {
+            return var.dims().contains(dim) || var != vars.front();
+          })) {
         // Mismatching 1D coords must be broadcast to ensure new coord shape
         // matches new data shape.
         out.emplace(key, concat(broadcast_along_dim(maps, key, dim), dim));
