@@ -9,12 +9,6 @@
 
 namespace scipp::dataset {
 
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray concatenate(const DataArray &a,
-                                                         const DataArray &b,
-                                                         const Dim dim);
-[[nodiscard]] SCIPP_DATASET_EXPORT Dataset concatenate(const Dataset &a,
-                                                       const Dataset &b,
-                                                       const Dim dim);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 concat(const scipp::span<const DataArray> das, const Dim dim);
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset

@@ -14,6 +14,10 @@
 using namespace scipp;
 using namespace scipp::dataset;
 
+template <class T> auto concat2(const T &a, const T &b, const Dim dim) {
+  return concat(std::vector{a, b}, dim);
+}
+
 class Concatenate1DTest : public ::testing::Test {
 protected:
   Concatenate1DTest() {
@@ -45,7 +49,7 @@ protected:
 };
 
 TEST_F(Concatenate1DTest, simple_1d) {
-  const auto d = concatenate(a, b, Dim::X);
+  const auto d = concat2(a, b, Dim::X);
 
   EXPECT_EQ(d.coords()[Dim::X], makeVariable<int>(Dims{Dim::X}, Shape{6},
                                                   Values{1, 2, 3, 4, 5, 6}));
@@ -61,31 +65,27 @@ TEST_F(Concatenate1DTest, simple_1d) {
 }
 
 TEST_F(Concatenate1DTest, slices_of_1d) {
-  EXPECT_EQ(concatenate(a.slice({Dim::X, 0}), a.slice({Dim::X, 1}), Dim::X),
+  EXPECT_EQ(concat2(a.slice({Dim::X, 0}), a.slice({Dim::X, 1}), Dim::X),
             a.slice({Dim::X, 0, 2}));
-  EXPECT_EQ(concatenate(a.slice({Dim::X, 0, 2}), a.slice({Dim::X, 2}), Dim::X),
-            a);
-  EXPECT_EQ(concatenate(a.slice({Dim::X, 0}), a.slice({Dim::X, 1, 3}), Dim::X),
-            a);
+  EXPECT_EQ(concat2(a.slice({Dim::X, 0, 2}), a.slice({Dim::X, 2}), Dim::X), a);
+  EXPECT_EQ(concat2(a.slice({Dim::X, 0}), a.slice({Dim::X, 1, 3}), Dim::X), a);
 }
 
 TEST_F(Concatenate1DTest, to_2d_with_0d_coord) {
   a.setCoord(Dim("label_0d"), makeVariable<int>(Values{1}));
   b.setCoord(Dim("label_0d"), makeVariable<int>(Values{2}));
-  const auto ab = concatenate(a, b, Dim::Y);
+  const auto ab = concat2(a, b, Dim::Y);
   EXPECT_EQ(ab["data_1"].data(),
-            concatenate(a["data_1"].data(), b["data_1"].data(), Dim::Y));
-  const auto aba = concatenate(ab, a, Dim::Y);
-  EXPECT_EQ(
-      aba["data_1"].data(),
-      concatenate(concatenate(a["data_1"].data(), b["data_1"].data(), Dim::Y),
-                  a["data_1"].data(), Dim::Y));
-  const auto aab = concatenate(a, ab, Dim::Y);
-  EXPECT_EQ(
-      aab["data_1"].data(),
-      concatenate(a["data_1"].data(),
-                  concatenate(a["data_1"].data(), b["data_1"].data(), Dim::Y),
-                  Dim::Y));
+            concat2(a["data_1"].data(), b["data_1"].data(), Dim::Y));
+  const auto aba = concat2(ab, a, Dim::Y);
+  EXPECT_EQ(aba["data_1"].data(),
+            concat2(concat2(a["data_1"].data(), b["data_1"].data(), Dim::Y),
+                    a["data_1"].data(), Dim::Y));
+  const auto aab = concat2(a, ab, Dim::Y);
+  EXPECT_EQ(aab["data_1"].data(),
+            concat2(a["data_1"].data(),
+                    concat2(a["data_1"].data(), b["data_1"].data(), Dim::Y),
+                    Dim::Y));
 }
 
 class Concatenate1DHistogramTest : public ::testing::Test {
@@ -137,16 +137,14 @@ TEST_F(Concatenate1DHistogramTest, simple_1d) {
       "masks", makeVariable<bool>(Dims{Dim::X}, Shape{4},
                                   Values{false, true, false, true}));
 
-  EXPECT_EQ(concatenate(a, b, Dim::X), expected);
+  EXPECT_EQ(concat2(a, b, Dim::X), expected);
 }
 
 TEST_F(Concatenate1DHistogramTest, slices_of_1d) {
-  EXPECT_EQ(concatenate(a.slice({Dim::X, 0}), a.slice({Dim::X, 1}), Dim::X),
+  EXPECT_EQ(concat2(a.slice({Dim::X, 0}), a.slice({Dim::X, 1}), Dim::X),
             a.slice({Dim::X, 0, 2}));
-  EXPECT_EQ(concatenate(a.slice({Dim::X, 0}), a.slice({Dim::X, 1, 2}), Dim::X),
-            a);
-  EXPECT_EQ(concatenate(a.slice({Dim::X, 0, 1}), a.slice({Dim::X, 1}), Dim::X),
-            a);
+  EXPECT_EQ(concat2(a.slice({Dim::X, 0}), a.slice({Dim::X, 1, 2}), Dim::X), a);
+  EXPECT_EQ(concat2(a.slice({Dim::X, 0, 1}), a.slice({Dim::X, 1}), Dim::X), a);
 }
 
 TEST(ConcatenateTest, fail_when_histograms_have_non_overlapping_bins) {
@@ -162,7 +160,7 @@ TEST(ConcatenateTest, fail_when_histograms_have_non_overlapping_bins) {
   b.setCoord(Dim::X,
              makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6}));
 
-  EXPECT_THROW_DISCARD(concatenate(a, b, Dim::X), except::VariableError);
+  EXPECT_THROW_DISCARD(concat2(a, b, Dim::X), except::VariableError);
 }
 
 TEST(ConcatenateTest, fail_mixing_point_data_and_histogram) {
@@ -174,7 +172,7 @@ TEST(ConcatenateTest, fail_mixing_point_data_and_histogram) {
   histogram.setData("data_1", makeVariable<int>(Dims{Dim::X}, Shape{2}));
   histogram.setCoord(Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}));
 
-  EXPECT_THROW_DISCARD(concatenate(pointData, histogram, Dim::X),
+  EXPECT_THROW_DISCARD(concat2(pointData, histogram, Dim::X),
                        except::BinEdgeError);
 }
 
@@ -191,7 +189,7 @@ TEST(ConcatenateTest, identical_non_dependant_data_is_copied) {
   b.setCoord(Dim::X, axis);
   b.setData("data_1", data);
 
-  const auto d = concatenate(a, b, Dim::Y);
+  const auto d = concat2(a, b, Dim::Y);
 
   EXPECT_EQ(d.coords()[Dim::X], axis);
   EXPECT_EQ(d["data_1"].data(), data);
@@ -210,7 +208,7 @@ TEST(ConcatenateTest, non_dependant_data_is_stacked) {
   b.setData("data_1",
             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{14, 15, 16}));
 
-  const auto d = concatenate(a, b, Dim::Y);
+  const auto d = concat2(a, b, Dim::Y);
 
   EXPECT_EQ(d["data_1"].data(),
             makeVariable<int>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
@@ -248,9 +246,9 @@ TEST(ConcatenateTest, concat_2d_coord) {
       "mask_1",
       makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
 
-  const auto ab = concatenate(a, b, Dim::Y);
-  const auto ba = concatenate(b, a, Dim::Y);
-  const auto abba = concatenate(ab, ba, Dim::Y);
+  const auto ab = concat2(a, b, Dim::Y);
+  const auto ba = concat2(b, a, Dim::Y);
+  const auto abba = concat2(ab, ba, Dim::Y);
 
   EXPECT_EQ(abba, expected);
 }
@@ -261,9 +259,8 @@ TEST(ConcatenateTest, dataset_with_no_data_items) {
               makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}));
   ds.setCoord(Dim("points"), makeVariable<double>(Dims{Dim::X}, Shape{4},
                                                   Values{.1, .2, .3, .4}));
-  EXPECT_EQ(
-      concatenate(ds.slice({Dim::X, 0, 2}), ds.slice({Dim::X, 2, 4}), Dim::X),
-      ds);
+  EXPECT_EQ(concat2(ds.slice({Dim::X, 0, 2}), ds.slice({Dim::X, 2, 4}), Dim::X),
+            ds);
 }
 
 TEST(ConcatenateTest, dataset_with_no_data_items_histogram) {
@@ -272,9 +269,8 @@ TEST(ConcatenateTest, dataset_with_no_data_items_histogram) {
                                                      Values{.1, .2, .3, .4}));
   ds.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{5},
                                            Values{1, 2, 3, 4, 5}));
-  EXPECT_EQ(
-      concatenate(ds.slice({Dim::X, 0, 2}), ds.slice({Dim::X, 2, 4}), Dim::X),
-      ds);
+  EXPECT_EQ(concat2(ds.slice({Dim::X, 0, 2}), ds.slice({Dim::X, 2, 4}), Dim::X),
+            ds);
 }
 
 TEST(ConcatenateTest, broadcast_coord) {
@@ -282,12 +278,12 @@ TEST(ConcatenateTest, broadcast_coord) {
   DataArray b(makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 3}),
               {{Dim::X, 2.0 * units::one}});
   EXPECT_EQ(
-      concatenate(a, b, Dim::X),
+      concat2(a, b, Dim::X),
       DataArray(makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}),
                 {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
                                                Values{1, 2, 2})}}));
   EXPECT_EQ(
-      concatenate(b, a, Dim::X),
+      concat2(b, a, Dim::X),
       DataArray(makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2, 3, 1}),
                 {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
                                                Values{2, 2, 1})}}));
@@ -313,28 +309,28 @@ TEST_F(ConcatenateBinnedTest, mismatching_buffer) {
         DataArray(data, {{Dim::Y, data + data}, {Dim::X, data + data}}),
         DataArray(data, {})}) {
     auto var2 = make_bins(indices, Dim::Event, buffer2);
-    EXPECT_THROW_DISCARD(concatenate(var, var2, Dim::X), std::runtime_error);
-    EXPECT_THROW_DISCARD(concatenate(var, var2, Dim::Y), std::runtime_error);
-    EXPECT_THROW_DISCARD(concatenate(var2, var, Dim::X), std::runtime_error);
-    EXPECT_THROW_DISCARD(concatenate(var2, var, Dim::Y), std::runtime_error);
+    EXPECT_THROW_DISCARD(concat2(var, var2, Dim::X), std::runtime_error);
+    EXPECT_THROW_DISCARD(concat2(var, var2, Dim::Y), std::runtime_error);
+    EXPECT_THROW_DISCARD(concat2(var2, var, Dim::X), std::runtime_error);
+    EXPECT_THROW_DISCARD(concat2(var2, var, Dim::Y), std::runtime_error);
   }
 }
 
 TEST_F(ConcatenateBinnedTest, existing_dim) {
-  auto out = concatenate(var, var, Dim::X);
+  auto out = concat2(var, var, Dim::X);
   EXPECT_EQ(out.slice({Dim::X, 0, 2}), var);
   EXPECT_EQ(out.slice({Dim::X, 2, 4}), var);
-  out = concatenate(var + 1.2 * units::one, out, Dim::X);
+  out = concat2(var + 1.2 * units::one, out, Dim::X);
   EXPECT_EQ(out.slice({Dim::X, 0, 2}), var + 1.2 * units::one);
   EXPECT_EQ(out.slice({Dim::X, 2, 4}), var);
   EXPECT_EQ(out.slice({Dim::X, 4, 6}), var);
 }
 
 TEST_F(ConcatenateBinnedTest, new_dim) {
-  auto out = concatenate(var, var, Dim::Y);
+  auto out = concat2(var, var, Dim::Y);
   EXPECT_EQ(out.slice({Dim::Y, 0}), var);
   EXPECT_EQ(out.slice({Dim::Y, 1}), var);
-  out = concatenate(var + 1.2 * units::one, out, Dim::Y);
+  out = concat2(var + 1.2 * units::one, out, Dim::Y);
   EXPECT_EQ(out.slice({Dim::Y, 0}), var + 1.2 * units::one);
   EXPECT_EQ(out.slice({Dim::Y, 1}), var);
   EXPECT_EQ(out.slice({Dim::Y, 2}), var);
@@ -345,7 +341,7 @@ TEST_F(ConcatenateBinnedTest, empty_bins) {
       makeVariable<scipp::index_pair>(Dims{Dim::X}, Shape{0});
   const Variable empty = make_bins(empty_indices, Dim::Event, buffer);
 
-  EXPECT_EQ(concatenate(empty, empty, Dim::X), empty);
-  EXPECT_EQ(concatenate(empty, var, Dim::X), var);
-  EXPECT_EQ(concatenate(var, empty, Dim::X), var);
+  EXPECT_EQ(concat2(empty, empty, Dim::X), empty);
+  EXPECT_EQ(concat2(empty, var, Dim::X), var);
+  EXPECT_EQ(concat2(var, empty, Dim::X), var);
 }

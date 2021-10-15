@@ -475,8 +475,8 @@ TEST_F(GroupbyWithBinsTest, two_bin) {
     return data;
   };
 
-  auto group0 =
-      concatenate(d.slice({Dim::X, 0, 2}), d.slice({Dim::X, 4, 5}), Dim::X);
+  auto group0 = concat(
+      std::vector{d.slice({Dim::X, 0, 2}), d.slice({Dim::X, 4, 5})}, Dim::X);
   EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 0}),
             add_bins(sum(group0, Dim::X), 0));
   EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 0}),
