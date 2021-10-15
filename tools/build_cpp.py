@@ -77,6 +77,11 @@ def main(*,
         scripts = os.path.join(os.environ.get('CONDA_PREFIX'), 'Scripts')
         if caching and os.path.exists(os.path.join(scripts, 'clcache.exe')):
             cmake_flags.update({'-DCLCACHE_PATH': scripts})
+        cmake_flags['-CMAKE_CXX_COMPILER'] = os.path.join(
+            'C:', os.sep, 'Program Files (x86)', 'Microsoft Visual Studio', '2019',
+            'Enterprise', 'VC', 'Tools', 'MSVC', '14.29.30133', 'bin', 'Hostx64', 'x64',
+            'cl.exe')
+        cmake_flags['-DMSVC_TOOLSET_VERSION'] = '142'
         shell = True
         build_config = 'Release'
         # cmake --build --parallel is detrimental to build performance on
@@ -103,14 +108,7 @@ def main(*,
     os.chdir(build_dir)
 
     # Run cmake
-    cmake = ['cmake']
-    if platform == 'win32':
-        cmake = [
-            os.path.join('C:', os.sep, 'Program Files (x86)', 'Microsoft Visual Studio',
-                         '2019', 'Enterprise', 'VC', 'Auxiliary', 'Build',
-                         'vcvarsall.bat'), 'x86\ncmake'
-        ]
-    run_command(cmake + flags_list + [source_dir], shell=shell)
+    run_command(['cmake'] + flags_list + [source_dir], shell=shell)
 
     # Show cmake settings
     run_command(['cmake', '-B', '.', '-S', source_dir, '-LA'], shell=shell)
