@@ -77,7 +77,7 @@ def main(*,
         scripts = os.path.join(os.environ.get('CONDA_PREFIX'), 'Scripts')
         if caching and os.path.exists(os.path.join(scripts, 'clcache.exe')):
             cmake_flags.update({'-DCLCACHE_PATH': scripts})
-        cmake_flags['-CMAKE_CXX_COMPILER'] = os.path.join(
+        cmake_flags['-DCMAKE_CXX_COMPILER'] = os.path.join(
             'C:', os.sep, 'Program Files (x86)', 'Microsoft Visual Studio', '2019',
             'Enterprise', 'VC', 'Tools', 'MSVC', '14.29.30133', 'bin', 'Hostx64', 'x64',
             'cl.exe')
