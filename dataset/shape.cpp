@@ -32,17 +32,17 @@ Variable join_edges(const View &a, const View &b, const Dim dim) {
 }
 
 namespace {
-template <class T1, class T2, class DimT>
-auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
-            const DimT &dimsB) {
+template <class T1, class T2>
+auto concat(const T1 &a, const T2 &b, const Dim dim) {
   std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
   for (const auto &[key, a_] : a) {
     if (a.dim_of(key) == dim) {
-      if (is_edges(dimsA, a_.dims(), dim) !=
-          is_edges(dimsB, b[key].dims(), dim)) {
+      if (is_edges(a.sizes(), a_.dims(), dim) !=
+          is_edges(b.sizes(), b[key].dims(), dim)) {
         throw except::BinEdgeError(
             "Either both or neither of the inputs must be bin edges.");
-      } else if (a_.dims()[dim] == (dimsA.contains(dim) ? dimsA.at(dim) : 1)) {
+      } else if (a_.dims()[dim] ==
+                 (a.sizes().contains(dim) ? a.sizes().at(dim) : 1)) {
         out.emplace(key, concatenate(a_, b[key], dim));
       } else {
         out.emplace(key, join_edges(a_, b[key], dim));
@@ -56,12 +56,12 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
         out.emplace(
             key,
             concatenate(
-                broadcast(a_, merge(dimsA.contains(dim)
-                                        ? Dimensions(dim, dimsA.at(dim))
+                broadcast(a_, merge(a.sizes().contains(dim)
+                                        ? Dimensions(dim, a.sizes().at(dim))
                                         : Dimensions(),
                                     a_.dims())),
-                broadcast(b[key], merge(dimsB.contains(dim)
-                                            ? Dimensions(dim, dimsB.at(dim))
+                broadcast(b[key], merge(b.sizes().contains(dim)
+                                            ? Dimensions(dim, b.sizes().at(dim))
                                             : Dimensions(),
                                         b[key].dims())),
                 dim));
@@ -75,9 +75,8 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
 
 DataArray concatenate(const DataArray &a, const DataArray &b, const Dim dim) {
   auto out = DataArray(concatenate(a.data(), b.data(), dim), {},
-                       concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
-  for (auto &&[d, coord] :
-       concat(a.meta(), b.meta(), dim, a.dims(), b.dims())) {
+                       concat(a.masks(), b.masks(), dim));
+  for (auto &&[d, coord] : concat(a.meta(), b.meta(), dim)) {
     if (d == dim || a.coords().contains(d) || b.coords().contains(d))
       out.coords().set(d, std::move(coord));
     else
@@ -96,9 +95,8 @@ Dataset concatenate(const Dataset &a, const Dataset &b, const Dim dim) {
   // range slice of thickness 1.
   Dataset result;
   if (a.empty())
-    result.setCoords(
-        Coords(concatenate(a.sizes(), b.sizes(), dim),
-               concat(a.coords(), b.coords(), dim, a.sizes(), b.sizes())));
+    result.setCoords(Coords(concatenate(a.sizes(), b.sizes(), dim),
+                            concat(a.coords(), b.coords(), dim)));
   for (const auto &item : a)
     if (b.contains(item.name())) {
       if (!item.dims().contains(dim) && item == b[item.name()])
