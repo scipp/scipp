@@ -176,6 +176,7 @@ if(NOT WIN32)
     -Wcast-qual
     -Wcast-align
     -Werror=attributes
+    -Werror=maybe-uninitialized
     -Werror=return-type
   )
   add_compile_options(

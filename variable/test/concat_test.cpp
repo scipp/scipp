@@ -21,6 +21,51 @@ TEST_F(ConcatTest, new_dim) {
       base);
 }
 
+TEST_F(ConcatTest, new_dim_strided_inputs) {
+  EXPECT_EQ(
+      concat(std::vector{base.slice({Dim::Y, 0}), base.slice({Dim::Y, 1})},
+             Dim::Y),
+      transpose(base));
+}
+
+TEST_F(ConcatTest, existing_outer_dim) {
+  auto expected = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 2},
+                                       Values{1, 2, 3, 4, 2, 4, 6, 8});
+  EXPECT_EQ(concat(std::vector{base, base + base}, Dim::X), expected);
+}
+
+TEST_F(ConcatTest, existing_inner_dim) {
+  auto expected = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 4},
+                                       Values{1, 2, 2, 4, 3, 4, 6, 8});
+  EXPECT_EQ(concat(std::vector{base, base + base}, Dim::Y), expected);
+}
+
+TEST_F(ConcatTest, existing_outer_transposed_other) {
+  auto expected = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 2},
+                                       Values{1, 2, 3, 4, 1, 2, 3, 4});
+  EXPECT_EQ(concat(std::vector{base, copy(transpose(base))}, Dim::X), expected);
+}
+
+TEST_F(ConcatTest, existing_inner_transposed_other) {
+  auto expected = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 4},
+                                       Values{1, 2, 1, 2, 3, 4, 3, 4});
+  EXPECT_EQ(concat(std::vector{base, copy(transpose(base))}, Dim::Y), expected);
+}
+
+TEST_F(ConcatTest, existing_outer_dim_and_new_dim) {
+  auto expected = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
+                                       Values{1, 2, 3, 4, 3, 4});
+  EXPECT_EQ(concat(std::vector{base, base.slice({Dim::X, 1})}, Dim::X),
+            expected);
+}
+
+TEST_F(ConcatTest, new_dim_and_existing_outer_dim) {
+  auto expected = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
+                                       Values{3, 4, 1, 2, 3, 4});
+  EXPECT_EQ(concat(std::vector{base.slice({Dim::X, 1}), base}, Dim::X),
+            expected);
+}
+
 TEST(ConcatenateTest, concatenate) {
   Dimensions dims(Dim::X, 1);
   auto a = makeVariable<double>(Dimensions(dims), Values{1.0});
