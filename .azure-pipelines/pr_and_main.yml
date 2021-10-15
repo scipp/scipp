@@ -14,7 +14,7 @@ resources:
     name: scipp/pipelines
     type: github
     endpoint: scipp
-    ref: main  # TODO: change to refs/tags/2.0.0 once new tag is created in pipelines repo
+    ref: refs/tags/2.0.0
 
 trigger:
   - main

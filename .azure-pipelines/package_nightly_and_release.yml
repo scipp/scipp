@@ -14,7 +14,7 @@ resources:
     name: scipp/pipelines
     type: github
     endpoint: scipp
-    ref: main  # TODO: change to refs/tags/2.0.0 once new tag is created in pipelines repo
+    ref: refs/tags/2.0.0
 
 trigger:
   tags:
@@ -30,13 +30,7 @@ schedules:
     always: false
 
 
-#TODO turn of PR package builds once working
-#pr: none
-pr:
-  autoCancel: true
-  branches:
-    include:
-      - '*'
+pr: none
 
 
 extends:
@@ -45,19 +39,16 @@ extends:
     verbose: ${{ parameters.verbose }}
     config:
       linux:
-        py_versions: ['3.7']
-        #py_versions: ['3.7', '3.8', '3.9']
+        py_versions: ['3.7', '3.8', '3.9']
         conda_env: 'scipp-developer.yml'
       osx:
-        py_versions: ['3.7']
-        #py_versions: ['3.7', '3.8', '3.9']
+        py_versions: ['3.7', '3.8', '3.9']
         conda_env: 'scipp-developer-minimal.yml'
       windows:
-        py_versions: ['3.7']
-        #py_versions: ['3.7', '3.8', '3.9']
+        py_versions: ['3.7', '3.8', '3.9']
         conda_env: 'scipp-developer-minimal.yml'
     package: true
-    deploy: false  # TODO turn back to true when PR builds disabled
+    deploy: true
     ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:  # nightly
       conda_label: 'dev'
     ${{ if ne(variables['Build.SourceBranchName'], 'main') }}:  # tagged release
