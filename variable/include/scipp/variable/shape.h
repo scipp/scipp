@@ -13,6 +13,8 @@ namespace scipp::variable {
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable broadcast(const Variable &var,
                                                        const Dimensions &dims);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+concat(const scipp::span<const Variable> vars, const Dim dim);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable concatenate(const Variable &a1,
                                                          const Variable &a2,
                                                          const Dim dim);

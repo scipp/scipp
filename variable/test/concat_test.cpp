@@ -8,6 +8,19 @@
 
 using namespace scipp;
 
+class ConcatTest : public ::testing::Test {
+protected:
+  Variable base = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                       Values{1, 2, 3, 4});
+};
+
+TEST_F(ConcatTest, new_dim) {
+  EXPECT_EQ(
+      concat(std::vector{base.slice({Dim::X, 0}), base.slice({Dim::X, 1})},
+             Dim::X),
+      base);
+}
+
 TEST(ConcatenateTest, concatenate) {
   Dimensions dims(Dim::X, 1);
   auto a = makeVariable<double>(Dimensions(dims), Values{1.0});

@@ -2,6 +2,8 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <algorithm>
+
 #include "scipp/core/dimensions.h"
 
 #include "scipp/variable/arithmetic.h"
@@ -82,6 +84,40 @@ Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
   out.data().copy(a1, out.slice({dim, 0, extent1}));
   out.data().copy(a2, out.slice({dim, extent1, extent1 + extent2}));
 
+  return out;
+}
+
+Variable concat(const scipp::span<const Variable> vars, const Dim dim) {
+  const auto it =
+      std::find_if(vars.begin(), vars.end(),
+                   [dim](const auto &var) { return var.dims().contains(dim); });
+  Dimensions dims;
+  // Expand dims for inputs that do not contain dim already. Favor order given
+  // by first input, if not found add as outer dim.
+  if (it == vars.end()) {
+    dims = vars.front().dims();
+    dims.add(dim, 1);
+  } else {
+    dims = it->dims();
+    dims.resize(dim, 1);
+  }
+  std::vector<Variable> tmp;
+  scipp::index size = 0;
+  for (const auto &var : vars) {
+    if (var.dims().contains(dim))
+      tmp.emplace_back(var);
+    else
+      tmp.emplace_back(broadcast(var, dims));
+    size += tmp.back().dims()[dim];
+  }
+  dims.resize(dim, size);
+  auto out = empty_like(vars.front(), dims);
+  scipp::index offset = 0;
+  for (const auto &var : tmp) {
+    const auto extent = var.dims()[dim];
+    out.data().copy(var, out.slice({dim, offset, offset + extent}));
+    offset += extent;
+  }
   return out;
 }
 
