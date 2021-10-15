@@ -72,7 +72,7 @@ from .counts import counts_to_density, density_to_counts
 from .cumulative import cumsum
 from .dataset import combine_masks, merge
 from .groupby import groupby
-from .math import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil
+from .math import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc
 from .operations import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where
 from .reduction import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
 from .shape import broadcast, concat, concatenate, fold, flatten, transpose
