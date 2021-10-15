@@ -83,7 +83,7 @@ TEST(SumPrecisionTest, sum_float) {
   const float init = 100000000.0;
   scipp::index N = 100;
   Variable var = broadcast(makeVariable<float>(Values{1.0}), {{Dim::X}, {N}});
-  var = concatenate(makeVariable<float>(Values{init}), var, Dim::X);
+  var = concat(std::vector{makeVariable<float>(Values{init}), var}, Dim::X);
   EXPECT_EQ(sum(var, Dim::X), makeVariable<float>(Values{init + N * 1.0}));
   for (scipp::index i = 1; i < N; i += 2)
     var.values<float>()[i] = NAN;

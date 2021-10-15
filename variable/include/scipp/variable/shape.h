@@ -15,9 +15,6 @@ namespace scipp::variable {
                                                        const Dimensions &dims);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 concat(const scipp::span<const Variable> vars, const Dim dim);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable concatenate(const Variable &a1,
-                                                         const Variable &a2,
-                                                         const Dim dim);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 resize(const Variable &var, const Dim dim, const scipp::index size,
        const FillValue fill = FillValue::Default);

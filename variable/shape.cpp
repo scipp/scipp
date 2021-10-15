@@ -22,10 +22,6 @@ Variable broadcast(const Variable &var, const Dimensions &dims) {
   return var.broadcast(dims);
 }
 
-Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
-  return concat(std::vector{a1, a2}, dim);
-}
-
 namespace {
 constexpr auto bin_sizes = [](const auto &ranges) {
   const auto [begin, end] = unzip(ranges);
