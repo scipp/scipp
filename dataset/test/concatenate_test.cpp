@@ -88,6 +88,19 @@ TEST_F(Concatenate1DTest, to_2d_with_0d_coord) {
                     Dim::Y));
 }
 
+TEST_F(Concatenate1DTest, sharing) {
+  auto da1 = copy(a["data_1"]);
+  auto da2 = copy(b["data_1"]);
+  da2.coords().set(Dim::X, da1.coords()[Dim::X]);
+  const auto out = concat2(da1, da2, Dim::Y);
+  // Coords may be shared
+  EXPECT_EQ(out.coords()[Dim::X], da1.coords()[Dim::X]);
+  EXPECT_TRUE(out.coords()[Dim::X].is_same(da1.coords()[Dim::X]));
+  // Masks are copied, just like in binary operations
+  EXPECT_EQ(out.masks()["mask_1"], da1.masks()["mask_1"]);
+  EXPECT_FALSE(out.masks()["mask_1"].is_same(da1.masks()["mask_1"]));
+}
+
 class Concatenate1DHistogramTest : public ::testing::Test {
 protected:
   Concatenate1DHistogramTest() {
