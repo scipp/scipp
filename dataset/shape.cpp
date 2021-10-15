@@ -99,7 +99,10 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
         // matches new data shape.
         out.emplace(key, concat(broadcast_along_dim(maps, key, dim), dim));
       } else {
-        out.emplace(key, a_);
+        if constexpr (std::is_same_v<T, Masks>)
+          out.emplace(key, copy(a_));
+        else
+          out.emplace(key, a_);
       }
     }
   }

@@ -592,9 +592,9 @@ TEST_F(GroupbyBinnedTest, concatenate_data_array) {
 
 TEST_F(GroupbyBinnedTest, concatenate_by_attr) {
   const auto key = Dim("labels");
-  const auto grouped_coord = groupby(a, key).concatenate(Dim::Y);
+  const auto grouped_coord = groupby(a, key).concat(Dim::Y);
   a.attrs().set(key, a.coords().extract(key));
-  const auto grouped_attr = groupby(a, key).concatenate(Dim::Y);
+  const auto grouped_attr = groupby(a, key).concat(Dim::Y);
   EXPECT_EQ(grouped_coord, grouped_attr);
 }
 
