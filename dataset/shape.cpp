@@ -25,10 +25,19 @@ template <class T> T same(const T &a, const T &b) {
 ///
 /// Checks that the last edges in `a` match the first edges in `b`. The
 /// Concatenates the input edges, removing duplicate bin edges.
-template <class View>
-Variable join_edges(const View &a, const View &b, const Dim dim) {
-  core::expect::equals(a.slice({dim, a.dims()[dim] - 1}), b.slice({dim, 0}));
-  return concatenate(a.slice({dim, 0, a.dims()[dim] - 1}), b, dim);
+Variable join_edges(const scipp::span<const Variable> vars, const Dim dim) {
+  std::vector<Variable> tmp;
+  tmp.reserve(vars.size());
+  for (const auto &var : vars) {
+    if (tmp.empty()) {
+      tmp.emplace_back(var);
+    } else {
+      core::expect::equals(tmp.back().slice({dim, tmp.back().dims()[dim] - 1}),
+                           var.slice({dim, 0}));
+      tmp.emplace_back(var.slice({dim, 1, var.dims()[dim]}));
+    }
+  }
+  return concat(tmp, dim);
 }
 
 namespace {
@@ -45,7 +54,7 @@ auto concat(const T1 &a, const T2 &b, const Dim dim) {
                  (a.sizes().contains(dim) ? a.sizes().at(dim) : 1)) {
         out.emplace(key, concatenate(a_, b[key], dim));
       } else {
-        out.emplace(key, join_edges(a_, b[key], dim));
+        out.emplace(key, join_edges(std::vector{a_, b[key]}, dim));
       }
     } else {
       // 1D coord is kept only if both inputs have matching 1D coords.
