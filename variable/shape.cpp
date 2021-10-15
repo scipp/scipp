@@ -23,69 +23,22 @@ Variable broadcast(const Variable &var, const Dimensions &dims) {
 }
 
 Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
-  if (a1.dtype() != a2.dtype())
-    throw except::TypeError(
-        "Cannot concatenate Variables: Data types do not match.");
-  if (a1.unit() != a2.unit())
-    throw except::UnitError(
-        "Cannot concatenate Variables: Units do not match.");
-
-  const auto &dims1 = a1.dims();
-  const auto &dims2 = a2.dims();
-  // TODO Many things in this function should be refactored and moved in class
-  // Dimensions.
-  for (const auto &dim1 : dims1.labels()) {
-    if (dim1 != dim) {
-      if (!dims2.contains(dim1))
-        throw except::DimensionError(
-            "Cannot concatenate Variables: Dimensions do not match.");
-      if (dims2[dim1] != dims1[dim1])
-        throw except::DimensionError(
-            "Cannot concatenate Variables: Dimension extents do not match.");
-    }
-  }
-  auto size1 = dims1.shape().size();
-  auto size2 = dims2.shape().size();
-  if (dims1.contains(dim))
-    size1--;
-  if (dims2.contains(dim))
-    size2--;
-  // This check covers the case of dims2 having extra dimensions not present in
-  // dims1.
-  // TODO Support broadcast of dimensions?
-  if (size1 != size2)
-    throw except::DimensionError(
-        "Cannot concatenate Variables: Dimensions do not match.");
-
-  Variable out;
-  auto dims(dims1);
-  scipp::index extent1 = 1;
-  scipp::index extent2 = 1;
-  if (dims1.contains(dim))
-    extent1 += dims1[dim] - 1;
-  if (dims2.contains(dim))
-    extent2 += dims2[dim] - 1;
-  if (dims.contains(dim))
-    dims.resize(dim, extent1 + extent2);
-  else
-    dims.add(dim, extent1 + extent2);
-  if (is_bins(a1)) {
-    constexpr auto bin_sizes = [](const auto &ranges) {
-      const auto [begin, end] = unzip(ranges);
-      return end - begin;
-    };
-    out = empty_like(a1, {},
-                     concatenate(bin_sizes(a1.bin_indices()),
-                                 bin_sizes(a2.bin_indices()), dim));
-  } else {
-    out = Variable(a1, dims);
-  }
-
-  out.data().copy(a1, out.slice({dim, 0, extent1}));
-  out.data().copy(a2, out.slice({dim, extent1, extent1 + extent2}));
-
-  return out;
+  return concat(std::vector{a1, a2}, dim);
 }
+
+namespace {
+constexpr auto bin_sizes = [](const auto &ranges) {
+  const auto [begin, end] = unzip(ranges);
+  return end - begin;
+};
+auto get_bin_sizes(const scipp::span<const Variable> vars) {
+  std::vector<Variable> sizes;
+  sizes.reserve(vars.size());
+  for (const auto &var : vars)
+    sizes.emplace_back(bin_sizes(var.bin_indices()));
+  return sizes;
+}
+} // namespace
 
 Variable concat(const scipp::span<const Variable> vars, const Dim dim) {
   const auto it =
@@ -111,7 +64,12 @@ Variable concat(const scipp::span<const Variable> vars, const Dim dim) {
     size += tmp.back().dims()[dim];
   }
   dims.resize(dim, size);
-  auto out = empty_like(vars.front(), dims);
+  Variable out;
+  if (is_bins(vars.front())) {
+    out = empty_like(vars.front(), {}, concat(get_bin_sizes(vars), dim));
+  } else {
+    out = empty_like(vars.front(), dims);
+  }
   scipp::index offset = 0;
   for (const auto &var : tmp) {
     const auto extent = var.dims()[dim];

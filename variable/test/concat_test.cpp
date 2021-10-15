@@ -152,13 +152,9 @@ TEST(ConcatenateTest, concatenate_fail) {
   auto a = makeVariable<double>(Dimensions(dims), Values{1.0});
   auto b = makeVariable<double>(Dimensions(dims), Values{2.0});
   auto c = makeVariable<float>(Dimensions(dims), Values{2.0});
-  EXPECT_THROW_MSG_DISCARD(
-      concatenate(a, c, Dim::X), std::runtime_error,
-      "Cannot concatenate Variables: Data types do not match.");
+  EXPECT_THROW_DISCARD(concatenate(a, c, Dim::X), except::TypeError);
   auto aa = concatenate(a, a, Dim::X);
-  EXPECT_THROW_MSG_DISCARD(
-      concatenate(a, aa, Dim::Y), std::runtime_error,
-      "Cannot concatenate Variables: Dimension extents do not match.");
+  EXPECT_THROW_DISCARD(concatenate(a, aa, Dim::Y), except::NotFoundError);
 }
 
 TEST(ConcatenateTest, concatenate_unit_fail) {
@@ -167,8 +163,7 @@ TEST(ConcatenateTest, concatenate_unit_fail) {
   auto b = copy(a);
   EXPECT_NO_THROW_DISCARD(concatenate(a, b, Dim::X));
   a.setUnit(units::m);
-  EXPECT_THROW_MSG_DISCARD(concatenate(a, b, Dim::X), std::runtime_error,
-                           "Cannot concatenate Variables: Units do not match.");
+  EXPECT_THROW_DISCARD(concatenate(a, b, Dim::X), except::UnitError);
   b.setUnit(units::m);
   EXPECT_NO_THROW_DISCARD(concatenate(a, b, Dim::X));
 }
