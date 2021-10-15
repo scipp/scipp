@@ -116,46 +116,44 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bin_sizes, self._obj)
 
+    def concat(self, dim: Optional[str] = None) -> Union[_cpp.Variable, _cpp.DataArray]:
+        """Concatenate bins element-wise by concatenating bin contents along
+        their internal bin dimension.
+
+        This is a reduction operation similar to :py:func:`scipp.sum` but operates on
+        binned data. Elements (bins) are concatenated along their internal dimension.
+
+        :param dim: Reduction dimension.
+        :return: All bins along `dim` concatenated into a single bin.
+        """
+        if dim is not None:
+            return _call_cpp_func(_cpp.buckets.concatenate, self._obj, dim)
+        raise RuntimeError("Reduction along all dims not supported yet.")
+
     def concatenate(
             self,
-            other: Optional[Union[_cpp.Variable, _cpp.DataArray]] = None,
+            other: Union[_cpp.Variable, _cpp.DataArray],
             *,
-            dim: Optional[str] = None,
             out: Optional[_cpp.DataArray] = None
     ) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Concatenate bins element-wise by concatenating bin contents along
         their internal bin dimension.
 
-        This can be used as a binary operation, or a reduction operation: The
-        bins to concatenate are either obtained element-wise from `self`
-        and `other`, or, if `dim` but not `other` is given, from all bins
-        along the given dimension.
+        The bins to concatenate are obtained element-wise from `self` and `other`.
 
-        :param other: Optional input containing bins.
-        :param dim: Optional dimension along which to merge bins. If not given
-                    and `other` is `None`, the bins are merged along all
-                    dimensions.
+        :param other: Other input containing bins.
         :param out: Optional output buffer.
         :raises: If `other` is not binned data.
         :return: The bins of the two inputs merged.
         """
-        if other is not None and dim is not None:
-            raise RuntimeError(
-                "`concatenate` requires `other` or a `dim`, but not both.")
-        if other is not None:
-            if out is None:
-                return _call_cpp_func(_cpp.buckets.concatenate, self._obj, other)
+        if out is None:
+            return _call_cpp_func(_cpp.buckets.concatenate, self._obj, other)
+        else:
+            if self._obj is out:
+                _call_cpp_func(_cpp.buckets.append, self._obj, other)
             else:
-                if self._obj is out:
-                    _call_cpp_func(_cpp.buckets.append, self._obj, other)
-                else:
-                    out = _call_cpp_func(_cpp.buckets.concatenate, self._obj, other)
-                return out
-        if out is not None:
-            raise RuntimeError("`out` arg not supported for concatenate along dim")
-        if dim is not None:
-            return _call_cpp_func(_cpp.buckets.concatenate, self._obj, dim)
-        raise RuntimeError("Reduction along all dims not supported yet.")
+                out = _call_cpp_func(_cpp.buckets.concatenate, self._obj, other)
+            return out
 
 
 class GroupbyBins:
