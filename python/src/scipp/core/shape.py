@@ -88,7 +88,7 @@ def concatenate(x: VariableLike, y: VariableLike, dim: str) -> VariableLike:
     """
     warnings.warn("`concatenate(a, b, dim)` is deprecated; use `concat([a, b,], dim).",
                   DeprecationWarning)
-    return _call_cpp_func(_cpp.concatenate, x, y, dim)
+    return concat([x, y], dim)
 
 
 def fold(x: VariableLike,

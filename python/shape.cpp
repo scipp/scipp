@@ -33,14 +33,7 @@ template <class T> void bind_broadcast(py::module &m) {
       py::arg("x"), py::arg("dims"), py::arg("shape"));
 }
 
-template <class T> void bind_concatenate(py::module &m) {
-  m.def(
-      "concatenate",
-      [](const T &x, const T &y, const Dim dim) {
-        return concatenate(x, y, dim);
-      },
-      py::arg("x"), py::arg("y"), py::arg("dim"),
-      py::call_guard<py::gil_scoped_release>());
+template <class T> void bind_concat(py::module &m) {
   m.def(
       "concat",
       [](const std::vector<T> &x, const Dim dim) { return concat(x, dim); },
@@ -80,9 +73,9 @@ template <class T> void bind_transpose(pybind11::module &mod) {
 
 void init_shape(py::module &m) {
   bind_broadcast<Variable>(m);
-  bind_concatenate<Variable>(m);
-  bind_concatenate<DataArray>(m);
-  bind_concatenate<Dataset>(m);
+  bind_concat<Variable>(m);
+  bind_concat<DataArray>(m);
+  bind_concat<Dataset>(m);
   bind_fold<Variable>(m);
   bind_fold<DataArray>(m);
   bind_flatten<Variable>(m);
