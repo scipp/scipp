@@ -184,6 +184,15 @@ TEST_F(GroupbyTest, array_variable) {
   EXPECT_THROW(groupby(arr, var_bad, bins), except::DimensionError);
 }
 
+TEST_F(GroupbyTest, by_attr) {
+  auto da = copy(d["a"]);
+  const auto key = Dim("labels1");
+  const auto grouped_coord = groupby(da, key).sum(Dim::X);
+  da.attrs().set(key, da.coords().extract(key));
+  const auto grouped_attr = groupby(da, key).sum(Dim::X);
+  EXPECT_EQ(grouped_coord, grouped_attr);
+}
+
 struct GroupbyMaskedTest : public GroupbyTest {
   GroupbyMaskedTest() : GroupbyTest() {
     for (const auto &item : {"a", "b", "c"})
