@@ -127,8 +127,9 @@ DataArray concat(const scipp::span<const DataArray> das, const Dim dim) {
                        concat_maps(get(das, get_masks), dim));
   const auto &coords = get(das, get_coords);
   for (auto &&[d, coord] : concat_maps(get(das, get_meta), dim)) {
+    const auto d_ = d; // OSX cannot capture structured binding
     if (d == dim || std::any_of(coords.begin(), coords.end(),
-                                [&](auto &_) { return _.contains(d); }))
+                                [d_](auto &_) { return _.contains(d_); }))
       out.coords().set(d, std::move(coord));
     else
       out.attrs().set(d, std::move(coord));
