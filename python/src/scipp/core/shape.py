@@ -28,10 +28,6 @@ def broadcast(x: _cpp.Variable, dims: Union[List[str], Tuple[str]],
 
 
 def concat(x: Sequence[VariableLike], dim: str) -> VariableLike:
-    return _call_cpp_func(_cpp.concat, x, dim)
-
-
-def concatenate(x: VariableLike, y: VariableLike, dim: str) -> VariableLike:
     """Concatenate input arrays along the given dimension.
 
     Concatenation can happen in two ways:
@@ -41,29 +37,28 @@ def concatenate(x: VariableLike, y: VariableLike, dim: str) -> VariableLike:
     - Along a new dimension that is not contained in either of the inputs,
       yielding an output with one extra dimensions.
 
-    In the case of a data array or dataset, the coords, and masks are also
+    In the case of a data array or dataset, the coords and masks are also
     concatenated.
-    Coords, and masks for any but the given dimension are required to match
+    Coords and masks for any but the given dimension are required to match
     and are copied to the output without changes.
 
-    :param x: Left hand side input.
-    :param y: Right hand side input.
+    :param x: Sequence of input variables, data arraus, or datasets.
     :param dim: Dimension along which to concatenate.
     :raises: If the dtype or unit does not match, or if the
              dimensions and shapes are incompatible.
-    :return: The absolute values of the input.
+    :return: Concatenation of the inputs.
 
     Examples:
 
       >>> a = sc.arange('x', 3)
       >>> b = 100 * sc.arange('x', 3)
-      >>> c = sc.concatenate(a, b, dim='x')
+      >>> c = sc.concat([a, b], dim='x')
       >>> c
       <scipp.Variable> (x: 6)      int64  [dimensionless]  [0, 1, ..., 100, 200]
       >>> c.values
       array([  0,   1,   2,   0, 100, 200])
 
-      >>> d = sc.concatenate(a, b, dim='y')
+      >>> d = sc.concat([a, b], dim='y')
       >>> d
       <scipp.Variable> (y: 2, x: 3)      int64  [dimensionless]  [0, 1, ..., 100, 200]
       >>> d.values
@@ -72,7 +67,7 @@ def concatenate(x: VariableLike, y: VariableLike, dim: str) -> VariableLike:
        
       >>> x = sc.DataArray(sc.arange('x', 3), coords={'x': sc.arange('x', 3)})
       >>> y = sc.DataArray(100 * sc.arange('x', 3), coords={'x': 100 * sc.arange('x', 3)})
-      >>> z = sc.concatenate(x, y, dim='x')
+      >>> z = sc.concat([x, y], dim='x')
       >>> z
       <scipp.DataArray>
       Dimensions: Sizes[x:6, ]
@@ -82,6 +77,14 @@ def concatenate(x: VariableLike, y: VariableLike, dim: str) -> VariableLike:
                                     int64  [dimensionless]  (x)  [0, 1, ..., 100, 200]
       >>> z.values
       array([  0,   1,   2,   0, 100, 200])
+    """
+    return _call_cpp_func(_cpp.concat, x, dim)
+
+
+def concatenate(x: VariableLike, y: VariableLike, dim: str) -> VariableLike:
+    """Concatenate input arrays along the given dimension.
+
+    This is deprecated and will be removed soon, please use :py:func:`scipp.concat`.
     """
     warnings.warn("`concatenate(a, b, dim)` is deprecated; use `concat([a, b,], dim).",
                   DeprecationWarning)
