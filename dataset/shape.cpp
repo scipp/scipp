@@ -2,8 +2,10 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/variable/shape.h"
+#include <algorithm>
+
 #include "scipp/variable/creation.h"
+#include "scipp/variable/shape.h"
 
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/shape.h"
@@ -41,41 +43,68 @@ Variable join_edges(const scipp::span<const Variable> vars, const Dim dim) {
 }
 
 namespace {
-template <class T1, class T2>
-auto concat(const T1 &a, const T2 &b, const Dim dim) {
-  std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
+template <class T, class Key>
+bool equal_is_edges(const T &maps, const Key &key, const Dim dim) {
+  return std::adjacent_find(maps.begin(), maps.end(),
+                            [&key, dim](auto &a, auto &b) {
+                              return is_edges(a.sizes(), a[key].dims(), dim) !=
+                                     is_edges(b.sizes(), b[key].dims(), dim);
+                            }) == maps.end();
+}
+template <class T, class Key>
+bool all_is_edges(const T &maps, const Key &key, const Dim dim) {
+  return std::all_of(maps.begin(), maps.end(), [&key, dim](auto &var) {
+    return is_edges(var.sizes(), var[key].dims(), dim);
+  });
+}
+template <class T> bool all_equal(const T &vars) {
+  return std::all_of(vars.begin(), vars.end(),
+                     [&](auto &var) { return var == vars.front(); });
+}
+template <class T, class Key>
+auto broadcast_along_dim(const T &maps, const Key &key, const Dim dim) {
+  std::vector<Variable> vars;
+  vars.reserve(maps.size());
+  for (auto &map : maps) {
+    const auto &var = map[key];
+    vars.emplace_back(broadcast(
+        var,
+        merge(Dimensions(dim,
+                         map.sizes().contains(dim) ? map.sizes().at(dim) : 1),
+              var.dims())));
+  }
+  return vars;
+}
+
+template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
+  using T = typename Maps::value_type;
+  std::unordered_map<typename T::key_type, typename T::mapped_type> out;
+  const auto &a = maps.front();
   for (const auto &[key, a_] : a) {
+    std::vector<Variable> vars;
+    vars.reserve(maps.size());
+    for (const auto &map : maps)
+      vars.emplace_back(map[key]);
     if (a.dim_of(key) == dim) {
-      if (is_edges(a.sizes(), a_.dims(), dim) !=
-          is_edges(b.sizes(), b[key].dims(), dim)) {
+      if (!equal_is_edges(maps, key, dim)) {
         throw except::BinEdgeError(
             "Either both or neither of the inputs must be bin edges.");
-      } else if (a_.dims()[dim] ==
-                 (a.sizes().contains(dim) ? a.sizes().at(dim) : 1)) {
-        out.emplace(key, concatenate(a_, b[key], dim));
+      } else if (!all_is_edges(maps, key, dim)) {
+        out.emplace(key, concat(vars, dim));
       } else {
-        out.emplace(key, join_edges(std::vector{a_, b[key]}, dim));
+        out.emplace(key, join_edges(vars, dim));
       }
     } else {
       // 1D coord is kept only if both inputs have matching 1D coords.
-      if (a_.dims().contains(dim) || b[key].dims().contains(dim) ||
-          a_ != b[key])
+      if (std::any_of(vars.begin(), vars.end(),
+                      [dim](auto &var) { return var.dims().contains(dim); }) ||
+          !all_equal(vars)) {
         // Mismatching 1D coords must be broadcast to ensure new coord shape
         // matches new data shape.
-        out.emplace(
-            key,
-            concatenate(
-                broadcast(a_, merge(a.sizes().contains(dim)
-                                        ? Dimensions(dim, a.sizes().at(dim))
-                                        : Dimensions(),
-                                    a_.dims())),
-                broadcast(b[key], merge(b.sizes().contains(dim)
-                                            ? Dimensions(dim, b.sizes().at(dim))
-                                            : Dimensions(),
-                                        b[key].dims())),
-                dim));
-      else
-        out.emplace(key, same(a_, b[key]));
+        out.emplace(key, concat(broadcast_along_dim(maps, key, dim), dim));
+      } else {
+        out.emplace(key, a_);
+      }
     }
   }
   return out;
@@ -83,9 +112,9 @@ auto concat(const T1 &a, const T2 &b, const Dim dim) {
 } // namespace
 
 DataArray concatenate(const DataArray &a, const DataArray &b, const Dim dim) {
-  auto out = DataArray(concatenate(a.data(), b.data(), dim), {},
-                       concat(a.masks(), b.masks(), dim));
-  for (auto &&[d, coord] : concat(a.meta(), b.meta(), dim)) {
+  auto out = DataArray(concat(std::vector{a.data(), b.data()}, dim), {},
+                       concat_maps(std::vector{a.masks(), b.masks()}, dim));
+  for (auto &&[d, coord] : concat_maps(std::vector{a.meta(), b.meta()}, dim)) {
     if (d == dim || a.coords().contains(d) || b.coords().contains(d))
       out.coords().set(d, std::move(coord));
     else
@@ -104,8 +133,9 @@ Dataset concatenate(const Dataset &a, const Dataset &b, const Dim dim) {
   // range slice of thickness 1.
   Dataset result;
   if (a.empty())
-    result.setCoords(Coords(concatenate(a.sizes(), b.sizes(), dim),
-                            concat(a.coords(), b.coords(), dim)));
+    result.setCoords(
+        Coords(concatenate(a.sizes(), b.sizes(), dim),
+               concat_maps(std::vector{a.coords(), b.coords()}, dim)));
   for (const auto &item : a)
     if (b.contains(item.name())) {
       if (!item.dims().contains(dim) && item == b[item.name()])
@@ -115,6 +145,9 @@ Dataset concatenate(const Dataset &a, const Dataset &b, const Dim dim) {
     }
   return result;
 }
+
+DataArray concat(const scipp::span<const DataArray> das, const Dim dim);
+Dataset concat(const scipp::span<const Dataset> dss, const Dim dim);
 
 DataArray resize(const DataArray &a, const Dim dim, const scipp::index size,
                  const FillValue fill) {
