@@ -166,7 +166,11 @@ class GroupbyBins:
         self._obj = obj
 
     def concatenate(self, dim):
-        return self._obj.concatenate(dim)
+        warnings.warn("`concatenate` is deprecated; use `concat`.", DeprecationWarning)
+        return self.concat(dim)
+
+    def concat(self, dim):
+        return self._obj.concat(dim)
 
 
 def _events(obj):
