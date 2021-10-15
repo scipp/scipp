@@ -55,6 +55,7 @@ def main(*,
     # Default cmake flags
     ipo = os.getenv('CMAKE_INTERPROCEDURAL_OPTIMIZATION', 'OFF')
     cmake_flags = {
+        '-G': 'Ninja',
         '-DPython_EXECUTABLE': shutil.which("python"),
         '-DCMAKE_INSTALL_PREFIX': prefix,
         '-DSITE_PACKAGES_DIR': site_packages_dir,
@@ -85,8 +86,6 @@ def main(*,
     else:
         # For other platforms we do want to add the parallel build flag.
         build_flags = [parallel_flag]
-
-    cmake_flags['-G'] = 'Ninja'
 
     if len(build_config) > 0:
         build_flags += ['--config', build_config]
