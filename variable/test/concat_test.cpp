@@ -90,6 +90,19 @@ TEST_F(ConcatTest, new_dim_and_existing_outer_dim) {
             expected);
 }
 
+TEST_F(ConcatTest, single_existing_dim) {
+  auto out = concat(std::vector{base}, Dim::X);
+  EXPECT_EQ(out, base);
+  EXPECT_FALSE(out.is_same(base));
+}
+
+TEST_F(ConcatTest, single_new_dim) {
+  auto out = concat(std::vector{base}, Dim::Z);
+  EXPECT_EQ(out,
+            broadcast(base, Dimensions({Dim::Z, Dim::X, Dim::Y}, {1, 2, 2})));
+  EXPECT_FALSE(out.is_same(base));
+}
+
 TEST_F(ConcatTest, multiple) {
   EXPECT_EQ(concat(std::vector{base, base, base}, Dim::Z),
             broadcast(base, Dimensions({Dim::Z, Dim::X, Dim::Y}, {3, 2, 2})));
