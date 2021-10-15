@@ -175,16 +175,18 @@ Sizes Sizes::slice(const Slice &params) const {
   return sliced;
 }
 
-Sizes concatenate(const Sizes &a, const Sizes &b, const Dim dim) {
+namespace {
+Sizes concat2(const Sizes &a, const Sizes &b, const Dim dim) {
   Sizes out = a.contains(dim) ? a.slice({dim, 0}) : a;
   out.set(dim, (a.contains(dim) ? a[dim] : 1) + (b.contains(dim) ? b[dim] : 1));
   return out;
 }
+} // namespace
 
 Sizes concat(const scipp::span<const Sizes> sizes, const Dim dim) {
   auto out = sizes.front();
   for (scipp::index i = 1; i < scipp::size(sizes); ++i)
-    out = concatenate(out, sizes[i], dim);
+    out = concat2(out, sizes[i], dim);
   return out;
 }
 
