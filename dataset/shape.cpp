@@ -105,18 +105,24 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
   }
   return out;
 }
+
+template <class T, class Op> auto get(const scipp::span<const T> items, Op op) {
+  std::vector<decltype(op(items.front()))> out;
+  out.reserve(items.size());
+  for (const auto &i : items)
+    out.emplace_back(op(i));
+  return out;
+}
+
+constexpr auto get_data = [](auto &&_) { return _.data(); };
+constexpr auto get_masks = [](auto &&_) { return _.masks(); };
+constexpr auto get_meta = [](auto &&_) { return _.meta(); };
+constexpr auto get_coords = [](auto &&_) { return _.coords(); };
+
 } // namespace
 
 DataArray concatenate(const DataArray &a, const DataArray &b, const Dim dim) {
-  auto out = DataArray(concat(std::vector{a.data(), b.data()}, dim), {},
-                       concat_maps(std::vector{a.masks(), b.masks()}, dim));
-  for (auto &&[d, coord] : concat_maps(std::vector{a.meta(), b.meta()}, dim)) {
-    if (d == dim || a.coords().contains(d) || b.coords().contains(d))
-      out.coords().set(d, std::move(coord));
-    else
-      out.attrs().set(d, std::move(coord));
-  }
-  return out;
+  return concat(std::vector{a, b}, dim);
 }
 
 Dataset concatenate(const Dataset &a, const Dataset &b, const Dim dim) {
@@ -142,7 +148,20 @@ Dataset concatenate(const Dataset &a, const Dataset &b, const Dim dim) {
   return result;
 }
 
-DataArray concat(const scipp::span<const DataArray> das, const Dim dim);
+DataArray concat(const scipp::span<const DataArray> das, const Dim dim) {
+  auto out = DataArray(concat(get(das, get_data), dim), {},
+                       concat_maps(get(das, get_masks), dim));
+  const auto &coords = get(das, get_coords);
+  for (auto &&[d, coord] : concat_maps(get(das, get_meta), dim)) {
+    if (d == dim || std::any_of(coords.begin(), coords.end(),
+                                [d](auto &_) { return _.contains(d); }))
+      out.coords().set(d, std::move(coord));
+    else
+      out.attrs().set(d, std::move(coord));
+  }
+  return out;
+}
+
 Dataset concat(const scipp::span<const Dataset> dss, const Dim dim);
 
 DataArray resize(const DataArray &a, const Dim dim, const scipp::index size,
