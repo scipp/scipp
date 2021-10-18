@@ -17,11 +17,20 @@ using namespace scipp::variable;
 
 namespace scipp::dataset {
 
-/// Return one of the inputs if they are the same, throw otherwise.
-template <class T> T same(const T &a, const T &b) {
-  core::expect::equals(a, b);
-  return a;
+/// Map `op` over `items`, return vector of results
+template <class T, class Op> auto map(const T &items, Op op) {
+  std::vector<decltype(op(items.front()))> out;
+  out.reserve(items.size());
+  for (const auto &i : items)
+    out.emplace_back(op(i));
+  return out;
 }
+
+constexpr auto get_data = [](auto &&_) { return _.data(); };
+constexpr auto get_masks = [](auto &&_) { return _.masks(); };
+constexpr auto get_meta = [](auto &&_) { return _.meta(); };
+constexpr auto get_coords = [](auto &&_) { return _.coords(); };
+constexpr auto get_sizes = [](auto &&_) { return _.sizes(); };
 
 /// Concatenate a and b, assuming that a and b contain bin edges.
 ///
@@ -57,19 +66,16 @@ bool all_is_edges(const T &maps, const Key &key, const Dim dim) {
     return is_edges(var.sizes(), var[key].dims(), dim);
   });
 }
+
 template <class T, class Key>
 auto broadcast_along_dim(const T &maps, const Key &key, const Dim dim) {
-  std::vector<Variable> vars;
-  vars.reserve(maps.size());
-  for (auto &map : maps) {
+  return map(maps, [&key, dim](const auto &map) {
     const auto &var = map[key];
-    vars.emplace_back(broadcast(
-        var,
-        merge(Dimensions(dim,
-                         map.sizes().contains(dim) ? map.sizes().at(dim) : 1),
-              var.dims())));
-  }
-  return vars;
+    return broadcast(var, merge(Dimensions(dim, map.sizes().contains(dim)
+                                                    ? map.sizes().at(dim)
+                                                    : 1),
+                                var.dims()));
+  });
 }
 
 template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
@@ -77,10 +83,7 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
   std::unordered_map<typename T::key_type, typename T::mapped_type> out;
   const auto &a = maps.front();
   for (const auto &[key, a_] : a) {
-    std::vector<Variable> vars;
-    vars.reserve(maps.size());
-    for (const auto &map : maps)
-      vars.emplace_back(map[key]);
+    auto vars = map(maps, [&key](auto &&map) { return map[key]; });
     if (a.dim_of(key) == dim) {
       if (!equal_is_edges(maps, key, dim)) {
         throw except::BinEdgeError(
@@ -109,27 +112,13 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
   return out;
 }
 
-template <class T, class Op> auto get(const scipp::span<const T> items, Op op) {
-  std::vector<decltype(op(items.front()))> out;
-  out.reserve(items.size());
-  for (const auto &i : items)
-    out.emplace_back(op(i));
-  return out;
-}
-
-constexpr auto get_data = [](auto &&_) { return _.data(); };
-constexpr auto get_masks = [](auto &&_) { return _.masks(); };
-constexpr auto get_meta = [](auto &&_) { return _.meta(); };
-constexpr auto get_coords = [](auto &&_) { return _.coords(); };
-constexpr auto get_sizes = [](auto &&_) { return _.sizes(); };
-
 } // namespace
 
 DataArray concat(const scipp::span<const DataArray> das, const Dim dim) {
-  auto out = DataArray(concat(get(das, get_data), dim), {},
-                       concat_maps(get(das, get_masks), dim));
-  const auto &coords = get(das, get_coords);
-  for (auto &&[d, coord] : concat_maps(get(das, get_meta), dim)) {
+  auto out = DataArray(concat(map(das, get_data), dim), {},
+                       concat_maps(map(das, get_masks), dim));
+  const auto &coords = map(das, get_coords);
+  for (auto &&[d, coord] : concat_maps(map(das, get_meta), dim)) {
     const auto d_ = d; // OSX cannot capture structured binding
     if (d == dim || std::any_of(coords.begin(), coords.end(),
                                 [d_](auto &_) { return _.contains(d_); }))
@@ -150,12 +139,12 @@ Dataset concat(const scipp::span<const Dataset> dss, const Dim dim) {
   // range slice of thickness 1.
   Dataset result;
   if (dss.front().empty())
-    result.setCoords(Coords(concat(get(dss, get_sizes), dim),
-                            concat_maps(get(dss, get_coords), dim)));
+    result.setCoords(Coords(concat(map(dss, get_sizes), dim),
+                            concat_maps(map(dss, get_coords), dim)));
   for (const auto &first : dss.front())
     if (std::all_of(dss.begin(), dss.end(),
                     [&first](auto &ds) { return ds.contains(first.name()); })) {
-      auto das = get(dss, [&first](auto &&ds) { return ds[first.name()]; });
+      auto das = map(dss, [&first](auto &&ds) { return ds[first.name()]; });
       if (std::any_of(das.begin(), das.end(), [dim, &first](auto &da) {
             return da.dims().contains(dim) || da != first;
           }))
