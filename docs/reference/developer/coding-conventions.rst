@@ -6,6 +6,9 @@ Formatting
 
 There are no explicit formatting conventions since we use ``clang-format`` (C++) and ``yapf`` (Python).
 
+The exception to this is Python docstrings, for which we use the
+`sphinx docstrings format <https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html#the-sphinx-docstring-format>`_.
+
 Integer types
 -------------
 

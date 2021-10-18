@@ -54,6 +54,7 @@ def test_init():
     assert len(d.coords) == 2
     assert len(d.attrs) == 1
     assert len(d.masks) == 1
+    assert d.ndim == 1
 
 
 def test_init_with_name():
@@ -86,6 +87,7 @@ def test_init_from_variable_views():
 def test_builtin_len(make):
     var = sc.empty(dims=['x', 'y'], shape=[3, 2])
     obj = make(var)
+    assert obj.ndim == 2
     assert len(obj) == 3
     assert len(obj['x', 0]) == 2
     assert len(obj['y', 0]) == 3

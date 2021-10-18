@@ -19,7 +19,7 @@ namespace scipp::core {
 /// dimension is inner dimension.
 class SCIPP_CORE_EXPORT Dimensions : public Sizes {
 public:
-  constexpr Dimensions() noexcept {}
+  constexpr Dimensions() noexcept = default;
   Dimensions(const Dim dim, const scipp::index size)
       : Dimensions({{dim, size}}) {}
   Dimensions(const std::vector<Dim> &labels,
@@ -45,12 +45,13 @@ public:
   }
 
   /// Return the shape of the space defined by *this.
-  constexpr scipp::span<const scipp::index> shape() const &noexcept {
+  [[nodiscard]] constexpr scipp::span<const scipp::index>
+  shape() const &noexcept {
     return sizes();
   }
 
   /// Return the volume of the space defined by *this.
-  constexpr scipp::index volume() const noexcept {
+  [[nodiscard]] constexpr scipp::index volume() const noexcept {
     scipp::index volume{1};
     for (const auto &length : shape())
       volume *= length;
@@ -58,13 +59,15 @@ public:
   }
 
   /// Return number of dims
-  constexpr scipp::index ndim() const noexcept { return Sizes::size(); }
+  [[nodiscard]] constexpr scipp::index ndim() const noexcept {
+    return Sizes::size();
+  }
 
-  Dim inner() const noexcept;
+  [[nodiscard]] Dim inner() const noexcept;
 
-  Dim label(const scipp::index i) const;
-  scipp::index size(const scipp::index i) const;
-  scipp::index offset(const Dim label) const;
+  [[nodiscard]] Dim label(const scipp::index i) const;
+  [[nodiscard]] scipp::index size(const scipp::index i) const;
+  [[nodiscard]] scipp::index offset(const Dim label) const;
 
   // TODO Better names required.
   void add(const Dim label, const scipp::index size);

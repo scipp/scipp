@@ -6,6 +6,8 @@
 import scipp as sc
 import pytest
 from .plot_helper import plot
+import matplotlib
+matplotlib.use('Agg')
 
 
 def test_plot_0d_variable():

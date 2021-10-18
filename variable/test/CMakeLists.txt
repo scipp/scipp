@@ -7,6 +7,7 @@ add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
   accumulate_test.cpp
+  astype_test.cpp
   bin_array_model_test.cpp
   bin_util_test.cpp
   comparison_test.cpp

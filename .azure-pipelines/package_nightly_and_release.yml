@@ -14,18 +14,24 @@ resources:
     name: scipp/pipelines
     type: github
     endpoint: scipp
-    ref: refs/tags/1.0.0
+    ref: refs/tags/2.0.0
 
 trigger:
-  branches:
-    exclude:
-      - '*'
-
-pr:
-  autoCancel: true
-  branches:
+  tags:
     include:
-      - '*'
+      - '*.*.*'
+
+schedules:
+  - cron: "0 0 * * *"
+    displayName: 'Nightly dev build'
+    branches:
+      include:
+        - 'main'
+    always: false
+
+
+pr: none
+
 
 extends:
   template: stages.yml@SharedPipelines
@@ -33,11 +39,18 @@ extends:
     verbose: ${{ parameters.verbose }}
     config:
       linux:
-        py_versions: ['3.7']
+        py_versions: ['3.7', '3.8', '3.9']
         conda_env: 'scipp-developer.yml'
       osx:
-        py_versions: ['3.7']
+        py_versions: ['3.7', '3.8', '3.9']
         conda_env: 'scipp-developer-minimal.yml'
       windows:
-        py_versions: ['3.7']
+        py_versions: ['3.7', '3.8', '3.9']
         conda_env: 'scipp-developer-minimal.yml'
+    package: true
+    deploy: true
+    ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:  # nightly
+      conda_label: 'dev'
+    ${{ if ne(variables['Build.SourceBranchName'], 'main') }}:  # tagged release
+      conda_label: 'main'
+      release: true

@@ -13,6 +13,8 @@
 #include "scipp/variable/creation.h"
 #include "scipp/variable/math.h"
 #include "scipp/variable/special_values.h"
+#include "scipp/variable/util.h"
+#include "scipp/variable/variable_factory.h"
 
 #include "operations_common.h"
 
@@ -30,20 +32,37 @@ bool is_dtype_int64(const Variable &var) {
 
 Variable make_accumulant(const Variable &var, const Dim dim,
                          const FillValue &init) {
+  if (variableFactory().has_masks(var))
+    throw except::BinnedDataError("Reduction operations for binned data with "
+                                  "event masks not supported yet.");
   auto dims = var.dims();
   dims.erase(dim);
-  return special_like(
-      var.dims()[dim] == 0 ? Variable(var, dims) : var.slice({dim, 0}), init);
+  auto prototype = empty(dims, variableFactory().elem_unit(var),
+                         variableFactory().elem_dtype(var),
+                         variableFactory().hasVariances(var));
+  return special_like(prototype, init);
 }
 
 } // namespace
 
 void sum_impl(Variable &summed, const Variable &var) {
-  accumulate_in_place(summed, var, element::add_equals, "sum");
+  if (summed.dtype() == dtype<float>) {
+    auto accum = astype(summed, dtype<double>);
+    sum_impl(accum, var);
+    copy(astype(accum, dtype<float>), summed);
+  } else {
+    accumulate_in_place(summed, var, element::add_equals, "sum");
+  }
 }
 
 void nansum_impl(Variable &summed, const Variable &var) {
-  accumulate_in_place(summed, var, element::nan_add_equals, "nansum");
+  if (summed.dtype() == dtype<float>) {
+    auto accum = astype(summed, dtype<double>);
+    nansum_impl(accum, var);
+    copy(astype(accum, dtype<float>), summed);
+  } else {
+    accumulate_in_place(summed, var, element::nan_add_equals, "nansum");
+  }
 }
 
 template <typename Op>
@@ -119,17 +138,30 @@ Variable &nanmean_impl(const Variable &var, const Dim dim,
   return out;
 }
 
+namespace {
+template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
+  if (!is_bins(var)) {
+    if constexpr (sizeof...(dim) == 0)
+      return var.dims().volume() * units::one;
+    else
+      return ((var.dims()[dim] * units::one) * ...);
+  }
+  const auto [begin, end] = unzip(var.bin_indices());
+  return sum(end - begin, dim...);
+}
+} // namespace
+
 /// Return the mean along all dimensions.
 Variable mean(const Variable &var) {
-  return normalize_impl(sum(var), var.dims().volume() * units::one);
+  return normalize_impl(sum(var), count(var));
 }
 
 Variable mean(const Variable &var, const Dim dim) {
-  return mean_impl(var, dim, var.dims()[dim] * units::one);
+  return mean_impl(var, dim, count(var, dim));
 }
 
 Variable &mean(const Variable &var, const Dim dim, Variable &out) {
-  return mean_impl(var, dim, var.dims()[dim] * units::one, out);
+  return mean_impl(var, dim, count(var, dim), out);
 }
 
 /// Return the mean along all dimensions. Ignoring NaN values.
