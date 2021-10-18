@@ -83,7 +83,7 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
   std::unordered_map<typename T::key_type, typename T::mapped_type> out;
   const auto &a = maps.front();
   for (const auto &[key, a_] : a) {
-    auto vars = map(maps, [&key](auto &&map) { return map[key]; });
+    auto vars = map(maps, [&](auto &&map) { return map[key]; });
     if (a.dim_of(key) == dim) {
       if (!equal_is_edges(maps, key, dim)) {
         throw except::BinEdgeError(
