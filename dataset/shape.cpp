@@ -83,7 +83,8 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
   std::unordered_map<typename T::key_type, typename T::mapped_type> out;
   const auto &a = maps.front();
   for (const auto &[key, a_] : a) {
-    auto vars = map(maps, [&](auto &&map) { return map[key]; });
+    const auto &key_ = key; // OSX cannot capture structured binding
+    auto vars = map(maps, [&key_](auto &&map) { return map[key_]; });
     if (a.dim_of(key) == dim) {
       if (!equal_is_edges(maps, key, dim)) {
         throw except::BinEdgeError(
