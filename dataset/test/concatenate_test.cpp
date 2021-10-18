@@ -2,14 +2,16 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "test_macros.h"
-
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/shape.h"
+
+#include "test_data_arrays.h"
+#include "test_macros.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -300,6 +302,86 @@ TEST(ConcatenateTest, broadcast_coord) {
       DataArray(makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2, 3, 1}),
                 {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
                                                Values{2, 2, 1})}}));
+}
+
+class ConcatTest : public ::testing::Test {
+protected:
+  DataArray da = make_data_array_1d();
+  DataArray da2 = concat(std::vector{da, da + da}, Dim::Y);
+};
+
+TEST_F(ConcatTest, single_existing_dim) {
+  const auto out = concat(std::vector{da}, Dim::X);
+  EXPECT_EQ(out, da);
+  EXPECT_FALSE(out.data().is_same(da.data()));
+}
+
+TEST_F(ConcatTest, single_new_dim) {
+  const auto out = concat(std::vector{da}, Dim::Y);
+  EXPECT_EQ(out.slice({Dim::Y, 0}), da);
+  EXPECT_FALSE(out.data().is_same(da.data()));
+}
+
+TEST_F(ConcatTest, multiple) {
+  EXPECT_EQ(concat(std::vector{da2, da2, da2}, Dim::Z),
+            da2 * variable::ones({{Dim::Z, Dim::X, Dim::Y}, {3, 2, 2}},
+                                 units::one, dtype<double>));
+  auto a = da2;
+  auto b = da2 + da2;
+  auto c = da2 + da2 + da2;
+  for (const auto &dim : {Dim::X, Dim::Y, Dim::Z}) {
+    auto abc = concat(std::vector{a, b, c}, dim);
+    auto ab_c = concat(std::vector{concat(std::vector{a, b}, dim), c}, dim);
+    auto a_bc = concat(std::vector{a, concat(std::vector{b, c}, dim)}, dim);
+    EXPECT_EQ(abc, ab_c);
+    EXPECT_EQ(abc, a_bc);
+  }
+}
+
+class ConcatHistogramTest : public ConcatTest {
+protected:
+  ConcatHistogramTest() {
+    a = copy(da2);
+    a.coords().set(
+        Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+    b = copy(da2);
+    b.coords().set(
+        Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{3, 4, 5}));
+    c = copy(da2);
+    c.coords().set(
+        Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{5, 6, 7}));
+  }
+  DataArray a;
+  DataArray b;
+  DataArray c;
+};
+
+TEST_F(ConcatHistogramTest, multiple_matching_edges) {
+  for (const auto &dim : {Dim::X, Dim::Y, Dim::Z}) {
+    auto abc = concat(std::vector{a, b, c}, dim);
+    auto ab_c = concat(std::vector{concat(std::vector{a, b}, dim), c}, dim);
+    auto a_bc = concat(std::vector{a, concat(std::vector{b, c}, dim)}, dim);
+    EXPECT_EQ(abc, ab_c);
+    EXPECT_EQ(abc, a_bc);
+  }
+}
+
+TEST_F(ConcatHistogramTest, multiple_mismatching_edges) {
+  EXPECT_THROW_DISCARD(concat(std::vector{a, c, b}, Dim::X),
+                       except::VariableError);
+  EXPECT_THROW_DISCARD(concat(std::vector{b, a, c}, Dim::X),
+                       except::VariableError);
+}
+
+TEST_F(ConcatHistogramTest, multiple_join_unrelated_dim) {
+  // We have edges along Dim::X, this just gets concatenated, but since we have
+  // an extra dim of length 2 it is also duplicated.
+  auto out = concat(std::vector{a, c, b}, Dim::Y);
+  EXPECT_EQ(out.coords()[Dim::X],
+            concat(std::vector{a.coords()[Dim::X], a.coords()[Dim::X],
+                               c.coords()[Dim::X], c.coords()[Dim::X],
+                               b.coords()[Dim::X], b.coords()[Dim::X]},
+                   Dim::Y));
 }
 
 class ConcatenateBinnedTest : public ::testing::Test {
