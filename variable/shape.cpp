@@ -7,6 +7,7 @@
 #include "scipp/core/dimensions.h"
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/shape.h"
@@ -23,15 +24,11 @@ Variable broadcast(const Variable &var, const Dimensions &dims) {
 }
 
 namespace {
-constexpr auto bin_sizes = [](const auto &ranges) {
-  const auto [begin, end] = unzip(ranges);
-  return end - begin;
-};
 auto get_bin_sizes(const scipp::span<const Variable> vars) {
   std::vector<Variable> sizes;
   sizes.reserve(vars.size());
   for (const auto &var : vars)
-    sizes.emplace_back(bin_sizes(var.bin_indices()));
+    sizes.emplace_back(bin_sizes(var));
   return sizes;
 }
 } // namespace
