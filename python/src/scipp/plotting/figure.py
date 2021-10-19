@@ -102,9 +102,11 @@ class PlotFigure:
         """
         Convert the Matplotlib figure to a static image.
         """
+        width, height = self.fig.get_size_inches()
+        dpi = self.fig.get_dpi()
         return ipw.Image(value=fig_to_pngbytes(self.fig),
-                         width=config.plot.width,
-                         height=config.plot.height)
+                         width=width * dpi,
+                         height=height * dpi)
 
     def close(self):
         """

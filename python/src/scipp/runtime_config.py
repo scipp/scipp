@@ -38,10 +38,10 @@ defaults = {
         },
         # The default image height (in pixels)
         "height":
-        467,
+        400,
         # The default image width (in pixels)
         "width":
-        700,
+        600,
         # Resolution
         "dpi":
         96,
