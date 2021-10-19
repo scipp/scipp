@@ -4,10 +4,12 @@
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
+#include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/comparison.h"
 #include "scipp/variable/shape.h"
 
 #include "test_macros.h"
@@ -182,6 +184,15 @@ TEST_F(GroupbyTest, array_variable) {
       makeVariable<double>(Dimensions{Dim::X, 4}, Values{1.0, 1.1, 2.5, 9.0});
 
   EXPECT_THROW(groupby(arr, var_bad, bins), except::DimensionError);
+}
+
+TEST_F(GroupbyTest, by_attr) {
+  auto da = copy(d["a"]);
+  const auto key = Dim("labels1");
+  const auto grouped_coord = groupby(da, key).sum(Dim::X);
+  da.attrs().set(key, da.coords().extract(key));
+  const auto grouped_attr = groupby(da, key).sum(Dim::X);
+  EXPECT_EQ(grouped_coord, grouped_attr);
 }
 
 struct GroupbyMaskedTest : public GroupbyTest {
@@ -544,8 +555,47 @@ struct GroupbyBinnedTest : public ::testing::Test {
       {{Dim("scalar_attr"), makeVariable<double>(Values{1.2})}}};
 };
 
+TEST_F(GroupbyBinnedTest, min_data_array) {
+  expected.setData(
+      makeVariable<double>(expected.dims(), Values{1, 1}, Variances{1, 1}));
+  EXPECT_EQ(groupby(a, Dim("labels")).min(Dim::Y), expected);
+}
+
+TEST_F(GroupbyBinnedTest, max_data_array) {
+  expected.setData(
+      makeVariable<double>(expected.dims(), Values{3, 4}, Variances{6, 7}));
+  EXPECT_EQ(groupby(a, Dim("labels")).max(Dim::Y), expected);
+}
+
+TEST_F(GroupbyBinnedTest, sum_data_array) {
+  expected.setData(
+      makeVariable<double>(expected.dims(), Values{8, 5}, Variances{14, 8}));
+  EXPECT_EQ(groupby(a, Dim("labels")).sum(Dim::Y), expected);
+}
+
+TEST_F(GroupbyBinnedTest, mean_data_array) {
+  EXPECT_THROW_DISCARD(groupby(a, Dim("labels")).mean(Dim::Y),
+                       except::BinnedDataError);
+}
+
+TEST_F(GroupbyBinnedTest, sum_with_event_mask) {
+  auto bins = bins_view<DataArray>(a.data());
+  bins.masks().set("mask", equal(bins.data(), bins.data()));
+  // Event masks not supported yet in reduction ops.
+  EXPECT_THROW_DISCARD(groupby(a, Dim("labels")).sum(Dim::Y),
+                       except::BinnedDataError);
+}
+
 TEST_F(GroupbyBinnedTest, concatenate_data_array) {
   EXPECT_EQ(groupby(a, Dim("labels")).concatenate(Dim::Y), expected);
+}
+
+TEST_F(GroupbyBinnedTest, concatenate_by_attr) {
+  const auto key = Dim("labels");
+  const auto grouped_coord = groupby(a, key).concatenate(Dim::Y);
+  a.attrs().set(key, a.coords().extract(key));
+  const auto grouped_attr = groupby(a, key).concatenate(Dim::Y);
+  EXPECT_EQ(grouped_coord, grouped_attr);
 }
 
 TEST_F(GroupbyBinnedTest, concatenate_data_array_2d) {

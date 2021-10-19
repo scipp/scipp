@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-#include "fix_typed_test_suite_warnings.h"
-#include "scipp/core/except.h"
-#include "scipp/variable/reduction.h"
-#include "scipp/variable/variable.h"
 #include <gtest/gtest.h>
 
+#include "fix_typed_test_suite_warnings.h"
 #include "test_macros.h"
+
+#include "scipp/core/except.h"
+#include "scipp/variable/bins.h"
+#include "scipp/variable/reduction.h"
+#include "scipp/variable/variable.h"
 
 using namespace scipp;
 
@@ -131,4 +133,39 @@ TYPED_TEST(NansumTest, nansum_with_dim_out) {
     nansum(x, Dim::X, out);
     EXPECT_EQ(out, expected);
   }
+}
+
+class ReduceBinnedTest : public ::testing::Test {
+protected:
+  Variable indices =
+      makeVariable<index_pair>(Dims{Dim::Y, Dim::Z}, Shape{2, 2},
+                               Values{std::pair{0, 2}, std::pair{2, 2},
+                                      std::pair{2, 5}, std::pair{5, 6}});
+  Variable buffer = makeVariable<double>(Dims{Dim::X}, Shape{6}, units::m,
+                                         Values{1, 2, 3, 4, 5, 6},
+                                         Variances{1, 2, 3, 4, 5, 6});
+  Variable binned = make_bins(indices, Dim::X, buffer);
+};
+
+TEST_F(ReduceBinnedTest, all_dims) {
+  EXPECT_EQ(sum(binned), sum(buffer));
+  EXPECT_EQ(max(binned), max(buffer));
+  EXPECT_EQ(min(binned), min(binned));
+}
+
+TEST_F(ReduceBinnedTest, one_dim) {
+  EXPECT_EQ(sum(binned, Dim::Y),
+            makeVariable<double>(Dims{Dim::Z}, Shape{2}, units::m,
+                                 Values{15, 6}, Variances{15, 6}));
+  EXPECT_EQ(sum(binned, Dim::Z),
+            makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m,
+                                 Values{3, 18}, Variances{3, 18}));
+  EXPECT_EQ(mean(binned), mean(buffer));
+}
+
+TEST_F(ReduceBinnedTest, slice) {
+  EXPECT_EQ(sum(binned.slice({Dim::Y, 1, 2})),
+            sum(buffer.slice({Dim::X, 2, 6})));
+  EXPECT_EQ(mean(binned.slice({Dim::Y, 1, 2})),
+            mean(buffer.slice({Dim::X, 2, 6})));
 }
