@@ -15,6 +15,14 @@
 
 namespace scipp::variable {
 
+Variable bin_sizes(const Variable &var) {
+  if (is_bins(var)) {
+    const auto [begin, end] = unzip(var.bin_indices());
+    return end - begin;
+  }
+  return makeVariable<scipp::index>(var.dims());
+}
+
 namespace {
 template <class T> using copy_spans_args = std::tuple<span<T>, span<const T>>;
 constexpr auto copy_spans = overloaded{
