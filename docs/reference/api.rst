@@ -54,6 +54,7 @@ General
 
    bin
    bins
+   bins_like
    choose
    collapse
    histogram

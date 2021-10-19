@@ -275,3 +275,25 @@ def test_bins_mean_using_bins():
     assert sc.identical(
         means,
         sc.array(dims=["x"], values=[0.5, 3], unit=sc.units.ns, dtype=sc.dtype.float64))
+
+
+def test_bins_like():
+    data = sc.array(dims=['row'], values=[1, 2, 3, 4])
+    begin = sc.array(dims=['x'], values=[0, 3], dtype=sc.dtype.int64)
+    end = sc.array(dims=['x'], values=[3, 4], dtype=sc.dtype.int64)
+    binned = sc.bins(begin=begin, end=end, dim='row', data=data)
+    dense = sc.array(dims=['x'], values=[1.1, 2.2])
+    expected_data = sc.array(dims=['row'], values=[1.1, 1.1, 1.1, 2.2])
+    expected = sc.bins(begin=begin, end=end, dim='row', data=expected_data)
+    # Prototype is binned variable
+    assert sc.identical(sc.bins_like(binned, dense), expected)
+    # Prototype is data array with binned data
+    binned = sc.DataArray(data=binned)
+    assert sc.identical(sc.bins_like(binned, dense), expected)
+    # Broadcast
+    expected_data = sc.array(dims=['row'], values=[1.1, 1.1, 1.1, 1.1])
+    expected = sc.bins(begin=begin, end=end, dim='row', data=expected_data)
+    assert sc.identical(sc.bins_like(binned, dense['x', 0]), expected)
+    with pytest.raises(sc.NotFoundError):
+        dense = dense.rename_dims({'x': 'y'})
+        sc.bins_like(binned, dense),

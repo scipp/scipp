@@ -66,7 +66,7 @@ for _cls in (Variable, DataArray, Dataset):
 del _cls
 
 from .arithmetic import add, divide, floor_divide, mod, multiply, subtract
-from .bins import lookup, histogram, bin, bins
+from .bins import lookup, histogram, bin, bins, bins_like
 from .comparison import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
 from .counts import counts_to_density, density_to_counts
 from .cumulative import cumsum
