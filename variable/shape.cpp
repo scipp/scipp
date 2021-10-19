@@ -110,8 +110,8 @@ Variable fold(const Variable &view, const Dim from_dim,
   return view.fold(from_dim, to_dims);
 }
 
-Variable flatten(const Variable &view,
-                 const scipp::span<const Dim> &from_labels, const Dim to_dim) {
+Variable flatten(const Variable &view, const std::span<const Dim> &from_labels,
+                 const Dim to_dim) {
   if (from_labels.empty())
     return broadcast(view, merge(view.dims(), Dimensions(to_dim, 1)));
   const auto &labels = view.dims().labels();

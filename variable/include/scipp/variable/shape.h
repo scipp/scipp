@@ -25,7 +25,7 @@ resize(const Variable &var, const Dim dim, const scipp::index size,
                                                   const Dim from_dim,
                                                   const Dimensions &to_dims);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-flatten(const Variable &view, const scipp::span<const Dim> &from_labels,
+flatten(const Variable &view, const std::span<const Dim> &from_labels,
         const Dim to_dim);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 transpose(const Variable &var, const std::vector<Dim> &dims = {});

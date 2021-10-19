@@ -4,9 +4,11 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <array>
+#include <span>
+
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
-#include "scipp/common/span.h"
 #include "scipp/core/slice.h"
 #include "scipp/units/dim.h"
 
@@ -47,10 +49,10 @@ public:
   void erase(const Key &key);
   void clear() noexcept;
   void replace_key(const Key &from, const Key &to);
-  [[nodiscard]] constexpr scipp::span<const Key> keys() const &noexcept {
+  [[nodiscard]] constexpr std::span<const Key> keys() const &noexcept {
     return {m_keys.data(), static_cast<size_t>(size())};
   }
-  [[nodiscard]] constexpr scipp::span<const Value> values() const &noexcept {
+  [[nodiscard]] constexpr std::span<const Value> values() const &noexcept {
     return {m_values.data(), static_cast<size_t>(size())};
   }
 
