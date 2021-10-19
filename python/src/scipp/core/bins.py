@@ -279,3 +279,21 @@ def bins(*,
               binning of coord value instead of explicitly given index ranges.
     """
     return _call_cpp_func(_cpp.bins, begin, end, dim, data)
+
+
+def bins_like(x: VariableLike, fill_value: _cpp.Variable) -> _cpp.Variable:
+    """Create a binned variable by "broadcasting" fill values to bins of given sizes.
+
+    The dimensions and shape of ``fill_value`` must be such that they can be broadcast
+    to those of ``x``. Each element of ``fill_value`` defines the values of all the bin
+    elements of the corresponding bin. The output shares the bin indices of ``x``.
+
+    :param x: Binned variable or data array serving as prototype for bin sizes.
+    :param fill_value: Fill values to use for the bins
+    :return: Variable containing fill value in bins.
+    """
+
+    var = x
+    if not isinstance(x, _cpp.Variable):
+        var = var.data
+    return _call_cpp_func(_cpp.bins_like, var, fill_value)
