@@ -373,6 +373,34 @@ TEST_F(ConcatHistogramTest, multiple_mismatching_edges) {
                        except::VariableError);
 }
 
+namespace {
+const auto no_edges = [](auto da) {
+  auto x = da.coords()[Dim::X];
+  da.coords().set(
+      Dim::X, concat(std::vector{x.slice({Dim::X, 0, 1}),
+                                 x.slice({Dim::X, 2, da.dims()[Dim::X] + 1})},
+                     Dim::X));
+  return da;
+};
+}
+
+TEST_F(ConcatHistogramTest, fail_mixing_point_data_and_histogram) {
+  EXPECT_THROW_DISCARD(concat(std::vector{no_edges(a), b, c}, Dim::X),
+                       except::BinEdgeError);
+  EXPECT_THROW_DISCARD(concat(std::vector{a, no_edges(b), c}, Dim::X),
+                       except::BinEdgeError);
+  EXPECT_THROW_DISCARD(concat(std::vector{a, b, no_edges(c)}, Dim::X),
+                       except::BinEdgeError);
+  EXPECT_THROW_DISCARD(concat(std::vector{no_edges(a), no_edges(b), c}, Dim::X),
+                       except::BinEdgeError);
+  EXPECT_THROW_DISCARD(concat(std::vector{no_edges(a), b, no_edges(c)}, Dim::X),
+                       except::BinEdgeError);
+  EXPECT_THROW_DISCARD(concat(std::vector{a, no_edges(b), no_edges(c)}, Dim::X),
+                       except::BinEdgeError);
+  EXPECT_NO_THROW(
+      concat(std::vector{no_edges(a), no_edges(b), no_edges(c)}, Dim::X));
+}
+
 TEST_F(ConcatHistogramTest, multiple_join_unrelated_dim) {
   // We have edges along Dim::X, this just gets concatenated, but since we have
   // an extra dim of length 2 it is also duplicated.
