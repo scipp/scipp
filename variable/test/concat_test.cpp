@@ -29,9 +29,21 @@ TEST_F(ConcatTest, type_mismatch) {
 }
 
 TEST_F(ConcatTest, dimension_mismatch) {
+  // Size mismatch
   EXPECT_THROW_DISCARD(
       concat(std::vector{base, base.slice({Dim::Y, 0, 1})}, Dim::X),
       except::NotFoundError);
+  // Label mismatch
+  auto xz = base;
+  xz.rename(Dim::Y, Dim::Z);
+  EXPECT_THROW_DISCARD(concat(std::vector{xz, base}, Dim::X),
+                       except::NotFoundError);
+  // Missing label in first arg can (right now) not lead to braodcast
+  EXPECT_THROW_DISCARD(
+      concat(std::vector{base.slice({Dim::Y, 0}), base}, Dim::Z),
+      except::NotFoundError);
+  // Missing label in second arg, but this broadcasts
+  EXPECT_NO_THROW(concat(std::vector{base, base.slice({Dim::Y, 0})}, Dim::Z));
 }
 
 TEST_F(ConcatTest, new_dim) {
