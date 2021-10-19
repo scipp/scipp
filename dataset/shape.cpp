@@ -26,11 +26,11 @@ template <class T, class Op> auto map(const T &items, Op op) {
   return out;
 }
 
-constexpr auto get_data = [](auto &&_) { return _.data(); };
-constexpr auto get_masks = [](auto &&_) { return _.masks(); };
-constexpr auto get_meta = [](auto &&_) { return _.meta(); };
-constexpr auto get_coords = [](auto &&_) { return _.coords(); };
-constexpr auto get_sizes = [](auto &&_) { return _.sizes(); };
+constexpr auto get_data = [](auto &&x) { return x.data(); };
+constexpr auto get_masks = [](auto &&x) { return x.masks(); };
+constexpr auto get_meta = [](auto &&x) { return x.meta(); };
+constexpr auto get_coords = [](auto &&x) { return x.coords(); };
+constexpr auto get_sizes = [](auto &&x) { return x.sizes(); };
 
 /// Concatenate a and b, assuming that a and b contain bin edges.
 ///
