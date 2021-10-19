@@ -28,7 +28,7 @@ Bugfixes
 Deprecations
 ~~~~~~~~~~~~
 
-* ``concatenate`` and ``groupby(..).concatenate`` are deprecated. Use ``concat`` and ``groupby(..).concatenate`` instead.
+* ``concatenate`` and ``groupby(..).concatenate`` are deprecated. Use ``concat`` and ``groupby(..).concat`` instead.
 
 Contributors
 ~~~~~~~~~~~~
