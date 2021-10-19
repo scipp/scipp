@@ -310,6 +310,11 @@ protected:
   DataArray da2 = concat(std::vector{da, da + da}, Dim::Y);
 };
 
+TEST_F(ConcatTest, empty) {
+  EXPECT_THROW(concat(std::vector<DataArray>{}, Dim::X), std::invalid_argument);
+  EXPECT_THROW(concat(std::vector<Dataset>{}, Dim::X), std::invalid_argument);
+}
+
 TEST_F(ConcatTest, single_existing_dim) {
   const auto out = concat(std::vector{da}, Dim::X);
   EXPECT_EQ(out, da);

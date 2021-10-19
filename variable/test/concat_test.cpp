@@ -102,6 +102,10 @@ TEST_F(ConcatTest, new_dim_and_existing_outer_dim) {
             expected);
 }
 
+TEST_F(ConcatTest, empty) {
+  EXPECT_THROW(concat(std::vector<Variable>{}, Dim::X), std::invalid_argument);
+}
+
 TEST_F(ConcatTest, single_existing_dim) {
   auto out = concat(std::vector{base}, Dim::X);
   EXPECT_EQ(out, base);

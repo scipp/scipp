@@ -34,6 +34,8 @@ auto get_bin_sizes(const scipp::span<const Variable> vars) {
 } // namespace
 
 Variable concat(const scipp::span<const Variable> vars, const Dim dim) {
+  if (vars.empty())
+    throw std::invalid_argument("Cannot concat empty list.");
   const auto it =
       std::find_if(vars.begin(), vars.end(),
                    [dim](const auto &var) { return var.dims().contains(dim); });

@@ -79,6 +79,8 @@ auto broadcast_along_dim(const T &maps, const Key &key, const Dim dim) {
 }
 
 template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
+  if (maps.empty())
+    throw std::invalid_argument("Cannot concat empty list.");
   using T = typename Maps::value_type;
   std::unordered_map<typename T::key_type, typename T::mapped_type> out;
   const auto &a = maps.front();
@@ -136,6 +138,8 @@ Dataset concat(const scipp::span<const Dataset> dss, const Dim dim) {
   // coords to dataset (which is not desirable for a variety of reasons). It is
   // unlikely that this will cause trouble in practice. Users can just use a
   // range slice of thickness 1.
+  if (dss.empty())
+    throw std::invalid_argument("Cannot concat empty list.");
   Dataset result;
   if (dss.front().empty())
     result.setCoords(Coords(concat(map(dss, get_sizes), dim),
