@@ -83,7 +83,7 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
   std::unordered_map<typename T::key_type, typename T::mapped_type> out;
   const auto &a = maps.front();
   for (const auto &[key, a_] : a) {
-    const auto &key_ = key; // OSX cannot capture structured binding
+    const auto &key_ = key; // clang cannot capture structured binding
     auto vars = map(maps, [&key_](auto &&map) { return map[key_]; });
     if (a.dim_of(key) == dim) {
       if (!equal_is_edges(maps, key, dim)) {
@@ -120,7 +120,7 @@ DataArray concat(const scipp::span<const DataArray> das, const Dim dim) {
                        concat_maps(map(das, get_masks), dim));
   const auto &coords = map(das, get_coords);
   for (auto &&[d, coord] : concat_maps(map(das, get_meta), dim)) {
-    const auto d_ = d; // OSX cannot capture structured binding
+    const auto d_ = d; // clang cannot capture structured binding
     if (d == dim || std::any_of(coords.begin(), coords.end(),
                                 [d_](auto &_) { return _.contains(d_); }))
       out.coords().set(d, std::move(coord));
