@@ -1,6 +1,6 @@
 {% extends "!layout.html" %}
 
-  {% block menu %}
+  {% block docs_toc %}
     {{ super() }}
     <div style="height: 32px; position: fixed; bottom: 0; left: 15px;">
       Select version:&nbsp;
@@ -17,10 +17,4 @@
         <option value="https://scipp.github.io/release/0.3.0">v0.3</option>
       </select>
     </div>
-  {% endblock %}
-
-  {% block footer %} {{ super() }}
-    <style>
-      .wy-nav-content { max-width: 1100px; }
-    </style>
   {% endblock %}

@@ -27,10 +27,10 @@ import doctest
 import os
 
 html_show_sourcelink = True
-nbsphinx_prolog = """`Download this Jupyter notebook <https://raw.githubusercontent.com/scipp/scipp/main/docs/{{ env.doc2path(env.docname, base=None) }}>`_
+# nbsphinx_prolog = """`Download this Jupyter notebook <https://raw.githubusercontent.com/scipp/scipp/main/docs/{{ env.doc2path(env.docname, base=None) }}>`_
 
-----
-"""  # noqa: E501
+# ----
+# """  # noqa: E501
 
 # -- General configuration ------------------------------------------------
 
@@ -151,8 +151,7 @@ html_theme = 'sphinx_book_theme'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {'logo_only': True}
-
+html_theme_options = {'logo_only': True}
 html_logo = "_static/logo-large-v4.png"
 html_favicon = "_static/favicon.ico"
 
