@@ -8,6 +8,8 @@
 
 namespace scipp::variable {
 
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bin_sizes(const Variable &var);
+
 SCIPP_VARIABLE_EXPORT void copy_slices(const Variable &src, Variable dst,
                                        const Dim dim,
                                        const Variable &srcIndices,

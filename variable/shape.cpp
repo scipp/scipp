@@ -2,9 +2,12 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <algorithm>
+
 #include "scipp/core/dimensions.h"
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/shape.h"
@@ -20,68 +23,54 @@ Variable broadcast(const Variable &var, const Dimensions &dims) {
   return var.broadcast(dims);
 }
 
-Variable concatenate(const Variable &a1, const Variable &a2, const Dim dim) {
-  if (a1.dtype() != a2.dtype())
-    throw except::TypeError(
-        "Cannot concatenate Variables: Data types do not match.");
-  if (a1.unit() != a2.unit())
-    throw except::UnitError(
-        "Cannot concatenate Variables: Units do not match.");
+namespace {
+auto get_bin_sizes(const std::span<const Variable> vars) {
+  std::vector<Variable> sizes;
+  sizes.reserve(vars.size());
+  for (const auto &var : vars)
+    sizes.emplace_back(bin_sizes(var));
+  return sizes;
+}
+} // namespace
 
-  const auto &dims1 = a1.dims();
-  const auto &dims2 = a2.dims();
-  // TODO Many things in this function should be refactored and moved in class
-  // Dimensions.
-  for (const auto &dim1 : dims1.labels()) {
-    if (dim1 != dim) {
-      if (!dims2.contains(dim1))
-        throw except::DimensionError(
-            "Cannot concatenate Variables: Dimensions do not match.");
-      if (dims2[dim1] != dims1[dim1])
-        throw except::DimensionError(
-            "Cannot concatenate Variables: Dimension extents do not match.");
-    }
-  }
-  auto size1 = dims1.shape().size();
-  auto size2 = dims2.shape().size();
-  if (dims1.contains(dim))
-    size1--;
-  if (dims2.contains(dim))
-    size2--;
-  // This check covers the case of dims2 having extra dimensions not present in
-  // dims1.
-  // TODO Support broadcast of dimensions?
-  if (size1 != size2)
-    throw except::DimensionError(
-        "Cannot concatenate Variables: Dimensions do not match.");
-
-  Variable out;
-  auto dims(dims1);
-  scipp::index extent1 = 1;
-  scipp::index extent2 = 1;
-  if (dims1.contains(dim))
-    extent1 += dims1[dim] - 1;
-  if (dims2.contains(dim))
-    extent2 += dims2[dim] - 1;
-  if (dims.contains(dim))
-    dims.resize(dim, extent1 + extent2);
-  else
-    dims.add(dim, extent1 + extent2);
-  if (is_bins(a1)) {
-    constexpr auto bin_sizes = [](const auto &ranges) {
-      const auto [begin, end] = unzip(ranges);
-      return end - begin;
-    };
-    out = empty_like(a1, {},
-                     concatenate(bin_sizes(a1.bin_indices()),
-                                 bin_sizes(a2.bin_indices()), dim));
+Variable concat(const std::span<const Variable> vars, const Dim dim) {
+  if (vars.empty())
+    throw std::invalid_argument("Cannot concat empty list.");
+  const auto it =
+      std::find_if(vars.begin(), vars.end(),
+                   [dim](const auto &var) { return var.dims().contains(dim); });
+  Dimensions dims;
+  // Expand dims for inputs that do not contain dim already. Favor order given
+  // by first input, if not found add as outer dim.
+  if (it == vars.end()) {
+    dims = vars.front().dims();
+    dims.add(dim, 1);
   } else {
-    out = Variable(a1, dims);
+    dims = it->dims();
+    dims.resize(dim, 1);
   }
-
-  out.data().copy(a1, out.slice({dim, 0, extent1}));
-  out.data().copy(a2, out.slice({dim, extent1, extent1 + extent2}));
-
+  std::vector<Variable> tmp;
+  scipp::index size = 0;
+  for (const auto &var : vars) {
+    if (var.dims().contains(dim))
+      tmp.emplace_back(var);
+    else
+      tmp.emplace_back(broadcast(var, dims));
+    size += tmp.back().dims()[dim];
+  }
+  dims.resize(dim, size);
+  Variable out;
+  if (is_bins(vars.front())) {
+    out = empty_like(vars.front(), {}, concat(get_bin_sizes(vars), dim));
+  } else {
+    out = empty_like(vars.front(), dims);
+  }
+  scipp::index offset = 0;
+  for (const auto &var : tmp) {
+    const auto extent = var.dims()[dim];
+    out.data().copy(var, out.slice({dim, offset, offset + extent}));
+    offset += extent;
+  }
   return out;
 }
 

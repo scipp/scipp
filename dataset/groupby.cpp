@@ -149,17 +149,17 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim,
 /// Reduce each group by concatenating elements and return combined data.
 ///
 /// This only supports binned data.
-template <class T> T GroupBy<T>::concatenate(const Dim reductionDim) const {
-  const auto concat = [&](const auto &data) {
+template <class T> T GroupBy<T>::concat(const Dim reductionDim) const {
+  const auto conc = [&](const auto &data) {
     if (key().dims().volume() == scipp::size(groups()))
       return groupby_concat_bins(data, {}, key(), reductionDim);
     else
       return groupby_concat_bins(data, key(), {}, reductionDim);
   };
   if constexpr (std::is_same_v<T, DataArray>) {
-    return concat(m_data);
+    return conc(m_data);
   } else {
-    return apply_to_items(m_data, [&](auto &&... _) { return concat(_...); });
+    return apply_to_items(m_data, [&](auto &&... _) { return conc(_...); });
   }
 }
 

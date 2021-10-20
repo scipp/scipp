@@ -106,6 +106,7 @@ Shape
    :toctree: ../generated/functions
 
    broadcast
+   concat
    concatenate
    flatten
    fold

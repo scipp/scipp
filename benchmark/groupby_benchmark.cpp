@@ -39,7 +39,7 @@ auto make_1d_events(const scipp::index size, const scipp::index count) {
   return DataArray(make_bins(indices, Dim::Event, buf));
 }
 
-template <class T> static void BM_groupby_concatenate(benchmark::State &state) {
+template <class T> static void BM_groupby_concat(benchmark::State &state) {
   const scipp::index nEvent = 1e8;
   const scipp::index nHist = state.range(0);
   const scipp::index nGroup = state.range(1);
@@ -52,7 +52,7 @@ template <class T> static void BM_groupby_concatenate(benchmark::State &state) {
       Dim("group"),
       astype(group / (nHist / nGroup * units::one), dtype<int64_t>));
   for (auto _ : state) {
-    auto flat = groupby(events, Dim("group")).concatenate(Dim::X);
+    auto flat = groupby(events, Dim("group")).concat(Dim::X);
     state.PauseTiming();
     flat = DataArray();
     state.ResumeTiming();
@@ -71,10 +71,10 @@ template <class T> static void BM_groupby_concatenate(benchmark::State &state) {
 // - nGroup
 // Also note the special case nHist = nGroup, which should effectively just make
 // a copy of the input with reshuffling events.
-BENCHMARK_TEMPLATE(BM_groupby_concatenate, float)
+BENCHMARK_TEMPLATE(BM_groupby_concat, float)
     ->RangeMultiplier(4)
     ->Ranges({{64, 2 << 19}, {1, 64}});
-BENCHMARK_TEMPLATE(BM_groupby_concatenate, double)
+BENCHMARK_TEMPLATE(BM_groupby_concat, double)
     ->RangeMultiplier(4)
     ->Ranges({{64, 2 << 19}, {1, 64}});
 

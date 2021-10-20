@@ -337,23 +337,6 @@ void scale(DataArray &array, const DataArray &histogram, Dim dim) {
 } // namespace scipp::dataset::buckets
 
 namespace scipp::variable {
-namespace {
-template <class T> Variable bin_sizes_impl(const Variable &view) {
-  const auto [begin, end] = unzip(view.bin_indices());
-  return end - begin;
-}
-} // namespace
-
-Variable bin_sizes(const Variable &var) {
-  if (var.dtype() == dtype<bucket<Variable>>)
-    return bin_sizes_impl<Variable>(var);
-  else if (var.dtype() == dtype<bucket<DataArray>>)
-    return bin_sizes_impl<DataArray>(var);
-  else if (var.dtype() == dtype<bucket<Dataset>>)
-    return bin_sizes_impl<Dataset>(var);
-  else
-    return makeVariable<scipp::index>(var.dims());
-}
 
 namespace {
 Variable applyMask(const DataArray &buffer, const Variable &indices,
