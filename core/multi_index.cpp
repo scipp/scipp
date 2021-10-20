@@ -140,9 +140,6 @@ MultiIndex<N>::MultiIndex(binned_tag, const Dimensions &inner_dims,
   // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
   m_nested_dim_index = m_inner_ndim - inner_dims.index(slice_dim) - 1;
 
-  if (bin_dims.volume() == 0) {
-    return; // Operands are empty, there are no bins to load.
-  }
   for (scipp::index data = 0; data < N; ++data) {
     load_bin_params(data);
   }
