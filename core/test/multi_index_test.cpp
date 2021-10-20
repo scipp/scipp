@@ -256,7 +256,7 @@ TEST_F(MultiIndexTest, scalar_of_2d_bins) {
 }
 
 TEST_F(MultiIndexTest, 1d_array_of_2d_bins) {
-  Dimensions buf{{Dim("a"), Dim("b")}, {2, 3}}; // 2d cut into two sections
+  const Dimensions buf{{Dim("a"), Dim("b")}, {2, 3}}; // 2d cut into 2 sections
   // cut along inner
   check_with_bins(buf, Dim("b"), {{0, 1}, {1, 3}}, x, make_strides(x, x),
                   {0, 3, 1, 2, 4, 5});
@@ -266,8 +266,15 @@ TEST_F(MultiIndexTest, 1d_array_of_2d_bins) {
                   {1, 4, 2, 5});
   check_with_bins(buf, Dim("b"), {{1, 3}, {0, 1}}, x, make_strides(x, x),
                   {1, 2, 4, 5, 0, 3});
+  check_with_bins(buf, Dim("b"), {{0, 0}, {1, 2}, {2, 3}}, y,
+                  make_strides(y, y), {1, 4, 2, 5});
   check_with_bins(buf, Dim("b"), {{0, 1}, {1, 1}, {2, 3}}, y,
                   make_strides(y, y), {0, 3, 2, 5});
+  check_with_bins(buf, Dim("b"), {{0, 1}, {2, 3}, {3, 3}}, y,
+                  make_strides(y, y), {0, 3, 2, 5});
+  check_with_bins(buf, Dim("b"), {{0, 1}}, z, make_strides(z, z), {0, 3});
+  check_with_bins(buf, Dim("b"), {{1, 1}}, z, make_strides(z, z), {});
+
   // cut along outer
   check_with_bins(buf, Dim("a"), {{0, 1}, {1, 2}}, x, make_strides(x, x),
                   {0, 1, 2, 3, 4, 5});
@@ -275,8 +282,14 @@ TEST_F(MultiIndexTest, 1d_array_of_2d_bins) {
                   {3, 4, 5, 3, 4, 5});
   check_with_bins(buf, Dim("a"), {{1, 2}, {0, 1}}, x, make_strides(x, x),
                   {3, 4, 5, 0, 1, 2});
+  check_with_bins(buf, Dim("a"), {{0, 0}, {0, 1}, {1, 2}}, y,
+                  make_strides(y, y), {0, 1, 2, 3, 4, 5});
   check_with_bins(buf, Dim("a"), {{0, 1}, {1, 1}, {1, 2}}, y,
                   make_strides(y, y), {0, 1, 2, 3, 4, 5});
+  check_with_bins(buf, Dim("a"), {{0, 1}, {1, 2}, {2, 2}}, y,
+                  make_strides(y, y), {0, 1, 2, 3, 4, 5});
+  check_with_bins(buf, Dim("a"), {{0, 1}}, z, make_strides(z, z), {0, 1, 2});
+  check_with_bins(buf, Dim("a"), {{1, 1}}, z, make_strides(z, z), {});
 }
 
 TEST_F(MultiIndexTest, 2d_array_of_1d_bins) {
