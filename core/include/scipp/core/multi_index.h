@@ -242,7 +242,7 @@ private:
     ++m_coord[dim];
     if (dim_at_end(dim))
       increment_outer_bins();
-    if (!dim_at_end(m_ndim - 1)) {
+    if (!at_end()) {
       for (scipp::index data = 0; data < N; ++data) {
         load_bin_params(data);
       }
@@ -252,13 +252,13 @@ private:
   void seek_bin() noexcept {
     do {
       increment_bins();
-    } while (m_shape[m_nested_dim_index] == 0 && !dim_at_end(m_ndim - 1));
+    } while (current_bin_is_empty() && !at_end());
   }
 
   void load_bin_params(const scipp::index data) noexcept {
     if (!m_bin[data].is_binned()) {
       m_data_index[data] = flat_index(data, 0, m_ndim);
-    } else if (!dim_at_end(m_ndim - 1)) {
+    } else if (!at_end()) {
       // All bins are guaranteed to have the same size.
       // Use common m_shape and m_nested_stride for all.
       const auto [begin, end] = m_bin[data].m_indices[m_bin[data].m_bin_index];
@@ -281,7 +281,7 @@ private:
       m_bin[data].m_bin_index = flat_index(data, m_inner_ndim, m_ndim);
       load_bin_params(data);
     }
-    if (m_shape[m_nested_dim_index] == 0 && !dim_at_end(m_ndim - 1))
+    if (current_bin_is_empty() && !at_end())
       seek_bin();
   }
 
