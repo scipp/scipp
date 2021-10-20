@@ -223,6 +223,20 @@ TEST_F(MultiIndexTest, 1d_array_of_1d_bins) {
                   {4, 5, 6, 0, 1, 2, 3});
 }
 
+TEST_F(MultiIndexTest, scalar_of_2d_bins) {
+  const Dimensions buf{{Dim("a"), Dim("b")}, {2, 3}};
+  // cut along inner
+  check_with_bins(buf, Dim("b"), {{0, 2}}, Dimensions{}, Strides{},
+                  {0, 1, 3, 4});
+  check_with_bins(buf, Dim("b"), {{1, 2}}, Dimensions{}, Strides{}, {1, 4});
+  check_with_bins(buf, Dim("b"), {{1, 1}}, Dimensions{}, Strides{}, {});
+  // cut along outer
+  check_with_bins(buf, Dim("a"), {{0, 2}}, Dimensions{}, Strides{},
+                  {0, 1, 2, 3, 4, 5});
+  check_with_bins(buf, Dim("a"), {{1, 2}}, Dimensions{}, Strides{}, {3, 4, 5});
+  check_with_bins(buf, Dim("a"), {{1, 1}}, Dimensions{}, Strides{}, {});
+}
+
 TEST_F(MultiIndexTest, 1d_array_of_2d_bins) {
   Dimensions buf{{Dim("a"), Dim("b")}, {2, 3}}; // 2d cut into two sections
   // cut along inner
