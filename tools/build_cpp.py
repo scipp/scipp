@@ -60,7 +60,8 @@ def main(*,
         '-DCMAKE_INSTALL_PREFIX': prefix,
         '-DSITE_PACKAGES_DIR': site_packages_dir,
         '-DWITH_CTEST': 'OFF',
-        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': ipo
+        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': ipo,
+        '-DFULL_BUILD': 1,
     }
 
     if platform == 'darwin':
@@ -110,9 +111,8 @@ def main(*,
 
     # Compile benchmarks, C++ tests, and python library
     start = time.time()
-    for target in ['all-benchmarks', 'all-tests', 'install']:
-        run_command(['cmake', '--build', '.', '--target', target] + build_flags,
-                    shell=shell)
+    run_command(['cmake', '--build', '.', '--target', 'install'] + build_flags,
+                shell=shell)
     end = time.time()
     print('Compilation took ', end - start, ' seconds')
 
