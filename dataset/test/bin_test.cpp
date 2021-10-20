@@ -431,9 +431,12 @@ TEST(BinTest, twod_not_supported) {
 TEST_P(BinTest, new_dim_existing_coord) {
   const auto table = GetParam();
   auto da = bin(table, {edges_x});
+  const auto expected = bin(da, {edges_y});
   // This case arises, e.g., after transform_coords when the input dimension is
   // not renamed. Ensure we do not enter the code branch handling existing
   // binning since this would throw.
-  da.coords().set(Dim::Y, da.coords()[Dim::X]);
-  EXPECT_NO_THROW_DISCARD(bin(da, {edges_y}));
+  auto edges = copy(edges_y);
+  edges.rename(Dim::Y, Dim::X);
+  da.coords().set(Dim::Y, edges);
+  EXPECT_EQ(bin(da, {edges_y}), expected);
 }
