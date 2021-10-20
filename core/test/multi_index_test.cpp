@@ -202,8 +202,11 @@ TEST_F(MultiIndexTest, advance_slice_and_broadcast) {
 
 TEST_F(MultiIndexTest, scalar_of_1d_bins) {
   const Dim dim = Dim::Row;
-  Dimensions buf{dim, 4};
+  const Dimensions buf{dim, 4};
   check_with_bins(buf, dim, {{0, 4}}, Dimensions{}, Strides{}, {0, 1, 2, 3});
+  check_with_bins(buf, dim, {{1, 4}}, Dimensions{}, Strides{}, {1, 2, 3});
+  check_with_bins(buf, dim, {{0, 3}}, Dimensions{}, Strides{}, {0, 1, 2});
+  check_with_bins(buf, dim, {{1, 1}}, Dimensions{}, Strides{}, {});
 }
 
 TEST_F(MultiIndexTest, 1d_array_of_1d_bins) {
