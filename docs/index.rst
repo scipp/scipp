@@ -111,7 +111,10 @@ Documentation
    :caption: Reference
    :maxdepth: 3
 
-   reference/api
+   reference/classes
+   reference/creation-functions
+   reference/free-functions
+   reference/modules
    reference/linear-algebra
    reference/dtype
    reference/units
