@@ -322,7 +322,7 @@ TEST_F(MultiIndexTest, empty_1d_array_of_2d_bins) {
 
 TEST_F(MultiIndexTest, 2d_array_of_1d_bins) {
   const Dim dim = Dim::Row;
-  Dimensions buf{dim, 12}; // 1d cut into xy=2x3 sections
+  Dimensions buf{dim, 12};
   check_with_bins(buf, dim, {{0, 2}, {2, 4}, {4, 6}, {6, 8}, {8, 10}, {10, 12}},
                   xy, make_strides(xy, xy),
                   {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11});
@@ -338,6 +338,13 @@ TEST_F(MultiIndexTest, 2d_array_of_1d_bins) {
   // slice outer
   check_with_bins(buf, dim, {{0, 2}, {2, 4}, {4, 6}, {6, 8}, {8, 10}, {10, 12}},
                   y, make_strides(y, xy), {0, 1, 2, 3, 4, 5});
+  // empty bin
+  check_with_bins(buf, dim, {{0, 0}, {2, 4}, {4, 6}, {6, 8}, {8, 10}, {10, 12}},
+                  xy, make_strides(xy, xy), {2, 3, 4, 5, 6, 7, 8, 9, 10, 11});
+  check_with_bins(buf, dim, {{0, 2}, {2, 2}, {4, 6}, {6, 8}, {8, 10}, {10, 12}},
+                  xy, make_strides(xy, xy), {0, 1, 4, 5, 6, 7, 8, 9, 10, 11});
+  check_with_bins(buf, dim, {{0, 2}, {2, 4}, {4, 6}, {6, 8}, {8, 10}, {10, 10}},
+                  xy, make_strides(xy, xy), {0, 1, 2, 3, 4, 5, 6, 7, 8, 9});
 }
 
 TEST_F(MultiIndexTest, 1d_array_of_1d_bins_and_dense) {
