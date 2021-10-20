@@ -10,28 +10,28 @@ channels:
 
 dependencies:
   # Build
-  - ninja
-  - tbb-devel
-  - conan
-  - cmake
+  - ninja=1.10.*
+  - tbb-devel=2021.3.*
+  - conan=1.41.*
+  - cmake=3.21.*
 
   # Run
   - appdirs
   - ipykernel = 6.3.1  # issue with pythreejs 3d plotting
-  - ipympl
-  - ipywidgets
-  - matplotlib-base
-  - numpy>=1.20.0
-  - python
+  - ipympl=0.8.*
+  - ipywidgets=7.6.*
+  - matplotlib-base=3.4.*
+  - numpy=1.21.*
+  - python=3.7.10
   - python-configuration
-  - pythreejs
+  - pythreejs=2.3.*
   - pyyaml
-  - tbb
+  - tbb=2021.3.*
 
   # Test
-  - h5py
-  - pytest
+  - h5py=3.4.*
+  - pytest=6.2.*
   - python-graphviz
   - xarray  # For testing xarray <-> scipp conversion
   - pandas  # For testing pandas <-> scipp conversion
-  - scipy>=1.7.0
+  - scipy=1.7.*
