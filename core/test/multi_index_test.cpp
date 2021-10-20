@@ -60,6 +60,8 @@ protected:
                   const Indices &... expected) const {
     if (scipp::size(expected0) > 0) {
       ASSERT_NE(i.begin(), i.end());
+    } else {
+      ASSERT_EQ(i.begin(), i.end());
     }
     check_increment(i, expected0, expected...);
     if (i == i.begin()) {
