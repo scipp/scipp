@@ -243,6 +243,17 @@ TEST_F(MultiIndexTest, 1d_array_of_1d_bins) {
   check_with_bins(buf, dim, {{2, 2}}, z, make_strides(z, z), {});
 }
 
+TEST_F(MultiIndexTest, empty_1d_array_of_1d_bins) {
+  const Dimensions bin_dims{{Dim::X, 0}};
+  const Dim dim = Dim::Row;
+  const Dimensions buf{dim, 5};
+  check_with_bins(buf, dim, {}, bin_dims, make_strides(bin_dims, bin_dims), {});
+
+  const Dimensions empty_buf{dim, 0};
+  check_with_bins(empty_buf, dim, {}, bin_dims,
+                  make_strides(bin_dims, bin_dims), {});
+}
+
 TEST_F(MultiIndexTest, scalar_of_2d_bins) {
   const Dimensions buf{{Dim("a"), Dim("b")}, {2, 3}};
   // cut along inner
