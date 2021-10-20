@@ -277,8 +277,9 @@ private:
 
   void set_bins_index(const scipp::index index) noexcept {
     zero_out_coords(m_inner_ndim);
+    assert(m_inner_ndim > 0);
     if (bin_ndim() == 0 && index != 0) {
-      m_coord[m_nested_dim_index] = m_shape[m_nested_dim_index];
+      m_coord[m_inner_ndim - 1] = m_shape[m_inner_ndim - 1];
     } else {
       extract_indices(index, shape_it(m_inner_ndim), shape_end(),
                       coord_it(m_inner_ndim));
@@ -294,13 +295,10 @@ private:
 
   void set_to_end_bin() noexcept {
     zero_out_coords(m_ndim);
-    const auto last_dim = (bin_ndim() == 0 ? m_nested_dim_index : m_ndim - 1);
-    m_coord[last_dim] = m_shape[last_dim];
-
-    for (scipp::index data = 0; data < N; ++data) {
-      // Only one dim contributes, all others have coord = 0.
-      m_bin[data].m_bin_index = m_coord[last_dim] * m_stride[last_dim][data];
-      load_bin_params(data);
+    if (bin_ndim() == 0) {
+      m_coord[m_inner_ndim] = 1;
+    } else {
+      m_coord[m_ndim - 1] = std::max(m_shape[m_ndim - 1], scipp::index{1});
     }
   }
 
