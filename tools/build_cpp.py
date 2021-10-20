@@ -111,6 +111,10 @@ def main(*,
 
     # Compile benchmarks, C++ tests, and python library
     start = time.time()
+    # WARNING We avoid building multiple targets here and instead use the FULL_BUILD
+    # option to cmake. If multiple `cmake --build` commands are used, Visual Studio
+    # builds eveything from scratch for every target, which leads to a large build
+    # time overhead on CI. Do not change unless you know what you are doing.
     run_command(['cmake', '--build', '.', '--target', 'install'] + build_flags,
                 shell=shell)
     end = time.time()
