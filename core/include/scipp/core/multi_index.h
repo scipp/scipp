@@ -220,8 +220,7 @@ private:
         : m_is_binned{static_cast<bool>(params.bucketParams())},
           m_indices{params.bucketParams().indices} {}
 
-    [[nodiscard]] bool is_binned() noexcept { return m_indices != nullptr; }
-
+    const bool m_is_binned{false};
     scipp::index m_bin_index{0};
     const std::pair<scipp::index, scipp::index> *m_indices{nullptr};
   };
