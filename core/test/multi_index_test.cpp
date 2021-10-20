@@ -421,10 +421,3 @@ TEST_F(MultiIndexTest, two_1d_arrays_of_1d_bins_bin_size_mismatch) {
                                {0, 1, 2, 3, 4, 5, 6}),
                except::BinnedDataError);
 }
-
-TEST_F(MultiIndexTest, 2d_empty_dims_array_of_1d_bins) {
-  const Dim dim = Dim::Row;
-  Dimensions buf{dim, 0}; // 1d cut into dims=0 sections
-  Dimensions dims{{Dim::X, 0}};
-  check_with_bins(buf, dim, {}, dims, make_strides(dims, dims), {});
-}
