@@ -200,6 +200,20 @@ private:
     return m_ndim - m_inner_ndim;
   }
 
+  [[nodiscard]] bool current_bin_is_empty() const noexcept {
+    return m_shape[m_nested_dim_index] == 0;
+  }
+
+  [[nodiscard]] scipp::index last_dim() const noexcept {
+    if (has_bins()) {
+      return bin_ndim() == 0 ? m_ndim : m_ndim - 1;
+    } else {
+      return std::max(m_ndim - 1, scipp::index{0});
+    }
+  }
+
+  [[nodiscard]] bool at_end() const noexcept { return dim_at_end(last_dim()); }
+
   struct BinIterator {
     BinIterator() = default;
     explicit BinIterator(const ElementArrayViewParams &params)
