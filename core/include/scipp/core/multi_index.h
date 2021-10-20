@@ -64,7 +64,7 @@ public:
     // Note that we do not check whether there are any bins, instead whether
     // the outer Variable is scalar because the loop above is enough to set up
     // the coord in that case.
-    if (bin_ndim() != 0 && dim_at_end(m_inner_ndim - 1))
+    if (has_bins() && dim_at_end(m_inner_ndim - 1))
       seek_bin();
   }
 
