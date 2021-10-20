@@ -10,7 +10,7 @@ class Variable:
         self.var2 = sc.array(dims=['x'], values=[1, 2, 3, 4, 5])
 
     def time_shallow_copy(self):
-        self.var1 = self.var2
+        self.var1.copy(deep=False)
 
     def time_deep_copy(self):
         self.var1.copy()
