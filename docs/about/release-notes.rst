@@ -23,6 +23,7 @@ Bugfixes
 * Fix bugs in ``rebin`` if data and/or edges had strides other than 1 along rebinned dimension, typically only occuring with multi-dimensional (ragged) coordinates `#2211 <https://github.com/scipp/scipp/pull/2211>`_.
 * Fix exception that was thrown when importing empty datasets from HDF5 files using ``open_hdf5`` `#2216 https://github.com/scipp/scipp/pull/2216`_.
 * Fix exception in ``astype`` when called with binned data that does not require conversion `#2222 <https://github.com/scipp/scipp/pull/2222>`_.
+* Fix exception in ``bin`` when binning in a new dimension but with an existing bin coord `#2237 <https://github.com/scipp/scipp/pull/2237>`_.
 
 Contributors
 ~~~~~~~~~~~~

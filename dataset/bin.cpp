@@ -213,7 +213,7 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
       out_coords[coord.dims().inner()] = copy(coord);
     }
   for (const auto &[dim_, coord] : coords)
-    if (!rebinned(coord))
+    if (!rebinned(coord) && !out_coords.contains(dim_))
       out_coords[dim_] = copy(coord);
   auto out_masks = extract_unbinned(buffer, get_masks);
   for (const auto &[name, mask] : masks)
@@ -221,7 +221,7 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
       out_masks[name] = copy(mask);
   auto out_attrs = extract_unbinned(buffer, get_attrs);
   for (const auto &[dim_, coord] : attrs)
-    if (!rebinned(coord))
+    if (!rebinned(coord) && !out_coords.contains(dim_))
       out_attrs[dim_] = copy(coord);
   return DataArray{
       make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer)),
@@ -276,6 +276,7 @@ public:
         // every input event. This is unrelated and varies independently,
         // depending on parameters of the input.
         if (bin_coords.count(dim) && m_offsets.dims().empty() &&
+            bin_coords.at(dim).dims().contains(dim) &&
             allsorted(bin_coords.at(dim), dim)) {
           const auto &bin_coord = bin_coords.at(dim);
           const bool histogram =
