@@ -61,11 +61,6 @@ option(FULL_BUILD
        "Enable full build where the 'all' target includes tests and benchmarks."
        OFF
 )
-if(FULL_BUILD)
-  set(MINIMAL_BUILD 0)
-else()
-  set(MINIMAL_BUILD 1)
-endif()
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
