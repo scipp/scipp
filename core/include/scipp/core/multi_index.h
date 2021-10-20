@@ -119,7 +119,7 @@ public:
       if (m_inner_ndim == 0) {
         m_coord[0] = 1;
       } else {
-        std::fill(coord_it(0), coord_it(m_inner_ndim - 1), 0);
+        zero_out_coords(m_inner_ndim - 1);
         m_coord[m_inner_ndim - 1] = m_shape[m_inner_ndim - 1];
       }
       for (scipp::index data = 0; data < N; ++data) {
