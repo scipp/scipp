@@ -5,7 +5,7 @@
 set(TARGET_NAME "scipp-core-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
-  ${TARGET_NAME} EXCLUDE_FROM_ALL
+  ${TARGET_NAME}
   dimensions_test.cpp
   eigen_test.cpp
   element_array_test.cpp
@@ -43,6 +43,9 @@ endif()
 set_property(
   TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION
                                  ${INTERPROCEDURAL_OPTIMIZATION_TESTS}
+)
+set_property(
+  TARGET ${TARGET_NAME} PROPERTY EXCLUDE_FROM_ALL $<NOT:$<BOOL:${FULL_BUILD}>>
 )
 add_sanitizers(${TARGET_NAME})
 if(${WITH_CTEST})

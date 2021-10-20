@@ -57,6 +57,11 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake"
                       "${CMAKE_SOURCE_DIR}/cmake/sanitizers-cmake/cmake"
 )
 
+option(FULL_BUILD
+       "Enable full build where the 'all' target includes tests and benchmarks."
+       OFF
+)
+
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
@@ -239,7 +244,11 @@ include(scipp-functions)
 include(scipp-install)
 
 add_subdirectory(common)
-add_subdirectory(benchmark)
+if(FULL_BUILD)
+  add_subdirectory(benchmark)
+else()
+  add_subdirectory(benchmark EXCLUDE_FROM_ALL)
+endif()
 add_subdirectory(units)
 add_subdirectory(core)
 add_subdirectory(variable)
