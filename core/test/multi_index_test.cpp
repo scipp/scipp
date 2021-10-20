@@ -108,6 +108,7 @@ protected:
 
   Dimensions x{Dim::X, 2};
   Dimensions y{Dim::Y, 3};
+  Dimensions z{Dim::Z, 1};
   Dimensions yx{{Dim::Y, Dim::X}, {3, 2}};
   Dimensions xy{{Dim::X, Dim::Y}, {2, 3}};
   Dimensions xz{{Dim::X, Dim::Z}, {2, 4}};
@@ -212,7 +213,7 @@ TEST_F(MultiIndexTest, scalar_of_1d_bins) {
 
 TEST_F(MultiIndexTest, 1d_array_of_1d_bins) {
   const Dim dim = Dim::Row;
-  Dimensions buf{dim, 7}; // 1d cut into two sections
+  const Dimensions buf{dim, 7}; // 1d cut into 2 sections
   // natural order no gaps
   check_with_bins(buf, dim, {{0, 3}, {3, 7}}, x, make_strides(x, x),
                   {0, 1, 2, 3, 4, 5, 6});
@@ -225,6 +226,19 @@ TEST_F(MultiIndexTest, 1d_array_of_1d_bins) {
   // out of order
   check_with_bins(buf, dim, {{4, 7}, {0, 4}}, x, make_strides(x, x),
                   {4, 5, 6, 0, 1, 2, 3});
+  // empty bin at start
+  check_with_bins(buf, dim, {{0, 0}, {0, 3}, {3, 7}}, y, make_strides(y, y),
+                  {0, 1, 2, 3, 4, 5, 6});
+  // empty bin at end
+  check_with_bins(buf, dim, {{0, 3}, {3, 3}, {4, 7}}, y, make_strides(y, y),
+                  {0, 1, 2, 4, 5, 6});
+  // empty bin in between
+  check_with_bins(buf, dim, {{0, 3}, {3, 7}, {4, 4}}, y, make_strides(y, y),
+                  {0, 1, 2, 3, 4, 5, 6});
+  // single bin
+  check_with_bins(buf, dim, {{2, 5}}, z, make_strides(z, z), {2, 3, 4});
+  // single empty bin
+  check_with_bins(buf, dim, {{2, 2}}, z, make_strides(z, z), {});
 }
 
 TEST_F(MultiIndexTest, scalar_of_2d_bins) {
