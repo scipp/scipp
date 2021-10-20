@@ -18,6 +18,7 @@ protected:
                        const Indices &... expected) const {
     const auto end = i.end();
     for (scipp::index n = 0; n < scipp::size(expected0); ++n) {
+      SCOPED_TRACE(n);
       ASSERT_NE(i, end);
       EXPECT_EQ(i.get(), (std::array{expected0[n], expected[n]...}));
       i.increment();
