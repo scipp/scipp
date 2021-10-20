@@ -256,14 +256,21 @@ private:
   }
 
   void load_bin_params(const scipp::index data) noexcept {
-    if (!m_bin[data].is_binned()) {
+    if (!m_bin[data].m_is_binned) {
       m_data_index[data] = flat_index(data, 0, m_ndim);
     } else if (!at_end()) {
       // All bins are guaranteed to have the same size.
       // Use common m_shape and m_nested_stride for all.
-      const auto [begin, end] = m_bin[data].m_indices[m_bin[data].m_bin_index];
-      m_shape[m_nested_dim_index] = end - begin;
-      m_data_index[data] = m_bin_stride * begin;
+      if (m_bin[data].m_indices != nullptr) {
+        const auto [begin, end] =
+            m_bin[data].m_indices[m_bin[data].m_bin_index];
+        m_shape[m_nested_dim_index] = end - begin;
+        m_data_index[data] = m_bin_stride * begin;
+      } else {
+        // m_indices can be nullptr if there are bins, but they are empty.
+        m_shape[m_nested_dim_index] = 0;
+        m_data_index[data] = 0;
+      }
     }
     // else: at end of bins
   }
