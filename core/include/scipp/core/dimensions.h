@@ -98,11 +98,6 @@ Dimensions merge(const Dimensions &a, const Dimensions &b,
 [[nodiscard]] SCIPP_CORE_EXPORT Dimensions
 transpose(const Dimensions &dims, scipp::span<const Dim> labels = {});
 
-[[nodiscard]] SCIPP_CORE_EXPORT inline Dimensions
-transpose(const Dimensions &dims, std::initializer_list<Dim> labels) {
-  return transpose(dims, scipp::span<const Dim>{labels.begin(), labels.end()});
-}
-
 [[nodiscard]] SCIPP_CORE_EXPORT Dimensions fold(const Dimensions &old_dims,
                                                 const Dim from_dim,
                                                 const Dimensions &to_dims);
