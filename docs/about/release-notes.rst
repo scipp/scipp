@@ -25,6 +25,7 @@ Bugfixes
 * Fix exception that was thrown when importing empty datasets from HDF5 files using ``open_hdf5`` `#2216 <https://github.com/scipp/scipp/pull/2216>`_.
 * Fix exception in ``astype`` when called with binned data that does not require conversion `#2222 <https://github.com/scipp/scipp/pull/2222>`_.
 * Fix bug in ``concatenate`` that could lead to masks being shared with input rather than being copied `#2232 <https://github.com/scipp/scipp/pull/2232>`_.
+* Fix exception in ``bin`` when binning in a new dimension but with an existing bin coord `#2237 <https://github.com/scipp/scipp/pull/2237>`_.
 
 Deprecations
 ~~~~~~~~~~~~
