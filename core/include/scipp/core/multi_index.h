@@ -217,7 +217,8 @@ private:
   struct BinIterator {
     BinIterator() = default;
     explicit BinIterator(const ElementArrayViewParams &params)
-        : m_indices{params.bucketParams().indices} {}
+        : m_is_binned{static_cast<bool>(params.bucketParams())},
+          m_indices{params.bucketParams().indices} {}
 
     [[nodiscard]] bool is_binned() noexcept { return m_indices != nullptr; }
 
