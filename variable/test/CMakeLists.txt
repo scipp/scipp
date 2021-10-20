@@ -5,7 +5,7 @@
 set(TARGET_NAME "scipp-variable-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
-  ${TARGET_NAME} EXCLUDE_FROM_ALL
+  ${TARGET_NAME}
   accumulate_test.cpp
   astype_test.cpp
   bin_array_model_test.cpp
@@ -50,6 +50,9 @@ endif()
 set_property(
   TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION
                                  ${INTERPROCEDURAL_OPTIMIZATION_TESTS}
+)
+set_property(
+  TARGET ${TARGET_NAME} PROPERTY EXCLUDE_FROM_ALL $<NOT:$<BOOL:${FULL_BUILD}>>
 )
 add_sanitizers(${TARGET_NAME})
 if(${WITH_CTEST})

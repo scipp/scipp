@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
-set_directory_properties(PROPERTIES EXCLUDE_FROM_ALL 1)
 add_custom_target(all-benchmarks)
 
 add_executable(groupby_benchmark groupby_benchmark.cpp)
@@ -73,7 +72,9 @@ target_link_libraries(
   dataset_operations_benchmark LINK_PRIVATE scipp-dataset benchmark::benchmark
 )
 
-add_executable(legacy_histogram_benchmark legacy_histogram_benchmark.cpp)
+add_executable(
+  legacy_histogram_benchmark EXCLUDE_FROM_ALL legacy_histogram_benchmark.cpp
+)
 # add_dependencies(all-benchmarks legacy_histogram_benchmark)
 target_link_libraries(
   legacy_histogram_benchmark LINK_PRIVATE scipp-core benchmark::benchmark
