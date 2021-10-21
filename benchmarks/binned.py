@@ -8,7 +8,7 @@ class Binned1d:
     """
     Benchmark different aspects of binned data
     """
-    params = (list(10**np.arange(8)), list(10**np.arange(1, 7)))
+    params = (list(10**np.arange(8)), list(10**np.arange(0, 7)))
     param_names = ['nevent', 'nbin']
 
     def setup(self, nevent, nbin):

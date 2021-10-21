@@ -24,5 +24,5 @@ def binned_x(nevent: int, nbin: int) -> DataArray:
     Return data array binned along 1 dimension.
     """
     table = table_xyz(nevent)
-    x = linspace(dim='x', unit='m', start=0.0, stop=1.0, num=nbin)
+    x = linspace(dim='x', unit='m', start=0.0, stop=1.0, num=nbin + 1)
     return bin(table, edges=[x])
