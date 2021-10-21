@@ -421,15 +421,15 @@ def test_own_var_1d_bin_set():
                 end=indices['x', 1:],
                 dim='x'))
 
-    # Assignment to indices has no effect.
+    # Bin begin/end indices can be changes, there is no safety check
     binned.bins.constituents['begin']['x', 0] = 1
     binned.bins.constituents['end']['x', -1] = 4
     indices['x', 1] = 1
     assert sc.identical(
         binned,
         sc.bins(data=make_variable([-1, -2, -3, -4, 4], unit='s'),
-                begin=make_variable([0, 2], dtype=sc.dtype.int64),
-                end=make_variable([2, 5], dtype=sc.dtype.int64),
+                begin=make_variable([1, 2], dtype=sc.dtype.int64),
+                end=make_variable([2, 4], dtype=sc.dtype.int64),
                 dim='x'))
 
 
