@@ -103,3 +103,5 @@ for _cls in (DataArray, Dataset):
     _binding.bind_functions_as_methods(_cls, globals(), ('groupby', 'transform_coords'))
 del _cls
 del _binding
+
+from . import data
