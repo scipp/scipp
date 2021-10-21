@@ -180,7 +180,7 @@ if(NOT WIN32)
     -Wold-style-cast
     -Wcast-qual
     -Wcast-align
-    -Wno-unknown-warning-option # Avoiding clang warnings about unknown warning options
+    -Wno-unknown-warning-option # Avoiding clang warnings about unknown warning
     -Werror=attributes
     -Werror=maybe-uninitialized
     -Werror=uninitialized
