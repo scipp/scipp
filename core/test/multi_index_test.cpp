@@ -40,6 +40,8 @@ protected:
         EXPECT_EQ(i, it); // Checks only for m_coord.
         EXPECT_EQ(i.get(), it.get());
       }
+      i.set_index(scipp::size(expected0));
+      ASSERT_EQ(i, i.end());
     } else {
       for (scipp::index bin = 0; bin < bin_volume; ++bin) {
         i.set_index(bin);
@@ -51,6 +53,8 @@ protected:
           ASSERT_EQ(it.get(), (std::array{expected0[n], expected[n]...}));
         }
       }
+      i.set_index(bin_volume);
+      ASSERT_EQ(i, i.end());
     }
   }
 
