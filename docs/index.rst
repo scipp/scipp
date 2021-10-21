@@ -1,32 +1,32 @@
+scipp - Multi-dimensional data arrays with labeled dimensions
+=============================================================
+
 |data-structures| |plotting| |masking|
 |binning| |slicing| |scipp-neutron|
 
 .. |data-structures| image:: _static/title-repr-html.png
-   :width: 33%
+   :width: 32%
    :target: user-guide/data-structures.html
 
 .. |binning| image:: _static/title-binning.png
-   :width: 33%
+   :width: 32%
    :target: user-guide/binned-data/binned-data.html
 
 .. |masking| image:: _static/title-masking.png
-   :width: 33%
+   :width: 32%
    :target: user-guide/masking.html
 
 .. |plotting| image:: _static/title-plotting.png
-   :width: 33%
+   :width: 32%
    :target: visualization/plotting-overview.html
 
 .. |scipp-neutron| image:: _static/title-instrument-view.png
-   :width: 33%
+   :width: 32%
    :target: https://scipp.github.io/scippneutron
 
 .. |slicing| image:: _static/title-show.png
-   :width: 33%
+   :width: 32%
    :target: user-guide/slicing.html
-
-scipp - Multi-dimensional data arrays with labeled dimensions
-=============================================================
 
 A Python library enabling a modern and intuitive way of working with scientific data in Jupyter notebooks
 ---------------------------------------------------------------------------------------------------------
