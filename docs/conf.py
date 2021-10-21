@@ -80,6 +80,7 @@ templates_path = ['_templates']
 #
 # source_suffix = ['.rst', '.md']
 source_suffix = '.rst'
+html_sourcelink_suffix = ''  # Avoid .ipynb.txt extensions in sources
 
 # The master toctree document.
 master_doc = 'index'

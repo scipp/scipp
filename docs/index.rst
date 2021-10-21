@@ -50,7 +50,8 @@ If your use case requires one or several of the items on the following list, usi
 
 Generic functionality of scipp is provided in the **scipp** Python package.
 In addition, more specific functionality is made available in other packages.
-Currently the only example for this is `scippneutron <https://scipp.github.io/scippneutron>`_ for handling data from neutron-scattering experiments.
+Examples for this are `scippneutron <https://scipp.github.io/scippneutron>`_ for handling data from neutron-scattering experiments,
+and `ess <https://scipp.github.io/ess>`_ for dealing with the specifics of neutron instruments at ESS.
 
 News
 ----
