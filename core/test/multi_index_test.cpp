@@ -86,7 +86,8 @@ protected:
       const std::vector<std::pair<scipp::index, scipp::index>> &indices,
       const Dimensions &iter_dims, const Strides &strides,
       const std::vector<scipp::index> &expected) {
-    BucketParams params{slice_dim, buffer_dims, indices.data()};
+    BucketParams params{slice_dim, buffer_dims, Strides{buffer_dims},
+                        indices.data()};
     MultiIndex<1> index(ElementArrayViewParams{0, iter_dims, strides, params});
     check(index, expected, iter_dims.volume());
   }
@@ -98,8 +99,10 @@ protected:
       const Dimensions &iter_dims, const Strides &strides0,
       const Strides &strides1, const std::vector<scipp::index> &expected0,
       const std::vector<scipp::index> &expected1) {
-    BucketParams params0{slice_dim0, buffer_dims0, indices0.data()};
-    BucketParams params1{slice_dim1, buffer_dims1, indices1.data()};
+    BucketParams params0{slice_dim0, buffer_dims0, Strides{buffer_dims0},
+                         indices0.data()};
+    BucketParams params1{slice_dim1, buffer_dims1, Strides{buffer_dims1},
+                         indices1.data()};
     MultiIndex<2> index(
         ElementArrayViewParams{0, iter_dims, strides0, params0},
         ElementArrayViewParams{0, iter_dims, strides1, params1});
