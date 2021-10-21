@@ -4,7 +4,7 @@ import numpy as np
 import scipp as sc
 
 
-class Binned:
+class Binned1d:
     """
     Benchmark different aspects of binned data
     """
