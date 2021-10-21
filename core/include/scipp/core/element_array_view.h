@@ -19,6 +19,7 @@ struct SCIPP_CORE_EXPORT BucketParams {
   explicit operator bool() const noexcept { return dim != Dim::Invalid; }
   Dim dim{Dim::Invalid};
   Dimensions dims{};
+  Strides strides{};
   const std::pair<scipp::index, scipp::index> *indices{nullptr};
 };
 
