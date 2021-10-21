@@ -130,7 +130,13 @@ html_theme = 'sphinx_book_theme'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {'logo_only': True}
+html_theme_options = {
+    "logo_only": True,
+    "repository_url": "https://github.com/scipp/scipp",
+    "use_repository_button": True,
+    "use_issues_button": True,
+    "use_edit_page_button": True
+}
 html_logo = "_static/logo-large-v4.png"
 html_favicon = "_static/favicon.ico"
 
