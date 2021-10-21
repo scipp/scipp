@@ -6,6 +6,7 @@
 #include "scipp/variable/bin_array_model.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/shape.h"
+#include "scipp/variable/structure_array_model.h"
 #include "scipp/variable/variable.tcc"
 #include "scipp/variable/variable_factory.h"
 
@@ -17,7 +18,11 @@ namespace scipp::variable {
 // avoid some of these (see namespace bin_array_variable_detail below, but this
 // particular one is hard to avoid. The `extern template` declaration avoids the
 // instantiation in a different DSO.
-extern template class ElementArrayModel<scipp::index_pair>;
+extern template class StructureArrayModel<scipp::index_pair, scipp::index>;
+
+template <> struct model<scipp::index_pair> {
+  using type = StructureArrayModel<scipp::index_pair, scipp::index>;
+};
 
 namespace bin_array_variable_detail {
 SCIPP_VARIABLE_EXPORT std::tuple<Variable, scipp::index>
@@ -26,6 +31,8 @@ SCIPP_VARIABLE_EXPORT const scipp::index_pair *
 index_pair_data(const Variable &indices);
 SCIPP_VARIABLE_EXPORT scipp::index size_from_end_index(const Variable &end);
 SCIPP_VARIABLE_EXPORT const scipp::index &index_value(const Variable &index);
+SCIPP_VARIABLE_EXPORT VariableConceptHandle
+zero_indices(const scipp::index size);
 } // namespace bin_array_variable_detail
 
 template <class T> std::tuple<Variable, Dim, T> Variable::to_constituents() {
@@ -184,12 +191,12 @@ template <class T> VariableConceptHandle BinArrayModel<T>::clone() const {
 
 template <class T>
 bool BinArrayModel<T>::operator==(const BinArrayModel &other) const noexcept {
+  using IndexModel = StructureArrayModel<scipp::index_pair, scipp::index>;
   if (indices()->dtype() != core::dtype<scipp::index_pair> ||
       other.indices()->dtype() != core::dtype<scipp::index_pair>)
     return false;
-  const auto &i1 = requireT<const ElementArrayModel<range_type>>(*indices());
-  const auto &i2 =
-      requireT<const ElementArrayModel<range_type>>(*other.indices());
+  const auto &i1 = requireT<const IndexModel>(*indices());
+  const auto &i2 = requireT<const IndexModel>(*other.indices());
   return equals_impl(i1.values(), i2.values()) &&
          this->bin_dim() == other.bin_dim() && m_buffer == other.m_buffer;
 }
@@ -198,8 +205,8 @@ template <class T>
 VariableConceptHandle
 BinArrayModel<T>::makeDefaultFromParent(const scipp::index size) const {
   return std::make_shared<BinArrayModel>(
-      makeVariable<range_type>(Dims{Dim::X}, Shape{size}).data_handle(),
-      this->bin_dim(), T{m_buffer.slice({this->bin_dim(), 0, 0})});
+      bin_array_variable_detail::zero_indices(size), this->bin_dim(),
+      T{m_buffer.slice({this->bin_dim(), 0, 0})});
 }
 
 template <class T>
@@ -220,7 +227,8 @@ template <class T> void BinArrayModel<T>::assign(const VariableConcept &other) {
 template <class T>
 ElementArrayView<const typename BinArrayModel<T>::range_type>
 BinArrayModel<T>::index_values(const core::ElementArrayViewParams &base) const {
-  return requireT<const ElementArrayModel<range_type>>(*this->indices())
+  return requireT<const StructureArrayModel<range_type, scipp::index>>(
+             *this->indices())
       .values(base);
 }
 

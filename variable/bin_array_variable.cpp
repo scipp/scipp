@@ -32,4 +32,9 @@ const scipp::index &index_value(const Variable &index) {
   return index.value<scipp::index>();
 }
 
+VariableConceptHandle zero_indices(const scipp::index size) {
+  return makeVariable<scipp::index_pair>(Dims{Dim::X}, Shape{size})
+      .data_handle();
+}
+
 } // namespace scipp::variable::bin_array_variable_detail
