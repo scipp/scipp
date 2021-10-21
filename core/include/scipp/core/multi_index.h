@@ -142,7 +142,9 @@ public:
   [[nodiscard]] bool
   in_same_chunk(const MultiIndex &other,
                 const scipp::index first_dim) const noexcept {
-    for (scipp::index dim = first_dim; dim < m_ndim; ++dim) {
+    // Take scalars of bins into account when calculating ndim.
+    for (scipp::index dim = first_dim;
+         dim < m_inner_ndim + std::max(bin_ndim(), scipp::index{1}); ++dim) {
       if (m_coord[dim] != other.m_coord[dim]) {
         return false;
       }
