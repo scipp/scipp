@@ -1,4 +1,5 @@
-from pathlib import Path
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 import os
 import sys
 import subprocess
