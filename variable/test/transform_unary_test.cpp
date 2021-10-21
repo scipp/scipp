@@ -102,8 +102,8 @@ TEST_P(TransformUnaryDenseTest, dense) {
 }
 
 TEST_P(TransformUnaryDenseTest, slice) {
-  for (const auto &slices :
-       scipp::testing::make_slice_combinations(input_var.dims().shape())) {
+  for (const auto &slices : scipp::testing::make_slice_combinations(
+           input_var.dims().shape(), {Dim::X, Dim::Y, Dim::Z})) {
     auto a = slice(copy(input_var), slices);
     check_transform(a);
   }

@@ -135,8 +135,8 @@ TEST_P(TransformBinaryDenseTest, scalar_and_array) {
 }
 
 TEST_P(TransformBinaryDenseTest, slices) {
-  for (const auto &slices :
-       scipp::testing::make_slice_combinations(input1.dims().shape())) {
+  for (const auto &slices : scipp::testing::make_slice_combinations(
+           input1.dims().shape(), {Dim::X, Dim::Y, Dim::Z})) {
     auto a = slice(copy(input1), slices);
     auto b = slice(copy(input2), slices);
     check_transform_combinations(a, b);
