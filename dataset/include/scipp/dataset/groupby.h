@@ -47,7 +47,7 @@ public:
   T copy(const scipp::index group,
          const AttrPolicy attrPolicy = AttrPolicy::Keep) const;
 
-  T concatenate(const Dim reductionDim) const;
+  T concat(const Dim reductionDim) const;
   T mean(const Dim reductionDim) const;
   T sum(const Dim reductionDim) const;
   T all(const Dim reductionDim) const;
