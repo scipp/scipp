@@ -180,15 +180,18 @@ if(NOT WIN32)
     -Wold-style-cast
     -Wcast-qual
     -Wcast-align
+    -Wno-unknown-warning-option # Avoiding clang warnings about unknown warning options
     -Werror=attributes
     -Werror=maybe-uninitialized
+    -Werror=uninitialized
     -Werror=return-type
   )
   add_compile_options(
     $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
     $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
   )
-endif(NOT WIN32)
+endif()
+
 # This is currently causing to many warnings, reenable when appropriate.
 # add_compile_options ( -Wconversion )
 
