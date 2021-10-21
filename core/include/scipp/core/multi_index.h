@@ -276,11 +276,12 @@ private:
   }
 
   void set_bins_index(const scipp::index index) noexcept {
-    zero_out_coords(m_inner_ndim);
     assert(m_inner_ndim > 0);
     if (bin_ndim() == 0 && index != 0) {
-      m_coord[m_inner_ndim - 1] = m_shape[m_inner_ndim - 1];
+      // Scalar outer dims and setting to / past end.
+      set_to_end_bin();
     } else {
+      zero_out_coords(m_inner_ndim);
       extract_indices(index, shape_it(m_inner_ndim), shape_end(),
                       coord_it(m_inner_ndim));
     }
