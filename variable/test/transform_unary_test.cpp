@@ -181,6 +181,20 @@ TEST_P(TransformUnaryRegularBinsTest, full) {
   EXPECT_EQ(binned, result_return);
 }
 
+TEST_P(TransformUnaryRegularBinsTest, slices_in_bin) {
+  for (const auto &slices : scipp::testing::make_slice_combinations(
+           binned.dims().shape(), {Dim{"i0"}, Dim{"i1"}, Dim{"i2"}})) {
+    auto full_view = make_input_variable();
+    auto sliced = slice(full_view, slices);
+
+    const auto result_return = transform<double>(sliced, op, name);
+    EXPECT_EQ(result_return, compute_on_buffer(sliced));
+
+    transform_in_place<double>(sliced, op_in_place, name);
+    EXPECT_EQ(sliced, result_return);
+  }
+}
+
 class TransformUnaryIrregularBinsTest
     : public TransformUnaryTest,
       public ::testing::WithParamInterface<std::tuple<Variable, bool>> {
