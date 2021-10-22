@@ -74,12 +74,12 @@ protected:
   }
   void check(MultiIndex<1> i, const std::vector<scipp::index> &indices,
              const scipp::index bin_volume = 0) const {
-    check_impl(std::move(i), bin_volume, indices);
+    check_impl(i, bin_volume, indices);
   }
   void check(MultiIndex<2> i, const std::vector<scipp::index> &indices0,
              const std::vector<scipp::index> &indices1,
              const scipp::index bin_volume = 0) const {
-    check_impl(std::move(i), bin_volume, indices0, indices1);
+    check_impl(i, bin_volume, indices0, indices1);
   }
   void check_with_bins(
       const Dimensions &buffer_dims, const Dim slice_dim,
