@@ -76,6 +76,8 @@ template <class T, class U> struct arg_type<T(U)> { using type = U; };
       const;                                                                   \
   template SCIPP_EXPORT Variable Variable::elements<arg_type<void(T)>::type>(  \
       const std::string &) const;                                              \
-  INSTANTIATE_ELEMENT_ARRAY_VARIABLE(name, arg_type<void(T)>::type)
+  template class SCIPP_EXPORT                                                  \
+      StructureArrayModel<arg_type<void(T)>::type, Elem>;                      \
+  INSTANTIATE_ELEMENT_ARRAY_VARIABLE_BASE(name, arg_type<void(T)>::type)
 
 } // namespace scipp::variable

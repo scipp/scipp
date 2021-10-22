@@ -37,6 +37,13 @@ template <class T> auto &cast(Variable &var) {
   return requireT<model_t<T>>(var.data());
 }
 
+template <int I, class T> decltype(auto) get(T &&t) {
+  if constexpr (core::has_eval_v<std::decay_t<T>>)
+    return t.operator()(I);
+  else
+    return std::get<I>(t);
+}
+
 template <class T>
 auto make_model(const units::Unit unit, const Dimensions &dimensions,
                 element_array<T> values,
@@ -50,7 +57,7 @@ auto make_model(const units::Unit unit, const Dimensions &dimensions,
     using Elem = typename model_t<T>::element_type;
     element_array<Elem> elems;
     if (values) {
-      auto begin = static_cast<Elem *>(&values.begin()->operator()(0));
+      auto begin = static_cast<Elem *>(&get<0>(*values.begin()));
       auto end = begin + model_t<T>::element_count * values.size();
       elems = element_array<Elem>{begin, end};
     }

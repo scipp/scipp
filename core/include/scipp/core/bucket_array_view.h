@@ -12,10 +12,9 @@
 namespace scipp::core {
 
 template <class T>
-class bucket_array_view
-    : public ElementArrayView<const bucket_base::range_type> {
+class bucket_array_view : public ElementArrayView<const scipp::index_pair> {
 public:
-  using value_type = const typename bucket_base::range_type;
+  using value_type = const scipp::index_pair;
   using base = ElementArrayView<const value_type>;
 
   bucket_array_view(const base &buckets, const Dim dim, T &buffer)

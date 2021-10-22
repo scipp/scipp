@@ -11,7 +11,7 @@ std::tuple<Variable, scipp::index> contiguous_indices(const Variable &parent,
   auto indices = Variable(parent, dims);
   copy(parent, indices);
   scipp::index size = 0;
-  for (auto &range : indices.values<core::bucket_base::range_type>()) {
+  for (auto &range : indices.values<scipp::index_pair>()) {
     range.second += size - range.first;
     range.first = size;
     size = range.second;
@@ -30,6 +30,11 @@ scipp::index size_from_end_index(const Variable &end) {
 
 const scipp::index &index_value(const Variable &index) {
   return index.value<scipp::index>();
+}
+
+VariableConceptHandle zero_indices(const scipp::index size) {
+  return makeVariable<scipp::index_pair>(Dims{Dim::X}, Shape{size})
+      .data_handle();
 }
 
 } // namespace scipp::variable::bin_array_variable_detail
