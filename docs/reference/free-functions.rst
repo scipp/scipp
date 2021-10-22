@@ -1,48 +1,5 @@
 .. currentmodule:: scipp
 
-Classes
-=======
-
-.. autosummary::
-   :toctree: ../generated/classes
-   :template: scipp-class-template.rst
-   :recursive:
-
-   Bins
-   DataArray
-   Dataset
-   GroupByDataArray
-   GroupByDataset
-   Unit
-   Variable
-   typing.VariableLike
-   typing.MetaDataMap
-
-Creation functions
-==================
-
-.. autosummary::
-   :toctree: ../generated/functions
-
-   array
-   arange
-   empty
-   empty_like
-   full
-   full_like
-   geomspace
-   linspace
-   logspace
-   matrix
-   matrices
-   ones
-   ones_like
-   scalar
-   vector
-   vectors
-   zeros
-   zeros_like
-
 Free functions
 ==============
 
@@ -239,15 +196,3 @@ Compatibility
    from_dict
    compat.from_pandas
    compat.from_xarray
-
-Modules
-=======
-
-.. autosummary::
-   :toctree: ../generated/modules
-   :template: scipp-module-template.rst
-   :recursive:
-
-   constants
-   spatial
-
