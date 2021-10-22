@@ -421,7 +421,7 @@ def test_own_var_1d_bin_set():
                 end=indices['x', 1:],
                 dim='x'))
 
-    # Bin begin/end indices can be changes, there is no safety check
+    # Bin begin/end indices can be changed, there is no safety check
     binned.bins.constituents['begin']['x', 0] = 1
     binned.bins.constituents['end']['x', -1] = 4
     indices['x', 1] = 1
