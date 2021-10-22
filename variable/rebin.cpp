@@ -102,7 +102,7 @@ auto as_contiguous(const Variable &var, const Dim dim) {
   auto dims = var.dims();
   dims.erase(dim);
   dims.addInner(dim, var.dims()[dim]);
-  return copy(transpose(var, {dims.begin(), dims.end()}));
+  return copy(transpose(var, dims.labels()));
 }
 } // namespace
 
@@ -115,7 +115,7 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
     // We *copy* the transpose to ensure that memory order of dims matches input
     return copy(
         transpose(rebin(as_contiguous(var, dim), dim, oldCoord, newCoord),
-                  {var.dims().begin(), var.dims().end()}));
+                  var.dims().labels()));
   // TODO Note that this currently rebins counts but resamples bool
   // Rebin could also implemented for count-densities. However, it may be better
   // to avoid this since it increases complexity. Instead, densities could
@@ -189,8 +189,7 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
   // If rebinned dimension has stride 1 but is not an inner dimension then we
   // need to transpose the output of transform_subspan to retain the input
   // dimension order.
-  const auto &order = var.dims().labels();
-  return transpose(rebinned, {order.begin(), order.end()});
+  return transpose(rebinned, var.dims().labels());
 }
 
 } // namespace scipp::variable

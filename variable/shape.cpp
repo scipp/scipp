@@ -127,7 +127,7 @@ Variable flatten(const Variable &view, const std::span<const Dim> &from_labels,
   return out;
 }
 
-Variable transpose(const Variable &var, const std::vector<Dim> &dims) {
+Variable transpose(const Variable &var, const std::span<const Dim> dims) {
   return var.transpose(dims);
 }
 

@@ -25,7 +25,7 @@ TEST(ShapeTest, broadcast) {
   const Dimensions z(Dim::Z, 3);
   EXPECT_EQ(broadcast(var, merge(z, var.dims())), reference);
   EXPECT_EQ(broadcast(var, merge(var.dims(), z)),
-            transpose(reference, {Dim::Y, Dim::X, Dim::Z}));
+            transpose(reference, std::vector<Dim>{Dim::Y, Dim::X, Dim::Z}));
 }
 
 TEST(ShapeTest, broadcast_does_not_copy) {
@@ -208,15 +208,17 @@ TEST(TransposeTest, make_transposed_2d) {
   auto ref = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                   Values{1, 3, 5, 2, 4, 6},
                                   Variances{11, 13, 15, 12, 14, 16});
-  EXPECT_EQ(transpose(var, {Dim::Y, Dim::X}), ref);
-  EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::X}), ref);
+  EXPECT_EQ(transpose(var, std::vector<Dim>{Dim::Y, Dim::X}), ref);
+  EXPECT_EQ(transpose(constVar, std::vector<Dim>{Dim::Y, Dim::X}), ref);
 
-  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+  EXPECT_THROW_DISCARD(transpose(constVar, std::vector<Dim>{Dim::Y, Dim::Z}),
                        except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y}), except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+  EXPECT_THROW_DISCARD(transpose(constVar, std::vector<Dim>{Dim::Y}),
                        except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(var, {Dim::Z}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, std::vector<Dim>{Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, std::vector<Dim>{Dim::Z}),
+                       except::DimensionError);
 }
 
 TEST(TransposeTest, make_transposed_multiple_d) {
@@ -229,15 +231,17 @@ TEST(TransposeTest, make_transposed_multiple_d) {
   auto ref = makeVariable<double>(Dims{Dim::Y, Dim::Z, Dim::X}, Shape{2, 1, 3},
                                   Values{1, 3, 5, 2, 4, 6},
                                   Variances{11, 13, 15, 12, 14, 16});
-  EXPECT_EQ(transpose(var, {Dim::Y, Dim::Z, Dim::X}), ref);
-  EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::Z, Dim::X}), ref);
+  EXPECT_EQ(transpose(var, std::vector<Dim>{Dim::Y, Dim::Z, Dim::X}), ref);
+  EXPECT_EQ(transpose(constVar, std::vector<Dim>{Dim::Y, Dim::Z, Dim::X}), ref);
 
-  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+  EXPECT_THROW_DISCARD(transpose(constVar, std::vector<Dim>{Dim::Y, Dim::Z}),
                        except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y}), except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(var, {Dim::Y, Dim::Z}),
+  EXPECT_THROW_DISCARD(transpose(constVar, std::vector<Dim>{Dim::Y}),
                        except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(var, {Dim::Z}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, std::vector<Dim>{Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, std::vector<Dim>{Dim::Z}),
+                       except::DimensionError);
 }
 
 TEST(TransposeTest, reverse) {

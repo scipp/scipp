@@ -134,7 +134,7 @@ public:
 
   [[nodiscard]] Variable broadcast(const Dimensions &target) const;
   [[nodiscard]] Variable fold(const Dim dim, const Dimensions &target) const;
-  [[nodiscard]] Variable transpose(const std::vector<Dim> &order) const;
+  [[nodiscard]] Variable transpose(std::span<const Dim> order) const;
 
   [[nodiscard]] bool is_valid() const noexcept;
   [[nodiscard]] bool is_slice() const;

@@ -473,8 +473,8 @@ TEST_F(TransposeTest, data_array_2d) {
   EXPECT_EQ(transposed.data(), transpose(a.data()));
   transposed.setData(a.data());
   EXPECT_EQ(transposed, a);
-  EXPECT_EQ(transpose(a, {Dim::X, Dim::Y}), transpose(a));
-  EXPECT_EQ(transpose(a, {Dim::Y, Dim::X}), a);
+  EXPECT_EQ(transpose(a, std::vector<Dim>{Dim::X, Dim::Y}), transpose(a));
+  EXPECT_EQ(transpose(a, std::vector<Dim>{Dim::Y, Dim::X}), a);
 }
 
 TEST_F(TransposeTest, data_array_2d_meta_data) {
@@ -490,8 +490,8 @@ TEST_F(TransposeTest, data_array_2d_meta_data) {
   EXPECT_EQ(transposed.data(), transpose(a.data()));
   transposed.setData(a.data());
   EXPECT_EQ(transposed, a);
-  EXPECT_EQ(transpose(a, {Dim::X, Dim::Y}), transpose(a));
-  EXPECT_EQ(transpose(a, {Dim::Y, Dim::X}), a);
+  EXPECT_EQ(transpose(a, std::vector<Dim>{Dim::X, Dim::Y}), transpose(a));
+  EXPECT_EQ(transpose(a, std::vector<Dim>{Dim::Y, Dim::X}), a);
 }
 
 TEST_F(TransposeTest, dataset_no_order) {
@@ -510,9 +510,10 @@ TEST_F(TransposeTest, dataset_2d) {
   Dataset d;
   d.setData("a", a);
   d.setData("b", transpose(a));
-  auto transposed = transpose(d, {Dim::X, Dim::Y});
+  auto transposed = transpose(d, std::vector<Dim>{Dim::X, Dim::Y});
   EXPECT_EQ(transposed["a"], d["b"]);
   EXPECT_EQ(transposed["b"], d["b"]);
   d.setData("c", a.slice({Dim::X, 0}));
-  EXPECT_THROW_DISCARD(transpose(d, {Dim::X, Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(d, std::vector<Dim>{Dim::X, Dim::Y}),
+                       except::DimensionError);
 }
