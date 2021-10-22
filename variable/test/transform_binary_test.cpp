@@ -33,6 +33,17 @@ const std::vector<std::vector<units::Dim>> dim_combinations{
     {Dim::X, Dim::Z},
     {Dim::Y, Dim::Z},
     {Dim::X, Dim::Y, Dim::Z}};
+
+std::optional<Variable> slice_to_scalar(Variable var,
+                                        scipp::span<const units::Dim> dims) {
+  for (const auto &dim : dims) {
+    if (!var.dims().contains(dim) || var.dims().at(dim) == 0) {
+      return std::nullopt;
+    }
+    var = var.slice(Slice{dim, 0, -1});
+  }
+  return var;
+}
 } // namespace
 
 class TransformBinaryTest : public ::testing::Test {
@@ -157,18 +168,15 @@ TEST_P(TransformBinaryDenseTest, slices) {
 
 TEST_P(TransformBinaryDenseTest, broadcast) {
   for (const auto &dims : dim_combinations) {
-    if (!std::all_of(dims.begin(), dims.end(), [&b = this->input2](auto dim) {
-          return b.dims().contains(dim) && b.dims().at(dim) > 0;
-        }))
+    auto sliced_ = slice_to_scalar(input2, dims);
+    if (!sliced_)
       continue;
-    auto b = input2;
-    for (const auto &dim : dims)
-      b = b.slice(Slice{dim, 0, -1});
+    auto sliced = sliced_.value();
 
     auto a = copy(input1);
-    check_transform_combinations(a, b);
+    check_transform_combinations(a, sliced);
 
-    auto dense_b = copy(b);
+    auto dense_b = copy(sliced);
     check_transform_combinations(a, dense_b);
   }
 }
@@ -429,6 +437,27 @@ TEST_P(TransformBinaryRegularBinsTest, binned_with_binned) {
 
   transform_in_place<double>(binned1, binned2, op_in_place, name);
   EXPECT_EQ(binned1, ab);
+}
+
+TEST_P(TransformBinaryRegularBinsTest, binned_with_binned_broadcast) {
+  for (const auto &dims : dim_combinations) {
+    auto sliced_ = slice_to_scalar(binned2, dims);
+    if (!sliced_)
+      continue;
+    const auto sliced = sliced_.value();
+    auto a = copy(binned1);
+    const auto expected =
+        transform<double>(a, sliced.broadcast(a.dims()), op, name);
+
+    for (auto &b : {sliced, copy(sliced)}) {
+      EXPECT_EQ(transform<double>(a, b, op, name), expected);
+      transform_in_place<double>(a, b, op_in_place, name);
+      EXPECT_EQ(a, expected);
+      auto mutable_b = b;
+      EXPECT_THROW(transform_in_place<double>(mutable_b, a, op_in_place, name),
+                   except::DimensionError);
+    }
+  }
 }
 
 TEST_P(TransformBinaryRegularBinsTest, binned_with_dense) {
