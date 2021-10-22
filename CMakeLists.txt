@@ -192,7 +192,10 @@ if(NOT WIN32)
   )
 endif()
 
-find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
+option(CPPCHECK "Enable running cppcheck during compilation if found." ON)
+if(CPPCHECK)
+  find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
+endif()
 if(CMAKE_CXX_CPPCHECK)
   list(
     APPEND
