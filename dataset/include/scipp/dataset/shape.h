@@ -36,8 +36,8 @@ flatten(const DataArray &a, const std::span<const Dim> &from_labels,
         const Dim to_dim);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-transpose(const DataArray &a, scipp::span<const Dim> dims = {});
+transpose(const DataArray &a, std::span<const Dim> dims = {});
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset
-transpose(const Dataset &d, scipp::span<const Dim> dims = {});
+transpose(const Dataset &d, std::span<const Dim> dims = {});
 
 } // namespace scipp::dataset
