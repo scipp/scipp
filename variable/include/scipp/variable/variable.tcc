@@ -26,7 +26,7 @@ template <class T, class C> auto &requireT(C &varconcept) {
     throw except::TypeError("Expected item dtype " +
                             to_string(T::static_dtype()) + ", got " +
                             to_string(varconcept.dtype()) + '.');
-  return dynamic_cast<T &>(varconcept);
+  return static_cast<T &>(varconcept);
 }
 
 template <class T> const auto &cast(const Variable &var) {
