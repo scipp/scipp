@@ -69,16 +69,16 @@ from .compat.dict import to_dict, from_dict
 from .coords import transform_coords, show_graph
 
 from .core import add, divide, floor_divide, mod, multiply, subtract
-from .core import lookup, histogram, bin, bins
+from .core import lookup, histogram, bin, bins, bins_like
 from .core import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
 from .core import counts_to_density, density_to_counts
 from .core import cumsum
 from .core import combine_masks, merge
 from .core import groupby
-from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil
+from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc
 from .core import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where
 from .core import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
-from .core import broadcast, concatenate, fold, flatten, transpose
+from .core import broadcast, concat, concatenate, fold, flatten, transpose
 from .core import sin, cos, tan, asin, acos, atan, atan2
 from .core import isnan, isinf, isfinite, isposinf, isneginf, to_unit
 from .core import scalar, zeros, zeros_like, ones, ones_like, empty, empty_like, full, full_like, matrix, matrices, vector, vectors, array, linspace, geomspace, logspace, arange
@@ -103,3 +103,5 @@ for _cls in (DataArray, Dataset):
     _binding.bind_functions_as_methods(_cls, globals(), ('groupby', 'transform_coords'))
 del _cls
 del _binding
+
+from . import data

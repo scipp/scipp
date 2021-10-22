@@ -213,7 +213,7 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
       out_coords[coord.dims().inner()] = copy(coord);
     }
   for (const auto &[dim_, coord] : coords)
-    if (!rebinned(coord))
+    if (!rebinned(coord) && !out_coords.contains(dim_))
       out_coords[dim_] = copy(coord);
   auto out_masks = extract_unbinned(buffer, get_masks);
   for (const auto &[name, mask] : masks)
@@ -221,7 +221,7 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
       out_masks[name] = copy(mask);
   auto out_attrs = extract_unbinned(buffer, get_attrs);
   for (const auto &[dim_, coord] : attrs)
-    if (!rebinned(coord))
+    if (!rebinned(coord) && !out_coords.contains(dim_))
       out_attrs[dim_] = copy(coord);
   return DataArray{
       make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer)),
@@ -276,6 +276,7 @@ public:
         // every input event. This is unrelated and varies independently,
         // depending on parameters of the input.
         if (bin_coords.count(dim) && m_offsets.dims().empty() &&
+            bin_coords.at(dim).dims().contains(dim) &&
             allsorted(bin_coords.at(dim), dim)) {
           const auto &bin_coord = bin_coords.at(dim);
           const bool histogram =
@@ -345,7 +346,7 @@ public:
 
   void join(const Dim dim, const Variable &coord) {
     m_dims.addInner(dim, 1);
-    m_joined.emplace_back(concatenate(min(coord), max(coord), dim));
+    m_joined.emplace_back(concat(std::vector{min(coord), max(coord)}, dim));
     m_actions.emplace_back(AxisAction::Join, dim, m_joined.back());
   }
 
@@ -471,10 +472,10 @@ DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
   builder.erase(reductionDim);
   const auto dims = array.dims();
   for (const auto &dim : dims.labels())
-    if (array.coords().contains(dim)) {
-      if (array.coords()[dim].dims().ndim() != 1 &&
-          array.coords()[dim].dims().contains(reductionDim))
-        builder.join(dim, array.coords()[dim]);
+    if (array.meta().contains(dim)) {
+      if (array.meta()[dim].dims().ndim() != 1 &&
+          array.meta()[dim].dims().contains(reductionDim))
+        builder.join(dim, array.meta()[dim]);
       else if (dim != reductionDim)
         builder.existing(dim, array.dims()[dim]);
     }
@@ -482,7 +483,7 @@ DataArray groupby_concat_bins(const DataArray &array, const Variable &edges,
   const auto masked =
       hide_masked(array.data(), array.masks(), builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
-  builder.build(*target_bins, array.coords());
+  builder.build(*target_bins, array.meta());
   // Note: Unlike in the other cases below we do not call
   // `drop_grouped_event_coords` here. Grouping is based on a bin-coord rather
   // than event-coord so we do not touch the latter.

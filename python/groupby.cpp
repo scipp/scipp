@@ -70,9 +70,9 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
               py::call_guard<py::gil_scoped_release>(),
               docstring_groupby<T>("max").c_str());
 
-  groupBy.def("concatenate", &GroupBy<T>::concatenate, py::arg("dim"),
+  groupBy.def("concat", &GroupBy<T>::concat, py::arg("dim"),
               py::call_guard<py::gil_scoped_release>(),
-              docstring_groupby<T>("concatenate").c_str());
+              docstring_groupby<T>("concat").c_str());
 
   groupBy.def(
       "copy",

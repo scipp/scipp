@@ -54,6 +54,7 @@ General
 
    bin
    bins
+   bins_like
    choose
    collapse
    histogram
@@ -105,6 +106,7 @@ Shape
    :toctree: ../generated/functions
 
    broadcast
+   concat
    concatenate
    flatten
    fold

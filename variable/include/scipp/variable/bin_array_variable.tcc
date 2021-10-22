@@ -146,6 +146,13 @@ public:
   void set_elem_unit(Variable &var, const units::Unit &u) const override {
     std::get<2>(var.constituents<T>()).setUnit(u);
   }
+  bool has_masks(const Variable &var) const override {
+    static_cast<void>(var);
+    if constexpr (std::is_same_v<T, Variable>)
+      return false;
+    else
+      return !std::get<2>(var.constituents<T>()).masks().empty();
+  }
   bool hasVariances(const Variable &var) const override {
     return std::get<2>(var.constituents<T>()).hasVariances();
   }

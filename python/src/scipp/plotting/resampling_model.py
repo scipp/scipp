@@ -6,7 +6,7 @@ from enum import Enum
 
 from ..core import bin as bin_
 from ..core import dtype, units
-from ..core import linspace, rebin, get_slice_params, concatenate, histogram
+from ..core import linspace, rebin, get_slice_params, concat, histogram
 from ..core import DataArray, DimensionError
 from .tools import to_bin_edges
 
@@ -250,7 +250,7 @@ class ResamplingBinnedModel(ResamplingModel):
             edges = self.edges[index]
             # Must specify bounds for final dim despite handling by `histogram`
             # below: If coord is ragged binning would throw otherwise.
-            bounds = concatenate(edges[dim, 0], edges[dim, -1], dim)
+            bounds = concat([edges[dim, 0], edges[dim, -1]], dim)
             binned = bin_(
                 array,
                 edges=[bounds if i == index else e for i, e in enumerate(self.edges)])

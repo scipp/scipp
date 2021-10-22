@@ -129,9 +129,13 @@ VariableConcept &Variable::data() & {
 
 const VariableConceptHandle &Variable::data_handle() const { return m_object; }
 
-scipp::span<const scipp::index> Variable::strides() const {
-  return scipp::span<const scipp::index>(&*m_strides.begin(),
-                                         &*m_strides.begin() + dims().ndim());
+std::span<const scipp::index> Variable::strides() const {
+  return std::span<const scipp::index>(&*m_strides.begin(),
+                                       &*m_strides.begin() + dims().ndim());
+}
+
+scipp::index Variable::stride(const Dim dim) const {
+  return m_strides[dims().index(dim)];
 }
 
 scipp::index Variable::offset() const { return m_offset; }

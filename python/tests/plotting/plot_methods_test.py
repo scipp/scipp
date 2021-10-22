@@ -5,6 +5,8 @@
 
 import numpy as np
 import scipp as sc
+import matplotlib
+matplotlib.use('Agg')
 
 
 def test_plot_variable():

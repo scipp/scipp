@@ -13,6 +13,8 @@ def cumsum(a: _cpp.Variable,
            mode: Optional[str] = 'inclusive') -> _cpp.Variable:
     """Return the cumulative sum along the specified dimension.
 
+    See :py:func:`scipp.sum` on how rounding errors for float32 inputs are handled.
+
     :param a: Input data.
     :param dim: Optional dimension along which to calculate the sum. If not
                 given, the cumulative sum along all dimensions is calculated.
