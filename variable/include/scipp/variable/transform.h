@@ -72,27 +72,13 @@ static constexpr decltype(auto) value_maybe_variance(T &&range,
   }
 }
 
-// Helpers for handling a tuple of indices (integers or ViewIndex).
 namespace iter {
-
 template <class T> static constexpr auto array_params(T &&iterable) noexcept {
   if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
     return iterable.values;
   else
     return iterable;
 }
-
-template <int N, class T> static constexpr auto get(const T &index) noexcept {
-  if constexpr (visit_detail::is_tuple<T>::value ||
-                visit_detail::is_array<T>::value) {
-    if constexpr (std::is_integral_v<std::tuple_element_t<0, T>>)
-      return std::get<N>(index);
-    else
-      return std::get<N>(index).get();
-  } else
-    return std::get<N>(index.get());
-}
-
 } // namespace iter
 
 template <size_t N_Operands, bool in_place>
@@ -154,12 +140,12 @@ void increment(std::array<scipp::index, N> &indices,
 template <class Op, class Indices, class... Args, size_t... I>
 static constexpr auto call_impl(Op &&op, const Indices &indices,
                                 std::index_sequence<I...>, Args &&... args) {
-  return op(value_maybe_variance(args, iter::get<I + 1>(indices))...);
+  return op(value_maybe_variance(args, indices[I + 1])...);
 }
 template <class Op, class Indices, class Out, class... Args>
 static constexpr void call(Op &&op, const Indices &indices, Out &&out,
                            Args &&... args) {
-  const auto i = iter::get<0>(indices);
+  const auto i = indices.front();
   auto &&out_ = value_maybe_variance(out, i);
   out_ = call_impl(std::forward<Op>(op), indices,
                    std::make_index_sequence<sizeof...(Args)>{},
@@ -174,16 +160,15 @@ template <class Op, class Indices, class Arg, class... Args, size_t... I>
 static constexpr void call_in_place_impl(Op &&op, const Indices &indices,
                                          std::index_sequence<I...>, Arg &&arg,
                                          Args &&... args) {
-  static_assert(
-      std::is_same_v<decltype(op(arg, value_maybe_variance(
-                                          args, iter::get<I + 1>(indices))...)),
-                     void>);
-  op(arg, value_maybe_variance(args, iter::get<I + 1>(indices))...);
+  static_assert(std::is_same_v<decltype(op(arg, value_maybe_variance(
+                                                    args, indices[I + 1])...)),
+                               void>);
+  op(arg, value_maybe_variance(args, indices[I + 1])...);
 }
 template <class Op, class Indices, class Arg, class... Args>
 static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
                                     Args &&... args) {
-  const auto i = iter::get<0>(indices);
+  const auto i = indices.front();
   // For dense data we conditionally create ValueAndVariance, which performs an
   // element copy, so the result may have to be updated after the call to `op`.
   auto &&arg_ = value_maybe_variance(arg, i);
