@@ -1,6 +1,7 @@
 ---
 Checks:            '*,
                     -android-*,
+                    -altera-id-dependent-backward-branch,
                     -altera-struct-pack-align,
                     -altera-unroll-loops,
                     -bugprone-bool-pointer-implicit-conversion,
