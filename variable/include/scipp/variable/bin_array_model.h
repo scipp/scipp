@@ -54,7 +54,6 @@ class BinArrayModel : public BinModelBase<VariableConceptHandle> {
 
 public:
   using value_type = bucket<T>;
-  using range_type = typename bucket<T>::range_type;
 
   BinArrayModel(const VariableConceptHandle &indices, const Dim dim, T buffer);
 
@@ -97,7 +96,7 @@ public:
   }
 
   [[nodiscard]] scipp::index dtype_size() const override {
-    return sizeof(range_type);
+    return sizeof(scipp::index_pair);
   }
 
   void setVariances(const Variable &) override {
@@ -105,7 +104,7 @@ public:
   }
 
 private:
-  ElementArrayView<const range_type>
+  ElementArrayView<const scipp::index_pair>
   index_values(const core::ElementArrayViewParams &base) const;
   T m_buffer;
 };

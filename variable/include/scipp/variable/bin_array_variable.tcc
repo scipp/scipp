@@ -225,9 +225,9 @@ template <class T> void BinArrayModel<T>::assign(const VariableConcept &other) {
 }
 
 template <class T>
-ElementArrayView<const typename BinArrayModel<T>::range_type>
+ElementArrayView<const scipp::index_pair>
 BinArrayModel<T>::index_values(const core::ElementArrayViewParams &base) const {
-  return requireT<const StructureArrayModel<range_type, scipp::index>>(
+  return requireT<const StructureArrayModel<scipp::index_pair, scipp::index>>(
              *this->indices())
       .values(base);
 }

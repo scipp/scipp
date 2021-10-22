@@ -14,10 +14,7 @@ using index_pair = std::pair<scipp::index, scipp::index>;
 
 namespace scipp::core {
 
-struct bucket_base {
-  using range_type = index_pair;
-};
-template <class T> struct bucket : bucket_base {
+template <class T> struct bucket {
   using buffer_type = T;
   using element_type = T;
   using const_element_type = T;
