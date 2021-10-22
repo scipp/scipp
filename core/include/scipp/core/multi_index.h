@@ -181,6 +181,16 @@ private:
     return m_coord[dim] == std::max(m_shape[dim], scipp::index{1});
   }
 
+  [[nodiscard]] bool at_end() const noexcept { return dim_at_end(last_dim()); }
+
+  [[nodiscard]] scipp::index last_dim() const noexcept {
+    if (has_bins()) {
+      return bin_ndim() == 0 ? m_ndim : m_ndim - 1;
+    } else {
+      return std::max(m_ndim - 1, scipp::index{0});
+    }
+  }
+
   template <class F>
   void increment_in_dims(const F &data_index, const scipp::index begin_dim,
                          const scipp::index end_dim) {
@@ -205,16 +215,6 @@ private:
   [[nodiscard]] bool current_bin_is_empty() const noexcept {
     return m_shape[m_nested_dim_index] == 0;
   }
-
-  [[nodiscard]] scipp::index last_dim() const noexcept {
-    if (has_bins()) {
-      return bin_ndim() == 0 ? m_ndim : m_ndim - 1;
-    } else {
-      return std::max(m_ndim - 1, scipp::index{0});
-    }
-  }
-
-  [[nodiscard]] bool at_end() const noexcept { return dim_at_end(last_dim()); }
 
   struct BinIterator {
     BinIterator() = default;
@@ -278,7 +278,6 @@ private:
   }
 
   void set_bins_index(const scipp::index index) noexcept {
-    assert(m_inner_ndim > 0);
     if (bin_ndim() == 0 && index != 0) {
       // Scalar outer dims and setting to / past end.
       set_to_end_bin();
@@ -315,7 +314,8 @@ private:
   }
 
   void zero_out_coords(const scipp::index ndim) noexcept {
-    for (auto it = coord_it(); it != coord_it(ndim); ++it) {
+    const auto end = coord_it(ndim);
+    for (auto it = coord_it(); it != end; ++it) {
       *it = 0;
     }
   }
@@ -323,8 +323,6 @@ private:
   [[nodiscard]] auto coord_it(const scipp::index dim = 0) noexcept {
     return m_coord.begin() + dim;
   }
-
-  [[nodiscard]] auto coord_end() noexcept { return m_coord.begin() + m_ndim; }
 
   [[nodiscard]] auto shape_it(const scipp::index dim = 0) noexcept {
     return std::next(m_shape.begin(), dim);
