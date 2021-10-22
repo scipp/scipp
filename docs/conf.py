@@ -136,11 +136,11 @@ html_theme_options = {
     "repository_url": "https://github.com/scipp/scipp",
     "use_repository_button": True,
     "use_issues_button": True,
-    "use_edit_page_button": True
+    "use_edit_page_button": True,
+    "show_toc_level": 2,  # Show subheadings in secondary sidebar
 }
 html_logo = "_static/logo-large-v4.png"
 html_favicon = "_static/favicon.ico"
-html_theme_options = {"show_toc_level": 2}  # Show subheadings in secondary sidebar
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
