@@ -196,11 +196,9 @@ TEST_P(TransformBinaryDenseTest, transposed_layout) {
   EXPECT_EQ(ab, ab_expected);
 
   const auto ba = transform<pair_self_t<double>>(b, input1, op, name);
-  // TODO simplify
-  const auto ba_dims = ba.dims().labels();
   const auto ba_expected =
       transpose(transform<pair_self_t<double>>(input2, input1, op, name),
-                std::vector<Dim>(ba_dims.begin(), ba_dims.end()));
+                ba.dims().labels());
   EXPECT_EQ(ba, ba_expected);
 
   auto a_in_place = copy(input1);
