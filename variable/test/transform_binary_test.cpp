@@ -24,6 +24,15 @@ using namespace scipp::testing;
 
 namespace {
 const char *name = "transform_test";
+
+const std::vector<std::vector<units::Dim>> dim_combinations{
+    {Dim::X},
+    {Dim::Y},
+    {Dim::Z},
+    {Dim::X, Dim::Y},
+    {Dim::X, Dim::Z},
+    {Dim::Y, Dim::Z},
+    {Dim::X, Dim::Y, Dim::Z}};
 } // namespace
 
 class TransformBinaryTest : public ::testing::Test {
@@ -143,6 +152,24 @@ TEST_P(TransformBinaryDenseTest, slices) {
     // Make one input a full view of its data.
     auto dense_a = copy(a);
     check_transform_combinations(dense_a, b);
+  }
+}
+
+TEST_P(TransformBinaryDenseTest, broadcast) {
+  for (const auto &dims : dim_combinations) {
+    if (!std::all_of(dims.begin(), dims.end(), [&b = this->input2](auto dim) {
+          return b.dims().contains(dim) && b.dims().at(dim) > 0;
+        }))
+      continue;
+    auto b = input2;
+    for (const auto &dim : dims)
+      b = b.slice(Slice{dim, 0, -1});
+
+    auto a = copy(input1);
+    check_transform_combinations(a, b);
+
+    auto dense_b = copy(b);
+    check_transform_combinations(a, dense_b);
   }
 }
 
@@ -403,8 +430,6 @@ TEST_P(TransformBinaryRegularBinsTest, binned_with_binned) {
   transform_in_place<double>(binned1, binned2, op_in_place, name);
   EXPECT_EQ(binned1, ab);
 }
-
-// TODO broadcasting
 
 TEST_P(TransformBinaryRegularBinsTest, binned_with_dense) {
   check_binned_with_dense(binned1, make_dense_bin_dims(),
