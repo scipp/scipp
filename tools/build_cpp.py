@@ -60,7 +60,8 @@ def main(*,
         '-DCMAKE_INSTALL_PREFIX': prefix,
         '-DSITE_PACKAGES_DIR': site_packages_dir,
         '-DWITH_CTEST': 'OFF',
-        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': ipo
+        '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': ipo,
+        '-DFULL_BUILD': 1,
     }
 
     if platform == 'darwin':
@@ -110,9 +111,12 @@ def main(*,
 
     # Compile benchmarks, C++ tests, and python library
     start = time.time()
-    for target in ['all-benchmarks', 'all-tests', 'install']:
-        run_command(['cmake', '--build', '.', '--target', target] + build_flags,
-                    shell=shell)
+    # WARNING We avoid building multiple targets here and instead use the FULL_BUILD
+    # option to cmake. If multiple `cmake --build` commands are used, Visual Studio
+    # builds eveything from scratch for every target, which leads to a large build
+    # time overhead on CI. Do not change unless you know what you are doing.
+    run_command(['cmake', '--build', '.', '--target', 'install'] + build_flags,
+                shell=shell)
     end = time.time()
     print('Compilation took ', end - start, ' seconds')
 

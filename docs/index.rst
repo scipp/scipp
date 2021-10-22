@@ -1,35 +1,38 @@
+scipp - Multi-dimensional data arrays with labeled dimensions
+=============================================================
+
+.. raw:: html
+
+   <span style="font-size:1.2em;font-style:italic;color:#5a5a5a">
+      A Python library enabling a modern and intuitive way of working with scientific data in Jupyter notebooks
+   </span>
+
 |data-structures| |plotting| |masking|
 |binning| |slicing| |scipp-neutron|
 
 .. |data-structures| image:: _static/title-repr-html.png
-   :width: 33%
+   :width: 32%
    :target: user-guide/data-structures.html
 
 .. |binning| image:: _static/title-binning.png
-   :width: 33%
+   :width: 32%
    :target: user-guide/binned-data/binned-data.html
 
 .. |masking| image:: _static/title-masking.png
-   :width: 33%
+   :width: 32%
    :target: user-guide/masking.html
 
 .. |plotting| image:: _static/title-plotting.png
-   :width: 33%
+   :width: 32%
    :target: visualization/plotting-overview.html
 
 .. |scipp-neutron| image:: _static/title-instrument-view.png
-   :width: 33%
+   :width: 32%
    :target: https://scipp.github.io/scippneutron
 
 .. |slicing| image:: _static/title-show.png
-   :width: 33%
+   :width: 32%
    :target: user-guide/slicing.html
-
-scipp - Multi-dimensional data arrays with labeled dimensions
-=============================================================
-
-A Python library enabling a modern and intuitive way of working with scientific data in Jupyter notebooks
----------------------------------------------------------------------------------------------------------
 
 **scipp** is heavily inspired by `xarray <https://xarray.pydata.org>`_.
 It enriches raw NumPy-like multi-dimensional arrays of data by adding named dimensions and associated coordinates.
@@ -47,7 +50,8 @@ If your use case requires one or several of the items on the following list, usi
 
 Generic functionality of scipp is provided in the **scipp** Python package.
 In addition, more specific functionality is made available in other packages.
-Currently the only example for this is `scippneutron <https://scipp.github.io/scippneutron>`_ for handling data from neutron-scattering experiments.
+Examples for this are `scippneutron <https://scipp.github.io/scippneutron>`_ for handling data from neutron-scattering experiments,
+and `ess <https://scipp.github.io/ess>`_ for dealing with the specifics of neutron instruments at ESS.
 
 News
 ----
@@ -117,7 +121,10 @@ Documentation
    :caption: Reference
    :maxdepth: 3
 
-   reference/api
+   reference/classes
+   reference/creation-functions
+   reference/free-functions
+   reference/modules
    reference/linear-algebra
    reference/dtype
    reference/units

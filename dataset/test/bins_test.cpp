@@ -363,7 +363,7 @@ protected:
     eventsA = make_events();
     eventsB = copy(eventsA);
     eventsB.coords()[Dim::X] += 0.01 * units::us;
-    eventsB = concatenate(eventsB, eventsA, Dim("event"));
+    eventsB = concat(std::vector{eventsB, eventsA}, Dim("event"));
     eventsB.coords()[Dim::X] += 0.02 * units::us;
     a = DataArray(make_bins(makeVariable<scipp::index_pair>(
                                 Dims{Dim::Y, Dim::X}, Shape{2, 1},
@@ -431,11 +431,13 @@ protected:
     Variable var1 = make_bins(indices, Dim::X, buffer1);
     const auto result = buckets::concatenate(var0, var1);
     EXPECT_EQ(result.values<core::bin<Dataset>>()[0],
-              concatenate(buffer0.slice({Dim::X, 0, 2}),
-                          buffer1.slice({Dim::X, 0, 2}), Dim::X));
+              concat(std::vector{buffer0.slice({Dim::X, 0, 2}),
+                                 buffer1.slice({Dim::X, 0, 2})},
+                     Dim::X));
     EXPECT_EQ(result.values<core::bin<Dataset>>()[1],
-              concatenate(buffer0.slice({Dim::X, 2, 3}),
-                          buffer1.slice({Dim::X, 2, 3}), Dim::X));
+              concat(std::vector{buffer0.slice({Dim::X, 2, 3}),
+                                 buffer1.slice({Dim::X, 2, 3})},
+                     Dim::X));
   }
   void check_fail() {
     Variable var0 = make_bins(indices, Dim::X, buffer0);

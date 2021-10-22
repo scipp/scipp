@@ -6,6 +6,7 @@ from .model import PlotModel, DataArrayDict
 from .tools import find_limits
 from .resampling_model import resampling_model
 from .._scipp import core as sc
+from ..core import concat
 
 
 class PlotModel1d(PlotModel):
@@ -91,7 +92,6 @@ class PlotModel1d(PlotModel):
         """
         Get the min and max values of the currently displayed slice.
         """
-        from functools import reduce, partial
         if self.dslice is not None:
             low = [
                 find_limits(array.data, scale=scale)[scale][0]
@@ -101,9 +101,6 @@ class PlotModel1d(PlotModel):
                 find_limits(array.data, scale=scale)[scale][1]
                 for array in self.dslice.values()
             ]
-            return [
-                sc.min(reduce(partial(sc.concatenate, dim='dummy'), low)),
-                sc.max(reduce(partial(sc.concatenate, dim='dummy'), high))
-            ]
+            return [sc.min(concat(low, dim='dummy')), sc.max(concat(high, dim='dummy'))]
         else:
             return [None, None]

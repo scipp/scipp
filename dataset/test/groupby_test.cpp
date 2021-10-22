@@ -475,8 +475,8 @@ TEST_F(GroupbyWithBinsTest, two_bin) {
     return data;
   };
 
-  auto group0 =
-      concatenate(d.slice({Dim::X, 0, 2}), d.slice({Dim::X, 4, 5}), Dim::X);
+  auto group0 = concat(
+      std::vector{d.slice({Dim::X, 0, 2}), d.slice({Dim::X, 4, 5})}, Dim::X);
   EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 0}),
             add_bins(sum(group0, Dim::X), 0));
   EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 0}),
@@ -587,20 +587,20 @@ TEST_F(GroupbyBinnedTest, sum_with_event_mask) {
 }
 
 TEST_F(GroupbyBinnedTest, concatenate_data_array) {
-  EXPECT_EQ(groupby(a, Dim("labels")).concatenate(Dim::Y), expected);
+  EXPECT_EQ(groupby(a, Dim("labels")).concat(Dim::Y), expected);
 }
 
 TEST_F(GroupbyBinnedTest, concatenate_by_attr) {
   const auto key = Dim("labels");
-  const auto grouped_coord = groupby(a, key).concatenate(Dim::Y);
+  const auto grouped_coord = groupby(a, key).concat(Dim::Y);
   a.attrs().set(key, a.coords().extract(key));
-  const auto grouped_attr = groupby(a, key).concatenate(Dim::Y);
+  const auto grouped_attr = groupby(a, key).concat(Dim::Y);
   EXPECT_EQ(grouped_coord, grouped_attr);
 }
 
 TEST_F(GroupbyBinnedTest, concatenate_data_array_2d) {
   a = bin(a, {makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 8})});
-  auto grouped = groupby(a, Dim("labels")).concatenate(Dim::Y);
+  auto grouped = groupby(a, Dim("labels")).concat(Dim::Y);
   grouped.coords().erase(Dim::X);
   EXPECT_EQ(grouped.slice({Dim::X, 0}), expected);
   // Dim added by grouping is *outer* dim
@@ -612,7 +612,7 @@ TEST_F(GroupbyBinnedTest, concatenate_data_array_conflicting_2d_coord) {
   a.coords().set(
       Dim::X, makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3}, units::m,
                                    Values{1, 3, 8, 1, 3, 9, 1, 3, 10}));
-  auto grouped = groupby(a, Dim("labels")).concatenate(Dim::Y);
+  auto grouped = groupby(a, Dim("labels")).concat(Dim::Y);
   EXPECT_EQ(
       grouped.coords().extract(Dim::X),
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1, 10}));
@@ -622,7 +622,7 @@ TEST_F(GroupbyBinnedTest, concatenate_data_array_conflicting_2d_coord) {
 TEST_F(GroupbyBinnedTest, concatenate_dataset) {
   const Dataset d{{{"a", a}, {"b", a}}};
   const Dataset expected_d{{{"a", expected}, {"b", expected}}};
-  EXPECT_EQ(groupby(d, Dim("labels")).concatenate(Dim::Y), expected_d);
+  EXPECT_EQ(groupby(d, Dim("labels")).concat(Dim::Y), expected_d);
 }
 
 struct GroupbyBinnedMaskTest : public ::testing::Test {
@@ -641,7 +641,7 @@ struct GroupbyBinnedMaskTest : public ::testing::Test {
 };
 
 TEST_F(GroupbyBinnedMaskTest, concatenate) {
-  EXPECT_EQ(groupby(a, Dim("labels")).concatenate(Dim::Y), expected);
+  EXPECT_EQ(groupby(a, Dim("labels")).concat(Dim::Y), expected);
 }
 
 struct GroupbyLogicalTest : public ::testing::Test {

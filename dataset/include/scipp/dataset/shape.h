@@ -9,12 +9,10 @@
 
 namespace scipp::dataset {
 
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray concatenate(const DataArray &a,
-                                                         const DataArray &b,
-                                                         const Dim dim);
-[[nodiscard]] SCIPP_DATASET_EXPORT Dataset concatenate(const Dataset &a,
-                                                       const Dataset &b,
-                                                       const Dim dim);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+concat(const std::span<const DataArray> das, const Dim dim);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset
+concat(const std::span<const Dataset> dss, const Dim dim);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 resize(const DataArray &a, const Dim dim, const scipp::index size,
@@ -34,12 +32,12 @@ resize(const Dataset &d, const Dim dim, const scipp::index size,
                                                   const Dim from_dim,
                                                   const Dimensions &to_dims);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
+flatten(const DataArray &a, const std::span<const Dim> &from_labels,
         const Dim to_dim);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-transpose(const DataArray &a, const std::vector<Dim> &dims = {});
+transpose(const DataArray &a, std::span<const Dim> dims = {});
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset
-transpose(const Dataset &d, const std::vector<Dim> &dims = {});
+transpose(const Dataset &d, std::span<const Dim> dims = {});
 
 } // namespace scipp::dataset

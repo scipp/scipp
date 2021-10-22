@@ -31,6 +31,7 @@ test:
     - gxx_linux-64 11.1.* [linux64]
     - h5py
     - ipykernel = 6.3.1  # issue with pythreejs 3d plotting, see https://github.com/ipython/ipykernel/issues/771
+    - ipympl
     - ipywidgets
     - matplotlib-base
     - pytest
@@ -42,9 +43,8 @@ test:
     - tbb-devel
     - pandoc
     - sphinx
-    - sphinx_rtd_theme=0.5.2 # 1.0.0 broken CSS?
+    - sphinx-book-theme
     - nbsphinx
-    - docutils=0.16 # see https://github.com/spatialaudio/nbsphinx/issues/549
   files:
     - cmake-package-test/
   source_files:

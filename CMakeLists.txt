@@ -16,7 +16,7 @@ project(
 )
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD 20)
 endif(NOT DEFINED CMAKE_CXX_STANDARD)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -55,6 +55,11 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake"
                       "${CMAKE_SOURCE_DIR}/cmake/sanitizers-cmake/cmake"
+)
+
+option(FULL_BUILD
+       "Enable full build where the 'all' target includes tests and benchmarks."
+       OFF
 )
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -175,14 +180,18 @@ if(NOT WIN32)
     -Wold-style-cast
     -Wcast-qual
     -Wcast-align
+    -Wno-unknown-warning-option # Avoiding clang warnings about unknown warning
     -Werror=attributes
+    -Werror=maybe-uninitialized
+    -Werror=uninitialized
     -Werror=return-type
   )
   add_compile_options(
     $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
     $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
   )
-endif(NOT WIN32)
+endif()
+
 # This is currently causing to many warnings, reenable when appropriate.
 # add_compile_options ( -Wconversion )
 
@@ -238,7 +247,11 @@ include(scipp-functions)
 include(scipp-install)
 
 add_subdirectory(common)
-add_subdirectory(benchmark)
+if(FULL_BUILD)
+  add_subdirectory(benchmark)
+else()
+  add_subdirectory(benchmark EXCLUDE_FROM_ALL)
+endif()
 add_subdirectory(units)
 add_subdirectory(core)
 add_subdirectory(variable)
