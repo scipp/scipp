@@ -140,6 +140,7 @@ html_theme_options = {
 }
 html_logo = "_static/logo-large-v4.png"
 html_favicon = "_static/favicon.ico"
+html_theme_options = {"show_toc_level": 2}  # Show subheadings in secondary sidebar
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
