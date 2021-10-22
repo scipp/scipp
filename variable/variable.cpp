@@ -140,7 +140,7 @@ scipp::index Variable::stride(const Dim dim) const {
 
 scipp::index Variable::offset() const { return m_offset; }
 
-core::ElementArrayViewParams Variable::array_params() const noexcept {
+core::ElementArrayViewParams Variable::array_params() const {
   return {m_offset, dims(), m_strides, {}};
 }
 

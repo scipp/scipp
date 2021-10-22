@@ -122,7 +122,7 @@ public:
 
   void setVariances(const Variable &v);
 
-  [[nodiscard]] core::ElementArrayViewParams array_params() const noexcept;
+  [[nodiscard]] core::ElementArrayViewParams array_params() const;
 
   [[nodiscard]] Variable bin_indices() const;
   template <class T> const T &bin_buffer() const;
