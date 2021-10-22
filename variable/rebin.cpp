@@ -102,7 +102,7 @@ auto as_contiguous(const Variable &var, const Dim dim) {
   auto dims = var.dims();
   dims.erase(dim);
   dims.addInner(dim, var.dims()[dim]);
-  return copy(transpose(var, {dims.begin(), dims.end()}));
+  return copy(transpose(var, {dims.begin(), static_cast<size_t>(dims.ndim())}));
 }
 } // namespace
 
