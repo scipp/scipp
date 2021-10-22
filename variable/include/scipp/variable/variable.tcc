@@ -7,7 +7,6 @@
 #include "scipp/core/eigen.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
-#include "scipp/core/has_eval.h"
 #include "scipp/units/unit.h"
 #include "scipp/variable/element_array_model.h"
 #include "scipp/variable/except.h"
