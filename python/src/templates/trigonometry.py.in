@@ -1,0 +1,5 @@
+
+
+def @NAME@(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+    """@DOCSTRING@"""
+    return _call_cpp_func(_cpp.@NAME@, x, out=out)

@@ -2,8 +2,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
+
+function(cat IN_FILE OUT_FILE)
+  file(READ ${IN_FILE} CONTENTS)
+  file(APPEND ${OUT_FILE} "${CONTENTS}")
+endfunction()
+
 function(scipp_function template category function_name)
-  set(options SKIP_VARIABLE OUT)
+  set(options SKIP_VARIABLE OUT PYTHON)
   set(oneValueArgs OP PREPROCESS_VARIABLE BASE_INCLUDE)
   cmake_parse_arguments(
     PARSE_ARGV 3 SCIPP_FUNCTION "${options}" "${oneValueArgs}" ""
@@ -72,6 +78,11 @@ function(scipp_function template category function_name)
       "${${python_binders}}\n  init_${OPNAME}(m)ENDL"
       PARENT_SCOPE
   )
+  if(SCIPP_FUNCTION_PYTHON)
+    file(READ python/src/templates/${function_name}.rst DOCSTRING)
+    configure_file(python/src/templates/${category}.py.in scratch/${function_name}.py.in)
+    cat(${CMAKE_CURRENT_BINARY_DIR}/scratch/${function_name}.py.in ${CMAKE_CURRENT_BINARY_DIR}/scratch/functions.py.in)
+  endif()
 endfunction()
 
 macro(scipp_unary)
@@ -83,6 +94,10 @@ macro(scipp_binary)
 endmacro()
 
 function(setup_scipp_category category)
+  set(options PYTHON)
+  cmake_parse_arguments(
+    PARSE_ARGV 1 SCIPP_SETUP_CATEGORY "${options}" "${oneValueArgs}" ""
+  )
   set(include_list ${variable_${category}_includes})
   configure_file(
     cmake/generated.h.in
@@ -99,4 +114,7 @@ function(setup_scipp_category category)
       ${python_SRC_FILES} generated_${category}.cpp
       PARENT_SCOPE
   )
+  if(SCIPP_SETUP_CATEGORY_PYTHON)
+    configure_file(${CMAKE_CURRENT_BINARY_DIR}/scratch/functions.py.in functions.py COPYONLY)
+  endif()
 endfunction()

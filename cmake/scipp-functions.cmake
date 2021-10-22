@@ -13,6 +13,8 @@ decltype(auto) preprocess(const scipp::variable::Variable &var) {
 }"
 )
 
+configure_file(templates/functions.py.in scratch/functions.py.in COPYONLY)
+
 scipp_unary(math abs OUT)
 scipp_unary(math exp OUT)
 scipp_unary(math log OUT)
@@ -38,11 +40,11 @@ setup_scipp_category(util)
 scipp_unary(trigonometry sin PREPROCESS_VARIABLE "${convert_to_rad}" OUT)
 scipp_unary(trigonometry cos PREPROCESS_VARIABLE "${convert_to_rad}" OUT)
 scipp_unary(trigonometry tan PREPROCESS_VARIABLE "${convert_to_rad}" OUT)
-scipp_unary(trigonometry asin OUT)
-scipp_unary(trigonometry acos OUT)
-scipp_unary(trigonometry atan OUT)
+scipp_unary(trigonometry asin OUT PYTHON)
+scipp_unary(trigonometry acos OUT PYTHON)
+scipp_unary(trigonometry atan OUT PYTHON)
 scipp_binary(trigonometry atan2 OUT)
-setup_scipp_category(trigonometry OUT)
+setup_scipp_category(trigonometry OUT PYTHON)
 
 scipp_unary(special_values isnan)
 scipp_unary(special_values isinf)
