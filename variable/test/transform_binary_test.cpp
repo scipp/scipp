@@ -35,7 +35,7 @@ const std::vector<std::vector<units::Dim>> dim_combinations{
     {Dim::X, Dim::Y, Dim::Z}};
 
 std::optional<Variable> slice_to_scalar(Variable var,
-                                        scipp::span<const units::Dim> dims) {
+                                        std::span<const units::Dim> dims) {
   for (const auto &dim : dims) {
     if (!var.dims().contains(dim) || var.dims().at(dim) == 0) {
       return std::nullopt;

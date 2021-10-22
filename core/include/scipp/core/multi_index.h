@@ -86,7 +86,7 @@ public:
   }
 
   [[nodiscard]] auto inner_strides() const noexcept {
-    return scipp::span<const scipp::index>(m_stride[0].data(), N);
+    return std::span<const scipp::index>(m_stride[0].data(), N);
   }
 
   [[nodiscard]] scipp::index inner_distance_to_end() const noexcept {
