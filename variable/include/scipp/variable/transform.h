@@ -72,14 +72,12 @@ static constexpr decltype(auto) value_maybe_variance(T &&range,
   }
 }
 
-namespace iter {
 template <class T> static constexpr auto array_params(T &&iterable) noexcept {
   if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
     return iterable.values;
   else
     return iterable;
 }
-} // namespace iter
 
 template <size_t N_Operands, bool in_place>
 inline constexpr auto stride_special_cases =
@@ -242,7 +240,7 @@ static void dispatch_inner_loop(
 template <class Op, class Out, class... Ts>
 static void transform_elements(Op op, Out &&out, Ts &&... other) {
   const auto begin =
-      core::MultiIndex(iter::array_params(out), iter::array_params(other)...);
+      core::MultiIndex(array_params(out), array_params(other)...);
 
   auto run = [&](auto &indices, const auto &end) {
     const auto inner_strides = indices.inner_strides();
@@ -443,7 +441,7 @@ template <bool dry_run> struct in_place {
   static void transform_in_place_impl(Op op, T &&arg, Ts &&... other) {
     using namespace detail;
     const auto begin =
-        core::MultiIndex(iter::array_params(arg), iter::array_params(other)...);
+        core::MultiIndex(array_params(arg), array_params(other)...);
     if constexpr (dry_run)
       return;
 
