@@ -197,6 +197,7 @@ if(CPPCHECK)
   find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck REQUIRED)
 endif()
 if(CMAKE_CXX_CPPCHECK)
+  file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/cppcheck)
   list(
     APPEND
     CMAKE_CXX_CPPCHECK
@@ -205,6 +206,7 @@ if(CMAKE_CXX_CPPCHECK)
     "--enable=style"
     "--inline-suppr"
     "--suppressions-list=${CMAKE_SOURCE_DIR}/cppcheck-suppressions.txt"
+    "--cppcheck-build-dir=${CMAKE_BINARY_DIR}/cppcheck"
   )
 endif()
 
