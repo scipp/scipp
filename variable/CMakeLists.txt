@@ -111,3 +111,7 @@ endif()
 add_subdirectory(test)
 
 scipp_install_component(TARGET ${TARGET_NAME} INSTALL_GENERATED)
+
+if(COVERAGE)
+  append_coverage_compiler_flags()
+endif()
