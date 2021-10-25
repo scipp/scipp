@@ -153,3 +153,10 @@ If you build and installed scipp from source use, e.g.,:
 
 where ``<your_scipp_install_dir>`` should point to the ``CMAKE_INSTALL_PREFIX`` that was used when building ``scipp``.
 Alternative set the ``Scipp_DIR`` or ``CMAKE_PREFIX_PATH`` (environment) variables to this path.
+
+Generating coverage reports
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Run ``cmake`` with options ``-DCOVERAGE=On -DCMAKE_BUILD_TYPE=Debug``.
+- Run ``cmake --build . --target coverage`` .
+- Open ``coverage/index.html`` in a browser.
