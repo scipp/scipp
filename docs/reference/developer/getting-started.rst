@@ -100,7 +100,7 @@ Additional build options
 2. ``-DENABLE_THREAD_LIMIT`` limits the maximum number of threads that TBB can use. This defaults to the maximum number of cores identified on your build system. You may then optionally apply an artificial limit via ``-DTHREAD_LIMIT``.
 3. ``-DDISABLE_MULTI_THREADING`` disable multi-threading. By default, multi-threading is enabled if TBB was found. If this option is set to ``ON``, it overrides that.
 4. ``-DPRECOMPILED_HEADERS`` toggle usage of precompiled headers. ``OFF`` by default.
-5. ``-DCPPCHECK`` toggle run of cppcheck during compilation. ``ON`` by default.
+5. ``-DCPPCHECK`` toggle run of cppcheck during compilation. ``OFF`` by default.
 
 Running the unit tests
 ~~~~~~~~~~~~~~~~~~~~~~
