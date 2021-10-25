@@ -1,1 +1,1 @@
-internalAstError:*scipp/variable/transform.h
+useStlAlgorithm

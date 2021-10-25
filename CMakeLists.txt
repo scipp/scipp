@@ -202,9 +202,7 @@ if(CMAKE_CXX_CPPCHECK)
     CMAKE_CXX_CPPCHECK
     "--std=c++20"
     "--quiet"
-    "--enable=warning"
-    "--inconclusive"
-    "--force"
+    "--enable=style"
     "--inline-suppr"
     "--suppressions-list=${CMAKE_SOURCE_DIR}/cppcheck-suppressions.txt"
   )
