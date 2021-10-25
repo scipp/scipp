@@ -241,6 +241,7 @@ static void dispatch_inner_loop(
     inner_loop<in_place>(std::forward<Op>(op), indices, inner_strides, n,
                          std::forward<Operands>(operands)...);
   } else {
+    // cppcheck-suppress internalAstError
     if (inner_strides ==
         detail::stride_special_cases<N_Operands, in_place>[I]) {
       inner_loop<in_place>(

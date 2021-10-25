@@ -64,7 +64,7 @@ auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
     return obj.cast<py::array>()
         .attr("astype")(py::dtype::of<PyType>())
         .template cast<py::array_t<PyType>>();
-  } else if constexpr (std::is_pod_v<T>) {
+  } else if constexpr (std::is_standard_layout_v<T> && std::is_trivial_v<T>) {
     // Casting to py::array_t applies all sorts of automatic conversions
     // such as integer to double, if required.
     return obj.cast<py::array_t<PyType>>();

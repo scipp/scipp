@@ -21,11 +21,11 @@ endif(NOT DEFINED CMAKE_CXX_STANDARD)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_program(CCACHE_FOUND ccache)
-if(CCACHE_FOUND)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-endif(CCACHE_FOUND)
+find_program(CCACHE ccache)
+if(CCACHE)
+  set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
+endif()
+
 if(MSVC)
   set(CLCACHE_PATH
       ""
@@ -189,6 +189,24 @@ if(NOT WIN32)
   add_compile_options(
     $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
     $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
+  )
+endif()
+
+option(CPPCHECK "Enable running cppcheck during compilation if found." OFF)
+if(CPPCHECK)
+  find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck REQUIRED)
+endif()
+if(CMAKE_CXX_CPPCHECK)
+  file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/cppcheck)
+  list(
+    APPEND
+    CMAKE_CXX_CPPCHECK
+    "--std=c++20"
+    "--quiet"
+    "--enable=style"
+    "--inline-suppr"
+    "--suppressions-list=${CMAKE_SOURCE_DIR}/cppcheck-suppressions.txt"
+    "--cppcheck-build-dir=${CMAKE_BINARY_DIR}/cppcheck"
   )
 endif()
 
