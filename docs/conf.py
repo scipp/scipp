@@ -135,6 +135,7 @@ html_theme_options = {
     "logo_only": True,
     "repository_url": "https://github.com/scipp/scipp",
     "repository_branch": "main",
+    "path_to_docs": "docs",
     "use_repository_button": True,
     "use_issues_button": True,
     "use_edit_page_button": True,
