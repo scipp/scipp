@@ -112,10 +112,12 @@ std::string to_iso_date(const scipp::core::time_point &item,
     return to_string(std::chrono::minutes{item.time_since_epoch()});
   } else if (unit == units::Unit(llnl::units::precise::hr)) {
     return to_string(std::chrono::hours{item.time_since_epoch()});
-  } else if (unit == units::Unit(llnl::units::precise::day) ||
-             unit == units::Unit("month") || unit == units::Unit("year")) {
-    throw except::UnitError("Printing of time points with units greater than "
-                            "hours is not yet implemented.");
+  } else if (unit == units::Unit(llnl::units::precise::day)) {
+    return to_string(std::chrono::days{item.time_since_epoch()});
+  } else if (unit == units::Unit("month")) {
+    return to_string(std::chrono::months{item.time_since_epoch()});
+  } else if (unit == units::Unit("year")) {
+    return to_string(std::chrono::years{item.time_since_epoch()});
   }
   throw except::UnitError("Cannot display time point, unsupported unit: " +
                           to_string(unit));
