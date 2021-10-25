@@ -158,5 +158,7 @@ Generating coverage reports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Run ``cmake`` with options ``-DCOVERAGE=On -DCMAKE_BUILD_TYPE=Debug``.
-- Run ``cmake --build . --target coverage`` .
+- Run ``make install``.
+  Building the ``install`` target is necessary to ensure that PYthon tests can be run, such that we get coverage of C++ Python binding code.
+- Run ``make coverage``.
 - Open ``coverage/index.html`` in a browser.
