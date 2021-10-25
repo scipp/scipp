@@ -194,7 +194,7 @@ endif()
 
 option(CPPCHECK "Enable running cppcheck during compilation if found." OFF)
 if(CPPCHECK)
-  find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
+  find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck REQUIRED)
 endif()
 if(CMAKE_CXX_CPPCHECK)
   list(
