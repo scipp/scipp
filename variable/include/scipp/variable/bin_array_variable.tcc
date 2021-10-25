@@ -158,22 +158,12 @@ public:
   }
   core::ElementArrayViewParams
   array_params(const Variable &var) const override {
-    const auto make_strides = [](const auto &buf) {
-      if constexpr (std::is_same_v<T, Variable>) {
-        return Strides{buf.strides()};
-      } else {
-        // With DataArrays, only the data Variable is needed
-        // which has its own strides.
-        return Strides{};
-      }
-    };
-
     const auto &[indices, dim, buffer] = var.constituents<T>();
     auto params = var.array_params();
     return {0, // no offset required in buffer since access via indices
             params.dims(),
             params.strides(),
-            {dim, buffer.dims(), make_strides(buffer),
+            {dim, buffer.dims(), Strides{buffer.strides()},
              bin_array_variable_detail ::index_pair_data(indices)}};
   }
 };

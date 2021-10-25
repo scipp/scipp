@@ -54,6 +54,7 @@ public:
 
   Dimensions dims() const { return m_data->dims(); }
   scipp::index ndim() const { return m_data->ndim(); }
+  std::span<const scipp::index> strides() const { return m_data->strides(); }
   DType dtype() const { return m_data->dtype(); }
   units::Unit unit() const { return m_data->unit(); }
 
