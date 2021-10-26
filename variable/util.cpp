@@ -86,8 +86,8 @@ Variable zip(const Variable &first, const Variable &second) {
 /// For an input where elements are pairs, return two variables containing the
 /// first and second components of the input pairs.
 std::pair<Variable, Variable> unzip(const Variable &var) {
-  return {transform(var, core::element::get<0>, "unzip"),
-          transform(var, core::element::get<1>, "unzip")};
+  return {var.elements<scipp::index_pair>("begin"),
+          var.elements<scipp::index_pair>("end")};
 }
 
 /// Fill variable with given values (and variances) and unit.

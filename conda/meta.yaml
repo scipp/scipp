@@ -44,6 +44,7 @@ test:
     - pandoc
     - sphinx
     - sphinx-book-theme
+    - sphinx-copybutton
     - nbsphinx
   files:
     - cmake-package-test/

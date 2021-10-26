@@ -1,0 +1,10 @@
+#!/bin/sh
+
+cd "$1"
+./scipp-common-test
+./scipp-units-test
+./scipp-core-test
+./scipp-variable-test
+./scipp-dataset-test
+cd "$2"
+pytest .

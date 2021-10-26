@@ -21,11 +21,11 @@ endif(NOT DEFINED CMAKE_CXX_STANDARD)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_program(CCACHE_FOUND ccache)
-if(CCACHE_FOUND)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-endif(CCACHE_FOUND)
+find_program(CCACHE ccache)
+if(CCACHE)
+  set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
+endif()
+
 if(MSVC)
   set(CLCACHE_PATH
       ""
@@ -192,6 +192,24 @@ if(NOT WIN32)
   )
 endif()
 
+option(CPPCHECK "Enable running cppcheck during compilation if found." OFF)
+if(CPPCHECK)
+  find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck REQUIRED)
+endif()
+if(CMAKE_CXX_CPPCHECK)
+  file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/cppcheck)
+  list(
+    APPEND
+    CMAKE_CXX_CPPCHECK
+    "--std=c++20"
+    "--quiet"
+    "--enable=style"
+    "--inline-suppr"
+    "--suppressions-list=${CMAKE_SOURCE_DIR}/cppcheck-suppressions.txt"
+    "--cppcheck-build-dir=${CMAKE_BINARY_DIR}/cppcheck"
+  )
+endif()
+
 # This is currently causing to many warnings, reenable when appropriate.
 # add_compile_options ( -Wconversion )
 
@@ -217,6 +235,31 @@ include(docs)
 add_docs_target(docs BUILDER html DEPENDS install-scipp)
 add_docs_target(doctest BUILDER doctest DEPENDS docs)
 add_docs_target(linkcheck BUILDER linkcheck DEPENDS docs)
+
+option(COVERAGE "Enable code coverage run." OFF)
+if(COVERAGE)
+  include(CodeCoverage)
+  configure_file(
+    tools/run-tests.sh.in "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests.sh"
+    COPYONLY
+  )
+  # Exclude cmake-generated source files
+  set(COVERAGE_EXCLUDES '${PROJECT_BINARY_DIR}/variable/*.cpp')
+  set(COVERAGE_EXCLUDES '${PROJECT_BINARY_DIR}/dataset/*.cpp')
+  set(COVERAGE_EXCLUDES '${PROJECT_BINARY_DIR}/python/*.cpp')
+  setup_target_for_coverage_gcovr_html(
+    NAME
+    coverage
+    EXECUTABLE
+    sh
+    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests.sh"
+    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+    "${CMAKE_SOURCE_DIR}/python/tests"
+    DEPENDENCIES
+    install-scipp
+    all-tests
+  )
+endif()
 
 include(GNUInstallDirs)
 set(SITE_PACKAGES_DIR

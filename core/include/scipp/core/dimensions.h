@@ -28,8 +28,8 @@ public:
       : Dimensions({labels.begin(), labels.end()},
                    {shape.begin(), shape.end()}) {}
   Dimensions(const std::initializer_list<std::pair<Dim, scipp::index>> dims) {
-    for (const auto &[label, size] : dims)
-      addInner(label, size);
+    for (const auto &[dim, len] : dims)
+      addInner(dim, len);
   }
 
   constexpr bool operator==(const Dimensions &other) const noexcept {
