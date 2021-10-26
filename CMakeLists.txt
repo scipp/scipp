@@ -236,7 +236,7 @@ add_docs_target(docs BUILDER html DEPENDS install-scipp)
 add_docs_target(doctest BUILDER doctest DEPENDS docs)
 add_docs_target(linkcheck BUILDER linkcheck DEPENDS docs)
 
-option(COVERAGE "Enable code coverage run." ON)
+option(COVERAGE "Enable code coverage run." OFF)
 if(COVERAGE)
   include(CodeCoverage)
   configure_file(
