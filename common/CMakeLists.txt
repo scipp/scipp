@@ -21,3 +21,7 @@ target_include_directories(
 add_subdirectory(test)
 
 scipp_install_component(TARGET ${TARGET_NAME} NO_EXPORT_HEADER)
+
+if(COVERAGE)
+  append_coverage_compiler_flags()
+endif()

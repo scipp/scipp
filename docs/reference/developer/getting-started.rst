@@ -118,7 +118,7 @@ To run the Python tests, run (in the ``python/`` directory):
 Building Documentation
 ~~~~~~~~~~~~~~~~~~~~~~
 
-- run ``cmake --build . --target docs`` from your build directory.
+- Run ``cmake --build . --target docs`` from your build directory.
 - This will build the documentation and put it on ``<build dir>/docs``.
 - If rebuilding the documentation is slow it can be quicker to remove the docs build directory and start a fresh build.
 
@@ -153,3 +153,10 @@ If you build and installed scipp from source use, e.g.,:
 
 where ``<your_scipp_install_dir>`` should point to the ``CMAKE_INSTALL_PREFIX`` that was used when building ``scipp``.
 Alternative set the ``Scipp_DIR`` or ``CMAKE_PREFIX_PATH`` (environment) variables to this path.
+
+Generating coverage reports
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Run ``cmake`` with options ``-DCOVERAGE=On -DCMAKE_BUILD_TYPE=Debug``.
+- Run ``cmake --build . --target coverage`` from your build directory.
+- Open ``coverage/index.html`` in a browser.
