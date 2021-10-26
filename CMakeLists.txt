@@ -243,6 +243,10 @@ if(COVERAGE)
     tools/run-tests.sh.in "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests.sh"
     COPYONLY
   )
+  # Exclude cmake-generated source files
+  set(COVERAGE_EXCLUDES '${PROJECT_BINARY_DIR}/variable/*.cpp')
+  set(COVERAGE_EXCLUDES '${PROJECT_BINARY_DIR}/dataset/*.cpp')
+  set(COVERAGE_EXCLUDES '${PROJECT_BINARY_DIR}/python/*.cpp')
   setup_target_for_coverage_gcovr_html(
     NAME
     coverage
