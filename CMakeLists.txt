@@ -244,9 +244,11 @@ if(COVERAGE)
     COPYONLY
   )
   # Exclude cmake-generated source files
-  set(COVERAGE_EXCLUDES '${PROJECT_BINARY_DIR}/variable/*.cpp')
-  set(COVERAGE_EXCLUDES '${PROJECT_BINARY_DIR}/dataset/*.cpp')
-  set(COVERAGE_EXCLUDES '${PROJECT_BINARY_DIR}/python/*.cpp')
+  set(COVERAGE_EXCLUDES
+      "${PROJECT_BINARY_DIR}/variable/*.cpp"
+      "${PROJECT_BINARY_DIR}/dataset/*.cpp"
+      "${PROJECT_BINARY_DIR}/python/*.cpp"
+  )
   setup_target_for_coverage_gcovr_html(
     NAME
     coverage
