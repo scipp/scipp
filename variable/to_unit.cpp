@@ -13,8 +13,14 @@
 namespace scipp::variable {
 
 namespace {
-constexpr double days_multiplier = llnl::units::precise::day.multiplier();
+bool involves_unit_greater_than_days(const Variable &var,
+                                     const units::Unit &unit) {
+  constexpr auto days_multiplier = llnl::units::precise::day.multiplier();
+  return variableFactory().elem_unit(var).underlying().multiplier() >=
+             days_multiplier ||
+         unit.underlying().multiplier() >= days_multiplier;
 }
+} // namespace
 
 Variable to_unit(const Variable &var, const units::Unit &unit,
                  const CopyPolicy copy) {
@@ -26,13 +32,13 @@ Variable to_unit(const Variable &var, const units::Unit &unit,
     throw except::UnitError("Conversion from `" + to_string(var.unit()) +
                             "` to `" + to_string(unit) + "` is not valid.");
   if (var.dtype() == dtype<core::time_point> &&
-      (variableFactory().elem_unit(var).underlying().multiplier() >=
-           days_multiplier ||
-       unit.underlying().multiplier() >= days_multiplier)) {
+      involves_unit_greater_than_days(var, unit)) {
     throw except::UnitError(
-        "Unit conversion for datetimes with a unit of days or greater"
-        " is not implemented. Attempted conversion from `" +
-        to_string(var.unit()) + "` to `" + to_string(unit) + "`.");
+        "Unit conversions for datetimes with a unit of days or greater "
+        "are not supported. Attempted conversion from `" +
+        to_string(var.unit()) + "` to `" + to_string(unit) + "`. " +
+        "This limitation exists because such conversions would require "
+        "information about calendars and time zones.");
   }
   return variable::transform(var, scale * unit, core::element::to_unit,
                              "to_unit");
