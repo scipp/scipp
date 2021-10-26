@@ -33,11 +33,19 @@ std::vector<scipp::Shape> shapes(std::optional<scipp::index> ndim) {
 std::vector<Variable> irregular_bin_indices_1d() {
   return {makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{0}, Values{}),
           makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{2},
+                                   Values{index_pair{0, 1}, index_pair{2, 3}}),
+          makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{2},
                                    Values{index_pair{0, 2}, index_pair{2, 3}}),
           makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{2},
                                    Values{index_pair{0, 0}, index_pair{0, 3}}),
           makeVariable<index_pair>(Dims{Dim{"i0"}}, Shape{2},
                                    Values{index_pair{0, 4}, index_pair{4, 4}}),
+          makeVariable<index_pair>(
+              Dims{Dim{"i0"}}, Shape{3},
+              Values{index_pair{0, 1}, index_pair{2, 4}, index_pair{4, 5}}),
+          makeVariable<index_pair>(
+              Dims{Dim{"i0"}}, Shape{3},
+              Values{index_pair{0, 1}, index_pair{1, 2}, index_pair{4, 5}}),
           makeVariable<index_pair>(
               Dims{Dim{"i0"}}, Shape{3},
               Values{index_pair{0, 2}, index_pair{2, 2}, index_pair{2, 3}}),
