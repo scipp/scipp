@@ -118,7 +118,7 @@ To run the Python tests, run (in the ``python/`` directory):
 Building Documentation
 ~~~~~~~~~~~~~~~~~~~~~~
 
-- run ``cmake --build . --target docs`` from your build directory.
+- Run ``cmake --build . --target docs`` from your build directory.
 - This will build the documentation and put it on ``<build dir>/docs``.
 - If rebuilding the documentation is slow it can be quicker to remove the docs build directory and start a fresh build.
 
@@ -158,7 +158,5 @@ Generating coverage reports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Run ``cmake`` with options ``-DCOVERAGE=On -DCMAKE_BUILD_TYPE=Debug``.
-- Run ``make install``.
-  Building the ``install`` target is necessary to ensure that PYthon tests can be run, such that we get coverage of C++ Python binding code.
-- Run ``make coverage``.
+- Run ``cmake --build . --target coverage`` from your build directory.
 - Open ``coverage/index.html`` in a browser.

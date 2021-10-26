@@ -210,26 +210,6 @@ if(CMAKE_CXX_CPPCHECK)
   )
 endif()
 
-option(COVERAGE "Enable code coverage run." ON)
-if(COVERAGE)
-  include(CodeCoverage)
-  configure_file(
-    tools/run-tests.sh.in "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests.sh"
-    COPYONLY
-  )
-  setup_target_for_coverage_gcovr_html(
-    NAME
-    coverage
-    EXECUTABLE
-    sh
-    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests.sh"
-    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-    "${CMAKE_SOURCE_DIR}/python/tests"
-    DEPENDENCIES
-    all-tests
-  )
-endif()
-
 # This is currently causing to many warnings, reenable when appropriate.
 # add_compile_options ( -Wconversion )
 
@@ -255,6 +235,27 @@ include(docs)
 add_docs_target(docs BUILDER html DEPENDS install-scipp)
 add_docs_target(doctest BUILDER doctest DEPENDS docs)
 add_docs_target(linkcheck BUILDER linkcheck DEPENDS docs)
+
+option(COVERAGE "Enable code coverage run." ON)
+if(COVERAGE)
+  include(CodeCoverage)
+  configure_file(
+    tools/run-tests.sh.in "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests.sh"
+    COPYONLY
+  )
+  setup_target_for_coverage_gcovr_html(
+    NAME
+    coverage
+    EXECUTABLE
+    sh
+    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests.sh"
+    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+    "${CMAKE_SOURCE_DIR}/python/tests"
+    DEPENDENCIES
+    install-scipp
+    all-tests
+  )
+endif()
 
 include(GNUInstallDirs)
 set(SITE_PACKAGES_DIR
