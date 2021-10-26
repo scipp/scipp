@@ -16,7 +16,7 @@ class ISODateTest : public ::testing::Test {
 protected:
   template <class Duration> constexpr auto get_time() {
     constexpr chrono::nanoseconds t{1595846471123456789l};
-    return scipp::core::time_point{chrono::duration_cast<Duration>(t).count()};
+    return core::time_point{chrono::duration_cast<Duration>(t).count()};
   }
 };
 
@@ -55,31 +55,25 @@ TEST_F(ISODateTest, days) {
   EXPECT_EQ(to_iso_date(t, units::Unit{"day"}), "2020-07-27T00:00:00");
 }
 
-/*
- * Months and years are mean gregorian months and years.
- * The formatted time thus contains contributions from smaller
- * units down to seconds.
- */
 TEST_F(ISODateTest, months) {
-  for (auto m : {0, 1, 427}) {
-    const auto months = chrono::months{m};
-    const auto tp_months = scipp::core::time_point{months.count()};
-    const auto seconds = chrono::duration_cast<chrono::seconds>(months);
-    const auto tp_seconds = scipp::core::time_point{seconds.count()};
-    EXPECT_EQ(to_iso_date(tp_months, units::Unit{"month"}),
-              to_iso_date(tp_seconds, units::s));
-  }
+  units::Unit m{"month"};
+  EXPECT_EQ(to_iso_date(core::time_point{0}, m), "1970-01-01T00:00:00");
+  EXPECT_EQ(to_iso_date(core::time_point{1}, m), "1970-02-01T00:00:00");
+  EXPECT_EQ(to_iso_date(core::time_point{12}, m), "1971-01-01T00:00:00");
+  EXPECT_EQ(to_iso_date(core::time_point{15}, m), "1971-04-01T00:00:00");
+  EXPECT_EQ(to_iso_date(core::time_point{-1}, m), "1969-12-01T00:00:00");
+  EXPECT_EQ(to_iso_date(core::time_point{-5}, m), "1969-08-01T00:00:00");
+  EXPECT_EQ(to_iso_date(core::time_point{-12}, m), "1969-01-01T00:00:00");
+  EXPECT_EQ(to_iso_date(core::time_point{-18}, m), "1968-07-01T00:00:00");
 }
 
 TEST_F(ISODateTest, years) {
-  for (auto y : {0, 1, 23}) {
-    const auto years = chrono::years{y};
-    const auto tp_years = scipp::core::time_point{years.count()};
-    const auto seconds = chrono::duration_cast<chrono::seconds>(years);
-    const auto tp_seconds = scipp::core::time_point{seconds.count()};
-    EXPECT_EQ(to_iso_date(tp_years, units::Unit{"year"}),
-              to_iso_date(tp_seconds, units::s));
-  }
+  units::Unit y{"year"};
+  EXPECT_EQ(to_iso_date(core::time_point{0}, y), "1970-01-01T00:00:00");
+  EXPECT_EQ(to_iso_date(core::time_point{1}, y), "1971-01-01T00:00:00");
+  EXPECT_EQ(to_iso_date(core::time_point{13}, y), "1983-01-01T00:00:00");
+  EXPECT_EQ(to_iso_date(core::time_point{-1}, y), "1969-01-01T00:00:00");
+  EXPECT_EQ(to_iso_date(core::time_point{-6}, y), "1964-01-01T00:00:00");
 }
 
 TEST_F(ISODateTest, invalid_unit) {

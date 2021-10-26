@@ -96,6 +96,45 @@ std::string to_string(const std::chrono::duration<Rep, Period> &duration) {
   }
   return oss.str();
 }
+
+constexpr std::chrono::year_month_day epoch{
+    std::chrono::year{1970}, std::chrono::month{1}, std::chrono::day{1}};
+
+auto normalize(const long years_since_epoch, const long months_since_epoch) {
+  const auto absolute_year = years_since_epoch + static_cast<int>(epoch.year());
+  const auto absolute_month =
+      months_since_epoch + static_cast<unsigned int>(epoch.month());
+  if (absolute_month > 0)
+    return std::pair{absolute_year, absolute_month};
+  else
+    return std::pair{absolute_year - 1, absolute_month + 12};
+}
+
+std::string to_string_year_month(const auto year, const auto month) {
+  std::ostringstream oss;
+  oss << std::setw(4) << std::setfill('0') << year << '-' << std::setw(2)
+      << std::setfill('0') << month << '-' << std::setw(2) << std::setfill('0')
+      << static_cast<unsigned int>(epoch.day()) << "T00:00:00";
+  return oss.str();
+}
+
+/*
+ * Custom implementations for months and years because we cannot construct
+ * a std::chrono::time_point with an exact number of months and years since
+ * epoch because std::chrono::duration uses average months / years.
+ */
+std::string to_string(const std::chrono::months &duration) {
+  const auto years_since_epoch = duration.count() / 12;
+  const auto months_since_epoch = duration.count() - years_since_epoch * 12;
+  const auto [year, month] = normalize(years_since_epoch, months_since_epoch);
+  return to_string_year_month(year, month);
+}
+
+std::string to_string(const std::chrono::years &duration) {
+  const auto years_since_epoch = duration.count();
+  const auto year = years_since_epoch + static_cast<int>(epoch.year());
+  return to_string_year_month(year, static_cast<unsigned int>(epoch.month()));
+}
 } // namespace
 
 std::string to_iso_date(const scipp::core::time_point &item,
