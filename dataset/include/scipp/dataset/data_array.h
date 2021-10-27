@@ -52,10 +52,11 @@ public:
 
   Coords meta() const;
 
-  Dimensions dims() const { return m_data->dims(); }
-  scipp::index ndim() const { return m_data->ndim(); }
-  DType dtype() const { return m_data->dtype(); }
-  units::Unit unit() const { return m_data->unit(); }
+  [[nodiscard]] Dimensions dims() const { return m_data->dims(); }
+  [[nodiscard]] Dim dim() const { return m_data->dim(); }
+  [[nodiscard]] scipp::index ndim() const { return m_data->ndim(); }
+  [[nodiscard]] DType dtype() const { return m_data->dtype(); }
+  [[nodiscard]] units::Unit unit() const { return m_data->unit(); }
 
   void setUnit(const units::Unit unit) { m_data->setUnit(unit); }
 
