@@ -112,9 +112,11 @@ std::string to_string(const std::chrono::days &duration) {
 constexpr std::chrono::year_month_day epoch{
     std::chrono::year{1970}, std::chrono::month{1}, std::chrono::day{1}};
 
-auto normalize(const long years_since_epoch, const long months_since_epoch) {
-  const auto absolute_year = years_since_epoch + static_cast<int>(epoch.year());
-  const auto absolute_month =
+auto normalize(const int64_t years_since_epoch,
+               const int64_t months_since_epoch) {
+  const int64_t absolute_year =
+      years_since_epoch + static_cast<int>(epoch.year());
+  const int64_t absolute_month =
       months_since_epoch + static_cast<unsigned int>(epoch.month());
   if (absolute_month > 0)
     return std::pair{absolute_year, absolute_month};
@@ -128,8 +130,9 @@ auto normalize(const long years_since_epoch, const long months_since_epoch) {
  * epoch because std::chrono::duration uses average months / years.
  */
 std::string to_string(const std::chrono::months &duration) {
-  const auto years_since_epoch = duration.count() / 12;
-  const auto months_since_epoch = duration.count() - years_since_epoch * 12;
+  const auto years_since_epoch = static_cast<int64_t>(duration.count()) / 12;
+  const auto months_since_epoch =
+      static_cast<int64_t>(duration.count()) - years_since_epoch * 12;
   const auto [year, month] = normalize(years_since_epoch, months_since_epoch);
   std::ostringstream oss;
   oss << std::setw(4) << std::setfill('0') << year << '-' << std::setw(2)
