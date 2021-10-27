@@ -90,7 +90,8 @@ class DataAccessHelper {
                     get_data_variable_concept_handle(view)};
       py::detail::array_proxy(array.ptr())->flags &=
           ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
-      return std::move(array); // no automatic move because of type mismatch
+      // no automatic move because of type mismatch
+      return py::object{std::move(array)};
     } else {
       return py::array{get_dtype(), dims.shape(),
                        numpy_strides<T>(var.strides()),
