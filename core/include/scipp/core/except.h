@@ -110,12 +110,6 @@ void equals(const A &a, const B &b, std::string optional_message = "") {
     scipp::except::throw_mismatch_error(a, b, optional_message);
 }
 
-template <class A, class B>
-void equals_any_of(const A &a, const std::initializer_list<B> possible) {
-  if (std::find(possible.begin(), possible.end(), a) == possible.end())
-    scipp::except::throw_mismatch_error(a, possible);
-}
-
 template <class T, class... Ts>
 void sizeMatches(const T &range, const Ts &... other) {
   if (((scipp::size(range) != scipp::size(other)) || ...))
