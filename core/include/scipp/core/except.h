@@ -130,11 +130,6 @@ void unit(const T &object, const units::Unit &unit,
   expect::equals(object.unit(), unit, optional_message);
 }
 
-template <class T>
-void unit_any_of(const T &object, std::initializer_list<units::Unit> units) {
-  expect::equals_any_of(object.unit(), units);
-}
-
 template <class T> void countsOrCountsDensity(const T &object) {
   if (!object.unit().isCounts() && !object.unit().isCountDensity())
     throw except::UnitError("Expected counts or counts-density, got " +
