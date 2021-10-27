@@ -128,7 +128,7 @@ protected:
     };
 
     // The assertion ensures that at least one combination of tests is run.
-    assert(do_check(a, b) || do_check(b, a));
+    ASSERT_TRUE(do_check(a, b) || do_check(b, a));
   }
 };
 
