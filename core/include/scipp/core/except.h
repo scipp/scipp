@@ -144,6 +144,8 @@ template <class T> void countsOrCountsDensity(const T &object) {
                             object.unit().name() + '.');
 }
 
+void SCIPP_CORE_EXPORT ndim_is(const Dimensions &dims, scipp::index expected);
+
 // TODO maybe just provide a `slice` function/method and check via that?
 void SCIPP_CORE_EXPORT validSlice(const Sizes &sizes, const Slice &slice);
 

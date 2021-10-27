@@ -33,10 +33,6 @@ namespace scipp::variable {
 class VariableConcept;
 using VariableConceptHandle = std::shared_ptr<VariableConcept>;
 
-namespace detail {
-SCIPP_VARIABLE_EXPORT void expect0D(const Dimensions &dims);
-} // namespace detail
-
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. In addition it has a unit and a set of dimension
 /// labels.
@@ -85,19 +81,19 @@ public:
   template <class T> ElementArrayView<const T> variances() const;
   template <class T> ElementArrayView<T> variances();
   template <class T> const auto &value() const {
-    detail::expect0D(dims());
+    core::expect::ndim_is(dims(), 0);
     return values<T>()[0];
   }
   template <class T> const auto &variance() const {
-    detail::expect0D(dims());
+    core::expect::ndim_is(dims(), 0);
     return variances<T>()[0];
   }
   template <class T> auto &value() {
-    detail::expect0D(dims());
+    core::expect::ndim_is(dims(), 0);
     return values<T>()[0];
   }
   template <class T> auto &variance() {
-    detail::expect0D(dims());
+    core::expect::ndim_is(dims(), 0);
     return variances<T>()[0];
   }
 
