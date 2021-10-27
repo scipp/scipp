@@ -158,19 +158,22 @@ protected:
 INSTANTIATE_TEST_SUITE_P(OneD, TransformUnaryRegularBinsTest,
                          ::testing::Combine(::testing::ValuesIn(shapes(1)),
                                             ::testing::ValuesIn(shapes()),
-                                            ::testing::Range(0l, 1l),
+                                            ::testing::Range(scipp::index{0},
+                                                             scipp::index{1}),
                                             ::testing::Bool()));
 
 INSTANTIATE_TEST_SUITE_P(TwoD, TransformUnaryRegularBinsTest,
                          ::testing::Combine(::testing::ValuesIn(shapes(2)),
                                             ::testing::ValuesIn(shapes()),
-                                            ::testing::Range(0l, 2l),
+                                            ::testing::Range(scipp::index{0},
+                                                             scipp::index{2}),
                                             ::testing::Bool()));
 
 INSTANTIATE_TEST_SUITE_P(ThreeD, TransformUnaryRegularBinsTest,
                          ::testing::Combine(::testing::ValuesIn(shapes(3)),
                                             ::testing::ValuesIn(shapes()),
-                                            ::testing::Range(0l, 3l),
+                                            ::testing::Range(scipp::index{0},
+                                                             scipp::index{3}),
                                             ::testing::Bool()));
 
 TEST_P(TransformUnaryRegularBinsTest, full) {
