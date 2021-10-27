@@ -116,9 +116,6 @@ void equals_any_of(const A &a, const std::initializer_list<B> possible) {
     scipp::except::throw_mismatch_error(a, possible);
 }
 
-SCIPP_CORE_EXPORT void dimensionMatches(const Dimensions &dims, const Dim dim,
-                                        const scipp::index length);
-
 template <class T, class... Ts>
 void sizeMatches(const T &range, const Ts &... other) {
   if (((scipp::size(range) != scipp::size(other)) || ...))

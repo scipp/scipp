@@ -76,12 +76,6 @@ void ndim_is(const Dimensions &dims, const scipp::index expected) {
   }
 }
 
-void dimensionMatches(const Dimensions &dims, const Dim dim,
-                      const scipp::index length) {
-  if (dims[dim] != length)
-    except::throw_dimension_length_error(dims, dim, length);
-}
-
 void validSlice(const Sizes &dims, const Slice &slice) {
   if (slice == Slice{})
     return;
