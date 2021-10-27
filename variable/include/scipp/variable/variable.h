@@ -66,6 +66,7 @@ public:
   void expectCanSetUnit(const units::Unit &) const;
 
   [[nodiscard]] const Dimensions &dims() const;
+  [[nodiscard]] Dim dim() const;
   [[nodiscard]] scipp::index ndim() const;
 
   [[nodiscard]] DType dtype() const;
