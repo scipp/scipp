@@ -52,28 +52,28 @@ TEST_F(ISODateTest, h) {
 
 TEST_F(ISODateTest, days) {
   const auto t = get_time<chrono::days>();
-  EXPECT_EQ(to_iso_date(t, units::Unit{"day"}), "2020-07-27T00:00:00");
+  EXPECT_EQ(to_iso_date(t, units::Unit{"day"}), "2020-07-27");
 }
 
 TEST_F(ISODateTest, months) {
   units::Unit m{"month"};
-  EXPECT_EQ(to_iso_date(core::time_point{0}, m), "1970-01-01T00:00:00");
-  EXPECT_EQ(to_iso_date(core::time_point{1}, m), "1970-02-01T00:00:00");
-  EXPECT_EQ(to_iso_date(core::time_point{12}, m), "1971-01-01T00:00:00");
-  EXPECT_EQ(to_iso_date(core::time_point{15}, m), "1971-04-01T00:00:00");
-  EXPECT_EQ(to_iso_date(core::time_point{-1}, m), "1969-12-01T00:00:00");
-  EXPECT_EQ(to_iso_date(core::time_point{-5}, m), "1969-08-01T00:00:00");
-  EXPECT_EQ(to_iso_date(core::time_point{-12}, m), "1969-01-01T00:00:00");
-  EXPECT_EQ(to_iso_date(core::time_point{-18}, m), "1968-07-01T00:00:00");
+  EXPECT_EQ(to_iso_date(core::time_point{0}, m), "1970-01");
+  EXPECT_EQ(to_iso_date(core::time_point{1}, m), "1970-02");
+  EXPECT_EQ(to_iso_date(core::time_point{12}, m), "1971-01");
+  EXPECT_EQ(to_iso_date(core::time_point{15}, m), "1971-04");
+  EXPECT_EQ(to_iso_date(core::time_point{-1}, m), "1969-12");
+  EXPECT_EQ(to_iso_date(core::time_point{-5}, m), "1969-08");
+  EXPECT_EQ(to_iso_date(core::time_point{-12}, m), "1969-01");
+  EXPECT_EQ(to_iso_date(core::time_point{-18}, m), "1968-07");
 }
 
 TEST_F(ISODateTest, years) {
   units::Unit y{"year"};
-  EXPECT_EQ(to_iso_date(core::time_point{0}, y), "1970-01-01T00:00:00");
-  EXPECT_EQ(to_iso_date(core::time_point{1}, y), "1971-01-01T00:00:00");
-  EXPECT_EQ(to_iso_date(core::time_point{13}, y), "1983-01-01T00:00:00");
-  EXPECT_EQ(to_iso_date(core::time_point{-1}, y), "1969-01-01T00:00:00");
-  EXPECT_EQ(to_iso_date(core::time_point{-6}, y), "1964-01-01T00:00:00");
+  EXPECT_EQ(to_iso_date(core::time_point{0}, y), "1970");
+  EXPECT_EQ(to_iso_date(core::time_point{1}, y), "1971");
+  EXPECT_EQ(to_iso_date(core::time_point{13}, y), "1983");
+  EXPECT_EQ(to_iso_date(core::time_point{-1}, y), "1969");
+  EXPECT_EQ(to_iso_date(core::time_point{-6}, y), "1964");
 }
 
 TEST_F(ISODateTest, invalid_unit) {

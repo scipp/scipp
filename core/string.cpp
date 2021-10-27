@@ -74,10 +74,14 @@ template <class Ratio> constexpr int64_t num_digits() {
 // For synchronizing access to gmtime because its return value is shared.
 std::mutex gmtime_mutex;
 
-void put_time(std::ostream &os, const std::time_t time_point) {
+void put_time(std::ostream &os, const std::time_t time_point,
+              const bool include_time) {
   std::lock_guard guard_{gmtime_mutex};
   const std::tm *tm = std::gmtime(&time_point);
-  os << std::put_time(tm, "%FT%T");
+  if (include_time)
+    os << std::put_time(tm, "%FT%T");
+  else
+    os << std::put_time(tm, "%F");
 }
 
 template <class Rep, class Period>
@@ -89,11 +93,19 @@ std::string to_string(const std::chrono::duration<Rep, Period> &duration) {
   // Sub-second digits are formatted manually.
   put_time(oss,
            Clock::to_time_t(Clock::time_point{
-               std::chrono::duration_cast<std::chrono::seconds>(duration)}));
+               std::chrono::duration_cast<std::chrono::seconds>(duration)}),
+           true);
   if constexpr (std::ratio_less_v<Period, std::ratio<1, 1>>) {
     oss << '.' << std::setw(num_digits<Period>()) << std::setfill('0')
         << (duration.count() % (Period::den / Period::num));
   }
+  return oss.str();
+}
+
+std::string to_string(const std::chrono::days &duration) {
+  using Clock = std::chrono::system_clock;
+  std::ostringstream oss;
+  put_time(oss, Clock::to_time_t(Clock::time_point{duration}), false);
   return oss.str();
 }
 
@@ -110,14 +122,6 @@ auto normalize(const long years_since_epoch, const long months_since_epoch) {
     return std::pair{absolute_year - 1, absolute_month + 12};
 }
 
-std::string to_string_year_month(const auto year, const auto month) {
-  std::ostringstream oss;
-  oss << std::setw(4) << std::setfill('0') << year << '-' << std::setw(2)
-      << std::setfill('0') << month << '-' << std::setw(2) << std::setfill('0')
-      << static_cast<unsigned int>(epoch.day()) << "T00:00:00";
-  return oss.str();
-}
-
 /*
  * Custom implementations for months and years because we cannot construct
  * a std::chrono::time_point with an exact number of months and years since
@@ -127,13 +131,18 @@ std::string to_string(const std::chrono::months &duration) {
   const auto years_since_epoch = duration.count() / 12;
   const auto months_since_epoch = duration.count() - years_since_epoch * 12;
   const auto [year, month] = normalize(years_since_epoch, months_since_epoch);
-  return to_string_year_month(year, month);
+  std::ostringstream oss;
+  oss << std::setw(4) << std::setfill('0') << year << '-' << std::setw(2)
+      << std::setfill('0') << month;
+  return oss.str();
 }
 
 std::string to_string(const std::chrono::years &duration) {
   const auto years_since_epoch = duration.count();
   const auto year = years_since_epoch + static_cast<int>(epoch.year());
-  return to_string_year_month(year, static_cast<unsigned int>(epoch.month()));
+  std::ostringstream oss;
+  oss << std::setw(4) << std::setfill('0') << year;
+  return oss.str();
 }
 } // namespace
 
