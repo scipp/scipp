@@ -413,6 +413,10 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       "Dimension labels of the data (read-only).",
       py::return_value_policy::move);
   c.def_property_readonly(
+      "dim", &T::dim,
+      "The only dimension label for 1-dimensional data, raising an exception "
+      "fo the data is not 1-dimensional.");
+  c.def_property_readonly(
       "ndim", [](const T &self) { return self.ndim(); },
       "Number of dimensions of the data (read-only).",
       py::return_value_policy::move);
