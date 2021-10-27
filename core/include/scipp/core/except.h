@@ -130,12 +130,6 @@ void unit(const T &object, const units::Unit &unit,
   expect::equals(object.unit(), unit, optional_message);
 }
 
-template <class T> void countsOrCountsDensity(const T &object) {
-  if (!object.unit().isCounts() && !object.unit().isCountDensity())
-    throw except::UnitError("Expected counts or counts-density, got " +
-                            object.unit().name() + '.');
-}
-
 void SCIPP_CORE_EXPORT ndim_is(const Dimensions &dims, scipp::index expected);
 
 // TODO maybe just provide a `slice` function/method and check via that?
