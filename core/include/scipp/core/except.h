@@ -146,7 +146,6 @@ void SCIPP_CORE_EXPORT ndim_is(const Dimensions &dims, scipp::index expected);
 // TODO maybe just provide a `slice` function/method and check via that?
 void SCIPP_CORE_EXPORT validSlice(const Sizes &sizes, const Slice &slice);
 
-void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);
 template <class T> void canHaveVariances() {

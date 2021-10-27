@@ -85,11 +85,6 @@ void validSlice(const Sizes &dims, const Slice &slice) {
                              to_string(dims) + ".");
 }
 
-void notCountDensity(const units::Unit &unit) {
-  if (unit.isCountDensity())
-    throw except::UnitError("Expected non-count-density unit.");
-}
-
 void validDim(const Dim dim) {
   if (dim == Dim::Invalid)
     throw except::DimensionError("Dim::Invalid is not a valid dimension.");
