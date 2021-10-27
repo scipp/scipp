@@ -72,28 +72,12 @@ static constexpr decltype(auto) value_maybe_variance(T &&range,
   }
 }
 
-// Helpers for handling a tuple of indices (integers or ViewIndex).
-namespace iter {
-
 template <class T> static constexpr auto array_params(T &&iterable) noexcept {
   if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
     return iterable.values;
   else
     return iterable;
 }
-
-template <int N, class T> static constexpr auto get(const T &index) noexcept {
-  if constexpr (visit_detail::is_tuple<T>::value ||
-                visit_detail::is_array<T>::value) {
-    if constexpr (std::is_integral_v<std::tuple_element_t<0, T>>)
-      return std::get<N>(index);
-    else
-      return std::get<N>(index).get();
-  } else
-    return std::get<N>(index.get());
-}
-
-} // namespace iter
 
 template <size_t N_Operands, bool in_place>
 inline constexpr auto stride_special_cases =
@@ -145,7 +129,7 @@ void increment(std::array<scipp::index, sizeof...(Strides)> &indices) noexcept {
 
 template <size_t N>
 void increment(std::array<scipp::index, N> &indices,
-               const std::array<scipp::index, N> &strides) noexcept {
+               const std::span<const scipp::index> strides) noexcept {
   for (size_t i = 0; i < N; ++i) {
     indices[i] += strides[i];
   }
@@ -154,12 +138,12 @@ void increment(std::array<scipp::index, N> &indices,
 template <class Op, class Indices, class... Args, size_t... I>
 static constexpr auto call_impl(Op &&op, const Indices &indices,
                                 std::index_sequence<I...>, Args &&... args) {
-  return op(value_maybe_variance(args, iter::get<I + 1>(indices))...);
+  return op(value_maybe_variance(args, indices[I + 1])...);
 }
 template <class Op, class Indices, class Out, class... Args>
 static constexpr void call(Op &&op, const Indices &indices, Out &&out,
                            Args &&... args) {
-  const auto i = iter::get<0>(indices);
+  const auto i = indices.front();
   auto &&out_ = value_maybe_variance(out, i);
   out_ = call_impl(std::forward<Op>(op), indices,
                    std::make_index_sequence<sizeof...(Args)>{},
@@ -174,16 +158,15 @@ template <class Op, class Indices, class Arg, class... Args, size_t... I>
 static constexpr void call_in_place_impl(Op &&op, const Indices &indices,
                                          std::index_sequence<I...>, Arg &&arg,
                                          Args &&... args) {
-  static_assert(
-      std::is_same_v<decltype(op(arg, value_maybe_variance(
-                                          args, iter::get<I + 1>(indices))...)),
-                     void>);
-  op(arg, value_maybe_variance(args, iter::get<I + 1>(indices))...);
+  static_assert(std::is_same_v<decltype(op(arg, value_maybe_variance(
+                                                    args, indices[I + 1])...)),
+                               void>);
+  op(arg, value_maybe_variance(args, indices[I + 1])...);
 }
 template <class Op, class Indices, class Arg, class... Args>
 static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
                                     Args &&... args) {
-  const auto i = iter::get<0>(indices);
+  const auto i = indices.front();
   // For dense data we conditionally create ValueAndVariance, which performs an
   // element copy, so the result may have to be updated after the call to `op`.
   auto &&arg_ = value_maybe_variance(arg, i);
@@ -216,10 +199,10 @@ static void inner_loop(Op &&op,
 
 /// Run transform with strides known at run time but bypassing MultiIndex.
 template <bool in_place, class Op, class... Operands>
-static void
-inner_loop(Op &&op, std::array<scipp::index, sizeof...(Operands)> indices,
-           const std::array<scipp::index, sizeof...(Operands)> &strides,
-           const scipp::index n, Operands &&... operands) {
+static void inner_loop(Op &&op,
+                       std::array<scipp::index, sizeof...(Operands)> indices,
+                       const std::span<const scipp::index> strides,
+                       const scipp::index n, Operands &&... operands) {
   for (scipp::index i = 0; i < n; ++i) {
     if constexpr (in_place) {
       detail::call_in_place(op, indices, std::forward<Operands>(operands)...);
@@ -233,17 +216,17 @@ inner_loop(Op &&op, std::array<scipp::index, sizeof...(Operands)> indices,
 template <bool in_place, size_t I = 0, class Op, class... Operands>
 static void dispatch_inner_loop(
     Op &&op, const std::array<scipp::index, sizeof...(Operands)> &indices,
-    const std::array<scipp::index, sizeof...(Operands)> &inner_strides,
-    const scipp::index n, Operands &&... operands) {
+    const std::span<const scipp::index> inner_strides, const scipp::index n,
+    Operands &&... operands) {
   constexpr auto N_Operands = sizeof...(Operands);
   if constexpr (I ==
                 detail::stride_special_cases<N_Operands, in_place>.size()) {
     inner_loop<in_place>(std::forward<Op>(op), indices, inner_strides, n,
                          std::forward<Operands>(operands)...);
   } else {
-    // cppcheck-suppress internalAstError
-    if (inner_strides ==
-        detail::stride_special_cases<N_Operands, in_place>[I]) {
+    if (std::equal(
+            inner_strides.begin(), inner_strides.end(),
+            detail::stride_special_cases<N_Operands, in_place>[I].begin())) {
       inner_loop<in_place>(
           std::forward<Op>(op), indices,
           detail::make_stride_sequence<I, N_Operands, in_place>{}, n,
@@ -258,7 +241,7 @@ static void dispatch_inner_loop(
 template <class Op, class Out, class... Ts>
 static void transform_elements(Op op, Out &&out, Ts &&... other) {
   const auto begin =
-      core::MultiIndex(iter::array_params(out), iter::array_params(other)...);
+      core::MultiIndex(array_params(out), array_params(other)...);
 
   auto run = [&](auto &indices, const auto &end) {
     const auto inner_strides = indices.inner_strides();
@@ -270,8 +253,7 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
       dispatch_inner_loop<false>(op, indices.get(), inner_strides, inner_size,
                                  std::forward<Out>(out),
                                  std::forward<Ts>(other)...);
-      indices.increment_inner_by(inner_size);
-      indices.increment_outer();
+      indices.increment_by(inner_size != 0 ? inner_size : 1);
     }
   };
 
@@ -377,7 +359,7 @@ static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
 
 template <class T> struct as_view {
   using value_type = typename T::value_type;
-  bool hasVariances() const { return data.hasVariances(); }
+  [[nodiscard]] bool hasVariances() const { return data.hasVariances(); }
   auto values() const { return decltype(data.values())(data.values(), dims); }
   auto variances() const {
     return decltype(data.variances())(data.variances(), dims);
@@ -459,7 +441,7 @@ template <bool dry_run> struct in_place {
   static void transform_in_place_impl(Op op, T &&arg, Ts &&... other) {
     using namespace detail;
     const auto begin =
-        core::MultiIndex(iter::array_params(arg), iter::array_params(other)...);
+        core::MultiIndex(array_params(arg), array_params(other)...);
     if constexpr (dry_run)
       return;
 
@@ -473,20 +455,19 @@ template <bool dry_run> struct in_place {
         detail::dispatch_inner_loop<true>(op, indices.get(), inner_strides,
                                           inner_size, std::forward<T>(arg),
                                           std::forward<Ts>(other)...);
-        indices.increment_inner_by(inner_size);
-        indices.increment_outer();
+        indices.increment_by(inner_size != 0 ? inner_size : 1);
       }
     };
     if (begin.has_stride_zero()) {
       // The output has a dimension with stride zero so parallelization must
       // be done differently. See parallelization in accumulate.h.
-      auto indices = begin; // copy so that run doesn't modify begin
+      auto indices = begin;
       auto end = begin;
       end.set_index(arg.size());
       run(indices, end);
     } else {
       auto run_parallel = [&](const auto &range) {
-        auto indices = begin;
+        auto indices = begin; // copy so that run doesn't modify begin
         indices.set_index(range.begin());
         auto end = begin;
         end.set_index(range.end());

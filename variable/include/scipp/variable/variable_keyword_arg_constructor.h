@@ -6,6 +6,14 @@
 
 #include <type_traits>
 
+#include "scipp/core/dimensions.h"
+#include "scipp/core/dtype.h"
+#include "scipp/core/element_array.h"
+#include "scipp/units/dim.h"
+#include "scipp/units/unit.h"
+
+#include "scipp-variable_export.h"
+
 namespace scipp::variable {
 
 namespace detail {

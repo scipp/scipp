@@ -170,7 +170,7 @@ public:
     return {0, // no offset required in buffer since access via indices
             params.dims(),
             params.strides(),
-            {dim, buffer.dims(),
+            {dim, buffer.dims(), Strides{buffer.strides()},
              bin_array_variable_detail ::index_pair_data(indices)}};
   }
 };

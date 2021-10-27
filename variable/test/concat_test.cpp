@@ -43,7 +43,8 @@ TEST_F(ConcatTest, dimension_mismatch) {
       concat(std::vector{base.slice({Dim::Y, 0}), base}, Dim::Z),
       except::NotFoundError);
   // Missing label in second arg, but this broadcasts
-  EXPECT_NO_THROW(concat(std::vector{base, base.slice({Dim::Y, 0})}, Dim::Z));
+  EXPECT_NO_THROW_DISCARD(
+      concat(std::vector{base, base.slice({Dim::Y, 0})}, Dim::Z));
 }
 
 TEST_F(ConcatTest, new_dim) {
@@ -103,7 +104,8 @@ TEST_F(ConcatTest, new_dim_and_existing_outer_dim) {
 }
 
 TEST_F(ConcatTest, empty) {
-  EXPECT_THROW(concat(std::vector<Variable>{}, Dim::X), std::invalid_argument);
+  EXPECT_THROW_DISCARD(concat(std::vector<Variable>{}, Dim::X),
+                       std::invalid_argument);
 }
 
 TEST_F(ConcatTest, single_existing_dim) {
