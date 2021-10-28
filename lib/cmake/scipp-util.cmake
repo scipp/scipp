@@ -35,9 +35,9 @@ function(scipp_function template category function_name)
   macro(configure_in_module module name)
     set(inc scipp/${module}/${name}.h)
     configure_file(
-      templates/${module}_${template}.h.in lib/${module}/include/${inc}
+      templates/${module}_${template}.h.in ${module}/include/${inc}
     )
-    configure_file(templates/${module}_${template}.cpp.in lib/${module}/${src})
+    configure_file(templates/${module}_${template}.cpp.in ${module}/${src})
     set(${module}_INC_FILES
         ${${module}_INC_FILES} "include/${inc}"
         PARENT_SCOPE
@@ -86,11 +86,11 @@ function(setup_scipp_category category)
   set(include_list ${variable_${category}_includes})
   configure_file(
     cmake/generated.h.in
-    lib/variable/include/scipp/variable/generated_${category}.h
+    variable/include/scipp/variable/generated_${category}.h
   )
   set(include_list ${dataset_${category}_includes})
   configure_file(
-    cmake/generated.h.in lib/dataset/include/scipp/dataset/generated_${category}.h
+    cmake/generated.h.in dataset/include/scipp/dataset/generated_${category}.h
   )
   string(REPLACE "ENDL" ";" init_list_forward ${python_${category}_binders_fwd})
   string(REPLACE "ENDL" ";" init_list ${python_${category}_binders})

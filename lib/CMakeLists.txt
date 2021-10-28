@@ -8,6 +8,11 @@ endif(NOT DEFINED CMAKE_CXX_STANDARD)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+# Generate files for free scipp API functions
+include(scipp-functions)
+
 find_program(CCACHE ccache)
 if(CCACHE)
   set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
@@ -208,3 +213,4 @@ add_subdirectory(core)
 add_subdirectory(variable)
 add_subdirectory(dataset)
 add_subdirectory(test)
+add_subdirectory(python)

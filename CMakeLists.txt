@@ -105,13 +105,9 @@ else()
   set(CMAKE_INSTALL_RPATH @loader_path)
 endif()
 
-# Generate files for free scipp API functions
-include(scipp-functions)
-
 include(scipp-install)
 
 add_subdirectory(lib)
-add_subdirectory(python)
 
 if(DYNAMIC_LIB)
   install(
