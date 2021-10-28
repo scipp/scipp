@@ -29,41 +29,6 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake"
                       "${CMAKE_SOURCE_DIR}/cmake/sanitizers-cmake/cmake"
 )
 
-# Conan dependencies
-if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
-  message(
-    STATUS
-      "Downloading conan.cmake from https://github.com/conan-io/cmake-conan"
-  )
-  file(
-    DOWNLOAD
-    "https://raw.githubusercontent.com/conan-io/cmake-conan/v0.16.1/conan.cmake"
-    "${CMAKE_BINARY_DIR}/conan.cmake"
-    EXPECTED_HASH
-      SHA256=396e16d0f5eabdc6a14afddbcfff62a54a7ee75c6da23f32f7a31bc85db23484
-    TLS_VERIFY ON
-  )
-endif()
-
-include(${CMAKE_BINARY_DIR}/conan.cmake)
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
-
-conan_cmake_autodetect(conan_settings)
-conan_cmake_install(
-  PATH_OR_REFERENCE ${CMAKE_SOURCE_DIR} SETTINGS ${conan_settings} BUILD
-  outdated
-)
-
-find_package(Benchmark)
-find_package(Boost 1.67 REQUIRED)
-find_package(Eigen3 REQUIRED)
-find_package(Sanitizers REQUIRED)
-find_package(GTest CONFIG REQUIRED)
-find_package(Python 3.7 REQUIRED COMPONENTS Interpreter Development)
-find_package(pybind11 CONFIG REQUIRED)
-find_package(LLNL-Units REQUIRED)
-
 option(FULL_BUILD
        "Enable full build where the 'all' target includes tests and benchmarks."
        OFF
