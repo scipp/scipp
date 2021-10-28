@@ -205,15 +205,15 @@ option(COVERAGE "Enable code coverage run." OFF)
 if(COVERAGE)
   include(CodeCoverage)
   configure_file(
-    tools/run-tests.sh.in "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests.sh"
-    COPYONLY
+    ${CMAKE_SOURCE_DIR}/tools/run-tests.sh.in
+    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests.sh" COPYONLY
   )
   # Exclude cmake-generated source files
   set(COVERAGE_EXCLUDES
-      "${PROJECT_BINARY_DIR}/core/*"
-      "${PROJECT_BINARY_DIR}/variable/*.cpp"
-      "${PROJECT_BINARY_DIR}/dataset/*.cpp"
-      "${PROJECT_BINARY_DIR}/python/*.cpp"
+      "${CMAKE_CURRENT_BINARY_DIR}/core/*"
+      "${CMAKE_CURRENT_BINARY_DIR}/variable/*.cpp"
+      "${CMAKE_CURRENT_BINARY_DIR}/dataset/*.cpp"
+      "${CMAKE_CURRENT_BINARY_DIR}/python/*.cpp"
       "/usr/*"
       "/*conan/data*"
       "/*miniconda*"
