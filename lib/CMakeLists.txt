@@ -8,7 +8,10 @@ endif(NOT DEFINED CMAKE_CXX_STANDARD)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(CMAKE_MODULE_PATH
+    ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/sanitizers-cmake/cmake"
+)
 
 # Conan dependencies
 if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
@@ -271,6 +274,8 @@ option(FULL_BUILD
        "Enable full build where the 'all' target includes tests and benchmarks."
        OFF
 )
+
+enable_testing()
 
 add_subdirectory(common)
 if(FULL_BUILD)

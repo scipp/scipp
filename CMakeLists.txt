@@ -25,11 +25,7 @@ if(NOT CMAKE_BUILD_TYPE)
   )
 endif()
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake"
-                      "${CMAKE_SOURCE_DIR}/cmake/sanitizers-cmake/cmake"
-)
-
-enable_testing()
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 # Custom install target for docs to depend on.
 add_custom_target(
