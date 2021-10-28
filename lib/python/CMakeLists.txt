@@ -63,7 +63,6 @@ endif()
 
 add_sanitizers(_scipp)
 
-install(DIRECTORY "src/scipp/" DESTINATION ${PYTHONDIR})
 install(TARGETS _scipp DESTINATION ${PYTHONDIR})
 
 if(COVERAGE)

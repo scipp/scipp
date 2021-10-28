@@ -109,6 +109,8 @@ include(scipp-install)
 
 add_subdirectory(lib)
 
+install(DIRECTORY "src/scipp/" DESTINATION ${PYTHONDIR})
+
 if(DYNAMIC_LIB)
   install(
     EXPORT ${EXPORT_NAME}
