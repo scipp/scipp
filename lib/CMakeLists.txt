@@ -32,8 +32,8 @@ list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
 conan_cmake_autodetect(conan_settings)
 conan_cmake_install(
-  PATH_OR_REFERENCE ${CMAKE_CURRENT_SOURCE_DIR} SETTINGS ${conan_settings} BUILD
-  outdated
+  PATH_OR_REFERENCE ${CMAKE_CURRENT_SOURCE_DIR} SETTINGS ${conan_settings}
+  BUILD outdated
 )
 
 find_package(Benchmark)
