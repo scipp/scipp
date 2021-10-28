@@ -14,6 +14,7 @@ Features
 * Add ``bins_like`` for broadcasting dense variables to binned variables, e.g., for converting bin coordinates into event coordinates `#2225 <https://github.com/scipp/scipp/pull/2225>`_.
 * ``groupby`` now also supports grouping by attributes instead of just by coordinates `#2227 <https://github.com/scipp/scipp/pull/2227>`_.
 * Add ``concat`` to replace ``concatenate``. In contrast to the now deprecated ``concatenate``, ``concat`` supports concatenation of lists of objects instead of just two objects `#2232 <https://github.com/scipp/scipp/pull/2232>`_.
+* Add ``dim`` property to ``Variable`` and ``DataArray`` `#2251 <https://github.com/scipp/scipp/pull/2251>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~

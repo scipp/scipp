@@ -72,3 +72,22 @@ TYPED_TEST(Variable_scalar_accessors, variance_dim_1) {
   ASSERT_THROW(v.template value<double>(), except::DimensionError);
   ASSERT_THROW(v.template variance<double>(), except::DimensionError);
 }
+
+TYPED_TEST(Variable_scalar_accessors, dim_dim_1) {
+  auto v_ = variable::makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.1});
+  auto &&v = TestFixture::access(v_);
+  ASSERT_EQ(v.dim(), Dim::X);
+}
+
+TYPED_TEST(Variable_scalar_accessors, dim_dim_0) {
+  auto v_ = variable::makeVariable<double>(Dims{}, Shape{}, Values{1.1});
+  auto &&v = TestFixture::access(v_);
+  ASSERT_THROW_DISCARD(v.dim(), except::DimensionError);
+}
+
+TYPED_TEST(Variable_scalar_accessors, dim_dim_2) {
+  auto v_ = variable::makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{1, 1},
+                                           Values{1.1});
+  auto &&v = TestFixture::access(v_);
+  ASSERT_THROW_DISCARD(v.dim(), except::DimensionError);
+}

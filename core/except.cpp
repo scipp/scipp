@@ -68,10 +68,12 @@ void throw_cannot_have_variances(const DType type) {
 } // namespace scipp::except
 
 namespace scipp::core::expect {
-void dimensionMatches(const Dimensions &dims, const Dim dim,
-                      const scipp::index length) {
-  if (dims[dim] != length)
-    except::throw_dimension_length_error(dims, dim, length);
+void ndim_is(const Dimensions &dims, const scipp::index expected) {
+  using std::to_string;
+  if (dims.ndim() != expected) {
+    throw except::DimensionError("Expected " + to_string(expected) +
+                                 " dimensions, got " + to_string(dims.ndim()));
+  }
 }
 
 void validSlice(const Sizes &dims, const Slice &slice) {
@@ -81,11 +83,6 @@ void validSlice(const Sizes &dims, const Slice &slice) {
   if (!dims.contains(slice.dim()) || end > dims[slice.dim()])
     throw except::SliceError("Expected " + to_string(slice) + " to be in " +
                              to_string(dims) + ".");
-}
-
-void notCountDensity(const units::Unit &unit) {
-  if (unit.isCountDensity())
-    throw except::UnitError("Expected non-count-density unit.");
 }
 
 void validDim(const Dim dim) {

@@ -97,6 +97,11 @@ void Variable::setUnit(const units::Unit &unit) {
   m_object->setUnit(unit);
 }
 
+Dim Variable::dim() const {
+  core::expect::ndim_is(dims(), 1);
+  return dims().inner();
+}
+
 bool Variable::operator==(const Variable &other) const {
   if (is_same(other))
     return true;
@@ -263,11 +268,6 @@ void throw_keyword_arg_constructor_bad_dtype(const DType dtype) {
                           to_string(dtype) +
                           " with such values and/or variances.");
 }
-
-void expect0D(const Dimensions &dims) {
-  core::expect::equals(dims, Dimensions());
-}
-
 } // namespace detail
 
 Variable Variable::bin_indices() const {

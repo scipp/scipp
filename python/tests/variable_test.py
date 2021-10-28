@@ -70,6 +70,11 @@ def test_operation_with_scalar_quantity():
     assert sc.identical(reference, var)
 
 
+def test_single_dim_access():
+    var = sc.Variable(dims=['x'], values=[0.0])
+    assert var.dim == 'x'
+
+
 def test_0D_scalar_access():
     var = sc.Variable(dims=(), values=0.0)
     assert var.value == 0.0
