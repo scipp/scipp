@@ -245,13 +245,13 @@ if(COVERAGE)
   )
   # Exclude cmake-generated source files
   set(COVERAGE_EXCLUDES
-      "${PROJECT_BINARY_DIR}/core/*.cpp"
+      "${PROJECT_BINARY_DIR}/core/*"
       "${PROJECT_BINARY_DIR}/variable/*.cpp"
       "${PROJECT_BINARY_DIR}/dataset/*.cpp"
       "${PROJECT_BINARY_DIR}/python/*.cpp"
       "/usr/*"
-      "*conan/data*"
-      "*miniconda*"
+      "/*conan/data*"
+      "/*miniconda*"
   )
   setup_target_for_coverage_lcov(
     NAME
