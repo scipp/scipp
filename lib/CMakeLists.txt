@@ -267,6 +267,11 @@ endif(DYNAMIC_LIB)
 
 include(scipp-install)
 
+option(FULL_BUILD
+       "Enable full build where the 'all' target includes tests and benchmarks."
+       OFF
+)
+
 add_subdirectory(common)
 if(FULL_BUILD)
   add_subdirectory(benchmark)

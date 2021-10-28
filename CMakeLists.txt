@@ -29,11 +29,6 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake"
                       "${CMAKE_SOURCE_DIR}/cmake/sanitizers-cmake/cmake"
 )
 
-option(FULL_BUILD
-       "Enable full build where the 'all' target includes tests and benchmarks."
-       OFF
-)
-
 enable_testing()
 
 # Custom install target for docs to depend on.
