@@ -2,33 +2,36 @@
 
 #include <array>
 #include <iostream>
+#include <sstream>
 #include <vector>
+
+#include "scipp/core/string.h"
+
+namespace debug::detail {
+template <class T, class C>
+void print_std_container(std::ostream &os, const C &c) {
+  os << '[';
+  for (size_t i = 0; i + 1 < std::size(c); ++i) {
+    os << c[i] << ", ";
+  }
+  if (std::size(c) > 0) {
+    os << c.back();
+  }
+  os << ']';
+}
+} // namespace debug::detail
 
 // Use namespace std to make the operators discoverable through ADL.
 namespace std { // NOLINT
 template <typename T, size_t N>
 std::ostream &operator<<(std::ostream &os, const std::array<T, N> &a) {
-  os << '[';
-  for (size_t i = 0; i + 1 < std::size(a); ++i) {
-    os << a[i] << ", ";
-  }
-  if (std::size(a) > 0) {
-    os << a.back();
-  }
-  os << ']';
+  debug::detail::print_std_container<T>(os, a);
   return os;
 }
 
-template <typename T, size_t N>
+template <typename T>
 std::ostream &operator<<(std::ostream &os, const std::vector<T> &v) {
-  os << '[';
-  for (size_t i = 0; i + 1 < std::size(v); ++i) {
-    os << v[i] << ", ";
-  }
-  if (std::size(v) > 0) {
-    os << v.back();
-  }
-  os << ']';
+  debug::detail::print_std_container<T>(os, v);
   return os;
 }
 } // namespace std

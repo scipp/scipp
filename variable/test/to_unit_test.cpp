@@ -90,7 +90,7 @@ TEST(ToUnitTest, time_point) {
                        core::time_point{40000 + 60000}}));
 }
 
-TEST(ToUnitTest, time_point_bad_units) {
+TEST(ToUnitTest, time_point_large_units) {
   const auto do_to_unit = [](const char *initial, const char *target) {
     return to_unit(makeVariable<core::time_point>(Dims{}, units::Unit(initial)),
                    units::Unit(target));
@@ -119,6 +119,13 @@ TEST(ToUnitTest, time_point_bad_units) {
         EXPECT_THROW_DISCARD(do_to_unit(initial, target), except::UnitError);
     }
   }
+}
+
+TEST(ToUnitTest, time_point_bad_unit) {
+  EXPECT_THROW_DISCARD(
+      to_unit(makeVariable<core::time_point>(Dims{}, units::Unit("m")),
+              units::Unit("mm")),
+      except::UnitError);
 }
 
 TEST(ToUnitTest, binned) {
