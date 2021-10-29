@@ -4,8 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <type_traits>
 #include <optional>
+#include <type_traits>
 
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"

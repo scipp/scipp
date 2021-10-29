@@ -34,7 +34,9 @@ public:
   [[nodiscard]] auto rbegin() const noexcept {
     return std::reverse_iterator(end());
   }
-  [[nodiscard]] auto rend() const noexcept { return std::reverse_iterator(begin()); }
+  [[nodiscard]] auto rend() const noexcept {
+    return std::reverse_iterator(begin());
+  }
   [[nodiscard]] typename std::array<Key, Capacity>::const_iterator
   find(const Key &key) const;
   [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
