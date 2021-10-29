@@ -8,6 +8,7 @@
 #include "scipp/variable/accumulate.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/astype.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 
@@ -47,15 +48,17 @@ Variable islinspace(const Variable &var, const Dim dim) {
                    "islinspace");
 }
 
-/// Return true if variable values are sorted along given dim.
+/// Return a variable of True, if variable values are sorted along given dim.
 ///
 /// If `order` is SortOrder::Ascending, checks if values are non-decreasing.
 /// If `order` is SortOrder::Descending, checks if values are non-increasing.
-bool issorted(const Variable &x, const Dim dim, const SortOrder order) {
+Variable issorted(const Variable &x, const Dim dim, const SortOrder order) {
+  auto dims = x.dims();
+  dims.erase(dim);
+  auto out = variable::ones(dims, units::one, dtype<bool>);
   const auto size = x.dims()[dim];
   if (size < 2)
-    return true;
-  auto out = makeVariable<bool>(Values{true});
+    return out;
   if (order == SortOrder::Ascending)
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
@@ -64,7 +67,15 @@ bool issorted(const Variable &x, const Dim dim, const SortOrder order) {
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
                         core::element::issorted_nonascending, "issorted");
-  return out.value<bool>();
+  return out;
+}
+
+/// Return true if variable values are sorted along given dim.
+///
+/// If `order` is SortOrder::Ascending, checks if values are non-decreasing.
+/// If `order` is SortOrder::Descending, checks if values are non-increasing.
+bool allsorted(const Variable &x, const Dim dim, const SortOrder order) {
+  return variable::all(issorted(x, dim, order)).value<bool>();
 }
 
 /// Zip elements of two variables into a variable where each element is a pair.
@@ -75,8 +86,8 @@ Variable zip(const Variable &first, const Variable &second) {
 /// For an input where elements are pairs, return two variables containing the
 /// first and second components of the input pairs.
 std::pair<Variable, Variable> unzip(const Variable &var) {
-  return {transform(var, core::element::get<0>, "unzip"),
-          transform(var, core::element::get<1>, "unzip")};
+  return {var.elements<scipp::index_pair>("begin"),
+          var.elements<scipp::index_pair>("end")};
 }
 
 /// Fill variable with given values (and variances) and unit.

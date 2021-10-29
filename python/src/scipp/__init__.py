@@ -26,58 +26,29 @@ user_configuration_filename = runtime_config.config_filename
 config = runtime_config.load()
 del runtime_config
 
-from ._scipp import _debug_
-if _debug_:
-    import warnings
-
-    def custom_formatwarning(msg, *args, **kwargs):
-        return str(msg) + '\n'
-
-    warnings.formatwarning = custom_formatwarning
-    warnings.warn(
-        'You are running a "Debug" build of scipp. For optimal performance use a "Release" build.'
-    )
-
-from ._scipp import __version__
+from .core import __version__
 # Import classes
-from ._scipp.core import Variable, DataArray, Dataset, GroupByDataArray, \
-                         GroupByDataset, Unit
+from .core import Variable, DataArray, Dataset, Unit
 # Import errors
-from ._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
+from .core import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
                          DTypeError, NotFoundError, SizeError, SliceError, \
                          UnitError, VariableError, VariancesError
 # Import submodules
-from ._scipp.core import units, dtype, buckets
+from .core import units, dtype
 from . import geometry
 # Import functions
-from ._scipp.core import choose, logical_and, logical_or, logical_xor, where
+from ._scipp.core import as_const, choose, logical_and, logical_or, logical_xor
 # Import python functions
 from .show import show, make_svg
 from .table import table
-from .plotting import plot
-from .extend_units import *
-from .html import to_html, make_html
-from .object_list import _repr_html_
-from .utils import collapse, slices
-from .compat.dict import to_dict, from_dict
-from .sizes import _make_sizes
 
-# Wrappers for free functions from _scipp.core
-from ._arithmetic import *
-from ._bins import *
-from ._counts import *
-from ._comparison import *
-from ._cumulative import *
-from ._dataset import *
-from ._groupby import *
-from ._math import *
-from ._operations import *
-from ._unary import *
-from ._reduction import *
-from ._shape import *
-from ._trigonometry import *
-from ._variable import *
+from .plotting import plot
+setattr(Variable, 'plot', plot)
+setattr(DataArray, 'plot', plot)
+setattr(Dataset, 'plot', plot)
+
+from .html import to_html, make_html
 
 setattr(Variable, '_repr_html_', make_html)
 setattr(DataArray, '_repr_html_', make_html)
@@ -88,59 +59,49 @@ from .io.hdf5 import to_hdf5 as _to_hdf5
 setattr(Variable, 'to_hdf5', _to_hdf5)
 setattr(DataArray, 'to_hdf5', _to_hdf5)
 setattr(Dataset, 'to_hdf5', _to_hdf5)
+del _to_hdf5
 
-setattr(Variable, 'sizes', property(_make_sizes))
-setattr(DataArray, 'sizes', property(_make_sizes))
-setattr(Dataset, 'sizes', property(_make_sizes))
-
-from ._bins import _bins, _set_bins, _events
-
-setattr(Variable, 'bins', property(_bins, _set_bins))
-setattr(DataArray, 'bins', property(_bins, _set_bins))
-setattr(Dataset, 'bins', property(_bins, _set_bins))
-setattr(Variable, 'events', property(_events))
-setattr(DataArray, 'events', property(_events))
-
-from ._structured import _fields
-
-setattr(
-    Variable, 'fields',
-    property(
-        _fields,
-        doc=
-        """Provides access to fields of structured types such as vectors or matrices."""
-    ))
-
-from ._bins import _groupby_bins
-
-setattr(GroupByDataArray, 'bins', property(_groupby_bins))
-setattr(GroupByDataset, 'bins', property(_groupby_bins))
-
-setattr(Variable, 'plot', plot)
-setattr(DataArray, 'plot', plot)
-setattr(Dataset, 'plot', plot)
-
-# Prevent unwanted conversion to numpy arrays by operations. Properly defining
-# __array_ufunc__ should be possible by converting non-scipp arguments to
-# variables. The most difficult part is probably mapping the ufunc to scipp
-# functions.
-for _cls in (Variable, DataArray, Dataset):
-    setattr(_cls, '__array_ufunc__', None)
-del _cls
-
-from . import _binding
+from .extend_units import *
+from .object_list import _repr_html_
+from .utils import collapse, slices
+from .compat.dict import to_dict, from_dict
 
 from .coords import transform_coords, show_graph
 
+from .core import add, divide, floor_divide, mod, multiply, subtract
+from .core import lookup, histogram, bin, bins, bins_like
+from .core import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
+from .core import counts_to_density, density_to_counts
+from .core import cumsum
+from .core import combine_masks, merge
+from .core import groupby
+from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc
+from .core import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where
+from .core import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
+from .core import broadcast, concat, concatenate, fold, flatten, transpose
+from .core import sin, cos, tan, asin, acos, atan, atan2
+from .core import isnan, isinf, isfinite, isposinf, isneginf, to_unit
+from .core import scalar, zeros, zeros_like, ones, ones_like, empty, empty_like, full, full_like, matrix, matrices, vector, vectors, array, linspace, geomspace, logspace, arange
+
+# Mainly imported for docs
+from .core import Bins, GroupByDataset, GroupByDataArray
+
+from . import _binding
+
 _binding.bind_get()
+_binding.bind_pop()
+# Assign method binding for both Variable and DataArray
 for _cls in (Variable, DataArray):
     _binding.bind_functions_as_methods(
         _cls, globals(), ('broadcast', 'flatten', 'fold', 'transpose', 'all', 'any',
-                          'mean', 'sum', 'nanmean', 'nansum'))
+                          'mean', 'sum', 'nanmean', 'nansum', 'floor', 'ceil', 'round'))
 del _cls
+# Assign method binding for JUST Variable
 _binding.bind_functions_as_methods(Variable, globals(),
                                    ('cumsum', 'max', 'min', 'nanmax', 'nanmin'))
 for _cls in (DataArray, Dataset):
     _binding.bind_functions_as_methods(_cls, globals(), ('groupby', 'transform_coords'))
 del _cls
 del _binding
+
+from . import data

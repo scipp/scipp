@@ -90,6 +90,18 @@ TEST_F(DataArrayTest, shadow_attr) {
   EXPECT_EQ(a.meta()[Dim::X], var1);
 }
 
+TEST_F(DataArrayTest, mutate_via_meta_throws) {
+  DataArray da(data);
+  da.coords().set(Dim::X, coord);
+  const auto original = copy(da);
+  EXPECT_THROW(da.meta().erase(Dim::X), except::DataArrayError);
+  EXPECT_EQ(da, original);
+  EXPECT_THROW_DISCARD(da.meta().extract(Dim::X), except::DataArrayError);
+  EXPECT_EQ(da, original);
+  EXPECT_THROW(da.meta().set(Dim::Y, coord), except::DataArrayError);
+  EXPECT_EQ(da, original);
+}
+
 TEST_F(DataArrayTest, view) {
   const auto var = makeVariable<double>(Values{1});
   const DataArray a(copy(var), {{Dim::X, copy(var)}}, {{"mask", copy(var)}},

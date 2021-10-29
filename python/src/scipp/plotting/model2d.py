@@ -4,7 +4,7 @@
 # @author Neil Vaytet, Simon Heybrock
 
 from .. import config
-from .._shape import transpose
+from ..core import transpose
 from .model import PlotModel
 from .resampling_model import resampling_model
 
@@ -30,6 +30,13 @@ class PlotModel2d(PlotModel):
         for dim, resolution in zip(self.dims, self._resolution):
             self._model.resolution[dim] = resolution
             self._model.bounds[dim] = None
+
+    def _mode_updated(self):
+        self._model.mode = self.mode
+
+    @property
+    def is_resampling(self):
+        return True
 
     def update(self):
         """

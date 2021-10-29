@@ -27,8 +27,8 @@ auto make_subspans(T *base, const Variable &indices,
       overloaded{core::transform_flags::expect_no_variance_arg<0>,
                  [](const units::Unit &) { return units::one; },
                  [base, stride](const auto &offset) {
-                   return scipp::span(base + stride * offset.first,
-                                      base + stride * offset.second);
+                   return std::span(base + stride * offset.first,
+                                    base + stride * offset.second);
                  }},
       "make_subspans");
 }
@@ -37,11 +37,11 @@ auto make_subspans(T *base, const Variable &indices,
 /// dimension as elements.
 template <class T, class Var>
 Variable subspan_view(Var &var, const Dim dim, const Variable &indices) {
-  auto subspans = make_subspans(var.template values<T>().data(), indices,
-                                var.dims().offset(dim));
+  auto subspans =
+      make_subspans(var.template values<T>().data(), indices, var.stride(dim));
   if (var.hasVariances())
     subspans.setVariances(make_subspans(var.template variances<T>().data(),
-                                        indices, var.dims().offset(dim)));
+                                        indices, var.stride(dim)));
   subspans.setUnit(var.unit());
   return subspans;
 }
@@ -59,7 +59,7 @@ auto invoke_subspan_view(const DType dtype, Args &&... args) {
 
 template <class Var, class... Args>
 Variable subspan_view_impl(Var &var, const Dim dim, Args &&... args) {
-  if (var.strides()[var.dims().index(dim)] != 1)
+  if (var.stride(dim) != 1)
     throw except::DimensionError(
         "View over subspan can only be created for contiguous "
         "range of data.");
@@ -79,7 +79,7 @@ Variable make_indices(const Variable &var, const Dim dim) {
   dims.erase(dim);
   auto start = scipp::index(0) * units::one;
   for (const auto &label : dims) {
-    const auto stride = var.strides()[var.dims().index(label)];
+    const auto stride = var.stride(label);
     start = start + make_range(dims[label], stride, label);
   }
   return zip(start, start + var.dims()[dim] * units::one);

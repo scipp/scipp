@@ -8,10 +8,13 @@ def test_wont_match_when_meta_size_unequal():
     point = sc.scalar(value=1.0)
     a = sc.DataArray(data=point, attrs={'x': point})
     b = sc.DataArray(data=point)
-    with pytest.raises(RuntimeError):
-        su.isnear(a, b, rtol=0 * sc.units.one, atol=1.0 * sc.units.one)
-    # Raise nothing if we are ignoring differing parts
-    su.isnear(a, b, rtol=0 * sc.units.one, atol=1.0 * sc.units.one, include_attrs=False)
+    assert not su.isnear(a, b, rtol=0 * sc.units.one, atol=1.0 * sc.units.one)
+    # ingore attributes, should give the same result
+    assert su.isnear(a,
+                     b,
+                     rtol=0 * sc.units.one,
+                     atol=1.0 * sc.units.one,
+                     include_attrs=False)
 
 
 def test_wont_match_when_meta_keys_unequal():

@@ -13,13 +13,16 @@ dependencies:
   - tbb-devel
   - conan
   - cmake
+  - pip
+  - gxx_linux-64 11.1.*
 
   # Run
   - appdirs
+  - ipykernel = 6.3.1  # issue with pythreejs 3d plotting
   - ipympl
   - ipywidgets
   - matplotlib-base
-  - numpy >=1.15.3
+  - numpy>=1.20.0
   - python
   - python-configuration
   - pythreejs
@@ -32,6 +35,7 @@ dependencies:
   - python-graphviz
   - xarray  # For testing xarray <-> scipp conversion
   - pandas  # For testing pandas <-> scipp conversion
+  - scipy>=1.7.0
 
   # Formatting & static analysis
   - pre-commit
@@ -41,6 +45,6 @@ dependencies:
   # Docs
   - pandoc
   - sphinx
-  - sphinx_rtd_theme
+  - sphinx-book-theme
+  - sphinx-copybutton
   - nbsphinx
-  - docutils=0.16 # see https://github.com/spatialaudio/nbsphinx/issues/549

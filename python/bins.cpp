@@ -69,12 +69,6 @@ template <class T> void bind_bins(pybind11::module &m) {
                                         // implicit conversions in functor
 }
 
-template <class T> void bind_bin_size(pybind11::module &m) {
-  m.def(
-      "bin_size", [](const T &x) { return dataset::bucket_sizes(x); },
-      py::call_guard<py::gil_scoped_release>());
-}
-
 template <class T> auto bin_begin_end(const Variable &var) {
   auto &&[indices, dim, buffer] = var.constituents<T>();
   static_cast<void>(dim);
@@ -93,6 +87,7 @@ template <class T>
 void bind_bins_map_view(py::module &m, const std::string &name) {
   py::class_<T> c(m, name.c_str());
   bind_common_mutable_view_operators<T>(c);
+  bind_pop(c);
 }
 
 template <class T> void bind_bins_view(py::module &m) {
@@ -110,6 +105,26 @@ template <class T> void bind_bins_view(py::module &m) {
   m.def("_bins_view", [](Variable &var) { return dataset::bins_view<T>(var); });
 }
 
+template <class T, class Data>
+auto bins_like(const Variable &bins, const Data &data) {
+  auto &&[idx, dim, buf] = bins.constituents<T>();
+  auto out = make_bins_no_validate(idx, dim, empty_like(data, buf.dims()));
+  out.setSlice(Slice{}, data);
+  return out;
+}
+
+template <class Data> void bind_bins_like(py::module &m) {
+  m.def("bins_like", [](const Variable &bins, const Data &data) {
+    if (bins.dtype() == dtype<bucket<Variable>>)
+      return bins_like<Variable>(bins, data);
+    if (bins.dtype() == dtype<bucket<DataArray>>)
+      return bins_like<DataArray>(bins, data);
+    throw except::TypeError(
+        "In `bins_like`: Prototype must contain binned data but got dtype=" +
+        to_string(bins.dtype()));
+  });
+}
+
 } // namespace
 
 void init_buckets(py::module &m) {
@@ -117,9 +132,7 @@ void init_buckets(py::module &m) {
   bind_bins<DataArray>(m);
   bind_bins<Dataset>(m);
 
-  bind_bin_size<Variable>(m);
-  bind_bin_size<DataArray>(m);
-  bind_bin_size<Dataset>(m);
+  bind_bins_like<Variable>(m);
 
   m.def("is_bins", variable::is_bins);
   m.def("is_bins",
@@ -200,15 +213,6 @@ void init_buckets(py::module &m) {
               py::call_guard<py::gil_scoped_release>());
   buckets.def("scale", dataset::buckets::scale,
               py::call_guard<py::gil_scoped_release>());
-  buckets.def(
-      "sum", [](const Variable &x) { return dataset::buckets::sum(x); },
-      py::call_guard<py::gil_scoped_release>());
-  buckets.def(
-      "sum", [](const DataArray &x) { return dataset::buckets::sum(x); },
-      py::call_guard<py::gil_scoped_release>());
-  buckets.def(
-      "sum", [](const Dataset &x) { return dataset::buckets::sum(x); },
-      py::call_guard<py::gil_scoped_release>());
 
   m.def(
       "bin",

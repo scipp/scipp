@@ -180,3 +180,13 @@ def test_data_array_unsupported_PyObject_coord():
 def test_dataset():
     d = sc.Dataset(data={'a': array_1d, 'b': array_2d})
     check_roundtrip(d)
+
+
+def test_variable_with_zero_length_dimension():
+    v = sc.Variable(dims=["x"], values=[])
+    check_roundtrip(v)
+
+
+def test_variable_with_zero_length_dimension_with_variances():
+    v = sc.Variable(dims=["x"], values=[], variances=[])
+    check_roundtrip(v)

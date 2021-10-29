@@ -4,10 +4,13 @@
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
+#include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/comparison.h"
+#include "scipp/variable/shape.h"
 
 #include "test_macros.h"
 
@@ -128,10 +131,11 @@ TEST_F(GroupbyTest, copy_nan) {
             makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{4, 5}));
 }
 
-TEST_F(GroupbyTest, fail_2d_coord) {
+TEST_F(GroupbyTest, drop_2d_coord) {
   d.setCoord(Dim("2d"), makeVariable<float>(Dims{Dim::X, Dim::Z}, Shape{3, 2}));
   EXPECT_NO_THROW(groupby(d, Dim("labels2")));
-  EXPECT_THROW(groupby(d, Dim("labels2")).sum(Dim::X), except::DimensionError);
+  EXPECT_FALSE(
+      groupby(d, Dim("labels2")).sum(Dim::X).coords().contains(Dim("2d")));
 }
 
 TEST_F(GroupbyTest, dataset_1d_and_2d) {
@@ -180,6 +184,15 @@ TEST_F(GroupbyTest, array_variable) {
       makeVariable<double>(Dimensions{Dim::X, 4}, Values{1.0, 1.1, 2.5, 9.0});
 
   EXPECT_THROW(groupby(arr, var_bad, bins), except::DimensionError);
+}
+
+TEST_F(GroupbyTest, by_attr) {
+  auto da = copy(d["a"]);
+  const auto key = Dim("labels1");
+  const auto grouped_coord = groupby(da, key).sum(Dim::X);
+  da.attrs().set(key, da.coords().extract(key));
+  const auto grouped_attr = groupby(da, key).sum(Dim::X);
+  EXPECT_EQ(grouped_coord, grouped_attr);
 }
 
 struct GroupbyMaskedTest : public GroupbyTest {
@@ -462,8 +475,8 @@ TEST_F(GroupbyWithBinsTest, two_bin) {
     return data;
   };
 
-  auto group0 =
-      concatenate(d.slice({Dim::X, 0, 2}), d.slice({Dim::X, 4, 5}), Dim::X);
+  auto group0 = concat(
+      std::vector{d.slice({Dim::X, 0, 2}), d.slice({Dim::X, 4, 5})}, Dim::X);
   EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 0}),
             add_bins(sum(group0, Dim::X), 0));
   EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 0}),
@@ -542,13 +555,52 @@ struct GroupbyBinnedTest : public ::testing::Test {
       {{Dim("scalar_attr"), makeVariable<double>(Values{1.2})}}};
 };
 
+TEST_F(GroupbyBinnedTest, min_data_array) {
+  expected.setData(
+      makeVariable<double>(expected.dims(), Values{1, 1}, Variances{1, 1}));
+  EXPECT_EQ(groupby(a, Dim("labels")).min(Dim::Y), expected);
+}
+
+TEST_F(GroupbyBinnedTest, max_data_array) {
+  expected.setData(
+      makeVariable<double>(expected.dims(), Values{3, 4}, Variances{6, 7}));
+  EXPECT_EQ(groupby(a, Dim("labels")).max(Dim::Y), expected);
+}
+
+TEST_F(GroupbyBinnedTest, sum_data_array) {
+  expected.setData(
+      makeVariable<double>(expected.dims(), Values{8, 5}, Variances{14, 8}));
+  EXPECT_EQ(groupby(a, Dim("labels")).sum(Dim::Y), expected);
+}
+
+TEST_F(GroupbyBinnedTest, mean_data_array) {
+  EXPECT_THROW_DISCARD(groupby(a, Dim("labels")).mean(Dim::Y),
+                       except::BinnedDataError);
+}
+
+TEST_F(GroupbyBinnedTest, sum_with_event_mask) {
+  auto bins = bins_view<DataArray>(a.data());
+  bins.masks().set("mask", equal(bins.data(), bins.data()));
+  // Event masks not supported yet in reduction ops.
+  EXPECT_THROW_DISCARD(groupby(a, Dim("labels")).sum(Dim::Y),
+                       except::BinnedDataError);
+}
+
 TEST_F(GroupbyBinnedTest, concatenate_data_array) {
-  EXPECT_EQ(groupby(a, Dim("labels")).concatenate(Dim::Y), expected);
+  EXPECT_EQ(groupby(a, Dim("labels")).concat(Dim::Y), expected);
+}
+
+TEST_F(GroupbyBinnedTest, concatenate_by_attr) {
+  const auto key = Dim("labels");
+  const auto grouped_coord = groupby(a, key).concat(Dim::Y);
+  a.attrs().set(key, a.coords().extract(key));
+  const auto grouped_attr = groupby(a, key).concat(Dim::Y);
+  EXPECT_EQ(grouped_coord, grouped_attr);
 }
 
 TEST_F(GroupbyBinnedTest, concatenate_data_array_2d) {
   a = bin(a, {makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 8})});
-  auto grouped = groupby(a, Dim("labels")).concatenate(Dim::Y);
+  auto grouped = groupby(a, Dim("labels")).concat(Dim::Y);
   grouped.coords().erase(Dim::X);
   EXPECT_EQ(grouped.slice({Dim::X, 0}), expected);
   // Dim added by grouping is *outer* dim
@@ -560,7 +612,7 @@ TEST_F(GroupbyBinnedTest, concatenate_data_array_conflicting_2d_coord) {
   a.coords().set(
       Dim::X, makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3}, units::m,
                                    Values{1, 3, 8, 1, 3, 9, 1, 3, 10}));
-  auto grouped = groupby(a, Dim("labels")).concatenate(Dim::Y);
+  auto grouped = groupby(a, Dim("labels")).concat(Dim::Y);
   EXPECT_EQ(
       grouped.coords().extract(Dim::X),
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1, 10}));
@@ -570,7 +622,7 @@ TEST_F(GroupbyBinnedTest, concatenate_data_array_conflicting_2d_coord) {
 TEST_F(GroupbyBinnedTest, concatenate_dataset) {
   const Dataset d{{{"a", a}, {"b", a}}};
   const Dataset expected_d{{{"a", expected}, {"b", expected}}};
-  EXPECT_EQ(groupby(d, Dim("labels")).concatenate(Dim::Y), expected_d);
+  EXPECT_EQ(groupby(d, Dim("labels")).concat(Dim::Y), expected_d);
 }
 
 struct GroupbyBinnedMaskTest : public ::testing::Test {
@@ -589,7 +641,7 @@ struct GroupbyBinnedMaskTest : public ::testing::Test {
 };
 
 TEST_F(GroupbyBinnedMaskTest, concatenate) {
-  EXPECT_EQ(groupby(a, Dim("labels")).concatenate(Dim::Y), expected);
+  EXPECT_EQ(groupby(a, Dim("labels")).concat(Dim::Y), expected);
 }
 
 struct GroupbyLogicalTest : public ::testing::Test {
@@ -749,4 +801,17 @@ TEST_F(GroupbyMinMaxTest, max_empty_bin) {
                                 Values{lowest, 2., lowest, 5.}));
   expected.setCoord(Dim("labels2"), edges);
   EXPECT_EQ(groupby(d, Dim("labels2"), edges).max(Dim::X), expected);
+}
+
+TEST(GroupbyLargeTest, sum) {
+  const scipp::index large = 114688;
+  auto data = broadcast(makeVariable<double>(Values{1}),
+                        {{Dim::X, Dim::Y}, {large, 10}});
+  auto z = makeVariable<int32_t>(Dims{Dim::X}, Shape{large});
+  for (scipp::index i = 0; i < large; ++i)
+    z.values<int32_t>()[i] = (i / 6000) % 13;
+  DataArray da(data);
+  da.coords().set(Dim::Z, z);
+  auto grouped = groupby(da, Dim::Z).sum(Dim::X);
+  EXPECT_EQ(sum(grouped), sum(da));
 }

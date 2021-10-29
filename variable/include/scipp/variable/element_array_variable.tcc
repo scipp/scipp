@@ -126,10 +126,7 @@ void ElementArrayModel<T>::setVariances(const Variable &variances) {
       requireT<const ElementArrayModel>(variances.data()).m_values);
 }
 
-/// Macro for instantiating classes and functions required for support a new
-/// dtype in Variable.
-#define INSTANTIATE_ELEMENT_ARRAY_VARIABLE(name, ...)                          \
-  template class SCIPP_EXPORT ElementArrayModel<__VA_ARGS__>;                  \
+#define INSTANTIATE_ELEMENT_ARRAY_VARIABLE_BASE(name, ...)                     \
   template SCIPP_EXPORT Variable variable::make_default_init<__VA_ARGS__>(     \
       const Dimensions &, const units::Unit &, const bool);                    \
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
@@ -145,5 +142,11 @@ void ElementArrayModel<T>::setVariances(const Variable &variances) {
   template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
   Variable::variances() const;                                                 \
   template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::variances();
+
+/// Macro for instantiating classes and functions required for support a new
+/// dtype in Variable.
+#define INSTANTIATE_ELEMENT_ARRAY_VARIABLE(name, ...)                          \
+  template class SCIPP_EXPORT ElementArrayModel<__VA_ARGS__>;                  \
+  INSTANTIATE_ELEMENT_ARRAY_VARIABLE_BASE(name, __VA_ARGS__)
 
 } // namespace scipp::variable

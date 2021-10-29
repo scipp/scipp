@@ -15,10 +15,10 @@ namespace scipp::dataset {
 template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
   std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
 
-  for (const auto [key, item] : a)
+  for (const auto &[key, item] : a)
     out.emplace(key, item);
 
-  for (const auto item : b) {
+  for (const auto &item : b) {
     if (const auto it = a.find(item.first); it != a.end()) {
       expect::matchingCoord(it->first, it->second, item.second);
     } else
@@ -31,7 +31,7 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 /// have matching content.
 template <class Map> auto intersection(const Map &a, const Map &b) {
   std::unordered_map<typename Map::key_type, Variable> out;
-  for (const auto [key, item] : a)
+  for (const auto &[key, item] : a)
     if (const auto it = b.find(key); it != b.end() && it->second == item)
       out.emplace(key, item);
   return out;
@@ -40,56 +40,28 @@ template <class Map> auto intersection(const Map &a, const Map &b) {
 /// Return a copy of map-like objects such as CoordView.
 template <class T> auto copy_map(const T &map) {
   std::unordered_map<typename T::key_type, typename T::mapped_type> out;
-  for (const auto [key, item] : map)
+  for (const auto &[key, item] : map)
     out.emplace(key, copy(item));
   return out;
-}
-
-static inline void expectAlignedCoord(const Dim coord_dim, const Variable &var,
-                                      const Dim operation_dim) {
-  // Coordinate is 2D, but the dimension associated with the coordinate is
-  // different from that of the operation. Note we do not account for the
-  // possibility that the coordinates actually align along the operation
-  // dimension.
-  if (var.dims().ndim() > 1 && var.dims().contains(operation_dim))
-    throw except::DimensionError("Coordinate " + to_string(coord_dim) +
-                                 " contains the operation dim " +
-                                 to_string(operation_dim) +
-                                 ", but has more than one dimension. It will "
-                                 "thus not be reduced by the operation.");
 }
 
 template <bool ApplyToData, class Func, class... Args>
 DataArray apply_or_copy_dim_impl(const DataArray &a, Func func, const Dim dim,
                                  Args &&... args) {
-  const auto coord_apply_or_copy_dim = [&](auto &coords_, const auto &view,
-                                           const bool aligned) {
-    // Note the `copy` call, ensuring that the return value of the ternary
-    // operator can be moved. Without `copy`, the result of `func` is always
-    // copied.
+  const auto copy_independent = [&](auto &coords_, const auto &view,
+                                    const bool share) {
     for (auto &&[d, coord] : view)
-      if (coord.dims().ndim() == 0 || dim_of_coord(coord, d) != dim) {
-        if (aligned)
-          expectAlignedCoord(d, coord, dim);
-        if constexpr (ApplyToData) {
-          coords_.emplace(d, coord.dims().contains(dim)
-                                 ? func(coord, dim, args...)
-                                 : copy(coord));
-        } else {
-          coords_.emplace(d, coord);
-        }
-      }
+      if (!coord.dims().contains(dim))
+        coords_.emplace(d, share ? coord : copy(coord));
   };
   std::unordered_map<Dim, Variable> coords;
-  coord_apply_or_copy_dim(coords, a.coords(), true);
+  copy_independent(coords, a.coords(), true);
 
   std::unordered_map<Dim, Variable> attrs;
-  coord_apply_or_copy_dim(attrs, a.attrs(), false);
+  copy_independent(attrs, a.attrs(), true);
 
   std::unordered_map<std::string, Variable> masks;
-  for (auto &&[name, mask] : a.masks())
-    if (!mask.dims().contains(dim))
-      masks.emplace(name, copy(mask));
+  copy_independent(masks, a.masks(), false);
 
   if constexpr (ApplyToData) {
     return DataArray(func(a.data(), dim, args...), std::move(coords),
@@ -107,10 +79,7 @@ DataArray apply_or_copy_dim_impl(const DataArray &a, Func func, const Dim dim,
 /// Examples are mostly reduction operations such as `sum` (dropping a
 /// dimension), or `resize` (altering a dimension extent). Creates new data
 /// array by applying `func` to data and dropping coords/masks/attrs depending
-/// on dim. The exception are multi-dimensional coords that depend on `dim`,
-/// with two cases: (1) If the coord is a coord for `dim`, `func` is applied to
-/// it, (2) if the coords is a coords for a dimension other than `dim`, a
-/// CoordMismatchError is thrown.
+/// on dim.
 template <class Func, class... Args>
 DataArray apply_to_data_and_drop_dim(const DataArray &a, Func func,
                                      const Dim dim, Args &&... args) {

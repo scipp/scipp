@@ -30,10 +30,10 @@ def plot2d(scipp_obj_dict, **kwargs):
                 cmap=None,
                 vmin=None,
                 vmax=None,
-                resolution=None,
                 title=None,
                 xlabel=None,
-                ylabel=None):
+                ylabel=None,
+                grid=False):
         out = {
             'view_ndims': 2,
             'model': PlotModel2d,
@@ -60,7 +60,8 @@ def plot2d(scipp_obj_dict, **kwargs):
                                      extend=params['extend_cmap'],
                                      title=title,
                                      xlabel=xlabel,
-                                     ylabel=ylabel)
+                                     ylabel=ylabel,
+                                     grid=grid)
         return out
 
     return make_plot(builder, scipp_obj_dict, **kwargs)

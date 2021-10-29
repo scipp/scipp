@@ -175,9 +175,18 @@ Sizes Sizes::slice(const Slice &params) const {
   return sliced;
 }
 
-Sizes concatenate(const Sizes &a, const Sizes &b, const Dim dim) {
+namespace {
+Sizes concat2(const Sizes &a, const Sizes &b, const Dim dim) {
   Sizes out = a.contains(dim) ? a.slice({dim, 0}) : a;
   out.set(dim, (a.contains(dim) ? a[dim] : 1) + (b.contains(dim) ? b[dim] : 1));
+  return out;
+}
+} // namespace
+
+Sizes concat(const std::span<const Sizes> sizes, const Dim dim) {
+  auto out = sizes.front();
+  for (scipp::index i = 1; i < scipp::size(sizes); ++i)
+    out = concat2(out, sizes[i], dim);
   return out;
 }
 
@@ -189,7 +198,7 @@ Sizes merge(const Sizes &a, const Sizes &b) {
 }
 
 bool is_edges(const Sizes &sizes, const Sizes &dataSizes, const Dim dim) {
-  if (dim == Dim::Invalid)
+  if (dim == Dim::Invalid || !dataSizes.contains(dim))
     return false;
   for (const auto &d : dataSizes)
     if (d != dim && !(sizes.contains(d) && sizes[d] == dataSizes[d]))

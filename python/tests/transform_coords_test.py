@@ -51,10 +51,6 @@ def ab(*, a, b):
     return a + b
 
 
-def ba(b, a):
-    return b + a
-
-
 def bc(*, b, c):
     return b * c
 
@@ -152,26 +148,6 @@ def test_dim_rename_multi_level_merge_multi_output():
     assert da.dims == ['a', 'bc']
 
 
-def test_dim_merge_two_transposed():
-    # *a   *b
-    #   \  /
-    #    ab
-    # without bin-edge
-    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
-    # ab depends on two dimension coords => no rename of a
-    da = original.transform_coords(['ba'], graph={'ba': ba})
-    assert da.dims == ['a', 'b']
-    assert sc.identical(da.coords['ba'], sc.transpose(b + a, ['b', 'a']))
-
-    # without bin-edge
-    bin_edge = sc.arange('b', 0, b.shape[0] + 1)
-    original = sc.DataArray(data=a + b, coords={'a': a, 'b': bin_edge})
-    # ab depends on two dimension coords => no rename of a
-    da = original.transform_coords(['ba'], graph={'ba': ba})
-    assert da.dims == ['a', 'b']
-    assert sc.identical(da.coords['ba'], sc.transpose(bin_edge + a, ['a', 'b']))
-
-
 def test_rename_dims_param():
     original = sc.DataArray(data=a, coords={'a': a})
     da = original.transform_coords(['b'], graph={'b': 'a'})
@@ -230,7 +206,7 @@ def test_dataset():
     assert sc.identical(transformed.coords['b'], a.rename_dims({'a': 'b'}))
 
 
-def test_binned():
+def make_binned():
     N = 50
     data = sc.DataArray(data=sc.ones(dims=['event'], unit=sc.units.counts, shape=[N]),
                         coords={
@@ -246,32 +222,67 @@ def test_binned():
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
     ybins = sc.Variable(dims=['y'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
     binned = sc.bin(data, edges=[xbins, ybins])
-    del binned.events.coords['y']
+    del binned.bins.coords['y']
     del binned.coords['y']
     binned.coords['y'] = sc.arange(dim='y', start=0, stop=2)
+    return binned
 
-    # TODO Avoid dimension error if we write `x2*y`, provided that it is
-    # temporary before rename. May be fixed automatically via fix for #2057.
+
+def check_binned(da, original):
+    y = original.coords['y']
+    assert 'xy' not in original.bins.coords  # Buffer was copied
+    assert 'x' in original.bins.coords  # Buffer was copied for consume
+    assert sc.identical(da.bins.coords['xy'],
+                        (y * original.bins.coords['x']).rename_dims({'x': 'x2'}))
+    assert 'yy' not in da.bins.coords
+    assert sc.identical(da.coords['yy'], y * y)
+
+
+def test_binned():
+    binned = make_binned()
+
     def convert(*, x2, y):
-        return {'yy': y * y, 'xy': y * x2}
-
-    def check(da, original):
-        y = original.coords['y']
-        assert 'xy' not in original.events.coords  # Buffer was copied
-        assert 'x' in original.events.coords  # Buffer was copied for consume
-        assert sc.identical(da.bins.coords['xy'],
-                            (y * original.bins.coords['x']).rename_dims({'x': 'x2'}))
-        assert 'yy' not in da.events.coords
-        assert sc.identical(da.coords['yy'], y * y)
+        return {'yy': y * y, 'xy': x2 * y}
 
     graph = {'xy': convert, 'x2': 'x'}
     da = binned.transform_coords(['xy', 'yy'], graph=graph)
-    check(da, binned)
+    check_binned(da, binned)
     # If input is sliced, transform_coords has to copy the buffer
     da = binned['y', 0:1].transform_coords(['xy', 'yy'], graph=graph)
-    check(da, binned['y', 0:1])
+    check_binned(da, binned['y', 0:1])
     da = binned['y', 1:2].transform_coords(['xy', 'yy'], graph=graph)
-    check(da, binned['y', 1:2])
+    check_binned(da, binned['y', 1:2])
+
+
+def test_binned_no_dense_coord():
+    binned = make_binned()
+    del binned.coords['x']
+
+    def convert(*, x2, y):
+        return {'yy': y * y, 'xy': x2 * y}
+
+    graph = {('xy', 'yy'): convert, 'x2': 'x'}
+    da = binned.transform_coords(['xy', 'yy'], graph=graph)
+    check_binned(da, binned)
+    # works also without explicit request of 'yy' in graph
+    graph = {'xy': convert, 'x2': 'x'}
+    da = binned.transform_coords(['xy', 'yy'], graph=graph)
+    check_binned(da, binned)
+
+
+def test_binned_request_existing_consumed():
+    binned = make_binned()
+
+    def xy(*, x, y):
+        return x * y
+
+    def unused(x):
+        pass
+
+    graph = {'xy': xy, 'x': unused}
+    # Regression test, this used to throw due to an untested branch when
+    # requesting a previously consumed event coord
+    binned.transform_coords(['xy', 'x'], graph=graph)
 
 
 def test_cycles():
@@ -357,3 +368,39 @@ def test_duplicate_output_keys():
     with pytest.raises(ValueError):
         graph = {('b', 'd'): to_bd, ('b', 'c'): to_bc}
         original.transform_coords(['b'], graph=graph)
+
+
+def test_pass_through_unary():
+    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
+    expected = original.copy()
+    assert sc.identical(original.transform_coords(['a'], graph={'a': 'a'}), expected)
+
+    with_a_as_attr = original.copy()
+    with_a_as_attr.attrs['a'] = with_a_as_attr.coords.pop('a')
+    assert sc.identical(with_a_as_attr.transform_coords(['a'], graph={'a': 'a'}),
+                        expected)
+
+
+def test_pass_through_binary():
+    def ac(a, b):
+        return {'a': a, 'c': b, 'd': a}
+
+    graph = {('a', 'c', 'd'): ac}
+
+    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
+    expected = sc.DataArray(data=a + b, coords={'a': a, 'c': b, 'd': a}, attrs={'b': b})
+    assert sc.identical(original.transform_coords(['a'], graph=graph), original)
+    assert sc.identical(original.transform_coords(['c'], graph=graph), expected)
+
+    with_a_as_attr = original.copy()
+    with_a_as_attr.attrs['a'] = with_a_as_attr.coords.pop('a')
+    assert sc.identical(with_a_as_attr.transform_coords(['a'], graph=graph), original)
+    assert sc.identical(with_a_as_attr.transform_coords(['c'], graph=graph), expected)
+    assert sc.identical(with_a_as_attr.transform_coords(['d'], graph=graph), expected)
+
+
+def test_prioritize_coords_attrs_conflict():
+    original = sc.DataArray(data=a, coords={'a': a}, attrs={'a': -1 * a})
+
+    with pytest.raises(sc.DataArrayError):
+        original.transform_coords(['b'], graph={'b': 'a'})

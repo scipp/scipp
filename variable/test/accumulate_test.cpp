@@ -71,7 +71,7 @@ auto make_variable(const Dimensions &dims) {
 }
 
 TEST_F(AccumulateTest, 1d_to_scalar) {
-  const auto var = make_variable({{Dim::X}, {24}});
+  const auto var = make_variable({{Dim::X}, 24});
   const auto expected = makeVariable<int64_t>(Values{300});
   auto result = makeVariable<int64_t>(Values{0});
   accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
@@ -156,4 +156,17 @@ TEST_F(AccumulateTest, 3d_outer_middle) {
   auto result = makeVariable<int64_t>(Dims{Dim::Z}, Shape{2});
   accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
   EXPECT_EQ(result, expected);
+}
+
+TEST_F(AccumulateTest, 1d_to_scalar_non_idempotent_init) {
+  for (scipp::index i : {1, 7, 13, 31, 73, 99, 327, 1037, 7341, 8192, 45327}) {
+    const auto var =
+        broadcast(make_variable({{Dim::X}, 24}), {{Dim::X, Dim::Y}, {24, i}});
+    const auto expected = makeVariable<int64_t>(Values{300 * i});
+    auto result = makeVariable<int64_t>(Values{0});
+    accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
+    EXPECT_EQ(result, expected) << i;
+    accumulate_in_place<pair_self_t<int64_t>>(result, var, op, name);
+    EXPECT_EQ(result, 2 * units::one * expected) << i;
+  }
 }

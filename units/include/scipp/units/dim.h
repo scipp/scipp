@@ -58,6 +58,7 @@ public:
   constexpr static auto Z = Id::Z;
 
   constexpr Dim() : m_id(Id::Invalid) {}
+  // cppcheck-suppress noExplicitConstructor
   constexpr Dim(const Id id) : m_id(id) {}
   explicit Dim(const std::string &label);
 

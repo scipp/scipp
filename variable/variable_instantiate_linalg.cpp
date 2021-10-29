@@ -30,15 +30,26 @@ constexpr auto structure_element_offset<Eigen::Matrix3d> =
       return offsets.at(key);
     };
 
+template <>
+constexpr auto structure_element_offset<
+    scipp::index_pair> = [](const std::string &key) {
+  static std::map<std::string, scipp::index> offsets{{"begin", 0}, {"end", 1}};
+  return offsets.at(key);
+};
+
 std::vector<std::string> element_keys(const Variable &var) {
   if (variableFactory().elem_dtype(var) == dtype<Eigen::Vector3d>)
     return {"x", "y", "z"};
   if (variableFactory().elem_dtype(var) == dtype<Eigen::Matrix3d>)
     return {"xx", "xy", "xz", "yx", "yy", "yz", "zx", "zy", "zz"};
+  if (variableFactory().elem_dtype(var) == dtype<scipp::index_pair>)
+    return {"begin", "end"};
   throw except::TypeError("dtype is not structured");
 }
 
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(vector_3_float64, Eigen::Vector3d, double)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(matrix_3_float64, Eigen::Matrix3d, double)
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(index_pair, scipp::index_pair,
+                                     scipp::index)
 
 } // namespace scipp::variable

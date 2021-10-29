@@ -4,6 +4,7 @@
 import pytest
 import scipp as sc
 import numpy as np
+from math import isnan
 from .nexus_helpers import (find_by_nx_class, in_memory_nexus_file_with_event_data)
 
 
@@ -200,3 +201,99 @@ def test_bins_sum_with_masked_buffer():
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
     binned = sc.bin(data, edges=[xbins])
     assert binned.bins.sum().values[0] == 2
+
+
+def test_bins_mean():
+    data = sc.DataArray(data=sc.Variable(dims=['position'],
+                                         unit=sc.units.counts,
+                                         values=[0.1, 0.2, 0.3, 0.4, 0.5]),
+                        coords={
+                            'x':
+                            sc.Variable(dims=['position'],
+                                        unit=sc.units.m,
+                                        values=[1, 2, 3, 4, 5])
+                        })
+    xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0, 5, 6, 7])
+    binned = sc.bin(data, edges=[xbins])
+
+    # Mean of [0.1, 0.2, 0.3, 0.4]
+    assert binned.bins.mean().values[0] == 0.25
+
+    # Mean of [0.5]
+    assert binned.bins.mean().values[1] == 0.5
+
+    # Mean of last (empty) bin should be NaN
+    assert isnan(binned.bins.mean().values[2])
+
+    assert binned.bins.mean().dims == ["x"]
+    assert binned.bins.mean().shape == [3]
+    assert binned.bins.mean().unit == sc.units.counts
+
+
+def test_bins_mean_with_masks():
+    data = sc.DataArray(data=sc.Variable(dims=['position'],
+                                         unit=sc.units.counts,
+                                         values=[0.1, 0.2, 0.3, 0.4, 0.5]),
+                        coords={
+                            'x':
+                            sc.Variable(dims=['position'],
+                                        unit=sc.units.m,
+                                        values=[1, 2, 3, 4, 5])
+                        },
+                        masks={
+                            'test-mask':
+                            sc.Variable(dims=['position'],
+                                        unit=sc.units.one,
+                                        values=[False, True, False, True, False])
+                        })
+    xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0, 5, 6, 7])
+    binned = sc.bin(data, edges=[xbins])
+
+    # Mean of [0.1, 0.3] (0.2 and 0.4 are masked)
+    assert binned.bins.mean().values[0] == 0.2
+
+    # Mean of [0.5]
+    assert binned.bins.mean().values[1] == 0.5
+
+    # Mean of last (empty) bin should be NaN
+    assert isnan(binned.bins.mean().values[2])
+
+    assert binned.bins.mean().dims == ["x"]
+    assert binned.bins.mean().shape == [3]
+    assert binned.bins.mean().unit == sc.units.counts
+
+
+def test_bins_mean_using_bins():
+    # Call to sc.bins gives different data structure compared to sc.bin
+
+    buffer = sc.arange('event', 5, unit=sc.units.ns, dtype=sc.dtype.float64)
+    begin = sc.array(dims=['x'], values=[0, 2], dtype=sc.dtype.int64)
+    end = sc.array(dims=['x'], values=[2, 5], dtype=sc.dtype.int64)
+    binned = sc.bins(data=buffer, dim='event', begin=begin, end=end)
+    means = binned.bins.mean()
+
+    assert sc.identical(
+        means,
+        sc.array(dims=["x"], values=[0.5, 3], unit=sc.units.ns, dtype=sc.dtype.float64))
+
+
+def test_bins_like():
+    data = sc.array(dims=['row'], values=[1, 2, 3, 4])
+    begin = sc.array(dims=['x'], values=[0, 3], dtype=sc.dtype.int64)
+    end = sc.array(dims=['x'], values=[3, 4], dtype=sc.dtype.int64)
+    binned = sc.bins(begin=begin, end=end, dim='row', data=data)
+    dense = sc.array(dims=['x'], values=[1.1, 2.2])
+    expected_data = sc.array(dims=['row'], values=[1.1, 1.1, 1.1, 2.2])
+    expected = sc.bins(begin=begin, end=end, dim='row', data=expected_data)
+    # Prototype is binned variable
+    assert sc.identical(sc.bins_like(binned, dense), expected)
+    # Prototype is data array with binned data
+    binned = sc.DataArray(data=binned)
+    assert sc.identical(sc.bins_like(binned, dense), expected)
+    # Broadcast
+    expected_data = sc.array(dims=['row'], values=[1.1, 1.1, 1.1, 1.1])
+    expected = sc.bins(begin=begin, end=end, dim='row', data=expected_data)
+    assert sc.identical(sc.bins_like(binned, dense['x', 0]), expected)
+    with pytest.raises(sc.NotFoundError):
+        dense = dense.rename_dims({'x': 'y'})
+        sc.bins_like(binned, dense),

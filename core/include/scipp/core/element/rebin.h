@@ -21,25 +21,30 @@ template <class Less>
 static constexpr auto rebin = overloaded{
     [](const auto &data_new, const auto &xnew, const auto &data_old,
        const auto &xold) {
-      constexpr Less less;
+      using T = decltype(xold[0] + (xold[0] - xnew[0]));
+      // Note: using const rather than constexpr here is required to
+      // avoid an internal compiler error on Windows/MSVC
+      const Less less;
       zero(data_new);
       const auto oldSize = scipp::size(xold) - 1;
       const auto newSize = scipp::size(xnew) - 1;
       scipp::index iold = 0;
       scipp::index inew = 0;
       while ((iold < oldSize) && (inew < newSize)) {
-        const auto xo_low = xold[iold];
-        const auto xo_high = xold[iold + 1];
-        const auto xn_low = xnew[inew];
-        const auto xn_high = xnew[inew + 1];
+        const T xo_low = xold[iold];
+        const T xo_high = xold[iold + 1];
+        const T xn_low = xnew[inew];
+        const T xn_high = xnew[inew + 1];
         if (!less(xo_low, xn_high))
           inew++; // old and new bins do not overlap
         else if (!less(xn_low, xo_high))
           iold++; // old and new bins do not overlap
         else {
           // delta is the overlap of the bins on the x axis
-          const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
-                                      std::max<double>(xn_low, xo_low, less));
+          using std::min;
+          using std::max;
+          const auto delta =
+              std::abs(min(xn_high, xo_high, less) - max(xn_low, xo_low, less));
           const auto owidth = std::abs(xo_high - xo_low);
           const auto scale = delta / owidth;
           if constexpr (is_ValueAndVariance_v<
@@ -67,9 +72,6 @@ static constexpr auto rebin = overloaded{
       if (target_edges != edges)
         throw except::UnitError(
             "Input and output bin edges must have the same unit.");
-      if (data != units::counts && data != units::one)
-        throw except::UnitError("Only count-data (units::counts or "
-                                "units::dimensionless) can be rebinned.");
       return data;
     },
     transform_flags::expect_in_variance_if_out_variance,

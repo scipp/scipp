@@ -5,6 +5,7 @@
 #pragma once
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/generated_bins.h"
 #include "scipp/variable/bins.h"
 
 namespace scipp::dataset {
@@ -31,11 +32,6 @@ make_bins_no_validate(Variable indices, const Dim dim, DataArray buffer);
                                                       Dataset buffer);
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
 make_bins_no_validate(Variable indices, const Dim dim, Dataset buffer);
-
-[[nodiscard]] SCIPP_DATASET_EXPORT Variable bucket_sizes(const Variable &var);
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-bucket_sizes(const DataArray &array);
-[[nodiscard]] SCIPP_DATASET_EXPORT Dataset bucket_sizes(const Dataset &dataset);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT bool is_bins(const DataArray &array);
 [[nodiscard]] SCIPP_DATASET_EXPORT bool is_bins(const Dataset &dataset);
@@ -67,8 +63,12 @@ SCIPP_DATASET_EXPORT void append(DataArray &a, const DataArray &b);
 SCIPP_DATASET_EXPORT void scale(DataArray &data, const DataArray &histogram,
                                 Dim dim = Dim::Invalid);
 
-[[nodiscard]] SCIPP_DATASET_EXPORT Variable sum(const Variable &data);
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray sum(const DataArray &data);
-[[nodiscard]] SCIPP_DATASET_EXPORT Dataset sum(const Dataset &data);
-
 } // namespace scipp::dataset::buckets
+
+// These functions are placed in scipp::variable for ADL but cannot be easily
+// moved into that compilation module since the implementation requires
+// DataArray.
+namespace scipp::variable {
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_sum(const Variable &data);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable bins_mean(const Variable &data);
+} // namespace scipp::variable

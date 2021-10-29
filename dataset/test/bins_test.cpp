@@ -5,6 +5,7 @@
 #include "test_macros.h"
 
 #include "scipp/dataset/bins.h"
+#include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/histogram.h"
@@ -71,10 +72,9 @@ TEST(DataArrayBins2dTest, concatenate_dim_2d) {
 
   EXPECT_EQ(buckets::concatenate(zy, Dim::Y), z);
   EXPECT_EQ(buckets::concatenate(zy, Dim::Z), y);
-  EXPECT_EQ(buckets::sum(
-                buckets::concatenate(buckets::concatenate(zy, Dim::Y), Dim::Z)),
-            buckets::sum(buckets::concatenate(buckets::concatenate(zy, Dim::Z),
-                                              Dim::Y)));
+  EXPECT_EQ(
+      bins_sum(buckets::concatenate(buckets::concatenate(zy, Dim::Y), Dim::Z)),
+      bins_sum(buckets::concatenate(buckets::concatenate(zy, Dim::Z), Dim::Y)));
 }
 
 TEST_F(DataArrayBinsTest, concatenate) {
@@ -117,8 +117,9 @@ TEST_F(DataArrayBinsTest, concatenate_with_broadcast) {
 }
 
 TEST_F(DataArrayBinsTest, histogram) {
-  Variable weights = makeVariable<double>(
-      Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
+  Variable weights =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, units::counts,
+                           Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   DataArray events = DataArray(weights, {{Dim::Z, data}});
   Variable buckets = make_bins(indices, Dim::X, events);
   // `buckets` *does not* depend on the histogramming dimension
@@ -126,13 +127,14 @@ TEST_F(DataArrayBinsTest, histogram) {
       makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{0, 1, 2, 4});
   EXPECT_EQ(buckets::histogram(buckets, bin_edges),
             makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 3},
-                                 Values{0, 1, 2, 0, 0, 3},
+                                 units::counts, Values{0, 1, 2, 0, 0, 3},
                                  Variances{0, 1, 2, 0, 0, 3}));
 }
 
 TEST_F(DataArrayBinsTest, histogram_masked) {
-  Variable weights = makeVariable<double>(
-      Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
+  Variable weights =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, units::counts,
+                           Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   Variable mask = makeVariable<bool>(Dims{Dim::X}, Shape{4},
                                      Values{false, false, true, false});
   DataArray events = DataArray(weights, {{Dim::Z, data}}, {{"mask", mask}});
@@ -142,20 +144,22 @@ TEST_F(DataArrayBinsTest, histogram_masked) {
       makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{0, 1, 2, 4});
   EXPECT_EQ(buckets::histogram(buckets, bin_edges),
             makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 3},
-                                 Values{0, 1, 2, 0, 0, 0},
+                                 units::counts, Values{0, 1, 2, 0, 0, 0},
                                  Variances{0, 1, 2, 0, 0, 0}));
 }
 
 TEST_F(DataArrayBinsTest, histogram_existing_dim) {
-  Variable weights = makeVariable<double>(
-      Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
+  Variable weights =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, units::counts,
+                           Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   DataArray events = DataArray(weights, {{Dim::Y, data}});
   Variable buckets = make_bins(indices, Dim::X, events);
   // `buckets` *does* depend on the histogramming dimension
   const auto bin_edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{4}, Values{0, 1, 2, 4});
-  const auto expected = makeVariable<double>(
-      Dims{Dim::Y}, Shape{3}, Values{0, 1, 5}, Variances{0, 1, 5});
+  const auto expected =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::counts,
+                           Values{0, 1, 5}, Variances{0, 1, 5});
   EXPECT_EQ(buckets::histogram(buckets, bin_edges), expected);
 
   // Histogram data array containing binned variable
@@ -165,15 +169,15 @@ TEST_F(DataArrayBinsTest, histogram_existing_dim) {
   // Masked data array
   a.masks().set(
       "mask", makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{false, true}));
-  EXPECT_EQ(histogram(a, bin_edges),
-            DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{3},
-                                           Values{0, 1, 2}, Variances{0, 1, 2}),
-                      {{Dim::Y, bin_edges}}));
+  EXPECT_EQ(
+      histogram(a, bin_edges),
+      DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::counts,
+                                     Values{0, 1, 2}, Variances{0, 1, 2}),
+                {{Dim::Y, bin_edges}}));
 }
 
 TEST_F(DataArrayBinsTest, sum) {
-  EXPECT_EQ(buckets::sum(var),
-            makeVariable<double>(indices.dims(), Values{3, 7}));
+  EXPECT_EQ(bins_sum(var), makeVariable<double>(indices.dims(), Values{3, 7}));
 }
 
 TEST_F(DataArrayBinsTest, operations_on_empty) {
@@ -206,7 +210,8 @@ protected:
 };
 
 TEST_F(DataArrayBinsMapTest, map) {
-  const auto out = buckets::map(histogram, buckets, Dim::Z);
+  const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
+  const auto out = buckets::map(histogram, coord, Dim::Z);
   // event coords 1,2,3,4
   // histogram:
   // | 1 | 2 | 4 |
@@ -224,15 +229,16 @@ TEST_F(DataArrayBinsMapTest, map) {
   histogram.setUnit(units::one); // cannot change unit of slice
   auto partial = buckets;
   for (auto s : {Slice(Dim::Y, 0), Slice(Dim::Y, 1)})
-    partial.slice(s) *= buckets::map(histogram, buckets.slice(s), Dim::Z);
+    partial.slice(s) *= buckets::map(histogram, coord.slice(s), Dim::Z);
   variable::variableFactory().set_elem_unit(partial, units::K);
   EXPECT_EQ(partial, expected);
 }
 
 TEST_F(DataArrayBinsMapTest, map_masked) {
+  const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
   histogram.masks().set(
       "mask", makeVariable<bool>(histogram.dims(), Values{false, true, false}));
-  const auto out = buckets::map(histogram, buckets, Dim::Z);
+  const auto out = buckets::map(histogram, coord, Dim::Z);
   const auto expected_scale = makeVariable<double>(
       Dims{Dim::X}, Shape{4}, units::K, Values{0, 4, 4, 0});
   EXPECT_EQ(out, make_bins(indices, Dim::X, expected_scale));
@@ -357,7 +363,7 @@ protected:
     eventsA = make_events();
     eventsB = copy(eventsA);
     eventsB.coords()[Dim::X] += 0.01 * units::us;
-    eventsB = concatenate(eventsB, eventsA, Dim("event"));
+    eventsB = concat(std::vector{eventsB, eventsA}, Dim("event"));
     eventsB.coords()[Dim::X] += 0.02 * units::us;
     a = DataArray(make_bins(makeVariable<scipp::index_pair>(
                                 Dims{Dim::Y, Dim::X}, Shape{2, 1},
@@ -378,16 +384,14 @@ protected:
 };
 
 TEST_F(DataArrayBinsPlusMinusTest, plus) {
-  using buckets::sum;
-  EXPECT_EQ(sum(buckets::concatenate(a, b)), sum(a) + sum(b));
+  EXPECT_EQ(bins_sum(buckets::concatenate(a, b)), bins_sum(a) + bins_sum(b));
 }
 
 TEST_F(DataArrayBinsPlusMinusTest, minus) {
-  using buckets::sum;
   auto tmp = -b;
   EXPECT_EQ(b.unit(), units::one);
   EXPECT_EQ(tmp.unit(), units::one);
-  EXPECT_EQ(sum(buckets::concatenate(a, -b)), sum(a) - sum(b));
+  EXPECT_EQ(bins_sum(buckets::concatenate(a, -b)), bins_sum(a) - bins_sum(b));
 }
 
 TEST_F(DataArrayBinsPlusMinusTest, plus_equals) {
@@ -396,7 +400,7 @@ TEST_F(DataArrayBinsPlusMinusTest, plus_equals) {
   EXPECT_EQ(out, buckets::concatenate(a, b));
   buckets::append(out, -b);
   EXPECT_NE(out, a); // events not removed by "undo" of addition
-  EXPECT_NE(buckets::sum(out), buckets::sum(a)); // mismatching variances
+  EXPECT_NE(bins_sum(out), bins_sum(a)); // mismatching variances
   EXPECT_EQ(out, buckets::concatenate(buckets::concatenate(a, b), -b));
 }
 
@@ -427,11 +431,13 @@ protected:
     Variable var1 = make_bins(indices, Dim::X, buffer1);
     const auto result = buckets::concatenate(var0, var1);
     EXPECT_EQ(result.values<core::bin<Dataset>>()[0],
-              concatenate(buffer0.slice({Dim::X, 0, 2}),
-                          buffer1.slice({Dim::X, 0, 2}), Dim::X));
+              concat(std::vector{buffer0.slice({Dim::X, 0, 2}),
+                                 buffer1.slice({Dim::X, 0, 2})},
+                     Dim::X));
     EXPECT_EQ(result.values<core::bin<Dataset>>()[1],
-              concatenate(buffer0.slice({Dim::X, 2, 3}),
-                          buffer1.slice({Dim::X, 2, 3}), Dim::X));
+              concat(std::vector{buffer0.slice({Dim::X, 2, 3}),
+                                 buffer1.slice({Dim::X, 2, 3})},
+                     Dim::X));
   }
   void check_fail() {
     Variable var0 = make_bins(indices, Dim::X, buffer0);

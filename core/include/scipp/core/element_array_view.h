@@ -19,6 +19,7 @@ struct SCIPP_CORE_EXPORT BucketParams {
   explicit operator bool() const noexcept { return dim != Dim::Invalid; }
   Dim dim{Dim::Invalid};
   Dimensions dims{};
+  Strides strides{};
   const std::pair<scipp::index, scipp::index> *indices{nullptr};
 };
 
@@ -67,15 +68,6 @@ public:
                          const BucketParams &bucket_params);
   ElementArrayViewParams(const ElementArrayViewParams &other,
                          const Dimensions &iterDims);
-
-  [[nodiscard]] ViewIndex begin_index() const noexcept {
-    return {m_iterDims, m_strides};
-  }
-  [[nodiscard]] ViewIndex end_index() const noexcept {
-    ViewIndex i{m_iterDims, m_strides};
-    i.set_to_end();
-    return i;
-  }
 
   [[nodiscard]] scipp::index size() const { return m_iterDims.volume(); }
   [[nodiscard]] constexpr scipp::index offset() const noexcept {
@@ -140,12 +132,12 @@ public:
 
   auto as_span() const {
     requireContiguous();
-    return scipp::span(data(), data() + size());
+    return std::span(data(), data() + size());
   }
 
   auto as_span() {
     requireContiguous();
-    return scipp::span(data(), data() + size());
+    return std::span(data(), data() + size());
   }
 
   bool operator==(const ElementArrayView<T> &other) const {

@@ -9,19 +9,23 @@ execute_process(
   OUTPUT_VARIABLE SCIPP_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-project(scipp VERSION ${SCIPP_VERSION})
+project(
+  scipp
+  VERSION ${SCIPP_VERSION}
+  LANGUAGES CXX
+)
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD 20)
 endif(NOT DEFINED CMAKE_CXX_STANDARD)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_program(CCACHE_FOUND ccache)
-if(CCACHE_FOUND)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-endif(CCACHE_FOUND)
+find_program(CCACHE ccache)
+if(CCACHE)
+  set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
+endif()
+
 if(MSVC)
   set(CLCACHE_PATH
       ""
@@ -53,9 +57,20 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake"
                       "${CMAKE_SOURCE_DIR}/cmake/sanitizers-cmake/cmake"
 )
 
+option(FULL_BUILD
+       "Enable full build where the 'all' target includes tests and benchmarks."
+       OFF
+)
+
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+
+execute_process(
+  COMMAND conan export .
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.conan-recipes/llnl-units"
+                    COMMAND_ECHO STDOUT
+)
 
 # Conan dependencies
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
@@ -90,12 +105,12 @@ find_package(Sanitizers REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 find_package(Python 3.7 REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 CONFIG REQUIRED)
+find_package(LLNL-Units REQUIRED)
 
 # MP : Parallel compile, add before any targets so all use it
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-MP>)
 
 include(GoogleTest)
-include(LLNL-units)
 include(GenerateExportHeader)
 
 option(DISABLE_MULTI_THREADING "Disable multi threading" OFF)
@@ -165,7 +180,10 @@ if(NOT WIN32)
     -Wold-style-cast
     -Wcast-qual
     -Wcast-align
+    -Wno-unknown-warning-option # Avoiding clang warnings about unknown warning
     -Werror=attributes
+    -Werror=maybe-uninitialized
+    -Werror=uninitialized
     -Werror=return-type
   )
   add_compile_options(
@@ -176,7 +194,25 @@ else()
   add_compile_options(
     $<$<COMPILE_LANGUAGE:CXX>:/W4> $<$<COMPILE_LANGUAGE:CXX>:/bigobj>
   )
-endif(NOT WIN32)
+endif()
+
+option(CPPCHECK "Enable running cppcheck during compilation if found." OFF)
+if(CPPCHECK)
+  find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck REQUIRED)
+endif()
+if(CMAKE_CXX_CPPCHECK)
+  file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/cppcheck)
+  list(
+    APPEND
+    CMAKE_CXX_CPPCHECK
+    "--std=c++20"
+    "--quiet"
+    "--enable=style"
+    "--inline-suppr"
+    "--suppressions-list=${CMAKE_SOURCE_DIR}/cppcheck-suppressions.txt"
+    "--cppcheck-build-dir=${CMAKE_BINARY_DIR}/cppcheck"
+  )
+endif()
 # This is currently causing to many warnings, reenable when appropriate.
 # add_compile_options ( -Wconversion )
 
@@ -203,8 +239,50 @@ add_docs_target(docs BUILDER html DEPENDS install-scipp)
 add_docs_target(doctest BUILDER doctest DEPENDS docs)
 add_docs_target(linkcheck BUILDER linkcheck DEPENDS docs)
 
+option(COVERAGE "Enable code coverage run." OFF)
+if(COVERAGE)
+  include(CodeCoverage)
+  configure_file(
+    tools/run-tests.sh.in "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests.sh"
+    COPYONLY
+  )
+  # Exclude cmake-generated source files
+  set(COVERAGE_EXCLUDES
+      "${PROJECT_BINARY_DIR}/core/*"
+      "${PROJECT_BINARY_DIR}/variable/*.cpp"
+      "${PROJECT_BINARY_DIR}/dataset/*.cpp"
+      "${PROJECT_BINARY_DIR}/python/*.cpp"
+      "/usr/*"
+      "/*conan/data*"
+      "/*miniconda*"
+  )
+  setup_target_for_coverage_lcov(
+    NAME
+    coverage
+    EXECUTABLE
+    sh
+    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/run-tests.sh"
+    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+    "${CMAKE_SOURCE_DIR}/python/tests"
+    DEPENDENCIES
+    install-scipp
+    all-tests
+  )
+endif()
+
 include(GNUInstallDirs)
-set(PYTHONDIR scipp)
+set(SITE_PACKAGES_DIR
+    ""
+    CACHE STRING
+          "Python site-packages directory to use for installing Python module."
+)
+if("${SITE_PACKAGES_DIR}" STREQUAL "")
+  set(PYTHONDIR scipp)
+  set(ARCHIVEDIR .)
+else()
+  file(TO_CMAKE_PATH ${SITE_PACKAGES_DIR}/scipp PYTHONDIR)
+  file(TO_CMAKE_PATH ${SITE_PACKAGES_DIR} ARCHIVEDIR)
+endif()
 set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
 
 set(EXPORT_NAME ${PROJECT_NAME}-targets)
@@ -221,7 +299,11 @@ include(scipp-functions)
 include(scipp-install)
 
 add_subdirectory(common)
-add_subdirectory(benchmark)
+if(FULL_BUILD)
+  add_subdirectory(benchmark)
+else()
+  add_subdirectory(benchmark EXCLUDE_FROM_ALL)
+endif()
 add_subdirectory(units)
 add_subdirectory(core)
 add_subdirectory(variable)
@@ -251,5 +333,8 @@ if(DYNAMIC_LIB)
     FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
           "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
     DESTINATION lib/cmake/scipp
+  )
+  install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/.conan-recipes"
+          DESTINATION lib/cmake/scipp
   )
 endif(DYNAMIC_LIB)

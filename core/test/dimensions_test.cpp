@@ -101,10 +101,10 @@ TEST(DimensionsTest, index_access) {
   Dimensions denseXY({Dim::X, Dim::Y}, {2, 3});
   Dimensions denseXYZ({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4});
 
-  ASSERT_THROW(denseXY[Dim::Invalid], except::DimensionError);
-  ASSERT_THROW(denseXYZ[Dim::Invalid], except::DimensionError);
-  ASSERT_THROW(denseXY[Dim::Z], except::DimensionError);
-  ASSERT_NO_THROW(denseXYZ[Dim::Z]);
+  ASSERT_THROW_DISCARD(denseXY[Dim::Invalid], except::DimensionError);
+  ASSERT_THROW_DISCARD(denseXYZ[Dim::Invalid], except::DimensionError);
+  ASSERT_THROW_DISCARD(denseXY[Dim::Z], except::DimensionError);
+  ASSERT_NO_THROW_DISCARD(denseXYZ[Dim::Z]);
 }
 
 TEST(DimensionsTest, duplicate) {
@@ -225,8 +225,8 @@ TEST(DimensionsTest, intersection) {
 
 TEST(DimensionsTest, index) {
   Dimensions dims({Dim::X, Dim::Y}, {1, 2});
-  ASSERT_THROW(dims.index(Dim::Invalid), except::DimensionError);
-  ASSERT_THROW(dims.index(Dim::Z), except::DimensionError);
+  ASSERT_THROW_DISCARD(dims.index(Dim::Invalid), except::DimensionError);
+  ASSERT_THROW_DISCARD(dims.index(Dim::Z), except::DimensionError);
   EXPECT_EQ(dims.index(Dim::X), 0);
   EXPECT_EQ(dims.index(Dim::Y), 1);
 }
@@ -234,15 +234,17 @@ TEST(DimensionsTest, index) {
 TEST(DimensionsTest, transpose_0d) {
   Dimensions dims;
   EXPECT_EQ(transpose(dims), dims);
-  EXPECT_THROW_DISCARD(transpose(dims, {Dim::X}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(dims, std::vector<Dim>{Dim::X}),
+                       except::DimensionError);
 }
 
 TEST(DimensionsTest, transpose_1d) {
   Dimensions dims(Dim::X, 2);
   EXPECT_EQ(transpose(dims), dims);
-  EXPECT_EQ(transpose(dims, {Dim::X}), dims);
-  EXPECT_THROW_DISCARD(transpose(dims, {Dim::Y}), except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(dims, {Dim::X, Dim::Y}),
+  EXPECT_EQ(transpose(dims, std::vector<Dim>{Dim::X}), dims);
+  EXPECT_THROW_DISCARD(transpose(dims, std::vector<Dim>{Dim::Y}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(dims, std::vector<Dim>{Dim::X, Dim::Y}),
                        except::DimensionError);
 }
 
@@ -250,13 +252,16 @@ TEST(DimensionsTest, transpose_2d) {
   Dimensions dims({Dim::X, Dim::Y}, {2, 3});
   Dimensions expected({Dim::Y, Dim::X}, {3, 2});
   EXPECT_EQ(transpose(dims), expected);
-  EXPECT_EQ(transpose(dims, {Dim::X, Dim::Y}), dims); // no change
-  EXPECT_EQ(transpose(dims, {Dim::Y, Dim::X}), expected);
-  EXPECT_THROW_DISCARD(transpose(dims, {Dim::X}), except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(dims, {Dim::X, Dim::Z}),
+  EXPECT_EQ(transpose(dims, std::vector<Dim>{Dim::X, Dim::Y}),
+            dims); // no change
+  EXPECT_EQ(transpose(dims, std::vector<Dim>{Dim::Y, Dim::X}), expected);
+  EXPECT_THROW_DISCARD(transpose(dims, std::vector<Dim>{Dim::X}),
                        except::DimensionError);
-  EXPECT_THROW_DISCARD(transpose(dims, {Dim::X, Dim::Y, Dim::Z}),
+  EXPECT_THROW_DISCARD(transpose(dims, std::vector<Dim>{Dim::X, Dim::Z}),
                        except::DimensionError);
+  EXPECT_THROW_DISCARD(
+      transpose(dims, std::vector<Dim>{Dim::X, Dim::Y, Dim::Z}),
+      except::DimensionError);
 }
 
 TEST(DimensionsTest, transpose_3d) {
@@ -264,10 +269,11 @@ TEST(DimensionsTest, transpose_3d) {
   Dimensions zyx({Dim::Z, Dim::Y, Dim::X}, {4, 3, 2});
   Dimensions zxy({Dim::Z, Dim::X, Dim::Y}, {4, 2, 3});
   EXPECT_EQ(transpose(xyz), zyx);
-  EXPECT_EQ(transpose(xyz, {Dim::X, Dim::Y, Dim::Z}), xyz); // no change
-  EXPECT_EQ(transpose(xyz, {Dim::Z, Dim::Y, Dim::X}), zyx);
-  EXPECT_EQ(transpose(xyz, {Dim::Z, Dim::X, Dim::Y}), zxy);
-  EXPECT_THROW_DISCARD(transpose(xyz, {Dim::X, Dim::Z}),
+  EXPECT_EQ(transpose(xyz, std::vector<Dim>{Dim::X, Dim::Y, Dim::Z}),
+            xyz); // no change
+  EXPECT_EQ(transpose(xyz, std::vector<Dim>{Dim::Z, Dim::Y, Dim::X}), zyx);
+  EXPECT_EQ(transpose(xyz, std::vector<Dim>{Dim::Z, Dim::X, Dim::Y}), zxy);
+  EXPECT_THROW_DISCARD(transpose(xyz, std::vector<Dim>{Dim::X, Dim::Z}),
                        except::DimensionError);
 }
 

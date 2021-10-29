@@ -3,7 +3,6 @@
 # @file
 # @author Jan-Lukas Wynen
 
-from datetime import datetime, timedelta, timezone
 import itertools
 import re
 
@@ -247,42 +246,19 @@ def test_datetime_operations_mismatch():
 
 
 def test_datetime_formatting():
-    def fmt(time_point, scale, unit):
-        var = sc.scalar(int(time_point.timestamp() * scale),
-                        dtype=sc.datetime64,
-                        unit=unit)
+    def fmt(time_point, unit):
+        np_unit = 'm' if unit == 'min' else unit
+        var = sc.scalar(time_point.astype(f'datetime64[{np_unit}]'), unit=unit)
         match = re.search(r'\[[\dT\-:\.]+]', str(var))
         assert match
         return match[0][1:-1]
 
-    # Time since epoch for a totally arbitrary date.
-    # The timezone has an offset of 0 to emulate a timestamp obtained from
-    # some source that is not aware of timezones.
-    dt = datetime(year=1991,
-                  month=8,
-                  day=16,
-                  hour=1,
-                  minute=2,
-                  second=3,
-                  microsecond=456789,
-                  tzinfo=timezone(timedelta(hours=0)))
-
-    # Make sure that date and time are printed unchanged,
-    # i.e. there was no timezone conversion.
-    assert fmt(dt, 10**6, 'us') == "1991-08-16T01:02:03.456789"
-    # The unit determines the precision of the output.
-    dt = dt.replace(microsecond=456000)
-    assert fmt(dt, 10**3, 'ms') == "1991-08-16T01:02:03.456"
-    dt = dt.replace(microsecond=0)
-    assert fmt(dt, 1, 's') == "1991-08-16T01:02:03"
-    dt = dt.replace(second=0)
-    assert fmt(dt, 1 / 60, 'min') == "1991-08-16T01:02:00"
-    dt = dt.replace(second=0)
-    assert fmt(dt, 1 / (60 * 60), 'h') == "1991-08-16T01:00:00"
-    # Not supported yet
-    with pytest.raises(sc.UnitError):
-        fmt(dt, 1, 'day')
-    with pytest.raises(sc.UnitError):
-        fmt(dt, 1, 'month')
-    with pytest.raises(sc.UnitError):
-        fmt(dt, 1, 'year')
+    dt = np.datetime64('1991-08-16T12:23:45.678901', 'us')
+    assert fmt(dt, 'us') == '1991-08-16T12:23:45.678901'
+    assert fmt(dt, 'ms') == '1991-08-16T12:23:45.678'
+    assert fmt(dt, 's') == '1991-08-16T12:23:45'
+    assert fmt(dt, 'min') == '1991-08-16T12:23:00'
+    assert fmt(dt, 'h') == '1991-08-16T12:00:00'
+    assert fmt(dt, 'D') == '1991-08-16'
+    assert fmt(dt, 'M') == '1991-08'
+    assert fmt(dt, 'Y') == '1991'

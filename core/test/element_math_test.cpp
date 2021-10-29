@@ -5,6 +5,7 @@
 #include "scipp/core/element/math.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/units/unit.h"
+#include "test_macros.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -46,6 +47,28 @@ TEST(ElementNormTest, value) {
   EXPECT_EQ(element::norm(v2), 5);
 }
 
+TEST(ElementPowTest, unit) {
+  // element::pow cannot handle units itself as that requires the *value* of the
+  // exponent and not its unit. This does not fit into the usual transform
+  // framework.
+  EXPECT_EQ(element::pow(units::one, units::one), units::one);
+  EXPECT_THROW_DISCARD(element::pow(units::one, units::m), except::UnitError);
+  EXPECT_THROW_DISCARD(element::pow(units::s, units::one), except::UnitError);
+  EXPECT_THROW_DISCARD(element::pow(units::K, units::kg), except::UnitError);
+}
+
+TEST(ElementPowTest, value) {
+  EXPECT_NEAR(element::pow(3.0, 2.0), 9.0, 1e-15);
+  EXPECT_NEAR(element::pow(int64_t{3}, 2.0), 9.0, 1e-15);
+  EXPECT_NEAR(element::pow(3.0, int64_t{2}), 9.0, 1e-15);
+  EXPECT_EQ(element::pow(int64_t{3}, int64_t{2}), 9);
+}
+
+TEST(ElementPowTest, value_and_variance) {
+  const ValueAndVariance base{3.0, 2.0};
+  EXPECT_EQ(element::pow(base, int64_t{3}), pow(base, int64_t{3}));
+}
+
 TEST(ElementSqrtTest, unit) {
   const units::Unit m2(units::m * units::m);
   EXPECT_EQ(element::sqrt(m2), units::sqrt(m2));
@@ -67,15 +90,27 @@ TEST(ElementSqrtTest, supported_types) {
   static_cast<void>(std::get<float>(supported));
 }
 
-TEST(ElementDotTest, unit) {
+template <class T> void element_vector_op_units_test(T op) {
   const units::Unit m(units::m);
   const units::Unit m2(units::m * units::m);
   const units::Unit dimless(units::dimensionless);
-  EXPECT_EQ(element::dot(m, m), m2);
-  EXPECT_EQ(element::dot(dimless, dimless), dimless);
+  EXPECT_EQ(op(m, m), m2);
+  EXPECT_EQ(op(dimless, dimless), dimless);
 }
 
+TEST(ElementDotTest, unit) { element_vector_op_units_test(element::dot); }
+
 TEST(ElementDotTest, value) {
+  Eigen::Vector3d v1(0, 0, 1);
+  Eigen::Vector3d v2(1, 0, 0);
+  EXPECT_EQ(element::cross(v1, v2), Eigen::Vector3d(0, 1, 0));
+  EXPECT_EQ(element::cross(v2, v1), Eigen::Vector3d(0, -1, 0));
+  EXPECT_EQ(element::cross(v2, v2), Eigen::Vector3d(0, 0, 0));
+}
+
+TEST(ElementCrossTest, unit) { element_vector_op_units_test(element::cross); }
+
+TEST(ElementCrossTest, value) {
   Eigen::Vector3d v1(0, 3, -4);
   Eigen::Vector3d v2(1, 1, -1);
   EXPECT_EQ(element::dot(v1, v1), 25);
@@ -131,3 +166,41 @@ TEST(ElementLog10Test, unit) {
 }
 
 TEST(ElementLog10Test, bad_unit) { EXPECT_ANY_THROW(element::log10(units::m)); }
+
+namespace {
+template <class T>
+void elementRoundingTest(T rounding_function, const std::vector<float> &input,
+                         const std::vector<float> &output) {
+  for (auto i = 0u; i < input.size(); i++) {
+    EXPECT_EQ(rounding_function(input[i]), output[i]);
+  }
+}
+} // namespace
+
+TEST(ElementRoundingTest, floor) {
+  elementRoundingTest(element::floor, {2.5, 2.7, 2.3, 2.15, 2.617, 2.32133},
+                      {2., 2., 2., 2., 2., 2.});
+}
+
+TEST(ElementRoundingTest, ceil) {
+  elementRoundingTest(element::ceil, {2.5, 2.7, 2.3, 2.15, 2.617, 2.32133},
+                      {3., 3., 3., 3., 3., 3.});
+}
+
+TEST(ElementRoundingTest, rint) {
+  elementRoundingTest(
+      element::rint, {2.01, 2.7, 2.3, 2.15, 2.617, 2.32133, 1.5, 2.5, 3.5, 4.5},
+      {2., 3., 2., 2., 3., 2., 2., 2., 4., 4.});
+}
+
+TEST(ElementMathTest, erf) {
+  EXPECT_EQ(element::erf(1.1), std::erf(1.1));
+  EXPECT_EQ(element::erf(units::one), units::one);
+  EXPECT_THROW_DISCARD(element::erf(units::m), except::UnitError);
+}
+
+TEST(ElementMathTest, erfc) {
+  EXPECT_EQ(element::erfc(1.1), std::erfc(1.1));
+  EXPECT_EQ(element::erfc(units::one), units::one);
+  EXPECT_THROW_DISCARD(element::erfc(units::m), except::UnitError);
+}

@@ -99,12 +99,13 @@ Additional build options
 1. ``-DDYNAMIC_LIB`` forces the shared libraries building, that also decreases link time.
 2. ``-DENABLE_THREAD_LIMIT`` limits the maximum number of threads that TBB can use. This defaults to the maximum number of cores identified on your build system. You may then optionally apply an artificial limit via ``-DTHREAD_LIMIT``.
 3. ``-DDISABLE_MULTI_THREADING`` disable multi-threading. By default, multi-threading is enabled if TBB was found. If this option is set to ``ON``, it overrides that.
-4. ``-DPRECOMPILED_HEADERS`` toggle usage of precompiled headers. ``ON`` by default.
+4. ``-DPRECOMPILED_HEADERS`` toggle usage of precompiled headers. ``OFF`` by default.
+5. ``-DCPPCHECK`` toggle run of cppcheck during compilation. ``OFF`` by default.
 
 Running the unit tests
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Executables for the unit tests can be found in the build directory as ``build/XYZ/test/scipp-XYZ-test``, where ``XYZ`` is the Scipp component under test (e.g. ``core``).
+Executables for the unit tests can be found in the build directory as ``build/bin/scipp-XYZ-test``, where ``XYZ`` is the Scipp component under test (e.g. ``core``).
 ``all-tests`` can be used to build all tests at the same time. Note that simply running ``ctest`` also works, but currently it seems to have an issue with gathering templated tests, so calling the test binaries manually is recommended (and much faster).
 
 To run the Python tests, run (in the ``python/`` directory):
@@ -117,7 +118,7 @@ To run the Python tests, run (in the ``python/`` directory):
 Building Documentation
 ~~~~~~~~~~~~~~~~~~~~~~
 
-- run ``cmake --build . --target docs`` from your build directory.
+- Run ``cmake --build . --target docs`` from your build directory.
 - This will build the documentation and put it on ``<build dir>/docs``.
 - If rebuilding the documentation is slow it can be quicker to remove the docs build directory and start a fresh build.
 
@@ -152,3 +153,10 @@ If you build and installed scipp from source use, e.g.,:
 
 where ``<your_scipp_install_dir>`` should point to the ``CMAKE_INSTALL_PREFIX`` that was used when building ``scipp``.
 Alternative set the ``Scipp_DIR`` or ``CMAKE_PREFIX_PATH`` (environment) variables to this path.
+
+Generating coverage reports
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Run ``cmake`` with options ``-DCOVERAGE=On -DCMAKE_BUILD_TYPE=Debug``.
+- Run ``cmake --build . --target coverage`` from your build directory.
+- Open ``coverage/index.html`` in a browser.

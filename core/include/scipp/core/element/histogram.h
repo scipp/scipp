@@ -30,13 +30,14 @@ constexpr auto iadd = [](const auto &x1, const scipp::index i1, const auto &x2,
 
 namespace histogram_detail {
 template <class Out, class Coord, class Weight, class Edge>
-using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
-                        span<const Edge>>;
+using args = std::tuple<std::span<Out>, std::span<const Coord>,
+                        std::span<const Weight>, std::span<const Edge>>;
 }
 
 static constexpr auto histogram = overloaded{
     element::arg_list<
         histogram_detail::args<float, double, float, double>,
+        histogram_detail::args<float, float, float, double>,
         histogram_detail::args<float, int64_t, float, double>,
         histogram_detail::args<float, int32_t, float, double>,
         histogram_detail::args<double, double, double, double>,
@@ -79,9 +80,6 @@ static constexpr auto histogram = overloaded{
       if (events_unit != edge_unit)
         throw except::UnitError(
             "Bin edges must have same unit as the input coordinate.");
-      if (weights_unit != units::counts && weights_unit != units::dimensionless)
-        throw except::UnitError(
-            "Data to histogram must have unit `counts` or `dimensionless`.");
       return weights_unit;
     },
     transform_flags::expect_in_variance_if_out_variance,

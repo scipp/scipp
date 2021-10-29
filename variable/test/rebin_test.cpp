@@ -7,6 +7,8 @@
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/variable.h"
 
+#include "test_macros.h"
+
 using namespace scipp;
 
 TEST(RebinTest, inner) {
@@ -225,6 +227,7 @@ TEST(Variable, rebin_mask_outer_single) {
 
   ASSERT_EQ(result, expected);
 }
+
 TEST(Variable, check_rebin_cannot_be_used_on_bin_data) {
   Dimensions dims{Dim::Y, 1};
   Variable buffer =
@@ -236,6 +239,5 @@ TEST(Variable, check_rebin_cannot_be_used_on_bin_data) {
       makeVariable<double>(Dimensions{Dim::Y, 2}, Values{1, 4});
   const auto newEdge =
       makeVariable<double>(Dimensions{Dim::Y, 4}, Values{0, 1, 2, 3});
-  EXPECT_THROW([[maybe_unused]] auto res = rebin(var, Dim::Y, oldEdge, newEdge),
-               except::TypeError);
+  EXPECT_THROW_DISCARD(rebin(var, Dim::Y, oldEdge, newEdge), except::TypeError);
 }

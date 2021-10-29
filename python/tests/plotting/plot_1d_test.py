@@ -7,6 +7,8 @@ import numpy as np
 import scipp as sc
 from ..factory import make_dense_data_array, make_dense_dataset
 from .plot_helper import plot
+import matplotlib
+matplotlib.use('Agg')
 
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing
@@ -14,7 +16,10 @@ from .plot_helper import plot
 
 
 def test_plot_1d():
-    plot(make_dense_data_array(ndim=1))
+    da = make_dense_data_array(ndim=1)
+    plot(da)
+    plot(da, resampling_mode='sum')
+    plot(da, resampling_mode='mean')
 
 
 def test_plot_1d_with_variances():
@@ -22,7 +27,10 @@ def test_plot_1d_with_variances():
 
 
 def test_plot_1d_bin_edges():
-    plot(make_dense_data_array(ndim=1, binedges=True))
+    da = make_dense_data_array(ndim=1, binedges=True)
+    plot(da)
+    plot(da, resampling_mode='sum')
+    plot(da, resampling_mode='mean')
 
 
 def test_plot_1d_with_labels():
@@ -39,6 +47,8 @@ def test_plot_1d_log_axes():
     plot(da, scale={'x': 'log'})
     plot(da, norm='log')
     plot(da, norm='log', scale={'x': 'log'})
+    plot(da, norm='log', scale={'x': 'log'}, resampling_mode='sum')
+    plot(da, norm='log', scale={'x': 'log'}, resampling_mode='mean')
 
 
 def test_plot_1d_bin_edges_with_variances():
@@ -65,6 +75,12 @@ def test_plot_1d_two_entries_hide_variances():
     plot(ds, errorbars={"a": False, "b": True})
 
 
+def test_plot_1d_log_axes_two_entries_zero_data():
+    a = sc.linspace(dim='xx', unit='K', start=1, stop=2, num=4)
+    b = sc.zeros_like(a)  # zero data triggers special branch in limit finding
+    plot({'a': a, 'b': b}, norm='log')
+
+
 def test_plot_1d_with_masks():
     plot(make_dense_data_array(ndim=1, masks=True))
 
@@ -75,7 +91,10 @@ def test_plot_collapse():
 
 
 def test_plot_sliceviewer_with_1d_projection():
-    plot(make_dense_data_array(ndim=3), projection="1d")
+    da = make_dense_data_array(ndim=3)
+    plot(da, projection="1d")
+    plot(da, projection="1d", resampling_mode='sum')
+    plot(da, projection="1d", resampling_mode='mean')
 
 
 def test_plot_sliceviewer_with_1d_projection_with_nans():
@@ -298,6 +317,10 @@ def test_plot_legend():
     plot(da, legend={"show": False})
     plot(da, legend={"loc": 5})
     plot(da, legend={"show": True, "loc": 4})
+
+
+def test_plot_1d_with_grid():
+    plot(make_dense_data_array(ndim=1), grid=True)
 
 
 def test_plot_redraw():

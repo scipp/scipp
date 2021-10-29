@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Union, TYPE_CHECKING
 
-from .. import Dataset, DataArray, Variable, scalar, VariableLike, Unit
+from ..core import Dataset, DataArray, Unit, Variable
+from ..core import scalar
+from ..typing import VariableLike
 
 if TYPE_CHECKING:
     import xarray as xr
@@ -16,9 +18,9 @@ def from_xarray(obj: Union[xr.DataArray, xr.Dataset]) -> VariableLike:
     If you know in advance what type of object you need to convert, you can
     also call from_xarray_dataarray or from_xarray_dataset directly.
 
-    :param obj: the xarray object to convert; must be either an xarray
+    :param obj: The xarray object to convert; must be either an xarray
         DataArray or Dataset object.
-    :return: the converted scipp object.
+    :return: The converted scipp object.
     """
     import xarray as xr
 
@@ -39,8 +41,8 @@ def from_xarray_dataarray(da: xr.DataArray) -> DataArray:
     """
     Converts an xarray.DataArray object to a scipp.DataArray object.
 
-    :param da: an xarray.DataArray object to be converted.
-    :return: the converted scipp DataArray object.
+    :param da: An xarray.DataArray object to be converted.
+    :return: The converted scipp DataArray object.
     """
     coords = {}
     attrs = {attr: scalar(da.attrs[attr]) for attr in da.attrs if attr != "units"}
@@ -61,8 +63,8 @@ def from_xarray_dataset(ds: xr.Dataset) -> Dataset:
     """
     Converts an xarray.Dataset object to a scipp.Dataset object.
 
-    :param ds: an xarray.Dataset object to be converted.
-    :return: the converted scipp dataset object.
+    :param ds: An xarray.Dataset object to be converted.
+    :return: The converted scipp dataset object.
     """
     sc_data = {k: from_xarray(v) for k, v in ds.items()}
     return Dataset(data=sc_data)

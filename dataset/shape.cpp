@@ -2,8 +2,10 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/variable/shape.h"
+#include <algorithm>
+
 #include "scipp/variable/creation.h"
+#include "scipp/variable/shape.h"
 
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/shape.h"
@@ -15,76 +17,112 @@ using namespace scipp::variable;
 
 namespace scipp::dataset {
 
-/// Return one of the inputs if they are the same, throw otherwise.
-template <class T> T same(const T &a, const T &b) {
-  core::expect::equals(a, b);
-  return a;
+/// Map `op` over `items`, return vector of results
+template <class T, class Op> auto map(const T &items, Op op) {
+  std::vector<decltype(op(items.front()))> out;
+  out.reserve(items.size());
+  for (const auto &i : items)
+    out.emplace_back(op(i));
+  return out;
 }
+
+constexpr auto get_data = [](auto &&x) { return x.data(); };
+constexpr auto get_masks = [](auto &&x) { return x.masks(); };
+constexpr auto get_meta = [](auto &&x) { return x.meta(); };
+constexpr auto get_coords = [](auto &&x) { return x.coords(); };
+constexpr auto get_sizes = [](auto &&x) { return x.sizes(); };
 
 /// Concatenate a and b, assuming that a and b contain bin edges.
 ///
 /// Checks that the last edges in `a` match the first edges in `b`. The
 /// Concatenates the input edges, removing duplicate bin edges.
-template <class View>
-Variable join_edges(const View &a, const View &b, const Dim dim) {
-  core::expect::equals(a.slice({dim, a.dims()[dim] - 1}), b.slice({dim, 0}));
-  return concatenate(a.slice({dim, 0, a.dims()[dim] - 1}), b, dim);
+Variable join_edges(const std::span<const Variable> vars, const Dim dim) {
+  std::vector<Variable> tmp;
+  tmp.reserve(vars.size());
+  for (const auto &var : vars) {
+    if (tmp.empty()) {
+      tmp.emplace_back(var);
+    } else {
+      core::expect::equals(tmp.back().slice({dim, tmp.back().dims()[dim] - 1}),
+                           var.slice({dim, 0}));
+      tmp.emplace_back(var.slice({dim, 1, var.dims()[dim]}));
+    }
+  }
+  return concat(tmp, dim);
 }
 
 namespace {
-// TODO near-duplicate of is_edges in core/sizes.cpp
-constexpr auto is_bin_edges = [](const auto &coord, const auto &dims,
-                                 const Dim dim) {
-  return coord.dims().contains(dim) &&
-         ((dims.contains(dim) == 1) ? coord.dims()[dim] != dims.at(dim)
-                                    : coord.dims()[dim] == 2);
-};
-template <class T1, class T2, class DimT>
-auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
-            const DimT &dimsB) {
-  std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
-  for (const auto [key, a_] : a) {
-    if (dim_of_coord(a_, key) == dim) {
-      if (is_bin_edges(a_, dimsA, dim) != is_bin_edges(b[key], dimsB, dim)) {
+template <class T, class Key>
+bool equal_is_edges(const T &maps, const Key &key, const Dim dim) {
+  return std::adjacent_find(maps.begin(), maps.end(),
+                            [&key, dim](auto &a, auto &b) {
+                              return is_edges(a.sizes(), a[key].dims(), dim) !=
+                                     is_edges(b.sizes(), b[key].dims(), dim);
+                            }) == maps.end();
+}
+template <class T, class Key>
+bool all_is_edges(const T &maps, const Key &key, const Dim dim) {
+  return std::all_of(maps.begin(), maps.end(), [&key, dim](auto &var) {
+    return is_edges(var.sizes(), var[key].dims(), dim);
+  });
+}
+
+template <class T, class Key>
+auto broadcast_along_dim(const T &maps, const Key &key, const Dim dim) {
+  return map(maps, [&key, dim](const auto &map) {
+    const auto &var = map[key];
+    return broadcast(var, merge(Dimensions(dim, map.sizes().contains(dim)
+                                                    ? map.sizes().at(dim)
+                                                    : 1),
+                                var.dims()));
+  });
+}
+
+template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
+  if (maps.empty())
+    throw std::invalid_argument("Cannot concat empty list.");
+  using T = typename Maps::value_type;
+  std::unordered_map<typename T::key_type, typename T::mapped_type> out;
+  const auto &a = maps.front();
+  for (const auto &[key, a_] : a) {
+    auto vars = map(maps, [&key = key](auto &&map) { return map[key]; });
+    if (a.dim_of(key) == dim) {
+      if (!equal_is_edges(maps, key, dim)) {
         throw except::BinEdgeError(
-            "Either both or neither of the inputs must be bin edges.");
-      } else if (a_.dims()[dim] == (dimsA.contains(dim) ? dimsA.at(dim) : 1)) {
-        out.emplace(key, concatenate(a_, b[key], dim));
+            "Either all or none of the inputs must have bin edge coordinates.");
+      } else if (!all_is_edges(maps, key, dim)) {
+        out.emplace(key, concat(vars, dim));
       } else {
-        out.emplace(key, join_edges(a_, b[key], dim));
+        out.emplace(key, join_edges(vars, dim));
       }
     } else {
-      // 1D coord is kept only if both inputs have matching 1D coords.
-      if (a_.dims().contains(dim) || b[key].dims().contains(dim) ||
-          a_ != b[key])
+      // 1D coord is kept only if all inputs have matching 1D coords.
+      if (std::any_of(vars.begin(), vars.end(), [dim, &vars](auto &var) {
+            return var.dims().contains(dim) || var != vars.front();
+          })) {
         // Mismatching 1D coords must be broadcast to ensure new coord shape
         // matches new data shape.
-        out.emplace(
-            key,
-            concatenate(
-                broadcast(a_, merge(dimsA.contains(dim)
-                                        ? Dimensions(dim, dimsA.at(dim))
-                                        : Dimensions(),
-                                    a_.dims())),
-                broadcast(b[key], merge(dimsB.contains(dim)
-                                            ? Dimensions(dim, dimsB.at(dim))
-                                            : Dimensions(),
-                                        b[key].dims())),
-                dim));
-      else
-        out.emplace(key, same(a_, b[key]));
+        out.emplace(key, concat(broadcast_along_dim(maps, key, dim), dim));
+      } else {
+        if constexpr (std::is_same_v<T, Masks>)
+          out.emplace(key, copy(a_));
+        else
+          out.emplace(key, a_);
+      }
     }
   }
   return out;
 }
+
 } // namespace
 
-DataArray concatenate(const DataArray &a, const DataArray &b, const Dim dim) {
-  auto out = DataArray(concatenate(a.data(), b.data(), dim), {},
-                       concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
-  for (auto &&[d, coord] :
-       concat(a.meta(), b.meta(), dim, a.dims(), b.dims())) {
-    if (d == dim || a.coords().contains(d) || b.coords().contains(d))
+DataArray concat(const std::span<const DataArray> das, const Dim dim) {
+  auto out = DataArray(concat(map(das, get_data), dim), {},
+                       concat_maps(map(das, get_masks), dim));
+  const auto &coords = map(das, get_coords);
+  for (auto &&[d, coord] : concat_maps(map(das, get_meta), dim)) {
+    if (d == dim || std::any_of(coords.begin(), coords.end(),
+                                [&d = d](auto &_) { return _.contains(d); }))
       out.coords().set(d, std::move(coord));
     else
       out.attrs().set(d, std::move(coord));
@@ -92,7 +130,7 @@ DataArray concatenate(const DataArray &a, const DataArray &b, const Dim dim) {
   return out;
 }
 
-Dataset concatenate(const Dataset &a, const Dataset &b, const Dim dim) {
+Dataset concat(const std::span<const Dataset> dss, const Dim dim) {
   // Note that in the special case of a dataset without data items (only coords)
   // concatenating a range slice with a non-range slice will fail due to the
   // missing unaligned coord in the non-range slice. This is an extremely
@@ -100,17 +138,22 @@ Dataset concatenate(const Dataset &a, const Dataset &b, const Dim dim) {
   // coords to dataset (which is not desirable for a variety of reasons). It is
   // unlikely that this will cause trouble in practice. Users can just use a
   // range slice of thickness 1.
+  if (dss.empty())
+    throw std::invalid_argument("Cannot concat empty list.");
   Dataset result;
-  if (a.empty())
-    result.setCoords(
-        Coords(concatenate(a.sizes(), b.sizes(), dim),
-               concat(a.coords(), b.coords(), dim, a.sizes(), b.sizes())));
-  for (const auto &item : a)
-    if (b.contains(item.name())) {
-      if (!item.dims().contains(dim) && item == b[item.name()])
-        result.setData(item.name(), item);
+  if (dss.front().empty())
+    result.setCoords(Coords(concat(map(dss, get_sizes), dim),
+                            concat_maps(map(dss, get_coords), dim)));
+  for (const auto &first : dss.front())
+    if (std::all_of(dss.begin(), dss.end(),
+                    [&first](auto &ds) { return ds.contains(first.name()); })) {
+      auto das = map(dss, [&first](auto &&ds) { return ds[first.name()]; });
+      if (std::any_of(das.begin(), das.end(), [dim, &first](auto &da) {
+            return da.dims().contains(dim) || da != first;
+          }))
+        result.setData(first.name(), concat(das, dim));
       else
-        result.setData(item.name(), concatenate(item, b[item.name()], dim));
+        result.setData(first.name(), first);
     }
   return result;
 }
@@ -149,7 +192,7 @@ namespace {
 ///    variable's dims, broadcast
 /// 3. If none of the variables's dimensions are contained, no broadcast
 Variable maybe_broadcast(const Variable &var,
-                         const scipp::span<const Dim> &from_labels,
+                         const std::span<const Dim> &from_labels,
                          const Dimensions &data_dims) {
   const auto &var_dims = var.dims();
   Dimensions broadcast_dims;
@@ -183,7 +226,7 @@ Variable fold_bin_edge(const Variable &var, const Dim from_dim,
 
 /// Special handling for flattening coord along a dim that contains bin edges.
 Variable flatten_bin_edge(const Variable &var,
-                          const scipp::span<const Dim> &from_labels,
+                          const std::span<const Dim> &from_labels,
                           const Dim to_dim, const Dim bin_edge_dim) {
   const auto data_shape = var.dims()[bin_edge_dim] - 1;
 
@@ -212,9 +255,9 @@ Variable flatten_bin_edge(const Variable &var,
 
 /// Check if one of the from_labels is a bin edge
 Dim bin_edge_in_from_labels(const Variable &var, const Dimensions &array_dims,
-                            const scipp::span<const Dim> &from_labels) {
+                            const std::span<const Dim> &from_labels) {
   for (const auto &dim : from_labels)
-    if (is_bin_edges(var, array_dims, dim))
+    if (is_edges(array_dims, var.dims(), dim))
       return dim;
   return Dim::Invalid;
 }
@@ -226,7 +269,7 @@ Dim bin_edge_in_from_labels(const Variable &var, const Dimensions &array_dims,
 DataArray fold(const DataArray &a, const Dim from_dim,
                const Dimensions &to_dims) {
   return dataset::transform(a, [&](const auto &var) {
-    if (is_bin_edges(var, a.dims(), from_dim))
+    if (is_edges(a.dims(), var.dims(), from_dim))
       return fold_bin_edge(var, from_dim, to_dims);
     else if (var.dims().contains(from_dim))
       return fold(var, from_dim, to_dims);
@@ -237,7 +280,7 @@ DataArray fold(const DataArray &a, const Dim from_dim,
 
 /// Flatten multiple dimensions into a single dimension:
 /// ['y', 'z'] -> ['x']
-DataArray flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
+DataArray flatten(const DataArray &a, const std::span<const Dim> &from_labels,
                   const Dim to_dim) {
   return dataset::transform(a, [&](const auto &in) {
     const auto var =
@@ -254,12 +297,12 @@ DataArray flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
   });
 }
 
-DataArray transpose(const DataArray &a, const std::vector<Dim> &dims) {
+DataArray transpose(const DataArray &a, const std::span<const Dim> dims) {
   return {transpose(a.data(), dims), a.coords(), a.masks(), a.attrs(),
           a.name()};
 }
 
-Dataset transpose(const Dataset &d, const std::vector<Dim> &dims) {
+Dataset transpose(const Dataset &d, const std::span<const Dim> dims) {
   return apply_to_items(
       d, [](auto &&... _) { return transpose(_...); }, dims);
 }

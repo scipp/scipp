@@ -6,6 +6,7 @@ channels:
 
 dependencies:
   - h5py
+  - ipykernel = 6.3.1  # see https://github.com/ipython/ipykernel/issues/771
   - ipympl
   - ipython
   - ipywidgets
@@ -16,3 +17,4 @@ dependencies:
   - nodejs
   - pythreejs
   - scipp
+  - scipy

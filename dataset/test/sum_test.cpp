@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-#include "scipp/dataset/reduction.h"
-
 #include <gtest/gtest.h>
 #include <limits>
 #include <vector>
+
+#include "test_macros.h"
+
+#include "scipp/dataset/bins.h"
+#include "scipp/dataset/reduction.h"
+#include "scipp/variable/comparison.h"
+#include "scipp/variable/reduction.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -84,21 +89,41 @@ TEST_F(Sum2dCoordTest, data_array_2d_coord) {
   EXPECT_FALSE(sum(a, Dim::X).coords().contains(Dim::X));
 }
 
-TEST_F(Sum2dCoordTest, data_array_2d_labels) {
+TEST_F(Sum2dCoordTest, data_array_2d_labels_dropped) {
   DataArray a(var, {{Dim("xlabels"), var}});
-  // Labels are for summed dimension -> drop. Note that associated dimension for
-  // labels is their inner dim, X in this case.
+  // Coord depend on summed dimension -> drop.
   EXPECT_FALSE(sum(a, Dim::X).coords().contains(Dim("xlabels")));
+  EXPECT_FALSE(sum(a, Dim::Y).coords().contains(Dim("xlabels")));
+  // Drops even dimension coords
+  EXPECT_FALSE(sum(a, Dim::Y).coords().contains(Dim::X));
 }
 
-TEST_F(Sum2dCoordTest, data_array_bad_2d_coord_fail) {
-  DataArray a(var, {{Dim::X, var}});
-  // Values being summed have different X coord -> fail.
-  EXPECT_THROW(sum(a, Dim::Y), except::DimensionError);
+TEST_F(Sum2dCoordTest, data_array_independent_2d_labels_preserved) {
+  Variable var3d{makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X},
+                                      Shape{1, 2, 2},
+                                      Values{1.0, 2.0, 3.0, 4.0})};
+  DataArray a(var3d, {{Dim::X, var}});
+  EXPECT_FALSE(sum(a, Dim::X).coords().contains(Dim::X));
+  EXPECT_FALSE(sum(a, Dim::Y).coords().contains(Dim::X));
+  EXPECT_TRUE(sum(a, Dim::Z).coords().contains(Dim::X));
 }
 
-TEST_F(Sum2dCoordTest, data_array_bad_2d_labels_fail) {
-  DataArray a(var, {{Dim("xlabels"), var}});
-  // Values being summed have different x labels -> fail.
-  EXPECT_THROW(sum(a, Dim::Y), except::DimensionError);
+class ReduceBinnedTest : public ::testing::Test {
+protected:
+  Variable indices = makeVariable<index_pair>(
+      Dims{Dim::Y}, Shape{3},
+      Values{std::pair{0, 2}, std::pair{2, 2}, std::pair{2, 5}});
+  Variable data =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, units::m,
+                           Values{1, 2, 3, 4, 5}, Variances{1, 2, 3, 4, 5});
+  DataArray buffer = DataArray(data);
+  Variable binned = make_bins(indices, Dim::X, buffer);
+};
+
+TEST_F(ReduceBinnedTest, masked) {
+  buffer.masks().set("mask", less(data, data));
+  binned = make_bins(indices, Dim::X, buffer);
+  // Event masks not supported yet in reduction ops.
+  EXPECT_THROW_DISCARD(sum(binned), except::BinnedDataError);
+  EXPECT_THROW_DISCARD(mean(binned), except::BinnedDataError);
 }

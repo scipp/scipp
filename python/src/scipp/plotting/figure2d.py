@@ -8,6 +8,7 @@ from .toolbar import PlotToolbar2d
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, LogNorm
+import math
 import warnings
 
 
@@ -29,7 +30,8 @@ class PlotFigure2d(PlotFigure):
                  extend=None,
                  title=None,
                  xlabel=None,
-                 ylabel=None):
+                 ylabel=None,
+                 grid=False):
 
         super().__init__(ax=ax,
                          cax=cax,
@@ -38,7 +40,8 @@ class PlotFigure2d(PlotFigure):
                          ndim=2,
                          xlabel=xlabel,
                          ylabel=ylabel,
-                         toolbar=PlotToolbar2d)
+                         toolbar=PlotToolbar2d,
+                         grid=grid)
 
         if aspect is None:
             aspect = config.plot.aspect
@@ -73,14 +76,27 @@ class PlotFigure2d(PlotFigure):
                                      ax=self.ax,
                                      cax=self.cax,
                                      extend=extend)
+            self._disable_colorbar_offset()
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.mask_image = {}
+
+    def _disable_colorbar_offset(self):
+        if not isinstance(self.norm, LogNorm):
+            self.cbar.formatter.set_useOffset(False)
+
+    def _make_limits(self, vmin, vmax):
+        if math.isclose(vmin, vmax):
+            offset = 0.001 * max(abs(vmin), abs(vmax))
+            vmin -= offset
+            vmax += offset
+        return vmin, vmax
 
     def rescale_to_data(self, vmin, vmax):
         """
         Rescale the colorbar limits according to the supplied values.
         """
+        vmin, vmax = self._make_limits(vmin, vmax)
         self.norm.vmin = vmin
         self.norm.vmax = vmax
         self.image_values.set_clim(vmin, vmax)
@@ -139,9 +155,11 @@ class PlotFigure2d(PlotFigure):
         self.draw()
 
     def toggle_norm(self, norm=None, vmin=None, vmax=None):
+        vmin, vmax = self._make_limits(vmin, vmax)
         self.norm = LogNorm(vmin=vmin, vmax=vmax) if norm == "log" else Normalize(
             vmin=vmin, vmax=vmax)
         self.image_values.set_norm(self.norm)
+        self._disable_colorbar_offset()
         self.opacify_colorbar()
 
     def rescale_on_zoom(self, *args, **kwargs):

@@ -32,6 +32,7 @@ public:
   virtual void expect_can_set_elem_unit(const Variable &var,
                                         const units::Unit &u) const = 0;
   virtual void set_elem_unit(Variable &var, const units::Unit &u) const = 0;
+  virtual bool has_masks(const Variable &) const { return false; }
   virtual bool hasVariances(const Variable &var) const = 0;
   virtual const Variable &data(const Variable &) const { throw unreachable(); }
   virtual Variable data(Variable &) const { throw unreachable(); }
@@ -78,6 +79,7 @@ public:
   void expect_can_set_elem_unit(const Variable &var,
                                 const units::Unit &u) const;
   void set_elem_unit(Variable &var, const units::Unit &u) const;
+  bool has_masks(const Variable &var) const;
   bool hasVariances(const Variable &var) const;
   template <class T, class Var> auto values(Var &&var) const {
     if (!is_bins(var))

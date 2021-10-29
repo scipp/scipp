@@ -50,6 +50,11 @@ def test_scalar_throws_if_wrong_dtype_provided_for_str_types():
         sc.scalar(value='temp', unit=sc.units.one, dtype=sc.dtype.float64)
 
 
+def test_scalar_throws_UnitError_if_not_parsable():
+    with pytest.raises(sc.UnitError):
+        sc.scalar(value=1, unit='abcdef')
+
+
 def test_scalar_of_numpy_array():
     value = np.array([1, 2, 3])
     with pytest.raises(sc.DimensionError):
@@ -230,11 +235,14 @@ def test_array_creates_correct_variable():
     assert sc.identical(var, expected)
 
 
-def test_array_needs_nonempty_dims():
-    with pytest.raises(ValueError):
-        sc.array(dims=[], values=[])
-    with pytest.raises(ValueError):
-        sc.array(dims=None, values=[])
+def test_array_empty_dims():
+    assert sc.identical(sc.array(dims=[], values=[1]),
+                        sc.scalar([1], dtype=sc.dtype.PyObject))
+    a = np.asarray(1.1)
+    assert sc.identical(sc.array(dims=None, values=a), sc.scalar(1.1))
+    assert sc.identical(sc.array(dims=[], values=a), sc.scalar(1.1))
+    assert sc.identical(sc.array(dims=[], values=a, variances=a),
+                        sc.scalar(1.1, variance=1.1))
 
 
 def test_zeros_like():

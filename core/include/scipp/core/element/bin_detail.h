@@ -13,10 +13,11 @@ namespace scipp::core::element {
 
 template <class Coord, class Edge>
 using bin_range_arg =
-    std::tuple<scipp::index, scipp::index, Coord, scipp::span<const Edge>>;
+    std::tuple<scipp::index, scipp::index, Coord, std::span<const Edge>>;
 
 static constexpr auto bin_range_common = overloaded{
     arg_list<bin_range_arg<double, double>, bin_range_arg<int64_t, double>,
+             bin_range_arg<int32_t, double>,
              bin_range_arg<time_point, time_point>>,
     transform_flags::expect_no_variance_arg<2>};
 

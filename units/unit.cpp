@@ -29,7 +29,8 @@ std::string map_unit_string(const std::string &unit) {
 } // namespace
 
 Unit::Unit(const std::string &unit)
-    : Unit(llnl::units::unit_from_string(map_unit_string(unit))) {
+    : Unit(llnl::units::unit_from_string(map_unit_string(unit),
+                                         llnl::units::strict_si)) {
   if (!is_valid(m_unit))
     throw except::UnitError("Failed to convert string `" + unit +
                             "` to valid unit.");
@@ -105,6 +106,12 @@ Unit operator%(const Unit &a, [[maybe_unused]] const Unit &b) { return a; }
 Unit operator-(const Unit &a) { return a; }
 
 Unit abs(const Unit &a) { return a; }
+
+Unit floor(const Unit &a) { return a; }
+
+Unit ceil(const Unit &a) { return a; }
+
+Unit rint(const Unit &a) { return a; }
 
 Unit sqrt(const Unit &a) {
   if (llnl::units::is_error(sqrt(a.underlying())))

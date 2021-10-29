@@ -18,9 +18,6 @@
 namespace scipp::dataset {
 
 namespace detail {
-using slice_list =
-    boost::container::small_vector<std::pair<Slice, scipp::index>, 2>;
-
 struct make_key_value {
   template <class T> auto operator()(T &&view) const {
     using View =
@@ -38,23 +35,6 @@ struct make_value {
 };
 
 } // namespace detail
-
-/// Return the dimension for given coord.
-/// @param var Coordinate variable
-/// @param key Key of the coordinate in a coord dict
-///
-/// For dimension-coords, this is the same as the key, for non-dimension-coords
-/// (labels) we adopt the convention that they are "label" their inner
-/// dimension. Returns Dim::Invalid for 0-D var.
-template <class T, class Key> Dim dim_of_coord(const T &var, const Key &key) {
-  if (var.dims().ndim() == 0)
-    return Dim::Invalid;
-  if constexpr (std::is_same_v<Key, Dim>) {
-    const bool is_dimension_coord = var.dims().contains(key);
-    return is_dimension_coord ? key : var.dims().inner();
-  } else
-    return var.dims().inner();
-}
 
 template <class T>
 auto slice_map(const Sizes &sizes, const T &map, const Slice &params) {
@@ -92,12 +72,12 @@ public:
        const bool readonly = false);
   Dict(const Sizes &sizes, holder_type items, const bool readonly = false);
   Dict(const Dict &other);
-  Dict(Dict &&other);
+  Dict(Dict &&other) noexcept;
   Dict &operator=(const Dict &other);
-  Dict &operator=(Dict &&other);
+  Dict &operator=(Dict &&other) noexcept;
 
   /// Return the number of coordinates in the view.
-  index size() const noexcept { return scipp::size(m_items); }
+  [[nodiscard]] index size() const noexcept { return scipp::size(m_items); }
   /// Return true if there are 0 coordinates in the view.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
@@ -110,6 +90,7 @@ public:
   // invariants.
   mapped_type operator[](const Key &key);
   mapped_type at(const Key &key);
+  Dim dim_of(const Key &key) const;
 
   auto find(const Key &k) const noexcept { return m_items.find(k); }
   auto find(const Key &k) noexcept { return m_items.find(k); }
@@ -153,8 +134,8 @@ public:
   bool operator==(const Dict &other) const;
   bool operator!=(const Dict &other) const;
 
-  const Sizes &sizes() const noexcept { return m_sizes; }
-  const auto &items() const noexcept { return m_items; }
+  [[nodiscard]] const Sizes &sizes() const noexcept { return m_sizes; }
+  [[nodiscard]] const auto &items() const noexcept { return m_items; }
 
   void setSizes(const Sizes &sizes);
   void rebuildSizes();
@@ -170,7 +151,8 @@ public:
 
   void rename(const Dim from, const Dim to);
 
-  bool is_readonly() const noexcept;
+  void set_readonly() noexcept;
+  [[nodiscard]] bool is_readonly() const noexcept;
   [[nodiscard]] Dict as_const() const;
   [[nodiscard]] Dict merge_from(const Dict &other) const;
 
@@ -198,8 +180,5 @@ template <class Masks>
 
 SCIPP_DATASET_EXPORT Variable masks_merge_if_contained(const Masks &masks,
                                                        const Dimensions &dims);
-
-[[nodiscard]] SCIPP_DATASET_EXPORT Coords copy(const Coords &coords);
-[[nodiscard]] SCIPP_DATASET_EXPORT Masks copy(const Masks &masks);
 
 } // namespace scipp::dataset

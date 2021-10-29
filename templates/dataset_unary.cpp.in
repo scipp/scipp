@@ -2,13 +2,19 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/variable/@OPNAME@.h"
+#include "scipp/@BASE_INCLUDE@"
 #include "scipp/dataset/@OPNAME@.h"
+
+#include "dataset_operations_common.h"
 
 namespace scipp::dataset {
 
 DataArray @NAME@(const DataArray &a) {
   return DataArray(@NAME@(a.data()), a.coords(), copy(a.masks()), a.attrs(), a.name());
+}
+
+Dataset @NAME@(const Dataset &ds) {
+  return apply_to_items(ds, [](auto &&_) { return @NAME@(_); });
 }
 
 } // namespace scipp::dataset

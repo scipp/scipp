@@ -8,12 +8,14 @@
 #include "scipp/dataset/astype.h"
 #include "scipp/dataset/generated_comparison.h"
 #include "scipp/dataset/generated_logical.h"
+#include "scipp/dataset/generated_math.h"
 #include "scipp/dataset/to_unit.h"
 #include "scipp/units/except.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/astype.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/logical.h"
+#include "scipp/variable/pow.h"
 #include "scipp/variable/to_unit.h"
 
 #include "dtype.h"
@@ -168,6 +170,15 @@ template <class RHSSetup> struct OpBinder {
             return a;
           },
           py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      if constexpr (!(std::is_same_v<T, DataArray> ||
+                      std::is_same_v<Other, DataArray>)) {
+        c.def(
+            "__ipow__",
+            [](T &base, Other &exponent) {
+              return pow(base, RHSSetup{}(exponent), base);
+            },
+            py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      }
     }
   }
 
@@ -195,6 +206,12 @@ template <class RHSSetup> struct OpBinder {
       c.def(
           "__mod__", [](T &a, Other &b) { return a % RHSSetup{}(b); },
           py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      c.def(
+          "__pow__",
+          [](T &base, Other &exponent) {
+            return pow(base, RHSSetup{}(exponent));
+          },
+          py::is_operator(), py::call_guard<py::gil_scoped_release>());
     }
   }
 };
@@ -211,17 +228,13 @@ static void bind_binary(pybind11::class_<T, Ignored...> &c) {
 
 template <class T, class... Ignored>
 void bind_in_place_binary_scalars(pybind11::class_<T, Ignored...> &c) {
-  OpBinder<ScalarToVariable>::in_place_binary<float>(c);
   OpBinder<ScalarToVariable>::in_place_binary<double>(c);
-  OpBinder<ScalarToVariable>::in_place_binary<int32_t>(c);
   OpBinder<ScalarToVariable>::in_place_binary<int64_t>(c);
 }
 
 template <class T, class... Ignored>
 void bind_binary_scalars(pybind11::class_<T, Ignored...> &c) {
-  OpBinder<ScalarToVariable>::binary<float>(c);
   OpBinder<ScalarToVariable>::binary<double>(c);
-  OpBinder<ScalarToVariable>::binary<int32_t>(c);
   OpBinder<ScalarToVariable>::binary<int64_t>(c);
 }
 

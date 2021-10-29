@@ -3,20 +3,78 @@
 Release Notes
 =============
 
-Since v0.7
-----------
+v0.9.0 (unreleased)
+-------------------
+
+Features
+~~~~~~~~
+
+* Add ``erf`` and ``erfc`` functions `#2195 <https://github.com/scipp/scipp/pull/2195>`_.
+* Reduction operations such as ``sum``, ``nansum``, and ``cumsum`` of single precision (float32) data now use double precision (float64) internally to reduce rounding errors `#2218 <https://github.com/scipp/scipp/pull/2218>`_.
+* Add ``bins_like`` for broadcasting dense variables to binned variables, e.g., for converting bin coordinates into event coordinates `#2225 <https://github.com/scipp/scipp/pull/2225>`_.
+* ``groupby`` now also supports grouping by attributes instead of just by coordinates `#2227 <https://github.com/scipp/scipp/pull/2227>`_.
+* Add ``concat`` to replace ``concatenate``. In contrast to the now deprecated ``concatenate``, ``concat`` supports concatenation of lists of objects instead of just two objects `#2232 <https://github.com/scipp/scipp/pull/2232>`_.
+* Add ``dim`` property to ``Variable`` and ``DataArray`` `#2251 <https://github.com/scipp/scipp/pull/2251>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+* Fix bugs in ``rebin`` if data and/or edges had strides other than 1 along rebinned dimension, typically only occuring with multi-dimensional (ragged) coordinates `#2211 <https://github.com/scipp/scipp/pull/2211>`_.
+* Fix exception that was thrown when importing empty datasets from HDF5 files using ``open_hdf5`` `#2216 <https://github.com/scipp/scipp/pull/2216>`_.
+* Fix exception in ``astype`` when called with binned data that does not require conversion `#2222 <https://github.com/scipp/scipp/pull/2222>`_.
+* Fix bug in ``concatenate`` that could lead to masks being shared with input rather than being copied `#2232 <https://github.com/scipp/scipp/pull/2232>`_.
+* Fix exception in ``bin`` when binning in a new dimension but with an existing bin coord `#2237 <https://github.com/scipp/scipp/pull/2237>`_.
+
+Deprecations
+~~~~~~~~~~~~
+
+* ``concatenate`` and ``groupby(..).concatenate`` are deprecated. Use ``concat`` and ``groupby(..).concat`` instead.
+
+Contributors
+~~~~~~~~~~~~
+
+Owen Arnold :sup:`b, c`\ ,
+Simon Heybrock :sup:`a`\ ,
+Samuel Jones :sup:`b`\ ,
+Neil Vaytet :sup:`a`\ ,
+Tom Willemsen :sup:`b, c`\ ,
+and Jan-Lukas Wynen :sup:`a`\
+
+v0.8.3 (September 2021)
+-----------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix serious correctness bug in ``groupby.sum`` and ``groupby.mean`` `#2200 <https://github.com/scipp/scipp/pull/2200>`_.
+
+v0.8.0 (September 2021)
+-----------------------
 
 Features
 ~~~~~~~~
 
 * Added ``sizes`` argument to ``zeros``, ``ones``, and ``empty`` variable creation functions `#1951 <https://github.com/scipp/scipp/pull/1951>`_.
-* Slicing syntax now supports ellipsis, e.g., ``da.data[...] = var`` `#1960 <https://github.com/scipp/scipp/pull/1960>`_.
+* Slicing syntax now supports ellipsis, e.g., ``da.data[...] = var`` `#1961 <https://github.com/scipp/scipp/pull/1961>`_.
 * Added bound method equivalents to many free functions which take a single Variable or DataArray `#1969 <https://github.com/scipp/scipp/pull/1969>`_.
 * Variables can now be constructed directly from multi dimensional lists and tuples `#1977 <https://github.com/scipp/scipp/pull/1977>`_.
 * Plotting 1-D event data is now supported `#2018 <https://github.com/scipp/scipp/pull/2018>`_.
 * Add ``transform_coords`` for (multi-step) transformations based on existing coords, with support of event coords `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
 * Add ``from_pandas`` and ``from_xarray`` for conversion of pandas dataframes, xarray data arrays and dataset to scipp objects `#2054 <https://github.com/scipp/scipp/pull/2054>`_.
 * Added ``full`` and ``full_like`` variable creation functions `#2069 <https://github.com/scipp/scipp/pull/2069>`_.
+* ``islinspace`` can now take multi-dimensional variables aslong as you pass the dimension to be checked `#2094 <https://github.com/scipp/scipp/pull/2094>`_.
+* Added a power function and support for the ``**`` operator `#2083 <https://github.com/scipp/scipp/pull/2083>`_.
+* Binned data now has a ``mean`` method as well as ``sum``, which returns the mean of each element within a bin.
+* Add ``scipp.constants`` module for physical constants `#2101 <https://github.com/scipp/scipp/pull/2101>`_.
+* Add ``scipp.spatial.transform`` module providing ``from_rotvec`` and ``as_rotvec`` `#2102 <https://github.com/scipp/scipp/pull/2102>`_.
+* Add ``cross`` function to complementing existing ``dot`` function `#2109 <https://github.com/scipp/scipp/pull/2109>`_.
+* The ``fields`` property of structured variables (vector and matrix dtypes) can now be iterated and provides dict-like access `#2116 <https://github.com/scipp/scipp/pull/2116>`_.
+* Add ``where`` function.
+* Unary operations such as ``sin`` are now available for datasets as well `#2112 <https://github.com/scipp/scipp/pull/2112>`_.
+* Add rounding functions ``floor``, ``ceil``, and ``round`` that performs similarly to numpy equivelants `#2147 <https://github.com/scipp/scipp/pull/2147>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -33,21 +91,42 @@ Breaking changes
 * ``astype`` and ``to_unit`` now copy the input by default even when no transformation is required, use the new ``copy`` argument to avoid `#2016 <https://github.com/scipp/scipp/pull/2016>`_.
 * ``rename_dims`` does not rename dimension-coords any more, only dims will be renamed `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
 * ``rename_dims`` does not modify the input anymore but returns a new object with renamed dims `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
+* ``issorted`` and ``islinspace`` return a variable of type boolean instead of a boolean `#2094 <https://github.com/scipp/scipp/pull/2094>`_.
+* Multi-dimensional coordinates are no longer associated with their inner dimension, which affects the behavior when slicing:
+  Such coords will no longer be turned into attributes during a slice operation on the inner dimension `#2098 <https://github.com/scipp/scipp/pull/2098>`_.
+* ``buckets.map(histogram, da.data, 'time')`` has been replaced by ``lookup(histogram, 'time')[da.bins.coords['time']]`` `#2112 <https://github.com/scipp/scipp/pull/2112>`_.
+* ``rebin`` and ``histogram`` now support any unit. ``plot()`` guesses which resampling mode to use and provides a button to toggle this `#2180 <https://github.com/scipp/scipp/pull/2180>`_.
 
 Bugfixes
 ~~~~~~~~
 
 * Various fixes in ``plot``, see  `#2018 <https://github.com/scipp/scipp/pull/2018>`_ for details.
+* Operations with Python floats to long interpret the float as 32-bit float `#2101 <https://github.com/scipp/scipp/pull/2101>`_.
+* Multi-dimensional bin-edge coordinates may now be edges for a non-inner dimension `#2098 <https://github.com/scipp/scipp/pull/2098>`_.
+
+Deprecations
+~~~~~~~~~~~~
+
+* The ``events`` property is deprecated and is scheduled for removal with v0.9.
 
 Contributors
 ~~~~~~~~~~~~
 
 Owen Arnold :sup:`b, c`\ ,
 Simon Heybrock :sup:`a`\ ,
+Samuel Jones :sup:`b`\ ,
 Greg Tucker :sup:`a`\ ,
 Neil Vaytet :sup:`a`\ ,
 Tom Willemsen :sup:`b, c`\ ,
 and Jan-Lukas Wynen :sup:`a`\
+
+v0.7.2 (September 2021)
+-----------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix serious correctness bug in ``groupby.sum`` and ``groupby.mean`` `#2200 <https://github.com/scipp/scipp/pull/2200>`_.
 
 v0.7.0 (June 2021)
 ------------------

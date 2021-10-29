@@ -42,19 +42,20 @@ class NumpyDataIO:
 
     @staticmethod
     def read(group, data):
-        if (data.values.flags['C_CONTIGUOUS']):
+        # h5py's read_direct method fails if any dim has zero size.
+        # see https://github.com/h5py/h5py/issues/870
+        if data.values.flags['C_CONTIGUOUS'] and data.values.size > 0:
             group['values'].read_direct(_as_hdf5_type(data.values))
         else:
             # Values of Eigen matrices are transposed
             data.values = group['values']
-        if 'variances' in group:
+        if 'variances' in group and data.variances.size > 0:
             group['variances'].read_direct(data.variances)
 
 
 class BinDataIO:
     @staticmethod
     def write(group, data):
-        from .. import sum as sc_sum
         bins = data.bins.constituents
         buffer_len = bins['data'].sizes[bins['dim']]
         # Crude mechanism to avoid writing large buffers, e.g., from
@@ -62,7 +63,7 @@ class BinDataIO:
         # copy causes some overhead, but so would the (much mor complicated)
         # solution to extract contents bin-by-bin. This approach will likely
         # need to be revisited in the future.
-        if buffer_len > 1.5 * sc_sum(data.bins.size()).value:
+        if buffer_len > 1.5 * data.bins.size().sum().value:
             data = data.copy()
             bins = data.bins.constituents
         values = group.create_group('values')
@@ -228,7 +229,7 @@ class DataArrayIO:
     @staticmethod
     def read(group):
         _check_scipp_header(group, 'DataArray')
-        from .._scipp import core as sc
+        from ..core import DataArray
         contents = dict()
         contents['name'] = group.attrs['name']
         contents['data'] = VariableIO.read(group['data'])
@@ -237,7 +238,7 @@ class DataArrayIO:
             for name in group[category]:
                 g = group[category][name]
                 contents[category][name] = VariableIO.read(g)
-        return sc.DataArray(**contents)
+        return DataArray(**contents)
 
 
 class DatasetIO:

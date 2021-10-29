@@ -9,3 +9,7 @@ repos:
         - id: yapf
           args: ["-i", "-r"]
           files: "python"
+  - repo: https://github.com/mantidproject/pre-commit-hooks.git
+    rev: ebd7eb9cc07498e58a8af5688104ab1e98f25b04
+    hooks:
+      - id: clang-format

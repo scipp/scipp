@@ -13,6 +13,7 @@
 
 #include "scipp/variable/operations.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/choose.h"
@@ -69,6 +70,22 @@ T GroupBy<T>::copy(const scipp::index group,
   return copy_impl(groups()[group], m_data, dim(), attrPolicy);
 }
 
+namespace {
+auto resize_array(const DataArray &da, const Dim reductionDim,
+                  const scipp::index size, const FillValue fill) {
+  if (!is_bins(da))
+    return resize(da, reductionDim, size, fill);
+  if (variableFactory().has_masks(da.data()))
+    throw except::BinnedDataError("Reduction operations for binned data with "
+                                  "event masks not supported yet.");
+  DataArray dense_dummy(da);
+  dense_dummy.setData(empty(da.dims(), variableFactory().elem_unit(da.data()),
+                            variableFactory().elem_dtype(da.data()),
+                            variableFactory().hasVariances(da.data())));
+  return resize_array(dense_dummy, reductionDim, size, fill);
+}
+} // namespace
+
 /// Helper for creating output for "combine" step for "apply" steps that reduce
 /// a dimension.
 ///
@@ -78,14 +95,12 @@ template <class T>
 T GroupBy<T>::makeReductionOutput(const Dim reductionDim,
                                   const FillValue fill) const {
   T out;
-  if (is_bins(m_data)) {
-    const auto out_sizes =
-        GroupBy(bucket_sizes(m_data), {key(), groups()}).sum(reductionDim);
-    out = resize(m_data, reductionDim, out_sizes);
+  if constexpr (std::is_same_v<T, Dataset>) {
+    out = apply_to_items(m_data, resize_array, reductionDim, size(), fill);
   } else {
-    out = resize(m_data, reductionDim, size(), fill);
-    out.rename(reductionDim, dim());
+    out = resize_array(m_data, reductionDim, size(), fill);
   }
+  out.rename(reductionDim, dim());
   out.coords().set(dim(), key());
   return out;
 }
@@ -134,17 +149,17 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim,
 /// Reduce each group by concatenating elements and return combined data.
 ///
 /// This only supports binned data.
-template <class T> T GroupBy<T>::concatenate(const Dim reductionDim) const {
-  const auto concat = [&](const auto &data) {
+template <class T> T GroupBy<T>::concat(const Dim reductionDim) const {
+  const auto conc = [&](const auto &data) {
     if (key().dims().volume() == scipp::size(groups()))
       return groupby_concat_bins(data, {}, key(), reductionDim);
     else
       return groupby_concat_bins(data, key(), {}, reductionDim);
   };
   if constexpr (std::is_same_v<T, DataArray>) {
-    return concat(m_data);
+    return conc(m_data);
   } else {
-    return apply_to_items(m_data, [&](auto &&... _) { return concat(_...); });
+    return apply_to_items(m_data, [&](auto &&... _) { return conc(_...); });
   }
 }
 
@@ -192,6 +207,11 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
 
   // 2. Compute number of slices N contributing to each out slice
   const auto get_scale = [&](const auto &data) {
+    // TODO Supporting binned data requires generalized approach to compute
+    // scale factor.
+    if (is_bins(data))
+      throw except::BinnedDataError(
+          "groupby.mean does not support binned data yet.");
     auto scale = makeVariable<double>(Dims{dim()}, Shape{size()});
     const auto scaleT = scale.template values<double>();
     const auto mask = irreducible_mask(data.masks(), reductionDim);
@@ -331,7 +351,7 @@ GroupBy<T> call_groupby(const T &array, const Variable &key, const Dim &dim) {
 /// Grouping will create a new coordinate for the dimension of the grouping
 /// coord in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArray &array, const Dim dim) {
-  const auto &key = array.coords()[dim];
+  const auto &key = array.meta()[dim];
   return call_groupby(array, key, dim);
 }
 
@@ -342,7 +362,7 @@ GroupBy<DataArray> groupby(const DataArray &array, const Dim dim) {
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<DataArray> groupby(const DataArray &array, const Dim dim,
                            const Variable &bins) {
-  const auto &key = array.coords()[dim];
+  const auto &key = array.meta()[dim];
   return groupby(array, key, bins);
 }
 
@@ -365,7 +385,7 @@ GroupBy<DataArray> groupby(const DataArray &array, const Variable &key,
 /// Grouping will create a new coordinate for the dimension of the grouping
 /// coord in a later apply/combine step.
 GroupBy<Dataset> groupby(const Dataset &dataset, const Dim dim) {
-  const auto &key = dataset.coords()[dim];
+  const auto &key = dataset.meta()[dim];
   return call_groupby(dataset, key, dim);
 }
 
@@ -376,7 +396,7 @@ GroupBy<Dataset> groupby(const Dataset &dataset, const Dim dim) {
 /// new coordinate to the output in a later apply/combine step.
 GroupBy<Dataset> groupby(const Dataset &dataset, const Dim dim,
                          const Variable &bins) {
-  const auto &key = dataset.coords()[dim];
+  const auto &key = dataset.meta()[dim];
   return groupby(dataset, key, bins);
 }
 
@@ -403,7 +423,7 @@ template class GroupBy<Dataset>;
 constexpr auto slice_by_value = [](const auto &x, const Dim dim,
                                    const auto &key) {
   const auto size = x.dims()[dim];
-  const auto &coord = x.coords()[dim];
+  const auto &coord = x.meta()[dim];
   for (scipp::index i = 0; i < size; ++i)
     if (coord.slice({dim, i}) == key)
       return x.slice({dim, i});

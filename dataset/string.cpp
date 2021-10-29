@@ -26,7 +26,7 @@ constexpr const char *tab = "  ";
 template <class T> auto sorted(const T &map) {
   using core::to_string;
   std::vector<std::pair<std::string, Variable>> elems;
-  for (const auto [dim, var] : map)
+  for (const auto &[dim, var] : map)
     elems.emplace_back(to_string(dim), var);
   std::sort(elems.begin(), elems.end(),
             [](const auto &a, const auto &b) { return a.first < b.first; });

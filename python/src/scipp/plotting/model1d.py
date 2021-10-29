@@ -6,6 +6,7 @@ from .model import PlotModel, DataArrayDict
 from .tools import find_limits
 from .resampling_model import resampling_model
 from .._scipp import core as sc
+from ..core import concat
 
 
 class PlotModel1d(PlotModel):
@@ -16,12 +17,13 @@ class PlotModel1d(PlotModel):
         super().__init__(*args, **kwargs)
         self._resolution = resolution
         for name, array in self.data_arrays.items():
-            if array.bins is not None:
+            if array.bins is not None and self._resolution is None:
                 self._resolution = 200
             self.dims = array.dims[-1:]
 
     def _make_1d_resampling_model(self, array):
         model = resampling_model(array)
+        model.mode = self.mode
         if self.resolution is not None:
             model.resolution[self.dims[0]] = self.resolution
             model.bounds[self.dims[0]] = None
@@ -47,6 +49,16 @@ class PlotModel1d(PlotModel):
                 slices[dim] = (s.start, s.stop)
         model.bounds.update(slices)
         return model.data
+
+    @property
+    def is_resampling(self):
+        # Two relevant cases where ndim != 1 leads to resampling:
+        # - Profile plot of higher-dimensional data.
+        # - projection='1d', with non-trivial thickness (set via slider).
+        # In the latter case there is strictly speaking no resampling if thickness is 1
+        # but in that case sum==mean and we avoid hiding/showing the toolbar button
+        # depending on selected thickness.
+        return self._resolution is not None or len(self.data_arrays.dims) != 1
 
     @property
     def resolution(self):
@@ -80,7 +92,6 @@ class PlotModel1d(PlotModel):
         """
         Get the min and max values of the currently displayed slice.
         """
-        from functools import reduce, partial
         if self.dslice is not None:
             low = [
                 find_limits(array.data, scale=scale)[scale][0]
@@ -90,9 +101,6 @@ class PlotModel1d(PlotModel):
                 find_limits(array.data, scale=scale)[scale][1]
                 for array in self.dslice.values()
             ]
-            return [
-                sc.min(reduce(partial(sc.concatenate, dim='dummy'), low)),
-                sc.max(reduce(partial(sc.concatenate, dim='dummy'), high))
-            ]
+            return [sc.min(concat(low, dim='dummy')), sc.max(concat(high, dim='dummy'))]
         else:
             return [None, None]

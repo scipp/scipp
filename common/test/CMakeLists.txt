@@ -5,7 +5,7 @@
 set(TARGET_NAME "scipp-common-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
-  ${TARGET_NAME} EXCLUDE_FROM_ALL index_test.cpp islinspace_test.cpp
+  ${TARGET_NAME} index_test.cpp islinspace_test.cpp numeric_test.cpp
 )
 target_link_libraries(
   ${TARGET_NAME} LINK_PRIVATE scipp-common scipp_test_helpers GTest::GTest
@@ -13,6 +13,9 @@ target_link_libraries(
 set_property(
   TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION
                                  ${INTERPROCEDURAL_OPTIMIZATION_TESTS}
+)
+set_property(
+  TARGET ${TARGET_NAME} PROPERTY EXCLUDE_FROM_ALL $<NOT:$<BOOL:${FULL_BUILD}>>
 )
 add_sanitizers(${TARGET_NAME})
 if(${WITH_CTEST})

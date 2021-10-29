@@ -5,11 +5,13 @@
 set(TARGET_NAME "scipp-variable-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
-  ${TARGET_NAME} EXCLUDE_FROM_ALL
+  ${TARGET_NAME}
   accumulate_test.cpp
+  astype_test.cpp
   bin_array_model_test.cpp
   bin_util_test.cpp
   comparison_test.cpp
+  concat_test.cpp
   copy_test.cpp
   creation_test.cpp
   cumulative_test.cpp
@@ -28,6 +30,10 @@ add_executable(
   test_variables.cpp
   to_unit_test.cpp
   transform_test.cpp
+  transform_binary_test.cpp
+  transform_test_helpers.h
+  transform_test_helpers.cpp
+  transform_unary_test.cpp
   trigonometry_test.cpp
   util_test.cpp
   variable_bin_test.cpp
@@ -49,6 +55,9 @@ endif()
 set_property(
   TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION
                                  ${INTERPROCEDURAL_OPTIMIZATION_TESTS}
+)
+set_property(
+  TARGET ${TARGET_NAME} PROPERTY EXCLUDE_FROM_ALL $<NOT:$<BOOL:${FULL_BUILD}>>
 )
 add_sanitizers(${TARGET_NAME})
 if(${WITH_CTEST})

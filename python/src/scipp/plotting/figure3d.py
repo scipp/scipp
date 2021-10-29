@@ -116,7 +116,7 @@ class PlotFigure3d:
         """
         return
 
-    def connect(self, controller, event_handler):
+    def connect(self, controller):
         """
         Connect the toolbar Home button to reset the camera position.
         """
@@ -370,6 +370,8 @@ void main() {
                          cmap=self.scalar_map.get_cmap(),
                          norm=self.scalar_map.norm,
                          extend=self.extend)
+        if not isinstance(self.scalar_map.norm, LogNorm):
+            _.formatter.set_useOffset(False)
         cbar_ax.set_ylabel(self._unit)
         # TODO If we set this position it is clipped somewhere. For now we
         # leave the default, which places unit to the right of the colorbar.

@@ -19,14 +19,17 @@ namespace scipp::core {
 /// dimension is inner dimension.
 class SCIPP_CORE_EXPORT Dimensions : public Sizes {
 public:
-  constexpr Dimensions() noexcept {}
+  constexpr Dimensions() noexcept = default;
   Dimensions(const Dim dim, const scipp::index size)
       : Dimensions({{dim, size}}) {}
-  Dimensions(const std::vector<Dim> &labels,
-             const std::vector<scipp::index> &shape);
+  Dimensions(std::span<const Dim> labels, std::span<const scipp::index> shape);
+  Dimensions(const std::initializer_list<Dim> labels,
+             const std::initializer_list<scipp::index> shape)
+      : Dimensions({labels.begin(), labels.end()},
+                   {shape.begin(), shape.end()}) {}
   Dimensions(const std::initializer_list<std::pair<Dim, scipp::index>> dims) {
-    for (const auto &[label, size] : dims)
-      addInner(label, size);
+    for (const auto &[dim, len] : dims)
+      addInner(dim, len);
   }
 
   constexpr bool operator==(const Dimensions &other) const noexcept {
@@ -45,12 +48,13 @@ public:
   }
 
   /// Return the shape of the space defined by *this.
-  constexpr scipp::span<const scipp::index> shape() const &noexcept {
+  [[nodiscard]] constexpr std::span<const scipp::index>
+  shape() const &noexcept {
     return sizes();
   }
 
   /// Return the volume of the space defined by *this.
-  constexpr scipp::index volume() const noexcept {
+  [[nodiscard]] constexpr scipp::index volume() const noexcept {
     scipp::index volume{1};
     for (const auto &length : shape())
       volume *= length;
@@ -58,13 +62,15 @@ public:
   }
 
   /// Return number of dims
-  constexpr scipp::index ndim() const noexcept { return Sizes::size(); }
+  [[nodiscard]] constexpr scipp::index ndim() const noexcept {
+    return Sizes::size();
+  }
 
-  Dim inner() const noexcept;
+  [[nodiscard]] Dim inner() const noexcept;
 
-  Dim label(const scipp::index i) const;
-  scipp::index size(const scipp::index i) const;
-  scipp::index offset(const Dim label) const;
+  [[nodiscard]] Dim label(const scipp::index i) const;
+  [[nodiscard]] scipp::index size(const scipp::index i) const;
+  [[nodiscard]] scipp::index offset(const Dim label) const;
 
   // TODO Better names required.
   void add(const Dim label, const scipp::index size);
@@ -89,7 +95,7 @@ Dimensions merge(const Dimensions &a, const Dimensions &b,
                                                         const Dimensions &b);
 
 [[nodiscard]] SCIPP_CORE_EXPORT Dimensions
-transpose(const Dimensions &dims, const std::vector<Dim> &labels = {});
+transpose(const Dimensions &dims, std::span<const Dim> labels = {});
 
 [[nodiscard]] SCIPP_CORE_EXPORT Dimensions fold(const Dimensions &old_dims,
                                                 const Dim from_dim,

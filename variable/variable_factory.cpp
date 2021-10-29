@@ -62,6 +62,10 @@ void VariableFactory::set_elem_unit(Variable &var, const units::Unit &u) const {
   m_makers.at(var.dtype())->set_elem_unit(var, u);
 }
 
+bool VariableFactory::has_masks(const Variable &var) const {
+  return m_makers.at(var.dtype())->has_masks(var);
+}
+
 bool VariableFactory::hasVariances(const Variable &var) const {
   return m_makers.at(var.dtype())->hasVariances(var);
 }

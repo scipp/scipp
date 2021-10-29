@@ -73,6 +73,12 @@ const Dimensions &Variable::dims() const {
   return m_dims;
 }
 
+scipp::index Variable::ndim() const {
+  if (!is_valid())
+    throw std::runtime_error("invalid variable");
+  return m_dims.ndim();
+}
+
 DType Variable::dtype() const { return data().dtype(); }
 
 bool Variable::hasVariances() const { return data().hasVariances(); }
@@ -89,6 +95,11 @@ void Variable::setUnit(const units::Unit &unit) {
   expectWritable();
   expectCanSetUnit(unit);
   m_object->setUnit(unit);
+}
+
+Dim Variable::dim() const {
+  core::expect::ndim_is(dims(), 1);
+  return dims().inner();
 }
 
 bool Variable::operator==(const Variable &other) const {
@@ -123,14 +134,18 @@ VariableConcept &Variable::data() & {
 
 const VariableConceptHandle &Variable::data_handle() const { return m_object; }
 
-scipp::span<const scipp::index> Variable::strides() const {
-  return scipp::span<const scipp::index>(&*m_strides.begin(),
-                                         &*m_strides.begin() + dims().ndim());
+std::span<const scipp::index> Variable::strides() const {
+  return std::span<const scipp::index>(&*m_strides.begin(),
+                                       &*m_strides.begin() + dims().ndim());
+}
+
+scipp::index Variable::stride(const Dim dim) const {
+  return m_strides[dims().index(dim)];
 }
 
 scipp::index Variable::offset() const { return m_offset; }
 
-core::ElementArrayViewParams Variable::array_params() const noexcept {
+core::ElementArrayViewParams Variable::array_params() const {
   return {m_offset, dims(), m_strides, {}};
 }
 
@@ -209,7 +224,7 @@ Variable Variable::fold(const Dim dim, const Dimensions &target) const {
   return out;
 }
 
-Variable Variable::transpose(const std::vector<Dim> &order) const {
+Variable Variable::transpose(const std::span<const Dim> order) const {
   auto transposed(*this);
   transposed.m_strides = core::transpose(m_strides, dims(), order);
   transposed.m_dims = core::transpose(dims(), order);
@@ -253,11 +268,6 @@ void throw_keyword_arg_constructor_bad_dtype(const DType dtype) {
                           to_string(dtype) +
                           " with such values and/or variances.");
 }
-
-void expect0D(const Dimensions &dims) {
-  core::expect::equals(dims, Dimensions());
-}
-
 } // namespace detail
 
 Variable Variable::bin_indices() const {

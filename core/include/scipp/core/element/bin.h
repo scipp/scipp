@@ -21,7 +21,7 @@ namespace scipp::core::element {
 
 template <class Index, class Coord, class Edges = Coord>
 using update_indices_by_binning_arg =
-    std::tuple<Index, Coord, scipp::span<const Edges>>;
+    std::tuple<Index, Coord, std::span<const Edges>>;
 
 static constexpr auto update_indices_by_binning = overloaded{
     element::arg_list<update_indices_by_binning_arg<int64_t, double>,
@@ -38,6 +38,8 @@ static constexpr auto update_indices_by_binning = overloaded{
                       update_indices_by_binning_arg<int32_t, int64_t, double>,
                       update_indices_by_binning_arg<int64_t, int32_t, double>,
                       update_indices_by_binning_arg<int32_t, int32_t, double>,
+                      update_indices_by_binning_arg<int64_t, float, double>,
+                      update_indices_by_binning_arg<int32_t, float, double>,
                       update_indices_by_binning_arg<int64_t, int32_t, int64_t>,
                       update_indices_by_binning_arg<int32_t, int32_t, int64_t>>,
     [](units::Unit &indices, const units::Unit &coord,
@@ -75,10 +77,10 @@ static constexpr auto update_indices_by_binning_sorted_edges =
 
 template <class Index>
 static constexpr auto groups_to_map = overloaded{
-    element::arg_list<span<const double>, span<const float>,
-                      span<const int64_t>, span<const int32_t>,
-                      span<const bool>, span<const std::string>,
-                      span<const time_point>>,
+    element::arg_list<std::span<const double>, std::span<const float>,
+                      std::span<const int64_t>, std::span<const int32_t>,
+                      std::span<const bool>, std::span<const std::string>,
+                      std::span<const time_point>>,
     transform_flags::expect_no_variance_arg<0>,
     [](const units::Unit &u) { return u; },
     [](const auto &groups) {
@@ -140,8 +142,8 @@ static constexpr auto update_indices_from_existing = overloaded{
 // - `offsets` Start indices of the output bins
 // - `bin_indices` Target output bin index (within input bin)
 template <class T, class Index>
-using bin_arg =
-    std::tuple<span<T>, SubbinSizes, span<const T>, span<const Index>>;
+using bin_arg = std::tuple<std::span<T>, SubbinSizes, std::span<const T>,
+                           std::span<const Index>>;
 static constexpr auto bin = overloaded{
     element::arg_list<
         bin_arg<double, int64_t>, bin_arg<double, int32_t>,
@@ -175,8 +177,8 @@ static constexpr auto bin = overloaded{
 
 static constexpr auto count_indices = overloaded{
     element::arg_list<
-        std::tuple<scipp::span<const int64_t>, scipp::index, scipp::index>,
-        std::tuple<scipp::span<const int32_t>, scipp::index, scipp::index>>,
+        std::tuple<std::span<const int64_t>, scipp::index, scipp::index>,
+        std::tuple<std::span<const int32_t>, scipp::index, scipp::index>>,
     [](const units::Unit &indices, const auto &offset, const auto &nbin) {
       expect::equals(indices, units::one);
       expect::equals(offset, units::one);

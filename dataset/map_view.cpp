@@ -2,8 +2,10 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/dataset/map_view.h"
+#include <algorithm>
+
 #include "scipp/dataset/except.h"
+#include "scipp/dataset/map_view.h"
 
 namespace scipp::dataset {
 
@@ -27,7 +29,8 @@ Dict<Key, Value>::Dict(const Sizes &sizes, holder_type items,
     : m_sizes(sizes) {
   for (auto &&[key, value] : items)
     set(key, std::move(value));
-  m_readonly = readonly;
+  // `set` requires Dict to be writable, set readonly flag at the end.
+  m_readonly = readonly; // NOLINT(cppcoreguidelines-prefer-member-initializer)
 }
 
 template <class Key, class Value>
@@ -35,7 +38,7 @@ Dict<Key, Value>::Dict(const Dict &other)
     : Dict(other.m_sizes, other.m_items, false) {}
 
 template <class Key, class Value>
-Dict<Key, Value>::Dict(Dict &&other)
+Dict<Key, Value>::Dict(Dict &&other) noexcept
     : Dict(std::move(other.m_sizes), std::move(other.m_items),
            other.m_readonly) {}
 
@@ -43,16 +46,16 @@ template <class Key, class Value>
 Dict<Key, Value> &Dict<Key, Value>::operator=(const Dict &other) = default;
 
 template <class Key, class Value>
-Dict<Key, Value> &Dict<Key, Value>::operator=(Dict &&other) = default;
+Dict<Key, Value> &Dict<Key, Value>::operator=(Dict &&other) noexcept = default;
 
 template <class Key, class Value>
 bool Dict<Key, Value>::operator==(const Dict &other) const {
   if (size() != other.size())
     return false;
-  for (const auto [name, data] : *this)
-    if (!other.contains(name) || data != other[name])
-      return false;
-  return true;
+  return std::all_of(this->begin(), this->end(), [&other](const auto &item) {
+    const auto &[name, data] = item;
+    return other.contains(name) && data == other[name];
+  });
 }
 
 template <class Key, class Value>
@@ -96,6 +99,33 @@ template <class Key, class Value> Value Dict<Key, Value>::at(const Key &key) {
   return std::as_const(*this).at(key);
 }
 
+/// Return the dimension for given coord.
+/// @param key Key of the coordinate in a coord dict
+///
+/// Return the dimension of the coord for 1-D coords or Dim::Invalid for 0-D
+/// coords. In the special case of multi-dimension coords the following applies,
+/// in this order:
+/// - For bin-edge coords return the dimension in which the coord dimension
+///   exceeds the data dimensions.
+/// - Else, for dimension coords (key matching a dimension), return the key.
+/// - Else, return Dim::Invalid.
+template <class Key, class Value>
+Dim Dict<Key, Value>::dim_of(const Key &key) const {
+  const auto &var = at(key);
+  if (var.dims().ndim() == 0)
+    return Dim::Invalid;
+  if (var.dims().ndim() == 1)
+    return var.dims().inner();
+  if constexpr (std::is_same_v<Key, Dim>) {
+    for (const auto &dim : var.dims())
+      if (is_edges(sizes(), var.dims(), dim))
+        return dim;
+    if (var.dims().contains(key))
+      return key; // dimension coord
+  }
+  return Dim::Invalid;
+}
+
 template <class Key, class Value>
 void Dict<Key, Value>::setSizes(const Sizes &sizes) {
   scipp::expect::includes(sizes, m_sizes);
@@ -125,8 +155,17 @@ void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
   expectWritable(*this);
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
-  if (!m_sizes.includes(coord.dims()) &&
-      !is_edges(m_sizes, coord.dims(), dim_of_coord(coord, key)))
+  auto dims = coord.dims();
+  for (const auto &dim : coord.dims()) {
+    if (!sizes().contains(dim) && dims[dim] == 2) { // bin edge along extra dim
+      dims.erase(dim);
+      break;
+    } else if (dims[dim] == sizes()[dim] + 1) {
+      dims.resize(dim, sizes()[dim]);
+      break;
+    }
+  }
+  if (!m_sizes.includes(dims))
     throw except::DimensionError("Cannot add coord exceeding DataArray dims");
   m_items.insert_or_assign(key, std::move(coord));
 }
@@ -161,13 +200,13 @@ Dict<Key, Value> Dict<Key, Value>::slice(const Slice &params) const {
 }
 
 namespace {
-constexpr auto unaligned_by_dim_slice = [](const auto &item,
+constexpr auto unaligned_by_dim_slice = [](const auto &coords, const auto &item,
                                            const Slice &params) {
   if (params == Slice{} || params.end() != -1)
     return false;
   const Dim dim = params.dim();
   const auto &[key, var] = item;
-  return var.dims().contains(dim) && dim_of_coord(var, key) == dim;
+  return var.dims().contains(dim) && coords.dim_of(key) == dim;
 };
 }
 
@@ -178,7 +217,7 @@ Dict<Key, Value>::slice_coords(const Slice &params) const {
   coords.m_readonly = false;
   Dict<Key, Value> attrs(coords.sizes(), {});
   for (auto &coord : *this)
-    if (unaligned_by_dim_slice(coord, params))
+    if (unaligned_by_dim_slice(*this, coord, params))
       attrs.set(coord.first, coords.extract(coord.first));
   coords.m_readonly = true;
   return {std::move(coords), std::move(attrs)};
@@ -226,6 +265,12 @@ void Dict<Key, Value>::rename(const Dim from, const Dim to) {
       item.second.rename(from, to);
 }
 
+/// Mark the dict as readonly. Does not imply that items are readonly.
+template <class Key, class Value>
+void Dict<Key, Value>::set_readonly() noexcept {
+  m_readonly = true;
+}
+
 /// Return true if the dict is readonly. Does not imply that items are readonly.
 template <class Key, class Value>
 bool Dict<Key, Value>::is_readonly() const noexcept {
@@ -266,9 +311,8 @@ template <class Key, class Value>
 bool Dict<Key, Value>::item_applies_to(const Key &key,
                                        const Dimensions &dims) const {
   const auto &val = m_items.at(key);
-  return dims.includes(val.dims()) ||
-         (!sizes().includes(val.dims()) &&
-          is_edges(Sizes(dims), val.dims(), dim_of_coord(val, key)));
+  return std::all_of(val.dims().begin(), val.dims().end(),
+                     [&dims](const Dim dim) { return dims.contains(dim); });
 }
 
 template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;

@@ -110,15 +110,6 @@ void equals(const A &a, const B &b, std::string optional_message = "") {
     scipp::except::throw_mismatch_error(a, b, optional_message);
 }
 
-template <class A, class B>
-void equals_any_of(const A &a, const std::initializer_list<B> possible) {
-  if (std::find(possible.begin(), possible.end(), a) == possible.end())
-    scipp::except::throw_mismatch_error(a, possible);
-}
-
-SCIPP_CORE_EXPORT void dimensionMatches(const Dimensions &dims, const Dim dim,
-                                        const scipp::index length);
-
 template <class T, class... Ts>
 void sizeMatches(const T &range, const Ts &... other) {
   if (((scipp::size(range) != scipp::size(other)) || ...))
@@ -133,21 +124,11 @@ void unit(const T &object, const units::Unit &unit,
   expect::equals(object.unit(), unit, optional_message);
 }
 
-template <class T>
-void unit_any_of(const T &object, std::initializer_list<units::Unit> units) {
-  expect::equals_any_of(object.unit(), units);
-}
-
-template <class T> void countsOrCountsDensity(const T &object) {
-  if (!object.unit().isCounts() && !object.unit().isCountDensity())
-    throw except::UnitError("Expected counts or counts-density, got " +
-                            object.unit().name() + '.');
-}
+void SCIPP_CORE_EXPORT ndim_is(const Dimensions &dims, scipp::index expected);
 
 // TODO maybe just provide a `slice` function/method and check via that?
 void SCIPP_CORE_EXPORT validSlice(const Sizes &sizes, const Slice &slice);
 
-void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);
 template <class T> void canHaveVariances() {

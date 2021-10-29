@@ -9,6 +9,7 @@
 #include "scipp/variable/astype.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
@@ -62,7 +63,7 @@ struct MakeVariableWithType {
 };
 
 Variable astype(const Variable &var, DType type, const CopyPolicy copy) {
-  return type == var.dtype()
+  return type == variableFactory().elem_dtype(var)
              ? (copy == CopyPolicy::TryAvoid ? var : variable::copy(var))
              : MakeVariableWithType::make(var, type);
 }

@@ -6,7 +6,7 @@
 
 namespace scipp::core {
 
-Strides::Strides(const scipp::span<const scipp::index> &strides) {
+Strides::Strides(const std::span<const scipp::index> &strides) {
   scipp::index i = 0;
   for (const auto &stride : strides)
     m_strides.at(i++) = stride;
@@ -38,11 +38,11 @@ void Strides::erase(const scipp::index i) {
 }
 
 Strides transpose(const Strides &strides, Dimensions from,
-                  const span<const Dim> order) {
+                  const std::span<const Dim> order) {
   scipp::index i = 0;
   for (const auto &dim : from)
     from.resize(dim, strides[i++]);
-  from = core::transpose(from, std::vector<Dim>{order.begin(), order.end()});
+  from = core::transpose(from, order);
   return Strides(from.shape());
 }
 

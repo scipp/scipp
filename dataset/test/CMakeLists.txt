@@ -5,12 +5,13 @@
 set(TARGET_NAME "scipp-dataset-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
-  ${TARGET_NAME} EXCLUDE_FROM_ALL
+  ${TARGET_NAME}
   astype_test.cpp
   attributes_test.cpp
   binned_arithmetic_test.cpp
   binned_creation_test.cpp
   bins_test.cpp
+  bins_view_test.cpp
   bin_test.cpp
   choose_test.cpp
   concatenate_test.cpp
@@ -59,6 +60,9 @@ endif()
 set_property(
   TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION
                                  ${INTERPROCEDURAL_OPTIMIZATION_TESTS}
+)
+set_property(
+  TARGET ${TARGET_NAME} PROPERTY EXCLUDE_FROM_ALL $<NOT:$<BOOL:${FULL_BUILD}>>
 )
 add_sanitizers(${TARGET_NAME})
 if(${WITH_CTEST})

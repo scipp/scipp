@@ -41,7 +41,7 @@ template <class T> void init_variances(T &obj) {
 
 /// Add element size as factor to strides.
 template <class T>
-std::vector<ssize_t> numpy_strides(const scipp::span<const scipp::index> &s) {
+std::vector<ssize_t> numpy_strides(const std::span<const scipp::index> &s) {
   std::vector<ssize_t> strides(s.size());
   for (size_t i = 0; i < strides.size(); ++i) {
     strides[i] = sizeof(T) * s[i];
@@ -90,7 +90,8 @@ class DataAccessHelper {
                     get_data_variable_concept_handle(view)};
       py::detail::array_proxy(array.ptr())->flags &=
           ~py::detail::npy_api::NPY_ARRAY_WRITEABLE_;
-      return std::move(array); // no automatic move because of type mismatch
+      // no automatic move because of type mismatch
+      return py::object{std::move(array)};
     } else {
       return py::array{get_dtype(), dims.shape(),
                        numpy_strides<T>(var.strides()),
@@ -413,6 +414,14 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       "Dimension labels of the data (read-only).",
       py::return_value_policy::move);
   c.def_property_readonly(
+      "dim", &T::dim,
+      "The only dimension label for 1-dimensional data, raising an exception "
+      "if the data is not 1-dimensional.");
+  c.def_property_readonly(
+      "ndim", [](const T &self) { return self.ndim(); },
+      "Number of dimensions of the data (read-only).",
+      py::return_value_policy::move);
+  c.def_property_readonly(
       "shape",
       [](const T &self) {
         const auto &dims = self.dims();
@@ -420,7 +429,8 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       },
       "Shape of the data (read-only).", py::return_value_policy::move);
   c.def_property(
-      "unit", [](const T &self) { return self.unit(); }, &T::setUnit,
+      "unit", [](const T &self) { return self.unit(); },
+      [](T &self, const ProtoUnit &unit) { self.setUnit(make_unit(unit)); },
       "Physical unit of the data.");
   c.def_property("values", &as_ElementArrayView::values<T>,
                  &as_ElementArrayView::set_values<T>,

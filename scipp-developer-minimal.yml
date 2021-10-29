@@ -17,10 +17,11 @@ dependencies:
 
   # Run
   - appdirs
+  - ipykernel = 6.3.1  # issue with pythreejs 3d plotting
   - ipympl
   - ipywidgets
   - matplotlib-base
-  - numpy >=1.15.3
+  - numpy>=1.20.0
   - python
   - python-configuration
   - pythreejs
@@ -33,3 +34,4 @@ dependencies:
   - python-graphviz
   - xarray  # For testing xarray <-> scipp conversion
   - pandas  # For testing pandas <-> scipp conversion
+  - scipy>=1.7.0

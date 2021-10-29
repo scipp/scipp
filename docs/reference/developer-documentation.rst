@@ -14,6 +14,7 @@ Developer Documentation
    developer/dependencies
    developer/deployment
    developer/how-to
+   developer/multi_dimensional_indexing
    developer/tooling
    developer/transform
    developer/variable_implementation

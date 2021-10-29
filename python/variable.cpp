@@ -12,8 +12,8 @@
 #include "scipp/core/time_point.h"
 
 #include "scipp/variable/operations.h"
-#include "scipp/variable/rebin.h"
 #include "scipp/variable/structures.h"
+#include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable_factory.h"
 
@@ -91,31 +91,46 @@ of variances.)");
       .def_property_readonly("dtype", &Variable::dtype)
       .def(
           "__radd__", [](Variable &a, double &b) { return a + b * units::one; },
-          py::is_operator())
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
-          "__radd__", [](Variable &a, int &b) { return a + b * units::one; },
-          py::is_operator())
+          "__radd__",
+          [](Variable &a, int64_t &b) { return a + b * units::one; },
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rsub__", [](Variable &a, double &b) { return b * units::one - a; },
-          py::is_operator())
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
-          "__rsub__", [](Variable &a, int &b) { return b * units::one - a; },
-          py::is_operator())
+          "__rsub__",
+          [](Variable &a, int64_t &b) { return b * units::one - a; },
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rmul__",
           [](Variable &a, double &b) { return a * (b * units::one); },
-          py::is_operator())
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
-          "__rmul__", [](Variable &a, int &b) { return a * (b * units::one); },
-          py::is_operator())
+          "__rmul__",
+          [](Variable &a, int64_t &b) { return a * (b * units::one); },
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rtruediv__",
           [](Variable &a, double &b) { return (b * units::one) / a; },
-          py::is_operator())
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rtruediv__",
-          [](Variable &a, int &b) { return (b * units::one) / a; },
-          py::is_operator())
+          [](Variable &a, int64_t &b) { return (b * units::one) / a; },
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
+      .def(
+          "__rpow__",
+          [](Variable &exponent, int64_t &base) {
+            return pow(base * units::one, exponent);
+          },
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
+      .def(
+          "__rpow__",
+          [](Variable &exponent, double &base) {
+            return pow(base * units::one, exponent);
+          },
+          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def("__sizeof__",
            [](const Variable &self) {
              return size_of(self, SizeofTag::ViewOnly);
@@ -150,20 +165,20 @@ of variances.)");
 
   m.def(
       "islinspace",
-      [](const Variable &x) {
-        if (x.dims().ndim() != 1)
+      [](const Variable &x,
+         const std::optional<Dim> dim = std::optional<Dim>()) {
+        if (!dim.has_value() && x.dims().ndim() != 1)
           throw scipp::except::VariableError(
-              "islinspace can only be called on a 1D Variable.");
+              "islinspace can only be called on a 1D Variable, or with a Dim "
+              "as an optional parameter.");
+        else if (dim.has_value())
+          return scipp::variable::islinspace(x, dim.value());
         else
-          return scipp::numeric::islinspace(x.template values<double>());
+          return makeVariable<bool>(
+              Values{scipp::numeric::islinspace(x.template values<double>())});
       },
+      py::arg("x"), py::arg("dim") = py::none(),
       py::call_guard<py::gil_scoped_release>());
-
-  m.def("rebin",
-        py::overload_cast<const Variable &, const Dim, const Variable &,
-                          const Variable &>(&rebin),
-        py::arg("x"), py::arg("dim"), py::arg("old"), py::arg("new"),
-        py::call_guard<py::gil_scoped_release>());
 
   bind_structured_creation<Eigen::Vector3d, double, 3>(m, "vectors");
   bind_structured_creation<Eigen::Matrix3d, double, 3, 3>(m, "matrices");

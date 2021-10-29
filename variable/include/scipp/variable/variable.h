@@ -5,13 +5,13 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "scipp-variable_export.h"
 #include "scipp/common/index.h"
-#include "scipp/common/span.h"
 #include "scipp/units/unit.h"
 
 #include "scipp/core/dimensions.h"
@@ -32,10 +32,6 @@ namespace scipp::variable {
 
 class VariableConcept;
 using VariableConceptHandle = std::shared_ptr<VariableConcept>;
-
-namespace detail {
-SCIPP_VARIABLE_EXPORT void expect0D(const Dimensions &dims);
-} // namespace detail
 
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. In addition it has a unit and a set of dimension
@@ -70,10 +66,13 @@ public:
   void expectCanSetUnit(const units::Unit &) const;
 
   [[nodiscard]] const Dimensions &dims() const;
+  [[nodiscard]] Dim dim() const;
+  [[nodiscard]] scipp::index ndim() const;
 
   [[nodiscard]] DType dtype() const;
 
-  [[nodiscard]] scipp::span<const scipp::index> strides() const;
+  [[nodiscard]] std::span<const scipp::index> strides() const;
+  [[nodiscard]] scipp::index stride(const Dim dim) const;
   [[nodiscard]] scipp::index offset() const;
 
   [[nodiscard]] bool hasVariances() const;
@@ -83,19 +82,19 @@ public:
   template <class T> ElementArrayView<const T> variances() const;
   template <class T> ElementArrayView<T> variances();
   template <class T> const auto &value() const {
-    detail::expect0D(dims());
+    core::expect::ndim_is(dims(), 0);
     return values<T>()[0];
   }
   template <class T> const auto &variance() const {
-    detail::expect0D(dims());
+    core::expect::ndim_is(dims(), 0);
     return variances<T>()[0];
   }
   template <class T> auto &value() {
-    detail::expect0D(dims());
+    core::expect::ndim_is(dims(), 0);
     return values<T>()[0];
   }
   template <class T> auto &variance() {
-    detail::expect0D(dims());
+    core::expect::ndim_is(dims(), 0);
     return variances<T>()[0];
   }
 
@@ -120,7 +119,7 @@ public:
 
   void setVariances(const Variable &v);
 
-  [[nodiscard]] core::ElementArrayViewParams array_params() const noexcept;
+  [[nodiscard]] core::ElementArrayViewParams array_params() const;
 
   [[nodiscard]] Variable bin_indices() const;
   template <class T> const T &bin_buffer() const;
@@ -132,7 +131,7 @@ public:
 
   [[nodiscard]] Variable broadcast(const Dimensions &target) const;
   [[nodiscard]] Variable fold(const Dim dim, const Dimensions &target) const;
-  [[nodiscard]] Variable transpose(const std::vector<Dim> &order) const;
+  [[nodiscard]] Variable transpose(std::span<const Dim> order) const;
 
   [[nodiscard]] bool is_valid() const noexcept;
   [[nodiscard]] bool is_slice() const;
