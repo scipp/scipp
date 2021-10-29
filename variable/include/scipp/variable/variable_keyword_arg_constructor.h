@@ -5,6 +5,7 @@
 #pragma once
 
 #include <type_traits>
+#include <optional>
 
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
