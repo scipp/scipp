@@ -14,10 +14,15 @@ resources:
     name: scipp/pipelines
     type: github
     endpoint: scipp
-    ref: refs/tags/2.0.0
+    ref: fix-windows-debug-build
 
 trigger:
   - main
+  
+schedules:
+  - cron: "0 1 * * *"
+    displayName: 'Nightly debug builds'
+    always: false
 
 pr:
   autoCancel: true
@@ -39,3 +44,7 @@ extends:
       windows:
         py_versions: ['3.7']
         conda_env: 'scipp-developer-minimal.yml'
+      windows-debug:
+        py_versions: ['3.7']
+        conda_env: 'scipp-developer-minimal.yml'
+        build_type: debug
