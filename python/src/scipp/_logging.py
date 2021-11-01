@@ -7,13 +7,16 @@ import logging
 from .utils import running_in_jupyter
 
 
-def get_logger() -> logging.Logger:
-    logger = logging.getLogger('scipp')
-    if get_logger.is_set_up:
-        return logger
-
+def _setup_logger(logger: logging.Logger) -> None:
+    logger.setLevel(logging.INFO)
     if running_in_jupyter():
         install_widget_handler(logger)
+
+
+def get_logger() -> logging.Logger:
+    logger = logging.getLogger('scipp')
+    if not get_logger.is_set_up:
+        _setup_logger(logger)
     return logger
 
 
