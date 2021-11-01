@@ -7,12 +7,6 @@ import logging
 from .utils import running_in_jupyter
 
 
-def _setup_logger(logger: logging.Logger) -> None:
-    logger.setLevel(logging.INFO)
-    if running_in_jupyter():
-        install_widget_handler(logger)
-
-
 def get_logger() -> logging.Logger:
     logger = logging.getLogger('scipp')
     if not get_logger.is_set_up:
@@ -21,6 +15,19 @@ def get_logger() -> logging.Logger:
 
 
 get_logger.is_set_up = False
+
+
+def _setup_logger(logger: logging.Logger) -> None:
+    logger.setLevel(logging.INFO)
+    logger.addHandler(make_stream_handler())
+    if running_in_jupyter():
+        logger.addHandler(make_widget_handler())
+
+
+def make_stream_handler() -> logging.StreamHandler:
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.WARN)
+    return handler
 
 
 class WidgetHandler(logging.Handler):
@@ -52,6 +59,13 @@ def _make_output_widget():
         return Output(layout=layout)
 
 
+def make_widget_handler() -> WidgetHandler:
+    handler = WidgetHandler(level=logging.INFO, widget=_make_output_widget())
+    handler.setFormatter(
+        logging.Formatter('%(asctime)s  - [%(levelname)s] %(message)s'))
+    return handler
+
+
 def get_log_widget():
     logger = get_logger()
     try:
@@ -69,10 +83,3 @@ def display_logs() -> None:
 
 def clear_log_widget() -> None:
     get_log_widget().clear_output()
-
-
-def install_widget_handler(logger: logging.Logger) -> None:
-    handler = WidgetHandler(level=logging.INFO, widget=_make_output_widget())
-    handler.setFormatter(
-        logging.Formatter('%(asctime)s  - [%(levelname)s] %(message)s'))
-    logger.addHandler(handler)
