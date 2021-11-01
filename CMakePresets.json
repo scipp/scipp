@@ -25,7 +25,6 @@
     {
       "name": "coverage",
       "configurePreset": "coverage",
-      "nativeToolOptions": ["-j"],
       "targets": ["coverage"]
     }
   ]
