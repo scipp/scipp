@@ -67,7 +67,7 @@ def display_logs() -> None:
     display(get_log_widget())
 
 
-def clear_logs() -> None:
+def clear_log_widget() -> None:
     get_log_widget().clear_output()
 
 
