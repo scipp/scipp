@@ -27,11 +27,6 @@ endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
-else()
-  add_compile_options(
-    $<$<COMPILE_LANGUAGE:CXX>:/BIGOBJ>
-  )
-endif()
 # Custom install target for docs to depend on.
 add_custom_target(
   install-scipp COMMAND cmake --build ${CMAKE_CURRENT_BINARY_DIR} --target

@@ -166,6 +166,10 @@ if(NOT WIN32)
     $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
     $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
   )
+else()
+  add_compile_options(
+    $<$<COMPILE_LANGUAGE:CXX>:/BIGOBJ>
+  )
 endif()
 
 option(CPPCHECK "Enable running cppcheck during compilation if found." OFF)
