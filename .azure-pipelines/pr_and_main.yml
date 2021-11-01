@@ -18,11 +18,6 @@ resources:
 
 trigger:
   - main
-  
-schedules:
-  - cron: "0 1 * * *"
-    displayName: 'Nightly debug builds'
-    always: false
 
 pr:
   autoCancel: true
