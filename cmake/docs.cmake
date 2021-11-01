@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
+find_package(Python 3.7 REQUIRED COMPONENTS Interpreter)
 function(add_docs_target name)
   set(oneValueArgs BUILDER)
   set(multiValueArgs DEPENDS)
