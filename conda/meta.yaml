@@ -49,13 +49,13 @@ test:
   files:
     - cmake-package-test/
   source_files:
-    - python/tests/
+    - tests/
     - docs/
     - .git/  # Docs build uses git to determine version and release month
   script_env:
     - DOCS_BUILD_DIR
   commands:
-    - python -m pytest -v python
+    - python -m pytest -v tests
     - python cmake-package-test/build.py
     - python docs/build_and_test.py [linux64]
 
