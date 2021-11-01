@@ -168,7 +168,7 @@ if(NOT WIN32)
   )
 else()
   add_compile_options(
-    $<$<COMPILE_LANGUAGE:CXX>:/BIGOBJ>
+    $<$<COMPILE_LANGUAGE:CXX>:/bigobj>
   )
 endif()
 
