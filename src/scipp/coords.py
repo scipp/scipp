@@ -3,7 +3,6 @@
 # @author Simon Heybrock, Jan-Lukas Wynen
 
 import inspect
-import warnings
 from typing import Union, List, Dict, Tuple, Callable
 from .core import DataArray, Dataset, bins, VariableError, identical
 
@@ -14,6 +13,15 @@ def _argnames(func):
         raise ValueError(
             "Function with variable arguments not allowed in conversion graph.")
     return spec.args + spec.kwonlyargs
+
+
+def _make_digraph(*args, **kwargs):
+    try:
+        from graphviz import Digraph
+    except ImportError:
+        raise RuntimeError("Failed to import `graphviz`, please install `graphviz` if "
+                           "using `pip`, or `python-graphviz` if using `conda`.")
+    return Digraph(*args, **kwargs)
 
 
 class Graph:
@@ -33,12 +41,7 @@ class Graph:
         return name in self._graph
 
     def show(self, size=None, simplified=False):
-        try:
-            from graphviz import Digraph
-        except ImportError:
-            warnings.warn("Failed to import `graphviz`, please install `graphviz` if "
-                          "using `pip`, or `python-graphviz` if using `conda`.")
-        dot = Digraph(strict=True)
+        dot = _make_digraph(strict=True)
         dot.attr('node', shape='box', height='0.1')
         dot.attr(size=size)
         for output, producer in self._graph.items():
