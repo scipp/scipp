@@ -503,5 +503,6 @@ tr.sc-log-critical td.sc-log-level {
 .sc-log-name {
   padding-left: 1em;
   padding-right: 0.5em;
+  text-align: right;
   color: var(--sc-font-color3);
 }
