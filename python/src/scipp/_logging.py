@@ -68,14 +68,8 @@ def make_log_widget():
         return LogWidget()
 
 
-def get_log_widget():
-    logger = get_logger()
-    try:
-        return next(
-            filter(lambda handler: isinstance(handler, WidgetHandler),
-                   logger.handlers)).widget
-    except StopIteration:
-        raise ValueError("The logger has no widget handler.") from None
+def get_log_widget() -> 'LogWidget':
+    return get_widget_handler().widget
 
 
 def display_logs() -> None:
@@ -102,3 +96,15 @@ class WidgetHandler(logging.Handler):
 def make_widget_handler() -> WidgetHandler:
     handler = WidgetHandler(level=logging.INFO, widget=make_log_widget())
     return handler
+
+
+def get_widget_handler() -> WidgetHandler:
+    """
+    Only the first!
+    """
+    try:
+        return next(  # type: ignore
+            filter(lambda handler: isinstance(handler, WidgetHandler),
+                   get_logger().handlers))
+    except StopIteration:
+        raise ValueError("The logger has no widget handler.") from None
