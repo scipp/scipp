@@ -321,6 +321,7 @@ def show_graph(graph, size: str = None, simplified: bool = False):
 
     Requires `python-graphviz` package.
 
+    :param graph: Transformation graph to show.
     :param size: Size forwarded to graphviz, must be a string, "width,height"
                  or "size". In the latter case, the same value is used for
                  both width and height.
