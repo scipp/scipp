@@ -3,10 +3,13 @@
 # @author Simon Heybrock, Jan-Lukas Wynen
 
 import inspect
-from typing import Union, List, Dict, Tuple, Callable
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
-from .core import DataArray, Dataset, bins, VariableError, identical
+from .core import DataArray, Dataset, VariableError, Variable, bins, identical
 from .logging import get_logger
+
+_OptionalCoordTuple = Tuple[Optional[Variable], Optional[Variable]]
+GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 
 
 def _argnames(func):
@@ -62,7 +65,8 @@ class Graph:
         return dot
 
 
-def _move_between_member_dicts(obj, name, src_name, dst_name):
+def _move_between_member_dicts(obj, name: str, src_name: str,
+                               dst_name: str) -> Optional[Variable]:
     src = getattr(obj, src_name)
     dst = getattr(obj, dst_name)
     if name in src:
@@ -70,21 +74,22 @@ def _move_between_member_dicts(obj, name, src_name, dst_name):
     return dst.get(name, None)
 
 
-def _move_between_coord_and_attr(obj, name, src_name, dst_name):
+def _move_between_coord_and_attr(obj, name: str, src_name: str,
+                                 dst_name: str) -> _OptionalCoordTuple:
     return (_move_between_member_dicts(obj, name, src_name, dst_name),
             _move_between_member_dicts(obj.bins, name, src_name, dst_name)
             if obj.bins is not None else None)
 
 
-def _consume_coord(obj, name):
+def _consume_coord(obj, name: str) -> _OptionalCoordTuple:
     return _move_between_coord_and_attr(obj, name, 'coords', 'attrs')
 
 
-def _produce_coord(obj, name):
+def _produce_coord(obj, name: str) -> _OptionalCoordTuple:
     return _move_between_coord_and_attr(obj, name, 'attrs', 'coords')
 
 
-def _store_event_coord(obj, name, coord):
+def _store_event_coord(obj, name: str, coord: Variable) -> None:
     try:
         obj.bins.coords[name] = coord
     except VariableError:  # Thrown on mismatching bin indices, e.g. slice
@@ -94,7 +99,7 @@ def _store_event_coord(obj, name, coord):
         del obj.bins.attrs[name]
 
 
-def _store_coord(obj, name, coord):
+def _store_coord(obj, name: str, coord: _OptionalCoordTuple) -> None:
     dense_coord, event_coord = coord
     if dense_coord is not None:
         obj.coords[name] = dense_coord
@@ -107,7 +112,8 @@ def _store_coord(obj, name, coord):
         _store_event_coord(obj, name, event_coord)
 
 
-def _call_function(func, args, out_name):
+def _call_function(func: Callable[..., Union[Variable, Dict[str, Variable]]],
+                   args: Dict[str, Variable], out_name: str) -> Dict[str, Variable]:
     get_logger().info('Computing %s = %s(%s)', out_name, func.__name__,
                       ', '.join(args.keys()))
     out = func(**args)
@@ -117,9 +123,7 @@ def _call_function(func, args, out_name):
 
 
 class CoordTransform:
-    Graph = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
-
-    def __init__(self, obj, *, graph, outputs):
+    def __init__(self, obj: DataArray, *, graph: Graph, outputs: Tuple[str]):
         self.obj = obj.copy(deep=False)
         # TODO We manually shallow-copy the buffer, until we have a better
         # solution for how shallow copies also shallow-copy event buffers.
@@ -127,14 +131,14 @@ class CoordTransform:
             self.obj.data = bins(**self.obj.bins.constituents)
         self._original = obj
         self._events_copied = False
-        self._rename = {}
-        self._memo = []  # names of product for cycle detection
-        self._aliases = []  # names that alias other names
-        self._consumed = []  # names that have been consumed
-        self._outputs = outputs  # names of outputs
+        self._rename: Dict[Tuple[str], List[str]] = {}
+        self._memo: List[str] = []  # names of product for cycle detection
+        self._aliases: List[str] = []  # names that alias other names
+        self._consumed: List[str] = []  # names that have been consumed
+        self._outputs: Tuple[str] = outputs  # names of outputs
         self._graph = graph
 
-    def _add_coord(self, *, name):
+    def _add_coord(self, *, name: str):
         if self._exists(name):
             return _produce_coord(self.obj, name)
         if isinstance(self._graph[name], str):
@@ -177,15 +181,15 @@ class CoordTransform:
         for key, coord in out.items():
             _store_coord(self.obj, key, coord)
 
-    def _exists(self, name):
+    def _exists(self, name: str):
         in_events = self.obj.bins is not None and name in self.obj.bins.meta
         return name in self.obj.meta or in_events
 
-    def _get_existing(self, name):
+    def _get_existing(self, name: str):
         events = None if self.obj.bins is None else self.obj.bins.meta[name]
         return self.obj.meta.get(name, None), events
 
-    def _get_coord(self, name):
+    def _get_coord(self, name: str):
         if self._exists(name):
             self._consumed.append(name)
             if name in self._outputs:
@@ -199,17 +203,18 @@ class CoordTransform:
             self._add_coord(name=name)
             return self._get_coord(name)
 
-    def _del_attr(self, name):
+    def _del_attr(self, name: str):
         self.obj.attrs.pop(name, None)
         if self.obj.bins is not None:
             self.obj.bins.attrs.pop(name, None)
 
-    def _del_coord(self, name):
+    def _del_coord(self, name: str):
         self.obj.coords.pop(name, None)
         if self.obj.bins is not None:
             self.obj.bins.coords.pop(name, None)
 
-    def finalize(self, *, include_aliases, rename_dims, keep_intermediate, keep_inputs):
+    def finalize(self, *, include_aliases: bool, rename_dims: bool,
+                 keep_intermediate: bool, keep_inputs: bool):
         for name in self._outputs:
             self._add_coord(name=name)
         if not include_aliases:
@@ -238,7 +243,7 @@ class CoordTransform:
         return self.obj
 
 
-def _get_splitting_nodes(graph):
+def _get_splitting_nodes(graph: Dict[Tuple[str], List[str]]) -> List[str]:
     nodes = {}
     for key in graph:
         for start in key:
@@ -246,14 +251,17 @@ def _get_splitting_nodes(graph):
     return [node for node in nodes if nodes[node] > 1]
 
 
-def _transform_data_array(obj: DataArray, coords, graph: dict, *, kwargs) -> DataArray:
-    transform = CoordTransform(obj,
-                               graph=Graph(graph),
-                               outputs=[coords] if isinstance(coords, str) else coords)
+def _transform_data_array(obj: DataArray, coords: Sequence[str], graph: GraphDict, *,
+                          kwargs) -> DataArray:
+    transform = CoordTransform(
+        obj,
+        graph=Graph(graph),
+        outputs=(coords, ) if isinstance(coords, str) else tuple(coords))
     return transform.finalize(**kwargs)
 
 
-def _transform_dataset(obj: Dataset, coords, graph: dict, *, kwargs) -> Dataset:
+def _transform_dataset(obj: Dataset, coords: Sequence[str], graph: GraphDict, *,
+                       kwargs) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord
     # transform is repeated for every item rather than sharing what is
     # possible. Implementing this would be tricky and likely error-prone,
@@ -270,7 +278,7 @@ def _transform_dataset(obj: Dataset, coords, graph: dict, *, kwargs) -> Dataset:
 
 def transform_coords(x: Union[DataArray, Dataset],
                      coords: Union[str, List[str]],
-                     graph: CoordTransform.Graph,
+                     graph: GraphDict,
                      *,
                      rename_dims=True,
                      include_aliases=True,
@@ -314,7 +322,7 @@ def transform_coords(x: Union[DataArray, Dataset],
         return _transform_dataset(x, coords=coords, graph=graph, kwargs=kwargs)
 
 
-def show_graph(graph, size: str = None, simplified: bool = False):
+def show_graph(graph: GraphDict, size: str = None, simplified: bool = False):
     """
     Show graphical representation of a graph as required by
     :py:func:`transform_coords`
