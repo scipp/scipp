@@ -458,6 +458,11 @@ div.sc-log {
 
 .sc-log table {
   table-layout: auto;
+  border-collapse: collapse;
+}
+
+.sc-log tr:nth-child(even) {
+  background-color: var(--sc-background-color0);
 }
 
 .sc-log td {
