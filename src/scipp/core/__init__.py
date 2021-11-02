@@ -5,8 +5,13 @@
 # flake8: noqa
 from .._scipp import _debug_
 if _debug_:
-    from ..logging import get_logger
-    get_logger().warning(
+    import warnings
+
+    def custom_formatwarning(msg, *args, **kwargs):
+        return str(msg) + '\n'
+
+    warnings.formatwarning = custom_formatwarning
+    warnings.warn(
         'You are running a "Debug" build of scipp. For optimal performance use a "Release" build.'
     )
 
