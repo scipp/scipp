@@ -14,6 +14,7 @@ def get_logger() -> logging.Logger:
     logger = logging.getLogger('scipp')
     if not get_logger.is_set_up:
         _setup_logger(logger)
+        get_logger.is_set_up = True
     return logger
 
 
