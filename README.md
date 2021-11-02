@@ -1,5 +1,5 @@
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
-[![Build Status](https://dev.azure.com/scipp/scipp/_apis/build/status/main?branchName=main)](https://dev.azure.com/scipp/scipp/_build?definitionId=77)
+[![Build Status](https://dev.azure.com/scipp/scipp/_apis/build/status/main?branchName=main)](https://dev.azure.com/scipp/scipp/_build?definitionId=78)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4019/badge)](https://bestpractices.coreinfrastructure.org/projects/4019)
 [![Anaconda-Server Badge](https://anaconda.org/scipp/scipp/badges/installer/conda.svg)](https://conda.anaconda.org/scipp/label/dev)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/scipp/scipp/main?filepath=docs%2Fgetting-started%2Fquick-start.ipynb)
