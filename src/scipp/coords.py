@@ -12,7 +12,7 @@ _OptionalCoordTuple = Tuple[Optional[Variable], Optional[Variable]]
 GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 
 
-def _argnames(func):
+def _argnames(func) -> List[str]:
     spec = inspect.getfullargspec(func)
     if spec.varargs is not None or spec.varkw is not None:
         raise ValueError(
@@ -59,8 +59,7 @@ class Graph:
                     dot.edge(name, output)
                 else:
                     name = output
-                argnames = _argnames(producer)
-                for arg in argnames:
+                for arg in _argnames(producer):
                     dot.edge(arg, name)
         return dot
 
@@ -142,44 +141,51 @@ class CoordTransform:
         if self._exists(name):
             return _produce_coord(self.obj, name)
         if isinstance(self._graph[name], str):
-            self._aliases.append(name)
-            out = {name: self._get_coord(self._graph[name])}
-            dim = (self._graph[name], )
+            out, dim = self._rename_coord(name)
         else:
-            func = self._graph[name]
-            argnames = _argnames(func)
-            args = {arg: self._get_coord(arg) for arg in argnames}
-            have_all_dense_inputs = all([v[0] is not None for v in args.values()])
-            if have_all_dense_inputs:
-                out = _call_function(func, {k: v[0] for k, v in args.items()}, name)
-            else:
-                out = {}
-            have_event_inputs = any([v[1] is not None for v in args.values()])
-            if have_event_inputs:
-                event_args = {
-                    k: v[0] if v[1] is None else v[1]
-                    for k, v in args.items()
-                }
-                out_bins = _call_function(func, event_args, name)
-                # Dense outputs may be produced as side effects of processing event
-                # coords.
-                for name in list(out_bins.keys()):
-                    if out_bins[name].bins is None:
-                        coord = out_bins.pop(name)
-                        if name in out:
-                            assert identical(out[name], coord)
-                        else:
-                            out[name] = coord
-            else:
-                out_bins = {}
-            out = {
-                k: (out.get(k, None), out_bins.get(k, None))
-                for k in list(out.keys()) + list(out_bins.keys())
-            }
-            dim = tuple(argnames)
+            out, dim = self._compute_coord(name)
         self._rename.setdefault(dim, []).extend(out.keys())
         for key, coord in out.items():
             _store_coord(self.obj, key, coord)
+
+    def _rename_coord(self,
+                      name: str) -> Tuple[Dict[str, _OptionalCoordTuple], Tuple[str]]:
+        self._aliases.append(name)
+        out = {name: self._get_coord(self._graph[name])}
+        dim = (self._graph[name], )
+        return out, dim
+
+    def _compute_coord(self,
+                       name: str) -> Tuple[Dict[str, _OptionalCoordTuple], Tuple[str]]:
+        func = self._graph[name]
+        argnames = _argnames(func)
+        args = {arg: self._get_coord(arg) for arg in argnames}
+        have_all_dense_inputs = all([v[0] is not None for v in args.values()])
+        if have_all_dense_inputs:
+            out = _call_function(func, {k: v[0] for k, v in args.items()}, name)
+        else:
+            out = {}
+        have_event_inputs = any([v[1] is not None for v in args.values()])
+        if have_event_inputs:
+            event_args = {k: v[0] if v[1] is None else v[1] for k, v in args.items()}
+            out_bins = _call_function(func, event_args, name)
+            # Dense outputs may be produced as side effects of processing event
+            # coords.
+            for name in list(out_bins.keys()):
+                if out_bins[name].bins is None:
+                    coord = out_bins.pop(name)
+                    if name in out:
+                        assert identical(out[name], coord)
+                    else:
+                        out[name] = coord
+        else:
+            out_bins = {}
+        out = {
+            k: (out.get(k, None), out_bins.get(k, None))
+            for k in list(out.keys()) + list(out_bins.keys())
+        }
+        dim = tuple(argnames)
+        return out, dim
 
     def _exists(self, name: str):
         in_events = self.obj.bins is not None and name in self.obj.bins.meta
