@@ -472,26 +472,26 @@ div.sc-log {
 }
 
 tr.sc-log-debug td.sc-log-level {
-  color: var(--jp-mirror-editor-quote-color);
+  color: var(--jp-accent-color1);
 }
 
 tr.sc-log-info td.sc-log-level {
-  color: var(--jp-mirror-editor-property-color);
+  color: var(--jp-info-color1);
 }
 
 tr.sc-log-warning td.sc-log-level {
-  color: var(--jp-mirror-editor-string-color);
+  color: var(--jp-warn-color1);
 }
 
 tr.sc-log-error td.sc-log-level {
   font-weight: bold;
-  color: var(--jp-mirror-editor-error-color);
+  color: var(--jp-error-color2);
 }
 
 tr.sc-log-critical td.sc-log-level {
   font-weight: bold;
   color: var(--sc-background-color0);
-  background-color: var(--jp-mirror-editor-error-color);
+  background-color: var(--jp-error-color1);
 }
 
 .sc-log-message {
