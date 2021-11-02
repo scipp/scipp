@@ -57,24 +57,26 @@ class Graph:
         return dot
 
 
+def _move_between_member_dicts(obj, name, src_name, dst_name):
+    src = getattr(obj, src_name)
+    dst = getattr(obj, dst_name)
+    if name in src:
+        dst[name] = src.pop(name)
+    return dst.get(name, None)
+
+
+def _move_between_coord_and_attr(obj, name, src_name, dst_name):
+    return (_move_between_member_dicts(obj, name, src_name, dst_name),
+            _move_between_member_dicts(obj.bins, name, src_name, dst_name)
+            if obj.bins is not None else None)
+
+
 def _consume_coord(obj, name):
-    if name in obj.coords:
-        obj.attrs[name] = obj.coords.pop(name)
-    if obj.bins is not None:
-        if name in obj.bins.coords:
-            obj.bins.attrs[name] = obj.bins.coords.pop(name)
-        return obj.attrs.get(name, None), obj.bins.attrs.get(name, None)
-    return obj.attrs[name], None
+    return _move_between_coord_and_attr(obj, name, 'coords', 'attrs')
 
 
 def _produce_coord(obj, name):
-    if name in obj.attrs:
-        obj.coords[name] = obj.attrs.pop(name)
-    if obj.bins is not None:
-        if name in obj.bins.attrs:
-            obj.bins.coords[name] = obj.bins.attrs.pop(name)
-        return obj.coords.get(name, None), obj.bins.coords.get(name, None)
-    return obj.coords[name], None
+    return _move_between_coord_and_attr(obj, name, 'attrs', 'coords')
 
 
 def _store_event_coord(obj, name, coord):
