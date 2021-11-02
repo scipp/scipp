@@ -450,6 +450,9 @@ div.sc-log {
   overflow-y: scroll;
   display: flex;
   flex-direction: column-reverse;
+  border: solid;
+  border-width: 1px;
+  border-color: var(--jp-border-color2);
   background-color: var(--sc-background-color1);
 }
 
