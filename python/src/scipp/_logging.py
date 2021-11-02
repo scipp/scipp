@@ -42,16 +42,17 @@ if running_in_jupyter():
             super().__init__(**kwargs)
             self._rows_str = ''
 
-        def add_row(self, time_stamp: str, level: str, message: str) -> None:
-            self._rows_str += self._format_row(time_stamp, level, message)
+        def add_row(self, name: str, time_stamp: str, level: str, message: str) -> None:
+            self._rows_str += self._format_row(name, time_stamp, level, message)
             self._update()
 
         @staticmethod
-        def _format_row(time_stamp: str, level: str, message: str) -> str:
+        def _format_row(name: str, time_stamp: str, level: str, message: str) -> str:
             return (f'<tr class="sc-log-{level.lower()}">'
                     f'<td class="sc-log-time-stamp">[{html.escape(time_stamp)}]</td>'
                     f'<td class="sc-log-level">{level}</td>'
                     f'<td class="sc-log-message">{html.escape(message)}</td>'
+                    f'<td class="sc-log-name">&lt;{html.escape(name)}&gt;</td>'
                     f'</tr>')
 
         def _update(self) -> None:
@@ -92,7 +93,8 @@ class WidgetHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         time_stamp = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(record.created))
-        self.widget.add_row(time_stamp, record.levelname, self.format(record))
+        self.widget.add_row(record.name, time_stamp, record.levelname,
+                            self.format(record))
 
 
 def make_widget_handler() -> WidgetHandler:

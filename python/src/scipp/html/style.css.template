@@ -496,3 +496,9 @@ tr.sc-log-critical td.sc-log-level {
   white-space: pre-wrap;
   width: 100%;
 }
+
+.sc-log-name {
+  padding-left: 1em;
+  padding-right: 0.5em;
+  color: var(--sc-font-color3);
+}
