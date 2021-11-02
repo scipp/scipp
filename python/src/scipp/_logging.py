@@ -31,6 +31,9 @@ def _setup_logger(logger: logging.Logger) -> None:
 def make_stream_handler() -> logging.StreamHandler:
     handler = logging.StreamHandler()
     handler.setLevel(logging.WARN)
+    handler.setFormatter(
+        logging.Formatter('[%(asctime)s] %(levelname)-8s : %(message)s',
+                          datefmt='%Y-%m-%dT%H:%M:%S'))
     return handler
 
 
