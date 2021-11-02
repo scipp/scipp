@@ -10,3 +10,4 @@ Modules
 
    constants
    spatial
+   logging
