@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
+"""
+Utilities for managing scipp's logger and log widget.
+"""
 
 import html
 import logging
@@ -149,6 +152,9 @@ class WidgetHandler(logging.Handler):
         self._rows = []
 
     def emit(self, record: logging.LogRecord) -> None:
+        """
+        Send the formatted record to the widget.
+        """
         time_stamp = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(record.created))
         self.widget.add_message(record.name, time_stamp, record.levelname,
                                 self.format(record))
