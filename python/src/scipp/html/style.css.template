@@ -466,6 +466,7 @@ div.sc-log {
 }
 
 .sc-log-time-stamp {
+  min-width: 21ch;
   padding-right: 1em;
   font-family: var(--jp-code-font-family);
   color: var(--sc-font-color2);
