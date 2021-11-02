@@ -196,3 +196,13 @@ Compatibility
    from_dict
    compat.from_pandas
    compat.from_xarray
+
+
+Logging
+~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated/functions
+
+   get_logger
+   display_logs
