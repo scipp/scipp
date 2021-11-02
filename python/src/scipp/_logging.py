@@ -48,9 +48,11 @@ if running_in_jupyter():
 
         @staticmethod
         def _format_row(time_stamp: str, level: str, message: str) -> str:
-            return (f'<tr><td class="sc-log-time-stamp">{html.escape(time_stamp)}</td> '
-                    f'<td class="sc-log-level">{level}</td> '
-                    f'<td class="sc-log-message">{html.escape(message)}</td></tr>')
+            return (f'<tr class="sc-log-{level.lower()}">'
+                    f'<td class="sc-log-time-stamp">[{html.escape(time_stamp)}]</td>'
+                    f'<td class="sc-log-level">{level}</td>'
+                    f'<td class="sc-log-message">{html.escape(message)}</td>'
+                    f'</tr>')
 
         def _update(self) -> None:
             self.value = f'<div class="sc-log"><table>{self._rows_str}</table></div>'
@@ -60,7 +62,7 @@ if running_in_jupyter():
             self._update()
 
 
-def make_log_widget():
+def make_log_widget() -> 'LogWidget':
     if not running_in_jupyter():
         raise RuntimeError('Cannot construct a logging widget because '
                            'Python is not running in a Jupyter notebook.')

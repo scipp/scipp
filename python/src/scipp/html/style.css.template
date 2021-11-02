@@ -444,16 +444,55 @@ label.sc-hide-icon svg{
 }
 
 div.sc-log {
-  max-height: 200px;
+  line-height: 2.5ex;
+  height: 25ex;
+  resize: vertical;
   overflow-y: scroll;
   display: flex;
   flex-direction: column-reverse;
+  background-color: var(--sc-background-color1);
+}
+
+.sc-log table {
+  table-layout: auto;
 }
 
 .sc-log td {
   vertical-align: top;
+  padding-bottom: 0.5ex;
 }
 
-.sc-log .sc-log-message {
+.sc-log-time-stamp {
+  padding-right: 1em;
+  font-family: var(--jp-code-font-family);
+  color: var(--sc-font-color2);
+}
+
+tr.sc-log-debug td.sc-log-level {
+  color: var(--jp-mirror-editor-quote-color);
+}
+
+tr.sc-log-info td.sc-log-level {
+  color: var(--jp-mirror-editor-property-color);
+}
+
+tr.sc-log-warning td.sc-log-level {
+  color: var(--jp-mirror-editor-string-color);
+}
+
+tr.sc-log-error td.sc-log-level {
+  font-weight: bold;
+  color: var(--jp-mirror-editor-error-color);
+}
+
+tr.sc-log-critical td.sc-log-level {
+  font-weight: bold;
+  color: var(--sc-background-color0);
+  background-color: var(--jp-mirror-editor-error-color);
+}
+
+.sc-log-message {
+  padding-left: 1em;
   white-space: pre-wrap;
+  width: 100%;
 }
