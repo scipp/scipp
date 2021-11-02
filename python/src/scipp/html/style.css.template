@@ -442,3 +442,18 @@ label.sc-hide-icon svg{
   stroke-width: 0.05;
   stroke-dasharray: 0.2, 0.2;
 }
+
+div.sc-log {
+  max-height: 200px;
+  overflow-y: scroll;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.sc-log td {
+  vertical-align: top;
+}
+
+.sc-log .sc-log-message {
+  white-space: pre-wrap;
+}
