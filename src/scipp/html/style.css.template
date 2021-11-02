@@ -510,5 +510,6 @@ tr.sc-log-critical td.sc-log-level {
   padding-left: 1em;
   padding-right: 0.5em;
   text-align: right;
+  white-space: pre-wrap;
   color: var(--sc-font-color3);
 }
