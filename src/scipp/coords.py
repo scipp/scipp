@@ -4,7 +4,9 @@
 
 import inspect
 from typing import Union, List, Dict, Tuple, Callable
+
 from .core import DataArray, Dataset, bins, VariableError, identical
+from .logging import get_logger
 
 
 def _argnames(func):
@@ -105,6 +107,15 @@ def _store_coord(obj, name, coord):
         _store_event_coord(obj, name, event_coord)
 
 
+def _call_function(func, args, out_name):
+    get_logger().info('Computing %s = %s(%s)', out_name, func.__name__,
+                      ', '.join(args.keys()))
+    out = func(**args)
+    if not isinstance(out, dict):
+        return {out_name: out}
+    return out
+
+
 class CoordTransform:
     Graph = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 
@@ -136,10 +147,7 @@ class CoordTransform:
             args = {arg: self._get_coord(arg) for arg in argnames}
             have_all_dense_inputs = all([v[0] is not None for v in args.values()])
             if have_all_dense_inputs:
-                dense_args = {k: v[0] for k, v in args.items()}
-                out = func(**dense_args)
-                if not isinstance(out, dict):
-                    out = {name: out}
+                out = _call_function(func, {k: v[0] for k, v in args.items()}, name)
             else:
                 out = {}
             have_event_inputs = any([v[1] is not None for v in args.values()])
@@ -148,9 +156,7 @@ class CoordTransform:
                     k: v[0] if v[1] is None else v[1]
                     for k, v in args.items()
                 }
-                out_bins = func(**event_args)
-                if not isinstance(out_bins, dict):
-                    out_bins = {name: out_bins}
+                out_bins = _call_function(func, event_args, name)
                 # Dense outputs may be produced as side effects of processing event
                 # coords.
                 for name in list(out_bins.keys()):
