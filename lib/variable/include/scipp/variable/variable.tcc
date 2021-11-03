@@ -40,6 +40,8 @@ template <class T> auto &cast(Variable &var) {
 template <int I, class T> decltype(auto) get(T &&t) {
   if constexpr (core::has_eval_v<std::decay_t<T>>)
     return t.operator()(I);
+  else if constexpr (std::is_same_v<std::decay_t<T>, Eigen::Transform<double,3,2,0>>)
+    return t.matrix().operator()(I);
   else
     return std::get<I>(t);
 }

@@ -97,7 +97,9 @@ struct multiplies_types_t {
                      std::tuple<std::tuple<Eigen::Vector3d, double>>(),
                      std::tuple<std::tuple<Eigen::Vector3d, float>>(),
                      std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
-                     std::tuple<std::tuple<Eigen::Vector3d, int32_t>>()));
+                     std::tuple<std::tuple<Eigen::Vector3d, int32_t>>(),
+                     std::tuple<std::tuple<Eigen::Affine3d, Eigen::Affine3d>>(),
+                     std::tuple<std::tuple<Eigen::Affine3d, Eigen::Vector3d>>()));
 };
 
 struct true_divide_types_t {

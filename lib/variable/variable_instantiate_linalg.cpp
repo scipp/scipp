@@ -30,6 +30,19 @@ constexpr auto structure_element_offset<Eigen::Matrix3d> =
       return offsets.at(key);
     };
 
+// TODO: investigate if this can be removed.
+template <>
+constexpr auto structure_element_offset<Eigen::Affine3d> =
+    [](const std::string &key) {
+      static std::map<std::string, scipp::index> offsets{
+          {"xx", 0}, {"xy", 4}, {"xz", 8}, {"xw", 12},
+          {"yx", 1}, {"yy", 5}, {"yz", 9}, {"yw", 13},
+          {"zx", 2}, {"zy", 6}, {"zz", 10}, {"zw", 14},
+          {"wx", 3}, {"wy", 7}, {"wz", 11}, {"ww", 15}
+          };
+      return offsets.at(key);
+    };
+
 template <>
 constexpr auto structure_element_offset<
     scipp::index_pair> = [](const std::string &key) {
@@ -42,6 +55,8 @@ std::vector<std::string> element_keys(const Variable &var) {
     return {"x", "y", "z"};
   if (variableFactory().elem_dtype(var) == dtype<Eigen::Matrix3d>)
     return {"xx", "xy", "xz", "yx", "yy", "yz", "zx", "zy", "zz"};
+  if (variableFactory().elem_dtype(var) == dtype<Eigen::Affine3d>)
+    throw except::TypeError("Not supported for Affine3d types");
   if (variableFactory().elem_dtype(var) == dtype<scipp::index_pair>)
     return {"begin", "end"};
   throw except::TypeError("dtype is not structured");
@@ -49,6 +64,7 @@ std::vector<std::string> element_keys(const Variable &var) {
 
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(vector_3_float64, Eigen::Vector3d, double)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(matrix_3_float64, Eigen::Matrix3d, double)
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(transform, Eigen::Affine3d, double)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(index_pair, scipp::index_pair,
                                      scipp::index)
 
