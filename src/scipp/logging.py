@@ -205,8 +205,12 @@ class WidgetHandler(logging.Handler):
     Logging handler that sends messages to a ``LogWidget``
     for display in Jupyter notebooks.
 
-    Note that this handler formats messages into a ``WidgetLogRecord``
-    and not into a string.
+    Messages are formatted into a ``WidgetLogRecord`` and not into a string.
+
+    This handler introduces special formatting for objects with a HTML representation.
+    If the log message is a single such object, its HTML repr is embedded in the widget.
+    Strings are formatted to replace %s with the HTML repr and %r with a plain string
+    repr (``str(x)``) and ``repr(x)`` is inaccessible.
     """
     def __init__(self, level: int, widget: 'LogWidget'):
         super().__init__(level)
