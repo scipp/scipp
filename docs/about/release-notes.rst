@@ -34,6 +34,14 @@ Deprecations
 
 * ``concatenate`` and ``groupby(..).concatenate`` are deprecated. Use ``concat`` and ``groupby(..).concat`` instead.
 
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* More thorough unit testing for low-level code underlying most operations on dense as well as binned data `#1900 <https://github.com/scipp/scipp/pull/1900>`_, by Jan-Lukas Wynen.
+* Switch to Jupyter Book theme for documentation, avoiding a number of issues with the RTD theme `#2233 <https://github.com/scipp/scipp/pull/2233>`_, by Neil Vaytet.
+* Add `benchmark suite <https://scipp.github.io/scipp-benchmarks/>`_ to allow for identification of performance regressions, by Samuel Jones.
+* Add `code coverage <https://scipp.github.io/scipp-coverage/>`_ tooling to allow for identification of dark spots in our test coverage, by Simon Heybrock.
+
 Contributors
 ~~~~~~~~~~~~
 
