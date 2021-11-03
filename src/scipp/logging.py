@@ -52,7 +52,7 @@ def make_stream_handler() -> logging.StreamHandler:
 
 
 @dataclass
-class WidgetLogRecord:
+class _WidgetLogRecord:
     name: str
     levelname: str
     time_stamp: str
@@ -70,7 +70,7 @@ if running_in_jupyter():
             super().__init__(**kwargs)
             self._rows_str = ''
 
-        def add_message(self, record: WidgetLogRecord) -> None:
+        def add_message(self, record: _WidgetLogRecord) -> None:
             """
             Add a message to the output.
             :param record: Log record formatted for the widget.
@@ -79,7 +79,7 @@ if running_in_jupyter():
             self._update()
 
         @staticmethod
-        def _format_row(record: WidgetLogRecord) -> str:
+        def _format_row(record: _WidgetLogRecord) -> str:
             return (
                 f'<tr class="sc-log sc-log-{record.levelname.lower()}">'
                 f'<td class="sc-log-time-stamp">[{html.escape(record.time_stamp)}]</td>'
@@ -213,17 +213,18 @@ class WidgetHandler(logging.Handler):
         self.widget = widget
         self._rows = []
 
-    def format(self, record: logging.LogRecord) -> WidgetLogRecord:
+    def format(self, record: logging.LogRecord) -> _WidgetLogRecord:
         """
         Format the specified record for consumption by a LogWidget.
         """
         message = self._format_html(record) if _has_html_repr(
             record.msg) else self._format_text(record)
-        return WidgetLogRecord(name=record.name,
-                               levelname=record.levelname,
-                               time_stamp=time.strftime('%Y-%m-%dT%H:%M:%S',
-                                                        time.localtime(record.created)),
-                               message=message)
+        return _WidgetLogRecord(name=record.name,
+                                levelname=record.levelname,
+                                time_stamp=time.strftime('%Y-%m-%dT%H:%M:%S',
+                                                         time.localtime(
+                                                             record.created)),
+                                message=message)
 
     def _format_text(self, record: logging.LogRecord) -> str:
         args, replacements = _preprocess_format_args(record.args)
