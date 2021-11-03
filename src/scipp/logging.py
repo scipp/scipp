@@ -7,7 +7,6 @@ Utilities for managing scipp's logger and log widget.
 
 from copy import copy
 from dataclasses import dataclass
-from functools import reduce
 import html
 import logging
 import time
@@ -161,6 +160,43 @@ def _make_html(x) -> str:
     return f'<div class="sc-log-html-payload">{make_html(x)}</div>'
 
 
+class _ReplacementPattern:
+    _PATTERN = '$__SCIPP_HTML_REPLACEMENT_{:02d}__'
+
+    def __init__(self, i: int, x: Any):
+        self._i = i
+        self._x = x
+
+    def __str__(self):
+        return self._PATTERN.format(self._i)
+
+    def __repr__(self):
+        return str(self._x)
+
+
+def _preprocess_format_args(args) -> Tuple[Tuple, Dict[str, str]]:
+    format_args = []
+    replacements = {}
+    for i, arg in enumerate(args):
+        if _has_html_repr(arg):
+            tag = _ReplacementPattern(i, arg)
+            format_args.append(tag)
+            replacements[str(tag)] = arg
+        else:
+            format_args.append(arg)
+    return tuple(format_args), replacements
+
+
+def _replace_html_repr(message: str, replacements: Dict[str, Any]) -> str:
+    # Do separate check `key in message` in order to avoid calling
+    # _make_html unnecessarily. Linear string searches are likely less
+    # expensive than HTML formatting.
+    for key, repl in replacements.items():
+        if key in message:
+            message = message.replace(key, _make_html(repl))
+    return message
+
+
 class WidgetHandler(logging.Handler):
     """
     Logging handler that sends messages to a ``LogWidget``
@@ -171,8 +207,6 @@ class WidgetHandler(logging.Handler):
         self.widget = widget
         self._rows = []
 
-    _HTML_REPLACEMENT_PATTERN = '$__SCIPP_CONTAINER_{:02d}__'
-
     def format(self, record: logging.LogRecord) -> WidgetLogRecord:
         message = self._format_html(record) if _has_html_repr(
             record.msg) else self._format_text(record)
@@ -182,24 +216,12 @@ class WidgetHandler(logging.Handler):
                                                         time.localtime(record.created)),
                                message=message)
 
-    def _preprocess_format_args(self, args) -> Tuple[Tuple, Dict[str, str]]:
-        format_args = []
-        replacements = {}
-        for i, arg in enumerate(args):
-            if _has_html_repr(arg):
-                tag = self._HTML_REPLACEMENT_PATTERN.format(i)
-                format_args.append(tag)
-                replacements[tag] = _make_html(arg)
-            else:
-                format_args.append(arg)
-        return tuple(format_args), replacements
-
     def _format_text(self, record: logging.LogRecord) -> str:
-        args, replacements = self._preprocess_format_args(record.args)
+        args, replacements = _preprocess_format_args(record.args)
         record = copy(record)
         record.args = tuple(args)
         message = html.escape(super().format(record))
-        return reduce(lambda s, repl: s.replace(*repl), replacements.items(), message)
+        return _replace_html_repr(message, replacements)
 
     @staticmethod
     def _format_html(record: logging.LogRecord) -> str:
