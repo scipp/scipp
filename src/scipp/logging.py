@@ -69,6 +69,7 @@ if running_in_jupyter():
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
             self._rows_str = ''
+            self._update()
 
         def add_message(self, record: _WidgetLogRecord) -> None:
             """
