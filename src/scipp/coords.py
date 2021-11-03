@@ -113,11 +113,11 @@ def _store_coord(obj, name: str, coord: _OptionalCoordTuple) -> None:
 
 def _call_function(func: Callable[..., Union[Variable, Dict[str, Variable]]],
                    args: Dict[str, Variable], out_name: str) -> Dict[str, Variable]:
-    get_logger().info('Computing %s = %s(%s)', out_name, func.__name__,
-                      ', '.join(args.keys()))
     out = func(**args)
     if not isinstance(out, dict):
         return {out_name: out}
+    for name in out:
+        get_logger().info('  %s = %s(%s)', name, func.__name__, ', '.join(args.keys()))
     return out
 
 
