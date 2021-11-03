@@ -8,8 +8,6 @@
 
 #include "scipp/core/dtype.h"
 
-// using AffineTransform = Eigen::Transform<double, 3, Eigen::Affine, Eigen::DontAlign>;
-
 namespace scipp::core {
 
 template <> inline constexpr DType dtype<Eigen::Vector3d>{4000};
