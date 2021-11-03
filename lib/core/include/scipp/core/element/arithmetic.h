@@ -10,6 +10,7 @@
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/subbin_sizes.h"
 #include "scipp/core/transform_common.h"
+#include "scipp/units/except.h"
 
 namespace scipp::core::element {
 
@@ -130,6 +131,18 @@ constexpr auto multiply = overloaded{
     multiplies_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
     [](const auto a, const auto b) { return a * b; }};
+
+constexpr auto multiply_if_units_equal = overloaded{
+    multiplies_types_t{},
+    transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
+    [](const auto a, const auto b) {
+      if (a.unit() == b.unit()) {
+        return a * b;
+      } else {
+        throw except::UnitError(
+            "Units must be strictly equal to multiply these types.");
+      }
+    }};
 
 // truediv defined as in Python.
 constexpr auto divide = overloaded{
