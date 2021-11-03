@@ -70,9 +70,11 @@ static constexpr auto update_indices_by_binning_sorted_edges =
                    return;
                  auto it = std::upper_bound(edges.begin(), edges.end(), x);
                  index *= scipp::size(edges) - 1;
-                 index = (it == edges.begin() || it == edges.end())
-                             ? -1
-                             : (index + --it - edges.begin());
+                 if (it == edges.begin() || it == edges.end()) {
+                   index = -1;
+                 } else {
+                   index += --it - edges.begin();
+                 }
                }};
 
 template <class Index>
