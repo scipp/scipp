@@ -5,11 +5,13 @@
 Utilities for managing scipp's logger and log widget.
 """
 
+from copy import copy
 from dataclasses import dataclass
+from functools import reduce
 import html
 import logging
 import time
-from typing import Optional
+from typing import Any, Dict, Optional, Tuple
 
 from .core import DataArray, Dataset, Variable
 from .html import make_html
@@ -56,7 +58,6 @@ class WidgetLogRecord:
     levelname: str
     time_stamp: str
     message: str
-    message_is_html: bool
 
 
 if running_in_jupyter():
@@ -80,17 +81,11 @@ if running_in_jupyter():
 
         @staticmethod
         def _format_row(record: WidgetLogRecord) -> str:
-            if record.message_is_html:
-                message = record.message
-                message_class = 'sc-log-message-html'
-            else:
-                message = html.escape(record.message)
-                message_class = 'sc-log-message-text'
             return (
                 f'<tr class="sc-log sc-log-{record.levelname.lower()}">'
                 f'<td class="sc-log-time-stamp">[{html.escape(record.time_stamp)}]</td>'
                 f'<td class="sc-log-level">{record.levelname}</td>'
-                f'<td class="{message_class}">{message}</td>'
+                f'<td class="sc-log-message">{record.message}</td>'
                 f'<td class="sc-log-name">&lt;{html.escape(record.name)}&gt;</td>'
                 '</tr>')
 
@@ -158,6 +153,14 @@ def clear_log_widget() -> None:
     widget.clear()
 
 
+def _has_html_repr(x: Any) -> bool:
+    return isinstance(x, (DataArray, Dataset, Variable))
+
+
+def _make_html(x) -> str:
+    return f'<div class="sc-log-html-payload">{make_html(x)}</div>'
+
+
 class WidgetHandler(logging.Handler):
     """
     Logging handler that sends messages to a ``LogWidget``
@@ -168,19 +171,41 @@ class WidgetHandler(logging.Handler):
         self.widget = widget
         self._rows = []
 
+    _HTML_REPLACEMENT_PATTERN = '$__SCIPP_CONTAINER_{:02d}__'
+
     def format(self, record: logging.LogRecord) -> WidgetLogRecord:
-        if isinstance(record.msg, (DataArray, Dataset, Variable)):
-            message = make_html(record.msg)
-            is_html = True
-        else:
-            message = str(record.msg)
-            is_html = False
+        message = self._format_html(record) if _has_html_repr(
+            record.msg) else self._format_text(record)
         return WidgetLogRecord(name=record.name,
                                levelname=record.levelname,
                                time_stamp=time.strftime('%Y-%m-%dT%H:%M:%S',
                                                         time.localtime(record.created)),
-                               message=message,
-                               message_is_html=is_html)
+                               message=message)
+
+    def _preprocess_format_args(self, args) -> Tuple[Tuple, Dict[str, str]]:
+        format_args = []
+        replacements = {}
+        for i, arg in enumerate(args):
+            if _has_html_repr(arg):
+                tag = self._HTML_REPLACEMENT_PATTERN.format(i)
+                format_args.append(tag)
+                replacements[tag] = _make_html(arg)
+            else:
+                format_args.append(arg)
+        return tuple(format_args), replacements
+
+    def _format_text(self, record: logging.LogRecord) -> str:
+        args, replacements = self._preprocess_format_args(record.args)
+        record = copy(record)
+        record.args = tuple(args)
+        message = html.escape(super().format(record))
+        return reduce(lambda s, repl: s.replace(*repl), replacements.items(), message)
+
+    @staticmethod
+    def _format_html(record: logging.LogRecord) -> str:
+        if record.args:
+            raise TypeError('not all arguments converted during string formatting')
+        return _make_html(record.msg)
 
     def emit(self, record: logging.LogRecord) -> None:
         """
