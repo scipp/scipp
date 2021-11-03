@@ -500,9 +500,14 @@ tr.sc-log-critical td.sc-log-level {
   background-color: var(--jp-error-color1);
 }
 
-.sc-log-message {
+.sc-log-message-text {
   padding-left: 1em;
   white-space: pre-wrap;
+  width: 100%;
+}
+
+.sc-log-message-html {
+  padding-left: 1em;
   width: 100%;
 }
 

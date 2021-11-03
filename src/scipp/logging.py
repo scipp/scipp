@@ -56,7 +56,7 @@ class WidgetLogRecord:
     levelname: str
     time_stamp: str
     message: str
-    message_is_safe: bool
+    message_is_html: bool
 
 
 if running_in_jupyter():
@@ -80,13 +80,17 @@ if running_in_jupyter():
 
         @staticmethod
         def _format_row(record: WidgetLogRecord) -> str:
-            message = record.message if record.message_is_safe else html.escape(
-                record.message)
+            if record.message_is_html:
+                message = record.message
+                message_class = 'sc-log-message-html'
+            else:
+                message = html.escape(record.message)
+                message_class = 'sc-log-message-text'
             return (
                 f'<tr class="sc-log sc-log-{record.levelname.lower()}">'
                 f'<td class="sc-log-time-stamp">[{html.escape(record.time_stamp)}]</td>'
                 f'<td class="sc-log-level">{record.levelname}</td>'
-                f'<td class="sc-log-message">{message}</td>'
+                f'<td class="{message_class}">{message}</td>'
                 f'<td class="sc-log-name">&lt;{html.escape(record.name)}&gt;</td>'
                 '</tr>')
 
@@ -167,16 +171,16 @@ class WidgetHandler(logging.Handler):
     def format(self, record: logging.LogRecord) -> WidgetLogRecord:
         if isinstance(record.msg, (DataArray, Dataset, Variable)):
             message = make_html(record.msg)
-            is_safe = True
+            is_html = True
         else:
             message = str(record.msg)
-            is_safe = False
+            is_html = False
         return WidgetLogRecord(name=record.name,
                                levelname=record.levelname,
                                time_stamp=time.strftime('%Y-%m-%dT%H:%M:%S',
                                                         time.localtime(record.created)),
                                message=message,
-                               message_is_safe=is_safe)
+                               message_is_html=is_html)
 
     def emit(self, record: logging.LogRecord) -> None:
         """
