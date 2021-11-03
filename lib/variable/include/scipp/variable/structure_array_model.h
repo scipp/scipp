@@ -34,6 +34,10 @@ public:
         m_elements(std::make_shared<ElementArrayModel<Elem>>(
             size * element_count, unit, std::move(model))) {}
 
+  StructureArrayModel(VariableConceptHandle model)
+      : VariableConcept(units::one), // unit ignored
+        m_elements(std::move(model)) {}
+
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
   DType dtype() const noexcept override { return scipp::dtype<T>; }
   scipp::index size() const override {

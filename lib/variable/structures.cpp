@@ -39,4 +39,16 @@ Variable make_matrices(const Dimensions &dims, const units::Unit &unit,
                                                   std::move(values));
 }
 
+Variable get_column(const Variable &var, const scipp::index i) {
+  const auto &model =
+      dynamic_cast<const StructureArrayModel<Eigen::Matrix3d, double> &>(
+          var.data());
+  auto dims = var.dims();
+  dims.addInner(Dim::InternalStructureComponent, 3);
+  return Variable{
+      dims, std::make_shared<StructureArrayModel<Eigen::Vector3d, double>>(
+                model.elements())}
+      .slice({Dim::InternalStructureComponent, i});
+}
+
 } // namespace scipp::variable

@@ -87,3 +87,15 @@ TEST_F(VariableStructureTest, binned) {
         elems.slice({Dim::X, 2}).slice({Dim::Y, x, x + 1}));
   }
 }
+
+TEST_F(VariableStructureTest, get_column) {
+  Variable col0 = variable::make_vectors(Dimensions(Dim::Y, 2), units::m,
+                                         {1, 2, 3, 11, 12, 13});
+  Variable col1 = variable::make_vectors(Dimensions(Dim::Y, 2), units::m,
+                                         {4, 5, 6, 14, 15, 16});
+  Variable col2 = variable::make_vectors(Dimensions(Dim::Y, 2), units::m,
+                                         {7, 8, 9, 17, 18, 19});
+  EXPECT_EQ(get_column(matrices, 0), col0);
+  EXPECT_EQ(get_column(matrices, 1), col1);
+  EXPECT_EQ(get_column(matrices, 2), col2);
+}
