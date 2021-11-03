@@ -5,6 +5,7 @@
 Utilities for managing scipp's logger and log widget.
 """
 
+from dataclasses import dataclass
 import html
 import logging
 import time
@@ -47,6 +48,15 @@ def make_stream_handler() -> logging.StreamHandler:
     return handler
 
 
+@dataclass
+class WidgetLogRecord:
+    name: str
+    levelname: str
+    time_stamp: str
+    message: str
+    message_is_safe: bool
+
+
 if running_in_jupyter():
     from ipywidgets import HTML
 
@@ -58,26 +68,25 @@ if running_in_jupyter():
             super().__init__(**kwargs)
             self._rows_str = ''
 
-        def add_message(self, name: str, time_stamp: str, level: str,
-                        message: str) -> None:
+        def add_message(self, record: WidgetLogRecord) -> None:
             """
             Add a message to the output.
-            :param name: Name of the logger.
-            :param time_stamp: Formatted time when the message was recorded.
-            :param level: Name of the log level.
-            :param message: The actual message.
+            :param record: Log record formatted for the widget.
             """
-            self._rows_str += self._format_row(name, time_stamp, level, message)
+            self._rows_str += self._format_row(record)
             self._update()
 
         @staticmethod
-        def _format_row(name: str, time_stamp: str, level: str, message: str) -> str:
-            return (f'<tr class="sc-log-{level.lower()}">'
-                    f'<td class="sc-log-time-stamp">[{html.escape(time_stamp)}]</td>'
-                    f'<td class="sc-log-level">{level}</td>'
-                    f'<td class="sc-log-message">{html.escape(message)}</td>'
-                    f'<td class="sc-log-name">&lt;{html.escape(name)}&gt;</td>'
-                    f'</tr>')
+        def _format_row(record: WidgetLogRecord) -> str:
+            message = record.message if record.message_is_safe else html.escape(
+                record.message)
+            return (
+                f'<tr class="sc-log-{record.levelname.lower()}">'
+                f'<td class="sc-log-time-stamp">[{html.escape(record.time_stamp)}]</td>'
+                f'<td class="sc-log-level">{record.levelname}</td>'
+                f'<td class="sc-log-message">{message}</td>'
+                f'<td class="sc-log-name">&lt;{html.escape(record.name)}&gt;</td>'
+                f'</tr>')
 
         def _update(self) -> None:
             self.value = f'<div class="sc-log"><table>{self._rows_str}</table></div>'
@@ -151,13 +160,19 @@ class WidgetHandler(logging.Handler):
         self.widget = widget
         self._rows = []
 
+    def format(self, record: logging.LogRecord) -> WidgetLogRecord:
+        return WidgetLogRecord(name=record.name,
+                               levelname=record.levelname,
+                               time_stamp=time.strftime('%Y-%m-%dT%H:%M:%S',
+                                                        time.localtime(record.created)),
+                               message=record.msg,
+                               message_is_safe=False)
+
     def emit(self, record: logging.LogRecord) -> None:
         """
         Send the formatted record to the widget.
         """
-        time_stamp = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(record.created))
-        self.widget.add_message(record.name, time_stamp, record.levelname,
-                                self.format(record))
+        self.widget.add_message(self.format(record))
 
 
 def make_widget_handler() -> WidgetHandler:
