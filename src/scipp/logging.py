@@ -11,6 +11,8 @@ import logging
 import time
 from typing import Optional
 
+from .core import DataArray, Dataset, Variable
+from .html import make_html
 from .utils import running_in_jupyter
 from ._styling import inject_style
 
@@ -161,12 +163,18 @@ class WidgetHandler(logging.Handler):
         self._rows = []
 
     def format(self, record: logging.LogRecord) -> WidgetLogRecord:
+        if isinstance(record.msg, (DataArray, Dataset, Variable)):
+            message = make_html(record.msg)
+            is_safe = True
+        else:
+            message = str(record.msg)
+            is_safe = False
         return WidgetLogRecord(name=record.name,
                                levelname=record.levelname,
                                time_stamp=time.strftime('%Y-%m-%dT%H:%M:%S',
                                                         time.localtime(record.created)),
-                               message=record.msg,
-                               message_is_safe=False)
+                               message=message,
+                               message_is_safe=is_safe)
 
     def emit(self, record: logging.LogRecord) -> None:
         """
