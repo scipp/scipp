@@ -160,21 +160,24 @@ def _make_html(x) -> str:
     return f'<div class="sc-log-html-payload">{make_html(x)}</div>'
 
 
+# This class is used with the log formatter to distinguish between str and repr.
+# str produces a pattern that can be replaced with HTML and
+# repr produces a plain string for the argument.
 class _ReplacementPattern:
     _PATTERN = '$__SCIPP_HTML_REPLACEMENT_{:02d}__'
 
-    def __init__(self, i: int, x: Any):
+    def __init__(self, i: int, arg: Any):
         self._i = i
-        self._x = x
+        self._arg = arg
 
     def __str__(self):
         return self._PATTERN.format(self._i)
 
     def __repr__(self):
-        return str(self._x)
+        return str(self._arg)
 
 
-def _preprocess_format_args(args) -> Tuple[Tuple, Dict[str, str]]:
+def _preprocess_format_args(args) -> Tuple[Tuple, Dict[str, Any]]:
     format_args = []
     replacements = {}
     for i, arg in enumerate(args):
@@ -187,7 +190,7 @@ def _preprocess_format_args(args) -> Tuple[Tuple, Dict[str, str]]:
     return tuple(format_args), replacements
 
 
-def _replace_html_repr(message: str, replacements: Dict[str, Any]) -> str:
+def _replace_html_repr(message: str, replacements: Dict[str, str]) -> str:
     # Do separate check `key in message` in order to avoid calling
     # _make_html unnecessarily. Linear string searches are likely less
     # expensive than HTML formatting.
@@ -201,6 +204,9 @@ class WidgetHandler(logging.Handler):
     """
     Logging handler that sends messages to a ``LogWidget``
     for display in Jupyter notebooks.
+
+    Note that this handler formats messages into a ``WidgetLogRecord``
+    and not into a string.
     """
     def __init__(self, level: int, widget: 'LogWidget'):
         super().__init__(level)
@@ -208,6 +214,9 @@ class WidgetHandler(logging.Handler):
         self._rows = []
 
     def format(self, record: logging.LogRecord) -> WidgetLogRecord:
+        """
+        Format the specified record for consumption by a LogWidget.
+        """
         message = self._format_html(record) if _has_html_repr(
             record.msg) else self._format_text(record)
         return WidgetLogRecord(name=record.name,
