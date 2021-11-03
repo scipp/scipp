@@ -35,11 +35,9 @@ template <>
 constexpr auto structure_element_offset<Eigen::Affine3d> =
     [](const std::string &key) {
       static std::map<std::string, scipp::index> offsets{
-          {"xx", 0}, {"xy", 4}, {"xz", 8}, {"xw", 12},
-          {"yx", 1}, {"yy", 5}, {"yz", 9}, {"yw", 13},
-          {"zx", 2}, {"zy", 6}, {"zz", 10}, {"zw", 14},
-          {"wx", 3}, {"wy", 7}, {"wz", 11}, {"ww", 15}
-          };
+          {"xx", 0}, {"xy", 4},  {"xz", 8},  {"xw", 12}, {"yx", 1},  {"yy", 5},
+          {"yz", 9}, {"yw", 13}, {"zx", 2},  {"zy", 6},  {"zz", 10}, {"zw", 14},
+          {"wx", 3}, {"wy", 7},  {"wz", 11}, {"ww", 15}};
       return offsets.at(key);
     };
 
