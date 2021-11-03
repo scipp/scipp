@@ -456,16 +456,16 @@ div.sc-log {
   background-color: var(--sc-background-color1);
 }
 
-.sc-log table {
+table.sc-log {
   table-layout: auto;
   border-collapse: collapse;
 }
 
-.sc-log tr:nth-child(even) {
+tr.sc-log:nth-child(even) {
   background-color: var(--sc-background-color0);
 }
 
-.sc-log td {
+tr.sc-log > td {
   vertical-align: top;
   padding-bottom: 0.5ex;
 }

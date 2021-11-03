@@ -83,15 +83,17 @@ if running_in_jupyter():
             message = record.message if record.message_is_safe else html.escape(
                 record.message)
             return (
-                f'<tr class="sc-log-{record.levelname.lower()}">'
+                f'<tr class="sc-log sc-log-{record.levelname.lower()}">'
                 f'<td class="sc-log-time-stamp">[{html.escape(record.time_stamp)}]</td>'
                 f'<td class="sc-log-level">{record.levelname}</td>'
                 f'<td class="sc-log-message">{message}</td>'
                 f'<td class="sc-log-name">&lt;{html.escape(record.name)}&gt;</td>'
-                f'</tr>')
+                '</tr>')
 
         def _update(self) -> None:
-            self.value = f'<div class="sc-log"><table>{self._rows_str}</table></div>'
+            self.value = ('<div class="sc-log">'
+                          f'<table class="sc-log">{self._rows_str}</table>'
+                          '</div>')
 
         def clear(self) -> None:
             """
