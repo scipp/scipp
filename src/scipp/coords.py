@@ -105,6 +105,12 @@ def _make_rule(data, out_name, graph):
     return _ComputeRule(out_name, graph_element)
 
 
+def _sort_topologically(graph: Mapping[str, _Rule]) -> Iterable[str]:
+    yield from TopologicalSorter(
+        {out: rule.dependencies()
+         for out, rule in graph.items()}).static_order()
+
+
 class Graph:
     def __init__(self, graph):
         # Keys in graph may be tuple to define multiple outputs
@@ -114,14 +120,6 @@ class Graph:
                 if k in self._graph:
                     raise ValueError("Duplicate output name define in conversion graph")
                 self._graph[k] = graph[key]
-
-    def sorted(self):
-        g = {
-            out: [producer] if isinstance(producer, str) else _argnames(producer)
-            for out, producer in self._graph.items()
-        }
-        t = TopologicalSorter(g).static_order()
-        return list(t)
 
     def subgraph(self, data: Union[DataArray, Dataset],
                  targets: Iterable[str]) -> Dict[str, _Rule]:
