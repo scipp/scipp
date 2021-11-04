@@ -8,6 +8,7 @@
 #include "test_macros.h"
 
 #include "scipp/core/element/math.h"
+#include "scipp/common/constants.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/operations.h"
@@ -824,6 +825,39 @@ TEST(VariableTest, rotate) {
       Dims{Dim::X}, Shape{2}, units::m,
       Values{rot1.toRotationMatrix() * vec1, rot2.toRotationMatrix() * vec2});
   EXPECT_EQ(vec_new, rotated);
+}
+
+TEST(VariableTest, apply_transform_to_vector) { 
+  Eigen::Vector3d eigen_vec(1, 2, 3);
+  auto vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, units::m,
+                                           Values{eigen_vec});
+
+  Eigen::Vector3d rotation_axis(1, 0, 0);
+  Eigen::Affine3d t(Eigen::AngleAxisd(pi<double>/2.0, rotation_axis));
+
+  auto transform = makeVariable<Eigen::Affine3d>(
+      Dims{Dim::X}, Shape{1}, units::m, Values{t});
+
+  auto transformed = transform * vec;
+
+  Eigen::Vector3d expected(1, -3, 2);
+  EXPECT_EQ(transformed, makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, units::m, Values{expected}));
+}
+
+TEST(VariableTest, apply_transform_to_vector_with_different_units) {
+  Eigen::Vector3d eigen_vec(1, 2, 3);
+  auto vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, units::m,
+                                           Values{eigen_vec});
+
+  Eigen::Vector3d rotation_axis(1, 0, 0);
+  Eigen::Affine3d t(Eigen::AngleAxisd(pi<double> / 2.0, rotation_axis));
+
+  auto transform = makeVariable<Eigen::Affine3d>(Dims{Dim::X}, Shape{1},
+                                                 units::mm, Values{t});
+
+  // Even though the transform and vector both have units of length, we don't allow this multiplication.
+  // The units must match exactly.
+  EXPECT_THROW(transform * vec, except::UnitError);
 }
 
 TEST(VariableTest, mul_vector) {

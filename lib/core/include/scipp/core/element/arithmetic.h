@@ -135,13 +135,13 @@ constexpr auto multiply = overloaded{
 constexpr auto multiply_if_units_equal = overloaded{
     multiplies_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
-    [](const auto a, const auto b) {
-      if (a.unit() == b.unit()) {
-        return a * b;
-      } else {
+    [](const auto a, const auto b) { return a * b; },
+    [](const units::Unit &a, const units::Unit &b) {
+      if (a != b)
         throw except::UnitError(
-            "Units must be strictly equal to multiply these types.");
-      }
+            "Cannot multiply non-equal units for this type");
+      else
+        return a;
     }};
 
 // truediv defined as in Python.
