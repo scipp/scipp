@@ -129,6 +129,7 @@ Documentation
    reference/dtype
    reference/units
    reference/error-propagation
+   reference/logging
    reference/runtime-configuration
    reference/developer-documentation
 

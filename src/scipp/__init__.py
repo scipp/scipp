@@ -83,6 +83,8 @@ from .core import sin, cos, tan, asin, acos, atan, atan2
 from .core import isnan, isinf, isfinite, isposinf, isneginf, to_unit
 from .core import scalar, zeros, zeros_like, ones, ones_like, empty, empty_like, full, full_like, matrix, matrices, vector, vectors, array, linspace, geomspace, logspace, arange
 
+from .logging import display_logs, get_logger
+
 # Mainly imported for docs
 from .core import Bins, GroupByDataset, GroupByDataArray
 

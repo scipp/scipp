@@ -3,8 +3,9 @@
 # @file
 # @author Neil Vaytet
 
-from .plot import plot as _plot
 import warnings
+from .plot import plot as _plot
+from ..utils import running_in_jupyter
 
 is_doc_build = False
 
@@ -13,15 +14,11 @@ try:
 except ImportError:
     mpl = None
 
-try:
+# If we are running inside a notebook, then make plot interactive by default.
+if running_in_jupyter():
     from IPython import get_ipython
     ipy = get_ipython()
-except ImportError:
-    ipy = None
 
-# If we are running inside a notebook, then make plot interactive by default.
-# From: https://stackoverflow.com/a/22424821
-if ipy is not None:
     # Check if a docs build is requested in the metadata. If so,
     # use the default Qt/inline backend.
     cfg = ipy.config
@@ -30,7 +27,7 @@ if ipy is not None:
         meta = meta.to_dict()
     if "scipp_docs_build" in meta:
         is_doc_build = meta["scipp_docs_build"]
-    if ("IPKernelApp" in ipy.config) and (mpl is not None):
+    if mpl is not None:
         try:
             # Attempt to use ipympl backend
             from ipympl.backend_nbagg import Canvas
