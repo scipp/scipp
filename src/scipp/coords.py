@@ -53,6 +53,9 @@ class _Rule(ABC):
             raise CoordError(f'Internal Error: Coordinate {name} does is not in the '
                              'input or has not (yet) been computed')
 
+    def _format_out_names(self):
+        return str(self.out_names) if len(self.out_names) > 1 else self.out_names[0]
+
 
 class _FetchRule(_Rule):
     def __init__(self, out_names: Union[str, Tuple[str, ...]],
@@ -69,6 +72,9 @@ class _FetchRule(_Rule):
     def dependencies(self) -> Iterable[str]:
         return ()
 
+    def __str__(self):
+        return f'Input   {self._format_out_names()}'
+
 
 class _RenameRule(_Rule):
     def __init__(self, out_names: Union[str, Tuple[str, ...]], in_name: str):
@@ -84,15 +90,20 @@ class _RenameRule(_Rule):
     def dependencies(self) -> Iterable[str]:
         return tuple((self._in_name, ))
 
+    def __str__(self):
+        return f'Rename  {self._format_out_names()} = {self._in_name}'
+
 
 class _ComputeRule(_Rule):
     def __init__(self, out_names: Union[str, Tuple[str, ...]], func: Callable):
         super().__init__(out_names)
         self._func = func
-        self._args = _argnames(func)
+        self._arg_names = _argnames(func)
 
     def __call__(self, coords: Mapping[str, Variable]) -> Dict[str, Variable]:
-        res = self._func(**{name: self._get_coord(name, coords) for name in self._args})
+        res = self._func(
+            **{name: self._get_coord(name, coords)
+               for name in self._arg_names})
         if not isinstance(res, dict):
             if len(self.out_names) != 1:
                 raise TypeError('Function returned a single output but '
@@ -101,7 +112,11 @@ class _ComputeRule(_Rule):
         return res
 
     def dependencies(self) -> Iterable[str]:
-        return self._args
+        return self._arg_names
+
+    def __str__(self):
+        return f'Compute {self._format_out_names()} = {self._func.__name__}' \
+               f'({", ".join(self._arg_names)})'
 
 
 def _make_rule(products, producer) -> _Rule:
@@ -198,10 +213,8 @@ class Graph:
 
 
 def _log_plan(rules):
-    get_logger().info(
-        'Transforming coords\n%s',
-        '\n'.join(f'  {rule.out_names} = {rule}({", ".join(rule.dependencies())})'
-                  for rule in rules))
+    get_logger().info('Transforming coords\n%s',
+                      '\n'.join(f'  {rule}' for rule in rules))
 
 
 def _store_results(x: DataArray, coords: Dict[str, Variable],
