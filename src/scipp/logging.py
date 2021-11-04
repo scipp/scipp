@@ -81,10 +81,12 @@ if running_in_jupyter():
 
         @staticmethod
         def _format_row(record: _WidgetLogRecord) -> str:
+            # The message is assumed to be safe HTML.
+            # It is WidgetHandler's responsibility to ensure that.
             return (
-                f'<tr class="sc-log sc-log-{record.levelname.lower()}">'
+                f'<tr class="sc-log sc-log-{html.escape(record.levelname.lower())}">'
                 f'<td class="sc-log-time-stamp">[{html.escape(record.time_stamp)}]</td>'
-                f'<td class="sc-log-level">{record.levelname}</td>'
+                f'<td class="sc-log-level">{html.escape(record.levelname)}</td>'
                 f'<td class="sc-log-message">{record.message}</td>'
                 f'<td class="sc-log-name">&lt;{html.escape(record.name)}&gt;</td>'
                 '</tr>')
