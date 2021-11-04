@@ -35,7 +35,7 @@ def _make_digraph(*args, **kwargs):
 
 class _Rule(ABC):
     def __init__(self, out_names: Union[str, Tuple[str]]):
-        self._out_names = (out_names, ) if isinstance(out_names, str) else out_names
+        self.out_names = (out_names, ) if isinstance(out_names, str) else out_names
 
     @abstractmethod
     def __call__(self, coords: Dict[str, Variable]) -> Dict[str, Variable]:
@@ -63,7 +63,7 @@ class _FetchRule(_Rule):
     def __call__(self, _) -> Dict[str, Variable]:
         return {
             out_name: self._get_coord(out_name, self._sources)
-            for out_name in self._out_names
+            for out_name in self.out_names
         }
 
     def dependencies(self) -> Iterable[str]:
@@ -78,7 +78,7 @@ class _RenameRule(_Rule):
     def __call__(self, coords: Mapping[str, Variable]) -> Dict[str, Variable]:
         return {
             out_name: self._get_coord(self._in_name, coords)
-            for out_name in self._out_names
+            for out_name in self.out_names
         }
 
     def dependencies(self) -> Iterable[str]:
@@ -94,10 +94,10 @@ class _ComputeRule(_Rule):
     def __call__(self, coords: Mapping[str, Variable]) -> Dict[str, Variable]:
         res = self._func(**{name: self._get_coord(name, coords) for name in self._args})
         if not isinstance(res, dict):
-            if len(self._out_names) != 1:
+            if len(self.out_names) != 1:
                 raise TypeError('Function returned a single output but '
-                                f'{len(self._out_names)} were expected.')
-            res = {self._out_names[0]: res}
+                                f'{len(self.out_names)} were expected.')
+            res = {self.out_names[0]: res}
         return res
 
     def dependencies(self) -> Iterable[str]:
@@ -195,6 +195,26 @@ class Graph:
                 for arg in _argnames(producer):
                     dot.edge(arg, name)
         return dot
+
+
+def _log_plan(rules):
+    get_logger().info(
+        'Transforming coords\n%s',
+        '\n'.join(f'  {rule.out_names} = {rule}({", ".join(rule.dependencies())})'
+                  for rule in rules))
+
+
+def new_transform_coords(x: DataArray, coords: Union[str, List[str], Tuple[str, ...]],
+                         graph: GraphDict):
+    rules = _non_duplicate_rules(Graph(graph).subgraph(x, coords))
+    _log_plan(rules)
+    working_coords = {}
+    for rule in rules:
+        for name, coord in rule(working_coords).items():
+            if name in working_coords:
+                raise ValueError(f"Coordinate '{name}' was produced multiple times.")
+            working_coords[name] = coord
+    return working_coords
 
 
 def _move_between_member_dicts(obj, name: str, src_name: str,
