@@ -2,22 +2,26 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock, Jan-Lukas Wynen
 
+from abc import ABC, abstractmethod
+from graphlib import TopologicalSorter
 import inspect
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Mapping,\
+    Optional, Sequence, Tuple, Union
 
-from .core import DataArray, Dataset, VariableError, Variable, bins, identical
+from .core import CoordError, DataArray, Dataset, VariableError,\
+    Variable, bins, identical
 from .logging import get_logger
 
 _OptionalCoordTuple = Tuple[Optional[Variable], Optional[Variable]]
 GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 
 
-def _argnames(func) -> List[str]:
+def _argnames(func) -> Tuple[str]:
     spec = inspect.getfullargspec(func)
     if spec.varargs is not None or spec.varkw is not None:
         raise ValueError(
             "Function with variable arguments not allowed in conversion graph.")
-    return spec.args + spec.kwonlyargs
+    return tuple(spec.args + spec.kwonlyargs)
 
 
 def _make_digraph(*args, **kwargs):
@@ -29,6 +33,78 @@ def _make_digraph(*args, **kwargs):
     return Digraph(*args, **kwargs)
 
 
+class _Rule(ABC):
+    @abstractmethod
+    def __call__(self, coords: Dict[str, Variable]) -> Dict[str, Variable]:
+        """Evaluate the kernel."""
+
+    @abstractmethod
+    def dependencies(self) -> Iterable[str]:
+        """Return names of coords that this kernel needs as inputs."""
+
+    @staticmethod
+    def _get_coord(name: str, coords: Mapping[str, Variable]) -> Variable:
+        try:
+            return coords[name]
+        except KeyError:
+            raise CoordError(
+                f'Coordinate {name} does is not in the input or has not (yet) '
+                'been computed. This is an internal error of scipp.')
+
+
+class _FetchRule(_Rule):
+    def __init__(self, out_name: str, sources: Mapping[str, Variable]):
+        self._out_name = out_name
+        self._sources = sources
+
+    def __call__(self, _) -> Dict[str, Variable]:
+        return {self._out_name: self._get_coord(self._out_name, self._sources)}
+
+    def dependencies(self) -> Iterable[str]:
+        return ()
+
+
+class _RenameRule(_Rule):
+    def __init__(self, out_name: str, in_name: str):
+        self._out_name = out_name
+        self._in_name = in_name
+
+    def __call__(self, coords: Mapping[str, Variable]) -> Dict[str, Variable]:
+        return {self._out_name: self._get_coord(self._in_name, coords)}
+
+    def dependencies(self) -> Iterable[str]:
+        return tuple((self._in_name, ))
+
+
+class _ComputeRule(_Rule):
+    def __init__(self, out, func):
+        self._out = out
+        self._func = func
+        self._args = _argnames(func)
+
+    def __call__(self, coords: Mapping[str, Variable]) -> Dict[str, Variable]:
+        res = self._func(**{name: self._get_coord(name, coords) for name in self._args})
+        if not isinstance(res, dict):
+            res = {self._out: res}
+        return res
+
+    def dependencies(self) -> Iterable[str]:
+        return self._args
+
+
+def _make_rule(data, out_name, graph):
+    if out_name in data.meta:
+        return _FetchRule(out_name, data.meta)
+    try:
+        graph_element = graph[out_name]
+    except KeyError:
+        raise CoordError(f"Coordinate '{out_name}' does not exist in the input data "
+                         "and no rule has been provided to compute it.")
+    if isinstance(graph_element, str):
+        return _RenameRule(out_name, graph_element)
+    return _ComputeRule(out_name, graph_element)
+
+
 class Graph:
     def __init__(self, graph):
         # Keys in graph may be tuple to define multiple outputs
@@ -38,6 +114,27 @@ class Graph:
                 if k in self._graph:
                     raise ValueError("Duplicate output name define in conversion graph")
                 self._graph[k] = graph[key]
+
+    def sorted(self):
+        g = {
+            out: [producer] if isinstance(producer, str) else _argnames(producer)
+            for out, producer in self._graph.items()
+        }
+        t = TopologicalSorter(g).static_order()
+        return list(t)
+
+    def subgraph(self, data: Union[DataArray, Dataset],
+                 targets: Iterable[str]) -> Dict[str, _Rule]:
+        subgraph = {}
+        pending = list(targets)
+        while pending:
+            out_name = pending.pop()
+            if out_name in subgraph:
+                continue
+            rule = _make_rule(data, out_name, self._graph)
+            subgraph[out_name] = rule
+            pending.extend(rule.dependencies())
+        return subgraph
 
     def __getitem__(self, name):
         return self._graph[name]
