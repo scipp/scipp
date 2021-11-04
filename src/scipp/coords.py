@@ -34,6 +34,9 @@ def _make_digraph(*args, **kwargs):
 
 
 class _Rule(ABC):
+    def __init__(self, out_names: Union[str, Tuple[str]]):
+        self._out_names = (out_names, ) if isinstance(out_names, str) else out_names
+
     @abstractmethod
     def __call__(self, coords: Dict[str, Variable]) -> Dict[str, Variable]:
         """Evaluate the kernel."""
@@ -47,62 +50,86 @@ class _Rule(ABC):
         try:
             return coords[name]
         except KeyError:
-            raise CoordError(
-                f'Coordinate {name} does is not in the input or has not (yet) '
-                'been computed. This is an internal error of scipp.')
+            raise CoordError(f'Internal Error: Coordinate {name} does is not in the '
+                             'input or has not (yet) been computed')
 
 
 class _FetchRule(_Rule):
-    def __init__(self, out_name: str, sources: Mapping[str, Variable]):
-        self._out_name = out_name
+    def __init__(self, out_names: Union[str, Tuple[str, ...]],
+                 sources: Mapping[str, Variable]):
+        super().__init__(out_names)
         self._sources = sources
 
     def __call__(self, _) -> Dict[str, Variable]:
-        return {self._out_name: self._get_coord(self._out_name, self._sources)}
+        return {
+            out_name: self._get_coord(out_name, self._sources)
+            for out_name in self._out_names
+        }
 
     def dependencies(self) -> Iterable[str]:
         return ()
 
 
 class _RenameRule(_Rule):
-    def __init__(self, out_name: str, in_name: str):
-        self._out_name = out_name
+    def __init__(self, out_names: Union[str, Tuple[str, ...]], in_name: str):
+        super().__init__(out_names)
         self._in_name = in_name
 
     def __call__(self, coords: Mapping[str, Variable]) -> Dict[str, Variable]:
-        return {self._out_name: self._get_coord(self._in_name, coords)}
+        return {
+            out_name: self._get_coord(self._in_name, coords)
+            for out_name in self._out_names
+        }
 
     def dependencies(self) -> Iterable[str]:
         return tuple((self._in_name, ))
 
 
 class _ComputeRule(_Rule):
-    def __init__(self, out, func):
-        self._out = out
+    def __init__(self, out_names: Union[str, Tuple[str, ...]], func: Callable):
+        super().__init__(out_names)
         self._func = func
         self._args = _argnames(func)
 
     def __call__(self, coords: Mapping[str, Variable]) -> Dict[str, Variable]:
         res = self._func(**{name: self._get_coord(name, coords) for name in self._args})
         if not isinstance(res, dict):
-            res = {self._out: res}
+            if len(self._out_names) != 1:
+                raise TypeError('Function returned a single output but '
+                                f'{len(self._out_names)} were expected.')
+            res = {self._out_names[0]: res}
         return res
 
     def dependencies(self) -> Iterable[str]:
         return self._args
 
 
-def _make_rule(data, out_name, graph):
-    if out_name in data.meta:
-        return _FetchRule(out_name, data.meta)
-    try:
-        graph_element = graph[out_name]
-    except KeyError:
-        raise CoordError(f"Coordinate '{out_name}' does not exist in the input data "
-                         "and no rule has been provided to compute it.")
-    if isinstance(graph_element, str):
-        return _RenameRule(out_name, graph_element)
-    return _ComputeRule(out_name, graph_element)
+def _make_rule(products, producer) -> _Rule:
+    if isinstance(producer, str):
+        return _RenameRule(products, producer)
+    return _ComputeRule(products, producer)
+
+
+def _non_duplicate_rules(rules: Mapping[str, _Rule]) -> List[_Rule]:
+    already_used = set()
+    result = []
+    for rule in filter(lambda r: r not in already_used,
+                       map(lambda n: rules[n], _sort_topologically(rules))):
+        already_used.add(rule)
+        result.append(rule)
+    return result
+
+
+def _convert_to_rule_graph(graph: GraphDict) -> Dict[str, _Rule]:
+    rule_graph = {}
+    for products, producer in graph.items():
+        rule = _make_rule(products, producer)
+        for product in (products, ) if isinstance(products, str) else products:
+            if product in rule_graph:
+                raise ValueError(
+                    f'Duplicate output name defined in conversion graph: {product}')
+            rule_graph[product] = rule
+    return rule_graph
 
 
 def _sort_topologically(graph: Mapping[str, _Rule]) -> Iterable[str]:
@@ -120,19 +147,30 @@ class Graph:
                 if k in self._graph:
                     raise ValueError("Duplicate output name define in conversion graph")
                 self._graph[k] = graph[key]
+        self._rule_graph = _convert_to_rule_graph(graph)
 
-    def subgraph(self, data: Union[DataArray, Dataset],
-                 targets: Iterable[str]) -> Dict[str, _Rule]:
+    def subgraph(self, data: DataArray, targets: Iterable[str]) -> Dict[str, _Rule]:
         subgraph = {}
         pending = list(targets)
         while pending:
             out_name = pending.pop()
             if out_name in subgraph:
                 continue
-            rule = _make_rule(data, out_name, self._graph)
+            rule = self._rule_for(out_name, data)
             subgraph[out_name] = rule
             pending.extend(rule.dependencies())
         return subgraph
+
+    def _rule_for(self, out_name: str, data: DataArray) -> _Rule:
+        if out_name in data.meta:
+            # TODO bins
+            return _FetchRule(out_name, data.meta)
+        try:
+            return self._rule_graph[out_name]
+        except KeyError:
+            raise CoordError(
+                f"Coordinate '{out_name}' does not exist in the input data "
+                "and no rule has been provided to compute it.") from None
 
     def __getitem__(self, name):
         return self._graph[name]
