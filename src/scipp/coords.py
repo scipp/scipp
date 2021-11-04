@@ -149,7 +149,7 @@ class Graph:
                 self._graph[k] = graph[key]
         self._rule_graph = _convert_to_rule_graph(graph)
 
-    def subgraph(self, data: DataArray, targets: Iterable[str]) -> Dict[str, _Rule]:
+    def subgraph(self, data: DataArray, targets: Tuple[str, ...]) -> Dict[str, _Rule]:
         subgraph = {}
         pending = list(targets)
         while pending:
@@ -204,9 +204,23 @@ def _log_plan(rules):
                   for rule in rules))
 
 
-def new_transform_coords(x: DataArray, coords: Union[str, List[str], Tuple[str, ...]],
+def _store_results(x: DataArray, coords: Dict[str, Variable],
+                   targets: Tuple[str, ...]) -> None:
+    for name, coord in coords.items():
+        if name in targets:
+            x.coords[name] = coord
+            if name in x.attrs:
+                del x.attrs[name]
+        else:
+            x.attrs[name] = coord
+            if name in x.coords:
+                del x.coords[name]
+
+
+def new_transform_coords(x: DataArray, targets: Union[str, List[str], Tuple[str, ...]],
                          graph: GraphDict):
-    rules = _non_duplicate_rules(Graph(graph).subgraph(x, coords))
+    targets = tuple(targets)
+    rules = _non_duplicate_rules(Graph(graph).subgraph(x, targets))
     _log_plan(rules)
     working_coords = {}
     for rule in rules:
@@ -214,7 +228,8 @@ def new_transform_coords(x: DataArray, coords: Union[str, List[str], Tuple[str, 
             if name in working_coords:
                 raise ValueError(f"Coordinate '{name}' was produced multiple times.")
             working_coords[name] = coord
-    return working_coords
+    _store_results(x, working_coords, targets)
+    return x
 
 
 def _move_between_member_dicts(obj, name: str, src_name: str,
