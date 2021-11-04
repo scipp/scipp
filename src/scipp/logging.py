@@ -175,7 +175,7 @@ class _ReplacementPattern:
         return self._PATTERN.format(self._i)
 
     def __repr__(self):
-        return str(self._arg)
+        return repr(self._arg)
 
 
 def _preprocess_format_args(args) -> Tuple[Tuple, Dict[str, Any]]:
