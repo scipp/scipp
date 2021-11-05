@@ -3,7 +3,7 @@
 # @author Simon Heybrock
 from __future__ import annotations
 
-from .._scipp.core import DataArray
+from .._scipp.core import DataArray, DimensionError
 from .shape import concat
 from .variable import empty
 
@@ -14,7 +14,11 @@ def merge_equal_adjacent(da: DataArray) -> DataArray:
     :param da: Input data array, must be a 1-D histogram.
     :return: Data array with bins spanning domains of input.
     """
-    dim = da.dim
+    try:
+        dim = da.dim
+    except DimensionError as e:
+        raise DimensionError(
+            "Cannot merge equal adjacent bins non-1-D data array") from e
     condition = empty(dims=da.dims, shape=da.shape, dtype='bool')
     condition[dim, -1] = False
     condition[dim, :-1] = da.data[dim, 1:] == da.data[dim, :-1]
