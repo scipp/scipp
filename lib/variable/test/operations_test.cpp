@@ -829,24 +829,23 @@ TEST(VariableTest, rotate) {
 }
 
 class ApplyTransformTest : public ::testing::Test {
-  public:
+public:
   Variable makeTransformVar(const units::Unit unit) {
     Eigen::Vector3d rotation_axis(1, 0, 0);
     Eigen::Affine3d t(Eigen::AngleAxisd(pi<double> / 2.0, rotation_axis));
 
-    return makeVariable<Eigen::Affine3d>(Dims{Dim::X}, Shape{1},
-                                                   unit, Values{t});
+    return makeVariable<Eigen::Affine3d>(Dims{Dim::X}, Shape{1}, unit,
+                                         Values{t});
   }
 
   Variable makeVectorVar(const units::Unit unit) {
     Eigen::Vector3d eigen_vec(1, 2, 3);
     return makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, unit,
-                                             Values{eigen_vec});
+                                         Values{eigen_vec});
   }
 };
 
 TEST_F(ApplyTransformTest, apply_transform_to_vector) {
-
   auto transformed = makeTransformVar(units::m) * makeVectorVar(units::m);
 
   Eigen::Vector3d expected(1, -3, 2);
@@ -856,11 +855,12 @@ TEST_F(ApplyTransformTest, apply_transform_to_vector) {
 }
 
 TEST_F(ApplyTransformTest, apply_transform_to_vector_with_different_units) {
-
   // Even though the transform and vector both have units of length, we don't
   // allow this application of a transform. The units must match exactly as the
   // transform may contain translations which get added to the vector.
-  EXPECT_THROW(std::ignore = makeTransformVar(units::m) * makeVectorVar(units::mm), except::UnitError);
+  EXPECT_THROW(std::ignore =
+                   makeTransformVar(units::m) * makeVectorVar(units::mm),
+               except::UnitError);
 }
 
 TEST(VariableTest, mul_vector) {

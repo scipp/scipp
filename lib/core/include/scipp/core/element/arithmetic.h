@@ -87,18 +87,18 @@ struct subtract_types_t {
 
 struct multiplies_types_t {
   constexpr void operator()() const noexcept;
-  using types = decltype(std::tuple_cat(
-      std::declval<arithmetic_type_pairs_with_bool>(),
-      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Matrix3d>>(),
-      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>(),
-      std::tuple<std::tuple<double, Eigen::Vector3d>>(),
-      std::tuple<std::tuple<float, Eigen::Vector3d>>(),
-      std::tuple<std::tuple<int64_t, Eigen::Vector3d>>(),
-      std::tuple<std::tuple<int32_t, Eigen::Vector3d>>(),
-      std::tuple<std::tuple<Eigen::Vector3d, double>>(),
-      std::tuple<std::tuple<Eigen::Vector3d, float>>(),
-      std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
-      std::tuple<std::tuple<Eigen::Vector3d, int32_t>>()));
+  using types = decltype(
+      std::tuple_cat(std::declval<arithmetic_type_pairs_with_bool>(),
+                     std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Matrix3d>>(),
+                     std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>(),
+                     std::tuple<std::tuple<double, Eigen::Vector3d>>(),
+                     std::tuple<std::tuple<float, Eigen::Vector3d>>(),
+                     std::tuple<std::tuple<int64_t, Eigen::Vector3d>>(),
+                     std::tuple<std::tuple<int32_t, Eigen::Vector3d>>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, double>>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, float>>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, int32_t>>()));
 };
 
 struct apply_spatial_transformation_t {
@@ -144,7 +144,8 @@ constexpr auto apply_spatial_transformation = overloaded{
     [](const units::Unit &a, const units::Unit &b) {
       if (a != b)
         throw except::UnitError(
-            "Cannot apply spatial transform as the units of the transformation are not the same as the units of transformation or vector.");
+            "Cannot apply spatial transform as the units of the transformation "
+            "are not the same as the units of transformation or vector.");
       else
         return a;
     }};
