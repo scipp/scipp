@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from graphlib import TopologicalSorter
 import inspect
 from typing import Callable, Dict, Iterable, List, Mapping,\
-    Optional, Sequence, Tuple, Union
+    Optional, Tuple, Union
 
 from .core import CoordError, DataArray, Dataset, VariableError,\
     Variable, bins, identical
@@ -219,6 +219,7 @@ def _log_plan(rules):
 
 def _store_results(x: DataArray, coords: Dict[str, Variable],
                    targets: Tuple[str, ...]) -> None:
+    x = x.copy(deep=False)
     for name, coord in coords.items():
         if name in targets:
             x.coords[name] = coord
@@ -228,21 +229,32 @@ def _store_results(x: DataArray, coords: Dict[str, Variable],
             x.attrs[name] = coord
             if name in x.coords:
                 del x.coords[name]
+    return x
 
 
-def new_transform_coords(x: DataArray, targets: Union[str, List[str], Tuple[str, ...]],
-                         graph: GraphDict):
-    targets = tuple(targets)
+def _renamable_dims(x: DataArray, rules: List[_Rule]) -> Dict[str, List[str]]:
+    res = {}
+    for rule in filter(lambda r: isinstance(r, _FetchRule), rules):
+        for name in rule.out_names:
+            if name in x.dims:
+                res[name] = []
+    return res
+
+
+def _transform_data_array(x: DataArray, coords: Union[str, List[str], Tuple[str, ...]],
+                          graph: GraphDict, kwargs) -> DataArray:
+    targets = tuple(coords)
     rules = _non_duplicate_rules(Graph(graph).subgraph(x, targets))
     _log_plan(rules)
+    # rename_dims = _renamable_dims(x, rules)
     working_coords = {}
     for rule in rules:
         for name, coord in rule(working_coords).items():
             if name in working_coords:
                 raise ValueError(f"Coordinate '{name}' was produced multiple times.")
             working_coords[name] = coord
-    _store_results(x, working_coords, targets)
-    return x
+
+    return _store_results(x, working_coords, targets)
 
 
 def _move_between_member_dicts(obj, name: str, src_name: str,
@@ -334,6 +346,7 @@ class CoordTransform:
         self._aliases.append(name)
         out = {name: self._get_coord(self._graph[name])}
         dim = (self._graph[name], )
+        print('###', name, dim)
         return out, dim
 
     def _compute_coord(self,
@@ -438,17 +451,17 @@ def _get_splitting_nodes(graph: Dict[Tuple[str], List[str]]) -> List[str]:
     return [node for node in nodes if nodes[node] > 1]
 
 
-def _transform_data_array(obj: DataArray, coords: Sequence[str], graph: GraphDict, *,
-                          kwargs) -> DataArray:
-    transform = CoordTransform(
-        obj,
-        graph=Graph(graph),
-        outputs=(coords, ) if isinstance(coords, str) else tuple(coords))
-    return transform.finalize(**kwargs)
+# def _transform_data_array(obj: DataArray, coords: Sequence[str], graph: GraphDict, *,
+#                           kwargs) -> DataArray:
+#     transform = CoordTransform(
+#         obj,
+#         graph=Graph(graph),
+#         outputs=(coords, ) if isinstance(coords, str) else tuple(coords))
+#     return transform.finalize(**kwargs)
 
 
-def _transform_dataset(obj: Dataset, coords: Sequence[str], graph: GraphDict, *,
-                       kwargs) -> Dataset:
+def _transform_dataset(obj: Dataset, coords: Union[str, List[str], Tuple[str, ...]],
+                       graph: GraphDict, *, kwargs) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord
     # transform is repeated for every item rather than sharing what is
     # possible. Implementing this would be tricky and likely error-prone,
