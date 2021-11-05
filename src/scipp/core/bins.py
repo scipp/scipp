@@ -8,13 +8,14 @@ from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLike, MetaDataMap
 from .domains import find_domains
+from .operations import islinspace
 
 
 class lookup:
     def __init__(self, func: _cpp.DataArray, dim: str):
         if func.ndim == 1 and func.dtype in [
                 _cpp.dtype.bool, _cpp.dtype.int32, _cpp.dtype.int64, _cpp.dtype.string
-        ]:
+        ] and not islinspace(func.coords[dim], dim).value:
             func = find_domains(func)
         self.func = func
         self.dim = dim
