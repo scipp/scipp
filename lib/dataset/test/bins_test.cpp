@@ -234,6 +234,13 @@ TEST_F(DataArrayBinsMapTest, map) {
   EXPECT_EQ(partial, expected);
 }
 
+TEST_F(DataArrayBinsMapTest, fail_no_bin_edges) {
+  const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
+  histogram.coords().set(Dim::Z, bin_edges.slice({Dim::Z, 1, 4}));
+  EXPECT_THROW_DISCARD(buckets::map(histogram, coord, Dim::Z),
+                       except::BinEdgeError);
+}
+
 TEST_F(DataArrayBinsMapTest, map_masked) {
   const auto &coord = bins_view<DataArray>(buckets).meta()[Dim::Z];
   histogram.masks().set(
