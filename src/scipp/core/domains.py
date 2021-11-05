@@ -2,22 +2,19 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from __future__ import annotations
-from typing import Optional
 
 from . import DataArray, concat
 
 
-def find_domains(da: DataArray, dim: Optional[str] = None) -> DataArray:
-    """Find domains of constant values in a histogram.
+def find_domains(da: DataArray) -> DataArray:
+    """Find domains of constant values in a 1-D histogram.
 
     This effectively merges adjacent bins that have identical values.
 
     :param da: Input data array.
-    :param dim: Optional dimension label. If not provided, ``da`` must be 1-D.
     :return: Data array with bins spanning domains of input.
     """
-    if dim is None:
-        dim = da.dim
+    dim = da.dim
     condition = da.data == da.data
     condition['x', :-1] = da.data['x', 1:] != da.data['x', :-1]
     condition
