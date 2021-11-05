@@ -3,6 +3,7 @@
 # @author Simon Heybrock, Jan-Lukas Wynen
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from graphlib import TopologicalSorter
 import inspect
 from typing import Callable, Dict, Iterable, List, Mapping,\
@@ -31,6 +32,14 @@ def _make_digraph(*args, **kwargs):
         raise RuntimeError("Failed to import `graphviz`, please install `graphviz` if "
                            "using `pip`, or `python-graphviz` if using `conda`.")
     return Digraph(*args, **kwargs)
+
+
+@dataclass(frozen=True)
+class _Options:
+    rename_dims: bool
+    include_aliases: bool
+    keep_intermediate: bool
+    keep_inputs: bool
 
 
 class _Rule(ABC):
@@ -259,7 +268,7 @@ def _rename_dims(x, original, rename):
 
 
 def _transform_data_array(x: DataArray, coords: Union[str, List[str], Tuple[str, ...]],
-                          graph: GraphDict, options) -> DataArray:
+                          graph: GraphDict, options: _Options) -> DataArray:
     targets = tuple(coords)
     rules = _non_duplicate_rules(Graph(graph).subgraph(x, targets))
     _log_plan(rules)
@@ -270,10 +279,11 @@ def _transform_data_array(x: DataArray, coords: Union[str, List[str], Tuple[str,
             if name in working_coords:
                 raise ValueError(f"Coordinate '{name}' was produced multiple times.")
             working_coords[name] = coord
-            ren = list(filter(lambda xx: xx in rename_dims, rule.dependencies()))
-            if len(ren) == 1:
-                rename_dims[ren[0]].append(name)
-                rename_dims[name] = []
+            if options.rename_dims:
+                ren = list(filter(lambda xx: xx in rename_dims, rule.dependencies()))
+                if len(ren) == 1:
+                    rename_dims[ren[0]].append(name)
+                    rename_dims[name] = []
 
     res = _store_results(x, working_coords, targets)
     return _rename_dims(res, x, rename_dims)
@@ -482,7 +492,7 @@ def _get_splitting_nodes(graph: Dict[Tuple[str], List[str]]) -> List[str]:
 
 
 def _transform_dataset(obj: Dataset, coords: Union[str, List[str], Tuple[str, ...]],
-                       graph: GraphDict, *, options) -> Dataset:
+                       graph: GraphDict, *, options: _Options) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord
     # transform is repeated for every item rather than sharing what is
     # possible. Implementing this would be tricky and likely error-prone,
@@ -531,12 +541,10 @@ def transform_coords(x: Union[DataArray, Dataset],
     :return: New object with desired coords. Existing data and meta-data is
              shallow-copied.
     """
-    options = {
-        'rename_dims': rename_dims,
-        'include_aliases': include_aliases,
-        'keep_intermediate': keep_intermediate,
-        'keep_inputs': keep_inputs
-    }
+    options = _Options(rename_dims=rename_dims,
+                       include_aliases=include_aliases,
+                       keep_intermediate=keep_intermediate,
+                       keep_inputs=keep_inputs)
     if isinstance(x, DataArray):
         return _transform_data_array(x, coords=coords, graph=graph, options=options)
     else:
