@@ -49,8 +49,8 @@ extends:
         conda_env: 'scipp-developer-minimal.yml'
     package: true
     deploy: true
-    ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:  # nightly
+    ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:  # nightly
       conda_label: 'dev'
-    ${{ if ne(variables['Build.SourceBranchName'], 'main') }}:  # tagged release
+    ${{ if ne(variables['Build.SourceBranch'], 'refs/heads/main') }}:  # tagged release
       conda_label: 'main'
       release: true
