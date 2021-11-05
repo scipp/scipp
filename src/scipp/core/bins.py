@@ -137,10 +137,10 @@ class Bins:
         raise RuntimeError("Reduction along all dims not supported yet.")
 
     def concatenate(
-        self,
-        other: Union[_cpp.Variable, _cpp.DataArray],
-        *,
-        out: Optional[_cpp.DataArray] = None
+            self,
+            other: Union[_cpp.Variable, _cpp.DataArray],
+            *,
+            out: Optional[_cpp.DataArray] = None
     ) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Concatenate bins element-wise by concatenating bin contents along
         their internal bin dimension.
