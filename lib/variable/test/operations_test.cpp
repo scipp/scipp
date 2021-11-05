@@ -858,7 +858,8 @@ TEST(VariableTest, apply_transform_to_vector_with_different_units) {
                                                  units::mm, Values{t});
 
   // Even though the transform and vector both have units of length, we don't
-  // allow this multiplication. The units must match exactly.
+  // allow this application of a transform. The units must match exactly as the
+  // transform may contain translations which get added to the vector.
   EXPECT_THROW(transform * vec, except::UnitError);
 }
 

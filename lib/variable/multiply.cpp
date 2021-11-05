@@ -9,8 +9,8 @@ namespace scipp::variable {
 
 Variable operator*(const Variable &a, const Variable &b) {
   if (a.dtype() == dtype<Eigen::Affine3d>) {
-    return transform(a, b, core::element::multiply_if_units_equal,
-                     std::string_view("multiply_if_units_equal"));
+    return transform(a, b, core::element::apply_spatial_transformation,
+                     std::string_view("apply_spatial_transformation"));
   } else {
     return transform(a, b, core::element::multiply,
                      std::string_view("multiply"));
