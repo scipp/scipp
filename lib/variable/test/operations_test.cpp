@@ -2,6 +2,7 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <Eigen/Geometry>
 #include <gtest/gtest.h>
+#include <tuple>
 #include <vector>
 
 #include "fix_typed_test_suite_warnings.h"
@@ -827,18 +828,26 @@ TEST(VariableTest, rotate) {
   EXPECT_EQ(vec_new, rotated);
 }
 
-TEST(VariableTest, apply_transform_to_vector) {
-  Eigen::Vector3d eigen_vec(1, 2, 3);
-  auto vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, units::m,
-                                           Values{eigen_vec});
+class ApplyTransformTest : public ::testing::Test {
+  public:
+  Variable makeTransformVar(const units::Unit unit) {
+    Eigen::Vector3d rotation_axis(1, 0, 0);
+    Eigen::Affine3d t(Eigen::AngleAxisd(pi<double> / 2.0, rotation_axis));
 
-  Eigen::Vector3d rotation_axis(1, 0, 0);
-  Eigen::Affine3d t(Eigen::AngleAxisd(pi<double> / 2.0, rotation_axis));
+    return makeVariable<Eigen::Affine3d>(Dims{Dim::X}, Shape{1},
+                                                   unit, Values{t});
+  }
 
-  auto transform = makeVariable<Eigen::Affine3d>(Dims{Dim::X}, Shape{1},
-                                                 units::m, Values{t});
+  Variable makeVectorVar(const units::Unit unit) {
+    Eigen::Vector3d eigen_vec(1, 2, 3);
+    return makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, unit,
+                                             Values{eigen_vec});
+  }
+};
 
-  auto transformed = transform * vec;
+TEST_F(ApplyTransformTest, apply_transform_to_vector) {
+
+  auto transformed = makeTransformVar(units::m) * makeVectorVar(units::m);
 
   Eigen::Vector3d expected(1, -3, 2);
   EXPECT_EQ(transformed,
@@ -846,21 +855,12 @@ TEST(VariableTest, apply_transform_to_vector) {
                                           Values{expected}));
 }
 
-TEST(VariableTest, apply_transform_to_vector_with_different_units) {
-  Eigen::Vector3d eigen_vec(1, 2, 3);
-  auto vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, units::m,
-                                           Values{eigen_vec});
-
-  Eigen::Vector3d rotation_axis(1, 0, 0);
-  Eigen::Affine3d t(Eigen::AngleAxisd(pi<double> / 2.0, rotation_axis));
-
-  auto transform = makeVariable<Eigen::Affine3d>(Dims{Dim::X}, Shape{1},
-                                                 units::mm, Values{t});
+TEST_F(ApplyTransformTest, apply_transform_to_vector_with_different_units) {
 
   // Even though the transform and vector both have units of length, we don't
   // allow this application of a transform. The units must match exactly as the
   // transform may contain translations which get added to the vector.
-  EXPECT_THROW(transform * vec, except::UnitError);
+  EXPECT_THROW(std::ignore = makeTransformVar(units::m) * makeVectorVar(units::mm), except::UnitError);
 }
 
 TEST(VariableTest, mul_vector) {
