@@ -11,7 +11,7 @@ from .domains import merge_equal_adjacent
 from .operations import islinspace
 
 
-class lookup:
+class Lookup:
     def __init__(self, func: _cpp.DataArray, dim: str):
         if func.ndim == 1 and func.dtype in [
                 _cpp.dtype.bool, _cpp.dtype.int32, _cpp.dtype.int64, _cpp.dtype.string
@@ -23,6 +23,27 @@ class lookup:
 
     def __getitem__(self, var):
         return _cpp.buckets.map(self.func, var, self.dim)
+
+
+def lookup(func: _cpp.DataArray, dim: str):
+    """
+    Create a "lookup table" from a histogram (data array with bin-edge coord).
+
+    The lookup table can be used to map, e.g., time-stamps to corresponding values
+    given by a time-series log.
+
+    :param func: Histogram defining the lookup table.
+    :param dim: Dimension along which the lookup occurs.
+
+    Examples:
+
+      >>> x = sc.linspace(dim='x', start=0.0, stop=1.0, num=4)
+      >>> vals = sc.array(dims=['x'], values=[3, 2, 1])
+      >>> hist = sc.DataArray(data=vals, coords={'x': x})
+      >>> sc.lookup(hist, 'x')[sc.array(dims=['event'], values=[0.1,0.4,0.1,0.6,0.9])]
+      <scipp.Variable> (event: 5)      int64  [dimensionless]  [3, 2, ..., 2, 1]
+    """
+    return Lookup(func, dim)
 
 
 class Bins:
@@ -138,10 +159,10 @@ class Bins:
         raise RuntimeError("Reduction along all dims not supported yet.")
 
     def concatenate(
-            self,
-            other: Union[_cpp.Variable, _cpp.DataArray],
-            *,
-            out: Optional[_cpp.DataArray] = None
+        self,
+        other: Union[_cpp.Variable, _cpp.DataArray],
+        *,
+        out: Optional[_cpp.DataArray] = None
     ) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Concatenate bins element-wise by concatenating bin contents along
         their internal bin dimension.
