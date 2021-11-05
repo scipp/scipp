@@ -7,7 +7,7 @@ import warnings
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLike, MetaDataMap
-from .domains import find_domains
+from .domains import merge_equal_adjacent
 from .operations import islinspace
 
 
@@ -16,7 +16,8 @@ class lookup:
         if func.ndim == 1 and func.dtype in [
                 _cpp.dtype.bool, _cpp.dtype.int32, _cpp.dtype.int64, _cpp.dtype.string
         ] and not islinspace(func.coords[dim], dim).value:
-            func = find_domains(func)
+            # Significant speedup if `func` is large but mostly constant.
+            func = merge_equal_adjacent(func)
         self.func = func
         self.dim = dim
 

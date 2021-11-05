@@ -5,18 +5,18 @@ from __future__ import annotations
 
 from .._scipp.core import DataArray
 from .shape import concat
+from .variable import empty
 
 
-def find_domains(da: DataArray) -> DataArray:
-    """Find domains of constant values in a 1-D histogram.
+def merge_equal_adjacent(da: DataArray) -> DataArray:
+    """Merges adjacent bins that have identical values.
 
-    This effectively merges adjacent bins that have identical values.
-
-    :param da: Input data array.
+    :param da: Input data array, must be a 1-D histogram.
     :return: Data array with bins spanning domains of input.
     """
     dim = da.dim
-    condition = da.data != da.data
+    condition = empty(dims=da.dims, shape=da.shape, dtype='bool')
+    condition[dim, -1] = False
     condition[dim, :-1] = da.data[dim, 1:] == da.data[dim, :-1]
     group = f'{dim}_'
     tmp = DataArray(da.data, coords={dim: da.coords[dim][dim, 1:], group: condition})
