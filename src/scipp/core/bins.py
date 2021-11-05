@@ -7,10 +7,15 @@ import warnings
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLike, MetaDataMap
+from .domains import find_domains
 
 
 class lookup:
     def __init__(self, func: _cpp.DataArray, dim: str):
+        if func.ndim == 1 and func.dtype in [
+                _cpp.dtype.bool, _cpp.dtype.int32, _cpp.dtype.int64, _cpp.dtype.string
+        ]:
+            func = find_domains(func)
         self.func = func
         self.dim = dim
 
@@ -131,10 +136,10 @@ class Bins:
         raise RuntimeError("Reduction along all dims not supported yet.")
 
     def concatenate(
-            self,
-            other: Union[_cpp.Variable, _cpp.DataArray],
-            *,
-            out: Optional[_cpp.DataArray] = None
+        self,
+        other: Union[_cpp.Variable, _cpp.DataArray],
+        *,
+        out: Optional[_cpp.DataArray] = None
     ) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Concatenate bins element-wise by concatenating bin contents along
         their internal bin dimension.
