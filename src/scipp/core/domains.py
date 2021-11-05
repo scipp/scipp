@@ -18,7 +18,6 @@ def find_domains(da: DataArray) -> DataArray:
     dim = da.dim
     condition = da.data != da.data
     condition[dim, :-1] = da.data[dim, 1:] == da.data[dim, :-1]
-    condition
     group = f'{dim}_'
     tmp = DataArray(da.data, coords={dim: da.coords[dim][dim, 1:], group: condition})
     # Note the flipped condition: In case we do not merge any bins we may have only a
