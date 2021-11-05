@@ -3,7 +3,8 @@
 # @author Simon Heybrock
 from __future__ import annotations
 
-from . import DataArray, concat
+from .._scipp.core import DataArray
+from .shape import concat
 
 
 def find_domains(da: DataArray) -> DataArray:
@@ -15,12 +16,14 @@ def find_domains(da: DataArray) -> DataArray:
     :return: Data array with bins spanning domains of input.
     """
     dim = da.dim
-    condition = da.data == da.data
-    condition['x', :-1] = da.data['x', 1:] != da.data['x', :-1]
+    condition = da.data != da.data
+    condition['x', :-1] = da.data['x', 1:] == da.data['x', :-1]
     condition
     group = f'{dim}_'
     tmp = DataArray(da.data, coords={dim: da.coords[dim][dim, 1:], group: condition})
-    out = tmp.groupby(group).copy(1)
+    # Note the flipped condition: In case we do not merge any bins we may have only a
+    # single group. The flipped condition ensures that we always require group 0.
+    out = tmp.groupby(group).copy(0)
     del out.coords[group]
     out.coords[dim] = concat([da.coords[dim][dim, 0:1], out.coords[dim]], dim)
     return out
