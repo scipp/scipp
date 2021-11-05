@@ -17,7 +17,7 @@ def find_domains(da: DataArray) -> DataArray:
     """
     dim = da.dim
     condition = da.data != da.data
-    condition['x', :-1] = da.data['x', 1:] == da.data['x', :-1]
+    condition[dim, :-1] = da.data[dim, 1:] == da.data[dim, :-1]
     condition
     group = f'{dim}_'
     tmp = DataArray(da.data, coords={dim: da.coords[dim][dim, 1:], group: condition})
