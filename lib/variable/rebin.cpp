@@ -17,10 +17,6 @@ using namespace scipp::core::element;
 
 namespace scipp::variable {
 
-bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
-  return edges[dim] - 1 == toMatch[dim];
-}
-
 // Workaround VS C7526 (undefined inline variable) with dtype<> in template.
 bool is_dtype_bool(const Variable &var) { return var.dtype() == dtype<bool>; }
 
@@ -122,7 +118,7 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
   // always be computed on-the-fly for visualization, if required.
   if (var.dtype() == dtype<bool>)
     core::expect::equals(var.unit(), units::one);
-  if (!isBinEdge(dim, oldCoord.dims(), var.dims()))
+  if (!is_edges(var.dims(), oldCoord.dims(), dim))
     throw except::BinEdgeError(
         "The input does not have coordinates with bin-edges.");
 
