@@ -212,13 +212,13 @@ class Graph:
         return dot
 
 
-def _log_plan(rules):
+def _log_plan(rules: List[_Rule]) -> None:
     get_logger().info('Transforming coords\n%s',
                       '\n'.join(f'  {rule}' for rule in rules))
 
 
 def _store_results(x: DataArray, coords: Dict[str, Variable],
-                   targets: Tuple[str, ...]) -> None:
+                   targets: Tuple[str, ...]) -> DataArray:
     x = x.copy(deep=False)
     for name, coord in coords.items():
         if name in targets:
@@ -241,20 +241,42 @@ def _renamable_dims(x: DataArray, rules: List[_Rule]) -> Dict[str, List[str]]:
     return res
 
 
+def _rename_dims(x, original, rename):
+    ren = {}
+    for dim in original.dims:
+        to = dim
+        while True:
+            try:
+                if len(rename[to]) == 1:
+                    to = rename[to][0]
+                else:
+                    break
+            except KeyError:
+                break
+        if dim != to:
+            ren[dim] = to
+    return x.rename_dims(ren)
+
+
 def _transform_data_array(x: DataArray, coords: Union[str, List[str], Tuple[str, ...]],
-                          graph: GraphDict, kwargs) -> DataArray:
+                          graph: GraphDict, options) -> DataArray:
     targets = tuple(coords)
     rules = _non_duplicate_rules(Graph(graph).subgraph(x, targets))
     _log_plan(rules)
-    # rename_dims = _renamable_dims(x, rules)
+    rename_dims = _renamable_dims(x, rules)
     working_coords = {}
     for rule in rules:
         for name, coord in rule(working_coords).items():
             if name in working_coords:
                 raise ValueError(f"Coordinate '{name}' was produced multiple times.")
             working_coords[name] = coord
+            ren = list(filter(lambda xx: xx in rename_dims, rule.dependencies()))
+            if len(ren) == 1:
+                rename_dims[ren[0]].append(name)
+                rename_dims[name] = []
 
-    return _store_results(x, working_coords, targets)
+    res = _store_results(x, working_coords, targets)
+    return _rename_dims(res, x, rename_dims)
 
 
 def _move_between_member_dicts(obj, name: str, src_name: str,
@@ -346,7 +368,6 @@ class CoordTransform:
         self._aliases.append(name)
         out = {name: self._get_coord(self._graph[name])}
         dim = (self._graph[name], )
-        print('###', name, dim)
         return out, dim
 
     def _compute_coord(self,
@@ -450,18 +471,18 @@ def _get_splitting_nodes(graph: Dict[Tuple[str], List[str]]) -> List[str]:
             nodes[start] = nodes.get(start, 0) + 1
     return [node for node in nodes if nodes[node] > 1]
 
-
-# def _transform_data_array(obj: DataArray, coords: Sequence[str], graph: GraphDict, *,
-#                           kwargs) -> DataArray:
+#
+# def _transform_data_array(obj: DataArray, coords , graph: GraphDict, *,
+#                           options) -> DataArray:
 #     transform = CoordTransform(
 #         obj,
 #         graph=Graph(graph),
 #         outputs=(coords, ) if isinstance(coords, str) else tuple(coords))
-#     return transform.finalize(**kwargs)
+#     return transform.finalize(**options)
 
 
 def _transform_dataset(obj: Dataset, coords: Union[str, List[str], Tuple[str, ...]],
-                       graph: GraphDict, *, kwargs) -> Dataset:
+                       graph: GraphDict, *, options) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord
     # transform is repeated for every item rather than sharing what is
     # possible. Implementing this would be tricky and likely error-prone,
@@ -471,13 +492,13 @@ def _transform_dataset(obj: Dataset, coords: Union[str, List[str], Tuple[str, ..
     return Dataset(
         data={
             name: _transform_data_array(
-                obj[name], coords=coords, graph=graph, kwargs=kwargs)
+                obj[name], coords=coords, graph=graph, options=options)
             for name in obj
         })
 
 
 def transform_coords(x: Union[DataArray, Dataset],
-                     coords: Union[str, List[str]],
+                     coords: Union[str, List[str], Tuple[str, ...]],
                      graph: GraphDict,
                      *,
                      rename_dims=True,
@@ -499,7 +520,7 @@ def transform_coords(x: Union[DataArray, Dataset],
                     it must either return a single variable or a dict of
                     variables.
     :param rename_dims: Rename dimensions if products of dimension coord are
-                        fully consumed and consumer consumes exectly one
+                        fully consumed and consumer consumes exactly one
                         dimension coordinate. Default is True.
     :param include_aliases: If True, aliases for coords defined in graph are
                             included in the output. Default is False.
@@ -510,16 +531,16 @@ def transform_coords(x: Union[DataArray, Dataset],
     :return: New object with desired coords. Existing data and meta-data is
              shallow-copied.
     """
-    kwargs = {
+    options = {
         'rename_dims': rename_dims,
         'include_aliases': include_aliases,
         'keep_intermediate': keep_intermediate,
         'keep_inputs': keep_inputs
     }
     if isinstance(x, DataArray):
-        return _transform_data_array(x, coords=coords, graph=graph, kwargs=kwargs)
+        return _transform_data_array(x, coords=coords, graph=graph, options=options)
     else:
-        return _transform_dataset(x, coords=coords, graph=graph, kwargs=kwargs)
+        return _transform_dataset(x, coords=coords, graph=graph, options=options)
 
 
 def show_graph(graph: GraphDict, size: str = None, simplified: bool = False):
