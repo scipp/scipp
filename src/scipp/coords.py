@@ -128,8 +128,6 @@ class _FetchRule(_Rule):
         self._event_sources = event_sources
 
     def __call__(self, _) -> Dict[str, _Coord]:
-        # TODO remove from sources, requires that sources
-        #  are for output da not original!
         return {
             out_name: _Coord(dense=self._dense_sources.get(out_name, None),
                              event=self._event_sources.get(out_name, None)
@@ -430,13 +428,12 @@ def _dim_name_changes(rules: List[_Rule], dims: List[str]) -> Dict[str, str]:
     return name_changes
 
 
-def _transform_data_array(original: DataArray, coords: Union[str, List[str],
-                                                             Tuple[str, ...]],
-                          graph: GraphDict, options: _Options) -> DataArray:
+def _transform_data_array(original: DataArray, coords: Tuple[str, ...], graph: Graph,
+                          options: _Options) -> DataArray:
     targets = tuple(coords)
-    rules = _non_duplicate_rules(Graph(graph).subgraph(original, targets))
-    dim_name_changes = _dim_name_changes(rules,
-                                         original.dims) if options.rename_dims else {}
+    rules = _non_duplicate_rules(graph.subgraph(original, targets))
+    dim_name_changes = (_dim_name_changes(rules, original.dims)
+                        if options.rename_dims else {})
     _log_plan(rules, dim_name_changes)
     working_coords = _CoordTable()
     for rule in rules:
@@ -448,8 +445,8 @@ def _transform_data_array(original: DataArray, coords: Union[str, List[str],
     return res.rename_dims(dim_name_changes)
 
 
-def _transform_dataset(obj: Dataset, coords: Union[str, List[str], Tuple[str, ...]],
-                       graph: GraphDict, *, options: _Options) -> Dataset:
+def _transform_dataset(obj: Dataset, coords: Tuple[str, ...], graph: Graph, *,
+                       options: _Options) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord
     # transform is repeated for every item rather than sharing what is
     # possible. Implementing this would be tricky and likely error-prone,
@@ -503,9 +500,15 @@ def transform_coords(x: Union[DataArray, Dataset],
                        keep_intermediate=keep_intermediate,
                        keep_inputs=keep_inputs)
     if isinstance(x, DataArray):
-        return _transform_data_array(x, coords=coords, graph=graph, options=options)
+        return _transform_data_array(x,
+                                     coords=tuple(coords),
+                                     graph=Graph(graph),
+                                     options=options)
     else:
-        return _transform_dataset(x, coords=coords, graph=graph, options=options)
+        return _transform_dataset(x,
+                                  coords=tuple(coords),
+                                  graph=Graph(graph),
+                                  options=options)
 
 
 def show_graph(graph: GraphDict, size: str = None, simplified: bool = False):
