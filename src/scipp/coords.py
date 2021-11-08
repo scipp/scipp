@@ -25,15 +25,13 @@ GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 #  - logs
 #  - all outputs must be named in graph
 #  - early deletion
+#  - rename edges are dashed in dot
 #  - maybe: arg renames coords->targets, include_aliases->keep_aliases
 #
 # Potential future changes:
 #  - provide rules publicly.
 #    Can allow users to override coord names and handle names
 #    that are not Python identifiers (2theta)
-
-# TODO usage counter for early deletion + maybe simpler rename dims
-# TODO coord storage class with consume, add (patches usage count) methods
 
 
 def _argnames(func) -> Tuple[str]:
@@ -139,11 +137,11 @@ def _apply_keep_options(usages: Dict[str, int], rules: List[_Rule], targets: Set
 
     inputs = set(out_names(_FetchRule))
     aliases = set(out_names(_RenameRule))
-    intermediates = set(dep for rule in rules for dep in rule.dependencies)
+    all_inputs = set(dep for rule in rules for dep in rule.dependencies)
     if options.keep_inputs:
         handle_in(inputs)
     if options.keep_intermediate:
-        handle_in(intermediates - inputs - aliases)
+        handle_in(all_inputs - inputs - aliases)
     if options.include_aliases:
         handle_in(aliases)
     return usages
@@ -162,14 +160,9 @@ class _Rule(ABC):
     def dependencies(self) -> Tuple[str]:
         """Return names of coords that this kernel needs as inputs."""
 
-    @staticmethod
-    def _consume_coord(name: str, coords: Mapping[str, _Coord]) -> Variable:
-        coord = coords[name]
-        coord.destination = _Destination.attr
-        return coord
-
     def _format_out_names(self):
-        return str(self.out_names) if len(self.out_names) > 1 else self.out_names[0]
+        return (f'({", ".join(self.out_names)})'
+                if len(self.out_names) > 1 else self.out_names[0])
 
 
 class _FetchRule(_Rule):
@@ -213,7 +206,7 @@ class _RenameRule(_Rule):
         return tuple((self._in_name, ))
 
     def __str__(self):
-        return f'Rename  {self._format_out_names()} = {self._in_name}'
+        return f'Rename  {self._format_out_names()} <- {self._in_name}'
 
 
 class _ComputeRule(_Rule):
@@ -316,7 +309,7 @@ class Graph:
     def __init__(self, graph):
         self._graph = _convert_to_rule_graph(graph)
 
-    def subgraph(self, data: DataArray, targets: Tuple[str, ...]) -> Dict[str, _Rule]:
+    def subgraph(self, data: DataArray, targets: Set[str]) -> Dict[str, _Rule]:
         subgraph = {}
         pending = list(targets)
         while pending:
@@ -359,16 +352,34 @@ class Graph:
         return dot
 
 
-def _log_plan(rules: List[_Rule], dim_name_changes: Mapping[str, str]) -> None:
-    get_logger().info('''Transforming coords
-  Renaming dimensions:
-%s
-  Rules:
-%s''', '\n'.join(f'    {f} -> {t}' for f, t in dim_name_changes.items()),
-                      '\n'.join(f'    {rule}' for rule in rules))
+def _log_plan(rules: List[_Rule], targets: Set[str],
+              dim_name_changes: Mapping[str, str], coords: _CoordTable) -> None:
+    inputs = set(_rule_output_names(rules, _FetchRule))
+    bi_products = {
+        name
+        for name in (set(_rule_output_names(rules, _RenameRule))
+                     | set(_rule_output_names(rules, _ComputeRule))) - targets
+        if coords.total_usages(name) < 0
+    }
+
+    inputs_str = f'({", ".join(sorted(inputs))})'
+    outputs_str = f'({", ".join(sorted(targets))})'
+    bi_products_str = (f'\n  Bi-products:\n    {", ".join(sorted(bi_products))}'
+                       if bi_products else '')
+
+    dim_rename_steps = '\n'.join(f'    {t} <- {f}' for f, t in dim_name_changes.items())
+    dim_rename_str = ('\n  Rename dimensions:\n' +
+                      dim_rename_steps if dim_rename_steps else '')
+
+    transform_steps = '\n'.join(f'    {rule}' for rule in rules
+                                if not isinstance(rule, _FetchRule))
+    transform_str = '\n  Steps:\n' + transform_steps
+
+    get_logger().info('Transforming coords %s -> %s%s%s%s', inputs_str, outputs_str,
+                      bi_products_str, dim_rename_str, transform_str)
 
 
-def _store_coord(data: DataArray, name: str, coord: _Coord):
+def _store_coord(data: DataArray, name: str, coord: _Coord) -> None:
     def out(x):
         return x.coords if coord.destination == _Destination.coord else x.attrs
 
@@ -395,7 +406,7 @@ def _store_coord(data: DataArray, name: str, coord: _Coord):
 
 
 def _store_results(data: DataArray, coords: _CoordTable,
-                   targets: Tuple[str, ...]) -> DataArray:
+                   targets: Set[str]) -> DataArray:
     data = data.copy(deep=False)
     if data.bins is not None:
         data.data = bins(**data.bins.constituents)
@@ -457,14 +468,13 @@ def _dim_name_changes(rules: List[_Rule], dims: List[str]) -> Dict[str, str]:
     return name_changes
 
 
-def _transform_data_array(original: DataArray, coords: Set[str], graph: Graph,
+def _transform_data_array(original: DataArray, targets: Set[str], graph: Graph,
                           options: _Options) -> DataArray:
-    targets = tuple(coords)
     rules = _non_duplicate_rules(graph.subgraph(original, targets))
     dim_name_changes = (_dim_name_changes(rules, original.dims)
                         if options.rename_dims else {})
-    _log_plan(rules, dim_name_changes)
-    working_coords = _CoordTable(rules, coords, options)
+    working_coords = _CoordTable(rules, targets, options)
+    _log_plan(rules, targets, dim_name_changes, working_coords)
     for rule in rules:
         for name, coord in rule(working_coords).items():
             working_coords.add(name, coord)
@@ -473,7 +483,7 @@ def _transform_data_array(original: DataArray, coords: Set[str], graph: Graph,
     return res.rename_dims(dim_name_changes)
 
 
-def _transform_dataset(obj: Dataset, coords: Set[str], graph: Graph, *,
+def _transform_dataset(obj: Dataset, targets: Set[str], graph: Graph, *,
                        options: _Options) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord
     # transform is repeated for every item rather than sharing what is
@@ -484,13 +494,13 @@ def _transform_dataset(obj: Dataset, coords: Set[str], graph: Graph, *,
     return Dataset(
         data={
             name: _transform_data_array(
-                obj[name], coords=coords, graph=graph, options=options)
+                obj[name], targets=targets, graph=graph, options=options)
             for name in obj
         })
 
 
 def transform_coords(x: Union[DataArray, Dataset],
-                     coords: Union[str, List[str], Tuple[str, ...]],
+                     coords: Iterable[str],
                      graph: GraphDict,
                      *,
                      rename_dims=True,
@@ -529,12 +539,12 @@ def transform_coords(x: Union[DataArray, Dataset],
                        keep_inputs=keep_inputs)
     if isinstance(x, DataArray):
         return _transform_data_array(x,
-                                     coords=set(coords),
+                                     targets=set(coords),
                                      graph=Graph(graph),
                                      options=options)
     else:
         return _transform_dataset(x,
-                                  coords=set(coords),
+                                  targets=set(coords),
                                   graph=Graph(graph),
                                   options=options)
 
