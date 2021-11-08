@@ -18,12 +18,27 @@ from .logging import get_logger
 _OptionalCoordTuple = Tuple[Optional[Variable], Optional[Variable]]
 GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 
+# TODO changes:
+#  - better errors
+#  - logs
+#  - all outputs must be named in graph
+#  - early deletion
+#  - maybe: arg renames coords->targets, include_aliases->keep_aliases
+#
+# Potential future changes:
+#  - provide rules publicly.
+#    Can allow users to override coord names and handle names
+#    that are not Python identifiers (2theta)
+
+# TODO usage counter for early deletion + maybe simpler rename dims
+# TODO coord storage class with consume, add (patches usage count) methods
+
 
 def _argnames(func) -> Tuple[str]:
     spec = inspect.getfullargspec(func)
     if spec.varargs is not None or spec.varkw is not None:
-        raise ValueError('Function with variable arguments not allowed in'
-                         f' conversion graph: `{func.__name__}`.')
+        raise ValueError('Function with variable arguments not allowed in '
+                         f'conversion graph: `{func.__name__}`.')
     return tuple(spec.args + spec.kwonlyargs)
 
 
@@ -64,12 +79,29 @@ class _Coord:
         return self.event is not None
 
 
+class _CoordTable:
+    def __init__(self):
+        self._coords = {}
+        self._total_usages = {}
+
+    def add(self, name: str, coord: _Coord):
+        self._coords[name] = coord
+
+    def consume(self, name: str) -> _Coord:
+        coord = self._coords[name]
+        coord.destination = _Destination.attr
+        return coord
+
+    def items(self) -> Iterable[Tuple[str, _Coord]]:
+        yield from self._coords.items()
+
+
 class _Rule(ABC):
     def __init__(self, out_names: Union[str, Tuple[str]]):
         self.out_names = (out_names, ) if isinstance(out_names, str) else out_names
 
     @abstractmethod
-    def __call__(self, coords: Dict[str, Variable]) -> Dict[str, Variable]:
+    def __call__(self, coords: _CoordTable) -> Dict[str, Variable]:
         """Evaluate the kernel."""
 
     @property
@@ -96,7 +128,8 @@ class _FetchRule(_Rule):
         self._event_sources = event_sources
 
     def __call__(self, _) -> Dict[str, _Coord]:
-        # TODO remove from sources, requires that sources are for output da not original!
+        # TODO remove from sources, requires that sources
+        #  are for output da not original!
         return {
             out_name: _Coord(dense=self._dense_sources.get(out_name, None),
                              event=self._event_sources.get(out_name, None)
@@ -118,9 +151,9 @@ class _RenameRule(_Rule):
         super().__init__(out_names)
         self._in_name = in_name
 
-    def __call__(self, coords: Mapping[str, _Coord]) -> Dict[str, _Coord]:
+    def __call__(self, coords: _CoordTable) -> Dict[str, _Coord]:
         return {
-            out_name: copy(self._consume_coord(self._in_name, coords))
+            out_name: copy(coords.consume(self._in_name))
             for out_name in self.out_names
         }
 
@@ -138,8 +171,8 @@ class _ComputeRule(_Rule):
         self._func = func
         self._arg_names = _argnames(func)
 
-    def __call__(self, coords: Mapping[str, _Coord]) -> Dict[str, _Coord]:
-        inputs = {name: self._consume_coord(name, coords) for name in self._arg_names}
+    def __call__(self, coords: _CoordTable) -> Dict[str, _Coord]:
+        inputs = {name: coords.consume(name) for name in self._arg_names}
         if not any(coord.has_event for coord in inputs.values()):
             outputs = self._compute_pure_dense(inputs)
         else:
@@ -155,15 +188,19 @@ class _ComputeRule(_Rule):
         }
 
     def _compute_with_events(self, inputs):
-        args = {name: coord.event if coord.has_event else coord.dense
-                for name, coord in inputs.items()}
+        args = {
+            name: coord.event if coord.has_event else coord.dense
+            for name, coord in inputs.items()
+        }
         outputs = self._to_dict(self._func(**args))
         # Dense outputs may be produced as side effects of processing event
         # coords.
-        outputs = {name: _Coord(dense=var if var.bins is None else None,
-                                event=var if var.bins is not None else None,
-                                destination=_Destination.coord)
-                   for name, var in outputs.items()}
+        outputs = {
+            name: _Coord(dense=var if var.bins is None else None,
+                         event=var if var.bins is not None else None,
+                         destination=_Destination.coord)
+            for name, var in outputs.items()
+        }
         return outputs
 
     def _without_unrequested(self, d: Dict[str, Any]) -> Dict[str, Any]:
@@ -220,7 +257,7 @@ def _sort_topologically(graph: Mapping[str, _Rule]) -> Iterable[str]:
          for out, rule in graph.items()}).static_order()
 
 
-def _is_meta_data(name: str, data:DataArray)->bool:
+def _is_meta_data(name: str, data: DataArray) -> bool:
     return name in data.meta or (data.bins is not None and name in data.bins.meta)
 
 
@@ -306,7 +343,7 @@ def _store_coord(data: DataArray, name: str, coord: _Coord):
         del_other(data.bins)
 
 
-def _store_results(data: DataArray, coords: Dict[str, _Coord], targets: Tuple[str, ...],
+def _store_results(data: DataArray, coords: _CoordTable, targets: Tuple[str, ...],
                    blacklist: Set[str]) -> DataArray:
     data = data.copy(deep=False)
     if data.bins is not None:
@@ -401,12 +438,10 @@ def _transform_data_array(original: DataArray, coords: Union[str, List[str],
     dim_name_changes = _dim_name_changes(rules,
                                          original.dims) if options.rename_dims else {}
     _log_plan(rules, dim_name_changes)
-    working_coords = {}
+    working_coords = _CoordTable()
     for rule in rules:
         for name, coord in rule(working_coords).items():
-            if name in working_coords and name not in rule.dependencies:
-                raise RuntimeError(f"Coordinate '{name}' was produced multiple times.")
-            working_coords[name] = coord
+            working_coords.add(name, coord)
 
     res = _store_results(original, working_coords, targets,
                          _storage_blacklist(coords, rules, options))
