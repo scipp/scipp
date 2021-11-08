@@ -57,6 +57,14 @@ def bc(*, b, c):
     return b * c
 
 
+def ac(a, c):
+    return a + c
+
+
+def bd(b, d):
+    return b + d
+
+
 def split(*, a):
     return {'b': a, 'c': 2 * a}
 
@@ -81,6 +89,16 @@ def test_avoid_consume_of_requested_outputs():
     # Second requested output must not consume first
     da = original.transform_coords(['b', 'ab'], graph=graph)
     assert 'b' in da.coords
+
+
+def test_only_outputs_in_graph_are_stored():
+    original = sc.DataArray(data=a, coords={'a': a})
+    graph = {'b': split}
+    da = original.transform_coords(['b'], graph=graph)
+    assert 'c' not in da.meta  # c is not stored
+    with pytest.raises(sc.NotFoundError):
+        # c is not computable
+        original.transform_coords(['c'], graph=graph)
 
 
 def test_dim_rename_merge_single_dim_coord():
@@ -159,12 +177,6 @@ def test_dim_rename_multi_level_multi_merge():
     #   *ac     *bd
     #     \     /
     #      abcd
-    def ac(a, c):
-        return a + c
-
-    def bd(b, d):
-        return b + d
-
     def abcd(ac, bd):
         return ac + bd
 
