@@ -282,7 +282,7 @@ def _convert_to_rule_graph(graph: GraphDict) -> Dict[str, _Rule]:
     rule_graph = {}
     for products, producer in graph.items():
         rule = _make_rule(products, producer)
-        for product in (products, ) if isinstance(products, str) else products:
+        for product in (products, ) if isinstance(products, str) else tuple(products):
             if product in rule_graph:
                 raise ValueError(
                     f'Duplicate output name defined in conversion graph: {product}')
