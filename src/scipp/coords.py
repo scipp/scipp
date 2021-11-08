@@ -2,9 +2,11 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock, Jan-Lukas Wynen
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from copy import copy
-from dataclasses import dataclass
+import dataclasses
 from enum import Enum, auto
 from graphlib import TopologicalSorter
 import inspect
@@ -51,7 +53,7 @@ def _make_digraph(*args, **kwargs):
     return Digraph(*args, **kwargs)
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class _Options:
     rename_dims: bool
     include_aliases: bool
@@ -64,11 +66,12 @@ class _Destination(Enum):
     attr = auto()
 
 
-@dataclass
+@dataclasses.dataclass
 class _Coord:
     dense: Variable  # for dense variable or bin-coord
     event: Variable
     destination: _Destination
+    usages: int = -1  # negative for unlimited usages
 
     @property
     def has_dense(self) -> bool:
@@ -78,11 +81,18 @@ class _Coord:
     def has_event(self) -> bool:
         return self.event is not None
 
+    def use(self):
+        self.usages -= 1
+
+    @property
+    def used_up(self) -> bool:
+        return self.usages == 0
+
 
 class _CoordTable:
-    def __init__(self):
+    def __init__(self, rules: List[_Rule]):
         self._coords = {}
-        self._total_usages = {}
+        self._total_usages = _count_usages(rules)
 
     def add(self, name: str, coord: _Coord):
         self._coords[name] = coord
@@ -90,10 +100,30 @@ class _CoordTable:
     def consume(self, name: str) -> _Coord:
         coord = self._coords[name]
         coord.destination = _Destination.attr
+        coord.use()
+        if coord.used_up:
+            del self._coords[name]
         return coord
+
+    def total_usages(self, name: str, never_consume: bool) -> int:
+        if never_consume:
+            return -1
+        try:
+            return self._total_usages[name]
+        except KeyError:
+            return -1
 
     def items(self) -> Iterable[Tuple[str, _Coord]]:
         yield from self._coords.items()
+
+
+def _count_usages(rules: List[_Rule]) -> Dict[str, int]:
+    usages = {}
+    for rule in rules:
+        for name in rule.dependencies:
+            usages.setdefault(name, 0)
+            usages[name] += 1
+    return usages
 
 
 class _Rule(ABC):
@@ -122,17 +152,19 @@ class _Rule(ABC):
 class _FetchRule(_Rule):
     def __init__(self, out_names: Union[str, Tuple[str, ...]],
                  dense_sources: Mapping[str, Variable],
-                 event_sources: Optional[Mapping[str, Variable]]):
+                 event_sources: Optional[Mapping[str, Variable]], keep_inputs: bool):
         super().__init__(out_names)
         self._dense_sources = dense_sources
         self._event_sources = event_sources
+        self._keep_inputs = keep_inputs
 
-    def __call__(self, _) -> Dict[str, _Coord]:
+    def __call__(self, coords: _CoordTable) -> Dict[str, _Coord]:
         return {
             out_name: _Coord(dense=self._dense_sources.get(out_name, None),
                              event=self._event_sources.get(out_name, None)
                              if self._event_sources else None,
-                             destination=_Destination.coord)
+                             destination=_Destination.coord,
+                             usages=coords.total_usages(out_name, self._keep_inputs))
             for out_name in self.out_names
         }
 
@@ -263,22 +295,24 @@ class Graph:
     def __init__(self, graph):
         self._graph = _convert_to_rule_graph(graph)
 
-    def subgraph(self, data: DataArray, targets: Tuple[str, ...]) -> Dict[str, _Rule]:
+    def subgraph(self, data: DataArray, targets: Tuple[str, ...],
+                 options: _Options) -> Dict[str, _Rule]:
         subgraph = {}
         pending = list(targets)
         while pending:
             out_name = pending.pop()
             if out_name in subgraph:
                 continue
-            rule = self._rule_for(out_name, data)
+            rule = self._rule_for(out_name, data, options)
             subgraph[out_name] = rule
             pending.extend(rule.dependencies)
         return subgraph
 
-    def _rule_for(self, out_name: str, data: DataArray) -> _Rule:
+    def _rule_for(self, out_name: str, data: DataArray, options: _Options) -> _Rule:
         if _is_meta_data(out_name, data):
             return _FetchRule(out_name, data.meta,
-                              data.bins.meta if data.bins else None)
+                              data.bins.meta if data.bins else None,
+                              options.keep_inputs)
         try:
             return self._graph[out_name]
         except KeyError:
@@ -372,9 +406,6 @@ def _storage_blacklist(targets: Tuple[str, ...], rules: List[_Rule],
 
     blacklist = set()
     inputs = set(_out_names(_FetchRule))
-    if not options.keep_inputs:
-        for inp in inputs:
-            blacklist.add(inp)
     if not options.keep_intermediate:
         for rule in rules:
             for dep in rule.dependencies:
@@ -431,11 +462,11 @@ def _dim_name_changes(rules: List[_Rule], dims: List[str]) -> Dict[str, str]:
 def _transform_data_array(original: DataArray, coords: Tuple[str, ...], graph: Graph,
                           options: _Options) -> DataArray:
     targets = tuple(coords)
-    rules = _non_duplicate_rules(graph.subgraph(original, targets))
+    rules = _non_duplicate_rules(graph.subgraph(original, targets, options))
     dim_name_changes = (_dim_name_changes(rules, original.dims)
                         if options.rename_dims else {})
     _log_plan(rules, dim_name_changes)
-    working_coords = _CoordTable()
+    working_coords = _CoordTable(rules)
     for rule in rules:
         for name, coord in rule(working_coords).items():
             working_coords.add(name, coord)
