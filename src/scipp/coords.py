@@ -3,14 +3,16 @@
 # @author Simon Heybrock, Jan-Lukas Wynen
 
 from abc import ABC, abstractmethod
+from copy import copy
 from dataclasses import dataclass
+from enum import Enum, auto
 from graphlib import TopologicalSorter
 import inspect
-from typing import Callable, Dict, Iterable, List, Mapping,\
-    Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Mapping,\
+    Optional, Set, Tuple, Union
 
-from .core import CoordError, DataArray, Dataset, VariableError,\
-    Variable, bins, identical
+from .core import CoordError, DataArray, Dataset, NotFoundError, VariableError,\
+    Variable, bins
 from .logging import get_logger
 
 _OptionalCoordTuple = Tuple[Optional[Variable], Optional[Variable]]
@@ -224,14 +226,7 @@ def _is_meta_data(name: str, data:DataArray)->bool:
 
 class Graph:
     def __init__(self, graph):
-        # Keys in graph may be tuple to define multiple outputs
-        self._graph = {}
-        for key in graph:
-            for k in [key] if isinstance(key, str) else key:
-                if k in self._graph:
-                    raise ValueError("Duplicate output name define in conversion graph")
-                self._graph[k] = graph[key]
-        self._rule_graph = _convert_to_rule_graph(graph)
+        self._graph = _convert_to_rule_graph(graph)
 
     def subgraph(self, data: DataArray, targets: Tuple[str, ...]) -> Dict[str, _Rule]:
         subgraph = {}
@@ -256,27 +251,22 @@ class Graph:
                 f"Coordinate '{out_name}' does not exist in the input data "
                 "and no rule has been provided to compute it.") from None
 
-    def __getitem__(self, name):
-        return self._graph[name]
-
-    def __contains__(self, name):
-        return name in self._graph
-
     def show(self, size=None, simplified=False):
         dot = _make_digraph(strict=True)
         dot.attr('node', shape='box', height='0.1')
         dot.attr(size=size)
-        for output, producer in self._graph.items():
-            if isinstance(producer, str):  # rename
-                dot.edge(producer, output)
+        for output, rule in self._graph.items():
+            if isinstance(rule, _RenameRule):  # rename
+                dot.edge(rule.dependencies[0], output, style='dashed')
             else:
                 if not simplified:
-                    name = f'{producer.__name__}(...)'
+                    # TODO
+                    name = f'{rule._func.__name__}(...)'
                     dot.node(name, shape='ellipse', style='filled', color='lightgrey')
                     dot.edge(name, output)
                 else:
                     name = output
-                for arg in _argnames(producer):
+                for arg in rule.dependencies:
                     dot.edge(arg, name)
         return dot
 
