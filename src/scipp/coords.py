@@ -540,14 +540,15 @@ def transform_coords(x: Union[DataArray, Dataset],
                        keep_aliases=keep_aliases,
                        keep_intermediate=keep_intermediate,
                        keep_inputs=keep_inputs)
+    targets = {targets} if isinstance(targets, str) else set(targets)
     if isinstance(x, DataArray):
         return _transform_data_array(x,
-                                     targets=set(targets),
+                                     targets=targets,
                                      graph=Graph(graph),
                                      options=options)
     else:
         return _transform_dataset(x,
-                                  targets=set(targets),
+                                  targets=targets,
                                   graph=Graph(graph),
                                   options=options)
 

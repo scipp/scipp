@@ -91,16 +91,6 @@ def test_avoid_consume_of_requested_outputs():
     assert 'b' in da.coords
 
 
-def test_only_outputs_in_graph_are_stored():
-    original = sc.DataArray(data=a, coords={'a': a})
-    graph = {'b': split}
-    da = original.transform_coords(['b'], graph=graph)
-    assert 'c' not in da.meta  # c is not stored
-    with pytest.raises(sc.NotFoundError):
-        # c is not computable
-        original.transform_coords(['c'], graph=graph)
-
-
 def test_dim_rename_merge_single_dim_coord():
     # *a    b
     #   \  /
@@ -321,6 +311,25 @@ def test_binned_request_existing_consumed():
     # Regression test, this used to throw due to an untested branch when
     # requesting a previously consumed event coord
     binned.transform_coords(['xy', 'x'], graph=graph)
+
+
+def test_only_outputs_in_graph_are_stored():
+    original = sc.DataArray(data=a, coords={'a': a})
+    graph = {'b': split}
+    da = original.transform_coords(['b'], graph=graph)
+    assert 'c' not in da.meta  # c is not stored
+    with pytest.raises(sc.NotFoundError):
+        # c is not computable
+        original.transform_coords(['c'], graph=graph)
+
+
+def test_targets_arg_types():
+    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
+    graph = {'ab': ab}
+    da = original.transform_coords(('ab', ), graph=graph)
+    assert 'ab' in da.coords
+    da = original.transform_coords('ab', graph=graph)
+    assert 'ab' in da.coords
 
 
 def test_cycles():
