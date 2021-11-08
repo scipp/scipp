@@ -130,6 +130,22 @@ def test_bins_arithmetic():
                         sc.Variable(dims=['event'], values=[1.0, 2.0, 6.0, 8.0]))
 
 
+@pytest.mark.parametrize("dtype", ['bool', 'int32', 'int64', 'float32', 'float64'])
+def test_lookup_getitem(dtype):
+    x_lin = sc.linspace(dim='xx', start=0, stop=1, num=4)
+    x = x_lin.copy()
+    x.values[0] -= 0.01
+    data = sc.array(dims=['xx'], values=[0, 1, 0], dtype=dtype)
+    hist_lin = sc.DataArray(data=data, coords={'xx': x_lin})
+    hist = sc.DataArray(data=data, coords={'xx': x})
+    var = sc.array(dims=['event'], values=[0.1, 0.4, 0.1, 0.6, 0.9, 0.2])
+    lut = sc.lookup(hist, 'xx')
+    expected = sc.array(dims=['event'], values=[0, 1, 0, 1, 0, 0], dtype=dtype)
+    assert sc.identical(lut[var], expected)
+    lut = sc.lookup(hist_lin, 'xx')
+    assert sc.identical(lut[var], expected)
+
+
 def test_load_events_bins():
     with in_memory_nexus_file_with_event_data() as nexus_file:
         event_data_groups = find_by_nx_class("NXevent_data", nexus_file)
