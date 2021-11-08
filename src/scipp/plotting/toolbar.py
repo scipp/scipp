@@ -115,7 +115,7 @@ class PlotToolbar:
         set_button_color(button)
         self.members[name] = button
 
-    def add_togglebutton(self, name, **kwargs):
+    def add_togglebutton(self, name, value=False, **kwargs):
         """
         Create a fake ToggleButton using Button because sometimes we want to
         change the value of the button without triggering an update, e.g. when
@@ -123,7 +123,8 @@ class PlotToolbar:
         """
         button = ipw.Button(**self._parse_button_args(**kwargs))
         set_button_color(button)
-        setattr(button, "value", False)
+        setattr(button, "value", value)
+        self.toggle_button_color(owner=button, value=value)
         # Add a local observer to change the color of the button according to
         # its value.
         button.on_click(self.toggle_button_color)
@@ -272,6 +273,14 @@ class PlotToolbar3d(PlotToolbar):
                         description="Z",
                         tooltip="Camera to Z normal. "
                         "Click twice to flip the view direction.")
+        self.add_togglebutton(name="toggle_axes_helper",
+                              value=True,
+                              icon="bar-chart",
+                              tooltip="Toggle visibility of XYZ axes")
+        self.add_togglebutton(name="toggle_outline",
+                              value=True,
+                              icon="codepen",
+                              tooltip="Toggle visibility of outline box")
         self.add_button(name="rescale_to_data", icon="arrows-v", tooltip="Rescale")
         self.add_togglebutton(name="toggle_norm",
                               description="log",
@@ -289,3 +298,9 @@ class PlotToolbar3d(PlotToolbar):
 
     def camera_z_normal(self, button):
         self.mpl_toolbar.camera_z_normal()
+
+    def toggle_axes_helper(self, button):
+        self.mpl_toolbar.toggle_axes_helper(button.value)
+
+    def toggle_outline(self, button):
+        self.mpl_toolbar.toggle_outline(button.value)
