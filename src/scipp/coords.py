@@ -271,9 +271,13 @@ class Graph:
         return dot
 
 
-def _log_plan(rules: List[_Rule]) -> None:
-    get_logger().info('Transforming coords\n%s',
-                      '\n'.join(f'  {rule}' for rule in rules))
+def _log_plan(rules: List[_Rule], dim_name_changes: Mapping[str, str]) -> None:
+    get_logger().info('''Transforming coords
+  Renaming dimensions:
+%s
+  Rules:
+%s''', '\n'.join(f'    {f} -> {t}' for f, t in dim_name_changes.items()),
+                      '\n'.join(f'    {rule}' for rule in rules))
 
 
 def _store_coord(data: DataArray, name: str, coord: _Coord):
