@@ -240,8 +240,34 @@ def _store_results(x: DataArray, coords: Dict[str, Variable],
                 del x.coords[name]
     return x
 
+def _rule_output_names(rules: List[_Rule], rule_type: type) -> Iterable[str]:
+    for rule in _rules_of_type(rules, rule_type):
+        yield from rule.out_names
 
-def _renamable_dims(x: DataArray, rules: List[_Rule]) -> Dict[str, List[str]]:
+
+def _storage_blacklist(targets: Tuple[str, ...], rules: List[_Rule],
+                       options: _Options) -> Set[str]:
+    def _out_names(rule_type):
+        yield from filter(lambda name: name not in targets,
+                          _rule_output_names(rules, rule_type))
+
+    blacklist = set()
+    inputs = set(_out_names(_FetchRule))
+    if not options.keep_inputs:
+        for inp in inputs:
+            blacklist.add(inp)
+    if not options.keep_intermediate:
+        for rule in rules:
+            for dep in rule.dependencies:
+                if dep not in inputs:
+                    blacklist.add(dep)
+    if not options.include_aliases:
+        for alias in _out_names(_RenameRule):
+            blacklist.add(alias)
+    return blacklist
+
+
+def _initial_dims_to_rename(x: DataArray, rules: List[_Rule]) -> Dict[str, List[str]]:
     res = {}
     for rule in filter(lambda r: isinstance(r, _FetchRule), rules):
         for name in rule.out_names:
