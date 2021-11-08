@@ -276,22 +276,37 @@ def _initial_dims_to_rename(x: DataArray, rules: List[_Rule]) -> Dict[str, List[
     return res
 
 
-def _rename_dims(x, original, rename):
-    ren = {}
-    for dim in original.dims:
-        to = dim
-        while True:
-            try:
-                if len(rename[to]) == 1:
-                    to = rename[to][0]
-                else:
-                    break
-            except KeyError:
-                break
-        if dim != to:
-            ren[dim] = to
-    return x.rename_dims(ren)
+def _rules_with_dep(dep, rules):
+    return list(filter(lambda r: dep in r.dependencies, rules))
 
+
+# A coords dim can be renamed if its node
+#  1. has one incoming dim coord
+#  2. has only one outgoing connection
+#
+# This functions traversed the graph in depth-first order
+# and builds a dict of old->new names according to the conditions above.
+def _dim_name_changes(rules: List[_Rule], dims: List[str]) -> Dict[str, str]:
+    dim_coords = tuple(name for name in _rule_output_names(rules, _FetchRule)
+                       if name in dims)
+    pending = list(dim_coords)
+    incoming_dim_coords = {name: [name] for name in pending}
+    name_changes = {}
+    while pending:
+        name = pending.pop(0)
+        if len(incoming_dim_coords[name]) != 1:
+            continue  # Condition 1.
+        dim = incoming_dim_coords[name][0]
+        name_changes[dim] = name
+        outgoing = _rules_with_dep(name, rules)
+        if len(outgoing) == 1 and len(outgoing[0].out_names) == 1:
+            # Potential candidate according to condition 2.
+            pending.append(outgoing[0].out_names[0])
+        for rule in filter(lambda r: len(r.out_names) == 1, outgoing):
+            # Condition 2. is not satisfied for these children but we
+            # still need to take the current node into account for 1.
+            incoming_dim_coords.setdefault(rule.out_names[0], []).append(dim)
+    return name_changes
 
 def _transform_data_array(x: DataArray, coords: Union[str, List[str], Tuple[str, ...]],
                           graph: GraphDict, options: _Options) -> DataArray:
