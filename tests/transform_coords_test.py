@@ -406,6 +406,10 @@ def test_duplicate_output_keys():
     with pytest.raises(ValueError):
         graph = {('b', 'd'): to_bd, ('b', 'c'): to_bc}
         original.transform_coords(['b'], graph=graph)
+    # b only named once in graph
+    graph = {'b': to_bd, 'c': to_bc}
+    da = original.transform_coords(['b'], graph=graph)
+    assert 'b' in da.coords
 
 
 def test_pass_through_unary():
