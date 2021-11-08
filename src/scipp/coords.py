@@ -82,7 +82,8 @@ class _Coord:
         return self.event is not None
 
     def use(self):
-        self.usages -= 1
+        if self.usages > 0:
+            self.usages -= 1
 
     @property
     def used_up(self) -> bool:
@@ -90,12 +91,14 @@ class _Coord:
 
 
 class _CoordTable:
-    def __init__(self, rules: List[_Rule]):
+    def __init__(self, rules: List[_Rule], targets: Set[str], options: _Options):
         self._coords = {}
-        self._total_usages = _count_usages(rules)
+        self._total_usages = _apply_keep_options(_count_usages(rules), rules, targets,
+                                                 options)
+        self._options = options
 
     def add(self, name: str, coord: _Coord):
-        self._coords[name] = coord
+        self._coords[name] = dataclasses.replace(coord, usages=self.total_usages(name))
 
     def consume(self, name: str) -> _Coord:
         coord = self._coords[name]
@@ -105,9 +108,7 @@ class _CoordTable:
             del self._coords[name]
         return coord
 
-    def total_usages(self, name: str, never_consume: bool) -> int:
-        if never_consume:
-            return -1
+    def total_usages(self, name: str) -> int:
         try:
             return self._total_usages[name]
         except KeyError:
@@ -123,6 +124,28 @@ def _count_usages(rules: List[_Rule]) -> Dict[str, int]:
         for name in rule.dependencies:
             usages.setdefault(name, 0)
             usages[name] += 1
+    return usages
+
+
+def _apply_keep_options(usages: Dict[str, int], rules: List[_Rule], targets: Set[str],
+                        options: _Options) -> Dict[str, int]:
+    def out_names(rule_type):
+        yield from filter(lambda name: name not in targets,
+                          _rule_output_names(rules, rule_type))
+
+    def handle_in(names):
+        for name in names:
+            usages[name] = -1
+
+    inputs = set(out_names(_FetchRule))
+    aliases = set(out_names(_RenameRule))
+    intermediates = set(dep for rule in rules for dep in rule.dependencies)
+    if options.keep_inputs:
+        handle_in(inputs)
+    if options.keep_intermediate:
+        handle_in(intermediates - inputs - aliases)
+    if options.include_aliases:
+        handle_in(aliases)
     return usages
 
 
@@ -152,19 +175,17 @@ class _Rule(ABC):
 class _FetchRule(_Rule):
     def __init__(self, out_names: Union[str, Tuple[str, ...]],
                  dense_sources: Mapping[str, Variable],
-                 event_sources: Optional[Mapping[str, Variable]], keep_inputs: bool):
+                 event_sources: Optional[Mapping[str, Variable]]):
         super().__init__(out_names)
         self._dense_sources = dense_sources
         self._event_sources = event_sources
-        self._keep_inputs = keep_inputs
 
     def __call__(self, coords: _CoordTable) -> Dict[str, _Coord]:
         return {
             out_name: _Coord(dense=self._dense_sources.get(out_name, None),
                              event=self._event_sources.get(out_name, None)
                              if self._event_sources else None,
-                             destination=_Destination.coord,
-                             usages=coords.total_usages(out_name, self._keep_inputs))
+                             destination=_Destination.coord)
             for out_name in self.out_names
         }
 
@@ -295,24 +316,22 @@ class Graph:
     def __init__(self, graph):
         self._graph = _convert_to_rule_graph(graph)
 
-    def subgraph(self, data: DataArray, targets: Tuple[str, ...],
-                 options: _Options) -> Dict[str, _Rule]:
+    def subgraph(self, data: DataArray, targets: Tuple[str, ...]) -> Dict[str, _Rule]:
         subgraph = {}
         pending = list(targets)
         while pending:
             out_name = pending.pop()
             if out_name in subgraph:
                 continue
-            rule = self._rule_for(out_name, data, options)
+            rule = self._rule_for(out_name, data)
             subgraph[out_name] = rule
             pending.extend(rule.dependencies)
         return subgraph
 
-    def _rule_for(self, out_name: str, data: DataArray, options: _Options) -> _Rule:
+    def _rule_for(self, out_name: str, data: DataArray) -> _Rule:
         if _is_meta_data(out_name, data):
             return _FetchRule(out_name, data.meta,
-                              data.bins.meta if data.bins else None,
-                              options.keep_inputs)
+                              data.bins.meta if data.bins else None)
         try:
             return self._graph[out_name]
         except KeyError:
@@ -375,14 +394,12 @@ def _store_coord(data: DataArray, name: str, coord: _Coord):
         del_other(data.bins)
 
 
-def _store_results(data: DataArray, coords: _CoordTable, targets: Tuple[str, ...],
-                   blacklist: Set[str]) -> DataArray:
+def _store_results(data: DataArray, coords: _CoordTable,
+                   targets: Tuple[str, ...]) -> DataArray:
     data = data.copy(deep=False)
     if data.bins is not None:
         data.data = bins(**data.bins.constituents)
     for name, coord in coords.items():
-        if name in blacklist:
-            continue
         if name in targets:
             coord.destination = _Destination.coord
         _store_coord(data, name, coord)
@@ -396,25 +413,6 @@ def _rules_of_type(rules: List[_Rule], rule_type: type) -> Iterable[_Rule]:
 def _rule_output_names(rules: List[_Rule], rule_type: type) -> Iterable[str]:
     for rule in _rules_of_type(rules, rule_type):
         yield from rule.out_names
-
-
-def _storage_blacklist(targets: Tuple[str, ...], rules: List[_Rule],
-                       options: _Options) -> Set[str]:
-    def _out_names(rule_type):
-        yield from filter(lambda name: name not in targets,
-                          _rule_output_names(rules, rule_type))
-
-    blacklist = set()
-    inputs = set(_out_names(_FetchRule))
-    if not options.keep_intermediate:
-        for rule in rules:
-            for dep in rule.dependencies:
-                if dep not in inputs:
-                    blacklist.add(dep)
-    if not options.include_aliases:
-        for alias in _out_names(_RenameRule):
-            blacklist.add(alias)
-    return blacklist
 
 
 def _initial_dims_to_rename(x: DataArray, rules: List[_Rule]) -> Dict[str, List[str]]:
@@ -459,24 +457,23 @@ def _dim_name_changes(rules: List[_Rule], dims: List[str]) -> Dict[str, str]:
     return name_changes
 
 
-def _transform_data_array(original: DataArray, coords: Tuple[str, ...], graph: Graph,
+def _transform_data_array(original: DataArray, coords: Set[str], graph: Graph,
                           options: _Options) -> DataArray:
     targets = tuple(coords)
-    rules = _non_duplicate_rules(graph.subgraph(original, targets, options))
+    rules = _non_duplicate_rules(graph.subgraph(original, targets))
     dim_name_changes = (_dim_name_changes(rules, original.dims)
                         if options.rename_dims else {})
     _log_plan(rules, dim_name_changes)
-    working_coords = _CoordTable(rules)
+    working_coords = _CoordTable(rules, coords, options)
     for rule in rules:
         for name, coord in rule(working_coords).items():
             working_coords.add(name, coord)
 
-    res = _store_results(original, working_coords, targets,
-                         _storage_blacklist(coords, rules, options))
+    res = _store_results(original, working_coords, targets)
     return res.rename_dims(dim_name_changes)
 
 
-def _transform_dataset(obj: Dataset, coords: Tuple[str, ...], graph: Graph, *,
+def _transform_dataset(obj: Dataset, coords: Set[str], graph: Graph, *,
                        options: _Options) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord
     # transform is repeated for every item rather than sharing what is
@@ -532,12 +529,12 @@ def transform_coords(x: Union[DataArray, Dataset],
                        keep_inputs=keep_inputs)
     if isinstance(x, DataArray):
         return _transform_data_array(x,
-                                     coords=tuple(coords),
+                                     coords=set(coords),
                                      graph=Graph(graph),
                                      options=options)
     else:
         return _transform_dataset(x,
-                                  coords=tuple(coords),
+                                  coords=set(coords),
                                   graph=Graph(graph),
                                   options=options)
 
