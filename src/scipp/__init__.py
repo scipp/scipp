@@ -110,23 +110,28 @@ del _binding
 
 from . import data
 
-from .serialization import encode, decode
-
 try:
-    import msgpack
     from typing import List, Dict, Tuple, Union
     from distributed.protocol import dask_serialize, dask_deserialize
+    from io import BytesIO
+    from .io.hdf5 import HDF5IO
+    import h5py
 
     @dask_serialize.register(Variable)
     @dask_serialize.register(DataArray)
     def serialize(var: Union[Variable, DataArray]) -> Tuple[Dict, List[bytes]]:
         header = {}
-        frames = [msgpack.packb(var, default=encode)]
+        buf = BytesIO()
+        f = h5py.File(buf, "w")
+        HDF5IO.write(f, var)
+        f.close()
+        frames = [buf.getvalue()]
         return header, frames
 
     @dask_deserialize.register(Variable)
     @dask_deserialize.register(DataArray)
     def deserialize(header: Dict, frames: List[bytes]) -> Union[Variable, DataArray]:
-        return msgpack.unpackb(frames[0], object_hook=decode)
+        buf = BytesIO(frames[0])
+        return HDF5IO.read(h5py.File(buf, "r"))
 except ImportError:
     pass
