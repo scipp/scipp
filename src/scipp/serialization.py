@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from . import Variable, DataArray
-from .core import bins, dtype
+from .core import bins, dtype, array, vectors
 
 
 def _encode_dict(meta):
@@ -21,6 +21,13 @@ def encode(obj):
             })
             if obj.dtype == dtype.datetime64:
                 enc['values'] = m.encode(obj.values.view('int64'))
+            elif obj.dtype == dtype.PyObject:
+                enc['values'] = None
+            elif obj.dtype == dtype.DataArray:
+                if obj.ndim == 0:
+                    enc['values'] = encode(obj.value)
+                else:
+                    enc['values'] = list[encode(da for da in obj.values)]
             else:
                 enc['values'] = m.encode(obj.values)
             if obj.variances is not None:
@@ -44,15 +51,22 @@ def decode(obj):
     if '__scipp.Variable__' in obj:
         if 'bins' in obj:
             return bins(**obj['bins'])
+        args = {'dims': obj['dims'], 'unit': obj['unit']}
         if obj['dtype'] == str(dtype.datetime64):
-            values = m.decode(obj['values']).view(f"datetime64[{obj['unit']}]")
+            args['values'] = m.decode(obj['values']).view(f"datetime64[{obj['unit']}]")
+        elif obj['dtype'] == str(dtype.DataArray):
+            args['values'] = obj['values']
+        elif obj['dtype'] == str(dtype.string):
+            # TODO Does msgpack have problems with arrays of strings?
+            args['values'] = obj['values']
         else:
-            values = m.decode(obj['values'])
-        variances = m.decode(obj['variances']) if 'variances' in obj else None
-        return Variable(dims=obj['dims'],
-                        unit=obj['unit'],
-                        values=values,
-                        variances=variances)
+            args['values'] = m.decode(obj['values'])
+        if 'variances' in obj:
+            args['variances'] = m.decode(obj['variances'])
+        if obj['dtype'] == str(dtype.vector_3_float64):
+            return vectors(**args)
+        else:
+            return array(**args)
     if '__scipp.DataArray__' in obj:
         return DataArray(data=obj['data'],
                          coords=obj['coords'],
