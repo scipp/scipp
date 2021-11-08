@@ -20,19 +20,6 @@ from .logging import get_logger
 _OptionalCoordTuple = Tuple[Optional[Variable], Optional[Variable]]
 GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 
-# TODO changes:
-#  - better errors
-#  - logs
-#  - all outputs must be named in graph
-#  - early deletion
-#  - rename edges are dashed in dot
-#  - maybe: arg renames coords->targets, include_aliases->keep_aliases
-#
-# Potential future changes:
-#  - provide rules publicly.
-#    Can allow users to override coord names and handle names
-#    that are not Python identifiers (2theta)
-
 
 @dataclasses.dataclass(frozen=True)
 class _Options:
@@ -328,7 +315,7 @@ class Graph:
 
     def _rule_for(self, out_name: str, data: DataArray) -> _Rule:
         if _is_meta_data(out_name, data):
-            return _FetchRule((out_name,), data.meta,
+            return _FetchRule((out_name, ), data.meta,
                               data.bins.meta if data.bins else None)
         try:
             return self._graph[out_name]
