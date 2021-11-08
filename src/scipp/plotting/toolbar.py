@@ -275,7 +275,8 @@ class PlotToolbar3d(PlotToolbar):
                         "Click twice to flip the view direction.")
         self.add_togglebutton(name="toggle_axes_helper",
                               value=True,
-                              icon="bar-chart",
+                              description="\u27C0",
+                              style={"font_weight": "bold"},
                               tooltip="Toggle visibility of XYZ axes")
         self.add_togglebutton(name="toggle_outline",
                               value=True,
