@@ -41,6 +41,13 @@ def test_rename_multi_output():
     assert sc.identical(da.attrs['y2'], original.coords['y'])
     assert sc.identical(da.attrs['y'], original.coords['y'])
 
+    da = original.copy().transform_coords(['y3', 'y4'], graph=graph, keep_aliases=False)
+    assert da.dims == ['x', 'y']
+    assert sc.identical(da.coords['y4'], original.coords['y'])
+    assert sc.identical(da.coords['y3'], original.coords['y'])
+    assert 'y2' not in da.meta
+    assert sc.identical(da.attrs['y'], original.coords['y'])
+
 
 def ab(*, a, b):
     return a + b
