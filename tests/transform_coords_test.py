@@ -332,6 +332,23 @@ def test_targets_arg_types():
     assert 'ab' in da.coords
 
 
+def test_inaccessible_coord():
+    original = sc.DataArray(data=a + b, coords={'a': a})
+    graph = {'ab': ab}
+    with pytest.raises(sc.NotFoundError):
+        original.transform_coords(['ab'], graph)
+    with pytest.raises(sc.NotFoundError):
+        original.transform_coords(['c'], graph)
+
+    def abc(a, b, c):
+        return a + b + c
+
+    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
+    graph = {'ab': ab, 'abc': abc}
+    with pytest.raises(sc.NotFoundError):
+        original.transform_coords(['ab', 'abc'], graph)
+
+
 def test_cycles():
     original = sc.DataArray(data=a, coords={'a': a, 'b': a})
     with pytest.raises(ValueError):
