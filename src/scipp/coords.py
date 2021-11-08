@@ -34,23 +34,6 @@ GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 #    that are not Python identifiers (2theta)
 
 
-def _argnames(func) -> Tuple[str]:
-    spec = inspect.getfullargspec(func)
-    if spec.varargs is not None or spec.varkw is not None:
-        raise ValueError('Function with variable arguments not allowed in '
-                         f'conversion graph: `{func.__name__}`.')
-    return tuple(spec.args + spec.kwonlyargs)
-
-
-def _make_digraph(*args, **kwargs):
-    try:
-        from graphviz import Digraph
-    except ImportError:
-        raise RuntimeError('Failed to import `graphviz`, please install `graphviz` if '
-                           'using `pip`, or `python-graphviz` if using `conda`.')
-    return Digraph(*args, **kwargs)
-
-
 @dataclasses.dataclass(frozen=True)
 class _Options:
     rename_dims: bool
@@ -209,11 +192,19 @@ class _RenameRule(_Rule):
         return f'Rename  {self._format_out_names()} <- {self._in_name}'
 
 
+def _arg_names(func) -> Tuple[str]:
+    spec = inspect.getfullargspec(func)
+    if spec.varargs is not None or spec.varkw is not None:
+        raise ValueError('Function with variable arguments not allowed in '
+                         f'conversion graph: `{func.__name__}`.')
+    return tuple(spec.args + spec.kwonlyargs)
+
+
 class _ComputeRule(_Rule):
     def __init__(self, out_names: Union[str, Tuple[str, ...]], func: Callable):
         super().__init__(out_names)
         self._func = func
-        self._arg_names = _argnames(func)
+        self._arg_names = _arg_names(func)
 
     def __call__(self, coords: _CoordTable) -> Dict[str, _Coord]:
         inputs = {name: coords.consume(name) for name in self._arg_names}
@@ -262,6 +253,10 @@ class _ComputeRule(_Rule):
     def dependencies(self) -> Tuple[str]:
         return self._arg_names
 
+    @property
+    def func_name(self) -> str:
+        return self._func.__name__
+
     def __str__(self):
         return f'Compute {self._format_out_names()} = {self._func.__name__}' \
                f'({", ".join(self._arg_names)})'
@@ -305,6 +300,15 @@ def _is_meta_data(name: str, data: DataArray) -> bool:
     return name in data.meta or (data.bins is not None and name in data.bins.meta)
 
 
+def _make_digraph(*args, **kwargs):
+    try:
+        from graphviz import Digraph
+    except ImportError:
+        raise RuntimeError('Failed to import `graphviz`, please install `graphviz` if '
+                           'using `pip`, or `python-graphviz` if using `conda`.')
+    return Digraph(*args, **kwargs)
+
+
 class Graph:
     def __init__(self, graph):
         self._graph = _convert_to_rule_graph(graph)
@@ -337,12 +341,11 @@ class Graph:
         dot.attr('node', shape='box', height='0.1')
         dot.attr(size=size)
         for output, rule in self._graph.items():
-            if isinstance(rule, _RenameRule):  # rename
+            if isinstance(rule, _RenameRule):
                 dot.edge(rule.dependencies[0], output, style='dashed')
-            else:
+            elif isinstance(rule, _ComputeRule):
                 if not simplified:
-                    # TODO
-                    name = f'{rule._func.__name__}(...)'
+                    name = f'{rule.func_name}(...)'
                     dot.node(name, shape='ellipse', style='filled', color='lightgrey')
                     dot.edge(name, output)
                 else:
