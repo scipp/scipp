@@ -503,7 +503,7 @@ def _transform_dataset(obj: Dataset, targets: Set[str], graph: Graph, *,
 
 
 def transform_coords(x: Union[DataArray, Dataset],
-                     coords: Iterable[str],
+                     targets: Iterable[str],
                      graph: GraphDict,
                      *,
                      rename_dims=True,
@@ -513,7 +513,7 @@ def transform_coords(x: Union[DataArray, Dataset],
     """Compute new coords based on transformation of input coords.
 
     :param x: Input object with coords.
-    :param coords: Name or list of names of desired output coords.
+    :param targets: Name or list of names of desired output coords.
     :param graph: A graph defining how new coords can be computed from existing
                   coords. This may be done in multiple steps.
                   The graph is given by a `dict` where:
@@ -542,12 +542,12 @@ def transform_coords(x: Union[DataArray, Dataset],
                        keep_inputs=keep_inputs)
     if isinstance(x, DataArray):
         return _transform_data_array(x,
-                                     targets=set(coords),
+                                     targets=set(targets),
                                      graph=Graph(graph),
                                      options=options)
     else:
         return _transform_dataset(x,
-                                  targets=set(coords),
+                                  targets=set(targets),
                                   graph=Graph(graph),
                                   options=options)
 
