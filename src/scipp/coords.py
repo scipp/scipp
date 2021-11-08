@@ -42,6 +42,26 @@ class _Options:
     keep_inputs: bool
 
 
+class _Destination(Enum):
+    coord = auto()
+    attr = auto()
+
+
+@dataclass
+class _Coord:
+    dense: Variable  # for dense variable or bin-coord
+    event: Variable
+    destination: _Destination
+
+    @property
+    def has_dense(self) -> bool:
+        return self.dense is not None
+
+    @property
+    def has_event(self) -> bool:
+        return self.event is not None
+
+
 class _Rule(ABC):
     def __init__(self, out_names: Union[str, Tuple[str]]):
         self.out_names = (out_names, ) if isinstance(out_names, str) else out_names
@@ -50,17 +70,16 @@ class _Rule(ABC):
     def __call__(self, coords: Dict[str, Variable]) -> Dict[str, Variable]:
         """Evaluate the kernel."""
 
+    @property
     @abstractmethod
-    def dependencies(self) -> Iterable[str]:
+    def dependencies(self) -> Tuple[str]:
         """Return names of coords that this kernel needs as inputs."""
 
     @staticmethod
-    def _get_coord(name: str, coords: Mapping[str, Variable]) -> Variable:
-        try:
-            return coords[name]
-        except KeyError:
-            raise CoordError(f'Internal Error: Coordinate {name} does is not in the '
-                             'input or has not (yet) been computed')
+    def _consume_coord(name: str, coords: Mapping[str, _Coord]) -> Variable:
+        coord = coords[name]
+        coord.destination = _Destination.attr
+        return coord
 
     def _format_out_names(self):
         return str(self.out_names) if len(self.out_names) > 1 else self.out_names[0]
@@ -68,18 +87,25 @@ class _Rule(ABC):
 
 class _FetchRule(_Rule):
     def __init__(self, out_names: Union[str, Tuple[str, ...]],
-                 sources: Mapping[str, Variable]):
+                 dense_sources: Mapping[str, Variable],
+                 event_sources: Optional[Mapping[str, Variable]]):
         super().__init__(out_names)
-        self._sources = sources
+        self._dense_sources = dense_sources
+        self._event_sources = event_sources
 
-    def __call__(self, _) -> Dict[str, Variable]:
+    def __call__(self, _) -> Dict[str, _Coord]:
+        # TODO remove from sources, requires that sources are for output da not original!
         return {
-            out_name: self._get_coord(out_name, self._sources)
+            out_name: _Coord(dense=self._dense_sources.get(out_name, None),
+                             event=self._event_sources.get(out_name, None)
+                             if self._event_sources else None,
+                             destination=_Destination.coord)
             for out_name in self.out_names
         }
 
-    def dependencies(self) -> Iterable[str]:
-        return ()
+    @property
+    def dependencies(self) -> Tuple[str]:
+        return ()  # type: ignore
 
     def __str__(self):
         return f'Input   {self._format_out_names()}'
@@ -90,13 +116,14 @@ class _RenameRule(_Rule):
         super().__init__(out_names)
         self._in_name = in_name
 
-    def __call__(self, coords: Mapping[str, Variable]) -> Dict[str, Variable]:
+    def __call__(self, coords: Mapping[str, _Coord]) -> Dict[str, _Coord]:
         return {
-            out_name: self._get_coord(self._in_name, coords)
+            out_name: copy(self._consume_coord(self._in_name, coords))
             for out_name in self.out_names
         }
 
-    def dependencies(self) -> Iterable[str]:
+    @property
+    def dependencies(self) -> Tuple[str]:
         return tuple((self._in_name, ))
 
     def __str__(self):
@@ -109,18 +136,47 @@ class _ComputeRule(_Rule):
         self._func = func
         self._arg_names = _argnames(func)
 
-    def __call__(self, coords: Mapping[str, Variable]) -> Dict[str, Variable]:
-        res = self._func(
-            **{name: self._get_coord(name, coords)
-               for name in self._arg_names})
-        if not isinstance(res, dict):
+    def __call__(self, coords: Mapping[str, _Coord]) -> Dict[str, _Coord]:
+        inputs = {name: self._consume_coord(name, coords) for name in self._arg_names}
+        if not any(coord.has_event for coord in inputs.values()):
+            outputs = self._compute_pure_dense(inputs)
+        else:
+            outputs = self._compute_with_events(inputs)
+        return self._without_unrequested(outputs)
+
+    def _compute_pure_dense(self, inputs):
+        outputs = self._func(**{name: coord.dense for name, coord in inputs.items()})
+        outputs = self._to_dict(outputs)
+        return {
+            name: _Coord(dense=var, event=None, destination=_Destination.coord)
+            for name, var in outputs.items()
+        }
+
+    def _compute_with_events(self, inputs):
+        args = {name: coord.event if coord.has_event else coord.dense
+                for name, coord in inputs.items()}
+        outputs = self._to_dict(self._func(**args))
+        # Dense outputs may be produced as side effects of processing event
+        # coords.
+        outputs = {name: _Coord(dense=var if var.bins is None else None,
+                                event=var if var.bins is not None else None,
+                                destination=_Destination.coord)
+                   for name, var in outputs.items()}
+        return outputs
+
+    def _without_unrequested(self, d: Dict[str, Any]) -> Dict[str, Any]:
+        return {key: val for key, val in d.items() if key in self.out_names}
+
+    def _to_dict(self, output) -> Dict[str, Variable]:
+        if not isinstance(output, dict):
             if len(self.out_names) != 1:
                 raise TypeError('Function returned a single output but '
                                 f'{len(self.out_names)} were expected.')
-            res = {self.out_names[0]: res}
-        return res
+            return {self.out_names[0]: output}
+        return output
 
-    def dependencies(self) -> Iterable[str]:
+    @property
+    def dependencies(self) -> Tuple[str]:
         return self._arg_names
 
     def __str__(self):
@@ -158,8 +214,12 @@ def _convert_to_rule_graph(graph: GraphDict) -> Dict[str, _Rule]:
 
 def _sort_topologically(graph: Mapping[str, _Rule]) -> Iterable[str]:
     yield from TopologicalSorter(
-        {out: rule.dependencies()
+        {out: rule.dependencies
          for out, rule in graph.items()}).static_order()
+
+
+def _is_meta_data(name: str, data:DataArray)->bool:
+    return name in data.meta or (data.bins is not None and name in data.bins.meta)
 
 
 class Graph:
@@ -182,15 +242,15 @@ class Graph:
                 continue
             rule = self._rule_for(out_name, data)
             subgraph[out_name] = rule
-            pending.extend(rule.dependencies())
+            pending.extend(rule.dependencies)
         return subgraph
 
     def _rule_for(self, out_name: str, data: DataArray) -> _Rule:
-        if out_name in data.meta:
-            # TODO bins
-            return _FetchRule(out_name, data.meta)
+        if _is_meta_data(out_name, data):
+            return _FetchRule(out_name, data.meta,
+                              data.bins.meta if data.bins else None)
         try:
-            return self._rule_graph[out_name]
+            return self._graph[out_name]
         except KeyError:
             raise CoordError(
                 f"Coordinate '{out_name}' does not exist in the input data "
@@ -226,19 +286,49 @@ def _log_plan(rules: List[_Rule]) -> None:
                       '\n'.join(f'  {rule}' for rule in rules))
 
 
-def _store_results(x: DataArray, coords: Dict[str, Variable],
-                   targets: Tuple[str, ...]) -> DataArray:
-    x = x.copy(deep=False)
-    for name, coord in coords.items():
-        if name in targets:
-            x.coords[name] = coord
-            if name in x.attrs:
+def _store_coord(data: DataArray, name: str, coord: _Coord):
+    def out(x):
+        return x.coords if coord.destination == _Destination.coord else x.attrs
+
+    def del_other(x):
+        try:
+            if coord.destination == _Destination.coord:
                 del x.attrs[name]
-        else:
-            x.attrs[name] = coord
-            if name in x.coords:
+            else:
                 del x.coords[name]
-    return x
+        except NotFoundError:
+            pass
+
+    if coord.has_dense:
+        out(data)[name] = coord.dense
+        del_other(data)
+    if coord.has_event:
+        try:
+            out(data.bins)[name] = coord.event
+        except VariableError:
+            # Thrown on mismatching bin indices, e.g. slice
+            data.data = data.data.copy()
+            out(data.bins)[name] = coord.event
+        del_other(data.bins)
+
+
+def _store_results(data: DataArray, coords: Dict[str, _Coord], targets: Tuple[str, ...],
+                   blacklist: Set[str]) -> DataArray:
+    data = data.copy(deep=False)
+    if data.bins is not None:
+        data.data = bins(**data.bins.constituents)
+    for name, coord in coords.items():
+        if name in blacklist:
+            continue
+        if name in targets:
+            coord.destination = _Destination.coord
+        _store_coord(data, name, coord)
+    return data
+
+
+def _rules_of_type(rules: List[_Rule], rule_type: type) -> Iterable[_Rule]:
+    yield from filter(lambda rule: isinstance(rule, rule_type), rules)
+
 
 def _rule_output_names(rules: List[_Rule], rule_type: type) -> Iterable[str]:
     for rule in _rules_of_type(rules, rule_type):
@@ -308,17 +398,20 @@ def _dim_name_changes(rules: List[_Rule], dims: List[str]) -> Dict[str, str]:
             incoming_dim_coords.setdefault(rule.out_names[0], []).append(dim)
     return name_changes
 
-def _transform_data_array(x: DataArray, coords: Union[str, List[str], Tuple[str, ...]],
+
+def _transform_data_array(original: DataArray, coords: Union[str, List[str],
+                                                             Tuple[str, ...]],
                           graph: GraphDict, options: _Options) -> DataArray:
     targets = tuple(coords)
-    rules = _non_duplicate_rules(Graph(graph).subgraph(x, targets))
-    _log_plan(rules)
-    rename_dims = _renamable_dims(x, rules)
+    rules = _non_duplicate_rules(Graph(graph).subgraph(original, targets))
+    dim_name_changes = _dim_name_changes(rules,
+                                         original.dims) if options.rename_dims else {}
+    _log_plan(rules, dim_name_changes)
     working_coords = {}
     for rule in rules:
         for name, coord in rule(working_coords).items():
-            if name in working_coords:
-                raise ValueError(f"Coordinate '{name}' was produced multiple times.")
+            if name in working_coords and name not in rule.dependencies:
+                raise RuntimeError(f"Coordinate '{name}' was produced multiple times.")
             working_coords[name] = coord
             if options.rename_dims:
                 ren = list(filter(lambda xx: xx in rename_dims, rule.dependencies()))
@@ -480,56 +573,9 @@ class CoordTransform:
         if self.obj.bins is not None:
             self.obj.bins.attrs.pop(name, None)
 
-    def _del_coord(self, name: str):
-        self.obj.coords.pop(name, None)
-        if self.obj.bins is not None:
-            self.obj.bins.coords.pop(name, None)
-
-    def finalize(self, *, include_aliases: bool, rename_dims: bool,
-                 keep_intermediate: bool, keep_inputs: bool):
-        for name in self._outputs:
-            self._add_coord(name=name)
-        if not include_aliases:
-            for name in self._aliases:
-                self._del_attr(name)
-        for name in self._consumed:
-            if name not in self.obj.attrs:
-                continue
-            if name in self._original.meta:
-                if not keep_inputs:
-                    self._del_attr(name)
-            elif not keep_intermediate:
-                self._del_attr(name)
-        unconsumed = set(self.obj.coords) - set(self._original.meta) - set(
-            self._outputs)
-        for name in unconsumed:
-            if name not in self._graph:
-                self._del_coord(name)
-        if rename_dims:
-            blacklist = _get_splitting_nodes(self._rename)
-            for key, val in self._rename.items():
-                found = [k for k in key if k in self.obj.dims]
-                # rename if exactly one input is dimension-coord
-                if len(val) == 1 and len(found) == 1 and found[0] not in blacklist:
-                    self.obj = self.obj.rename_dims({found[0]: val[0]})
-        return self.obj
-
-
-def _get_splitting_nodes(graph: Dict[Tuple[str], List[str]]) -> List[str]:
-    nodes = {}
-    for key in graph:
-        for start in key:
-            nodes[start] = nodes.get(start, 0) + 1
-    return [node for node in nodes if nodes[node] > 1]
-
-#
-# def _transform_data_array(obj: DataArray, coords , graph: GraphDict, *,
-#                           options) -> DataArray:
-#     transform = CoordTransform(
-#         obj,
-#         graph=Graph(graph),
-#         outputs=(coords, ) if isinstance(coords, str) else tuple(coords))
-#     return transform.finalize(**options)
+    res = _store_results(original, working_coords, targets,
+                         _storage_blacklist(coords, rules, options))
+    return res.rename_dims(dim_name_changes)
 
 
 def _transform_dataset(obj: Dataset, coords: Union[str, List[str], Tuple[str, ...]],
