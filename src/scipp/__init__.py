@@ -109,3 +109,24 @@ del _cls
 del _binding
 
 from . import data
+
+from .serialization import encode, decode
+
+try:
+    import msgpack
+    from typing import List, Dict, Tuple, Union
+    from distributed.protocol import dask_serialize, dask_deserialize
+
+    @dask_serialize.register(Variable)
+    @dask_serialize.register(DataArray)
+    def serialize(var: Union[Variable, DataArray]) -> Tuple[Dict, List[bytes]]:
+        header = {}
+        frames = [msgpack.packb(var, default=encode)]
+        return header, frames
+
+    @dask_deserialize.register(Variable)
+    @dask_deserialize.register(DataArray)
+    def deserialize(header: Dict, frames: List[bytes]) -> Union[Variable, DataArray]:
+        return msgpack.unpackb(frames[0], object_hook=decode)
+except ImportError:
+    pass
