@@ -13,7 +13,7 @@ import inspect
 from typing import Any, Callable, Dict, Iterable, List, Mapping,\
     Optional, Set, Tuple, Union
 
-from .core import CoordError, DataArray, Dataset, NotFoundError, VariableError,\
+from .core import DataArray, Dataset, NotFoundError, VariableError,\
     Variable, bins
 from .logging import get_logger
 
@@ -332,7 +332,7 @@ class Graph:
         try:
             return self._graph[out_name]
         except KeyError:
-            raise CoordError(
+            raise NotFoundError(
                 f"Coordinate '{out_name}' does not exist in the input data "
                 "and no rule has been provided to compute it.") from None
 
