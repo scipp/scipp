@@ -40,6 +40,7 @@ def test_rename_multi_output():
                                               'y2': 'y'
                                           },
                                           include_aliases=True)
+    print(da)
     assert da.dims == ['x', 'y']  # y4 also depends on y so dim not renamed
     assert sc.identical(da.coords['y4'], original.coords['y'])
     assert sc.identical(da.coords['y3'], original.coords['y'])
@@ -142,10 +143,38 @@ def test_dim_rename_multi_level_merge_multi_output():
         return {'a2': a, 'c': a}
 
     original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
-    da = original.transform_coords(['bc'], graph={'bc': bc, 'c': split_a})
+    da = original.transform_coords(['bc'], graph={'bc': bc, ('c', 'a2'): split_a})
     # Similar to test_dim_rename_multi_level_merge above, but now an implicit
     # intermediate result prevents conversion of a to c
     assert da.dims == ['a', 'bc']
+    da = original.transform_coords(['bc'], graph={'bc': bc, 'c': split_a})
+    # b2 is not part of the graph and dropped, a is thus free to be renamed to c.
+    assert da.dims == ['c', 'bc']
+
+
+def test_dim_rename_multi_level_multi_merge():
+    # *a    c  *b   d
+    #  \   /    \  /
+    #   *ac     *bd
+    #     \     /
+    #      abcd
+    def ac(a, c):
+        return a + c
+
+    def bd(b, d):
+        return b + d
+
+    def abcd(ac, bd):
+        return ac + bd
+
+    graph = {'ac': ac, 'bd': bd, 'abcd': abcd}
+    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b, 'c': a, 'd': b})
+    da = original.transform_coords(['abcd'], graph=graph)
+    assert da.dims == ['ac', 'bd']
+
+    original = sc.DataArray(data=a + b + c, coords={'a': a, 'b': b, 'c': c, 'd': b})
+    da = original.transform_coords(['abcd'], graph=graph)
+    assert da.dims == ['a', 'abcd', 'c']
 
 
 def test_rename_dims_param():
@@ -244,7 +273,7 @@ def test_binned():
     def convert(*, x2, y):
         return {'yy': y * y, 'xy': x2 * y}
 
-    graph = {'xy': convert, 'x2': 'x'}
+    graph = {('xy', 'yy'): convert, 'x2': 'x'}
     da = binned.transform_coords(['xy', 'yy'], graph=graph)
     check_binned(da, binned)
     # If input is sliced, transform_coords has to copy the buffer
@@ -262,10 +291,6 @@ def test_binned_no_dense_coord():
         return {'yy': y * y, 'xy': x2 * y}
 
     graph = {('xy', 'yy'): convert, 'x2': 'x'}
-    da = binned.transform_coords(['xy', 'yy'], graph=graph)
-    check_binned(da, binned)
-    # works also without explicit request of 'yy' in graph
-    graph = {'xy': convert, 'x2': 'x'}
     da = binned.transform_coords(['xy', 'yy'], graph=graph)
     check_binned(da, binned)
 
