@@ -116,6 +116,7 @@ try:
 
     @dask_serialize.register(Variable)
     @dask_serialize.register(DataArray)
+    @dask_serialize.register(Dataset)
     def serialize(var: Union[Variable, DataArray]) -> Tuple[Dict, List[bytes]]:
         from io import BytesIO
         from .io.hdf5 import HDF5IO
@@ -130,6 +131,7 @@ try:
 
     @dask_deserialize.register(Variable)
     @dask_deserialize.register(DataArray)
+    @dask_deserialize.register(Dataset)
     def deserialize(header: Dict, frames: List[bytes]) -> Union[Variable, DataArray]:
         from io import BytesIO
         from .io.hdf5 import HDF5IO
