@@ -131,8 +131,8 @@ def _apply_keep_options(usages: Dict[str, int], rules: List[_Rule], targets: Set
 
 
 class _Rule(ABC):
-    def __init__(self, out_names: Union[str, Tuple[str]]):
-        self.out_names = (out_names, ) if isinstance(out_names, str) else out_names
+    def __init__(self, out_names: Tuple[str, ...]):
+        self.out_names = out_names
 
     @abstractmethod
     def __call__(self, coords: _CoordTable) -> Dict[str, Variable]:
@@ -149,8 +149,8 @@ class _Rule(ABC):
 
 
 class _FetchRule(_Rule):
-    def __init__(self, out_names: Union[str, Tuple[str, ...]],
-                 dense_sources: Mapping[str, Variable],
+    def __init__(self, out_names: Tuple[str, ...], dense_sources: Mapping[str,
+                                                                          Variable],
                  event_sources: Optional[Mapping[str, Variable]]):
         super().__init__(out_names)
         self._dense_sources = dense_sources
@@ -174,7 +174,7 @@ class _FetchRule(_Rule):
 
 
 class _RenameRule(_Rule):
-    def __init__(self, out_names: Union[str, Tuple[str, ...]], in_name: str):
+    def __init__(self, out_names: Tuple[str, ...], in_name: str):
         super().__init__(out_names)
         self._in_name = in_name
 
@@ -201,7 +201,7 @@ def _arg_names(func) -> Tuple[str]:
 
 
 class _ComputeRule(_Rule):
-    def __init__(self, out_names: Union[str, Tuple[str, ...]], func: Callable):
+    def __init__(self, out_names: Tuple[str, ...], func: Callable):
         super().__init__(out_names)
         self._func = func
         self._arg_names = _arg_names(func)
@@ -281,8 +281,9 @@ def _non_duplicate_rules(rules: Mapping[str, _Rule]) -> List[_Rule]:
 def _convert_to_rule_graph(graph: GraphDict) -> Dict[str, _Rule]:
     rule_graph = {}
     for products, producer in graph.items():
+        products = (products, ) if isinstance(products, str) else tuple(products)
         rule = _make_rule(products, producer)
-        for product in (products, ) if isinstance(products, str) else tuple(products):
+        for product in products:
             if product in rule_graph:
                 raise ValueError(
                     f'Duplicate output name defined in conversion graph: {product}')
@@ -327,7 +328,7 @@ class Graph:
 
     def _rule_for(self, out_name: str, data: DataArray) -> _Rule:
         if _is_meta_data(out_name, data):
-            return _FetchRule(out_name, data.meta,
+            return _FetchRule((out_name,), data.meta,
                               data.bins.meta if data.bins else None)
         try:
             return self._graph[out_name]
