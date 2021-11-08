@@ -113,13 +113,13 @@ from . import data
 try:
     from typing import List, Dict, Tuple, Union
     from distributed.protocol import dask_serialize, dask_deserialize
-    from io import BytesIO
-    from .io.hdf5 import HDF5IO
-    import h5py
 
     @dask_serialize.register(Variable)
     @dask_serialize.register(DataArray)
     def serialize(var: Union[Variable, DataArray]) -> Tuple[Dict, List[bytes]]:
+        from io import BytesIO
+        from .io.hdf5 import HDF5IO
+        import h5py
         header = {}
         buf = BytesIO()
         f = h5py.File(buf, "w")
@@ -131,6 +131,9 @@ try:
     @dask_deserialize.register(Variable)
     @dask_deserialize.register(DataArray)
     def deserialize(header: Dict, frames: List[bytes]) -> Union[Variable, DataArray]:
+        from io import BytesIO
+        from .io.hdf5 import HDF5IO
+        import h5py
         buf = BytesIO(frames[0])
         return HDF5IO.read(h5py.File(buf, "r"))
 except ImportError:
