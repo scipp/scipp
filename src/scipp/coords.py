@@ -20,8 +20,8 @@ GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 def _argnames(func) -> Tuple[str]:
     spec = inspect.getfullargspec(func)
     if spec.varargs is not None or spec.varkw is not None:
-        raise ValueError(
-            "Function with variable arguments not allowed in conversion graph.")
+        raise ValueError('Function with variable arguments not allowed in'
+                         f' conversion graph: `{func.__name__}`.')
     return tuple(spec.args + spec.kwonlyargs)
 
 
@@ -29,8 +29,8 @@ def _make_digraph(*args, **kwargs):
     try:
         from graphviz import Digraph
     except ImportError:
-        raise RuntimeError("Failed to import `graphviz`, please install `graphviz` if "
-                           "using `pip`, or `python-graphviz` if using `conda`.")
+        raise RuntimeError('Failed to import `graphviz`, please install `graphviz` if '
+                           'using `pip`, or `python-graphviz` if using `conda`.')
     return Digraph(*args, **kwargs)
 
 
