@@ -18,6 +18,7 @@ General
    logical_and
    logical_or
    logical_xor
+   lookup
    merge
    rebin
    slices

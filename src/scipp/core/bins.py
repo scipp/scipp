@@ -7,15 +7,43 @@ import warnings
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLike, MetaDataMap
+from .domains import merge_equal_adjacent
+from .operations import islinspace
 
 
-class lookup:
+class Lookup:
     def __init__(self, func: _cpp.DataArray, dim: str):
+        if func.ndim == 1 and func.dtype in [
+                _cpp.dtype.bool, _cpp.dtype.int32, _cpp.dtype.int64
+        ] and not islinspace(func.coords[dim], dim).value:
+            # Significant speedup if `func` is large but mostly constant.
+            func = merge_equal_adjacent(func)
         self.func = func
         self.dim = dim
 
     def __getitem__(self, var):
         return _cpp.buckets.map(self.func, var, self.dim)
+
+
+def lookup(func: _cpp.DataArray, dim: str):
+    """
+    Create a "lookup table" from a histogram (data array with bin-edge coord).
+
+    The lookup table can be used to map, e.g., time-stamps to corresponding values
+    given by a time-series log.
+
+    :param func: Histogram defining the lookup table.
+    :param dim: Dimension along which the lookup occurs.
+
+    Examples:
+
+      >>> x = sc.linspace(dim='x', start=0.0, stop=1.0, num=4)
+      >>> vals = sc.array(dims=['x'], values=[3, 2, 1])
+      >>> hist = sc.DataArray(data=vals, coords={'x': x})
+      >>> sc.lookup(hist, 'x')[sc.array(dims=['event'], values=[0.1,0.4,0.1,0.6,0.9])]
+      <scipp.Variable> (event: 5)      int64  [dimensionless]  [3, 2, ..., 2, 1]
+    """
+    return Lookup(func, dim)
 
 
 class Bins:

@@ -72,31 +72,56 @@ TEST_F(GroupbyTest, copy) {
   EXPECT_EQ(two_groups.copy(1), d.slice({Dim::X, 2, 3}));
 }
 
-TEST_F(GroupbyTest, copy_multiple_subgroups) {
-  const auto var =
-      makeVariable<double>(Dims{Dim("x")}, Shape{12}, units::m,
+struct GroupbyTestCopyMultipleSubgroupsTest : public ::testing::Test {
+protected:
+  const Variable var =
+      makeVariable<double>(Dims{Dim::X}, Shape{12}, units::m,
                            Values{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11});
-  const auto labels = makeVariable<double>(
+  const Variable labels = makeVariable<double>(
       Dims{Dim::X}, Shape{12}, Values{0, 1, 1, 0, 2, 2, 0, 0, 1, 0, 1, 2});
+
+  const Variable var0 = makeVariable<double>(Dims{Dim::X}, Shape{5}, units::m,
+                                             Values{0, 3, 6, 7, 9});
+  const Variable var1 = makeVariable<double>(Dims{Dim::X}, Shape{4}, units::m,
+                                             Values{1, 2, 8, 10});
+  const Variable var2 =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{4, 5, 11});
+  const Variable labels0 =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{0, 0, 0, 0, 0});
+  const Variable labels1 =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 1, 1, 1});
+  const Variable labels2 =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2, 2, 2});
+  const DataArray da0 = DataArray(var0, {{Dim("labels"), labels0}});
+  const DataArray da1 = DataArray(var1, {{Dim("labels"), labels1}});
+  const DataArray da2 = DataArray(var2, {{Dim("labels"), labels2}});
+};
+
+TEST_F(GroupbyTestCopyMultipleSubgroupsTest, no_edges) {
   const auto da = DataArray(var, {{Dim("labels"), labels}});
 
   auto grouped = groupby(da, Dim("labels"));
 
-  const auto var0 = makeVariable<double>(Dims{Dim("x")}, Shape{5}, units::m,
-                                         Values{0, 3, 6, 7, 9});
-  const auto var1 = makeVariable<double>(Dims{Dim("x")}, Shape{4}, units::m,
-                                         Values{1, 2, 8, 10});
-  const auto var2 = makeVariable<double>(Dims{Dim("x")}, Shape{3}, units::m,
-                                         Values{4, 5, 11});
-  const auto labels0 =
-      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{0, 0, 0, 0, 0});
-  const auto labels1 =
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 1, 1, 1});
-  const auto labels2 =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2, 2, 2});
-  const auto da0 = DataArray(var0, {{Dim("labels"), labels0}});
-  const auto da1 = DataArray(var1, {{Dim("labels"), labels1}});
-  const auto da2 = DataArray(var2, {{Dim("labels"), labels2}});
+  EXPECT_EQ(grouped.copy(0), da0);
+  EXPECT_EQ(grouped.copy(1), da1);
+  EXPECT_EQ(grouped.copy(2), da2);
+}
+
+TEST_F(GroupbyTestCopyMultipleSubgroupsTest, with_edges) {
+  const auto edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{13}, units::m,
+                           Values{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+  const auto da = DataArray(var, {{Dim::X, edges}, {Dim("labels"), labels}},
+                            {{"mask", edges}}, {{Dim("attr"), edges}});
+
+  auto grouped = groupby(da, Dim("labels"));
+
+  for (scipp::index i : {0, 1, 2}) {
+    const auto out = grouped.copy(i);
+    EXPECT_FALSE(out.coords().contains(Dim::X));
+    EXPECT_FALSE(out.masks().contains("mask"));
+    EXPECT_FALSE(out.attrs().contains(Dim("attr")));
+  }
   EXPECT_EQ(grouped.copy(0), da0);
   EXPECT_EQ(grouped.copy(1), da1);
   EXPECT_EQ(grouped.copy(2), da2);
