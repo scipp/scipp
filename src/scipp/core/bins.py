@@ -14,7 +14,7 @@ from .operations import islinspace
 class Lookup:
     def __init__(self, func: _cpp.DataArray, dim: str):
         if func.ndim == 1 and func.dtype in [
-                _cpp.dtype.bool, _cpp.dtype.int32, _cpp.dtype.int64, _cpp.dtype.string
+                _cpp.dtype.bool, _cpp.dtype.int32, _cpp.dtype.int64
         ] and not islinspace(func.coords[dim], dim).value:
             # Significant speedup if `func` is large but mostly constant.
             func = merge_equal_adjacent(func)
