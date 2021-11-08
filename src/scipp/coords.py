@@ -37,7 +37,7 @@ GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 @dataclasses.dataclass(frozen=True)
 class _Options:
     rename_dims: bool
-    include_aliases: bool
+    keep_aliases: bool
     keep_intermediate: bool
     keep_inputs: bool
 
@@ -125,7 +125,7 @@ def _apply_keep_options(usages: Dict[str, int], rules: List[_Rule], targets: Set
         handle_in(inputs)
     if options.keep_intermediate:
         handle_in(all_inputs - inputs - aliases)
-    if options.include_aliases:
+    if options.keep_aliases:
         handle_in(aliases)
     return usages
 
@@ -507,7 +507,7 @@ def transform_coords(x: Union[DataArray, Dataset],
                      graph: GraphDict,
                      *,
                      rename_dims=True,
-                     include_aliases=True,
+                     keep_aliases=True,
                      keep_intermediate=True,
                      keep_inputs=True) -> Union[DataArray, Dataset]:
     """Compute new coords based on transformation of input coords.
@@ -527,8 +527,8 @@ def transform_coords(x: Union[DataArray, Dataset],
     :param rename_dims: Rename dimensions if products of dimension coord are
                         fully consumed and consumer consumes exactly one
                         dimension coordinate. Default is True.
-    :param include_aliases: If True, aliases for coords defined in graph are
-                            included in the output. Default is False.
+    :param keep_aliases: If True, aliases for coords defined in graph are
+                         included in the output. Default is False.
     :param keep_intermediate: Keep attributes created as intermediate results.
                               Default is True.
     :param keep_inputs: Keep consumed input coordinates or attributes.
@@ -537,7 +537,7 @@ def transform_coords(x: Union[DataArray, Dataset],
              shallow-copied.
     """
     options = _Options(rename_dims=rename_dims,
-                       include_aliases=include_aliases,
+                       keep_aliases=keep_aliases,
                        keep_intermediate=keep_intermediate,
                        keep_inputs=keep_inputs)
     if isinstance(x, DataArray):
