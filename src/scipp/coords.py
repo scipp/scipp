@@ -128,8 +128,7 @@ class _Rule(ABC):
         """Return names of coords that this kernel needs as inputs."""
 
     def _format_out_names(self):
-        return (f'({", ".join(self.out_names)})'
-                if len(self.out_names) > 1 else self.out_names[0])
+        return f'({", ".join(self.out_names)})'
 
 
 class _FetchRule(_Rule):
