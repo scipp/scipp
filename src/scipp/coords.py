@@ -349,21 +349,18 @@ def _log_plan(rules: List[_Rule], targets: Set[str],
         if coords.total_usages(name) < 0
     }
 
-    inputs_str = f'({", ".join(sorted(inputs))})'
-    outputs_str = f'({", ".join(sorted(targets))})'
-    byproducts_str = (f'\n  Byproducts:\n    {", ".join(sorted(byproducts))}'
-                      if byproducts else '')
+    message = f'Transforming coords ({", ".join(sorted(inputs))}) ' \
+              f'-> ({", ".join(sorted(targets))})'
+    if byproducts:
+        message += f'\n  Byproducts:\n    {", ".join(sorted(byproducts))}'
+    if dim_name_changes:
+        dim_rename_steps = '\n'.join(f'    {t} <- {f}'
+                                     for f, t in dim_name_changes.items())
+        message += '\n  Rename dimensions:\n' + dim_rename_steps
+    message += '\n  Steps:\n' + '\n'.join(
+        f'    {rule}' for rule in rules if not isinstance(rule, _FetchRule))
 
-    dim_rename_steps = '\n'.join(f'    {t} <- {f}' for f, t in dim_name_changes.items())
-    dim_rename_str = ('\n  Rename dimensions:\n' +
-                      dim_rename_steps if dim_rename_steps else '')
-
-    transform_steps = '\n'.join(f'    {rule}' for rule in rules
-                                if not isinstance(rule, _FetchRule))
-    transform_str = '\n  Steps:\n' + transform_steps
-
-    get_logger().info('Transforming coords %s -> %s%s%s%s', inputs_str, outputs_str,
-                      byproducts_str, dim_rename_str, transform_str)
+    get_logger().info(message)
 
 
 def _store_coord(da: DataArray, name: str, coord: _Coord) -> None:
