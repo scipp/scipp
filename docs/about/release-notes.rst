@@ -27,14 +27,15 @@ v0.9.0 (November 2021)
 Features
 ~~~~~~~~
 
-* Add ``erf`` and ``erfc`` functions `#2195 <https://github.com/scipp/scipp/pull/2195>`_.
+* Added ``erf`` and ``erfc`` functions `#2195 <https://github.com/scipp/scipp/pull/2195>`_.
 * Reduction operations such as ``sum``, ``nansum``, and ``cumsum`` of single precision (float32) data now use double precision (float64) internally to reduce rounding errors `#2218 <https://github.com/scipp/scipp/pull/2218>`_.
-* Add ``bins_like`` for broadcasting dense variables to binned variables, e.g., for converting bin coordinates into event coordinates `#2225 <https://github.com/scipp/scipp/pull/2225>`_.
+* Added ``bins_like`` for broadcasting dense variables to binned variables, e.g., for converting bin coordinates into event coordinates `#2225 <https://github.com/scipp/scipp/pull/2225>`_.
 * ``groupby`` now also supports grouping by attributes instead of just by coordinates `#2227 <https://github.com/scipp/scipp/pull/2227>`_.
-* Add ``concat`` to replace ``concatenate``. In contrast to the now deprecated ``concatenate``, ``concat`` supports concatenation of lists of objects instead of just two objects `#2232 <https://github.com/scipp/scipp/pull/2232>`_.
-* Add ``dim`` property to ``Variable`` and ``DataArray`` `#2251 <https://github.com/scipp/scipp/pull/2251>`_.
-* Add preconfigured logging support including a widget for output to notebooks `#2255 <https://github.com/scipp/scipp/pull/2255>`_.
-* Add ``reduce`` for setting up reductions across a list of inputs `#2267 <https://github.com/scipp/scipp/pull/2267>`_.
+* Added ``concat`` to replace ``concatenate``. In contrast to the now deprecated ``concatenate``, ``concat`` supports concatenation of lists of objects instead of just two objects `#2232 <https://github.com/scipp/scipp/pull/2232>`_.
+* Added ``dim`` property to ``Variable`` and ``DataArray`` `#2251 <https://github.com/scipp/scipp/pull/2251>`_.
+* Added preconfigured logging support including a widget for output to notebooks `#2255 <https://github.com/scipp/scipp/pull/2255>`_.
+* Added ``reduce`` for setting up reductions across a list of inputs `#2267 <https://github.com/scipp/scipp/pull/2267>`_.
+* Added toggle buttons for hiding/showing the 3d axes and outline box in 3d plots `#2265 <https://github.com/scipp/scipp/pull/2265>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -59,8 +60,8 @@ Stability, Maintainability, and Testing
 
 * More thorough unit testing for low-level code underlying most operations on dense as well as binned data `#1900 <https://github.com/scipp/scipp/pull/1900>`_, by Jan-Lukas Wynen.
 * Switch to Jupyter Book theme for documentation, avoiding a number of issues with the RTD theme `#2233 <https://github.com/scipp/scipp/pull/2233>`_, by Neil Vaytet.
-* Add `benchmark suite <https://scipp.github.io/scipp-benchmarks/>`_ to allow for identification of performance regressions, by Samuel Jones.
-* Add `code coverage <https://scipp.github.io/scipp-coverage/>`_ tooling to allow for identification of dark spots in our test coverage, by Simon Heybrock.
+* Added `benchmark suite <https://scipp.github.io/scipp-benchmarks/>`_ to allow for identification of performance regressions, by Samuel Jones.
+* Added `code coverage <https://scipp.github.io/scipp-coverage/>`_ tooling to allow for identification of dark spots in our test coverage, by Simon Heybrock.
 
 Contributors
 ~~~~~~~~~~~~
