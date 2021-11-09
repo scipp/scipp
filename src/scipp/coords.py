@@ -342,7 +342,7 @@ class Graph:
 def _log_plan(rules: List[_Rule], targets: Set[str],
               dim_name_changes: Mapping[str, str], coords: _CoordTable) -> None:
     inputs = set(_rule_output_names(rules, _FetchRule))
-    bi_products = {
+    byproducts = {
         name
         for name in (set(_rule_output_names(rules, _RenameRule))
                      | set(_rule_output_names(rules, _ComputeRule))) - targets
@@ -351,8 +351,8 @@ def _log_plan(rules: List[_Rule], targets: Set[str],
 
     inputs_str = f'({", ".join(sorted(inputs))})'
     outputs_str = f'({", ".join(sorted(targets))})'
-    bi_products_str = (f'\n  Bi-products:\n    {", ".join(sorted(bi_products))}'
-                       if bi_products else '')
+    byproducts_str = (f'\n  Byproducts:\n    {", ".join(sorted(byproducts))}'
+                      if byproducts else '')
 
     dim_rename_steps = '\n'.join(f'    {t} <- {f}' for f, t in dim_name_changes.items())
     dim_rename_str = ('\n  Rename dimensions:\n' +
@@ -363,7 +363,7 @@ def _log_plan(rules: List[_Rule], targets: Set[str],
     transform_str = '\n  Steps:\n' + transform_steps
 
     get_logger().info('Transforming coords %s -> %s%s%s%s', inputs_str, outputs_str,
-                      bi_products_str, dim_rename_str, transform_str)
+                      byproducts_str, dim_rename_str, transform_str)
 
 
 def _store_coord(da: DataArray, name: str, coord: _Coord) -> None:
