@@ -3,8 +3,26 @@
 Release Notes
 =============
 
-v0.9.0 (unreleased)
--------------------
+v0.10.0 (unreleased)
+--------------------
+
+Features
+~~~~~~~~
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+v0.9.0 (November 2021)
+----------------------
 
 Features
 ~~~~~~~~
@@ -16,6 +34,7 @@ Features
 * Add ``concat`` to replace ``concatenate``. In contrast to the now deprecated ``concatenate``, ``concat`` supports concatenation of lists of objects instead of just two objects `#2232 <https://github.com/scipp/scipp/pull/2232>`_.
 * Add ``dim`` property to ``Variable`` and ``DataArray`` `#2251 <https://github.com/scipp/scipp/pull/2251>`_.
 * Add preconfigured logging support including a widget for output to notebooks `#2255 <https://github.com/scipp/scipp/pull/2255>`_.
+* Add ``reduce`` for setting up reductions across a list of inputs `#2267 <https://github.com/scipp/scipp/pull/2267>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -28,6 +47,7 @@ Bugfixes
 * Fix exception in ``astype`` when called with binned data that does not require conversion `#2222 <https://github.com/scipp/scipp/pull/2222>`_.
 * Fix bug in ``concatenate`` that could lead to masks being shared with input rather than being copied `#2232 <https://github.com/scipp/scipp/pull/2232>`_.
 * Fix exception in ``bin`` when binning in a new dimension but with an existing bin coord `#2237 <https://github.com/scipp/scipp/pull/2237>`_.
+* Fix exception when plotting data with masks in presence of multi-dimensional coords `#2269 <https://github.com/scipp/scipp/pull/2269>`_.
 
 Deprecations
 ~~~~~~~~~~~~
