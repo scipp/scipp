@@ -85,6 +85,8 @@ from .core import scalar, zeros, zeros_like, ones, ones_like, empty, empty_like,
 
 from .logging import display_logs, get_logger
 
+from .reduction import reduce
+
 # Mainly imported for docs
 from .core import Bins, GroupByDataset, GroupByDataArray
 
