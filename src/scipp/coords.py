@@ -422,7 +422,7 @@ def _rules_with_dep(dep, rules):
     return list(filter(lambda r: dep in r.dependencies, rules))
 
 
-# A coords dim can be renamed if its node
+# A coord's dim can be renamed if its node
 #  1. has one incoming dim coord
 #  2. has only one outgoing connection
 #
