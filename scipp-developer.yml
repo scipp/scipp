@@ -28,6 +28,7 @@ dependencies:
   - pythreejs
   - pyyaml
   - tbb
+  - graphlib-backport  # only needed for py < 3.9
 
   # Test
   - h5py
