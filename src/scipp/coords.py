@@ -282,8 +282,8 @@ def _sort_topologically(graph: Mapping[str, _Rule]) -> Iterable[str]:
          for out, rule in graph.items()}).static_order()
 
 
-def _is_meta_data(name: str, data: DataArray) -> bool:
-    return name in data.meta or (data.bins is not None and name in data.bins.meta)
+def _is_meta_data(name: str, da: DataArray) -> bool:
+    return name in da.meta or (da.bins is not None and name in da.bins.meta)
 
 
 def _make_digraph(*args, **kwargs):
@@ -299,22 +299,21 @@ class Graph:
     def __init__(self, graph):
         self._graph = _convert_to_rule_graph(graph)
 
-    def subgraph(self, data: DataArray, targets: Set[str]) -> Dict[str, _Rule]:
+    def subgraph(self, da: DataArray, targets: Set[str]) -> Dict[str, _Rule]:
         subgraph = {}
         pending = list(targets)
         while pending:
             out_name = pending.pop()
             if out_name in subgraph:
                 continue
-            rule = self._rule_for(out_name, data)
+            rule = self._rule_for(out_name, da)
             subgraph[out_name] = rule
             pending.extend(rule.dependencies)
         return subgraph
 
-    def _rule_for(self, out_name: str, data: DataArray) -> _Rule:
-        if _is_meta_data(out_name, data):
-            return _FetchRule((out_name, ), data.meta,
-                              data.bins.meta if data.bins else None)
+    def _rule_for(self, out_name: str, da: DataArray) -> _Rule:
+        if _is_meta_data(out_name, da):
+            return _FetchRule((out_name, ), da.meta, da.bins.meta if da.bins else None)
         try:
             return self._graph[out_name]
         except KeyError:
@@ -368,7 +367,7 @@ def _log_plan(rules: List[_Rule], targets: Set[str],
                       bi_products_str, dim_rename_str, transform_str)
 
 
-def _store_coord(data: DataArray, name: str, coord: _Coord) -> None:
+def _store_coord(da: DataArray, name: str, coord: _Coord) -> None:
     def out(x):
         return x.coords if coord.destination == _Destination.coord else x.attrs
 
@@ -382,28 +381,27 @@ def _store_coord(data: DataArray, name: str, coord: _Coord) -> None:
             pass
 
     if coord.has_dense:
-        out(data)[name] = coord.dense
-        del_other(data)
+        out(da)[name] = coord.dense
+        del_other(da)
     if coord.has_event:
         try:
-            out(data.bins)[name] = coord.event
+            out(da.bins)[name] = coord.event
         except VariableError:
             # Thrown on mismatching bin indices, e.g. slice
-            data.data = data.data.copy()
-            out(data.bins)[name] = coord.event
-        del_other(data.bins)
+            da.data = da.data.copy()
+            out(da.bins)[name] = coord.event
+        del_other(da.bins)
 
 
-def _store_results(data: DataArray, coords: _CoordTable,
-                   targets: Set[str]) -> DataArray:
-    data = data.copy(deep=False)
-    if data.bins is not None:
-        data.data = bins(**data.bins.constituents)
+def _store_results(da: DataArray, coords: _CoordTable, targets: Set[str]) -> DataArray:
+    da = da.copy(deep=False)
+    if da.bins is not None:
+        da.data = bins(**da.bins.constituents)
     for name, coord in coords.items():
         if name in targets:
             coord.destination = _Destination.coord
-        _store_coord(data, name, coord)
-    return data
+        _store_coord(da, name, coord)
+    return da
 
 
 def _rules_of_type(rules: List[_Rule], rule_type: type) -> Iterable[_Rule]:
@@ -415,11 +413,11 @@ def _rule_output_names(rules: List[_Rule], rule_type: type) -> Iterable[str]:
         yield from rule.out_names
 
 
-def _initial_dims_to_rename(x: DataArray, rules: List[_Rule]) -> Dict[str, List[str]]:
+def _initial_dims_to_rename(da: DataArray, rules: List[_Rule]) -> Dict[str, List[str]]:
     res = {}
     for rule in filter(lambda r: isinstance(r, _FetchRule), rules):
         for name in rule.out_names:
-            if name in x.dims:
+            if name in da.dims:
                 res[name] = []
     return res
 
@@ -472,7 +470,7 @@ def _transform_data_array(original: DataArray, targets: Set[str], graph: Graph,
     return res.rename_dims(dim_name_changes)
 
 
-def _transform_dataset(obj: Dataset, targets: Set[str], graph: Graph, *,
+def _transform_dataset(original: Dataset, targets: Set[str], graph: Graph, *,
                        options: _Options) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord
     # transform is repeated for every item rather than sharing what is
@@ -483,8 +481,8 @@ def _transform_dataset(obj: Dataset, targets: Set[str], graph: Graph, *,
     return Dataset(
         data={
             name: _transform_data_array(
-                obj[name], targets=targets, graph=graph, options=options)
-            for name in obj
+                original[name], targets=targets, graph=graph, options=options)
+            for name in original
         })
 
 
