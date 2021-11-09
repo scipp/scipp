@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import uuid
-from typing import Union, List, Tuple
+from typing import Iterable, List
 from .typing import VariableLike
 from .core import concat, reduction
 
@@ -45,7 +45,7 @@ class Reducer:
         return BinsReducer(self._obj, self._dim)
 
 
-def reduce(x: Union[List[VariableLike], Tuple[VariableLike]]) -> Reducer:
+def reduce(x: Iterable[VariableLike]) -> Reducer:
     """Create helper object for reduction operations over list or tuple of inputs.
 
     Usage examples:
