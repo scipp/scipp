@@ -507,7 +507,7 @@ def transform_coords(x: Union[DataArray, Dataset],
                     in ``x`` or be computable by other nodes in ``graph``.
     :param rename_dims: Rename dimensions if the corresponding dimension coords
                         are used as inputs. `Dimension` ``a`` is renamed to ``b``
-                        iff
+                        if and only if
 
                         - `coord` ``a`` is used as input in exactly 1 node
                         - `coord` ``a`` is the only dimension coord in
