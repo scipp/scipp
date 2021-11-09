@@ -134,7 +134,7 @@ class _Rule(ABC):
 class _FetchRule(_Rule):
     def __init__(self, out_names: Tuple[str, ...], dense_sources: Mapping[str,
                                                                           Variable],
-                 event_sources: Optional[Mapping[str, Variable]]):
+                 event_sources: Mapping[str, Variable]):
         super().__init__(out_names)
         self._dense_sources = dense_sources
         self._event_sources = event_sources
@@ -142,8 +142,7 @@ class _FetchRule(_Rule):
     def __call__(self, coords: _CoordTable) -> Dict[str, _Coord]:
         return {
             out_name: _Coord(dense=self._dense_sources.get(out_name, None),
-                             event=self._event_sources.get(out_name, None)
-                             if self._event_sources else None,
+                             event=self._event_sources.get(out_name, None),
                              destination=_Destination.coord)
             for out_name in self.out_names
         }
@@ -313,7 +312,7 @@ class Graph:
 
     def _rule_for(self, out_name: str, da: DataArray) -> _Rule:
         if _is_meta_data(out_name, da):
-            return _FetchRule((out_name, ), da.meta, da.bins.meta if da.bins else None)
+            return _FetchRule((out_name, ), da.meta, da.bins.meta if da.bins else {})
         try:
             return self._graph[out_name]
         except KeyError:
