@@ -46,4 +46,18 @@ class Reducer:
 
 
 def reduce(x: Union[List[VariableLike], Tuple[VariableLike]]) -> Reducer:
+    """Create helper object for reduction operations over list or tuple of inputs.
+
+    Usage examples:
+
+      >>> a = sc.linspace(dim='x', start=0, stop=1, num=4)
+      >>> b = sc.linspace(dim='x', start=0.2, stop=0.8, num=4)
+      >>> sc.reduce([a, b]).max()
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [0.200000, 0.400000, 0.666667, 1.000000]
+      >>> sc.reduce([a, b]).sum()
+      <scipp.Variable> (x: 4)    float64  [dimensionless]  [0.200000, 0.733333, 1.266667, 1.800000]
+
+    :param x: List or tuple of variables or data arrays
+    :return: Reducer helper object with methods such as ``sum()`` or ``max()``
+    """  # noqa: E501
     return Reducer(list(x))
