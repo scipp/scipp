@@ -16,22 +16,28 @@ def _slices(obj):
 def test_reduce_logical():
     v = var < var.mean()
     args = _slices(v)
-    assert sc.identical(sc.reduce(args).all(), sc.all(v, 'yy'))
-    assert sc.identical(sc.reduce(args).any(), sc.any(v, 'yy'))
+    assert sc.identical(sc.reduce(args).all(), sc.all(v, dim))
+    assert sc.identical(sc.reduce(args).any(), sc.any(v, dim))
 
 
 def test_reduce():
     args = _slices(var)
-    assert sc.identical(sc.reduce(args).max(), sc.max(var, 'yy'))
-    assert sc.identical(sc.reduce(args).min(), sc.min(var, 'yy'))
-    assert sc.identical(sc.reduce(args).sum(), sc.sum(var, 'yy'))
-    assert sc.identical(sc.reduce(args).mean(), sc.mean(var, 'yy'))
+    assert sc.identical(sc.reduce(args).max(), sc.max(var, dim))
+    assert sc.identical(sc.reduce(args).min(), sc.min(var, dim))
+    assert sc.identical(sc.reduce(args).sum(), sc.sum(var, dim))
+    assert sc.identical(sc.reduce(args).mean(), sc.mean(var, dim))
 
 
 def test_reduce_nan():
     var.values[1, 1] = np.NAN
     args = _slices(var)
-    assert sc.identical(sc.reduce(args).nanmax(), sc.nanmax(var, 'yy'))
-    assert sc.identical(sc.reduce(args).nanmin(), sc.nanmin(var, 'yy'))
-    assert sc.identical(sc.reduce(args).nansum(), sc.nansum(var, 'yy'))
-    assert sc.identical(sc.reduce(args).nanmean(), sc.nanmean(var, 'yy'))
+    assert sc.identical(sc.reduce(args).nanmax(), sc.nanmax(var, dim))
+    assert sc.identical(sc.reduce(args).nanmin(), sc.nanmin(var, dim))
+    assert sc.identical(sc.reduce(args).nansum(), sc.nansum(var, dim))
+    assert sc.identical(sc.reduce(args).nanmean(), sc.nanmean(var, dim))
+
+
+def test_reduce_bins():
+    var = sc.data.binned_x(100, 10).rename_dims({'x': dim})
+    args = _slices(var)
+    assert sc.identical(sc.reduce(args).bins.concat(), var.bins.concat(dim))

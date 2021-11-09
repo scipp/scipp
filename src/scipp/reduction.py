@@ -14,6 +14,15 @@ def _make_method(f):
     return method
 
 
+class BinsReducer:
+    def __init__(self, obj, dim):
+        self._obj = obj
+        self._dim = dim
+
+    def concat(self):
+        return self._obj.bins.concat(self._dim)
+
+
 class Reducer:
     all = _make_method(reduction.all)
     any = _make_method(reduction.any)
@@ -30,6 +39,10 @@ class Reducer:
         self._dim = uuid.uuid4().hex
         # concat in init avoids repeated costly step in case of multiple reductions
         self._obj = concat(x, dim=self._dim)
+
+    @property
+    def bins(self):
+        return BinsReducer(self._obj, self._dim)
 
 
 def reduce(x: Union[List[VariableLike], Tuple[VariableLike]]) -> Reducer:
