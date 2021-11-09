@@ -7,34 +7,17 @@ from .typing import VariableLike
 from .core import concat, reduction
 
 
-def _make_method(f):
-    def method(self) -> VariableLike:
-        return f(self._obj, self._dim)
-
-    return method
-
-
 class BinsReducer:
     def __init__(self, obj: VariableLike, dim: str):
         self._obj = obj
         self._dim = dim
 
     def concat(self):
+        """Element-wise 'concat' across bins of inputs passed to :py:func:`scipp.reduce`."""  # noqa: E501
         return self._obj.bins.concat(self._dim)
 
 
 class Reducer:
-    all = _make_method(reduction.all)
-    any = _make_method(reduction.any)
-    max = _make_method(reduction.max)
-    min = _make_method(reduction.min)
-    sum = _make_method(reduction.sum)
-    mean = _make_method(reduction.mean)
-    nanmax = _make_method(reduction.nanmax)
-    nanmean = _make_method(reduction.nanmean)
-    nanmin = _make_method(reduction.nanmin)
-    nansum = _make_method(reduction.nansum)
-
     def __init__(self, x: List[VariableLike]):
         self._dim = uuid.uuid4().hex
         # concat in init avoids repeated costly step in case of multiple reductions
@@ -43,6 +26,46 @@ class Reducer:
     @property
     def bins(self):
         return BinsReducer(self._obj, self._dim)
+
+    def all(self):
+        """Element-wise 'all' across inputs passed to :py:func:`scipp.reduce`."""
+        return reduction.all(self._obj, self._dim)
+
+    def any(self):
+        """Element-wise 'any' across inputs passed to :py:func:`scipp.reduce`."""
+        return reduction.any(self._obj, self._dim)
+
+    def max(self):
+        """Element-wise 'max' across inputs passed to :py:func:`scipp.reduce`."""
+        return reduction.max(self._obj, self._dim)
+
+    def min(self):
+        """Element-wise 'min' across inputs passed to :py:func:`scipp.reduce`."""
+        return reduction.min(self._obj, self._dim)
+
+    def sum(self):
+        """Element-wise 'sum' across inputs passed to :py:func:`scipp.reduce`."""
+        return reduction.sum(self._obj, self._dim)
+
+    def mean(self):
+        """Element-wise 'mean' across inputs passed to :py:func:`scipp.reduce`."""
+        return reduction.mean(self._obj, self._dim)
+
+    def nanmax(self):
+        """Element-wise 'nanmax' across inputs passed to :py:func:`scipp.reduce`."""
+        return reduction.nanmax(self._obj, self._dim)
+
+    def nanmin(self):
+        """Element-wise 'nanmin' across inputs passed to :py:func:`scipp.reduce`."""
+        return reduction.nanmin(self._obj, self._dim)
+
+    def nansum(self):
+        """Element-wise 'nansum' across inputs passed to :py:func:`scipp.reduce`."""
+        return reduction.nansum(self._obj, self._dim)
+
+    def nanmean(self):
+        """Element-wise 'nanmean' across inputs passed to :py:func:`scipp.reduce`."""
+        return reduction.nanmean(self._obj, self._dim)
 
 
 def reduce(x: Iterable[VariableLike]) -> Reducer:
