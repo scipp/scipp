@@ -162,6 +162,8 @@ class _RenameRule(_Rule):
         self._in_name = in_name
 
     def __call__(self, coords: _CoordTable) -> Dict[str, _Coord]:
+        # Shallow copy the _Coord object to allow the alias to have
+        # a different destination and usage count than the original.
         return {
             out_name: copy(coords.consume(self._in_name))
             for out_name in self.out_names
