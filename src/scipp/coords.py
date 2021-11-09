@@ -77,10 +77,7 @@ class _CoordTable:
         return coord
 
     def total_usages(self, name: str) -> int:
-        try:
-            return self._total_usages[name]
-        except KeyError:
-            return -1
+        return self._total_usages.get(name, -1)
 
     def items(self) -> Iterable[Tuple[str, _Coord]]:
         yield from self._coords.items()
