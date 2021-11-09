@@ -21,6 +21,7 @@ General
    lookup
    merge
    rebin
+   reduce
    slices
    sort
    stddevs
