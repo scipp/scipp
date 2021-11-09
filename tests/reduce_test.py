@@ -28,6 +28,11 @@ def test_reduce():
     assert sc.identical(sc.reduce(args).mean(), sc.mean(var, dim))
 
 
+def test_reduce_tuple():
+    args = _slices(var)
+    assert sc.identical(sc.reduce(args).max(), sc.reduce(tuple(args)).max())
+
+
 def test_reduce_nan():
     var.values[1, 1] = np.NAN
     args = _slices(var)

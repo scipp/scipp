@@ -8,14 +8,14 @@ from .core import concat, reduction
 
 
 def _make_method(f):
-    def method(self):
+    def method(self) -> VariableLike:
         return f(self._obj, self._dim)
 
     return method
 
 
 class BinsReducer:
-    def __init__(self, obj, dim):
+    def __init__(self, obj: VariableLike, dim: str):
         self._obj = obj
         self._dim = dim
 
