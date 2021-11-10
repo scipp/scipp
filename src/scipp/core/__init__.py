@@ -34,13 +34,11 @@ setattr(Variable, 'sizes', property(_make_sizes))
 setattr(DataArray, 'sizes', property(_make_sizes))
 setattr(Dataset, 'sizes', property(_make_sizes))
 
-from .bins import _bins, _set_bins, _events
+from .bins import _bins, _set_bins
 
 setattr(Variable, 'bins', property(_bins, _set_bins))
 setattr(DataArray, 'bins', property(_bins, _set_bins))
 setattr(Dataset, 'bins', property(_bins, _set_bins))
-setattr(Variable, 'events', property(_events))
-setattr(DataArray, 'events', property(_events))
 
 from .structured import _fields
 
