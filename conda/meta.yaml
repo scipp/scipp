@@ -47,6 +47,7 @@ test:
     - sphinx-book-theme
     - sphinx-copybutton
     - nbsphinx
+    - graphlib-backport [py<3.9]
   files:
     - cmake-package-test/
   source_files:
