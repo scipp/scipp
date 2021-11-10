@@ -279,6 +279,8 @@ def test_binned():
     graph = {('xy', 'yy'): convert, 'x2': 'x'}
     da = binned.transform_coords(['xy', 'yy'], graph=graph)
     check_binned(da, binned)
+    assert sc.identical(da.coords['xy'], (binned.coords['x'] *
+                                          binned.coords['y']).rename_dims({'x': 'x2'}))
     # If input is sliced, transform_coords has to copy the buffer
     da = binned['y', 0:1].transform_coords(['xy', 'yy'], graph=graph)
     check_binned(da, binned['y', 0:1])
