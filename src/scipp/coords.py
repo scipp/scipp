@@ -192,17 +192,16 @@ class _ComputeRule(_Rule):
 
     def __call__(self, coords: _CoordTable) -> Dict[str, _Coord]:
         inputs = {name: coords.consume(name) for name in self._arg_names}
-        if not any(coord.has_event for coord in inputs.values()):
-            outputs = self._compute_pure_dense(inputs)
-        else:
+        outputs = None
+        if any(coord.has_event for coord in inputs.values()):
             outputs = self._compute_with_events(inputs)
-        # Compute missing dense outputs, provided that all inputs have dense components.
-        # Checking presence in outputs first to avoid multiple calls to _func.
-        missing_dense = not all(coord.has_dense for coord in outputs.values())
-        if missing_dense and all(coord.has_dense for coord in inputs.values()):
+        if all(coord.has_dense for coord in inputs.values()):
             dense_outputs = self._compute_pure_dense(inputs)
-            for name, coord in dense_outputs.items():
-                outputs[name].dense = coord.dense
+            if outputs is None:
+                outputs = dense_outputs
+            else:
+                for name, coord in dense_outputs.items():
+                    outputs[name].dense = coord.dense
         return self._without_unrequested(outputs)
 
     def _compute_pure_dense(self, inputs):
