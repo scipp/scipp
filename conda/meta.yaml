@@ -21,6 +21,7 @@ requirements:
     - python-configuration
     - pyyaml
     - tbb
+    - graphlib-backport [py<3.9]
 
 test:
   imports:

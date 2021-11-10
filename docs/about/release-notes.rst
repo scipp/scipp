@@ -15,10 +15,13 @@ Features
 * ``groupby`` now also supports grouping by attributes instead of just by coordinates `#2227 <https://github.com/scipp/scipp/pull/2227>`_.
 * Add ``concat`` to replace ``concatenate``. In contrast to the now deprecated ``concatenate``, ``concat`` supports concatenation of lists of objects instead of just two objects `#2232 <https://github.com/scipp/scipp/pull/2232>`_.
 * Add ``dim`` property to ``Variable`` and ``DataArray`` `#2251 <https://github.com/scipp/scipp/pull/2251>`_.
-* Add preconfigured logging support including a widget for output to notebooks `#2255 <https://github.com/scipp/scipp/pull/2255>`_.
+* Add preconfigured logging support including a widget for output to notebooks `#2255 <https://github.com/scipp/scipp/pull/2255>`_, `#2267 <https://github.com/scipp/scipp/pull/2267>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
+
+* Name changes of arguments of ``transform_coords`` `#2267 <https://github.com/scipp/scipp/pull/2267>`_.
+* Graphs in ``transform_coords`` must now name all outputs of functions or else the outputs are discarded `#2267 <https://github.com/scipp/scipp/pull/2267>`_.
 
 Bugfixes
 ~~~~~~~~
