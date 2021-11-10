@@ -21,7 +21,7 @@ requirements:
     - python-configuration
     - pyyaml
     - tbb
-    - graphlib-backport [py<3.9]
+    - graphlib-backport # for python < 3.9
 
 test:
   imports:
@@ -47,7 +47,6 @@ test:
     - sphinx-book-theme
     - sphinx-copybutton
     - nbsphinx
-    - graphlib-backport [py<3.9]
   files:
     - cmake-package-test/
   source_files:
