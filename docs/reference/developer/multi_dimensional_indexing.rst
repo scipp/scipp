@@ -67,7 +67,10 @@ Note that states c), f), and g) are only intermediate and not visible from the o
 
 We can see that ``delta[dim]`` takes a step in direction ``dim`` but also rewinds the previous dimension to its beginning.
 Furthermore, we always start one element past the end of the previous dimension.
-This means that::
+This means that
+
+.. code-block:: python
+
     if dim == 0:
         delta[dim] = stride[dim]
     else:
