@@ -282,6 +282,14 @@ TEST_P(BinTest, rebin_coarse_to_fine_2d_outer) {
   expect_near(bin(xy_coarse, {edges_x}), xy);
 }
 
+TEST_P(BinTest, rebin_coarse_to_fine_2d_outer_no_coord) {
+  const auto table = GetParam();
+  auto xy_coarse = bin(table, {edges_x_coarse, edges_y});
+  auto xy = bin(table, {edges_x, edges_y});
+  xy_coarse.coords().erase(Dim::X);
+  expect_near(bin(xy_coarse, {edges_x}), xy);
+}
+
 TEST_P(BinTest, rebin_empty_dim) {
   const auto table = GetParam();
   const auto xy = bin(table, {edges_x, edges_y});

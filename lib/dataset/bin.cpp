@@ -299,9 +299,22 @@ public:
         } else {
           update_indices_by_binning(indices, get_coord(dim), key, linspace);
         }
-      } else if (action == AxisAction::Existing)
-        update_indices_from_existing(indices, dim);
-      else if (action == AxisAction::Join) {
+      } else if (action == AxisAction::Existing) {
+        // Similar to binning along an existing dim, if a dimension is simply
+        // kept unchanged there is a 1:1 mapping from input to output dims. We
+        // can thus avoid storing and processing a lot of length-0 contributions
+        // to bins.
+        // Note that this is only possible (in this simple manner) if there are
+        // no other actions affecting output dimensions.
+        if (m_offsets.dims().empty() && m_dims[dim] == m_dims.volume()) {
+          // Offset to output bin tracked using base offset for input bins
+          m_nbin = scipp::index{1} * units::one;
+          m_offsets = make_range(0, m_dims[dim], 1, dim);
+        } else {
+          // Offset to output bin tracked in indices for individual events
+          update_indices_from_existing(indices, dim);
+        }
+      } else if (action == AxisAction::Join) {
         ; // target bin 0 for all
       }
     }

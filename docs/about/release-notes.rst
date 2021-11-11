@@ -15,6 +15,8 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
+* Fix kernel crash or poor performance when using ``bin`` or ``da.bins.concat`` along an inner dimension in the presence of a long outer dimension `#2278 <https://github.com/scipp/scipp/pull/2278>`_.
+
 Deprecations
 ~~~~~~~~~~~~
 
