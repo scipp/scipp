@@ -14,19 +14,29 @@ DataArray &@NAME@(DataArray &lhs, const Variable &rhs) {
   return lhs;
 }
 DataArray &@NAME@(DataArray &lhs, const DataArray &rhs) {
-  expect::coordsAreSuperset(lhs, rhs);
-  union_or_in_place(lhs.masks(), rhs.masks());
-  @NAME@(lhs.data(), rhs.data());
-  return lhs;
+  try {
+    expect::coordsAreSuperset(lhs, rhs);
+    union_or_in_place(lhs.masks(), rhs.masks());
+    @NAME@(lhs.data(), rhs.data());
+    return lhs;
+  } catch(except::CoordMismatchError &err) {
+    throw except::CoordMismatchError(std::string{"In operation '@OPNAME@': "}
+                                     + err.what());
+  }
 }
 DataArray @NAME@(DataArray &&lhs, const Variable &rhs) {
   @NAME@(lhs.data(), rhs);
   return std::move(lhs);
 }
 DataArray @NAME@(DataArray &&lhs, const DataArray &rhs) {
-  expect::coordsAreSuperset(lhs, rhs);
-  union_or_in_place(lhs.masks(), rhs.masks());
-  return @NAME@(std::move(lhs), rhs.data());
+  try {
+    expect::coordsAreSuperset(lhs, rhs);
+    union_or_in_place(lhs.masks(), rhs.masks());
+    return @NAME@(std::move(lhs), rhs.data());
+  } catch(except::CoordMismatchError &err) {
+    throw except::CoordMismatchError(std::string{"In operation '@OPNAME@': "}
+                                     + err.what());
+  }
 }
 
 } // namespace scipp::dataset
