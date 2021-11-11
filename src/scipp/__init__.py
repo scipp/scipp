@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-# @file
 # @author Simon Heybrock
 
 # flake8: noqa
@@ -110,33 +109,4 @@ del _binding
 
 from . import data
 
-try:
-    from typing import List, Dict, Tuple, Union
-    from distributed.protocol import dask_serialize, dask_deserialize
-
-    @dask_serialize.register(Variable)
-    @dask_serialize.register(DataArray)
-    @dask_serialize.register(Dataset)
-    def serialize(var: Union[Variable, DataArray]) -> Tuple[Dict, List[bytes]]:
-        from io import BytesIO
-        from .io.hdf5 import HDF5IO
-        import h5py
-        header = {}
-        buf = BytesIO()
-        f = h5py.File(buf, "w")
-        HDF5IO.write(f, var)
-        f.close()
-        frames = [buf.getvalue()]
-        return header, frames
-
-    @dask_deserialize.register(Variable)
-    @dask_deserialize.register(DataArray)
-    @dask_deserialize.register(Dataset)
-    def deserialize(header: Dict, frames: List[bytes]) -> Union[Variable, DataArray]:
-        from io import BytesIO
-        from .io.hdf5 import HDF5IO
-        import h5py
-        buf = BytesIO(frames[0])
-        return HDF5IO.read(h5py.File(buf, "r"))
-except ImportError:
-    pass
+from .dask import *
