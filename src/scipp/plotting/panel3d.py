@@ -45,19 +45,26 @@ class PlotPanel3d(PlotPanel):
                                      step=0.5 * cut_surface_thickness.value,
                                      description=f'{key}:',
                                      value=0.5 * (high + low).value,
+                                     continuous_update=False,
                                      layout={"width": "350px"})
         cut_unit = ipw.Label(value=str(low.unit))
-        cut_checkbox = ipw.Checkbox(value=True,
-                                    description="Continuous update",
-                                    indent=False,
-                                    layout={"width": "20px"})
-        ipw.jslink((cut_checkbox, 'value'), (cut_slider, 'continuous_update'))
+        # cut_checkbox = ipw.Checkbox(value=True,
+        #                             description="Continuous update",
+        #                             indent=False,
+        #                             layout={"width": "20px"})
+        # ipw.jslink((cut_checkbox, 'value'), (cut_slider, 'continuous_update'))
         cut_slider.observe(self._update_cut_surface, names="value")
 
         self._cut_sliders[key] = cut_slider
         self._cut_surface_thicknesses[key] = cut_surface_thickness
-        controls = ipw.HBox(
-            [ipw.HBox([cut_slider, cut_unit, cut_checkbox]), cut_surface_thickness])
+        controls = ipw.HBox([
+            ipw.HBox([
+                cut_slider,
+                cut_unit,
+                # cut_checkbox
+            ]),
+            cut_surface_thickness
+        ])
         controls.layout.display = 'none'
         return controls
 
@@ -147,7 +154,9 @@ class PlotPanel3d(PlotPanel):
         if self.cut_surface_buttons.value is None:
             self.controller.update_opacity(alpha=change["new"][1])
         else:
-            self._update_cut_surface()
+            print('_update_opacity', change["new"][0])
+            self.controller.update_opacity(alpha=change["new"][0])
+            # self._update_cut_surface()
 
     def _check_if_reset_needed(self, owner, content, buffers):
         """
@@ -162,8 +171,10 @@ class PlotPanel3d(PlotPanel):
         """
         Handle button update when the type of cut surface is changed.
         """
+        self._update_opacity({"new": self.opacity_slider.value})
         if change['old'] is not None:
             self._cut_controls[change['old']].layout.display = 'none'
+            self._update_opacity({"new": self.opacity_slider.value})
         if change["new"] is None:
             self._current_cut = None
             self._update_opacity({"new": self.opacity_slider.value})
@@ -177,16 +188,18 @@ class PlotPanel3d(PlotPanel):
         """
         Ask the `PlotController3d` to update the pixel colors.
         """
+        self.controller.remove_cut_surface()
         if self._current_cut is None:
             return
         delta = self._cut_surface_thicknesses[self._current_cut].value
         self._cut_sliders[self._current_cut].step = 0.5 * delta
-        self.controller.update_cut_surface(
+        self.controller.add_cut_surface(
             key=self.options[self.cut_surface_buttons.value],
             center=self._cut_sliders[self._current_cut].value,
             delta=delta,
             inactive=self.opacity_slider.lower,
             active=self.opacity_slider.upper)
+        # self.controller.set_opacity()
 
     def update_data(self, axparams=None):
         """

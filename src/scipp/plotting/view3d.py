@@ -20,7 +20,8 @@ class PlotView3d(PlotView):
         self._axes = ['z', 'y', 'x']
 
     def update_opacity(self, alpha):
-        self.figure.update_opacity(alpha.values)
+        # self.figure.update_opacity(alpha.values)
+        self.figure.update_opacity(alpha)
 
     def update_depth_test(self, *args, **kwargs):
         self.figure.update_depth_test(*args, **kwargs)
@@ -57,3 +58,9 @@ class PlotView3d(PlotView):
 
     def set_position_params(self, params):
         self.figure.set_position_params(params)
+
+    def remove_cut_surface(self):
+        self.figure.remove_cut_surface()
+
+    def add_cut_surface(self, *args, **kwargs):
+        self.figure.add_cut_surface(*args, **kwargs)
