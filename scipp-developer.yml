@@ -45,7 +45,7 @@ dependencies:
 
   # Docs
   - pandoc
-  - sphinx
+  - sphinx = 4.2.0
   - sphinx-book-theme
   - sphinx-copybutton
   - nbsphinx
