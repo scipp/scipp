@@ -6,7 +6,7 @@
 #include "scipp/core/except.h"
 #include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
-
+#include<iostream>
 namespace scipp::dataset {
 
 namespace {
@@ -157,7 +157,7 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
   setSizes(data.dims());
   for (auto &&[dim, coord] : data.coords()) {
     if (const auto it = m_coords.find(dim); it != m_coords.end())
-      core::expect::equals(coord, it->second);
+      expect::matchingCoord(dim, coord, it->second);
     else
       setCoord(dim, std::move(coord));
   }
