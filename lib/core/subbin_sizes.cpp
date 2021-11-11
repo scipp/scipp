@@ -29,16 +29,6 @@ void SubbinSizes::operator=(const scipp::index value) {
 SubbinSizes &SubbinSizes::operator+=(const SubbinSizes &other) {
   if (other.offset() < offset()) // avoid realloc if possible
     return *this = *this + other;
-  // This case is crucial to avoid an N*N term in memory use after call to
-  // 'sum' in the setup of output bin sizes in 'bin' (in certain cases). The
-  // problem comes from the initialization of the output in 'sum', which is set
-  // to "0" (defined as offset 0 and one 0 entry in SubbinSizes), rather than
-  // using the actual offset of an input element.
-  if (sizes().size() == 1 && sizes()[0] == 0) {
-    m_offset = other.m_offset;
-    m_sizes = other.sizes();
-    return *this;
-  }
   scipp::index current = other.offset() - offset();
   const auto length = current + scipp::size(other.sizes());
   if (length > scipp::size(sizes()))
