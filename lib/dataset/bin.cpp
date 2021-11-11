@@ -304,8 +304,8 @@ public:
         // kept unchanged there is a 1:1 mapping from input to output dims. We
         // can thus avoid storing and processing a lot of length-0 contributions
         // to bins.
-        if (m_offsets.dims().empty() && m_dims[dim] != 0) {
-          m_nbin = (m_dims.volume() / m_dims[dim]) * units::one;
+        if (m_offsets.dims().empty() && m_dims[dim] == m_dims.volume()) {
+          m_nbin = scipp::index{1} * units::one;
           m_offsets = make_range(0, m_dims[dim], 1, dim);
         } else {
           update_indices_from_existing(indices, dim);
