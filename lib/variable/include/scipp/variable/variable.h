@@ -63,7 +63,7 @@ public:
 
   [[nodiscard]] const units::Unit &unit() const;
   void setUnit(const units::Unit &unit);
-  void expectCanSetUnit(const units::Unit &) const;
+  void expect_can_set_unit(const units::Unit &unit) const;
 
   [[nodiscard]] const Dimensions &dims() const;
   [[nodiscard]] Dim dim() const;

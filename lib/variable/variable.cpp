@@ -83,7 +83,7 @@ DType Variable::dtype() const { return data().dtype(); }
 
 bool Variable::hasVariances() const { return data().hasVariances(); }
 
-void Variable::expectCanSetUnit(const units::Unit &unit) const {
+void Variable::expect_can_set_unit(const units::Unit &unit) const {
   if (this->unit() != unit && is_slice())
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
@@ -93,7 +93,7 @@ const units::Unit &Variable::unit() const { return m_object->unit(); }
 
 void Variable::setUnit(const units::Unit &unit) {
   expect_writable();
-  expectCanSetUnit(unit);
+  expect_can_set_unit(unit);
   m_object->setUnit(unit);
 }
 

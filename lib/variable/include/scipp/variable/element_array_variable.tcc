@@ -46,7 +46,7 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   }
   void expect_can_set_elem_unit(const Variable &var,
                                 const units::Unit &u) const override {
-    var.expectCanSetUnit(u);
+    var.expect_can_set_unit(u);
   }
   void set_elem_unit(Variable &var, const units::Unit &u) const override {
     var.setUnit(u);
