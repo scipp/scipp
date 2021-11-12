@@ -138,6 +138,9 @@ def _table_from_dict_of_variables(dict_of_variables,
         html += "</tr>"
     else:
         row_end = min(size, row_start + max_rows)
+        if row_end != size:
+            # Ensure we are printing same number of rows, including overflow
+            row_end -= 1
         # If we are not starting at the first row, add overflow
         if row_start > 0:
             html += _make_overflow_row(dict_of_variables)
