@@ -151,6 +151,19 @@ template <class Key, class Value> void Dict<Key, Value>::rebuildSizes() {
   m_sizes = std::move(new_sizes);
 }
 
+namespace {
+template <class Key>
+void expect_valid_coord_dims(const Key &key, const Dimensions &coord_dims,
+                             const Sizes &da_sizes) {
+  using core::to_string;
+  if (!da_sizes.includes(coord_dims))
+    throw except::DimensionError(
+        "Cannot add coord '" + to_string(key) + "' of dims " +
+        to_string(coord_dims) + " to DataArray with dims " +
+        to_string(Dimensions{da_sizes.labels(), da_sizes.sizes()}));
+}
+} // namespace
+
 template <class Key, class Value>
 void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
   if (contains(key) && at(key).is_same(coord))
@@ -168,8 +181,7 @@ void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
       break;
     }
   }
-  if (!m_sizes.includes(dims))
-    throw except::DimensionError("Cannot add coord exceeding DataArray dims");
+  expect_valid_coord_dims(key, dims, m_sizes);
   m_items.insert_or_assign(key, std::move(coord));
 }
 
