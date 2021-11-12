@@ -44,13 +44,13 @@ class PlotController3d(PlotController):
         # they were drawn, and not in the order they are with respect
         # to the camera position. So for high opacities, we switch to
         # depthTest = True.
-        self.view.update_depth_test(alpha > 0.5)
+        # self.view.update_depth_test(alpha > 0.5)
 
-    def update_depth_test(self, value):
-        """
-        Update the state of depth test in the view (see `update_opacity`).
-        """
-        self.view.update_depth_test(value)
+    # def update_depth_test(self, value):
+    #     """
+    #     Update the state of depth test in the view (see `update_opacity`).
+    #     """
+    #     self.view.update_depth_test(value)
 
     def remove_cut_surface(self):
         self.view.remove_cut_surface()

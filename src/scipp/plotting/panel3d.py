@@ -152,11 +152,15 @@ class PlotPanel3d(PlotPanel):
         Take cut surface into account if present.
         """
         if self.cut_surface_buttons.value is None:
-            self.controller.update_opacity(alpha=change["new"][1])
+            self.controller.update_opacity(alpha={"main": change["new"][1]})
         else:
-            print('_update_opacity', change["new"][0])
-            self.controller.update_opacity(alpha=change["new"][0])
-            # self._update_cut_surface()
+            self.controller.update_opacity(alpha={
+                "main": change["new"][0],
+                "cut": change["new"][1]
+            })
+            # if change["new"][1] != change["old"][1]:
+            # self.controller.update_opacity(alpha=change["new"][0])
+            # # self._update_cut_surface()
 
     def _check_if_reset_needed(self, owner, content, buffers):
         """
@@ -171,18 +175,19 @@ class PlotPanel3d(PlotPanel):
         """
         Handle button update when the type of cut surface is changed.
         """
-        self._update_opacity({"new": self.opacity_slider.value})
+        # self._update_opacity({"new": self.opacity_slider.value})
         if change['old'] is not None:
             self._cut_controls[change['old']].layout.display = 'none'
-            self._update_opacity({"new": self.opacity_slider.value})
+            # self._update_opacity({"new": self.opacity_slider.value})
         if change["new"] is None:
             self._current_cut = None
-            self._update_opacity({"new": self.opacity_slider.value})
+            # self._update_opacity({"new": self.opacity_slider.value})
         else:
             self._current_cut = self.options[change['new']]
             self._cut_controls[change['new']].layout.display = ''
-            self.controller.update_depth_test(False)
-            self._update_cut_surface()
+            # self.controller.update_depth_test(False)
+        self._update_cut_surface()
+        self._update_opacity({"new": self.opacity_slider.value})
 
     def _update_cut_surface(self, change=None):
         """
