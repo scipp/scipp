@@ -36,7 +36,7 @@ from . import geometry
 from ._scipp.core import as_const, choose, logical_and, logical_or, logical_xor
 # Import python functions
 from .show import show, make_svg
-from .table import table
+from .table import table, make_table
 
 from .plotting import plot
 

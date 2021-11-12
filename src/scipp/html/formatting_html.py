@@ -11,6 +11,7 @@ from .._scipp import core as sc
 from ..core import stddevs
 from ..utils import value_to_string
 from .resources import load_icons, load_style
+from ..table import make_table
 
 BIN_EDGE_LABEL = "[bin-edge]"
 STDDEV_PREFIX = "σ = "
@@ -140,8 +141,11 @@ def _short_data_repr_html_events(var, variances=False):
 
 def short_data_repr_html(var, variances=False):
     """Format "data" for DataArray and Variable."""
-    data_repr = _short_data_repr_html_non_events(var, variances)
-    return escape(data_repr)
+    if var.bins is None:
+        data_repr = _short_data_repr_html_non_events(var, variances)
+        return escape(data_repr)
+    else:
+        return make_table(var.values[0])
 
 
 def format_dims(dims, sizes, coords):

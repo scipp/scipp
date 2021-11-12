@@ -12,6 +12,7 @@ from . import utils as su
 from ._scipp import core as sc
 from .typing import is_scalar, VariableLike
 from .html.resources import load_style
+from .core import Variable, DataArray, Dataset
 
 
 def _make_table_sections(dict_of_variables):
@@ -38,8 +39,7 @@ def _make_table_unit_headers(dict_of_variables):
     for key, section in dict_of_variables.items():
         for name, val in section.items():
             html.append("<th class='sc-units' colspan='{}'>{}</th>".format(
-                1 + (val.variances is not None),
-                escape(name)))
+                1 + (val.variances is not None), escape(name)))
     return "".join(html)
 
 
@@ -171,6 +171,60 @@ def _is_bin_centers(container, var, dim):
     """
     largest = [c.shape[0] for _, c in container.meta.items() if dim in c.dims]
     return max(largest) == var.shape[0] + 1 if len(largest) > 0 else False
+
+
+def _is_edges():
+    pass
+
+
+def make_table(x: VariableLike, nrow=5):
+    # from IPython.display import HTML
+    dim = x.dim
+    size = x.sizes[dim]
+
+    def centers(d):
+        return {key: val.sizes[dim] == size for key, val in d.items()}
+
+    if isinstance(x, Variable):
+        headers = 1
+        columns = {'data': {'': x}}
+        is_bin_centers = {'data': {'': True}}
+    elif isinstance(x, DataArray):
+        headers = 2
+        columns = {
+            'coords': x.coords,
+            'data': {
+                x.name: x.data
+            },
+            'masks': x.masks,
+            'attrs': x.attrs
+        }
+        is_bin_centers = {
+            'coords': centers(x.coords),
+            'data': {
+                '': True
+            },
+            'masks': centers(x.masks),
+            'attrs': centers(x.attrs)
+        }
+    elif isinstance(x, Dataset):
+        pass
+    html = _table_from_dict_of_variables(columns,
+                                         size=size,
+                                         headers=headers,
+                                         max_rows=nrow,
+                                         group="1D Variables",
+                                         is_bin_centers=is_bin_centers)
+
+    return html  # not style loaded, this is used instide _repr_html_ for now
+    # return HTML("<div>"
+    #             f"<style>{load_style()}</style>"
+    #             "<div class='sc-root'>"
+    #             f"{html}"
+    #             "</div>"
+    #             "</div>")
+
+    # return HTML(f"<style>{load_style()}</style><span class='sc-root'>{html}</span>")
 
 
 def table(scipp_obj: VariableLike):
