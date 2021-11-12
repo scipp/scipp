@@ -119,12 +119,21 @@ auto bin(const Variable &data, const Variable &indices,
   fill_zeros(offsets);
   // Not using cumsum along *all* dims, since some outer dims may be left
   // untouched (no rebin).
+  std::vector<std::pair<Dim, scipp::index>> strategy;
   for (const auto dim : views::reverse(data.dims()))
-    if (dims.contains(dim) && dims[dim] > 0) {
-      subbin_sizes_add_intersection(
-          offsets, subbin_sizes_cumsum_exclusive(output_bin_sizes, dim));
-      output_bin_sizes = sum(output_bin_sizes, dim);
-    }
+    if (dims.contains(dim) && dims[dim] > 0)
+      strategy.emplace_back(dim, data.dims()[dim]);
+  // To avoid excessive memory consumption in intermediate results for
+  // `output_bin_sizes` (in the loop below, computing sums and cumsums) we need
+  // to ensure to handle the longest dimensions first,
+  std::sort(strategy.begin(), strategy.end(),
+            [](auto &&a, auto &&b) { return a.second > b.second; });
+  for (const auto &item : strategy) {
+    const auto dim = item.first;
+    subbin_sizes_add_intersection(
+        offsets, subbin_sizes_cumsum_exclusive(output_bin_sizes, dim));
+    output_bin_sizes = sum(output_bin_sizes, dim);
+  }
   // cumsum with bin dimension is last, since this corresponds to different
   // output bins, whereas the cumsum above handled different subbins of same
   // output bin, i.e., contributions of different input bins to some output bin.
