@@ -20,7 +20,6 @@ class PlotView3d(PlotView):
         self._axes = ['z', 'y', 'x']
 
     def update_opacity(self, *args, **kwargs):
-        # self.figure.update_opacity(alpha.values)
         self.figure.update_opacity(*args, **kwargs)
 
     def update_depth_test(self, *args, **kwargs):
