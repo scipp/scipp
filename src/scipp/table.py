@@ -39,7 +39,7 @@ def _make_table_unit_headers(dict_of_variables):
         for name, val in section.items():
             html.append("<th class='sc-units' colspan='{}'>{}</th>".format(
                 1 + (val.variances is not None),
-                escape(su.name_with_unit(val, name=name))))
+                escape(name)))
     return "".join(html)
 
 
@@ -51,7 +51,8 @@ def _make_table_subsections(dict_of_variables, plural):
     html = []
     for key, section in dict_of_variables.items():
         for name, val in section.items():
-            html.append(f"<th class='sc-subheader'>Value{s}</th>")
+            unit = escape(str(val.unit))
+            html.append(f"<th class='sc-subheader'>Value{s} [{unit}]</th>")
             if val.variances is not None:
                 html.append(f"<th class='sc-subheader'>Variance{s}</th>")
     return "".join(html)
