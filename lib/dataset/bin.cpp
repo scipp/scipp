@@ -5,8 +5,6 @@
 #include <numeric>
 #include <set>
 
-#include "scipp/common/ranges.h"
-
 #include "scipp/core/element/bin.h"
 #include "scipp/core/element/cumulative.h"
 
@@ -120,7 +118,7 @@ auto bin(const Variable &data, const Variable &indices,
   // Not using cumsum along *all* dims, since some outer dims may be left
   // untouched (no rebin).
   std::vector<std::pair<Dim, scipp::index>> strategy;
-  for (const auto dim : views::reverse(data.dims()))
+  for (const auto dim : data.dims())
     if (dims.contains(dim) && dims[dim] > 0)
       strategy.emplace_back(dim, data.dims()[dim]);
   // To avoid excessive memory consumption in intermediate results for
