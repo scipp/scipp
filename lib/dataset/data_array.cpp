@@ -125,14 +125,14 @@ DataArray DataArray::slice(const Slice &s) const {
 }
 
 void DataArray::validateSlice(const Slice &s, const DataArray &array) const {
-  expect::coords_are_superset(slice(s), array);
+  expect::coords_are_superset(slice(s), array, "");
   data().validateSlice(s, array.data());
   masks().validateSlice(s, array.masks());
 }
 
 DataArray &DataArray::setSlice(const Slice &s, const DataArray &array) {
   // validateSlice, but not masks as otherwise repeated
-  expect::coords_are_superset(slice(s), array);
+  expect::coords_are_superset(slice(s), array, "");
   data().validateSlice(s, array.data());
   // Apply changes
   masks().setSlice(s, array.masks());
