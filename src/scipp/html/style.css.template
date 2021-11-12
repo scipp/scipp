@@ -3,7 +3,7 @@
 * https://github.com/jsignell/xarray/blob/1d960933ab252e0f79f7e050e6c9261d55568057/xarray/static/css/style.css
 */
 
-:root {
+.sc-root {
   --sc-background-color0: var(--jp-layout-color0, #fff);
   --sc-background-color1: var(--jp-layout-color1, #fcfcfc);
   --sc-background-color2: var(--jp-layout-color2, #efefef);
