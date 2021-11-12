@@ -64,11 +64,11 @@ Variable sum_subbin_sizes(const Variable &var) {
 
 std::vector<scipp::index> flatten_subbin_sizes(const Variable &var,
                                                const scipp::index length) {
-  std::vector<scipp::index> flat;
-  for (const auto &val : var.values<core::SubbinSizes>()) {
-    flat.insert(flat.end(), val.sizes().begin(), val.sizes().end());
-    for (scipp::index i = 0; i < length - scipp::size(val.sizes()); ++i)
-      flat.push_back(0);
+  std::vector<scipp::index> flat(length * var.dims().volume());
+  auto it = flat.begin();
+  for (const auto &sub : var.values<core::SubbinSizes>()) {
+    std::copy_n(sub.sizes().begin(), sub.sizes().size(), it + sub.offset());
+    it += length;
   }
   return flat;
 }
