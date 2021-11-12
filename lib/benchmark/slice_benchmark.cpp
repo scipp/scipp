@@ -20,7 +20,7 @@ auto make_table() {
 static void BM_dataset_create_view(benchmark::State &state) {
   auto d = make_table();
   for (auto _ : state) {
-    Dataset view(d);
+    [[maybe_unused]] Dataset view(d);
   }
   state.SetItemsProcessed(state.iterations());
 }
@@ -28,7 +28,7 @@ static void BM_dataset_create_view(benchmark::State &state) {
 static void BM_dataset_slice(benchmark::State &state) {
   auto d = make_table();
   for (auto _ : state) {
-    d.slice({Dim::X, 1});
+    benchmark::DoNotOptimize(d.slice({Dim::X, 1}));
   }
   state.SetItemsProcessed(state.iterations());
 }
@@ -36,7 +36,7 @@ static void BM_dataset_slice(benchmark::State &state) {
 static void BM_dataset_slice_item(benchmark::State &state) {
   auto d = make_table();
   for (auto _ : state) {
-    d.slice({Dim::X, 1})["b"];
+    benchmark::DoNotOptimize(d.slice({Dim::X, 1})["b"]);
   }
   state.SetItemsProcessed(state.iterations());
 }
@@ -44,7 +44,7 @@ static void BM_dataset_slice_item(benchmark::State &state) {
 static void BM_dataset_slice_item_dims(benchmark::State &state) {
   auto d = make_table();
   for (auto _ : state) {
-    d.slice({Dim::X, 1})["b"].dims();
+    benchmark::DoNotOptimize(d.slice({Dim::X, 1})["b"].dims());
   }
   state.SetItemsProcessed(state.iterations());
 }
