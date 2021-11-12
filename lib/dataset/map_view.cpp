@@ -9,6 +9,9 @@
 
 namespace scipp::dataset {
 
+template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;
+template class SCIPP_DATASET_EXPORT Dict<std::string, Variable>;
+
 namespace {
 template <class T> void expectWritable(const T &dict) {
   if (dict.is_readonly())
@@ -314,8 +317,5 @@ bool Dict<Key, Value>::item_applies_to(const Key &key,
   return std::all_of(val.dims().begin(), val.dims().end(),
                      [&dims](const Dim dim) { return dims.contains(dim); });
 }
-
-template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;
-template class SCIPP_DATASET_EXPORT Dict<std::string, Variable>;
 
 } // namespace scipp::dataset
