@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Jan-Lukas Wynen
+from functools import lru_cache
 
 import importlib.resources as pkg_resources
 from string import Template
@@ -28,6 +29,7 @@ def _preprocess_style(template: str) -> str:
     return css
 
 
+@lru_cache
 def load_style() -> str:
     """
     Load the bundled CSS style and return it as a string.
@@ -42,6 +44,7 @@ def load_style() -> str:
 load_style.style = None
 
 
+@lru_cache
 def load_icons() -> str:
     """
     Load the bundled icons and return them as an HTML string.
