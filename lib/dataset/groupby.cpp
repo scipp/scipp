@@ -266,7 +266,7 @@ template <class T> struct NanSensitiveLess {
 
 template <class T> struct MakeGroups {
   static auto apply(const Variable &key, const Dim targetDim) {
-    expect::isKey(key);
+    expect::is_key(key);
     const auto &values = key.values<T>();
 
     const auto dim = key.dims().inner();
@@ -301,7 +301,7 @@ template <class T> struct MakeGroups {
 
 template <class T> struct MakeBinGroups {
   static auto apply(const Variable &key, const Variable &bins) {
-    expect::isKey(key);
+    expect::is_key(key);
     if (bins.dims().ndim() != 1)
       throw except::DimensionError("Group-by bins must be 1-dimensional");
     if (key.unit() != bins.unit())

@@ -53,7 +53,7 @@ void matching_coord(const Dim dim, const Variable &a, const Variable &b) {
     throw except::CoordMismatchError(dim, a, b);
 }
 
-void isKey(const Variable &key) {
+void is_key(const Variable &key) {
   if (key.dims().ndim() != 1)
     throw except::DimensionError(
         "Coord for binning or grouping must be 1-dimensional");
