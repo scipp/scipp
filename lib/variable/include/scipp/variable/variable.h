@@ -152,7 +152,7 @@ private:
   template <class T, class... Index>
   Variable elements_impl(Index... index) const;
 
-  void expectWritable() const;
+  void expect_writable() const;
 
   Dimensions m_dims;
   Strides m_strides;

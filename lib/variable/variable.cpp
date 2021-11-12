@@ -92,7 +92,7 @@ void Variable::expectCanSetUnit(const units::Unit &unit) const {
 const units::Unit &Variable::unit() const { return m_object->unit(); }
 
 void Variable::setUnit(const units::Unit &unit) {
-  expectWritable();
+  expect_writable();
   expectCanSetUnit(unit);
   m_object->setUnit(unit);
 }
@@ -128,7 +128,7 @@ bool Variable::operator!=(const Variable &other) const {
 const VariableConcept &Variable::data() const & { return *m_object; }
 
 VariableConcept &Variable::data() & {
-  expectWritable();
+  expect_writable();
   return *m_object;
 }
 
@@ -251,7 +251,7 @@ bool Variable::is_same(const Variable &other) const noexcept {
 }
 
 void Variable::setVariances(const Variable &v) {
-  expectWritable();
+  expect_writable();
   if (is_slice())
     throw except::VariancesError(
         "Cannot add variances via sliced view of Variable.");
@@ -282,7 +282,7 @@ Variable Variable::as_const() const {
   return out;
 }
 
-void Variable::expectWritable() const {
+void Variable::expect_writable() const {
   if (m_readonly)
     throw except::VariableError("Read-only flag is set, cannot mutate data.");
 }

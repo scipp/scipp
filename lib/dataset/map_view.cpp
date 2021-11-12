@@ -13,7 +13,7 @@ template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;
 template class SCIPP_DATASET_EXPORT Dict<std::string, Variable>;
 
 namespace {
-template <class T> void expectWritable(const T &dict) {
+template <class T> void expect_writable(const T &dict) {
   if (dict.is_readonly())
     throw except::DataArrayError(
         "Read-only flag is set, cannot mutate metadata dict.");
@@ -168,7 +168,7 @@ template <class Key, class Value>
 void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
   if (contains(key) && at(key).is_same(coord))
     return;
-  expectWritable(*this);
+  expect_writable(*this);
   // Is a good definition for things that are allowed: "would be possible to
   // concat along existing dim or extra dim"?
   auto dims = coord.dims();
@@ -187,7 +187,7 @@ void Dict<Key, Value>::set(const key_type &key, mapped_type coord) {
 
 template <class Key, class Value>
 void Dict<Key, Value>::erase(const key_type &key) {
-  expectWritable(*this);
+  expect_writable(*this);
   scipp::expect::contains(*this, key);
   m_items.erase(key);
 }

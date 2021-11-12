@@ -11,7 +11,7 @@
 namespace scipp::dataset {
 
 namespace {
-template <class T> void expectWritable(const T &dict) {
+template <class T> void expect_writable(const T &dict) {
   if (dict.is_readonly())
     throw except::DataArrayError("Read-only flag is set, cannot set new data.");
 }
@@ -79,7 +79,7 @@ void DataArray::setData(const Variable &data) {
   // Return early on self assign to avoid exceptions from Python inplace ops
   if (m_data->is_same(data))
     return;
-  expectWritable(*this);
+  expect_writable(*this);
   core::expect::equals(static_cast<Sizes>(dims()),
                        static_cast<Sizes>(data.dims()));
   *m_data = data;
