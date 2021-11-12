@@ -261,7 +261,7 @@ void append(Variable &var0, const Variable &var1) {
 void append(Variable &&var0, const Variable &var1) { append(var0, var1); }
 
 void append(DataArray &a, const DataArray &b) {
-  expect::coordsAreSuperset(a, b);
+  expect::coords_are_superset(a, b);
   union_or_in_place(a.masks(), b.masks());
   auto data = a.data();
   append(data, b.data());
@@ -317,7 +317,7 @@ void scale(DataArray &array, const DataArray &histogram, Dim dim) {
   if (dim == Dim::Invalid)
     dim = edge_dimension(histogram);
   // Coords along dim are ignored since "binning" is dynamic for buckets.
-  expect::coordsAreSuperset(array, histogram.slice({dim, 0}));
+  expect::coords_are_superset(array, histogram.slice({dim, 0}));
   // scale applies masks along dim but others are kept
   union_or_in_place(array.masks(), histogram.slice({dim, 0}).masks());
   auto data = bins_view<DataArray>(array.data()).data();

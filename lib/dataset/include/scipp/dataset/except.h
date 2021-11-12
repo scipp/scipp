@@ -53,9 +53,9 @@ struct SCIPP_DATASET_EXPORT CoordMismatchError : public DatasetError {
 
 namespace scipp::dataset::expect {
 
-SCIPP_DATASET_EXPORT void coordsAreSuperset(const DataArray &a,
-                                            const DataArray &b);
-SCIPP_DATASET_EXPORT void coordsAreSuperset(const Coords &a, const Coords &b);
+SCIPP_DATASET_EXPORT void coords_are_superset(const DataArray &a,
+                                              const DataArray &b);
+SCIPP_DATASET_EXPORT void coords_are_superset(const Coords &a, const Coords &b);
 SCIPP_DATASET_EXPORT void matchingCoord(const Dim dim, const Variable &a,
                                         const Variable &b);
 
