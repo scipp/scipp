@@ -17,6 +17,7 @@ public:
   Slice() : m_dim(Dim::None), m_begin(-1), m_end(-1) {}
   Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_);
   Slice(const Dim dim_, const scipp::index begin_);
+  Slice(const Slice &) = default;
   Slice &operator=(const Slice &) = default;
   bool operator==(const Slice &other) const noexcept;
   bool operator!=(const Slice &other) const noexcept;

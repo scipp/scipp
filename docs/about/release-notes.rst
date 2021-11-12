@@ -17,11 +17,21 @@ Bugfixes
 
 * Fix kernel crash or poor performance when using ``bin`` or ``da.bins.concat`` along an inner dimension in the presence of a long outer dimension `#2278 <https://github.com/scipp/scipp/pull/2278>`_.
 
+Deprecations
+~~~~~~~~~~~~
+
+* The deprecated ``events`` property has been removed.
+
 Stability, Maintainability, and Testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Contributors
 ~~~~~~~~~~~~
+
+Simon Heybrock:sup:`a`\ ,
+Neil Vaytet:sup:`a`\ ,
+Tom Willemsen:sup:`b, c`\ ,
+and Jan-Lukas Wynen:sup:`a`
 
 v0.9.0 (November 2021)
 ----------------------
