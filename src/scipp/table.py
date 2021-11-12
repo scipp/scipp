@@ -10,7 +10,6 @@ from html import escape
 from . import config
 from . import utils as su
 from ._scipp import core as sc
-from ._styling import inject_style
 from .typing import is_scalar, VariableLike
 from .html.resources import load_style
 
@@ -177,7 +176,6 @@ def table(scipp_obj: VariableLike):
     The entries will be grouped by dimensions/coordinates.
     """
 
-    inject_style()
     from IPython.display import display
     tv = TableViewer(scipp_obj)
     display(tv.box)

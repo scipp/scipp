@@ -9,7 +9,6 @@ import numpy as np
 
 from ._scipp import core as sc
 from . import config
-from ._styling import inject_style
 from .utils import hex_to_rgb, rgb_to_hex
 from .typing import VariableLike
 from .html.resources import load_style
@@ -473,6 +472,5 @@ def show(container: VariableLike):
     """
     Show a graphical representation of a variable or dataset.
     """
-    inject_style()
     from IPython.core.display import display, HTML
     display(HTML(make_svg(container)))
