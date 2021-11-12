@@ -30,7 +30,7 @@ TEST_F(SubspanViewTest, values) {
   EXPECT_EQ(view.unit(), units::m);
   EXPECT_TRUE(equals(view.values<std::span<double>>()[0], {1, 2, 3}));
   EXPECT_TRUE(equals(view.values<std::span<double>>()[1], {4, 5, 6}));
-  EXPECT_FALSE(view.hasVariances());
+  EXPECT_FALSE(view.has_variances());
 }
 
 TEST_F(SubspanViewTest, values_length_0) {
@@ -41,7 +41,7 @@ TEST_F(SubspanViewTest, values_length_0) {
   // &` overload.
   EXPECT_TRUE(view.values<std::span<const double>>()[0].empty());
   EXPECT_TRUE(view.values<std::span<const double>>()[1].empty());
-  EXPECT_FALSE(view.hasVariances());
+  EXPECT_FALSE(view.has_variances());
 }
 
 TEST_F(SubspanViewTest, values_and_errors) {

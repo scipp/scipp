@@ -75,7 +75,7 @@ public:
   [[nodiscard]] scipp::index stride(const Dim dim) const;
   [[nodiscard]] scipp::index offset() const;
 
-  [[nodiscard]] bool hasVariances() const;
+  [[nodiscard]] bool has_variances() const;
 
   template <class T> ElementArrayView<const T> values() const;
   template <class T> ElementArrayView<T> values();

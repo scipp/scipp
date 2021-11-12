@@ -104,7 +104,7 @@ constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
   // _uninitialized_ variable.
   return var.dims().contains(dim)
              ? variable::variableFactory().create(var.dtype(), dims, var.unit(),
-                                                  var.hasVariances())
+                                                  var.has_variances())
              : copy(var);
 };
 }
@@ -356,7 +356,7 @@ Variable bins_sum(const Variable &data) {
   type = type == dtype<bool> ? dtype<int64_t> : type;
   const auto unit = variable::variableFactory().elem_unit(data);
   Variable summed;
-  if (variable::variableFactory().hasVariances(data))
+  if (variable::variableFactory().has_variances(data))
     summed = Variable(type, data.dims(), unit, Values{}, Variances{});
   else
     summed = Variable(type, data.dims(), unit, Values{});

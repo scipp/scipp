@@ -51,8 +51,8 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   void set_elem_unit(Variable &var, const units::Unit &u) const override {
     var.setUnit(u);
   }
-  bool hasVariances(const Variable &var) const override {
-    return var.hasVariances();
+  bool has_variances(const Variable &var) const override {
+    return var.has_variances();
   }
   Variable empty_like(const Variable &prototype,
                       const std::optional<Dimensions> &shape,
@@ -61,7 +61,7 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
       throw except::TypeError(
           "Cannot specify sizes in `empty_like` for non-bin prototype.");
     return create(prototype.dtype(), shape ? *shape : prototype.dims(),
-                  prototype.unit(), prototype.hasVariances(), {});
+                  prototype.unit(), prototype.has_variances(), {});
   }
 };
 
@@ -89,7 +89,7 @@ template <class T> VariableConceptHandle ElementArrayModel<T>::clone() const {
 template <class T>
 VariableConceptHandle
 ElementArrayModel<T>::makeDefaultFromParent(const scipp::index size) const {
-  if (hasVariances())
+  if (has_variances())
     return std::make_shared<ElementArrayModel<T>>(
         size, unit(), element_array<T>(size), element_array<T>(size));
   else
@@ -104,7 +104,7 @@ ElementArrayModel<T>::makeDefaultFromParent(const scipp::index size) const {
 template <class T>
 bool ElementArrayModel<T>::equals(const Variable &a, const Variable &b) const {
   return equals_impl(a.values<T>(), b.values<T>()) &&
-         (!a.hasVariances() || equals_impl(a.variances<T>(), b.variances<T>()));
+         (!a.has_variances() || equals_impl(a.variances<T>(), b.variances<T>()));
 }
 
 template <class T>
@@ -119,7 +119,7 @@ void ElementArrayModel<T>::setVariances(const Variable &variances) {
   if (!variances.is_valid())
     return m_variances.reset();
   // TODO Could move if refcount is 1?
-  if (variances.hasVariances())
+  if (variances.has_variances())
     throw except::VariancesError(
         "Cannot set variances from variable with variances.");
   m_variances.emplace(

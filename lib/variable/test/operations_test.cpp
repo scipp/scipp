@@ -693,7 +693,7 @@ TEST(VariableTest, binary_op_with_variance) {
       Dims{Dim::X, Dim::Y}, Shape{2, 3}, Values{2.0, 4.0, 6.0, 8.0, 10.0, 12.0},
       Variances{0.2, 0.4, 0.6, 0.8, 1.0, 1.2});
   auto tmp = var + var;
-  EXPECT_TRUE(tmp.hasVariances());
+  EXPECT_TRUE(tmp.has_variances());
   EXPECT_EQ(tmp.variances<double>()[0], 0.2);
   EXPECT_EQ(var + var, sum);
 

@@ -57,7 +57,7 @@ void isKey(const Variable &key) {
   if (key.dims().ndim() != 1)
     throw except::DimensionError(
         "Coord for binning or grouping must be 1-dimensional");
-  if (key.hasVariances())
+  if (key.has_variances())
     throw except::VariancesError(
         "Coord for binning or grouping cannot have variances");
 }

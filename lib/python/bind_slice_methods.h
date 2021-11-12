@@ -49,7 +49,7 @@ auto from_py_slice(const T &source,
 template <class View> struct SetData {
   template <class T> struct Impl {
     static void apply(View &slice, const py::object &obj) {
-      if (slice.hasVariances())
+      if (slice.has_variances())
         throw std::runtime_error("Data object contains variances, to set data "
                                  "values use the `values` property or provide "
                                  "a tuple of values and variances.");

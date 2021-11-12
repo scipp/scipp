@@ -76,7 +76,7 @@ protected:
     const auto result_return = transform<double>(var, op, name);
     EXPECT_TRUE(equals(result_return.values<double>(),
                        op_manual_values(var.values<double>())));
-    if (var.hasVariances()) {
+    if (var.has_variances()) {
       EXPECT_TRUE(equals(
           result_return.variances<double>(),
           op_manual_variances(var.values<double>(), var.variances<double>())));

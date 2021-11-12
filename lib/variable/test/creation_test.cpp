@@ -15,12 +15,12 @@ TEST(CreationTest, empty) {
   EXPECT_EQ(var1.dims(), dims);
   EXPECT_EQ(var1.unit(), units::m);
   EXPECT_EQ(var1.dtype(), dtype<double>);
-  EXPECT_EQ(var1.hasVariances(), true);
+  EXPECT_EQ(var1.has_variances(), true);
   const auto var2 = variable::empty(dims, units::s, dtype<int32_t>);
   EXPECT_EQ(var2.dims(), dims);
   EXPECT_EQ(var2.unit(), units::s);
   EXPECT_EQ(var2.dtype(), dtype<int32_t>);
-  EXPECT_EQ(var2.hasVariances(), false);
+  EXPECT_EQ(var2.has_variances(), false);
 }
 
 TEST(CreationTest, ones) {
@@ -48,7 +48,7 @@ TEST_P(DenseVariablesTest, empty_like_default_shape) {
   EXPECT_EQ(empty.dtype(), var.dtype());
   EXPECT_EQ(empty.dims(), var.dims());
   EXPECT_EQ(empty.unit(), var.unit());
-  EXPECT_EQ(empty.hasVariances(), var.hasVariances());
+  EXPECT_EQ(empty.has_variances(), var.has_variances());
 }
 
 TEST_P(DenseVariablesTest, empty_like_slice_default_shape) {
@@ -58,7 +58,7 @@ TEST_P(DenseVariablesTest, empty_like_slice_default_shape) {
     EXPECT_EQ(empty.dtype(), var.dtype());
     EXPECT_EQ(empty.dims(), var.slice({Dim::X, 0}).dims());
     EXPECT_EQ(empty.unit(), var.unit());
-    EXPECT_EQ(empty.hasVariances(), var.hasVariances());
+    EXPECT_EQ(empty.has_variances(), var.has_variances());
   }
 }
 
@@ -69,7 +69,7 @@ TEST_P(DenseVariablesTest, empty_like) {
   EXPECT_EQ(empty.dtype(), var.dtype());
   EXPECT_EQ(empty.dims(), dims);
   EXPECT_EQ(empty.unit(), var.unit());
-  EXPECT_EQ(empty.hasVariances(), var.hasVariances());
+  EXPECT_EQ(empty.has_variances(), var.has_variances());
 }
 
 TEST(CreationTest, special_like_double) {

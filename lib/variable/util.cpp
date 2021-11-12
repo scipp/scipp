@@ -27,7 +27,7 @@ Variable linspace(const Variable &start, const Variable &stop, const Dim dim,
   if (start.dtype() != dtype<double> && start.dtype() != dtype<float>)
     throw except::TypeError(
         "Cannot create linspace with non-floating-point start and/or stop.");
-  if (start.hasVariances() || stop.hasVariances())
+  if (start.has_variances() || stop.has_variances())
     throw except::VariancesError(
         "Cannot create linspace with start and/or stop containing variances.");
   auto dims = start.dims();

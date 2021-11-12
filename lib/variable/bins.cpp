@@ -69,7 +69,7 @@ Variable resize_default_init(const Variable &var, const Dim dim,
   // Using variableFactory instead of variable::resize for creating
   // _uninitialized_ variable.
   return variable::variableFactory().create(var.dtype(), dims, var.unit(),
-                                            var.hasVariances());
+                                            var.has_variances());
 }
 
 /// Construct a bin-variable over a variable.

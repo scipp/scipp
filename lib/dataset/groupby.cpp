@@ -83,7 +83,7 @@ auto resize_array(const DataArray &da, const Dim reductionDim,
   DataArray dense_dummy(da);
   dense_dummy.setData(empty(da.dims(), variableFactory().elem_unit(da.data()),
                             variableFactory().elem_dtype(da.data()),
-                            variableFactory().hasVariances(da.data())));
+                            variableFactory().has_variances(da.data())));
   return resize_array(dense_dummy, reductionDim, size, fill);
 }
 } // namespace

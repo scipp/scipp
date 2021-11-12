@@ -60,7 +60,7 @@ public:
 
   VariableConceptHandle clone() const override;
 
-  bool hasVariances() const noexcept override {
+  bool has_variances() const noexcept override {
     return m_variances.has_value();
   }
 
@@ -94,7 +94,7 @@ public:
 
 private:
   void expectHasVariances() const {
-    if (!hasVariances())
+    if (!has_variances())
       throw except::VariancesError("Variable does not have variances.");
   }
   element_array<T> m_values;

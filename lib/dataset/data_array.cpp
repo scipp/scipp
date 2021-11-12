@@ -87,7 +87,7 @@ void DataArray::setData(const Variable &data) {
 
 /// Return true if the dataset proxies have identical content.
 bool operator==(const DataArray &a, const DataArray &b) {
-  if (a.hasVariances() != b.hasVariances())
+  if (a.has_variances() != b.has_variances())
     return false;
   if (a.coords() != b.coords())
     return false;
