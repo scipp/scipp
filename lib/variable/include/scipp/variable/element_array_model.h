@@ -71,11 +71,11 @@ public:
     return ElementArrayView(base, m_values.data());
   }
   auto variances(const core::ElementArrayViewParams &base) const {
-    expectHasVariances();
+    expect_has_variances();
     return ElementArrayView(base, m_variances->data());
   }
   auto variances(const core::ElementArrayViewParams &base) {
-    expectHasVariances();
+    expect_has_variances();
     return ElementArrayView(base, m_variances->data());
   }
 
@@ -93,7 +93,7 @@ public:
   }
 
 private:
-  void expectHasVariances() const {
+  void expect_has_variances() const {
     if (!has_variances())
       throw except::VariancesError("Variable does not have variances.");
   }
