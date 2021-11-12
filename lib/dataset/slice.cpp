@@ -2,6 +2,8 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Owen Arnold, Simon Heybrock
+#include <sstream>
+
 #include "scipp/dataset/slice.h"
 #include "scipp/variable/slice.h"
 
@@ -9,21 +11,57 @@ namespace scipp::dataset {
 
 namespace {
 
+template <class T> const auto &get_coord(const T &data, const Dim dim) {
+  const auto &coords = data.coords();
+  if (coords.contains(dim))
+    return coords[dim];
+
+  std::ostringstream oss;
+  oss << "Invalid slice dimension: '" << dim
+      << "': no coordinate for that dimension. Coordinates are (";
+  for (auto it = coords.keys_begin(); it != coords.keys_end(); ++it) {
+    oss << to_string(*it) << ", ";
+  }
+  oss << ")";
+  throw except::DimensionError(oss.str());
+}
+
 template <class T>
 T slice(const T &data, const Dim dim, const Variable &value) {
-  const auto [d, i] = get_slice_params(data.dims(), data.coords()[dim], value);
-  return data.slice({d, i});
+  return data.slice(
+      std::make_from_tuple<Slice>(get_slice_params(data, dim, value)));
 }
 
 template <class T>
 T slice(const T &data, const Dim dim, const Variable &begin,
         const Variable &end) {
-  const auto [d, b, e] =
-      get_slice_params(data.dims(), data.coords()[dim], begin, end);
-  return data.slice({d, b, e});
+  return data.slice(
+      std::make_from_tuple<Slice>(get_slice_params(data, dim, begin, end)));
 }
 
 } // namespace
+
+std::tuple<Dim, scipp::index>
+get_slice_params(const DataArray &data, const Dim dim, const Variable &value) {
+  return get_slice_params(data.dims(), get_coord(data, dim), value);
+}
+
+std::tuple<Dim, scipp::index, scipp::index>
+get_slice_params(const DataArray &data, const Dim dim, const Variable &begin,
+                 const Variable &end) {
+  return get_slice_params(data.dims(), get_coord(data, dim), begin, end);
+}
+
+std::tuple<Dim, scipp::index>
+get_slice_params(const Dataset &data, const Dim dim, const Variable &value) {
+  return get_slice_params(data.dims(), get_coord(data, dim), value);
+}
+
+std::tuple<Dim, scipp::index, scipp::index>
+get_slice_params(const Dataset &data, const Dim dim, const Variable &begin,
+                 const Variable &end) {
+  return get_slice_params(data.dims(), get_coord(data, dim), begin, end);
+}
 
 DataArray slice(const DataArray &data, const Dim dim, const Variable &value) {
   return slice<DataArray>(data, dim, value);

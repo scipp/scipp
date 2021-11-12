@@ -95,8 +95,8 @@ auto get_slice_range(T &self, const std::tuple<Dim, const py::slice> &index) {
           throw std::runtime_error(
               "Step cannot be specified for value based slicing.");
         }
-        return std::make_from_tuple<Slice>(get_slice_params(
-            self.dims(), self.coords()[dim], start_var, stop_var));
+        return std::make_from_tuple<Slice>(
+            get_slice_params(self, dim, start_var, stop_var));
       }
     } catch (const py::cast_error &) {
     }
@@ -120,15 +120,9 @@ template <class T> auto getitem(T &self, const py::ellipsis &) {
 
 // Helpers wrapped in struct to avoid unresolvable overloads.
 template <class T> struct slicer {
-  static auto get_slice_by_value(T &self,
-                                 const std::tuple<Dim, Variable> &value) {
-    auto &[dim, i] = value;
-    return std::make_from_tuple<Slice>(
-        get_slice_params(self.dims(), self.coords()[dim], i));
-  }
-
   static auto get_by_value(T &self, const std::tuple<Dim, Variable> &value) {
-    return self.slice(get_slice_by_value(self, value));
+    auto &[dim, val] = value;
+    return slice(self, dim, val);
   }
 
   static void set_from_numpy(T &&slice, const py::object &obj) {
@@ -158,7 +152,9 @@ template <class T> struct slicer {
   template <class Other>
   static void set_by_value(T &self, const std::tuple<Dim, Variable> &value,
                            const Other &data) {
-    self.setSlice(slicer<T>::get_slice_by_value(self, value), data);
+    auto &[dim, val] = value;
+    self.setSlice(std::make_from_tuple<Slice>(get_slice_params(self, dim, val)),
+                  data);
   }
 
   // Manually dispatch based on the object we are assigning from in order to
