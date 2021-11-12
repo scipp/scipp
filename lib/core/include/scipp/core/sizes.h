@@ -97,8 +97,6 @@ public:
 SCIPP_CORE_EXPORT bool is_edges(const Sizes &sizes, const Sizes &dataSizes,
                                 const Dim dim);
 
-SCIPP_CORE_EXPORT std::string to_string(const Sizes &sizes);
-
 } // namespace scipp::core
 
 namespace scipp {

@@ -29,6 +29,7 @@ SCIPP_CORE_EXPORT std::string to_string(const char *s);
 SCIPP_CORE_EXPORT std::string to_string(const bool b);
 SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
 SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);
+SCIPP_CORE_EXPORT std::string to_string(const Sizes &sizes);
 SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
 SCIPP_CORE_EXPORT std::string to_string(const scipp::index_pair &index);
 
