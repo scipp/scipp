@@ -5,23 +5,16 @@
 #include "scipp/variable/@OPNAME@.h"
 #include "scipp/dataset/@OPNAME@.h"
 
-#include "scipp/dataset/except.h"
-
 #include "dataset_operations_common.h"
 
 namespace scipp::dataset {
 
 DataArray @NAME@(const DataArray &a, const DataArray &b) {
-  try {
-    return DataArray(
-        @NAME@(a.data(), b.data()),
-        union_(a.coords(), b.coords()),
-        union_or(a.masks(), b.masks()),
-        intersection(a.attrs(), b.attrs()));
-  } catch(except::CoordMismatchError &err) {
-    throw except::CoordMismatchError(std::string{"In operation '@OPNAME@': "}
-                                     + err.what());
-  }
+  return DataArray(
+      @NAME@(a.data(), b.data()),
+      union_(a.coords(), b.coords(), "@OPNAME@"),
+      union_or(a.masks(), b.masks()),
+      intersection(a.attrs(), b.attrs()));
 }
 
 DataArray @NAME@(const DataArray &a, const Variable &b) {

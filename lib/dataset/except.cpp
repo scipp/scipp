@@ -33,6 +33,14 @@ CoordMismatchError::CoordMismatchError(const Dim dim, const Variable &expected,
                    "', expected\n" + format_variable(expected) + ", got\n" +
                    format_variable(actual)} {}
 
+CoordMismatchError::CoordMismatchError(const Dim dim, const Variable &expected,
+                                       const Variable &actual,
+                                       const std::string_view opname)
+    : DatasetError{"Mismatch in coordinate '" + to_string(dim) +
+                   "' in operation '" + std::string(opname) + "':\n" +
+                   format_variable(expected) + "\nvs\n" +
+                   format_variable(actual)} {}
+
 } // namespace scipp::except
 
 namespace scipp::dataset::expect {
@@ -48,9 +56,10 @@ void coords_are_superset(const DataArray &a, const DataArray &b) {
   coords_are_superset(a.coords(), b.coords());
 }
 
-void matching_coord(const Dim dim, const Variable &a, const Variable &b) {
+void matching_coord(const Dim dim, const Variable &a, const Variable &b,
+                    const std::string_view opname) {
   if (a != b)
-    throw except::CoordMismatchError(dim, a, b);
+    throw except::CoordMismatchError(dim, a, b, opname);
 }
 
 void is_key(const Variable &key) {

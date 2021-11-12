@@ -33,7 +33,7 @@ auto union_(const Dataset &a, const Dataset &b) {
 }
 
 Dataset merge(const Dataset &a, const Dataset &b) {
-  return Dataset(union_(a, b), union_(a.coords(), b.coords()));
+  return Dataset(union_(a, b), union_(a.coords(), b.coords(), "merge"));
 }
 
 Coords copy(const Coords &coords) { return {coords.sizes(), copy_map(coords)}; }

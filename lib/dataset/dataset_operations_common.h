@@ -12,7 +12,8 @@
 
 namespace scipp::dataset {
 
-template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
+template <class T1, class T2>
+auto union_(const T1 &a, const T2 &b, const std::string_view opname) {
   std::unordered_map<typename T1::key_type, typename T1::mapped_type> out;
 
   for (const auto &[key, item] : a)
@@ -20,7 +21,7 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 
   for (const auto &item : b) {
     if (const auto it = a.find(item.first); it != a.end()) {
-      expect::matching_coord(it->first, it->second, item.second);
+      expect::matching_coord(it->first, it->second, item.second, opname);
     } else
       out.emplace(item.first, item.second);
   }

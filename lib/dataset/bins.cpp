@@ -227,9 +227,10 @@ Variable concatenate(const Variable &var0, const Variable &var1) {
 }
 
 DataArray concatenate(const DataArray &a, const DataArray &b) {
-  return DataArray{
-      buckets::concatenate(a.data(), b.data()), union_(a.coords(), b.coords()),
-      union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
+  return DataArray{buckets::concatenate(a.data(), b.data()),
+                   union_(a.coords(), b.coords(), "concatenate"),
+                   union_or(a.masks(), b.masks()),
+                   intersection(a.attrs(), b.attrs())};
 }
 
 /// Reduce a dimension by concatenating all elements along the dimension.
