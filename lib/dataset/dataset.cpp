@@ -6,7 +6,7 @@
 #include "scipp/core/except.h"
 #include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
-#include<iostream>
+
 namespace scipp::dataset {
 
 namespace {
