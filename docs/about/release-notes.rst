@@ -15,11 +15,21 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
+Deprecations
+~~~~~~~~~~~~
+
+* The deprecated ``events`` property has been removed.
+
 Stability, Maintainability, and Testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Contributors
 ~~~~~~~~~~~~
+
+Simon Heybrock:sup:`a`\ ,
+Neil Vaytet:sup:`a`\ ,
+Tom Willemsen:sup:`b, c`\ ,
+and Jan-Lukas Wynen:sup:`a`
 
 v0.9.0 (November 2021)
 ----------------------

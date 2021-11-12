@@ -199,22 +199,6 @@ class GroupbyBins:
         return self._obj.concat(dim)
 
 
-def _events(obj):
-    """
-    Returns the data underlying the bins stored in the object, or None if the
-    object stores dense data.
-    """
-    warnings.warn("The 'events' property is deprecated; use 'bins'.",
-                  DeprecationWarning)
-    if _cpp.is_bins(obj):
-        if isinstance(obj, _cpp.Variable):
-            return _cpp.bins_data(obj)
-        else:
-            return _cpp.bins_data(obj.data)
-    else:
-        return None
-
-
 def _bins(obj):
     """
     Returns helper :py:class:`scipp.Bins` allowing bin-wise operations
