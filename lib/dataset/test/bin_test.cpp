@@ -410,6 +410,19 @@ TEST_P(BinTest, erase_binning_and_bin_along_different_dimension) {
   expect_near(test_output, binned_along_y);
 }
 
+TEST_P(BinTest, erase_binning_and_rebin_along_different_dimension) {
+  const auto table = GetParam();
+  const auto binned_along_x = bin(table, {edges_x, edges_y});
+  const auto binned_along_y = bin(table, {edges_y});
+
+  const std::vector<Dim> clear_binning_from_dimension = {Dim::X};
+  const auto test_output =
+      bin(binned_along_x, {edges_y}, {}, clear_binning_from_dimension);
+  // Expect result of clearing x binning and adding y binning to be the same
+  // as binning the original data along y
+  expect_near(test_output, binned_along_y);
+}
+
 TEST_P(BinTest, error_if_erase_binning_and_try_rebin_along_same_dimension) {
   const auto table = GetParam();
   const auto binned_along_x = bin(table, {edges_x_coarse});
