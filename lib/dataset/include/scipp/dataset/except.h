@@ -56,8 +56,8 @@ namespace scipp::dataset::expect {
 SCIPP_DATASET_EXPORT void coords_are_superset(const DataArray &a,
                                               const DataArray &b);
 SCIPP_DATASET_EXPORT void coords_are_superset(const Coords &a, const Coords &b);
-SCIPP_DATASET_EXPORT void matchingCoord(const Dim dim, const Variable &a,
-                                        const Variable &b);
+SCIPP_DATASET_EXPORT void matching_coord(const Dim dim, const Variable &a,
+                                         const Variable &b);
 
 SCIPP_DATASET_EXPORT void isKey(const Variable &key);
 

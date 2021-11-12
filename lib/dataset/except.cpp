@@ -48,7 +48,7 @@ void coords_are_superset(const DataArray &a, const DataArray &b) {
   coords_are_superset(a.coords(), b.coords());
 }
 
-void matchingCoord(const Dim dim, const Variable &a, const Variable &b) {
+void matching_coord(const Dim dim, const Variable &a, const Variable &b) {
   if (a != b)
     throw except::CoordMismatchError(dim, a, b);
 }

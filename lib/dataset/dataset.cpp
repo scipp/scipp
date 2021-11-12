@@ -157,7 +157,7 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
   setSizes(data.dims());
   for (auto &&[dim, coord] : data.coords()) {
     if (const auto it = m_coords.find(dim); it != m_coords.end())
-      expect::matchingCoord(dim, coord, it->second);
+      expect::matching_coord(dim, coord, it->second);
     else
       setCoord(dim, std::move(coord));
   }
