@@ -122,7 +122,7 @@ template <class T> auto getitem(T &self, const py::ellipsis &) {
 template <class T> struct slicer {
   static auto get_slice_by_value(T &self,
                                  const std::tuple<Dim, Variable> &value) {
-    auto [dim, i] = value;
+    auto &[dim, i] = value;
     return std::make_from_tuple<Slice>(
         get_slice_params(self.dims(), self.coords()[dim], i));
   }
