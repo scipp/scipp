@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
-import numpy as np
-from ..core import scalar, where
 from ..core import abs as abs_
 from .controller import PlotController
 
@@ -36,23 +34,12 @@ class PlotController3d(PlotController):
         When the opacity slider in the panel is changed, ask the view to update
         the opacity.
         """
-        # self.view.update_opacity(alpha=scalar(alpha))
         self.view.update_opacity(alpha=alpha)
-        # There is a strange effect with point clouds and opacities.
-        # Results are best when depthTest is False, at low opacities.
-        # But when opacities are high, the points appear in the order
-        # they were drawn, and not in the order they are with respect
-        # to the camera position. So for high opacities, we switch to
-        # depthTest = True.
-        # self.view.update_depth_test(alpha > 0.5)
-
-    # def update_depth_test(self, value):
-    #     """
-    #     Update the state of depth test in the view (see `update_opacity`).
-    #     """
-    #     self.view.update_depth_test(value)
 
     def remove_cut_surface(self):
+        """
+        When panel requests to remove the cut surface, ask the view to remove it.
+        """
         self.view.remove_cut_surface()
 
     def add_cut_surface(self, *, key, center, delta, active, inactive):
@@ -67,11 +54,7 @@ class PlotController3d(PlotController):
         else:
             value = self._get_cut(key)
         u = value.unit
-        # alpha = where(
-        #     abs_(value - center * u) < 0.5 * delta * u, scalar(active),
-        #     scalar(inactive))
-        # self.view.update_opacity(alpha=alpha)
-        indices = np.where((abs_(value - center * u) < 0.5 * delta * u).values)
+        indices = (abs_(value - center * u) < 0.5 * delta * u).values
         self.view.add_cut_surface(indices)
 
     def get_pixel_size(self):

@@ -54,12 +54,8 @@ class PlotFigure3d:
         self.figsize = figsize
         self.extend = extend
 
-        # Create the point cloud material with pythreejs
-        # self.points_material = None
-        # self.points_geometry = None
         self.point_clouds = {}
-        # self.cut_point_cloud = None
-        self.cut_surface_indices = None
+        self.cut_surface_indices = None  # Indices that select points for cut surface
         self.outline = None
         self.axticks = None
         self.camera_backup = {}
@@ -133,21 +129,6 @@ class PlotFigure3d:
         """
         self.toolbar.connect(controller=controller)
 
-    def update_axes(self, scale, unit):
-        """
-        When a point cloud is created, one cannot modify the number of points.
-        Hence, when axes are updated, we have to remove the point cloud from
-        the scene and create a new one.
-        """
-        for pc in self.point_clouds.values():
-            # if self.point_cloud is not None:
-            self.scene.remove(pc)
-        self.point_clouds.clear()
-        if self.outline is not None:
-            self.scene.remove(self.outline)
-        if self.axticks is not None:
-            self.scene.remove(self.axticks)
-
     def set_position_params(self, params):
         limits = params.limits
         center = params.center
@@ -165,7 +146,6 @@ class PlotFigure3d:
         self.axticks = self._generate_axis_ticks_and_labels(
             box_size=box_size, limits=limits, components=params.components)
 
-        # self._create_points_material()
         self.point_cloud_positions = params.positions.values.astype('float32')
         self.point_clouds["main"] = self._create_point_cloud(
             positions=self.point_cloud_positions)
@@ -209,72 +189,20 @@ class PlotFigure3d:
 
     def _create_point_cloud(self, positions):
         """
-        Make a PointsGeometry using pythreejs
+        Make a point cloud using pythreejs
         """
-        # rgba_shape = list(positions.shape)
-        # rgba_shape[1] += 1
-        # self.point_cloud_positions = positions.astype('float32')
-        # self.sorting_indices = pos_array[:, 0].argsort()
         self.points_geometry = p3.BufferGeometry(
             attributes={
                 'position':
-                p3.BufferAttribute(
-                    array=positions.astype('float32')),  #[self.sorting_indices]),
+                p3.BufferAttribute(array=positions),
                 'color':
                 p3.BufferAttribute(
-                    array=np.ones([positions.shape[0], 3], dtype=np.float32))
+                    array=np.ones([positions.shape[0], 3], dtype='float32'))
             })
-        # self.point_cloud = p3.Points(geometry=self.points_geometry,
-        #                              material=self.points_material)
 
-        # def _create_points_material(self):
-        """
-        Define custom raw shader for point cloud to allow to RGBA color format.
-        Note that the value of 580 was obtained from trial and error.
-        """
-        #         if "pixel_ratio" in config.plot:
-        #             pixel_ratio = config.plot.pixel_ratio
-        #         else:
-        #             pixel_ratio = 1.0
-        #         self.points_material = p3.ShaderMaterial(
-        #             vertexShader='''
-        # precision highp float;
-        # attribute vec4 rgba_color;
-        # varying vec3 mypos;
-        # varying vec4 vColor;
-        # varying vec4 projected;
-        # float xDelta, yDelta, zDelta, delta;
-        # void main(){
-        #     vColor = rgba_color;
-        #     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        #     // use the delta between the point position and camera position for size
-        #     xDelta = (position[0]-cameraPosition[0]) * (position[0]-cameraPosition[0]);
-        #     yDelta = (position[1]-cameraPosition[1]) * (position[1]-cameraPosition[1]);
-        #     zDelta = (position[2]-cameraPosition[2]) * (position[2]-cameraPosition[2]);
-        #     delta = pow(xDelta + yDelta + zDelta, 0.5);
-        #     gl_PointSize = %f / delta;
-        # }
-        # ''' % (580.0 * self._pixel_size * pixel_ratio, ),
-        #             fragmentShader='''
-        # precision highp float;
-        # varying vec4 vColor;
-        # void main() {
-        #     gl_FragColor = vColor;
-        # }
-        # ''',
-        #             vertexColors='VertexColors',
-        #             transparent=True,
-        #             depthTest=True,
-        #             # depthWrite=True,
-        #             # depthFunc='AlwaysDepth',
-        #             # side='DoubleSide',
-        #             # alphaTest=0.5
-        #         )
-        self.points_material = p3.PointsMaterial(
-            vertexColors='VertexColors',
-            size=self._pixel_size,
-            # opacity=0.3,
-            transparent=True)
+        self.points_material = p3.PointsMaterial(vertexColors='VertexColors',
+                                                 size=self._pixel_size,
+                                                 transparent=True)
         return p3.Points(geometry=self.points_geometry, material=self.points_material)
 
     def _create_outline(self, *, limits, box_size, center):
@@ -352,44 +280,34 @@ class PlotFigure3d:
         to the camera position. So for high opacities, we switch to
         depthTest = True.
         """
-        # print('self.point_cloud.material.opacity', alpha)
         for key, a in alpha.items():
             self.point_clouds[key].material.opacity = a
             self.point_clouds[key].material.depthTest = a > 0.5
-        # return
-        # color = self.points_geometry.attributes["rgba_color"]
-        # # Must work with a copy and the array property setter to ensure
-        # # updates are triggered
-        # updated = color.array.copy()
-        # updated[:, 3] = alpha  #[self.sorting_indices]
-        # color.array = updated
 
     def remove_cut_surface(self):
+        """
+        Remove the point cloud that represents the cut surface.
+        This occurs either when we hide the cut surface, or when we update the position
+        of the cut surface (the point cloud is removed and added again at the new
+        location).
+        """
         if "cut" in self.point_clouds:
-            # try:
             self.scene.remove(self.point_clouds["cut"])
-            # except ValueError:
-            #     pass
             del self.point_clouds["cut"]
 
     def add_cut_surface(self, cut_surface_indices):
+        """
+        Add a new opaque point cloud that represents the cut surface.
+        This occurs either when we show the cut surface, or when we update the position
+        of the cut surface (the point cloud is removed and added again at the new
+        location).
+        """
         self.cut_surface_indices = cut_surface_indices
         self.point_clouds["cut"] = self._create_point_cloud(
             self.point_cloud_positions[cut_surface_indices])
         self.point_clouds["cut"].geometry.attributes["color"].array = self.point_clouds[
             "main"].geometry.attributes["color"].array[self.cut_surface_indices]
         self.scene.add(self.point_clouds["cut"])
-
-    # def update_depth_test(self, value):
-    #     """
-    #     Update the `depthTest` property of the point cloud. If `depthTest` is
-    #     `True`, the distance of the point with respect to the camera is
-    #     conserved. When it is `False`, the points simply appear in the order
-    #     they are drawn.
-    #     """
-    #     # print('update_depth_test', value)
-    #     self.points_material.depthTest = value
-    #     # return
 
     def toggle_mask(self, *args, **kwargs):
         """
@@ -412,13 +330,11 @@ class PlotFigure3d:
                 array.values[masks_inds])[..., :3]
             colors[masks_inds] = masks_colors
 
-        # colors[:, 3] = self.points_geometry.attributes["rgba_color"].array[:, 3]
-        self.point_clouds["main"].geometry.attributes["color"].array = colors.astype(
-            'float32')  #[self.sorting_indices]
+        colors = colors.astype('float32')
+        self.point_clouds["main"].geometry.attributes["color"].array = colors
         if "cut" in self.point_clouds:
-            # if self.cut_point_cloud is not None:
-            self.point_clouds["cut"].geometry.attributes["color"].array = colors.astype(
-                'float32')[self.cut_surface_indices]
+            self.point_clouds["cut"].geometry.attributes["color"].array = colors[
+                self.cut_surface_indices]
 
     def rescale_to_data(self, vmin=None, vmax=None):
         """

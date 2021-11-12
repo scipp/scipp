@@ -48,23 +48,11 @@ class PlotPanel3d(PlotPanel):
                                      continuous_update=False,
                                      layout={"width": "350px"})
         cut_unit = ipw.Label(value=str(low.unit))
-        # cut_checkbox = ipw.Checkbox(value=True,
-        #                             description="Continuous update",
-        #                             indent=False,
-        #                             layout={"width": "20px"})
-        # ipw.jslink((cut_checkbox, 'value'), (cut_slider, 'continuous_update'))
         cut_slider.observe(self._update_cut_surface, names="value")
 
         self._cut_sliders[key] = cut_slider
         self._cut_surface_thicknesses[key] = cut_surface_thickness
-        controls = ipw.HBox([
-            ipw.HBox([
-                cut_slider,
-                cut_unit,
-                # cut_checkbox
-            ]),
-            cut_surface_thickness
-        ])
+        controls = ipw.HBox([ipw.HBox([cut_slider, cut_unit]), cut_surface_thickness])
         controls.layout.display = 'none'
         return controls
 
@@ -87,17 +75,9 @@ class PlotPanel3d(PlotPanel):
             "and the lower value has no effect. When a cut surface is "
             "present, the max value is the opacity of the slice, while the "
             "min value is the opacity of the background.",
-            continuous_update=True,
+            continuous_update=False,
             style={'description_width': '60px'})
         self.opacity_slider.observe(self._update_opacity, names="value")
-        self.opacity_checkbox = ipw.Checkbox(
-            value=self.opacity_slider.continuous_update,
-            description="Continuous update",
-            indent=False,
-            layout={"width": "20px"})
-        self.opacity_checkbox_link = ipw.jslink(
-            (self.opacity_checkbox, 'value'),
-            (self.opacity_slider, 'continuous_update'))
 
         # Add buttons to provide a choice of different cut surfaces:
         # - Cartesian X, Y, Z
@@ -129,8 +109,7 @@ class PlotPanel3d(PlotPanel):
 
         self._cut_controls = []
         self._cut_controls_box = ipw.VBox([self.cut_surface_buttons])
-        self.container.children = (ipw.HBox(
-            [self.opacity_slider, self.opacity_checkbox]), self._cut_controls_box)
+        self.container.children = (self.opacity_slider, self._cut_controls_box)
 
     def set_range(self, key, low, high):
         # TODO scaling? See old impl:
@@ -158,9 +137,6 @@ class PlotPanel3d(PlotPanel):
                 "main": change["new"][0],
                 "cut": change["new"][1]
             })
-            # if change["new"][1] != change["old"][1]:
-            # self.controller.update_opacity(alpha=change["new"][0])
-            # # self._update_cut_surface()
 
     def _check_if_reset_needed(self, owner, content, buffers):
         """
@@ -175,17 +151,13 @@ class PlotPanel3d(PlotPanel):
         """
         Handle button update when the type of cut surface is changed.
         """
-        # self._update_opacity({"new": self.opacity_slider.value})
         if change['old'] is not None:
             self._cut_controls[change['old']].layout.display = 'none'
-            # self._update_opacity({"new": self.opacity_slider.value})
         if change["new"] is None:
             self._current_cut = None
-            # self._update_opacity({"new": self.opacity_slider.value})
         else:
             self._current_cut = self.options[change['new']]
             self._cut_controls[change['new']].layout.display = ''
-            # self.controller.update_depth_test(False)
         self._update_cut_surface()
         self._update_opacity({"new": self.opacity_slider.value})
 
@@ -204,7 +176,6 @@ class PlotPanel3d(PlotPanel):
             delta=delta,
             inactive=self.opacity_slider.lower,
             active=self.opacity_slider.upper)
-        # self.controller.set_opacity()
 
     def update_data(self, axparams=None):
         """
