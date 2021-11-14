@@ -27,7 +27,7 @@ def islinspace(x: _cpp.Variable, dim: str = None) -> _cpp.Variable:
     :param x: Variable to check.
     :param dim: Optional variable for the dim to check from the Variable.
     :returns: Variable of value True if the variable contains regularly
-    spaced values, variable of value False otherwise.
+     spaced values, variable of value False otherwise.
     """
     if dim is None:
         return _call_cpp_func(_cpp.islinspace, x)

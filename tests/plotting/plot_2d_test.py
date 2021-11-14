@@ -121,6 +121,22 @@ def test_plot_2d_with_masks_and_labels():
     plot(make_dense_data_array(ndim=2, masks=True, labels=True), labels={'xx': 'lab'})
 
 
+def test_plot_2d_with_2d_coord_1d_mask():
+    da = sc.DataArray(sc.arange('a', 6.0).fold('a', {
+        'x': 2,
+        'y': 3
+    }),
+                      coords={
+                          'x': sc.arange('x', 2.0),
+                          'y': sc.arange('a', 6.0).fold('a', {
+                              'x': 2,
+                              'y': 3
+                          })
+                      },
+                      masks={'m': sc.array(dims=['y'], values=[True, False, True])})
+    plot(da)
+
+
 def test_plot_2d_with_non_regular_bin_edges():
     da = make_dense_data_array(ndim=2, binedges=True)
     da.coords['xx'].values = da.coords['xx'].values**2

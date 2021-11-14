@@ -30,6 +30,41 @@ class Binned1d:
         self.da.bins.concat('x')
 
 
+class Binned2dConcat:
+    """
+    Benchmark reduction with 'concat' for 2d binned data
+    """
+    params = ([1, 2, 4, 8, 16, 32, 64, 128], )
+    param_names = ['nbin']
+    timeout = 300.0
+
+    def setup(self, nbin):
+        nx = 100000
+        binned = sc.data.binned_x(nevent=2 * nx, nbin=nx)
+        y = sc.linspace(dim='y', start=0, stop=1, num=nbin + 1, unit='m')
+        self.da = sc.bin(binned, edges=[y])
+
+    def time_bins_concat(self, nbin):
+        self.da.bins.concat('x')
+
+
+class Binned2dConcatInner:
+    """
+    Benchmark reduction with 'concat' along inner for 2d binned data
+    """
+    params = (list(2**np.arange(10, 16)), )
+    param_names = ['nbin']
+    timeout = 300.0
+
+    def setup(self, nbin):
+        binned = sc.data.binned_x(nevent=2 * nbin, nbin=nbin)
+        y = sc.linspace(dim='y', start=0, stop=1, num=2, unit='m')
+        self.da = sc.bin(binned, edges=[y])
+
+    def time_bins_concat_long_outer(self, nbin):
+        self.da.bins.concat('y')
+
+
 class Lookup:
     """
     Benchmark map operations using sc.lookup()

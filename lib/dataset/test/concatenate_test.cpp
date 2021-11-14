@@ -311,8 +311,10 @@ protected:
 };
 
 TEST_F(ConcatTest, empty) {
-  EXPECT_THROW(concat(std::vector<DataArray>{}, Dim::X), std::invalid_argument);
-  EXPECT_THROW(concat(std::vector<Dataset>{}, Dim::X), std::invalid_argument);
+  EXPECT_THROW_DISCARD(concat(std::vector<DataArray>{}, Dim::X),
+                       std::invalid_argument);
+  EXPECT_THROW_DISCARD(concat(std::vector<Dataset>{}, Dim::X),
+                       std::invalid_argument);
 }
 
 TEST_F(ConcatTest, single_existing_dim) {
@@ -402,7 +404,7 @@ TEST_F(ConcatHistogramTest, fail_mixing_point_data_and_histogram) {
                        except::BinEdgeError);
   EXPECT_THROW_DISCARD(concat(std::vector{a, no_edges(b), no_edges(c)}, Dim::X),
                        except::BinEdgeError);
-  EXPECT_NO_THROW(
+  EXPECT_NO_THROW_DISCARD(
       concat(std::vector{no_edges(a), no_edges(b), no_edges(c)}, Dim::X));
 }
 

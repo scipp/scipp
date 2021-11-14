@@ -18,14 +18,14 @@ def _make_xy():
 def test_rename_2_steps():
     original = _make_xy()
     graph = {'y4': 'y', 'y3': 'y2', 'y2': 'y'}
-    da = original.copy().transform_coords(['y3'], graph=graph, include_aliases=True)
+    da = original.copy().transform_coords(['y3'], graph=graph, keep_aliases=True)
     assert da.dims == ['x', 'y3']
     original = original.rename_dims({'y': 'y3'})
     assert sc.identical(da.coords['y3'], original.coords['y'])
     assert sc.identical(da.attrs['y2'], original.coords['y'])
     assert sc.identical(da.attrs['y'], original.coords['y'])
 
-    da = original.copy().transform_coords(['y3'], graph=graph, include_aliases=False)
+    da = original.copy().transform_coords(['y3'], graph=graph, keep_aliases=False)
     assert 'y3' in da.coords  # alias, but requested explicitly
     assert 'y2' not in da.attrs  # alias for y => removed
     assert 'y' in da.attrs
@@ -33,17 +33,19 @@ def test_rename_2_steps():
 
 def test_rename_multi_output():
     original = _make_xy()
-    da = original.copy().transform_coords(['y3', 'y4'],
-                                          graph={
-                                              'y4': 'y',
-                                              'y3': 'y2',
-                                              'y2': 'y'
-                                          },
-                                          include_aliases=True)
+    graph = {'y4': 'y', 'y3': 'y2', 'y2': 'y'}
+    da = original.copy().transform_coords(['y3', 'y4'], graph=graph, keep_aliases=True)
     assert da.dims == ['x', 'y']  # y4 also depends on y so dim not renamed
     assert sc.identical(da.coords['y4'], original.coords['y'])
     assert sc.identical(da.coords['y3'], original.coords['y'])
     assert sc.identical(da.attrs['y2'], original.coords['y'])
+    assert sc.identical(da.attrs['y'], original.coords['y'])
+
+    da = original.copy().transform_coords(['y3', 'y4'], graph=graph, keep_aliases=False)
+    assert da.dims == ['x', 'y']
+    assert sc.identical(da.coords['y4'], original.coords['y'])
+    assert sc.identical(da.coords['y3'], original.coords['y'])
+    assert 'y2' not in da.meta
     assert sc.identical(da.attrs['y'], original.coords['y'])
 
 
@@ -53,6 +55,14 @@ def ab(*, a, b):
 
 def bc(*, b, c):
     return b * c
+
+
+def ac(a, c):
+    return a + c
+
+
+def bd(b, d):
+    return b + d
 
 
 def split(*, a):
@@ -142,10 +152,32 @@ def test_dim_rename_multi_level_merge_multi_output():
         return {'a2': a, 'c': a}
 
     original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
-    da = original.transform_coords(['bc'], graph={'bc': bc, 'c': split_a})
-    # Similar to test_dim_rename_multi_level_merge above, but now an implicit
-    # intermediate result prevents conversion of a to c
+    da = original.transform_coords(['bc'], graph={'bc': bc, ('c', 'a2'): split_a})
+    # Similar to test_dim_rename_multi_level_merge above,
+    # but a2 and c are produced by the same node
     assert da.dims == ['a', 'bc']
+    da = original.transform_coords(['bc'], graph={'bc': bc, 'c': split_a})
+    # a2 is not part of the graph and dropped, a is thus free to be renamed to c.
+    assert da.dims == ['c', 'bc']
+
+
+def test_dim_rename_multi_level_multi_merge():
+    # *a    c  *b   d
+    #  \   /    \  /
+    #   *ac     *bd
+    #     \     /
+    #      abcd
+    def abcd(ac, bd):
+        return ac + bd
+
+    graph = {'ac': ac, 'bd': bd, 'abcd': abcd}
+    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b, 'c': a, 'd': b})
+    da = original.transform_coords(['abcd'], graph=graph)
+    assert da.dims == ['ac', 'bd']
+
+    original = sc.DataArray(data=a + b + c, coords={'a': a, 'b': b, 'c': c, 'd': b})
+    da = original.transform_coords(['abcd'], graph=graph)
+    assert da.dims == ['a', 'abcd', 'c']
 
 
 def test_rename_dims_param():
@@ -244,9 +276,11 @@ def test_binned():
     def convert(*, x2, y):
         return {'yy': y * y, 'xy': x2 * y}
 
-    graph = {'xy': convert, 'x2': 'x'}
+    graph = {('xy', 'yy'): convert, 'x2': 'x'}
     da = binned.transform_coords(['xy', 'yy'], graph=graph)
     check_binned(da, binned)
+    assert sc.identical(da.coords['xy'], (binned.coords['x'] *
+                                          binned.coords['y']).rename_dims({'x': 'x2'}))
     # If input is sliced, transform_coords has to copy the buffer
     da = binned['y', 0:1].transform_coords(['xy', 'yy'], graph=graph)
     check_binned(da, binned['y', 0:1])
@@ -264,10 +298,6 @@ def test_binned_no_dense_coord():
     graph = {('xy', 'yy'): convert, 'x2': 'x'}
     da = binned.transform_coords(['xy', 'yy'], graph=graph)
     check_binned(da, binned)
-    # works also without explicit request of 'yy' in graph
-    graph = {'xy': convert, 'x2': 'x'}
-    da = binned.transform_coords(['xy', 'yy'], graph=graph)
-    check_binned(da, binned)
 
 
 def test_binned_request_existing_consumed():
@@ -283,6 +313,42 @@ def test_binned_request_existing_consumed():
     # Regression test, this used to throw due to an untested branch when
     # requesting a previously consumed event coord
     binned.transform_coords(['xy', 'x'], graph=graph)
+
+
+def test_only_outputs_in_graph_are_stored():
+    original = sc.DataArray(data=a, coords={'a': a})
+    graph = {'b': split}
+    da = original.transform_coords(['b'], graph=graph)
+    assert 'c' not in da.meta  # c is not stored
+    with pytest.raises(sc.NotFoundError):
+        # c is not computable
+        original.transform_coords(['c'], graph=graph)
+
+
+def test_targets_arg_types():
+    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
+    graph = {'ab': ab}
+    da = original.transform_coords(('ab', ), graph=graph)
+    assert 'ab' in da.coords
+    da = original.transform_coords('ab', graph=graph)
+    assert 'ab' in da.coords
+
+
+def test_inaccessible_coord():
+    original = sc.DataArray(data=a + b, coords={'a': a})
+    graph = {'ab': ab}
+    with pytest.raises(sc.NotFoundError):
+        original.transform_coords(['ab'], graph)
+    with pytest.raises(sc.NotFoundError):
+        original.transform_coords(['c'], graph)
+
+    def abc(a, b, c):
+        return a + b + c
+
+    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
+    graph = {'ab': ab, 'abc': abc}
+    with pytest.raises(sc.NotFoundError):
+        original.transform_coords(['ab', 'abc'], graph)
 
 
 def test_cycles():
@@ -368,6 +434,10 @@ def test_duplicate_output_keys():
     with pytest.raises(ValueError):
         graph = {('b', 'd'): to_bd, ('b', 'c'): to_bc}
         original.transform_coords(['b'], graph=graph)
+    # b only named once in graph
+    graph = {'b': to_bd, 'c': to_bc}
+    da = original.transform_coords(['b'], graph=graph)
+    assert 'b' in da.coords
 
 
 def test_pass_through_unary():
