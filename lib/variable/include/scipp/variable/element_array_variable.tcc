@@ -104,7 +104,8 @@ ElementArrayModel<T>::makeDefaultFromParent(const scipp::index size) const {
 template <class T>
 bool ElementArrayModel<T>::equals(const Variable &a, const Variable &b) const {
   return equals_impl(a.values<T>(), b.values<T>()) &&
-         (!a.has_variances() || equals_impl(a.variances<T>(), b.variances<T>()));
+         (!a.has_variances() ||
+          equals_impl(a.variances<T>(), b.variances<T>()));
 }
 
 template <class T>
