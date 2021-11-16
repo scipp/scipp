@@ -72,10 +72,12 @@ protected:
       check_set_index(i, bin_volume, expected0, expected...);
     }
   }
+  // cppcheck-suppress passedByValue # Want a copy of i.
   void check(MultiIndex<1> i, const std::vector<scipp::index> &indices,
              const scipp::index bin_volume = 0) const {
     check_impl(i, bin_volume, indices);
   }
+  // cppcheck-suppress passedByValue # Want a copy of i.
   void check(MultiIndex<2> i, const std::vector<scipp::index> &indices0,
              const std::vector<scipp::index> &indices1,
              const scipp::index bin_volume = 0) const {
