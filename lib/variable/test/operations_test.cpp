@@ -347,6 +347,7 @@ TEST(VariableView, minus_equals_slice_const_outer) {
   EXPECT_EQ(data[1], 0.0);
   EXPECT_EQ(data[2], 2.0);
   EXPECT_EQ(data[3], 2.0);
+  // cppcheck-suppress unreadVariable  # Read through `data`.
   var -= copy.slice({Dim::Y, 1});
   EXPECT_EQ(data[0], -3.0);
   EXPECT_EQ(data[1], -4.0);
@@ -365,6 +366,7 @@ TEST(VariableView, minus_equals_slice_outer) {
   EXPECT_EQ(data[1], 0.0);
   EXPECT_EQ(data[2], 2.0);
   EXPECT_EQ(data[3], 2.0);
+  // cppcheck-suppress unreadVariable  # Read through `data`.
   var -= copy.slice({Dim::Y, 1});
   EXPECT_EQ(data[0], -3.0);
   EXPECT_EQ(data[1], -4.0);
@@ -383,6 +385,7 @@ TEST(VariableView, minus_equals_slice_inner) {
   EXPECT_EQ(data[1], 1.0);
   EXPECT_EQ(data[2], 0.0);
   EXPECT_EQ(data[3], 1.0);
+  // cppcheck-suppress unreadVariable  # Read through `data`.
   var -= copy.slice({Dim::X, 1});
   EXPECT_EQ(data[0], -2.0);
   EXPECT_EQ(data[1], -1.0);
