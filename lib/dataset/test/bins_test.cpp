@@ -464,6 +464,7 @@ TEST_F(DatasetBinsTest, concatenate) {
   check();
   buffer0.setData("b", column * column);
   check_fail();
+  // cppcheck-suppress duplicateExpression  # Intentional, see above.
   buffer1.setData("b", column / column);
   check();
   buffer0["a"].masks().set("mask", column);
