@@ -44,7 +44,7 @@ test:
     - scipy>=1.7.0
     - tbb-devel
     - pandoc
-    - sphinx = 4.2.0
+    - sphinx
     - sphinx-book-theme
     - sphinx-copybutton
     - nbsphinx
