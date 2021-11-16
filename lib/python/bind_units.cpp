@@ -74,6 +74,7 @@ void init_units(py::module &m) {
       .def(py::self + py::self)
       .def(py::self - py::self)
       .def(py::self * py::self)
+      // cppcheck-suppress duplicateExpression
       .def(py::self / py::self)
       .def("__pow__", [](const units::Unit &self,
                          const int64_t power) { return pow(self, power); })
