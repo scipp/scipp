@@ -827,6 +827,22 @@ TEST(VariableTest, rotate) {
   EXPECT_EQ(vec_new, rotated);
 }
 
+TEST(VariableTest, combine_translations) {
+  Eigen::Translation<double, 3> translation1(1, 2, 3);
+  Eigen::Translation<double, 3> translation2(4, 5, 6);
+
+  const Variable trans1 = makeVariable<scipp::core::eigen_translation_type>(
+      Dims{Dim::X}, Shape{1}, units::m, Values{translation1});
+  const Variable trans2 = makeVariable<scipp::core::eigen_translation_type>(
+      Dims{Dim::X}, Shape{1}, units::m, Values{translation2});
+
+  Eigen::Translation<double, 3> expected(5, 7, 9);
+  const Variable expected_var = makeVariable<scipp::core::eigen_translation_type>(
+          Dims{Dim::X}, Shape{1}, units::m, Values{expected});
+
+  EXPECT_EQ(trans1 * trans2, expected_var);
+}
+
 class ApplyTransformTest : public ::testing::Test {
 public:
   Variable makeTransformVar(const units::Unit unit) {

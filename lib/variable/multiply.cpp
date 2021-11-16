@@ -8,7 +8,8 @@
 namespace scipp::variable {
 
 bool is_transform_with_translation(const Variable &var) {
-  return var.dtype() == dtype<Eigen::Affine3d>;
+  return var.dtype() == dtype<Eigen::Affine3d> ||
+         var.dtype() == dtype<scipp::core::eigen_translation_type>;
 }
 
 Variable operator*(const Variable &a, const Variable &b) {

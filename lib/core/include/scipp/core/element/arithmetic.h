@@ -105,7 +105,40 @@ struct apply_spatial_transformation_t {
   constexpr void operator()() const noexcept;
   using types = decltype(std::tuple_cat(
       std::tuple<std::tuple<Eigen::Affine3d, Eigen::Affine3d>>(),
-      std::tuple<std::tuple<Eigen::Affine3d, Eigen::Vector3d>>()));
+      std::tuple<std::tuple<Eigen::Affine3d, Eigen::Vector3d>>(),
+      std::tuple<std::tuple<Eigen::Affine3d, scipp::core::eigen_translation_type>>(),
+      std::tuple<std::tuple<Eigen::Affine3d, scipp::core::eigen_rotation_type>>(),
+      std::tuple<std::tuple<Eigen::Affine3d, scipp::core::eigen_scaling_type>>(),
+      std::tuple<std::tuple<Eigen::Affine3d, Eigen::Matrix3d>>(),
+
+//      std::tuple<std::tuple<scipp::core::eigen_translation_type, Eigen::Affine3d>>(),
+//      std::tuple<std::tuple<scipp::core::eigen_translation_type, Eigen::Vector3d>>(),
+      std::tuple<std::tuple<scipp::core::eigen_translation_type, scipp::core::eigen_translation_type>>()
+ //     std::tuple<std::tuple<scipp::core::eigen_translation_type, scipp::core::eigen_rotation_type>>(),
+ //     std::tuple<std::tuple<scipp::core::eigen_translation_type, scipp::core::eigen_scaling_type>>(),
+ //     std::tuple<std::tuple<scipp::core::eigen_translation_type, Eigen::Matrix3d>>(),
+
+ //     std::tuple<std::tuple<scipp::core::eigen_rotation_type, Eigen::Affine3d>>(),
+ //     std::tuple<std::tuple<scipp::core::eigen_rotation_type, Eigen::Vector3d>>(),
+ //     std::tuple<std::tuple<scipp::core::eigen_rotation_type, scipp::core::eigen_translation_type>>(),
+ //     std::tuple<std::tuple<scipp::core::eigen_rotation_type, scipp::core::eigen_rotation_type>>(),
+ //     std::tuple<std::tuple<scipp::core::eigen_rotation_type, scipp::core::eigen_scaling_type>>(),
+ //     std::tuple<std::tuple<scipp::core::eigen_rotation_type, Eigen::Matrix3d>>(),
+ //
+ //     std::tuple<std::tuple<scipp::core::eigen_scaling_type, Eigen::Affine3d>>(),
+ //     std::tuple<std::tuple<scipp::core::eigen_scaling_type, Eigen::Vector3d>>(),
+ //     std::tuple<std::tuple<scipp::core::eigen_scaling_type, scipp::core::eigen_translation_type>>(),
+ //     std::tuple<std::tuple<scipp::core::eigen_scaling_type, scipp::core::eigen_rotation_type>>(),
+ //     std::tuple<std::tuple<scipp::core::eigen_scaling_type, scipp::core::eigen_scaling_type>>(),
+ //     std::tuple<std::tuple<scipp::core::eigen_scaling_type, Eigen::Matrix3d>>(),
+ //
+ //     std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Affine3d>>(),
+ //     std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>(),
+ //     std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::eigen_translation_type>>(),
+ //     std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::eigen_rotation_type>>(),
+ //     std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::eigen_scaling_type>>(),
+ //     std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Matrix3d>>()
+  ));
 };
 
 struct true_divide_types_t {
