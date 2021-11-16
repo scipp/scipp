@@ -12,11 +12,6 @@
 
 namespace scipp::core {
 
-/// Replacement for C++20 std::make_unique_for_overwrite
-template <class T> auto make_unique_for_overwrite(const scipp::index size) {
-  return std::unique_ptr<T>(new std::remove_extent_t<T>[size]);
-}
-
 /// Tag for requesting default-initialization in methods of class element_array.
 struct init_for_overwrite_t {};
 static constexpr auto init_for_overwrite = init_for_overwrite_t{};
@@ -125,7 +120,7 @@ public:
       m_data.reset();
       m_size = 0;
     } else if (new_size != size()) {
-      m_data = make_unique_for_overwrite<T[]>(new_size);
+      m_data = std::make_unique_for_overwrite<T[]>(new_size);
       m_size = new_size;
     }
   }
