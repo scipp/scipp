@@ -658,9 +658,8 @@ struct GroupbyBinnedMaskTest : public ::testing::Test {
                                             Values{1, 1, 3})}},
       {{"mask_y", makeVariable<bool>(Dims{Dim::Y}, Shape{3},
                                      Values{false, true, false})}}};
-  const bool mask = true;
   const DataArray expected{
-      make_events_out(mask),
+      make_events_out(true),
       {{Dim("labels"), makeVariable<double>(Dims{Dim("labels")}, Shape{2},
                                             units::m, Values{1, 3})}}};
 };

@@ -67,10 +67,6 @@ TEST(CreateVariableTest, from_vector) {
   EXPECT_EQ(makeVariable<double>(Dims{Dim::X}, Shape{3},
                                  Values(std::vector<int>{1, 2, 3})),
             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-
-  const std::vector<double> v{1, 2, 3};
-  auto varRef = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values(v));
 }
 
 TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
