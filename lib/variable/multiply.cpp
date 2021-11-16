@@ -13,7 +13,8 @@ bool is_transform_with_translation(const Variable &var) {
 
 Variable operator*(const Variable &a, const Variable &b) {
   if (is_transform_with_translation(a) &&
-      (is_transform_with_translation(b) || b.dtype() == dtype<Eigen::Vector3d>)) {
+      (is_transform_with_translation(b) ||
+       b.dtype() == dtype<Eigen::Vector3d>)) {
     return transform(a, b, core::element::apply_spatial_transformation,
                      std::string_view("apply_spatial_transformation"));
   } else {

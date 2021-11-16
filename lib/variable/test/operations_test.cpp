@@ -858,7 +858,7 @@ TEST_F(ApplyTransformTest, apply_transform_to_vector_with_different_units) {
   // allow this application of a transform. The units must match exactly as the
   // transform may contain translations which get added to the vector.
   EXPECT_THROW_DISCARD(makeTransformVar(units::m) * makeVectorVar(units::mm),
-               except::UnitError);
+                       except::UnitError);
 }
 
 TEST(VariableTest, mul_vector) {
