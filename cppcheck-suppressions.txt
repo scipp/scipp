@@ -8,3 +8,8 @@ noExplicitConstructor
 # Mix-ups are very unlikely because they mostly fail to compile.
 # Compiler warnings appear to match our usage better.
 shadowFunction
+
+# Iterators are meant to abstract away the underlying container.
+# This check warns, e.g., about using iterators of std::span and
+# std::array together. This should be perfectly fine.
+mismatchingContainerExpression
