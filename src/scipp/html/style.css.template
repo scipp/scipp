@@ -473,7 +473,7 @@ tr.sc-log > td {
 }
 
 .sc-log-time-stamp {
-  min-width: 21ch;
+  min-width: 22ch;
   padding-right: 1em;
   font-family: var(--jp-code-font-family);
   color: var(--sc-font-color2);
