@@ -13,6 +13,7 @@ import time
 from typing import Any, Dict, Optional, Tuple
 
 from .core import DataArray, Dataset, Variable
+from .html.resources import load_style
 from .html import make_html
 from .utils import running_in_jupyter
 
@@ -139,7 +140,8 @@ def display_logs() -> None:
             'Cannot display log widgets because no widget handler is installed.')
 
     from IPython.display import display
-    display(widget)
+    from ipywidgets import HTML, VBox
+    display(VBox([HTML(value=load_style()), widget]))
 
 
 def clear_log_widget() -> None:
