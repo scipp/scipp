@@ -261,9 +261,9 @@ class TableViewer:
                                                          "").replace("'>", "")
 
         self.box = [
-                self.widgets.HTML(value=f"<style>{load_style()}</style>"),
-                self.widgets.HTML(value=f"<span class='sc-title'>{title}</span>")
-                ]
+            self.widgets.HTML(value=f"<style>{load_style()}</style>"),
+            self.widgets.HTML(value=f"<span class='sc-title'>{title}</span>")
+        ]
         self.tables = {}
         self.sliders = {}
         self.readouts = {}
