@@ -14,8 +14,6 @@ def inject_style():
     if not inject_style._has_been_injected:
         from IPython.display import display, Javascript
         from .html.resources import load_style
-        # `display` claims that its parameter should be a tuple, but
-        # that does not seem to work in the case of Javascript.
         display(
             Javascript(f"""
             const style = document.createElement('style');
