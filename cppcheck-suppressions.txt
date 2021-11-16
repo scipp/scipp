@@ -30,3 +30,8 @@ unusedVariable
 
 // More thoroughly covered by clang-tidy.
 useInitializationList
+
+// Warns about the `State` parameter in benchmarks.
+// We have no control over constness in this case.
+// Generally, non-const callbacks should be fine.
+constParameterCallback
