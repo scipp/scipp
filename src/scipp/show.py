@@ -46,7 +46,7 @@ def _truncate_long_string(long_string: str, max_title_length) -> str:
 def _build_svg(content, left, top, width, height):
     return (f'<svg width={_svg_width}em viewBox="{left} {top} {width} {height}"'
             ' class="sc-root">'
-            f'<defs><style>{load_style()}</style></defs>{content}</svg>')
+            f'<defs>{load_style()}</defs>{content}</svg>')
 
 
 class VariableDrawer:

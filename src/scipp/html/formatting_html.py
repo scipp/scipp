@@ -441,7 +441,8 @@ def _obj_repr(header_components, sections):
     sections = "".join(f"<li class='sc-section-item'>{s}</li>" for s in sections)
 
     return ("<div>"
-            f"{load_icons()}<style>{load_style()}</style>"
+            f"{load_icons()}"
+            f"{load_style()}"
             "<div class='sc-wrap sc-root'>"
             f"{header}"
             f"<ul class='sc-sections'>{sections}</ul>"

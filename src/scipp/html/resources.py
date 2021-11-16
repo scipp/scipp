@@ -30,13 +30,20 @@ def _preprocess_style(template: str) -> str:
 
 
 @lru_cache(maxsize=1)
-def load_style() -> str:
+def load_style_sheet() -> str:
     """
     Load the bundled CSS style and return it as a string.
     The string is cached upon first call.
     """
     return _preprocess_style(pkg_resources.read_text('scipp.html',
                                                      'style.css.template'))
+
+
+def load_style() -> str:
+    """
+    Load the bundled CSS style and return it within <style> tags.
+    """
+    return '<style id="scipp-style-sheet">' + load_style_sheet() + '</style>'
 
 
 @lru_cache(maxsize=1)
