@@ -8,7 +8,8 @@ def inject_style():
     HTML and SVG output without duplicating it in every cell.
     This also preserves the style when the output in Jupyter is cleared.
 
-    The style is only injected once per session.
+    The style is only injected once per session but if the kernel is restarted,
+    the old style (if present in the HTML) is replaced.
     """
     if not inject_style._has_been_injected:
         from IPython.display import display, Javascript
@@ -18,8 +19,14 @@ def inject_style():
         display(
             Javascript(f"""
             const style = document.createElement('style');
+            style.setAttribute('id', 'scipp-style-sheet');
             style.textContent = String.raw`{load_style()}`;
-            document.head.append(style);
+            const oldStyle = document.getElementById('scipp-style-sheet');
+            if (oldStyle === null) {{
+                document.head.append(style);
+            }} else {{
+                oldStyle.replaceWith(style);
+            }}
             """))
     inject_style._has_been_injected = True
 
