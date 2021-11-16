@@ -20,6 +20,7 @@ template <typename T> struct GenerateEvents {
     auto vals = indices.values<std::pair<scipp::index, scipp::index>>();
     for (scipp::index i = 0; i < length; ++i) {
       const auto l = dis(gen);
+      // cppcheck-suppress unreadVariable  # Read through `indices`.
       vals[i] = {size, size + l};
       size += l;
     }
