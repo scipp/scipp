@@ -13,3 +13,8 @@ shadowFunction
 # This check warns, e.g., about using iterators of std::span and
 # std::array together. This should be perfectly fine.
 mismatchingContainerExpression
+
+# Flags use of `false` or `true` as template parameters (seems to be a
+# bug in cppcheck's parser). The warning would be nice to have but it
+# would need too many inline suppressions at this point.
+comparisonOfBoolWithInvalidComparator
