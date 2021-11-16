@@ -27,3 +27,6 @@ unassignedVariable
 # Covered by gcc's unused-variable warning.
 # Flags unused parts of structured bindings as opposed to gcc.
 unusedVariable
+
+# More thoroughly covered by clang-tidy.
+useInitializationList
