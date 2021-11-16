@@ -16,6 +16,7 @@ parser.add_argument('--site-packages-dir', default=os.environ.get('SP_DIR', ''))
 parser.add_argument('--source_dir', default='.')
 parser.add_argument('--build_dir', default='build')
 parser.add_argument('--caching', action='store_true', default=False)
+parser.add_argument('--build_type', default='release')
 
 
 def run_command(cmd, shell):
@@ -31,10 +32,20 @@ def main(*,
          site_packages_dir,
          build_dir='build',
          source_dir='.',
-         caching=False):
+         caching=False,
+         build_type="release"):
     """
     Platform-independent function to run cmake, build, install and C++ tests.
     """
+    if build_type == "release":
+        debug_build = False
+    elif build_type == "debug":
+        debug_build = True
+    else:
+        print(f"build_cpp.py: Unsupported build type: {build_type}")
+        sys.exit(1)
+
+    print(f"Building in {build_type} configuration")
 
     # Get the platform name: 'linux', 'darwin' (osx), or 'win32'.
     platform = sys.platform
@@ -53,7 +64,7 @@ def main(*,
     use_space = ['-G', '-A']
 
     # Default cmake flags
-    ipo = os.getenv('CMAKE_INTERPROCEDURAL_OPTIMIZATION', 'OFF')
+    ipo = os.getenv('CMAKE_INTERPROCEDURAL_OPTIMIZATION', 'OFF') and not debug_build
     cmake_flags = {
         '-G': 'Ninja',
         '-DPython_EXECUTABLE': shutil.which("python"),
@@ -62,7 +73,11 @@ def main(*,
         '-DWITH_CTEST': 'OFF',
         '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION': ipo,
         '-DFULL_BUILD': 1,
+        '-DCMAKE_BUILD_TYPE': 'Debug' if debug_build else "Release",
     }
+
+    if debug_build:
+        cmake_flags["-DDYNAMIC_LIB"] = "ON"
 
     if platform == 'darwin':
         # Note 10.14 is the minimum supported osx version
@@ -79,7 +94,12 @@ def main(*,
         if caching and os.path.exists(os.path.join(scripts, 'clcache.exe')):
             cmake_flags.update({'-DCLCACHE_PATH': scripts})
         shell = True
-        build_config = 'Release'
+        if debug_build:
+            build_config = 'Debug'
+            # TBB not available for windows-debug
+            cmake_flags['-DDISABLE_MULTI_THREADING'] = "ON"
+        else:
+            build_config = 'Release'
         # cmake --build --parallel is detrimental to build performance on
         # windows, see https://github.com/scipp/scipp/issues/2078 for
         # details
@@ -134,4 +154,5 @@ if __name__ == '__main__':
          site_packages_dir=args.site_packages_dir,
          build_dir=args.build_dir,
          source_dir=args.source_dir,
-         caching=args.caching)
+         caching=args.caching,
+         build_type=args.build_type)

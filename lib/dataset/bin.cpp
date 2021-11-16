@@ -5,8 +5,6 @@
 #include <numeric>
 #include <set>
 
-#include "scipp/common/ranges.h"
-
 #include "scipp/core/element/bin.h"
 #include "scipp/core/element/cumulative.h"
 
@@ -119,12 +117,21 @@ auto bin(const Variable &data, const Variable &indices,
   fill_zeros(offsets);
   // Not using cumsum along *all* dims, since some outer dims may be left
   // untouched (no rebin).
-  for (const auto dim : views::reverse(data.dims()))
-    if (dims.contains(dim) && dims[dim] > 0) {
-      subbin_sizes_add_intersection(
-          offsets, subbin_sizes_cumsum_exclusive(output_bin_sizes, dim));
-      output_bin_sizes = sum(output_bin_sizes, dim);
-    }
+  std::vector<std::pair<Dim, scipp::index>> strategy;
+  for (const auto dim : data.dims())
+    if (dims.contains(dim) && dims[dim] > 0)
+      strategy.emplace_back(dim, data.dims()[dim]);
+  // To avoid excessive memory consumption in intermediate results for
+  // `output_bin_sizes` (in the loop below, computing sums and cumsums) we need
+  // to ensure to handle the longest dimensions first,
+  std::sort(strategy.begin(), strategy.end(),
+            [](auto &&a, auto &&b) { return a.second > b.second; });
+  for (const auto &item : strategy) {
+    const auto dim = item.first;
+    subbin_sizes_add_intersection(
+        offsets, subbin_sizes_cumsum_exclusive(output_bin_sizes, dim));
+    output_bin_sizes = sum(output_bin_sizes, dim);
+  }
   // cumsum with bin dimension is last, since this corresponds to different
   // output bins, whereas the cumsum above handled different subbins of same
   // output bin, i.e., contributions of different input bins to some output bin.
@@ -299,9 +306,22 @@ public:
         } else {
           update_indices_by_binning(indices, get_coord(dim), key, linspace);
         }
-      } else if (action == AxisAction::Existing)
-        update_indices_from_existing(indices, dim);
-      else if (action == AxisAction::Join) {
+      } else if (action == AxisAction::Existing) {
+        // Similar to binning along an existing dim, if a dimension is simply
+        // kept unchanged there is a 1:1 mapping from input to output dims. We
+        // can thus avoid storing and processing a lot of length-0 contributions
+        // to bins.
+        // Note that this is only possible (in this simple manner) if there are
+        // no other actions affecting output dimensions.
+        if (m_offsets.dims().empty() && m_dims[dim] == m_dims.volume()) {
+          // Offset to output bin tracked using base offset for input bins
+          m_nbin = scipp::index{1} * units::one;
+          m_offsets = make_range(0, m_dims[dim], 1, dim);
+        } else {
+          // Offset to output bin tracked in indices for individual events
+          update_indices_from_existing(indices, dim);
+        }
+      } else if (action == AxisAction::Join) {
         ; // target bin 0 for all
       }
     }

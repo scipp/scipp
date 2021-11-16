@@ -75,7 +75,16 @@ class PlotFigure3d:
                               background=background)
 
         # Add camera controller
-        self.controls = p3.OrbitControls(controlling=self.camera)
+        # TODO: additional parameters whose default values are Inf need to be specified
+        # here to avoid a warning being raised: minAzimuthAngle, maxAzimuthAngle,
+        # maxDistance, maxZoom. Note that we change the maxDistance once we know the
+        # extents of the box.
+        # See https://github.com/jupyter-widgets/pythreejs/issues/366.
+        self.controls = p3.OrbitControls(controlling=self.camera,
+                                         minAzimuthAngle=-1.0e9,
+                                         maxAzimuthAngle=1.0e9,
+                                         maxDistance=1.0,
+                                         maxZoom=1)
 
         # Render the scene into a widget
         self.renderer = p3.Renderer(camera=self.camera,
@@ -164,6 +173,9 @@ class PlotFigure3d:
         self.camera.far = 5.0 * cam_pos_norm
         self.controls.target = tuple(center)
         self.camera.lookAt(tuple(center))
+        # TODO: Update OrbitControls maxDistance. This should be removed once
+        # https://github.com/jupyter-widgets/pythreejs/issues/366 is resolved.
+        self.controls.maxDistance = self.camera.far * 5.0
 
         # Save camera settings
         self.camera_backup["reset"] = copy(self.camera.position)
@@ -275,17 +287,20 @@ void main() {
         iden = np.identity(3, dtype=np.float32)
         ticker_ = ticker.MaxNLocator(5)
         lims = {x: limits[x] for x in "xyz"}
-        offsets = {
-            'x': [0, limits['y'][0], limits['z'][0]],
-            'y': [limits['x'][0], 0, limits['z'][0]],
-            'z': [limits['x'][0], limits['y'][0], 0]
-        }
+
+        def get_offsets(dim, ind):
+            if dim == 'x':
+                return np.array([0, limits['y'][ind], limits['z'][ind]])
+            if dim == 'y':
+                return np.array([limits['x'][ind], 0, limits['z'][ind]])
+            if dim == 'z':
+                return np.array([limits['x'][ind], limits['y'][ind], 0])
 
         for axis, (x, dim) in enumerate(zip('xyz', components)):
             ticks = ticker_.tick_values(lims[x][0], lims[x][1])
             for tick in ticks:
                 if lims[x][0] <= tick <= lims[x][1]:
-                    tick_pos = iden[axis] * tick + offsets[x]
+                    tick_pos = iden[axis] * tick + get_offsets(x, 0)
                     ticks_and_labels.add(
                         self._make_axis_tick(string=value_to_string(tick, precision=1),
                                              position=tick_pos.tolist(),
@@ -294,10 +309,12 @@ void main() {
             axis_label = f'{dim} [{coord.unit}]' if self.axlabels[
                 x] is None else self.axlabels[x]
             # Offset labels 5% beyond axis ticks to reduce overlap
+            delta = 0.05
             ticks_and_labels.add(
                 self._make_axis_tick(string=axis_label,
                                      position=(iden[axis] * 0.5 * np.sum(limits[x]) +
-                                               1.05 * np.array(offsets[x])).tolist(),
+                                               (1.0 + delta) * get_offsets(x, 0) -
+                                               delta * get_offsets(x, 1)).tolist(),
                                      size=self.tick_size * 0.3 * len(axis_label)))
 
         return ticks_and_labels
@@ -425,3 +442,16 @@ void main() {
         self.scalar_map.set_norm(new_norm)
         self.masks_scalar_map.set_norm(new_norm)
         self._update_colorbar()
+
+    def toggle_axes_helper(self, value):
+        """
+        Toggle vibility of red green blue axes helper.
+        """
+        self.axes_3d.visible = value
+
+    def toggle_outline(self, value):
+        """
+        Toggle vibility of outline.
+        """
+        self.outline.visible = value
+        self.axticks.visible = value

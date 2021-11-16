@@ -32,9 +32,11 @@ public:
   [[nodiscard]] auto begin() const noexcept { return m_keys.begin(); }
   [[nodiscard]] auto end() const noexcept { return m_keys.begin() + size(); }
   [[nodiscard]] auto rbegin() const noexcept {
-    return m_keys.rbegin() - size() + NDIM_MAX;
+    return std::reverse_iterator(end());
   }
-  [[nodiscard]] auto rend() const noexcept { return m_keys.rend(); }
+  [[nodiscard]] auto rend() const noexcept {
+    return std::reverse_iterator(begin());
+  }
   [[nodiscard]] typename std::array<Key, Capacity>::const_iterator
   find(const Key &key) const;
   [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }

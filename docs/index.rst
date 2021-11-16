@@ -129,6 +129,8 @@ Documentation
    reference/dtype
    reference/units
    reference/error-propagation
+   reference/ownership-mechanism-and-readonly-flags
+   reference/logging
    reference/runtime-configuration
    reference/developer-documentation
 

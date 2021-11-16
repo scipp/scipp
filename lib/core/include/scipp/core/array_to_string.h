@@ -51,9 +51,10 @@ std::string array_to_string(const T &arr,
     return std::string("[]");
   std::string s = "[";
   for (scipp::index i = 0; i < scipp::size(arr); ++i) {
-    if (i == 2 && size > 4) {
+    scipp::index n = 4;
+    if (i == n && size > 2 * n) {
       s += "..., ";
-      i = size - 2;
+      i = size - n;
     }
     s += element_to_string(arr[i], unit);
   }

@@ -6,6 +6,7 @@ from enum import Enum
 
 from ..core import bin as bin_
 from ..core import dtype, units
+from ..core import broadcast
 from ..core import linspace, rebin, get_slice_params, concat, histogram
 from ..core import DataArray, DimensionError
 from .tools import to_bin_edges
@@ -107,7 +108,24 @@ class ResamplingModel():
         non-edge inputs in `rebin`, or rather a function with similar constraits
         such as `bin`, but for dense data.
         """
-        array = DataArray(data=var)
+        data = var
+        # In case of masks, we need to preprocess to potentially broadcast `var` (the
+        # mask being resampled) to take into account multi-dimensional coords: A mask
+        # depending on `dim1` is implicitly "constant" along other dimensions, say
+        # `dim2`. If a coord for `dim1` depends on `dim2`, resampling must result in
+        # an output mask depending on `dim1` as well as `dim2`. We need to broadcast
+        # the input along `dim2` to accomplish this.
+        for dim in coords:
+            coord = coords[dim]
+            data_dims = set(data.dims)
+            coord_dims = set(coord.dims)
+            if dim in coord_dims and not data_dims.isdisjoint(coord_dims):
+                for d in coord_dims:
+                    if d not in data_dims:
+                        data = broadcast(data,
+                                         dims=[d] + data.dims,
+                                         shape=[coord.sizes[d]] + data.shape)
+        array = DataArray(data=data)
         for dim in coords:
             try:
                 array.coords[dim] = coords[dim]
@@ -118,7 +136,7 @@ class ResamplingModel():
         plan = []
         for edge in self.edges:
             dim = edge.dims[-1]
-            if dim not in var.dims:
+            if dim not in data.dims:
                 continue
             coord = array.meta[dim]
             if len(coord.dims) == 1:

@@ -442,3 +442,78 @@ label.sc-hide-icon svg{
   stroke-width: 0.05;
   stroke-dasharray: 0.2, 0.2;
 }
+
+div.sc-log {
+  line-height: 2.5ex;
+  height: 25ex;
+  resize: vertical;
+  overflow-y: scroll;
+  display: flex;
+  flex-direction: column-reverse;
+  border: solid;
+  border-width: 1px;
+  border-color: var(--jp-border-color2);
+  background-color: var(--sc-background-color1);
+}
+
+table.sc-log {
+  table-layout: auto;
+  border-collapse: collapse;
+}
+
+tr.sc-log:nth-child(even) {
+  background-color: var(--sc-background-color0);
+}
+
+tr.sc-log > td {
+  vertical-align: top;
+  padding-bottom: 0.5ex;
+}
+
+.sc-log-time-stamp {
+  min-width: 21ch;
+  padding-right: 1em;
+  font-family: var(--jp-code-font-family);
+  color: var(--sc-font-color2);
+}
+
+tr.sc-log-debug td.sc-log-level {
+  color: var(--jp-accent-color1);
+}
+
+tr.sc-log-info td.sc-log-level {
+  color: var(--jp-info-color1);
+}
+
+tr.sc-log-warning td.sc-log-level {
+  color: var(--jp-warn-color1);
+}
+
+tr.sc-log-error td.sc-log-level {
+  font-weight: bold;
+  color: var(--jp-error-color2);
+}
+
+tr.sc-log-critical td.sc-log-level {
+  font-weight: bold;
+  color: var(--sc-background-color0);
+  background-color: var(--jp-error-color1);
+}
+
+.sc-log-message {
+  padding-left: 1em;
+  white-space: pre-wrap;
+  width: 100%;
+}
+
+.sc-log-html-payload {
+  white-space: normal;
+}
+
+.sc-log-name {
+  padding-left: 1em;
+  padding-right: 0.5em;
+  text-align: right;
+  white-space: pre-wrap;
+  color: var(--sc-font-color3);
+}

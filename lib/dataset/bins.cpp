@@ -297,6 +297,9 @@ Variable map(const DataArray &function, const Variable &x, Dim dim) {
   if (dim == Dim::Invalid)
     dim = edge_dimension(function);
   const auto &edges = function.meta()[dim];
+  if (!is_edges(function.dims(), edges.dims(), dim))
+    throw except::BinEdgeError(
+        "Function used as lookup table in map operation must be a histogram");
   const auto data = masked_data(function, dim);
   const auto weights = subspan_view(data, dim);
   if (all(islinspace(edges, dim)).value<bool>()) {

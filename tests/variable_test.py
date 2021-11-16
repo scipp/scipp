@@ -73,6 +73,8 @@ def test_operation_with_scalar_quantity():
 def test_single_dim_access():
     var = sc.Variable(dims=['x'], values=[0.0])
     assert var.dim == 'x'
+    assert isinstance(var.dim, str)
+    assert var.sizes[var.dim] == 1
 
 
 def test_0D_scalar_access():

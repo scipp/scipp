@@ -67,7 +67,9 @@ auto copy_impl(const Slices &slices, const Data &data, const Dim dim,
 template <class T>
 T GroupBy<T>::copy(const scipp::index group,
                    const AttrPolicy attrPolicy) const {
-  return copy_impl(groups()[group], m_data, dim(), attrPolicy);
+  const Dim slice_dim = m_data.coords()[dim()].dim();
+  return copy_impl(groups()[group], strip_edges_along(m_data, slice_dim), dim(),
+                   attrPolicy);
 }
 
 namespace {
@@ -250,9 +252,12 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
 namespace {
 template <class T> struct NanSensitiveLess {
   // Compare two values such that x < NaN for all x != NaN.
+  // Note: if changing this in future, ensure it meets the requirements from
+  // https://en.cppreference.com/w/cpp/named_req/Compare, as it is used as
+  // the comparator for keys in a map.
   bool operator()(const T &a, const T &b) const {
     if (scipp::numeric::isnan(b)) {
-      return true;
+      return !scipp::numeric::isnan(a);
     }
     return a < b;
   }

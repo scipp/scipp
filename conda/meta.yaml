@@ -18,9 +18,11 @@ requirements:
   run:
     - appdirs
     - numpy>=1.20.0
+    - python {{ python }}
     - python-configuration
     - pyyaml
     - tbb
+    - graphlib-backport # for python < 3.9
 
 test:
   imports:
@@ -42,7 +44,7 @@ test:
     - scipy>=1.7.0
     - tbb-devel
     - pandoc
-    - sphinx
+    - sphinx = 4.2.0
     - sphinx-book-theme
     - sphinx-copybutton
     - nbsphinx

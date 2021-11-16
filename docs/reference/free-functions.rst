@@ -18,8 +18,10 @@ General
    logical_and
    logical_or
    logical_xor
+   lookup
    merge
    rebin
+   reduce
    slices
    sort
    stddevs
@@ -196,3 +198,13 @@ Compatibility
    from_dict
    compat.from_pandas
    compat.from_xarray
+
+
+Logging
+~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated/functions
+
+   get_logger
+   display_logs
