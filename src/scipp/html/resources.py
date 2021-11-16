@@ -29,7 +29,7 @@ def _preprocess_style(template: str) -> str:
     return css
 
 
-@lru_cache
+@lru_cache(maxsize=1)
 def load_style() -> str:
     """
     Load the bundled CSS style and return it as a string.
@@ -39,7 +39,7 @@ def load_style() -> str:
                                                      'style.css.template'))
 
 
-@lru_cache
+@lru_cache(maxsize=1)
 def load_icons() -> str:
     """
     Load the bundled icons and return them as an HTML string.
