@@ -262,7 +262,7 @@ if you want to preallocate memory to fill later, use :py:func:`scipp.empty`.
 :type unit: scipp.Unit
 :type dtype: Any
 
-:seealso: Specialized `creation functions <../reference/api.rst#creation-functions>`_,
+:seealso: Specialized `creation functions <../../reference/creation-functions.rst>`_,
  in particular :py:func:`scipp.array` and :py:func:`scipp.scalar`.
 )raw");
 }
