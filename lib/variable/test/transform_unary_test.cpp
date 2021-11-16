@@ -34,7 +34,7 @@ protected:
                  [](const units::Unit &unit) { return unit; }}};
 
   template <typename T>
-  static auto op_manual_values(const ElementArrayView<T> values) {
+  static auto op_manual_values(const ElementArrayView<T> &values) {
     std::vector<double> res;
     res.reserve(values.size());
     std::transform(values.begin(), values.end(), std::back_inserter(res), op);
@@ -42,8 +42,8 @@ protected:
   }
 
   template <typename T>
-  static auto op_manual_variances(const ElementArrayView<T> values,
-                                  const ElementArrayView<T> variances) {
+  static auto op_manual_variances(const ElementArrayView<T> &values,
+                                  const ElementArrayView<T> &variances) {
     std::vector<double> res;
     res.reserve(values.size());
     std::transform(

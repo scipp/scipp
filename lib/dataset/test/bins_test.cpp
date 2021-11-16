@@ -286,7 +286,7 @@ protected:
   }
 
   auto make_buckets(const DataArray &events,
-                    const std::map<Dim, Variable> coords = {}) const {
+                    const std::map<Dim, Variable> &coords = {}) const {
     auto array = DataArray(make_bins(make_indices(), Dim("event"), events));
     for (const auto &[dim, coord] : coords)
       array.coords().set(dim, coord);
