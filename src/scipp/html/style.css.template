@@ -443,17 +443,19 @@ label.sc-hide-icon svg{
   stroke-dasharray: 0.2, 0.2;
 }
 
-div.sc-log {
-  line-height: 2.5ex;
+.sc-log-wrap {
   height: 25ex;
   resize: vertical;
   overflow-y: scroll;
   display: flex;
   flex-direction: column-reverse;
-  border: solid;
-  border-width: 1px;
+  border: 1px solid;
   border-color: var(--jp-border-color2);
   background-color: var(--sc-background-color1);
+}
+
+div.sc-log {
+  line-height: 2.5ex;
 }
 
 table.sc-log {
