@@ -151,8 +151,10 @@ static void BM_Variable_assign_1d(benchmark::State &state) {
   const auto size = state.range(0);
 
   const auto a = makeVariable<double>(Dims{Dim::X}, Shape{size});
+  // cppcheck-suppress unreadVariable
   auto b = makeVariable<double>(Dims{Dim::X}, Shape{size});
   for (auto _ : state) {
+    // cppcheck-suppress unreadVariable
     b = a;
   }
 
