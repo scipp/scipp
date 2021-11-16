@@ -76,8 +76,6 @@ public:
     const auto [indices, dim, buf] = prototype.constituents<T>();
     auto sizes_ = sizes;
     if (!sizes.is_valid()) {
-      // Defect: https://trac.cppcheck.net/ticket/10368
-      // cppcheck-suppress unassignedVariable
       const auto &[begin, end] = unzip(indices);
       sizes_ = end - begin;
     }

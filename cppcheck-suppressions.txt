@@ -18,3 +18,8 @@ mismatchingContainerExpression
 # bug in cppcheck's parser). The warning would be nice to have but it
 # would need too many inline suppressions at this point.
 comparisonOfBoolWithInvalidComparator
+
+# Does not work with references in structured bindings (2021-11-16):
+# https://trac.cppcheck.net/ticket/10368
+# Should be covered by gcc's maybe-uninitialized warning.
+unassignedVariable
