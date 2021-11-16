@@ -24,8 +24,9 @@ bool equals_impl(const T1 &view1, const T2 &view2) {
   // TODO Use optimizations in case of contigous views (instead of slower
   // ElementArrayView iteration). Add multi threading?
   if constexpr (is_span_v<typename T1::value_type>)
-    return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end(),
-                      [](const auto &a, const auto &b) { return equals_impl(a, b); });
+    return std::equal(
+        view1.begin(), view1.end(), view2.begin(), view2.end(),
+        [](const auto &a, const auto &b) { return equals_impl(a, b); });
   else
     return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }
