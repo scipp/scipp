@@ -23,3 +23,7 @@ comparisonOfBoolWithInvalidComparator
 # https://trac.cppcheck.net/ticket/10368
 # Should be covered by gcc's maybe-uninitialized warning.
 unassignedVariable
+
+# Covered by gcc's unused-variable warning.
+# Flags unused parts of structured bindings as opposed to gcc.
+unusedVariable
