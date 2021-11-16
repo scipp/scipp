@@ -202,12 +202,6 @@ class TransformUnaryIrregularBinsTest
     : public TransformUnaryTest,
       public ::testing::WithParamInterface<std::tuple<Variable, bool>> {
 protected:
-  static constexpr auto op_in_place{
-      overloaded{[](auto &x) { x *= 2.0; }, [](units::Unit &) {}}};
-  static constexpr auto op{
-      overloaded{[](const auto x) { return x * 2.0; },
-                 [](const units::Unit &unit) { return unit; }}};
-
   const Variable indices;
   const Variable input_buffer;
   const Variable input;
