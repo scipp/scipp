@@ -2,7 +2,6 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <Eigen/Geometry>
 #include <gtest/gtest.h>
-#include <tuple>
 #include <vector>
 
 #include "fix_typed_test_suite_warnings.h"
@@ -858,8 +857,7 @@ TEST_F(ApplyTransformTest, apply_transform_to_vector_with_different_units) {
   // Even though the transform and vector both have units of length, we don't
   // allow this application of a transform. The units must match exactly as the
   // transform may contain translations which get added to the vector.
-  EXPECT_THROW(std::ignore =
-                   makeTransformVar(units::m) * makeVectorVar(units::mm),
+  EXPECT_THROW_DISCARD(makeTransformVar(units::m) * makeVectorVar(units::mm),
                except::UnitError);
 }
 
