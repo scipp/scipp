@@ -91,57 +91,53 @@ of variances.)");
       .def_property_readonly("dtype", &Variable::dtype)
       .def(
           "__radd__",
-          [](const Variable &a, const double &b) { return a + b * units::one; },
+          [](const Variable &a, const double b) { return a + b * units::one; },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__radd__",
-          [](const Variable &a, const int64_t &b) {
-            return a + b * units::one;
-          },
+          [](const Variable &a, const int64_t b) { return a + b * units::one; },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rsub__",
-          [](const Variable &a, const double &b) { return b * units::one - a; },
+          [](const Variable &a, const double b) { return b * units::one - a; },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rsub__",
-          [](const Variable &a, const int64_t &b) {
-            return b * units::one - a;
-          },
+          [](const Variable &a, const int64_t b) { return b * units::one - a; },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rmul__",
-          [](const Variable &a, const double &b) {
+          [](const Variable &a, const double b) {
             return a * (b * units::one);
           },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rmul__",
-          [](const Variable &a, const int64_t &b) {
+          [](const Variable &a, const int64_t b) {
             return a * (b * units::one);
           },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rtruediv__",
-          [](const Variable &a, const double &b) {
+          [](const Variable &a, const double b) {
             return (b * units::one) / a;
           },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rtruediv__",
-          [](const Variable &a, const int64_t &b) {
+          [](const Variable &a, const int64_t b) {
             return (b * units::one) / a;
           },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rpow__",
-          [](const Variable &exponent, const int64_t &base) {
+          [](const Variable &exponent, const int64_t base) {
             return pow(base * units::one, exponent);
           },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def(
           "__rpow__",
-          [](const Variable &exponent, const double &base) {
+          [](const Variable &exponent, const double base) {
             return pow(base * units::one, exponent);
           },
           py::is_operator(), py::call_guard<py::gil_scoped_release>())
