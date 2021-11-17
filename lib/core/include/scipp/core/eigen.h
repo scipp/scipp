@@ -11,7 +11,7 @@
 namespace scipp::core {
 
 using eigen_translation_type = Eigen::Translation<double, 3>;
-using eigen_scaling_type = Eigen::DiagonalMatrix<double, 3, 3>;
+using eigen_scaling_type = Eigen::DiagonalMatrix<double, 3>;
 using eigen_rotation_type = Eigen::Quaterniond;
 
 template <> inline constexpr DType dtype<Eigen::Vector3d>{4000};

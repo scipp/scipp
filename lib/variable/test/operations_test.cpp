@@ -843,6 +843,22 @@ TEST(VariableTest, combine_translations) {
   EXPECT_EQ(trans1 * trans2, expected_var);
 }
 
+TEST(VariableTest, combine_translation_and_scaling) {
+  Eigen::Translation<double, 3> translation(1, 2, 3);
+  Eigen::DiagonalMatrix<double, 3> scaling(4, 5, 6);
+
+  const Variable translation_var = makeVariable<scipp::core::eigen_translation_type>(
+      Dims{Dim::X}, Shape{1}, units::m, Values{translation});
+  const Variable scaling_var = makeVariable<scipp::core::eigen_scaling_type>(
+      Dims{Dim::X}, Shape{1}, units::m, Values{scaling});
+
+  Eigen::Translation<double, 3> expected(4, 10, 18);
+  const Variable expected_var = makeVariable<scipp::core::eigen_translation_type>(
+          Dims{Dim::X}, Shape{1}, units::m, Values{expected});
+
+  EXPECT_EQ(translation_var * scaling_var, expected_var);
+}
+
 class ApplyTransformTest : public ::testing::Test {
 public:
   Variable makeTransformVar(const units::Unit unit) {

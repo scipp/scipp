@@ -104,40 +104,45 @@ struct multiplies_types_t {
 struct apply_spatial_transformation_t {
   constexpr void operator()() const noexcept;
   using types = decltype(std::tuple_cat(
-      std::tuple<std::tuple<Eigen::Affine3d, Eigen::Affine3d>>(),
       std::tuple<std::tuple<Eigen::Affine3d, Eigen::Vector3d>>(),
+      std::tuple<std::tuple<scipp::core::eigen_translation_type, scipp::core::eigen_translation_type>>(),
+      std::tuple<std::tuple<scipp::core::eigen_rotation_type, scipp::core::eigen_rotation_type>>(),
+      // std::tuple<std::tuple<scipp::core::eigen_scaling_type, scipp::core::eigen_scaling_type>>(),  // some issue with template instantiation for this combination??
+      std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::eigen_rotation_type>>(),
+      std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::eigen_scaling_type>>(),
+      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Matrix3d>>()
+  ));
+};
+
+struct combine_spatial_transformations_to_affine_t {
+  constexpr void operator()() const noexcept;
+  using types = decltype(std::tuple_cat(
+      std::tuple<std::tuple<Eigen::Affine3d, Eigen::Affine3d>>(),
       std::tuple<std::tuple<Eigen::Affine3d, scipp::core::eigen_translation_type>>(),
       std::tuple<std::tuple<Eigen::Affine3d, scipp::core::eigen_rotation_type>>(),
       std::tuple<std::tuple<Eigen::Affine3d, scipp::core::eigen_scaling_type>>(),
       std::tuple<std::tuple<Eigen::Affine3d, Eigen::Matrix3d>>(),
 
-//      std::tuple<std::tuple<scipp::core::eigen_translation_type, Eigen::Affine3d>>(),
-//      std::tuple<std::tuple<scipp::core::eigen_translation_type, Eigen::Vector3d>>(),
-      std::tuple<std::tuple<scipp::core::eigen_translation_type, scipp::core::eigen_translation_type>>()
- //     std::tuple<std::tuple<scipp::core::eigen_translation_type, scipp::core::eigen_rotation_type>>(),
- //     std::tuple<std::tuple<scipp::core::eigen_translation_type, scipp::core::eigen_scaling_type>>(),
- //     std::tuple<std::tuple<scipp::core::eigen_translation_type, Eigen::Matrix3d>>(),
+      std::tuple<std::tuple<scipp::core::eigen_translation_type, Eigen::Affine3d>>(),
+      std::tuple<std::tuple<scipp::core::eigen_translation_type, Eigen::Vector3d>>(),
+      std::tuple<std::tuple<scipp::core::eigen_translation_type, scipp::core::eigen_rotation_type>>(),
+      std::tuple<std::tuple<scipp::core::eigen_translation_type, scipp::core::eigen_scaling_type>>(),
+      std::tuple<std::tuple<scipp::core::eigen_translation_type, Eigen::Matrix3d>>(),
 
- //     std::tuple<std::tuple<scipp::core::eigen_rotation_type, Eigen::Affine3d>>(),
- //     std::tuple<std::tuple<scipp::core::eigen_rotation_type, Eigen::Vector3d>>(),
- //     std::tuple<std::tuple<scipp::core::eigen_rotation_type, scipp::core::eigen_translation_type>>(),
- //     std::tuple<std::tuple<scipp::core::eigen_rotation_type, scipp::core::eigen_rotation_type>>(),
- //     std::tuple<std::tuple<scipp::core::eigen_rotation_type, scipp::core::eigen_scaling_type>>(),
- //     std::tuple<std::tuple<scipp::core::eigen_rotation_type, Eigen::Matrix3d>>(),
- //
- //     std::tuple<std::tuple<scipp::core::eigen_scaling_type, Eigen::Affine3d>>(),
- //     std::tuple<std::tuple<scipp::core::eigen_scaling_type, Eigen::Vector3d>>(),
- //     std::tuple<std::tuple<scipp::core::eigen_scaling_type, scipp::core::eigen_translation_type>>(),
- //     std::tuple<std::tuple<scipp::core::eigen_scaling_type, scipp::core::eigen_rotation_type>>(),
- //     std::tuple<std::tuple<scipp::core::eigen_scaling_type, scipp::core::eigen_scaling_type>>(),
- //     std::tuple<std::tuple<scipp::core::eigen_scaling_type, Eigen::Matrix3d>>(),
- //
- //     std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Affine3d>>(),
- //     std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>(),
- //     std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::eigen_translation_type>>(),
- //     std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::eigen_rotation_type>>(),
- //     std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::eigen_scaling_type>>(),
- //     std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Matrix3d>>()
+      std::tuple<std::tuple<scipp::core::eigen_rotation_type, Eigen::Affine3d>>(),
+      std::tuple<std::tuple<scipp::core::eigen_rotation_type, Eigen::Vector3d>>(),
+      std::tuple<std::tuple<scipp::core::eigen_rotation_type, scipp::core::eigen_translation_type>>(),
+      std::tuple<std::tuple<scipp::core::eigen_rotation_type, scipp::core::eigen_scaling_type>>(),
+      std::tuple<std::tuple<scipp::core::eigen_rotation_type, Eigen::Matrix3d>>(),
+      
+      std::tuple<std::tuple<scipp::core::eigen_scaling_type, Eigen::Affine3d>>(),
+      std::tuple<std::tuple<scipp::core::eigen_scaling_type, Eigen::Vector3d>>(),
+      std::tuple<std::tuple<scipp::core::eigen_scaling_type, scipp::core::eigen_translation_type>>(),
+      std::tuple<std::tuple<scipp::core::eigen_scaling_type, scipp::core::eigen_rotation_type>>(),
+      std::tuple<std::tuple<scipp::core::eigen_scaling_type, Eigen::Matrix3d>>(),
+      
+      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Affine3d>>(),
+      std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::eigen_translation_type>>()
   ));
 };
 
@@ -168,12 +173,30 @@ constexpr auto subtract = overloaded{
 constexpr auto multiply = overloaded{
     multiplies_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
-    [](const auto a, const auto b) { return a * b; }};
+    [](const auto a, const auto b) { return a * b; }
+    [](const scipp::core::eigen_translation_type &a, const scipp::core::eigen_scaling_type &b) -> Eigen::Affine3d { return Eigen::Affine3d(a * b); },
+};
 
 constexpr auto apply_spatial_transformation = overloaded{
     apply_spatial_transformation_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
     [](const auto a, const auto b) { return a * b; },
+    [](const units::Unit &a, const units::Unit &b) {
+      if (a != b)
+        throw except::UnitError(
+            "Cannot apply spatial transform as the units of the transformation "
+            "are not the same as the units of transformation or vector.");
+      else
+        return a;
+    }};
+
+constexpr auto combine_spatial_transformations_to_affine = overloaded{
+    combine_spatial_transformations_to_affine_t{},
+    transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
+
+    [](const auto &a, const auto &b) { return a * b; },
+    [](const scipp::core::eigen_translation_type &a, const scipp::core::eigen_scaling_type &b) -> Eigen::Affine3d { return Eigen::Affine3d(a * b); },
+
     [](const units::Unit &a, const units::Unit &b) {
       if (a != b)
         throw except::UnitError(
