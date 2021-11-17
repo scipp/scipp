@@ -68,7 +68,7 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
       py::return_value_policy::move, py::keep_alive<0, 1>(),
       R"(view on self's items)");
   c.def("__getitem__",
-        [](T &self, const std::string &name) { return self[name]; });
+        [](const T &self, const std::string &name) { return self[name]; });
   c.def("__contains__", &T::contains);
   c.def_property_readonly(
       "dims",
@@ -188,8 +188,8 @@ void init_dataset(py::module &m) {
                   const std::map<Dim, Variable> &coords) {
         Dataset d;
         for (auto &&[name, item] : data) {
-          auto visitor = [&d, name = name](auto &object) {
-            d.setData(std::string(name), std::move(object));
+          auto visitor = [&d, n = name](auto &object) {
+            d.setData(std::string(n), std::move(object));
           };
           std::visit(visitor, item);
         }

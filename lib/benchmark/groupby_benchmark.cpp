@@ -54,6 +54,7 @@ template <class T> static void BM_groupby_concat(benchmark::State &state) {
   for (auto _ : state) {
     auto flat = groupby(events, Dim("group")).concat(Dim::X);
     state.PauseTiming();
+    // cppcheck-suppress redundantInitialization  # Used to modify shared_ptr.
     flat = DataArray();
     state.ResumeTiming();
   }
@@ -97,6 +98,7 @@ static void BM_groupby_large_table(benchmark::State &state) {
   for (auto _ : state) {
     auto grouped = groupby(d, Dim("group")).sum(Dim::X);
     state.PauseTiming();
+    // cppcheck-suppress redundantInitialization  # Used to modify shared_ptr.
     grouped = Dataset();
     state.ResumeTiming();
   }

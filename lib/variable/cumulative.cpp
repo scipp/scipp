@@ -14,7 +14,7 @@ namespace scipp::variable {
 
 namespace {
 auto as_precise(const Variable &var) {
-  return var.dtype() == dtype<float> ? astype(var, dtype<double>) : var;
+  return (var.dtype() == dtype<float>) ? astype(var, dtype<double>) : var;
 }
 } // namespace
 

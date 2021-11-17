@@ -31,6 +31,7 @@ TEST(ShapeTest, broadcast) {
 TEST(ShapeTest, broadcast_does_not_copy) {
   auto scalar = makeVariable<double>(Values{1});
   auto var = broadcast(scalar, {Dim::X, 2});
+  // cppcheck-suppress unreadVariable  # Read through `var`.
   scalar += scalar;
   EXPECT_EQ(var, makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 2}));
 }
@@ -99,6 +100,7 @@ TEST(ShapeTest, fold_does_not_copy) {
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   const auto expected = var + var;
   auto folded = fold(var, Dim::X, {{Dim::Y, 2}, {Dim::Z, 2}});
+  // cppcheck-suppress unreadVariable  # Read through `var`.
   folded += folded;
   EXPECT_EQ(var, expected);
 }

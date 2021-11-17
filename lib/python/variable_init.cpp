@@ -190,6 +190,7 @@ template <class T> struct MakeVariable {
         Values(make_element_array<T>(dims, values, values_unit));
     auto variable = variances.is_none()
                         ? makeVariable<T>(dims, std::move(values_array))
+                        // cppcheck-suppress accessMoved  # False-positive.
                         : makeVariable<T>(dims, std::move(values_array),
                                           Variances(make_element_array<T>(
                                               dims, variances, values_unit)));

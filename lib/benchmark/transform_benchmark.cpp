@@ -56,6 +56,7 @@ void run(benchmark::State &state, Func func, bool variances = false) {
 static void BM_transform_in_place(benchmark::State &state) {
   run<true>(
       state,
+      // cppcheck-suppress constParameter  # state must be mutable in for loop.
       [](auto &state_, auto &&... args) {
         for ([[maybe_unused]] auto _ : state_) {
           transform_in_place<Types>(args..., "");
@@ -67,6 +68,7 @@ static void BM_transform_in_place(benchmark::State &state) {
 static void BM_transform_in_place_view(benchmark::State &state) {
   run<true>(
       state,
+      // cppcheck-suppress constParameter  # state must be mutable in for loop.
       [](auto &state_, auto &a, auto &b, auto &op) {
         Variable a_view(a);
         const Variable b_view(b);
@@ -80,6 +82,7 @@ static void BM_transform_in_place_view(benchmark::State &state) {
 static void BM_transform_in_place_slice(benchmark::State &state) {
   run<true>(
       state,
+      // cppcheck-suppress constParameter  # state must be mutable in for loop.
       [](auto &state_, auto &a, auto &b, auto &op) {
         // Strictly speaking our counters are off by 1% since we
         // exclude 1 out of 100 X elements here.

@@ -38,28 +38,29 @@ zero_indices(const scipp::index size);
 template <class T> std::tuple<Variable, Dim, T> Variable::to_constituents() {
   Variable tmp;
   std::swap(*this, tmp);
+  // cppcheck-suppress constVariable # Deduced by auto.
   auto &model = requireT<BinArrayModel<T>>(tmp.data());
   return {tmp.bin_indices(), model.bin_dim(), std::move(model.buffer())};
 }
 
 template <class T> std::tuple<Variable, Dim, T> Variable::constituents() const {
+  // cppcheck-suppress constVariable # Deduced by auto.
   auto &model = requireT<const BinArrayModel<T>>(data());
   return {bin_indices(), model.bin_dim(), model.buffer()};
 }
 
 template <class T> std::tuple<Variable, Dim, T> Variable::constituents() {
+  // cppcheck-suppress constVariable # Deduced by auto.
   auto &model = requireT<BinArrayModel<T>>(data());
   return {bin_indices(), model.bin_dim(), model.buffer()};
 }
 
 template <class T> const T &Variable::bin_buffer() const {
-  auto &model = requireT<const BinArrayModel<T>>(data());
-  return model.buffer();
+  return requireT<const BinArrayModel<T>>(data()).buffer();
 }
 
 template <class T> T &Variable::bin_buffer() {
-  auto &model = requireT<BinArrayModel<T>>(data());
-  return model.buffer();
+  return requireT<BinArrayModel<T>>(data()).buffer();
 }
 
 template <class T> class BinVariableMakerCommon : public AbstractVariableMaker {
@@ -116,6 +117,7 @@ protected:
   const T &buffer(const Variable &var) const {
     return requireT<const BinArrayModel<T>>(var.data()).buffer();
   }
+  // cppcheck-suppress constParameter # Overloading on const-ness.
   T buffer(Variable &var) const {
     return requireT<BinArrayModel<T>>(var.data()).buffer();
   }

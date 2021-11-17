@@ -141,6 +141,7 @@ TEST(Variable, span_references_Variable) {
   auto span = a.values<double>();
 
   EXPECT_EQ(span.size(), 2);
+  // cppcheck-suppress unreadVariable  # Read through `observer`.
   span[0] = 1.0;
   EXPECT_EQ(observer[0], 1.0);
 }

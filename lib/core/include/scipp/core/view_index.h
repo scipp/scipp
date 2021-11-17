@@ -22,7 +22,7 @@ public:
   ViewIndex(const Dimensions &target_dimensions, const Strides &strides);
 
   constexpr void increment_outer() noexcept {
-    for (scipp::index d = 0; (m_coord[d] == m_shape[d]) && (d < NDIM_MAX - 1);
+    for (scipp::index d = 0; (d < NDIM_MAX - 1) && (m_coord[d] == m_shape[d]);
          ++d) {
       m_memory_index += m_delta[d + 1];
       ++m_coord[d + 1];

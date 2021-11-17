@@ -20,7 +20,6 @@ TEST(NumericPowTest, value_float_exponent) {
   EXPECT_TRUE(numeric::isnan(numeric::pow(-3, 3.2)));
   EXPECT_TRUE(numeric::isnan(numeric::pow(-3.0, -3.2)));
   EXPECT_TRUE(numeric::isnan(numeric::pow(-3, -3.2)));
-  EXPECT_TRUE(numeric::isinf(numeric::pow(0, -3.2)));
 }
 
 TEST(NumericPowTest, value_integer_base_integer_exponent) {
