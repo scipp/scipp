@@ -8,9 +8,11 @@
 #include <string>
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include "scipp/units/unit.h"
 
+#include "scipp/core/eigen.h"
 #include "scipp/core/string.h"
 
 namespace scipp::core {
@@ -39,6 +41,23 @@ element_to_string(const T &item,
     return {"(" + element_to_string(Eigen::Vector3d(item.row(0))) + ", " +
             element_to_string(Eigen::Vector3d(item.row(1))) + ", " +
             element_to_string(Eigen::Vector3d(item.row(2))) + "), "};
+  else if constexpr (std::is_same_v<T, Eigen::Affine3d>) {
+      std::stringstream ss;
+      for (int row=0; row<4;++row){
+          ss << "[";
+          for (int col=0; col<4;++col){
+             ss << to_string(item(row, col)) << " ";
+          }
+          ss << "], ";
+      }
+      return ss.str();
+  } else if constexpr (std::is_same_v<T, scipp::core::eigen_rotation_type>)
+      return element_to_string(item.matrix());
+  else if constexpr (std::is_same_v<T, scipp::core::eigen_scaling_type>)
+      return element_to_string(item.derived());
+  else if constexpr (std::is_same_v<T, scipp::core::eigen_translation_type>)
+      return {"(" + to_string(item.x()) + ", " + to_string(item.y()) + ", " +
+            to_string(item.z()) + "), "};
   else
     return to_string(item) + ", ";
 }
