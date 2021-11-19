@@ -200,8 +200,9 @@ class PlotFigure3d:
                     array=np.ones([positions.shape[0], 3], dtype='float32'))
             })
 
+        pixel_ratio = config.plot.get("pixel_ratio", 1.0)
         self.points_material = p3.PointsMaterial(vertexColors='VertexColors',
-                                                 size=self._pixel_size,
+                                                 size=self._pixel_size * pixel_ratio,
                                                  transparent=True)
         return p3.Points(geometry=self.points_geometry, material=self.points_material)
 
