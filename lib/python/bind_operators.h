@@ -41,10 +41,11 @@ void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
       copy is made, and the returned data (and meta data) values are new views
       of the data and meta data values of this object.)");
   c.def(
-      "__copy__", [](T &self) { return self; },
+      "__copy__", [](const T &self) { return self; },
       py::call_guard<py::gil_scoped_release>(), "Return a (shallow) copy.");
   c.def(
-      "__deepcopy__", [](T &self, const py::dict &) { return copy(self); },
+      "__deepcopy__",
+      [](const T &self, const py::dict &) { return copy(self); },
       py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
 }
 
@@ -85,11 +86,11 @@ void bind_astype(py::class_<T, Ignored...> &c) {
 template <class Other, class T, class... Ignored>
 void bind_inequality_to_operator(pybind11::class_<T, Ignored...> &c) {
   c.def(
-      "__eq__", [](T &a, Other &b) { return a == b; }, py::is_operator(),
-      py::call_guard<py::gil_scoped_release>());
+      "__eq__", [](const T &a, const Other &b) { return a == b; },
+      py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def(
-      "__ne__", [](T &a, Other &b) { return a != b; }, py::is_operator(),
-      py::call_guard<py::gil_scoped_release>());
+      "__ne__", [](const T &a, const Other &b) { return a != b; },
+      py::is_operator(), py::call_guard<py::gil_scoped_release>());
 }
 
 template <class Other, class T, class... Ignored>
@@ -186,29 +187,33 @@ template <class RHSSetup> struct OpBinder {
   static void binary(pybind11::class_<T, Ignored...> &c) {
     using namespace scipp;
     c.def(
-        "__add__", [](T &a, Other &b) { return a + RHSSetup{}(b); },
+        "__add__", [](const T &a, const Other &b) { return a + RHSSetup{}(b); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
-        "__sub__", [](T &a, Other &b) { return a - RHSSetup{}(b); },
+        "__sub__", [](const T &a, const Other &b) { return a - RHSSetup{}(b); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
-        "__mul__", [](T &a, Other &b) { return a * RHSSetup{}(b); },
+        "__mul__", [](const T &a, const Other &b) { return a * RHSSetup{}(b); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     c.def(
-        "__truediv__", [](T &a, Other &b) { return a / RHSSetup{}(b); },
+        "__truediv__",
+        [](const T &a, const Other &b) { return a / RHSSetup{}(b); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
     if constexpr (!(std::is_same_v<T, Dataset> ||
                     std::is_same_v<Other, Dataset>)) {
       c.def(
           "__floordiv__",
-          [](T &a, Other &b) { return floor_divide(a, RHSSetup{}(b)); },
+          [](const T &a, const Other &b) {
+            return floor_divide(a, RHSSetup{}(b));
+          },
           py::is_operator(), py::call_guard<py::gil_scoped_release>());
       c.def(
-          "__mod__", [](T &a, Other &b) { return a % RHSSetup{}(b); },
+          "__mod__",
+          [](const T &a, const Other &b) { return a % RHSSetup{}(b); },
           py::is_operator(), py::call_guard<py::gil_scoped_release>());
       c.def(
           "__pow__",
-          [](T &base, Other &exponent) {
+          [](const T &base, const Other &exponent) {
             return pow(base, RHSSetup{}(exponent));
           },
           py::is_operator(), py::call_guard<py::gil_scoped_release>());
@@ -241,14 +246,14 @@ void bind_binary_scalars(pybind11::class_<T, Ignored...> &c) {
 template <class T, class... Ignored>
 void bind_unary(pybind11::class_<T, Ignored...> &c) {
   c.def(
-      "__neg__", [](T &a) { return -a; }, py::is_operator(),
+      "__neg__", [](const T &a) { return -a; }, py::is_operator(),
       py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T, class... Ignored>
 void bind_boolean_unary(pybind11::class_<T, Ignored...> &c) {
   c.def(
-      "__invert__", [](T &a) { return ~a; }, py::is_operator(),
+      "__invert__", [](const T &a) { return ~a; }, py::is_operator(),
       py::call_guard<py::gil_scoped_release>());
 }
 
@@ -257,31 +262,31 @@ void bind_logical(pybind11::class_<T, Ignored...> &c) {
   using T1 = const T;
   using T2 = const Other;
   c.def(
-      "__or__", [](T1 &a, T2 &b) { return a | b; }, py::is_operator(),
-      py::call_guard<py::gil_scoped_release>());
+      "__or__", [](const T1 &a, const T2 &b) { return a | b; },
+      py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def(
-      "__xor__", [](T1 &a, T2 &b) { return a ^ b; }, py::is_operator(),
-      py::call_guard<py::gil_scoped_release>());
+      "__xor__", [](const T1 &a, const T2 &b) { return a ^ b; },
+      py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def(
-      "__and__", [](T1 &a, T2 &b) { return a & b; }, py::is_operator(),
-      py::call_guard<py::gil_scoped_release>());
+      "__and__", [](const T1 &a, const T2 &b) { return a & b; },
+      py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def(
       "__ior__",
-      [](py::object &a, T2 &b) {
+      [](const py::object &a, const T2 &b) {
         a.cast<T &>() |= b;
         return a;
       },
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def(
       "__ixor__",
-      [](py::object &a, T2 &b) {
+      [](const py::object &a, const T2 &b) {
         a.cast<T &>() ^= b;
         return a;
       },
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def(
       "__iand__",
-      [](py::object &a, T2 &b) {
+      [](const py::object &a, const T2 &b) {
         a.cast<T &>() &= b;
         return a;
       },

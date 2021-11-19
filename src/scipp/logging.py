@@ -140,8 +140,9 @@ def display_logs() -> None:
             'Cannot display log widgets because no widget handler is installed.')
 
     from IPython.display import display
+    from ipywidgets import VBox
     inject_style()
-    display(widget)
+    display(VBox([widget]).add_class('sc-log-wrap'))
 
 
 def clear_log_widget() -> None:

@@ -64,13 +64,15 @@ TEST(CreateVariableTest, default_init) {
 }
 
 TEST(CreateVariableTest, from_vector) {
+  const auto reference =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+
   EXPECT_EQ(makeVariable<double>(Dims{Dim::X}, Shape{3},
                                  Values(std::vector<int>{1, 2, 3})),
-            makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+            reference);
 
   const std::vector<double> v{1, 2, 3};
-  auto varRef = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values(v));
+  EXPECT_EQ(makeVariable<double>(Dims{Dim::X}, Shape{3}, Values(v)), reference);
 }
 
 TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {

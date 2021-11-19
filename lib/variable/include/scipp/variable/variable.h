@@ -196,7 +196,7 @@ Variable Variable::construct(const DType &type, Args &&... args) {
                       : Variable()...};
   for (auto &var : vars)
     if (var.is_valid())
-      return std::move(var);
+      return var;
   throw except::TypeError("Unsupported dtype for constructing a Variable: " +
                           to_string(type));
 }

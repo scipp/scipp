@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-# @file
 # @author Simon Heybrock
 
 # flake8: noqa
@@ -109,3 +108,5 @@ del _cls
 del _binding
 
 from . import data
+
+from . import serialization

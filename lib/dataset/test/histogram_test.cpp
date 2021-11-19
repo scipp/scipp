@@ -124,7 +124,6 @@ TEST(HistogramTest, below) {
   auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2.0, -1.0, 0.0});
   auto hist = dataset::histogram(events["events"], edges);
-  std::map<Dim, Variable> coords = {{Dim::X, edges}};
   auto expected =
       make_expected(makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
                                          Values{0, 0}, Variances{0, 0}),

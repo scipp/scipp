@@ -52,7 +52,7 @@ TEST_F(BinsViewTest, DISABLED_slice_readonly) {
   // EXPECT_TRUE(view.meta().is_readonly());
   EXPECT_FALSE(view.data().is_readonly());
   EXPECT_FALSE(view.coords()[Dim::X].is_readonly());
-  auto copied(view);
+  const auto copied(view);
   // For data arrays a shallow copy clears readonly flags, but this does not
   // appear useful for bins_view, since it just references the same buffer
   // (which is not shallow-copied).
@@ -61,8 +61,8 @@ TEST_F(BinsViewTest, DISABLED_slice_readonly) {
   // EXPECT_TRUE(view.masks().is_readonly());
   // EXPECT_TRUE(view.attrs().is_readonly());
   // EXPECT_TRUE(view.meta().is_readonly());
-  EXPECT_FALSE(view.data().is_readonly());
-  EXPECT_FALSE(view.coords()[Dim::X].is_readonly());
+  EXPECT_FALSE(copied.data().is_readonly());
+  EXPECT_FALSE(copied.coords()[Dim::X].is_readonly());
 }
 
 TEST_F(BinsViewTest, constituents_erase) {

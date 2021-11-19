@@ -94,8 +94,6 @@ TEST(SortTest, data_array_1d) {
   Variable scalar = makeVariable<double>(Values{1.1});
   DataArray table =
       DataArray(data, {{Dim::X, x}, {Dim("scalar"), scalar}}, {{"mask", mask}});
-  Variable edges_x =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 2, 4});
   Variable sorted_data = makeVariable<double>(
       Dims{Dim::Event}, Shape{4}, Values{4, 2, 1, 3}, Variances{4, 3, 1, 2});
   Variable sorted_x =
@@ -118,8 +116,6 @@ TEST(SortTest, data_array_1d_descending) {
   Variable scalar = makeVariable<double>(Values{1.1});
   DataArray table =
       DataArray(data, {{Dim::X, x}, {Dim("scalar"), scalar}}, {{"mask", mask}});
-  Variable edges_x =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 2, 4});
   Variable sorted_data = makeVariable<double>(
       Dims{Dim::Event}, Shape{4}, Values{3, 1, 2, 4}, Variances{2, 1, 3, 4});
   Variable sorted_x =
