@@ -15,7 +15,7 @@ PyObject::~PyObject() {
 
 PyObject::PyObject(const py::object &object) {
   py::gil_scoped_acquire acquire;
-  m_object = object;
+  m_object = object; // NOLINT(cppcoreguidelines-prefer-member-initializer)
 }
 
 bool PyObject::operator==(const PyObject &other) const {

@@ -262,6 +262,10 @@ template <class T> struct NanSensitiveLess {
     return a < b;
   }
 };
+
+template <class T> bool nan_sensitive_equal(const T &a, const T &b) {
+  return a == b || (scipp::numeric::isnan(a) && scipp::numeric::isnan(b));
+}
 } // namespace
 
 template <class T> struct MakeGroups {
@@ -277,13 +281,12 @@ template <class T> struct MakeGroups {
       // Use contiguous (thick) slices if possible to avoid overhead of slice
       // handling in follow-up "apply" steps.
       const auto begin = i;
-      const auto &value = *it;
-      while (it != end && (*it == value || (scipp::numeric::isnan(value) &&
-                                            scipp::numeric::isnan(*it)))) {
+      const auto &group_value = *it;
+      while (it != end && nan_sensitive_equal(*it, group_value)) {
         ++it;
         ++i;
       }
-      indices[value].emplace_back(dim, begin, i);
+      indices[group_value].emplace_back(dim, begin, i);
     }
 
     const Dimensions dims{targetDim, scipp::size(indices)};

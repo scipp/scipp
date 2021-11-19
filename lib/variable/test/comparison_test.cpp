@@ -156,6 +156,8 @@ const auto a = 1.0 * units::m;
 const auto b = 2.0 * units::m;
 const auto true_ = true * units::one;
 const auto false_ = false * units::one;
+} // namespace
+
 TEST(ComparisonTest, less_test) {
   EXPECT_EQ(less(a, b), true_);
   EXPECT_EQ(less(b, a), false_);
@@ -186,4 +188,3 @@ TEST(ComparisonTest, not_equal_test) {
   EXPECT_EQ(not_equal(b, a), true_);
   EXPECT_EQ(not_equal(a, a), false_);
 }
-} // namespace

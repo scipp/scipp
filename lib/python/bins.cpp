@@ -28,10 +28,8 @@ template <class T>
 auto call_make_bins(const py::object &begin_obj, const py::object &end_obj,
                     const Dim dim, T &&data) {
   Variable indices;
-  Dimensions dims;
   if (!begin_obj.is_none()) {
     const auto &begin = begin_obj.cast<Variable>();
-    dims = begin.dims();
     if (!end_obj.is_none()) {
       const auto &end = end_obj.cast<Variable>();
       indices = zip(begin, end);

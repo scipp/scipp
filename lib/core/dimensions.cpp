@@ -112,7 +112,7 @@ Dimensions transpose_impl(const Dimensions &dims,
                                  "order contains different number of labels.");
   std::vector<scipp::index> shape(labels.size());
   std::transform(labels.begin(), labels.end(), shape.begin(),
-                 [&dims](auto &dim) { return dims[dim]; });
+                 [&dims](const auto &dim) { return dims[dim]; });
   return {labels, shape};
 }
 } // namespace

@@ -101,7 +101,8 @@ TEST_F(SetSliceTest, lower_dimensional_mask_cannot_be_overridden_arithmetic) {
   EXPECT_EQ(array, original);
 }
 
-DataArray make_example_dataarray(std::string mask_name, Dim mask_dim) {
+DataArray make_example_dataarray(const std::string_view mask_name,
+                                 Dim mask_dim) {
   std::vector<double> data_values(4);
   std::iota(data_values.begin(), data_values.end(), 0);
 
@@ -110,12 +111,12 @@ DataArray make_example_dataarray(std::string mask_name, Dim mask_dim) {
   auto mask =
       makeVariable<bool>(Dimensions{mask_dim, 2}, Values({true, false}));
   auto da = DataArray(data);
-  da.masks().set(mask_name, mask);
+  da.masks().set(std::string(mask_name), mask);
   return da;
 }
 
-Dataset make_example_dataset(std::string xmask_name = "mask_x",
-                             std::string ymask_name = "mask_y") {
+Dataset make_example_dataset(const std::string_view xmask_name = "mask_x",
+                             const std::string_view ymask_name = "mask_y") {
   auto a = make_example_dataarray(xmask_name, Dim::X);
   auto b = make_example_dataarray(ymask_name, Dim::Y);
   auto ds = Dataset{};

@@ -25,7 +25,7 @@ Note that this ``tcc`` file should *never* be included in a header.
 - The second macro argument is the C++ type.
 
 To support formatting of variables with the new ``dtype`` it should be registered in ``scipp::variable::formatterRegistry()``.
-`variable_instantiate_py_object.cpp <https://github.com/scipp/scipp/blob/main/python/variable_instantiate_py_object.cpp>`_ can be used as a reference.
+`variable_instantiate_py_object.cpp <https://github.com/scipp/scipp/blob/main/lib/python/variable_instantiate_py_object.cpp>`_ can be used as a reference.
 
 In addition to these steps, it is currently required to manually add Python bindings in several places.
 TODO: Improve or document this process.
