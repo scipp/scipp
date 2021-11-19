@@ -183,8 +183,24 @@ def test_2D_access_variances():
     assert np.array_equal(var.variances, np.ones(shape=shape))
 
 
-def test_getitem():
-    var = sc.Variable(dims=['x', 'y'], values=np.arange(0, 8).reshape(2, 4))
+def test_getitem_element():
+    var = sc.arange('a', 0, 8).fold('a', {'x': 2, 'y': 4})
+    for i in range(var.sizes['x']):
+        assert sc.identical(var['x', i], sc.arange('y', 0, 4) + i * 4)
+    for j in range(var.sizes['y']):
+        assert sc.identical(var['y', j], sc.arange('x', 0, 8, 4) + j)
+
+
+def test_getitem_element_out_of_range():
+    var = sc.arange('a', 0, 8).fold('a', {'x': 2, 'y': 4})
+    with pytest.raises(IndexError):
+        _ = var['x', 4]
+    with pytest.raises(IndexError):
+        _ = var['y', 5]
+
+
+def test_getitem_range():
+    var = sc.arange('a', 0, 8).fold('a', {'x': 2, 'y': 4})
     var_slice = var['x', 1:2]
     assert sc.identical(
         var_slice, sc.Variable(dims=['x', 'y'], values=np.arange(4, 8).reshape(1, 4)))
