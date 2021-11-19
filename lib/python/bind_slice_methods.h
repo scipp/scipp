@@ -65,11 +65,11 @@ auto get_slice(T &self, const std::tuple<Dim, scipp::index> &index) {
   auto [dim, i] = index;
   auto sz = dim_extent(self, dim);
   if (i < -sz || i >= sz) // index is out of range
-    throw std::runtime_error(
-        "The requested index " + std::to_string(i) +
-        " is out of range. Dimension size is " + std::to_string(sz) +
-        " and the allowed range is [" + std::to_string(-sz) + ":" +
-        std::to_string(sz - 1) + "].");
+    throw std::out_of_range("The requested index " + std::to_string(i) +
+                            " is out of range. Dimension size is " +
+                            std::to_string(sz) + " and the allowed range is [" +
+                            std::to_string(-sz) + ":" + std::to_string(sz - 1) +
+                            "].");
   if (i < 0)
     i = sz + i;
   return Slice(dim, i);
