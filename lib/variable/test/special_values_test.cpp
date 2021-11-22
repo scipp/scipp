@@ -70,7 +70,7 @@ template <typename Op> void check_no_out_variances(Op op) {
   const auto var = makeVariable<double>(Dimensions{Dim::Z, 2}, units::m,
                                         Values{1.0, 2.0}, Variances{1.0, 2.0});
   const Variable applied = op(var);
-  EXPECT_FALSE(applied.hasVariances());
+  EXPECT_FALSE(applied.has_variances());
   const Variable applied_on_values = op(values(var));
   EXPECT_EQ(applied, applied_on_values);
 }

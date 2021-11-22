@@ -25,7 +25,7 @@ template <class T, class Var> struct VariableAccess {
   Dimensions dims() const { return m_var->dims(); }
   auto values() const { return variableFactory().values<T>(*m_var); }
   auto variances() const { return variableFactory().variances<T>(*m_var); }
-  bool hasVariances() const { return variableFactory().hasVariances(*m_var); }
+  bool has_variances() const { return variableFactory().has_variances(*m_var); }
   Variable clone() const { return copy(*m_var); }
   Var *m_var{nullptr};
 };

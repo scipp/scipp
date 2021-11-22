@@ -14,7 +14,7 @@ DataArray &@NAME@(DataArray &lhs, const Variable &rhs) {
   return lhs;
 }
 DataArray &@NAME@(DataArray &lhs, const DataArray &rhs) {
-  expect::coordsAreSuperset(lhs, rhs);
+  expect::coords_are_superset(lhs, rhs, "@OPNAME@");
   union_or_in_place(lhs.masks(), rhs.masks());
   @NAME@(lhs.data(), rhs.data());
   return lhs;
@@ -24,7 +24,7 @@ DataArray @NAME@(DataArray &&lhs, const Variable &rhs) {
   return std::move(lhs);
 }
 DataArray @NAME@(DataArray &&lhs, const DataArray &rhs) {
-  expect::coordsAreSuperset(lhs, rhs);
+  expect::coords_are_superset(lhs, rhs, "@OPNAME@");
   union_or_in_place(lhs.masks(), rhs.masks());
   return @NAME@(std::move(lhs), rhs.data());
 }

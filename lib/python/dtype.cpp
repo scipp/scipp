@@ -28,6 +28,7 @@ enum class DTypeKind : char {
   Datetime = 'M',
   Object = 'O',
   String = 'U',
+  RawData = 'V',
 };
 
 constexpr bool operator==(const char a, const DTypeKind b) {
@@ -120,7 +121,14 @@ scipp::core::DType scipp_dtype(const py::object &type) {
   try {
     return type.cast<DType>();
   } catch (const py::cast_error &) {
-    return scipp_dtype(py::dtype::from_args(type));
+    auto np_dtype = py::dtype::from_args(type);
+    if (np_dtype.kind() == DTypeKind::RawData) {
+      throw std::invalid_argument(
+          "Unsupported numpy dtype: raw data. This can happen when you pass a "
+          "Python object instead of a class. Got dtype=`" +
+          py::str(type).cast<std::string>() + '`');
+    }
+    return scipp_dtype(np_dtype);
   }
 }
 

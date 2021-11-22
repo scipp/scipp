@@ -47,7 +47,7 @@ public:
 
   virtual void setUnit(const units::Unit &unit) { m_unit = unit; }
 
-  virtual bool hasVariances() const noexcept = 0;
+  virtual bool has_variances() const noexcept = 0;
   virtual void setVariances(const Variable &variances) = 0;
 
   virtual bool equals(const Variable &a, const Variable &b) const = 0;

@@ -39,7 +39,7 @@ template <class T, class Var>
 Variable subspan_view(Var &var, const Dim dim, const Variable &indices) {
   auto subspans =
       make_subspans(var.template values<T>().data(), indices, var.stride(dim));
-  if (var.hasVariances())
+  if (var.has_variances())
     subspans.setVariances(make_subspans(var.template variances<T>().data(),
                                         indices, var.stride(dim)));
   subspans.setUnit(var.unit());

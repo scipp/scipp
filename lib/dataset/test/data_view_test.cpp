@@ -134,13 +134,13 @@ TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant_2d) {
   ASSERT_FALSE(coords.contains(Dim::X));
 }
 
-TYPED_TEST(DataArrayViewTest, hasVariances) {
+TYPED_TEST(DataArrayViewTest, has_variances) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   d.setData("a", makeVariable<double>(Values{double{}}));
   d.setData("b", makeVariable<double>(Values{1}, Variances{1}));
-  ASSERT_FALSE(d_ref["a"].hasVariances());
-  ASSERT_TRUE(d_ref["b"].hasVariances());
+  ASSERT_FALSE(d_ref["a"].has_variances());
+  ASSERT_TRUE(d_ref["b"].has_variances());
 }
 
 TYPED_TEST(DataArrayViewTest, values_variances) {

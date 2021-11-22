@@ -207,12 +207,4 @@ bool is_edges(const Sizes &sizes, const Sizes &dataSizes, const Dim dim) {
   return size == (sizes.contains(dim) ? sizes[dim] + 1 : 2);
 }
 
-std::string to_string(const Sizes &sizes) {
-  std::string repr("Sizes[");
-  for (const auto &dim : sizes)
-    repr += to_string(dim) + ":" + std::to_string(sizes[dim]) + ", ";
-  repr += "]";
-  return repr;
-}
-
 } // namespace scipp::core

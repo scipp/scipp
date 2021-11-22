@@ -64,7 +64,7 @@ public:
   void setUnit(const units::Unit unit) { m_data->setUnit(unit); }
 
   /// Return true if the data array contains data variances.
-  bool hasVariances() const { return m_data->hasVariances(); }
+  bool has_variances() const { return m_data->has_variances(); }
 
   /// Return untyped const view for data (values and optional variances).
   const Variable &data() const { return *m_data; }

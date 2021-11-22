@@ -342,7 +342,7 @@ Variable compute_on_bin_buffer(const Variable &a, const Variable &b,
 
 Variable element_as_scalar(const Variable &var, const scipp::index i) {
   const auto val = var.values<double>()[i];
-  if (var.hasVariances())
+  if (var.has_variances())
     return makeVariable<double>(Shape{}, Values{val},
                                 Variances{var.variances<double>()[i]});
   return makeVariable<double>(Shape{}, Values{val});

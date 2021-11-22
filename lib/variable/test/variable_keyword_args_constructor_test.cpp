@@ -48,9 +48,9 @@ TEST(CreateVariableTest, default_init) {
   auto withVariance =
       makeVariable<float>(Dims{Dim::X}, Shape{3}, Values{}, Variances{});
 
-  EXPECT_FALSE(noVariance.hasVariances());
-  EXPECT_FALSE(stillNoVariance.hasVariances());
-  EXPECT_TRUE(withVariance.hasVariances());
+  EXPECT_FALSE(noVariance.has_variances());
+  EXPECT_FALSE(stillNoVariance.has_variances());
+  EXPECT_TRUE(withVariance.has_variances());
   EXPECT_EQ(noVariance.values<float>().size(), 3);
   EXPECT_EQ(stillNoVariance.values<float>().size(), 3);
   EXPECT_EQ(withVariance.values<float>().size(), 3);
@@ -82,7 +82,7 @@ TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
   EXPECT_EQ(variable.dims(), (Dimensions{{Dim::X, Dim::Y}, {2, 3}}));
   EXPECT_EQ(variable.unit(), units::kg);
   EXPECT_EQ(variable.values<float>().size(), 6);
-  EXPECT_FALSE(variable.hasVariances());
+  EXPECT_FALSE(variable.has_variances());
 
   auto otherVariable =
       Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3});

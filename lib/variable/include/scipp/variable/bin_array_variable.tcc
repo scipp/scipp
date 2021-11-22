@@ -162,8 +162,8 @@ public:
     else
       return !std::get<2>(var.constituents<T>()).masks().empty();
   }
-  bool hasVariances(const Variable &var) const override {
-    return std::get<2>(var.constituents<T>()).hasVariances();
+  bool has_variances(const Variable &var) const override {
+    return std::get<2>(var.constituents<T>()).has_variances();
   }
   core::ElementArrayViewParams
   array_params(const Variable &var) const override {

@@ -77,9 +77,9 @@ TEST_F(BucketModelTest, dtype) {
 
 TEST_F(BucketModelTest, variances) {
   Model model(indices.data_handle(), Dim::X, buffer);
-  EXPECT_FALSE(model.hasVariances());
+  EXPECT_FALSE(model.has_variances());
   EXPECT_THROW(model.setVariances(Variable(buffer)), except::VariancesError);
-  EXPECT_FALSE(model.hasVariances());
+  EXPECT_FALSE(model.has_variances());
 }
 
 TEST_F(BucketModelTest, comparison) {

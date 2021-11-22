@@ -56,7 +56,7 @@ public:
   void copy(const Variable &src, Variable &&dest) const override;
   void assign(const VariableConcept &other) override;
 
-  bool hasVariances() const noexcept override { return false; }
+  bool has_variances() const noexcept override { return false; }
   void setVariances(const Variable &) override {
     except::throw_cannot_have_variances(core::dtype<T>);
   }

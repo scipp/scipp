@@ -39,7 +39,7 @@ Variable make_accumulant(const Variable &var, const Dim dim,
   dims.erase(dim);
   auto prototype = empty(dims, variableFactory().elem_unit(var),
                          variableFactory().elem_dtype(var),
-                         variableFactory().hasVariances(var));
+                         variableFactory().has_variances(var));
   return special_like(prototype, init);
 }
 
