@@ -255,7 +255,7 @@ public:
   }
 
   template <class Var> static py::object variances(py::object &object) {
-    if (!object.cast<Var &>().hasVariances())
+    if (!object.cast<Var &>().has_variances())
       return py::none();
     return get_py_array_t<get_variances, Var>(object);
   }
@@ -274,7 +274,7 @@ public:
   static void set_variances(Var &view, const py::object &obj) {
     if (obj.is_none())
       return remove_variances(view);
-    if (!view.hasVariances())
+    if (!view.has_variances())
       init_variances(view);
     set(view.dims(), view.unit(), get<get_variances>(view), obj);
   }
@@ -364,7 +364,7 @@ public:
       return as_ElementArrayViewImpl<const Ts...>::template variance<const Var>(
           obj);
     expect_scalar(view.dims(), "variance");
-    if (!view.hasVariances())
+    if (!view.has_variances())
       return py::none();
     return std::visit(GetScalarVisitor<decltype(view)>{obj, view},
                       get<get_variances>(view));
@@ -383,7 +383,7 @@ public:
     expect_scalar(view.dims(), "variance");
     if (obj.is_none())
       return remove_variances(view);
-    if (!view.hasVariances())
+    if (!view.has_variances())
       init_variances(view);
 
     std::visit(SetScalarVisitor<decltype(view)>{obj, view},

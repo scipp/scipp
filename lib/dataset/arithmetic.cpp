@@ -26,7 +26,7 @@ template <class T, class Op> void dry_run_op(T &&a, const Variable &b, Op op) {
 }
 
 template <class T, class Op> void dry_run_op(T &&a, const DataArray &b, Op op) {
-  expect::coordsAreSuperset(a, b);
+  expect::coords_are_superset(a, b, "");
   dry_run_op(a, b.data(), op);
 }
 

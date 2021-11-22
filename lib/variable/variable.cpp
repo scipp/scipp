@@ -14,7 +14,7 @@
 
 namespace scipp::variable {
 
-/// Construct from parent with same dtype, unit, and hasVariances but new dims.
+/// Construct from parent with same dtype, unit, and has_variances but new dims.
 ///
 /// In the case of bucket variables the buffer size is set to zero.
 Variable::Variable(const Variable &parent, const Dimensions &dims)
@@ -81,9 +81,9 @@ scipp::index Variable::ndim() const {
 
 DType Variable::dtype() const { return data().dtype(); }
 
-bool Variable::hasVariances() const { return data().hasVariances(); }
+bool Variable::has_variances() const { return data().has_variances(); }
 
-void Variable::expectCanSetUnit(const units::Unit &unit) const {
+void Variable::expect_can_set_unit(const units::Unit &unit) const {
   if (this->unit() != unit && is_slice())
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
@@ -92,8 +92,8 @@ void Variable::expectCanSetUnit(const units::Unit &unit) const {
 const units::Unit &Variable::unit() const { return m_object->unit(); }
 
 void Variable::setUnit(const units::Unit &unit) {
-  expectWritable();
-  expectCanSetUnit(unit);
+  expect_writable();
+  expect_can_set_unit(unit);
   m_object->setUnit(unit);
 }
 
@@ -114,7 +114,7 @@ bool Variable::operator==(const Variable &other) const {
     return false;
   if (dtype() != other.dtype())
     return false;
-  if (hasVariances() != other.hasVariances())
+  if (has_variances() != other.has_variances())
     return false;
   if (dims().volume() == 0 && dims() == other.dims())
     return true;
@@ -128,7 +128,7 @@ bool Variable::operator!=(const Variable &other) const {
 const VariableConcept &Variable::data() const & { return *m_object; }
 
 VariableConcept &Variable::data() & {
-  expectWritable();
+  expect_writable();
   return *m_object;
 }
 
@@ -169,12 +169,12 @@ Variable Variable::slice(const Slice params) const {
 
 void Variable::validateSlice(const Slice &s, const Variable &data) const {
   core::expect::validSlice(this->dims(), s);
-  if (variableFactory().hasVariances(data) !=
-      variableFactory().hasVariances(*this)) {
+  if (variableFactory().has_variances(data) !=
+      variableFactory().has_variances(*this)) {
     auto variances_message = [](const auto &variable) {
       return "does" +
-             std::string(variableFactory().hasVariances(variable) ? ""
-                                                                  : " NOT") +
+             std::string(variableFactory().has_variances(variable) ? ""
+                                                                   : " NOT") +
              " have variances.";
     };
     throw except::VariancesError("Invalid slice operation. Slice " +
@@ -251,7 +251,7 @@ bool Variable::is_same(const Variable &other) const noexcept {
 }
 
 void Variable::setVariances(const Variable &v) {
-  expectWritable();
+  expect_writable();
   if (is_slice())
     throw except::VariancesError(
         "Cannot add variances via sliced view of Variable.");
@@ -282,7 +282,7 @@ Variable Variable::as_const() const {
   return out;
 }
 
-void Variable::expectWritable() const {
+void Variable::expect_writable() const {
   if (m_readonly)
     throw except::VariableError("Read-only flag is set, cannot mutate data.");
 }

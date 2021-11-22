@@ -71,7 +71,8 @@ Dimensions merge(const Dimensions &a, const Dimensions &b) {
     if (b.contains(dim)) {
       if (a[dim] != b[dim])
         throw except::DimensionError(
-            "Cannot merge subspaces with mismatching extent");
+            "Cannot merge dimensions with mismatching extent in '" +
+            to_string(dim) + "': " + to_string(a) + " and " + to_string(b));
       while (it != end && *it != dim) {
         if (!a.contains(*it))
           out.addInner(*it, b[*it]);

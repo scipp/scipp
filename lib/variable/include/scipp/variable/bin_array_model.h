@@ -31,7 +31,7 @@ public:
           "elements? This can be set, e.g., with `array.bins.unit = 'm'`.");
   }
 
-  bool hasVariances() const noexcept override { return false; }
+  bool has_variances() const noexcept override { return false; }
   const Indices &bin_indices() const override { return indices(); }
 
   const auto &indices() const { return m_indices; }
