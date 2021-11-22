@@ -25,13 +25,14 @@ namespace py = pybind11;
 namespace {
 
 template <class T>
-auto call_make_bins(const py::object &begin_obj, const py::object &end_obj,
-                    const Dim dim, T &&data) {
+auto call_make_bins(const std::optional<Variable> &begin_arg,
+                    const std::optional<Variable> &end_arg, const Dim dim,
+                    T &&data) {
   Variable indices;
-  if (!begin_obj.is_none()) {
-    const auto &begin = begin_obj.cast<Variable>();
-    if (!end_obj.is_none()) {
-      const auto &end = end_obj.cast<Variable>();
+  if (begin_arg.has_value()) {
+    const auto &begin = *begin_arg;
+    if (end_arg.has_value()) {
+      const auto &end = *end_arg;
       indices = zip(begin, end);
     } else {
       indices = zip(begin, begin);
@@ -44,7 +45,7 @@ auto call_make_bins(const py::object &begin_obj, const py::object &end_obj,
           indices_[i].second = data.dims()[dim];
       }
     }
-  } else if (end_obj.is_none()) {
+  } else if (!end_arg.has_value()) {
     const auto one = scipp::index{1} * units::one;
     const auto ones = broadcast(one, {dim, data.dims()[dim]});
     const auto begin = cumsum(ones, dim, CumSumMode::Exclusive);
@@ -58,10 +59,9 @@ auto call_make_bins(const py::object &begin_obj, const py::object &end_obj,
 template <class T> void bind_bins(pybind11::module &m) {
   m.def(
       "bins",
-      [](const py::object &begin_obj, const py::object &end_obj, const Dim dim,
-         const T &data) {
-        return call_make_bins(begin_obj, end_obj, dim, T(data));
-      },
+      [](const std::optional<Variable> &begin,
+         const std::optional<Variable> &end, const Dim dim,
+         const T &data) { return call_make_bins(begin, end, dim, T(data)); },
       py::arg("begin") = py::none(), py::arg("end") = py::none(),
       py::arg("dim"), py::arg("data")); // do not release GIL since using
                                         // implicit conversions in functor
