@@ -1,20 +1,19 @@
 from ._scipp.core import Unit as _Unit
+from .core import scalar
 
 
-def __rmul(self, scalar):
-    tp = type(scalar)
-    if tp in [float, int]:
-        return self.__rmul(scalar)
+def __rmul(self, value):
+    if isinstance(value, (float, int)):
+        return self.__rmul(value)
     else:
-        return self.__rmul(scalar, scalar.dtype)
+        return scalar(value, unit=self)
 
 
-def __rtruediv(self, scalar):
-    tp = type(scalar)
-    if tp in [float, int]:
-        return self.__rtruediv(scalar)
+def __rtruediv(self, value):
+    if isinstance(value, (float, int)):
+        return self.__rtruediv(value)
     else:
-        return self.__rtruediv(scalar, scalar.dtype)
+        return scalar(value, unit=self**(-1))
 
 
 # add magic python methods to Unit class
