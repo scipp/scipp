@@ -209,7 +209,7 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   } else {
     c.def("__len__", [](const T &self) {
       if (self.dims().ndim() == 0)
-        throw except::TypeError("len() of unsized object");
+        throw except::TypeError("len() of scalar object");
       return self.dims().size(0);
     });
   }
