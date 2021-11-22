@@ -51,10 +51,29 @@ auto get_coord(const Variable &coord, const Dim dim) {
 void expect_same_unit(const Variable &coord, const Variable &value,
                       const std::string &name) {
   if (coord.unit() != value.unit()) {
-    throw except::UnitError("The unit of the slice " + name + " (" +
+    throw except::UnitError("The unit of the " + name + " of the slice (" +
                             to_string(value.unit()) +
                             ") does not match the unit of the coordinate (" +
                             to_string(coord.unit()) + ").");
+  }
+}
+
+void expect_valid_dtype(const Variable &var, const std::string &name) {
+  if (!is_total_orderable(var.dtype())) {
+    throw except::TypeError(
+        "The dtype of the " + name + " of the slice (" +
+        to_string(var.dtype()) +
+        ") cannot be used for value-based slicing because it does not"
+        " define an order.");
+  }
+}
+
+void expect_valid_slice_value(const Variable &coord, const Variable &value,
+                              const std::string_view name) {
+  if (value.is_valid()) {
+    core::expect::equals(Dimensions{}, value.dims());
+    expect_same_unit(coord, value, std::string(name));
+    expect_valid_dtype(value, std::string(name));
   }
 }
 } // namespace
@@ -62,8 +81,7 @@ void expect_same_unit(const Variable &coord, const Variable &value,
 std::tuple<Dim, scipp::index> get_slice_params(const Sizes &dims,
                                                const Variable &coord_,
                                                const Variable &value) {
-  core::expect::equals(Dimensions{}, value.dims());
-  expect_same_unit(coord_, value, "value");
+  expect_valid_slice_value(coord_, value, "value");
   const auto dim = coord_.dims().inner();
   if (dims[dim] + 1 == coord_.dims()[dim]) {
     const auto &[coord, ascending] = get_coord(coord_, dim);
@@ -83,14 +101,9 @@ std::tuple<Dim, scipp::index> get_slice_params(const Sizes &dims,
 std::tuple<Dim, scipp::index, scipp::index>
 get_slice_params(const Sizes &dims, const Variable &coord_,
                  const Variable &begin, const Variable &end) {
-  if (begin.is_valid()) {
-    core::expect::equals(Dimensions{}, begin.dims());
-    expect_same_unit(coord_, begin, "begin");
-  }
-  if (end.is_valid()) {
-    core::expect::equals(Dimensions{}, end.dims());
-    expect_same_unit(coord_, end, "end");
-  }
+  expect_valid_slice_value(coord_, begin, "begin");
+  expect_valid_slice_value(coord_, end, "end");
+  expect_valid_dtype(coord_, "coord");
   const auto dim = coord_.dims().inner();
   const auto &[coord, ascending] = get_coord(coord_, dim);
   scipp::index first = 0;
