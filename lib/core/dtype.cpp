@@ -16,6 +16,8 @@ bool is_fundamental(DType tp) {
   return is_int(tp) || is_float(tp) || tp == dtype<bool>;
 }
 
+bool is_total_orderable(DType tp) { return is_fundamental(tp); }
+
 namespace {
 template <class... Ts> bool is_span_impl(DType tp) {
   return (
