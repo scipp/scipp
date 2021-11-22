@@ -66,8 +66,8 @@ bool VariableFactory::has_masks(const Variable &var) const {
   return m_makers.at(var.dtype())->has_masks(var);
 }
 
-bool VariableFactory::hasVariances(const Variable &var) const {
-  return m_makers.at(var.dtype())->hasVariances(var);
+bool VariableFactory::has_variances(const Variable &var) const {
+  return m_makers.at(var.dtype())->has_variances(var);
 }
 
 Variable VariableFactory::empty_like(const Variable &prototype,

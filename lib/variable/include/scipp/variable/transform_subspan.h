@@ -37,7 +37,7 @@ transform_subspan_impl(const DType type, const Dim dim, const scipp::index size,
       std::is_base_of_v<core::transform_flags::expect_variance_arg_t<0>, Op> ||
       (std::is_base_of_v<
            core::transform_flags::expect_in_variance_if_out_variance_t, Op> &&
-       (var.hasVariances() || ...));
+       (var.has_variances() || ...));
   Variable out =
       variableFactory().create(type, dims, op(var.unit()...), variance);
 

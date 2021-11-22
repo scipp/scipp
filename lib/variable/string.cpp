@@ -85,7 +85,7 @@ std::string format_variable(const Variable &variable,
     s << colSep << make_dims_labels(variable, datasetSizes);
   s << colSep;
   s << apply<ValuesToString>(variable.dtype(), variable);
-  if (variable.hasVariances())
+  if (variable.has_variances())
     s << colSep << apply<VariancesToString>(variable.dtype(), variable);
   return s.str();
 }

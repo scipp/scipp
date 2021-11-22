@@ -61,7 +61,7 @@ public:
 
   VariableConceptHandle clone() const override;
 
-  bool hasVariances() const noexcept override {
+  bool has_variances() const noexcept override {
     return m_variances.has_value();
   }
 
@@ -72,11 +72,11 @@ public:
     return ElementArrayView(base, m_values.data());
   }
   auto variances(const core::ElementArrayViewParams &base) const {
-    expectHasVariances();
+    expect_has_variances();
     return ElementArrayView(base, m_variances->data());
   }
   auto variances(const core::ElementArrayViewParams &base) {
-    expectHasVariances();
+    expect_has_variances();
     return ElementArrayView(base, m_variances->data());
   }
 
@@ -94,8 +94,8 @@ public:
   }
 
 private:
-  void expectHasVariances() const {
-    if (!hasVariances())
+  void expect_has_variances() const {
+    if (!has_variances())
       throw except::VariancesError("Variable does not have variances.");
   }
   element_array<T> m_values;

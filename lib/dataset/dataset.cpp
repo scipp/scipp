@@ -10,7 +10,7 @@
 namespace scipp::dataset {
 
 namespace {
-template <class T> void expectWritable(const T &dict) {
+template <class T> void expect_writable(const T &dict) {
   if (dict.is_readonly())
     throw except::DatasetError(
         "Read-only flag is set, cannot insert new or erase existing items.");
@@ -41,7 +41,7 @@ Dataset &Dataset::operator=(Dataset &&other) {
 ///
 /// Coordinates are not modified.
 void Dataset::clear() {
-  expectWritable(*this);
+  expect_writable(*this);
   m_data.clear();
   rebuildDims();
 }
@@ -69,7 +69,7 @@ bool Dataset::contains(const std::string &name) const noexcept {
 ///
 /// Coordinates are not modified.
 void Dataset::erase(const std::string &name) {
-  expectWritable(*this);
+  expect_writable(*this);
   scipp::expect::contains(*this, name);
   m_data.erase(std::string(name));
   rebuildDims();
@@ -111,7 +111,7 @@ void Dataset::rebuildDims() {
 
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
-  expectWritable(*this);
+  expect_writable(*this);
   bool set_sizes = true;
   for (const auto &coord_dim : coord.dims())
     if (is_edges(m_coords.sizes(), coord.dims(), coord_dim))
@@ -128,7 +128,7 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 /// AttrPolicy::Keep is specified.
 void Dataset::setData(const std::string &name, Variable data,
                       const AttrPolicy attrPolicy) {
-  expectWritable(*this);
+  expect_writable(*this);
   setSizes(data.dims());
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
@@ -153,11 +153,11 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
         it->attrs() == data.attrs() && it->coords() == data.coords())
       return;
   }
-  expectWritable(*this);
+  expect_writable(*this);
   setSizes(data.dims());
   for (auto &&[dim, coord] : data.coords()) {
     if (const auto it = m_coords.find(dim); it != m_coords.end())
-      core::expect::equals(coord, it->second);
+      expect::matching_coord(dim, coord, it->second, "set coord");
     else
       setCoord(dim, std::move(coord));
   }
@@ -193,7 +193,7 @@ Dataset Dataset::slice(const Slice s) const {
 
 Dataset &Dataset::setSlice(const Slice s, const Dataset &data) {
   // Validate slice on all items as a dry-run
-  expect::coordsAreSuperset(slice(s).coords(), data.coords());
+  expect::coords_are_superset(slice(s).coords(), data.coords(), "");
   for (const auto &[name, item] : m_data)
     item.validateSlice(s, data.m_data.at(name));
   // Only if all items checked for dry-run does modification go-ahead
@@ -204,7 +204,7 @@ Dataset &Dataset::setSlice(const Slice s, const Dataset &data) {
 
 Dataset &Dataset::setSlice(const Slice s, const DataArray &data) {
   // Validate slice on all items as a dry-run
-  expect::coordsAreSuperset(slice(s).coords(), data.coords());
+  expect::coords_are_superset(slice(s).coords(), data.coords(), "");
   for (const auto &item : m_data)
     item.second.validateSlice(s, data);
   // Only if all items checked for dry-run does modification go-ahead

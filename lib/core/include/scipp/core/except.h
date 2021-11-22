@@ -31,7 +31,7 @@ struct SCIPP_CORE_EXPORT TypeError : public Error<core::DType> {
 
   template <class... Vars>
   explicit TypeError(const std::string &msg, Vars &&... vars)
-      : TypeError{msg + ((pretty_dtype(vars) + ' ') + ...)} {}
+      : TypeError{msg + (('\'' + pretty_dtype(vars) + "', ") + ...)} {}
 };
 
 template <>

@@ -10,11 +10,14 @@
 namespace scipp::dataset {
 
 DataArray @NAME@(const DataArray &a, const DataArray &b) {
+  auto coords = union_(a.coords(), b.coords(), "@OPNAME@");
+  auto masks = union_or(a.masks(), b.masks());
+  auto attrs = intersection(a.attrs(), b.attrs());
   return DataArray(
       @NAME@(a.data(), b.data()),
-      union_(a.coords(), b.coords()),
-      union_or(a.masks(), b.masks()),
-      intersection(a.attrs(), b.attrs()));
+      std::move(coords),
+      std::move(masks),
+      std::move(attrs));
 }
 
 DataArray @NAME@(const DataArray &a, const Variable &b) {

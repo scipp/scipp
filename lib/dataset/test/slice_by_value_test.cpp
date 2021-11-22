@@ -29,7 +29,7 @@ constexpr auto make_histogram = make_array_common<1>;
 TEST(SliceByValueTest, test_dimension_not_found) {
   auto test = [](const auto &sliceable) {
     EXPECT_THROW(auto s = slice(sliceable, Dim::Y, {}, {}),
-                 except::NotFoundError);
+                 except::DimensionError);
   };
 
   auto var =

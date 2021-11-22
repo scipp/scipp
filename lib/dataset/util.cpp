@@ -38,7 +38,7 @@ scipp::index size_of(const Variable &view, const SizeofTag tag) {
   }
 
   const auto value_size = view.data().dtype_size();
-  const auto variance_scale = view.hasVariances() ? 2 : 1;
+  const auto variance_scale = view.has_variances() ? 2 : 1;
   const auto data_size =
       tag == SizeofTag::Underlying ? view.data().size() : view.dims().volume();
   return data_size * value_size * variance_scale;

@@ -27,37 +27,51 @@ void throw_mismatch_error(const dataset::Dataset &expected,
                      to_string(actual) + '.' + optional_message);
 }
 
-CoordMismatchError::CoordMismatchError(const Dim dim, const Variable &expected,
-                                       const Variable &actual)
-    : DatasetError{"Mismatch in coordinate '" + to_string(dim) +
-                   "', expected\n" + format_variable(expected) + ", got\n" +
-                   format_variable(actual)} {}
+namespace {
+auto format_coord_mismatch_message(const Dim dim, const Variable &a,
+                                   const Variable &b,
+                                   const std::string_view opname) {
+  std::string message = "Mismatch in coordinate '" + to_string(dim);
+  if (!opname.empty())
+    message += "' in operation '" + std::string(opname);
+  message += "':\n" + format_variable(a) + "\nvs\n" + format_variable(b);
+  return message;
+}
+} // namespace
+
+CoordMismatchError::CoordMismatchError(const Dim dim, const Variable &a,
+                                       const Variable &b,
+                                       const std::string_view opname)
+    : DatasetError{format_coord_mismatch_message(dim, a, b, opname)} {}
 
 } // namespace scipp::except
 
 namespace scipp::dataset::expect {
-void coordsAreSuperset(const Coords &a_coords, const Coords &b_coords) {
+void coords_are_superset(const Coords &a_coords, const Coords &b_coords,
+                         const std::string_view opname) {
   for (const auto &b_coord : b_coords) {
     if (a_coords[b_coord.first] != b_coord.second)
       throw except::CoordMismatchError(b_coord.first, a_coords[b_coord.first],
-                                       b_coord.second);
+                                       b_coord.second, opname);
   }
 }
 
-void coordsAreSuperset(const DataArray &a, const DataArray &b) {
-  coordsAreSuperset(a.coords(), b.coords());
+void coords_are_superset(const DataArray &a, const DataArray &b,
+                         const std::string_view opname) {
+  coords_are_superset(a.coords(), b.coords(), opname);
 }
 
-void matchingCoord(const Dim dim, const Variable &a, const Variable &b) {
+void matching_coord(const Dim dim, const Variable &a, const Variable &b,
+                    const std::string_view opname) {
   if (a != b)
-    throw except::CoordMismatchError(dim, a, b);
+    throw except::CoordMismatchError(dim, a, b, opname);
 }
 
-void isKey(const Variable &key) {
+void is_key(const Variable &key) {
   if (key.dims().ndim() != 1)
     throw except::DimensionError(
         "Coord for binning or grouping must be 1-dimensional");
-  if (key.hasVariances())
+  if (key.has_variances())
     throw except::VariancesError(
         "Coord for binning or grouping cannot have variances");
 }
