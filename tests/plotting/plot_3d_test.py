@@ -8,6 +8,7 @@ import scipp as sc
 from ..factory import make_dense_data_array, make_binned_data_array
 from .plot_helper import plot
 import matplotlib
+
 matplotlib.use('Agg')
 
 
@@ -141,8 +142,8 @@ def test_plot_3d_binned_data():
 def test_plot_redraw():
     da = _with_fake_pos(ndim=3, unit='K')
     p = sc.plot(da, positions='pos', projection="3d")
-    before = p.view.figure.points_geometry.attributes["rgba_color"].array
+    before = p.view.figure.points_geometry.attributes["color"].array
     da *= 5.0
     p.redraw()
-    after = p.view.figure.points_geometry.attributes["rgba_color"].array
+    after = p.view.figure.points_geometry.attributes["color"].array
     assert np.any(before != after)
