@@ -42,16 +42,6 @@ Variable nansum(const Variable &var, const Dim dim, const Masks &masks) {
   return nansum(var, dim);
 }
 
-Variable &nansum(const Variable &var, const Dim dim, const Masks &masks,
-                 // cppcheck-suppress constParameter  # intentional out param
-                 Variable &out) {
-  if (const auto mask_union = irreducible_mask(masks, dim);
-      mask_union.is_valid()) {
-    return nansum(where(mask_union, zero_like(var), var), dim, out);
-  }
-  return nansum(var, dim, out);
-}
-
 Variable mean(const Variable &var, const Dim dim, const Masks &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim);
       mask_union.is_valid()) {
