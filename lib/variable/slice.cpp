@@ -51,7 +51,7 @@ auto get_coord(const Variable &coord, const Dim dim) {
 void expect_same_unit(const Variable &coord, const Variable &value,
                       const std::string &name) {
   if (coord.unit() != value.unit()) {
-    throw except::UnitError("The unit of the " + name + " of the slice (" +
+    throw except::UnitError("The unit of the " + name + " of the slice key (" +
                             to_string(value.unit()) +
                             ") does not match the unit of the coordinate (" +
                             to_string(coord.unit()) + ").");
@@ -62,7 +62,7 @@ void expect_valid_dtype(const Variable &var, const bool is_range,
                         const std::string &name) {
   if (is_range && !is_total_orderable(var.dtype())) {
     throw except::TypeError(
-        "The dtype of the " + name + " of the slice (" +
+        "The dtype of the " + name + " of the slice key (" +
         to_string(var.dtype()) +
         ") cannot be used for label-based slicing because it does not"
         " define an order.");
