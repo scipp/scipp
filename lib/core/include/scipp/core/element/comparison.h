@@ -8,6 +8,7 @@
 
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/values_and_variances.h"
@@ -59,37 +60,48 @@ struct comparison_types_t {
                                         std::tuple<core::time_point>{}));
 };
 
+struct equality_types_t {
+  constexpr void operator()() const noexcept;
+  using types = decltype(std::tuple_cat(
+      comparison_types_t::types{}, std::tuple<std::string>{},
+      std::tuple<Eigen::Vector3d>{}, std::tuple<Eigen::Matrix3d>{}));
+};
+
 constexpr auto comparison =
-    overloaded{comparison_types_t{}, transform_flags::no_out_variance,
+    overloaded{transform_flags::no_out_variance,
                [](const units::Unit &x, const units::Unit &y) {
                  expect::equals(x, y);
                  return units::dimensionless;
                }};
 
+constexpr auto inequality = overloaded{comparison_types_t{}, comparison};
+
+constexpr auto equality = overloaded{equality_types_t{}, comparison};
+
 constexpr auto less = overloaded{
-    comparison,
+    inequality,
     [](const auto &x, const auto &y) { return x < y; },
 };
 
 constexpr auto greater = overloaded{
-    comparison,
+    inequality,
     [](const auto &x, const auto &y) { return x > y; },
 };
 
 constexpr auto less_equal = overloaded{
-    comparison,
+    inequality,
     [](const auto &x, const auto &y) { return x <= y; },
 };
 
 constexpr auto greater_equal =
-    overloaded{comparison, [](const auto &x, const auto &y) { return x >= y; }};
+    overloaded{inequality, [](const auto &x, const auto &y) { return x >= y; }};
 
 constexpr auto equal = overloaded{
-    comparison,
+    equality,
     [](const auto &x, const auto &y) { return x == y; },
 };
 constexpr auto not_equal =
-    overloaded{comparison, [](const auto &x, const auto &y) { return x != y; }};
+    overloaded{equality, [](const auto &x, const auto &y) { return x != y; }};
 
 constexpr auto max_equals =
     overloaded{arg_list<double, float, int64_t, int32_t, bool, time_point>,

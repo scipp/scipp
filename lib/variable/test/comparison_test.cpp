@@ -3,6 +3,7 @@
 #include "scipp/core/eigen.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
+#include "scipp/variable/structures.h"
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
@@ -154,6 +155,14 @@ TEST(ComparisonTest, less_units_test) {
 namespace {
 const auto a = 1.0 * units::m;
 const auto b = 2.0 * units::m;
+const auto sa = makeVariable<std::string>(Dims{}, Values{"a"});
+const auto sb = makeVariable<std::string>(Dims{}, Values{"b"});
+const auto va = make_vectors(Dimensions{}, units::m, {1.0, 2.0, 3.0});
+const auto vb = make_vectors(Dimensions{}, units::m, {4.0, 5.0, 6.0});
+const auto ma = make_matrices(Dimensions{}, units::m,
+                              {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0});
+const auto mb = make_matrices(Dimensions{}, units::m,
+                              {1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9});
 const auto true_ = true * units::one;
 const auto false_ = false * units::one;
 } // namespace
@@ -183,8 +192,38 @@ TEST(ComparisonTest, equal_test) {
   EXPECT_EQ(equal(b, a), false_);
   EXPECT_EQ(equal(a, a), true_);
 }
+TEST(ComparisonTest, equal_test_string) {
+  EXPECT_EQ(equal(sa, sb), false_);
+  EXPECT_EQ(equal(sb, sa), false_);
+  EXPECT_EQ(equal(sa, sa), true_);
+}
+TEST(ComparisonTest, equal_test_vector) {
+  EXPECT_EQ(equal(va, vb), false_);
+  EXPECT_EQ(equal(vb, va), false_);
+  EXPECT_EQ(equal(va, va), true_);
+}
+TEST(ComparisonTest, equal_test_matrix) {
+  EXPECT_EQ(equal(ma, mb), false_);
+  EXPECT_EQ(equal(mb, ma), false_);
+  EXPECT_EQ(equal(ma, ma), true_);
+}
 TEST(ComparisonTest, not_equal_test) {
   EXPECT_EQ(not_equal(a, b), true_);
   EXPECT_EQ(not_equal(b, a), true_);
   EXPECT_EQ(not_equal(a, a), false_);
+}
+TEST(ComparisonTest, not_equal_test_string) {
+  EXPECT_EQ(not_equal(sa, sb), true_);
+  EXPECT_EQ(not_equal(sb, sa), true_);
+  EXPECT_EQ(not_equal(sa, sa), false_);
+}
+TEST(ComparisonTest, not_equal_test_vector) {
+  EXPECT_EQ(not_equal(va, vb), true_);
+  EXPECT_EQ(not_equal(vb, va), true_);
+  EXPECT_EQ(not_equal(va, va), false_);
+}
+TEST(ComparisonTest, not_equal_test_matrix) {
+  EXPECT_EQ(not_equal(ma, mb), true_);
+  EXPECT_EQ(not_equal(mb, ma), true_);
+  EXPECT_EQ(not_equal(ma, ma), false_);
 }
