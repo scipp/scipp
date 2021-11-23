@@ -58,8 +58,9 @@ void expect_same_unit(const Variable &coord, const Variable &value,
   }
 }
 
-void expect_valid_dtype(const Variable &var, const std::string &name) {
-  if (!is_total_orderable(var.dtype())) {
+void expect_valid_dtype(const Variable &var, const bool is_range,
+                        const std::string &name) {
+  if (is_range && !is_total_orderable(var.dtype())) {
     throw except::TypeError(
         "The dtype of the " + name + " of the slice (" +
         to_string(var.dtype()) +
@@ -69,11 +70,12 @@ void expect_valid_dtype(const Variable &var, const std::string &name) {
 }
 
 void expect_valid_slice_value(const Variable &coord, const Variable &value,
+                              const bool is_range,
                               const std::string_view name) {
   if (value.is_valid()) {
     core::expect::equals(Dimensions{}, value.dims());
     expect_same_unit(coord, value, std::string(name));
-    expect_valid_dtype(value, std::string(name));
+    expect_valid_dtype(value, is_range, std::string(name));
   }
 }
 } // namespace
@@ -81,7 +83,7 @@ void expect_valid_slice_value(const Variable &coord, const Variable &value,
 std::tuple<Dim, scipp::index> get_slice_params(const Sizes &dims,
                                                const Variable &coord_,
                                                const Variable &value) {
-  expect_valid_slice_value(coord_, value, "value");
+  expect_valid_slice_value(coord_, value, false, "value");
   const auto dim = coord_.dims().inner();
   if (dims[dim] + 1 == coord_.dims()[dim]) {
     const auto &[coord, ascending] = get_coord(coord_, dim);
@@ -101,9 +103,9 @@ std::tuple<Dim, scipp::index> get_slice_params(const Sizes &dims,
 std::tuple<Dim, scipp::index, scipp::index>
 get_slice_params(const Sizes &dims, const Variable &coord_,
                  const Variable &begin, const Variable &end) {
-  expect_valid_slice_value(coord_, begin, "begin");
-  expect_valid_slice_value(coord_, end, "end");
-  expect_valid_dtype(coord_, "coord");
+  expect_valid_slice_value(coord_, begin, true, "begin");
+  expect_valid_slice_value(coord_, end, true, "end");
+  expect_valid_dtype(coord_, true, "coord");
   const auto dim = coord_.dims().inner();
   const auto &[coord, ascending] = get_coord(coord_, dim);
   scipp::index first = 0;
