@@ -123,6 +123,13 @@ def test_del_item_missing():
         del d['not an item']
 
 
+def test_ipython_key_completion():
+    var = sc.Variable(dims=['x'], values=np.arange(4))
+    da = sc.DataArray(data=var, coords={'x': var, 'aux': var})
+    ds = sc.Dataset(data={'array 1': da, 'array 2': da})
+    assert set(ds._ipython_key_completions_()) == set(ds.keys())
+
+
 def test_coord_setitem():
     var = sc.Variable(dims=['x'], values=np.arange(4))
     d = sc.Dataset(data={'a': var}, coords={'x': var})
