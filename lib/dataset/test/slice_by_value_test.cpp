@@ -76,6 +76,20 @@ TEST(SliceByValueTest, test_begin_end_not_0D_throws) {
   test(Dataset{da});
 }
 
+TEST(SliceByValueTest, test_unit_mismatch_throws) {
+  auto da = make_points(0, 1, 2, 3);
+  const auto test = [](const auto &sliceable) {
+    EXPECT_THROW_DISCARD(slice(sliceable, Dim::X, 1 * units::m),
+                         except::UnitError);
+    EXPECT_THROW_DISCARD(slice(sliceable, Dim::X, 1 * units::m, {}),
+                         except::UnitError);
+    EXPECT_THROW_DISCARD(slice(sliceable, Dim::X, {}, 1 * units::m),
+                         except::UnitError);
+  };
+  test(da);
+  test(Dataset{da});
+}
+
 TEST(SliceByValueTest, test_slicing_defaults_ascending) {
   auto da = make_points(3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
   const auto test = [](const auto &sliceable) {
