@@ -113,13 +113,7 @@ class Bins:
     @property
     def constituents(self) -> Dict[str, Union[str, _cpp.Variable, _cpp.DataArray]]:
         """Constituents of binned data, as supported by :py:func:`sc.bins`."""
-        begin_end = _cpp.bins_begin_end(self._data())
-        return {
-            'begin': begin_end[0],
-            'end': begin_end[1],
-            'dim': _cpp.bins_dim(self._data()),
-            'data': _cpp.bins_data(self._data())
-        }
+        return _call_cpp_func(_cpp.bins_constituents, self._data())
 
     def sum(self) -> Union[_cpp.Variable, _cpp.DataArray]:
         """Sum of each bin.

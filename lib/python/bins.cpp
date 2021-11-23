@@ -67,18 +67,15 @@ template <class T> void bind_bins(pybind11::module &m) {
                                         // implicit conversions in functor
 }
 
-template <class T> auto bin_begin_end(const Variable &var) {
+template <class T> py::dict bins_constituents(const Variable &var) {
   auto &&[indices, dim, buffer] = var.constituents<T>();
-  static_cast<void>(dim);
-  static_cast<void>(buffer);
-  return unzip(indices);
-}
-
-template <class T> auto bin_dim(const Variable &var) {
-  auto &&[indices, dim, buffer] = var.constituents<T>();
-  static_cast<void>(buffer);
-  static_cast<void>(indices);
-  return std::string(dim.name());
+  auto &&[begin, end] = unzip(indices);
+  py::dict out;
+  out["begin"] = std::forward<decltype(begin)>(begin);
+  out["end"] = std::forward<decltype(end)>(end);
+  out["dim"] = std::string(dim.name());
+  out["data"] = std::forward<decltype(buffer)>(buffer);
+  return out;
 }
 
 template <class T>
@@ -138,37 +135,16 @@ void init_buckets(py::module &m) {
   m.def("is_bins",
         [](const Dataset &dataset) { return dataset::is_bins(dataset); });
 
-  m.def(
-      "bins_begin_end",
-      [](const Variable &var) -> std::optional<std::pair<Variable, Variable>> {
-        if (var.dtype() == dtype<bucket<Variable>>)
-          return bin_begin_end<Variable>(var);
-        if (var.dtype() == dtype<bucket<DataArray>>)
-          return bin_begin_end<DataArray>(var);
-        if (var.dtype() == dtype<bucket<Dataset>>)
-          return bin_begin_end<Dataset>(var);
-        return std::nullopt;
-      });
-
-  m.def("bins_dim", [](const Variable &var) -> std::optional<std::string> {
-    if (var.dtype() == dtype<bucket<Variable>>)
-      return bin_dim<Variable>(var);
-    if (var.dtype() == dtype<bucket<DataArray>>)
-      return bin_dim<DataArray>(var);
-    if (var.dtype() == dtype<bucket<Dataset>>)
-      return bin_dim<Dataset>(var);
-    return std::nullopt;
-  });
-
-  m.def("bins_data", [](Variable &var) -> py::object {
-    if (var.dtype() == dtype<bucket<Variable>>)
-      return py::cast(var.bin_buffer<Variable>());
-    if (var.dtype() == dtype<bucket<DataArray>>)
-      return py::cast(var.bin_buffer<DataArray>().view());
-    if (var.dtype() == dtype<bucket<Dataset>>)
-      // TODO Provide mechanism for creating sharing view as for DataArray above
-      return py::cast(var.bin_buffer<Dataset>());
-    return py::none();
+  m.def("bins_constituents", [](const Variable &var) {
+    const auto dt = var.dtype();
+    if (dt == dtype<bucket<Variable>>)
+      return bins_constituents<Variable>(var);
+    if (dt == dtype<bucket<DataArray>>)
+      return bins_constituents<DataArray>(var);
+    if (dt == dtype<bucket<Dataset>>)
+      return bins_constituents<Dataset>(var);
+    throw except::TypeError("'constituents' does not support dtype " +
+                            to_string(dt));
   });
 
   auto buckets = m.def_submodule("buckets");
