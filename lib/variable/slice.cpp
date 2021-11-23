@@ -63,7 +63,7 @@ void expect_valid_dtype(const Variable &var, const std::string &name) {
     throw except::TypeError(
         "The dtype of the " + name + " of the slice (" +
         to_string(var.dtype()) +
-        ") cannot be used for value-based slicing because it does not"
+        ") cannot be used for label-based slicing because it does not"
         " define an order.");
   }
 }
