@@ -5,22 +5,17 @@
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
-#include "scipp/dataset/generated_comparison.h"
-#include "scipp/dataset/histogram.h"
 #include "scipp/dataset/map_view.h"
 #include "scipp/dataset/math.h"
 #include "scipp/dataset/rebin.h"
-#include "scipp/dataset/sort.h"
 #include "scipp/dataset/util.h"
 
 #include "bind_data_access.h"
 #include "bind_data_array.h"
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
-#include "docstring.h"
 #include "pybind11.h"
 #include "rename.h"
-#include "view.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
