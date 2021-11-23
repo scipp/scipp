@@ -11,6 +11,7 @@
 #include "test_macros.h"
 
 using namespace scipp;
+using namespace std::string_literals;
 
 namespace {
 template <int N>
@@ -85,6 +86,23 @@ TEST(SliceByValueTest, test_unit_mismatch_throws) {
                          except::UnitError);
     EXPECT_THROW_DISCARD(slice(sliceable, Dim::X, {}, 1 * units::m),
                          except::UnitError);
+  };
+  test(da);
+  test(Dataset{da});
+}
+
+TEST(SliceByValueTest, test_dtype_string) {
+  Variable coord = makeVariable<std::string>(units::s, Dims{Dim::X}, Shape{3},
+                                             Values{"a"s, "b"s, "c"s});
+  Variable data = makeVariable<int64_t>(Dims{Dim::X}, Shape{3});
+  const DataArray da{data, {{Dim::X, coord}}};
+
+  const auto test = [](const auto &sliceable) {
+    const auto x =
+        makeVariable<std::string>(units::s, Dims{}, Shape{}, Values{"a"s});
+    EXPECT_EQ(slice(sliceable, Dim::X, x), sliceable.slice(Slice{Dim::X, 0}));
+    EXPECT_THROW_DISCARD(slice(sliceable, Dim::X, x, {}), except::TypeError);
+    EXPECT_THROW_DISCARD(slice(sliceable, Dim::X, {}, x), except::TypeError);
   };
   test(da);
   test(Dataset{da});
