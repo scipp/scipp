@@ -38,16 +38,7 @@ void init_units(py::module &m) {
       .def("__pow__", [](const units::Unit &self,
                          const int64_t power) { return pow(self, power); })
       .def(py::self == py::self)
-      .def(py::self != py::self)
-      .def("__rmul",
-           [](const units::Unit &self, double scalar) { return scalar * self; })
-      .def("__rmul", [](const units::Unit &self,
-                        int64_t scalar) { return scalar * self; })
-      .def("__rtruediv",
-           [](const units::Unit &self, double scalar) { return scalar / self; })
-      .def("__rtruediv", [](const units::Unit &self, int64_t scalar) {
-        return scalar / self;
-      });
+      .def(py::self != py::self);
 
   m.def("sqrt", [](const units::Unit &u) { return sqrt(u); });
 

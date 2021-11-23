@@ -3,17 +3,11 @@ from .core import scalar
 
 
 def __rmul(self, value):
-    if isinstance(value, (float, int)):
-        return self.__rmul(value)
-    else:
-        return scalar(value, unit=self)
+    return scalar(value, unit=self)
 
 
 def __rtruediv(self, value):
-    if isinstance(value, (float, int)):
-        return self.__rtruediv(value)
-    else:
-        return scalar(value, unit=self**(-1))
+    return scalar(value, unit=self**(-1))
 
 
 # add magic python methods to Unit class
