@@ -65,6 +65,14 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
   c.def("__getitem__",
         [](const T &self, const std::string &name) { return self[name]; });
   c.def("__contains__", &T::contains);
+  c.def("_ipython_key_completions_", [](T &self) {
+    py::list out;
+    const auto end = self.keys_end();
+    for (auto it = self.keys_begin(); it != end; ++it) {
+      out.append(*it);
+    }
+    return out;
+  });
   c.def_property_readonly(
       "dims",
       [](const T &self) {
