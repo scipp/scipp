@@ -51,7 +51,7 @@ auto get_coord(const Variable &coord, const Dim dim) {
 void expect_same_unit(const Variable &coord, const Variable &value,
                       const std::string &name) {
   if (coord.unit() != value.unit()) {
-    throw except::UnitError("The unit of the " + name + " of the slice key (" +
+    throw except::UnitError("The unit of the slice " + name + " (" +
                             to_string(value.unit()) +
                             ") does not match the unit of the coordinate (" +
                             to_string(coord.unit()) + ").");
@@ -62,8 +62,7 @@ void expect_valid_dtype(const Variable &var, const bool is_range,
                         const std::string &name) {
   if (is_range && !is_total_orderable(var.dtype())) {
     throw except::TypeError(
-        "The dtype of the " + name + " of the slice key (" +
-        to_string(var.dtype()) +
+        "The dtype of the slice " + name + " (" + to_string(var.dtype()) +
         ") cannot be used for label-based slicing because it does not"
         " define an order.");
   }
@@ -83,7 +82,7 @@ void expect_valid_slice_value(const Variable &coord, const Variable &value,
 std::tuple<Dim, scipp::index> get_slice_params(const Sizes &dims,
                                                const Variable &coord_,
                                                const Variable &value) {
-  expect_valid_slice_value(coord_, value, false, "value");
+  expect_valid_slice_value(coord_, value, false, "key");
   const auto dim = coord_.dims().inner();
   if (dims[dim] + 1 == coord_.dims()[dim]) {
     const auto &[coord, ascending] = get_coord(coord_, dim);
