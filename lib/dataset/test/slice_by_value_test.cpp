@@ -3,7 +3,6 @@
 #include <cmath>
 #include <gtest/gtest.h>
 
-#include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/dataset/dataset.h"
