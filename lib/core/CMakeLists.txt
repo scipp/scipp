@@ -15,6 +15,7 @@ set(INC_FILES
     include/scipp/core/parallel-fallback.h
     include/scipp/core/parallel-tbb.h
     include/scipp/core/slice.h
+    include/scipp/core/spatial_transforms.h
     include/scipp/core/tag_util.h
     include/scipp/core/transform_common.h
     include/scipp/core/value_and_variance.h
@@ -44,6 +45,7 @@ set(SRC_FILES
     multi_index.cpp
     sizes.cpp
     slice.cpp
+    spatial_transforms.cpp
     strides.cpp
     string.cpp
     subbin_sizes.cpp

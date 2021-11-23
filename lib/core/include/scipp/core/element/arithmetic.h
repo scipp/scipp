@@ -9,6 +9,7 @@
 #include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/subbin_sizes.h"
+#include "scipp/core/spatial_transforms.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/units/except.h"
 
@@ -171,7 +172,6 @@ constexpr auto multiply = overloaded{
     multiplies_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
     [](const auto a, const auto b) { return a * b; }
-    // [](const scipp::core::eigen_rotation_type &a, const scipp::core::eigen_scaling_type &b) { return Eigen::Affine3d(a) * Eigen::Affine3d(b); }
 };
 
 constexpr auto apply_spatial_transformation = overloaded{

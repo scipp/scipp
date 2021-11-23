@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/eigen.h"
+#include "scipp/core/spatial_transforms.h"
 #include "scipp/variable/structure_array_variable.tcc"
 #include "scipp/variable/structures.h"
 #include "scipp/variable/variable.h"

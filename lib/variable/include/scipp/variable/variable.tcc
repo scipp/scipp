@@ -38,21 +38,15 @@ template <class T> auto &cast(Variable &var) {
 }
 
 template <int I, class T> decltype(auto) get(T &&t) {
-  if constexpr (core::has_eval_v<std::decay_t<T>>){
-    return t.operator()(I);
-  } else if constexpr (std::is_same_v<std::decay_t<T>, Eigen::Affine3d> || 
-                     std::is_same_v<std::decay_t<T>, scipp::core::eigen_rotation_type>) {
+  if constexpr (std::is_same_v<std::decay_t<T>, Eigen::Affine3d>) {
     return t.matrix().operator()(I);
-  } else if constexpr (std::is_same_v<std::decay_t<T>, scipp::core::eigen_scaling_type>) {
-    return t.diagonal().operator()(I);
+  } else if constexpr (core::has_eval_v<std::decay_t<T>>){
+    return t.operator()(I);
+  } else if constexpr (std::is_same_v<std::decay_t<T>, scipp::core::eigen_scaling_type> || 
+                     std::is_same_v<std::decay_t<T>, scipp::core::eigen_rotation_type>) {
+    return t.mat.operator()(I);
   } else if constexpr (std::is_same_v<std::decay_t<T>, scipp::core::eigen_translation_type>) {
-    if constexpr (I == 0) {
-      return t.x();
-    } else if constexpr (I == 1) {
-      return t.y();
-    } else if constexpr (I == 2) {
-      return t.z();
-    }
+    return t.vec.operator()(I);
   } else {
     return std::get<I>(t);
   }
