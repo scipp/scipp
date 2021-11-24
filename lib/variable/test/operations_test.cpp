@@ -836,14 +836,9 @@ TEST(VariableTest, combine_translations) {
   auto trans2 = makeVariable<scipp::core::eigen_translation_type>(
       Dims{Dim::X}, Shape{1}, units::m, Values{scipp::core::eigen_translation_type{translation2}});
 
-  std::cout << "Trans1 = " << trans1 << std::endl;
-  std::cout << "Trans2 = " << trans2 << std::endl;
-
   Eigen::Vector3d expected(5, 7, 9);
   auto expected_var = makeVariable<scipp::core::eigen_translation_type>(
           Dims{Dim::X}, Shape{1}, units::m, Values{scipp::core::eigen_translation_type{expected}});
-
-  std::cout << "Expected = " << expected_var << std::endl;
 
   EXPECT_EQ(trans1 * trans2, expected_var);
 }
@@ -857,15 +852,10 @@ TEST(VariableTest, combine_translation_and_scaling) {
   const Variable scaling_var = makeVariable<scipp::core::eigen_scaling_type>(
       Dims{Dim::X}, Shape{1}, units::one, Values{scipp::core::eigen_scaling_type{scaling}});
 
-  std::cout << "Translation = " << translation_var << std::endl;
-  std::cout << "Scaling = " << scaling_var << std::endl;
-
   // Translation and scaling -> affine
   const Eigen::Affine3d expected(Eigen::Translation<double, 3>(translation) * scaling);
   const Variable expected_var = makeVariable<Eigen::Affine3d>(
           Dims{Dim::X}, Shape{1}, units::m, Values{expected});
-
-  std::cout << "Expected = " << expected_var << std::endl;
 
   EXPECT_EQ(translation_var * scaling_var, expected_var);
 }
