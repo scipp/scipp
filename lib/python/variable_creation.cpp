@@ -8,7 +8,6 @@
 #include "scipp/variable/creation.h"
 
 #include "dtype.h"
-#include "py_object.h"
 #include "pybind11.h"
 
 using namespace scipp;

@@ -101,6 +101,7 @@ inline constexpr DType dtype<std::unordered_map<core::time_point, int32_t>>{
 SCIPP_CORE_EXPORT bool is_int(DType tp);
 SCIPP_CORE_EXPORT bool is_float(DType tp);
 SCIPP_CORE_EXPORT bool is_fundamental(DType tp);
+SCIPP_CORE_EXPORT bool is_total_orderable(DType tp);
 SCIPP_CORE_EXPORT bool is_span(DType tp);
 SCIPP_CORE_EXPORT bool is_structured(DType tp);
 
