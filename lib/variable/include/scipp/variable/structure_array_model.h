@@ -34,6 +34,10 @@ public:
         m_elements(std::make_shared<ElementArrayModel<Elem>>(
             size * element_count, unit, std::move(model))) {}
 
+  StructureArrayModel(VariableConceptHandle &&elements)
+      : VariableConcept(units::one), // unit ignored
+        m_elements(std::move(elements)) {}
+
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
   DType dtype() const noexcept override { return scipp::dtype<T>; }
   scipp::index size() const override {
@@ -62,7 +66,7 @@ public:
   }
 
   VariableConceptHandle clone() const override {
-    return std::make_shared<StructureArrayModel<T, Elem>>(*this);
+    return std::make_shared<StructureArrayModel<T, Elem>>(m_elements->clone());
   }
 
   auto values(const core::ElementArrayViewParams &base) const {

@@ -32,7 +32,7 @@ void expect_valid_bin_indices(const VariableConceptHandle &indices,
                               const Dim dim, const Sizes &buffer_sizes) {
   auto copy =
       requireT<const StructureArrayModel<scipp::index_pair, scipp::index>>(
-          *indices);
+          *indices->clone());
   const auto vals = copy.values();
   std::sort(vals.begin(), vals.end());
   if ((!vals.empty() && (vals.begin()->first < 0)) ||
