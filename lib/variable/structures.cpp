@@ -25,6 +25,11 @@ make_structures<Eigen::Matrix3d, double>(const Dimensions &,
                                          const units::Unit &,
                                          element_array<double> &&);
 
+template SCIPP_VARIABLE_EXPORT Variable
+make_structures<Eigen::Affine3d, double>(const Dimensions &,
+                                         const units::Unit &,
+                                         element_array<double> &&);
+
 /// Construct a variable containing vectors from a variable of elements.
 Variable make_vectors(const Dimensions &dims, const units::Unit &unit,
                       element_array<double> &&values) {

@@ -10,6 +10,7 @@
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/subbin_sizes.h"
 #include "scipp/core/transform_common.h"
+#include "scipp/units/except.h"
 
 namespace scipp::core::element {
 
@@ -100,6 +101,13 @@ struct multiplies_types_t {
                      std::tuple<std::tuple<Eigen::Vector3d, int32_t>>()));
 };
 
+struct apply_spatial_transformation_t {
+  constexpr void operator()() const noexcept;
+  using types = decltype(std::tuple_cat(
+      std::tuple<std::tuple<Eigen::Affine3d, Eigen::Affine3d>>(),
+      std::tuple<std::tuple<Eigen::Affine3d, Eigen::Vector3d>>()));
+};
+
 struct true_divide_types_t {
   constexpr void operator()() const noexcept;
   using types = decltype(
@@ -128,6 +136,19 @@ constexpr auto multiply = overloaded{
     multiplies_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
     [](const auto a, const auto b) { return a * b; }};
+
+constexpr auto apply_spatial_transformation = overloaded{
+    apply_spatial_transformation_t{},
+    transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
+    [](const auto a, const auto b) { return a * b; },
+    [](const units::Unit &a, const units::Unit &b) {
+      if (a != b)
+        throw except::UnitError(
+            "Cannot apply spatial transform as the units of the transformation "
+            "are not the same as the units of transformation or vector.");
+      else
+        return a;
+    }};
 
 // truediv defined as in Python.
 constexpr auto divide = overloaded{

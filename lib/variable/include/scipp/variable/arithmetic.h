@@ -6,6 +6,7 @@
 
 #include "scipp-variable_export.h"
 #include "scipp/variable/generated_arithmetic.h"
+#include "scipp/variable/multiply.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::units {
