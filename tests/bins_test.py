@@ -82,6 +82,14 @@ def test_bins():
     assert sc.identical(var['y', 1].value, data['x', 2:4])
 
 
+def test_bins_of_transpose():
+    data = sc.Variable(dims=['row'], values=[1, 2, 3, 4])
+    begin = sc.Variable(dims=['x', 'y'], values=[[0, 1], [2, 3]], dtype=sc.dtype.int64)
+    end = begin + 1
+    var = sc.bins(begin=begin, end=end, dim='row', data=data)
+    assert sc.identical(sc.bins(**var.transpose().bins.constituents), var.transpose())
+
+
 def test_bins_view():
     col = sc.Variable(dims=['event'], values=[1, 2, 3, 4])
     table = sc.DataArray(data=col,
