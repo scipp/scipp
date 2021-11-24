@@ -10,53 +10,124 @@
 
 namespace scipp::core {
 
-class eigen_rotation_type;
-class eigen_scaling_type;
-class eigen_translation_type;
-
 class eigen_rotation_type {
 public:
     Eigen::Matrix3d mat;
-
-    SCIPP_CORE_EXPORT eigen_rotation_type operator*(const eigen_rotation_type &other) const;
-    SCIPP_CORE_EXPORT Eigen::Matrix3d operator*(const eigen_scaling_type &other) const;
-    SCIPP_CORE_EXPORT Eigen::Matrix3d operator*(const Eigen::Matrix3d &other) const;
-    SCIPP_CORE_EXPORT Eigen::Affine3d operator*(const eigen_translation_type &other) const;
-    SCIPP_CORE_EXPORT Eigen::Affine3d operator*(const Eigen::Affine3d &other) const;
-    SCIPP_CORE_EXPORT Eigen::Vector3d operator*(const Eigen::Vector3d &other) const;
 };
 
 class eigen_scaling_type {
 public:
     Eigen::Matrix3d mat;
-
-    SCIPP_CORE_EXPORT eigen_scaling_type operator*(const eigen_scaling_type &other) const;
-    SCIPP_CORE_EXPORT Eigen::Matrix3d operator*(const eigen_rotation_type &other) const;
-    SCIPP_CORE_EXPORT Eigen::Matrix3d operator*(const Eigen::Matrix3d &other) const;
-    SCIPP_CORE_EXPORT Eigen::Affine3d operator*(const eigen_translation_type &other) const;
-    SCIPP_CORE_EXPORT Eigen::Affine3d operator*(const Eigen::Affine3d &other) const;
-    SCIPP_CORE_EXPORT Eigen::Vector3d operator*(const Eigen::Vector3d &other) const;
 };
 
 class eigen_translation_type {
 public:
     Eigen::Vector3d vec;
-
-    SCIPP_CORE_EXPORT eigen_translation_type operator*(const eigen_translation_type &other) const;
-    SCIPP_CORE_EXPORT Eigen::Affine3d operator*(const eigen_rotation_type &other) const;
-    SCIPP_CORE_EXPORT Eigen::Affine3d operator*(const eigen_scaling_type &other) const;
-    SCIPP_CORE_EXPORT Eigen::Affine3d operator*(const Eigen::Matrix3d &other) const;
-    SCIPP_CORE_EXPORT Eigen::Affine3d operator*(const Eigen::Affine3d &other) const;
-    SCIPP_CORE_EXPORT Eigen::Vector3d operator*(const Eigen::Vector3d &other) const;
 };
 
-SCIPP_CORE_EXPORT Eigen::Affine3d operator*(const Eigen::Affine3d &lhs, const eigen_translation_type &rhs);
-SCIPP_CORE_EXPORT Eigen::Affine3d operator*(const Eigen::Affine3d &lhs, const eigen_rotation_type &rhs);
-SCIPP_CORE_EXPORT Eigen::Affine3d operator*(const Eigen::Affine3d &lhs, const eigen_scaling_type &rhs);
+[[nodiscard]] inline eigen_rotation_type operator*(const eigen_rotation_type &lhs, const eigen_rotation_type &rhs) {
+    return eigen_rotation_type{(lhs.mat * rhs.mat).eval()};
+};
 
-SCIPP_CORE_EXPORT Eigen::Affine3d operator*(const Eigen::Matrix3d &lhs, const eigen_translation_type &rhs);
-SCIPP_CORE_EXPORT Eigen::Matrix3d operator*(const Eigen::Matrix3d &lhs, const eigen_rotation_type &rhs);
-SCIPP_CORE_EXPORT Eigen::Matrix3d operator*(const Eigen::Matrix3d &lhs, const eigen_scaling_type &rhs);
+[[nodiscard]] inline Eigen::Matrix3d operator*(const eigen_rotation_type &lhs, const eigen_scaling_type &rhs) {
+    return (lhs.mat * rhs.mat).eval();
+};
+
+[[nodiscard]] inline Eigen::Matrix3d operator*(const eigen_rotation_type &lhs, const Eigen::Matrix3d &rhs) {
+    return (lhs.mat * rhs).eval();
+};
+
+[[nodiscard]] inline Eigen::Affine3d operator*(const eigen_rotation_type &lhs, const eigen_translation_type &rhs) {
+    return (lhs.mat * Eigen::Translation<double, 3>(rhs.vec));
+};
+
+[[nodiscard]] inline Eigen::Affine3d operator*(const eigen_rotation_type &lhs, const Eigen::Affine3d &rhs) {
+    return lhs.mat * rhs;
+};
+
+[[nodiscard]] inline Eigen::Vector3d operator*(const eigen_rotation_type &lhs, const Eigen::Vector3d &rhs) {
+    return lhs.mat * rhs;
+};
+
+
+
+[[nodiscard]] inline eigen_scaling_type operator*(const eigen_scaling_type &lhs, const eigen_scaling_type &rhs) {
+    return eigen_scaling_type{(lhs.mat * rhs.mat).eval()};
+};
+
+[[nodiscard]] inline Eigen::Matrix3d operator*(const eigen_scaling_type &lhs, const eigen_rotation_type &rhs) {
+    return (lhs.mat * rhs.mat).eval();
+};
+
+[[nodiscard]] inline Eigen::Matrix3d operator*(const eigen_scaling_type &lhs, const Eigen::Matrix3d &rhs) {
+    return (lhs.mat * rhs).eval();
+};
+
+[[nodiscard]] inline Eigen::Affine3d operator*(const eigen_scaling_type &lhs, const eigen_translation_type &rhs) {
+    return (lhs.mat * Eigen::Translation<double, 3>(rhs.vec));
+};
+
+[[nodiscard]] inline Eigen::Affine3d operator*(const eigen_scaling_type &lhs, const Eigen::Affine3d &rhs) {
+    return lhs.mat * rhs;
+};
+
+[[nodiscard]] inline Eigen::Vector3d operator*(const eigen_scaling_type &lhs, const Eigen::Vector3d &rhs) {
+    return lhs.mat * rhs;
+};
+
+
+
+[[nodiscard]] inline Eigen::Affine3d operator*(const eigen_translation_type &lhs, const eigen_scaling_type &rhs) {
+    return Eigen::Translation<double, 3>(lhs.vec) * rhs.mat;
+};
+
+[[nodiscard]] inline Eigen::Affine3d operator*(const eigen_translation_type &lhs, const eigen_rotation_type &rhs) {
+    return Eigen::Translation<double, 3>(lhs.vec) * rhs.mat;
+};
+
+[[nodiscard]] inline Eigen::Affine3d operator*(const eigen_translation_type &lhs, const Eigen::Matrix3d &rhs) {
+    return Eigen::Translation<double, 3>(lhs.vec) * rhs;
+};
+
+[[nodiscard]] inline eigen_translation_type operator*(const eigen_translation_type &lhs, const eigen_translation_type &rhs) {
+    return eigen_translation_type{(lhs.vec + rhs.vec).eval()};
+};
+
+[[nodiscard]] inline Eigen::Affine3d operator*(const eigen_translation_type &lhs, const Eigen::Affine3d &rhs) {
+    return Eigen::Translation<double, 3>(lhs.vec) * rhs;
+};
+
+[[nodiscard]] inline Eigen::Vector3d operator*(const eigen_translation_type &lhs, const Eigen::Vector3d &rhs) {
+    return lhs.vec + rhs;
+};
+
+
+
+[[nodiscard]] inline Eigen::Affine3d operator*(const Eigen::Affine3d &lhs, const eigen_translation_type &rhs) {
+    return lhs * Eigen::Translation<double, 3>(rhs.vec);
+}
+
+[[nodiscard]] inline Eigen::Affine3d operator*(const Eigen::Affine3d &lhs, const eigen_rotation_type &rhs) {
+    return Eigen::Affine3d(lhs * rhs.mat);
+}
+
+[[nodiscard]] inline Eigen::Affine3d operator*(const Eigen::Affine3d &lhs, const eigen_scaling_type &rhs) {
+    return Eigen::Affine3d(lhs * rhs.mat);
+}
+
+
+
+[[nodiscard]] inline Eigen::Affine3d operator*(const Eigen::Matrix3d &lhs, const eigen_translation_type &rhs) {
+    return lhs * Eigen::Translation<double, 3>(rhs.vec);
+}
+
+[[nodiscard]] inline Eigen::Matrix3d operator*(const Eigen::Matrix3d &lhs, const eigen_rotation_type &rhs) {
+    return lhs * rhs.mat;
+}
+
+[[nodiscard]] inline Eigen::Matrix3d operator*(const Eigen::Matrix3d &lhs, const eigen_scaling_type &rhs) {
+    return lhs * rhs.mat;
+}
 
 template <> inline constexpr DType dtype<Eigen::Matrix3d>{5001};
 template <> inline constexpr DType dtype<Eigen::Affine3d>{5002};

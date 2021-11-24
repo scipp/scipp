@@ -45,7 +45,6 @@ set(SRC_FILES
     multi_index.cpp
     sizes.cpp
     slice.cpp
-    spatial_transforms.cpp
     strides.cpp
     string.cpp
     subbin_sizes.cpp
