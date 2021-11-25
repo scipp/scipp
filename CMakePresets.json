@@ -73,7 +73,11 @@
   "testPresets": [
     {
       "name": "ci",
-      "configurePreset": "ci"
+      "configurePreset": "ci",
+      "output": {
+        "shortProgress": true,
+        "outputOnFailure": true
+      }
     }
   ]
 }
