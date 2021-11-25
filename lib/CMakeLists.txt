@@ -198,8 +198,6 @@ add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-permissive->)
 # defaulting to OFF for now.
 option(PRECOMPILED_HEADERS "Set whether to build with precompiled headers" OFF)
 
-enable_testing()
-
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
 
@@ -276,8 +274,6 @@ option(FULL_BUILD
        "Enable full build where the 'all' target includes tests and benchmarks."
        OFF
 )
-
-enable_testing()
 
 add_subdirectory(common)
 if(FULL_BUILD)

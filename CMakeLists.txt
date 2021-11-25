@@ -53,6 +53,8 @@ else()
 endif()
 set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
 
+enable_testing()
+
 add_subdirectory(lib)
 
 install(DIRECTORY "src/scipp/" DESTINATION ${PYTHONDIR})

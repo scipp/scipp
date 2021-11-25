@@ -7,6 +7,25 @@
   },
   "configurePresets": [
     {
+      "name": "ci",
+      "displayName": "ci",
+      "description": "Options options for CI build (PR and Main)",
+      "binaryDir": "${sourceDir}/build",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "FULL_BUILD": "ON"
+      }
+    },
+    {
+      "name": "ci-linux",
+      "inherits": "ci",
+      "displayName": "ci-linux",
+      "description": "Linux options for CI build (PR and Main)"
+    },
+    {
       "name": "coverage",
       "displayName": "coverage",
       "description": "Options for coverage build (Linux only)",
@@ -23,9 +42,20 @@
   ],
   "buildPresets": [
     {
+      "name": "ci-linux",
+      "configurePreset": "ci-linux",
+      "targets": ["install"]
+    },
+    {
       "name": "coverage",
       "configurePreset": "coverage",
       "targets": ["coverage"]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "ci-linux",
+      "configurePreset": "ci-linux"
     }
   ]
 }
