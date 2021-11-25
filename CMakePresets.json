@@ -26,6 +26,23 @@
       "description": "Linux options for CI build (PR and Main)"
     },
     {
+      "name": "ci-macos",
+      "inherits": "ci",
+      "displayName": "ci-macos",
+      "description": "MacOS options for CI build (PR and Main)",
+      "cacheVariables": {
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "10.15"
+      }
+    },
+    {
+      "name": "ci-windows",
+      "inherits": "ci",
+      "displayName": "ci-windows",
+      "description": "Windows options for CI build (PR and Main)",
+      "generator": "Visual Studio 16 2019",
+      "architecture": "x64"
+    },
+    {
       "name": "coverage",
       "displayName": "coverage",
       "description": "Options for coverage build (Linux only)",
