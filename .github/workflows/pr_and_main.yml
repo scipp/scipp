@@ -9,7 +9,7 @@ on:
 jobs:
   build_and_test:
     name: CI (${{ matrix.os }}, ${{ matrix.python-version }})
-    runs-on: ${{ matrix.os }}
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
