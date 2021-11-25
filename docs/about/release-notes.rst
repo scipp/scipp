@@ -9,6 +9,8 @@ v0.10.0 (unreleased)
 Features
 ~~~~~~~~
 
+* Add support for auto-completions for slices and metadata access in Jupyter `#2304 <https://github.com/scipp/scipp/pull/2304>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
