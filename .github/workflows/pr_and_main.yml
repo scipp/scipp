@@ -34,9 +34,10 @@ jobs:
           echo "PYTHONPATH=$(pwd)/install" >> $GITHUB_ENV
 
       - name: ccache
-        if: contains(matrix.os, 'ubuntu')
+        if: !contains(matrix.os, 'windows')
         uses: hendrikmuhs/ccache-action@v1
         with:
+          key: ${{ matrix.os }}
           max-size: 1000M
 
       - name: Setup Mambaforge and dev env
