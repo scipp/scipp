@@ -214,7 +214,7 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
     });
     c.def("_ipython_key_completions_", [](T &self) {
       py::list out;
-      for (const auto dim : self.dims().labels()) {
+      for (const auto &dim : self.dims()) {
         out.append(dim.name());
       }
       return out;
