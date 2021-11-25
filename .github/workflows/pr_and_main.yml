@@ -1,4 +1,4 @@
-name: Linux build and test
+name: PR and main CI
 
 on: 
   schedule:
@@ -7,8 +7,13 @@ on:
   
 
 jobs:
-  coverage:
-    runs-on: ubuntu-latest
+  build_and_test:
+    name: CI (${{ matrix.os }}, ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["3.7"]
 
     steps:
       - uses: actions/checkout@v2
@@ -22,12 +27,15 @@ jobs:
 
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1
+        with:
+          max-size: 1000M
 
       - name: Setup Mambaforge and dev env
-        uses: conda-incubator/setup-miniconda@v2.1.1
+        uses: conda-incubator/setup-miniconda@v2
         with:
           miniforge-version: latest
           miniforge-variant: Mambaforge
+          python-version: ${{ matrix.python-version }}
           environment-file: scipp-developer.yml
           activate-environment: scipp-developer
           auto-activate-base: false
