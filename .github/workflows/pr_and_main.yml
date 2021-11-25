@@ -63,14 +63,14 @@ jobs:
         shell: bash -l {0}
         run: python -m pytest -v tests
 
-      - uses: ammaraskar/sphinx-action@master
-        if: ${{ contains(matrix.os, 'ubuntu') }}
-        with:
-          docs-folder: "docs/"
-          build-command: "sphinx-build -v -b html -b doctest -d .doctrees . docs_build"
+      - name: Docs build
+        shell: bash -l {0}
+        run: |
+            sphinx-build -v -b html -d .doctrees docs docs_build
+            sphinx-build -v -b doctest -d .doctrees docs docs_build
 
       - uses: actions/upload-artifact@v1
         if: ${{ contains(matrix.os, 'ubuntu') }}
         with:
           name: DocumentationHTML
-          path: docs/docs_build/html/
+          path: docs_build/html/
