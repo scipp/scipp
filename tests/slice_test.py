@@ -35,3 +35,10 @@ def test_setitem_ellipsis_dataset():
     assert sc.identical(var, ds['a'].data)
     ds['a'].data[...] = 2.3 * sc.units.one
     assert sc.identical(var, ds['a'].data)
+
+
+def test_ipython_key_completion():
+    var = sc.ones(dims=['x', 'y'], shape=[2, 1])
+    da = sc.DataArray(data=var, coords={'x': var, 'aux': var})
+    assert set(var._ipython_key_completions_()) == set(var.dims)
+    assert set(da._ipython_key_completions_()) == set(da.dims)
