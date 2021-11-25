@@ -38,24 +38,6 @@ constexpr auto structure_element_offset<Eigen::Affine3d> =
 };
 
 template <>
-constexpr auto structure_element_offset<scipp::core::eigen_translation_type> =
-    [](const std::string &key) -> scipp::index {
-  throw except::TypeError("Not supported for transform types");
-};
-
-template <>
-constexpr auto structure_element_offset<scipp::core::eigen_rotation_type> =
-    [](const std::string &key) -> scipp::index {
-  throw except::TypeError("Not supported for transform types");
-};
-
-template <>
-constexpr auto structure_element_offset<scipp::core::eigen_scaling_type> =
-    [](const std::string &key) -> scipp::index {
-  throw except::TypeError("Not supported for transform types");
-};
-
-template <>
 constexpr auto structure_element_offset<
     scipp::index_pair> = [](const std::string &key) {
   static std::map<std::string, scipp::index> offsets{{"begin", 0}, {"end", 1}};
@@ -69,13 +51,6 @@ std::vector<std::string> element_keys(const Variable &var) {
     return {"xx", "xy", "xz", "yx", "yy", "yz", "zx", "zy", "zz"};
   if (variableFactory().elem_dtype(var) == dtype<Eigen::Affine3d>)
     throw except::TypeError("Not supported for Affine3d types");
-  if (variableFactory().elem_dtype(var) ==
-          dtype<scipp::core::eigen_rotation_type> ||
-      variableFactory().elem_dtype(var) ==
-          dtype<scipp::core::eigen_translation_type> ||
-      variableFactory().elem_dtype(var) ==
-          dtype<scipp::core::eigen_scaling_type>)
-    throw except::TypeError("Not supported for transform types");
   if (variableFactory().elem_dtype(var) == dtype<scipp::index_pair>)
     return {"begin", "end"};
   throw except::TypeError("dtype is not structured");
