@@ -6,8 +6,6 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include <iostream>
-
 #include "scipp/core/dtype.h"
 
 namespace scipp::core {
@@ -29,10 +27,6 @@ public:
     inline bool operator==(const eigen_rotation_type &other) const {
         return this->matrix() == other.matrix();
     }
-
-    const eigen_rotation_type& eval() const {
-        return *this;
-    };
 };
 
 class eigen_scaling_type {
@@ -50,10 +44,6 @@ public:
     inline bool operator==(const eigen_scaling_type &other) const {
         return this->matrix() == other.matrix();
     }
-
-    const eigen_scaling_type& eval() const {
-        return *this;
-    };
 };
 
 class eigen_translation_type {
@@ -71,10 +61,6 @@ public:
     inline bool operator==(const eigen_translation_type &other) const {
         return this->vector() == other.vector();
     }
-
-    const eigen_translation_type& eval() const {
-        return *this;
-    };
 };
 
 [[nodiscard]] inline eigen_rotation_type operator*(const eigen_rotation_type &lhs, const eigen_rotation_type &rhs) {
