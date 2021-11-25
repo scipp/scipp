@@ -26,8 +26,8 @@ jobs:
         run: |
           echo "PYTHONPATH=$(pwd)/install" >> $GITHUB_ENV
 
-      - if: !contains(matrix.os, 'windows')
-        name: ccache
+      - name: ccache
+        if: ${{ !contains(matrix.os, 'windows') }}
         uses: hendrikmuhs/ccache-action@v1
         with:
           max-size: 1000M
