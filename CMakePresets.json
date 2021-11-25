@@ -40,8 +40,7 @@
       "displayName": "ci-windows",
       "description": "Windows options for CI build (PR and Main)",
       "generator": "Visual Studio 16 2019",
-      "architecture": "x64",
-      "configuration": "Release"
+      "architecture": "x64"
     },
     {
       "name": "coverage",
@@ -62,6 +61,7 @@
     {
       "name": "ci",
       "configurePreset": "ci",
+      "configuration": "Release",
       "targets": ["install"]
     },
     {
