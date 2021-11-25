@@ -54,7 +54,7 @@ jobs:
         run: cmake --preset ${{ matrix.cmake-preset }}
       - name: C++ build
         shell: bash -l {0}
-        run: cmake --build --preset ${{ matrix.cmake-preset }}
+        run: cmake --build --preset ci
       - name: C++ tests
         shell: bash -l {0}
-        run: ctest --preset ${{ matrix.cmake-preset }}
+        run: ctest --preset ci
