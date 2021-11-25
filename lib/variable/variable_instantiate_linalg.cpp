@@ -59,9 +59,9 @@ std::vector<std::string> element_keys(const Variable &var) {
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(vector_3_float64, Eigen::Vector3d, double)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(matrix_3_float64, Eigen::Matrix3d, double)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(affine_transform, Eigen::Affine3d, double)
-INSTANTIATE_ELEMENT_ARRAY_VARIABLE(rotation, scipp::core::eigen_rotation_type)
-INSTANTIATE_ELEMENT_ARRAY_VARIABLE(scaling, scipp::core::eigen_scaling_type)
-INSTANTIATE_ELEMENT_ARRAY_VARIABLE(translation, scipp::core::eigen_translation_type)
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(rotation, scipp::core::RotationTransform)
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(scaling, scipp::core::ScalingTransform)
+INSTANTIATE_ELEMENT_ARRAY_VARIABLE(translation, scipp::core::TranslationTransform)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(index_pair, scipp::index_pair, scipp::index)
 
 } // namespace scipp::variable

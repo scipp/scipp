@@ -51,9 +51,9 @@ element_to_string(const T &item,
           ss << "], ";
       }
       return ss.str();
-  } else if constexpr (std::is_same_v<T, scipp::core::eigen_rotation_type> || std::is_same_v<T, scipp::core::eigen_scaling_type>) {
+  } else if constexpr (std::is_same_v<T, scipp::core::RotationTransform> || std::is_same_v<T, scipp::core::ScalingTransform>) {
       return element_to_string(item.matrix());
-  } else if constexpr (std::is_same_v<T, scipp::core::eigen_translation_type>)
+  } else if constexpr (std::is_same_v<T, scipp::core::TranslationTransform>)
       return element_to_string(item.vector());
   else
     return to_string(item) + ", ";

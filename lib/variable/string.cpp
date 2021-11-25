@@ -67,8 +67,8 @@ auto apply(const DType dtype, Args &&... args) {
       std::tuple<double, float, int64_t, int32_t, std::string, bool,
                  scipp::core::time_point, Eigen::Vector3d, Eigen::Matrix3d,
                  Variable, bucket<Variable>, scipp::index_pair, Eigen::Affine3d, 
-                 scipp::core::eigen_rotation_type, scipp::core::eigen_translation_type, 
-                 scipp::core::eigen_scaling_type>{},
+                 scipp::core::RotationTransform, scipp::core::TranslationTransform, 
+                 scipp::core::ScalingTransform>{},
       dtype, std::forward<Args>(args)...);
 }
 } // namespace

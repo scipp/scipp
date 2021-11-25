@@ -831,17 +831,17 @@ TEST(VariableTest, combine_translations) {
   Eigen::Vector3d translation1(1, 2, 3);
   Eigen::Vector3d translation2(4, 5, 6);
 
-  auto trans1 = makeVariable<scipp::core::eigen_translation_type>(
-      Dims{Dim::X}, Shape{1}, units::m, Values{scipp::core::eigen_translation_type(translation1)});
-  auto trans2 = makeVariable<scipp::core::eigen_translation_type>(
-      Dims{Dim::X}, Shape{1}, units::m, Values{scipp::core::eigen_translation_type(translation2)});
+  auto trans1 = makeVariable<scipp::core::TranslationTransform>(
+      Dims{Dim::X}, Shape{1}, units::m, Values{scipp::core::TranslationTransform(translation1)});
+  auto trans2 = makeVariable<scipp::core::TranslationTransform>(
+      Dims{Dim::X}, Shape{1}, units::m, Values{scipp::core::TranslationTransform(translation2)});
 
   std::cout << "Translation1 = " << trans1 << std::endl;
   std::cout << "Translation2 = " << trans2 << std::endl;
 
   Eigen::Vector3d expected(5, 7, 9);
-  auto expected_var = makeVariable<scipp::core::eigen_translation_type>(
-          Dims{Dim::X}, Shape{1}, units::m, Values{scipp::core::eigen_translation_type(expected)});
+  auto expected_var = makeVariable<scipp::core::TranslationTransform>(
+          Dims{Dim::X}, Shape{1}, units::m, Values{scipp::core::TranslationTransform(expected)});
 
   EXPECT_EQ(trans1 * trans2, expected_var);
 }
@@ -850,10 +850,10 @@ TEST(VariableTest, combine_translation_and_scaling) {
   const Eigen::Vector3d translation(1, 2, 3);
   const Eigen::DiagonalMatrix<double, 3> scaling(4, 5, 6);
 
-  const Variable translation_var = makeVariable<scipp::core::eigen_translation_type>(
-      Dims{Dim::X}, Shape{1}, units::m, Values{scipp::core::eigen_translation_type(translation)});
-  const Variable scaling_var = makeVariable<scipp::core::eigen_scaling_type>(
-      Dims{Dim::X}, Shape{1}, units::one, Values{scipp::core::eigen_scaling_type(scaling)});
+  const Variable translation_var = makeVariable<scipp::core::TranslationTransform>(
+      Dims{Dim::X}, Shape{1}, units::m, Values{scipp::core::TranslationTransform(translation)});
+  const Variable scaling_var = makeVariable<scipp::core::ScalingTransform>(
+      Dims{Dim::X}, Shape{1}, units::one, Values{scipp::core::ScalingTransform(scaling)});
 
   std::cout << "Translation = " << translation_var << std::endl;
   std::cout << "Scaling = " << scaling_var << std::endl;
@@ -871,11 +871,11 @@ TEST(VariableTest, combine_rotation_and_scaling) {
   rotation = Eigen::AngleAxisd(pi<double>, Eigen::Vector3d::UnitX());
   const Eigen::DiagonalMatrix<double, 3> scaling(2, 3, 4);
 
-  const Variable rotation_var = makeVariable<scipp::core::eigen_rotation_type>(
-      Dims{Dim::X}, Shape{1}, units::one, Values{scipp::core::eigen_rotation_type(rotation)});
+  const Variable rotation_var = makeVariable<scipp::core::RotationTransform>(
+      Dims{Dim::X}, Shape{1}, units::one, Values{scipp::core::RotationTransform(rotation)});
 
-  const Variable scaling_var = makeVariable<scipp::core::eigen_scaling_type>(
-      Dims{Dim::X}, Shape{1}, units::one, Values{scipp::core::eigen_scaling_type(scaling)});
+  const Variable scaling_var = makeVariable<scipp::core::ScalingTransform>(
+      Dims{Dim::X}, Shape{1}, units::one, Values{scipp::core::ScalingTransform(scaling)});
 
   std::cout << "Rotation = " << rotation_var << std::endl;
   std::cout << "Scaling = " << scaling_var << std::endl;
