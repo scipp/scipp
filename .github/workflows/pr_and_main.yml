@@ -59,3 +59,18 @@ jobs:
       - name: C++ tests
         shell: bash -l {0}
         run: ctest --preset ci
+      - name: Python tests
+        shell: bash -l {0}
+        run: python -m pytest -v tests
+
+      - uses: ammaraskar/sphinx-action@master
+        if: ${{ contains(matrix.os, 'ubuntu') }}
+        with:
+          docs-folder: "docs/"
+          build-command: "sphinx-build -v -b html -b doctest -d .doctrees . docs_build"
+
+      - uses: actions/upload-artifact@v1
+        if: ${{ contains(matrix.os, 'ubuntu') }}
+        with:
+          name: DocumentationHTML
+          path: docs/docs_build/html/
