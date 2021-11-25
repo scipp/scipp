@@ -28,12 +28,10 @@ private:
   Variable data(Variable &var) const override { return this->buffer(var); }
 };
 
-void expect_valid_bin_indices(const VariableConceptHandle &indices,
-                              const Dim dim, const Sizes &buffer_sizes) {
-  auto copy =
-      requireT<const StructureArrayModel<scipp::index_pair, scipp::index>>(
-          *indices->clone());
-  const auto vals = copy.values();
+void expect_valid_bin_indices(const Variable &indices, const Dim dim,
+                              const Sizes &buffer_sizes) {
+  auto var = copy(indices);
+  const auto vals = var.values<scipp::index_pair>().as_span();
   std::sort(vals.begin(), vals.end());
   if ((!vals.empty() && (vals.begin()->first < 0)) ||
       (!vals.empty() && ((vals.end() - 1)->second > buffer_sizes[dim])))
