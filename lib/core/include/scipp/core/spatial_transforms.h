@@ -12,159 +12,177 @@ namespace scipp::core {
 
 class RotationTransform {
 private:
-    // Store as quaterniond as this is more space efficient than storing as matrix
-    // (4 doubles for quat vs 9 doubles for 3x3 matrix).
-    Eigen::Quaterniond quat;
+  // Store as quaterniond as this is more space efficient than storing as matrix
+  // (4 doubles for quat vs 9 doubles for 3x3 matrix).
+  Eigen::Quaterniond quat;
+
 public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    RotationTransform() : quat(Eigen::Quaterniond::Identity()) { };
-    explicit RotationTransform(const Eigen::Quaterniond &x) : quat(x) { };
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  RotationTransform() : quat(Eigen::Quaterniond::Identity()){};
+  explicit RotationTransform(const Eigen::Quaterniond &x) : quat(x){};
 
-    [[nodiscard]] Eigen::Matrix3d matrix() const {
-        return quat.toRotationMatrix();
-    }
+  [[nodiscard]] Eigen::Matrix3d matrix() const {
+    return quat.toRotationMatrix();
+  }
 
-    inline bool operator==(const RotationTransform &other) const {
-        return this->matrix() == other.matrix();
-    }
+  inline bool operator==(const RotationTransform &other) const {
+    return this->matrix() == other.matrix();
+  }
 };
 
 class ScalingTransform {
 private:
-    Eigen::DiagonalMatrix<double, 3> mat;
+  Eigen::DiagonalMatrix<double, 3> mat;
+
 public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    ScalingTransform() : mat(Eigen::Matrix3d::Identity().diagonal().asDiagonal()) { };
-    explicit ScalingTransform(const Eigen::DiagonalMatrix<double, 3> &x) : mat(x) { };
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  ScalingTransform()
+      : mat(Eigen::Matrix3d::Identity().diagonal().asDiagonal()){};
+  explicit ScalingTransform(const Eigen::DiagonalMatrix<double, 3> &x)
+      : mat(x){};
 
-    [[nodiscard]] Eigen::Matrix3d matrix() const {
-        return mat;
-    }
+  [[nodiscard]] Eigen::Matrix3d matrix() const { return mat; }
 
-    inline bool operator==(const ScalingTransform &other) const {
-        return this->matrix() == other.matrix();
-    }
+  inline bool operator==(const ScalingTransform &other) const {
+    return this->matrix() == other.matrix();
+  }
 };
 
 class TranslationTransform {
 private:
-    Eigen::Vector3d vec;
+  Eigen::Vector3d vec;
+
 public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    TranslationTransform() : vec(Eigen::Vector3d(0, 0, 0)) { };
-    explicit TranslationTransform(const Eigen::Vector3d &x) : vec(x) { };
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  TranslationTransform() : vec(Eigen::Vector3d(0, 0, 0)){};
+  explicit TranslationTransform(const Eigen::Vector3d &x) : vec(x){};
 
-    [[nodiscard]] Eigen::Vector3d vector() const {
-        return vec;
-    }
+  [[nodiscard]] Eigen::Vector3d vector() const { return vec; }
 
-    inline bool operator==(const TranslationTransform &other) const {
-        return this->vector() == other.vector();
-    }
+  inline bool operator==(const TranslationTransform &other) const {
+    return this->vector() == other.vector();
+  }
 };
 
-[[nodiscard]] inline RotationTransform operator*(const RotationTransform &lhs, const RotationTransform &rhs) {
-    return RotationTransform(Eigen::Quaterniond(lhs.matrix() * rhs.matrix()));
+[[nodiscard]] inline RotationTransform operator*(const RotationTransform &lhs,
+                                                 const RotationTransform &rhs) {
+  return RotationTransform(Eigen::Quaterniond(lhs.matrix() * rhs.matrix()));
 };
 
-[[nodiscard]] inline Eigen::Matrix3d operator*(const RotationTransform &lhs, const ScalingTransform &rhs) {
-    return lhs.matrix() * rhs.matrix();
+[[nodiscard]] inline Eigen::Matrix3d operator*(const RotationTransform &lhs,
+                                               const ScalingTransform &rhs) {
+  return lhs.matrix() * rhs.matrix();
 };
 
-[[nodiscard]] inline Eigen::Matrix3d operator*(const RotationTransform &lhs, const Eigen::Matrix3d &rhs) {
-    return lhs.matrix() * rhs;
+[[nodiscard]] inline Eigen::Matrix3d operator*(const RotationTransform &lhs,
+                                               const Eigen::Matrix3d &rhs) {
+  return lhs.matrix() * rhs;
 };
 
-[[nodiscard]] inline Eigen::Affine3d operator*(const RotationTransform &lhs, const TranslationTransform &rhs) {
-    return lhs.matrix() * Eigen::Translation<double, 3>(rhs.vector());
+[[nodiscard]] inline Eigen::Affine3d
+operator*(const RotationTransform &lhs, const TranslationTransform &rhs) {
+  return lhs.matrix() * Eigen::Translation<double, 3>(rhs.vector());
 };
 
-[[nodiscard]] inline Eigen::Affine3d operator*(const RotationTransform &lhs, const Eigen::Affine3d &rhs) {
-    return lhs.matrix() * rhs;
+[[nodiscard]] inline Eigen::Affine3d operator*(const RotationTransform &lhs,
+                                               const Eigen::Affine3d &rhs) {
+  return lhs.matrix() * rhs;
 };
 
-[[nodiscard]] inline Eigen::Vector3d operator*(const RotationTransform &lhs, const Eigen::Vector3d &rhs) {
-    return lhs.matrix() * rhs;
+[[nodiscard]] inline Eigen::Vector3d operator*(const RotationTransform &lhs,
+                                               const Eigen::Vector3d &rhs) {
+  return lhs.matrix() * rhs;
 };
 
-
-
-[[nodiscard]] inline ScalingTransform operator*(const ScalingTransform &lhs, const ScalingTransform &rhs) {
-    return ScalingTransform((lhs.matrix() * rhs.matrix()).diagonal().asDiagonal());
+[[nodiscard]] inline ScalingTransform operator*(const ScalingTransform &lhs,
+                                                const ScalingTransform &rhs) {
+  return ScalingTransform(
+      (lhs.matrix() * rhs.matrix()).diagonal().asDiagonal());
 };
 
-[[nodiscard]] inline Eigen::Matrix3d operator*(const ScalingTransform &lhs, const RotationTransform &rhs) {
-    return lhs.matrix() * rhs.matrix();
+[[nodiscard]] inline Eigen::Matrix3d operator*(const ScalingTransform &lhs,
+                                               const RotationTransform &rhs) {
+  return lhs.matrix() * rhs.matrix();
 };
 
-[[nodiscard]] inline Eigen::Matrix3d operator*(const ScalingTransform &lhs, const Eigen::Matrix3d &rhs) {
-    return lhs.matrix() * rhs;
+[[nodiscard]] inline Eigen::Matrix3d operator*(const ScalingTransform &lhs,
+                                               const Eigen::Matrix3d &rhs) {
+  return lhs.matrix() * rhs;
 };
 
-[[nodiscard]] inline Eigen::Affine3d operator*(const ScalingTransform &lhs, const TranslationTransform &rhs) {
-    return lhs.matrix() * Eigen::Translation<double, 3>(rhs.vector());
+[[nodiscard]] inline Eigen::Affine3d
+operator*(const ScalingTransform &lhs, const TranslationTransform &rhs) {
+  return lhs.matrix() * Eigen::Translation<double, 3>(rhs.vector());
 };
 
-[[nodiscard]] inline Eigen::Affine3d operator*(const ScalingTransform &lhs, const Eigen::Affine3d &rhs) {
-    return lhs.matrix() * rhs;
+[[nodiscard]] inline Eigen::Affine3d operator*(const ScalingTransform &lhs,
+                                               const Eigen::Affine3d &rhs) {
+  return lhs.matrix() * rhs;
 };
 
-[[nodiscard]] inline Eigen::Vector3d operator*(const ScalingTransform &lhs, const Eigen::Vector3d &rhs) {
-    return lhs.matrix() * rhs;
+[[nodiscard]] inline Eigen::Vector3d operator*(const ScalingTransform &lhs,
+                                               const Eigen::Vector3d &rhs) {
+  return lhs.matrix() * rhs;
 };
 
-
-
-[[nodiscard]] inline Eigen::Affine3d operator*(const TranslationTransform &lhs, const ScalingTransform &rhs) {
-    return Eigen::Translation<double, 3>(lhs.vector()) * rhs.matrix();
+[[nodiscard]] inline Eigen::Affine3d operator*(const TranslationTransform &lhs,
+                                               const ScalingTransform &rhs) {
+  return Eigen::Translation<double, 3>(lhs.vector()) * rhs.matrix();
 };
 
-[[nodiscard]] inline Eigen::Affine3d operator*(const TranslationTransform &lhs, const RotationTransform &rhs) {
-    return Eigen::Translation<double, 3>(lhs.vector()) * rhs.matrix();
+[[nodiscard]] inline Eigen::Affine3d operator*(const TranslationTransform &lhs,
+                                               const RotationTransform &rhs) {
+  return Eigen::Translation<double, 3>(lhs.vector()) * rhs.matrix();
 };
 
-[[nodiscard]] inline Eigen::Affine3d operator*(const TranslationTransform &lhs, const Eigen::Matrix3d &rhs) {
-    return Eigen::Translation<double, 3>(lhs.vector()) * rhs;
+[[nodiscard]] inline Eigen::Affine3d operator*(const TranslationTransform &lhs,
+                                               const Eigen::Matrix3d &rhs) {
+  return Eigen::Translation<double, 3>(lhs.vector()) * rhs;
 };
 
-[[nodiscard]] inline TranslationTransform operator*(const TranslationTransform &lhs, const TranslationTransform &rhs) {
-    return TranslationTransform(lhs.vector() + rhs.vector());
+[[nodiscard]] inline TranslationTransform
+operator*(const TranslationTransform &lhs, const TranslationTransform &rhs) {
+  return TranslationTransform(lhs.vector() + rhs.vector());
 };
 
-[[nodiscard]] inline Eigen::Affine3d operator*(const TranslationTransform &lhs, const Eigen::Affine3d &rhs) {
-    return Eigen::Translation<double, 3>(lhs.vector()) * rhs;
+[[nodiscard]] inline Eigen::Affine3d operator*(const TranslationTransform &lhs,
+                                               const Eigen::Affine3d &rhs) {
+  return Eigen::Translation<double, 3>(lhs.vector()) * rhs;
 };
 
-[[nodiscard]] inline Eigen::Vector3d operator*(const TranslationTransform &lhs, const Eigen::Vector3d &rhs) {
-    return lhs.vector() + rhs;
+[[nodiscard]] inline Eigen::Vector3d operator*(const TranslationTransform &lhs,
+                                               const Eigen::Vector3d &rhs) {
+  return lhs.vector() + rhs;
 };
 
-
-
-[[nodiscard]] inline Eigen::Affine3d operator*(const Eigen::Affine3d &lhs, const TranslationTransform &rhs) {
-    return lhs * Eigen::Translation<double, 3>(rhs.vector());
+[[nodiscard]] inline Eigen::Affine3d
+operator*(const Eigen::Affine3d &lhs, const TranslationTransform &rhs) {
+  return lhs * Eigen::Translation<double, 3>(rhs.vector());
 }
 
-[[nodiscard]] inline Eigen::Affine3d operator*(const Eigen::Affine3d &lhs, const RotationTransform &rhs) {
-    return Eigen::Affine3d(lhs * rhs.matrix());
+[[nodiscard]] inline Eigen::Affine3d operator*(const Eigen::Affine3d &lhs,
+                                               const RotationTransform &rhs) {
+  return Eigen::Affine3d(lhs * rhs.matrix());
 }
 
-[[nodiscard]] inline Eigen::Affine3d operator*(const Eigen::Affine3d &lhs, const ScalingTransform &rhs) {
-    return Eigen::Affine3d(lhs * rhs.matrix());
+[[nodiscard]] inline Eigen::Affine3d operator*(const Eigen::Affine3d &lhs,
+                                               const ScalingTransform &rhs) {
+  return Eigen::Affine3d(lhs * rhs.matrix());
 }
 
-
-
-[[nodiscard]] inline Eigen::Affine3d operator*(const Eigen::Matrix3d &lhs, const TranslationTransform &rhs) {
-    return lhs * Eigen::Translation<double, 3>(rhs.vector());
+[[nodiscard]] inline Eigen::Affine3d
+operator*(const Eigen::Matrix3d &lhs, const TranslationTransform &rhs) {
+  return lhs * Eigen::Translation<double, 3>(rhs.vector());
 }
 
-[[nodiscard]] inline Eigen::Matrix3d operator*(const Eigen::Matrix3d &lhs, const RotationTransform &rhs) {
-    return lhs * rhs.matrix();
+[[nodiscard]] inline Eigen::Matrix3d operator*(const Eigen::Matrix3d &lhs,
+                                               const RotationTransform &rhs) {
+  return lhs * rhs.matrix();
 }
 
-[[nodiscard]] inline Eigen::Matrix3d operator*(const Eigen::Matrix3d &lhs, const ScalingTransform &rhs) {
-    return lhs * rhs.matrix();
+[[nodiscard]] inline Eigen::Matrix3d operator*(const Eigen::Matrix3d &lhs,
+                                               const ScalingTransform &rhs) {
+  return lhs * rhs.matrix();
 }
 
 template <> inline constexpr DType dtype<Eigen::Matrix3d>{5001};

@@ -42,19 +42,20 @@ element_to_string(const T &item,
             element_to_string(Eigen::Vector3d(item.row(1))) + ", " +
             element_to_string(Eigen::Vector3d(item.row(2))) + "), "};
   else if constexpr (std::is_same_v<T, Eigen::Affine3d>) {
-      std::stringstream ss;
-      for (int row=0; row<4;++row){
-          ss << "[";
-          for (int col=0; col<4;++col){
-             ss << to_string(item(row, col)) << " ";
-          }
-          ss << "], ";
+    std::stringstream ss;
+    for (int row = 0; row < 4; ++row) {
+      ss << "[";
+      for (int col = 0; col < 4; ++col) {
+        ss << to_string(item(row, col)) << " ";
       }
-      return ss.str();
-  } else if constexpr (std::is_same_v<T, scipp::core::RotationTransform> || std::is_same_v<T, scipp::core::ScalingTransform>) {
-      return element_to_string(item.matrix());
+      ss << "], ";
+    }
+    return ss.str();
+  } else if constexpr (std::is_same_v<T, scipp::core::RotationTransform> ||
+                       std::is_same_v<T, scipp::core::ScalingTransform>) {
+    return element_to_string(item.matrix());
   } else if constexpr (std::is_same_v<T, scipp::core::TranslationTransform>)
-      return element_to_string(item.vector());
+    return element_to_string(item.vector());
   else
     return to_string(item) + ", ";
 }

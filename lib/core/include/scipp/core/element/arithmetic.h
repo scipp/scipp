@@ -8,8 +8,8 @@
 #include "scipp/common/overloaded.h"
 #include "scipp/core/eigen.h"
 #include "scipp/core/element/arg_list.h"
-#include "scipp/core/subbin_sizes.h"
 #include "scipp/core/spatial_transforms.h"
+#include "scipp/core/subbin_sizes.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/units/except.h"
 
@@ -88,60 +88,72 @@ struct subtract_types_t {
 
 struct multiplies_types_t {
   constexpr void operator()() const noexcept;
-  using types = decltype(
-      std::tuple_cat(std::declval<arithmetic_type_pairs_with_bool>(),
-                     std::tuple<std::tuple<double, Eigen::Vector3d>>(),
-                     std::tuple<std::tuple<float, Eigen::Vector3d>>(),
-                     std::tuple<std::tuple<int64_t, Eigen::Vector3d>>(),
-                     std::tuple<std::tuple<int32_t, Eigen::Vector3d>>(),
-                     std::tuple<std::tuple<Eigen::Vector3d, double>>(),
-                     std::tuple<std::tuple<Eigen::Vector3d, float>>(),
-                     std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
-                     std::tuple<std::tuple<Eigen::Vector3d, int32_t>>(),
+  using types = decltype(std::tuple_cat(
+      std::declval<arithmetic_type_pairs_with_bool>(),
+      std::tuple<std::tuple<double, Eigen::Vector3d>>(),
+      std::tuple<std::tuple<float, Eigen::Vector3d>>(),
+      std::tuple<std::tuple<int64_t, Eigen::Vector3d>>(),
+      std::tuple<std::tuple<int32_t, Eigen::Vector3d>>(),
+      std::tuple<std::tuple<Eigen::Vector3d, double>>(),
+      std::tuple<std::tuple<Eigen::Vector3d, float>>(),
+      std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
+      std::tuple<std::tuple<Eigen::Vector3d, int32_t>>(),
 
-                     std::tuple<std::tuple<Eigen::Affine3d, scipp::core::RotationTransform>>(),
-                     std::tuple<std::tuple<Eigen::Affine3d, scipp::core::ScalingTransform>>(),
-                     std::tuple<std::tuple<Eigen::Affine3d, Eigen::Matrix3d>>(),
-                     
-                     std::tuple<std::tuple<scipp::core::TranslationTransform, scipp::core::RotationTransform>>(),
-                     std::tuple<std::tuple<scipp::core::TranslationTransform, scipp::core::ScalingTransform>>(),
-                     std::tuple<std::tuple<scipp::core::TranslationTransform, Eigen::Matrix3d>>(),
-                     
-                     std::tuple<std::tuple<scipp::core::RotationTransform, Eigen::Affine3d>>(),
-                     std::tuple<std::tuple<scipp::core::RotationTransform, Eigen::Vector3d>>(),
-                     std::tuple<std::tuple<scipp::core::RotationTransform, scipp::core::TranslationTransform>>(),
-                     std::tuple<std::tuple<scipp::core::RotationTransform, scipp::core::RotationTransform>>(),
-                     std::tuple<std::tuple<scipp::core::RotationTransform, scipp::core::ScalingTransform>>(),
-                     std::tuple<std::tuple<scipp::core::RotationTransform, Eigen::Matrix3d>>(),
-                     
-                     std::tuple<std::tuple<scipp::core::ScalingTransform, Eigen::Affine3d>>(),
-                     std::tuple<std::tuple<scipp::core::ScalingTransform, Eigen::Vector3d>>(),
-                     std::tuple<std::tuple<scipp::core::ScalingTransform, scipp::core::TranslationTransform>>(),
-                     std::tuple<std::tuple<scipp::core::ScalingTransform, scipp::core::RotationTransform>>(),
-                     std::tuple<std::tuple<scipp::core::ScalingTransform, scipp::core::ScalingTransform>>(),
-                     std::tuple<std::tuple<scipp::core::ScalingTransform, Eigen::Matrix3d>>(),
-                     
-                     std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Affine3d>>(),
-                     std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>(),
-                     std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::TranslationTransform>>(),
-                     std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::RotationTransform>>(),
-                     std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::ScalingTransform>>(),
-                     std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Matrix3d>>()
-      ));
+      std::tuple<std::tuple<Eigen::Affine3d, scipp::core::RotationTransform>>(),
+      std::tuple<std::tuple<Eigen::Affine3d, scipp::core::ScalingTransform>>(),
+      std::tuple<std::tuple<Eigen::Affine3d, Eigen::Matrix3d>>(),
+
+      std::tuple<std::tuple<scipp::core::TranslationTransform,
+                            scipp::core::RotationTransform>>(),
+      std::tuple<std::tuple<scipp::core::TranslationTransform,
+                            scipp::core::ScalingTransform>>(),
+      std::tuple<
+          std::tuple<scipp::core::TranslationTransform, Eigen::Matrix3d>>(),
+
+      std::tuple<std::tuple<scipp::core::RotationTransform, Eigen::Affine3d>>(),
+      std::tuple<std::tuple<scipp::core::RotationTransform, Eigen::Vector3d>>(),
+      std::tuple<std::tuple<scipp::core::RotationTransform,
+                            scipp::core::TranslationTransform>>(),
+      std::tuple<std::tuple<scipp::core::RotationTransform,
+                            scipp::core::RotationTransform>>(),
+      std::tuple<std::tuple<scipp::core::RotationTransform,
+                            scipp::core::ScalingTransform>>(),
+      std::tuple<std::tuple<scipp::core::RotationTransform, Eigen::Matrix3d>>(),
+
+      std::tuple<std::tuple<scipp::core::ScalingTransform, Eigen::Affine3d>>(),
+      std::tuple<std::tuple<scipp::core::ScalingTransform, Eigen::Vector3d>>(),
+      std::tuple<std::tuple<scipp::core::ScalingTransform,
+                            scipp::core::TranslationTransform>>(),
+      std::tuple<std::tuple<scipp::core::ScalingTransform,
+                            scipp::core::RotationTransform>>(),
+      std::tuple<std::tuple<scipp::core::ScalingTransform,
+                            scipp::core::ScalingTransform>>(),
+      std::tuple<std::tuple<scipp::core::ScalingTransform, Eigen::Matrix3d>>(),
+
+      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Affine3d>>(),
+      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>(),
+      std::tuple<
+          std::tuple<Eigen::Matrix3d, scipp::core::TranslationTransform>>(),
+      std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::RotationTransform>>(),
+      std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::ScalingTransform>>(),
+      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Matrix3d>>()));
 };
 
 struct apply_spatial_transformation_t {
   constexpr void operator()() const noexcept;
   using types = decltype(std::tuple_cat(
       std::tuple<std::tuple<Eigen::Affine3d, Eigen::Vector3d>>(),
-      std::tuple<std::tuple<scipp::core::TranslationTransform, Eigen::Vector3d>>(),
+      std::tuple<
+          std::tuple<scipp::core::TranslationTransform, Eigen::Vector3d>>(),
 
-      std::tuple<std::tuple<scipp::core::TranslationTransform, scipp::core::TranslationTransform>>(),
-      std::tuple<std::tuple<scipp::core::TranslationTransform, Eigen::Affine3d>>(),
+      std::tuple<std::tuple<scipp::core::TranslationTransform,
+                            scipp::core::TranslationTransform>>(),
+      std::tuple<
+          std::tuple<scipp::core::TranslationTransform, Eigen::Affine3d>>(),
 
       std::tuple<std::tuple<Eigen::Affine3d, Eigen::Affine3d>>(),
-      std::tuple<std::tuple<Eigen::Affine3d, scipp::core::TranslationTransform>>()
-  ));
+      std::tuple<
+          std::tuple<Eigen::Affine3d, scipp::core::TranslationTransform>>()));
 };
 
 struct true_divide_types_t {
@@ -171,8 +183,7 @@ constexpr auto subtract = overloaded{
 constexpr auto multiply = overloaded{
     multiplies_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
-    [](const auto a, const auto b) { return a * b; }
-};
+    [](const auto a, const auto b) { return a * b; }};
 
 constexpr auto apply_spatial_transformation = overloaded{
     apply_spatial_transformation_t{},

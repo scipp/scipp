@@ -3,8 +3,8 @@
 #include "scipp/variable/multiply.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/eigen.h"
-#include "scipp/core/spatial_transforms.h"
 #include "scipp/core/element/arithmetic.h"
+#include "scipp/core/spatial_transforms.h"
 #include "scipp/variable/transform.h"
 
 namespace scipp::variable {
@@ -15,7 +15,9 @@ bool is_transform_with_translation(const Variable &var) {
 }
 
 Variable operator*(const Variable &a, const Variable &b) {
-  if (is_transform_with_translation(a) && (is_transform_with_translation(b) || b.dtype() == dtype<Eigen::Vector3d>)) {
+  if (is_transform_with_translation(a) &&
+      (is_transform_with_translation(b) ||
+       b.dtype() == dtype<Eigen::Vector3d>)) {
     return transform(a, b, core::element::apply_spatial_transformation,
                      std::string_view("apply_spatial_transformation"));
   } else {
