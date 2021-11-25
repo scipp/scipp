@@ -1,4 +1,4 @@
-name: code coverage
+name: Linux build and test
 
 on: 
   schedule:
@@ -32,6 +32,12 @@ jobs:
           activate-environment: scipp-developer
           auto-activate-base: false
 
-      - run: cmake --preset ci-linux
-      - run: cmake --build --preset ci-linux
-      - run: ctest --preset ci-linux
+      - name: Run cmake
+        shell: bash -l {0}
+        run: cmake --preset ci-linux
+      - name: C++ build
+        shell: bash -l {0}
+        run: cmake --build --preset ci-linux
+      - name: C++ tests
+        shell: bash -l {0}
+        run: ctest --preset ci-linux
