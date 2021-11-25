@@ -40,6 +40,7 @@
 #include "scipp/core/multi_index.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/transform_common.h"
+#include "scipp/core/spatial_transforms.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/core/values_and_variances.h"
 

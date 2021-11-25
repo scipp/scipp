@@ -44,9 +44,9 @@ template <int I, class T> decltype(auto) get(T &&t) {
     return t.operator()(I);
   } else if constexpr (std::is_same_v<std::decay_t<T>, scipp::core::eigen_scaling_type> || 
                      std::is_same_v<std::decay_t<T>, scipp::core::eigen_rotation_type>) {
-    return t.mat.operator()(I);
+    return t.matrix().operator()(I);
   } else if constexpr (std::is_same_v<std::decay_t<T>, scipp::core::eigen_translation_type>) {
-    return t.vec.operator()(I);
+    return t.vector().operator()(I);
   } else {
     return std::get<I>(t);
   }
