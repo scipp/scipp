@@ -18,10 +18,6 @@ jobs:
         include:
         - os: ubuntu-latest
           cmake-preset: ci-linux
-        - os: macos-latest
-          cmake-preset: ci-macos
-        - os: windows-latest
-          cmake-preset: ci-windows
 
     steps:
       - uses: actions/checkout@v2
