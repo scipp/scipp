@@ -1,0 +1,37 @@
+name: code coverage
+
+on: 
+  schedule:
+    - cron: '0 1 * * *'
+  pull_request:
+  
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0  # history required so cmake can determine version
+
+      - name: Setup env variables
+        run: |
+          echo "PYTHONPATH=$(pwd)/install" >> $GITHUB_ENV
+
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1
+
+      - name: Setup Mambaforge and dev env
+        uses: conda-incubator/setup-miniconda@v2.1.1
+        with:
+          miniforge-version: latest
+          miniforge-variant: Mambaforge
+          environment-file: scipp-developer.yml
+          activate-environment: scipp-developer
+          auto-activate-base: false
+
+      - run: cmake --preset ci-linux
+      - run: cmake --build --preset ci-linux
+      - run: ctest --preset ci-linux
