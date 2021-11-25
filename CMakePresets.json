@@ -9,7 +9,7 @@
     {
       "name": "ci",
       "displayName": "ci",
-      "description": "Options options for CI build (PR and Main)",
+      "description": "Options for CI build (PR and Main)",
       "binaryDir": "${sourceDir}/build",
       "generator": "Ninja",
       "cacheVariables": {
