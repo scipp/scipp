@@ -73,7 +73,6 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1
         with:
           key: ${{ matrix.os }}
-          max-size: 1000M
 
       - name: Setup Mambaforge and dev env
         uses: conda-incubator/setup-miniconda@v2
