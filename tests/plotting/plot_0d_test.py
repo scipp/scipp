@@ -7,6 +7,7 @@ import scipp as sc
 import pytest
 from .plot_helper import plot
 import matplotlib
+
 matplotlib.use('Agg')
 
 

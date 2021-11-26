@@ -43,6 +43,7 @@ from .show import show, make_svg
 from .table import table
 
 from .plotting import plot
+
 setattr(Variable, 'plot', plot)
 setattr(DataArray, 'plot', plot)
 setattr(Dataset, 'plot', plot)
