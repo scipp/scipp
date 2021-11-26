@@ -60,7 +60,7 @@ jobs:
 
       - name: Setup env variables
         run: |
-          echo "PYTHONPATH=$(pwd)/install" >> $GITHUB_ENV
+          echo PYTHONPATH=${{ github.workspace }}/install >> ${{ github.env }}
 
       - name: ccache
         if: ${{ !contains(matrix.os, 'windows') }}
