@@ -74,6 +74,7 @@
     {
       "name": "ci",
       "configurePreset": "ci",
+      "configuration": "Release",
       "output": {
         "outputOnFailure": true
       }
