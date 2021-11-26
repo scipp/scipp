@@ -1,8 +1,9 @@
 name: PR and main CI
 
 on: 
-  schedule:
-    - cron: '0 1 * * *'
+  push:
+    branches:
+      - main
   pull_request:
   
 
