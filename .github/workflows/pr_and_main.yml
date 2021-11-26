@@ -63,14 +63,15 @@ jobs:
         shell: bash -l {0}
         run: python -m pytest -v tests
 
-      - ${{ if contains(matrix.os, 'ubuntu') }}:
-        - name: Docs build
-          shell: bash -l {0}
-          run: |
-              sphinx-build -v -b html -d .doctrees docs docs_html
-              sphinx-build -v -b doctest -d .doctrees docs docs_html
+      - name: Docs build
+        if: ${{ contains(matrix.os, 'ubuntu') }}
+        shell: bash -l {0}
+        run: |
+            sphinx-build -v -b html -d .doctrees docs docs_html
+            sphinx-build -v -b doctest -d .doctrees docs docs_html
 
-        - uses: actions/upload-artifact@v1
-          with:
-            name: DocumentationHTML
-            path: docs_html/
+      - uses: actions/upload-artifact@v1
+        if: ${{ contains(matrix.os, 'ubuntu') }}
+        with:
+          name: DocumentationHTML
+          path: docs_html/
