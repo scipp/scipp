@@ -7,7 +7,23 @@ on:
   
 
 jobs:
+  formatting:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: DoozyX/clang-format-lint-action@v0.13
+        with:
+          source: 'lib'
+          extensions: 'h,cpp,tcc'
+          clangFormatVersion: 10
+          inplace: True
+      - uses: PuneetMatharu/cmake-format-lint-action@v1.0.0
+        with:
+          args: --in-place
+
   build_and_test:
+    needs: formatting
     name: CI (${{ matrix.os }}, ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
