@@ -22,8 +22,6 @@ jobs:
         with:
           args: --in-place
       - uses: py-actions/flake8@v1
-        with:
-          flake8-version: 0.6.9
       - uses: mritunjaysharma394/autoyapf@v2
         with:
           args: --recursive --in-place .
