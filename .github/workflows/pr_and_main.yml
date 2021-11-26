@@ -21,6 +21,7 @@ jobs:
       - uses: PuneetMatharu/cmake-format-lint-action@v1.0.0
         with:
           args: --in-place
+      - uses: stefanzweifel/git-auto-commit-action@v4
 
   build_and_test:
     needs: formatting
