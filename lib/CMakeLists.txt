@@ -63,10 +63,7 @@ if(CCACHE)
 endif()
 
 if(MSVC)
-  set(CLCACHE_PATH
-      ""
-      CACHE PATH "Path to installed clcache executable directory"
-  )
+  set(CLCACHE_PATH "" CACHE PATH "Path to installed clcache executable directory")
   if(EXISTS ${CLCACHE_PATH})
     set(CMAKE_VS_GLOBALS "CLToolExe=clcache.exe" "CLToolPath=${CLCACHE_PATH}"
                          "TrackFileAccess=false"
@@ -135,8 +132,7 @@ execute_process(
   COMMAND git describe --tag
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
   RESULT_VARIABLE HAVE_GIT_VERSION_INFO
-  OUTPUT_VARIABLE GIT_VERSION_INFO
-  OUTPUT_STRIP_TRAILING_WHITESPACE
+  OUTPUT_VARIABLE GIT_VERSION_INFO OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
   message(STATUS "Got version from Git: ${GIT_VERSION_INFO}")
