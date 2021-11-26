@@ -144,7 +144,7 @@ Dataset resize_default_init(const Dataset &parent, const Dim dim,
 /// Each bin is represented by a Variable slice. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, DataArray buffer) {
-  expect_valid_bin_indices(indices.data_handle(), dim, buffer.dims());
+  expect_valid_bin_indices(indices, dim, buffer.dims());
   return make_bins_no_validate(std::move(indices), dim, std::move(buffer));
 }
 
@@ -162,7 +162,7 @@ Variable make_bins_no_validate(Variable indices, const Dim dim,
 /// Each bin is represented by a Variable slice. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
-  expect_valid_bin_indices(indices.data_handle(), dim, buffer.sizes());
+  expect_valid_bin_indices(indices, dim, buffer.sizes());
   return make_bins_no_validate(std::move(indices), dim, std::move(buffer));
 }
 
