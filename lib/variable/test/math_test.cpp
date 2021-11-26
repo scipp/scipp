@@ -201,7 +201,8 @@ template <class B, class E> void pow_check_negative_exponent_allowed() {
   EXPECT_NO_THROW_DISCARD(pow(base, makeVariable<double>(Dims{}, Values{3})));
   EXPECT_NO_THROW_DISCARD(pow(base, makeVariable<double>(Dims{}, Values{-3})));
 
-  for (auto &&values : {Values{-3, 4}, Values{-3, -4}, Values{3, -4}}) {
+  for (auto values :
+       {std::vector{-3, 4}, std::vector{-3, -4}, std::vector{3, -4}}) {
     EXPECT_NO_THROW_DISCARD(
         pow(base, makeVariable<E>(Dims{Dim::X}, Shape{2}, Values(values))));
   }
