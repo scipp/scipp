@@ -63,7 +63,10 @@ if(CCACHE)
 endif()
 
 if(MSVC)
-  set(CLCACHE_PATH "" CACHE PATH "Path to installed clcache executable directory")
+  set(CLCACHE_PATH
+      ""
+      CACHE PATH "Path to installed clcache executable directory"
+  )
   if(EXISTS ${CLCACHE_PATH})
     set(CMAKE_VS_GLOBALS "CLToolExe=clcache.exe" "CLToolPath=${CLCACHE_PATH}"
                          "TrackFileAccess=false"
@@ -116,7 +119,11 @@ else()
   )
 endif()
 
-option(WITH_CTEST "Enable ctest integration of tests" ON)
+option(
+  CTEST_DISCOVER_TESTS
+  "Enable discoverage of *individual* tests by ctest. Test execution is slower, but ctest integration better. If OFF (default) each submodule test runner is registered as a *single* test."
+  OFF
+)
 option(DYNAMIC_LIB "Build shared libraries" ON)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
@@ -266,6 +273,7 @@ if(DYNAMIC_LIB)
 endif(DYNAMIC_LIB)
 
 include(scipp-install)
+include(scipp-test)
 
 option(FULL_BUILD
        "Enable full build where the 'all' target includes tests and benchmarks."

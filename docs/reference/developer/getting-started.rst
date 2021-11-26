@@ -101,6 +101,7 @@ Additional build options
 3. ``-DDISABLE_MULTI_THREADING`` disable multi-threading. By default, multi-threading is enabled if TBB was found. If this option is set to ``ON``, it overrides that.
 4. ``-DPRECOMPILED_HEADERS`` toggle usage of precompiled headers. ``OFF`` by default.
 5. ``-DCPPCHECK`` toggle run of cppcheck during compilation. ``OFF`` by default.
+6. ``-DCTEST_DISCOVER_TESTS`` toggle discovery of individual tests for better (but much slower) integration with ``ctest``. ``OFF`` by default.
 
 Running the unit tests
 ~~~~~~~~~~~~~~~~~~~~~~

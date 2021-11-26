@@ -18,7 +18,7 @@ mkdir ${INSTALL}
 cd ${BUILD}
 # We need to disable ctest integration of gtest-based tests since gtest_discover_tests
 # fails due to missing (asan) preload.
-cmake -DWITH_CTEST=Off -DSANITIZE_${SANITIZER}=On -DCMAKE_INSTALL_PREFIX=${INSTALL} ${SOURCE}
+cmake -DSANITIZE_${SANITIZER}=On -DCMAKE_INSTALL_PREFIX=${INSTALL} ${SOURCE}
 make -j
 make -j all-tests
 make install

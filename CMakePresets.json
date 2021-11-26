@@ -75,7 +75,6 @@
       "name": "ci",
       "configurePreset": "ci",
       "output": {
-        "shortProgress": true,
         "outputOnFailure": true
       }
     }
