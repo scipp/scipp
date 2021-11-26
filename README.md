@@ -22,3 +22,4 @@ The following organizations have made major contributions to the development of 
 * [Science and Technology Funding Council](https://stfc.ukri.org/councils/stfc), UK
 
 See individual [release notes](https://scipp.github.io/about/release-notes.html) for the individual contributors to each release 
+
