@@ -12,6 +12,11 @@ concurrency:
   cancel-in-progress: true  # cancel jobs from previous push
 
 
+defaults:
+  run:
+    shell: bash -l {0}
+
+
 jobs:
   formatting:
     runs-on: ubuntu-latest
@@ -83,21 +88,16 @@ jobs:
           auto-activate-base: false
 
       - name: Run cmake
-        shell: bash -l {0}
         run: cmake --preset ${{ matrix.cmake-preset }}
       - name: C++ build
-        shell: bash -l {0}
         run: cmake --build --preset ci
       - name: C++ tests
-        shell: bash -l {0}
         run: ctest --preset ci
       - name: Python tests
-        shell: bash -l {0}
         run: python -m pytest -v tests
 
       - name: Docs build
         if: ${{ contains(matrix.os, 'ubuntu') }}
-        shell: bash -l {0}
         run: |
             sphinx-build -v -b html -d .doctrees docs docs_html
             sphinx-build -v -b doctest -d .doctrees docs docs_html
