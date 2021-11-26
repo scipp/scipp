@@ -54,7 +54,7 @@ std::string to_string(const DType dtype) {
 std::string to_string(const Slice &slice) {
   std::string end = slice.end() >= 0 ? ", " + std::to_string(slice.end()) : "";
   return "Slice(" + to_string(slice.dim()) + ", " +
-         std::to_string(slice.begin()) + end + ")\n";
+         std::to_string(slice.begin()) + end + ')';
 }
 
 std::string to_string(const scipp::index_pair &index) {
