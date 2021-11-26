@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.7'
       - run: pip install cmake_format==0.6.9 flake8 yapf==0.30.0
-      - run: find . \( -name '*.cmake' -o -name 'CMakeLists.txt' \) -exec cmake-format $* {};
+      - run: find . -type f -name CMakeLists.txt -or -name '*.cmake' | xargs cmake-format -i
       - run: yapf --recursive --in-place .
       - run: flake8 .
       - uses: stefanzweifel/git-auto-commit-action@v4
