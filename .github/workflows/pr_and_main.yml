@@ -41,6 +41,8 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
+    env:
+      PYTHONPATH: ${{ github.workspace }}/install
     strategy:
       fail-fast: false
       matrix:
@@ -59,9 +61,6 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
-
-      - name: Setup env variables
-        run: echo PYTHONPATH=${{ github.workspace }}/install >> ${{ github.env }}
 
       - name: ccache
         if: ${{ !contains(matrix.os, 'windows') }}
