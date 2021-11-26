@@ -32,6 +32,9 @@ jobs:
       - run: find . -type f -name CMakeLists.txt -or -name '*.cmake' | xargs cmake-format -i
       - run: yapf --recursive --in-place .
       - run: flake8 .
+      - run: |
+          find . -type f -not -path '.git/*' -exec sed -ri "s/[0-9]{4} (Scipp contributors)/$(date +%Y) \1/g" {} +
+          git diff --exit-code
       - uses: stefanzweifel/git-auto-commit-action@v4
 
 
