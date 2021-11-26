@@ -218,9 +218,12 @@ private:
 
   struct BinIterator {
     BinIterator() = default;
-    explicit BinIterator(const ElementArrayViewParams &params)
-        : m_is_binned{static_cast<bool>(params.bucketParams())},
-          m_indices{params.bucketParams().indices} {}
+    explicit BinIterator(const BucketParams &bucket_params,
+                         const scipp::index outer_volume)
+        : m_is_binned{static_cast<bool>(bucket_params)},
+          // indices can be != nullptr but outer_volume == 0 when Variable
+          // was sliced.
+          m_indices{outer_volume == 0 ? nullptr : bucket_params.indices} {}
 
     const bool m_is_binned{false};
     scipp::index m_bin_index{0};
