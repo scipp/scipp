@@ -18,13 +18,14 @@ jobs:
           extensions: 'h,cpp,tcc'
           clangFormatVersion: 10
           inplace: True
-      - uses: PuneetMatharu/cmake-format-lint-action@v1.0.0
+      - name: Set up Python
+        uses: actions/setup-python@v2
         with:
-          args: --in-place
-      - uses: py-actions/flake8@v1
-      - uses: mritunjaysharma394/autoyapf@v2
-        with:
-          args: --recursive --in-place .
+          python-version: '3.7'
+      - run: pip install cmake_format==0.6.9 flake8 yapf==0.30.0
+      - run: find . \( -name '*.cmake' -o -name 'CMakeLists.txt' \) -exec cmake-format $* {}
+      - run: yapf --recursive --in-place .
+      - run: flake8 .
       - uses: stefanzweifel/git-auto-commit-action@v4
 
 
