@@ -24,10 +24,6 @@ jobs:
           extensions: 'h,cpp,tcc'
           clangFormatVersion: 10
           inplace: True
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.7'
       - run: pip install cmake_format==0.6.9 flake8 yapf==0.30.0
       - run: find . -type f -name CMakeLists.txt -or -name '*.cmake' | xargs cmake-format -i
       - run: yapf --recursive --in-place .
