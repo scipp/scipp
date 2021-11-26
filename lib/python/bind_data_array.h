@@ -84,7 +84,15 @@ void bind_mutable_view(py::module &m, const std::string &name) {
       .def(
           "items", [](T &self) { return items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
-          R"(view on self's items)");
+          R"(view on self's items)")
+      .def("_ipython_key_completions_", [](T &self) {
+        py::list out;
+        const auto end = self.keys_end();
+        for (auto it = self.keys_begin(); it != end; ++it) {
+          out.append(*it);
+        }
+        return out;
+      });
 }
 
 template <class T>
@@ -107,7 +115,15 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name) {
       .def(
           "items", [](T &self) { return str_items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
-          R"(view on self's items)");
+          R"(view on self's items)")
+      .def("_ipython_key_completions_", [](T &self) {
+        py::list out;
+        const auto end = self.keys_end();
+        for (auto it = self.keys_begin(); it != end; ++it) {
+          out.append(it->name());
+        }
+        return out;
+      });
 }
 
 template <class T, class... Ignored>

@@ -212,5 +212,12 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
         throw except::TypeError("len() of scalar object");
       return self.dims().size(0);
     });
+    c.def("_ipython_key_completions_", [](T &self) {
+      py::list out;
+      for (const auto &dim : self.dims()) {
+        out.append(dim.name());
+      }
+      return out;
+    });
   }
 }

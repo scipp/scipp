@@ -5,22 +5,17 @@
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
-#include "scipp/dataset/generated_comparison.h"
-#include "scipp/dataset/histogram.h"
 #include "scipp/dataset/map_view.h"
 #include "scipp/dataset/math.h"
 #include "scipp/dataset/rebin.h"
-#include "scipp/dataset/sort.h"
 #include "scipp/dataset/util.h"
 
 #include "bind_data_access.h"
 #include "bind_data_array.h"
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
-#include "docstring.h"
 #include "pybind11.h"
 #include "rename.h"
-#include "view.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -70,6 +65,14 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
   c.def("__getitem__",
         [](const T &self, const std::string &name) { return self[name]; });
   c.def("__contains__", &T::contains);
+  c.def("_ipython_key_completions_", [](T &self) {
+    py::list out;
+    const auto end = self.keys_end();
+    for (auto it = self.keys_begin(); it != end; ++it) {
+      out.append(*it);
+    }
+    return out;
+  });
   c.def_property_readonly(
       "dims",
       [](const T &self) {
