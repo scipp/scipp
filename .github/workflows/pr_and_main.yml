@@ -21,7 +21,14 @@ jobs:
       - uses: PuneetMatharu/cmake-format-lint-action@v1.0.0
         with:
           args: --in-place
+      - uses: py-actions/flake8@v1
+        with:
+          flake8-version: 0.6.9
+      - uses: mritunjaysharma394/autoyapf@v2
+        with:
+          args: --recursive --in-place .
       - uses: stefanzweifel/git-auto-commit-action@v4
+
 
   build_and_test:
     needs: formatting
