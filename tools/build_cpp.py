@@ -104,13 +104,15 @@ def main(*,
         # windows, see https://github.com/scipp/scipp/issues/2078 for
         # details
         build_flags = []
-        build_flags += ['--', '/p:TrackFileAccess=false']
     else:
         # For other platforms we do want to add the parallel build flag.
         build_flags = [parallel_flag]
 
     if len(build_config) > 0:
         build_flags += ['--config', build_config]
+
+    if platform == 'win32':
+        build_flags += ['--', '/p:TrackFileAccess=false']
 
     # Parse cmake flags
     flags_list = []
