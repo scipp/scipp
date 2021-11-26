@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: DoozyX/clang-format-lint-action@v0.13
+      - uses: DoozyX/clang-format-lint-action@9ea72631b74e61ce337d0839a90e76180e997283
         with:
           source: 'lib'
           extensions: 'h,cpp,tcc'
@@ -65,7 +65,7 @@ jobs:
 
       - name: ccache
         if: ${{ !contains(matrix.os, 'windows') }}
-        uses: hendrikmuhs/ccache-action@v1
+        uses: hendrikmuhs/ccache-action@9abc88f1e5416ef236a67b736bb781d6b134a6ea
         with:
           key: ${{ matrix.os }}
 
