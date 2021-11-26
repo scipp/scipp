@@ -63,10 +63,7 @@ if(CCACHE)
 endif()
 
 if(MSVC)
-  set(CLCACHE_PATH
-      ""
-      CACHE PATH "Path to installed clcache executable directory"
-  )
+  set(CLCACHE_PATH "" CACHE PATH "Path to installed clcache executable directory")
   if(EXISTS ${CLCACHE_PATH})
     set(CMAKE_VS_GLOBALS "CLToolExe=clcache.exe" "CLToolPath=${CLCACHE_PATH}"
                          "TrackFileAccess=false"
