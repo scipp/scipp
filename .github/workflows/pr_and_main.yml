@@ -12,11 +12,6 @@ concurrency:
   cancel-in-progress: true  # cancel jobs from previous push
 
 
-defaults:
-  run:
-    shell: bash -l {0}
-
-
 jobs:
   formatting:
     runs-on: ubuntu-latest
@@ -47,6 +42,9 @@ jobs:
     needs: formatting
     name: CI (${{ matrix.os }}, ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}
     strategy:
       fail-fast: false
       matrix:
@@ -87,14 +85,10 @@ jobs:
           activate-environment: scipp-developer
           auto-activate-base: false
 
-      - name: Run cmake
-        run: cmake --preset ${{ matrix.cmake-preset }}
-      - name: C++ build
-        run: cmake --build --preset ci
-      - name: C++ tests
-        run: ctest --preset ci
-      - name: Python tests
-        run: python -m pytest -v tests
+      - run: cmake --preset ${{ matrix.cmake-preset }}
+      - run: cmake --build --preset ci
+      - run: ctest --preset ci
+      - run: python -m pytest -v tests
 
       - name: Docs build
         if: ${{ contains(matrix.os, 'ubuntu') }}
