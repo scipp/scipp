@@ -14,56 +14,56 @@ class RotationTransform {
 private:
   // Store as quaterniond as this is more space efficient than storing as matrix
   // (4 doubles for quat vs 9 doubles for 3x3 matrix).
-  Eigen::Quaterniond quat;
+  Eigen::Quaterniond m_quat;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  RotationTransform() : quat(Eigen::Quaterniond::Identity()){};
-  explicit RotationTransform(const Eigen::Quaterniond &x) : quat(x){};
+  RotationTransform() : m_quat(Eigen::Quaterniond::Identity()){};
+  explicit RotationTransform(const Eigen::Quaterniond &x) : m_quat(x){};
 
   [[nodiscard]] Eigen::Matrix3d matrix() const {
-    return quat.toRotationMatrix();
+    return m_quat.toRotationMatrix();
   }
 
   bool operator==(const RotationTransform &other) const {
-    return this->quat.w() == other.quat.w() && 
-        this->quat.x() == other.quat.x() && 
-        this->quat.y() == other.quat.y() && 
-        this->quat.z() == other.quat.z();
+    return m_quat.w() == other.m_quat.w() && 
+        m_quat.x() == other.m_quat.x() && 
+        m_quat.y() == other.m_quat.y() && 
+        m_quat.z() == other.m_quat.z();
   }
 };
 
 class ScalingTransform {
 private:
-  Eigen::DiagonalMatrix<double, 3> mat;
+  Eigen::DiagonalMatrix<double, 3> m_mat;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   ScalingTransform()
-      : mat(Eigen::Matrix3d::Identity().diagonal().asDiagonal()){};
+      : m_mat(Eigen::Matrix3d::Identity().diagonal().asDiagonal()){};
   explicit ScalingTransform(const Eigen::DiagonalMatrix<double, 3> &x)
-      : mat(x){};
+      : m_mat(x){};
 
-  [[nodiscard]] Eigen::Matrix3d matrix() const { return mat; }
+  [[nodiscard]] Eigen::Matrix3d matrix() const { return m_mat; }
 
   bool operator==(const ScalingTransform &other) const {
-    return this->mat.diagonal() == other.mat.diagonal();
+    return m_mat.diagonal() == other.m_mat.diagonal();
   }
 };
 
 class TranslationTransform {
 private:
-  Eigen::Vector3d vec;
+  Eigen::Vector3d m_vec;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  TranslationTransform() : vec(Eigen::Vector3d(0, 0, 0)){};
-  explicit TranslationTransform(const Eigen::Vector3d &x) : vec(x){};
+  TranslationTransform() : m_vec(Eigen::Vector3d(0, 0, 0)){};
+  explicit TranslationTransform(const Eigen::Vector3d &x) : m_vec(x){};
 
-  [[nodiscard]] Eigen::Vector3d vector() const { return vec; }
+  [[nodiscard]] Eigen::Vector3d vector() const { return m_vec; }
 
   bool operator==(const TranslationTransform &other) const {
-    return this->vector() == other.vector();
+    return m_vec == other.m_vec;
   }
 };
 
