@@ -25,8 +25,11 @@ public:
     return quat.toRotationMatrix();
   }
 
-  inline bool operator==(const RotationTransform &other) const {
-    return this->matrix() == other.matrix();
+  bool operator==(const RotationTransform &other) const {
+    return this->quat.w() == other.quat.w() && 
+        this->quat.x() == other.quat.x() && 
+        this->quat.y() == other.quat.y() && 
+        this->quat.z() == other.quat.z();
   }
 };
 
@@ -43,8 +46,8 @@ public:
 
   [[nodiscard]] Eigen::Matrix3d matrix() const { return mat; }
 
-  inline bool operator==(const ScalingTransform &other) const {
-    return this->matrix() == other.matrix();
+  bool operator==(const ScalingTransform &other) const {
+    return this->mat.diagonal() == other.mat.diagonal();
   }
 };
 
@@ -59,7 +62,7 @@ public:
 
   [[nodiscard]] Eigen::Vector3d vector() const { return vec; }
 
-  inline bool operator==(const TranslationTransform &other) const {
+  bool operator==(const TranslationTransform &other) const {
     return this->vector() == other.vector();
   }
 };
