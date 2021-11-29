@@ -79,14 +79,11 @@ jobs:
       - run: ctest --preset ci
       - run: python -m pytest -v tests
 
-      - name: Docs build
+      - run: cmake --build --preset docs
         if: ${{ contains(matrix.os, 'ubuntu') }}
-        run: |
-            sphinx-build -v -b html -d .doctrees docs docs_html
-            sphinx-build -v -b doctest -d .doctrees docs docs_html
 
       - uses: actions/upload-artifact@v2
         if: ${{ contains(matrix.os, 'ubuntu') }}
         with:
           name: DocumentationHTML
-          path: docs_html/
+          path: build/html/

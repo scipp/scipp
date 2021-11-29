@@ -12,10 +12,9 @@ function(add_docs_target name)
   add_custom_target(
     ${name}
     COMMAND
-      ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/build_docs.py
-      --builder=${ADD_DOCS_TARGET_BUILDER}
-      --prefix=${CMAKE_CURRENT_BINARY_DIR}/docs
-      --work_dir=${CMAKE_CURRENT_BINARY_DIR}/docs/doctrees
+      ${Python_EXECUTABLE} -m sphinx -v -b ${ADD_DOCS_TARGET_BUILDER} -d
+      ${CMAKE_BINARY_DIR}/.doctrees ${CMAKE_SOURCE_DIR}/docs
+      ${CMAKE_BINARY_DIR}/html
     DEPENDS ${ADD_DOCS_TARGET_DEPENDS}
   )
 endfunction()

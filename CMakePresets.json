@@ -59,6 +59,12 @@
   ],
   "buildPresets": [
     {
+      "name": "docs",
+      "configurePreset": "ci",
+      "configuration": "Release",
+      "targets": ["docs", "doctest"]
+    },
+    {
       "name": "ci",
       "configurePreset": "ci",
       "configuration": "Release",
