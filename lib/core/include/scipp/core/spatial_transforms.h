@@ -31,6 +31,19 @@ public:
         m_quat.y() == other.m_quat.y() && 
         m_quat.z() == other.m_quat.z();
   }
+
+  const double get(const int index) const {
+      if (index == 0)
+          return m_quat.w();
+      else if (index == 1)
+          return m_quat.x();
+      else if (index == 2)
+          return m_quat.y();
+      else if (index == 3)
+          return m_quat.z();
+      else
+          throw std::out_of_range("invalid index in get for Rotation");
+  }
 };
 
 class Scaling {
@@ -49,6 +62,10 @@ public:
   bool operator==(const Scaling &other) const {
     return m_mat.diagonal() == other.m_mat.diagonal();
   }
+
+  const double get(const int index) const {
+      return m_mat.diagonal()(index);
+  }
 };
 
 class Translation {
@@ -64,6 +81,10 @@ public:
 
   bool operator==(const Translation &other) const {
     return m_vec == other.m_vec;
+  }
+
+  const double get(const int index) const {
+      return m_vec(index);
   }
 };
 

@@ -40,15 +40,6 @@ template <class T> auto &cast(Variable &var) {
 template <int I, class T> decltype(auto) get(T &&t) {
   if constexpr (std::is_same_v<std::decay_t<T>, Eigen::Affine3d>) {
     return t.matrix().operator()(I);
-  } else if constexpr (std::is_same_v<std::decay_t<T>,
-                                      scipp::core::Scaling>) {
-    return t.matrix().operator()(I);
-  } else if constexpr (std::is_same_v<std::decay_t<T>,
-                                      scipp::core::Rotation>) {
-    return t.quat().operator()(I);
-  } else if constexpr (std::is_same_v<std::decay_t<T>,
-                                      scipp::core::Translation>) {
-    return t.vector().operator()(I);
   } else if constexpr (core::has_eval_v<std::decay_t<T>>) {
     return t.operator()(I);
   } else {
