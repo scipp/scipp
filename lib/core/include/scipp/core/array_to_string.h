@@ -51,9 +51,10 @@ element_to_string(const T &item,
       ss << "], ";
     }
     return ss.str();
-  } else if constexpr (std::is_same_v<T, scipp::core::RotationTransform> ||
-                       std::is_same_v<T, scipp::core::ScalingTransform>) {
+  } else if constexpr (std::is_same_v<T, scipp::core::ScalingTransform>) {
     return element_to_string(item.matrix());
+  } else if constexpr (std::is_same_v<T, scipp::core::RotationTransform>) {
+    return {"(" + to_string(item.quat().w()) + ", " + to_string(item.quat().x()) + ", " + to_string(item.quat().y()) + ", " + to_string(item.quat().z()) + "), "};
   } else if constexpr (std::is_same_v<T, scipp::core::TranslationTransform>)
     return element_to_string(item.vector());
   else
