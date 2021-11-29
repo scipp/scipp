@@ -98,45 +98,10 @@ struct multiplies_types_t {
       std::tuple<std::tuple<Eigen::Vector3d, float>>(),
       std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
       std::tuple<std::tuple<Eigen::Vector3d, int32_t>>(),
-
-      std::tuple<std::tuple<Eigen::Affine3d, scipp::core::RotationTransform>>(),
-      std::tuple<std::tuple<Eigen::Affine3d, scipp::core::ScalingTransform>>(),
-      std::tuple<std::tuple<Eigen::Affine3d, Eigen::Matrix3d>>(),
-
-      std::tuple<std::tuple<scipp::core::TranslationTransform,
-                            scipp::core::RotationTransform>>(),
-      std::tuple<std::tuple<scipp::core::TranslationTransform,
-                            scipp::core::ScalingTransform>>(),
-      std::tuple<
-          std::tuple<scipp::core::TranslationTransform, Eigen::Matrix3d>>(),
-
-      std::tuple<std::tuple<scipp::core::RotationTransform, Eigen::Affine3d>>(),
+      std::declval<pair_product_t<Eigen::Matrix3d, Eigen::Affine3d, scipp::core::RotationTransform, scipp::core::ScalingTransform, scipp::core::TranslationTransform>>(),
       std::tuple<std::tuple<scipp::core::RotationTransform, Eigen::Vector3d>>(),
-      std::tuple<std::tuple<scipp::core::RotationTransform,
-                            scipp::core::TranslationTransform>>(),
-      std::tuple<std::tuple<scipp::core::RotationTransform,
-                            scipp::core::RotationTransform>>(),
-      std::tuple<std::tuple<scipp::core::RotationTransform,
-                            scipp::core::ScalingTransform>>(),
-      std::tuple<std::tuple<scipp::core::RotationTransform, Eigen::Matrix3d>>(),
-
-      std::tuple<std::tuple<scipp::core::ScalingTransform, Eigen::Affine3d>>(),
       std::tuple<std::tuple<scipp::core::ScalingTransform, Eigen::Vector3d>>(),
-      std::tuple<std::tuple<scipp::core::ScalingTransform,
-                            scipp::core::TranslationTransform>>(),
-      std::tuple<std::tuple<scipp::core::ScalingTransform,
-                            scipp::core::RotationTransform>>(),
-      std::tuple<std::tuple<scipp::core::ScalingTransform,
-                            scipp::core::ScalingTransform>>(),
-      std::tuple<std::tuple<scipp::core::ScalingTransform, Eigen::Matrix3d>>(),
-
-      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Affine3d>>(),
-      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>(),
-      std::tuple<
-          std::tuple<Eigen::Matrix3d, scipp::core::TranslationTransform>>(),
-      std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::RotationTransform>>(),
-      std::tuple<std::tuple<Eigen::Matrix3d, scipp::core::ScalingTransform>>(),
-      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Matrix3d>>()));
+      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>()));
 };
 
 struct apply_spatial_transformation_t {
