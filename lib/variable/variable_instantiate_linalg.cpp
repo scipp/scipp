@@ -32,7 +32,7 @@ constexpr auto structure_element_offset<Eigen::Matrix3d> =
 
 template <>
 constexpr auto structure_element_offset<Eigen::Affine3d> =
-    [](const std::string &key) -> scipp::index {
+    []([[maybe_unused]] const std::string &key) -> scipp::index {
   throw except::TypeError("Not supported for Affine3d types");
 };
 
