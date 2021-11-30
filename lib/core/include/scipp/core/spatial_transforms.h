@@ -86,11 +86,15 @@ public:
   const double get(const int index) const {
       return m_vec(index);
   }
+
+  const Eigen::Translation<double, 3> asEigenTranslation() const {
+      return Eigen::Translation<double, 3>(m_vec);
+  }
 };
 
 [[nodiscard]] inline Rotation operator*(const Rotation &lhs,
                                                  const Rotation &rhs) {
-  return Rotation(Eigen::Quaterniond(lhs.quat() * rhs.quat()));
+  return Rotation(lhs.quat() * rhs.quat());
 };
 
 [[nodiscard]] inline Eigen::Matrix3d operator*(const Rotation &lhs,
@@ -105,7 +109,7 @@ public:
 
 [[nodiscard]] inline Eigen::Affine3d
 operator*(const Rotation &lhs, const Translation &rhs) {
-  return lhs.quat() * Eigen::Translation<double, 3>(rhs.vector());
+  return lhs.quat() * rhs.asEigenTranslation();
 };
 
 [[nodiscard]] inline Eigen::Affine3d operator*(const Rotation &lhs,
@@ -136,7 +140,7 @@ operator*(const Rotation &lhs, const Translation &rhs) {
 
 [[nodiscard]] inline Eigen::Affine3d
 operator*(const Scaling &lhs, const Translation &rhs) {
-  return lhs.matrix() * Eigen::Translation<double, 3>(rhs.vector());
+  return lhs.matrix() * rhs.asEigenTranslation();
 };
 
 [[nodiscard]] inline Eigen::Affine3d operator*(const Scaling &lhs,
@@ -151,17 +155,17 @@ operator*(const Scaling &lhs, const Translation &rhs) {
 
 [[nodiscard]] inline Eigen::Affine3d operator*(const Translation &lhs,
                                                const Scaling &rhs) {
-  return Eigen::Translation<double, 3>(lhs.vector()) * rhs.matrix();
+  return lhs.asEigenTranslation() * rhs.matrix();
 };
 
 [[nodiscard]] inline Eigen::Affine3d operator*(const Translation &lhs,
                                                const Rotation &rhs) {
-  return Eigen::Translation<double, 3>(lhs.vector()) * rhs.quat();
+  return lhs.asEigenTranslation() * rhs.quat();
 };
 
 [[nodiscard]] inline Eigen::Affine3d operator*(const Translation &lhs,
                                                const Eigen::Matrix3d &rhs) {
-  return Eigen::Translation<double, 3>(lhs.vector()) * rhs;
+  return lhs.asEigenTranslation() * rhs;
 };
 
 [[nodiscard]] inline Translation
@@ -171,7 +175,7 @@ operator*(const Translation &lhs, const Translation &rhs) {
 
 [[nodiscard]] inline Eigen::Affine3d operator*(const Translation &lhs,
                                                const Eigen::Affine3d &rhs) {
-  return Eigen::Translation<double, 3>(lhs.vector()) * rhs;
+  return lhs.asEigenTranslation() * rhs;
 };
 
 [[nodiscard]] inline Eigen::Vector3d operator*(const Translation &lhs,
@@ -181,7 +185,7 @@ operator*(const Translation &lhs, const Translation &rhs) {
 
 [[nodiscard]] inline Eigen::Affine3d
 operator*(const Eigen::Affine3d &lhs, const Translation &rhs) {
-  return lhs * Eigen::Translation<double, 3>(rhs.vector());
+  return lhs * rhs.asEigenTranslation();
 }
 
 [[nodiscard]] inline Eigen::Affine3d operator*(const Eigen::Affine3d &lhs,
@@ -196,7 +200,7 @@ operator*(const Eigen::Affine3d &lhs, const Translation &rhs) {
 
 [[nodiscard]] inline Eigen::Affine3d
 operator*(const Eigen::Matrix3d &lhs, const Translation &rhs) {
-  return lhs * Eigen::Translation<double, 3>(rhs.vector());
+  return lhs * rhs.asEigenTranslation();
 }
 
 [[nodiscard]] inline Eigen::Matrix3d operator*(const Eigen::Matrix3d &lhs,
