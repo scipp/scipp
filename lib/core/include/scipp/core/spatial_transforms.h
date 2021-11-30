@@ -8,6 +8,9 @@
 
 #include "scipp/core/dtype.h"
 
+#include <type_traits>
+#include <optional>
+
 namespace scipp::core {
 
 class Rotation {
@@ -86,40 +89,69 @@ public:
   const double get(const int index) const {
       return m_vec(index);
   }
-
-  const Eigen::Translation<double, 3> asEigenTranslation() const {
-      return Eigen::Translation<double, 3>(m_vec);
-  }
 };
+
+template<class T> struct asEigenType_t { using type = T; };
+template<> struct asEigenType_t<Rotation> { using type = Eigen::Quaterniond; };
+template<> struct asEigenType_t<Scaling> { using type = Eigen::Matrix3d; };
+template<> struct asEigenType_t<Translation> { using type = Eigen::Translation<double, 3>; };
+
+template<typename T, typename R = asEigenType_t<T>::type> inline const R asEigenType(const T &obj) { return obj; };
+template<> inline const Eigen::Quaterniond asEigenType(const Rotation &obj) { return obj.quat(); }
+template<> inline const Eigen::Matrix3d asEigenType(const Scaling &obj) { return obj.matrix(); }
+template<> inline const Eigen::Translation<double, 3> asEigenType(const Translation &obj) { return Eigen::Translation<double, 3>(obj.vector()); }
+
+template<class T_LHS, class T_RHS> struct combines_to_linear : std::false_type {}; 
+template<> struct combines_to_linear<Rotation, Scaling> : std::true_type {};
+template<> struct combines_to_linear<Rotation, Eigen::Matrix3d> : std::true_type {};
+template<> struct combines_to_linear<Scaling, Rotation> : std::true_type {};
+template<> struct combines_to_linear<Scaling, Eigen::Matrix3d> : std::true_type {};
+template<> struct combines_to_linear<Eigen::Matrix3d, Rotation> : std::true_type {};
+template<> struct combines_to_linear<Eigen::Matrix3d, Scaling> : std::true_type {};
+
+template <typename T_LHS, typename T_RHS>
+[[nodiscard]] inline 
+std::enable_if_t<combines_to_linear<T_LHS, T_RHS>::value, Eigen::Matrix3d> 
+operator*(const T_LHS &lhs, const T_RHS &rhs) {
+    return asEigenType<T_LHS>(lhs) * asEigenType<T_RHS>(rhs);
+}
+
+template<class T_LHS, class T_RHS> struct combines_to_affine : std::false_type {}; 
+template<> struct combines_to_affine<Rotation, Translation> : std::true_type {};
+template<> struct combines_to_affine<Rotation, Eigen::Affine3d> : std::true_type {};
+template<> struct combines_to_affine<Scaling, Translation> : std::true_type {};
+template<> struct combines_to_affine<Scaling, Eigen::Affine3d> : std::true_type {};
+template<> struct combines_to_affine<Eigen::Matrix3d, Translation> : std::true_type {};
+template<> struct combines_to_affine<Eigen::Affine3d, Rotation> : std::true_type {};
+template<> struct combines_to_affine<Eigen::Affine3d, Scaling> : std::true_type {};
+template<> struct combines_to_affine<Eigen::Affine3d, Translation> : std::true_type {};
+template<> struct combines_to_affine<Translation, Rotation> : std::true_type {};
+template<> struct combines_to_affine<Translation, Scaling> : std::true_type {};
+template<> struct combines_to_affine<Translation, Eigen::Matrix3d> : std::true_type {};
+template<> struct combines_to_affine<Translation, Eigen::Affine3d> : std::true_type {};
+
+template <typename T_LHS, typename T_RHS>
+[[nodiscard]] inline 
+std::enable_if_t<combines_to_affine<T_LHS, T_RHS>::value, Eigen::Affine3d> 
+operator*(const T_LHS &lhs, const T_RHS &rhs) {
+    return Eigen::Affine3d(asEigenType<T_LHS>(lhs) * asEigenType<T_RHS>(rhs));
+}
+
+template<class T_LHS> struct applies_to_vector : std::false_type {}; 
+template<> struct applies_to_vector<Rotation> : std::true_type {};
+template<> struct applies_to_vector<Translation> : std::true_type {};
+template<> struct applies_to_vector<Scaling> : std::true_type {};
+
+template <typename T_LHS>
+[[nodiscard]] inline 
+std::enable_if_t<applies_to_vector<T_LHS>::value, Eigen::Vector3d> 
+operator*(const T_LHS &lhs, const Eigen::Vector3d &rhs) {
+    return asEigenType<T_LHS>(lhs) * rhs;
+}
 
 [[nodiscard]] inline Rotation operator*(const Rotation &lhs,
                                                  const Rotation &rhs) {
   return Rotation(lhs.quat() * rhs.quat());
-};
-
-[[nodiscard]] inline Eigen::Matrix3d operator*(const Rotation &lhs,
-                                               const Scaling &rhs) {
-  return lhs.quat() * rhs.matrix();
-};
-
-[[nodiscard]] inline Eigen::Matrix3d operator*(const Rotation &lhs,
-                                               const Eigen::Matrix3d &rhs) {
-  return lhs.quat() * rhs;
-};
-
-[[nodiscard]] inline Eigen::Affine3d
-operator*(const Rotation &lhs, const Translation &rhs) {
-  return lhs.quat() * rhs.asEigenTranslation();
-};
-
-[[nodiscard]] inline Eigen::Affine3d operator*(const Rotation &lhs,
-                                               const Eigen::Affine3d &rhs) {
-  return lhs.quat() * rhs;
-};
-
-[[nodiscard]] inline Eigen::Vector3d operator*(const Rotation &lhs,
-                                               const Eigen::Vector3d &rhs) {
-  return lhs.quat() * rhs;
 };
 
 [[nodiscard]] inline Scaling operator*(const Scaling &lhs,
@@ -128,90 +160,10 @@ operator*(const Rotation &lhs, const Translation &rhs) {
       (lhs.matrix() * rhs.matrix()).diagonal().asDiagonal());
 };
 
-[[nodiscard]] inline Eigen::Matrix3d operator*(const Scaling &lhs,
-                                               const Rotation &rhs) {
-  return lhs.matrix() * rhs.quat();
-};
-
-[[nodiscard]] inline Eigen::Matrix3d operator*(const Scaling &lhs,
-                                               const Eigen::Matrix3d &rhs) {
-  return lhs.matrix() * rhs;
-};
-
-[[nodiscard]] inline Eigen::Affine3d
-operator*(const Scaling &lhs, const Translation &rhs) {
-  return lhs.matrix() * rhs.asEigenTranslation();
-};
-
-[[nodiscard]] inline Eigen::Affine3d operator*(const Scaling &lhs,
-                                               const Eigen::Affine3d &rhs) {
-  return lhs.matrix() * rhs;
-};
-
-[[nodiscard]] inline Eigen::Vector3d operator*(const Scaling &lhs,
-                                               const Eigen::Vector3d &rhs) {
-  return lhs.matrix() * rhs;
-};
-
-[[nodiscard]] inline Eigen::Affine3d operator*(const Translation &lhs,
-                                               const Scaling &rhs) {
-  return lhs.asEigenTranslation() * rhs.matrix();
-};
-
-[[nodiscard]] inline Eigen::Affine3d operator*(const Translation &lhs,
-                                               const Rotation &rhs) {
-  return lhs.asEigenTranslation() * rhs.quat();
-};
-
-[[nodiscard]] inline Eigen::Affine3d operator*(const Translation &lhs,
-                                               const Eigen::Matrix3d &rhs) {
-  return lhs.asEigenTranslation() * rhs;
-};
-
 [[nodiscard]] inline Translation
 operator*(const Translation &lhs, const Translation &rhs) {
   return Translation(lhs.vector() + rhs.vector());
 };
-
-[[nodiscard]] inline Eigen::Affine3d operator*(const Translation &lhs,
-                                               const Eigen::Affine3d &rhs) {
-  return lhs.asEigenTranslation() * rhs;
-};
-
-[[nodiscard]] inline Eigen::Vector3d operator*(const Translation &lhs,
-                                               const Eigen::Vector3d &rhs) {
-  return lhs.vector() + rhs;
-};
-
-[[nodiscard]] inline Eigen::Affine3d
-operator*(const Eigen::Affine3d &lhs, const Translation &rhs) {
-  return lhs * rhs.asEigenTranslation();
-}
-
-[[nodiscard]] inline Eigen::Affine3d operator*(const Eigen::Affine3d &lhs,
-                                               const Rotation &rhs) {
-  return Eigen::Affine3d(lhs * rhs.quat());
-}
-
-[[nodiscard]] inline Eigen::Affine3d operator*(const Eigen::Affine3d &lhs,
-                                               const Scaling &rhs) {
-  return Eigen::Affine3d(lhs * rhs.matrix());
-}
-
-[[nodiscard]] inline Eigen::Affine3d
-operator*(const Eigen::Matrix3d &lhs, const Translation &rhs) {
-  return lhs * rhs.asEigenTranslation();
-}
-
-[[nodiscard]] inline Eigen::Matrix3d operator*(const Eigen::Matrix3d &lhs,
-                                               const Rotation &rhs) {
-  return lhs * rhs.quat();
-}
-
-[[nodiscard]] inline Eigen::Matrix3d operator*(const Eigen::Matrix3d &lhs,
-                                               const Scaling &rhs) {
-  return lhs * rhs.matrix();
-}
 
 template <> inline constexpr DType dtype<Eigen::Matrix3d>{5001};
 template <> inline constexpr DType dtype<Eigen::Affine3d>{5002};
