@@ -113,7 +113,7 @@ template <typename T_LHS, typename T_RHS>
 [[nodiscard]] inline 
 std::enable_if_t<combines_to_linear<T_LHS, T_RHS>::value, Eigen::Matrix3d> 
 operator*(const T_LHS &lhs, const T_RHS &rhs) {
-    return asEigenType<T_LHS>(lhs) * asEigenType<T_RHS>(rhs);
+    return asEigenType(lhs) * asEigenType(rhs);
 }
 
 template<class T_LHS, class T_RHS> struct combines_to_affine : std::false_type {}; 
@@ -134,7 +134,7 @@ template <typename T_LHS, typename T_RHS>
 [[nodiscard]] inline 
 std::enable_if_t<combines_to_affine<T_LHS, T_RHS>::value, Eigen::Affine3d> 
 operator*(const T_LHS &lhs, const T_RHS &rhs) {
-    return Eigen::Affine3d(asEigenType<T_LHS>(lhs) * asEigenType<T_RHS>(rhs));
+    return Eigen::Affine3d(asEigenType(lhs) * asEigenType(rhs));
 }
 
 template<class T_LHS> struct applies_to_vector : std::false_type {}; 
@@ -146,7 +146,7 @@ template <typename T_LHS>
 [[nodiscard]] inline 
 std::enable_if_t<applies_to_vector<T_LHS>::value, Eigen::Vector3d> 
 operator*(const T_LHS &lhs, const Eigen::Vector3d &rhs) {
-    return asEigenType<T_LHS>(lhs) * rhs;
+    return asEigenType(lhs) * rhs;
 }
 
 [[nodiscard]] inline Rotation operator*(const Rotation &lhs,
