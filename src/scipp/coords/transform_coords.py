@@ -7,7 +7,7 @@ from typing import Dict, Iterable, List, Mapping, Set, Union
 from ..core import DataArray, Dataset, NotFoundError, VariableError, bins
 from ..logging import get_logger
 from .coord_table import Coord, CoordTable, Destination
-from .graph import Graph, GraphDict, sorted_non_duplicate_rules
+from .graph import Graph, GraphDict, rule_sequence
 from .options import Options
 from .rule import ComputeRule, FetchRule, RenameRule, Rule, rule_output_names
 
@@ -93,7 +93,7 @@ def show_graph(graph: GraphDict, size: str = None, simplified: bool = False):
 
 def _transform_data_array(original: DataArray, targets: Set[str], graph: Graph,
                           options: Options) -> DataArray:
-    rules = sorted_non_duplicate_rules(graph.subgraph(original, targets))
+    rules = rule_sequence(graph.graph_for(original, targets))
     dim_name_changes = (_dim_name_changes(rules, original.dims)
                         if options.rename_dims else {})
     working_coords = CoordTable(rules, targets, options)
