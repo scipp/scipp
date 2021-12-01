@@ -16,7 +16,7 @@ jobs:
         shell: bash -l {0}  # required for conda env
     strategy:
       matrix:
-        os: ["ubuntu-latest"]
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
         python-version: ["3.7"]
         include:
         - os: ubuntu-latest
