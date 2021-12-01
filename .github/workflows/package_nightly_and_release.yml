@@ -18,16 +18,21 @@ jobs:
         include:
         - os: ubuntu-latest
           conda-package-root: linux-64
-        - os: macos-latest
-          conda-package-root: osx-64
-        - os: windows-latest
-          conda-package-root: win-64
+        #- os: macos-latest
+        #  conda-package-root: osx-64
+        #- os: windows-latest
+        #  conda-package-root: win-64
 
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
+
+      - name: Install conda-build
+        run: |
+          conda install --yes conda-build
+          conda config --set always_yes yes --set changeps1 no
 
       - run: conda build --channel conda-forge --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels conda
 
