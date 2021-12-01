@@ -1,4 +1,4 @@
-name: Package build (nightly and releases)
+name: Package build (nightly and release)
 
 on:
   pull_request:  # TODO temporary for setting up
