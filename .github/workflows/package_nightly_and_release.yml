@@ -21,10 +21,10 @@ jobs:
         include:
         - os: ubuntu-latest
           conda-package-root: linux-64
-        #- os: macos-latest
-        #  conda-package-root: osx-64
-        #- os: windows-latest
-        #  conda-package-root: win-64
+        - os: macos-latest
+          conda-package-root: osx-64
+        - os: windows-latest
+          conda-package-root: win-64
 
     steps:
       - uses: actions/checkout@v2
