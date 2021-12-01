@@ -37,13 +37,13 @@ public:
 
   const double get(const int index) const {
       if (index == 0)
-          return m_quat.w();
-      else if (index == 1)
           return m_quat.x();
-      else if (index == 2)
+      else if (index == 1)
           return m_quat.y();
-      else if (index == 3)
+      else if (index == 2)
           return m_quat.z();
+      else if (index == 3)
+          return m_quat.w();
       else
           throw std::out_of_range("invalid index in get for Rotation");
   }
