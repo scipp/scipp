@@ -1,10 +1,10 @@
 name: PR and main CI
 
-#on:
-#  push:
-#    branches:
-#      - main
-#  pull_request:
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 
 concurrency:
