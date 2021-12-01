@@ -88,7 +88,7 @@
       "targets": ["docs", "doctest"]
     },
     {
-      "name": "ci",
+      "name": "build",
       "configurePreset": "base",
       "configuration": "Release",
       "targets": ["install"]
@@ -101,7 +101,7 @@
   ],
   "testPresets": [
     {
-      "name": "ci",
+      "name": "test",
       "configurePreset": "base",
       "configuration": "Release",
       "output": {

@@ -66,8 +66,8 @@ build:
     - cmake --preset package-linux [linux]
     - cmake --preset package-macos [osx]
     - cmake --preset package-windows [win]
-    - cmake --build --preset ci
-    - ctest --preset package
+    - cmake --build --preset build
+    - ctest --preset test
 
 
 about:
