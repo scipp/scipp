@@ -57,6 +57,7 @@ test:
   commands:
     - python -m pytest -v tests
     - python cmake-package-test/build.py
+    - cmake --build --preset docs [linux]
 
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
@@ -66,7 +67,6 @@ build:
     - cmake --preset package-macos [osx]
     - cmake --preset package-windows [win]
     - cmake --build --preset ci
-    - cmake --build --preset docs [linux]
     - ctest --preset package
 
 
