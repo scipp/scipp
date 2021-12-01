@@ -34,6 +34,20 @@ public:
         m_quat.y() == other.m_quat.y() && 
         m_quat.z() == other.m_quat.z();
   }
+
+  double& operator()(const int i) {
+      if (i == 0) {
+           m_quat.x();
+      } else if (i == 1) {
+          return m_quat.y();
+      } else if (i == 2) {
+          return m_quat.z();
+      } else if (i == 3) {
+          return m_quat.w();
+      } else {
+          throw std::out_of_range("invalid index for Quaternion");
+      }
+  } 
 };
 
 class Scaling {
@@ -52,6 +66,10 @@ public:
   bool operator==(const Scaling &other) const {
     return m_mat.diagonal() == other.m_mat.diagonal();
   }
+
+  double& operator()(const int i) {
+      return m_mat.diagonal()(i);
+  } 
 };
 
 class Translation {
@@ -68,6 +86,10 @@ public:
   bool operator==(const Translation &other) const {
     return m_vec == other.m_vec;
   }
+
+  double& operator()(const int i) {
+      return m_vec(i);
+  } 
 };
 
 template<class T> struct asEigenType_t { using type = T; };
