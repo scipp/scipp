@@ -28,6 +28,9 @@ jobs:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
 
+      - run: sudo chown -R $USER $CONDA
+        if: ${{ contains(matrix.os, 'macos') }}
+
       - name: Install conda-build
         run: |
           conda install --yes conda-build
