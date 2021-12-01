@@ -52,24 +52,22 @@ test:
     - cmake-package-test/
   source_files:
     - tests/
-    - docs/
-    - .git/  # Docs build uses git to determine version and release month
-  script_env:
-   - DOCS_HTML_DIR # [linux]
   commands:
     - python -m pytest -v tests
     - python cmake-package-test/build.py
-    - python -m sphinx -v -b html -d .doctrees docs $DOCS_HTML_DIR [linux]
-    - python -m sphinx -v -b doctest -d .doctrees docs $DOCS_HTML_DIR [linux]
 
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
+  script_env:
+   - DOCS_HTML_DIR # [linux]
   script:
     - cmake --preset package-linux [linux]
     - cmake --preset package-macos [osx]
     - cmake --preset package-windows [win]
     - cmake --build --preset build
+    - cmake --build --preset docs [linux]
+    - cp build/html $DOCS_HTML_DIR [linux]
     - ctest --preset test
 
 

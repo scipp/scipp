@@ -86,7 +86,7 @@
       "name": "docs",
       "configurePreset": "base",
       "configuration": "Release",
-      "targets": ["docs", "doctest"]
+      "targets": ["docs", "doctest", "cleanup_docs_html"]
     },
     {
       "name": "build",

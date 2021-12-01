@@ -37,6 +37,14 @@ include(docs)
 add_docs_target(docs BUILDER html DEPENDS install-scipp)
 add_docs_target(doctest BUILDER doctest DEPENDS docs)
 add_docs_target(linkcheck BUILDER linkcheck DEPENDS docs)
+add_custom_target(
+  cleanup_docs_html
+  COMMENT "Remove unnecessary .ipynb files from built HTML documentation."
+  COMMAND find "${CMAKE_BINARY_DIR}/html" -type f -name "*.ipynb" -not -path
+          "${CMAKE_BINARY_DIR}/html/_sources/*" -delete
+  VERBATIM
+)
+add_dependencies(cleanup_docs_html docs)
 
 include(GNUInstallDirs)
 if(DEFINED ENV{SP_DIR}) # Defined by conda-build
