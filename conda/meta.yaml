@@ -54,10 +54,13 @@ test:
     - tests/
     - docs/
     - .git/  # Docs build uses git to determine version and release month
+  script_env:
+   - DOCS_HTML_DIR # [linux]
   commands:
     - python -m pytest -v tests
     - python cmake-package-test/build.py
-    - cmake --build --preset docs [linux]
+    - python -m sphinx -v -b html .doctrees docs $DOCS_HTML_DIR [linux]
+    - python -m sphinx -v -b doctest .doctrees docs $DOCS_HTML_DIR [linux]
 
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
