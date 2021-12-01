@@ -40,7 +40,7 @@ jobs:
           path: ${{ env.conda }}/conda-bld/${{ matrix.conda-package-root }}
 
       - uses: actions/upload-artifact@v2
-        if: ${{ contains(matrix.os, 'ubuntu') }}
+        if: ${{ contains(matrix.os, 'ubuntu') && matrix.python-version == '3.7' }}
         with:
           name: DocumentationHTML
           path: build/html
