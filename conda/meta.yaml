@@ -54,21 +54,20 @@ test:
     - tests/
     - docs/
     - .git/  # Docs build uses git to determine version and release month
-  script_env:
-    - DOCS_BUILD_DIR
   commands:
     - python -m pytest -v tests
     - python cmake-package-test/build.py
-    - python docs/build_and_test.py [linux64]
 
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
-  script_env:
-    - OSX_VERSION [osx]
-    - CMAKE_INTERPROCEDURAL_OPTIMIZATION=ON
   script:
-    - python tools/build_cpp.py
+    - cmake --preset package-linux [linux]
+    - cmake --preset package-macos [osx]
+    - cmake --preset package-windows [win]
+    - cmake --build --preset ci
+    - cmake --build --preset docs [linux]
+    - ctest --preset package
 
 
 about:

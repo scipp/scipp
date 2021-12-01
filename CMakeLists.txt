@@ -39,17 +39,12 @@ add_docs_target(doctest BUILDER doctest DEPENDS docs)
 add_docs_target(linkcheck BUILDER linkcheck DEPENDS docs)
 
 include(GNUInstallDirs)
-set(SITE_PACKAGES_DIR
-    ""
-    CACHE STRING
-          "Python site-packages directory to use for installing Python module."
-)
-if("${SITE_PACKAGES_DIR}" STREQUAL "")
+if(DEFINED ENV{SP_DIR}) # Defined by conda-build
+  file(TO_CMAKE_PATH $ENV{SP_DIR}/scipp PYTHONDIR)
+  file(TO_CMAKE_PATH $ENV{SP_DIR} ARCHIVEDIR)
+else()
   set(PYTHONDIR scipp)
   set(ARCHIVEDIR .)
-else()
-  file(TO_CMAKE_PATH ${SITE_PACKAGES_DIR}/scipp PYTHONDIR)
-  file(TO_CMAKE_PATH ${SITE_PACKAGES_DIR} ARCHIVEDIR)
 endif()
 set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
 

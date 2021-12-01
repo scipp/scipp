@@ -1,0 +1,43 @@
+name: Package build (nightly and releases)
+
+on:
+  pull_request:  # TODO temporary for setting up
+
+
+jobs:
+  conda_build:
+    name: Package build (${{ matrix.os }}, ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}  # required for conda env
+    strategy:
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["3.7"]
+        include:
+        - os: ubuntu-latest
+          conda-package-root: linux-64
+        - os: macos-latest
+          conda-package-root: osx-64
+        - os: windows-latest
+          conda-package-root: win-64
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0  # history required so cmake can determine version
+
+      - run: conda build --channel conda-forge --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels conda
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.conda-package-root }}-py${{ matrix.python-version }}
+          path: ${{ env.conda }}/conda-bld/${{ matrix.conda-package-root }}
+
+      - uses: actions/upload-artifact@v2
+        if: ${{ contains(matrix.os, 'ubuntu') }}
+        with:
+          name: DocumentationHTML
+          path: build/html/
