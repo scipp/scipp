@@ -34,10 +34,11 @@ jobs:
       - run: conda install --yes conda-build
       - run: conda build --channel conda-forge --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels conda
 
+      - run: echo "PACKAGES_DIR=$(conda info --base)/envs/test/conda-bld" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.conda-package-root }}-py${{ matrix.python-version }}
-          path: ${{ env.conda }}/conda-bld/${{ matrix.conda-package-root }}
+          path: ${{ env.packages_dir }}/${{ matrix.conda-package-root }}
 
       - uses: actions/upload-artifact@v2
         if: ${{ contains(matrix.os, 'ubuntu') && matrix.python-version == '3.7' }}
