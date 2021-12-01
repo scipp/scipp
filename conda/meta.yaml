@@ -15,6 +15,22 @@ requirements:
     - ninja
     - python {{ python }}
     - tbb-devel
+    - pandoc
+    - sphinx
+    - sphinx-book-theme
+    - sphinx-copybutton
+    - nbsphinx
+    - h5py
+    - ipykernel = 6.3.1  # issue with pythreejs 3d plotting, see https://github.com/ipython/ipykernel/issues/771
+    - ipympl
+    - ipywidgets
+    - matplotlib-base
+    - pytest
+    - pythreejs
+    - python-graphviz
+    - xarray
+    - pandas
+    - scipy>=1.7.0
   run:
     - appdirs
     - numpy>=1.20.0
@@ -43,11 +59,6 @@ test:
     - pandas
     - scipy>=1.7.0
     - tbb-devel
-    - pandoc
-    - sphinx
-    - sphinx-book-theme
-    - sphinx-copybutton
-    - nbsphinx
   files:
     - cmake-package-test/
   source_files:
