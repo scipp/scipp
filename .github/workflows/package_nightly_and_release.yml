@@ -41,11 +41,11 @@ jobs:
         if: ${{ contains(matrix.os, 'ubuntu') }}
         with:
           name: DocumentationHTML
-          path: build/html/
+          path: build/html
 
   deploy:
     needs: conda_build
-    name: Deply packages and docs
+    name: Deploy packages and docs
     runs-on: ubuntu-latest
     steps:
       - uses: conda-incubator/setup-miniconda@v2
@@ -53,9 +53,16 @@ jobs:
       - uses: actions/download-artifact@v2
       - run: ls -R
       - run: ls *.tar.bz2
-        #- name: Deploy
-        #  uses: JamesIves/github-pages-deploy-action@4.1.5
-        #  with:
-        #    branch: gh-pages
-        #    folder: coverage_html
 
+      - uses: JamesIves/github-pages-deploy-action@4.1.5
+        with:
+          branch: master
+          repository-name: scipp/scipp.github.io
+          #ssh-key: ${{ secrets.DEPLOY_KEY }}
+          folder: html
+          single-commit: true
+          dry-run: true
+          clean: true
+          clean-exclude: |
+            .nojekyll
+            releases/*
