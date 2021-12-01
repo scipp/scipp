@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# @author Jan-Lukas Wynen
+
+import dataclasses
+from enum import Enum, auto
+from typing import Optional
+
+from ..core import Variable
+
+
+class Destination(Enum):
+    coord = auto()
+    attr = auto()
+
+
+@dataclasses.dataclass
+class Coord:
+    dense: Variable  # for dense variable or bin-coord
+    event: Optional[Variable]
+    destination: Destination
+    usages: int = -1  # negative for unlimited usages
+
+    @property
+    def has_dense(self) -> bool:
+        return self.dense is not None
+
+    @property
+    def has_event(self) -> bool:
+        return self.event is not None
+
+    def use(self):
+        if self.usages > 0:
+            self.usages -= 1
+
+    @property
+    def used_up(self) -> bool:
+        return self.usages == 0
