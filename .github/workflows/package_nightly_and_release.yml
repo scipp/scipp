@@ -67,4 +67,4 @@ jobs:
           clean: true
           clean-exclude: |
             .nojekyll
-            releases/*
+            release/*
