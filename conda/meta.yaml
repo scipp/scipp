@@ -59,8 +59,8 @@ test:
   commands:
     - python -m pytest -v tests
     - python cmake-package-test/build.py
-    - python -m sphinx -v -b html .doctrees docs $DOCS_HTML_DIR [linux]
-    - python -m sphinx -v -b doctest .doctrees docs $DOCS_HTML_DIR [linux]
+    - python -m sphinx -v -b html -d .doctrees docs $DOCS_HTML_DIR [linux]
+    - python -m sphinx -v -b doctest -d .doctrees docs $DOCS_HTML_DIR [linux]
 
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
