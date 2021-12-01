@@ -43,6 +43,7 @@
       "inherits": "base",
       "description": "Package build base options",
       "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "$env{PREFIX}",
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON"
       }
     },
