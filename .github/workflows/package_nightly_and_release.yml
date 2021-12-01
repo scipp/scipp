@@ -3,10 +3,6 @@ name: Package build (nightly and release)
 on:
   pull_request:  # TODO temporary for setting up
 
-concurrency:  # TODO temporary for setting up
-  group: ${{ github.head_ref }}
-  cancel-in-progress: true  # cancel jobs from previous push
-
 jobs:
   conda_build:
     name: Package build (${{ matrix.os }}, ${{ matrix.python-version }})
