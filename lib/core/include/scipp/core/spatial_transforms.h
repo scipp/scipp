@@ -13,7 +13,7 @@
 
 namespace scipp::core {
 
-class Rotation {
+class Quaternion {
 private:
   // Store as quaterniond as this is more space efficient than storing as matrix
   // (4 doubles for quat vs 9 doubles for 3x3 matrix).
@@ -21,14 +21,14 @@ private:
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  Rotation() : m_quat(Eigen::Quaterniond::Identity()){};
-  explicit Rotation(const Eigen::Quaterniond &x) : m_quat(x){};
+  Quaternion() : m_quat(Eigen::Quaterniond::Identity()){};
+  explicit Quaternion(const Eigen::Quaterniond &x) : m_quat(x){};
 
   [[nodiscard]] Eigen::Quaterniond quat() const {
     return m_quat;
   }
 
-  bool operator==(const Rotation &other) const {
+  bool operator==(const Quaternion &other) const {
     return m_quat.w() == other.m_quat.w() && 
         m_quat.x() == other.m_quat.x() && 
         m_quat.y() == other.m_quat.y() && 
@@ -71,16 +71,16 @@ public:
 };
 
 template<class T> struct asEigenType_t { using type = T; };
-template<> struct asEigenType_t<Rotation> { using type = Eigen::Quaterniond; };
+template<> struct asEigenType_t<Quaternion> { using type = Eigen::Quaterniond; };
 template<> struct asEigenType_t<Translation> { using type = Eigen::Translation<double, 3>; };
 
 template<typename T, typename R = asEigenType_t<T>::type> inline const R asEigenType(const T &obj) { return obj; };
-template<> inline const Eigen::Quaterniond asEigenType(const Rotation &obj) { return obj.quat(); }
+template<> inline const Eigen::Quaterniond asEigenType(const Quaternion &obj) { return obj.quat(); }
 template<> inline const Eigen::Translation<double, 3> asEigenType(const Translation &obj) { return Eigen::Translation<double, 3>(obj.vector()); }
 
 template<class T_LHS, class T_RHS> struct combines_to_linear : std::false_type {}; 
-template<> struct combines_to_linear<Rotation, Eigen::Matrix3d> : std::true_type {};
-template<> struct combines_to_linear<Eigen::Matrix3d, Rotation> : std::true_type {};
+template<> struct combines_to_linear<Quaternion, Eigen::Matrix3d> : std::true_type {};
+template<> struct combines_to_linear<Eigen::Matrix3d, Quaternion> : std::true_type {};
 
 template <typename T_LHS, typename T_RHS>
 [[nodiscard]] inline 
@@ -90,12 +90,12 @@ operator*(const T_LHS &lhs, const T_RHS &rhs) {
 }
 
 template<class T_LHS, class T_RHS> struct combines_to_affine : std::false_type {}; 
-template<> struct combines_to_affine<Rotation, Translation> : std::true_type {};
-template<> struct combines_to_affine<Rotation, Eigen::Affine3d> : std::true_type {};
+template<> struct combines_to_affine<Quaternion, Translation> : std::true_type {};
+template<> struct combines_to_affine<Quaternion, Eigen::Affine3d> : std::true_type {};
 template<> struct combines_to_affine<Eigen::Matrix3d, Translation> : std::true_type {};
-template<> struct combines_to_affine<Eigen::Affine3d, Rotation> : std::true_type {};
+template<> struct combines_to_affine<Eigen::Affine3d, Quaternion> : std::true_type {};
 template<> struct combines_to_affine<Eigen::Affine3d, Translation> : std::true_type {};
-template<> struct combines_to_affine<Translation, Rotation> : std::true_type {};
+template<> struct combines_to_affine<Translation, Quaternion> : std::true_type {};
 template<> struct combines_to_affine<Translation, Eigen::Matrix3d> : std::true_type {};
 template<> struct combines_to_affine<Translation, Eigen::Affine3d> : std::true_type {};
 
@@ -107,7 +107,7 @@ operator*(const T_LHS &lhs, const T_RHS &rhs) {
 }
 
 template<class T_LHS> struct applies_to_vector : std::false_type {}; 
-template<> struct applies_to_vector<Rotation> : std::true_type {};
+template<> struct applies_to_vector<Quaternion> : std::true_type {};
 template<> struct applies_to_vector<Translation> : std::true_type {};
 
 template <typename T_LHS>
@@ -117,9 +117,9 @@ operator*(const T_LHS &lhs, const Eigen::Vector3d &rhs) {
     return asEigenType(lhs) * rhs;
 }
 
-[[nodiscard]] inline Rotation operator*(const Rotation &lhs,
-                                                 const Rotation &rhs) {
-  return Rotation(lhs.quat() * rhs.quat());
+[[nodiscard]] inline Quaternion operator*(const Quaternion &lhs,
+                                                 const Quaternion &rhs) {
+  return Quaternion(lhs.quat() * rhs.quat());
 };
 
 [[nodiscard]] inline Translation
@@ -130,6 +130,6 @@ operator*(const Translation &lhs, const Translation &rhs) {
 template <> inline constexpr DType dtype<Eigen::Matrix3d>{5001};
 template <> inline constexpr DType dtype<Eigen::Affine3d>{5002};
 template <> inline constexpr DType dtype<Translation>{5003};
-template <> inline constexpr DType dtype<Rotation>{5004};
+template <> inline constexpr DType dtype<Quaternion>{5004};
 
 } // namespace scipp::core
