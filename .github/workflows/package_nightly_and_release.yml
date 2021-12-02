@@ -72,6 +72,8 @@ jobs:
         run: |
           cd pages
           rsync -av --checksum --delete --exclude .nojekyll --exclude release --exclude .git --exclude .github ../DocumentationHTML/ .
+          git config --global user.name 'Documentation Builder'
+          git config --global user.email 'nobody@localhost'
           git add --all .
           git status
           git commit --amend --date="$(date)" --message='Auto commit from CI'
