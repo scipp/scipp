@@ -246,7 +246,7 @@ Variable flatten_bin_edge(const Variable &var,
   auto out_dims = bulk.dims();
   // To make the container of the right size, we increase to_dim by 1
   out_dims.resize(to_dim, out_dims[to_dim] + 1);
-  auto out = empty(out_dims, var.unit(), var.dtype(), var.hasVariances());
+  auto out = empty(out_dims, var.unit(), var.dtype(), var.has_variances());
   copy(bulk, out.slice({to_dim, 0, out_dims[to_dim] - 1}));
   copy(back_flat.slice({to_dim, back.dims().volume() - 1}),
        out.slice({to_dim, out_dims[to_dim] - 1}));

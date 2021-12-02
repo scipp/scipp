@@ -69,7 +69,7 @@ Variable resize_default_init(const Variable &var, const Dim dim,
   // Using variableFactory instead of variable::resize for creating
   // _uninitialized_ variable.
   return variable::variableFactory().create(var.dtype(), dims, var.unit(),
-                                            var.hasVariances());
+                                            var.has_variances());
 }
 
 /// Construct a bin-variable over a variable.
@@ -77,7 +77,7 @@ Variable resize_default_init(const Variable &var, const Dim dim,
 /// Each bin is represented by a VariableView. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, Variable buffer) {
-  expect_valid_bin_indices(indices.data_handle(), dim, buffer.dims());
+  expect_valid_bin_indices(indices, dim, buffer.dims());
   return make_bins_no_validate(std::move(indices), dim, buffer);
 }
 

@@ -49,7 +49,7 @@ auto from_py_slice(const T &source,
 template <class View> struct SetData {
   template <class T> struct Impl {
     static void apply(View &slice, const py::object &obj) {
-      if (slice.hasVariances())
+      if (slice.has_variances())
         throw std::runtime_error("Data object contains variances, to set data "
                                  "values use the `values` property or provide "
                                  "a tuple of values and variances.");
@@ -65,11 +65,11 @@ auto get_slice(T &self, const std::tuple<Dim, scipp::index> &index) {
   auto [dim, i] = index;
   auto sz = dim_extent(self, dim);
   if (i < -sz || i >= sz) // index is out of range
-    throw std::runtime_error(
-        "The requested index " + std::to_string(i) +
-        " is out of range. Dimension size is " + std::to_string(sz) +
-        " and the allowed range is [" + std::to_string(-sz) + ":" +
-        std::to_string(sz - 1) + "].");
+    throw std::out_of_range("The requested index " + std::to_string(i) +
+                            " is out of range. Dimension size is " +
+                            std::to_string(sz) + " and the allowed range is [" +
+                            std::to_string(-sz) + ":" + std::to_string(sz - 1) +
+                            "].");
   if (i < 0)
     i = sz + i;
   return Slice(dim, i);
@@ -95,8 +95,8 @@ auto get_slice_range(T &self, const std::tuple<Dim, const py::slice> &index) {
           throw std::runtime_error(
               "Step cannot be specified for value based slicing.");
         }
-        return std::make_from_tuple<Slice>(get_slice_params(
-            self.dims(), self.coords()[dim], start_var, stop_var));
+        return std::make_from_tuple<Slice>(
+            get_slice_params(self, dim, start_var, stop_var));
       }
     } catch (const py::cast_error &) {
     }
@@ -120,15 +120,9 @@ template <class T> auto getitem(T &self, const py::ellipsis &) {
 
 // Helpers wrapped in struct to avoid unresolvable overloads.
 template <class T> struct slicer {
-  static auto get_slice_by_value(T &self,
-                                 const std::tuple<Dim, Variable> &value) {
-    auto [dim, i] = value;
-    return std::make_from_tuple<Slice>(
-        get_slice_params(self.dims(), self.coords()[dim], i));
-  }
-
   static auto get_by_value(T &self, const std::tuple<Dim, Variable> &value) {
-    return self.slice(get_slice_by_value(self, value));
+    auto &[dim, val] = value;
+    return slice(self, dim, val);
   }
 
   static void set_from_numpy(T &&slice, const py::object &obj) {
@@ -158,7 +152,9 @@ template <class T> struct slicer {
   template <class Other>
   static void set_by_value(T &self, const std::tuple<Dim, Variable> &value,
                            const Other &data) {
-    self.setSlice(slicer<T>::get_slice_by_value(self, value), data);
+    auto &[dim, val] = value;
+    self.setSlice(std::make_from_tuple<Slice>(get_slice_params(self, dim, val)),
+                  data);
   }
 
   // Manually dispatch based on the object we are assigning from in order to
@@ -213,8 +209,15 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   } else {
     c.def("__len__", [](const T &self) {
       if (self.dims().ndim() == 0)
-        throw except::TypeError("len() of unsized object");
+        throw except::TypeError("len() of scalar object");
       return self.dims().size(0);
+    });
+    c.def("_ipython_key_completions_", [](T &self) {
+      py::list out;
+      for (const auto &dim : self.dims()) {
+        out.append(dim.name());
+      }
+      return out;
     });
   }
 }

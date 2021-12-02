@@ -104,7 +104,7 @@ constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
   // _uninitialized_ variable.
   return var.dims().contains(dim)
              ? variable::variableFactory().create(var.dtype(), dims, var.unit(),
-                                                  var.hasVariances())
+                                                  var.has_variances())
              : copy(var);
 };
 }
@@ -144,7 +144,7 @@ Dataset resize_default_init(const Dataset &parent, const Dim dim,
 /// Each bin is represented by a Variable slice. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, DataArray buffer) {
-  expect_valid_bin_indices(indices.data_handle(), dim, buffer.dims());
+  expect_valid_bin_indices(indices, dim, buffer.dims());
   return make_bins_no_validate(std::move(indices), dim, std::move(buffer));
 }
 
@@ -162,7 +162,7 @@ Variable make_bins_no_validate(Variable indices, const Dim dim,
 /// Each bin is represented by a Variable slice. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
-  expect_valid_bin_indices(indices.data_handle(), dim, buffer.sizes());
+  expect_valid_bin_indices(indices, dim, buffer.sizes());
   return make_bins_no_validate(std::move(indices), dim, std::move(buffer));
 }
 
@@ -227,9 +227,10 @@ Variable concatenate(const Variable &var0, const Variable &var1) {
 }
 
 DataArray concatenate(const DataArray &a, const DataArray &b) {
-  return DataArray{
-      buckets::concatenate(a.data(), b.data()), union_(a.coords(), b.coords()),
-      union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
+  return DataArray{buckets::concatenate(a.data(), b.data()),
+                   union_(a.coords(), b.coords(), "concatenate"),
+                   union_or(a.masks(), b.masks()),
+                   intersection(a.attrs(), b.attrs())};
 }
 
 /// Reduce a dimension by concatenating all elements along the dimension.
@@ -261,7 +262,7 @@ void append(Variable &var0, const Variable &var1) {
 void append(Variable &&var0, const Variable &var1) { append(var0, var1); }
 
 void append(DataArray &a, const DataArray &b) {
-  expect::coordsAreSuperset(a, b);
+  expect::coords_are_superset(a, b, "bins.append");
   union_or_in_place(a.masks(), b.masks());
   auto data = a.data();
   append(data, b.data());
@@ -317,7 +318,7 @@ void scale(DataArray &array, const DataArray &histogram, Dim dim) {
   if (dim == Dim::Invalid)
     dim = edge_dimension(histogram);
   // Coords along dim are ignored since "binning" is dynamic for buckets.
-  expect::coordsAreSuperset(array, histogram.slice({dim, 0}));
+  expect::coords_are_superset(array, histogram.slice({dim, 0}), "bins.scale");
   // scale applies masks along dim but others are kept
   union_or_in_place(array.masks(), histogram.slice({dim, 0}).masks());
   auto data = bins_view<DataArray>(array.data()).data();
@@ -356,7 +357,7 @@ Variable bins_sum(const Variable &data) {
   type = type == dtype<bool> ? dtype<int64_t> : type;
   const auto unit = variable::variableFactory().elem_unit(data);
   Variable summed;
-  if (variable::variableFactory().hasVariances(data))
+  if (variable::variableFactory().has_variances(data))
     summed = Variable(type, data.dims(), unit, Values{}, Variances{});
   else
     summed = Variable(type, data.dims(), unit, Values{});

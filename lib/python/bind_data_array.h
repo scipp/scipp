@@ -30,7 +30,7 @@ void bind_helper_view(py::module &m, const std::string &name) {
       .def("__len__", &View<T>::size)
       .def(
           "__iter__",
-          [](View<T> &self) {
+          [](const View<T> &self) {
             return py::make_iterator(self.begin(), self.end(),
                                      py::return_value_policy::move);
           },
@@ -42,7 +42,9 @@ void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
   view.def("__len__", &T::size)
       .def(
           "__getitem__",
-          [](T &self, const typename T::key_type &key) { return self[key]; },
+          [](const T &self, const typename T::key_type &key) {
+            return self[key];
+          },
           py::return_value_policy::copy)
       .def("__setitem__", [](T &self, const typename T::key_type key,
                              const Variable &var) { self.set(key, var); })
@@ -71,7 +73,7 @@ void bind_mutable_view(py::module &m, const std::string &name) {
   bind_pop(view);
   view.def(
           "__iter__",
-          [](T &self) {
+          [](const T &self) {
             return py::make_iterator(self.keys_begin(), self.keys_end(),
                                      py::return_value_policy::move);
           },
@@ -82,7 +84,15 @@ void bind_mutable_view(py::module &m, const std::string &name) {
       .def(
           "items", [](T &self) { return items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
-          R"(view on self's items)");
+          R"(view on self's items)")
+      .def("_ipython_key_completions_", [](T &self) {
+        py::list out;
+        const auto end = self.keys_end();
+        for (auto it = self.keys_begin(); it != end; ++it) {
+          out.append(*it);
+        }
+        return out;
+      });
 }
 
 template <class T>
@@ -105,7 +115,15 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name) {
       .def(
           "items", [](T &self) { return str_items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
-          R"(view on self's items)");
+          R"(view on self's items)")
+      .def("_ipython_key_completions_", [](T &self) {
+        py::list out;
+        const auto end = self.keys_end();
+        for (auto it = self.keys_begin(); it != end; ++it) {
+          out.append(it->name());
+        }
+        return out;
+      });
 }
 
 template <class T, class... Ignored>

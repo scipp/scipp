@@ -4,6 +4,7 @@
 
 #include "scipp/variable/bins.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/shape.h"
 
 using namespace scipp;
 
@@ -21,6 +22,15 @@ TEST_F(VariableBinsTest, make_bins_from_slice) {
   // Sharing indices or not yields equivalent results.
   EXPECT_EQ(make_bins(indices.slice({Dim::Y, 1}), Dim::X, buffer),
             make_bins(copy(indices.slice({Dim::Y, 1})), Dim::X, buffer));
+}
+
+TEST_F(VariableBinsTest,
+       make_bins_from_unordered_index_validation_does_not_mutate) {
+  indices = makeVariable<scipp::index_pair>(
+      dims, Values{std::pair{2, 4}, std::pair{0, 2}});
+  auto original = copy(indices);
+  var = make_bins(indices, Dim::X, buffer);
+  EXPECT_EQ(var.bin_indices(), original);
 }
 
 TEST_F(VariableBinsTest, make_bins_shares_indices_and_buffer) {

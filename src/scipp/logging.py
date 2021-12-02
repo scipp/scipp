@@ -141,7 +141,7 @@ def display_logs() -> None:
 
     from IPython.display import display
     from ipywidgets import HTML, VBox
-    display(VBox([HTML(value=load_style()), widget]))
+    display(VBox([HTML(value=load_style()), widget]).add_class('sc-log-wrap'))
 
 
 def clear_log_widget() -> None:

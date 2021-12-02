@@ -34,7 +34,7 @@ protected:
                  [](const units::Unit &unit) { return unit; }}};
 
   template <typename T>
-  static auto op_manual_values(const ElementArrayView<T> values) {
+  static auto op_manual_values(const ElementArrayView<T> &values) {
     std::vector<double> res;
     res.reserve(values.size());
     std::transform(values.begin(), values.end(), std::back_inserter(res), op);
@@ -42,8 +42,8 @@ protected:
   }
 
   template <typename T>
-  static auto op_manual_variances(const ElementArrayView<T> values,
-                                  const ElementArrayView<T> variances) {
+  static auto op_manual_variances(const ElementArrayView<T> &values,
+                                  const ElementArrayView<T> &variances) {
     std::vector<double> res;
     res.reserve(values.size());
     std::transform(
@@ -76,7 +76,7 @@ protected:
     const auto result_return = transform<double>(var, op, name);
     EXPECT_TRUE(equals(result_return.values<double>(),
                        op_manual_values(var.values<double>())));
-    if (var.hasVariances()) {
+    if (var.has_variances()) {
       EXPECT_TRUE(equals(
           result_return.variances<double>(),
           op_manual_variances(var.values<double>(), var.variances<double>())));
@@ -202,12 +202,6 @@ class TransformUnaryIrregularBinsTest
     : public TransformUnaryTest,
       public ::testing::WithParamInterface<std::tuple<Variable, bool>> {
 protected:
-  static constexpr auto op_in_place{
-      overloaded{[](auto &x) { x *= 2.0; }, [](units::Unit &) {}}};
-  static constexpr auto op{
-      overloaded{[](const auto x) { return x * 2.0; },
-                 [](const units::Unit &unit) { return unit; }}};
-
   const Variable indices;
   const Variable input_buffer;
   const Variable input;

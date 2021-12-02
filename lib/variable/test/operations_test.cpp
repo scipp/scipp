@@ -7,6 +7,7 @@
 #include "fix_typed_test_suite_warnings.h"
 #include "test_macros.h"
 
+#include "scipp/common/constants.h"
 #include "scipp/core/element/math.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
@@ -347,6 +348,7 @@ TEST(VariableView, minus_equals_slice_const_outer) {
   EXPECT_EQ(data[1], 0.0);
   EXPECT_EQ(data[2], 2.0);
   EXPECT_EQ(data[3], 2.0);
+  // cppcheck-suppress unreadVariable  # Read through `data`.
   var -= copy.slice({Dim::Y, 1});
   EXPECT_EQ(data[0], -3.0);
   EXPECT_EQ(data[1], -4.0);
@@ -365,6 +367,7 @@ TEST(VariableView, minus_equals_slice_outer) {
   EXPECT_EQ(data[1], 0.0);
   EXPECT_EQ(data[2], 2.0);
   EXPECT_EQ(data[3], 2.0);
+  // cppcheck-suppress unreadVariable  # Read through `data`.
   var -= copy.slice({Dim::Y, 1});
   EXPECT_EQ(data[0], -3.0);
   EXPECT_EQ(data[1], -4.0);
@@ -383,6 +386,7 @@ TEST(VariableView, minus_equals_slice_inner) {
   EXPECT_EQ(data[1], 1.0);
   EXPECT_EQ(data[2], 0.0);
   EXPECT_EQ(data[3], 1.0);
+  // cppcheck-suppress unreadVariable  # Read through `data`.
   var -= copy.slice({Dim::X, 1});
   EXPECT_EQ(data[0], -2.0);
   EXPECT_EQ(data[1], -1.0);
@@ -693,7 +697,7 @@ TEST(VariableTest, binary_op_with_variance) {
       Dims{Dim::X, Dim::Y}, Shape{2, 3}, Values{2.0, 4.0, 6.0, 8.0, 10.0, 12.0},
       Variances{0.2, 0.4, 0.6, 0.8, 1.0, 1.2});
   auto tmp = var + var;
-  EXPECT_TRUE(tmp.hasVariances());
+  EXPECT_TRUE(tmp.has_variances());
   EXPECT_EQ(tmp.variances<double>()[0], 0.2);
   EXPECT_EQ(var + var, sum);
 
@@ -824,6 +828,40 @@ TEST(VariableTest, rotate) {
       Dims{Dim::X}, Shape{2}, units::m,
       Values{rot1.toRotationMatrix() * vec1, rot2.toRotationMatrix() * vec2});
   EXPECT_EQ(vec_new, rotated);
+}
+
+class ApplyTransformTest : public ::testing::Test {
+public:
+  Variable makeTransformVar(const units::Unit unit) {
+    Eigen::Vector3d rotation_axis(1, 0, 0);
+    Eigen::Affine3d t(Eigen::AngleAxisd(pi<double> / 2.0, rotation_axis));
+
+    return makeVariable<Eigen::Affine3d>(Dims{Dim::X}, Shape{1}, unit,
+                                         Values{t});
+  }
+
+  Variable makeVectorVar(const units::Unit unit) {
+    Eigen::Vector3d eigen_vec(1, 2, 3);
+    return makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, unit,
+                                         Values{eigen_vec});
+  }
+};
+
+TEST_F(ApplyTransformTest, apply_transform_to_vector) {
+  auto transformed = makeTransformVar(units::m) * makeVectorVar(units::m);
+
+  Eigen::Vector3d expected(1, -3, 2);
+  EXPECT_EQ(transformed,
+            makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, units::m,
+                                          Values{expected}));
+}
+
+TEST_F(ApplyTransformTest, apply_transform_to_vector_with_different_units) {
+  // Even though the transform and vector both have units of length, we don't
+  // allow this application of a transform. The units must match exactly as the
+  // transform may contain translations which get added to the vector.
+  EXPECT_THROW_DISCARD(makeTransformVar(units::m) * makeVectorVar(units::mm),
+                       except::UnitError);
 }
 
 TEST(VariableTest, mul_vector) {

@@ -9,6 +9,8 @@ v0.10.0 (unreleased)
 Features
 ~~~~~~~~
 
+* Add support for auto-completions for slices and metadata access in Jupyter `#2304 <https://github.com/scipp/scipp/pull/2304>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
@@ -16,6 +18,7 @@ Bugfixes
 ~~~~~~~~
 
 * Fix kernel crash or poor performance when using ``bin`` or ``da.bins.concat`` along an inner dimension in the presence of a long outer dimension `#2278 <https://github.com/scipp/scipp/pull/2278>`_.
+* Improved the rendering of cut slices in 3d plots where some strange artifacts could appear depending on the order in which the pixels were being drawn `#2287 <https://github.com/scipp/scipp/pull/2287>`_.
 
 Deprecations
 ~~~~~~~~~~~~

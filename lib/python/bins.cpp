@@ -6,10 +6,8 @@
 #include "scipp/core/except.h"
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins_view.h"
-#include "scipp/dataset/shape.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/cumulative.h"
-#include "scipp/variable/rebin.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
@@ -25,15 +23,14 @@ namespace py = pybind11;
 namespace {
 
 template <class T>
-auto call_make_bins(const py::object &begin_obj, const py::object &end_obj,
-                    const Dim dim, T &&data) {
+auto call_make_bins(const std::optional<Variable> &begin_arg,
+                    const std::optional<Variable> &end_arg, const Dim dim,
+                    T &&data) {
   Variable indices;
-  Dimensions dims;
-  if (!begin_obj.is_none()) {
-    const auto &begin = begin_obj.cast<Variable>();
-    dims = begin.dims();
-    if (!end_obj.is_none()) {
-      const auto &end = end_obj.cast<Variable>();
+  if (begin_arg.has_value()) {
+    const auto &begin = *begin_arg;
+    if (end_arg.has_value()) {
+      const auto &end = *end_arg;
       indices = zip(begin, end);
     } else {
       indices = zip(begin, begin);
@@ -46,7 +43,7 @@ auto call_make_bins(const py::object &begin_obj, const py::object &end_obj,
           indices_[i].second = data.dims()[dim];
       }
     }
-  } else if (end_obj.is_none()) {
+  } else if (!end_arg.has_value()) {
     const auto one = scipp::index{1} * units::one;
     const auto ones = broadcast(one, {dim, data.dims()[dim]});
     const auto begin = cumsum(ones, dim, CumSumMode::Exclusive);
@@ -60,27 +57,23 @@ auto call_make_bins(const py::object &begin_obj, const py::object &end_obj,
 template <class T> void bind_bins(pybind11::module &m) {
   m.def(
       "bins",
-      [](const py::object &begin_obj, const py::object &end_obj, const Dim dim,
-         const T &data) {
-        return call_make_bins(begin_obj, end_obj, dim, T(data));
-      },
+      [](const std::optional<Variable> &begin,
+         const std::optional<Variable> &end, const Dim dim,
+         const T &data) { return call_make_bins(begin, end, dim, T(data)); },
       py::arg("begin") = py::none(), py::arg("end") = py::none(),
       py::arg("dim"), py::arg("data")); // do not release GIL since using
                                         // implicit conversions in functor
 }
 
-template <class T> auto bin_begin_end(const Variable &var) {
+template <class T> py::dict bins_constituents(const Variable &var) {
   auto &&[indices, dim, buffer] = var.constituents<T>();
-  static_cast<void>(dim);
-  static_cast<void>(buffer);
-  return py::cast(unzip(indices));
-}
-
-template <class T> auto bin_dim(const Variable &var) {
-  auto &&[indices, dim, buffer] = var.constituents<T>();
-  static_cast<void>(buffer);
-  static_cast<void>(indices);
-  return py::cast(std::string(dim.name()));
+  auto &&[begin, end] = unzip(indices);
+  py::dict out;
+  out["begin"] = std::forward<decltype(begin)>(begin);
+  out["end"] = std::forward<decltype(end)>(end);
+  out["dim"] = std::string(dim.name());
+  out["data"] = std::forward<decltype(buffer)>(buffer);
+  return out;
 }
 
 template <class T>
@@ -140,36 +133,16 @@ void init_buckets(py::module &m) {
   m.def("is_bins",
         [](const Dataset &dataset) { return dataset::is_bins(dataset); });
 
-  m.def("bins_begin_end", [](const Variable &var) -> py::object {
-    if (var.dtype() == dtype<bucket<Variable>>)
-      return bin_begin_end<Variable>(var);
-    if (var.dtype() == dtype<bucket<DataArray>>)
-      return bin_begin_end<DataArray>(var);
-    if (var.dtype() == dtype<bucket<Dataset>>)
-      return bin_begin_end<Dataset>(var);
-    return py::none();
-  });
-
-  m.def("bins_dim", [](const Variable &var) -> py::object {
-    if (var.dtype() == dtype<bucket<Variable>>)
-      return bin_dim<Variable>(var);
-    if (var.dtype() == dtype<bucket<DataArray>>)
-      return bin_dim<DataArray>(var);
-    if (var.dtype() == dtype<bucket<Dataset>>)
-      return bin_dim<Dataset>(var);
-    return py::none();
-  });
-
-  m.def("bins_data", [](py::object &obj) -> py::object {
-    auto &var = obj.cast<Variable &>();
-    if (var.dtype() == dtype<bucket<Variable>>)
-      return py::cast(obj.cast<Variable &>().bin_buffer<Variable>());
-    if (var.dtype() == dtype<bucket<DataArray>>)
-      return py::cast(obj.cast<Variable &>().bin_buffer<DataArray>().view());
-    if (var.dtype() == dtype<bucket<Dataset>>)
-      // TODO Provide mechanism for creating sharing view as for DataArray above
-      return py::cast(obj.cast<Variable &>().bin_buffer<Dataset>());
-    return py::none();
+  m.def("bins_constituents", [](const Variable &var) {
+    const auto dt = var.dtype();
+    if (dt == dtype<bucket<Variable>>)
+      return bins_constituents<Variable>(var);
+    if (dt == dtype<bucket<DataArray>>)
+      return bins_constituents<DataArray>(var);
+    if (dt == dtype<bucket<Dataset>>)
+      return bins_constituents<Dataset>(var);
+    throw except::TypeError("'constituents' does not support dtype " +
+                            to_string(dt));
   });
 
   auto buckets = m.def_submodule("buckets");

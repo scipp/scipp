@@ -232,8 +232,7 @@ TEST_P(BinTest, rebin_2d_with_2d_coord) {
   Variable edges_y_2d = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                              Values{-2, 1, 2, -3, 0, 3});
   xy.coords().set(Dim::Y, edges_y_2d);
-  auto bins_y = bins_view<DataArray>(xy.data()).coords()[Dim::Y];
-  bins_y += 0.5 * units::one;
+  bins_view<DataArray>(xy.data()).coords()[Dim::Y] += 0.5 * units::one;
   EXPECT_THROW(bin(xy, {edges_x_coarse}), except::DimensionError);
   if (table.dims().volume() > 0) {
     EXPECT_NE(bin(xy, {edges_x_coarse, edges_y_coarse}),

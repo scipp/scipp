@@ -33,7 +33,7 @@ public:
                                         const units::Unit &u) const = 0;
   virtual void set_elem_unit(Variable &var, const units::Unit &u) const = 0;
   virtual bool has_masks(const Variable &) const { return false; }
-  virtual bool hasVariances(const Variable &var) const = 0;
+  virtual bool has_variances(const Variable &var) const = 0;
   virtual const Variable &data(const Variable &) const { throw unreachable(); }
   virtual Variable data(Variable &) const { throw unreachable(); }
   virtual core::ElementArrayViewParams array_params(const Variable &) const {
@@ -50,7 +50,7 @@ SCIPP_VARIABLE_EXPORT bool is_bins(const Variable &var);
 ///
 /// The factory can be used for creating variables with a dtype that is not
 /// known in the current module, e.g., dtype<bucket<Dataset>> can be used in
-/// scipp::variable. The main prupose of this is the implementation of
+/// scipp::variable. The main purpose of this is the implementation of
 /// `transform`.
 class SCIPP_VARIABLE_EXPORT VariableFactory {
 private:
@@ -80,7 +80,7 @@ public:
                                 const units::Unit &u) const;
   void set_elem_unit(Variable &var, const units::Unit &u) const;
   bool has_masks(const Variable &var) const;
-  bool hasVariances(const Variable &var) const;
+  bool has_variances(const Variable &var) const;
   template <class T, class Var> auto values(Var &&var) const {
     if (!is_bins(var))
       return var.template values<T>();

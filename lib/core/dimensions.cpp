@@ -71,7 +71,8 @@ Dimensions merge(const Dimensions &a, const Dimensions &b) {
     if (b.contains(dim)) {
       if (a[dim] != b[dim])
         throw except::DimensionError(
-            "Cannot merge subspaces with mismatching extent");
+            "Cannot merge dimensions with mismatching extent in '" +
+            to_string(dim) + "': " + to_string(a) + " and " + to_string(b));
       while (it != end && *it != dim) {
         if (!a.contains(*it))
           out.addInner(*it, b[*it]);
@@ -111,7 +112,7 @@ Dimensions transpose_impl(const Dimensions &dims,
                                  "order contains different number of labels.");
   std::vector<scipp::index> shape(labels.size());
   std::transform(labels.begin(), labels.end(), shape.begin(),
-                 [&dims](auto &dim) { return dims[dim]; });
+                 [&dims](const auto &dim) { return dims[dim]; });
   return {labels, shape};
 }
 } // namespace

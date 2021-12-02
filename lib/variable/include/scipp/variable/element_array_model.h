@@ -24,8 +24,9 @@ bool equals_impl(const T1 &view1, const T2 &view2) {
   // TODO Use optimizations in case of contigous views (instead of slower
   // ElementArrayView iteration). Add multi threading?
   if constexpr (is_span_v<typename T1::value_type>)
-    return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end(),
-                      [](auto &a, auto &b) { return equals_impl(a, b); });
+    return std::equal(
+        view1.begin(), view1.end(), view2.begin(), view2.end(),
+        [](const auto &a, const auto &b) { return equals_impl(a, b); });
   else
     return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }
@@ -60,7 +61,7 @@ public:
 
   VariableConceptHandle clone() const override;
 
-  bool hasVariances() const noexcept override {
+  bool has_variances() const noexcept override {
     return m_variances.has_value();
   }
 
@@ -71,11 +72,11 @@ public:
     return ElementArrayView(base, m_values.data());
   }
   auto variances(const core::ElementArrayViewParams &base) const {
-    expectHasVariances();
+    expect_has_variances();
     return ElementArrayView(base, m_variances->data());
   }
   auto variances(const core::ElementArrayViewParams &base) {
-    expectHasVariances();
+    expect_has_variances();
     return ElementArrayView(base, m_variances->data());
   }
 
@@ -93,8 +94,8 @@ public:
   }
 
 private:
-  void expectHasVariances() const {
-    if (!hasVariances())
+  void expect_has_variances() const {
+    if (!has_variances())
       throw except::VariancesError("Variable does not have variances.");
   }
   element_array<T> m_values;

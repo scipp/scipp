@@ -20,7 +20,7 @@ protected:
     EXPECT_NE(&a.dims(), &b.dims());
     EXPECT_NE(&a.unit(), &b.unit());
     EXPECT_NE(a.values<double>().data(), b.values<double>().data());
-    if (a.hasVariances()) {
+    if (a.has_variances()) {
       EXPECT_NE(a.variances<double>().data(), b.variances<double>().data());
     }
   }

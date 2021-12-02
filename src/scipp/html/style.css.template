@@ -443,17 +443,19 @@ label.sc-hide-icon svg{
   stroke-dasharray: 0.2, 0.2;
 }
 
-div.sc-log {
-  line-height: 2.5ex;
+.sc-log-wrap {
   height: 25ex;
   resize: vertical;
   overflow-y: scroll;
   display: flex;
   flex-direction: column-reverse;
-  border: solid;
-  border-width: 1px;
+  border: 1px solid;
   border-color: var(--jp-border-color2);
   background-color: var(--sc-background-color1);
+}
+
+div.sc-log {
+  line-height: 2.5ex;
 }
 
 table.sc-log {
@@ -471,10 +473,13 @@ tr.sc-log > td {
 }
 
 .sc-log-time-stamp {
-  min-width: 21ch;
-  padding-right: 1em;
+  min-width: 22ch;
   font-family: var(--jp-code-font-family);
   color: var(--sc-font-color2);
+}
+
+.sc-log-level {
+  min-width: 10ch;
 }
 
 tr.sc-log-debug td.sc-log-level {
@@ -501,7 +506,6 @@ tr.sc-log-critical td.sc-log-level {
 }
 
 .sc-log-message {
-  padding-left: 1em;
   white-space: pre-wrap;
   width: 100%;
 }
@@ -511,7 +515,6 @@ tr.sc-log-critical td.sc-log-level {
 }
 
 .sc-log-name {
-  padding-left: 1em;
   padding-right: 0.5em;
   text-align: right;
   white-space: pre-wrap;

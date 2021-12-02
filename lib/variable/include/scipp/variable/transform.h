@@ -316,7 +316,7 @@ template <class Op, class Out, class Tuple, class Arg, class... Args>
 static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
                          const Args &... args) {
   auto vals = arg.values();
-  if (arg.hasVariances()) {
+  if (arg.has_variances()) {
     if constexpr (std::is_base_of_v<
                       core::transform_flags::expect_no_variance_arg_t<
                           std::tuple_size_v<Tuple>>,
@@ -340,10 +340,10 @@ static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
           std::tuple_cat(processed, std::tuple(ValuesAndVariances{vals, vars})),
           args...);
     }
-    // else {}  // Cannot happen because args.hasVariances()
+    // else {}  // Cannot happen because args.has_variances()
     //             implies canHaveVariances<value_type>.
     //             The 2nd test is needed to avoid compilation errors
-    //             (hasVariances is a runtime check).
+    //             (has_variances is a runtime check).
   } else {
     if constexpr (std::is_base_of_v<
                       core::transform_flags::expect_variance_arg_t<
@@ -359,7 +359,7 @@ static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
 
 template <class T> struct as_view {
   using value_type = typename T::value_type;
-  [[nodiscard]] bool hasVariances() const { return data.hasVariances(); }
+  [[nodiscard]] bool has_variances() const { return data.has_variances(); }
   auto values() const { return decltype(data.values())(data.values(), dims); }
   auto variances() const {
     return decltype(data.variances())(data.variances(), dims);
@@ -376,7 +376,7 @@ template <class Op> struct Transform {
     using Out = decltype(maybe_eval(op(handles.values()[0]...)));
     const bool variances =
         !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
-        core::canHaveVariances<Out>() && (handles.hasVariances() || ...);
+        core::canHaveVariances<Out>() && (handles.has_variances() || ...);
     auto unit = op.base_op()(variableFactory().elem_unit(*handles.m_var)...);
     auto out = variableFactory().create(dtype<Out>, dims, unit, variances,
                                         *handles.m_var...);
@@ -523,7 +523,7 @@ template <bool dry_run> struct in_place {
                                     const Args &... args) {
     using namespace detail;
     auto vals = arg.values();
-    if (arg.hasVariances()) {
+    if (arg.has_variances()) {
       if constexpr (std::is_base_of_v<
                         core::transform_flags::expect_no_variance_arg_t<
                             std::tuple_size_v<Tuple>>,

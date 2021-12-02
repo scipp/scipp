@@ -23,6 +23,13 @@ TEST_F(VariableStructureTest, basics) {
   EXPECT_EQ(vectors.values<Eigen::Vector3d>()[1], Eigen::Vector3d(4, 5, 6));
 }
 
+TEST_F(VariableStructureTest, copy) {
+  // StructureArrayModel holds a VariableConceptHandle, copy should not share
+  auto copied = copy(vectors);
+  copied += copied;
+  EXPECT_NE(copied, vectors);
+}
+
 TEST_F(VariableStructureTest, elem_access) {
   Variable elems = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                         units::m, Values{1, 2, 3, 4, 5, 6});

@@ -83,7 +83,7 @@ auto resize_array(const DataArray &da, const Dim reductionDim,
   DataArray dense_dummy(da);
   dense_dummy.setData(empty(da.dims(), variableFactory().elem_unit(da.data()),
                             variableFactory().elem_dtype(da.data()),
-                            variableFactory().hasVariances(da.data())));
+                            variableFactory().has_variances(da.data())));
   return resize_array(dense_dummy, reductionDim, size, fill);
 }
 } // namespace
@@ -262,11 +262,15 @@ template <class T> struct NanSensitiveLess {
     return a < b;
   }
 };
+
+template <class T> bool nan_sensitive_equal(const T &a, const T &b) {
+  return a == b || (scipp::numeric::isnan(a) && scipp::numeric::isnan(b));
+}
 } // namespace
 
 template <class T> struct MakeGroups {
   static auto apply(const Variable &key, const Dim targetDim) {
-    expect::isKey(key);
+    expect::is_key(key);
     const auto &values = key.values<T>();
 
     const auto dim = key.dims().inner();
@@ -277,13 +281,12 @@ template <class T> struct MakeGroups {
       // Use contiguous (thick) slices if possible to avoid overhead of slice
       // handling in follow-up "apply" steps.
       const auto begin = i;
-      const auto &value = *it;
-      while (it != end && (*it == value || (scipp::numeric::isnan(value) &&
-                                            scipp::numeric::isnan(*it)))) {
+      const auto &group_value = *it;
+      while (it != end && nan_sensitive_equal(*it, group_value)) {
         ++it;
         ++i;
       }
-      indices[value].emplace_back(dim, begin, i);
+      indices[group_value].emplace_back(dim, begin, i);
     }
 
     const Dimensions dims{targetDim, scipp::size(indices)};
@@ -301,7 +304,7 @@ template <class T> struct MakeGroups {
 
 template <class T> struct MakeBinGroups {
   static auto apply(const Variable &key, const Variable &bins) {
-    expect::isKey(key);
+    expect::is_key(key);
     if (bins.dims().ndim() != 1)
       throw except::DimensionError("Group-by bins must be 1-dimensional");
     if (key.unit() != bins.unit())

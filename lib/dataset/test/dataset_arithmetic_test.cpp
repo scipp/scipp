@@ -144,7 +144,7 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_without_variance) {
     auto target = copy(dataset_a["data_xyz"]);
     auto data_array = copy(target);
 
-    if (item.hasVariances()) {
+    if (item.has_variances()) {
       ASSERT_ANY_THROW(TestFixture::op(target, item));
     } else {
       auto reference = copy(target.data());
@@ -152,7 +152,7 @@ TYPED_TEST(DataArrayViewBinaryEqualsOpTest, lhs_without_variance) {
 
       ASSERT_NO_THROW(target = TestFixture::op(target, item));
       EXPECT_EQ(target.data(), reference);
-      EXPECT_FALSE(target.hasVariances());
+      EXPECT_FALSE(target.has_variances());
       EXPECT_EQ(TestFixture::op(data_array, item), target);
     }
   }
@@ -590,7 +590,6 @@ TYPED_TEST(DatasetBinaryOpTest, variableconstview_lhs_dataset_rhs) {
 
 TYPED_TEST(DatasetBinaryOpTest, broadcast) {
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
   const auto c = makeVariable<double>(Values{2.0});
   Dataset a;
   Dataset b;

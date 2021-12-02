@@ -141,6 +141,7 @@ TEST(Variable, span_references_Variable) {
   auto span = a.values<double>();
 
   EXPECT_EQ(span.size(), 2);
+  // cppcheck-suppress unreadVariable  # Read through `observer`.
   span[0] = 1.0;
   EXPECT_EQ(observer[0], 1.0);
 }
@@ -645,13 +646,14 @@ TEST(VariableTest, create_with_variance) {
                                        Variances{0.1}));
 }
 
-TEST(VariableTest, hasVariances) {
-  ASSERT_FALSE(makeVariable<double>(Values{double{}}).hasVariances());
-  ASSERT_FALSE(makeVariable<double>(Values{1.0}).hasVariances());
-  ASSERT_TRUE(makeVariable<double>(Values{1.0}, Variances{0.1}).hasVariances());
+TEST(VariableTest, has_variances) {
+  ASSERT_FALSE(makeVariable<double>(Values{double{}}).has_variances());
+  ASSERT_FALSE(makeVariable<double>(Values{1.0}).has_variances());
+  ASSERT_TRUE(
+      makeVariable<double>(Values{1.0}, Variances{0.1}).has_variances());
   ASSERT_TRUE(makeVariable<double>(Dims(), Shape(), units::m, Values{1.0},
                                    Variances{0.1})
-                  .hasVariances());
+                  .has_variances());
 }
 
 TEST(VariableTest, values_variances) {
@@ -692,9 +694,9 @@ TEST(VariableTest, set_variances) {
 TEST(VariableTest, set_variances_remove) {
   Variable var =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{}, Variances{});
-  EXPECT_TRUE(var.hasVariances());
+  EXPECT_TRUE(var.has_variances());
   EXPECT_NO_THROW(var.setVariances(Variable()));
-  EXPECT_FALSE(var.hasVariances());
+  EXPECT_FALSE(var.has_variances());
 }
 
 TEST(VariableViewTest, set_variances) {
@@ -717,7 +719,7 @@ TEST(VariableViewTest, create_with_variance) {
                                         Values{1.0, 2.0}, Variances{0.1, 0.2});
   ASSERT_NO_THROW_DISCARD(var.slice({Dim::X, 1, 2}));
   const auto slice = var.slice({Dim::X, 1, 2});
-  ASSERT_TRUE(slice.hasVariances());
+  ASSERT_TRUE(slice.has_variances());
   ASSERT_EQ(slice.variances<double>().size(), 1);
   ASSERT_EQ(slice.variances<double>()[0], 0.2);
   const auto reference =

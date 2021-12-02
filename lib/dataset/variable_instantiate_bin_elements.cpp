@@ -68,7 +68,7 @@ class BinVariableMakerDataset
   void set_elem_unit(Variable &, const units::Unit &) const override {
     throw std::runtime_error("undefined");
   }
-  bool hasVariances(const Variable &) const override {
+  bool has_variances(const Variable &) const override {
     throw std::runtime_error("undefined");
   }
 };

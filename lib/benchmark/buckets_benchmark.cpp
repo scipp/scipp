@@ -35,6 +35,7 @@ static void BM_buckets_concatenate(benchmark::State &state) {
   for (auto _ : state) {
     auto var = dataset::buckets::concatenate(events, events);
     state.PauseTiming();
+    // cppcheck-suppress redundantInitialization  # Used to modify shared_ptr.
     var = Variable();
     state.ResumeTiming();
   }

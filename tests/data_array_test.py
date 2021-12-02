@@ -117,6 +117,16 @@ def test_masks():
     assert (len(dict(da.masks))) == 0
 
 
+def test_ipython_key_completion():
+    da = make_dataarray()
+    mask = sc.Variable(dims=['x'], values=np.array([False, True], dtype=bool))
+    da.masks['mask1'] = mask
+    assert set(da.coords._ipython_key_completions_()) == set(da.coords.keys())
+    assert set(da.attrs._ipython_key_completions_()) == set(da.attrs.keys())
+    assert set(da.meta._ipython_key_completions_()) == set(da.meta.keys())
+    assert set(da.masks._ipython_key_completions_()) == set(da.masks.keys())
+
+
 def test_name():
     a = sc.DataArray(data=1.0 * sc.units.m)
     assert a.name == ''

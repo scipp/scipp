@@ -17,7 +17,7 @@ using namespace scipp::core;
 namespace scipp::variable {
 
 namespace {
-Variable _values(Variable &&in) { return in.hasVariances() ? values(in) : in; }
+Variable _values(Variable &&in) { return in.has_variances() ? values(in) : in; }
 } // namespace
 
 Variable isclose(const Variable &a, const Variable &b, const Variable &rtol,
@@ -30,7 +30,7 @@ Variable isclose(const Variable &a, const Variable &b, const Variable &rtol,
                Dim::InternalStructureComponent);
 
   auto tol = atol + rtol * abs(b);
-  if (a.hasVariances() && b.hasVariances()) {
+  if (a.has_variances() && b.has_variances()) {
     return isclose(values(a), values(b), rtol, atol, equal_nans) &
            isclose(stddevs(a), stddevs(b), rtol, atol, equal_nans);
   } else {

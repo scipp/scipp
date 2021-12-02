@@ -190,6 +190,7 @@ template <class T> struct MakeVariable {
         Values(make_element_array<T>(dims, values, values_unit));
     auto variable = variances.is_none()
                         ? makeVariable<T>(dims, std::move(values_array))
+                        // cppcheck-suppress accessMoved  # False-positive.
                         : makeVariable<T>(dims, std::move(values_array),
                                           Variances(make_element_array<T>(
                                               dims, variances, values_unit)));
@@ -262,7 +263,7 @@ if you want to preallocate memory to fill later, use :py:func:`scipp.empty`.
 :type unit: scipp.Unit
 :type dtype: Any
 
-:seealso: Specialized `creation functions <../reference/api.rst#creation-functions>`_,
+:seealso: Specialized `creation functions <../../reference/creation-functions.rst>`_,
  in particular :py:func:`scipp.array` and :py:func:`scipp.scalar`.
 )raw");
 }

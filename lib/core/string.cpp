@@ -33,6 +33,14 @@ std::string to_string(const Dimensions &dims) {
   return s;
 }
 
+std::string to_string(const Sizes &sizes) {
+  std::string repr("Sizes[");
+  for (const auto &dim : sizes)
+    repr += to_string(dim) + ":" + std::to_string(sizes[dim]) + ", ";
+  repr += "]";
+  return repr;
+}
+
 const std::string &to_string(const std::string &s) { return s; }
 std::string_view to_string(const std::string_view s) { return s; }
 std::string to_string(const char *s) { return std::string(s); }
@@ -46,7 +54,7 @@ std::string to_string(const DType dtype) {
 std::string to_string(const Slice &slice) {
   std::string end = slice.end() >= 0 ? ", " + std::to_string(slice.end()) : "";
   return "Slice(" + to_string(slice.dim()) + ", " +
-         std::to_string(slice.begin()) + end + ")\n";
+         std::to_string(slice.begin()) + end + ')';
 }
 
 std::string to_string(const scipp::index_pair &index) {

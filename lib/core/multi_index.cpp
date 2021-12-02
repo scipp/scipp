@@ -119,7 +119,7 @@ template <scipp::index N>
 template <class... Params>
 MultiIndex<N>::MultiIndex(binned_tag, const Dimensions &inner_dims,
                           const Dimensions &bin_dims, const Params &... params)
-    : m_bin{BinIterator(params)...} {
+    : m_bin{BinIterator(params.bucketParams(), bin_dims.volume())...} {
   validate_bin_indices(params...);
 
   const Dim slice_dim = get_slice_dim(params.bucketParams()...);

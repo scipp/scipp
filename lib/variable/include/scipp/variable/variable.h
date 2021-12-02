@@ -63,7 +63,7 @@ public:
 
   [[nodiscard]] const units::Unit &unit() const;
   void setUnit(const units::Unit &unit);
-  void expectCanSetUnit(const units::Unit &) const;
+  void expect_can_set_unit(const units::Unit &unit) const;
 
   [[nodiscard]] const Dimensions &dims() const;
   [[nodiscard]] Dim dim() const;
@@ -75,7 +75,7 @@ public:
   [[nodiscard]] scipp::index stride(const Dim dim) const;
   [[nodiscard]] scipp::index offset() const;
 
-  [[nodiscard]] bool hasVariances() const;
+  [[nodiscard]] bool has_variances() const;
 
   template <class T> ElementArrayView<const T> values() const;
   template <class T> ElementArrayView<T> values();
@@ -152,7 +152,7 @@ private:
   template <class T, class... Index>
   Variable elements_impl(Index... index) const;
 
-  void expectWritable() const;
+  void expect_writable() const;
 
   Dimensions m_dims;
   Strides m_strides;
@@ -196,7 +196,7 @@ Variable Variable::construct(const DType &type, Args &&... args) {
                       : Variable()...};
   for (auto &var : vars)
     if (var.is_valid())
-      return std::move(var);
+      return var;
   throw except::TypeError("Unsupported dtype for constructing a Variable: " +
                           to_string(type));
 }

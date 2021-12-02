@@ -11,7 +11,7 @@
 namespace scipp::dataset {
 
 namespace {
-template <class T> void expectWritable(const T &dict) {
+template <class T> void expect_writable(const T &dict) {
   if (dict.is_readonly())
     throw except::DataArrayError("Read-only flag is set, cannot set new data.");
 }
@@ -79,7 +79,7 @@ void DataArray::setData(const Variable &data) {
   // Return early on self assign to avoid exceptions from Python inplace ops
   if (m_data->is_same(data))
     return;
-  expectWritable(*this);
+  expect_writable(*this);
   core::expect::equals(static_cast<Sizes>(dims()),
                        static_cast<Sizes>(data.dims()));
   *m_data = data;
@@ -87,7 +87,7 @@ void DataArray::setData(const Variable &data) {
 
 /// Return true if the dataset proxies have identical content.
 bool operator==(const DataArray &a, const DataArray &b) {
-  if (a.hasVariances() != b.hasVariances())
+  if (a.has_variances() != b.has_variances())
     return false;
   if (a.coords() != b.coords())
     return false;
@@ -125,14 +125,14 @@ DataArray DataArray::slice(const Slice &s) const {
 }
 
 void DataArray::validateSlice(const Slice &s, const DataArray &array) const {
-  expect::coordsAreSuperset(slice(s), array);
+  expect::coords_are_superset(slice(s), array, "");
   data().validateSlice(s, array.data());
   masks().validateSlice(s, array.masks());
 }
 
 DataArray &DataArray::setSlice(const Slice &s, const DataArray &array) {
   // validateSlice, but not masks as otherwise repeated
-  expect::coordsAreSuperset(slice(s), array);
+  expect::coords_are_superset(slice(s), array, "");
   data().validateSlice(s, array.data());
   // Apply changes
   masks().setSlice(s, array.masks());

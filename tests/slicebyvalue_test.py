@@ -126,14 +126,15 @@ class TestSliceByValue:
 
     def test_slice_by_incorrect_unit_throws(self):
         with pytest.raises(sc.UnitError) as e_info:
-            self._d['a']['x', 1.5 * sc.units.m]
-        assert str(e_info.value) == 'Expected unit dimensionless, got m.'
+            _ = self._d['a']['x', 1.5 * sc.units.m]
+        assert '(m)' in str(e_info.value)
+        assert '(dimensionless)' in str(e_info.value)
 
     def test_out_of_range_throws(self):
         with pytest.raises(IndexError):
-            self._d['a']['x', 5.0 * sc.units.dimensionless]
+            _ = self._d['a']['x', 5.0 * sc.units.dimensionless]
 
-    def test_assign_incompatable_variable_throws(self):
+    def test_assign_incompatible_variable_throws(self):
         with pytest.raises(RuntimeError) as e_info:
             self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
                          sc.units.dimensionless] = sc.Variable(dims=['x'],
