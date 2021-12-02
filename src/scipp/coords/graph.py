@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 import dataclasses
 from graphlib import TopologicalSorter
 from itertools import islice
@@ -55,6 +56,9 @@ class Cycle:
 class Graph:
     def __init__(self, graph: Dict[str, Iterable[str]]):
         self._child_to_parent = {key: set(values) for key, values in graph.items()}
+
+    def __getitem__(self, node: str):
+        return self._child_to_parent[node]
 
     def parents_of(self, node: str) -> Iterable[str]:
         try:
@@ -120,6 +124,45 @@ class Graph:
             # but allows a<->b (2 edges).
             return
         cycles.add(Cycle(nodes=set(path_section), inputs=inputs, outputs=outputs))
+
+    def add_node(self, name, parents):
+        self._child_to_parent[name] = parents
+
+    def remove_node(self, name: str):
+        self._child_to_parent.pop(name, None)
+        for other in self.children_of(name):
+            self._child_to_parent[other].discard(name)
+
+    def add_parent(self, child: str, parent: str):
+        self._child_to_parent[child].add(parent)
+
+    def remove_parent(self, child: str, parent: str):
+        self._child_to_parent[child].discard(parent)
+
+    def contract_cycle(self, cycle: Cycle) -> Graph:
+        intermediates = list(cycle.intermediates())
+        new_node = _make_new_node_name(intermediates)
+        work_graph = deepcopy(self)
+
+        for node in intermediates:
+            work_graph.remove_node(node)
+
+        new_parents = set(cycle.inputs)
+        for node in intermediates:
+            for parent in self.parents_of(node):
+                if parent not in intermediates:
+                    new_parents.add(parent)
+        work_graph.add_node(new_node, new_parents)
+
+        for node in self._child_to_parent:
+            if node not in cycle.inputs and node not in intermediates:
+                for parent in self.parents_of(node):
+                    if parent in cycle.inputs:
+                        work_graph.remove_parent(node, parent)
+                    if parent in cycle.inputs or parent in intermediates:
+                        work_graph.add_parent(node, new_node)
+
+        return work_graph
 
 
 class RuleGraph:
@@ -219,6 +262,12 @@ def _convert_to_rule_graph(graph: GraphDict) -> Dict[str, Rule]:
 
 def _is_in_meta_data(name: str, da: DataArray) -> bool:
     return name in da.meta or (da.bins is not None and name in da.bins.meta)
+
+
+def _make_new_node_name(node_names: Iterable[str]) -> str:
+    cycle_prefix = '__SC_CYCLE_NODE:'
+    return cycle_prefix + ':'.join(
+        name.replace(cycle_prefix, '') for name in node_names)
 
 
 def _make_graphviz_digraph(*args, **kwargs):
