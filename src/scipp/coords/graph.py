@@ -129,7 +129,7 @@ class Graph:
                     if n is not None and len(cycles) >= n:
                         return set(islice(cycles, 0, n))
                 else:
-                    dfs.push(path + [neighbor])
+                    dfs.push([path + [neighbor]])
         return cycles
 
     def _add_cycle_to(self, cycles, path_section):
@@ -150,7 +150,10 @@ class Graph:
                 # Must have outgoing edges.
                 inputs.add(node)
         if not inner:
-            return  # No intermediate nodes that can be contracted.
+            # No intermediate nodes that can be contracted.
+            # This prevents (among others) a->b from being detected as a cycle
+            # but allows a<->b (2 edges).
+            return
         cycles.add(Cycle(nodes=set(path_section), inputs=inputs, outputs=outputs))
 
     def show(self, size=None, simplified=False):
