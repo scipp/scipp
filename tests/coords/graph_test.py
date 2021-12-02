@@ -259,6 +259,15 @@ def test_undirected_cycles_graph_1():
     assert graph.graph_for(da, {'d'}).dependency_graph.undirected_cycles() == expected
 
 
+def test_contract_cycle_graph_1():
+    # Contracted: a -> cycle_b_c -> d
+    graph = graph_1().dependency_graph
+    cycle = scgraph.Cycle(nodes={'a', 'b', 'c', 'd'}, inputs={'a'}, outputs={'d'})
+    contracted = graph.contract_cycle(cycle)
+    assert len(contracted['d']) == 1
+    assert contracted[next(iter(contracted['d']))] == {'a'}
+
+
 def test_undirected_cycles_graph_2():
     da = make_data(('a', 'c', 'd'))
     graph = graph_2()
@@ -306,3 +315,39 @@ def test_undirected_cycles_graph_4():
                            {'d'}).dependency_graph.undirected_cycles() == set(expected)
     assert graph.graph_for(da,
                            {'c'}).dependency_graph.undirected_cycles() == {expected[1]}
+
+    # Finds the cycle e <-> cycle_b_c after contraction.
+    contracted = graph.dependency_graph.contract_cycle(expected[0])
+    cycle_node = next(iter(contracted['d']))
+    assert contracted.undirected_cycles() == {
+        scgraph.Cycle(nodes={cycle_node, 'e'}, inputs=set(), outputs=set())
+    }
+
+
+def test_contract_cycle_graph_4():
+    graph = graph_4().dependency_graph
+
+    # Contracted:
+    #            a
+    #            |
+    #   e <-> cycle_b_c
+    #            |
+    #            d
+    cycle = scgraph.Cycle(nodes={'a', 'b', 'c', 'd'}, inputs={'a'}, outputs={'d'})
+    contracted = graph.contract_cycle(cycle)
+    assert len(contracted['d']) == 1
+    cycle_node = next(iter(contracted['d']))
+    assert contracted[cycle_node] == {'a', 'e'}
+    assert contracted['e'] == {cycle_node}
+
+    # Twice contracted:
+    #        a
+    #        |
+    #   cycle_b_c_e
+    #        |
+    #        d
+    cycle = scgraph.Cycle(nodes={cycle_node, 'e'}, inputs=set(), outputs=set())
+    twice_contracted = contracted.contract_cycle(cycle)
+    assert len(twice_contracted['d']) == 1
+    cycle_node = next(iter(twice_contracted['d']))
+    assert twice_contracted[cycle_node] == {'a'}
