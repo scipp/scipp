@@ -53,66 +53,33 @@ class Cycle:
                     if node not in self.inputs and node not in self.outputs)
 
 
-class Graph:
-    def __init__(self, graph: Union[GraphDict, RuleGraph]):
-        if isinstance(next(iter(graph.values())), Rule):
-            self._rule_graph = graph
-        else:
-            self._rule_graph = _convert_to_rule_graph(graph)
-
-    def __getitem__(self, item) -> Rule:
-        return self._rule_graph[item]
-
-    def items(self) -> Iterable[Tuple[str, Rule]]:
-        yield from self._rule_graph.items()
+class BaseGraph:
+    def __init__(self, graph: Dict[str, Iterable[str]], frozen=False):
+        self._child_to_parent = {key: set(values) for key, values in graph.items()}
+        self._frozen = frozen
 
     def parents_of(self, node: str) -> Iterable[str]:
         try:
-            yield from self._rule_graph[node].dependencies
+            yield from self._child_to_parent[node]
         except KeyError:
             # Input nodes have no parents but are not represented in the
             # graph unless the corresponding FetchRules have been added.
             return
 
     def children_of(self, node: str) -> Iterable[str]:
-        for candidate, rule in self._rule_graph.items():
-            if node in rule.dependencies:
+        for candidate, parents in self._child_to_parent.items():
+            if node in parents:
                 yield candidate
 
     def neighbors_of(self, node: str) -> Iterable[str]:
         yield from self.parents_of(node)
         yield from self.children_of(node)
 
-    def graph_for(self, da: DataArray, targets: Set[str]) -> Graph:
-        """
-        Construct a graph containing only rules needed for the given DataArray
-        and targets, including FetchRules for the inputs.
-        """
-        subgraph = {}
-        dfs = DepthFirstSearch(targets)
-        for out_name in dfs:
-            if out_name in subgraph:
-                continue
-            rule = self._rule_for(out_name, da)
-            subgraph[out_name] = rule
-            dfs.push(rule.dependencies)
-        return Graph(subgraph)
-
-    def _rule_for(self, out_name: str, da: DataArray) -> Rule:
-        if _is_in_meta_data(out_name, da):
-            return FetchRule((out_name, ), da.meta, da.bins.meta if da.bins else {})
-        try:
-            return self._rule_graph[out_name]
-        except KeyError:
-            raise NotFoundError(
-                f"Coordinate '{out_name}' does not exist in the input data "
-                "and no rule has been provided to compute it.") from None
-
     def undirected_cycles(self, n=None) -> Set[Cycle]:
         cycles = set()
         # It is enough to only start from rule outputs, because there are no cycles
         # that include only inputs.
-        for start in self._rule_graph.keys():
+        for start in self._child_to_parent.keys():
             cycles.update(self._undirected_cycles_from(start, n))
             if n is not None and len(cycles) >= n:
                 return set(islice(cycles, 0, n))
@@ -155,6 +122,51 @@ class Graph:
             # but allows a<->b (2 edges).
             return
         cycles.add(Cycle(nodes=set(path_section), inputs=inputs, outputs=outputs))
+
+
+class Graph(BaseGraph):
+    def __init__(self, graph: Union[GraphDict, RuleGraph]):
+        if isinstance(next(iter(graph.values())), Rule):
+            rule_graph: RuleGraph = graph
+        else:
+            rule_graph: RuleGraph = _convert_to_rule_graph(graph)
+        # Graph must be frozen because Rules do not allow for modification.
+        super().__init__(
+            {output: rule.dependencies
+             for output, rule in rule_graph.items()},
+            frozen=True)
+        self._rule_graph = rule_graph
+
+    def __getitem__(self, name: str) -> Rule:
+        return self._rule_graph[name]
+
+    def items(self) -> Iterable[Tuple[str, Rule]]:
+        yield from self._rule_graph.items()
+
+    def graph_for(self, da: DataArray, targets: Set[str]) -> Graph:
+        """
+        Construct a graph containing only rules needed for the given DataArray
+        and targets, including FetchRules for the inputs.
+        """
+        subgraph = {}
+        dfs = DepthFirstSearch(targets)
+        for out_name in dfs:
+            if out_name in subgraph:
+                continue
+            rule = self._rule_for(out_name, da)
+            subgraph[out_name] = rule
+            dfs.push(rule.dependencies)
+        return Graph(subgraph)
+
+    def _rule_for(self, out_name: str, da: DataArray) -> Rule:
+        if _is_in_meta_data(out_name, da):
+            return FetchRule((out_name, ), da.meta, da.bins.meta if da.bins else {})
+        try:
+            return self._rule_graph[out_name]
+        except KeyError:
+            raise NotFoundError(
+                f"Coordinate '{out_name}' does not exist in the input data "
+                "and no rule has been provided to compute it.") from None
 
     def show(self, size=None, simplified=False):
         dot = _make_graphviz_digraph(strict=True)
