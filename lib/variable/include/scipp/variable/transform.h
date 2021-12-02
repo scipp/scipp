@@ -314,7 +314,7 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
 /// without variances.
 template <class Op, class Out, class Tuple, class Arg, class... Args>
 static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
-                         const Args &...args) {
+                         const Args &... args) {
   auto vals = arg.values();
   if (arg.hasVariances()) {
     if constexpr (std::is_base_of_v<
@@ -520,7 +520,7 @@ template <bool dry_run> struct in_place {
   /// and without variances.
   template <class Op, class Tuple, class Arg, class... Args>
   static void do_transform_in_place(Op op, Tuple &&processed, Arg &arg,
-                                    const Args &...args) {
+                                    const Args &... args) {
     using namespace detail;
     auto vals = arg.values();
     if (arg.hasVariances()) {

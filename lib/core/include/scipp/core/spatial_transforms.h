@@ -24,7 +24,7 @@ public:
   Quaternion() : m_quat(Eigen::Quaterniond::Identity()){};
   explicit Quaternion(const Eigen::Quaterniond &x) : m_quat(x){};
 
-  [[nodiscard]] Eigen::Quaterniond quat() const { return m_quat; }
+  [[nodiscard]] const Eigen::Quaterniond& quat() const { return m_quat; }
 
   bool operator==(const Quaternion &other) const {
     return m_quat.w() == other.m_quat.w() && m_quat.x() == other.m_quat.x() &&
@@ -55,7 +55,7 @@ public:
   Translation() : m_vec(Eigen::Vector3d(0, 0, 0)){};
   explicit Translation(const Eigen::Vector3d &x) : m_vec(x){};
 
-  [[nodiscard]] Eigen::Vector3d vector() const { return m_vec; }
+  [[nodiscard]] const Eigen::Vector3d& vector() const { return m_vec; }
 
   bool operator==(const Translation &other) const {
     return m_vec == other.m_vec;
