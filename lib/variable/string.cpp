@@ -68,8 +68,7 @@ auto apply(const DType dtype, Args &&...args) {
                  scipp::core::time_point, Eigen::Vector3d, Eigen::Matrix3d,
                  Variable, bucket<Variable>, scipp::index_pair, Eigen::Affine3d,
                  scipp::core::Rotation,
-                 scipp::core::Translation,
-                 scipp::core::Scaling>{},
+                 scipp::core::Translation>{},
       dtype, std::forward<Args>(args)...);
 }
 } // namespace

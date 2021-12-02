@@ -42,7 +42,6 @@ template <int I, class T> decltype(auto) get(T &&t) {
     return t.matrix().operator()(I);
   } else if constexpr (core::has_eval_v<std::decay_t<T>> || 
       std::is_same_v<std::decay_t<T>, scipp::core::Rotation> || 
-      std::is_same_v<std::decay_t<T>, scipp::core::Scaling> || 
       std::is_same_v<std::decay_t<T>, scipp::core::Translation>) {
     return t.operator()(I);
   } else {

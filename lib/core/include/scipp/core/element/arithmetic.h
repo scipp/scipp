@@ -98,9 +98,8 @@ struct multiplies_types_t {
       std::tuple<std::tuple<Eigen::Vector3d, float>>(),
       std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
       std::tuple<std::tuple<Eigen::Vector3d, int32_t>>(),
-      std::declval<pair_product_t<Eigen::Matrix3d, Eigen::Affine3d, scipp::core::Rotation, scipp::core::Scaling, scipp::core::Translation>>(),
+      std::declval<pair_product_t<Eigen::Matrix3d, Eigen::Affine3d, scipp::core::Rotation, scipp::core::Translation>>(),
       std::tuple<std::tuple<scipp::core::Rotation, Eigen::Vector3d>>(),
-      std::tuple<std::tuple<scipp::core::Scaling, Eigen::Vector3d>>(),
       std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>()));
 };
 

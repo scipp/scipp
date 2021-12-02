@@ -50,28 +50,6 @@ public:
   } 
 };
 
-class Scaling {
-private:
-  Eigen::DiagonalMatrix<double, 3> m_mat;
-
-public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  Scaling()
-      : m_mat(Eigen::Matrix3d::Identity().diagonal().asDiagonal()){};
-  explicit Scaling(const Eigen::DiagonalMatrix<double, 3> &x)
-      : m_mat(x){};
-
-  [[nodiscard]] Eigen::Matrix3d matrix() const { return m_mat; }
-
-  bool operator==(const Scaling &other) const {
-    return m_mat.diagonal() == other.m_mat.diagonal();
-  }
-
-  double& operator()(const int i) {
-      return m_mat.diagonal()(i);
-  } 
-};
-
 class Translation {
 private:
   Eigen::Vector3d m_vec;
@@ -94,21 +72,15 @@ public:
 
 template<class T> struct asEigenType_t { using type = T; };
 template<> struct asEigenType_t<Rotation> { using type = Eigen::Quaterniond; };
-template<> struct asEigenType_t<Scaling> { using type = Eigen::Matrix3d; };
 template<> struct asEigenType_t<Translation> { using type = Eigen::Translation<double, 3>; };
 
 template<typename T, typename R = asEigenType_t<T>::type> inline const R asEigenType(const T &obj) { return obj; };
 template<> inline const Eigen::Quaterniond asEigenType(const Rotation &obj) { return obj.quat(); }
-template<> inline const Eigen::Matrix3d asEigenType(const Scaling &obj) { return obj.matrix(); }
 template<> inline const Eigen::Translation<double, 3> asEigenType(const Translation &obj) { return Eigen::Translation<double, 3>(obj.vector()); }
 
 template<class T_LHS, class T_RHS> struct combines_to_linear : std::false_type {}; 
-template<> struct combines_to_linear<Rotation, Scaling> : std::true_type {};
 template<> struct combines_to_linear<Rotation, Eigen::Matrix3d> : std::true_type {};
-template<> struct combines_to_linear<Scaling, Rotation> : std::true_type {};
-template<> struct combines_to_linear<Scaling, Eigen::Matrix3d> : std::true_type {};
 template<> struct combines_to_linear<Eigen::Matrix3d, Rotation> : std::true_type {};
-template<> struct combines_to_linear<Eigen::Matrix3d, Scaling> : std::true_type {};
 
 template <typename T_LHS, typename T_RHS>
 [[nodiscard]] inline 
@@ -120,14 +92,10 @@ operator*(const T_LHS &lhs, const T_RHS &rhs) {
 template<class T_LHS, class T_RHS> struct combines_to_affine : std::false_type {}; 
 template<> struct combines_to_affine<Rotation, Translation> : std::true_type {};
 template<> struct combines_to_affine<Rotation, Eigen::Affine3d> : std::true_type {};
-template<> struct combines_to_affine<Scaling, Translation> : std::true_type {};
-template<> struct combines_to_affine<Scaling, Eigen::Affine3d> : std::true_type {};
 template<> struct combines_to_affine<Eigen::Matrix3d, Translation> : std::true_type {};
 template<> struct combines_to_affine<Eigen::Affine3d, Rotation> : std::true_type {};
-template<> struct combines_to_affine<Eigen::Affine3d, Scaling> : std::true_type {};
 template<> struct combines_to_affine<Eigen::Affine3d, Translation> : std::true_type {};
 template<> struct combines_to_affine<Translation, Rotation> : std::true_type {};
-template<> struct combines_to_affine<Translation, Scaling> : std::true_type {};
 template<> struct combines_to_affine<Translation, Eigen::Matrix3d> : std::true_type {};
 template<> struct combines_to_affine<Translation, Eigen::Affine3d> : std::true_type {};
 
@@ -141,7 +109,6 @@ operator*(const T_LHS &lhs, const T_RHS &rhs) {
 template<class T_LHS> struct applies_to_vector : std::false_type {}; 
 template<> struct applies_to_vector<Rotation> : std::true_type {};
 template<> struct applies_to_vector<Translation> : std::true_type {};
-template<> struct applies_to_vector<Scaling> : std::true_type {};
 
 template <typename T_LHS>
 [[nodiscard]] inline 
@@ -155,12 +122,6 @@ operator*(const T_LHS &lhs, const Eigen::Vector3d &rhs) {
   return Rotation(lhs.quat() * rhs.quat());
 };
 
-[[nodiscard]] inline Scaling operator*(const Scaling &lhs,
-                                                const Scaling &rhs) {
-  return Scaling(
-      (lhs.matrix() * rhs.matrix()).diagonal().asDiagonal());
-};
-
 [[nodiscard]] inline Translation
 operator*(const Translation &lhs, const Translation &rhs) {
   return Translation(lhs.vector() + rhs.vector());
@@ -169,7 +130,6 @@ operator*(const Translation &lhs, const Translation &rhs) {
 template <> inline constexpr DType dtype<Eigen::Matrix3d>{5001};
 template <> inline constexpr DType dtype<Eigen::Affine3d>{5002};
 template <> inline constexpr DType dtype<Translation>{5003};
-template <> inline constexpr DType dtype<Scaling>{5004};
-template <> inline constexpr DType dtype<Rotation>{5005};
+template <> inline constexpr DType dtype<Rotation>{5004};
 
 } // namespace scipp::core

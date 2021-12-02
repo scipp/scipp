@@ -846,46 +846,49 @@ TEST(VariableTest, combine_translations) {
   EXPECT_EQ(trans1 * trans2, expected_var);
 }
 
-TEST(VariableTest, combine_translation_and_scaling) {
+TEST(VariableTest, combine_translation_and_rotation) {
   const Eigen::Vector3d translation(1, 2, 3);
-  const Eigen::DiagonalMatrix<double, 3> scaling(4, 5, 6);
+  Eigen::Quaterniond rotation;
+  rotation = Eigen::AngleAxisd(pi<double>, Eigen::Vector3d::UnitX());
 
   const Variable translation_var =
       makeVariable<scipp::core::Translation>(
           Dims{Dim::X}, Shape{1}, units::m,
           Values{scipp::core::Translation(translation)});
-  const Variable scaling_var = makeVariable<scipp::core::Scaling>(
-      Dims{Dim::X}, Shape{1}, units::one,
-      Values{scipp::core::Scaling(scaling)});
-
-  // Translation and scaling -> affine
-  const Eigen::Affine3d expected(Eigen::Translation<double, 3>(translation) *
-                                 scaling);
-  const Variable expected_var = makeVariable<Eigen::Affine3d>(
-      Dims{Dim::X}, Shape{1}, units::m, Values{expected});
-
-  EXPECT_EQ(translation_var * scaling_var, expected_var);
-}
-
-TEST(VariableTest, combine_rotation_and_scaling) {
-  Eigen::Quaterniond rotation;
-  rotation = Eigen::AngleAxisd(pi<double>, Eigen::Vector3d::UnitX());
-  const Eigen::DiagonalMatrix<double, 3> scaling(2, 3, 4);
-
   const Variable rotation_var = makeVariable<scipp::core::Rotation>(
       Dims{Dim::X}, Shape{1}, units::one,
       Values{scipp::core::Rotation(rotation)});
 
-  const Variable scaling_var = makeVariable<scipp::core::Scaling>(
+  // Translation and rotation -> affine
+  const Eigen::Affine3d expected(Eigen::Translation<double, 3>(translation) *
+                                 rotation);
+  const Variable expected_var = makeVariable<Eigen::Affine3d>(
+      Dims{Dim::X}, Shape{1}, units::m, Values{expected});
+
+  EXPECT_EQ(translation_var * rotation_var, expected_var);
+}
+
+TEST(VariableTest, combine_rotations) {
+  Eigen::Quaterniond rotation1;
+  rotation1 = Eigen::AngleAxisd(pi<double>/2.0, Eigen::Vector3d::UnitX());
+
+  Eigen::Quaterniond rotation2;
+  rotation2 = Eigen::AngleAxisd(pi<double>/2.0, Eigen::Vector3d::UnitX());
+
+  const Variable rotation1_var = makeVariable<scipp::core::Rotation>(
       Dims{Dim::X}, Shape{1}, units::one,
-      Values{scipp::core::Scaling(scaling)});
+      Values{scipp::core::Rotation(rotation1)});
 
-  // Rotation and scaling -> linear transform
-  const Eigen::Matrix3d expected((rotation * scaling).linear().eval());
-  const Variable expected_var = makeVariable<Eigen::Matrix3d>(
-      Dims{Dim::X}, Shape{1}, units::one, Values{expected});
+  const Variable rotation2_var = makeVariable<scipp::core::Rotation>(
+      Dims{Dim::X}, Shape{1}, units::one,
+      Values{scipp::core::Rotation(rotation2)});
 
-  EXPECT_EQ(rotation_var * scaling_var, expected_var);
+  // Rotation and rotation -> rotation
+  const Eigen::Quaterniond expected(rotation1 * rotation2);
+  const Variable expected_var = makeVariable<scipp::core::Rotation>(
+      Dims{Dim::X}, Shape{1}, units::one, Values{scipp::core::Rotation(expected)});
+
+  EXPECT_EQ(rotation1_var * rotation2_var, expected_var);
 }
 
 class ApplyTransformTest : public ::testing::Test {
