@@ -25,7 +25,7 @@ def graph_0():
     def ff(c, d):
         pass
 
-    return scgraph.Graph({'d': fd, 'e': fe, 'f': ff, 'g': 'e'})
+    return scgraph.RuleGraph({'d': fd, 'e': fe, 'f': ff, 'g': 'e'})
 
 
 def graph_1():
@@ -39,7 +39,7 @@ def graph_1():
     def fd(b, c):
         pass
 
-    return scgraph.Graph({'d': fd, 'b': 'a', 'c': 'a'})
+    return scgraph.RuleGraph({'d': fd, 'b': 'a', 'c': 'a'})
 
 
 def graph_2():
@@ -60,7 +60,7 @@ def graph_2():
     def fg(b, f):
         pass
 
-    return scgraph.Graph({'b': 'a', 'e': fe, 'f': ff, 'g': fg})
+    return scgraph.RuleGraph({'b': 'a', 'e': fe, 'f': ff, 'g': fg})
 
 
 def graph_3():
@@ -92,7 +92,7 @@ def graph_3():
     def fi(h, f):
         pass
 
-    return scgraph.Graph({
+    return scgraph.RuleGraph({
         'b': 'a',
         ('c', 'f'): fcf,
         'd': fd,
@@ -133,7 +133,7 @@ def graph_4():
     def fe(b):
         pass
 
-    return scgraph.Graph({'b': fb, 'c': fc, 'd': fd, 'e': fe})
+    return scgraph.RuleGraph({'b': fb, 'c': fc, 'd': fd, 'e': fe})
 
 
 def make_data(coords, dims=('x', )):
@@ -146,7 +146,7 @@ def make_data(coords, dims=('x', )):
 
 
 def test_children_of():
-    graph = graph_0()
+    graph = graph_0().dependency_graph
     assert set(graph.children_of('a')) == {'d', 'e'}
     assert set(graph.children_of('b')) == {'d', 'e'}
     assert set(graph.children_of('c')) == {'f'}
@@ -157,7 +157,7 @@ def test_children_of():
 
 
 def test_parents_of():
-    graph = graph_0()
+    graph = graph_0().dependency_graph
     assert set(graph.parents_of('a')) == set()
     assert set(graph.parents_of('b')) == set()
     assert set(graph.parents_of('c')) == set()
@@ -168,7 +168,7 @@ def test_parents_of():
 
 
 def test_neighbors_of():
-    graph = graph_0()
+    graph = graph_0().dependency_graph
     for node in ('a', 'b', 'c', 'd', 'e', 'f', 'g'):
         assert set(graph.neighbors_of(node)) == (set(graph.children_of(node))
                                                  | set(graph.parents_of(node)))
@@ -247,16 +247,16 @@ def test_graph_for_graph_3():
 def test_undirected_cycles_graph_0():
     da = make_data(('a', 'b', 'c'))
     graph = graph_0()
-    assert not graph.undirected_cycles()
-    assert not graph.graph_for(da, {'f', 'g'}).undirected_cycles()
+    assert not graph.dependency_graph.undirected_cycles()
+    assert not graph.graph_for(da, {'f', 'g'}).dependency_graph.undirected_cycles()
 
 
 def test_undirected_cycles_graph_1():
     da = make_data(('a', ))
     graph = graph_1()
     expected = {scgraph.Cycle(nodes={'a', 'b', 'c', 'd'}, inputs={'a'}, outputs={'d'})}
-    assert graph.undirected_cycles() == expected
-    assert graph.graph_for(da, {'d'}).undirected_cycles() == expected
+    assert graph.dependency_graph.undirected_cycles() == expected
+    assert graph.graph_for(da, {'d'}).dependency_graph.undirected_cycles() == expected
 
 
 def test_undirected_cycles_graph_2():
@@ -270,9 +270,10 @@ def test_undirected_cycles_graph_2():
                       inputs={'b', 'd'},
                       outputs={'e', 'g'})
     }
-    assert graph.undirected_cycles() == expected
-    assert not graph.graph_for(da, {'g'}).undirected_cycles()
-    assert graph.graph_for(da, {'e', 'g'}).undirected_cycles() == expected
+    assert graph.dependency_graph.undirected_cycles() == expected
+    assert not graph.graph_for(da, {'g'}).dependency_graph.undirected_cycles()
+    assert graph.graph_for(da,
+                           {'e', 'g'}).dependency_graph.undirected_cycles() == expected
 
 
 def test_undirected_cycles_graph_3():
@@ -286,9 +287,10 @@ def test_undirected_cycles_graph_3():
                       inputs={'d', 'f'},
                       outputs={'g', 'i'})
     }
-    assert graph.undirected_cycles() == expected
-    assert not graph.graph_for(da, {'d'}).undirected_cycles()
-    assert graph.graph_for(da, {'g', 'i'}).undirected_cycles() == expected
+    assert graph.dependency_graph.undirected_cycles() == expected
+    assert not graph.graph_for(da, {'d'}).dependency_graph.undirected_cycles()
+    assert graph.graph_for(da,
+                           {'g', 'i'}).dependency_graph.undirected_cycles() == expected
 
 
 def test_undirected_cycles_graph_4():
@@ -299,6 +301,8 @@ def test_undirected_cycles_graph_4():
                 scgraph.Cycle(nodes={'a', 'b', 'c', 'd', 'e'},
                               inputs={'a'},
                               outputs={'d'}))
-    assert graph.undirected_cycles() == set(expected)
-    assert graph.graph_for(da, {'d'}).undirected_cycles() == set(expected)
-    assert graph.graph_for(da, {'c'}).undirected_cycles() == {expected[1]}
+    assert graph.dependency_graph.undirected_cycles() == set(expected)
+    assert graph.graph_for(da,
+                           {'d'}).dependency_graph.undirected_cycles() == set(expected)
+    assert graph.graph_for(da,
+                           {'c'}).dependency_graph.undirected_cycles() == {expected[1]}

@@ -13,7 +13,6 @@ from ..core import DataArray, NotFoundError
 from .rule import ComputeRule, FetchRule, RenameRule, Rule
 
 GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
-RuleGraph = Dict[str, Rule]
 
 
 class DepthFirstSearch:
@@ -53,10 +52,9 @@ class Cycle:
                     if node not in self.inputs and node not in self.outputs)
 
 
-class BaseGraph:
-    def __init__(self, graph: Dict[str, Iterable[str]], frozen=False):
+class Graph:
+    def __init__(self, graph: Dict[str, Iterable[str]]):
         self._child_to_parent = {key: set(values) for key, values in graph.items()}
-        self._frozen = frozen
 
     def parents_of(self, node: str) -> Iterable[str]:
         try:
@@ -124,18 +122,15 @@ class BaseGraph:
         cycles.add(Cycle(nodes=set(path_section), inputs=inputs, outputs=outputs))
 
 
-class Graph(BaseGraph):
-    def __init__(self, graph: Union[GraphDict, RuleGraph]):
+class RuleGraph:
+    def __init__(self, graph: Union[GraphDict, Dict[str, Rule]]):
         if isinstance(next(iter(graph.values())), Rule):
-            rule_graph: RuleGraph = graph
+            self._rule_graph: Dict[str, Rule] = graph
         else:
-            rule_graph: RuleGraph = _convert_to_rule_graph(graph)
-        # Graph must be frozen because Rules do not allow for modification.
-        super().__init__(
+            self._rule_graph: Dict[str, Rule] = _convert_to_rule_graph(graph)
+        self.dependency_graph = Graph(
             {output: rule.dependencies
-             for output, rule in rule_graph.items()},
-            frozen=True)
-        self._rule_graph = rule_graph
+             for output, rule in self._rule_graph.items()})
 
     def __getitem__(self, name: str) -> Rule:
         return self._rule_graph[name]
@@ -143,7 +138,7 @@ class Graph(BaseGraph):
     def items(self) -> Iterable[Tuple[str, Rule]]:
         yield from self._rule_graph.items()
 
-    def graph_for(self, da: DataArray, targets: Set[str]) -> Graph:
+    def graph_for(self, da: DataArray, targets: Set[str]) -> RuleGraph:
         """
         Construct a graph containing only rules needed for the given DataArray
         and targets, including FetchRules for the inputs.
@@ -156,7 +151,7 @@ class Graph(BaseGraph):
             rule = self._rule_for(out_name, da)
             subgraph[out_name] = rule
             dfs.push(rule.dependencies)
-        return Graph(subgraph)
+        return RuleGraph(subgraph)
 
     def _rule_for(self, out_name: str, da: DataArray) -> Rule:
         if _is_in_meta_data(out_name, da):
@@ -187,7 +182,7 @@ class Graph(BaseGraph):
         return dot
 
 
-def rule_sequence(rules: Graph) -> List[Rule]:
+def rule_sequence(rules: RuleGraph) -> List[Rule]:
     already_used = set()
     result = []
     for rule in filter(lambda r: r not in already_used,
@@ -197,7 +192,7 @@ def rule_sequence(rules: Graph) -> List[Rule]:
     return result
 
 
-def _sort_topologically(graph: Graph) -> Iterable[str]:
+def _sort_topologically(graph: RuleGraph) -> Iterable[str]:
     yield from TopologicalSorter(
         {out: rule.dependencies
          for out, rule in graph.items()}).static_order()
@@ -209,7 +204,7 @@ def _make_rule(products, producer) -> Rule:
     return ComputeRule(products, producer)
 
 
-def _convert_to_rule_graph(graph: GraphDict) -> RuleGraph:
+def _convert_to_rule_graph(graph: GraphDict) -> Dict[str, Rule]:
     rule_graph = {}
     for products, producer in graph.items():
         products = (products, ) if isinstance(products, str) else tuple(products)
