@@ -29,7 +29,7 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.os }}-py${{ matrix.python-version }}
+          name: conda-package-${{ matrix.os }}-py${{ matrix.python-version }}
           path: conda/package/*/scipp*.tar.bz2
 
       - uses: actions/upload-artifact@v2
@@ -43,6 +43,8 @@ jobs:
     name: Deploy packages and docs
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
+
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install --yes anaconda-client
       - uses: actions/download-artifact@v2
