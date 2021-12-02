@@ -49,6 +49,8 @@ jobs:
       - run: conda install --yes anaconda-client
       - uses: actions/download-artifact@v2
       - run: ls -R
+      - run: anaconda upload --token ${{ secrets.ANACONDATOKEN }} --user scipp --label test conda-package/*/*.tar.bz2
+        #- run: find conda-package-* -type f -name *.tar.bz2 -exec anaconda --token "abc" {} --force \;
 
       - uses: JamesIves/github-pages-deploy-action@4.1.5
         with:
