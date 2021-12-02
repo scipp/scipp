@@ -55,7 +55,7 @@ jobs:
       - run: conda install -c conda-forge --yes anaconda-client
       - uses: actions/download-artifact@v2
       - run: ls -R
-      - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label ${{ env.conda_label }} $(ls conda-package/*/*.tar.bz2)
+      - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label ${{ env.conda_label }} $(ls conda-package-*/*/*.tar.bz2)
         #- run: find conda-package-* -type f -name *.tar.bz2 -exec anaconda --token "abc" {} --force \;
         #
       - uses: actions/checkout@v2
