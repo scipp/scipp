@@ -2,6 +2,9 @@ name: Package build (nightly and release)
 
 on:
   pull_request:  # TODO temporary for setting up
+  create:
+    tags:
+      - *.*.*
 
 jobs:
   conda_build:
@@ -42,16 +45,37 @@ jobs:
     needs: conda_build
     name: Deploy packages and docs
     runs-on: ubuntu-latest
+    env:
+      - conda_label: ${{ startsWith(github.ref, 'refs/tags/') && 'testrelease' || 'testdev' }}
     steps:
-      - uses: actions/checkout@v2
 
       - uses: conda-incubator/setup-miniconda@v2
-      - run: conda install --yes anaconda-client
+      - run: conda install -c conda-forge --yes anaconda-client
+      - run: conda config --set always_yes yes --set changeps1 no
       - uses: actions/download-artifact@v2
       - run: ls -R
-      - run: anaconda upload --token ${{ secrets.ANACONDATOKEN }} --user scipp --label test conda-package/*/*.tar.bz2
+      - run: anaconda upload --token ${{ secrets.ANACONDATOKEN }} --user scipp --label ${{ env.conda_label }} conda-package/*/*.tar.bz2
         shell: bash -l {0}
         #- run: find conda-package-* -type f -name *.tar.bz2 -exec anaconda --token "abc" {} --force \;
+        #
+      - uses: actions/checkout@v2
+        with:
+          repository: scipp/scipp.github.io
+          path: pages
+
+      - if: ${{ env.conda_label == 'testrelease' }}
+        run: |
+          mkdir DocumentationHTML/release
+          cp -r  DocumentationHTML DocumentationHTML/release/${GITHUB_REF#refs/*/}
+
+      - name: Deploy documentation
+        run: |
+          cd pages
+          rsync -av --checksum --delete --exclude .nojekyll --exclude release --exclude .git --exclude .github ../DocumentationHTML/ .
+          git add --all .
+          git status
+          git commit --amend --date="$(date)" --message='Auto commit from CI'
+          git status
 
       - uses: JamesIves/github-pages-deploy-action@4.1.5
         with:
