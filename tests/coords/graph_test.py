@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
 
+import pytest
 import scipp.coords.graph as scgraph
 from scipp.coords.rule import ComputeRule, FetchRule, RenameRule
 import scipp as sc
@@ -11,23 +12,128 @@ def graph_0():
     r"""
     a b c
     |╳| |
-    f e |
+    e d |
     |  \|
-    h   g
+    g   f
     """
-    def fd(a, b, c):
+    def fd(a, b):
         pass
 
-    def fe(a, b):
+    def fe(b, a):
         pass
 
-    def ff(a, b):
+    def ff(c, d):
         pass
 
-    def fg(c, e):
+    return scgraph.Graph({'d': fd, 'e': fe, 'f': ff, 'g': 'e'})
+
+
+def graph_1():
+    r"""
+      a
+     / \
+    b   c
+     \ /
+      d
+    """
+    def fd(b, c):
         pass
 
-    return scgraph.Graph({'d': fd, 'e': fe, 'f': ff, 'g': fg, 'h': 'f'})
+    return scgraph.Graph({'d': fd, 'b': 'a', 'c': 'a'})
+
+
+def graph_2():
+    r"""
+    a
+    |
+    b   c d
+    |\ /╳ |
+    | e   f
+    g_____|
+    """
+    def fe(b, d, c):
+        pass
+
+    def ff(c, d):
+        pass
+
+    def fg(b, f):
+        pass
+
+    return scgraph.Graph({'b': 'a', 'e': fe, 'f': ff, 'g': fg})
+
+
+def graph_3():
+    r"""
+        a
+        |
+        b
+       / \
+    e c   f
+     \|  /|
+      d  ||
+      |\ /|
+      h g |
+       \ /
+        i
+    """
+    def fcf(b):
+        pass
+
+    def fd(c, e):
+        pass
+
+    def fg(d, f):
+        pass
+
+    def fh(d):
+        pass
+
+    def fi(h, f):
+        pass
+
+    return scgraph.Graph({
+        'b': 'a',
+        ('c', 'f'): fcf,
+        'd': fd,
+        'g': fg,
+        'h': fh,
+        'i': fi
+    })
+
+
+def graph_4():
+    r"""
+      a
+      | \
+      b  |
+     /|  |
+    e |  |
+     \|  |
+      c  |
+      \ /
+       d
+
+    After contracting a,b,c,d, this graph produces a cycle between 2 nodes:
+        a
+        |
+    e<->bc
+        |
+        d
+    """
+    def fb(a):
+        pass
+
+    def fc(b, e):
+        pass
+
+    def fd(a, c):
+        pass
+
+    def fe(b):
+        pass
+
+    return scgraph.Graph({'b': fb, 'c': fc, 'd': fd, 'e': fe})
 
 
 def make_data(coords, dims=('x', )):
@@ -41,14 +147,13 @@ def make_data(coords, dims=('x', )):
 
 def test_children_of():
     graph = graph_0()
-    assert set(graph.children_of('a')) == {'d', 'e', 'f'}
-    assert set(graph.children_of('b')) == {'d', 'e', 'f'}
-    assert set(graph.children_of('c')) == {'d', 'g'}
-    assert set(graph.children_of('d')) == set()
+    assert set(graph.children_of('a')) == {'d', 'e'}
+    assert set(graph.children_of('b')) == {'d', 'e'}
+    assert set(graph.children_of('c')) == {'f'}
+    assert set(graph.children_of('d')) == {'f'}
     assert set(graph.children_of('e')) == {'g'}
-    assert set(graph.children_of('f')) == {'h'}
+    assert set(graph.children_of('f')) == set()
     assert set(graph.children_of('g')) == set()
-    assert set(graph.children_of('h')) == set()
 
 
 def test_parents_of():
@@ -56,45 +161,144 @@ def test_parents_of():
     assert set(graph.parents_of('a')) == set()
     assert set(graph.parents_of('b')) == set()
     assert set(graph.parents_of('c')) == set()
-    assert set(graph.parents_of('d')) == {'a', 'b', 'c'}
+    assert set(graph.parents_of('d')) == {'a', 'b'}
     assert set(graph.parents_of('e')) == {'a', 'b'}
-    assert set(graph.parents_of('f')) == {'a', 'b'}
-    assert set(graph.parents_of('g')) == {'c', 'e'}
-    assert set(graph.parents_of('h')) == {'f'}
+    assert set(graph.parents_of('f')) == {'d', 'c'}
+    assert set(graph.parents_of('g')) == {'e'}
 
 
 def test_neighbors_of():
     graph = graph_0()
-    for node in ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'):
+    for node in ('a', 'b', 'c', 'd', 'e', 'f', 'g'):
         assert set(graph.neighbors_of(node)) == (set(graph.children_of(node))
                                                  | set(graph.parents_of(node)))
 
 
-def test_graph_for():
+def assert_rule(graph, node, rule_type, dependencies):
+    rule = graph[node]
+    assert isinstance(rule, rule_type)
+    assert set(rule.dependencies) == dependencies
+
+
+def test_graph_for_graph_0():
     base_graph = graph_0()
     da = make_data(('a', 'b', 'c'))
 
+    graph = base_graph.graph_for(da, {'e'})
+    assert_rule(graph, 'a', FetchRule, set())
+    assert_rule(graph, 'b', FetchRule, set())
+    assert_rule(graph, 'e', ComputeRule, {'a', 'b'})
+
     graph = base_graph.graph_for(da, {'f'})
-    assert isinstance(graph['a'], FetchRule)
-    assert isinstance(graph['b'], FetchRule)
-    assert isinstance(graph['f'], ComputeRule)
-    assert set(graph['f'].dependencies) == {'a', 'b'}
+    assert_rule(graph, 'a', FetchRule, set())
+    assert_rule(graph, 'b', FetchRule, set())
+    assert_rule(graph, 'c', FetchRule, set())
+    assert_rule(graph, 'd', ComputeRule, {'a', 'b'})
+    assert_rule(graph, 'f', ComputeRule, {'c', 'd'})
 
-    graph = base_graph.graph_for(da, {'g'})
-    assert isinstance(graph['a'], FetchRule)
-    assert isinstance(graph['b'], FetchRule)
-    assert isinstance(graph['c'], FetchRule)
-    assert isinstance(graph['e'], ComputeRule)
-    assert set(graph['e'].dependencies) == {'a', 'b'}
-    assert isinstance(graph['g'], ComputeRule)
-    assert set(graph['g'].dependencies) == {'c', 'e'}
+    graph = base_graph.graph_for(da, {'d', 'g'})
+    assert_rule(graph, 'a', FetchRule, set())
+    assert_rule(graph, 'b', FetchRule, set())
+    assert_rule(graph, 'd', ComputeRule, {'a', 'b'})
+    assert_rule(graph, 'e', ComputeRule, {'a', 'b'})
+    assert_rule(graph, 'g', RenameRule, {'e'})
 
-    graph = base_graph.graph_for(da, {'h', 'e'})
-    assert isinstance(graph['a'], FetchRule)
-    assert isinstance(graph['b'], FetchRule)
-    assert isinstance(graph['f'], ComputeRule)
-    assert set(graph['f'].dependencies) == {'a', 'b'}
-    assert isinstance(graph['e'], ComputeRule)
-    assert set(graph['e'].dependencies) == {'a', 'b'}
-    assert isinstance(graph['h'], RenameRule)
-    assert set(graph['h'].dependencies) == {'f'}
+
+def test_graph_for_graph_1():
+    base_graph = graph_1()
+    da = make_data(('a', ))
+
+    graph = base_graph.graph_for(da, {'b'})
+    assert_rule(graph, 'a', FetchRule, set())
+    assert_rule(graph, 'b', RenameRule, {'a'})
+
+    graph = base_graph.graph_for(da, {'d'})
+    assert_rule(graph, 'a', FetchRule, set())
+    assert_rule(graph, 'b', RenameRule, {'a'})
+    assert_rule(graph, 'c', RenameRule, {'a'})
+    assert_rule(graph, 'd', ComputeRule, {'b', 'c'})
+
+
+def test_graph_for_graph_3():
+    base_graph = graph_3()
+    da = make_data(('a', 'e'))
+
+    graph = base_graph.graph_for(da, {'d'})
+    assert_rule(graph, 'a', FetchRule, set())
+    assert_rule(graph, 'b', RenameRule, {'a'})
+    assert_rule(graph, 'c', ComputeRule, {'b'})
+    # f is produced by the same rule as c but not required to make d.
+    with pytest.raises(KeyError):
+        assert graph['f']
+    assert_rule(graph, 'd', ComputeRule, {'c', 'e'})
+
+    graph = base_graph.graph_for(da, {'i', 'g'})
+    assert_rule(graph, 'a', FetchRule, set())
+    assert_rule(graph, 'b', RenameRule, {'a'})
+    assert_rule(graph, 'c', ComputeRule, {'b'})
+    assert_rule(graph, 'd', ComputeRule, {'c', 'e'})
+    assert_rule(graph, 'e', FetchRule, set())
+    assert_rule(graph, 'f', ComputeRule, {'b'})
+    assert_rule(graph, 'g', ComputeRule, {'d', 'f'})
+    assert_rule(graph, 'h', ComputeRule, {'d'})
+    assert_rule(graph, 'i', ComputeRule, {'f', 'h'})
+
+
+def test_undirected_cycles_graph_0():
+    da = make_data(('a', 'b', 'c'))
+    graph = graph_0()
+    assert not graph.undirected_cycles()
+    assert not graph.graph_for(da, {'f', 'g'}).undirected_cycles()
+
+
+def test_undirected_cycles_graph_1():
+    da = make_data(('a', ))
+    graph = graph_1()
+    expected = {scgraph.Cycle(nodes={'a', 'b', 'c', 'd'}, inputs={'a'}, outputs={'d'})}
+    assert graph.undirected_cycles() == expected
+    assert graph.graph_for(da, {'d'}).undirected_cycles() == expected
+
+
+def test_undirected_cycles_graph_2():
+    da = make_data(('a', 'c', 'd'))
+    graph = graph_2()
+    expected = {
+        scgraph.Cycle(nodes={'b', 'e', 'c', 'f', 'g'},
+                      inputs={'b', 'c'},
+                      outputs={'e', 'g'}),
+        scgraph.Cycle(nodes={'b', 'e', 'd', 'f', 'g'},
+                      inputs={'b', 'd'},
+                      outputs={'e', 'g'})
+    }
+    assert graph.undirected_cycles() == expected
+    assert not graph.graph_for(da, {'g'}).undirected_cycles()
+    assert graph.graph_for(da, {'e', 'g'}).undirected_cycles() == expected
+
+
+def test_undirected_cycles_graph_3():
+    da = make_data(('a', 'e'))
+    graph = graph_3()
+    expected = {
+        scgraph.Cycle(nodes={'b', 'c', 'd', 'f', 'g'}, inputs={'b'}, outputs={'g'}),
+        scgraph.Cycle(nodes={'b', 'c', 'd', 'f', 'h', 'i'}, inputs={'b'},
+                      outputs={'i'}),
+        scgraph.Cycle(nodes={'d', 'f', 'g', 'h', 'i'},
+                      inputs={'d', 'f'},
+                      outputs={'g', 'i'})
+    }
+    assert graph.undirected_cycles() == expected
+    assert not graph.graph_for(da, {'d'}).undirected_cycles()
+    assert graph.graph_for(da, {'g', 'i'}).undirected_cycles() == expected
+
+
+def test_undirected_cycles_graph_4():
+    da = make_data(('a', ))
+    graph = graph_4()
+    expected = (scgraph.Cycle(nodes={'a', 'b', 'c', 'd'}, inputs={'a'}, outputs={'d'}),
+                scgraph.Cycle(nodes={'b', 'c', 'e'}, inputs={'b'}, outputs={'c'}),
+                scgraph.Cycle(nodes={'a', 'b', 'c', 'd', 'e'},
+                              inputs={'a'},
+                              outputs={'d'}))
+    assert graph.undirected_cycles() == set(expected)
+    assert graph.graph_for(da, {'d'}).undirected_cycles() == set(expected)
+    assert graph.graph_for(da, {'c'}).undirected_cycles() == {expected[1]}
