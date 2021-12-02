@@ -42,7 +42,7 @@ jobs:
           path: docs_html
 
   deploy:
-    needs: conda_build
+    #needs: conda_build
     name: Deploy packages and docs
     runs-on: ubuntu-latest
     env:
