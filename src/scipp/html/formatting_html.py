@@ -9,7 +9,7 @@ from html import escape
 
 from .._scipp import core as sc
 from .. import stddevs
-from .resources import load_icons
+from .resources import load_icons, load_style
 
 BIN_EDGE_LABEL = "[bin-edge]"
 STDDEV_PREFIX = "σ = "
@@ -442,7 +442,8 @@ def _obj_repr(header_components, sections):
 
     return ("<div>"
             f"{load_icons()}"
-            "<div class='sc-wrap'>"
+            f"{load_style()}"
+            "<div class='sc-wrap sc-root'>"
             f"{header}"
             f"<ul class='sc-sections'>{sections}</ul>"
             "</div>"

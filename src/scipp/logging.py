@@ -13,9 +13,9 @@ import time
 from typing import Any, Dict, Optional, Tuple
 
 from .core import DataArray, Dataset, Variable
+from .html.resources import load_style
 from .html import make_html
 from .utils import running_in_jupyter
-from ._styling import inject_style
 
 
 def get_logger() -> logging.Logger:
@@ -140,9 +140,8 @@ def display_logs() -> None:
             'Cannot display log widgets because no widget handler is installed.')
 
     from IPython.display import display
-    from ipywidgets import VBox
-    inject_style()
-    display(VBox([widget]).add_class('sc-log-wrap'))
+    from ipywidgets import HTML, VBox
+    display(VBox([HTML(value=load_style()), widget]).add_class('sc-log-wrap'))
 
 
 def clear_log_widget() -> None:

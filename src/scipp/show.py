@@ -9,9 +9,9 @@ import numpy as np
 
 from ._scipp import core as sc
 from . import config
-from ._styling import inject_style
 from .utils import hex_to_rgb, rgb_to_hex
 from .typing import VariableLike
+from .html.resources import load_style
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -44,8 +44,9 @@ def _truncate_long_string(long_string: str, max_title_length) -> str:
 
 
 def _build_svg(content, left, top, width, height):
-    return (f'<svg width={_svg_width}em viewBox="{left} {top} {width} {height}">'
-            f'{content}</svg>')
+    return (f'<svg width={_svg_width}em viewBox="{left} {top} {width} {height}"'
+            ' class="sc-root">'
+            f'<defs>{load_style()}</defs>{content}</svg>')
 
 
 class VariableDrawer:
@@ -471,6 +472,5 @@ def show(container: VariableLike):
     """
     Show a graphical representation of a variable or dataset.
     """
-    inject_style()
     from IPython.core.display import display, HTML
     display(HTML(make_svg(container)))
