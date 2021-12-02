@@ -8,8 +8,8 @@
 
 #include "scipp/core/dtype.h"
 
-#include <type_traits>
 #include <optional>
+#include <type_traits>
 
 namespace scipp::core {
 
@@ -24,30 +24,26 @@ public:
   Quaternion() : m_quat(Eigen::Quaterniond::Identity()){};
   explicit Quaternion(const Eigen::Quaterniond &x) : m_quat(x){};
 
-  [[nodiscard]] Eigen::Quaterniond quat() const {
-    return m_quat;
-  }
+  [[nodiscard]] Eigen::Quaterniond quat() const { return m_quat; }
 
   bool operator==(const Quaternion &other) const {
-    return m_quat.w() == other.m_quat.w() && 
-        m_quat.x() == other.m_quat.x() && 
-        m_quat.y() == other.m_quat.y() && 
-        m_quat.z() == other.m_quat.z();
+    return m_quat.w() == other.m_quat.w() && m_quat.x() == other.m_quat.x() &&
+           m_quat.y() == other.m_quat.y() && m_quat.z() == other.m_quat.z();
   }
 
-  double& operator()(const int i) {
-      if (i == 0) {
-           m_quat.x();
-      } else if (i == 1) {
-          return m_quat.y();
-      } else if (i == 2) {
-          return m_quat.z();
-      } else if (i == 3) {
-          return m_quat.w();
-      } else {
-          throw std::out_of_range("invalid index for Quaternion");
-      }
-  } 
+  double &operator()(const int i) {
+    if (i == 0) {
+      m_quat.x();
+    } else if (i == 1) {
+      return m_quat.y();
+    } else if (i == 2) {
+      return m_quat.z();
+    } else if (i == 3) {
+      return m_quat.w();
+    } else {
+      throw std::out_of_range("invalid index for Quaternion");
+    }
+  }
 };
 
 class Translation {
@@ -65,65 +61,87 @@ public:
     return m_vec == other.m_vec;
   }
 
-  double& operator()(const int i) {
-      return m_vec(i);
-  } 
+  double &operator()(const int i) { return m_vec(i); }
 };
 
-template<class T> struct asEigenType_t { using type = T; };
-template<> struct asEigenType_t<Quaternion> { using type = Eigen::Quaterniond; };
-template<> struct asEigenType_t<Translation> { using type = Eigen::Translation<double, 3>; };
+template <class T> struct asEigenType_t { using type = T; };
+template <> struct asEigenType_t<Quaternion> {
+  using type = Eigen::Quaterniond;
+};
+template <> struct asEigenType_t<Translation> {
+  using type = Eigen::Translation<double, 3>;
+};
 
-template<typename T, typename R = asEigenType_t<T>::type> inline const R asEigenType(const T &obj) { return obj; };
-template<> inline const Eigen::Quaterniond asEigenType(const Quaternion &obj) { return obj.quat(); }
-template<> inline const Eigen::Translation<double, 3> asEigenType(const Translation &obj) { return Eigen::Translation<double, 3>(obj.vector()); }
-
-template<class T_LHS, class T_RHS> struct combines_to_linear : std::false_type {}; 
-template<> struct combines_to_linear<Quaternion, Eigen::Matrix3d> : std::true_type {};
-template<> struct combines_to_linear<Eigen::Matrix3d, Quaternion> : std::true_type {};
-
-template <typename T_LHS, typename T_RHS>
-[[nodiscard]] inline 
-std::enable_if_t<combines_to_linear<T_LHS, T_RHS>::value, Eigen::Matrix3d> 
-operator*(const T_LHS &lhs, const T_RHS &rhs) {
-    return asEigenType(lhs) * asEigenType(rhs);
+template <typename T, typename R = asEigenType_t<T>::type>
+inline const R asEigenType(const T &obj) {
+  return obj;
+};
+template <> inline const Eigen::Quaterniond asEigenType(const Quaternion &obj) {
+  return obj.quat();
+}
+template <>
+inline const Eigen::Translation<double, 3> asEigenType(const Translation &obj) {
+  return Eigen::Translation<double, 3>(obj.vector());
 }
 
-template<class T_LHS, class T_RHS> struct combines_to_affine : std::false_type {}; 
-template<> struct combines_to_affine<Quaternion, Translation> : std::true_type {};
-template<> struct combines_to_affine<Quaternion, Eigen::Affine3d> : std::true_type {};
-template<> struct combines_to_affine<Eigen::Matrix3d, Translation> : std::true_type {};
-template<> struct combines_to_affine<Eigen::Affine3d, Quaternion> : std::true_type {};
-template<> struct combines_to_affine<Eigen::Affine3d, Translation> : std::true_type {};
-template<> struct combines_to_affine<Translation, Quaternion> : std::true_type {};
-template<> struct combines_to_affine<Translation, Eigen::Matrix3d> : std::true_type {};
-template<> struct combines_to_affine<Translation, Eigen::Affine3d> : std::true_type {};
+template <class T_LHS, class T_RHS>
+struct combines_to_linear : std::false_type {};
+template <>
+struct combines_to_linear<Quaternion, Eigen::Matrix3d> : std::true_type {};
+template <>
+struct combines_to_linear<Eigen::Matrix3d, Quaternion> : std::true_type {};
 
 template <typename T_LHS, typename T_RHS>
-[[nodiscard]] inline 
-std::enable_if_t<combines_to_affine<T_LHS, T_RHS>::value, Eigen::Affine3d> 
+[[nodiscard]] inline std::enable_if_t<combines_to_linear<T_LHS, T_RHS>::value,
+                                      Eigen::Matrix3d>
 operator*(const T_LHS &lhs, const T_RHS &rhs) {
-    return Eigen::Affine3d(asEigenType(lhs) * asEigenType(rhs));
+  return asEigenType(lhs) * asEigenType(rhs);
 }
 
-template<class T_LHS> struct applies_to_vector : std::false_type {}; 
-template<> struct applies_to_vector<Quaternion> : std::true_type {};
-template<> struct applies_to_vector<Translation> : std::true_type {};
+template <class T_LHS, class T_RHS>
+struct combines_to_affine : std::false_type {};
+template <>
+struct combines_to_affine<Quaternion, Translation> : std::true_type {};
+template <>
+struct combines_to_affine<Quaternion, Eigen::Affine3d> : std::true_type {};
+template <>
+struct combines_to_affine<Eigen::Matrix3d, Translation> : std::true_type {};
+template <>
+struct combines_to_affine<Eigen::Affine3d, Quaternion> : std::true_type {};
+template <>
+struct combines_to_affine<Eigen::Affine3d, Translation> : std::true_type {};
+template <>
+struct combines_to_affine<Translation, Quaternion> : std::true_type {};
+template <>
+struct combines_to_affine<Translation, Eigen::Matrix3d> : std::true_type {};
+template <>
+struct combines_to_affine<Translation, Eigen::Affine3d> : std::true_type {};
+
+template <typename T_LHS, typename T_RHS>
+[[nodiscard]] inline std::enable_if_t<combines_to_affine<T_LHS, T_RHS>::value,
+                                      Eigen::Affine3d>
+operator*(const T_LHS &lhs, const T_RHS &rhs) {
+  return Eigen::Affine3d(asEigenType(lhs) * asEigenType(rhs));
+}
+
+template <class T_LHS> struct applies_to_vector : std::false_type {};
+template <> struct applies_to_vector<Quaternion> : std::true_type {};
+template <> struct applies_to_vector<Translation> : std::true_type {};
 
 template <typename T_LHS>
-[[nodiscard]] inline 
-std::enable_if_t<applies_to_vector<T_LHS>::value, Eigen::Vector3d> 
+[[nodiscard]] inline std::enable_if_t<applies_to_vector<T_LHS>::value,
+                                      Eigen::Vector3d>
 operator*(const T_LHS &lhs, const Eigen::Vector3d &rhs) {
-    return asEigenType(lhs) * rhs;
+  return asEigenType(lhs) * rhs;
 }
 
 [[nodiscard]] inline Quaternion operator*(const Quaternion &lhs,
-                                                 const Quaternion &rhs) {
+                                          const Quaternion &rhs) {
   return Quaternion(lhs.quat() * rhs.quat());
 };
 
-[[nodiscard]] inline Translation
-operator*(const Translation &lhs, const Translation &rhs) {
+[[nodiscard]] inline Translation operator*(const Translation &lhs,
+                                           const Translation &rhs) {
   return Translation(lhs.vector() + rhs.vector());
 };
 

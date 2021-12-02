@@ -57,7 +57,7 @@ template <class T> struct VariancesToString {
 };
 
 template <template <class> class Callable, class... Args>
-auto apply(const DType dtype, Args &&...args) {
+auto apply(const DType dtype, Args &&... args) {
   // Note that formatting via registry ignores the Callable, but custom types
   // should typically not have variances, so Callable should always be
   // `ValuesToString` in this case.
@@ -67,8 +67,7 @@ auto apply(const DType dtype, Args &&...args) {
       std::tuple<double, float, int64_t, int32_t, std::string, bool,
                  scipp::core::time_point, Eigen::Vector3d, Eigen::Matrix3d,
                  Variable, bucket<Variable>, scipp::index_pair, Eigen::Affine3d,
-                 scipp::core::Quaternion,
-                 scipp::core::Translation>{},
+                 scipp::core::Quaternion, scipp::core::Translation>{},
       dtype, std::forward<Args>(args)...);
 }
 } // namespace

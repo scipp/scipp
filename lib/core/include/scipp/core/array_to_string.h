@@ -52,7 +52,9 @@ element_to_string(const T &item,
     }
     return ss.str();
   } else if constexpr (std::is_same_v<T, scipp::core::Quaternion>) {
-    return {"(" + to_string(item.quat().w()) + "+" + to_string(item.quat().x()) + "i+" + to_string(item.quat().y()) + "j+" + to_string(item.quat().z()) + "k), "};
+    return {"(" + to_string(item.quat().w()) + "+" +
+            to_string(item.quat().x()) + "i+" + to_string(item.quat().y()) +
+            "j+" + to_string(item.quat().z()) + "k), "};
   } else if constexpr (std::is_same_v<T, scipp::core::Translation>)
     return element_to_string(item.vector());
   else
