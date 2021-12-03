@@ -50,8 +50,9 @@ target_compile_definitions(_scipp PRIVATE SCIPP_EXPORT=)
 # pybind11 FAQ.
 set_target_properties(_scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
 set_target_properties(
-  _scipp PROPERTIES INSTALL_RPATH
-                    "${CMAKE_INSTALL_RPATH}/../${CMAKE_INSTALL_LIBDIR}"
+  _scipp
+  PROPERTIES INSTALL_RPATH
+             "${CMAKE_INSTALL_RPATH}/${RELATIVE_LIB}/${CMAKE_INSTALL_LIBDIR}"
 )
 
 pybind11_strip(_scipp)
