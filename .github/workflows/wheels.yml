@@ -43,7 +43,6 @@ jobs:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
 
-    - uses: actions/setup-python@v2
     - uses: pypa/cibuildwheel@v2.2.2
       env:
         CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
