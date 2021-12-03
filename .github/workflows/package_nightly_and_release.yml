@@ -1,7 +1,6 @@
 name: Package build (nightly and release)
 
 on:
-  pull_request:  # TODO temporary for setting up
   create:
     tags:
       - "*.*.*"
@@ -21,7 +20,7 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        python-version: ["3.7"]
+        python-version: ["3.7", "3.8", "3.9"]
 
     steps:
       - uses: actions/checkout@v2
@@ -49,7 +48,7 @@ jobs:
     name: Deploy packages and docs
     runs-on: ubuntu-latest
     env:
-      conda_label: ${{ startsWith(github.ref, 'refs/tags/') && 'testrelease' || 'testdev' }}
+      conda_label: ${{ startsWith(github.ref, 'refs/tags/') && 'main' || 'dev' }}
     steps:
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install -c conda-forge --yes anaconda-client
@@ -59,11 +58,12 @@ jobs:
 
       - uses: JamesIves/github-pages-deploy-action@4.1.5
         with:
-          repository-name: SimonHeybrock/scipp.github.io
+          repository-name: scipp/scipp.github.io
           branch: master
           folder: html
-          # TODO dummy -> ${GITHUB_REF#refs/tags/}
-          target-folder: ${{ env.conda_label == 'testdev' && 'release/dummy' || '' }}
+          # Note: If this is a release, it will not deploy to the top level folder.
+          # The next scheduled main build will update that.
+          target-folder: ${{ env.conda_label == 'main' && 'release/${GITHUB_REF#refs/tags/}' || '' }}
           single-commit: true
           clean-exclude: release
-          ssh-key: ${{ secrets.DEPLOY_TEST }}
+          ssh-key: ${{ secrets.GH_PAGES_DEPLOY_KEY }}
