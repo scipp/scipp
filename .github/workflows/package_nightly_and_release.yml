@@ -57,17 +57,13 @@ jobs:
       - uses: actions/download-artifact@v2
       - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label ${{ env.conda_label }} $(ls conda-package-*/*/*.tar.bz2)
 
-      - if: ${{ env.conda_label == 'testdev' }}  # TODO label inverted for testing
-        run: |
-          mkdir -p html/release
-          echo ${GITHUB_REF#refs/tags/}
-          rsync -av --exclude release html/ html/release/dummy
-
       - uses: JamesIves/github-pages-deploy-action@4.1.5
         with:
           repository-name: SimonHeybrock/scipp.github.io
           branch: master
           folder: html
+          # TODO dummy -> ${GITHUB_REF#refs/tags/}
+          target-folder: ${{ env.conda_label == 'testdev' && 'release/dummy' || '' }}
           single-commit: true
           clean-exclude: release
           ssh-key: ${{ secrets.DEPLOY_TEST }}
