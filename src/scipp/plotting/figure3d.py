@@ -201,8 +201,11 @@ class PlotFigure3d:
             })
 
         pixel_ratio = config.plot.get("pixel_ratio", 1.0)
+        # Note that an additional factor of 2.5 (obtained from trial and error) seems to
+        # be required to get the sizes right in the scene.
         self.points_material = p3.PointsMaterial(vertexColors='VertexColors',
-                                                 size=self._pixel_size * pixel_ratio,
+                                                 size=2.5 * self._pixel_size *
+                                                 pixel_ratio,
                                                  transparent=True)
         return p3.Points(geometry=self.points_geometry, material=self.points_material)
 
