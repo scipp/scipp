@@ -72,9 +72,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          repository: SimonHeybrock/scipp.github.io
-          path: pages
 
       - run: |
           mkdir html
@@ -87,4 +84,3 @@ jobs:
           folder: html
           single-commit: true
           clean-exclude: release
-          workspace: pages
