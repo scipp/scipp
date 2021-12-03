@@ -72,6 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
+          git init .
           mkdir html
           echo "<html>deploy test</html>" > index.html
       - uses: JamesIves/github-pages-deploy-action@4.1.5
