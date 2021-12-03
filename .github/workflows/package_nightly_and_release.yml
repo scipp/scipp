@@ -54,19 +54,17 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install -c conda-forge --yes anaconda-client
       - uses: actions/download-artifact@v2
-      - run: ls -R
       - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label ${{ env.conda_label }} $(ls conda-package-*/*/*.tar.bz2)
-        #- run: find conda-package-* -type f -name *.tar.bz2 -exec anaconda --token "abc" {} --force \;
-        #
       - uses: actions/checkout@v2
         with:
           repository: scipp/scipp.github.io
           path: pages
 
-      - if: ${{ env.conda_label == 'testrelease' }}
+      - if: ${{ env.conda_label == 'testdev' }}  # TODO label inverted for testing
         run: |
           mkdir DocumentationHTML/release
-          cp -r  DocumentationHTML DocumentationHTML/release/${GITHUB_REF#refs/*/}
+          echo "${GITHUB_REF#refs/*/}"
+          cp -r  DocumentationHTML DocumentationHTML/release/dummy
 
       - name: Deploy documentation
         run: |
@@ -74,6 +72,7 @@ jobs:
           rsync -av --checksum --delete --exclude .nojekyll --exclude release --exclude .git --exclude .github ../DocumentationHTML/ .
           git config --global user.name 'Documentation Builder'
           git config --global user.email 'nobody@localhost'
+          git diff
           git add --all .
           git status
           git commit --amend --date="$(date)" --message='Auto commit from CI'
