@@ -4,7 +4,12 @@ requires = [
   "wheel",
   "cmake>=3.18",
   "conan",
-  "libpython",
   "ninja",
   "scikit-build",
 ]
+
+[tool.cibuildwheel]
+manylinux-x86_64_image = "manylinux2014"
+manylinux-i686-image = "manylinux2014"
+manylinux-pypy_x86_64-image = "manylinux2014"
+manylinux-pypy_i686-image = "manylinux2014"

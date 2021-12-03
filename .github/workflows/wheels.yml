@@ -44,8 +44,6 @@ jobs:
         fetch-depth: 0  # history required so cmake can determine version
 
     - uses: pypa/cibuildwheel@v2.2.2
-      env:
-        CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
 
     - name: Verify clean directory
       run: git diff --exit-code
