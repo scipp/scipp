@@ -53,10 +53,9 @@ jobs:
     steps:
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install -c conda-forge --yes anaconda-client
+      - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
       - uses: actions/download-artifact@v2
       - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label ${{ env.conda_label }} $(ls conda-package-*/*/*.tar.bz2)
-
-      - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
 
       - if: ${{ env.conda_label == 'testdev' }}  # TODO label inverted for testing
         run: |
