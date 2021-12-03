@@ -59,9 +59,9 @@ jobs:
 
       - if: ${{ env.conda_label == 'testdev' }}  # TODO label inverted for testing
         run: |
-          mkdir -p html/release/dummy
+          mkdir -p html/release
           echo ${GITHUB_REF#refs/tags/}
-          cp -r html/* html/release/dummy/
+          rsync -av --exclude release html/ html/release/dummy
 
       - uses: JamesIves/github-pages-deploy-action@4.1.5
         with:
