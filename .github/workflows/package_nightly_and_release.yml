@@ -6,13 +6,14 @@ on:
     tags:
       - "*.*.*"
 
+defaults:
+  run:
+    shell: bash -l {0}  # required for conda env
+
 jobs:
   conda_build:
     name: Package build (${{ matrix.os }}, ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash -l {0}  # required for conda env
     env:
       DOCS_HTML_DIR: ${{ github.workspace }}/docs_html
     strategy:
@@ -45,9 +46,6 @@ jobs:
     needs: conda_build
     name: Deploy packages and docs
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}  # required for conda env
     env:
       conda_label: ${{ startsWith(github.ref, 'refs/tags/') && 'testrelease' || 'testdev' }}
     steps:
