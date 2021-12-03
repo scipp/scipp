@@ -41,7 +41,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: ${{ contains(matrix.os, 'ubuntu') && matrix.python-version == '3.7' }}
         with:
-          name: DocumentationHTML
+          name: html
           path: docs_html
 
   deploy:
@@ -55,21 +55,34 @@ jobs:
       - run: conda install -c conda-forge --yes anaconda-client
       - uses: actions/download-artifact@v2
       - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label ${{ env.conda_label }} $(ls conda-package-*/*/*.tar.bz2)
+
       - uses: actions/checkout@v2
         with:
           repository: scipp/scipp.github.io
           path: pages
 
+      - uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.GH_PAGES_DEPLOY_KEY }}
+
+      - name: Test deploy
+        run: |
+          cd pages
+          echo "<html>deploy test</html>" > deploy_test.html
+          git add deploy_test.html
+          git commit --amend --date="$(date)" --message='Auto commit from CI'
+          git push --force-with-lease
+
       - if: ${{ env.conda_label == 'testdev' }}  # TODO label inverted for testing
         run: |
-          mkdir DocumentationHTML/release
-          echo "${GITHUB_REF#refs/*/}"
-          cp -r  DocumentationHTML DocumentationHTML/release/dummy
+          mkdir html/release
+          echo ${GITHUB_REF#refs/tags/}
+          cp -r html html/release/dummy
 
       - name: Deploy documentation
         run: |
           cd pages
-          rsync -av --checksum --delete --exclude .nojekyll --exclude release --exclude .git --exclude .github ../DocumentationHTML/ .
+          rsync -av --checksum --delete --exclude .nojekyll --exclude release --exclude .git --exclude .github ../html/ .
           git config --global user.name 'Documentation Builder'
           git config --global user.email 'nobody@localhost'
           git diff
