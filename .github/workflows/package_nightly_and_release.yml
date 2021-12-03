@@ -5,6 +5,8 @@ on:
   create:
     tags:
       - "*.*.*"
+  schedule:
+    - cron: "0 0 * * *"
 
 defaults:
   run:
