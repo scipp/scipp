@@ -24,7 +24,7 @@ public:
   Quaternion() : m_quat(Eigen::Quaterniond::Identity()){};
   explicit Quaternion(const Eigen::Quaterniond &x) : m_quat(x){};
 
-  [[nodiscard]] const Eigen::Quaterniond& quat() const { return m_quat; }
+  [[nodiscard]] const Eigen::Quaterniond &quat() const { return m_quat; }
 
   bool operator==(const Quaternion &other) const {
     return m_quat.w() == other.m_quat.w() && m_quat.x() == other.m_quat.x() &&
@@ -55,7 +55,7 @@ public:
   Translation() : m_vec(Eigen::Vector3d(0, 0, 0)){};
   explicit Translation(const Eigen::Vector3d &x) : m_vec(x){};
 
-  [[nodiscard]] const Eigen::Vector3d& vector() const { return m_vec; }
+  [[nodiscard]] const Eigen::Vector3d &vector() const { return m_vec; }
 
   bool operator==(const Translation &other) const {
     return m_vec == other.m_vec;
@@ -64,13 +64,8 @@ public:
   double &operator()(const int i) { return m_vec(i); }
 };
 
-template <typename T>
-inline const T& asEigenType(const T &obj) {
-  return obj;
-};
-inline const auto& asEigenType(const Quaternion &obj) {
-  return obj.quat();
-}
+template <typename T> inline const T &asEigenType(const T &obj) { return obj; };
+inline const auto &asEigenType(const Quaternion &obj) { return obj.quat(); }
 inline auto asEigenType(const Translation &obj) {
   return Eigen::Translation<double, 3>(obj.vector());
 }
