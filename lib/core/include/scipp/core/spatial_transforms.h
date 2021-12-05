@@ -64,23 +64,14 @@ public:
   double &operator()(const int i) { return m_vec(i); }
 };
 
-template <class T> struct asEigenType_t { using type = T; };
-template <> struct asEigenType_t<Quaternion> {
-  using type = Eigen::Quaterniond;
-};
-template <> struct asEigenType_t<Translation> {
-  using type = Eigen::Translation<double, 3>;
-};
-
-template <typename T, typename R = asEigenType_t<T>::type>
-inline const R asEigenType(const T &obj) {
+template <typename T>
+inline const T& asEigenType(const T &obj) {
   return obj;
 };
-template <> inline const Eigen::Quaterniond asEigenType(const Quaternion &obj) {
+inline const auto& asEigenType(const Quaternion &obj) {
   return obj.quat();
 }
-template <>
-inline const Eigen::Translation<double, 3> asEigenType(const Translation &obj) {
+inline auto asEigenType(const Translation &obj) {
   return Eigen::Translation<double, 3>(obj.vector());
 }
 
