@@ -4,5 +4,5 @@
 /// @author Simon Heybrock
 #pragma once
 
-#define TCP_SPAN_NAMESPACE_NAME std
+#define TCB_SPAN_NAMESPACE_NAME scipp
 #include "span.hpp"

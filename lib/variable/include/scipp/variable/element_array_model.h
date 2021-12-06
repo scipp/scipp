@@ -16,7 +16,7 @@
 namespace scipp::variable {
 
 template <class T> struct is_span : std::false_type {};
-template <class T> struct is_span<std::span<T>> : std::true_type {};
+template <class T> struct is_span<scipp::span<T>> : std::true_type {};
 template <class T> inline constexpr bool is_span_v = is_span<T>::value;
 
 template <class T1, class T2>
@@ -85,11 +85,11 @@ public:
     throw except::TypeError("This data type does not have bin indices.");
   }
 
-  std::span<const T> values() const {
+  scipp::span<const T> values() const {
     return {m_values.data(), m_values.data() + m_values.size()};
   }
 
-  std::span<T> values() {
+  scipp::span<T> values() {
     return {m_values.data(), m_values.data() + m_values.size()};
   }
 

@@ -1,6 +1,6 @@
 
 /*
-This is an implementation of C++20's std::span
+This is an implementation of C++20's scipp::span
 http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/n4820.pdf
 */
 

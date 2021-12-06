@@ -41,7 +41,7 @@ template <class T> void init_variances(T &obj) {
 
 /// Add element size as factor to strides.
 template <class T>
-std::vector<ssize_t> numpy_strides(const std::span<const scipp::index> &s) {
+std::vector<ssize_t> numpy_strides(const scipp::span<const scipp::index> &s) {
   std::vector<ssize_t> strides(s.size());
   for (size_t i = 0; i < strides.size(); ++i) {
     strides[i] = sizeof(T) * s[i];

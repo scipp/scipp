@@ -5,7 +5,6 @@
 #pragma once
 
 #include <cstddef>
-#include <span>
 
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
@@ -20,13 +19,14 @@
 namespace scipp::core::element {
 
 /// Set the elements referenced by a span to 0
-template <class T> void zero(const std::span<T> &data) {
+template <class T> void zero(const scipp::span<T> &data) {
   for (auto &x : data)
     x = 0.0;
 }
 
 /// Set the elements references by the spans for values and variances to 0
-template <class T> void zero(const core::ValueAndVariance<std::span<T>> &data) {
+template <class T>
+void zero(const core::ValueAndVariance<scipp::span<T>> &data) {
   zero(data.value);
   zero(data.variance);
 }
@@ -86,9 +86,9 @@ constexpr auto issorted_nonascending = overloaded{
     }};
 
 constexpr auto islinspace =
-    overloaded{arg_list<std::span<const double>, std::span<const float>,
-                        std::span<const int64_t>, std::span<const int32_t>,
-                        std::span<const time_point>>,
+    overloaded{arg_list<scipp::span<const double>, scipp::span<const float>,
+                        scipp::span<const int64_t>, scipp::span<const int32_t>,
+                        scipp::span<const time_point>>,
                transform_flags::expect_no_variance_arg<0>,
                [](const units::Unit &) { return units::one; },
                [](const auto &range) { return numeric::islinspace(range); }};
