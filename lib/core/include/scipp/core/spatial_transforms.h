@@ -110,14 +110,13 @@ operator*(const T_LHS &lhs, const T_RHS &rhs) {
   return Eigen::Affine3d(asEigenType(lhs) * asEigenType(rhs));
 }
 
-template <class T_LHS> struct applies_to_vector : std::false_type {};
-template <> struct applies_to_vector<Quaternion> : std::true_type {};
-template <> struct applies_to_vector<Translation> : std::true_type {};
+[[nodiscard]] inline Eigen::Vector3d operator*(const Quaternion &lhs, 
+                                               const Eigen::Vector3d &rhs) {
+  return asEigenType(lhs) * rhs;
+}
 
-template <typename T_LHS>
-[[nodiscard]] inline std::enable_if_t<applies_to_vector<T_LHS>::value,
-                                      Eigen::Vector3d>
-operator*(const T_LHS &lhs, const Eigen::Vector3d &rhs) {
+[[nodiscard]] inline Eigen::Vector3d operator*(const Translation &lhs, 
+                                               const Eigen::Vector3d &rhs) {
   return asEigenType(lhs) * rhs;
 }
 
@@ -131,9 +130,9 @@ operator*(const T_LHS &lhs, const Eigen::Vector3d &rhs) {
   return Translation(lhs.vector() + rhs.vector());
 };
 
-template <> inline constexpr DType dtype<Eigen::Matrix3d>{5001};
-template <> inline constexpr DType dtype<Eigen::Affine3d>{5002};
-template <> inline constexpr DType dtype<Translation>{5003};
-template <> inline constexpr DType dtype<Quaternion>{5004};
+template <> inline constexpr DType dtype<Eigen::Matrix3d>{4001};
+template <> inline constexpr DType dtype<Eigen::Affine3d>{4002};
+template <> inline constexpr DType dtype<Translation>{4003};
+template <> inline constexpr DType dtype<Quaternion>{4004};
 
 } // namespace scipp::core

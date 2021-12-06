@@ -12,6 +12,7 @@
 namespace scipp::core {
 
 template <> inline constexpr DType dtype<Eigen::Vector3d>{4000};
+// 4001-4004 defined in spatial_transforms.h
 template <>
 inline constexpr DType dtype<std::span<const Eigen::Vector3d>>{4100};
 template <> inline constexpr DType dtype<std::span<Eigen::Vector3d>>{4200};
