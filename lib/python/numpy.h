@@ -96,7 +96,7 @@ template <bool convert, class T, class View>
 void copy_flattened_1d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   auto it = view.begin();
-  for (ssize_t i = 0; i < r.shape(0); ++i, ++it) {
+  for (scipp::index i = 0; i < r.shape(0); ++i, ++it) {
     copy_element<convert>(r(i), *it);
   }
 }
@@ -108,8 +108,8 @@ void copy_flattened_2d(const py::array_t<T> &data, View &&view) {
   core::parallel::parallel_for(
       core::parallel::blocked_range(0, r.shape(0)), [&](const auto &range) {
         auto it = begin + range.begin() * r.shape(1);
-        for (ssize_t i = range.begin(); i < range.end(); ++i)
-          for (ssize_t j = 0; j < r.shape(1); ++j, ++it)
+        for (scipp::index i = range.begin(); i < range.end(); ++i)
+          for (scipp::index j = 0; j < r.shape(1); ++j, ++it)
             copy_element<convert>(r(i, j), *it);
       });
 }
@@ -118,9 +118,9 @@ template <bool convert, class T, class View>
 void copy_flattened_3d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   auto it = view.begin();
-  for (ssize_t i = 0; i < r.shape(0); ++i)
-    for (ssize_t j = 0; j < r.shape(1); ++j)
-      for (ssize_t k = 0; k < r.shape(2); ++k, ++it)
+  for (scipp::index i = 0; i < r.shape(0); ++i)
+    for (scipp::index j = 0; j < r.shape(1); ++j)
+      for (scipp::index k = 0; k < r.shape(2); ++k, ++it)
         copy_element<convert>(r(i, j, k), *it);
 }
 
@@ -128,10 +128,10 @@ template <bool convert, class T, class View>
 void copy_flattened_4d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   auto it = view.begin();
-  for (ssize_t i = 0; i < r.shape(0); ++i)
-    for (ssize_t j = 0; j < r.shape(1); ++j)
-      for (ssize_t k = 0; k < r.shape(2); ++k)
-        for (ssize_t l = 0; l < r.shape(3); ++l, ++it)
+  for (scipp::index i = 0; i < r.shape(0); ++i)
+    for (scipp::index j = 0; j < r.shape(1); ++j)
+      for (scipp::index k = 0; k < r.shape(2); ++k)
+        for (scipp::index l = 0; l < r.shape(3); ++l, ++it)
           copy_element<convert>(r(i, j, k, l), *it);
 }
 
