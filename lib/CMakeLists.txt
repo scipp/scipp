@@ -60,6 +60,7 @@ find_package(Boost 1.67 REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Sanitizers REQUIRED)
 find_package(GTest CONFIG REQUIRED)
+# libpython is not available on `manylinux` images, use `Development.Module` instead of `Development`
 find_package(Python 3.7 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(LLNL-Units REQUIRED)
