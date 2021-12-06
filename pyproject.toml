@@ -6,6 +6,5 @@ requires = [
   "conan",
   "ninja",
   "scikit-build",
-  "pybind11~=2.6.1",
 ]
 build-backend = "setuptools.build_meta"
