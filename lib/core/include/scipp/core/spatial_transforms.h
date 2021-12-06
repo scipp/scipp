@@ -110,12 +110,12 @@ operator*(const T_LHS &lhs, const T_RHS &rhs) {
   return Eigen::Affine3d(asEigenType(lhs) * asEigenType(rhs));
 }
 
-[[nodiscard]] inline Eigen::Vector3d operator*(const Quaternion &lhs, 
+[[nodiscard]] inline Eigen::Vector3d operator*(const Quaternion &lhs,
                                                const Eigen::Vector3d &rhs) {
   return asEigenType(lhs) * rhs;
 }
 
-[[nodiscard]] inline Eigen::Vector3d operator*(const Translation &lhs, 
+[[nodiscard]] inline Eigen::Vector3d operator*(const Translation &lhs,
                                                const Eigen::Vector3d &rhs) {
   return asEigenType(lhs) * rhs;
 }
