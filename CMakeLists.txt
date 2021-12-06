@@ -58,7 +58,7 @@ if(SKBUILD)
   # scikit-build will not include files outside the directory of the Python module,
   # ensure our shared objects are installed there.
   set(RELATIVE_LIB ".")
-  # Note the we do not install src/scipp when making a `pip` package. It will simply
+  # Note that we do not install src/scipp when making a `pip` package. It will simply
   # use the source directory directly. C++ libraries get installed into the source dir.
 else()
   install(DIRECTORY "src/scipp/" DESTINATION ${PYTHONDIR})
