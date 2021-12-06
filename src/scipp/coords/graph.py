@@ -52,10 +52,24 @@ class Cycle:
         yield from (node for node in self.nodes
                     if node not in self.inputs and node not in self.outputs)
 
+    @classmethod
+    def make_empty(cls):
+        return cls(nodes=set(), inputs=set(), outputs=set())
+
 
 class Graph:
     def __init__(self, graph: Dict[str, Iterable[str]]):
         self._child_to_parent = {key: set(values) for key, values in graph.items()}
+
+    def __eq__(self, other: Graph) -> bool:
+        return self._child_to_parent == other._child_to_parent
+
+    # TODO remove
+    def __str__(self):
+        return str(self._child_to_parent)
+
+    def __repr__(self):
+        return str(self)
 
     def __getitem__(self, node: str):
         return self._child_to_parent[node]
@@ -163,6 +177,42 @@ class Graph:
                         work_graph.add_parent(node, new_node)
 
         return work_graph
+
+    def fully_contract_cycles(self) -> Graph:
+        graph = self
+        cycles = graph.undirected_cycles(n=1)
+        while cycles:
+            cycle = next(iter(cycles))
+            graph = graph.contract_cycle(cycle)
+            cycles = graph.undirected_cycles(n=1)
+        return graph
+
+    ## for testing / debugging
+    # def fully_contract_cycles(self, single_result) -> List[Graph]:
+    #     n = 1 if single_result else None
+    #     dfs = DepthFirstSearch([[Graph._GraphCyclePair(graph=self._child_to_parent,
+    #                                                    cycle=cycle)]
+    #                             for cycle in self.undirected_cycles(n)])
+    #     results = []
+    #     for x in dfs:
+    #         top = x[-1]
+    #         new_graph = top.graph.contract_cycle(top.cycle)
+    #         new_cycles = new_graph.undirected_cycles(n)
+    #         if not new_cycles:
+    #             results.append(x + [Graph._GraphCyclePair(graph=new_graph, cycle=Cycle.make_empty())])
+    #             if single_result:
+    #                 break
+    #             else:
+    #                 continue
+    #         dfs.push([x+[Graph._GraphCyclePair(graph=new_graph, cycle=cycle)]
+    #                   for cycle in new_cycles])
+    #     return results
+    #
+    # @dataclasses.dataclass
+    # class _GraphCyclePair:
+    #     graph: Dict[str, Set[str]]
+    #     cycle: Cycle  # a cycle in graph, *not* a cycle that has already been contracted
+    #
 
 
 class RuleGraph:

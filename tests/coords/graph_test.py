@@ -42,6 +42,12 @@ def graph_1():
     return scgraph.RuleGraph({'d': fd, 'b': 'a', 'c': 'a'})
 
 
+def cycles_1():
+    return {
+        'abcd': scgraph.Cycle(nodes={'a', 'b', 'c', 'd'}, inputs={'a'}, outputs={'d'})
+    }
+
+
 def graph_2():
     r"""
     a
@@ -61,6 +67,19 @@ def graph_2():
         pass
 
     return scgraph.RuleGraph({'b': 'a', 'e': fe, 'f': ff, 'g': fg})
+
+
+def cycles_2():
+    return {
+        'bcefg':
+        scgraph.Cycle(nodes={'b', 'e', 'c', 'f', 'g'},
+                      inputs={'b', 'c'},
+                      outputs={'e', 'g'}),
+        'bdefg':
+        scgraph.Cycle(nodes={'b', 'e', 'd', 'f', 'g'},
+                      inputs={'b', 'd'},
+                      outputs={'e', 'g'})
+    }
 
 
 def graph_3():
@@ -102,6 +121,20 @@ def graph_3():
     })
 
 
+def cycles_3():
+    return {
+        'bcdfg':
+        scgraph.Cycle(nodes={'b', 'c', 'd', 'f', 'g'}, inputs={'b'}, outputs={'g'}),
+        'bcdfhi':
+        scgraph.Cycle(nodes={'b', 'c', 'd', 'f', 'h', 'i'}, inputs={'b'},
+                      outputs={'i'}),
+        'dfghi':
+        scgraph.Cycle(nodes={'d', 'f', 'g', 'h', 'i'},
+                      inputs={'d', 'f'},
+                      outputs={'g', 'i'})
+    }
+
+
 def graph_4():
     r"""
       a
@@ -134,6 +167,16 @@ def graph_4():
         pass
 
     return scgraph.RuleGraph({'b': fb, 'c': fc, 'd': fd, 'e': fe})
+
+
+def cycles_4():
+    return {
+        'abcd': scgraph.Cycle(nodes={'a', 'b', 'c', 'd'}, inputs={'a'}, outputs={'d'}),
+        'bce': scgraph.Cycle(nodes={'b', 'c', 'e'}, inputs={'b'}, outputs={'c'}),
+        'abcde': scgraph.Cycle(nodes={'a', 'b', 'c', 'd', 'e'},
+                               inputs={'a'},
+                               outputs={'d'})
+    }
 
 
 def make_data(coords, dims=('x', )):
@@ -251,10 +294,15 @@ def test_undirected_cycles_graph_0():
     assert not graph.graph_for(da, {'f', 'g'}).dependency_graph.undirected_cycles()
 
 
+def test_fully_contract_cycles_graph_0():
+    graph = graph_0().dependency_graph
+    assert graph.fully_contract_cycles() == graph
+
+
 def test_undirected_cycles_graph_1():
     da = make_data(('a', ))
     graph = graph_1()
-    expected = {scgraph.Cycle(nodes={'a', 'b', 'c', 'd'}, inputs={'a'}, outputs={'d'})}
+    expected = set(cycles_1().values())
     assert graph.dependency_graph.undirected_cycles() == expected
     assert graph.graph_for(da, {'d'}).dependency_graph.undirected_cycles() == expected
 
@@ -262,40 +310,52 @@ def test_undirected_cycles_graph_1():
 def test_contract_cycle_graph_1():
     # Contracted: a -> cycle_b_c -> d
     graph = graph_1().dependency_graph
-    cycle = scgraph.Cycle(nodes={'a', 'b', 'c', 'd'}, inputs={'a'}, outputs={'d'})
+    cycle = cycles_1()['abcd']
     contracted = graph.contract_cycle(cycle)
     assert len(contracted['d']) == 1
     assert contracted[next(iter(contracted['d']))] == {'a'}
 
 
+def test_fully_contract_cycles_graph_1():
+    graph = graph_1().dependency_graph
+    contracted = graph.fully_contract_cycles()
+    assert len(contracted['d']) == 1
+    cycle_node = next(iter(contracted['d']))
+    assert contracted[cycle_node] == {'a'}
+
+
 def test_undirected_cycles_graph_2():
     da = make_data(('a', 'c', 'd'))
     graph = graph_2()
-    expected = {
-        scgraph.Cycle(nodes={'b', 'e', 'c', 'f', 'g'},
-                      inputs={'b', 'c'},
-                      outputs={'e', 'g'}),
-        scgraph.Cycle(nodes={'b', 'e', 'd', 'f', 'g'},
-                      inputs={'b', 'd'},
-                      outputs={'e', 'g'})
-    }
+    expected = set(cycles_2().values())
     assert graph.dependency_graph.undirected_cycles() == expected
     assert not graph.graph_for(da, {'g'}).dependency_graph.undirected_cycles()
     assert graph.graph_for(da,
                            {'e', 'g'}).dependency_graph.undirected_cycles() == expected
 
 
+def test_contract_cycle_graph_2():
+    graph = graph_2().dependency_graph
+
+    cycle = cycles_2()['bcefg']
+    contracted = graph.contract_cycle(cycle)
+    assert len(contracted['g']) == 1
+    cycle_node = next(iter(contracted['g']))
+    assert cycle_node != 'f'  # not the old node
+    expected = {'b': {'a'}, cycle_node: {'b', 'c', 'd'}, 'e': {cycle_node, 'd'}, 'g': {cycle_node}}
+    assert contracted == expected
+
+
+    for cycle in cycles_2().values():
+        graph = graph_2().dependency_graph
+        print(graph.contract_cycle(cycle)._child_to_parent)
+    assert False
+
+
 def test_undirected_cycles_graph_3():
     da = make_data(('a', 'e'))
     graph = graph_3()
-    expected = {
-        scgraph.Cycle(nodes={'b', 'c', 'd', 'f', 'g'}, inputs={'b'}, outputs={'g'}),
-        scgraph.Cycle(nodes={'b', 'c', 'd', 'f', 'h', 'i'}, inputs={'b'},
-                      outputs={'i'}),
-        scgraph.Cycle(nodes={'d', 'f', 'g', 'h', 'i'},
-                      inputs={'d', 'f'},
-                      outputs={'g', 'i'})
-    }
+    expected = set(cycles_3().values())
     assert graph.dependency_graph.undirected_cycles() == expected
     assert not graph.graph_for(da, {'d'}).dependency_graph.undirected_cycles()
     assert graph.graph_for(da,
@@ -305,19 +365,15 @@ def test_undirected_cycles_graph_3():
 def test_undirected_cycles_graph_4():
     da = make_data(('a', ))
     graph = graph_4()
-    expected = (scgraph.Cycle(nodes={'a', 'b', 'c', 'd'}, inputs={'a'}, outputs={'d'}),
-                scgraph.Cycle(nodes={'b', 'c', 'e'}, inputs={'b'}, outputs={'c'}),
-                scgraph.Cycle(nodes={'a', 'b', 'c', 'd', 'e'},
-                              inputs={'a'},
-                              outputs={'d'}))
-    assert graph.dependency_graph.undirected_cycles() == set(expected)
-    assert graph.graph_for(da,
-                           {'d'}).dependency_graph.undirected_cycles() == set(expected)
-    assert graph.graph_for(da,
-                           {'c'}).dependency_graph.undirected_cycles() == {expected[1]}
+    expected = cycles_4()
+    assert graph.dependency_graph.undirected_cycles() == set(expected.values())
+    assert graph.graph_for(da, {'d'}).dependency_graph.undirected_cycles() == set(
+        expected.values())
+    assert graph.graph_for(
+        da, {'c'}).dependency_graph.undirected_cycles() == {expected['bce']}
 
     # Finds the cycle e <-> cycle_b_c after contraction.
-    contracted = graph.dependency_graph.contract_cycle(expected[0])
+    contracted = graph.dependency_graph.contract_cycle(expected['abcd'])
     cycle_node = next(iter(contracted['d']))
     assert contracted.undirected_cycles() == {
         scgraph.Cycle(nodes={cycle_node, 'e'}, inputs=set(), outputs=set())
@@ -333,7 +389,7 @@ def test_contract_cycle_graph_4():
     #   e <-> cycle_b_c
     #            |
     #            d
-    cycle = scgraph.Cycle(nodes={'a', 'b', 'c', 'd'}, inputs={'a'}, outputs={'d'})
+    cycle = cycles_4()['abcd']
     contracted = graph.contract_cycle(cycle)
     assert len(contracted['d']) == 1
     cycle_node = next(iter(contracted['d']))
