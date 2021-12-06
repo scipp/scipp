@@ -43,7 +43,7 @@ jobs:
         submodules: true
         fetch-depth: 0  # history required so cmake can determine version
 
-    - uses: pypa/cibuildwheel@v2.2.2
+    - uses: pypa/cibuildwheel@v2.3.0
 
     - name: Verify clean directory
       run: git diff --exit-code
