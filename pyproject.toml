@@ -13,3 +13,4 @@ build-backend = "setuptools.build_meta"
 test-requires = "pytest"
 test-command = "pytest {project}/tests"
 test-skip = "*"
+skip = ["cp36-*", "cp37-*", "cp38-*", "cp310-*", "*-win32", "*-manylinux_i686"]
