@@ -21,7 +21,7 @@ setup(name='scipp',
       package_dir={'': 'src'},
       cmake_args=[
           '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF',
-          '-CMAKE_OSX_DEPLOYMENT_TARGET=10.15'
+          '-DCMAKE_OSX_DEPLOYMENT_TARGET=10.15'
       ],
       cmake_install_dir='src/scipp',
       include_package_data=True,
