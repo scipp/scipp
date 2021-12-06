@@ -19,7 +19,10 @@ setup(name='scipp',
       license='BSD-3-Clause',
       packages=find_packages(where="src"),
       package_dir={'': 'src'},
-      cmake_args=['-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF'],
+      cmake_args=[
+          '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF',
+          '-CMAKE_OSX_DEPLOYMENT_TARGET=10.15'
+      ],
       cmake_install_dir='src/scipp',
       include_package_data=True,
       python_requires='>=3.7',
