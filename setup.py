@@ -26,7 +26,7 @@ setup(name='scipp',
       install_requires=[
           'appdirs',
           'graphlib-backport',
-          'numpy',
+          'numpy>=1.20',
           'python-configuration',
           'pyyaml',
       ])
