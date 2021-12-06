@@ -11,6 +11,15 @@ def get_version():
                           stdout=subprocess.PIPE).stdout.decode('utf8').strip()
 
 
+def get_cmake_args():
+    # Note: We do not specify '-DCMAKE_OSX_DEPLOYMENT_TARGET' here. It is set using the
+    # MACOSX_DEPLOYMENT_TARGET environment variable in the github workflow. The reason
+    # is that I am not sure if cibuildwheel uses this for anything else apart from
+    # configuring the actual build.
+    args = ['-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF']
+    return args
+
+
 setup(name='scipp',
       version=get_version(),
       description='Multi-dimensional data arrays with labeled dimensions',
@@ -19,10 +28,7 @@ setup(name='scipp',
       license='BSD-3-Clause',
       packages=find_packages(where="src"),
       package_dir={'': 'src'},
-      cmake_args=[
-          '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF',
-          '-DCMAKE_OSX_DEPLOYMENT_TARGET=10.15'
-      ],
+      cmake_args=get_cmake_args(),
       cmake_install_dir='src/scipp',
       include_package_data=True,
       python_requires='>=3.7',
