@@ -33,7 +33,7 @@ public:
 
   double &operator()(const int i) {
     if (i == 0) {
-      m_quat.x();
+      return m_quat.x();
     } else if (i == 1) {
       return m_quat.y();
     } else if (i == 2) {
