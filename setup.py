@@ -6,7 +6,7 @@ from setuptools import find_packages
 
 
 def get_version():
-    return '0.10.0rc1'
+    return '0.10.0rc2'  # TODO testing only
     import subprocess
     return subprocess.run(['git', 'describe', '--tags', '--abbrev=0'],
                           stdout=subprocess.PIPE).stdout.decode('utf8').strip()
@@ -17,6 +17,7 @@ def get_cmake_args():
     # MACOSX_DEPLOYMENT_TARGET environment variable in the github workflow. The reason
     # is that I am not sure if cibuildwheel uses this for anything else apart from
     # configuring the actual build.
+    # TODO IPO disabled during testing for better build performance
     args = ['-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF']
     return args
 
@@ -39,6 +40,7 @@ setup(name='scipp',
           'numpy>=1.20',
           'python-configuration',
           'pyyaml',
+          'tbb',
       ],
       extras_require={
           "test": ["pytest"],

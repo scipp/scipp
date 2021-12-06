@@ -6,6 +6,7 @@ requires = [
   "conan",
   "ninja",
   "scikit-build",
+  "tbb-devel",
 ]
 build-backend = "setuptools.build_meta"
 

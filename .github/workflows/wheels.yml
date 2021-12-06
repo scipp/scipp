@@ -1,7 +1,7 @@
 name: Wheels
 
 on:
-  pull_request:
+  pull_request:  #TODO remove this line
   release:
     types:
       - published
@@ -64,6 +64,7 @@ jobs:
     name: Upload if release
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
+    #TODO uncomment this line
     #if: github.event_name == 'release' && github.event.action == 'published'
 
     steps:
