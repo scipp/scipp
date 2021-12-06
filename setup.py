@@ -6,7 +6,7 @@ from setuptools import find_packages
 
 
 def get_version():
-    return '0.10.0rc2'  # TODO testing only
+    return '0.10.0rc3'  # TODO testing only
     import subprocess
     return subprocess.run(['git', 'describe', '--tags', '--abbrev=0'],
                           stdout=subprocess.PIPE).stdout.decode('utf8').strip()
@@ -44,7 +44,7 @@ setup(name='scipp',
       ],
       extras_require={
           "test": ["pytest"],
-          'all': ['h5py', 'scipy', 'python-graphviz'],
+          'all': ['h5py', 'scipy', 'graphviz'],
           'interactive': [
               'ipykernel==6.3.1', 'ipympl', 'ipython', 'ipywidgets', 'matplotlib',
               'jupyterlab', 'jupyterlab-widgets', 'jupyter_nbextensions_configurator',
