@@ -5,4 +5,4 @@
 #pragma once
 
 #define TCB_SPAN_NAMESPACE_NAME scipp
-#include "span.hpp"
+#include "span.hpp.in"
