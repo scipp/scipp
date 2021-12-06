@@ -45,6 +45,16 @@ conan_cmake_install(
   BUILD outdated
 )
 
+# Currently, scikit-build does not support FindPython.
+if(SKBUILD)
+  set(Python_EXECUTABLE "${PYTHON_EXECUTABLE}")
+  set(Python_INCLUDE_DIR "${PYTHON_INCLUDE_DIR}")
+  unset(PYTHON_EXECUTABLE)
+  unset(PYTHON_INCLUDE_DIR)
+  unset(PYTHON_LIBRARY)
+  unset(PYTHON_VERSION_STRING)
+endif()
+
 find_package(Benchmark)
 find_package(Boost 1.67 REQUIRED)
 find_package(Eigen3 REQUIRED)
