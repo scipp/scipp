@@ -44,7 +44,7 @@ setup(name='scipp',
       ],
       extras_require={
           "test": ["pytest"],
-          'all': ['h5py', 'scipy', 'graphviz'],
+          'all': ['h5py', 'scipy>=1.7.0', 'graphviz'],
           'interactive': [
               'ipykernel==6.3.1', 'ipympl', 'ipython', 'ipywidgets', 'matplotlib',
               'jupyterlab', 'jupyterlab-widgets', 'jupyter_nbextensions_configurator',
