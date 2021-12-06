@@ -2,6 +2,9 @@ name: Wheels
 
 on:
   pull_request:
+  release:
+    types:
+      - published
 
 env:
   CIBW_TEST_COMMAND: pytest {project}/tests
@@ -61,7 +64,7 @@ jobs:
     name: Upload if release
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    #if: github.event_name == 'release' && github.event.action == 'published'
+    if: github.event_name == 'release' && github.event.action == 'published'
 
     steps:
     - uses: actions/setup-python@v2
