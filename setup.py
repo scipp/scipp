@@ -43,7 +43,7 @@ setup(name='scipp',
           "test": ["pytest"],
           'all': ['h5py', 'scipy', 'python-graphviz'],
           'interactive': [
-              'ipykernel==6.3.1', 'ipympl', 'ipython', 'ipywidgets', 'matplotlib-base',
+              'ipykernel==6.3.1', 'ipympl', 'ipython', 'ipywidgets', 'matplotlib',
               'jupyterlab', 'jupyterlab-widgets', 'jupyter_nbextensions_configurator',
               'nodejs', 'pythreejs'
           ],
