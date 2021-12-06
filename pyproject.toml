@@ -8,9 +8,4 @@ requires = [
   "scikit-build",
   "pybind11~=2.6.1",
 ]
-
-[tool.cibuildwheel]
-manylinux-x86_64_image = "manylinux2014"
-manylinux-i686-image = "manylinux2014"
-manylinux-pypy_x86_64-image = "manylinux2014"
-manylinux-pypy_i686-image = "manylinux2014"
+build-backend = "setuptools.build_meta"
