@@ -10,6 +10,6 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
-test-requires = "pytest"
+test-requires = "pytest h5py matplotlib-base xarray pandas scipy>=1.7.0 pythreejs"
 test-command = "pytest {project}/tests"
 build = ["cp39-manylinux_x86_64", "cp38-macosx_x86_64", "cp39-win_amd64"]

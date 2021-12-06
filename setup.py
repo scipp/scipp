@@ -38,4 +38,13 @@ setup(name='scipp',
           'numpy>=1.20',
           'python-configuration',
           'pyyaml',
-      ])
+      ],
+      extras_require={
+          "test": ["pytest"],
+          'all': ['h5py', 'scipy', 'python-graphviz'],
+          'interactive': [
+              'ipykernel==6.3.1', 'ipympl', 'ipython', 'ipywidgets', 'matplotlib-base',
+              'jupyterlab', 'jupyterlab-widgets', 'jupyter_nbextensions_configurator',
+              'nodejs', 'pythreejs'
+          ],
+      })
