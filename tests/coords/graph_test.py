@@ -379,6 +379,23 @@ def test_undirected_cycles_graph_4():
     }
 
 
+def test_contract_cycle_graph_3():
+    graph = graph_3().dependency_graph
+
+    cycle = cycles_3()['bcdfg']
+    contracted = graph.contract_cycle(cycle)
+    assert len(contracted['g']) == 1
+    cycle_node = next(iter(contracted['g']))
+    expected = scgraph.Graph({
+        'b': {'a'},
+        cycle_node: {'b', 'e'},
+        'g': {cycle_node},
+        'h': {cycle_node},
+        'i': {cycle_node, 'h'},
+    })
+    assert contracted == expected
+
+
 def test_contract_cycle_graph_4():
     graph = graph_4().dependency_graph
 
