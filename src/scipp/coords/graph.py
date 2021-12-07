@@ -64,10 +64,6 @@ class Graph:
     def __eq__(self, other: Graph) -> bool:
         return self._child_to_parent == other._child_to_parent
 
-    # TODO remove
-    def __str__(self):
-        return str(self._child_to_parent)
-
     def __repr__(self):
         return str(self)
 
