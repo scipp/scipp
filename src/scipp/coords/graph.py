@@ -87,6 +87,10 @@ class Graph:
         yield from self.parents_of(node)
         yield from self.children_of(node)
 
+    def roots(self) -> Iterable[str]:
+        yield from (name for name, parents in self._child_to_parent.items()
+                    if not parents)
+
     def undirected_cycles(self, n=None) -> Set[Cycle]:
         cycles = set()
         # It is enough to only start from rule outputs, because there are no cycles
