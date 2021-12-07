@@ -37,19 +37,22 @@ include(docs)
 add_docs_target(docs BUILDER html DEPENDS install-scipp)
 add_docs_target(doctest BUILDER doctest DEPENDS docs)
 add_docs_target(linkcheck BUILDER linkcheck DEPENDS docs)
+add_custom_target(
+  cleanup_docs_html
+  COMMENT "Remove unnecessary .ipynb files from built HTML documentation."
+  COMMAND find "${CMAKE_BINARY_DIR}/html" -type f -name "*.ipynb" -not -path
+          "${CMAKE_BINARY_DIR}/html/_sources/*" -delete
+  VERBATIM
+)
+add_dependencies(cleanup_docs_html docs)
 
 include(GNUInstallDirs)
-set(SITE_PACKAGES_DIR
-    ""
-    CACHE STRING
-          "Python site-packages directory to use for installing Python module."
-)
-if("${SITE_PACKAGES_DIR}" STREQUAL "")
+if(DEFINED ENV{SP_DIR}) # Defined by conda-build
+  file(TO_CMAKE_PATH $ENV{SP_DIR}/scipp PYTHONDIR)
+  file(TO_CMAKE_PATH $ENV{SP_DIR} ARCHIVEDIR)
+else()
   set(PYTHONDIR scipp)
   set(ARCHIVEDIR .)
-else()
-  file(TO_CMAKE_PATH ${SITE_PACKAGES_DIR}/scipp PYTHONDIR)
-  file(TO_CMAKE_PATH ${SITE_PACKAGES_DIR} ARCHIVEDIR)
 endif()
 set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
 
@@ -65,5 +68,7 @@ else()
   install(DIRECTORY "src/scipp/" DESTINATION ${PYTHONDIR})
   set(RELATIVE_LIB "..")
 endif()
+
+enable_testing()
 
 add_subdirectory(lib)

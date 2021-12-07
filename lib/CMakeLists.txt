@@ -132,7 +132,11 @@ else()
   )
 endif()
 
-option(WITH_CTEST "Enable ctest integration of tests" ON)
+option(
+  CTEST_DISCOVER_TESTS
+  "Enable discoverage of *individual* tests by ctest. Test execution is slower, but ctest integration better. If OFF (default) each submodule test runner is registered as a *single* test."
+  OFF
+)
 option(DYNAMIC_LIB "Build shared libraries" ON)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
@@ -211,8 +215,6 @@ add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-permissive->)
 # defaulting to OFF for now.
 option(PRECOMPILED_HEADERS "Set whether to build with precompiled headers" OFF)
 
-enable_testing()
-
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
 
@@ -284,13 +286,12 @@ if(DYNAMIC_LIB)
 endif(DYNAMIC_LIB)
 
 include(scipp-install)
+include(scipp-test)
 
 option(FULL_BUILD
        "Enable full build where the 'all' target includes tests and benchmarks."
        OFF
 )
-
-enable_testing()
 
 add_subdirectory(common)
 if(FULL_BUILD)
