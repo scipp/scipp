@@ -351,6 +351,20 @@ def test_contract_cycle_graph_2():
     assert contracted == expected
 
 
+def test_fully_contract_cycles_graph_2():
+    graph = graph_2().dependency_graph
+    contracted = graph.fully_contract_cycles()
+    assert len(contracted['g']) == 1
+    cycle_node = next(iter(contracted['g']))
+    expected = scgraph.Graph({
+        'b': {'a'},
+        cycle_node: {'b', 'c', 'd'},
+        'e': {cycle_node},
+        'g': {cycle_node}
+    })
+    assert contracted == expected
+
+
 def test_undirected_cycles_graph_3():
     da = make_data(('a', 'e'))
     graph = graph_3()
@@ -359,6 +373,33 @@ def test_undirected_cycles_graph_3():
     assert not graph.graph_for(da, {'d'}).dependency_graph.undirected_cycles()
     assert graph.graph_for(da,
                            {'g', 'i'}).dependency_graph.undirected_cycles() == expected
+
+
+def test_contract_cycle_graph_3():
+    graph = graph_3().dependency_graph
+
+    cycle = cycles_3()['bcdfg']
+    contracted = graph.contract_cycle(cycle)
+    assert len(contracted['g']) == 1
+    cycle_node = next(iter(contracted['g']))
+    expected = scgraph.Graph({
+        'b': {'a'},
+        cycle_node: {'b', 'e'},
+        'g': {cycle_node},
+        'h': {cycle_node},
+        'i': {cycle_node, 'h'},
+    })
+    assert contracted == expected
+
+
+def test_fully_contract_cycles_graph_3():
+    # There are 3 possible contractions. Test only whether the
+    # resulting graph makes sense, not whether it is 'correct'.
+    graph = graph_3().dependency_graph
+    contracted = graph.fully_contract_cycles()
+    assert len(contracted['g']) == 1
+    assert len(contracted['i']) == 1
+    assert not contracted.undirected_cycles()
 
 
 def test_undirected_cycles_graph_4():
@@ -377,23 +418,6 @@ def test_undirected_cycles_graph_4():
     assert contracted.undirected_cycles() == {
         scgraph.Cycle(nodes={cycle_node, 'e'}, inputs=set(), outputs=set())
     }
-
-
-def test_contract_cycle_graph_3():
-    graph = graph_3().dependency_graph
-
-    cycle = cycles_3()['bcdfg']
-    contracted = graph.contract_cycle(cycle)
-    assert len(contracted['g']) == 1
-    cycle_node = next(iter(contracted['g']))
-    expected = scgraph.Graph({
-        'b': {'a'},
-        cycle_node: {'b', 'e'},
-        'g': {cycle_node},
-        'h': {cycle_node},
-        'i': {cycle_node, 'h'},
-    })
-    assert contracted == expected
 
 
 def test_contract_cycle_graph_4():
@@ -423,3 +447,12 @@ def test_contract_cycle_graph_4():
     assert len(twice_contracted['d']) == 1
     cycle_node = next(iter(twice_contracted['d']))
     assert twice_contracted[cycle_node] == {'a'}
+
+
+def test_fully_contract_cycles_graph_4():
+    graph = graph_4().dependency_graph
+    contracted = graph.fully_contract_cycles()
+    assert len(contracted['d']) == 1
+    cycle_node = next(iter(contracted['d']))
+    expected = scgraph.Graph({'d': {cycle_node}, cycle_node: {'a'}})
+    assert contracted == expected
