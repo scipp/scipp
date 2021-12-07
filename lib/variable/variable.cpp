@@ -134,9 +134,9 @@ VariableConcept &Variable::data() & {
 
 const VariableConceptHandle &Variable::data_handle() const { return m_object; }
 
-std::span<const scipp::index> Variable::strides() const {
-  return std::span<const scipp::index>(&*m_strides.begin(),
-                                       &*m_strides.begin() + dims().ndim());
+scipp::span<const scipp::index> Variable::strides() const {
+  return scipp::span<const scipp::index>(&*m_strides.begin(),
+                                         &*m_strides.begin() + dims().ndim());
 }
 
 scipp::index Variable::stride(const Dim dim) const {
@@ -224,7 +224,7 @@ Variable Variable::fold(const Dim dim, const Dimensions &target) const {
   return out;
 }
 
-Variable Variable::transpose(const std::span<const Dim> order) const {
+Variable Variable::transpose(const scipp::span<const Dim> order) const {
   auto transposed(*this);
   transposed.m_strides = core::transpose(m_strides, dims(), order);
   transposed.m_dims = core::transpose(dims(), order);

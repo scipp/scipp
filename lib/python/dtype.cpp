@@ -35,15 +35,15 @@ constexpr bool operator==(const char a, const DTypeKind b) {
   return a == static_cast<char>(b);
 }
 
-enum class DTypeSize : ssize_t {
+enum class DTypeSize : scipp::index {
   Float64 = 8,
   Float32 = 4,
   Int64 = 8,
   Int32 = 4,
 };
 
-constexpr bool operator==(const ssize_t a, const DTypeSize b) {
-  return a == static_cast<ssize_t>(b);
+constexpr bool operator==(const scipp::index a, const DTypeSize b) {
+  return a == static_cast<scipp::index>(b);
 }
 } // namespace
 

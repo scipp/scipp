@@ -36,7 +36,7 @@ constexpr auto get_sizes = [](auto &&x) { return x.sizes(); };
 ///
 /// Checks that the last edges in `a` match the first edges in `b`. The
 /// Concatenates the input edges, removing duplicate bin edges.
-Variable join_edges(const std::span<const Variable> vars, const Dim dim) {
+Variable join_edges(const scipp::span<const Variable> vars, const Dim dim) {
   std::vector<Variable> tmp;
   tmp.reserve(vars.size());
   for (const auto &var : vars) {
@@ -116,7 +116,7 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
 
 } // namespace
 
-DataArray concat(const std::span<const DataArray> das, const Dim dim) {
+DataArray concat(const scipp::span<const DataArray> das, const Dim dim) {
   auto out = DataArray(concat(map(das, get_data), dim), {},
                        concat_maps(map(das, get_masks), dim));
   const auto &coords = map(das, get_coords);
@@ -130,7 +130,7 @@ DataArray concat(const std::span<const DataArray> das, const Dim dim) {
   return out;
 }
 
-Dataset concat(const std::span<const Dataset> dss, const Dim dim) {
+Dataset concat(const scipp::span<const Dataset> dss, const Dim dim) {
   // Note that in the special case of a dataset without data items (only coords)
   // concatenating a range slice with a non-range slice will fail due to the
   // missing unaligned coord in the non-range slice. This is an extremely
@@ -192,7 +192,7 @@ namespace {
 ///    variable's dims, broadcast
 /// 3. If none of the variables's dimensions are contained, no broadcast
 Variable maybe_broadcast(const Variable &var,
-                         const std::span<const Dim> &from_labels,
+                         const scipp::span<const Dim> &from_labels,
                          const Dimensions &data_dims) {
   const auto &var_dims = var.dims();
   Dimensions broadcast_dims;
@@ -226,7 +226,7 @@ Variable fold_bin_edge(const Variable &var, const Dim from_dim,
 
 /// Special handling for flattening coord along a dim that contains bin edges.
 Variable flatten_bin_edge(const Variable &var,
-                          const std::span<const Dim> &from_labels,
+                          const scipp::span<const Dim> &from_labels,
                           const Dim to_dim, const Dim bin_edge_dim) {
   const auto data_shape = var.dims()[bin_edge_dim] - 1;
 
@@ -255,7 +255,7 @@ Variable flatten_bin_edge(const Variable &var,
 
 /// Check if one of the from_labels is a bin edge
 Dim bin_edge_in_from_labels(const Variable &var, const Dimensions &array_dims,
-                            const std::span<const Dim> &from_labels) {
+                            const scipp::span<const Dim> &from_labels) {
   for (const auto &dim : from_labels)
     if (is_edges(array_dims, var.dims(), dim))
       return dim;
@@ -280,7 +280,7 @@ DataArray fold(const DataArray &a, const Dim from_dim,
 
 /// Flatten multiple dimensions into a single dimension:
 /// ['y', 'z'] -> ['x']
-DataArray flatten(const DataArray &a, const std::span<const Dim> &from_labels,
+DataArray flatten(const DataArray &a, const scipp::span<const Dim> &from_labels,
                   const Dim to_dim) {
   return dataset::transform(a, [&](const auto &in) {
     const auto var =
@@ -297,12 +297,12 @@ DataArray flatten(const DataArray &a, const std::span<const Dim> &from_labels,
   });
 }
 
-DataArray transpose(const DataArray &a, const std::span<const Dim> dims) {
+DataArray transpose(const DataArray &a, const scipp::span<const Dim> dims) {
   return {transpose(a.data(), dims), a.coords(), a.masks(), a.attrs(),
           a.name()};
 }
 
-Dataset transpose(const Dataset &d, const std::span<const Dim> dims) {
+Dataset transpose(const Dataset &d, const scipp::span<const Dim> dims) {
   return apply_to_items(
       d, [](auto &&... _) { return transpose(_...); }, dims);
 }

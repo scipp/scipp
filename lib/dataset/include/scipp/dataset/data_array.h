@@ -55,7 +55,7 @@ public:
   [[nodiscard]] Dimensions dims() const { return m_data->dims(); }
   [[nodiscard]] Dim dim() const { return m_data->dim(); }
   [[nodiscard]] scipp::index ndim() const { return m_data->ndim(); }
-  [[nodiscard]] std::span<const scipp::index> strides() const {
+  [[nodiscard]] scipp::span<const scipp::index> strides() const {
     return m_data->strides();
   }
   [[nodiscard]] DType dtype() const { return m_data->dtype(); }

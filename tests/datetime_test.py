@@ -245,20 +245,26 @@ def test_datetime_operations_mismatch():
             dims=['x'], values=np.random.randint(0, 100, len(values)), unit=sc.units.us)
 
 
-def test_datetime_formatting():
-    def fmt(time_point, unit):
-        np_unit = 'm' if unit == 'min' else unit
-        var = sc.scalar(time_point.astype(f'datetime64[{np_unit}]'), unit=unit)
-        match = re.search(r'\[[\dT\-:\.]+]', str(var))
-        assert match
-        return match[0][1:-1]
+def fmt(time_point, unit):
+    np_unit = 'm' if unit == 'min' else unit
+    var = sc.scalar(time_point.astype(f'datetime64[{np_unit}]'), unit=unit)
+    match = re.search(r'\[[\dT\-:\.]+]', str(var))
+    assert match
+    return match[0][1:-1]
 
+
+def test_datetime_formatting():
     dt = np.datetime64('1991-08-16T12:23:45.678901', 'us')
     assert fmt(dt, 'us') == '1991-08-16T12:23:45.678901'
     assert fmt(dt, 'ms') == '1991-08-16T12:23:45.678'
     assert fmt(dt, 's') == '1991-08-16T12:23:45'
     assert fmt(dt, 'min') == '1991-08-16T12:23:00'
     assert fmt(dt, 'h') == '1991-08-16T12:00:00'
+
+
+@pytest.mark.skip(reason="Requires std::chrono from C++20")
+def test_datetime_formatting_day_month_year():
+    dt = np.datetime64('1991-08-16T12:23:45.678901', 'us')
     assert fmt(dt, 'D') == '1991-08-16'
     assert fmt(dt, 'M') == '1991-08'
     assert fmt(dt, 'Y') == '1991'

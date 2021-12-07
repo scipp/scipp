@@ -48,8 +48,10 @@ TEST(ElementHistogramTest, values) {
   std::vector<double> result_vals{0, 0};
   std::vector<double> result_vars{0, 0};
   element::histogram(
-      ValueAndVariance(std::span(result_vals), std::span(result_vars)), events,
-      ValueAndVariance(std::span(weight_vals), std::span(weight_vars)), edges);
+      ValueAndVariance(scipp::span(result_vals), scipp::span(result_vars)),
+      events,
+      ValueAndVariance(scipp::span(weight_vals), scipp::span(weight_vars)),
+      edges);
   EXPECT_EQ(result_vals, std::vector<double>({20 + 30, 40 + 50}));
   EXPECT_EQ(result_vars, std::vector<double>({200 + 300, 400 + 500}));
 }
@@ -59,7 +61,7 @@ TEST(ElementHistogramTest, no_variance) {
   std::vector<double> events{1, 2, 3, 4, 5, 6, 7};
   std::vector<double> weight_vals{10, 20, 30, 40, 50, 60, 70};
   std::vector<double> result_vals{0, 0};
-  element::histogram(std::span(result_vals), events, std::span(weight_vals),
+  element::histogram(scipp::span(result_vals), events, scipp::span(weight_vals),
                      edges);
   EXPECT_EQ(result_vals, std::vector<double>({20 + 30, 40 + 50}));
 }

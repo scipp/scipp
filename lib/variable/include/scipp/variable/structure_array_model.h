@@ -83,10 +83,12 @@ public:
     throw except::TypeError("This data type does not have bin indices.");
   }
 
-  std::span<const T> values() const {
+  scipp::span<const T> values() const {
     return {get_values(), static_cast<size_t>(size())};
   }
-  std::span<T> values() { return {get_values(), static_cast<size_t>(size())}; }
+  scipp::span<T> values() {
+    return {get_values(), static_cast<size_t>(size())};
+  }
 
 private:
   const T *get_values() const;

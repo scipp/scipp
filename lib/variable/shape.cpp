@@ -24,7 +24,7 @@ Variable broadcast(const Variable &var, const Dimensions &dims) {
 }
 
 namespace {
-auto get_bin_sizes(const std::span<const Variable> vars) {
+auto get_bin_sizes(const scipp::span<const Variable> vars) {
   std::vector<Variable> sizes;
   sizes.reserve(vars.size());
   for (const auto &var : vars)
@@ -33,7 +33,7 @@ auto get_bin_sizes(const std::span<const Variable> vars) {
 }
 } // namespace
 
-Variable concat(const std::span<const Variable> vars, const Dim dim) {
+Variable concat(const scipp::span<const Variable> vars, const Dim dim) {
   if (vars.empty())
     throw std::invalid_argument("Cannot concat empty list.");
   const auto it =
@@ -99,8 +99,8 @@ Variable fold(const Variable &view, const Dim from_dim,
   return view.fold(from_dim, to_dims);
 }
 
-Variable flatten(const Variable &view, const std::span<const Dim> &from_labels,
-                 const Dim to_dim) {
+Variable flatten(const Variable &view,
+                 const scipp::span<const Dim> &from_labels, const Dim to_dim) {
   if (from_labels.empty())
     return broadcast(view, merge(view.dims(), Dimensions(to_dim, 1)));
   const auto &labels = view.dims().labels();
@@ -127,7 +127,7 @@ Variable flatten(const Variable &view, const std::span<const Dim> &from_labels,
   return out;
 }
 
-Variable transpose(const Variable &var, const std::span<const Dim> dims) {
+Variable transpose(const Variable &var, const scipp::span<const Dim> dims) {
   return var.transpose(dims);
 }
 

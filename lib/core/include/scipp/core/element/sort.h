@@ -4,8 +4,6 @@
 /// @author Thibault Chatel
 #pragma once
 
-#include <span>
-
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/element/comparison.h"
@@ -18,9 +16,9 @@ namespace scipp::core::element {
 namespace {
 template <class Compare> constexpr auto make_sort(Compare compare) {
   return overloaded{
-      core::element::arg_list<std::span<int64_t>, std::span<int32_t>,
-                              std::span<double>, std::span<float>,
-                              std::span<std::string>>,
+      core::element::arg_list<scipp::span<int64_t>, scipp::span<int32_t>,
+                              scipp::span<double>, scipp::span<float>,
+                              scipp::span<std::string>>,
       [](units::Unit &) {},
       [&compare](auto &range) {
         using T = std::decay_t<decltype(range)>;
