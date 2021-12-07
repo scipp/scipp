@@ -93,8 +93,9 @@ def show_graph(graph: GraphDict, size: str = None, simplified: bool = False):
 
 def _transform_data_array(original: DataArray, targets: Set[str], graph: RuleGraph,
                           options: Options) -> DataArray:
-    rules = rule_sequence(graph.graph_for(original, targets))
-    dim_name_changes = (_dim_name_changes(rules, original.dims)
+    graph = graph.graph_for(original, targets)
+    rules = rule_sequence(graph)
+    dim_name_changes = (_dim_name_changes(graph, original.dims)
                         if options.rename_dims else {})
     working_coords = CoordTable(rules, targets, options)
     _log_plan(rules, targets, dim_name_changes, working_coords)
@@ -183,32 +184,37 @@ def _store_results(da: DataArray, coords: CoordTable, targets: Set[str]) -> Data
     return da
 
 
-# A coord's dim can be renamed if its node
-#  1. has one incoming dim coord
-#  2. has only one outgoing connection
-#
-# This functions traversed the graph in depth-first order
-# and builds a dict of old->new names according to the conditions above.
-def _dim_name_changes(rules: List[Rule], dims: List[str]) -> Dict[str, str]:
-    dim_coords = tuple(name for name in rule_output_names(rules, FetchRule)
-                       if name in dims)
-    pending = list(dim_coords)
-    incoming_dim_coords = {name: [name] for name in pending}
+def _dim_name_changes(graph: RuleGraph, dims: List[str]) -> Dict[str, str]:
+    # TODO cycles
+    graph = graph.dependency_graph
+    dim_coord_parents = {}
+    candidates_per_dim = {}
+    for dim_coord in filter(lambda name: name in dims, graph.roots()):
+        node = dim_coord
+        while True:
+            candidates_per_dim.setdefault(dim_coord, []).append(node)
+            dim_coord_parents.setdefault(node, set()).add(dim_coord)
+            children = tuple(graph.children_of(node))
+            if not children:
+                break
+            if len(children) > 1:
+                for child in children:
+                    dim_coord_parents.setdefault(child, set()).add(dim_coord)
+                break
+            node = next(iter(children))
+
     name_changes = {}
-    while pending:
-        name = pending.pop(0)
-        if len(incoming_dim_coords[name]) != 1:
-            continue  # Condition 1.
-        dim = incoming_dim_coords[name][0]
-        name_changes[dim] = name
-        outgoing = _rules_with_dep(name, rules)
-        if len(outgoing) == 1 and len(outgoing[0].out_names) == 1:
-            # Potential candidate according to condition 2.
-            pending.append(outgoing[0].out_names[0])
-        for rule in filter(lambda r: len(r.out_names) == 1, outgoing):
-            # Condition 2. is not satisfied for these children but we
-            # still need to take the current node into account for 1.
-            incoming_dim_coords.setdefault(rule.out_names[0], []).append(dim)
+    for dim_coord, candidates in candidates_per_dim.items():
+        # new_name = next(filter(lambda c: dim_coord_parents[c] == {dim_coord},
+        #                        candidates))
+        new_name = None
+        for candidate in candidates:
+            if dim_coord_parents[candidate] != {dim_coord}:
+                break
+            new_name = candidate
+        if new_name:
+            name_changes[dim_coord] = new_name
+
     return name_changes
 
 
