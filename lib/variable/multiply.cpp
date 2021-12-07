@@ -2,13 +2,16 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include "scipp/variable/multiply.h"
 #include "scipp/core/dtype.h"
+#include "scipp/core/eigen.h"
 #include "scipp/core/element/arithmetic.h"
+#include "scipp/core/spatial_transforms.h"
 #include "scipp/variable/transform.h"
 
 namespace scipp::variable {
 
 bool is_transform_with_translation(const Variable &var) {
-  return var.dtype() == dtype<Eigen::Affine3d>;
+  return var.dtype() == dtype<Eigen::Affine3d> ||
+         var.dtype() == dtype<scipp::core::Translation>;
 }
 
 Variable operator*(const Variable &a, const Variable &b) {

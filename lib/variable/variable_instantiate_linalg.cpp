@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/eigen.h"
+#include "scipp/core/spatial_transforms.h"
 #include "scipp/variable/structure_array_variable.tcc"
 #include "scipp/variable/structures.h"
 #include "scipp/variable/variable.h"
@@ -37,6 +38,18 @@ constexpr auto structure_element_offset<Eigen::Affine3d> =
 };
 
 template <>
+constexpr auto structure_element_offset<scipp::core::Quaternion> =
+    [](const std::string &key) -> scipp::index {
+  throw except::TypeError("Not supported for Affine3d types");
+};
+
+template <>
+constexpr auto structure_element_offset<scipp::core::Translation> =
+    [](const std::string &key) -> scipp::index {
+  throw except::TypeError("Not supported for Affine3d types");
+};
+
+template <>
 constexpr auto structure_element_offset<
     scipp::index_pair> = [](const std::string &key) {
   static std::map<std::string, scipp::index> offsets{{"begin", 0}, {"end", 1}};
@@ -58,6 +71,9 @@ std::vector<std::string> element_keys(const Variable &var) {
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(vector_3_float64, Eigen::Vector3d, double)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(matrix_3_float64, Eigen::Matrix3d, double)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(affine_transform, Eigen::Affine3d, double)
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(rotation, scipp::core::Quaternion, double)
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(translation, scipp::core::Translation,
+                                     double)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(index_pair, scipp::index_pair,
                                      scipp::index)
 
