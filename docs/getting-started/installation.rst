@@ -75,6 +75,30 @@ If you wish to use plotting functionality you will also need to install ``matplo
 
 To update or remove ``scipp`` use `conda update <https://docs.conda.io/projects/conda/en/latest/commands/update.html>`_ and `conda remove <https://docs.conda.io/projects/conda/en/latest/commands/remove.html>`_.
 
+Pip
+---
+
+Scipp is available from `PyPI <https://pypi.org/>`_ via ``pip``:
+
+.. code-block:: sh
+
+   pip install scipp
+
+By default, this is only a minimal install without optional dependencies.
+To install components for additional submodules, use the ``all`` extras of the module:
+
+.. code-block:: sh
+
+   pip install scipp[all]
+
+This will install everything that is needed, with the exception of plotting libraries for interactive use in Jupyter.
+These are avaiable in the ``interactive`` extra.
+We recommend combining this with ``all``:
+
+.. code-block:: sh
+
+   pip install scipp[all,interactive]
+
 From source
 -----------
 
