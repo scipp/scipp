@@ -1,0 +1,69 @@
+name: Package build (nightly and release)
+
+on:
+  create:
+    tags:
+      - "*.*.*"
+  schedule:
+    - cron: "0 0 * * *"
+
+defaults:
+  run:
+    shell: bash -l {0}  # required for conda env
+
+jobs:
+  conda_build:
+    name: Package build (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    env:
+      DOCS_HTML_DIR: ${{ github.workspace }}/docs_html
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        python-version: ["3.7", "3.8", "3.9"]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0  # history required so cmake can determine version
+
+      - uses: conda-incubator/setup-miniconda@v2
+      - run: conda install --yes conda-build
+      - run: conda build --channel conda-forge --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels --output-folder conda/package conda
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: conda-package-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: conda/package/*/scipp*.tar.bz2
+
+      - uses: actions/upload-artifact@v2
+        if: ${{ contains(matrix.os, 'ubuntu') && matrix.python-version == '3.7' }}
+        with:
+          name: html
+          path: docs_html
+
+  deploy:
+    needs: conda_build
+    name: Deploy packages and docs
+    runs-on: ubuntu-latest
+    env:
+      conda_label: ${{ startsWith(github.ref, 'refs/tags/') && 'main' || 'dev' }}
+    steps:
+      - uses: conda-incubator/setup-miniconda@v2
+      - run: conda install -c conda-forge --yes anaconda-client
+      - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
+      - uses: actions/download-artifact@v2
+      - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label ${{ env.conda_label }} $(ls conda-package-*/*/*.tar.bz2)
+
+      - uses: JamesIves/github-pages-deploy-action@4.1.5
+        with:
+          repository-name: scipp/scipp.github.io
+          branch: master
+          folder: html
+          # Note: If this is a release, it will not deploy to the top level folder.
+          # The next scheduled main build will update that.
+          target-folder: ${{ env.conda_label == 'main' && 'release/${GITHUB_REF#refs/tags/}' || '' }}
+          single-commit: true
+          clean-exclude: release
+          ssh-key: ${{ secrets.GH_PAGES_DEPLOY_KEY }}

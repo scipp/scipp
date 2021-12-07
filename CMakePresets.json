@@ -7,8 +7,68 @@
   },
   "configurePresets": [
     {
+      "name": "base",
+      "description": "Base options",
+      "binaryDir": "${sourceDir}/build",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+        "FULL_BUILD": "ON"
+      }
+    },
+    {
+      "name": "ci-linux",
+      "inherits": "base",
+      "description": "Linux options for CI build (PR and Main)"
+    },
+    {
+      "name": "ci-macos",
+      "inherits": "base",
+      "description": "MacOS options for CI build (PR and Main)",
+      "cacheVariables": {
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "10.15"
+      }
+    },
+    {
+      "name": "ci-windows",
+      "inherits": "base",
+      "description": "Windows options for CI build (PR and Main)",
+      "generator": "Visual Studio 16 2019",
+      "architecture": "x64"
+    },
+    {
+      "name": "package",
+      "inherits": "base",
+      "description": "Package build base options",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "$env{PREFIX}",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "ON"
+      }
+    },
+    {
+      "name": "package-linux",
+      "inherits": "package",
+      "description": "Linux options for package build"
+    },
+    {
+      "name": "package-macos",
+      "inherits": "package",
+      "description": "MacOS options for package build",
+      "cacheVariables": {
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "10.15"
+      }
+    },
+    {
+      "name": "package-windows",
+      "inherits": "package",
+      "description": "Windows options for package build",
+      "generator": "Visual Studio 16 2019",
+      "architecture": "x64"
+    },
+    {
       "name": "coverage",
-      "displayName": "coverage",
       "description": "Options for coverage build (Linux only)",
       "binaryDir": "${sourceDir}/build",
       "generator": "Unix Makefiles",
@@ -23,9 +83,31 @@
   ],
   "buildPresets": [
     {
+      "name": "docs",
+      "configurePreset": "base",
+      "configuration": "Release",
+      "targets": ["docs", "doctest", "cleanup_docs_html"]
+    },
+    {
+      "name": "build",
+      "configurePreset": "base",
+      "configuration": "Release",
+      "targets": ["install"]
+    },
+    {
       "name": "coverage",
       "configurePreset": "coverage",
       "targets": ["coverage"]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "test",
+      "configurePreset": "base",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
     }
   ]
 }

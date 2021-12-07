@@ -8,6 +8,7 @@ import scipp as sc
 from ..factory import make_dense_data_array, make_dense_dataset
 from .plot_helper import plot
 import matplotlib
+
 matplotlib.use('Agg')
 
 # TODO: For now we are just checking that the plot does not throw any errors.
