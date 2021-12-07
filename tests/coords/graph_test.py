@@ -342,14 +342,13 @@ def test_contract_cycle_graph_2():
     assert len(contracted['g']) == 1
     cycle_node = next(iter(contracted['g']))
     assert cycle_node != 'f'  # not the old node
-    expected = {'b': {'a'}, cycle_node: {'b', 'c', 'd'}, 'e': {cycle_node, 'd'}, 'g': {cycle_node}}
+    expected = scgraph.Graph({
+        'b': {'a'},
+        cycle_node: {'b', 'c', 'd'},
+        'e': {cycle_node, 'd'},
+        'g': {cycle_node}
+    })
     assert contracted == expected
-
-
-    for cycle in cycles_2().values():
-        graph = graph_2().dependency_graph
-        print(graph.contract_cycle(cycle)._child_to_parent)
-    assert False
 
 
 def test_undirected_cycles_graph_3():
