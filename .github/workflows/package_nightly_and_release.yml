@@ -13,7 +13,7 @@ defaults:
 
 jobs:
   conda_build:
-    name: Package build (${{ matrix.os }}, ${{ matrix.python-version }})
+    name: Package build (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     env:
       DOCS_HTML_DIR: ${{ github.workspace }}/docs_html
