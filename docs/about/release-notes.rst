@@ -36,7 +36,7 @@ Features
 ~~~~~~~~
 
 * Add support for auto-completions for slices and metadata access in Jupyter `#2304 <https://github.com/scipp/scipp/pull/2304>`_.
-* ``pip`` packages are now built, in addition to the existing builds for ``conda`` packages.
+* Start publishing ``pip`` packages to `PyPI <https://pypi.org/>`_ in addition to ``conda`` packages.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
