@@ -75,6 +75,7 @@ c = sc.arange(dim='c', start=4, stop=8)
 
 
 def test_diamond_graph():
+    # TODO dim names
     original = sc.DataArray(data=a, coords={'a': a})
     graph = {('b', 'c'): split, 'd': bc}
     da = original.transform_coords(['d'], graph=graph)
@@ -175,9 +176,28 @@ def test_dim_rename_multi_level_multi_merge():
     da = original.transform_coords(['abcd'], graph=graph)
     assert da.dims == ['ac', 'bd']
 
+    # c is also a dim coord
     original = sc.DataArray(data=a + b + c, coords={'a': a, 'b': b, 'c': c, 'd': b})
     da = original.transform_coords(['abcd'], graph=graph)
     assert da.dims == ['a', 'abcd', 'c']
+
+
+def test_dim_rename_multi_level_multi_merge_long():
+    # *x
+    #  |
+    # *a    *c
+    #  \   /
+    #    ac      *b
+    #     \     /
+    #      *abc
+    def abc(ac, b):
+        return ac + b
+
+    graph = {'a': 'x', 'ac': ac, 'abc': abc}
+    x = a.rename_dims({'a': 'x'})
+    original = sc.DataArray(data=x + b + c, coords={'x': x, 'b': b, 'c': c})
+    da = original.transform_coords(['abc'], graph=graph)
+    assert da.dims == ['a', 'abc', 'c']
 
 
 def test_rename_dims_param():
