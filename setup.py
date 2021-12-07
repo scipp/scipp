@@ -6,7 +6,7 @@ from setuptools import find_packages
 
 
 def get_version():
-    return '0.10.0rc3'  # TODO testing only
+    return '0.10.0rc4'  # TODO testing only
     import subprocess
     return subprocess.run(['git', 'describe', '--tags', '--abbrev=0'],
                           stdout=subprocess.PIPE).stdout.decode('utf8').strip()
