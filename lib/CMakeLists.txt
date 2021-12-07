@@ -54,6 +54,7 @@ if(SKBUILD)
   unset(PYTHON_LIBRARY)
   unset(PYTHON_VERSION_STRING)
 endif()
+set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
 
 find_package(Benchmark)
 find_package(Boost 1.67 REQUIRED)
