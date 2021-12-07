@@ -13,5 +13,5 @@ build-backend = "setuptools.build_meta"
 [tool.cibuildwheel]
 archs = ["auto64"]
 before-build = "rm -rf {project}/build"  # probably https://github.com/pypa/setuptools/issues/2912
-test-extras = [test, all]
+test-extras = ["test", "all"]
 test-command = "pytest {project}/tests"
