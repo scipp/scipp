@@ -1,7 +1,6 @@
 name: Wheels
 
 on:
-  pull_request:  #TODO remove this line
   release:
     types:
       - published
@@ -25,7 +24,6 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         path: dist/*.tar.gz
-
 
   build_wheels:
     name: Wheels on ${{ matrix.os }}
@@ -59,8 +57,7 @@ jobs:
     name: Upload if release
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
-    #TODO uncomment this line
-    #if: github.event_name == 'release' && github.event.action == 'published'
+    if: github.event_name == 'release' && github.event.action == 'published'
 
     steps:
     - uses: actions/setup-python@v2
