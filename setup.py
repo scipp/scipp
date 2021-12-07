@@ -43,7 +43,7 @@ setup(name='scipp',
           'tbb',
       ],
       extras_require={
-          "test": ["pytest"],
+          "test": ["pytest", "matplotlib", "xarray", "pandas", "pythreejs"],
           'all': ['h5py', 'scipy>=1.7.0', 'graphviz'],
           'interactive': [
               'ipykernel==6.3.1', 'ipympl', 'ipython', 'ipywidgets', 'matplotlib',
