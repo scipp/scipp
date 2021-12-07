@@ -56,8 +56,19 @@ else()
 endif()
 set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
 
+if(SKBUILD)
+  set(PYTHONDIR .)
+  # scikit-build will not include files outside the directory of the Python
+  # module, ensure our shared objects are installed there.
+  set(RELATIVE_LIB ".")
+  # Note that we do not install src/scipp when making a `pip` package. It will
+  # simply use the source directory directly. C++ libraries get installed into
+  # the source dir.
+else()
+  install(DIRECTORY "src/scipp/" DESTINATION ${PYTHONDIR})
+  set(RELATIVE_LIB "..")
+endif()
+
 enable_testing()
 
 add_subdirectory(lib)
-
-install(DIRECTORY "src/scipp/" DESTINATION ${PYTHONDIR})
