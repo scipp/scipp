@@ -3,13 +3,40 @@
 Release Notes
 =============
 
-v0.10.0 (unreleased)
+v0.11.0 (unreleased)
 --------------------
 
 Features
 ~~~~~~~~
 
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+Tom Willemsen :sup:`b, c`\ ,
+and Jan-Lukas Wynen :sup:`a`
+
+v0.10.0 (December 2021)
+-----------------------
+
+Features
+~~~~~~~~
+
 * Add support for auto-completions for slices and metadata access in Jupyter `#2304 <https://github.com/scipp/scipp/pull/2304>`_.
+* ``pip`` packages are now built, in addition to the existing builds for ``conda`` packages.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -27,6 +54,8 @@ Deprecations
 
 Stability, Maintainability, and Testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Improve a number of error messages `#2286 <https://github.com/scipp/scipp/pull/2286>`_ and `#2301 <https://github.com/scipp/scipp/pull/2301>`_, by Jan-Lukas Wynen.
 
 Contributors
 ~~~~~~~~~~~~
