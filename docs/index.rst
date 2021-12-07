@@ -58,6 +58,8 @@ News
 
 - [|SCIPP_RELEASE_MONTH|] scipp-|SCIPP_VERSION| `has been released <about/release-notes.rst>`_.
   Check out the `What's new <about/whats-new.rst>`_ notebook for an overview of recent highlights and major changes.
+- We now provide ``pip`` packages of ``scipp``, in addition to ``conda`` packages.
+  See `installation <getting-started/installation.rst#Pip>`_ for details.
 - Scipp changed from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
 - Looking for ``scipp.neutron``?
   This submodule has been moved into its own package, `scippneutron <https://scipp.github.io/scippneutron>`_.
