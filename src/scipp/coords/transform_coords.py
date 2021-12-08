@@ -7,7 +7,8 @@ from typing import Dict, Iterable, List, Mapping, Set, Union
 from ..core import DataArray, Dataset, NotFoundError, VariableError, bins
 from ..logging import get_logger
 from .coord_table import Coord, CoordTable, Destination
-from .graph import GraphDict, RuleGraph, rule_sequence
+from .graph import Graph, GraphDict, RuleGraph, is_cycle_node,\
+    is_in_cycle, rule_sequence
 from .options import Options
 from .rule import ComputeRule, FetchRule, RenameRule, Rule, rule_output_names
 
@@ -95,7 +96,7 @@ def _transform_data_array(original: DataArray, targets: Set[str], graph: RuleGra
                           options: Options) -> DataArray:
     graph = graph.graph_for(original, targets)
     rules = rule_sequence(graph)
-    dim_name_changes = (_dim_name_changes(graph, original.dims)
+    dim_name_changes = (_dim_name_changes(graph, original.dims, options)
                         if options.rename_dims else {})
     working_coords = CoordTable(rules, targets, options)
     _log_plan(rules, targets, dim_name_changes, working_coords)
@@ -184,39 +185,74 @@ def _store_results(da: DataArray, coords: CoordTable, targets: Set[str]) -> Data
     return da
 
 
-def _dim_name_changes(graph: RuleGraph, dims: List[str]) -> Dict[str, str]:
-    # TODO cycles
-    graph = graph.dependency_graph
+def _find_dim_parents(node, graph, dim_coord_parents, is_split_node):
+    dim_parents = set()
+    for parent in graph.parents_of(node):
+        if is_split_node[parent]:
+            return set()
+        dim_parents.update(dim_coord_parents[parent])
+    return dim_parents if len(dim_parents) == 1 else set()
+
+
+def _has_single_element(iterable: Iterable) -> bool:
+    n = 0
+    for _ in iterable:
+        n += 1
+        if n > 1:
+            break
+    return n == 1
+
+
+def _dim_coords(graph: Graph, dims: List[str]) -> Iterable[str]:
+    for dim in dims:
+        for node in graph.nodes():
+            if dim == node:
+                yield dim, node
+                break
+            if is_in_cycle(dim, node):
+                yield dim, node
+                break
+
+
+def _dim_name_changes(rule_graph: RuleGraph, dims: List[str],
+                      options: Options) -> Dict[str, str]:
+    graph = rule_graph.dependency_graph.fully_contract_cycles()
     dim_coord_parents = {}
-    candidates_per_dim = {}
-    for dim_coord in filter(lambda name: name in dims, graph.roots()):
-        node = dim_coord
-        while True:
-            candidates_per_dim.setdefault(dim_coord, []).append(node)
-            dim_coord_parents.setdefault(node, set()).add(dim_coord)
-            children = tuple(graph.children_of(node))
-            if not children:
-                break
-            if len(children) > 1:
-                for child in children:
-                    dim_coord_parents.setdefault(child, set()).add(dim_coord)
-                break
-            node = next(iter(children))
+    is_split_node = {}
+
+    for node in graph.nodes_topologically():
+        is_split_node[node] = not _has_single_element(graph.children_of(node))
+        if node in dims:
+            dim_coord_parents[node] = {node}
+        else:
+            if is_cycle_node(node):
+                for dim in dims:
+                    if is_in_cycle(dim, node):
+                        dim_coord_parents.setdefault(node, set()).add(dim)
+            dim_coord_parents.setdefault(node, set()).update(
+                _find_dim_parents(node, graph, dim_coord_parents, is_split_node))
 
     name_changes = {}
-    for dim_coord, candidates in candidates_per_dim.items():
-        # new_name = next(filter(lambda c: dim_coord_parents[c] == {dim_coord},
-        #                        candidates))
-        new_name = None
-        for candidate in candidates:
-            if dim_coord_parents[candidate] != {dim_coord}:
+    # for dim_coord in filter(lambda dim: dim in graph.nodes(), dims):
+    for dim_coord, node in _dim_coords(graph, dims):
+        # node = dim_coord
+        candidate = node if not is_cycle_node(node) else None
+        while True:
+            children = list(graph.children_of(node))
+            if len(children) == 1:
+                child = next(iter(children))
+                if dim_coord_parents[child] != {dim_coord}:
+                    break
+                if not (is_cycle_node(child) or
+                        (not options.keep_intermediate
+                         and isinstance(rule_graph[child], ComputeRule)) or
+                        (not options.keep_aliases
+                         and isinstance(rule_graph[child], RenameRule))):
+                    candidate = child
+                node = child
+            else:
                 break
-            new_name = candidate
-        if new_name:
-            name_changes[dim_coord] = new_name
+        if candidate is not None and candidate != dim_coord:
+            name_changes[dim_coord] = candidate
 
     return name_changes
-
-
-def _rules_with_dep(dep, rules):
-    return list(filter(lambda r: dep in r.dependencies, rules))
