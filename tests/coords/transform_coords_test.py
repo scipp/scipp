@@ -226,6 +226,37 @@ def test_dim_rename_multi_level_multi_merge_long():
     assert da.dims == ['a', 'abc', 'c']
 
 
+def test_rename_dims_cycle():
+    #   a
+    #   |
+    #   b   c
+    #  / \ /
+    # c   d  e
+    #  \ /  /
+    #   f __
+    def f_d(b, c):
+        return b + c
+
+    def f_f(c, d, e):
+        return c + d + e
+
+    graph = {'b': 'a', 'c': 'b', 'd': f_d, 'f': f_f}
+    original = sc.DataArray(data=a, coords={'a': a, 'c': a, 'e': a})
+    da = original.transform_coords(['f'], graph=graph)
+    assert da.dims == ['f']
+
+    # c is a dimension coord
+    original = sc.DataArray(data=a + c, coords={'a': a, 'c': c, 'e': a})
+    da = original.transform_coords(['f'], graph=graph)
+    assert da.dims == ['b', 'c']
+
+    # e is a dimension coord
+    e = a.rename_dims({'a': 'e'})
+    original = sc.DataArray(data=a + e, coords={'a': a, 'c': a, 'e': e})
+    da = original.transform_coords(['f'], graph=graph)
+    assert da.dims == ['b', 'e']
+
+
 @pytest.mark.parametrize('keep_inputs', (True, False))
 def test_dim_rename_keep_arguments(keep_inputs):
     # *x
