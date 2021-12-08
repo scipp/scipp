@@ -221,7 +221,8 @@ class RuleGraph:
             if out_name in subgraph:
                 continue
             rule = self._rule_for(out_name, da)
-            subgraph[out_name] = rule
+            for name in rule.out_names:
+                subgraph[name] = rule
             dfs.push(rule.dependencies)
         return RuleGraph(subgraph)
 
@@ -257,17 +258,12 @@ class RuleGraph:
 def rule_sequence(rules: RuleGraph) -> List[Rule]:
     already_used = set()
     result = []
-    for rule in filter(lambda r: r not in already_used,
-                       map(lambda n: rules[n], _sort_topologically(rules))):
+    for rule in filter(
+            lambda r: r not in already_used,
+            map(lambda n: rules[n], rules.dependency_graph.nodes_topologically())):
         already_used.add(rule)
         result.append(rule)
     return result
-
-
-def _sort_topologically(graph: RuleGraph) -> Iterable[str]:
-    yield from TopologicalSorter(
-        {out: rule.dependencies
-         for out, rule in graph.items()}).static_order()
 
 
 def _make_rule(products, producer) -> Rule:
