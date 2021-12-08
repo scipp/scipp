@@ -226,6 +226,48 @@ def test_dim_rename_multi_level_multi_merge_long():
     assert da.dims == ['a', 'abc', 'c']
 
 
+@pytest.mark.parametrize('keep_inputs', (True, False))
+def test_dim_rename_keep_arguments(keep_inputs):
+    # *x
+    #  |
+    #  y
+    #  |
+    #  a   *b
+    #   \  |
+    #    ab
+    def y(x):
+        return x
+
+    graph = {'y': y, 'a': 'y', 'ab': ab}
+    x = a.rename_dims({'a': 'x'})
+    original = sc.DataArray(data=x + b, coords={'x': x, 'b': b})
+
+    da = original.transform_coords(['ab'],
+                                   graph=graph,
+                                   keep_intermediate=True,
+                                   keep_aliases=True,
+                                   keep_inputs=keep_inputs)
+    assert da.dims == ['a', 'b']
+    da = original.transform_coords(['ab'],
+                                   graph=graph,
+                                   keep_intermediate=False,
+                                   keep_aliases=True,
+                                   keep_inputs=keep_inputs)
+    assert da.dims == ['a', 'b']
+    da = original.transform_coords(['ab'],
+                                   graph=graph,
+                                   keep_intermediate=True,
+                                   keep_aliases=False,
+                                   keep_inputs=keep_inputs)
+    assert da.dims == ['y', 'b']
+    da = original.transform_coords(['ab'],
+                                   graph=graph,
+                                   keep_intermediate=False,
+                                   keep_aliases=False,
+                                   keep_inputs=keep_inputs)
+    assert da.dims == ['x', 'b']
+
+
 def test_rename_dims_param():
     original = sc.DataArray(data=a, coords={'a': a})
     da = original.transform_coords(['b'], graph={'b': 'a'})
