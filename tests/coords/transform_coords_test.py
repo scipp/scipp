@@ -143,7 +143,7 @@ def test_dim_rename_merge_two_dim_coords():
     # ab depends on two dimension coords => no rename of a
     da = original.transform_coords(['ab'], graph={'ab': ab})
     assert da.dims == ['a', 'b']
-    # Split combined with merge: Ensure the b2 does not cause rename of b
+    # Split combined with merge: Ensure that b2 does not cause rename of b
     # which in turn would enable rename of a to ab
     # *a   *b
     #   \  / \
