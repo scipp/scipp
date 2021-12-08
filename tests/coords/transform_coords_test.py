@@ -75,11 +75,16 @@ c = sc.arange(dim='c', start=4, stop=8)
 
 
 def test_diamond_graph():
-    # TODO dim names
+    #   *a
+    #  /  \
+    # b    c
+    #  \  /
+    #   *d
     original = sc.DataArray(data=a, coords={'a': a})
     graph = {('b', 'c'): split, 'd': bc}
     da = original.transform_coords(['d'], graph=graph)
-    assert sc.identical(da.coords['d'], a * (2 * a))
+    expected = (a * (2 * a)).rename_dims({'a': 'd'})
+    assert sc.identical(da.coords['d'], expected)
 
 
 def test_avoid_consume_of_requested_outputs():
