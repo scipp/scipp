@@ -37,7 +37,6 @@ setup(name='scipp',
           'numpy>=1.20',
           'python-configuration',
           'pyyaml',
-          'tbb',
       ],
       extras_require={
           "test": ["pytest", "matplotlib", "xarray", "pandas", "pythreejs"],

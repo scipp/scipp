@@ -104,7 +104,15 @@ include(GenerateExportHeader)
 
 option(DISABLE_MULTI_THREADING "Disable multi threading" OFF)
 if(NOT DISABLE_MULTI_THREADING)
-  find_package(TBB CONFIG)
+  if(SKBUILD)
+    include(patch-pip-tbb-devel)
+    find_package(TBB CONFIG REQUIRED)
+    install(IMPORTED_RUNTIME_ARTIFACTS TBB::tbb RUNTIME DESTINATION
+            ${PYTHONDIR}
+    )
+  else()
+    find_package(TBB CONFIG)
+  endif()
 endif()
 if(TBB_FOUND)
   option(ENABLE_THREAD_LIMIT
