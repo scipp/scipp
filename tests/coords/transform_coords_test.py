@@ -262,6 +262,52 @@ def test_rename_dims_cycle():
     assert da.dims == ['b', 'e']
 
 
+def test_dim_rename_produced_dim_coord():
+    # c is a dimension coordinate even though it is computed from a and b.
+    # *a    b
+    #   \  /
+    #    *c
+    #     |
+    #    *d
+    def f_c(a, b):
+        return c
+
+    graph = {'c': f_c, 'd': 'c'}
+    original = sc.DataArray(data=a + c, coords={'a': a, 'b': a})
+    da = original.transform_coords(['d'], graph=graph)
+    assert da.dims == ['a', 'd']
+
+    # b is a dim coord
+    graph = {'c': f_c, 'd': 'c'}
+    original = sc.DataArray(data=a + b + c, coords={'a': a, 'b': b})
+    da = original.transform_coords(['d'], graph=graph)
+    assert da.dims == ['a', 'b', 'd']
+
+
+def test_dim_rename_produced_dim_coord_cycle():
+    # c is a dimension coordinate even though it is computed from a.
+    #    a
+    #   / \
+    # *c   b
+    #   \ /
+    #   *d
+    def f_c(a):
+        return c
+
+    def f_d(b, c):
+        return b + c
+
+    graph = {'c': f_c, 'b': 'a', 'd': f_d}
+    original = sc.DataArray(data=c, coords={'a': a.rename_dims({'a': 'c'})})
+    da = original.transform_coords(['d'], graph=graph)
+    assert da.dims == ['d']
+
+    # a is a dim coord
+    original = sc.DataArray(data=a + c, coords={'a': a})
+    da = original.transform_coords(['d'], graph=graph)
+    assert da.dims == ['a', 'c']
+
+
 @pytest.mark.parametrize('keep_inputs', (True, False))
 def test_dim_rename_keep_arguments(keep_inputs):
     # *x
