@@ -287,10 +287,22 @@ def _is_in_meta_data(name: str, da: DataArray) -> bool:
     return name in da.meta or (da.bins is not None and name in da.bins.meta)
 
 
+_CYCLE_PREFIX = '__SC_CYCLE_NODE:'
+_CYCLE_SEP = ':__SC_CYCLE_SEP__:'
+
+
 def _make_new_node_name(node_names: Iterable[str]) -> str:
-    cycle_prefix = '__SC_CYCLE_NODE:'
-    return cycle_prefix + ':'.join(
-        name.replace(cycle_prefix, '') for name in node_names)
+    return _CYCLE_PREFIX + _CYCLE_SEP.join(
+        name.replace(_CYCLE_PREFIX, '') for name in node_names)
+
+
+def is_cycle_node(node: str) -> bool:
+    return node.startswith(_CYCLE_PREFIX)
+
+
+def is_in_cycle(node: str, cycle_node: str) -> bool:
+    return node in (component for without_prefix in cycle_node.split(_CYCLE_PREFIX)
+                    for component in without_prefix.split(_CYCLE_SEP))
 
 
 def _make_graphviz_digraph(*args, **kwargs):
