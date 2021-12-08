@@ -91,6 +91,12 @@ class Graph:
         yield from (name for name, parents in self._child_to_parent.items()
                     if not parents)
 
+    def nodes(self) -> Iterable[str]:
+        yield from self._child_to_parent.keys()
+
+    def nodes_topologically(self) -> Iterable[str]:
+        yield from TopologicalSorter(self._child_to_parent).static_order()
+
     def undirected_cycles(self, n=None) -> Set[Cycle]:
         cycles = set()
         # It is enough to only start from rule outputs, because there are no cycles
