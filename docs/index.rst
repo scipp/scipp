@@ -60,6 +60,8 @@ News
   Check out the `What's new <about/whats-new.rst>`_ notebook for an overview of recent highlights and major changes.
 - We now provide ``pip`` packages of ``scipp``, in addition to ``conda`` packages.
   See `installation <getting-started/installation.rst#Pip>`_ for details.
+  Note that the 0.10.0 pip packages do not support multi-threading.
+  We therefore recommend using conda packages if performance is relevant.
 - Scipp changed from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
 - Looking for ``scipp.neutron``?
   This submodule has been moved into its own package, `scippneutron <https://scipp.github.io/scippneutron>`_.
