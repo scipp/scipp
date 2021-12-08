@@ -170,17 +170,22 @@ def test_dim_rename_multi_level_merge():
 
 
 def test_dim_rename_multi_level_merge_multi_output():
+    # Similar to test_dim_rename_multi_level_merge above,
+    # but a2 and c are produced by the same node
+    # *b   *a
+    #  |   / \
+    #  |  c   a2
+    #   \ |
+    #    *bc
     def split_a(*, a):
         return {'a2': a, 'c': a}
 
     original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
     da = original.transform_coords(['bc'], graph={'bc': bc, ('c', 'a2'): split_a})
-    # Similar to test_dim_rename_multi_level_merge above,
-    # but a2 and c are produced by the same node
     assert da.dims == ['a', 'bc']
     da = original.transform_coords(['bc'], graph={'bc': bc, 'c': split_a})
     # a2 is not part of the graph and dropped, a is thus free to be renamed to c.
-    assert da.dims == ['c', 'bc']
+    assert da.dims == ['c', 'b']
 
 
 def test_dim_rename_multi_level_multi_merge():
