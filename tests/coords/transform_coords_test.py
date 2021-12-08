@@ -528,35 +528,6 @@ def test_duplicate_output_keys():
     assert 'b' in da.coords
 
 
-def test_pass_through_unary():
-    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
-    expected = original.copy()
-    assert sc.identical(original.transform_coords(['a'], graph={'a': 'a'}), expected)
-
-    with_a_as_attr = original.copy()
-    with_a_as_attr.attrs['a'] = with_a_as_attr.coords.pop('a')
-    assert sc.identical(with_a_as_attr.transform_coords(['a'], graph={'a': 'a'}),
-                        expected)
-
-
-def test_pass_through_binary():
-    def ac(a, b):
-        return {'a': a, 'c': b, 'd': a}
-
-    graph = {('a', 'c', 'd'): ac}
-
-    original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
-    expected = sc.DataArray(data=a + b, coords={'a': a, 'c': b, 'd': a}, attrs={'b': b})
-    assert sc.identical(original.transform_coords(['a'], graph=graph), original)
-    assert sc.identical(original.transform_coords(['c'], graph=graph), expected)
-
-    with_a_as_attr = original.copy()
-    with_a_as_attr.attrs['a'] = with_a_as_attr.coords.pop('a')
-    assert sc.identical(with_a_as_attr.transform_coords(['a'], graph=graph), original)
-    assert sc.identical(with_a_as_attr.transform_coords(['c'], graph=graph), expected)
-    assert sc.identical(with_a_as_attr.transform_coords(['d'], graph=graph), expected)
-
-
 def test_prioritize_coords_attrs_conflict():
     original = sc.DataArray(data=a, coords={'a': a}, attrs={'a': -1 * a})
 
