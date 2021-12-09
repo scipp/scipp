@@ -27,7 +27,7 @@ def test_from_rotvec_rotation():
 
 
 def test_from_rotvec_rad():
-    assert sc.identical(rotation.from_rotvec(value=[pi/2, 0, 0], unit="rad"),
+    assert sc.identical(rotation.from_rotvec(value=[pi / 2, 0, 0], unit="rad"),
                         rotation.from_rotvec(value=[90, 0, 0], unit="deg"))
 
 
@@ -38,32 +38,25 @@ def test_as_rotvec_bad_unit():
 
 
 def test_from_rotation_matrix():
-    matrix = [[1, 0, 0],
-              [0, -1, 0],
-              [0, 0, -1]]
+    matrix = [[1, 0, 0], [0, -1, 0], [0, 0, -1]]
 
     transform = rotation.from_matrix(value=matrix)
     vector = sc.vector(value=[1, 2, 3], unit=sc.units.m)
 
-    assert sc.allclose(transform * vector,
-                       sc.vector(value=[1, -2, -3], unit=sc.units.m))
+    assert sc.allclose(transform * vector, sc.vector(value=[1, -2, -3],
+                                                     unit=sc.units.m))
 
 
 def test_from_rotation_matrices():
-    matrix1 = [[1, 0, 0],
-               [0, -1, 0],
-               [0, 0, -1]]
-    matrix2 = [[-1, 0, 0],
-               [0, -1, 0],
-               [0, 0, 0]]
+    matrix1 = [[1, 0, 0], [0, -1, 0], [0, 0, -1]]
+    matrix2 = [[-1, 0, 0], [0, -1, 0], [0, 0, 0]]
 
     transforms = rotation.from_matrices(dims=["x"], values=[matrix1, matrix2])
     vectors = sc.vectors(dims=["x"], values=[[1, 2, 3], [4, 5, 6]], unit=sc.units.m)
 
     assert sc.allclose(
         transforms * vectors,
-        sc.vectors(dims=["x"], values=[[1, -2, -3], [-4, -5, 6]], unit=sc.units.m)
-    )
+        sc.vectors(dims=["x"], values=[[1, -2, -3], [-4, -5, 6]], unit=sc.units.m))
 
 
 def test_from_quaternion():
@@ -72,8 +65,8 @@ def test_from_quaternion():
     transform = rotation.from_quat(value=quat)
     vector = sc.vector(value=[1, 2, 3], unit=sc.units.m)
 
-    assert sc.allclose(transform * vector,
-                       sc.vector(value=[1, -2, -3], unit=sc.units.m))
+    assert sc.allclose(transform * vector, sc.vector(value=[1, -2, -3],
+                                                     unit=sc.units.m))
 
 
 def test_from_quaternions():
@@ -85,5 +78,4 @@ def test_from_quaternions():
 
     assert sc.allclose(
         transforms * vectors,
-        sc.vectors(dims=["x"], values=[[1, -2, -3], [-4, 5, -6]], unit=sc.units.m)
-    )
+        sc.vectors(dims=["x"], values=[[1, -2, -3], [-4, 5, -6]], unit=sc.units.m))

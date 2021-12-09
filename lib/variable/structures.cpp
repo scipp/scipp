@@ -33,13 +33,13 @@ make_structures<Eigen::Affine3d, double>(const Dimensions &,
 
 template SCIPP_VARIABLE_EXPORT Variable
 make_structures<scipp::core::Quaternion, double>(const Dimensions &,
-                                         const units::Unit &,
-                                         element_array<double> &&);
+                                                 const units::Unit &,
+                                                 element_array<double> &&);
 
 template SCIPP_VARIABLE_EXPORT Variable
 make_structures<scipp::core::Translation, double>(const Dimensions &,
-                                         const units::Unit &,
-                                         element_array<double> &&);
+                                                  const units::Unit &,
+                                                  element_array<double> &&);
 
 /// Construct a variable containing vectors from a variable of elements.
 Variable make_vectors(const Dimensions &dims, const units::Unit &unit,
@@ -55,24 +55,25 @@ Variable make_matrices(const Dimensions &dims, const units::Unit &unit,
                                                   std::move(values));
 }
 
-/// Construct a variable containing affine transforms from a variable of elements.
+/// Construct a variable containing affine transforms from a variable of
+/// elements.
 Variable make_affine_transforms(const Dimensions &dims, const units::Unit &unit,
-                      element_array<double> &&values) {
+                                element_array<double> &&values) {
   return make_structures<Eigen::Affine3d, double>(dims, unit,
                                                   std::move(values));
 }
 
 /// Construct a variable containing rotations from a variable of elements.
 Variable make_rotations(const Dimensions &dims, const units::Unit &unit,
-                       element_array<double> &&values) {
+                        element_array<double> &&values) {
   return make_structures<scipp::core::Quaternion, double>(dims, unit,
-                                                  std::move(values));
+                                                          std::move(values));
 }
 
 /// Construct a variable containing translations from a variable of elements.
 Variable make_translations(const Dimensions &dims, const units::Unit &unit,
-                       element_array<double> &&values) {
+                           element_array<double> &&values) {
   return make_structures<scipp::core::Translation, double>(dims, unit,
-                                                  std::move(values));
+                                                           std::move(values));
 }
 } // namespace scipp::variable

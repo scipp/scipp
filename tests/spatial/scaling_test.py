@@ -15,5 +15,4 @@ def test_from_scaling_vectors():
 
     assert sc.allclose(
         transforms * vectors,
-        sc.vectors(dims=["x"], values=[[1, 0, -6], [12, 10, 6]], unit=sc.units.m)
-    )
+        sc.vectors(dims=["x"], values=[[1, 0, -6], [12, 10, 6]], unit=sc.units.m))

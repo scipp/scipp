@@ -23,15 +23,15 @@ make_matrices(const Dimensions &dims, const units::Unit &unit,
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 make_affine_transforms(const Dimensions &dims, const units::Unit &unit,
-             element_array<double> &&values);
+                       element_array<double> &&values);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 make_rotations(const Dimensions &dims, const units::Unit &unit,
-              element_array<double> &&values);
+               element_array<double> &&values);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 make_translations(const Dimensions &dims, const units::Unit &unit,
-              element_array<double> &&values);
+                  element_array<double> &&values);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT std::vector<std::string>
 element_keys(const Variable &var);
