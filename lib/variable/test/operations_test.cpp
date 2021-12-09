@@ -830,6 +830,70 @@ TEST(VariableTest, rotate) {
   EXPECT_EQ(vec_new, rotated);
 }
 
+TEST(VariableTest, combine_translations) {
+  Eigen::Vector3d translation1(1, 2, 3);
+  Eigen::Vector3d translation2(4, 5, 6);
+
+  auto trans1 = makeVariable<scipp::core::Translation>(
+      Dims{Dim::X}, Shape{1}, units::m,
+      Values{scipp::core::Translation(translation1)});
+  auto trans2 = makeVariable<scipp::core::Translation>(
+      Dims{Dim::X}, Shape{1}, units::m,
+      Values{scipp::core::Translation(translation2)});
+
+  Eigen::Vector3d expected(5, 7, 9);
+  auto expected_var = makeVariable<scipp::core::Translation>(
+      Dims{Dim::X}, Shape{1}, units::m,
+      Values{scipp::core::Translation(expected)});
+
+  EXPECT_EQ(trans1 * trans2, expected_var);
+}
+
+TEST(VariableTest, combine_translation_and_rotation) {
+  const Eigen::Vector3d translation(1, 2, 3);
+  Eigen::Quaterniond rotation;
+  rotation = Eigen::AngleAxisd(pi<double>, Eigen::Vector3d::UnitX());
+
+  const Variable translation_var = makeVariable<scipp::core::Translation>(
+      Dims{Dim::X}, Shape{1}, units::m,
+      Values{scipp::core::Translation(translation)});
+  const Variable rotation_var = makeVariable<scipp::core::Quaternion>(
+      Dims{Dim::X}, Shape{1}, units::one,
+      Values{scipp::core::Quaternion(rotation)});
+
+  // Translation and rotation -> affine
+  const Eigen::Affine3d expected(Eigen::Translation<double, 3>(translation) *
+                                 rotation);
+  const Variable expected_var = makeVariable<Eigen::Affine3d>(
+      Dims{Dim::X}, Shape{1}, units::m, Values{expected});
+
+  EXPECT_EQ(translation_var * rotation_var, expected_var);
+}
+
+TEST(VariableTest, combine_rotations) {
+  Eigen::Quaterniond rotation1;
+  rotation1 = Eigen::AngleAxisd(pi<double> / 2.0, Eigen::Vector3d::UnitX());
+
+  Eigen::Quaterniond rotation2;
+  rotation2 = Eigen::AngleAxisd(pi<double> / 2.0, Eigen::Vector3d::UnitX());
+
+  const Variable rotation1_var = makeVariable<scipp::core::Quaternion>(
+      Dims{Dim::X}, Shape{1}, units::one,
+      Values{scipp::core::Quaternion(rotation1)});
+
+  const Variable rotation2_var = makeVariable<scipp::core::Quaternion>(
+      Dims{Dim::X}, Shape{1}, units::one,
+      Values{scipp::core::Quaternion(rotation2)});
+
+  // Rotation and rotation -> rotation
+  const Eigen::Quaterniond expected(rotation1 * rotation2);
+  const Variable expected_var = makeVariable<scipp::core::Quaternion>(
+      Dims{Dim::X}, Shape{1}, units::one,
+      Values{scipp::core::Quaternion(expected)});
+
+  EXPECT_EQ(rotation1_var * rotation2_var, expected_var);
+}
+
 class ApplyTransformTest : public ::testing::Test {
 public:
   Variable makeTransformVar(const units::Unit unit) {

@@ -25,6 +25,7 @@ add_executable(
   multi_index_test.cpp
   slice_test.cpp
   sizes_test.cpp
+  spatial_transforms_test.cpp
   string_test.cpp
   subbin_sizes_test.cpp
   time_point_test.cpp
@@ -48,6 +49,4 @@ set_property(
   TARGET ${TARGET_NAME} PROPERTY EXCLUDE_FROM_ALL $<NOT:$<BOOL:${FULL_BUILD}>>
 )
 add_sanitizers(${TARGET_NAME})
-if(${WITH_CTEST})
-  gtest_discover_tests(${TARGET_NAME} TEST_PREFIX scipp/core/)
-endif()
+scipp_test(${TARGET_NAME} core)

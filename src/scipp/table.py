@@ -10,8 +10,8 @@ from html import escape
 from . import config
 from . import utils as su
 from ._scipp import core as sc
-from ._styling import inject_style
 from .typing import is_scalar, VariableLike
+from .html.resources import load_style
 
 
 def _make_table_sections(dict_of_variables):
@@ -176,7 +176,6 @@ def table(scipp_obj: VariableLike):
     The entries will be grouped by dimensions/coordinates.
     """
 
-    inject_style()
     from IPython.display import display
     tv = TableViewer(scipp_obj)
     display(tv.box)
@@ -261,7 +260,10 @@ class TableViewer:
                                              "").replace("scipp._scipp.core.",
                                                          "").replace("'>", "")
 
-        self.box = [self.widgets.HTML(value=f"<span class='sc-title'>{title}</span>")]
+        self.box = [
+            self.widgets.HTML(value=load_style()),
+            self.widgets.HTML(value=f"<span class='sc-title'>{title}</span>")
+        ]
         self.tables = {}
         self.sliders = {}
         self.readouts = {}
@@ -307,6 +309,7 @@ class TableViewer:
                                                                 width="auto",
                                                                 display='flex',
                                                                 flex_flow='column'))
+        self.box.add_class('sc-root')
         return
 
     def make_dict(self):

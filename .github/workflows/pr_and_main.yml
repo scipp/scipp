@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_number || github.ref }}
+  cancel-in-progress: true  # cancel jobs from previous push
+
+jobs:
+  formatting:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - run: sudo apt-get install --yes clang-format-10
+      - run: find lib -type f -regex '.*\.\(cpp\|h\|tcc\)' -exec clang-format-10 -i {} +
+      - run: pip install cmake_format==0.6.9 flake8 yapf==0.30.0
+      - run: find . -type f -name CMakeLists.txt -or -name '*.cmake' -not -path "./lib/.tbb/*" | xargs cmake-format -i
+      - run: yapf --recursive --in-place .
+      - run: flake8 .
+      - run: |
+          find . -type f -not -path '.git/*' -exec sed -ri "s/[0-9]{4} (Scipp contributors)/$(date +%Y) \1/g" {} +
+          git diff --exit-code
+      - uses: stefanzweifel/git-auto-commit-action@v4
+
+  build_and_test:
+    needs: formatting
+    name: build and test ${{ matrix.os }}, py${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}  # required for conda env
+    env:
+      PYTHONPATH: ${{ github.workspace }}/install
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        python-version: ["3.7"]
+        include:
+        - os: ubuntu-latest
+          cmake-preset: ci-linux
+        - os: macos-latest
+          cmake-preset: ci-macos
+        - os: windows-latest
+          cmake-preset: ci-windows
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0  # history required so cmake can determine version
+
+      - name: ccache
+        if: ${{ !contains(matrix.os, 'windows') }}
+        uses: hendrikmuhs/ccache-action@9abc88f1e5416ef236a67b736bb781d6b134a6ea
+        with:
+          key: ${{ matrix.os }}
+
+      - name: Setup Mambaforge and dev env
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniforge-version: latest
+          miniforge-variant: Mambaforge
+          python-version: ${{ matrix.python-version }}
+          environment-file: ${{ matrix.os == 'ubuntu-latest' && 'scipp-developer.yml' || 'scipp-developer-minimal.yml' }}
+          activate-environment: scipp-developer
+          auto-activate-base: false
+
+      - run: cmake --preset ${{ matrix.cmake-preset }}
+      - run: cmake --build --preset build
+      - run: ctest --preset test
+      - run: python -m pytest -v tests
+
+      - run: cmake --build --preset docs
+        if: ${{ contains(matrix.os, 'ubuntu') }}
+
+      - uses: actions/upload-artifact@v2
+        if: ${{ contains(matrix.os, 'ubuntu') }}
+        with:
+          name: DocumentationHTML
+          path: build/html/

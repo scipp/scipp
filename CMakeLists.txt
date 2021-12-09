@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.21)
 execute_process(
   COMMAND git describe --tags --abbrev=0
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
@@ -37,22 +37,38 @@ include(docs)
 add_docs_target(docs BUILDER html DEPENDS install-scipp)
 add_docs_target(doctest BUILDER doctest DEPENDS docs)
 add_docs_target(linkcheck BUILDER linkcheck DEPENDS docs)
+add_custom_target(
+  cleanup_docs_html
+  COMMENT "Remove unnecessary .ipynb files from built HTML documentation."
+  COMMAND find "${CMAKE_BINARY_DIR}/html" -type f -name "*.ipynb" -not -path
+          "${CMAKE_BINARY_DIR}/html/_sources/*" -delete
+  VERBATIM
+)
+add_dependencies(cleanup_docs_html docs)
 
 include(GNUInstallDirs)
-set(SITE_PACKAGES_DIR
-    ""
-    CACHE STRING
-          "Python site-packages directory to use for installing Python module."
-)
-if("${SITE_PACKAGES_DIR}" STREQUAL "")
+if(DEFINED ENV{SP_DIR}) # Defined by conda-build
+  file(TO_CMAKE_PATH $ENV{SP_DIR}/scipp PYTHONDIR)
+  file(TO_CMAKE_PATH $ENV{SP_DIR} ARCHIVEDIR)
+else()
   set(PYTHONDIR scipp)
   set(ARCHIVEDIR .)
-else()
-  file(TO_CMAKE_PATH ${SITE_PACKAGES_DIR}/scipp PYTHONDIR)
-  file(TO_CMAKE_PATH ${SITE_PACKAGES_DIR} ARCHIVEDIR)
 endif()
 set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
 
-add_subdirectory(lib)
+if(SKBUILD)
+  set(PYTHONDIR .)
+  # scikit-build will not include files outside the directory of the Python
+  # module, ensure our shared objects are installed there.
+  set(RELATIVE_LIB ".")
+  # Note that we do not install src/scipp when making a `pip` package. It will
+  # simply use the source directory directly. C++ libraries get installed into
+  # the source dir.
+else()
+  install(DIRECTORY "src/scipp/" DESTINATION ${PYTHONDIR})
+  set(RELATIVE_LIB "..")
+endif()
 
-install(DIRECTORY "src/scipp/" DESTINATION ${PYTHONDIR})
+enable_testing()
+
+add_subdirectory(lib)

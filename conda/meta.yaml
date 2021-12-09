@@ -15,6 +15,23 @@ requirements:
     - ninja
     - python {{ python }}
     - tbb-devel
+    # doc build requirements
+    - appdirs
+    - graphlib-backport # for python < 3.9
+    - h5py
+    - ipykernel=6.3.1  # issue with pythreejs 3d plotting, see https://github.com/ipython/ipykernel/issues/771
+    - ipympl
+    - ipywidgets
+    - matplotlib-base
+    - nbsphinx
+    - python-configuration
+    - python-graphviz
+    - pythreejs
+    - pyyaml
+    - scipy>=1.7.0
+    - sphinx
+    - sphinx-book-theme
+    - sphinx-copybutton
   run:
     - appdirs
     - numpy>=1.20.0
@@ -32,7 +49,7 @@ test:
     - conan
     - gxx_linux-64 11.1.* [linux64]
     - h5py
-    - ipykernel = 6.3.1  # issue with pythreejs 3d plotting, see https://github.com/ipython/ipykernel/issues/771
+    - ipykernel=6.3.1  # issue with pythreejs 3d plotting, see https://github.com/ipython/ipykernel/issues/771
     - ipympl
     - ipywidgets
     - matplotlib-base
@@ -43,32 +60,27 @@ test:
     - pandas
     - scipy>=1.7.0
     - tbb-devel
-    - pandoc
-    - sphinx
-    - sphinx-book-theme
-    - sphinx-copybutton
-    - nbsphinx
   files:
     - cmake-package-test/
   source_files:
     - tests/
-    - docs/
-    - .git/  # Docs build uses git to determine version and release month
-  script_env:
-    - DOCS_BUILD_DIR
   commands:
     - python -m pytest -v tests
     - python cmake-package-test/build.py
-    - python docs/build_and_test.py [linux64]
 
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
   script_env:
-    - OSX_VERSION [osx]
-    - CMAKE_INTERPROCEDURAL_OPTIMIZATION=ON
+   - DOCS_HTML_DIR # [linux]
   script:
-    - python tools/build_cpp.py
+    - cmake --preset package-linux [linux]
+    - cmake --preset package-macos [osx]
+    - cmake --preset package-windows [win]
+    - cmake --build --preset build
+    - cmake --build --preset docs [linux]
+    - cp -r build/html $DOCS_HTML_DIR [linux]
+    - ctest --preset test
 
 
 about:

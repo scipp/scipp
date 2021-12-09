@@ -30,8 +30,8 @@ constexpr auto iadd = [](const auto &x1, const scipp::index i1, const auto &x2,
 
 namespace histogram_detail {
 template <class Out, class Coord, class Weight, class Edge>
-using args = std::tuple<std::span<Out>, std::span<const Coord>,
-                        std::span<const Weight>, std::span<const Edge>>;
+using args = std::tuple<scipp::span<Out>, scipp::span<const Coord>,
+                        scipp::span<const Weight>, scipp::span<const Edge>>;
 }
 
 static constexpr auto histogram = overloaded{

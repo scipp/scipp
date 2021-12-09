@@ -11,8 +11,6 @@ from ..core import Variable
 
 def make_html(container: VariableLike) -> str:
     from .formatting_html import dataset_repr, variable_repr
-    from .._styling import inject_style
-    inject_style()
     if isinstance(container, Variable):
         return variable_repr(container)
     else:

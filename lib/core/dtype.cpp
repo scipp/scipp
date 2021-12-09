@@ -22,9 +22,9 @@ bool is_total_orderable(DType tp) {
 
 namespace {
 template <class... Ts> bool is_span_impl(DType tp) {
-  return (
-      ((tp == dtype<std::span<Ts>>) || (tp == dtype<std::span<const Ts>>)) ||
-      ...);
+  return (((tp == dtype<scipp::span<Ts>>) ||
+           (tp == dtype<scipp::span<const Ts>>)) ||
+          ...);
 }
 } // namespace
 

@@ -109,52 +109,6 @@ std::string to_string(const std::chrono::duration<Rep, Period> &duration) {
   }
   return oss.str();
 }
-
-std::string to_string(const std::chrono::days &duration) {
-  using Clock = std::chrono::system_clock;
-  std::ostringstream oss;
-  put_time(oss, Clock::to_time_t(Clock::time_point{duration}), false);
-  return oss.str();
-}
-
-constexpr std::chrono::year_month_day epoch{
-    std::chrono::year{1970}, std::chrono::month{1}, std::chrono::day{1}};
-
-auto normalize(const int64_t years_since_epoch,
-               const int64_t months_since_epoch) {
-  const int64_t absolute_year =
-      years_since_epoch + static_cast<int>(epoch.year());
-  const int64_t absolute_month =
-      months_since_epoch + static_cast<unsigned int>(epoch.month());
-  if (absolute_month > 0)
-    return std::pair{absolute_year, absolute_month};
-  else
-    return std::pair{absolute_year - 1, absolute_month + 12};
-}
-
-/*
- * Custom implementations for months and years because we cannot construct
- * a std::chrono::time_point with an exact number of months and years since
- * epoch because std::chrono::duration uses average months / years.
- */
-std::string to_string(const std::chrono::months &duration) {
-  const auto years_since_epoch = static_cast<int64_t>(duration.count()) / 12;
-  const auto months_since_epoch =
-      static_cast<int64_t>(duration.count()) - years_since_epoch * 12;
-  const auto [year, month] = normalize(years_since_epoch, months_since_epoch);
-  std::ostringstream oss;
-  oss << std::setw(4) << std::setfill('0') << year << '-' << std::setw(2)
-      << std::setfill('0') << month;
-  return oss.str();
-}
-
-std::string to_string(const std::chrono::years &duration) {
-  const auto years_since_epoch = duration.count();
-  const auto year = years_since_epoch + static_cast<int>(epoch.year());
-  std::ostringstream oss;
-  oss << std::setw(4) << std::setfill('0') << year;
-  return oss.str();
-}
 } // namespace
 
 std::string to_iso_date(const scipp::core::time_point &item,
@@ -171,12 +125,10 @@ std::string to_iso_date(const scipp::core::time_point &item,
     return to_string(std::chrono::minutes{item.time_since_epoch()});
   } else if (unit == units::Unit(llnl::units::precise::hr)) {
     return to_string(std::chrono::hours{item.time_since_epoch()});
-  } else if (unit == units::Unit(llnl::units::precise::day)) {
-    return to_string(std::chrono::days{item.time_since_epoch()});
-  } else if (unit == units::Unit("month")) {
-    return to_string(std::chrono::months{item.time_since_epoch()});
-  } else if (unit == units::Unit("year")) {
-    return to_string(std::chrono::years{item.time_since_epoch()});
+  } else if (unit == units::Unit(llnl::units::precise::day) ||
+             unit == units::Unit("month") || unit == units::Unit("year")) {
+    throw except::UnitError("Printing of time points with units greater than "
+                            "hours is not yet implemented.");
   }
   throw except::UnitError("Cannot display time point, unsupported unit: " +
                           to_string(unit));

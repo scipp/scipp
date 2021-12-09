@@ -220,7 +220,7 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
       out_coords[coord.dims().inner()] = copy(coord);
     }
   for (const auto &[dim_, coord] : coords)
-    if (!rebinned(coord) && !out_coords.contains(dim_))
+    if (!rebinned(coord) && !out_coords.count(dim_))
       out_coords[dim_] = copy(coord);
   auto out_masks = extract_unbinned(buffer, get_masks);
   for (const auto &[name, mask] : masks)
@@ -228,7 +228,7 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
       out_masks[name] = copy(mask);
   auto out_attrs = extract_unbinned(buffer, get_attrs);
   for (const auto &[dim_, coord] : attrs)
-    if (!rebinned(coord) && !out_coords.contains(dim_))
+    if (!rebinned(coord) && !out_coords.count(dim_))
       out_attrs[dim_] = copy(coord);
   return DataArray{
       make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer)),

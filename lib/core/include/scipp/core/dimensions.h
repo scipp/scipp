@@ -22,7 +22,8 @@ public:
   constexpr Dimensions() noexcept = default;
   Dimensions(const Dim dim, const scipp::index size)
       : Dimensions({{dim, size}}) {}
-  Dimensions(std::span<const Dim> labels, std::span<const scipp::index> shape);
+  Dimensions(scipp::span<const Dim> labels,
+             scipp::span<const scipp::index> shape);
   Dimensions(const std::initializer_list<Dim> labels,
              const std::initializer_list<scipp::index> shape)
       : Dimensions({labels.begin(), labels.end()},
@@ -48,7 +49,7 @@ public:
   }
 
   /// Return the shape of the space defined by *this.
-  [[nodiscard]] constexpr std::span<const scipp::index>
+  [[nodiscard]] constexpr scipp::span<const scipp::index>
   shape() const &noexcept {
     return sizes();
   }
@@ -95,7 +96,7 @@ Dimensions merge(const Dimensions &a, const Dimensions &b,
                                                         const Dimensions &b);
 
 [[nodiscard]] SCIPP_CORE_EXPORT Dimensions
-transpose(const Dimensions &dims, std::span<const Dim> labels = {});
+transpose(const Dimensions &dims, scipp::span<const Dim> labels = {});
 
 [[nodiscard]] SCIPP_CORE_EXPORT Dimensions fold(const Dimensions &old_dims,
                                                 const Dim from_dim,

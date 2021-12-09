@@ -56,8 +56,8 @@ TYPED_TEST(ElementEventMapTest, variances_constant_bin_width) {
   std::vector<TypeParam> edges{0, 2, 4};
   std::vector<float> values{2, 4};
   std::vector<float> variances{3, 5};
-  ValueAndVariance weights{std::span<const float>(values),
-                           std::span<const float>(variances)};
+  ValueAndVariance weights{scipp::span<const float>(values),
+                           scipp::span<const float>(variances)};
   EXPECT_EQ(map_linspace(TypeParam{0}, edges, weights),
             ValueAndVariance<float>(2, 3));
   EXPECT_EQ(map_linspace(TypeParam{1}, edges, weights),
@@ -76,8 +76,8 @@ TYPED_TEST(ElementEventMapTest, variances_variable_bin_width) {
   std::vector<TypeParam> edges{1, 2, 4};
   std::vector<float> values{2, 4};
   std::vector<float> variances{3, 5};
-  ValueAndVariance weights{std::span<const float>(values),
-                           std::span<const float>(variances)};
+  ValueAndVariance weights{scipp::span<const float>(values),
+                           scipp::span<const float>(variances)};
   EXPECT_EQ(map_sorted_edges(TypeParam{0}, edges, weights),
             ValueAndVariance<float>(0, 0));
   EXPECT_EQ(map_sorted_edges(TypeParam{1}, edges, weights),

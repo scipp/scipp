@@ -3,7 +3,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
 if(NOT DEFINED CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_CXX_STANDARD 17)
 endif(NOT DEFINED CMAKE_CXX_STANDARD)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -45,12 +45,25 @@ conan_cmake_install(
   BUILD outdated
 )
 
+# Currently, scikit-build does not support FindPython.
+if(SKBUILD)
+  set(Python_EXECUTABLE "${PYTHON_EXECUTABLE}")
+  set(Python_INCLUDE_DIR "${PYTHON_INCLUDE_DIR}")
+  unset(PYTHON_EXECUTABLE)
+  unset(PYTHON_INCLUDE_DIR)
+  unset(PYTHON_LIBRARY)
+  unset(PYTHON_VERSION_STRING)
+endif()
+set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
+
 find_package(Benchmark)
 find_package(Boost 1.67 REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Sanitizers REQUIRED)
 find_package(GTest CONFIG REQUIRED)
-find_package(Python 3.7 REQUIRED COMPONENTS Interpreter Development)
+# libpython is not available on `manylinux` images, use `Development.Module`
+# instead of `Development`
+find_package(Python 3.7 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(LLNL-Units REQUIRED)
 
@@ -91,7 +104,15 @@ include(GenerateExportHeader)
 
 option(DISABLE_MULTI_THREADING "Disable multi threading" OFF)
 if(NOT DISABLE_MULTI_THREADING)
-  find_package(TBB CONFIG)
+  if(SKBUILD)
+    include(patch-pip-tbb-devel)
+    find_package(TBB CONFIG REQUIRED)
+    install(IMPORTED_RUNTIME_ARTIFACTS TBB::tbb RUNTIME DESTINATION
+            ${PYTHONDIR}
+    )
+  else()
+    find_package(TBB CONFIG)
+  endif()
 endif()
 if(TBB_FOUND)
   option(ENABLE_THREAD_LIMIT
@@ -119,7 +140,11 @@ else()
   )
 endif()
 
-option(WITH_CTEST "Enable ctest integration of tests" ON)
+option(
+  CTEST_DISCOVER_TESTS
+  "Enable discoverage of *individual* tests by ctest. Test execution is slower, but ctest integration better. If OFF (default) each submodule test runner is registered as a *single* test."
+  OFF
+)
 option(DYNAMIC_LIB "Build shared libraries" ON)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
@@ -198,8 +223,6 @@ add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-permissive->)
 # defaulting to OFF for now.
 option(PRECOMPILED_HEADERS "Set whether to build with precompiled headers" OFF)
 
-enable_testing()
-
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
 
@@ -271,13 +294,12 @@ if(DYNAMIC_LIB)
 endif(DYNAMIC_LIB)
 
 include(scipp-install)
+include(scipp-test)
 
 option(FULL_BUILD
        "Enable full build where the 'all' target includes tests and benchmarks."
        OFF
 )
-
-enable_testing()
 
 add_subdirectory(common)
 if(FULL_BUILD)
