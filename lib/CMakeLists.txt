@@ -113,8 +113,6 @@ if(THREADING)
   else()
     find_package(TBB CONFIG REQUIRED)
   endif()
-endif()
-if(TBB_FOUND)
   configure_file(
     core/include/scipp/core/parallel-tbb.h core/include/scipp/core/parallel.h
     COPYONLY
