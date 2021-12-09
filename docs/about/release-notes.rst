@@ -9,8 +9,14 @@ v0.11.0 (unreleased)
 Features
 ~~~~~~~~
 
+* Add new datatypes for representing spatial transformations: ``Affine``, ``Rotation``, and ``Translation``. Each of these can be combined and applied to the existing vector datatype.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
+
+* ``sc.spatial.transform.as_rotvec`` has been moved to ``sc.spatial.transform.rotation.as_rotvec``
+* ``sc.spatial.transform.from_rotvec`` has been moved to ``sc.spatial.transform.rotation.from_rotvecs``, and now returns a rotation data type rather than a matrix.
+  For consistency with other transformation creation functions, ``from_rotvecs`` now takes ``values``, ``dims`` and ``unit`` separately.
 
 Bugfixes
 ~~~~~~~~
