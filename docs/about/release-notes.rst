@@ -87,7 +87,7 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
-* Fix bugs in ``rebin`` if data and/or edges had strides other than 1 along rebinned dimension, typically only occuring with multi-dimensional (ragged) coordinates `#2211 <https://github.com/scipp/scipp/pull/2211>`_.
+* Fix bugs in ``rebin`` if data and/or edges had strides other than 1 along rebinned dimension, typically only occurring with multi-dimensional (ragged) coordinates `#2211 <https://github.com/scipp/scipp/pull/2211>`_.
 * Fix exception that was thrown when importing empty datasets from HDF5 files using ``open_hdf5`` `#2216 <https://github.com/scipp/scipp/pull/2216>`_.
 * Fix exception in ``astype`` when called with binned data that does not require conversion `#2222 <https://github.com/scipp/scipp/pull/2222>`_.
 * Fix bug in ``concatenate`` that could lead to masks being shared with input rather than being copied `#2232 <https://github.com/scipp/scipp/pull/2232>`_.
@@ -139,7 +139,7 @@ Features
 * Add ``transform_coords`` for (multi-step) transformations based on existing coords, with support of event coords `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
 * Add ``from_pandas`` and ``from_xarray`` for conversion of pandas dataframes, xarray data arrays and dataset to scipp objects `#2054 <https://github.com/scipp/scipp/pull/2054>`_.
 * Added ``full`` and ``full_like`` variable creation functions `#2069 <https://github.com/scipp/scipp/pull/2069>`_.
-* ``islinspace`` can now take multi-dimensional variables aslong as you pass the dimension to be checked `#2094 <https://github.com/scipp/scipp/pull/2094>`_.
+* ``islinspace`` can now take multi-dimensional variables as long as you pass the dimension to be checked `#2094 <https://github.com/scipp/scipp/pull/2094>`_.
 * Added a power function and support for the ``**`` operator `#2083 <https://github.com/scipp/scipp/pull/2083>`_.
 * Binned data now has a ``mean`` method as well as ``sum``, which returns the mean of each element within a bin.
 * Add ``scipp.constants`` module for physical constants `#2101 <https://github.com/scipp/scipp/pull/2101>`_.
