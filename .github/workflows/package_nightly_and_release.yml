@@ -1,4 +1,4 @@
-name: Package build (nightly and release)
+name: Package build
 
 on:
   create:
