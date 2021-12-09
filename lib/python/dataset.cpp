@@ -94,6 +94,10 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
         return shape;
       },
       R"(List of shapes.)", py::return_value_policy::move);
+  c.def_property_readonly(
+      "dim", [](const T &self) { return self.dim().name(); },
+      "The only dimension label for 1-dimensional data, raising an exception "
+      "if the data is not 1-dimensional.");
 }
 
 template <class T, class... Ignored>

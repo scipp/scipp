@@ -186,6 +186,12 @@ template <class T> struct slicer {
 
 template <class T, class... Ignored>
 void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
+  c.def("__getitem__", [](T &self, const scipp::index &index) {
+    return getitem(self, {self.dim(), index});
+  });
+  c.def("__getitem__", [](T &self, const py::slice &index) {
+    return getitem(self, {self.dim(), index});
+  });
   c.def("__getitem__", [](T &self, const std::tuple<Dim, scipp::index> &index) {
     return getitem(self, index);
   });
@@ -195,6 +201,16 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   c.def("__getitem__", [](T &self, const py::ellipsis &index) {
     return getitem(self, index);
   });
+  c.def("__setitem__",
+        [](T &self, const scipp::index &index, const py::object &data) {
+          slicer<T>::template set<std::tuple<Dim, scipp::index>>(
+              self, {self.dim(), index}, data);
+        });
+  c.def("__setitem__",
+        [](T &self, const py::slice &index, const py::object &data) {
+          slicer<T>::template set<std::tuple<Dim, py::slice>>(
+              self, {self.dim(), index}, data);
+        });
   c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, scipp::index>>);
   c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, py::slice>>);
   c.def("__setitem__", &slicer<T>::template set<py::ellipsis>);
