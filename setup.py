@@ -19,9 +19,30 @@ def get_cmake_args():
     return []
 
 
+long_description = """# Multi-dimensional data arrays with labeled dimensions
+
+*A Python library enabling a modern and intuitive way of working with scientific data in Jupyter notebooks*
+
+**scipp** is heavily inspired by [xarray](https://xarray.pydata.org>).
+It enriches raw NumPy-like multi-dimensional arrays of data by adding named dimensions and associated coordinates.
+Multiple arrays can be combined into datasets.
+While for many applications xarray is certainly more suitable (and definitely much more matured) than scipp, there is a number of features missing in other situations.
+If your use case requires one or several of the items on the following list, using scipp may be worth considering:
+
+- **Physical units** are stored with each data or coord array and are handled in arithmetic operations.
+- **Propagation of uncertainties**.
+- Support for **histograms**, i.e., **bin-edge axes**, which are by 1 longer than the data extent.
+- Support for scattered data and **non-destructive binning**.
+  This includes first and foremost **event data**, a particular form of sparse data with arrays of random-length lists, with very small list entries.
+- Support for **masks stored with data**.
+- Internals written in C++ for better performance (for certain applications), in combination with Python bindings.
+"""  # noqa #501
+
 setup(name='scipp',
       version=get_version(),
       description='Multi-dimensional data arrays with labeled dimensions',
+      long_description=long_description,
+      long_description_content_type='text/markdown',
       author='Scipp contributors (https://github.com/scipp)',
       url='https://scipp.github.io',
       license='BSD-3-Clause',
