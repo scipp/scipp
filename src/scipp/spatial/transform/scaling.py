@@ -21,4 +21,4 @@ def from_vectors(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
     :param values: a list or numpy array of 3-vectors, each corresponding to scaling
         coefficients in the x, y and z directions respectively.
     """
-    return matrices(dims=dims, values=_np.diag(values))
+    return matrices(dims=dims, values=[_np.diag(v) for v in values])
