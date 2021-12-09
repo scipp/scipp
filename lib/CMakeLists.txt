@@ -74,6 +74,7 @@ find_program(CCACHE ccache)
 if(CCACHE)
   set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
 endif()
+message(FATAL_ERROR "cache found: ${CCACHE}")
 
 if(MSVC)
   set(CLCACHE_PATH
