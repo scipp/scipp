@@ -1,9 +1,8 @@
 name: Package build
 
 on:
-  create:
-    tags:
-      - "*.*.*"
+  release:
+    types: [published]
   schedule:
     - cron: "0 0 * * *"
 
