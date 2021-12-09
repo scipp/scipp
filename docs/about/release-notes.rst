@@ -12,6 +12,8 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* Changed behavior of dimension renaming in ``transform_coords``, new behavior documented in `Coordinate transformations <../user-guide/coordinate-transformations.rst>`_ `#2319 <https://github.com/scipp/scipp/pull/2319>`_.
+
 Bugfixes
 ~~~~~~~~
 
