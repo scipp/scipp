@@ -2,7 +2,8 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock, Jan-Lukas Wynen
 
-from typing import Dict, Iterable, List, Mapping, Set, Union
+from itertools import takewhile
+from typing import Dict, Iterable, List, Mapping, Optional, Set, Union
 
 from ..core import DataArray, Dataset, NotFoundError, VariableError, bins
 from ..logging import get_logger
@@ -185,22 +186,52 @@ def _store_results(da: DataArray, coords: CoordTable, targets: Set[str]) -> Data
     return da
 
 
-def _find_dim_parents(node, graph, dim_coord_parents, is_split_node):
-    dim_parents = set()
-    for parent in graph.parents_of(node):
-        if is_split_node[parent]:
-            return set()
-        dim_parents.update(dim_coord_parents[parent])
-    return dim_parents if len(dim_parents) == 1 else set()
-
-
 def _has_single_element(iterable: Iterable) -> bool:
     n = 0
     for _ in iterable:
         n += 1
         if n > 1:
-            break
+            return False
     return n == 1
+
+
+def _dim_associations_of_cycle_node(node: str, dims: List[str]) -> Set[str]:
+    return {dim for dim in dims if is_in_cycle(dim, node)}
+
+
+def _dim_associations_of_parents(node: str, graph: Graph,
+                                 associated_dims: Dict[str, Set[str]],
+                                 is_split_node: Dict[str, bool]) -> Set[str]:
+    dim_parents = set()
+    for parent in graph.parents_of(node):
+        if is_split_node[parent]:
+            # If *any* parent is a split node, this node cannot
+            # be associated with any parent dim.
+            return set()
+        dim_parents.update(associated_dims[parent])
+    return dim_parents if len(dim_parents) == 1 else set()
+
+
+def _associate_nodes_with_dim_coords(graph: Graph,
+                                     dims: List[str]) -> Dict[str, Optional[str]]:
+    associated_dims: Dict[str, Set[str]] = {}
+    is_split_node: Dict[str, bool] = {}
+
+    for node in graph.nodes_topologically():
+        is_split_node[node] = not _has_single_element(graph.children_of(node))
+        if node in dims:
+            associated_dims[node] = {node}
+        else:
+            associated_dims[node] = _dim_associations_of_parents(
+                node, graph, associated_dims, is_split_node)
+            if is_cycle_node(node):
+                associated_dims[node].update(_dim_associations_of_cycle_node(
+                    node, dims))
+
+    return {
+        name: next(iter(d)) if len(d) == 1 else None
+        for name, d in associated_dims.items()
+    }
 
 
 def _dim_coords(graph: Graph, dims: List[str]) -> Iterable[str]:
@@ -214,44 +245,35 @@ def _dim_coords(graph: Graph, dims: List[str]) -> Iterable[str]:
                 break
 
 
+def _is_valid_rename_candidate(node: str, rule_graph: RuleGraph,
+                               options: Options) -> bool:
+    return (not is_cycle_node(node) and
+            (options.keep_intermediate or not isinstance(rule_graph[node], ComputeRule))
+            and (options.keep_aliases or not isinstance(rule_graph[node], RenameRule)))
+
+
+def _walk_single_children(graph, start):
+    node = start
+    children = list(graph.children_of(node))
+    while len(children) == 1:
+        node = children[0]
+        yield node
+        children = list(graph.children_of(node))
+
+
 def _dim_name_changes(rule_graph: RuleGraph, dims: List[str],
                       options: Options) -> Dict[str, str]:
     graph = rule_graph.dependency_graph.fully_contract_cycles()
-    dim_coord_parents = {}
-    is_split_node = {}
-
-    for node in graph.nodes_topologically():
-        is_split_node[node] = not _has_single_element(graph.children_of(node))
-        if node in dims:
-            dim_coord_parents[node] = {node}
-        else:
-            if is_cycle_node(node):
-                for dim in dims:
-                    if is_in_cycle(dim, node):
-                        dim_coord_parents.setdefault(node, set()).add(dim)
-            dim_coord_parents.setdefault(node, set()).update(
-                _find_dim_parents(node, graph, dim_coord_parents, is_split_node))
+    associated_dims = _associate_nodes_with_dim_coords(graph, dims)
 
     name_changes = {}
-    # for dim_coord in filter(lambda dim: dim in graph.nodes(), dims):
     for dim_coord, node in _dim_coords(graph, dims):
-        # node = dim_coord
-        candidate = node if not is_cycle_node(node) else None
-        while True:
-            children = list(graph.children_of(node))
-            if len(children) == 1:
-                child = next(iter(children))
-                if dim_coord_parents[child] != {dim_coord}:
-                    break
-                if not (is_cycle_node(child) or
-                        (not options.keep_intermediate
-                         and isinstance(rule_graph[child], ComputeRule)) or
-                        (not options.keep_aliases
-                         and isinstance(rule_graph[child], RenameRule))):
-                    candidate = child
-                node = child
-            else:
-                break
+        candidate = node if _is_valid_rename_candidate(node, rule_graph,
+                                                       options) else None
+        for child in takewhile(lambda c: associated_dims[c] == dim_coord,
+                               _walk_single_children(graph, node)):
+            if _is_valid_rename_candidate(child, rule_graph, options):
+                candidate = child
         if candidate is not None and candidate != dim_coord:
             name_changes[dim_coord] = candidate
 
