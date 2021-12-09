@@ -68,9 +68,6 @@ target_compile_definitions(
   ${TARGET_NAME} PRIVATE SCIPP_EXPORT=SCIPP_DATASET_EXPORT
 )
 target_link_libraries(${TARGET_NAME} PUBLIC scipp-variable)
-if(TBB_FOUND AND NOT DISABLE_MULTI_THREADING)
-  target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
-endif()
 
 target_include_directories(
   ${TARGET_NAME}
