@@ -250,8 +250,6 @@ const Sizes &Dataset::sizes() const { return m_coords.sizes(); }
 const Sizes &Dataset::dims() const { return sizes(); }
 Dim Dataset::dim() const {
   core::expect::ndim_is(sizes(), 1);
-  for (const auto &item : m_data)
-    core::expect::ndim_is(item.second.dims(), 1);
   return begin()->dim();
 }
 

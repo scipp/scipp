@@ -100,7 +100,7 @@ TEST(DatasetTest, dim) {
   d.setData("a", makeVariable<double>());
   ASSERT_THROW(d.dim(), except::DimensionError); // 0D
   d.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{2}));
-  ASSERT_THROW(d.dim(), except::DimensionError); // 0D and 1D, undefined dim
+  ASSERT_EQ(d.dim(), Dim::X); // 0D and 1D, dim is unique
   d.erase("a");
   ASSERT_EQ(d.dim(), Dim::X);
   d.setData("a", makeVariable<double>(Dims{Dim::Y}, Shape{2}));
