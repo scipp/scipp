@@ -12,7 +12,14 @@ See https://scipp.github.io/ for project context and how to use and install the 
 See [here](https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion) for a list of frequently asked questions on how to use scipp.
 This is also the place to ask new questions that have not been answered yet, by [opening](https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=) a new **Question** issue.
 
+## Development
+
 If you are interested in developing Scipp, please see the [developer getting started guide](https://scipp.github.io/reference/developer/getting-started.html).
+
+### Links
+
+- [Performance benchmarks](https://scipp.github.io/scipp-benchmarks/)
+- [Code coverage](https://scipp.github.io/scipp-coverage/)
 
 ## Contributing Organizations
 
@@ -21,4 +28,4 @@ The following organizations have made major contributions to the development of 
 * [European Spallation Source ERIC](https://europeanspallationsource.se/), Sweden
 * [Science and Technology Funding Council](https://stfc.ukri.org/councils/stfc), UK
 
-See individual [release notes](https://scipp.github.io/about/release-notes.html) for the individual contributors to each release 
+See individual [release notes](https://scipp.github.io/about/release-notes.html) for the individual contributors to each release.
