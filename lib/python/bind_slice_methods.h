@@ -186,6 +186,9 @@ template <class T> struct slicer {
 
 template <class T, class... Ignored>
 void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
+  // Slice with implicit dim possible only if the is exactly one dimension. We
+  // do *not* use the numpy/xarray mechanism which slices the outer dimension in
+  // the case, since we consider it dangerous, leading to hard to find bugs.
   c.def("__getitem__", [](T &self, const scipp::index &index) {
     return getitem(self, {self.dim(), index});
   });
@@ -214,6 +217,12 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, scipp::index>>);
   c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, py::slice>>);
   c.def("__setitem__", &slicer<T>::template set<py::ellipsis>);
+  // Note that label-based indexing with an implicit unique dim is not supported
+  // for now. Labels can also be taken from any other coord, so if the coord
+  // label is omitted we would have to "default" to using the dimension coord.
+  // This may be too confusing, so we do not implement this for now. Note that
+  // the objection to this is not absolute (unlike in the case of slicing outer
+  // dimension above).
   if constexpr (std::is_same_v<T, DataArray>) {
     c.def("__getitem__", &slicer<T>::get_by_value);
     c.def("__setitem__", &slicer<T>::template set_by_value<Variable>);
