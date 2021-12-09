@@ -124,7 +124,7 @@ void unit(const T &object, const units::Unit &unit,
   expect::equals(object.unit(), unit, optional_message);
 }
 
-void SCIPP_CORE_EXPORT ndim_is(const Dimensions &dims, scipp::index expected);
+void SCIPP_CORE_EXPORT ndim_is(const Sizes &dims, scipp::index expected);
 
 // TODO maybe just provide a `slice` function/method and check via that?
 void SCIPP_CORE_EXPORT validSlice(const Sizes &sizes, const Slice &slice);

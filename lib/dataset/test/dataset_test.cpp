@@ -94,6 +94,22 @@ TEST(DatasetTest, extract_extents_rebuild) {
   ASSERT_TRUE(d.contains("a"));
 }
 
+TEST(DatasetTest, dim) {
+  Dataset d;
+  ASSERT_THROW(d.dim(), except::DimensionError); // empty => 0D
+  d.setData("a", makeVariable<double>());
+  ASSERT_THROW(d.dim(), except::DimensionError); // 0D
+  d.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{2}));
+  ASSERT_THROW(d.dim(), except::DimensionError); // 0D and 1D, undefined dim
+  d.erase("a");
+  ASSERT_EQ(d.dim(), Dim::X);
+  d.setData("a", makeVariable<double>(Dims{Dim::Y}, Shape{2}));
+  ASSERT_THROW(d.dim(), except::DimensionError); // X and Y, undefined dim
+  d.erase("a");
+  d.setData("b", makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2}));
+  ASSERT_THROW(d.dim(), except::DimensionError); // X and Y, undefined dim
+}
+
 TEST(DatasetTest, setCoord) {
   Dataset d;
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
