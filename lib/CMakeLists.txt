@@ -115,23 +115,9 @@ if(THREADING)
   endif()
 endif()
 if(TBB_FOUND)
-  option(ENABLE_THREAD_LIMIT
-         "Limit the number TBB threads. Limit number set via THREAD_LIMIT" OFF
-  )
-  if(ENABLE_THREAD_LIMIT)
-    include(ProcessorCount)
-    processorcount(N)
-    set(THREAD_LIMIT
-        N
-        CACHE
-          STRING
-          "Maximum number of TBB threads if limit enabled via ENABLE_THREAD_LIMIT"
-    )
-  else()
-    unset(THREAD_LIMIT)
-  endif()
   configure_file(
     core/include/scipp/core/parallel-tbb.h core/include/scipp/core/parallel.h
+    COPYONLY
   )
 else()
   configure_file(
