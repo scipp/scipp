@@ -190,6 +190,7 @@ def test_dim_rename_multi_level_merge_multi_output():
     assert da.dims == ['a', 'bc']
     da = original.transform_coords(['bc'], graph={'bc': bc, 'c': split_a})
     # a2 is not part of the graph and dropped, a is thus free to be renamed to c.
+    # bc then has two dim-coords as input so unlike above, b cannot be renamed to bc.
     assert da.dims == ['c', 'b']
 
 
