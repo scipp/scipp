@@ -2,7 +2,6 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
 
-import pytest
 import scipp.coords.graph as scgraph
 from scipp.coords.rule import ComputeRule, FetchRule, RenameRule
 import scipp as sc
@@ -270,9 +269,8 @@ def test_graph_for_graph_3():
     assert_rule(graph, 'a', FetchRule, set())
     assert_rule(graph, 'b', RenameRule, {'a'})
     assert_rule(graph, 'c', ComputeRule, {'b'})
-    # f is produced by the same rule as c but not required to make d.
-    with pytest.raises(KeyError):
-        assert graph['f']
+    # f is produced by the same rule as c and thus always produced even if not required.
+    assert_rule(graph, 'f', ComputeRule, {'b'})
     assert_rule(graph, 'd', ComputeRule, {'c', 'e'})
 
     graph = base_graph.graph_for(da, {'i', 'g'})
