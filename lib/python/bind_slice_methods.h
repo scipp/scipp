@@ -184,15 +184,33 @@ template <class T> struct slicer {
   }
 };
 
+namespace {
+void expect_implicit_dimension(const Sizes &dims) {
+  using std::to_string;
+  if (dims.size() == 0)
+    throw except::DimensionError("Slicing scalar object is not possible.");
+  if (dims.size() > 1) {
+    std::string msg("Slicing with implicit dimension label is only possible "
+                    "for 1-D objects. Got " +
+                    to_string(dims) + " with ndim=" + to_string(dims.size()) +
+                    ". Provide an explicit dimension label, e.g., var['" +
+                    to_string(*dims.begin()) + "', 0] instead of var[0].");
+    throw except::DimensionError(msg);
+  }
+}
+} // namespace
+
 template <class T, class... Ignored>
 void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   // Slice with implicit dim possible only if there is exactly one dimension. We
   // do *not* use the numpy/xarray mechanism which slices the outer dimension in
   // this case, since we consider it dangerous, leading to hard to find bugs.
   c.def("__getitem__", [](T &self, const scipp::index &index) {
+    expect_implicit_dimension(self.dims());
     return getitem(self, {self.dim(), index});
   });
   c.def("__getitem__", [](T &self, const py::slice &index) {
+    expect_implicit_dimension(self.dims());
     return getitem(self, {self.dim(), index});
   });
   c.def("__getitem__", [](T &self, const std::tuple<Dim, scipp::index> &index) {
@@ -206,11 +224,13 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   });
   c.def("__setitem__",
         [](T &self, const scipp::index &index, const py::object &data) {
+          expect_implicit_dimension(self.dims());
           slicer<T>::template set<std::tuple<Dim, scipp::index>>(
               self, {self.dim(), index}, data);
         });
   c.def("__setitem__",
         [](T &self, const py::slice &index, const py::object &data) {
+          expect_implicit_dimension(self.dims());
           slicer<T>::template set<std::tuple<Dim, py::slice>>(
               self, {self.dim(), index}, data);
         });
