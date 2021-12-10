@@ -46,10 +46,10 @@ def test_ipython_key_completion():
 
 
 xx = sc.arange(dim='xx', start=2, stop=6)
-testdata = [xx, sc.DataArray(data=xx), sc.Dataset(data={'a': xx, 'b': xx + 1})]
+ds = sc.Dataset(data={'a': xx, 'b': xx + 1})
 
 
-@pytest.mark.parametrize("obj", testdata)
+@pytest.mark.parametrize("obj", [xx.copy(), ds['a'].copy(), ds.copy()])
 def test_slice_implicit_dim(obj):
     assert sc.identical(obj[1], obj['xx', 1])
     assert sc.identical(obj[1:3], obj['xx', 1:3])
