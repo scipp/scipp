@@ -39,13 +39,13 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
 
     :param kind: Specifies the kind of interpolation as a string or as an integer
                  specifying the order of the spline interpolator to use. The string
-                 has to be one of 'linear', 'nearest’, 'nearest-up’, 'zero’, 'slinear’,
-                 'quadratic’, 'cubic’, 'previous’, or 'next’. 'zero’, 'slinear’,
-                 'quadratic’ and 'cubic’ refer to a spline interpolation of zeroth,
-                 first, second or third order; 'previous’ and 'next’ simply return the
-                 previous or next value of the point; 'nearest-up’ and 'nearest’ differ
-                 when interpolating half-integers (e.g. 0.5, 1.5) in that 'nearest-up’
-                 rounds up and 'nearest’ rounds down. Default is 'linear’.
+                 has to be one of 'linear', 'nearest', 'nearest-up', 'zero', 'slinear',
+                 'quadratic', 'cubic', 'previous', or 'next'. 'zero', 'slinear',
+                 'quadratic' and 'cubic' refer to a spline interpolation of zeroth,
+                 first, second or third order; 'previous' and 'next' simply return the
+                 previous or next value of the point; 'nearest-up' and 'nearest' differ
+                 when interpolating half-integers (e.g. 0.5, 1.5) in that 'nearest-up'
+                 rounds up and 'nearest' rounds down. Default is 'linear'.
     :param fill_value: Set to 'extrapolate' to allow for extrapolation of points
                        outside the range.
 
