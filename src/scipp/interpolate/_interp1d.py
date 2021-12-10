@@ -3,7 +3,7 @@ from .. import array, Variable, DataArray, DimensionError, VariancesError
 from typing import Callable
 
 
-def validated_masks(da, dim):
+def _validated_masks(da, dim):
     masks = {}
     for name, mask in da.masks.items():
         if dim in mask.dims:
@@ -14,9 +14,8 @@ def validated_masks(da, dim):
     return masks
 
 
-def interp1d(da: DataArray, dim, **kwargs) -> Callable:
-    """
-    Interpolate a 1-D function.
+def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
+    """Interpolate a 1-D function.
 
     A data array is used to approximate some function f: y = f(x), where y is given by
     the array values and x is is given by the coordinate for the given dimension. This
@@ -52,21 +51,21 @@ def interp1d(da: DataArray, dim, **kwargs) -> Callable:
 
     Examples:
 
-      >>> # Create discrete data approximately defining function
       >>> x = sc.geomspace(dim='x', start=0.1, stop=0.4, num=4, unit='rad')
       >>> da = sc.DataArray(sc.sin(x), coords={'x': x})
-      >>> # Create interpolation function
+
       >>> from scipp.interpolate import interp1d
       >>> f = interp1d(da, 'x')
-      >>> # Apply interpolation function
+
       >>> xnew = sc.linspace(dim='x', start=0.1, stop=0.4, num=5, unit='rad')
-      >>> f(xnew)
+      >>> f(xnew)  # use interpolation function returned by `interp1d`
       <scipp.DataArray>
       Dimensions: Sizes[x:5, ]
       Coordinates:
         x                         float64            [rad]  (x)  [0.100000, 0.175000, 0.250000, 0.325000, 0.400000]
       Data:
                                   float64  [dimensionless]  (x)  [0.099833, 0.173987, 0.247384, 0.318433, 0.389418]
+
       >>> f(xnew, midpoints=True)
       <scipp.DataArray>
       Dimensions: Sizes[x:4, ]
@@ -84,7 +83,7 @@ def interp1d(da: DataArray, dim, **kwargs) -> Callable:
     kwargs['axis'] = da.dims.index(dim)
 
     coords = {k: v for k, v in da.coords.items() if dim not in v.dims}
-    masks = validated_masks(da, dim)
+    masks = _validated_masks(da, dim)
     attrs = {k: v for k, v in da.attrs.items() if dim not in v.dims}
 
     def func(xnew: Variable, *, midpoints=False) -> DataArray:

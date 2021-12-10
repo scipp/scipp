@@ -9,5 +9,6 @@ Modules
    :recursive:
 
    constants
+   interpolate
    spatial
    logging
