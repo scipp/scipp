@@ -64,9 +64,8 @@ jobs:
           environment-file: ${{ matrix.os == 'ubuntu-latest' && 'scipp-developer.yml' || 'scipp-developer-minimal.yml' }}
           activate-environment: scipp-developer
           auto-activate-base: false
-      - run: conda install ccache
-      - run: ccache --version
 
+      - run: ccache --version
       - name: ccache
         uses: hendrikmuhs/ccache-action@9abc88f1e5416ef236a67b736bb781d6b134a6ea
         with:
