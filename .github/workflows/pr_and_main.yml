@@ -66,6 +66,10 @@ jobs:
           auto-activate-base: false
 
       - run: ccache --version
+
+      - run: echo "C:\Miniconda3\envs\scipp-developer\Library\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+        if: ${{ contains(matrix.os, 'windows-latest') }}
+
       - name: ccache
         uses: hendrikmuhs/ccache-action@9abc88f1e5416ef236a67b736bb781d6b134a6ea
         with:
