@@ -65,7 +65,7 @@ But this can produce surprising results.
 
 Consider the following which is a simplified graph of what is used in time-of-flight neutron scattering.
 Allowing ``a`` ➔ ``c`` renaming, the left graph renames the time dimension ``tof`` to the wavelength dimension ``λ``.
-This is a common conversion and makes sense for scientists in neutron scattering.
+This is a common conversion and likely makes sense to many scientists in neutron scattering.
 If, however, the graph is altered to the one on the right, the ``pos`` dimension is renamed to ``λ`` while ``tof`` is left as is.
 This is surprising and usually undesired.
 
@@ -91,7 +91,6 @@ Allowing ``b`` ➔ ``d`` would therefore break the rule that there must be a uni
   :width: 128
   :alt: split-join with cycle
 
-
 .. _sec-existing-implementation:
 
 Existing Implementation (v0.8 - v0.10)
@@ -110,7 +109,7 @@ It furthermore allows splitting the graph into steps that can be done separately
   :width: 160
   :alt: split-join with long branch
 
-All graphs used by :py:func:`scipp.transform_coords` must be directed acyclic in order to ensure that all inputs to a node are available before processing that node.
+All graphs used by :py:func:`scipp.transform_coords` must be directed and acyclic in order to ensure that all inputs to a node are available before processing that node.
 This does, however, allow for undirected cycles.
 An example is given below.
 
@@ -136,7 +135,7 @@ At a high level the corresponding algorithm is
 2. Let ``N`` be the set of all output nodes.
 3. Remove all nodes with more than one color and all nodes that share a color with other nodes from ``N``.
 4. Add all parents of the removed nodes in 3. to ``N``.
-5. Repeat until there are no parents left or no nodes are removed in step 3.
+5. Repeat 3-5 until there are no parents left or no nodes are removed in step 3.
 6. The remaining nodes in ``N`` are the new dimension-coordinates for their corresponding color.
 
 This approach renames ``a`` to ``d`` in the cycle graph in section :ref:`sec-existing-implementation`.
@@ -151,7 +150,7 @@ In particular, it satisfies all constraints given above.
 Its main shortcoming is the handling of cycles.
 
 The solution chosen here builds on top of the old algorithm.
-It handles cycles by contracting them to produce graphs without and (undirected) cycles and then colors the nodes using local rules.
+It handles cycles by contracting them to produce graphs without any (undirected) cycles and then colors the nodes using local rules.
 The following graphs illustrate the procedure.
 
 In graph 1, there is initially one cycle, ``{c, e, f, h}``.
@@ -160,7 +159,7 @@ Importantly, inputs and outputs to cycles are preserved.
 Inputs and outputs are nodes that only have outgoing or incoming edges in the cycle, respectively.
 Edges outside the cycle do not matter.
 In graph 1, ``c`` is the only input and ``h`` the only output to the cycle.
-After contracting, nodes are colored in according to the rules described below.
+After contracting, nodes are colored according to the rules described below.
 In this case, ``a`` is the only dimension-coordinate and dimension ``a`` is renamed to ``h``.
 
 In graph 2, there are three cycles, ``{c, e, f, h}``, ``{b, c, f}``, ``{b, c, e, f, h}``.
@@ -168,7 +167,7 @@ We need to choose one to contract.
 Different choices produce different final graphs, but those graphs are all equivalent.
 Here, we choose ``{b, c, f}`` and contract it.
 Note that ``c`` is the only inner node of the cycle.
-But the contraction still produces a new node and crucially removed the ``(b, f)`` edge.
+But the contraction still produces a new node and crucially removes the ``(b, f)`` edge.
 Next, the last remaining cycle, ``{Cc, e, f, h}``, is contracted as in graph 1.
 Finally, the graph is colored in.
 Now, for exposition, both ``a`` and ``d`` are dimension-coordinates.
