@@ -52,10 +52,6 @@ class Cycle:
         yield from (node for node in self.nodes
                     if node not in self.inputs and node not in self.outputs)
 
-    @classmethod
-    def make_empty(cls):
-        return cls(nodes=set(), inputs=set(), outputs=set())
-
 
 class Graph:
     def __init__(self, graph: Dict[str, Iterable[str]]):
