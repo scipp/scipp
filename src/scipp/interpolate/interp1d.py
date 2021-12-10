@@ -16,11 +16,40 @@ def validated_masks(da, dim):
 
 def interp1d(da: DataArray, dim, **kwargs) -> Callable:
     """
-    interpolate
+    Interpolate a 1-D function.
 
-    :param rotvec: A variable with vector(s) giving rotation axis and angle. Unit must
-                   be rad or deg.
-    """
+    A data array is used to approximate some function f: y = f(x), where y is given by
+    the array values and x is is given by the coordinate for the given dimension. This
+    class returns a function whose call method uses interpolation to find the value of
+    new points.
+
+    The function is a wrapper for scipy.interpolate.interp1d. The differences are:
+
+    - Instead of x and y, a data array defining these is used as input.
+    - Instead of an axis, a dimension label defines the interpolation dimension.
+    - The returned function does not just return the values of f(x) but a new
+      data array with values defined as f(x) and x as a coordinate for the
+      interpolation dimension.
+    - The returning function accepts an extra argument ``midpoints``. When setting
+      ``midpoints=True`` the interpolation uses the midpoints of the new points
+      instead of the points itself. The returned data array is then a histogram, i.e.,
+      the new coordinate is a bin-edge coordinate.
+
+    Parameters not described above are forwarded to scipy.interpolate.interp1d. The
+    most relevant ones are (see https://docs.scipy.org/doc/scipy/reference/reference/generated/scipy.interpolate.interp1d.html#scipy.interpolate.interp1d for details):
+
+    :param kind: Specifies the kind of interpolation as a string or as an integer
+                 specifying the order of the spline interpolator to use. The string
+                 has to be one of 'linear', 'nearest’, 'nearest-up’, 'zero’, 'slinear’,
+                 'quadratic’, 'cubic’, 'previous’, or 'next’. 'zero’, 'slinear’,
+                 'quadratic’ and 'cubic’ refer to a spline interpolation of zeroth,
+                 first, second or third order; 'previous’ and 'next’ simply return the
+                 previous or next value of the point; 'nearest-up’ and 'nearest’ differ
+                 when interpolating half-integers (e.g. 0.5, 1.5) in that 'nearest-up’
+                 rounds up and 'nearest’ rounds down. Default is 'linear’.
+    :param fill_value: Set to 'extrapolate' to allow for extrapolation of points
+                       outside the range.
+    """  # noqa #501
     import scipy.interpolate as inter
     if 'axis' in kwargs:
         raise ValueError("Use the 'dim' keyword argument instead of 'axis'.")
@@ -33,7 +62,7 @@ def interp1d(da: DataArray, dim, **kwargs) -> Callable:
     masks = validated_masks(da, dim)
     attrs = {k: v for k, v in da.attrs.items() if dim not in v.dims}
 
-    def func(xnew: Variable, midpoints=False) -> DataArray:
+    def func(xnew: Variable, *, midpoints=False) -> DataArray:
         f = inter.interp1d(x=da.coords[dim].values, y=da.values, **kwargs)
         x_ = 0.5 * (xnew[dim, 1:] + xnew[dim, :-1]) if midpoints else xnew
         ynew = array(dims=da.dims, unit=da.unit, values=f(x_.values))

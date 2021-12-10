@@ -84,6 +84,16 @@ def test_data():
         theirs.interp1d(x=da.coords['xx'].values, y=da.values, axis=1)(x.values))
 
 
+def test_midpoints():
+    da = make_array()
+    x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=10, unit='rad')
+    out = interp1d(da, 'xx')(x, midpoints=True)
+    midpoints = (0.5 * (x[1:] + x[:-1])).values
+    assert np.array_equal(
+        out.values,
+        theirs.interp1d(x=da.coords['xx'].values, y=da.values, axis=0)(midpoints))
+
+
 @pytest.mark.parametrize("kind,fill_value",
                          list(
                              product(['nearest', 'quadratic', 'cubic'],
