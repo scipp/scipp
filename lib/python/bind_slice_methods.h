@@ -186,9 +186,9 @@ template <class T> struct slicer {
 
 template <class T, class... Ignored>
 void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
-  // Slice with implicit dim possible only if the is exactly one dimension. We
+  // Slice with implicit dim possible only if there is exactly one dimension. We
   // do *not* use the numpy/xarray mechanism which slices the outer dimension in
-  // the case, since we consider it dangerous, leading to hard to find bugs.
+  // this case, since we consider it dangerous, leading to hard to find bugs.
   c.def("__getitem__", [](T &self, const scipp::index &index) {
     return getitem(self, {self.dim(), index});
   });
