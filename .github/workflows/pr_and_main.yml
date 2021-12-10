@@ -55,11 +55,6 @@ jobs:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
 
-      - name: ccache
-        uses: hendrikmuhs/ccache-action@9abc88f1e5416ef236a67b736bb781d6b134a6ea
-        with:
-          key: ${{ matrix.os }}
-
       - name: Setup Mambaforge and dev env
         uses: conda-incubator/setup-miniconda@v2
         with:
@@ -69,6 +64,11 @@ jobs:
           environment-file: ${{ matrix.os == 'ubuntu-latest' && 'scipp-developer.yml' || 'scipp-developer-minimal.yml' }}
           activate-environment: scipp-developer
           auto-activate-base: false
+
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@9abc88f1e5416ef236a67b736bb781d6b134a6ea
+        with:
+          key: ${{ matrix.os }}
 
       - run: cmake --preset ${{ matrix.cmake-preset }}
       - run: cmake --build --preset build
