@@ -14,7 +14,6 @@ dependencies:
   - tbb-devel
   - conan
   - cmake
-  - ccache
 
   # Run
   - appdirs

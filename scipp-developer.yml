@@ -15,7 +15,6 @@ dependencies:
   - cmake
   - pip
   - gxx_linux-64 11.1.*
-  - ccache
 
   # Run
   - appdirs
