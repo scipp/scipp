@@ -67,7 +67,7 @@ jobs:
 
       - run: ccache --version
 
-      - run: echo "C:/Miniconda3/envs/scipp-developer/Library/bin" >> $GITHUB_PATH
+      - run: echo "$CONDA/envs/scipp-developer/Library/bin" >> $GITHUB_PATH
         if: ${{ contains(matrix.os, 'windows-latest') }}
 
       - name: ccache
