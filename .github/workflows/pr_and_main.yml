@@ -56,7 +56,6 @@ jobs:
           fetch-depth: 0  # history required so cmake can determine version
 
       - name: ccache
-        if: ${{ !contains(matrix.os, 'windows') }}
         uses: hendrikmuhs/ccache-action@9abc88f1e5416ef236a67b736bb781d6b134a6ea
         with:
           key: ${{ matrix.os }}
