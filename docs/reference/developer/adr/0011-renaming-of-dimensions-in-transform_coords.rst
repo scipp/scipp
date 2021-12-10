@@ -48,7 +48,8 @@ Is it possible to rename dimensions in the following graph?
 No, it is not without potentially causing confusion, see below.
 Users need to apply domain knowledge in order to find good dimension names.
 
-From now on, colors indicate which coordinates are associated via their dimensions.
+Determining how to rename dimensions can be mapped onto a graph coloring problem because we are looking for unique associations between nodes.
+From now on, colors indicate dimension-coordinates and associated output coordinates.
 
 .. image:: ../../../images/transform_coords/split-join.svg
   :width: 128
@@ -91,6 +92,8 @@ Allowing ``b`` ➔ ``d`` would therefore break the rule that there must be a uni
   :alt: split-join with cycle
 
 
+.. _sec-existing-implementation:
+
 Existing Implementation (v0.8 - v0.10)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -119,12 +122,74 @@ The purely local rule in versions 0.8 - 0.10 does not, however, rename as it tre
   :width: 100
   :alt: cycle graph
 
+Alternatives
+------------
+
+Global Coloring
+~~~~~~~~~~~~~~~
+
+Cycles can be handled by taking the whole graph into account when coloring nodes.
+At a high level the corresponding algorithm is
+
+1. For each dimension-coordinate, color all nodes that depend on this coordinate (transitively) with the corresponding color.
+   Allow multiple colors per node.
+2. Let ``N`` be the set of all output nodes.
+3. Remove all nodes with more than one color and all nodes that share a color with other nodes from ``N``.
+4. Add all parents of the removed nodes in 3. to ``N``.
+5. Repeat until there are no parents left or no nodes are removed in step 3.
+6. The remaining nodes in ``N`` are the new dimension-coordinates for their corresponding color.
+
+This approach renames ``a`` to ``d`` in the cycle graph in section :ref:`sec-existing-implementation`.
+But it does not rename ``a`` to ``e`` in the other graph of that section, because ``c``, ``d``, and ``e`` all get colored orange, since they depend on ``b``.
+
 
 Decision
 --------
 
+The algorithm of section :ref:`sec-existing-implementation` works in many cases and has several desirable properties.
+In particular, it satisfies all constraints given above.
+Its main shortcoming is the handling of cycles.
 
+The solution chosen here builds on top of the old algorithm.
+It handles cycles by contracting them to produce graphs without and (undirected) cycles and then colors the nodes using local rules.
+The following graphs illustrate the procedure.
 
+In graph 1, there is initially one cycle, ``{c, e, f, h}``.
+It is contracted in the first step, producing a new graph with node ``Cef``.
+Importantly, inputs and outputs to cycles are preserved.
+Inputs and outputs are nodes that only have outgoing or incoming edges in the cycle, respectively.
+Edges outside the cycle do not matter.
+In graph 1, ``c`` is the only input and ``h`` the only output to the cycle.
+After contracting, nodes are colored in according to the rules described below.
+In this case, ``a`` is the only dimension-coordinate and dimension ``a`` is renamed to ``h``.
+
+In graph 2, there are three cycles, ``{c, e, f, h}``, ``{b, c, f}``, ``{b, c, e, f, h}``.
+We need to choose one to contract.
+Different choices produce different final graphs, but those graphs are all equivalent.
+Here, we choose ``{b, c, f}`` and contract it.
+Note that ``c`` is the only inner node of the cycle.
+But the contraction still produces a new node and crucially removed the ``(b, f)`` edge.
+Next, the last remaining cycle, ``{Cc, e, f, h}``, is contracted as in graph 1.
+Finally, the graph is colored in.
+Now, for exposition, both ``a`` and ``d`` are dimension-coordinates.
+This means that neither ``Cef`` nor ``h`` can be colored.
+Therefore, dimension ``d`` is not renamed.
+``a`` could in principle be renamed to ``c`` but ``c`` is excluded from renaming because it is in a cycle.
+(It does not matter that the cycle contains only a single node. In general, cycles represent multiple nodes and do not represent dimensions that can be renamed.)
+
+.. image:: ../../../images/transform_coords/cycle-contraction.svg
+  :width: 640
+  :alt: cycle graph
+
+Nodes are colored by first giving every dimension-coordinate its own color.
+Those colors are then propagated through the graph following these rules:
+
+1. If a node has exactly one colored parent, use that parent's color.
+2. If a node has several colored parents, leave the node black (uncolored).
+3. If a node has more than one child, all its children are black.
+
+This produces a chain of nodes for each color.
+Dimensions are renamed to the last node in its chain, excluding cycle nodes.
 
 Consequences
 ------------
@@ -132,7 +197,10 @@ Consequences
 Positive:
 ~~~~~~~~~
 
+- Automated renaming of dimensions that should always do 'the right thing' or nothing.
+- Dimension renaming can happen through undirected cycles.
 
 Negative:
 ~~~~~~~~~
 
+- The algorithm is fairly complicated given how small a task it achieves.

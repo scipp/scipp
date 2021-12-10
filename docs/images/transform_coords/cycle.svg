@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="25.532537mm"
-   height="44.126583mm"
-   viewBox="0 0 25.532538 44.126581"
+   width="33.532539mm"
+   height="51.126583mm"
+   viewBox="0 0 33.53254 51.126581"
    version="1.1"
    id="svg5"
    sodipodi:docname="cycle.svg"
@@ -25,14 +25,18 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="0.28230574"
-     inkscape:cx="-467.57816"
-     inkscape:cy="504.77188"
+     inkscape:cx="-442.78235"
+     inkscape:cy="508.31414"
      inkscape:window-width="2560"
      inkscape:window-height="1410"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg5" />
+     inkscape:current-layer="svg5"
+     fit-margin-top="1"
+     fit-margin-left="7"
+     fit-margin-right="1"
+     fit-margin-bottom="6" />
   <defs
      id="defs2">
     <linearGradient
@@ -1400,7 +1404,7 @@
        xlink:href="#linearGradient62596"
        id="linearGradient68543"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="translate(-26.641019,-115.77613)"
+       gradientTransform="translate(-19.641019,-114.77613)"
        x1="37.30405"
        y1="117.36155"
        x2="41.446438"
@@ -1409,7 +1413,7 @@
        xlink:href="#linearGradient62726"
        id="linearGradient68545"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="translate(-23.547912,-35.45623)"
+       gradientTransform="translate(-16.547912,-34.456225)"
        x1="23.246126"
        y1="58.208336"
        x2="26.908953"
@@ -1418,7 +1422,7 @@
        xlink:href="#linearGradient62726"
        id="linearGradient68547"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="translate(-22.904153,-75.14373)"
+       gradientTransform="translate(-15.904153,-74.143725)"
        x1="44.773861"
        y1="97.050407"
        x2="48.912109"
@@ -1427,7 +1431,7 @@
        xlink:href="#linearGradient62726"
        id="linearGradient68549"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="translate(-26.641019,-76.51126)"
+       gradientTransform="translate(-19.641019,-75.511255)"
        x1="37.30405"
        y1="117.36155"
        x2="41.446438"
@@ -1436,26 +1440,26 @@
   <text
      xml:space="preserve"
      style="font-size:8.46667px;line-height:1.25;font-family:sans-serif;fill:url(#linearGradient68543);fill-opacity:1;stroke-width:0.264583"
-     x="9.8940868"
-     y="4.7418265"
+     x="16.894087"
+     y="5.7418313"
      id="text65249"><tspan
        id="tspan65247"
        style="fill:url(#linearGradient68543);fill-opacity:1;stroke-width:0.264583"
-       x="9.8940868"
-       y="4.7418265">a</tspan></text>
+       x="16.894087"
+       y="5.7418313">a</tspan></text>
   <text
      xml:space="preserve"
      style="font-size:8.46667px;line-height:1.25;font-family:sans-serif;fill:url(#linearGradient68545);fill-opacity:1;stroke-width:0.264583"
-     x="-0.76894557"
-     y="25.06307"
+     x="6.2310543"
+     y="26.063076"
      id="text65253"><tspan
        id="tspan65251"
        style="fill:url(#linearGradient68545);fill-opacity:1;stroke-width:0.264583"
-       x="-0.76894557"
-       y="25.06307">b</tspan></text>
+       x="6.2310543"
+       y="26.063076">b</tspan></text>
   <g
      id="g65265"
-     transform="translate(-24.227068,-72.4979)">
+     transform="translate(-17.227068,-71.497895)">
     <path
        style="color:#000000;fill:#000000;-inkscape-stroke:none"
        d="m 34.037109,79.195312 -5.291015,10.583985 0.716797,0.357422 5.291015,-10.582032 z"
@@ -1478,16 +1482,16 @@
   <text
      xml:space="preserve"
      style="font-size:8.46667px;line-height:1.25;font-family:sans-serif;fill:url(#linearGradient68547);fill-opacity:1;stroke-width:0.264583"
-     x="21.402555"
-     y="25.06307"
+     x="28.402555"
+     y="26.063076"
      id="text65269"><tspan
        id="tspan65267"
        style="fill:url(#linearGradient68547);fill-opacity:1;stroke-width:0.264583"
-       x="21.402555"
-       y="25.06307">c</tspan></text>
+       x="28.402555"
+       y="26.063076">c</tspan></text>
   <g
      id="g65293"
-     transform="translate(0.042313,-72.49446)"
+     transform="translate(7.042313,-71.494455)"
      style="fill:#030303;fill-opacity:1">
     <path
        style="color:#000000;fill:#030303;fill-opacity:1;-inkscape-stroke:none"
@@ -1512,7 +1516,7 @@
   </g>
   <g
      id="g65305"
-     transform="matrix(-1,0,0,1,37.288934,-52.4558)"
+     transform="matrix(-1,0,0,1,44.288934,-51.455795)"
      style="fill:#020802;fill-opacity:1">
     <path
        style="color:#000000;fill:#020802;fill-opacity:1;-inkscape-stroke:none"
@@ -1538,16 +1542,16 @@
   <text
      xml:space="preserve"
      style="font-size:8.46667px;line-height:1.25;font-family:sans-serif;fill:url(#linearGradient68549);fill-opacity:1;stroke-width:0.264583"
-     x="9.8940868"
-     y="44.006687"
+     x="16.894087"
+     y="45.006691"
      id="text65309"><tspan
        id="tspan65307"
        style="fill:url(#linearGradient68549);fill-opacity:1;stroke-width:0.264583"
-       x="9.8940868"
-       y="44.006687">d</tspan></text>
+       x="16.894087"
+       y="45.006691">d</tspan></text>
   <g
      id="g65321"
-     transform="matrix(-1,0,0,1,39.075134,-52.45775)">
+     transform="matrix(-1,0,0,1,46.075134,-51.457745)">
     <path
        style="color:#000000;fill:#000000;-inkscape-stroke:none"
        d="m 34.037109,79.195312 -5.291015,10.583985 0.716797,0.357422 5.291015,-10.582032 z"
