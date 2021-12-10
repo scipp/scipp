@@ -14,7 +14,7 @@ def validated_masks(da, dim):
     return masks
 
 
-def interp1d(da: DataArray, *, dim, **kwargs) -> Callable:
+def interp1d(da: DataArray, dim, **kwargs) -> Callable:
     """
     interpolate
 
@@ -30,18 +30,19 @@ def interp1d(da: DataArray, *, dim, **kwargs) -> Callable:
     kwargs['axis'] = da.dims.index(dim)
 
     coords = {k: v for k, v in da.coords.items() if dim not in v.dims}
+    masks = validated_masks(da, dim)
     attrs = {k: v for k, v in da.attrs.items() if dim not in v.dims}
 
     def func(xnew: Variable, midpoints=False) -> DataArray:
         f = inter.interp1d(x=da.coords[dim].values, y=da.values, **kwargs)
         x_ = 0.5 * (xnew[dim, 1:] + xnew[dim, :-1]) if midpoints else xnew
-        ynew = array(dims=xnew.dims, unit=da.unit, values=f(x_.values))
-        masks = validated_masks(da, dim)  # NOT outside func, need one copy per call
+        ynew = array(dims=da.dims, unit=da.unit, values=f(x_.values))
         return DataArray(data=ynew,
                          coords={
                              **coords, dim: xnew
                          },
-                         masks=masks,
+                         masks={k: v.copy()
+                                for k, v in masks.items()},
                          attrs=attrs)
 
     return func
