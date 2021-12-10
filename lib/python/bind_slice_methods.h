@@ -188,7 +188,7 @@ namespace {
 void expect_implicit_dimension(const Sizes &dims) {
   using std::to_string;
   if (dims.size() == 0)
-    throw except::DimensionError("Slicing scalar object is not possible.");
+    throw except::DimensionError("Slicing a scalar object is not possible.");
   if (dims.size() > 1) {
     std::string msg("Slicing with implicit dimension label is only possible "
                     "for 1-D objects. Got " +
