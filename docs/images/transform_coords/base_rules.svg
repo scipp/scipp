@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="169.79845mm"
-   height="26.873833mm"
-   viewBox="0 0 169.79845 26.873832"
+   width="180.7285mm"
+   height="38.118031mm"
+   viewBox="0 0 180.7285 38.11803"
    version="1.1"
    id="svg5"
    sodipodi:docname="base_rules.svg"
@@ -24,15 +24,19 @@
      inkscape:pagecheckerboard="1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.38011931"
-     inkscape:cx="194.67572"
-     inkscape:cy="267.02142"
+     inkscape:zoom="1.9212364"
+     inkscape:cx="334.15982"
+     inkscape:cy="61.679031"
      inkscape:window-width="2560"
      inkscape:window-height="1410"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg5" />
+     inkscape:current-layer="svg5"
+     fit-margin-top="1"
+     fit-margin-left="7"
+     fit-margin-right="1"
+     fit-margin-bottom="6" />
   <defs
      id="defs2">
     <linearGradient
@@ -1315,7 +1319,7 @@
   </defs>
   <g
      id="g94259"
-     transform="translate(-8.6278963,-28.473695)">
+     transform="translate(1.3021511,-23.229497)">
     <text
        xml:space="preserve"
        style="font-size:8.46667px;line-height:1.25;font-family:sans-serif;fill:url(#linearGradient94311);fill-opacity:1;stroke-width:0.264583"
@@ -1391,7 +1395,7 @@
   </g>
   <g
      id="g94239"
-     transform="translate(-10.252366,-28.473695)">
+     transform="translate(-0.32231861,-23.229497)">
     <text
        xml:space="preserve"
        style="font-size:8.46667px;line-height:1.25;font-family:sans-serif;fill:url(#linearGradient94315);fill-opacity:1;stroke-width:0.264583"
@@ -1467,7 +1471,7 @@
   </g>
   <g
      id="g94219"
-     transform="translate(-11.876839,-28.473695)">
+     transform="translate(-1.9467916,-23.229497)">
     <text
        xml:space="preserve"
        style="font-size:8.46667px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
@@ -1543,7 +1547,7 @@
   </g>
   <g
      id="g94199"
-     transform="translate(-8.6278791,-28.473695)">
+     transform="translate(1.3021683,-23.229497)">
     <text
        xml:space="preserve"
        style="font-size:8.46667px;line-height:1.25;font-family:sans-serif;stroke-width:0.264583"
@@ -1651,4 +1655,48 @@
          x="173.82092"
          y="34.90638">d</tspan></text>
   </g>
+  <text
+     xml:space="preserve"
+     style="font-size:3.52777px;line-height:1.25;font-family:sans-serif;fill:#4d4d4d;stroke-width:0.264583"
+     x="6.6124277"
+     y="3.6768334"
+     id="text75763"><tspan
+       sodipodi:role="line"
+       id="tspan75761"
+       style="fill:#4d4d4d;stroke-width:0.264583"
+       x="6.6124277"
+       y="3.6768334">1)</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:3.52777px;line-height:1.25;font-family:sans-serif;fill:#4d4d4d;stroke-width:0.264583"
+     x="50.384609"
+     y="3.6768334"
+     id="text77044"><tspan
+       sodipodi:role="line"
+       id="tspan77042"
+       style="fill:#4d4d4d;stroke-width:0.264583"
+       x="50.384609"
+       y="3.6768334">2)</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:3.52777px;line-height:1.25;font-family:sans-serif;fill:#4d4d4d;stroke-width:0.264583"
+     x="94.156776"
+     y="3.6768334"
+     id="text78242"><tspan
+       sodipodi:role="line"
+       id="tspan78240"
+       style="fill:#4d4d4d;stroke-width:0.264583"
+       x="94.156776"
+       y="3.6768334">3)</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:3.52777px;line-height:1.25;font-family:sans-serif;fill:#4d4d4d;stroke-width:0.264583"
+     x="137.92897"
+     y="3.6768334"
+     id="text78246"><tspan
+       sodipodi:role="line"
+       id="tspan78244"
+       style="fill:#4d4d4d;stroke-width:0.264583"
+       x="137.92897"
+       y="3.6768334">4)</tspan></text>
 </svg>
