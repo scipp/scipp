@@ -248,6 +248,10 @@ bool Dataset::operator!=(const Dataset &other) const {
 
 const Sizes &Dataset::sizes() const { return m_coords.sizes(); }
 const Sizes &Dataset::dims() const { return sizes(); }
+Dim Dataset::dim() const {
+  core::expect::ndim_is(sizes(), 1);
+  return *sizes().begin();
+}
 
 bool Dataset::is_readonly() const noexcept { return m_readonly; }
 

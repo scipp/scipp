@@ -9,6 +9,8 @@ v0.11.0 (unreleased)
 Features
 ~~~~~~~~
 
+* Added support for slicing without specifying a dimension (only for 1-D objects) `#2321 <https://github.com/scipp/scipp/pull/2321>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
