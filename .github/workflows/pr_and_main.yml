@@ -65,6 +65,7 @@ jobs:
           activate-environment: scipp-developer
           auto-activate-base: false
 
+      - run: ccache --version
       - name: ccache
         uses: hendrikmuhs/ccache-action@9abc88f1e5416ef236a67b736bb781d6b134a6ea
         with:
