@@ -188,10 +188,9 @@ public:
   Dataset &operator*=(const Dataset &other);
   Dataset &operator/=(const Dataset &other);
 
-  // TODO dims() required for generic code. Need proper equivalent to class
-  // Dimensions that does not imply dimension order.
   const Sizes &sizes() const;
   const Sizes &dims() const;
+  Dim dim() const;
 
   bool is_readonly() const noexcept;
 
