@@ -28,6 +28,7 @@ def wrap1d(is_partial=False):
     The decorators returned by this factory apply pre- and postprcoessing as follows:
 
     - An 'axis' keyword argument will raise ``ValueError``, recommending use of 'dim'.
+      The index of the provided dimension is added as axis to kwargs.
     - Providing data with variances will raise ``sc.VariancesError`` since third-party
       libraries typically cannot handle variances.
     - Coordinates, masks, and attributes that act as "observers", i.e., do not depend
@@ -49,6 +50,7 @@ def wrap1d(is_partial=False):
                 raise VariancesError(
                     "Cannot apply function to data with uncertainties. If uncertainties"
                     " should be ignored, use 'sc.values(da)' to extract only values.")
+            kwargs['axis'] = da.dims.index(dim)
 
             coords = {k: v for k, v in da.coords.items() if dim not in v.dims}
             masks = _validated_masks(da, dim)

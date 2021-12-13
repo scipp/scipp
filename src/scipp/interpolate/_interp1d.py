@@ -70,7 +70,6 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
                                   float64  [dimensionless]  (x)  [0.137015, 0.210685, 0.282941, 0.353926]
     """  # noqa #501
     import scipy.interpolate as inter
-    kwargs['axis'] = da.dims.index(dim)
 
     def func(xnew: Variable, *, midpoints=False) -> DataArray:
         """Compute interpolation function defined by ``interp1d`` at interpolation points.
