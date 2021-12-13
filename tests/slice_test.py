@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+import pytest
 import scipp as sc
 
 
@@ -42,3 +43,17 @@ def test_ipython_key_completion():
     da = sc.DataArray(data=var, coords={'x': var, 'aux': var})
     assert set(var._ipython_key_completions_()) == set(var.dims)
     assert set(da._ipython_key_completions_()) == set(da.dims)
+
+
+xx = sc.arange(dim='xx', start=2, stop=6)
+ds = sc.Dataset(data={'a': xx, 'b': xx + 1})
+
+
+@pytest.mark.parametrize("obj", [xx.copy(), ds['a'].copy(), ds.copy()])
+def test_slice_implicit_dim(obj):
+    assert sc.identical(obj[1], obj['xx', 1])
+    assert sc.identical(obj[1:3], obj['xx', 1:3])
+    obj[1] = obj[0]
+    assert sc.identical(obj[1], obj['xx', 0])
+    obj[1:3] = obj[0]
+    assert sc.identical(obj[2], obj['xx', 0])

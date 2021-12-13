@@ -77,7 +77,7 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
-        "DISABLE_MULTI_THREADING": "ON"
+        "THREADING": "OFF"
       }
     }
   ],

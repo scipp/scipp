@@ -9,10 +9,6 @@
 #include <tbb/parallel_sort.h>
 
 #include "scipp/common/index.h"
-#cmakedefine ENABLE_THREAD_LIMIT
-// clang-format off
-#cmakedefine THREAD_LIMIT @THREAD_LIMIT@
-// clang-format on
 
 /// Wrappers for multi-threading using TBB.
 namespace scipp::core::parallel {
@@ -31,13 +27,7 @@ inline auto blocked_range(const scipp::index begin, const scipp::index end,
 }
 
 template <class... Args> void parallel_for(Args &&... args) {
-#ifdef ENABLE_THREAD_LIMIT
-  tbb::task_arena limited_arena(THREAD_LIMIT);
-  limited_arena.execute(
-      [&args...]() { tbb::parallel_for(std::forward<Args>(args)...); });
-#else
   tbb::parallel_for(std::forward<Args>(args)...);
-#endif
 }
 
 template <class... Args> void parallel_sort(Args &&... args) {
