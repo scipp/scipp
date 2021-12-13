@@ -38,14 +38,9 @@ def transform_coords(x: Union[DataArray, Dataset],
                     variables. The argument names of callables must be coords
                     in ``x`` or be computable by other nodes in ``graph``.
     :param rename_dims: Rename dimensions if the corresponding dimension coords
-                        are used as inputs. `Dimension` ``a`` is renamed to ``b``
-                        if and only if
-
-                        - `coord` ``a`` is used as input in exactly 1 node
-                        - `coord` ``a`` is the only dimension coord in
-                          that node's inputs
-                        - `coord` ``b`` is the only output of that node.
-
+                        are used as inputs and there is a single output coord
+                        that can be associated with that dimension.
+                        See the user guide for more details and examples.
                         Default is True.
     :param keep_aliases: If True, aliases for coords defined in graph are
                          included in the output. Default is True.
