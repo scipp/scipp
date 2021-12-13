@@ -54,7 +54,7 @@ def wrap1d(is_partial=False):
             masks = _validated_masks(da, dim)
             attrs = {k: v for k, v in da.attrs.items() if dim not in v.dims}
 
-            def postprocess(da):
+            def _add_observing_metadata(da):
                 for k, v in coords.items():
                     da.coords[k] = v
                 for k, v in masks.items():
@@ -63,17 +63,17 @@ def wrap1d(is_partial=False):
                     da.attrs[k] = v
                 return da
 
-            def postprocessing_decorator(func):
+            def postprocessing(func):
                 @wraps(func)
                 def function(*args, **kwargs):
-                    return postprocess(func(*args, **kwargs))
+                    return _add_observing_metadata(func(*args, **kwargs))
 
                 return function
 
             if is_partial:
-                return postprocessing_decorator(func(da, dim, **kwargs))
+                return postprocessing(func(da, dim, **kwargs))
             else:
-                return postprocess(func(da, dim, **kwargs))
+                return _add_observing_metadata(func(da, dim, **kwargs))
 
         return function
 
