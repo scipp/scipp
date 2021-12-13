@@ -12,27 +12,14 @@ import pytest
 def make_array():
     x = sc.geomspace(dim='xx', start=0.1, stop=0.4, num=10, unit='rad')
     y = sc.linspace(dim='yy', start=0.5, stop=2.0, num=6, unit='m')
-    da = sc.DataArray(sc.sin(x) * y, coords={'xx': x, 'yy': y, 'scalar': y[0]})
+    da = sc.DataArray(sc.sin(x) * y, coords={'xx': x})
     da.unit = 'K'
-    mask = y.copy()
-    mask.unit = ''
-    da.masks['yy'] = mask < mask**2
-    da.attrs['xx'] = x
-    da.attrs['yy'] = y
-    da.attrs['scalar'] = x[0]
     return da
 
 
 def check_metadata(out, da, x):
     assert out.unit == da.unit
     assert sc.identical(out.coords['xx'], x)
-    assert sc.identical(out.coords['yy'], da.coords['yy'])
-    assert sc.identical(out.coords['scalar'], da.coords['scalar'])
-    assert sc.identical(out.masks['yy'], da.masks['yy'])
-    assert sc.identical(out.attrs['yy'], da.attrs['yy'])
-    assert sc.identical(out.attrs['scalar'], da.attrs['scalar'])
-    out.masks['yy'] ^= out.masks['yy']
-    assert not sc.identical(out.masks['yy'], da.masks['yy'])
 
 
 @pytest.mark.parametrize(
@@ -44,11 +31,6 @@ def test_metadata(da):
     x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=10, unit='rad')
     check_metadata(f(x), da, x)
     check_metadata(f(x[:5]), da, x[:5])
-
-
-def test_fail_axis_given():
-    with pytest.raises(ValueError):
-        interp1d(make_array(), axis=0, dim='xx')
 
 
 def test_fail_variances():
@@ -63,13 +45,6 @@ def test_fail_bin_edges():
     da = tmp['xx', 1:].copy()
     da.coords['xx'] = tmp.coords['xx']
     with pytest.raises(sc.BinEdgeError):
-        interp1d(da, 'xx')
-
-
-def test_fail_conflicting_mask():
-    da = make_array()
-    da.masks['xx'] = da.coords['xx'] != da.coords['xx']
-    with pytest.raises(sc.DimensionError):
         interp1d(da, 'xx')
 
 

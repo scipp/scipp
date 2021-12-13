@@ -20,7 +20,7 @@ def _validated_masks(da, dim):
 
 
 def wrap1d(is_partial=False):
-    """Decorator factory for decorating function that wrap non-scipp 1-D functions.
+    """Decorator factory for decorating functions that wrap non-scipp 1-D functions.
 
     1-D functions are typically functions from libraries such as scipy that depend
     on a single 'axis' argument.

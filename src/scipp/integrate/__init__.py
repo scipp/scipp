@@ -6,4 +6,5 @@
 
 from ._integrate import simpson, trapezoid
 
+
 __all__ = ['simpson', 'trapezoid']
