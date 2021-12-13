@@ -11,6 +11,12 @@ from .rule import FetchRule, RenameRule, Rule, rule_output_names
 
 
 class CoordTable:
+    """
+    Stores a dictionary of coordinates for use in coord transforms.
+
+    Coords have an associated number of usages.
+    When that number drops to 0, the coord is removed.
+    """
     def __init__(self, rules: List[Rule], targets: Set[str], options: Options):
         self._coords = {}
         self._total_usages = _apply_keep_options(_count_usages(rules), rules, targets,
