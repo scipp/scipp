@@ -20,6 +20,26 @@ def _validated_masks(da, dim):
 
 
 def wrap1d(is_partial=False):
+    """Decorator factory for decorating function that wrap non-scipp 1-D functions.
+
+    1-D functions are typically functions from libraries such as scipy that depend
+    on a single 'axis' argument.
+
+    The decorators returned by this factory apply pre- and postprcoessing as follows:
+
+    - An 'axis' keyword argument will raise ``ValueError``, recommending use of 'dim'.
+    - Providing data with variances will raise ``sc.VariancesError`` since third-party
+      libraries typically cannot handle variances.
+    - Coordinates, masks, and attributes that act as "observers", i.e., do not depend
+      on the dimension of the function application or added do the output data array.
+      Masks are deep-copied as per the usual requirement in scipp.
+
+    :param is_partial: The wrapped function is partial, i.e., does not return a data
+                       array itself, but a callable that returns a data array. If true,
+                       the posprocessing step is not applied to the wrapped function.
+                       Instead the callable returned by the decorated function is
+                       decorated with the postprocessing step.
+    """
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def function(da: DataArray, dim: str, **kwargs) -> Union[DataArray, Callable]:
