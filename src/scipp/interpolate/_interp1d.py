@@ -1,19 +1,14 @@
-from .. import array, Variable, DataArray, DimensionError, UnitError, VariancesError
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# @author Simon Heybrock
+
+from .. import array, Variable, DataArray, DimensionError, UnitError
+from ..compat.wrapping import wrap1d
 
 from typing import Callable
 
 
-def _validated_masks(da, dim):
-    masks = {}
-    for name, mask in da.masks.items():
-        if dim in mask.dims:
-            raise DimensionError(
-                f"Cannot interpolate along '{dim}' since mask '{name}' depends"
-                "on this dimension.")
-        masks[name] = mask.copy()
-    return masks
-
-
+@wrap1d(is_partial=True)
 def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
     """Interpolate a 1-D function.
 
@@ -75,18 +70,19 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
                                   float64  [dimensionless]  (x)  [0.137015, 0.210685, 0.282941, 0.353926]
     """  # noqa #501
     import scipy.interpolate as inter
-    if 'axis' in kwargs:
-        raise ValueError("Use the 'dim' keyword argument instead of 'axis'.")
-    if da.variances is not None:
-        raise VariancesError("Cannot interpolate data with uncertainties. Try "
-                             "'interp1d(sc.values(da), ...)' to ignore uncertainties.")
     kwargs['axis'] = da.dims.index(dim)
 
-    coords = {k: v for k, v in da.coords.items() if dim not in v.dims}
-    masks = _validated_masks(da, dim)
-    attrs = {k: v for k, v in da.attrs.items() if dim not in v.dims}
-
     def func(xnew: Variable, *, midpoints=False) -> DataArray:
+        """Compute interpolation function defined by ``interp1d`` at interpolation points.
+
+        :param xnew: Interpolation points.
+        :param midpoints: Interpolate at midpoints of given points. The result will be
+                          a histogram. Default is ``False``.
+        :return: Interpolated data array with new coord given by interpolation points
+                 and data given by interpolation function evaluated at the
+                 interpolation points (or evaluated at the midpoints of the given
+                 points).
+        """
         if xnew.unit != da.coords[dim].unit:
             raise UnitError(
                 f"Unit of interpolation points '{xnew.unit}' does not match unit "
@@ -99,12 +95,6 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
         f = inter.interp1d(x=da.coords[dim].values, y=da.values, **kwargs)
         x_ = 0.5 * (xnew[dim, 1:] + xnew[dim, :-1]) if midpoints else xnew
         ynew = array(dims=da.dims, unit=da.unit, values=f(x_.values))
-        return DataArray(data=ynew,
-                         coords={
-                             **coords, dim: xnew
-                         },
-                         masks={k: v.copy()
-                                for k, v in masks.items()},
-                         attrs=attrs)
+        return DataArray(data=ynew, coords={dim: xnew})
 
     return func
