@@ -65,6 +65,25 @@ def test_fail_conflicting_mask():
         interp1d(da, 'xx')
 
 
+def test_fail_new_coord_unit():
+    da = make_array()
+    f = interp1d(da, 'xx')
+    x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=10, unit='deg')
+    with pytest.raises(sc.UnitError):
+        f(x)
+
+
+def test_fail_new_coord_wrong_dim():
+    da = make_array()
+    f = interp1d(da, 'xx')
+    x = sc.linspace(dim='x', start=0.1, stop=0.4, num=10, unit='rad')
+    with pytest.raises(sc.DimensionError):
+        f(x)
+    x = sc.linspace(dim='yy', start=0.1, stop=0.4, num=da.sizes['yy'], unit='rad')
+    with pytest.raises(sc.DimensionError):
+        f(x)
+
+
 def test_data():
     da = make_array()
     x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=10, unit='rad')

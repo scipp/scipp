@@ -1,4 +1,4 @@
-from .. import array, Variable, DataArray, DimensionError, VariancesError
+from .. import array, Variable, DataArray, DimensionError, UnitError, VariancesError
 
 from typing import Callable
 
@@ -29,13 +29,13 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
     - The returned function does not just return the values of f(x) but a new
       data array with values defined as f(x) and x as a coordinate for the
       interpolation dimension.
-    - The returning function accepts an extra argument ``midpoints``. When setting
+    - The returned function accepts an extra argument ``midpoints``. When setting
       ``midpoints=True`` the interpolation uses the midpoints of the new points
       instead of the points itself. The returned data array is then a histogram, i.e.,
       the new coordinate is a bin-edge coordinate.
 
     Parameters not described above are forwarded to scipy.interpolate.interp1d. The
-    most relevant ones are (see https://docs.scipy.org/doc/scipy/reference/reference/generated/scipy.interpolate.interp1d.html#scipy.interpolate.interp1d for details):
+    most relevant ones are (see :py:class:`scipy.interpolate.interp1d` for details):
 
     :param kind: Specifies the kind of interpolation as a string or as an integer
                  specifying the order of the spline interpolator to use. The string
@@ -87,6 +87,15 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
     attrs = {k: v for k, v in da.attrs.items() if dim not in v.dims}
 
     def func(xnew: Variable, *, midpoints=False) -> DataArray:
+        if xnew.unit != da.coords[dim].unit:
+            raise UnitError(
+                f"Unit of interpolation points '{xnew.unit}' does not match unit "
+                f"'{da.coords[dim].unit}' of points defining the interpolation "
+                "function.")
+        if xnew.dim != dim:
+            raise DimensionError(
+                f"Dimension of interpolation points '{xnew.dim}' does not match "
+                f"interpolation dimension '{dim}'")
         f = inter.interp1d(x=da.coords[dim].values, y=da.values, **kwargs)
         x_ = 0.5 * (xnew[dim, 1:] + xnew[dim, :-1]) if midpoints else xnew
         ynew = array(dims=da.dims, unit=da.unit, values=f(x_.values))
