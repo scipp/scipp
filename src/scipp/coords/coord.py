@@ -4,7 +4,7 @@
 
 import dataclasses
 from enum import Enum, auto
-from typing import Optional
+from typing import List, Optional
 
 from ..core import Variable
 
@@ -16,7 +16,7 @@ class Destination(Enum):
 
 @dataclasses.dataclass
 class Coord:
-    dense: Variable  # for dense variable or bin-coord
+    dense: Optional[Variable]  # for dense variable or bin-coord
     event: Optional[Variable]
     destination: Destination
     usages: int = -1  # negative for unlimited usages
@@ -36,3 +36,7 @@ class Coord:
     @property
     def used_up(self) -> bool:
         return self.usages == 0
+
+    @property
+    def dims(self) -> List[str]:
+        return self.dense.dims if self.has_dense else []
