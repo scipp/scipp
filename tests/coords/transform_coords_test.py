@@ -148,15 +148,15 @@ def test_dim_rename_merge_two_dim_coords():
     # ab depends on two dimension coords => no rename of a
     da = original.transform_coords(['ab'], graph={'ab': ab})
     assert da.dims == ['a', 'b']
-    # Split combined with merge: Ensure that b2 does not cause rename of b
-    # which in turn would enable rename of a to ab
+    # Split combined with merge: b is split into ab and b2 and cannot
+    # participate in renaming, so a is renamed to ab.
     # *a   *b
     #   \  / \
     #    ab   b2
     da = original.transform_coords(['ab', 'b2'], graph={'ab': ab, 'b2': 'b'})
-    assert da.dims == ['a', 'b']
+    assert da.dims == ['ab', 'b']
     da = original.transform_coords(['b2', 'ab'], graph={'ab': ab, 'b2': 'b'})
-    assert da.dims == ['a', 'b']
+    assert da.dims == ['ab', 'b']
 
 
 def test_dim_rename_multi_level_merge():
@@ -167,10 +167,8 @@ def test_dim_rename_multi_level_merge():
     #    *bc
     original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
     da = original.transform_coords(['bc', 'a2'], graph={'bc': bc, 'c': 'a', 'a2': 'a'})
-    # a2 prevents conversion of a to c
-    # => c is not a dimension coord
-    # => bc depends on single dimension coord
-    # => rename b to bc
+    # Contributions from a are spread out over c and a2.
+    # b is the only full dimension-coord contribution to bc which triggers a rename
     assert da.dims == ['a', 'bc']
 
 
@@ -211,7 +209,7 @@ def test_dim_rename_multi_level_multi_merge():
     # c is also a dim coord
     original = sc.DataArray(data=a + b + c, coords={'a': a, 'b': b, 'c': c, 'd': b})
     da = original.transform_coords(['abcd'], graph=graph)
-    assert da.dims == ['a', 'abcd', 'c']
+    assert da.dims == ['a', 'bd', 'c']
 
 
 def test_dim_rename_multi_level_multi_merge_long():
@@ -219,9 +217,9 @@ def test_dim_rename_multi_level_multi_merge_long():
     #  |
     # *a    *c
     #  \   /
-    #    ac      *b
-    #     \     /
-    #      *abc
+    #    ac     *b
+    #     \    /
+    #      abc
     def abc(ac, b):
         return ac + b
 
@@ -229,7 +227,7 @@ def test_dim_rename_multi_level_multi_merge_long():
     x = a.rename_dims({'a': 'x'})
     original = sc.DataArray(data=x + b + c, coords={'x': x, 'b': b, 'c': c})
     da = original.transform_coords(['abc'], graph=graph)
-    assert da.dims == ['a', 'abc', 'c']
+    assert da.dims == ['a', 'b', 'c']
 
 
 def test_rename_dims_cycle():
@@ -237,48 +235,51 @@ def test_rename_dims_cycle():
     #   |
     #   b   c
     #  / \ /
-    # c   d  e
+    # g   d  e
     #  \ /  /
     #   f __
     def f_d(b, c):
         return b + c
 
-    def f_f(c, d, e):
-        return c + d + e
+    def f_f(g, d, e):
+        return g + d + e
 
-    graph = {'b': 'a', 'c': 'b', 'd': f_d, 'f': f_f}
-    original = sc.DataArray(data=a, coords={'a': a, 'c': a, 'e': a})
-    da = original.transform_coords(['f'], graph=graph)
-    assert da.dims == ['f']
-
-    # c is a dimension coord
-    original = sc.DataArray(data=a + c, coords={'a': a, 'c': c, 'e': a})
-    da = original.transform_coords(['f'], graph=graph)
-    assert da.dims == ['b', 'c']
-
-    # e is a dimension coord
+    graph = {'b': 'a', 'g': 'b', 'd': f_d, 'f': f_f}
     e = a.rename_dims({'a': 'e'})
-    original = sc.DataArray(data=a + e, coords={'a': a, 'c': a, 'e': e})
+
+    # dim coords: a
+    original = sc.DataArray(data=a + c + e, coords={'a': a, 'c': a, 'e': a})
     da = original.transform_coords(['f'], graph=graph)
-    assert da.dims == ['b', 'e']
+    assert da.dims == ['f', 'c', 'e']
+
+    # dim coords: a, c
+    original = sc.DataArray(data=a + c + e, coords={'a': a, 'c': c, 'e': a})
+    da = original.transform_coords(['f'], graph=graph)
+    assert da.dims == ['b', 'd', 'e']
+
+    # dim coords: a, e
+    original = sc.DataArray(data=a + c + e, coords={'a': a, 'c': a, 'e': e})
+    da = original.transform_coords(['f'], graph=graph)
+    assert da.dims == ['b', 'c', 'e']
 
 
 def test_dim_rename_produced_dim_coord():
     # c is a dimension coordinate even though it is computed from a and b.
-    # *a    b
+    #  a    b
     #   \  /
-    #    *c
+    #     c
     #     |
-    #    *d
+    #     d
     def f_c(a, b):
         return c
 
     graph = {'c': f_c, 'd': 'c'}
+    # dim coords: a, c
     original = sc.DataArray(data=a + c, coords={'a': a, 'b': a})
     da = original.transform_coords(['d'], graph=graph)
     assert da.dims == ['a', 'd']
 
-    # b is a dim coord
+    # dim coords: a, b, c
     graph = {'c': f_c, 'd': 'c'}
     original = sc.DataArray(data=a + b + c, coords={'a': a, 'b': b})
     da = original.transform_coords(['d'], graph=graph)
@@ -289,9 +290,9 @@ def test_dim_rename_produced_dim_coord_cycle():
     # c is a dimension coordinate even though it is computed from a.
     #    a
     #   / \
-    # *c   b
+    #  c   b
     #   \ /
-    #   *d
+    #    d
     def f_c(a):
         return c
 
@@ -299,18 +300,22 @@ def test_dim_rename_produced_dim_coord_cycle():
         return b + c
 
     graph = {'c': f_c, 'b': 'a', 'd': f_d}
+    # dim coords: c
     original = sc.DataArray(data=c, coords={'a': a.rename_dims({'a': 'c'})})
     da = original.transform_coords(['d'], graph=graph)
     assert da.dims == ['d']
 
-    # a is a dim coord
+    # dim coords: a, c
+    # a's contribution to d is only 1/2 because it gets blocked by c.
     original = sc.DataArray(data=a + c, coords={'a': a})
     da = original.transform_coords(['d'], graph=graph)
-    assert da.dims == ['a', 'c']
+    assert da.dims == ['a', 'd']
 
 
 @pytest.mark.parametrize('keep_inputs', (True, False))
-def test_dim_rename_keep_arguments(keep_inputs):
+@pytest.mark.parametrize('keep_intermediates', (True, False))
+@pytest.mark.parametrize('keep_aliases', (True, False))
+def test_dim_rename_keep_arguments(keep_inputs, keep_intermediates, keep_aliases):
     # *x
     #  |
     #  y
@@ -327,28 +332,10 @@ def test_dim_rename_keep_arguments(keep_inputs):
 
     da = original.transform_coords(['ab'],
                                    graph=graph,
-                                   keep_intermediate=True,
-                                   keep_aliases=True,
+                                   keep_intermediate=keep_intermediates,
+                                   keep_aliases=keep_aliases,
                                    keep_inputs=keep_inputs)
     assert da.dims == ['a', 'b']
-    da = original.transform_coords(['ab'],
-                                   graph=graph,
-                                   keep_intermediate=False,
-                                   keep_aliases=True,
-                                   keep_inputs=keep_inputs)
-    assert da.dims == ['a', 'b']
-    da = original.transform_coords(['ab'],
-                                   graph=graph,
-                                   keep_intermediate=True,
-                                   keep_aliases=False,
-                                   keep_inputs=keep_inputs)
-    assert da.dims == ['y', 'b']
-    da = original.transform_coords(['ab'],
-                                   graph=graph,
-                                   keep_intermediate=False,
-                                   keep_aliases=False,
-                                   keep_inputs=keep_inputs)
-    assert da.dims == ['x', 'b']
 
 
 def test_rename_dims_param():
@@ -431,12 +418,12 @@ def make_binned():
     return binned
 
 
-def check_binned(da, original):
+def check_binned(da, original, new_x_name):
     y = original.coords['y']
     assert 'xy' not in original.bins.coords  # Buffer was copied
     assert 'x' in original.bins.coords  # Buffer was copied for consume
     assert sc.identical(da.bins.coords['xy'],
-                        (y * original.bins.coords['x']).rename_dims({'x': 'x2'}))
+                        (y * original.bins.coords['x']).rename_dims({'x': new_x_name}))
     assert 'yy' not in da.bins.coords
     assert sc.identical(da.coords['yy'], y * y)
 
@@ -449,14 +436,14 @@ def test_binned():
 
     graph = {('xy', 'yy'): convert, 'x2': 'x'}
     da = binned.transform_coords(['xy', 'yy'], graph=graph)
-    check_binned(da, binned)
+    check_binned(da, binned, 'x2')
     assert sc.identical(da.coords['xy'], (binned.coords['x'] *
                                           binned.coords['y']).rename_dims({'x': 'x2'}))
     # If input is sliced, transform_coords has to copy the buffer
     da = binned['y', 0:1].transform_coords(['xy', 'yy'], graph=graph)
-    check_binned(da, binned['y', 0:1])
+    check_binned(da, binned['y', 0:1], 'x2')
     da = binned['y', 1:2].transform_coords(['xy', 'yy'], graph=graph)
-    check_binned(da, binned['y', 1:2])
+    check_binned(da, binned['y', 1:2], 'x2')
 
 
 def test_binned_no_dense_coord():
@@ -468,7 +455,7 @@ def test_binned_no_dense_coord():
 
     graph = {('xy', 'yy'): convert, 'x2': 'x'}
     da = binned.transform_coords(['xy', 'yy'], graph=graph)
-    check_binned(da, binned)
+    check_binned(da, binned, 'x')
 
 
 def test_binned_request_existing_consumed():
