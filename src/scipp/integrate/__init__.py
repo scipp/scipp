@@ -3,7 +3,7 @@
 # @author Simon Heybrock
 """Sub-package for integration."""
 
-from .. import scalar, DataArray
+from ..core import array, DataArray
 from ..compat.wrapping import wrap1d
 
 from typing import Callable
@@ -14,7 +14,8 @@ def _integrate(func: Callable, da: DataArray, dim: str, **kwargs) -> DataArray:
         raise ValueError("Invalid argument 'dx': Spacing of integration points is "
                          f"given by the '{dim}' coord.")
     integral = func(x=da.coords[dim].values, y=da.values, **kwargs)
-    return DataArray(data=scalar(integral, unit=da.unit * da.coords[dim].unit))
+    return DataArray(data=array(
+        dims=da[dim, 0].dims, values=integral, unit=da.unit * da.coords[dim].unit))
 
 
 @wrap1d()
