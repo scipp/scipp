@@ -2,14 +2,13 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock, Jan-Lukas Wynen
 
-from itertools import takewhile
-from typing import Dict, Iterable, List, Mapping, Optional, Set, Union
+from fractions import Fraction
+from typing import Dict, Iterable, List, Mapping, Set, Union
 
 from ..core import DataArray, Dataset, NotFoundError, VariableError, bins
 from ..logging import get_logger
 from .coord_table import Coord, CoordTable, Destination
-from .graph import Graph, GraphDict, RuleGraph, is_cycle_node,\
-    is_in_cycle, rule_sequence
+from .graph import GraphDict, RuleGraph, rule_sequence
 from .options import Options
 from .rule import ComputeRule, FetchRule, RenameRule, Rule, rule_output_names
 
@@ -92,15 +91,18 @@ def _transform_data_array(original: DataArray, targets: Set[str], graph: RuleGra
                           options: Options) -> DataArray:
     graph = graph.graph_for(original, targets)
     rules = rule_sequence(graph)
-    dim_name_changes = (_dim_name_changes(graph, original.dims, options)
-                        if options.rename_dims else {})
     working_coords = CoordTable(rules, targets, options)
-    _log_plan(rules, targets, dim_name_changes, working_coords)
+    # _log_plan(rules, targets, dim_name_changes, working_coords)
+    dim_coords = set()
     for rule in rules:
         for name, coord in rule(working_coords).items():
             working_coords.add(name, coord)
+            if name in coord.dims:
+                dim_coords.add(name)
 
     res = _store_results(original, working_coords, targets)
+    dim_name_changes = (_dim_name_changes(graph, dim_coords)
+                        if options.rename_dims else {})
     return res.rename_dims(dim_name_changes)
 
 
@@ -181,95 +183,39 @@ def _store_results(da: DataArray, coords: CoordTable, targets: Set[str]) -> Data
     return da
 
 
-def _has_single_element(iterable: Iterable) -> bool:
-    n = 0
-    for _ in iterable:
-        n += 1
-        if n > 1:
-            return False
-    return n == 1
+def _color_dims(graph: RuleGraph,
+                dim_coords: Set[str]) -> Dict[str, Dict[str, Fraction]]:
+    graph = graph.dependency_graph
 
-
-def _dim_associations_of_cycle_node(node: str, dims: List[str]) -> Set[str]:
-    return {dim for dim in dims if is_in_cycle(dim, node)}
-
-
-def _dim_associations_of_parents(node: str, graph: Graph,
-                                 associated_dims: Dict[str, Set[str]],
-                                 is_split_node: Dict[str, bool]) -> Set[str]:
-    dim_parents = set()
-    for parent in graph.parents_of(node):
-        if is_split_node[parent]:
-            # If *any* parent is a split node, this node cannot
-            # be associated with any parent dim.
-            return set()
-        dim_parents.update(associated_dims[parent])
-    return dim_parents if len(dim_parents) == 1 else set()
-
-
-def _associate_nodes_with_dim_coords(graph: Graph,
-                                     dims: List[str]) -> Dict[str, Optional[str]]:
-    associated_dims: Dict[str, Set[str]] = {}
-    is_split_node: Dict[str, bool] = {}
-
-    for node in graph.nodes_topologically():
-        is_split_node[node] = not _has_single_element(graph.children_of(node))
-        if node in dims:
-            associated_dims[node] = {node}
-        else:
-            associated_dims[node] = _dim_associations_of_parents(
-                node, graph, associated_dims, is_split_node)
-            if is_cycle_node(node):
-                associated_dims[node].update(_dim_associations_of_cycle_node(
-                    node, dims))
-
-    return {
-        name: next(iter(d)) if len(d) == 1 else None
-        for name, d in associated_dims.items()
+    colors = {
+        coord: {dim: Fraction(0, 1)
+                for dim in dim_coords}
+        for coord in graph.nodes()
     }
+    for dim in dim_coords:
+        colors[dim][dim] = Fraction(1, 1)
+        pending = [dim]
+        while pending:
+            coord = pending.pop()
+            children = tuple(graph.children_of(coord))
+            for child in children:
+                # test for produced dim coords
+                if child not in dim_coords:
+                    colors[child][dim] += colors[coord][dim] * Fraction(
+                        1, len(children))
+            pending.extend(children)
+
+    return colors
 
 
-def _dim_coords(graph: Graph, dims: List[str]) -> Iterable[str]:
-    for dim in dims:
-        for node in graph.nodes():
-            if dim == node:
-                yield dim, node
-                break
-            if is_in_cycle(dim, node):
-                yield dim, node
-                break
-
-
-def _is_valid_rename_candidate(node: str, rule_graph: RuleGraph,
-                               options: Options) -> bool:
-    return (not is_cycle_node(node) and
-            (options.keep_intermediate or not isinstance(rule_graph[node], ComputeRule))
-            and (options.keep_aliases or not isinstance(rule_graph[node], RenameRule)))
-
-
-def _walk_single_children(graph, start):
-    node = start
-    children = list(graph.children_of(node))
-    while len(children) == 1:
-        node = children[0]
-        yield node
-        children = list(graph.children_of(node))
-
-
-def _dim_name_changes(rule_graph: RuleGraph, dims: List[str],
-                      options: Options) -> Dict[str, str]:
-    graph = rule_graph.dependency_graph.fully_contract_cycles()
-    associated_dims = _associate_nodes_with_dim_coords(graph, dims)
-
+def _dim_name_changes(rule_graph: RuleGraph, dim_coords: Set[str]) -> Dict[str, str]:
+    colors = _color_dims(rule_graph, dim_coords)
+    nodes = list(rule_graph.dependency_graph.nodes_topologically())[::-1]
     name_changes = {}
-    for dim_coord, node in _dim_coords(graph, dims):
-        candidate = node if _is_valid_rename_candidate(node, rule_graph,
-                                                       options) else None
-        for child in takewhile(lambda c: associated_dims[c] == dim_coord,
-                               _walk_single_children(graph, node)):
-            if _is_valid_rename_candidate(child, rule_graph, options):
-                candidate = child
-        if candidate is not None and candidate != dim_coord:
-            name_changes[dim_coord] = candidate
-
+    for dim in dim_coords:
+        for node in nodes:
+            c = colors[node]
+            if all(f == 1 if d == dim else f != 1 for d, f in c.items()):
+                name_changes[dim] = node
+                break
     return name_changes
