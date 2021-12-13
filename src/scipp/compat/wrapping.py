@@ -32,7 +32,7 @@ def wrap1d(is_partial=False):
     - Providing data with variances will raise ``sc.VariancesError`` since third-party
       libraries typically cannot handle variances.
     - Coordinates, masks, and attributes that act as "observers", i.e., do not depend
-      on the dimension of the function application are added do the output data array.
+      on the dimension of the function application, are added to the output data array.
       Masks are deep-copied as per the usual requirement in scipp.
 
     :param is_partial: The wrapped function is partial, i.e., does not return a data
