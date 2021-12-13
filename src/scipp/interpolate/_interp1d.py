@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 
-from .. import array, Variable, DataArray, DimensionError, UnitError
+from ..core import array, Variable, DataArray, DimensionError, UnitError
 from ..compat.wrapping import wrap1d
 
 from typing import Callable
@@ -86,7 +86,7 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
             raise UnitError(
                 f"Unit of interpolation points '{xnew.unit}' does not match unit "
                 f"'{da.coords[dim].unit}' of points defining the interpolation "
-                "function.")
+                "function along dimension '{dim}'.")
         if xnew.dim != dim:
             raise DimensionError(
                 f"Dimension of interpolation points '{xnew.dim}' does not match "

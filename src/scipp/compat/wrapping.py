@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 
-from .. import DataArray, DimensionError, VariancesError
+from ..core import DataArray, BinEdgeError, DimensionError, VariancesError
 
 from functools import wraps
 from typing import Callable, Union
@@ -32,7 +32,7 @@ def wrap1d(is_partial=False):
     - Providing data with variances will raise ``sc.VariancesError`` since third-party
       libraries typically cannot handle variances.
     - Coordinates, masks, and attributes that act as "observers", i.e., do not depend
-      on the dimension of the function application or added do the output data array.
+      on the dimension of the function application are added do the output data array.
       Masks are deep-copied as per the usual requirement in scipp.
 
     :param is_partial: The wrapped function is partial, i.e., does not return a data
@@ -50,6 +50,10 @@ def wrap1d(is_partial=False):
                 raise VariancesError(
                     "Cannot apply function to data with uncertainties. If uncertainties"
                     " should be ignored, use 'sc.values(da)' to extract only values.")
+            if da.sizes[dim] != da.coords[dim].sizes[dim]:
+                raise BinEdgeError(
+                    "Cannot apply function to data array with bin edges.")
+
             kwargs['axis'] = da.dims.index(dim)
 
             coords = {k: v for k, v in da.coords.items() if dim not in v.dims}

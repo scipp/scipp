@@ -58,6 +58,14 @@ def test_fail_variances():
         interp1d(da, 'xx')
 
 
+def test_fail_bin_edges():
+    tmp = make_array()
+    da = tmp['xx', 1:].copy()
+    da.coords['xx'] = tmp.coords['xx']
+    with pytest.raises(sc.BinEdgeError):
+        interp1d(da, 'xx')
+
+
 def test_fail_conflicting_mask():
     da = make_array()
     da.masks['xx'] = da.coords['xx'] != da.coords['xx']
