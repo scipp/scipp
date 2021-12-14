@@ -70,9 +70,9 @@ std::vector<std::string> element_keys(const Variable &var) {
 
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(vector3, Eigen::Vector3d, double)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(linear_transform3, Eigen::Matrix3d, double)
-INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(affine_transform, Eigen::Affine3d, double)
-INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(rotation, scipp::core::Quaternion, double)
-INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(translation, scipp::core::Translation,
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(affine_transform3, Eigen::Affine3d, double)
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(rotation3, scipp::core::Quaternion, double)
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(translation3, scipp::core::Translation,
                                      double)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(index_pair, scipp::index_pair,
                                      scipp::index)
