@@ -4,10 +4,7 @@
 
 from __future__ import annotations
 
-from copy import deepcopy
-import dataclasses
 from graphlib import TopologicalSorter
-from itertools import islice
 from typing import Callable, Dict, Iterable, List, Set, Tuple, Union
 
 from ..core import DataArray, NotFoundError
@@ -35,22 +32,6 @@ class DepthFirstSearch:
 
     def push(self, next_values: Iterable):
         self._stack.extend(next_values)
-
-
-@dataclasses.dataclass
-class Cycle:
-    nodes: Set[str]
-    inputs: Set[str]
-    outputs: Set[str]
-
-    def __hash__(self):
-        # For a given graph, the nodes uniquely identify the cycle.
-        # There is no need to include inputs and outputs in the hash.
-        return hash(tuple(sorted(self.nodes)))
-
-    def intermediates(self):
-        yield from (node for node in self.nodes
-                    if node not in self.inputs and node not in self.outputs)
 
 
 class Graph:
@@ -92,102 +73,6 @@ class Graph:
 
     def nodes_topologically(self) -> Iterable[str]:
         yield from TopologicalSorter(self._child_to_parent).static_order()
-
-    def undirected_cycles(self, n=None) -> Set[Cycle]:
-        cycles = set()
-        # It is enough to only start from rule outputs, because there are no cycles
-        # that include only inputs.
-        for start in self._child_to_parent.keys():
-            cycles.update(self._undirected_cycles_from(start, n))
-            if n is not None and len(cycles) >= n:
-                return set(islice(cycles, 0, n))
-        return cycles
-
-    def _undirected_cycles_from(self, start, n) -> Set[Cycle]:
-        dfs = DepthFirstSearch([[start]])
-        cycles = set()
-        for path in dfs:
-            head = path[-1]
-            for neighbor in self.neighbors_of(head):
-                if neighbor in path:
-                    self._add_cycle_to(cycles, path[path.index(neighbor):])
-                    if n is not None and len(cycles) >= n:
-                        return set(islice(cycles, 0, n))
-                else:
-                    dfs.push([path + [neighbor]])
-        return cycles
-
-    def _add_cycle_to(self, cycles, path_section):
-        inputs = set()
-        outputs = set()
-        inner = set()
-        for node in path_section:
-            has_parents_in_graph = any(parent in path_section
-                                       for parent in self.parents_of(node))
-            has_children_in_graph = any(child in path_section
-                                        for child in self.children_of(node))
-            if has_parents_in_graph:
-                if not has_children_in_graph:
-                    outputs.add(node)
-                else:
-                    inner.add(node)
-            else:
-                # Must have outgoing edges.
-                inputs.add(node)
-        if not inner:
-            # No intermediate nodes that can be contracted.
-            # This prevents (among others) a->b from being detected as a cycle
-            # but allows a<->b (2 edges).
-            return
-        cycles.add(Cycle(nodes=set(path_section), inputs=inputs, outputs=outputs))
-
-    def add_node(self, name, parents):
-        self._child_to_parent[name] = parents
-
-    def remove_node(self, name: str):
-        self._child_to_parent.pop(name, None)
-        for other in self.children_of(name):
-            self._child_to_parent[other].discard(name)
-
-    def add_parent(self, child: str, parent: str):
-        self._child_to_parent[child].add(parent)
-
-    def remove_parent(self, child: str, parent: str):
-        self._child_to_parent[child].discard(parent)
-
-    def contract_cycle(self, cycle: Cycle) -> Graph:
-        intermediates = list(cycle.intermediates())
-        new_node = _make_new_node_name(intermediates)
-        work_graph = deepcopy(self)
-
-        for node in intermediates:
-            work_graph.remove_node(node)
-
-        new_parents = set(cycle.inputs)
-        for node in intermediates:
-            for parent in self.parents_of(node):
-                if parent not in intermediates:
-                    new_parents.add(parent)
-        work_graph.add_node(new_node, new_parents)
-
-        for node in self._child_to_parent:
-            if node not in cycle.inputs and node not in intermediates:
-                for parent in self.parents_of(node):
-                    if parent in cycle.inputs:
-                        work_graph.remove_parent(node, parent)
-                    if parent in cycle.inputs or parent in intermediates:
-                        work_graph.add_parent(node, new_node)
-
-        return work_graph
-
-    def fully_contract_cycles(self) -> Graph:
-        graph = self
-        cycles = graph.undirected_cycles(n=1)
-        while cycles:
-            cycle = next(iter(cycles))
-            graph = graph.contract_cycle(cycle)
-            cycles = graph.undirected_cycles(n=1)
-        return graph
 
 
 class RuleGraph:
@@ -283,24 +168,6 @@ def _convert_to_rule_graph(graph: GraphDict) -> Dict[str, Rule]:
 
 def _is_in_meta_data(name: str, da: DataArray) -> bool:
     return name in da.meta or (da.bins is not None and name in da.bins.meta)
-
-
-_CYCLE_PREFIX = '__SC_CYCLE_NODE:'
-_CYCLE_SEP = ':__SC_CYCLE_SEP__:'
-
-
-def _make_new_node_name(node_names: Iterable[str]) -> str:
-    return _CYCLE_PREFIX + _CYCLE_SEP.join(
-        name.replace(_CYCLE_PREFIX, '') for name in node_names)
-
-
-def is_cycle_node(node: str) -> bool:
-    return node.startswith(_CYCLE_PREFIX)
-
-
-def is_in_cycle(node: str, cycle_node: str) -> bool:
-    return node in (component for without_prefix in cycle_node.split(_CYCLE_PREFIX)
-                    for component in without_prefix.split(_CYCLE_SEP))
 
 
 def _make_graphviz_digraph(*args, **kwargs):
