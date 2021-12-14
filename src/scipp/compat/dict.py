@@ -60,8 +60,8 @@ def _variable_to_dict(v):
     # Using raw dtypes as dict keys doesn't appear to work, so we need to
     # convert to strings.
     dtype_parser.update({
-        str(dtype.vector_3_float64): _vec_parser,
-        str(dtype.matrix_3_float64): _vec_parser,
+        str(dtype.vector3): _vec_parser,
+        str(dtype.linear_transform3): _vec_parser,
         str(dtype.string): _vec_parser,
     })
 
@@ -144,9 +144,9 @@ def _dict_to_variable(d):
             out[key] = d[key]
     # Hack for types that cannot be directly constructed using Variable()
     if out['dims']:
-        init = {'vector_3_float64': vectors, 'matrix_3_float64': matrices}
+        init = {'vector3': vectors, 'linear_transform3': matrices}
     else:
-        init = {'vector_3_float64': vector, 'matrix_3_float64': matrix}
+        init = {'vector3': vector, 'linear_transform3': matrix}
     make_var = init.get(str(out.get('dtype', None)), Variable)
     if make_var != Variable:
         if not out['dims']:

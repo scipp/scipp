@@ -18,7 +18,7 @@ def _dtype_lut():
     dtypes = [
         d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64, d.string,
         d.Variable, d.DataArray, d.Dataset, d.VariableView, d.DataArrayView,
-        d.DatasetView, d.vector_3_float64, d.matrix_3_float64
+        d.DatasetView, d.vector3, d.linear_transform3
     ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
@@ -149,7 +149,7 @@ def _data_handler_lut():
     handler = {}
     for dtype in [
             d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64,
-            d.vector_3_float64, d.matrix_3_float64
+            d.vector3, d.linear_transform3
     ]:
         handler[str(dtype)] = NumpyDataIO
     for dtype in [d.VariableView, d.DataArrayView, d.DatasetView]:
