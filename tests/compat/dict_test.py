@@ -95,11 +95,7 @@ def test_variable_0D_from_dict():
 
 
 def test_variable_vector_from_dict():
-    var_dict = {
-        "dims": ['x'],
-        "values": np.arange(6).reshape(2, 3),
-        "dtype": "vector3"
-    }
+    var_dict = {"dims": ['x'], "values": np.arange(6).reshape(2, 3), "dtype": "vector3"}
     var = sc.from_dict(var_dict)
     assert var.dims == var_dict["dims"]
     assert var.shape == [2]

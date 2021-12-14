@@ -20,8 +20,7 @@ def test_from_rotvec():
 
     # Test rotations are equivalent by applying to a test vector.
     test_vec = sc.vector(value=[4, 5, 6])
-    assert sc.allclose(rot * test_vec,
-                       sc.matrix(value=expected.as_matrix()) * test_vec)
+    assert sc.allclose(rot * test_vec, sc.matrix(value=expected.as_matrix()) * test_vec)
 
 
 def test_from_rotvec_rotation():
