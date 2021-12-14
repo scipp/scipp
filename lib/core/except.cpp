@@ -68,11 +68,11 @@ void throw_cannot_have_variances(const DType type) {
 } // namespace scipp::except
 
 namespace scipp::core::expect {
-void ndim_is(const Dimensions &dims, const scipp::index expected) {
+void ndim_is(const Sizes &dims, const scipp::index expected) {
   using std::to_string;
-  if (dims.ndim() != expected) {
+  if (dims.size() != expected) {
     throw except::DimensionError("Expected " + to_string(expected) +
-                                 " dimensions, got " + to_string(dims.ndim()));
+                                 " dimensions, got " + to_string(dims.size()));
   }
 }
 

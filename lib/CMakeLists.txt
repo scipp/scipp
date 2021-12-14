@@ -102,28 +102,20 @@ add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-MP>)
 include(GoogleTest)
 include(GenerateExportHeader)
 
-option(DISABLE_MULTI_THREADING "Disable multi threading" OFF)
-if(NOT DISABLE_MULTI_THREADING)
-  find_package(TBB CONFIG)
-endif()
-if(TBB_FOUND)
-  option(ENABLE_THREAD_LIMIT
-         "Limit the number TBB threads. Limit number set via THREAD_LIMIT" OFF
-  )
-  if(ENABLE_THREAD_LIMIT)
-    include(ProcessorCount)
-    processorcount(N)
-    set(THREAD_LIMIT
-        N
-        CACHE
-          STRING
-          "Maximum number of TBB threads if limit enabled via ENABLE_THREAD_LIMIT"
+option(THREADING "Build with multi-threading" ON)
+if(THREADING)
+  if(SKBUILD)
+    include(patch-pip-tbb-devel)
+    find_package(TBB CONFIG REQUIRED)
+    install(IMPORTED_RUNTIME_ARTIFACTS TBB::tbb RUNTIME DESTINATION
+            ${PYTHONDIR}
     )
   else()
-    unset(THREAD_LIMIT)
+    find_package(TBB CONFIG REQUIRED)
   endif()
   configure_file(
     core/include/scipp/core/parallel-tbb.h core/include/scipp/core/parallel.h
+    COPYONLY
   )
 else()
   configure_file(

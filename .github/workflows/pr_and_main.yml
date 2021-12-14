@@ -1,4 +1,4 @@
-name: PR and main CI
+name: CI
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
       - run: sudo apt-get install --yes clang-format-10
       - run: find lib -type f -regex '.*\.\(cpp\|h\|tcc\)' -exec clang-format-10 -i {} +
       - run: pip install cmake_format==0.6.9 flake8 yapf==0.30.0
-      - run: find . -type f -name CMakeLists.txt -or -name '*.cmake' | xargs cmake-format -i
+      - run: find . -type f -name CMakeLists.txt -or -name '*.cmake' -not -path "./lib/.tbb/*" | xargs cmake-format -i
       - run: yapf --recursive --in-place .
       - run: flake8 .
       - run: |
@@ -29,7 +29,7 @@ jobs:
 
   build_and_test:
     needs: formatting
-    name: CI (${{ matrix.os }}, py${{ matrix.python-version }})
+    name: build and test ${{ matrix.os }}, py${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     defaults:
       run:

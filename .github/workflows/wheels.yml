@@ -2,8 +2,7 @@ name: Wheels
 
 on:
   release:
-    types:
-      - published
+    types: [published]
 
 jobs:
   build_sdist:
