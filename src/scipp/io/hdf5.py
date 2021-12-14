@@ -148,8 +148,8 @@ def _data_handler_lut():
     from .._scipp.core import dtype as d
     handler = {}
     for dtype in [
-            d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64,
-            d.vector3, d.linear_transform3
+            d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64, d.vector3,
+            d.linear_transform3
     ]:
         handler[str(dtype)] = NumpyDataIO
     for dtype in [d.VariableView, d.DataArrayView, d.DatasetView]:
