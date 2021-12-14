@@ -4,7 +4,7 @@
 
 import dataclasses
 from enum import Enum, auto
-from typing import List, Optional
+from typing import Optional
 
 from ..core import Variable
 
@@ -37,6 +37,5 @@ class Coord:
     def used_up(self) -> bool:
         return self.usages == 0
 
-    @property
-    def dims(self) -> List[str]:
-        return self.dense.dims if self.has_dense else []
+    def has_dim(self, dim: str) -> bool:
+        return dim in (self.dense.dims if self.has_dense else self.event.dims)

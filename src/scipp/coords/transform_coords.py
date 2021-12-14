@@ -97,7 +97,7 @@ def _transform_data_array(original: DataArray, targets: Set[str], graph: RuleGra
     for rule in rules:
         for name, coord in rule(working_coords).items():
             working_coords.add(name, coord)
-            if name in coord.dims:
+            if coord.has_dim(name):
                 dim_coords.add(name)
 
     res = _store_results(original, working_coords, targets)
