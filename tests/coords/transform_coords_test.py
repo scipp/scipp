@@ -523,6 +523,22 @@ def test_cycles():
         original.transform_coords(['c'], graph={'c': 'd', 'd': bc})
 
 
+def test_new_dim_in_coord():
+    def x(a):
+        return a.rename_dims({'a': 'x'})
+
+    original = sc.DataArray(data=a, coords={'a': a})
+    with pytest.raises(sc.DimensionError):
+        original.transform_coords(['x'], graph={'x': x})
+
+    def ax(a):
+        return sc.concat([a, a], dim='x')
+
+    original = sc.DataArray(data=a, coords={'a': a})
+    with pytest.raises(sc.DimensionError):
+        original.transform_coords(['x'], graph={'x': ax})
+
+
 def test_vararg_fail():
     original = sc.DataArray(data=a, coords={'a': a})
 
