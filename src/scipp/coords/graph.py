@@ -13,27 +13,6 @@ from .rule import ComputeRule, FetchRule, RenameRule, Rule
 GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 
 
-class DepthFirstSearch:
-    def __init__(self, initial: Iterable):
-        self._stack = list(initial)
-        self._iterating = False
-
-    def __iter__(self):
-        assert not self._iterating
-        self._iterating = True
-        return self
-
-    def __next__(self):
-        assert self._iterating
-        if self._stack:
-            return self._stack.pop()
-        self._iterating = False
-        raise StopIteration
-
-    def push(self, next_values: Iterable):
-        self._stack.extend(next_values)
-
-
 class Graph:
     def __init__(self, graph: Union[GraphDict, Dict[str, Rule]]):
         if isinstance(next(iter(graph.values())), Rule):
@@ -68,20 +47,39 @@ class Graph:
             {out: rule.dependencies
              for out, rule in self._rules.items()}).static_order()
 
+    def depth_first(self, start: Iterable[str], direction: str) -> Iterable[str]:
+        """
+        Traverse the graph in depth first order visiting every node at most once.
+        """
+        assert direction in ('children', 'parents')
+
+        pending = [start] if isinstance(start, str) else list(start)
+        visited = set()
+        while pending:
+            node = pending.pop()
+            if node in visited:
+                continue
+            visited.add(node)
+            yield node
+
+            if direction == 'children':
+                pending.extend(list(self.children_of(node)))
+            else:
+                try:
+                    pending.extend(self._rules[node].dependencies)
+                except KeyError:
+                    pass
+
     def graph_for(self, da: DataArray, targets: Set[str]) -> Graph:
         """
         Construct a graph containing only rules needed for the given DataArray
         and targets, including FetchRules for the inputs.
         """
         subgraph = {}
-        dfs = DepthFirstSearch(targets)
-        for out_name in dfs:
-            if out_name in subgraph:
-                continue
+        for out_name in self.depth_first(targets, direction='parents'):
             rule = self._rule_for(out_name, da)
             for name in rule.out_names:
                 subgraph[name] = rule
-            dfs.push(rule.dependencies)
         return Graph(subgraph)
 
     def _rule_for(self, out_name: str, da: DataArray) -> Rule:

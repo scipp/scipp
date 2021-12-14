@@ -191,16 +191,13 @@ def _color_dims(graph: Graph, dim_coords: Set[str]) -> Dict[str, Dict[str, Fract
     }
     for dim in dim_coords:
         colors[dim][dim] = Fraction(1, 1)
-        pending = [dim]
-        while pending:
-            coord = pending.pop()
+        for coord in graph.depth_first(dim, direction='children'):
             children = tuple(graph.children_of(coord))
             for child in children:
                 # test for produced dim coords
                 if child not in dim_coords:
                     colors[child][dim] += colors[coord][dim] * Fraction(
                         1, len(children))
-            pending.extend(children)
 
     return colors
 
