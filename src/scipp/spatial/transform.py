@@ -1,8 +1,10 @@
 from typing import Union, Sequence
 import numpy as _np
+import numpy as np
+
 from .._scipp import core as _core_cpp
 from .. import matrices, units, Unit, UnitError, Variable, vectors
-from ..core.variable import _to_eigen_layout
+from ..core.variable import _to_eigen_layout, matrix
 
 
 def translation_from_vector(*,
@@ -51,7 +53,12 @@ def scalings_from_vectors(*, dims: Sequence[str], values: Union[_np.ndarray, lis
     :param values: a list or numpy array of 3-vectors, each corresponding to scaling
         coefficients in the x, y and z directions respectively.
     """
-    return matrices(dims=dims, values=[_np.diag(v) for v in _np.nditer(values)])
+    identity = matrix(value=np.identity(3))
+    matrices = identity.broadcast(dims=dims, shape=(len(values),)).copy()
+    for field_name, index in (("xx", 0), ("yy", 1), ("zz", 2)):
+        matrices.fields[field_name] = Variable(
+            dims=dims, values=np.asarray(values)[:, index], dtype="float64")
+    return matrices
 
 
 def rotation(*, value: Union[_np.ndarray, list]):
