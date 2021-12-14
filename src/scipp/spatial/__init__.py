@@ -6,4 +6,4 @@ from . import transform
 from .transform import rotation, rotations, rotation_from_rotvec, \
     rotations_from_rotvecs, rotation_as_rotvec, scaling_from_vector, \
     scalings_from_vectors, translation_from_vector, translations_from_vectors, \
-    affine_transform, affine_transforms
+    affine_transform, affine_transforms, linear_transform, linear_transforms

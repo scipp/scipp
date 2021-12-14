@@ -3,8 +3,13 @@ import numpy as _np
 import numpy as np
 
 from .._scipp import core as _core_cpp
-from .. import matrices, units, Unit, UnitError, Variable, vectors
-from ..core.variable import _to_eigen_layout, matrix
+from .. import units, Unit, UnitError, Variable, vectors
+
+
+def _to_eigen_layout(a):
+    # Numpy and scipp use row-major, but Eigen matrices use column-major,
+    # transpose matrix axes for copying values.
+    return _np.moveaxis(a, -1, -2)
 
 
 def translation_from_vector(*,
@@ -42,7 +47,7 @@ def scaling_from_vector(*, value: Union[_np.ndarray, list]):
     :param value: a list or numpy array of 3 values, corresponding to scaling
         coefficients in the x, y and z directions respectively.
     """
-    return matrices(dims=[], values=_np.diag(value))
+    return linear_transforms(dims=[], values=_np.diag(value))
 
 
 def scalings_from_vectors(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
@@ -53,11 +58,12 @@ def scalings_from_vectors(*, dims: Sequence[str], values: Union[_np.ndarray, lis
     :param values: a list or numpy array of 3-vectors, each corresponding to scaling
         coefficients in the x, y and z directions respectively.
     """
-    identity = matrix(value=np.identity(3))
-    matrices = identity.broadcast(dims=dims, shape=(len(values),)).copy()
+    identity = linear_transform(value=np.identity(3))
+    matrices = identity.broadcast(dims=dims, shape=(len(values), )).copy()
     for field_name, index in (("xx", 0), ("yy", 1), ("zz", 2)):
-        matrices.fields[field_name] = Variable(
-            dims=dims, values=np.asarray(values)[:, index], dtype="float64")
+        matrices.fields[field_name] = Variable(dims=dims,
+                                               values=np.asarray(values)[:, index],
+                                               dtype="float64")
     return matrices
 
 
@@ -84,6 +90,11 @@ def rotations(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
     :param values: a numpy array of numpy arrays corresponding to the quaternion
         coefficients (w, x*i, y*j, z*k)
     """
+    for val in values:
+        if hasattr(val, "__len__") and len(val) != 4:
+            raise ValueError("Inputs must be Quaternions to create a rotation. If you"
+                             "want to pass a rotation matrix, use "
+                             "sc.linear_transforms instead.")
     return _core_cpp.rotations(dims=dims, values=values)
 
 
@@ -183,3 +194,35 @@ def affine_transforms(*,
     return _core_cpp.affine_transforms(dims=dims,
                                        unit=unit,
                                        values=_to_eigen_layout(values))
+
+
+def linear_transform(*,
+                     unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+                     value: Union[_np.ndarray, list]):
+    """Constructs a zero dimensional :class:`Variable` holding a single 3x3
+    matrix.
+
+    :seealso: :py:func:`scipp.matrices`
+
+    :param value: Initial value, a list or 1-D numpy array.
+    :param unit: Optional, unit. Default=dimensionless
+    :returns: A scalar (zero-dimensional) Variable.
+    :rtype: Variable
+    """
+    return _core_cpp.matrices(dims=[], unit=unit, values=_to_eigen_layout(value))
+
+
+def linear_transforms(*,
+                      dims: Sequence[str],
+                      unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+                      values: Union[_np.ndarray, list]):
+    """Constructs a :class:`Variable` with given dimensions holding an array
+    of 3x3 matrices.
+
+    :seealso: :py:func:`scipp.matrix`
+
+    :param dims: Dimension labels.
+    :param values: Initial values.
+    :param unit: Optional, data unit. Default=dimensionless
+    """
+    return _core_cpp.matrices(dims=dims, unit=unit, values=_to_eigen_layout(values))
