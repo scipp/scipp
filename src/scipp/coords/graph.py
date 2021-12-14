@@ -35,63 +35,40 @@ class DepthFirstSearch:
 
 
 class Graph:
-    def __init__(self, graph: Dict[str, Iterable[str]]):
-        self._child_to_parent = {key: set(values) for key, values in graph.items()}
+    def __init__(self, graph: Union[GraphDict, Dict[str, Rule]]):
+        if isinstance(next(iter(graph.values())), Rule):
+            self._rules: Dict[str, Rule] = graph
+        else:
+            self._rules: Dict[str, Rule] = _convert_to_rule_graph(graph)
 
-    def __eq__(self, other: Graph) -> bool:
-        return self._child_to_parent == other._child_to_parent
+    def __getitem__(self, name: str) -> Rule:
+        return self._rules[name]
 
-    def __repr__(self):
-        return str(self)
-
-    def __getitem__(self, node: str):
-        return self._child_to_parent[node]
+    def items(self) -> Iterable[Tuple[str, Rule]]:
+        yield from self._rules.items()
 
     def parents_of(self, node: str) -> Iterable[str]:
         try:
-            yield from self._child_to_parent[node]
+            yield from self._rules[node].dependencies
         except KeyError:
             # Input nodes have no parents but are not represented in the
             # graph unless the corresponding FetchRules have been added.
             return
 
     def children_of(self, node: str) -> Iterable[str]:
-        for candidate, parents in self._child_to_parent.items():
-            if node in parents:
+        for candidate, rule in self.items():
+            if node in rule.dependencies:
                 yield candidate
 
-    def neighbors_of(self, node: str) -> Iterable[str]:
-        yield from self.parents_of(node)
-        yield from self.children_of(node)
-
-    def roots(self) -> Iterable[str]:
-        yield from (name for name, parents in self._child_to_parent.items()
-                    if not parents)
-
     def nodes(self) -> Iterable[str]:
-        yield from self._child_to_parent.keys()
+        yield from self._rules.keys()
 
     def nodes_topologically(self) -> Iterable[str]:
-        yield from TopologicalSorter(self._child_to_parent).static_order()
+        yield from TopologicalSorter(
+            {out: rule.dependencies
+             for out, rule in self._rules.items()}).static_order()
 
-
-class RuleGraph:
-    def __init__(self, graph: Union[GraphDict, Dict[str, Rule]]):
-        if isinstance(next(iter(graph.values())), Rule):
-            self._rule_graph: Dict[str, Rule] = graph
-        else:
-            self._rule_graph: Dict[str, Rule] = _convert_to_rule_graph(graph)
-        self.dependency_graph = Graph(
-            {output: rule.dependencies
-             for output, rule in self._rule_graph.items()})
-
-    def __getitem__(self, name: str) -> Rule:
-        return self._rule_graph[name]
-
-    def items(self) -> Iterable[Tuple[str, Rule]]:
-        yield from self._rule_graph.items()
-
-    def graph_for(self, da: DataArray, targets: Set[str]) -> RuleGraph:
+    def graph_for(self, da: DataArray, targets: Set[str]) -> Graph:
         """
         Construct a graph containing only rules needed for the given DataArray
         and targets, including FetchRules for the inputs.
@@ -105,13 +82,13 @@ class RuleGraph:
             for name in rule.out_names:
                 subgraph[name] = rule
             dfs.push(rule.dependencies)
-        return RuleGraph(subgraph)
+        return Graph(subgraph)
 
     def _rule_for(self, out_name: str, da: DataArray) -> Rule:
         if _is_in_meta_data(out_name, da):
             return FetchRule((out_name, ), da.meta, da.bins.meta if da.bins else {})
         try:
-            return self._rule_graph[out_name]
+            return self._rules[out_name]
         except KeyError:
             raise NotFoundError(
                 f"Coordinate '{out_name}' does not exist in the input data "
@@ -121,7 +98,7 @@ class RuleGraph:
         dot = _make_graphviz_digraph(strict=True)
         dot.attr('node', shape='box', height='0.1')
         dot.attr(size=size)
-        for output, rule in self._rule_graph.items():
+        for output, rule in self._rules.items():
             if isinstance(rule, RenameRule):
                 dot.edge(rule.dependencies[0], output, style='dashed')
             elif isinstance(rule, ComputeRule):
@@ -136,12 +113,11 @@ class RuleGraph:
         return dot
 
 
-def rule_sequence(rules: RuleGraph) -> List[Rule]:
+def rule_sequence(rules: Graph) -> List[Rule]:
     already_used = set()
     result = []
-    for rule in filter(
-            lambda r: r not in already_used,
-            map(lambda n: rules[n], rules.dependency_graph.nodes_topologically())):
+    for rule in filter(lambda r: r not in already_used,
+                       map(lambda n: rules[n], rules.nodes_topologically())):
         already_used.add(rule)
         result.append(rule)
     return result

@@ -8,7 +8,7 @@ from typing import Dict, Iterable, List, Mapping, Set, Union
 from ..core import DataArray, Dataset, NotFoundError, VariableError, bins
 from ..logging import get_logger
 from .coord_table import Coord, CoordTable, Destination
-from .graph import GraphDict, RuleGraph, rule_sequence
+from .graph import Graph, GraphDict, rule_sequence
 from .options import Options
 from .rule import ComputeRule, FetchRule, RenameRule, Rule, rule_output_names
 
@@ -61,12 +61,12 @@ def transform_coords(x: Union[DataArray, Dataset],
     if isinstance(x, DataArray):
         return _transform_data_array(x,
                                      targets=targets,
-                                     graph=RuleGraph(graph),
+                                     graph=Graph(graph),
                                      options=options)
     else:
         return _transform_dataset(x,
                                   targets=targets,
-                                  graph=RuleGraph(graph),
+                                  graph=Graph(graph),
                                   options=options)
 
 
@@ -84,10 +84,10 @@ def show_graph(graph: GraphDict, size: str = None, simplified: bool = False):
     :param simplified: If ``True``, do not show the conversion functions,
                        only the potential input and output coordinates.
     """
-    return RuleGraph(graph).show(size=size, simplified=simplified)
+    return Graph(graph).show(size=size, simplified=simplified)
 
 
-def _transform_data_array(original: DataArray, targets: Set[str], graph: RuleGraph,
+def _transform_data_array(original: DataArray, targets: Set[str], graph: Graph,
                           options: Options) -> DataArray:
     graph = graph.graph_for(original, targets)
     rules = rule_sequence(graph)
@@ -106,7 +106,7 @@ def _transform_data_array(original: DataArray, targets: Set[str], graph: RuleGra
     return res.rename_dims(dim_name_changes)
 
 
-def _transform_dataset(original: Dataset, targets: Set[str], graph: RuleGraph, *,
+def _transform_dataset(original: Dataset, targets: Set[str], graph: Graph, *,
                        options: Options) -> Dataset:
     # Note the inefficiency here in datasets with multiple items: Coord
     # transform is repeated for every item rather than sharing what is
@@ -183,10 +183,7 @@ def _store_results(da: DataArray, coords: CoordTable, targets: Set[str]) -> Data
     return da
 
 
-def _color_dims(graph: RuleGraph,
-                dim_coords: Set[str]) -> Dict[str, Dict[str, Fraction]]:
-    graph = graph.dependency_graph
-
+def _color_dims(graph: Graph, dim_coords: Set[str]) -> Dict[str, Dict[str, Fraction]]:
     colors = {
         coord: {dim: Fraction(0, 1)
                 for dim in dim_coords}
@@ -208,9 +205,9 @@ def _color_dims(graph: RuleGraph,
     return colors
 
 
-def _dim_name_changes(rule_graph: RuleGraph, dim_coords: Set[str]) -> Dict[str, str]:
+def _dim_name_changes(rule_graph: Graph, dim_coords: Set[str]) -> Dict[str, str]:
     colors = _color_dims(rule_graph, dim_coords)
-    nodes = list(rule_graph.dependency_graph.nodes_topologically())[::-1]
+    nodes = list(rule_graph.nodes_topologically())[::-1]
     name_changes = {}
     for dim in dim_coords:
         for node in nodes:
