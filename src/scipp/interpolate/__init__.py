@@ -4,9 +4,11 @@
 """Sub-package for objects used in interpolation."""
 
 from ..core import array, Variable, DataArray, DimensionError, UnitError
+from ..core import irreducible_mask
 from ..compat.wrapping import wrap1d
 
 from typing import Callable
+import uuid
 
 
 def _midpoints(var, dim):
@@ -15,7 +17,20 @@ def _midpoints(var, dim):
     return a + 0.5 * (b - a)
 
 
-@wrap1d(is_partial=True)
+def _drop_masked(da, dim):
+    mask = irreducible_mask(da.masks, dim)
+    da = da.copy(deep=False)
+    if mask is not None:
+        name = uuid.uuid4().hex
+        da.coords[name] = mask
+        da = da.groupby(name).copy(0)
+    for name in list(da.masks):
+        if dim in da.masks[name].dims:
+            del da.masks[name]
+    return da
+
+
+@wrap1d(is_partial=True, accept_masks=True)
 def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
     """Interpolate a 1-D function.
 
@@ -35,6 +50,11 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
       ``midpoints=True`` the interpolation uses the midpoints of the new points
       instead of the points itself. The returned data array is then a histogram, i.e.,
       the new coordinate is a bin-edge coordinate.
+
+    If the input data array contains masks that depend on the interpolation dimension
+    the masked points are treated as missing, i.e., they are ignored for the definition
+    of the interpolation function. If such a mask also depends on additional dimensions
+    ``DimensionError`` is raised since interpolation requires points to be 1-D.
 
     Parameters not described above are forwarded to scipy.interpolate.interp1d. The
     most relevant ones are (see :py:class:`scipy.interpolate.interp1d` for details):
@@ -77,6 +97,8 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
                                   float64  [dimensionless]  (x)  [0.137015, 0.210685, 0.282941, 0.353926]
     """  # noqa #501
     import scipy.interpolate as inter
+
+    da = _drop_masked(da, dim)
 
     def func(xnew: Variable, *, midpoints=False) -> DataArray:
         """Compute interpolation function defined by ``interp1d`` at interpolation points.

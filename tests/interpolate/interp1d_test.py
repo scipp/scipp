@@ -93,6 +93,24 @@ def test_close():
     assert sc.allclose(da.data, out.data, rtol=sc.scalar(1e-3))
 
 
+def test_fail_multidim_mask():
+    da = make_array()
+    da.masks['mask'] = da.data != da.data
+    with pytest.raises(sc.DimensionError):
+        interp1d(da, 'xx')
+
+
+def test_masked():
+    x = sc.linspace(dim='xx', start=0.0, stop=3.0, num=20, unit='rad')
+    da = sc.DataArray(sc.sin(x), coords={'xx': x})
+    da.masks['mask'] = da.data > sc.scalar(0.9)
+    result = interp1d(da, 'xx', kind='cubic')(da.coords['xx'])
+    assert sc.allclose(result.data, da.data, rtol=sc.scalar(3e-3))
+    da.masks['mask'] = da.data > sc.scalar(0.8)
+    result = interp1d(da, 'xx', kind='cubic')(da.coords['xx'])
+    assert sc.allclose(result.data, da.data, rtol=sc.scalar(2e-2))
+
+
 def test_midpoints():
     da = make_array()
     x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=10, unit='rad')
