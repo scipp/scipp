@@ -48,7 +48,7 @@ When we finally concatenate the transformed slices, ``c`` has dimensions ``[a,x,
 Existing Implementation (v0.8 - v0.10)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The implementation in scipp versions 0.8 - 0.10 (before this ADR) takes only a single node its direct children into account when determining if a dimension can be renamed through the edges between those nodes.
+The implementation in scipp versions 0.8 - 0.10 (before this ADR) takes only a single node and its direct children into account when determining if a dimension can be renamed through the edges between those nodes.
 This approach is quite simple and works well for many cases.
 But it has some shortcomings.
 
@@ -138,8 +138,8 @@ While this algorithm works as desired, it is fairly complicated.
 Decision
 --------
 
-Similarly to :ref:`sec-global-coloring`, color all nodes that (transitively) depend on a dimension-coordinate with the corresponding color, allowing multiple colors per node.
-But keep track of the 'amount' of color per node as illustrated by the graphs below.
+Similarly to :ref:`sec-global-coloring`, color all nodes that (transitively) depend on a dimension-coordinate with the corresponding color.
+Nodes can have multiple colors and keep track of the 'amount' of each color as illustrated by the graphs below.
 
 1. The inputs ``a`` and ``b`` are dimension-coordinates and are assigned 'pure' colors.
    That is, ``a`` has 1 blue (its own color) and 0 orange (``b``'s color) and ``b`` is the other way around.
@@ -175,7 +175,7 @@ Positive:
 - Automated renaming of dimensions that should always do 'the right thing' or nothing.
 - Dimension renaming can happen through undirected cycles.
 - Split-join type graphs are handled consistently, distances between nodes nodes not matter.
-- Simpler to implement that the alternative of contracting cycles.
+- Simpler to implement than the alternative of contracting cycles.
 
 Negative:
 ~~~~~~~~~

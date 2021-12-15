@@ -112,13 +112,6 @@ def graph_4():
       c  |
       \ /
        d
-
-    After contracting a,b,c,d, this graph produces a cycle between 2 nodes:
-        a
-        |
-    e<->bc
-        |
-        d
     """
     def fb(a):
         pass
