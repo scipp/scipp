@@ -3,19 +3,23 @@ ADR 0011: Renaming of Dimensions in ``transform_coords``
 
 - Status: accepted
 - Deciders: Jan-Lukas, Neil, Simon
-- Date: 2021-12-10
+- Date: 2021-12-15
 
 Context
 -------
 
 :py:func:`scipp.transform_coords` computes new coordinates from other coordinates and attributes.
-This is often used to express conversion of dimension-coordinates to a single output such as ``datetime`` to ``local_time`` in the user guide or ``tof`` to ``wavelength`` in scippneutron.
+This is often used to express conversions of dimension-coordinates to a single output such as ``datetime`` to ``local_time`` in the user guide or ``tof`` to ``wavelength`` in scippneutron.
 As those represent changes of coordinate systems, it makes sense to change the names of dimensions as well.
 
 Since :py:func:`scipp.transform_coords` is a general purpose function, it cannot make assumptions about the meaning of coordinates.
 Any algorithm that determines how dimensions are renamed must therefore be based solely on the input data (``DataArray`` / ``Dataset`` and ``graph``).
 It must furthermore not depend on the order the graph is traversed in, as that order is an implementation detail.
 When there is more than one possible choice how dimensions can be renamed, it is better to not rename at all and leave it up to the user's judgment.
+
+Transformations are encoded as directed acyclic graphs.
+Associating outputs with dimensions can be expressed in terms of coloring those graphs.
+Each dimension has a unique color and nodes (coordinates) associated with that dimension (dimension-coordinates) are painted in that color.
 
 Constraints
 ~~~~~~~~~~~
@@ -39,80 +43,33 @@ When we finally concatenate the transformed slices, ``c`` has dimensions ``[a,x,
   :width: 640
   :alt: slice-transform-concat
 
-.. _sec-split-join:
-
-Split-Join
-^^^^^^^^^^
-
-Is it possible to rename dimensions in the following graph?
-No, it is not without potentially causing confusion, see below.
-Users need to apply domain knowledge in order to find good dimension names.
-
-Determining how to rename dimensions can be mapped onto a graph coloring problem because we are looking for unique associations between nodes.
-From now on, colors indicate dimension-coordinates and associated output coordinates.
-
-.. image:: ../../../images/transform_coords/split-join.svg
-  :width: 128
-  :alt: split-join
-
-Split-Join (1) ``a`` ➔ ``c``
-""""""""""""""""""""""""""""
-
-Is it possible to rename ``a`` to ``c``?
-This is reasonable at a first glance because there is no unique output dimension for ``b`` as it has two children.
-So ``a`` could be seen as the dimension-coordinate parent of ``c``.
-But this can produce surprising results.
-
-Consider the following which is a simplified graph of what is used in time-of-flight neutron scattering.
-Allowing ``a`` ➔ ``c`` renaming, the left graph renames the time dimension ``tof`` to the wavelength dimension ``λ``.
-This is a common conversion and likely makes sense to many scientists in neutron scattering.
-If, however, the graph is altered to the one on the right, the ``pos`` dimension is renamed to ``λ`` while ``tof`` is left as is.
-This is surprising and usually undesired.
-
-.. image:: ../../../images/transform_coords/split-join-tof.svg
-  :width: 320
-  :alt: split-join with time-of-flight neutron coordinates
-
-
-Split-Join (2) ``b`` ➔ ``d``
-""""""""""""""""""""""""""""
-
-Is it possible to rename ``b`` to ``d``?
-We could apply the inverse of the argument from the previous section.
-``c`` depends on two dimension-coordinates and can thus not become a new dimension-coordinate.
-This leaves ``d`` free to replace ``b``.
-
-This approach breaks in larger graphs.
-In the graph below, ``b`` would be renamed to ``e`` because the latter depends only on one dimension-coordinate, ``d``.
-But considering the graph as a whole, ``e`` depends on two dimension-coordinates, ``a`` and ``b``.
-Allowing ``b`` ➔ ``d`` would therefore break the rule that there must be a unique association of dimension coordinates with outputs.
-
-.. image:: ../../../images/transform_coords/split-join-cycle.svg
-  :width: 128
-  :alt: split-join with cycle
-
 .. _sec-existing-implementation:
 
 Existing Implementation (v0.8 - v0.10)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The implementation in scipp versions 0.8 - 0.10 (before this ADR) uses local rules to propagate colors through graphs.
-This allows for cases where dimensions are renamed even though a coordinate has more than one dimension-coordinate as ancestor if those ancestors are sufficiently far removed.
+The implementation in scipp versions 0.8 - 0.10 (before this ADR) takes only a single node its direct children into account when determining if a dimension can be renamed through the edges between those nodes.
+This approach is quite simple and works well for many cases.
+But it has some shortcomings.
 
-For instance, extending the graph from section :ref:`sec-split-join` by one node as shown below, allows renaming of dimension ``a`` to ``e``.
-``b`` cannot be renamed to either ``c`` or ``d``.
-But ``b`` is not taken into account for ``e`` because ``c`` separates the two.
-This behavior is beneficial as it encapsulates contributions from dimension coordinates.
-It furthermore allows splitting the graph into steps that can be done separately (``b`` ➔ (``c``, ``d``) followed by (``a``, ``c``) ➔ ``e``).
+Split-Join
+""""""""""
 
-.. image:: ../../../images/transform_coords/split-join-long-branch.svg
-  :width: 160
-  :alt: split-join with long branch
+In graph 1 below, ``c`` has two colored (dimension-coordinate) parents which means that neither dimension can be renamed.
+However, when an extra node ``e`` is inserted (graph 2), ``c`` has only a single colored parent.
+Dimension ``a`` is therefore renamed to ``e``.
+This is undesirable because the distance between a node and dimension coordinates should not matter, ``b`` is an ancestor of ``c`` in both cases.
+
+.. image:: ../../../images/transform_coords/split-join.svg
+  :width: 360
+  :alt: split-join graph
+
+Cycles
+""""""
 
 All graphs used by :py:func:`scipp.transform_coords` must be directed and acyclic in order to ensure that all inputs to a node are available before processing that node.
 This does, however, allow for undirected cycles.
-An example is given below.
-
+An example of which is given below.
 Node ``d`` can be uniquely associated with ``a`` in this case.
 This would allow renaming dimension ``a`` to ``d``.
 The purely local rule in versions 0.8 - 0.10 does not, however, rename as it treats the ``{a,b,c}`` and ``{b,c,d}`` subgraphs separately.
@@ -123,6 +80,8 @@ The purely local rule in versions 0.8 - 0.10 does not, however, rename as it tre
 
 Alternatives
 ------------
+
+.. _sec-global-coloring:
 
 Global Coloring
 ~~~~~~~~~~~~~~~
@@ -139,18 +98,12 @@ At a high level the corresponding algorithm is
 6. The remaining nodes in ``N`` are the new dimension-coordinates for their corresponding color.
 
 This approach renames ``a`` to ``d`` in the cycle graph in section :ref:`sec-existing-implementation`.
-But it does not rename ``a`` to ``e`` in the other graph of that section, because ``c``, ``d``, and ``e`` all get colored orange, since they depend on ``b``.
+But it does not rename ``a`` to ``c`` in the other two graphs of that section, because ``c``, ``d``, and ``e`` all get colored orange, since they depend on ``b``.
 
+Contracting Cycles
+~~~~~~~~~~~~~~~~~~
 
-Decision
---------
-
-The algorithm of section :ref:`sec-existing-implementation` works in many cases and has several desirable properties.
-In particular, it satisfies all constraints given above.
-Its main shortcoming is the handling of cycles.
-
-The solution chosen here builds on top of the old algorithm.
-It handles cycles by contracting them to produce graphs without any (undirected) cycles and then colors the nodes using local rules.
+Cycles can also be handled by contracting and thereby removing them from the graph.
 The following graphs illustrate the procedure.
 
 In graph 1, there is initially one cycle, ``{c, e, f, h}``.
@@ -159,7 +112,7 @@ Importantly, inputs and outputs to cycles are preserved.
 Inputs and outputs are nodes that only have outgoing or incoming edges in the cycle, respectively.
 Edges outside the cycle do not matter.
 In graph 1, ``c`` is the only input and ``h`` the only output to the cycle.
-After contracting, nodes are colored according to the rules described below.
+After contracting, nodes are colored according to similar rules as in the current implementation but adjusted to fix the split-join issue.
 In this case, ``a`` is the only dimension-coordinate and dimension ``a`` is renamed to ``h``.
 
 In graph 2, there are three cycles, ``{c, e, f, h}``, ``{b, c, f}``, ``{b, c, e, f, h}``.
@@ -180,15 +133,38 @@ Therefore, dimension ``d`` is not renamed.
   :width: 640
   :alt: cycle graph
 
-Nodes are colored by first giving every dimension-coordinate its own color.
-Those colors are then propagated through the graph following these rules:
+While this algorithm works as desired, it is fairly complicated.
 
-1. If a node has exactly one colored parent, use that parent's color.
-2. If a node has several colored parents, leave the node black (uncolored).
-3. If a node has more than one child, all its children are black.
+Decision
+--------
 
-This produces a chain of nodes for each color.
-Dimensions are renamed to the last node in its chain, excluding cycle nodes.
+Similarly to :ref:`sec-global-coloring`, color all nodes that (transitively) depend on a dimension-coordinate with the corresponding color, allowing multiple colors per node.
+But keep track of the 'amount' of color per node as illustrated by the graphs below.
+
+1. The inputs ``a`` and ``b`` are dimension-coordinates and are assigned 'pure' colors.
+   That is, ``a`` has 1 blue (its own color) and 0 orange (``b``'s color) and ``b`` is the other way around.
+   ``a`` has a single child, ``c``, and propagates its color fully.
+   But ``b`` has two children and only propagates half of its color to each.
+   ``c`` therefore is fully blue and only partially orange and as a result is painted blue.
+   ``d`` has only a partial color and thus remains black.
+2. ``e`` propagates its colors to ``c``.
+   And the end result in this case is the same as in 1.
+   The disparity between those two cases of the original algorithm is thus fixed.
+3. ``c`` propagates half of its color to ``e`` and ``f`` which in turn combine their colors in ``h``.
+   As a result, ``h`` has a full contribution from blue, that is dimension ``a``, and ``a`` is renamed to ``h``.
+4. In this case, ``a``'s color is divided twice, once at ``a`` itself and once at ``c``.
+   As a result, most nodes have a fractional color and can therefore not be associated with dimension ``a``.
+   The final node, ``h`` receives full contributions from both ``a`` and ``d``, meaning that those colors cancel.
+
+.. image:: ../../../images/transform_coords/fractional-colors.svg
+  :width: 640
+  :alt: cycle graph
+
+In summary, every node propagates all its colors to all its children.
+In the case of multiple children, the color is divided among them evenly resulting in fractional colors.
+Colors from all parents of a node are added up.
+Only nodes that have a 1, i.e. full contribution of one and only one color can participate in renaming.
+Rename each dimension to the coordinate name that satisfies this criterion and is the farthest removed from the input.
 
 Consequences
 ------------
@@ -198,8 +174,10 @@ Positive:
 
 - Automated renaming of dimensions that should always do 'the right thing' or nothing.
 - Dimension renaming can happen through undirected cycles.
+- Split-join type graphs are handled consistently, distances between nodes nodes not matter.
+- Simpler to implement that the alternative of contracting cycles.
 
 Negative:
 ~~~~~~~~~
 
-- The algorithm is fairly complicated given how small a task it achieves.
+- More complicated than the existing algorithm.
