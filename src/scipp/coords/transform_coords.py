@@ -92,7 +92,6 @@ def _transform_data_array(original: DataArray, targets: Set[str], graph: Graph,
     graph = graph.graph_for(original, targets)
     rules = rule_sequence(graph)
     working_coords = CoordTable(rules, targets, options)
-    # _log_plan(rules, targets, dim_name_changes, working_coords)
     dim_coords = set()
     for rule in rules:
         for name, coord in rule(working_coords).items():
@@ -100,9 +99,10 @@ def _transform_data_array(original: DataArray, targets: Set[str], graph: Graph,
             if coord.has_dim(name):
                 dim_coords.add(name)
 
-    res = _store_results(original, working_coords, targets)
     dim_name_changes = (_dim_name_changes(graph, dim_coords)
                         if options.rename_dims else {})
+    _log_transform(rules, targets, dim_name_changes, working_coords)
+    res = _store_results(original, working_coords, targets)
     return res.rename_dims(dim_name_changes)
 
 
@@ -122,8 +122,8 @@ def _transform_dataset(original: Dataset, targets: Set[str], graph: Graph, *,
         })
 
 
-def _log_plan(rules: List[Rule], targets: Set[str], dim_name_changes: Mapping[str, str],
-              coords: CoordTable) -> None:
+def _log_transform(rules: List[Rule], targets: Set[str],
+                   dim_name_changes: Mapping[str, str], coords: CoordTable) -> None:
     inputs = set(rule_output_names(rules, FetchRule))
     byproducts = {
         name
@@ -132,14 +132,14 @@ def _log_plan(rules: List[Rule], targets: Set[str], dim_name_changes: Mapping[st
         if coords.total_usages(name) < 0
     }
 
-    message = f'Transforming coords ({", ".join(sorted(inputs))}) ' \
+    message = f'Transformed coords ({", ".join(sorted(inputs))}) ' \
               f'-> ({", ".join(sorted(targets))})'
     if byproducts:
         message += f'\n  Byproducts:\n    {", ".join(sorted(byproducts))}'
     if dim_name_changes:
         dim_rename_steps = '\n'.join(f'    {t} <- {f}'
                                      for f, t in dim_name_changes.items())
-        message += '\n  Rename dimensions:\n' + dim_rename_steps
+        message += '\n  Renamed dimensions:\n' + dim_rename_steps
     message += '\n  Steps:\n' + '\n'.join(
         f'    {rule}' for rule in rules if not isinstance(rule, FetchRule))
 
