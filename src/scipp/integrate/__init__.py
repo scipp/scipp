@@ -14,8 +14,9 @@ def _integrate(func: Callable, da: DataArray, dim: str, **kwargs) -> DataArray:
         raise ValueError("Invalid argument 'dx': Spacing of integration points is "
                          f"given by the '{dim}' coord.")
     integral = func(x=da.coords[dim].values, y=da.values, **kwargs)
-    return DataArray(data=array(
-        dims=da[dim, 0].dims, values=integral, unit=da.unit * da.coords[dim].unit))
+    dims = [d for d in da.dims if d != dim]
+    return DataArray(
+        data=array(dims=dims, values=integral, unit=da.unit * da.coords[dim].unit))
 
 
 @wrap1d()
