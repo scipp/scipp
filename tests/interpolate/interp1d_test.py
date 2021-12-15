@@ -88,7 +88,7 @@ def test_data():
 def test_close():
     # Sanity check: are we using interp1d correctly? Remove points and interpolate
     da = make_array()
-    da_missing_points = sc.concat([da['xx', :3] , da['xx', 5:]], 'xx')
+    da_missing_points = sc.concat([da['xx', :3], da['xx', 5:]], 'xx')
     out = interp1d(da_missing_points, 'xx')(da.coords['xx'])
     assert sc.allclose(da.data, out.data, rtol=sc.scalar(1e-3))
 
