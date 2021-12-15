@@ -47,39 +47,21 @@ class Graph:
             {out: rule.dependencies
              for out, rule in self._rules.items()}).static_order()
 
-    def depth_first(self, start: Iterable[str], direction: str) -> Iterable[str]:
-        """
-        Traverse the graph in depth first order visiting every node at most once.
-        """
-        assert direction in ('children', 'parents')
-
-        pending = [start] if isinstance(start, str) else list(start)
-        visited = set()
-        while pending:
-            node = pending.pop()
-            if node in visited:
-                continue
-            visited.add(node)
-            yield node
-
-            if direction == 'children':
-                pending.extend(list(self.children_of(node)))
-            else:
-                try:
-                    pending.extend(self._rules[node].dependencies)
-                except KeyError:
-                    pass
-
     def graph_for(self, da: DataArray, targets: Set[str]) -> Graph:
         """
         Construct a graph containing only rules needed for the given DataArray
         and targets, including FetchRules for the inputs.
         """
         subgraph = {}
-        for out_name in self.depth_first(targets, direction='parents'):
+        depth_first_stack = list(targets)
+        while depth_first_stack:
+            out_name = depth_first_stack.pop()
+            if out_name in subgraph:
+                continue
             rule = self._rule_for(out_name, da)
             for name in rule.out_names:
                 subgraph[name] = rule
+            depth_first_stack.extend(rule.dependencies)
         return Graph(subgraph)
 
     def _rule_for(self, out_name: str, da: DataArray) -> Rule:
