@@ -96,7 +96,10 @@ def _transform_data_array(original: DataArray, targets: Set[str], graph: Graph,
     for rule in rules:
         for name, coord in rule(working_coords).items():
             working_coords.add(name, coord)
-            if coord.has_dim(name):
+            # Check if coord is a dimension-coord. Need to also check if it is in the
+            # data dimensions because slicing can produce attrs with dims that are
+            # no longer in the data.
+            if name in original.dims and coord.has_dim(name):
                 dim_coords.add(name)
 
     dim_name_changes = (_dim_name_changes(graph, dim_coords)
@@ -214,6 +217,7 @@ def _dim_name_changes(rule_graph: Graph, dim_coords: Set[str]) -> Dict[str, str]
     colors = _color_dims(rule_graph, dim_coords)
     nodes = list(rule_graph.nodes_topologically())[::-1]
     name_changes = {}
+    print(dim_coords, colors)
     for dim in dim_coords:
         for node in nodes:
             if _has_full_color_of_dim(colors[node], dim):
