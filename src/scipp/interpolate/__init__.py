@@ -9,6 +9,12 @@ from ..compat.wrapping import wrap1d
 from typing import Callable
 
 
+def _midpoints(var, dim):
+    a = var[dim, :-1]
+    b = var[dim, 1:]
+    return a + 0.5 * (b - a)
+
+
 @wrap1d(is_partial=True)
 def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
     """Interpolate a 1-D function.
@@ -93,7 +99,7 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
                 f"Dimension of interpolation points '{xnew.dim}' does not match "
                 f"interpolation dimension '{dim}'")
         f = inter.interp1d(x=da.coords[dim].values, y=da.values, **kwargs)
-        x_ = 0.5 * (xnew[dim, 1:] + xnew[dim, :-1]) if midpoints else xnew
+        x_ = _midpoints(xnew, dim) if midpoints else xnew
         ynew = array(dims=da.dims, unit=da.unit, values=f(x_.values))
         return DataArray(data=ynew, coords={dim: xnew})
 
