@@ -9,7 +9,7 @@ v0.11.0 (unreleased)
 Features
 ~~~~~~~~
 
-* Add new datatypes for representing spatial transformations: ``Affine3``, ``Rotation3``, and ``Translation3``. Each of these can be combined and applied to the existing vector datatype.
+* Add new datatypes for representing spatial transformations: ``affine3``, ``rotation3``, and ``translation3``. Each of these can be combined and applied to the existing vector datatype.
 * Added support for slicing without specifying a dimension (only for 1-D objects) `#2321 <https://github.com/scipp/scipp/pull/2321>`_.
 
 Breaking changes

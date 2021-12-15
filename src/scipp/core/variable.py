@@ -257,7 +257,7 @@ def matrix(*,
     """
     warnings.warn("sc.matrix() has been deprecated in favour of "
                   "sc.spatial.linear_transform(), and will be removed in a future "
-                  "version of scipp.")
+                  "version of scipp.", DeprecationWarning)
     from ..spatial import linear_transform
     return linear_transform(unit=unit, value=value)
 
@@ -277,7 +277,7 @@ def matrices(*,
     """
     warnings.warn("sc.matrices() has been deprecated in favour of "
                   "sc.spatial.linear_transforms(), and will be removed in a future "
-                  "version of scipp.")
+                  "version of scipp.", DeprecationWarning)
     from ..spatial import linear_transforms
     return linear_transforms(dims=dims, unit=unit, values=values)
 

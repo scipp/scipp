@@ -110,8 +110,7 @@ def rotation_from_rotvec(*, value: Union[_np.ndarray, list],
     rotation and whose norm gives the angle of rotation.
 
     :param value: A numpy vector of 3 values
-    :param unit: The units of the 3 provided values. Should be either sc.units.rad or
-        sc.units.deg.
+    :param unit: The units of the 3 provided values. Should be either 'rad' or 'deg'.
     """
     return rotations_from_rotvecs(dims=[], values=value, unit=unit)
 
@@ -129,8 +128,7 @@ def rotations_from_rotvecs(*, dims: Sequence[str], values: Union[_np.ndarray, li
 
     :param dims: The dimensions of the created variable
     :param values: A numpy vector of 3 values
-    :param unit: The units of the 3 provided values. Should be either sc.units.rad or
-        sc.units.deg.
+    :param unit: The units of the 3 provided values. Should be either 'rad' or 'deg'.
     """
     from scipy.spatial.transform import Rotation as R
     supported = [units.deg, units.rad]
