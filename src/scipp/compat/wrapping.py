@@ -13,7 +13,7 @@ def _validated_masks(da, dim):
     for name, mask in da.masks.items():
         if dim in mask.dims:
             raise DimensionError(
-                f"Cannot apply function along '{dim}' since mask '{name}' depends"
+                f"Cannot apply function along '{dim}' since mask '{name}' depends "
                 "on this dimension.")
         masks[name] = mask.copy()
     return masks
