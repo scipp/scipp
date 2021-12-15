@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
+"""
+Rules encode instructions for how to compute a coordinate in ``transform_coords``.
+They provide a common interface for renaming and computing new coordinates.
+"""
 
 from __future__ import annotations
 
@@ -47,6 +51,11 @@ class Rule(ABC):
 
 
 class FetchRule(Rule):
+    """
+    Get coords from the provided dict-like sources.
+
+    Can be used to abstract away retrieving coords and attrs from the input DataArray.
+    """
     def __init__(self, out_names: Tuple[str, ...], dense_sources: Mapping[str,
                                                                           Variable],
                  event_sources: Mapping[str, Variable]):
@@ -71,6 +80,9 @@ class FetchRule(Rule):
 
 
 class RenameRule(Rule):
+    """
+    Return the input coordinate and give it a new name.
+    """
     def __init__(self, out_names: Tuple[str, ...], in_name: str):
         super().__init__(out_names)
         self._in_name = in_name
@@ -92,6 +104,9 @@ class RenameRule(Rule):
 
 
 class ComputeRule(Rule):
+    """
+    Compute new coordinates using the provided callable.
+    """
     def __init__(self, out_names: Tuple[str, ...], func: Callable):
         super().__init__(out_names)
         self._func = func
