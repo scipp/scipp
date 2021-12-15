@@ -178,7 +178,4 @@ template <class Masks>
   return union_;
 }
 
-SCIPP_DATASET_EXPORT Variable masks_merge_if_contained(const Masks &masks,
-                                                       const Dimensions &dims);
-
 } // namespace scipp::dataset

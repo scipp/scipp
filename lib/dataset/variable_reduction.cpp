@@ -62,15 +62,4 @@ Variable nanmean(const Variable &var, const Dim dim, const Masks &masks) {
   return nanmean(var, dim);
 }
 
-/// Merges all the masks that have all their dimensions found in the given set
-//  of dimensions.
-Variable masks_merge_if_contained(const Masks &masks, const Dimensions &dims) {
-  auto mask_union = makeVariable<bool>(Values{false});
-  for (const auto &mask : masks) {
-    if (dims.includes(mask.second.dims()))
-      mask_union = mask_union | mask.second;
-  }
-  return mask_union;
-}
-
 } // namespace scipp::dataset

@@ -5,26 +5,15 @@ from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
-def combine_masks(masks, labels, shape):
+def irreducible_mask(masks: _cpp.Masks, dim: str) -> _cpp.Variable:
     """
-    Combine all masks into a single one following the OR operation.
-    This requires a masks view as an input, followed by the
-    dimension labels and shape of the Variable/DataArray. The
-    labels and the shape are used to create a Dimensions object.
-    The function then iterates through the masks view and combines
-    only the masks that have all their dimensions contained in the
-    Variable/DataArray Dimensions.
+    The union of all masks with irreducible dimension.
 
-    :param masks: Masks view of the dataset's masks.
-    :param labels: A list of dimension labels.
-    :param shape: A list of dimension extents.
-    :type masks: MaskView
-    :type labels: list
-    :type shape: list
-    :return: A new variable that contains the union of all masks.
-    :rtype: Variable
+    Irreducible means that a reduction operation must apply these masks since
+    depend on the reduction dimension. Returns an invalid (empty) variable if
+    there is no irreducible mask.
     """
-    return _call_cpp_func(_cpp.combine_masks, labels, shape)
+    return _call_cpp_func(_cpp.irreducible_mask, masks, dim)
 
 
 def merge(lhs: _cpp.Dataset, rhs: _cpp.Dataset) -> _cpp.Dataset:
