@@ -202,14 +202,18 @@ def _color_dims(graph: Graph, dim_coords: Set[str]) -> Dict[str, Dict[str, Fract
     return colors
 
 
+def _has_full_color_of_dim(colors: Dict[str, Fraction], dim: str) -> bool:
+    return all(fraction == 1 if d == dim else fraction != 1
+               for d, fraction in colors.items())
+
+
 def _dim_name_changes(rule_graph: Graph, dim_coords: Set[str]) -> Dict[str, str]:
     colors = _color_dims(rule_graph, dim_coords)
     nodes = list(rule_graph.nodes_topologically())[::-1]
     name_changes = {}
     for dim in dim_coords:
         for node in nodes:
-            c = colors[node]
-            if all(f == 1 if d == dim else f != 1 for d, f in c.items()):
+            if _has_full_color_of_dim(colors[node], dim):
                 name_changes[dim] = node
                 break
     return name_changes
