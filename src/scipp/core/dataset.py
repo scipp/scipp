@@ -10,8 +10,9 @@ def irreducible_mask(masks: _cpp.Masks, dim: str) -> _cpp.Variable:
     The union of all masks with irreducible dimension.
 
     Irreducible means that a reduction operation must apply these masks since
-    depend on the reduction dimension. Returns an invalid (empty) variable if
-    there is no irreducible mask.
+    they depend on the reduction dimension.
+
+    Returns None if there is no irreducible mask.
     """
     return _call_cpp_func(_cpp.irreducible_mask, masks, dim)
 

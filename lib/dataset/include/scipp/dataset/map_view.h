@@ -167,8 +167,8 @@ protected:
 /// Returns the union of all masks with irreducible dimension `dim`.
 ///
 /// Irreducible means that a reduction operation must apply these masks since
-/// depend on the reduction dimension. Returns an invalid (empty) variable if
-/// there is no irreducible mask.
+/// they depend on the reduction dimension. Returns an invalid (empty) variable
+/// if there is no irreducible mask.
 template <class Masks>
 [[nodiscard]] Variable irreducible_mask(const Masks &masks, const Dim dim) {
   Variable union_;
