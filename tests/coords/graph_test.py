@@ -196,6 +196,18 @@ def test_graph_for_graph_0():
     assert_rule(graph, 'g', RenameRule, {'e'})
 
 
+def test_graph_for_graph_0_finds_intermediates():
+    base_graph = graph_0()
+    da = make_data(('c', 'd'))
+
+    graph = base_graph.graph_for(da, {'f'})
+    assert_rule(graph, 'c', FetchRule, set())
+    assert_rule(graph, 'd', FetchRule, set())
+    assert_rule(graph, 'f', ComputeRule, {'c', 'd'})
+    assert 'a' not in graph.nodes()
+    assert 'b' not in graph.nodes()
+
+
 def test_graph_for_graph_1():
     base_graph = graph_1()
     da = make_data(('a', ))
