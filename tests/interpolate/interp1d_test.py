@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-from itertools import product
 import numpy as np
 import scipp as sc
 import scipy.interpolate as theirs
@@ -96,10 +95,8 @@ def test_midpoints():
         theirs.interp1d(x=da.coords['xx'].values, y=da.values, axis=0)(midpoints))
 
 
-@pytest.mark.parametrize("kind,fill_value",
-                         list(
-                             product(['nearest', 'quadratic', 'cubic'],
-                                     [0.0, 'extrapolate'])))
+@pytest.mark.parametrize("kind", ['nearest', 'quadratic', 'cubic'])
+@pytest.mark.parametrize("fill_value", [0.0, 'extrapolate'])
 def test_options(kind, fill_value):
     da = make_array()
     x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=10, unit='rad')
