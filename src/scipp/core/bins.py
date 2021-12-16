@@ -111,6 +111,16 @@ class Bins:
         _cpp._bins_view(self._data()).data = data
 
     @property
+    def unit(self) -> _cpp.Unit:
+        """Unit of the bin elements"""
+        return self.constituents['data'].unit
+
+    @unit.setter
+    def unit(self, unit: Union[_cpp.Unit, str]):
+        """Set unit of the bin elements"""
+        self.constituents['data'].unit = unit
+
+    @property
     def constituents(self) -> Dict[str, Union[str, _cpp.Variable, _cpp.DataArray]]:
         """Constituents of binned data, as supported by :py:func:`sc.bins`."""
         return _call_cpp_func(_cpp.bins_constituents, self._data())
