@@ -102,23 +102,34 @@ Dim Variable::dim() const {
   return dims().inner();
 }
 
-bool Variable::operator==(const Variable &other) const {
-  if (is_same(other))
+namespace {
+bool compare(const Variable &a, const Variable &b, bool equal_nan) {
+  if (equal_nan && a.is_same(b))
     return true;
-  if (!is_valid() || !other.is_valid())
-    return is_valid() == other.is_valid();
+  if (!a.is_valid() || !b.is_valid())
+    return a.is_valid() == b.is_valid();
   // Note: Not comparing strides
-  if (unit() != other.unit())
+  if (a.unit() != b.unit())
     return false;
-  if (dims() != other.dims())
+  if (a.dims() != b.dims())
     return false;
-  if (dtype() != other.dtype())
+  if (a.dtype() != b.dtype())
     return false;
-  if (has_variances() != other.has_variances())
+  if (a.has_variances() != b.has_variances())
     return false;
-  if (dims().volume() == 0 && dims() == other.dims())
+  if (a.dims().volume() == 0 && a.dims() == b.dims())
     return true;
-  return dims() == other.dims() && data().equals(*this, other);
+  return a.dims() == b.dims() &&
+         (equal_nan ? a.data().equals_nan(a, b) : a.data().equals(a, b));
+}
+} // namespace
+
+bool Variable::operator==(const Variable &other) const {
+  return compare(*this, other, false);
+}
+
+bool equals_nan(const Variable &a, const Variable &b) {
+  return compare(a, b, true);
 }
 
 bool Variable::operator!=(const Variable &other) const {

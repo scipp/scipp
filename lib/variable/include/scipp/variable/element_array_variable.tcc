@@ -97,7 +97,7 @@ ElementArrayModel<T>::makeDefaultFromParent(const scipp::index size) const {
                                                   element_array<T>(size));
 }
 
-/// Helper for implementing Variable(View)::operator==.
+/// Helper for implementing Variable::operator==.
 ///
 /// This method is using virtual dispatch as a trick to obtain T, such that
 /// values<T> and variances<T> can be compared.
@@ -106,6 +106,18 @@ bool ElementArrayModel<T>::equals(const Variable &a, const Variable &b) const {
   return equals_impl(a.values<T>(), b.values<T>()) &&
          (!a.has_variances() ||
           equals_impl(a.variances<T>(), b.variances<T>()));
+}
+
+/// Helper for implementing Variable::operator==.
+///
+/// This method is using virtual dispatch as a trick to obtain T, such that
+/// values<T> and variances<T> can be compared.
+template <class T>
+bool ElementArrayModel<T>::equals_nan(const Variable &a,
+                                      const Variable &b) const {
+  return equals_nan_impl(a.values<T>(), b.values<T>()) &&
+         (!a.has_variances() ||
+          equals_nan_impl(a.variances<T>(), b.variances<T>()));
 }
 
 template <class T>
