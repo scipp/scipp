@@ -363,14 +363,14 @@ def test_create_1d_override_dtype(dtype, values):
     np.testing.assert_array_equal(var.values, converted)
 
 
-def test_create_1D_vector_3_float64():
+def test_create_1D_vector3():
     var = sc.vectors(dims=['x'], values=[[1, 2, 3], [4, 5, 6]], unit=sc.units.m)
     assert len(var.values) == 2
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
     np.testing.assert_array_equal(var.values[1], [4, 5, 6])
     assert var.dims == ['x']
     assert var.ndim == 1
-    assert var.dtype == sc.dtype.vector_3_float64
+    assert var.dtype == sc.dtype.vector3
     assert var.unit == sc.units.m
 
 

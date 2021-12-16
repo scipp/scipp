@@ -3,6 +3,8 @@
 # @author Matthew Andrew
 
 from __future__ import annotations
+
+import warnings
 from collections.abc import Iterable as _Iterable
 from typing import Any as _Any, Sequence as _Sequence, Union as _Union,\
     Optional as _Optional
@@ -240,12 +242,6 @@ def full_like(var: _cpp.Variable, value: _Any, variance: _Any = None) -> _cpp.Va
                 variance=variance)
 
 
-def _to_eigen_layout(a):
-    # Numpy and scipp use row-major, but Eigen matrices use column-major,
-    # transpose matrix axes for copying values.
-    return _np.moveaxis(a, -1, -2)
-
-
 def matrix(*,
            unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
            value: _Union[_np.ndarray, list]):
@@ -259,7 +255,12 @@ def matrix(*,
     :returns: A scalar (zero-dimensional) Variable.
     :rtype: Variable
     """
-    return _cpp.matrices(dims=[], unit=unit, values=_to_eigen_layout(value))
+    warnings.warn(
+        "sc.matrix() has been deprecated in favour of "
+        "sc.spatial.linear_transform(), and will be removed in a future "
+        "version of scipp.", DeprecationWarning)
+    from ..spatial import linear_transform
+    return linear_transform(unit=unit, value=value)
 
 
 def matrices(*,
@@ -275,7 +276,12 @@ def matrices(*,
     :param values: Initial values.
     :param unit: Optional, data unit. Default=dimensionless
     """
-    return _cpp.matrices(dims=dims, unit=unit, values=_to_eigen_layout(values))
+    warnings.warn(
+        "sc.matrices() has been deprecated in favour of "
+        "sc.spatial.linear_transforms(), and will be removed in a future "
+        "version of scipp.", DeprecationWarning)
+    from ..spatial import linear_transforms
+    return linear_transforms(dims=dims, unit=unit, values=values)
 
 
 def vector(*,

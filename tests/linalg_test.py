@@ -8,31 +8,31 @@ import scipp as sc
 import pytest
 
 
-def test_variable_0D_vector_3_float64_from_list():
+def test_variable_0D_vector3_from_list():
     var = sc.vector(value=[1, 2, 3], unit=sc.units.m)
     np.testing.assert_array_equal(var.value, [1, 2, 3])
-    assert var.dtype == sc.dtype.vector_3_float64
+    assert var.dtype == sc.dtype.vector3
     assert var.unit == sc.units.m
 
 
-def test_variable_0D_vector_3_float64_from_numpy():
+def test_variable_0D_vector3_from_numpy():
     var = sc.vector(value=np.array([1, 2, 3]), unit=sc.units.m)
     np.testing.assert_array_equal(var.value, [1, 2, 3])
-    assert var.dtype == sc.dtype.vector_3_float64
+    assert var.dtype == sc.dtype.vector3
     assert var.unit == sc.units.m
 
 
-def test_variable_1D_vector_3_float64_from_list():
+def test_variable_1D_vector3_from_list():
     var = sc.vectors(dims=['x'], values=[[1, 2, 3], [4, 5, 6]], unit=sc.units.m)
     assert len(var.values) == 2
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
     np.testing.assert_array_equal(var.values[1], [4, 5, 6])
     assert var.dims == ['x']
-    assert var.dtype == sc.dtype.vector_3_float64
+    assert var.dtype == sc.dtype.vector3
     assert var.unit == sc.units.m
 
 
-def test_variable_1D_vector_3_float64_from_numpy():
+def test_variable_1D_vector3_from_numpy():
     var = sc.vectors(dims=['x'],
                      values=np.array([[1, 2, 3], [4, 5, 6]]),
                      unit=sc.units.m)
@@ -40,7 +40,7 @@ def test_variable_1D_vector_3_float64_from_numpy():
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
     np.testing.assert_array_equal(var.values[1], [4, 5, 6])
     assert var.dims == ['x']
-    assert var.dtype == sc.dtype.vector_3_float64
+    assert var.dtype == sc.dtype.vector3
     assert var.unit == sc.units.m
 
 
@@ -132,7 +132,7 @@ def test_variable_0D_matrix():
 def test_variable_0D_matrix_from_numpy():
     var = sc.matrix(value=np.arange(9).reshape(3, 3), unit=sc.units.m)
     np.testing.assert_array_equal(var.value, np.arange(9).reshape(3, 3))
-    assert var.dtype == sc.dtype.matrix_3_float64
+    assert var.dtype == sc.dtype.linear_transform3
     assert var.unit == sc.units.m
 
 
@@ -148,7 +148,7 @@ def test_variable_1D_matrix_from_numpy():
     np.testing.assert_array_equal(var.values[1], [[5, 6, 7], [8, 9, 10], [11, 12, 13]])
     np.testing.assert_array_equal(var.values[2], [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     assert var.dims == ['x']
-    assert var.dtype == sc.dtype.matrix_3_float64
+    assert var.dtype == sc.dtype.linear_transform3
     assert var.unit == sc.units.us
 
 

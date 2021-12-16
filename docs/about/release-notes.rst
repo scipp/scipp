@@ -9,16 +9,25 @@ v0.11.0 (unreleased)
 Features
 ~~~~~~~~
 
+* Add new datatypes for representing spatial transformations: ``affine3``, ``rotation3``, and ``translation3``. Each of these can be combined and applied to the existing vector datatype.
 * Added support for slicing without specifying a dimension (only for 1-D objects) `#2321 <https://github.com/scipp/scipp/pull/2321>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
+
+* ``sc.spatial.transform.as_rotvec`` has been moved to ``sc.spatial.as_rotvec``
+* ``sc.spatial.transform.from_rotvec`` has been moved to ``sc.spatial.from_rotvecs``, and now returns a rotation data type rather than a matrix.
+  For consistency with other transformation creation functions, ``from_rotvecs`` now takes ``values``, ``dims`` and ``unit`` separately.
+* The matrix dtype ``matrix_3_float64`` has been renamed to ``linear_transform3``, and should now be constructed with ``sc.spatial.linear_transform``.
+* The vector dtype ``vector_3_float64`` has been renamed to ``vector3``.
 
 Bugfixes
 ~~~~~~~~
 
 Deprecations
 ~~~~~~~~~~~~
+
+* ``sc.matrix`` has been deprecated in favour of ``sc.spatial.linear_transform``, and will be removed in a future release of scipp.
 
 Stability, Maintainability, and Testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

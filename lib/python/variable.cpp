@@ -9,6 +9,7 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
+#include "scipp/core/spatial_transforms.h"
 #include "scipp/core/time_point.h"
 
 #include "scipp/variable/operations.h"
@@ -192,8 +193,15 @@ of variances.)");
 
   bind_structured_creation<Eigen::Vector3d, double, 3>(m, "vectors");
   bind_structured_creation<Eigen::Matrix3d, double, 3, 3>(m, "matrices");
+  bind_structured_creation<Eigen::Affine3d, double, 4, 4>(m,
+                                                          "affine_transforms");
+  bind_structured_creation<scipp::core::Quaternion, double, 4>(m, "rotations");
+  bind_structured_creation<scipp::core::Translation, double, 3>(m,
+                                                                "translations");
 
-  using structured_t = std::tuple<Eigen::Vector3d, Eigen::Matrix3d>;
+  using structured_t =
+      std::tuple<Eigen::Vector3d, Eigen::Matrix3d, Eigen::Affine3d,
+                 scipp::core::Quaternion, scipp::core::Translation>;
   m.def("_element_keys", element_keys);
   m.def("_get_elements", [](Variable &self, const std::string &key) {
     return core::callDType<GetElements>(
