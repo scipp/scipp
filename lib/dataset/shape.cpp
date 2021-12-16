@@ -98,7 +98,7 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
     } else {
       // 1D coord is kept only if all inputs have matching 1D coords.
       if (std::any_of(vars.begin(), vars.end(), [dim, &vars](auto &var) {
-            return var.dims().contains(dim) || var != vars.front();
+            return var.dims().contains(dim) || !equals_nan(var, vars.front());
           })) {
         // Mismatching 1D coords must be broadcast to ensure new coord shape
         // matches new data shape.

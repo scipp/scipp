@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/bins.h"
+#include "scipp/dataset/shape.h"
 
 using namespace scipp;
 
@@ -72,6 +73,18 @@ TEST_F(EqualsNanTest, concat_nan_coord) {
   da.coords()[Dim::X] += nan;
   const auto out = dataset::concat(std::vector{da, copy(da)}, Dim::Y);
   ASSERT_TRUE(equals_nan(out.coords()[Dim::X], da.coords()[Dim::X]));
+}
+
+TEST_F(EqualsNanTest, concat_nan_mask) {
+  da.masks()["mask"] += nan;
+  const auto out = dataset::concat(std::vector{da, copy(da)}, Dim::Y);
+  ASSERT_TRUE(equals_nan(out.masks()["mask"], da.masks()["mask"]));
+}
+
+TEST_F(EqualsNanTest, concat_nan_attr) {
+  da.attrs()[Dim("attr")] += nan;
+  const auto out = dataset::concat(std::vector{da, copy(da)}, Dim::Y);
+  ASSERT_TRUE(equals_nan(out.attrs()[Dim("attr")], da.attrs()[Dim("attr")]));
 }
 
 TEST_F(EqualsNanTest, dataset_item_self_assign) {
