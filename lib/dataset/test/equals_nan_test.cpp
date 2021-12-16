@@ -87,6 +87,18 @@ TEST_F(EqualsNanTest, concat_nan_attr) {
   ASSERT_TRUE(equals_nan(out.attrs()[Dim("attr")], da.attrs()[Dim("attr")]));
 }
 
+TEST_F(EqualsNanTest, concat_nan_item) {
+  da.masks().erase("mask");
+  ds["a"].masks().erase("mask");
+  ds.setData("b", copy(da));
+  ds["a"] += nan;
+  auto ds2 = copy(ds);
+  ds2["b"] += da;
+  const auto out = dataset::concat(std::vector{ds, ds2}, Dim::Y);
+  // concat will avoid broadcasting "a" since it is equal, need to accepts NAN
+  ASSERT_TRUE(equals_nan(out["a"], da));
+}
+
 TEST_F(EqualsNanTest, dataset_item_self_assign) {
   // This is relevant for d['x', 1:]['a'] *= 1.5. We should accept NaNs. Current
   // implementation in Dataset.setData does not, because pointer comparison

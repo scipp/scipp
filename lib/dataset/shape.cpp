@@ -149,7 +149,7 @@ Dataset concat(const scipp::span<const Dataset> dss, const Dim dim) {
                     [&first](auto &ds) { return ds.contains(first.name()); })) {
       auto das = map(dss, [&first](auto &&ds) { return ds[first.name()]; });
       if (std::any_of(das.begin(), das.end(), [dim, &first](auto &da) {
-            return da.dims().contains(dim) || da != first;
+            return da.dims().contains(dim) || !equals_nan(da, first);
           }))
         result.setData(first.name(), concat(das, dim));
       else
