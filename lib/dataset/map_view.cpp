@@ -59,6 +59,16 @@ bool Dict<Key, Value>::operator==(const Dict &other) const {
 }
 
 template <class Key, class Value>
+bool equals_nan(const Dict<Key, Value> &a, const Dict<Key, Value> &b) {
+  if (a.size() != b.size())
+    return false;
+  return std::all_of(a.begin(), a.end(), [&b](const auto &item) {
+    const auto &[name, data] = item;
+    return b.contains(name) && equals_nan(data, b[name]);
+  });
+}
+
+template <class Key, class Value>
 bool Dict<Key, Value>::operator!=(const Dict &other) const {
   return !operator==(other);
 }
@@ -329,5 +339,10 @@ bool Dict<Key, Value>::item_applies_to(const Key &key,
 
 template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;
 template class SCIPP_DATASET_EXPORT Dict<std::string, Variable>;
+template SCIPP_DATASET_EXPORT bool equals_nan(const Dict<Dim, Variable> &a,
+                                              const Dict<Dim, Variable> &b);
+template SCIPP_DATASET_EXPORT bool
+equals_nan(const Dict<std::string, Variable> &a,
+           const Dict<std::string, Variable> &b);
 
 } // namespace scipp::dataset

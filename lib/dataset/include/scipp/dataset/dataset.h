@@ -269,6 +269,9 @@ SCIPP_DATASET_EXPORT void union_or_in_place(Masks &masks,
 
 SCIPP_DATASET_EXPORT Dataset merge(const Dataset &a, const Dataset &b);
 
+[[nodiscard]] SCIPP_DATASET_EXPORT bool equals_nan(const Dataset &a,
+                                                   const Dataset &b);
+
 } // namespace scipp::dataset
 
 namespace scipp::core {

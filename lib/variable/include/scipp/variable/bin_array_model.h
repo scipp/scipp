@@ -122,7 +122,6 @@ bool BinArrayModel<T>::equals(const Variable &a, const Variable &b) const {
 
 template <class T>
 bool BinArrayModel<T>::equals_nan(const Variable &a, const Variable &b) const {
-  fprintf(stderr, "BinArrayModel<T>::equals_nan\n");
   // TODO This implementation is slow since it creates a view for every bucket.
   return a.dtype() == dtype() && b.dtype() == dtype() &&
          equals_nan_impl(a.values<bucket<T>>(), b.values<bucket<T>>());

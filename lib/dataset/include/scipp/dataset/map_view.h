@@ -181,4 +181,7 @@ template <class Masks>
 SCIPP_DATASET_EXPORT Variable masks_merge_if_contained(const Masks &masks,
                                                        const Dimensions &dims);
 
+template <class Key, class Value>
+bool equals_nan(const Dict<Key, Value> &a, const Dict<Key, Value> &b);
+
 } // namespace scipp::dataset

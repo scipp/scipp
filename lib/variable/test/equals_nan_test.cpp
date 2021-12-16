@@ -27,6 +27,13 @@ TEST(EqualsNanTest, variances) {
   check_equal(var, var);
 }
 
+TEST(EqualsNanTest, nested) {
+  auto inner = makeVariable<double>(Dims{Dim::X}, Shape{4},
+                                    Values{1.0f, 2.0f, NAN, 4.0f});
+  auto var = makeVariable<Variable>(Values{inner});
+  check_equal(var, var);
+}
+
 TEST(EqualsNanTest, structured) {
   auto var =
       variable::make_vectors(Dimensions(Dim::X, 1), units::m, {1, 2, NAN});
