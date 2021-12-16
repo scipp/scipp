@@ -10,6 +10,7 @@ Features
 ~~~~~~~~
 
 * Added support for slicing without specifying a dimension (only for 1-D objects) `#2321 <https://github.com/scipp/scipp/pull/2321>`_.
+* Added ``unit`` property to ``obj.bins`` for getting and setting unit of bin elements `#2330 <https://github.com/scipp/scipp/pull/2330>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
