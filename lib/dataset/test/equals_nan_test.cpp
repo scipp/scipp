@@ -35,6 +35,14 @@ protected:
     check_equal(makeVariable<Dataset>(Values{ds}));
     check_equal(make_bins(indices, Dim::X, da));
     check_equal(make_bins(indices, Dim::X, ds));
+    da.masks().erase("mask");
+    ds["a"].masks().erase("mask");
+    ASSERT_NO_THROW(da + da);
+    ASSERT_NO_THROW(da + copy(da));
+    ASSERT_NO_THROW(ds + ds);
+    ASSERT_NO_THROW(ds + copy(ds));
+    ASSERT_NO_THROW(ds.setData("b", da));
+    ASSERT_NO_THROW(ds.setData("b", copy(da)));
   }
 };
 
@@ -56,4 +64,25 @@ TEST_F(EqualsNanTest, nan_mask) {
 TEST_F(EqualsNanTest, nan_attr) {
   da.attrs()[Dim("attr")] += nan;
   check();
+  const auto out = da + copy(da);
+  ASSERT_TRUE(out.attrs().contains(Dim("attr")));
+}
+
+TEST_F(EqualsNanTest, concat_nan_coord) {
+  da.coords()[Dim::X] += nan;
+  const auto out = dataset::concat(std::vector{da, copy(da)}, Dim::Y);
+  ASSERT_TRUE(equals_nan(out.coords()[Dim::X], da.coords()[Dim::X]));
+}
+
+TEST_F(EqualsNanTest, dataset_item_self_assign) {
+  // This is relevant for d['x', 1:]['a'] *= 1.5. We should accept NaNs. Current
+  // implementation in Dataset.setData does not, because pointer comparison
+  // kicks in first, so this just works.
+  auto item = ds.slice({Dim::X, 0})["a"];
+  ds.slice({Dim::X, 0}).setData("a", item);
+  da += nan;
+  da.coords()[Dim::X] += nan;
+  da.masks()["mask"] += nan;
+  da.attrs()[Dim("attr")] += nan;
+  ds.slice({Dim::X, 0}).setData("a", item);
 }
