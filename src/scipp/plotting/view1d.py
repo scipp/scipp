@@ -3,9 +3,10 @@
 # @author Neil Vaytet
 from matplotlib.lines import Line2D
 
+from .. import units
 from .view import PlotView
 from .tools import vars_to_err
-from ..core import ones, units, Variable
+from ..core import ones, Variable
 
 
 def _make_label(array):
