@@ -178,4 +178,7 @@ template <class Masks>
   return union_;
 }
 
+template <class Key, class Value>
+bool equals_nan(const Dict<Key, Value> &a, const Dict<Key, Value> &b);
+
 } // namespace scipp::dataset

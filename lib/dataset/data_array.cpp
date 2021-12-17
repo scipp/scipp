@@ -102,6 +102,16 @@ bool operator!=(const DataArray &a, const DataArray &b) {
   return !operator==(a, b);
 }
 
+bool equals_nan(const DataArray &a, const DataArray &b) {
+  if (!equals_nan(a.coords(), b.coords()))
+    return false;
+  if (!equals_nan(a.masks(), b.masks()))
+    return false;
+  if (!equals_nan(a.attrs(), b.attrs()))
+    return false;
+  return equals_nan(a.data(), b.data());
+}
+
 /// Return the name of the data array.
 ///
 /// If part of a dataset, the name of the array is equal to the key of this item

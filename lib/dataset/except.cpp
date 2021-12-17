@@ -63,7 +63,7 @@ void coords_are_superset(const DataArray &a, const DataArray &b,
 
 void matching_coord(const Dim dim, const Variable &a, const Variable &b,
                     const std::string_view opname) {
-  if (a != b)
+  if (!equals_nan(a, b))
     throw except::CoordMismatchError(dim, a, b, opname);
 }
 

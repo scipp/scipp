@@ -78,6 +78,8 @@ public:
 
   [[nodiscard]] bool equals(const Variable &a,
                             const Variable &b) const override;
+  [[nodiscard]] bool equals_nan(const Variable &a,
+                                const Variable &b) const override;
   void copy(const Variable &src, Variable &dest) const override;
   void copy(const Variable &src, Variable &&dest) const override;
   void assign(const VariableConcept &other) override;
@@ -116,6 +118,13 @@ bool BinArrayModel<T>::equals(const Variable &a, const Variable &b) const {
   // TODO This implementation is slow since it creates a view for every bucket.
   return a.dtype() == dtype() && b.dtype() == dtype() &&
          equals_impl(a.values<bucket<T>>(), b.values<bucket<T>>());
+}
+
+template <class T>
+bool BinArrayModel<T>::equals_nan(const Variable &a, const Variable &b) const {
+  // TODO This implementation is slow since it creates a view for every bucket.
+  return a.dtype() == dtype() && b.dtype() == dtype() &&
+         equals_nan_impl(a.values<bucket<T>>(), b.values<bucket<T>>());
 }
 
 template <class T>

@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 #include "scipp/common/initialization.h"
+#include "scipp/common/numeric.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
@@ -31,6 +32,29 @@ bool equals_impl(const T1 &view1, const T2 &view2) {
     return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }
 
+template <class T> bool equals_nan(const T &a, const T &b) {
+  if constexpr (std::is_floating_point_v<T>) {
+    using numeric::isnan;
+    if (isnan(a) && isnan(b))
+      return true;
+  }
+  return a == b;
+}
+
+template <class T1, class T2>
+bool equals_nan_impl(const T1 &view1, const T2 &view2) {
+  // TODO Use optimizations in case of contigous views (instead of slower
+  // ElementArrayView iteration). Add multi threading?
+  if constexpr (is_span_v<typename T1::value_type>)
+    return std::equal(
+        view1.begin(), view1.end(), view2.begin(), view2.end(),
+        [](const auto &a, const auto &b) { return equals_nan_impl(a, b); });
+  else
+    return std::equal(
+        view1.begin(), view1.end(), view2.begin(), view2.end(),
+        [](const auto &x, const auto &y) { return equals_nan(x, y); });
+}
+
 /// Implementation of VariableConcept that holds an array with element type T.
 template <class T> class ElementArrayModel : public VariableConcept {
 public:
@@ -53,6 +77,7 @@ public:
   }
 
   bool equals(const Variable &a, const Variable &b) const override;
+  bool equals_nan(const Variable &a, const Variable &b) const override;
   void copy(const Variable &src, Variable &dest) const override;
   void copy(const Variable &src, Variable &&dest) const override;
   void assign(const VariableConcept &other) override;

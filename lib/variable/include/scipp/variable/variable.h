@@ -211,6 +211,9 @@ Variable::Variable(const DType &type, Ts &&... args)
                                                       Variable &out);
 [[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var,
                                                      Variable &&out);
+
+[[nodiscard]] SCIPP_VARIABLE_EXPORT bool equals_nan(const Variable &a,
+                                                    const Variable &b);
 } // namespace scipp::variable
 
 namespace scipp::core {
