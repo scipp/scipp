@@ -1,0 +1,16 @@
+name: 'Weekly Recurring Jobs'
+
+on:
+  schedule:
+    - cron: "0 0 * * 6"
+
+jobs:
+  remove_old_conda_dev_packages:
+    name: 'Remove Old Conda Packages'
+    runs-on: ubuntu-latest
+    env:
+      ANACONDA_CLOUD_TOKEN: ${{ secrets.ANACONDATOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: ./tools/anaconda_remove_old_dev_packages.sh
+        displayName: 'Remove Old Conda Packages'
