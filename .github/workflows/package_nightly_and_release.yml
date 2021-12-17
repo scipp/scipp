@@ -26,6 +26,7 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
+          ref: fa281eddf8c750bf4a0946a4f5e0a007c12e89a6
 
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install --yes conda-build
@@ -52,6 +53,8 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install -c conda-forge --yes anaconda-client
       - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
+        with:
+          ref: fa281eddf8c750bf4a0946a4f5e0a007c12e89a6
       - uses: actions/download-artifact@v2
       - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label ${{ env.conda_label }} $(ls conda-package-*/*/*.tar.bz2)
 
