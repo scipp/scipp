@@ -3,6 +3,7 @@ name: 'Weekly Recurring Jobs'
 on:
   schedule:
     - cron: "0 0 * * 6"
+  pull_request:
 
 jobs:
   remove_old_conda_dev_packages:
