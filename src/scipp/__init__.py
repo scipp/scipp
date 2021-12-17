@@ -73,7 +73,7 @@ from .core import lookup, histogram, bin, bins, bins_like
 from .core import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
 from .core import counts_to_density, density_to_counts
 from .core import cumsum
-from .core import combine_masks, merge
+from .core import merge
 from .core import groupby
 from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc
 from .core import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where

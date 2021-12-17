@@ -167,8 +167,8 @@ protected:
 /// Returns the union of all masks with irreducible dimension `dim`.
 ///
 /// Irreducible means that a reduction operation must apply these masks since
-/// depend on the reduction dimension. Returns an invalid (empty) variable if
-/// there is no irreducible mask.
+/// they depend on the reduction dimension. Returns an invalid (empty) variable
+/// if there is no irreducible mask.
 template <class Masks>
 [[nodiscard]] Variable irreducible_mask(const Masks &masks, const Dim dim) {
   Variable union_;
@@ -177,9 +177,6 @@ template <class Masks>
       union_ = union_.is_valid() ? union_ | mask.second : copy(mask.second);
   return union_;
 }
-
-SCIPP_DATASET_EXPORT Variable masks_merge_if_contained(const Masks &masks,
-                                                       const Dimensions &dims);
 
 template <class Key, class Value>
 bool equals_nan(const Dict<Key, Value> &a, const Dict<Key, Value> &b);

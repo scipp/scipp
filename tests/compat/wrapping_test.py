@@ -97,3 +97,18 @@ def test_wrap1d_fail_conflicting_mask(func):
     da.masks['xx'] = da.coords['xx'] != da.coords['xx']
     with pytest.raises(sc.DimensionError):
         func(da, 'xx')
+
+
+@wrap1d(accept_masks=True)
+def func1d_with_mask(da, dim, **kwargs):
+    assert kwargs['axis'] == da.dims.index(dim)
+    assert dim in da.masks
+    return da[dim, 1:3].copy()
+
+
+def test_wrap1d_accept_masks():
+    da = make_array()
+    da.masks['xx'] = da.coords['xx'] != da.coords['xx']
+    result = func1d_with_mask(da, 'xx')
+    assert sc.identical(result, da['xx', 1:3])
+    check_metadata(result, da, x=None)

@@ -28,7 +28,7 @@ public:
     if (unit != units::one)
       throw except::UnitError(
           "Bins cannot have a unit. Did you mean to set the unit of the bin "
-          "elements? This can be set, e.g., with `array.bins.unit = 'm'`.");
+          "elements? This can be set with `array.bins.unit = 'm'`.");
   }
 
   bool has_variances() const noexcept override { return false; }
