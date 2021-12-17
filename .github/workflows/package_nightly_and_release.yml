@@ -23,7 +23,7 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
-          ref: fa281eddf8c750bf4a0946a4f5e0a007c12e89a6
+          ref: 35c4ed460a0bd45563fea25934ba727126480cf7
 
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install --yes conda-build
@@ -40,29 +40,3 @@ jobs:
           name: html
           path: docs_html
 
-  deploy:
-    needs: conda_build
-    name: Deploy packages and docs
-    runs-on: ubuntu-latest
-    env:
-      conda_label: ${{ startsWith(github.ref, 'refs/tags/') && 'main' || 'dev' }}
-    steps:
-      - uses: conda-incubator/setup-miniconda@v2
-      - run: conda install -c conda-forge --yes anaconda-client
-      - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
-        with:
-          ref: fa281eddf8c750bf4a0946a4f5e0a007c12e89a6
-      - uses: actions/download-artifact@v2
-      - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label ${{ env.conda_label }} $(ls conda-package-*/*/*.tar.bz2)
-
-      - uses: JamesIves/github-pages-deploy-action@4.1.7
-        with:
-          repository-name: scipp/scipp.github.io
-          branch: master
-          folder: html
-          # Note: If this is a release, it will not deploy to the top level folder.
-          # The next scheduled main build will update that.
-          target-folder: ${{ env.conda_label == 'main' && format('release/{0}', github.ref_name) || '' }}
-          single-commit: true
-          clean-exclude: release
-          ssh-key: ${{ secrets.GH_PAGES_DEPLOY_KEY }}
