@@ -22,12 +22,16 @@ void expect_eq(const DataArray &a, const DataArray &b) {
   EXPECT_TRUE(b == a);
   EXPECT_FALSE(a != b);
   EXPECT_FALSE(b != a);
+  EXPECT_TRUE(equals_nan(a, b));
+  EXPECT_TRUE(equals_nan(b, a));
 }
 void expect_ne(const DataArray &a, const DataArray &b) {
   EXPECT_TRUE(a != b);
   EXPECT_TRUE(b != a);
   EXPECT_FALSE(a == b);
   EXPECT_FALSE(b == a);
+  EXPECT_FALSE(equals_nan(a, b));
+  EXPECT_FALSE(equals_nan(b, a));
 }
 } // namespace
 

@@ -28,6 +28,7 @@ add_executable(
   dataset_test.cpp
   dataset_view_test.cpp
   data_view_test.cpp
+  equals_nan_test.cpp
   event_data_operations_consistency_test.cpp
   except_test.cpp
   generated_test.cpp

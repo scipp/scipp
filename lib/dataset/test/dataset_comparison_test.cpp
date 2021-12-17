@@ -24,6 +24,8 @@ private:
     EXPECT_TRUE(b == a);
     EXPECT_FALSE(a != b);
     EXPECT_FALSE(b != a);
+    EXPECT_TRUE(equals_nan(a, b));
+    EXPECT_TRUE(equals_nan(b, a));
   }
   template <class A, class B>
   void expect_ne_impl(const A &a, const B &b) const {
@@ -31,6 +33,8 @@ private:
     EXPECT_TRUE(b != a);
     EXPECT_FALSE(a == b);
     EXPECT_FALSE(b == a);
+    EXPECT_FALSE(equals_nan(a, b));
+    EXPECT_FALSE(equals_nan(b, a));
   }
 
 protected:

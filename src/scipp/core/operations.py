@@ -14,7 +14,7 @@ def dot(x: VariableLike, y: VariableLike) -> VariableLike:
 
     :param x: Left hand side operand.
     :param y: Right hand side operand.
-    :raises: If the dtype of the input is not vector_3_float64.
+    :raises: If the dtype of the input is not vector3.
     :return: The dot product of the input vectors.
     """
     return _call_cpp_func(_cpp.dot, x, y)
@@ -82,7 +82,7 @@ def cross(x: VariableLike, y: VariableLike) -> VariableLike:
 
     :param x: Left hand side operand.
     :param y: Right hand side operand.
-    :raises: If the dtype of the input is not vector_3_float64.
+    :raises: If the dtype of the input is not vector3.
     :return: The cross product of the input vectors.
     """
     return _call_cpp_func(_cpp.cross, x, y)

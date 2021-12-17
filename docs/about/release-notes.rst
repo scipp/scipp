@@ -9,18 +9,29 @@ v0.11.0 (unreleased)
 Features
 ~~~~~~~~
 
+* Add new datatypes for representing spatial transformations: ``affine3``, ``rotation3``, and ``translation3``. Each of these can be combined and applied to the existing vector datatype.
 * Added support for slicing without specifying a dimension (only for 1-D objects) `#2321 <https://github.com/scipp/scipp/pull/2321>`_.
+* Added ``unit`` property to ``obj.bins`` for getting and setting unit of bin elements `#2330 <https://github.com/scipp/scipp/pull/2330>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * Minor change in behavior of dimension renaming in ``transform_coords``, new behavior documented in `Coordinate transformations <../user-guide/coordinate-transformations.rst>`_. Most use cases are unaffected. `#2319 <https://github.com/scipp/scipp/pull/2319>`_.
+* ``sc.spatial.transform.as_rotvec`` has been moved to ``sc.spatial.as_rotvec``
+* ``sc.spatial.transform.from_rotvec`` has been moved to ``sc.spatial.from_rotvecs``, and now returns a rotation data type rather than a matrix.
+  For consistency with other transformation creation functions, ``from_rotvecs`` now takes ``values``, ``dims`` and ``unit`` separately.
+* The matrix dtype ``matrix_3_float64`` has been renamed to ``linear_transform3``, and should now be constructed with ``sc.spatial.linear_transform``.
+* The vector dtype ``vector_3_float64`` has been renamed to ``vector3``.
 
 Bugfixes
 ~~~~~~~~
 
+* Fix coordinate and attribute comparisons to treat NaN (not-a-number) values as equal, which previously prevented most operations with data arrays or datasets that contained NaN values in their coordinates or attributes `#2331 <https://github.com/scipp/scipp/pull/2331>`_.
+
 Deprecations
 ~~~~~~~~~~~~
+
+* ``sc.matrix`` has been deprecated in favour of ``sc.spatial.linear_transform``, and will be removed in a future release of scipp.
 
 Stability, Maintainability, and Testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

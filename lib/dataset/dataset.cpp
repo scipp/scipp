@@ -246,6 +246,17 @@ bool Dataset::operator!=(const Dataset &other) const {
   return !operator==(other);
 }
 
+bool equals_nan(const Dataset &a, const Dataset &b) {
+  if (a.size() != b.size())
+    return false;
+  if (!equals_nan(a.coords(), b.coords()))
+    return false;
+  for (const auto &data : a)
+    if (!b.contains(data.name()) || !equals_nan(data, b[data.name()]))
+      return false;
+  return true;
+}
+
 const Sizes &Dataset::sizes() const { return m_coords.sizes(); }
 const Sizes &Dataset::dims() const { return sizes(); }
 Dim Dataset::dim() const {

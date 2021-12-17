@@ -94,9 +94,9 @@ def test_zeros_dtypes():
                     dtype='datetime64').value == np.datetime64(0, 's')
     assert sc.zeros(dims=(), shape=(), dtype=str).value == ''
     np.testing.assert_array_equal(
-        sc.zeros(dims=(), shape=(), dtype=sc.dtype.vector_3_float64).value, np.zeros(3))
+        sc.zeros(dims=(), shape=(), dtype=sc.dtype.vector3).value, np.zeros(3))
     np.testing.assert_array_equal(
-        sc.zeros(dims=(), shape=(), dtype=sc.dtype.matrix_3_float64).value,
+        sc.zeros(dims=(), shape=(), dtype=sc.dtype.linear_transform3).value,
         np.zeros((3, 3)))
 
 

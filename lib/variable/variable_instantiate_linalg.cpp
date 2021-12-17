@@ -39,13 +39,13 @@ constexpr auto structure_element_offset<Eigen::Affine3d> =
 
 template <>
 constexpr auto structure_element_offset<scipp::core::Quaternion> =
-    [](const std::string &key) -> scipp::index {
+    []([[maybe_unused]] const std::string &key) -> scipp::index {
   throw except::TypeError("Not supported for Affine3d types");
 };
 
 template <>
 constexpr auto structure_element_offset<scipp::core::Translation> =
-    [](const std::string &key) -> scipp::index {
+    []([[maybe_unused]] const std::string &key) -> scipp::index {
   throw except::TypeError("Not supported for Affine3d types");
 };
 
@@ -68,11 +68,11 @@ std::vector<std::string> element_keys(const Variable &var) {
   throw except::TypeError("dtype is not structured");
 }
 
-INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(vector_3_float64, Eigen::Vector3d, double)
-INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(matrix_3_float64, Eigen::Matrix3d, double)
-INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(affine_transform, Eigen::Affine3d, double)
-INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(rotation, scipp::core::Quaternion, double)
-INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(translation, scipp::core::Translation,
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(vector3, Eigen::Vector3d, double)
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(linear_transform3, Eigen::Matrix3d, double)
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(affine_transform3, Eigen::Affine3d, double)
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(rotation3, scipp::core::Quaternion, double)
+INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(translation3, scipp::core::Translation,
                                      double)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(index_pair, scipp::index_pair,
                                      scipp::index)

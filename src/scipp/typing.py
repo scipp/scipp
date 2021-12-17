@@ -17,9 +17,9 @@ def is_scalar(obj: _std_typing.Any) -> bool:
 
 def has_vector_type(obj: _std_typing.Any) -> bool:
     """
-    Return True if the object dtype is vector_3_float64.
+    Return True if the object dtype is vector3.
     """
-    return obj.dtype == sc.dtype.vector_3_float64
+    return obj.dtype == sc.dtype.vector3
 
 
 def has_string_type(obj: _std_typing.Any) -> bool:

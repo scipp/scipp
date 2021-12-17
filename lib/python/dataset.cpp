@@ -269,13 +269,12 @@ void init_dataset(py::module &m) {
       py::arg("lhs"), py::arg("rhs"), py::call_guard<py::gil_scoped_release>());
 
   m.def(
-      "combine_masks",
-      [](const Masks &msk, const std::vector<Dim> &labels,
-         const std::vector<scipp::index> &shape) {
-        return dataset::masks_merge_if_contained(msk,
-                                                 Dimensions(labels, shape));
+      "irreducible_mask",
+      [](const Masks &masks, const Dim dim) {
+        auto mask = irreducible_mask(masks, dim);
+        return mask.is_valid() ? py::cast(mask) : py::none();
       },
-      py::arg("masks"), py::arg("labels"), py::arg("shape"),
+      py::arg("masks"), py::arg("dim"),
       py::call_guard<py::gil_scoped_release>());
 
   m.def(

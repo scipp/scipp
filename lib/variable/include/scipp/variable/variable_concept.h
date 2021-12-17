@@ -51,6 +51,7 @@ public:
   virtual void setVariances(const Variable &variances) = 0;
 
   virtual bool equals(const Variable &a, const Variable &b) const = 0;
+  virtual bool equals_nan(const Variable &a, const Variable &b) const = 0;
   virtual void copy(const Variable &src, Variable &dest) const = 0;
   virtual void copy(const Variable &src, Variable &&dest) const = 0;
   virtual void assign(const VariableConcept &other) = 0;
