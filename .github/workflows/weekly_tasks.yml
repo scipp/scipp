@@ -14,4 +14,3 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: ./tools/anaconda_remove_old_dev_packages.sh
-        displayName: 'Remove Old Conda Packages'
