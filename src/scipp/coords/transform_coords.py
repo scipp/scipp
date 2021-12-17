@@ -217,7 +217,6 @@ def _dim_name_changes(rule_graph: Graph, dim_coords: Set[str]) -> Dict[str, str]
     colors = _color_dims(rule_graph, dim_coords)
     nodes = list(rule_graph.nodes_topologically())[::-1]
     name_changes = {}
-    print(dim_coords, colors)
     for dim in dim_coords:
         for node in nodes:
             if _has_full_color_of_dim(colors[node], dim):
