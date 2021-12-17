@@ -271,11 +271,12 @@ void init_dataset(py::module &m) {
   m.def(
       "irreducible_mask",
       [](const Masks &masks, const Dim dim) {
+        py::gil_scoped_release release;
         auto mask = irreducible_mask(masks, dim);
+        py::gil_scoped_acquire acquire;
         return mask.is_valid() ? py::cast(mask) : py::none();
       },
-      py::arg("masks"), py::arg("dim"),
-      py::call_guard<py::gil_scoped_release>());
+      py::arg("masks"), py::arg("dim"));
 
   m.def(
       "reciprocal", [](const DataArray &self) { return reciprocal(self); },
