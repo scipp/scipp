@@ -9,8 +9,9 @@ v0.11.0 (unreleased)
 Features
 ~~~~~~~~
 
-* Add new datatypes for representing spatial transformations: ``affine3``, ``rotation3``, and ``translation3``. Each of these can be combined and applied to the existing vector datatype.
+* Added new datatypes for representing spatial transformations: ``affine3``, ``rotation3``, and ``translation3``. Each of these can be combined and applied to the existing vector datatype.
 * Added support for slicing without specifying a dimension (only for 1-D objects) `#2321 <https://github.com/scipp/scipp/pull/2321>`_.
+* Added ``sc.interpolate.interp1d``, ``sc.integration.trapezoid``, and ``sc.integration.simpson`` as convenience wrappers of the scipy functions of the same name `#2324 <https://github.com/scipp/scipp/pull/2324>`_.
 * Added ``unit`` property to ``obj.bins`` for getting and setting unit of bin elements `#2330 <https://github.com/scipp/scipp/pull/2330>`_.
 
 Breaking changes
