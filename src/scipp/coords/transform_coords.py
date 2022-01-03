@@ -5,7 +5,7 @@
 from fractions import Fraction
 from typing import Dict, Iterable, List, Mapping, Set, Union
 
-from ..core import DataArray, Dataset, NotFoundError, VariableError, bins
+from ..core import DataArray, Dataset, VariableError, bins
 from ..logging import get_logger
 from .coord_table import Coord, CoordTable, Destination
 from .graph import Graph, GraphDict, rule_sequence
@@ -150,29 +150,36 @@ def _log_transform(rules: List[Rule], targets: Set[str],
 
 
 def _store_coord(da: DataArray, name: str, coord: Coord) -> None:
-    def out(x):
-        return x.coords if coord.destination == Destination.coord else x.attrs
+    def try_del(dest):
+        if dest == Destination.coord:
+            da.coords.pop(name, None)
+            if da.bins is not None:
+                da.bins.coords.pop(name, None)
+        else:
+            da.attrs.pop(name, None)
+            if da.bins is not None:
+                da.bins.attrs.pop(name, None)
 
-    def del_other(x):
-        try:
-            if coord.destination == Destination.coord:
-                del x.attrs[name]
-            else:
-                del x.coords[name]
-        except NotFoundError:
-            pass
+    def store(x, c):
+        if coord.destination == Destination.coord:
+            x.coords[name] = c
+        else:
+            x.attrs[name] = c
 
-    if coord.has_dense:
-        out(da)[name] = coord.dense
-        del_other(da)
-    if coord.has_event:
-        try:
-            out(da.bins)[name] = coord.event
-        except VariableError:
-            # Thrown on mismatching bin indices, e.g. slice
-            da.data = da.data.copy()
-            out(da.bins)[name] = coord.event
-        del_other(da.bins)
+    try_del(coord.destination.other)
+
+    if coord.usages == 0:
+        try_del(coord.destination)
+    else:
+        if coord.has_dense:
+            store(da, coord.dense)
+        if coord.has_event:
+            try:
+                store(da.bins, coord.event)
+            except VariableError:
+                # Thrown on mismatching bin indices, e.g. slice
+                da.data = da.data.copy()
+                store(da.bins, coord.event)
 
 
 def _store_results(da: DataArray, coords: CoordTable, targets: Set[str]) -> DataArray:
