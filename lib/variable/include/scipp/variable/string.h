@@ -13,9 +13,6 @@
 
 namespace scipp::variable {
 
-template <class Id, class Key, class Value> class ConstView;
-template <class T, class U> class MutableView;
-
 SCIPP_VARIABLE_EXPORT std::ostream &operator<<(std::ostream &os,
                                                const Variable &variable);
 
