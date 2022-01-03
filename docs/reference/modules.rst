@@ -11,5 +11,6 @@ Modules
    constants
    integrate
    interpolate
-   spatial
    logging
+   spatial
+   units

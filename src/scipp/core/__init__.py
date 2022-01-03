@@ -24,7 +24,7 @@ from .._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
                          DTypeError, NotFoundError, SizeError, SliceError, \
                          UnitError, VariableError, VariancesError
 # Import submodules
-from .._scipp.core import units, dtype
+from .._scipp.core import dtype
 
 from .._scipp.core import get_slice_params
 
