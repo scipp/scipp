@@ -42,6 +42,10 @@ PyObject copy(const PyObject &obj) {
   }
 }
 
+std::ostream &operator<<(std::ostream &os, const PyObject &obj) {
+  return os << to_string(obj);
+}
+
 std::string to_string(const PyObject &obj) {
   py::gil_scoped_acquire gil_{};
   return py::str(obj.to_pybind());
