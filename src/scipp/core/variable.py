@@ -317,11 +317,12 @@ def vectors(*,
 
 
 def array(*,
-          dims: _Iterable,
-          values: array_like,
+          dims: _Optional[_Iterable] = None,
+          values: _Optional[array_like] = None,
           variances: _Optional[array_like] = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
-          dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
+          dtype: type(_cpp.dtype.float64) = None,
+          **kwargs) -> _cpp.Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
     values and optional variances. Dimension and value shape must match.
     Only keyword arguments accepted.
@@ -337,6 +338,18 @@ def array(*,
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
     """
+    if len(kwargs) > 1:
+        raise ValueError("Multiple unknown keyword arguments.")
+    if len(kwargs) == 1:
+        key = next(iter(kwargs))
+        if dims is not None:
+            raise ValueError(f"Given dims={dims} but dimension name already defined"
+                             f" by keyword argument `{key}`.")
+        if values is not None:
+            raise ValueError("Multiple specification of values, using the `values`"
+                             f" argument as well as the keyword argument `{key}`.")
+        dims = [key]
+        values = kwargs[key]
     return _cpp.Variable(dims=dims,
                          values=values,
                          variances=variances,
