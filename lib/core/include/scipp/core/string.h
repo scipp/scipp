@@ -22,6 +22,8 @@ namespace scipp::core {
 
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
                                            const Dimensions &dims);
+SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
+                                           const scipp::index_pair &index);
 
 SCIPP_CORE_EXPORT const std::string &to_string(const std::string &s);
 SCIPP_CORE_EXPORT std::string_view to_string(const std::string_view s);
