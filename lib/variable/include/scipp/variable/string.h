@@ -31,13 +31,13 @@ format_variable(const Variable &variable,
 class SCIPP_VARIABLE_EXPORT AbstractFormatter {
 public:
   virtual ~AbstractFormatter() = default;
-  virtual std::string format(const Variable &var) const = 0;
+  [[nodiscard]] virtual std::string format(const Variable &var) const = 0;
 };
 
 /// Concrete class for formatting variables with element types not in
 /// scipp-variable.
 template <class T> class Formatter : public AbstractFormatter {
-  std::string format(const Variable &var) const override;
+  [[nodiscard]] std::string format(const Variable &var) const override;
 };
 
 /// Registry of formatters.
@@ -50,8 +50,8 @@ public:
   FormatterRegistry(const FormatterRegistry &) = delete;
   FormatterRegistry &operator=(const FormatterRegistry &) = delete;
   void emplace(const DType key, std::unique_ptr<AbstractFormatter> formatter);
-  bool contains(const DType key) const noexcept;
-  std::string format(const Variable &var) const;
+  [[nodiscard]] bool contains(const DType key) const noexcept;
+  [[nodiscard]] std::string format(const Variable &var) const;
 
 private:
   std::map<DType, std::unique_ptr<AbstractFormatter>> m_formatters;

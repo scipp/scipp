@@ -65,10 +65,10 @@ std::string array_to_string(const T &arr,
                             const std::optional<units::Unit> &unit) {
   const auto size = scipp::size(arr);
   if (size == 0)
-    return std::string("[]");
+    return "[]";
   std::string s = "[";
   for (scipp::index i = 0; i < scipp::size(arr); ++i) {
-    scipp::index n = 4;
+    constexpr scipp::index n = 4;
     if (i == n && size > 2 * n) {
       s += "..., ";
       i = size - n;
