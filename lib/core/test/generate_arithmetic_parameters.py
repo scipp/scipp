@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 """
 This script generates input parameters to test whether arithmetic
 operations are consistent with Python.
@@ -42,7 +42,7 @@ def main():
     np.random.seed(14653503)
     with open(sys.argv[1], 'w') as outf:
         outf.write('// SPDX-License-Identifier: BSD-3-Clause\n')
-        outf.write('// Copyright (c) 2021 Scipp contributors '
+        outf.write('// Copyright (c) 2022 Scipp contributors '
                    '(https://github.com/scipp)\n')
         outf.write('// clang-format off\n')
         outf.write('/*\n')

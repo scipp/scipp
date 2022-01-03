@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include "scipp/variable/element_array_variable.tcc"
 #include "scipp/variable/string.h"
 #include <gtest/gtest.h>
