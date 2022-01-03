@@ -55,7 +55,7 @@ jobs:
       - uses: actions/download-artifact@v2
       - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label ${{ env.conda_label }} $(ls conda-package-*/*/*.tar.bz2)
 
-      - uses: JamesIves/github-pages-deploy-action@4.1.7
+      - uses: JamesIves/github-pages-deploy-action@4.1.8
         with:
           repository-name: scipp/scipp.github.io
           branch: master
