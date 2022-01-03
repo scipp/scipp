@@ -245,6 +245,40 @@ def test_array_empty_dims():
                         sc.scalar(1.1, variance=1.1))
 
 
+def test_array_dim_from_keyword_fail_multiple():
+    with pytest.raises(ValueError):
+        sc.array(x=[4], y=[5])
+
+
+def test_array_dim_from_keyword_fail_redundant_dims():
+    with pytest.raises(ValueError):
+        sc.array(dims=['x'], x=[4])
+    with pytest.raises(ValueError):
+        sc.array(dims=['y'], x=[4])
+
+
+def test_array_dim_from_keyword_fail_redundant_values():
+    with pytest.raises(ValueError):
+        sc.array(x=[4], values=[4])
+
+
+def test_array_dim_from_keyword():
+    var = sc.array(xx=[2, 3, 4], unit='K', dtype='float32')
+    assert sc.identical(
+        var, sc.array(dims=['xx'], values=[2, 3, 4], unit='K', dtype='float32'))
+
+
+def test_array_dim_from_keyword_with_variances():
+    var = sc.array(xx=[2, 3, 4], unit='K', dtype='float32', variances=[3, 4, 5])
+    assert sc.identical(
+        var,
+        sc.array(dims=['xx'],
+                 values=[2, 3, 4],
+                 variances=[3, 4, 5],
+                 unit='K',
+                 dtype='float32'))
+
+
 def test_zeros_like():
     var = sc.Variable(dims=['x', 'y', 'z'], values=np.random.random([1, 2, 3]))
     expected = sc.zeros(dims=['x', 'y', 'z'], shape=[1, 2, 3])
