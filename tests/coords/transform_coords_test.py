@@ -363,15 +363,15 @@ def test_keep_intermediate_keep_inputs():
     assert 'b' in da.attrs
     da = original.transform_coords(['c'], graph=graph, keep_inputs=False)
     assert 'ab' in da.meta
-    assert 'a' not in da.attrs
-    assert 'b' not in da.attrs
+    assert 'a' not in da.meta
+    assert 'b' not in da.meta
     da = original.transform_coords(['c'],
                                    graph=graph,
                                    keep_intermediate=False,
                                    keep_inputs=False)
     assert 'ab' not in da.meta
-    assert 'a' not in da.attrs
-    assert 'b' not in da.attrs
+    assert 'a' not in da.meta
+    assert 'b' not in da.meta
 
 
 def test_inplace():
