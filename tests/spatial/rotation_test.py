@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 from scipp.spatial import rotation, rotation_from_rotvec, rotations, rotation_as_rotvec
 from math import pi
 import scipp as sc
