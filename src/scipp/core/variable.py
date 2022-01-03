@@ -325,7 +325,26 @@ def array(*,
           **kwargs) -> _cpp.Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
     values and optional variances. Dimension and value shape must match.
-    Only keyword arguments accepted.
+
+    An optional arbitrary keyword argument is supported as convenience for creating
+    1-D variables. If provided the name of the argument defines the dimension label
+    and the value defines the array of values.
+
+    Example:
+
+      >>> sc.array(temperature=[4.3, 4.4], unit='K')
+      <scipp.Variable> (temperature: 2)    float64              [K]  [4.300000, 4.400000]
+
+    This is equivalent to:
+
+      >>> sc.array(dims=['temperature'], values=[4.3, 4.4], unit='K')
+      <scipp.Variable> (temperature: 2)    float64              [K]  [4.300000, 4.400000]
+
+    For creating multi-dimensional arrays the dimension labels and values must be
+    specified explicitly:
+
+      >>> sc.array(dims=['x', 'y'], values=[[4.3, 4.4]], unit='K')
+      <scipp.Variable> (x: 1, y: 2)    float64              [K]  [4.300000, 4.400000]
 
     :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
               :py:func:`scipp.empty` :py:func:`scipp.scalar`
@@ -337,7 +356,7 @@ def array(*,
     :param unit: Optional, data unit. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
-    """
+    """  # noqa #501
     if len(kwargs) > 1:
         raise ValueError("Multiple unknown keyword arguments.")
     if len(kwargs) == 1:
