@@ -25,9 +25,6 @@ def _format_array(data, size, ellipsis_after, do_elide=True):
             s.append("...")
             i = size - ellipsis_after
         elem = data[i]
-        if hasattr(elem, "__round__"):
-            if not hasattr(data, "dtype") or data.dtype != bool:
-                elem = round(elem, 2)
         if isinstance(elem, sc.DataArray):
             dims = ', '.join(f'{dim}: {s}' for dim, s in elem.sizes.items())
             coords = ', '.join(elem.coords)
