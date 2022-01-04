@@ -34,7 +34,9 @@ bool is_span(DType tp) {
 }
 
 bool is_structured(DType tp) {
-  return tp == dtype<Eigen::Vector3d> || tp == dtype<Eigen::Matrix3d> || tp == dtype<scipp::core::Quaternion> || tp == dtype<Eigen::Affine3d> || tp == dtype<scipp::core::Translation>;
+  return tp == dtype<Eigen::Vector3d> || tp == dtype<Eigen::Matrix3d> ||
+         tp == dtype<scipp::core::Quaternion> || tp == dtype<Eigen::Affine3d> ||
+         tp == dtype<scipp::core::Translation>;
 }
 
 std::ostream &operator<<(std::ostream &os, const DType &dtype) {

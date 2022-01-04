@@ -9,8 +9,8 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/eigen.h"
-#include "scipp/core/tag_util.h"
 #include "scipp/core/spatial_transforms.h"
+#include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/variable/shape.h"
@@ -204,9 +204,11 @@ template <class... Ts> class as_ElementArrayViewImpl {
       std::iter_swap(labels.end() - 2, labels.end() - 1);
       return transpose(elems, labels);
     } else if (view.dtype() == dtype<scipp::core::Quaternion>) {
-      return get_data_variable(view).template elements<scipp::core::Quaternion>();
+      return get_data_variable(view)
+          .template elements<scipp::core::Quaternion>();
     } else if (view.dtype() == dtype<scipp::core::Translation>) {
-      return get_data_variable(view).template elements<scipp::core::Translation>();
+      return get_data_variable(view)
+          .template elements<scipp::core::Translation>();
     } else if (view.dtype() == dtype<Eigen::Affine3d>) {
       auto elems = get_data_variable(view).template elements<Eigen::Affine3d>();
       elems = fold(
@@ -416,7 +418,7 @@ public:
 using as_ElementArrayView = as_ElementArrayViewImpl<
     double, float, int64_t, int32_t, bool, std::string, scipp::core::time_point,
     Variable, DataArray, Dataset, bucket<Variable>, bucket<DataArray>,
-    bucket<Dataset>, Eigen::Vector3d, Eigen::Matrix3d, scipp::python::PyObject, 
+    bucket<Dataset>, Eigen::Vector3d, Eigen::Matrix3d, scipp::python::PyObject,
     Eigen::Affine3d, scipp::core::Quaternion, scipp::core::Translation>;
 
 template <class T, class... Ignored>
