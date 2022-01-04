@@ -17,11 +17,11 @@ VARIANCES_SYMBOL = "σ²"
 SPARSE_PREFIX = "len={}"
 
 
-def _format_array(data, size, ellipsis_after, do_ellide=True):
+def _format_array(data, size, ellipsis_after, do_elide=True):
     i = 0
     s = []
     while i < size:
-        if do_ellide and i == ellipsis_after and size > 2 * ellipsis_after + 1:
+        if do_elide and i == ellipsis_after and size > 2 * ellipsis_after + 1:
             s.append("...")
             i = size - ellipsis_after
         elem = data[i]
@@ -62,13 +62,13 @@ def _format_non_events(var, has_variances):
     return _make_row(s)
 
 
-def _repr_item(s, bin_dim, item, ellipsis_after, do_ellide, summary):
+def _repr_item(s, bin_dim, item, ellipsis_after, do_elide, summary):
     shape = item.shape[bin_dim]
     if summary:
         s.append(SPARSE_PREFIX.format(shape))
     else:
         s.append('events({})'.format(
-            _format_array(item, shape, ellipsis_after, do_ellide)))
+            _format_array(item, shape, ellipsis_after, do_elide)))
 
 
 def _get_events(var, variances, ellipsis_after, summary=False):
@@ -98,7 +98,7 @@ def _get_events(var, variances, ellipsis_after, summary=False):
                    bin_dim,
                    var.value,
                    ellipsis_after,
-                   do_ellide=False,
+                   do_elide=False,
                    summary=summary)
     return s
 
