@@ -33,10 +33,9 @@ eigen_2d = sc.matrices(dims=['x'], values=np.random.rand(4, 3, 3))
 
 rotation = sc.spatial.rotation(value=[1, 2, 3, 4])
 translation = sc.spatial.translation_from_vector(value=[5, 6, 7], unit=sc.units.m)
-affine = sc.spatial.affine_transform(value=[[0, 1, 2, 4],
-                                            [5, 6, 7, 8],
-                                            [9, 10, 11, 12],
-                                            [13, 14, 15, 16]], unit=sc.units.m)
+affine = sc.spatial.affine_transform(value=[[0, 1, 2, 4], [5, 6, 7, 8], [9, 10, 11, 12],
+                                            [13, 14, 15, 16]],
+                                     unit=sc.units.m)
 
 datetime64ms_1d = sc.Variable(dims=['x'],
                               dtype=sc.dtype.datetime64,
