@@ -41,7 +41,7 @@ def _format_array(data, size, ellipsis_after, do_elide=True):
     return escape(", ".join(s))
 
 
-def _make_row(data_html, variances_html=None):
+def _make_row(data_html):
     return f"<div>{data_html}</div>"
 
 
@@ -247,7 +247,7 @@ def _make_inline_attributes(var, has_attrs, embedded_in):
     return disabled, attrs_ul
 
 
-def _make_dim_labels(dim, size, bin_edges=None):
+def _make_dim_labels(dim, bin_edges=None):
     # Note: the space needs to be here, otherwise
     # there is a trailing whitespace when no dimension
     # label has been added
@@ -259,7 +259,7 @@ def _make_dim_labels(dim, size, bin_edges=None):
 
 def _make_dim_str(var, bin_edges, add_dim_size=False):
     dims_text = ', '.join(
-        '{}{}{}'.format(str(dim), _make_dim_labels(dim, size, bin_edges),
+        '{}{}{}'.format(str(dim), _make_dim_labels(dim, bin_edges),
                         f': {size}' if add_dim_size and size is not None else '')
         for dim, size in zip(var.dims, var.shape))
     return dims_text
