@@ -5,6 +5,7 @@
 
 from ..core import scalar, stddevs, Variable, DataArray
 from ..interpolate import _drop_masked
+import numpy as np
 
 from typing import Callable, List, Tuple
 from inspect import signature
@@ -25,6 +26,21 @@ def _wrap_func(f, x_prototype, p_units):
         return f(x_prototype, *p).values
 
     return func
+
+
+def _covariance_with_units(pcov, units):
+    pcov = pcov.astype(dtype=object)
+    for i, row in enumerate(pcov):
+        for j, elem in enumerate(row):
+            ui = units[i]
+            uj = units[j]
+            u = None
+            if ui is None:
+                u = uj
+            elif uj is not None:
+                u = ui * uj
+            pcov[i, j] = _as_scalar(elem, u)
+    return pcov
 
 
 def curve_fit(f: Callable,
@@ -50,8 +66,9 @@ def curve_fit(f: Callable,
                                ydata=da.values,
                                sigma=sigma.values,
                                p0=p0)
-    # TODO units for pcov
-    return [_as_scalar(v, u) for v, u in zip(popt, p_units)], pcov
+    popt = np.array([_as_scalar(v, u) for v, u in zip(popt, p_units)])
+    pcov = _covariance_with_units(pcov, p_units)
+    return popt, pcov
 
 
 __all__ = ['curve_fit']
