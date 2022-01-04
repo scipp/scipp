@@ -3,6 +3,7 @@
 # @file
 # @author Simon Heybrock
 import scipp as sc
+import scipp.spatial
 import numpy as np
 import tempfile
 
@@ -29,6 +30,13 @@ xy = sc.Variable(dims=['y', 'x'],
 eigen_1d = sc.vectors(dims=['x'], values=np.random.rand(4, 3))
 
 eigen_2d = sc.matrices(dims=['x'], values=np.random.rand(4, 3, 3))
+
+rotation = sc.spatial.rotation(value=[1, 2, 3, 4])
+translation = sc.spatial.translation_from_vector(value=[5, 6, 7], unit=sc.units.m)
+affine = sc.spatial.affine_transform(value=[[0, 1, 2, 4],
+                                            [5, 6, 7, 8],
+                                            [9, 10, 11, 12],
+                                            [13, 14, 15, 16]], unit=sc.units.m)
 
 datetime64ms_1d = sc.Variable(dims=['x'],
                               dtype=sc.dtype.datetime64,
@@ -82,6 +90,12 @@ def test_variable_eigen():
     check_roundtrip(eigen_1d['x', 0])
     check_roundtrip(eigen_2d)
     check_roundtrip(eigen_2d['x', 0])
+
+
+def test_transform_types():
+    check_roundtrip(rotation)
+    check_roundtrip(translation)
+    check_roundtrip(affine)
 
 
 def test_variable_datetime64():

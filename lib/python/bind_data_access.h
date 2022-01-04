@@ -10,6 +10,7 @@
 #include "scipp/core/dtype.h"
 #include "scipp/core/eigen.h"
 #include "scipp/core/tag_util.h"
+#include "scipp/core/spatial_transforms.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/variable/shape.h"
@@ -159,6 +160,12 @@ template <class... Ts> class as_ElementArrayViewImpl {
         return {Getter::template get<Eigen::Vector3d>(view)};
       if (type == dtype<Eigen::Matrix3d>)
         return {Getter::template get<Eigen::Matrix3d>(view)};
+      if (type == dtype<Eigen::Affine3d>)
+        return {Getter::template get<Eigen::Affine3d>(view)};
+      if (type == dtype<scipp::core::Quaternion>)
+        return {Getter::template get<scipp::core::Quaternion>(view)};
+      if (type == dtype<scipp::core::Translation>)
+        return {Getter::template get<scipp::core::Translation>(view)};
       if (type == dtype<scipp::python::PyObject>)
         return {Getter::template get<scipp::python::PyObject>(view)};
       if (type == dtype<bucket<Variable>>)
@@ -192,6 +199,20 @@ template <class... Ts> class as_ElementArrayViewImpl {
           elems, Dim::InternalStructureComponent,
           Dimensions({Dim::InternalStructureRow, Dim::InternalStructureColumn},
                      {3, 3}));
+      std::vector labels(elems.dims().labels().begin(),
+                         elems.dims().labels().end());
+      std::iter_swap(labels.end() - 2, labels.end() - 1);
+      return transpose(elems, labels);
+    } else if (view.dtype() == dtype<scipp::core::Quaternion>) {
+      return get_data_variable(view).template elements<scipp::core::Quaternion>();
+    } else if (view.dtype() == dtype<scipp::core::Translation>) {
+      return get_data_variable(view).template elements<scipp::core::Translation>();
+    } else if (view.dtype() == dtype<Eigen::Affine3d>) {
+      auto elems = get_data_variable(view).template elements<Eigen::Affine3d>();
+      elems = fold(
+          elems, Dim::InternalStructureComponent,
+          Dimensions({Dim::InternalStructureRow, Dim::InternalStructureColumn},
+                     {4, 4}));
       std::vector labels(elems.dims().labels().begin(),
                          elems.dims().labels().end());
       std::iter_swap(labels.end() - 2, labels.end() - 1);
@@ -395,7 +416,8 @@ public:
 using as_ElementArrayView = as_ElementArrayViewImpl<
     double, float, int64_t, int32_t, bool, std::string, scipp::core::time_point,
     Variable, DataArray, Dataset, bucket<Variable>, bucket<DataArray>,
-    bucket<Dataset>, Eigen::Vector3d, Eigen::Matrix3d, scipp::python::PyObject>;
+    bucket<Dataset>, Eigen::Vector3d, Eigen::Matrix3d, scipp::python::PyObject, 
+    Eigen::Affine3d, scipp::core::Quaternion, scipp::core::Translation>;
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
