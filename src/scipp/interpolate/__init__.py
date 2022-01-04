@@ -84,15 +84,15 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
       <scipp.DataArray>
       Dimensions: Sizes[x:5, ]
       Coordinates:
-        x                         float64            [rad]  (x)  [0.100000, 0.175000, 0.250000, 0.325000, 0.400000]
+        x                         float64            [rad]  (x)  [0.1, 0.175, ..., 0.325, 0.4]
       Data:
-                                  float64  [dimensionless]  (x)  [0.099833, 0.173987, 0.247384, 0.318433, 0.389418]
+                                  float64  [dimensionless]  (x)  [0.0998334, 0.173987, ..., 0.318433, 0.389418]
 
       >>> f(xnew, midpoints=True)
       <scipp.DataArray>
       Dimensions: Sizes[x:4, ]
       Coordinates:
-        x                         float64            [rad]  (x [bin-edge])  [0.100000, 0.175000, 0.250000, 0.325000, 0.400000]
+        x                         float64            [rad]  (x [bin-edge])  [0.1, 0.175, ..., 0.325, 0.4]
       Data:
                                   float64  [dimensionless]  (x)  [0.137015, 0.210685, 0.282941, 0.353926]
     """  # noqa #501
