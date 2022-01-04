@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/eigen.h"
@@ -39,13 +39,13 @@ constexpr auto structure_element_offset<Eigen::Affine3d> =
 
 template <>
 constexpr auto structure_element_offset<scipp::core::Quaternion> =
-    [](const std::string &key) -> scipp::index {
+    []([[maybe_unused]] const std::string &key) -> scipp::index {
   throw except::TypeError("Not supported for Affine3d types");
 };
 
 template <>
 constexpr auto structure_element_offset<scipp::core::Translation> =
-    [](const std::string &key) -> scipp::index {
+    []([[maybe_unused]] const std::string &key) -> scipp::index {
   throw except::TypeError("Not supported for Affine3d types");
 };
 

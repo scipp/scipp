@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -33,7 +33,8 @@ auto union_(const T1 &a, const T2 &b, const std::string_view opname) {
 template <class Map> auto intersection(const Map &a, const Map &b) {
   std::unordered_map<typename Map::key_type, Variable> out;
   for (const auto &[key, item] : a)
-    if (const auto it = b.find(key); it != b.end() && it->second == item)
+    if (const auto it = b.find(key);
+        it != b.end() && equals_nan(it->second, item))
       out.emplace(key, item);
   return out;
 }

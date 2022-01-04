@@ -9,12 +9,15 @@ v0.11.0 (unreleased)
 Features
 ~~~~~~~~
 
-* Add new datatypes for representing spatial transformations: ``affine3``, ``rotation3``, and ``translation3``. Each of these can be combined and applied to the existing vector datatype.
+* Added new datatypes for representing spatial transformations: ``affine3``, ``rotation3``, and ``translation3``. Each of these can be combined and applied to the existing vector datatype.
 * Added support for slicing without specifying a dimension (only for 1-D objects) `#2321 <https://github.com/scipp/scipp/pull/2321>`_.
+* Added ``sc.interpolate.interp1d``, ``sc.integration.trapezoid``, and ``sc.integration.simpson`` as convenience wrappers of the scipy functions of the same name `#2324 <https://github.com/scipp/scipp/pull/2324>`_.
+* Added ``unit`` property to ``obj.bins`` for getting and setting unit of bin elements `#2330 <https://github.com/scipp/scipp/pull/2330>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* Minor change in behavior of dimension renaming in ``transform_coords``, new behavior documented in `Coordinate transformations <../user-guide/coordinate-transformations.rst>`_. Most use cases are unaffected. `#2319 <https://github.com/scipp/scipp/pull/2319>`_.
 * ``sc.spatial.transform.as_rotvec`` has been moved to ``sc.spatial.as_rotvec``
 * ``sc.spatial.transform.from_rotvec`` has been moved to ``sc.spatial.from_rotvecs``, and now returns a rotation data type rather than a matrix.
   For consistency with other transformation creation functions, ``from_rotvecs`` now takes ``values``, ``dims`` and ``unit`` separately.
@@ -23,6 +26,8 @@ Breaking changes
 
 Bugfixes
 ~~~~~~~~
+
+* Fix coordinate and attribute comparisons to treat NaN (not-a-number) values as equal, which previously prevented most operations with data arrays or datasets that contained NaN values in their coordinates or attributes `#2331 <https://github.com/scipp/scipp/pull/2331>`_.
 
 Deprecations
 ~~~~~~~~~~~~
@@ -98,7 +103,7 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
-* Fix bugs in ``rebin`` if data and/or edges had strides other than 1 along rebinned dimension, typically only occuring with multi-dimensional (ragged) coordinates `#2211 <https://github.com/scipp/scipp/pull/2211>`_.
+* Fix bugs in ``rebin`` if data and/or edges had strides other than 1 along rebinned dimension, typically only occurring with multi-dimensional (ragged) coordinates `#2211 <https://github.com/scipp/scipp/pull/2211>`_.
 * Fix exception that was thrown when importing empty datasets from HDF5 files using ``open_hdf5`` `#2216 <https://github.com/scipp/scipp/pull/2216>`_.
 * Fix exception in ``astype`` when called with binned data that does not require conversion `#2222 <https://github.com/scipp/scipp/pull/2222>`_.
 * Fix bug in ``concatenate`` that could lead to masks being shared with input rather than being copied `#2232 <https://github.com/scipp/scipp/pull/2232>`_.
@@ -150,7 +155,7 @@ Features
 * Add ``transform_coords`` for (multi-step) transformations based on existing coords, with support of event coords `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
 * Add ``from_pandas`` and ``from_xarray`` for conversion of pandas dataframes, xarray data arrays and dataset to scipp objects `#2054 <https://github.com/scipp/scipp/pull/2054>`_.
 * Added ``full`` and ``full_like`` variable creation functions `#2069 <https://github.com/scipp/scipp/pull/2069>`_.
-* ``islinspace`` can now take multi-dimensional variables aslong as you pass the dimension to be checked `#2094 <https://github.com/scipp/scipp/pull/2094>`_.
+* ``islinspace`` can now take multi-dimensional variables as long as you pass the dimension to be checked `#2094 <https://github.com/scipp/scipp/pull/2094>`_.
 * Added a power function and support for the ``**`` operator `#2083 <https://github.com/scipp/scipp/pull/2083>`_.
 * Binned data now has a ``mean`` method as well as ``sum``, which returns the mean of each element within a bin.
 * Add ``scipp.constants`` module for physical constants `#2101 <https://github.com/scipp/scipp/pull/2101>`_.

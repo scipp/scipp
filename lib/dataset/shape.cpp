@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <algorithm>
@@ -98,7 +98,7 @@ template <class Maps> auto concat_maps(const Maps &maps, const Dim dim) {
     } else {
       // 1D coord is kept only if all inputs have matching 1D coords.
       if (std::any_of(vars.begin(), vars.end(), [dim, &vars](auto &var) {
-            return var.dims().contains(dim) || var != vars.front();
+            return var.dims().contains(dim) || !equals_nan(var, vars.front());
           })) {
         // Mismatching 1D coords must be broadcast to ensure new coord shape
         // matches new data shape.
@@ -149,7 +149,7 @@ Dataset concat(const scipp::span<const Dataset> dss, const Dim dim) {
                     [&first](auto &ds) { return ds.contains(first.name()); })) {
       auto das = map(dss, [&first](auto &&ds) { return ds[first.name()]; });
       if (std::any_of(das.begin(), das.end(), [dim, &first](auto &da) {
-            return da.dims().contains(dim) || da != first;
+            return da.dims().contains(dim) || !equals_nan(da, first);
           }))
         result.setData(first.name(), concat(das, dim));
       else

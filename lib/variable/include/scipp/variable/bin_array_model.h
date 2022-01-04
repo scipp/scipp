@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -28,7 +28,7 @@ public:
     if (unit != units::one)
       throw except::UnitError(
           "Bins cannot have a unit. Did you mean to set the unit of the bin "
-          "elements? This can be set, e.g., with `array.bins.unit = 'm'`.");
+          "elements? This can be set with `array.bins.unit = 'm'`.");
   }
 
   bool has_variances() const noexcept override { return false; }
@@ -78,6 +78,8 @@ public:
 
   [[nodiscard]] bool equals(const Variable &a,
                             const Variable &b) const override;
+  [[nodiscard]] bool equals_nan(const Variable &a,
+                                const Variable &b) const override;
   void copy(const Variable &src, Variable &dest) const override;
   void copy(const Variable &src, Variable &&dest) const override;
   void assign(const VariableConcept &other) override;
@@ -116,6 +118,13 @@ bool BinArrayModel<T>::equals(const Variable &a, const Variable &b) const {
   // TODO This implementation is slow since it creates a view for every bucket.
   return a.dtype() == dtype() && b.dtype() == dtype() &&
          equals_impl(a.values<bucket<T>>(), b.values<bucket<T>>());
+}
+
+template <class T>
+bool BinArrayModel<T>::equals_nan(const Variable &a, const Variable &b) const {
+  // TODO This implementation is slow since it creates a view for every bucket.
+  return a.dtype() == dtype() && b.dtype() == dtype() &&
+         equals_nan_impl(a.values<bucket<T>>(), b.values<bucket<T>>());
 }
 
 template <class T>

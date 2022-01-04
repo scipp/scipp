@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <numeric>
@@ -273,7 +273,7 @@ template <class T> struct MakeGroups {
     expect::is_key(key);
     const auto &values = key.values<T>();
 
-    const auto dim = key.dims().inner();
+    const auto dim = key.dim();
     std::map<T, GroupByGrouping::group, NanSensitiveLess<T>> indices;
     const auto end = values.end();
     scipp::index i = 0;
@@ -313,7 +313,7 @@ template <class T> struct MakeBinGroups {
     const auto &edges = bins.values<T>();
     core::expect::histogram::sorted_edges(edges);
 
-    const auto dim = key.dims().inner();
+    const auto dim = key.dim();
     std::vector<GroupByGrouping::group> groups(edges.size() - 1);
     for (scipp::index i = 0; i < scipp::size(values);) {
       // Use contiguous (thick) slices if possible to avoid overhead of slice

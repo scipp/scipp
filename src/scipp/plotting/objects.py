@@ -1,15 +1,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .. import config
+from .. import config, units
 from .formatters import make_formatter
 from .tools import parse_params
 from ..core import DimensionError
 from .model1d import PlotModel1d
 from .widgets import PlotWidgets
 from .resampling_model import ResamplingMode
-from ..core import units
 
 
 def make_params(*, cmap=None, norm=None, vmin=None, vmax=None, masks=None, color=None):

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from typing import Dict, Optional, Sequence, Union
 import warnings
@@ -109,6 +109,16 @@ class Bins:
     def data(self, data: _cpp.Variable):
         """Set data of the bins"""
         _cpp._bins_view(self._data()).data = data
+
+    @property
+    def unit(self) -> _cpp.Unit:
+        """Unit of the bin elements"""
+        return self.constituents['data'].unit
+
+    @unit.setter
+    def unit(self, unit: Union[_cpp.Unit, str]):
+        """Set unit of the bin elements"""
+        self.constituents['data'].unit = unit
 
     @property
     def constituents(self) -> Dict[str, Union[str, _cpp.Variable, _cpp.DataArray]]:

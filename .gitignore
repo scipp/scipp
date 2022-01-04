@@ -11,3 +11,4 @@ cmake-build-*
 __pycache__/
 CMakeSettings.json
 .vs/
+.virtual_documents

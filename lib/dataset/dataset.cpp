@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/dataset.h"
@@ -244,6 +244,17 @@ bool Dataset::operator==(const Dataset &other) const {
 /// Return true if the datasets have mismatching content./
 bool Dataset::operator!=(const Dataset &other) const {
   return !operator==(other);
+}
+
+bool equals_nan(const Dataset &a, const Dataset &b) {
+  if (a.size() != b.size())
+    return false;
+  if (!equals_nan(a.coords(), b.coords()))
+    return false;
+  for (const auto &data : a)
+    if (!b.contains(data.name()) || !equals_nan(data, b[data.name()]))
+      return false;
+  return true;
 }
 
 const Sizes &Dataset::sizes() const { return m_coords.sizes(); }

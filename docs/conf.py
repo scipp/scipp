@@ -65,6 +65,7 @@ rst_epilog = f"""
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/', None),
     'xarray': ('https://xarray.pydata.org/en/stable/', None)
 }
 
@@ -88,7 +89,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'scipp'
-copyright = u'2021 Scipp contributors'
+copyright = u'2022 Scipp contributors'
 author = u'Scipp contributors'
 
 # The version info for the project you're documenting, acts as replacement for

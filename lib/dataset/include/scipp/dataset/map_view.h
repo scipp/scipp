@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -167,8 +167,8 @@ protected:
 /// Returns the union of all masks with irreducible dimension `dim`.
 ///
 /// Irreducible means that a reduction operation must apply these masks since
-/// depend on the reduction dimension. Returns an invalid (empty) variable if
-/// there is no irreducible mask.
+/// they depend on the reduction dimension. Returns an invalid (empty) variable
+/// if there is no irreducible mask.
 template <class Masks>
 [[nodiscard]] Variable irreducible_mask(const Masks &masks, const Dim dim) {
   Variable union_;
@@ -178,7 +178,7 @@ template <class Masks>
   return union_;
 }
 
-SCIPP_DATASET_EXPORT Variable masks_merge_if_contained(const Masks &masks,
-                                                       const Dimensions &dims);
+template <class Key, class Value>
+bool equals_nan(const Dict<Key, Value> &a, const Dict<Key, Value> &b);
 
 } // namespace scipp::dataset

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import pytest
 import scipp as sc
@@ -90,7 +90,7 @@ def test_bins_of_transpose():
     assert sc.identical(sc.bins(**var.transpose().bins.constituents), var.transpose())
 
 
-def test_bins_view():
+def make_binned():
     col = sc.Variable(dims=['event'], values=[1, 2, 3, 4])
     table = sc.DataArray(data=col,
                          coords={'time': col * 2.2},
@@ -98,12 +98,17 @@ def test_bins_view():
                          masks={'mask': col == col})
     begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.dtype.int64)
     end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.dtype.int64)
-    var = sc.bins(begin=begin, end=end, dim='event', data=table)
+    return sc.bins(begin=begin, end=end, dim='event', data=table)
+
+
+def test_bins_view():
+    var = make_binned()
     assert 'time' in var.bins.coords
     assert 'time' in var.bins.meta
     assert 'attr' in var.bins.meta
     assert 'attr' in var.bins.attrs
     assert 'mask' in var.bins.masks
+    col = sc.Variable(dims=['event'], values=[1, 2, 3, 4])
     with pytest.raises(sc.DTypeError):
         var.bins.coords['time2'] = col  # col is not binned
 
@@ -125,6 +130,33 @@ def test_bins_view():
     var.bins.data = var.bins.data * 2.0
     del var.bins.coords['time3']
     assert 'time3' not in var.bins.coords
+
+
+def test_bins_view_data_array_unit():
+    var = make_binned()
+    with pytest.raises(sc.UnitError):
+        var.unit = 'K'
+    assert var.bins.unit == ''
+    var.bins.unit = 'K'
+    assert var.bins.unit == 'K'
+
+
+def test_bins_view_coord_unit():
+    var = make_binned()
+    with pytest.raises(sc.UnitError):
+        var.bins.coords['time'].unit = 'K'
+    assert var.bins.coords['time'].bins.unit == ''
+    var.bins.coords['time'].bins.unit = 'K'
+    assert var.bins.coords['time'].bins.unit == 'K'
+
+
+def test_bins_view_data_unit():
+    var = make_binned()
+    with pytest.raises(sc.UnitError):
+        var.bins.data.unit = 'K'
+    assert var.bins.data.bins.unit == ''
+    var.bins.data.bins.unit = 'K'
+    assert var.bins.data.bins.unit == 'K'
 
 
 def test_bins_arithmetic():

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/except.h"
@@ -63,7 +63,7 @@ void coords_are_superset(const DataArray &a, const DataArray &b,
 
 void matching_coord(const Dim dim, const Variable &a, const Variable &b,
                     const std::string_view opname) {
-  if (a != b)
+  if (!equals_nan(a, b))
     throw except::CoordMismatchError(dim, a, b, opname);
 }
 

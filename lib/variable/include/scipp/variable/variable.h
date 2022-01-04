@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -211,6 +211,9 @@ Variable::Variable(const DType &type, Ts &&... args)
                                                       Variable &out);
 [[maybe_unused]] SCIPP_VARIABLE_EXPORT Variable copy(const Variable &var,
                                                      Variable &&out);
+
+[[nodiscard]] SCIPP_VARIABLE_EXPORT bool equals_nan(const Variable &a,
+                                                    const Variable &b);
 } // namespace scipp::variable
 
 namespace scipp::core {

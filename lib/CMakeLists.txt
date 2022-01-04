@@ -1,6 +1,6 @@
 # ~~~
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # ~~~
 if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -194,6 +194,9 @@ if(CMAKE_CXX_CPPCHECK)
     "--inline-suppr"
     "--suppressions-list=${CMAKE_SOURCE_DIR}/cppcheck-suppressions.txt"
     "--cppcheck-build-dir=${CMAKE_BINARY_DIR}/cppcheck"
+    # Suppress warnings from 3rd party span header. This needs an absolute path
+    # can can therefore not be done in the suppressions file.
+    "--suppress=*:${CMAKE_SOURCE_DIR}/lib/common/include/scipp/common/span.hpp.in"
   )
 endif()
 

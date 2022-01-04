@@ -1,6 +1,6 @@
 # ~~~
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # ~~~
 set(TARGET_NAME "scipp-dataset-test")
 add_dependencies(all-tests ${TARGET_NAME})
@@ -28,6 +28,7 @@ add_executable(
   dataset_test.cpp
   dataset_view_test.cpp
   data_view_test.cpp
+  equals_nan_test.cpp
   event_data_operations_consistency_test.cpp
   except_test.cpp
   generated_test.cpp
