@@ -315,7 +315,8 @@ def test_dim_rename_produced_dim_coord_cycle():
 @pytest.mark.parametrize('keep_inputs', (True, False))
 @pytest.mark.parametrize('keep_intermediates', (True, False))
 @pytest.mark.parametrize('keep_aliases', (True, False))
-def test_dim_rename_keep_arguments(keep_inputs, keep_intermediates, keep_aliases):
+def test_dim_rename_keep_arguments_have_no_effect(keep_inputs, keep_intermediates,
+                                                  keep_aliases):
     # *x
     #  |
     #  y
