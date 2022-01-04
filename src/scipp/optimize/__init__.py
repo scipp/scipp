@@ -7,7 +7,8 @@ from ..core import scalar, stddevs, Variable, DataArray
 from ..interpolate import _drop_masked
 import numpy as np
 
-from typing import Callable, List, Tuple
+from numbers import Real
+from typing import Callable, List, Tuple, Union
 from inspect import signature
 
 
@@ -43,18 +44,20 @@ def _covariance_with_units(pcov, units):
     return pcov
 
 
-def curve_fit(f: Callable,
-              da: DataArray,
-              p0: List[Variable] = None,
-              **kwargs) -> Tuple[List[Variable], List[List[Variable]]]:
-    """Use non-linear least squares to fot a function, f, to data."""
+def curve_fit(
+    f: Callable,
+    da: DataArray,
+    p0: List[Variable] = None,
+    **kwargs
+) -> Tuple[List[Union[Variable, Real]], List[List[Union[Variable, Real]]]]:
+    """Use non-linear least squares to fit a function, f, to data."""
     for arg in ['xdata', 'ydata', 'sigma']:
         if arg in kwargs:
             raise TypeError(
                 f"Invalid argument '{arg}', already defined by the input data array.")
     import scipy.optimize as opt
     da = _drop_masked(da, da.dim)
-    sigma = stddevs(da) if da.variances is not None else None
+    sigma = stddevs(da).values if da.variances is not None else None
     x = da.coords[da.dim]
     sig = signature(f)
     if p0 is None:
@@ -64,7 +67,7 @@ def curve_fit(f: Callable,
     popt, pcov = opt.curve_fit(f=_wrap_func(f, x, p_units),
                                xdata=x.values,
                                ydata=da.values,
-                               sigma=sigma.values,
+                               sigma=sigma,
                                p0=p0)
     popt = np.array([_as_scalar(v, u) for v, u in zip(popt, p_units)])
     pcov = _covariance_with_units(pcov, p_units)
