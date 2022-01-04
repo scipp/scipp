@@ -347,32 +347,86 @@ def test_rename_dims_param():
     assert da.dims == ['a']
 
 
-def test_keep_intermediate_keep_inputs():
+@pytest.mark.parametrize('keep_inputs', (True, False))
+@pytest.mark.parametrize('keep_intermediate', (True, False))
+def test_keep_aliases_dense(keep_inputs, keep_intermediate):
     original = sc.DataArray(data=1 * c, coords={'a': 2 * c, 'b': 3 * c})
+    graph = {'d': 'c', 'c': 'ab', 'ab': ab}
+    da = original.transform_coords(['d'],
+                                   graph=graph,
+                                   keep_aliases=True,
+                                   keep_inputs=keep_inputs,
+                                   keep_intermediate=keep_intermediate)
+    assert 'c' in da.attrs
+    assert 'd' in da.coords
 
-    def func(*, ab):
-        return 2 * ab
 
-    graph = {'c': func, 'ab': ab}
-    da = original.transform_coords(['c'], graph=graph)
-    assert 'ab' in da.attrs
-    assert 'a' in da.attrs
-    assert 'b' in da.attrs
-    da = original.transform_coords(['c'], graph=graph, keep_intermediate=False)
-    assert 'ab' not in da.meta
-    assert 'a' in da.attrs
-    assert 'b' in da.attrs
-    da = original.transform_coords(['c'], graph=graph, keep_inputs=False)
-    assert 'ab' in da.meta
-    assert 'a' not in da.meta
-    assert 'b' not in da.meta
+@pytest.mark.parametrize('keep_inputs', (True, False))
+@pytest.mark.parametrize('keep_intermediate', (True, False))
+def test_not_keep_aliases_dense(keep_inputs, keep_intermediate):
+    original = sc.DataArray(data=1 * c, coords={'a': 2 * c, 'b': 3 * c})
+    graph = {'d': 'c', 'c': 'ab', 'ab': ab}
+    da = original.transform_coords(['d'],
+                                   graph=graph,
+                                   keep_aliases=False,
+                                   keep_inputs=keep_inputs,
+                                   keep_intermediate=keep_intermediate)
+    assert 'c' not in da.meta
+    assert 'd' in da.coords
+
+
+@pytest.mark.parametrize('keep_aliases', (True, False))
+@pytest.mark.parametrize('keep_intermediate', (True, False))
+def test_keep_inputs_dense(keep_aliases, keep_intermediate):
+    original = sc.DataArray(data=1 * c, coords={'a': 2 * c, 'b': 3 * c})
+    graph = {'c': 'ab', 'ab': ab}
     da = original.transform_coords(['c'],
                                    graph=graph,
-                                   keep_intermediate=False,
-                                   keep_inputs=False)
-    assert 'ab' not in da.meta
+                                   keep_aliases=keep_aliases,
+                                   keep_inputs=True,
+                                   keep_intermediate=keep_intermediate)
+    assert 'a' in da.attrs
+    assert 'b' in da.attrs
+
+
+@pytest.mark.parametrize('keep_aliases', (True, False))
+@pytest.mark.parametrize('keep_intermediate', (True, False))
+def test_not_keep_inputs_dense(keep_aliases, keep_intermediate):
+    original = sc.DataArray(data=1 * c, coords={'a': 2 * c, 'b': 3 * c})
+    graph = {'c': 'ab', 'ab': ab}
+    da = original.transform_coords(['c'],
+                                   graph=graph,
+                                   keep_aliases=keep_aliases,
+                                   keep_inputs=False,
+                                   keep_intermediate=keep_intermediate)
     assert 'a' not in da.meta
     assert 'b' not in da.meta
+
+
+@pytest.mark.parametrize('keep_aliases', (True, False))
+@pytest.mark.parametrize('keep_inputs', (True, False))
+def test_keep_intermediate_dense(keep_aliases, keep_inputs):
+    original = sc.DataArray(data=1 * c, coords={'a': 2 * c, 'b': 3 * c})
+    graph = {'c': 'ab', 'ab': ab}
+    da = original.transform_coords(['c'],
+                                   graph=graph,
+                                   keep_aliases=keep_aliases,
+                                   keep_inputs=keep_inputs,
+                                   keep_intermediate=True)
+    assert 'ab' in da.attrs
+
+
+@pytest.mark.parametrize('keep_aliases', (True, False))
+@pytest.mark.parametrize('keep_inputs', (True, False))
+def test_not_keep_intermediate_dense(keep_aliases, keep_inputs):
+    original = sc.DataArray(data=1 * c, coords={'a': 2 * c, 'b': 3 * c})
+    graph = {'c': 'ab', 'ab': ab}
+    da = original.transform_coords(['c'],
+                                   graph=graph,
+                                   keep_aliases=keep_aliases,
+                                   keep_inputs=keep_inputs,
+                                   keep_intermediate=False)
+    assert 'ab' not in da.meta
 
 
 def test_inplace():
