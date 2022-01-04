@@ -35,8 +35,8 @@ def _covariance_with_units(pcov, units):
         for j, elem in enumerate(row):
             ui = units[i]
             uj = units[j]
-            u = None
-            if ui is None:
+            u = ui
+            if u is None:
                 u = uj
             elif uj is not None:
                 u = ui * uj
