@@ -49,7 +49,7 @@ auto match_numbers(const std::string &text) {
  */
 
 TEST(array_to_string, double) {
-  const std::vector<double> array({1.0, 3.14, -5.9, 1.3e-9, 2.1e11});
+  const std::vector<double> array({1.0, -5.9, 1.3e-9, 2.1e11});
   const auto matched = match_numbers(array_to_string(array));
   EXPECT_THAT(matched, ContainerEq(array));
 }
