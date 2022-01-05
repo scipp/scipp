@@ -357,6 +357,32 @@ def test_rename_dims_param(a):
     assert da.dims == ['a']
 
 
+@pytest.fixture(params=[('coord', 'coord'), ('coord', 'attr'), ('attr', 'coord'),
+                        ('attr', 'attr')])
+def binned_in_a_b(request):
+    events = sc.DataArray(data=sc.arange('event', 10, unit='counts'),
+                          coords={
+                              'a': sc.arange('event', 10, unit='m'),
+                              'b': sc.arange('event', 10, 20, unit='m')
+                          })
+    binned = sc.bin(events,
+                    edges=[
+                        sc.array(dims=['a'], values=[0, 5, 10], unit='m'),
+                        sc.array(dims=['b'], values=[10, 15, 20], unit='m')
+                    ])
+    del binned.coords['b']
+    binned.bins.attrs['b'] = binned.bins.coords.pop('b')
+    binned.attrs['b'] = sc.arange('b', 2, unit='m')
+
+    bin_src, event_src = request.param
+    if bin_src == 'attr':
+        binned.attrs['a'] = binned.coords.pop('a')
+    if event_src == 'attr':
+        binned.bins.attrs['a'] = binned.bins.coords.pop('a')
+
+    return binned
+
+
 @pytest.mark.parametrize('keep_inputs', (True, False))
 @pytest.mark.parametrize('keep_intermediate', (True, False))
 def test_keep_aliases_dense(a, b, keep_inputs, keep_intermediate):
@@ -383,6 +409,36 @@ def test_not_keep_aliases_dense(a, b, keep_inputs, keep_intermediate):
                                    keep_intermediate=keep_intermediate)
     assert 'c' not in da.meta
     assert 'd' in da.coords
+
+
+@pytest.mark.parametrize('keep_inputs', (True, False))
+@pytest.mark.parametrize('keep_intermediate', (True, False))
+def test_keep_aliases_binned(binned_in_a_b, keep_inputs, keep_intermediate):
+    graph = {'d': 'c', 'c': 'ab', 'ab': ab}
+    da = binned_in_a_b.transform_coords(['d'],
+                                        graph=graph,
+                                        keep_aliases=True,
+                                        keep_inputs=keep_inputs,
+                                        keep_intermediate=keep_intermediate)
+    assert 'c' in da.attrs
+    assert 'c' in da.bins.attrs
+    assert 'd' in da.coords
+    assert 'd' in da.bins.coords
+
+
+@pytest.mark.parametrize('keep_inputs', (True, False))
+@pytest.mark.parametrize('keep_intermediate', (True, False))
+def test_not_keep_aliases_binned(binned_in_a_b, keep_inputs, keep_intermediate):
+    graph = {'d': 'c', 'c': 'ab', 'ab': ab}
+    da = binned_in_a_b.transform_coords(['d'],
+                                        graph=graph,
+                                        keep_aliases=False,
+                                        keep_inputs=keep_inputs,
+                                        keep_intermediate=keep_intermediate)
+    assert 'c' not in da.meta
+    assert 'c' not in da.bins.meta
+    assert 'd' in da.coords
+    assert 'd' in da.bins.coords
 
 
 @pytest.mark.parametrize('keep_aliases', (True, False))
@@ -414,6 +470,36 @@ def test_not_keep_inputs_dense(a, b, keep_aliases, keep_intermediate):
 
 
 @pytest.mark.parametrize('keep_aliases', (True, False))
+@pytest.mark.parametrize('keep_intermediate', (True, False))
+def test_keep_inputs_binned(binned_in_a_b, keep_aliases, keep_intermediate):
+    graph = {'c': 'ab', 'ab': ab}
+    da = binned_in_a_b.transform_coords(['c'],
+                                        graph=graph,
+                                        keep_aliases=keep_aliases,
+                                        keep_inputs=True,
+                                        keep_intermediate=keep_intermediate)
+    assert 'a' in da.attrs
+    assert 'a' in da.bins.attrs
+    assert 'b' in da.attrs
+    assert 'b' in da.bins.attrs
+
+
+@pytest.mark.parametrize('keep_aliases', (True, False))
+@pytest.mark.parametrize('keep_intermediate', (True, False))
+def test_not_keep_inputs_binned(binned_in_a_b, keep_aliases, keep_intermediate):
+    graph = {'c': 'ab', 'ab': ab}
+    da = binned_in_a_b.transform_coords(['c'],
+                                        graph=graph,
+                                        keep_aliases=keep_aliases,
+                                        keep_inputs=False,
+                                        keep_intermediate=keep_intermediate)
+    assert 'a' not in da.meta
+    assert 'a' not in da.bins.meta
+    assert 'b' not in da.meta
+    assert 'b' not in da.bins.meta
+
+
+@pytest.mark.parametrize('keep_aliases', (True, False))
 @pytest.mark.parametrize('keep_inputs', (True, False))
 def test_keep_intermediate_dense(a, b, keep_aliases, keep_inputs):
     original = sc.DataArray(data=a + b, coords={'a': a}, attrs={'b': b})
@@ -437,6 +523,32 @@ def test_not_keep_intermediate_dense(a, b, keep_aliases, keep_inputs):
                                    keep_inputs=keep_inputs,
                                    keep_intermediate=False)
     assert 'ab' not in da.meta
+
+
+@pytest.mark.parametrize('keep_aliases', (True, False))
+@pytest.mark.parametrize('keep_inputs', (True, False))
+def test_keep_intermediate_binned(binned_in_a_b, keep_aliases, keep_inputs):
+    graph = {'c': 'ab', 'ab': ab}
+    da = binned_in_a_b.transform_coords(['c'],
+                                        graph=graph,
+                                        keep_aliases=keep_aliases,
+                                        keep_inputs=keep_inputs,
+                                        keep_intermediate=True)
+    assert 'ab' in da.attrs
+    assert 'ab' in da.bins.attrs
+
+
+@pytest.mark.parametrize('keep_aliases', (True, False))
+@pytest.mark.parametrize('keep_inputs', (True, False))
+def test_not_keep_intermediate_binned(binned_in_a_b, keep_aliases, keep_inputs):
+    graph = {'c': 'ab', 'ab': ab}
+    da = binned_in_a_b.transform_coords(['c'],
+                                        graph=graph,
+                                        keep_aliases=keep_aliases,
+                                        keep_inputs=keep_inputs,
+                                        keep_intermediate=False)
+    assert 'ab' not in da.meta
+    assert 'ab' not in da.bins.meta
 
 
 def test_inplace(c):
