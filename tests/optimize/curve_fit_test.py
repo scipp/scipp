@@ -87,3 +87,27 @@ def test_variances_determine_weights(variance, expected):
     # Fit a constant to highlight influence of weights
     popt, _ = curve_fit(lambda x, a: sc.scalar(a), da)
     assert popt[0] == pytest.approx(expected)
+
+
+def test_fit_function_with_dimensionful_params_raises_UnitError_when_no_p0_given():
+    def f(x, a, b):
+        return a * sc.exp(-b * x)
+
+    with pytest.raises(sc.UnitError):
+        curve_fit(f, array1d())
+
+
+def test_fit_function_with_dimensionful_params_yields_outputs_with_units():
+    def f(x, a, b):
+        return a * sc.exp(-b * x)
+
+    x = sc.linspace(dim='x', start=0.5, stop=2.0, num=10, unit='m')
+    da = sc.DataArray(f(x, 1.2, 1.3 / sc.Unit('m')), coords={'x': x})
+    p0 = [1.1, 1.2 / sc.Unit('m')]
+    popt, pcov = curve_fit(f, da, p0=p0)
+    assert not isinstance(popt[0], sc.Variable)
+    assert popt[1].unit == sc.Unit('1/m')
+    assert not isinstance(pcov[0][0], sc.Variable)
+    assert pcov[0][1].unit == sc.Unit('1/m')
+    assert pcov[1][0].unit == sc.Unit('1/m')
+    assert pcov[1][1].unit == sc.Unit('1/m**2')
