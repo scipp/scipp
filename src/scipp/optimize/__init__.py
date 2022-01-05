@@ -109,14 +109,12 @@ def curve_fit(
     import scipy.optimize as opt
     da = _drop_masked(da, da.dim)
     sigma = stddevs(da).values if da.variances is not None else None
-    x = da.coords[da.dim]
-    sig = signature(f)
     if p0 is None:
-        p0 = [1.0] * (len(sig.parameters) - 1)
+        p0 = [1.0] * (len(signature(f).parameters) - 1)
     p_units = [p.unit if isinstance(p, Variable) else None for p in p0]
     p0 = [p.value if isinstance(p, Variable) else p for p in p0]
     popt, pcov = opt.curve_fit(f=_wrap_func(f, p_units),
-                               xdata=x,
+                               xdata=da.coords[da.dim],
                                ydata=da.values,
                                sigma=sigma,
                                p0=p0)
