@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-"""Sub-package for optimization such as curve fitting."""
+"""Sub-package for optimization such as curve fitting.
+
+This subpackage provides wrappers for a subset of functions from
+:py:mod:`scipy.optimize`.
+"""
 
 from ..core import scalar, stddevs, Variable, DataArray
 from ..core import BinEdgeError
@@ -43,13 +47,53 @@ def _covariance_with_units(pcov, units):
 
 
 def curve_fit(
-        f: Callable,
-        da: DataArray,
-        *,
-        p0: List[Variable] = None,
-        **kwargs
+    f: Callable,
+    da: DataArray,
+    *,
+    p0: List[Variable] = None,
+    **kwargs
 ) -> Tuple[List[Union[Variable, Real]], List[List[Union[Variable, Real]]]]:
-    """Use non-linear least squares to fit a function, f, to data."""
+    """Use non-linear least squares to fit a function, f, to data.
+
+    This is a wrapper around :py:class:`scipy.optimize.curve_fit`. See there for a
+    complete description of parameters. The differences are:
+
+    - Instead of separate xdata, ydata, and sigma arguments, the input data array
+      defines provides these, with sigma defined as the square root of the variances,
+      if present, i.e., the standard deviations.
+    - The fit function f must work with scipp objects. This provides additional safety
+      over the underlying scipy function by ensuring units are consistent.
+    - The fit parameters may be scalar scipp variables. In that case an initial guess
+      p0 with the correct units must be provided.
+    - The returned optimal parameter values popt and the coverance matrix pcov will
+      have units provided that the initial parameters have units.
+
+    :param f: The model function, f(x, ...). It must take the independent variable
+        (coordinate of the data array da) as the first argument and the parameters
+        to fit as separate remaining arguments.
+    :param da: One-dimensional data array. The dimension coordinate for the only
+        dimension defines the independent variable where the data is measured. The
+        values of the data array provide the dependent data. If the data array stores
+        variances then the standard deviations (square root of the variances) are taken
+        into account when fitting.
+
+    Example:
+
+      >>> def func(x, a, b):
+      ...     return a * sc.exp(-b * x)
+
+      >>> x = sc.linspace(dim='x', start=0.0, stop=0.4, num=50, unit='m')
+      >>> y = func(x, a=5, b=17/sc.Unit('m'))
+      >>> y.values += 0.01 * np.random.default_rng().normal(size=50)
+      >>> da = sc.DataArray(y, coords={'x': x})
+
+      >>> from scipp.optimize import curve_fit
+      >>> popt, _ = curve_fit(func, da, p0 = [1.0, 1.0 / sc.Unit('m')])
+      >>> round(popt[0])
+      5
+      >>> sc.round(popt[1])
+      <scipp.Variable> ()    float64            [1/m]  [17.000000]
+    """
     for arg in ['xdata', 'ydata', 'sigma']:
         if arg in kwargs:
             raise TypeError(
