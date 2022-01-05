@@ -608,9 +608,19 @@ def test_binned_does_not_modify_inputs(binned_in_a_b):
     assert 'b2' not in binned_in_a_b.bins.meta
 
 
-def test_binned_with_slice_does_not_modify_inputs(binned_in_a_b):
+def test_binned_with_range_slice_does_not_modify_inputs(binned_in_a_b):
     # If input is sliced, transform_coords has to copy the buffer
     original = binned_in_a_b['a', 0:1]
+    _ = original.transform_coords(['b2'], graph={'b2': 'b'})
+    assert 'b' in original.coords
+    assert 'b' in original.bins.coords
+    assert 'b2' not in original.meta
+    assert 'b2' not in original.bins.meta
+
+
+def test_binned_with_point_slice_does_not_modify_inputs(binned_in_a_b):
+    # If input is sliced, transform_coords has to copy the buffer
+    original = binned_in_a_b['a', 1]
     _ = original.transform_coords(['b2'], graph={'b2': 'b'})
     assert 'b' in original.coords
     assert 'b' in original.bins.coords
