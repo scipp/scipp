@@ -712,6 +712,16 @@ def test_raises_when_requested_coord_not_computed(a):
         original.transform_coords('expected', graph={'expected': foo})
 
 
+def test_raises_when_expected_multiple_outputs_but_returned_non_dict(a):
+    def foo(a):
+        return a
+
+    graph = {('b', 'c'): foo}
+    original = sc.DataArray(data=a, coords={'a': a})
+    with pytest.raises(TypeError):
+        original.transform_coords(['b', 'c'], graph=graph)
+
+
 def test_inaccessible_coord(a, b):
     original = sc.DataArray(data=a + b, coords={'a': a})
     graph = {'ab': ab}
