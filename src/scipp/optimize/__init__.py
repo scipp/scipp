@@ -19,13 +19,10 @@ def _as_scalar(obj, unit):
     return scalar(value=obj, unit=unit)
 
 
-def _wrap_func(f, x_prototype, p_units):
-    x_prototype = x_prototype.copy()
-
+def _wrap_func(f, p_units):
     def func(x, *args):
-        x_prototype.values = x
         p = [_as_scalar(v, u) for v, u in zip(args, p_units)]
-        return f(x_prototype, *p).values
+        return f(x, *p).values
 
     return func
 
@@ -68,8 +65,8 @@ def curve_fit(
         p0 = [1.0] * (len(sig.parameters) - 1)
     p_units = [p.unit if isinstance(p, Variable) else None for p in p0]
     p0 = [p.value if isinstance(p, Variable) else p for p in p0]
-    popt, pcov = opt.curve_fit(f=_wrap_func(f, x, p_units),
-                               xdata=x.values,
+    popt, pcov = opt.curve_fit(f=_wrap_func(f, p_units),
+                               xdata=x,
                                ydata=da.values,
                                sigma=sigma,
                                p0=p0)
