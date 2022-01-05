@@ -703,6 +703,15 @@ def test_targets_arg_types(a, b):
     assert 'ab' in da.coords
 
 
+def test_raises_when_requested_coord_not_computed(a):
+    def foo(a):
+        return {'actual': a}
+
+    original = sc.DataArray(data=a, coords={'a': a})
+    with pytest.raises(TypeError):
+        original.transform_coords('expected', graph={'expected': foo})
+
+
 def test_inaccessible_coord(a, b):
     original = sc.DataArray(data=a + b, coords={'a': a})
     graph = {'ab': ab}

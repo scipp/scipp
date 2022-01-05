@@ -151,7 +151,13 @@ class ComputeRule(Rule):
         return outputs
 
     def _without_unrequested(self, d: Dict[str, Any]) -> Dict[str, Any]:
-        return {key: val for key, val in d.items() if key in self.out_names}
+        missing_outputs = [key for key in self.out_names if key not in d]
+        if missing_outputs:
+            raise TypeError(
+                f'transform_coords was expected to compute {missing_outputs} '
+                f'using `{self._func.__name__}` but the function returned '
+                f'{list(d.keys())} instead.')
+        return {key: d[key] for key in self.out_names}
 
     def _to_dict(self, output) -> Dict[str, Variable]:
         if not isinstance(output, dict):
