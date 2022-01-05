@@ -98,7 +98,7 @@ def curve_fit(
       >>> round(popt[0])
       5
       >>> sc.round(popt[1])
-      <scipp.Variable> ()    float64            [1/m]  [17.000000]
+      <scipp.Variable> ()    float64            [1/m]  [17]
     """
     for arg in ['xdata', 'ydata', 'sigma']:
         if arg in kwargs:
