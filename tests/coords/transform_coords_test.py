@@ -631,31 +631,26 @@ def test_binned_computes_correct_results(binned_in_a_b):
     assert sc.identical(converted.bins.meta['a2'], renamed.bins.meta['a'])
 
     # `a*b` is indeed the product of `a` and `b`
+    assert sc.identical(converted.coords['a*b'], renamed.meta['a'] * renamed.meta['b'])
     assert sc.identical(converted.bins.coords['a*b'],
                         renamed.bins.meta['a'] * renamed.bins.meta['b'])
-    assert sc.identical(converted.coords['a*b'], renamed.meta['a'] * renamed.meta['b'])
 
 
-def check_binned(da, original):
-    y = original.coords['y']
-    assert 'xy' not in original.bins.coords  # Buffer was copied
-    assert 'x' in original.bins.coords  # Buffer was copied for consume
-    assert sc.identical(da.bins.coords['xy'],
-                        (y * original.bins.coords['x']).rename_dims({'x': 'x2'}))
-    assert 'yy' not in da.bins.coords
-    assert sc.identical(da.coords['yy'], y * y)
+def test_binned_without_bin_coord_computes_correct_results(binned_in_a_b):
+    def convert(*, a, b2):
+        return b2 * a
 
+    graph = {'a*b': convert, 'b2': 'b'}
+    del binned_in_a_b.coords['b']
+    converted = binned_in_a_b.transform_coords(['a*b'], graph=graph)
+    renamed = binned_in_a_b.rename_dims({'b': 'b2'})
 
-def test_binned_no_dense_coord():
-    binned = make_binned()
-    del binned.coords['x']
+    # `b` was renamed to `b2`
+    assert sc.identical(converted.bins.meta['b2'], renamed.bins.meta['b'])
 
-    def convert(*, x2, y):
-        return {'yy': y * y, 'xy': x2 * y}
-
-    graph = {('xy', 'yy'): convert, 'x2': 'x'}
-    da = binned.transform_coords(['xy', 'yy'], graph=graph)
-    check_binned(da, binned)
+    # `a*b` is indeed the product of `a` and `b`
+    assert sc.identical(converted.bins.coords['a*b'],
+                        renamed.bins.meta['a'] * renamed.bins.meta['b'])
 
 
 def test_binned_request_existing_consumed():
