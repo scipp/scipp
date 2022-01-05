@@ -47,11 +47,11 @@ def _covariance_with_units(pcov, units):
 
 
 def curve_fit(
-    f: Callable,
-    da: DataArray,
-    *,
-    p0: List[Variable] = None,
-    **kwargs
+        f: Callable,
+        da: DataArray,
+        *,
+        p0: List[Variable] = None,
+        **kwargs
 ) -> Tuple[List[Union[Variable, Real]], List[List[Union[Variable, Real]]]]:
     """Use non-linear least squares to fit a function, f, to data.
 
