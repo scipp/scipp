@@ -4,6 +4,7 @@
 """Sub-package for optimization such as curve fitting."""
 
 from ..core import scalar, stddevs, Variable, DataArray
+from ..core import BinEdgeError
 from ..interpolate import _drop_masked
 import numpy as np
 
@@ -55,6 +56,8 @@ def curve_fit(
         if arg in kwargs:
             raise TypeError(
                 f"Invalid argument '{arg}', already defined by the input data array.")
+    if da.sizes[da.dim] != da.coords[da.dim].sizes[da.dim]:
+        raise BinEdgeError("Cannot fit data array with bin-edge coordinate.")
     import scipy.optimize as opt
     da = _drop_masked(da, da.dim)
     sigma = stddevs(da).values if da.variances is not None else None
