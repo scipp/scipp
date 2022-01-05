@@ -638,7 +638,7 @@ def test_binned_computes_correct_results(binned_in_a_b):
 
 def test_binned_without_bin_coord_computes_correct_results(binned_in_a_b):
     def convert(*, a, b2):
-        return b2 * a
+        return a * b2
 
     graph = {'a*b': convert, 'b2': 'b'}
     del binned_in_a_b.coords['b']
@@ -651,6 +651,22 @@ def test_binned_without_bin_coord_computes_correct_results(binned_in_a_b):
     # `a*b` is indeed the product of `a` and `b`
     assert sc.identical(converted.bins.coords['a*b'],
                         renamed.bins.meta['a'] * renamed.bins.meta['b'])
+
+
+def test_binned_without_event_coord_computes_correct_results(binned_in_a_b):
+    def convert(*, a, b2):
+        return a * b2
+
+    graph = {'a*b': convert, 'b2': 'b'}
+    del binned_in_a_b.bins.coords['b']
+    converted = binned_in_a_b.transform_coords(['a*b'], graph=graph)
+    renamed = binned_in_a_b.rename_dims({'b': 'b2'})
+
+    # `b` was renamed to `b2`
+    assert sc.identical(converted.meta['b2'], renamed.meta['b'])
+
+    # `a*b` is indeed the product of `a` and `b`
+    assert sc.identical(converted.coords['a*b'], renamed.meta['a'] * renamed.meta['b'])
 
 
 def test_binned_request_existing_consumed():
