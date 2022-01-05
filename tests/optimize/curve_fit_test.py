@@ -67,7 +67,7 @@ def test_masks_are_not_ignored():
 @pytest.mark.parametrize("noise_scale", [1e-1, 1e-2, 1e-3, 1e-6, 1e-9])
 def test_optimized_params_approach_real_params_as_data_noise_decreases(noise_scale):
     popt, _ = curve_fit(func, array1d(a=1.7, b=1.5, noise_scale=noise_scale))
-    np.testing.assert_allclose(popt, [1.7, 1.5], rtol=noise_scale)
+    np.testing.assert_allclose(popt, [1.7, 1.5], rtol=2.0 * noise_scale)
 
 
 @pytest.mark.parametrize("mask_pos", [0, 1, -3])
