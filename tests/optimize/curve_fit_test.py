@@ -11,14 +11,14 @@ def func(x, a, b):
     return a * sc.exp(-(b / x.unit) * x)
 
 
-def array1d():
-    size = 20
-    x = sc.linspace(dim='xx', start=0.5, stop=2.0, num=size, unit='m')
-    y = func(x, 1.2, 1.3)
+def array1d(*, a=1.2, b=1.3, noise_scale=0.1):
+    size = 50
+    x = sc.linspace(dim='xx', start=-0.1, stop=4.0, num=size, unit='m')
+    y = func(x, a, b)
     rng = np.random.default_rng()
-    y.values += 0.1 * rng.normal(size)
-    da = sc.DataArray(y, coords={'xx': x})
-    return da
+    # Noise is random but avoiding unbounded values to avoid flaky tests
+    y.values += noise_scale * np.clip(rng.normal(size=size), -2.0, 2.0)
+    return sc.DataArray(y, coords={'xx': x})
 
 
 def test_should_not_raise_given_function_with_dimensionless_params_and_1d_array():
@@ -62,6 +62,12 @@ def test_masks_are_not_ignored():
     da.masks['mask'][0] = True
     masked, _ = curve_fit(func, da)
     assert all(masked != unmasked)
+
+
+@pytest.mark.parametrize("noise_scale", [1e-1, 1e-2, 1e-3, 1e-6, 1e-9])
+def test_optimized_params_approach_real_params_as_data_noise_decreases(noise_scale):
+    popt, _ = curve_fit(func, array1d(a=1.7, b=1.5, noise_scale=noise_scale))
+    np.testing.assert_allclose(popt, [1.7, 1.5], rtol=noise_scale)
 
 
 @pytest.mark.parametrize("mask_pos", [0, 1, -3])

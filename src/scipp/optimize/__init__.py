@@ -65,7 +65,7 @@ def curve_fit(
     x = da.coords[da.dim]
     sig = signature(f)
     if p0 is None:
-        p0 = [1] * (len(sig.parameters) - 1)
+        p0 = [1.0] * (len(sig.parameters) - 1)
     p_units = [p.unit if isinstance(p, Variable) else None for p in p0]
     p0 = [p.value if isinstance(p, Variable) else p for p in p0]
     popt, pcov = opt.curve_fit(f=_wrap_func(f, x, p_units),
