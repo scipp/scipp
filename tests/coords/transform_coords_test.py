@@ -362,17 +362,22 @@ def test_rename_dims_param(a):
 def binned_in_a_b(request):
     events = sc.DataArray(data=sc.arange('event', 10, unit='counts'),
                           coords={
-                              'a': sc.arange('event', 10, unit='m'),
-                              'b': sc.arange('event', 10, 20, unit='m')
+                              'a':
+                              sc.array(dims=['event'],
+                                       values=np.random.rand(10),
+                                       unit='m'),
+                              'b':
+                              sc.array(dims=['event'],
+                                       values=np.random.rand(10),
+                                       unit='m')
                           })
     binned = sc.bin(events,
                     edges=[
-                        sc.array(dims=['a'], values=[0, 5, 10], unit='m'),
-                        sc.array(dims=['b'], values=[10, 15, 20], unit='m')
+                        sc.linspace('a', 0, 1, 3, unit='m'),
+                        sc.linspace('b', 0, 1, 3, unit='m')
                     ])
-    del binned.coords['b']
-    binned.bins.attrs['b'] = binned.bins.coords.pop('b')
-    binned.attrs['b'] = sc.arange('b', 2, unit='m')
+    # use non-bin-edge coord
+    binned.coords['b'] = sc.arange('b', 2, unit='m')
 
     bin_src, event_src = request.param
     if bin_src == 'attr':
@@ -595,6 +600,42 @@ def make_binned():
     return binned
 
 
+def test_binned_does_not_modify_inputs(binned_in_a_b):
+    _ = binned_in_a_b.transform_coords(['b2'], graph={'b2': 'b'})
+    assert 'b' in binned_in_a_b.coords
+    assert 'b' in binned_in_a_b.bins.coords
+    assert 'b2' not in binned_in_a_b.meta
+    assert 'b2' not in binned_in_a_b.bins.meta
+
+
+def test_binned_with_slice_does_not_modify_inputs(binned_in_a_b):
+    # If input is sliced, transform_coords has to copy the buffer
+    original = binned_in_a_b['a', 0:1]
+    _ = original.transform_coords(['b2'], graph={'b2': 'b'})
+    assert 'b' in original.coords
+    assert 'b' in original.bins.coords
+    assert 'b2' not in original.meta
+    assert 'b2' not in original.bins.meta
+
+
+def test_binned_computes_correct_results(binned_in_a_b):
+    def convert(*, a2, b):
+        return a2 * b
+
+    graph = {'a*b': convert, 'a2': 'a'}
+    converted = binned_in_a_b.transform_coords(['a*b'], graph=graph)
+    renamed = binned_in_a_b.rename_dims({'a': 'a2'})
+
+    # `a` was renamed to `a2`
+    assert sc.identical(converted.meta['a2'], renamed.meta['a'])
+    assert sc.identical(converted.bins.meta['a2'], renamed.bins.meta['a'])
+
+    # `a*b` is indeed the product of `a` and `b`
+    assert sc.identical(converted.bins.coords['a*b'],
+                        renamed.bins.meta['a'] * renamed.bins.meta['b'])
+    assert sc.identical(converted.coords['a*b'], renamed.meta['a'] * renamed.meta['b'])
+
+
 def check_binned(da, original):
     y = original.coords['y']
     assert 'xy' not in original.bins.coords  # Buffer was copied
@@ -603,24 +644,6 @@ def check_binned(da, original):
                         (y * original.bins.coords['x']).rename_dims({'x': 'x2'}))
     assert 'yy' not in da.bins.coords
     assert sc.identical(da.coords['yy'], y * y)
-
-
-def test_binned():
-    binned = make_binned()
-
-    def convert(*, x2, y):
-        return {'yy': y * y, 'xy': x2 * y}
-
-    graph = {('xy', 'yy'): convert, 'x2': 'x'}
-    da = binned.transform_coords(['xy', 'yy'], graph=graph)
-    check_binned(da, binned)
-    assert sc.identical(da.coords['xy'], (binned.coords['x'] *
-                                          binned.coords['y']).rename_dims({'x': 'x2'}))
-    # If input is sliced, transform_coords has to copy the buffer
-    da = binned['y', 0:1].transform_coords(['xy', 'yy'], graph=graph)
-    check_binned(da, binned['y', 0:1])
-    da = binned['y', 1:2].transform_coords(['xy', 'yy'], graph=graph)
-    check_binned(da, binned['y', 1:2])
 
 
 def test_binned_no_dense_coord():
