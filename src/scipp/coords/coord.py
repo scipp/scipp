@@ -13,6 +13,10 @@ class Destination(Enum):
     coord = auto()
     attr = auto()
 
+    @property
+    def other(self):
+        return Destination.attr if self == Destination.coord else Destination.coord
+
 
 @dataclasses.dataclass
 class Coord:

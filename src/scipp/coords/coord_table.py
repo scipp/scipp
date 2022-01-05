@@ -29,8 +29,10 @@ class CoordTable:
         coord = self._coords[name]
         coord.destination = Destination.attr
         coord.use()
-        if coord.used_up:
-            del self._coords[name]
+        if coord.usages == 0:
+            # The coord's data is no longer needed in the table.
+            # But the caller of `consume` does need it, so return `coord` as is.
+            self._coords[name] = dataclasses.replace(coord, dense=None, event=None)
         return coord
 
     def total_usages(self, name: str) -> int:
