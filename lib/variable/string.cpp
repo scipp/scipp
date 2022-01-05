@@ -7,7 +7,6 @@
 #include <set>
 
 #include "scipp/core/array_to_string.h"
-#include "scipp/core/bucket_array_view.h"
 #include "scipp/core/eigen.h"
 #include "scipp/core/string.h"
 #include "scipp/core/tag_util.h"

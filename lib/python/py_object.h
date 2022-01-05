@@ -40,6 +40,7 @@ private:
 
 [[nodiscard]] PyObject copy(const PyObject &obj);
 
+std::ostream &operator<<(std::ostream &os, const PyObject &obj);
 std::string to_string(const PyObject &obj);
 
 } // namespace scipp::python
