@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-"""Sub-package for objects used in interpolation."""
+"""Sub-package for objects used in interpolation.
+
+This subpackage provides wrappers for a subset of functions from
+:py:mod:`scipy.interpolate`.
+"""
 
 from ..core import array, Variable, DataArray, DimensionError, UnitError
 from ..core import irreducible_mask

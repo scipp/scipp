@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-"""Sub-package for integration."""
+"""Sub-package for integration.
+
+This subpackage provides wrappers for a subset of functions from
+:py:mod:`scipy.integrate`.
+"""
 
 from ..core import array, DataArray
 from ..compat.wrapping import wrap1d
