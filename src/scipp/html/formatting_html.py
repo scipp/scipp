@@ -8,7 +8,8 @@ from functools import partial, reduce
 from html import escape
 
 from .._scipp import core as sc
-from .. import stddevs
+from ..core import stddevs
+from ..utils import value_to_string
 from .resources import load_icons, load_style
 
 BIN_EDGE_LABEL = "[bin-edge]"
@@ -33,7 +34,7 @@ def _format_array(data, size, ellipsis_after, do_elide=True):
             else:
                 s.append(f'{{dims=[{dims}], unit={elem.unit}, coords=[{coords}]}}')
         else:
-            s.append(str(elem))
+            s.append(value_to_string(elem))
         i += 1
     return escape(", ".join(s))
 
