@@ -74,3 +74,16 @@ def test_masked_points_are_treated_as_if_they_were_removed(mask_pos, mask_size):
     removed, _ = curve_fit(
         func, sc.concat([da[:mask_pos], da[mask_pos + mask_size:]], da.dim))
     assert all(masked == removed)
+
+
+@pytest.mark.parametrize("variance,expected", [(1e9, 1.0), (1, 2.0), (1 / 3, 3.0),
+                                               (1e-9, 5.0)],
+                         ids=['disabled', 'equal', 'high', 'dominant'])
+def test_variances_determine_weights(variance, expected):
+    x = sc.array(dims=['x'], values=[1, 2, 3, 4])
+    y = sc.array(dims=['x'], values=[1., 5., 1., 1.], variances=[1., 1., 1., 1.])
+    da = sc.DataArray(data=y, coords={'x': x})
+    da.variances[1] = variance
+    # Fit a constant to highlight influence of weights
+    popt, _ = curve_fit(lambda x, a: sc.scalar(a), da)
+    assert popt[0] == pytest.approx(expected)
