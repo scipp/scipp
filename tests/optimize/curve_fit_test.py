@@ -54,6 +54,12 @@ def test_should_raise_BinEdgeError_when_data_array_is_histogram():
         curve_fit(func, hist)
 
 
+def test_should_raise_DimensionError_when_data_array_is_not_1d():
+    da = sc.concat([array1d(), array1d()], 'extra_dim')
+    with pytest.raises(sc.DimensionError):
+        curve_fit(func, da)
+
+
 def test_masks_are_not_ignored():
     da = array1d(size=20)
     unmasked, _ = curve_fit(func, da)
