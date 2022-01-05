@@ -64,7 +64,7 @@ def test_masks_are_not_ignored():
     da = array1d(size=20)
     unmasked, _ = curve_fit(func, da)
     da.masks['mask'] = sc.zeros(sizes=da.sizes, dtype=bool)
-    da.masks['mask'][:-5] = sc.scalar(True)
+    da.masks['mask'][-5:] = sc.scalar(True)
     masked, _ = curve_fit(func, da)
     assert all(masked != unmasked)
 

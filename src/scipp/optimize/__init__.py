@@ -76,6 +76,12 @@ def curve_fit(
         values of the data array provide the dependent data. If the data array stores
         variances then the standard deviations (square root of the variances) are taken
         into account when fitting.
+    :param p0: Initial guess for the parameters (length N). If None, then the initial
+        values will all be 1 (if the number of parameters for the function can be
+        determined using introspection, otherwise a ValueError is raised). If the fit
+        function cannot handle initial values of 1, in particular for parameters that
+        are not dimensionless, then typically a UnitError is raised, but details will
+        depend on the function.
 
     Example:
 
