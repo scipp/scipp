@@ -27,15 +27,18 @@ xy = sc.Variable(dims=['y', 'x'],
                  values=np.random.rand(6, 4),
                  variances=np.random.rand(6, 4),
                  unit=sc.units.kg)
-eigen_1d = sc.vectors(dims=['x'], values=np.random.rand(4, 3))
+vector = sc.vectors(dims=['x'], values=np.random.rand(4, 3))
 
-eigen_2d = sc.matrices(dims=['x'], values=np.random.rand(4, 3, 3))
+matrix = sc.spatial.linear_transforms(dims=['x'], values=np.random.rand(4, 3, 3))
 
-rotation = sc.spatial.rotation(value=[1, 2, 3, 4])
-translation = sc.spatial.translation_from_vector(value=[5, 6, 7], unit=sc.units.m)
-affine = sc.spatial.affine_transform(value=[[0, 1, 2, 4], [5, 6, 7, 8], [9, 10, 11, 12],
-                                            [13, 14, 15, 16]],
-                                     unit=sc.units.m)
+rotation = sc.spatial.rotations(dims=['x'], values=[[1, 2, 3, 4]])
+translation = sc.spatial.translations_from_vectors(dims=['x'],
+                                                   values=[[5, 6, 7]],
+                                                   unit=sc.units.m)
+affine = sc.spatial.affine_transforms(dims=['x'],
+                                      values=[[[0, 1, 2, 4], [5, 6, 7, 8],
+                                               [9, 10, 11, 12], [13, 14, 15, 16]]],
+                                      unit=sc.units.m)
 
 datetime64ms_1d = sc.Variable(dims=['x'],
                               dtype=sc.dtype.datetime64,
@@ -84,17 +87,29 @@ def test_variable_2d():
     check_roundtrip(xy)
 
 
-def test_variable_eigen():
-    check_roundtrip(eigen_1d)
-    check_roundtrip(eigen_1d['x', 0])
-    check_roundtrip(eigen_2d)
-    check_roundtrip(eigen_2d['x', 0])
+def test_variable_vector():
+    check_roundtrip(vector)
+    check_roundtrip(vector['x', 0])
 
 
-def test_transform_types():
+def test_variable_matrix():
+    check_roundtrip(matrix)
+    check_roundtrip(matrix['x', 0])
+
+
+def test_variable_rotation():
     check_roundtrip(rotation)
+    check_roundtrip(rotation['x', 0])
+
+
+def test_variable_translation():
     check_roundtrip(translation)
+    check_roundtrip(translation['x', 0])
+
+
+def test_variable_affine():
     check_roundtrip(affine)
+    check_roundtrip(affine['x', 0])
 
 
 def test_variable_datetime64():

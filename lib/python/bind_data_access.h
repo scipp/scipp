@@ -190,19 +190,23 @@ template <class... Ts> class as_ElementArrayViewImpl {
         view);
   }
 
-  template <class View> static auto structure_elements(View &&view) {
-    if (view.dtype() == dtype<Eigen::Vector3d>) {
-      return get_data_variable(view).template elements<Eigen::Vector3d>();
-    } else if (view.dtype() == dtype<Eigen::Matrix3d>) {
-      auto elems = get_data_variable(view).template elements<Eigen::Matrix3d>();
+  template <typename View, typename T> static auto get_matrix_elements(const View &view, const std::initializer_list<scipp::index> shape) {
+      auto elems = get_data_variable(view).template elements<T>();
       elems = fold(
           elems, Dim::InternalStructureComponent,
           Dimensions({Dim::InternalStructureRow, Dim::InternalStructureColumn},
-                     {3, 3}));
+                     shape));
       std::vector labels(elems.dims().labels().begin(),
                          elems.dims().labels().end());
       std::iter_swap(labels.end() - 2, labels.end() - 1);
       return transpose(elems, labels);
+  }
+
+  template <class View> static auto structure_elements(View &&view) {
+    if (view.dtype() == dtype<Eigen::Vector3d>) {
+      return get_data_variable(view).template elements<Eigen::Vector3d>();
+    } else if (view.dtype() == dtype<Eigen::Matrix3d>) {
+      return get_matrix_elements<View, Eigen::Matrix3d>(view, {3, 3});
     } else if (view.dtype() == dtype<scipp::core::Quaternion>) {
       return get_data_variable(view)
           .template elements<scipp::core::Quaternion>();
@@ -210,15 +214,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
       return get_data_variable(view)
           .template elements<scipp::core::Translation>();
     } else if (view.dtype() == dtype<Eigen::Affine3d>) {
-      auto elems = get_data_variable(view).template elements<Eigen::Affine3d>();
-      elems = fold(
-          elems, Dim::InternalStructureComponent,
-          Dimensions({Dim::InternalStructureRow, Dim::InternalStructureColumn},
-                     {4, 4}));
-      std::vector labels(elems.dims().labels().begin(),
-                         elems.dims().labels().end());
-      std::iter_swap(labels.end() - 2, labels.end() - 1);
-      return transpose(elems, labels);
+      return get_matrix_elements<View, Eigen::Affine3d>(view, {4, 4});
     } else {
       throw std::runtime_error("Unsupported structured dtype");
     }
