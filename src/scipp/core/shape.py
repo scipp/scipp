@@ -128,7 +128,7 @@ def fold(x: VariableLike,
       Coordinates:
         x                           int64  [dimensionless]  (y, z)  [0, 1, ..., 4, 5]
       Data:
-                                  float64  [dimensionless]  (y, z)  [0.000000, 0.100000, ..., 0.400000, 0.500000]
+                                  float64  [dimensionless]  (y, z)  [0, 0.1, ..., 0.4, 0.5]
       >>> sc.fold(a, dim='x', sizes={'y': 2, 'z': 3}).data.values
       array([[0. , 0.1, 0.2],
              [0.3, 0.4, 0.5]])
@@ -196,7 +196,7 @@ def flatten(x: VariableLike,
         xy                          int64  [dimensionless]  (x, y)  [0, 1, ..., 4, 5]
         y                           int64  [dimensionless]  (y)  [0, 1, 2]
       Data:
-                                  float64  [dimensionless]  (x, y)  [0.000000, 0.100000, ..., 0.400000, 0.500000]
+                                  float64  [dimensionless]  (x, y)  [0, 0.1, ..., 0.4, 0.5]
       >>> sc.flatten(a, to='u')
       <scipp.DataArray>
       Dimensions: Sizes[u:6, ]
@@ -205,7 +205,7 @@ def flatten(x: VariableLike,
         xy                          int64  [dimensionless]  (u)  [0, 1, ..., 4, 5]
         y                           int64  [dimensionless]  (u)  [0, 1, ..., 1, 2]
       Data:
-                                  float64  [dimensionless]  (u)  [0.000000, 0.100000, ..., 0.400000, 0.500000]
+                                  float64  [dimensionless]  (u)  [0, 0.1, ..., 0.4, 0.5]
 
     """
     if to is None:

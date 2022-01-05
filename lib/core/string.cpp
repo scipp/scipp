@@ -21,6 +21,10 @@ std::ostream &operator<<(std::ostream &os, const Dimensions &dims) {
   return os << to_string(dims);
 }
 
+std::ostream &operator<<(std::ostream &os, const scipp::index_pair &index) {
+  return os << to_string(index);
+}
+
 std::string to_string(const Dimensions &dims) {
   if (dims.empty())
     return "()";

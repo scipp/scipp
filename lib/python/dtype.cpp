@@ -211,7 +211,8 @@ bool has_datetime_dtype(const py::object &obj) {
 
 [[nodiscard]] scipp::units::Unit
 parse_datetime_dtype(const std::string &dtype_name) {
-  static std::regex datetime_regex{R"(datetime64(\[(\w+)\])?)"};
+  static std::regex datetime_regex{R"(datetime64(\[(\w+)\])?)",
+                                   std::regex_constants::optimize};
   constexpr size_t unit_idx = 2;
   std::smatch match;
   if (!std::regex_match(dtype_name, match, datetime_regex) ||
