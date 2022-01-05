@@ -11,8 +11,7 @@ def func(x, a, b):
     return a * sc.exp(-(b / x.unit) * x)
 
 
-def array1d(*, a=1.2, b=1.3, noise_scale=0.1):
-    size = 50
+def array1d(*, a=1.2, b=1.3, noise_scale=0.1, size=50):
     x = sc.linspace(dim='xx', start=-0.1, stop=4.0, num=size, unit='m')
     y = func(x, a, b)
     rng = np.random.default_rng()
@@ -56,10 +55,10 @@ def test_should_raise_BinEdgeError_when_data_array_is_histogram():
 
 
 def test_masks_are_not_ignored():
-    da = array1d()
+    da = array1d(size=20)
     unmasked, _ = curve_fit(func, da)
     da.masks['mask'] = sc.zeros(sizes=da.sizes, dtype=bool)
-    da.masks['mask'][0] = True
+    da.masks['mask'][:-5] = sc.scalar(True)
     masked, _ = curve_fit(func, da)
     assert all(masked != unmasked)
 
@@ -73,7 +72,7 @@ def test_optimized_params_approach_real_params_as_data_noise_decreases(noise_sca
 @pytest.mark.parametrize("mask_pos", [0, 1, -3])
 @pytest.mark.parametrize("mask_size", [1, 2])
 def test_masked_points_are_treated_as_if_they_were_removed(mask_pos, mask_size):
-    da = array1d()
+    da = array1d(size=10)
     da.masks['mask'] = sc.zeros(sizes=da.sizes, dtype=bool)
     da.masks['mask'][mask_pos:mask_pos + mask_size] = sc.scalar(True)
     masked, _ = curve_fit(func, da)
