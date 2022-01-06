@@ -29,6 +29,7 @@ Bugfixes
 ~~~~~~~~
 
 * Fix coordinate and attribute comparisons to treat NaN (not-a-number) values as equal, which previously prevented most operations with data arrays or datasets that contained NaN values in their coordinates or attributes `#2331 <https://github.com/scipp/scipp/pull/2331>`_.
+* Fix incorrect result from ``sc.bin`` when rebinning an inner dimension to a multi-dimensional coordinate `#2355 <https://github.com/scipp/scipp/pull/2355>`_.
 
 Deprecations
 ~~~~~~~~~~~~
