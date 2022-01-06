@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-"""Sub-package for objects used in interpolation."""
+"""Sub-package for objects used in interpolation.
+
+This subpackage provides wrappers for a subset of functions from
+:py:mod:`scipy.interpolate`.
+"""
 
 from ..core import array, Variable, DataArray, DimensionError, UnitError
 from ..core import irreducible_mask
@@ -54,7 +58,8 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
     If the input data array contains masks that depend on the interpolation dimension
     the masked points are treated as missing, i.e., they are ignored for the definition
     of the interpolation function. If such a mask also depends on additional dimensions
-    ``DimensionError`` is raised since interpolation requires points to be 1-D.
+    :py:class:`scipp.DimensionError` is raised since interpolation requires points to
+    be 1-D.
 
     Parameters not described above are forwarded to scipy.interpolate.interp1d. The
     most relevant ones are (see :py:class:`scipy.interpolate.interp1d` for details):

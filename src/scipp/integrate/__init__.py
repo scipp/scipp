@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-"""Sub-package for integration."""
+"""Sub-package for integration.
+
+This subpackage provides wrappers for a subset of functions from
+:py:mod:`scipy.integrate`.
+"""
 
 from ..core import array, DataArray
 from ..compat.wrapping import wrap1d
@@ -23,7 +27,7 @@ def _integrate(func: Callable, da: DataArray, dim: str, **kwargs) -> DataArray:
 def trapezoid(da: DataArray, dim: str, **kwargs) -> DataArray:
     """Integrate data array along the given dimension with the composite trapezoidal rule.
 
-    This is a wrapper around :py:class:`scipy.integrate.trapezoid`.
+    This is a wrapper around :py:func:`scipy.integrate.trapezoid`.
 
     Examples:
 
@@ -44,7 +48,7 @@ def trapezoid(da: DataArray, dim: str, **kwargs) -> DataArray:
 def simpson(da: DataArray, dim: str, **kwargs) -> DataArray:
     """Integrate data array along the given dimension with the composite Simpson's rule.
 
-    This is a wrapper around :py:class:`scipy.integrate.simpson`.
+    This is a wrapper around :py:func:`scipy.integrate.simpson`.
 
     Examples:
 

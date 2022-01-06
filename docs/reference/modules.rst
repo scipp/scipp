@@ -12,5 +12,6 @@ Modules
    integrate
    interpolate
    logging
+   optimize
    spatial
    units
