@@ -80,8 +80,8 @@ def curve_fit(
         values will all be 1 (if the number of parameters for the function can be
         determined using introspection, otherwise a ValueError is raised). If the fit
         function cannot handle initial values of 1, in particular for parameters that
-        are not dimensionless, then typically a UnitError is raised, but details will
-        depend on the function.
+        are not dimensionless, then typically a :py:class:`scipp.UnitError` is raised,
+        but details will depend on the function.
 
     Example:
 
