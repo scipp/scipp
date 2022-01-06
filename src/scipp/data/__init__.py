@@ -26,3 +26,13 @@ def binned_x(nevent: int, nbin: int) -> DataArray:
     table = table_xyz(nevent)
     x = linspace(dim='x', unit='m', start=0.0, stop=1.0, num=nbin + 1)
     return bin(table, edges=[x])
+
+
+def binned_xy(nevent: int, nx: int, ny: int) -> DataArray:
+    """
+    Return data array binned along 2 dimensions.
+    """
+    table = table_xyz(nevent)
+    x = linspace(dim='x', unit='m', start=0.0, stop=1.0, num=nx + 1)
+    y = linspace(dim='y', unit='m', start=0.0, stop=1.0, num=ny + 1)
+    return bin(table, edges=[x, y])
