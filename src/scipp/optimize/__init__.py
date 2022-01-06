@@ -55,7 +55,7 @@ def curve_fit(
 ) -> Tuple[List[Union[Variable, Real]], List[List[Union[Variable, Real]]]]:
     """Use non-linear least squares to fit a function, f, to data.
 
-    This is a wrapper around :py:class:`scipy.optimize.curve_fit`. See there for a
+    This is a wrapper around :py:func:`scipy.optimize.curve_fit`. See there for a
     complete description of parameters. The differences are:
 
     - Instead of separate xdata, ydata, and sigma arguments, the input data array

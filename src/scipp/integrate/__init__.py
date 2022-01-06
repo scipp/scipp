@@ -27,7 +27,7 @@ def _integrate(func: Callable, da: DataArray, dim: str, **kwargs) -> DataArray:
 def trapezoid(da: DataArray, dim: str, **kwargs) -> DataArray:
     """Integrate data array along the given dimension with the composite trapezoidal rule.
 
-    This is a wrapper around :py:class:`scipy.integrate.trapezoid`.
+    This is a wrapper around :py:func:`scipy.integrate.trapezoid`.
 
     Examples:
 
@@ -48,7 +48,7 @@ def trapezoid(da: DataArray, dim: str, **kwargs) -> DataArray:
 def simpson(da: DataArray, dim: str, **kwargs) -> DataArray:
     """Integrate data array along the given dimension with the composite Simpson's rule.
 
-    This is a wrapper around :py:class:`scipy.integrate.simpson`.
+    This is a wrapper around :py:func:`scipy.integrate.simpson`.
 
     Examples:
 
