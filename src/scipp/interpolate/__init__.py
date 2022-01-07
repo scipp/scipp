@@ -11,8 +11,10 @@ from ..core import array, Variable, DataArray, DimensionError, UnitError
 from ..core import dtype, irreducible_mask
 from ..compat.wrapping import wrap1d
 
-from typing import Callable
+from typing import Any, Callable, Union
 import uuid
+
+import numpy as np
 
 
 def _interpolation_type(dt):
@@ -53,7 +55,12 @@ def _drop_masked(da, dim):
 
 
 @wrap1d(is_partial=True, accept_masks=True)
-def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
+def interp1d(da: DataArray,
+             dim: str,
+             *,
+             kind: Union[str, int] = 'linear',
+             fill_value: Any = np.nan,
+             **kwargs) -> Callable:
     """Interpolate a 1-D function.
 
     A data array is used to approximate some function f: y = f(x), where y is given by
@@ -145,6 +152,8 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
                 f"interpolation dimension '{dim}'")
         f = inter.interp1d(x=_as_interpolation_type(da.coords[dim].values),
                            y=da.values,
+                           kind=kind,
+                           fill_value=fill_value,
                            **kwargs)
         x_ = _as_interpolation_type(_midpoints(xnew, dim) if midpoints else xnew)
         ynew = array(dims=da.dims, unit=da.unit, values=f(x_.values))
