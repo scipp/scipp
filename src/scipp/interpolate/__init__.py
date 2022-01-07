@@ -8,17 +8,35 @@ This subpackage provides wrappers for a subset of functions from
 """
 
 from ..core import array, Variable, DataArray, DimensionError, UnitError
-from ..core import irreducible_mask
+from ..core import dtype, irreducible_mask
 from ..compat.wrapping import wrap1d
 
 from typing import Callable
 import uuid
 
 
+def _interpolation_type(dt):
+    if hasattr(dt, 'kind'):
+        # numpy
+        if dt.kind == 'M':
+            return 'int64'
+    else:
+        # scipp
+        if dt == dtype.datetime64:
+            return 'int64'
+    return dt
+
+
+def _as_interpolation_type(x):
+    return x.astype(_interpolation_type(x.dtype), copy=False)
+
+
 def _midpoints(var, dim):
     a = var[dim, :-1]
     b = var[dim, 1:]
-    return a + 0.5 * (b - a)
+    mid = _as_interpolation_type(a) + 0.5 * (b - a)
+    # Return int as int, datetime as int, and float as float
+    return mid.astype(_interpolation_type(var.dtype), copy=False)
 
 
 def _drop_masked(da, dim):
@@ -125,8 +143,10 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
             raise DimensionError(
                 f"Dimension of interpolation points '{xnew.dim}' does not match "
                 f"interpolation dimension '{dim}'")
-        f = inter.interp1d(x=da.coords[dim].values, y=da.values, **kwargs)
-        x_ = _midpoints(xnew, dim) if midpoints else xnew
+        f = inter.interp1d(x=_as_interpolation_type(da.coords[dim].values),
+                           y=da.values,
+                           **kwargs)
+        x_ = _as_interpolation_type(_midpoints(xnew, dim) if midpoints else xnew)
         ynew = array(dims=da.dims, unit=da.unit, values=f(x_.values))
         return DataArray(data=ynew, coords={dim: xnew})
 
