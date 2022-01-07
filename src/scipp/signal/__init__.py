@@ -41,7 +41,8 @@ def butter(da: DataArray, dim: str, *, N, Wn, **kwargs):
             f"'{one / coord.unit}'")
     import scipy.signal
     return SOS(coord=coord.copy(),
-               sos=scipy.signal.butter(N=N, Wn=Wn.value, fs=fs, output='sos', **kwargs))
+               sos=scipy.signal.butter(N=N, Wn=Wn.values, fs=fs, output='sos',
+                                       **kwargs))
 
 
 @wrap1d(keep_coords=True)

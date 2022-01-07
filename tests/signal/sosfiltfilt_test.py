@@ -76,3 +76,19 @@ def test_high_frequency_components_removed_by_lowpass_filter():
     sos = butter(da, dim, N=4, Wn=20 / x.unit)
     out = sosfiltfilt(da, dim, sos=sos)
     assert sc.allclose(out[20:-20].data, low_freq[20:-20].data, atol=sc.scalar(0.02))
+
+
+def test_low_and_high_frequency_components_removed_by_bandpass_filter():
+    dim = 'xx'
+    x = sc.linspace(dim=dim, start=-0.1, stop=40.0, num=10000, unit='m')
+    y = sc.sin(x * sc.scalar(20.0, unit='rad/m'))
+    da = sc.DataArray(data=y, coords={dim: x})
+    mid_freq = da.copy()
+    da += sc.sin(x * sc.scalar(1.0, unit='rad/m'))
+    da += sc.sin(x * sc.scalar(400.0, unit='rad/m'))
+    band = sc.array(dims=['ignored'], values=[2, 10], unit=sc.units.one / x.unit)
+    sos = butter(da, dim, N=6, Wn=band, btype='bandpass')
+    out = sosfiltfilt(da, dim, sos=sos)
+    assert sc.allclose(out[400:-400].data,
+                       mid_freq[400:-400].data,
+                       atol=sc.scalar(0.01))
