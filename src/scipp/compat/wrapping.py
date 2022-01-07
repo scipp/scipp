@@ -19,7 +19,7 @@ def _validated_masks(da, dim):
     return masks
 
 
-def wrap1d(is_partial=False, accept_masks=False):
+def wrap1d(is_partial=False, accept_masks=False, keep_coords=False):
     """Decorator factory for decorating functions that wrap non-scipp 1-D functions.
 
     1-D functions are typically functions from libraries such as scipy that depend
@@ -56,12 +56,16 @@ def wrap1d(is_partial=False, accept_masks=False):
 
             kwargs['axis'] = da.dims.index(dim)
 
-            coords = {k: v for k, v in da.coords.items() if dim not in v.dims}
             if accept_masks:
                 masks = {k: v for k, v in da.masks.items() if dim not in v.dims}
             else:
                 masks = _validated_masks(da, dim)
-            attrs = {k: v for k, v in da.attrs.items() if dim not in v.dims}
+            if keep_coords:
+                coords = da.coords
+                attrs = da.attrs
+            else:
+                coords = {k: v for k, v in da.coords.items() if dim not in v.dims}
+                attrs = {k: v for k, v in da.attrs.items() if dim not in v.dims}
 
             def _add_observing_metadata(da):
                 for k, v in coords.items():
