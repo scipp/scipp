@@ -17,28 +17,20 @@ import uuid
 import numpy as np
 
 
-def _interpolation_type(dt):
-    if hasattr(dt, 'kind'):
-        # numpy
-        if dt.kind == 'M':
-            return 'int64'
-    else:
-        # scipp
-        if dt == dtype.datetime64:
-            return 'int64'
-    return dt
-
-
 def _as_interpolation_type(x):
-    return x.astype(_interpolation_type(x.dtype), copy=False)
+    if isinstance(x, np.ndarray):
+        if x.dtype.kind == 'M':
+            return x.astype('int64', copy=False)
+    else:
+        if x.dtype == dtype.datetime64:
+            return x.astype('int64', copy=False)
+    return x
 
 
 def _midpoints(var, dim):
     a = var[dim, :-1]
     b = var[dim, 1:]
-    mid = _as_interpolation_type(a) + 0.5 * (b - a)
-    # Return int as int, datetime as int, and float as float
-    return mid.astype(_interpolation_type(var.dtype), copy=False)
+    return _as_interpolation_type(a) + 0.5 * (b - a)
 
 
 def _drop_masked(da, dim):
