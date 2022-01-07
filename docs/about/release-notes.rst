@@ -14,6 +14,7 @@ Features
 * Added ``sc.interpolate.interp1d``, ``sc.integration.trapezoid``, and ``sc.integration.simpson`` as convenience wrappers of the scipy functions of the same name `#2324 <https://github.com/scipp/scipp/pull/2324>`_.
 * Added ``unit`` property to ``obj.bins`` for getting and setting unit of bin elements `#2330 <https://github.com/scipp/scipp/pull/2330>`_.
 * Added ``sc.optimize.curve_fit`` as convenience wrappers of the scipy function of the same name `#2350 <https://github.com/scipp/scipp/pull/2350>`_.
+* Added :py:func:`scipp.signal.butter` and :py:func:`scipp.signal.sosfiltfilt` as wrappers of the scipy functions of the same name `#2356 <https://github.com/scipp/scipp/pull/2356>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~

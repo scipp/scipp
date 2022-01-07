@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-"""Signal processing based on :py:module:`scipy.signal`"""
+"""Sub-package for signal processing such as smoothing.
+
+This subpackage provides wrappers for a subset of functions from
+:py:mod:`scipy.signal`.
+"""
 from dataclasses import dataclass
 from numpy import ndarray
 
@@ -47,7 +51,7 @@ def sosfiltfilt(da: DataArray, dim: str, *, sos: SOS, **kwargs) -> DataArray:
     if not identical(da.coords[dim], sos.coord):
         raise CoordError(f"Coord\n{da.coords[dim]}\nof filter dimension '{dim}' does "
                          f"not match coord\n{sos.coord}\nused for creating the "
-                         "second-order sections representation scipp.signal.butter.")
+                         "second-order sections representation by scipp.signal.butter.")
     import scipy.signal
     data = array(dims=da.dims,
                  unit=da.unit,
