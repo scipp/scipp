@@ -21,10 +21,10 @@ Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * Minor change in behavior of dimension renaming in ``transform_coords``, new behavior documented in `Coordinate transformations <../user-guide/coordinate-transformations.rst>`_. Most use cases are unaffected. `#2319 <https://github.com/scipp/scipp/pull/2319>`_.
-* ``sc.spatial.transform.as_rotvec`` has been moved to ``sc.spatial.rotation_as_rotvec``
-* ``sc.spatial.transform.from_rotvec`` has been moved to ``sc.spatial.rotations_from_rotvecs``, and now returns a rotation data type rather than a matrix.
-  For consistency with other transformation creation functions, ``rotations_from_rotvecs`` now takes ``values``, ``dims`` and ``unit`` separately.
-* The matrix dtype ``matrix_3_float64`` has been renamed to ``linear_transform3``, and should now be constructed with ``sc.spatial.linear_transform``.
+* ``sc.spatial.transform.as_rotvec`` has been moved to :py:func:`scipp.spatial.rotation_as_rotvec`
+* ``sc.spatial.transform.from_rotvec`` has been moved to :py:func:`scipp.spatial.rotations_from_rotvecs`, and now returns a rotation data type rather than a matrix.
+  For consistency with other transformation creation functions, ``rotations_from_rotvecs`` now takes ``values``, ``dims``, and ``unit`` separately.
+* The matrix dtype ``matrix_3_float64`` has been renamed to ``linear_transform3``, and should now be constructed with :py:func:`scipp.spatial.transform.linear_transform`.
 * The vector dtype ``vector_3_float64`` has been renamed to ``vector3``.
 
 Bugfixes
@@ -35,7 +35,7 @@ Bugfixes
 Deprecations
 ~~~~~~~~~~~~
 
-* ``sc.matrix`` has been deprecated in favour of ``sc.spatial.linear_transform``, and will be removed in a future release of scipp.
+* ``sc.matrix`` and ``sc.matrices`` have been deprecated in favour of :py:func:`scipp.spatial.linear_transform` and :py:func:`scipp.spatial.linear_transforms`, and will be removed in a future release of scipp.
 
 Stability, Maintainability, and Testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
