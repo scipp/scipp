@@ -44,6 +44,8 @@ struct MakeVariableWithType {
           overloaded{
               expect_input_variances, [](const units::Unit &x) { return x; },
               [](const auto &x) {
+                if constexpr (std::is_same_v<T, core::time_point>)
+                  return T{static_cast<int64_t>(x)};
                 if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
                   return ValueAndVariance<T>{static_cast<T>(x.value),
                                              static_cast<T>(x.variance)};
