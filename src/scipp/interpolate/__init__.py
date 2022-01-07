@@ -89,6 +89,8 @@ def interp1d(da: DataArray,
     Parameters not described above are forwarded to scipy.interpolate.interp1d. The
     most relevant ones are (see :py:class:`scipy.interpolate.interp1d` for details):
 
+    :param da: Input data. Defines both dependent and independent variables for interpolation.
+    :param dim: Dimension of the interpolation.
     :param kind: Specifies the kind of interpolation as a string or as an integer
                  specifying the order of the spline interpolator to use. The string
                  has to be one of 'linear', 'nearest', 'nearest-up', 'zero', 'slinear',
