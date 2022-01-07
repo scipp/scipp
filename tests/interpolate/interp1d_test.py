@@ -68,7 +68,7 @@ def test_fail_new_coord_wrong_dim():
 
 def test_data():
     da = make_array()
-    x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=10, unit='rad')
+    x = sc.linspace(dim='xx', start=0.1, stop=0.4, num=20, unit='rad')
     out = interp1d(da, 'xx')(x)
     assert np.array_equal(
         out.values,
