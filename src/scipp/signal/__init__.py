@@ -2,36 +2,52 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 """Signal processing based on :py:module:`scipy.signal`"""
+from dataclasses import dataclass
+from numpy import ndarray
 
-from ..core import array, islinspace, DataArray, UnitError
+from ..core import array, identical, islinspace, DataArray, Variable
+from ..core import UnitError, CoordError
 from ..units import one
 from ..compat.wrapping import wrap1d
 
 
-# TODO
-# - like this there is no guarantee that sosfilt is applied to data with same coord
-# - Rename/replace fs argument? Can we pass in `da` and `dim`?
-def butter(N, Wn, *, fs, output='sos', **kwargs):
-    if not islinspace(fs).value:
-        raise ValueError("Data is not regularly sampled.")
-    if not Wn.unit == one / fs.unit:
+@dataclass
+class SOS:
+    """Class for keeping track of an item in inventory."""
+    coord: Variable
+    sos: ndarray
+
+
+def _frequency(coord: Variable) -> Variable:
+    if not islinspace(coord).value:
+        raise CoordError("Data is not regularly sampled, cannot compute frequency.")
+    return (len(coord) - 1) / (coord[-1] - coord[0])
+
+
+def butter(da: DataArray, dim: str, *, N, Wn, **kwargs):
+    coord = da.coords[dim]
+    fs = _frequency(coord).value
+    if not Wn.unit == one / coord.unit:
         raise UnitError(
             f"Critical frequency unit '{Wn.unit}' does not match sampling unit "
-            f"'{one / fs.unit}'"
-        )
-    fs = (len(fs) - 1) / (fs[-1] - fs[0]).value
+            f"'{one / coord.unit}'")
     import scipy.signal
-    return scipy.signal.butter(N=N, Wn=Wn.value, fs=fs, output=output, **kwargs)
+    return SOS(coord=coord.copy(),
+               sos=scipy.signal.butter(N=N, Wn=Wn.value, fs=fs, output='sos', **kwargs))
 
 
 @wrap1d(keep_coords=True)
-def sosfiltfilt(da: DataArray, dim: str, *, sos, **kwargs) -> DataArray:
+def sosfiltfilt(da: DataArray, dim: str, *, sos: SOS, **kwargs) -> DataArray:
     """Filter data along one dimension using cascaded second-order sections.
     """  # noqa #501
+    if not identical(da.coords[dim], sos.coord):
+        raise CoordError(f"Coord\n{da.coords[dim]}\nof filter dimension '{dim}' does "
+                         f"not match coord\n{sos.coord}\nused for creating the "
+                         "second-order sections representation scipp.signal.butter.")
     import scipy.signal
     data = array(dims=da.dims,
                  unit=da.unit,
-                 values=scipy.signal.sosfiltfilt(sos, da.values, **kwargs))
+                 values=scipy.signal.sosfiltfilt(sos.sos, da.values, **kwargs))
     return DataArray(data=data)
 
 
