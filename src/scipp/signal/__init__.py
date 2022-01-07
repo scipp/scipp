@@ -9,7 +9,7 @@ This subpackage provides wrappers for a subset of functions from
 from dataclasses import dataclass
 from numpy import ndarray
 
-from ..core import array, identical, islinspace, DataArray, Variable
+from ..core import array, identical, islinspace, to_unit, DataArray, Variable
 from ..core import UnitError, CoordError
 from ..units import one
 from ..compat.wrapping import wrap1d
@@ -56,9 +56,11 @@ def butter(da: DataArray, dim: str, *, N, Wn, **kwargs):
     """
     coord = da.coords[dim]
     fs = _frequency(coord).value
-    if not Wn.unit == one / coord.unit:
+    try:
+        Wn = to_unit(Wn, one / coord.unit)
+    except UnitError:
         raise UnitError(
-            f"Critical frequency unit '{Wn.unit}' does not match sampling unit "
+            f"Critical frequency unit '{Wn.unit}' incompatible with sampling unit "
             f"'{one / coord.unit}'")
     import scipy.signal
     return SOS(coord=coord.copy(),
