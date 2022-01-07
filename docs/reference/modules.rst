@@ -13,5 +13,6 @@ Modules
    interpolate
    logging
    optimize
+   signal
    spatial
    units

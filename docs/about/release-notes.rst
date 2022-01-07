@@ -11,18 +11,20 @@ Features
 
 * Added new datatypes for representing spatial transformations: ``affine_transform3``, ``rotation3``, and ``translation3``. Each of these can be combined and applied to the existing vector datatype.
 * Added support for slicing without specifying a dimension (only for 1-D objects) `#2321 <https://github.com/scipp/scipp/pull/2321>`_.
-* Added ``sc.interpolate.interp1d``, ``sc.integration.trapezoid``, and ``sc.integration.simpson`` as convenience wrappers of the scipy functions of the same name `#2324 <https://github.com/scipp/scipp/pull/2324>`_.
+* Added :py:func:`scipp.interpolate.interp1d` as convenience wrapper of the scipy functions of the same name `#2324 <https://github.com/scipp/scipp/pull/2324>`_.
+* Added :py:func:`scipp.integrate.trapezoid` and :py:func:`scipp.integrate.simpson` as convenience wrappers of the scipy functions of the same name `#2324 <https://github.com/scipp/scipp/pull/2324>`_.
 * Added ``unit`` property to ``obj.bins`` for getting and setting unit of bin elements `#2330 <https://github.com/scipp/scipp/pull/2330>`_.
-* Added ``sc.optimize.curve_fit`` as convenience wrappers of the scipy function of the same name `#2350 <https://github.com/scipp/scipp/pull/2350>`_.
+* Added :py:func:`scipp.optimize.curve_fit` as convenience wrappers of the scipy function of the same name `#2350 <https://github.com/scipp/scipp/pull/2350>`_.
+* Added :py:func:`scipp.signal.butter` and :py:func:`scipp.signal.sosfiltfilt` as wrappers of the scipy functions of the same name `#2356 <https://github.com/scipp/scipp/pull/2356>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * Minor change in behavior of dimension renaming in ``transform_coords``, new behavior documented in `Coordinate transformations <../user-guide/coordinate-transformations.rst>`_. Most use cases are unaffected. `#2319 <https://github.com/scipp/scipp/pull/2319>`_.
-* ``sc.spatial.transform.as_rotvec`` has been moved to ``sc.spatial.rotation_as_rotvec``
-* ``sc.spatial.transform.from_rotvec`` has been moved to ``sc.spatial.rotations_from_rotvecs``, and now returns a rotation data type rather than a matrix.
-  For consistency with other transformation creation functions, ``rotations_from_rotvecs`` now takes ``values``, ``dims`` and ``unit`` separately.
-* The matrix dtype ``matrix_3_float64`` has been renamed to ``linear_transform3``, and should now be constructed with ``sc.spatial.linear_transform``.
+* ``sc.spatial.transform.as_rotvec`` has been moved to :py:func:`scipp.spatial.rotation_as_rotvec`
+* ``sc.spatial.transform.from_rotvec`` has been moved to :py:func:`scipp.spatial.rotations_from_rotvecs`, and now returns a rotation data type rather than a matrix.
+  For consistency with other transformation creation functions, ``rotations_from_rotvecs`` now takes ``values``, ``dims``, and ``unit`` separately.
+* The matrix dtype ``matrix_3_float64`` has been renamed to ``linear_transform3``, and should now be constructed with :py:func:`scipp.spatial.transform.linear_transform`.
 * The vector dtype ``vector_3_float64`` has been renamed to ``vector3``.
 
 Bugfixes
@@ -34,7 +36,7 @@ Bugfixes
 Deprecations
 ~~~~~~~~~~~~
 
-* ``sc.matrix`` has been deprecated in favour of ``sc.spatial.linear_transform``, and will be removed in a future release of scipp.
+* ``sc.matrix`` and ``sc.matrices`` have been deprecated in favour of :py:func:`scipp.spatial.linear_transform` and :py:func:`scipp.spatial.linear_transforms`, and will be removed in a future release of scipp.
 
 Stability, Maintainability, and Testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
