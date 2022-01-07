@@ -92,3 +92,31 @@ def test_low_and_high_frequency_components_removed_by_bandpass_filter():
     assert sc.allclose(out[400:-400].data,
                        mid_freq[400:-400].data,
                        atol=sc.scalar(0.01))
+
+
+def test_filtering_inner_and_outer_dimension_yields_equivalent_results():
+    dim = 'xx'
+    x = sc.linspace(dim=dim, start=-0.1, stop=4.0, num=1000, unit='m')
+    y = sc.sin(x * sc.scalar(1.0, unit='rad/m'))
+    da = sc.DataArray(data=y, coords={dim: x})
+    da += sc.sin(x * sc.scalar(400.0, unit='rad/m'))
+    da = sc.concat([da, da + da], 'extra_dim')
+    sos = butter(da, dim, N=4, Wn=20 / x.unit)
+    out1 = sosfiltfilt(da, dim, sos=sos)
+    out2 = sosfiltfilt(da.transpose().copy(), dim, sos=sos)
+    assert sc.identical(out1, out2.transpose())
+
+
+def test_filtering_slice_identical_to_slice_of_filtered():
+    dim = 'xx'
+    x = sc.linspace(dim=dim, start=-0.1, stop=4.0, num=1000, unit='m')
+    y = sc.sin(x * sc.scalar(1.0, unit='rad/m'))
+    da = sc.DataArray(data=y, coords={dim: x})
+    da += sc.sin(x * sc.scalar(400.0, unit='rad/m'))
+    da = sc.concat([da, da + da], 'extra_dim')
+    sos = butter(da, dim, N=4, Wn=20 / x.unit)
+    out2d = sosfiltfilt(da, dim, sos=sos)
+    assert sc.identical(out2d['extra_dim', 0],
+                        sosfiltfilt(da['extra_dim', 0], dim, sos=sos))
+    assert sc.identical(out2d['extra_dim', 1],
+                        sosfiltfilt(da['extra_dim', 1], dim, sos=sos))
