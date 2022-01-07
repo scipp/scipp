@@ -56,13 +56,23 @@ protected:
   DataArray da = make_array();
 };
 
+TEST_F(ToUnitTest, conversion_to_same_unit_returns_identical_copy) {
+  da.setData(makeVariable<double>(Values{3.0}, units::m));
+  EXPECT_EQ(to_unit(da, units::m), da);
+}
+
 TEST_F(ToUnitTest, converts_unit_of_data) {
   // TODO Use DataArrayBuilder
   da.setData(makeVariable<double>(Values{3.0}, units::m));
   const auto result = to_unit(da, units::mm);
   EXPECT_EQ(result.data(), makeVariable<double>(Values{3000.0}, units::mm));
-  // const auto result = to_unit(da, units::m);
-  // EXPECT_EQ(result.data(), makeVariable<double>(Values{3.0}, units::m));
+}
+
+TEST_F(ToUnitTest, preserves_masks) {
+  da.setData(makeVariable<double>(Values{3.0}, units::m));
+  da.masks().set("mask", makeVariable<bool>(Values{true}));
+  const auto result = to_unit(da, units::mm);
+  EXPECT_EQ(result.masks()["mask"], da.masks()["mask"]);
 }
 
 /* corresponds to three tests below
