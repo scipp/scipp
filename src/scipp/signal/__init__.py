@@ -32,7 +32,7 @@ def _frequency(coord: Variable) -> Variable:
     return (len(coord) - 1) / (coord[-1] - coord[0])
 
 
-def butter(da: DataArray, dim: str, *, N, Wn, **kwargs):
+def butter(da: DataArray, dim: str, *, N: int, Wn: Variable, **kwargs) -> SOS:
     """
     Butterworth digital and analog filter design.
 
@@ -47,7 +47,7 @@ def butter(da: DataArray, dim: str, *, N, Wn, **kwargs):
 
     - Instead of a sampling frequency fs, this wrapper takes a data array ``da`` and a
       dimension label ``dim`` as input. The sampling frequency is then computed from
-      ``da.coords[dim]``. Only inputs with regular sampling are supported.
+      ``da.coords[dim]``. Only data sampled at regular intervals are supported.
     - The critical frequency or frequencies must be provided as a variable with correct
       unit.
     - Only 'sos' output is supported.
@@ -79,7 +79,7 @@ def sosfiltfilt(da: DataArray, dim: str, *, sos: SOS, **kwargs) -> DataArray:
     - Instead of an array ``x`` and an optional axis, the input must be a data array
       and dimension label.
     - The array of second-order filter coefficients ``sos`` includes the coordinate
-      used for computing the frequence used for creating the coefficients. This is
+      used for computing the frequency used for creating the coefficients. This is
       compared to the corresponding coordinate of the input data array to ensure that
       compatible coefficients are used.
 
