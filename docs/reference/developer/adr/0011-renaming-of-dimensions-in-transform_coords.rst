@@ -53,7 +53,7 @@ This approach is quite simple and works well for many cases.
 But it has some shortcomings.
 
 Split-Join
-""""""""""
+^^^^^^^^^^
 
 In graph 1 below, ``c`` has two colored (dimension-coordinate) parents which means that neither dimension can be renamed.
 However, when an extra node ``e`` is inserted (graph 2), ``c`` has only a single colored parent.
@@ -65,7 +65,7 @@ This is undesirable because the distance between a node and dimension coordinate
   :alt: split-join graph
 
 Cycles
-""""""
+^^^^^^
 
 All graphs used by :py:func:`scipp.transform_coords` must be directed and acyclic in order to ensure that all inputs to a node are available before processing that node.
 This does, however, allow for undirected cycles.
