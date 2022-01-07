@@ -70,9 +70,9 @@ def test_high_frequency_components_removed_by_lowpass_filter():
     dim = 'xx'
     x = sc.linspace(dim=dim, start=-0.1, stop=4.0, num=1000, unit='m')
     y = sc.sin(x * sc.scalar(1.0, unit='rad/m'))
-    low_freq = sc.DataArray(data=y.copy(), coords={dim: x})
-    y += sc.sin(x * sc.scalar(400.0, unit='rad/m'))
     da = sc.DataArray(data=y, coords={dim: x})
+    low_freq = da.copy()
+    da += sc.sin(x * sc.scalar(400.0, unit='rad/m'))
     sos = butter(da, dim, N=4, Wn=20 / x.unit)
     out = sosfiltfilt(da, dim, sos=sos)
     assert sc.allclose(out[20:-20].data, low_freq[20:-20].data, atol=sc.scalar(0.02))
