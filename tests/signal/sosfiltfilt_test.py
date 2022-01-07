@@ -107,16 +107,20 @@ def test_filtering_inner_and_outer_dimension_yields_equivalent_results():
     assert sc.identical(out1, out2.transpose())
 
 
-def test_filtering_slice_identical_to_slice_of_filtered():
-    dim = 'xx'
+def array2d(dim, extra_dim):
     x = sc.linspace(dim=dim, start=-0.1, stop=4.0, num=1000, unit='m')
     y = sc.sin(x * sc.scalar(1.0, unit='rad/m'))
     da = sc.DataArray(data=y, coords={dim: x})
     da += sc.sin(x * sc.scalar(400.0, unit='rad/m'))
-    da = sc.concat([da, da + da], 'extra_dim')
-    sos = butter(da, dim, N=4, Wn=20 / x.unit)
-    out2d = sosfiltfilt(da, dim, sos=sos)
-    assert sc.identical(out2d['extra_dim', 0],
-                        sosfiltfilt(da['extra_dim', 0], dim, sos=sos))
-    assert sc.identical(out2d['extra_dim', 1],
-                        sosfiltfilt(da['extra_dim', 1], dim, sos=sos))
+    return sc.concat([da, da + da], extra_dim)
+
+
+@pytest.mark.parametrize("da", [
+    array2d(dim='xx', extra_dim='yy'),
+    array2d(dim='xx', extra_dim='yy').transpose().copy()
+])
+def test_filtering_slice_identical_to_slice_of_filtered(da):
+    sos = butter(da, 'xx', N=4, Wn=20 / da.coords['xx'].unit)
+    out2d = sosfiltfilt(da, 'xx', sos=sos)
+    assert sc.identical(out2d['yy', 0], sosfiltfilt(da['yy', 0], 'xx', sos=sos))
+    assert sc.identical(out2d['yy', 1], sosfiltfilt(da['yy', 1], 'xx', sos=sos))
