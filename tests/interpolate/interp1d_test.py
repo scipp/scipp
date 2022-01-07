@@ -85,6 +85,22 @@ def test_data():
         theirs.interp1d(x=da.coords['xx'].values, y=da.values, axis=1)(x.values))
 
 
+def test_data_datetime():
+    da = make_array().rename_dims({'xx': 'time'})
+    x = sc.arange(dim='time',
+                  start=0,
+                  stop=da.sizes['time'],
+                  step=1,
+                  unit='s',
+                  dtype='datetime64')
+    da.coords['time'] = x
+    out = interp1d(da, 'time')(da.coords['time'])
+    assert np.array_equal(
+        out.values,
+        theirs.interp1d(x=da.coords['time'].values.astype('int64'), y=da.values,
+                        axis=0)(x.values))
+
+
 def test_close():
     # Sanity check: are we using interp1d correctly? Remove points and interpolate
     da = make_array()
@@ -119,6 +135,23 @@ def test_midpoints():
     assert np.array_equal(
         out.values,
         theirs.interp1d(x=da.coords['xx'].values, y=da.values, axis=0)(midpoints))
+
+
+def test_midpoints_datetime():
+    da = make_array().rename_dims({'xx': 'time'})
+    x = sc.arange(dim='time',
+                  start=0,
+                  stop=da.sizes['time'],
+                  step=1,
+                  unit='s',
+                  dtype='datetime64')
+    da.coords['time'] = x
+    out = interp1d(da, 'time')(da.coords['time'], midpoints=True)
+    midpoints = x[:-1].values + 0.5 * (x[1:].values - x[:-1].values)
+    assert np.array_equal(
+        out.values,
+        theirs.interp1d(x=da.coords['time'].values.astype('int64'), y=da.values,
+                        axis=0)(midpoints))
 
 
 @pytest.mark.parametrize("kind", ['nearest', 'quadratic', 'cubic'])
