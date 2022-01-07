@@ -89,6 +89,11 @@
       "targets": ["docs", "doctest", "cleanup_docs_html"]
     },
     {
+      "name": "package-docs",
+      "inherits": "docs",
+      "targets": ["docs", "doctest", "linkcheck" ,"cleanup_docs_html"]
+    },
+    {
       "name": "build",
       "configurePreset": "base",
       "configuration": "Release",

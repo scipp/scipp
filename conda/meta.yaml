@@ -78,8 +78,7 @@ build:
     - cmake --preset package-macos [osx]
     - cmake --preset package-windows [win]
     - cmake --build --preset build
-    - cmake --build --preset docs [linux]
-    - cmake --build --preset linkcheck [linux]
+    - cmake --build --preset package-docs [linux]
     - cp -r build/html $DOCS_HTML_DIR [linux]
     - ctest --preset test
 
