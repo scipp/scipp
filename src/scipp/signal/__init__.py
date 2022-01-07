@@ -13,7 +13,11 @@ from ..compat.wrapping import wrap1d
 
 @dataclass
 class SOS:
-    """Class for keeping track of an item in inventory."""
+    """
+    Second-order sections representation returned by :py:func:`scipp.signal.butter`.
+
+    This is used as input to :py:func:`scipp.signal.sosfiltfilt`.
+    """
     coord: Variable
     sos: ndarray
 
