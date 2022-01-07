@@ -226,6 +226,22 @@ TEST_P(BinTest, 2d_drop_out_of_group) {
             bin(table, {}, {groups1_drop, groups2_drop}));
 }
 
+TEST_P(
+    BinTest,
+    rebin_inner_1d_coord_to_2d_coord_gives_same_result_as_direct_binning_to_2d_coord) {
+  auto table = GetParam();
+  auto xy = bin(table, {edges_x_coarse, edges_y_coarse});
+  Variable edges_y_2d = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                                             Values{-2, 1, 2, -3, 0, 3});
+  // With bin-coord for Y
+  expect_near(bin(xy, {edges_y_2d}),
+              bin(bin(table, {edges_x_coarse}), {edges_y_2d}));
+  // Without bin-coord for Y
+  xy.coords().erase(Dim::Y);
+  expect_near(bin(xy, {edges_y_2d}),
+              bin(bin(table, {edges_x_coarse}), {edges_y_2d}));
+}
+
 TEST_P(BinTest, rebin_2d_with_2d_coord) {
   auto table = GetParam();
   auto xy = bin(table, {edges_x_coarse, edges_y_coarse});

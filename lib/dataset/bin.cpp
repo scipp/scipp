@@ -282,7 +282,8 @@ public:
         // algorithm, `indices`, containing the index of the target bin for
         // every input event. This is unrelated and varies independently,
         // depending on parameters of the input.
-        if (bin_coords.count(dim) && m_offsets.dims().empty() &&
+        if (key.ndim() == 1 && // index setup not implemented for this case
+            bin_coords.count(dim) && m_offsets.dims().empty() &&
             bin_coords.at(dim).dims().contains(dim) &&
             allsorted(bin_coords.at(dim), dim)) {
           const auto &bin_coord = bin_coords.at(dim);
