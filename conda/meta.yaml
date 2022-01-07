@@ -79,7 +79,6 @@ build:
     - cmake --preset package-windows [win]
     - cmake --build --preset build
     - cmake --build --preset docs [linux]
-    - cmake --build --preset doctest [linux]
     - cmake --build --preset linkcheck [linux]
     - cp -r build/html $DOCS_HTML_DIR [linux]
     - ctest --preset test
