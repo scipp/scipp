@@ -158,6 +158,5 @@ def test_plot_projection_3d_with_camera():
              'position': [150, 10, 10],
              'look_at': [0, 0, 30]
          })
-    plot(da, projection="3d", positions="xyz", camera={
-        'position': [150, 10, 10],
-    })
+    plot(da, projection="3d", positions="xyz", camera={'position': [150, 10, 10]})
+    plot(da, projection="3d", positions="xyz", camera={'look_at': [0, 0, 30]})
