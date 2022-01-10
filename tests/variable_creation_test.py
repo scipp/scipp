@@ -394,13 +394,6 @@ def test_datetime():
                         sc.scalar(-94716, dtype='datetime64', unit='min'))
 
 
-def test_datetime_epoch():
-    assert sc.identical(sc.datetime('epoch', unit='s'),
-                        sc.scalar(np.datetime64('1970-01-01T00:00:00', 's')))
-    assert sc.identical(sc.datetime(0, unit='s'),
-                        sc.scalar(np.datetime64('1970-01-01T00:00:00', 's')))
-
-
 def test_datetimes():
     assert sc.identical(
         sc.datetimes(dims=['t'], values=['1970', '2021'], unit='Y'),
@@ -436,3 +429,9 @@ def test_datetimes():
         sc.datetimes(dims=['t'], values=[-723, 2**13, -3**5], unit='min'),
         sc.array(dims=['t'],
                  values=np.array([-723, 2**13, -3**5], dtype='datetime64[m]')))
+
+
+def test_datetime_epoch():
+    assert sc.identical(sc.epoch(unit='s'),
+                        sc.scalar(np.datetime64('1970-01-01T00:00:00', 's')))
+    assert sc.identical(sc.epoch(unit='D'), sc.scalar(np.datetime64('1970-01-01', 'D')))
