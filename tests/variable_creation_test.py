@@ -393,6 +393,11 @@ def test_datetime():
     assert sc.identical(sc.datetime(-94716, unit='min'),
                         sc.scalar(-94716, dtype='datetime64', unit='min'))
 
+    assert sc.identical(sc.datetime(np.datetime64(314, 's'), unit='s'),
+                        sc.scalar(314, dtype='datetime64', unit='s'))
+    assert sc.identical(sc.datetime(np.datetime64(671, 'h')),
+                        sc.scalar(671, dtype='datetime64', unit='h'))
+
 
 def test_datetimes():
     assert sc.identical(
