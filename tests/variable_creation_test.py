@@ -399,3 +399,40 @@ def test_datetime_epoch():
                         sc.scalar(np.datetime64('1970-01-01T00:00:00', 's')))
     assert sc.identical(sc.datetime(0, unit='s'),
                         sc.scalar(np.datetime64('1970-01-01T00:00:00', 's')))
+
+
+def test_datetimes():
+    assert sc.identical(
+        sc.datetimes(dims=['t'], values=['1970', '2021'], unit='Y'),
+        sc.array(dims=['t'],
+                 values=[np.datetime64('1970', 'Y'),
+                         np.datetime64('2021', 'Y')],
+                 unit='Y'))
+    assert sc.identical(
+        sc.datetimes(dims=['t'],
+                     values=['2152-11-25T13:13:46', '1111-11-11T11:11:11'],
+                     unit='s'),
+        sc.array(dims=['t'],
+                 values=[
+                     np.datetime64('2152-11-25T13:13:46', 's'),
+                     np.datetime64('1111-11-11T11:11:11', 's')
+                 ],
+                 unit='s'))
+    assert sc.identical(
+        sc.datetimes(dims=['t'],
+                     values=['2152-11-25T13:13:46', '1111-11-11T11:11:11'],
+                     unit='us'),
+        sc.array(dims=['t'],
+                 values=[
+                     np.datetime64('2152-11-25T13:13:46', 'us'),
+                     np.datetime64('1111-11-11T11:11:11', 'us')
+                 ],
+                 unit='us'))
+
+    assert sc.identical(
+        sc.datetimes(dims=['t'], values=[0, 123, 2**10], unit='s'),
+        sc.array(dims=['t'], values=np.array([0, 123, 2**10], dtype='datetime64[s]')))
+    assert sc.identical(
+        sc.datetimes(dims=['t'], values=[-723, 2**13, -3**5], unit='min'),
+        sc.array(dims=['t'],
+                 values=np.array([-723, 2**13, -3**5], dtype='datetime64[m]')))

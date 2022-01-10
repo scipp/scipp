@@ -466,3 +466,9 @@ def datetime(value, unit=None) -> _cpp.Variable:
             return scalar(0, dtype='datetime64', unit=unit)
         return scalar(_np.datetime64(value), unit=unit)
     return scalar(value, unit=unit, dtype='datetime64')
+
+
+def datetimes(*, dims, values, unit=None) -> _cpp.Variable:
+    np_unit_str = f'[{_cpp.to_numpy_time_string(unit)}]' if unit else ''
+    return array(dims=dims,
+                 values=_np.asarray(values, dtype=f'datetime64{np_unit_str}'))
