@@ -147,3 +147,17 @@ def test_plot_redraw():
     p.redraw()
     after = p.view.figure.points_geometry.attributes["color"].array
     assert np.any(before != after)
+
+
+def test_plot_projection_3d_with_camera():
+    da = make_data_array_with_position_vectors()
+    plot(da,
+         projection="3d",
+         positions="xyz",
+         camera={
+             'position': [150, 10, 10],
+             'look_at': [0, 0, 30]
+         })
+    plot(da, projection="3d", positions="xyz", camera={
+        'position': [150, 10, 10],
+    })
