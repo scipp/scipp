@@ -5,7 +5,6 @@
 #include <cmath>
 
 #include "scipp/core/tag_util.h"
-#include "scipp/core/time_point.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/variable/astype.h"
 #include "scipp/variable/transform.h"
@@ -15,8 +14,7 @@
 namespace scipp::variable {
 
 struct MakeVariableWithType {
-  using AllSourceTypes =
-      std::tuple<double, float, int64_t, int32_t, bool, core::time_point>;
+  using AllSourceTypes = std::tuple<double, float, int64_t, int32_t, bool>;
 
   template <class T> struct Maker {
     template <size_t I, class... Types> constexpr static auto source_types() {
@@ -49,9 +47,6 @@ struct MakeVariableWithType {
                                              static_cast<T>(x.variance)};
                 else
                   return static_cast<T>(x);
-              },
-              [](const core::time_point &x) {
-                return static_cast<T>(x.time_since_epoch());
               }},
           "astype");
     }
@@ -62,8 +57,8 @@ struct MakeVariableWithType {
   };
 
   static Variable make(const Variable &var, DType type) {
-    return core::CallDType<double, float, int64_t, int32_t, bool,
-                           core::time_point>::apply<Maker>(type, var);
+    return core::CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(
+        type, var);
   }
 };
 
