@@ -17,11 +17,11 @@ TEST(SpatialTransformsTest, combine_to_linear) {
   x1 = Eigen::AngleAxisd(pi<double>, Eigen::Vector3d::UnitX());
 
   Eigen::Matrix3d x2;
-  x2 << 2, 0, 0, 0, 3, 0, 0, 0, 4;
+  x2 << 2, 0, 0, 0, 3, 0, 0, 0, 4; // cppcheck-suppress constStatement
 
   Eigen::Matrix3d result = scipp::core::Quaternion(x1) * x2;
   Eigen::Matrix3d expected;
-  expected << 2, 0, 0, 0, -3, 0, 0, 0, -4;
+  expected << 2, 0, 0, 0, -3, 0, 0, 0, -4; // cppcheck-suppress constStatement
 
   ASSERT_TRUE(result.isApprox(expected, TOLERANCE));
 }
