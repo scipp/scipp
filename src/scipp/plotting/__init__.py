@@ -86,6 +86,11 @@ def plot(*args, **kwargs):
         is used. `labels={"time": "time-labels"}`. Defaults to `None`.
     :type labels: dict, optional
 
+    :param camera: Define initial camera 'position' and 'look_at' (3d only).
+        Defaults to `None`. When nothing is specified, the camera looks at the
+        mean position of the pixels.
+    :type camera: dict, optional
+
     :param cax: Attach colorbar to supplied Matplotlib axes.
         Defaults to `None`.
     :type cax: matplotlib.axes.Axes, optional

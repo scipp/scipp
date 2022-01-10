@@ -35,7 +35,8 @@ def plot3d(scipp_obj_dict, *, positions, **kwargs):
                 show_outline=True,
                 xlabel=None,
                 ylabel=None,
-                zlabel=None):
+                zlabel=None,
+                camera=None):
         array = next(iter(scipp_obj_dict.values()))
         pos = array.meta[positions] if isinstance(positions, str) else positions
         out = {
@@ -64,7 +65,8 @@ def plot3d(scipp_obj_dict, *, positions, **kwargs):
                                      tick_size=tick_size,
                                      xlabel=xlabel,
                                      ylabel=ylabel,
-                                     zlabel=zlabel)
+                                     zlabel=zlabel,
+                                     camera=camera)
 
         return out
 
