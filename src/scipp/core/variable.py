@@ -484,8 +484,6 @@ def datetime(value: _Union[str, int, _np.datetime64],
       <scipp.Variable> ()  datetime64              [s]  [2021-01-10T14:16:15]
       >>> sc.datetime('2021-01-10T14:16:15', unit='ns')
       <scipp.Variable> ()  datetime64             [ns]  [2021-01-10T14:16:14.999999744]
-      >>> sc.datetime('now', unit='s')
-      <scipp.Variable> ()  datetime64              [s]  [2022-01-10T13:16:20]
       >>> sc.datetime(1610288175, unit='s')
       <scipp.Variable> ()  datetime64              [s]  [2021-01-10T14:16:15]
     """
