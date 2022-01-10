@@ -283,6 +283,7 @@ void init_dataset(py::module &m) {
       py::arg("x"), py::call_guard<py::gil_scoped_release>());
 
   bind_astype(dataArray);
+  bind_to(dataArray);
 
   bind_rebin<DataArray>(m);
   bind_rebin<Dataset>(m);

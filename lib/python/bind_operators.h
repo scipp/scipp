@@ -83,6 +83,71 @@ void bind_astype(py::class_<T, Ignored...> &c) {
         :rtype: Union[scipp.Variable, scipp.DataArray])");
 }
 
+template <class T, class... Ignored>
+void bind_to(py::class_<T, Ignored...> &c) {
+  c.def(
+      "to",
+      [](const T &self, const py::object &dtype, const std::string& units, const bool copy) {
+        const auto [dest_dtype, dest_units] =
+            cast_dtype_and_unit(dtype, units);
+
+        [[maybe_unused]] py::gil_scoped_release release;
+
+        bool convert_dtype_first;
+        const scipp::core::DType src_dtype(self.dtype());
+
+        using scipp::core::dtype;
+
+        if (src_dtype == dest_dtype) {
+            return to_unit(self, dest_units, copy ? scipp::CopyPolicy::Always : scipp::CopyPolicy::TryAvoid);
+        } else if (dest_dtype == dtype<double>) {
+           convert_dtype_first = true;
+        } else if (src_dtype == dtype<double>) {
+           convert_dtype_first = false;
+        } else if (dest_dtype == dtype<float>) {
+           convert_dtype_first = true;
+        } else if (src_dtype == dtype<float>) {
+           convert_dtype_first = false;
+        } else if (src_dtype == dtype<int64_t> && dest_dtype == dtype<int32_t>) {
+           convert_dtype_first = false;
+        } else if (src_dtype == dtype<int32_t> && dest_dtype == dtype<int64_t>) {
+           convert_dtype_first = true;
+        } else {
+           convert_dtype_first = true;
+        }
+
+        if (convert_dtype_first) {
+            auto data = astype(self, dest_dtype,
+                          copy ? scipp::CopyPolicy::Always
+                               : scipp::CopyPolicy::TryAvoid);
+
+            return to_unit(data, dest_units, copy ? scipp::CopyPolicy::Always
+                               : scipp::CopyPolicy::TryAvoid);
+        } else {
+            auto data = to_unit(self, dest_units, copy ? scipp::CopyPolicy::Always
+                               : scipp::CopyPolicy::TryAvoid);
+
+            return astype(data, dest_dtype,
+                          copy ? scipp::CopyPolicy::Always
+                               : scipp::CopyPolicy::TryAvoid);
+        }
+      },
+      py::kw_only(), py::arg("dtype") = std::nullopt, py::arg("units") = std::nullopt, py::arg("copy") = true,
+      R"(
+        Converts a Variable or DataArray to a different dtype and/or a different unit.
+
+        If the dtype and unit are both unchanged and ``copy`` is `False`, 
+        the object is returned without making a deep copy.
+
+        :param dtype: Target dtype.
+        :param units: Target units.
+        :param copy: If `False`, return the input object if possible.
+                     If `True`, the function always returns a new object.
+        :raises: If the data cannot be converted to the requested dtype or unit.
+        :return: New variable or data array with specified dtype and unit.
+        :rtype: Union[scipp.Variable, scipp.DataArray])");
+}
+
 template <class Other, class T, class... Ignored>
 void bind_inequality_to_operator(pybind11::class_<T, Ignored...> &c) {
   c.def(

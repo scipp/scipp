@@ -153,6 +153,7 @@ of variances.)");
   bind_common_operators(variable);
 
   bind_astype(variable);
+  bind_to(variable);
 
   bind_slice_methods(variable);
 
