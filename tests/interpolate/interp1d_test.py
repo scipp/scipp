@@ -147,7 +147,7 @@ def test_midpoints_datetime():
                   dtype='datetime64')
     da.coords['time'] = x
     out = interp1d(da, 'time')(da.coords['time'], midpoints=True)
-    int_x = x.astype('int64').values
+    int_x = (x - sc.epoch(unit=x.unit)).values
     midpoints = int_x[:-1] + 0.5 * (int_x[1:] - int_x[:-1])
     assert np.array_equal(
         out.values,

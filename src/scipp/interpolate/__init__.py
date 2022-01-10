@@ -7,7 +7,7 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.interpolate`.
 """
 
-from ..core import array, Variable, DataArray, DimensionError, UnitError
+from ..core import array, epoch, Variable, DataArray, DimensionError, UnitError
 from ..core import dtype, irreducible_mask
 from ..compat.wrapping import wrap1d
 
@@ -23,7 +23,7 @@ def _as_interpolation_type(x):
             return x.astype('int64', copy=False)
     else:
         if x.dtype == dtype.datetime64:
-            return x.astype('int64', copy=False)
+            return x - epoch(unit=x.unit)
     return x
 
 
