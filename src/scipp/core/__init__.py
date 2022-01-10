@@ -83,4 +83,4 @@ from .reduction import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all
 from .shape import broadcast, concat, concatenate, fold, flatten, transpose
 from .trigonometry import sin, cos, tan, asin, acos, atan, atan2
 from .unary import isnan, isinf, isfinite, isposinf, isneginf, to_unit
-from .variable import scalar, zeros, zeros_like, ones, ones_like, empty, empty_like, full, full_like, matrix, matrices, vector, vectors, array, linspace, geomspace, logspace, arange
+from .variable import scalar, zeros, zeros_like, ones, ones_like, empty, empty_like, full, full_like, matrix, matrices, vector, vectors, array, linspace, geomspace, logspace, arange, datetime

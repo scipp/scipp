@@ -372,3 +372,30 @@ def test_empty_sizes():
                         sc.empty(sizes=dict(zip(dims, shape))))
     with pytest.raises(ValueError):
         sc.empty(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
+
+
+def test_datetime():
+    assert sc.identical(sc.datetime('1970', unit='Y'),
+                        sc.scalar(np.datetime64('1970', 'Y')))
+    assert sc.identical(sc.datetime('2015-06-13'),
+                        sc.scalar(np.datetime64('2015-06-13', 'D')))
+    assert sc.identical(sc.datetime('2152-11-25T13:13:46'),
+                        sc.scalar(np.datetime64('2152-11-25T13:13:46', 's')))
+    assert sc.identical(sc.datetime('2152-11-25T13:13:46', unit='h'),
+                        sc.scalar(np.datetime64('2152-11-25T13', 'h')))
+    assert sc.identical(sc.datetime('2152-11-25T13:13:46', unit='us'),
+                        sc.scalar(np.datetime64('2152-11-25T13:13:46', 'us')))
+
+    assert sc.identical(sc.datetime(626, unit='s'),
+                        sc.scalar(626, dtype='datetime64', unit='s'))
+    assert sc.identical(sc.datetime(2**10, unit='ns'),
+                        sc.scalar(2**10, dtype='datetime64', unit='ns'))
+    assert sc.identical(sc.datetime(-94716, unit='min'),
+                        sc.scalar(-94716, dtype='datetime64', unit='min'))
+
+
+def test_datetime_epoch():
+    assert sc.identical(sc.datetime('epoch', unit='s'),
+                        sc.scalar(np.datetime64('1970-01-01T00:00:00', 's')))
+    assert sc.identical(sc.datetime(0, unit='s'),
+                        sc.scalar(np.datetime64('1970-01-01T00:00:00', 's')))
