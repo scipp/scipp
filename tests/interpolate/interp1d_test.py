@@ -171,8 +171,6 @@ def test_options(kind, fill_value):
 
 
 def test_structured_dtype_interpolation_interpolates_elements():
-    da = make_array()
-    da.data = sc.vector(value=[1, 2, 3]) * da.data
     x = sc.array(dims=['x'], values=[1, 3])
     da = sc.DataArray(data=sc.vectors(dims=['x'],
                                       values=[[1, 2, 3], [5, 4, 3]],
