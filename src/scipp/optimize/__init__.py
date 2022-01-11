@@ -11,6 +11,7 @@ from ..core import scalar, stddevs, Variable, DataArray
 from ..core import BinEdgeError
 from ..interpolate import _drop_masked
 
+import numpy as np
 from numbers import Real
 from typing import Callable, Dict, Tuple, Union
 from inspect import getfullargspec
@@ -61,7 +62,7 @@ def curve_fit(
     f: Callable,
     da: DataArray,
     *,
-    p0: Dict[str, Union[Variable, Real]] = None,
+    p0: Dict[str, Variable] = None,
     **kwargs
 ) -> Tuple[Dict[str, Union[Variable, Real]], Dict[str, Dict[str, Union[Variable,
                                                                        Real]]]]:
@@ -135,7 +136,10 @@ def curve_fit(
                                ydata=da.values,
                                sigma=sigma,
                                p0=p0)
-    popt = {k: _as_scalar(v, u) for k, v, u in zip(p, popt, p_units)}
+    popt = {
+        name: scalar(value=val, variance=var, unit=u)
+        for name, val, var, u in zip(p, popt, np.diag(pcov), p_units)
+    }
     pcov = _covariance_with_units(list(p.keys()), pcov, p_units)
     return popt, pcov
 

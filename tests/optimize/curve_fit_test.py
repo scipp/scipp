@@ -67,15 +67,15 @@ def test_masks_are_not_ignored():
     da.masks['mask'] = sc.zeros(sizes=da.sizes, dtype=bool)
     da.masks['mask'][-5:] = sc.scalar(True)
     masked, _ = curve_fit(func, da)
-    assert masked['a'] != unmasked['a']
-    assert masked['b'] != unmasked['b']
+    assert not sc.identical(masked['a'], unmasked['a'])
+    assert not sc.identical(masked['b'], unmasked['b'])
 
 
 @pytest.mark.parametrize("noise_scale", [1e-1, 1e-2, 1e-3, 1e-6, 1e-9])
 def test_optimized_params_approach_real_params_as_data_noise_decreases(noise_scale):
     popt, _ = curve_fit(func, array1d(a=1.7, b=1.5, noise_scale=noise_scale))
-    np.testing.assert_allclose(popt['a'], 1.7, rtol=2.0 * noise_scale)
-    np.testing.assert_allclose(popt['b'], 1.5, rtol=2.0 * noise_scale)
+    assert sc.allclose(popt['a'], sc.scalar(1.7), rtol=sc.scalar(2.0 * noise_scale))
+    assert sc.allclose(popt['b'], sc.scalar(1.5), rtol=sc.scalar(2.0 * noise_scale))
 
 
 @pytest.mark.parametrize("mask_pos", [0, 1, -3])
@@ -87,8 +87,8 @@ def test_masked_points_are_treated_as_if_they_were_removed(mask_pos, mask_size):
     masked, _ = curve_fit(func, da)
     removed, _ = curve_fit(
         func, sc.concat([da[:mask_pos], da[mask_pos + mask_size:]], da.dim))
-    assert masked['a'] == removed['a']
-    assert masked['b'] == removed['b']
+    assert sc.identical(masked['a'], removed['a'])
+    assert sc.identical(masked['b'], removed['b'])
 
 
 @pytest.mark.parametrize("variance,expected", [(1e9, 1.0), (1, 2.0), (1 / 3, 3.0),
@@ -101,7 +101,7 @@ def test_variances_determine_weights(variance, expected):
     da.variances[1] = variance
     # Fit a constant to highlight influence of weights
     popt, _ = curve_fit(lambda x, *, a: sc.scalar(a), da)
-    assert popt['a'] == pytest.approx(expected)
+    assert popt['a'].value == pytest.approx(expected)
 
 
 def test_fit_function_with_dimensionful_params_raises_UnitError_when_no_p0_given():
@@ -119,7 +119,7 @@ def test_fit_function_with_dimensionful_params_yields_outputs_with_units():
     x = sc.linspace(dim='x', start=0.5, stop=2.0, num=10, unit='m')
     da = sc.DataArray(f(x, a=1.2, b=1.3 / sc.Unit('m')), coords={'x': x})
     popt, pcov = curve_fit(f, da, p0={'a': 1.1, 'b': 1.2 / sc.Unit('m')})
-    assert not isinstance(popt['a'], sc.Variable)
+    assert popt['a'].unit == sc.Unit()
     assert popt['b'].unit == sc.Unit('1/m')
     assert not isinstance(pcov['a']['a'], sc.Variable)
     assert pcov['a']['b'].unit == sc.Unit('1/m')
@@ -132,7 +132,7 @@ def test_default_params_are_not_used_for_fit():
     popt, _ = curve_fit(partial(func, b=1.5),
                         array1d(a=1.7, b=1.5, noise_scale=noise_scale))
     assert 'b' not in popt
-    np.testing.assert_allclose(popt['a'], 1.7, rtol=2.0 * noise_scale)
+    assert sc.allclose(popt['a'], sc.scalar(1.7), rtol=sc.scalar(2.0 * noise_scale))
 
 
 def test_default_params_with_initial_guess_are_used_for_fit():
@@ -140,5 +140,5 @@ def test_default_params_with_initial_guess_are_used_for_fit():
     popt, _ = curve_fit(partial(func, b=1.5),
                         array1d(a=1.7, b=1.5, noise_scale=noise_scale),
                         p0={'b': 1.1})
-    np.testing.assert_allclose(popt['a'], 1.7, rtol=2.0 * noise_scale)
-    np.testing.assert_allclose(popt['b'], 1.5, rtol=2.0 * noise_scale)
+    assert sc.allclose(popt['a'], sc.scalar(1.7), rtol=sc.scalar(2.0 * noise_scale))
+    assert sc.allclose(popt['b'], sc.scalar(1.5), rtol=sc.scalar(2.0 * noise_scale))
