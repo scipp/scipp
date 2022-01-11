@@ -13,8 +13,8 @@ from ..interpolate import _drop_masked
 import numpy as np
 
 from numbers import Real
-from typing import Callable, List, Tuple, Union
-from inspect import signature
+from typing import Callable, Dict, Tuple, Union
+from inspect import getfullargspec
 
 
 def _as_scalar(obj, unit):
@@ -23,10 +23,10 @@ def _as_scalar(obj, unit):
     return scalar(value=obj, unit=unit)
 
 
-def _wrap_func(f, p_units):
+def _wrap_func(f, p_names, p_units):
     def func(x, *args):
-        p = [_as_scalar(v, u) for v, u in zip(args, p_units)]
-        return f(x, *p).values
+        p = {k: _as_scalar(v, u) for k, v, u in zip(p_names, args, p_units)}
+        return f(x, **p).values
 
     return func
 
@@ -46,13 +46,25 @@ def _covariance_with_units(pcov, units):
     return pcov
 
 
+def _make_defaults(f, p0):
+    spec = getfullargspec(f)
+    if len(spec.args) != 1 or spec.varargs is not None:
+        raise ValueError("Fit function must take exactly one positional argument")
+    defaults = {} if spec.kwonlydefaults is None else spec.kwonlydefaults
+    kwargs = {arg: 1.0 for arg in spec.kwonlyargs if arg not in defaults}
+    if p0 is not None:
+        kwargs.update(p0)
+    return kwargs
+
+
 def curve_fit(
-        f: Callable,
-        da: DataArray,
-        *,
-        p0: List[Variable] = None,
-        **kwargs
-) -> Tuple[List[Union[Variable, Real]], List[List[Union[Variable, Real]]]]:
+    f: Callable,
+    da: DataArray,
+    *,
+    p0: Dict[str, Union[Variable, Real]] = None,
+    **kwargs
+) -> Tuple[Dict[str, Union[Variable, Real]], Dict[str, Dict[str, Union[Variable,
+                                                                       Real]]]]:
     """Use non-linear least squares to fit a function, f, to data.
 
     This is a wrapper around :py:func:`scipy.optimize.curve_fit`. See there for a
@@ -109,11 +121,10 @@ def curve_fit(
     import scipy.optimize as opt
     da = _drop_masked(da, da.dim)
     sigma = stddevs(da).values if da.variances is not None else None
-    if p0 is None:
-        p0 = [1.0] * (len(signature(f).parameters) - 1)
-    p_units = [p.unit if isinstance(p, Variable) else None for p in p0]
-    p0 = [p.value if isinstance(p, Variable) else p for p in p0]
-    popt, pcov = opt.curve_fit(f=_wrap_func(f, p_units),
+    p = _make_defaults(f, p0)
+    p_units = [p.unit if isinstance(p, Variable) else None for p in p.values()]
+    p0 = [p.value if isinstance(p, Variable) else p for p in p.values()]
+    popt, pcov = opt.curve_fit(f=_wrap_func(f, p.keys(), p_units),
                                xdata=da.coords[da.dim],
                                ydata=da.values,
                                sigma=sigma,

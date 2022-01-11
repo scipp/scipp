@@ -7,13 +7,13 @@ from scipp.optimize import curve_fit
 import pytest
 
 
-def func(x, a, b):
+def func(x, *, a, b):
     return a * sc.exp(-(b / x.unit) * x)
 
 
 def array1d(*, a=1.2, b=1.3, noise_scale=0.1, size=50):
     x = sc.linspace(dim='xx', start=-0.1, stop=4.0, num=size, unit='m')
-    y = func(x, a, b)
+    y = func(x, a=a, b=b)
     rng = np.random.default_rng()
     # Noise is random but avoiding unbounded values to avoid flaky tests
     y.values += noise_scale * np.clip(rng.normal(size=size), -2.0, 2.0)
@@ -96,12 +96,12 @@ def test_variances_determine_weights(variance, expected):
     da = sc.DataArray(data=y, coords={'x': x})
     da.variances[1] = variance
     # Fit a constant to highlight influence of weights
-    popt, _ = curve_fit(lambda x, a: sc.scalar(a), da)
+    popt, _ = curve_fit(lambda x, *, a: sc.scalar(a), da)
     assert popt[0] == pytest.approx(expected)
 
 
 def test_fit_function_with_dimensionful_params_raises_UnitError_when_no_p0_given():
-    def f(x, a, b):
+    def f(x, *, a, b):
         return a * sc.exp(-b * x)
 
     with pytest.raises(sc.UnitError):
@@ -109,13 +109,12 @@ def test_fit_function_with_dimensionful_params_raises_UnitError_when_no_p0_given
 
 
 def test_fit_function_with_dimensionful_params_yields_outputs_with_units():
-    def f(x, a, b):
+    def f(x, *, a, b):
         return a * sc.exp(-b * x)
 
     x = sc.linspace(dim='x', start=0.5, stop=2.0, num=10, unit='m')
-    da = sc.DataArray(f(x, 1.2, 1.3 / sc.Unit('m')), coords={'x': x})
-    p0 = [1.1, 1.2 / sc.Unit('m')]
-    popt, pcov = curve_fit(f, da, p0=p0)
+    da = sc.DataArray(f(x, a=1.2, b=1.3 / sc.Unit('m')), coords={'x': x})
+    popt, pcov = curve_fit(f, da, p0={'a': 1.1, 'b': 1.2 / sc.Unit('m')})
     assert not isinstance(popt[0], sc.Variable)
     assert popt[1].unit == sc.Unit('1/m')
     assert not isinstance(pcov[0][0], sc.Variable)
