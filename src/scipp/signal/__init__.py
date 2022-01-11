@@ -8,6 +8,7 @@ This subpackage provides wrappers for a subset of functions from
 """
 from dataclasses import dataclass
 from numpy import ndarray
+from typing import Union
 
 from ..core import array, identical, islinspace, to_unit, DataArray, Variable
 from ..core import UnitError, CoordError
@@ -25,6 +26,14 @@ class SOS:
     coord: Variable
     sos: ndarray
 
+    def filtfilt(self, obj: Union[Variable, DataArray], dim: str,
+                 **kwargs) -> DataArray:
+        """
+        Forwards to :py:func:`scipp.signal.sosfiltfilt` with sos argument set to the SOS
+        instance.
+        """
+        return sosfiltfilt(obj, dim=dim, sos=self, **kwargs)
+
 
 def _frequency(coord: Variable) -> Variable:
     if not islinspace(coord).value:
@@ -32,7 +41,7 @@ def _frequency(coord: Variable) -> Variable:
     return (len(coord) - 1) / (coord[-1] - coord[0])
 
 
-def butter(da: DataArray, dim: str, *, N: int, Wn: Variable, **kwargs) -> SOS:
+def butter(coord: Variable, *, N: int, Wn: Variable, **kwargs) -> SOS:
     """
     Butterworth digital and analog filter design.
 
@@ -45,16 +54,15 @@ def butter(da: DataArray, dim: str, *, N: int, Wn: Variable, **kwargs) -> SOS:
     This is a wrapper around :py:func:`scipy.signal.butter`. See there for a
     complete description of parameters. The differences are:
 
-    - Instead of a sampling frequency fs, this wrapper takes a data array ``da`` and a
-      dimension label ``dim`` as input. The sampling frequency is then computed from
-      ``da.coords[dim]``. Only data sampled at regular intervals are supported.
+    - Instead of a sampling frequency fs, this wrapper takes a variable ``coord`` as
+      input. The sampling frequency is then computed from this coordinate. Only data
+      sampled at regular intervals are supported.
     - The critical frequency or frequencies must be provided as a variable with correct
       unit.
     - Only 'sos' output is supported.
 
     :seealso: :py:func:`scipp.signal.sosfiltfilt`
     """
-    coord = da.coords[dim]
     fs = _frequency(coord).value
     try:
         Wn = to_unit(Wn, one / coord.unit)
@@ -69,7 +77,20 @@ def butter(da: DataArray, dim: str, *, N: int, Wn: Variable, **kwargs) -> SOS:
 
 
 @wrap1d(keep_coords=True)
-def sosfiltfilt(da: DataArray, dim: str, *, sos: SOS, **kwargs) -> DataArray:
+def _sosfiltfilt(da: DataArray, dim: str, *, sos: SOS, **kwargs) -> DataArray:
+    if not identical(da.coords[dim], sos.coord):
+        raise CoordError(f"Coord\n{da.coords[dim]}\nof filter dimension '{dim}' does "
+                         f"not match coord\n{sos.coord}\nused for creating the "
+                         "second-order sections representation by scipp.signal.butter.")
+    import scipy.signal
+    data = array(dims=da.dims,
+                 unit=da.unit,
+                 values=scipy.signal.sosfiltfilt(sos.sos, da.values, **kwargs))
+    return DataArray(data=data)
+
+
+def sosfiltfilt(obj: Union[Variable, DataArray], dim: str, *, sos: SOS,
+                **kwargs) -> DataArray:
     """
     A forward-backward digital filter using cascaded second-order sections.
 
@@ -77,7 +98,8 @@ def sosfiltfilt(da: DataArray, dim: str, *, sos: SOS, **kwargs) -> DataArray:
     complete description of parameters. The differences are:
 
     - Instead of an array ``x`` and an optional axis, the input must be a data array
-      and dimension label.
+      (or variable) and dimension label. If it is a variable, the coord used for setting
+      up the second-order sections is used as output coordinate.
     - The array of second-order filter coefficients ``sos`` includes the coordinate
       used for computing the frequency used for creating the coefficients. This is
       compared to the corresponding coordinate of the input data array to ensure that
@@ -90,18 +112,17 @@ def sosfiltfilt(da: DataArray, dim: str, *, sos: SOS, **kwargs) -> DataArray:
       >>> y = sc.sin(x * sc.scalar(1.0, unit='rad/m'))
       >>> y += sc.sin(x * sc.scalar(400.0, unit='rad/m'))
       >>> da = sc.DataArray(data=y, coords={'x': x})
-      >>> sos = butter(da, 'x', N=4, Wn=20 / x.unit)
+      >>> sos = butter(da.coords['x'], N=4, Wn=20 / x.unit)
       >>> out = sosfiltfilt(da, 'x', sos=sos)
+
+    Instead of calling sosfiltfilt the more convenient filtfilt method of
+    :py:class:`scipp.signal.SOS` can be used:
+
+      >>> out = butter(da.coords['x'], N=4, Wn=20 / x.unit).filtfilt(da, 'x')
     """
-    if not identical(da.coords[dim], sos.coord):
-        raise CoordError(f"Coord\n{da.coords[dim]}\nof filter dimension '{dim}' does "
-                         f"not match coord\n{sos.coord}\nused for creating the "
-                         "second-order sections representation by scipp.signal.butter.")
-    import scipy.signal
-    data = array(dims=da.dims,
-                 unit=da.unit,
-                 values=scipy.signal.sosfiltfilt(sos.sos, da.values, **kwargs))
-    return DataArray(data=data)
+    da = obj if isinstance(obj, DataArray) else DataArray(data=obj,
+                                                          coords={dim: sos.coord})
+    return _sosfiltfilt(da, dim=dim, sos=sos, **kwargs)
 
 
 __all__ = ['butter', 'sosfiltfilt']
