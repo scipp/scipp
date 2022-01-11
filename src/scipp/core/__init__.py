@@ -62,6 +62,11 @@ from .bins import _groupby_bins, Bins
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
 setattr(GroupByDataset, 'bins', property(_groupby_bins))
 
+from .operations import to as to
+
+setattr(Variable, 'to', to)
+setattr(DataArray, 'to', to)
+
 # Prevent unwanted conversion to numpy arrays by operations. Properly defining
 # __array_ufunc__ should be possible by converting non-scipp arguments to
 # variables. The most difficult part is probably mapping the ufunc to scipp

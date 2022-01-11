@@ -6,6 +6,7 @@ from typing import Optional, Union
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .unary import to_unit
 from ..typing import VariableLike
 
 
@@ -166,3 +167,59 @@ def where(condition: _cpp.Variable, x: _cpp.Variable,
     :seealso: :py:func:`scipp.choose`
     """
     return _call_cpp_func(_cpp.where, condition, x, y)
+
+
+def to(var: Union[_cpp.Variable, _cpp.DataArray], *, unit=None, dtype=None, copy=True):
+    """
+    Converts a Variable or DataArray to a different dtype and/or a different unit.
+
+    If the dtype and unit are both unchanged and ``copy`` is `False`,
+    the object is returned without making a deep copy.
+
+    This method will choose whether to do the dtype or units translation first, by
+    using the following rules in order:
+    - If either the input or output dtype is float64, the unit translation will be done
+      on the float64 type
+    - If either the input or output dtype is float32, the unit translation will be done
+      on the float32 type
+    - If both the input and output dtypes are integer types, the unit translation will
+      be done on the larger type
+    - In other cases, the dtype is converted first and then the unit translation is done
+
+    :param dtype: Target dtype.
+    :param unit: Target units.
+    :param copy: If `False`, return the input object if possible.
+                 If `True`, the function always returns a new object.
+    :raises: If the data cannot be converted to the requested dtype or unit.
+    :return: New variable or data array with specified dtype and unit.
+    """
+    if unit is None and dtype is None:
+        raise ValueError("Must provide dtype or unit or both")
+
+    if dtype is None or var.dtype == dtype:
+        return to_unit(var, unit, copy=copy)
+
+    if unit is None or var.unit == unit:
+        return var.astype(dtype, copy=copy)
+
+    if dtype == _cpp.dtype.float64 or dtype == "float64":
+        convert_dtype_first = True
+    elif var.dtype == _cpp.dtype.float64:
+        convert_dtype_first = False
+    elif dtype == _cpp.dtype.float32 or dtype == "float32":
+        convert_dtype_first = True
+    elif var.dtype == _cpp.dtype.float32:
+        convert_dtype_first = False
+    elif var.dtype == _cpp.dtype.int64 and (dtype == _cpp.dtype.int32
+                                            or dtype == "int32"):
+        convert_dtype_first = False
+    elif var.dtype == _cpp.dtype.int32 and (dtype == _cpp.dtype.int64
+                                            or dtype == "int64"):
+        convert_dtype_first = True
+    else:
+        convert_dtype_first = True
+
+    if convert_dtype_first:
+        return to_unit(var.astype(dtype, copy=copy), unit=unit, copy=copy)
+    else:
+        return to_unit(var, unit=unit, copy=copy).astype(dtype, copy=copy)

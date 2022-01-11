@@ -1004,3 +1004,10 @@ def test_to_without_dtype():
     assert sc.identical(
         data.to(unit="mm"),
         sc.array(dims=["x"], values=[1000, 2000, 3000], dtype="int64", unit="mm"))
+
+
+def test_to_without_any_arguments():
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
+
+    with pytest.raises(ValueError):
+        data.to()
