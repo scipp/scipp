@@ -62,11 +62,6 @@ from .bins import _groupby_bins, Bins
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
 setattr(GroupByDataset, 'bins', property(_groupby_bins))
 
-from .operations import to as to
-
-setattr(Variable, 'to', to)
-setattr(DataArray, 'to', to)
-
 # Prevent unwanted conversion to numpy arrays by operations. Properly defining
 # __array_ufunc__ should be possible by converting non-scipp arguments to
 # variables. The most difficult part is probably mapping the ufunc to scipp
@@ -83,7 +78,7 @@ from .cumulative import cumsum
 from .dataset import irreducible_mask, merge
 from .groupby import groupby
 from .math import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc
-from .operations import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where
+from .operations import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where, to
 from .reduction import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
 from .shape import broadcast, concat, concatenate, fold, flatten, transpose
 from .trigonometry import sin, cos, tan, asin, acos, atan, atan2
