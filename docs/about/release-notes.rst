@@ -17,6 +17,7 @@ Features
 * Added :py:func:`scipp.optimize.curve_fit` as convenience wrappers of the scipy function of the same name `#2350 <https://github.com/scipp/scipp/pull/2350>`_.
 * Added :py:func:`scipp.signal.butter` and :py:func:`scipp.signal.sosfiltfilt` as wrappers of the scipy functions of the same name `#2356 <https://github.com/scipp/scipp/pull/2356>`_.
 * Added :py:func.`scipp.Variable.to` and :py:func.`scipp.DataArray.to` as a convenience function for simultaneously converting dtype and units.
+* Added :py:func:`scipp.datetime`, :py:func:`scipp.datetimes`, and :py:func:`scipp.epoch` to conveniently construct variables containing datetimes `#2360 <https://github.com/scipp/scipp/pull/2360>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~

@@ -59,4 +59,6 @@ void init_units(py::module &m) {
   units.attr("us") = units::us;
   units.attr("ns") = units::ns;
   units.attr("mm") = units::mm;
+
+  m.def("to_numpy_time_string", to_numpy_time_string);
 }

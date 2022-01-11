@@ -8,8 +8,11 @@ Creation functions
 
    array
    arange
+   datetime
+   datetimes
    empty
    empty_like
+   epoch
    full
    full_like
    geomspace
