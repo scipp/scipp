@@ -2,7 +2,6 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from typing import Dict, Optional, Sequence, Union
-import warnings
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
@@ -194,10 +193,6 @@ class GroupbyBins:
     """
     def __init__(self, obj):
         self._obj = obj
-
-    def concatenate(self, dim):
-        warnings.warn("`concatenate` is deprecated; use `concat`.", DeprecationWarning)
-        return self.concat(dim)
 
     def concat(self, dim):
         return self._obj.concat(dim)

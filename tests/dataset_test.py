@@ -412,13 +412,13 @@ def test_dataset_merge():
     assert sc.identical(b['d2'], c['d2'])
 
 
-def test_dataset_concatenate():
+def test_dataset_concat():
     a = sc.Dataset(data={'data': sc.Variable(dims=['x'], values=np.array([11, 12]))},
                    coords={'x': sc.Variable(dims=['x'], values=np.array([1, 2]))})
     b = sc.Dataset(data={'data': sc.Variable(dims=['x'], values=np.array([13, 14]))},
                    coords={'x': sc.Variable(dims=['x'], values=np.array([3, 4]))})
 
-    c = sc.concatenate(a, b, 'x')
+    c = sc.concat([a, b], 'x')
 
     assert np.array_equal(c.coords['x'].values, np.array([1, 2, 3, 4]))
     assert np.array_equal(c['data'].values, np.array([11, 12, 13, 14]))

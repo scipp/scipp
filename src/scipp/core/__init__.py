@@ -80,7 +80,7 @@ from .groupby import groupby
 from .math import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc
 from .operations import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where
 from .reduction import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
-from .shape import broadcast, concat, concatenate, fold, flatten, transpose
+from .shape import broadcast, concat, fold, flatten, transpose
 from .trigonometry import sin, cos, tan, asin, acos, atan, atan2
 from .unary import isnan, isinf, isfinite, isposinf, isneginf, to_unit
 from .variable import scalar, zeros, zeros_like, ones, ones_like, empty, empty_like, full, full_like, matrix, matrices, vector, vectors, array, linspace, geomspace, logspace, arange, datetime, datetimes, epoch
