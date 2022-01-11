@@ -10,7 +10,6 @@ This subpackage provides wrappers for a subset of functions from
 from ..core import scalar, stddevs, Variable, DataArray
 from ..core import BinEdgeError
 from ..interpolate import _drop_masked
-import numpy as np
 
 from numbers import Real
 from typing import Callable, Dict, Tuple, Union
@@ -31,9 +30,10 @@ def _wrap_func(f, p_names, p_units):
     return func
 
 
-def _covariance_with_units(pcov, units):
-    pcov = pcov.astype(dtype=object)
-    for i, row in enumerate(pcov):
+def _covariance_with_units(p_names, pcov_values, units):
+    pcov = {}
+    for i, row in enumerate(pcov_values):
+        pcov[p_names[i]] = {}
         for j, elem in enumerate(row):
             ui = units[i]
             uj = units[j]
@@ -42,7 +42,7 @@ def _covariance_with_units(pcov, units):
                 u = uj
             elif uj is not None:
                 u = ui * uj
-            pcov[i, j] = _as_scalar(elem, u)
+            pcov[p_names[i]][p_names[j]] = _as_scalar(elem, u)
     return pcov
 
 
@@ -129,8 +129,8 @@ def curve_fit(
                                ydata=da.values,
                                sigma=sigma,
                                p0=p0)
-    popt = np.array([_as_scalar(v, u) for v, u in zip(popt, p_units)])
-    pcov = _covariance_with_units(pcov, p_units)
+    popt = {k: _as_scalar(v, u) for k, v, u in zip(p, popt, p_units)}
+    pcov = _covariance_with_units(list(p.keys()), pcov, p_units)
     return popt, pcov
 
 
