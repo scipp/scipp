@@ -86,9 +86,13 @@ def plot(*args, **kwargs):
         is used. `labels={"time": "time-labels"}`. Defaults to `None`.
     :type labels: dict, optional
 
-    :param camera: Define initial camera 'position' and 'look_at' (3d only).
-        Defaults to `None`. When nothing is specified, the camera looks at the
-        mean position of the pixels.
+    :param camera: Dict configuring the camera. Valid entries are 'position' and
+        'look_at'. This option is valid only for 3-D scatter plots.
+        The 'position' entry defined the position of the camera and the 'look_at'
+        entry defines the point the camera is looking at.
+        Both must be scalar variables with the correct unit, i.e., the unit of the
+        scatter point positions. Defaults to `None`, in which case the camera looks
+        at the center of the cloud of plotted points.
     :type camera: dict, optional
 
     :param cax: Attach colorbar to supplied Matplotlib axes.
