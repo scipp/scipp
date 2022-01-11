@@ -78,6 +78,12 @@ def test_optimized_params_approach_real_params_as_data_noise_decreases(noise_sca
     assert sc.allclose(popt['b'], sc.scalar(1.5), rtol=sc.scalar(2.0 * noise_scale))
 
 
+def test_optimized_params_variances_are_diag_of_covariance_matrix():
+    popt, pcov = curve_fit(func, array1d(a=1.7, b=1.5))
+    assert popt['a'].variance == pcov['a']['a']
+    assert popt['b'].variance == pcov['b']['b']
+
+
 @pytest.mark.parametrize("mask_pos", [0, 1, -3])
 @pytest.mark.parametrize("mask_size", [1, 2])
 def test_masked_points_are_treated_as_if_they_were_removed(mask_pos, mask_size):
