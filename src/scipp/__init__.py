@@ -99,9 +99,9 @@ _binding.bind_pop()
 # Assign method binding for both Variable and DataArray
 for _cls in (Variable, DataArray):
     _binding.bind_functions_as_methods(
-        _cls, globals(), ('broadcast', 'flatten', 'fold', 'transpose', 'all', 'any',
-                          'mean', 'sum', 'nanmean', 'nansum', 'floor', 'ceil', 'round',
-                          'to'))
+        _cls, globals(),
+        ('broadcast', 'flatten', 'fold', 'transpose', 'all', 'any', 'mean', 'sum',
+         'nanmean', 'nansum', 'floor', 'ceil', 'round', 'to'))
 del _cls
 # Assign method binding for JUST Variable
 _binding.bind_functions_as_methods(Variable, globals(),
