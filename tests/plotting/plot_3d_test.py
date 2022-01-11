@@ -9,6 +9,8 @@ from ..factory import make_dense_data_array, make_binned_data_array
 from .plot_helper import plot
 import matplotlib
 
+import pytest
+
 matplotlib.use('Agg')
 
 
@@ -151,12 +153,34 @@ def test_plot_redraw():
 
 def test_plot_projection_3d_with_camera():
     da = make_data_array_with_position_vectors()
+    da.coords['xyz'].unit = 'm'
     plot(da,
          projection="3d",
          positions="xyz",
          camera={
-             'position': [150, 10, 10],
-             'look_at': [0, 0, 30]
+             'position': sc.vector(value=[150, 10, 10], unit='m'),
+             'look_at': sc.vector(value=[0, 0, 30], unit='m')
          })
-    plot(da, projection="3d", positions="xyz", camera={'position': [150, 10, 10]})
-    plot(da, projection="3d", positions="xyz", camera={'look_at': [0, 0, 30]})
+    plot(da,
+         projection="3d",
+         positions="xyz",
+         camera={'position': sc.vector(value=[150, 10, 10], unit='m')})
+    plot(da,
+         projection="3d",
+         positions="xyz",
+         camera={'look_at': sc.vector(value=[0, 0, 30], unit='m')})
+
+
+def test_plot_projection_3d_with_camera_raises_if_camera_param_units_wrong():
+    da = make_data_array_with_position_vectors()
+    da.coords['xyz'].unit = 'm'
+    with pytest.raises(sc.UnitError):
+        plot(da,
+             projection="3d",
+             positions="xyz",
+             camera={'position': sc.vector(value=[150, 10, 10], unit='mm')})
+    with pytest.raises(sc.UnitError):
+        plot(da,
+             projection="3d",
+             positions="xyz",
+             camera={'look_at': sc.vector(value=[0, 0, 30], unit='mm')})
