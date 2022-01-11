@@ -943,7 +943,7 @@ def test_to_int64_to_float64():
     data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
 
     assert sc.identical(
-        data.to(units="km", dtype="float64"),
+        data.to(unit="km", dtype="float64"),
         sc.array(dims=["x"], values=[0.001, 0.002, 0.003], dtype="float64", unit="km"))
 
 
@@ -952,7 +952,7 @@ def test_to_int64_to_float32():
     data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
 
     assert sc.identical(
-        data.to(units="km", dtype="float32"),
+        data.to(unit="km", dtype="float32"),
         sc.array(dims=["x"], values=[0.001, 0.002, 0.003], dtype="float32", unit="km"))
 
 
@@ -961,7 +961,7 @@ def test_to_float64_to_int64():
     data = sc.array(dims=["x"], values=[0.001, 0.002, 0.003], dtype="float64", unit="m")
 
     assert sc.identical(
-        data.to(units="mm", dtype="int64"),
+        data.to(unit="mm", dtype="int64"),
         sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="mm"))
 
 
@@ -970,7 +970,7 @@ def test_to_float32_to_int64():
     data = sc.array(dims=["x"], values=[0.001, 0.002, 0.003], dtype="float32", unit="m")
 
     assert sc.identical(
-        data.to(units="mm", dtype="int64"),
+        data.to(unit="mm", dtype="int64"),
         sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="mm"))
 
 
@@ -978,7 +978,7 @@ def test_to_int64_to_int32():
     # Will be lossy if dtype conversion done first
     data = sc.array(dims=["x"], values=[1000 * 2**30], dtype="int64", unit="m")
 
-    assert sc.identical(data.to(units="km", dtype="int32"),
+    assert sc.identical(data.to(unit="km", dtype="int32"),
                         sc.array(dims=["x"], values=[2**30], dtype="int32", unit="km"))
 
 
@@ -987,5 +987,21 @@ def test_to_int32_to_int64():
     data = sc.array(dims=["x"], values=[2**30], dtype="int32", unit="m")
 
     assert sc.identical(
-        data.to(units="mm", dtype="int64"),
+        data.to(unit="mm", dtype="int64"),
         sc.array(dims=["x"], values=[1000 * 2**30], dtype="int64", unit="mm"))
+
+
+def test_to_without_unit():
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int32", unit="m")
+
+    assert sc.identical(
+        data.to(dtype="int64"),
+        sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m"))
+
+
+def test_to_without_dtype():
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
+
+    assert sc.identical(
+        data.to(unit="mm"),
+        sc.array(dims=["x"], values=[1000, 2000, 3000], dtype="int64", unit="mm"))

@@ -87,19 +87,19 @@ template <class T, class... Ignored>
 void bind_to(py::class_<T, Ignored...> &c) {
   c.def(
       "to",
-      [](const T &self, const py::object &dtype, const std::string& units, const bool copy) {
-        const auto [dest_dtype, dest_units] =
-            cast_dtype_and_unit(dtype, units);
+      [](const T &self, const py::object &dt, const std::optional<ProtoUnit> unit, const bool copy) {
+        using scipp::core::dtype;
+
+        const auto src_dtype(self.dtype());
+        const auto dest_dtype(dt.is_none() ? src_dtype : scipp_dtype(dt));
+        const auto dest_units(unit.has_value() ? make_unit(unit.value()) : self.unit());
 
         [[maybe_unused]] py::gil_scoped_release release;
 
         bool convert_dtype_first;
-        const scipp::core::DType src_dtype(self.dtype());
-
-        using scipp::core::dtype;
 
         if (src_dtype == dest_dtype) {
-            return to_unit(self, dest_units, copy ? scipp::CopyPolicy::Always : scipp::CopyPolicy::TryAvoid);
+           return to_unit(self, dest_units, copy ? scipp::CopyPolicy::Always : scipp::CopyPolicy::TryAvoid);
         } else if (dest_dtype == dtype<double>) {
            convert_dtype_first = true;
         } else if (src_dtype == dtype<double>) {
@@ -132,7 +132,7 @@ void bind_to(py::class_<T, Ignored...> &c) {
                                : scipp::CopyPolicy::TryAvoid);
         }
       },
-      py::kw_only(), py::arg("dtype") = std::nullopt, py::arg("units") = std::nullopt, py::arg("copy") = true,
+      py::kw_only(), py::arg("dtype") = py::none(), py::arg("unit") = std::nullopt, py::arg("copy") = true,
       R"(
         Converts a Variable or DataArray to a different dtype and/or a different unit.
 
@@ -140,7 +140,7 @@ void bind_to(py::class_<T, Ignored...> &c) {
         the object is returned without making a deep copy.
 
         :param dtype: Target dtype.
-        :param units: Target units.
+        :param unit: Target units.
         :param copy: If `False`, return the input object if possible.
                      If `True`, the function always returns a new object.
         :raises: If the data cannot be converted to the requested dtype or unit.
