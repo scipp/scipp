@@ -196,10 +196,10 @@ def to(var: Union[_cpp.Variable, _cpp.DataArray], *, unit=None, dtype=None, copy
     if unit is None and dtype is None:
         raise ValueError("Must provide dtype or unit or both")
 
-    if dtype is None or var.dtype == dtype:
+    if dtype is None:
         return to_unit(var, unit, copy=copy)
 
-    if unit is None or var.unit == unit:
+    if unit is None:
         return var.astype(dtype, copy=copy)
 
     if dtype == _cpp.dtype.float64 or dtype == "float64":
