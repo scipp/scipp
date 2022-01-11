@@ -994,9 +994,8 @@ def test_to_int32_to_int64():
 def test_to_without_unit():
     data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int32", unit="m")
 
-    assert sc.identical(
-        data.to(dtype="int64"),
-        sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m"))
+    assert sc.identical(data.to(dtype="int64"),
+                        sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m"))
 
 
 def test_to_without_dtype():

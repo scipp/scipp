@@ -297,5 +297,4 @@ def test_to():
 
     assert sc.identical(
         da.to(unit="mm", dtype="int64"),
-        sc.DataArray(data=sc.scalar(value=1000, dtype="int64", unit="mm"))
-    )
+        sc.DataArray(data=sc.scalar(value=1000, dtype="int64", unit="mm")))

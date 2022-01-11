@@ -87,52 +87,61 @@ template <class T, class... Ignored>
 void bind_to(py::class_<T, Ignored...> &c) {
   c.def(
       "to",
-      [](const T &self, const py::object &dt, const std::optional<ProtoUnit> unit, const bool copy) {
+      [](const T &self, const py::object &dt,
+         const std::optional<ProtoUnit> unit, const bool copy) {
         using scipp::core::dtype;
 
         const auto src_dtype(self.dtype());
         const auto dest_dtype(dt.is_none() ? src_dtype : scipp_dtype(dt));
-        const auto dest_units(unit.has_value() ? make_unit(unit.value()) : self.unit());
+        const auto dest_units(unit.has_value() ? make_unit(unit.value())
+                                               : self.unit());
 
         [[maybe_unused]] py::gil_scoped_release release;
 
         bool convert_dtype_first;
 
         if (src_dtype == dest_dtype) {
-           return to_unit(self, dest_units, copy ? scipp::CopyPolicy::Always : scipp::CopyPolicy::TryAvoid);
+          return to_unit(self, dest_units,
+                         copy ? scipp::CopyPolicy::Always
+                              : scipp::CopyPolicy::TryAvoid);
         } else if (dest_dtype == dtype<double>) {
-           convert_dtype_first = true;
+          convert_dtype_first = true;
         } else if (src_dtype == dtype<double>) {
-           convert_dtype_first = false;
+          convert_dtype_first = false;
         } else if (dest_dtype == dtype<float>) {
-           convert_dtype_first = true;
+          convert_dtype_first = true;
         } else if (src_dtype == dtype<float>) {
-           convert_dtype_first = false;
-        } else if (src_dtype == dtype<int64_t> && dest_dtype == dtype<int32_t>) {
-           convert_dtype_first = false;
-        } else if (src_dtype == dtype<int32_t> && dest_dtype == dtype<int64_t>) {
-           convert_dtype_first = true;
+          convert_dtype_first = false;
+        } else if (src_dtype == dtype<int64_t> &&
+                   dest_dtype == dtype<int32_t>) {
+          convert_dtype_first = false;
+        } else if (src_dtype == dtype<int32_t> &&
+                   dest_dtype == dtype<int64_t>) {
+          convert_dtype_first = true;
         } else {
-           convert_dtype_first = true;
+          convert_dtype_first = true;
         }
 
         if (convert_dtype_first) {
-            auto data = astype(self, dest_dtype,
-                          copy ? scipp::CopyPolicy::Always
-                               : scipp::CopyPolicy::TryAvoid);
+          auto data = astype(self, dest_dtype,
+                             copy ? scipp::CopyPolicy::Always
+                                  : scipp::CopyPolicy::TryAvoid);
 
-            return to_unit(data, dest_units, copy ? scipp::CopyPolicy::Always
-                               : scipp::CopyPolicy::TryAvoid);
+          return to_unit(data, dest_units,
+                         copy ? scipp::CopyPolicy::Always
+                              : scipp::CopyPolicy::TryAvoid);
         } else {
-            auto data = to_unit(self, dest_units, copy ? scipp::CopyPolicy::Always
-                               : scipp::CopyPolicy::TryAvoid);
+          auto data = to_unit(self, dest_units,
+                              copy ? scipp::CopyPolicy::Always
+                                   : scipp::CopyPolicy::TryAvoid);
 
-            return astype(data, dest_dtype,
-                          copy ? scipp::CopyPolicy::Always
-                               : scipp::CopyPolicy::TryAvoid);
+          return astype(data, dest_dtype,
+                        copy ? scipp::CopyPolicy::Always
+                             : scipp::CopyPolicy::TryAvoid);
         }
       },
-      py::kw_only(), py::arg("dtype") = py::none(), py::arg("unit") = std::nullopt, py::arg("copy") = true,
+      py::kw_only(), py::arg("dtype") = py::none(),
+      py::arg("unit") = std::nullopt, py::arg("copy") = true,
       R"(
         Converts a Variable or DataArray to a different dtype and/or a different unit.
 
