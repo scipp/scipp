@@ -220,6 +220,6 @@ def to(var: Union[_cpp.Variable, _cpp.DataArray], *, unit=None, dtype=None, copy
         convert_dtype_first = True
 
     if convert_dtype_first:
-        return to_unit(var.astype(dtype, copy=copy), unit=unit, copy=copy)
+        return to_unit(var.astype(dtype, copy=copy), unit=unit, copy=False)
     else:
-        return to_unit(var, unit=unit, copy=copy).astype(dtype, copy=copy)
+        return to_unit(var, unit=unit, copy=copy).astype(dtype, copy=False)
