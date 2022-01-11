@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
+# flake8: noqa: E501
 
 from __future__ import annotations
 
@@ -458,3 +459,82 @@ def arange(dim: str,
                  values=_np.arange(start, stop, step),
                  unit=unit,
                  dtype=dtype)
+
+
+def datetime(value: _Union[str, int, _np.datetime64],
+             *,
+             unit: _Optional[_Union[_cpp.Unit, str]] = None) -> _cpp.Variable:
+    """Constructs a zero dimensional :class:`Variable` with a dtype of datetime64.
+
+    :seealso: :py:func:`scipp.datetimes` :py:func:`scipp.epoch`
+              'Dates and Times' section in `Data Types <../../reference/dtype.rst>`_
+
+    :param value:
+     - `str`: Interpret the string according to the ISO 8601 date time format.
+     - `int`: Number of time units (see argument ``unit``) since scipp's epoch
+              (see :py:func:`scipp.epoch`).
+     - `np.datetime64`: Construct equivalent datetime of scipp.
+    :param unit: Unit of the resulting datetime.
+                 Can be deduced if ``value`` is a str or np.datetime64 but
+                 is required if it is an int.
+
+    Examples:
+
+      >>> sc.datetime('2021-01-10T14:16:15')
+      <scipp.Variable> ()  datetime64              [s]  [2021-01-10T14:16:15]
+      >>> sc.datetime('2021-01-10T14:16:15', unit='ns')
+      <scipp.Variable> ()  datetime64             [ns]  [2021-01-10T14:16:14.999999744]
+      >>> sc.datetime(1610288175, unit='s')
+      <scipp.Variable> ()  datetime64              [s]  [2021-01-10T14:16:15]
+    """
+    if isinstance(value, str):
+        return scalar(_np.datetime64(value), unit=unit)
+    return scalar(value, unit=unit, dtype=_cpp.dtype.datetime64)
+
+
+def datetimes(*,
+              dims,
+              values: array_like,
+              unit: _Optional[_Union[_cpp.Unit, str]] = None) -> _cpp.Variable:
+    """Constructs an array :class:`Variable` with a dtype of datetime64.
+
+    :seealso: :py:func:`scipp.datetime` :py:func:`scipp.epoch`
+              'Dates and Times' section in `Data Types <../../reference/dtype.rst>`_
+
+    :param dims: Dimension labels
+    :param values: Numpy array or something that can be converted to a
+                   Numpy array of datetimes.
+    :param unit: Unit for the resulting Variable.
+                 Can be deduced if ``values`` contains strings or np.datetime64's.
+
+    Examples:
+
+      >>> sc.datetimes(dims=['t'], values=['2021-01-10T01:23:45', '2021-01-11T01:23:45'])
+      <scipp.Variable> (t: 2)  datetime64              [s]  [2021-01-10T01:23:45, 2021-01-11T01:23:45]
+      >>> sc.datetimes(dims=['t'], values=['2021-01-10T01:23:45', '2021-01-11T01:23:45'], unit='h')
+      <scipp.Variable> (t: 2)  datetime64              [h]  [2021-01-10T01:00:00, 2021-01-11T01:00:00]
+      >>> sc.datetimes(dims=['t'], values=[0, 1610288175], unit='s')
+      <scipp.Variable> (t: 2)  datetime64              [s]  [1970-01-01T00:00:00, 2021-01-10T14:16:15]
+    """
+    np_unit_str = f'[{_cpp.to_numpy_time_string(unit)}]' if unit else ''
+    return array(dims=dims,
+                 values=_np.asarray(values, dtype=f'datetime64{np_unit_str}'))
+
+
+def epoch(*, unit: _Union[_cpp.Unit, str]) -> _cpp.Variable:
+    """Constructs a zero dimensional :class:`Variable` with a dtype of
+    datetime64 that contains scipp's epoch.
+
+    Currently, the epoch of datetimes in scipp is the Unix epoch 1970-01-01T00:00:00.
+
+    :seealso: :py:func:`scipp.datetime` :py:func:`scipp.datetimes`
+              'Dates and Times' section in `Data Types <../../reference/dtype.rst>`_
+
+    :param unit: Unit of the resulting Variable.
+
+    Examples:
+
+      >>> sc.epoch(unit='s')
+      <scipp.Variable> ()  datetime64              [s]  [1970-01-01T00:00:00]
+    """
+    return scalar(0, unit=unit, dtype=_cpp.dtype.datetime64)
