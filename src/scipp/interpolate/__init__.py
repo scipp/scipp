@@ -7,7 +7,7 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.interpolate`.
 """
 
-from ..core import array, epoch, Variable, DataArray, DimensionError, UnitError
+from ..core import empty, epoch, Variable, DataArray, DimensionError, UnitError
 from ..core import dtype, irreducible_mask
 from ..compat.wrapping import wrap1d
 
@@ -77,6 +77,12 @@ def interp1d(da: DataArray,
     of the interpolation function. If such a mask also depends on additional dimensions
     :py:class:`scipp.DimensionError` is raised since interpolation requires points to
     be 1-D.
+
+    For structured input data dtypes such as vectors, rotations, or linear
+    transformations interpolation is structure-element-wise. While this is appropriate
+    for vectors, such a naive interpolation for, e.g., rotations does typically not
+    yield a rotation so this should be used with care, unless the 'kind' parameter is
+    set to, e.g., 'previous', 'next', or 'nearest'.
 
     Parameters not described above are forwarded to scipy.interpolate.interp1d. The
     most relevant ones are (see :py:class:`scipy.interpolate.interp1d` for details):
@@ -150,7 +156,12 @@ def interp1d(da: DataArray,
                            fill_value=fill_value,
                            **kwargs)
         x_ = _as_interpolation_type(_midpoints(xnew, dim) if midpoints else xnew)
-        ynew = array(dims=da.dims, unit=da.unit, values=f(x_.values))
+        sizes = da.sizes
+        sizes[dim] = x_.sizes[dim]
+        # ynew is created in this manner to allow for creation of structured dtypes,
+        # which is not possible using scipp.array
+        ynew = empty(sizes=sizes, unit=da.unit, dtype=da.dtype)
+        ynew.values = f(x_.values)
         return DataArray(data=ynew, coords={dim: xnew})
 
     return func
