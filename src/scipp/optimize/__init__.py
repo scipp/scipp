@@ -85,7 +85,8 @@ def curve_fit(
     - The returned optimal parameter values popt and the coverance matrix pcov will
       have units provided that the initial parameters have units. popt and pcov are
       a dict and a dic of dict, respectively. The are indexed using the fit parameter
-      names.
+      names. The variance of the returned optimal parameter values is set to the
+      corresponding diagonal value of the covariance matrix.
 
     :param f: The model function, f(x, ...). It must take the independent variable
         (coordinate of the data array da) as the first argument and the parameters
