@@ -5,6 +5,7 @@ import scipp as sc
 from scipp.optimize import curve_fit
 
 import pytest
+from functools import partial
 
 
 def func(x, *, a, b):
@@ -124,3 +125,20 @@ def test_fit_function_with_dimensionful_params_yields_outputs_with_units():
     assert pcov['a']['b'].unit == sc.Unit('1/m')
     assert pcov['b']['a'].unit == sc.Unit('1/m')
     assert pcov['b']['b'].unit == sc.Unit('1/m**2')
+
+
+def test_default_params_are_not_used_for_fit():
+    noise_scale = 1e-3
+    popt, _ = curve_fit(partial(func, b=1.5),
+                        array1d(a=1.7, b=1.5, noise_scale=noise_scale))
+    assert 'b' not in popt
+    np.testing.assert_allclose(popt['a'], 1.7, rtol=2.0 * noise_scale)
+
+
+def test_default_params_with_initial_guess_are_used_for_fit():
+    noise_scale = 1e-3
+    popt, _ = curve_fit(partial(func, b=1.5),
+                        array1d(a=1.7, b=1.5, noise_scale=noise_scale),
+                        p0={'b': 1.1})
+    np.testing.assert_allclose(popt['a'], 1.7, rtol=2.0 * noise_scale)
+    np.testing.assert_allclose(popt['b'], 1.5, rtol=2.0 * noise_scale)
