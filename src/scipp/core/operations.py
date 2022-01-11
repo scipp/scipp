@@ -187,7 +187,7 @@ def to(var: Union[_cpp.Variable, _cpp.DataArray], *, unit=None, dtype=None, copy
     - In other cases, the dtype is converted first and then the unit translation is done
 
     :param dtype: Target dtype.
-    :param unit: Target units.
+    :param unit: Target unit.
     :param copy: If `False`, return the input object if possible.
                  If `True`, the function always returns a new object.
     :raises: If the data cannot be converted to the requested dtype or unit.
