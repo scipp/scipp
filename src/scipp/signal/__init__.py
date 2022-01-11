@@ -8,6 +8,7 @@ This subpackage provides wrappers for a subset of functions from
 """
 from dataclasses import dataclass
 from numpy import ndarray
+from typing import Union
 
 from ..core import array, identical, islinspace, to_unit, DataArray, Variable
 from ..core import UnitError, CoordError
@@ -24,6 +25,22 @@ class SOS:
     """
     coord: Variable
     sos: ndarray
+
+    def filtfilt(self, obj: Union[Variable, DataArray], dim: str,
+                 **kwargs) -> DataArray:
+        """
+        Forwards to :py:func:`scipp.signal.sosfiltfilt` with sos argument set to the SOS
+        instance.
+
+        The input data may be a variable. In the case a data array with the coord used
+        for setting of the SOS parameters by :py:func:`scipp.signal.butter` is setup and
+        forwarded to  :py:func:`scipp.signal.sosfiltfilt`.
+        """
+        if isinstance(obj, DataArray):
+            da = obj
+        else:
+            da = DataArray(data=obj, coords={dim: self.coord})
+        return sosfiltfilt(da=da, dim=dim, sos=self, **kwargs)
 
 
 def _frequency(coord: Variable) -> Variable:
@@ -89,8 +106,13 @@ def sosfiltfilt(da: DataArray, dim: str, *, sos: SOS, **kwargs) -> DataArray:
       >>> y = sc.sin(x * sc.scalar(1.0, unit='rad/m'))
       >>> y += sc.sin(x * sc.scalar(400.0, unit='rad/m'))
       >>> da = sc.DataArray(data=y, coords={'x': x})
-      >>> sos = butter(da, 'x', N=4, Wn=20 / x.unit)
+      >>> sos = butter(da.coords['x'], N=4, Wn=20 / x.unit)
       >>> out = sosfiltfilt(da, 'x', sos=sos)
+
+    Instead of calling sosfiltfilt the more convenient filtfilt method of
+    :py:class:`scipp.signal.SOS` can be used:
+
+      >>> out = butter(da.coords['x'], N=4, Wn=20 / x.unit).filtfilt(da, 'x')
     """
     if not identical(da.coords[dim], sos.coord):
         raise CoordError(f"Coord\n{da.coords[dim]}\nof filter dimension '{dim}' does "

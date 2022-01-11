@@ -139,3 +139,15 @@ def test_filtering_slice_identical_to_slice_of_filtered(da):
     out2d = sosfiltfilt(da, 'xx', sos=sos)
     assert sc.identical(out2d['yy', 0], sosfiltfilt(da['yy', 0], 'xx', sos=sos))
     assert sc.identical(out2d['yy', 1], sosfiltfilt(da['yy', 1], 'xx', sos=sos))
+
+
+def test_SOS_filtfilt_same_as_sosfiltfilt():
+    da = array1d_linspace()
+    sos = butter(da.coords[da.dim], N=4, Wn=4 / da.coords[da.dim].unit)
+    assert sc.identical(sos.filtfilt(da, da.dim), sosfiltfilt(da, da.dim, sos=sos))
+
+
+def test_SOS_filtfilt_given_variable_used_coord_passed_to_butter():
+    da = array1d_linspace()
+    sos = butter(da.coords[da.dim], N=4, Wn=4 / da.coords[da.dim].unit)
+    assert sc.identical(sos.filtfilt(da.data, da.dim), sosfiltfilt(da, da.dim, sos=sos))
