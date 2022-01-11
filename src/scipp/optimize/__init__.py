@@ -115,10 +115,22 @@ def curve_fit(
 
       >>> from scipp.optimize import curve_fit
       >>> popt, _ = curve_fit(func, da, p0 = {'b': 1.0 / sc.Unit('m')})
-      >>> round(popt['a'])
-      5
-      >>> sc.round(popt['b'])
+      >>> sc.round(sc.values(popt['a']))
+      <scipp.Variable> ()    float64            [dimensionless]  [5]
+      >>> sc.round(sc.values(popt['b']))
       <scipp.Variable> ()    float64            [1/m]  [17]
+
+    Fit-function parameters that have a default value do not participate in the fit
+    unless an initial guess is provided via the p0 parameters:
+
+      >>> from functools import partial
+      >>> func2 = partial(func, a=5)
+      >>> popt, _ = curve_fit(func2, da, p0 = {'b': 1.0 / sc.Unit('m')})
+      >>> 'a' in popt
+      False
+      >>> popt, _ = curve_fit(func2, da, p0 = {'a':2, 'b': 1.0 / sc.Unit('m')})
+      >>> 'a' in popt
+      True
     """
     for arg in ['xdata', 'ydata', 'sigma']:
         if arg in kwargs:
