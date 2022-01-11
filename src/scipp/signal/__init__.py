@@ -32,9 +32,10 @@ class SOS:
         Forwards to :py:func:`scipp.signal.sosfiltfilt` with sos argument set to the SOS
         instance.
 
-        The input data may be a variable. In the case a data array with the coord used
-        for setting of the SOS parameters by :py:func:`scipp.signal.butter` is setup and
-        forwarded to  :py:func:`scipp.signal.sosfiltfilt`.
+        The input data may be a variable or a data array. In the case of a variable, a
+        data array with the coord used for setting up the SOS parameters by
+        :py:func:`scipp.signal.butter` is created and forwarded to
+        :py:func:`scipp.signal.sosfiltfilt`.
         """
         if isinstance(obj, DataArray):
             da = obj
