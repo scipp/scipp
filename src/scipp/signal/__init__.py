@@ -32,7 +32,7 @@ def _frequency(coord: Variable) -> Variable:
     return (len(coord) - 1) / (coord[-1] - coord[0])
 
 
-def butter(da: DataArray, dim: str, *, N: int, Wn: Variable, **kwargs) -> SOS:
+def butter(coord: Variable, *, N: int, Wn: Variable, **kwargs) -> SOS:
     """
     Butterworth digital and analog filter design.
 
@@ -45,16 +45,15 @@ def butter(da: DataArray, dim: str, *, N: int, Wn: Variable, **kwargs) -> SOS:
     This is a wrapper around :py:func:`scipy.signal.butter`. See there for a
     complete description of parameters. The differences are:
 
-    - Instead of a sampling frequency fs, this wrapper takes a data array ``da`` and a
-      dimension label ``dim`` as input. The sampling frequency is then computed from
-      ``da.coords[dim]``. Only data sampled at regular intervals are supported.
+    - Instead of a sampling frequency fs, this wrapper takes a variable ``coord`` as
+      input. The sampling frequency is then computed from this coordinate. Only data
+      sampled at regular intervals are supported.
     - The critical frequency or frequencies must be provided as a variable with correct
       unit.
     - Only 'sos' output is supported.
 
     :seealso: :py:func:`scipp.signal.sosfiltfilt`
     """
-    coord = da.coords[dim]
     fs = _frequency(coord).value
     try:
         Wn = to_unit(Wn, one / coord.unit)
