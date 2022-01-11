@@ -38,6 +38,7 @@ Deprecations
 ~~~~~~~~~~~~
 
 * ``sc.matrix`` and ``sc.matrices`` have been deprecated in favour of :py:func:`scipp.spatial.linear_transform` and :py:func:`scipp.spatial.linear_transforms`, and will be removed in a future release of scipp.
+* The previously deprecated ``concatenate`` and ``groupby(..).concatenate`` have been removed. Use ``concat`` and ``groupby(..).concat`` instead.
 
 Stability, Maintainability, and Testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -81,16 +81,6 @@ def concat(x: Sequence[VariableLike], dim: str) -> VariableLike:
     return _call_cpp_func(_cpp.concat, x, dim)
 
 
-def concatenate(x: VariableLike, y: VariableLike, dim: str) -> VariableLike:
-    """Concatenate input arrays along the given dimension.
-
-    This is deprecated and will be removed soon, please use :py:func:`scipp.concat`.
-    """
-    warnings.warn("`concatenate(a, b, dim)` is deprecated; use `concat([a, b,], dim).",
-                  DeprecationWarning)
-    return concat([x, y], dim)
-
-
 def fold(x: VariableLike,
          dim: str,
          sizes: Optional[Dict[str, int]] = None,
