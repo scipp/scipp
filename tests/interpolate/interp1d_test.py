@@ -168,3 +168,20 @@ def test_options(kind, fill_value):
                         axis=0,
                         kind=kind,
                         fill_value=fill_value)(x.values))
+
+
+def test_structured_dtype_interpolation_interpolates_elements():
+    da = make_array()
+    da.data = sc.vector(value=[1, 2, 3]) * da.data
+    x = sc.array(dims=['x'], values=[1, 3])
+    da = sc.DataArray(data=sc.vectors(dims=['x'],
+                                      values=[[1, 2, 3], [5, 4, 3]],
+                                      unit='m'),
+                      coords={'x': x})
+    xnew = sc.array(dims=['x'], values=[1, 2, 3])
+    out = interp1d(da, 'x')(xnew)
+    expected = sc.DataArray(data=sc.vectors(dims=['x'],
+                                            values=[[1, 2, 3], [3, 3, 3], [5, 4, 3]],
+                                            unit='m'),
+                            coords={'x': xnew})
+    assert sc.identical(out, expected)
