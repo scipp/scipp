@@ -139,6 +139,16 @@ void bind_to(py::class_<T, Ignored...> &c) {
         If the dtype and unit are both unchanged and ``copy`` is `False`, 
         the object is returned without making a deep copy.
 
+        This method will choose whether to do the dtype or units translation first, by
+        using the following rules in order:
+        - If either the input or output dtype is float64, the unit translation will be done
+          on the float64 type.
+        - If either the input or output dtype is float32, the unit translation will be done
+          on the float64 type.
+        - If both the input and output dtypes are integer types, the unit translation will be
+          done on the larger type.
+        - In other cases, the dtype is converted first and then the unit translation is done.
+
         :param dtype: Target dtype.
         :param unit: Target units.
         :param copy: If `False`, return the input object if possible.
