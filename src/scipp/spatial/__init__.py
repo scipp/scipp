@@ -14,10 +14,9 @@ def _to_eigen_layout(a):
     return _np.moveaxis(a, -1, -2)
 
 
-def translation_from_vector(*,
-                            unit: Union[_core_cpp.Unit,
-                                        str] = _core_cpp.units.dimensionless,
-                            value: Union[_np.ndarray, list]):
+def translation(*,
+                unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+                value: Union[_np.ndarray, list]):
     """
     Creates a translation transformation from a single provided 3-vector.
 
@@ -27,11 +26,10 @@ def translation_from_vector(*,
     return _core_cpp.translations(dims=[], unit=unit, values=value)
 
 
-def translations_from_vectors(*,
-                              dims: Sequence[str],
-                              unit: Union[_core_cpp.Unit,
-                                          str] = _core_cpp.units.dimensionless,
-                              values: Union[_np.ndarray, list]):
+def translations(*,
+                 dims: Sequence[str],
+                 unit: Union[_core_cpp.Unit, str] = _core_cpp.units.dimensionless,
+                 values: Union[_np.ndarray, list]):
     """
     Creates translation transformations from multiple 3-vectors.
 
@@ -230,7 +228,7 @@ def linear_transforms(*,
 
 __all__ = [
     'rotation', 'rotations', 'rotation_from_rotvec', 'rotations_from_rotvecs',
-    'rotation_as_rotvec', 'scaling_from_vector', 'scalings_from_vectors',
-    'translation_from_vector', 'translations_from_vectors', 'affine_transform',
-    'affine_transforms', 'linear_transform', 'linear_transforms'
+    'rotation_as_rotvec', 'scaling_from_vector', 'scalings_from_vectors', 'translation',
+    'translations', 'affine_transform', 'affine_transforms', 'linear_transform',
+    'linear_transforms'
 ]

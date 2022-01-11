@@ -32,9 +32,7 @@ vector = sc.vectors(dims=['x'], values=np.random.rand(4, 3))
 matrix = sc.spatial.linear_transforms(dims=['x'], values=np.random.rand(4, 3, 3))
 
 rotation = sc.spatial.rotations(dims=['x'], values=[[1, 2, 3, 4]])
-translation = sc.spatial.translations_from_vectors(dims=['x'],
-                                                   values=[[5, 6, 7]],
-                                                   unit=sc.units.m)
+translation = sc.spatial.translations(dims=['x'], values=[[5, 6, 7]], unit=sc.units.m)
 affine = sc.spatial.affine_transforms(dims=['x'],
                                       values=[[[0, 1, 2, 4], [5, 6, 7, 8],
                                                [9, 10, 11, 12], [13, 14, 15, 16]]],
