@@ -278,36 +278,40 @@ def test_own_var_1d_pyobj_set():
     # Input data is deep-copied.
     x = {'num': 1, 'list': [2, 3]}
     y = {'num': 4, 'list': [5, 6]}
-    v = sc.concatenate(make_variable(x), make_variable(y), dim='x')
+    v = sc.concat([make_variable(x), make_variable(y)], dim='x')
     v['x', 0].value['num'] = -1
     v.values[0]['list'][0] = -2
     y['num'] = -4
     assert sc.identical(
         v,
-        sc.concatenate(make_variable({
-            'num': -1,
-            'list': [-2, 3]
-        }),
-                       make_variable({
-                           'num': 4,
-                           'list': [5, 6]
-                       }),
-                       dim='x'))
+        sc.concat([
+            make_variable({
+                'num': -1,
+                'list': [-2, 3]
+            }),
+            make_variable({
+                'num': 4,
+                'list': [5, 6]
+            })
+        ],
+                  dim='x'))
     assert x == {'num': 1, 'list': [2, 3]}
     assert y == {'num': -4, 'list': [5, 6]}
 
 
 def test_own_var_1d_pyobj_get():
     # .values getter shares ownership of the array.
-    v = sc.concatenate(make_variable({
-        'num': 1,
-        'list': [2, 3]
-    }),
-                       make_variable({
-                           'num': 4,
-                           'list': [5, 6]
-                       }),
-                       dim='x')
+    v = sc.concat([
+        make_variable({
+            'num': 1,
+            'list': [2, 3]
+        }),
+        make_variable({
+            'num': 4,
+            'list': [5, 6]
+        })
+    ],
+                  dim='x')
     x = v['x', 0].value
     y = v['x', 1].value
     x['num'] = -1
@@ -317,8 +321,8 @@ def test_own_var_1d_pyobj_get():
     x_expected = {'num': -1, 'list': [-2, 3]}
     y_expected = {'num': -5, 'list': [-6, 6]}
     assert sc.identical(
-        v, sc.concatenate(make_variable(x_expected), make_variable(y_expected),
-                          dim='x'))
+        v, sc.concat([make_variable(x_expected),
+                      make_variable(y_expected)], dim='x'))
     assert x == x_expected
     assert y == y_expected
 
@@ -327,7 +331,7 @@ def test_own_var_1d_pyobj_copy():
     # Depth of copies of variables can be controlled.
     x = make_variable({'num': 1, 'list': [2, 3]})
     y = make_variable({'num': 4, 'list': [5, 6]})
-    v = sc.concatenate(x, y, dim='x')
+    v = sc.concat([x, y], dim='x')
     v_copy = copy(v)
     v_deepcopy = deepcopy(v)
     v_methcopy = v.copy(deep=False)
@@ -335,8 +339,8 @@ def test_own_var_1d_pyobj_copy():
 
     v.values[0]['num'] = -1
     v.values[0]['list'][0] = -2
-    modified = sc.concatenate(make_variable({'num': -1, 'list': [-2, 3]}), y, dim='x')
-    original = sc.concatenate(make_variable({'num': 1, 'list': [2, 3]}), y, dim='x')
+    modified = sc.concat([make_variable({'num': -1, 'list': [-2, 3]}), y], dim='x')
+    original = sc.concat([make_variable({'num': 1, 'list': [2, 3]}), y], dim='x')
     assert sc.identical(v, modified)
     assert sc.identical(v_copy, modified)
     assert sc.identical(v_deepcopy, original)

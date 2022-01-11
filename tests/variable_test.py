@@ -524,9 +524,10 @@ def test_cross():
     assert_export(sc.cross, sc.vector(value=[0, 0, 1]), sc.vector(value=[0, 0, 1]))
 
 
-def test_concatenate():
-    assert_export(sc.concatenate, sc.Variable(dims=(), values=0.0),
-                  sc.Variable(dims=(), values=0.0), 'x')
+def test_concat():
+    assert_export(sc.concat,
+                  [sc.Variable(dims=(), values=0.0),
+                   sc.Variable(dims=(), values=0.0)], 'x')
 
 
 def test_mean():

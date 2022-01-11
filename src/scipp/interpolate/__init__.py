@@ -7,18 +7,30 @@ This subpackage provides wrappers for a subset of functions from
 :py:mod:`scipy.interpolate`.
 """
 
-from ..core import array, Variable, DataArray, DimensionError, UnitError
-from ..core import irreducible_mask
+from ..core import empty, epoch, Variable, DataArray, DimensionError, UnitError
+from ..core import dtype, irreducible_mask
 from ..compat.wrapping import wrap1d
 
-from typing import Callable
+from typing import Any, Callable, Union
 import uuid
+
+import numpy as np
+
+
+def _as_interpolation_type(x):
+    if isinstance(x, np.ndarray):
+        if x.dtype.kind == 'M':
+            return x.astype('int64', copy=False)
+    else:
+        if x.dtype == dtype.datetime64:
+            return x - epoch(unit=x.unit)
+    return x
 
 
 def _midpoints(var, dim):
     a = var[dim, :-1]
     b = var[dim, 1:]
-    return a + 0.5 * (b - a)
+    return _as_interpolation_type(a) + 0.5 * (b - a)
 
 
 def _drop_masked(da, dim):
@@ -35,7 +47,12 @@ def _drop_masked(da, dim):
 
 
 @wrap1d(is_partial=True, accept_masks=True)
-def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
+def interp1d(da: DataArray,
+             dim: str,
+             *,
+             kind: Union[str, int] = 'linear',
+             fill_value: Any = np.nan,
+             **kwargs) -> Callable:
     """Interpolate a 1-D function.
 
     A data array is used to approximate some function f: y = f(x), where y is given by
@@ -61,9 +78,17 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
     :py:class:`scipp.DimensionError` is raised since interpolation requires points to
     be 1-D.
 
+    For structured input data dtypes such as vectors, rotations, or linear
+    transformations interpolation is structure-element-wise. While this is appropriate
+    for vectors, such a naive interpolation for, e.g., rotations does typically not
+    yield a rotation so this should be used with care, unless the 'kind' parameter is
+    set to, e.g., 'previous', 'next', or 'nearest'.
+
     Parameters not described above are forwarded to scipy.interpolate.interp1d. The
     most relevant ones are (see :py:class:`scipy.interpolate.interp1d` for details):
 
+    :param da: Input data. Defines both dependent and independent variables for interpolation.
+    :param dim: Dimension of the interpolation.
     :param kind: Specifies the kind of interpolation as a string or as an integer
                  specifying the order of the spline interpolator to use. The string
                  has to be one of 'linear', 'nearest', 'nearest-up', 'zero', 'slinear',
@@ -125,9 +150,18 @@ def interp1d(da: DataArray, dim: str, **kwargs) -> Callable:
             raise DimensionError(
                 f"Dimension of interpolation points '{xnew.dim}' does not match "
                 f"interpolation dimension '{dim}'")
-        f = inter.interp1d(x=da.coords[dim].values, y=da.values, **kwargs)
-        x_ = _midpoints(xnew, dim) if midpoints else xnew
-        ynew = array(dims=da.dims, unit=da.unit, values=f(x_.values))
+        f = inter.interp1d(x=_as_interpolation_type(da.coords[dim].values),
+                           y=da.values,
+                           kind=kind,
+                           fill_value=fill_value,
+                           **kwargs)
+        x_ = _as_interpolation_type(_midpoints(xnew, dim) if midpoints else xnew)
+        sizes = da.sizes
+        sizes[dim] = x_.sizes[dim]
+        # ynew is created in this manner to allow for creation of structured dtypes,
+        # which is not possible using scipp.array
+        ynew = empty(sizes=sizes, unit=da.unit, dtype=da.dtype)
+        ynew.values = f(x_.values)
         return DataArray(data=ynew, coords={dim: xnew})
 
     return func

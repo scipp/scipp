@@ -66,7 +66,6 @@ Shape
 
    broadcast
    concat
-   concatenate
    flatten
    fold
    transpose
