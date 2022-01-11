@@ -75,25 +75,31 @@ def curve_fit(
       if present, i.e., the standard deviations.
     - The fit function f must work with scipp objects. This provides additional safety
       over the underlying scipy function by ensuring units are consistent.
+    - The fit function f must only take a single positional argument, x. All other
+      arguments mapping to fit parameters must be keyword-only arguments.
+    - The inital guess in p0 must be provided as a dict, mapping from fit-function
+      parameter names to initial guesses.
     - The fit parameters may be scalar scipp variables. In that case an initial guess
       p0 with the correct units must be provided.
     - The returned optimal parameter values popt and the coverance matrix pcov will
-      have units provided that the initial parameters have units.
+      have units provided that the initial parameters have units. popt and pcov are
+      a dict and a dic of dict, respectively. The are indexed using the fit parameter
+      names.
 
     :param f: The model function, f(x, ...). It must take the independent variable
         (coordinate of the data array da) as the first argument and the parameters
-        to fit as separate remaining arguments.
+        to fit as keyword arguments.
     :param da: One-dimensional data array. The dimension coordinate for the only
         dimension defines the independent variable where the data is measured. The
         values of the data array provide the dependent data. If the data array stores
         variances then the standard deviations (square root of the variances) are taken
         into account when fitting.
-    :param p0: Initial guess for the parameters (length N). If None, then the initial
-        values will all be 1 (if the number of parameters for the function can be
-        determined using introspection, otherwise a ValueError is raised). If the fit
-        function cannot handle initial values of 1, in particular for parameters that
-        are not dimensionless, then typically a :py:class:`scipp.UnitError` is raised,
-        but details will depend on the function.
+    :param p0: An optional dict of optional initial guesses for the parameters. If None,
+        then the initial values will all be 1 (if the parameter names for the function
+        can be determined using introspection, otherwise a ValueError is raised). If
+        the fit function cannot handle initial values of 1, in particular for parameters
+        that are not dimensionless, then typically a :py:class:`scipp.UnitError` is
+        raised, but details will depend on the function.
 
     Example:
 
