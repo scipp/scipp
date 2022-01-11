@@ -97,7 +97,7 @@ def curve_fit(
 
     Example:
 
-      >>> def func(x, a, b):
+      >>> def func(x, *, a, b):
       ...     return a * sc.exp(-b * x)
 
       >>> x = sc.linspace(dim='x', start=0.0, stop=0.4, num=50, unit='m')
@@ -106,10 +106,10 @@ def curve_fit(
       >>> da = sc.DataArray(y, coords={'x': x})
 
       >>> from scipp.optimize import curve_fit
-      >>> popt, _ = curve_fit(func, da, p0 = [1.0, 1.0 / sc.Unit('m')])
-      >>> round(popt[0])
+      >>> popt, _ = curve_fit(func, da, p0 = {'b': 1.0 / sc.Unit('m')})
+      >>> round(popt['a'])
       5
-      >>> sc.round(popt[1])
+      >>> sc.round(popt['b'])
       <scipp.Variable> ()    float64            [1/m]  [17]
     """
     for arg in ['xdata', 'ydata', 'sigma']:
