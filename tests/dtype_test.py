@@ -22,6 +22,8 @@ def test_dtype_comparison_not_equal(other):
 def test_dtype_comparison_str(name):
     assert sc.DType(name) == name
     assert name == sc.DType(name)
+    assert sc.DType(name) != 'bool'
+    assert 'bool' != sc.DType(name)
 
 
 def test_dtype_comparison_type():
@@ -32,12 +34,29 @@ def test_dtype_comparison_type():
     # Depends on OS
     assert int in (sc.DType.int64, sc.DType.int32)
 
+    assert sc.DType.float64 != int
+    assert int != sc.DType.float64
+    assert sc.DType.string != float
+    assert float != sc.DType.string
+
 
 def test_numpy_comparison():
     assert sc.DType.int32 == np.dtype(np.int32)
-    with pytest.raises(TypeError):
-        # Calls np.DType.__eq__ which does not know how to interpret sc.DType
-        assert np.dtype(np.int32) == sc.DType.int32
+    assert sc.DType.int32 != np.dtype(np.int64)
+
+
+def check_numpy_version_for_comaprison():
+    major, minor, patch = np.__version__.split('.')
+    if int(major) == 1 and int(minor) < 21:
+        return True
+    return False
+
+
+@pytest.mark.skipif(check_numpy_version_for_comaprison(),
+                    reason='at least numpy 1.21 required')
+def test_numpy_comparison_numpy_on_lhs():
+    assert np.dtype(np.int32) == sc.DType.int32
+    assert np.dtype(np.int32) != sc.DType.int64
 
 
 def test_dtype_string_construction():
