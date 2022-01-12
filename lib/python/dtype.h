@@ -21,7 +21,7 @@ scipp::core::DType scipp_dtype(const pybind11::object &type);
 
 std::tuple<scipp::core::DType, scipp::units::Unit>
 cast_dtype_and_unit(const pybind11::object &dtype,
-                    std::optional<ProtoUnit> unit);
+                    const std::optional<ProtoUnit> &unit);
 
 void ensure_conversion_possible(scipp::core::DType from, scipp::core::DType to,
                                 const std::string &data_name);
