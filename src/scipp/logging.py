@@ -4,7 +4,7 @@
 """
 Utilities for managing scipp's logger and log widget.
 
-See the `Logging <../../reference/logging.rst>`_ reference for an overview.
+See the https://scipp.github.io/reference/logging.html for an overview.
 """
 
 from copy import copy
