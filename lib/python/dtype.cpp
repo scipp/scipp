@@ -50,9 +50,10 @@ constexpr bool operator==(const scipp::index a, const DTypeSize b) {
 void init_dtype(py::module &m) {
   py::class_<DType>(m, "DType")
       .def(py::init([](const py::object &x) { return scipp_dtype(x); }))
-      .def("__eq__", [](const DType &self, const py::object &other){
-        return self == scipp_dtype(other);
-      })
+      .def("__eq__",
+           [](const DType &self, const py::object &other) {
+             return self == scipp_dtype(other);
+           })
       .def("__str__", [](const DType &self) { return to_string(self); })
       .def("__repr__", [](const DType &self) {
         return "DType('" + to_string(self) + "')";
