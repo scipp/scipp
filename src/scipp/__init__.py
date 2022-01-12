@@ -103,6 +103,7 @@ for _cls in (Variable, DataArray):
         ('broadcast', 'flatten', 'fold', 'transpose', 'all', 'any', 'mean', 'sum',
          'nanmean', 'nansum', 'floor', 'ceil', 'round', 'to'))
 del _cls
+del to
 # Assign method binding for JUST Variable
 _binding.bind_functions_as_methods(Variable, globals(),
                                    ('cumsum', 'max', 'min', 'nanmax', 'nanmin'))
