@@ -83,6 +83,7 @@ from .core import broadcast, concat, fold, flatten, transpose
 from .core import sin, cos, tan, asin, acos, atan, atan2
 from .core import isnan, isinf, isfinite, isposinf, isneginf, to_unit
 from .core import scalar, zeros, zeros_like, ones, ones_like, empty, empty_like, full, full_like, matrix, matrices, vector, vectors, array, linspace, geomspace, logspace, arange, datetime, datetimes, epoch
+from .core import to
 
 from .logging import display_logs, get_logger
 
@@ -98,9 +99,11 @@ _binding.bind_pop()
 # Assign method binding for both Variable and DataArray
 for _cls in (Variable, DataArray):
     _binding.bind_functions_as_methods(
-        _cls, globals(), ('broadcast', 'flatten', 'fold', 'transpose', 'all', 'any',
-                          'mean', 'sum', 'nanmean', 'nansum', 'floor', 'ceil', 'round'))
+        _cls, globals(),
+        ('broadcast', 'flatten', 'fold', 'transpose', 'all', 'any', 'mean', 'sum',
+         'nanmean', 'nansum', 'floor', 'ceil', 'round', 'to'))
 del _cls
+del to
 # Assign method binding for JUST Variable
 _binding.bind_functions_as_methods(Variable, globals(),
                                    ('cumsum', 'max', 'min', 'nanmax', 'nanmin'))

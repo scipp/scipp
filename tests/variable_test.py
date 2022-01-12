@@ -937,3 +937,78 @@ def test_ceil():
 
 def test_floor():
     _test_rounding(sc.floor, (1.1, 1.5, 2.5, 4.7), (1., 1., 2., 4.))
+
+
+def test_to_int64_to_float64():
+    # If unit conversion is done first followed by dtype conversion, this will be lossy.
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
+
+    assert sc.identical(
+        data.to(unit="km", dtype="float64"),
+        sc.array(dims=["x"], values=[0.001, 0.002, 0.003], dtype="float64", unit="km"))
+
+
+def test_to_int64_to_float32():
+    # If unit conversion is done first followed by dtype conversion, this will be lossy.
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
+
+    assert sc.identical(
+        data.to(unit="km", dtype="float32"),
+        sc.array(dims=["x"], values=[0.001, 0.002, 0.003], dtype="float32", unit="km"))
+
+
+def test_to_float64_to_int64():
+    # Will be lossy if dtype conversion done before unit conversion
+    data = sc.array(dims=["x"], values=[0.001, 0.002, 0.003], dtype="float64", unit="m")
+
+    assert sc.identical(
+        data.to(unit="mm", dtype="int64"),
+        sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="mm"))
+
+
+def test_to_float32_to_int64():
+    # Will be lossy if dtype conversion done before unit conversion
+    data = sc.array(dims=["x"], values=[0.001, 0.002, 0.003], dtype="float32", unit="m")
+
+    assert sc.identical(
+        data.to(unit="mm", dtype="int64"),
+        sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="mm"))
+
+
+def test_to_int64_to_int32():
+    # Will be lossy if dtype conversion done first
+    data = sc.array(dims=["x"], values=[1000 * 2**30], dtype="int64", unit="m")
+
+    assert sc.identical(data.to(unit="km", dtype="int32"),
+                        sc.array(dims=["x"], values=[2**30], dtype="int32", unit="km"))
+
+
+def test_to_int32_to_int64():
+    # Will be lossy if unit conversion done first
+    data = sc.array(dims=["x"], values=[2**30], dtype="int32", unit="m")
+
+    assert sc.identical(
+        data.to(unit="mm", dtype="int64"),
+        sc.array(dims=["x"], values=[1000 * 2**30], dtype="int64", unit="mm"))
+
+
+def test_to_without_unit():
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int32", unit="m")
+
+    assert sc.identical(data.to(dtype="int64"),
+                        sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m"))
+
+
+def test_to_without_dtype():
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
+
+    assert sc.identical(
+        data.to(unit="mm"),
+        sc.array(dims=["x"], values=[1000, 2000, 3000], dtype="int64", unit="mm"))
+
+
+def test_to_without_any_arguments():
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
+
+    with pytest.raises(ValueError):
+        data.to()

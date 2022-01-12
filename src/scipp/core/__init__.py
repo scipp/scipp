@@ -78,7 +78,7 @@ from .cumulative import cumsum
 from .dataset import irreducible_mask, merge
 from .groupby import groupby
 from .math import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc
-from .operations import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where
+from .operations import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where, to
 from .reduction import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
 from .shape import broadcast, concat, fold, flatten, transpose
 from .trigonometry import sin, cos, tan, asin, acos, atan, atan2

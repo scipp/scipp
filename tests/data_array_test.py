@@ -290,3 +290,11 @@ def test_sizes():
     assert a.sizes == {'x': 2}
     a = sc.DataArray(data=sc.Variable(dims=['x', 'z'], values=np.ones((2, 4))))
     assert a.sizes == {'x': 2, 'z': 4}
+
+
+def test_to():
+    da = sc.DataArray(data=sc.scalar(value=1, dtype="int32", unit="m"))
+
+    assert sc.identical(
+        da.to(unit="mm", dtype="int64"),
+        sc.DataArray(data=sc.scalar(value=1000, dtype="int64", unit="mm")))
