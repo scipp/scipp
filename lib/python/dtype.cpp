@@ -48,12 +48,21 @@ constexpr bool operator==(const scipp::index a, const DTypeSize b) {
 } // namespace
 
 void init_dtype(py::module &m) {
-  py::class_<DType>(m, "_DType")
-      .def(py::self == py::self)
-      .def("__repr__", [](const DType self) { return to_string(self); });
-  auto dtype = m.def_submodule("dtype");
+  py::class_<DType> PyDType(m, "DType", R"(
+Representation of a data type of a Variable in scipp.
+See https://scipp.github.io/reference/dtype.html for details.)");
+  PyDType.def(py::init([](const py::object &x) { return scipp_dtype(x); }))
+      .def("__eq__",
+           [](const DType &self, const py::object &other) {
+             return self == scipp_dtype(other);
+           })
+      .def("__str__", [](const DType &self) { return to_string(self); })
+      .def("__repr__", [](const DType &self) {
+        return "DType('" + to_string(self) + "')";
+      });
   for (const auto &[key, name] : core::dtypeNameRegistry()) {
-    dtype.attr(name.c_str()) = key;
+    PyDType.def_property_readonly_static(
+        name.c_str(), [key = key](const py::object &) { return key; });
   }
 }
 
@@ -134,7 +143,7 @@ scipp::core::DType scipp_dtype(const py::object &type) {
 
 std::tuple<scipp::core::DType, scipp::units::Unit>
 cast_dtype_and_unit(const pybind11::object &dtype,
-                    const std::optional<ProtoUnit> unit) {
+                    const std::optional<ProtoUnit> &unit) {
   const auto scipp_dtype = ::scipp_dtype(dtype);
   if (scipp_dtype == core::dtype<core::time_point>) {
     units::Unit deduced_unit = parse_datetime_dtype(dtype);

@@ -14,6 +14,7 @@ General
    Bins
    DataArray
    Dataset
+   DType
    GroupByDataArray
    GroupByDataset
    Unit

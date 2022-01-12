@@ -8,7 +8,7 @@ This subpackage provides wrappers for a subset of functions from
 """
 
 from ..core import empty, epoch, Variable, DataArray, DimensionError, UnitError
-from ..core import dtype, irreducible_mask
+from ..core import DType, irreducible_mask
 from ..compat.wrapping import wrap1d
 
 from typing import Any, Callable, Union
@@ -22,7 +22,7 @@ def _as_interpolation_type(x):
         if x.dtype.kind == 'M':
             return x.astype('int64', copy=False)
     else:
-        if x.dtype == dtype.datetime64:
+        if x.dtype == DType.datetime64:
             return x - epoch(unit=x.unit)
     return x
 

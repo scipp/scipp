@@ -50,7 +50,7 @@ def isnear(x,
             raise sc.CoordError(
                 f'Coord (or attr) with key {key} have different'
                 f' shapes. For x, shape is {a.shape}. For y, shape = {b.shape}')
-        if val.dtype in [sc.dtype.float64, sc.dtype.float32]:
+        if val.dtype in [sc.DType.float64, sc.DType.float32]:
             if not sc.all(sc.isclose(a, b, rtol=rtol, atol=atol,
                                      equal_nan=equal_nan)).value:
                 return False

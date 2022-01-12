@@ -17,7 +17,7 @@ if _debug_:
 
 from .._scipp import __version__
 from .._scipp.core import Variable, DataArray, Dataset, GroupByDataArray, \
-                         GroupByDataset, Unit
+                         GroupByDataset, DType, Unit
 # Import errors
 from .._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
@@ -29,9 +29,6 @@ CoordError.__doc__ = 'Inappropriate coordinate values.'
 UnitError.__doc__ = 'Inappropriate unit value.'
 DimensionError.__doc__ = 'Inappropriate dimension labels and/or shape.'
 DTypeError.__doc__ = 'Inappropriate dtype.'
-
-# Import submodules
-from .._scipp.core import dtype
 
 from .._scipp.core import get_slice_params
 

@@ -19,21 +19,21 @@ def has_vector_type(obj: _std_typing.Any) -> bool:
     """
     Return True if the object dtype is vector3.
     """
-    return obj.dtype == sc.dtype.vector3
+    return obj.dtype == sc.DType.vector3
 
 
 def has_string_type(obj: _std_typing.Any) -> bool:
     """
     Return True if the object dtype is string.
     """
-    return obj.dtype == sc.dtype.string
+    return obj.dtype == sc.DType.string
 
 
 def has_datetime_type(obj: _std_typing.Any) -> bool:
     """
     Return True if the object dtype is datetime64.
     """
-    return obj.dtype == sc.dtype.datetime64
+    return obj.dtype == sc.DType.datetime64
 
 
 def has_numeric_type(obj: _std_typing.Any) -> bool:

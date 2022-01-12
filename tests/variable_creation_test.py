@@ -28,7 +28,7 @@ def test_scalar_with_dtype():
     value = 1.0
     variance = 5.0
     unit = sc.units.m
-    dtype = sc.dtype.float64
+    dtype = sc.DType.float64
     var = sc.scalar(value=value, variance=variance, unit=unit, dtype=dtype)
     expected = sc.Variable(dims=(),
                            values=value,
@@ -47,7 +47,7 @@ def test_scalar_without_dtype():
 
 def test_scalar_throws_if_wrong_dtype_provided_for_str_types():
     with pytest.raises(ValueError):
-        sc.scalar(value='temp', unit=sc.units.one, dtype=sc.dtype.float64)
+        sc.scalar(value='temp', unit=sc.units.one, dtype=sc.DType.float64)
 
 
 def test_scalar_throws_UnitError_if_not_parsable():
@@ -59,8 +59,8 @@ def test_scalar_of_numpy_array():
     value = np.array([1, 2, 3])
     with pytest.raises(sc.DimensionError):
         sc.scalar(value)
-    var = sc.scalar(value, dtype=sc.dtype.PyObject)
-    assert var.dtype == sc.dtype.PyObject
+    var = sc.scalar(value, dtype=sc.DType.PyObject)
+    assert var.dtype == sc.DType.PyObject
     np.testing.assert_array_equal(var.value, value)
 
 
@@ -81,9 +81,9 @@ def test_zeros_with_variances():
 def test_zeros_with_dtype_and_unit():
     var = sc.zeros(dims=['x', 'y', 'z'],
                    shape=[1, 2, 3],
-                   dtype=sc.dtype.int32,
+                   dtype=sc.DType.int32,
                    unit='m')
-    assert var.dtype == sc.dtype.int32
+    assert var.dtype == sc.DType.int32
     assert var.unit == 'm'
 
 
@@ -94,9 +94,9 @@ def test_zeros_dtypes():
                     dtype='datetime64').value == np.datetime64(0, 's')
     assert sc.zeros(dims=(), shape=(), dtype=str).value == ''
     np.testing.assert_array_equal(
-        sc.zeros(dims=(), shape=(), dtype=sc.dtype.vector3).value, np.zeros(3))
+        sc.zeros(dims=(), shape=(), dtype=sc.DType.vector3).value, np.zeros(3))
     np.testing.assert_array_equal(
-        sc.zeros(dims=(), shape=(), dtype=sc.dtype.linear_transform3).value,
+        sc.zeros(dims=(), shape=(), dtype=sc.DType.linear_transform3).value,
         np.zeros((3, 3)))
 
 
@@ -115,8 +115,8 @@ def test_ones_with_variances():
 
 
 def test_ones_with_dtype_and_unit():
-    var = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=sc.dtype.int64, unit='s')
-    assert var.dtype == sc.dtype.int64
+    var = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=sc.DType.int64, unit='s')
+    assert var.dtype == sc.DType.int64
     assert var.unit == 's'
 
 
@@ -146,10 +146,10 @@ def test_full_with_variances():
 def test_full_with_dtype_and_unit():
     var = sc.full(dims=['x', 'y', 'z'],
                   shape=[1, 2, 3],
-                  dtype=sc.dtype.int64,
+                  dtype=sc.DType.int64,
                   unit='s',
                   value=1)
-    assert var.dtype == sc.dtype.int64
+    assert var.dtype == sc.DType.int64
     assert var.unit == 's'
 
 
@@ -197,9 +197,9 @@ def test_empty_with_variances():
 def test_empty_with_dtype_and_unit():
     var = sc.empty(dims=['x', 'y', 'z'],
                    shape=[1, 2, 3],
-                   dtype=sc.dtype.int32,
+                   dtype=sc.DType.int32,
                    unit='s')
-    assert var.dtype == sc.dtype.int32
+    assert var.dtype == sc.DType.int32
     assert var.unit == 's'
 
 
@@ -220,7 +220,7 @@ def test_array_creates_correct_variable():
     values = [1, 2, 3]
     variances = [4, 5, 6]
     unit = sc.units.m
-    dtype = sc.dtype.float64
+    dtype = sc.DType.float64
     var = sc.array(dims=dims,
                    values=values,
                    variances=variances,
@@ -237,7 +237,7 @@ def test_array_creates_correct_variable():
 
 def test_array_empty_dims():
     assert sc.identical(sc.array(dims=[], values=[1]),
-                        sc.scalar([1], dtype=sc.dtype.PyObject))
+                        sc.scalar([1], dtype=sc.DType.PyObject))
     a = np.asarray(1.1)
     assert sc.identical(sc.array(dims=None, values=a), sc.scalar(1.1))
     assert sc.identical(sc.array(dims=[], values=a), sc.scalar(1.1))
@@ -258,12 +258,12 @@ def test_zeros_like_with_variances():
                       values=np.random.random([1, 2, 3]),
                       variances=np.random.random([1, 2, 3]),
                       unit='m',
-                      dtype=sc.dtype.float32)
+                      dtype=sc.DType.float32)
     expected = sc.zeros(dims=['x', 'y', 'z'],
                         shape=[1, 2, 3],
                         with_variances=True,
                         unit='m',
-                        dtype=sc.dtype.float32)
+                        dtype=sc.DType.float32)
     zeros = sc.zeros_like(var)
     _compare_properties(zeros, expected)
     np.testing.assert_array_equal(zeros.values, 0)
@@ -283,12 +283,12 @@ def test_ones_like_with_variances():
                       values=np.random.random([1, 2, 3]),
                       variances=np.random.random([1, 2, 3]),
                       unit='m',
-                      dtype=sc.dtype.float32)
+                      dtype=sc.DType.float32)
     expected = sc.ones(dims=['x', 'y', 'z'],
                        shape=[1, 2, 3],
                        with_variances=True,
                        unit='m',
-                       dtype=sc.dtype.float32)
+                       dtype=sc.DType.float32)
     ones = sc.ones_like(var)
     _compare_properties(ones, expected)
     np.testing.assert_array_equal(ones.values, 1)
@@ -306,44 +306,44 @@ def test_empty_like_with_variances():
                       values=np.random.random([1, 2, 3]),
                       variances=np.random.random([1, 2, 3]),
                       unit='m',
-                      dtype=sc.dtype.float32)
+                      dtype=sc.DType.float32)
     expected = make_dummy(dims=['x', 'y', 'z'],
                           shape=[1, 2, 3],
                           with_variances=True,
                           unit='m',
-                          dtype=sc.dtype.float32)
+                          dtype=sc.DType.float32)
     _compare_properties(sc.empty_like(var), expected)
 
 
 def test_linspace():
     values = np.linspace(1.2, 103., 51)
-    var = sc.linspace('x', 1.2, 103., 51, unit='m', dtype=sc.dtype.float32)
-    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.dtype.float32)
+    var = sc.linspace('x', 1.2, 103., 51, unit='m', dtype=sc.DType.float32)
+    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.DType.float32)
     assert sc.identical(var, expected)
 
 
 def test_logspace():
     values = np.logspace(2.0, 3.0, num=4)
     var = sc.logspace('y', 2.0, 3.0, num=4, unit='s')
-    expected = sc.Variable(dims=['y'], values=values, unit='s', dtype=sc.dtype.float64)
+    expected = sc.Variable(dims=['y'], values=values, unit='s', dtype=sc.DType.float64)
     assert sc.identical(var, expected)
 
 
 def test_geomspace():
     values = np.geomspace(1, 1000, num=4)
     var = sc.geomspace('z', 1, 1000, num=4)
-    expected = sc.Variable(dims=['z'], values=values, dtype=sc.dtype.float64)
+    expected = sc.Variable(dims=['z'], values=values, dtype=sc.DType.float64)
     assert sc.identical(var, expected)
 
 
 def test_arange():
     values = np.arange(21)
-    var = sc.arange('x', 21, unit='m', dtype=sc.dtype.int32)
-    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.dtype.int32)
+    var = sc.arange('x', 21, unit='m', dtype=sc.DType.int32)
+    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.DType.int32)
     assert sc.identical(var, expected)
     values = np.arange(10, 21, 2)
-    var = sc.arange(dim='x', start=10, stop=21, step=2, unit='m', dtype=sc.dtype.int32)
-    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.dtype.int32)
+    var = sc.arange(dim='x', start=10, stop=21, step=2, unit='m', dtype=sc.DType.int32)
+    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.DType.int32)
     assert sc.identical(var, expected)
 
 

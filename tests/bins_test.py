@@ -24,7 +24,7 @@ def test_bins_default_begin_end():
 
 def test_bins_default_end():
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
-    begin = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.dtype.int64)
+    begin = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.DType.int64)
     var = sc.bins(begin=begin, dim='x', data=data)
     assert var.dims == begin.dims
     assert var.shape == begin.shape
@@ -34,7 +34,7 @@ def test_bins_default_end():
 
 def test_bins_fail_only_end():
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
-    end = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.dtype.int64)
+    end = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.DType.int64)
     with pytest.raises(RuntimeError):
         sc.bins(end=end, dim='x', data=data)
 
@@ -45,8 +45,8 @@ def test_bins_constituents():
                         coords={'coord': var},
                         masks={'mask': var},
                         attrs={'attr': var})
-    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.dtype.int64)
-    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.dtype.int64)
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64)
+    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64)
     binned = sc.bins(begin=begin, end=end, dim='x', data=data)
     events = binned.bins.constituents['data']
     assert 'coord' in events.coords
@@ -73,8 +73,8 @@ def test_bins_constituents():
 
 def test_bins():
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
-    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.dtype.int64)
-    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.dtype.int64)
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64)
+    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64)
     var = sc.bins(begin=begin, end=end, dim='x', data=data)
     assert var.dims == begin.dims
     assert var.shape == begin.shape
@@ -84,7 +84,7 @@ def test_bins():
 
 def test_bins_of_transpose():
     data = sc.Variable(dims=['row'], values=[1, 2, 3, 4])
-    begin = sc.Variable(dims=['x', 'y'], values=[[0, 1], [2, 3]], dtype=sc.dtype.int64)
+    begin = sc.Variable(dims=['x', 'y'], values=[[0, 1], [2, 3]], dtype=sc.DType.int64)
     end = begin + 1
     var = sc.bins(begin=begin, end=end, dim='row', data=data)
     assert sc.identical(sc.bins(**var.transpose().bins.constituents), var.transpose())
@@ -96,8 +96,8 @@ def make_binned():
                          coords={'time': col * 2.2},
                          attrs={'attr': col * 3.3},
                          masks={'mask': col == col})
-    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.dtype.int64)
-    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.dtype.int64)
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64)
+    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64)
     return sc.bins(begin=begin, end=end, dim='event', data=table)
 
 
@@ -322,21 +322,21 @@ def test_bins_mean_with_masks():
 def test_bins_mean_using_bins():
     # Call to sc.bins gives different data structure compared to sc.bin
 
-    buffer = sc.arange('event', 5, unit=sc.units.ns, dtype=sc.dtype.float64)
-    begin = sc.array(dims=['x'], values=[0, 2], dtype=sc.dtype.int64)
-    end = sc.array(dims=['x'], values=[2, 5], dtype=sc.dtype.int64)
+    buffer = sc.arange('event', 5, unit=sc.units.ns, dtype=sc.DType.float64)
+    begin = sc.array(dims=['x'], values=[0, 2], dtype=sc.DType.int64)
+    end = sc.array(dims=['x'], values=[2, 5], dtype=sc.DType.int64)
     binned = sc.bins(data=buffer, dim='event', begin=begin, end=end)
     means = binned.bins.mean()
 
     assert sc.identical(
         means,
-        sc.array(dims=["x"], values=[0.5, 3], unit=sc.units.ns, dtype=sc.dtype.float64))
+        sc.array(dims=["x"], values=[0.5, 3], unit=sc.units.ns, dtype=sc.DType.float64))
 
 
 def test_bins_like():
     data = sc.array(dims=['row'], values=[1, 2, 3, 4])
-    begin = sc.array(dims=['x'], values=[0, 3], dtype=sc.dtype.int64)
-    end = sc.array(dims=['x'], values=[3, 4], dtype=sc.dtype.int64)
+    begin = sc.array(dims=['x'], values=[0, 3], dtype=sc.DType.int64)
+    end = sc.array(dims=['x'], values=[3, 4], dtype=sc.DType.int64)
     binned = sc.bins(begin=begin, end=end, dim='row', data=data)
     dense = sc.array(dims=['x'], values=[1.1, 2.2])
     expected_data = sc.array(dims=['row'], values=[1.1, 1.1, 1.1, 2.2])
