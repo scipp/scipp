@@ -376,7 +376,7 @@ def test_mean_masked():
         data={
             'a':
             sc.Variable(
-                dims=['x'], values=np.array([1, 5, 4, 5, 1]), dtype=sc.dtype.float64)
+                dims=['x'], values=np.array([1, 5, 4, 5, 1]), dtype=sc.DType.float64)
         })
     d['a'].masks['m1'] = sc.Variable(dims=['x'],
                                      values=np.array([False, True, False, True, False]))

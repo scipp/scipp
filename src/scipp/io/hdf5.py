@@ -11,7 +11,7 @@ from ..typing import VariableLike
 
 
 def _dtype_lut():
-    from .._scipp.core import dtype as d
+    from .._scipp.core import DType as d
     # For types understood by numpy we do not actually need this special
     # handling, but will do as we add support for other types such as
     # variable-length strings.
@@ -146,7 +146,7 @@ def _check_scipp_header(group, what):
 
 
 def _data_handler_lut():
-    from .._scipp.core import dtype as d
+    from .._scipp.core import DType as d
     handler = {}
     for dtype in [
             d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64, d.vector3,
@@ -193,7 +193,7 @@ class VariableIO:
     def read(cls, group):
         _check_scipp_header(group, 'Variable')
         from .._scipp import core as sc
-        from .._scipp.core import dtype as d
+        from .._scipp.core import DType as d
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
         contents['dtype'] = cls._dtypes[values.attrs['dtype']]

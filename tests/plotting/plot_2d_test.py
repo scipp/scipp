@@ -379,11 +379,11 @@ def test_plot_access_ax_and_fig():
 
 
 def test_plot_2d_int32():
-    plot(make_dense_data_array(ndim=2, dtype=sc.dtype.int32))
+    plot(make_dense_data_array(ndim=2, dtype=sc.DType.int32))
 
 
 def test_plot_2d_int64_with_unit():
-    plot(make_dense_data_array(ndim=2, unit='K', dtype=sc.dtype.int64))
+    plot(make_dense_data_array(ndim=2, unit='K', dtype=sc.DType.int64))
 
 
 def test_plot_2d_int_coords():
@@ -424,7 +424,7 @@ def test_plot_redraw_dense():
 
 
 def test_plot_redraw_dense_int64():
-    da = make_dense_data_array(ndim=2, unit='K', dtype=sc.dtype.int64)
+    da = make_dense_data_array(ndim=2, unit='K', dtype=sc.DType.int64)
     p = sc.plot(da)
     before = p.view.figure.image_values.get_array()
     da *= 5

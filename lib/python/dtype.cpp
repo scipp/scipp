@@ -48,8 +48,8 @@ constexpr bool operator==(const scipp::index a, const DTypeSize b) {
 } // namespace
 
 void init_dtype(py::module &m) {
-  py::class_<DType>(m, "DType")
-      .def(py::init([](const py::object &x) { return scipp_dtype(x); }))
+  py::class_<DType> PyDType(m, "DType");
+  PyDType.def(py::init([](const py::object &x) { return scipp_dtype(x); }))
       .def("__eq__",
            [](const DType &self, const py::object &other) {
              return self == scipp_dtype(other);
@@ -58,9 +58,9 @@ void init_dtype(py::module &m) {
       .def("__repr__", [](const DType &self) {
         return "DType('" + to_string(self) + "')";
       });
-  auto dtype = m.def_submodule("dtype");
   for (const auto &[key, name] : core::dtypeNameRegistry()) {
-    dtype.attr(name.c_str()) = key;
+    PyDType.def_property_readonly_static(
+        name.c_str(), [key = key](const py::object &) { return key; });
   }
 }
 

@@ -5,8 +5,7 @@
 from __future__ import annotations
 
 from ..core import vector, vectors, matrix, matrices
-from ..core import dtype
-from ..core import Variable, DataArray, Dataset
+from ..core import DType, Variable, DataArray, Dataset
 from ..typing import VariableLike
 
 import numpy as np
@@ -60,9 +59,9 @@ def _variable_to_dict(v):
     # Using raw dtypes as dict keys doesn't appear to work, so we need to
     # convert to strings.
     dtype_parser.update({
-        str(dtype.vector3): _vec_parser,
-        str(dtype.linear_transform3): _vec_parser,
-        str(dtype.string): _vec_parser,
+        str(DType.vector3): _vec_parser,
+        str(DType.linear_transform3): _vec_parser,
+        str(DType.string): _vec_parser,
     })
 
     str_dtype = str(v.dtype)
@@ -139,7 +138,7 @@ def _dict_to_variable(d):
 
     for key in keylist:
         if key == "dtype" and isinstance(d[key], str):
-            out[key] = getattr(dtype, d[key])
+            out[key] = getattr(DType, d[key])
         else:
             out[key] = d[key]
     # Hack for types that cannot be directly constructed using Variable()

@@ -334,7 +334,7 @@ def test_plot_redraw():
 
 
 def test_plot_redraw_int64():
-    da = make_dense_data_array(ndim=1, dtype=sc.dtype.int64)
+    da = make_dense_data_array(ndim=1, dtype=sc.DType.int64)
     p = sc.plot(da)
     assert p.view.figure._lines[''].data.get_ydata()[2] == int(10.0 * np.sin(2.0))
     da *= 5

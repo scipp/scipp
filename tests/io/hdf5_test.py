@@ -39,12 +39,12 @@ affine = sc.spatial.affine_transforms(dims=['x'],
                                       unit=sc.units.m)
 
 datetime64ms_1d = sc.Variable(dims=['x'],
-                              dtype=sc.dtype.datetime64,
+                              dtype=sc.DType.datetime64,
                               unit='ms',
                               values=np.arange(10))
 
 datetime64us_1d = sc.Variable(dims=['x'],
-                              dtype=sc.dtype.datetime64,
+                              dtype=sc.DType.datetime64,
                               unit='us',
                               values=np.arange(10))
 
@@ -118,15 +118,15 @@ def test_variable_datetime64():
 
 
 def test_variable_binned_variable():
-    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.dtype.int64)
-    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.dtype.int64)
+    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.DType.int64)
+    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.DType.int64)
     binned = sc.bins(begin=begin, end=end, dim='x', data=x)
     check_roundtrip(binned)
 
 
 def test_variable_binned_variable_slice():
-    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.dtype.int64)
-    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.dtype.int64)
+    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.DType.int64)
+    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.DType.int64)
     binned = sc.bins(begin=begin, end=end, dim='x', data=x)
     # Note the current arbitrary limit is to avoid writing the buffer if it is
     # more than 50% too large. These cutoffs or the entiry mechanism may
@@ -177,7 +177,7 @@ def test_data_array_dtype_scipp_container():
     a = sc.DataArray(data=x)
     a.coords['variable'] = sc.scalar(x)
     a.coords['scalar'] = sc.scalar(a)
-    a.coords['1d'] = sc.empty(dims=x.dims, shape=x.shape, dtype=sc.dtype.DataArray)
+    a.coords['1d'] = sc.empty(dims=x.dims, shape=x.shape, dtype=sc.DType.DataArray)
     for i in range(4):
         a.coords['1d'].values[i] = sc.DataArray(float(i) * sc.units.m)
     a.coords['dataset'] = sc.scalar(sc.Dataset(data={'a': array_1d, 'b': array_2d}))

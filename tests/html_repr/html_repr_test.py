@@ -14,7 +14,7 @@ from ..factory import make_dense_data_array, make_dense_dataset, \
 
 
 def maybe_variances(variances, dtype):
-    if dtype in [sc.dtype.float64, sc.dtype.float32]:
+    if dtype in [sc.DType.float64, sc.DType.float32]:
         return variances
     else:
         return False
@@ -22,7 +22,7 @@ def maybe_variances(variances, dtype):
 
 @pytest.mark.parametrize("variance", [False, True])
 @pytest.mark.parametrize(
-    "dtype", [sc.dtype.float64, sc.dtype.float32, sc.dtype.int64, sc.dtype.int32])
+    "dtype", [sc.DType.float64, sc.DType.float32, sc.DType.int64, sc.DType.int32])
 @pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's', 'us'])
 def test_html_repr_scalar(variance, dtype, unit):
     var = make_scalar(with_variance=maybe_variances(variance, dtype),
@@ -36,7 +36,7 @@ def test_html_repr_scalar(variance, dtype, unit):
 @pytest.mark.parametrize("attr", [False, True])
 @pytest.mark.parametrize("mask", [False, True])
 @pytest.mark.parametrize(
-    "dtype", [sc.dtype.float64, sc.dtype.float32, sc.dtype.int64, sc.dtype.int32])
+    "dtype", [sc.DType.float64, sc.DType.float32, sc.DType.int64, sc.DType.int32])
 @pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
 def test_html_repr_scalar_array(variance, label, attr, mask, dtype, unit):
     da = make_scalar_array(with_variance=maybe_variances(variance, dtype),
@@ -50,7 +50,7 @@ def test_html_repr_scalar_array(variance, label, attr, mask, dtype, unit):
 
 @pytest.mark.parametrize("ndim", [1, 2, 3, 4])
 @pytest.mark.parametrize("variances", [False, True])
-@pytest.mark.parametrize("dtype", [sc.dtype.float64, sc.dtype.int64])
+@pytest.mark.parametrize("dtype", [sc.DType.float64, sc.DType.int64])
 @pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
 def test_html_repr_variable(ndim, variances, dtype, unit):
     print(ndim, variances, dtype, unit)
@@ -72,7 +72,7 @@ def test_html_repr_variable_vector():
 
 @pytest.mark.parametrize("ndim", [1, 2, 3, 4])
 @pytest.mark.parametrize("with_all", [True, False])
-@pytest.mark.parametrize("dtype", [sc.dtype.float64, sc.dtype.int64])
+@pytest.mark.parametrize("dtype", [sc.DType.float64, sc.DType.int64])
 @pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
 def test_html_repr_data_array(ndim, with_all, dtype, unit):
     da = make_dense_data_array(ndim=ndim,
@@ -99,7 +99,7 @@ def test_html_repr_binned_data_array(ndim, variances, masks):
 
 @pytest.mark.parametrize("ndim", [1, 2, 3, 4])
 @pytest.mark.parametrize("with_all", [True, False])
-@pytest.mark.parametrize("dtype", [sc.dtype.float64, sc.dtype.int64])
+@pytest.mark.parametrize("dtype", [sc.DType.float64, sc.DType.int64])
 @pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
 def test_html_repr_dataset(ndim, with_all, dtype, unit):
     da = make_dense_dataset(ndim=ndim,

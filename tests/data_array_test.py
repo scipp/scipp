@@ -246,7 +246,7 @@ def test_rename_dims():
 def test_coord_setitem_can_change_dtype():
     a = np.arange(3)
     v1 = sc.array(dims=['x'], values=a)
-    v2 = v1.astype(sc.dtype.int32)
+    v2 = v1.astype(sc.DType.int32)
     data = sc.DataArray(data=v1, coords={'x': v1})
     data.coords['x'] = v2
 
@@ -261,20 +261,20 @@ def test_astype():
     a = sc.DataArray(data=sc.Variable(dims=['x'],
                                       values=np.arange(10.0, dtype=np.int64)),
                      coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
-    assert a.dtype == sc.dtype.int64
+    assert a.dtype == sc.DType.int64
 
-    a_as_float = a.astype(sc.dtype.float32)
-    assert a_as_float.dtype == sc.dtype.float32
+    a_as_float = a.astype(sc.DType.float32)
+    assert a_as_float.dtype == sc.DType.float32
 
 
 def test_astype_bad_conversion():
     a = sc.DataArray(data=sc.Variable(dims=['x'],
                                       values=np.arange(10.0, dtype=np.int64)),
                      coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
-    assert a.dtype == sc.dtype.int64
+    assert a.dtype == sc.DType.int64
 
     with pytest.raises(sc.DTypeError):
-        a.astype(sc.dtype.string)
+        a.astype(sc.DType.string)
 
 
 def test_reciprocal():

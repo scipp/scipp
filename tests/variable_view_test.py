@@ -16,10 +16,10 @@ def test_type():
 def test_astype():
     variable_slice = sc.Variable(dims=['x'], values=np.arange(1, 10,
                                                               dtype=np.int64))['x', :]
-    assert variable_slice.dtype == sc.dtype.int64
+    assert variable_slice.dtype == sc.DType.int64
 
-    var_as_float = variable_slice.astype(sc.dtype.float32)
-    assert var_as_float.dtype == sc.dtype.float32
+    var_as_float = variable_slice.astype(sc.DType.float32)
+    assert var_as_float.dtype == sc.DType.float32
 
 
 def apply_test_op(op, a, b, data):

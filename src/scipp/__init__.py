@@ -34,7 +34,6 @@ from .core import BinEdgeError, BinnedDataError, CoordError, \
                          DTypeError, NotFoundError, SizeError, SliceError, \
                          UnitError, VariableError, VariancesError
 # Import submodules
-from .core import dtype
 from . import units
 from . import geometry
 # Import functions

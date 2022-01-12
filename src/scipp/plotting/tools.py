@@ -3,8 +3,8 @@
 # @author Neil Vaytet
 
 from .. import config, units
-from ..core import concat, values, dtype, nanmin, nanmax, histogram, full_like
-from ..core import Variable, DataArray
+from ..core import concat, values, nanmin, nanmax, histogram, full_like
+from ..core import DType, Variable, DataArray
 from ..core import abs as abs_
 import numpy as np
 from copy import copy
@@ -115,7 +115,7 @@ def find_log_limits(x):
     """
     from .. import flatten, ones
     volume = np.product(x.shape)
-    pixel = flatten(values(x.astype(dtype.float64)), to='pixel')
+    pixel = flatten(values(x.astype(DType.float64)), to='pixel')
     weights = ones(dims=['pixel'], shape=[volume], unit='counts')
     hist = histogram(DataArray(data=weights, coords={'order': pixel}),
                      bins=Variable(dims=['order'],
@@ -146,8 +146,8 @@ def find_linear_limits(x):
     Find variable min and max.
     """
     return [
-        values(nanmin(x).astype(dtype.float64)),
-        values(nanmax(x).astype(dtype.float64))
+        values(nanmin(x).astype(DType.float64)),
+        values(nanmax(x).astype(DType.float64))
     ]
 
 

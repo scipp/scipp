@@ -6,10 +6,9 @@ from enum import Enum
 
 from .. import units
 from ..core import bin as bin_
-from ..core import dtype
 from ..core import broadcast
 from ..core import linspace, rebin, get_slice_params, concat, histogram
-from ..core import DataArray, DimensionError
+from ..core import DataArray, DimensionError, DType
 from .tools import to_bin_edges
 
 
@@ -21,10 +20,10 @@ class ResamplingMode(Enum):
 def _resample(array, mode: ResamplingMode, dim, edges):
     if mode == ResamplingMode.sum:
         return rebin(array, dim, edges)
-    if array.dtype == dtype.float64:
+    if array.dtype == DType.float64:
         array = array.copy()
     else:
-        array = array.astype(dtype.float64)
+        array = array.astype(DType.float64)
     # Scale by bin widths, so `rebin` is effectively performing a "mean"
     # operation instead of "sum".
     # TODO
@@ -293,9 +292,9 @@ def _with_edges(array):
         new_array.coords[f'{prefix}_{dim}'] = var
         if var.sizes[dim] == array.sizes[dim]:
             new_array.coords[dim] = to_bin_edges(var, dim)
-        elif var.dtype not in [dtype.float32, dtype.float64]:
+        elif var.dtype not in [DType.float32, DType.float64]:
             # rebin does not support int coords right now
-            new_array.coords[dim] = var.astype(dtype.float64, copy=False)
+            new_array.coords[dim] = var.astype(DType.float64, copy=False)
     return new_array, prefix
 
 

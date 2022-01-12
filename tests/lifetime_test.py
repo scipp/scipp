@@ -77,7 +77,7 @@ def test_lifetime_coord_values():
 
 def test_lifetime_scalar_py_object():
     var = sc.scalar([1] * 100000)
-    assert var.dtype == sc.dtype.PyObject
+    assert var.dtype == sc.DType.PyObject
     val = var.copy().value
     import gc
     gc.collect()

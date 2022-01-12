@@ -24,33 +24,33 @@ def test_astype():
     var = sc.Variable(dims=['x'],
                       values=np.array([1, 2, 3, 4], dtype=np.int64),
                       unit='s')
-    assert var.dtype == sc.dtype.int64
+    assert var.dtype == sc.DType.int64
     assert var.unit == sc.units.s
 
-    for target_dtype in (sc.dtype.float64, float, 'float64'):
+    for target_dtype in (sc.DType.float64, float, 'float64'):
         var_as_float = var.astype(target_dtype)
-        assert var_as_float.dtype == sc.dtype.float64
+        assert var_as_float.dtype == sc.DType.float64
         assert var_as_float.unit == sc.units.s
 
 
 def test_astype_bad_conversion():
     var = sc.Variable(dims=['x'], values=np.array([1, 2, 3, 4], dtype=np.int64))
-    assert var.dtype == sc.dtype.int64
+    assert var.dtype == sc.DType.int64
 
-    for target_dtype in (sc.dtype.string, str, 'str'):
+    for target_dtype in (sc.DType.string, str, 'str'):
         with pytest.raises(sc.DTypeError):
             var.astype(target_dtype)
 
 
 def test_astype_datetime():
     var = sc.arange('x', np.datetime64(1, 's'), np.datetime64(5, 's'))
-    assert var.dtype == sc.dtype.datetime64
+    assert var.dtype == sc.DType.datetime64
     assert var.unit == sc.units.s
 
-    for target_dtype in (sc.dtype.datetime64, np.datetime64, 'datetime64',
+    for target_dtype in (sc.DType.datetime64, np.datetime64, 'datetime64',
                          'datetime64[s]'):
         same = var.astype(target_dtype)
-        assert same.dtype == sc.dtype.datetime64
+        assert same.dtype == sc.DType.datetime64
         assert same.unit == sc.units.s
 
 
@@ -138,7 +138,7 @@ def test_1D_converting():
 
 
 def test_1D_dataset():
-    var = sc.empty(dims=['x'], shape=(2, ), dtype=sc.dtype.Dataset)
+    var = sc.empty(dims=['x'], shape=(2, ), dtype=sc.DType.Dataset)
     d1 = sc.Dataset(data={'a': 1.5 * sc.units.m})
     d2 = sc.Dataset(data={'a': 2.5 * sc.units.m})
     var.values = [d1, d2]
@@ -207,10 +207,10 @@ def test_getitem_range():
 
 
 def test_setitem_broadcast():
-    var = sc.Variable(dims=['x'], values=[1, 2, 3, 4], dtype=sc.dtype.int64)
-    var['x', 1:3] = sc.scalar(5, dtype=sc.dtype.int64)
+    var = sc.Variable(dims=['x'], values=[1, 2, 3, 4], dtype=sc.DType.int64)
+    var['x', 1:3] = sc.scalar(5, dtype=sc.DType.int64)
     assert sc.identical(
-        var, sc.Variable(dims=['x'], values=[1, 5, 5, 4], dtype=sc.dtype.int64))
+        var, sc.Variable(dims=['x'], values=[1, 5, 5, 4], dtype=sc.DType.int64))
 
 
 def test_slicing():
@@ -877,26 +877,26 @@ def test_comparison():
 
 def test_radd_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var + 1).dtype == sc.dtype.int64
-    assert (1 + var).dtype == sc.dtype.int64
+    assert (var + 1).dtype == sc.DType.int64
+    assert (1 + var).dtype == sc.DType.int64
 
 
 def test_rsub_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var - 1).dtype == sc.dtype.int64
-    assert (1 - var).dtype == sc.dtype.int64
+    assert (var - 1).dtype == sc.DType.int64
+    assert (1 - var).dtype == sc.DType.int64
 
 
 def test_rmul_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var * 1).dtype == sc.dtype.int64
-    assert (1 * var).dtype == sc.dtype.int64
+    assert (var * 1).dtype == sc.DType.int64
+    assert (1 * var).dtype == sc.DType.int64
 
 
 def test_rtruediv_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var / 1).dtype == sc.dtype.float64
-    assert (1 / var).dtype == sc.dtype.float64
+    assert (var / 1).dtype == sc.DType.float64
+    assert (1 / var).dtype == sc.DType.float64
 
 
 def test_sort():

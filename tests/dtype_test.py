@@ -8,14 +8,14 @@ import numpy as np
 import scipp as sc
 
 
-@pytest.mark.parametrize('dt', (sc.dtype.int32, sc.dtype.float64, sc.dtype.string))
+@pytest.mark.parametrize('dt', (sc.DType.int32, sc.DType.float64, sc.DType.string))
 def test_dtype_comparison_equal(dt):
     assert dt == dt
 
 
-@pytest.mark.parametrize('other', (sc.dtype.int32, sc.dtype.float64, sc.dtype.string))
+@pytest.mark.parametrize('other', (sc.DType.int32, sc.DType.float64, sc.DType.string))
 def test_dtype_comparison_not_equal(other):
-    assert sc.dtype.int64 != other
+    assert sc.DType.int64 != other
 
 
 @pytest.mark.parametrize('name', ('int64', 'float32', 'str'))
@@ -25,44 +25,44 @@ def test_dtype_comparison_str(name):
 
 
 def test_dtype_comparison_type():
-    assert sc.dtype.float64 == float
-    assert float == sc.dtype.float64
-    assert sc.dtype.string == str
-    assert str == sc.dtype.string
+    assert sc.DType.float64 == float
+    assert float == sc.DType.float64
+    assert sc.DType.string == str
+    assert str == sc.DType.string
     # Depends on OS
-    assert int in (sc.dtype.int64, sc.dtype.int32)
+    assert int in (sc.DType.int64, sc.DType.int32)
 
 
 def test_numpy_comparison():
-    assert sc.dtype.int32 == np.dtype(np.int32)
+    assert sc.DType.int32 == np.dtype(np.int32)
     with pytest.raises(TypeError):
-        # Calls np.dtype.__eq__ which does not know how to interpret sc.DType
-        assert np.dtype(np.int32) == sc.dtype.int32
+        # Calls np.DType.__eq__ which does not know how to interpret sc.DType
+        assert np.dtype(np.int32) == sc.DType.int32
 
 
 def test_dtype_string_construction():
-    assert sc.DType('int64') == sc.dtype.int64
-    assert sc.DType('float64') == sc.dtype.float64
-    assert sc.DType('float') == sc.dtype.float64
-    assert sc.DType('str') == sc.dtype.string
+    assert sc.DType('int64') == sc.DType.int64
+    assert sc.DType('float64') == sc.DType.float64
+    assert sc.DType('float') == sc.DType.float64
+    assert sc.DType('str') == sc.DType.string
 
 
 def test_dtype_type_class_construction():
-    assert sc.DType(float) == sc.dtype.float64
-    assert sc.DType(str) == sc.dtype.string
+    assert sc.DType(float) == sc.DType.float64
+    assert sc.DType(str) == sc.DType.string
     # Depends on OS
-    assert sc.DType(int) in (sc.dtype.int64, sc.dtype.int32)
+    assert sc.DType(int) in (sc.DType.int64, sc.DType.int32)
 
 
 def test_dtype_numpy_dtype_construction():
-    assert sc.DType(np.dtype('float')) == sc.dtype.float64
-    assert sc.DType(np.dtype('int64')) == sc.dtype.int64
-    assert sc.DType(np.dtype('str')) == sc.dtype.string
+    assert sc.DType(np.dtype('float')) == sc.DType.float64
+    assert sc.DType(np.dtype('int64')) == sc.DType.int64
+    assert sc.DType(np.dtype('str')) == sc.DType.string
 
 
 def test_dtype_numpy_element_type_construction():
-    assert sc.DType(np.float64) == sc.dtype.float64
-    assert sc.DType(np.int32) == sc.dtype.int32
+    assert sc.DType(np.float64) == sc.DType.float64
+    assert sc.DType(np.int32) == sc.DType.int32
 
 
 def test_repr():
@@ -73,3 +73,8 @@ def test_repr():
 def test_str():
     assert str(sc.DType('int32')) == 'int32'
     assert str(sc.DType('float')) == 'float64'
+
+
+def test_predefined_dtypes_are_read_only():
+    with pytest.raises(AttributeError):
+        sc.DType.int64 = sc.DType('str')

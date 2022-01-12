@@ -30,7 +30,7 @@ def _parse_dims_shape_sizes(dims, shape, sizes):
 def scalar(value: _Any,
            variance: _Any = None,
            unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
-           dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
+           dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a zero dimensional :class:`Variable` with a unit and optional
     variance.
 
@@ -59,7 +59,7 @@ def zeros(*,
           shape: _Sequence[int] = None,
           sizes: dict = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
-          dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
+          dtype: _cpp.DType = _cpp.DType.float64,
           with_variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with default initialized values with
     given dimension labels and shape.
@@ -108,7 +108,7 @@ def ones(*,
          shape: _Sequence[int] = None,
          sizes: dict = None,
          unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
-         dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
+         dtype: _cpp.DType = _cpp.DType.float64,
          with_variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values initialized to 1 with
     given dimension labels and shape.
@@ -152,7 +152,7 @@ def empty(*,
           shape: _Sequence[int] = None,
           sizes: dict = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
-          dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
+          dtype: _cpp.DType = _cpp.DType.float64,
           with_variances: bool = False) -> _cpp.Variable:
     """Constructs a :class:`Variable` with uninitialized values with given
     dimension labels and shape.
@@ -200,7 +200,7 @@ def full(*,
          shape: _Sequence[int] = None,
          sizes: dict = None,
          unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
-         dtype: type(_cpp.dtype.float64) = _cpp.dtype.float64,
+         dtype: _cpp.DType = _cpp.DType.float64,
          value: _Any,
          variance: _Any = None) -> _cpp.Variable:
     """
@@ -322,7 +322,7 @@ def array(*,
           values: array_like,
           variances: _Optional[array_like] = None,
           unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
-          dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
+          dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
     values and optional variances. Dimension and value shape must match.
     Only keyword arguments accepted.
@@ -351,7 +351,7 @@ def linspace(dim: str,
              num: int,
              *,
              unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
-             dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
+             dtype: _cpp > DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with `num` evenly spaced samples,
     calculated over the interval `[start, stop]`.
 
@@ -378,7 +378,7 @@ def geomspace(dim: str,
               num: int,
               *,
               unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
-              dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
+              dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale
     (a geometric progression). This is similar to :py:func:`scipp.logspace`,
     but with endpoints specified directly.
@@ -407,7 +407,7 @@ def logspace(dim: str,
              num: int,
              *,
              unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
-             dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
+             dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale.
 
     :seealso: :py:func:`scipp.linspace` :py:func:`scipp.geomspace`
@@ -433,7 +433,7 @@ def arange(dim: str,
            step: _Union[int, float] = 1,
            *,
            unit: _Union[_cpp.Unit, str] = _cpp.units.dimensionless,
-           dtype: type(_cpp.dtype.float64) = None) -> _cpp.Variable:
+           dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with evenly spaced values within a given
     interval.
     Values are generated within the half-open interval [start, stop)
@@ -489,7 +489,7 @@ def datetime(value: _Union[str, int, _np.datetime64],
     """
     if isinstance(value, str):
         return scalar(_np.datetime64(value), unit=unit)
-    return scalar(value, unit=unit, dtype=_cpp.dtype.datetime64)
+    return scalar(value, unit=unit, dtype=_cpp.DType.datetime64)
 
 
 def datetimes(*,
@@ -537,4 +537,4 @@ def epoch(*, unit: _Union[_cpp.Unit, str]) -> _cpp.Variable:
       >>> sc.epoch(unit='s')
       <scipp.Variable> ()  datetime64              [s]  [1970-01-01T00:00:00]
     """
-    return scalar(0, unit=unit, dtype=_cpp.dtype.datetime64)
+    return scalar(0, unit=unit, dtype=_cpp.DType.datetime64)

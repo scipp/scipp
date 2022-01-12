@@ -252,7 +252,7 @@ if you want to preallocate memory to fill later, use :py:func:`scipp.empty`.
 :param variance: A single variance for constructing a scalar variable.
 :param unit: Physical unit, defaults to ``scipp.units.dimensionless``.
 :param dtype: Type of the variable's elements. Is deduced from other arguments
-              in most cases. Defaults to ``sc.dtype.float64`` if no deduction is
+              in most cases. Defaults to ``sc.DType.float64`` if no deduction is
               possible.
 
 :type dims: Sequence[str]

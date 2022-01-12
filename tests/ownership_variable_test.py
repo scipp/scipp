@@ -394,7 +394,7 @@ def test_own_var_1d_bin_set():
     a_buffer = np.arange(5)
     a_indices = np.array([0, 2, 5], dtype=np.int64)
     buffer = make_variable(a_buffer, unit='m')
-    indices = make_variable(a_indices, dtype=sc.dtype.int64)
+    indices = make_variable(a_indices, dtype=sc.DType.int64)
     binned = sc.bins(data=buffer,
                      begin=indices['x', :-1],
                      end=indices['x', 1:],
@@ -432,14 +432,14 @@ def test_own_var_1d_bin_set():
     assert sc.identical(
         binned,
         sc.bins(data=make_variable([-1, -2, -3, -4, 4], unit='s'),
-                begin=make_variable([1, 2], dtype=sc.dtype.int64),
-                end=make_variable([2, 4], dtype=sc.dtype.int64),
+                begin=make_variable([1, 2], dtype=sc.DType.int64),
+                end=make_variable([2, 4], dtype=sc.DType.int64),
                 dim='x'))
 
 
 def test_own_var_1d_bin_get():
     # The buffer is shared.
-    indices = make_variable(np.array([0, 2, 5]), dtype=sc.dtype.int64)
+    indices = make_variable(np.array([0, 2, 5]), dtype=sc.DType.int64)
     binned = sc.bins(data=make_variable(np.arange(5), unit='m'),
                      begin=indices['x', :-1],
                      end=indices['x', 1:],
@@ -454,7 +454,7 @@ def test_own_var_1d_bin_get():
 
 def test_own_var_1d_bin_copy():
     # Depth of copies of variables can be controlled.
-    indices = make_variable(np.array([0, 2, 5]), dtype=sc.dtype.int64)
+    indices = make_variable(np.array([0, 2, 5]), dtype=sc.DType.int64)
     binned = sc.bins(data=make_variable(np.arange(5), unit='m'),
                      begin=indices['x', :-1],
                      end=indices['x', 1:],

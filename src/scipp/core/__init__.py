@@ -30,9 +30,6 @@ UnitError.__doc__ = 'Inappropriate unit value.'
 DimensionError.__doc__ = 'Inappropriate dimension labels and/or shape.'
 DTypeError.__doc__ = 'Inappropriate dtype.'
 
-# Import submodules
-from .._scipp.core import dtype
-
 from .._scipp.core import get_slice_params
 
 from .sizes import _make_sizes

@@ -13,7 +13,7 @@ from .operations import islinspace
 class Lookup:
     def __init__(self, func: _cpp.DataArray, dim: str):
         if func.ndim == 1 and func.dtype in [
-                _cpp.dtype.bool, _cpp.dtype.int32, _cpp.dtype.int64
+                _cpp.DType.bool, _cpp.DType.int32, _cpp.DType.int64
         ] and not islinspace(func.coords[dim], dim).value:
             # Significant speedup if `func` is large but mostly constant.
             func = merge_equal_adjacent(func)
@@ -272,7 +272,7 @@ def bins(*,
     internally.
 
     The variables ``begin`` and ``end`` must have the same dims and shape and
-    ``dtype=sc.dtype.int64``. The output dims and shape are given by ``begin``.
+    ``dtype=sc.DType.int64``. The output dims and shape are given by ``begin``.
     If only ``begin`` is given, each bucket is a slice containing a non-range
     slice of ``data`` at the given indices. If neither ``begin`` nor ``end``
     are given, the output has ``dims=[dim]`` and contains all non-range slices
