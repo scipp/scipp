@@ -29,6 +29,7 @@ Breaking changes
   For consistency with other transformation creation functions, ``rotations_from_rotvecs`` now takes ``values``, ``dims``, and ``unit`` separately.
 * The matrix dtype ``matrix_3_float64`` has been renamed to ``linear_transform3``, and should now be constructed with :py:func:`scipp.spatial.transform.linear_transform`.
 * The vector dtype ``vector_3_float64`` has been renamed to ``vector3``.
+* Scipp's logger is no longer preconfigured, this has to be done by the user `#2372 <https://github.com/scipp/scipp/pull/2372>`_.
 
 Bugfixes
 ~~~~~~~~
