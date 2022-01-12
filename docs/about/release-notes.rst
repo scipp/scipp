@@ -3,8 +3,34 @@
 Release Notes
 =============
 
-v0.11.0 (unreleased)
+v0.12.0 (unreleased)
 --------------------
+
+Features
+~~~~~~~~
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+Tom Willemsen :sup:`b, c`\ ,
+and Jan-Lukas Wynen :sup:`a`
+
+v0.11.0 (January 2022)
+----------------------
 
 Features
 ~~~~~~~~
@@ -44,9 +70,6 @@ Deprecations
 
 * ``sc.matrix`` and ``sc.matrices`` have been deprecated in favour of :py:func:`scipp.spatial.linear_transform` and :py:func:`scipp.spatial.linear_transforms`, and will be removed in a future release of scipp.
 * The previously deprecated ``concatenate`` and ``groupby(..).concatenate`` have been removed. Use :py:func:`scipp.concat` and :py:func:`scipp.GroupByDataArray.concat` instead.
-
-Stability, Maintainability, and Testing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Contributors
 ~~~~~~~~~~~~
