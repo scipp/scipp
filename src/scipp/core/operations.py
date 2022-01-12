@@ -202,19 +202,17 @@ def to(var: Union[_cpp.Variable, _cpp.DataArray], *, unit=None, dtype=None, copy
     if unit is None:
         return var.astype(dtype, copy=copy)
 
-    if dtype == _cpp.dtype.float64 or dtype == "float64":
+    if dtype == _cpp.DType.float64:
         convert_dtype_first = True
-    elif var.dtype == _cpp.dtype.float64:
+    elif var.dtype == _cpp.DType.float64:
         convert_dtype_first = False
-    elif dtype == _cpp.dtype.float32 or dtype == "float32":
+    elif dtype == _cpp.DType.float32:
         convert_dtype_first = True
-    elif var.dtype == _cpp.dtype.float32:
+    elif var.dtype == _cpp.DType.float32:
         convert_dtype_first = False
-    elif var.dtype == _cpp.dtype.int64 and (dtype == _cpp.dtype.int32
-                                            or dtype == "int32"):
+    elif var.dtype == _cpp.DType.int64 and dtype == _cpp.DType.int32:
         convert_dtype_first = False
-    elif var.dtype == _cpp.dtype.int32 and (dtype == _cpp.dtype.int64
-                                            or dtype == "int64"):
+    elif var.dtype == _cpp.DType.int32 and dtype == _cpp.DType.int64:
         convert_dtype_first = True
     else:
         convert_dtype_first = True
