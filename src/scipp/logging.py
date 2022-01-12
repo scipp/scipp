@@ -22,33 +22,7 @@ def get_logger() -> logging.Logger:
     """
     Return the global logger used by scipp.
     """
-    logger = logging.getLogger('scipp')
-    if not get_logger.is_set_up:
-        _setup_logger(logger)
-        get_logger.is_set_up = True
-    return logger
-
-
-get_logger.is_set_up = False
-
-
-def _setup_logger(logger: logging.Logger) -> None:
-    logger.setLevel(logging.INFO)
-    logger.addHandler(make_stream_handler())
-    if running_in_jupyter():
-        logger.addHandler(make_widget_handler())
-
-
-def make_stream_handler() -> logging.StreamHandler:
-    """
-    Make a new ``StreamHandler`` with default setup for scipp.
-    """
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.WARN)
-    handler.setFormatter(
-        logging.Formatter('[%(asctime)s] %(levelname)-8s : %(message)s',
-                          datefmt='%Y-%m-%dT%H:%M:%S'))
-    return handler
+    return logging.getLogger('scipp')
 
 
 @dataclass
@@ -120,7 +94,7 @@ def make_log_widget() -> 'LogWidget':
 
 def get_log_widget() -> Optional['LogWidget']:
     """
-    Return the log widget used by the global scipp logger.
+    Return the log widget used by the scipp logger.
     If multiple widget handlers are installed, only the first one is returned.
     If no widget handler is installed, returns ``None``.
     """
@@ -132,7 +106,8 @@ def get_log_widget() -> Optional['LogWidget']:
 
 def display_logs() -> None:
     """
-    Display the log widget associated with the global scipp logger.
+    Display the log widget associated with the scipp logger.
+    Only works in Jupyter notebooks.
     """
     widget = get_log_widget()
     if widget is None:
@@ -146,7 +121,7 @@ def display_logs() -> None:
 
 def clear_log_widget() -> None:
     """
-    Remove the current output of the log widget of the global scipp logger
+    Remove the current output of the log widget of the scipp logger
     if there is one.
     """
     widget = get_log_widget()
@@ -264,7 +239,7 @@ def make_widget_handler() -> WidgetHandler:
 
 def get_widget_handler() -> Optional[WidgetHandler]:
     """
-    Return the widget handler installed in the global scipp logger.
+    Return the widget handler installed in the scipp logger.
     If multiple widget handlers are installed, only the first one is returned.
     If no widget handler is installed, returns ``None``.
     """
