@@ -27,7 +27,7 @@ del runtime_config
 
 from .core import __version__
 # Import classes
-from .core import Variable, DataArray, Dataset, Unit
+from .core import Variable, DataArray, Dataset, DType, Unit
 # Import errors
 from .core import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \

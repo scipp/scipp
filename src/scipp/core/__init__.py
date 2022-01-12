@@ -17,7 +17,7 @@ if _debug_:
 
 from .._scipp import __version__
 from .._scipp.core import Variable, DataArray, Dataset, GroupByDataArray, \
-                         GroupByDataset, Unit
+                         GroupByDataset, DType, Unit
 # Import errors
 from .._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
