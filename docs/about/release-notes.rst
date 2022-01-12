@@ -19,6 +19,7 @@ Features
 * Added :py:func:`scipp.Variable.to` and :py:func:`scipp.DataArray.to` as a convenience function for simultaneously converting dtype and units.
 * Added :py:func:`scipp.datetime`, :py:func:`scipp.datetimes`, and :py:func:`scipp.epoch` to conveniently construct variables containing datetimes `#2360 <https://github.com/scipp/scipp/pull/2360>`_.
 * Added ``camera`` option for 3-D scatter plots to control camera position and the point the camera is looking at `#2361 <https://github.com/scipp/scipp/pull/2361>`_.
+* Allow more interoperability between :py:class:`scipp.DType` and other ways of encoding dtypes `#2373 <https://github.com/scipp/scipp/pull/2373>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -30,6 +31,7 @@ Breaking changes
 * The matrix dtype ``matrix_3_float64`` has been renamed to ``linear_transform3``, and should now be constructed with :py:func:`scipp.spatial.transform.linear_transform`.
 * The vector dtype ``vector_3_float64`` has been renamed to ``vector3``.
 * Scipp's logger is no longer preconfigured, this has to be done by the user `#2372 <https://github.com/scipp/scipp/pull/2372>`_.
+* Data types are not attributes of the :py:class:`scipp.DType` class and the ``scipp.dtype`` module has been removed `#2373 <https://github.com/scipp/scipp/pull/2373>`_.
 
 Bugfixes
 ~~~~~~~~
