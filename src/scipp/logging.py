@@ -3,6 +3,8 @@
 # @author Jan-Lukas Wynen
 """
 Utilities for managing scipp's logger and log widget.
+
+See the `Logging <../../reference/logging.rst>`_ reference for an overview.
 """
 
 from copy import copy
@@ -27,19 +29,30 @@ def get_logger() -> logging.Logger:
 
 @dataclass
 class WidgetLogRecord:
+    """
+    Preprocessed data for display in :py:class:`LogWidget`.
+    """
     name: str
     levelname: str
     time_stamp: str
     message: str
 
 
+_LogWidgetDoc = """
+Widget that displays log messages in a table.
+
+This class can only be instantiated when Python is running in a Jupyter notebook.
+The constructor raises `RuntimeError` otherwise.
+
+:seealso: :py:class:`scipp.logging.WidgetHandler`
+"""
+
 if running_in_jupyter():
     from ipywidgets import HTML
 
     class LogWidget(HTML):
-        """
-        Widget that displays log messages in a table.
-        """
+        __doc__ = _LogWidgetDoc
+
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
             self._rows_str = ''
@@ -77,22 +90,17 @@ if running_in_jupyter():
             self._rows_str = ''
             self._update()
 
+else:
 
-def make_log_widget() -> 'LogWidget':
-    """
-    Create and return a new ``LogWidget`` for use with ``WidgetHandler``
-    in a Jupyter notebook.
+    class LogWidget:
+        __doc__ = _LogWidgetDoc
 
-    :raises RuntimeError: If Python is not running in Jupyter.
-    """
-    if not running_in_jupyter():
-        raise RuntimeError('Cannot construct a logging widget because '
-                           'Python is not running in a Jupyter notebook.')
-    else:
-        return LogWidget()
+        def __init__(self, **kwargs):
+            raise RuntimeError('Cannot create a logging widget because '
+                               'Python is not running in a Jupyter notebook.')
 
 
-def get_log_widget() -> Optional['LogWidget']:
+def get_log_widget() -> Optional[LogWidget]:
     """
     Return the log widget used by the scipp logger.
     If multiple widget handlers are installed, only the first one is returned.
@@ -180,17 +188,17 @@ def _replace_html_repr(message: str, replacements: Dict[str, str]) -> str:
 
 class WidgetHandler(logging.Handler):
     """
-    Logging handler that sends messages to a ``LogWidget``
+    Logging handler that sends messages to a :py:class:`scipp.logging.LogWidget`
     for display in Jupyter notebooks.
 
     Messages are formatted into a ``WidgetLogRecord`` and not into a string.
 
-    This handler introduces special formatting for objects with a HTML representation.
+    This handler introduces special formatting for objects with an HTML representation.
     If the log message is a single such object, its HTML repr is embedded in the widget.
     Strings are formatted to replace %s with the HTML repr and %r with a plain string
-    repr (``str(x)``) and ``repr(x)`` is inaccessible.
+    repr using ``str(x)`` and ``repr(x)`` is inaccessible.
     """
-    def __init__(self, level: int, widget: 'LogWidget'):
+    def __init__(self, level: int, widget: LogWidget):
         super().__init__(level)
         self.widget = widget
         self._rows = []
@@ -232,7 +240,7 @@ def make_widget_handler() -> WidgetHandler:
     Create a new widget log handler.
     :raises RuntimeError: If Python is not running in Jupyter.
     """
-    handler = WidgetHandler(level=logging.INFO, widget=make_log_widget())
+    handler = WidgetHandler(level=logging.INFO, widget=LogWidget())
     return handler
 
 
