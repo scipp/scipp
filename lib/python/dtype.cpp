@@ -48,7 +48,9 @@ constexpr bool operator==(const scipp::index a, const DTypeSize b) {
 } // namespace
 
 void init_dtype(py::module &m) {
-  py::class_<DType> PyDType(m, "DType");
+  py::class_<DType> PyDType(m, "DType", R"(
+Representation of a data type of a Variable in scipp.
+See https://scipp.github.io/reference/dtype.html for details.)");
   PyDType.def(py::init([](const py::object &x) { return scipp_dtype(x); }))
       .def("__eq__",
            [](const DType &self, const py::object &other) {
