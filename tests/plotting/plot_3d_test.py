@@ -171,6 +171,26 @@ def test_plot_projection_3d_with_camera():
          camera={'look_at': sc.vector(value=[0, 0, 30], unit='m')})
 
 
+def test_plot_projection_3d_with_camera_supports_compatible_units():
+    da = make_data_array_with_position_vectors()
+    da.coords['xyz'].unit = 'm'
+    plot(da,
+         projection="3d",
+         positions="xyz",
+         camera={
+             'position': sc.vector(value=[150, 10, 10], unit='mm'),
+             'look_at': sc.vector(value=[0, 0, 30], unit='mm')
+         })
+    plot(da,
+         projection="3d",
+         positions="xyz",
+         camera={'position': sc.vector(value=[150, 10, 10], unit='mm')})
+    plot(da,
+         projection="3d",
+         positions="xyz",
+         camera={'look_at': sc.vector(value=[0, 0, 30], unit='mm')})
+
+
 def test_plot_projection_3d_with_camera_raises_if_camera_param_units_wrong():
     da = make_data_array_with_position_vectors()
     da.coords['xyz'].unit = 'm'
@@ -178,9 +198,9 @@ def test_plot_projection_3d_with_camera_raises_if_camera_param_units_wrong():
         plot(da,
              projection="3d",
              positions="xyz",
-             camera={'position': sc.vector(value=[150, 10, 10], unit='mm')})
+             camera={'position': sc.vector(value=[150, 10, 10], unit='s')})
     with pytest.raises(sc.UnitError):
         plot(da,
              projection="3d",
              positions="xyz",
-             camera={'look_at': sc.vector(value=[0, 0, 30], unit='mm')})
+             camera={'look_at': sc.vector(value=[0, 0, 30], unit='s')})
