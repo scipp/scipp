@@ -8,6 +8,7 @@ from .view3d import PlotView3d
 from .figure3d import PlotFigure3d
 from .controller3d import PlotController3d
 from .model3d import ScatterPointModel
+from ..core import UnitError, to_unit
 
 
 def plot3d(scipp_obj_dict, *, positions, **kwargs):
@@ -35,9 +36,20 @@ def plot3d(scipp_obj_dict, *, positions, **kwargs):
                 show_outline=True,
                 xlabel=None,
                 ylabel=None,
-                zlabel=None):
+                zlabel=None,
+                camera=None):
         array = next(iter(scipp_obj_dict.values()))
         pos = array.meta[positions] if isinstance(positions, str) else positions
+        if camera is not None:
+            camera = dict(camera)
+            for k, v in camera.items():
+                try:
+                    camera[k] = to_unit(v, pos.unit)
+                except UnitError:
+                    raise UnitError(
+                        f"Unit  '{v.unit}' of camera['{k}'] not convertible "
+                        f"to unit of scatter point positions '{pos.unit}'.")
+            camera = {k: tuple(v.value) for k, v in camera.items()}
         out = {
             'view_ndims': 0,
             'dims': list(set(array.dims) - set(pos.dims)),
@@ -64,7 +76,8 @@ def plot3d(scipp_obj_dict, *, positions, **kwargs):
                                      tick_size=tick_size,
                                      xlabel=xlabel,
                                      ylabel=ylabel,
-                                     zlabel=zlabel)
+                                     zlabel=zlabel,
+                                     camera=camera)
 
         return out
 
