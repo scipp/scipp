@@ -52,7 +52,7 @@ void init_dtype(py::module &m) {
       .def(py::self == py::self)
       .def("__str__", [](const DType &self) { return to_string(self); })
       .def("__repr__", [](const DType &self) {
-        return "dtype('" + to_string(self) + "')";
+        return "DType('" + to_string(self) + "')";
       });
   auto dtype = m.def_submodule("dtype");
   for (const auto &[key, name] : core::dtypeNameRegistry()) {
