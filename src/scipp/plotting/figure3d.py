@@ -22,7 +22,7 @@ class PlotFigure3d:
     It renders an interactive scene containing a point cloud using `pythreejs`.
     """
     def __init__(self, *, background, cmap, extend, figsize, mask_cmap, nan_color, norm,
-                 pixel_size, show_outline, tick_size, xlabel, ylabel, zlabel):
+                 pixel_size, show_outline, tick_size, xlabel, ylabel, zlabel, camera):
 
         self._pixel_size = pixel_size
         if pixel_size is not None:
@@ -61,6 +61,7 @@ class PlotFigure3d:
         self.camera_backup = {}
 
         # Define camera
+        self.initial_camera_view = camera
         self.camera = p3.PerspectiveCamera(position=[0, 0, 0],
                                            aspect=config.plot.width /
                                            config.plot.height)
@@ -152,13 +153,20 @@ class PlotFigure3d:
 
         # Set camera controller target
         distance_from_center = 1.2
-        self.camera.position = list(np.array(center) + distance_from_center * box_size)
+        camera_position = list(np.array(center) + distance_from_center * box_size)
+        camera_lookat = tuple(center)
+        if self.initial_camera_view is not None:
+            camera_position = self.initial_camera_view.get('position', camera_position)
+            camera_lookat = tuple(self.initial_camera_view.get(
+                'look_at', camera_lookat))
+            self.initial_camera_view = None
+        self.camera.position = camera_position
         cam_pos_norm = np.linalg.norm(self.camera.position)
         box_mean_size = np.linalg.norm(box_size)
         self.camera.near = 0.01 * box_mean_size
         self.camera.far = 5.0 * cam_pos_norm
-        self.controls.target = tuple(center)
-        self.camera.lookAt(tuple(center))
+        self.controls.target = camera_lookat
+        self.camera.lookAt(camera_lookat)
         # TODO: Update OrbitControls maxDistance. This should be removed once
         # https://github.com/jupyter-widgets/pythreejs/issues/366 is resolved.
         self.controls.maxDistance = self.camera.far * 5.0
