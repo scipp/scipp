@@ -6,7 +6,7 @@ requires = [
   "conan",
   "ninja",
   "scikit-build",
-  "tbb-devel",
+  "tbb-devel==2021.4.0",  # because of hack with specific cmake config from conda package
 ]
 build-backend = "setuptools.build_meta"
 
