@@ -5,6 +5,7 @@ on:
     types: [published]
   schedule:
     - cron: "0 0 * * 4"  # every Thursday
+  workflow_dispatch:
 
 defaults:
   run:
