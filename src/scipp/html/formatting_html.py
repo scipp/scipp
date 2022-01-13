@@ -316,7 +316,7 @@ def summarize_variable(name,
             "</span></div>", f"<div class='sc-var-dims'>{escape(dims_str)}</div>"
         ]
     html += [
-        f"<div class='sc-var-dtype'>{escape(repr(var.dtype))}</div>",
+        f"<div class='sc-var-dtype'>{escape(str(var.dtype))}</div>",
         f"<div class='sc-var-unit'>{escape(unit)}</div>",
         f"<div class='sc-value-preview sc-preview'><span>{preview}</span>",
         "{}</div>".format(f'<span>{variances_preview}</span>'
