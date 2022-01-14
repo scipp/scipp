@@ -54,7 +54,7 @@ Breaking changes
 * ``sc.spatial.transform.as_rotvec`` has been moved to :py:func:`scipp.spatial.rotation_as_rotvec`
 * ``sc.spatial.transform.from_rotvec`` has been moved to :py:func:`scipp.spatial.rotations_from_rotvecs`, and now returns a rotation data type rather than a matrix.
   For consistency with other transformation creation functions, ``rotations_from_rotvecs`` now takes ``values``, ``dims``, and ``unit`` separately.
-* The matrix dtype ``matrix_3_float64`` has been renamed to ``linear_transform3``, and should now be constructed with :py:func:`scipp.spatial.transform.linear_transform`.
+* The matrix dtype ``matrix_3_float64`` has been renamed to ``linear_transform3``, and should now be constructed with :py:func:`scipp.spatial.linear_transform`.
 * The vector dtype ``vector_3_float64`` has been renamed to ``vector3``.
 * Scipp's logger is no longer preconfigured, this has to be done by the user `#2372 <https://github.com/scipp/scipp/pull/2372>`_.
 * Data types are now attributes of the :py:class:`scipp.DType` class and the ``scipp.dtype`` module has been removed `#2373 <https://github.com/scipp/scipp/pull/2373>`_.
