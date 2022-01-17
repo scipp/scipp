@@ -21,7 +21,10 @@
     {
       "name": "ci-linux",
       "inherits": "base",
-      "description": "Linux options for CI build (PR and Main)"
+      "description": "Linux options for CI build (PR and Main)",
+      "cacheVariables": {
+        "CPPCHECK": "ON"
+      }
     },
     {
       "name": "ci-macos",
