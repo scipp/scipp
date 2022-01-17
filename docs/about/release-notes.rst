@@ -9,6 +9,8 @@ v0.12.0 (unreleased)
 Features
 ~~~~~~~~
 
+* Added support for :py:func:`abs` to :py:func:`scipp.DataArray`, :py:func:`scipp.Dataset`, :py:func:`scipp.Variable` `#2382 <https://github.com/scipp/scipp/pull/2382>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
