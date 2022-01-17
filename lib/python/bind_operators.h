@@ -26,6 +26,7 @@ namespace py = pybind11;
 
 template <class T, class... Ignored>
 void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
+  c.def("__abs__", [](T &self) { return abs(self); });
   c.def("__repr__", [](T &self) { return to_string(self); });
   c.def("__bool__", [](T &) {
     throw std::runtime_error("The truth value of a variable, data array, or "
