@@ -13,6 +13,7 @@ dependencies:
   - tbb-devel
   - conan
   - cmake
+  - cppcheck
   - pip
   - gxx_linux-64 11.1.*
 
