@@ -1,4 +1,3 @@
-useStlAlgorithm
 
 // clang-tidy's google-explicit-constructor matches our style better.
 noExplicitConstructor
