@@ -1,5 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+"""
+Use this script right before a release to:
+- Add a new entry to the version-selection menu in the documentation.
+- Update headings in release notes and add new empty sections for next release.
+
+BEFORE running this script update the list of versions and targets to include the
+new desired version (or remove old unused versions).
+"""
 
 from datetime import datetime
 import pathlib
