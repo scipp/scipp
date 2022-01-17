@@ -9,15 +9,16 @@ BEFORE running this script update the list of versions and targets to include th
 new desired version (or remove old unused versions).
 """
 
-from datetime import datetime
 import pathlib
+from datetime import datetime
+from string import Template
 
 
 def make_version_select(root):
     version_select = f'{root}/docs/_templates/topbar/launchbuttons.html'
 
     with open(f'{root}/tools/release/templates/launchbuttons.html', 'r') as f:
-        contents = f.readlines()
+        contents = f.read()
 
     versions = ['0.11', '0.10', '0.9', '0.8', '0.7', '0.6', '0.5', '0.4', '0.3']
     targets = [
@@ -29,12 +30,12 @@ def make_version_select(root):
     for version, target in zip(versions, targets):
         entries.append(f"""        <a class="dropdown-buttons"
             href="https://scipp.github.io/release/{target}"><button type="button"
-                class="btn btn-secondary topbarbtn">v{version}</button></a>\n""")
+                class="btn btn-secondary topbarbtn">v{version}</button></a>""")
 
-    contents.insert(14, ''.join(entries))
+    contents = Template(contents).substitute(releases='\n'.join(entries))
+    contents = '<!-- DO NOT EDIT! This file is created using tools/release/prepare-release.html. -->\n' + contents  # noqa: E501
 
     with open(version_select, "w") as f:
-        contents = "".join(contents)
         f.write(contents)
 
 

@@ -17,8 +17,8 @@ Steps
 2. Run ``tools/release/prepare-release.py`` *after* inserting new entries to the version number and link target arrays.
    This creates a new entry in the version select menu and a new section with subsections in the release notes.
 
-3. Committing and merge the changes on GitHub.
+3. Commit and merge the changes on GitHub.
 
 4. Create a release in GitHub.
-   This triggers workflows to create conda packages and wheel.
+   This triggers workflows to create conda packages and wheels.
    They are automatically uploaded to conda-forge and PyPI, respectively.
