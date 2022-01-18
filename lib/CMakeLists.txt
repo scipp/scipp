@@ -198,7 +198,6 @@ if(CMAKE_CXX_CPPCHECK)
     # can can therefore not be done in the suppressions file.
     "--suppress=*:${CMAKE_SOURCE_DIR}/lib/common/include/scipp/common/span.hpp.in"
   )
-  add_compile_options(-Werror)
 endif()
 
 # This is currently causing to many warnings, reenable when appropriate.
