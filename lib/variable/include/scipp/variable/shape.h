@@ -30,7 +30,6 @@ flatten(const Variable &view, const scipp::span<const Dim> &from_labels,
 transpose(const Variable &var, scipp::span<const Dim> dims = {});
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-squeeze(const Variable &var,
-        std::optional<scipp::span<const Dim>> dims = std::nullopt);
+squeeze(const Variable &var, std::optional<scipp::span<const Dim>> dims);
 
 } // namespace scipp::variable
