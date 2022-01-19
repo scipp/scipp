@@ -29,6 +29,10 @@ flatten(const Variable &view, const scipp::span<const Dim> &from_labels,
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 transpose(const Variable &var, scipp::span<const Dim> dims = {});
 
+[[nodiscard]] SCIPP_VARIABLE_EXPORT std::vector<scipp::Dim>
+dims_for_squeezing(const Variable &var,
+                   std::optional<scipp::span<const Dim>> selected_dims);
+
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 squeeze(const Variable &var, std::optional<scipp::span<const Dim>> dims);
 
