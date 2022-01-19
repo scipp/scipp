@@ -90,6 +90,12 @@ TEST_F(SqueezeTest, all) {
   EXPECT_EQ(squeeze(var), sum(sum(original, Dim::Z), Dim::X));
 }
 
+TEST_F(SqueezeTest, all_var_has_no_length_1) {
+  const auto v = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                      Values{1, 2, 3, 4});
+  EXPECT_EQ(squeeze(v), v);
+}
+
 TEST_F(SqueezeTest, slice) {
   Variable xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
                                      Values{1, 2, 3, 4});
