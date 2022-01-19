@@ -31,6 +31,6 @@ transpose(const Variable &var, scipp::span<const Dim> dims = {});
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable squeeze(const Variable &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-squeeze(const Variable &var, const std::vector<Dim> &dims);
+squeeze(const Variable &var, const scipp::span<const Dim> dims);
 
 } // namespace scipp::variable
