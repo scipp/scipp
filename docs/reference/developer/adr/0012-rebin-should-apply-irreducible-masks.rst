@@ -9,7 +9,9 @@ Context
 -------
 
 In its current implementation ``rebin`` preserves all masks, including masks that depend on the dimension being rebinned.
-This is unlike other operations that remove a dimension or change the length of a dimension, such as ``sum``.
+This is unlike other operations that remove a dimension or change the length of a dimension, such as ``sum``:
+Those operations apply "irreducible" masks, i.e., masks that depend on the operation dimension.
+
 Historically the motivation for this was likely the behavior in Mantid, which also preserves such masks (called bin-masks in Mantid).
 The difference is that Mantid turns such masks into fractional masks, whereas scipp kept masks as boolean.
 
