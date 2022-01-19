@@ -307,4 +307,22 @@ Dataset transpose(const Dataset &d, const scipp::span<const Dim> dims) {
       d, [](auto &&... _) { return transpose(_...); }, dims);
 }
 
+DataArray squeeze(const DataArray &a,
+                  std::optional<scipp::span<const Dim>> dims) {
+  return dataset::transform(
+      a, [squeeze_dims = dims_for_squeezing(a.data(), dims)](const auto &in) {
+        for (const auto dim : squeeze_dims) {
+          if (in.dims().contains(dim)) {
+            return squeeze(in, squeeze_dims);
+          }
+        }
+        return in;
+      });
+}
+
+Dataset squeeze(const Dataset &d, std::optional<scipp::span<const Dim>> dims) {
+  return apply_to_items(
+      d, [](auto &&... _) { return squeeze(_...); }, dims);
+}
+
 } // namespace scipp::dataset
