@@ -55,7 +55,7 @@ TEST_F(SumTest, sum_in_place_bool) {
 }
 
 TEST_F(SumTest, sum_in_place_bool_incorrect_out_type) {
-  auto out = makeVariable<float>(Dims{Dim::Y}, Shape{2});
+  auto out = makeVariable<bool>(Dims{Dim::Y}, Shape{2});
   EXPECT_THROW(sum(var_bool, Dim::X, out), except::TypeError);
 }
 
