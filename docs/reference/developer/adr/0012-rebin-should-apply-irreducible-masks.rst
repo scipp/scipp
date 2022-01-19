@@ -1,7 +1,7 @@
 ADR 0012: Rebin should apply irreducible masks
 ==============================================
 
-- Status: accepted
+- Status: under discussion
 - Deciders: Jan-Lukas, Neil, Simon
 - Date: 2022-01-19
 
@@ -22,6 +22,12 @@ The user may experience that some of their data, e.g., a measured intensity, sim
 Rebinning multiple times makes more and more intensity disappear.
 
 Note furthermore that this behavior of ``rebin`` is inconsistent with ``bin``, which already applies masks in its current implementation by ignoring all masked bins.
+
+A crucial shortcoming of applying the mask is that for normalization purposes it is important whether a zero is true (measured) or and artifact (such as a masked dead detector).
+If the mask is applied we cannot tell the difference any more.
+A partial solution could be to use NaN for fully or partially masked bins.
+But the boundary problem persists:
+If we convert only fully masked bins to NaN the mask (or rather then invalid data area previously marked by the mask, now marked by NaN values) "shrinks", whereas if we do so also for partially masked bins the mask "grows", as in the current implementation.
 
 Decision
 --------
