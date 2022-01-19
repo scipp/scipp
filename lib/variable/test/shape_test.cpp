@@ -105,6 +105,14 @@ TEST_F(SqueezeTest, slice) {
   EXPECT_EQ(squeeze(sliced, std::vector<Dim>{Dim::Y}), sum(sliced, Dim::Y));
 }
 
+TEST_F(SqueezeTest, shares_buffer) {
+  auto squeezed = squeeze(var);
+  const core::Slice slice{Dim::Y, 0};
+  squeezed.setSlice(slice, makeVariable<double>(Values{-1}));
+  EXPECT_EQ(sum(sum(var, Dim::X), Dim::Z).slice(slice),
+            makeVariable<double>(Values{-1}));
+}
+
 TEST(ShapeTest, fold_fail_if_dim_not_found) {
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{4});
   EXPECT_THROW_DISCARD(fold(var, Dim::Time, {{Dim::Y, 2}, {Dim::Z, 2}}),
