@@ -509,6 +509,7 @@ def test_binary_not_equal():
 
 def test_abs():
     assert_export(sc.abs, sc.Variable(dims=(), values=0.0))
+    assert_export(abs, sc.Variable(dims=(), values=0.0))
 
 
 def test_abs_out():
