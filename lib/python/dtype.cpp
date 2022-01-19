@@ -62,7 +62,7 @@ See https://scipp.github.io/reference/dtype.html for details.)");
       });
   for (const auto &[key, name] : core::dtypeNameRegistry()) {
     PyDType.def_property_readonly_static(
-        name.c_str(), [key = key](const py::object &) { return key; });
+        name.c_str(), [k = key](const py::object &) { return k; });
   }
 }
 

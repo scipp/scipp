@@ -197,6 +197,7 @@ if(CMAKE_CXX_CPPCHECK)
     # Suppress warnings from 3rd party span header. This needs an absolute path
     # can can therefore not be done in the suppressions file.
     "--suppress=*:${CMAKE_SOURCE_DIR}/lib/common/include/scipp/common/span.hpp.in"
+    "--error-exitcode=2"
   )
 endif()
 

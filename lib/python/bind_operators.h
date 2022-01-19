@@ -26,14 +26,15 @@ namespace py = pybind11;
 
 template <class T, class... Ignored>
 void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
-  c.def("__abs__", [](T &self) { return abs(self); });
-  c.def("__repr__", [](T &self) { return to_string(self); });
-  c.def("__bool__", [](T &) {
+  c.def("__abs__", [](const T &self) { return abs(self); });
+  c.def("__repr__", [](const T &self) { return to_string(self); });
+  c.def("__bool__", [](const T &) {
     throw std::runtime_error("The truth value of a variable, data array, or "
                              "dataset is ambiguous. Use any() or all().");
   });
   c.def(
-      "copy", [](T &self, const bool deep) { return deep ? copy(self) : self; },
+      "copy",
+      [](const T &self, const bool deep) { return deep ? copy(self) : self; },
       py::arg("deep") = true, py::call_guard<py::gil_scoped_release>(),
       R"(
       Return a (by default deep) copy.
