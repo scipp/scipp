@@ -11,6 +11,7 @@ Features
 
 * Added support for :py:func:`abs` to :py:class:`scipp.DataArray`, :py:class:`scipp.Dataset`, :py:class:`scipp.Variable` `#2382 <https://github.com/scipp/scipp/pull/2382>`_.
 * ``sc.bin`` will now also look at attributes to perform the binning, instead of only looking at the coordinates `#2388 <https://github.com/scipp/scipp/pull/2388>`_.
+* Added :py:func:`scipp.squeeze` to remove length-1 dimensions `#2385 <https://github.com/scipp/scipp/pull/2385>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
