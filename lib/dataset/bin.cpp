@@ -469,7 +469,7 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
 
   builder.build(*target_bins, std::map<Dim, Variable>{});
   auto [buffer, bin_sizes] = bin<DataArray>(var, *target_bins, builder);
-  bin_sizes = squeeze(bin_sizes, scipp::span<const Dim>{&dim, 1});
+  bin_sizes = squeeze(bin_sizes, {dim});
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
   return make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer));
