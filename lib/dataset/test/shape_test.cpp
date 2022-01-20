@@ -613,3 +613,54 @@ TEST_F(SqueezeTest, data_array_3d_wrong_length_throws) {
   EXPECT_THROW_DISCARD(squeeze(a, std::vector<Dim>{Dim::X, Dim::Z}),
                        except::DimensionError);
 }
+
+class SqueezeDatasetTest : public SqueezeTest {
+protected:
+  SqueezeDatasetTest()
+      : b(copy(a.slice({Dim::X, 0}))), c(copy(a.slice({Dim::Y, 0}))) {
+    // Keeping them would cause a mismatch error when inserting into d.
+    b.coords().erase(Dim{"xyz"});
+    c.coords().erase(Dim{"xyz"});
+    dset.setData("a", a);
+    dset.setData("b", b);
+    dset.setData("c", c);
+  }
+
+  Dataset dset;
+  DataArray b;
+  DataArray c;
+};
+
+TEST_F(SqueezeDatasetTest, dataset_3d_outer) {
+  const std::vector<Dim> dims{Dim::X};
+  const auto squeezed = squeeze(dset, dims);
+  // b contains 'xyz' now because the latter has dims [y,z] after squeezing.
+  b.coords().set(Dim{"xyz"}, squeeze(xyz, dims));
+
+  EXPECT_EQ(squeezed["a"], squeeze(a, dims));
+  EXPECT_EQ(squeezed["b"], b);
+  EXPECT_EQ(squeezed["c"], squeeze(c, dims));
+}
+
+TEST_F(SqueezeDatasetTest, dataset_3d_center) {
+  const std::vector<Dim> dims{Dim::Y};
+  const auto squeezed = squeeze(dset, dims);
+  // b contains 'xyz' now because the latter has dims [x,z] after squeezing.
+  c.coords().set(Dim{"xyz"}, squeeze(xyz, dims));
+
+  EXPECT_EQ(squeezed["a"], squeeze(a, dims));
+  EXPECT_EQ(squeezed["b"], squeeze(b, dims));
+  EXPECT_EQ(squeezed["c"], c);
+}
+
+TEST_F(SqueezeDatasetTest, dataset_3d_all) {
+  const auto dims = std::nullopt;
+  const auto squeezed = squeeze(dset, dims);
+  // b,c contain 'xyz' now because the latter has dims [z] after squeezing.
+  b.coords().set(Dim{"xyz"}, squeeze(xyz, dims));
+  c.coords().set(Dim{"xyz"}, squeeze(xyz, dims));
+
+  EXPECT_EQ(squeezed["a"], squeeze(a, dims));
+  EXPECT_EQ(squeezed["b"], squeeze(b, std::vector<Dim>({Dim::Y})));
+  EXPECT_EQ(squeezed["c"], squeeze(c, std::vector<Dim>({Dim::X})));
+}
