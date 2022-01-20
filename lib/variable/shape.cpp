@@ -132,14 +132,14 @@ Variable transpose(const Variable &var, const scipp::span<const Dim> dims) {
 }
 
 Variable squeeze(const Variable &var) {
-  std::array<Dim, NDIM_MAX> length_1_dims;
-  std::size_t n = 0;
+  std::vector<Dim> length_1_dims;
+  length_1_dims.reserve(var.ndim());
   for (const auto &dim : var.dims().labels()) {
     if (var.dims()[dim] == 1) {
-      length_1_dims[n++] = dim;
+      length_1_dims.push_back(dim);
     }
   }
-  return squeeze(var, scipp::span{length_1_dims.begin(), n});
+  return squeeze(var, length_1_dims);
 }
 
 Variable squeeze(const Variable &var, const scipp::span<const Dim> dims) {
