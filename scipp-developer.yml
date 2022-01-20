@@ -43,6 +43,8 @@ dependencies:
   - pre-commit
   - yapf
   - flake8
+  - pip:
+    - nb-clean
 
   # Docs
   - pandoc
