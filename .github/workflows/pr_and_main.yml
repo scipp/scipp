@@ -20,7 +20,7 @@ jobs:
       - run: find lib -type f -regex '.*\.\(cpp\|h\|tcc\)' -exec clang-format-10 -i {} +
       - run: pip install cmake_format==0.6.9 flake8 yapf==0.30.0
       - run: find . -type f -name CMakeLists.txt -or -name '*.cmake' -not -path "./lib/.tbb/*" | xargs cmake-format -i
-      - run: find docs -type f -regex '.*\.ipynb' -exec nb-clean clean {} --remove-empty-cells --preserve-cell-metadata
+      - run: find docs -type f -regex '.*\.ipynb' -exec nb-clean clean {} --remove-empty-cells --preserve-cell-metadata +
       - run: yapf --recursive --in-place .
       - run: flake8 .
       - run: |
