@@ -317,8 +317,11 @@ DataArray squeeze(const DataArray &a,
 }
 
 Dataset squeeze(const Dataset &d, std::optional<scipp::span<const Dim>> dims) {
-  return apply_to_items(
-      d, [](auto &&... _) { return squeeze(_...); }, dims);
+  auto squeezed = d;
+  for (const auto &dim : dims_for_squeezing(d.dims(), dims)) {
+    squeezed = squeezed.slice({dim, 0});
+  }
+  return squeezed;
 }
 
 } // namespace scipp::dataset
