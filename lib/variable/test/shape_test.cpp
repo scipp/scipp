@@ -71,9 +71,7 @@ TEST_F(SqueezeTest, fail) {
   EXPECT_EQ(var, original);
 }
 
-TEST_F(SqueezeTest, none) {
-  EXPECT_EQ(squeeze(var, std::vector<Dim>{}), original);
-}
+TEST_F(SqueezeTest, none) { EXPECT_EQ(squeeze(var, {}), original); }
 
 TEST_F(SqueezeTest, outer) {
   EXPECT_EQ(squeeze(var, std::vector<Dim>{Dim::X}), sum(original, Dim::X));
