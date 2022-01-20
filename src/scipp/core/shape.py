@@ -221,3 +221,14 @@ def transpose(x: VariableLike,
     :return: The absolute values of the input.
     """
     return _call_cpp_func(_cpp.transpose, x, dims if dims is not None else [])
+
+
+def squeeze(x: VariableLike,
+            dims: Optional[Union[List[str], Tuple[str, ...]]] = None) -> VariableLike:
+    """
+
+    :param x:
+    :param dims:
+    :return:
+    """
+    return _call_cpp_func(_cpp.squeeze, x, dims)
