@@ -12,7 +12,7 @@ from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLike
 
 
-def broadcast(x: _cpp.Variable, dims: Union[List[str], Tuple[str]],
+def broadcast(x: _cpp.Variable, dims: Union[List[str], Tuple[str, ...]],
               shape: Sequence[int]) -> _cpp.Variable:
     """Broadcast a variable.
 
@@ -84,7 +84,7 @@ def concat(x: Sequence[VariableLike], dim: str) -> VariableLike:
 def fold(x: VariableLike,
          dim: str,
          sizes: Optional[Dict[str, int]] = None,
-         dims: Optional[Union[List[str], Tuple[str]]] = None,
+         dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
          shape: Optional[Sequence[int]] = None) -> VariableLike:
     """Fold a single dimension of a variable or data array into multiple dims.
 
@@ -141,7 +141,7 @@ def fold(x: VariableLike,
 
 
 def flatten(x: VariableLike,
-            dims: Optional[Union[List[str], Tuple[str]]] = None,
+            dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
             to: Optional[str] = None) -> VariableLike:
     """Flatten multiple dimensions of a variable or data array into a single
     dimension. If dims is omitted, then we flatten all of the inputs dimensions
@@ -210,8 +210,8 @@ def flatten(x: VariableLike,
 
 
 def transpose(x: VariableLike,
-              dims: Optional[Union[List[str], Tuple[str]]] = None) -> VariableLike:
-    """Transpose dimensions of a variable, an data array, or a dataset.
+              dims: Optional[Union[List[str], Tuple[str, ...]]] = None) -> VariableLike:
+    """Transpose dimensions of a variable, a data array, or a dataset.
 
     :param x: Object to transpose.
     :param dims: List of dimensions in desired order. If default,
