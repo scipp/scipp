@@ -178,6 +178,26 @@ TEST_P(BinTest, rebin_no_event_coord) {
   EXPECT_THROW_DISCARD(bin(x, {edges_x}), except::BinEdgeError);
 }
 
+TEST_P(BinTest, bin_using_attr) {
+  auto table = GetParam();
+  const auto expected = bin(table, {edges_x});
+  const auto xcoord = table.coords()[Dim::X];
+  table.coords().erase(Dim::X);
+  table.attrs().set(Dim::X, xcoord);
+  const auto result = bin(table, {edges_x});
+  EXPECT_EQ(expected, );
+}
+
+TEST_P(BinTest, rebin_using_attr) {
+  auto table = GetParam();
+  const auto expected = bin(bin(table, {edges_x}), {edges_x_coarse});
+  const auto xcoord = table.coords()[Dim::X];
+  table.coords().erase(Dim::X);
+  table.attrs().set(Dim::X, xcoord);
+  const auto result = bin(bin(table, {edges_x}), {edges_x_coarse});
+  EXPECT_EQ(expected, );
+}
+
 TEST_P(BinTest, rebin_coarse_to_fine_1d) {
   const auto table = GetParam();
   EXPECT_EQ(bin(table, {edges_x}),
