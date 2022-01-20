@@ -82,10 +82,6 @@ TEST_F(SqueezeTest, both) {
   EXPECT_EQ(squeeze(var, {Dim::X, Dim::Z}), sum(sum(original, Dim::Z), Dim::X));
 }
 
-TEST_F(SqueezeTest, all) {
-  EXPECT_EQ(squeeze(var), sum(sum(original, Dim::Z), Dim::X));
-}
-
 TEST_F(SqueezeTest, slice) {
   Variable xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
                                      Values{1, 2, 3, 4});
