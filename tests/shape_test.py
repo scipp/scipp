@@ -29,3 +29,9 @@ def test_flatten():
     assert_export(sc.flatten, x=x, dim='z')
     assert_export(sc.flatten, x=da, dims=['x', 'y'], dim='z')
     assert_export(sc.flatten, x=da, dim='z')
+
+
+def test_squeeze():
+    xy = sc.arange('a', 2).fold('a', {'x': 1, 'y': 2})
+    assert sc.identical(sc.squeeze(xy, dims=['x']), sc.arange('y', 2))
+    assert sc.identical(sc.squeeze(xy), sc.arange('y', 2))
