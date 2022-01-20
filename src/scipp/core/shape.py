@@ -249,7 +249,7 @@ def squeeze(x: VariableLike,
       >>> sc.squeeze(v)
       <scipp.Variable> (y: 3)      int64  [dimensionless]  [0, 1, 2]
       >>> sc.squeeze(v, ['z'])
-      <scipp.Variable> (x: 1, y: 3)      int64  [dimensionless]  [0, 1, 2
+      <scipp.Variable> (x: 1, y: 3)      int64  [dimensionless]  [0, 1, 2]
 
     Coordinates for squeezed dimensions are turned into attributes:
 
