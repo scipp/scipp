@@ -131,36 +131,36 @@ Variable transpose(const Variable &var, const scipp::span<const Dim> dims) {
   return var.transpose(dims);
 }
 
-std::vector<scipp::Dim>
-dims_for_squeezing(const Variable &var,
-                   const std::optional<scipp::span<const Dim>> selected_dims) {
-  if (selected_dims.has_value()) {
-    for (const auto &dim : *selected_dims) {
+namespace {
+auto squeeze_with_dims(const Variable &var, const scipp::span<const Dim> dims) {
+  auto squeezed = var;
+  for (const auto &dim : dims) {
+    squeezed = squeezed.slice({dim, 0});
+  }
+  return squeezed;
+}
+} // namespace
+
+Variable squeeze(const Variable &var,
+                 const std::optional<scipp::span<const Dim>> dims) {
+  if (dims.has_value()) {
+    for (const auto &dim : *dims) {
       if (const auto size = var.dims()[dim]; size != 1)
         throw except::DimensionError("Cannot squeeze '" + to_string(dim) +
                                      "' of length " + std::to_string(size) +
                                      ", must be of length 1.");
     }
-    return std::vector<Dim>{selected_dims->begin(), selected_dims->end()};
+    return squeeze_with_dims(var, *dims);
   } else {
-    std::vector<Dim> length_1_dims;
-    length_1_dims.reserve(var.ndim());
+    std::array<Dim, NDIM_MAX> length_1_dims;
+    std::size_t n = 0;
     for (const auto &dim : var.dims().labels()) {
       if (var.dims()[dim] == 1) {
-        length_1_dims.push_back(dim);
+        length_1_dims[n++] = dim;
       }
     }
-    return length_1_dims;
+    return squeeze_with_dims(var, scipp::span{length_1_dims.begin(), n});
   }
-}
-
-Variable squeeze(const Variable &var,
-                 const std::optional<scipp::span<const Dim>> dims) {
-  auto squeezed = var;
-  for (const auto &dim : dims_for_squeezing(var, dims)) {
-    squeezed = squeezed.slice({dim, 0});
-  }
-  return squeezed;
 }
 
 } // namespace scipp::variable
