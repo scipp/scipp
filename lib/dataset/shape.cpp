@@ -308,7 +308,7 @@ Dataset transpose(const Dataset &d, const scipp::span<const Dim> dims) {
 }
 
 DataArray squeeze(const DataArray &a,
-                  std::optional<scipp::span<const Dim>> dims) {
+                  const std::optional<scipp::span<const Dim>> dims) {
   auto squeezed = a;
   for (const auto &dim : dims_for_squeezing(a.dims(), dims)) {
     squeezed = squeezed.slice({dim, 0});
@@ -316,7 +316,8 @@ DataArray squeeze(const DataArray &a,
   return squeezed;
 }
 
-Dataset squeeze(const Dataset &d, std::optional<scipp::span<const Dim>> dims) {
+Dataset squeeze(const Dataset &d,
+                const std::optional<scipp::span<const Dim>> dims) {
   auto squeezed = d;
   for (const auto &dim : dims_for_squeezing(d.dims(), dims)) {
     squeezed = squeezed.slice({dim, 0});
