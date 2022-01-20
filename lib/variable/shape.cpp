@@ -142,7 +142,7 @@ Variable squeeze(const Variable &var) {
   return squeeze(var, length_1_dims);
 }
 
-Variable squeeze(const Variable &var, const scipp::span<const Dim> dims) {
+Variable squeeze(const Variable &var, const std::vector<Dim> &dims) {
   auto squeezed = var;
   for (const auto &dim : dims) {
     if (squeezed.dims()[dim] != 1)
