@@ -40,9 +40,4 @@ transpose(const DataArray &a, scipp::span<const Dim> dims = {});
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset
 transpose(const Dataset &d, scipp::span<const Dim> dims = {});
 
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
-squeeze(const DataArray &a, std::optional<scipp::span<const Dim>> dims);
-[[nodiscard]] SCIPP_DATASET_EXPORT Dataset
-squeeze(const Dataset &d, std::optional<scipp::span<const Dim>> dims);
-
 } // namespace scipp::dataset
