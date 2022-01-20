@@ -538,7 +538,7 @@ protected:
   DataArray a;
 };
 
-TEST_F(SqueezeTest, data_array_2d_outer) {
+TEST_F(SqueezeTest, data_array_3d_outer) {
   const auto dims = std::vector<Dim>{Dim::X};
   const auto squeezed = squeeze(a, dims);
   EXPECT_EQ(squeezed.data(), squeeze(xyz, dims));
@@ -553,7 +553,7 @@ TEST_F(SqueezeTest, data_array_2d_outer) {
   EXPECT_EQ(squeezed.attrs()[Dim{"attr-x"}], makeVariable<double>(Values{10}));
 }
 
-TEST_F(SqueezeTest, data_array_2d_center) {
+TEST_F(SqueezeTest, data_array_3d_center) {
   const auto dims = std::vector<Dim>{Dim::Y};
   const auto squeezed = squeeze(a, dims);
   EXPECT_EQ(squeezed.data(), squeeze(xyz, dims));
@@ -568,7 +568,7 @@ TEST_F(SqueezeTest, data_array_2d_center) {
   EXPECT_EQ(squeezed.attrs()[Dim{"attr-x"}], x);
 }
 
-TEST_F(SqueezeTest, data_array_2d_inner_and_center) {
+TEST_F(SqueezeTest, data_array_3d_inner_and_center) {
   const auto dims = std::vector<Dim>{Dim::Y, Dim::X};
   const auto squeezed = squeeze(a, dims);
   EXPECT_EQ(squeezed.data(), squeeze(xyz, dims));
@@ -584,7 +584,7 @@ TEST_F(SqueezeTest, data_array_2d_inner_and_center) {
   EXPECT_EQ(squeezed.attrs()[Dim{"attr-x"}], makeVariable<double>(Values{10}));
 }
 
-TEST_F(SqueezeTest, data_array_2d_outer_bin_edge) {
+TEST_F(SqueezeTest, data_array_3d_outer_bin_edge) {
   const auto dims = std::vector<Dim>{Dim::X};
   a.coords().set(Dim::X,
                  makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{-1, -2}));
@@ -602,7 +602,12 @@ TEST_F(SqueezeTest, data_array_2d_outer_bin_edge) {
   EXPECT_EQ(squeezed.attrs()[Dim{"attr-x"}], makeVariable<double>(Values{10}));
 }
 
-TEST_F(SqueezeTest, data_array_2d_wrong_length_throws) {
+TEST_F(SqueezeTest, data_array_3d_all) {
+  EXPECT_EQ(squeeze(a, std::nullopt),
+            squeeze(a, std::vector<Dim>{Dim::X, Dim::Y}));
+}
+
+TEST_F(SqueezeTest, data_array_3d_wrong_length_throws) {
   EXPECT_THROW_DISCARD(squeeze(a, std::vector<Dim>{Dim::Z}),
                        except::DimensionError);
   EXPECT_THROW_DISCARD(squeeze(a, std::vector<Dim>{Dim::X, Dim::Z}),
