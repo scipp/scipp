@@ -1,0 +1,69 @@
+colors:
+  attrs: '#ff5555'
+  button: '#bdbdbd49'
+  button_selected: '#bdbdbdbb'
+  coords: '#c6e590'
+  data: '#f6d028'
+  header_text: '#111111'
+  hover: '#d6eaf8'
+  masks: '#c8c8c8'
+plot:
+  aspect: auto
+  color:
+    - '#1f77b4'
+    - '#ff7f0e'
+    - '#2ca02c'
+    - '#d62728'
+    - '#9467bd'
+    - '#8c564b'
+    - '#e377c2'
+    - '#7f7f7f'
+    - '#bcbd22'
+    - '#17becf'
+  dpi: 96
+  height: 400
+  linestyle:
+    - none
+  linewidth:
+    - 1.5
+  marker:
+    - o
+    - ^
+    - s
+    - d
+    - '*'
+    - '1'
+    - P
+    - h
+    - X
+    - v
+    - <
+    - '>'
+    - '2'
+    - '3'
+    - '4'
+    - '8'
+    - p
+    - H
+    - +
+    - x
+    - D
+  padding:
+    - 0.05
+    - 0.02
+    - 1
+    - 1
+  params:
+    cbar: true
+    cmap: viridis
+    color: null
+    nan_color: '#d3d3d3'
+    norm: linear
+    over_color: '#8c564b'
+    show: true
+    under_color: '#9467bd'
+    vmax: null
+    vmin: null
+  pixel_ratio: 1.0
+  width: 600
+table_max_size: 50
