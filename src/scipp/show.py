@@ -33,7 +33,10 @@ def _color_variants(hex_color):
     Produce darker and lighter color variants, given an input color.
     """
     rgb = hex_to_rgb(hex_color)
-    dark = rgb_to_hex(np.clip(rgb - 40, 0, 255))
+    dark = rgb_to_hex(
+        
+        
+        np.clip(rgb - 40, 0, 255))
     light = rgb_to_hex(np.clip(rgb + 30, 0, 255))
     return light, hex_color, dark
 
