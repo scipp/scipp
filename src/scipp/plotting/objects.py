@@ -75,7 +75,7 @@ def _make_formatters(*, dims, arrays, labels):
 def make_profile(ax, mask_color):
     from .profile import PlotProfile
     cfg = config['plot']
-    pad = list(cfg['padding'])
+    pad = list(cfg['bounding_box'])
     pad[2] = 0.77
     return PlotProfile(ax=ax,
                        mask_color=mask_color,

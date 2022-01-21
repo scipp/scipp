@@ -37,7 +37,7 @@ class PlotFigure:
                 figsize = (cfg['width'] / cfg['dpi'], cfg['height'] / cfg['dpi'])
             self.fig, self.ax = plt.subplots(1, 1, figsize=figsize, dpi=cfg['dpi'])
             if self.padding is None:
-                self.padding = cfg['padding']
+                self.padding = cfg['bounding_box']
             self.fig.tight_layout(rect=self.padding)
             if self.is_widget():
                 self.toolbar = toolbar(mpl_toolbar=self.fig.canvas.toolbar)
