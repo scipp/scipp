@@ -198,6 +198,27 @@ TEST_P(BinTest, rebin_using_attr) {
   EXPECT_EQ(expected, result);
 }
 
+TEST_P(BinTest, rebin_existing_binning_attr_and_event_coord) {
+  auto table = GetParam();
+  const auto expected = bin(bin(table, {edges_x}), {edges_x_coarse});
+  auto temp = bin(table, {edges_x});
+  temp.attrs().set(Dim::X, temp.coords().extract(Dim::X));
+  const auto result = bin(temp, {edges_x_coarse});
+  EXPECT_EQ(expected, result);
+}
+
+TEST_P(BinTest, rebin_existing_binning_attr_and_event_attr) {
+  auto table = GetParam();
+  const auto expected = bin(bin(table, {edges_x}), {edges_x_coarse});
+  table.attrs().set(Dim::X, table.coords().extract(Dim::X));
+  auto temp = bin(table, {edges_x});
+  temp.attrs().set(Dim::X, temp.coords().extract(Dim::X));
+  const auto result = bin(temp, {edges_x_coarse});
+  auto view = bins_view<DataArray>(result.data());
+  view.coords().set(Dim::X, view.attrs().extract(Dim::X));
+  EXPECT_EQ(expected, result);
+}
+
 TEST_P(BinTest, rebin_coarse_to_fine_1d) {
   const auto table = GetParam();
   EXPECT_EQ(bin(table, {edges_x}),
@@ -284,6 +305,19 @@ TEST_P(BinTest, rebin_2d_with_2d_coord) {
   // Unchanged outer binning
   EXPECT_EQ(bin(xy, {edges_x_coarse, edges_y_coarse}),
             bin(xy, {edges_y_coarse}));
+}
+
+TEST_P(BinTest, rebin_2d_with_2d_attr) {
+  auto table = GetParam();
+  table.attrs().set(Dim::Y, table.coords().extract(Dim::Y));
+  auto xy = bin(table, {edges_x_coarse, edges_y_coarse});
+  Variable edges_y_2d = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                                             Values{-2, 1, 2, -3, 0, 3});
+  xy.coords().erase(Dim::Y);
+  xy.attrs().set(Dim::Y, edges_y_2d);
+  bins_view<DataArray>(xy.data()).attrs()[Dim::Y] += 0.5 * units::one;
+  EXPECT_THROW(bin(xy, {edges_x_coarse}), except::DimensionError);
+  EXPECT_NO_THROW(bin(xy, {edges_x_coarse, edges_y_coarse}));
 }
 
 TEST_P(BinTest, rebin_coarse_to_fine_2d) {
