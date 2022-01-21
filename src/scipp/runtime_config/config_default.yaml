@@ -1,3 +1,14 @@
+## Configuration file for scipp
+## See https://scipp.github.io/reference/runtime-configuration.html
+##
+## COLORS
+## All colors are given as one of
+##     - a hex string, such as #ff00ff
+##     - a scalar grayscale intensity such as 0.75 (as a string)
+##     - a legal html color name, e.g., red, blue, darkslategray
+##
+
+# Colors used by output to Jupyter notebooks by, e.g. show, table, plot
 colors:
   attrs: '#ff5555'
   button: '#bdbdbd49'
@@ -7,9 +18,19 @@ colors:
   header_text: '#111111'
   hover: '#d6eaf8'
   masks: '#c8c8c8'
+
+# Maximum number of rows in a table.
+table_max_size: 50
+
+# Default style of plots produced by scipp.
 plot:
+  # Aspect ratio for multidimensional plots
+  # See https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_aspect.html
   aspect: auto
+
+  # Plots cycle through these colors for lines and markers.
   color:
+    - '0.5'
     - '#1f77b4'
     - '#ff7f0e'
     - '#2ca02c'
@@ -20,50 +41,81 @@ plot:
     - '#7f7f7f'
     - '#bcbd22'
     - '#17becf'
+
+  # Dots per inch of figures
   dpi: 96
+
+  # TODO
+  pixel_ratio: 1.0
+
+  # Height and width of figures
   height: 400
+  width: 600
+
+  # Style of lines
+  # Cycles through these when more than one line is drawn in a single call.
+  # Use 'none' to disable lines.
+  # See https://matplotlib.org/stable/api/_as_gen/matplotlib.lines.Line2D.html#matplotlib.lines.Line2D.set_linestyle
   linestyle:
     - none
+
+  # Width of lines.
+  # Cycles through these when more than one line is drawn in a single call.
   linewidth:
     - 1.5
+
+  # Plots cycle through these to draw markers.
+  # See https://matplotlib.org/stable/api/markers_api.html
   marker:
-    - o
-    - ^
-    - s
-    - d
+    - 'o'
+    - '^'
+    - 's'
+    - 'd'
     - '*'
     - '1'
-    - P
-    - h
-    - X
-    - v
-    - <
+    - 'P'
+    - 'h'
+    - 'X'
+    - 'v'
+    - '<'
     - '>'
     - '2'
     - '3'
     - '4'
     - '8'
-    - p
-    - H
-    - +
-    - x
-    - D
-  padding:
-    - 0.05
-    - 0.02
-    - 1
-    - 1
+    - 'p'
+    - 'H'
+    - '+'
+    - 'x'
+    - 'D'
+
+  # Rectangle into which figure content is drawn
+  # in normalized figure coordinates.
+  bounding_box:
+    - 0.05  # distance from left edge
+    - 0.02  # distance from bottom edge
+    - 1  # width
+    - 1  # height
+
   params:
+    # Choose whether to show a color bar where applicable.
     cbar: true
+    # Colormap
+    # See https://matplotlib.org/stable/gallery/color/colormap_reference.html
     cmap: viridis
+    # Generate a colormap from this color if given.
+    # Overrides cmap.
     color: null
+    # Mark values of NaN with this color.
     nan_color: '#d3d3d3'
+    # Norm used in 2d and 3d plots.
+    # One of ['linear', 'log']
     norm: linear
+    # Color of values above vmax.
     over_color: '#8c564b'
-    show: true
+    # Color of values below vmin.
     under_color: '#9467bd'
+    # Maximum value to show.
     vmax: null
+    # Minimum value to show.
     vmin: null
-  pixel_ratio: 1.0
-  width: 600
-table_max_size: 50
