@@ -16,6 +16,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
       # Run this before any other commands so that git diff does not pick up formatting changes.
       - run: |
           find . -type f -not -path '.git/*' -exec sed -ri "s/[0-9]{4} (Scipp contributors)/$(date +%Y) \1/g" {} +
@@ -56,6 +58,7 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
+          ref: ${{ github.head_ref }}
 
       - name: ccache
         if: ${{ !contains(matrix.os, 'windows') }}
