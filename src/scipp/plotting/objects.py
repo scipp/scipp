@@ -74,12 +74,13 @@ def _make_formatters(*, dims, arrays, labels):
 
 def make_profile(ax, mask_color):
     from .profile import PlotProfile
-    pad = config.plot.padding.copy()
+    cfg = config['plot']
+    pad = list(cfg['padding'])
     pad[2] = 0.77
     return PlotProfile(ax=ax,
                        mask_color=mask_color,
-                       figsize=(1.3 * config.plot.width / config.plot.dpi,
-                                0.6 * config.plot.height / config.plot.dpi),
+                       figsize=(1.3 * cfg['width'] / cfg['dpi'],
+                                0.6 * cfg['height'] / cfg['dpi']),
                        padding=pad,
                        legend={
                            "show": True,

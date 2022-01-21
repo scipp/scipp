@@ -31,13 +31,13 @@ class PlotFigure:
         self.own_axes = True
         self.toolbar = None
         self.padding = padding
+        cfg = config['plot']
         if self.ax is None:
             if figsize is None:
-                figsize = (config.plot.width / config.plot.dpi,
-                           config.plot.height / config.plot.dpi)
-            self.fig, self.ax = plt.subplots(1, 1, figsize=figsize, dpi=config.plot.dpi)
+                figsize = (cfg['width'] / cfg['dpi'], cfg['height'] / cfg['dpi'])
+            self.fig, self.ax = plt.subplots(1, 1, figsize=figsize, dpi=cfg['dpi'])
             if self.padding is None:
-                self.padding = config.plot.padding
+                self.padding = cfg['padding']
             self.fig.tight_layout(rect=self.padding)
             if self.is_widget():
                 self.toolbar = toolbar(mpl_toolbar=self.fig.canvas.toolbar)
