@@ -30,6 +30,8 @@ jobs:
       - run: yapf --recursive --in-place .
       - run: flake8 .
       - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Apply automatic formatting
 
   build_and_test:
     needs: formatting
