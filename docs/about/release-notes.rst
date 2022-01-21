@@ -17,6 +17,8 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
+* ``sc.bin`` will now also look at attributes to perform the binning, instead of only looking at the coordinates `#2388 <https://github.com/scipp/scipp/pull/2388>`_.
+
 Deprecations
 ~~~~~~~~~~~~
 
