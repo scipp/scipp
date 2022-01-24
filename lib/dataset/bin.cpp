@@ -610,8 +610,7 @@ DataArray bin(const Variable &data, const Coords &coords, const Masks &masks,
               const Attrs &attrs, const std::vector<Variable> &edges,
               const std::vector<Variable> &groups,
               const std::vector<Dim> &erase) {
-  auto meta = attrs.merge_from(coords);
-  meta.set_readonly();
+  const auto meta = attrs.merge_from(coords);
   auto builder = axis_actions(data, meta, edges, groups, erase);
   const auto masked = hide_masked(data, masks, builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
