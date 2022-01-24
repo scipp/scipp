@@ -559,6 +559,7 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
   validate_bin_args(array, edges, groups);
   const auto &data = array.data();
   const auto &coords = array.coords();
+  const auto &meta = array.meta();
   const auto &masks = array.masks();
   const auto &attrs = array.attrs();
   if (data.dtype() == dtype<core::bin<DataArray>>) {
@@ -580,8 +581,8 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
         (data.dims().volume() > std::numeric_limits<int32_t>::max())
             ? makeVariable<int64_t>(data.dims())
             : makeVariable<int32_t>(data.dims());
-    auto builder = axis_actions(data, coords, edges, groups, erase);
-    builder.build(target_bins_buffer, coords);
+    auto builder = axis_actions(data, meta, edges, groups, erase);
+    builder.build(target_bins_buffer, meta);
     const auto target_bins =
         make_bins_no_validate(indices, dim, target_bins_buffer);
     return add_metadata(bin<DataArray>(drop_grouped_event_coords(tmp, groups),
@@ -609,20 +610,15 @@ DataArray bin(const Variable &data, const Coords &coords, const Masks &masks,
               const Attrs &attrs, const std::vector<Variable> &edges,
               const std::vector<Variable> &groups,
               const std::vector<Dim> &erase) {
-  auto builder = axis_actions(data, coords, edges, groups, erase);
+  const auto meta = attrs.merge_from(coords);
+  auto builder = axis_actions(data, meta, edges, groups, erase);
   const auto masked = hide_masked(data, masks, builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
-  builder.build(*target_bins, bins_view<DataArray>(masked).coords(), coords);
+  builder.build(*target_bins, bins_view<DataArray>(masked).meta(), coords);
   return add_metadata(bin<DataArray>(drop_grouped_event_coords(masked, groups),
                                      *target_bins, builder),
                       coords, masks, attrs, builder.edges(), builder.groups(),
                       erase);
 }
-
-template SCIPP_DATASET_EXPORT DataArray
-bin(const Variable &, const std::map<Dim, Variable> &,
-    const std::map<std::string, Variable> &, const std::map<Dim, Variable> &,
-    const std::vector<Variable> &, const std::vector<Variable> &,
-    const std::vector<Dim> &);
 
 } // namespace scipp::dataset
