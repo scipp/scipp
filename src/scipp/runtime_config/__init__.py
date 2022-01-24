@@ -39,7 +39,10 @@ class Config:
 
     def __init__(self):
         self._cfg = confuse.LazyConfig('scipp', __name__)
-        self._cfg.set_file('./scipp.config.yaml')
+        self._cfg.set(
+            confuse.YamlSource('./scipp.config.yaml',
+                               optional=True,
+                               loader=self._cfg.loader))
 
     @lru_cache
     def get(self) -> dict:
