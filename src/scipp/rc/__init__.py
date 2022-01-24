@@ -3,10 +3,16 @@
 # @file
 # @author Neil Vaytet, Jan-Lukas Wynen
 """
-Runtime configuration utility.
+Runtime configuration.
 
 See https://scipp.github.io/reference/runtime-configuration.html
 """
+
+# *** For developers ***
+#
+# When adding new options, update both the file config_default.yaml
+# and Config._TEMPLATE.
+# If the template is not updated, new options will simply be ignored.
 
 from functools import lru_cache
 from pathlib import Path
