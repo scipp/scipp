@@ -19,7 +19,8 @@ template <class Compare> constexpr auto make_sort(Compare compare) {
   return overloaded{
       core::element::arg_list<scipp::span<int64_t>, scipp::span<int32_t>,
                               scipp::span<double>, scipp::span<float>,
-                              scipp::span<std::string>, scipp::span<time_point>>,
+                              scipp::span<std::string>,
+                              scipp::span<time_point>>,
       [](units::Unit &) {},
       [&compare](auto &range) {
         using T = std::decay_t<decltype(range)>;
