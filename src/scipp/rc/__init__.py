@@ -9,6 +9,7 @@ See https://scipp.github.io/reference/runtime-configuration.html
 """
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Any, Iterable, Tuple
 
 import confuse
@@ -59,6 +60,22 @@ class Config:
             confuse.YamlSource('./scipp.config.yaml',
                                optional=True,
                                loader=self._cfg.loader))
+
+    def config_dir(self) -> Path:
+        """
+        Return the directory for configuration files.
+
+        The directory is created if it does not already exist.
+        """
+        return Path(self._cfg.config_dir())
+
+    def config_path(self) -> Path:
+        """
+        Return the path to the configuration file.
+
+        The file may not exist but its folder is created if it does not already exist.
+        """
+        return Path(self._cfg.user_config_path())
 
     @lru_cache
     def get(self) -> dict:
