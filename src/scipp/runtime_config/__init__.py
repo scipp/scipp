@@ -4,6 +4,7 @@
 # @author Neil Vaytet, Jan-Lukas Wynen
 
 from functools import lru_cache
+from typing import Any, Iterable, Tuple
 
 import confuse
 
@@ -56,6 +57,15 @@ class Config:
             raise TypeError(
                 f"New items cannot be inserted into the configuration, got '{name}'.")
         self.get()[name] = value
+
+    def keys(self) -> Iterable[str]:
+        yield from self.get().keys()
+
+    def values(self) -> Iterable[Any]:
+        yield from self.get().values()
+
+    def items(self) -> Iterable[Tuple[str, Any]]:
+        yield from self.get().items()
 
 
 config = Config()
