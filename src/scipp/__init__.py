@@ -19,7 +19,7 @@ if os.name == "nt" and "CONDA_PREFIX" in os.environ:
         dll_directory = (path.parent.parent / "bin").resolve()
         os.environ["PATH"] += os.pathsep + str(dll_directory)
 
-from .runtime_config import config
+from .rc import config
 
 from .core import __version__
 # Import classes
