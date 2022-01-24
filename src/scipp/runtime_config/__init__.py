@@ -45,8 +45,11 @@ class Config:
     def get(self) -> dict:
         return self._cfg.get(self._TEMPLATE)
 
-    def __getitem__(self, item: str):
-        return self.get()[item]
+    def __getitem__(self, name: str):
+        return self.get()[name]
+
+    def __setitem__(self, name: str, value):
+        self.get()[name] = value
 
 
 config = Config()
