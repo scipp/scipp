@@ -27,6 +27,8 @@
 #include "bins_util.h"
 #include "dataset_operations_common.h"
 
+#include <iostream>
+
 using namespace scipp::variable::bin_detail;
 
 namespace scipp::dataset {
@@ -614,7 +616,7 @@ DataArray bin(const Variable &data, const Coords &coords, const Masks &masks,
   auto builder = axis_actions(data, meta, edges, groups, erase);
   const auto masked = hide_masked(data, masks, builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
-  builder.build(*target_bins, bins_view<DataArray>(masked).meta(), coords);
+  builder.build(*target_bins, bins_view<DataArray>(masked).meta(), meta);
   return add_metadata(bin<DataArray>(drop_grouped_event_coords(masked, groups),
                                      *target_bins, builder),
                       coords, masks, attrs, builder.edges(), builder.groups(),
