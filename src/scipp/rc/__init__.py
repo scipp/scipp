@@ -83,7 +83,7 @@ class Config:
         """
         return Path(self._cfg.user_config_path())
 
-    @lru_cache
+    @lru_cache()
     def get(self) -> dict:
         """Return parameters as a dict."""
         return self._cfg.get(self._TEMPLATE)
