@@ -52,6 +52,9 @@ class Config:
         return self.get()[name]
 
     def __setitem__(self, name: str, value):
+        if name not in self.get():
+            raise TypeError(
+                f"New items cannot be inserted into the configuration, got '{name}'.")
         self.get()[name] = value
 
 
