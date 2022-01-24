@@ -11,9 +11,12 @@ Features
 
 * Added support for :py:func:`abs` to :py:class:`scipp.DataArray`, :py:class:`scipp.Dataset`, :py:class:`scipp.Variable` `#2382 <https://github.com/scipp/scipp/pull/2382>`_.
 * ``sc.bin`` will now also look at attributes to perform the binning, instead of only looking at the coordinates `#2388 <https://github.com/scipp/scipp/pull/2388>`_.
+* Switched to new system for runtime configuration, see the corresponding section in the reference documentation `#2389 <https://github.com/scipp/scipp/pull/2389>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
+
+* The configuration option ``plot.padding`` is now called ``plot.bounding_box``, no action is required if it was never modified `#2389 <https://github.com/scipp/scipp/pull/2389>`_.
 
 Bugfixes
 ~~~~~~~~
