@@ -44,6 +44,6 @@ std::ostream &operator<<(std::ostream &os, const DType &dtype) {
 }
 
 auto register_dtype_name_void(
-    (core::dtypeNameRegistry().emplace(dtype<void>, "<none>"), 0));
+    (core::dtypeNameRegistry().emplace(dtype<void>, "void"), 0));
 
 } // namespace scipp::core
