@@ -20,7 +20,7 @@ namespace scipp::variable {
 template <class Indices> class BinModelBase : public VariableConcept {
 public:
   BinModelBase(const VariableConceptHandle &indices, const Dim dim)
-      : VariableConcept(units::one), m_indices(indices), m_dim(dim) {}
+      : VariableConcept(units::none), m_indices(indices), m_dim(dim) {}
 
   scipp::index size() const override { return indices()->size(); }
 

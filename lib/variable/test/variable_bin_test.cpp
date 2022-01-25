@@ -18,6 +18,10 @@ protected:
   Variable var = make_bins(indices, Dim::X, buffer);
 };
 
+TEST_F(VariableBinsTest, default_unit_of_bins_is_none) {
+  EXPECT_EQ(make_bins(indices, Dim::X, buffer).unit(), units::none);
+}
+
 TEST_F(VariableBinsTest, make_bins_from_slice) {
   // Sharing indices or not yields equivalent results.
   EXPECT_EQ(make_bins(indices.slice({Dim::Y, 1}), Dim::X, buffer),
@@ -82,13 +86,13 @@ TEST_F(VariableBinsTest, copy_slice) {
 }
 
 TEST_F(VariableBinsTest, cannot_set_unit) {
-  EXPECT_EQ(var.unit(), units::one);
+  EXPECT_EQ(var.unit(), units::none);
   EXPECT_THROW(var.setUnit(units::m), except::UnitError);
-  EXPECT_EQ(var.unit(), units::one);
+  EXPECT_EQ(var.unit(), units::none);
 }
 
 TEST_F(VariableBinsTest, basics) {
-  EXPECT_EQ(var.unit(), units::one);
+  EXPECT_EQ(var.unit(), units::none);
   EXPECT_EQ(var.dims(), dims);
   const auto vals = var.values<bucket<Variable>>();
   EXPECT_EQ(vals.size(), 2);

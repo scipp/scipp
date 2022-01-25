@@ -396,8 +396,8 @@ TEST_F(DataArrayBinsPlusMinusTest, plus) {
 
 TEST_F(DataArrayBinsPlusMinusTest, minus) {
   auto tmp = -b;
-  EXPECT_EQ(b.unit(), units::one);
-  EXPECT_EQ(tmp.unit(), units::one);
+  EXPECT_EQ(b.unit(), units::none);
+  EXPECT_EQ(tmp.unit(), units::none);
   EXPECT_EQ(bins_sum(buckets::concatenate(a, -b)), bins_sum(a) - bins_sum(b));
 }
 
