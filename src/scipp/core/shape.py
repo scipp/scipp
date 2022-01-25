@@ -223,8 +223,9 @@ def transpose(x: VariableLike,
     return _call_cpp_func(_cpp.transpose, x, dims if dims is not None else [])
 
 
-def squeeze(x: VariableLike,
-            dim: Optional[Union[str, List[str], Tuple[str, ...]]] = None) -> VariableLike:
+def squeeze(
+        x: VariableLike,
+        dim: Optional[Union[str, List[str], Tuple[str, ...]]] = None) -> VariableLike:
     """Remove dimensions of length 1.
 
     This is equivalent to indexing the squeezed dimensions with index 0, that is
@@ -275,4 +276,4 @@ def squeeze(x: VariableLike,
       Attributes:
         x                           int64  [dimensionless]  ()  [0]
     """
-    return _call_cpp_func(_cpp.squeeze, x, (dim,) if isinstance(dim, str) else dim)
+    return _call_cpp_func(_cpp.squeeze, x, (dim, ) if isinstance(dim, str) else dim)
