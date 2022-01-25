@@ -78,6 +78,7 @@ units::Unit unit_for_dtype(const std::optional<units::Unit> &unit) {
   if (unit.has_value())
     return *unit;
   if constexpr (std::is_arithmetic_v<T> ||
+                std::is_same_v<T, scipp::index_pair> ||
                 std::is_same_v<T, core::time_point> ||
                 std::is_same_v<T, Eigen::Vector3d> ||
                 std::is_same_v<T, Eigen::Matrix3d> ||
