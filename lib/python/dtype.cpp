@@ -141,7 +141,7 @@ scipp::core::DType scipp_dtype(const py::object &type) {
   }
 }
 
-std::tuple<scipp::core::DType, scipp::units::Unit>
+std::tuple<scipp::core::DType, std::optional<scipp::units::Unit>>
 cast_dtype_and_unit(const pybind11::object &dtype,
                     const std::optional<ProtoUnit> &unit) {
   const auto scipp_dtype = ::scipp_dtype(dtype);
@@ -159,7 +159,9 @@ cast_dtype_and_unit(const pybind11::object &dtype,
     }
     return std::tuple{scipp_dtype, deduced_unit};
   } else {
-    return std::tuple{scipp_dtype, make_unit(unit.value_or(units::one))};
+    return std::tuple{scipp_dtype, unit.has_value()
+                                       ? make_unit(unit.value())
+                                       : std::optional<scipp::units::Unit>()};
   }
 }
 

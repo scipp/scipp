@@ -17,6 +17,8 @@ bool temporal_or_dimensionless(const units::Unit unit) {
 } // namespace
 
 units::Unit make_unit(const ProtoUnit &unit) {
+  if (std::holds_alternative<py::none>(unit))
+    return units::none;
   if (std::holds_alternative<std::string>(unit))
     return units::Unit(std::get<std::string>(unit));
   return std::get<units::Unit>(unit);

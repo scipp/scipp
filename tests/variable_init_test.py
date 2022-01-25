@@ -103,7 +103,10 @@ def test_create_scalar_with_value(args):
     assert var.dims == []
     assert var.ndim == 0
     assert var.dtype == dtype
-    assert var.unit == sc.units.dimensionless
+    if dtype == sc.DType.string:
+        assert var.unit is None
+    else:
+        assert var.unit == sc.units.one
 
 
 @pytest.mark.parametrize('args', ((sc.DType.bool, True), (sc.DType.string, 'a')))
@@ -114,7 +117,10 @@ def test_create_scalar_with_value_array(args):
     assert var.dims == []
     assert var.ndim == 0
     assert var.dtype == dtype
-    assert var.unit == sc.units.dimensionless
+    if dtype == sc.DType.string:
+        assert var.unit is None
+    else:
+        assert var.unit == sc.units.dimensionless
 
 
 def test_create_scalar_with_value_array_int():
@@ -189,7 +195,7 @@ def test_create_scalar_dtype_Variable(dtype):
     assert var.dims == []
     assert var.ndim == 0
     assert var.dtype == sc.DType.Variable
-    assert var.unit == sc.units.dimensionless
+    assert var.unit is None
     var = sc.Variable(dims=(), values=elem['x', 1:3], dtype=dtype)
     assert var.dtype == sc.DType.Variable
 
@@ -202,7 +208,7 @@ def test_create_scalar_dtype_DataArray(dtype):
     assert var.dims == []
     assert var.ndim == 0
     assert var.dtype == sc.DType.DataArray
-    assert var.unit == sc.units.dimensionless
+    assert var.unit is None
     var = sc.Variable(dims=(), values=elem['x', 1:3], dtype=dtype)
     assert var.dtype == sc.DType.DataArray
 
@@ -215,7 +221,7 @@ def test_create_scalar_dtype_Dataset(dtype):
     assert var.dims == []
     assert var.ndim == 0
     assert var.dtype == sc.DType.Dataset
-    assert var.unit == sc.units.dimensionless
+    assert var.unit is None
     var = sc.Variable(dims=(), values=elem['x', 1:3], dtype=dtype)
     assert var.dtype == sc.DType.Dataset
 

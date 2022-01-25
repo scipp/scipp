@@ -53,12 +53,15 @@ void init_units(py::module &m) {
   units.attr("K") = units::K;
   units.attr("meV") = units::meV;
   units.attr("m") = units::m;
+  // Note: No binding to units::none here, use None in Python!
   units.attr("one") = units::one;
   units.attr("rad") = units::rad;
   units.attr("s") = units::s;
   units.attr("us") = units::us;
   units.attr("ns") = units::ns;
   units.attr("mm") = units::mm;
+
+  units.attr("default_unit") = std::optional<units::Unit>();
 
   m.def("to_numpy_time_string", to_numpy_time_string);
 }

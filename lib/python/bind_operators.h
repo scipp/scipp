@@ -58,7 +58,8 @@ void bind_astype(py::class_<T, Ignored...> &c) {
       [](const T &self, const py::object &type, const bool copy) {
         const auto [scipp_dtype, dtype_unit] =
             cast_dtype_and_unit(type, std::nullopt);
-        if (dtype_unit != scipp::units::one && dtype_unit != self.unit()) {
+        if (dtype_unit.has_value() &&
+            (dtype_unit != scipp::units::one && dtype_unit != self.unit())) {
           throw scipp::except::UnitError(scipp::python::format(
               "Conversion of units via the dtype is not allowed. Occurred when "
               "trying to change dtype from ",
