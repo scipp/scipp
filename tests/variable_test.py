@@ -907,37 +907,6 @@ def test_sort():
     assert_export(sc.allsorted, x=var, dim='x', order='ascending')
 
 
-def test_sort_datetime():
-    var = sc.Variable(dims=["x"],
-                      values=[
-                          np.datetime64('2001-01-01T00:00:00', 's'),
-                          np.datetime64('2003-01-01T00:00:00', 's'),
-                          np.datetime64('2002-01-01T00:00:00', 's'),
-                      ],
-                      dtype=sc.DType.datetime64,
-                      unit=sc.units.s)
-    assert sc.identical(
-        sc.sort(var, "x", "ascending"),
-        sc.Variable(dims=["x"],
-                    values=[
-                        np.datetime64('2001-01-01T00:00:00', 's'),
-                        np.datetime64('2002-01-01T00:00:00', 's'),
-                        np.datetime64('2003-01-01T00:00:00', 's'),
-                    ],
-                    dtype=sc.DType.datetime64,
-                    unit=sc.units.s))
-    assert sc.identical(
-        sc.sort(var, "x", "descending"),
-        sc.Variable(dims=["x"],
-                    values=[
-                        np.datetime64('2003-01-01T00:00:00', 's'),
-                        np.datetime64('2002-01-01T00:00:00', 's'),
-                        np.datetime64('2001-01-01T00:00:00', 's'),
-                    ],
-                    dtype=sc.DType.datetime64,
-                    unit=sc.units.s))
-
-
 def test_islinspace_true():
     x = sc.Variable(dims=['x'], values=np.arange(5.), unit=sc.units.m)
     assert sc.islinspace(x, 'x').value
