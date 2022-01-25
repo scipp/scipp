@@ -16,7 +16,7 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
-* The configuration option ``plot.padding`` is now called ``plot.bounding_box``, no action is required if it was never modified `#2389 <https://github.com/scipp/scipp/pull/2389>`_.
+* The configuration option ``config['plot']['padding']`` is now called ``config['plot']['bounding_box']``, no action is required if it was never modified `#2389 <https://github.com/scipp/scipp/pull/2389>`_.
 
 Bugfixes
 ~~~~~~~~
