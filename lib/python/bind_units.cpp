@@ -24,7 +24,6 @@ void init_units(py::module &m) {
       .def("__repr__", [](const Dim &dim) { return dim.name(); });
 
   py::class_<units::Unit>(m, "Unit", "A physical unit.")
-      .def(py::init())
       .def(py::init<const std::string &>())
       .def("__repr__", [](const units::Unit &u) { return u.name(); })
       .def_property_readonly("name", &units::Unit::name,

@@ -184,56 +184,30 @@ auto make_element_array(const Dimensions &dims, const py::object &source,
 
 template <class T> struct MakeVariable {
   static Variable apply(const Dimensions &dims, const py::object &values,
-                        const py::object &variances,
-                        const std::optional<units::Unit> &unit) {
-    if constexpr (std::is_same_v<T, core::time_point>) {
-      const auto [values_unit, final_unit] =
-          common_unit<T>(values, unit.value_or(units::one));
-      auto values_array =
-          Values(make_element_array<T>(dims, values, values_unit));
-      auto variable = variances.is_none()
-                          ? makeVariable<T>(dims, std::move(values_array))
-                          // cppcheck-suppress accessMoved  # False-positive.
-                          : makeVariable<T>(dims, std::move(values_array),
-                                            Variances(make_element_array<T>(
-                                                dims, variances, values_unit)));
-      variable.setUnit(values_unit);
-      return to_unit(variable, final_unit, CopyPolicy::TryAvoid);
-    } else {
-      auto values_array =
-          Values(make_element_array<T>(dims, values, units::one));
-      if (unit.has_value())
-        return variances.is_none()
-                   ? makeVariable<T>(dims, *unit, std::move(values_array))
-                   // cppcheck-suppress accessMoved  # False-positive.
-                   : makeVariable<T>(dims, *unit, std::move(values_array),
-                                     Variances(make_element_array<T>(
-                                         dims, variances, units::one)));
-      else
-        return variances.is_none()
-                   ? makeVariable<T>(dims, std::move(values_array))
-                   // cppcheck-suppress accessMoved  # False-positive.
-                   : makeVariable<T>(dims, std::move(values_array),
-                                     Variances(make_element_array<T>(
-                                         dims, variances, units::one)));
-    }
+                        const py::object &variances, const units::Unit unit) {
+    const auto [values_unit, final_unit] = common_unit<T>(values, unit);
+    auto values_array =
+        Values(make_element_array<T>(dims, values, values_unit));
+    auto variable = variances.is_none()
+                        ? makeVariable<T>(dims, std::move(values_array))
+                        // cppcheck-suppress accessMoved  # False-positive.
+                        : makeVariable<T>(dims, std::move(values_array),
+                                          Variances(make_element_array<T>(
+                                              dims, variances, values_unit)));
+    variable.setUnit(values_unit);
+    return to_unit(variable, final_unit, CopyPolicy::TryAvoid);
   }
 };
 
-auto default_unit(DType type) {
-  if (type == dtype<std::string>)
-    return units::none;
-  return units::one;
-}
-
 Variable make_variable(const py::object &dim_labels, const py::object &values,
                        const py::object &variances,
-                       const std::optional<units::Unit> &unit, DType dtype) {
+                       const std::optional<units::Unit> &unit_, DType dtype) {
   const auto converted_values = parse_data_sequence(dim_labels, values);
   const auto converted_variances = parse_data_sequence(dim_labels, variances);
   dtype = common_dtype(converted_values, converted_variances, dtype);
   const auto dims =
       build_dimensions(dim_labels, converted_values, converted_variances);
+  const auto unit = unit_.value_or(default_unit_for(dtype));
   return core::CallDType<double, float, int64_t, int32_t, bool,
                          scipp::core::time_point, std::string, Variable,
                          DataArray, Dataset, Eigen::Vector3d, Eigen::Matrix3d,
