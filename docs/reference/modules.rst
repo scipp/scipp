@@ -8,12 +8,12 @@ Modules
    :template: scipp-module-template.rst
    :recursive:
 
+   configuration
    constants
    integrate
    interpolate
    logging
    optimize
-   rc
    signal
    spatial
    units
