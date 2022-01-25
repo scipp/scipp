@@ -224,16 +224,16 @@ def transpose(x: VariableLike,
 
 
 def squeeze(x: VariableLike,
-            dims: Optional[Union[List[str], Tuple[str, ...]]] = None) -> VariableLike:
+            dim: Optional[Union[str, List[str], Tuple[str, ...]]] = None) -> VariableLike:
     """Remove dimensions of length 1.
 
     This is equivalent to indexing the squeezed dimensions with index 0, that is
     ``squeeze(x, ['x', 'y'])`` is equivalent to ``x['x', 0]['y', 0]``.
 
     :param x: Object to remove dimensions from.
-    :param dims: If given, the dimensions to squeeze.
-                 If ``None``, all length-1 dimensions are squeezed.
-    :raises: If a dimension in `dims` does not have length 1.
+    :param dim: If given, the dimension(s) to squeeze.
+                If ``None``, all length-1 dimensions are squeezed.
+    :raises: If a dimension in `dim` does not have length 1.
     :return: `x` with dimensions squeezed out.
 
     :seealso: :py:func:`scipp.Variable.squeeze`
@@ -248,8 +248,10 @@ def squeeze(x: VariableLike,
       <scipp.Variable> (x: 1, y: 3, z: 1)      int64  [dimensionless]  [0, 1, 2]
       >>> sc.squeeze(v)
       <scipp.Variable> (y: 3)      int64  [dimensionless]  [0, 1, 2]
-      >>> sc.squeeze(v, ['z'])
+      >>> sc.squeeze(v, 'z')
       <scipp.Variable> (x: 1, y: 3)      int64  [dimensionless]  [0, 1, 2]
+      >>> sc.squeeze(v, ['x', 'z'])
+      <scipp.Variable> (y: 3)      int64  [dimensionless]  [0, 1, 2]
 
     Coordinates for squeezed dimensions are turned into attributes:
 
@@ -273,4 +275,4 @@ def squeeze(x: VariableLike,
       Attributes:
         x                           int64  [dimensionless]  ()  [0]
     """
-    return _call_cpp_func(_cpp.squeeze, x, dims)
+    return _call_cpp_func(_cpp.squeeze, x, (dim,) if isinstance(dim, str) else dim)
