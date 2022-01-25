@@ -198,6 +198,21 @@ TEST_P(BinTest, rebin_using_attr) {
   EXPECT_EQ(expected, result);
 }
 
+TEST_P(BinTest, rebin_using_attr_in_new_dimension) {
+  auto table = GetParam();
+  auto expected_temp = bin(table, {edges_x});
+  const auto z_coord = makeVariable<double>(Dims{Dim::X}, Shape{4},
+                                            Values{-10., -5.0, 0.5, 7.5});
+  expected_temp.coords().set(Dim::Z, z_coord);
+  const auto edges_z_coarse =
+      makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{-11., 0.0, 8.0});
+  const auto expected = bin(expected_temp, {edges_z_coarse});
+  auto temp = bin(table, {edges_x});
+  temp.attrs().set(Dim::Z, z_coord);
+  const auto result = bin(temp, {edges_z_coarse});
+  EXPECT_EQ(expected, result);
+}
+
 TEST_P(BinTest, rebin_existing_binning_attr_and_event_coord) {
   auto table = GetParam();
   const auto expected = bin(bin(table, {edges_x}), {edges_x_coarse});
