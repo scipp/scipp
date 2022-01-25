@@ -24,7 +24,7 @@ TEST(UnitTest, construct) { ASSERT_NO_THROW(Unit{units::dimensionless}); }
 
 TEST(UnitTest, construct_default) {
   Unit u;
-  ASSERT_EQ(u, units::dimensionless);
+  ASSERT_EQ(u, units::none);
 }
 
 TEST(UnitTest, construct_bad_string) {

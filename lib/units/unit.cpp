@@ -31,16 +31,18 @@ std::string map_unit_string(const std::string &unit) {
 Unit::Unit(const std::string &unit)
     : Unit(llnl::units::unit_from_string(map_unit_string(unit),
                                          llnl::units::strict_si)) {
-  if (!is_valid(m_unit))
+  if (!is_valid(m_unit.value()))
     throw except::UnitError("Failed to convert string `" + unit +
                             "` to valid unit.");
 }
 
 std::string Unit::name() const {
+  if (!has_value())
+    return "None";
   if (*this == Unit{"month"}) {
     return "M";
   }
-  auto repr = to_string(m_unit);
+  auto repr = to_string(*m_unit);
   repr = std::regex_replace(repr, std::regex("^u"), "µ");
   repr = std::regex_replace(repr, std::regex("item"), "count");
   repr = std::regex_replace(repr, std::regex("count(?!s)"), "counts");
@@ -52,11 +54,11 @@ std::string Unit::name() const {
 bool Unit::isCounts() const { return *this == counts; }
 
 bool Unit::isCountDensity() const {
-  return !isCounts() && m_unit.base_units().count() != 0;
+  return has_value() && !isCounts() && m_unit->base_units().count() != 0;
 }
 
 bool Unit::has_same_base(const Unit &other) const {
-  return m_unit.has_same_base(other.underlying());
+  return has_value() && m_unit->has_same_base(other.underlying());
 }
 
 bool Unit::operator==(const Unit &other) const {
@@ -72,7 +74,7 @@ Unit &Unit::operator*=(const Unit &other) { return *this = *this * other; }
 
 Unit &Unit::operator/=(const Unit &other) { return *this = *this / other; }
 
-Unit &Unit::operator%=([[maybe_unused]] const Unit &other) { return *this; }
+Unit &Unit::operator%=(const Unit &) { return *this; }
 
 Unit operator+(const Unit &a, const Unit &b) {
   if (a == b)
