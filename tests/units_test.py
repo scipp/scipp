@@ -51,11 +51,6 @@ def test_default_unit_for_string_is_none():
     assert var.unit is None
 
 
-def test_default_unit_for_vector_is_dimensionless():
-    var = sc.vector(value=[1, 2, 3])
-    assert var.unit == sc.units.one
-
-
 def test_to_unit():
     var = sc.scalar(1, unit='m')
     assert sc.to_unit(var, unit='mm').unit == sc.Unit('mm')
