@@ -17,7 +17,7 @@ class PlotModel2d(PlotModel):
         self._model = None
         super().__init__(*args, **kwargs)
         if resolution is None:
-            self._resolution = [config.plot.height, config.plot.width]
+            self._resolution = [config['plot']['height'], config['plot']['width']]
         elif isinstance(resolution, int):
             self._resolution = [resolution, resolution]
         else:
