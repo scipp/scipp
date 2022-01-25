@@ -64,7 +64,7 @@ def test_from_quaternions():
 
 
 def test_rotation_default_unit_is_dimensionless():
-    var = rotation(value=np.ones(shape=(4,)))
+    var = rotation(value=np.ones(shape=(4, )))
     assert var.unit == sc.units.one
 
 

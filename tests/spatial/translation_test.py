@@ -22,7 +22,7 @@ def test_translations():
 
 
 def test_translation_default_unit_is_dimensionless():
-    var = translation(value=np.ones(shape=(3,)))
+    var = translation(value=np.ones(shape=(3, )))
     assert var.unit == sc.units.one
 
 
