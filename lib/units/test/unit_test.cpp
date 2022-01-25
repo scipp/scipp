@@ -253,3 +253,50 @@ TEST(UnitFormatTest, roundtrip_unit) {
     EXPECT_EQ(units::Unit(to_string(unit)), unit);
   }
 }
+
+TEST(UnitTest, binary_operations_with_one_none_operand_throw_UnitError) {
+  using units::none;
+  const auto u = units::m;
+  EXPECT_THROW_DISCARD(none + u, except::UnitError);
+  EXPECT_THROW_DISCARD(u + none, except::UnitError);
+  EXPECT_THROW_DISCARD(none - u, except::UnitError);
+  EXPECT_THROW_DISCARD(u - none, except::UnitError);
+  EXPECT_THROW_DISCARD(none * u, except::UnitError);
+  EXPECT_THROW_DISCARD(u * none, except::UnitError);
+  EXPECT_THROW_DISCARD(none / u, except::UnitError);
+  EXPECT_THROW_DISCARD(u / none, except::UnitError);
+  EXPECT_THROW_DISCARD(atan2(u, none), except::UnitError);
+  EXPECT_THROW_DISCARD(atan2(none, u), except::UnitError);
+}
+
+TEST(UnitTest, binary_operations_with_two_none_operands_return_none) {
+  using units::none;
+  const auto u = units::m;
+  EXPECT_EQ(none + none, none);
+  EXPECT_EQ(none - none, none);
+  EXPECT_EQ(none * none, none);
+  EXPECT_EQ(none / none, none);
+}
+
+TEST(UnitTest, trigonometric_of_none_throw_UnitError) {
+  using units::none;
+  EXPECT_THROW_DISCARD(sin(none), except::UnitError);
+  EXPECT_THROW_DISCARD(cos(none), except::UnitError);
+  EXPECT_THROW_DISCARD(tan(none), except::UnitError);
+}
+
+TEST(UnitTest, inverse_trigonometric_of_none_throw_UnitError) {
+  using units::none;
+  EXPECT_THROW_DISCARD(asin(none), except::UnitError);
+  EXPECT_THROW_DISCARD(acos(none), except::UnitError);
+  EXPECT_THROW_DISCARD(atan(none), except::UnitError);
+  EXPECT_THROW_DISCARD(atan2(none, none), except::UnitError);
+}
+
+TEST(UnitTest, sqrt_of_none_returns_none) {
+  EXPECT_EQ(sqrt(units::none), units::none);
+}
+
+TEST(UnitTest, pow_of_none_returns_none) {
+  EXPECT_EQ(sqrt(units::none), units::none);
+}
