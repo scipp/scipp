@@ -145,7 +145,7 @@ dims_for_squeezing(const core::Sizes &data_dims,
   } else {
     std::vector<Dim> length_1_dims;
     length_1_dims.reserve(data_dims.size());
-    for (const auto &dim : data_dims.labels()) {
+    for (const auto &dim : data_dims) {
       if (data_dims[dim] == 1) {
         length_1_dims.push_back(dim);
       }
