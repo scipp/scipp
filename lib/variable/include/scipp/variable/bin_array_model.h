@@ -25,7 +25,7 @@ public:
   scipp::index size() const override { return indices()->size(); }
 
   void setUnit(const units::Unit &unit) override {
-    if (unit != units::one)
+    if (unit != units::none)
       throw except::UnitError(
           "Bins cannot have a unit. Did you mean to set the unit of the bin "
           "elements? This can be set with `array.bins.unit = 'm'`.");

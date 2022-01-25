@@ -89,7 +89,16 @@ Unit operator-(const Unit &a, const Unit &b) {
                           ".");
 }
 
+namespace {
+void expect_not_none(const Unit &u, const std::string &name) {
+  if (!u.has_value())
+    throw except::UnitError("Cannot " + name + " with operand of unit 'None'.");
+}
+} // namespace
+
 Unit operator*(const Unit &a, const Unit &b) {
+  expect_not_none(a, "multiply");
+  expect_not_none(b, "multiply");
   if (llnl::units::times_overflows(a.underlying(), b.underlying()))
     throw except::UnitError("Unsupported unit as result of multiplication: (" +
                             a.name() + ") * (" + b.name() + ')');
@@ -97,13 +106,15 @@ Unit operator*(const Unit &a, const Unit &b) {
 }
 
 Unit operator/(const Unit &a, const Unit &b) {
+  expect_not_none(a, "divide");
+  expect_not_none(b, "divide");
   if (llnl::units::divides_overflows(a.underlying(), b.underlying()))
     throw except::UnitError("Unsupported unit as result of division: (" +
                             a.name() + ") / (" + b.name() + ')');
   return Unit{a.underlying() / b.underlying()};
 }
 
-Unit operator%(const Unit &a, [[maybe_unused]] const Unit &b) { return a; }
+Unit operator%(const Unit &a, const Unit &) { return a; }
 
 Unit operator-(const Unit &a) { return a; }
 
@@ -116,6 +127,7 @@ Unit ceil(const Unit &a) { return a; }
 Unit rint(const Unit &a) { return a; }
 
 Unit sqrt(const Unit &a) {
+  expect_not_none(a, "sqrt");
   if (llnl::units::is_error(sqrt(a.underlying())))
     throw except::UnitError("Unsupported unit as result of sqrt: sqrt(" +
                             a.name() + ").");
@@ -123,6 +135,7 @@ Unit sqrt(const Unit &a) {
 }
 
 Unit pow(const Unit &a, const int64_t power) {
+  expect_not_none(a, "pow");
   if (llnl::units::pow_overflows(a.underlying(), power))
     throw except::UnitError("Unsupported unit as result of pow: pow(" +
                             a.name() + ", " + std::to_string(power) + ").");
@@ -151,6 +164,8 @@ Unit asin(const Unit &a) { return inverse_trigonometric(a); }
 Unit acos(const Unit &a) { return inverse_trigonometric(a); }
 Unit atan(const Unit &a) { return inverse_trigonometric(a); }
 Unit atan2(const Unit &y, const Unit &x) {
+  expect_not_none(x, "atan2");
+  expect_not_none(y, "atan2");
   if (x == y)
     return units::rad;
   throw except::UnitError(

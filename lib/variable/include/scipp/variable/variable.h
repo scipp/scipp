@@ -41,8 +41,8 @@ public:
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const Dimensions &dims, VariableConceptHandle data);
   template <class T>
-  Variable(units::Unit unit, const Dimensions &dimensions, T values,
-           std::optional<T> variances);
+  Variable(const std::optional<units::Unit> &unit, const Dimensions &dimensions,
+           T values, std::optional<T> variances);
   explicit Variable(const llnl::units::precise_measurement &m);
 
   /// Keyword-argument constructor.
