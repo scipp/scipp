@@ -28,14 +28,14 @@ class PlotFigure1d(PlotFigure):
                  figsize=None,
                  picker=False,
                  legend=None,
-                 padding=None,
+                 bounding_box=None,
                  xlabel=None,
                  ylabel=None):
 
         super().__init__(ax=ax,
                          figsize=figsize,
                          title=title,
-                         padding=padding,
+                         bounding_box=bounding_box,
                          xlabel=xlabel,
                          ylabel=ylabel,
                          toolbar=PlotToolbar1d,
@@ -225,7 +225,7 @@ class PlotFigure1d(PlotFigure):
             self.ax.set_xlim([xmin - deltax, xmax + deltax])
         if self._axes_updated:
             self._axes_updated = False
-            self.fig.tight_layout(rect=self.padding)
+            self.fig.tight_layout(rect=self.bounding_box)
 
         self.draw()
 

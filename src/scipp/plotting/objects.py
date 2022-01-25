@@ -75,13 +75,13 @@ def _make_formatters(*, dims, arrays, labels):
 def make_profile(ax, mask_color):
     from .profile import PlotProfile
     cfg = config['plot']
-    pad = list(cfg['bounding_box'])
-    pad[2] = 0.77
+    bbox = list(cfg['bounding_box'])
+    bbox[2] = 0.77
     return PlotProfile(ax=ax,
                        mask_color=mask_color,
                        figsize=(1.3 * cfg['width'] / cfg['dpi'],
                                 0.6 * cfg['height'] / cfg['dpi']),
-                       padding=pad,
+                       bounding_box=bbox,
                        legend={
                            "show": True,
                            "loc": (1.02, 0.0)
