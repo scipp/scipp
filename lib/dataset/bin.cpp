@@ -27,8 +27,6 @@
 #include "bins_util.h"
 #include "dataset_operations_common.h"
 
-#include <iostream>
-
 using namespace scipp::variable::bin_detail;
 
 namespace scipp::dataset {
