@@ -38,6 +38,14 @@ def test_scalar_with_dtype():
     assert sc.identical(var, expected)
 
 
+def test_scalar_float_default_unit_is_dimensionless():
+    assert sc.scalar(value=1.2).unit == sc.units.one
+
+
+def test_scalar_string_default_unit_is_None():
+    assert sc.scalar(value='abc').unit is None
+
+
 def test_scalar_without_dtype():
     value = 'temp'
     var = sc.scalar(value)
@@ -100,6 +108,21 @@ def test_zeros_dtypes():
         np.zeros((3, 3)))
 
 
+def test_zeros_float_default_unit_is_dimensionless():
+    var = sc.zeros(dtype=float, dims=(), shape=())
+    assert var.unit == sc.units.one
+
+
+def test_zeros_string_default_unit_is_None():
+    var = sc.zeros(dtype=str, dims=(), shape=())
+    assert var.unit is None
+
+
+def test_ones_float_default_unit_is_dimensionless():
+    var = sc.ones(dtype=float, dims=(), shape=())
+    assert var.unit == sc.units.one
+
+
 def test_ones_creates_variable_with_correct_dims_and_shape():
     var = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     expected = sc.Variable(dims=['x', 'y', 'z'], values=np.ones([1, 2, 3]))
@@ -129,6 +152,16 @@ def test_ones_dtypes():
         sc.ones(dims=(), shape=(), dtype=str)
 
 
+def test_full_float_default_unit_is_dimensionless():
+    var = sc.full(dims=(), shape=(), value=1.2)
+    assert var.unit == sc.units.one
+
+
+def test_full_string_default_unit_is_None():
+    var = sc.full(dims=(), shape=(), value='abc')
+    assert var.unit is None
+
+
 def test_full_creates_variable_with_correct_dims_and_shape():
     var = sc.full(dims=['x', 'y', 'z'], shape=[1, 2, 3], value=12.34)
     expected = sc.Variable(dims=['x', 'y', 'z'], values=np.full([1, 2, 3], 12.34))
@@ -151,6 +184,16 @@ def test_full_with_dtype_and_unit():
                   value=1)
     assert var.dtype == sc.DType.int64
     assert var.unit == 's'
+
+
+def test_full_with_int_value_gives_int64_dtype():
+    var = sc.full(dims=(), shape=(), value=3)
+    assert var.dtype == sc.DType.int64
+
+
+def test_full_with_string_value_gives_string_dtype():
+    var = sc.full(dims=(), shape=(), value='abc')
+    assert var.dtype == str
 
 
 def test_full_and_ones_equivalent():
@@ -233,6 +276,14 @@ def test_array_creates_correct_variable():
                            dtype=dtype)
 
     assert sc.identical(var, expected)
+
+
+def test_array_from_float_default_unit_is_dimensionless():
+    assert sc.array(dims=['x'], values=[1.2]).unit == sc.units.one
+
+
+def test_array_from_string_default_unit_is_None():
+    assert sc.array(dims=['x'], values=['abc']).unit is None
 
 
 def test_array_empty_dims():

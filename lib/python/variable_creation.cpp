@@ -55,7 +55,7 @@ void init_creation(py::module &m) {
             Eigen::Matrix3d>::apply<MakeZeros>(dtype_, dims, shape, unit_,
                                                with_variances);
       },
-      py::arg("dims"), py::arg("shape"), py::arg("unit") = units::one,
+      py::arg("dims"), py::arg("shape"), py::arg("unit") = std::nullopt,
       py::arg("dtype") = py::none(), py::arg("with_variances") = std::nullopt);
   m.def(
       "ones",

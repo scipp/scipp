@@ -201,7 +201,7 @@ def full(*,
          shape: _Sequence[int] = None,
          sizes: dict = None,
          unit: _Union[_cpp.Unit, str, None] = default_unit,
-         dtype: _cpp.DType = _cpp.DType.float64,
+         dtype: _cpp.DType = None,
          value: _Any,
          variance: _Any = None) -> _cpp.Variable:
     """
@@ -215,7 +215,7 @@ def full(*,
     :param shape: Optional (if sizes is specified), dimension sizes.
     :param sizes: Optional, dimension label to size map.
     :param unit: Optional, unit of contents. Default=dimensionless
-    :param dtype: Optional, type of underlying data. Default=float64
+    :param dtype: Optional, type of underlying data. Deduced from 'value' if not given.
     :param value: The value to fill the Variable with
     :param variance: Optional, the variance to fill the Variable with. If None
         or not provided, the variances will not be set.

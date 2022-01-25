@@ -22,6 +22,8 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
+* Fix :py:func:`full`, which previously converted or attempted to convert all values to ``float64`` unless the ``dtype`` was specified explicitly `#2395 <https://github.com/scipp/scipp/pull/2395>`_.
+
 Deprecations
 ~~~~~~~~~~~~
 
