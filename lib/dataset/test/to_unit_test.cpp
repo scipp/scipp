@@ -117,9 +117,3 @@ TEST_P(ToUnitTest, does_not_affect_attrs) {
   EXPECT_EQ(converted.attrs(), da.attrs());
   EXPECT_TRUE(converted.attrs()[Dim::X].is_same(da.attrs()[Dim::X]));
 }
-
-// TEST(ToUnitTest, is_applied_to_data) {
-//  const auto da = DataArray(makeVariable<double>(Values{2.0}, units::m));
-//  const auto result = to_unit(da, units::mm, CopyPolicy::TryAvoid);
-//  EXPECT_EQ(converted.data().is_same(original.data()));
-//}
