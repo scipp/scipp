@@ -180,43 +180,61 @@ TEST_P(BinTest, rebin_no_event_coord) {
 
 TEST_P(BinTest, bin_using_attr) {
   auto table = GetParam();
-  const auto expected = bin(table, {edges_x});
+  const auto da_coord = bin(table, {edges_x});
   table.attrs().set(Dim::X, table.coords().extract(Dim::X));
-  const auto result = bin(table, {edges_x});
-  auto view = bins_view<DataArray>(result.data());
-  view.coords().set(Dim::X, view.attrs().extract(Dim::X));
-  EXPECT_EQ(expected, result);
+  const auto da_attr = bin(table, {edges_x});
+  auto da_attr_bins_view = bins_view<DataArray>(da_attr.data());
+  da_attr_bins_view.coords().set(Dim::X,
+                                 da_attr_bins_view.attrs().extract(Dim::X));
+  EXPECT_EQ(da_coord, da_attr);
 }
 
 TEST_P(BinTest, rebin_using_attr) {
   auto table = GetParam();
-  const auto expected = bin(bin(table, {edges_x}), {edges_x_coarse});
+  const auto da_coord = bin(bin(table, {edges_x}), {edges_x_coarse});
   table.attrs().set(Dim::X, table.coords().extract(Dim::X));
-  const auto result = bin(bin(table, {edges_x}), {edges_x_coarse});
-  auto view = bins_view<DataArray>(result.data());
-  view.coords().set(Dim::X, view.attrs().extract(Dim::X));
-  EXPECT_EQ(expected, result);
+  const auto da_attr = bin(bin(table, {edges_x}), {edges_x_coarse});
+  auto da_attr_bins_view = bins_view<DataArray>(da_attr.data());
+  da_attr_bins_view.coords().set(Dim::X,
+                                 da_attr_bins_view.attrs().extract(Dim::X));
+  EXPECT_EQ(da_coord, da_attr);
+}
+
+TEST_P(BinTest, rebin_using_attr_in_new_dimension) {
+  const auto z_coord = makeVariable<double>(Dims{Dim::X}, Shape{4},
+                                            Values{-10., -5.0, 0.5, 7.5});
+  const auto edges_z_coarse =
+      makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{-11., 0.0, 8.0});
+  const auto table = GetParam();
+  auto da_coord = bin(table, {edges_x});
+  auto da_attr = bin(table, {edges_x});
+  da_coord.coords().set(Dim::Z, z_coord);
+  da_attr.attrs().set(Dim::Z, z_coord);
+  const auto out_coord = bin(da_coord, {edges_z_coarse});
+  const auto out_attr = bin(da_attr, {edges_z_coarse});
+  EXPECT_EQ(out_coord, out_attr);
 }
 
 TEST_P(BinTest, rebin_existing_binning_attr_and_event_coord) {
   auto table = GetParam();
-  const auto expected = bin(bin(table, {edges_x}), {edges_x_coarse});
-  auto temp = bin(table, {edges_x});
-  temp.attrs().set(Dim::X, temp.coords().extract(Dim::X));
-  const auto result = bin(temp, {edges_x_coarse});
-  EXPECT_EQ(expected, result);
+  const auto da_coord = bin(bin(table, {edges_x}), {edges_x_coarse});
+  auto da_attr_temp = bin(table, {edges_x});
+  da_attr_temp.attrs().set(Dim::X, da_attr_temp.coords().extract(Dim::X));
+  const auto da_attr = bin(da_attr_temp, {edges_x_coarse});
+  EXPECT_EQ(da_coord, da_attr);
 }
 
 TEST_P(BinTest, rebin_existing_binning_attr_and_event_attr) {
   auto table = GetParam();
-  const auto expected = bin(bin(table, {edges_x}), {edges_x_coarse});
+  const auto da_coord = bin(bin(table, {edges_x}), {edges_x_coarse});
   table.attrs().set(Dim::X, table.coords().extract(Dim::X));
-  auto temp = bin(table, {edges_x});
-  temp.attrs().set(Dim::X, temp.coords().extract(Dim::X));
-  const auto result = bin(temp, {edges_x_coarse});
-  auto view = bins_view<DataArray>(result.data());
-  view.coords().set(Dim::X, view.attrs().extract(Dim::X));
-  EXPECT_EQ(expected, result);
+  auto da_attr_temp = bin(table, {edges_x});
+  da_attr_temp.attrs().set(Dim::X, da_attr_temp.coords().extract(Dim::X));
+  const auto da_attr = bin(da_attr_temp, {edges_x_coarse});
+  auto da_attr_bins_view = bins_view<DataArray>(da_attr.data());
+  da_attr_bins_view.coords().set(Dim::X,
+                                 da_attr_bins_view.attrs().extract(Dim::X));
+  EXPECT_EQ(da_coord, da_attr);
 }
 
 TEST_P(BinTest, rebin_coarse_to_fine_1d) {
