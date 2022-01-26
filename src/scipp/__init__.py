@@ -74,7 +74,7 @@ from .core import groupby
 from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc
 from .core import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where
 from .core import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
-from .core import broadcast, concat, fold, flatten, transpose
+from .core import broadcast, concat, fold, flatten, squeeze, transpose
 from .core import sin, cos, tan, asin, acos, atan, atan2
 from .core import isnan, isinf, isfinite, isposinf, isneginf, to_unit
 from .core import scalar, zeros, zeros_like, ones, ones_like, empty, empty_like, full, full_like, matrix, matrices, vector, vectors, array, linspace, geomspace, logspace, arange, datetime, datetimes, epoch
@@ -95,13 +95,15 @@ _binding.bind_pop()
 for _cls in (Variable, DataArray):
     _binding.bind_functions_as_methods(
         _cls, globals(),
-        ('broadcast', 'flatten', 'fold', 'transpose', 'all', 'any', 'mean', 'sum',
-         'nanmean', 'nansum', 'floor', 'ceil', 'round', 'to'))
+        ('broadcast', 'flatten', 'fold', 'squeeze', 'transpose', 'all', 'any', 'mean',
+         'sum', 'nanmean', 'nansum', 'floor', 'ceil', 'round', 'to'))
 del _cls
 del to
 # Assign method binding for JUST Variable
 _binding.bind_functions_as_methods(Variable, globals(),
                                    ('cumsum', 'max', 'min', 'nanmax', 'nanmin'))
+# Assign method binding for JUST Dataset
+_binding.bind_functions_as_methods(Dataset, globals(), ('squeeze', ))
 for _cls in (DataArray, Dataset):
     _binding.bind_functions_as_methods(_cls, globals(), ('groupby', 'transform_coords'))
 del _cls

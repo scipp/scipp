@@ -69,6 +69,15 @@ template <class T> void bind_transpose(pybind11::module &mod) {
       },
       py::arg("x"), py::arg("dims") = std::vector<Dim>{});
 }
+
+template <class T> void bind_squeeze(pybind11::module &mod) {
+  mod.def(
+      "squeeze",
+      [](const T &self, const std::optional<std::vector<Dim>> &dims) {
+        return squeeze(self, dims);
+      },
+      py::arg("x"), py::arg("dims") = std::nullopt);
+}
 } // namespace
 
 void init_shape(py::module &m) {
@@ -83,4 +92,7 @@ void init_shape(py::module &m) {
   bind_transpose<Variable>(m);
   bind_transpose<DataArray>(m);
   bind_transpose<Dataset>(m);
+  bind_squeeze<Variable>(m);
+  bind_squeeze<DataArray>(m);
+  bind_squeeze<Dataset>(m);
 }
