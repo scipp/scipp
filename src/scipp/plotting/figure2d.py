@@ -44,7 +44,7 @@ class PlotFigure2d(PlotFigure):
                          grid=grid)
 
         if aspect is None:
-            aspect = config.plot.aspect
+            aspect = config['plot']['aspect']
 
         self.cmap = cmap
         self._mask_cmap = mask_cmap

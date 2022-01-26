@@ -3,6 +3,9 @@
 Modules
 =======
 
+Core Functionality
+------------------
+
 .. autosummary::
    :toctree: ../generated/modules
    :template: scipp-module-template.rst
@@ -11,8 +14,18 @@ Modules
    constants
    integrate
    interpolate
-   logging
    optimize
    signal
    spatial
    units
+
+Utilities
+---------
+
+.. autosummary::
+   :toctree: ../generated/modules
+   :template: scipp-module-template.rst
+   :recursive:
+
+   configuration
+   logging
