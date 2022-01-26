@@ -462,9 +462,10 @@ def arange(dim: str,
                  dtype=dtype)
 
 
-def datetime(value: _Union[str, int, _np.datetime64],
-             *,
-             unit: _Optional[_Union[_cpp.Unit, str, None]] = default_unit) -> _cpp.Variable:
+def datetime(
+        value: _Union[str, int, _np.datetime64],
+        *,
+        unit: _Optional[_Union[_cpp.Unit, str, None]] = default_unit) -> _cpp.Variable:
     """Constructs a zero dimensional :class:`Variable` with a dtype of datetime64.
 
     :seealso: :py:func:`scipp.datetimes` :py:func:`scipp.epoch`
@@ -493,10 +494,11 @@ def datetime(value: _Union[str, int, _np.datetime64],
     return scalar(value, unit=unit, dtype=_cpp.DType.datetime64)
 
 
-def datetimes(*,
-              dims,
-              values: array_like,
-              unit: _Optional[_Union[_cpp.Unit, str, None]] = default_unit) -> _cpp.Variable:
+def datetimes(
+        *,
+        dims,
+        values: array_like,
+        unit: _Optional[_Union[_cpp.Unit, str, None]] = default_unit) -> _cpp.Variable:
     """Constructs an array :class:`Variable` with a dtype of datetime64.
 
     :seealso: :py:func:`scipp.datetime` :py:func:`scipp.epoch`
