@@ -271,7 +271,6 @@ TEST(UnitTest, binary_operations_with_one_none_operand_throw_UnitError) {
 
 TEST(UnitTest, binary_operations_with_two_none_operands_return_none) {
   using units::none;
-  const auto u = units::m;
   EXPECT_EQ(none + none, none);
   EXPECT_EQ(none - none, none);
   EXPECT_EQ(none * none, none);
