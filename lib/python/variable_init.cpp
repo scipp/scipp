@@ -225,8 +225,7 @@ Variable make_variable(const py::object &dim_labels, const py::object &values,
 void bind_init(py::class_<Variable> &cls) {
   cls.def(
       py::init([](const py::object &dim_labels, const py::object &values,
-                  const py::object &variances,
-                  const std::optional<ProtoUnit> unit,
+                  const py::object &variances, const ProtoUnit unit,
                   const py::object &dtype) {
         if (values.is_none() && variances.is_none()) {
           throw std::invalid_argument(
@@ -238,7 +237,7 @@ void bind_init(py::class_<Variable> &cls) {
                              scipp_dtype);
       }),
       py::kw_only(), py::arg("dims"), py::arg("values") = py::none(),
-      py::arg("variances") = py::none(), py::arg("unit") = std::nullopt,
+      py::arg("variances") = py::none(), py::arg("unit") = DefaultUnit{},
       py::arg("dtype") = py::none(),
       R"raw(
 Initialize a variable with values and/or variances.

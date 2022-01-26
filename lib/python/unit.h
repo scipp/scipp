@@ -11,7 +11,10 @@
 #include "scipp/core/time_point.h"
 #include "scipp/units/unit.h"
 
-using ProtoUnit = std::variant<std::string, scipp::units::Unit, pybind11::none>;
+struct DefaultUnit {};
+
+using ProtoUnit =
+    std::variant<std::string, scipp::units::Unit, pybind11::none, DefaultUnit>;
 scipp::units::Unit make_unit(const ProtoUnit &unit);
 
 std::tuple<scipp::units::Unit, int64_t>

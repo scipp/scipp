@@ -278,6 +278,10 @@ def test_array_creates_correct_variable():
     assert sc.identical(var, expected)
 
 
+def test_array_with_unit_None_gives_variable_with_unit_None():
+    assert sc.array(dims=['x'], values=[1.2], unit=None).unit is None
+
+
 def test_array_from_float_default_unit_is_dimensionless():
     assert sc.array(dims=['x'], values=[1.2]).unit == sc.units.one
 
@@ -371,6 +375,10 @@ def test_linspace():
     var = sc.linspace('x', 1.2, 103., 51, unit='m', dtype=sc.DType.float32)
     expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.DType.float32)
     assert sc.identical(var, expected)
+
+
+def test_linspace_none_unit():
+    assert sc.linspace('x', 1.2, 103., 51, unit=None).unit is None
 
 
 def test_logspace():

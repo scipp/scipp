@@ -27,47 +27,55 @@ template <class T> struct MakeZeros {
   }
 };
 
+namespace {
+auto unit_or_default(const ProtoUnit &unit, const DType type) {
+  return std::holds_alternative<DefaultUnit>(unit)
+             ? variable::default_unit_for(type)
+             : make_unit(unit);
+}
+} // namespace
+
 void init_creation(py::module &m) {
   m.def(
       "empty",
       [](const std::vector<Dim> &dims, const std::vector<scipp::index> &shape,
-         const std::optional<units::Unit> &unit, const py::object &dtype,
+         const ProtoUnit &unit, const py::object &dtype,
          const bool with_variances) {
         const auto dtype_ = scipp_dtype(dtype);
         py::gil_scoped_release release;
-        const auto unit_ = unit.value_or(variable::default_unit_for(dtype_));
+        const auto unit_ = unit_or_default(unit, dtype_);
         return variable::empty(Dimensions(dims, shape), unit_, dtype_,
                                with_variances);
       },
-      py::arg("dims"), py::arg("shape"), py::arg("unit") = std::nullopt,
+      py::arg("dims"), py::arg("shape"), py::arg("unit") = DefaultUnit{},
       py::arg("dtype") = py::none(), py::arg("with_variances") = std::nullopt);
   m.def(
       "zeros",
       [](const std::vector<Dim> &dims, const std::vector<scipp::index> &shape,
-         const std::optional<units::Unit> &unit, const py::object &dtype,
+         const ProtoUnit &unit, const py::object &dtype,
          const bool with_variances) {
         const auto dtype_ = scipp_dtype(dtype);
         py::gil_scoped_release release;
-        const auto unit_ = unit.value_or(variable::default_unit_for(dtype_));
+        const auto unit_ = unit_or_default(unit, dtype_);
         return core::CallDType<
             double, float, int64_t, int32_t, bool, scipp::core::time_point,
             std::string, Eigen::Vector3d,
             Eigen::Matrix3d>::apply<MakeZeros>(dtype_, dims, shape, unit_,
                                                with_variances);
       },
-      py::arg("dims"), py::arg("shape"), py::arg("unit") = std::nullopt,
+      py::arg("dims"), py::arg("shape"), py::arg("unit") = DefaultUnit{},
       py::arg("dtype") = py::none(), py::arg("with_variances") = std::nullopt);
   m.def(
       "ones",
       [](const std::vector<Dim> &dims, const std::vector<scipp::index> &shape,
-         const std::optional<units::Unit> &unit, const py::object &dtype,
+         const ProtoUnit &unit, const py::object &dtype,
          const bool with_variances) {
         const auto dtype_ = scipp_dtype(dtype);
         py::gil_scoped_release release;
-        const auto unit_ = unit.value_or(variable::default_unit_for(dtype_));
+        const auto unit_ = unit_or_default(unit, dtype_);
         return variable::ones(Dimensions(dims, shape), unit_, dtype_,
                               with_variances);
       },
-      py::arg("dims"), py::arg("shape"), py::arg("unit") = std::nullopt,
+      py::arg("dims"), py::arg("shape"), py::arg("unit") = DefaultUnit{},
       py::arg("dtype") = py::none(), py::arg("with_variances") = std::nullopt);
 }

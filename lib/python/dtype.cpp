@@ -141,14 +141,19 @@ scipp::core::DType scipp_dtype(const py::object &type) {
   }
 }
 
+namespace {
+bool is_default(const ProtoUnit &unit) {
+  return std::holds_alternative<DefaultUnit>(unit);
+}
+} // namespace
+
 std::tuple<scipp::core::DType, std::optional<scipp::units::Unit>>
-cast_dtype_and_unit(const pybind11::object &dtype,
-                    const std::optional<ProtoUnit> &unit) {
+cast_dtype_and_unit(const pybind11::object &dtype, const ProtoUnit &unit) {
   const auto scipp_dtype = ::scipp_dtype(dtype);
   if (scipp_dtype == core::dtype<core::time_point>) {
     units::Unit deduced_unit = parse_datetime_dtype(dtype);
-    if (unit.has_value()) {
-      const auto unit_ = make_unit(*unit);
+    if (!is_default(unit)) {
+      const auto unit_ = make_unit(unit);
       if (deduced_unit != units::one && unit_ != deduced_unit) {
         throw std::invalid_argument(
             python::format("The unit encoded in the dtype (", deduced_unit,
@@ -159,9 +164,9 @@ cast_dtype_and_unit(const pybind11::object &dtype,
     }
     return std::tuple{scipp_dtype, deduced_unit};
   } else {
-    return std::tuple{scipp_dtype, unit.has_value()
-                                       ? make_unit(unit.value())
-                                       : std::optional<scipp::units::Unit>()};
+    return std::tuple{scipp_dtype, is_default(unit)
+                                       ? std::optional<scipp::units::Unit>()
+                                       : make_unit(unit)};
   }
 }
 

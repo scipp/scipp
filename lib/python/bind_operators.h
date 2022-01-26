@@ -57,7 +57,7 @@ void bind_astype(py::class_<T, Ignored...> &c) {
       "astype",
       [](const T &self, const py::object &type, const bool copy) {
         const auto [scipp_dtype, dtype_unit] =
-            cast_dtype_and_unit(type, std::nullopt);
+            cast_dtype_and_unit(type, DefaultUnit{});
         if (dtype_unit.has_value() &&
             (dtype_unit != scipp::units::one && dtype_unit != self.unit())) {
           throw scipp::except::UnitError(scipp::python::format(

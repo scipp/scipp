@@ -16,6 +16,7 @@ using namespace scipp;
 namespace py = pybind11;
 
 void init_units(py::module &m) {
+  py::class_<DefaultUnit>(m, "DefaultUnit");
   py::class_<units::Dim>(m, "Dim", "Dimension label")
       .def(py::init<const std::string &>())
       .def(py::self == py::self)
@@ -60,7 +61,7 @@ void init_units(py::module &m) {
   units.attr("ns") = units::ns;
   units.attr("mm") = units::mm;
 
-  units.attr("default_unit") = std::optional<units::Unit>();
+  units.attr("default_unit") = DefaultUnit{};
 
   m.def("to_numpy_time_string", to_numpy_time_string);
 }
