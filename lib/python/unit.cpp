@@ -8,6 +8,7 @@
 #include "scipp/core/eigen.h"
 #include "scipp/core/time_point.h"
 #include "scipp/units/string.h"
+#include "scipp/variable/variable.h"
 
 #include "dtype.h"
 
@@ -96,4 +97,10 @@ std::string to_numpy_time_string(const scipp::units::Unit unit) {
   return unit == units::us
              ? std::string("us")
              : unit == units::Unit("min") ? std::string("m") : to_string(unit);
+}
+
+scipp::units::Unit unit_or_default(const ProtoUnit &unit, const DType type) {
+  return std::holds_alternative<DefaultUnit>(unit)
+             ? variable::default_unit_for(type)
+             : make_unit(unit);
 }

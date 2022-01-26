@@ -217,6 +217,10 @@ def test_elements_binned():
     assert sc.identical(var.fields.yz, yz)
 
 
+def test_vectors_None_unit_yields_variable_with_None_unit():
+    assert sc.vectors(dims=['x'], values=np.ones(shape=(2, 3)), unit=None).unit is None
+
+
 def test_vector_default_unit_is_dimensionless():
     var = sc.vector(value=np.ones(shape=(3, )))
     assert var.unit == sc.units.one

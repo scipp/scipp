@@ -27,14 +27,6 @@ template <class T> struct MakeZeros {
   }
 };
 
-namespace {
-auto unit_or_default(const ProtoUnit &unit, const DType type) {
-  return std::holds_alternative<DefaultUnit>(unit)
-             ? variable::default_unit_for(type)
-             : make_unit(unit);
-}
-} // namespace
-
 void init_creation(py::module &m) {
   m.def(
       "empty",

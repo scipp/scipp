@@ -39,10 +39,10 @@ void bind_structured_creation(py::module &m, const std::string &name) {
   m.def(
       name.c_str(),
       [](const std::vector<Dim> &labels, py::array_t<Elem> &values,
-         const std::optional<units::Unit> &unit) {
+         const ProtoUnit &unit) {
         if (scipp::size(labels) != values.ndim() - scipp::index(sizeof...(N)))
           throw std::runtime_error("bad shape to make structured type");
-        const auto unit_ = unit.value_or(default_unit_for(dtype<T>));
+        const auto unit_ = unit_or_default(unit, dtype<T>);
         auto var = variable::make_structures<T, Elem>(
             Dimensions(labels,
                        std::vector<scipp::index>(
@@ -59,7 +59,7 @@ void bind_structured_creation(py::module &m, const std::string &name) {
                              elems.dims());
         return var;
       },
-      py::arg("dims"), py::arg("values"), py::arg("unit") = std::nullopt);
+      py::arg("dims"), py::arg("values"), py::arg("unit") = DefaultUnit{});
 }
 
 template <class T> struct GetElements {

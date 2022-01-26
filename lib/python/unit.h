@@ -42,3 +42,6 @@ common_unit<scipp::core::time_point>(const pybind11::object &values,
 /// Only time units are supported!
 // TODO Can be removed if / when the units library supports this.
 std::string to_numpy_time_string(scipp::units::Unit const unit);
+
+scipp::units::Unit unit_or_default(const ProtoUnit &unit,
+                                   const scipp::core::DType type);
