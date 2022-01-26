@@ -20,22 +20,6 @@ bool temporal_or_dimensionless(const units::Unit unit) {
 }
 } // namespace
 
-units::Unit default_unit_for(const core::DType type) {
-  // Note: This is an unfortunate duplication of logic in a compile-time helper
-  // in variable.tcc. At the time of writing using the same mechanism would have
-  // lead to more complicated code in a number of places, so for now this is the
-  // solution.
-  constexpr std::array number_like{
-      dtype<core::time_point>, dtype<scipp::index_pair>,
-      dtype<Eigen::Vector3d>,  dtype<Eigen::Matrix3d>,
-      dtype<Eigen::Affine3d>,  dtype<core::Translation>,
-      dtype<core::Quaternion>};
-  if (is_fundamental(type) || std::find(number_like.begin(), number_like.end(),
-                                        type) != number_like.end())
-    return units::one;
-  return units::none;
-}
-
 units::Unit make_unit(const ProtoUnit &unit) {
   if (std::holds_alternative<py::none>(unit))
     return units::none;

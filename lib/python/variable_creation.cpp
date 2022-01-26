@@ -35,7 +35,7 @@ void init_creation(py::module &m) {
          const bool with_variances) {
         const auto dtype_ = scipp_dtype(dtype);
         py::gil_scoped_release release;
-        const auto unit_ = unit.value_or(default_unit_for(dtype_));
+        const auto unit_ = unit.value_or(variable::default_unit_for(dtype_));
         return variable::empty(Dimensions(dims, shape), unit_, dtype_,
                                with_variances);
       },
@@ -48,7 +48,7 @@ void init_creation(py::module &m) {
          const bool with_variances) {
         const auto dtype_ = scipp_dtype(dtype);
         py::gil_scoped_release release;
-        const auto unit_ = unit.value_or(default_unit_for(dtype_));
+        const auto unit_ = unit.value_or(variable::default_unit_for(dtype_));
         return core::CallDType<
             double, float, int64_t, int32_t, bool, scipp::core::time_point,
             std::string, Eigen::Vector3d,
@@ -64,7 +64,7 @@ void init_creation(py::module &m) {
          const bool with_variances) {
         const auto dtype_ = scipp_dtype(dtype);
         py::gil_scoped_release release;
-        const auto unit_ = unit.value_or(default_unit_for(dtype_));
+        const auto unit_ = unit.value_or(variable::default_unit_for(dtype_));
         return variable::ones(Dimensions(dims, shape), unit_, dtype_,
                               with_variances);
       },

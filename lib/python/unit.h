@@ -11,8 +11,6 @@
 #include "scipp/core/time_point.h"
 #include "scipp/units/unit.h"
 
-scipp::units::Unit default_unit_for(const scipp::core::DType type);
-
 using ProtoUnit = std::variant<std::string, scipp::units::Unit, pybind11::none>;
 scipp::units::Unit make_unit(const ProtoUnit &unit);
 

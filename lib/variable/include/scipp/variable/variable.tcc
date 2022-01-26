@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #include "scipp/core/array_to_string.h"
 #include "scipp/core/dimensions.h"
-#include "scipp/core/eigen.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
 #include "scipp/core/has_eval.h"
@@ -73,21 +72,12 @@ auto make_model(const units::Unit unit, const Dimensions &dimensions,
   }
 }
 
+/// See also default_unit_for, for similar runtime functionality.
 template <class T>
 units::Unit unit_for_dtype(const std::optional<units::Unit> &unit) {
   if (unit.has_value())
     return *unit;
-  if constexpr (std::is_arithmetic_v<T> ||
-                std::is_same_v<T, scipp::index_pair> ||
-                std::is_same_v<T, core::time_point> ||
-                std::is_same_v<T, Eigen::Vector3d> ||
-                std::is_same_v<T, Eigen::Matrix3d> ||
-                std::is_same_v<T, Eigen::Affine3d> ||
-                std::is_same_v<T, core::Quaternion> ||
-                std::is_same_v<T, core::Translation>)
-    return units::dimensionless;
-  else
-    return units::none;
+  return default_unit_for(dtype<T>);
 }
 
 } // namespace
