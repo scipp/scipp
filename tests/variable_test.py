@@ -72,7 +72,7 @@ def test_datetime_repr():
                        ])
 
     if os.name == "nt":
-        expected = "[(cannot format datetime), 1970-01-01T00:00:01]"
+        expected = "[(datetime before epoch, cannot format), 1970-01-01T00:00:01]"
     else:
         expected = "[1969-01-01T00:00:01, 1970-01-01T00:00:01]"
 

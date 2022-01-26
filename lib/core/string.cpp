@@ -105,7 +105,7 @@ std::string to_string(const std::chrono::duration<Rep, Period> &duration) {
 #ifdef _WIN32
   // Windows' time functions (e.g. gmtime) don't support datetimes before 1970.
   if (duration < std::chrono::duration<Rep, Period>::zero()) {
-    return "(cannot format datetime)";
+    return "(datetime before epoch, cannot format)";
   }
 #endif
 
