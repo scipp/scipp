@@ -89,7 +89,6 @@ std::mutex gmtime_mutex;
 void put_time(std::ostream &os, const std::time_t time_point,
               const bool include_time) {
   std::lock_guard guard_{gmtime_mutex};
-
   const std::tm *tm = std::gmtime(&time_point);
   if (include_time)
     os << std::put_time(tm, "%FT%T");
