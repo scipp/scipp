@@ -31,7 +31,7 @@ class PlotFigure3d:
             self._pixel_size = None
 
         if figsize is None:
-            figsize = (config.plot.width, config.plot.height)
+            figsize = (config['plot']['width'], config['plot']['height'])
 
         # Figure toolbar
         self.toolbar = PlotToolbar3d(mpl_toolbar=self)
@@ -63,8 +63,8 @@ class PlotFigure3d:
         # Define camera
         self.initial_camera_view = camera
         self.camera = p3.PerspectiveCamera(position=[0, 0, 0],
-                                           aspect=config.plot.width /
-                                           config.plot.height)
+                                           aspect=config['plot']['width'] /
+                                           config['plot']['height'])
 
         # Add red/green/blue axes helper
         self.axes_3d = p3.AxesHelper()
@@ -208,7 +208,7 @@ class PlotFigure3d:
                     array=np.ones([positions.shape[0], 3], dtype='float32'))
             })
 
-        pixel_ratio = config.plot.get("pixel_ratio", 1.0)
+        pixel_ratio = config['plot']['pixel_ratio']
         # Note that an additional factor of 2.5 (obtained from trial and error) seems to
         # be required to get the sizes right in the scene.
         self.points_material = p3.PointsMaterial(vertexColors='VertexColors',
@@ -364,9 +364,9 @@ class PlotFigure3d:
         Note that the figure is closed as soon as it is created to avoid it
         re-appearing further down the notebook.
         """
-        height_inches = self.figsize[1] / config.plot.dpi
+        height_inches = self.figsize[1] / config['plot']['dpi']
         cbar_fig = plt.figure(figsize=(height_inches * 0.2, height_inches),
-                              dpi=config.plot.dpi)
+                              dpi=config['plot']['dpi'])
         cbar_ax = cbar_fig.add_axes([0.05, 0.02, 0.25, 0.94])
         _ = ColorbarBase(cbar_ax,
                          cmap=self.scalar_map.get_cmap(),

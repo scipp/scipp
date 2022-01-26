@@ -517,3 +517,150 @@ TEST_F(TransposeTest, dataset_2d) {
   EXPECT_THROW_DISCARD(transpose(d, std::vector<Dim>{Dim::X, Dim::Y}),
                        except::DimensionError);
 }
+
+class SqueezeTest : public ::testing::Test {
+protected:
+  SqueezeTest() : a(xyz) {
+    a.coords().set(Dim::X, x);
+    a.coords().set(Dim::Y, y);
+    a.coords().set(Dim::Z, z);
+    a.coords().set(Dim{"xyz"}, xyz);
+    a.masks().set("mask-x", x);
+    a.masks().set("mask-z", z);
+    a.masks().set("mask-xyz", xyz);
+    a.attrs().set(Dim{"attr-x"}, x);
+  }
+  Variable xyz = makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z},
+                                      Shape{1, 1, 2}, Values{1, 2});
+  Variable x = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{10});
+  Variable y = makeVariable<double>(Dims{Dim::Y}, Shape{1}, Values{20});
+  Variable z = makeVariable<double>(Dims{Dim::Z}, Shape{2}, Values{30, 31});
+  DataArray a;
+};
+
+TEST_F(SqueezeTest, data_array_3d_outer) {
+  const auto dims = std::vector<Dim>{Dim::X};
+  const auto squeezed = squeeze(a, dims);
+  EXPECT_EQ(squeezed.data(), squeeze(xyz, dims));
+  EXPECT_FALSE(squeezed.coords().contains(Dim::X));
+  EXPECT_EQ(squeezed.attrs()[Dim::X], makeVariable<double>(Values{10}));
+  EXPECT_EQ(squeezed.coords()[Dim::Y], y);
+  EXPECT_EQ(squeezed.coords()[Dim::Z], z);
+  EXPECT_EQ(squeezed.coords()[Dim{"xyz"}], squeeze(xyz, dims));
+  EXPECT_EQ(squeezed.masks()["mask-x"], makeVariable<double>(Values{10}));
+  EXPECT_EQ(squeezed.masks()["mask-z"], z);
+  EXPECT_EQ(squeezed.masks()["mask-xyz"], squeeze(xyz, dims));
+  EXPECT_EQ(squeezed.attrs()[Dim{"attr-x"}], makeVariable<double>(Values{10}));
+}
+
+TEST_F(SqueezeTest, data_array_3d_center) {
+  const auto dims = std::vector<Dim>{Dim::Y};
+  const auto squeezed = squeeze(a, dims);
+  EXPECT_EQ(squeezed.data(), squeeze(xyz, dims));
+  EXPECT_EQ(squeezed.coords()[Dim::X], x);
+  EXPECT_FALSE(squeezed.coords().contains(Dim::Y));
+  EXPECT_EQ(squeezed.attrs()[Dim::Y], makeVariable<double>(Values{20}));
+  EXPECT_EQ(squeezed.coords()[Dim::Z], z);
+  EXPECT_EQ(squeezed.coords()[Dim{"xyz"}], squeeze(xyz, dims));
+  EXPECT_EQ(squeezed.masks()["mask-x"], x);
+  EXPECT_EQ(squeezed.masks()["mask-z"], z);
+  EXPECT_EQ(squeezed.masks()["mask-xyz"], squeeze(xyz, dims));
+  EXPECT_EQ(squeezed.attrs()[Dim{"attr-x"}], x);
+}
+
+TEST_F(SqueezeTest, data_array_3d_inner_and_center) {
+  const auto dims = std::vector<Dim>{Dim::Y, Dim::X};
+  const auto squeezed = squeeze(a, dims);
+  EXPECT_EQ(squeezed.data(), squeeze(xyz, dims));
+  EXPECT_FALSE(squeezed.coords().contains(Dim::X));
+  EXPECT_EQ(squeezed.attrs()[Dim::X], makeVariable<double>(Values{10}));
+  EXPECT_FALSE(squeezed.coords().contains(Dim::Y));
+  EXPECT_EQ(squeezed.attrs()[Dim::Y], makeVariable<double>(Values{20}));
+  EXPECT_EQ(squeezed.coords()[Dim::Z], z);
+  EXPECT_EQ(squeezed.coords()[Dim{"xyz"}], squeeze(xyz, dims));
+  EXPECT_EQ(squeezed.masks()["mask-x"], makeVariable<double>(Values{10}));
+  EXPECT_EQ(squeezed.masks()["mask-z"], z);
+  EXPECT_EQ(squeezed.masks()["mask-xyz"], squeeze(xyz, dims));
+  EXPECT_EQ(squeezed.attrs()[Dim{"attr-x"}], makeVariable<double>(Values{10}));
+}
+
+TEST_F(SqueezeTest, data_array_3d_outer_bin_edge) {
+  const auto dims = std::vector<Dim>{Dim::X};
+  a.coords().set(Dim::X,
+                 makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{-1, -2}));
+  const auto squeezed = squeeze(a, dims);
+  EXPECT_EQ(squeezed.data(), squeeze(xyz, dims));
+  EXPECT_FALSE(squeezed.coords().contains(Dim::X));
+  EXPECT_EQ(squeezed.attrs()[Dim::X],
+            makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{-1, -2}));
+  EXPECT_EQ(squeezed.coords()[Dim::Y], y);
+  EXPECT_EQ(squeezed.coords()[Dim::Z], z);
+  EXPECT_EQ(squeezed.coords()[Dim{"xyz"}], squeeze(xyz, dims));
+  EXPECT_EQ(squeezed.masks()["mask-x"], makeVariable<double>(Values{10}));
+  EXPECT_EQ(squeezed.masks()["mask-z"], z);
+  EXPECT_EQ(squeezed.masks()["mask-xyz"], squeeze(xyz, dims));
+  EXPECT_EQ(squeezed.attrs()[Dim{"attr-x"}], makeVariable<double>(Values{10}));
+}
+
+TEST_F(SqueezeTest, data_array_3d_all) {
+  EXPECT_EQ(squeeze(a, std::nullopt),
+            squeeze(a, std::vector<Dim>{Dim::X, Dim::Y}));
+}
+
+TEST_F(SqueezeTest, data_array_3d_wrong_length_throws) {
+  EXPECT_THROW_DISCARD(squeeze(a, std::vector<Dim>{Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(squeeze(a, std::vector<Dim>{Dim::X, Dim::Z}),
+                       except::DimensionError);
+}
+
+class SqueezeDatasetTest : public SqueezeTest {
+protected:
+  SqueezeDatasetTest()
+      : b(copy(a.slice({Dim::X, 0}))), c(copy(a.slice({Dim::Y, 0}))) {
+    // Keeping them would cause a mismatch error when inserting into d.
+    b.coords().erase(Dim{"xyz"});
+    c.coords().erase(Dim{"xyz"});
+    dset.setData("a", a);
+    dset.setData("b", b);
+    dset.setData("c", c);
+  }
+
+  Dataset dset;
+  DataArray b;
+  DataArray c;
+};
+
+TEST_F(SqueezeDatasetTest, dataset_3d_outer) {
+  const std::vector<Dim> dims{Dim::X};
+  const auto squeezed = squeeze(dset, dims);
+  // b contains 'xyz' now because the latter has dims [y,z] after squeezing.
+  b.coords().set(Dim{"xyz"}, squeeze(xyz, dims));
+
+  EXPECT_EQ(squeezed["a"], squeeze(a, dims));
+  EXPECT_EQ(squeezed["b"], b);
+  EXPECT_EQ(squeezed["c"], squeeze(c, dims));
+}
+
+TEST_F(SqueezeDatasetTest, dataset_3d_center) {
+  const std::vector<Dim> dims{Dim::Y};
+  const auto squeezed = squeeze(dset, dims);
+  // b contains 'xyz' now because the latter has dims [x,z] after squeezing.
+  c.coords().set(Dim{"xyz"}, squeeze(xyz, dims));
+
+  EXPECT_EQ(squeezed["a"], squeeze(a, dims));
+  EXPECT_EQ(squeezed["b"], squeeze(b, dims));
+  EXPECT_EQ(squeezed["c"], c);
+}
+
+TEST_F(SqueezeDatasetTest, dataset_3d_all) {
+  const auto dims = std::nullopt;
+  const auto squeezed = squeeze(dset, dims);
+  // b,c contain 'xyz' now because the latter has dims [z] after squeezing.
+  b.coords().set(Dim{"xyz"}, squeeze(xyz, dims));
+  c.coords().set(Dim{"xyz"}, squeeze(xyz, dims));
+
+  EXPECT_EQ(squeezed["a"], squeeze(a, dims));
+  EXPECT_EQ(squeezed["b"], squeeze(b, std::vector<Dim>({Dim::Y})));
+  EXPECT_EQ(squeezed["c"], squeeze(c, std::vector<Dim>({Dim::X})));
+}

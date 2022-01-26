@@ -16,7 +16,7 @@ requirements:
     - python {{ python }}
     - tbb-devel
     # doc build requirements
-    - appdirs
+    - confuse
     - graphlib-backport # for python < 3.9
     - h5py
     - ipykernel=6.3.1  # issue with pythreejs 3d plotting, see https://github.com/ipython/ipykernel/issues/771
@@ -24,7 +24,6 @@ requirements:
     - ipywidgets
     - matplotlib-base
     - nbsphinx
-    - python-configuration
     - python-graphviz
     - pythreejs
     - pyyaml
@@ -33,10 +32,9 @@ requirements:
     - sphinx-book-theme
     - sphinx-copybutton
   run:
-    - appdirs
+    - confuse
     - numpy>=1.20.0
     - python {{ python }}
-    - python-configuration
     - pyyaml
     - tbb
     - graphlib-backport # for python < 3.9
