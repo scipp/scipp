@@ -62,7 +62,6 @@ TEST_F(ToUnitTest, conversion_to_same_unit_returns_identical_copy) {
 }
 
 TEST_F(ToUnitTest, converts_unit_of_data) {
-  // TODO Use DataArrayBuilder
   da.setData(makeVariable<double>(Values{3.0}, units::m));
   const auto result = to_unit(da, units::mm);
   EXPECT_EQ(result.data(), makeVariable<double>(Values{3000.0}, units::mm));
@@ -74,47 +73,6 @@ TEST_F(ToUnitTest, preserves_masks) {
   const auto result = to_unit(da, units::mm);
   EXPECT_EQ(result.masks()["mask"], da.masks()["mask"]);
 }
-
-/* corresponds to three tests below
-TEST_F(ToUnitTest, with_same_target_unit_buffer_sharing_depends_on_policy) {
-  auto da = make_array();
-  da.setData(makeVariable<double>(Values{3.0}, units::m));
-  EXPECT_FALSE(to_unit(da, units::m).data().is_same(da.data()));
-  EXPECT_FALSE(
-      to_unit(da, units::m, CopyPolicy::Always).data().is_same(da.data()));
-  EXPECT_TRUE(
-      to_unit(da, units::m, CopyPolicy::TryAvoid).data().is_same(da.data()));
-}
-// cons:
-// - fresh state
-// - clear naming
-// pros:
-// - harder to compare the 3 cases at a glance
-
-*/
-
-// TODO mask values
-
-// If we don't split this, a brief glance may lead us to think that a multi-step
-// process is being tested
-//
-// What about setup duplication?
-// - cheap to developer (copy and paste easier than writing test fixture)
-// - if tests are good, they should not need to be changed (or read) often or at
-// all
-// => not a problem?
-
-// Did we go too far? Is having similar asserts in adjacent lines valuable?
-
-// Adding new behavior:
-// - new test is beneficial, e.g., simpler code review
-// - same for changing behavior
-//
-// - Changing behavior: Would imply changing test name, serves as a safety check
-//   that code change was intentional?
-//
-// Finding bugs:
-// - Single failing tests easier to parse
 
 TEST_F(ToUnitTest, with_new_target_unit_copies_buffers_when_default_policy) {
   da.setUnit(units::m);
