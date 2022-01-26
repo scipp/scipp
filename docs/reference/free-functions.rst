@@ -68,6 +68,7 @@ Shape
    concat
    flatten
    fold
+   squeeze
    transpose
 
 Comparison

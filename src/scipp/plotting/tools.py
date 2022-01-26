@@ -11,12 +11,12 @@ from copy import copy
 import io
 
 
-def get_line_param(name=None, index=None):
+def get_line_param(name, index):
     """
     Get the default line parameter from the config.
     If an index is supplied, return the i-th item in the list.
     """
-    param = getattr(config.plot, name)
+    param = config['plot'][name]
     return param[index % len(param)]
 
 
@@ -51,7 +51,7 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
     from matplotlib.colors import Normalize, LogNorm, LinearSegmentedColormap
     from matplotlib import cm
 
-    parsed = dict(config.plot.params)
+    parsed = dict(config['plot']['params'])
     if defaults is not None:
         for key, val in defaults.items():
             parsed[key] = val

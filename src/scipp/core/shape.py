@@ -12,7 +12,7 @@ from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLike
 
 
-def broadcast(x: _cpp.Variable, dims: Union[List[str], Tuple[str]],
+def broadcast(x: _cpp.Variable, dims: Union[List[str], Tuple[str, ...]],
               shape: Sequence[int]) -> _cpp.Variable:
     """Broadcast a variable.
 
@@ -84,7 +84,7 @@ def concat(x: Sequence[VariableLike], dim: str) -> VariableLike:
 def fold(x: VariableLike,
          dim: str,
          sizes: Optional[Dict[str, int]] = None,
-         dims: Optional[Union[List[str], Tuple[str]]] = None,
+         dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
          shape: Optional[Sequence[int]] = None) -> VariableLike:
     """Fold a single dimension of a variable or data array into multiple dims.
 
@@ -141,7 +141,7 @@ def fold(x: VariableLike,
 
 
 def flatten(x: VariableLike,
-            dims: Optional[Union[List[str], Tuple[str]]] = None,
+            dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
             to: Optional[str] = None) -> VariableLike:
     """Flatten multiple dimensions of a variable or data array into a single
     dimension. If dims is omitted, then we flatten all of the inputs dimensions
@@ -210,8 +210,8 @@ def flatten(x: VariableLike,
 
 
 def transpose(x: VariableLike,
-              dims: Optional[Union[List[str], Tuple[str]]] = None) -> VariableLike:
-    """Transpose dimensions of a variable, an data array, or a dataset.
+              dims: Optional[Union[List[str], Tuple[str, ...]]] = None) -> VariableLike:
+    """Transpose dimensions of a variable, a data array, or a dataset.
 
     :param x: Object to transpose.
     :param dims: List of dimensions in desired order. If default,
@@ -221,3 +221,59 @@ def transpose(x: VariableLike,
     :return: The absolute values of the input.
     """
     return _call_cpp_func(_cpp.transpose, x, dims if dims is not None else [])
+
+
+def squeeze(
+        x: VariableLike,
+        dim: Optional[Union[str, List[str], Tuple[str, ...]]] = None) -> VariableLike:
+    """Remove dimensions of length 1.
+
+    This is equivalent to indexing the squeezed dimensions with index 0, that is
+    ``squeeze(x, ['x', 'y'])`` is equivalent to ``x['x', 0]['y', 0]``.
+
+    :param x: Object to remove dimensions from.
+    :param dim: If given, the dimension(s) to squeeze.
+                If ``None``, all length-1 dimensions are squeezed.
+    :raises: If a dimension in `dim` does not have length 1.
+    :return: `x` with dimensions squeezed out.
+
+    :seealso: :py:func:`scipp.Variable.squeeze`
+              :py:func:`scipp.DataArray.squeeze`
+              :py:func:`scipp.Dataset.squeeze`
+              :py:func:`numpy.squeeze`
+
+    Examples:
+
+      >>> v = sc.arange('a', 3).fold('a', {'x': 1, 'y': 3, 'z': 1})
+      >>> v
+      <scipp.Variable> (x: 1, y: 3, z: 1)      int64  [dimensionless]  [0, 1, 2]
+      >>> sc.squeeze(v)
+      <scipp.Variable> (y: 3)      int64  [dimensionless]  [0, 1, 2]
+      >>> sc.squeeze(v, 'z')
+      <scipp.Variable> (x: 1, y: 3)      int64  [dimensionless]  [0, 1, 2]
+      >>> sc.squeeze(v, ['x', 'z'])
+      <scipp.Variable> (y: 3)      int64  [dimensionless]  [0, 1, 2]
+
+    Coordinates for squeezed dimensions are turned into attributes:
+
+      >>> da = sc.DataArray(v, coords={'x': sc.arange('x', 1),
+      ...                              'y': sc.arange('y', 3)})
+      >>> da
+      <scipp.DataArray>
+      Dimensions: Sizes[x:1, y:3, z:1, ]
+      Coordinates:
+        x                           int64  [dimensionless]  (x)  [0]
+        y                           int64  [dimensionless]  (y)  [0, 1, 2]
+      Data:
+                                    int64  [dimensionless]  (x, y, z)  [0, 1, 2]
+      >>> sc.squeeze(da)
+      <scipp.DataArray>
+      Dimensions: Sizes[y:3, ]
+      Coordinates:
+        y                           int64  [dimensionless]  (y)  [0, 1, 2]
+      Data:
+                                    int64  [dimensionless]  (y)  [0, 1, 2]
+      Attributes:
+        x                           int64  [dimensionless]  ()  [0]
+    """
+    return _call_cpp_func(_cpp.squeeze, x, (dim, ) if isinstance(dim, str) else dim)
