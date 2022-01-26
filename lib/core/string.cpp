@@ -89,6 +89,7 @@ std::mutex gmtime_mutex;
 void put_time(std::ostream &os, const std::time_t time_point,
               const bool include_time) {
   std::lock_guard guard_{gmtime_mutex};
+
   const std::tm *tm = std::gmtime(&time_point);
   if (include_time)
     os << std::put_time(tm, "%FT%T");
@@ -101,6 +102,14 @@ std::string to_string(const std::chrono::duration<Rep, Period> &duration) {
   using Clock = std::chrono::system_clock;
 
   std::ostringstream oss;
+
+  #ifdef _WIN32
+      // Windows' time functions (e.g. gmtime) don't support datetimes before 1970.
+      if (duration < std::chrono::duration<Rep, Period>::zero()) {
+          return "(cannot format datetime)";
+      }
+  #endif
+
   // Cast to seconds to be independent of clock precision.
   // Sub-second digits are formatted manually.
   put_time(oss,
