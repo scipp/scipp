@@ -24,9 +24,7 @@ public:
   [[nodiscard]] constexpr bool has_value() const noexcept {
     return m_unit.has_value();
   }
-  [[nodiscard]] constexpr auto underlying() const {
-    return m_unit.value();
-  }
+  [[nodiscard]] constexpr auto underlying() const { return m_unit.value(); }
 
   [[nodiscard]] std::string name() const;
 
