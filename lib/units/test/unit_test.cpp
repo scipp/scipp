@@ -274,7 +274,7 @@ TEST(UnitTest, binary_operations_with_two_none_operands_return_none) {
   EXPECT_EQ(none + none, none);
   EXPECT_EQ(none - none, none);
   EXPECT_EQ(none * none, none);
-  EXPECT_EQ(none / none, none);
+  EXPECT_EQ(none / none, none); // cppcheck-suppress duplicateExpression
 }
 
 TEST(UnitTest, trigonometric_of_none_throw_UnitError) {
