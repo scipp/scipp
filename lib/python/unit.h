@@ -15,7 +15,6 @@ struct DefaultUnit {};
 
 using ProtoUnit =
     std::variant<std::string, scipp::units::Unit, pybind11::none, DefaultUnit>;
-scipp::units::Unit make_unit(const ProtoUnit &unit);
 
 std::tuple<scipp::units::Unit, int64_t>
 get_time_unit(std::optional<scipp::units::Unit> value_unit,
@@ -43,5 +42,6 @@ common_unit<scipp::core::time_point>(const pybind11::object &values,
 // TODO Can be removed if / when the units library supports this.
 std::string to_numpy_time_string(scipp::units::Unit const unit);
 
-scipp::units::Unit unit_or_default(const ProtoUnit &unit,
-                                   const scipp::core::DType type);
+scipp::units::Unit
+unit_or_default(const ProtoUnit &unit,
+                const scipp::core::DType type = scipp::core::dtype<void>);

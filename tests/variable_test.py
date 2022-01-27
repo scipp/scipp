@@ -1031,3 +1031,15 @@ def test_to_without_any_arguments():
 
     with pytest.raises(ValueError):
         data.to()
+
+
+def test_setting_float_unit_property_to_default_gives_dimensionless():
+    var = sc.scalar(1.2, unit='m')
+    var.unit = sc.units.default_unit
+    assert var.unit == sc.units.one
+
+
+def test_setting_string_unit_property_to_default_gives_none():
+    var = sc.scalar('abc', unit='m')
+    var.unit = sc.units.default_unit
+    assert var.unit is None

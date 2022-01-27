@@ -21,14 +21,6 @@ bool temporal_or_dimensionless(const units::Unit unit) {
 }
 } // namespace
 
-units::Unit make_unit(const ProtoUnit &unit) {
-  if (std::holds_alternative<py::none>(unit))
-    return units::none;
-  if (std::holds_alternative<std::string>(unit))
-    return units::Unit(std::get<std::string>(unit));
-  return std::get<units::Unit>(unit);
-}
-
 std::tuple<units::Unit, int64_t>
 get_time_unit(const std::optional<scipp::units::Unit> value_unit,
               const std::optional<scipp::units::Unit> dtype_unit,
@@ -100,7 +92,14 @@ std::string to_numpy_time_string(const scipp::units::Unit unit) {
 }
 
 scipp::units::Unit unit_or_default(const ProtoUnit &unit, const DType type) {
-  return std::holds_alternative<DefaultUnit>(unit)
-             ? variable::default_unit_for(type)
-             : make_unit(unit);
+  if (std::holds_alternative<DefaultUnit>(unit)) {
+    if (type == dtype<void>)
+      throw except::UnitError("Default unit requested but dtype unknown.");
+    return variable::default_unit_for(type);
+  }
+  if (std::holds_alternative<py::none>(unit))
+    return units::none;
+  if (std::holds_alternative<std::string>(unit))
+    return units::Unit(std::get<std::string>(unit));
+  return std::get<units::Unit>(unit);
 }

@@ -153,7 +153,7 @@ cast_dtype_and_unit(const pybind11::object &dtype, const ProtoUnit &unit) {
   if (scipp_dtype == core::dtype<core::time_point>) {
     units::Unit deduced_unit = parse_datetime_dtype(dtype);
     if (!is_default(unit)) {
-      const auto unit_ = make_unit(unit);
+      const auto unit_ = unit_or_default(unit, scipp_dtype);
       if (deduced_unit != units::one && unit_ != deduced_unit) {
         throw std::invalid_argument(
             python::format("The unit encoded in the dtype (", deduced_unit,
@@ -164,9 +164,11 @@ cast_dtype_and_unit(const pybind11::object &dtype, const ProtoUnit &unit) {
     }
     return std::tuple{scipp_dtype, deduced_unit};
   } else {
+    // Concrete dtype not known at this point so we cannot determine the default
+    // unit here. Therefore nullopt is returned.
     return std::tuple{scipp_dtype, is_default(unit)
                                        ? std::optional<scipp::units::Unit>()
-                                       : make_unit(unit)};
+                                       : unit_or_default(unit)};
   }
 }
 
