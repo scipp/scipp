@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+import os
 
 import numpy as np
 import pytest
@@ -59,6 +60,23 @@ def test_astype_datetime_different_unit():
     assert var.unit == sc.units.s
     with pytest.raises(sc.UnitError):
         var.astype('datetime64[ms]')
+
+
+def test_datetime_repr():
+    # This test exists as windows time functions don't natively support times before
+    # 1970-01-01, which has historically been overlooked and caused crashes.
+    var = sc.datetimes(dims=["x"],
+                       values=[
+                           np.datetime64("1969-01-01T00:00:01", 's'),
+                           np.datetime64("1970-01-01T00:00:01", 's')
+                       ])
+
+    if os.name == "nt":
+        expected = "[(datetime before 1970, cannot format), 1970-01-01T00:00:01]"
+    else:
+        expected = "[1969-01-01T00:00:01, 1970-01-01T00:00:01]"
+
+    assert repr(var).endswith(expected)
 
 
 def test_operation_with_scalar_quantity():
