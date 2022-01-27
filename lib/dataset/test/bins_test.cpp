@@ -337,6 +337,24 @@ TEST_F(DataArrayBinsScaleTest, events_times_histogram) {
   EXPECT_EQ(buckets, make_buckets(expected_events));
 }
 
+TEST_F(DataArrayBinsScaleTest, events_times_histogram_without_variances) {
+  const auto events = make_events();
+  const auto hist = make_histogram_no_variance();
+  auto buckets = make_buckets(events);
+  buckets::scale(buckets, hist);
+
+  auto expected_weights = makeVariable<double>(
+      Dims{Dim("event")}, Shape{7}, units::us, Values{1, 2, 1, 3, 1, 1, 1},
+      Variances{1, 3, 1, 2, 1, 1, 1});
+  // Last event is out of bounds and scaled to 0.0
+  expected_weights *= makeVariable<double>(
+      Dims{Dim("event")}, Shape{7}, Values{2.0, 3.0, 3.0, 2.0, 2.0, 3.0, 0.0});
+  auto expected_events = events;
+  copy(expected_weights, expected_events.data());
+
+  EXPECT_EQ(buckets, make_buckets(expected_events));
+}
+
 TEST_F(DataArrayBinsScaleTest,
        events_times_histogram_fail_too_many_bucketed_dims) {
   auto x = make_histogram();
