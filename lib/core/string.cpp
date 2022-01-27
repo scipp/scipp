@@ -101,6 +101,14 @@ std::string to_string(const std::chrono::duration<Rep, Period> &duration) {
   using Clock = std::chrono::system_clock;
 
   std::ostringstream oss;
+
+#ifdef _WIN32
+  // Windows' time functions (e.g. gmtime) don't support datetimes before 1970.
+  if (duration < std::chrono::duration<Rep, Period>::zero()) {
+    return "(datetime before 1970, cannot format)";
+  }
+#endif
+
   // Cast to seconds to be independent of clock precision.
   // Sub-second digits are formatted manually.
   put_time(oss,
