@@ -117,7 +117,6 @@ constexpr auto map_and_mul = overloaded{
         map_and_mul_detail::args<double, time_point, time_point, float>,
         map_and_mul_detail::args<float, time_point, time_point, double>,
         map_and_mul_detail::args<float, time_point, time_point, float>>,
-    transform_flags::expect_in_variance_if_out_variance,
     transform_flags::expect_no_variance_arg<1>,
     transform_flags::expect_no_variance_arg<2>,
     [](units::Unit &data, const units::Unit &x, const units::Unit &edges,
