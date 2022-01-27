@@ -16,16 +16,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - run: sudo apt-get install --yes clang-format-10
-      - run: find lib -type f -regex '.*\.\(cpp\|h\|tcc\)' -exec clang-format-10 -i {} +
-      - run: pip install cmake_format==0.6.9 flake8 yapf==0.30.0
-      - run: find . -type f -name CMakeLists.txt -or -name '*.cmake' -not -path "./lib/.tbb/*" | xargs cmake-format -i
-      - run: yapf --recursive --in-place .
-      - run: flake8 .
+        with:
+          ref: ${{ github.head_ref }}
+      # Run this before any other commands so that git diff does not pick up formatting changes.
       - run: |
           find . -type f -not -path '.git/*' -exec sed -ri "s/[0-9]{4} (Scipp contributors)/$(date +%Y) \1/g" {} +
           git diff --exit-code
+      - run: sudo apt-get install --yes clang-format-10
+      - run: find lib -type f -regex '.*\.\(cpp\|h\|tcc\)' -exec clang-format-10 -i {} +
+      - run: pip install cmake_format==0.6.9 flake8 nb-clean==2.1.0 yapf==0.30.0
+      - run: find . -type f -name CMakeLists.txt -or -name '*.cmake' -not -path "./lib/.tbb/*" | xargs cmake-format -i
+      - run: find . -type f -regex '.*\.ipynb' | xargs nb-clean clean --remove-empty-cells --preserve-cell-metadata
+      - run: yapf --recursive --in-place .
+      - run: flake8 .
       - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Apply automatic formatting
 
   build_and_test:
     needs: formatting
@@ -54,6 +60,7 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
+          ref: ${{ github.head_ref }}
 
       - name: ccache
         if: ${{ !contains(matrix.os, 'windows') }}
