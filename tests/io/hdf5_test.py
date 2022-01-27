@@ -216,3 +216,9 @@ def test_variable_with_zero_length_dimension():
 def test_variable_with_zero_length_dimension_with_variances():
     v = sc.Variable(dims=["x"], values=[], variances=[])
     check_roundtrip(v)
+
+
+def test_None_unit_is_preserved_even_if_dtype_does_not_default_to_None_unit():
+    v = sc.scalar(1.2, unit=None)
+    result = check_roundtrip(v)
+    assert result.unit is None

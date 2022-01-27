@@ -200,6 +200,8 @@ class VariableIO:
         contents['dtype'] = cls._dtypes[values.attrs['dtype']]
         if 'unit' in values.attrs:
             contents['unit'] = sc.Unit(values.attrs['unit'])
+        else:
+            contents['unit'] = None  # essential, otherwise default unit is used
         contents['with_variances'] = 'variances' in group
         if contents['dtype'] in [d.VariableView, d.DataArrayView, d.DatasetView]:
             var = BinDataIO.read(group)
