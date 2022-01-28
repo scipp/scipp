@@ -265,8 +265,26 @@ TEST(UnitTest, binary_operations_with_one_none_operand_throw_UnitError) {
   EXPECT_THROW_DISCARD(u * none, except::UnitError);
   EXPECT_THROW_DISCARD(none / u, except::UnitError);
   EXPECT_THROW_DISCARD(u / none, except::UnitError);
+  EXPECT_THROW_DISCARD(none % u, except::UnitError);
+  EXPECT_THROW_DISCARD(u % none, except::UnitError);
   EXPECT_THROW_DISCARD(atan2(u, none), except::UnitError);
   EXPECT_THROW_DISCARD(atan2(none, u), except::UnitError);
+}
+
+TEST(UnitTest,
+     inplace_binary_operations_with_one_none_operand_throw_UnitError) {
+  auto none = units::none;
+  auto u = units::m;
+  EXPECT_THROW_DISCARD(none += u, except::UnitError);
+  EXPECT_THROW_DISCARD(u += none, except::UnitError);
+  EXPECT_THROW_DISCARD(none -= u, except::UnitError);
+  EXPECT_THROW_DISCARD(u -= none, except::UnitError);
+  EXPECT_THROW_DISCARD(none *= u, except::UnitError);
+  EXPECT_THROW_DISCARD(u *= none, except::UnitError);
+  EXPECT_THROW_DISCARD(none /= u, except::UnitError);
+  EXPECT_THROW_DISCARD(u /= none, except::UnitError);
+  EXPECT_THROW_DISCARD(none %= u, except::UnitError);
+  EXPECT_THROW_DISCARD(u %= none, except::UnitError);
 }
 
 TEST(UnitTest, binary_operations_with_two_none_operands_return_none) {
@@ -275,6 +293,7 @@ TEST(UnitTest, binary_operations_with_two_none_operands_return_none) {
   EXPECT_EQ(none - none, none);
   EXPECT_EQ(none * none, none);
   EXPECT_EQ(none / none, none); // cppcheck-suppress duplicateExpression
+  EXPECT_EQ(none % none, none); // cppcheck-suppress duplicateExpression
 }
 
 TEST(UnitTest, trigonometric_of_none_throw_UnitError) {
