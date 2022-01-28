@@ -161,10 +161,22 @@ constexpr auto erfc = overloaded{special, [](const auto &x) {
                                    return erfc(x);
                                  }};
 
+/*
+ * Variances are not allowed because the outputs would be strongly correlated.
+ * Given inputs (x, y, z), the midpoints have covariance
+ *     Cov(mid(x, y), mid(y, z)) = Var(y) / 4
+ * In the common case that all inputs have similar variances,
+ * Pearson's correlation coefficient is
+ *     rho ~ 1/2
+ * that is, neighboring outputs are 50% correlated.
+ */
 constexpr auto midpoint = overloaded{
     arg_list<std::tuple<double, double>, std::tuple<float, float>,
              std::tuple<int64_t, int64_t>, std::tuple<int32_t, int32_t>,
              std::tuple<time_point, time_point>>,
+    transform_flags::no_out_variance,
+    transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
     [](const units::Unit &a, const units::Unit &b) {
       expect::equals(a, b);
       return a;
