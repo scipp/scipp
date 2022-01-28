@@ -9,6 +9,7 @@ This subpackage provides wrappers for a subset of functions from
 
 from ..core import scalar, stddevs, Variable, DataArray
 from ..core import BinEdgeError
+from ..units import default_unit
 from ..interpolate import _drop_masked
 
 import numpy as np
@@ -18,7 +19,7 @@ from inspect import getfullargspec
 
 
 def _as_scalar(obj, unit):
-    if unit is None:
+    if unit == default_unit:
         return obj
     return scalar(value=obj, unit=unit)
 
@@ -39,9 +40,9 @@ def _covariance_with_units(p_names, pcov_values, units):
             ui = units[i]
             uj = units[j]
             u = ui
-            if u is None:
+            if u == default_unit:
                 u = uj
-            elif uj is not None:
+            elif uj != default_unit:
                 u = ui * uj
             pcov[p_names[i]][p_names[j]] = _as_scalar(elem, u)
     return pcov
@@ -142,7 +143,7 @@ def curve_fit(
     da = _drop_masked(da, da.dim)
     sigma = stddevs(da).values if da.variances is not None else None
     p = _make_defaults(f, p0)
-    p_units = [p.unit if isinstance(p, Variable) else None for p in p.values()]
+    p_units = [p.unit if isinstance(p, Variable) else default_unit for p in p.values()]
     p0 = [p.value if isinstance(p, Variable) else p for p in p.values()]
     popt, pcov = opt.curve_fit(f=_wrap_func(f, p.keys(), p_units),
                                xdata=da.coords[da.dim],

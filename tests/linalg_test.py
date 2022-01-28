@@ -215,3 +215,27 @@ def test_elements_binned():
     assert var.fields is not None
     yz = sc.bins(dim='x', data=sc.array(dims=['x'], values=[5., 14.]))
     assert sc.identical(var.fields.yz, yz)
+
+
+def test_vectors_None_unit_yields_variable_with_None_unit():
+    assert sc.vectors(dims=['x'], values=np.ones(shape=(2, 3)), unit=None).unit is None
+
+
+def test_vector_default_unit_is_dimensionless():
+    var = sc.vector(value=np.ones(shape=(3, )))
+    assert var.unit == sc.units.one
+
+
+def test_vectors_default_unit_is_dimensionless():
+    var = sc.vectors(dims=['x'], values=np.ones(shape=(2, 3)))
+    assert var.unit == sc.units.one
+
+
+def test_matrix_default_unit_is_dimensionless():
+    var = sc.matrix(value=np.ones(shape=(3, 3)))
+    assert var.unit == sc.units.one
+
+
+def test_matrices_default_unit_is_dimensionless():
+    var = sc.matrices(dims=['x'], values=np.ones(shape=(2, 3, 3)))
+    assert var.unit == sc.units.one

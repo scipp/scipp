@@ -16,6 +16,7 @@ using namespace scipp;
 namespace py = pybind11;
 
 void init_units(py::module &m) {
+  py::class_<DefaultUnit>(m, "DefaultUnit");
   py::class_<units::Dim>(m, "Dim", "Dimension label")
       .def(py::init<const std::string &>())
       .def(py::self == py::self)
@@ -24,7 +25,6 @@ void init_units(py::module &m) {
       .def("__repr__", [](const Dim &dim) { return dim.name(); });
 
   py::class_<units::Unit>(m, "Unit", "A physical unit.")
-      .def(py::init())
       .def(py::init<const std::string &>())
       .def("__repr__", [](const units::Unit &u) { return u.name(); })
       .def_property_readonly("name", &units::Unit::name,
@@ -53,12 +53,15 @@ void init_units(py::module &m) {
   units.attr("K") = units::K;
   units.attr("meV") = units::meV;
   units.attr("m") = units::m;
+  // Note: No binding to units::none here, use None in Python!
   units.attr("one") = units::one;
   units.attr("rad") = units::rad;
   units.attr("s") = units::s;
   units.attr("us") = units::us;
   units.attr("ns") = units::ns;
   units.attr("mm") = units::mm;
+
+  units.attr("default_unit") = DefaultUnit{};
 
   m.def("to_numpy_time_string", to_numpy_time_string);
 }

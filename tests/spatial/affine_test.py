@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 
 from scipp.spatial import affine_transform, affine_transforms
 import scipp as sc
@@ -39,3 +40,13 @@ def test_from_affine_matrix_with_bad_unit():
 
     with pytest.raises(sc.UnitError):
         _ = transform * vector
+
+
+def test_affine_transform_default_unit_is_dimensionless():
+    var = affine_transform(value=np.ones(shape=(4, 4)))
+    assert var.unit == sc.units.one
+
+
+def test_affine_transforms_default_unit_is_dimensionless():
+    var = affine_transforms(dims=['x'], values=np.ones(shape=(3, 4, 4)))
+    assert var.unit == sc.units.one

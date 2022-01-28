@@ -41,6 +41,16 @@ def test_unit_property():
         var.unit = 5  # neither str nor Unit
 
 
+def test_explicit_default_unit_for_string_gives_none():
+    var = sc.scalar('abcdef', unit=sc.units.default_unit)
+    assert var.unit is None
+
+
+def test_default_unit_for_string_is_none():
+    var = sc.scalar('abcdef')
+    assert var.unit is None
+
+
 def test_to_unit():
     var = sc.scalar(1, unit='m')
     assert sc.to_unit(var, unit='mm').unit == sc.Unit('mm')

@@ -1,3 +1,4 @@
+import numpy as np
 from scipp.spatial import translation, translations
 import scipp as sc
 
@@ -18,3 +19,13 @@ def test_translations():
     assert sc.allclose(
         transforms * vectors,
         sc.vectors(dims=["x"], values=[[2, 2, 1], [7, 9, 11]], unit=sc.units.m))
+
+
+def test_translation_default_unit_is_dimensionless():
+    var = translation(value=np.ones(shape=(3, )))
+    assert var.unit == sc.units.one
+
+
+def test_translations_default_unit_is_dimensionless():
+    var = translations(dims=['x'], values=np.ones(shape=(2, 3)))
+    assert var.unit == sc.units.one

@@ -7,12 +7,33 @@
 #include "scipp/variable/variable.h"
 
 #include "scipp/core/dtype.h"
+#include "scipp/core/eigen.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/variable_concept.h"
 #include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
+
+namespace {
+/// Types that default to unit=units::dimensionless. Everything else is
+/// units::none.
+const std::tuple<double, float, int64_t, int32_t, bool, scipp::index_pair,
+                 core::time_point, Eigen::Vector3d, Eigen::Matrix3d,
+                 Eigen::Affine3d, core::Quaternion, core::Translation>
+    default_dimensionless_dtypes;
+
+template <class... Ts>
+bool is_default_dimensionless(DType type, std::tuple<Ts...>) {
+  return ((type == dtype<Ts>) || ...);
+}
+} // namespace
+
+units::Unit default_unit_for(const DType type) {
+  return is_default_dimensionless(type, default_dimensionless_dtypes)
+             ? units::dimensionless
+             : units::none;
+}
 
 /// Construct from parent with same dtype, unit, and has_variances but new dims.
 ///

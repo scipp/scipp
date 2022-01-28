@@ -69,13 +69,15 @@ throw_keyword_arg_constructor_bad_dtype(const DType dtype);
 ///
 /// This is an implementation detail of `makeVariable`.
 template <class ElemT> struct ArgParser {
-  std::tuple<units::Unit, Dimensions, element_array<ElemT>,
+  std::tuple<std::optional<units::Unit>, Dimensions, element_array<ElemT>,
              std::optional<element_array<ElemT>>>
       args;
   Dims dims;
   Shape shape;
 
-  void parse(const units::Unit &arg) { std::get<units::Unit>(args) = arg; }
+  void parse(const units::Unit &arg) {
+    std::get<std::optional<units::Unit>>(args) = arg;
+  }
 
   void parse(const Dimensions &arg) { std::get<Dimensions>(args) = arg; }
 

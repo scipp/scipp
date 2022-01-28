@@ -200,13 +200,14 @@ template <class T> struct MakeVariable {
 };
 
 Variable make_variable(const py::object &dim_labels, const py::object &values,
-                       const py::object &variances, const units::Unit unit,
-                       DType dtype) {
+                       const py::object &variances,
+                       const std::optional<units::Unit> &unit_, DType dtype) {
   const auto converted_values = parse_data_sequence(dim_labels, values);
   const auto converted_variances = parse_data_sequence(dim_labels, variances);
   dtype = common_dtype(converted_values, converted_variances, dtype);
   const auto dims =
       build_dimensions(dim_labels, converted_values, converted_variances);
+  const auto unit = unit_.value_or(variable::default_unit_for(dtype));
   return core::CallDType<double, float, int64_t, int32_t, bool,
                          scipp::core::time_point, std::string, Variable,
                          DataArray, Dataset, Eigen::Vector3d, Eigen::Matrix3d,
@@ -224,8 +225,7 @@ Variable make_variable(const py::object &dim_labels, const py::object &values,
 void bind_init(py::class_<Variable> &cls) {
   cls.def(
       py::init([](const py::object &dim_labels, const py::object &values,
-                  const py::object &variances,
-                  const std::optional<ProtoUnit> unit,
+                  const py::object &variances, const ProtoUnit unit,
                   const py::object &dtype) {
         if (values.is_none() && variances.is_none()) {
           throw std::invalid_argument(
@@ -237,7 +237,7 @@ void bind_init(py::class_<Variable> &cls) {
                              scipp_dtype);
       }),
       py::kw_only(), py::arg("dims"), py::arg("values") = py::none(),
-      py::arg("variances") = py::none(), py::arg("unit") = std::nullopt,
+      py::arg("variances") = py::none(), py::arg("unit") = DefaultUnit{},
       py::arg("dtype") = py::none(),
       R"raw(
 Initialize a variable with values and/or variances.
