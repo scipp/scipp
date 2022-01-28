@@ -3,6 +3,7 @@
 
 #include "unit.h"
 
+#include "scipp/common/overloaded.h"
 #include "scipp/core/bucket.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/eigen.h"
@@ -92,14 +93,15 @@ std::string to_numpy_time_string(const scipp::units::Unit unit) {
 }
 
 scipp::units::Unit unit_or_default(const ProtoUnit &unit, const DType type) {
-  if (std::holds_alternative<DefaultUnit>(unit)) {
-    if (type == dtype<void>)
-      throw except::UnitError("Default unit requested but dtype unknown.");
-    return variable::default_unit_for(type);
-  }
-  if (std::holds_alternative<py::none>(unit))
-    return units::none;
-  if (std::holds_alternative<std::string>(unit))
-    return units::Unit(std::get<std::string>(unit));
-  return std::get<units::Unit>(unit);
+  return std::visit(
+      overloaded{[type](DefaultUnit) {
+                   if (type == dtype<void>)
+                     throw except::UnitError(
+                         "Default unit requested but dtype unknown.");
+                   return variable::default_unit_for(type);
+                 },
+                 [](py::none) { return units::none; },
+                 [](const std::string &u) { return units::Unit(u); },
+                 [](const units::Unit &u) { return u; }},
+      unit);
 }
