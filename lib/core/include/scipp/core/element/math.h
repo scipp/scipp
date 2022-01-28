@@ -12,6 +12,35 @@
 #include <Eigen/Geometry>
 #include <cmath>
 
+#if __cplusplus > 201703L
+#include <numeric>
+namespace scipp::core::element::detail {
+using midpoint = std::midpoint;
+}
+#else
+namespace scipp::core::element::detail {
+template <class T> constexpr auto midpoint(const T &a, const T &b) {
+  if constexpr (std::is_integral_v<T>) {
+    using U = std::make_unsigned_t<T>;
+    int sign = 1;
+    U m = a;
+    U M = b;
+    if (a > b) {
+      sign = -1;
+      m = b;
+      M = a;
+    }
+    return a + sign * static_cast<T>(static_cast<U>(M - m) / 2);
+  } else {
+    // This is *not* safe from over-/underflow!
+    // But those should be rare as currently, most data uses reasonably
+    // normalized double precision values.
+    return (a + b) / 2;
+  }
+}
+} // namespace scipp::core::element::detail
+#endif
+
 namespace scipp::core::element {
 
 constexpr auto abs =
@@ -131,5 +160,19 @@ constexpr auto erfc = overloaded{special, [](const auto &x) {
                                    using std::erfc;
                                    return erfc(x);
                                  }};
+
+constexpr auto midpoint = overloaded{
+    arg_list<std::tuple<double, double>, std::tuple<float, float>,
+             std::tuple<int64_t, int64_t>, std::tuple<int32_t, int32_t>,
+             std::tuple<time_point, time_point>>,
+    [](const units::Unit &a, const units::Unit &b) {
+      expect::equals(a, b);
+      return a;
+    },
+    [](const time_point &a, const time_point &b) {
+      return time_point{
+          detail::midpoint(a.time_since_epoch(), b.time_since_epoch())};
+    },
+    [](const auto &a, const auto &b) { return detail::midpoint(a, b); }};
 
 } // namespace scipp::core::element

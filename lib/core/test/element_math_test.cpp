@@ -204,3 +204,43 @@ TEST(ElementMathTest, erfc) {
   EXPECT_EQ(element::erfc(units::one), units::one);
   EXPECT_THROW_DISCARD(element::erfc(units::m), except::UnitError);
 }
+
+TEST(ElementMathTest, midpoint_of_medium_sized_int) {
+  EXPECT_EQ(element::midpoint(5, 1), 3);
+  EXPECT_EQ(element::midpoint(2, 8), 5);
+  EXPECT_EQ(element::midpoint(-4, -8), -6);
+  EXPECT_EQ(element::midpoint(6, -8), -1);
+}
+
+TEST(ElementMathTest, midpoint_of_medium_sized_double) {
+  EXPECT_EQ(element::midpoint(5.0, 1.0), 3.0);
+  EXPECT_EQ(element::midpoint(2.0, 8.0), 5.0);
+  EXPECT_EQ(element::midpoint(-4.0, -8.0), -6.0);
+  EXPECT_EQ(element::midpoint(6.0, -7.0), -0.5);
+}
+
+TEST(ElementMathTest, midpoint_of_medium_sized_values_rounds_towards_first) {
+  EXPECT_EQ(element::midpoint(4, 1), 3);
+  EXPECT_EQ(element::midpoint(2, 7), 4);
+  EXPECT_EQ(element::midpoint(-3, -8), -5);
+  EXPECT_EQ(element::midpoint(6, -7), 0);
+}
+
+TEST(ElementMathTest, midpoint_of_small_int_works) {
+  const auto a = std::numeric_limits<std::uint32_t>::max();
+  const auto b = std::numeric_limits<std::uint32_t>::max() - 2;
+  EXPECT_EQ(element::midpoint(a, b),
+            std::numeric_limits<std::uint32_t>::max() - 1);
+}
+
+TEST(ElementMathTest, midpoint_of_time_point_uses_underlying_int) {
+  const time_point a{123};
+  const time_point b{732};
+  EXPECT_EQ(element::midpoint(a, b), time_point{element::midpoint(123, 732)});
+}
+
+TEST(ElementMathTest, midpoint_units_must_be_equal) {
+  EXPECT_EQ(element::midpoint(units::m, units::m), units::m);
+  EXPECT_THROW_DISCARD(element::midpoint(units::m, units::one),
+                       except::UnitError);
+}
