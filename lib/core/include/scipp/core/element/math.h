@@ -181,10 +181,13 @@ constexpr auto midpoint = overloaded{
       expect::equals(a, b);
       return a;
     },
-    [](const time_point &a, const time_point &b) {
-      return time_point{
-          detail::midpoint(a.time_since_epoch(), b.time_since_epoch())};
-    },
-    [](const auto &a, const auto &b) { return detail::midpoint(a, b); }};
+    [](const auto &a, const auto &b) {
+      if constexpr (std::is_same_v<std::decay_t<decltype(a)>, time_point>) {
+        return time_point{
+            detail::midpoint(a.time_since_epoch(), b.time_since_epoch())};
+      } else {
+        return detail::midpoint(a, b);
+      }
+    }};
 
 } // namespace scipp::core::element
