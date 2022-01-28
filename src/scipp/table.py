@@ -178,17 +178,25 @@ def _is_edges():
 
 
 def make_table(x: VariableLike, nrow=5):
-    # from IPython.display import HTML
+    from IPython.display import HTML
     dim = x.dim
     size = x.sizes[dim]
+    # Hacky bin-edge handling. For some reason we get an empty row as firs and last data
+    # row if *all* entries are set to is_bin_centers=True, so if there are no edges we
+    # set everything to False.
+    have_edges = False
+    if isinstance(x, DataArray):
+        for var in x.coords.values():
+            if var.sizes[dim] == size + 1:
+                have_edges = True
 
     def centers(d):
-        return {key: val.sizes[dim] == size for key, val in d.items()}
+        return {key: have_edges and val.sizes[dim] == size for key, val in d.items()}
 
     if isinstance(x, Variable):
         headers = 1
         columns = {'data': {'': x}}
-        is_bin_centers = {'data': {'': True}}
+        is_bin_centers = {'data': {'': False}}
     elif isinstance(x, DataArray):
         headers = 2
         columns = {
@@ -202,13 +210,13 @@ def make_table(x: VariableLike, nrow=5):
         is_bin_centers = {
             'coords': centers(x.coords),
             'data': {
-                '': True
+                '': have_edges
             },
             'masks': centers(x.masks),
             'attrs': centers(x.attrs)
         }
     elif isinstance(x, Dataset):
-        pass
+        pass  # TODO
     html = _table_from_dict_of_variables(columns,
                                          size=size,
                                          headers=headers,
@@ -216,13 +224,13 @@ def make_table(x: VariableLike, nrow=5):
                                          group="1D Variables",
                                          is_bin_centers=is_bin_centers)
 
-    return html  # not style loaded, this is used instide _repr_html_ for now
-    # return HTML("<div>"
-    #             f"<style>{load_style()}</style>"
-    #             "<div class='sc-root'>"
-    #             f"{html}"
-    #             "</div>"
-    #             "</div>")
+    # return html  # not style loaded, this is used instide _repr_html_ for now
+    return HTML("<div>"
+                f"<style>{load_style()}</style>"
+                "<div class='sc-root'>"
+                f"{html}"
+                "</div>"
+                "</div>")
 
     # return HTML(f"<style>{load_style()}</style><span class='sc-root'>{html}</span>")
 
