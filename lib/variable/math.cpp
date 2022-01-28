@@ -21,8 +21,8 @@ Variable midpoints(const Variable &var, const std::optional<Dim> dim) {
   }
 
   if (!dim.has_value() && var.ndim() != 1) {
-    throw std::invalid_argument("Cannot deduce dimension to compute in "
-                                "midpoints for variable with dimensions " +
+    throw std::invalid_argument("Cannot deduce dimension to compute "
+                                "midpoints of variable with dimensions " +
                                 to_string(var.dims()) +
                                 ". Select one using the `dim` argument.");
   }
