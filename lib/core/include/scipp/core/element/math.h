@@ -32,10 +32,15 @@ template <class T> constexpr auto midpoint(const T &a, const T &b) {
     }
     return a + sign * static_cast<T>(static_cast<U>(M - m) / 2);
   } else {
-    // This is *not* safe from over-/underflow!
-    // But those should be rare as currently, most data uses reasonably
-    // normalized double precision values.
-    return (a + b) / 2;
+    constexpr auto lo = std::numeric_limits<T>::min() * 2;
+    constexpr auto hi = std::numeric_limits<T>::max() / 2;
+    if (std::abs(a) <= hi && std::abs(b) <= hi)
+      return (a + b) / 2; // always correctly rounded
+    if (std::abs(a) < lo) // not safe to halve a
+      return a + b / 2;
+    if (std::abs(b) < lo) // not safe to halve b
+      return a / 2 + b;
+    return a / 2 + b / 2; // otherwise correctly rounded
   }
 }
 } // namespace scipp::core::element::detail
