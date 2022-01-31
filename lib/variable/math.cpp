@@ -7,9 +7,6 @@
 
 namespace scipp::variable {
 
-using MidpointTypes =
-    std::tuple<double, float, int32_t, int64_t, core::time_point>;
-
 Variable midpoints(const Variable &var, const std::optional<Dim> dim) {
   if (var.ndim() == 0) {
     if (dim.has_value()) {
@@ -32,8 +29,7 @@ Variable midpoints(const Variable &var, const std::optional<Dim> dim) {
   if (len == scipp::index{1}) {
     return var;
   }
-  return transform<MidpointTypes>(var.slice({d, 0, len - 1}),
-                                  var.slice({d, 1, len}),
-                                  core::element::midpoint, "midpoints");
+  return transform(var.slice({d, 0, len - 1}), var.slice({d, 1, len}),
+                   core::element::midpoint, "midpoints");
 }
 } // namespace scipp::variable
