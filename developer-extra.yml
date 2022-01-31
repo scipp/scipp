@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+
+# This file adds optional dependencies for local development.
+# It should be used in combination with the metatoenv.py script to generate a complete
+# developer environment:
+#
+#   python tools/metatoenv.py --dir=conda --env-file=scipp-developer.yml \
+#       --channels=conda-forge --merge-with=developer-extra.yml
+
+name: developer-extra
+
+channels:
+  - conda-forge
+
+dependencies:
+  - pre-commit
+  - yapf
+  - flake8
+  - pip:
+    - nb-clean
