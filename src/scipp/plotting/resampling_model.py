@@ -285,11 +285,20 @@ class ResamplingBinnedModel(ResamplingModel):
 
 def _with_edges(array):
     new_array = array.copy(deep=False)
+    if new_array.unit is None:
+        # Workaround required, even if no resampling done
+        new_array.data = array.data.copy()
+        new_array.unit = ''
     prefix = ''.join(array.dims)
     for dim, var in array.coords.items():
         if dim not in array.dims:
             continue
         new_array.coords[f'{prefix}_{dim}'] = var
+        if var.unit is None:
+            # We cannot rebin with such a unit. Even if no rebin happens, such as for
+            # 1-D plots we need to use this workaround.
+            var = var.copy()
+            var.unit = ''
         if var.sizes[dim] == array.sizes[dim]:
             new_array.coords[dim] = to_bin_edges(var, dim)
         elif var.dtype not in [DType.float32, DType.float64]:

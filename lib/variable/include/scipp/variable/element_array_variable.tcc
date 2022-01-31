@@ -150,8 +150,8 @@ void ElementArrayModel<T>::setVariances(const Variable &variances) {
       0));                                                                     \
   }                                                                            \
   template SCIPP_EXPORT Variable::Variable(                                    \
-      const units::Unit, const Dimensions &, element_array<__VA_ARGS__>,       \
-      std::optional<element_array<__VA_ARGS__>>);                              \
+      const std::optional<units::Unit> &, const Dimensions &,                  \
+      element_array<__VA_ARGS__>, std::optional<element_array<__VA_ARGS__>>);  \
   template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
   Variable::variances() const;                                                 \
   template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::variances();

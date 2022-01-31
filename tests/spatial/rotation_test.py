@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+import numpy as np
 from scipp.spatial import rotation, rotation_from_rotvec, rotations, rotation_as_rotvec
 from math import pi
 import scipp as sc
@@ -60,3 +61,13 @@ def test_from_quaternions():
     assert sc.allclose(
         transforms * vectors,
         sc.vectors(dims=["x"], values=[[1, -2, -3], [-4, 5, -6]], unit=sc.units.m))
+
+
+def test_rotation_default_unit_is_dimensionless():
+    var = rotation(value=np.ones(shape=(4, )))
+    assert var.unit == sc.units.one
+
+
+def test_rotations_default_unit_is_dimensionless():
+    var = rotations(dims=['x'], values=np.ones(shape=(3, 4)))
+    assert var.unit == sc.units.one

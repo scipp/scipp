@@ -186,7 +186,8 @@ class VariableIO:
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
         dset.attrs['shape'] = var.shape
         dset.attrs['dtype'] = str(var.dtype)
-        dset.attrs['unit'] = str(var.unit)
+        if var.unit is not None:
+            dset.attrs['unit'] = str(var.unit)
         return group
 
     @classmethod
@@ -197,7 +198,10 @@ class VariableIO:
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
         contents['dtype'] = cls._dtypes[values.attrs['dtype']]
-        contents['unit'] = sc.Unit(values.attrs['unit'])
+        if 'unit' in values.attrs:
+            contents['unit'] = sc.Unit(values.attrs['unit'])
+        else:
+            contents['unit'] = None  # essential, otherwise default unit is used
         contents['with_variances'] = 'variances' in group
         if contents['dtype'] in [d.VariableView, d.DataArrayView, d.DatasetView]:
             var = BinDataIO.read(group)

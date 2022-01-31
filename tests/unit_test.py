@@ -3,10 +3,16 @@
 # @file
 # @author Simon Heybrock
 import scipp as sc
+import pytest
+
+
+def test_cannot_construct_unit_without_arguments():
+    with pytest.raises(TypeError):
+        sc.Unit()
 
 
 def test_default_unit():
-    u = sc.Unit()
+    u = sc.Unit('')
     assert u == sc.units.dimensionless
 
 

@@ -66,7 +66,7 @@ template <class T> void bind_to_unit(py::module &m) {
   m.def(
       "to_unit",
       [](const T &x, const ProtoUnit &unit, const bool copy) {
-        return to_unit(x, make_unit(unit),
+        return to_unit(x, unit_or_default(unit),
                        copy ? CopyPolicy::Always : CopyPolicy::TryAvoid);
       },
       py::arg("x"), py::arg("unit"), py::arg("copy") = true,

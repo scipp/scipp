@@ -125,7 +125,7 @@ def test_fit_function_with_dimensionful_params_yields_outputs_with_units():
     x = sc.linspace(dim='x', start=0.5, stop=2.0, num=10, unit='m')
     da = sc.DataArray(f(x, a=1.2, b=1.3 / sc.Unit('m')), coords={'x': x})
     popt, pcov = curve_fit(f, da, p0={'a': 1.1, 'b': 1.2 / sc.Unit('m')})
-    assert popt['a'].unit == sc.Unit()
+    assert popt['a'].unit == sc.units.one
     assert popt['b'].unit == sc.Unit('1/m')
     assert not isinstance(pcov['a']['a'], sc.Variable)
     assert pcov['a']['b'].unit == sc.Unit('1/m')

@@ -27,6 +27,7 @@
 #include "numpy.h"
 #include "pybind11.h"
 #include "rename.h"
+#include "unit.h"
 
 using namespace scipp;
 using namespace scipp::variable;
@@ -38,14 +39,16 @@ void bind_structured_creation(py::module &m, const std::string &name) {
   m.def(
       name.c_str(),
       [](const std::vector<Dim> &labels, py::array_t<Elem> &values,
-         units::Unit unit) {
+         const ProtoUnit &unit) {
         if (scipp::size(labels) != values.ndim() - scipp::index(sizeof...(N)))
           throw std::runtime_error("bad shape to make structured type");
+        const auto unit_ = unit_or_default(unit, dtype<T>);
         auto var = variable::make_structures<T, Elem>(
             Dimensions(labels,
                        std::vector<scipp::index>(
                            values.shape(), values.shape() + labels.size())),
-            unit, element_array<Elem>(values.size(), core::init_for_overwrite));
+            unit_,
+            element_array<Elem>(values.size(), core::init_for_overwrite));
         auto elems = var.template elements<T>();
         if constexpr (sizeof...(N) != 1)
           elems = fold(elems, Dim::InternalStructureComponent,
@@ -56,7 +59,7 @@ void bind_structured_creation(py::module &m, const std::string &name) {
                              elems.dims());
         return var;
       },
-      py::arg("dims"), py::arg("values"), py::arg("unit") = units::one);
+      py::arg("dims"), py::arg("values"), py::arg("unit") = DefaultUnit{});
 }
 
 template <class T> struct GetElements {

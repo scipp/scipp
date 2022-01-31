@@ -32,6 +32,10 @@ namespace scipp::variable {
 class VariableConcept;
 using VariableConceptHandle = std::shared_ptr<VariableConcept>;
 
+/// Return the default unit (dimensionless or none) for a given dtype.
+[[nodiscard]] SCIPP_VARIABLE_EXPORT units::Unit
+default_unit_for(const DType type);
+
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. In addition it has a unit and a set of dimension
 /// labels.
@@ -41,8 +45,8 @@ public:
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const Dimensions &dims, VariableConceptHandle data);
   template <class T>
-  Variable(units::Unit unit, const Dimensions &dimensions, T values,
-           std::optional<T> variances);
+  Variable(const std::optional<units::Unit> &unit, const Dimensions &dimensions,
+           T values, std::optional<T> variances);
   explicit Variable(const llnl::units::precise_measurement &m);
 
   /// Keyword-argument constructor.

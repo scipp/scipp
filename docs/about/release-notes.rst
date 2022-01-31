@@ -19,9 +19,12 @@ Breaking changes
 
 * The configuration option ``config['plot']['padding']`` is now called ``config['plot']['bounding_box']``, no action is required if it was never modified `#2389 <https://github.com/scipp/scipp/pull/2389>`_.
 * :py:func:`scipp.rebin` now applies masks that depend on the rebinning dimension to avoid "growing" effect on masks which previously resulted in masking more than intended `#2383 <https://github.com/scipp/scipp/pull/2383>`_.
+* The ``unit`` attribute now distinguishes ``None`` from ``dimensionless``. For number-like dtypes the default is ``dimensionless`` (unchanged) whereas all other dtypes such as strings default to ``None`` (new) `#2395 <https://github.com/scipp/scipp/pull/2395>`_.
 
 Bugfixes
 ~~~~~~~~
+
+* Fix :py:func:`full`, which previously converted or attempted to convert all values to ``float64`` unless the ``dtype`` was specified explicitly `#2395 <https://github.com/scipp/scipp/pull/2395>`_.
 
 Deprecations
 ~~~~~~~~~~~~
