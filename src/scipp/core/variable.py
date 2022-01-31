@@ -352,7 +352,7 @@ def linspace(dim: str,
              num: int,
              *,
              unit: _Union[_cpp.Unit, str, None] = default_unit,
-             dtype: _cpp > DType = None) -> _cpp.Variable:
+             dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with `num` evenly spaced samples,
     calculated over the interval `[start, stop]`.
 
