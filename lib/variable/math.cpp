@@ -23,7 +23,8 @@ Variable midpoints(const Variable &var, const std::optional<Dim> dim) {
   const auto d = dim.has_value() ? *dim : var.dim();
   const auto len = var.dims()[d];
   if (len == scipp::index{1}) {
-    return var;
+    throw except::SizeError("Cannot compute midpoints in dimension `" +
+                            to_string(d) + "` of length 1.");
   }
   return transform(var.slice({d, 0, len - 1}), var.slice({d, 1, len}),
                    core::element::midpoint, "midpoints");

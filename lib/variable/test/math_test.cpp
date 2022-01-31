@@ -492,9 +492,14 @@ TEST(Variable, midpoints_throws_with_scalar_input) {
       except::DimensionError);
 }
 
-TEST(Variable, midpoints_1d_1_element) {
-  const auto var = makeVariable<int64_t>(Dims{Dim::X}, Shape{1}, Values{3});
-  EXPECT_EQ(midpoints(var), var);
+TEST(Variable, midpoints_1d_throws_with_single_element) {
+  EXPECT_THROW_DISCARD(
+      midpoints(makeVariable<int64_t>(Dims{Dim::X}, Shape{1}, Values{1})),
+      except::SizeError);
+  EXPECT_THROW_DISCARD(
+      midpoints(makeVariable<int64_t>(Dims{Dim::X}, Shape{1}, Values{1}),
+                Dim::X),
+      except::SizeError);
 }
 
 TEST(Variable, midpoints_1d_2_elements) {
