@@ -351,6 +351,7 @@ def linspace(dim: str,
              stop: _Union[int, float],
              num: int,
              *,
+             endpoint: bool = True,
              unit: _Union[_cpp.Unit, str, None] = default_unit,
              dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with `num` evenly spaced samples,
@@ -363,12 +364,14 @@ def linspace(dim: str,
     :param start: The starting value of the sequence.
     :param stop: The end value of the sequence.
     :param num: Number of samples to generate.
+    :param endpoint: If True, `step` is the last returned value.
+                     Otherwise, it is not included.
     :param unit: Optional, data unit. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
     """
     return array(dims=[dim],
-                 values=_np.linspace(start, stop, num),
+                 values=_np.linspace(start, stop, num, endpoint=endpoint),
                  unit=unit,
                  dtype=dtype)
 
@@ -378,6 +381,7 @@ def geomspace(dim: str,
               stop: _Union[int, float],
               num: int,
               *,
+              endpoint: bool = True,
               unit: _Union[_cpp.Unit, str, None] = default_unit,
               dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale
@@ -392,12 +396,14 @@ def geomspace(dim: str,
     :param start: The starting value of the sequence.
     :param stop: The end value of the sequence.
     :param num: Number of samples to generate.
+    :param endpoint: If True, `step` is the last returned value.
+                     Otherwise, it is not included.
     :param unit: Optional, data unit. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
     """
     return array(dims=[dim],
-                 values=_np.geomspace(start, stop, num),
+                 values=_np.geomspace(start, stop, num, endpoint=endpoint),
                  unit=unit,
                  dtype=dtype)
 
@@ -407,6 +413,7 @@ def logspace(dim: str,
              stop: _Union[int, float],
              num: int,
              *,
+             endpoint: bool = True,
              base: _Union[int, float] = 10.0,
              unit: _Union[_cpp.Unit, str, None] = default_unit,
              dtype: _cpp.DType = None) -> _cpp.Variable:
@@ -420,12 +427,14 @@ def logspace(dim: str,
     :param stop: The end value of the sequence.
     :param num: Number of samples to generate.
     :param base: The base of the log space.
+    :param endpoint: If True, `step` is the last returned value.
+                     Otherwise, it is not included.
     :param unit: Optional, data unit. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
     """
     return array(dims=[dim],
-                 values=_np.logspace(start, stop, num, base=base),
+                 values=_np.logspace(start, stop, num, base=base, endpoint=endpoint),
                  unit=unit,
                  dtype=dtype)
 
