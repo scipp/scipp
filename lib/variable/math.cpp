@@ -9,12 +9,8 @@ namespace scipp::variable {
 
 Variable midpoints(const Variable &var, const std::optional<Dim> dim) {
   if (var.ndim() == 0) {
-    if (dim.has_value()) {
-      throw except::DimensionError(
-          "Called `midpoints` with a scalar but specified dimension `" +
-          to_string(*dim) + "`.");
-    }
-    return var;
+    throw except::DimensionError(
+        "`midpoints` requires at least one input dimension, got a scalar.");
   }
 
   if (!dim.has_value() && var.ndim() != 1) {
@@ -31,5 +27,5 @@ Variable midpoints(const Variable &var, const std::optional<Dim> dim) {
   }
   return transform(var.slice({d, 0, len - 1}), var.slice({d, 1, len}),
                    core::element::midpoint, "midpoints");
-}
+} // namespace scipp::variable
 } // namespace scipp::variable

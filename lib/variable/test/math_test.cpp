@@ -483,14 +483,13 @@ TEST(Variable, floor) {
   EXPECT_EQ(floor(preRoundedVar), roundedVar);
 }
 
-TEST(Variable, midpoints_scalar) {
-  const auto var = makeVariable<int64_t>(Dims{}, Shape{}, Values{-2});
-  EXPECT_EQ(midpoints(var), var);
-}
-
-TEST(Variable, midpoints_scalar_cannot_use_dim_argument) {
-  const auto var = makeVariable<int64_t>(Dims{}, Shape{}, Values{-2});
-  EXPECT_THROW_DISCARD(midpoints(var, Dim::X), except::DimensionError);
+TEST(Variable, midpoints_throws_with_scalar_input) {
+  EXPECT_THROW_DISCARD(
+      midpoints(makeVariable<int64_t>(Dims{}, Shape{}, Values{2})),
+      except::DimensionError);
+  EXPECT_THROW_DISCARD(
+      midpoints(makeVariable<int64_t>(Dims{}, Shape{}, Values{2}), Dim::X),
+      except::DimensionError);
 }
 
 TEST(Variable, midpoints_1d_1_element) {
