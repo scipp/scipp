@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 import numpy as np
-from scipp.spatial import rotation, rotations_from_rotvecs, rotations, rotation_as_rotvec
+from scipp.spatial import (rotation, rotations_from_rotvecs, rotations,
+                           rotation_as_rotvec)
 from math import pi
 import scipp as sc
 
