@@ -14,7 +14,7 @@ See `Tooling <tooling.rst>`_ for compilers and other required tools.
 Getting the code, building, and installing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You first need to clone the git repository (either via SSH or HTTPS) from `GitHub <https://github.com/scipp/scippneutron>`_.
+You first need to clone the git repository (either via SSH or HTTPS) from `GitHub <https://github.com/scipp/scipp>`_.
 Note that this assumes you will end up with a directory structure similar to the following.
 If you want something different be sure to modify paths as appropriate.
 
