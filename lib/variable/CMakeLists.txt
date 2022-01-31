@@ -48,6 +48,7 @@ set(SRC_FILES
     creation.cpp
     cumulative.cpp
     except.cpp
+    math.cpp
     multiply.cpp
     pow.cpp
     operations.cpp

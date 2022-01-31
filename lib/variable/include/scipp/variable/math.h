@@ -8,3 +8,8 @@
 #include "scipp/variable/variable.h"
 
 #include "scipp/variable/generated_math.h"
+
+namespace scipp::variable {
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+midpoints(const Variable &var, std::optional<Dim> dim = std::nullopt);
+} // namespace scipp::variable

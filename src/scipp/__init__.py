@@ -71,7 +71,7 @@ from .core import counts_to_density, density_to_counts
 from .core import cumsum
 from .core import merge
 from .core import groupby
-from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc
+from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc, midpoints
 from .core import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where
 from .core import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
 from .core import broadcast, concat, fold, flatten, squeeze, transpose
