@@ -172,7 +172,6 @@ constexpr auto erfc = overloaded{special, [](const auto &x) {
  */
 constexpr auto midpoint = overloaded{
     arg_list<double, float, int64_t, int32_t, time_point>,
-    transform_flags::no_out_variance,
     transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>,
     [](const units::Unit &a, const units::Unit &b) {
