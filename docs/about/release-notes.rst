@@ -24,7 +24,7 @@ Bugfixes
 ~~~~~~~~
 
 * Fix :py:func:`full`, which previously converted or attempted to convert all values to ``float64`` unless the ``dtype`` was specified explicitly `#2395 <https://github.com/scipp/scipp/pull/2395>`_.
-* Fix :py:func:`transform_coords` for sliced binned data `#2406 <https://github.com/scipp/scipp/pull/2406>`_.
+* Fix :py:func:`transform_coords` for sliced binned data, used to raise an exception `#2406 <https://github.com/scipp/scipp/pull/2406>`_.
 
 Deprecations
 ~~~~~~~~~~~~
