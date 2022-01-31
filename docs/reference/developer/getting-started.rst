@@ -32,7 +32,7 @@ To build and install the library:
 
   # Create Conda environment with dependencies and development tools
   python tools/metatoenv.py --dir=conda --env-file=scipp-developer.yml \
-    --channels=conda-forge
+    --channels=conda-forge --merge-with=developer-extra.yml
   conda env create -f scipp-developer.yml
   conda activate scipp-developer
 

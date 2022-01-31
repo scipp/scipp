@@ -34,6 +34,7 @@ requirements:
     - tbb-devel
     # doc build requirements
     - confuse
+    - cppcheck [linux64]
     - graphlib-backport # for python < 3.9
     - h5py
     - ipykernel=6.3.1  # issue with pythreejs 3d plotting, see https://github.com/ipython/ipykernel/issues/771

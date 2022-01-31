@@ -1,0 +1,15 @@
+# This is used for incremental CI builds and local development.
+# All dependencies should be installed here (i.e. the union of build, run, test and documentation build dependencies).
+# See https://scipp.github.io/developer/dependencies.html
+
+name: developer-extra
+
+channels:
+  - conda-forge
+
+dependencies:
+  - pre-commit
+  - yapf
+  - flake8
+  - pip:
+    - nb-clean
