@@ -98,25 +98,7 @@ def rotations(*, dims: Sequence[str], values: Union[_np.ndarray, list]):
     return _core_cpp.rotations(dims=dims, values=values)
 
 
-def rotation_from_rotvec(*, value: Union[_np.ndarray, list],
-                         unit: Union[_core_cpp.Unit, str]) -> Variable:
-    """
-    Creates a rotation transformation from a rotation vector.
-
-    This requires ``scipy`` to be installed, as is wraps ``Rotation.from_rotvec()``
-    from ``scipy.spatial.transform``.
-
-    A rotation vector is a 3 dimensional vector which is co-directional to the axis of
-    rotation and whose norm gives the angle of rotation.
-
-    :param value: A numpy vector of 3 values
-    :param unit: The units of the 3 provided values. Should be either 'rad' or 'deg'.
-    """
-    return rotations_from_rotvecs(dims=[], values=value, unit=unit)
-
-
-def rotations_from_rotvecs(*, dims: Sequence[str], values: Union[_np.ndarray, list],
-                           unit: Union[_core_cpp.Unit, str]) -> Variable:
+def rotations_from_rotvecs(rotation_vectors: Variable) -> Variable:
     """
     Creates rotation transformations from rotation vectors.
 
@@ -126,16 +108,15 @@ def rotations_from_rotvecs(*, dims: Sequence[str], values: Union[_np.ndarray, li
     A rotation vector is a 3 dimensional vector which is co-directional to the axis of
     rotation and whose norm gives the angle of rotation.
 
-    :param dims: The dimensions of the created variable
-    :param values: A numpy vector of 3 values
-    :param unit: The units of the 3 provided values. Should be either 'rad' or 'deg'.
+    :param rotation_vectors: A Variable with vector dtype
     """
     from scipy.spatial.transform import Rotation as R
     supported = [units.deg, units.rad]
+    unit = rotation_vectors.unit
     if unit not in supported:
         raise UnitError(f"Rotation vector unit must be one of {supported}.")
-    r = R.from_rotvec(values, degrees=unit == units.deg)
-    return rotations(dims=dims, values=r.as_quat())
+    r = R.from_rotvec(rotation_vectors.values, degrees=unit == units.deg)
+    return rotations(dims=rotation_vectors.dims, values=r.as_quat())
 
 
 def rotation_as_rotvec(rotation: Variable, *, unit='rad') -> Variable:
@@ -227,8 +208,7 @@ def linear_transforms(*,
 
 
 __all__ = [
-    'rotation', 'rotations', 'rotation_from_rotvec', 'rotations_from_rotvecs',
-    'rotation_as_rotvec', 'scaling_from_vector', 'scalings_from_vectors', 'translation',
-    'translations', 'affine_transform', 'affine_transforms', 'linear_transform',
-    'linear_transforms'
+    'rotation', 'rotations', 'rotations_from_rotvecs', 'rotation_as_rotvec',
+    'scaling_from_vector', 'scalings_from_vectors', 'translation', 'translations',
+    'affine_transform', 'affine_transforms', 'linear_transform', 'linear_transforms'
 ]

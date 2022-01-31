@@ -646,6 +646,17 @@ def test_binned_computes_correct_results(binned_in_a_b):
                         renamed.bins.meta['a'] * renamed.bins.meta['b'])
 
 
+def test_binned_slice_computes_correct_results():
+    events = sc.DataArray(sc.ones(dims=['event'], shape=[10]),
+                          coords={'x': sc.arange('event', 10.0)})
+    da = sc.bin(events, edges=[sc.arange('x', 0.0, 10.0, 2.0)])
+    sliced = da['x', :2]
+
+    assert sc.identical(
+        sliced.transform_coords('y', graph={'y': lambda x: 2 * x}),
+        sliced.copy().transform_coords('y', graph={'y': lambda x: 2 * x}))
+
+
 def test_binned_without_bin_coord_computes_correct_results(binned_in_a_b):
     def convert(*, a, b2):
         return a * b2
