@@ -396,8 +396,10 @@ def geomspace(dim: str,
               unit: _Union[_cpp.Unit, str, None] = default_unit,
               dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale
-    (a geometric progression). This is similar to :py:func:`scipp.logspace`,
-    but with endpoints specified directly.
+    (a geometric progression).
+
+    This is similar to :py:func:`scipp.logspace`, but with endpoints specified
+    directly instead of as exponents.
     Each output sample is a constant multiple of the previous.
 
     :param dim: Dimension label.
@@ -411,7 +413,7 @@ def geomspace(dim: str,
       in which case type is inferred from value input.
 
     :seealso: :py:func:`scipp.linspace` :py:func:`scipp.logspace`
-              :py:func:`scipp.arange`
+              :py:func:`scipp.arange` :py:func:`numpy.geomspace`
     """
     return array(dims=[dim],
                  values=_np.geomspace(start, stop, num, endpoint=endpoint),
@@ -429,6 +431,9 @@ def logspace(dim: str,
              unit: _Union[_cpp.Unit, str, None] = default_unit,
              dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale.
+
+    This is similar to :py:func:`scipp.geomspace`, but with endpoints specified
+    as exponents.
 
     :param dim: Dimension label.
     :param start: ``base ** start`` is the starting value of the sequence.
