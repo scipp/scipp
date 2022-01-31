@@ -35,8 +35,6 @@ def scalar(value: _Any,
     """Constructs a zero dimensional :class:`Variable` with a unit and optional
     variance.
 
-    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
-              :py:func:`scipp.empty` :py:func:`scipp.array`
 
     :param value: Initial value.
     :param variance: Optional, initial variance, Default=None
@@ -47,6 +45,9 @@ def scalar(value: _Any,
       str, Dataset or DataArray.
     :returns: A scalar (zero-dimensional) Variable.
     :rtype: Variable
+
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
+              :py:func:`scipp.empty` :py:func:`scipp.array`
     """
     return _cpp.Variable(dims=(),
                          values=value,
@@ -68,8 +69,6 @@ def zeros(*,
     Optionally can add default initialized variances.
     Only keyword arguments accepted.
 
-    :seealso: :py:func:`scipp.ones` :py:func:`scipp.empty`
-              :py:func:`scipp.scalar` :py:func:`scipp.array`
 
     :param dims: Optional (if sizes is specified), dimension labels.
     :param shape: Optional (if sizes is specified), dimension sizes.
@@ -80,6 +79,9 @@ def zeros(*,
       initialized to the default value for dtype.
       For example for a float type values and variances would all be
       initialized to 0.0. Default=False
+
+    :seealso: :py:func:`scipp.ones` :py:func:`scipp.empty`
+              :py:func:`scipp.scalar` :py:func:`scipp.array`
     """
 
     return _cpp.zeros(**_parse_dims_shape_sizes(dims, shape, sizes),
@@ -93,9 +95,10 @@ def zeros_like(var: _cpp.Variable) -> _cpp.Variable:
     as the input variable, but with all values initialized to 0. If the input
     has variances, all variances in the output are set to 0.
 
-    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones_like`
 
     :param var: Input variable.
+
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones_like`
     """
     return zeros(dims=var.dims,
                  shape=var.shape,
@@ -115,8 +118,6 @@ def ones(*,
     given dimension labels and shape.
     The dims and shape can also be specified using a sizes dict.
 
-    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.empty`
-              :py:func:`scipp.scalar` :py:func:`scipp.array`
 
     :param dims: Optional (if sizes is specified), dimension labels.
     :param shape: Optional (if sizes is specified), dimension sizes.
@@ -125,6 +126,9 @@ def ones(*,
     :param dtype: Optional, type of underlying data. Default=float64
     :param with_variances: Optional, boolean flag, if True includes variances
                       initialized to 1. Default=False
+
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.empty`
+              :py:func:`scipp.scalar` :py:func:`scipp.array`
     """
     return _cpp.ones(**_parse_dims_shape_sizes(dims, shape, sizes),
                      unit=unit,
@@ -137,9 +141,10 @@ def ones_like(var: _cpp.Variable) -> _cpp.Variable:
     as the input variable, but with all values initialized to 1. If the input
     has variances, all variances in the output are set to 1.
 
-    :seealso: :py:func:`scipp.ones` :py:func:`scipp.zeros_like`
 
     :param var: Input variable.
+
+    :seealso: :py:func:`scipp.ones` :py:func:`scipp.zeros_like`
     """
     return ones(dims=var.dims,
                 shape=var.shape,
@@ -162,8 +167,6 @@ def empty(*,
     Consider using :py:func:`scipp.zeros` unless you
     know what you are doing and require maximum performance.
 
-    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
-              :py:func:`scipp.scalar` :py:func:`scipp.array`
 
     :param dims: Optional (if sizes is specified), dimension labels.
     :param shape: Optional (if sizes is specified), dimension sizes.
@@ -172,6 +175,9 @@ def empty(*,
     :param dtype: Optional, type of underlying data. Default=float64
     :param with_variances: Optional, boolean flag, if True includes
                     uninitialized variances. Default=False
+
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
+              :py:func:`scipp.scalar` :py:func:`scipp.array`
     """
     return _cpp.empty(**_parse_dims_shape_sizes(dims, shape, sizes),
                       unit=unit,
@@ -184,10 +190,11 @@ def empty_like(var: _cpp.Variable) -> _cpp.Variable:
     as the input variable, but with uninitialized values. If the input
     has variances, all variances in the output exist but are uninitialized.
 
-    :seealso: :py:func:`scipp.empty` :py:func:`scipp.zeros_like`
-              :py:func:`scipp.ones_like`
 
     :param var: Input variable.
+
+    :seealso: :py:func:`scipp.empty` :py:func:`scipp.zeros_like`
+              :py:func:`scipp.ones_like`
     """
     return empty(dims=var.dims,
                  shape=var.shape,
@@ -209,7 +216,6 @@ def full(*,
     value with given dimension labels and shape.
     The dims and shape can also be specified using a sizes dict.
 
-    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
 
     :param dims: Optional (if sizes is specified), dimension labels.
     :param shape: Optional (if sizes is specified), dimension sizes.
@@ -219,6 +225,8 @@ def full(*,
     :param value: The value to fill the Variable with
     :param variance: Optional, the variance to fill the Variable with. If None
         or not provided, the variances will not be set.
+
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
     """
     return scalar(value=value, variance=variance, unit=unit, dtype=dtype)\
         .broadcast(**_parse_dims_shape_sizes(dims, shape, sizes)).copy()
@@ -229,12 +237,13 @@ def full_like(var: _cpp.Variable, value: _Any, variance: _Any = None) -> _cpp.Va
     Constructs a :class:`Variable` with values initialized to the specified
     value with dimensions labels and shape provided by an existing variable.
 
-    :seealso: :py:func:`scipp.zeros_like` :py:func:`scipp.ones_like`
 
     :param var: Input variable to copy dimensions, sizes, unit and dtype from.
     :param value: The value to fill the Variable with
     :param variance: Optional, the variance to fill the Variable with. If None
         or not provided, the variances will not be set.
+
+    :seealso: :py:func:`scipp.zeros_like` :py:func:`scipp.ones_like`
     """
     return full(dims=var.dims,
                 shape=var.shape,
@@ -250,12 +259,13 @@ def matrix(*,
     """Constructs a zero dimensional :class:`Variable` holding a single 3x3
     matrix.
 
-    :seealso: :py:func:`scipp.matrices`
 
     :param value: Initial value, a list or 1-D numpy array.
     :param unit: Optional, unit. Default=dimensionless
     :returns: A scalar (zero-dimensional) Variable.
     :rtype: Variable
+
+    :seealso: :py:func:`scipp.matrices`
     """
     warnings.warn(
         "sc.matrix() has been deprecated in favour of "
@@ -272,11 +282,12 @@ def matrices(*,
     """Constructs a :class:`Variable` with given dimensions holding an array
     of 3x3 matrices.
 
-    :seealso: :py:func:`scipp.matrix`
 
     :param dims: Dimension labels.
     :param values: Initial values.
     :param unit: Optional, data unit. Default=dimensionless
+
+    :seealso: :py:func:`scipp.matrix`
     """
     warnings.warn(
         "sc.matrices() has been deprecated in favour of "
@@ -292,12 +303,13 @@ def vector(*,
     """Constructs a zero dimensional :class:`Variable` holding a single length-3
     vector.
 
-    :seealso: :py:func:`scipp.vectors`
 
     :param value: Initial value, a list or 1-D numpy array.
     :param unit: Optional, unit. Default=dimensionless
     :returns: A scalar (zero-dimensional) Variable.
     :rtype: Variable
+
+    :seealso: :py:func:`scipp.vectors`
     """
     return _cpp.vectors(dims=[], unit=unit, values=value)
 
@@ -309,11 +321,12 @@ def vectors(*,
     """Constructs a :class:`Variable` with given dimensions holding an array
     of length-3 vectors.
 
-    :seealso: :py:func:`scipp.vector`
 
     :param dims: Dimension labels.
     :param values: Initial values.
     :param unit: Optional, data unit. Default=dimensionless
+
+    :seealso: :py:func:`scipp.vector`
     """
     return _cpp.vectors(dims=dims, unit=unit, values=values)
 
@@ -328,8 +341,6 @@ def array(*,
     values and optional variances. Dimension and value shape must match.
     Only keyword arguments accepted.
 
-    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
-              :py:func:`scipp.empty` :py:func:`scipp.scalar`
 
     :param dims: Dimension labels
     :param values: Initial values.
@@ -338,6 +349,9 @@ def array(*,
     :param unit: Optional, data unit. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
+
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
+              :py:func:`scipp.empty` :py:func:`scipp.scalar`
     """
     return _cpp.Variable(dims=dims,
                          values=values,
@@ -357,9 +371,6 @@ def linspace(dim: str,
     """Constructs a :class:`Variable` with `num` evenly spaced samples,
     calculated over the interval `[start, stop]`.
 
-    :seealso: :py:func:`scipp.geomspace` :py:func:`scipp.logspace`
-              :py:func:`scipp.arange`
-
     :param dim: Dimension label.
     :param start: The starting value of the sequence.
     :param stop: The end value of the sequence.
@@ -369,6 +380,9 @@ def linspace(dim: str,
     :param unit: Optional, data unit. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
+
+    :seealso: :py:func:`scipp.geomspace` :py:func:`scipp.logspace`
+              :py:func:`scipp.arange`
     """
     return array(dims=[dim],
                  values=_np.linspace(start, stop, num, endpoint=endpoint),
@@ -389,9 +403,6 @@ def geomspace(dim: str,
     but with endpoints specified directly.
     Each output sample is a constant multiple of the previous.
 
-    :seealso: :py:func:`scipp.linspace` :py:func:`scipp.logspace`
-              :py:func:`scipp.arange`
-
     :param dim: Dimension label.
     :param start: The starting value of the sequence.
     :param stop: The end value of the sequence.
@@ -401,6 +412,9 @@ def geomspace(dim: str,
     :param unit: Optional, data unit. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
+
+    :seealso: :py:func:`scipp.linspace` :py:func:`scipp.logspace`
+              :py:func:`scipp.arange`
     """
     return array(dims=[dim],
                  values=_np.geomspace(start, stop, num, endpoint=endpoint),
@@ -419,9 +433,6 @@ def logspace(dim: str,
              dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale.
 
-    :seealso: :py:func:`scipp.linspace` :py:func:`scipp.geomspace`
-              :py:func:`scipp.arange`
-
     :param dim: Dimension label.
     :param start: The starting value of the sequence.
     :param stop: The end value of the sequence.
@@ -432,6 +443,9 @@ def logspace(dim: str,
     :param unit: Optional, data unit. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
+
+    :seealso: :py:func:`scipp.linspace` :py:func:`scipp.geomspace`
+              :py:func:`scipp.arange`
     """
     return array(dims=[dim],
                  values=_np.logspace(start, stop, num, base=base, endpoint=endpoint),
@@ -451,9 +465,6 @@ def arange(dim: str,
     Values are generated within the half-open interval [start, stop)
     (in other words, the interval including start but excluding stop).
 
-    :seealso: :py:func:`scipp.linspace` :py:func:`scipp.geomspace`
-              :py:func:`scipp.logspace`
-
     :param dim: Dimension label.
     :param start: Optional, the starting value of the sequence. Default=0.
     :param stop: End of interval. The interval does not include this value,
@@ -463,6 +474,9 @@ def arange(dim: str,
     :param unit: Optional, data unit. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
+
+    :seealso: :py:func:`scipp.linspace` :py:func:`scipp.geomspace`
+              :py:func:`scipp.logspace`
     """
     if stop is None:
         stop = start
@@ -479,9 +493,6 @@ def datetime(
         unit: _Optional[_Union[_cpp.Unit, str, None]] = default_unit) -> _cpp.Variable:
     """Constructs a zero dimensional :class:`Variable` with a dtype of datetime64.
 
-    :seealso: :py:func:`scipp.datetimes` :py:func:`scipp.epoch`
-              'Dates and Times' section in `Data Types <../../reference/dtype.rst>`_
-
     :param value:
      - `str`: Interpret the string according to the ISO 8601 date time format.
      - `int`: Number of time units (see argument ``unit``) since scipp's epoch
@@ -490,6 +501,9 @@ def datetime(
     :param unit: Unit of the resulting datetime.
                  Can be deduced if ``value`` is a str or np.datetime64 but
                  is required if it is an int.
+
+    :seealso: :py:func:`scipp.datetimes` :py:func:`scipp.epoch`
+              'Dates and Times' section in `Data Types <../../reference/dtype.rst>`_
 
     Examples:
 
@@ -512,14 +526,14 @@ def datetimes(
         unit: _Optional[_Union[_cpp.Unit, str, None]] = default_unit) -> _cpp.Variable:
     """Constructs an array :class:`Variable` with a dtype of datetime64.
 
-    :seealso: :py:func:`scipp.datetime` :py:func:`scipp.epoch`
-              'Dates and Times' section in `Data Types <../../reference/dtype.rst>`_
-
     :param dims: Dimension labels
     :param values: Numpy array or something that can be converted to a
                    Numpy array of datetimes.
     :param unit: Unit for the resulting Variable.
                  Can be deduced if ``values`` contains strings or np.datetime64's.
+
+    :seealso: :py:func:`scipp.datetime` :py:func:`scipp.epoch`
+              'Dates and Times' section in `Data Types <../../reference/dtype.rst>`_
 
     Examples:
 
@@ -544,10 +558,10 @@ def epoch(*, unit: _Union[_cpp.Unit, str]) -> _cpp.Variable:
 
     Currently, the epoch of datetimes in scipp is the Unix epoch 1970-01-01T00:00:00.
 
+    :param unit: Unit of the resulting Variable.
+
     :seealso: :py:func:`scipp.datetime` :py:func:`scipp.datetimes`
               'Dates and Times' section in `Data Types <../../reference/dtype.rst>`_
-
-    :param unit: Unit of the resulting Variable.
 
     Examples:
 
