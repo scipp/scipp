@@ -2,11 +2,11 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "docstring.h"
 #include "pybind11.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/sort.h"
+#include "scipp/variable/math.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/slice.h"
 #include "scipp/variable/sort.h"
@@ -73,6 +73,8 @@ void bind_allsorted(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
 }
 
+void bind_midpoints(py::module &m) { m.def("midpoints", midpoints); }
+
 void init_operations(py::module &m) {
   bind_dot<Variable>(m);
 
@@ -84,6 +86,7 @@ void init_operations(py::module &m) {
   bind_sort_dim<Dataset>(m);
   bind_issorted(m);
   bind_allsorted(m);
+  bind_midpoints(m);
 
   m.def(
       "get_slice_params",

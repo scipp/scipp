@@ -20,6 +20,7 @@ General
    logical_xor
    lookup
    merge
+   midpoints
    rebin
    reduce
    slices
