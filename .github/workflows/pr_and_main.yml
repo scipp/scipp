@@ -68,14 +68,16 @@ jobs:
         with:
           key: ${{ matrix.os }}
 
+      - run: python tools/metatoenv.py --dir=conda --env-file=buildenv.yml --channels=conda-forge
+
       - name: Setup Mambaforge and dev env
         uses: conda-incubator/setup-miniconda@v2
         with:
           miniforge-version: latest
           miniforge-variant: Mambaforge
           python-version: ${{ matrix.python-version }}
-          environment-file: ${{ matrix.os == 'ubuntu-latest' && 'scipp-developer.yml' || 'scipp-developer-minimal.yml' }}
-          activate-environment: scipp-developer
+          environment-file: buildenv.yml
+          activate-environment: buildenv
           auto-activate-base: false
 
       - run: cmake --preset ${{ matrix.cmake-preset }}

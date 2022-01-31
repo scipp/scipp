@@ -1,3 +1,20 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+
+# Note:
+#
+# The conda documentation recommends placing version number in the
+# conda_build_config.yaml file, instead of directly in this meta.yaml file:
+# https://docs.conda.io/projects/conda-build/en/latest/resources/variants.html
+# It seems the primary advantage of doing this is that it allows matrix builds from a
+# single conda-build command.
+# For now, the only matrix-style building we are doing is the python version,
+# which is set via the `--python` command line argument anyway, because we are
+# parallelising our CI builds.
+# A matrix build from conda-build directly would have to perform the lib solving for
+# each version, and using multiple workers on our CI is faster than building all python
+# versions in a single conda-build step.
+
 package:
   name: scipp
   # Get version number from most recent Git tag
@@ -13,7 +30,7 @@ requirements:
     - gxx_linux-64 11.1.* [linux64]
     - git
     - ninja
-    - python {{ python }}
+    - python
     - tbb-devel
     # doc build requirements
     - confuse
@@ -34,7 +51,7 @@ requirements:
   run:
     - confuse
     - numpy>=1.20.0
-    - python {{ python }}
+    - python
     - pyyaml
     - tbb
     - graphlib-backport # for python < 3.9
