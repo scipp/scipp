@@ -108,9 +108,7 @@ def rotations_from_rotvecs(rotation_vectors: Variable) -> Variable:
     A rotation vector is a 3 dimensional vector which is co-directional to the axis of
     rotation and whose norm gives the angle of rotation.
 
-    :param dims: The dimensions of the created variable
     :param rotation_vectors: A Variable with vector dtype
-    :param unit: The units of the 3 provided values. Should be either 'rad' or 'deg'.
     """
     from scipy.spatial.transform import Rotation as R
     supported = [units.deg, units.rad]
