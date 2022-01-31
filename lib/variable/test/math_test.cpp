@@ -495,11 +495,11 @@ TEST(Variable, midpoints_throws_with_scalar_input) {
 TEST(Variable, midpoints_1d_throws_with_single_element) {
   EXPECT_THROW_DISCARD(
       midpoints(makeVariable<int64_t>(Dims{Dim::X}, Shape{1}, Values{1})),
-      except::SizeError);
+      except::DimensionError);
   EXPECT_THROW_DISCARD(
       midpoints(makeVariable<int64_t>(Dims{Dim::X}, Shape{1}, Values{1}),
                 Dim::X),
-      except::SizeError);
+      except::DimensionError);
 }
 
 TEST(Variable, midpoints_1d_2_elements) {
