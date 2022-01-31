@@ -73,11 +73,7 @@ void bind_allsorted(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
 }
 
-void bind_midpoints(py::module &m) {
-  m.def("midpoints", [](const Variable &x, const std::optional<Dim> dim) {
-    return midpoints(x, dim);
-  });
-}
+void bind_midpoints(py::module &m) { m.def("midpoints", midpoints); }
 
 void init_operations(py::module &m) {
   bind_dot<Variable>(m);
