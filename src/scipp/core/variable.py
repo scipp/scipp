@@ -44,7 +44,6 @@ def scalar(value: _Any,
       Cannot be specified for value types of
       str, Dataset or DataArray.
     :returns: A scalar (zero-dimensional) Variable.
-    :rtype: Variable
 
     :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
               :py:func:`scipp.empty` :py:func:`scipp.array`
@@ -263,7 +262,6 @@ def matrix(*,
     :param value: Initial value, a list or 1-D numpy array.
     :param unit: Optional, unit. Default=dimensionless
     :returns: A scalar (zero-dimensional) Variable.
-    :rtype: Variable
 
     :seealso: :py:func:`scipp.matrices`
     """
@@ -307,7 +305,6 @@ def vector(*,
     :param value: Initial value, a list or 1-D numpy array.
     :param unit: Optional, unit. Default=dimensionless
     :returns: A scalar (zero-dimensional) Variable.
-    :rtype: Variable
 
     :seealso: :py:func:`scipp.vectors`
     """
