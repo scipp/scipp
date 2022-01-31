@@ -24,7 +24,7 @@ Rebinning multiple times makes more and more intensity disappear.
 
 Note furthermore that this behavior of ``rebin`` is inconsistent with ``bin``, which already applies masks in its current implementation by ignoring all masked bins.
 
-A crucial shortcoming of applying the mask is that for normalization purposes it is important whether a zero is true (measured) or and artifact (such as a masked dead detector).
+A crucial shortcoming of applying the mask is that for normalization purposes it is important whether a zero is true (measured) or an artifact (such as a masked dead detector).
 If the mask is applied we cannot tell the difference any more.
 A partial solution could be to use NaN for fully or partially masked bins.
 But the boundary problem persists:
