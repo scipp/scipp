@@ -407,6 +407,7 @@ def logspace(dim: str,
              stop: _Union[int, float],
              num: int,
              *,
+             base: _Union[int, float] = 10.0,
              unit: _Union[_cpp.Unit, str, None] = default_unit,
              dtype: _cpp.DType = None) -> _cpp.Variable:
     """Constructs a :class:`Variable` with values spaced evenly on a log scale.
@@ -418,12 +419,13 @@ def logspace(dim: str,
     :param start: The starting value of the sequence.
     :param stop: The end value of the sequence.
     :param num: Number of samples to generate.
+    :param base: The base of the log space.
     :param unit: Optional, data unit. Default=dimensionless
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
     """
     return array(dims=[dim],
-                 values=_np.logspace(start, stop, num),
+                 values=_np.logspace(start, stop, num, base=base),
                  unit=unit,
                  dtype=dtype)
 
