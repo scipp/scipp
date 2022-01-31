@@ -5,7 +5,7 @@ Prerequisites
 ~~~~~~~~~~~~~
 
 All non-optional build dependencies are installed automatically through Conan when running CMake.
-Conan itself can be installed manually but we recommend using the provided ``scipp-developer.yml``
+Conan itself can be installed manually but we recommend using the generated ``scipp-developer.yml``
 for installing this and other dependencies in a ``conda`` environment (see below).
 Alternatively you can refer to this file for a full list of dependencies.
 
@@ -14,6 +14,7 @@ See `Tooling <tooling.rst>`_ for compilers and other required tools.
 Getting the code, building, and installing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+You first need to clone the git repository (either via SSH or HTTPS) from `GitHub <https://github.com/scipp/scipp>`_.
 Note that this assumes you will end up with a directory structure similar to the following.
 If you want something different be sure to modify paths as appropriate.
 
@@ -29,6 +30,12 @@ To build and install the library:
 
 .. code-block:: bash
 
+  # Create Conda environment with dependencies and development tools
+  python tools/metatoenv.py --dir=conda --env-file=scipp-developer.yml \
+    --channels=conda-forge --merge-with=developer-extra.yml
+  conda env create -f scipp-developer.yml
+  conda activate scipp-developer
+
   # Update Git submodules
   git submodule init
   git submodule update
@@ -37,10 +44,6 @@ To build and install the library:
   mkdir build
   mkdir install
   cd build
-
-  # Create Conda environment with dependencies and development tools
-  conda env create -f ../scipp-developer.yml            # For Linux
-  conda activate scipp-developer
 
 To build a debug version of the library:
 
@@ -141,7 +144,7 @@ In your ``CMakeLists.txt``:
 
 .. code-block:: cmake
 
-  find_package(Scipp 0.10 REQUIRED) # replace with required version
+  find_package(Scipp 0.11 REQUIRED) # replace with required version
   target_link_libraries(mytarget PUBLIC scipp::dataset)
 
 If scipp was install using ``conda``, ``cmake`` should find it automatically.
