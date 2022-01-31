@@ -19,6 +19,7 @@ Breaking changes
 
 * The configuration option ``config['plot']['padding']`` is now called ``config['plot']['bounding_box']``, no action is required if it was never modified `#2389 <https://github.com/scipp/scipp/pull/2389>`_.
 * The ``unit`` attribute now distinguishes ``None`` from ``dimensionless``. For number-like dtypes the default is ``dimensionless`` (unchanged) whereas all other dtypes such as strings default to ``None`` (new) `#2395 <https://github.com/scipp/scipp/pull/2395>`_.
+* :py:func:`scipp.spatial.rotations_from_rotvecs` has been changed to taking a variable input rather than separate values/dims/units.
 
 Bugfixes
 ~~~~~~~~
