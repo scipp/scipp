@@ -431,8 +431,8 @@ def logspace(dim: str,
     """Constructs a :class:`Variable` with values spaced evenly on a log scale.
 
     :param dim: Dimension label.
-    :param start: The starting value of the sequence.
-    :param stop: The end value of the sequence.
+    :param start: ``base ** start`` is the starting value of the sequence.
+    :param stop: ``base ** end`` is the end value of the sequence.
     :param num: Number of samples to generate.
     :param base: The base of the log space.
     :param endpoint: If True, `step` is the last returned value.
@@ -442,7 +442,7 @@ def logspace(dim: str,
       in which case type is inferred from value input.
 
     :seealso: :py:func:`scipp.linspace` :py:func:`scipp.geomspace`
-              :py:func:`scipp.arange`
+              :py:func:`scipp.arange` :py:func:`numpy.logspace`
     """
     return array(dims=[dim],
                  values=_np.logspace(start, stop, num, base=base, endpoint=endpoint),
