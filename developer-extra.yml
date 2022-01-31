@@ -1,6 +1,12 @@
-# This is used for incremental CI builds and local development.
-# All dependencies should be installed here (i.e. the union of build, run, test and documentation build dependencies).
-# See https://scipp.github.io/developer/dependencies.html
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+
+# This file adds optional dependencies for local development.
+# It should be used in combination with the metatoenv.py script to generate a complete
+# developer environment:
+#
+#   python tools/metatoenv.py --dir=conda --env-file=scipp-developer.yml \
+#       --channels=conda-forge --merge-with=developer-extra.yml
 
 name: developer-extra
 
