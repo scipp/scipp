@@ -11,13 +11,12 @@ import pytest
 
 def test_from_rotvec_bad_unit():
     with pytest.raises(sc.UnitError):
-        rotations_from_rotvecs(rotation_vectors=sc.vector(value=[90, 0, 0], unit="m"))
+        rotations_from_rotvecs(sc.vector(value=[90, 0, 0], unit="m"))
 
 
 def test_from_rotvec():
     values = [1.2, -2.3, 3.4]
-    rot = rotations_from_rotvecs(
-        rotation_vectors=sc.vectors(dims=["x"], values=[values], unit='deg'))
+    rot = rotations_from_rotvecs(sc.vectors(dims=["x"], values=[values], unit='deg'))
     from scipy.spatial.transform import Rotation as R
     expected = R.from_rotvec(values, degrees=True)
 
@@ -28,22 +27,18 @@ def test_from_rotvec():
 
 def test_from_rotvec_rotation():
     v1 = sc.vector(value=[1, 2, 3], unit='m')
-    rot = rotations_from_rotvecs(
-        rotation_vectors=sc.vector(value=[90, 0, 0], unit='deg'))
+    rot = rotations_from_rotvecs(sc.vector(value=[90, 0, 0], unit='deg'))
     assert sc.allclose(rot * v1, sc.vector(value=[1, -3, 2], unit='m'))
 
 
 def test_from_rotvec_rad():
     assert sc.identical(
-        rotations_from_rotvecs(
-            rotation_vectors=sc.vector(value=[pi / 2, 0, 0], unit="rad")),
-        rotations_from_rotvecs(
-            rotation_vectors=sc.vector(value=[90, 0, 0], unit="deg")))
+        rotations_from_rotvecs(sc.vector(value=[pi / 2, 0, 0], unit="rad")),
+        rotations_from_rotvecs(sc.vector(value=[90, 0, 0], unit="deg")))
 
 
 def test_as_rotvec_bad_unit():
-    rot = rotations_from_rotvecs(
-        rotation_vectors=sc.vector(value=[1.2, -2.3, 3.4], unit='deg'))
+    rot = rotations_from_rotvecs(sc.vector(value=[1.2, -2.3, 3.4], unit='deg'))
     with pytest.raises(sc.UnitError):
         rotation_as_rotvec(rot, unit='m')
 
