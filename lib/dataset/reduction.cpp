@@ -60,7 +60,7 @@ DataArray mean(const DataArray &a, const Dim dim) {
 }
 
 DataArray mean(const DataArray &a) {
-  return variable::normalize_impl(sum(a), sum(isfinite(a)));
+  return variable::normalize_impl(sum(a), count_finite(a));
 }
 
 Dataset mean(const Dataset &d, const Dim dim) {
@@ -78,7 +78,7 @@ DataArray nanmean(const DataArray &a, const Dim dim) {
 }
 
 DataArray nanmean(const DataArray &a) {
-  return variable::normalize_impl(nansum(a), sum(isfinite(a)));
+  return variable::normalize_impl(nansum(a), count_finite(a));
 }
 
 Dataset nanmean(const Dataset &d, const Dim dim) {

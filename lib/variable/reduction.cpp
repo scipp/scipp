@@ -150,12 +150,6 @@ template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
   return sum(end - begin, dim...);
 }
 
-template <class... Dim>
-Variable count_finite(const Variable &var, Dim &&... dim) {
-  auto count = sum(isfinite(var), dim...);
-  count.setUnit(units::one);
-  return count;
-}
 } // namespace
 
 /// Return the mean along all dimensions.

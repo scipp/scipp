@@ -7,6 +7,7 @@
 #include "scipp/core/flags.h"
 #include "scipp/variable/astype.h"
 #include "scipp/variable/reciprocal.h"
+#include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {
@@ -54,3 +55,12 @@ template <class T, class Op> auto reduce_all_dims(const T &obj, const Op &op) {
 }
 
 } // namespace scipp::variable
+
+namespace scipp {
+template <class Var, class... Dim>
+auto count_finite(const Var &var, Dim &&... dim) {
+  auto count = sum(isfinite(var), dim...);
+  count.setUnit(units::one);
+  return count;
+}
+} // namespace scipp

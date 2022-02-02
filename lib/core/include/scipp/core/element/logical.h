@@ -11,11 +11,7 @@
 namespace scipp::core::element {
 
 constexpr auto logical =
-    overloaded{arg_list<bool>,
-               [](const units::Unit &a) {
-                 expect::equals(units::none, a);
-                 return units::none;
-               },
+    overloaded{arg_list<bool>, [](const units::Unit &a) { return a; },
                [](const units::Unit &a, const units::Unit &b) {
                  expect::equals(units::none, a);
                  expect::equals(units::none, b);
