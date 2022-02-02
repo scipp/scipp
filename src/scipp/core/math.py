@@ -175,3 +175,50 @@ def erfc(x: VariableLike) -> VariableLike:
     Computes the complementary error function.
     """
     return _cpp.erfc(x)
+
+
+def midpoints(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
+    """
+    Computes the points in the middle of adjacent elements of x.
+
+    The midpoint of two numbers :math:`a` and :math:`b` is
+    :math:`(a + b) / 2`.
+    This formula encounters under- or overflow for
+    very small or very large inputs.
+    The implementation deals with those cases properly.
+
+    :param x: Input data.
+    :param dim: Dimension along which to compute midpoints.
+                Optional for 1D Variables.
+
+    Examples:
+
+      >>> x = sc.array(dims=['x'], values=[-2, 0, 4, 2])
+      >>> x
+      <scipp.Variable> (x: 4)      int64  [dimensionless]  [-2, 0, 4, 2]
+      >>> sc.midpoints(x)
+      <scipp.Variable> (x: 3)      int64  [dimensionless]  [-1, 2, 3]
+
+    For integers, when the difference of adjacent elements is odd,
+    `midpoints` rounds towards the number that comes first in the array:
+
+      >>> x = sc.array(dims=['x'], values=[0, 3, 0])
+      >>> x
+      <scipp.Variable> (x: 3)      int64  [dimensionless]  [0, 3, 0]
+      >>> sc.midpoints(x)
+      <scipp.Variable> (x: 2)      int64  [dimensionless]  [1, 2]
+
+    With multidimensional variables, `midpoints` is only applied
+    to the specified dimension:
+
+      >>> xy = sc.array(dims=['x', 'y'], values=[[1, 3, 5], [2, 6, 10]])
+      >>> xy.values
+      array([[ 1,  3,  5],
+             [ 2,  6, 10]])
+      >>> sc.midpoints(xy, dim='x').values
+      array([[1, 4, 7]])
+      >>> sc.midpoints(xy, dim='y').values
+      array([[2, 4],
+             [4, 8]])
+    """
+    return _cpp.midpoints(x, dim)
