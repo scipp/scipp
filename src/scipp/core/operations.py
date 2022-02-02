@@ -145,6 +145,10 @@ def rebin(x: VariableLike, dim: str, bins: _cpp.Variable) -> VariableLike:
 
     The input must contain bin edges for the given dimension `dim`.
 
+    If the input has masks that contain the dimension being rebinned then those
+    masks are applied to the data before rebinning. Tht is, masked values are treated
+    as zero.
+
     :param x: Data to rebin.
     :param dim: Dimension to rebin over.
     :param bins: New bin edges.
