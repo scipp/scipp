@@ -50,7 +50,7 @@ Positive:
 ~~~~~~~~~
 
 - No more mysteriously disappearing data.
-- The effect of masking data is the same as zeroing data directly.
+- Masking removes only data values that are explicitly masked, rather than removing also *additional* data values.
 - Consistent with ``bin``.
 - Consistent with reduction operations.
 
