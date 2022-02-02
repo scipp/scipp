@@ -51,11 +51,6 @@ static constexpr auto rebin = overloaded{
                             std::decay_t<decltype(data_old)>>) {
             data_new.value[inew] += data_old.value[iold] * scale;
             data_new.variance[inew] += data_old.variance[iold] * scale;
-          } else if constexpr (std::is_same_v<typename std::decay_t<decltype(
-                                                  data_new)>::value_type,
-                                              bool>) {
-            static_cast<void>(scale);
-            data_new[inew] = data_new[inew] || data_old[iold];
           } else {
             data_new[inew] += data_old[iold] * scale;
           }

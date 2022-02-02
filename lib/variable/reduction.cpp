@@ -77,9 +77,9 @@ Variable sum_with_dim_impl(Op op, const Variable &var, const Dim dim) {
 template <typename Op>
 Variable &sum_with_dim_inplace_impl(Op op, const Variable &var, const Dim dim,
                                     Variable &out) {
-  if (is_dtype_bool(var) && !is_dtype_int64(out))
-    throw except::TypeError("In-place sum of dtype=bool must be stored in an "
-                            "output variable with dtype=int64.");
+  if (is_dtype_bool(var) && is_dtype_bool(out))
+    throw except::TypeError("In-place sum of dtype=bool cannot be stored in an "
+                            "output variable with dtype=bool.");
 
   auto dims = var.dims();
   dims.erase(dim);

@@ -242,6 +242,9 @@ def bin(x: _cpp.DataArray,
 
     At least one argument of ``edges`` and ``groups`` is required.
 
+    If the input is binned and certain bins are masked then changing the binning
+    will apply the masks, i.e., masked bins are treated as empty.
+
     :param x: Input data.
     :param edges: Bin edges, one per dimension to bin in.
     :param groups: Keys to group input by one per dimension to group in.

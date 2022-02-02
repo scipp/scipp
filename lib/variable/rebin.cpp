@@ -17,9 +17,6 @@ using namespace scipp::core::element;
 
 namespace scipp::variable {
 
-// Workaround VS C7526 (undefined inline variable) with dtype<> in template.
-bool is_dtype_bool(const Variable &var) { return var.dtype() == dtype<bool>; }
-
 template <typename T, class Less>
 void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,
                      const Variable &oldCoord, const Variable &newCoord) {
@@ -52,15 +49,11 @@ void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,
     if (begin == oldSize + 1 || end == 0)
       return;
     begin = std::max(scipp::index(0), begin - 1);
-    if (is_dtype_bool(newT)) {
-      slice |= any(oldT.slice({dim, begin, std::min(end, oldSize)}), dim);
-    } else {
-      add_from_bin(slice, xn_low, xn_high, begin);
-      if (begin + 1 < end - 1)
-        sum(oldT.slice({dim, begin + 1, end - 1}), dim, slice);
-      if (begin != end - 1 && end < oldSize + 1)
-        add_from_bin(slice, xn_low, xn_high, end - 1);
-    }
+    add_from_bin(slice, xn_low, xn_high, begin);
+    if (begin + 1 < end - 1)
+      sum(oldT.slice({dim, begin + 1, end - 1}), dim, slice);
+    if (begin != end - 1 && end < oldSize + 1)
+      add_from_bin(slice, xn_low, xn_high, end - 1);
   };
   auto accumulate_bins = [&](const auto &range) {
     for (scipp::index inew = range.begin(); inew < range.end(); ++inew) {
@@ -112,12 +105,9 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
     return copy(
         transpose(rebin(as_contiguous(var, dim), dim, oldCoord, newCoord),
                   var.dims().labels()));
-  // TODO Note that this currently rebins counts but resamples bool
   // Rebin could also implemented for count-densities. However, it may be better
   // to avoid this since it increases complexity. Instead, densities could
   // always be computed on-the-fly for visualization, if required.
-  if (var.dtype() == dtype<bool>)
-    core::expect::equals(var.unit(), units::one);
   if (!is_edges(var.dims(), oldCoord.dims(), dim))
     throw except::BinEdgeError(
         "The input does not have coordinates with bin-edges.");
@@ -133,10 +123,10 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
       args<float, core::time_point, float, core::time_point>,
       args<double, core::time_point, int64_t, core::time_point>,
       args<double, core::time_point, int32_t, core::time_point>,
-      args<bool, core::time_point, bool, core::time_point>,
+      args<double, core::time_point, bool, core::time_point>,
       args<double, double, double, double>, args<float, float, float, float>,
       args<float, double, float, double>, args<float, float, float, double>,
-      args<bool, double, bool, double>>;
+      args<double, double, bool, double>>;
 
   const bool ascending = allsorted(oldCoord, dim, SortOrder::Ascending) &&
                          allsorted(newCoord, dim, SortOrder::Ascending);
@@ -144,7 +134,9 @@ Variable rebin(const Variable &var, const Dim dim, const Variable &oldCoord,
                       allsorted(newCoord, dim, SortOrder::Descending)))
     throw except::BinEdgeError(
         "Rebin: The old or new bin edges are not sorted.");
-  const auto out_type = is_int(var.dtype()) ? dtype<double> : var.dtype();
+  const auto out_type = (is_int(var.dtype()) || var.dtype() == dtype<bool>)
+                            ? dtype<double>
+                            : var.dtype();
   // Both code branches below require stride 1 for input and output edges.
   const auto oldEdges = as_contiguous(oldCoord, dim);
   const auto newEdges = as_contiguous(newCoord, dim);
