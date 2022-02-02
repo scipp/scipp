@@ -55,6 +55,19 @@ def scalar(value: _Any,
                          dtype=dtype)
 
 
+def index(value: _Any, dtype: _cpp.DType = None) -> _cpp.Variable:
+    """Constructs a zero dimensional :class:`Variable` representing an index.
+
+    This is equivalent to calling :py:func:`scipp.scalar` with unit=None.
+
+    :param value: Initial value.
+    :param dtype: Optional, type of underlying data. Default=None,
+      in which case type is inferred from value input.
+    :returns: A scalar (zero-dimensional) Variable.
+    """
+    return scalar(value=value, dtype=dtype, unit=None)
+
+
 def zeros(*,
           dims: _Sequence[str] = None,
           shape: _Sequence[int] = None,

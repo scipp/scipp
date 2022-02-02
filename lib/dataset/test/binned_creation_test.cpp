@@ -50,8 +50,8 @@ TEST_F(BinnedCreationTest, empty_like_slice_default_shape) {
 }
 
 TEST_F(BinnedCreationTest, empty_like) {
-  Variable shape = makeVariable<scipp::index>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                              Values{1, 2, 5, 6, 3, 4});
+  Variable shape = makeVariable<scipp::index>(
+      Dims{Dim::X, Dim::Y}, Shape{2, 3}, units::none, Values{1, 2, 5, 6, 3, 4});
   const auto empty = empty_like(m_var, {}, shape);
   EXPECT_EQ(empty.dims(), shape.dims());
   const auto [indices, dim, buf] = empty.constituents<DataArray>();
