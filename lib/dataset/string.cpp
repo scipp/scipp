@@ -41,7 +41,6 @@ std::string format_variable(const std::string &key, const Variable &variable,
     << format_variable(variable, datasetSizes) << '\n';
   return s.str();
 }
-} // namespace
 
 template <class Key>
 auto format_data_view(const Key &name, const DataArray &data,
@@ -100,6 +99,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
   s << '\n';
   return s.str();
 }
+} // namespace
 
 std::string to_string(const DataArray &data) {
   return do_to_string(data, "<scipp.DataArray>", data.dims());
@@ -109,6 +109,7 @@ std::string to_string(const Dataset &dataset) {
   return do_to_string(dataset, "<scipp.Dataset>", dataset.sizes());
 }
 
+namespace {
 template <class Key, class Value>
 std::string dict_to_string(const Dict<Key, Value> &view) {
   std::stringstream ss;
@@ -118,6 +119,7 @@ std::string dict_to_string(const Dict<Key, Value> &view) {
   }
   return ss.str();
 }
+} // namespace
 
 std::string to_string(const Coords &coords) { return dict_to_string(coords); }
 std::string to_string(const Masks &masks) { return dict_to_string(masks); }
