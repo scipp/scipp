@@ -50,7 +50,7 @@ class PlotView2d(PlotView):
         mask_info = next(iter(mask_info.values()))
         if len(mask_info) > 0:
             # Use automatic broadcasting in Scipp variables
-            msk = zeros(sizes=new_values.sizes, dtype='int32')
+            msk = zeros(sizes=new_values.sizes, dtype='int32', unit=None)
             for m, val in mask_info.items():
                 if val:
                     msk += new_values.masks[m].astype(msk.dtype)

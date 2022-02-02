@@ -37,7 +37,7 @@ class PlotView1d(PlotView):
             return {}
         masks = {}
         data = array.data
-        base_mask = ones(sizes=data.sizes, dtype='int32')
+        base_mask = ones(sizes=data.sizes, dtype='int32', unit=None)
         for m in mask_info:
             if m in array.masks:
                 msk = base_mask * Variable(dims=array.masks[m].dims,
