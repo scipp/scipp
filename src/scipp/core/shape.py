@@ -147,10 +147,16 @@ def fold(x: VariableLike,
     minus_one_count = new_shape.count(-1)
     if minus_one_count > 1:
         raise _cpp.DimensionError(
-            "sc.fold: Can only have a single -1 in the new requested shape.")
+            "Can only have a single -1 in the new requested shape.")
     if minus_one_count == 1:
         ind = new_shape.index(-1)
         del new_shape[ind]
+        new_volume = np.prod(new_shape)
+        dim_size = x.sizes[dim] // new_volume
+        if x.sizes[dim] % new_volume != 0:
+            raise ValueError("-1 in new shape was computed to be {}, but the original "
+                             "shape {} cannot be divided by {}.".format(
+                                 dim_size, x.sizes[dim], dim_size))
         sizes[list(sizes.keys())[ind]] = x.sizes[dim] // np.prod(new_shape)
 
     return _call_cpp_func(_cpp.fold, x, dim, sizes)
