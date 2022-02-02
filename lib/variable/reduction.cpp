@@ -147,7 +147,9 @@ template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
       return ((var.dims()[dim] * units::one) * ...);
   }
   const auto [begin, end] = unzip(var.bin_indices());
-  return sum(end - begin, dim...);
+  auto out = sum(end - begin, dim...);
+  out.setUnit(units::one);
+  return out;
 }
 
 } // namespace

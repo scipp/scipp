@@ -20,7 +20,7 @@ Variable bin_sizes(const Variable &var) {
     const auto [begin, end] = unzip(var.bin_indices());
     return end - begin;
   }
-  return makeVariable<scipp::index>(var.dims());
+  return makeVariable<scipp::index>(var.dims(), units::none);
 }
 
 namespace {

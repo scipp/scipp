@@ -52,8 +52,8 @@ TEST(Variable, default_unit_of_spatial_types_is_dimensionless) {
   EXPECT_EQ(makeVariable<core::Quaternion>(Dimensions{}).unit(), units::one);
 }
 
-TEST(Variable, default_unit_of_index_pair_is_dimensionless) {
-  EXPECT_EQ(makeVariable<scipp::index_pair>(Dimensions{}).unit(), units::one);
+TEST(Variable, default_unit_of_index_pair_is_none) {
+  EXPECT_EQ(makeVariable<scipp::index_pair>(Dimensions{}).unit(), units::none);
 }
 
 TEST(Variable, default_unit_of_string_is_none) {

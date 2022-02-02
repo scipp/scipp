@@ -18,9 +18,9 @@ namespace scipp::variable {
 namespace {
 /// Types that default to unit=units::dimensionless. Everything else is
 /// units::none.
-const std::tuple<double, float, int64_t, int32_t, scipp::index_pair,
-                 core::time_point, Eigen::Vector3d, Eigen::Matrix3d,
-                 Eigen::Affine3d, core::Quaternion, core::Translation>
+const std::tuple<double, float, int64_t, int32_t, core::time_point,
+                 Eigen::Vector3d, Eigen::Matrix3d, Eigen::Affine3d,
+                 core::Quaternion, core::Translation>
     default_dimensionless_dtypes;
 
 template <class... Ts>
