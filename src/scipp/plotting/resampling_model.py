@@ -285,10 +285,6 @@ class ResamplingBinnedModel(ResamplingModel):
 
 def _with_edges(array):
     new_array = array.copy(deep=False)
-    if new_array.unit is None:
-        # Workaround required, even if no resampling done
-        new_array.data = array.data.copy()
-        new_array.unit = ''
     prefix = ''.join(array.dims)
     for dim, var in array.coords.items():
         if dim not in array.dims:

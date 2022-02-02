@@ -26,9 +26,6 @@ namespace {
 
 // Workaround VS C7526 (undefined inline variable) with dtype<> in template.
 bool is_dtype_bool(const Variable &var) { return var.dtype() == dtype<bool>; }
-bool is_dtype_int64(const Variable &var) {
-  return var.dtype() == dtype<int64_t>;
-}
 
 Variable make_accumulant(const Variable &var, const Dim dim,
                          const FillValue &init) {
