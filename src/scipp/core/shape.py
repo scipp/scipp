@@ -157,7 +157,7 @@ def fold(x: VariableLike,
             raise ValueError("-1 in new shape was computed to be {}, but the original "
                              "shape {} cannot be divided by {}.".format(
                                  dim_size, x.sizes[dim], dim_size))
-        sizes[list(sizes.keys())[ind]] = x.sizes[dim] // np.prod(new_shape)
+        sizes[list(sizes.keys())[ind]] = dim_size
 
     return _call_cpp_func(_cpp.fold, x, dim, sizes)
 
