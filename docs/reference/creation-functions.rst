@@ -16,6 +16,7 @@ Creation functions
    full
    full_like
    geomspace
+   index
    linspace
    logspace
    matrix

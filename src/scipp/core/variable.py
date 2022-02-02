@@ -63,7 +63,7 @@ def index(value: _Any, dtype: _cpp.DType = None) -> _cpp.Variable:
     :param value: Initial value.
     :param dtype: Optional, type of underlying data. Default=None,
       in which case type is inferred from value input.
-    :returns: A scalar (zero-dimensional) Variable.
+    :returns: A scalar (zero-dimensional) variable without unit.
     """
     return scalar(value=value, dtype=dtype, unit=None)
 
