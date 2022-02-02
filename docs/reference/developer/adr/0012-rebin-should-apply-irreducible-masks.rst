@@ -1,7 +1,7 @@
 ADR 0012: Rebin should apply irreducible masks
 ==============================================
 
-- Status: under discussion
+- Status: accepted
 - Deciders: Jan-Lukas, Neil, Simon
 - Date: 2022-01-19
 
