@@ -4,6 +4,7 @@
 # flake8: noqa: E501
 
 from __future__ import annotations
+import numpy as np
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 import warnings
 
@@ -64,7 +65,7 @@ def concat(x: Sequence[VariableLike], dim: str) -> VariableLike:
       >>> d.values
       array([[  0,   1,   2],
              [  0, 100, 200]])
-       
+
       >>> x = sc.DataArray(sc.arange('x', 3), coords={'x': sc.arange('x', 3)})
       >>> y = sc.DataArray(100 * sc.arange('x', 3), coords={'x': 100 * sc.arange('x', 3)})
       >>> z = sc.concat([x, y], dim='x')
@@ -111,6 +112,9 @@ def fold(x: VariableLike,
       >>> sc.fold(v, dim='x', dims=['y', 'z'], shape=[2, 3])
       <scipp.Variable> (y: 2, z: 3)      int64  [dimensionless]  [0, 1, ..., 4, 5]
 
+      >>> sc.fold(v, dim='x', sizes={'y': 2, 'z': -1})
+      <scipp.Variable> (y: 2, z: 3)      int64  [dimensionless]  [0, 1, ..., 4, 5]
+
       >>> a = sc.DataArray(0.1 * sc.arange('x', 6), coords={'x': sc.arange('x', 6)})
       >>> sc.fold(a, dim='x', sizes={'y': 2, 'z': 3})
       <scipp.DataArray>
@@ -130,14 +134,32 @@ def fold(x: VariableLike,
         if (dims is not None) or (shape is not None):
             raise RuntimeError(
                 "If sizes is defined, dims and shape must be None in fold.")
+        sizes = sizes.copy()
     else:
         if (dims is None) or (shape is None):
             raise RuntimeError("Both dims and shape must be defined in fold.")
+        sizes = dict(zip(dims, shape))
 
-    if dims is None:
-        return _call_cpp_func(_cpp.fold, x, dim, sizes)
-    else:
-        return _call_cpp_func(_cpp.fold, x, dim, dict(zip(dims, shape)))
+    # Handle potential size of -1.
+    # Note that we implement this here on the Python layer, because one cannot create
+    # a C++ Dimensions object with negative sizes.
+    new_shape = list(sizes.values())
+    minus_one_count = new_shape.count(-1)
+    if minus_one_count > 1:
+        raise _cpp.DimensionError(
+            "Can only have a single -1 in the new requested shape.")
+    if minus_one_count == 1:
+        ind = new_shape.index(-1)
+        del new_shape[ind]
+        new_volume = np.prod(new_shape)
+        dim_size = x.sizes[dim] // new_volume
+        if x.sizes[dim] % new_volume != 0:
+            raise ValueError("-1 in new shape was computed to be {}, but the original "
+                             "shape {} cannot be divided by {}.".format(
+                                 dim_size, x.sizes[dim], dim_size))
+        sizes[list(sizes.keys())[ind]] = dim_size
+
+    return _call_cpp_func(_cpp.fold, x, dim, sizes)
 
 
 def flatten(x: VariableLike,

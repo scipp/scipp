@@ -14,6 +14,7 @@ Features
 * Added :py:func:`scipp.squeeze` to remove length-1 dimensions `#2385 <https://github.com/scipp/scipp/pull/2385>`_.
 * Switched to new system for runtime configuration, see the corresponding section in the reference documentation `#2389 <https://github.com/scipp/scipp/pull/2389>`_.
 * Added :py:func:`scipp.midpoints` which can be used to compute bin-centers `#2404 <https://github.com/scipp/scipp/pull/2404>`_.
+* Made it possible to use ``-1`` for one of the dimension sizes when using ``sc.fold`` `#2414 <https://github.com/scipp/scipp/pull/2414>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
