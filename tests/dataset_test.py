@@ -119,7 +119,7 @@ def test_del_item():
 
 def test_del_item_missing():
     d = sc.Dataset()
-    with pytest.raises(RuntimeError):
+    with pytest.raises(KeyError):
         del d['not an item']
 
 
