@@ -55,7 +55,7 @@ Variable islinspace(const Variable &var, const Dim dim) {
 Variable issorted(const Variable &x, const Dim dim, const SortOrder order) {
   auto dims = x.dims();
   dims.erase(dim);
-  auto out = variable::ones(dims, units::one, dtype<bool>);
+  auto out = variable::ones(dims, units::none, dtype<bool>);
   const auto size = x.dims()[dim];
   if (size < 2)
     return out;

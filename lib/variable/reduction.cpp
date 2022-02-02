@@ -149,6 +149,13 @@ template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
   const auto [begin, end] = unzip(var.bin_indices());
   return sum(end - begin, dim...);
 }
+
+template <class... Dim>
+Variable count_finite(const Variable &var, Dim &&... dim) {
+  auto count = sum(isfinite(var), dim...);
+  count.setUnit(units::one);
+  return count;
+}
 } // namespace
 
 /// Return the mean along all dimensions.
@@ -166,15 +173,15 @@ Variable &mean(const Variable &var, const Dim dim, Variable &out) {
 
 /// Return the mean along all dimensions. Ignoring NaN values.
 Variable nanmean(const Variable &var) {
-  return normalize_impl(nansum(var), sum(isfinite(var)));
+  return normalize_impl(nansum(var), count_finite(var));
 }
 
 Variable nanmean(const Variable &var, const Dim dim) {
-  return nanmean_impl(var, dim, sum(isfinite(var), dim));
+  return nanmean_impl(var, dim, count_finite(var, dim));
 }
 
 Variable &nanmean(const Variable &var, const Dim dim, Variable &out) {
-  return nanmean_impl(var, dim, sum(isfinite(var), dim), out);
+  return nanmean_impl(var, dim, count_finite(var, dim), out);
 }
 
 template <class Op>

@@ -20,7 +20,7 @@ TYPED_TEST(IsCloseTest, atol_when_variable_equal) {
   const auto a = makeVariable<TypeParam>(Values{1});
   const auto rtol = makeVariable<TypeParam>(Values{0});
   const auto atol = makeVariable<TypeParam>(Values{1});
-  EXPECT_EQ(isclose(a, a, rtol, atol), true * units::one);
+  EXPECT_EQ(isclose(a, a, rtol, atol), true * units::none);
 }
 
 TYPED_TEST(IsCloseTest, atol_when_variables_within_tolerance) {
@@ -28,7 +28,7 @@ TYPED_TEST(IsCloseTest, atol_when_variables_within_tolerance) {
   const auto b = makeVariable<TypeParam>(Values{1});
   const auto rtol = makeVariable<TypeParam>(Values{0});
   const auto atol = makeVariable<TypeParam>(Values{1});
-  EXPECT_EQ(isclose(a, b, rtol, atol), true * units::one);
+  EXPECT_EQ(isclose(a, b, rtol, atol), true * units::none);
 }
 
 TYPED_TEST(IsCloseTest, atol_when_variables_outside_tolerance) {
@@ -36,7 +36,7 @@ TYPED_TEST(IsCloseTest, atol_when_variables_outside_tolerance) {
   const auto b = makeVariable<TypeParam>(Values{2});
   const auto rtol = makeVariable<TypeParam>(Values{0});
   const auto atol = makeVariable<TypeParam>(Values{1});
-  EXPECT_EQ(isclose(a, b, rtol, atol), false * units::one);
+  EXPECT_EQ(isclose(a, b, rtol, atol), false * units::none);
 }
 
 TYPED_TEST(IsCloseTest, rtol_when_variables_within_tolerance) {
@@ -45,7 +45,7 @@ TYPED_TEST(IsCloseTest, rtol_when_variables_within_tolerance) {
   // tol = atol + rtol * b = 1
   const auto rtol = makeVariable<double>(Values{1.0 / 9});
   const auto atol = makeVariable<TypeParam>(Values{0});
-  EXPECT_EQ(isclose(a, b, rtol, atol), true * units::one);
+  EXPECT_EQ(isclose(a, b, rtol, atol), true * units::none);
 }
 
 TYPED_TEST(IsCloseTest, rtol_when_variables_outside_tolerance) {
@@ -54,7 +54,7 @@ TYPED_TEST(IsCloseTest, rtol_when_variables_outside_tolerance) {
   // tol = atol + rtol * b = 1
   const auto rtol = makeVariable<double>(Values{1.0 / 9});
   const auto atol = makeVariable<TypeParam>(Values{0});
-  EXPECT_EQ(isclose(a, b, rtol, atol), false * units::one);
+  EXPECT_EQ(isclose(a, b, rtol, atol), false * units::none);
 }
 
 TEST(IsCloseTest, with_vectors) {
@@ -87,10 +87,10 @@ TEST(IsCloseTest, compare_variances_only) {
   const auto b = makeVariable<double>(Values{10.0}, Variances{1.0});
   EXPECT_EQ(isclose(a, b, makeVariable<double>(Values{0.0}),
                     makeVariable<double>(Values{1.0})),
-            true * units::one);
+            true * units::none);
   EXPECT_EQ(isclose(a, b, makeVariable<double>(Values{0.0}),
                     makeVariable<double>(Values{0.9})),
-            false * units::one);
+            false * units::none);
 }
 
 TEST(IsCloseTest, compare_values_and_variances) {
@@ -103,24 +103,24 @@ TEST(IsCloseTest, compare_values_and_variances) {
   // sanity check no mismatch
   EXPECT_EQ(isclose(w, w, makeVariable<double>(Values{0.0}),
                     makeVariable<double>(Values{0.9})),
-            true * units::one);
+            true * units::none);
   // mismatch value only
   EXPECT_EQ(isclose(w, x, makeVariable<double>(Values{0.0}),
                     makeVariable<double>(Values{0.9})),
-            false * units::one);
+            false * units::none);
   // mismatch variance only
   EXPECT_EQ(isclose(w, y, makeVariable<double>(Values{0.0}),
                     makeVariable<double>(Values{0.9})),
-            false * units::one);
+            false * units::none);
   // mismatch value and variance
   EXPECT_EQ(isclose(w, z, makeVariable<double>(Values{0.0}),
                     makeVariable<double>(Values{0.9})),
-            false * units::one);
+            false * units::none);
 
   // same as above but looser tolerance
   EXPECT_EQ(isclose(w, z, makeVariable<double>(Values{0.0}),
                     makeVariable<double>(Values{1.0})),
-            true * units::one);
+            true * units::none);
 }
 
 TEST(IsCloseTest, rtol_units) {
@@ -128,7 +128,7 @@ TEST(IsCloseTest, rtol_units) {
   const auto a = makeVariable<double>(Values{1.0}, Variances{1.0}, unit);
   // This is fine
   EXPECT_EQ(isclose(a, a, 1.0 * scipp::units::one, 1.0 * unit),
-            true * scipp::units::one);
+            true * scipp::units::none);
   // Now rtol has units m
   EXPECT_THROW_DISCARD(isclose(a, a, 1.0 * unit, 1.0 * unit),
                        except::UnitError);
@@ -137,12 +137,12 @@ TEST(IsCloseTest, rtol_units) {
 TEST(ComparisonTest, variances_test) {
   const auto a = makeVariable<float>(Values{1.0}, Variances{1.0});
   const auto b = makeVariable<float>(Values{2.0}, Variances{2.0});
-  EXPECT_EQ(less(a, b), true * units::one);
-  EXPECT_EQ(less_equal(a, b), true * units::one);
-  EXPECT_EQ(greater(a, b), false * units::one);
-  EXPECT_EQ(greater_equal(a, b), false * units::one);
-  EXPECT_EQ(equal(a, b), false * units::one);
-  EXPECT_EQ(not_equal(a, b), true * units::one);
+  EXPECT_EQ(less(a, b), true * units::none);
+  EXPECT_EQ(less_equal(a, b), true * units::none);
+  EXPECT_EQ(greater(a, b), false * units::none);
+  EXPECT_EQ(greater_equal(a, b), false * units::none);
+  EXPECT_EQ(equal(a, b), false * units::none);
+  EXPECT_EQ(not_equal(a, b), true * units::none);
 }
 
 TEST(ComparisonTest, less_units_test) {
@@ -163,8 +163,8 @@ const auto ma = make_matrices(Dimensions{}, units::m,
                               {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0});
 const auto mb = make_matrices(Dimensions{}, units::m,
                               {1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9});
-const auto true_ = true * units::one;
-const auto false_ = false * units::one;
+const auto true_ = true * units::none;
+const auto false_ = false * units::none;
 } // namespace
 
 TEST(ComparisonTest, less_test) {

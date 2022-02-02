@@ -153,7 +153,7 @@ TEST(UtilTest, allsorted_multidimensional) {
 TEST(VariableTest, where) {
   auto var =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 2, 3});
-  auto mask = makeVariable<bool>(Dims{Dim::X}, Shape{3}, units::one,
+  auto mask = makeVariable<bool>(Dims{Dim::X}, Shape{3}, units::none,
                                  Values{true, false, true});
   auto expected_var =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 4, 3});
