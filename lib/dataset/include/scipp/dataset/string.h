@@ -25,5 +25,7 @@ SCIPP_DATASET_EXPORT std::string to_string(const DataArray &data);
 SCIPP_DATASET_EXPORT std::string to_string(const Dataset &dataset);
 SCIPP_DATASET_EXPORT std::string to_string(const Coords &coords);
 SCIPP_DATASET_EXPORT std::string to_string(const Masks &masks);
+SCIPP_DATASET_EXPORT std::string dict_keys_to_string(const Coords &coords);
+SCIPP_DATASET_EXPORT std::string dict_keys_to_string(const Masks &masks);
 
 } // namespace scipp::dataset
