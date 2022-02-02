@@ -32,7 +32,7 @@ def _resample(array, mode: ResamplingMode, dim, edges):
     # `rebin` that works on non-counts data
     coord = array.coords[dim]
     width = coord[dim, 1:] - coord[dim, :-1]
-    width.unit = units.one
+    width.unit = units.none if array.unit is None else units.one
     array.data *= width
     unit = array.unit
     array.unit = units.counts
