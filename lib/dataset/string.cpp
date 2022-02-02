@@ -125,10 +125,11 @@ std::string to_string(const Coords &coords) { return dict_to_string(coords); }
 std::string to_string(const Masks &masks) { return dict_to_string(masks); }
 
 namespace {
-template <class Key, class Value>
-std::string dict_keys_to_string_impl(const Dict<Key, Value> &view) {
+template <class D>
+std::string dict_keys_to_string_impl(const D &view,
+                                     const std::string_view dict_name) {
   std::stringstream ss;
-  ss << "<scipp.Dict {";
+  ss << "<" << dict_name << " {";
   bool first = true;
   const auto end = view.keys_end();
   for (auto it = view.keys_begin(); it != end; ++it) {
@@ -145,11 +146,15 @@ std::string dict_keys_to_string_impl(const Dict<Key, Value> &view) {
 } // namespace
 
 std::string dict_keys_to_string(const Coords &coords) {
-  return dict_keys_to_string_impl(coords);
+  return dict_keys_to_string_impl(coords, "scipp.Dict");
 }
 
 std::string dict_keys_to_string(const Masks &masks) {
-  return dict_keys_to_string_impl(masks);
+  return dict_keys_to_string_impl(masks, "scipp.Dict");
+}
+
+std::string dict_keys_to_string(const Dataset &dataset) {
+  return dict_keys_to_string_impl(dataset, "scipp.Dataset");
 }
 
 } // namespace scipp::dataset
