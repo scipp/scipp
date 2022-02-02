@@ -588,7 +588,7 @@ TEST(VariableView, slice_copy_from_variable_dimension_fail) {
   const auto source = makeVariable<double>(Dims{Dim::Y}, Shape{1});
   auto target = makeVariable<double>(Dims{Dim::X}, Shape{2});
   EXPECT_THROW(copy(source, target.slice({Dim::X, 1, 2})),
-               except::NotFoundError);
+               except::DimensionError);
 }
 
 TEST(VariableView, slice_copy_from_variable_full_slice_can_change_unit) {

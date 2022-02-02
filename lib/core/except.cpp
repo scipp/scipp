@@ -67,6 +67,24 @@ void throw_cannot_have_variances(const DType type) {
 
 } // namespace scipp::except
 
+namespace scipp::expect {
+namespace {
+template <class A, class B> void includes_impl(const A &a, const B &b) {
+  if (!a.includes(b))
+    throw except::DimensionError("Expected " + to_string(a) + " to include " +
+                                 to_string(b) + ".");
+}
+} // namespace
+
+void includes(const core::Sizes &a, const core::Sizes &b) {
+  includes_impl(a, b);
+}
+
+void includes(const core::Dimensions &a, const core::Dimensions &b) {
+  includes_impl(a, b);
+}
+} // namespace scipp::expect
+
 namespace scipp::core::expect {
 void ndim_is(const Sizes &dims, const scipp::index expected) {
   using std::to_string;
