@@ -710,7 +710,7 @@ def test_only_outputs_in_graph_are_stored(a):
     graph = {'b': split}
     da = original.transform_coords(['b'], graph=graph)
     assert 'c' not in da.meta  # c is not stored
-    with pytest.raises(sc.NotFoundError):
+    with pytest.raises(sc.KeyError):
         # c is not computable
         original.transform_coords(['c'], graph=graph)
 
@@ -746,9 +746,9 @@ def test_raises_when_expected_multiple_outputs_but_returned_non_dict(a):
 def test_inaccessible_coord(a, b):
     original = sc.DataArray(data=a + b, coords={'a': a})
     graph = {'ab': ab}
-    with pytest.raises(sc.NotFoundError):
+    with pytest.raises(sc.KeyError):
         original.transform_coords(['ab'], graph)
-    with pytest.raises(sc.NotFoundError):
+    with pytest.raises(sc.KeyError):
         original.transform_coords(['c'], graph)
 
     def abc(a, b, c):
@@ -756,7 +756,7 @@ def test_inaccessible_coord(a, b):
 
     original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
     graph = {'ab': ab, 'abc': abc}
-    with pytest.raises(sc.NotFoundError):
+    with pytest.raises(sc.KeyError):
         original.transform_coords(['ab', 'abc'], graph)
 
 

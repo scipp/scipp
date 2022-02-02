@@ -11,6 +11,23 @@
 
 namespace py = pybind11;
 
+namespace {
+template <class CppException, class PyException>
+void register_with_builtin_exception(const PyException &py_exception) {
+  // Pybind11 does not like it when the lambda captures something,
+  // so 'pass' py_exception via a static variable.
+  static auto pyexc = py_exception;
+  py::register_exception_translator([](std::exception_ptr p) {
+    try {
+      if (p)
+        std::rethrow_exception(p);
+    } catch (const CppException &e) {
+      PyErr_SetString(pyexc, e.what());
+    }
+  });
+}
+} // namespace
+
 void init_exceptions(py::module &m) {
   using namespace scipp;
   py::register_exception<except::UnitError>(m, "UnitError", PyExc_RuntimeError);
@@ -26,8 +43,7 @@ void init_exceptions(py::module &m) {
                                                  PyExc_RuntimeError);
   py::register_exception<except::BinEdgeError>(m, "BinEdgeError",
                                                PyExc_RuntimeError);
-  py::register_exception<except::NotFoundError>(m, "NotFoundError",
-                                                PyExc_RuntimeError);
+  register_with_builtin_exception<except::NotFoundError>(PyExc_KeyError);
 
   py::register_exception<except::VariableError>(m, "VariableError",
                                                 PyExc_RuntimeError);
