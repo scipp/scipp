@@ -6,6 +6,8 @@
 
 #include <array>
 
+#include <boost/container/small_vector.hpp>
+
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
 #include "scipp/common/span.h"
@@ -37,10 +39,11 @@ public:
   [[nodiscard]] auto rend() const noexcept {
     return std::reverse_iterator(begin());
   }
-  [[nodiscard]] typename std::array<Key, Capacity>::const_iterator
+  [[nodiscard]]
+  typename boost::container::small_vector<Key, Capacity>::const_iterator
   find(const Key &key) const;
-  [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
-  [[nodiscard]] constexpr scipp::index size() const noexcept { return m_size; }
+  [[nodiscard]] bool empty() const noexcept { return size() == 0; }
+  [[nodiscard]] scipp::index size() const noexcept { return m_keys.size(); }
   [[nodiscard]] bool contains(const Key &key) const;
   [[nodiscard]] scipp::index index(const Key &key) const;
   [[nodiscard]] const Value &operator[](const Key &key) const;
@@ -51,24 +54,22 @@ public:
   void erase(const Key &key);
   void clear() noexcept;
   void replace_key(const Key &from, const Key &to);
-  [[nodiscard]] constexpr scipp::span<const Key> keys() const &noexcept {
+  [[nodiscard]] scipp::span<const Key> keys() const &noexcept {
     return {m_keys.data(), static_cast<size_t>(size())};
   }
-  [[nodiscard]] constexpr scipp::span<const Value> values() const &noexcept {
+  [[nodiscard]] scipp::span<const Value> values() const &noexcept {
     return {m_values.data(), static_cast<size_t>(size())};
   }
 
 private:
-  int16_t m_size{0};
-  std::array<Key, Capacity> m_keys{};
-  std::array<Value, Capacity> m_values{};
+  boost::container::small_vector<Key, Capacity> m_keys{};
+  boost::container::small_vector<Value, Capacity> m_values{};
 };
 
 /// Similar to class Dimensions but without implied ordering
-class SCIPP_CORE_EXPORT Sizes
-    : public small_stable_map<Dim, scipp::index, NDIM_MAX> {
+class SCIPP_CORE_EXPORT Sizes : public small_stable_map<Dim, scipp::index, 4> {
 private:
-  using base = small_stable_map<Dim, scipp::index, NDIM_MAX>;
+  using base = small_stable_map<Dim, scipp::index, 4>;
 
 protected:
   using base::assign;
@@ -76,7 +77,7 @@ protected:
   using base::insert_right;
 
 public:
-  constexpr Sizes() noexcept = default;
+  Sizes() noexcept = default;
 
   void set(const Dim dim, const scipp::index size);
   void resize(const Dim dim, const scipp::index size);
@@ -84,9 +85,9 @@ public:
   [[nodiscard]] Sizes slice(const Slice &params) const;
 
   /// Return the labels of the space defined by *this.
-  [[nodiscard]] constexpr auto labels() const &noexcept { return keys(); }
+  [[nodiscard]] auto labels() const &noexcept { return keys(); }
   /// Return the shape of the space defined by *this.
-  [[nodiscard]] constexpr auto sizes() const &noexcept { return values(); }
+  [[nodiscard]] auto sizes() const &noexcept { return values(); }
 };
 
 [[nodiscard]] SCIPP_CORE_EXPORT Sizes

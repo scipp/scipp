@@ -56,6 +56,8 @@ Dim Dimensions::inner() const noexcept {
   return labels().back();
 }
 
+Dimensions merge(const Dimensions &a) { return a; }
+
 /// Return the direct sum, i.e., the combination of dimensions in a and b.
 ///
 /// Throws if there is a mismatching dimension extent.
