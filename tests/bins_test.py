@@ -350,6 +350,6 @@ def test_bins_like():
     expected_data = sc.array(dims=['row'], values=[1.1, 1.1, 1.1, 1.1])
     expected = sc.bins(begin=begin, end=end, dim='row', data=expected_data)
     assert sc.identical(sc.bins_like(binned, dense['x', 0]), expected)
-    with pytest.raises(KeyError):
+    with pytest.raises(sc.DimensionError):
         dense = dense.rename_dims({'x': 'y'})
         sc.bins_like(binned, dense),
