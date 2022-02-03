@@ -21,7 +21,13 @@ Breaking changes
 
 * The configuration option ``config['plot']['padding']`` is now called ``config['plot']['bounding_box']``, no action is required if it was never modified `#2389 <https://github.com/scipp/scipp/pull/2389>`_.
 * :py:func:`scipp.rebin` now applies masks that depend on the rebinning dimension to avoid "growing" effect on masks which previously resulted in masking more than intended `#2383 <https://github.com/scipp/scipp/pull/2383>`_.
-* The ``unit`` attribute now distinguishes ``None`` from ``dimensionless``. For number-like dtypes the default is ``dimensionless`` (unchanged) whereas all other dtypes such as strings default to ``None`` (new) `#2395 <https://github.com/scipp/scipp/pull/2395>`_.
+* The ``unit`` attribute now distinguishes ``None`` from ``dimensionless`` `#2395 <https://github.com/scipp/scipp/pull/2395>` and _`#2417 <https://github.com/scipp/scipp/pull/2417>`_..
+
+  * For number-like dtypes the default is ``dimensionless`` (unchanged) whereas all other dtypes such as strings default to ``None`` (new).
+  * ``bool`` (used for masks) is not considered number-like and the default unit is ``None``.
+  * Comparison operator results now use ``None`` as unit of their output.
+  * When integers without unit are used as indices, the new :py:func:`scipp.index` can be used to create a scalar variable without unit.
+
 * :py:func:`scipp.spatial.rotations_from_rotvecs` has been changed to taking a variable input rather than separate values/dims/units.
 
 Bugfixes
