@@ -235,23 +235,24 @@ Variable Variable::broadcast(const Dimensions &target) const {
   expect::includes(target, dims());
   auto out = target.volume() == dims().volume() ? *this : as_const();
   out.m_dims = target;
-  scipp::index i = 0;
+  out.m_strides.clear();
   for (const auto &d : target.labels())
-    out.m_strides[i++] = dims().contains(d) ? m_strides[dims().index(d)] : 0;
+    out.m_strides.emplace_back(dims().contains(d) ? m_strides[dims().index(d)]
+                                                  : 0);
   return out;
 }
 
 Variable Variable::fold(const Dim dim, const Dimensions &target) const {
   auto out(*this);
   out.m_dims = core::fold(dims(), dim, target);
+  out.m_strides.clear();
   const Strides substrides(target);
-  scipp::index i_out = 0;
   for (scipp::index i_in = 0; i_in < dims().ndim(); ++i_in) {
     if (dims().label(i_in) == dim)
       for (scipp::index i_target = 0; i_target < target.ndim(); ++i_target)
-        out.m_strides[i_out++] = m_strides[i_in] * substrides[i_target];
+        out.m_strides.emplace_back(m_strides[i_in] * substrides[i_target]);
     else
-      out.m_strides[i_out++] = m_strides[i_in];
+      out.m_strides.emplace_back(m_strides[i_in]);
   }
   return out;
 }

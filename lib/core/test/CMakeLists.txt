@@ -27,6 +27,7 @@ add_executable(
   slice_test.cpp
   sizes_test.cpp
   spatial_transforms_test.cpp
+  strides_test.cpp
   string_test.cpp
   subbin_sizes_test.cpp
   time_point_test.cpp

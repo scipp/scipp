@@ -126,10 +126,11 @@ MultiIndex<N>::MultiIndex(binned_tag, const Dimensions &inner_dims,
   const Dim slice_dim = get_slice_dim(params.bucketParams()...);
 
   // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
-  m_inner_ndim = flatten_dims(
-      make_span(m_stride, 0), make_span(m_shape, 0), inner_dims,
-      inner_dims.index(slice_dim),
-      params.bucketParams() ? params.bucketParams().strides : Strides{0}...);
+  m_inner_ndim =
+      flatten_dims(make_span(m_stride, 0), make_span(m_shape, 0), inner_dims,
+                   inner_dims.index(slice_dim),
+                   params.bucketParams() ? params.bucketParams().strides
+                                         : Strides{0, 0, 0, 0, 0, 0}...);
   // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
   m_ndim = m_inner_ndim + flatten_dims(make_span(m_stride, m_inner_ndim),
                                        make_span(m_shape, m_inner_ndim),
