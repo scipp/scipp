@@ -128,6 +128,7 @@ protected:
 
 Strides make_strides(const Dimensions &iter_dims, const Dimensions &data_dims) {
   Strides strides;
+  strides.resize(iter_dims.ndim());
   scipp::index d = 0;
   for (const auto &dim : iter_dims.labels()) {
     if (data_dims.contains(dim))

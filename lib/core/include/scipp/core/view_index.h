@@ -37,12 +37,12 @@ public:
     ++m_view_index;
   }
 
-  constexpr void set_index(const scipp::index index) noexcept {
+  void set_index(const scipp::index index) noexcept {
     m_view_index = index;
     extract_indices(index, m_shape.begin(), m_shape.begin() + m_ndim,
                     m_coord.begin());
     m_memory_index = flat_index_from_strides(
-        m_strides.begin(), m_strides.end(m_ndim), m_coord.begin());
+        m_strides.begin(), m_strides.begin() + m_ndim, m_coord.begin());
   }
 
   [[nodiscard]] constexpr scipp::index get() const noexcept {
@@ -71,7 +71,7 @@ private:
   /// Shape in iteration dimensions.
   std::array<scipp::index, NDIM_MAX> m_shape = {};
   /// Strides in memory.
-  Strides m_strides;
+  std::array<scipp::index, NDIM_MAX> m_strides = {};
   /// Number of dimensions.
   int32_t m_ndim;
 };

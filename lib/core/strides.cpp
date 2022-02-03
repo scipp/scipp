@@ -6,17 +6,15 @@
 
 namespace scipp::core {
 
-Strides::Strides(const scipp::span<const scipp::index> &strides) {
-  scipp::index i = 0;
-  for (const auto &stride : strides)
-    m_strides.at(i++) = stride;
-}
+Strides::Strides(const scipp::span<const scipp::index> &strides)
+    : m_strides(strides.begin(), strides.end()) {}
 
 Strides::Strides(const std::initializer_list<scipp::index> strides)
-    : Strides{{strides.begin(), strides.end()}} {}
+    : m_strides(strides) {}
 
 Strides::Strides(const Dimensions &dims) {
   scipp::index offset{1};
+  resize(dims.ndim());
   for (scipp::index i = dims.ndim() - 1; i >= 0; --i) {
     m_strides[i] = offset;
     offset *= dims.size(i);
@@ -31,10 +29,10 @@ bool Strides::operator!=(const Strides &other) const noexcept {
   return !operator==(other);
 }
 
+void Strides::resize(const scipp::index size) { m_strides.resize(size); }
+
 void Strides::erase(const scipp::index i) {
-  for (scipp::index j = i; j < scipp::size(m_strides) - 1; ++j)
-    m_strides[j] = m_strides[j + 1];
-  m_strides.back() = 0;
+  m_strides.erase(m_strides.begin() + i);
 }
 
 Strides transpose(const Strides &strides, Dimensions from,

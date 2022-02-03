@@ -123,7 +123,7 @@ void small_stable_map<Key, Value, Capacity>::replace_key(const Key &key,
   m_keys[index(key)] = new_key;
 }
 
-template class small_stable_map<Dim, scipp::index, 4>;
+template class small_stable_map<Dim, scipp::index, NDIM_STACK>;
 
 void Sizes::set(const Dim dim, const scipp::index size) {
   expect::validDim(dim);

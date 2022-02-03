@@ -17,6 +17,7 @@
 namespace scipp::core {
 
 constexpr int32_t NDIM_MAX = 6;
+constexpr int32_t NDIM_STACK = 4;
 
 class Dimensions;
 
@@ -67,9 +68,10 @@ private:
 };
 
 /// Similar to class Dimensions but without implied ordering
-class SCIPP_CORE_EXPORT Sizes : public small_stable_map<Dim, scipp::index, 4> {
+class SCIPP_CORE_EXPORT Sizes
+    : public small_stable_map<Dim, scipp::index, NDIM_STACK> {
 private:
-  using base = small_stable_map<Dim, scipp::index, 4>;
+  using base = small_stable_map<Dim, scipp::index, NDIM_STACK>;
 
 protected:
   using base::assign;
