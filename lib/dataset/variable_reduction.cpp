@@ -44,9 +44,9 @@ Variable nansum(const Variable &var, const Dim dim, const Masks &masks) {
 
 Variable mean(const Variable &var, const Dim dim, const Masks &masks) {
   if (auto mask_union = irreducible_mask(masks, dim); mask_union.is_valid()) {
-    mask_union.setUnit(units::one);
-    return mean_impl(where(mask_union, zero_like(var), var), dim,
-                     sum(~mask_union, dim));
+    auto count = sum(~mask_union, dim);
+    count.setUnit(units::one);
+    return mean_impl(where(mask_union, zero_like(var), var), dim, count);
   }
   return mean(var, dim);
 }

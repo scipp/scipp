@@ -27,7 +27,7 @@ TYPED_TEST_SUITE(ElementNotEqualTest, ElementLessTestTypes);
 
 TEST(ElementComparisonTest, unit) {
   const units::Unit m(units::m);
-  EXPECT_EQ(comparison(m, m), units::dimensionless);
+  EXPECT_EQ(comparison(m, m), units::none);
   const units::Unit rad(units::rad);
   EXPECT_THROW(comparison(rad, m), except::UnitError);
 }
@@ -186,7 +186,7 @@ TYPED_TEST(IsCloseTest, value_equal_infs_signbit) {
 }
 
 template <class Op> void do_isclose_units_test(Op op) {
-  EXPECT_EQ(units::dimensionless, op(units::m, units::m, units::m));
+  EXPECT_EQ(units::one, op(units::m, units::m, units::m));
   EXPECT_THROW_DISCARD(op(units::m, units::m, units::s), except::UnitError);
   EXPECT_THROW_DISCARD(op(units::m, units::s, units::m), except::UnitError);
   EXPECT_THROW_DISCARD(op(units::s, units::m, units::m), except::UnitError);
