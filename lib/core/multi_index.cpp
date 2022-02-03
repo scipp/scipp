@@ -86,6 +86,10 @@ flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
              const scipp::span<scipp::index> &out_shape, const Dimensions &dims,
              const scipp::index non_flattenable_dim,
              const StridesArgs &... strides) {
+  if (dims.ndim() > NDIM_MAX)
+    throw std::runtime_error("Operations with more than " +
+                             std::to_string(NDIM_MAX) +
+                             " dimensions are not supported.");
   constexpr scipp::index N = sizeof...(StridesArgs);
   std::array strides_array{std::ref(strides)...};
   std::array<scipp::index, N> strides_for_contiguous{};
