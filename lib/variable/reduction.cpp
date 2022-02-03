@@ -146,7 +146,6 @@ template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
   const auto [begin, end] = unzip(var.bin_indices());
   return sum(end - begin, dim...);
 }
-
 } // namespace
 
 /// Return the mean along all dimensions.

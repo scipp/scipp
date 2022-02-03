@@ -7,7 +7,6 @@
 #include "scipp/core/flags.h"
 #include "scipp/variable/astype.h"
 #include "scipp/variable/reciprocal.h"
-#include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {
