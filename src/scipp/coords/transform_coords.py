@@ -20,7 +20,8 @@ def transform_coords(x: Union[DataArray, Dataset],
                      rename_dims: bool = True,
                      keep_aliases: bool = True,
                      keep_intermediate: bool = True,
-                     keep_inputs: bool = True) -> Union[DataArray, Dataset]:
+                     keep_inputs: bool = True,
+                     quiet: bool = False) -> Union[DataArray, Dataset]:
     """Compute new coords based on transformations of input coords.
 
     :param x: Input object with coords.
@@ -47,6 +48,8 @@ def transform_coords(x: Union[DataArray, Dataset],
                               Default is True.
     :param keep_inputs: Keep consumed input coordinates or attributes.
                         Default is True.
+    :param quiet: If True, no log output is produced. Otherwise, ``transform_coords``
+                  produces a log of its actions.
     :return: New object with desired coords. Existing data and meta-data is
              shallow-copied.
 
@@ -56,7 +59,8 @@ def transform_coords(x: Union[DataArray, Dataset],
     options = Options(rename_dims=rename_dims,
                       keep_aliases=keep_aliases,
                       keep_intermediate=keep_intermediate,
-                      keep_inputs=keep_inputs)
+                      keep_inputs=keep_inputs,
+                      quiet=quiet)
     targets = {targets} if isinstance(targets, str) else set(targets)
     if isinstance(x, DataArray):
         return _transform_data_array(x,
@@ -104,7 +108,8 @@ def _transform_data_array(original: DataArray, targets: Set[str], graph: Graph,
 
     dim_name_changes = (_dim_name_changes(graph, dim_coords)
                         if options.rename_dims else {})
-    _log_transform(rules, targets, dim_name_changes, working_coords)
+    if not options.quiet:
+        _log_transform(rules, targets, dim_name_changes, working_coords)
     res = _store_results(original, working_coords, targets)
     return res.rename_dims(dim_name_changes)
 
