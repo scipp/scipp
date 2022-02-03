@@ -95,12 +95,10 @@ template <class A, class B> void contains(const A &a, const B &b) {
     throw except::NotFoundError("Expected " + to_string(a) + " to contain " +
                                 to_string(b) + ".");
 }
-template <class A, class B> void includes(const A &a, const B &b) {
-  using core::to_string;
-  if (!a.includes(b))
-    throw except::NotFoundError("Expected " + to_string(a) + " to include " +
-                                to_string(b) + ".");
-}
+
+SCIPP_CORE_EXPORT void includes(const core::Sizes &a, const core::Sizes &b);
+SCIPP_CORE_EXPORT void includes(const core::Dimensions &a,
+                                const core::Dimensions &b);
 } // namespace scipp::expect
 
 namespace scipp::core::expect {

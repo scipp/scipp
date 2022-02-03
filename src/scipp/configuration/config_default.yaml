@@ -39,7 +39,6 @@ plot:
   # on the same plot, the first line will use the first color, the second line will
   # use the second color, and so on.
   color:
-    - '0.5'
     - '#1f77b4'
     - '#ff7f0e'
     - '#2ca02c'

@@ -46,6 +46,15 @@ CoordMismatchError::CoordMismatchError(const Dim dim, const Variable &a,
 
 } // namespace scipp::except
 
+namespace scipp::expect {
+template <>
+void contains(const scipp::dataset::Dataset &a, const std::string &b) {
+  if (!a.contains(b))
+    throw except::NotFoundError("Expected '" + b + "' in " +
+                                scipp::dataset::dict_keys_to_string(a) + ".");
+}
+} // namespace scipp::expect
+
 namespace scipp::dataset::expect {
 void coords_are_superset(const Coords &a_coords, const Coords &b_coords,
                          const std::string_view opname) {

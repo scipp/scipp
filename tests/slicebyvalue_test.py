@@ -135,7 +135,7 @@ class TestSliceByValue:
             _ = self._d['a']['x', 5.0 * sc.units.dimensionless]
 
     def test_assign_incompatible_variable_throws(self):
-        with pytest.raises(RuntimeError) as e_info:
+        with pytest.raises(sc.DimensionError) as e_info:
             self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
                          sc.units.dimensionless] = sc.Variable(dims=['x'],
                                                                values=[6.0, 6.0],

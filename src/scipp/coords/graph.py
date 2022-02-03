@@ -7,7 +7,7 @@ from __future__ import annotations
 from graphlib import TopologicalSorter
 from typing import Callable, Dict, Iterable, List, Set, Tuple, Union
 
-from ..core import DataArray, NotFoundError
+from ..core import DataArray
 from .rule import ComputeRule, FetchRule, RenameRule, Rule
 
 GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
@@ -15,7 +15,9 @@ GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 
 class Graph:
     def __init__(self, graph: Union[GraphDict, Dict[str, Rule]]):
-        if isinstance(next(iter(graph.values())), Rule):
+        if not graph:
+            self._rules = {}
+        elif isinstance(next(iter(graph.values())), Rule):
             self._rules: Dict[str, Rule] = graph
         else:
             self._rules: Dict[str, Rule] = _convert_to_rule_graph(graph)
@@ -70,9 +72,8 @@ class Graph:
         try:
             return self._rules[out_name]
         except KeyError:
-            raise NotFoundError(
-                f"Coordinate '{out_name}' does not exist in the input data "
-                "and no rule has been provided to compute it.") from None
+            raise KeyError(f"Coordinate '{out_name}' does not exist in the input data "
+                           "and no rule has been provided to compute it.") from None
 
     def show(self, size=None, simplified=False):
         dot = _make_graphviz_digraph(strict=True)

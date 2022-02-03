@@ -128,6 +128,14 @@ def test_multi_output_produced_regardless_of_targets(a):
     assert sc.identical(original.transform_coords(['a2'], graph=graph), expected)
 
 
+def test_convert_attr_to_coord_with_empty_graph(a):
+    original = sc.DataArray(data=a, attrs={'a': a})
+    da = original.transform_coords('a', graph={})
+    assert da.dims == ['a']
+    assert sc.identical(da.coords['a'], a)
+    assert 'a' not in da.attrs
+
+
 def test_dim_rename_merge_single_dim_coord(a):
     # *a    b
     #   \  /
@@ -710,7 +718,7 @@ def test_only_outputs_in_graph_are_stored(a):
     graph = {'b': split}
     da = original.transform_coords(['b'], graph=graph)
     assert 'c' not in da.meta  # c is not stored
-    with pytest.raises(sc.NotFoundError):
+    with pytest.raises(KeyError):
         # c is not computable
         original.transform_coords(['c'], graph=graph)
 
@@ -746,9 +754,9 @@ def test_raises_when_expected_multiple_outputs_but_returned_non_dict(a):
 def test_inaccessible_coord(a, b):
     original = sc.DataArray(data=a + b, coords={'a': a})
     graph = {'ab': ab}
-    with pytest.raises(sc.NotFoundError):
+    with pytest.raises(KeyError):
         original.transform_coords(['ab'], graph)
-    with pytest.raises(sc.NotFoundError):
+    with pytest.raises(KeyError):
         original.transform_coords(['c'], graph)
 
     def abc(a, b, c):
@@ -756,7 +764,7 @@ def test_inaccessible_coord(a, b):
 
     original = sc.DataArray(data=a + b, coords={'a': a, 'b': b})
     graph = {'ab': ab, 'abc': abc}
-    with pytest.raises(sc.NotFoundError):
+    with pytest.raises(KeyError):
         original.transform_coords(['ab', 'abc'], graph)
 
 

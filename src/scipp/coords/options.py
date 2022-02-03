@@ -14,3 +14,4 @@ class Options:
     keep_aliases: bool
     keep_intermediate: bool
     keep_inputs: bool
+    quiet: bool

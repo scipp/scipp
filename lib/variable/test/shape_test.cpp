@@ -49,7 +49,7 @@ TEST(ShapeTest, broadcast_output_is_not_readonly_if_not_broadcast) {
 TEST(ShapeTest, broadcast_fail) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1, 2, 3, 4});
-  EXPECT_THROW_DISCARD(broadcast(var, {Dim::X, 3}), except::NotFoundError);
+  EXPECT_THROW_DISCARD(broadcast(var, {Dim::X, 3}), except::DimensionError);
 }
 
 class SqueezeTest : public ::testing::Test {

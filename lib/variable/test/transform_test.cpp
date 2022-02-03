@@ -174,7 +174,7 @@ TEST_F(TransformInPlaceDryRunTest, dimensions_fail) {
 
   EXPECT_THROW(
       dry_run::transform_in_place<pair_self_t<double>>(a, b, binary, name),
-      except::NotFoundError);
+      except::DimensionError);
   EXPECT_EQ(a, original);
 }
 

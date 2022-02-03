@@ -51,6 +51,20 @@ struct SCIPP_DATASET_EXPORT CoordMismatchError : public DatasetError {
 
 } // namespace scipp::except
 
+namespace scipp::expect {
+template <class Key, class Value>
+void contains(const scipp::dataset::Dict<Key, Value> &a, const Key &b) {
+  using core::to_string;
+  if (!a.contains(b))
+    throw except::NotFoundError("Expected '" + to_string(b) + "' in " +
+                                scipp::dataset::dict_keys_to_string(a) + ".");
+}
+
+template <>
+SCIPP_DATASET_EXPORT void contains(const scipp::dataset::Dataset &a,
+                                   const std::string &b);
+} // namespace scipp::expect
+
 namespace scipp::dataset::expect {
 
 SCIPP_DATASET_EXPORT void coords_are_superset(const DataArray &a,

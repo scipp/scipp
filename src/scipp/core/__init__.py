@@ -21,7 +21,7 @@ from .._scipp.core import Variable, DataArray, Dataset, GroupByDataArray, \
 # Import errors
 from .._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
-                         DTypeError, NotFoundError, SizeError, SliceError, \
+                         DTypeError, SizeError, SliceError, \
                          UnitError, VariableError, VariancesError
 
 BinEdgeError.__doc__ = 'Inappropriate bin-edge coordinate.'

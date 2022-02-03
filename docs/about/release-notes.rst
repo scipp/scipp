@@ -15,6 +15,8 @@ Features
 * Switched to new system for runtime configuration, see the corresponding section in the reference documentation `#2389 <https://github.com/scipp/scipp/pull/2389>`_.
 * Added :py:func:`scipp.midpoints` which can be used to compute bin-centers `#2404 <https://github.com/scipp/scipp/pull/2404>`_.
 * :py:func:`sc.fold` now supports ``-1`` for one of the dimension sizes, to indicate automatic shape `#2414 <https://github.com/scipp/scipp/pull/2414>`_.
+* Made it possible to use ``-1`` for one of the dimension sizes when using ``sc.fold`` `#2414 <https://github.com/scipp/scipp/pull/2414>`_.
+* Added ``quiet`` argument to :py:func:`scipp.transform_coords` `#2420 <https://github.com/scipp/scipp/pull/2420>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -29,6 +31,8 @@ Breaking changes
   * When integers without unit are used as indices, the new :py:func:`scipp.index` can be used to create a scalar variable without unit.
 
 * :py:func:`scipp.spatial.rotations_from_rotvecs` has been changed to taking a variable input rather than separate values/dims/units.
+* ``scipp.NotFoundError`` error has been replaced with ``KeyError`` in Python `#2416 <https://github.com/scipp/scipp/pull/2416>`_.
+* Some functions now raise ``scipp.DimensionError`` instead of ``scipp.NotFoundError`` `#2416 <https://github.com/scipp/scipp/pull/2416>`_.
 
 Bugfixes
 ~~~~~~~~

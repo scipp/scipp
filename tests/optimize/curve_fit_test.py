@@ -40,10 +40,10 @@ def test_should_raise_TypeError_when_sigma_given_as_param():
         curve_fit(func, array1d(), sigma=np.arange(4))
 
 
-def test_should_raise_NotFoundError_when_data_array_has_no_coord():
+def test_should_raise_KeyError_when_data_array_has_no_coord():
     da = array1d()
     del da.coords[da.dim]
-    with pytest.raises(sc.NotFoundError):
+    with pytest.raises(KeyError):
         curve_fit(func, da)
 
 
