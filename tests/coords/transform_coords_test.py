@@ -128,6 +128,14 @@ def test_multi_output_produced_regardless_of_targets(a):
     assert sc.identical(original.transform_coords(['a2'], graph=graph), expected)
 
 
+def test_convert_attr_to_coord_with_empty_graph(a):
+    original = sc.DataArray(data=a, attrs={'a': a})
+    da = original.transform_coords('a', graph={})
+    assert da.dims == ['a']
+    assert sc.identical(da.coords['a'], a)
+    assert 'a' not in da.attrs
+
+
 def test_dim_rename_merge_single_dim_coord(a):
     # *a    b
     #   \  /
