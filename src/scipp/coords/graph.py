@@ -15,7 +15,9 @@ GraphDict = Dict[Union[str, Tuple[str, ...]], Union[str, Callable]]
 
 class Graph:
     def __init__(self, graph: Union[GraphDict, Dict[str, Rule]]):
-        if isinstance(next(iter(graph.values())), Rule):
+        if not graph:
+            self._rules = {}
+        elif isinstance(next(iter(graph.values())), Rule):
             self._rules: Dict[str, Rule] = graph
         else:
             self._rules: Dict[str, Rule] = _convert_to_rule_graph(graph)
