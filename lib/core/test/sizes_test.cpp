@@ -63,7 +63,7 @@ TEST_F(SizesTest, 2d) {
   EXPECT_EQ(sizes[Dim::Y], 3);
 }
 
-TEST_F(SizesTest, max_dims) {
+TEST_F(SizesTest, many_dims) {
   Sizes sizes;
   sizes.set(Dim("axis-0"), 2);
   sizes.set(Dim("axis-1"), 2);
@@ -71,7 +71,10 @@ TEST_F(SizesTest, max_dims) {
   sizes.set(Dim("axis-3"), 2);
   sizes.set(Dim("axis-4"), 2);
   sizes.set(Dim("axis-5"), 2);
-  EXPECT_THROW(sizes.set(Dim("axis-6"), 2), std::runtime_error);
+  sizes.set(Dim("axis-6"), 2);
+  sizes.set(Dim("axis-7"), 2);
+  sizes.set(Dim("axis-8"), 2);
+  sizes.set(Dim("axis-9"), 2);
 }
 
 TEST_F(SizesTest, comparison) {
