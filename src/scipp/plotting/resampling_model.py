@@ -146,7 +146,8 @@ class ResamplingModel():
         for edge in plan:
             try:
                 array = _resample(array, self.mode, dim, edge)
-            except RuntimeError:  # Limitation of rebin for slice of inner dim
+            except (KeyError,
+                    DimensionError):  # Limitation of rebin for slice of inner dim
                 array = _resample(array.copy(), self.mode, edge.dims[-1], edge)
         return array
 
