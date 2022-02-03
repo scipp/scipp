@@ -72,6 +72,22 @@ def test_scalar_of_numpy_array():
     np.testing.assert_array_equal(var.value, value)
 
 
+def test_index_is_same_as_scalar_with_explicit_none_unit():
+    assert sc.identical(sc.index(5), sc.scalar(5, unit=None))
+    assert sc.identical(sc.index(6, dtype='int32'),
+                        sc.scalar(6, dtype='int32', unit=None))
+
+
+def test_index_unit_is_none():
+    i = sc.index(5)
+    assert i.unit is None
+
+
+def test_index_raises_if_unit_given():
+    with pytest.raises(TypeError):
+        sc.index(5, unit='')
+
+
 def test_zeros_creates_variable_with_correct_dims_and_shape():
     var = sc.zeros(dims=['x', 'y', 'z'], shape=[1, 2, 3])
     expected = sc.Variable(dims=['x', 'y', 'z'], values=np.zeros([1, 2, 3]))

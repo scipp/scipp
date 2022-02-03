@@ -45,7 +45,7 @@ static constexpr auto update_indices_by_binning = overloaded{
     [](units::Unit &indices, const units::Unit &coord,
        const units::Unit &groups) {
       expect::equals(coord, groups);
-      expect::equals(indices, units::one);
+      expect::equals(indices, units::none);
     },
     transform_flags::expect_no_variance_arg<1>,
     transform_flags::expect_no_variance_arg<2>};
@@ -119,7 +119,7 @@ static constexpr auto update_indices_by_grouping = overloaded{
     [](units::Unit &indices, const units::Unit &coord,
        const units::Unit &groups) {
       expect::equals(coord, groups);
-      expect::equals(indices, units::one);
+      expect::equals(indices, units::none);
     },
     [](auto &index, const auto &x, const auto &groups) {
       if (index == -1)
@@ -182,10 +182,10 @@ static constexpr auto count_indices = overloaded{
         std::tuple<scipp::span<const int64_t>, scipp::index, scipp::index>,
         std::tuple<scipp::span<const int32_t>, scipp::index, scipp::index>>,
     [](const units::Unit &indices, const auto &offset, const auto &nbin) {
-      expect::equals(indices, units::one);
-      expect::equals(offset, units::one);
-      expect::equals(nbin, units::one);
-      return units::one;
+      expect::equals(indices, units::none);
+      expect::equals(offset, units::none);
+      expect::equals(nbin, units::none);
+      return units::none;
     },
     [](const auto &indices, const auto offset, const auto nbin) {
       typename SubbinSizes::container_type counts(nbin);

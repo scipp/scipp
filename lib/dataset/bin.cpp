@@ -43,7 +43,7 @@ template <class T> Variable as_subspan_view(T &&binned) {
 
 auto make_range(const scipp::index begin, const scipp::index end,
                 const scipp::index stride, const Dim dim) {
-  return cumsum(broadcast(stride * units::one, {dim, (end - begin) / stride}),
+  return cumsum(broadcast(stride * units::none, {dim, (end - begin) / stride}),
                 dim, CumSumMode::Exclusive);
 }
 
@@ -92,7 +92,7 @@ void update_indices_by_grouping(Variable &indices, const Variable &key,
 void update_indices_from_existing(Variable &indices, const Dim dim) {
   const scipp::index nbin = indices.dims()[dim];
   const auto index = make_range(0, nbin, 1, dim);
-  variable::transform_in_place(indices, index, nbin * units::one,
+  variable::transform_in_place(indices, index, nbin * units::none,
                                core::element::update_indices_from_existing,
                                "scipp.bin.update_indices_from_existing");
 }
@@ -165,7 +165,7 @@ auto bin(const Variable &data, const Variable &indices,
   // Now switch to desired final bin indices.
   auto output_dims = merge(output_bin_sizes.dims(), dims);
   auto bin_sizes = makeVariable<scipp::index>(
-      output_dims,
+      output_dims, units::none,
       Values(flatten_subbin_sizes(output_bin_sizes, dims.volume())));
   return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
 }
@@ -251,8 +251,8 @@ public:
     const auto get_coord = [&](const Dim dim) {
       return coords.count(dim) ? coords[dim] : bin_coords.at(dim);
     };
-    m_offsets = makeVariable<scipp::index>(Values{0});
-    m_nbin = dims().volume() * units::one;
+    m_offsets = makeVariable<scipp::index>(Values{0}, units::none);
+    m_nbin = dims().volume() * units::none;
     for (const auto &[action, dim, key] : m_actions) {
       if (action == AxisAction::Group)
         update_indices_by_grouping(indices, get_coord(dim), key);
@@ -292,11 +292,11 @@ public:
           const auto begin =
               begin_edge(histogram ? left_edge(bin_coord) : bin_coord, key);
           const auto end = histogram ? end_edge(right_edge(bin_coord), key)
-                                     : begin + 2 * units::one;
+                                     : begin + 2 * units::none;
           const auto indices_ = zip(begin, end);
-          const auto inner_volume = dims().volume() / dims()[dim] * units::one;
+          const auto inner_volume = dims().volume() / dims()[dim] * units::none;
           // Number of non-zero entries (per "row" above)
-          m_nbin = (end - begin - 1 * units::one) * inner_volume;
+          m_nbin = (end - begin - 1 * units::none) * inner_volume;
           // Offset to first non-zero entry (in "row" above)
           m_offsets = begin * inner_volume;
           // Mask out any output bin edges that need not be considered since
@@ -316,7 +316,7 @@ public:
         // no other actions affecting output dimensions.
         if (m_offsets.dims().empty() && m_dims[dim] == m_dims.volume()) {
           // Offset to output bin tracked using base offset for input bins
-          m_nbin = scipp::index{1} * units::one;
+          m_nbin = scipp::index{1} * units::none;
           m_offsets = make_range(0, m_dims[dim], 1, dim);
         } else {
           // Offset to output bin tracked in indices for individual events
@@ -444,9 +444,10 @@ public:
     // right now bin<> cannot handle this and requires target bin indices for
     // every bin element.
     const auto &[begin_end, dim, buffer] = var.constituents<T>();
-    m_target_bins_buffer = (dims.volume() > std::numeric_limits<int32_t>::max())
-                               ? makeVariable<int64_t>(buffer.dims())
-                               : makeVariable<int32_t>(buffer.dims());
+    m_target_bins_buffer =
+        (dims.volume() > std::numeric_limits<int32_t>::max())
+            ? makeVariable<int64_t>(buffer.dims(), units::none)
+            : makeVariable<int32_t>(buffer.dims(), units::none);
     m_target_bins = make_bins_no_validate(begin_end, dim, m_target_bins_buffer);
   }
   auto &operator*() noexcept { return m_target_bins; }
@@ -573,14 +574,14 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
     auto begin = make_range(0, size, stride,
                             groups.empty() ? edges.front().dims().inner()
                                            : groups.front().dims().inner());
-    auto end = begin + stride * units::one;
+    auto end = begin + stride * units::none;
     end.values<scipp::index>().as_span().back() = data.dims()[dim];
     const auto indices = zip(begin, end);
     const auto tmp = make_bins_no_validate(indices, dim, array);
     auto target_bins_buffer =
         (data.dims().volume() > std::numeric_limits<int32_t>::max())
-            ? makeVariable<int64_t>(data.dims())
-            : makeVariable<int32_t>(data.dims());
+            ? makeVariable<int64_t>(data.dims(), units::none)
+            : makeVariable<int32_t>(data.dims(), units::none);
     auto builder = axis_actions(data, meta, edges, groups, erase);
     builder.build(target_bins_buffer, meta);
     const auto target_bins =

@@ -762,7 +762,7 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
 
 TEST(DataArrayMasks, can_contain_any_type_but_only_OR_bools) {
   DataArray a(makeVariable<double>(Values{1}));
-  a.masks().set("double", makeVariable<double>(Values{1}));
+  a.masks().set("double", makeVariable<double>(units::none, Values{1}));
   ASSERT_THROW(a += a, except::TypeError);
   ASSERT_THROW_DISCARD(a + a, except::TypeError);
   a.masks().set("bool", makeVariable<bool>(Values{false}));

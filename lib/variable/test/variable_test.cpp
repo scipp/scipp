@@ -34,7 +34,10 @@ TEST(Variable, default_unit_of_numeric_is_dimensionless) {
   EXPECT_EQ(makeVariable<float>(Dimensions{}).unit(), units::one);
   EXPECT_EQ(makeVariable<int64_t>(Dimensions{}).unit(), units::one);
   EXPECT_EQ(makeVariable<int32_t>(Dimensions{}).unit(), units::one);
-  EXPECT_EQ(makeVariable<bool>(Dimensions{}).unit(), units::one);
+}
+
+TEST(Variable, default_unit_of_bool_is_none) {
+  EXPECT_EQ(makeVariable<bool>(Dimensions{}).unit(), units::none);
 }
 
 TEST(Variable, default_unit_of_time_point_is_dimensionless) {
@@ -49,8 +52,8 @@ TEST(Variable, default_unit_of_spatial_types_is_dimensionless) {
   EXPECT_EQ(makeVariable<core::Quaternion>(Dimensions{}).unit(), units::one);
 }
 
-TEST(Variable, default_unit_of_index_pair_is_dimensionless) {
-  EXPECT_EQ(makeVariable<scipp::index_pair>(Dimensions{}).unit(), units::one);
+TEST(Variable, default_unit_of_index_pair_is_none) {
+  EXPECT_EQ(makeVariable<scipp::index_pair>(Dimensions{}).unit(), units::none);
 }
 
 TEST(Variable, default_unit_of_string_is_none) {

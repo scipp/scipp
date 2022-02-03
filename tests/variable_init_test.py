@@ -103,7 +103,7 @@ def test_create_scalar_with_value(args):
     assert var.dims == []
     assert var.ndim == 0
     assert var.dtype == dtype
-    if dtype == sc.DType.string:
+    if dtype in (sc.DType.string, sc.DType.bool):
         assert var.unit is None
     else:
         assert var.unit == sc.units.one
@@ -117,7 +117,7 @@ def test_create_scalar_with_value_array(args):
     assert var.dims == []
     assert var.ndim == 0
     assert var.dtype == dtype
-    if dtype == sc.DType.string:
+    if dtype in (sc.DType.string, sc.DType.bool):
         assert var.unit is None
     else:
         assert var.unit == sc.units.dimensionless

@@ -29,7 +29,7 @@ constexpr auto isclose_units = [](const units::Unit &x, const units::Unit &y,
                                   const units::Unit &t) {
   expect::equals(x, y);
   expect::equals(x, t);
-  return units::dimensionless;
+  return units::none;
 };
 
 constexpr auto isclose = overloaded{
@@ -71,7 +71,7 @@ constexpr auto comparison =
     overloaded{transform_flags::no_out_variance,
                [](const units::Unit &x, const units::Unit &y) {
                  expect::equals(x, y);
-                 return units::dimensionless;
+                 return units::none;
                }};
 
 constexpr auto inequality = overloaded{comparison_types_t{}, comparison};

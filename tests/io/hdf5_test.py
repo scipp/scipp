@@ -118,15 +118,15 @@ def test_variable_datetime64():
 
 
 def test_variable_binned_variable():
-    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.DType.int64)
-    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.DType.int64)
+    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.DType.int64, unit=None)
+    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.DType.int64, unit=None)
     binned = sc.bins(begin=begin, end=end, dim='x', data=x)
     check_roundtrip(binned)
 
 
 def test_variable_binned_variable_slice():
-    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.DType.int64)
-    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.DType.int64)
+    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.DType.int64, unit=None)
+    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.DType.int64, unit=None)
     binned = sc.bins(begin=begin, end=end, dim='x', data=x)
     # Note the current arbitrary limit is to avoid writing the buffer if it is
     # more than 50% too large. These cutoffs or the entiry mechanism may

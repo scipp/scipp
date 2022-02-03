@@ -5,7 +5,6 @@ import pytest
 import scipp as sc
 import numpy as np
 from math import isnan
-from .nexus_helpers import (find_by_nx_class, in_memory_nexus_file_with_event_data)
 
 
 def test_dense_data_properties_are_none():
@@ -24,7 +23,7 @@ def test_bins_default_begin_end():
 
 def test_bins_default_end():
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
-    begin = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.DType.int64)
+    begin = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.DType.int64, unit=None)
     var = sc.bins(begin=begin, dim='x', data=data)
     assert var.dims == begin.dims
     assert var.shape == begin.shape
@@ -34,7 +33,7 @@ def test_bins_default_end():
 
 def test_bins_fail_only_end():
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
-    end = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.DType.int64)
+    end = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.DType.int64, unit=None)
     with pytest.raises(RuntimeError):
         sc.bins(end=end, dim='x', data=data)
 
@@ -45,8 +44,8 @@ def test_bins_constituents():
                         coords={'coord': var},
                         masks={'mask': var},
                         attrs={'attr': var})
-    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64)
-    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64)
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
+    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64, unit=None)
     binned = sc.bins(begin=begin, end=end, dim='x', data=data)
     events = binned.bins.constituents['data']
     assert 'coord' in events.coords
@@ -73,8 +72,8 @@ def test_bins_constituents():
 
 def test_bins():
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
-    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64)
-    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64)
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
+    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64, unit=None)
     var = sc.bins(begin=begin, end=end, dim='x', data=data)
     assert var.dims == begin.dims
     assert var.shape == begin.shape
@@ -84,8 +83,11 @@ def test_bins():
 
 def test_bins_of_transpose():
     data = sc.Variable(dims=['row'], values=[1, 2, 3, 4])
-    begin = sc.Variable(dims=['x', 'y'], values=[[0, 1], [2, 3]], dtype=sc.DType.int64)
-    end = begin + 1
+    begin = sc.Variable(dims=['x', 'y'],
+                        values=[[0, 1], [2, 3]],
+                        dtype=sc.DType.int64,
+                        unit=None)
+    end = begin + sc.index(1)
     var = sc.bins(begin=begin, end=end, dim='row', data=data)
     assert sc.identical(sc.bins(**var.transpose().bins.constituents), var.transpose())
 
@@ -96,8 +98,8 @@ def make_binned():
                          coords={'time': col * 2.2},
                          attrs={'attr': col * 3.3},
                          masks={'mask': col == col})
-    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64)
-    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64)
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.DType.int64, unit=None)
+    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.DType.int64, unit=None)
     return sc.bins(begin=begin, end=end, dim='event', data=table)
 
 
@@ -186,48 +188,6 @@ def test_lookup_getitem(dtype):
     assert sc.identical(lut[var], expected)
 
 
-def test_load_events_bins():
-    with in_memory_nexus_file_with_event_data() as nexus_file:
-        event_data_groups = find_by_nx_class("NXevent_data", nexus_file)
-
-        # Load only the first event data group we found
-        event_group = event_data_groups[0]
-        event_index_np = event_group["event_index"][...]
-        event_time_offset = sc.Variable(dims=['event'],
-                                        values=event_group["event_time_offset"][...])
-        event_id = sc.Variable(dims=['event'], values=event_group["event_id"][...])
-        event_index = sc.Variable(dims=['pulse'], values=event_index_np, dtype=np.int64)
-        event_time_zero = sc.Variable(dims=['pulse'],
-                                      values=event_group["event_time_zero"][...])
-
-    # Calculate the end index for each pulse
-    # The end index for a pulse is the start index of the next pulse
-    end_indices = event_index_np.astype(np.int64)
-    end_indices = np.roll(end_indices, -1)
-    end_indices[-1] = event_id.shape[0]
-    end_indices = sc.Variable(dims=['pulse'], values=end_indices, dtype=np.int64)
-
-    # Weights are not stored in NeXus, so use 1s
-    weights = sc.Variable(dims=['event'],
-                          values=np.ones(event_id.shape),
-                          dtype=np.float32)
-    data = sc.DataArray(data=weights,
-                        coords={
-                            'tof': event_time_offset,
-                            'detector-id': event_id
-                        })
-    events = sc.DataArray(data=sc.bins(begin=event_index,
-                                       end=end_indices,
-                                       dim='event',
-                                       data=data),
-                          coords={'pulse-time': event_time_zero})
-
-    assert events.dims == event_index.dims
-    assert events.shape == event_index.shape
-    assert sc.identical(events['pulse', 0].value.coords['detector-id'],
-                        data.coords['detector-id']['event', 0:3])
-
-
 def test_bins_sum_with_masked_buffer():
     N = 5
     values = np.ones(N)
@@ -251,7 +211,6 @@ def test_bins_sum_with_masked_buffer():
                         masks={
                             'test-mask':
                             sc.Variable(dims=['position'],
-                                        unit=sc.units.one,
                                         values=[True, False, True, False, True])
                         })
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
@@ -299,7 +258,6 @@ def test_bins_mean_with_masks():
                         masks={
                             'test-mask':
                             sc.Variable(dims=['position'],
-                                        unit=sc.units.one,
                                         values=[False, True, False, True, False])
                         })
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0, 5, 6, 7])
@@ -323,8 +281,8 @@ def test_bins_mean_using_bins():
     # Call to sc.bins gives different data structure compared to sc.bin
 
     buffer = sc.arange('event', 5, unit=sc.units.ns, dtype=sc.DType.float64)
-    begin = sc.array(dims=['x'], values=[0, 2], dtype=sc.DType.int64)
-    end = sc.array(dims=['x'], values=[2, 5], dtype=sc.DType.int64)
+    begin = sc.array(dims=['x'], values=[0, 2], dtype=sc.DType.int64, unit=None)
+    end = sc.array(dims=['x'], values=[2, 5], dtype=sc.DType.int64, unit=None)
     binned = sc.bins(data=buffer, dim='event', begin=begin, end=end)
     means = binned.bins.mean()
 
@@ -335,8 +293,8 @@ def test_bins_mean_using_bins():
 
 def test_bins_like():
     data = sc.array(dims=['row'], values=[1, 2, 3, 4])
-    begin = sc.array(dims=['x'], values=[0, 3], dtype=sc.DType.int64)
-    end = sc.array(dims=['x'], values=[3, 4], dtype=sc.DType.int64)
+    begin = sc.array(dims=['x'], values=[0, 3], dtype=sc.DType.int64, unit=None)
+    end = sc.array(dims=['x'], values=[3, 4], dtype=sc.DType.int64, unit=None)
     binned = sc.bins(begin=begin, end=end, dim='row', data=data)
     dense = sc.array(dims=['x'], values=[1.1, 2.2])
     expected_data = sc.array(dims=['row'], values=[1.1, 1.1, 1.1, 2.2])

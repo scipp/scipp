@@ -15,17 +15,17 @@ TEST(LogicalTest, accepts_only_bool) {
 }
 
 TEST(LogicalTest, logical_unit) {
-  EXPECT_EQ(logical(units::one), units::one);
+  EXPECT_EQ(logical(units::none), units::none);
   EXPECT_THROW(logical(units::m), except::UnitError);
 }
 
 TEST(LogicalTest, logical_inplace_unit) {
-  auto u = units::one;
-  EXPECT_NO_THROW(logical_inplace(u, units::one));
-  EXPECT_EQ(u, units::one);
+  auto u = units::none;
+  EXPECT_NO_THROW(logical_inplace(u, units::none));
+  EXPECT_EQ(u, units::none);
   EXPECT_THROW(logical_inplace(u, units::m), except::UnitError);
   u = units::m;
-  EXPECT_THROW(logical_inplace(u, units::one), except::UnitError);
+  EXPECT_THROW(logical_inplace(u, units::none), except::UnitError);
   EXPECT_THROW(logical_inplace(u, units::m), except::UnitError);
 }
 

@@ -152,8 +152,8 @@ protected:
 TEST_F(RebinBool1DTest, without_fractional_overlap_yields_ones_and_zeros) {
   const auto edges =
       makeVariable<double>(Dimensions{Dim::X, 5}, Values{1, 3, 5, 7, 10});
-  const auto expected =
-      makeVariable<double>(Dimensions{Dim::X, 4}, Values{0.0, 1.0, 0.0, 0.0});
+  const auto expected = makeVariable<double>(
+      Dimensions{Dim::X, 4}, Values{0.0, 1.0, 0.0, 0.0}, units::none);
 
   const auto result = rebin(mask, Dim::X, x, edges);
 
@@ -163,8 +163,8 @@ TEST_F(RebinBool1DTest, without_fractional_overlap_yields_ones_and_zeros) {
 TEST_F(RebinBool1DTest, with_fractional_overlap_yields_fractions) {
   const auto edges = makeVariable<double>(Dimensions{Dim::X, 5},
                                           Values{1.0, 3.5, 5.5, 7.0, 10.0});
-  const auto expected =
-      makeVariable<double>(Dimensions{Dim::X, 4}, Values{0.5, 0.5, 0.0, 0.0});
+  const auto expected = makeVariable<double>(
+      Dimensions{Dim::X, 4}, Values{0.5, 0.5, 0.0, 0.0}, units::none);
 
   const auto result = rebin(mask, Dim::X, x, edges);
 
@@ -181,9 +181,9 @@ TEST(RebinBool2DTest, inner) {
 
   const auto edges = makeVariable<double>(Dimensions{Dim::X, 5},
                                           Values{1.0, 3.0, 4.0, 5.5, 6.0});
-  const auto expected =
-      makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 4}},
-                           Values{1.0, 0.0, 0.5, 0.5, 0.0, 1.0, 0.0, 0.0});
+  const auto expected = makeVariable<double>(
+      Dimensions{{Dim::Y, 2}, {Dim::X, 4}},
+      Values{1.0, 0.0, 0.5, 0.5, 0.0, 1.0, 0.0, 0.0}, units::none);
 
   const auto result = rebin(mask, Dim::X, x, edges);
 
@@ -203,7 +203,7 @@ TEST(RebinBool2DTest, outer) {
       makeVariable<double>(Dimensions{Dim::Y, 4}, Values{0.0, 2.0, 3.5, 6.5});
   const auto expected =
       makeVariable<double>(Dimensions{{Dim::Y, 3}, {Dim::X, 2}},
-                           Values{0.0, 1.0, 0.5, 0.0, 0.5, 1.0});
+                           Values{0.0, 1.0, 0.5, 0.0, 0.5, 1.0}, units::none);
 
   const auto result = rebin(mask, Dim::Y, oldEdge, newEdge);
 
@@ -221,7 +221,7 @@ TEST(RebinBool2DTest, outer_single) {
   const auto newEdge =
       makeVariable<double>(Dimensions{Dim::Y, 2}, Values{0.0, 6.5});
   const auto expected = makeVariable<double>(
-      Dimensions{{Dim::Y, 1}, {Dim::X, 2}}, Values{0.0, 1.0});
+      Dimensions{{Dim::Y, 1}, {Dim::X, 2}}, Values{0.0, 1.0}, units::none);
 
   const auto result = rebin(mask, Dim::Y, oldEdge, newEdge);
 

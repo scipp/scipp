@@ -23,6 +23,14 @@ def test_plot_1d():
     plot(da, resampling_mode='mean')
 
 
+def test_plot_1d_no_unit():
+    da = make_dense_data_array(ndim=1)
+    da.unit = None
+    plot(da)
+    plot(da, resampling_mode='sum')
+    plot(da, resampling_mode='mean')
+
+
 def test_plot_1d_with_variances():
     plot(make_dense_data_array(ndim=1, with_variance=True))
 

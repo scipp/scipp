@@ -38,7 +38,8 @@ void rebin_non_inner(const Dim dim, const Variable &oldT, Variable &newT,
     const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
                                 std::max<double>(xn_low, xo_low, less));
     const auto owidth = std::abs(xo_high - xo_low);
-    slice += oldT.slice({dim, iold}) * ((delta / owidth) * units::one);
+    slice += oldT.slice({dim, iold}) *
+             ((delta / owidth) * (slice.unit() / oldT.unit()));
   };
   auto accumulate_bin = [&](auto &&slice, const auto xn_low,
                             const auto xn_high) {
