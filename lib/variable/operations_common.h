@@ -62,10 +62,3 @@ template <class T, class Op> auto reduce_all_dims(const T &obj, const Op &op) {
 }
 
 } // namespace scipp::variable
-
-namespace scipp {
-template <class Var, class... Dim>
-auto count_finite(const Var &var, Dim &&... dim) {
-  return sum(isfinite(var), dim...);
-}
-} // namespace scipp

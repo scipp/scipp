@@ -380,7 +380,7 @@ Variable bins_sum(const Variable &data) {
 Variable bins_mean(const Variable &data) {
   if (data.dtype() == dtype<bucket<DataArray>>) {
     const auto &&[indices, dim, buffer] = data.constituents<DataArray>();
-    if (auto mask_union = irreducible_mask(buffer.masks(), dim);
+    if (const auto mask_union = irreducible_mask(buffer.masks(), dim);
         mask_union.is_valid()) {
       // Trick to get the sizes of bins if masks are present - bin the masks
       // using the same dimension & indices as the data, and then sum the
