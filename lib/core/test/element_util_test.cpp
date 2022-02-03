@@ -23,19 +23,19 @@ TEST(ElementUtilTest, where) {
 
 TEST(ElementUtilTest, where_unit_preserved) {
   for (const auto &unit : {units::m, units::one, units::s}) {
-    EXPECT_EQ(where(units::one, unit, unit), unit);
+    EXPECT_EQ(where(units::none, unit, unit), unit);
   }
 }
 
 TEST(ElementUtilTest, where_unit_mismatch_fail) {
   for (const auto &unit : {units::m, units::one, units::s}) {
-    EXPECT_THROW(where(units::one, unit, units::kg), except::UnitError);
+    EXPECT_THROW(where(units::none, unit, units::kg), except::UnitError);
   }
 }
 
 TEST(ElementUtilTest, where_rejects_condition_with_unit) {
-  EXPECT_NO_THROW_DISCARD(where(units::one, units::m, units::m));
-  for (const auto &unit : {units::m, units::kg, units::s}) {
+  EXPECT_NO_THROW_DISCARD(where(units::none, units::m, units::m));
+  for (const auto &unit : {units::m, units::kg, units::s, units::one}) {
     EXPECT_THROW(where(unit, units::m, units::m), except::UnitError);
   }
 }
@@ -83,7 +83,7 @@ constexpr auto test_issorted = [](const auto sorted, const bool order) {
   expect_sorted_eq(-1.0, -2.0, !order);
   units::Unit unit = units::one;
   sorted(unit, units::m, units::m);
-  EXPECT_EQ(unit, units::one);
+  EXPECT_EQ(unit, units::none);
   EXPECT_THROW(sorted(unit, units::m, units::s), except::UnitError);
 };
 }
