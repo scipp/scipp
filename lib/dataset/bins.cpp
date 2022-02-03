@@ -385,14 +385,11 @@ Variable bins_mean(const Variable &data) {
       // Trick to get the sizes of bins if masks are present - bin the masks
       // using the same dimension & indices as the data, and then sum the
       // inverse of the mask to get the number of unmasked entries.
-      mask_union.setUnit(units::one);
       return normalize_impl(bins_sum(data), bins_sum(make_bins_no_validate(
                                                 indices, dim, ~mask_union)));
     }
   }
-  auto sizes = bin_sizes(data);
-  sizes.setUnit(units::one);
-  return normalize_impl(bins_sum(data), sizes);
+  return normalize_impl(bins_sum(data), bin_sizes(data));
 }
 
 } // namespace scipp::variable

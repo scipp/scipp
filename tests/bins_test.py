@@ -211,7 +211,6 @@ def test_bins_sum_with_masked_buffer():
                         masks={
                             'test-mask':
                             sc.Variable(dims=['position'],
-                                        unit=sc.units.one,
                                         values=[True, False, True, False, True])
                         })
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
@@ -259,7 +258,6 @@ def test_bins_mean_with_masks():
                         masks={
                             'test-mask':
                             sc.Variable(dims=['position'],
-                                        unit=sc.units.one,
                                         values=[False, True, False, True, False])
                         })
     xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0, 5, 6, 7])
