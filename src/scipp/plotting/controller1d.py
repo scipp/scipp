@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 from .controller import PlotController
+from ..units import one
 import numpy as np
 
 
@@ -34,8 +35,8 @@ class PlotController1d(PlotController):
         with_max_padding = self.vmax is None
         vmin, vmax = self.find_vmin_vmax(button=button)
         if vmin.unit is None:
-            vmin.unit = ''
-            vmax.unit = ''
+            vmin.unit = one
+            vmax.unit = one
         if self.norm == "log":
             delta = 10**(0.05 * np.log10(vmax.value / vmin.value))
             if with_min_padding or (button is not None):

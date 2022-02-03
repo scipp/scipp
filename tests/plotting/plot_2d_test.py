@@ -22,7 +22,7 @@ def test_plot_2d():
     plot(da, resampling_mode='mean')
 
 
-def test_plot_2d_none_unit():
+def test_plot_2d_no_unit():
     da = make_dense_data_array(ndim=2)
     da.unit = None
     plot(da)
