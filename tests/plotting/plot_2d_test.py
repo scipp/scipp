@@ -22,6 +22,14 @@ def test_plot_2d():
     plot(da, resampling_mode='mean')
 
 
+def test_plot_2d_none_unit():
+    da = make_dense_data_array(ndim=2)
+    da.unit = None
+    plot(da)
+    plot(da, resampling_mode='sum')
+    plot(da, resampling_mode='mean')
+
+
 def test_plot_2d_dataset():
     plot(make_dense_dataset(ndim=2))
 
