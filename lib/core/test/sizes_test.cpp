@@ -151,3 +151,9 @@ TEST_F(SizesTest, slice_with_stride_3_yields_smaller) {
   EXPECT_EQ(sizes.slice({Dim::Z, 2, 4, 3}), sizes.slice({Dim::Z, 0, 1}));
   EXPECT_EQ(sizes.slice({Dim::Z, 3, 4, 3}), sizes.slice({Dim::Z, 0, 1}));
 }
+
+TEST_F(SizesTest, slice_with_stride_exceeding_size_yields_length_1) {
+  Sizes sizes;
+  sizes.set(Dim::X, 4);
+  EXPECT_EQ(sizes.slice({Dim::X, 1, 3, 10}), sizes.slice({Dim::X, 0, 1}));
+}

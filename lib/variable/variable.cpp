@@ -196,9 +196,7 @@ Variable Variable::slice(const Slice params) const {
     out.m_strides.erase(index);
     out.m_dims.erase(dim);
   } else {
-    const auto remainder = (end - begin) % stride != 0;
-    out.m_dims.resize(
-        dim, std::max(scipp::index{0}, (end - begin) / stride + remainder));
+    static_cast<Sizes &>(out.m_dims) = out.m_dims.slice(params);
     out.m_strides[index] *= stride;
   }
   return out;
