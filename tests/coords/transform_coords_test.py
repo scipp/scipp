@@ -626,6 +626,17 @@ def test_binned_with_range_slice_does_not_modify_inputs(binned_in_a_b):
     assert 'b2' not in original.bins.meta
 
 
+def test_binned_with_range_slice_does_not_modify_inputs_copy(binned_in_a_b):
+    # If input is sliced, transform_coords has to copy the buffer.
+    # The copy introduces a mismatch in bin indices of the new coord and DataArray.
+    original = binned_in_a_b['a', 1:2]
+    _ = original.transform_coords(['b2'], graph={'b2': lambda b: b.copy()})
+    assert 'b' in original.coords
+    assert 'b' in original.bins.coords
+    assert 'b2' not in original.meta
+    assert 'b2' not in original.bins.meta
+
+
 def test_binned_with_point_slice_does_not_modify_inputs(binned_in_a_b):
     # If input is sliced, transform_coords has to copy the buffer
     original = binned_in_a_b['a', 1]
@@ -654,11 +665,12 @@ def test_binned_computes_correct_results(binned_in_a_b):
                         renamed.bins.meta['a'] * renamed.bins.meta['b'])
 
 
-def test_binned_slice_computes_correct_results():
+@pytest.mark.parametrize('slice_', (slice(0, 2), slice(2, 4)))
+def test_binned_slice_computes_correct_results(slice_):
     events = sc.DataArray(sc.ones(dims=['event'], shape=[10]),
                           coords={'x': sc.arange('event', 10.0)})
     da = sc.bin(events, edges=[sc.arange('x', 0.0, 10.0, 2.0)])
-    sliced = da['x', :2]
+    sliced = da['x', slice_]
 
     assert sc.identical(
         sliced.transform_coords('y', graph={'y': lambda x: 2 * x}),
