@@ -33,7 +33,7 @@ public:
   bool operator==(const Strides &other) const noexcept;
   bool operator!=(const Strides &other) const noexcept;
 
-  void emplace_back(const scipp::index i);
+  void push_back(const scipp::index i);
   void clear();
   void resize(const scipp::index size);
 

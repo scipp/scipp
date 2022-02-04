@@ -29,7 +29,7 @@ bool Strides::operator!=(const Strides &other) const noexcept {
   return !operator==(other);
 }
 
-void Strides::emplace_back(const scipp::index i) { m_strides.emplace_back(i); }
+void Strides::push_back(const scipp::index i) { m_strides.push_back(i); }
 
 void Strides::clear() { m_strides.clear(); }
 

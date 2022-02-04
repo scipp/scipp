@@ -237,8 +237,8 @@ Variable Variable::broadcast(const Dimensions &target) const {
   out.m_dims = target;
   out.m_strides.clear();
   for (const auto &d : target.labels())
-    out.m_strides.emplace_back(dims().contains(d) ? m_strides[dims().index(d)]
-                                                  : 0);
+    out.m_strides.push_back(dims().contains(d) ? m_strides[dims().index(d)]
+                                               : 0);
   return out;
 }
 
@@ -250,9 +250,9 @@ Variable Variable::fold(const Dim dim, const Dimensions &target) const {
   for (scipp::index i_in = 0; i_in < dims().ndim(); ++i_in) {
     if (dims().label(i_in) == dim)
       for (scipp::index i_target = 0; i_target < target.ndim(); ++i_target)
-        out.m_strides.emplace_back(m_strides[i_in] * substrides[i_target]);
+        out.m_strides.push_back(m_strides[i_in] * substrides[i_target]);
     else
-      out.m_strides.emplace_back(m_strides[i_in]);
+      out.m_strides.push_back(m_strides[i_in]);
   }
   return out;
 }

@@ -66,15 +66,17 @@ TEST_F(SizesTest, 2d) {
 TEST_F(SizesTest, many_dims) {
   Sizes sizes;
   sizes.set(Dim("axis-0"), 2);
-  sizes.set(Dim("axis-1"), 2);
-  sizes.set(Dim("axis-2"), 2);
-  sizes.set(Dim("axis-3"), 2);
-  sizes.set(Dim("axis-4"), 2);
-  sizes.set(Dim("axis-5"), 2);
-  sizes.set(Dim("axis-6"), 2);
-  sizes.set(Dim("axis-7"), 2);
-  sizes.set(Dim("axis-8"), 2);
-  sizes.set(Dim("axis-9"), 2);
+  sizes.set(Dim("axis-1"), 3);
+  sizes.set(Dim("axis-2"), 4);
+  sizes.set(Dim("axis-3"), 5);
+  sizes.set(Dim("axis-4"), 6);
+  sizes.set(Dim("axis-5"), 7);
+  sizes.set(Dim("axis-6"), 8);
+  sizes.set(Dim("axis-7"), 9);
+  sizes.set(Dim("axis-8"), 10);
+  sizes.set(Dim("axis-9"), 11);
+  EXPECT_EQ(sizes.size(), 10);
+  EXPECT_EQ(sizes[Dim("axis-0")], 2);
 }
 
 TEST_F(SizesTest, comparison) {
