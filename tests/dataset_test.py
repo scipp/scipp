@@ -743,3 +743,13 @@ def test_iteration():
     expected = ['a', 'b']
     for k in d:
         assert k in expected
+
+
+def test_many_independent_dims_are_supported():
+    ds = sc.Dataset()
+    for i in range(100):
+        dim = f'dim{i}'
+        ds[dim] = sc.linspace(dim=dim, start=0, stop=1, num=i)
+    assert 'dim45' in ds
+    assert sc.identical(ds.copy(), ds)
+    ds + ds

@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <boost/container/small_vector.hpp>
+
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
 #include "scipp/core/dimensions.h"
@@ -31,27 +33,27 @@ public:
   bool operator==(const Strides &other) const noexcept;
   bool operator!=(const Strides &other) const noexcept;
 
-  constexpr scipp::index operator[](const scipp::index i) const {
+  [[nodiscard]] scipp::index size() const noexcept { return m_strides.size(); }
+
+  void push_back(const scipp::index i);
+  void clear();
+  void resize(const scipp::index size);
+
+  scipp::index operator[](const scipp::index i) const {
     return m_strides.at(i);
   }
 
-  constexpr scipp::index &operator[](const scipp::index i) {
-    return m_strides.at(i);
-  }
+  scipp::index &operator[](const scipp::index i) { return m_strides.at(i); }
 
-  [[nodiscard]] constexpr auto begin() const { return m_strides.begin(); }
-  [[nodiscard]] constexpr auto begin() { return m_strides.begin(); }
-  [[nodiscard]] constexpr auto end(const scipp::index ndim) const {
-    return std::next(m_strides.begin(), ndim);
-  }
-  [[nodiscard]] constexpr auto end(const scipp::index ndim) {
-    return std::next(m_strides.begin(), ndim);
-  }
+  [[nodiscard]] auto begin() const { return m_strides.begin(); }
+  [[nodiscard]] auto begin() { return m_strides.begin(); }
+  [[nodiscard]] auto end() const { return m_strides.end(); }
+  [[nodiscard]] auto end() { return m_strides.end(); }
 
   void erase(scipp::index i);
 
 private:
-  std::array<scipp::index, NDIM_MAX> m_strides{0};
+  boost::container::small_vector<scipp::index, NDIM_STACK> m_strides;
 };
 
 Strides SCIPP_CORE_EXPORT transpose(const Strides &strides, Dimensions from,

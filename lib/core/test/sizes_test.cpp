@@ -9,7 +9,7 @@
 using namespace scipp;
 
 using SmallMap =
-    scipp::core::small_stable_map<Dim, scipp::index, core::NDIM_MAX>;
+    scipp::core::small_stable_map<Dim, scipp::index, core::NDIM_STACK>;
 
 TEST(SmallMapTest, empty_size) {
   SmallMap map;
@@ -63,15 +63,20 @@ TEST_F(SizesTest, 2d) {
   EXPECT_EQ(sizes[Dim::Y], 3);
 }
 
-TEST_F(SizesTest, max_dims) {
+TEST_F(SizesTest, many_dims) {
   Sizes sizes;
   sizes.set(Dim("axis-0"), 2);
-  sizes.set(Dim("axis-1"), 2);
-  sizes.set(Dim("axis-2"), 2);
-  sizes.set(Dim("axis-3"), 2);
-  sizes.set(Dim("axis-4"), 2);
-  sizes.set(Dim("axis-5"), 2);
-  EXPECT_THROW(sizes.set(Dim("axis-6"), 2), std::runtime_error);
+  sizes.set(Dim("axis-1"), 3);
+  sizes.set(Dim("axis-2"), 4);
+  sizes.set(Dim("axis-3"), 5);
+  sizes.set(Dim("axis-4"), 6);
+  sizes.set(Dim("axis-5"), 7);
+  sizes.set(Dim("axis-6"), 8);
+  sizes.set(Dim("axis-7"), 9);
+  sizes.set(Dim("axis-8"), 10);
+  sizes.set(Dim("axis-9"), 11);
+  EXPECT_EQ(sizes.size(), 10);
+  EXPECT_EQ(sizes[Dim("axis-0")], 2);
 }
 
 TEST_F(SizesTest, comparison) {
