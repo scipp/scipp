@@ -66,7 +66,13 @@ TEST(SliceTest, positive_stride_can_be_set) {
   EXPECT_EQ(slice.stride(), 3);
 }
 
-TEST(SliceTest, negative_stride_can_be_set) {
+TEST(SliceTest, negative_stride_throws_SliceError) {
+  // Not implemented yet, this is not based on a requirement
+  EXPECT_THROW(Slice(Dim::X, 1, 10, -1), except::SliceError);
+}
+
+// DISABLED since support not implemented yet
+TEST(SliceTest, DISABLED_negative_stride_can_be_set) {
   Slice slice(Dim::X, 1, 10, -3);
   EXPECT_EQ(slice.stride(), -3);
 }

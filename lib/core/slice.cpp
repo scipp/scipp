@@ -33,6 +33,8 @@ Slice::Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_,
                              std::to_string(end_));
   if (stride_ == 0)
     throw except::SliceError("slice step cannot be zero");
+  if (stride_ < 0)
+    throw except::SliceError("negative slice step support not implemented");
 }
 
 /// Constructor for point slice

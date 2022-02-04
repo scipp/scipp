@@ -44,13 +44,23 @@ TEST(VariableSliceTest, stride_3_gives_every_third) {
             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{4, 7, 10}));
 }
 
-TEST(VariableSliceTest, negative_stride_1_with_positive_range_is_empty) {
+TEST(VariableSliceTest, negative_stride_throws) {
+  // Currently class Slice cannot be created with negative stride. This is a
+  // sanity check since Variable::slice needs modifications if class Slice
+  // started to suppor this. See DISABLED tests below.
+  const auto var = make_range();
+  ASSERT_ANY_THROW(var.slice({Dim::X, 0, 10, -1}));
+}
+
+TEST(VariableSliceTest,
+     DISABLED_negative_stride_1_with_positive_range_is_empty) {
   const auto var = make_range();
   EXPECT_EQ(var.slice({Dim::X, 0, 10, -1}),
             makeVariable<double>(Dims{Dim::X}, Shape{0}));
 }
 
-TEST(VariableSliceTest, negative_stride_1_with_negative_range_reverses) {
+TEST(VariableSliceTest,
+     DISABLED_negative_stride_1_with_negative_range_reverses) {
   const auto var = make_range();
   // Note the missing 1
   EXPECT_EQ(var.slice({Dim::X, 10, 0, -1}),
