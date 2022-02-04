@@ -32,12 +32,13 @@ TEST(Variable, construct) {
 TEST(Variable, many_dims_works_or_fails_gracefully) {
   Dimensions dims;
   for (const auto dim : "abcdefghijklmn")
-    dims.addInner(Dim(std::string(1, dim)), 2);
-  auto var = makeVariable<double>(dims);
+    dims.addInner(Dim(std::string(1, dim)), 1);
+  auto var = makeVariable<double>(dims, Values{1});
   EXPECT_EQ(var.ndim(), 15);
+  EXPECT_EQ(copy(var), var);
+  EXPECT_EQ(var + var, makeVariable<double>(dims, Values{2}));
   // TODO In principle we should be able to support all of the below with
-  // flattening, but the current implementation fails in some cases and is
-  // therefore disabled for many dims.
+  // flattening, but the current implementation dos not handle this.
   ASSERT_THROW(var += 1.0 * units::one, std::runtime_error);
   ASSERT_THROW(var +=
                makeVariable<double>(Dims{Dim("a")}, Shape{2}, Values{1, 2}),
@@ -48,8 +49,6 @@ TEST(Variable, many_dims_works_or_fails_gracefully) {
   ASSERT_THROW(var +=
                makeVariable<double>(Dims{Dim("n")}, Shape{2}, Values{1, 2}),
                std::runtime_error);
-  ASSERT_THROW(copy(var), std::runtime_error);
-  ASSERT_THROW(var + var, std::runtime_error);
 }
 
 TEST(Variable, default_unit_of_numeric_is_dimensionless) {
