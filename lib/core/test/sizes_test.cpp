@@ -121,3 +121,33 @@ TEST_F(SizesTest, slice_none) {
   sizes.set(Dim::Z, 4);
   EXPECT_EQ(sizes.slice({}), sizes);
 }
+
+TEST_F(SizesTest, full_slice_with_stride_1_yields_original) {
+  Sizes sizes;
+  sizes.set(Dim::X, 2);
+  sizes.set(Dim::Y, 3);
+  sizes.set(Dim::Z, 4);
+  EXPECT_EQ(sizes.slice({Dim::Z, 0, 4, 1}), sizes);
+}
+
+TEST_F(SizesTest, slice_with_stride_2_yields_smaller) {
+  Sizes sizes;
+  sizes.set(Dim::X, 2);
+  sizes.set(Dim::Y, 3);
+  sizes.set(Dim::Z, 4);
+  EXPECT_EQ(sizes.slice({Dim::Z, 0, 4, 2}), sizes.slice({Dim::Z, 0, 2}));
+  EXPECT_EQ(sizes.slice({Dim::Z, 1, 4, 2}), sizes.slice({Dim::Z, 0, 2}));
+  EXPECT_EQ(sizes.slice({Dim::Z, 2, 4, 2}), sizes.slice({Dim::Z, 0, 1}));
+  EXPECT_EQ(sizes.slice({Dim::Z, 3, 4, 2}), sizes.slice({Dim::Z, 0, 1}));
+}
+
+TEST_F(SizesTest, slice_with_stride_3_yields_smaller) {
+  Sizes sizes;
+  sizes.set(Dim::X, 2);
+  sizes.set(Dim::Y, 3);
+  sizes.set(Dim::Z, 4);
+  EXPECT_EQ(sizes.slice({Dim::Z, 0, 4, 3}), sizes.slice({Dim::Z, 0, 2}));
+  EXPECT_EQ(sizes.slice({Dim::Z, 1, 4, 3}), sizes.slice({Dim::Z, 0, 1}));
+  EXPECT_EQ(sizes.slice({Dim::Z, 2, 4, 3}), sizes.slice({Dim::Z, 0, 1}));
+  EXPECT_EQ(sizes.slice({Dim::Z, 3, 4, 3}), sizes.slice({Dim::Z, 0, 1}));
+}

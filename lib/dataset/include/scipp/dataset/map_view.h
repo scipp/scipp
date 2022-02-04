@@ -44,6 +44,11 @@ auto slice_map(const Sizes &sizes, const T &map, const Slice &params) {
       if (value.dims()[params.dim()] == sizes[params.dim()]) {
         out[key] = value.slice(params);
       } else { // bin edge
+        if (params.stride() != 1)
+          throw except::SliceError(
+              "Object has bin-edges along dimension " +
+              to_string(params.dim()) + " so slicing with stride " +
+              std::to_string(params.stride()) + " != 1 is not valid.");
         const auto end = params.end() == -1 ? params.begin() + 2
                                             : params.begin() == params.end()
                                                   ? params.end()

@@ -153,9 +153,14 @@ Sizes Sizes::slice(const Slice &params) const {
   Sizes sliced(*this);
   if (params == Slice{})
     return sliced;
-  if (params.isRange())
-    sliced.resize(params.dim(), params.end() - params.begin());
-  else
+  if (params.isRange()) {
+    const auto remainder =
+        (params.end() - params.begin()) % params.stride() != 0;
+    sliced.resize(params.dim(),
+                  std::max(scipp::index{0},
+                           (params.end() - params.begin()) / params.stride() +
+                               remainder));
+  } else
     sliced.erase(params.dim());
   return sliced;
 }
