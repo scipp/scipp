@@ -24,6 +24,7 @@ add_executable(
   reduce_logical_test.cpp
   reduce_various_test.cpp
   shape_test.cpp
+  slice_test.cpp
   sort_test.cpp
   special_values_test.cpp
   subspan_view_test.cpp

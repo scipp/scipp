@@ -17,6 +17,7 @@ Features
 * :py:func:`sc.fold` now supports ``-1`` for one of the dimension sizes, to indicate automatic shape `#2414 <https://github.com/scipp/scipp/pull/2414>`_.
 * Made it possible to use ``-1`` for one of the dimension sizes when using ``sc.fold`` `#2414 <https://github.com/scipp/scipp/pull/2414>`_.
 * Added ``quiet`` argument to :py:func:`scipp.transform_coords` `#2420 <https://github.com/scipp/scipp/pull/2420>`_.
+* Added support for strides for positional slicing. Negative strides are not supported for now `#2423 <https://github.com/scipp/scipp/pull/2423>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~

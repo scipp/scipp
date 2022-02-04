@@ -165,10 +165,10 @@ public:
                const AttrPolicy attrPolicy = AttrPolicy::Drop);
   void setData(const std::string &name, const DataArray &data);
 
-  Dataset slice(const Slice s) const;
-  [[maybe_unused]] Dataset &setSlice(const Slice s, const Dataset &dataset);
-  [[maybe_unused]] Dataset &setSlice(const Slice s, const DataArray &array);
-  [[maybe_unused]] Dataset &setSlice(const Slice s, const Variable &var);
+  Dataset slice(const Slice &s) const;
+  [[maybe_unused]] Dataset &setSlice(const Slice &s, const Dataset &dataset);
+  [[maybe_unused]] Dataset &setSlice(const Slice &s, const DataArray &array);
+  [[maybe_unused]] Dataset &setSlice(const Slice &s, const Variable &var);
 
   void rename(const Dim from, const Dim to);
 

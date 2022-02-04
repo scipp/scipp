@@ -3,6 +3,7 @@
 # @file
 # @author Simon Heybrock
 import pytest
+import numpy as np
 import scipp as sc
 
 
@@ -57,3 +58,25 @@ def test_slice_implicit_dim(obj):
     assert sc.identical(obj[1], obj['xx', 0])
     obj[1:3] = obj[0]
     assert sc.identical(obj[2], obj['xx', 0])
+
+
+def test_getitem_with_stride_equivalent_to_numpy():
+    var = sc.arange('x', 10)
+    assert np.array_equal(var['x', 2:7:2].values, var.values[2:7:2])
+    assert np.array_equal(var['x', 7:7:2].values, var.values[7:7:2])
+    assert np.array_equal(var['x', 2:7:3].values, var.values[2:7:3])
+    assert np.array_equal(var['x', 3:7:3].values, var.values[3:7:3])
+    assert np.array_equal(var['x', 4:7:3].values, var.values[4:7:3])
+    assert np.array_equal(var['x', 5:7:3].values, var.values[5:7:3])
+    assert np.array_equal(var['x', 2:7:99].values, var.values[2:7:99])
+    assert np.array_equal(var['x', :7:2].values, var.values[:7:2])
+    assert np.array_equal(var['x', 2::2].values, var.values[2::2])
+    assert np.array_equal(var['x', ::2].values, var.values[::2])
+    assert np.array_equal(var['x', -4::2].values, var.values[-4::2])
+    assert np.array_equal(var['x', :-4:2].values, var.values[:-4:2])
+
+
+def test_setitem_with_stride_2_sets_every_other_element():
+    var = sc.array(dims=['x'], values=[1, 2, 3, 4, 5, 6])
+    var['x', 1:5:2] = sc.array(dims=['x'], values=[11, 22])
+    assert sc.identical(var, sc.array(dims=['x'], values=[1, 11, 3, 22, 5, 6]))

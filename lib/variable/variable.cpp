@@ -189,13 +189,16 @@ Variable Variable::slice(const Slice params) const {
   const auto dim = params.dim();
   const auto begin = params.begin();
   const auto end = params.end();
+  const auto stride = params.stride();
   const auto index = out.m_dims.index(dim);
   out.m_offset += begin * m_strides[index];
   if (end == -1) {
     out.m_strides.erase(index);
     out.m_dims.erase(dim);
-  } else
-    out.m_dims.resize(dim, end - begin);
+  } else {
+    static_cast<Sizes &>(out.m_dims) = out.m_dims.slice(params);
+    out.m_strides[index] *= stride;
+  }
   return out;
 }
 
