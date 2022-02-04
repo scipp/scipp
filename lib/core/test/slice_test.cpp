@@ -60,3 +60,18 @@ TEST(SliceTest, stride_is_1_if_not_specified) {
   EXPECT_EQ(Slice(Dim::X, 2).stride(), 1);
   EXPECT_EQ(Slice(Dim::X, 2, 4).stride(), 1);
 }
+
+TEST(SliceTest, positive_stride_can_be_set) {
+  Slice slice(Dim::X, 1, 10, 3);
+  EXPECT_EQ(slice.stride(), 3);
+}
+
+TEST(SliceTest, negative_stride_can_be_set) {
+  Slice slice(Dim::X, 1, 10, -3);
+  EXPECT_EQ(slice.stride(), -3);
+}
+
+TEST(SliceTest, zero_stride_can_be_set) {
+  Slice slice(Dim::X, 1, 10, 0);
+  EXPECT_EQ(slice.stride(), 0);
+}
