@@ -15,12 +15,6 @@ template <class T> void expectUnique(const T &map, const Dim label) {
     throw except::DimensionError("Duplicate dimension.");
 }
 
-template <class T> void expectExtendable(const T &map) {
-  if (map.size() == T::capacity)
-    throw except::DimensionError(
-        "Maximum number of allowed dimensions exceeded.");
-}
-
 template <class T> std::string to_string(const T &map) {
   std::string repr("[");
   for (const auto &key : map)
@@ -56,7 +50,7 @@ bool small_stable_map<Key, Value, Capacity>::operator!=(
 }
 
 template <class Key, class Value, int16_t Capacity>
-typename std::array<Key, Capacity>::const_iterator
+typename boost::container::small_vector<Key, Capacity>::const_iterator
 small_stable_map<Key, Value, Capacity>::find(const Key &key) const {
   return std::find(begin(), end(), key);
 }
@@ -96,38 +90,29 @@ template <class Key, class Value, int16_t Capacity>
 void small_stable_map<Key, Value, Capacity>::insert_left(const Key &key,
                                                          const Value &value) {
   expectUnique(*this, key);
-  expectExtendable(*this);
-  for (scipp::index i = size(); i > 0; --i) {
-    m_keys[i] = m_keys[i - 1];
-    m_values[i] = m_values[i - 1];
-  }
-  m_keys[0] = key;
-  m_values[0] = value;
-  m_size++;
+  m_keys.insert(m_keys.begin(), key);
+  m_values.insert(m_values.begin(), value);
 }
 
 template <class Key, class Value, int16_t Capacity>
 void small_stable_map<Key, Value, Capacity>::insert_right(const Key &key,
                                                           const Value &value) {
   expectUnique(*this, key);
-  expectExtendable(*this);
-  m_keys[m_size] = key;
-  m_values[m_size] = value;
-  m_size++;
+  m_keys.push_back(key);
+  m_values.push_back(value);
 }
 
 template <class Key, class Value, int16_t Capacity>
 void small_stable_map<Key, Value, Capacity>::erase(const Key &key) {
-  for (scipp::index i = index(key); i < size() - 1; ++i) {
-    m_keys[i] = m_keys[i + 1];
-    m_values[i] = m_values[i + 1];
-  }
-  m_size--;
+  const auto i = index(key);
+  m_keys.erase(m_keys.begin() + i);
+  m_values.erase(m_values.begin() + i);
 }
 
 template <class Key, class Value, int16_t Capacity>
 void small_stable_map<Key, Value, Capacity>::clear() noexcept {
-  m_size = 0;
+  m_keys.clear();
+  m_values.clear();
 }
 
 template <class Key, class Value, int16_t Capacity>
@@ -138,7 +123,7 @@ void small_stable_map<Key, Value, Capacity>::replace_key(const Key &key,
   m_keys[index(key)] = new_key;
 }
 
-template class small_stable_map<Dim, scipp::index, NDIM_MAX>;
+template class small_stable_map<Dim, scipp::index, NDIM_STACK>;
 
 void Sizes::set(const Dim dim, const scipp::index size) {
   expect::validDim(dim);

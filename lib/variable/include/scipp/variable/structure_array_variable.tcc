@@ -29,7 +29,7 @@ Variable Variable::elements_impl(Is... index) const {
   if constexpr (sizeof...(Is) == 0) {
     // Get all elements by setting up internal dim and stride
     elements.unchecked_dims().addInner(Dim::InternalStructureComponent, N);
-    elements.unchecked_strides()[dims().ndim()] = 1;
+    elements.unchecked_strides().push_back(1);
   } else {
     // Get specific element at offset
     const auto offset = structure_element_offset<T>(index...);

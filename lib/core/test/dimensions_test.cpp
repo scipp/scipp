@@ -12,13 +12,6 @@
 using namespace scipp;
 using namespace scipp::core;
 
-TEST(DimensionsTest, footprint) {
-  EXPECT_EQ(sizeof(Dimensions), 64ul);
-  // TODO Do we want to align this? Need to run benchmarks when implementation
-  // is more mature.
-  // EXPECT_EQ(std::alignment_of<Dimensions>(), 64);
-}
-
 TEST(DimensionsTest, construct) {
   EXPECT_NO_THROW(Dimensions());
   EXPECT_NO_THROW(Dimensions{});
