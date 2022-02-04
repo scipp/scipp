@@ -63,14 +63,22 @@ template <class T>
                      static_cast<size_t>(NDIM_OP_MAX - begin)};
 }
 
+template <class StridesArg>
+[[nodiscard]] scipp::index value_or_default(const StridesArg &strides,
+                                            const scipp::index i) {
+  return i < strides.size() ? strides[i] : 0;
+}
+
 template <size_t... I, class... StridesArgs>
 bool can_be_flattened(
     const scipp::index dim, const scipp::index size, std::index_sequence<I...>,
     std::array<scipp::index, sizeof...(I)> &strides_for_contiguous,
     const StridesArgs &... strides) {
   const bool res =
-      ((strides[dim] == strides_for_contiguous[I] && strides[dim] != 0) && ...);
-  ((strides_for_contiguous[I] = size * strides[dim]), ...);
+      ((value_or_default(strides, dim) == strides_for_contiguous[I] &&
+        value_or_default(strides, dim) != 0) &&
+       ...);
+  ((strides_for_contiguous[I] = size * value_or_default(strides, dim)), ...);
   return res;
 }
 
@@ -103,7 +111,8 @@ flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
     } else {
       out_shape[dim_write] = size;
       for (scipp::index data = 0; data < N; ++data) {
-        out_strides[dim_write][data] = strides_array[data].get()[dim_read];
+        out_strides[dim_write][data] =
+            value_or_default(strides_array[data].get(), dim_read);
       }
       ++dim_write;
     }
@@ -130,11 +139,10 @@ MultiIndex<N>::MultiIndex(binned_tag, const Dimensions &inner_dims,
   const Dim slice_dim = get_slice_dim(params.bucketParams()...);
 
   // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
-  m_inner_ndim =
-      flatten_dims(make_span(m_stride, 0), make_span(m_shape, 0), inner_dims,
-                   inner_dims.index(slice_dim),
-                   params.bucketParams() ? params.bucketParams().strides
-                                         : Strides{0, 0, 0, 0, 0, 0}...);
+  m_inner_ndim = flatten_dims(
+      make_span(m_stride, 0), make_span(m_shape, 0), inner_dims,
+      inner_dims.index(slice_dim),
+      params.bucketParams() ? params.bucketParams().strides : Strides{}...);
   // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
   m_ndim = m_inner_ndim + flatten_dims(make_span(m_stride, m_inner_ndim),
                                        make_span(m_shape, m_inner_ndim),

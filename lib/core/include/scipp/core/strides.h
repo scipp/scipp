@@ -33,6 +33,8 @@ public:
   bool operator==(const Strides &other) const noexcept;
   bool operator!=(const Strides &other) const noexcept;
 
+  [[nodiscard]] scipp::index size() const noexcept { return m_strides.size(); }
+
   void push_back(const scipp::index i);
   void clear();
   void resize(const scipp::index size);
