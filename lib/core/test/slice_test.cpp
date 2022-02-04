@@ -71,7 +71,6 @@ TEST(SliceTest, negative_stride_can_be_set) {
   EXPECT_EQ(slice.stride(), -3);
 }
 
-TEST(SliceTest, zero_stride_can_be_set) {
-  Slice slice(Dim::X, 1, 10, 0);
-  EXPECT_EQ(slice.stride(), 0);
+TEST(SliceTest, zero_stride_throws_SliceError) {
+  EXPECT_THROW(Slice(Dim::X, 1, 10, 0), except::SliceError);
 }

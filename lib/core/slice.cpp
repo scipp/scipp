@@ -24,13 +24,15 @@ void validate_begin(const scipp::index begin) {
 /// not before-end.
 ///
 Slice::Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_,
-             const scipp::index stride)
-    : m_dim(dim_), m_begin(begin_), m_end(end_), m_stride(stride) {
+             const scipp::index stride_)
+    : m_dim(dim_), m_begin(begin_), m_end(end_), m_stride(stride_) {
   validate_begin(begin_);
   if (end_ != -1 && begin_ > end_)
     throw except::SliceError("end must be >= begin. Given begin " +
                              std::to_string(begin_) + " end " +
                              std::to_string(end_));
+  if (stride_ == 0)
+    throw except::SliceError("slice step cannot be zero");
 }
 
 /// Constructor for point slice
