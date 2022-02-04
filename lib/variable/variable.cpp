@@ -189,13 +189,18 @@ Variable Variable::slice(const Slice params) const {
   const auto dim = params.dim();
   const auto begin = params.begin();
   const auto end = params.end();
+  const auto stride = params.stride();
   const auto index = out.m_dims.index(dim);
   out.m_offset += begin * m_strides[index];
   if (end == -1) {
     out.m_strides.erase(index);
     out.m_dims.erase(dim);
-  } else
-    out.m_dims.resize(dim, end - begin);
+  } else {
+    const auto remainder = (end - begin) % stride != 0;
+    out.m_dims.resize(
+        dim, std::max(scipp::index{0}, (end - begin) / stride + remainder));
+    out.m_strides[index] *= stride;
+  }
   return out;
 }
 
