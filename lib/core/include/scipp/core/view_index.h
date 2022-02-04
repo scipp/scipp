@@ -22,8 +22,8 @@ public:
   ViewIndex(const Dimensions &target_dimensions, const Strides &strides);
 
   constexpr void increment_outer() noexcept {
-    for (scipp::index d = 0; (d < NDIM_MAX - 1) && (m_coord[d] == m_shape[d]);
-         ++d) {
+    for (scipp::index d = 0;
+         (d < NDIM_OP_MAX - 1) && (m_coord[d] == m_shape[d]); ++d) {
       m_memory_index += m_delta[d + 1];
       ++m_coord[d + 1];
       m_coord[d] = 0;
@@ -65,13 +65,13 @@ private:
   /// Index in iteration dimensions.
   scipp::index m_view_index{0};
   /// Steps in memory to advance one element.
-  std::array<scipp::index, NDIM_MAX> m_delta = {};
+  std::array<scipp::index, NDIM_OP_MAX> m_delta = {};
   /// Multi-dimensional index in iteration dimensions.
-  std::array<scipp::index, NDIM_MAX> m_coord = {};
+  std::array<scipp::index, NDIM_OP_MAX> m_coord = {};
   /// Shape in iteration dimensions.
-  std::array<scipp::index, NDIM_MAX> m_shape = {};
+  std::array<scipp::index, NDIM_OP_MAX> m_shape = {};
   /// Strides in memory.
-  std::array<scipp::index, NDIM_MAX> m_strides = {};
+  std::array<scipp::index, NDIM_OP_MAX> m_strides = {};
   /// Number of dimensions.
   int32_t m_ndim;
 };

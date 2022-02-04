@@ -16,7 +16,9 @@
 
 namespace scipp::core {
 
-constexpr int32_t NDIM_MAX = 6;
+/// Maximum number of dimensions supported by transform-based operations
+constexpr int32_t NDIM_OP_MAX = 6;
+/// Number of dimension labels/sizes/strides storable without heap allocation
 constexpr int32_t NDIM_STACK = 4;
 
 class Dimensions;

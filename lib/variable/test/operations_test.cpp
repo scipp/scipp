@@ -962,7 +962,7 @@ TEST(VariableTest, divide_vector) {
 }
 
 TEST(Variable, 6d) {
-  ASSERT_EQ(core::NDIM_MAX, 6); // update this test if limit is increased
+  ASSERT_EQ(core::NDIM_OP_MAX, 6); // update this test if limit is increased
   auto a = makeVariable<double>(
       Dims{Dim("1"), Dim("2"), Dim("3"), Dim("4"), Dim("5"), Dim("6")},
       Shape{1, 2, 3, 4, 5, 6});

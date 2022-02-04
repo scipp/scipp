@@ -9,7 +9,7 @@
 using namespace scipp;
 
 using SmallMap =
-    scipp::core::small_stable_map<Dim, scipp::index, core::NDIM_MAX>;
+    scipp::core::small_stable_map<Dim, scipp::index, core::NDIM_OP_MAX>;
 
 TEST(SmallMapTest, empty_size) {
   SmallMap map;

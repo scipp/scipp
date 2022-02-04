@@ -60,7 +60,7 @@ auto get_slice_dim(const T &param, const Ts &... params) {
 template <class T>
 [[nodiscard]] auto make_span(T &&array, const scipp::index begin) {
   return scipp::span{array.data() + begin,
-                     static_cast<size_t>(NDIM_MAX - begin)};
+                     static_cast<size_t>(NDIM_OP_MAX - begin)};
 }
 
 template <size_t... I, class... StridesArgs>
@@ -86,9 +86,9 @@ flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
              const scipp::span<scipp::index> &out_shape, const Dimensions &dims,
              const scipp::index non_flattenable_dim,
              const StridesArgs &... strides) {
-  if (dims.ndim() > NDIM_MAX)
+  if (dims.ndim() > NDIM_OP_MAX)
     throw std::runtime_error("Operations with more than " +
-                             std::to_string(NDIM_MAX) +
+                             std::to_string(NDIM_OP_MAX) +
                              " dimensions are not supported.");
   constexpr scipp::index N = sizeof...(StridesArgs);
   std::array strides_array{std::ref(strides)...};
