@@ -175,7 +175,7 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
 }
 
 /// Return slice of the dataset along given dimension with given extents.
-Dataset Dataset::slice(const Slice s) const {
+Dataset Dataset::slice(const Slice &s) const {
   Dataset out;
   out.m_data = slice_map(m_coords.sizes(), m_data, s);
   auto [coords, attrs] = m_coords.slice_coords(s);
@@ -191,7 +191,7 @@ Dataset Dataset::slice(const Slice s) const {
   return out;
 }
 
-Dataset &Dataset::setSlice(const Slice s, const Dataset &data) {
+Dataset &Dataset::setSlice(const Slice &s, const Dataset &data) {
   // Validate slice on all items as a dry-run
   expect::coords_are_superset(slice(s).coords(), data.coords(), "");
   for (const auto &[name, item] : m_data)
@@ -202,7 +202,7 @@ Dataset &Dataset::setSlice(const Slice s, const Dataset &data) {
   return *this;
 }
 
-Dataset &Dataset::setSlice(const Slice s, const DataArray &data) {
+Dataset &Dataset::setSlice(const Slice &s, const DataArray &data) {
   // Validate slice on all items as a dry-run
   expect::coords_are_superset(slice(s).coords(), data.coords(), "");
   for (const auto &item : m_data)
@@ -213,7 +213,7 @@ Dataset &Dataset::setSlice(const Slice s, const DataArray &data) {
   return *this;
 }
 
-Dataset &Dataset::setSlice(const Slice s, const Variable &data) {
+Dataset &Dataset::setSlice(const Slice &s, const Variable &data) {
   for (auto &&item : *this)
     item.setSlice(s, data);
   return *this;

@@ -246,7 +246,7 @@ Dict<Key, Value>::slice_coords(const Slice &params) const {
 }
 
 template <class Key, class Value>
-void Dict<Key, Value>::validateSlice(const Slice s, const Dict &dict) const {
+void Dict<Key, Value>::validateSlice(const Slice &s, const Dict &dict) const {
   using core::to_string;
   using units::to_string;
   for (const auto &[key, item] : dict) {
@@ -268,7 +268,7 @@ void Dict<Key, Value>::validateSlice(const Slice s, const Dict &dict) const {
 }
 
 template <class Key, class Value>
-Dict<Key, Value> &Dict<Key, Value>::setSlice(const Slice s, const Dict &dict) {
+Dict<Key, Value> &Dict<Key, Value>::setSlice(const Slice &s, const Dict &dict) {
   validateSlice(s, dict);
   for (const auto &[key, item] : dict) {
     const auto it = find(key);
