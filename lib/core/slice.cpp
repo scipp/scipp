@@ -38,7 +38,7 @@ Slice::Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_,
 /// \param begin_ start index or single index of the slice
 ///
 Slice::Slice(const Dim dim_, const index begin_)
-    : m_dim(dim_), m_begin(begin_), m_end(-1) {
+    : m_dim(dim_), m_begin(begin_), m_end(-1), m_stride(1) {
   validate_begin(begin_);
 }
 

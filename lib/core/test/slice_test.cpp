@@ -54,3 +54,9 @@ TEST(SliceTest, test_end_valid) {
                }),
                except::SliceError);
 }
+
+TEST(SliceTest, stride_is_1_if_not_specified) {
+  EXPECT_EQ(Slice().stride(), 1);
+  EXPECT_EQ(Slice(Dim::X, 2).stride(), 1);
+  EXPECT_EQ(Slice(Dim::X, 2, 4).stride(), 1);
+}
