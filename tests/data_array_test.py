@@ -298,3 +298,43 @@ def test_to():
     assert sc.identical(
         da.to(unit="mm", dtype="int64"),
         sc.DataArray(data=sc.scalar(value=1000, dtype="int64", unit="mm")))
+
+
+def test_zeros_like():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    b = sc.zeros_like(a)
+    a.data *= 0.
+    assert sc.identical(a, b)
+
+
+def test_ones_like():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    b = sc.ones_like(a)
+    a.data *= 0.
+    a.data += 1.
+    assert sc.identical(a, b)
+
+
+def test_empty_like():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    b = sc.empty_like(a)
+    assert a.dims == b.dims
+    assert a.shape == b.shape
+    assert a.unit == b.unit
+    assert a.dtype == b.dtype
+    assert (a.variances is None) == (b.variances is None)
+    assert not sc.identical(a.data, b.data)
+    assert not sc.identical(sc.zeros_like(a.data), b.data)
+    assert not sc.identical(sc.ones_like(a.data), b.data)
+
+
+def test_full_like():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    b = sc.full_like(a, 2.)
+    a.data *= 0.
+    a.data += 2.
+    assert sc.identical(a, b)
