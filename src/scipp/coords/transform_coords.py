@@ -5,7 +5,7 @@
 from fractions import Fraction
 from typing import Dict, Iterable, List, Mapping, Set, Union
 
-from ..core import DataArray, Dataset, DimensionError, bins
+from ..core import DataArray, Dataset, DimensionError, VariableError, bins
 from ..logging import get_logger
 from .coord_table import Coord, CoordTable, Destination
 from .graph import Graph, GraphDict, rule_sequence
@@ -181,7 +181,7 @@ def _store_coord(da: DataArray, name: str, coord: Coord) -> None:
         if coord.has_event:
             try:
                 store(da.bins, coord.event)
-            except DimensionError:
+            except (DimensionError, VariableError):
                 # Thrown on mismatching bin indices, e.g. slice
                 da.data = da.data.copy()
                 store(da.bins, coord.event)
