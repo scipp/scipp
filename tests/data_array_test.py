@@ -298,3 +298,51 @@ def test_to():
     assert sc.identical(
         da.to(unit="mm", dtype="int64"),
         sc.DataArray(data=sc.scalar(value=1000, dtype="int64", unit="mm")))
+
+
+def test_zeros_like():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    b = sc.zeros_like(a)
+    a.data *= 0.
+    assert sc.identical(a, b)
+
+
+def test_ones_like():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    b = sc.ones_like(a)
+    a.data *= 0.
+    a.data += 1.
+    assert sc.identical(a, b)
+
+
+def test_empty_like():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    b = sc.empty_like(a)
+    assert a.dims == b.dims
+    assert a.shape == b.shape
+    assert a.unit == b.unit
+    assert a.dtype == b.dtype
+    assert (a.variances is None) == (b.variances is None)
+
+
+def test_full_like():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    b = sc.full_like(a, 2.)
+    a.data *= 0.
+    a.data += 2.
+    assert sc.identical(a, b)
+
+
+def test_zeros_like_deep_copy_masks():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    c = sc.scalar(33., unit='m')
+    b = sc.zeros_like(a)
+    a.coords['x'][0] = c
+    a.masks['m'][0] = False
+    assert sc.identical(b.coords['x'][0], c)
+    assert sc.identical(b.masks['m'][0], sc.scalar(True))

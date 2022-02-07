@@ -102,23 +102,6 @@ def zeros(*,
                       with_variances=with_variances)
 
 
-def zeros_like(var: _cpp.Variable) -> _cpp.Variable:
-    """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
-    as the input variable, but with all values initialized to 0. If the input
-    has variances, all variances in the output are set to 0.
-
-
-    :param var: Input variable.
-
-    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones_like`
-    """
-    return zeros(dims=var.dims,
-                 shape=var.shape,
-                 unit=var.unit,
-                 dtype=var.dtype,
-                 with_variances=var.variances is not None)
-
-
 def ones(*,
          dims: _Sequence[str] = None,
          shape: _Sequence[int] = None,
@@ -146,23 +129,6 @@ def ones(*,
                      unit=unit,
                      dtype=dtype,
                      with_variances=with_variances)
-
-
-def ones_like(var: _cpp.Variable) -> _cpp.Variable:
-    """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
-    as the input variable, but with all values initialized to 1. If the input
-    has variances, all variances in the output are set to 1.
-
-
-    :param var: Input variable.
-
-    :seealso: :py:func:`scipp.ones` :py:func:`scipp.zeros_like`
-    """
-    return ones(dims=var.dims,
-                shape=var.shape,
-                unit=var.unit,
-                dtype=var.dtype,
-                with_variances=var.variances is not None)
 
 
 def empty(*,
@@ -197,24 +163,6 @@ def empty(*,
                       with_variances=with_variances)
 
 
-def empty_like(var: _cpp.Variable) -> _cpp.Variable:
-    """Constructs a :class:`Variable` with the same dims, shape, unit and dtype
-    as the input variable, but with uninitialized values. If the input
-    has variances, all variances in the output exist but are uninitialized.
-
-
-    :param var: Input variable.
-
-    :seealso: :py:func:`scipp.empty` :py:func:`scipp.zeros_like`
-              :py:func:`scipp.ones_like`
-    """
-    return empty(dims=var.dims,
-                 shape=var.shape,
-                 unit=var.unit,
-                 dtype=var.dtype,
-                 with_variances=var.variances is not None)
-
-
 def full(*,
          dims: _Sequence[str] = None,
          shape: _Sequence[int] = None,
@@ -242,27 +190,6 @@ def full(*,
     """
     return scalar(value=value, variance=variance, unit=unit, dtype=dtype)\
         .broadcast(**_parse_dims_shape_sizes(dims, shape, sizes)).copy()
-
-
-def full_like(var: _cpp.Variable, value: _Any, variance: _Any = None) -> _cpp.Variable:
-    """
-    Constructs a :class:`Variable` with values initialized to the specified
-    value with dimensions labels and shape provided by an existing variable.
-
-
-    :param var: Input variable to copy dimensions, sizes, unit and dtype from.
-    :param value: The value to fill the Variable with
-    :param variance: Optional, the variance to fill the Variable with. If None
-        or not provided, the variances will not be set.
-
-    :seealso: :py:func:`scipp.zeros_like` :py:func:`scipp.ones_like`
-    """
-    return full(dims=var.dims,
-                shape=var.shape,
-                unit=var.unit,
-                dtype=var.dtype,
-                value=value,
-                variance=variance)
 
 
 def matrix(*,
