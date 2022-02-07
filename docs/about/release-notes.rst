@@ -18,7 +18,7 @@ Features
 * Made it possible to use ``-1`` for one of the dimension sizes when using ``sc.fold`` `#2414 <https://github.com/scipp/scipp/pull/2414>`_.
 * Added ``quiet`` argument to :py:func:`scipp.transform_coords` `#2420 <https://github.com/scipp/scipp/pull/2420>`_.
 * Added support for strides for positional slicing. Negative strides are not supported for now `#2423 <https://github.com/scipp/scipp/pull/2423>`_.
-* ``:py:func:scipp.zeros_like``, ``:py:func:scipp.ones_like``, ``:py:func:scipp.empty_like``, and ``:py:func:scipp.full_like`` now accept and return data arrays `#2425 <https://github.com/scipp/scipp/pull/2425>`_.
+* :py:func:`scipp.zeros_like`, :py:func:`scipp.ones_like`, :py:func:`scipp.empty_like`, and :py:func:`scipp.full_like` now accept and return data arrays `#2425 <https://github.com/scipp/scipp/pull/2425>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~

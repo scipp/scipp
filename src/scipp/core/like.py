@@ -23,15 +23,11 @@ def zeros_like(
     var: _Union[_cpp.Variable,
                 _cpp.DataArray]) -> _Union[_cpp.Variable, _cpp.DataArray]:
     """
-    If input is a :class:`Variable`, it constructs a :class:`Variable` with the same
-    dims, shape, unit and dtype, but with all values initialized to 0. If the input
-    has variances, all variances in the output are set to 0.
-
-    If input is a :class:`DataArray`, it constructs a :class:`DataArray` with the same
-    coordinates, attributes and masks as the input, but sets the data values to 1.
-    If the input data has variances, all variances in the output are set to 0.
-    Note that coordinates and attributes are shallow-copied, while masks are
-    deep-copied.
+    Constructs a new object with the same dims, shape, unit and dtype as the input
+    (:class:`Variable` or :class:`DataArray`), but with all values initialized to 0.
+    If the input has variances, all variances in the output are set to 0.
+    If the input is a :class:`DataArray`, coordinates and attributes are shallow-copied
+    and masks are deep copied.
 
     :param var: Input variable or data array.
 
@@ -49,15 +45,11 @@ def ones_like(
     var: _Union[_cpp.Variable,
                 _cpp.DataArray]) -> _Union[_cpp.Variable, _cpp.DataArray]:
     """
-    If input is a :class:`Variable`, it constructs a :class:`Variable` with the same
-    dims, shape, unit and dtype, but with all values initialized to 1. If the input
-    has variances, all variances in the output are set to 1.
-
-    If input is a :class:`DataArray`, it constructs a :class:`DataArray` with the same
-    coordinates, attributes and masks as the input, but sets the data values to 1.
-    If the input data has variances, all variances in the output are set to 1.
-    Note that coordinates and attributes are shallow-copied, while masks are
-    deep-copied.
+    Constructs a new object with the same dims, shape, unit and dtype as the input
+    (:class:`Variable` or :class:`DataArray`), but with all values initialized to 1.
+    If the input has variances, all variances in the output are set to 1.
+    If the input is a :class:`DataArray`, coordinates and attributes are shallow-copied
+    and masks are deep copied.
 
     :param var: Input variable or data array.
 
@@ -75,16 +67,11 @@ def empty_like(
     var: _Union[_cpp.Variable,
                 _cpp.DataArray]) -> _Union[_cpp.Variable, _cpp.DataArray]:
     """
-    If input is a :class:`Variable`, it constructs a :class:`Variable` with the same
-    dims, shape, unit and dtype as the input variable, but with uninitialized values.
+    Constructs a new object with the same dims, shape, unit and dtype as the input
+    (:class:`Variable` or :class:`DataArray`), but with all values uninitialized.
     If the input has variances, all variances in the output exist but are uninitialized.
-
-    If input is a :class:`DataArray`, it constructs a :class:`DataArray` with the same
-    coordinates, attributes and masks as the input, but replaces the data with a
-    :class:`Variable` containing uninitialized values. If the input data has variances,
-    all variances in the output exist but are uninitialized.
-    Note that coordinates and attributes are shallow-copied, while masks are
-    deep-copied.
+    If the input is a :class:`DataArray`, coordinates and attributes are shallow-copied
+    and masks are deep copied.
 
     :param var: Input variable or data array.
 
@@ -101,15 +88,11 @@ def empty_like(
 
 def full_like(var: _cpp.Variable, value: _Any, variance: _Any = None) -> _cpp.Variable:
     """
-    If input is a :class:`Variable`, it constructs a :class:`Variable` with values
-    initialized to the specified value with dimensions labels and shape provided by an
-    existing variable.
-
-    If input is a :class:`DataArray`, it constructs a :class:`DataArray` with the same
-    coordinates, attributes and masks as the input, but replaces the data with a
-    :class:`Variable` containing values initialized to the specified value.
-    Note that coordinates and attributes are shallow-copied, while masks are
-    deep-copied.
+    Constructs a new object with the same dims, shape, unit and dtype as the input
+    (:class:`Variable` or :class:`DataArray`), but with all values, and optionally
+    variances, initialized to the specified ``value`` and ``variance``.
+    If the input is a :class:`DataArray`, coordinates and attributes are shallow-copied
+    and masks are deep copied.
 
     :param var: Input variable or data array.
     :param value: The value to fill the data with.
