@@ -326,9 +326,6 @@ def test_empty_like():
     assert a.unit == b.unit
     assert a.dtype == b.dtype
     assert (a.variances is None) == (b.variances is None)
-    assert not sc.identical(a.data, b.data)
-    assert not sc.identical(sc.zeros_like(a.data), b.data)
-    assert not sc.identical(sc.ones_like(a.data), b.data)
 
 
 def test_full_like():
@@ -338,3 +335,14 @@ def test_full_like():
     a.data *= 0.
     a.data += 2.
     assert sc.identical(a, b)
+
+
+def test_zeros_like_deep_copy_masks():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    c = sc.scalar(33., unit='m')
+    b = sc.zeros_like(a)
+    a.coords['x'][0] = c
+    a.masks['m'][0] = False
+    assert sc.identical(b.coords['x'][0], c)
+    assert sc.identical(b.masks['m'][0], sc.scalar(True))
