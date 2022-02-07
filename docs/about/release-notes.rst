@@ -15,7 +15,6 @@ Features
 * Switched to new system for runtime configuration, see the corresponding section in the reference documentation `#2389 <https://github.com/scipp/scipp/pull/2389>`_.
 * Added :py:func:`scipp.midpoints` which can be used to compute bin-centers `#2404 <https://github.com/scipp/scipp/pull/2404>`_.
 * :py:func:`sc.fold` now supports ``-1`` for one of the dimension sizes, to indicate automatic shape `#2414 <https://github.com/scipp/scipp/pull/2414>`_.
-* Made it possible to use ``-1`` for one of the dimension sizes when using ``sc.fold`` `#2414 <https://github.com/scipp/scipp/pull/2414>`_.
 * Added ``quiet`` argument to :py:func:`scipp.transform_coords` `#2420 <https://github.com/scipp/scipp/pull/2420>`_.
 * Added support for strides for positional slicing. Negative strides are not supported for now `#2423 <https://github.com/scipp/scipp/pull/2423>`_.
 * :py:func:`scipp.zeros_like`, :py:func:`scipp.ones_like`, :py:func:`scipp.empty_like`, and :py:func:`scipp.full_like` now accept and return data arrays `#2425 <https://github.com/scipp/scipp/pull/2425>`_.
@@ -25,7 +24,7 @@ Breaking changes
 
 * The configuration option ``config['plot']['padding']`` is now called ``config['plot']['bounding_box']``, no action is required if it was never modified `#2389 <https://github.com/scipp/scipp/pull/2389>`_.
 * :py:func:`scipp.rebin` now applies masks that depend on the rebinning dimension to avoid "growing" effect on masks which previously resulted in masking more than intended `#2383 <https://github.com/scipp/scipp/pull/2383>`_.
-* The ``unit`` attribute now distinguishes ``None`` from ``dimensionless`` `#2395 <https://github.com/scipp/scipp/pull/2395>` and _`#2417 <https://github.com/scipp/scipp/pull/2417>`_..
+* The ``unit`` attribute now distinguishes ``None`` from ``dimensionless`` `#2395 <https://github.com/scipp/scipp/pull/2395>`_ and `#2417 <https://github.com/scipp/scipp/pull/2417>`_.
 
   * For number-like dtypes the default is ``dimensionless`` (unchanged) whereas all other dtypes such as strings default to ``None`` (new).
   * ``bool`` (used for masks) is not considered number-like and the default unit is ``None``.
