@@ -50,3 +50,16 @@ class PlotController1d(PlotController):
             if with_max_padding or (button is not None):
                 vmax += delta
         self.view.rescale_to_data(vmin, vmax)
+
+    def toggle_norm(self, owner):
+        """
+        Toggle data normalization from toolbar button signal.
+        """
+        self.norm = "log" if owner.value else "linear"
+        vmin, vmax = self.find_vmin_vmax()
+        if self.norm == "log":
+            self.rescale_to_data()
+            self.view.toggle_norm(self.norm, vmin, vmax)
+        else:
+            self.view.toggle_norm(self.norm, vmin, vmax)
+            self.rescale_to_data()

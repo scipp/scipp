@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config, units
-from ..core import concat, values, nanmin, nanmax, histogram, full_like
+from ..core import concat, values, scalar, histogram, full_like
 from ..core import DType, Variable, DataArray
 from ..core import abs as abs_
 import numpy as np
@@ -143,11 +143,17 @@ def find_log_limits(x):
 
 def find_linear_limits(x):
     """
-    Find variable min and max.
+    Find variable finite min and max.
+    TODO: If we implement finitemin and finitemax for Variable, we would no longer need
+    to go via Numpy's isfinite.
     """
+    v = x.values
+    finite_vals = v[np.isfinite(v)]
+    finite_min = np.amin(finite_vals)
+    finite_max = np.amax(finite_vals)
     return [
-        values(nanmin(x).astype(DType.float64)),
-        values(nanmax(x).astype(DType.float64))
+        scalar(finite_min, unit=x.unit, dtype='float64'),
+        scalar(finite_max, unit=x.unit, dtype='float64')
     ]
 
 
