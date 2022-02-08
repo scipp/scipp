@@ -153,6 +153,10 @@ auto bin(const Variable &data, const Variable &indices,
         const auto &[input_indices, buffer_dim, in_buffer] =
             var.template constituents<Variable>();
         static_cast<void>(input_indices);
+        if (in_buffer.stride(buffer_dim) == 0) {
+          return broadcast(copy(in_buffer.slice({buffer_dim, 0})),
+                           Dimensions(buffer_dim, total_size));
+        }
         auto out = resize_default_init(in_buffer, buffer_dim, total_size);
         transform_in_place(
             subspan_view(out, buffer_dim, filtered_input_bin_ranges), offsets,
