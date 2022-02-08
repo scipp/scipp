@@ -144,8 +144,10 @@ def find_log_limits(x):
 def find_linear_limits(x):
     """
     Find variable finite min and max.
+    TODO: If we implement finitemin and finitemax for Variable, we would no longer need
+    to go via Numpy's isfinite.
     """
-    v = values(x).values
+    v = x.values
     finite_vals = v[np.isfinite(v)]
     finite_min = np.amin(finite_vals)
     finite_max = np.amax(finite_vals)
