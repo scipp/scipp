@@ -36,7 +36,7 @@ class Bin1d:
     Benchmark sc.bin, for 1d binning.
     """
     def setup(self):
-        self.table = sc.data.table_xyz(10_000_000)
+        self.table = sc.data.table_xyz(100_000_000)
         self.x_coarse = sc.linspace(dim='x', start=0, stop=1, num=2**8, unit='m')
         self.x_fine = sc.linspace(dim='x', start=0, stop=1, num=2**16, unit='m')
 
