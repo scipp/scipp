@@ -243,6 +243,40 @@ def test_rename_dims():
     assert sc.identical(renamed, make_dataarray('y', 'x', seed=0))
 
 
+def test_rename():
+    d = make_dataarray('x', 'y', seed=0)
+    original = d.copy()
+    renamed = d.rename({'y': 'z'})
+    assert sc.identical(d, original)
+    assert sc.identical(renamed, make_dataarray('x', 'z', seed=0))
+    renamed = renamed.rename(dims_dict={'x': 'y', 'z': 'x'})
+    assert sc.identical(renamed, make_dataarray('y', 'x', seed=0))
+
+
+def test_rename_kwargs():
+    d = make_dataarray('x', 'y', seed=0)
+    renamed = d.rename(y='z')
+    assert sc.identical(renamed, make_dataarray('x', 'z', seed=0))
+    renamed = renamed.rename(x='y', z='x')
+    assert sc.identical(renamed, make_dataarray('y', 'x', seed=0))
+
+
+def test_rename_with_attr():
+    d = make_dataarray('x', 'y', seed=0)
+    d.attrs['y'] = d.coords.pop('y')
+    renamed = d.rename({'y': 'z'})
+    expected = make_dataarray('x', 'z', seed=0)
+    expected.attrs['z'] = expected.coords.pop('z')
+    assert sc.identical(renamed, expected)
+
+
+def test_rename_fails_when_coord_already_exists():
+    d = make_dataarray('x', 'y', seed=0)
+    d.coords['z'] = d.coords['x'].copy()
+    with pytest.raises(sc.DimensionError):
+        d.rename({'x': 'z'})
+
+
 def test_coord_setitem_can_change_dtype():
     a = np.arange(3)
     v1 = sc.array(dims=['x'], values=a)
