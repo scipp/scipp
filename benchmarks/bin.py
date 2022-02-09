@@ -29,3 +29,25 @@ class Bin2dRebinLongDim:
     def time_outer_transposed_copied(self, nbin):
         x = sc.linspace(dim='x', start=0, stop=1, num=nbin - 1, unit='m')
         sc.bin(self.da_transposed, edges=[x])
+
+
+class Bin1d:
+    """
+    Benchmark sc.bin, for 1d binning.
+    """
+    def setup(self):
+        self.table = sc.data.table_xyz(10_000_000)
+        self.x_coarse = sc.linspace(dim='x', start=0, stop=1, num=2**8, unit='m')
+        self.x_fine = sc.linspace(dim='x', start=0, stop=1, num=2**16, unit='m')
+
+    def time_coarse(self):
+        sc.bin(self.table, edges=[self.x_coarse])
+
+    def time_fine(self):
+        sc.bin(self.table, edges=[self.x_fine])
+
+    def time_coarse_then_fine(self):
+        """Iteratore coarse -> fine binning which may be faster than direct fine binning
+        """
+        coarse = sc.bin(self.table, edges=[self.x_coarse])
+        sc.bin(coarse, edges=[self.x_fine])
