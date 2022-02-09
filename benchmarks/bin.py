@@ -35,19 +35,13 @@ class Bin1d:
     """
     Benchmark sc.bin, for 1d binning.
     """
-    def setup(self):
+    params = (list(2**np.arange(0, 20)), )
+    param_names = ['nbin']
+    timeout = 300.0
+
+    def setup(self, nbin):
         self.table = sc.data.table_xyz(100_000_000)
-        self.x_coarse = sc.linspace(dim='x', start=0, stop=1, num=2**8, unit='m')
-        self.x_fine = sc.linspace(dim='x', start=0, stop=1, num=2**16, unit='m')
+        self.x = sc.linspace(dim='x', start=0, stop=1, num=nbin + 1, unit='m')
 
-    def time_coarse(self):
-        sc.bin(self.table, edges=[self.x_coarse])
-
-    def time_fine(self):
-        sc.bin(self.table, edges=[self.x_fine])
-
-    def time_coarse_then_fine(self):
-        """Iteratore coarse -> fine binning which may be faster than direct fine binning
-        """
-        coarse = sc.bin(self.table, edges=[self.x_coarse])
-        sc.bin(coarse, edges=[self.x_fine])
+    def time_bin_table(self, nbin):
+        sc.bin(self.table, edges=[self.x])
