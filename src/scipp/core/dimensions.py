@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from .._scipp.core import Variable, DataArray, Dataset, CoordError
+from .dataset import merge
 
 
 def _make_sizes(obj):
@@ -49,8 +50,21 @@ def _rename_dataset(ds: Dataset, dims_dict: dict = None, **names) -> Dataset:
        - using keyword arguments, e.g. rename(x='a', y='b')
     """
     renaming_dict = {**({} if dims_dict is None else dims_dict), **names}
-    out = Dataset()
+    ds_from_items = Dataset()
     for key, item in ds.items():
         dims_dict = {old: new for old, new in renaming_dict.items() if old in item.dims}
-        out[key] = _rename_data_array(ds[key], dims_dict=dims_dict)
-    return out
+        # Rename data and attrs but not coords, to avoid the cost of renaming them a
+        # second time below.
+        to_rename = DataArray(data=item.data,
+                              attrs=dict(item.attrs),
+                              masks=dict(item.masks))
+        ds_from_items[key] = _rename_data_array(to_rename, dims_dict=dims_dict)
+    dict_of_coords = {}
+    for dim, coord in ds.coords.items():
+        dims_dict = {
+            old: new
+            for old, new in renaming_dict.items() if old in coord.dims
+        }
+        dict_of_coords[dims_dict.get(dim, dim)] = _rename_variable(coord,
+                                                                   dims_dict=dims_dict)
+    return merge(ds_from_items, Dataset(coords=dict_of_coords))

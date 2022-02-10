@@ -665,6 +665,36 @@ def test_rename_intersection_of_dims():
     assert sc.identical(renamed, expected)
 
 
+def test_rename_coords_only():
+    d = sc.Dataset(coords={
+        'x': sc.arange('x', 5.),
+        'y': sc.arange('y', 6.),
+        'z': sc.arange('z', 7.)
+    })
+    expected = sc.Dataset(coords={
+        'u': sc.arange('u', 5.),
+        'y': sc.arange('y', 6.),
+        'z': sc.arange('z', 7.)
+    })
+    assert sc.identical(d.rename({'x': 'u'}), expected)
+
+
+def test_rename_dataset_with_coords_not_belonging_to_any_item():
+    d = sc.Dataset(data={'a': sc.arange('x', 5.)},
+                   coords={
+                       'x': sc.arange('x', 5.),
+                       'y': sc.arange('y', 6.),
+                       'z': sc.arange('z', 7.)
+                   })
+    expected = sc.Dataset(data={'a': sc.arange('u', 5.)},
+                          coords={
+                              'u': sc.arange('u', 5.),
+                              'y': sc.arange('y', 6.),
+                              'z': sc.arange('z', 7.)
+                          })
+    assert sc.identical(d.rename({'x': 'u'}), expected)
+
+
 def test_rename_kwargs():
     d = make_simple_dataset('x', 'y', seed=0)
     renamed = d.rename(y='z')
