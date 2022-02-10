@@ -16,7 +16,7 @@
 
 namespace scipp::core::element {
 
-auto map_to_bins_direct = [](const auto &binned, auto &bins, const auto &data,
+auto map_to_bins_direct = [](auto &binned, auto &bins, const auto &data,
                              const auto &bin_indices) {
   const auto size = scipp::size(bin_indices);
   using T = std::decay_t<decltype(data)>;
@@ -36,8 +36,8 @@ auto map_to_bins_direct = [](const auto &binned, auto &bins, const auto &data,
 constexpr bool is_powerof2(int v) { return v && ((v & (v - 1)) == 0); }
 
 template <int chunksize>
-auto map_to_bins_chunkwise = [](const auto &binned, auto &bins,
-                                const auto &data, const auto &bin_indices) {
+auto map_to_bins_chunkwise = [](auto &binned, auto &bins, const auto &data,
+                                const auto &bin_indices) {
   // compiler is smart for div or mod 2**N, otherwise this would be too slow
   static_assert(is_powerof2(chunksize));
   using InnerIndex = int16_t;
