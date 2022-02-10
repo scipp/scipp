@@ -31,7 +31,7 @@ requirements:
     - git
     - ninja
     - python
-    - tbb-devel
+    - tbb-devel=2020.2.*
     # doc build requirements
     - confuse
     - cppcheck [linux64]
