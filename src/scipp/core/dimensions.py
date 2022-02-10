@@ -30,14 +30,14 @@ def _rename_data_array(da: DataArray, dims_dict: dict = None, **names) -> DataAr
     """
     renaming_dict = {**({} if dims_dict is None else dims_dict), **names}
     out = da.rename_dims(renaming_dict)
-    for coord in renaming_dict:
+    for old, new in renaming_dict.items():
         for meta in (out.coords, out.attrs):
-            if coord in meta:
-                if renaming_dict[coord] in meta:
+            if old in meta:
+                if new in meta:
                     raise DimensionError(
-                        'Cannot rename coordinate {} to {} as this would erase an '
-                        'existing coordinate.'.format(coord, renaming_dict[coord]))
-                meta[renaming_dict[coord]] = meta.pop(coord)
+                        f'Cannot rename coordinate {old} to {new} as this would erase '
+                        'an existing coordinate.')
+                meta[new] = meta.pop(old)
     return out
 
 
