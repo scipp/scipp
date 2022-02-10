@@ -51,8 +51,11 @@ def _rename_dataset(ds: Dataset, dims_dict: dict = None, **names) -> Dataset:
     renaming_dict = {**({} if dims_dict is None else dims_dict), **names}
     out = Dataset()
     for key, item in ds.items():
-        if set(renaming_dict.keys()).issubset(set(item.dims)):
-            out[key] = _rename_data_array(ds[key], dims_dict=renaming_dict)
+        dims_intersect = set(renaming_dict.keys()).intersection(set(item.dims))
+        if dims_intersect:
+            out[key] = _rename_data_array(
+                ds[key], dims_dict={dim: renaming_dict[dim]
+                                    for dim in dims_intersect})
         else:
             out[key] = item
     return out

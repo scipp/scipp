@@ -656,6 +656,15 @@ def test_rename():
     assert sc.identical(renamed, make_simple_dataset('y', 'x', seed=0))
 
 
+def test_rename_intersection_of_dims():
+    d = make_simple_dataset('x', 'y', seed=0)
+    d['c'] = sc.Variable(dims=['time', 'y'], values=np.random.rand(4, 3))
+    renamed = d.rename(dims_dict={'x': 'u', 'time': 'v'})
+    expected = make_simple_dataset('u', 'y', seed=0)
+    expected['c'] = sc.Variable(dims=['v', 'y'], values=np.random.rand(4, 3))
+    assert sc.identical(renamed, expected)
+
+
 def test_rename_kwargs():
     d = make_simple_dataset('x', 'y', seed=0)
     renamed = d.rename(y='z')
