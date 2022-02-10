@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
+#include <limits>
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/eigen.h"
@@ -39,6 +40,8 @@ auto map_to_bins_chunkwise = [](const auto &binned, auto &bins,
                                 const auto &data, const auto &bin_indices) {
   // compiler is smart for div or mod 2**N, otherwise this would be too slow
   static_assert(is_powerof2(chunksize));
+  using InnerIndex = int16_t;
+  static_assert(chunksize <= std::numeric_limits<InnerIndex>::max());
   const auto size = scipp::size(bin_indices);
   using T = std::decay_t<decltype(data)>;
 
@@ -46,14 +49,14 @@ auto map_to_bins_chunkwise = [](const auto &binned, auto &bins,
       std::conditional_t<is_ValueAndVariance_v<T>, typename T::value_type, T>;
   // TODO Ideally this buffer would be reused (on a per-thread basis)
   // for every application of the kernel.
-  std::vector<
-      std::tuple<std::vector<typename Val::value_type>, std::vector<uint8_t>>>
+  std::vector<std::tuple<std::vector<typename Val::value_type>,
+                         std::vector<InnerIndex>>>
       chunks((bins.size() - 1) / chunksize + 1);
   for (scipp::index i = 0; i < size;) {
     // We operate in blocks so the size of the map of buffers, i.e.,
     // additional memory use of the algorithm, is bounded. This also
     // avoids costly allocations from resize operations.
-    scipp::index max = std::min(size, i + scipp::size(bins) * 32);
+    scipp::index max = std::min(size, i + scipp::size(bins) * 8);
     // 1. Map to chunks
     for (; i < max; ++i) {
       const auto i_bin = bin_indices[i];
