@@ -51,16 +51,6 @@ def _rename_dataset(ds: Dataset, dims_dict: dict = None, **names) -> Dataset:
     renaming_dict = {**({} if dims_dict is None else dims_dict), **names}
     out = Dataset()
     for key, item in ds.items():
-        dims_intersect = set(renaming_dict.keys()).intersection(set(item.dims))
-        if dims_intersect:
-            # Note that we cannot use the dims_intersect directly to construct the dict
-            # because the order is not guaranteed in the set, and the order of renaming
-            # is important here.
-            item_dims_dict = {
-                old: new
-                for old, new in renaming_dict.items() if old in dims_intersect
-            }
-            out[key] = _rename_data_array(ds[key], dims_dict=item_dims_dict)
-        else:
-            out[key] = item
+        dims_dict = {old: new for old, new in renaming_dict.items() if old in item.dims}
+        out[key] = _rename_data_array(ds[key], dims_dict=dims_dict)
     return out
