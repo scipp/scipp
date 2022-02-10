@@ -118,7 +118,7 @@ static constexpr auto bin = overloaded{
       // chunks into bins. For example, instead of mapping directly to 65536
       // bins, we may map to 256 chunks, and each chunk to 256 bins.
       bool many_bins = bins.size() > 512;
-      bool multiple_events_per_bin = bins.size() * 16 < bin_indices.size();
+      bool multiple_events_per_bin = bins.size() * 4 < bin_indices.size();
       if (many_bins && multiple_events_per_bin) { // avoid overhead
         if (bins.size() <= 128 * 128)
           map_to_bins_chunkwise<128>(binned, bins, data, bin_indices);
