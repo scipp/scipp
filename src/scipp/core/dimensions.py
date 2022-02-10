@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from .._scipp.core import Variable, DataArray, Dataset, DimensionError
+from .._scipp.core import Variable, DataArray, Dataset, CoordError
 
 
 def _make_sizes(obj):
@@ -34,7 +34,7 @@ def _rename_data_array(da: DataArray, dims_dict: dict = None, **names) -> DataAr
         for meta in (out.coords, out.attrs):
             if old in meta:
                 if new in meta:
-                    raise DimensionError(
+                    raise CoordError(
                         f'Cannot rename coordinate {old} to {new} as this would erase '
                         'an existing coordinate.')
                 meta[new] = meta.pop(old)

@@ -273,7 +273,7 @@ def test_rename_with_attr():
 def test_rename_fails_when_coord_already_exists():
     d = make_dataarray('x', 'y', seed=0)
     d.coords['z'] = d.coords['x'].copy()
-    with pytest.raises(sc.DimensionError):
+    with pytest.raises(sc.CoordError):
         d.rename({'x': 'z'})
 
 
@@ -281,7 +281,7 @@ def test_rename_fails_when_attr_already_exists():
     d = make_dataarray('x', 'y', seed=0)
     d.attrs['y'] = d.coords.pop('y')
     d.attrs['z'] = d.attrs['y'].copy()
-    with pytest.raises(sc.DimensionError):
+    with pytest.raises(sc.CoordError):
         d.rename({'y': 'z'})
 
 
