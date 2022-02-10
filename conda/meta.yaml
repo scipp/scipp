@@ -54,7 +54,7 @@ requirements:
     - numpy>=1.20.0
     - python
     - pyyaml
-    - tbb
+    - tbb=2020.2.*
     - graphlib-backport # for python < 3.9
 
 test:
@@ -75,7 +75,7 @@ test:
     - xarray
     - pandas
     - scipy>=1.7.0
-    - tbb-devel
+    - tbb-devel=2020.2.*
   files:
     - cmake-package-test/
   source_files:
