@@ -32,6 +32,7 @@ auto map_to_bins_direct = [](const auto &binned, auto &bins, const auto &data,
   }
 };
 
+template <int chunksize>
 auto map_to_bins_chunkwise = [](const auto &binned, auto &bins,
                                 const auto &data, const auto &bin_indices) {
   const auto size = scipp::size(bin_indices);
@@ -44,7 +45,7 @@ auto map_to_bins_chunkwise = [](const auto &binned, auto &bins,
   std::vector<
       std::tuple<std::vector<typename Val::value_type>, std::vector<uint8_t>>>
       chunks;
-  chunks.resize((bins.size() - 1) / 256 + 1);
+  chunks.resize((bins.size() - 1) / chunksize + 1);
   for (scipp::index i = 0; i < size;) {
     // We operate in blocks so the size of the map of buffers, i.e.,
     // additional memory use of the algorithm, is bounded. This also
@@ -55,9 +56,8 @@ auto map_to_bins_chunkwise = [](const auto &binned, auto &bins,
       const auto i_bin = bin_indices[i];
       if (i_bin < 0)
         continue;
-      // TODO use sqrt rounded to power of 2
-      const uint8_t j = i_bin % 256; // compiler is smart for mod 2**N
-      const auto i_chunk = i_bin / 256;
+      const uint8_t j = i_bin % chunksize; // compiler is smart for mod 2**N
+      const auto i_chunk = i_bin / chunksize;
       auto &[vals, ind] = chunks[i_chunk];
       if constexpr (is_ValueAndVariance_v<T>) {
         vals.emplace_back(data.value[i]);
@@ -71,7 +71,7 @@ auto map_to_bins_chunkwise = [](const auto &binned, auto &bins,
     for (scipp::index i_chunk = 0; i_chunk < scipp::size(chunks); ++i_chunk) {
       auto &[vals, ind] = chunks[i_chunk];
       for (scipp::index j = 0; j < scipp::size(ind); ++j) {
-        const auto i_bin = 256 * i_chunk + ind[j];
+        const auto i_bin = chunksize * i_chunk + ind[j];
         if constexpr (is_ValueAndVariance_v<T>) {
           binned.variance[bins[i_bin]] = vals[2 * j + 1];
           binned.value[bins[i_bin]++] = vals[2 * j];
@@ -115,11 +115,15 @@ static constexpr auto bin = overloaded{
       // We can avoid some of this issue by first sorting into chunks, then
       // chunks into bins. For example, instead of mapping directly to 65536
       // bins, we may map to 256 chunks, and each chunk to 256 bins.
-      // TODO Ideally we should recurse this approach, with optimal
-      // intermediate chunk sizes. These will in principle depend on cache
-      // sizes.
       if (bins.size() > 512 && size > 128 * 1024) { // avoid overhead
-        map_to_bins_chunkwise(binned, bins, data, bin_indices);
+        if (128 * 128 >= bins.size())
+          map_to_bins_chunkwise<128>(binned, bins, data, bin_indices);
+        else if (256 * 256 >= bins.size())
+          map_to_bins_chunkwise<256>(binned, bins, data, bin_indices);
+        else if (512 * 512 >= bins.size())
+          map_to_bins_chunkwise<512>(binned, bins, data, bin_indices);
+        else
+          map_to_bins_chunkwise<1024>(binned, bins, data, bin_indices);
       } else {
         map_to_bins_direct(binned, bins, data, bin_indices);
       }
