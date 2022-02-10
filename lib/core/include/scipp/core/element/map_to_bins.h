@@ -44,7 +44,7 @@ auto map_to_bins_chunkwise = [](const auto &binned, auto &bins,
   std::vector<
       std::tuple<std::vector<typename Val::value_type>, std::vector<uint8_t>>>
       chunks;
-  chunks.resize(bins.size() / 256);
+  chunks.resize((bins.size() - 1) / 256 + 1);
   for (scipp::index i = 0; i < size;) {
     // We operate in blocks so the size of the map of buffers, i.e.,
     // additional memory use of the algorithm, is bounded. This also
