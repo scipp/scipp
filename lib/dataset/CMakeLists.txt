@@ -34,6 +34,7 @@ set(SRC_FILES
     arithmetic.cpp
     astype.cpp
     bin.cpp
+    bin_detail.cpp
     bins.cpp
     counts.cpp
     data_array.cpp
