@@ -48,13 +48,12 @@ auto map_to_bins_chunkwise = [](const auto &binned, auto &bins,
   // for every application of the kernel.
   std::vector<
       std::tuple<std::vector<typename Val::value_type>, std::vector<uint8_t>>>
-      chunks;
-  chunks.resize((bins.size() - 1) / chunksize + 1);
+      chunks((bins.size() - 1) / chunksize + 1);
   for (scipp::index i = 0; i < size;) {
     // We operate in blocks so the size of the map of buffers, i.e.,
     // additional memory use of the algorithm, is bounded. This also
     // avoids costly allocations from resize operations.
-    scipp::index max = std::min(size, i + scipp::size(bins) * 64);
+    scipp::index max = std::min(size, i + scipp::size(bins) * 32);
     // 1. Map to chunks
     for (; i < max; ++i) {
       const auto i_bin = bin_indices[i];
@@ -77,8 +76,8 @@ auto map_to_bins_chunkwise = [](const auto &binned, auto &bins,
       for (scipp::index j = 0; j < scipp::size(ind); ++j) {
         const auto i_bin = chunksize * i_chunk + ind[j];
         if constexpr (is_ValueAndVariance_v<T>) {
-          binned.variance[bins[i_bin]] = vals[2 * j + 1];
-          binned.value[bins[i_bin]++] = vals[2 * j];
+          binned.value[bins[i_bin]] = vals[2 * j];
+          binned.variance[bins[i_bin]++] = vals[2 * j + 1];
         } else {
           binned[bins[i_bin]++] = vals[j];
         }
@@ -111,7 +110,6 @@ static constexpr auto bin = overloaded{
     [](const auto &binned, const auto &offsets, const auto &data,
        const auto &bin_indices) {
       auto bins(offsets.sizes());
-      const auto size = scipp::size(bin_indices);
       // If there are many bins, we have two performance issues:
       // 1. `bins` is large and will not fit into L1, L2, or L3 cache.
       // 2. Writes to output are very random, implying a cache miss for every
@@ -119,7 +117,9 @@ static constexpr auto bin = overloaded{
       // We can avoid some of this issue by first sorting into chunks, then
       // chunks into bins. For example, instead of mapping directly to 65536
       // bins, we may map to 256 chunks, and each chunk to 256 bins.
-      if (bins.size() > 512 && size > 128 * 1024) { // avoid overhead
+      bool many_bins = bins.size() > 512;
+      bool multiple_events_per_bin = bins.size() * 16 < bin_indices.size();
+      if (many_bins && multiple_events_per_bin) { // avoid overhead
         if (bins.size() <= 128 * 128)
           map_to_bins_chunkwise<128>(binned, bins, data, bin_indices);
         else if (bins.size() <= 256 * 256)
