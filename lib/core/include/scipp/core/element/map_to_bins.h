@@ -56,7 +56,7 @@ auto map_to_bins_chunkwise = [](auto &binned, auto &bins, const auto &data,
     // We operate in blocks so the size of the map of buffers, i.e.,
     // additional memory use of the algorithm, is bounded. This also
     // avoids costly allocations from resize operations.
-    scipp::index max = std::min(size, i + scipp::size(bins) * 8);
+    const scipp::index max = std::min(size, i + scipp::size(bins) * 8);
     // 1. Map to chunks
     for (; i < max; ++i) {
       const auto i_bin = bin_indices[i];
@@ -120,8 +120,8 @@ static constexpr auto bin = overloaded{
       // We can avoid some of this issue by first sorting into chunks, then
       // chunks into bins. For example, instead of mapping directly to 65536
       // bins, we may map to 256 chunks, and each chunk to 256 bins.
-      bool many_bins = bins.size() > 512;
-      bool multiple_events_per_bin = bins.size() * 4 < bin_indices.size();
+      const bool many_bins = bins.size() > 512;
+      const bool multiple_events_per_bin = bins.size() * 4 < bin_indices.size();
       if (many_bins && multiple_events_per_bin) { // avoid overhead
         if (bins.size() <= 128 * 128)
           map_to_bins_chunkwise<128>(binned, bins, data, bin_indices);
