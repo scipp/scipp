@@ -18,6 +18,7 @@ Features
 * Added ``quiet`` argument to :py:func:`scipp.transform_coords` `#2420 <https://github.com/scipp/scipp/pull/2420>`_.
 * Added support for strides for positional slicing. Negative strides are not supported for now `#2423 <https://github.com/scipp/scipp/pull/2423>`_.
 * :py:func:`scipp.zeros_like`, :py:func:`scipp.ones_like`, :py:func:`scipp.empty_like`, and :py:func:`scipp.full_like` now accept and return data arrays `#2425 <https://github.com/scipp/scipp/pull/2425>`_.
+* Added the ``.rename`` method to :py:class:`scipp.Variable`, :py:class:`scipp.DataArray`, and :py:class:`scipp.Dataset` that renames both dimensions and coords/attrs at the same time `#2428 <https://github.com/scipp/scipp/pull/2428>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~

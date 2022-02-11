@@ -646,6 +646,63 @@ def test_rename_dims():
     assert sc.identical(renamed, make_simple_dataset('y', 'x', seed=0))
 
 
+def test_rename():
+    d = make_simple_dataset('x', 'y', seed=0)
+    original = d.copy()
+    renamed = d.rename({'y': 'z'})
+    assert sc.identical(d, original)
+    assert sc.identical(renamed, make_simple_dataset('x', 'z', seed=0))
+    renamed = renamed.rename(dims_dict={'x': 'y', 'z': 'x'})
+    assert sc.identical(renamed, make_simple_dataset('y', 'x', seed=0))
+
+
+def test_rename_intersection_of_dims():
+    d = make_simple_dataset('x', 'y', seed=0)
+    d['c'] = sc.Variable(dims=['time', 'y'], values=np.random.rand(4, 3))
+    renamed = d.rename(dims_dict={'x': 'u', 'time': 'v'})
+    expected = make_simple_dataset('u', 'y', seed=0)
+    expected['c'] = sc.Variable(dims=['v', 'y'], values=np.random.rand(4, 3))
+    assert sc.identical(renamed, expected)
+
+
+def test_rename_coords_only():
+    d = sc.Dataset(coords={
+        'x': sc.arange('x', 5.),
+        'y': sc.arange('y', 6.),
+        'z': sc.arange('z', 7.)
+    })
+    expected = sc.Dataset(coords={
+        'u': sc.arange('u', 5.),
+        'y': sc.arange('y', 6.),
+        'z': sc.arange('z', 7.)
+    })
+    assert sc.identical(d.rename({'x': 'u'}), expected)
+
+
+def test_rename_dataset_with_coords_not_belonging_to_any_item():
+    d = sc.Dataset(data={'a': sc.arange('x', 5.)},
+                   coords={
+                       'x': sc.arange('x', 5.),
+                       'y': sc.arange('y', 6.),
+                       'z': sc.arange('z', 7.)
+                   })
+    expected = sc.Dataset(data={'a': sc.arange('u', 5.)},
+                          coords={
+                              'u': sc.arange('u', 5.),
+                              'y': sc.arange('y', 6.),
+                              'z': sc.arange('z', 7.)
+                          })
+    assert sc.identical(d.rename({'x': 'u'}), expected)
+
+
+def test_rename_kwargs():
+    d = make_simple_dataset('x', 'y', seed=0)
+    renamed = d.rename(y='z')
+    assert sc.identical(renamed, make_simple_dataset('x', 'z', seed=0))
+    renamed = renamed.rename(x='y', z='x')
+    assert sc.identical(renamed, make_simple_dataset('y', 'x', seed=0))
+
+
 def test_coord_delitem():
     var = sc.Variable(dims=['x'], values=np.arange(4))
     d = sc.Dataset(data={'a': var}, coords={'x': var})

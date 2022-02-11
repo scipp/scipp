@@ -682,6 +682,22 @@ def test_rename_dims():
     assert sc.identical(xy, original)
 
 
+def test_rename():
+    values = np.arange(6).reshape(2, 3)
+    xy = sc.Variable(dims=['x', 'y'], values=values)
+    original = xy.copy()
+    zy = sc.Variable(dims=['z', 'y'], values=values)
+    assert sc.identical(xy.rename({'x': 'z'}), zy)
+    assert sc.identical(xy, original)
+
+
+def test_rename_kwargs():
+    values = np.arange(6).reshape(2, 3)
+    xy = sc.Variable(dims=['x', 'y'], values=values)
+    zy = sc.Variable(dims=['z', 'y'], values=values)
+    assert sc.identical(xy.rename(x='z'), zy)
+
+
 def test_bool_variable_repr():
     a = sc.Variable(dims=['x'], values=np.array([False, True, True, False, True]))
     assert [expected in repr(a) for expected in ["True", "False", "..."]]
