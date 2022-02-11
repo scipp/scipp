@@ -12,21 +12,20 @@
 using namespace scipp;
 using namespace scipp::core::element;
 
-auto random_shuffled(const scipp::index nevent, const scipp::index nbin) {
-  std::random_device rnd_device;
-  std::mt19937 mersenne_engine{rnd_device()};
+auto random_shuffled(const unsigned int seed, const scipp::index nevent,
+                     const scipp::index nbin) {
+  std::mt19937 mersenne_engine{seed};
   std::uniform_int_distribution<scipp::index> dist{0, nbin - 1};
   auto gen = [&dist, &mersenne_engine]() { return dist(mersenne_engine); };
   std::vector<scipp::index> vec(nevent);
   std::generate(begin(vec), end(vec), gen);
-  std::shuffle(begin(vec), end(vec), mersenne_engine);
   return vec;
 }
 
 class ElementMapToBinsTest : public ::testing::Test {
 protected:
   ElementMapToBinsTest()
-      : binned(nevent), bin_indices(random_shuffled(nevent, nbin)),
+      : binned(nevent), bin_indices(random_shuffled(seed, nevent, nbin)),
         data(bin_indices.begin(), bin_indices.end()) {
     scipp::index current = 0;
     for (scipp::index i = 0; i < nbin; ++i) {
@@ -34,6 +33,7 @@ protected:
       current += std::count(bin_indices.begin(), bin_indices.end(), i);
     }
   }
+  unsigned int seed = std::random_device()();
   const scipp::index nevent = 1033;
   const scipp::index nbin = 17;
   std::vector<double> binned;
@@ -48,14 +48,14 @@ protected:
     auto bins2 = bins;
     map_to_bins_direct(binned1, bins1, data, bin_indices);
     map_to_bins_chunkwise<N>(binned2, bins2, data, bin_indices);
-    EXPECT_EQ(binned1, binned2);
+    EXPECT_EQ(binned1, binned2) << seed;
   }
 };
 
 TEST_F(ElementMapToBinsTest, data_matching_index_equivalent_to_sort) {
   map_to_bins_direct(binned, bins, data, bin_indices);
   std::sort(data.begin(), data.end());
-  EXPECT_EQ(binned, data);
+  EXPECT_EQ(binned, data) << seed;
 }
 
 TEST_F(ElementMapToBinsTest, direct_equivalent_to_chunkwise) {
