@@ -18,18 +18,30 @@ def bind_get():
         _bind_function_as_method(cls, 'get', get)
 
 
-_NO_DEFAULT = object()
+class _NoDefaultType:
+    def __repr__(self):
+        return 'NotSpecified'
 
 
-def _pop(obj, name, default=_NO_DEFAULT):
-    if name not in obj and default is not _NO_DEFAULT:
+_NoDefault = _NoDefaultType()
+
+
+def _pop(self, name, default=_NoDefault):
+    """
+    Remove and return an element.
+
+    :param name: Key to remove.
+    :param default: If the mapping does not contain an element `name`,
+                    return this value or raise `KeyError` is no default is given.
+    """
+    if name not in self and default is not _NoDefault:
         return default
-    return obj._pop(name)
+    return self._pop(name)
 
 
 def bind_pop():
     for cls in _dict_likes:
-        _bind_function_as_method(cls, 'pop', _pop)
+        _bind_function_as_method(cls, 'pop', _pop, abbreviate_doc=False)
 
 
 def bind_functions_as_methods(cls, namespace, func_names):
@@ -37,7 +49,7 @@ def bind_functions_as_methods(cls, namespace, func_names):
         _bind_function_as_method(cls, func_name, func)
 
 
-def _bind_function_as_method(cls, name, func):
+def _bind_function_as_method(cls, name, func, *, abbreviate_doc=True):
     method = types.FunctionType(func.__code__, func.__globals__, name,
                                 func.__defaults__, func.__closure__)
     method.__kwdefaults__ = func.__kwdefaults__
@@ -48,6 +60,9 @@ def _bind_function_as_method(cls, name, func):
         # sophisticate / expensive parser that running during import of scipp.
         # Line feeds are replaced because they mess with the
         # reST parser of autosummary.
-        method.__doc__ = (func.__doc__.split('\n\n', 1)[0].replace('\n', ' ') +
-                          f'\n\n:seealso: Details in :py:meth:`scipp.{name}`')
+        if abbreviate_doc:
+            method.__doc__ = (func.__doc__.split('\n\n', 1)[0].replace('\n', ' ') +
+                              f'\n\n:seealso: Details in :py:meth:`scipp.{name}`')
+        else:
+            method.__doc__ = func.__doc__
     setattr(cls, name, method)
