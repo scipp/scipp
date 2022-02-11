@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/except.h"
 #include "scipp/dataset/map_view.h"
 #include "scipp/dataset/math.h"
 #include "scipp/dataset/rebin.h"
@@ -98,6 +97,7 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
       "dim", [](const T &self) { return self.dim().name(); },
       "The only dimension label for 1-dimensional data, raising an exception "
       "if the data is not 1-dimensional.");
+  bind_pop(c);
 }
 
 template <class T, class... Ignored>
