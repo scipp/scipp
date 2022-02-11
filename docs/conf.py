@@ -40,16 +40,16 @@ html_show_sourcelink = True
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
-    'sphinx.ext.doctest',
+    'sphinx.ext.napoleon',
+    'sphinx_autodoc_typehints',
     'sphinx_copybutton',
     'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
     'nbsphinx',
 ]
-
-autodoc_typehints = 'description'
 
 autodoc_type_aliases = {
     'VariableLike': 'VariableLike',
@@ -73,6 +73,21 @@ intersphinx_mapping = {
 # looks more suitable in the long run when the API grows.
 # For a nice example see how xarray handles its API documentation.
 autosummary_generate = True
+
+napoleon_google_docstring = False
+napoleon_numpy_docstring = True
+napoleon_use_param = True
+napoleon_use_rtype = True
+napoleon_preprocess_types = True
+napoleon_type_aliases = {
+    # objects without namespace: scipp
+    "DataArray": "~scipp.DataArray",
+    "Dataset": "~scipp.Dataset",
+    "Variable": "~scipp.Variable",
+    # objects without namespace: numpy
+    "ndarray": "~numpy.ndarray",
+}
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
