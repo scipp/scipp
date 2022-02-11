@@ -285,6 +285,19 @@ def test_rename_fails_when_attr_already_exists():
         d.rename({'y': 'z'})
 
 
+def test_rename_fails_when_attr_with_same_name_already_exists():
+    d = make_dataarray('x', 'y', seed=0)
+    with pytest.raises(sc.CoordError):
+        d.rename({'x': 'meta'})
+
+
+def test_rename_fails_when_coord_with_same_name_already_exists():
+    d = make_dataarray('x', 'y', seed=0)
+    d.attrs['y'] = d.coords.pop('y')
+    with pytest.raises(sc.CoordError):
+        d.rename({'y': 'aux'})
+
+
 def test_coord_setitem_can_change_dtype():
     a = np.arange(3)
     v1 = sc.array(dims=['x'], values=a)

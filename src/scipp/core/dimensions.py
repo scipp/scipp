@@ -31,13 +31,19 @@ def _rename_data_array(da: DataArray, dims_dict: dict = None, **names) -> DataAr
     """
     renaming_dict = {**({} if dims_dict is None else dims_dict), **names}
     out = da.rename_dims(renaming_dict)
+    coords_and_attrs = list(zip(("coord", "attr"), (out.coords, out.attrs)))
     for old, new in renaming_dict.items():
-        for meta in (out.coords, out.attrs):
+        for i, (group, meta) in enumerate(coords_and_attrs):
             if old in meta:
                 if new in meta:
                     raise CoordError(
-                        f'Cannot rename coordinate {old} to {new} as this would erase '
-                        'an existing coordinate.')
+                        f"Cannot rename {group} '{old}' to '{new}' as this would erase "
+                        f"an existing {group}.")
+                elif new in out.meta:
+                    other = coords_and_attrs[i - 1][0]
+                    raise CoordError(
+                        f"Cannot rename {group} '{old}' to '{new}' as there is an "
+                        f"existing {other} with the same name.")
                 meta[new] = meta.pop(old)
     return out
 
