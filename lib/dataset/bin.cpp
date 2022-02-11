@@ -24,10 +24,12 @@
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/except.h"
 
+#include "bin_detail.h"
 #include "bins_util.h"
 #include "dataset_operations_common.h"
 
 using namespace scipp::variable::bin_detail;
+using namespace scipp::dataset::bin_detail;
 
 namespace scipp::dataset {
 
@@ -154,10 +156,10 @@ auto bin(const Variable &data, const Variable &indices,
             var.template constituents<Variable>();
         static_cast<void>(input_indices);
         auto out = resize_default_init(in_buffer, buffer_dim, total_size);
-        transform_in_place(
-            subspan_view(out, buffer_dim, filtered_input_bin_ranges), offsets,
-            as_subspan_view(var), as_subspan_view(indices), core::element::bin,
-            "bin");
+        auto out_subspans =
+            subspan_view(out, buffer_dim, filtered_input_bin_ranges);
+        map_to_bins(out_subspans, as_subspan_view(var), offsets,
+                    as_subspan_view(indices));
         return out;
       });
 
