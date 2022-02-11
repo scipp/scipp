@@ -77,7 +77,7 @@ autosummary_generate = True
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 napoleon_use_param = True
-napoleon_use_rtype = True
+napoleon_use_rtype = False
 napoleon_preprocess_types = True
 napoleon_type_aliases = {
     # objects without namespace: scipp
@@ -87,6 +87,8 @@ napoleon_type_aliases = {
     # objects without namespace: numpy
     "ndarray": "~numpy.ndarray",
 }
+typehints_defaults = 'comma'
+typehints_use_rtype = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
