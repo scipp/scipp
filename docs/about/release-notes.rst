@@ -10,11 +10,11 @@ Features
 ~~~~~~~~
 
 * Added support for :py:func:`abs` to :py:class:`scipp.DataArray`, :py:class:`scipp.Dataset`, :py:class:`scipp.Variable` `#2382 <https://github.com/scipp/scipp/pull/2382>`_.
-* :py:func:`sc.bin` will now also look at attributes to perform the binning, instead of only looking at the coordinates `#2388 <https://github.com/scipp/scipp/pull/2388>`_.
+* :py:func:`scipp.bin` will now also look at attributes to perform the binning, instead of only looking at the coordinates `#2388 <https://github.com/scipp/scipp/pull/2388>`_.
 * Added :py:func:`scipp.squeeze` to remove length-1 dimensions `#2385 <https://github.com/scipp/scipp/pull/2385>`_.
 * Switched to new system for runtime configuration, see the corresponding section in the reference documentation `#2389 <https://github.com/scipp/scipp/pull/2389>`_.
 * Added :py:func:`scipp.midpoints` which can be used to compute bin-centers `#2404 <https://github.com/scipp/scipp/pull/2404>`_.
-* :py:func:`sc.fold` now supports ``-1`` for one of the dimension sizes, to indicate automatic shape `#2414 <https://github.com/scipp/scipp/pull/2414>`_.
+* :py:func:`scipp.fold` now supports ``-1`` for one of the dimension sizes, to indicate automatic shape `#2414 <https://github.com/scipp/scipp/pull/2414>`_.
 * Added ``quiet`` argument to :py:func:`scipp.transform_coords` `#2420 <https://github.com/scipp/scipp/pull/2420>`_.
 * Added support for strides for positional slicing. Negative strides are not supported for now `#2423 <https://github.com/scipp/scipp/pull/2423>`_.
 * :py:func:`scipp.zeros_like`, :py:func:`scipp.ones_like`, :py:func:`scipp.empty_like`, and :py:func:`scipp.full_like` now accept and return data arrays `#2425 <https://github.com/scipp/scipp/pull/2425>`_.
@@ -38,8 +38,8 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
-* Fix :py:func:`full`, which previously converted or attempted to convert all values to ``float64`` unless the ``dtype`` was specified explicitly `#2395 <https://github.com/scipp/scipp/pull/2395>`_.
-* Fix :py:func:`transform_coords` for sliced binned data, used to raise an exception `#2406 <https://github.com/scipp/scipp/pull/2406>`_.
+* Fix :py:func:`scipp.full`, which previously converted or attempted to convert all values to ``float64`` unless the ``dtype`` was specified explicitly `#2395 <https://github.com/scipp/scipp/pull/2395>`_.
+* Fix :py:func:`scipp.transform_coords` for sliced binned data, used to raise an exception `#2406 <https://github.com/scipp/scipp/pull/2406>`_.
 * Fix 1d plots y-axis limits when toggling log-scale with buttons and fix 2d plot colorbar when Inf values `#2426 <https://github.com/scipp/scipp/pull/2426>`_.
 
 Deprecations
