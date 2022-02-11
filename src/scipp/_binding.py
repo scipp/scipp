@@ -15,7 +15,7 @@ _dict_likes = [
 
 def bind_get():
     for cls in _dict_likes:
-        setattr(cls, 'get', get)
+        _bind_function_as_method(cls, 'get', get)
 
 
 _NO_DEFAULT = object()
@@ -29,20 +29,25 @@ def _pop(obj, name, default=_NO_DEFAULT):
 
 def bind_pop():
     for cls in _dict_likes:
-        setattr(cls, 'pop', _pop)
+        _bind_function_as_method(cls, 'pop', _pop)
 
 
 def bind_functions_as_methods(cls, namespace, func_names):
     for func_name, func in map(lambda n: (n, namespace[n]), func_names):
-        method = types.FunctionType(func.__code__, func.__globals__, func_name,
-                                    func.__defaults__, func.__closure__)
-        method.__kwdefaults__ = func.__kwdefaults__
-        method.__annotations__ = func.__annotations__
+        _bind_function_as_method(cls, func_name, func)
+
+
+def _bind_function_as_method(cls, name, func):
+    method = types.FunctionType(func.__code__, func.__globals__, name,
+                                func.__defaults__, func.__closure__)
+    method.__kwdefaults__ = func.__kwdefaults__
+    method.__annotations__ = func.__annotations__
+    if func.__doc__ is not None:
         # Extract the summary from the docstring.
         # This relies on check W293 in flake8 to avoid implementing a more
         # sophisticate / expensive parser that running during import of scipp.
         # Line feeds are replaced because they mess with the
         # reST parser of autosummary.
         method.__doc__ = (func.__doc__.split('\n\n', 1)[0].replace('\n', ' ') +
-                          f'\n\n:seealso: Details in :py:meth:`scipp.{func_name}`')
-        setattr(cls, func_name, method)
+                          f'\n\n:seealso: Details in :py:meth:`scipp.{name}`')
+    setattr(cls, name, method)
