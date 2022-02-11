@@ -15,7 +15,10 @@ _dict_likes = [
 
 def bind_get():
     for cls in _dict_likes:
-        _bind_function_as_method(cls, 'get', get)
+        method = _convert_to_method(name='get', func=get, abbreviate_doc=False)
+        method.__doc__ = "Get the value associated with the " \
+                         "provided key or the default value."
+        setattr(cls, 'get', method)
 
 
 class _NoDefaultType:
@@ -41,15 +44,20 @@ def _pop(self, name, default=_NoDefault):
 
 def bind_pop():
     for cls in _dict_likes:
-        _bind_function_as_method(cls, 'pop', _pop, abbreviate_doc=False)
+        _bind_function_as_method(cls=cls, name='pop', func=_pop, abbreviate_doc=False)
 
 
 def bind_functions_as_methods(cls, namespace, func_names):
     for func_name, func in map(lambda n: (n, namespace[n]), func_names):
-        _bind_function_as_method(cls, func_name, func)
+        _bind_function_as_method(cls=cls, name=func_name, func=func)
 
 
-def _bind_function_as_method(cls, name, func, *, abbreviate_doc=True):
+def _bind_function_as_method(*, cls, name, func, abbreviate_doc=True):
+    setattr(cls, name,
+            _convert_to_method(name=name, func=func, abbreviate_doc=abbreviate_doc))
+
+
+def _convert_to_method(*, name, func, abbreviate_doc=True):
     method = types.FunctionType(func.__code__, func.__globals__, name,
                                 func.__defaults__, func.__closure__)
     method.__kwdefaults__ = func.__kwdefaults__
@@ -65,4 +73,4 @@ def _bind_function_as_method(cls, name, func, *, abbreviate_doc=True):
                               f'\n\n:seealso: Details in :py:meth:`scipp.{name}`')
         else:
             method.__doc__ = func.__doc__
-    setattr(cls, name, method)
+    return method
