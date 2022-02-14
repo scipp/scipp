@@ -174,3 +174,10 @@ def test_ge(small, medium, large):
     assert (large >= medium).value
     assert (large >= medium.value).value
     assert (large.value >= medium).value
+
+
+def test_comparison_with_str(medium):
+    assert (sc.scalar('a string') == sc.scalar('a string')).value
+    assert not (medium == 'a string')
+    with pytest.raises(TypeError):
+        _ = medium < 'a string'
