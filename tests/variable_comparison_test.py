@@ -94,35 +94,83 @@ def large():
 
 def test_eq(small, medium, large):
     assert not (small == medium).value
-    assert not (large == medium).value
+    assert not (small == medium.value).value
+    assert not (small.values == medium).value
+
     assert (medium == medium).value
+    assert (medium == medium.value).value
+    assert (medium.value == medium).value
+
+    assert not (large == medium).value
+    assert not (large == medium.value).value
+    assert not (large.value == medium).value
 
 
-def test_neq(small, medium, large):
+def test_ne(small, medium, large):
     assert (small != medium).value
-    assert (large != medium).value
+    assert (small != medium.value).value
+    assert (small.values != medium).value
+
     assert not (medium != medium).value
+    assert not (medium != medium.value).value
+    assert not (medium.value != medium).value
+
+    assert (large != medium).value
+    assert (large != medium.value).value
+    assert (large.value != medium).value
 
 
 def test_lt(small, medium, large):
     assert (small < medium).value
-    assert not (large < medium).value
+    assert (small < medium.value).value
+    assert (small.values < medium).value
+
     assert not (medium < medium).value
+    assert not (medium < medium.value).value
+    assert not (medium.value < medium).value
+
+    assert not (large < medium).value
+    assert not (large < medium.value).value
+    assert not (large.value < medium).value
 
 
 def test_le(small, medium, large):
     assert (small <= medium).value
-    assert not (large <= medium).value
+    assert (small <= medium.value).value
+    assert (small.values <= medium).value
+
     assert (medium <= medium).value
+    assert (medium <= medium.value).value
+    assert (medium.value <= medium).value
+
+    assert not (large <= medium).value
+    assert not (large <= medium.value).value
+    assert not (large.value <= medium).value
 
 
 def test_gt(small, medium, large):
     assert not (small > medium).value
-    assert (large > medium).value
+    assert not (small > medium.value).value
+    assert not (small.values > medium).value
+
     assert not (medium > medium).value
+    assert not (medium > medium.value).value
+    assert not (medium.value > medium).value
+
+    assert (large > medium).value
+    assert (large > medium.value).value
+    assert (large.value > medium).value
 
 
 def test_ge(small, medium, large):
     assert not (small >= medium).value
-    assert (large >= medium).value
+    assert not (small >= medium.value).value
+    assert not (small.values >= medium).value
+
     assert (medium >= medium).value
+    assert (medium >= medium.value).value
+    assert (medium.value >= medium).value
+
+    assert (large >= medium).value
+    assert (large >= medium.value).value
+    assert (large.value >= medium).value
