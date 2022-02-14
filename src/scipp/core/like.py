@@ -43,7 +43,7 @@ def zeros_like(
     See Also
     --------
     zeros: Create zeros but based on given dims and shape
-    ones_like : Create and object initialized with ones
+    ones_like : Create an object initialized with ones
     """
     new_values = zeros(dims=var.dims,
                        shape=var.shape,
