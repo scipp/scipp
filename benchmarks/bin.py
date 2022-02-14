@@ -40,7 +40,7 @@ class Bin1d:
     timeout = 300.0
 
     def setup(self, nbin):
-        self.table = sc.data.table_xyz(100_000_000)
+        self.table = sc.data.table_xyz(50_000_000)
         self.x = sc.linspace(dim='x', start=0, stop=1, num=nbin + 1, unit='m')
 
     def time_bin_table(self, nbin):
