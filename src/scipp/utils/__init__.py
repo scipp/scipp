@@ -9,5 +9,4 @@ from .collapse_and_slices import *
 from .colors import *
 from .to_string import *
 from .comparison import *
-from .get import *
 from .pyshell import *
