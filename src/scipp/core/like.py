@@ -23,15 +23,27 @@ def zeros_like(
     var: _Union[_cpp.Variable,
                 _cpp.DataArray]) -> _Union[_cpp.Variable, _cpp.DataArray]:
     """
-    Constructs a new object with the same dims, shape, unit and dtype as the input
-    (:class:`Variable` or :class:`DataArray`), but with all values initialized to 0.
+    Return a Variable or DataArray with the same dims, shape, unit, and dtype as the
+    input and all values initialized to 0.
+
     If the input has variances, all variances in the output are set to 0.
-    If the input is a :class:`DataArray`, coordinates and attributes are shallow-copied
+    If the input is a data array, coordinates and attributes are shallow-copied
     and masks are deep copied.
 
-    :param var: Input variable or data array.
+    Parameters
+    ----------
+    var:
+        Input object defining dims, shape, unit, and dtype of the output
 
-    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones_like`
+    Returns
+    -------
+    :
+        New object of zeros.
+
+    See Also
+    --------
+    zeros: Create zeros but based on given dims and shape
+    ones_like : Create an object initialized with ones
     """
     new_values = zeros(dims=var.dims,
                        shape=var.shape,
