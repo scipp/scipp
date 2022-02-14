@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+import pytest
 import scipp as sc
 import numpy as np
 from .common import assert_export
@@ -74,3 +75,54 @@ def test_identical():
 
     ds = sc.Dataset(data={'a': var})
     assert_export(sc.identical, ds['x', :], ds['x', :])
+
+
+@pytest.fixture
+def small():
+    return sc.scalar(1.0)
+
+
+@pytest.fixture
+def medium():
+    return sc.scalar(2.0)
+
+
+@pytest.fixture
+def large():
+    return sc.scalar(3.0)
+
+
+def test_eq(small, medium, large):
+    assert not (small == medium).value
+    assert not (large == medium).value
+    assert (medium == medium).value
+
+
+def test_neq(small, medium, large):
+    assert (small != medium).value
+    assert (large != medium).value
+    assert not (medium != medium).value
+
+
+def test_lt(small, medium, large):
+    assert (small < medium).value
+    assert not (large < medium).value
+    assert not (medium < medium).value
+
+
+def test_le(small, medium, large):
+    assert (small <= medium).value
+    assert not (large <= medium).value
+    assert (medium <= medium).value
+
+
+def test_gt(small, medium, large):
+    assert not (small > medium).value
+    assert (large > medium).value
+    assert not (medium > medium).value
+
+
+def test_ge(small, medium, large):
+    assert not (small >= medium).value
+    assert (large >= medium).value
+    assert (medium >= medium).value
