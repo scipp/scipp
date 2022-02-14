@@ -5,7 +5,6 @@
 import types
 
 from ._scipp import core
-from .utils import get
 
 _dict_likes = [
     core.Dataset, core.Coords, core.Masks, core._BinsMeta, core._BinsCoords,
@@ -13,9 +12,19 @@ _dict_likes = [
 ]
 
 
+def _get(self, key, default=None):
+    """
+    Return the value for key if key is in present, else default.
+    """
+    try:
+        return self[key]
+    except KeyError:
+        return default
+
+
 def bind_get():
     for cls in _dict_likes:
-        method = _convert_to_method(name='get', func=get, abbreviate_doc=False)
+        method = _convert_to_method(name='get', func=_get, abbreviate_doc=False)
         method.__doc__ = "Get the value associated with the " \
                          "provided key or the default value."
         setattr(cls, 'get', method)
@@ -29,17 +38,15 @@ class _NoDefaultType:
 _NoDefault = _NoDefaultType()
 
 
-def _pop(self, name, default=_NoDefault):
+def _pop(self, key, default=_NoDefault):
     """
     Remove and return an element.
 
-    :param name: Key to remove.
-    :param default: If the mapping does not contain an element `name`,
-                    return this value or raise `KeyError` is no default is given.
+    If key is not found, default is returned if given, otherwise KeyError is raised.
     """
-    if name not in self and default is not _NoDefault:
+    if key not in self and default is not _NoDefault:
         return default
-    return self._pop(name)
+    return self._pop(key)
 
 
 def bind_pop():
