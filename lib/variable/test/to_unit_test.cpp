@@ -139,3 +139,10 @@ TEST(ToUnitTest, binned) {
   EXPECT_EQ(to_unit(var, units::Unit{"m"}),
             make_bins(indices, Dim::X, expected_buffer));
 }
+
+TEST(ToUnitTest, throws_if_none_unit) {
+  EXPECT_THROW_DISCARD(to_unit(makeVariable<int32_t>(Dims{Dim::X}, Shape{2},
+                                                     units::none, Values{1, 2}),
+                               units::Unit("m")),
+                       except::UnitError);
+}
