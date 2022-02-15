@@ -514,4 +514,4 @@ def test_when_2d_data_has_y_coord_associated_with_dim_x():
                           'x': sc.arange('x', 2, N + 2),
                           'y': sc.arange('x', 1, N + 1)
                       })
-    da.plot()
+    plot(da)
