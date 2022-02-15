@@ -32,7 +32,7 @@ Variable to_unit(const Variable &var, const units::Unit &unit,
   const auto var_unit = variableFactory().elem_unit(var);
   if (var_unit == units::none)
     throw except::UnitError(
-        "Conversion from a `none` unit to another unit is not permitted.");
+        "Unit conversion is not permitted as the input variable has no unit.");
   const auto scale =
       llnl::units::quick_convert(var_unit.underlying(), unit.underlying());
   if (std::isnan(scale))
