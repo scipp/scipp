@@ -3,8 +3,33 @@
 Release Notes
 =============
 
-v0.12.0 (unreleased)
+v0.13.0 (unreleased)
 --------------------
+
+Features
+~~~~~~~~
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas Wynen :sup:`a`
+
+v0.12.0 (February 2022)
+-----------------------
 
 Features
 ~~~~~~~~
@@ -43,12 +68,6 @@ Bugfixes
 * Fix :py:func:`scipp.transform_coords` for sliced binned data, used to raise an exception `#2406 <https://github.com/scipp/scipp/pull/2406>`_.
 * Fix 1d plots y-axis limits when toggling log-scale with buttons and fix 2d plot colorbar when Inf values `#2426 <https://github.com/scipp/scipp/pull/2426>`_.
 * Fix bug leading to datasets dims/shape modification after failed item insertion `#2437 <https://github.com/scipp/scipp/pull/2437>`_.
-
-Deprecations
-~~~~~~~~~~~~
-
-Stability, Maintainability, and Testing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Contributors
 ~~~~~~~~~~~~
