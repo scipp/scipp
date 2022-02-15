@@ -6,7 +6,7 @@ from enum import Enum
 
 from .. import units
 from ..core import bin as bin_
-from ..core import broadcast, scalar
+from ..core import broadcast
 from ..core import linspace, rebin, get_slice_params, concat, histogram
 from ..core import DataArray, DimensionError, DType
 from .tools import to_bin_edges
@@ -214,10 +214,7 @@ class ResamplingModel():
                                 out.meta,
                                 sanitize=isinstance(self, ResamplingBinnedModel))
                 # rebin changes to float-valued mask, but need bool
-                if m.dtype != DType.bool:
-                    self._resampled.masks[name] = m.data > scalar(0.0, unit=None)
-                else:
-                    self._resampled.masks[name] = m.data
+                self._resampled.masks[name] = m.data.to(dtype='bool', copy=False)
             for dim in params:
                 size_one = self._resampled.sizes.get(dim, None) == 1
                 no_resolution = self.resolution.get(dim, None) is None
