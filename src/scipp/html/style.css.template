@@ -235,7 +235,7 @@
   grid-column: 4;
   text-align: left;
   color: var(--sc-font-color1);
-  max-width: 80px;
+  max-width: 50pt;
   text-overflow: ellipsis;
 }
 .sc-value-preview {
