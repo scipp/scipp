@@ -265,6 +265,18 @@ TEST(DatasetTest, setData_with_mismatched_dims) {
   ASSERT_THROW(d.setData("a", mismatched), except::DimensionError);
 }
 
+TEST(DatasetTest,
+     setData_with_dims_extensions_but_coord_mismatch_does_not_modify) {
+  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{3, 4});
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
+  DataArray da1(x, {{Dim::X, x}});
+  DataArray da2(y, {{Dim::X, y}}); // note Dim::X
+  Dataset d;
+  d.setData("da1", da1);
+  ASSERT_THROW(d.setData("da2", da2), except::CoordMismatchError);
+  EXPECT_EQ(d.sizes(), da1.dims());
+}
+
 TEST(DatasetTest, DataArrayView_setData) {
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
   Dataset d;

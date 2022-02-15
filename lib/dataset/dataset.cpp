@@ -154,13 +154,13 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
       return;
   }
   expect_writable(*this);
-  setSizes(data.dims());
-  for (auto &&[dim, coord] : data.coords()) {
+  for (auto &&[dim, coord] : data.coords())
     if (const auto it = m_coords.find(dim); it != m_coords.end())
       expect::matching_coord(dim, coord, it->second, "set coord");
-    else
+  setSizes(data.dims());
+  for (auto &&[dim, coord] : data.coords())
+    if (const auto it = m_coords.find(dim); it == m_coords.end())
       setCoord(dim, std::move(coord));
-  }
 
   setData(name, std::move(data.data()));
   auto &item = m_data[name];
