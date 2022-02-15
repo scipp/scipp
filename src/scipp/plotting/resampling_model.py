@@ -210,9 +210,11 @@ class ResamplingModel():
             self._edges = self._make_edges(params)
             self._resampled = self._resample(out)
             for name, mask in out.masks.items():
-                self._resampled.masks[name] = self._rebin(
-                    mask, out.meta, sanitize=isinstance(self,
-                                                        ResamplingBinnedModel)).data
+                m = self._rebin(mask,
+                                out.meta,
+                                sanitize=isinstance(self, ResamplingBinnedModel))
+                # rebin changes to float-valued mask, but need bool
+                self._resampled.masks[name] = m.data.to(dtype='bool', copy=False)
             for dim in params:
                 size_one = self._resampled.sizes.get(dim, None) == 1
                 no_resolution = self.resolution.get(dim, None) is None
