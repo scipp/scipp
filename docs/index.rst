@@ -72,7 +72,7 @@ However, we cannot cover all use-cases and questions users may have.
 
 We use GitHub's `discussions <https://github.com/scipp/scipp/discussions>`_ forum for questions
 that are not answered by these documentation pages.
-This space can be used to both search through problems already met/solved in the community,
+This space can be used to both search through problems already met/solved in the community
 and open new discussions if none of the existing ones provide a satisfactory answer.
 
 Documentation
