@@ -504,3 +504,14 @@ def test_plot_various_2d_coord():
     c = make_array(['xx', 'yy'], 'zz')
     plot(c)
     plot(c, labels={'yy': 'zz'})
+
+
+def test_when_2d_data_has_y_coord_associated_with_dim_x():
+    N = 10
+    M = 15
+    da = sc.DataArray(sc.array(dims=['x', 'y'], values=np.random.random([N, M])),
+                      coords={
+                          'x': sc.arange('x', 2, N + 2),
+                          'y': sc.arange('x', 1, N + 1)
+                      })
+    da.plot()

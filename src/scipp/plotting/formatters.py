@@ -201,7 +201,7 @@ def _get_or_make_coord(array, dim):
     return arange(dim=dim, start=0, stop=array.sizes[dim])
 
 
-def make_formatter(array, key):
+def make_formatter(array, key, dim):
     """
     Get dimensions from requested axis.
     Also return axes tick formatters and locators.
@@ -212,10 +212,8 @@ def make_formatter(array, key):
     formatter = {"linear": None, "log": None, "custom_locator": False}
 
     labels = None
-    dim = key
     if key in array.meta:
         labels = array.meta[key]
-        dim = key if key in labels.dims else labels.dims[-1]
         kind = _dtype_kind(labels)
         if kind == Kind.vector:
             form = VectorFormatter(labels.values, array.sizes[dim]).formatter

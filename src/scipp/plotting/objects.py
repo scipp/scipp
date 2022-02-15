@@ -68,7 +68,7 @@ def _make_formatters(*, dims, arrays, labels):
     labs = {dim: dim for dim in dims}
     if labels is not None:
         labs.update(labels)
-    formatters = {dim: make_formatter(array, labs[dim]) for dim in dims}
+    formatters = {dim: make_formatter(array, labs[dim], dim) for dim in dims}
     return labs, formatters
 
 
