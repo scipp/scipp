@@ -6,16 +6,11 @@ Frequently Asked Questions
 Specific help with using scipp
 ------------------------------
 
-For help on specific issues with using **scipp**, you should first visit
-`this <https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion>`_
+For help on specific issues with using **scipp**, you should first visit the
+`discussions <https://github.com/scipp/scipp/discussions>`_
 page to see if the problem you are facing has already been met/solved in the community.
 
-If you cannot find an answer, you can ask a new question by
-`opening <https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=>`_
-a new |QuestionLabel|_ issue.
-
-.. |QuestionLabel| image:: ../images/question.png
-.. _QuestionLabel: https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=
+If you cannot find an answer, simply start a new discussion there.
 
 General
 -------

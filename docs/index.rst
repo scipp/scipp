@@ -67,16 +67,13 @@ News
 Where can I get help?
 ---------------------
 
-For questions not answered in the documentation
-`this page <https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion>`_
-provides a forum with discussions on problems already met/solved in the community.
+We strive to keep our documentation complete and up-to-date.
+However, we cannot cover all use-cases and questions users may have.
 
-New questions can be asked by
-`opening <https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=>`_
-a new |QuestionLabel|_ issue.
-
-.. |QuestionLabel| image:: images/question.png
-.. _QuestionLabel: https://github.com/scipp/scipp/issues/new?assignees=&labels=question&template=question.md&title=
+We use GitHub's `discussions <https://github.com/scipp/scipp/discussions>`_ forum for questions,
+that are not answered by these documentation pages.
+This space can be used to both search through problems already met/solved in the community,
+and open new discussions if none of the existing ones provide a satisfactory answer.
 
 Documentation
 =============
