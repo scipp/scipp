@@ -5,7 +5,7 @@
 
 import numpy as np
 import scipp as sc
-from ..factory import make_dense_data_array, make_dense_dataset
+from ..factory import make_dense_data_array, make_dense_dataset, make_binned_data_array
 from .plot_helper import plot
 import matplotlib
 
@@ -355,3 +355,8 @@ def test_scale_arg_subplots_independent_dims():
     d['a'] = sc.DataArray(sc.arange('x', 10), coords={'x': sc.arange('x', 10)})
     d['b'] = sc.DataArray(sc.arange('y', 5), coords={'y': sc.arange('y', 5)})
     d.plot(scale={'x': 'log'}).close()
+
+
+def test_plot_binned_with_mask():
+    da = make_binned_data_array(ndim=1, masks=True)
+    da.plot()
