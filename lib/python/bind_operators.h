@@ -96,28 +96,6 @@ void bind_inequality_to_operator(pybind11::class_<T, Ignored...> &c) {
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
 }
 
-template <class Other, class T, class... Ignored>
-void bind_comparison(pybind11::class_<T, Ignored...> &c) {
-  c.def(
-      "__eq__", [](T &a, Other &b) { return equal(a, b); }, py::is_operator(),
-      py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__ne__", [](T &a, Other &b) { return not_equal(a, b); },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__lt__", [](T &a, Other &b) { return less(a, b); }, py::is_operator(),
-      py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__gt__", [](T &a, Other &b) { return greater(a, b); }, py::is_operator(),
-      py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__le__", [](T &a, Other &b) { return less_equal(a, b); },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__ge__", [](T &a, Other &b) { return greater_equal(a, b); },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
-}
-
 struct Identity {
   template <class T> const T &operator()(const T &x) const noexcept {
     return x;
@@ -222,6 +200,29 @@ template <class RHSSetup> struct OpBinder {
           py::is_operator(), py::call_guard<py::gil_scoped_release>());
     }
   }
+
+  template <class Other, class T, class... Ignored>
+  static void comparison(pybind11::class_<T, Ignored...> &c) {
+    c.def(
+        "__eq__", [](T &a, Other &b) { return equal(a, RHSSetup{}(b)); },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "__ne__", [](T &a, Other &b) { return not_equal(a, RHSSetup{}(b)); },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "__lt__", [](T &a, Other &b) { return less(a, RHSSetup{}(b)); },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "__gt__", [](T &a, Other &b) { return greater(a, RHSSetup{}(b)); },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "__le__", [](T &a, Other &b) { return less_equal(a, RHSSetup{}(b)); },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "__ge__",
+        [](T &a, Other &b) { return greater_equal(a, RHSSetup{}(b)); },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+  }
 };
 
 template <class Other, class T, class... Ignored>
@@ -234,6 +235,11 @@ static void bind_binary(pybind11::class_<T, Ignored...> &c) {
   OpBinder<Identity>::binary<Other>(c);
 }
 
+template <class Other, class T, class... Ignored>
+static void bind_comparison(pybind11::class_<T, Ignored...> &c) {
+  OpBinder<Identity>::comparison<Other>(c);
+}
+
 template <class T, class... Ignored>
 void bind_in_place_binary_scalars(pybind11::class_<T, Ignored...> &c) {
   OpBinder<ScalarToVariable>::in_place_binary<double>(c);
@@ -244,6 +250,12 @@ template <class T, class... Ignored>
 void bind_binary_scalars(pybind11::class_<T, Ignored...> &c) {
   OpBinder<ScalarToVariable>::binary<double>(c);
   OpBinder<ScalarToVariable>::binary<int64_t>(c);
+}
+
+template <class T, class... Ignored>
+void bind_comparison_scalars(pybind11::class_<T, Ignored...> &c) {
+  OpBinder<ScalarToVariable>::comparison<double>(c);
+  OpBinder<ScalarToVariable>::comparison<int64_t>(c);
 }
 
 template <class T, class... Ignored>

@@ -160,6 +160,7 @@ of variances.)");
   bind_slice_methods(variable);
 
   bind_comparison<Variable>(variable);
+  bind_comparison_scalars(variable);
 
   bind_in_place_binary<Variable>(variable);
   bind_in_place_binary_scalars(variable);
