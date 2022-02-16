@@ -12,7 +12,7 @@ def _make_sizes(obj):
     return dict(zip(obj.dims, obj.shape))
 
 
-def _rename_variable(var: Variable, dims_dict: dict = None, **names) -> Variable:
+def _rename_variable(var: Variable, dims_dict: dict = None, /, **names) -> Variable:
     """
     Rename the dimensions labels of a Variable.
     The renaming can be defined:
@@ -22,7 +22,7 @@ def _rename_variable(var: Variable, dims_dict: dict = None, **names) -> Variable
     return var.rename_dims({**({} if dims_dict is None else dims_dict), **names})
 
 
-def _rename_data_array(da: DataArray, dims_dict: dict = None, **names) -> DataArray:
+def _rename_data_array(da: DataArray, dims_dict: dict = None, /, **names) -> DataArray:
     """
     Rename the dimensions, coordinates and attributes of a Dataset.
     The renaming can be defined:
@@ -42,7 +42,7 @@ def _rename_data_array(da: DataArray, dims_dict: dict = None, **names) -> DataAr
     return out
 
 
-def _rename_dataset(ds: Dataset, dims_dict: dict = None, **names) -> Dataset:
+def _rename_dataset(ds: Dataset, dims_dict: dict = None, /, **names) -> Dataset:
     """
     Rename the dimensions, coordinates and attributes of all the items in a dataset.
     The renaming can be defined:

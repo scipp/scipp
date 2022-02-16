@@ -662,6 +662,16 @@ def test_rename_kwargs():
     assert sc.identical(xy.rename(x='z'), zy)
 
 
+def test_rename_self_and_dims_dict_are_position_only():
+    values = np.arange(6).reshape(2, 3)
+    xy = sc.Variable(dims=['x', 'y'], values=values)
+    zy = sc.Variable(dims=['z', 'y'], values=values)
+    # `var` is a position-only arg, so it *can* be used as a keyword
+    assert sc.identical(xy.rename(x='var').rename(var='z'), zy)
+    # `dims_dict` is a position-only arg, so it *can* be used as a keyword
+    assert sc.identical(xy.rename(x='dims_dict').rename(dims_dict='z'), zy)
+
+
 def test_bool_variable_repr():
     a = sc.Variable(dims=['x'], values=np.array([False, True, True, False, True]))
     assert [expected in repr(a) for expected in ["True", "False", "..."]]
