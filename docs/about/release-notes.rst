@@ -69,6 +69,7 @@ Bugfixes
 * Fix 1d plots y-axis limits when toggling log-scale with buttons and fix 2d plot colorbar when Inf values `#2426 <https://github.com/scipp/scipp/pull/2426>`_.
 * Fix bug leading to datasets dims/shape modification after failed item insertion `#2437 <https://github.com/scipp/scipp/pull/2437>`_.
 * Fix a plotting bug when 2d data has y coord associated with dimension x `#2446 <https://github.com/scipp/scipp/pull/2446>`_.
+* Fix plotting with custom tick labels of ``dtype=datetime64`` which previously raised an exception `#2449 <https://github.com/scipp/scipp/pull/2449>`_.
 
 Contributors
 ~~~~~~~~~~~~
