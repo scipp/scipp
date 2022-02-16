@@ -17,5 +17,24 @@ dependencies:
   - pre-commit
   - yapf
   - flake8
+  # doc build requirements
+  - confuse
+  - cppcheck [linux64]
+  - graphlib-backport # for python < 3.9
+  - h5py
+  - ipykernel=6.3.1  # issue with pythreejs 3d plotting, see https://github.com/ipython/ipykernel/issues/771
+  - ipympl
+  - ipywidgets
+  - matplotlib-base
+  - nbsphinx
+  - python-graphviz
+  - pythreejs
+  - pyyaml
+  - scipy>=1.7.0
+  - sphinx
+  - sphinx-book-theme
+  - sphinx-copybutton
+  - pip
   - pip:
     - nb-clean
+    - sphinx-autodoc-typehints>=1.17.0
