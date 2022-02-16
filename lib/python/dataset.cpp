@@ -255,10 +255,8 @@ void init_dataset(py::module &m) {
   bind_binary<DataArray>(dataset);
   bind_binary<Variable>(dataset);
 
-  dataArray.def("rename_dims", &rename_dims<DataArray>, py::arg("dims_dict"),
-                "Rename dimensions.");
-  dataset.def("rename_dims", &rename_dims<Dataset>, py::arg("dims_dict"),
-              "Rename dimensions.");
+  dataArray.def("rename_dims", &rename_dims<DataArray>, "Rename dimensions.");
+  dataset.def("rename_dims", &rename_dims<Dataset>, "Rename dimensions.");
 
   m.def(
       "merge",

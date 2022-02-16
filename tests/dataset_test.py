@@ -639,7 +639,7 @@ def test_rename_dims():
     renamed.coords['z'] = renamed.coords['y']
     del renamed.coords['y']
     assert sc.identical(renamed, make_simple_dataset('x', 'z', seed=0))
-    renamed = renamed.rename_dims(dims_dict={'x': 'y', 'z': 'x'})
+    renamed = renamed.rename_dims({'x': 'y', 'z': 'x'})
     renamed.coords['y'] = renamed.coords['x']
     renamed.coords['x'] = renamed.coords['z']
     del renamed.coords['z']
@@ -652,14 +652,14 @@ def test_rename():
     renamed = d.rename({'y': 'z'})
     assert sc.identical(d, original)
     assert sc.identical(renamed, make_simple_dataset('x', 'z', seed=0))
-    renamed = renamed.rename(dims_dict={'x': 'y', 'z': 'x'})
+    renamed = renamed.rename({'x': 'y', 'z': 'x'})
     assert sc.identical(renamed, make_simple_dataset('y', 'x', seed=0))
 
 
 def test_rename_intersection_of_dims():
     d = make_simple_dataset('x', 'y', seed=0)
     d['c'] = sc.Variable(dims=['time', 'y'], values=np.random.rand(4, 3))
-    renamed = d.rename(dims_dict={'x': 'u', 'time': 'v'})
+    renamed = d.rename({'x': 'u', 'time': 'v'})
     expected = make_simple_dataset('u', 'y', seed=0)
     expected['c'] = sc.Variable(dims=['v', 'y'], values=np.random.rand(4, 3))
     assert sc.identical(renamed, expected)

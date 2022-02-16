@@ -236,7 +236,7 @@ def test_rename_dims():
     renamed.coords['z'] = renamed.coords['y']
     del renamed.coords['y']
     assert sc.identical(renamed, make_dataarray('x', 'z', seed=0))
-    renamed = renamed.rename_dims(dims_dict={'x': 'y', 'z': 'x'})
+    renamed = renamed.rename_dims({'x': 'y', 'z': 'x'})
     renamed.coords['y'] = renamed.coords['x']
     renamed.coords['x'] = renamed.coords['z']
     del renamed.coords['z']
@@ -249,7 +249,7 @@ def test_rename():
     renamed = d.rename({'y': 'z'})
     assert sc.identical(d, original)
     assert sc.identical(renamed, make_dataarray('x', 'z', seed=0))
-    renamed = renamed.rename(dims_dict={'x': 'y', 'z': 'x'})
+    renamed = renamed.rename({'x': 'y', 'z': 'x'})
     assert sc.identical(renamed, make_dataarray('y', 'x', seed=0))
 
 

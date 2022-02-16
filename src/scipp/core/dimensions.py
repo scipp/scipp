@@ -53,7 +53,7 @@ def _rename_dataset(ds: Dataset, dims_dict: dict = None, /, **names) -> Dataset:
     ds_from_items = Dataset()
     for key, item in ds.items():
         dims_dict = {old: new for old, new in renaming_dict.items() if old in item.dims}
-        ds_from_items[key] = _rename_data_array(item, dims_dict=dims_dict)
+        ds_from_items[key] = _rename_data_array(item, dims_dict)
     dict_of_coords = {}
     for dim, coord in ds.coords.items():
         if dim not in ds_from_items.coords:
@@ -61,7 +61,5 @@ def _rename_dataset(ds: Dataset, dims_dict: dict = None, /, **names) -> Dataset:
                 old: new
                 for old, new in renaming_dict.items() if old in coord.dims
             }
-            dict_of_coords[dims_dict.get(dim,
-                                         dim)] = _rename_variable(coord,
-                                                                  dims_dict=dims_dict)
+            dict_of_coords[dims_dict.get(dim, dim)] = _rename_variable(coord, dims_dict)
     return merge(ds_from_items, Dataset(coords=dict_of_coords))
