@@ -154,7 +154,8 @@ class PlotView:
             {axis: self.formatters[dim]
              for axis, dim in zip(self._axes, self._dims)})
         scale = {axis: self._scale[dim] for axis, dim in zip(self._axes, self._dims)}
-        self.figure.update_axes(scale=scale, unit=f'[{self._data.unit}]')
+        unit = '' if self._data.unit is None else f'[{self._data.unit}]'
+        self.figure.update_axes(scale=scale, unit=unit)
 
     def _make_data(self, new_values, mask_info):
         return new_values
