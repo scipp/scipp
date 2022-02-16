@@ -50,8 +50,6 @@ requirements:
     - sphinx-book-theme
     - sphinx-copybutton
     - pip
-    - pip:
-      - sphinx-autodoc-typehints>=1.17.0
   run:
     - confuse
     - numpy>=1.20.0
@@ -97,6 +95,8 @@ build:
     - cmake --preset package-macos [osx]
     - cmake --preset package-windows [win]
     - cmake --build --preset build
+    - wget https://files.pythonhosted.org/packages/04/51/4b4a0740fbde50408a2f956cbb190bdc01f1c7a562627e7f102b6a30d9b4/sphinx_autodoc_typehints-1.17.0-py3-none-any.whl
+    - pip install sphinx_autodoc_typehints-1.17.0-py3-none-any.whl
     - cmake --build --preset package-docs [linux]
     - cp -r build/html $DOCS_HTML_DIR [linux]
     - ctest --preset test
