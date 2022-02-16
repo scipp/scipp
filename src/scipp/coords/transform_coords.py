@@ -139,6 +139,7 @@ def _log_transform(rules: List[Rule], targets: Set[str],
                      | set(rule_output_names(rules, ComputeRule))) - targets
         if coords.total_usages(name) < 0
     }
+    preexisting = {target for target in targets if target in inputs}
     steps = [rule for rule in rules if not isinstance(rule, FetchRule)]
 
     message = f'Transformed coords ({", ".join(sorted(inputs))}) ' \
@@ -149,6 +150,9 @@ def _log_transform(rules: List[Rule], targets: Set[str],
         dim_rename_steps = '\n'.join(f'    {t} <- {f}'
                                      for f, t in dim_name_changes.items())
         message += '\n  Renamed dimensions:\n' + dim_rename_steps
+    if preexisting:
+        message += ('\n  Outputs already present in input:'
+                    f'\n    {", ".join(sorted(preexisting))}')
     message += '\n  Steps:\n' + ('\n'.join(f'    {rule}'
                                            for rule in steps) if steps else '    None')
 
