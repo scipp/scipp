@@ -1,5 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+"""
+Convert pre-0.11 HDF5 files to 0.11-compatible files.
+
+Changes are:
+
+* Rename dtype vector_3_float64 to vector3
+* Rename dtype matrix_3_float64 to linear_transform3
+"""
 import h5py
 import sys
 from shutil import copyfile
