@@ -46,6 +46,12 @@ def test_plot_1d_with_labels():
     plot(make_dense_data_array(ndim=1, labels=True), labels={"xx": "lab"})
 
 
+def test_plot_1d_with_datetime_labels():
+    da = make_dense_data_array(ndim=1)
+    da.coords['time'] = sc.epoch(unit='ns') + sc.arange('xx', da.sizes['xx'], unit='ns')
+    plot(da, labels={"xx": "time"})
+
+
 def test_plot_1d_with_attrs():
     plot(make_dense_data_array(ndim=1, attrs=True), labels={"xx": "attr"})
 
