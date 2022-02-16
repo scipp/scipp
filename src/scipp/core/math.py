@@ -3,10 +3,12 @@
 # @author Simon Heybrock
 from __future__ import annotations
 from typing import Optional
+from numbers import Number
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLike
+from .variable import scalar
 
 
 def abs(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
@@ -95,16 +97,18 @@ def reciprocal(x: VariableLike, *, out: Optional[VariableLike] = None) -> Variab
     return _call_cpp_func(_cpp.reciprocal, x, out=out)
 
 
-def pow(base: VariableLike, exp: VariableLike) -> VariableLike:
+def pow(base: VariableLike, exponent: VariableLike) -> VariableLike:
     """Element-wise power.
 
     If the base has a unit, the exponent must be scalar in order to get
-    a well defined unit in the result.
+    a well-defined unit in the result.
 
     :raises: If the dtype does not have a power, e.g., if it is a string.
     :return: ``base`` raised to the power of ``exp``.
     """
-    return _call_cpp_func(_cpp.pow, base, exp)
+    if not isinstance(base, _cpp.Unit) and isinstance(exponent, Number):
+        exponent = scalar(exponent)
+    return _call_cpp_func(_cpp.pow, base, exponent)
 
 
 def sqrt(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
