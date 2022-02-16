@@ -124,7 +124,8 @@ class PlotModel:
         """
         if dim in array.meta:
             coord = array.meta[dim]
-            if typing.has_vector_type(coord) or typing.has_string_type(coord):
+            if typing.has_vector_type(coord) or typing.has_string_type(coord) or (
+                    dim not in coord.dims):
                 coord = arange(dim=dim, start=0, stop=array.sizes[dim])
             elif typing.has_datetime_type(coord):
                 coord = coord - coord.min()
