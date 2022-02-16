@@ -3,7 +3,7 @@
 Installation
 ============
 
-Scipp requires Python 3.7 or above.
+Scipp requires Python 3.8 or above.
 
 Conda
 -----
