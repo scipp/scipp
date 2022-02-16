@@ -2,8 +2,8 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from __future__ import annotations
-from typing import Optional
-from numbers import Number
+from typing import Optional, Union
+from numbers import Real
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
@@ -11,11 +11,13 @@ from ..typing import VariableLike
 from .variable import scalar
 
 
-def abs(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def abs(x: Union[VariableLike, _cpp.Unit],
+        *,
+        out: Optional[_cpp.Variable] = None) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise absolute value.
 
     :param x: Input data.
-    :param out: Optional output buffer.
+    :param out: Optional output buffer. Only supported if `x` is a scipp.Variable.
     :raises: If the dtype has no absolute value, e.g., if it is a string.
     :return: The absolute values of the input.
     :seealso: :py:func:`scipp.norm` for vector-like dtype.
@@ -86,36 +88,43 @@ def norm(x: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.norm, x, out=None)
 
 
-def reciprocal(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def reciprocal(x: Union[VariableLike, _cpp.Unit],
+               *,
+               out: Optional[_cpp.Variable] = None) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise reciprocal.
 
     :param x: Input data.
-    :param out: Optional output buffer.
+    :param out: Optional output buffer. Only supported when `x` is a scipp.Variable.
     :raises: If the dtype has no reciprocal, e.g., if it is a string.
     :return: The reciprocal values of the input.
     """
     return _call_cpp_func(_cpp.reciprocal, x, out=out)
 
 
-def pow(base: VariableLike, exponent: VariableLike) -> VariableLike:
+def pow(base: Union[VariableLike, _cpp.Unit],
+        exponent: Union[VariableLike, Real]) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise power.
 
     If the base has a unit, the exponent must be scalar in order to get
     a well-defined unit in the result.
 
+    :param base: Base of the exponential.
+    :param exponent: Raise ``base`` to this power.
     :raises: If the dtype does not have a power, e.g., if it is a string.
     :return: ``base`` raised to the power of ``exp``.
     """
-    if not isinstance(base, _cpp.Unit) and isinstance(exponent, Number):
+    if not isinstance(base, _cpp.Unit) and isinstance(exponent, Real):
         exponent = scalar(exponent)
     return _call_cpp_func(_cpp.pow, base, exponent)
 
 
-def sqrt(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def sqrt(x: Union[VariableLike, _cpp.Unit],
+         *,
+         out: Optional[_cpp.Variable] = None) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise square-root.
 
     :param x: Input data.
-    :param out: Optional output buffer.
+    :param out: Optional output buffer. Only supported when `x` is a scipp.Variable.
     :raises: If the dtype has no square-root, e.g., if it is a string.
     :return: The square-root values of the input.
     """
