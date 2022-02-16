@@ -225,6 +225,7 @@ def make_formatter(array, key, dim):
             formatter["custom_locator"] = True
         elif kind == Kind.datetime:
             coord = _get_or_make_coord(array, dim)
+            coord = coord - coord.min()
             form = DateFormatter(coord=coord, offset=labels.min(), dim=key).formatter
             formatter["need_callbacks"] = True
         elif dim is not key:
