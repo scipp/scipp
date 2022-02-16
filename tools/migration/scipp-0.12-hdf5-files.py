@@ -1,5 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+"""
+Convert pre-0.12 HDF5 files to 0.12-compatible files.
+
+Changes are:
+
+* Unit of values of `begin` and `end` indices for binned data removed
+"""
 import h5py
 import sys
 from shutil import copyfile
