@@ -204,10 +204,9 @@ void init_dataset(py::module &m) {
           d.setCoord(dim, coord);
         return d;
       }),
-      py::kw_only(),
       py::arg("data") =
           std::map<std::string, std::variant<Variable, DataArray>>{},
-      py::arg("coords") = std::map<Dim, Variable>{},
+      py::kw_only(), py::arg("coords") = std::map<Dim, Variable>{},
       R"(__init__(self, data: Dict[str, Union[Variable, DataArray]] = {}, coords: Dict[str, Variable] = {}) -> None
 
               Dataset initializer.
