@@ -150,7 +150,7 @@ def log10(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLik
 
 def round(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
     """
-    Round to the nearest integer if all values passed in x.
+    Round to the nearest integer of all values passed in x.
 
     Note: if the number being rounded is halfway between two integers it will
     round to the nearest even number. For example 1.5 and 2.5 will both round

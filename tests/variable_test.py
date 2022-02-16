@@ -525,24 +525,6 @@ def test_binary_not_equal():
     assert not sc.identical(c, a_slice)
 
 
-def test_abs():
-    assert_export(sc.abs, sc.Variable(dims=(), values=0.0))
-    assert_export(abs, sc.Variable(dims=(), values=0.0))
-
-
-def test_abs_out():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.abs, var, out=var)
-
-
-def test_dot():
-    assert_export(sc.dot, sc.vector(value=[0, 0, 1]), sc.vector(value=[0, 0, 1]))
-
-
-def test_cross():
-    assert_export(sc.cross, sc.vector(value=[0, 0, 1]), sc.vector(value=[0, 0, 1]))
-
-
 def test_concat():
     assert_export(sc.concat,
                   [sc.Variable(dims=(), values=0.0),
@@ -556,24 +538,6 @@ def test_mean():
 def test_mean_in_place():
     var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.mean, sc.Variable(dims=(), values=0.0), 'x', var)
-
-
-def test_norm():
-    assert_export(sc.norm, sc.Variable(dims=(), values=0.0))
-
-
-def test_pow():
-    assert_export(sc.pow, sc.Variable(dims=(), values=0.0),
-                  sc.Variable(dims=(), values=0.0))
-
-
-def test_sqrt():
-    assert_export(sc.sqrt, sc.Variable(dims=(), values=0.0))
-
-
-def test_sqrt_out():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.sqrt, var, var)
 
 
 def test_values_variances():
@@ -701,30 +665,6 @@ def test_rename_kwargs():
 def test_bool_variable_repr():
     a = sc.Variable(dims=['x'], values=np.array([False, True, True, False, True]))
     assert [expected in repr(a) for expected in ["True", "False", "..."]]
-
-
-def test_reciprocal():
-    assert_export(sc.reciprocal, sc.Variable(dims=(), values=0.0))
-
-
-def test_reciprocal_out():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.reciprocal, var, var)
-
-
-def test_exp():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.exp, x=var)
-
-
-def test_log():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.log, x=var)
-
-
-def test_log10():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.log10, x=var)
 
 
 def test_sin():
@@ -951,27 +891,6 @@ def test_islinspace_false():
     x = sc.Variable(dims=['x'], values=(1, 1.5, 4), unit=sc.units.m)
     assert not sc.islinspace(x, 'x').value
     assert not sc.islinspace(x).value
-
-
-def _test_rounding(rounding_function, input_, output):
-    x = sc.Variable(dims=['x'], values=input_)
-    x_out = sc.Variable(dims=['x'], values=input_)
-    expected = sc.Variable(dims=['x'], values=output)
-    assert sc.identical(rounding_function(x), expected)
-    rounding_function(x, out=x_out)
-    assert sc.identical(x_out, expected)
-
-
-def test_round():
-    _test_rounding(sc.round, (1.1, 1.5, 2.5, 4.7), (1., 2., 2., 5.))
-
-
-def test_ceil():
-    _test_rounding(sc.ceil, (1.1, 1.5, 2.5, 4.7), (2., 2., 3., 5.))
-
-
-def test_floor():
-    _test_rounding(sc.floor, (1.1, 1.5, 2.5, 4.7), (1., 1., 2., 4.))
 
 
 def test_to_int64_to_float64():
