@@ -1,10 +1,8 @@
-name: Package build
+name: Release package build
 
 on:
   release:
     types: [published]
-  schedule:
-    - cron: "0 0 * * 4"  # every Thursday
   workflow_dispatch:
 
 defaults:
@@ -30,40 +28,57 @@ jobs:
 
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install --yes conda-build
-      - run: conda build --channel conda-forge --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels --output-folder conda/package conda
+      - run: conda build --channel conda-forge --python=${{ matrix.python-version }} --override-channels --output-folder conda/package --token ${{ secrets.ANACONDATOKEN }} --user scipp --label staging conda
 
+
+  docs:
+    needs: conda_build
+    name: Build documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          environment-file: developer-extra.yml
+          activate-environment: developer-extra
+          auto-activate-base: false
+      - run: conda install -c scipp/label/staging --yes scipp
+      - run: cmake --build --preset docs
       - uses: actions/upload-artifact@v2
         with:
-          name: conda-package-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: conda/package/*/scipp*.tar.bz2
+          name: DocumentationHTML
+          path: build/html/
 
-      - uses: actions/upload-artifact@v2
-        if: ${{ contains(matrix.os, 'ubuntu') && matrix.python-version == '3.8' }}
-        with:
-          name: html
-          path: docs_html
 
   deploy:
-    needs: conda_build
-    name: Deploy packages and docs
+    needs: docs
+    name: Deploy docs and re-label conda packages to main
     runs-on: ubuntu-latest
-    env:
-      conda_label: ${{ startsWith(github.ref, 'refs/tags/') && 'main' || 'dev' }}
     steps:
-      - uses: conda-incubator/setup-miniconda@v2
-      - run: conda install -c conda-forge --yes anaconda-client
       - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
       - uses: actions/download-artifact@v2
-      - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label ${{ env.conda_label }} $(ls conda-package-*/*/*.tar.bz2)
 
-      - uses: JamesIves/github-pages-deploy-action@v4.2.5
+      # Push pages once to the top level folder
+      - uses: JamesIves/github-pages-deploy-action@v4.2.3
         with:
           repository-name: scipp/scipp.github.io
           branch: master
           folder: html
-          # Note: If this is a release, it will not deploy to the top level folder.
-          # The next scheduled main build will update that.
-          target-folder: ${{ env.conda_label == 'main' && format('release/{0}', github.ref_name) || '' }}
           single-commit: true
           clean-exclude: release
           ssh-key: ${{ secrets.GH_PAGES_DEPLOY_KEY }}
+
+      # Push pages a second time to the release folder
+      - uses: JamesIves/github-pages-deploy-action@v4.2.3
+        with:
+          repository-name: scipp/scipp.github.io
+          branch: master
+          folder: html
+          target-folder: ${{ format('release/{0}', github.ref_name) }}
+          single-commit: true
+          clean-exclude: release
+          ssh-key: ${{ secrets.GH_PAGES_DEPLOY_KEY }}
+
+      # Something here to re-label conda packages
+      # - uses: conda-incubator/setup-miniconda@v2
+      # - run: conda install -c conda-forge --yes anaconda-client
