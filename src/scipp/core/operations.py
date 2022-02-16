@@ -10,17 +10,6 @@ from .unary import to_unit
 from ..typing import VariableLike
 
 
-def dot(x: VariableLike, y: VariableLike) -> VariableLike:
-    """Element-wise dot product.
-
-    :param x: Left hand side operand.
-    :param y: Right hand side operand.
-    :raises: If the dtype of the input is not vector3.
-    :return: The dot product of the input vectors.
-    """
-    return _call_cpp_func(_cpp.dot, x, y)
-
-
 def islinspace(x: _cpp.Variable, dim: str = None) -> _cpp.Variable:
     """
     Check if the values of a variable are evenly spaced.
@@ -76,17 +65,6 @@ def allsorted(x: _cpp.Variable, dim: str, order: Optional[str] = 'ascending') ->
       descending (depending on the requested order), False otherwise.
     """
     return _call_cpp_func(_cpp.allsorted, x, dim, order)
-
-
-def cross(x: VariableLike, y: VariableLike) -> VariableLike:
-    """Element-wise cross product.
-
-    :param x: Left hand side operand.
-    :param y: Right hand side operand.
-    :raises: If the dtype of the input is not vector3.
-    :return: The cross product of the input vectors.
-    """
-    return _call_cpp_func(_cpp.cross, x, y)
 
 
 def sort(x: VariableLike,
