@@ -9,6 +9,7 @@ from ..common import assert_export
 def test_abs():
     assert_export(sc.abs, sc.scalar(0.0))
     assert_export(abs, sc.scalar(0.0))
+    assert_export(sc.abs, sc.units.one)
 
 
 def test_abs_out():
@@ -55,24 +56,28 @@ def test_norm():
 
 def test_pow():
     assert_export(sc.pow, sc.scalar(0.0), sc.scalar(0.0))
+    assert_export(sc.pow, sc.scalar(0.0), 0.0)
+    assert_export(sc.pow, sc.units.one, 0.0)
 
 
 def test_reciprocal():
     assert_export(sc.reciprocal, sc.scalar(0.0))
+    assert_export(sc.reciprocal, sc.units.one)
 
 
 def test_reciprocal_out():
     var = sc.scalar(0.0)
-    assert_export(sc.reciprocal, var, var)
+    assert_export(sc.reciprocal, var, out=var)
 
 
 def test_sqrt():
     assert_export(sc.sqrt, sc.scalar(0.0))
+    assert_export(sc.sqrt, sc.units.one)
 
 
 def test_sqrt_out():
     var = sc.scalar(0.0)
-    assert_export(sc.sqrt, var, var)
+    assert_export(sc.sqrt, var, out=var)
 
 
 def test_round():
