@@ -30,7 +30,6 @@ jobs:
       - run: conda install --yes conda-build
       - run: conda build --channel conda-forge --python=${{ matrix.python-version }} --override-channels --output-folder conda/package --token ${{ secrets.ANACONDATOKEN }} --user scipp --label staging conda
 
-
   docs:
     needs: conda_build
     name: Build documentation
@@ -53,7 +52,6 @@ jobs:
           name: DocumentationHTML
           path: build/html/
 
-
   deploy:
     needs: docs
     name: Deploy docs and re-label conda packages to main
@@ -61,6 +59,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
       - uses: actions/download-artifact@v2
+
+      # TODO: can we have multiple target folders so that we don't have the action twice?
 
       # Push pages once to the top level folder
       - uses: JamesIves/github-pages-deploy-action@v4.2.3
@@ -83,6 +83,7 @@ jobs:
           clean-exclude: release
           ssh-key: ${{ secrets.GH_PAGES_DEPLOY_KEY }}
 
-      # Something here to re-label conda packages
-      # - uses: conda-incubator/setup-miniconda@v2
-      # - run: conda install -c conda-forge --yes anaconda-client
+      # Change conda packages labels from staging to main
+      - uses: conda-incubator/setup-miniconda@v2
+      - run: conda install -c conda-forge --yes anaconda-client
+      - run: anaconda --token ${{ secrets.ANACONDATOKEN }} move --from-label staging --to-label main scipp/scipp/${{ github.ref_name }}
