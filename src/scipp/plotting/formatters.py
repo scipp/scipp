@@ -14,8 +14,8 @@ class LabelFormatter:
         self.coord_values = coord.values
 
     def formatter(self, val, pos):
-        return value_to_string(self.label_values[np.abs(self.coord_values -
-                                                        val).argmin()])
+        index = np.abs(self.coord_values - val).argmin()
+        return value_to_string(self.label_values[index])
 
 
 class VectorFormatter:
@@ -50,13 +50,15 @@ class DateFormatter:
     Format datetime ticks: adjust the time precision and update
     offset according to the currently displayed range.
     """
-    def __init__(self, offset, dim):
+    def __init__(self, coord, offset, dim):
+        self.coord_values = coord.values
         self.offset = offset
         self.dim = dim
         self.indicators = []
 
     def formatter(self, val, pos, axis=None, get_axis_bounds=None, set_axis_label=None):
-        d = (self.offset + (int(val) * self.offset.unit)).value
+        index = np.abs(self.coord_values - val).argmin()
+        d = (self.offset + (index * self.offset.unit)).value
         dt = str(d)
         if pos is None:  # Return full string, not split into label + offset
             return dt
@@ -223,7 +225,7 @@ def make_formatter(array, key, dim):
             formatter["custom_locator"] = True
         elif kind == Kind.datetime:
             coord = _get_or_make_coord(array, dim)
-            form = DateFormatter(offset=labels.min(), dim=key).formatter
+            form = DateFormatter(coord=coord, offset=labels.min(), dim=key).formatter
             formatter["need_callbacks"] = True
         elif dim is not key:
             coord = _get_or_make_coord(array, dim)
