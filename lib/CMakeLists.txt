@@ -63,7 +63,7 @@ find_package(Sanitizers REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 # libpython is not available on `manylinux` images, use `Development.Module`
 # instead of `Development`
-find_package(Python 3.7 REQUIRED COMPONENTS Interpreter Development.Module)
+find_package(Python 3.8 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(LLNL-Units REQUIRED)
 
