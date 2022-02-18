@@ -4,6 +4,7 @@ requires = [
   "wheel",
   "cmake>=3.21",
   "conan",
+  "markupsafe>=1.1.1,<2.1.0",
   "ninja",
   "scikit-build",
   "tbb-devel==2021.4.0",  # because of hack with specific cmake config from conda package
