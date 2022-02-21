@@ -2,7 +2,8 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
-from scipp.io.hdf5 import collection_element_name
+from hypothesis import given
+from scipp.testing import strategies as scst
 import scipp as sc
 import scipp.spatial
 import numpy as np
@@ -18,8 +19,18 @@ def roundtrip(obj):
 
 def check_roundtrip(obj):
     result = roundtrip(obj)
-    assert sc.identical(result, obj)
+    assert sc.identical(result, obj, equal_nan=True)
     return result  # for optional addition tests
+
+
+@given(scst.variables())
+def test_variable_roundtrip(var):
+    check_roundtrip(var)
+
+
+@given(scst.dataarrays())
+def test_data_array_roundtrip(da):
+    check_roundtrip(da)
 
 
 x = sc.Variable(dims=['x'], values=np.arange(4.0), unit=sc.units.m)
