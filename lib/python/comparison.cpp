@@ -29,8 +29,15 @@ template <class T> void bind_isclose(py::module &m) {
 
 template <typename T> void bind_identical(py::module &m) {
   m.def(
-      "identical", [](const T &x, const T &y) { return x == y; }, py::arg("x"),
-      py::arg("y"), py::call_guard<py::gil_scoped_release>());
+      "identical",
+      [](const T &x, const T &y, const bool equal_nan) {
+        if (equal_nan) {
+          return equals_nan(x, y);
+        }
+        return x == y;
+      },
+      py::arg("x"), py::arg("y"), py::arg("equal_nan"),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 void init_comparison(py::module &m) {

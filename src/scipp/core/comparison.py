@@ -106,15 +106,21 @@ def not_equal(x: VariableLike, y: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.not_equal, x, y)
 
 
-def identical(x: VariableLike, y: VariableLike) -> VariableLike:
+def identical(x: VariableLike,
+              y: VariableLike,
+              *,
+              equal_nan: bool = False) -> VariableLike:
     """Full comparison of x and y.
 
     :param x: Left input.
     :param y: Right input.
+    :param equal_nan: If true, non-finite values at the same index in (x, y)
+                      are treated as equal.
+                      Signbit must match for infs.
     :return: True if x and y have identical values, variances, dtypes, units,
              dims, shapes, coords, and masks. Else False.
     """
-    return _call_cpp_func(_cpp.identical, x, y)
+    return _call_cpp_func(_cpp.identical, x, y, equal_nan=equal_nan)
 
 
 def isclose(x: _cpp.Variable,
@@ -146,7 +152,7 @@ def isclose(x: _cpp.Variable,
                  Defaults to scalar 1e-5 if unset.
     :param atol: Tolerance value absolute. Can be a scalar or non-scalar.
                  Defaults to scalar 1e-8 if unset and takes units from y arg.
-    :param equal_nan: if true, non-finite values at the same index in (x, y)
+    :param equal_nan: If true, non-finite values at the same index in (x, y)
                       are treated as equal.
                       Signbit must match for infs.
     :return: Variable same size as input.
