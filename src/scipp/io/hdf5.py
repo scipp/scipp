@@ -215,7 +215,7 @@ class DataArrayIO:
     @staticmethod
     def write(group, data):
         _write_scipp_header(group, 'DataArray')
-        group.attrs['name'] = data.name
+        group.attrs['scipp-name'] = data.name
         if data.data is None:
             raise RuntimeError("Cannot write object with invalid data.")
         VariableIO.write(group.create_group('data'), var=data.data)
@@ -236,7 +236,7 @@ class DataArrayIO:
         _check_scipp_header(group, 'DataArray')
         from ..core import DataArray
         contents = dict()
-        contents['name'] = group.attrs['name']
+        contents['name'] = group.attrs['scipp-name']
         contents['data'] = VariableIO.read(group['data'])
         for category in ['coords', 'masks', 'attrs']:
             contents[category] = dict()
