@@ -14,8 +14,9 @@ import subprocess
 
 parser = argparse.ArgumentParser(
     description='Generate a conda environment file from a conda recipe meta.yaml file')
-parser.add_argument('--dir',
-                    default='.',
+parser.add_argument('--log',
+                    '--log-file',
+                    default='',
                     help='the directory where the conda meta.yaml file is located')
 parser.add_argument('--env-file',
                     default='environment.yml',
@@ -46,7 +47,7 @@ parser.add_argument('--channels',
 #                               executable=executable)
 
 
-def main(condadir, envfile, envname, channels):
+def main(condalog, envfile, envname, channels):
 
     shell = sys.platform == 'win32'
 
@@ -54,17 +55,20 @@ def main(condadir, envfile, envname, channels):
     if len(envname) == 0:
         envname = os.path.splitext(envfile)[0]
 
-    # out = subprocess.check_output(
-    #     ['conda', 'debug', '--channel', 'conda-forge', condadir],
-    #     stderr=subprocess.STDOUT,
-    #     shell=shell).decode()
-    # print(out)
-    out = None
-    subprocess.check_call(['conda', 'debug', '--channel', 'conda-forge', condadir],
-                          stderr=subprocess.STDOUT,
-                          shell=shell)
+    # # out = subprocess.check_output(
+    # #     ['conda', 'debug', '--channel', 'conda-forge', condadir],
+    # #     stderr=subprocess.STDOUT,
+    # #     shell=shell).decode()
+    # # print(out)
+    # out = None
+    # subprocess.check_call(['conda', 'debug', '--channel', 'conda-forge', condadir],
+    #                       stderr=subprocess.STDOUT,
+    #                       shell=shell)
 
-    lines = out.split('\n')
+    with open(condalog, 'r') as f:
+        conda_debug_log = f.readlines()
+
+    lines = conda_debug_log.split('\n')
     env_setup_file = None
     for line in reversed(lines):
         if all(x in line for x in ['cd', 'conda-bld', '&&']):
@@ -123,7 +127,7 @@ if __name__ == '__main__':
     # if "," in args.extra:
     #     extra = args.extra.split(",")
 
-    main(condadir=args.dir,
+    main(condalog=args.log,
          envfile=args.env_file,
          envname=args.env_name,
          channels=channels)
