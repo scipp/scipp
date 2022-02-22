@@ -59,7 +59,7 @@ def main(condadir, envfile, envname, channels):
     #     stderr=subprocess.STDOUT,
     #     shell=shell).decode()
     # print(out)
-
+    out = None
     subprocess.check_call(['conda', 'debug', '--channel', 'conda-forge', condadir],
                           stderr=subprocess.STDOUT,
                           shell=shell)
