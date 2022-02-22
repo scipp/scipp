@@ -10,8 +10,11 @@ from hypothesis.extra import numpy as npst
 from ..core import DataArray, array
 
 
+DIMS_ALPHABET = string.printable + 'µλÅΣx̅…'
+
+
 def dims():
-    return st.text(alphabet=string.printable, min_size=1, max_size=10)
+    return st.text(alphabet=DIMS_ALPHABET, min_size=1, max_size=10)
 
 
 def sizes(ndim=None):
