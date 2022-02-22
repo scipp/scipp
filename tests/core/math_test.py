@@ -63,7 +63,7 @@ def test_pow():
 
 def test_reciprocal():
     assert sc.identical(sc.reciprocal(sc.scalar(2.0)), sc.scalar(0.5))
-    assert sc.reciprocal(sc.units.m, 1 / sc.units.m)
+    assert sc.reciprocal(sc.units.m) == sc.units.one / sc.units.m
 
 
 def test_reciprocal_out():
