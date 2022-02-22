@@ -169,6 +169,13 @@ def test_data_array_1d():
     check_roundtrip(array_1d)
 
 
+def test_data_array_1d_name_is_stored_correctly():
+    da = array_1d.copy()
+    da.name = 'some name'
+    result = roundtrip(da)
+    assert result.name == 'some name'
+
+
 def test_data_array_2d():
     check_roundtrip(array_2d)
 
