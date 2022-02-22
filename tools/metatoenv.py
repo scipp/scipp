@@ -54,11 +54,15 @@ def main(condadir, envfile, envname, channels):
     if len(envname) == 0:
         envname = os.path.splitext(envfile)[0]
 
-    out = subprocess.check_output(
-        ['conda', 'debug', '--channel', 'conda-forge', condadir],
-        stderr=subprocess.STDOUT,
-        shell=shell).decode()
-    print(out)
+    # out = subprocess.check_output(
+    #     ['conda', 'debug', '--channel', 'conda-forge', condadir],
+    #     stderr=subprocess.STDOUT,
+    #     shell=shell).decode()
+    # print(out)
+
+    subprocess.check_call(['conda', 'debug', '--channel', 'conda-forge', condadir],
+                          stderr=subprocess.STDOUT,
+                          shell=shell)
 
     lines = out.split('\n')
     env_setup_file = None
