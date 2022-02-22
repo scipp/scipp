@@ -20,9 +20,9 @@ def dims() -> st.SearchStrategy:
                    max_size=10)
 
 
-def sizes(ndim: Optional[Union[int, st.SearchStrategy]] = None) -> st.SearchStrategy:
+def sizes_dicts(ndim: Optional[Union[int, st.SearchStrategy]] = None) -> st.SearchStrategy:
     if isinstance(ndim, st.SearchStrategy):
-        return ndim.flatmap(lambda n: sizes(ndim=n))
+        return ndim.flatmap(lambda n: sizes_dicts(ndim=n))
     keys = dims()
     values = st.integers(min_value=1, max_value=10)
     if ndim is None:
@@ -71,14 +71,14 @@ def _make_vectors(draw, sizes):
 def vectors(draw, ndim=None) -> st.SearchStrategy:
     if ndim is None:
         ndim = draw(st.integers(0, 3))
-    return draw(sizes(ndim).flatmap(lambda s: _make_vectors(s)))
+    return draw(sizes_dicts(ndim).flatmap(lambda s: _make_vectors(s)))
 
 
 @st.composite
 def variables(draw, dtype=None, ndim=None) -> st.SearchStrategy:
     if dtype is None:
         dtype = draw(scalar_numeric_dtypes())
-    return draw(sizes(ndim).flatmap(lambda s: fixed_variables(dtype=dtype, sizes=s)))
+    return draw(sizes_dicts(ndim).flatmap(lambda s: fixed_variables(dtype=dtype, sizes=s)))
 
 
 @st.composite
