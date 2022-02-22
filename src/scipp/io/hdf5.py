@@ -255,16 +255,20 @@ class DatasetIO:
         _write_scipp_header(group, 'Dataset')
         # Slight redundancy here from writing aligned coords for each item,
         # but irrelevant for common case of 1D coords with 2D (or higher)
-        # data. The advantage is the we can read individual dataset entries
+        # data. The advantage is that we can read individual dataset entries
         # directly as data arrays.
-        for name in data:
-            HDF5IO.write(group.create_group(name), data[name])
+        for i, (name, da) in enumerate(data.items()):
+            data_array_group = group.create_group(f'data_{i}')
+            data_array_group.attrs['scipp-name'] = name
+            HDF5IO.write(data_array_group, da)
 
     @staticmethod
     def read(group):
         _check_scipp_header(group, 'Dataset')
-        from .._scipp import core as sc
-        return sc.Dataset(data={name: HDF5IO.read(group[name]) for name in group})
+        from ..core import Dataset
+        return Dataset(
+            data={g.attrs['scipp-name']: HDF5IO.read(g)
+                  for g in group.values()})
 
 
 class HDF5IO:
