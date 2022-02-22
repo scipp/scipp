@@ -32,7 +32,7 @@ def sizes(ndim: Optional[Union[int, st.SearchStrategy]] = None) -> st.SearchStra
     return st.dictionaries(keys=keys, values=values, min_size=ndim, max_size=ndim)
 
 
-def units():
+def units() -> st.SearchStrategy:
     return st.sampled_from(('one', 'm', 'kg', 's', 'A', 'K', 'count'))
 
 
@@ -49,7 +49,7 @@ def scalar_numeric_dtypes() -> st.SearchStrategy:
 
 
 @st.composite
-def fixed_variables(draw, dtype, sizes):
+def fixed_variables(draw, dtype, sizes) -> st.SearchStrategy:
     values = draw(npst.arrays(dtype, shape=tuple(sizes.values())))
     if dtype == float and draw(st.booleans()):
         variances = draw(npst.arrays(dtype, shape=values.shape))
@@ -75,14 +75,14 @@ def vectors(draw, ndim=None) -> st.SearchStrategy:
 
 
 @st.composite
-def variables(draw, dtype=None, ndim=None):
+def variables(draw, dtype=None, ndim=None) -> st.SearchStrategy:
     if dtype is None:
-        dtype = draw(dtypes())
+        dtype = draw(scalar_numeric_dtypes())
     return draw(sizes(ndim).flatmap(lambda s: fixed_variables(dtype=dtype, sizes=s)))
 
 
 @st.composite
-def coord_dicts_1d(draw, sizes):
+def coord_dicts_1d(draw, sizes) -> st.SearchStrategy:
     return {
         dim: draw(fixed_variables(dtype=int, sizes={dim: size}))
         for dim, size in sizes.items()
@@ -90,7 +90,7 @@ def coord_dicts_1d(draw, sizes):
 
 
 @st.composite
-def dataarrays(draw):
+def dataarrays(draw) -> st.SearchStrategy:
     data = draw(variables(dtype=float))
     coords = draw(coord_dicts_1d(sizes=data.sizes))
     return DataArray(data, coords=coords)
