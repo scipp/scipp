@@ -225,11 +225,14 @@ class DataArrayIO:
         # 2 separate groups.
         for view_name, view in zip(['coords', 'masks', 'attrs'], views):
             subgroup = group.create_group(view_name)
-            for name in view:
-                g = VariableIO.write(group=subgroup.create_group(str(name)),
+            for i, name in enumerate(view):
+                var_group_name = f'{view_name}_{i}'
+                g = VariableIO.write(group=subgroup.create_group(var_group_name),
                                      var=view[name])
                 if g is None:
-                    del subgroup[str(name)]
+                    del subgroup[var_group_name]
+                else:
+                    g.attrs['scipp-name'] = str(name)
 
     @staticmethod
     def read(group):
@@ -239,10 +242,10 @@ class DataArrayIO:
         contents['name'] = group.attrs['scipp-name']
         contents['data'] = VariableIO.read(group['data'])
         for category in ['coords', 'masks', 'attrs']:
-            contents[category] = dict()
-            for name in group[category]:
-                g = group[category][name]
-                contents[category][name] = VariableIO.read(g)
+            contents[category] = {
+                g.attrs['scipp-name']: VariableIO.read(g)
+                for g in group[category].values()
+            }
         return DataArray(**contents)
 
 
