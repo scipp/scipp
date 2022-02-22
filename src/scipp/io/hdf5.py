@@ -226,7 +226,7 @@ class DataArrayIO:
         for view_name, view in zip(['coords', 'masks', 'attrs'], views):
             subgroup = group.create_group(view_name)
             for i, name in enumerate(view):
-                var_group_name = f'{view_name}_{i}'
+                var_group_name = f'elem_{i}'
                 g = VariableIO.write(group=subgroup.create_group(var_group_name),
                                      var=view[name])
                 if g is None:
@@ -258,7 +258,7 @@ class DatasetIO:
         # data. The advantage is that we can read individual dataset entries
         # directly as data arrays.
         for i, (name, da) in enumerate(data.items()):
-            HDF5IO.write(group.create_group(f'data_{i}'), da)
+            HDF5IO.write(group.create_group(f'elem_{i}'), da)
 
     @staticmethod
     def read(group):
