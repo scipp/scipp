@@ -12,3 +12,4 @@ __pycache__/
 CMakeSettings.json
 .vs/
 .virtual_documents
+.hypothesis
