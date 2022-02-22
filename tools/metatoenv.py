@@ -9,8 +9,8 @@
 
 import os
 import argparse
-import sys
-import subprocess
+# import sys
+# import subprocess
 
 parser = argparse.ArgumentParser(
     description='Generate a conda environment file from a conda recipe meta.yaml file')
@@ -49,7 +49,7 @@ parser.add_argument('--channels',
 
 def main(condalog, envfile, envname, channels):
 
-    shell = sys.platform == 'win32'
+    # shell = sys.platform == 'win32'
 
     # Generate envname from output file name if name is not defined
     if len(envname) == 0:
