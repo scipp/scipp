@@ -38,7 +38,7 @@
       "name": "ci-windows",
       "inherits": "base",
       "description": "Windows options for CI build (PR and Main)",
-      "generator": "Visual Studio 16 2019",
+      "generator": "Visual Studio 17 2022",
       "architecture": "x64"
     },
     {
@@ -67,7 +67,7 @@
       "name": "package-windows",
       "inherits": "package",
       "description": "Windows options for package build",
-      "generator": "Visual Studio 16 2019",
+      "generator": "Visual Studio 17 2022",
       "architecture": "x64"
     },
     {
