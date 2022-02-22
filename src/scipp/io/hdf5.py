@@ -258,9 +258,7 @@ class DatasetIO:
         # data. The advantage is that we can read individual dataset entries
         # directly as data arrays.
         for i, (name, da) in enumerate(data.items()):
-            data_array_group = group.create_group(f'data_{i}')
-            data_array_group.attrs['scipp-name'] = name
-            HDF5IO.write(data_array_group, da)
+            HDF5IO.write(group.create_group(f'data_{i}'), da)
 
     @staticmethod
     def read(group):
