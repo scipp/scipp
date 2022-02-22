@@ -80,8 +80,8 @@ jobs:
           # activate-environment: buildenv
           # auto-activate-base: false
 
-      - run: conda debug --channel conda-forge conda > conda_debug_log
-      - run: python tools/metatoenv.py --log=conda_debug_log --env-file=buildenv.yml --env-name=buildenv --channels=conda-forge
+      - run: conda install --yes conda-build
+      - run: python tools/metatoenv.py --dir=conda --env-file=buildenv.yml --env-name=buildenv --channels=conda-forge
       - run: mamba env create -f buildenv.yml
       - run: conda activate buildenv
 

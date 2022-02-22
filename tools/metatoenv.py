@@ -9,14 +9,13 @@
 
 import os
 import argparse
-# import sys
-# import subprocess
+import sys
+import subprocess
 
 parser = argparse.ArgumentParser(
     description='Generate a conda environment file from a conda recipe meta.yaml file')
-parser.add_argument('--log',
-                    '--log-file',
-                    default='',
+parser.add_argument('--dir',
+                    default='.',
                     help='the directory where the conda meta.yaml file is located')
 parser.add_argument('--env-file',
                     default='environment.yml',
@@ -47,28 +46,21 @@ parser.add_argument('--channels',
 #                               executable=executable)
 
 
-def main(condalog, envfile, envname, channels):
+def main(condadir, envfile, envname, channels):
 
-    # shell = sys.platform == 'win32'
+    shell = sys.platform == 'win32'
 
     # Generate envname from output file name if name is not defined
     if len(envname) == 0:
         envname = os.path.splitext(envfile)[0]
 
-    # # out = subprocess.check_output(
-    # #     ['conda', 'debug', '--channel', 'conda-forge', condadir],
-    # #     stderr=subprocess.STDOUT,
-    # #     shell=shell).decode()
-    # # print(out)
-    # out = None
-    # subprocess.check_call(['conda', 'debug', '--channel', 'conda-forge', condadir],
-    #                       stderr=subprocess.STDOUT,
-    #                       shell=shell)
+    out = subprocess.check_output(
+        ['conda', 'debug', '--channel', 'conda-forge', condadir],
+        stderr=subprocess.STDOUT,
+        shell=shell).decode()
+    print(out)
 
-    with open(condalog, 'r') as f:
-        conda_debug_log = f.readlines()
-
-    lines = conda_debug_log.split('\n')
+    lines = out.split('\n')
     env_setup_file = None
     for line in reversed(lines):
         if all(x in line for x in ['cd', 'conda-bld', '&&']):
@@ -127,7 +119,7 @@ if __name__ == '__main__':
     # if "," in args.extra:
     #     extra = args.extra.split(",")
 
-    main(condalog=args.log,
+    main(condadir=args.dir,
          envfile=args.env_file,
          envname=args.env_name,
          channels=channels)
