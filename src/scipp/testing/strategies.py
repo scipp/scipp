@@ -31,8 +31,16 @@ def units():
     return st.sampled_from(('one', 'm', 'kg', 's', 'A', 'K', 'count'))
 
 
-def dtypes():
-    return st.sampled_from((int, float))
+def integer_dtypes(sizes: Sequence[int] = (32, 64)) -> st.SearchStrategy:
+    return st.sampled_from([f'int{size}' for size in sizes])
+
+
+def floating_dtypes(sizes: Sequence[int] = (32, 64)) -> st.SearchStrategy:
+    return st.sampled_from([f'float{size}' for size in sizes])
+
+
+def scalar_numeric_dtypes() -> st.SearchStrategy:
+    return st.sampled_from((integer_dtypes, floating_dtypes)).flatmap(lambda f: f())
 
 
 @st.composite
