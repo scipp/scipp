@@ -46,7 +46,7 @@ void init_units(py::module &m) {
   });
   m.def("pow",
         [](const units::Unit &u, const double power) { return pow(u, power); });
-  m.def("reciprocal", [](const units::Unit &u) { return 1 / u; });
+  m.def("reciprocal", [](const units::Unit &u) { return units::one / u; });
   m.def("sqrt", [](const units::Unit &u) { return sqrt(u); });
 
   py::implicitly_convertible<std::string, units::Unit>();
