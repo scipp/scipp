@@ -6,8 +6,8 @@ from typing import Optional, Sequence, Union
 from hypothesis import strategies as st
 from hypothesis.extra import numpy as npst
 
-from ..core import DataArray, array
-
+from ..core import variable as creation
+from ..core import DataArray
 
 
 def dims() -> st.SearchStrategy:
@@ -55,9 +55,23 @@ def fixed_variables(draw, dtype, sizes):
         variances = draw(npst.arrays(dtype, shape=values.shape))
     else:
         variances = None
-    dims = list(sizes.keys())
-    unit = draw(units())
-    return array(dims=dims, values=values, variances=variances, unit=unit)
+    return creation.array(dims=list(sizes.keys()),
+                          values=values,
+                          variances=variances,
+                          unit=draw(units()))
+
+
+@st.composite
+def _make_vectors(draw, sizes):
+    values = draw(npst.arrays(float, (*sizes.values(), 3)))
+    return creation.vectors(dims=tuple(sizes), values=values, unit=draw(units()))
+
+
+@st.composite
+def vectors(draw, ndim=None) -> st.SearchStrategy:
+    if ndim is None:
+        ndim = draw(st.integers(0, 3))
+    return draw(sizes(ndim).flatmap(lambda s: _make_vectors(s)))
 
 
 @st.composite
