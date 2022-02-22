@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
-
-import string
+from typing import Optional, Sequence, Union
 
 from hypothesis import strategies as st
 from hypothesis.extra import numpy as npst
@@ -13,17 +12,16 @@ from ..core import DataArray, array
 DIMS_ALPHABET = string.printable + 'µλÅΣx̅…'
 
 
-def dims():
-    return st.text(alphabet=DIMS_ALPHABET, min_size=1, max_size=10)
 
-
-def sizes(ndim=None):
+def sizes(ndim: Optional[Union[int, st.SearchStrategy]] = None) -> st.SearchStrategy:
+    if isinstance(ndim, st.SearchStrategy):
+        return ndim.flatmap(lambda n: sizes(ndim=n))
     keys = dims()
     values = st.integers(min_value=1, max_value=10)
     if ndim is None:
         # The constructor of sc.Variable in Python only supports
         # arrays with <= 4 dimensions.
-        return st.dictionaries(keys=keys, values=values, min_size=1, max_size=4)
+        return st.dictionaries(keys=keys, values=values, min_size=0, max_size=4)
     return st.dictionaries(keys=keys, values=values, min_size=ndim, max_size=ndim)
 
 
