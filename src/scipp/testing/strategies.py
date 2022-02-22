@@ -9,8 +9,15 @@ from hypothesis.extra import numpy as npst
 from ..core import DataArray, array
 
 
-DIMS_ALPHABET = string.printable + 'µλÅΣx̅…'
 
+def dims() -> st.SearchStrategy:
+    # Allowing all graphic utf-8 characters and control characters
+    # except NULL, which causes problems in C and C++ code (e.g. HDF5).
+    return st.text(st.characters(
+        whitelist_categories=['L', 'M', 'N', 'P', 'S', 'Zs', 'Cc'],
+        blacklist_characters='\0'),
+                   min_size=1,
+                   max_size=10)
 
 
 def sizes(ndim: Optional[Union[int, st.SearchStrategy]] = None) -> st.SearchStrategy:
