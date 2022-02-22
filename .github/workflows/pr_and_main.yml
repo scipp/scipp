@@ -68,7 +68,7 @@ jobs:
         with:
           key: ${{ matrix.os }}
 
-      - run: python tools/metatoenv.py --dir=conda --env-file=buildenv.yml --channels=conda-forge
+      # - run: python tools/metatoenv.py --dir=conda --env-file=buildenv.yml --channels=conda-forge
 
       - name: Setup Mambaforge and dev env
         uses: conda-incubator/setup-miniconda@v2
@@ -76,9 +76,13 @@ jobs:
           miniforge-version: latest
           miniforge-variant: Mambaforge
           python-version: ${{ matrix.python-version }}
-          environment-file: buildenv.yml
-          activate-environment: buildenv
-          auto-activate-base: false
+          # environment-file: buildenv.yml
+          # activate-environment: buildenv
+          # auto-activate-base: false
+
+      - run: python tools/metatoenv.py --dir=conda --env-file=buildenv.yml --env-name=buildenv --channels=conda-forge
+      - run: mamba env create -f buildenv.yml
+      - run: conda activate buildenv
 
       - run: cmake --preset ${{ matrix.cmake-preset }}
       - run: cmake --build --preset build
