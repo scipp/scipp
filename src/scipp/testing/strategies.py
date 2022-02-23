@@ -1,13 +1,15 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
+from functools import partial
 from typing import Optional, Sequence, Union
 
+from hypothesis.errors import InvalidArgument
 from hypothesis import strategies as st
 from hypothesis.extra import numpy as npst
 
 from ..core import variable as creation
-from ..core import DataArray
+from ..core import DataArray, DType
 
 
 def dims() -> st.SearchStrategy:
@@ -20,7 +22,8 @@ def dims() -> st.SearchStrategy:
                    max_size=10)
 
 
-def sizes_dicts(ndim: Optional[Union[int, st.SearchStrategy]] = None) -> st.SearchStrategy:
+def sizes_dicts(
+        ndim: Optional[Union[int, st.SearchStrategy]] = None) -> st.SearchStrategy:
     if isinstance(ndim, st.SearchStrategy):
         return ndim.flatmap(lambda n: sizes_dicts(ndim=n))
     keys = dims()
@@ -74,11 +77,51 @@ def vectors(draw, ndim=None) -> st.SearchStrategy:
     return draw(sizes_dicts(ndim).flatmap(lambda s: _make_vectors(s)))
 
 
-@st.composite
-def variables(draw, dtype=None, ndim=None) -> st.SearchStrategy:
+def use_variances(dtype) -> st.SearchStrategy:
+    if dtype in (DType.float32, DType.float64):
+        return st.booleans()
+    return st.just(False)
+
+
+def variables(*,
+              ndim=None,
+              sizes=None,
+              unit=None,
+              dtype=None,
+              with_variances=None) -> st.SearchStrategy:
+    if ndim is not None:
+        if sizes is not None:
+            raise InvalidArgument('Arguments `ndim` and `sizes` cannot both be used. '
+                                  f'Got ndim={ndim}, sizes={sizes}.')
+    if sizes is None:
+        sizes = sizes_dicts(ndim)
+    if isinstance(sizes, st.SearchStrategy):
+        return sizes.flatmap(lambda s: variables(
+            ndim=None, sizes=s, unit=unit, dtype=dtype, with_variances=with_variances))
+
+    if unit is None:
+        unit = units()
+    if isinstance(unit, st.SearchStrategy):
+        return unit.flatmap(lambda u: variables(
+            ndim=ndim, sizes=sizes, unit=u, dtype=dtype, with_variances=with_variances))
+
     if dtype is None:
-        dtype = draw(scalar_numeric_dtypes())
-    return draw(sizes_dicts(ndim).flatmap(lambda s: fixed_variables(dtype=dtype, sizes=s)))
+        dtype = scalar_numeric_dtypes()
+    if isinstance(dtype, st.SearchStrategy):
+        return dtype.flatmap(lambda dt: variables(
+            ndim=ndim, sizes=sizes, unit=unit, dtype=dt, with_variances=with_variances))
+
+    if with_variances is None:
+        with_variances = use_variances(dtype)
+    if isinstance(with_variances, st.SearchStrategy):
+        return with_variances.flatmap(lambda wv: variables(
+            ndim=ndim, sizes=sizes, unit=unit, dtype=dtype, with_variances=wv))
+
+    assert ndim is None
+    return st.builds(partial(creation.array, dims=list(sizes.keys()), unit=unit),
+                     values=npst.arrays(dtype, tuple(sizes.values())),
+                     variances=npst.arrays(dtype, tuple(sizes.values()))
+                     if with_variances else st.none())
 
 
 @st.composite
