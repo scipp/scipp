@@ -25,13 +25,20 @@ def check_roundtrip(obj):
 
 @given(scst.variables())
 def test_variable_roundtrip(var):
-    check_roundtrip(var)
+    result = roundtrip(var)
+    assert sc.identical(result, var, equal_nan=True)
+
+
+@given(scst.vectors())
+def test_variable_roundtrip_vectors(var):
+    result = roundtrip(var)
+    assert sc.identical(result, var, equal_nan=True)
 
 
 @given(scst.dataarrays())
 def test_data_array_roundtrip(da):
-    check_roundtrip(da)
-
+    result = roundtrip(da)
+    assert sc.identical(result, da, equal_nan=True)
 
 x = sc.Variable(dims=['x'], values=np.arange(4.0), unit=sc.units.m)
 y = sc.Variable(dims=['y'], values=np.arange(6.0), unit=sc.units.angstrom)
