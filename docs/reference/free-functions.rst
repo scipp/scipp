@@ -54,6 +54,7 @@ Math
    mod
    multiply
    norm
+   pow
    reciprocal
    round
    sqrt
