@@ -148,9 +148,9 @@ def test_variable_binned_variable_slice():
     end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.DType.int64, unit=None)
     binned = sc.bins(begin=begin, end=end, dim='x', data=x)
     # Note the current arbitrary limit is to avoid writing the buffer if it is
-    # more than 50% too large. These cutoffs or the entiry mechanism may
+    # more than 50% too large. These cutoffs or the entire mechanism may
     # change in the future, so this test should be adapted. This test does not
-    # documented a strict requirement.
+    # document a strict requirement.
     result = check_roundtrip(binned['y', 0])
     assert result.bins.constituents['data'].shape[0] == 4
     result = check_roundtrip(binned['y', 1])
