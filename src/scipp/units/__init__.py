@@ -6,13 +6,35 @@ Predefined units.
 
 The following predefined units are available:
 
-{unit_list}
+Dimensionless (those two are aliases for each other):
+ - dimensionless
+ - one
+
+Common units:
+ - angstrom
+ - counts
+ - deg
+ - kg
+ - K
+ - meV
+ - m
+ - rad
+ - s
+ - us
+ - ns
+ - mm
+
+Special:
+ - default_unit (used by some functions to deduce a unit)
 
 .. seealso::
     :py:class:`scipp.Unit` to construct other units.
 """
 
-from .._scipp.core.units import *  # noqa
+from .._scipp.core.units import (angstrom, counts, default_unit, deg, dimensionless, kg,
+                                 K, meV, m, one, rad, s, us, ns, mm)
 
-__doc__ = __doc__.format(unit_list='\n'.join(f'- {unit}' for unit in locals()
-                                             if not unit.startswith('_')))
+__all__ = [
+    'angstrom', 'counts', 'default_unit', 'deg', 'dimensionless', 'kg', 'K', 'meV', 'm',
+    'one', 'rad', 's', 'us', 'ns', 'mm'
+]

@@ -40,6 +40,13 @@ void init_units(py::module &m) {
       .def(py::self == py::self)
       .def(py::self != py::self);
 
+  m.def("abs", [](const units::Unit &u) { return abs(u); });
+  m.def("pow", [](const units::Unit &u, const int64_t power) {
+    return pow(u, power);
+  });
+  m.def("pow",
+        [](const units::Unit &u, const double power) { return pow(u, power); });
+  m.def("reciprocal", [](const units::Unit &u) { return units::one / u; });
   m.def("sqrt", [](const units::Unit &u) { return sqrt(u); });
 
   py::implicitly_convertible<std::string, units::Unit>();
