@@ -51,32 +51,6 @@ def scalar_numeric_dtypes() -> st.SearchStrategy:
     return st.sampled_from((integer_dtypes, floating_dtypes)).flatmap(lambda f: f())
 
 
-@st.composite
-def fixed_variables(draw, dtype, sizes) -> st.SearchStrategy:
-    values = draw(npst.arrays(dtype, shape=tuple(sizes.values())))
-    if dtype == float and draw(st.booleans()):
-        variances = draw(npst.arrays(dtype, shape=values.shape))
-    else:
-        variances = None
-    return creation.array(dims=list(sizes.keys()),
-                          values=values,
-                          variances=variances,
-                          unit=draw(units()))
-
-
-@st.composite
-def _make_vectors(draw, sizes):
-    values = draw(npst.arrays(float, (*sizes.values(), 3)))
-    return creation.vectors(dims=tuple(sizes), values=values, unit=draw(units()))
-
-
-@st.composite
-def vectors(draw, ndim=None) -> st.SearchStrategy:
-    if ndim is None:
-        ndim = draw(st.integers(0, 3))
-    return draw(sizes_dicts(ndim).flatmap(lambda s: _make_vectors(s)))
-
-
 def use_variances(dtype) -> st.SearchStrategy:
     if dtype in (DType.float32, DType.float64):
         return st.booleans()
@@ -131,6 +105,7 @@ def variable_args(draw,
     return dict(sizes=sizes, unit=unit, dtype=dtype, with_variances=with_variances)
 
 
+# TODO allow setting element values
 def variables(*,
               ndim=None,
               sizes=None,
@@ -161,9 +136,22 @@ def n_variables(n: int,
 
 
 @st.composite
+def _make_vectors(draw, sizes):
+    values = draw(npst.arrays(float, (*sizes.values(), 3)))
+    return creation.vectors(dims=tuple(sizes), values=values, unit=draw(units()))
+
+
+@st.composite
+def vectors(draw, ndim=None) -> st.SearchStrategy:
+    if ndim is None:
+        ndim = draw(st.integers(0, 3))
+    return draw(sizes_dicts(ndim).flatmap(lambda s: _make_vectors(s)))
+
+
+@st.composite
 def coord_dicts_1d(draw, sizes) -> st.SearchStrategy:
     return {
-        dim: draw(fixed_variables(dtype=int, sizes={dim: size}))
+        dim: draw(variables(dtype=int, sizes={dim: size}))
         for dim, size in sizes.items()
     }
 
