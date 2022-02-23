@@ -4,9 +4,12 @@
 # @author Simon Heybrock
 import os
 
+from hypothesis import given, settings
+import hypothesis.strategies as st
 import numpy as np
 import pytest
 
+from scipp.testing import strategies as scst
 import scipp as sc
 
 from .common import assert_export
@@ -21,26 +24,32 @@ def make_variables():
     return a, b, a_slice, b_slice, data
 
 
-def test_astype():
-    var = sc.Variable(dims=['x'],
-                      values=np.array([1, 2, 3, 4], dtype=np.int64),
-                      unit='s')
-    assert var.dtype == sc.DType.int64
-    assert var.unit == sc.units.s
-
-    for target_dtype in (sc.DType.float64, float, 'float64'):
-        var_as_float = var.astype(target_dtype)
-        assert var_as_float.dtype == sc.DType.float64
-        assert var_as_float.unit == sc.units.s
+@settings(max_examples=20)
+@given(var=scst.variables(dtype=scst.integer_dtypes()),
+       target_dtype=scst.floating_dtypes())
+def test_astype_int_to_float(var, target_dtype):
+    original = var.copy()
+    res = var.astype(target_dtype)
+    assert res.dtype == target_dtype
+    assert res.unit == original.unit
 
 
-def test_astype_bad_conversion():
-    var = sc.Variable(dims=['x'], values=np.array([1, 2, 3, 4], dtype=np.int64))
-    assert var.dtype == sc.DType.int64
+@settings(max_examples=20)
+@given(var=scst.variables(dtype=scst.floating_dtypes(), with_variances=False),
+       target_dtype=scst.integer_dtypes())
+def test_astype_float_to_int(var, target_dtype):
+    original = var.copy()
+    res = var.astype(target_dtype)
+    assert res.dtype == target_dtype
+    assert res.unit == original.unit
 
-    for target_dtype in (sc.DType.string, str, 'str'):
-        with pytest.raises(sc.DTypeError):
-            var.astype(target_dtype)
+
+@settings(max_examples=20)
+@given(var=scst.variables(dtype=scst.scalar_numeric_dtypes()))
+@pytest.mark.parametrize('target_dtype', (sc.DType.string, str, 'str'))
+def test_astype_bad_conversion(var, target_dtype):
+    with pytest.raises(sc.DTypeError):
+        var.astype(target_dtype)
 
 
 def test_astype_datetime():
