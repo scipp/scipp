@@ -83,12 +83,26 @@ def use_variances(dtype) -> st.SearchStrategy:
     return st.just(False)
 
 
-def variables(*,
-              ndim=None,
-              sizes=None,
-              unit=None,
-              dtype=None,
-              with_variances=None) -> st.SearchStrategy:
+def _variables_from_fixed_args(args) -> st.SearchStrategy:
+
+    def make_array():
+        return npst.arrays(args['dtype'], tuple(args['sizes'].values()))
+
+    return st.builds(partial(creation.array,
+                             dims=list(args['sizes'].keys()),
+                             unit=args['unit']),
+                     values=make_array(),
+                     variances=make_array() if args['with_variances'] else st.none())
+
+
+@st.composite
+def variable_args(draw,
+                  *,
+                  ndim=None,
+                  sizes=None,
+                  unit=None,
+                  dtype=None,
+                  with_variances=None) -> dict:
     if ndim is not None:
         if sizes is not None:
             raise InvalidArgument('Arguments `ndim` and `sizes` cannot both be used. '
@@ -96,32 +110,54 @@ def variables(*,
     if sizes is None:
         sizes = sizes_dicts(ndim)
     if isinstance(sizes, st.SearchStrategy):
-        return sizes.flatmap(lambda s: variables(
-            ndim=None, sizes=s, unit=unit, dtype=dtype, with_variances=with_variances))
+        sizes = draw(sizes)
 
     if unit is None:
         unit = units()
     if isinstance(unit, st.SearchStrategy):
-        return unit.flatmap(lambda u: variables(
-            ndim=ndim, sizes=sizes, unit=u, dtype=dtype, with_variances=with_variances))
+        unit = draw(unit)
 
     if dtype is None:
+        # TODO other dtypes?
         dtype = scalar_numeric_dtypes()
     if isinstance(dtype, st.SearchStrategy):
-        return dtype.flatmap(lambda dt: variables(
-            ndim=ndim, sizes=sizes, unit=unit, dtype=dt, with_variances=with_variances))
+        dtype = draw(dtype)
 
     if with_variances is None:
         with_variances = use_variances(dtype)
     if isinstance(with_variances, st.SearchStrategy):
-        return with_variances.flatmap(lambda wv: variables(
-            ndim=ndim, sizes=sizes, unit=unit, dtype=dtype, with_variances=wv))
+        with_variances = draw(with_variances)
 
-    assert ndim is None
-    return st.builds(partial(creation.array, dims=list(sizes.keys()), unit=unit),
-                     values=npst.arrays(dtype, tuple(sizes.values())),
-                     variances=npst.arrays(dtype, tuple(sizes.values()))
-                     if with_variances else st.none())
+    return dict(sizes=sizes, unit=unit, dtype=dtype, with_variances=with_variances)
+
+
+def variables(*,
+              ndim=None,
+              sizes=None,
+              unit=None,
+              dtype=None,
+              with_variances=None) -> st.SearchStrategy:
+    return variable_args(ndim=ndim,
+                         sizes=sizes,
+                         unit=unit,
+                         dtype=dtype,
+                         with_variances=with_variances).flatmap(
+                             lambda args: _variables_from_fixed_args(args))
+
+
+def n_variables(n: int,
+                *,
+                ndim=None,
+                sizes=None,
+                unit=None,
+                dtype=None,
+                with_variances=None) -> st.SearchStrategy:
+    return variable_args(ndim=ndim,
+                         sizes=sizes,
+                         unit=unit,
+                         dtype=dtype,
+                         with_variances=with_variances).flatmap(lambda args: st.tuples(
+                             *(_variables_from_fixed_args(args) for _ in range(n))))
 
 
 @st.composite
