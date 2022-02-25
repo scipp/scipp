@@ -12,6 +12,13 @@ from ..core import variable as creation
 from ..core import DataArray, DType
 
 
+# TODO sometimes checks fail with (seen in test_astype_int_to_float)
+#  hypothesis.errors.FailedHealthCheck: Examples routinely exceeded the max allowable size. (20 examples overran while generating 9 valid ones). Generating examples this large will usually lead to bad results. You could try setting max_size parameters on your collections and turning max_leaves down on recursive() calls.
+#  See https://hypothesis.readthedocs.io/en/latest/healthchecks.html for more information about this. If you want to disable just this health check, add HealthCheck.data_too_large to the suppress_health_check settings for this test.
+#
+#  Maybe the variable strat has too many parameters or too many nested strats?
+
+
 def dims() -> st.SearchStrategy:
     # Allowing all graphic utf-8 characters and control characters
     # except NULL, which causes problems in C and C++ code (e.g. HDF5).
