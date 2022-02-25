@@ -127,8 +127,10 @@ class ResamplingModel():
                                          shape=[coord.sizes[d]] + data.shape)
         array = DataArray(data=data)
         for dim in coords:
-            if coords[dim].dim in array.dims:
+            try:
                 array.coords[dim] = coords[dim]
+            except DimensionError:  # Masks may be lower-dimensional
+                pass
         if sanitize:
             array, _ = _with_edges(array)
         plan = []
