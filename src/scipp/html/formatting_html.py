@@ -272,7 +272,7 @@ def summarize_variable(name,
     dims_str = "({})".format(
         _make_dim_str(
             var,
-            find_bin_edge_dims(coord=var, ds=embedded_in)
+            find_bin_edge_dims(embedded_in, coord=var)
             if embedded_in is not None else None, add_dim_size))
     if var.unit is None:
         unit = ''
