@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Jan-Lukas Wynen
+"""
+Helpers for handling bin-edges.
+"""
+
 from typing import Set
 
 from ..core import Variable
