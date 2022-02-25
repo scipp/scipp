@@ -5,7 +5,7 @@
 Advanced comparisons.
 """
 
-import scipp as sc
+from ..core import CoordError, DataArray, DType, all, isclose
 
 
 def isnear(x,
@@ -60,8 +60,8 @@ def isnear(x,
         If `x`, `y` are not going to be logically comparable
         for reasons relating to shape, item naming or non-finite elements.
     """
-    same_data = sc.all(
-        sc.isclose(x.data, y.data, rtol=rtol, atol=atol,
+    same_data = all(
+        isclose(x.data, y.data, rtol=rtol, atol=atol,
                    equal_nan=equal_nan)).value if include_data else True
     same_len = len(x.meta) == len(y.meta) if include_attrs else len(x.coords) == len(
         y.coords)
@@ -71,11 +71,11 @@ def isnear(x,
         a = x.meta[key] if include_attrs else x.coords[key]
         b = y.meta[key] if include_attrs else y.coords[key]
         if a.shape != b.shape:
-            raise sc.CoordError(
+            raise CoordError(
                 f'Coord (or attr) with key {key} have different'
                 f' shapes. For x, shape is {a.shape}. For y, shape = {b.shape}')
-        if val.dtype in [sc.DType.float64, sc.DType.float32]:
-            if not sc.all(sc.isclose(a, b, rtol=rtol, atol=atol,
+        if val.dtype in [DType.float64, DType.float32]:
+            if not all(isclose(a, b, rtol=rtol, atol=atol,
                                      equal_nan=equal_nan)).value:
                 return False
     return same_data
