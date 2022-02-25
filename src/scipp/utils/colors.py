@@ -24,6 +24,7 @@ def make_random_color(fmt='rgb'):
     """
     Generate a random color.
     Possible output formats are:
+
       - 'rgb' (default): (255, 255, 100)
       - 'dec': (1.0, 1.0, 0.392)
       - 'rgba': (1.0, 1.0, 0.392, 1.0)
