@@ -4,7 +4,6 @@
 # @author Neil Vaytet
 
 # flake8: noqa
-
 """
 Miscellaneous utilities.
 
