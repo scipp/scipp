@@ -181,15 +181,39 @@ def vectors(draw, ndim=None) -> st.SearchStrategy:
 
 
 @st.composite
-def coord_dicts_1d(draw, sizes) -> st.SearchStrategy:
-    return {
-        dim: draw(variables(dtype=int, sizes={dim: size}))
-        for dim, size in sizes.items()
-    }
+def coord_dicts_1d(draw, *, coords, sizes, args=None) -> dict:
+    args = (args or {})
+    args['sizes'] = sizes
+    try:
+        del args['ndim']
+    except KeyError:
+        pass
+    return {dim: draw(variables(**args)) for dim in coords}
+
+
+class _NotSetType:
+
+    def __repr__(self):
+        return 'Default'
+
+    def __bool__(self):
+        return False
+
+
+_NotSet = _NotSetType()
 
 
 @st.composite
-def dataarrays(draw) -> st.SearchStrategy:
-    data = draw(variables(dtype=float))
-    coords = draw(coord_dicts_1d(sizes=data.sizes))
-    return DataArray(data, coords=coords)
+def dataarrays(draw,
+               data_args=None,
+               coords=_NotSet,
+               coord_args=None) -> st.SearchStrategy:
+    data = draw(variables(**(data_args or {})))
+    if coords is _NotSet:
+        coords = data.dims
+    if coords is not None:
+        coord_dict = draw(
+            coord_dicts_1d(coords=coords, sizes=data.sizes, args=coord_args))
+    else:
+        coord_dict = {}
+    return DataArray(data, coords=coord_dict)
