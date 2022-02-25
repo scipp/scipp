@@ -127,10 +127,12 @@ class ResamplingModel():
                                          shape=[coord.sizes[d]] + data.shape)
         array = DataArray(data=data)
         for dim in coords:
-            try:
+            if coords[dim].dim in array.dims:
                 array.coords[dim] = coords[dim]
-            except DimensionError:  # Masks may be lower-dimensional
-                pass
+            # try:
+            #     array.coords[dim] = coords[dim]
+            # except DimensionError:  # Masks may be lower-dimensional
+            #     pass
         if sanitize:
             array, _ = _with_edges(array)
         plan = []
@@ -144,8 +146,13 @@ class ResamplingModel():
             else:
                 plan.insert(0, edge)
         for edge in plan:
+            if edge.unit is None:
+                # We cannot rebin with such a unit.
+                edge = edge.copy()
+                edge.unit = ''
             try:
-                array = _resample(array, self.mode, dim, edge)
+                # array = _resample(array, self.mode, dim, edge)
+                array = _resample(array, self.mode, edge.dims[-1], edge)
             except (KeyError,
                     DimensionError):  # Limitation of rebin for slice of inner dim
                 array = _resample(array.copy(), self.mode, edge.dims[-1], edge)
