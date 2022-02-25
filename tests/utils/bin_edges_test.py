@@ -12,7 +12,7 @@ def test_find_bin_edge_dims_coord_of_same_length():
     assert sc.utils.find_bin_edge_dims(da, coord=b) == set()
 
 
-def test_find_bin_edge_dims_coord_of_length_plut_1():
+def test_find_bin_edge_dims_coord_of_length_plus_1():
     da = sc.DataArray(sc.zeros(sizes={'a': 2, 'b': 3}))
     a = sc.ones(sizes={'a': 3})
     assert sc.utils.find_bin_edge_dims(da, coord=a) == {'a'}
@@ -56,3 +56,23 @@ def test_find_bin_edge_dims_scalar_da():
     assert sc.utils.find_bin_edge_dims(da, coord=x) == set()
     x = sc.ones(sizes={'a': 0})
     assert sc.utils.find_bin_edge_dims(da, coord=x) == set()
+
+
+def test_is_bin_edges_1d_coord():
+    da = sc.DataArray(sc.zeros(sizes={'a': 2, 'b': 3}))
+    a = sc.ones(sizes={'a': 2})
+    assert not sc.utils.is_bin_edges(da, coord=a)
+    a = sc.ones(sizes={'a': 3})
+    assert sc.utils.is_bin_edges(da, coord=a)
+
+
+def test_is_bin_edges_2d_coord():
+    da = sc.DataArray(sc.zeros(sizes={'a': 2, 'b': 3}))
+    a = sc.ones(sizes={'a': 2, 'b': 3})
+    assert not sc.utils.is_bin_edges(da, coord=a)
+    a = sc.ones(sizes={'a': 3, 'b': 3})
+    assert sc.utils.is_bin_edges(da, coord=a)
+    a = sc.ones(sizes={'a': 2, 'b': 4})
+    assert sc.utils.is_bin_edges(da, coord=a)
+    a = sc.ones(sizes={'a': 3, 'b': 4})
+    assert sc.utils.is_bin_edges(da, coord=a)
