@@ -9,7 +9,7 @@ from html import escape
 
 from .._scipp import core as sc
 from ..core import stddevs
-from ..utils import value_to_string
+from ..utils import find_bin_edge_dims, value_to_string
 from .resources import load_icons, load_style
 
 BIN_EDGE_LABEL = "[bin-edge]"
@@ -178,23 +178,6 @@ def summarize_mask(dim, var, ds=None):
     return summarize_variable(str(dim), var, is_index=False, embedded_in=ds)
 
 
-def find_bin_edges(var, ds):
-    """
-    Checks if the coordinate contains bin-edges.
-    """
-    bin_edges = []
-    for idx, dim in enumerate(var.dims):
-        length = var.shape[idx]
-        if not ds.dims:
-            # Have a scalar slice.
-            # Cannot match dims, just assume length 2 attributes are bin-edge
-            if length == 2:
-                bin_edges.append(dim)
-        elif dim in ds.dims and ds.shape[ds.dims.index(dim)] + 1 == length:
-            bin_edges.append(dim)
-    return bin_edges
-
-
 def summarize_coords(coords, ds=None):
     vars_li = "".join("<li class='sc-var-item'>"
                       f"{summarize_coord(dim, var, ds)}"
@@ -289,8 +272,8 @@ def summarize_variable(name,
     dims_str = "({})".format(
         _make_dim_str(
             var,
-            find_bin_edges(var, embedded_in) if embedded_in is not None else None,
-            add_dim_size))
+            find_bin_edge_dims(coord=var, ds=embedded_in)
+            if embedded_in is not None else None, add_dim_size))
     if var.unit is None:
         unit = ''
     else:

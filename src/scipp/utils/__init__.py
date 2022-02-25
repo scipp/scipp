@@ -5,6 +5,7 @@
 
 # flake8: noqa
 
+from .bin_edges import *
 from .collapse_and_slices import *
 from .colors import *
 from .to_string import *
