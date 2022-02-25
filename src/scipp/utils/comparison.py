@@ -4,17 +4,18 @@
 """
 Advanced comparisons.
 """
+from typing import Optional
 
-from ..core import CoordError, DataArray, DType, all, isclose
+from ..core import CoordError, DataArray, DType, Variable, all, isclose
 
 
-def isnear(x,
-           y,
-           rtol=None,
-           atol=None,
-           include_attrs=True,
-           include_data=True,
-           equal_nan=True):
+def isnear(x: DataArray,
+           y: DataArray,
+           rtol: Optional[Variable] = None,
+           atol: Optional[Variable] = None,
+           include_attrs: bool = True,
+           include_data: bool = True,
+           equal_nan: bool = True) -> bool:
     """
     Similar to scipp.isclose, but intended to compare whole DataArrays.
     Coordinates compared element by element with
@@ -60,9 +61,8 @@ def isnear(x,
         If `x`, `y` are not going to be logically comparable
         for reasons relating to shape, item naming or non-finite elements.
     """
-    same_data = all(
-        isclose(x.data, y.data, rtol=rtol, atol=atol,
-                   equal_nan=equal_nan)).value if include_data else True
+    same_data = all(isclose(x.data, y.data, rtol=rtol, atol=atol,
+                            equal_nan=equal_nan)).value if include_data else True
     same_len = len(x.meta) == len(y.meta) if include_attrs else len(x.coords) == len(
         y.coords)
     if not same_len:
@@ -75,7 +75,6 @@ def isnear(x,
                 f'Coord (or attr) with key {key} have different'
                 f' shapes. For x, shape is {a.shape}. For y, shape = {b.shape}')
         if val.dtype in [DType.float64, DType.float32]:
-            if not all(isclose(a, b, rtol=rtol, atol=atol,
-                                     equal_nan=equal_nan)).value:
+            if not all(isclose(a, b, rtol=rtol, atol=atol, equal_nan=equal_nan)).value:
                 return False
     return same_data
