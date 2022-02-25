@@ -55,7 +55,7 @@ def find_bin_edge_dims(ref: VariableLike, /, *, coord: Variable) -> Set[str]:
     return bin_edges
 
 
-def is_bin_edges(ref: VariableLike, /, *, coord:Variable)->bool:
+def is_bin_edges(ref: VariableLike, /, *, coord: Variable) -> bool:
     """
     Returns True if `coord` has bin-edges relative to the sizes of `ref`.
 
