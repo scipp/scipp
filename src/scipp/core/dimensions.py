@@ -16,6 +16,7 @@ def _rename_variable(var: Variable, dims_dict: dict = None, **names) -> Variable
     """
     Rename the dimensions labels of a Variable.
     The renaming can be defined:
+
        - using a dict mapping the old to new names, e.g. rename({'x': 'a', 'y': 'b'})
        - using keyword arguments, e.g. rename(x='a', y='b')
     """
@@ -26,6 +27,7 @@ def _rename_data_array(da: DataArray, dims_dict: dict = None, **names) -> DataAr
     """
     Rename the dimensions, coordinates and attributes of a Dataset.
     The renaming can be defined:
+
        - using a dict mapping the old to new names, e.g. rename({'x': 'a', 'y': 'b'})
        - using keyword arguments, e.g. rename(x='a', y='b')
     """
@@ -46,6 +48,7 @@ def _rename_dataset(ds: Dataset, dims_dict: dict = None, **names) -> Dataset:
     """
     Rename the dimensions, coordinates and attributes of all the items in a dataset.
     The renaming can be defined:
+
        - using a dict mapping the old to new names, e.g. rename({'x': 'a', 'y': 'b'})
        - using keyword arguments, e.g. rename(x='a', y='b')
     """
