@@ -60,7 +60,11 @@ def use_variances(dtype) -> st.SearchStrategy:
 def _variables_from_fixed_args(args) -> st.SearchStrategy:
 
     def make_array():
-        return npst.arrays(args['dtype'], tuple(args['sizes'].values()))
+        return npst.arrays(args['dtype'],
+                           tuple(args['sizes'].values()),
+                           elements=args['elements'],
+                           fill=args['fill'],
+                           unique=args['unique'])
 
     return st.builds(partial(creation.array,
                              dims=list(args['sizes'].keys()),
@@ -76,7 +80,10 @@ def variable_args(draw,
                   sizes=None,
                   unit=None,
                   dtype=None,
-                  with_variances=None) -> dict:
+                  with_variances=None,
+                  elements=None,
+                  fill=None,
+                  unique=None) -> dict:
     if ndim is not None:
         if sizes is not None:
             raise InvalidArgument('Arguments `ndim` and `sizes` cannot both be used. '
@@ -102,22 +109,33 @@ def variable_args(draw,
     if isinstance(with_variances, st.SearchStrategy):
         with_variances = draw(with_variances)
 
-    return dict(sizes=sizes, unit=unit, dtype=dtype, with_variances=with_variances)
+    return dict(sizes=sizes,
+                unit=unit,
+                dtype=dtype,
+                with_variances=with_variances,
+                elements=elements,
+                fill=fill,
+                unique=unique)
 
 
-# TODO allow setting element values
 def variables(*,
               ndim=None,
               sizes=None,
               unit=None,
               dtype=None,
-              with_variances=None) -> st.SearchStrategy:
-    return variable_args(ndim=ndim,
+              with_variances=None,
+              elements=None,
+              fill=None,
+              unique=None) -> st.SearchStrategy:
+    args = variable_args(ndim=ndim,
                          sizes=sizes,
                          unit=unit,
                          dtype=dtype,
-                         with_variances=with_variances).flatmap(
-                             lambda args: _variables_from_fixed_args(args))
+                         with_variances=with_variances,
+                         elements=elements,
+                         fill=fill,
+                         unique=unique)
+    return args.flatmap(lambda a: _variables_from_fixed_args(a))
 
 
 def n_variables(n: int,
@@ -126,13 +144,20 @@ def n_variables(n: int,
                 sizes=None,
                 unit=None,
                 dtype=None,
-                with_variances=None) -> st.SearchStrategy:
-    return variable_args(ndim=ndim,
+                with_variances=None,
+                elements=None,
+                fill=None,
+                unique=None) -> st.SearchStrategy:
+    args = variable_args(ndim=ndim,
                          sizes=sizes,
                          unit=unit,
                          dtype=dtype,
-                         with_variances=with_variances).flatmap(lambda args: st.tuples(
-                             *(_variables_from_fixed_args(args) for _ in range(n))))
+                         with_variances=with_variances,
+                         elements=elements,
+                         fill=fill,
+                         unique=unique)
+    return args.flatmap(
+        lambda a: st.tuples(*(_variables_from_fixed_args(a) for _ in range(n))))
 
 
 @st.composite
