@@ -166,3 +166,18 @@ def test_n_variables_all_have_same_parameters(variables):
     assert a.unit == b.unit
     assert a.dtype == b.dtype
     assert (a.variances is None) == (b.variances is None)
+
+
+@settings(max_examples=N_EXAMPLES)
+@given(
+    scst.dataarrays(data_args={
+        'dtype': int,
+        'sizes': {
+            'a': 2,
+            'b': 3
+        }
+    },
+                    coords=['b'],
+                    coord_args=None))
+def test_dataarrays(da):
+    print(da)
