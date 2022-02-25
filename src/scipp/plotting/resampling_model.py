@@ -129,10 +129,6 @@ class ResamplingModel():
         for dim in coords:
             if coords[dim].dim in array.dims:
                 array.coords[dim] = coords[dim]
-            # try:
-            #     array.coords[dim] = coords[dim]
-            # except DimensionError:  # Masks may be lower-dimensional
-            #     pass
         if sanitize:
             array, _ = _with_edges(array)
         plan = []
@@ -151,7 +147,6 @@ class ResamplingModel():
                 edge = edge.copy()
                 edge.unit = ''
             try:
-                # array = _resample(array, self.mode, dim, edge)
                 array = _resample(array, self.mode, edge.dims[-1], edge)
             except (KeyError,
                     DimensionError):  # Limitation of rebin for slice of inner dim
