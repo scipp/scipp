@@ -67,7 +67,7 @@ class DateFormatter:
             return dt
         trim = 0
         bounds = get_axis_bounds(axis)
-        diff = sc.scalar(bounds[1] - bounds[0], unit=self.offset.unit)
+        diff = scalar(bounds[1] - bounds[0], unit=self.offset.unit)
         label = self.dim
         if pos == 0:
             self.indicators.clear()
