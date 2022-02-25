@@ -33,7 +33,7 @@ def to_bin_edges(x, dim):
     """
     idim = x.dims.index(dim)
     if x.shape[idim] < 2:
-        one = 1.0 * x.unit
+        one = scalar(1.0, unit=x.unit)
         return concat([x[dim, 0:1] - one, x[dim, 0:1] + one], dim)
     else:
         center = to_bin_centers(x, dim)
@@ -122,7 +122,7 @@ def find_log_limits(x):
                                    values=np.geomspace(1e-30, 1e30, num=61),
                                    unit=x.unit))
     # Find the first and the last non-zero bins
-    inds = np.nonzero((hist.data > 0.0 * units.counts).values)
+    inds = np.nonzero((hist.data > scalar(0.0, unit=units.counts)).values)
     ar = np.arange(hist.data.shape[0])[inds]
     # Safety check in case there are no values in range 1.0e-30:1.0e+30:
     # fall back to the linear method and replace with arbitrary values if the
@@ -178,12 +178,12 @@ def fix_empty_range(lims, replacement=None):
     """
     Range correction in case xmin == xmax
     """
-    dx = 0.0 * lims[0].unit
+    dx = scalar(0.0, unit=lims[0].unit)
     if lims[0].value == lims[1].value:
         if replacement is not None:
             dx = 0.5 * replacement
         elif lims[0].value == 0.0:
-            dx = 0.5 * lims[0].unit
+            dx = scalar(0.5, unit=lims[0].unit)
         else:
             dx = 0.5 * abs_(lims[0])
     return [lims[0] - dx, lims[1] + dx]
