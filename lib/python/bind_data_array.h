@@ -76,8 +76,8 @@ void bind_is_edges(py::class_<T, Ignored...> &view) {
 }
 
 template <class T>
-void bind_mutable_view(py::module &m, const std::string &name) {
-  py::class_<T> view(m, name.c_str());
+void bind_mutable_view(py::module &m, const std::string &name, const std::string& docs) {
+  py::class_<T> view(m, name.c_str(), docs.c_str());
   bind_common_mutable_view_operators<T>(view);
   bind_inequality_to_operator<T>(view);
   bind_pop(view);
@@ -107,8 +107,8 @@ void bind_mutable_view(py::module &m, const std::string &name) {
 }
 
 template <class T>
-void bind_mutable_view_no_dim(py::module &m, const std::string &name) {
-  py::class_<T> view(m, name.c_str());
+void bind_mutable_view_no_dim(py::module &m, const std::string &name, const std::string& docs) {
+  py::class_<T> view(m, name.c_str(), docs.c_str());
   bind_common_mutable_view_operators<T>(view);
   bind_inequality_to_operator<T>(view);
   bind_pop(view);
