@@ -224,7 +224,7 @@ class DataArrayIO:
     @staticmethod
     def write(group, data):
         _write_scipp_header(group, 'DataArray')
-        group.attrs['scipp-name'] = data.name
+        group.attrs['name'] = data.name
         if data.data is None:
             raise RuntimeError("Cannot write object with invalid data.")
         VariableIO.write(group.create_group('data'), var=data.data)
@@ -241,18 +241,18 @@ class DataArrayIO:
                 if g is None:
                     del subgroup[var_group_name]
                 else:
-                    g.attrs['scipp-name'] = str(name)
+                    g.attrs['name'] = str(name)
 
     @staticmethod
     def read(group):
         _check_scipp_header(group, 'DataArray')
         from ..core import DataArray
         contents = dict()
-        contents['name'] = group.attrs['scipp-name']
+        contents['name'] = group.attrs['name']
         contents['data'] = VariableIO.read(group['data'])
         for category in ['coords', 'masks', 'attrs']:
             contents[category] = {
-                g.attrs['scipp-name']: VariableIO.read(g)
+                g.attrs['name']: VariableIO.read(g)
                 for g in group[category].values()
             }
         return DataArray(**contents)
@@ -273,9 +273,7 @@ class DatasetIO:
     def read(group):
         _check_scipp_header(group, 'Dataset')
         from ..core import Dataset
-        return Dataset(
-            data={g.attrs['scipp-name']: HDF5IO.read(g)
-                  for g in group.values()})
+        return Dataset(data={g.attrs['name']: HDF5IO.read(g) for g in group.values()})
 
 
 class HDF5IO:

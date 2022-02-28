@@ -6,8 +6,6 @@ Convert pre-0.13 HDF5 files to 0.13-compatible files.
 Changes are:
 
 * Names of coords, attrs, masks, and dataset items are encoded via attributes.
-* Names of data arrays are stored in attributes called 'scipp-name'
-  instead of just 'name'.
 """
 import h5py
 import sys
@@ -27,12 +25,11 @@ def migrate_meta_data(group):
     for i, name in enumerate(group):
         new_name = f'elem_{i}'
         group[new_name] = group.pop(name)
-        group[new_name].attrs['scipp-name'] = name
+        group[new_name].attrs['name'] = name
         migrate_variable(group[new_name])
 
 
 def migrate_data_array(group):
-    group.attrs['scipp-name'] = group.attrs.pop('name')
     migrate_variable(group['data'])
     for category in ('coords', 'masks', 'attrs'):
         migrate_meta_data(group[category])
