@@ -26,6 +26,7 @@ source:
 requirements:
   build:
     - cmake
+    - cppcheck [linux64]
     - conan>=1.45.0
     - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - gxx_linux-64 11.1.* [linux64]
