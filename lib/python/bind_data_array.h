@@ -71,7 +71,8 @@ void bind_is_edges(py::class_<T, Ignored...> &view) {
       "is_edges",
       [](const T &self, const typename T::key_type &key,
          const std::optional<Dim> dim) { return self.is_edges(key, dim); },
-      py::arg("key"), py::arg("dim") = std::nullopt);
+      py::arg("key"), py::arg("dim") = std::nullopt,
+      R"(Return True if the given key contains bin-edges in the given dim.)");
 }
 
 template <class T>
