@@ -145,7 +145,7 @@ class ResamplingModel():
                 plan.insert(0, edge)
         for edge in plan:
             if edge.unit is None:
-                # We cannot rebin with such a unit.
+                # We cannot use rebin with no unit, so we change it to dimensionless
                 edge = edge.copy()
                 edge.unit = ''
             try:
