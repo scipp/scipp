@@ -53,6 +53,8 @@ jobs:
 
   build_wheels:
     name: Wheels on ${{ matrix.os }}
+    # TODO remove
+    if: github.event_name == 'release' && github.event.action == 'published'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
