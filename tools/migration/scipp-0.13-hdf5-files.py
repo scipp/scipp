@@ -5,7 +5,7 @@ Convert pre-0.13 HDF5 files to 0.13-compatible files.
 
 Changes are:
 
-* Names of coords, attrs, and masks are encoded via attributes.
+* Names of coords, attrs, masks, and dataset items are encoded via attributes.
 * Names of data arrays are stored in attributes called 'scipp-name'
   instead of just 'name'.
 """
