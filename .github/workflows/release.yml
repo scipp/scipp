@@ -97,7 +97,7 @@ jobs:
           activate-environment: developer-extra
           auto-activate-base: false
       - run: mamba install --yes -c scipp/label/staging scipp
-      - run: cmake --build --preset docs
+      - run: cmake --build --preset package-docs
       - uses: actions/upload-artifact@v2
         with:
           name: html
