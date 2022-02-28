@@ -12,6 +12,16 @@ import sys
 from shutil import copyfile
 
 
+# NOTE copied from scipp.io.hdf5 at Git ref a74103329
+def collection_element_name(name, index):
+    """
+    Convert name into an ASCII string that can be used as an object name in HDF5.
+    """
+    ascii_name = name.replace('.', '&#46;').replace('/', '&#47;').encode(
+        'ascii', 'xmlcharrefreplace').decode('ascii')
+    return f'elem_{index:03d}_{ascii_name}'
+
+
 def migrate_variable(group):
     vals = group['values']
     if isinstance(vals, h5py.Group):
@@ -23,7 +33,7 @@ def migrate_variable(group):
 
 def migrate_meta_data(group):
     for i, name in enumerate(group):
-        new_name = f'elem_{i}'
+        new_name = collection_element_name(name, i)
         group[new_name] = group.pop(name)
         group[new_name].attrs['name'] = name
         migrate_variable(group[new_name])
@@ -37,7 +47,7 @@ def migrate_data_array(group):
 
 def migrate_dataset(group):
     for i, name in enumerate(list(group)):
-        new_name = f'elem_{i}'
+        new_name = collection_element_name(name, i)
         group[new_name] = group.pop(name)
         migrate_data_array(group[new_name])
 
