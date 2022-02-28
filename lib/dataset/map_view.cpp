@@ -340,7 +340,7 @@ bool Dict<Key, Value>::item_applies_to(const Key &key,
 template <class Key, class Value>
 bool Dict<Key, Value>::is_edges(const Key &key,
                                 const std::optional<Dim> dim) const {
-  const auto &val = m_items.at(key);
+  const auto &val = this->at(key);
   return core::is_edges(m_sizes, val.dims(),
                         dim.has_value() ? *dim : val.dim());
 }
