@@ -128,7 +128,7 @@ Dim Dict<Key, Value>::dim_of(const Key &key) const {
     return var.dims().inner();
   if constexpr (std::is_same_v<Key, Dim>) {
     for (const auto &dim : var.dims())
-      if (is_edges(sizes(), var.dims(), dim))
+      if (core::is_edges(sizes(), var.dims(), dim))
         return dim;
     if (var.dims().contains(key))
       return key; // dimension coord
@@ -335,6 +335,14 @@ bool Dict<Key, Value>::item_applies_to(const Key &key,
   const auto &val = m_items.at(key);
   return std::all_of(val.dims().begin(), val.dims().end(),
                      [&dims](const Dim dim) { return dims.contains(dim); });
+}
+
+template <class Key, class Value>
+bool Dict<Key, Value>::is_edges(const Key &key,
+                                const std::optional<Dim> dim) const {
+  const auto &val = m_items.at(key);
+  return core::is_edges(m_sizes, val.dims(),
+                        dim.has_value() ? *dim : val.dim());
 }
 
 template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;
