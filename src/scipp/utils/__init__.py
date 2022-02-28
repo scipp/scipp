@@ -10,7 +10,6 @@ Miscellaneous utilities.
 Note that all functions from submodules are also available in ``scipp.utils`` directly.
 """
 
-from .bin_edges import *
 from .collapse_and_slices import *
 from .colors import *
 from .to_string import *
