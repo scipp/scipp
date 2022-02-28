@@ -65,12 +65,22 @@ void bind_pop(pybind11::class_<T, Ignored...> &view) {
       py::arg("k"));
 }
 
+template <class T, class... Ignored>
+void bind_is_edges(py::class_<T, Ignored...> &view) {
+  view.def(
+      "is_edges",
+      [](const T &self, const typename T::key_type &key,
+         const std::optional<Dim> dim) { return self.is_edges(key, dim); },
+      py::arg("key"), py::arg("dim") = std::nullopt);
+}
+
 template <class T>
 void bind_mutable_view(py::module &m, const std::string &name) {
   py::class_<T> view(m, name.c_str());
   bind_common_mutable_view_operators<T>(view);
   bind_inequality_to_operator<T>(view);
   bind_pop(view);
+  bind_is_edges(view);
   view.def(
           "__iter__",
           [](const T &self) {
@@ -101,6 +111,7 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name) {
   bind_common_mutable_view_operators<T>(view);
   bind_inequality_to_operator<T>(view);
   bind_pop(view);
+  bind_is_edges(view);
   view.def(
           "__iter__",
           [](T &self) {
