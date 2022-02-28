@@ -515,3 +515,11 @@ def test_when_2d_data_has_y_coord_associated_with_dim_x():
                           'y': sc.arange('x', 1, N + 1)
                       })
     plot(da)
+
+
+def test_when_2d_data_has_masks_and_coord_with_none_unit():
+    da = make_binned_data_array(ndim=2)
+    da.masks['mask_x'] = da.coords['xx'] > 0.5 * sc.units.m
+    da.bins.constituents['data'].coords['xx'].unit = None
+    da.coords['xx'].unit = None
+    plot(da)
