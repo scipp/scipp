@@ -230,3 +230,11 @@ TEST_F(DataArrayTest, is_edges_scalar_with_edges) {
   ASSERT_TRUE(da.coords().is_edges(Dim{"c"}));
   ASSERT_TRUE(da.coords().is_edges(Dim{"c"}, Dim::Y));
 }
+
+TEST_F(DataArrayTest, is_edges_invalid_coord_name_throws_NotFoundError) {
+  DataArray da{
+      makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{1, 2}),
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{0, 1, 2})}}};
+  ASSERT_THROW_DISCARD(da.coords().is_edges(Dim{"invalid name"}),
+                       except::NotFoundError);
+}
