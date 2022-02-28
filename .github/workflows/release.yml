@@ -50,6 +50,7 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
+        name: dist
         path: dist/*.tar.gz
 
   build_wheels:
@@ -77,6 +78,7 @@ jobs:
     - name: Upload wheels
       uses: actions/upload-artifact@v2
       with:
+        name: dist
         path: wheelhouse/*.whl
 
   docs:
@@ -98,7 +100,7 @@ jobs:
       - run: cmake --build --preset docs
       - uses: actions/upload-artifact@v2
         with:
-          name: DocumentationHTML
+          name: html
           path: build/html/
 
   upload_all:
@@ -111,6 +113,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
       - uses: actions/download-artifact@v2
+      - run: ls -R
 
       - run: cp -r html html/release/${{ github.ref_name }}
       - uses: JamesIves/github-pages-deploy-action@v4.2.3
@@ -128,11 +131,6 @@ jobs:
       #- run: anaconda --token ${{ secrets.ANACONDATOKEN }} move --from-label staging --to-label main scipp/scipp/${{ github.ref_name }}
 
       - uses: actions/setup-python@v2
-
-        #- uses: actions/download-artifact@v2
-        #  with:
-        #    name: artifact
-        #    path: dist
 
         #- uses: pypa/gh-action-pypi-publish@v1.5.0
         #  with:
