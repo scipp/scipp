@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .view import PlotView
-from ..core import zeros
+from ..core import zeros, scalar
 import numpy as np
 from matplotlib.collections import PathCollection
 
@@ -107,7 +107,7 @@ class PlotView2d(PlotView):
         for dim in self.dims:
             low, high = self.current_lims[dim]
             unit = self._data.coords[dim].unit
-            limits[dim] = [low * unit, high * unit]
+            limits[dim] = [scalar(low, unit=unit), scalar(high, unit=unit)]
         return limits
 
     @property
@@ -116,7 +116,7 @@ class PlotView2d(PlotView):
         for dim in self.dims:
             low, high = self.global_lims[dim]
             unit = self._data.coords[dim].unit
-            limits[dim] = [low * unit, high * unit]
+            limits[dim] = [scalar(low, unit=unit), scalar(high, unit=unit)]
         return limits
 
     def _update_axes(self):

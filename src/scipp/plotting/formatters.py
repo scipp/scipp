@@ -1,6 +1,9 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+
 from .. import typing
 from ..utils import name_with_unit, value_to_string
-from ..core import arange, to_unit, Unit
+from ..core import arange, to_unit, Unit, scalar
 import enum
 import numpy as np
 
@@ -58,19 +61,21 @@ class DateFormatter:
 
     def formatter(self, val, pos, axis=None, get_axis_bounds=None, set_axis_label=None):
         index = np.abs(self.coord_values - val).argmin()
-        d = (self.offset + (index * self.offset.unit)).value
+        d = (self.offset + scalar(index, unit=self.offset.unit)).value
         dt = str(d)
         if pos is None:  # Return full string, not split into label + offset
             return dt
         trim = 0
         bounds = get_axis_bounds(axis)
-        diff = (bounds[1] - bounds[0]) * self.offset.unit
+        diff = scalar(bounds[1] - bounds[0], unit=self.offset.unit)
         label = self.dim
         if pos == 0:
             self.indicators.clear()
 
-        date_min = str((int(bounds[0]) * self.offset.unit + self.offset).value)
-        date_max = str((int(bounds[1]) * self.offset.unit + self.offset).value)
+        date_min = str(
+            (scalar(int(bounds[0]), unit=self.offset.unit) + self.offset).value)
+        date_max = str(
+            (scalar(int(bounds[1]), unit=self.offset.unit) + self.offset).value)
 
         check_transition = True
         check_time = True

@@ -11,7 +11,8 @@ def _slice_params(array, dim, loc):
     if not isinstance(array, core.DataArray):
         array = next(iter(array.values()))
     if array.sizes[dim] + 1 == coord.sizes[dim]:
-        _, i = core.get_slice_params(array.data, coord, loc * coord.unit)
+        _, i = core.get_slice_params(array.data, coord, core.scalar(loc,
+                                                                    unit=coord.unit))
         if i < 0 or i + 1 >= coord.sizes[dim]:
             return None
         return coord[dim, i], coord[dim, i + 1]
