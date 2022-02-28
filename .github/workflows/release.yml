@@ -88,7 +88,7 @@ jobs:
     env:
       DOCS_HTML_DIR: ${{ github.workspace }}/docs_html
     steps:
-      - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
+      - uses: actions/checkout@v2
       - name: Setup Mambaforge and dev env
         uses: conda-incubator/setup-miniconda@v2
         with:
@@ -127,9 +127,9 @@ jobs:
           clean-exclude: release
           ssh-key: ${{ secrets.GH_PAGES_DEPLOY_KEY }}
 
-      # Change conda packages labels from staging to main
       - uses: conda-incubator/setup-miniconda@v2
-      - run: conda install -c conda-forge --yes anaconda-client
+      - name: Relabel conda package to main
+        run: conda install -c conda-forge --yes anaconda-client
       #- run: anaconda --token ${{ secrets.ANACONDATOKEN }} move --from-label staging --to-label main scipp/scipp/${{ github.ref_name }}
 
       - uses: actions/setup-python@v2

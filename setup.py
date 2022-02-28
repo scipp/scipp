@@ -59,10 +59,7 @@ setup(name='scipp',
           'pyyaml',
       ],
       extras_require={
-          "test": [
-              "pytest", "matplotlib", "xarray", "pandas", "pythreejs",
-              "sphinx-autodoc-typehints>=1.17.0"
-          ],
+          "test": ["pytest", "matplotlib", "xarray", "pandas", "pythreejs"],
           'all': ['h5py', 'scipy>=1.7.0', 'graphviz'],
           'interactive': [
               'ipykernel==6.3.1', 'ipympl', 'ipython', 'ipywidgets', 'matplotlib',

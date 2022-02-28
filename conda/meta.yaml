@@ -81,7 +81,6 @@ build:
     - cmake --build --preset build
     - ctest --preset test
 
-
 about:
   home: https://scipp.github.io/
   license: BSD-3-Clause
