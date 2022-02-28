@@ -81,7 +81,7 @@ jobs:
 
   docs:
     name: Build documentation
-    needs: [build_conda, build_sdist, build_wheels]
+    needs: build_conda
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
@@ -103,7 +103,8 @@ jobs:
 
   upload_all:
     name: Deploy docs and packages
-    needs: docs
+    needs: [docs, build_sdist]
+    #needs: [docs, build_sdist, build_wheels]
     runs-on: ubuntu-latest
     #if: github.event_name == 'release' && github.event.action == 'published'
 
