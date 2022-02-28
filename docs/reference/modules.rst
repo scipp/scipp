@@ -29,4 +29,3 @@ Utilities
 
    configuration
    logging
-   utils

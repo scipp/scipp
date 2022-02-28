@@ -5,9 +5,7 @@
 
 # flake8: noqa
 """
-Miscellaneous utilities.
-
-Note that all functions from submodules are also available in ``scipp.utils`` directly.
+INTERNAL USE ONLY
 """
 
 from .collapse_and_slices import *
