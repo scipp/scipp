@@ -9,7 +9,7 @@ v0.13.0 (unreleased)
 Features
 ~~~~~~~~
 
-* Added :mod:`scipp.utils.bin_edges` with helpers to detect bin-edges `#2469 <https://github.com/scipp/scipp/pull/2469>`_.
+* Added ``is_edges`` method to ``coords``, ``attrs``, ``masks``, and ``meta`` properties of DataArray and Dataset `#2469 <https://github.com/scipp/scipp/pull/2469>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
