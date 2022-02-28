@@ -52,11 +52,11 @@ datetime64us_1d = sc.Variable(dims=['x'],
 array_1d = sc.DataArray(data=x,
                         coords={
                             'x': x,
-                            'x2': 2.0 * x
+                            'λ': 2.0 * x
                         },
                         masks={
-                            'mask1': sc.less(x, 1.5 * sc.units.m),
-                            'mask2': sc.less(x, 2.5 * sc.units.m)
+                            'mask.1': sc.less(x, 1.5 * sc.units.m),
+                            'mask.2': sc.less(x, 2.5 * sc.units.m)
                         },
                         attrs={
                             'attr1': x,
