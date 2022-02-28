@@ -138,7 +138,8 @@ void init_dataset(py::module &m) {
   bind_helper_view<values_view, Coords>(m, "Coords");
   bind_helper_view<values_view, Masks>(m, "Masks");
 
-  bind_mutable_view_no_dim<Coords>(m, "Coords", R"(dict-like collection of meta data
+  bind_mutable_view_no_dim<Coords>(m, "Coords",
+                                   R"(dict-like collection of meta data
 
 Returned by :py:func:`DataArray.coords`, :py:func:`DataArray.attrs`, :py:func:`DataArray.meta`,
 and the corresponding properties of :py:class:`Dataset`.)");
