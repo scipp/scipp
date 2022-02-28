@@ -32,6 +32,15 @@ def _as_hdf5_type(a):
     return a
 
 
+def collection_element_name(name, index):
+    """
+    Convert name into an ASCII string that can be used as an object name in HDF5.
+    """
+    ascii_name = name.replace('.', '&#46;').replace('/', '&#47;').encode(
+        'ascii', 'xmlcharrefreplace').decode('ascii')
+    return f'elem_{index:03d}_{ascii_name}'
+
+
 class NumpyDataIO:
     @staticmethod
     def write(group, data):
@@ -226,7 +235,7 @@ class DataArrayIO:
         for view_name, view in zip(['coords', 'masks', 'attrs'], views):
             subgroup = group.create_group(view_name)
             for i, name in enumerate(view):
-                var_group_name = f'elem_{i}'
+                var_group_name = collection_element_name(name, i)
                 g = VariableIO.write(group=subgroup.create_group(var_group_name),
                                      var=view[name])
                 if g is None:
@@ -258,7 +267,7 @@ class DatasetIO:
         # data. The advantage is that we can read individual dataset entries
         # directly as data arrays.
         for i, (name, da) in enumerate(data.items()):
-            HDF5IO.write(group.create_group(f'elem_{i}'), da)
+            HDF5IO.write(group.create_group(collection_element_name(name, i)), da)
 
     @staticmethod
     def read(group):
