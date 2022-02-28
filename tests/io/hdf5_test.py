@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+from scipp.io.hdf5 import collection_element_name
 import scipp as sc
 import scipp.spatial
 import numpy as np
@@ -229,3 +230,30 @@ def test_None_unit_is_preserved_even_if_dtype_does_not_default_to_None_unit():
     v = sc.scalar(1.2, unit=None)
     result = check_roundtrip(v)
     assert result.unit is None
+
+
+def assert_is_valid_hdf5_name(name: str):
+    assert '.' not in name
+    assert '/' not in name
+    name.encode('ascii', 'strict')  # raise exception if not ASCII
+
+
+def test_periods_are_escaped_in_names():
+    assert_is_valid_hdf5_name(collection_element_name('a.b', 0))
+    assert_is_valid_hdf5_name(collection_element_name('a..b', 1))
+    assert_is_valid_hdf5_name(collection_element_name('a.', 2))
+    assert_is_valid_hdf5_name(collection_element_name('.a', 3))
+
+
+def test_slashes_are_escaped_in_names():
+    assert_is_valid_hdf5_name(collection_element_name('a/b', 0))
+    assert_is_valid_hdf5_name(collection_element_name('a//b', 1))
+    assert_is_valid_hdf5_name(collection_element_name('a/', 2))
+    assert_is_valid_hdf5_name(collection_element_name('/a', 3))
+
+
+def test_unicode_is_escaped_in_names():
+    assert_is_valid_hdf5_name(collection_element_name('µm', 0))
+    assert_is_valid_hdf5_name(collection_element_name('λ', 1))
+    assert_is_valid_hdf5_name(collection_element_name('Å/travel_time', 2))
+    assert_is_valid_hdf5_name(collection_element_name('λ in Å', 3))
