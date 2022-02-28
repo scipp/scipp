@@ -30,6 +30,21 @@ Simon Heybrock :sup:`a`\ ,
 Neil Vaytet :sup:`a`\ ,
 and Jan-Lukas Wynen :sup:`a`
 
+v0.12.1 (February 2022)
+-----------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix a plotting bug when 2d data has masks and a coord with no unit `#2470 <https://github.com/scipp/scipp/pull/2470>`_.
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas Wynen :sup:`a`
+
 v0.12.0 (February 2022)
 -----------------------
 

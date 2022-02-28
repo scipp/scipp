@@ -144,8 +144,12 @@ class ResamplingModel():
             else:
                 plan.insert(0, edge)
         for edge in plan:
+            if edge.unit is None:
+                # We cannot use rebin with no unit, so we change it to dimensionless
+                edge = edge.copy()
+                edge.unit = ''
             try:
-                array = _resample(array, self.mode, dim, edge)
+                array = _resample(array, self.mode, edge.dims[-1], edge)
             except (KeyError,
                     DimensionError):  # Limitation of rebin for slice of inner dim
                 array = _resample(array.copy(), self.mode, edge.dims[-1], edge)
