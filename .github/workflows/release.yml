@@ -14,8 +14,6 @@ jobs:
   build_conda:
     name: Package build (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
-    env:
-      DOCS_HTML_DIR: ${{ github.workspace }}/docs_html
     strategy:
       matrix:
         os: ["ubuntu-latest"]
@@ -85,6 +83,8 @@ jobs:
     name: Build documentation
     needs: build_conda
     runs-on: ubuntu-latest
+    env:
+      DOCS_HTML_DIR: ${{ github.workspace }}/docs_html
     steps:
       - uses: actions/checkout@v2  # Need to checkout repo so github-pages-deploy-action works
       - name: Setup Mambaforge and dev env
