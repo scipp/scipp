@@ -29,7 +29,7 @@ jobs:
 
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install --yes conda-build
-      - run: conda build --channel conda-forge --python=${{ matrix.python-version }} --override-channels --output-folder conda/package --token ${{ secrets.ANACONDATOKEN }} --user scipp --label staging conda
+      - run: conda build --token ${{ secrets.ANACONDATOKEN }} --python=${{ matrix.python-version }} --override-channels --channel conda-forge --user scipp --label staging conda
 
   build_sdist:
     name: Build SDist
