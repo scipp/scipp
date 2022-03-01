@@ -12,6 +12,8 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* Changed format of scipp native HDF5 files to allow for UTF-8 characters in coord names; migration script: ``tools/migration/scipp-0.13-hdf5-files.py`` `#2463 <https://github.com/scipp/scipp/pull/2463>`_.
+
 Bugfixes
 ~~~~~~~~
 
