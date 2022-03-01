@@ -107,8 +107,8 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: conda-package-ubuntu-latest-py3.8
-      - run: ls -R
       - run: mamba install linux-64/scipp-*-py38_*.tar.bz2
+      - run: cmake --preset package-linux
       - run: cmake --build --preset package-docs
       - uses: actions/upload-artifact@v2
         with:
