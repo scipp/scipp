@@ -95,12 +95,17 @@ jobs:
       DOCS_HTML_DIR: ${{ github.workspace }}/docs_html
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist
+      - run: ls -R dist
       - uses: actions/setup-python@v2
       - name: Setup docs build env
         run: |
           pip install -r requirements-docs.txt
           pip install scipp[all,interactive]
           # TODO download pip artifact instead of installing from PyPI
+          #pip install dist/scipp-*cp38*manylinux*.whl[all,interactive]
           #- uses: actions/download-artifact@v2
           #  with:
           #    name: conda-package-ubuntu-latest-py3.8
