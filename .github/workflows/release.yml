@@ -109,6 +109,7 @@ jobs:
           #- run: cmake --build --preset package-docs
       - name: Run Sphinx
         run: |
+          sudo apt install --yes pandoc
           python -m sphinx -j2 -v -b html -d doctrees docs html
           python -m sphinx -j2 -v -b doctest -d doctrees docs html
           python -m sphinx -j2 -v -b linkcheck -d doctrees docs html
