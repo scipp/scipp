@@ -302,6 +302,44 @@ def test_truediv_dataarray_with_variable():
     assert sc.identical(da.data / da, expected)
 
 
+def test_add_dataarray_with_scalar():
+    da = sc.DataArray(sc.arange('x', 1.0, 10.0),
+                      coords={'x': sc.arange('x', 10.0, 20.0)})
+    expected = sc.zeros_like(da)
+    expected.data = sc.arange('x', 3.0, 12.0)
+    assert sc.identical(da + 2.0, expected)
+    assert sc.identical(2.0 + da, expected)
+
+
+def test_sub_dataarray_with_scalar():
+    da = sc.DataArray(sc.arange('x', 1.0, 10.0),
+                      coords={'x': sc.arange('x', 10.0, 20.0)})
+    expected = sc.zeros_like(da)
+    expected.data = sc.arange('x', 1.0, 10.0) - 2.0
+    assert sc.identical(da - 2.0, expected)
+    expected.data = 2.0 - sc.arange('x', 1.0, 10.0)
+    assert sc.identical(2.0 - da, expected)
+
+
+def test_mul_dataarray_with_scalar():
+    da = sc.DataArray(sc.arange('x', 1.0, 10.0),
+                      coords={'x': sc.arange('x', 10.0, 20.0)})
+    expected = sc.zeros_like(da)
+    expected.data = sc.arange('x', 2.0, 20.0, 2.0)
+    assert sc.identical(da * 2.0, expected)
+    assert sc.identical(2.0 * da, expected)
+
+
+def test_truediv_dataarray_with_scalar():
+    da = sc.DataArray(sc.arange('x', 1.0, 10.0),
+                      coords={'x': sc.arange('x', 10.0, 20.0)})
+    expected = sc.zeros_like(da)
+    expected.data = sc.arange('x', 1.0, 10.0) / 2.0
+    assert sc.identical(da / 2.0, expected)
+    expected.data = 2.0 / sc.arange('x', 1.0, 10.0)
+    assert sc.identical(2.0 / da, expected)
+
+
 def test_iadd_dataset_with_dataarray():
     da = sc.DataArray(sc.arange('x', 1.0, 10.0),
                       coords={'x': sc.arange('x', 10.0, 20.0)})
