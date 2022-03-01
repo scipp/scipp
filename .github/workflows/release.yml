@@ -95,21 +95,24 @@ jobs:
       DOCS_HTML_DIR: ${{ github.workspace }}/docs_html
     steps:
       - uses: actions/checkout@v2
-      - name: Setup Mambaforge and dev env
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniforge-version: latest
-          miniforge-variant: Mambaforge
-          python-version: "3.8"
-          environment-file: developer-extra.yml
-          activate-environment: developer-extra
-          auto-activate-base: false
-      - uses: actions/download-artifact@v2
-        with:
-          name: conda-package-ubuntu-latest-py3.8
-      - run: mamba install linux-64/scipp-*-py38*.tar.bz2
-      - run: cmake --preset package-linux
-      - run: cmake --build --preset package-docs
+      - uses: actions/setup-python@v2
+      - name: Setup docs build env
+        run: |
+          pip install -r requirements-docs.txt
+          pip install scipp
+          # TODO download pip artifact instead of installing from PyPI
+          #- uses: actions/download-artifact@v2
+          #  with:
+          #    name: conda-package-ubuntu-latest-py3.8
+          #- run: mamba install linux-64/scipp-*-py38*.tar.bz2
+          #- run: cmake --preset package-linux
+          #- run: cmake --build --preset package-docs
+      - name: Run Sphinx
+        run: |
+          python -m sphinx -j2 -v -b html -d doctrees docs html
+          python -m sphinx -j2 -v -b doctest -d doctrees docs html
+          python -m sphinx -j2 -v -b linkcheck -d doctrees docs html
+          find html -type f -name "*.ipynb" -not -path html/_sources/*" -delete
       - uses: actions/upload-artifact@v2
         with:
           name: html
