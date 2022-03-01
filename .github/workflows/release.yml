@@ -99,7 +99,7 @@ jobs:
       - name: Setup docs build env
         run: |
           pip install -r requirements-docs.txt
-          pip install scipp
+          pip install scipp[all,interactive]
           # TODO download pip artifact instead of installing from PyPI
           #- uses: actions/download-artifact@v2
           #  with:
