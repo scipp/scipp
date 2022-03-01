@@ -480,64 +480,6 @@ def test_dataset_set_data():
     assert sc.identical(d2, expected)
 
 
-def test_binary_with_broadcast():
-    d = sc.Dataset(data={'data': sc.Variable(dims=['x'], values=np.arange(10.0))},
-                   coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
-
-    d2 = d - d['x', 0]
-    d -= d['x', 0]
-    assert sc.identical(d, d2)
-
-
-def test_binary__with_dataarray():
-    da = sc.DataArray(
-        data=sc.Variable(dims=['x'], values=np.arange(1.0, 10.0)),
-        coords={'x': sc.Variable(dims=['x'], values=np.arange(1.0, 10.0))})
-    ds = sc.Dataset(data={da.name: da.copy()})
-    orig = ds.copy()
-    ds += da
-    ds -= da
-    ds *= da
-    ds /= da
-    assert sc.identical(ds, orig)
-
-
-def test_binary_of_item_with_variable():
-    d = sc.Dataset(data={'data': sc.Variable(dims=['x'], values=np.arange(10.0))},
-                   coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
-    copy = d.copy()
-
-    d['data'] += 2.0 * sc.units.dimensionless
-    d['data'] *= 2.0 * sc.units.m
-    d['data'] -= 4.0 * sc.units.m
-    d['data'] /= 2.0 * sc.units.m
-    assert sc.identical(d, copy)
-
-
-def test_in_place_binary_with_scalar():
-    d = sc.Dataset(data={'data': sc.Variable(dims=['x'], values=[10.0])},
-                   coords={'x': sc.Variable(dims=['x'], values=[10])})
-    copy = d.copy()
-
-    d += 2
-    d *= 2
-    d -= 4
-    d /= 2
-    assert sc.identical(d, copy)
-
-
-def test_view_in_place_binary_with_scalar():
-    d = sc.Dataset(data={'data': sc.Variable(dims=['x'], values=[10.0])},
-                   coords={'x': sc.Variable(dims=['x'], values=[10])})
-    copy = d.copy()
-
-    d['data'] += 2
-    d['data'] *= 2
-    d['data'] -= 4
-    d['data'] /= 2
-    assert sc.identical(d, copy)
-
-
 def test_add_sum_of_columns():
     d = sc.Dataset(
         data={
