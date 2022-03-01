@@ -104,7 +104,11 @@ jobs:
           environment-file: developer-extra.yml
           activate-environment: developer-extra
           auto-activate-base: false
-      - run: mamba install --yes -c scipp/label/staging scipp
+      - uses: actions/download-artifact@v2
+        with:
+          name: conda-package-ubuntu-latest-py3.8
+      - run: ls -R
+      - run: mamba install scipp*.tar.bz2
       - run: cmake --build --preset package-docs
       - uses: actions/upload-artifact@v2
         with:
