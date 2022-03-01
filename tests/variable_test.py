@@ -506,25 +506,6 @@ def test_in_place_binary_with_scalar():
     assert sc.identical(v, copy)
 
 
-def test_binary_equal():
-    a, b, a_slice, b_slice, data = make_variables()
-    assert sc.identical(a, b)
-    assert sc.identical(a, a_slice)
-    assert sc.identical(a_slice, b_slice)
-    assert sc.identical(b, a)
-    assert sc.identical(b_slice, a)
-    assert sc.identical(b_slice, a_slice)
-
-
-def test_binary_not_equal():
-    a, b, a_slice, b_slice, data = make_variables()
-    c = a + b
-    assert not sc.identical(a, c)
-    assert not sc.identical(a_slice, c)
-    assert not sc.identical(c, a)
-    assert not sc.identical(c, a_slice)
-
-
 def test_concat():
     assert_export(sc.concat,
                   [sc.Variable(dims=(), values=0.0),
