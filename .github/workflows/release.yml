@@ -105,7 +105,7 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: conda-package-ubuntu-latest-py3.8
-      - run: mamba install linux-64/scipp-*-py38*.tar.bz2
+      - run: mamba install linux-64/scipp-*.tar.bz2
       - name: Run Sphinx
         run: |
           python -m sphinx -j2 -v -b html -d doctrees docs html
@@ -115,7 +115,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: html
-          path: build/html/
+          path: html/
 
   upload_all:
     name: Deploy docs and packages
