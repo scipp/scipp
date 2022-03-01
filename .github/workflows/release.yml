@@ -29,7 +29,13 @@ jobs:
 
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install --yes conda-build
-      - run: conda build --token ${{ secrets.ANACONDATOKEN }} --python=${{ matrix.python-version }} --override-channels --channel conda-forge --user scipp --label staging --debug conda
+      - run: conda build --channel conda-forge --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels --output-folder conda/package conda
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: conda-package-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: conda/package/*/scipp*.tar.bz2
+          #- run: conda build --token ${{ secrets.ANACONDATOKEN }} --python=${{ matrix.python-version }} --override-channels --channel conda-forge --user scipp --label staging --no-anaconda-upload --output-folder conda/package conda
 
   build_sdist:
     name: Build SDist
