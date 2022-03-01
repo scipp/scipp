@@ -113,7 +113,7 @@ jobs:
           python -m sphinx -j2 -v -b html -d doctrees docs html
           python -m sphinx -j2 -v -b doctest -d doctrees docs html
           python -m sphinx -j2 -v -b linkcheck -d doctrees docs html
-          find html -type f -name "*.ipynb" -not -path html/_sources/*" -delete
+          find html -type f -name "*.ipynb" -not -path "html/_sources/*" -delete
       - uses: actions/upload-artifact@v2
         with:
           name: html
