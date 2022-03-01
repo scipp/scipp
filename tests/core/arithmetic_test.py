@@ -238,6 +238,36 @@ def test_itruediv_variable_with_scalar():
     assert sc.identical(v, expected)
 
 
+def test_add_dataarray_with_dataarray():
+    da = sc.DataArray(sc.arange('x', 1.0, 10.0),
+                      coords={'x': sc.arange('x', 10.0, 20.0)})
+    expected = sc.zeros_like(da)
+    expected.data = sc.arange('x', 2.0, 20.0, 2.0)
+    assert sc.identical(da + da, expected)
+
+
+def test_sub_dataarray_with_dataarray():
+    da = sc.DataArray(sc.arange('x', 1.0, 10.0),
+                      coords={'x': sc.arange('x', 10.0, 20.0)})
+    expected = sc.zeros_like(da)
+    assert sc.identical(da - da, expected)
+
+
+def test_mul_dataarray_with_dataarray():
+    da = sc.DataArray(sc.arange('x', 1.0, 10.0),
+                      coords={'x': sc.arange('x', 10.0, 20.0)})
+    expected = sc.zeros_like(da)
+    expected.data = sc.arange('x', 1.0, 10.0)**2
+    assert sc.identical(da * da, expected)
+
+
+def test_truediv_dataarray_with_dataarray():
+    da = sc.DataArray(sc.arange('x', 1.0, 10.0),
+                      coords={'x': sc.arange('x', 10.0, 20.0)})
+    expected = sc.ones_like(da)
+    assert sc.identical(da / da, expected)
+
+
 def test_iadd_dataset_with_dataarray():
     da = sc.DataArray(sc.arange('x', 1.0, 10.0),
                       coords={'x': sc.arange('x', 10.0, 20.0)})
