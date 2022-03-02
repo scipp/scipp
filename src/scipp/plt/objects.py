@@ -309,12 +309,12 @@ class Plot:
         """
         import ipywidgets as ipw
         widget_list = [self.view._to_widget()]
-        if self.profile is not None:
-            widget_list.append(self.profile._to_widget())
-        if self.show_widgets:
-            widget_list.append(self.widgets._to_widget())
-        if self.panel is not None and self.show_widgets:
-            widget_list.append(self.panel._to_widget())
+        # if self.profile is not None:
+        #     widget_list.append(self.profile._to_widget())
+        # if self.show_widgets:
+        #     widget_list.append(self.widgets._to_widget())
+        # if self.panel is not None and self.show_widgets:
+        #     widget_list.append(self.panel._to_widget())
 
         return ipw.VBox(widget_list)
 

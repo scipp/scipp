@@ -42,14 +42,14 @@ class PlotController1d:
         #     self._profile_model.mode = resampling_mode
         self.view = view
 
-        # self.vmin = vmin
-        # self.vmax = vmax
-        # self.norm = norm if norm is not None else "linear"
+        self.vmin = vmin
+        self.vmax = vmax
+        self.norm = norm if norm is not None else "linear"
 
-        # self.scale = {dim: "linear" for dim in self._dims}
-        # if scale is not None:
-        #     for dim, item in scale.items():
-        #         self.scale[dim] = item
+        self.scale = {dim: "linear" for dim in self._dims}
+        if scale is not None:
+            for dim, item in scale.items():
+                self.scale[dim] = item
         # self.view.set_scale(scale=self.scale)
 
     def render(self):
@@ -100,29 +100,29 @@ class PlotController1d:
     #     """
     #     return
 
-    # def rescale_to_data(self, button=None):
-    #     """
-    #     A small delta is used to add padding around the plotted points.
-    #     """
-    #     with_min_padding = self.vmin is None
-    #     with_max_padding = self.vmax is None
-    #     vmin, vmax = self.find_vmin_vmax(button=button)
-    #     if vmin.unit is None:
-    #         vmin.unit = one
-    #         vmax.unit = one
-    #     if self.norm == "log":
-    #         delta = 10**(0.05 * np.log10(vmax.value / vmin.value))
-    #         if with_min_padding or (button is not None):
-    #             vmin /= delta
-    #         if with_max_padding or (button is not None):
-    #             vmax *= delta
-    #     else:
-    #         delta = 0.05 * (vmax - vmin)
-    #         if with_min_padding or (button is not None):
-    #             vmin -= delta
-    #         if with_max_padding or (button is not None):
-    #             vmax += delta
-    #     self.view.rescale_to_data(vmin, vmax)
+    def rescale_to_data(self, button=None):
+        """
+        A small delta is used to add padding around the plotted points.
+        """
+        with_min_padding = self.vmin is None
+        with_max_padding = self.vmax is None
+        vmin, vmax = self.find_vmin_vmax(button=button)
+        if vmin.unit is None:
+            vmin.unit = one
+            vmax.unit = one
+        if self.norm == "log":
+            delta = 10**(0.05 * np.log10(vmax.value / vmin.value))
+            if with_min_padding or (button is not None):
+                vmin /= delta
+            if with_max_padding or (button is not None):
+                vmax *= delta
+        else:
+            delta = 0.05 * (vmax - vmin)
+            if with_min_padding or (button is not None):
+                vmin -= delta
+            if with_max_padding or (button is not None):
+                vmax += delta
+        self.view.rescale_to_data(vmin, vmax)
 
     # def toggle_norm(self, owner):
     #     """

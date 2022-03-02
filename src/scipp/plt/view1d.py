@@ -11,6 +11,18 @@ import warnings
 from .. import config
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+from .. import units
+import ipywidgets as ipw
+
+
+def _make_label(array):
+    # TODO use formatter
+    labels = []
+    for dim, coord in array.meta.items():
+        unit = '' if coord.unit == units.dimensionless else f' {coord.unit}'
+        if dim not in array.dims:
+            labels.append(f'{dim}={coord.values.round(decimals=2)}{unit}')
+    return ', '.join(labels)
 
 
 class PlotView1d:
@@ -47,7 +59,7 @@ class PlotView1d:
             bounding_box = cfg['bounding_box']
         self.fig.tight_layout(rect=bounding_box)
         if self.is_widget():
-            self.toolbar = toolbar(mpl_toolbar=self.fig.canvas.toolbar)
+            self.toolbar = PlotToolbar1d(mpl_toolbar=self.fig.canvas.toolbar)
             self.fig.canvas.toolbar_visible = False
 
         self.ax.set_title(title)
@@ -60,6 +72,7 @@ class PlotView1d:
         # self.ylabel = ylabel
         # self.draw_no_delay = False
         # self.event_connections = {}
+        self.errorbars = {}
 
         self._lines = {}
 
@@ -125,20 +138,21 @@ class PlotView1d:
             key: get_line_param(key, index)
             for key in ["color", "marker", "linestyle", "linewidth"]
         }
-        if self._mpl_line_params is not None:
-            for key, item in self._mpl_line_params.items():
-                if name in item:
-                    line.mpl_params[key] = item[name]
+        # if self._mpl_line_params is not None:
+        #     for key, item in self._mpl_line_params.items():
+        #         if name in item:
+        #             line.mpl_params[key] = item[name]
         label = None
-        if self._legend_labels and len(name) > 0:
-            label = name
+        # if self._legend_labels and len(name) > 0:
+        #     label = name
 
         if hist:
             line.data = self.ax.step(
-                [1, 2], [1, 2],
+                [1, 2],
+                [1, 2],
                 label=label,
                 zorder=10,
-                picker=self.picker,
+                # picker=self.picker,
                 **{key: line.mpl_params[key]
                    for key in ["color", "linewidth"]})[0]
             for m in masks:
@@ -155,11 +169,13 @@ class PlotView1d:
                 # not.
                 line.masks[m].set_gid("onaxes")
         else:
-            line.data = self.ax.plot([1, 2], [1, 2],
-                                     label=label,
-                                     zorder=10,
-                                     picker=self.picker,
-                                     **line.mpl_params)[0]
+            line.data = self.ax.plot(
+                [1, 2],
+                [1, 2],
+                label=label,
+                zorder=10,
+                # picker=self.picker,
+                **line.mpl_params)[0]
             for m in masks:
                 line.masks[m] = self.ax.plot([1, 2], [1, 2],
                                              zorder=11,
@@ -170,8 +186,8 @@ class PlotView1d:
                                              marker=line.mpl_params["marker"])[0]
                 line.masks[m].set_gid("onaxes")
 
-        if self.picker:
-            line.data.set_pickradius(5.0)
+        # if self.picker:
+        #     line.data.set_pickradius(5.0)
         line.data.set_url(name)
 
         # Add error bars
@@ -181,8 +197,8 @@ class PlotView1d:
                                           color=line.mpl_params["color"],
                                           zorder=10,
                                           fmt="none")
-        if self.show_legend():
-            self.ax.legend(loc=self.legend["loc"])
+        # if self.show_legend():
+        #     self.ax.legend(loc=self.legend["loc"])
         return line
 
     def _preprocess_hist(self, name, vals):
@@ -203,14 +219,47 @@ class PlotView1d:
         vals["variances"]["y"] = y
         return vals, hist
 
+    def _make_masks(self, array, mask_info):
+        if not mask_info:
+            return {}
+        masks = {}
+        data = array.data
+        base_mask = ones(sizes=data.sizes, dtype='int32', unit=None)
+        for m in mask_info:
+            if m in array.masks:
+                msk = base_mask * Variable(
+                    dims=array.masks[m].dims, unit=None, values=array.masks[m].values)
+                masks[m] = msk.values
+            else:
+                masks[m] = None
+        return masks
+
+    def _make_data(self, new_values, mask_info=None):
+        out = {}
+        for name, array in new_values.items():
+            self._dim = array.dims[0]  # should be same for all items
+            values = {"values": {}, "variances": {}, "masks": {}}
+            values['label'] = _make_label(array)
+            values["values"]["x"] = array.meta[self._dim].values.ravel()
+            values["values"]["y"] = array.values.ravel()
+            if array.variances is not None:
+                values["variances"]["e"] = vars_to_err(array.variances.ravel())
+            # values["masks"] = self._make_masks(array, mask_info=mask_info[name])
+            out[name] = values
+        return out
+
     def update_data(self, new_values):
         """
         Update the x and y positions of the data points when a new data slice
         is received for display.
         """
+
+        new_values = self._make_data(new_values)
+
         xmin = np.Inf
         xmax = np.NINF
         for name in new_values:
+            self.errorbars[name] = False
             vals, hist = self._preprocess_hist(name, new_values[name])
             if name not in self._lines:
                 self._lines[name] = self._make_line(name,
@@ -243,9 +292,9 @@ class PlotView1d:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
             self.ax.set_xlim([xmin - deltax, xmax + deltax])
-        if self._axes_updated:
-            self._axes_updated = False
-            self.fig.tight_layout(rect=self.bounding_box)
+        # if self._axes_updated:
+        #     self._axes_updated = False
+        #     self.fig.tight_layout(rect=self.bounding_box)
 
         self.draw()
 
@@ -352,12 +401,12 @@ class PlotView1d:
     #             line.set_visible(value)
     #     self.draw()
 
-    # def rescale_to_data(self, vmin=None, vmax=None):
-    #     """
-    #     Rescale y axis to the contents of the plot.
-    #     """
-    #     self.ax.set_ylim(vmin, vmax)
-    #     self.draw()
+    def rescale_to_data(self, vmin=None, vmax=None):
+        """
+        Rescale y axis to the contents of the plot.
+        """
+        self.ax.set_ylim(vmin, vmax)
+        self.draw()
 
     # def show_legend(self):
     #     """
@@ -405,6 +454,7 @@ class PlotView1d:
         If not, convert the plot to a png image and place inside an ipywidgets
         Image container.
         """
+        print(self.toolbar, self.is_widget())
         if self.is_widget():
             return ipw.HBox([
                 self.toolbar._to_widget(),
@@ -428,3 +478,18 @@ class PlotView1d:
         Set the closed flag to True to output static images.
         """
         self.closed = True
+
+    def draw(self):
+        """
+        Manually update the figure.
+        We control update manually since we have better control on how many
+        draws are performed on the canvas. Matplotlib's automatic drawing
+        (which we have disabled by using `plt.ioff()`) can degrade performance
+        significantly.
+        Matplotlib's `draw()` is slightly more expensive than `draw_idle()`
+        but won't update inside a loop (only when the loop has finished
+        executing).
+        If `draw_no_delay` has been set to True (via `set_draw_no_delay`,
+        then we use `draw()` instead of `draw_idle()`.
+        """
+        self.fig.canvas.draw_idle()
