@@ -122,8 +122,8 @@ jobs:
       - uses: actions/download-artifact@v2
 
       - run: |
-          mkdir -p html/release
-          cp -r html html/release/${{ github.ref_name }}
+          cp -r html release/${{ github.ref_name }}
+          mv release html/
       - uses: JamesIves/github-pages-deploy-action@v4.2.3
         with:
           repository-name: scipp/scipp.github.io
