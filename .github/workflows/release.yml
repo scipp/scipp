@@ -122,6 +122,7 @@ jobs:
       - uses: actions/download-artifact@v2
 
       - run: |
+          mkdir -p release
           cp -r html release/${{ github.ref_name }}
           mv release html/
       - uses: JamesIves/github-pages-deploy-action@v4.2.3
