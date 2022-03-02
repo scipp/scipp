@@ -19,9 +19,8 @@ def _to_variable_or_data_array(var, new_values):
         return new_values
 
 
-def zeros_like(
-    var: _Union[_cpp.Variable,
-                _cpp.DataArray]) -> _Union[_cpp.Variable, _cpp.DataArray]:
+def zeros_like(var: _Union[_cpp.Variable, _cpp.DataArray],
+               /) -> _Union[_cpp.Variable, _cpp.DataArray]:
     """
     Return a Variable or DataArray with the same dims, shape, unit, and dtype as the
     input and all values initialized to 0.
@@ -53,9 +52,8 @@ def zeros_like(
     return _to_variable_or_data_array(var, new_values)
 
 
-def ones_like(
-    var: _Union[_cpp.Variable,
-                _cpp.DataArray]) -> _Union[_cpp.Variable, _cpp.DataArray]:
+def ones_like(var: _Union[_cpp.Variable, _cpp.DataArray],
+              /) -> _Union[_cpp.Variable, _cpp.DataArray]:
     """
     Constructs a new object with the same dims, shape, unit and dtype as the input
     (:class:`Variable` or :class:`DataArray`), but with all values initialized to 1.
@@ -75,9 +73,8 @@ def ones_like(
     return _to_variable_or_data_array(var, new_values)
 
 
-def empty_like(
-    var: _Union[_cpp.Variable,
-                _cpp.DataArray]) -> _Union[_cpp.Variable, _cpp.DataArray]:
+def empty_like(var: _Union[_cpp.Variable, _cpp.DataArray],
+               /) -> _Union[_cpp.Variable, _cpp.DataArray]:
     """
     Constructs a new object with the same dims, shape, unit and dtype as the input
     (:class:`Variable` or :class:`DataArray`), but with all values uninitialized.
@@ -98,7 +95,11 @@ def empty_like(
     return _to_variable_or_data_array(var, new_values)
 
 
-def full_like(var: _cpp.Variable, value: _Any, variance: _Any = None) -> _cpp.Variable:
+def full_like(var: _cpp.Variable,
+              /,
+              value: _Any,
+              *,
+              variance: _Any = None) -> _cpp.Variable:
     """
     Constructs a new object with the same dims, shape, unit and dtype as the input
     (:class:`Variable` or :class:`DataArray`), but with all values, and optionally

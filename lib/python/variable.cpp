@@ -91,7 +91,7 @@ of variances.)");
   bind_init(variable);
   variable
       .def("rename_dims", &rename_dims<Variable>, py::arg("dims_dict"),
-           "Rename dimensions.")
+           py::pos_only(), "Rename dimensions.")
       .def_property_readonly("dtype", &Variable::dtype)
       .def("__sizeof__",
            [](const Variable &self) {

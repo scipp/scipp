@@ -264,9 +264,9 @@ Returned by :py:func:`DataArray.masks`)");
   bind_binary<Variable>(dataset);
 
   dataArray.def("rename_dims", &rename_dims<DataArray>, py::arg("dims_dict"),
-                "Rename dimensions.");
+                py::pos_only(), "Rename dimensions.");
   dataset.def("rename_dims", &rename_dims<Dataset>, py::arg("dims_dict"),
-              "Rename dimensions.");
+              py::pos_only(), "Rename dimensions.");
 
   m.def(
       "merge",
