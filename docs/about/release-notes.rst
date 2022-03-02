@@ -9,6 +9,8 @@ v0.13.0 (unreleased)
 Features
 ~~~~~~~~
 
+* Added support for arithmetic of :class:`scipp.DataArray` and :class:`scipp.Dataset` with builtin ``int`` and ``float`` `#2473 <https://github.com/scipp/scipp/pull/2473>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
