@@ -26,6 +26,7 @@ source:
 requirements:
   build:
     - cmake
+    - cppcheck [linux64]
     - conan>=1.45.0
     - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - gxx_linux-64 11.1.* [linux64]
@@ -33,24 +34,6 @@ requirements:
     - ninja
     - python
     - tbb-devel=2020.2.*
-    # doc build requirements
-    - confuse
-    - cppcheck [linux64]
-    - graphlib-backport # for python < 3.9
-    - h5py
-    - ipykernel=6.3.1  # issue with pythreejs 3d plotting, see https://github.com/ipython/ipykernel/issues/771
-    - ipympl
-    - ipywidgets
-    - matplotlib-base
-    - nbsphinx
-    - python-graphviz
-    - pythreejs
-    - pyyaml
-    - scipy>=1.7.0
-    - sphinx
-    - sphinx-book-theme
-    - sphinx-copybutton
-    - pip
   run:
     - confuse
     - numpy>=1.20.0
@@ -71,6 +54,7 @@ test:
     - ipykernel=6.3.1  # issue with pythreejs 3d plotting, see https://github.com/ipython/ipykernel/issues/771
     - ipympl
     - ipywidgets
+    - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - matplotlib-base
     - pytest
     - pythreejs
@@ -90,19 +74,12 @@ test:
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
-  script_env:
-   - DOCS_HTML_DIR # [linux]
   script:
     - cmake --preset package-linux [linux]
     - cmake --preset package-macos [osx]
     - cmake --preset package-windows [win]
     - cmake --build --preset build
-    - wget https://files.pythonhosted.org/packages/04/51/4b4a0740fbde50408a2f956cbb190bdc01f1c7a562627e7f102b6a30d9b4/sphinx_autodoc_typehints-1.17.0-py3-none-any.whl
-    - pip install sphinx_autodoc_typehints-1.17.0-py3-none-any.whl
-    - cmake --build --preset package-docs [linux]
-    - cp -r build/html $DOCS_HTML_DIR [linux]
     - ctest --preset test
-
 
 about:
   home: https://scipp.github.io/

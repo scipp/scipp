@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+from scipp.io.hdf5 import collection_element_name
 import scipp as sc
 import scipp.spatial
 import numpy as np
@@ -51,11 +52,11 @@ datetime64us_1d = sc.Variable(dims=['x'],
 array_1d = sc.DataArray(data=x,
                         coords={
                             'x': x,
-                            'x2': 2.0 * x
+                            'λ': 2.0 * x
                         },
                         masks={
-                            'mask1': sc.less(x, 1.5 * sc.units.m),
-                            'mask2': sc.less(x, 2.5 * sc.units.m)
+                            'mask.1': sc.less(x, 1.5 * sc.units.m),
+                            'mask.2': sc.less(x, 2.5 * sc.units.m)
                         },
                         attrs={
                             'attr1': x,
@@ -169,6 +170,13 @@ def test_data_array_1d():
     check_roundtrip(array_1d)
 
 
+def test_data_array_1d_name_is_stored_correctly():
+    da = array_1d.copy()
+    da.name = 'some name'
+    result = roundtrip(da)
+    assert result.name == 'some name'
+
+
 def test_data_array_2d():
     check_roundtrip(array_2d)
 
@@ -222,3 +230,30 @@ def test_None_unit_is_preserved_even_if_dtype_does_not_default_to_None_unit():
     v = sc.scalar(1.2, unit=None)
     result = check_roundtrip(v)
     assert result.unit is None
+
+
+def assert_is_valid_hdf5_name(name: str):
+    assert '.' not in name
+    assert '/' not in name
+    name.encode('ascii', 'strict')  # raise exception if not ASCII
+
+
+def test_periods_are_escaped_in_names():
+    assert_is_valid_hdf5_name(collection_element_name('a.b', 0))
+    assert_is_valid_hdf5_name(collection_element_name('a..b', 1))
+    assert_is_valid_hdf5_name(collection_element_name('a.', 2))
+    assert_is_valid_hdf5_name(collection_element_name('.a', 3))
+
+
+def test_slashes_are_escaped_in_names():
+    assert_is_valid_hdf5_name(collection_element_name('a/b', 0))
+    assert_is_valid_hdf5_name(collection_element_name('a//b', 1))
+    assert_is_valid_hdf5_name(collection_element_name('a/', 2))
+    assert_is_valid_hdf5_name(collection_element_name('/a', 3))
+
+
+def test_unicode_is_escaped_in_names():
+    assert_is_valid_hdf5_name(collection_element_name('µm', 0))
+    assert_is_valid_hdf5_name(collection_element_name('λ', 1))
+    assert_is_valid_hdf5_name(collection_element_name('Å/travel_time', 2))
+    assert_is_valid_hdf5_name(collection_element_name('λ in Å', 3))

@@ -111,6 +111,8 @@ void bind_data_array(py::class_<T, Ignored...> &c) {
   bind_binary<Dataset>(c);
   bind_binary<DataArray>(c);
   bind_binary<Variable>(c);
+  bind_binary_scalars(c);
+  bind_reverse_binary_scalars(c);
   bind_comparison<DataArray>(c);
   bind_comparison<Variable>(c);
   bind_unary(c);
