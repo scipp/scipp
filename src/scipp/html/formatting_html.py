@@ -178,23 +178,6 @@ def summarize_mask(dim, var, ds=None):
     return summarize_variable(str(dim), var, is_index=False, embedded_in=ds)
 
 
-def find_bin_edges(var, ds):
-    """
-    Checks if the coordinate contains bin-edges.
-    """
-    bin_edges = []
-    for idx, dim in enumerate(var.dims):
-        length = var.shape[idx]
-        if not ds.dims:
-            # Have a scalar slice.
-            # Cannot match dims, just assume length 2 attributes are bin-edge
-            if length == 2:
-                bin_edges.append(dim)
-        elif dim in ds.dims and ds.shape[ds.dims.index(dim)] + 1 == length:
-            bin_edges.append(dim)
-    return bin_edges
-
-
 def summarize_coords(coords, ds=None):
     vars_li = "".join("<li class='sc-var-item'>"
                       f"{summarize_coord(dim, var, ds)}"
@@ -218,6 +201,23 @@ def summarize_attrs(attrs, embedded_in=None):
                            is_index=name in var.dims))
                        for name, var in _ordered_dict(attrs).items())
     return f"<ul class='sc-var-list'>{attrs_li}</ul>"
+
+
+def find_bin_edges(var, ds):
+    """
+    Checks if the coordinate contains bin-edges.
+    """
+    bin_edges = []
+    for idx, dim in enumerate(var.dims):
+        length = var.shape[idx]
+        if not ds.dims:
+            # Have a scalar slice.
+            # Cannot match dims, just assume length 2 attributes are bin-edge
+            if length == 2:
+                bin_edges.append(dim)
+        elif dim in ds.dims and ds.shape[ds.dims.index(dim)] + 1 == length:
+            bin_edges.append(dim)
+    return bin_edges
 
 
 def _make_inline_attributes(var, has_attrs, embedded_in):

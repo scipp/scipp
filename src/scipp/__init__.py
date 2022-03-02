@@ -85,7 +85,7 @@ from .logging import display_logs, get_logger
 from .reduction import reduce
 
 # Mainly imported for docs
-from .core import Bins, GroupByDataset, GroupByDataArray
+from .core import Bins, Coords, GroupByDataset, GroupByDataArray, Masks
 
 from . import _binding
 

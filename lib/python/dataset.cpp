@@ -140,8 +140,14 @@ void init_dataset(py::module &m) {
   bind_helper_view<values_view, Coords>(m, "Coords");
   bind_helper_view<values_view, Masks>(m, "Masks");
 
-  bind_mutable_view_no_dim<Coords>(m, "Coords");
-  bind_mutable_view<Masks>(m, "Masks");
+  bind_mutable_view_no_dim<Coords>(m, "Coords",
+                                   R"(dict-like collection of meta data
+
+Returned by :py:func:`DataArray.coords`, :py:func:`DataArray.attrs`, :py:func:`DataArray.meta`,
+and the corresponding properties of :py:class:`Dataset`.)");
+  bind_mutable_view<Masks>(m, "Masks", R"(dict-like collection of masks.
+
+Returned by :py:func:`DataArray.masks`)");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
     Named variable with associated coords, masks, and attributes.)");

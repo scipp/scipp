@@ -3,10 +3,8 @@
 # @author Matthew Andrew
 # flake8: noqa: E501
 
-from __future__ import annotations
 import numpy as np
 from typing import Dict, List, Optional, Sequence, Tuple, Union
-import warnings
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
