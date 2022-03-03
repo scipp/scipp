@@ -4,6 +4,9 @@
 # @author Neil Vaytet
 
 # flake8: noqa
+"""
+INTERNAL USE ONLY
+"""
 
 from .collapse_and_slices import *
 from .colors import *

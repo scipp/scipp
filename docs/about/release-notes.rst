@@ -9,8 +9,13 @@ v0.13.0 (unreleased)
 Features
 ~~~~~~~~
 
+* Added ``is_edges`` method to ``coords``, ``attrs``, ``masks``, and ``meta`` properties of DataArray and Dataset `#2469 <https://github.com/scipp/scipp/pull/2469>`_.
+* Added support for arithmetic of :class:`scipp.DataArray` and :class:`scipp.Dataset` with builtin ``int`` and ``float`` `#2473 <https://github.com/scipp/scipp/pull/2473>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
+
+* Changed format of scipp native HDF5 files to allow for UTF-8 characters in coord names; migration script: ``tools/migration/scipp-0.13-hdf5-files.py`` `#2463 <https://github.com/scipp/scipp/pull/2463>`_.
 
 Bugfixes
 ~~~~~~~~

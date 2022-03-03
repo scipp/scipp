@@ -91,60 +91,8 @@ of variances.)");
   bind_init(variable);
   variable
       .def("rename_dims", &rename_dims<Variable>, py::arg("dims_dict"),
-           "Rename dimensions.")
+           py::pos_only(), "Rename dimensions.")
       .def_property_readonly("dtype", &Variable::dtype)
-      .def(
-          "__radd__",
-          [](const Variable &a, const double b) { return a + b * units::one; },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>())
-      .def(
-          "__radd__",
-          [](const Variable &a, const int64_t b) { return a + b * units::one; },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>())
-      .def(
-          "__rsub__",
-          [](const Variable &a, const double b) { return b * units::one - a; },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>())
-      .def(
-          "__rsub__",
-          [](const Variable &a, const int64_t b) { return b * units::one - a; },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>())
-      .def(
-          "__rmul__",
-          [](const Variable &a, const double b) {
-            return a * (b * units::one);
-          },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>())
-      .def(
-          "__rmul__",
-          [](const Variable &a, const int64_t b) {
-            return a * (b * units::one);
-          },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>())
-      .def(
-          "__rtruediv__",
-          [](const Variable &a, const double b) {
-            return (b * units::one) / a;
-          },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>())
-      .def(
-          "__rtruediv__",
-          [](const Variable &a, const int64_t b) {
-            return (b * units::one) / a;
-          },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>())
-      .def(
-          "__rpow__",
-          [](const Variable &exponent, const int64_t base) {
-            return pow(base * units::one, exponent);
-          },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>())
-      .def(
-          "__rpow__",
-          [](const Variable &exponent, const double base) {
-            return pow(base * units::one, exponent);
-          },
-          py::is_operator(), py::call_guard<py::gil_scoped_release>())
       .def("__sizeof__",
            [](const Variable &self) {
              return size_of(self, SizeofTag::ViewOnly);
@@ -168,6 +116,7 @@ of variances.)");
   bind_binary<Variable>(variable);
   bind_binary<DataArray>(variable);
   bind_binary_scalars(variable);
+  bind_reverse_binary_scalars(variable);
 
   bind_unary(variable);
 

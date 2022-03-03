@@ -62,7 +62,7 @@ jobs:
           fetch-depth: 0  # history required so cmake can determine version
           ref: ${{ github.head_ref }}
 
-      - run: python tools/metatoenv.py --dir=conda --env-file=buildenv.yml --channels=conda-forge
+      - run: python tools/metatoenv.py --dir=conda --env-file=buildenv.yml --channels=conda-forge --merge-with=developer-extra.yml
 
       - name: Setup Mambaforge and dev env
         uses: conda-incubator/setup-miniconda@v2

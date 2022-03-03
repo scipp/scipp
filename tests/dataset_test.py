@@ -480,64 +480,6 @@ def test_dataset_set_data():
     assert sc.identical(d2, expected)
 
 
-def test_binary_with_broadcast():
-    d = sc.Dataset(data={'data': sc.Variable(dims=['x'], values=np.arange(10.0))},
-                   coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
-
-    d2 = d - d['x', 0]
-    d -= d['x', 0]
-    assert sc.identical(d, d2)
-
-
-def test_binary__with_dataarray():
-    da = sc.DataArray(
-        data=sc.Variable(dims=['x'], values=np.arange(1.0, 10.0)),
-        coords={'x': sc.Variable(dims=['x'], values=np.arange(1.0, 10.0))})
-    ds = sc.Dataset(data={da.name: da.copy()})
-    orig = ds.copy()
-    ds += da
-    ds -= da
-    ds *= da
-    ds /= da
-    assert sc.identical(ds, orig)
-
-
-def test_binary_of_item_with_variable():
-    d = sc.Dataset(data={'data': sc.Variable(dims=['x'], values=np.arange(10.0))},
-                   coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
-    copy = d.copy()
-
-    d['data'] += 2.0 * sc.units.dimensionless
-    d['data'] *= 2.0 * sc.units.m
-    d['data'] -= 4.0 * sc.units.m
-    d['data'] /= 2.0 * sc.units.m
-    assert sc.identical(d, copy)
-
-
-def test_in_place_binary_with_scalar():
-    d = sc.Dataset(data={'data': sc.Variable(dims=['x'], values=[10.0])},
-                   coords={'x': sc.Variable(dims=['x'], values=[10])})
-    copy = d.copy()
-
-    d += 2
-    d *= 2
-    d -= 4
-    d /= 2
-    assert sc.identical(d, copy)
-
-
-def test_view_in_place_binary_with_scalar():
-    d = sc.Dataset(data={'data': sc.Variable(dims=['x'], values=[10.0])},
-                   coords={'x': sc.Variable(dims=['x'], values=[10])})
-    copy = d.copy()
-
-    d['data'] += 2
-    d['data'] *= 2
-    d['data'] -= 4
-    d['data'] /= 2
-    assert sc.identical(d, copy)
-
-
 def test_add_sum_of_columns():
     d = sc.Dataset(
         data={
@@ -639,7 +581,7 @@ def test_rename_dims():
     renamed.coords['z'] = renamed.coords['y']
     del renamed.coords['y']
     assert sc.identical(renamed, make_simple_dataset('x', 'z', seed=0))
-    renamed = renamed.rename_dims(dims_dict={'x': 'y', 'z': 'x'})
+    renamed = renamed.rename_dims({'x': 'y', 'z': 'x'})
     renamed.coords['y'] = renamed.coords['x']
     renamed.coords['x'] = renamed.coords['z']
     del renamed.coords['z']
@@ -652,14 +594,14 @@ def test_rename():
     renamed = d.rename({'y': 'z'})
     assert sc.identical(d, original)
     assert sc.identical(renamed, make_simple_dataset('x', 'z', seed=0))
-    renamed = renamed.rename(dims_dict={'x': 'y', 'z': 'x'})
+    renamed = renamed.rename({'x': 'y', 'z': 'x'})
     assert sc.identical(renamed, make_simple_dataset('y', 'x', seed=0))
 
 
 def test_rename_intersection_of_dims():
     d = make_simple_dataset('x', 'y', seed=0)
     d['c'] = sc.Variable(dims=['time', 'y'], values=np.random.rand(4, 3))
-    renamed = d.rename(dims_dict={'x': 'u', 'time': 'v'})
+    renamed = d.rename({'x': 'u', 'time': 'v'})
     expected = make_simple_dataset('u', 'y', seed=0)
     expected['c'] = sc.Variable(dims=['v', 'y'], values=np.random.rand(4, 3))
     assert sc.identical(renamed, expected)
@@ -810,3 +752,22 @@ def test_many_independent_dims_are_supported():
     assert 'dim45' in ds
     assert sc.identical(ds.copy(), ds)
     ds + ds
+
+
+def test_is_edges():
+    da = sc.DataArray(sc.zeros(sizes={
+        'a': 2,
+        'b': 3
+    }),
+                      coords={'coord': sc.zeros(sizes={'a': 3})},
+                      attrs={'attr': sc.zeros(sizes={
+                          'a': 2,
+                          'b': 4
+                      })},
+                      masks={'mask': sc.zeros(sizes={'b': 3})})
+    assert da.coords.is_edges('coord')
+    assert da.coords.is_edges('coord', 'a')
+    assert da.meta.is_edges('coord')
+    assert not da.attrs.is_edges('attr', 'a')
+    assert da.attrs.is_edges('attr', 'b')
+    assert not da.masks.is_edges('mask', 'b')

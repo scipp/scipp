@@ -44,7 +44,7 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
         py::call_guard<py::gil_scoped_release>());
 
   py::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
-    GroupBy object implementing to split-apply-combine mechanism.)");
+    GroupBy object implementing split-apply-combine mechanism.)");
 
   groupBy.def("mean", &GroupBy<T>::mean, py::arg("dim"),
               py::call_guard<py::gil_scoped_release>(),

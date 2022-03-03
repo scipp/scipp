@@ -190,9 +190,17 @@ Sizes merge(const Sizes &a, const Sizes &b) {
 bool is_edges(const Sizes &sizes, const Sizes &dataSizes, const Dim dim) {
   if (dim == Dim::Invalid || !dataSizes.contains(dim))
     return false;
-  for (const auto &d : dataSizes)
-    if (d != dim && !(sizes.contains(d) && sizes[d] == dataSizes[d]))
-      return false;
+  // Without this if, !sizes.contains(d) below would identify 2d coords
+  // with a length-2 dim as non-edge.
+  if (!sizes.empty()) {
+    for (const auto &d : dataSizes) {
+      // !(sizes[d] == dataSizes[d]) assumes that a coordinate can only be
+      // bin-edges in one dim. I.e. if its size does not match the data in `d`,
+      // it cannot be a bin-edge in `dim`.
+      if (d != dim && !(sizes.contains(d) && sizes[d] == dataSizes[d]))
+        return false;
+    }
+  }
   const auto size = dataSizes[dim];
   return size == (sizes.contains(dim) ? sizes[dim] + 1 : 2);
 }

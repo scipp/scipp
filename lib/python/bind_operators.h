@@ -202,6 +202,43 @@ template <class RHSSetup> struct OpBinder {
   }
 
   template <class Other, class T, class... Ignored>
+  static void reverse_binary(pybind11::class_<T, Ignored...> &c) {
+    using namespace scipp;
+    c.def(
+        "__radd__", [](const T &a, const Other b) { return RHSSetup{}(b) + a; },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "__rsub__", [](const T &a, const Other b) { return RHSSetup{}(b)-a; },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "__rmul__", [](const T &a, const Other b) { return RHSSetup{}(b)*a; },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "__rtruediv__",
+        [](const T &a, const Other b) { return RHSSetup{}(b) / a; },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    if constexpr (!(std::is_same_v<T, Dataset> ||
+                    std::is_same_v<Other, Dataset>)) {
+      c.def(
+          "__rfloordiv__",
+          [](const T &a, const Other &b) {
+            return floor_divide(RHSSetup{}(b), a);
+          },
+          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      c.def(
+          "__rmod__",
+          [](const T &a, const Other &b) { return RHSSetup{}(b) % a; },
+          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      c.def(
+          "__rpow__",
+          [](const T &exponent, const Other &base) {
+            return pow(RHSSetup{}(base), exponent);
+          },
+          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    }
+  }
+
+  template <class Other, class T, class... Ignored>
   static void comparison(pybind11::class_<T, Ignored...> &c) {
     c.def(
         "__eq__", [](T &a, Other &b) { return equal(a, RHSSetup{}(b)); },
@@ -250,6 +287,12 @@ template <class T, class... Ignored>
 void bind_binary_scalars(pybind11::class_<T, Ignored...> &c) {
   OpBinder<ScalarToVariable>::binary<double>(c);
   OpBinder<ScalarToVariable>::binary<int64_t>(c);
+}
+
+template <class T, class... Ignored>
+static void bind_reverse_binary_scalars(pybind11::class_<T, Ignored...> &c) {
+  OpBinder<ScalarToVariable>::reverse_binary<double>(c);
+  OpBinder<ScalarToVariable>::reverse_binary<int64_t>(c);
 }
 
 template <class T, class... Ignored>

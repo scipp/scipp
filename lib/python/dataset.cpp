@@ -111,6 +111,8 @@ void bind_data_array(py::class_<T, Ignored...> &c) {
   bind_binary<Dataset>(c);
   bind_binary<DataArray>(c);
   bind_binary<Variable>(c);
+  bind_binary_scalars(c);
+  bind_reverse_binary_scalars(c);
   bind_comparison<DataArray>(c);
   bind_comparison<Variable>(c);
   bind_unary(c);
@@ -138,8 +140,14 @@ void init_dataset(py::module &m) {
   bind_helper_view<values_view, Coords>(m, "Coords");
   bind_helper_view<values_view, Masks>(m, "Masks");
 
-  bind_mutable_view_no_dim<Coords>(m, "Coords");
-  bind_mutable_view<Masks>(m, "Masks");
+  bind_mutable_view_no_dim<Coords>(m, "Coords",
+                                   R"(dict-like collection of meta data
+
+Returned by :py:func:`DataArray.coords`, :py:func:`DataArray.attrs`, :py:func:`DataArray.meta`,
+and the corresponding properties of :py:class:`Dataset`.)");
+  bind_mutable_view<Masks>(m, "Masks", R"(dict-like collection of masks.
+
+Returned by :py:func:`DataArray.masks`)");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
     Named variable with associated coords, masks, and attributes.)");
@@ -256,9 +264,9 @@ void init_dataset(py::module &m) {
   bind_binary<Variable>(dataset);
 
   dataArray.def("rename_dims", &rename_dims<DataArray>, py::arg("dims_dict"),
-                "Rename dimensions.");
+                py::pos_only(), "Rename dimensions.");
   dataset.def("rename_dims", &rename_dims<Dataset>, py::arg("dims_dict"),
-              "Rename dimensions.");
+              py::pos_only(), "Rename dimensions.");
 
   m.def(
       "merge",
