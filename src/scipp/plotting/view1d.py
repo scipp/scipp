@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 from matplotlib.lines import Line2D
 
+from .. import units
 from .view import PlotView
 from .tools import vars_to_err
-from ..core import ones, units, Variable
+from ..core import ones, Variable
 
 
 def _make_label(array):
@@ -36,11 +37,11 @@ class PlotView1d(PlotView):
             return {}
         masks = {}
         data = array.data
-        base_mask = ones(sizes=data.sizes, dtype='int32')
+        base_mask = ones(sizes=data.sizes, dtype='int32', unit=None)
         for m in mask_info:
             if m in array.masks:
-                msk = base_mask * Variable(dims=array.masks[m].dims,
-                                           values=array.masks[m].values)
+                msk = base_mask * Variable(
+                    dims=array.masks[m].dims, unit=None, values=array.masks[m].values)
                 masks[m] = msk.values
             else:
                 masks[m] = None

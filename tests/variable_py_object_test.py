@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
 import scipp as sc
@@ -7,7 +7,7 @@ import scipp as sc
 
 def test_scalar_Variable_py_object_dict():
     var = sc.scalar({'a': 1, 'b': 2})
-    assert var.dtype == sc.dtype.PyObject
+    assert var.dtype == sc.DType.PyObject
     assert var.value == {'a': 1, 'b': 2}
     var.value['a'] = 3
     var.value['c'] = 4
@@ -16,7 +16,7 @@ def test_scalar_Variable_py_object_dict():
 
 def test_scalar_Variable_py_object_list():
     var = sc.scalar([1, 2, 3])
-    assert var.dtype == sc.dtype.PyObject
+    assert var.dtype == sc.DType.PyObject
     assert var.value == [1, 2, 3]
     var.value[0] = 2
     assert var.value == [2, 2, 3]
@@ -24,12 +24,12 @@ def test_scalar_Variable_py_object_list():
 
 def test_scalar_Variable_py_object_change():
     var = sc.scalar([1, 2, 3])
-    assert var.dtype == sc.dtype.PyObject
+    assert var.dtype == sc.DType.PyObject
     assert var.value == [1, 2, 3]
     # Value assignment cannot change dtype, so the result is still PyObject,
     # contrary to creating a variable directly from an integer.
     var.value = 1
-    assert var.dtype == sc.dtype.PyObject
+    assert var.dtype == sc.DType.PyObject
     assert var.value == 1
 
 

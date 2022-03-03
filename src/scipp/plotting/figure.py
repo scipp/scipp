@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .. import config
@@ -18,7 +18,7 @@ class PlotFigure:
                  cax=None,
                  figsize=None,
                  title=None,
-                 padding=None,
+                 bounding_box=None,
                  ndim=1,
                  xlabel=None,
                  ylabel=None,
@@ -30,15 +30,15 @@ class PlotFigure:
         self.cax = cax
         self.own_axes = True
         self.toolbar = None
-        self.padding = padding
+        self.bounding_box = bounding_box
+        cfg = config['plot']
         if self.ax is None:
             if figsize is None:
-                figsize = (config.plot.width / config.plot.dpi,
-                           config.plot.height / config.plot.dpi)
-            self.fig, self.ax = plt.subplots(1, 1, figsize=figsize, dpi=config.plot.dpi)
-            if self.padding is None:
-                self.padding = config.plot.padding
-            self.fig.tight_layout(rect=self.padding)
+                figsize = (cfg['width'] / cfg['dpi'], cfg['height'] / cfg['dpi'])
+            self.fig, self.ax = plt.subplots(1, 1, figsize=figsize, dpi=cfg['dpi'])
+            if self.bounding_box is None:
+                self.bounding_box = cfg['bounding_box']
+            self.fig.tight_layout(rect=self.bounding_box)
             if self.is_widget():
                 self.toolbar = toolbar(mpl_toolbar=self.fig.canvas.toolbar)
                 self.fig.canvas.toolbar_visible = False

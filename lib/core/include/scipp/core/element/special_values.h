@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -26,7 +26,7 @@ constexpr auto isnan =
                  using numeric::isnan;
                  return isnan(x);
                },
-               [](const units::Unit &) { return units::dimensionless; }};
+               [](const units::Unit &) { return units::none; }};
 
 constexpr auto isinf =
     overloaded{special_value_args,
@@ -34,23 +34,20 @@ constexpr auto isinf =
                  using numeric::isinf;
                  return isinf(x);
                },
-               [](const units::Unit &) { return units::dimensionless; }};
+               [](const units::Unit &) { return units::none; }};
 
-constexpr auto isfinite = overloaded{
-    special_value_args_finite,
-    [](const auto x) {
-      if constexpr (std::is_same_v<std::decay_t<decltype(x)>,
-                                   Eigen::Vector3d>) {
-        return x.allFinite();
-      } else {
-        using numeric::isfinite;
-        return isfinite(x);
-      }
-    },
-    [](const units::Unit &) {
-      return units::dimensionless;
-    } // namespace scipp::core::element
-};
+constexpr auto isfinite =
+    overloaded{special_value_args_finite,
+               [](const auto x) {
+                 if constexpr (std::is_same_v<std::decay_t<decltype(x)>,
+                                              Eigen::Vector3d>) {
+                   return x.allFinite();
+                 } else {
+                   using numeric::isfinite;
+                   return isfinite(x);
+                 }
+               },
+               [](const units::Unit &) { return units::none; }};
 
 namespace detail {
 template <typename T> auto isposinf(T x) {
@@ -68,7 +65,7 @@ constexpr auto isposinf =
                  using detail::isposinf;
                  return isposinf(x);
                },
-               [](const units::Unit &) { return units::dimensionless; }};
+               [](const units::Unit &) { return units::none; }};
 
 constexpr auto isneginf =
     overloaded{special_value_args,
@@ -76,7 +73,7 @@ constexpr auto isneginf =
                  using detail::isneginf;
                  return isneginf(x);
                },
-               [](const units::Unit &) { return units::dimensionless; }};
+               [](const units::Unit &) { return units::none; }};
 
 constexpr auto replace_special = overloaded{
     arg_list<double, float>, transform_flags::expect_all_or_none_have_variance,

@@ -1,6 +1,6 @@
 # ~~~
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # ~~~
 set(TARGET_NAME "scipp-variable")
 set(INC_FILES
@@ -48,6 +48,7 @@ set(SRC_FILES
     creation.cpp
     cumulative.cpp
     except.cpp
+    math.cpp
     multiply.cpp
     pow.cpp
     operations.cpp

@@ -3,13 +3,11 @@
 Release Notes
 =============
 
-v0.11.0 (unreleased)
+v0.13.0 (unreleased)
 --------------------
 
 Features
 ~~~~~~~~
-
-* Added support for slicing without specifying a dimension (only for 1-D objects) `#2321 <https://github.com/scipp/scipp/pull/2321>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -22,6 +20,121 @@ Deprecations
 
 Stability, Maintainability, and Testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas Wynen :sup:`a`
+
+v0.12.1 (February 2022)
+-----------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix a plotting bug when 2d data has masks and a coord with no unit `#2470 <https://github.com/scipp/scipp/pull/2470>`_.
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas Wynen :sup:`a`
+
+v0.12.0 (February 2022)
+-----------------------
+
+Features
+~~~~~~~~
+
+* Added support for :py:func:`abs` to :py:class:`scipp.DataArray`, :py:class:`scipp.Dataset`, :py:class:`scipp.Variable` `#2382 <https://github.com/scipp/scipp/pull/2382>`_.
+* :py:func:`scipp.bin` will now also look at attributes to perform the binning, instead of only looking at the coordinates `#2388 <https://github.com/scipp/scipp/pull/2388>`_.
+* Added :py:func:`scipp.squeeze` to remove length-1 dimensions `#2385 <https://github.com/scipp/scipp/pull/2385>`_.
+* Switched to new system for runtime configuration, see the corresponding section in the reference documentation `#2389 <https://github.com/scipp/scipp/pull/2389>`_.
+* Added :py:func:`scipp.midpoints` which can be used to compute bin-centers `#2404 <https://github.com/scipp/scipp/pull/2404>`_.
+* :py:func:`scipp.fold` now supports ``-1`` for one of the dimension sizes, to indicate automatic shape `#2414 <https://github.com/scipp/scipp/pull/2414>`_.
+* Added ``quiet`` argument to :py:func:`scipp.transform_coords` `#2420 <https://github.com/scipp/scipp/pull/2420>`_.
+* Added support for strides for positional slicing. Negative strides are not supported for now `#2423 <https://github.com/scipp/scipp/pull/2423>`_.
+* :py:func:`scipp.zeros_like`, :py:func:`scipp.ones_like`, :py:func:`scipp.empty_like`, and :py:func:`scipp.full_like` now accept and return data arrays `#2425 <https://github.com/scipp/scipp/pull/2425>`_.
+* Added the ``.rename`` method to :py:class:`scipp.Variable`, :py:class:`scipp.DataArray`, and :py:class:`scipp.Dataset` that renames both dimensions and coords/attrs at the same time `#2428 <https://github.com/scipp/scipp/pull/2428>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+* The configuration option ``config['plot']['padding']`` is now called ``config['plot']['bounding_box']``, no action is required if it was never modified `#2389 <https://github.com/scipp/scipp/pull/2389>`_.
+* :py:func:`scipp.rebin` now applies masks that depend on the rebinning dimension to avoid "growing" effect on masks which previously resulted in masking more than intended `#2383 <https://github.com/scipp/scipp/pull/2383>`_.
+* The ``unit`` attribute now distinguishes ``None`` from ``dimensionless`` `#2395 <https://github.com/scipp/scipp/pull/2395>`_ and `#2417 <https://github.com/scipp/scipp/pull/2417>`_.
+
+  * For number-like dtypes the default is ``dimensionless`` (unchanged) whereas all other dtypes such as strings default to ``None`` (new).
+  * ``bool`` (used for masks) is not considered number-like and the default unit is ``None``.
+  * Comparison operator results now use ``None`` as unit of their output.
+  * When integers without unit are used as indices, the new :py:func:`scipp.index` can be used to create a scalar variable without unit.
+
+* :py:func:`scipp.spatial.rotations_from_rotvecs` has been changed to taking a variable input rather than separate values/dims/units.
+* ``scipp.NotFoundError`` error has been replaced with ``KeyError`` in Python `#2416 <https://github.com/scipp/scipp/pull/2416>`_.
+* Some functions now raise ``scipp.DimensionError`` instead of ``scipp.NotFoundError`` `#2416 <https://github.com/scipp/scipp/pull/2416>`_.
+
+Bugfixes
+~~~~~~~~
+
+* Fix :py:func:`scipp.full`, which previously converted or attempted to convert all values to ``float64`` unless the ``dtype`` was specified explicitly `#2395 <https://github.com/scipp/scipp/pull/2395>`_.
+* Fix :py:func:`scipp.transform_coords` for sliced binned data, used to raise an exception `#2406 <https://github.com/scipp/scipp/pull/2406>`_.
+* Fix 1d plots y-axis limits when toggling log-scale with buttons and fix 2d plot colorbar when Inf values `#2426 <https://github.com/scipp/scipp/pull/2426>`_.
+* Fix bug leading to datasets dims/shape modification after failed item insertion `#2437 <https://github.com/scipp/scipp/pull/2437>`_.
+* Fix a plotting bug when 2d data has y coord associated with dimension x `#2446 <https://github.com/scipp/scipp/pull/2446>`_.
+* Fix plotting with custom tick labels of ``dtype=datetime64`` which previously raised an exception `#2449 <https://github.com/scipp/scipp/pull/2449>`_.
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+Tom Willemsen :sup:`b, c`\ ,
+and Jan-Lukas Wynen :sup:`a`
+
+v0.11.0 (January 2022)
+----------------------
+
+Features
+~~~~~~~~
+
+* Added new datatypes for representing spatial transformations: ``affine_transform3``, ``rotation3``, and ``translation3``. Each of these can be combined and applied to the existing vector datatype.
+* Added support for slicing without specifying a dimension (only for 1-D objects) `#2321 <https://github.com/scipp/scipp/pull/2321>`_.
+* Added :py:func:`scipp.interpolate.interp1d` as convenience wrapper of the scipy functions of the same name `#2324 <https://github.com/scipp/scipp/pull/2324>`_.
+* Added :py:func:`scipp.integrate.trapezoid` and :py:func:`scipp.integrate.simpson` as convenience wrappers of the scipy functions of the same name `#2324 <https://github.com/scipp/scipp/pull/2324>`_.
+* Added ``unit`` property to ``obj.bins`` for getting and setting unit of bin elements `#2330 <https://github.com/scipp/scipp/pull/2330>`_.
+* Added :py:func:`scipp.optimize.curve_fit` as convenience wrappers of the scipy function of the same name `#2350 <https://github.com/scipp/scipp/pull/2350>`_.
+* Added :py:func:`scipp.signal.butter` and :py:func:`scipp.signal.sosfiltfilt` as wrappers of the scipy functions of the same name `#2356 <https://github.com/scipp/scipp/pull/2356>`_.
+* Added :py:func:`scipp.Variable.to` and :py:func:`scipp.DataArray.to` as a convenience function for simultaneously converting dtype and units.
+* Added :py:func:`scipp.datetime`, :py:func:`scipp.datetimes`, and :py:func:`scipp.epoch` to conveniently construct variables containing datetimes `#2360 <https://github.com/scipp/scipp/pull/2360>`_.
+* Added ``camera`` option for 3-D scatter plots to control camera position and the point the camera is looking at `#2361 <https://github.com/scipp/scipp/pull/2361>`_.
+* Allow more interoperability between :py:class:`scipp.DType` and other ways of encoding dtypes `#2373 <https://github.com/scipp/scipp/pull/2373>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+* Minor change in behavior of dimension renaming in ``transform_coords``, new behavior documented in `Coordinate transformations <../user-guide/coordinate-transformations.rst>`_. Most use cases are unaffected. `#2319 <https://github.com/scipp/scipp/pull/2319>`_.
+* ``sc.spatial.transform.as_rotvec`` has been moved to :py:func:`scipp.spatial.rotation_as_rotvec`
+* ``sc.spatial.transform.from_rotvec`` has been moved to :py:func:`scipp.spatial.rotations_from_rotvecs`, and now returns a rotation data type rather than a matrix.
+  For consistency with other transformation creation functions, ``rotations_from_rotvecs`` now takes ``values``, ``dims``, and ``unit`` separately.
+* The matrix dtype ``matrix_3_float64`` has been renamed to ``linear_transform3``, and should now be constructed with :py:func:`scipp.spatial.linear_transform`.
+* The vector dtype ``vector_3_float64`` has been renamed to ``vector3``.
+* Scipp's logger is no longer preconfigured, this has to be done by the user `#2372 <https://github.com/scipp/scipp/pull/2372>`_.
+* Data types are now attributes of the :py:class:`scipp.DType` class and the ``scipp.dtype`` module has been removed `#2373 <https://github.com/scipp/scipp/pull/2373>`_.
+
+Bugfixes
+~~~~~~~~
+
+* Fix coordinate and attribute comparisons to treat NaN (not-a-number) values as equal, which previously prevented most operations with data arrays or datasets that contained NaN values in their coordinates or attributes `#2331 <https://github.com/scipp/scipp/pull/2331>`_.
+* Fix incorrect result from ``sc.bin`` when rebinning an inner dimension to a multi-dimensional coordinate `#2355 <https://github.com/scipp/scipp/pull/2355>`_.
+
+Deprecations
+~~~~~~~~~~~~
+
+* ``sc.matrix`` and ``sc.matrices`` have been deprecated in favour of :py:func:`scipp.spatial.linear_transform` and :py:func:`scipp.spatial.linear_transforms`, and will be removed in a future release of scipp.
+* The previously deprecated ``concatenate`` and ``groupby(..).concatenate`` have been removed. Use :py:func:`scipp.concat` and :py:func:`scipp.GroupByDataArray.concat` instead.
 
 Contributors
 ~~~~~~~~~~~~
@@ -89,7 +202,7 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
-* Fix bugs in ``rebin`` if data and/or edges had strides other than 1 along rebinned dimension, typically only occuring with multi-dimensional (ragged) coordinates `#2211 <https://github.com/scipp/scipp/pull/2211>`_.
+* Fix bugs in ``rebin`` if data and/or edges had strides other than 1 along rebinned dimension, typically only occurring with multi-dimensional (ragged) coordinates `#2211 <https://github.com/scipp/scipp/pull/2211>`_.
 * Fix exception that was thrown when importing empty datasets from HDF5 files using ``open_hdf5`` `#2216 <https://github.com/scipp/scipp/pull/2216>`_.
 * Fix exception in ``astype`` when called with binned data that does not require conversion `#2222 <https://github.com/scipp/scipp/pull/2222>`_.
 * Fix bug in ``concatenate`` that could lead to masks being shared with input rather than being copied `#2232 <https://github.com/scipp/scipp/pull/2232>`_.
@@ -141,7 +254,7 @@ Features
 * Add ``transform_coords`` for (multi-step) transformations based on existing coords, with support of event coords `#2058 <https://github.com/scipp/scipp/pull/2058>`_.
 * Add ``from_pandas`` and ``from_xarray`` for conversion of pandas dataframes, xarray data arrays and dataset to scipp objects `#2054 <https://github.com/scipp/scipp/pull/2054>`_.
 * Added ``full`` and ``full_like`` variable creation functions `#2069 <https://github.com/scipp/scipp/pull/2069>`_.
-* ``islinspace`` can now take multi-dimensional variables aslong as you pass the dimension to be checked `#2094 <https://github.com/scipp/scipp/pull/2094>`_.
+* ``islinspace`` can now take multi-dimensional variables as long as you pass the dimension to be checked `#2094 <https://github.com/scipp/scipp/pull/2094>`_.
 * Added a power function and support for the ``**`` operator `#2083 <https://github.com/scipp/scipp/pull/2083>`_.
 * Binned data now has a ``mean`` method as well as ``sum``, which returns the mean of each element within a bin.
 * Add ``scipp.constants`` module for physical constants `#2101 <https://github.com/scipp/scipp/pull/2101>`_.

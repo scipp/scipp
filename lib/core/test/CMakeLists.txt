@@ -1,11 +1,12 @@
 # ~~~
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # ~~~
 set(TARGET_NAME "scipp-core-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME}
+  array_to_string_test.cpp
   dimensions_test.cpp
   eigen_test.cpp
   element_array_test.cpp
@@ -17,6 +18,7 @@ add_executable(
   element_geometric_operations_test.cpp
   element_histogram_test.cpp
   element_logical_test.cpp
+  element_map_to_bins_test.cpp
   element_math_test.cpp
   element_special_values_test.cpp
   element_to_unit_test.cpp
@@ -26,6 +28,7 @@ add_executable(
   slice_test.cpp
   sizes_test.cpp
   spatial_transforms_test.cpp
+  strides_test.cpp
   string_test.cpp
   subbin_sizes_test.cpp
   time_point_test.cpp

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -23,9 +23,6 @@ template <class... Ts> struct pair_ {
 
 template <class... Ts> using pair_self_t = typename pair_self<Ts...>::type;
 template <class... Ts> using pair_custom_t = typename pair_custom<Ts...>::type;
-template <class RHS>
-using pair_numerical_with_t =
-    typename pair_<double, float, int64_t, int32_t>::type<RHS>;
 
 template <class... Ts> struct pair_product {
   template <class T> using type = std::tuple<std::tuple<T, Ts>...>;
@@ -36,10 +33,8 @@ using pair_product_t = decltype(
     std::tuple_cat(typename pair_product<Ts...>::template type<Ts>{}...));
 
 using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
-
 using arithmetic_type_pairs_with_bool =
-    decltype(std::tuple_cat(std::declval<arithmetic_type_pairs>(),
-                            std::declval<pair_numerical_with_t<bool>>()));
+    pair_product_t<float, double, int32_t, int64_t, bool>;
 
 static constexpr auto keep_unit =
     overloaded{[](const units::Unit &) {},

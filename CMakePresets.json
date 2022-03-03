@@ -21,7 +21,10 @@
     {
       "name": "ci-linux",
       "inherits": "base",
-      "description": "Linux options for CI build (PR and Main)"
+      "description": "Linux options for CI build (PR and Main)",
+      "cacheVariables": {
+        "CPPCHECK": "ON"
+      }
     },
     {
       "name": "ci-macos",
@@ -35,8 +38,7 @@
       "name": "ci-windows",
       "inherits": "base",
       "description": "Windows options for CI build (PR and Main)",
-      "generator": "Visual Studio 16 2019",
-      "architecture": "x64"
+      "generator": "Ninja"
     },
     {
       "name": "package",
@@ -64,8 +66,7 @@
       "name": "package-windows",
       "inherits": "package",
       "description": "Windows options for package build",
-      "generator": "Visual Studio 16 2019",
-      "architecture": "x64"
+      "generator": "Ninja"
     },
     {
       "name": "coverage",
@@ -87,6 +88,11 @@
       "configurePreset": "base",
       "configuration": "Release",
       "targets": ["docs", "doctest", "cleanup_docs_html"]
+    },
+    {
+      "name": "package-docs",
+      "inherits": "docs",
+      "targets": ["docs", "doctest", "linkcheck" ,"cleanup_docs_html"]
     },
     {
       "name": "build",

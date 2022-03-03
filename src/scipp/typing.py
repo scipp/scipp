@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 
@@ -17,23 +17,23 @@ def is_scalar(obj: _std_typing.Any) -> bool:
 
 def has_vector_type(obj: _std_typing.Any) -> bool:
     """
-    Return True if the object dtype is vector_3_float64.
+    Return True if the object dtype is vector3.
     """
-    return obj.dtype == sc.dtype.vector_3_float64
+    return obj.dtype == sc.DType.vector3
 
 
 def has_string_type(obj: _std_typing.Any) -> bool:
     """
     Return True if the object dtype is string.
     """
-    return obj.dtype == sc.dtype.string
+    return obj.dtype == sc.DType.string
 
 
 def has_datetime_type(obj: _std_typing.Any) -> bool:
     """
     Return True if the object dtype is datetime64.
     """
-    return obj.dtype == sc.dtype.datetime64
+    return obj.dtype == sc.DType.datetime64
 
 
 def has_numeric_type(obj: _std_typing.Any) -> bool:

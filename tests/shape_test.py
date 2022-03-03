@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 
 import numpy as np
+import pytest
 import scipp as sc
 from .common import assert_export
 
@@ -22,6 +23,59 @@ def test_fold():
     assert_export(sc.fold, x=da, dims=['x', 'y'], shape=[2, 3])
 
 
+def test_fold_size_minus_1_variable():
+    x = sc.array(dims=['x'], values=np.arange(6.0))
+    assert sc.identical(sc.fold(x, dim='x', sizes={
+        'x': 2,
+        'y': 3
+    }), sc.fold(x, dim='x', sizes={
+        'x': 2,
+        'y': -1
+    }))
+    assert sc.identical(sc.fold(x, dim='x', sizes={
+        'x': 2,
+        'y': 3
+    }), sc.fold(x, dim='x', sizes={
+        'x': -1,
+        'y': 3
+    }))
+
+
+def test_fold_size_minus_1_data_array():
+    x = sc.array(dims=['x'], values=np.arange(6.0))
+    da = sc.DataArray(x)
+    assert sc.identical(sc.fold(da, dim='x', sizes={
+        'x': 2,
+        'y': 3
+    }), sc.fold(da, dim='x', sizes={
+        'x': 2,
+        'y': -1
+    }))
+    assert sc.identical(sc.fold(da, dim='x', sizes={
+        'x': 2,
+        'y': 3
+    }), sc.fold(da, dim='x', sizes={
+        'x': -1,
+        'y': 3
+    }))
+
+
+def test_fold_raises_two_minus_1():
+    x = sc.array(dims=['x'], values=np.arange(6.0))
+    da = sc.DataArray(x)
+    with pytest.raises(sc.DimensionError):
+        sc.fold(x, dim='x', sizes={'x': -1, 'y': -1})
+        sc.fold(da, dim='x', sizes={'x': -1, 'y': -1})
+
+
+def test_fold_raises_non_divisible():
+    x = sc.array(dims=['x'], values=np.arange(10.0))
+    da = sc.DataArray(x)
+    with pytest.raises(ValueError):
+        sc.fold(x, dim='x', sizes={'x': 3, 'y': -1})
+        sc.fold(da, dim='x', sizes={'x': -1, 'y': 3})
+
+
 def test_flatten():
     x = sc.array(dims=['x', 'y'], values=np.arange(6.0).reshape(2, 3))
     da = sc.DataArray(x)
@@ -29,3 +83,10 @@ def test_flatten():
     assert_export(sc.flatten, x=x, dim='z')
     assert_export(sc.flatten, x=da, dims=['x', 'y'], dim='z')
     assert_export(sc.flatten, x=da, dim='z')
+
+
+def test_squeeze():
+    xy = sc.arange('a', 2).fold('a', {'x': 1, 'y': 2})
+    assert sc.identical(sc.squeeze(xy, dim='x'), sc.arange('y', 2))
+    assert sc.identical(sc.squeeze(xy, dim=['x']), sc.arange('y', 2))
+    assert sc.identical(sc.squeeze(xy), sc.arange('y', 2))

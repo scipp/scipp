@@ -1,6 +1,6 @@
 # ~~~
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # ~~~
 if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -27,10 +27,10 @@ if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake")
   )
   file(
     DOWNLOAD
-    "https://raw.githubusercontent.com/conan-io/cmake-conan/v0.16.1/conan.cmake"
+    "https://raw.githubusercontent.com/conan-io/cmake-conan/0.17.0/conan.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/conan.cmake"
     EXPECTED_HASH
-      SHA256=396e16d0f5eabdc6a14afddbcfff62a54a7ee75c6da23f32f7a31bc85db23484
+      SHA256=3bef79da16c2e031dc429e1dac87a08b9226418b300ce004cc125a82687baeef
     TLS_VERIFY ON
   )
 endif()
@@ -63,7 +63,7 @@ find_package(Sanitizers REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 # libpython is not available on `manylinux` images, use `Development.Module`
 # instead of `Development`
-find_package(Python 3.7 REQUIRED COMPONENTS Interpreter Development.Module)
+find_package(Python 3.8 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(LLNL-Units REQUIRED)
 
@@ -73,6 +73,8 @@ include(scipp-functions)
 find_program(CCACHE ccache)
 if(CCACHE)
   set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
+else()
+  message(FATAL_ERROR "no ccache found")
 endif()
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -159,7 +161,7 @@ if(NOT WIN32)
     $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
   )
 else()
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/bigobj>)
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/bigobj> /EHsc)
 endif()
 
 option(CPPCHECK "Enable running cppcheck during compilation if found." OFF)
@@ -177,6 +179,10 @@ if(CMAKE_CXX_CPPCHECK)
     "--inline-suppr"
     "--suppressions-list=${CMAKE_SOURCE_DIR}/cppcheck-suppressions.txt"
     "--cppcheck-build-dir=${CMAKE_BINARY_DIR}/cppcheck"
+    # Suppress warnings from 3rd party span header. This needs an absolute path
+    # can can therefore not be done in the suppressions file.
+    "--suppress=*:${CMAKE_SOURCE_DIR}/lib/common/include/scipp/common/span.hpp.in"
+    "--error-exitcode=2"
   )
 endif()
 

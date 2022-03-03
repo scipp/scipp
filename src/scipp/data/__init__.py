@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from ..core import array, bin, linspace, ones
 from ..core import DataArray
@@ -26,3 +26,13 @@ def binned_x(nevent: int, nbin: int) -> DataArray:
     table = table_xyz(nevent)
     x = linspace(dim='x', unit='m', start=0.0, stop=1.0, num=nbin + 1)
     return bin(table, edges=[x])
+
+
+def binned_xy(nevent: int, nx: int, ny: int) -> DataArray:
+    """
+    Return data array binned along 2 dimensions.
+    """
+    table = table_xyz(nevent)
+    x = linspace(dim='x', unit='m', start=0.0, stop=1.0, num=nx + 1)
+    y = linspace(dim='y', unit='m', start=0.0, stop=1.0, num=ny + 1)
+    return bin(table, edges=[x, y])

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
 import pytest
@@ -39,6 +39,16 @@ def test_unit_property():
         var.unit = 'abcdef'  # does not parse
     with pytest.raises(TypeError):
         var.unit = 5  # neither str nor Unit
+
+
+def test_explicit_default_unit_for_string_gives_none():
+    var = sc.scalar('abcdef', unit=sc.units.default_unit)
+    assert var.unit is None
+
+
+def test_default_unit_for_string_is_none():
+    var = sc.scalar('abcdef')
+    assert var.unit is None
 
 
 def test_to_unit():

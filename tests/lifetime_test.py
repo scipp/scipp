@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import numpy as np
 import scipp as sc
@@ -77,7 +77,7 @@ def test_lifetime_coord_values():
 
 def test_lifetime_scalar_py_object():
     var = sc.scalar([1] * 100000)
-    assert var.dtype == sc.dtype.PyObject
+    assert var.dtype == sc.DType.PyObject
     val = var.copy().value
     import gc
     gc.collect()

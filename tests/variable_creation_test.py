@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import pytest
 import scipp as sc
@@ -28,7 +28,7 @@ def test_scalar_with_dtype():
     value = 1.0
     variance = 5.0
     unit = sc.units.m
-    dtype = sc.dtype.float64
+    dtype = sc.DType.float64
     var = sc.scalar(value=value, variance=variance, unit=unit, dtype=dtype)
     expected = sc.Variable(dims=(),
                            values=value,
@@ -36,6 +36,14 @@ def test_scalar_with_dtype():
                            unit=unit,
                            dtype=dtype)
     assert sc.identical(var, expected)
+
+
+def test_scalar_float_default_unit_is_dimensionless():
+    assert sc.scalar(value=1.2).unit == sc.units.one
+
+
+def test_scalar_string_default_unit_is_None():
+    assert sc.scalar(value='abc').unit is None
 
 
 def test_scalar_without_dtype():
@@ -47,7 +55,7 @@ def test_scalar_without_dtype():
 
 def test_scalar_throws_if_wrong_dtype_provided_for_str_types():
     with pytest.raises(ValueError):
-        sc.scalar(value='temp', unit=sc.units.one, dtype=sc.dtype.float64)
+        sc.scalar(value='temp', unit=sc.units.one, dtype=sc.DType.float64)
 
 
 def test_scalar_throws_UnitError_if_not_parsable():
@@ -59,9 +67,25 @@ def test_scalar_of_numpy_array():
     value = np.array([1, 2, 3])
     with pytest.raises(sc.DimensionError):
         sc.scalar(value)
-    var = sc.scalar(value, dtype=sc.dtype.PyObject)
-    assert var.dtype == sc.dtype.PyObject
+    var = sc.scalar(value, dtype=sc.DType.PyObject)
+    assert var.dtype == sc.DType.PyObject
     np.testing.assert_array_equal(var.value, value)
+
+
+def test_index_is_same_as_scalar_with_explicit_none_unit():
+    assert sc.identical(sc.index(5), sc.scalar(5, unit=None))
+    assert sc.identical(sc.index(6, dtype='int32'),
+                        sc.scalar(6, dtype='int32', unit=None))
+
+
+def test_index_unit_is_none():
+    i = sc.index(5)
+    assert i.unit is None
+
+
+def test_index_raises_if_unit_given():
+    with pytest.raises(TypeError):
+        sc.index(5, unit='')
 
 
 def test_zeros_creates_variable_with_correct_dims_and_shape():
@@ -81,9 +105,9 @@ def test_zeros_with_variances():
 def test_zeros_with_dtype_and_unit():
     var = sc.zeros(dims=['x', 'y', 'z'],
                    shape=[1, 2, 3],
-                   dtype=sc.dtype.int32,
+                   dtype=sc.DType.int32,
                    unit='m')
-    assert var.dtype == sc.dtype.int32
+    assert var.dtype == sc.DType.int32
     assert var.unit == 'm'
 
 
@@ -94,10 +118,25 @@ def test_zeros_dtypes():
                     dtype='datetime64').value == np.datetime64(0, 's')
     assert sc.zeros(dims=(), shape=(), dtype=str).value == ''
     np.testing.assert_array_equal(
-        sc.zeros(dims=(), shape=(), dtype=sc.dtype.vector_3_float64).value, np.zeros(3))
+        sc.zeros(dims=(), shape=(), dtype=sc.DType.vector3).value, np.zeros(3))
     np.testing.assert_array_equal(
-        sc.zeros(dims=(), shape=(), dtype=sc.dtype.matrix_3_float64).value,
+        sc.zeros(dims=(), shape=(), dtype=sc.DType.linear_transform3).value,
         np.zeros((3, 3)))
+
+
+def test_zeros_float_default_unit_is_dimensionless():
+    var = sc.zeros(dtype=float, dims=(), shape=())
+    assert var.unit == sc.units.one
+
+
+def test_zeros_string_default_unit_is_None():
+    var = sc.zeros(dtype=str, dims=(), shape=())
+    assert var.unit is None
+
+
+def test_ones_float_default_unit_is_dimensionless():
+    var = sc.ones(dtype=float, dims=(), shape=())
+    assert var.unit == sc.units.one
 
 
 def test_ones_creates_variable_with_correct_dims_and_shape():
@@ -115,8 +154,8 @@ def test_ones_with_variances():
 
 
 def test_ones_with_dtype_and_unit():
-    var = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=sc.dtype.int64, unit='s')
-    assert var.dtype == sc.dtype.int64
+    var = sc.ones(dims=['x', 'y', 'z'], shape=[1, 2, 3], dtype=sc.DType.int64, unit='s')
+    assert var.dtype == sc.DType.int64
     assert var.unit == 's'
 
 
@@ -127,6 +166,16 @@ def test_ones_dtypes():
                    dtype='datetime64').value == np.datetime64(1, 's')
     with pytest.raises(ValueError):
         sc.ones(dims=(), shape=(), dtype=str)
+
+
+def test_full_float_default_unit_is_dimensionless():
+    var = sc.full(dims=(), shape=(), value=1.2)
+    assert var.unit == sc.units.one
+
+
+def test_full_string_default_unit_is_None():
+    var = sc.full(dims=(), shape=(), value='abc')
+    assert var.unit is None
 
 
 def test_full_creates_variable_with_correct_dims_and_shape():
@@ -146,11 +195,21 @@ def test_full_with_variances():
 def test_full_with_dtype_and_unit():
     var = sc.full(dims=['x', 'y', 'z'],
                   shape=[1, 2, 3],
-                  dtype=sc.dtype.int64,
+                  dtype=sc.DType.int64,
                   unit='s',
                   value=1)
-    assert var.dtype == sc.dtype.int64
+    assert var.dtype == sc.DType.int64
     assert var.unit == 's'
+
+
+def test_full_with_int_value_gives_int64_dtype():
+    var = sc.full(dims=(), shape=(), value=3)
+    assert var.dtype == sc.DType.int64
+
+
+def test_full_with_string_value_gives_string_dtype():
+    var = sc.full(dims=(), shape=(), value='abc')
+    assert var.dtype == str
 
 
 def test_full_and_ones_equivalent():
@@ -197,9 +256,9 @@ def test_empty_with_variances():
 def test_empty_with_dtype_and_unit():
     var = sc.empty(dims=['x', 'y', 'z'],
                    shape=[1, 2, 3],
-                   dtype=sc.dtype.int32,
+                   dtype=sc.DType.int32,
                    unit='s')
-    assert var.dtype == sc.dtype.int32
+    assert var.dtype == sc.DType.int32
     assert var.unit == 's'
 
 
@@ -220,7 +279,7 @@ def test_array_creates_correct_variable():
     values = [1, 2, 3]
     variances = [4, 5, 6]
     unit = sc.units.m
-    dtype = sc.dtype.float64
+    dtype = sc.DType.float64
     var = sc.array(dims=dims,
                    values=values,
                    variances=variances,
@@ -235,9 +294,21 @@ def test_array_creates_correct_variable():
     assert sc.identical(var, expected)
 
 
+def test_array_with_unit_None_gives_variable_with_unit_None():
+    assert sc.array(dims=['x'], values=[1.2], unit=None).unit is None
+
+
+def test_array_from_float_default_unit_is_dimensionless():
+    assert sc.array(dims=['x'], values=[1.2]).unit == sc.units.one
+
+
+def test_array_from_string_default_unit_is_None():
+    assert sc.array(dims=['x'], values=['abc']).unit is None
+
+
 def test_array_empty_dims():
     assert sc.identical(sc.array(dims=[], values=[1]),
-                        sc.scalar([1], dtype=sc.dtype.PyObject))
+                        sc.scalar([1], dtype=sc.DType.PyObject))
     a = np.asarray(1.1)
     assert sc.identical(sc.array(dims=None, values=a), sc.scalar(1.1))
     assert sc.identical(sc.array(dims=[], values=a), sc.scalar(1.1))
@@ -258,12 +329,12 @@ def test_zeros_like_with_variances():
                       values=np.random.random([1, 2, 3]),
                       variances=np.random.random([1, 2, 3]),
                       unit='m',
-                      dtype=sc.dtype.float32)
+                      dtype=sc.DType.float32)
     expected = sc.zeros(dims=['x', 'y', 'z'],
                         shape=[1, 2, 3],
                         with_variances=True,
                         unit='m',
-                        dtype=sc.dtype.float32)
+                        dtype=sc.DType.float32)
     zeros = sc.zeros_like(var)
     _compare_properties(zeros, expected)
     np.testing.assert_array_equal(zeros.values, 0)
@@ -283,12 +354,12 @@ def test_ones_like_with_variances():
                       values=np.random.random([1, 2, 3]),
                       variances=np.random.random([1, 2, 3]),
                       unit='m',
-                      dtype=sc.dtype.float32)
+                      dtype=sc.DType.float32)
     expected = sc.ones(dims=['x', 'y', 'z'],
                        shape=[1, 2, 3],
                        with_variances=True,
                        unit='m',
-                       dtype=sc.dtype.float32)
+                       dtype=sc.DType.float32)
     ones = sc.ones_like(var)
     _compare_properties(ones, expected)
     np.testing.assert_array_equal(ones.values, 1)
@@ -306,44 +377,48 @@ def test_empty_like_with_variances():
                       values=np.random.random([1, 2, 3]),
                       variances=np.random.random([1, 2, 3]),
                       unit='m',
-                      dtype=sc.dtype.float32)
+                      dtype=sc.DType.float32)
     expected = make_dummy(dims=['x', 'y', 'z'],
                           shape=[1, 2, 3],
                           with_variances=True,
                           unit='m',
-                          dtype=sc.dtype.float32)
+                          dtype=sc.DType.float32)
     _compare_properties(sc.empty_like(var), expected)
 
 
 def test_linspace():
     values = np.linspace(1.2, 103., 51)
-    var = sc.linspace('x', 1.2, 103., 51, unit='m', dtype=sc.dtype.float32)
-    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.dtype.float32)
+    var = sc.linspace('x', 1.2, 103., 51, unit='m', dtype=sc.DType.float32)
+    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.DType.float32)
     assert sc.identical(var, expected)
+
+
+def test_linspace_none_unit():
+    assert sc.linspace('x', 1.2, 103., 51, unit=None).unit is None
 
 
 def test_logspace():
     values = np.logspace(2.0, 3.0, num=4)
     var = sc.logspace('y', 2.0, 3.0, num=4, unit='s')
-    expected = sc.Variable(dims=['y'], values=values, unit='s', dtype=sc.dtype.float64)
+    expected = sc.Variable(dims=['y'], values=values, unit='s', dtype=sc.DType.float64)
     assert sc.identical(var, expected)
 
 
 def test_geomspace():
     values = np.geomspace(1, 1000, num=4)
     var = sc.geomspace('z', 1, 1000, num=4)
-    expected = sc.Variable(dims=['z'], values=values, dtype=sc.dtype.float64)
+    expected = sc.Variable(dims=['z'], values=values, dtype=sc.DType.float64)
     assert sc.identical(var, expected)
 
 
 def test_arange():
     values = np.arange(21)
-    var = sc.arange('x', 21, unit='m', dtype=sc.dtype.int32)
-    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.dtype.int32)
+    var = sc.arange('x', 21, unit='m', dtype=sc.DType.int32)
+    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.DType.int32)
     assert sc.identical(var, expected)
     values = np.arange(10, 21, 2)
-    var = sc.arange(dim='x', start=10, stop=21, step=2, unit='m', dtype=sc.dtype.int32)
-    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.dtype.int32)
+    var = sc.arange(dim='x', start=10, stop=21, step=2, unit='m', dtype=sc.DType.int32)
+    expected = sc.Variable(dims=['x'], values=values, unit='m', dtype=sc.DType.int32)
     assert sc.identical(var, expected)
 
 
@@ -372,3 +447,71 @@ def test_empty_sizes():
                         sc.empty(sizes=dict(zip(dims, shape))))
     with pytest.raises(ValueError):
         sc.empty(dims=dims, shape=shape, sizes=dict(zip(dims, shape)))
+
+
+def test_datetime():
+    assert sc.identical(sc.datetime('1970', unit='Y'),
+                        sc.scalar(np.datetime64('1970', 'Y')))
+    assert sc.identical(sc.datetime('2015-06-13'),
+                        sc.scalar(np.datetime64('2015-06-13', 'D')))
+    assert sc.identical(sc.datetime('2152-11-25T13:13:46'),
+                        sc.scalar(np.datetime64('2152-11-25T13:13:46', 's')))
+    assert sc.identical(sc.datetime('2152-11-25T13:13:46', unit='h'),
+                        sc.scalar(np.datetime64('2152-11-25T13', 'h')))
+    assert sc.identical(sc.datetime('2152-11-25T13:13:46', unit='us'),
+                        sc.scalar(np.datetime64('2152-11-25T13:13:46', 'us')))
+
+    assert sc.identical(sc.datetime(626, unit='s'),
+                        sc.scalar(626, dtype='datetime64', unit='s'))
+    assert sc.identical(sc.datetime(2**10, unit='ns'),
+                        sc.scalar(2**10, dtype='datetime64', unit='ns'))
+    assert sc.identical(sc.datetime(-94716, unit='min'),
+                        sc.scalar(-94716, dtype='datetime64', unit='min'))
+
+    assert sc.identical(sc.datetime(np.datetime64(314, 's'), unit='s'),
+                        sc.scalar(314, dtype='datetime64', unit='s'))
+    assert sc.identical(sc.datetime(np.datetime64(671, 'h')),
+                        sc.scalar(671, dtype='datetime64', unit='h'))
+
+
+def test_datetimes():
+    assert sc.identical(
+        sc.datetimes(dims=['t'], values=['1970', '2021'], unit='Y'),
+        sc.array(dims=['t'],
+                 values=[np.datetime64('1970', 'Y'),
+                         np.datetime64('2021', 'Y')],
+                 unit='Y'))
+    assert sc.identical(
+        sc.datetimes(dims=['t'],
+                     values=['2152-11-25T13:13:46', '1111-11-11T11:11:11'],
+                     unit='s'),
+        sc.array(dims=['t'],
+                 values=[
+                     np.datetime64('2152-11-25T13:13:46', 's'),
+                     np.datetime64('1111-11-11T11:11:11', 's')
+                 ],
+                 unit='s'))
+    assert sc.identical(
+        sc.datetimes(dims=['t'],
+                     values=['2152-11-25T13:13:46', '1111-11-11T11:11:11'],
+                     unit='us'),
+        sc.array(dims=['t'],
+                 values=[
+                     np.datetime64('2152-11-25T13:13:46', 'us'),
+                     np.datetime64('1111-11-11T11:11:11', 'us')
+                 ],
+                 unit='us'))
+
+    assert sc.identical(
+        sc.datetimes(dims=['t'], values=[0, 123, 2**10], unit='s'),
+        sc.array(dims=['t'], values=np.array([0, 123, 2**10], dtype='datetime64[s]')))
+    assert sc.identical(
+        sc.datetimes(dims=['t'], values=[-723, 2**13, -3**5], unit='min'),
+        sc.array(dims=['t'],
+                 values=np.array([-723, 2**13, -3**5], dtype='datetime64[m]')))
+
+
+def test_datetime_epoch():
+    assert sc.identical(sc.epoch(unit='s'),
+                        sc.scalar(np.datetime64('1970-01-01T00:00:00', 's')))
+    assert sc.identical(sc.epoch(unit='D'), sc.scalar(np.datetime64('1970-01-01', 'D')))

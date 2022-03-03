@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/map_view.h"
@@ -45,14 +45,13 @@ Variable nansum(const Variable &var, const Dim dim, const Masks &masks) {
 Variable mean(const Variable &var, const Dim dim, const Masks &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim);
       mask_union.is_valid()) {
-    return mean_impl(where(mask_union, zero_like(var), var), dim,
-                     sum(~mask_union, dim));
+    const auto count = sum(~mask_union, dim);
+    return mean_impl(where(mask_union, zero_like(var), var), dim, count);
   }
   return mean(var, dim);
 }
 
 Variable nanmean(const Variable &var, const Dim dim, const Masks &masks) {
-  using variable::isfinite;
   if (const auto mask_union = irreducible_mask(masks, dim);
       mask_union.is_valid()) {
     const auto count = sum(
@@ -60,17 +59,6 @@ Variable nanmean(const Variable &var, const Dim dim, const Masks &masks) {
     return nanmean_impl(where(mask_union, zero_like(var), var), dim, count);
   }
   return nanmean(var, dim);
-}
-
-/// Merges all the masks that have all their dimensions found in the given set
-//  of dimensions.
-Variable masks_merge_if_contained(const Masks &masks, const Dimensions &dims) {
-  auto mask_union = makeVariable<bool>(Values{false});
-  for (const auto &mask : masks) {
-    if (dims.includes(mask.second.dims()))
-      mask_union = mask_union | mask.second;
-  }
-  return mask_union;
 }
 
 } // namespace scipp::dataset

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp
 #include <gtest/gtest.h>
 #include <vector>
 
@@ -100,7 +100,7 @@ TEST(VariableUniversalConstructorTest, type_constructors_mix) {
                      Values(flt.begin(), flt.end()), Variances{2.0, 3.0});
   auto v2 = Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 1},
                      Values{1.5, 3.6}, Variances{2, 3});
-  auto v3 = Variable(dtype<float>, units::Unit(), Dims{Dim::X, Dim::Y},
+  auto v3 = Variable(dtype<float>, units::one, Dims{Dim::X, Dim::Y},
                      Shape{2, 1}, Values{1.5f, 3.6f});
   v3.setVariances(
       makeVariable<float>(Dims{Dim::X, Dim::Y}, Shape{2, 1}, Values{2, 3}));

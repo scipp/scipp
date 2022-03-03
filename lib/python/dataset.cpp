@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/except.h"
 #include "scipp/dataset/map_view.h"
 #include "scipp/dataset/math.h"
 #include "scipp/dataset/rebin.h"
@@ -98,6 +97,7 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
       "dim", [](const T &self) { return self.dim().name(); },
       "The only dimension label for 1-dimensional data, raising an exception "
       "if the data is not 1-dimensional.");
+  bind_pop(c);
 }
 
 template <class T, class... Ignored>
@@ -204,10 +204,9 @@ void init_dataset(py::module &m) {
           d.setCoord(dim, coord);
         return d;
       }),
-      py::kw_only(),
       py::arg("data") =
           std::map<std::string, std::variant<Variable, DataArray>>{},
-      py::arg("coords") = std::map<Dim, Variable>{},
+      py::kw_only(), py::arg("coords") = std::map<Dim, Variable>{},
       R"(__init__(self, data: Dict[str, Union[Variable, DataArray]] = {}, coords: Dict[str, Variable] = {}) -> None
 
               Dataset initializer.
@@ -269,14 +268,14 @@ void init_dataset(py::module &m) {
       py::arg("lhs"), py::arg("rhs"), py::call_guard<py::gil_scoped_release>());
 
   m.def(
-      "combine_masks",
-      [](const Masks &msk, const std::vector<Dim> &labels,
-         const std::vector<scipp::index> &shape) {
-        return dataset::masks_merge_if_contained(msk,
-                                                 Dimensions(labels, shape));
+      "irreducible_mask",
+      [](const Masks &masks, const Dim dim) {
+        py::gil_scoped_release release;
+        auto mask = irreducible_mask(masks, dim);
+        py::gil_scoped_acquire acquire;
+        return mask.is_valid() ? py::cast(mask) : py::none();
       },
-      py::arg("masks"), py::arg("labels"), py::arg("shape"),
-      py::call_guard<py::gil_scoped_release>());
+      py::arg("masks"), py::arg("dim"));
 
   m.def(
       "reciprocal", [](const DataArray &self) { return reciprocal(self); },

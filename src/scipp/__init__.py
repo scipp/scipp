@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 
 # flake8: noqa
@@ -19,22 +19,18 @@ if os.name == "nt" and "CONDA_PREFIX" in os.environ:
         dll_directory = (path.parent.parent / "bin").resolve()
         os.environ["PATH"] += os.pathsep + str(dll_directory)
 
-from . import runtime_config
-
-user_configuration_filename = runtime_config.config_filename
-config = runtime_config.load()
-del runtime_config
+from .configuration import config
 
 from .core import __version__
 # Import classes
-from .core import Variable, DataArray, Dataset, Unit
+from .core import Variable, DataArray, Dataset, DType, Unit
 # Import errors
 from .core import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
-                         DTypeError, NotFoundError, SizeError, SliceError, \
+                         DTypeError, SizeError, SliceError, \
                          UnitError, VariableError, VariancesError
 # Import submodules
-from .core import units, dtype
+from . import units
 from . import geometry
 # Import functions
 from ._scipp.core import as_const, choose, logical_and, logical_or, logical_xor
@@ -73,15 +69,16 @@ from .core import lookup, histogram, bin, bins, bins_like
 from .core import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
 from .core import counts_to_density, density_to_counts
 from .core import cumsum
-from .core import combine_masks, merge
+from .core import merge
 from .core import groupby
-from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc
+from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc, midpoints
 from .core import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where
 from .core import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
-from .core import broadcast, concat, concatenate, fold, flatten, transpose
+from .core import broadcast, concat, fold, flatten, squeeze, transpose
 from .core import sin, cos, tan, asin, acos, atan, atan2
 from .core import isnan, isinf, isfinite, isposinf, isneginf, to_unit
-from .core import scalar, zeros, zeros_like, ones, ones_like, empty, empty_like, full, full_like, matrix, matrices, vector, vectors, array, linspace, geomspace, logspace, arange
+from .core import scalar, index, zeros, zeros_like, ones, ones_like, empty, empty_like, full, full_like, matrix, matrices, vector, vectors, array, linspace, geomspace, logspace, arange, datetime, datetimes, epoch
+from .core import to
 
 from .logging import display_logs, get_logger
 
@@ -97,12 +94,16 @@ _binding.bind_pop()
 # Assign method binding for both Variable and DataArray
 for _cls in (Variable, DataArray):
     _binding.bind_functions_as_methods(
-        _cls, globals(), ('broadcast', 'flatten', 'fold', 'transpose', 'all', 'any',
-                          'mean', 'sum', 'nanmean', 'nansum', 'floor', 'ceil', 'round'))
+        _cls, globals(),
+        ('broadcast', 'flatten', 'fold', 'squeeze', 'transpose', 'all', 'any', 'mean',
+         'sum', 'nanmean', 'nansum', 'floor', 'ceil', 'round', 'to'))
 del _cls
+del to
 # Assign method binding for JUST Variable
 _binding.bind_functions_as_methods(Variable, globals(),
                                    ('cumsum', 'max', 'min', 'nanmax', 'nanmin'))
+# Assign method binding for JUST Dataset
+_binding.bind_functions_as_methods(Dataset, globals(), ('squeeze', ))
 for _cls in (DataArray, Dataset):
     _binding.bind_functions_as_methods(_cls, globals(), ('groupby', 'transform_coords'))
 del _cls

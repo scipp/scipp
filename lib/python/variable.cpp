@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 
@@ -9,6 +9,7 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
+#include "scipp/core/spatial_transforms.h"
 #include "scipp/core/time_point.h"
 
 #include "scipp/variable/operations.h"
@@ -26,6 +27,7 @@
 #include "numpy.h"
 #include "pybind11.h"
 #include "rename.h"
+#include "unit.h"
 
 using namespace scipp;
 using namespace scipp::variable;
@@ -37,14 +39,16 @@ void bind_structured_creation(py::module &m, const std::string &name) {
   m.def(
       name.c_str(),
       [](const std::vector<Dim> &labels, py::array_t<Elem> &values,
-         units::Unit unit) {
+         const ProtoUnit &unit) {
         if (scipp::size(labels) != values.ndim() - scipp::index(sizeof...(N)))
           throw std::runtime_error("bad shape to make structured type");
+        const auto unit_ = unit_or_default(unit, dtype<T>);
         auto var = variable::make_structures<T, Elem>(
             Dimensions(labels,
                        std::vector<scipp::index>(
                            values.shape(), values.shape() + labels.size())),
-            unit, element_array<Elem>(values.size(), core::init_for_overwrite));
+            unit_,
+            element_array<Elem>(values.size(), core::init_for_overwrite));
         auto elems = var.template elements<T>();
         if constexpr (sizeof...(N) != 1)
           elems = fold(elems, Dim::InternalStructureComponent,
@@ -55,7 +59,7 @@ void bind_structured_creation(py::module &m, const std::string &name) {
                              elems.dims());
         return var;
       },
-      py::arg("dims"), py::arg("values"), py::arg("unit") = units::one);
+      py::arg("dims"), py::arg("values"), py::arg("unit") = DefaultUnit{});
 }
 
 template <class T> struct GetElements {
@@ -156,6 +160,7 @@ of variances.)");
   bind_slice_methods(variable);
 
   bind_comparison<Variable>(variable);
+  bind_comparison_scalars(variable);
 
   bind_in_place_binary<Variable>(variable);
   bind_in_place_binary_scalars(variable);
@@ -192,8 +197,15 @@ of variances.)");
 
   bind_structured_creation<Eigen::Vector3d, double, 3>(m, "vectors");
   bind_structured_creation<Eigen::Matrix3d, double, 3, 3>(m, "matrices");
+  bind_structured_creation<Eigen::Affine3d, double, 4, 4>(m,
+                                                          "affine_transforms");
+  bind_structured_creation<scipp::core::Quaternion, double, 4>(m, "rotations");
+  bind_structured_creation<scipp::core::Translation, double, 3>(m,
+                                                                "translations");
 
-  using structured_t = std::tuple<Eigen::Vector3d, Eigen::Matrix3d>;
+  using structured_t =
+      std::tuple<Eigen::Vector3d, Eigen::Matrix3d, Eigen::Affine3d,
+                 scipp::core::Quaternion, scipp::core::Translation>;
   m.def("_element_keys", element_keys);
   m.def("_get_elements", [](Variable &self, const std::string &key) {
     return core::callDType<GetElements>(

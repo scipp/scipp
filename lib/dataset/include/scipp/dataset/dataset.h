@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -165,10 +165,10 @@ public:
                const AttrPolicy attrPolicy = AttrPolicy::Drop);
   void setData(const std::string &name, const DataArray &data);
 
-  Dataset slice(const Slice s) const;
-  [[maybe_unused]] Dataset &setSlice(const Slice s, const Dataset &dataset);
-  [[maybe_unused]] Dataset &setSlice(const Slice s, const DataArray &array);
-  [[maybe_unused]] Dataset &setSlice(const Slice s, const Variable &var);
+  Dataset slice(const Slice &s) const;
+  [[maybe_unused]] Dataset &setSlice(const Slice &s, const Dataset &dataset);
+  [[maybe_unused]] Dataset &setSlice(const Slice &s, const DataArray &array);
+  [[maybe_unused]] Dataset &setSlice(const Slice &s, const Variable &var);
 
   void rename(const Dim from, const Dim to);
 
@@ -268,6 +268,9 @@ SCIPP_DATASET_EXPORT void union_or_in_place(Masks &masks,
                                             const Masks &otherMasks);
 
 SCIPP_DATASET_EXPORT Dataset merge(const Dataset &a, const Dataset &b);
+
+[[nodiscard]] SCIPP_DATASET_EXPORT bool equals_nan(const Dataset &a,
+                                                   const Dataset &b);
 
 } // namespace scipp::dataset
 

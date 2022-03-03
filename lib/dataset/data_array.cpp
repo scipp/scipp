@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/data_array.h"
@@ -100,6 +100,16 @@ bool operator==(const DataArray &a, const DataArray &b) {
 
 bool operator!=(const DataArray &a, const DataArray &b) {
   return !operator==(a, b);
+}
+
+bool equals_nan(const DataArray &a, const DataArray &b) {
+  if (!equals_nan(a.coords(), b.coords()))
+    return false;
+  if (!equals_nan(a.masks(), b.masks()))
+    return false;
+  if (!equals_nan(a.attrs(), b.attrs()))
+    return false;
+  return equals_nan(a.data(), b.data());
 }
 
 /// Return the name of the data array.

@@ -20,6 +20,7 @@ General
    logical_xor
    lookup
    merge
+   midpoints
    rebin
    reduce
    slices
@@ -53,6 +54,7 @@ Math
    mod
    multiply
    norm
+   pow
    reciprocal
    round
    sqrt
@@ -66,9 +68,9 @@ Shape
 
    broadcast
    concat
-   concatenate
    flatten
    fold
+   squeeze
    transpose
 
 Comparison

@@ -74,5 +74,5 @@ The event data described above can be used to produce such a histogram.
 
 Bin-edge coordinates are handled naturally by operations with datasets.
 Most operations on individual data elements are unaffected.
-Other operations such as ``concatenate`` take the edges into account and ensure that the resulting concatenated edge coordinate is well-defined.
+Other operations such as ``concat`` take the edges into account and ensure that the resulting concatenated edge coordinate is well-defined.
 There are also a number of operations specific to data with bin-edges, such as ``rebin``.

@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .view import PlotView
-from ..core import zeros
+from ..core import zeros, scalar
 import numpy as np
 from matplotlib.collections import PathCollection
 
@@ -50,7 +50,7 @@ class PlotView2d(PlotView):
         mask_info = next(iter(mask_info.values()))
         if len(mask_info) > 0:
             # Use automatic broadcasting in Scipp variables
-            msk = zeros(sizes=new_values.sizes, dtype='int32')
+            msk = zeros(sizes=new_values.sizes, dtype='int32', unit=None)
             for m, val in mask_info.items():
                 if val:
                     msk += new_values.masks[m].astype(msk.dtype)
@@ -107,7 +107,7 @@ class PlotView2d(PlotView):
         for dim in self.dims:
             low, high = self.current_lims[dim]
             unit = self._data.coords[dim].unit
-            limits[dim] = [low * unit, high * unit]
+            limits[dim] = [scalar(low, unit=unit), scalar(high, unit=unit)]
         return limits
 
     @property
@@ -116,7 +116,7 @@ class PlotView2d(PlotView):
         for dim in self.dims:
             low, high = self.global_lims[dim]
             unit = self._data.coords[dim].unit
-            limits[dim] = [low * unit, high * unit]
+            limits[dim] = [scalar(low, unit=unit), scalar(high, unit=unit)]
         return limits
 
     def _update_axes(self):

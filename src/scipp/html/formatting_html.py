@@ -8,7 +8,8 @@ from functools import partial, reduce
 from html import escape
 
 from .._scipp import core as sc
-from .. import stddevs
+from ..core import stddevs
+from ..utils import value_to_string
 from .resources import load_icons, load_style
 
 BIN_EDGE_LABEL = "[bin-edge]"
@@ -17,17 +18,14 @@ VARIANCES_SYMBOL = "σ²"
 SPARSE_PREFIX = "len={}"
 
 
-def _format_array(data, size, ellipsis_after, do_ellide=True):
+def _format_array(data, size, ellipsis_after, do_elide=True):
     i = 0
     s = []
     while i < size:
-        if do_ellide and i == ellipsis_after and size > 2 * ellipsis_after + 1:
+        if do_elide and i == ellipsis_after and size > 2 * ellipsis_after + 1:
             s.append("...")
             i = size - ellipsis_after
         elem = data[i]
-        if hasattr(elem, "__round__"):
-            if not hasattr(data, "dtype") or data.dtype != bool:
-                elem = round(elem, 2)
         if isinstance(elem, sc.DataArray):
             dims = ', '.join(f'{dim}: {s}' for dim, s in elem.sizes.items())
             coords = ', '.join(elem.coords)
@@ -36,12 +34,12 @@ def _format_array(data, size, ellipsis_after, do_ellide=True):
             else:
                 s.append(f'{{dims=[{dims}], unit={elem.unit}, coords=[{coords}]}}')
         else:
-            s.append(str(elem))
+            s.append(value_to_string(elem))
         i += 1
     return escape(", ".join(s))
 
 
-def _make_row(data_html, variances_html=None):
+def _make_row(data_html):
     return f"<div>{data_html}</div>"
 
 
@@ -62,13 +60,13 @@ def _format_non_events(var, has_variances):
     return _make_row(s)
 
 
-def _repr_item(s, bin_dim, item, ellipsis_after, do_ellide, summary):
+def _repr_item(s, bin_dim, item, ellipsis_after, do_elide, summary):
     shape = item.shape[bin_dim]
     if summary:
         s.append(SPARSE_PREFIX.format(shape))
     else:
         s.append('events({})'.format(
-            _format_array(item, shape, ellipsis_after, do_ellide)))
+            _format_array(item, shape, ellipsis_after, do_elide)))
 
 
 def _get_events(var, variances, ellipsis_after, summary=False):
@@ -98,7 +96,7 @@ def _get_events(var, variances, ellipsis_after, summary=False):
                    bin_dim,
                    var.value,
                    ellipsis_after,
-                   do_ellide=False,
+                   do_elide=False,
                    summary=summary)
     return s
 
@@ -247,7 +245,7 @@ def _make_inline_attributes(var, has_attrs, embedded_in):
     return disabled, attrs_ul
 
 
-def _make_dim_labels(dim, size, bin_edges=None):
+def _make_dim_labels(dim, bin_edges=None):
     # Note: the space needs to be here, otherwise
     # there is a trailing whitespace when no dimension
     # label has been added
@@ -259,7 +257,7 @@ def _make_dim_labels(dim, size, bin_edges=None):
 
 def _make_dim_str(var, bin_edges, add_dim_size=False):
     dims_text = ', '.join(
-        '{}{}{}'.format(str(dim), _make_dim_labels(dim, size, bin_edges),
+        '{}{}{}'.format(str(dim), _make_dim_labels(dim, bin_edges),
                         f': {size}' if add_dim_size and size is not None else '')
         for dim, size in zip(var.dims, var.shape))
     return dims_text
@@ -293,7 +291,10 @@ def summarize_variable(name,
             var,
             find_bin_edges(var, embedded_in) if embedded_in is not None else None,
             add_dim_size))
-    unit = '' if var.unit == sc.units.dimensionless else repr(var.unit)
+    if var.unit is None:
+        unit = ''
+    else:
+        unit = '𝟙' if var.unit == sc.units.dimensionless else repr(var.unit)
 
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs, embedded_in)
 
@@ -318,7 +319,7 @@ def summarize_variable(name,
             "</span></div>", f"<div class='sc-var-dims'>{escape(dims_str)}</div>"
         ]
     html += [
-        f"<div class='sc-var-dtype'>{escape(repr(var.dtype))}</div>",
+        f"<div class='sc-var-dtype'>{escape(str(var.dtype))}</div>",
         f"<div class='sc-var-unit'>{escape(unit)}</div>",
         f"<div class='sc-value-preview sc-preview'><span>{preview}</span>",
         "{}</div>".format(f'<span>{variances_preview}</span>'

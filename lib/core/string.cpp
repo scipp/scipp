@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <chrono>
@@ -19,6 +19,10 @@ namespace scipp::core {
 
 std::ostream &operator<<(std::ostream &os, const Dimensions &dims) {
   return os << to_string(dims);
+}
+
+std::ostream &operator<<(std::ostream &os, const scipp::index_pair &index) {
+  return os << to_string(index);
 }
 
 std::string to_string(const Dimensions &dims) {
@@ -97,6 +101,14 @@ std::string to_string(const std::chrono::duration<Rep, Period> &duration) {
   using Clock = std::chrono::system_clock;
 
   std::ostringstream oss;
+
+#ifdef _WIN32
+  // Windows' time functions (e.g. gmtime) don't support datetimes before 1970.
+  if (duration < std::chrono::duration<Rep, Period>::zero()) {
+    return "(datetime before 1970, cannot format)";
+  }
+#endif
+
   // Cast to seconds to be independent of clock precision.
   // Sub-second digits are formatted manually.
   put_time(oss,

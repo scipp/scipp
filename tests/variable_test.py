@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+import os
 
 import numpy as np
 import pytest
@@ -24,33 +25,33 @@ def test_astype():
     var = sc.Variable(dims=['x'],
                       values=np.array([1, 2, 3, 4], dtype=np.int64),
                       unit='s')
-    assert var.dtype == sc.dtype.int64
+    assert var.dtype == sc.DType.int64
     assert var.unit == sc.units.s
 
-    for target_dtype in (sc.dtype.float64, float, 'float64'):
+    for target_dtype in (sc.DType.float64, float, 'float64'):
         var_as_float = var.astype(target_dtype)
-        assert var_as_float.dtype == sc.dtype.float64
+        assert var_as_float.dtype == sc.DType.float64
         assert var_as_float.unit == sc.units.s
 
 
 def test_astype_bad_conversion():
     var = sc.Variable(dims=['x'], values=np.array([1, 2, 3, 4], dtype=np.int64))
-    assert var.dtype == sc.dtype.int64
+    assert var.dtype == sc.DType.int64
 
-    for target_dtype in (sc.dtype.string, str, 'str'):
+    for target_dtype in (sc.DType.string, str, 'str'):
         with pytest.raises(sc.DTypeError):
             var.astype(target_dtype)
 
 
 def test_astype_datetime():
     var = sc.arange('x', np.datetime64(1, 's'), np.datetime64(5, 's'))
-    assert var.dtype == sc.dtype.datetime64
+    assert var.dtype == sc.DType.datetime64
     assert var.unit == sc.units.s
 
-    for target_dtype in (sc.dtype.datetime64, np.datetime64, 'datetime64',
+    for target_dtype in (sc.DType.datetime64, np.datetime64, 'datetime64',
                          'datetime64[s]'):
         same = var.astype(target_dtype)
-        assert same.dtype == sc.dtype.datetime64
+        assert same.dtype == sc.DType.datetime64
         assert same.unit == sc.units.s
 
 
@@ -59,6 +60,23 @@ def test_astype_datetime_different_unit():
     assert var.unit == sc.units.s
     with pytest.raises(sc.UnitError):
         var.astype('datetime64[ms]')
+
+
+def test_datetime_repr():
+    # This test exists as windows time functions don't natively support times before
+    # 1970-01-01, which has historically been overlooked and caused crashes.
+    var = sc.datetimes(dims=["x"],
+                       values=[
+                           np.datetime64("1969-01-01T00:00:01", 's'),
+                           np.datetime64("1970-01-01T00:00:01", 's')
+                       ])
+
+    if os.name == "nt":
+        expected = "[(datetime before 1970, cannot format), 1970-01-01T00:00:01]"
+    else:
+        expected = "[1969-01-01T00:00:01, 1970-01-01T00:00:01]"
+
+    assert repr(var).endswith(expected)
 
 
 def test_operation_with_scalar_quantity():
@@ -138,7 +156,7 @@ def test_1D_converting():
 
 
 def test_1D_dataset():
-    var = sc.empty(dims=['x'], shape=(2, ), dtype=sc.dtype.Dataset)
+    var = sc.empty(dims=['x'], shape=(2, ), dtype=sc.DType.Dataset)
     d1 = sc.Dataset(data={'a': 1.5 * sc.units.m})
     d2 = sc.Dataset(data={'a': 2.5 * sc.units.m})
     var.values = [d1, d2]
@@ -207,10 +225,10 @@ def test_getitem_range():
 
 
 def test_setitem_broadcast():
-    var = sc.Variable(dims=['x'], values=[1, 2, 3, 4], dtype=sc.dtype.int64)
-    var['x', 1:3] = sc.scalar(5, dtype=sc.dtype.int64)
+    var = sc.Variable(dims=['x'], values=[1, 2, 3, 4], dtype=sc.DType.int64)
+    var['x', 1:3] = sc.scalar(5, dtype=sc.DType.int64)
     assert sc.identical(
-        var, sc.Variable(dims=['x'], values=[1, 5, 5, 4], dtype=sc.dtype.int64))
+        var, sc.Variable(dims=['x'], values=[1, 5, 5, 4], dtype=sc.DType.int64))
 
 
 def test_slicing():
@@ -507,26 +525,10 @@ def test_binary_not_equal():
     assert not sc.identical(c, a_slice)
 
 
-def test_abs():
-    assert_export(sc.abs, sc.Variable(dims=(), values=0.0))
-
-
-def test_abs_out():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.abs, var, out=var)
-
-
-def test_dot():
-    assert_export(sc.dot, sc.vector(value=[0, 0, 1]), sc.vector(value=[0, 0, 1]))
-
-
-def test_cross():
-    assert_export(sc.cross, sc.vector(value=[0, 0, 1]), sc.vector(value=[0, 0, 1]))
-
-
-def test_concatenate():
-    assert_export(sc.concatenate, sc.Variable(dims=(), values=0.0),
-                  sc.Variable(dims=(), values=0.0), 'x')
+def test_concat():
+    assert_export(sc.concat,
+                  [sc.Variable(dims=(), values=0.0),
+                   sc.Variable(dims=(), values=0.0)], 'x')
 
 
 def test_mean():
@@ -536,24 +538,6 @@ def test_mean():
 def test_mean_in_place():
     var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.mean, sc.Variable(dims=(), values=0.0), 'x', var)
-
-
-def test_norm():
-    assert_export(sc.norm, sc.Variable(dims=(), values=0.0))
-
-
-def test_pow():
-    assert_export(sc.pow, sc.Variable(dims=(), values=0.0),
-                  sc.Variable(dims=(), values=0.0))
-
-
-def test_sqrt():
-    assert_export(sc.sqrt, sc.Variable(dims=(), values=0.0))
-
-
-def test_sqrt_out():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.sqrt, var, var)
 
 
 def test_values_variances():
@@ -662,33 +646,25 @@ def test_rename_dims():
     assert sc.identical(xy, original)
 
 
+def test_rename():
+    values = np.arange(6).reshape(2, 3)
+    xy = sc.Variable(dims=['x', 'y'], values=values)
+    original = xy.copy()
+    zy = sc.Variable(dims=['z', 'y'], values=values)
+    assert sc.identical(xy.rename({'x': 'z'}), zy)
+    assert sc.identical(xy, original)
+
+
+def test_rename_kwargs():
+    values = np.arange(6).reshape(2, 3)
+    xy = sc.Variable(dims=['x', 'y'], values=values)
+    zy = sc.Variable(dims=['z', 'y'], values=values)
+    assert sc.identical(xy.rename(x='z'), zy)
+
+
 def test_bool_variable_repr():
     a = sc.Variable(dims=['x'], values=np.array([False, True, True, False, True]))
     assert [expected in repr(a) for expected in ["True", "False", "..."]]
-
-
-def test_reciprocal():
-    assert_export(sc.reciprocal, sc.Variable(dims=(), values=0.0))
-
-
-def test_reciprocal_out():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.reciprocal, var, var)
-
-
-def test_exp():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.exp, x=var)
-
-
-def test_log():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.log, x=var)
-
-
-def test_log10():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.log10, x=var)
 
 
 def test_sin():
@@ -876,26 +852,26 @@ def test_comparison():
 
 def test_radd_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var + 1).dtype == sc.dtype.int64
-    assert (1 + var).dtype == sc.dtype.int64
+    assert (var + 1).dtype == sc.DType.int64
+    assert (1 + var).dtype == sc.DType.int64
 
 
 def test_rsub_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var - 1).dtype == sc.dtype.int64
-    assert (1 - var).dtype == sc.dtype.int64
+    assert (var - 1).dtype == sc.DType.int64
+    assert (1 - var).dtype == sc.DType.int64
 
 
 def test_rmul_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var * 1).dtype == sc.dtype.int64
-    assert (1 * var).dtype == sc.dtype.int64
+    assert (var * 1).dtype == sc.DType.int64
+    assert (1 * var).dtype == sc.DType.int64
 
 
 def test_rtruediv_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var / 1).dtype == sc.dtype.float64
-    assert (1 / var).dtype == sc.dtype.float64
+    assert (var / 1).dtype == sc.DType.float64
+    assert (1 / var).dtype == sc.DType.float64
 
 
 def test_sort():
@@ -917,22 +893,88 @@ def test_islinspace_false():
     assert not sc.islinspace(x).value
 
 
-def _test_rounding(rounding_function, input_, output):
-    x = sc.Variable(dims=['x'], values=input_)
-    x_out = sc.Variable(dims=['x'], values=input_)
-    expected = sc.Variable(dims=['x'], values=output)
-    assert sc.identical(rounding_function(x), expected)
-    rounding_function(x, out=x_out)
-    assert sc.identical(x_out, expected)
+def test_to_int64_to_float64():
+    # If unit conversion is done first followed by dtype conversion, this will be lossy.
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
+
+    assert sc.identical(
+        data.to(unit="km", dtype="float64"),
+        sc.array(dims=["x"], values=[0.001, 0.002, 0.003], dtype="float64", unit="km"))
 
 
-def test_round():
-    _test_rounding(sc.round, (1.1, 1.5, 2.5, 4.7), (1., 2., 2., 5.))
+def test_to_int64_to_float32():
+    # If unit conversion is done first followed by dtype conversion, this will be lossy.
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
+
+    assert sc.identical(
+        data.to(unit="km", dtype="float32"),
+        sc.array(dims=["x"], values=[0.001, 0.002, 0.003], dtype="float32", unit="km"))
 
 
-def test_ceil():
-    _test_rounding(sc.ceil, (1.1, 1.5, 2.5, 4.7), (2., 2., 3., 5.))
+def test_to_float64_to_int64():
+    # Will be lossy if dtype conversion done before unit conversion
+    data = sc.array(dims=["x"], values=[0.001, 0.002, 0.003], dtype="float64", unit="m")
+
+    assert sc.identical(
+        data.to(unit="mm", dtype="int64"),
+        sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="mm"))
 
 
-def test_floor():
-    _test_rounding(sc.floor, (1.1, 1.5, 2.5, 4.7), (1., 1., 2., 4.))
+def test_to_float32_to_int64():
+    # Will be lossy if dtype conversion done before unit conversion
+    data = sc.array(dims=["x"], values=[0.001, 0.002, 0.003], dtype="float32", unit="m")
+
+    assert sc.identical(
+        data.to(unit="mm", dtype="int64"),
+        sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="mm"))
+
+
+def test_to_int64_to_int32():
+    # Will be lossy if dtype conversion done first
+    data = sc.array(dims=["x"], values=[1000 * 2**30], dtype="int64", unit="m")
+
+    assert sc.identical(data.to(unit="km", dtype="int32"),
+                        sc.array(dims=["x"], values=[2**30], dtype="int32", unit="km"))
+
+
+def test_to_int32_to_int64():
+    # Will be lossy if unit conversion done first
+    data = sc.array(dims=["x"], values=[2**30], dtype="int32", unit="m")
+
+    assert sc.identical(
+        data.to(unit="mm", dtype="int64"),
+        sc.array(dims=["x"], values=[1000 * 2**30], dtype="int64", unit="mm"))
+
+
+def test_to_without_unit():
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int32", unit="m")
+
+    assert sc.identical(data.to(dtype="int64"),
+                        sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m"))
+
+
+def test_to_without_dtype():
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
+
+    assert sc.identical(
+        data.to(unit="mm"),
+        sc.array(dims=["x"], values=[1000, 2000, 3000], dtype="int64", unit="mm"))
+
+
+def test_to_without_any_arguments():
+    data = sc.array(dims=["x"], values=[1, 2, 3], dtype="int64", unit="m")
+
+    with pytest.raises(ValueError):
+        data.to()
+
+
+def test_setting_float_unit_property_to_default_gives_dimensionless():
+    var = sc.scalar(1.2, unit='m')
+    var.unit = sc.units.default_unit
+    assert var.unit == sc.units.one
+
+
+def test_setting_string_unit_property_to_default_gives_none():
+    var = sc.scalar('abc', unit='m')
+    var.unit = sc.units.default_unit
+    assert var.unit is None

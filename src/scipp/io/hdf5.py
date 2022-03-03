@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
 
@@ -11,14 +11,15 @@ from ..typing import VariableLike
 
 
 def _dtype_lut():
-    from .._scipp.core import dtype as d
+    from .._scipp.core import DType as d
     # For types understood by numpy we do not actually need this special
     # handling, but will do as we add support for other types such as
     # variable-length strings.
     dtypes = [
         d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64, d.string,
         d.Variable, d.DataArray, d.Dataset, d.VariableView, d.DataArrayView,
-        d.DatasetView, d.vector_3_float64, d.matrix_3_float64
+        d.DatasetView, d.vector3, d.linear_transform3, d.affine_transform3,
+        d.translation3, d.rotation3
     ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
@@ -145,11 +146,11 @@ def _check_scipp_header(group, what):
 
 
 def _data_handler_lut():
-    from .._scipp.core import dtype as d
+    from .._scipp.core import DType as d
     handler = {}
     for dtype in [
-            d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64,
-            d.vector_3_float64, d.matrix_3_float64
+            d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64, d.vector3,
+            d.linear_transform3, d.rotation3, d.translation3, d.affine_transform3
     ]:
         handler[str(dtype)] = NumpyDataIO
     for dtype in [d.VariableView, d.DataArrayView, d.DatasetView]:
@@ -185,18 +186,22 @@ class VariableIO:
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
         dset.attrs['shape'] = var.shape
         dset.attrs['dtype'] = str(var.dtype)
-        dset.attrs['unit'] = str(var.unit)
+        if var.unit is not None:
+            dset.attrs['unit'] = str(var.unit)
         return group
 
     @classmethod
     def read(cls, group):
         _check_scipp_header(group, 'Variable')
         from .._scipp import core as sc
-        from .._scipp.core import dtype as d
+        from .._scipp.core import DType as d
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
         contents['dtype'] = cls._dtypes[values.attrs['dtype']]
-        contents['unit'] = sc.Unit(values.attrs['unit'])
+        if 'unit' in values.attrs:
+            contents['unit'] = sc.Unit(values.attrs['unit'])
+        else:
+            contents['unit'] = None  # essential, otherwise default unit is used
         contents['with_variances'] = 'variances' in group
         if contents['dtype'] in [d.VariableView, d.DataArrayView, d.DatasetView]:
             var = BinDataIO.read(group)

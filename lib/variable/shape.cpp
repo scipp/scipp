@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <algorithm>
@@ -131,12 +131,33 @@ Variable transpose(const Variable &var, const scipp::span<const Dim> dims) {
   return var.transpose(dims);
 }
 
-Variable squeeze(const Variable &var, const std::vector<Dim> &dims) {
+std::vector<scipp::Dim>
+dims_for_squeezing(const core::Sizes &data_dims,
+                   const std::optional<scipp::span<const Dim>> selected_dims) {
+  if (selected_dims.has_value()) {
+    for (const auto &dim : *selected_dims) {
+      if (const auto size = data_dims[dim]; size != 1)
+        throw except::DimensionError("Cannot squeeze '" + to_string(dim) +
+                                     "' of length " + std::to_string(size) +
+                                     ", must be of length 1.");
+    }
+    return std::vector<Dim>{selected_dims->begin(), selected_dims->end()};
+  } else {
+    std::vector<Dim> length_1_dims;
+    length_1_dims.reserve(data_dims.size());
+    for (const auto &dim : data_dims) {
+      if (data_dims[dim] == 1) {
+        length_1_dims.push_back(dim);
+      }
+    }
+    return length_1_dims;
+  }
+}
+
+Variable squeeze(const Variable &var,
+                 const std::optional<scipp::span<const Dim>> dims) {
   auto squeezed = var;
-  for (const auto &dim : dims) {
-    if (squeezed.dims()[dim] != 1)
-      throw except::DimensionError("Cannot squeeze '" + to_string(dim) +
-                                   "' since it is not of length 1.");
+  for (const auto &dim : dims_for_squeezing(var.dims(), dims)) {
     squeezed = squeezed.slice({dim, 0});
   }
   return squeezed;

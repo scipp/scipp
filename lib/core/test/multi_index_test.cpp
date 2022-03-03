@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 #include <vector>
 
@@ -128,6 +128,7 @@ protected:
 
 Strides make_strides(const Dimensions &iter_dims, const Dimensions &data_dims) {
   Strides strides;
+  strides.resize(iter_dims.ndim());
   scipp::index d = 0;
   for (const auto &dim : iter_dims.labels()) {
     if (data_dims.contains(dim))

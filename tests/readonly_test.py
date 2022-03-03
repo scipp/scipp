@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import numpy as np
 import pytest
@@ -130,7 +130,7 @@ def test_readonly_metadata():
 
 def test_readonly_metadata_broadcast_sets_readonly_flag():
     da = _make_data_array()
-    da = sc.concatenate(da, da, 'y')
+    da = sc.concat([da, da], 'y')
     assert_variable_readonly(da['y', 1].coords['x'])
     assert_variable_readonly(da['y', 1].masks['m'])
     assert_variable_readonly(da['y', 1].attrs['a'])

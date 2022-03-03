@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 /// @author Neil Vaytet
@@ -31,16 +31,18 @@ std::string map_unit_string(const std::string &unit) {
 Unit::Unit(const std::string &unit)
     : Unit(llnl::units::unit_from_string(map_unit_string(unit),
                                          llnl::units::strict_si)) {
-  if (!is_valid(m_unit))
+  if (!is_valid(m_unit.value()))
     throw except::UnitError("Failed to convert string `" + unit +
                             "` to valid unit.");
 }
 
 std::string Unit::name() const {
+  if (!has_value())
+    return "None";
   if (*this == Unit{"month"}) {
     return "M";
   }
-  auto repr = to_string(m_unit);
+  auto repr = to_string(*m_unit);
   repr = std::regex_replace(repr, std::regex("^u"), "µ");
   repr = std::regex_replace(repr, std::regex("item"), "count");
   repr = std::regex_replace(repr, std::regex("count(?!s)"), "counts");
@@ -52,11 +54,11 @@ std::string Unit::name() const {
 bool Unit::isCounts() const { return *this == counts; }
 
 bool Unit::isCountDensity() const {
-  return !isCounts() && m_unit.base_units().count() != 0;
+  return has_value() && !isCounts() && m_unit->base_units().count() != 0;
 }
 
 bool Unit::has_same_base(const Unit &other) const {
-  return m_unit.has_same_base(other.underlying());
+  return has_value() && m_unit->has_same_base(other.underlying());
 }
 
 bool Unit::operator==(const Unit &other) const {
@@ -72,7 +74,7 @@ Unit &Unit::operator*=(const Unit &other) { return *this = *this * other; }
 
 Unit &Unit::operator/=(const Unit &other) { return *this = *this / other; }
 
-Unit &Unit::operator%=([[maybe_unused]] const Unit &other) { return *this; }
+Unit &Unit::operator%=(const Unit &other) { return *this = *this % other; }
 
 Unit operator+(const Unit &a, const Unit &b) {
   if (a == b)
@@ -87,7 +89,18 @@ Unit operator-(const Unit &a, const Unit &b) {
                           ".");
 }
 
+namespace {
+void expect_not_none(const Unit &u, const std::string &name) {
+  if (!u.has_value())
+    throw except::UnitError("Cannot " + name + " with operand of unit 'None'.");
+}
+} // namespace
+
 Unit operator*(const Unit &a, const Unit &b) {
+  if (a == none && b == none)
+    return none;
+  expect_not_none(a, "multiply");
+  expect_not_none(b, "multiply");
   if (llnl::units::times_overflows(a.underlying(), b.underlying()))
     throw except::UnitError("Unsupported unit as result of multiplication: (" +
                             a.name() + ") * (" + b.name() + ')');
@@ -95,13 +108,23 @@ Unit operator*(const Unit &a, const Unit &b) {
 }
 
 Unit operator/(const Unit &a, const Unit &b) {
+  if (a == none && b == none)
+    return none;
+  expect_not_none(a, "divide");
+  expect_not_none(b, "divide");
   if (llnl::units::divides_overflows(a.underlying(), b.underlying()))
     throw except::UnitError("Unsupported unit as result of division: (" +
                             a.name() + ") / (" + b.name() + ')');
   return Unit{a.underlying() / b.underlying()};
 }
 
-Unit operator%(const Unit &a, [[maybe_unused]] const Unit &b) { return a; }
+Unit operator%(const Unit &a, const Unit &b) {
+  if (a == none && b == none)
+    return a;
+  expect_not_none(a, "modulo");
+  expect_not_none(b, "modulo");
+  return a;
+}
 
 Unit operator-(const Unit &a) { return a; }
 
@@ -114,6 +137,8 @@ Unit ceil(const Unit &a) { return a; }
 Unit rint(const Unit &a) { return a; }
 
 Unit sqrt(const Unit &a) {
+  if (a == none)
+    return a;
   if (llnl::units::is_error(sqrt(a.underlying())))
     throw except::UnitError("Unsupported unit as result of sqrt: sqrt(" +
                             a.name() + ").");
@@ -121,6 +146,8 @@ Unit sqrt(const Unit &a) {
 }
 
 Unit pow(const Unit &a, const int64_t power) {
+  if (a == none)
+    return a;
   if (llnl::units::pow_overflows(a.underlying(), power))
     throw except::UnitError("Unsupported unit as result of pow: pow(" +
                             a.name() + ", " + std::to_string(power) + ").");
@@ -149,6 +176,8 @@ Unit asin(const Unit &a) { return inverse_trigonometric(a); }
 Unit acos(const Unit &a) { return inverse_trigonometric(a); }
 Unit atan(const Unit &a) { return inverse_trigonometric(a); }
 Unit atan2(const Unit &y, const Unit &x) {
+  expect_not_none(x, "atan2");
+  expect_not_none(y, "atan2");
   if (x == y)
     return units::rad;
   throw except::UnitError(

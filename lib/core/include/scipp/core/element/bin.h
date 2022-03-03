@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -45,7 +45,7 @@ static constexpr auto update_indices_by_binning = overloaded{
     [](units::Unit &indices, const units::Unit &coord,
        const units::Unit &groups) {
       expect::equals(coord, groups);
-      expect::equals(indices, units::one);
+      expect::equals(indices, units::none);
     },
     transform_flags::expect_no_variance_arg<1>,
     transform_flags::expect_no_variance_arg<2>};
@@ -119,7 +119,7 @@ static constexpr auto update_indices_by_grouping = overloaded{
     [](units::Unit &indices, const units::Unit &coord,
        const units::Unit &groups) {
       expect::equals(coord, groups);
-      expect::equals(indices, units::one);
+      expect::equals(indices, units::none);
     },
     [](auto &index, const auto &x, const auto &groups) {
       if (index == -1)
@@ -140,52 +140,15 @@ static constexpr auto update_indices_from_existing = overloaded{
       index += bin_index;
     }};
 
-// - Each span covers an *input* bin.
-// - `offsets` Start indices of the output bins
-// - `bin_indices` Target output bin index (within input bin)
-template <class T, class Index>
-using bin_arg = std::tuple<scipp::span<T>, SubbinSizes, scipp::span<const T>,
-                           scipp::span<const Index>>;
-static constexpr auto bin = overloaded{
-    element::arg_list<
-        bin_arg<double, int64_t>, bin_arg<double, int32_t>,
-        bin_arg<float, int64_t>, bin_arg<float, int32_t>,
-        bin_arg<int64_t, int64_t>, bin_arg<int64_t, int32_t>,
-        bin_arg<int32_t, int64_t>, bin_arg<int32_t, int32_t>,
-        bin_arg<bool, int64_t>, bin_arg<bool, int32_t>,
-        bin_arg<Eigen::Vector3d, int64_t>, bin_arg<Eigen::Vector3d, int32_t>,
-        bin_arg<std::string, int64_t>, bin_arg<std::string, int32_t>,
-        bin_arg<time_point, int64_t>, bin_arg<time_point, int32_t>>,
-    transform_flags::expect_in_variance_if_out_variance,
-    [](units::Unit &binned, const units::Unit &, const units::Unit &data,
-       const units::Unit &) { binned = data; },
-    [](const auto &binned, const auto &offsets, const auto &data,
-       const auto &bin_indices) {
-      auto bins(offsets.sizes());
-      const auto size = scipp::size(bin_indices);
-      using T = std::decay_t<decltype(data)>;
-      for (scipp::index i = 0; i < size; ++i) {
-        const auto i_bin = bin_indices[i];
-        if (i_bin < 0)
-          continue;
-        if constexpr (is_ValueAndVariance_v<T>) {
-          binned.variance[bins[i_bin]] = data.variance[i];
-          binned.value[bins[i_bin]++] = data.value[i];
-        } else {
-          binned[bins[i_bin]++] = data[i];
-        }
-      }
-    }};
-
 static constexpr auto count_indices = overloaded{
     element::arg_list<
         std::tuple<scipp::span<const int64_t>, scipp::index, scipp::index>,
         std::tuple<scipp::span<const int32_t>, scipp::index, scipp::index>>,
     [](const units::Unit &indices, const auto &offset, const auto &nbin) {
-      expect::equals(indices, units::one);
-      expect::equals(offset, units::one);
-      expect::equals(nbin, units::one);
-      return units::one;
+      expect::equals(indices, units::none);
+      expect::equals(offset, units::none);
+      expect::equals(nbin, units::none);
+      return units::none;
     },
     [](const auto &indices, const auto offset, const auto nbin) {
       typename SubbinSizes::container_type counts(nbin);

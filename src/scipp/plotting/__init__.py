@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 
@@ -85,6 +85,16 @@ def plot(*args, **kwargs):
         the tics for a dimension. If not specifified the dimension coordinate
         is used. `labels={"time": "time-labels"}`. Defaults to `None`.
     :type labels: dict, optional
+
+    :param camera: Dict configuring the camera. Valid entries are 'position' and
+        'look_at'. This option is valid only for 3-D scatter plots.
+        The 'position' entry defines the position of the camera and the 'look_at'
+        entry defines the point the camera is looking at.
+        Both must be variables containing a single vector with the correct unit,
+        i.e., a unit compatible with the unit of the scatter point positions.
+        Defaults to `None`, in which case the camera looks at the center of the
+        cloud of plotted points.
+    :type camera: dict, optional
 
     :param cax: Attach colorbar to supplied Matplotlib axes.
         Defaults to `None`.

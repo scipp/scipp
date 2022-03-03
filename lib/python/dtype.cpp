@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "dtype.h"
@@ -48,12 +48,21 @@ constexpr bool operator==(const scipp::index a, const DTypeSize b) {
 } // namespace
 
 void init_dtype(py::module &m) {
-  py::class_<DType>(m, "_DType")
-      .def(py::self == py::self)
-      .def("__repr__", [](const DType self) { return to_string(self); });
-  auto dtype = m.def_submodule("dtype");
+  py::class_<DType> PyDType(m, "DType", R"(
+Representation of a data type of a Variable in scipp.
+See https://scipp.github.io/reference/dtype.html for details.)");
+  PyDType.def(py::init([](const py::object &x) { return scipp_dtype(x); }))
+      .def("__eq__",
+           [](const DType &self, const py::object &other) {
+             return self == scipp_dtype(other);
+           })
+      .def("__str__", [](const DType &self) { return to_string(self); })
+      .def("__repr__", [](const DType &self) {
+        return "DType('" + to_string(self) + "')";
+      });
   for (const auto &[key, name] : core::dtypeNameRegistry()) {
-    dtype.attr(name.c_str()) = key;
+    PyDType.def_property_readonly_static(
+        name.c_str(), [k = key](const py::object &) { return k; });
   }
 }
 
@@ -132,14 +141,19 @@ scipp::core::DType scipp_dtype(const py::object &type) {
   }
 }
 
-std::tuple<scipp::core::DType, scipp::units::Unit>
-cast_dtype_and_unit(const pybind11::object &dtype,
-                    const std::optional<ProtoUnit> unit) {
+namespace {
+bool is_default(const ProtoUnit &unit) {
+  return std::holds_alternative<DefaultUnit>(unit);
+}
+} // namespace
+
+std::tuple<scipp::core::DType, std::optional<scipp::units::Unit>>
+cast_dtype_and_unit(const pybind11::object &dtype, const ProtoUnit &unit) {
   const auto scipp_dtype = ::scipp_dtype(dtype);
   if (scipp_dtype == core::dtype<core::time_point>) {
     units::Unit deduced_unit = parse_datetime_dtype(dtype);
-    if (unit.has_value()) {
-      const auto unit_ = make_unit(*unit);
+    if (!is_default(unit)) {
+      const auto unit_ = unit_or_default(unit, scipp_dtype);
       if (deduced_unit != units::one && unit_ != deduced_unit) {
         throw std::invalid_argument(
             python::format("The unit encoded in the dtype (", deduced_unit,
@@ -150,7 +164,11 @@ cast_dtype_and_unit(const pybind11::object &dtype,
     }
     return std::tuple{scipp_dtype, deduced_unit};
   } else {
-    return std::tuple{scipp_dtype, make_unit(unit.value_or(units::one))};
+    // Concrete dtype not known at this point so we cannot determine the default
+    // unit here. Therefore nullopt is returned.
+    return std::tuple{scipp_dtype, is_default(unit)
+                                       ? std::optional<scipp::units::Unit>()
+                                       : unit_or_default(unit)};
   }
 }
 
@@ -211,7 +229,8 @@ bool has_datetime_dtype(const py::object &obj) {
 
 [[nodiscard]] scipp::units::Unit
 parse_datetime_dtype(const std::string &dtype_name) {
-  static std::regex datetime_regex{R"(datetime64(\[(\w+)\])?)"};
+  static std::regex datetime_regex{R"(datetime64(\[(\w+)\])?)",
+                                   std::regex_constants::optimize};
   constexpr size_t unit_idx = 2;
   std::smatch match;
   if (!std::regex_match(dtype_name, match, datetime_regex) ||

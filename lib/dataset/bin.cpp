@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <numeric>
@@ -24,10 +24,12 @@
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/except.h"
 
+#include "bin_detail.h"
 #include "bins_util.h"
 #include "dataset_operations_common.h"
 
 using namespace scipp::variable::bin_detail;
+using namespace scipp::dataset::bin_detail;
 
 namespace scipp::dataset {
 
@@ -43,7 +45,7 @@ template <class T> Variable as_subspan_view(T &&binned) {
 
 auto make_range(const scipp::index begin, const scipp::index end,
                 const scipp::index stride, const Dim dim) {
-  return cumsum(broadcast(stride * units::one, {dim, (end - begin) / stride}),
+  return cumsum(broadcast(stride * units::none, {dim, (end - begin) / stride}),
                 dim, CumSumMode::Exclusive);
 }
 
@@ -92,7 +94,7 @@ void update_indices_by_grouping(Variable &indices, const Variable &key,
 void update_indices_from_existing(Variable &indices, const Dim dim) {
   const scipp::index nbin = indices.dims()[dim];
   const auto index = make_range(0, nbin, 1, dim);
-  variable::transform_in_place(indices, index, nbin * units::one,
+  variable::transform_in_place(indices, index, nbin * units::none,
                                core::element::update_indices_from_existing,
                                "scipp.bin.update_indices_from_existing");
 }
@@ -154,10 +156,10 @@ auto bin(const Variable &data, const Variable &indices,
             var.template constituents<Variable>();
         static_cast<void>(input_indices);
         auto out = resize_default_init(in_buffer, buffer_dim, total_size);
-        transform_in_place(
-            subspan_view(out, buffer_dim, filtered_input_bin_ranges), offsets,
-            as_subspan_view(var), as_subspan_view(indices), core::element::bin,
-            "bin");
+        auto out_subspans =
+            subspan_view(out, buffer_dim, filtered_input_bin_ranges);
+        map_to_bins(out_subspans, as_subspan_view(var), offsets,
+                    as_subspan_view(indices));
         return out;
       });
 
@@ -165,7 +167,7 @@ auto bin(const Variable &data, const Variable &indices,
   // Now switch to desired final bin indices.
   auto output_dims = merge(output_bin_sizes.dims(), dims);
   auto bin_sizes = makeVariable<scipp::index>(
-      output_dims,
+      output_dims, units::none,
       Values(flatten_subbin_sizes(output_bin_sizes, dims.volume())));
   return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
 }
@@ -251,8 +253,8 @@ public:
     const auto get_coord = [&](const Dim dim) {
       return coords.count(dim) ? coords[dim] : bin_coords.at(dim);
     };
-    m_offsets = makeVariable<scipp::index>(Values{0});
-    m_nbin = dims().volume() * units::one;
+    m_offsets = makeVariable<scipp::index>(Values{0}, units::none);
+    m_nbin = dims().volume() * units::none;
     for (const auto &[action, dim, key] : m_actions) {
       if (action == AxisAction::Group)
         update_indices_by_grouping(indices, get_coord(dim), key);
@@ -282,7 +284,8 @@ public:
         // algorithm, `indices`, containing the index of the target bin for
         // every input event. This is unrelated and varies independently,
         // depending on parameters of the input.
-        if (bin_coords.count(dim) && m_offsets.dims().empty() &&
+        if (key.ndim() == 1 && // index setup not implemented for this case
+            bin_coords.count(dim) && m_offsets.dims().empty() &&
             bin_coords.at(dim).dims().contains(dim) &&
             allsorted(bin_coords.at(dim), dim)) {
           const auto &bin_coord = bin_coords.at(dim);
@@ -291,11 +294,11 @@ public:
           const auto begin =
               begin_edge(histogram ? left_edge(bin_coord) : bin_coord, key);
           const auto end = histogram ? end_edge(right_edge(bin_coord), key)
-                                     : begin + 2 * units::one;
+                                     : begin + 2 * units::none;
           const auto indices_ = zip(begin, end);
-          const auto inner_volume = dims().volume() / dims()[dim] * units::one;
+          const auto inner_volume = dims().volume() / dims()[dim] * units::none;
           // Number of non-zero entries (per "row" above)
-          m_nbin = (end - begin - 1 * units::one) * inner_volume;
+          m_nbin = (end - begin - 1 * units::none) * inner_volume;
           // Offset to first non-zero entry (in "row" above)
           m_offsets = begin * inner_volume;
           // Mask out any output bin edges that need not be considered since
@@ -315,7 +318,7 @@ public:
         // no other actions affecting output dimensions.
         if (m_offsets.dims().empty() && m_dims[dim] == m_dims.volume()) {
           // Offset to output bin tracked using base offset for input bins
-          m_nbin = scipp::index{1} * units::one;
+          m_nbin = scipp::index{1} * units::none;
           m_offsets = make_range(0, m_dims[dim], 1, dim);
         } else {
           // Offset to output bin tracked in indices for individual events
@@ -443,9 +446,10 @@ public:
     // right now bin<> cannot handle this and requires target bin indices for
     // every bin element.
     const auto &[begin_end, dim, buffer] = var.constituents<T>();
-    m_target_bins_buffer = (dims.volume() > std::numeric_limits<int32_t>::max())
-                               ? makeVariable<int64_t>(buffer.dims())
-                               : makeVariable<int32_t>(buffer.dims());
+    m_target_bins_buffer =
+        (dims.volume() > std::numeric_limits<int32_t>::max())
+            ? makeVariable<int64_t>(buffer.dims(), units::none)
+            : makeVariable<int32_t>(buffer.dims(), units::none);
     m_target_bins = make_bins_no_validate(begin_end, dim, m_target_bins_buffer);
   }
   auto &operator*() noexcept { return m_target_bins; }
@@ -468,7 +472,7 @@ template <class T> Variable concat_bins(const Variable &var, const Dim dim) {
 
   builder.build(*target_bins, std::map<Dim, Variable>{});
   auto [buffer, bin_sizes] = bin<DataArray>(var, *target_bins, builder);
-  bin_sizes = squeeze(bin_sizes, {dim});
+  bin_sizes = squeeze(bin_sizes, scipp::span{&dim, 1});
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
   return make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer));
@@ -558,6 +562,7 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
   validate_bin_args(array, edges, groups);
   const auto &data = array.data();
   const auto &coords = array.coords();
+  const auto &meta = array.meta();
   const auto &masks = array.masks();
   const auto &attrs = array.attrs();
   if (data.dtype() == dtype<core::bin<DataArray>>) {
@@ -571,16 +576,16 @@ DataArray bin(const DataArray &array, const std::vector<Variable> &edges,
     auto begin = make_range(0, size, stride,
                             groups.empty() ? edges.front().dims().inner()
                                            : groups.front().dims().inner());
-    auto end = begin + stride * units::one;
+    auto end = begin + stride * units::none;
     end.values<scipp::index>().as_span().back() = data.dims()[dim];
     const auto indices = zip(begin, end);
     const auto tmp = make_bins_no_validate(indices, dim, array);
     auto target_bins_buffer =
         (data.dims().volume() > std::numeric_limits<int32_t>::max())
-            ? makeVariable<int64_t>(data.dims())
-            : makeVariable<int32_t>(data.dims());
-    auto builder = axis_actions(data, coords, edges, groups, erase);
-    builder.build(target_bins_buffer, coords);
+            ? makeVariable<int64_t>(data.dims(), units::none)
+            : makeVariable<int32_t>(data.dims(), units::none);
+    auto builder = axis_actions(data, meta, edges, groups, erase);
+    builder.build(target_bins_buffer, meta);
     const auto target_bins =
         make_bins_no_validate(indices, dim, target_bins_buffer);
     return add_metadata(bin<DataArray>(drop_grouped_event_coords(tmp, groups),
@@ -608,20 +613,15 @@ DataArray bin(const Variable &data, const Coords &coords, const Masks &masks,
               const Attrs &attrs, const std::vector<Variable> &edges,
               const std::vector<Variable> &groups,
               const std::vector<Dim> &erase) {
-  auto builder = axis_actions(data, coords, edges, groups, erase);
+  const auto meta = attrs.merge_from(coords);
+  auto builder = axis_actions(data, meta, edges, groups, erase);
   const auto masked = hide_masked(data, masks, builder.dims().labels());
   TargetBins<DataArray> target_bins(masked, builder.dims());
-  builder.build(*target_bins, bins_view<DataArray>(masked).coords(), coords);
+  builder.build(*target_bins, bins_view<DataArray>(masked).meta(), meta);
   return add_metadata(bin<DataArray>(drop_grouped_event_coords(masked, groups),
                                      *target_bins, builder),
                       coords, masks, attrs, builder.edges(), builder.groups(),
                       erase);
 }
-
-template SCIPP_DATASET_EXPORT DataArray
-bin(const Variable &, const std::map<Dim, Variable> &,
-    const std::map<std::string, Variable> &, const std::map<Dim, Variable> &,
-    const std::vector<Variable> &, const std::vector<Variable> &,
-    const std::vector<Dim> &);
 
 } // namespace scipp::dataset

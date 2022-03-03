@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet, Simon Heybrock
 
@@ -17,7 +17,7 @@ class PlotModel2d(PlotModel):
         self._model = None
         super().__init__(*args, **kwargs)
         if resolution is None:
-            self._resolution = [config.plot.height, config.plot.width]
+            self._resolution = [config['plot']['height'], config['plot']['width']]
         elif isinstance(resolution, int):
             self._resolution = [resolution, resolution]
         else:

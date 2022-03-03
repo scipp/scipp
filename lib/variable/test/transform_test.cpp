@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 #include <vector>
 
@@ -174,7 +174,7 @@ TEST_F(TransformInPlaceDryRunTest, dimensions_fail) {
 
   EXPECT_THROW(
       dry_run::transform_in_place<pair_self_t<double>>(a, b, binary, name),
-      except::NotFoundError);
+      except::DimensionError);
   EXPECT_EQ(a, original);
 }
 

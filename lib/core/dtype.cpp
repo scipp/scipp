@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <ostream>
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/eigen.h"
+#include "scipp/core/spatial_transforms.h"
 #include "scipp/core/string.h"
 
 namespace scipp::core {
@@ -33,7 +34,9 @@ bool is_span(DType tp) {
 }
 
 bool is_structured(DType tp) {
-  return tp == dtype<Eigen::Vector3d> || tp == dtype<Eigen::Matrix3d>;
+  return tp == dtype<Eigen::Vector3d> || tp == dtype<Eigen::Matrix3d> ||
+         tp == dtype<scipp::core::Quaternion> || tp == dtype<Eigen::Affine3d> ||
+         tp == dtype<scipp::core::Translation>;
 }
 
 std::ostream &operator<<(std::ostream &os, const DType &dtype) {
@@ -41,6 +44,6 @@ std::ostream &operator<<(std::ostream &os, const DType &dtype) {
 }
 
 auto register_dtype_name_void(
-    (core::dtypeNameRegistry().emplace(dtype<void>, "<none>"), 0));
+    (core::dtypeNameRegistry().emplace(dtype<void>, "void"), 0));
 
 } // namespace scipp::core

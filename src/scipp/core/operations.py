@@ -1,23 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
 from __future__ import annotations
 from typing import Optional, Union
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from .unary import to_unit
 from ..typing import VariableLike
-
-
-def dot(x: VariableLike, y: VariableLike) -> VariableLike:
-    """Element-wise dot product.
-
-    :param x: Left hand side operand.
-    :param y: Right hand side operand.
-    :raises: If the dtype of the input is not vector_3_float64.
-    :return: The dot product of the input vectors.
-    """
-    return _call_cpp_func(_cpp.dot, x, y)
 
 
 def islinspace(x: _cpp.Variable, dim: str = None) -> _cpp.Variable:
@@ -77,17 +67,6 @@ def allsorted(x: _cpp.Variable, dim: str, order: Optional[str] = 'ascending') ->
     return _call_cpp_func(_cpp.allsorted, x, dim, order)
 
 
-def cross(x: VariableLike, y: VariableLike) -> VariableLike:
-    """Element-wise cross product.
-
-    :param x: Left hand side operand.
-    :param y: Right hand side operand.
-    :raises: If the dtype of the input is not vector_3_float64.
-    :return: The cross product of the input vectors.
-    """
-    return _call_cpp_func(_cpp.cross, x, y)
-
-
 def sort(x: VariableLike,
          key: Union[str, _cpp.Variable],
          order: Optional[str] = 'ascending') -> VariableLike:
@@ -144,6 +123,10 @@ def rebin(x: VariableLike, dim: str, bins: _cpp.Variable) -> VariableLike:
 
     The input must contain bin edges for the given dimension `dim`.
 
+    If the input has masks that contain the dimension being rebinned then those
+    masks are applied to the data before rebinning. That is, masked values are treated
+    as zero.
+
     :param x: Data to rebin.
     :param dim: Dimension to rebin over.
     :param bins: New bin edges.
@@ -166,3 +149,57 @@ def where(condition: _cpp.Variable, x: _cpp.Variable,
     :seealso: :py:func:`scipp.choose`
     """
     return _call_cpp_func(_cpp.where, condition, x, y)
+
+
+def to(var: Union[_cpp.Variable, _cpp.DataArray], *, unit=None, dtype=None, copy=True):
+    """
+    Converts a Variable or DataArray to a different dtype and/or a different unit.
+
+    If the dtype and unit are both unchanged and ``copy`` is `False`,
+    the object is returned without making a deep copy.
+
+    This method will choose whether to do the dtype or units translation first, by
+    using the following rules in order:
+    - If either the input or output dtype is float64, the unit translation will be done
+      on the float64 type
+    - If either the input or output dtype is float32, the unit translation will be done
+      on the float32 type
+    - If both the input and output dtypes are integer types, the unit translation will
+      be done on the larger type
+    - In other cases, the dtype is converted first and then the unit translation is done
+
+    :param dtype: Target dtype.
+    :param unit: Target unit.
+    :param copy: If `False`, return the input object if possible.
+                 If `True`, the function always returns a new object.
+    :raises: If the data cannot be converted to the requested dtype or unit.
+    :return: New variable or data array with specified dtype and unit.
+    """
+    if unit is None and dtype is None:
+        raise ValueError("Must provide dtype or unit or both")
+
+    if dtype is None:
+        return to_unit(var, unit, copy=copy)
+
+    if unit is None:
+        return var.astype(dtype, copy=copy)
+
+    if dtype == _cpp.DType.float64:
+        convert_dtype_first = True
+    elif var.dtype == _cpp.DType.float64:
+        convert_dtype_first = False
+    elif dtype == _cpp.DType.float32:
+        convert_dtype_first = True
+    elif var.dtype == _cpp.DType.float32:
+        convert_dtype_first = False
+    elif var.dtype == _cpp.DType.int64 and dtype == _cpp.DType.int32:
+        convert_dtype_first = False
+    elif var.dtype == _cpp.DType.int32 and dtype == _cpp.DType.int64:
+        convert_dtype_first = True
+    else:
+        convert_dtype_first = True
+
+    if convert_dtype_first:
+        return to_unit(var.astype(dtype, copy=copy), unit=unit, copy=False)
+    else:
+        return to_unit(var, unit=unit, copy=copy).astype(dtype, copy=False)

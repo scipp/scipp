@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -23,7 +23,7 @@ constexpr auto add_inplace_types =
              std::tuple<int64_t, int32_t>, std::tuple<int32_t, int64_t>,
              std::tuple<double, int64_t>, std::tuple<double, int32_t>,
              std::tuple<float, int64_t>, std::tuple<float, int32_t>,
-             std::tuple<int64_t, bool>>;
+             std::tuple<double, bool>, std::tuple<int64_t, bool>>;
 
 constexpr auto add_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a += b; }};

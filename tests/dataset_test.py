@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
 import numpy as np
@@ -76,7 +76,7 @@ def test_create_from_data_array_and_variable_mix():
     var_1 = sc.Variable(dims=['x'], values=np.arange(4))
     var_2 = sc.Variable(dims=['x'], values=np.arange(4))
     da = sc.DataArray(data=var_1, coords={'x': var_1, 'aux': var_1})
-    d = sc.Dataset(data={'array': da, 'variable': var_2})
+    d = sc.Dataset({'array': da, 'variable': var_2})
     assert sc.identical(d['array'], da)
     assert sc.identical(d['variable'].data, var_2)
 
@@ -119,7 +119,7 @@ def test_del_item():
 
 def test_del_item_missing():
     d = sc.Dataset()
-    with pytest.raises(RuntimeError):
+    with pytest.raises(KeyError):
         del d['not an item']
 
 
@@ -376,7 +376,7 @@ def test_mean_masked():
         data={
             'a':
             sc.Variable(
-                dims=['x'], values=np.array([1, 5, 4, 5, 1]), dtype=sc.dtype.float64)
+                dims=['x'], values=np.array([1, 5, 4, 5, 1]), dtype=sc.DType.float64)
         })
     d['a'].masks['m1'] = sc.Variable(dims=['x'],
                                      values=np.array([False, True, False, True, False]))
@@ -412,13 +412,13 @@ def test_dataset_merge():
     assert sc.identical(b['d2'], c['d2'])
 
 
-def test_dataset_concatenate():
+def test_dataset_concat():
     a = sc.Dataset(data={'data': sc.Variable(dims=['x'], values=np.array([11, 12]))},
                    coords={'x': sc.Variable(dims=['x'], values=np.array([1, 2]))})
     b = sc.Dataset(data={'data': sc.Variable(dims=['x'], values=np.array([13, 14]))},
                    coords={'x': sc.Variable(dims=['x'], values=np.array([3, 4]))})
 
-    c = sc.concatenate(a, b, 'x')
+    c = sc.concat([a, b], 'x')
 
     assert np.array_equal(c.coords['x'].values, np.array([1, 2, 3, 4]))
     assert np.array_equal(c['data'].values, np.array([11, 12, 13, 14]))
@@ -646,6 +646,63 @@ def test_rename_dims():
     assert sc.identical(renamed, make_simple_dataset('y', 'x', seed=0))
 
 
+def test_rename():
+    d = make_simple_dataset('x', 'y', seed=0)
+    original = d.copy()
+    renamed = d.rename({'y': 'z'})
+    assert sc.identical(d, original)
+    assert sc.identical(renamed, make_simple_dataset('x', 'z', seed=0))
+    renamed = renamed.rename(dims_dict={'x': 'y', 'z': 'x'})
+    assert sc.identical(renamed, make_simple_dataset('y', 'x', seed=0))
+
+
+def test_rename_intersection_of_dims():
+    d = make_simple_dataset('x', 'y', seed=0)
+    d['c'] = sc.Variable(dims=['time', 'y'], values=np.random.rand(4, 3))
+    renamed = d.rename(dims_dict={'x': 'u', 'time': 'v'})
+    expected = make_simple_dataset('u', 'y', seed=0)
+    expected['c'] = sc.Variable(dims=['v', 'y'], values=np.random.rand(4, 3))
+    assert sc.identical(renamed, expected)
+
+
+def test_rename_coords_only():
+    d = sc.Dataset(coords={
+        'x': sc.arange('x', 5.),
+        'y': sc.arange('y', 6.),
+        'z': sc.arange('z', 7.)
+    })
+    expected = sc.Dataset(coords={
+        'u': sc.arange('u', 5.),
+        'y': sc.arange('y', 6.),
+        'z': sc.arange('z', 7.)
+    })
+    assert sc.identical(d.rename({'x': 'u'}), expected)
+
+
+def test_rename_dataset_with_coords_not_belonging_to_any_item():
+    d = sc.Dataset(data={'a': sc.arange('x', 5.)},
+                   coords={
+                       'x': sc.arange('x', 5.),
+                       'y': sc.arange('y', 6.),
+                       'z': sc.arange('z', 7.)
+                   })
+    expected = sc.Dataset(data={'a': sc.arange('u', 5.)},
+                          coords={
+                              'u': sc.arange('u', 5.),
+                              'y': sc.arange('y', 6.),
+                              'z': sc.arange('z', 7.)
+                          })
+    assert sc.identical(d.rename({'x': 'u'}), expected)
+
+
+def test_rename_kwargs():
+    d = make_simple_dataset('x', 'y', seed=0)
+    renamed = d.rename(y='z')
+    assert sc.identical(renamed, make_simple_dataset('x', 'z', seed=0))
+    renamed = renamed.rename(x='y', z='x')
+    assert sc.identical(renamed, make_simple_dataset('y', 'x', seed=0))
+
+
 def test_coord_delitem():
     var = sc.Variable(dims=['x'], values=np.arange(4))
     d = sc.Dataset(data={'a': var}, coords={'x': var})
@@ -743,3 +800,13 @@ def test_iteration():
     expected = ['a', 'b']
     for k in d:
         assert k in expected
+
+
+def test_many_independent_dims_are_supported():
+    ds = sc.Dataset()
+    for i in range(100):
+        dim = f'dim{i}'
+        ds[dim] = sc.linspace(dim=dim, start=0, stop=1, num=i)
+    assert 'dim45' in ds
+    assert sc.identical(ds.copy(), ds)
+    ds + ds

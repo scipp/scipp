@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 import pytest
@@ -17,6 +17,14 @@ matplotlib.use('Agg')
 
 def test_plot_2d():
     da = make_dense_data_array(ndim=2)
+    plot(da)
+    plot(da, resampling_mode='sum')
+    plot(da, resampling_mode='mean')
+
+
+def test_plot_2d_no_unit():
+    da = make_dense_data_array(ndim=2)
+    da.unit = None
     plot(da)
     plot(da, resampling_mode='sum')
     plot(da, resampling_mode='mean')
@@ -334,7 +342,7 @@ def test_plot_2d_binned_data_datetime64():
 
 def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
     data = make_binned_data_array(ndim=2, masks=True)
-    data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
+    data = sc.concat([data, data * sc.scalar(2.0)], 'run')
     plot_obj = sc.plot(data)
     plot_obj.widgets._controls['run']['slider'].value = 1
     plot_obj.close()
@@ -342,7 +350,7 @@ def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
 
 def test_plot_3d_binned_data_where_inner_dimension_has_no_event_coord():
     data = make_binned_data_array(ndim=2)
-    data = sc.concatenate(data, data * sc.scalar(2.0), 'run')
+    data = sc.concat([data, data * sc.scalar(2.0)], 'run')
     plot(sc.transpose(data, dims=['yy', 'xx', 'run']))
 
 
@@ -379,11 +387,11 @@ def test_plot_access_ax_and_fig():
 
 
 def test_plot_2d_int32():
-    plot(make_dense_data_array(ndim=2, dtype=sc.dtype.int32))
+    plot(make_dense_data_array(ndim=2, dtype=sc.DType.int32))
 
 
 def test_plot_2d_int64_with_unit():
-    plot(make_dense_data_array(ndim=2, unit='K', dtype=sc.dtype.int64))
+    plot(make_dense_data_array(ndim=2, unit='K', dtype=sc.DType.int64))
 
 
 def test_plot_2d_int_coords():
@@ -424,7 +432,7 @@ def test_plot_redraw_dense():
 
 
 def test_plot_redraw_dense_int64():
-    da = make_dense_data_array(ndim=2, unit='K', dtype=sc.dtype.int64)
+    da = make_dense_data_array(ndim=2, unit='K', dtype=sc.DType.int64)
     p = sc.plot(da)
     before = p.view.figure.image_values.get_array()
     da *= 5
@@ -496,3 +504,22 @@ def test_plot_various_2d_coord():
     c = make_array(['xx', 'yy'], 'zz')
     plot(c)
     plot(c, labels={'yy': 'zz'})
+
+
+def test_when_2d_data_has_y_coord_associated_with_dim_x():
+    N = 10
+    M = 15
+    da = sc.DataArray(sc.array(dims=['x', 'y'], values=np.random.random([N, M])),
+                      coords={
+                          'x': sc.arange('x', 2, N + 2),
+                          'y': sc.arange('x', 1, N + 1)
+                      })
+    plot(da)
+
+
+def test_when_2d_data_has_masks_and_coord_with_none_unit():
+    da = make_binned_data_array(ndim=2)
+    da.masks['mask_x'] = da.coords['xx'] > 0.5 * sc.units.m
+    da.bins.constituents['data'].coords['xx'].unit = None
+    da.coords['xx'].unit = None
+    plot(da)

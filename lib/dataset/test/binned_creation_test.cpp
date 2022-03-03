@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/bins.h"
@@ -50,8 +50,8 @@ TEST_F(BinnedCreationTest, empty_like_slice_default_shape) {
 }
 
 TEST_F(BinnedCreationTest, empty_like) {
-  Variable shape = makeVariable<scipp::index>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                              Values{1, 2, 5, 6, 3, 4});
+  Variable shape = makeVariable<scipp::index>(
+      Dims{Dim::X, Dim::Y}, Shape{2, 3}, units::none, Values{1, 2, 5, 6, 3, 4});
   const auto empty = empty_like(m_var, {}, shape);
   EXPECT_EQ(empty.dims(), shape.dims());
   const auto [indices, dim, buf] = empty.constituents<DataArray>();

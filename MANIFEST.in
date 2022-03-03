@@ -1,2 +1,2 @@
 include LICENSE
-recursive-include src/scipp *.html *.css.template
+recursive-include src/scipp *.html *.css.template *.yaml

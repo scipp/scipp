@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -25,5 +25,8 @@ SCIPP_DATASET_EXPORT std::string to_string(const DataArray &data);
 SCIPP_DATASET_EXPORT std::string to_string(const Dataset &dataset);
 SCIPP_DATASET_EXPORT std::string to_string(const Coords &coords);
 SCIPP_DATASET_EXPORT std::string to_string(const Masks &masks);
+SCIPP_DATASET_EXPORT std::string dict_keys_to_string(const Coords &coords);
+SCIPP_DATASET_EXPORT std::string dict_keys_to_string(const Masks &masks);
+SCIPP_DATASET_EXPORT std::string dict_keys_to_string(const Dataset &dataset);
 
 } // namespace scipp::dataset

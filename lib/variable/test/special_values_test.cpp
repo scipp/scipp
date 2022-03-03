@@ -31,38 +31,36 @@ TYPED_TEST_SUITE(VariableSpecialValueTest, FloatTypes);
 
 TYPED_TEST(VariableSpecialValueTest, isnan) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
-    EXPECT_EQ(variable::isnan(x * units::m),
-              element::isnan(x) * units::dimensionless);
+    EXPECT_EQ(variable::isnan(x * units::m), element::isnan(x) * units::none);
   }
 }
 
 TYPED_TEST(VariableSpecialValueTest, isinf) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
-    EXPECT_EQ(variable::isinf(x * units::m),
-              element::isinf(x) * units::dimensionless);
+    EXPECT_EQ(variable::isinf(x * units::m), element::isinf(x) * units::none);
   }
 }
 
 TYPED_TEST(VariableSpecialValueTest, isfinite) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
     EXPECT_EQ(variable::isfinite(x * units::m),
-              element::isfinite(x) * units::dimensionless);
+              element::isfinite(x) * units::none);
   }
   EXPECT_EQ(variable::isfinite(1 * units::dimensionless),
-            element::isfinite(1) * units::dimensionless);
+            element::isfinite(1) * units::none);
 }
 
 TYPED_TEST(VariableSpecialValueTest, isposinf) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
     EXPECT_EQ(variable::isposinf(x * units::m),
-              element::isposinf(x) * units::dimensionless);
+              element::isposinf(x) * units::none);
   }
 }
 
 TYPED_TEST(VariableSpecialValueTest, isneginf) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
     EXPECT_EQ(variable::isneginf(x * units::m),
-              element::isneginf(x) * units::dimensionless);
+              element::isneginf(x) * units::none);
   }
 }
 

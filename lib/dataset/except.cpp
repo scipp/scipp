@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/except.h"
@@ -46,6 +46,15 @@ CoordMismatchError::CoordMismatchError(const Dim dim, const Variable &a,
 
 } // namespace scipp::except
 
+namespace scipp::expect {
+template <>
+void contains(const scipp::dataset::Dataset &a, const std::string &b) {
+  if (!a.contains(b))
+    throw except::NotFoundError("Expected '" + b + "' in " +
+                                scipp::dataset::dict_keys_to_string(a) + ".");
+}
+} // namespace scipp::expect
+
 namespace scipp::dataset::expect {
 void coords_are_superset(const Coords &a_coords, const Coords &b_coords,
                          const std::string_view opname) {
@@ -63,7 +72,7 @@ void coords_are_superset(const DataArray &a, const DataArray &b,
 
 void matching_coord(const Dim dim, const Variable &a, const Variable &b,
                     const std::string_view opname) {
-  if (a != b)
+  if (!equals_nan(a, b))
     throw except::CoordMismatchError(dim, a, b, opname);
 }
 

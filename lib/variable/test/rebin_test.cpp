@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/variable/astype.h"
@@ -139,7 +139,7 @@ TEST(RebinTest, outer_decreasing) {
             var1x1((2.0 - 1.1) * 2 + 3 + (3.3 - 3.0) * 4));
 }
 
-class RebinMask1DTest : public ::testing::Test {
+class RebinBool1DTest : public ::testing::Test {
 protected:
   Variable x = makeVariable<double>(Dimensions{Dim::X, 11},
                                     Values{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11});
@@ -149,29 +149,29 @@ protected:
                                             false, false, false, false, false});
 };
 
-TEST_F(RebinMask1DTest, mask_1d) {
+TEST_F(RebinBool1DTest, without_fractional_overlap_yields_ones_and_zeros) {
   const auto edges =
       makeVariable<double>(Dimensions{Dim::X, 5}, Values{1, 3, 5, 7, 10});
-  const auto expected = makeVariable<bool>(Dimensions{Dim::X, 4},
-                                           Values{false, true, false, false});
+  const auto expected = makeVariable<double>(
+      Dimensions{Dim::X, 4}, Values{0.0, 1.0, 0.0, 0.0}, units::none);
 
   const auto result = rebin(mask, Dim::X, x, edges);
 
   ASSERT_EQ(result, expected);
 }
 
-TEST_F(RebinMask1DTest, mask_weights_1d) {
+TEST_F(RebinBool1DTest, with_fractional_overlap_yields_fractions) {
   const auto edges = makeVariable<double>(Dimensions{Dim::X, 5},
                                           Values{1.0, 3.5, 5.5, 7.0, 10.0});
-  const auto expected = makeVariable<bool>(Dimensions{Dim::X, 4},
-                                           Values{true, true, false, false});
+  const auto expected = makeVariable<double>(
+      Dimensions{Dim::X, 4}, Values{0.5, 0.5, 0.0, 0.0}, units::none);
 
   const auto result = rebin(mask, Dim::X, x, edges);
 
   ASSERT_EQ(result, expected);
 }
 
-TEST(Variable, rebin_mask_2d) {
+TEST(RebinBool2DTest, inner) {
   Variable x = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 6}},
                                     Values{1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
 
@@ -181,16 +181,16 @@ TEST(Variable, rebin_mask_2d) {
 
   const auto edges = makeVariable<double>(Dimensions{Dim::X, 5},
                                           Values{1.0, 3.0, 4.0, 5.5, 6.0});
-  const auto expected = makeVariable<bool>(
+  const auto expected = makeVariable<double>(
       Dimensions{{Dim::Y, 2}, {Dim::X, 4}},
-      Values{true, false, true, true, false, true, false, false});
+      Values{1.0, 0.0, 0.5, 0.5, 0.0, 1.0, 0.0, 0.0}, units::none);
 
   const auto result = rebin(mask, Dim::X, x, edges);
 
   ASSERT_EQ(result, expected);
 }
 
-TEST(Variable, rebin_mask_outer) {
+TEST(RebinBool2DTest, outer) {
   const auto mask =
       makeVariable<bool>(Dimensions{{Dim::Y, 5}, {Dim::X, 2}},
                          Values{false, true, false, false, true, false, false,
@@ -202,15 +202,15 @@ TEST(Variable, rebin_mask_outer) {
   const auto newEdge =
       makeVariable<double>(Dimensions{Dim::Y, 4}, Values{0.0, 2.0, 3.5, 6.5});
   const auto expected =
-      makeVariable<bool>(Dimensions{{Dim::Y, 3}, {Dim::X, 2}},
-                         Values{false, true, true, false, true, true});
+      makeVariable<double>(Dimensions{{Dim::Y, 3}, {Dim::X, 2}},
+                           Values{0.0, 1.0, 0.5, 0.0, 0.5, 1.0}, units::none);
 
   const auto result = rebin(mask, Dim::Y, oldEdge, newEdge);
 
   ASSERT_EQ(result, expected);
 }
 
-TEST(Variable, rebin_mask_outer_single) {
+TEST(RebinBool2DTest, outer_single) {
   const auto mask =
       makeVariable<bool>(Dimensions{{Dim::Y, 3}, {Dim::X, 2}},
                          Values{false, true, false, false, false, false});
@@ -220,8 +220,8 @@ TEST(Variable, rebin_mask_outer_single) {
 
   const auto newEdge =
       makeVariable<double>(Dimensions{Dim::Y, 2}, Values{0.0, 6.5});
-  const auto expected = makeVariable<bool>(Dimensions{{Dim::Y, 1}, {Dim::X, 2}},
-                                           Values{false, true});
+  const auto expected = makeVariable<double>(
+      Dimensions{{Dim::Y, 1}, {Dim::X, 2}}, Values{0.0, 1.0}, units::none);
 
   const auto result = rebin(mask, Dim::Y, oldEdge, newEdge);
 

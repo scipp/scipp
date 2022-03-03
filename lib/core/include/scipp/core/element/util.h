@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -72,7 +72,7 @@ constexpr auto issorted_common = overloaded{
     transform_flags::expect_no_variance_arg<1>,
     [](units::Unit &out, const units::Unit &left, const units::Unit &right) {
       core::expect::equals(left, right);
-      out = units::dimensionless;
+      out = units::none;
     }};
 
 constexpr auto issorted_nondescending = overloaded{
@@ -129,7 +129,7 @@ constexpr auto where = overloaded{
     },
     [](const units::Unit &condition, const units::Unit &x,
        const units::Unit &y) {
-      expect::equals(condition, units::one);
+      expect::equals(condition, units::none);
       expect::equals(x, y);
       return x;
     }};

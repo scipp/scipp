@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import numpy as np
 import pytest
@@ -243,10 +243,65 @@ def test_rename_dims():
     assert sc.identical(renamed, make_dataarray('y', 'x', seed=0))
 
 
+def test_rename():
+    d = make_dataarray('x', 'y', seed=0)
+    original = d.copy()
+    renamed = d.rename({'y': 'z'})
+    assert sc.identical(d, original)
+    assert sc.identical(renamed, make_dataarray('x', 'z', seed=0))
+    renamed = renamed.rename(dims_dict={'x': 'y', 'z': 'x'})
+    assert sc.identical(renamed, make_dataarray('y', 'x', seed=0))
+
+
+def test_rename_kwargs():
+    d = make_dataarray('x', 'y', seed=0)
+    renamed = d.rename(y='z')
+    assert sc.identical(renamed, make_dataarray('x', 'z', seed=0))
+    renamed = renamed.rename(x='y', z='x')
+    assert sc.identical(renamed, make_dataarray('y', 'x', seed=0))
+
+
+def test_rename_with_attr():
+    d = make_dataarray('x', 'y', seed=0)
+    d.attrs['y'] = d.coords.pop('y')
+    renamed = d.rename({'y': 'z'})
+    expected = make_dataarray('x', 'z', seed=0)
+    expected.attrs['z'] = expected.coords.pop('z')
+    assert sc.identical(renamed, expected)
+
+
+def test_rename_fails_when_coord_already_exists():
+    d = make_dataarray('x', 'y', seed=0)
+    d.coords['z'] = d.coords['x'].copy()
+    with pytest.raises(sc.CoordError):
+        d.rename({'x': 'z'})
+
+
+def test_rename_fails_when_attr_already_exists():
+    d = make_dataarray('x', 'y', seed=0)
+    d.attrs['y'] = d.coords.pop('y')
+    d.attrs['z'] = d.attrs['y'].copy()
+    with pytest.raises(sc.CoordError):
+        d.rename({'y': 'z'})
+
+
+def test_rename_fails_when_attr_with_same_name_already_exists():
+    d = make_dataarray('x', 'y', seed=0)
+    with pytest.raises(sc.CoordError):
+        d.rename({'x': 'meta'})
+
+
+def test_rename_fails_when_coord_with_same_name_already_exists():
+    d = make_dataarray('x', 'y', seed=0)
+    d.attrs['y'] = d.coords.pop('y')
+    with pytest.raises(sc.CoordError):
+        d.rename({'y': 'aux'})
+
+
 def test_coord_setitem_can_change_dtype():
     a = np.arange(3)
     v1 = sc.array(dims=['x'], values=a)
-    v2 = v1.astype(sc.dtype.int32)
+    v2 = v1.astype(sc.DType.int32)
     data = sc.DataArray(data=v1, coords={'x': v1})
     data.coords['x'] = v2
 
@@ -261,20 +316,20 @@ def test_astype():
     a = sc.DataArray(data=sc.Variable(dims=['x'],
                                       values=np.arange(10.0, dtype=np.int64)),
                      coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
-    assert a.dtype == sc.dtype.int64
+    assert a.dtype == sc.DType.int64
 
-    a_as_float = a.astype(sc.dtype.float32)
-    assert a_as_float.dtype == sc.dtype.float32
+    a_as_float = a.astype(sc.DType.float32)
+    assert a_as_float.dtype == sc.DType.float32
 
 
 def test_astype_bad_conversion():
     a = sc.DataArray(data=sc.Variable(dims=['x'],
                                       values=np.arange(10.0, dtype=np.int64)),
                      coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
-    assert a.dtype == sc.dtype.int64
+    assert a.dtype == sc.DType.int64
 
     with pytest.raises(sc.DTypeError):
-        a.astype(sc.dtype.string)
+        a.astype(sc.DType.string)
 
 
 def test_reciprocal():
@@ -290,3 +345,59 @@ def test_sizes():
     assert a.sizes == {'x': 2}
     a = sc.DataArray(data=sc.Variable(dims=['x', 'z'], values=np.ones((2, 4))))
     assert a.sizes == {'x': 2, 'z': 4}
+
+
+def test_to():
+    da = sc.DataArray(data=sc.scalar(value=1, dtype="int32", unit="m"))
+
+    assert sc.identical(
+        da.to(unit="mm", dtype="int64"),
+        sc.DataArray(data=sc.scalar(value=1000, dtype="int64", unit="mm")))
+
+
+def test_zeros_like():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    b = sc.zeros_like(a)
+    a.data *= 0.
+    assert sc.identical(a, b)
+
+
+def test_ones_like():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    b = sc.ones_like(a)
+    a.data *= 0.
+    a.data += 1.
+    assert sc.identical(a, b)
+
+
+def test_empty_like():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    b = sc.empty_like(a)
+    assert a.dims == b.dims
+    assert a.shape == b.shape
+    assert a.unit == b.unit
+    assert a.dtype == b.dtype
+    assert (a.variances is None) == (b.variances is None)
+
+
+def test_full_like():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    b = sc.full_like(a, 2.)
+    a.data *= 0.
+    a.data += 2.
+    assert sc.identical(a, b)
+
+
+def test_zeros_like_deep_copy_masks():
+    a = make_dataarray()
+    a.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    c = sc.scalar(33., unit='m')
+    b = sc.zeros_like(a)
+    a.coords['x'][0] = c
+    a.masks['m'][0] = False
+    assert sc.identical(b.coords['x'][0], c)
+    assert sc.identical(b.masks['m'][0], sc.scalar(True))

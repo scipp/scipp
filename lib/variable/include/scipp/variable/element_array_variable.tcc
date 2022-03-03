@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/element_array_model.h"
@@ -97,7 +97,7 @@ ElementArrayModel<T>::makeDefaultFromParent(const scipp::index size) const {
                                                   element_array<T>(size));
 }
 
-/// Helper for implementing Variable(View)::operator==.
+/// Helper for implementing Variable::operator==.
 ///
 /// This method is using virtual dispatch as a trick to obtain T, such that
 /// values<T> and variances<T> can be compared.
@@ -106,6 +106,18 @@ bool ElementArrayModel<T>::equals(const Variable &a, const Variable &b) const {
   return equals_impl(a.values<T>(), b.values<T>()) &&
          (!a.has_variances() ||
           equals_impl(a.variances<T>(), b.variances<T>()));
+}
+
+/// Helper for implementing Variable::operator==.
+///
+/// This method is using virtual dispatch as a trick to obtain T, such that
+/// values<T> and variances<T> can be compared.
+template <class T>
+bool ElementArrayModel<T>::equals_nan(const Variable &a,
+                                      const Variable &b) const {
+  return equals_nan_impl(a.values<T>(), b.values<T>()) &&
+         (!a.has_variances() ||
+          equals_nan_impl(a.variances<T>(), b.variances<T>()));
 }
 
 template <class T>
@@ -138,8 +150,8 @@ void ElementArrayModel<T>::setVariances(const Variable &variances) {
       0));                                                                     \
   }                                                                            \
   template SCIPP_EXPORT Variable::Variable(                                    \
-      const units::Unit, const Dimensions &, element_array<__VA_ARGS__>,       \
-      std::optional<element_array<__VA_ARGS__>>);                              \
+      const std::optional<units::Unit> &, const Dimensions &,                  \
+      element_array<__VA_ARGS__>, std::optional<element_array<__VA_ARGS__>>);  \
   template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
   Variable::variances() const;                                                 \
   template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::variances();

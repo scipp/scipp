@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -55,7 +55,10 @@ public:
     return makeDefaultFromParent(shape.dims().volume());
   }
 
-  bool equals(const Variable &a, const Variable &b) const override;
+  [[nodiscard]] bool equals(const Variable &a,
+                            const Variable &b) const override;
+  [[nodiscard]] bool equals_nan(const Variable &a,
+                                const Variable &b) const override;
   void copy(const Variable &src, Variable &dest) const override;
   void copy(const Variable &src, Variable &&dest) const override;
   void assign(const VariableConcept &other) override;
@@ -108,6 +111,13 @@ bool StructureArrayModel<T, Elem>::equals(const Variable &a,
                                           const Variable &b) const {
   return a.dtype() == dtype() && b.dtype() == dtype() &&
          a.elements<T>() == b.elements<T>();
+}
+
+template <class T, class Elem>
+bool StructureArrayModel<T, Elem>::equals_nan(const Variable &a,
+                                              const Variable &b) const {
+  return a.dtype() == dtype() && b.dtype() == dtype() &&
+         variable::equals_nan(a.elements<T>(), b.elements<T>());
 }
 
 template <class T, class Elem>

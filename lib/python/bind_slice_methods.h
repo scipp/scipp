@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -38,12 +38,10 @@ auto from_py_slice(const T &source,
   const auto size = dim_extent(source, dim);
   if (!indices.compute(size, &start, &stop, &step, &slicelength))
     throw py::error_already_set();
-  if (step != 1)
-    throw std::runtime_error("Step must be 1");
   if (slicelength == 0) {
     stop = start; // Propagate vanishing slice length downstream.
   }
-  return Slice(dim, start, stop);
+  return Slice(dim, start, stop, step);
 }
 
 template <class View> struct SetData {

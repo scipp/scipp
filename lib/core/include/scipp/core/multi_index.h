@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -337,11 +337,11 @@ private:
   std::array<scipp::index, N> m_data_index = {};
   // This does *not* 0-init the inner arrays!
   /// Stride for each operand in each dimension.
-  std::array<std::array<scipp::index, N>, NDIM_MAX> m_stride = {};
+  std::array<std::array<scipp::index, N>, NDIM_OP_MAX> m_stride = {};
   /// Current index in iteration dimensions for both bin and inner dims.
-  std::array<scipp::index, NDIM_MAX + 1> m_coord = {};
+  std::array<scipp::index, NDIM_OP_MAX + 1> m_coord = {};
   /// Shape of the iteration dimensions for both bin and inner dims.
-  std::array<scipp::index, NDIM_MAX + 1> m_shape = {};
+  std::array<scipp::index, NDIM_OP_MAX + 1> m_shape = {};
   /// Total number of dimensions.
   scipp::index m_ndim{0};
   /// Number of dense dimensions, i.e. same as m_ndim when not binned,

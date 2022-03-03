@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/data_array.h"
@@ -64,6 +64,14 @@ TEST_F(DataArrayTest, name) {
   EXPECT_EQ(array.name(), "");
   array.setName("newname");
   EXPECT_EQ(array.name(), "newname");
+}
+
+TEST_F(DataArrayTest, get_coord) {
+  DataArray a(data);
+  a.coords().set(Dim::X, coord);
+  EXPECT_EQ(a.coords().at(Dim::X), coord);
+  EXPECT_THROW_DISCARD(a.attrs().at(Dim::X), except::NotFoundError);
+  EXPECT_THROW_DISCARD(a.coords().at(Dim::Y), except::NotFoundError);
 }
 
 TEST_F(DataArrayTest, erase_coord) {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/variable/bins.h"
@@ -138,4 +138,11 @@ TEST(ToUnitTest, binned) {
   const auto var = make_bins(indices, Dim::X, input_buffer);
   EXPECT_EQ(to_unit(var, units::Unit{"m"}),
             make_bins(indices, Dim::X, expected_buffer));
+}
+
+TEST(ToUnitTest, throws_if_none_unit) {
+  EXPECT_THROW_DISCARD(to_unit(makeVariable<int32_t>(Dims{Dim::X}, Shape{2},
+                                                     units::none, Values{1, 2}),
+                               units::Unit("m")),
+                       except::UnitError);
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #pragma once
 
 #include <tuple>
@@ -7,11 +7,14 @@
 
 #include "pybind11.h"
 
+#include "scipp/core/dtype.h"
 #include "scipp/core/time_point.h"
 #include "scipp/units/unit.h"
 
-using ProtoUnit = std::variant<std::string, scipp::units::Unit>;
-scipp::units::Unit make_unit(const ProtoUnit &unit);
+struct DefaultUnit {};
+
+using ProtoUnit =
+    std::variant<std::string, scipp::units::Unit, pybind11::none, DefaultUnit>;
 
 std::tuple<scipp::units::Unit, int64_t>
 get_time_unit(std::optional<scipp::units::Unit> value_unit,
@@ -38,3 +41,7 @@ common_unit<scipp::core::time_point>(const pybind11::object &values,
 /// Only time units are supported!
 // TODO Can be removed if / when the units library supports this.
 std::string to_numpy_time_string(scipp::units::Unit const unit);
+
+scipp::units::Unit
+unit_or_default(const ProtoUnit &unit,
+                const scipp::core::DType type = scipp::core::dtype<void>);

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <algorithm>
@@ -55,6 +55,16 @@ bool Dict<Key, Value>::operator==(const Dict &other) const {
   return std::all_of(this->begin(), this->end(), [&other](const auto &item) {
     const auto &[name, data] = item;
     return other.contains(name) && data == other[name];
+  });
+}
+
+template <class Key, class Value>
+bool equals_nan(const Dict<Key, Value> &a, const Dict<Key, Value> &b) {
+  if (a.size() != b.size())
+    return false;
+  return std::all_of(a.begin(), a.end(), [&b](const auto &item) {
+    const auto &[name, data] = item;
+    return b.contains(name) && equals_nan(data, b[name]);
   });
 }
 
@@ -236,7 +246,7 @@ Dict<Key, Value>::slice_coords(const Slice &params) const {
 }
 
 template <class Key, class Value>
-void Dict<Key, Value>::validateSlice(const Slice s, const Dict &dict) const {
+void Dict<Key, Value>::validateSlice(const Slice &s, const Dict &dict) const {
   using core::to_string;
   using units::to_string;
   for (const auto &[key, item] : dict) {
@@ -258,7 +268,7 @@ void Dict<Key, Value>::validateSlice(const Slice s, const Dict &dict) const {
 }
 
 template <class Key, class Value>
-Dict<Key, Value> &Dict<Key, Value>::setSlice(const Slice s, const Dict &dict) {
+Dict<Key, Value> &Dict<Key, Value>::setSlice(const Slice &s, const Dict &dict) {
   validateSlice(s, dict);
   for (const auto &[key, item] : dict) {
     const auto it = find(key);
@@ -329,5 +339,10 @@ bool Dict<Key, Value>::item_applies_to(const Key &key,
 
 template class SCIPP_DATASET_EXPORT Dict<Dim, Variable>;
 template class SCIPP_DATASET_EXPORT Dict<std::string, Variable>;
+template SCIPP_DATASET_EXPORT bool equals_nan(const Dict<Dim, Variable> &a,
+                                              const Dict<Dim, Variable> &b);
+template SCIPP_DATASET_EXPORT bool
+equals_nan(const Dict<std::string, Variable> &a,
+           const Dict<std::string, Variable> &b);
 
 } // namespace scipp::dataset

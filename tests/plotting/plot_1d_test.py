@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 
 import numpy as np
 import scipp as sc
-from ..factory import make_dense_data_array, make_dense_dataset
+from ..factory import make_dense_data_array, make_dense_dataset, make_binned_data_array
 from .plot_helper import plot
 import matplotlib
 
@@ -18,6 +18,14 @@ matplotlib.use('Agg')
 
 def test_plot_1d():
     da = make_dense_data_array(ndim=1)
+    plot(da)
+    plot(da, resampling_mode='sum')
+    plot(da, resampling_mode='mean')
+
+
+def test_plot_1d_no_unit():
+    da = make_dense_data_array(ndim=1)
+    da.unit = None
     plot(da)
     plot(da, resampling_mode='sum')
     plot(da, resampling_mode='mean')
@@ -36,6 +44,12 @@ def test_plot_1d_bin_edges():
 
 def test_plot_1d_with_labels():
     plot(make_dense_data_array(ndim=1, labels=True), labels={"xx": "lab"})
+
+
+def test_plot_1d_with_datetime_labels():
+    da = make_dense_data_array(ndim=1)
+    da.coords['time'] = sc.epoch(unit='ns') + sc.arange('xx', da.sizes['xx'], unit='ns')
+    plot(da, labels={"xx": "time"})
 
 
 def test_plot_1d_with_attrs():
@@ -334,7 +348,7 @@ def test_plot_redraw():
 
 
 def test_plot_redraw_int64():
-    da = make_dense_data_array(ndim=1, dtype=sc.dtype.int64)
+    da = make_dense_data_array(ndim=1, dtype=sc.DType.int64)
     p = sc.plot(da)
     assert p.view.figure._lines[''].data.get_ydata()[2] == int(10.0 * np.sin(2.0))
     da *= 5
@@ -347,3 +361,8 @@ def test_scale_arg_subplots_independent_dims():
     d['a'] = sc.DataArray(sc.arange('x', 10), coords={'x': sc.arange('x', 10)})
     d['b'] = sc.DataArray(sc.arange('y', 5), coords={'y': sc.arange('y', 5)})
     d.plot(scale={'x': 'log'}).close()
+
+
+def test_plot_binned_with_mask():
+    da = make_binned_data_array(ndim=1, masks=True)
+    da.plot()

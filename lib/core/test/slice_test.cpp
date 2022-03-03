@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/core/except.h"
@@ -53,4 +53,30 @@ TEST(SliceTest, test_end_valid) {
                    Dim::X, 2, 1 /*invalid end index*/
                }),
                except::SliceError);
+}
+
+TEST(SliceTest, stride_is_1_if_not_specified) {
+  EXPECT_EQ(Slice().stride(), 1);
+  EXPECT_EQ(Slice(Dim::X, 2).stride(), 1);
+  EXPECT_EQ(Slice(Dim::X, 2, 4).stride(), 1);
+}
+
+TEST(SliceTest, positive_stride_can_be_set) {
+  Slice slice(Dim::X, 1, 10, 3);
+  EXPECT_EQ(slice.stride(), 3);
+}
+
+TEST(SliceTest, negative_stride_throws_SliceError) {
+  // Not implemented yet, this is not based on a requirement
+  EXPECT_THROW(Slice(Dim::X, 1, 10, -1), except::SliceError);
+}
+
+// DISABLED since support not implemented yet
+TEST(SliceTest, DISABLED_negative_stride_can_be_set) {
+  Slice slice(Dim::X, 1, 10, -3);
+  EXPECT_EQ(slice.stride(), -3);
+}
+
+TEST(SliceTest, zero_stride_throws_SliceError) {
+  EXPECT_THROW(Slice(Dim::X, 1, 10, 0), except::SliceError);
 }

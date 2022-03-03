@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -85,7 +85,7 @@ void bind_mutable_view(py::module &m, const std::string &name) {
           "items", [](T &self) { return items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
           R"(view on self's items)")
-      .def("_ipython_key_completions_", [](T &self) {
+      .def("_ipython_key_completions_", [](const T &self) {
         py::list out;
         const auto end = self.keys_end();
         for (auto it = self.keys_begin(); it != end; ++it) {
@@ -116,7 +116,7 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name) {
           "items", [](T &self) { return str_items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
           R"(view on self's items)")
-      .def("_ipython_key_completions_", [](T &self) {
+      .def("_ipython_key_completions_", [](const T &self) {
         py::list out;
         const auto end = self.keys_end();
         for (auto it = self.keys_begin(); it != end; ++it) {

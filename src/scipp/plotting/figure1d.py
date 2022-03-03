@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .figure import PlotFigure
@@ -28,14 +28,14 @@ class PlotFigure1d(PlotFigure):
                  figsize=None,
                  picker=False,
                  legend=None,
-                 padding=None,
+                 bounding_box=None,
                  xlabel=None,
                  ylabel=None):
 
         super().__init__(ax=ax,
                          figsize=figsize,
                          title=title,
-                         padding=padding,
+                         bounding_box=bounding_box,
                          xlabel=xlabel,
                          ylabel=ylabel,
                          toolbar=PlotToolbar1d,
@@ -225,7 +225,7 @@ class PlotFigure1d(PlotFigure):
             self.ax.set_xlim([xmin - deltax, xmax + deltax])
         if self._axes_updated:
             self._axes_updated = False
-            self.fig.tight_layout(rect=self.padding)
+            self.fig.tight_layout(rect=self.bounding_box)
 
         self.draw()
 
@@ -336,12 +336,7 @@ class PlotFigure1d(PlotFigure):
         """
         Rescale y axis to the contents of the plot.
         """
-        if (vmin is None) and (vmax is None):
-            self.ax.autoscale(True)
-            self.ax.relim()
-            self.ax.autoscale_view()
-        else:
-            self.ax.set_ylim(vmin, vmax)
+        self.ax.set_ylim(vmin, vmax)
         self.draw()
 
     def show_legend(self):

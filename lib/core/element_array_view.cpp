@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/element_array_view.h"
@@ -45,6 +45,7 @@ ElementArrayViewParams::ElementArrayViewParams(
       m_bucketParams(other.m_bucketParams) {
   expectCanBroadcastFromTo(other.m_iterDims, m_iterDims);
 
+  m_strides.resize(iterDims.ndim());
   for (scipp::index dim = 0; dim < iterDims.ndim(); ++dim) {
     auto label = iterDims.label(dim);
     if (other.m_iterDims.contains(label)) {

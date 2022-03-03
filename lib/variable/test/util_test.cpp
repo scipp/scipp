@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/core/except.h"
@@ -153,8 +153,8 @@ TEST(UtilTest, allsorted_multidimensional) {
 TEST(VariableTest, where) {
   auto var =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 2, 3});
-  auto mask = makeVariable<bool>(Dims{Dim::X}, Shape{3}, units::one,
-                                 Values{true, false, true});
+  auto mask =
+      makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{true, false, true});
   auto expected_var =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 4, 3});
   EXPECT_EQ(where(mask, var, var + var), expected_var);

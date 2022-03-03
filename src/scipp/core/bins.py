@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from typing import Dict, Optional, Sequence, Union
-import warnings
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
@@ -14,7 +13,7 @@ from .operations import islinspace
 class Lookup:
     def __init__(self, func: _cpp.DataArray, dim: str):
         if func.ndim == 1 and func.dtype in [
-                _cpp.dtype.bool, _cpp.dtype.int32, _cpp.dtype.int64
+                _cpp.DType.bool, _cpp.DType.int32, _cpp.DType.int64
         ] and not islinspace(func.coords[dim], dim).value:
             # Significant speedup if `func` is large but mostly constant.
             func = merge_equal_adjacent(func)
@@ -111,6 +110,16 @@ class Bins:
         _cpp._bins_view(self._data()).data = data
 
     @property
+    def unit(self) -> _cpp.Unit:
+        """Unit of the bin elements"""
+        return self.constituents['data'].unit
+
+    @unit.setter
+    def unit(self, unit: Union[_cpp.Unit, str]):
+        """Set unit of the bin elements"""
+        self.constituents['data'].unit = unit
+
+    @property
     def constituents(self) -> Dict[str, Union[str, _cpp.Variable, _cpp.DataArray]]:
         """Constituents of binned data, as supported by :py:func:`sc.bins`."""
         return _call_cpp_func(_cpp.bins_constituents, self._data())
@@ -185,10 +194,6 @@ class GroupbyBins:
     def __init__(self, obj):
         self._obj = obj
 
-    def concatenate(self, dim):
-        warnings.warn("`concatenate` is deprecated; use `concat`.", DeprecationWarning)
-        return self.concat(dim)
-
     def concat(self, dim):
         return self._obj.concat(dim)
 
@@ -237,6 +242,9 @@ def bin(x: _cpp.DataArray,
 
     At least one argument of ``edges`` and ``groups`` is required.
 
+    If the input is binned and certain bins are masked then changing the binning
+    will apply the masks, i.e., masked bins are treated as empty.
+
     :param x: Input data.
     :param edges: Bin edges, one per dimension to bin in.
     :param groups: Keys to group input by one per dimension to group in.
@@ -267,7 +275,7 @@ def bins(*,
     internally.
 
     The variables ``begin`` and ``end`` must have the same dims and shape and
-    ``dtype=sc.dtype.int64``. The output dims and shape are given by ``begin``.
+    ``dtype=sc.DType.int64``. The output dims and shape are given by ``begin``.
     If only ``begin`` is given, each bucket is a slice containing a non-range
     slice of ``data`` at the given indices. If neither ``begin`` nor ``end``
     are given, the output has ``dims=[dim]`` and contains all non-range slices

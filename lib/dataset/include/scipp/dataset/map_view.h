@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -44,6 +44,11 @@ auto slice_map(const Sizes &sizes, const T &map, const Slice &params) {
       if (value.dims()[params.dim()] == sizes[params.dim()]) {
         out[key] = value.slice(params);
       } else { // bin edge
+        if (params.stride() != 1)
+          throw except::SliceError(
+              "Object has bin-edges along dimension " +
+              to_string(params.dim()) + " so slicing with stride " +
+              std::to_string(params.stride()) + " != 1 is not valid.");
         const auto end = params.end() == -1 ? params.begin() + 2
                                             : params.begin() == params.end()
                                                   ? params.end()
@@ -146,8 +151,8 @@ public:
 
   Dict slice(const Slice &params) const;
   std::tuple<Dict, Dict> slice_coords(const Slice &params) const;
-  void validateSlice(const Slice s, const Dict &dict) const;
-  [[maybe_unused]] Dict &setSlice(const Slice s, const Dict &dict);
+  void validateSlice(const Slice &s, const Dict &dict) const;
+  [[maybe_unused]] Dict &setSlice(const Slice &s, const Dict &dict);
 
   void rename(const Dim from, const Dim to);
 
@@ -167,8 +172,8 @@ protected:
 /// Returns the union of all masks with irreducible dimension `dim`.
 ///
 /// Irreducible means that a reduction operation must apply these masks since
-/// depend on the reduction dimension. Returns an invalid (empty) variable if
-/// there is no irreducible mask.
+/// they depend on the reduction dimension. Returns an invalid (empty) variable
+/// if there is no irreducible mask.
 template <class Masks>
 [[nodiscard]] Variable irreducible_mask(const Masks &masks, const Dim dim) {
   Variable union_;
@@ -178,7 +183,7 @@ template <class Masks>
   return union_;
 }
 
-SCIPP_DATASET_EXPORT Variable masks_merge_if_contained(const Masks &masks,
-                                                       const Dimensions &dims);
+template <class Key, class Value>
+bool equals_nan(const Dict<Key, Value> &a, const Dict<Key, Value> &b);
 
 } // namespace scipp::dataset

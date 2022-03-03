@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 #include "unit.h"
 
+#include "scipp/common/overloaded.h"
+#include "scipp/core/bucket.h"
+#include "scipp/core/dtype.h"
+#include "scipp/core/eigen.h"
+#include "scipp/core/time_point.h"
 #include "scipp/units/string.h"
+#include "scipp/variable/variable.h"
 
 #include "dtype.h"
 
@@ -15,12 +21,6 @@ bool temporal_or_dimensionless(const units::Unit unit) {
   return unit == units::one || unit.has_same_base(units::s);
 }
 } // namespace
-
-units::Unit make_unit(const ProtoUnit &unit) {
-  if (std::holds_alternative<std::string>(unit))
-    return units::Unit(std::get<std::string>(unit));
-  return std::get<units::Unit>(unit);
-}
 
 std::tuple<units::Unit, int64_t>
 get_time_unit(const std::optional<scipp::units::Unit> value_unit,
@@ -90,4 +90,18 @@ std::string to_numpy_time_string(const scipp::units::Unit unit) {
   return unit == units::us
              ? std::string("us")
              : unit == units::Unit("min") ? std::string("m") : to_string(unit);
+}
+
+scipp::units::Unit unit_or_default(const ProtoUnit &unit, const DType type) {
+  return std::visit(
+      overloaded{[type](DefaultUnit) {
+                   if (type == dtype<void>)
+                     throw except::UnitError(
+                         "Default unit requested but dtype unknown.");
+                   return variable::default_unit_for(type);
+                 },
+                 [](py::none) { return units::none; },
+                 [](const std::string &u) { return units::Unit(u); },
+                 [](const units::Unit &u) { return u; }},
+      unit);
 }

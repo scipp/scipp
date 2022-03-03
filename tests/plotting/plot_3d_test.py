@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 
@@ -8,6 +8,8 @@ import scipp as sc
 from ..factory import make_dense_data_array, make_binned_data_array
 from .plot_helper import plot
 import matplotlib
+
+import pytest
 
 matplotlib.use('Agg')
 
@@ -147,3 +149,58 @@ def test_plot_redraw():
     p.redraw()
     after = p.view.figure.points_geometry.attributes["color"].array
     assert np.any(before != after)
+
+
+def test_plot_projection_3d_with_camera():
+    da = make_data_array_with_position_vectors()
+    da.coords['xyz'].unit = 'm'
+    plot(da,
+         projection="3d",
+         positions="xyz",
+         camera={
+             'position': sc.vector(value=[150, 10, 10], unit='m'),
+             'look_at': sc.vector(value=[0, 0, 30], unit='m')
+         })
+    plot(da,
+         projection="3d",
+         positions="xyz",
+         camera={'position': sc.vector(value=[150, 10, 10], unit='m')})
+    plot(da,
+         projection="3d",
+         positions="xyz",
+         camera={'look_at': sc.vector(value=[0, 0, 30], unit='m')})
+
+
+def test_plot_projection_3d_with_camera_supports_compatible_units():
+    da = make_data_array_with_position_vectors()
+    da.coords['xyz'].unit = 'm'
+    plot(da,
+         projection="3d",
+         positions="xyz",
+         camera={
+             'position': sc.vector(value=[150, 10, 10], unit='mm'),
+             'look_at': sc.vector(value=[0, 0, 30], unit='mm')
+         })
+    plot(da,
+         projection="3d",
+         positions="xyz",
+         camera={'position': sc.vector(value=[150, 10, 10], unit='mm')})
+    plot(da,
+         projection="3d",
+         positions="xyz",
+         camera={'look_at': sc.vector(value=[0, 0, 30], unit='mm')})
+
+
+def test_plot_projection_3d_with_camera_raises_if_camera_param_units_wrong():
+    da = make_data_array_with_position_vectors()
+    da.coords['xyz'].unit = 'm'
+    with pytest.raises(sc.UnitError):
+        plot(da,
+             projection="3d",
+             positions="xyz",
+             camera={'position': sc.vector(value=[150, 10, 10], unit='s')})
+    with pytest.raises(sc.UnitError):
+        plot(da,
+             projection="3d",
+             positions="xyz",
+             camera={'look_at': sc.vector(value=[0, 0, 30], unit='s')})

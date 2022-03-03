@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -29,7 +29,11 @@ flatten(const Variable &view, const scipp::span<const Dim> &from_labels,
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 transpose(const Variable &var, scipp::span<const Dim> dims = {});
 
+[[nodiscard]] SCIPP_VARIABLE_EXPORT std::vector<scipp::Dim>
+dims_for_squeezing(const core::Sizes &data_dims,
+                   std::optional<scipp::span<const Dim>> selected_dims);
+
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-squeeze(const Variable &var, const std::vector<Dim> &dims);
+squeeze(const Variable &var, std::optional<scipp::span<const Dim>> dims);
 
 } // namespace scipp::variable

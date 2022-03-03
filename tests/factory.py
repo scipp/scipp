@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 import numpy as np
@@ -8,7 +8,7 @@ import scipp as sc
 dim_list = ['xx', 'yy', 'zz', 'time', 'temperature']
 
 
-def make_scalar(with_variance=False, dtype=sc.dtype.float64, unit='counts'):
+def make_scalar(with_variance=False, dtype='float64', unit='counts'):
     var = sc.scalar(10.0 * np.random.rand(), unit=unit, dtype=dtype)
     if with_variance:
         var.variance = np.random.rand()
@@ -18,7 +18,7 @@ def make_scalar(with_variance=False, dtype=sc.dtype.float64, unit='counts'):
 def make_variable(ndim=1,
                   with_variance=False,
                   dims=None,
-                  dtype=sc.dtype.float64,
+                  dtype='float64',
                   unit='counts'):
 
     shapes = np.arange(50, 0, -10)[:ndim]
@@ -39,7 +39,7 @@ def make_scalar_array(with_variance=False,
                       label=False,
                       mask=False,
                       attr=False,
-                      dtype=sc.dtype.float64,
+                      dtype='float64',
                       unit='counts'):
 
     data = make_scalar(with_variance=with_variance, dtype=dtype, unit=unit)
@@ -66,7 +66,7 @@ def make_dense_data_array(ndim=1,
                           attrs=False,
                           ragged=False,
                           dims=None,
-                          dtype=sc.dtype.float64,
+                          dtype='float64',
                           unit='counts'):
 
     coord_units = dict(zip(dim_list, ['m', 'm', 'm', 's', 'K']))
@@ -156,8 +156,9 @@ def make_binned_data_array(ndim=1, with_variance=False, masks=False):
 
     if masks:
         # Make a checkerboard mask, see https://stackoverflow.com/a/51715491
-        binned.masks["mask"] = sc.Variable(
-            dims=binned.dims,
-            values=(np.indices(binned.shape).sum(axis=0) % 2).astype(bool))
+        binned.masks["mask"] = sc.array(dims=binned.dims,
+                                        values=(np.indices(binned.shape).sum(axis=0) %
+                                                2).astype(bool),
+                                        unit=None)
 
     return binned

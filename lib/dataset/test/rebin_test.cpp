@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
@@ -206,6 +206,29 @@ TEST_F(RebinRaggedTest, no_stride1) {
   ASSERT_EQ(rebin(copy(transpose(da)), Dim::X, edges), transpose(expected));
 }
 
+TEST(RebinWithMaskTest, applies_mask_along_rebin_dim) {
+  DataArray da(
+      broadcast(makeVariable<double>(Dimensions{Dim::X, 5}, units::counts,
+                                     Values{1, 2, 3, 4, 5}),
+                Dimensions({Dim::Y, Dim::X}, {5, 5})),
+      {{Dim::X, makeVariable<double>(Dimensions{Dim::X, 6},
+                                     Values{1, 2, 3, 4, 5, 6})}});
+
+  da.masks().set("mask_x",
+                 makeVariable<bool>(Dimensions{Dim::X, 5},
+                                    Values{false, false, true, false, false}));
+
+  const auto edges =
+      makeVariable<double>(Dimensions{Dim::X, 3}, Values{1, 3, 5});
+  const auto result = rebin(da, Dim::X, edges);
+
+  EXPECT_FALSE(result.masks().contains("mask_x"));
+  EXPECT_EQ(result.data(),
+            broadcast(makeVariable<double>(Dimensions{Dim::X, 2}, units::counts,
+                                           Values{3, 4}),
+                      Dimensions({Dim::Y, Dim::X}, {5, 2})));
+}
+
 TEST(RebinWithMaskTest, preserves_unrelated_mask) {
   Dataset ds;
   ds.setData("data_xy", broadcast(makeVariable<double>(Dimensions{Dim::X, 5},
@@ -215,9 +238,6 @@ TEST(RebinWithMaskTest, preserves_unrelated_mask) {
   ds.setCoord(Dim::X, makeVariable<double>(Dimensions{Dim::X, 6},
                                            Values{1, 2, 3, 4, 5, 6}));
 
-  ds["data_xy"].masks().set(
-      "mask_x", makeVariable<bool>(Dimensions{Dim::X, 5},
-                                   Values{false, false, true, false, false}));
   ds["data_xy"].masks().set(
       "mask_y", makeVariable<bool>(Dimensions{Dim::Y, 5},
                                    Values{false, false, true, false, false}));
@@ -230,9 +250,6 @@ TEST(RebinWithMaskTest, preserves_unrelated_mask) {
             broadcast(makeVariable<double>(Dimensions{Dim::X, 2}, units::counts,
                                            Values{3, 7}),
                       Dimensions({Dim::Y, Dim::X}, {5, 2})));
-  ASSERT_EQ(result["data_xy"].masks()["mask_x"],
-            makeVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true}));
-  // the Y masks should not have been touched
-  ASSERT_EQ(ds["data_xy"].masks().size(), 2);
-  ASSERT_EQ(ds["data_xy"].masks()["mask_y"].dims(), Dimensions(Dim::Y, 5));
+  ASSERT_EQ(result["data_xy"].masks()["mask_y"],
+            ds["data_xy"].masks()["mask_y"]);
 }

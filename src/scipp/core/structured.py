@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from .._scipp.core import _element_keys, _get_elements, _set_elements, dtype
+from .._scipp.core import _element_keys, _get_elements, _set_elements, DType
 
 
 def _prop(key):
@@ -17,7 +17,7 @@ def _prop(key):
 def is_structured(obj):
     if obj.bins is not None:
         return is_structured(obj.bins.constituents['data'])
-    return obj.dtype in [dtype.vector_3_float64, dtype.matrix_3_float64]
+    return obj.dtype in [DType.vector3, DType.linear_transform3]
 
 
 def _fields(obj):

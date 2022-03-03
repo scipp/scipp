@@ -1,24 +1,50 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Union
+from numbers import Real
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ..typing import VariableLike
+from .variable import scalar
 
 
-def abs(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def abs(x: Union[VariableLike, _cpp.Unit],
+        *,
+        out: Optional[_cpp.Variable] = None) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise absolute value.
 
     :param x: Input data.
-    :param out: Optional output buffer.
+    :param out: Optional output buffer. Only supported if `x` is a scipp.Variable.
     :raises: If the dtype has no absolute value, e.g., if it is a string.
     :return: The absolute values of the input.
     :seealso: :py:func:`scipp.norm` for vector-like dtype.
     """
     return _call_cpp_func(_cpp.abs, x, out=out)
+
+
+def cross(x: VariableLike, y: VariableLike) -> VariableLike:
+    """Element-wise cross product.
+
+    :param x: Left hand side operand.
+    :param y: Right hand side operand.
+    :raises: If the dtype of the input is not vector3.
+    :return: The cross product of the input vectors.
+    """
+    return _call_cpp_func(_cpp.cross, x, y)
+
+
+def dot(x: VariableLike, y: VariableLike) -> VariableLike:
+    """Element-wise dot product.
+
+    :param x: Left hand side operand.
+    :param y: Right hand side operand.
+    :raises: If the dtype of the input is not vector3.
+    :return: The dot product of the input vectors.
+    """
+    return _call_cpp_func(_cpp.dot, x, y)
 
 
 def nan_to_num(x: _cpp.Variable,
@@ -62,34 +88,43 @@ def norm(x: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.norm, x, out=None)
 
 
-def reciprocal(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def reciprocal(x: Union[VariableLike, _cpp.Unit],
+               *,
+               out: Optional[_cpp.Variable] = None) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise reciprocal.
 
     :param x: Input data.
-    :param out: Optional output buffer.
+    :param out: Optional output buffer. Only supported when `x` is a scipp.Variable.
     :raises: If the dtype has no reciprocal, e.g., if it is a string.
     :return: The reciprocal values of the input.
     """
     return _call_cpp_func(_cpp.reciprocal, x, out=out)
 
 
-def pow(base: VariableLike, exp: VariableLike) -> VariableLike:
+def pow(base: Union[VariableLike, _cpp.Unit],
+        exponent: Union[VariableLike, Real]) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise power.
 
     If the base has a unit, the exponent must be scalar in order to get
-    a well defined unit in the result.
+    a well-defined unit in the result.
 
+    :param base: Base of the exponential.
+    :param exponent: Raise ``base`` to this power.
     :raises: If the dtype does not have a power, e.g., if it is a string.
     :return: ``base`` raised to the power of ``exp``.
     """
-    return _call_cpp_func(_cpp.pow, base, exp)
+    if not isinstance(base, _cpp.Unit) and isinstance(exponent, Real):
+        exponent = scalar(exponent)
+    return _call_cpp_func(_cpp.pow, base, exponent)
 
 
-def sqrt(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def sqrt(x: Union[VariableLike, _cpp.Unit],
+         *,
+         out: Optional[_cpp.Variable] = None) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise square-root.
 
     :param x: Input data.
-    :param out: Optional output buffer.
+    :param out: Optional output buffer. Only supported when `x` is a scipp.Variable.
     :raises: If the dtype has no square-root, e.g., if it is a string.
     :return: The square-root values of the input.
     """
@@ -128,7 +163,7 @@ def log10(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLik
 
 def round(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
     """
-    Round to the nearest integer if all values passed in x.
+    Round to the nearest integer of all values passed in x.
 
     Note: if the number being rounded is halfway between two integers it will
     round to the nearest even number. For example 1.5 and 2.5 will both round
@@ -175,3 +210,50 @@ def erfc(x: VariableLike) -> VariableLike:
     Computes the complementary error function.
     """
     return _cpp.erfc(x)
+
+
+def midpoints(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
+    """
+    Computes the points in the middle of adjacent elements of x.
+
+    The midpoint of two numbers :math:`a` and :math:`b` is
+    :math:`(a + b) / 2`.
+    This formula encounters under- or overflow for
+    very small or very large inputs.
+    The implementation deals with those cases properly.
+
+    :param x: Input data.
+    :param dim: Dimension along which to compute midpoints.
+                Optional for 1D Variables.
+
+    Examples:
+
+      >>> x = sc.array(dims=['x'], values=[-2, 0, 4, 2])
+      >>> x
+      <scipp.Variable> (x: 4)      int64  [dimensionless]  [-2, 0, 4, 2]
+      >>> sc.midpoints(x)
+      <scipp.Variable> (x: 3)      int64  [dimensionless]  [-1, 2, 3]
+
+    For integers, when the difference of adjacent elements is odd,
+    `midpoints` rounds towards the number that comes first in the array:
+
+      >>> x = sc.array(dims=['x'], values=[0, 3, 0])
+      >>> x
+      <scipp.Variable> (x: 3)      int64  [dimensionless]  [0, 3, 0]
+      >>> sc.midpoints(x)
+      <scipp.Variable> (x: 2)      int64  [dimensionless]  [1, 2]
+
+    With multidimensional variables, `midpoints` is only applied
+    to the specified dimension:
+
+      >>> xy = sc.array(dims=['x', 'y'], values=[[1, 3, 5], [2, 6, 10]])
+      >>> xy.values
+      array([[ 1,  3,  5],
+             [ 2,  6, 10]])
+      >>> sc.midpoints(xy, dim='x').values
+      array([[1, 4, 7]])
+      >>> sc.midpoints(xy, dim='y').values
+      array([[2, 4],
+             [4, 8]])
+    """
+    return _cpp.midpoints(x, dim)

@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .controller import PlotController
+from ..units import one
 import numpy as np
 
 
@@ -33,6 +34,9 @@ class PlotController1d(PlotController):
         with_min_padding = self.vmin is None
         with_max_padding = self.vmax is None
         vmin, vmax = self.find_vmin_vmax(button=button)
+        if vmin.unit is None:
+            vmin.unit = one
+            vmax.unit = one
         if self.norm == "log":
             delta = 10**(0.05 * np.log10(vmax.value / vmin.value))
             if with_min_padding or (button is not None):
@@ -46,3 +50,16 @@ class PlotController1d(PlotController):
             if with_max_padding or (button is not None):
                 vmax += delta
         self.view.rescale_to_data(vmin, vmax)
+
+    def toggle_norm(self, owner):
+        """
+        Toggle data normalization from toolbar button signal.
+        """
+        self.norm = "log" if owner.value else "linear"
+        vmin, vmax = self.find_vmin_vmax()
+        if self.norm == "log":
+            self.rescale_to_data()
+            self.view.toggle_norm(self.norm, vmin, vmax)
+        else:
+            self.view.toggle_norm(self.norm, vmin, vmax)
+            self.rescale_to_data()

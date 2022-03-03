@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include <numeric>
@@ -658,4 +658,18 @@ TEST_F(CoordToAttrMappingTest, DatasetView) {
 TEST_F(CoordToAttrMappingTest, DatasetConstView) {
   const Dataset d({{"a", a}});
   test_dataset_coord_aligned_to_unaligned_mapping(d);
+}
+
+TEST(SliceWithStrideTest, throws_SliceError_if_bin_edges_along_slice_dim) {
+  DataArray da(makeVariable<double>(Dims{Dim::X}, Shape{4}));
+  da.coords().set(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{5}));
+  Slice params(Dim::X, 0, 4, 2);
+  EXPECT_THROW(da.slice(params), except::SliceError);
+}
+
+TEST(SliceWithStrideTest, works_if_bin_edges_along_unrelated_dim) {
+  DataArray da(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{4, 4}));
+  da.coords().set(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{5}));
+  Slice params(Dim::Y, 0, 4, 2);
+  EXPECT_NO_THROW_DISCARD(da.slice(params));
 }

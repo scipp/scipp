@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 //
 // The test in this file ensure that comparison operators for DataArray are
 // correct. More complex tests should build on the assumption that comparison
@@ -22,12 +22,16 @@ void expect_eq(const DataArray &a, const DataArray &b) {
   EXPECT_TRUE(b == a);
   EXPECT_FALSE(a != b);
   EXPECT_FALSE(b != a);
+  EXPECT_TRUE(equals_nan(a, b));
+  EXPECT_TRUE(equals_nan(b, a));
 }
 void expect_ne(const DataArray &a, const DataArray &b) {
   EXPECT_TRUE(a != b);
   EXPECT_TRUE(b != a);
   EXPECT_FALSE(a == b);
   EXPECT_FALSE(b == a);
+  EXPECT_FALSE(equals_nan(a, b));
+  EXPECT_FALSE(equals_nan(b, a));
 }
 } // namespace
 

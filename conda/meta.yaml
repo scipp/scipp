@@ -1,3 +1,20 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+
+# Note:
+#
+# The conda documentation recommends placing version number in the
+# conda_build_config.yaml file, instead of directly in this meta.yaml file:
+# https://docs.conda.io/projects/conda-build/en/latest/resources/variants.html
+# It seems the primary advantage of doing this is that it allows matrix builds from a
+# single conda-build command.
+# For now, the only matrix-style building we are doing is the python version,
+# which is set via the `--python` command line argument anyway, because we are
+# parallelising our CI builds.
+# A matrix build from conda-build directly would have to perform the lib solving for
+# each version, and using multiple workers on our CI is faster than building all python
+# versions in a single conda-build step.
+
 package:
   name: scipp
   # Get version number from most recent Git tag
@@ -9,14 +26,16 @@ source:
 requirements:
   build:
     - cmake
-    - conan
+    - conan>=1.45.0
+    - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - gxx_linux-64 11.1.* [linux64]
     - git
     - ninja
-    - python {{ python }}
-    - tbb-devel
+    - python
+    - tbb-devel=2020.2.*
     # doc build requirements
-    - appdirs
+    - confuse
+    - cppcheck [linux64]
     - graphlib-backport # for python < 3.9
     - h5py
     - ipykernel=6.3.1  # issue with pythreejs 3d plotting, see https://github.com/ipython/ipykernel/issues/771
@@ -24,7 +43,6 @@ requirements:
     - ipywidgets
     - matplotlib-base
     - nbsphinx
-    - python-configuration
     - python-graphviz
     - pythreejs
     - pyyaml
@@ -32,13 +50,13 @@ requirements:
     - sphinx
     - sphinx-book-theme
     - sphinx-copybutton
+    - pip
   run:
-    - appdirs
+    - confuse
     - numpy>=1.20.0
-    - python {{ python }}
-    - python-configuration
+    - python
     - pyyaml
-    - tbb
+    - tbb=2020.2.*
     - graphlib-backport # for python < 3.9
 
 test:
@@ -46,7 +64,8 @@ test:
     - scipp
   requires:
     - cmake
-    - conan
+    - conan>=1.45.0
+    - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - gxx_linux-64 11.1.* [linux64]
     - h5py
     - ipykernel=6.3.1  # issue with pythreejs 3d plotting, see https://github.com/ipython/ipykernel/issues/771
@@ -59,7 +78,7 @@ test:
     - xarray
     - pandas
     - scipy>=1.7.0
-    - tbb-devel
+    - tbb-devel=2020.2.*
   files:
     - cmake-package-test/
   source_files:
@@ -78,7 +97,9 @@ build:
     - cmake --preset package-macos [osx]
     - cmake --preset package-windows [win]
     - cmake --build --preset build
-    - cmake --build --preset docs [linux]
+    - wget https://files.pythonhosted.org/packages/04/51/4b4a0740fbde50408a2f956cbb190bdc01f1c7a562627e7f102b6a30d9b4/sphinx_autodoc_typehints-1.17.0-py3-none-any.whl
+    - pip install sphinx_autodoc_typehints-1.17.0-py3-none-any.whl
+    - cmake --build --preset package-docs [linux]
     - cp -r build/html $DOCS_HTML_DIR [linux]
     - ctest --preset test
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include <type_traits>
@@ -11,13 +11,6 @@
 
 using namespace scipp;
 using namespace scipp::core;
-
-TEST(DimensionsTest, footprint) {
-  EXPECT_EQ(sizeof(Dimensions), 64ul);
-  // TODO Do we want to align this? Need to run benchmarks when implementation
-  // is more mature.
-  // EXPECT_EQ(std::alignment_of<Dimensions>(), 64);
-}
 
 TEST(DimensionsTest, construct) {
   EXPECT_NO_THROW(Dimensions());

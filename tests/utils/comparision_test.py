@@ -21,7 +21,7 @@ def test_wont_match_when_meta_keys_unequal():
     point = sc.scalar(value=1.0)
     a = sc.DataArray(data=point, attrs={'x': point})
     b = sc.DataArray(data=point, attrs={'y': point})
-    with pytest.raises(RuntimeError):
+    with pytest.raises(KeyError):
         su.isnear(a, b, rtol=0 * sc.units.one, atol=1.0 * sc.units.one)
     # Raise nothing if we are ignoring differing parts
     su.isnear(a, b, rtol=0 * sc.units.one, atol=1.0 * sc.units.one, include_attrs=False)

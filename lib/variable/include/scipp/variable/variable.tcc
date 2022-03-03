@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/array_to_string.h"
 #include "scipp/core/dimensions.h"
-#include "scipp/core/eigen.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
 #include "scipp/core/has_eval.h"
@@ -73,14 +72,24 @@ auto make_model(const units::Unit unit, const Dimensions &dimensions,
   }
 }
 
+/// See also default_unit_for, for similar runtime functionality.
+template <class T>
+units::Unit unit_for_dtype(const std::optional<units::Unit> &unit) {
+  if (unit.has_value())
+    return *unit;
+  return default_unit_for(dtype<T>);
+}
+
 } // namespace
 
 template <class T>
-Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
-                   T values_, std::optional<T> variances_)
+Variable::Variable(const std::optional<units::Unit> &unit,
+                   const Dimensions &dimensions, T values_,
+                   std::optional<T> variances_)
     : m_dims(dimensions), m_strides(dimensions),
-      m_object(make_model(unit, dimensions, std::move(values_),
-                          std::move(variances_))) {}
+      m_object(
+          make_model(unit_for_dtype<typename std::decay_t<T>::value_type>(unit),
+                     dimensions, std::move(values_), std::move(variances_))) {}
 
 template <class T> ElementArrayView<const T> Variable::values() const {
   return cast<T>(*this).values(array_params());

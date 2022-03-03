@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -51,11 +51,6 @@ static constexpr auto rebin = overloaded{
                             std::decay_t<decltype(data_old)>>) {
             data_new.value[inew] += data_old.value[iold] * scale;
             data_new.variance[inew] += data_old.variance[iold] * scale;
-          } else if constexpr (std::is_same_v<typename std::decay_t<decltype(
-                                                  data_new)>::value_type,
-                                              bool>) {
-            static_cast<void>(scale);
-            data_new[inew] = data_new[inew] || data_old[iold];
           } else {
             data_new[inew] += data_old[iold] * scale;
           }

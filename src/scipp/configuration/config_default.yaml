@@ -1,0 +1,133 @@
+## Configuration file for scipp
+## See https://scipp.github.io/reference/runtime-configuration.html
+##
+## COLORS
+## All colors are given as one of
+##     - a hex string, such as #ff00ff
+##     - a scalar grayscale intensity such as 0.75 (as a string)
+##     - a legal html color name, e.g., red, blue, darkslategray
+##
+
+# Colors used by output to Jupyter notebooks by, e.g. show, table, plot
+colors:
+  attrs: '#ff5555'
+  coords: '#c6e590'
+  data: '#f6d028'
+  masks: '#c8c8c8'
+
+  # Color for plot control button.
+  button: '#bdbdbd49'
+  # Color for selected plot control button.
+  button_selected: '#bdbdbdbb'
+  # Color for table header text.
+  header_text: '#111111'
+  # Color for hovering on table rows.
+  hover: '#d6eaf8'
+
+# Maximum number of rows in a table to display at the same time.
+table_max_size: 50
+
+# Default style of plots produced by scipp.
+plot:
+  # Aspect ratio for images.
+  # - 'equal' conserves the aspect ratio of the image.
+  # - 'auto' stretches the image to the size of the figure.
+  # See https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_aspect.html
+  aspect: auto
+
+  # The list of default line colors for one-dimensional plots. When multiple lines are
+  # on the same plot, the first line will use the first color, the second line will
+  # use the second color, and so on.
+  color:
+    - '#1f77b4'
+    - '#ff7f0e'
+    - '#2ca02c'
+    - '#d62728'
+    - '#9467bd'
+    - '#8c564b'
+    - '#e377c2'
+    - '#7f7f7f'
+    - '#bcbd22'
+    - '#17becf'
+
+  # Style of lines
+  # Cycles through values given here when more than one line is drawn in a single call.
+  # Use 'none' to disable lines.
+  # See https://matplotlib.org/stable/api/_as_gen/matplotlib.lines.Line2D.html#matplotlib.lines.Line2D.set_linestyle
+  linestyle:
+    - none
+
+  # Width of lines.
+  # Cycles through these when more than one line is drawn in a single call.
+  linewidth:
+    - 1.5
+
+  # List of matplotlib line markers. When multiple lines are on the same plot, the
+  # first line will use the first marker, the second line will use the second marker, and so on.
+  # See https://matplotlib.org/stable/api/markers_api.html
+  marker:
+    - 'o'
+    - '^'
+    - 's'
+    - 'd'
+    - '*'
+    - '1'
+    - 'P'
+    - 'h'
+    - 'X'
+    - 'v'
+    - '<'
+    - '>'
+    - '2'
+    - '3'
+    - '4'
+    - '8'
+    - 'p'
+    - 'H'
+    - '+'
+    - 'x'
+    - 'D'
+
+  # Dots per inch (resolution) of figures
+  dpi: 96
+
+  # Monitor pixel ratio (see https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio).
+  # This affects the size of the points in three-dimensional plots.
+  # Set to > 1 for high density (e.g. retina) displays
+  pixel_ratio: 1.0
+
+  # Height and width of figures in pixels.
+  height: 400
+  width: 600
+
+  # Rectangle into which figure content is drawn
+  # in normalized figure coordinates.
+  bounding_box:
+    - 0.05  # distance from left edge
+    - 0.02  # distance from bottom edge
+    - 1  # width
+    - 1  # height
+
+  # Colorbar properties.
+  params:
+    # Choose whether to show a colorbar where applicable.
+    cbar: true
+    # Colormap for 2D and 3D plots.
+    # See https://matplotlib.org/stable/gallery/color/colormap_reference.html
+    cmap: viridis
+    # Generate a colormap from this color if given.
+    # Overrides cmap.
+    color: null
+    # Mark values of NaN with this color.
+    nan_color: '#d3d3d3'
+    # Normalization for y values (1D plots), colorbar (2D and 3D plots).
+    # One of ['linear', 'log']
+    norm: linear
+    # Color of values above vmax.
+    over_color: '#8c564b'
+    # Color of values below vmin.
+    under_color: '#9467bd'
+    # Minimum value of y-axis (1D), of the colorbar (2D and 3D).
+    vmax: null
+    # Minimum value of y-axis (1D), of the colorbar (2D and 3D).
+    vmin: null

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .. import config
@@ -44,7 +44,7 @@ class PlotFigure2d(PlotFigure):
                          grid=grid)
 
         if aspect is None:
-            aspect = config.plot.aspect
+            aspect = config['plot']['aspect']
 
         self.cmap = cmap
         self._mask_cmap = mask_cmap

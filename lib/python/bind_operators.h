@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -26,13 +26,15 @@ namespace py = pybind11;
 
 template <class T, class... Ignored>
 void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
-  c.def("__repr__", [](T &self) { return to_string(self); });
-  c.def("__bool__", [](T &) {
+  c.def("__abs__", [](const T &self) { return abs(self); });
+  c.def("__repr__", [](const T &self) { return to_string(self); });
+  c.def("__bool__", [](const T &) {
     throw std::runtime_error("The truth value of a variable, data array, or "
                              "dataset is ambiguous. Use any() or all().");
   });
   c.def(
-      "copy", [](T &self, const bool deep) { return deep ? copy(self) : self; },
+      "copy",
+      [](const T &self, const bool deep) { return deep ? copy(self) : self; },
       py::arg("deep") = true, py::call_guard<py::gil_scoped_release>(),
       R"(
       Return a (by default deep) copy.
@@ -55,8 +57,9 @@ void bind_astype(py::class_<T, Ignored...> &c) {
       "astype",
       [](const T &self, const py::object &type, const bool copy) {
         const auto [scipp_dtype, dtype_unit] =
-            cast_dtype_and_unit(type, std::nullopt);
-        if (dtype_unit != scipp::units::one && dtype_unit != self.unit()) {
+            cast_dtype_and_unit(type, DefaultUnit{});
+        if (dtype_unit.has_value() &&
+            (dtype_unit != scipp::units::one && dtype_unit != self.unit())) {
           throw scipp::except::UnitError(scipp::python::format(
               "Conversion of units via the dtype is not allowed. Occurred when "
               "trying to change dtype from ",
@@ -90,28 +93,6 @@ void bind_inequality_to_operator(pybind11::class_<T, Ignored...> &c) {
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def(
       "__ne__", [](const T &a, const Other &b) { return a != b; },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
-}
-
-template <class Other, class T, class... Ignored>
-void bind_comparison(pybind11::class_<T, Ignored...> &c) {
-  c.def(
-      "__eq__", [](T &a, Other &b) { return equal(a, b); }, py::is_operator(),
-      py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__ne__", [](T &a, Other &b) { return not_equal(a, b); },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__lt__", [](T &a, Other &b) { return less(a, b); }, py::is_operator(),
-      py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__gt__", [](T &a, Other &b) { return greater(a, b); }, py::is_operator(),
-      py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__le__", [](T &a, Other &b) { return less_equal(a, b); },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__ge__", [](T &a, Other &b) { return greater_equal(a, b); },
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
 }
 
@@ -219,6 +200,29 @@ template <class RHSSetup> struct OpBinder {
           py::is_operator(), py::call_guard<py::gil_scoped_release>());
     }
   }
+
+  template <class Other, class T, class... Ignored>
+  static void comparison(pybind11::class_<T, Ignored...> &c) {
+    c.def(
+        "__eq__", [](T &a, Other &b) { return equal(a, RHSSetup{}(b)); },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "__ne__", [](T &a, Other &b) { return not_equal(a, RHSSetup{}(b)); },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "__lt__", [](T &a, Other &b) { return less(a, RHSSetup{}(b)); },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "__gt__", [](T &a, Other &b) { return greater(a, RHSSetup{}(b)); },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "__le__", [](T &a, Other &b) { return less_equal(a, RHSSetup{}(b)); },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    c.def(
+        "__ge__",
+        [](T &a, Other &b) { return greater_equal(a, RHSSetup{}(b)); },
+        py::is_operator(), py::call_guard<py::gil_scoped_release>());
+  }
 };
 
 template <class Other, class T, class... Ignored>
@@ -231,6 +235,11 @@ static void bind_binary(pybind11::class_<T, Ignored...> &c) {
   OpBinder<Identity>::binary<Other>(c);
 }
 
+template <class Other, class T, class... Ignored>
+static void bind_comparison(pybind11::class_<T, Ignored...> &c) {
+  OpBinder<Identity>::comparison<Other>(c);
+}
+
 template <class T, class... Ignored>
 void bind_in_place_binary_scalars(pybind11::class_<T, Ignored...> &c) {
   OpBinder<ScalarToVariable>::in_place_binary<double>(c);
@@ -241,6 +250,12 @@ template <class T, class... Ignored>
 void bind_binary_scalars(pybind11::class_<T, Ignored...> &c) {
   OpBinder<ScalarToVariable>::binary<double>(c);
   OpBinder<ScalarToVariable>::binary<int64_t>(c);
+}
+
+template <class T, class... Ignored>
+void bind_comparison_scalars(pybind11::class_<T, Ignored...> &c) {
+  OpBinder<ScalarToVariable>::comparison<double>(c);
+  OpBinder<ScalarToVariable>::comparison<int64_t>(c);
 }
 
 template <class T, class... Ignored>

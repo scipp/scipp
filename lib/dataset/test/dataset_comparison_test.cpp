@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 //
 // The test in this file ensure that comparison operators for Dataset and
 // DatasetConstView are correct. More complex tests should build on the
@@ -24,6 +24,8 @@ private:
     EXPECT_TRUE(b == a);
     EXPECT_FALSE(a != b);
     EXPECT_FALSE(b != a);
+    EXPECT_TRUE(equals_nan(a, b));
+    EXPECT_TRUE(equals_nan(b, a));
   }
   template <class A, class B>
   void expect_ne_impl(const A &a, const B &b) const {
@@ -31,6 +33,8 @@ private:
     EXPECT_TRUE(b != a);
     EXPECT_FALSE(a == b);
     EXPECT_FALSE(b == a);
+    EXPECT_FALSE(equals_nan(a, b));
+    EXPECT_FALSE(equals_nan(b, a));
   }
 
 protected:

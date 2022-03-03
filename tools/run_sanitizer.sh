@@ -22,15 +22,16 @@ cmake -DSANITIZE_${SANITIZER}=On -DCMAKE_INSTALL_PREFIX=${INSTALL} ${SOURCE}
 make -j
 make -j all-tests
 make install
-export ASan_WRAPPER=${SOURCE}/cmake/sanitizers-cmake/cmake/asan-wrapper
-${ASan_WRAPPER} ${BUILD}/common/test/scipp-common-test || { exit 1; }
-${ASan_WRAPPER} ${BUILD}/units/test/scipp-units-test || { exit 1; }
-${ASan_WRAPPER} ${BUILD}/core/test/scipp-core-test || { exit 1; }
-${ASan_WRAPPER} ${BUILD}/variable/test/scipp-variable-test || { exit 1; }
-${ASan_WRAPPER} ${BUILD}/dataset/test/scipp-dataset-test || { exit 1; }
-cd ${SOURCE}/python
-export PYTHONPATH=${PYTHONPATH}:${INSTALL}
-python3 -m pytest || { exit 1; }
+export ASan_WRAPPER=${SOURCE}/lib/cmake/sanitizers-cmake/cmake/asan-wrapper
+${ASan_WRAPPER} ${BUILD}/bin/scipp-common-test || { exit 1; }
+${ASan_WRAPPER} ${BUILD}/bin/scipp-units-test || { exit 1; }
+${ASan_WRAPPER} ${BUILD}/bin/scipp-core-test || { exit 1; }
+${ASan_WRAPPER} ${BUILD}/bin/scipp-variable-test || { exit 1; }
+${ASan_WRAPPER} ${BUILD}/bin/scipp-dataset-test || { exit 1; }
+cd ${SOURCE}/test
+export PYTHONPATH=${INSTALL}
+export LD_PRELOAD=$(ldd ${INSTALL}/scipp/_scipp*.so | grep libasan | sed "s/^[[:space:]]//" | cut -d' ' -f1)
+python3 -m pytest -s || { exit 1; }
 
 cd ${WORKING_DIR}
 rm -rf ${BUILD} ${INSTALL}

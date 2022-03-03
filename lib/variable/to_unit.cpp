@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <units/units.hpp>
@@ -29,8 +29,12 @@ Variable to_unit(const Variable &var, const units::Unit &unit,
                  const CopyPolicy copy) {
   if (unit == var.unit())
     return copy == CopyPolicy::Always ? variable::copy(var) : var;
-  const auto scale = llnl::units::quick_convert(
-      variableFactory().elem_unit(var).underlying(), unit.underlying());
+  const auto var_unit = variableFactory().elem_unit(var);
+  if (var_unit == units::none)
+    throw except::UnitError(
+        "Unit conversion is not permitted as the input variable has no unit.");
+  const auto scale =
+      llnl::units::quick_convert(var_unit.underlying(), unit.underlying());
   if (std::isnan(scale))
     throw except::UnitError("Conversion from `" + to_string(var.unit()) +
                             "` to `" + to_string(unit) + "` is not valid.");

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file Accumulation functions for variables, based on transform.
 /// @author Simon Heybrock
 #pragma once
@@ -25,7 +25,7 @@ static void do_accumulate(const std::tuple<Ts...> &types, Op op,
       (sizeof...(other) != 1 && var.dims().ndim() == 0))
     return in_place<false>::transform_data(types, op, name, var, other...);
 
-  const auto reduce_chunk = [&](auto &&out, const Slice slice) {
+  const auto reduce_chunk = [&](auto &&out, const Slice &slice) {
     // A typical cache line has 64 Byte, which would fit, e.g., 8 doubles. If
     // multiple threads write to different elements in the same cache lines we
     // have "false sharing", with a severe negative performance impact. 128 is a

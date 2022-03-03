@@ -1,6 +1,6 @@
 # ~~~
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # ~~~
 set(TARGET_NAME "scipp-dataset")
 set(INC_FILES
@@ -34,6 +34,7 @@ set(SRC_FILES
     arithmetic.cpp
     astype.cpp
     bin.cpp
+    bin_detail.cpp
     bins.cpp
     counts.cpp
     data_array.cpp

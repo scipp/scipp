@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "py_object.h"
@@ -40,6 +40,10 @@ PyObject copy(const PyObject &obj) {
   } else {
     return {object};
   }
+}
+
+std::ostream &operator<<(std::ostream &os, const PyObject &obj) {
+  return os << to_string(obj);
 }
 
 std::string to_string(const PyObject &obj) {

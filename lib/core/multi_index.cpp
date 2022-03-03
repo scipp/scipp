@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 
@@ -60,7 +60,13 @@ auto get_slice_dim(const T &param, const Ts &... params) {
 template <class T>
 [[nodiscard]] auto make_span(T &&array, const scipp::index begin) {
   return scipp::span{array.data() + begin,
-                     static_cast<size_t>(NDIM_MAX - begin)};
+                     static_cast<size_t>(NDIM_OP_MAX - begin)};
+}
+
+template <class StridesArg>
+[[nodiscard]] scipp::index value_or_default(const StridesArg &strides,
+                                            const scipp::index i) {
+  return i < strides.size() ? strides[i] : 0;
 }
 
 template <size_t... I, class... StridesArgs>
@@ -69,8 +75,10 @@ bool can_be_flattened(
     std::array<scipp::index, sizeof...(I)> &strides_for_contiguous,
     const StridesArgs &... strides) {
   const bool res =
-      ((strides[dim] == strides_for_contiguous[I] && strides[dim] != 0) && ...);
-  ((strides_for_contiguous[I] = size * strides[dim]), ...);
+      ((value_or_default(strides, dim) == strides_for_contiguous[I] &&
+        value_or_default(strides, dim) != 0) &&
+       ...);
+  ((strides_for_contiguous[I] = size * value_or_default(strides, dim)), ...);
   return res;
 }
 
@@ -91,6 +99,10 @@ flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
   std::array<scipp::index, N> strides_for_contiguous{};
   scipp::index dim_write = 0;
   for (scipp::index dim_read = dims.ndim() - 1; dim_read >= 0; --dim_read) {
+    if (dim_write >= NDIM_OP_MAX)
+      throw std::runtime_error("Operations with more than " +
+                               std::to_string(NDIM_OP_MAX) +
+                               " dimensions are not supported.");
     const auto size = dims.size(dim_read);
     if (dim_read > non_flattenable_dim &&
         can_be_flattened(dim_read, size, std::make_index_sequence<N>{},
@@ -99,7 +111,8 @@ flatten_dims(const scipp::span<std::array<scipp::index, sizeof...(StridesArgs)>>
     } else {
       out_shape[dim_write] = size;
       for (scipp::index data = 0; data < N; ++data) {
-        out_strides[dim_write][data] = strides_array[data].get()[dim_read];
+        out_strides[dim_write][data] =
+            value_or_default(strides_array[data].get(), dim_read);
       }
       ++dim_write;
     }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/core/element/special_values.h"
@@ -31,7 +31,7 @@ TYPED_TEST_SUITE(ElementIsnanTest, ElementSpecialValuesTestTypes);
 
 TEST(ElementIsnanTest, unit) {
   for (const auto &u : {units::dimensionless, units::m, units::meV}) {
-    EXPECT_EQ(element::isnan(u), units::dimensionless);
+    EXPECT_EQ(element::isnan(u), units::none);
   }
 }
 
@@ -57,7 +57,7 @@ TYPED_TEST_SUITE(ElementIsinfTest, ElementSpecialValuesTestTypes);
 
 TEST(ElementIsinfTest, unit) {
   for (const auto &u : {units::dimensionless, units::m, units::meV}) {
-    EXPECT_EQ(element::isinf(u), units::dimensionless);
+    EXPECT_EQ(element::isinf(u), units::none);
   }
 }
 
@@ -83,7 +83,7 @@ TYPED_TEST_SUITE(ElementIsfiniteTest, ElementSpecialValuesTestTypes);
 
 TEST(ElementIsfiniteTest, unit) {
   for (const auto &u : {units::dimensionless, units::m, units::meV}) {
-    EXPECT_EQ(element::isfinite(u), units::dimensionless);
+    EXPECT_EQ(element::isfinite(u), units::none);
   }
 }
 
@@ -110,8 +110,8 @@ TYPED_TEST_SUITE(ElementIssignedinfTest, ElementSpecialValuesTestTypes);
 
 TEST(ElementIssignedinfTest, unit) {
   for (const auto &u : {units::dimensionless, units::m, units::meV}) {
-    EXPECT_EQ(element::isposinf(u), units::dimensionless);
-    EXPECT_EQ(element::isneginf(u), units::dimensionless);
+    EXPECT_EQ(element::isposinf(u), units::none);
+    EXPECT_EQ(element::isneginf(u), units::none);
   }
 }
 

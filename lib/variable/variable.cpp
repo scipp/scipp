@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <units/units.hpp>
@@ -7,12 +7,33 @@
 #include "scipp/variable/variable.h"
 
 #include "scipp/core/dtype.h"
+#include "scipp/core/eigen.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/variable_concept.h"
 #include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
+
+namespace {
+/// Types that default to unit=units::dimensionless. Everything else is
+/// units::none.
+const std::tuple<double, float, int64_t, int32_t, core::time_point,
+                 Eigen::Vector3d, Eigen::Matrix3d, Eigen::Affine3d,
+                 core::Quaternion, core::Translation>
+    default_dimensionless_dtypes;
+
+template <class... Ts>
+bool is_default_dimensionless(DType type, std::tuple<Ts...>) {
+  return ((type == dtype<Ts>) || ...);
+}
+} // namespace
+
+units::Unit default_unit_for(const DType type) {
+  return is_default_dimensionless(type, default_dimensionless_dtypes)
+             ? units::dimensionless
+             : units::none;
+}
 
 /// Construct from parent with same dtype, unit, and has_variances but new dims.
 ///
@@ -102,23 +123,34 @@ Dim Variable::dim() const {
   return dims().inner();
 }
 
-bool Variable::operator==(const Variable &other) const {
-  if (is_same(other))
+namespace {
+bool compare(const Variable &a, const Variable &b, bool equal_nan) {
+  if (equal_nan && a.is_same(b))
     return true;
-  if (!is_valid() || !other.is_valid())
-    return is_valid() == other.is_valid();
+  if (!a.is_valid() || !b.is_valid())
+    return a.is_valid() == b.is_valid();
   // Note: Not comparing strides
-  if (unit() != other.unit())
+  if (a.unit() != b.unit())
     return false;
-  if (dims() != other.dims())
+  if (a.dims() != b.dims())
     return false;
-  if (dtype() != other.dtype())
+  if (a.dtype() != b.dtype())
     return false;
-  if (has_variances() != other.has_variances())
+  if (a.has_variances() != b.has_variances())
     return false;
-  if (dims().volume() == 0 && dims() == other.dims())
+  if (a.dims().volume() == 0 && a.dims() == b.dims())
     return true;
-  return dims() == other.dims() && data().equals(*this, other);
+  return a.dims() == b.dims() &&
+         (equal_nan ? a.data().equals_nan(a, b) : a.data().equals(a, b));
+}
+} // namespace
+
+bool Variable::operator==(const Variable &other) const {
+  return compare(*this, other, false);
+}
+
+bool equals_nan(const Variable &a, const Variable &b) {
+  return compare(a, b, true);
 }
 
 bool Variable::operator!=(const Variable &other) const {
@@ -157,13 +189,16 @@ Variable Variable::slice(const Slice params) const {
   const auto dim = params.dim();
   const auto begin = params.begin();
   const auto end = params.end();
+  const auto stride = params.stride();
   const auto index = out.m_dims.index(dim);
   out.m_offset += begin * m_strides[index];
   if (end == -1) {
     out.m_strides.erase(index);
     out.m_dims.erase(dim);
-  } else
-    out.m_dims.resize(dim, end - begin);
+  } else {
+    static_cast<Sizes &>(out.m_dims) = out.m_dims.slice(params);
+    out.m_strides[index] *= stride;
+  }
   return out;
 }
 
@@ -203,23 +238,24 @@ Variable Variable::broadcast(const Dimensions &target) const {
   expect::includes(target, dims());
   auto out = target.volume() == dims().volume() ? *this : as_const();
   out.m_dims = target;
-  scipp::index i = 0;
+  out.m_strides.clear();
   for (const auto &d : target.labels())
-    out.m_strides[i++] = dims().contains(d) ? m_strides[dims().index(d)] : 0;
+    out.m_strides.push_back(dims().contains(d) ? m_strides[dims().index(d)]
+                                               : 0);
   return out;
 }
 
 Variable Variable::fold(const Dim dim, const Dimensions &target) const {
   auto out(*this);
   out.m_dims = core::fold(dims(), dim, target);
+  out.m_strides.clear();
   const Strides substrides(target);
-  scipp::index i_out = 0;
   for (scipp::index i_in = 0; i_in < dims().ndim(); ++i_in) {
     if (dims().label(i_in) == dim)
       for (scipp::index i_target = 0; i_target < target.ndim(); ++i_target)
-        out.m_strides[i_out++] = m_strides[i_in] * substrides[i_target];
+        out.m_strides.push_back(m_strides[i_in] * substrides[i_target]);
     else
-      out.m_strides[i_out++] = m_strides[i_in];
+      out.m_strides.push_back(m_strides[i_in]);
   }
   return out;
 }

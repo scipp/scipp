@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from ..core import zeros
@@ -39,7 +39,7 @@ class PlotView3d(PlotView):
         mask_info = next(iter(mask_info.values()))
         if len(mask_info) > 0:
             # Use automatic broadcasting in Scipp variables
-            msk = zeros(sizes=array.sizes, dtype='int32')
+            msk = zeros(sizes=array.sizes, dtype='int32', unit=None)
             for m, val in mask_info.items():
                 if val:
                     msk += array.masks[m].astype(msk.dtype)

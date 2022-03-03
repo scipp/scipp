@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 from .. import config
 from .toolbar import PlotToolbar3d
@@ -22,7 +22,7 @@ class PlotFigure3d:
     It renders an interactive scene containing a point cloud using `pythreejs`.
     """
     def __init__(self, *, background, cmap, extend, figsize, mask_cmap, nan_color, norm,
-                 pixel_size, show_outline, tick_size, xlabel, ylabel, zlabel):
+                 pixel_size, show_outline, tick_size, xlabel, ylabel, zlabel, camera):
 
         self._pixel_size = pixel_size
         if pixel_size is not None:
@@ -31,7 +31,7 @@ class PlotFigure3d:
             self._pixel_size = None
 
         if figsize is None:
-            figsize = (config.plot.width, config.plot.height)
+            figsize = (config['plot']['width'], config['plot']['height'])
 
         # Figure toolbar
         self.toolbar = PlotToolbar3d(mpl_toolbar=self)
@@ -61,9 +61,10 @@ class PlotFigure3d:
         self.camera_backup = {}
 
         # Define camera
+        self.initial_camera_view = camera
         self.camera = p3.PerspectiveCamera(position=[0, 0, 0],
-                                           aspect=config.plot.width /
-                                           config.plot.height)
+                                           aspect=config['plot']['width'] /
+                                           config['plot']['height'])
 
         # Add red/green/blue axes helper
         self.axes_3d = p3.AxesHelper()
@@ -152,13 +153,20 @@ class PlotFigure3d:
 
         # Set camera controller target
         distance_from_center = 1.2
-        self.camera.position = list(np.array(center) + distance_from_center * box_size)
+        camera_position = list(np.array(center) + distance_from_center * box_size)
+        camera_lookat = tuple(center)
+        if self.initial_camera_view is not None:
+            camera_position = self.initial_camera_view.get('position', camera_position)
+            camera_lookat = tuple(self.initial_camera_view.get(
+                'look_at', camera_lookat))
+            self.initial_camera_view = None
+        self.camera.position = camera_position
         cam_pos_norm = np.linalg.norm(self.camera.position)
         box_mean_size = np.linalg.norm(box_size)
         self.camera.near = 0.01 * box_mean_size
         self.camera.far = 5.0 * cam_pos_norm
-        self.controls.target = tuple(center)
-        self.camera.lookAt(tuple(center))
+        self.controls.target = camera_lookat
+        self.camera.lookAt(camera_lookat)
         # TODO: Update OrbitControls maxDistance. This should be removed once
         # https://github.com/jupyter-widgets/pythreejs/issues/366 is resolved.
         self.controls.maxDistance = self.camera.far * 5.0
@@ -200,7 +208,7 @@ class PlotFigure3d:
                     array=np.ones([positions.shape[0], 3], dtype='float32'))
             })
 
-        pixel_ratio = config.plot.get("pixel_ratio", 1.0)
+        pixel_ratio = config['plot']['pixel_ratio']
         # Note that an additional factor of 2.5 (obtained from trial and error) seems to
         # be required to get the sizes right in the scene.
         self.points_material = p3.PointsMaterial(vertexColors='VertexColors',
@@ -356,9 +364,9 @@ class PlotFigure3d:
         Note that the figure is closed as soon as it is created to avoid it
         re-appearing further down the notebook.
         """
-        height_inches = self.figsize[1] / config.plot.dpi
+        height_inches = self.figsize[1] / config['plot']['dpi']
         cbar_fig = plt.figure(figsize=(height_inches * 0.2, height_inches),
-                              dpi=config.plot.dpi)
+                              dpi=config['plot']['dpi'])
         cbar_ax = cbar_fig.add_axes([0.05, 0.02, 0.25, 0.94])
         _ = ColorbarBase(cbar_ax,
                          cmap=self.scalar_map.get_cmap(),

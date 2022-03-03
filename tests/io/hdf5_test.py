@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
 import scipp as sc
+import scipp.spatial
 import numpy as np
 import tempfile
 
@@ -26,17 +27,24 @@ xy = sc.Variable(dims=['y', 'x'],
                  values=np.random.rand(6, 4),
                  variances=np.random.rand(6, 4),
                  unit=sc.units.kg)
-eigen_1d = sc.vectors(dims=['x'], values=np.random.rand(4, 3))
+vector = sc.vectors(dims=['x'], values=np.random.rand(4, 3))
 
-eigen_2d = sc.matrices(dims=['x'], values=np.random.rand(4, 3, 3))
+matrix = sc.spatial.linear_transforms(dims=['x'], values=np.random.rand(4, 3, 3))
+
+rotation = sc.spatial.rotations(dims=['x'], values=[[1, 2, 3, 4]])
+translation = sc.spatial.translations(dims=['x'], values=[[5, 6, 7]], unit=sc.units.m)
+affine = sc.spatial.affine_transforms(dims=['x'],
+                                      values=[[[0, 1, 2, 4], [5, 6, 7, 8],
+                                               [9, 10, 11, 12], [13, 14, 15, 16]]],
+                                      unit=sc.units.m)
 
 datetime64ms_1d = sc.Variable(dims=['x'],
-                              dtype=sc.dtype.datetime64,
+                              dtype=sc.DType.datetime64,
                               unit='ms',
                               values=np.arange(10))
 
 datetime64us_1d = sc.Variable(dims=['x'],
-                              dtype=sc.dtype.datetime64,
+                              dtype=sc.DType.datetime64,
                               unit='us',
                               values=np.arange(10))
 
@@ -77,11 +85,29 @@ def test_variable_2d():
     check_roundtrip(xy)
 
 
-def test_variable_eigen():
-    check_roundtrip(eigen_1d)
-    check_roundtrip(eigen_1d['x', 0])
-    check_roundtrip(eigen_2d)
-    check_roundtrip(eigen_2d['x', 0])
+def test_variable_vector():
+    check_roundtrip(vector)
+    check_roundtrip(vector['x', 0])
+
+
+def test_variable_matrix():
+    check_roundtrip(matrix)
+    check_roundtrip(matrix['x', 0])
+
+
+def test_variable_rotation():
+    check_roundtrip(rotation)
+    check_roundtrip(rotation['x', 0])
+
+
+def test_variable_translation():
+    check_roundtrip(translation)
+    check_roundtrip(translation['x', 0])
+
+
+def test_variable_affine():
+    check_roundtrip(affine)
+    check_roundtrip(affine['x', 0])
 
 
 def test_variable_datetime64():
@@ -92,15 +118,15 @@ def test_variable_datetime64():
 
 
 def test_variable_binned_variable():
-    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.dtype.int64)
-    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.dtype.int64)
+    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.DType.int64, unit=None)
+    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.DType.int64, unit=None)
     binned = sc.bins(begin=begin, end=end, dim='x', data=x)
     check_roundtrip(binned)
 
 
 def test_variable_binned_variable_slice():
-    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.dtype.int64)
-    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.dtype.int64)
+    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.DType.int64, unit=None)
+    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.DType.int64, unit=None)
     binned = sc.bins(begin=begin, end=end, dim='x', data=x)
     # Note the current arbitrary limit is to avoid writing the buffer if it is
     # more than 50% too large. These cutoffs or the entiry mechanism may
@@ -151,7 +177,7 @@ def test_data_array_dtype_scipp_container():
     a = sc.DataArray(data=x)
     a.coords['variable'] = sc.scalar(x)
     a.coords['scalar'] = sc.scalar(a)
-    a.coords['1d'] = sc.empty(dims=x.dims, shape=x.shape, dtype=sc.dtype.DataArray)
+    a.coords['1d'] = sc.empty(dims=x.dims, shape=x.shape, dtype=sc.DType.DataArray)
     for i in range(4):
         a.coords['1d'].values[i] = sc.DataArray(float(i) * sc.units.m)
     a.coords['dataset'] = sc.scalar(sc.Dataset(data={'a': array_1d, 'b': array_2d}))
@@ -190,3 +216,9 @@ def test_variable_with_zero_length_dimension():
 def test_variable_with_zero_length_dimension_with_variances():
     v = sc.Variable(dims=["x"], values=[], variances=[])
     check_roundtrip(v)
+
+
+def test_None_unit_is_preserved_even_if_dtype_does_not_default_to_None_unit():
+    v = sc.scalar(1.2, unit=None)
+    result = check_roundtrip(v)
+    assert result.unit is None

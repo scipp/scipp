@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 from .._scipp import core
 import numpy as np
 
@@ -11,7 +11,8 @@ def _slice_params(array, dim, loc):
     if not isinstance(array, core.DataArray):
         array = next(iter(array.values()))
     if array.sizes[dim] + 1 == coord.sizes[dim]:
-        _, i = core.get_slice_params(array.data, coord, loc * coord.unit)
+        _, i = core.get_slice_params(array.data, coord, core.scalar(loc,
+                                                                    unit=coord.unit))
         if i < 0 or i + 1 >= coord.sizes[dim]:
             return None
         return coord[dim, i], coord[dim, i + 1]
@@ -154,7 +155,8 @@ class PlotView:
             {axis: self.formatters[dim]
              for axis, dim in zip(self._axes, self._dims)})
         scale = {axis: self._scale[dim] for axis, dim in zip(self._axes, self._dims)}
-        self.figure.update_axes(scale=scale, unit=f'[{self._data.unit}]')
+        unit = '' if self._data.unit is None else f'[{self._data.unit}]'
+        self.figure.update_axes(scale=scale, unit=unit)
 
     def _make_data(self, new_values, mask_info):
         return new_values

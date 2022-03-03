@@ -1,15 +1,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .. import config
+from .. import config, units
 from .formatters import make_formatter
 from .tools import parse_params
 from ..core import DimensionError
 from .model1d import PlotModel1d
 from .widgets import PlotWidgets
 from .resampling_model import ResamplingMode
-from ..core import units
 
 
 def make_params(*, cmap=None, norm=None, vmin=None, vmax=None, masks=None, color=None):
@@ -69,19 +68,20 @@ def _make_formatters(*, dims, arrays, labels):
     labs = {dim: dim for dim in dims}
     if labels is not None:
         labs.update(labels)
-    formatters = {dim: make_formatter(array, labs[dim]) for dim in dims}
+    formatters = {dim: make_formatter(array, labs[dim], dim) for dim in dims}
     return labs, formatters
 
 
 def make_profile(ax, mask_color):
     from .profile import PlotProfile
-    pad = config.plot.padding.copy()
-    pad[2] = 0.77
+    cfg = config['plot']
+    bbox = list(cfg['bounding_box'])
+    bbox[2] = 0.77
     return PlotProfile(ax=ax,
                        mask_color=mask_color,
-                       figsize=(1.3 * config.plot.width / config.plot.dpi,
-                                0.6 * config.plot.height / config.plot.dpi),
-                       padding=pad,
+                       figsize=(1.3 * cfg['width'] / cfg['dpi'],
+                                0.6 * cfg['height'] / cfg['dpi']),
+                       bounding_box=bbox,
                        legend={
                            "show": True,
                            "loc": (1.02, 0.0)

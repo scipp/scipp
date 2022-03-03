@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from __future__ import annotations
 from html import escape
@@ -273,7 +273,7 @@ class VariableDrawer:
 
     def make_svg(self, content_only=False):
         if content_only:
-            return self.draw(color=config.colors['data'])
+            return self.draw(color=config['colors']['data'])
         return _build_svg(self.make_svg(content_only=True), 0, 0,
                           max(_cubes_in_full_width,
                               self.size()[0]),
@@ -371,12 +371,12 @@ class DatasetDrawer:
         area_xy = []
         area_0d = []
         if isinstance(self._dataset, sc.DataArray):
-            area_xy.append(DrawerItem('', self._dataset, config.colors['data']))
+            area_xy.append(DrawerItem('', self._dataset, config['colors']['data']))
         else:
             # Render highest-dimension items last so coords are optically
             # aligned
             for name, data in self._dataset.items():
-                item = DrawerItem(name, data, config.colors['data'])
+                item = DrawerItem(name, data, config['colors']['data'])
                 # Using only x and 0d areas for 1-D dataset
                 if len(dims) == 1 or data.dims != dims:
                     if len(data.dims) == 0:
@@ -400,7 +400,7 @@ class DatasetDrawer:
             categories = zip(['coords'], [ds.coords])
         for what, items in categories:
             for name, var in items.items():
-                item = DrawerItem(name, var, config.colors[what])
+                item = DrawerItem(name, var, config['colors'][what])
                 if len(var.dims) == 0:
                     area_0d.append(item)
                 elif var.dims[-1] == dims[-1]:

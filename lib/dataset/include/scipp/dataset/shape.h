@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -40,4 +40,8 @@ transpose(const DataArray &a, scipp::span<const Dim> dims = {});
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset
 transpose(const Dataset &d, scipp::span<const Dim> dims = {});
 
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+squeeze(const DataArray &a, std::optional<scipp::span<const Dim>> dims);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset
+squeeze(const Dataset &a, std::optional<scipp::span<const Dim>> dims);
 } // namespace scipp::dataset

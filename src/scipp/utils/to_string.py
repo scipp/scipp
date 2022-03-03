@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 
@@ -17,10 +17,9 @@ def name_with_unit(var=None, name=None, log=False):
     if log:
         text = "log\u2081\u2080(" + text + ")"
     if var is not None:
-        if var.bins is not None:
-            text += " [{}]".format(var.bins.constituents["data"].unit)
-        else:
-            text += " [{}]".format(var.unit)
+        unit = var.unit if var.bins is None else var.bins.constituents["data"].unit
+        if unit is not None:
+            text += f" [{unit}]"
     return text
 
 

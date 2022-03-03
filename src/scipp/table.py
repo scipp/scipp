@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Igor Gudich & Neil Vaytet
 
@@ -284,7 +284,7 @@ class TableViewer:
                         is_bin_centers=self.is_bin_centers[group][key],
                         size=self.sizes[group][key],
                         headers=self.headers,
-                        max_rows=config.table_max_size,
+                        max_rows=config['table_max_size'],
                         group=group)
                     self.tables[group][key] = self.widgets.HTML(value=html)
                     hbox = self.make_hbox(group, key, self.sizes[group][key])
@@ -318,9 +318,9 @@ class TableViewer:
     def make_hbox(self, group, key, size):
         hbox = self.tables[group][key]
         if size is not None:
-            if size > config.table_max_size:
+            if size > config['table_max_size']:
                 self.nrows[key] = self.widgets.BoundedIntText(
-                    value=config.table_max_size,
+                    value=config['table_max_size'],
                     min=1,
                     max=size,
                     step=1,

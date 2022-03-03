@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from skbuild import setup
 from setuptools import find_packages
@@ -51,16 +51,18 @@ setup(name='scipp',
       cmake_args=get_cmake_args(),
       cmake_install_dir='src/scipp',
       include_package_data=True,
-      python_requires='>=3.7',
+      python_requires='>=3.8',
       install_requires=[
-          'appdirs',
+          'confuse',
           'graphlib-backport',
           'numpy>=1.20',
-          'python-configuration',
           'pyyaml',
       ],
       extras_require={
-          "test": ["pytest", "matplotlib", "xarray", "pandas", "pythreejs"],
+          "test": [
+              "pytest", "matplotlib", "xarray", "pandas", "pythreejs",
+              "sphinx-autodoc-typehints>=1.17.0"
+          ],
           'all': ['h5py', 'scipy>=1.7.0', 'graphviz'],
           'interactive': [
               'ipykernel==6.3.1', 'ipympl', 'ipython', 'ipywidgets', 'matplotlib',

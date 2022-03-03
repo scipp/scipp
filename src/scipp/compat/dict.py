@@ -1,12 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from __future__ import annotations
 
 from ..core import vector, vectors, matrix, matrices
-from ..core import dtype
-from ..core import Variable, DataArray, Dataset
+from ..core import DType, Variable, DataArray, Dataset
 from ..typing import VariableLike
 
 import numpy as np
@@ -60,9 +59,9 @@ def _variable_to_dict(v):
     # Using raw dtypes as dict keys doesn't appear to work, so we need to
     # convert to strings.
     dtype_parser.update({
-        str(dtype.vector_3_float64): _vec_parser,
-        str(dtype.matrix_3_float64): _vec_parser,
-        str(dtype.string): _vec_parser,
+        str(DType.vector3): _vec_parser,
+        str(DType.linear_transform3): _vec_parser,
+        str(DType.string): _vec_parser,
     })
 
     str_dtype = str(v.dtype)
@@ -139,14 +138,14 @@ def _dict_to_variable(d):
 
     for key in keylist:
         if key == "dtype" and isinstance(d[key], str):
-            out[key] = getattr(dtype, d[key])
+            out[key] = getattr(DType, d[key])
         else:
             out[key] = d[key]
     # Hack for types that cannot be directly constructed using Variable()
     if out['dims']:
-        init = {'vector_3_float64': vectors, 'matrix_3_float64': matrices}
+        init = {'vector3': vectors, 'linear_transform3': matrices}
     else:
-        init = {'vector_3_float64': vector, 'matrix_3_float64': matrix}
+        init = {'vector3': vector, 'linear_transform3': matrix}
     make_var = init.get(str(out.get('dtype', None)), Variable)
     if make_var != Variable:
         if not out['dims']:

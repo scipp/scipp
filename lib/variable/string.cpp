@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <chrono>
@@ -7,7 +7,6 @@
 #include <set>
 
 #include "scipp/core/array_to_string.h"
-#include "scipp/core/bucket_array_view.h"
 #include "scipp/core/eigen.h"
 #include "scipp/core/string.h"
 #include "scipp/core/tag_util.h"

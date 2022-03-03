@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
 from enum import Enum
 
+from .. import units
 from ..core import bin as bin_
-from ..core import dtype, units
 from ..core import broadcast
 from ..core import linspace, rebin, get_slice_params, concat, histogram
-from ..core import DataArray, DimensionError
+from ..core import DataArray, DimensionError, DType
 from .tools import to_bin_edges
 
 
@@ -20,10 +20,10 @@ class ResamplingMode(Enum):
 def _resample(array, mode: ResamplingMode, dim, edges):
     if mode == ResamplingMode.sum:
         return rebin(array, dim, edges)
-    if array.dtype == dtype.float64:
+    if array.dtype == DType.float64:
         array = array.copy()
     else:
-        array = array.astype(dtype.float64)
+        array = array.astype(DType.float64)
     # Scale by bin widths, so `rebin` is effectively performing a "mean"
     # operation instead of "sum".
     # TODO
@@ -32,7 +32,7 @@ def _resample(array, mode: ResamplingMode, dim, edges):
     # `rebin` that works on non-counts data
     coord = array.coords[dim]
     width = coord[dim, 1:] - coord[dim, :-1]
-    width.unit = units.one
+    width.unit = None if array.unit is None else units.one
     array.data *= width
     unit = array.unit
     array.unit = units.counts
@@ -144,9 +144,14 @@ class ResamplingModel():
             else:
                 plan.insert(0, edge)
         for edge in plan:
+            if edge.unit is None:
+                # We cannot use rebin with no unit, so we change it to dimensionless
+                edge = edge.copy()
+                edge.unit = ''
             try:
-                array = _resample(array, self.mode, dim, edge)
-            except RuntimeError:  # Limitation of rebin for slice of inner dim
+                array = _resample(array, self.mode, edge.dims[-1], edge)
+            except (KeyError,
+                    DimensionError):  # Limitation of rebin for slice of inner dim
                 array = _resample(array.copy(), self.mode, edge.dims[-1], edge)
         return array
 
@@ -209,9 +214,11 @@ class ResamplingModel():
             self._edges = self._make_edges(params)
             self._resampled = self._resample(out)
             for name, mask in out.masks.items():
-                self._resampled.masks[name] = self._rebin(
-                    mask, out.meta, sanitize=isinstance(self,
-                                                        ResamplingBinnedModel)).data
+                m = self._rebin(mask,
+                                out.meta,
+                                sanitize=isinstance(self, ResamplingBinnedModel))
+                # rebin changes to float-valued mask, but need bool
+                self._resampled.masks[name] = m.data.to(dtype='bool', copy=False)
             for dim in params:
                 size_one = self._resampled.sizes.get(dim, None) == 1
                 no_resolution = self.resolution.get(dim, None) is None
@@ -290,11 +297,16 @@ def _with_edges(array):
         if dim not in array.dims:
             continue
         new_array.coords[f'{prefix}_{dim}'] = var
+        if var.unit is None:
+            # We cannot rebin with such a unit. Even if no rebin happens, such as for
+            # 1-D plots we need to use this workaround.
+            var = var.copy()
+            var.unit = ''
         if var.sizes[dim] == array.sizes[dim]:
             new_array.coords[dim] = to_bin_edges(var, dim)
-        elif var.dtype not in [dtype.float32, dtype.float64]:
+        elif var.dtype not in [DType.float32, DType.float64]:
             # rebin does not support int coords right now
-            new_array.coords[dim] = var.astype(dtype.float64, copy=False)
+            new_array.coords[dim] = var.astype(DType.float64, copy=False)
     return new_array, prefix
 
 

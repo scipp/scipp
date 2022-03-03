@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .tools import find_limits, to_dict, to_bin_centers
@@ -124,7 +124,8 @@ class PlotModel:
         """
         if dim in array.meta:
             coord = array.meta[dim]
-            if typing.has_vector_type(coord) or typing.has_string_type(coord):
+            if typing.has_vector_type(coord) or typing.has_string_type(coord) or (
+                    dim not in coord.dims):
                 coord = arange(dim=dim, start=0, stop=array.sizes[dim])
             elif typing.has_datetime_type(coord):
                 coord = coord - coord.min()

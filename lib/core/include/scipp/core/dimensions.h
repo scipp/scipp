@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -19,7 +19,7 @@ namespace scipp::core {
 /// dimension is inner dimension.
 class SCIPP_CORE_EXPORT Dimensions : public Sizes {
 public:
-  constexpr Dimensions() noexcept = default;
+  Dimensions() noexcept = default;
   Dimensions(const Dim dim, const scipp::index size)
       : Dimensions({{dim, size}}) {}
   Dimensions(scipp::span<const Dim> labels,
@@ -33,7 +33,7 @@ public:
       addInner(dim, len);
   }
 
-  constexpr bool operator==(const Dimensions &other) const noexcept {
+  bool operator==(const Dimensions &other) const noexcept {
     if (ndim() != other.ndim())
       return false;
     for (int32_t i = 0; i < ndim(); ++i) {
@@ -44,18 +44,17 @@ public:
     }
     return true;
   }
-  constexpr bool operator!=(const Dimensions &other) const noexcept {
+  bool operator!=(const Dimensions &other) const noexcept {
     return !(*this == other);
   }
 
   /// Return the shape of the space defined by *this.
-  [[nodiscard]] constexpr scipp::span<const scipp::index>
-  shape() const &noexcept {
+  [[nodiscard]] scipp::span<const scipp::index> shape() const &noexcept {
     return sizes();
   }
 
   /// Return the volume of the space defined by *this.
-  [[nodiscard]] constexpr scipp::index volume() const noexcept {
+  [[nodiscard]] scipp::index volume() const noexcept {
     scipp::index volume{1};
     for (const auto &length : shape())
       volume *= length;
@@ -63,9 +62,7 @@ public:
   }
 
   /// Return number of dims
-  [[nodiscard]] constexpr scipp::index ndim() const noexcept {
-    return Sizes::size();
-  }
+  [[nodiscard]] scipp::index ndim() const noexcept { return Sizes::size(); }
 
   [[nodiscard]] Dim inner() const noexcept;
 
@@ -78,10 +75,7 @@ public:
   void addInner(const Dim label, const scipp::index size);
 };
 
-[[nodiscard]] SCIPP_CORE_EXPORT constexpr Dimensions
-merge(const Dimensions &a) noexcept {
-  return a;
-}
+[[nodiscard]] SCIPP_CORE_EXPORT Dimensions merge(const Dimensions &a);
 
 [[nodiscard]] SCIPP_CORE_EXPORT Dimensions merge(const Dimensions &a,
                                                  const Dimensions &b);

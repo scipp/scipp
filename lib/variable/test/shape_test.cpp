@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "test_macros.h"
@@ -49,7 +49,7 @@ TEST(ShapeTest, broadcast_output_is_not_readonly_if_not_broadcast) {
 TEST(ShapeTest, broadcast_fail) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1, 2, 3, 4});
-  EXPECT_THROW_DISCARD(broadcast(var, {Dim::X, 3}), except::NotFoundError);
+  EXPECT_THROW_DISCARD(broadcast(var, {Dim::X, 3}), except::DimensionError);
 }
 
 class SqueezeTest : public ::testing::Test {
@@ -60,33 +60,63 @@ protected:
 };
 
 TEST_F(SqueezeTest, fail) {
-  EXPECT_THROW_DISCARD(squeeze(var, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(squeeze(var, std::vector<Dim>{Dim::Y}),
+                       except::DimensionError);
   EXPECT_EQ(var, original);
-  EXPECT_THROW_DISCARD(squeeze(var, {Dim::X, Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(squeeze(var, std::vector<Dim>{Dim::X, Dim::Y}),
+                       except::DimensionError);
   EXPECT_EQ(var, original);
-  EXPECT_THROW_DISCARD(squeeze(var, {Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW_DISCARD(squeeze(var, std::vector<Dim>{Dim::Y, Dim::Z}),
+                       except::DimensionError);
   EXPECT_EQ(var, original);
 }
 
-TEST_F(SqueezeTest, none) { EXPECT_EQ(squeeze(var, {}), original); }
+TEST_F(SqueezeTest, none) {
+  EXPECT_EQ(squeeze(var, std::vector<Dim>{}), original);
+}
 
 TEST_F(SqueezeTest, outer) {
-  EXPECT_EQ(squeeze(var, {Dim::X}), sum(original, Dim::X));
+  EXPECT_EQ(squeeze(var, std::vector<Dim>{Dim::X}), sum(original, Dim::X));
 }
 
 TEST_F(SqueezeTest, inner) {
-  EXPECT_EQ(squeeze(var, {Dim::Z}), sum(original, Dim::Z));
+  EXPECT_EQ(squeeze(var, std::vector<Dim>{Dim::Z}), sum(original, Dim::Z));
 }
 
 TEST_F(SqueezeTest, both) {
-  EXPECT_EQ(squeeze(var, {Dim::X, Dim::Z}), sum(sum(original, Dim::Z), Dim::X));
+  EXPECT_EQ(squeeze(var, std::vector<Dim>{Dim::X, Dim::Z}),
+            sum(sum(original, Dim::Z), Dim::X));
+}
+
+TEST_F(SqueezeTest, all) {
+  EXPECT_EQ(squeeze(var, std::nullopt),
+            squeeze(var, std::vector<Dim>{Dim::X, Dim::Z}));
+}
+
+TEST_F(SqueezeTest, to_scalar) {
+  var = var.slice({Dim::Y, 0});
+  EXPECT_EQ(squeeze(var, std::nullopt), makeVariable<double>(Values{1}));
+}
+
+TEST_F(SqueezeTest, all_var_has_no_length_1) {
+  const auto v = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                      Values{1, 2, 3, 4});
+  EXPECT_EQ(squeeze(v, std::nullopt), v);
 }
 
 TEST_F(SqueezeTest, slice) {
   Variable xy = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
                                      Values{1, 2, 3, 4});
   const auto sliced = xy.slice({Dim::Y, 1, 2});
-  EXPECT_EQ(squeeze(sliced, {Dim::Y}), sum(sliced, Dim::Y));
+  EXPECT_EQ(squeeze(sliced, std::vector<Dim>{Dim::Y}), sum(sliced, Dim::Y));
+}
+
+TEST_F(SqueezeTest, shares_buffer) {
+  auto squeezed = squeeze(var, std::nullopt);
+  const core::Slice slice{Dim::Y, 0};
+  squeezed.setSlice(slice, makeVariable<double>(Values{-1}));
+  EXPECT_EQ(sum(sum(var, Dim::X), Dim::Z).slice(slice),
+            makeVariable<double>(Values{-1}));
 }
 
 TEST(ShapeTest, fold_fail_if_dim_not_found) {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 #include <vector>
 
@@ -7,6 +7,7 @@
 
 #include "test_macros.h"
 
+#include "scipp/core/eigen.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/astype.h"
 #include "scipp/variable/shape.h"
@@ -26,6 +27,59 @@ TEST(Variable, construct) {
   const auto a = makeVariable<double>(Dims{Dim::X}, Shape{2});
   const auto &data = a.values<double>();
   EXPECT_EQ(data.size(), 2);
+}
+
+TEST(Variable, many_dims_works_or_fails_gracefully) {
+  Dimensions dims;
+  for (const auto dim : "abcdefghijklmn")
+    dims.addInner(Dim(std::string(1, dim)), 1);
+  auto var = makeVariable<double>(dims, Values{1});
+  EXPECT_EQ(var.ndim(), 15);
+  EXPECT_EQ(copy(var), var);
+  EXPECT_EQ(var + var, makeVariable<double>(dims, Values{2}));
+  // TODO In principle we should be able to support all of the below with
+  // flattening, but the current implementation dos not handle this.
+  ASSERT_THROW(var += 1.0 * units::one, std::runtime_error);
+  ASSERT_THROW(var +=
+               makeVariable<double>(Dims{Dim("a")}, Shape{2}, Values{1, 2}),
+               std::runtime_error);
+  ASSERT_THROW(var +=
+               makeVariable<double>(Dims{Dim("g")}, Shape{2}, Values{1, 2}),
+               std::runtime_error);
+  ASSERT_THROW(var +=
+               makeVariable<double>(Dims{Dim("n")}, Shape{2}, Values{1, 2}),
+               std::runtime_error);
+}
+
+TEST(Variable, default_unit_of_numeric_is_dimensionless) {
+  EXPECT_EQ(makeVariable<double>(Dimensions{}).unit(), units::one);
+  EXPECT_EQ(makeVariable<float>(Dimensions{}).unit(), units::one);
+  EXPECT_EQ(makeVariable<int64_t>(Dimensions{}).unit(), units::one);
+  EXPECT_EQ(makeVariable<int32_t>(Dimensions{}).unit(), units::one);
+}
+
+TEST(Variable, default_unit_of_bool_is_none) {
+  EXPECT_EQ(makeVariable<bool>(Dimensions{}).unit(), units::none);
+}
+
+TEST(Variable, default_unit_of_time_point_is_dimensionless) {
+  EXPECT_EQ(makeVariable<core::time_point>(Dimensions{}).unit(), units::one);
+}
+
+TEST(Variable, default_unit_of_spatial_types_is_dimensionless) {
+  EXPECT_EQ(makeVariable<Eigen::Vector3d>(Dimensions{}).unit(), units::one);
+  EXPECT_EQ(makeVariable<Eigen::Matrix3d>(Dimensions{}).unit(), units::one);
+  EXPECT_EQ(makeVariable<Eigen::Affine3d>(Dimensions{}).unit(), units::one);
+  EXPECT_EQ(makeVariable<core::Translation>(Dimensions{}).unit(), units::one);
+  EXPECT_EQ(makeVariable<core::Quaternion>(Dimensions{}).unit(), units::one);
+}
+
+TEST(Variable, default_unit_of_index_pair_is_none) {
+  EXPECT_EQ(makeVariable<scipp::index_pair>(Dimensions{}).unit(), units::none);
+}
+
+TEST(Variable, default_unit_of_string_is_none) {
+  EXPECT_EQ(makeVariable<std::string>(Dimensions{}).unit(), units::none);
 }
 
 TEST(Variable, construct_llnl_units_quantity) {
@@ -559,7 +613,7 @@ TEST(VariableView, slice_copy_from_variable_dimension_fail) {
   const auto source = makeVariable<double>(Dims{Dim::Y}, Shape{1});
   auto target = makeVariable<double>(Dims{Dim::X}, Shape{2});
   EXPECT_THROW(copy(source, target.slice({Dim::X, 1, 2})),
-               except::NotFoundError);
+               except::DimensionError);
 }
 
 TEST(VariableView, slice_copy_from_variable_full_slice_can_change_unit) {

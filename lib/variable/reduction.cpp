@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/reduction.h"
@@ -26,9 +26,6 @@ namespace {
 
 // Workaround VS C7526 (undefined inline variable) with dtype<> in template.
 bool is_dtype_bool(const Variable &var) { return var.dtype() == dtype<bool>; }
-bool is_dtype_int64(const Variable &var) {
-  return var.dtype() == dtype<int64_t>;
-}
 
 Variable make_accumulant(const Variable &var, const Dim dim,
                          const FillValue &init) {
@@ -77,9 +74,9 @@ Variable sum_with_dim_impl(Op op, const Variable &var, const Dim dim) {
 template <typename Op>
 Variable &sum_with_dim_inplace_impl(Op op, const Variable &var, const Dim dim,
                                     Variable &out) {
-  if (is_dtype_bool(var) && !is_dtype_int64(out))
-    throw except::TypeError("In-place sum of dtype=bool must be stored in an "
-                            "output variable with dtype=int64.");
+  if (is_dtype_bool(var) && is_dtype_bool(out))
+    throw except::TypeError("In-place sum of dtype=bool cannot be stored in an "
+                            "output variable with dtype=bool.");
 
   auto dims = var.dims();
   dims.erase(dim);
@@ -124,7 +121,7 @@ Variable &mean_impl(const Variable &var, const Dim dim, const Variable &count,
     throw except::TypeError(
         "Cannot calculate mean in-place when output dtype is integer");
   sum(var, dim, out);
-  out *= reciprocal(astype(count, core::dtype<double>, CopyPolicy::TryAvoid));
+  normalize_inplace_impl(out, count);
   return out;
 }
 
@@ -134,7 +131,7 @@ Variable &nanmean_impl(const Variable &var, const Dim dim,
     throw except::TypeError(
         "Cannot calculate nanmean in-place when output dtype is integer");
   nansum(var, dim, out);
-  out *= reciprocal(astype(count, core::dtype<double>, CopyPolicy::TryAvoid));
+  normalize_inplace_impl(out, count);
   return out;
 }
 
@@ -142,9 +139,9 @@ namespace {
 template <class... Dim> Variable count(const Variable &var, Dim &&... dim) {
   if (!is_bins(var)) {
     if constexpr (sizeof...(dim) == 0)
-      return var.dims().volume() * units::one;
+      return var.dims().volume() * units::none;
     else
-      return ((var.dims()[dim] * units::one) * ...);
+      return ((var.dims()[dim] * units::none) * ...);
   }
   const auto [begin, end] = unzip(var.bin_indices());
   return sum(end - begin, dim...);

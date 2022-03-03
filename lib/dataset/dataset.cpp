@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/dataset.h"
@@ -154,13 +154,13 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
       return;
   }
   expect_writable(*this);
-  setSizes(data.dims());
-  for (auto &&[dim, coord] : data.coords()) {
+  for (auto &&[dim, coord] : data.coords())
     if (const auto it = m_coords.find(dim); it != m_coords.end())
       expect::matching_coord(dim, coord, it->second, "set coord");
-    else
+  setSizes(data.dims());
+  for (auto &&[dim, coord] : data.coords())
+    if (const auto it = m_coords.find(dim); it == m_coords.end())
       setCoord(dim, std::move(coord));
-  }
 
   setData(name, std::move(data.data()));
   auto &item = m_data[name];
@@ -175,7 +175,7 @@ void Dataset::setData(const std::string &name, const DataArray &data) {
 }
 
 /// Return slice of the dataset along given dimension with given extents.
-Dataset Dataset::slice(const Slice s) const {
+Dataset Dataset::slice(const Slice &s) const {
   Dataset out;
   out.m_data = slice_map(m_coords.sizes(), m_data, s);
   auto [coords, attrs] = m_coords.slice_coords(s);
@@ -191,7 +191,7 @@ Dataset Dataset::slice(const Slice s) const {
   return out;
 }
 
-Dataset &Dataset::setSlice(const Slice s, const Dataset &data) {
+Dataset &Dataset::setSlice(const Slice &s, const Dataset &data) {
   // Validate slice on all items as a dry-run
   expect::coords_are_superset(slice(s).coords(), data.coords(), "");
   for (const auto &[name, item] : m_data)
@@ -202,7 +202,7 @@ Dataset &Dataset::setSlice(const Slice s, const Dataset &data) {
   return *this;
 }
 
-Dataset &Dataset::setSlice(const Slice s, const DataArray &data) {
+Dataset &Dataset::setSlice(const Slice &s, const DataArray &data) {
   // Validate slice on all items as a dry-run
   expect::coords_are_superset(slice(s).coords(), data.coords(), "");
   for (const auto &item : m_data)
@@ -213,7 +213,7 @@ Dataset &Dataset::setSlice(const Slice s, const DataArray &data) {
   return *this;
 }
 
-Dataset &Dataset::setSlice(const Slice s, const Variable &data) {
+Dataset &Dataset::setSlice(const Slice &s, const Variable &data) {
   for (auto &&item : *this)
     item.setSlice(s, data);
   return *this;
@@ -244,6 +244,17 @@ bool Dataset::operator==(const Dataset &other) const {
 /// Return true if the datasets have mismatching content./
 bool Dataset::operator!=(const Dataset &other) const {
   return !operator==(other);
+}
+
+bool equals_nan(const Dataset &a, const Dataset &b) {
+  if (a.size() != b.size())
+    return false;
+  if (!equals_nan(a.coords(), b.coords()))
+    return false;
+  for (const auto &data : a)
+    if (!b.contains(data.name()) || !equals_nan(data, b[data.name()]))
+      return false;
+  return true;
 }
 
 const Sizes &Dataset::sizes() const { return m_coords.sizes(); }

@@ -1,6 +1,9 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+
 from .. import typing
 from ..utils import name_with_unit, value_to_string
-from ..core import arange, to_unit, Unit
+from ..core import arange, to_unit, Unit, scalar
 import enum
 import numpy as np
 
@@ -14,8 +17,8 @@ class LabelFormatter:
         self.coord_values = coord.values
 
     def formatter(self, val, pos):
-        return value_to_string(self.label_values[np.abs(self.coord_values -
-                                                        val).argmin()])
+        index = np.abs(self.coord_values - val).argmin()
+        return value_to_string(self.label_values[index])
 
 
 class VectorFormatter:
@@ -50,25 +53,29 @@ class DateFormatter:
     Format datetime ticks: adjust the time precision and update
     offset according to the currently displayed range.
     """
-    def __init__(self, offset, dim):
+    def __init__(self, coord, offset, dim):
+        self.coord_values = coord.values
         self.offset = offset
         self.dim = dim
         self.indicators = []
 
     def formatter(self, val, pos, axis=None, get_axis_bounds=None, set_axis_label=None):
-        d = (self.offset + (int(val) * self.offset.unit)).value
+        index = np.abs(self.coord_values - val).argmin()
+        d = (self.offset + scalar(index, unit=self.offset.unit)).value
         dt = str(d)
         if pos is None:  # Return full string, not split into label + offset
             return dt
         trim = 0
         bounds = get_axis_bounds(axis)
-        diff = (bounds[1] - bounds[0]) * self.offset.unit
+        diff = scalar(bounds[1] - bounds[0], unit=self.offset.unit)
         label = self.dim
         if pos == 0:
             self.indicators.clear()
 
-        date_min = str((int(bounds[0]) * self.offset.unit + self.offset).value)
-        date_max = str((int(bounds[1]) * self.offset.unit + self.offset).value)
+        date_min = str(
+            (scalar(int(bounds[0]), unit=self.offset.unit) + self.offset).value)
+        date_max = str(
+            (scalar(int(bounds[1]), unit=self.offset.unit) + self.offset).value)
 
         check_transition = True
         check_time = True
@@ -201,7 +208,7 @@ def _get_or_make_coord(array, dim):
     return arange(dim=dim, start=0, stop=array.sizes[dim])
 
 
-def make_formatter(array, key):
+def make_formatter(array, key, dim):
     """
     Get dimensions from requested axis.
     Also return axes tick formatters and locators.
@@ -212,10 +219,8 @@ def make_formatter(array, key):
     formatter = {"linear": None, "log": None, "custom_locator": False}
 
     labels = None
-    dim = key
     if key in array.meta:
         labels = array.meta[key]
-        dim = key if key in labels.dims else labels.dims[-1]
         kind = _dtype_kind(labels)
         if kind == Kind.vector:
             form = VectorFormatter(labels.values, array.sizes[dim]).formatter
@@ -225,7 +230,8 @@ def make_formatter(array, key):
             formatter["custom_locator"] = True
         elif kind == Kind.datetime:
             coord = _get_or_make_coord(array, dim)
-            form = DateFormatter(offset=coord.min(), dim=key).formatter
+            coord = coord - coord.min()
+            form = DateFormatter(coord=coord, offset=labels.min(), dim=key).formatter
             formatter["need_callbacks"] = True
         elif dim is not key:
             coord = _get_or_make_coord(array, dim)

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/bin_array_variable.tcc"
@@ -30,6 +30,7 @@ private:
 
 void expect_valid_bin_indices(const Variable &indices, const Dim dim,
                               const Sizes &buffer_sizes) {
+  core::expect::equals(indices.unit(), units::none);
   auto var = copy(indices);
   const auto vals = var.values<scipp::index_pair>().as_span();
   std::sort(vals.begin(), vals.end());

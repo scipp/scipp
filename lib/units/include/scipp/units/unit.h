@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 /// @author Neil Vaytet
 #pragma once
 
+#include <optional>
 #include <string>
 
 #include <units/unit_definitions.hpp>
@@ -20,7 +21,10 @@ public:
       : m_unit(u) {}
   explicit Unit(const std::string &unit);
 
-  [[nodiscard]] constexpr auto underlying() const noexcept { return m_unit; }
+  [[nodiscard]] constexpr bool has_value() const noexcept {
+    return m_unit.has_value();
+  }
+  [[nodiscard]] constexpr auto underlying() const { return m_unit.value(); }
 
   [[nodiscard]] std::string name() const;
 
@@ -39,7 +43,7 @@ public:
   Unit &operator%=(const Unit &other);
 
 private:
-  llnl::units::precise_unit m_unit;
+  std::optional<llnl::units::precise_unit> m_unit;
 };
 
 SCIPP_UNITS_EXPORT Unit operator+(const Unit &a, const Unit &b);
@@ -62,6 +66,7 @@ SCIPP_UNITS_EXPORT Unit floor(const Unit &a);
 SCIPP_UNITS_EXPORT Unit ceil(const Unit &a);
 SCIPP_UNITS_EXPORT Unit rint(const Unit &a);
 
+constexpr Unit none{};
 constexpr Unit dimensionless{llnl::units::precise::one};
 constexpr Unit one{llnl::units::precise::one}; /// alias for dimensionless
 constexpr Unit m{llnl::units::precise::meter};

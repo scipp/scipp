@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -51,6 +51,7 @@ public:
   virtual void setVariances(const Variable &variances) = 0;
 
   virtual bool equals(const Variable &a, const Variable &b) const = 0;
+  virtual bool equals_nan(const Variable &a, const Variable &b) const = 0;
   virtual void copy(const Variable &src, Variable &dest) const = 0;
   virtual void copy(const Variable &src, Variable &&dest) const = 0;
   virtual void assign(const VariableConcept &other) = 0;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Hezbrock
 #include "scipp/dataset/bins.h"
@@ -44,7 +44,7 @@ auto call_make_bins(const std::optional<Variable> &begin_arg,
       }
     }
   } else if (!end_arg.has_value()) {
-    const auto one = scipp::index{1} * units::one;
+    const auto one = scipp::index{1} * units::none;
     const auto ones = broadcast(one, {dim, data.dims()[dim]});
     const auto begin = cumsum(ones, dim, CumSumMode::Exclusive);
     indices = zip(begin, begin + one);

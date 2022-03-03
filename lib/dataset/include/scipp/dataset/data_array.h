@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -119,6 +119,9 @@ SCIPP_DATASET_EXPORT bool operator!=(const DataArray &a, const DataArray &b);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 copy(const DataArray &array, AttrPolicy attrPolicy = AttrPolicy::Keep);
+
+[[nodiscard]] SCIPP_DATASET_EXPORT bool equals_nan(const DataArray &a,
+                                                   const DataArray &b);
 
 } // namespace scipp::dataset
 

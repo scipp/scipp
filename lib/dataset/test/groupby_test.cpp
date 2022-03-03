@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/bin.h"
@@ -253,7 +253,7 @@ TEST_F(GroupbyMaskedTest, sum) {
   const auto result = groupby(d, dim).sum(Dim::X);
   EXPECT_EQ(result, expected);
   // Ensure reduction operation does NOT share the unrelated mask
-  result["a"].masks()["mask_z"] |= true * units::one;
+  result["a"].masks()["mask_z"] |= true * units::none;
   EXPECT_NE(result["a"].masks()["mask_z"], d["a"].masks()["mask_z"]);
 }
 

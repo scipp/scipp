@@ -1,6 +1,6 @@
 # ~~~
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # ~~~
 set(TARGET_NAME "scipp-variable-test")
 add_dependencies(all-tests ${TARGET_NAME})
@@ -15,6 +15,7 @@ add_executable(
   copy_test.cpp
   creation_test.cpp
   cumulative_test.cpp
+  equals_nan_test.cpp
   linalg_test.cpp
   math_test.cpp
   mean_test.cpp
@@ -23,6 +24,7 @@ add_executable(
   reduce_logical_test.cpp
   reduce_various_test.cpp
   shape_test.cpp
+  slice_test.cpp
   sort_test.cpp
   special_values_test.cpp
   subspan_view_test.cpp

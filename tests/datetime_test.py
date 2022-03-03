@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Jan-Lukas Wynen
 
@@ -49,7 +49,7 @@ def test_construct_0d_datetime(unit):
                                                        values=value),
                 sc.Variable(dims=(), dtype=dtype,
                             values=value), sc.Variable(dims=(), values=value)):
-        assert var.dtype == sc.dtype.datetime64
+        assert var.dtype == sc.DType.datetime64
         assert var.unit == unit
         assert var.value.dtype == dtype
         assert var.value == value
@@ -57,7 +57,7 @@ def test_construct_0d_datetime(unit):
 
 def test_construct_0d_datetime_array():
     var = sc.Variable(dims=(), values=np.array(np.datetime64(123, 's')))
-    assert var.dtype == sc.dtype.datetime64
+    assert var.dtype == sc.DType.datetime64
     assert var.unit == sc.units.s
     assert var.value == np.datetime64(123, 's')
 
@@ -65,8 +65,8 @@ def test_construct_0d_datetime_array():
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
 def test_construct_0d_datetime_from_int(unit):
     value = np.random.randint(0, 1000)
-    var = sc.Variable(dims=(), dtype=sc.dtype.datetime64, unit=unit, values=value)
-    assert var.dtype == sc.dtype.datetime64
+    var = sc.Variable(dims=(), dtype=sc.DType.datetime64, unit=unit, values=value)
+    assert var.dtype == sc.DType.datetime64
     assert var.unit == unit
     assert var.value.dtype == f'datetime64[{unit}]'
     assert var.value == np.datetime64(value, unit)
@@ -90,8 +90,8 @@ def test_construct_0d_datetime_unit_conversion(unit1, unit2):
 def test_construct_0d_datetime_nounit():
     # Can make a datetime variable without unit but cannot do anything
     # with it except set its unit.
-    var = sc.Variable(dims=(), values=1, dtype=sc.dtype.datetime64)
-    assert var.dtype == sc.dtype.datetime64
+    var = sc.Variable(dims=(), values=1, dtype=sc.DType.datetime64)
+    assert var.dtype == sc.DType.datetime64
     assert var.unit == sc.units.one
     with pytest.raises(sc.UnitError):
         str(var)
@@ -139,9 +139,9 @@ def test_construct_datetime(unit):
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
 def test_construct_datetime_from_int(unit):
     values = np.random.randint(0, 1000, np.random.randint(5, 100))
-    var = sc.Variable(dims=['x'], dtype=sc.dtype.datetime64, unit=unit, values=values)
+    var = sc.Variable(dims=['x'], dtype=sc.DType.datetime64, unit=unit, values=values)
     dtype_str = f'datetime64[{unit}]'
-    assert var.dtype == sc.dtype.datetime64
+    assert var.dtype == sc.DType.datetime64
     assert var.unit == unit
     assert var.values.dtype == dtype_str
     np.testing.assert_array_equal(var.values, values.astype(dtype_str))
@@ -165,8 +165,8 @@ def test_construct_datetime_unit_conversion(unit1, unit2):
 def test_construct_datetime_nounit():
     # Can make a datetime variable without unit but cannot do anything
     # with it except set its unit.
-    var = sc.Variable(dims=['x'], values=[1, 2], dtype=sc.dtype.datetime64)
-    assert var.dtype == sc.dtype.datetime64
+    var = sc.Variable(dims=['x'], values=[1, 2], dtype=sc.DType.datetime64)
+    assert var.dtype == sc.DType.datetime64
     assert var.unit == sc.units.one
     with pytest.raises(sc.UnitError):
         str(var)
@@ -228,7 +228,7 @@ def test_datetime_operations():
 
     shift = np.random.randint(0, 100, len(values))
     res = var - (var - sc.Variable(dims=['x'], values=shift, unit=sc.units.ns))
-    assert res.dtype == sc.dtype.int64
+    assert res.dtype == sc.DType.int64
     assert res.unit == sc.units.ns
     np.testing.assert_array_equal(res.values, shift)
 

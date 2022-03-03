@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <algorithm>
@@ -55,6 +55,8 @@ Dim Dimensions::inner() const noexcept {
     return Dim::Invalid;
   return labels().back();
 }
+
+Dimensions merge(const Dimensions &a) { return a; }
 
 /// Return the direct sum, i.e., the combination of dimensions in a and b.
 ///

@@ -40,16 +40,16 @@ html_show_sourcelink = True
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
-    'sphinx.ext.doctest',
+    'sphinx.ext.napoleon',
+    'sphinx_autodoc_typehints',
     'sphinx_copybutton',
     'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
     'nbsphinx',
 ]
-
-autodoc_typehints = 'description'
 
 autodoc_type_aliases = {
     'VariableLike': 'VariableLike',
@@ -65,6 +65,7 @@ rst_epilog = f"""
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/', None),
     'xarray': ('https://xarray.pydata.org/en/stable/', None)
 }
 
@@ -72,6 +73,22 @@ intersphinx_mapping = {
 # looks more suitable in the long run when the API grows.
 # For a nice example see how xarray handles its API documentation.
 autosummary_generate = True
+
+napoleon_google_docstring = False
+napoleon_numpy_docstring = True
+napoleon_use_param = True
+napoleon_use_rtype = False
+napoleon_preprocess_types = True
+napoleon_type_aliases = {
+    # objects without namespace: scipp
+    "DataArray": "~scipp.DataArray",
+    "Dataset": "~scipp.Dataset",
+    "Variable": "~scipp.Variable",
+    # objects without namespace: numpy
+    "ndarray": "~numpy.ndarray",
+}
+typehints_defaults = 'comma'
+typehints_use_rtype = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -88,7 +105,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'scipp'
-copyright = u'2021 Scipp contributors'
+copyright = u'2022 Scipp contributors'
 author = u'Scipp contributors'
 
 # The version info for the project you're documenting, acts as replacement for
