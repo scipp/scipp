@@ -45,6 +45,11 @@ To build and install the library:
   mkdir install
   cd build
 
+If you are running on Windows, you need to use a visual studio developer command prompt for the following steps. This can be opened manually from the start menu, or programatically by calling the appropriate vcvars script, for example:
+
+.. code-block:: bash
+  "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat"
+
 To build a debug version of the library:
 
 .. code-block:: bash

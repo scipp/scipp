@@ -70,12 +70,8 @@ find_package(LLNL-Units REQUIRED)
 # Generate files for free scipp API functions
 include(scipp-functions)
 
-find_program(CCACHE ccache)
-if(CCACHE)
-  set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
-else()
-  message(FATAL_ERROR "no ccache found")
-endif()
+find_program(CCACHE ccache REQUIRED)
+set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
