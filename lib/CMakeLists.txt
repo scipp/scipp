@@ -158,9 +158,7 @@ if(NOT WIN32)
   )
 else()
   add_compile_options(
-    $<$<COMPILE_LANGUAGE:CXX>:/bigobj> 
-    /EHsc
-    /constexpr:steps2000000
+    $<$<COMPILE_LANGUAGE:CXX>:/bigobj> /EHsc /constexpr:steps2000000
   )
 endif()
 
