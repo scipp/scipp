@@ -74,8 +74,6 @@ jobs:
           activate-environment: buildenv
           auto-activate-base: false
 
-      - run: ccache --version
-
       - run: echo "$CONDA/envs/scipp-developer/Library/bin" >> $GITHUB_PATH
         if: ${{ contains(matrix.os, 'windows-latest') }}
 
