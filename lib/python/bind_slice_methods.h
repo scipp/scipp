@@ -10,6 +10,7 @@
 #include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/groupby.h"
 #include "scipp/dataset/slice.h"
 #include "scipp/variable/slice.h"
 #include "scipp/variable/variable.h"
@@ -219,6 +220,9 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   });
   c.def("__getitem__", [](T &self, const py::ellipsis &index) {
     return getitem(self, index);
+  });
+  c.def("__getitem__", [](T &self, const Variable &condition) {
+    return extract(self, condition);
   });
   c.def("__setitem__",
         [](T &self, const scipp::index &index, const py::object &data) {
