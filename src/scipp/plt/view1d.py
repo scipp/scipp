@@ -58,9 +58,9 @@ class PlotView1d:
         if bounding_box is None:
             bounding_box = cfg['bounding_box']
         self.fig.tight_layout(rect=bounding_box)
-        if self.is_widget():
-            self.toolbar = PlotToolbar1d(mpl_toolbar=self.fig.canvas.toolbar)
-            self.fig.canvas.toolbar_visible = False
+        # if self.is_widget():
+        #     self.toolbar = PlotToolbar1d(mpl_toolbar=self.fig.canvas.toolbar)
+        #     self.fig.canvas.toolbar_visible = False
 
         self.ax.set_title(title)
         if grid:
@@ -75,6 +75,7 @@ class PlotView1d:
         self.errorbars = {}
 
         self._lines = {}
+        self._dim = None
 
         if legend is None:
             legend = {"show": True}

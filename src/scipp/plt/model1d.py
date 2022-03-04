@@ -1,21 +1,20 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
-# @author Neil Vaytet
 
-# from .model import PlotModel, DataArrayDict
+from .model import PlotModel
 from .tools import find_limits
 # from .resampling_model import resampling_model
 from .._scipp import core as sc
 from ..core import concat
 
 
-class PlotModel1d:
+class PlotModel1d(PlotModel):
     """
     Model class for 1 dimensional plots.
     """
-    def __init__(self, scipp_obj_dict):
-        # super().__init__(*args, **kwargs)
-        self.data_arrays = scipp_obj_dict
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # self.data_arrays = scipp_obj_dict
         # # self._resolution = resolution
         # for name, array in self.data_arrays.items():
         #     # if array.bins is not None and self._resolution is None:

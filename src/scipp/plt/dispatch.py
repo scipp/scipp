@@ -23,9 +23,9 @@ def dispatch(scipp_obj_dict, ndim=0, projection=None, **kwargs):
     if projection == "1d":
         from .plot1d import plot1d
         return plot1d(scipp_obj_dict, **kwargs)
-    # elif projection == "2d":
-    #     from .plot2d import plot2d
-    #     return plot2d(scipp_obj_dict, **kwargs)
+    elif projection == "2d":
+        from .plot2d import plot2d
+        return plot2d(scipp_obj_dict, **kwargs)
     # elif projection == "3d":
     #     from .plot3d import plot3d
     #     return plot3d(scipp_obj_dict, **kwargs)

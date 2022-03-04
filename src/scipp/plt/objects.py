@@ -168,11 +168,11 @@ class PlotDict():
             item.set_draw_no_delay(value)
 
 
-def _guess_resampling_mode(array):
-    unit = array.unit if array.bins is None else array.bins.constituents['data'].unit
-    if unit in [units.counts, units.one]:
-        return ResamplingMode.sum
-    return ResamplingMode.mean
+# def _guess_resampling_mode(array):
+#     unit = array.unit if array.bins is None else array.bins.constituents['data'].unit
+#     if unit in [units.counts, units.one]:
+#         return ResamplingMode.sum
+#     return ResamplingMode.mean
 
 
 class Plot:
@@ -214,10 +214,11 @@ class Plot:
             vmin=None,
             vmax=None,
             axes=None,
-            norm=False,
+            # norm=False,
             resampling_mode=None,
             scale=None,
-            view_ndims=None):
+            view_ndims=None,
+            **kwargs):
 
         self._scipp_obj_dict = scipp_obj_dict
         self.panel = panel
@@ -239,11 +240,11 @@ class Plot:
             self.dims = scipp_obj_dict[self.name].dims
         else:
             self.dims = dims
-        for dim in self.dims[:-view_ndims]:
-            if dim in array.meta and len(array.meta[dim].dims) > 1:
-                raise DimensionError("A ragged coordinate cannot lie along "
-                                     "a slider dimension, it must be one of "
-                                     "the displayed dimensions.")
+        # for dim in self.dims[:-view_ndims]:
+        #     if dim in array.meta and len(array.meta[dim].dims) > 1:
+        #         raise DimensionError("A ragged coordinate cannot lie along "
+        #                              "a slider dimension, it must be one of "
+        #                              "the displayed dimensions.")
 
         # self._tool_button_states = {}
         # if norm:
@@ -268,7 +269,7 @@ class Plot:
         #                                       labels=labels,
         #                                       dims=self.dims)
         # self.profile = profile_figure
-        self.view = view()  #figure=figure, formatters=formatters)
+        self.view = view(**kwargs)  #figure=figure, formatters=formatters)
 
         # self.widgets = PlotWidgets(dims=self.dims,
         #                            formatters=formatters,
@@ -381,25 +382,27 @@ class Plot:
             self.profile.set_draw_no_delay(value)
 
 
-def make_plot(builder,
-              scipp_obj_dict,
-              filename=None,
-              labels=None,
-              errorbars=None,
-              norm=None,
-              resampling_mode=None,
-              scale=None,
-              resolution=None,
-              **kwargs):
+def make_plot(
+        builder,
+        scipp_obj_dict,
+        filename=None,
+        labels=None,
+        errorbars=None,
+        norm=None,
+        # resampling_mode=None,
+        scale=None,
+        resolution=None,
+        **kwargs):
     dims = next(iter(scipp_obj_dict.values())).dims
-    sp = Plot(scipp_obj_dict=scipp_obj_dict,
-              **builder(dims=dims, norm=norm, **kwargs),
-              errorbars=errorbars,
-              labels=labels,
-              resolution=resolution,
-              norm=norm,
-              resampling_mode=resampling_mode,
-              scale=scale)
+    sp = Plot(
+        scipp_obj_dict=scipp_obj_dict,
+        **builder(dims=dims, norm=norm, **kwargs),
+        errorbars=errorbars,
+        labels=labels,
+        resolution=resolution,
+        norm=norm,
+        # resampling_mode=resampling_mode,
+        scale=scale)
     if filename is not None:
         sp.savefig(filename)
     else:

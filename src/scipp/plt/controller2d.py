@@ -3,12 +3,10 @@
 # @author Neil Vaytet
 
 from .controller import PlotController
-from ..units import one
-import numpy as np
 
 
-class PlotController1d(PlotController):
+class PlotController2d(PlotController):
     """
-    Controller class for 1d plots.
+    Controller class for 2d plots.
     """
     pass

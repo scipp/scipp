@@ -50,44 +50,44 @@ class PlotToolbar:
         #     " The default value is guessed based on the data unit but in practice"
         #     " the automatic selection cannot always be relied on.")
 
-    def initialize(self, log_axis_buttons, button_states):
-        # self.members['resampling_mode'] = self._resampling_mode
-        # if 'resampling_mode' in button_states:
-        #     resampling_modes = {
-        #         ResamplingMode.mean: (True, 'mean'),
-        #         ResamplingMode.sum: (False, 'sum')
-        #     }
-        #     mode = button_states.pop('resampling_mode')
-        #     state, description = resampling_modes[mode]
-        #     self._resampling_mode.description = description
-        #     self.toggle_button_color(self._resampling_mode, value=state)
-        self._log_axis = {
-            dim: _make_toggle_button(tooltip=f'log({dim})')
-            for dim in log_axis_buttons
-        }
-        for name, state in button_states.items():
-            button = self._log_axis[name[4:]] if name.startswith(
-                'log_') else self.members[name]
-            self.toggle_button_color(button, value=state)
+    # def initialize(self, log_axis_buttons, button_states):
+    #     # self.members['resampling_mode'] = self._resampling_mode
+    #     # if 'resampling_mode' in button_states:
+    #     #     resampling_modes = {
+    #     #         ResamplingMode.mean: (True, 'mean'),
+    #     #         ResamplingMode.sum: (False, 'sum')
+    #     #     }
+    #     #     mode = button_states.pop('resampling_mode')
+    #     #     state, description = resampling_modes[mode]
+    #     #     self._resampling_mode.description = description
+    #     #     self.toggle_button_color(self._resampling_mode, value=state)
+    #     self._log_axis = {
+    #         dim: _make_toggle_button(tooltip=f'log({dim})')
+    #         for dim in log_axis_buttons
+    #     }
+    #     for name, state in button_states.items():
+    #         button = self._log_axis[name[4:]] if name.startswith(
+    #             'log_') else self.members[name]
+    #         self.toggle_button_color(button, value=state)
 
-    @property
-    def dims(self):
-        return self._dims
+    # @property
+    # def dims(self):
+    #     return self._dims
 
-    @dims.setter
-    def dims(self, dims):
-        if self._dims == dims:
-            return
-        self._dims = dims
-        for dim, button in self._log_axis.items():
-            if dim in self.dims:
-                button.layout.display = ''
-            else:
-                button.layout.display = 'none'
-        for ax, dim in zip('xyz', dims[::-1]):  # might have only 1 dim -> x
-            self._log_axis[dim].description = f'log{ax}'
-            self.members[f'toggle_{ax}axis_scale'] = self._log_axis[dim]
-        self._update_container()
+    # @dims.setter
+    # def dims(self, dims):
+    #     if self._dims == dims:
+    #         return
+    #     self._dims = dims
+    #     for dim, button in self._log_axis.items():
+    #         if dim in self.dims:
+    #             button.layout.display = ''
+    #         else:
+    #             button.layout.display = 'none'
+    #     for ax, dim in zip('xyz', dims[::-1]):  # might have only 1 dim -> x
+    #         self._log_axis[dim].description = f'log{ax}'
+    #         self.members[f'toggle_{ax}axis_scale'] = self._log_axis[dim]
+    #     self._update_container()
 
     def _ipython_display_(self):
         """
@@ -140,18 +140,23 @@ class PlotToolbar:
             owner.value = value
         set_button_color(owner, selected=owner.value)
 
-    def connect(self, controller):
+    def connect(self, view):
         """
         Connect callbacks to button clicks.
         """
-        for key in self.members:
-            if hasattr(controller, key):
-                self.members[key].on_click(getattr(controller, key))
-            elif self.members[key] is not None:
-                if not isinstance(self.members[key], ipw.ToggleButton):
-                    self.members[key].on_click(getattr(self, key))
-        for dim, button in self._log_axis.items():
-            button.observe(getattr(controller, 'toggle_dim_scale')(dim), 'value')
+        for key, button in self.members.items():
+            callback = getattr(view, key)
+            if isinstance(button, ipw.ToggleButton):
+                button.observe(callback, names='value')
+            else:
+                button.on_click(callback)
+            # if hasattr(controller, key):
+            #     self.members[key].on_click(getattr(controller, key))
+            # elif self.members[key] is not None:
+            #     if not isinstance(self.members[key], ipw.ToggleButton):
+            #         self.members[key].on_click(getattr(self, key))
+        # for dim, button in self._log_axis.items():
+        #     button.observe(getattr(controller, 'toggle_dim_scale')(dim), 'value')
         # self._resampling_mode.observe(self.toggle_resampling_mode, 'value')
         # if hasattr(controller, 'toggle_resampling_mode'):
         #     self._resampling_mode.observe(controller.toggle_resampling_mode, 'value')
@@ -228,6 +233,7 @@ class PlotToolbar1d(PlotToolbar):
                               tooltip="log(data)")
         # self.members['resampling_mode'] = None
         self.add_button(name="save_view", icon="save", tooltip="Save")
+        self._update_container()
 
 
 class PlotToolbar2d(PlotToolbar):
@@ -242,13 +248,14 @@ class PlotToolbar2d(PlotToolbar):
         self.add_togglebutton(name="zoom_view", icon="square-o", tooltip="Zoom")
         self.add_button(name="rescale_to_data", icon="arrows-v", tooltip="Rescale")
         self.add_button(name="transpose", icon="retweet", tooltip="Transpose")
-        self.members['toggle_xaxis_scale'] = None
-        self.members['toggle_yaxis_scale'] = None
+        self.add_togglebutton('toggle_xaxis_scale', description="logx")
+        self.add_togglebutton('toggle_yaxis_scale', description="logy")
         self.add_togglebutton(name="toggle_norm",
                               description="log",
                               tooltip="log(data)")
         # self.members['resampling_mode'] = None
         self.add_button(name="save_view", icon="save", tooltip="Save")
+        self._update_container()
 
 
 class PlotToolbar3d(PlotToolbar):
