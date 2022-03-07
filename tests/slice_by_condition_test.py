@@ -42,6 +42,14 @@ def test_true_and_false_concats_slices(obj):
     assert sc.identical(obj[condition], sc.concat([obj['xx', 0], obj['xx', 2:]], 'xx'))
 
 
+def test_bind_edges_are_dropped():
+    da = make_array()
+    base = da.copy()
+    da.coords['edges'] = sc.concat([da.coords['xx'], da.coords['xx'][-1] + 1], 'xx')
+    condition = sc.array(dims=['xx'], values=[True, False, True, True])
+    assert sc.identical(da[condition], sc.concat([base['xx', 0], base['xx', 2:]], 'xx'))
+
+
 def test_dataset_item_independent_of_condition_dim_preserved_unchanged():
     condition = sc.array(dims=['yy'], values=[True, False, True])
     ds = make_dataset()
