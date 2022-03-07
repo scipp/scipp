@@ -10,7 +10,7 @@ class PlotToolbar:
     Custom toolbar with additional buttons for controlling log scales and
     normalization, and with back/forward buttons removed.
     """
-    def __init__(self, external_toolbar=None):
+    def __init__(self, external_controls=None):
         self._dims = None
         self.controller = None
 
@@ -19,7 +19,7 @@ class PlotToolbar:
 
         # Keep a reference to the matplotlib toolbar so we can call the zoom
         # and pan methods
-        self.external_toolbar = external_toolbar
+        self.external_controls = external_controls
 
         self.add_button(name="home_view", icon="home", tooltip="Reset original view")
 
@@ -99,24 +99,24 @@ class PlotToolbar:
                 self.members["pan_view"].value
 
     def home_view(self, button):
-        self.external_toolbar.home()
+        self.external_controls.home()
 
     def pan_view(self, change):
         if change["new"]:
             # In case the zoom button is selected, we need to de-select it
             if self.members["zoom_view"].value:
                 self.members["zoom_view"].value = False
-            self.external_toolbar.pan()
+            self.external_controls.pan()
 
     def zoom_view(self, change):
         if change["new"]:
             # In case the pan button is selected, we need to de-select it
             if self.members["pan_view"].value:
                 self.members["pan_view"].value = False
-            self.external_toolbar.zoom()
+            self.external_controls.zoom()
 
     def save_view(self, button):
-        self.external_toolbar.save_figure()
+        self.external_controls.save_figure()
 
     def rescale_on_zoom(self):
         return self.members["zoom_view"].value
@@ -199,19 +199,19 @@ class PlotToolbar3d(PlotToolbar):
                               tooltip="log(data)")
 
     def home_view(self, button):
-        self.external_toolbar.reset_camera()
+        self.external_controls.reset_camera()
 
     def camera_x_normal(self, button):
-        self.external_toolbar.camera_x_normal()
+        self.external_controls.camera_x_normal()
 
     def camera_y_normal(self, button):
-        self.external_toolbar.camera_y_normal()
+        self.external_controls.camera_y_normal()
 
     def camera_z_normal(self, button):
-        self.external_toolbar.camera_z_normal()
+        self.external_controls.camera_z_normal()
 
     def toggle_axes_helper(self, button):
-        self.external_toolbar.toggle_axes_helper(button.value)
+        self.external_controls.toggle_axes_helper(button.value)
 
     def toggle_outline(self, button):
-        self.external_toolbar.toggle_outline(button.value)
+        self.external_controls.toggle_outline(button.value)

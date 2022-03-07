@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
-# @author Neil Vaytet
 
 from .. import config
 from .tools import fig_to_pngbytes
@@ -37,7 +36,7 @@ class PlotView:
                 self.bounding_box = cfg['bounding_box']
             self.fig.tight_layout(rect=self.bounding_box)
             if self.is_widget():
-                self.toolbar = toolbar(external_toolbar=self.fig.canvas.toolbar)
+                self.toolbar = toolbar(external_controls=self.fig.canvas.toolbar)
                 self.fig.canvas.toolbar_visible = False
         else:
             self.own_axes = False

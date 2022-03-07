@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
-# @author Neil Vaytet
 
 from .. import config, units
 from ..core import concat, values, scalar, histogram, full_like
