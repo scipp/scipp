@@ -41,6 +41,13 @@
       "generator": "Ninja"
     },
     {
+      "name": "windows-msbuild",
+      "inherits": "base",
+      "description": "Windows build using MSBuild (visual studio CMake generators)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64"
+    },
+    {
       "name": "package",
       "inherits": "base",
       "description": "Package build base options",
