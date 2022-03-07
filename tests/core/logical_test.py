@@ -84,3 +84,23 @@ def test_logical_xor_variable_with_variable():
     assert sc.identical((a ^ b),
                         sc.Variable(dims=['x'],
                                     values=np.array([False, True, True, False])))
+
+
+def test_logical_not_function():
+    assert sc.identical(sc.logical_not(sc.scalar(False)), sc.scalar(True))
+    assert sc.identical(sc.logical_not(sc.scalar(True)), sc.scalar(False))
+
+
+def test_logical_and_function():
+    assert sc.identical(sc.logical_and(sc.scalar(True), sc.scalar(False)),
+                        sc.scalar(False))
+
+
+def test_logical_or_function():
+    assert sc.identical(sc.logical_or(sc.scalar(True), sc.scalar(False)),
+                        sc.scalar(True))
+
+
+def test_logical_xor_function():
+    assert sc.identical(sc.logical_xor(sc.scalar(True), sc.scalar(False)),
+                        sc.scalar(True))
