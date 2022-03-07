@@ -422,3 +422,31 @@ def test_isub_dataset_with_dataset_broadcast():
     expected = ds - ds['x', 0]
     ds -= ds['x', 0]
     assert sc.identical(ds, expected)
+
+
+def test_add_function():
+    assert sc.identical(sc.add(sc.scalar(3), sc.scalar(2)), sc.scalar(5))
+
+
+def test_divide_function():
+    assert sc.identical(sc.divide(sc.scalar(6), sc.scalar(2)), sc.scalar(3.0))
+
+
+def test_floor_divide_function():
+    assert sc.identical(sc.floor_divide(sc.scalar(6), sc.scalar(2.5)), sc.scalar(2.0))
+
+
+def test_mod_function():
+    assert sc.identical(sc.mod(sc.scalar(3), sc.scalar(2)), sc.scalar(1))
+
+
+def test_multipy_function():
+    assert sc.identical(sc.multiply(sc.scalar(3), sc.scalar(2)), sc.scalar(6))
+
+
+def test_subtract_function():
+    assert sc.identical(sc.subtract(sc.scalar(3), sc.scalar(2)), sc.scalar(1))
+
+
+def test_unary_minus_function():
+    assert sc.identical(sc.unary_minus(sc.scalar(3)), sc.scalar(-3))
