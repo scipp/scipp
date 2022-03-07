@@ -109,3 +109,63 @@ def test_floor():
     x_out = sc.zeros_like(expected)
     sc.floor(x, out=x_out)
     assert sc.identical(x_out, expected)
+
+
+def test_sin():
+    assert_export(sc.sin, sc.Variable(dims=(), values=0.0))
+
+
+def test_sin_out():
+    var = sc.Variable(dims=(), values=0.0)
+    assert_export(sc.sin, var, out=var)
+
+
+def test_cos():
+    assert_export(sc.cos, sc.Variable(dims=(), values=0.0))
+
+
+def test_cos_out():
+    var = sc.Variable(dims=(), values=0.0)
+    assert_export(sc.cos, var, out=var)
+
+
+def test_tan():
+    assert_export(sc.tan, sc.Variable(dims=(), values=0.0))
+
+
+def test_tan_out():
+    var = sc.Variable(dims=(), values=0.0)
+    assert_export(sc.tan, var, out=var)
+
+
+def test_asin():
+    assert_export(sc.asin, sc.Variable(dims=(), values=0.0))
+
+
+def test_asin_out():
+    var = sc.Variable(dims=(), values=0.0)
+    assert_export(sc.asin, var, out=var)
+
+
+def test_acos():
+    assert_export(sc.acos, sc.Variable(dims=(), values=0.0))
+
+
+def test_acos_out():
+    var = sc.Variable(dims=(), values=0.0)
+    assert_export(sc.acos, var, out=var)
+
+
+def test_atan():
+    assert_export(sc.atan, sc.Variable(dims=(), values=0.0))
+
+
+def test_atan_out():
+    var = sc.Variable(dims=(), values=0.0)
+    assert_export(sc.atan, var, out=var)
+
+
+def test_atan2():
+    var = sc.Variable(dims=(), values=0.0)
+    assert_export(sc.atan2, y=var, x=var)
+    assert_export(sc.atan2, y=var, x=var, out=var)
