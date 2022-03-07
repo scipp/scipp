@@ -424,16 +424,27 @@ Variable extract(const Variable &var, const Variable &condition) {
   return extract(DataArray(var), condition).data();
 }
 
+namespace {
+template <class T> T extract_impl(const T &obj, const Variable &condition) {
+  if (condition.dtype() != dtype<bool>)
+    throw except::TypeError(
+        "Cannot extract elements based on condition with non-boolean dtype. If "
+        "you intended to select a range based on a label you must specify the "
+        "dimension.");
+  if (all(condition).value<bool>())
+    return copy(obj);
+  if (!any(condition).value<bool>())
+    return copy(obj.slice({condition.dim(), 0, 0}));
+  return call_groupby(obj, condition, condition.dim()).copy(1);
+}
+} // namespace
+
 DataArray extract(const DataArray &da, const Variable &condition) {
-  core::expect::equals(condition.dtype(), dtype<bool>);
-  // TODO This is wrong, unless condition contains both true and false elements.
-  return call_groupby(da, condition, condition.dim()).copy(1);
+  return extract_impl(da, condition);
 }
 
 Dataset extract(const Dataset &ds, const Variable &condition) {
-  core::expect::equals(condition.dtype(), dtype<bool>);
-  // TODO This is wrong, unless condition contains both true and false elements.
-  return call_groupby(ds, condition, condition.dim()).copy(1);
+  return extract_impl(ds, condition);
 }
 
 template class GroupBy<DataArray>;
