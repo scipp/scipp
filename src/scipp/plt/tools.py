@@ -67,17 +67,17 @@ def parse_params(params=None, defaults=None, globs=None, array=None):
         for key, val in params.items():
             parsed[key] = val
 
-    if parsed["norm"] == "log":
-        norm = LogNorm
-    elif parsed["norm"] == "linear":
-        norm = Normalize
-    else:
-        raise RuntimeError("Unknown norm. Expected 'linear' or 'log', "
-                           "got {}.".format(parsed["norm"]))
-    vmin = parsed["vmin"]
-    vmax = parsed["vmax"]
-    parsed["norm"] = norm(vmin=vmin.value if vmin is not None else None,
-                          vmax=vmax.value if vmax is not None else None)
+    # if parsed["norm"] == "log":
+    #     norm = LogNorm
+    # elif parsed["norm"] == "linear":
+    #     norm = Normalize
+    # else:
+    #     raise RuntimeError("Unknown norm. Expected 'linear' or 'log', "
+    #                        "got {}.".format(parsed["norm"]))
+    # vmin = parsed["vmin"]
+    # vmax = parsed["vmax"]
+    # parsed["norm"] = norm(vmin=vmin.value if vmin is not None else None,
+    #                       vmax=vmax.value if vmax is not None else None)
 
     # Convert color into custom colormap
     if parsed["color"] is not None:

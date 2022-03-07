@@ -13,21 +13,21 @@ class PlotView:
     """
     Base class for 1d and 2d figures, that holds matplotlib axes.
     """
-    def __init__(self,
-                 ax=None,
-                 cax=None,
-                 figsize=None,
-                 title=None,
-                 bounding_box=None,
-                 ndim=1,
-                 xlabel=None,
-                 ylabel=None,
-                 toolbar=None,
-                 grid=False):
+    def __init__(
+            self,
+            ax=None,
+            # cax=None,
+            figsize=None,
+            title=None,
+            bounding_box=None,
+            ndim=1,
+            xlabel=None,
+            ylabel=None,
+            toolbar=None,
+            grid=False):
         self.fig = None
         self.closed = False
         self.ax = ax
-        self.cax = cax
         self.own_axes = True
         self.toolbar = None
         self.bounding_box = bounding_box

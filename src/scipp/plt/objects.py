@@ -349,8 +349,9 @@ class Plot:
         #     self.profile.initialize_toolbar(log_axis_buttons=self.dims,
         #                                     button_states=self._tool_button_states)
         self.controller.render()
-        # if hasattr(self.view.figure, "fig"):
-        #     self.fig = self.view.figure.fig
+        self.fig = getattr(self.view, "fig", None)
+        self.ax = getattr(self.view, "ax", None)
+        #     self.fig = self.view.fig
         # if hasattr(self.view.figure, "ax"):
         #     self.ax = self.view.figure.ax
 

@@ -5,6 +5,7 @@
 from .. import config
 from .view import PlotView
 from .toolbar import PlotToolbar2d
+from .tools import find_limits, fix_empty_range
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, LogNorm
@@ -16,25 +17,25 @@ class PlotView2d(PlotView):
     """
     Class for 2 dimensional plots, based on Matplotlib's `imshow`.
     """
-    def __init__(self,
-                 ax=None,
-                 cax=None,
-                 figsize=None,
-                 aspect=None,
-                 cmap=None,
-                 mask_cmap=None,
-                 norm=None,
-                 name=None,
-                 cbar=None,
-                 resolution=None,
-                 extend=None,
-                 title=None,
-                 xlabel=None,
-                 ylabel=None,
-                 grid=False):
+    def __init__(
+            self,
+            ax=None,
+            cax=None,
+            figsize=None,
+            aspect=None,
+            cmap=None,
+            mask_cmap=None,
+            norm=None,
+            name=None,
+            # cbar=None,
+            resolution=None,
+            extend=None,
+            title=None,
+            xlabel=None,
+            ylabel=None,
+            grid=False):
 
         super().__init__(ax=ax,
-                         cax=cax,
                          figsize=figsize,
                          title=name if title is None else title,
                          ndim=2,
@@ -47,9 +48,14 @@ class PlotView2d(PlotView):
             aspect = config['plot']['aspect']
 
         self.cmap = cmap
+        self.cax = cax
+
         # print("cmap2", cmap)
         self._mask_cmap = mask_cmap
-        self.norm = norm
+        self.norm_flag = norm
+        print("NORM", norm)
+        self.norm_func = None
+        self.extend = extend
         # print("norm", self.norm)
 
         # ones = np.ones([2, 2])
@@ -71,45 +77,40 @@ class PlotView2d(PlotView):
         #                                    zorder=2,
         #                                    alpha=0.0,
         #                                    **image_params)
-        self.image_colors = None
-        self.image_values = None
+        self.image = None
 
-        # self.cbar = None
-        # if cbar:
-        #     self.cbar = plt.colorbar(self.image_values,
-        #                              ax=self.ax,
-        #                              cax=self.cax,
-        #                              extend=extend)
-        #     self._disable_colorbar_offset()
-        # if self.cax is None:
-        #     self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
-        self.mask_image = {}
+        # self.image_values = None
 
-    def _disable_colorbar_offset(self):
-        if not isinstance(self.norm, LogNorm):
-            self.cbar.formatter.set_useOffset(False)
+        self.cbar = None
 
-    def _make_limits(self, vmin, vmax):
-        if math.isclose(vmin, vmax):
-            offset = 0.001 * max(abs(vmin), abs(vmax))
-            vmin -= offset
-            vmax += offset
-        return vmin, vmax
+        self.data = None
 
-    def rescale_to_data(self, vmin, vmax):
+        # self.mask_image = {}
+
+    # def _disable_colorbar_offset(self):
+    #     if not isinstance(self.norm, LogNorm):
+    #         self.cbar.formatter.set_useOffset(False)
+
+    def _make_limits(self):
+        vmin, vmax = fix_empty_range(
+            find_limits(self.data.data, scale=self.norm_flag)[self.norm_flag])
+        return vmin.value, vmax.value
+
+    def rescale_to_data(self, _):
         """
         Rescale the colorbar limits according to the supplied values.
         """
-        vmin, vmax = self._make_limits(vmin, vmax)
-        self.norm.vmin = vmin
-        self.norm.vmax = vmax
-        self.image_values.set_clim(vmin, vmax)
-        self.opacify_colorbar()
-        self.draw()
+        vmin, vmax = self._make_limits()
+        self.norm_func.vmin = vmin
+        self.norm_func.vmax = vmax
+        self.image.set_clim(vmin, vmax)
+        # self.opacify_colorbar()
+        # self.draw()
+        self.update_data()
 
-    def opacify_colorbar(self):
-        self.cbar.set_alpha(1.0)
-        self.cbar.draw_all()
+    # def opacify_colorbar(self):
+    #     self.cbar.set_alpha(1.0)
+    #     self.cbar.draw_all()
 
     def toggle_mask(self, *args, **kwargs):
         """
@@ -137,56 +138,68 @@ class PlotView2d(PlotView):
 
     #     self._limits_set = False
 
-    def _make_data(self, new_values, mask_info=None):
-        dims = new_values.dims
-        # for dim in dims:
-        #     xmin = new_values.coords[dim].values[0]
-        #     xmax = new_values.coords[dim].values[-1]
-        #     if dim not in self.global_lims:
-        #         self.global_lims[dim] = [xmin, xmax]
-        #     self.current_lims[dim] = [xmin, xmax]
-        values = new_values.data.values
-        slice_values = {
-            "values": values,
-            # "extent":
-            # np.array([self.current_lims[dims[1]],
-            #           self.current_lims[dims[0]]]).flatten()
-        }
-        slice_values["x"] = new_values.meta[dims[1]].values
-        slice_values["y"] = new_values.meta[dims[0]].values
-        # mask_info = next(iter(mask_info.values()))
-        # if len(mask_info) > 0:
-        #     # Use automatic broadcasting in Scipp variables
-        #     msk = zeros(sizes=new_values.sizes, dtype='int32', unit=None)
-        #     for m, val in mask_info.items():
-        #         if val:
-        #             msk += new_values.masks[m].astype(msk.dtype)
-        #     slice_values["masks"] = msk.values
-        return slice_values
+    # def _make_data(self, new_values, mask_info=None):
+    #     dims = new_values.dims
+    #     # for dim in dims:
+    #     #     xmin = new_values.coords[dim].values[0]
+    #     #     xmax = new_values.coords[dim].values[-1]
+    #     #     if dim not in self.global_lims:
+    #     #         self.global_lims[dim] = [xmin, xmax]
+    #     #     self.current_lims[dim] = [xmin, xmax]
+    #     values = new_values.data.values
+    #     slice_values = {
+    #         "values": values,
+    #         # "extent":
+    #         # np.array([self.current_lims[dims[1]],
+    #         #           self.current_lims[dims[0]]]).flatten()
+    #     }
+    #     slice_values["x"] = new_values.meta[dims[1]].values
+    #     slice_values["y"] = new_values.meta[dims[0]].values
+    #     # mask_info = next(iter(mask_info.values()))
+    #     # if len(mask_info) > 0:
+    #     #     # Use automatic broadcasting in Scipp variables
+    #     #     msk = zeros(sizes=new_values.sizes, dtype='int32', unit=None)
+    #     #     for m, val in mask_info.items():
+    #     #         if val:
+    #     #             msk += new_values.masks[m].astype(msk.dtype)
+    #     #     slice_values["masks"] = msk.values
+    #     return slice_values
 
-    def update_data(self, new_values):
+    def update_data(self, new_values=None):
         """
         Update image array with new values.
         """
-        new_values = self._make_data(new_values)
+        # self.data = self._make_data(new_values)
+        if new_values is not None:
+            self.data = new_values
         # print(self.cmap)
         # print(self.norm)
         # print(self.cmap(np.arange(10.)))
         # print(self.norm(np.arange(10.)))
         # print(new_values["values"])
+        dims = self.data.dims
 
-        rgba = self.cmap(self.norm(new_values["values"].flatten()))
         # if "masks" in new_values:
         #     indices = np.where(new_values["masks"].flatten())
         #     rgba[indices] = self._mask_cmap(self.norm(new_values["values"][indices]))
 
-        if self.image_colors is None:
-            self.image_colors = self.ax.pcolormesh(new_values["x"],
-                                                   new_values["y"],
-                                                   new_values["values"],
-                                                   shading='auto')
-            self.image_colors.set_array(None)
-        self.image_colors.set_facecolors(rgba)
+        if self.image is None:
+            self.image = self.ax.pcolormesh(self.data.meta[dims[1]].values,
+                                            self.data.meta[dims[0]].values,
+                                            self.data.data.values,
+                                            shading='auto')
+            self.cbar = plt.colorbar(self.image,
+                                     ax=self.ax,
+                                     cax=self.cax,
+                                     extend=self.extend)
+            # self._disable_colorbar_offset()
+            if self.cax is None:
+                self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
+            self.image.set_array(None)
+            self._set_norm()
+
+        rgba = self.cmap(self.norm_func(self.data.data.values.flatten()))
+        self.image.set_facecolors(rgba)
         # self.image_values.set_data(new_values["values"])
         # self.image_colors.set_extent(new_values["extent"])
         # self.image_values.set_extent(new_values["extent"])
@@ -198,13 +211,23 @@ class PlotView2d(PlotView):
         #         self.ax.set_ylim(new_values["extent"][2:])
         self.draw()
 
-    def toggle_norm(self, norm=None, vmin=None, vmax=None):
-        vmin, vmax = self._make_limits(vmin, vmax)
-        self.norm = LogNorm(vmin=vmin, vmax=vmax) if norm == "log" else Normalize(
-            vmin=vmin, vmax=vmax)
-        self.image_values.set_norm(self.norm)
-        self._disable_colorbar_offset()
-        self.opacify_colorbar()
+    def _set_norm(self):
+        vmin, vmax = self._make_limits()
+        func = LogNorm if self.norm_flag == "log" else Normalize
+        self.norm_func = func(vmin=vmin, vmax=vmax)
+        self.image.set_norm(self.norm_func)
+
+    def toggle_norm(self, change=None):
+        self.norm_flag = "log" if change["new"] else "linear"
+        # # lims = find_limits(self.data.data, scale=self.norm)
+        # vmin, vmax = self._make_limits(norm=self.norm_flag)
+        # func = LogNorm if self.norm_flag == "log" else Normalize
+        # self.norm_func = func(vmin=vmin, vmax=vmax)
+        # # self.image.set_norm(self.norm_func)
+        # # self._disable_colorbar_offset()
+        # # self.opacify_colorbar()
+        self._set_norm()
+        self.update_data()
 
     def transpose(self):
         pass
