@@ -3,7 +3,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # ~~~
 function(scipp_function template category function_name)
-  set(options SKIP_VARIABLE OUT)
+  set(options SKIP_VARIABLE SKIP_PYTHON OUT)
   set(oneValueArgs OP PREPROCESS_VARIABLE BASE_INCLUDE)
   cmake_parse_arguments(
     PARSE_ARGV 3 SCIPP_FUNCTION "${options}" "${oneValueArgs}" ""
@@ -57,21 +57,23 @@ function(scipp_function template category function_name)
     configure_in_module("variable" ${OPNAME})
   endif()
   configure_in_module("dataset" ${OPNAME})
-  configure_file(templates/python_${template}.cpp.in python/${src})
-  set(python_SRC_FILES
-      ${python_SRC_FILES} ${src}
-      PARENT_SCOPE
-  )
-  set(python_binders_fwd python_${category}_binders_fwd)
-  set(python_binders python_${category}_binders)
-  set(${python_binders_fwd}
-      "${${python_binders_fwd}}\nvoid init_${OPNAME}(pybind11::module &)ENDL"
-      PARENT_SCOPE
-  )
-  set(${python_binders}
-      "${${python_binders}}\n  init_${OPNAME}(m)ENDL"
-      PARENT_SCOPE
-  )
+  if(NOT SCIPP_FUNCTION_SKIP_PYTHON)
+    configure_file(templates/python_${template}.cpp.in python/${src})
+    set(python_SRC_FILES
+        ${python_SRC_FILES} ${src}
+        PARENT_SCOPE
+    )
+    set(python_binders_fwd python_${category}_binders_fwd)
+    set(python_binders python_${category}_binders)
+    set(${python_binders_fwd}
+        "${${python_binders_fwd}}\nvoid init_${OPNAME}(pybind11::module &)ENDL"
+        PARENT_SCOPE
+    )
+    set(${python_binders}
+        "${${python_binders}}\n  init_${OPNAME}(m)ENDL"
+        PARENT_SCOPE
+    )
+  endif()
 endfunction()
 
 macro(scipp_unary)
