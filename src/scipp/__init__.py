@@ -33,7 +33,7 @@ from .core import BinEdgeError, BinnedDataError, CoordError, \
 from . import units
 from . import geometry
 # Import functions
-from ._scipp.core import as_const, choose, logical_and, logical_or, logical_xor
+from ._scipp.core import as_const, choose
 # Import python functions
 from .show import show, make_svg
 from .table import table
@@ -71,6 +71,7 @@ from .core import counts_to_density, density_to_counts
 from .core import cumsum
 from .core import merge
 from .core import groupby
+from .core import logical_not, logical_and, logical_or, logical_xor
 from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc, midpoints
 from .core import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where
 from .core import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
