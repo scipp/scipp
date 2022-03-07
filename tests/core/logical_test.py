@@ -6,6 +6,11 @@ import numpy as np
 import scipp as sc
 
 
+def test_bitwise_not_variable():
+    assert sc.identical(~sc.scalar(False), sc.scalar(True))
+    assert sc.identical(~sc.scalar(True), sc.scalar(False))
+
+
 def test_bitwise_ior_variable_with_variable():
     a = sc.scalar(False)
     b = sc.scalar(True)
