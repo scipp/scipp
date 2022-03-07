@@ -422,8 +422,6 @@ GroupBy<Dataset> groupby(const Dataset &dataset, const Variable &key,
 
 Variable extract(const Variable &var, const Variable &condition) {
   return extract(DataArray(var), condition).data();
-  return extract(DataArray(var, {{condition.dim(), condition}}), condition)
-      .data();
 }
 
 DataArray extract(const DataArray &da, const Variable &condition) {
