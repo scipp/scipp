@@ -15,6 +15,7 @@ General
    choose
    collapse
    histogram
+   logical_not
    logical_and
    logical_or
    logical_xor
@@ -59,6 +60,7 @@ Math
    round
    sqrt
    subtract
+   unary_minus
 
 Shape
 ~~~~~
