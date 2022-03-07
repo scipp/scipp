@@ -56,6 +56,13 @@ def test_dataset_item_independent_of_condition_dim_preserved_unchanged():
     assert sc.identical(ds[condition]['x'], ds['x'])
 
 
+def test_non_boolean_condition_raises_DTypeError():
+    var = make_var()
+    with pytest.raises(sc.DTypeError):
+        condition = (var < 3).to(dtype='int32')
+        var[condition]
+
+
 def test_2d_condition_raises_DimensionError():
     var = make_var()
     with pytest.raises(sc.DimensionError):
