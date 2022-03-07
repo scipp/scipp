@@ -40,7 +40,7 @@ class PlotView:
                 self.bounding_box = cfg['bounding_box']
             self.fig.tight_layout(rect=self.bounding_box)
             if self.is_widget():
-                self.toolbar = toolbar(mpl_toolbar=self.fig.canvas.toolbar)
+                self.toolbar = toolbar(external_toolbar=self.fig.canvas.toolbar)
                 self.fig.canvas.toolbar_visible = False
         else:
             self.own_axes = False
@@ -159,11 +159,13 @@ class PlotView:
     #     if self.toolbar is not None:
     #         self.toolbar.connect(controller=controller)
 
-    def toggle_xaxis_scale(change):
+    def toggle_xaxis_scale(self, change):
         self.ax.set_xscale("log" if change['new'] else "linear")
+        self.draw()
 
-    def toggle_yaxis_scale(change):
+    def toggle_yaxis_scale(self, change):
         self.ax.set_yscale("log" if change['new'] else "linear")
+        self.draw()
 
     # def toggle_mouse_events(self, active, event_handler):
     #     if active:
@@ -191,10 +193,10 @@ class PlotView:
         If `draw_no_delay` has been set to True (via `set_draw_no_delay`,
         then we use `draw()` instead of `draw_idle()`.
         """
-        if self.draw_no_delay:
-            self.fig.canvas.draw()
-        else:
-            self.fig.canvas.draw_idle()
+        # if self.draw_no_delay:
+        #     self.fig.canvas.draw()
+        # else:
+        self.fig.canvas.draw_idle()
 
     def get_axis_bounds(self, axis):
         return getattr(self.ax, "get_{}lim".format(axis))()

@@ -77,7 +77,13 @@ class PlotModel:
         entries in the dict of data arrays, and return a dict of 1d value
         arrays for data values, variances, and masks.
         """
-        return self.data_arrays
+        print("slices", slices)
+        out = DataArrayDict()
+        for name, array in self.data_arrays.items():
+            out[name] = array
+            for dim, sl in slices.items():
+                out[name] = out[name][dim, sl]
+        return out
 
     # def _dims_updated(self):
     #     pass

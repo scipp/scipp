@@ -100,4 +100,5 @@ def plot2d(scipp_obj_dict,
         title=None,
         xlabel=None,
         ylabel=None,
-        grid=False)
+        grid=False,
+        view_ndims=2)

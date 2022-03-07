@@ -58,7 +58,7 @@ class PlotController:
         # if self.profile is not None:
         #     self.profile.connect()
 
-        # self.widgets.connect(controller=self)
+        self.widgets.connect(controller=self)
         # self.view.connect(controller=self)
         # if self.panel is not None:
         #     self.panel.controller = self
@@ -76,6 +76,7 @@ class PlotController:
         #     slices = self.widgets.slices
         # else:
         #     slices.update(self.widgets.slices)
+        slices = self.widgets.slices
         new_values = self.model.update_data(slices)
         # self.widgets.update_slider_readout(new_values.meta)
 

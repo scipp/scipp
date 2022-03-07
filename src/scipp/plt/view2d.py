@@ -47,10 +47,10 @@ class PlotView2d(PlotView):
             aspect = config['plot']['aspect']
 
         self.cmap = cmap
-        print("cmap2", cmap)
+        # print("cmap2", cmap)
         self._mask_cmap = mask_cmap
         self.norm = norm
-        print("norm", self.norm)
+        # print("norm", self.norm)
 
         # ones = np.ones([2, 2])
         # image_params = {
@@ -205,6 +205,9 @@ class PlotView2d(PlotView):
         self.image_values.set_norm(self.norm)
         self._disable_colorbar_offset()
         self.opacify_colorbar()
+
+    def transpose(self):
+        pass
 
     # def rescale_on_zoom(self, *args, **kwargs):
     #     if self.toolbar is not None:

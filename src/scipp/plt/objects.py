@@ -7,7 +7,7 @@ from .. import config, units
 from .tools import parse_params
 from ..core import DimensionError
 from .model1d import PlotModel1d
-# from .widgets import PlotWidgets
+from .widgets import PlotWidgets
 # from .resampling_model import ResamplingMode
 
 
@@ -68,7 +68,8 @@ def _make_formatters(*, dims, arrays, labels):
     labs = {dim: dim for dim in dims}
     if labels is not None:
         labs.update(labels)
-    formatters = {dim: make_formatter(array, labs[dim], dim) for dim in dims}
+    # formatters = {dim: make_formatter(array, labs[dim], dim) for dim in dims}
+    formatters = {}
     return labs, formatters
 
 
@@ -265,19 +266,19 @@ class Plot:
         # figure.errorbars = errorbars
         # if profile_figure is not None:
         #     profile_figure.errorbars = errorbars
-        # labels, formatters = _make_formatters(arrays=scipp_obj_dict,
-        #                                       labels=labels,
-        #                                       dims=self.dims)
+        labels, formatters = _make_formatters(arrays=scipp_obj_dict,
+                                              labels=labels,
+                                              dims=self.dims)
         # self.profile = profile_figure
         self.view = view(**kwargs)  #figure=figure, formatters=formatters)
 
-        # self.widgets = PlotWidgets(dims=self.dims,
-        #                            formatters=formatters,
-        #                            ndim=self.view_ndims,
-        #                            dim_label_map=labels,
-        #                            masks=self._scipp_obj_dict,
-        #                            sizes={dim: array.sizes[dim]
-        #                                   for dim in self.dims})
+        self.widgets = PlotWidgets(dims=self.dims,
+                                   formatters=formatters,
+                                   ndim=self.view_ndims,
+                                   dim_label_map=labels,
+                                   masks=self._scipp_obj_dict,
+                                   sizes={dim: array.sizes[dim]
+                                          for dim in self.dims})
 
         self.model = model(scipp_obj_dict=self._scipp_obj_dict)
         # profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict)
@@ -288,7 +289,7 @@ class Plot:
             # norm=norm,
             # resampling_mode=resampling_mode,
             # scale=scale,
-            # widgets=self.widgets,
+            widgets=self.widgets,
             model=self.model,
             # profile_model=profile_model,
             view=self.view,
@@ -312,8 +313,8 @@ class Plot:
         widget_list = [self.view._to_widget()]
         # if self.profile is not None:
         #     widget_list.append(self.profile._to_widget())
-        # if self.show_widgets:
-        #     widget_list.append(self.widgets._to_widget())
+        if self.show_widgets:
+            widget_list.append(self.widgets._to_widget())
         # if self.panel is not None and self.show_widgets:
         #     widget_list.append(self.panel._to_widget())
 
@@ -369,17 +370,17 @@ class Plot:
         """
         self.controller.redraw()
 
-    def set_draw_no_delay(self, value):
-        """
-        When set to True, try to update plots as soon as possible.
-        This is useful in the case where one wishes to update the plot inside
-        a loop (e.g. when listening to a data stream).
-        The plot update is then slightly more expensive than when it is set to
-        False.
-        """
-        self.view.set_draw_no_delay(value)
-        if self.profile is not None:
-            self.profile.set_draw_no_delay(value)
+    # def set_draw_no_delay(self, value):
+    #     """
+    #     When set to True, try to update plots as soon as possible.
+    #     This is useful in the case where one wishes to update the plot inside
+    #     a loop (e.g. when listening to a data stream).
+    #     The plot update is then slightly more expensive than when it is set to
+    #     False.
+    #     """
+    #     self.view.set_draw_no_delay(value)
+    #     if self.profile is not None:
+    #         self.profile.set_draw_no_delay(value)
 
 
 def make_plot(

@@ -22,7 +22,7 @@ def _make_toggle_button(**kwargs):
         "padding": "0px 0px 0px 0px"
     },
                               **kwargs)
-    set_button_color(button)
+    # set_button_color(button)
     return button
 
 
@@ -31,7 +31,7 @@ class PlotToolbar:
     Custom toolbar with additional buttons for controlling log scales and
     normalization, and with back/forward buttons removed.
     """
-    def __init__(self, mpl_toolbar=None):
+    def __init__(self, external_toolbar=None):
         self._dims = None
         self.controller = None
 
@@ -40,7 +40,7 @@ class PlotToolbar:
 
         # Keep a reference to the matplotlib toolbar so we can call the zoom
         # and pan methods
-        self.mpl_toolbar = mpl_toolbar
+        self.external_toolbar = external_toolbar
 
         self.add_button(name="home_view", icon="home", tooltip="Reset original view")
         # self._resampling_mode = _make_toggle_button(
@@ -121,31 +121,38 @@ class PlotToolbar:
         change the value of the button without triggering an update, e.g. when
         we swap the axes.
         """
-        button = ipw.Button(**self._parse_button_args(**kwargs))
-        set_button_color(button)
-        setattr(button, "value", value)
-        self.toggle_button_color(owner=button, value=value)
-        # Add a local observer to change the color of the button according to
-        # its value.
-        button.on_click(self.toggle_button_color)
+        button = ipw.ToggleButton(layout={
+            "width": "34px",
+            "padding": "0px 0px 0px 0px"
+        },
+                                  value=value,
+                                  **kwargs)
+        # button = ipw.Button(**self._parse_button_args(**kwargs))
+        # set_button_color(button)
+        # setattr(button, "value", value)
+        # self.toggle_button_color(owner=button, value=value)
+        # # Add a local observer to change the color of the button according to
+        # # its value.
+        # button.on_click(self.toggle_button_color)
         self.members[name] = button
 
-    def toggle_button_color(self, owner, value=None):
-        """
-        Change the color of the button to make it look like a ToggleButton.
-        """
-        if value is None:
-            owner.value = not owner.value
-        else:
-            owner.value = value
-        set_button_color(owner, selected=owner.value)
+    # def toggle_button_color(self, owner, value=None):
+    #     """
+    #     Change the color of the button to make it look like a ToggleButton.
+    #     """
+    #     if value is None:
+    #         owner.value = not owner.value
+    #     else:
+    #         owner.value = value
+    #     set_button_color(owner, selected=owner.value)
 
     def connect(self, view):
         """
         Connect callbacks to button clicks.
         """
         for key, button in self.members.items():
-            callback = getattr(view, key)
+            obj = self if hasattr(self, key) else view
+            callback = getattr(obj, key)
             if isinstance(button, ipw.ToggleButton):
                 button.observe(callback, names='value')
             else:
@@ -186,22 +193,26 @@ class PlotToolbar:
                 self.members["pan_view"].value
 
     def home_view(self, button):
-        self.mpl_toolbar.home()
+        self.external_toolbar.home()
 
-    def pan_view(self, button):
-        # In case the zoom button is selected, we need to de-select it
-        if self.members["zoom_view"].value:
-            self.toggle_button_color(self.members["zoom_view"])
-        self.mpl_toolbar.pan()
+    def pan_view(self, change):
+        if change["new"]:
+            # In case the zoom button is selected, we need to de-select it
+            if self.members["zoom_view"].value:
+                self.members["zoom_view"].value = False
+                # self.toggle_button_color(self.members["zoom_view"])
+            self.external_toolbar.pan()
 
-    def zoom_view(self, button):
-        # In case the pan button is selected, we need to de-select it
-        if self.members["pan_view"].value:
-            self.toggle_button_color(self.members["pan_view"])
-        self.mpl_toolbar.zoom()
+    def zoom_view(self, change):
+        if change["new"]:
+            # In case the pan button is selected, we need to de-select it
+            if self.members["pan_view"].value:
+                self.members["pan_view"].value = False
+                # self.toggle_button_color(self.members["pan_view"])
+            self.external_toolbar.zoom()
 
     def save_view(self, button):
-        self.mpl_toolbar.save_figure()
+        self.external_toolbar.save_figure()
 
     def rescale_on_zoom(self):
         return self.members["zoom_view"].value
@@ -296,19 +307,19 @@ class PlotToolbar3d(PlotToolbar):
         # self.members['resampling_mode'] = None
 
     def home_view(self, button):
-        self.mpl_toolbar.reset_camera()
+        self.external_toolbar.reset_camera()
 
     def camera_x_normal(self, button):
-        self.mpl_toolbar.camera_x_normal()
+        self.external_toolbar.camera_x_normal()
 
     def camera_y_normal(self, button):
-        self.mpl_toolbar.camera_y_normal()
+        self.external_toolbar.camera_y_normal()
 
     def camera_z_normal(self, button):
-        self.mpl_toolbar.camera_z_normal()
+        self.external_toolbar.camera_z_normal()
 
     def toggle_axes_helper(self, button):
-        self.mpl_toolbar.toggle_axes_helper(button.value)
+        self.external_toolbar.toggle_axes_helper(button.value)
 
     def toggle_outline(self, button):
-        self.mpl_toolbar.toggle_outline(button.value)
+        self.external_toolbar.toggle_outline(button.value)
