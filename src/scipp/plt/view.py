@@ -13,18 +13,15 @@ class PlotView:
     """
     Base class for 1d and 2d figures, that holds matplotlib axes.
     """
-    def __init__(
-            self,
-            ax=None,
-            # cax=None,
-            figsize=None,
-            title=None,
-            bounding_box=None,
-            ndim=1,
-            xlabel=None,
-            ylabel=None,
-            toolbar=None,
-            grid=False):
+    def __init__(self,
+                 ax=None,
+                 figsize=None,
+                 title=None,
+                 bounding_box=None,
+                 xlabel=None,
+                 ylabel=None,
+                 toolbar=None,
+                 grid=False):
         self.fig = None
         self.closed = False
         self.ax = ax
@@ -122,43 +119,6 @@ class PlotView:
         """
         self.fig.show()
 
-    # def initialize(self, axformatters):
-    #     """
-    #     Initialize figure parameters once the model has been created, since
-    #     the axes formatters are defined by the model.
-    #     """
-    #     self._formatters = axformatters
-    #     for axis, formatter in self._formatters.items():
-    #         self.axformatter[axis] = {}
-    #         for key in ["linear", "log"]:
-    #             if formatter[key] is None:
-    #                 self.axformatter[axis][key] = ticker.ScalarFormatter()
-    #             else:
-    #                 form = formatter[key]
-    #                 if "need_callbacks" in formatter:
-    #                     from functools import partial
-    #                     form = partial(form,
-    #                                    axis=axis,
-    #                                    get_axis_bounds=self.get_axis_bounds,
-    #                                    set_axis_label=self.set_axis_label)
-    #                 self.axformatter[axis][key] = ticker.FuncFormatter(form)
-    #         self.axlocator[axis] = {
-    #             "linear":
-    #             ticker.MaxNLocator(integer=True)
-    #             if axformatters[axis]["custom_locator"] else ticker.AutoLocator(),
-    #             "log":
-    #             ticker.LogLocator()
-    #         }
-
-    # def connect(self):
-    #     """
-    #     Connect the toolbar to callback from the controller. This includes
-    #     rescaling the data norm, and change the scale (log or linear) on the
-    #     axes.
-    #     """
-    #     if self.toolbar is not None:
-    #         self.toolbar.connect(controller=controller)
-
     def toggle_xaxis_scale(self, change):
         self.ax.set_xscale("log" if change['new'] else "linear")
         self.draw()
@@ -166,19 +126,6 @@ class PlotView:
     def toggle_yaxis_scale(self, change):
         self.ax.set_yscale("log" if change['new'] else "linear")
         self.draw()
-
-    # def toggle_mouse_events(self, active, event_handler):
-    #     if active:
-    #         self.event_connections['button_press_event'] = self.fig.canvas.mpl_connect(
-    #             'button_press_event', event_handler.handle_button_press)
-    #         self.event_connections['pick_event'] = self.fig.canvas.mpl_connect(
-    #             'pick_event', event_handler.handle_pick)
-    #         self.event_connections['motion_notify_event'] = self.fig.canvas.mpl_connect(
-    #             'motion_notify_event', event_handler.handle_motion_notify)
-    #     else:
-    #         for cid in self.event_connections.values():
-    #             self.fig.canvas.mpl_disconnect(cid)
-    #         self.event_connections.clear()
 
     def draw(self):
         """
@@ -193,9 +140,6 @@ class PlotView:
         If `draw_no_delay` has been set to True (via `set_draw_no_delay`,
         then we use `draw()` instead of `draw_idle()`.
         """
-        # if self.draw_no_delay:
-        #     self.fig.canvas.draw()
-        # else:
         self.fig.canvas.draw_idle()
 
     def get_axis_bounds(self, axis):
@@ -203,6 +147,3 @@ class PlotView:
 
     def set_axis_label(self, axis, string):
         getattr(self.ax, "set_{}label".format(axis))(string)
-
-    def set_draw_no_delay(self, value):
-        self.draw_no_delay = value

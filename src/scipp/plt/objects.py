@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
-# @author Neil Vaytet
 
 from .. import config, units
 # from .formatters import make_formatter
@@ -169,13 +168,6 @@ class PlotDict():
             item.set_draw_no_delay(value)
 
 
-# def _guess_resampling_mode(array):
-#     unit = array.unit if array.bins is None else array.bins.constituents['data'].unit
-#     if unit in [units.counts, units.one]:
-#         return ResamplingMode.sum
-#     return ResamplingMode.mean
-
-
 class Plot:
     """
     Base class for plot objects. It uses the Model-View-Controller pattern to
@@ -199,27 +191,24 @@ class Plot:
       - a `PlotController`: handles all the communication between all the
           pieces above.
     """
-    def __init__(
-            self,
-            scipp_obj_dict,
-            controller,
-            # figure,
-            model=None,
-            profile_figure=None,
-            errorbars=None,
-            panel=None,
-            labels=None,
-            resolution=None,
-            dims=None,
-            view=None,
-            vmin=None,
-            vmax=None,
-            axes=None,
-            # norm=False,
-            resampling_mode=None,
-            scale=None,
-            view_ndims=None,
-            **kwargs):
+    def __init__(self,
+                 scipp_obj_dict,
+                 controller,
+                 model=None,
+                 profile_figure=None,
+                 errorbars=None,
+                 panel=None,
+                 labels=None,
+                 resolution=None,
+                 dims=None,
+                 view=None,
+                 vmin=None,
+                 vmax=None,
+                 axes=None,
+                 resampling_mode=None,
+                 scale=None,
+                 view_ndims=None,
+                 **kwargs):
 
         self._scipp_obj_dict = scipp_obj_dict
         self.panel = panel
@@ -241,26 +230,6 @@ class Plot:
             self.dims = scipp_obj_dict[self.name].dims
         else:
             self.dims = dims
-        # for dim in self.dims[:-view_ndims]:
-        #     if dim in array.meta and len(array.meta[dim].dims) > 1:
-        #         raise DimensionError("A ragged coordinate cannot lie along "
-        #                              "a slider dimension, it must be one of "
-        #                              "the displayed dimensions.")
-
-        # self._tool_button_states = {}
-        # if norm:
-        #     self._tool_button_states['toggle_norm'] = True
-        # for dim in {} if scale is None else scale:
-        #     if dim in self.dims:
-        #         self._tool_button_states[f'log_{dim}'] = scale[dim] == 'log'
-
-        # if resampling_mode is None:
-        #     resampling_mode = _guess_resampling_mode(array)
-        # else:
-        #     resampling_mode = {
-        #         'sum': ResamplingMode.sum,
-        #         'mean': ResamplingMode.mean
-        #     }[resampling_mode]
 
         # errorbars = _make_errorbar_params(scipp_obj_dict, errorbars)
         # figure.errorbars = errorbars
@@ -270,7 +239,7 @@ class Plot:
                                               labels=labels,
                                               dims=self.dims)
         # self.profile = profile_figure
-        self.view = view(**kwargs)  #figure=figure, formatters=formatters)
+        self.view = view(**kwargs)
 
         self.widgets = PlotWidgets(dims=self.dims,
                                    formatters=formatters,
@@ -282,21 +251,10 @@ class Plot:
 
         self.model = model(scipp_obj_dict=self._scipp_obj_dict)
         # profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict)
-        self.controller = controller(
-            dims=self.dims,
-            # vmin=vmin,
-            # vmax=vmax,
-            # norm=norm,
-            # resampling_mode=resampling_mode,
-            # scale=scale,
-            widgets=self.widgets,
-            model=self.model,
-            # profile_model=profile_model,
-            view=self.view,
-            # panel=self.panel,
-            # profile=self.profile
-        )
-        # self._tool_button_states['resampling_mode'] = self.model.mode
+        self.controller = controller(dims=self.dims,
+                                     widgets=self.widgets,
+                                     model=self.model,
+                                     view=self.view)
         self._render()
 
     def _ipython_display_(self):
@@ -343,17 +301,9 @@ class Plot:
         Perform some initial calls to render the figure once all components
         have been created.
         """
-        # self.view.figure.initialize_toolbar(log_axis_buttons=self.dims,
-        #                                     button_states=self._tool_button_states)
-        # if self.profile is not None:
-        #     self.profile.initialize_toolbar(log_axis_buttons=self.dims,
-        #                                     button_states=self._tool_button_states)
         self.controller.render()
         self.fig = getattr(self.view, "fig", None)
         self.ax = getattr(self.view, "ax", None)
-        #     self.fig = self.view.fig
-        # if hasattr(self.view.figure, "ax"):
-        #     self.ax = self.view.figure.ax
 
     def savefig(self, filename=None):
         """
@@ -370,42 +320,3 @@ class Plot:
         has been modified.
         """
         self.controller.redraw()
-
-    # def set_draw_no_delay(self, value):
-    #     """
-    #     When set to True, try to update plots as soon as possible.
-    #     This is useful in the case where one wishes to update the plot inside
-    #     a loop (e.g. when listening to a data stream).
-    #     The plot update is then slightly more expensive than when it is set to
-    #     False.
-    #     """
-    #     self.view.set_draw_no_delay(value)
-    #     if self.profile is not None:
-    #         self.profile.set_draw_no_delay(value)
-
-
-def make_plot(
-        builder,
-        scipp_obj_dict,
-        filename=None,
-        labels=None,
-        errorbars=None,
-        norm=None,
-        # resampling_mode=None,
-        scale=None,
-        resolution=None,
-        **kwargs):
-    dims = next(iter(scipp_obj_dict.values())).dims
-    sp = Plot(
-        scipp_obj_dict=scipp_obj_dict,
-        **builder(dims=dims, norm=norm, **kwargs),
-        errorbars=errorbars,
-        labels=labels,
-        resolution=resolution,
-        norm=norm,
-        # resampling_mode=resampling_mode,
-        scale=scale)
-    if filename is not None:
-        sp.savefig(filename)
-    else:
-        return sp

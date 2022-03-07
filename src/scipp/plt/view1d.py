@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
-# @author Neil Vaytet
 
-# from .figure import PlotFigure
+from .view import PlotView
 from .toolbar import PlotToolbar1d
-from .tools import get_line_param
+from .tools import get_line_param, find_limits, fix_empty_range
 import numpy as np
 import copy as cp
 import warnings
@@ -25,7 +24,7 @@ def _make_label(array):
     return ', '.join(labels)
 
 
-class PlotView1d:
+class PlotView1d(PlotView):
     """
     Class for 1 dimensional plots. This is used by both the `PlotView1d` for
     normal 1d plots, and the `PlotProfile`.
@@ -33,45 +32,26 @@ class PlotView1d:
     `PlotFigure1d` can "keep" the currently displayed line, or "remove" a
     previously saved line.
     """
-    def __init__(
-            self,
-            # ax=None,
-            # mpl_line_params=None,
-            title=None,
-            norm=None,
-            grid=False,
-            mask_color=None,
-            figsize=None,
-            # picker=False,
-            legend=None,
-            bounding_box=None,
-            xlabel=None,
-            ylabel=None):
+    def __init__(self,
+                 ax=None,
+                 title=None,
+                 norm=None,
+                 grid=False,
+                 mask_color=None,
+                 figsize=None,
+                 legend=None,
+                 bounding_box=None,
+                 xlabel=None,
+                 ylabel=None):
 
-        # self.fig = None
-        self.closed = False
-        cfg = config['plot']
+        super().__init__(ax=ax,
+                         figsize=figsize,
+                         title=title,
+                         xlabel=xlabel,
+                         ylabel=ylabel,
+                         toolbar=PlotToolbar1d,
+                         grid=grid)
 
-        if figsize is None:
-            figsize = (cfg['width'] / cfg['dpi'], cfg['height'] / cfg['dpi'])
-        self.fig, self.ax = plt.subplots(1, 1, figsize=figsize, dpi=cfg['dpi'])
-        if bounding_box is None:
-            bounding_box = cfg['bounding_box']
-        self.fig.tight_layout(rect=bounding_box)
-        # if self.is_widget():
-        #     self.toolbar = PlotToolbar1d(mpl_toolbar=self.fig.canvas.toolbar)
-        #     self.fig.canvas.toolbar_visible = False
-
-        self.ax.set_title(title)
-        if grid:
-            self.ax.grid()
-
-        # self.axformatter = {}
-        # self.axlocator = {}
-        # self.xlabel = xlabel
-        # self.ylabel = ylabel
-        # self.draw_no_delay = False
-        # self.event_connections = {}
         self.errorbars = {}
 
         self._lines = {}
@@ -85,45 +65,10 @@ class PlotView1d:
             legend["show"] = True
 
         self._mask_color = mask_color if mask_color is not None else 'k'
-        # self.picker = picker
         self.norm = norm
         self.legend = legend
         if "loc" not in self.legend:
             self.legend["loc"] = 0
-
-    #     # self._mpl_line_params = mpl_line_params  # color, linewidth, ...
-
-    # def update_axes(self, scale, unit, legend_labels=True):
-    #     """
-    #     Wipe the figure and start over when the dimension to be displayed along
-    #     the horizontal axis is changed.
-    #     """
-    #     scale = scale['x']
-    #     self._legend_labels = legend_labels
-
-    #     if self.own_axes:
-    #         self._lines = {}
-    #         title = self.ax.get_title()
-    #         need_grid = self.ax.xaxis.get_gridlines()[0]._visible
-    #         self.ax.clear()
-    #         self.ax.set_title(title)
-    #         if need_grid:
-    #             self.ax.grid()
-
-    #     self.ax.set_xscale(scale)
-    #     self.ax.set_yscale("log" if self.norm == "log" else "linear")
-    #     self.ax.set_ylabel(unit if self.ylabel is None else self.ylabel)
-
-    #     self.ax.set_xlabel(
-    #         self._formatters['x']['label'] if self.xlabel is None else self.xlabel)
-
-    #     self.ax.xaxis.set_major_locator(self.axlocator['x'][scale])
-    #     self.ax.xaxis.set_major_formatter(self.axformatter['x'][scale])
-
-    #     if self.show_legend():
-    #         self.ax.legend(loc=self.legend["loc"])
-
-    #     self._axes_updated = True
 
     def _make_line(self, name, masks, hist):
         class Line:
@@ -139,21 +84,13 @@ class PlotView1d:
             key: get_line_param(key, index)
             for key in ["color", "marker", "linestyle", "linewidth"]
         }
-        # if self._mpl_line_params is not None:
-        #     for key, item in self._mpl_line_params.items():
-        #         if name in item:
-        #             line.mpl_params[key] = item[name]
         label = None
-        # if self._legend_labels and len(name) > 0:
-        #     label = name
 
         if hist:
             line.data = self.ax.step(
-                [1, 2],
-                [1, 2],
+                [1, 2], [1, 2],
                 label=label,
                 zorder=10,
-                # picker=self.picker,
                 **{key: line.mpl_params[key]
                    for key in ["color", "linewidth"]})[0]
             for m in masks:
@@ -170,13 +107,10 @@ class PlotView1d:
                 # not.
                 line.masks[m].set_gid("onaxes")
         else:
-            line.data = self.ax.plot(
-                [1, 2],
-                [1, 2],
-                label=label,
-                zorder=10,
-                # picker=self.picker,
-                **line.mpl_params)[0]
+            line.data = self.ax.plot([1, 2], [1, 2],
+                                     label=label,
+                                     zorder=10,
+                                     **line.mpl_params)[0]
             for m in masks:
                 line.masks[m] = self.ax.plot([1, 2], [1, 2],
                                              zorder=11,
@@ -187,10 +121,6 @@ class PlotView1d:
                                              marker=line.mpl_params["marker"])[0]
                 line.masks[m].set_gid("onaxes")
 
-        # if self.picker:
-        #     line.data.set_pickradius(5.0)
-        line.data.set_url(name)
-
         # Add error bars
         if self.errorbars[name]:
             line.error = self.ax.errorbar([1, 2], [1, 2],
@@ -198,8 +128,6 @@ class PlotView1d:
                                           color=line.mpl_params["color"],
                                           zorder=10,
                                           fmt="none")
-        # if self.show_legend():
-        #     self.ax.legend(loc=self.legend["loc"])
         return line
 
     def _preprocess_hist(self, name, vals):
@@ -254,14 +182,15 @@ class PlotView1d:
         Update the x and y positions of the data points when a new data slice
         is received for display.
         """
+        self._data = new_values
 
-        new_values = self._make_data(new_values)
+        raw_values = self._make_data(self._data)
 
         xmin = np.Inf
         xmax = np.NINF
-        for name in new_values:
+        for name in raw_values:
             self.errorbars[name] = False
-            vals, hist = self._preprocess_hist(name, new_values[name])
+            vals, hist = self._preprocess_hist(name, raw_values[name])
             if name not in self._lines:
                 self._lines[name] = self._make_line(name,
                                                     masks=vals['masks'].keys(),
@@ -283,102 +212,7 @@ class PlotView1d:
                     self._change_segments_y(vals["variances"]["x"],
                                             vals["variances"]["y"],
                                             vals["variances"]["e"]))
-            coord = vals["values"]["x"]
-            low = min(coord[0], coord[-1])
-            high = max(coord[0], coord[-1])
-            xmin = min(xmin, low)
-            xmax = max(xmax, high)
-
-        deltax = 0.05 * (xmax - xmin)
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=UserWarning)
-            self.ax.set_xlim([xmin - deltax, xmax + deltax])
-        # if self._axes_updated:
-        #     self._axes_updated = False
-        #     self.fig.tight_layout(rect=self.bounding_box)
-
         self.draw()
-
-    # def keep_line(self, color, line_id, names=None):
-    #     """
-    #     Duplicate the current main line and give it an arbitrary color.
-    #     Triggered by a `PlotPanel1d` keep button or a `keep_profile` event.
-    #     """
-    #     if names is None:
-    #         names = self._lines
-    #     for name in names:
-    #         # The main line
-    #         line = self._lines[name]
-    #         self.ax.lines.append(cp.copy(line.data))
-    #         self.ax.lines[-1].set_label(line.label)
-    #         self.ax.lines[-1].set_url(line_id)
-    #         self.ax.lines[-1].set_zorder(2)
-    #         if self.ax.lines[-1].get_marker() == "None":
-    #             self.ax.lines[-1].set_color(color)
-    #         else:
-    #             self.ax.lines[-1].set_markerfacecolor(color)
-    #             self.ax.lines[-1].set_markeredgecolor("None")
-
-    #         # The masks
-    #         for m in self._lines[name].masks:
-    #             self.ax.lines.append(cp.copy(self._lines[name].masks[m]))
-    #             self.ax.lines[-1].set_url(line_id)
-    #             self.ax.lines[-1].set_gid(m)
-    #             self.ax.lines[-1].set_zorder(3)
-    #             if self.ax.lines[-1].get_marker() != "None":
-    #                 self.ax.lines[-1].set_zorder(3)
-    #             else:
-    #                 self.ax.lines[-1].set_zorder(1)
-
-    #         if self.errorbars[name]:
-    #             err = self._lines[name].error.get_children()
-    #             self.ax.collections.append(cp.copy(err[0]))
-    #             self.ax.collections[-1].set_color(color)
-    #             self.ax.collections[-1].set_url(line_id)
-    #             self.ax.collections[-1].set_zorder(2)
-
-    #         if self.show_legend():
-    #             self.ax.legend(loc=self.legend["loc"])
-    #         self.draw()
-
-    # def remove_line(self, line_id, names=None):
-    #     """
-    #     Remove a previously saved line.
-    #     Triggered by a `PlotPanel1d` remove button or a `remove_profile` event.
-    #     """
-    #     if names is None:
-    #         names = self._lines
-    #     for name in names:
-    #         lines = []
-    #         for line in self.ax.lines:
-    #             if line.get_url() != line_id:
-    #                 lines.append(line)
-    #         collections = []
-    #         for coll in self.ax.collections:
-    #             if coll.get_url() != line_id:
-    #                 collections.append(coll)
-    #         self.ax.lines = lines
-    #         self.ax.collections = collections
-    #         if self.show_legend():
-    #             self.ax.legend(loc=self.legend["loc"])
-    #         self.draw()
-
-    # def update_line_color(self, line_id, color):
-    #     """
-    #     Change the line color when the `ColorPicker` in the `PlotPanel1d` is
-    #     being used.
-    #     """
-    #     for line in self.ax.lines:
-    #         if line.get_url() == line_id:
-    #             if line.get_marker() == 'None':
-    #                 line.set_color(color)
-    #             else:
-    #                 line.set_markerfacecolor(color)
-
-    #     for coll in self.ax.collections:
-    #         if coll.get_url() == line_id:
-    #             coll.set_color(color)
-    #     self.draw()
 
     def _change_segments_y(self, x, y, e):
         """
@@ -388,109 +222,46 @@ class PlotView1d:
         arr2 = np.array([y - e, y + e]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
 
-    # def toggle_mask(self, mask_group, mask_name, value):
-    #     """
-    #     Show or hide a given mask.
-    #     """
-    #     if mask_group in self._lines:
-    #         msk = self._lines[mask_group].masks[mask_name]
-    #         if msk.get_gid() == "onaxes":
-    #             msk.set_visible(value)
-    #     # Also toggle masks on additional lines created by keep button
-    #     for line in self.ax.lines:
-    #         if line.get_gid() == mask_name:
-    #             line.set_visible(value)
-    #     self.draw()
-
-    def rescale_to_data(self, vmin=None, vmax=None):
+    def rescale_to_data(self, button=None):
         """
         Rescale y axis to the contents of the plot.
         """
+        vmin = 1.0e30
+        vmax = -1.0e30
+        xmin = 1.0e30
+        xmax = -1.0e30
+
+        for name, array in self._data.items():
+            ylims = fix_empty_range(find_limits(array.data, scale=self.norm)[self.norm])
+            vmin = min(vmin, ylims[0].value)
+            vmax = max(vmax, ylims[1].value)
+            xlims = fix_empty_range(find_limits(array.meta[self._dim])["linear"])
+            xmin = min(xmin, xlims[0].value)
+            xmax = max(xmax, xlims[1].value)
+
+        # Add padding
+        if self.norm == "log":
+            delta = 10**(0.05 * np.log10(vmax / vmin))
+            vmin /= delta
+            vmax *= delta
+        else:
+            delta = 0.05 * (vmax - vmin)
+            vmin -= delta
+            vmax += delta
+
         self.ax.set_ylim(vmin, vmax)
+
+        deltax = 0.05 * (xmax - xmin)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            self.ax.set_xlim([xmin - deltax, xmax + deltax])
+
         self.draw()
 
-    # def show_legend(self):
-    #     """
-    #     Only display legend if there is least 1 line in the plot.
-    #     """
-    #     return self.legend["show"] and len(self.ax.get_legend_handles_labels()[1]) > 0
-
-    # def toggle_norm(self, norm=None, vmin=None, vmax=None):
-    #     """
-    #     Set yscale to either "log" or "linear", depending on norm.
-    #     """
-    #     self.norm = norm
-    #     self.ax.set_yscale("log" if self.norm == "log" else "linear")
-    #     self.draw()
-    def initialize_toolbar(self, **kwargs):
-        if self.toolbar is not None:
-            self.toolbar.initialize(**kwargs)
-
-    def is_widget(self):
+    def toggle_norm(self, change):
         """
-        Check whether we are using the Matplotlib widget backend or not.
-        "on_widget_constructed" is an attribute specific to `ipywidgets`.
+        Set yscale to either "log" or "linear", depending on norm.
         """
-        return hasattr(self.fig.canvas, "on_widget_constructed")
-
-    def savefig(self, filename=None):
-        """
-        Save plot to file.
-        Possible file extensions are `.jpg`, `.png` and `.pdf`.
-        The default directory for writing the file is the same as the
-        directory where the script or notebook is running.
-        """
-        self.fig.savefig(filename, bbox_inches="tight")
-
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
-
-    def _to_widget(self):
-        """
-        Convert the Matplotlib figure to a widget. If the ipympl (widget)
-        backend is in use, return the custom toolbar and the figure canvas.
-        If not, convert the plot to a png image and place inside an ipywidgets
-        Image container.
-        """
-        print(self.toolbar, self.is_widget())
-        if self.is_widget():
-            return ipw.HBox([
-                self.toolbar._to_widget(),
-                self._to_image() if self.closed else self.fig.canvas
-            ])
-        else:
-            return self._to_image()
-
-    def _to_image(self):
-        """
-        Convert the Matplotlib figure to a static image.
-        """
-        width, height = self.fig.get_size_inches()
-        dpi = self.fig.get_dpi()
-        return ipw.Image(value=fig_to_pngbytes(self.fig),
-                         width=width * dpi,
-                         height=height * dpi)
-
-    def close(self):
-        """
-        Set the closed flag to True to output static images.
-        """
-        self.closed = True
-
-    def draw(self):
-        """
-        Manually update the figure.
-        We control update manually since we have better control on how many
-        draws are performed on the canvas. Matplotlib's automatic drawing
-        (which we have disabled by using `plt.ioff()`) can degrade performance
-        significantly.
-        Matplotlib's `draw()` is slightly more expensive than `draw_idle()`
-        but won't update inside a loop (only when the loop has finished
-        executing).
-        If `draw_no_delay` has been set to True (via `set_draw_no_delay`,
-        then we use `draw()` instead of `draw_idle()`.
-        """
-        self.fig.canvas.draw_idle()
+        self.norm = "log" if change["new"] else "linear"
+        self.ax.set_yscale(self.norm)
+        self.rescale_to_data()

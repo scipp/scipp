@@ -101,14 +101,6 @@ def plot(scipp_obj, projection=None, **kwargs):
     else:
         inventory.update(_input_to_data_array(scipp_obj, all_keys=inventory.keys()))
 
-    # # Prepare container for matplotlib line parameters
-    # line_params = {
-    #     "color": color,
-    #     "marker": marker,
-    #     "linestyle": linestyle,
-    #     "linewidth": linewidth
-    # }
-
     # Counter for 1d/event data
     line_count = -1
 
@@ -128,43 +120,17 @@ def plot(scipp_obj, projection=None, **kwargs):
             else:
                 key = name
 
-            # mpl_line_params = {}
-            # for n, p in line_params.items():
-            #     if p is None:
-            #         mpl_line_params[n] = line_count
-            #     elif isinstance(p, list):
-            #         mpl_line_params[n] = p[line_count]
-            #     elif isinstance(p, dict):
-            #         if name in p:
-            #             mpl_line_params[n] = p[name]
-            #         else:
-            #             mpl_line_params[n] = line_count
-            #     else:
-            #         mpl_line_params[n] = p
-            #     if isinstance(mpl_line_params[n], int):
-            #         mpl_line_params[n] = get_line_param(name=n,
-            #                                             index=mpl_line_params[n])
-
             if key not in tobeplotted.keys():
-                tobeplotted[key] = dict(ndims=ndims,
-                                        scipp_obj_dict=dict()
-                                        # mpl_line_params=dict()
-                                        )
-                # for n in mpl_line_params.keys():
-                #     tobeplotted[key]["mpl_line_params"][n] = {}
+                tobeplotted[key] = dict(ndims=ndims, scipp_obj_dict=dict())
             tobeplotted[key]["scipp_obj_dict"][name] = inventory[name]
-            # for n, p in mpl_line_params.items():
-            #     tobeplotted[key]["mpl_line_params"][n][name] = p
 
     # Plot all the subsets
     output = PlotDict()
     for key, val in tobeplotted.items():
-        output._items[key] = dispatch(
-            scipp_obj_dict=val["scipp_obj_dict"],
-            ndim=val["ndims"],
-            projection=projection,
-            # mpl_line_params=val["mpl_line_params"],
-            **kwargs)
+        output._items[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
+                                      ndim=val["ndims"],
+                                      projection=projection,
+                                      **kwargs)
 
     if len(output) > 1:
         return output

@@ -11,4 +11,10 @@ class PlotController1d(PlotController):
     """
     Controller class for 1d plots.
     """
-    pass
+    def render(self, *args, **kwargs):
+        """
+        Update axes (and data) to render the figure once all components
+        have been created.
+        """
+        super().render(*args, **kwargs)
+        self.view.rescale_to_data()

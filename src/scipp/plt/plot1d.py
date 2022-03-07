@@ -1,15 +1,26 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .objects import make_params, make_profile, make_plot
+from .objects import make_params, make_profile, make_plot, Plot
 from .model1d import PlotModel1d
 # from .panel1d import PlotPanel1d
 from .view1d import PlotView1d
-# from .figure1d import PlotFigure1d
 from .controller1d import PlotController1d
 
 
-def plot1d(scipp_obj_dict, **kwargs):
+def plot1d(scipp_obj_dict,
+           norm=None,
+           masks=None,
+           ax=None,
+           figsize=None,
+           vmin=None,
+           vmax=None,
+           title=None,
+           xlabel=None,
+           ylabel=None,
+           grid=False,
+           legend=None,
+           filename=None):
     """
     Plot one or more Scipp data objects as a 1 dimensional line plot.
 
@@ -23,51 +34,27 @@ def plot1d(scipp_obj_dict, **kwargs):
     displayed line, a functionality inspired by the Superplot in the Lamp
     software.
     """
-    def builder(*,
-                dims,
-                norm=None,
-                masks=None,
-                ax=None,
-                pax=None,
-                figsize=None,
-                vmin=None,
-                vmax=None,
-                title=None,
-                xlabel=None,
-                ylabel=None,
-                mpl_line_params=None,
-                grid=False,
-                legend=None):
-        out = {
-            'view_ndims': 1,
-            'model': PlotModel1d,
-            'view': PlotView1d,
-            'controller': PlotController1d
-        }
-        if masks is None:
-            masks = {"color": "k"}
-        params = make_params(norm=norm, vmin=vmin, vmax=vmax, masks=masks)
-        out['vmin'] = params["values"]["vmin"]
-        out['vmax'] = params["values"]["vmax"]
-        # if len(dims) > 1:
-        #     out['profile_figure'] = make_profile(ax=pax,
-        #                                          mask_color=params['masks']['color'])
-        #     # An additional panel view with widgets to save/remove lines
-        #     out['panel'] = PlotPanel1d(data_names=list(scipp_obj_dict.keys()))
 
-        # out['figure'] = PlotFigure1d(
-        # ax=ax,
-        # figsize=figsize,
-        # norm=norm,
-        # title=title,
-        # mask_color=params['masks']['color'],
-        # mpl_line_params=mpl_line_params,
-        # picker=True,
-        # grid=grid,
-        # xlabel=xlabel,
-        # ylabel=ylabel,
-        # legend=legend
-        # )
-        return out
+    params = make_params(norm=norm, vmin=vmin, vmax=vmax, masks=masks)
 
-    return make_plot(builder, scipp_obj_dict, **kwargs)
+    sp = Plot(
+        scipp_obj_dict=scipp_obj_dict,
+        model=PlotModel1d,
+        view=PlotView1d,
+        controller=PlotController1d,
+        norm=params["values"]["norm"],
+        # masks=None,
+        ax=None,
+        figsize=None,
+        vmin=params["values"]["vmin"],
+        vmax=params["values"]["vmax"],
+        title=None,
+        xlabel=None,
+        ylabel=None,
+        grid=False,
+        view_ndims=1)
+
+    if filename is not None:
+        sp.savefig(filename)
+    else:
+        return sp
