@@ -11,9 +11,10 @@ from matplotlib.colors import Normalize, LogNorm
 import math
 import warnings
 import plotly.graph_objects as go
+import ipywidgets as ipw
 
 
-class PlotView2d(PlotView):
+class PlotView2d:
     """
     Class for 2 dimensional plots.
     """
@@ -39,6 +40,8 @@ class PlotView2d(PlotView):
             "height": 700
         })
 
+        self.toolbar = PlotToolbar2d(external_controls=None)
+
         if aspect is None:
             aspect = config['plot']['aspect']
 
@@ -52,6 +55,7 @@ class PlotView2d(PlotView):
         self.image = None
         self.cbar = None
         self._data = None
+        self.toolbar.connect(view=self)
 
     def _ipython_display_(self):
         """
@@ -66,7 +70,8 @@ class PlotView2d(PlotView):
         If not, convert the plot to a png image and place inside an ipywidgets
         Image container.
         """
-        return self.fig
+        # return self.fig
+        return ipw.HBox([self.toolbar._to_widget(), self.fig])
 
     def _make_limits(self):
         vmin, vmax = fix_empty_range(
@@ -136,3 +141,9 @@ class PlotView2d(PlotView):
 
     def transpose(self):
         pass
+
+    def toggle_xaxis_scale(self, change):
+        self.fig.update_xaxes(type="log" if change['new'] else "linear")
+
+    def toggle_yaxis_scale(self, change):
+        self.fig.update_yaxes(type="log" if change['new'] else "linear")
