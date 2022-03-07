@@ -526,30 +526,6 @@ def test_comparison():
     assert_export(sc.not_equal, x=var, y=var)
 
 
-def test_radd_int():
-    var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var + 1).dtype == sc.DType.int64
-    assert (1 + var).dtype == sc.DType.int64
-
-
-def test_rsub_int():
-    var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var - 1).dtype == sc.DType.int64
-    assert (1 - var).dtype == sc.DType.int64
-
-
-def test_rmul_int():
-    var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var * 1).dtype == sc.DType.int64
-    assert (1 * var).dtype == sc.DType.int64
-
-
-def test_rtruediv_int():
-    var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var / 1).dtype == sc.DType.float64
-    assert (1 / var).dtype == sc.DType.float64
-
-
 def test_sort():
     var = sc.Variable(dims=(), values=0.0)
     assert_export(sc.sort, x=var, dim='x', order='ascending')
