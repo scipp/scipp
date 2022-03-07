@@ -6,12 +6,12 @@ import numpy as np
 import scipp as sc
 
 
-def test_bitwise_not_variable():
+def test_logical_not_variable():
     assert sc.identical(~sc.scalar(False), sc.scalar(True))
     assert sc.identical(~sc.scalar(True), sc.scalar(False))
 
 
-def test_bitwise_ior_variable_with_variable():
+def test_logical_ior_variable_with_variable():
     a = sc.scalar(False)
     b = sc.scalar(True)
     a |= b
@@ -24,7 +24,7 @@ def test_bitwise_ior_variable_with_variable():
         a, sc.Variable(dims=['x'], values=np.array([False, True, True, True])))
 
 
-def test_bitwise_or_variable_with_variable():
+def test_logical_or_variable_with_variable():
     a = sc.scalar(False)
     b = sc.scalar(True)
     assert sc.identical((a | b), sc.scalar(True))
@@ -36,7 +36,7 @@ def test_bitwise_or_variable_with_variable():
                                     values=np.array([False, True, True, True])))
 
 
-def test_bitwise_iand_variable_with_variable():
+def test_logical_iand_variable_with_variable():
     a = sc.scalar(False)
     b = sc.scalar(True)
     a &= b
@@ -49,7 +49,7 @@ def test_bitwise_iand_variable_with_variable():
         a, sc.Variable(dims=['x'], values=np.array([False, False, False, True])))
 
 
-def test_bitwise_and_variable_with_variable():
+def test_logical_and_variable_with_variable():
     a = sc.scalar(False)
     b = sc.scalar(True)
     assert sc.identical((a & b), sc.scalar(False))
@@ -61,7 +61,7 @@ def test_bitwise_and_variable_with_variable():
                                     values=np.array([False, False, False, True])))
 
 
-def test_bitwise_ixor_variable_with_variable():
+def test_logical_ixor_variable_with_variable():
     a = sc.scalar(False)
     b = sc.scalar(True)
     a ^= b
@@ -74,7 +74,7 @@ def test_bitwise_ixor_variable_with_variable():
         a, sc.Variable(dims=['x'], values=np.array([False, True, True, False])))
 
 
-def test_bitwise_xor_variable_with_variable():
+def test_logical_xor_variable_with_variable():
     a = sc.scalar(False)
     b = sc.scalar(True)
     assert sc.identical((a ^ b), sc.scalar(True))
