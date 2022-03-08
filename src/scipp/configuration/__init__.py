@@ -86,6 +86,15 @@ class Config:
     @lru_cache()
     def get(self) -> dict:
         """Return parameters as a dict."""
+        try:
+            self._cfg.read(user=True, defaults=True)
+        except PermissionError:
+            # On some systems, the user configuration directories are read-only.
+            # confuse tries to create a subdirectory for scipp if it does not
+            # already exist and that raises PermissionError.
+            # Fall back to the default configuration shipped as part of the
+            # source code in this case.
+            self._cfg.read(user=False, defaults=True)
         return self._cfg.get(self._TEMPLATE)
 
     def __getitem__(self, name: str):
