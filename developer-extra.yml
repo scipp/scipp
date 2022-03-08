@@ -17,8 +17,8 @@ dependencies:
   - pre-commit
   - yapf
   - flake8
-  # doc build requirements
   - ccache
+  # doc build requirements
   - confuse
   - graphlib-backport # for python < 3.9
   - h5py
