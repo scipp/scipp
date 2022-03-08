@@ -7,13 +7,17 @@ import scipp as sc
 
 
 def make_var() -> sc.Variable:
-    return sc.arange('dummy', 12).fold(dim='dummy', sizes={'xx': 4, 'yy': 3})
+    return sc.arange('dummy', 12, dtype='int64').fold(dim='dummy',
+                                                      sizes={
+                                                          'xx': 4,
+                                                          'yy': 3
+                                                      })
 
 
 def make_array() -> sc.DataArray:
     da = sc.DataArray(make_var())
-    da.coords['xx'] = sc.arange('xx', 4)
-    da.coords['yy'] = sc.arange('yy', 3)
+    da.coords['xx'] = sc.arange('xx', 4, dtype='int64')
+    da.coords['yy'] = sc.arange('yy', 3, dtype='int64')
     return da
 
 
