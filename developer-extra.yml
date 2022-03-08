@@ -18,6 +18,7 @@ dependencies:
   - yapf
   - flake8
   # doc build requirements
+  - ccache
   - confuse
   - graphlib-backport # for python < 3.9
   - h5py
