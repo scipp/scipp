@@ -75,23 +75,6 @@ if(CCACHE)
   set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
 endif()
 
-if(MSVC)
-  set(CLCACHE_PATH
-      ""
-      CACHE PATH "Path to installed clcache executable directory"
-  )
-  if(EXISTS ${CLCACHE_PATH})
-    set(CMAKE_VS_GLOBALS "CLToolExe=clcache.exe" "CLToolPath=${CLCACHE_PATH}"
-                         "TrackFileAccess=false"
-    )
-    message(STATUS "Will attempt to use clcache")
-  else(EXISTS ${CLCACHE_PATH})
-    message(STATUS "CLCACHE_PATH not specified. Not enabled.")
-    unset(CMAKE_VS_GLOBALS) # Clear all vs globals
-  endif(EXISTS ${CLCACHE_PATH})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /constexpr:steps2000000")
-endif(MSVC)
-
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
@@ -176,7 +159,9 @@ if(NOT WIN32)
     $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
   )
 else()
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/bigobj>)
+  add_compile_options(
+    $<$<COMPILE_LANGUAGE:CXX>:/bigobj> /EHsc /constexpr:steps2000000
+  )
 endif()
 
 option(CPPCHECK "Enable running cppcheck during compilation if found." OFF)
