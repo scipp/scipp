@@ -212,6 +212,12 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
     expect_implicit_dimension(self.dims());
     return getitem(self, {self.dim(), index});
   });
+  // Note the order of overloads: For some reason pybind11(?) calls `len()` on
+  // __getitem__ arguments when there is an overload accepting std::tuple. This
+  // fails for scalar variables, so we place this before those overloads.
+  c.def("__getitem__", [](T &self, const Variable &condition) {
+    return extract(self, condition);
+  });
   c.def("__getitem__", [](T &self, const std::tuple<Dim, scipp::index> &index) {
     return getitem(self, index);
   });
@@ -220,9 +226,6 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   });
   c.def("__getitem__", [](T &self, const py::ellipsis &index) {
     return getitem(self, index);
-  });
-  c.def("__getitem__", [](T &self, const Variable &condition) {
-    return extract(self, condition);
   });
   c.def("__setitem__",
         [](T &self, const scipp::index &index, const py::object &data) {
