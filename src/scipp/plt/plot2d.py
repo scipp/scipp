@@ -3,7 +3,7 @@
 
 from .objects import make_params, Plot
 from .model2d import PlotModel2d
-from .view2d_plotly import PlotView2d
+from .view2d import PlotView2d
 from .controller2d import PlotController2d
 
 

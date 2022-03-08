@@ -66,7 +66,7 @@ def _input_to_data_array(item, all_keys, key=None):
     return to_plot
 
 
-def plot(scipp_obj, projection=None, **kwargs):
+def plot(scipp_obj, projection=None, operation="sum", **kwargs):
     """
     Wrapper function to plot a scipp object.
 
@@ -111,18 +111,20 @@ def plot(scipp_obj, projection=None, **kwargs):
     # tobeplotted is a dict that holds four items:
     # {number_of_dimensions, Dataset, axes, line_parameters}.
     tobeplotted = dict()
-    for name, var in sorted(inventory.items()):
-        ndims = len(var.dims)
-        if (ndims > 0) and (np.sum(var.shape) > 0):
+    for name, item in sorted(inventory.items()):
+        if item.bins is not None:
+            item = getattr(item.bins, operation)()
+        ndims = len(item.dims)
+        if (ndims > 0) and (np.sum(item.shape) > 0):
             if ndims == 1 or projection == "1d" or projection == "1D":
-                key = f"{var.dims}.{var.unit}"
+                key = f"{item.dims}.{item.unit}"
                 line_count += 1
             else:
                 key = name
 
             if key not in tobeplotted.keys():
                 tobeplotted[key] = dict(ndims=ndims, scipp_obj_dict=dict())
-            tobeplotted[key]["scipp_obj_dict"][name] = inventory[name]
+            tobeplotted[key]["scipp_obj_dict"][name] = item
 
     # Plot all the subsets
     output = PlotDict()
