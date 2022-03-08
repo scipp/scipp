@@ -373,5 +373,5 @@ def test_subtract_function():
     assert sc.identical(sc.subtract(sc.scalar(3), sc.scalar(2)), sc.scalar(1))
 
 
-def test_unary_minus_function():
-    assert sc.identical(sc.unary_minus(sc.scalar(3)), sc.scalar(-3))
+def test_negative_function():
+    assert sc.identical(sc.negative(sc.scalar(3)), sc.scalar(-3))
