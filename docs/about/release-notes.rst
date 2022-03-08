@@ -20,6 +20,8 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
+* Fix permissions error for configuration file where users do not have write access to their config dir `#2482 <https://github.com/scipp/scipp/pull/2482>`_.
+
 Deprecations
 ~~~~~~~~~~~~
 
