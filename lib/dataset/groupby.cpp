@@ -32,13 +32,11 @@ namespace scipp::dataset {
 namespace {
 
 template <class Slices, class Data>
-auto copy_impl(const Slices &slices, const Data &data, const Dim dim,
+auto copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
                const AttrPolicy attrPolicy = AttrPolicy::Keep) {
   scipp::index size = 0;
   for (const auto &slice : slices)
     size += slice.end() - slice.begin();
-  // This is just the slicing dim, but `slices` may be empty
-  const Dim slice_dim = data.coords()[dim].dims().inner();
   auto out = dataset::copy(data.slice({slice_dim, 0, size}), attrPolicy);
   scipp::index current = 0;
   auto out_slices = slices;
@@ -67,9 +65,9 @@ auto copy_impl(const Slices &slices, const Data &data, const Dim dim,
 template <class T>
 T GroupBy<T>::copy(const scipp::index group,
                    const AttrPolicy attrPolicy) const {
-  const Dim slice_dim = m_data.coords()[dim()].dim();
-  return copy_impl(groups()[group], strip_edges_along(m_data, slice_dim), dim(),
-                   attrPolicy);
+  return copy_impl(groups()[group],
+                   strip_edges_along(m_data, m_grouping.sliceDim()),
+                   m_grouping.sliceDim(), attrPolicy);
 }
 
 namespace {
@@ -199,7 +197,7 @@ template <class T> T GroupBy<T>::copy(const SortOrder order) const {
   else
     for (auto it = groups().rbegin(); it != groups().rend(); ++it)
       flat.insert(flat.end(), it->begin(), it->end());
-  return copy_impl(flat, m_data, dim());
+  return copy_impl(flat, m_data, m_grouping.sliceDim());
 }
 
 /// Apply mean to groups and return combined data.
@@ -298,7 +296,7 @@ template <class T> struct MakeGroups {
     }
     auto keys_ = makeVariable<T>(Dimensions{dims}, Values(std::move(keys)));
     keys_.setUnit(key.unit());
-    return GroupByGrouping{std::move(keys_), std::move(groups)};
+    return GroupByGrouping{dim, std::move(keys_), std::move(groups)};
   }
 };
 
@@ -329,7 +327,7 @@ template <class T> struct MakeBinGroups {
         groups[std::distance(edges.begin(), left)].emplace_back(dim, begin, i);
       }
     }
-    return GroupByGrouping{bins, std::move(groups)};
+    return GroupByGrouping{dim, bins, std::move(groups)};
   }
 };
 
@@ -420,6 +418,33 @@ GroupBy<Dataset> groupby(const Dataset &dataset, const Variable &key,
   }
   // No Dimension contains the key - throw.
   throw except::DimensionError("Size of Group-by key is incorrect.");
+}
+
+Variable extract(const Variable &var, const Variable &condition) {
+  return extract(DataArray(var), condition).data();
+}
+
+namespace {
+template <class T> T extract_impl(const T &obj, const Variable &condition) {
+  if (condition.dtype() != dtype<bool>)
+    throw except::TypeError(
+        "Cannot extract elements based on condition with non-boolean dtype. If "
+        "you intended to select a range based on a label you must specify the "
+        "dimension.");
+  if (all(condition).value<bool>())
+    return copy(obj);
+  if (!any(condition).value<bool>())
+    return copy(obj.slice({condition.dim(), 0, 0}));
+  return call_groupby(obj, condition, condition.dim()).copy(1);
+}
+} // namespace
+
+DataArray extract(const DataArray &da, const Variable &condition) {
+  return extract_impl(da, condition);
+}
+
+Dataset extract(const Dataset &ds, const Variable &condition) {
+  return extract_impl(ds, condition);
 }
 
 template class GroupBy<DataArray>;

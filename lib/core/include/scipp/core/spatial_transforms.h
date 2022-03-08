@@ -64,7 +64,7 @@ public:
   double &operator()(const int i) { return m_vec(i); }
 };
 
-template <typename T> inline const T &asEigenType(const T &obj) { return obj; };
+template <typename T> inline const T &asEigenType(const T &obj) { return obj; }
 inline const auto &asEigenType(const Quaternion &obj) { return obj.quat(); }
 inline auto asEigenType(const Translation &obj) {
   return Eigen::Translation<double, 3>(obj.vector());
@@ -123,12 +123,12 @@ operator*(const T_LHS &lhs, const T_RHS &rhs) {
 [[nodiscard]] inline Quaternion operator*(const Quaternion &lhs,
                                           const Quaternion &rhs) {
   return Quaternion(lhs.quat() * rhs.quat());
-};
+}
 
 [[nodiscard]] inline Translation operator*(const Translation &lhs,
                                            const Translation &rhs) {
   return Translation(lhs.vector() + rhs.vector());
-};
+}
 
 template <> inline constexpr DType dtype<Eigen::Matrix3d>{4001};
 template <> inline constexpr DType dtype<Eigen::Affine3d>{4002};

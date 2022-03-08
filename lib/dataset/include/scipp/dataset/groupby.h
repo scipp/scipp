@@ -19,15 +19,18 @@ namespace scipp::dataset {
 class SCIPP_DATASET_EXPORT GroupByGrouping {
 public:
   using group = boost::container::small_vector<Slice, 4>;
-  GroupByGrouping(Variable key, std::vector<group> groups)
-      : m_key(std::move(key)), m_groups(std::move(groups)) {}
+  GroupByGrouping(const Dim sliceDim, Variable key, std::vector<group> groups)
+      : m_sliceDim(sliceDim), m_key(std::move(key)),
+        m_groups(std::move(groups)) {}
 
   scipp::index size() const noexcept { return scipp::size(m_groups); }
+  Dim sliceDim() const noexcept { return m_sliceDim; }
   Dim dim() const noexcept { return m_key.dims().inner(); }
   const Variable &key() const noexcept { return m_key; }
   const std::vector<group> &groups() const noexcept { return m_groups; }
 
 private:
+  Dim m_sliceDim;
   Variable m_key;
   std::vector<group> m_groups;
 };
@@ -81,5 +84,12 @@ SCIPP_DATASET_EXPORT GroupBy<DataArray> groupby(const DataArray &dataset,
 
 SCIPP_DATASET_EXPORT GroupBy<Dataset>
 groupby(const Dataset &dataset, const Variable &variable, const Variable &bins);
+
+SCIPP_DATASET_EXPORT Variable extract(const Variable &var,
+                                      const Variable &condition);
+SCIPP_DATASET_EXPORT DataArray extract(const DataArray &da,
+                                       const Variable &condition);
+SCIPP_DATASET_EXPORT Dataset extract(const Dataset &ds,
+                                     const Variable &condition);
 
 } // namespace scipp::dataset
