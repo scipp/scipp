@@ -72,7 +72,7 @@ include(scipp-functions)
 
 find_program(CCACHE ccache)
 if(CCACHE)
-    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
+  set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
 endif()
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
