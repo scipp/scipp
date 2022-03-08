@@ -11,14 +11,19 @@ from ..typing import VariableLike
 def logical_not(x: VariableLike) -> VariableLike:
     """Element-wise logical negation.
 
-    Equivalent to
-
-    .. code-block:: python
+    Equivalent to::
 
         ~a
 
-    :param x: Input data.
-    :return: The logical inverse of `x`.
+    Parameters
+    ----------
+    x:
+        Input data.
+
+    Returns
+    -------
+    :
+        The logical inverse of ``x``.
     """
     return _call_cpp_func(_cpp.logical_not, x)
 
@@ -26,15 +31,21 @@ def logical_not(x: VariableLike) -> VariableLike:
 def logical_and(a: VariableLike, b: VariableLike) -> VariableLike:
     """Element-wise logical and.
 
-    Equivalent to
-
-    .. code-block:: python
+    Equivalent to::
 
         a & b
 
-    :param a: First input.
-    :param b: Second input.
-    :return: The logical and of the elements of `a` and `b`.
+    Parameters
+    ----------
+    a:
+        First input.
+    b:
+        Second input.
+
+    Returns
+    -------
+    :
+        The logical and of the elements of ``a`` and ``b``.
     """
     return _call_cpp_func(_cpp.logical_and, a, b)
 
@@ -42,15 +53,21 @@ def logical_and(a: VariableLike, b: VariableLike) -> VariableLike:
 def logical_or(a: VariableLike, b: VariableLike) -> VariableLike:
     """Element-wise logical or.
 
-    Equivalent to
-
-    .. code-block:: python
+    Equivalent to::
 
         a | b
 
-    :param a: First input.
-    :param b: Second input.
-    :return: The logical or of the elements of `a` and `b`.
+    Parameters
+    ----------
+    a:
+        First input.
+    b:
+        Second input.
+
+    Returns
+    -------
+    :
+        The logical or of the elements of ``a`` and ``b``.
     """
     return _call_cpp_func(_cpp.logical_or, a, b)
 
@@ -58,14 +75,20 @@ def logical_or(a: VariableLike, b: VariableLike) -> VariableLike:
 def logical_xor(a: VariableLike, b: VariableLike) -> VariableLike:
     """Element-wise logical exclusive-or.
 
-    Equivalent to
-
-    .. code-block:: python
+    Equivalent to::
 
         a ^ b
 
-    :param a: First input.
-    :param b: Second input.
-    :return: The logical exclusive-or of the elements of `a` and `b`.
+    Parameters
+    ----------
+    a:
+        First input.
+    b:
+        Second input.
+
+    Returns
+    -------
+    :
+        The logical exclusive-or of the elements of ``a`` and ``b``.
     """
     return _call_cpp_func(_cpp.logical_xor, a, b)
