@@ -15,3 +15,4 @@ class PlotController1d(PlotController):
         """
         super().render(*args, **kwargs)
         self.view.rescale_to_data()
+        self.view.set_axes_labels()

@@ -5,6 +5,7 @@ from .. import config
 from .view import PlotView
 from .toolbar import PlotToolbar2d
 from .tools import find_limits, fix_empty_range
+from ..utils import name_with_unit
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, LogNorm
@@ -96,6 +97,12 @@ class PlotView2d(PlotView):
                 self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
             self.image.set_array(None)
             self._set_norm()
+            self.ax.set_xlabel(
+                self.xlabel if self.xlabel is not None else name_with_unit(
+                    var=self._data.meta[dims[1]]))
+            self.ax.set_ylabel(
+                self.ylabel if self.ylabel is not None else name_with_unit(
+                    var=self._data.meta[dims[0]]))
 
         rgba = self.cmap(self.norm_func(self._data.data.values.flatten()))
         self.image.set_facecolors(rgba)

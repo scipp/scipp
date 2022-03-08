@@ -4,6 +4,7 @@
 from .view import PlotView
 from .toolbar import PlotToolbar1d
 from .tools import get_line_param, find_limits, fix_empty_range
+from ..utils import name_with_unit
 import numpy as np
 import copy as cp
 import warnings
@@ -265,3 +266,8 @@ class PlotView1d(PlotView):
         self.norm = "log" if change["new"] else "linear"
         self.ax.set_yscale(self.norm)
         self.rescale_to_data()
+
+    def set_axes_labels(self):
+        self.ax.set_xlabel(self.xlabel if self.xlabel is not None else name_with_unit(
+            var=self._data.meta[self._dim]))
+        self.ax.set_ylabel(name_with_unit(var=self._data.data, name=""))
