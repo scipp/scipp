@@ -155,6 +155,21 @@ def multiply(a: VariableLike, b: VariableLike) -> VariableLike:
     return _call_cpp_func(_cpp.multiply, a, b)
 
 
+def negative(a) -> VariableLike:
+    """Element-wise negative.
+
+    Equivalent to
+
+    .. code-block:: python
+
+        -a
+
+    :param a: Input data.
+    :return: ``a`` with flipped signs.
+    """
+    return _call_cpp_func(_cpp.negative, a)
+
+
 def subtract(minuend: VariableLike, subtrahend: VariableLike) -> VariableLike:
     """Element-wise difference.
 
@@ -172,18 +187,3 @@ def subtract(minuend: VariableLike, subtrahend: VariableLike) -> VariableLike:
     general concepts and broadcasting behavior.
     """
     return _call_cpp_func(_cpp.subtract, minuend, subtrahend)
-
-
-def unary_minus(a) -> VariableLike:
-    """Element-wise unary minus.
-
-    Equivalent to
-
-    .. code-block:: python
-
-        -a
-
-    :param a: Input data.
-    :return: ``a`` with flipped signs.
-    """
-    return _call_cpp_func(_cpp.unary_minus, a)

@@ -54,13 +54,13 @@ Math
    log10
    mod
    multiply
+   negative
    norm
    pow
    reciprocal
    round
    sqrt
    subtract
-   unary_minus
 
 Shape
 ~~~~~

@@ -70,7 +70,7 @@ for _cls in (Variable, DataArray, Dataset):
     setattr(_cls, '__array_ufunc__', None)
 del _cls
 
-from .arithmetic import add, divide, floor_divide, mod, multiply, subtract, unary_minus
+from .arithmetic import add, divide, floor_divide, mod, multiply, negative, subtract
 from .bins import lookup, histogram, bin, bins, bins_like
 from .comparison import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
 from .counts import counts_to_density, density_to_counts

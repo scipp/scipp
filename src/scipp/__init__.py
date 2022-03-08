@@ -64,7 +64,7 @@ from .compat.dict import to_dict, from_dict
 
 from .coords import transform_coords, show_graph
 
-from .core import add, divide, floor_divide, mod, multiply, subtract, unary_minus
+from .core import add, divide, floor_divide, mod, multiply, negative, subtract
 from .core import lookup, histogram, bin, bins, bins_like
 from .core import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
 from .core import counts_to_density, density_to_counts

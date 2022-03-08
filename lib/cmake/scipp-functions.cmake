@@ -59,7 +59,7 @@ scipp_binary(comparison less_equal)
 scipp_binary(comparison not_equal)
 setup_scipp_category(comparison)
 
-scipp_function("unary" arithmetic operator- OP unary_minus)
+scipp_function("unary" arithmetic operator- OP negative)
 scipp_function("binary" arithmetic operator+ OP add)
 scipp_function("binary" arithmetic operator- OP subtract)
 scipp_function("binary" arithmetic operator* OP multiply SKIP_VARIABLE)
