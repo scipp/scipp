@@ -122,7 +122,7 @@ jobs:
       - uses: actions/download-artifact@v2
 
       - run: cp -r html/* html/release/${{ github.ref_name }}
-      - uses: JamesIves/github-pages-deploy-action@v4.2.3
+      - uses: JamesIves/github-pages-deploy-action@v4.2.5
         with:
           repository-name: scipp/scipp.github.io
           branch: master
