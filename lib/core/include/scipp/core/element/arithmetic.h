@@ -187,7 +187,7 @@ constexpr auto mod_equals =
                [](units::Unit &a, const units::Unit &b) { a %= b; },
                [](auto &&a, const auto &b) { a = mod(a, b); }};
 
-constexpr auto unary_minus =
+constexpr auto negative =
     overloaded{arg_list<double, float, int64_t, int32_t, Eigen::Vector3d>,
                [](const auto x) { return -x; }};
 

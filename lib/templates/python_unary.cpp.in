@@ -13,11 +13,11 @@ namespace py = pybind11;
 
 template <typename T> void bind_@OPNAME@(py::module &m) {
   m.def(
-      "@NAME@", [](const T &x) { return @NAME@(x); },
+      "@OPNAME@", [](const T &x) { return @NAME@(x); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>());
   if constexpr(std::is_same_v<T, Variable> && @GENERATE_OUT@)
     m.def(
-        "@NAME@", [](const T &x, T &out) { return @NAME@(x, out); },
+        "@OPNAME@", [](const T &x, T &out) { return @NAME@(x, out); },
         py::arg("x"), py::arg("out"), py::keep_alive<0, 2>(),
         py::call_guard<py::gil_scoped_release>());
 }

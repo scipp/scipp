@@ -16,11 +16,26 @@ def abs(x: Union[VariableLike, _cpp.Unit],
         out: Optional[_cpp.Variable] = None) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise absolute value.
 
-    :param x: Input data.
-    :param out: Optional output buffer. Only supported if `x` is a scipp.Variable.
-    :raises: If the dtype has no absolute value, e.g., if it is a string.
-    :return: The absolute values of the input.
-    :seealso: :py:func:`scipp.norm` for vector-like dtype.
+    Parameters
+    ----------
+    x:
+        Input data.
+    out:
+        Optional output buffer. Only supported if `x` is a scipp.Variable.
+
+    Raises
+    ------
+    scipp.DTypeError
+        If the dtype has no absolute value, e.g., if it is a string.
+
+    Returns
+    -------
+    :
+        The absolute values of the input.
+
+    See Also
+    --------
+    scipp.norm
     """
     return _call_cpp_func(_cpp.abs, x, out=out)
 
@@ -28,10 +43,22 @@ def abs(x: Union[VariableLike, _cpp.Unit],
 def cross(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise cross product.
 
-    :param x: Left hand side operand.
-    :param y: Right hand side operand.
-    :raises: If the dtype of the input is not vector3.
-    :return: The cross product of the input vectors.
+    Parameters
+    ----------
+    x:
+        Left hand side operand.
+    y:
+        Right hand side operand.
+
+    Raises
+    ------
+    scipp.DTypeError
+        If the dtype of the input is not vector3.
+
+    Returns
+    -------
+    :
+        The cross product of the input vectors.
     """
     return _call_cpp_func(_cpp.cross, x, y)
 
@@ -39,10 +66,22 @@ def cross(x: VariableLike, y: VariableLike) -> VariableLike:
 def dot(x: VariableLike, y: VariableLike) -> VariableLike:
     """Element-wise dot product.
 
-    :param x: Left hand side operand.
-    :param y: Right hand side operand.
-    :raises: If the dtype of the input is not vector3.
-    :return: The dot product of the input vectors.
+    Parameters
+    ----------
+    x:
+        Left hand side operand.
+    y:
+        Right hand side operand.
+
+    Raises
+    ------
+    scipp.DTypeError
+        If the dtype of the input is not vector3.
+
+    Returns
+    -------
+    :
+        The dot product of the input vectors.
     """
     return _call_cpp_func(_cpp.dot, x, y)
 
@@ -62,13 +101,28 @@ def nan_to_num(x: _cpp.Variable,
     You can choose to replace a subset of those special values by providing
     just the required keyword arguments.
 
-    :param x: Input data.
-    :param nan: Replacement values for NaN in the input.
-    :param posinf: Replacement values for Inf in the input.
-    :param neginf: Replacement values for -Inf in the input.
-    :param out: Optional output buffer.
-    :raises: If the types of input and replacement do not match.
-    :return: Input with specified substitutions.
+    Parameters
+    ----------
+    x:
+        Input data.
+    nan:
+        Replacement values for NaN in the input.
+    posinf:
+        Replacement values for Inf in the input.
+    neginf:
+        Replacement values for -Inf in the input.
+    out:
+        Optional output buffer.
+
+    Raises
+    ------
+    scipp.DTypeError
+        If the types of input and replacement do not match.
+
+    Returns
+    -------
+    :
+        Input with specified substitutions.
     """
     return _call_cpp_func(_cpp.nan_to_num,
                           x,
@@ -81,9 +135,20 @@ def nan_to_num(x: _cpp.Variable,
 def norm(x: VariableLike) -> VariableLike:
     """Element-wise norm.
 
-    :param x: Input data.
-    :raises: If the dtype has no norm, i.e., if it is not a vector.
-    :return: Scalar elements computed as the norm values of the input elements.
+    Parameters
+    ----------
+    x:
+        Input data.
+
+    Raises
+    ------
+    scipp.DTypeError
+        If the dtype has no norm, i.e., if it is not a vector.
+
+    Returns
+    -------
+    :
+        Scalar elements computed as the norm values of the input elements.
     """
     return _call_cpp_func(_cpp.norm, x, out=None)
 
@@ -93,10 +158,22 @@ def reciprocal(x: Union[VariableLike, _cpp.Unit],
                out: Optional[_cpp.Variable] = None) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise reciprocal.
 
-    :param x: Input data.
-    :param out: Optional output buffer. Only supported when `x` is a scipp.Variable.
-    :raises: If the dtype has no reciprocal, e.g., if it is a string.
-    :return: The reciprocal values of the input.
+    Parameters
+    ----------
+    x:
+        Input data.
+    out:
+        Optional output buffer. Only supported when `x` is a scipp.Variable.
+
+    Raises
+    ------
+    scipp.DTypeError
+        If the dtype has no reciprocal, e.g., if it is a string.
+
+    Returns
+    -------
+    :
+        The reciprocal values of the input.
     """
     return _call_cpp_func(_cpp.reciprocal, x, out=out)
 
@@ -108,10 +185,22 @@ def pow(base: Union[VariableLike, _cpp.Unit],
     If the base has a unit, the exponent must be scalar in order to get
     a well-defined unit in the result.
 
-    :param base: Base of the exponential.
-    :param exponent: Raise ``base`` to this power.
-    :raises: If the dtype does not have a power, e.g., if it is a string.
-    :return: ``base`` raised to the power of ``exp``.
+    Parameters
+    ----------
+    base:
+        Base of the exponential.
+    exponent:
+        Raise ``base`` to this power.
+
+    Raises
+    ------
+    scipp.DTypeError
+        If the dtype does not have a power, e.g., if it is a string.
+
+    Returns
+    -------
+    :
+        ``base`` raised to the power of ``exp``.
     """
     if not isinstance(base, _cpp.Unit) and isinstance(exponent, Real):
         exponent = scalar(exponent)
@@ -123,10 +212,22 @@ def sqrt(x: Union[VariableLike, _cpp.Unit],
          out: Optional[_cpp.Variable] = None) -> Union[VariableLike, _cpp.Unit]:
     """Element-wise square-root.
 
-    :param x: Input data.
-    :param out: Optional output buffer. Only supported when `x` is a scipp.Variable.
-    :raises: If the dtype has no square-root, e.g., if it is a string.
-    :return: The square-root values of the input.
+    Parameters
+    ----------
+    x:
+        Input data.
+    out:
+        Optional output buffer. Only supported when `x` is a scipp.Variable.
+
+    Raises
+    ------
+    scipp.DTypeError
+         If the dtype has no square-root, e.g., if it is a string.
+
+    Returns
+    -------
+    :
+        The square-root values of the input.
     """
     return _call_cpp_func(_cpp.sqrt, x, out=out)
 
@@ -134,9 +235,17 @@ def sqrt(x: Union[VariableLike, _cpp.Unit],
 def exp(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise exponential.
 
-    :param x: Input data.
-    :param out: Optional output buffer.
-    :returns: e raised to the power of the input.
+    Parameters
+    ----------
+    x:
+        Input data.
+    out:
+        Optional output buffer.
+
+    Returns
+    -------
+    :
+        e raised to the power of the input.
     """
     return _call_cpp_func(_cpp.exp, x, out=out)
 
@@ -144,9 +253,17 @@ def exp(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
 def log(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise natural logarithm.
 
-    :param x: Input data.
-    :param out: Optional output buffer.
-    :returns: Base e logiarithm of the input.
+    Parameters
+    ----------
+    x:
+        Input data.
+    out:
+        Optional output buffer.
+
+    Returns
+    -------
+    :
+        Base e logarithm of the input.
     """
     return _call_cpp_func(_cpp.log, x, out=out)
 
@@ -154,9 +271,17 @@ def log(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
 def log10(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
     """Element-wise base 10 logarithm.
 
-    :param x: Input data.
-    :param out: Optional output buffer.
-    :returns: Base 10 logarithm of the input.
+    Parameters
+    ----------
+    x:
+        Input data.
+    out:
+        Optional output buffer.
+
+    Returns
+    -------
+    :
+        Base 10 logarithm of the input.
     """
     return _call_cpp_func(_cpp.log10, x, out=out)
 
@@ -169,9 +294,17 @@ def round(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLik
     round to the nearest even number. For example 1.5 and 2.5 will both round
     to 2.0, -0.5 and 0.5 will both round to 0.0.
 
-    :param x: Input data.
-    :param out: Optional output buffer.
-    :returns: Rounded version of the data passed to the nearest integer.
+    Parameters
+    ----------
+    x:
+        Input data.
+    out:
+        Optional output buffer.
+
+    Returns
+    -------
+    :
+        Rounded version of the data passed to the nearest integer.
     """
     return _call_cpp_func(_cpp.rint, x, out=out)
 
@@ -180,9 +313,17 @@ def floor(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLik
     """
     Round down to the nearest integer of all values passed in x.
 
-    :param x: Input data.
-    :param out: Optional output buffer.
-    :returns: Rounded down version of the data passed.
+    Parameters
+    ----------
+    x:
+        Input data.
+    out:
+        Optional output buffer.
+
+    Returns
+    -------
+    :
+        Rounded down version of the data passed.
     """
     return _call_cpp_func(_cpp.floor, x, out=out)
 
@@ -191,9 +332,17 @@ def ceil(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike
     """
     Round up to the nearest integer of all values passed in x.
 
-    :param x: Input data.
-    :param out: Optional output buffer.
-    :returns: Rounded up version of the data passed.
+    Parameters
+    ----------
+    x:
+        Input data.
+    out:
+        Optional output buffer.
+
+    Returns
+    -------
+    :
+        Rounded up version of the data passed.
     """
     return _call_cpp_func(_cpp.ceil, x, out=out)
 
@@ -201,6 +350,11 @@ def ceil(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike
 def erf(x: VariableLike) -> VariableLike:
     """
     Computes the error function.
+
+    Parameters
+    ----------
+    x:
+        Input data.
     """
     return _cpp.erf(x)
 
@@ -208,6 +362,11 @@ def erf(x: VariableLike) -> VariableLike:
 def erfc(x: VariableLike) -> VariableLike:
     """
     Computes the complementary error function.
+
+    Parameters
+    ----------
+    x:
+        Input data.
     """
     return _cpp.erfc(x)
 
@@ -222,11 +381,21 @@ def midpoints(x: _cpp.Variable, dim: Optional[str] = None) -> _cpp.Variable:
     very small or very large inputs.
     The implementation deals with those cases properly.
 
-    :param x: Input data.
-    :param dim: Dimension along which to compute midpoints.
-                Optional for 1D Variables.
+    Parameters
+    ----------
+    x:
+        Input data.
+    dim:
+        Dimension along which to compute midpoints.
+        Optional for 1D Variables.
 
-    Examples:
+    Returns
+    -------
+    :
+        Midpoints of ``x`` along ``dim``.
+
+    Examples
+    --------
 
       >>> x = sc.array(dims=['x'], values=[-2, 0, 4, 2])
       >>> x

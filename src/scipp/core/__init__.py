@@ -70,13 +70,14 @@ for _cls in (Variable, DataArray, Dataset):
     setattr(_cls, '__array_ufunc__', None)
 del _cls
 
-from .arithmetic import add, divide, floor_divide, mod, multiply, subtract
+from .arithmetic import add, divide, floor_divide, mod, multiply, negative, subtract
 from .bins import lookup, histogram, bin, bins, bins_like
 from .comparison import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
 from .counts import counts_to_density, density_to_counts
 from .cumulative import cumsum
 from .dataset import irreducible_mask, merge
 from .groupby import groupby
+from .logical import logical_not, logical_and, logical_or, logical_xor
 from .math import abs, cross, dot, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc, midpoints
 from .operations import islinspace, issorted, allsorted, sort, values, variances, stddevs, rebin, where, to
 from .reduction import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
