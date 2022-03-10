@@ -6,7 +6,9 @@ from .. import config, units
 from .tools import parse_params
 from ..core import DimensionError
 from .model1d import PlotModel1d
-from .widgets import PlotWidgets
+from .widgets import WidgetCollection
+from .slider_widget import SliderWidget
+from .mask_widget import MaskWidget
 # from .resampling_model import ResamplingMode
 
 
@@ -241,15 +243,24 @@ class Plot:
         # self.profile = profile_figure
         self.view = view(**kwargs)
 
-        self.widgets = PlotWidgets(dims=self.dims,
-                                   formatters=formatters,
-                                   ndim=self.view_ndims,
-                                   dim_label_map=labels,
-                                   masks=self._scipp_obj_dict,
-                                   sizes={dim: array.sizes[dim]
-                                          for dim in self.dims})
+        self.preprocessors = make_default_preprocessors(data_array,
+                                                        ndim=self.view_ndims)
 
-        self.model = model(scipp_obj_dict=self._scipp_obj_dict)
+        self.widgets = WidgetCollection([p.widget for p in self.preprocessors])
+
+        #     [
+        #     SliderWidget(
+        #         dims=self.dims,
+        #         formatters=formatters,
+        #         ndim=self.view_ndims,
+        #         dim_label_map=labels,
+        #         # masks=self._scipp_obj_dict,
+        #         sizes={dim: array.sizes[dim]
+        #                for dim in self.dims}),
+        #     MaskWidget(array.masks)
+        # ])
+
+        self.model = model(data_array=array, preprocessors=self.preprocessors)
         # profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict)
         self.controller = controller(dims=self.dims,
                                      widgets=self.widgets,

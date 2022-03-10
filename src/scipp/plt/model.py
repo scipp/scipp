@@ -7,6 +7,14 @@ from ..core import DataArray
 from ..core import arange, bins
 
 
+class Model:
+    def __init__(self, data_array, preprocessing_functions):
+        self._data_array = data_array
+        self._preprocessing_functions = preprocessing_functions
+
+    d
+
+
 class DataArrayDict(dict):
     """
     Dict of data arrays with matching dimension labels and units. Shape and

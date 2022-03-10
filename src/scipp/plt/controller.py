@@ -57,6 +57,12 @@ class PlotController:
         #     slices.update(self.widgets.slices)
         slices = self.widgets.slices
         new_values = self.model.update_data(slices)
+        # change to: new_values = self.model[slices]
+        # Model could just be a data array
+
+        # INSERT additional post-processing here
+        # - a generic function to do, for example, some custom resampling
+
         # self.widgets.update_slider_readout(new_values.meta)
 
         self.view.update_data(new_values)  #, mask_info=self.get_masks_info())
