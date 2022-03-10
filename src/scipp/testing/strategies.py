@@ -25,7 +25,7 @@ def dims() -> st.SearchStrategy:
     return st.text(st.characters(
         whitelist_categories=['L', 'M', 'N', 'P', 'S', 'Zs', 'Cc'],
         blacklist_characters='\0'),
-                   min_size=1,
+                   min_size=0,
                    max_size=10)
 
 
