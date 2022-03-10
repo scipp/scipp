@@ -3,19 +3,20 @@
 # @file
 # @author Neil Vaytet
 
-from hypothesis import given
 import numpy as np
-from scipp.testing import strategies as scst
 import scipp as sc
 
 
-@given(scst.variables())
-def test_variable_to_dict(var):
+def test_variable_to_dict():
+    var = sc.Variable(dims=["x"],
+                      values=np.arange(10.),
+                      variances=np.random.random(10),
+                      unit=sc.units.m)
     var_dict = sc.to_dict(var)
     assert var_dict["dims"] == var.dims
     assert var_dict["shape"] == var.shape
-    np.testing.assert_equal(var_dict["values"], var.values)
-    np.testing.assert_equal(var_dict["variances"], var.variances)
+    assert np.array_equal(var_dict["values"], var.values)
+    assert np.array_equal(var_dict["variances"], var.variances)
     assert var_dict["unit"] == var.unit
     assert var_dict["dtype"] == var.dtype
 
