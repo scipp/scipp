@@ -43,7 +43,8 @@ class PlotController:
         #     self.panel.controller = self
         self.update_data()
 
-    def update_data(self, *, slices=None):
+    # def update(self, *, slices=None):
+    def update(self):
         """
         This function is called when the data in the displayed 1D plot or 2D
         image is to be updated. This happens for instance when we move a slider
@@ -55,6 +56,9 @@ class PlotController:
         #     slices = self.widgets.slices
         # else:
         #     slices.update(self.widgets.slices)
+
+        data_processors = []
+
         slices = self.widgets.slices
         new_values = self.model.update_data(slices)
         # change to: new_values = self.model[slices]

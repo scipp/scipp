@@ -111,10 +111,10 @@ class SliderWidget:
     #         self._set_slider_defaults(dim, sizes[dim])
 
     def _slider_moved(self, _):
-        self._controller.update_data(slices=self.slices)
+        self._controller.update()
 
     @property
-    def slices(self):
+    def values(self):
         """
         Get the current range covered by the thick slice.
         """

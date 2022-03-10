@@ -260,7 +260,7 @@ class Plot:
         #     MaskWidget(array.masks)
         # ])
 
-        self.model = model(data_array=array, preprocessors=self.preprocessors)
+        self.model = model(data_array=array)
         # profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict)
         self.controller = controller(dims=self.dims,
                                      widgets=self.widgets,
