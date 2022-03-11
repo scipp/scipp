@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
+from scipp.io.hdf5 import collection_element_name
 import scipp as sc
 import scipp.spatial
 import numpy as np
