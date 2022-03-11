@@ -94,7 +94,6 @@ def test_variables_can_set_sizes_strategy(var):
 
 
 def test_variables_ndim_and_sizes_are_mutually_exclusive():
-
     @settings(max_examples=1, database=None)
     @given(scst.variables(ndim=1, sizes={'a': 2}))
     def draw_from_strategy(_):

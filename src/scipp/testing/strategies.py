@@ -11,12 +11,20 @@ from hypothesis.extra import numpy as npst
 from ..core import variable as creation
 from ..core import DataArray, DType
 
-
 # TODO sometimes checks fail with (seen in test_astype_int_to_float)
-#  hypothesis.errors.FailedHealthCheck: Examples routinely exceeded the max allowable size. (20 examples overran while generating 9 valid ones). Generating examples this large will usually lead to bad results. You could try setting max_size parameters on your collections and turning max_leaves down on recursive() calls.
-#  See https://hypothesis.readthedocs.io/en/latest/healthchecks.html for more information about this. If you want to disable just this health check, add HealthCheck.data_too_large to the suppress_health_check settings for this test.
+#  hypothesis.errors.FailedHealthCheck: Examples routinely exceeded the max
+#  allowable size. (20 examples overran while generating 9 valid ones).
+#  Generating examples this large will usually lead to bad results.
+#  You could try setting max_size parameters on your collections and turning
+#  max_leaves down on recursive() calls.
+#  See https://hypothesis.readthedocs.io/en/latest/healthchecks.html for more
+#  information about this. If you want to disable just this health check,
+#  add HealthCheck.data_too_large to the suppress_health_check settings for this test.
 #
 #  Maybe the variable strat has too many parameters or too many nested strats?
+#  Nested strats are reinited for every example,
+#  need to change to make them once up front
+#  But that is problematic because with_variances depends on dtype.
 
 
 def dims() -> st.SearchStrategy:
@@ -65,7 +73,6 @@ def use_variances(dtype) -> st.SearchStrategy:
 
 
 def _variables_from_fixed_args(args) -> st.SearchStrategy:
-
     def make_array():
         return npst.arrays(args['dtype'],
                            tuple(args['sizes'].values()),
@@ -192,7 +199,6 @@ def coord_dicts_1d(draw, *, coords, sizes, args=None) -> dict:
 
 
 class _NotSetType:
-
     def __repr__(self):
         return 'Default'
 
