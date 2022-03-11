@@ -8,6 +8,12 @@ import scipp as sc
 from .common import assert_export
 
 
+def test_broadcast():
+    x = sc.array(dims=['x'], values=np.arange(6.0))
+    assert_export(sc.broadcast, x=x, sizes={'x': 6, 'y': 3})
+    assert_export(sc.broadcast, x=x, dims=['x', 'y'], shape=[6, 3])
+
+
 def test_concat():
     var = sc.scalar(1.0)
     assert sc.identical(sc.concat([var, var + var, 3 * var], 'x'),
