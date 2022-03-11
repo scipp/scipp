@@ -31,25 +31,24 @@ def plot2d(scipp_obj_dict,
 
     params = make_params(cmap=cmap, norm=norm, vmin=vmin, vmax=vmax, masks=masks)
 
-    sp = Plot(
-        scipp_obj_dict=scipp_obj_dict,
-        model=Model,
-        view=PlotView2d,
-        controller=PlotController2d,
-        norm=params["values"]["norm"],
-        # masks=None,
-        ax=None,
-        cax=None,
-        figsize=None,
-        aspect=None,
-        cmap=params["values"]["cmap"],
-        vmin=params["values"]["vmin"],
-        vmax=params["values"]["vmax"],
-        title=None,
-        xlabel=None,
-        ylabel=None,
-        grid=False,
-        view_ndims=2)
+    sp = Plot(scipp_obj_dict=scipp_obj_dict,
+              model=Model,
+              view=PlotView2d,
+              controller=PlotController2d,
+              norm=params["values"]["norm"],
+              masks=params["masks"],
+              ax=None,
+              cax=None,
+              figsize=None,
+              aspect=None,
+              cmap=params["values"]["cmap"],
+              vmin=params["values"]["vmin"],
+              vmax=params["values"]["vmax"],
+              title=None,
+              xlabel=None,
+              ylabel=None,
+              grid=False,
+              view_ndims=2)
     if filename is not None:
         sp.savefig(filename)
     else:

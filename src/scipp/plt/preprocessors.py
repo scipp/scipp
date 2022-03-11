@@ -25,7 +25,7 @@ def _slice_data(data_array, slices):
 
 def _hide_masks(data_array, masks):
     out = data_array.copy()
-    for name, value in masks:
+    for name, value in masks.items():
         if not value:
             del out.masks[name]
     return out

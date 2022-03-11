@@ -15,6 +15,7 @@ class MaskWidget:
         import ipywidgets as ipw
 
         self._checkboxes = {}
+        self._lock = False
         for key, mask in masks.items():
             self._checkboxes[key] = ipw.Checkbox(value=True,
                                                  description=f"{escape(key)}",
@@ -31,7 +32,6 @@ class MaskWidget:
                                                       disabled=False,
                                                       button_style="",
                                                       layout={"width": "initial"})
-            self._all_masks_button.observe(self._toggle_all_masks, keys="value")
 
             self._box_layout = ipw.Layout(display='flex',
                                           flex_flow='row wrap',
@@ -62,36 +62,41 @@ class MaskWidget:
         if len(self._checkboxes) > 0:
             out.children = [
                 self._label, self._all_masks_button,
-                ipw.Box(children=self._checkboxes.values(), layout=self.box_layout)
+                ipw.Box(children=list(self._checkboxes.values()),
+                        layout=self._box_layout)
             ]
         return out
-
-    def _toggle_all_masks(self, change):
-        """
-        A main button to hide or show all masks at once.
-        """
-        for key in self._checkboxes:
-            self._checkboxes[key].value = change["new"]
-        change["owner"].description = "Hide all" if change["new"] else \
-            "Show all"
 
     def connect(self, controller):
         """
         Connect the widget interface to the callbacks provided by the
         `PlotController`.
         """
+        self._controller = controller
         for key in self._checkboxes:
-            self._checkboxes[key].observe(controller.toggle_mask, keys="value")
+            self._checkboxes[key].observe(self._toggle_mask, names="value")
+        self._all_masks_button.observe(self._toggle_all_masks, names="value")
 
     def values(self):
         """
         Get information on masks: their keys and whether they should be
         displayed.
         """
-        # mask_info = {}
-        # for key in self.mask_checkboxes:
-        #     mask_info[key] = {
-        #         m: chbx.value
-        #         for m, chbx in self.mask_checkboxes[key].items()
-        #     }
         return {key: chbx.value for key, chbx in self._checkboxes.items()}
+
+    def _toggle_mask(self, _):
+        if self._lock:
+            return
+        self._controller.update()
+
+    def _toggle_all_masks(self, change):
+        """
+        A main button to hide or show all masks at once.
+        """
+        self._lock = True
+        for key in self._checkboxes:
+            self._checkboxes[key].value = change["new"]
+        change["owner"].description = "Hide all" if change["new"] else \
+            "Show all"
+        self._lock = False
+        self._toggle_mask(None)

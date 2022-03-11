@@ -6,11 +6,13 @@ from .view import PlotView
 from .toolbar import PlotToolbar2d
 from .tools import find_limits, fix_empty_range
 from ..utils import name_with_unit
+from ..core import broadcast
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, LogNorm
 import math
 import warnings
+from functools import reduce
 
 
 class PlotView2d(PlotView):
@@ -23,7 +25,7 @@ class PlotView2d(PlotView):
                  figsize=None,
                  aspect=None,
                  cmap=None,
-                 mask_cmap=None,
+                 masks=None,
                  norm=None,
                  name=None,
                  resolution=None,
@@ -44,20 +46,19 @@ class PlotView2d(PlotView):
         if aspect is None:
             aspect = config['plot']['aspect']
 
-        self.cmap = cmap
-        self.cax = cax
-
-        self._mask_cmap = mask_cmap
-        self.norm_flag = norm
-        self.norm_func = None
-        self.extend = extend
-        self.image = None
-        self.cbar = None
+        self._cmap = cmap
+        self._cax = cax
+        self._mask_cmap = masks["cmap"]
+        self._norm_flag = norm
+        self._norm_func = None
+        self._extend = extend
+        self._image = None
+        self._cbar = None
         self._data = None
 
     def _make_limits(self):
         vmin, vmax = fix_empty_range(
-            find_limits(self._data.data, scale=self.norm_flag)[self.norm_flag])
+            find_limits(self._data.data, scale=self._norm_flag)[self._norm_flag])
         return vmin.value, vmax.value
 
     def rescale_to_data(self, _):
@@ -65,9 +66,9 @@ class PlotView2d(PlotView):
         Rescale the colorbar limits according to the supplied values.
         """
         vmin, vmax = self._make_limits()
-        self.norm_func.vmin = vmin
-        self.norm_func.vmax = vmax
-        self.image.set_clim(vmin, vmax)
+        self._norm_func.vmin = vmin
+        self._norm_func.vmax = vmax
+        self._image.set_clim(vmin, vmax)
         self.update()
 
     def toggle_mask(self, *args, **kwargs):
@@ -84,18 +85,18 @@ class PlotView2d(PlotView):
             self._data = new_values
         dims = self._data.dims
 
-        if self.image is None:
-            self.image = self.ax.pcolormesh(self._data.meta[dims[1]].values,
-                                            self._data.meta[dims[0]].values,
-                                            self._data.data.values,
-                                            shading='auto')
-            self.cbar = plt.colorbar(self.image,
-                                     ax=self.ax,
-                                     cax=self.cax,
-                                     extend=self.extend)
-            if self.cax is None:
-                self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
-            self.image.set_array(None)
+        if self._image is None:
+            self._image = self.ax.pcolormesh(self._data.meta[dims[1]].values,
+                                             self._data.meta[dims[0]].values,
+                                             self._data.data.values,
+                                             shading='auto')
+            self._cbar = plt.colorbar(self._image,
+                                      ax=self.ax,
+                                      cax=self._cax,
+                                      extend=self._extend)
+            if self._cax is None:
+                self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
+            self._image.set_array(None)
             self._set_norm()
             self.ax.set_xlabel(
                 self.xlabel if self.xlabel is not None else name_with_unit(
@@ -104,18 +105,27 @@ class PlotView2d(PlotView):
                 self.ylabel if self.ylabel is not None else name_with_unit(
                     var=self._data.meta[dims[0]]))
 
-        rgba = self.cmap(self.norm_func(self._data.data.values.flatten()))
-        self.image.set_facecolors(rgba)
+        flat_values = self._data.values.flatten()
+        rgba = self._cmap(self._norm_func(flat_values))
+        if len(self._data.masks) > 0:
+            # Combine all masks into one
+            one_mask = broadcast(reduce(lambda a, b: a | b, self._data.masks.values()),
+                                 dims=self._data.dims,
+                                 shape=self._data.shape).values.flatten()
+            # indices = np.where(new_values["masks"])
+            rgba[one_mask] = self._mask_cmap(self._norm_func(flat_values[one_mask]))
+
+        self._image.set_facecolors(rgba)
         self.draw()
 
     def _set_norm(self):
         vmin, vmax = self._make_limits()
-        func = LogNorm if self.norm_flag == "log" else Normalize
-        self.norm_func = func(vmin=vmin, vmax=vmax)
-        self.image.set_norm(self.norm_func)
+        func = LogNorm if self._norm_flag == "log" else Normalize
+        self._norm_func = func(vmin=vmin, vmax=vmax)
+        self._image.set_norm(self._norm_func)
 
     def toggle_norm(self, change=None):
-        self.norm_flag = "log" if change["new"] else "linear"
+        self._norm_flag = "log" if change["new"] else "linear"
         self._set_norm()
         self.update()
 
