@@ -3,6 +3,16 @@
 
 from ..units import one
 import numpy as np
+from dataclasses import dataclass
+from typing import Callable
+
+
+@dataclass
+class DataProcessor:
+    """
+    """
+    func: Callable
+    values: dict
 
 
 class PlotController:
@@ -17,11 +27,13 @@ class PlotController:
                  scale=None,
                  widgets=None,
                  model=None,
-                 view=None):
+                 view=None,
+                 preprocessors=None):
         self._dims = dims
         self.widgets = widgets
         self.model = model
         self.view = view
+        self.preprocessors = preprocessors
 
         self.vmin = vmin
         self.vmax = vmax
@@ -41,7 +53,7 @@ class PlotController:
         # self.view.connect(controller=self)
         # if self.panel is not None:
         #     self.panel.controller = self
-        self.update_data()
+        self.update()
 
     # def update(self, *, slices=None):
     def update(self):
@@ -57,10 +69,14 @@ class PlotController:
         # else:
         #     slices.update(self.widgets.slices)
 
-        data_processors = []
+        data_processors = [
+            DataProcessor(func=p.func, values=p.widget.values())
+            for p in self.preprocessors
+        ]
 
-        slices = self.widgets.slices
-        new_values = self.model.update_data(slices)
+        # slices = self.widgets.slices
+        new_values = self.model.update(data_processors=data_processors)
+        print(new_values)
         # change to: new_values = self.model[slices]
         # Model could just be a data array
 
@@ -69,8 +85,11 @@ class PlotController:
 
         # self.widgets.update_slider_readout(new_values.meta)
 
-        self.view.update_data(new_values)  #, mask_info=self.get_masks_info())
+        self.view.update(new_values)  #, mask_info=self.get_masks_info())
         # if self.panel is not None:
         #     self.panel.update_data(new_values)
         # if self.profile is not None:
         #     self._update_slice_area()
+
+    def toggle_mask(self):
+        pass

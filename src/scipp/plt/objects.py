@@ -7,9 +7,8 @@ from .tools import parse_params
 from ..core import DimensionError
 from .model1d import PlotModel1d
 from .widgets import WidgetCollection
-from .slider_widget import SliderWidget
-from .mask_widget import MaskWidget
 # from .resampling_model import ResamplingMode
+from .preprocessors import make_default_preprocessors
 
 
 def make_params(*, cmap=None, norm=None, vmin=None, vmax=None, masks=None, color=None):
@@ -243,8 +242,7 @@ class Plot:
         # self.profile = profile_figure
         self.view = view(**kwargs)
 
-        self.preprocessors = make_default_preprocessors(data_array,
-                                                        ndim=self.view_ndims)
+        self.preprocessors = make_default_preprocessors(array, ndim=self.view_ndims)
 
         self.widgets = WidgetCollection([p.widget for p in self.preprocessors])
 
@@ -263,6 +261,7 @@ class Plot:
         self.model = model(data_array=array)
         # profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict)
         self.controller = controller(dims=self.dims,
+                                     preprocessors=self.preprocessors,
                                      widgets=self.widgets,
                                      model=self.model,
                                      view=self.view)

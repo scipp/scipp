@@ -11,7 +11,7 @@ class SliderWidget:
     Widgets containing a slider for each of the input's dimensions, as well as
     buttons to modify the currently displayed axes.
     """
-    def __init__(self, *, dims, formatters, ndim, dim_label_map, sizes):
+    def __init__(self, *, dims, ndim, sizes, formatters=None, dim_label_map=None):
 
         import ipywidgets as ipw
         self._dims = dims
@@ -113,7 +113,7 @@ class SliderWidget:
     def _slider_moved(self, _):
         self._controller.update()
 
-    @property
+    # @property
     def values(self):
         """
         Get the current range covered by the thick slice.

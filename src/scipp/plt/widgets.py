@@ -27,7 +27,7 @@ class WidgetCollection:
         Gather all widgets in a single container box.
         """
         import ipywidgets as ipw
-        return ipw.VBox(self.children)
+        return ipw.VBox([child._to_widget() for child in self.children])
 
     def connect(self, *args, **kwargs):
         """

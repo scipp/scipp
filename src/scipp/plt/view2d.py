@@ -68,7 +68,7 @@ class PlotView2d(PlotView):
         self.norm_func.vmin = vmin
         self.norm_func.vmax = vmax
         self.image.set_clim(vmin, vmax)
-        self.update_data()
+        self.update()
 
     def toggle_mask(self, *args, **kwargs):
         """
@@ -76,7 +76,7 @@ class PlotView2d(PlotView):
         """
         return
 
-    def update_data(self, new_values=None):
+    def update(self, new_values=None):
         """
         Update image array with new values.
         """
@@ -117,7 +117,7 @@ class PlotView2d(PlotView):
     def toggle_norm(self, change=None):
         self.norm_flag = "log" if change["new"] else "linear"
         self._set_norm()
-        self.update_data()
+        self.update()
 
     def transpose(self):
         pass

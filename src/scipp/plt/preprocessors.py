@@ -1,3 +1,10 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+
+from .slider_widget import SliderWidget
+from .mask_widget import MaskWidget
+
+
 class Preprocessor:
     def __init__(self, func, widget):
         self.func = func
@@ -36,6 +43,7 @@ def make_default_preprocessors(data_array, ndim):
             # masks=self._scipp_obj_dict,
             sizes=data_array.sizes))
 
-    mask_preprocessor = Preprocessor(func=_hide_masks, MaskWidget(masks))
+    mask_preprocessor = Preprocessor(func=_hide_masks,
+                                     widget=MaskWidget(data_array.masks))
 
     return [slicing_preprocessor, mask_preprocessor]

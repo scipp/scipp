@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .objects import make_params, Plot
-from .model2d import PlotModel2d
+from .model import Model
 from .view2d import PlotView2d
 from .controller2d import PlotController2d
 
@@ -33,7 +33,7 @@ def plot2d(scipp_obj_dict,
 
     sp = Plot(
         scipp_obj_dict=scipp_obj_dict,
-        model=PlotModel2d,
+        model=Model,
         view=PlotView2d,
         controller=PlotController2d,
         norm=params["values"]["norm"],

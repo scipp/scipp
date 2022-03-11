@@ -15,12 +15,12 @@ class MaskWidget:
         import ipywidgets as ipw
 
         self._checkboxes = {}
-        for name, mask in masks.items():
-            self._checkboxes[name] = ipw.Checkbox(value=True,
-                                                  description=f"{escape(name)}",
-                                                  indent=False,
-                                                  layout={"width": "initial"})
-            setattr(self.mask_checkboxes[name][key], "mask_name", name)
+        for key, mask in masks.items():
+            self._checkboxes[key] = ipw.Checkbox(value=True,
+                                                 description=f"{escape(key)}",
+                                                 indent=False,
+                                                 layout={"width": "initial"})
+            setattr(self._checkboxes[key], "mask_name", key)
 
         if len(self._checkboxes) > 0:
             self._label = ipw.Label(value="Masks:")
@@ -31,15 +31,15 @@ class MaskWidget:
                                                       disabled=False,
                                                       button_style="",
                                                       layout={"width": "initial"})
-            self.all_masks_button.observe(self._toggle_all_masks, names="value")
+            self._all_masks_button.observe(self._toggle_all_masks, keys="value")
 
-            self.box_layout = ipw.Layout(display='flex',
-                                         flex_flow='row wrap',
-                                         align_items='stretch',
-                                         width='70%')
+            self._box_layout = ipw.Layout(display='flex',
+                                          flex_flow='row wrap',
+                                          align_items='stretch',
+                                          width='70%')
             # mask_list = []
-            # for name in self.mask_checkboxes:
-            #     for cbox in self.mask_checkboxes[name].values():
+            # for key in self.mask_checkboxes:
+            #     for cbox in self.mask_checkboxes[key].values():
             #         mask_list.append(cbox)
 
             # masks_box = ipw.Box(children=mask_list, layout=box_layout)
@@ -58,41 +58,40 @@ class MaskWidget:
         Gather all widgets in a single container box.
         """
         import ipywidgets as ipw
-        return ipw.HBox([
-            self.masks_label, self.all_masks_button,
-            ipw.Box(children=self._checkboxes.values(), layout=self.box_layout)
-        ])
+        out = ipw.HBox()
+        if len(self._checkboxes) > 0:
+            out.children = [
+                self._label, self._all_masks_button,
+                ipw.Box(children=self._checkboxes.values(), layout=self.box_layout)
+            ]
+        return out
 
     def _toggle_all_masks(self, change):
         """
         A main button to hide or show all masks at once.
         """
-        for name in self.mask_checkboxes:
-            for key in self.mask_checkboxes[name]:
-                self.mask_checkboxes[name][key].value = change["new"]
+        for key in self._checkboxes:
+            self._checkboxes[key].value = change["new"]
         change["owner"].description = "Hide all" if change["new"] else \
             "Show all"
-        return
 
     def connect(self, controller):
         """
         Connect the widget interface to the callbacks provided by the
         `PlotController`.
         """
-        for mask in self._checkboxes:
-            for m in self.mask_checkboxes[name]:
-                self.mask_checkboxes[name][m].observe(controller.toggle_mask,
-                                                      names="value")
+        for key in self._checkboxes:
+            self._checkboxes[key].observe(controller.toggle_mask, keys="value")
 
-    def get_masks_info(self):
+    def values(self):
         """
-        Get information on masks: their names and whether they should be
+        Get information on masks: their keys and whether they should be
         displayed.
         """
-        mask_info = {}
-        for name in self.mask_checkboxes:
-            mask_info[name] = {
-                m: chbx.value
-                for m, chbx in self.mask_checkboxes[name].items()
-            }
-        return mask_info
+        # mask_info = {}
+        # for key in self.mask_checkboxes:
+        #     mask_info[key] = {
+        #         m: chbx.value
+        #         for m, chbx in self.mask_checkboxes[key].items()
+        #     }
+        return {key: chbx.value for key, chbx in self._checkboxes.items()}
