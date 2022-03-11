@@ -40,6 +40,11 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
 conan_cmake_autodetect(conan_settings)
+if(${CMAKE_GENERATOR_PLATFORM})
+  set(conan_settings "${conan_settings};arch=${CMAKE_GENERATOR_PLATFORM}")
+endif()
+message(STATUS "conan_settings")
+message(STATUS "${conan_settings}")
 conan_cmake_install(
   PATH_OR_REFERENCE ${CMAKE_CURRENT_SOURCE_DIR} SETTINGS ${conan_settings}
   BUILD outdated
