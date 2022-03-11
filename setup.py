@@ -57,8 +57,8 @@ setup(name='scipp',
           "test": ["pytest", "matplotlib", "xarray", "pandas", "pythreejs"],
           'all': ['h5py', 'scipy>=1.7.0', 'graphviz'],
           'interactive': [
-              'ipykernel==6.3.1', 'ipympl', 'ipython', 'ipywidgets', 'matplotlib',
-              'jupyterlab', 'jupyterlab-widgets', 'jupyter_nbextensions_configurator',
-              'nodejs', 'pythreejs'
+              'ipympl', 'ipython', 'ipywidgets', 'matplotlib', 'jupyterlab',
+              'jupyterlab-widgets', 'jupyter_nbextensions_configurator', 'nodejs',
+              'pythreejs'
           ],
       })
