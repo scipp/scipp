@@ -46,7 +46,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
-        python-version: ["3.8"]
+        python-version: ["3.10"]
         include:
         - os: ubuntu-latest
           cmake-preset: ci-linux
@@ -61,7 +61,7 @@ jobs:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
           ref: ${{ github.head_ref }}
-      
+
       - uses: ilammy/msvc-dev-cmd@v1  # Required to set up MSVC dev environment for Ninja builds.
 
       - run: python tools/metatoenv.py --dir=conda --env-file=buildenv.yml --channels=conda-forge --merge-with=developer-extra.yml
