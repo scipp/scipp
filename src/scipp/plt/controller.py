@@ -55,11 +55,11 @@ class Controller:
         #     self.panel.controller = self
         self.update()
 
-    # def _make_data_processors(self):
-    #     return [
-    #         DataProcessor(func=p.func, values=p.widget.values())
-    #         for p in self.preprocessors
-    #     ]
+    def _make_data_processors(self):
+        return [
+            DataProcessor(func=p.func, values=p.widget.values())
+            for p in self.preprocessors
+        ]
 
     # def update(self, *, slices=None):
     def update(self):
@@ -75,10 +75,7 @@ class Controller:
         # else:
         #     slices.update(self.widgets.slices)
 
-        data_processors = [
-            DataProcessor(func=p.func, values=p.widget.values())
-            for p in self.preprocessors
-        ]
+        data_processors = self._make_data_processors()
 
         # slices = self.widgets.slices
         new_values = self.model.update(data_processors=data_processors)
