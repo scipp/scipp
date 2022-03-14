@@ -41,7 +41,10 @@ list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
 conan_cmake_autodetect(conan_settings)
 if(DEFINED CMAKE_OSX_ARCHITECTURES)
-  set(conan_settings "${conan_settings};arch=${CMAKE_OSX_ARCHITECTURES}")
+  if(${CMAKE_OSX_ARCHITECTURES} STREQUAL "arm64")
+    # For Apple M1
+    set(conan_settings "${conan_settings};arch=armv8")
+  endif()
 endif()
 message(STATUS "conan_settings")
 message(STATUS "${conan_settings}")
