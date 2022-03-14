@@ -12,6 +12,20 @@ def test_broadcast():
     x = sc.array(dims=['x'], values=np.arange(6.0))
     assert_export(sc.broadcast, x=x, sizes={'x': 6, 'y': 3})
     assert_export(sc.broadcast, x=x, dims=['x', 'y'], shape=[6, 3])
+    assert sc.identical(sc.broadcast(x, sizes={
+        'x': 6,
+        'y': 3
+    }), sc.broadcast(x, dims=['x', 'y'], shape=[6, 3]))
+
+
+def test_broadcast_fails_with_bad_inputs():
+    x = sc.array(dims=['x'], values=np.arange(6.0))
+    with pytest.raises(ValueError):
+        _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, dims=['x', 'y'], shape=[6, 3])
+    with pytest.raises(ValueError):
+        _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, dims=['x', 'y'])
+    with pytest.raises(ValueError):
+        _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, shape=[6, 3])
 
 
 def test_concat():
@@ -71,6 +85,7 @@ def test_fold_raises_two_minus_1():
     da = sc.DataArray(x)
     with pytest.raises(sc.DimensionError):
         sc.fold(x, dim='x', sizes={'x': -1, 'y': -1})
+    with pytest.raises(sc.DimensionError):
         sc.fold(da, dim='x', sizes={'x': -1, 'y': -1})
 
 
@@ -79,6 +94,7 @@ def test_fold_raises_non_divisible():
     da = sc.DataArray(x)
     with pytest.raises(ValueError):
         sc.fold(x, dim='x', sizes={'x': 3, 'y': -1})
+    with pytest.raises(ValueError):
         sc.fold(da, dim='x', sizes={'x': -1, 'y': 3})
 
 
