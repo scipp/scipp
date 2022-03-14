@@ -18,15 +18,18 @@ def broadcast(
     shape: Optional[Sequence[int]] = None,
     sizes: Optional[Dict[str, int]] = None,
 ) -> _cpp.Variable:
-    """Broadcast a variable.
+    """Broadcast a Variable or a DataArray.
+    If the input is a DataArray, coordinates and attributes are shallow-copied
+    and masks are deep copied.
 
     Note that scipp operations broadcast automatically, so using this function
     directly is rarely required.
 
-    :param x: Variable to broadcast.
-    :param dims: List of new dimensions.
-    :param shape: New extents in each dimension.
-    :return: New variable with requested dimension labels and shape.
+    :param x: Variable or DataArray to broadcast.
+    :param dims: Optional (if sizes is specified), list of new dimensions.
+    :param shape: Optional (if sizes is specified), new extents in each dimension.
+    :param sizes: Optional, new dimension labels to sizes map.
+    :return: New Variable or DataArray with requested dimension labels and shape.
     """
     sizes = _parse_dims_shape_sizes(dims=dims, shape=shape, sizes=sizes)
     if isinstance(x, _cpp.Variable):
