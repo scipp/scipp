@@ -27,7 +27,6 @@ dependencies:
   - nbsphinx
   - python-graphviz
   - pythreejs
-  - pyyaml
   - scipy>=1.7.0
   - sphinx
   - sphinx-book-theme

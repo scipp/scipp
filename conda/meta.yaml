@@ -38,7 +38,6 @@ requirements:
     - confuse
     - numpy>=1.20.0
     - python
-    - pyyaml
     - tbb=2020.2.*
     - graphlib-backport # for python < 3.9
 
