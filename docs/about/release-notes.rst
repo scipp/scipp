@@ -12,6 +12,7 @@ Features
 * Added ``is_edges`` method to ``coords``, ``attrs``, ``masks``, and ``meta`` properties of DataArray and Dataset `#2469 <https://github.com/scipp/scipp/pull/2469>`_.
 * Added support for arithmetic of :class:`scipp.DataArray` and :class:`scipp.Dataset` with builtin ``int`` and ``float`` `#2473 <https://github.com/scipp/scipp/pull/2473>`_.
 * Added advanced indexing support: boolean variable indexing `#2477 <https://github.com/scipp/scipp/pull/2477>`_.
+* Added or exposed to Python more functions for boolean logic `#2480 <https://github.com/scipp/scipp/pull/2480>`_, `#2489 <https://github.com/scipp/scipp/pull/2489>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
