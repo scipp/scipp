@@ -12,6 +12,7 @@ Features
 * Added ``is_edges`` method to ``coords``, ``attrs``, ``masks``, and ``meta`` properties of DataArray and Dataset `#2469 <https://github.com/scipp/scipp/pull/2469>`_.
 * Added support for arithmetic of :class:`scipp.DataArray` and :class:`scipp.Dataset` with builtin ``int`` and ``float`` `#2473 <https://github.com/scipp/scipp/pull/2473>`_.
 * Added advanced indexing support: boolean variable indexing `#2477 <https://github.com/scipp/scipp/pull/2477>`_.
+* ``broadcast`` now supports :class:`scipp.DataArray`, and the ``sizes`` argument `#2488 <https://github.com/scipp/scipp/pull/2488>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
