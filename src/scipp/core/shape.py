@@ -13,7 +13,7 @@ from ..typing import VariableLike
 
 
 def broadcast(
-    x: _cpp.Variable,
+    x: VariableLike,
     dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
     shape: Optional[Sequence[int]] = None,
     sizes: Optional[Dict[str, int]] = None,
@@ -29,7 +29,19 @@ def broadcast(
     :return: New variable with requested dimension labels and shape.
     """
     sizes = _parse_dims_shape_sizes(dims=dims, shape=shape, sizes=sizes)
-    return _call_cpp_func(_cpp.broadcast, x, sizes["dims"], sizes["shape"])
+    if isinstance(x, _cpp.Variable):
+        return _call_cpp_func(_cpp.broadcast, x, sizes["dims"], sizes["shape"])
+    elif isinstance(x, _cpp.DataArray):
+        return _cpp.DataArray(data=_call_cpp_func(_cpp.broadcast, x.data, sizes["dims"],
+                                                  sizes["shape"]),
+                              coords={c: coord
+                                      for c, coord in x.coords.items()},
+                              attrs={a: attr
+                                     for a, attr in x.attrs.items()},
+                              masks={m: mask.copy()
+                                     for m, mask in x.masks.items()})
+    else:
+        raise TypeError("Broadcast only supports Variable and DataArray as inputs.")
 
 
 def concat(x: Sequence[VariableLike], dim: str) -> VariableLike:
