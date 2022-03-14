@@ -15,7 +15,7 @@ class DataProcessor:
     values: dict
 
 
-class PlotController:
+class Controller:
     """
     Controller class plots.
     """
@@ -54,6 +54,12 @@ class PlotController:
         # if self.panel is not None:
         #     self.panel.controller = self
         self.update()
+
+    # def _make_data_processors(self):
+    #     return [
+    #         DataProcessor(func=p.func, values=p.widget.values())
+    #         for p in self.preprocessors
+    #     ]
 
     # def update(self, *, slices=None):
     def update(self):

@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .. import config
-from .view import PlotView
+from .view import View
 from .toolbar import PlotToolbar2d
 from .tools import find_limits, fix_empty_range
 from ..utils import name_with_unit
@@ -15,7 +15,7 @@ import warnings
 from functools import reduce
 
 
-class PlotView2d(PlotView):
+class View2d(View):
     """
     Class for 2 dimensional plots.
     """

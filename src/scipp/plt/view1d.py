@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .view import PlotView
+from .view import View
 from .toolbar import PlotToolbar1d
 from .tools import get_line_param, find_limits, fix_empty_range
 from ..utils import name_with_unit
@@ -25,7 +25,7 @@ def _make_label(array):
     return ', '.join(labels)
 
 
-class PlotView1d(PlotView):
+class View1d(View):
     """
     Class for 1 dimensional plots. This is used by both the `PlotView1d` for
     normal 1d plots, and the `PlotProfile`.
@@ -178,7 +178,7 @@ class PlotView1d(PlotView):
             out[name] = values
         return out
 
-    def update_data(self, new_values):
+    def update(self, new_values):
         """
         Update the x and y positions of the data points when a new data slice
         is received for display.

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
 
-class PlotView:
+class View:
     """
     Base class for 1d and 2d figures, that holds matplotlib axes.
     """

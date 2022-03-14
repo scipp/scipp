@@ -5,7 +5,7 @@ from .. import config, units
 # from .formatters import make_formatter
 from .tools import parse_params
 from ..core import DimensionError
-from .model1d import PlotModel1d
+# from .model1d import PlotModel1d
 from .widgets import WidgetCollection
 # from .resampling_model import ResamplingMode
 from .preprocessors import make_default_preprocessors
@@ -206,15 +206,16 @@ class Plot:
                  vmin=None,
                  vmax=None,
                  axes=None,
-                 resampling_mode=None,
                  scale=None,
-                 view_ndims=None,
-                 **kwargs):
+                 view_ndims=None):
 
         self._scipp_obj_dict = scipp_obj_dict
         self.panel = panel
         self.profile = None
         self.widgets = None
+
+        self.view = view
+        self.model = model
 
         self.show_widgets = True
         self.view_ndims = view_ndims
@@ -240,7 +241,7 @@ class Plot:
                                               labels=labels,
                                               dims=self.dims)
         # self.profile = profile_figure
-        self.view = view(**kwargs)
+        # self.view = view(**kwargs)
 
         self.preprocessors = make_default_preprocessors(array, ndim=self.view_ndims)
 
@@ -258,7 +259,7 @@ class Plot:
         #     MaskWidget(array.masks)
         # ])
 
-        self.model = model(data_array=array)
+        # self.model = model(data_array=array)
         # profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict)
         self.controller = controller(dims=self.dims,
                                      preprocessors=self.preprocessors,

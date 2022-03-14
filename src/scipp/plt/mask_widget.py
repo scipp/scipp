@@ -23,7 +23,7 @@ class MaskWidget:
                                                  layout={"width": "initial"})
             setattr(self._checkboxes[key], "mask_name", key)
 
-        if len(self._checkboxes) > 0:
+        if len(self._checkboxes):
             self._label = ipw.Label(value="Masks:")
 
             # Add a master button to control all masks in one go
@@ -59,7 +59,7 @@ class MaskWidget:
         """
         import ipywidgets as ipw
         out = ipw.HBox()
-        if len(self._checkboxes) > 0:
+        if len(self._checkboxes):
             out.children = [
                 self._label, self._all_masks_button,
                 ipw.Box(children=list(self._checkboxes.values()),
@@ -75,7 +75,8 @@ class MaskWidget:
         self._controller = controller
         for key in self._checkboxes:
             self._checkboxes[key].observe(self._toggle_mask, names="value")
-        self._all_masks_button.observe(self._toggle_all_masks, names="value")
+        if len(self._checkboxes):
+            self._all_masks_button.observe(self._toggle_all_masks, names="value")
 
     def values(self):
         """
