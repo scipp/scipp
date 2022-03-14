@@ -20,4 +20,4 @@ test-command = "pytest {project}/tests"
 skip = ["pp*", "*musllinux*"]
 
 [tool.cibuildwheel.macos]
-archs = ["x86_64", "universal2", "arm64"]
+archs = ["x86_64", "arm64"]
