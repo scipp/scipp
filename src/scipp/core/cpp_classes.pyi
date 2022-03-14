@@ -313,6 +313,7 @@ class DataArray():
         :type attrs: Dict[str, Variable]
         :type name: str
         """
+    def __invert__(self) -> DataArray: ...
     @typing.overload
     def __ior__(self, arg0: DataArray) -> object: ...
     @typing.overload
@@ -647,7 +648,7 @@ class DataArray():
     pass
     def all(self, dim: 'typing.Optional[str]' = None, *, out: 'typing.Optional[Variable]' = None) -> 'Variable': ...
     def any(self, dim: 'typing.Optional[str]' = None, *, out: 'typing.Optional[Variable]' = None) -> 'Variable': ...
-    def broadcast(self, dims: typing.Union[typing.List[str], typing.Tuple[str, ...]], shape: typing.Sequence[int]) -> Variable: ...
+    def broadcast(self, dims: typing.Union[typing.List[str], typing.Tuple[str, ...], None] = None, shape: typing.Union[typing.Sequence[int], None] = None, sizes: typing.Union[typing.Dict[str, int], None] = None) -> Variable: ...
     def ceil(self, *, out: 'typing.Optional[VariableLike]' = None) -> 'VariableLike': ...
     def flatten(self, dims: typing.Union[typing.List[str], typing.Tuple[str, ...], None] = None, to: typing.Union[str, None] = None) -> typing.Union[Variable, DataArray, Dataset]: ...
     def floor(self, *, out: 'typing.Optional[VariableLike]' = None) -> 'VariableLike': ...
@@ -1480,26 +1481,27 @@ class Variable():
         At least one argument of ``values`` and ``variances`` must be used.
         if you want to preallocate memory to fill later, use :py:func:`scipp.empty`.
 
-        :param dims: Dimension labels.
-        :param values: Sequence of values for constructing an array variable.
-        :param variances: Sequence of variances for constructing an array variable.
-        :param value: A single value for constructing a scalar variable.
-        :param variance: A single variance for constructing a scalar variable.
-        :param unit: Physical unit, defaults to ``scipp.units.dimensionless``.
-        :param dtype: Type of the variable's elements. Is deduced from other arguments
-                      in most cases. Defaults to ``sc.DType.float64`` if no deduction is
-                      possible.
+        Attention
+        ---------
+        This constructor is meant primarily for internal use.
+        Use one of the Specialized
+        `creation functions <../../reference/creation-functions.rst>`_ instead.
+        See in particular :py:func:`scipp.array` and :py:func:`scipp.scalar`.
 
-        :type dims: Sequence[str]
-        :type values: numpy.ArrayLike
-        :type variances: numpy.ArrayLike
-        :type value: Any
-        :type variance: Any
-        :type unit: scipp.Unit
-        :type dtype: Any
-
-        :seealso: Specialized `creation functions <../../reference/creation-functions.rst>`_,
-         in particular :py:func:`scipp.array` and :py:func:`scipp.scalar`.
+        Parameters
+        ----------
+        dims:
+           Dimension labels.
+        values:
+           Sequence of values for constructing an array variable.
+        variances:
+           Sequence of variances for constructing an array variable.
+        unit:
+           Physical unit, defaults to ``scipp.units.dimensionless``.
+        dtype:
+           Type of the variable's elements. Is deduced from other arguments
+           in most cases. Defaults to ``sc.DType.float64`` if no deduction is
+           possible.
         """
     def __invert__(self) -> Variable: ...
     def __ior__(self, arg0: Variable) -> object: ...
@@ -1780,7 +1782,7 @@ class Variable():
     pass
     def all(self, dim: 'typing.Optional[str]' = None, *, out: 'typing.Optional[Variable]' = None) -> 'Variable': ...
     def any(self, dim: 'typing.Optional[str]' = None, *, out: 'typing.Optional[Variable]' = None) -> 'Variable': ...
-    def broadcast(self, dims: typing.Union[typing.List[str], typing.Tuple[str, ...]], shape: typing.Sequence[int]) -> Variable: ...
+    def broadcast(self, dims: typing.Union[typing.List[str], typing.Tuple[str, ...], None] = None, shape: typing.Union[typing.Sequence[int], None] = None, sizes: typing.Union[typing.Dict[str, int], None] = None) -> Variable: ...
     def ceil(self, *, out: 'typing.Optional[VariableLike]' = None) -> 'VariableLike': ...
     def cumsum(self, dim: typing.Union[str, None] = None, mode: typing.Union[str, None] = 'inclusive') -> Variable: ...
     def flatten(self, dims: typing.Union[typing.List[str], typing.Tuple[str, ...], None] = None, to: typing.Union[str, None] = None) -> typing.Union[Variable, DataArray, Dataset]: ...
