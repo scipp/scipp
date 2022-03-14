@@ -10,6 +10,7 @@
 #include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/groupby.h"
 #include "scipp/dataset/slice.h"
 #include "scipp/variable/slice.h"
 #include "scipp/variable/variable.h"
@@ -210,6 +211,12 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   c.def("__getitem__", [](T &self, const py::slice &index) {
     expect_implicit_dimension(self.dims());
     return getitem(self, {self.dim(), index});
+  });
+  // Note the order of overloads: For some reason pybind11(?) calls `len()` on
+  // __getitem__ arguments when there is an overload accepting std::tuple. This
+  // fails for scalar variables, so we place this before those overloads.
+  c.def("__getitem__", [](T &self, const Variable &condition) {
+    return extract(self, condition);
   });
   c.def("__getitem__", [](T &self, const std::tuple<Dim, scipp::index> &index) {
     return getitem(self, index);

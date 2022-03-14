@@ -175,3 +175,66 @@ TEST_F(DataArrayTest, self_nesting) {
   ASSERT_THROW_DISCARD(var.value<DataArray>() = nested_in_coord,
                        std::invalid_argument);
 }
+
+TEST_F(DataArrayTest, is_edges_1d_without_edges) {
+  DataArray da{
+      makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{1, 2}),
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{0, 1})}}};
+  ASSERT_FALSE(da.coords().is_edges(Dim::X));
+  ASSERT_FALSE(da.coords().is_edges(Dim::X, Dim::X));
+}
+
+TEST_F(DataArrayTest, is_edges_1d_with_edges) {
+  DataArray da{
+      makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{1, 2}),
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{0, 1, 2})}}};
+  ASSERT_TRUE(da.coords().is_edges(Dim::X));
+  ASSERT_TRUE(da.coords().is_edges(Dim::X, Dim::X));
+}
+
+TEST_F(DataArrayTest, is_edges_2d_with_edges) {
+  DataArray da{
+      makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                        Values{1, 2, 3, 4, 5, 6}),
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{0, 1, 2})},
+       {Dim::Y, makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{0, 1, 2})}}};
+  ASSERT_TRUE(da.coords().is_edges(Dim::X));
+  ASSERT_TRUE(da.coords().is_edges(Dim::X, Dim::X));
+  ASSERT_FALSE(da.coords().is_edges(Dim::Y));
+  ASSERT_FALSE(da.coords().is_edges(Dim::Y, Dim::Y));
+}
+
+TEST_F(DataArrayTest, is_edges_2d_with_2d_edges) {
+  DataArray da{
+      makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                        Values{1, 2, 3, 4, 5, 6}),
+      {{Dim::X, makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{3, 3},
+                                  Values{0, 1, 2, 3, 4, 5, 6, 7, 8})}}};
+  ASSERT_TRUE(da.coords().is_edges(Dim::X, Dim::X));
+  ASSERT_FALSE(da.coords().is_edges(Dim::X, Dim::Y));
+}
+
+TEST_F(DataArrayTest, is_edges_2d_coord_requires_dim_parameter) {
+  DataArray da{
+      makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                        Values{1, 2, 3, 4, 5, 6}),
+      {{Dim::X, makeVariable<int>(Dims{Dim::X, Dim::Y}, Shape{3, 3},
+                                  Values{0, 1, 2, 3, 4, 5, 6, 7, 8})}}};
+  ASSERT_THROW_DISCARD(da.coords().is_edges(Dim::X), except::DimensionError);
+}
+
+TEST_F(DataArrayTest, is_edges_scalar_with_edges) {
+  DataArray da{
+      makeVariable<int>(Dims{}, Shape{}, Values{1}),
+      {{Dim{"c"}, makeVariable<int>(Dims{Dim::Y}, Shape{2}, Values{0, 1})}}};
+  ASSERT_TRUE(da.coords().is_edges(Dim{"c"}));
+  ASSERT_TRUE(da.coords().is_edges(Dim{"c"}, Dim::Y));
+}
+
+TEST_F(DataArrayTest, is_edges_invalid_coord_name_throws_NotFoundError) {
+  DataArray da{
+      makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{1, 2}),
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{0, 1, 2})}}};
+  ASSERT_THROW_DISCARD(da.coords().is_edges(Dim{"invalid name"}),
+                       except::NotFoundError);
+}

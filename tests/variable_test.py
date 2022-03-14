@@ -388,69 +388,19 @@ def test_rename_kwargs():
     assert sc.identical(xy.rename(x='z'), zy)
 
 
+def test_rename_self_and_dims_dict_are_position_only():
+    values = np.arange(6).reshape(2, 3)
+    xy = sc.Variable(dims=['x', 'y'], values=values)
+    zy = sc.Variable(dims=['z', 'y'], values=values)
+    # `var` is a position-only arg, so it *can* be used as a keyword
+    assert sc.identical(xy.rename(x='var').rename(var='z'), zy)
+    # `dims_dict` is a position-only arg, so it *can* be used as a keyword
+    assert sc.identical(xy.rename(x='dims_dict').rename(dims_dict='z'), zy)
+
+
 def test_bool_variable_repr():
     a = sc.Variable(dims=['x'], values=np.array([False, True, True, False, True]))
     assert [expected in repr(a) for expected in ["True", "False", "..."]]
-
-
-def test_sin():
-    assert_export(sc.sin, sc.Variable(dims=(), values=0.0))
-
-
-def test_sin_out():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.sin, var, out=var)
-
-
-def test_cos():
-    assert_export(sc.cos, sc.Variable(dims=(), values=0.0))
-
-
-def test_cos_out():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.cos, var, out=var)
-
-
-def test_tan():
-    assert_export(sc.tan, sc.Variable(dims=(), values=0.0))
-
-
-def test_tan_out():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.tan, var, out=var)
-
-
-def test_asin():
-    assert_export(sc.asin, sc.Variable(dims=(), values=0.0))
-
-
-def test_asin_out():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.asin, var, out=var)
-
-
-def test_acos():
-    assert_export(sc.acos, sc.Variable(dims=(), values=0.0))
-
-
-def test_acos_out():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.acos, var, out=var)
-
-
-def test_atan():
-    assert_export(sc.atan, sc.Variable(dims=(), values=0.0))
-
-
-def test_atan_out():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.atan, var, out=var)
-
-
-def test_atan2():
-    var = sc.Variable(dims=(), values=0.0)
-    assert_export(sc.atan2, y=var, x=var)
-    assert_export(sc.atan2, y=var, x=var, out=var)
 
 
 def test_variable_data_array_binary_ops():
@@ -574,30 +524,6 @@ def test_comparison():
     assert_export(sc.less_equal, x=var, y=var)
     assert_export(sc.equal, x=var, y=var)
     assert_export(sc.not_equal, x=var, y=var)
-
-
-def test_radd_int():
-    var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var + 1).dtype == sc.DType.int64
-    assert (1 + var).dtype == sc.DType.int64
-
-
-def test_rsub_int():
-    var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var - 1).dtype == sc.DType.int64
-    assert (1 - var).dtype == sc.DType.int64
-
-
-def test_rmul_int():
-    var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var * 1).dtype == sc.DType.int64
-    assert (1 * var).dtype == sc.DType.int64
-
-
-def test_rtruediv_int():
-    var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var / 1).dtype == sc.DType.float64
-    assert (1 / var).dtype == sc.DType.float64
 
 
 def test_sort():

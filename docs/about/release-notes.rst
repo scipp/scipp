@@ -9,7 +9,9 @@ v0.13.0 (unreleased)
 Features
 ~~~~~~~~
 
+* Added ``is_edges`` method to ``coords``, ``attrs``, ``masks``, and ``meta`` properties of DataArray and Dataset `#2469 <https://github.com/scipp/scipp/pull/2469>`_.
 * Added support for arithmetic of :class:`scipp.DataArray` and :class:`scipp.Dataset` with builtin ``int`` and ``float`` `#2473 <https://github.com/scipp/scipp/pull/2473>`_.
+* Added advanced indexing support: boolean variable indexing `#2477 <https://github.com/scipp/scipp/pull/2477>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -18,6 +20,8 @@ Breaking changes
 
 Bugfixes
 ~~~~~~~~
+
+* Fix permissions error for configuration file where users do not have write access to their config dir `#2482 <https://github.com/scipp/scipp/pull/2482>`_.
 
 Deprecations
 ~~~~~~~~~~~~

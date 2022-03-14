@@ -135,81 +135,6 @@ def test_pow_variable():
     assert np.array_equal(c.values, 2.0**data)
 
 
-def test_bitwise_ior_variable_with_variable():
-    a = sc.scalar(False)
-    b = sc.scalar(True)
-    a |= b
-    assert sc.identical(a, sc.scalar(True))
-
-    a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
-    b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
-    a |= b
-    assert sc.identical(
-        a, sc.Variable(dims=['x'], values=np.array([False, True, True, True])))
-
-
-def test_bitwise_or_variable_with_variable():
-    a = sc.scalar(False)
-    b = sc.scalar(True)
-    assert sc.identical((a | b), sc.scalar(True))
-
-    a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
-    b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
-    assert sc.identical((a | b),
-                        sc.Variable(dims=['x'],
-                                    values=np.array([False, True, True, True])))
-
-
-def test_bitwise_iand_variable_with_variable():
-    a = sc.scalar(False)
-    b = sc.scalar(True)
-    a &= b
-    assert sc.identical(a, sc.scalar(False))
-
-    a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
-    b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
-    a &= b
-    assert sc.identical(
-        a, sc.Variable(dims=['x'], values=np.array([False, False, False, True])))
-
-
-def test_bitwise_and_variable_with_variable():
-    a = sc.scalar(False)
-    b = sc.scalar(True)
-    assert sc.identical((a & b), sc.scalar(False))
-
-    a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
-    b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
-    assert sc.identical((a & b),
-                        sc.Variable(dims=['x'],
-                                    values=np.array([False, False, False, True])))
-
-
-def test_ixor_variable_with_variable():
-    a = sc.scalar(False)
-    b = sc.scalar(True)
-    a ^= b
-    assert sc.identical(a, sc.scalar(True))
-
-    a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
-    b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
-    a ^= b
-    assert sc.identical(
-        a, sc.Variable(dims=['x'], values=np.array([False, True, True, False])))
-
-
-def test_xor_variable_with_variable():
-    a = sc.scalar(False)
-    b = sc.scalar(True)
-    assert sc.identical((a ^ b), sc.scalar(True))
-
-    a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
-    b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
-    assert sc.identical((a ^ b),
-                        sc.Variable(dims=['x'],
-                                    values=np.array([False, True, True, False])))
-
-
 def test_iadd_variable_with_scalar():
     v = sc.Variable(dims=['x'], values=[10.0])
     expected = sc.Variable(dims=['x'], values=[12.0])
@@ -422,3 +347,31 @@ def test_isub_dataset_with_dataset_broadcast():
     expected = ds - ds['x', 0]
     ds -= ds['x', 0]
     assert sc.identical(ds, expected)
+
+
+def test_add_function():
+    assert sc.identical(sc.add(sc.scalar(3), sc.scalar(2)), sc.scalar(5))
+
+
+def test_divide_function():
+    assert sc.identical(sc.divide(sc.scalar(6), sc.scalar(2)), sc.scalar(3.0))
+
+
+def test_floor_divide_function():
+    assert sc.identical(sc.floor_divide(sc.scalar(6), sc.scalar(2.5)), sc.scalar(2.0))
+
+
+def test_mod_function():
+    assert sc.identical(sc.mod(sc.scalar(3), sc.scalar(2)), sc.scalar(1))
+
+
+def test_multipy_function():
+    assert sc.identical(sc.multiply(sc.scalar(3), sc.scalar(2)), sc.scalar(6))
+
+
+def test_subtract_function():
+    assert sc.identical(sc.subtract(sc.scalar(3), sc.scalar(2)), sc.scalar(1))
+
+
+def test_negative_function():
+    assert sc.identical(sc.negative(sc.scalar(3)), sc.scalar(-3))

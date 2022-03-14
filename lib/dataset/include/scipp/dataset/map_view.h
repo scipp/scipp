@@ -162,6 +162,8 @@ public:
   [[nodiscard]] Dict merge_from(const Dict &other) const;
 
   bool item_applies_to(const Key &key, const Dimensions &dims) const;
+  bool is_edges(const Key &key,
+                const std::optional<Dim> dim = std::nullopt) const;
 
 protected:
   Sizes m_sizes;
