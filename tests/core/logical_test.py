@@ -104,3 +104,8 @@ def test_logical_or_function():
 def test_logical_xor_function():
     assert sc.identical(sc.logical_xor(sc.scalar(True), sc.scalar(False)),
                         sc.scalar(True))
+
+
+def test_logical_not_data_array():
+    assert sc.identical(~sc.DataArray(sc.scalar(False)), sc.DataArray(sc.scalar(True)))
+    assert sc.identical(~sc.DataArray(sc.scalar(True)), sc.DataArray(sc.scalar(False)))

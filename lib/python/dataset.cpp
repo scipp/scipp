@@ -118,6 +118,7 @@ void bind_data_array(py::class_<T, Ignored...> &c) {
   bind_unary(c);
   bind_logical<DataArray>(c);
   bind_logical<Variable>(c);
+  bind_boolean_unary(c);
 }
 
 template <class T> void bind_rebin(py::module &m) {
