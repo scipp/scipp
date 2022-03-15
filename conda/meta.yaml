@@ -27,8 +27,8 @@ requirements:
   build:
     - cmake
     - cppcheck [linux64]
-    - conan>=1.45.0
-    - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
+    # - conan>=1.45.0
+    # - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - gxx_linux-64 11.1.* [linux64]
     - git
     - ninja
@@ -46,13 +46,13 @@ test:
     - scipp
   requires:
     - cmake
-    - conan>=1.45.0
-    - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
+    # - conan>=1.45.0
+    # - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - gxx_linux-64 11.1.* [linux64]
     - h5py
     - ipympl
     - ipywidgets
-    - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
+    # - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - matplotlib-base
     - pytest
     - pythreejs
