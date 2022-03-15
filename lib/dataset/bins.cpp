@@ -228,7 +228,7 @@ Variable concatenate(const Variable &var0, const Variable &var1) {
 
 DataArray concatenate(const DataArray &a, const DataArray &b) {
   return DataArray{buckets::concatenate(a.data(), b.data()),
-                   union_(a.coords(), b.coords(), "concatenate"),
+                   union_(a.coords(), b.coords(), "concat"),
                    union_or(a.masks(), b.masks()),
                    intersection(a.attrs(), b.attrs())};
 }
