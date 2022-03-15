@@ -7,7 +7,6 @@ requires = [
   "markupsafe>=1.1.1,<2.1.0",  # see https://github.com/pallets/markupsafe/issues/284
   "ninja",
   "scikit-build",
-  "tbb-devel==2021.4.0",  # because of hack with specific cmake config from conda package
 ]
 build-backend = "setuptools.build_meta"
 
