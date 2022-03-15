@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .view import View
-from .toolbar import PlotToolbar1d
+from .toolbar import Toolbar1d
 from .tools import get_line_param, find_limits, fix_empty_range
 from ..utils import name_with_unit
 from ..core import Variable, scalar
@@ -25,6 +25,14 @@ def _make_label(array):
         if dim not in array.dims:
             labels.append(f'{dim}={coord.values.round(decimals=2)}{unit}')
     return ', '.join(labels)
+
+
+class Line:
+    def __init__(self):
+        self.data = None
+        self.error = None
+        self.mask = None
+        self.mpl_params = {}
 
 
 class View1d(View):
@@ -53,7 +61,7 @@ class View1d(View):
                          title=title,
                          xlabel=xlabel,
                          ylabel=ylabel,
-                         toolbar=PlotToolbar1d,
+                         toolbar=Toolbar1d,
                          grid=grid)
 
         self.errorbars = errorbars
@@ -75,14 +83,7 @@ class View1d(View):
         if "loc" not in self.legend:
             self.legend["loc"] = 0
 
-    def _make_line(self, name, masks, hist, errorbars):
-        class Line:
-            def __init__(self):
-                self.data = None
-                self.error = None
-                self.masks = {}
-                self.mpl_params = {}
-
+    def _make_line(self, name, mask, hist, errorbars):
         index = len(self._lines)
         line = Line()
         line.mpl_params = {
@@ -98,33 +99,34 @@ class View1d(View):
                 zorder=10,
                 **{key: line.mpl_params[key]
                    for key in ["color", "linewidth"]})[0]
-            for m in masks:
-                line.masks[m] = self.ax.step([1, 2], [1, 2],
-                                             linewidth=line.mpl_params["linewidth"] *
-                                             3.0,
-                                             color=self._mask_color,
-                                             zorder=9)[0]
-                # Abuse a mostly unused property `gid` of Line2D to
-                # identify the line as a mask. We set gid to `onaxes`.
-                # This is used by the profile viewer in the 2D plotter
-                # to know whether to show the mask or not, depending on
-                # whether the cursor is hovering over the 2D image or
-                # not.
-                line.masks[m].set_gid("onaxes")
+            # if len(mask):
+            line.mask = self.ax.step([1, 2], [1, 2],
+                                     linewidth=line.mpl_params["linewidth"] * 3.0,
+                                     color=self._mask_color,
+                                     zorder=9,
+                                     visible=mask is not None)[0]
+            # # Abuse a mostly unused property `gid` of Line2D to
+            # # identify the line as a mask. We set gid to `onaxes`.
+            # # This is used by the profile viewer in the 2D plotter
+            # # to know whether to show the mask or not, depending on
+            # # whether the cursor is hovering over the 2D image or
+            # # not.
+            # line.masks[m].set_gid("onaxes")
         else:
             line.data = self.ax.plot([1, 2], [1, 2],
                                      label=label,
                                      zorder=10,
                                      **line.mpl_params)[0]
-            for m in masks:
-                line.masks[m] = self.ax.plot([1, 2], [1, 2],
-                                             zorder=11,
-                                             mec=self._mask_color,
-                                             mfc="None",
-                                             mew=3.0,
-                                             linestyle="none",
-                                             marker=line.mpl_params["marker"])[0]
-                line.masks[m].set_gid("onaxes")
+            # if len(mask):
+            line.mask = self.ax.plot([1, 2], [1, 2],
+                                     zorder=11,
+                                     mec=self._mask_color,
+                                     mfc="None",
+                                     mew=3.0,
+                                     linestyle="none",
+                                     marker=line.mpl_params["marker"],
+                                     visible=mask is not None)[0]
+            # line.masks[m].set_gid("onaxes")
 
         # Add error bars
         if errorbars:
@@ -181,7 +183,7 @@ class View1d(View):
         #     # values["masks"] = self._make_masks(array, mask_info=mask_info[name])
         #     out[name] = values
         # return out
-        out = {"values": {}, "variances": {}, "masks": {}}
+        out = {"values": {}, "variances": {}, "mask": None}
         out['name'] = new_values.name
         out['label'] = _make_label(new_values)
         out["values"]["x"] = new_values.meta[self._dim].values  #.ravel()
@@ -190,7 +192,11 @@ class View1d(View):
             out["variances"]["e"] = vars_to_err(new_values.variances)  #.ravel())
         if len(new_values.masks):
             # out["masks"] = self._make_masks(new_values)
-            out["masks"] = reduce(lambda a, b: a | b, new_values.masks.values()).values
+            one_mask = reduce(lambda a, b: a | b, new_values.masks.values()).values
+            out["mask"] = {
+                "x": out["values"]["x"],
+                "y": np.where(one_mask, out["values"]["y"], None).astype(np.float32)
+            }
         # out[name] = values
         return out
 
@@ -216,7 +222,7 @@ class View1d(View):
         vals, hist = self._preprocess_hist(new_values)
         if name not in self._lines:
             self._lines[name] = self._make_line(name,
-                                                masks=new_values['masks'].keys(),
+                                                mask=new_values['mask'],
                                                 hist=hist,
                                                 errorbars=errorbars)
         line = self._lines[name]
@@ -224,11 +230,17 @@ class View1d(View):
         lab = new_values["label"] if len(new_values["label"]) > 0 else name
         line.label = f'{name}[{lab}]'  # used later if line is kept
 
-        for m in new_values["masks"]:
-            line.masks[m].set_data(
-                new_values["values"]["x"],
-                np.where(new_values["masks"][m], new_values["values"]["y"],
-                         None).astype(np.float32))
+        if new_values["mask"] is not None:
+            line.mask.set_data(new_values["mask"]["x"], new_values["mask"]["y"])
+            line.mask.set_visible(True)
+        else:
+            line.mask.set_visible(False)
+
+        # for m in new_values["masks"]:
+        #     line.masks[m].set_data(
+        #         new_values["values"]["x"],
+        #         np.where(new_values["masks"][m], new_values["values"]["y"],
+        #                  None).astype(np.float32))
 
         if errorbars:
             coll = line.error.get_children()[0]

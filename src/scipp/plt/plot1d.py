@@ -8,7 +8,7 @@ from .view1d import View1d
 from .controller1d import Controller1d
 
 
-def plot1d(scipp_obj_dict,
+def plot1d(data_array_dict,
            norm=None,
            masks=None,
            ax=None,
@@ -46,10 +46,10 @@ def plot1d(scipp_obj_dict,
                   norm=params["values"]["norm"],
                   legend=legend)
 
-    model = Model1d(scipp_obj_dict)
+    model = Model1d(data_array_dict)
 
     sp = Plot(
-        scipp_obj_dict=scipp_obj_dict,
+        data_array_dict=data_array_dict,
         model=model,
         view=view,
         controller=Controller1d,

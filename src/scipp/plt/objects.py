@@ -193,7 +193,7 @@ class Plot:
           pieces above.
     """
     def __init__(self,
-                 scipp_obj_dict,
+                 data_array_dict,
                  controller,
                  model=None,
                  profile_figure=None,
@@ -209,7 +209,7 @@ class Plot:
                  scale=None,
                  view_ndims=None):
 
-        self._scipp_obj_dict = scipp_obj_dict
+        self._data_array_dict = data_array_dict
         self.panel = panel
         self.profile = None
         self.widgets = None
@@ -225,19 +225,19 @@ class Plot:
         self.ax = None
 
         # TODO use option to provide keys here
-        array = next(iter(scipp_obj_dict.values()))
+        array = next(iter(data_array_dict.values()))
 
-        self.name = list(scipp_obj_dict.keys())[0]
+        self.name = list(data_array_dict.keys())[0]
         if dims is None:
-            self.dims = scipp_obj_dict[self.name].dims
+            self.dims = data_array_dict[self.name].dims
         else:
             self.dims = dims
 
-        # errorbars = _make_errorbar_params(scipp_obj_dict, errorbars)
+        # errorbars = _make_errorbar_params(data_array_dict, errorbars)
         # figure.errorbars = errorbars
         # if profile_figure is not None:
         #     profile_figure.errorbars = errorbars
-        labels, formatters = _make_formatters(arrays=scipp_obj_dict,
+        labels, formatters = _make_formatters(arrays=data_array_dict,
                                               labels=labels,
                                               dims=self.dims)
         # self.profile = profile_figure
@@ -253,14 +253,14 @@ class Plot:
         #         formatters=formatters,
         #         ndim=self.view_ndims,
         #         dim_label_map=labels,
-        #         # masks=self._scipp_obj_dict,
+        #         # masks=self._data_array_dict,
         #         sizes={dim: array.sizes[dim]
         #                for dim in self.dims}),
         #     MaskWidget(array.masks)
         # ])
 
         # self.model = model(data_array=array)
-        # profile_model = PlotModel1d(scipp_obj_dict=self._scipp_obj_dict)
+        # profile_model = PlotModel1d(data_array_dict=self._data_array_dict)
         self.controller = controller(dims=self.dims,
                                      preprocessors=self.preprocessors,
                                      widgets=self.widgets,

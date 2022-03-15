@@ -5,7 +5,7 @@ import ipywidgets as ipw
 from .. import config
 
 
-class PlotToolbar:
+class Toolbar:
     """
     Custom toolbar with additional buttons for controlling log scales and
     normalization, and with back/forward buttons removed.
@@ -122,7 +122,7 @@ class PlotToolbar:
         return self.members["zoom_view"].value
 
 
-class PlotToolbar1d(PlotToolbar):
+class Toolbar1d(Toolbar):
     """
     Custom toolbar for 1d figures.
     """
@@ -141,7 +141,7 @@ class PlotToolbar1d(PlotToolbar):
         self._update_container()
 
 
-class PlotToolbar2d(PlotToolbar):
+class Toolbar2d(Toolbar):
     """
     Custom toolbar for 2d figures.
     """
@@ -162,7 +162,7 @@ class PlotToolbar2d(PlotToolbar):
         self._update_container()
 
 
-class PlotToolbar3d(PlotToolbar):
+class Toolbar3d(Toolbar):
     """
     Custom toolbar for 3d figures.
     """

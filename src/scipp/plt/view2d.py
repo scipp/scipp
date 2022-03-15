@@ -3,7 +3,7 @@
 
 from .. import config
 from .view import View
-from .toolbar import PlotToolbar2d
+from .toolbar import Toolbar2d
 from .tools import find_limits, fix_empty_range
 from ..utils import name_with_unit
 from ..core import broadcast
@@ -40,7 +40,7 @@ class View2d(View):
                          title=name if title is None else title,
                          xlabel=xlabel,
                          ylabel=ylabel,
-                         toolbar=PlotToolbar2d,
+                         toolbar=Toolbar2d,
                          grid=grid)
 
         if aspect is None:

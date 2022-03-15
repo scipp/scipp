@@ -8,6 +8,21 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
 
+class SideBar:
+    def __init__(self, children=None):
+        self._children = children if children is not None else []
+
+    def _ipython_display_(self):
+        """
+        """
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+        """
+        """
+        return ipw.VBox([child._to_widget() for child in self._children])
+
+
 class View:
     """
     Base class for 1d and 2d figures, that holds matplotlib axes.
@@ -46,6 +61,11 @@ class View:
         if grid:
             self.ax.grid()
 
+        self.left_bar = SideBar([self.toolbar])
+        self.right_bar = SideBar()
+        self.bottom_bar = SideBar()
+        self.top_bar = SideBar()
+
         self.axformatter = {}
         self.axlocator = {}
         self.xlabel = xlabel
@@ -55,9 +75,9 @@ class View:
 
         self.toolbar.connect(view=self)
 
-    def initialize_toolbar(self, **kwargs):
-        if self.toolbar is not None:
-            self.toolbar.initialize(**kwargs)
+    # def initialize_toolbar(self, **kwargs):
+    #     if self.toolbar is not None:
+    #         self.toolbar.initialize(**kwargs)
 
     def is_widget(self):
         """
@@ -89,9 +109,14 @@ class View:
         Image container.
         """
         if self.is_widget():
-            return ipw.HBox([
-                self.toolbar._to_widget(),
-                self._to_image() if self.closed else self.fig.canvas
+            return ipw.VBox([
+                self.top_bar._to_widget(),
+                ipw.HBox([
+                    self.left_bar._to_widget(),
+                    self._to_image() if self.closed else self.fig.canvas,
+                    self.right_bar._to_widget()
+                ]),
+                self.bottom_bar._to_widget()
             ])
         else:
             return self._to_image()
