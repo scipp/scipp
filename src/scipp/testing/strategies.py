@@ -34,7 +34,7 @@ def dims() -> st.SearchStrategy:
         whitelist_categories=['L', 'M', 'N', 'P', 'S', 'Zs', 'Cc'],
         blacklist_characters='\0'),
                    min_size=0,
-                   max_size=10)
+                   max_size=50)
 
 
 def sizes_dicts(
@@ -188,7 +188,7 @@ def vectors(draw, ndim=None) -> st.SearchStrategy:
 
 
 @st.composite
-def coord_dicts_1d(draw, *, coords, sizes, args=None) -> dict:
+def coord_dicts(draw, *, coords, sizes, args=None) -> dict:
     args = (args or {})
     args['sizes'] = sizes
     try:
@@ -218,8 +218,7 @@ def dataarrays(draw,
     if coords is _NotSet:
         coords = data.dims
     if coords is not None:
-        coord_dict = draw(
-            coord_dicts_1d(coords=coords, sizes=data.sizes, args=coord_args))
+        coord_dict = draw(coord_dicts(coords=coords, sizes=data.sizes, args=coord_args))
     else:
         coord_dict = {}
     return DataArray(data, coords=coord_dict)

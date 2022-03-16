@@ -179,4 +179,6 @@ def test_n_variables_all_have_same_parameters(variables):
                     coords=['b'],
                     coord_args=None))
 def test_dataarrays(da):
-    print(da)
+    assert da.sizes == {'a': 2, 'b': 3}
+    assert da.dtype == int
+    assert da.coords['b'].sizes == {'a': 2, 'b': 3}
