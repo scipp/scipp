@@ -77,7 +77,7 @@ class View2d(View):
         """
         return
 
-    def update(self, new_values=None, draw=True):
+    def update(self, new_values=None, key=None, draw=True):
         """
         Update image array with new values.
         """

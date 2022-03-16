@@ -4,7 +4,7 @@
 from functools import partial
 from html import escape
 from ..utils import value_to_string
-from .step import Step
+from .step import WidgetStep
 
 
 class SlicingWidget:
@@ -39,7 +39,7 @@ class SlicingWidget:
                                    continuous_update=True,
                                    readout=True,
                                    layout={"width": "400px"})
-            slider.observe(self._slider_moved, names="value")
+            # slider.observe(self._changed, names="value")
 
             continuous_update = ipw.Checkbox(value=True,
                                              description="Continuous update",
@@ -78,17 +78,28 @@ class SlicingWidget:
         import ipywidgets as ipw
         return ipw.VBox(self.container)
 
-    def set_callback(self, callback):
-        self._callback = callback
+    # def set_callback(self, callback):
+    #     self._callback = callback
 
-    def _slider_moved(self, _):
-        self._callback()
+    # def _slider_moved(self, _):
+    #     self._callback()
 
-    def values(self):
+    def observe(self, callback, **kwargs):
         """
         Get the current range covered by the thick slice.
         """
+        for dim in self._controls:
+            self._controls[dim]['slider'].observe(callback, **kwargs)
+
+    @property
+    def value(self):
         return {dim: self._controls[dim]['slider'].value for dim in self._slider_dims}
+
+    def _changed(self, change):
+        change = {"new": self.value}
+        super()._changed(change)
+
+        # return {dim: self._controls[dim]['slider'].value for dim in self._slider_dims}
 
     # def update_slider_readout(self, bounds):
     #     """
@@ -125,6 +136,31 @@ def _slicing_func(model, slices):
     return out
 
 
-class SlicingStep(Step):
+class SlicingStep(WidgetStep):
     def __init__(self, **kwargs):
         super().__init__(func=_slicing_func, widget=SlicingWidget(**kwargs))
+
+
+########################################################################################
+
+
+def smooth(da, radius):
+    return da.smoothed(radius)
+
+
+class SmoothingStep(WidgetStep):
+    def __init__(self, **kwargs):
+        super().__init__(func=smooth, widget=ipw.FloatSlider(min=0, max=10))
+
+
+def add_noise(da):
+    out = da.copy()
+    data = out.values
+    noise = np.random.random(data.shape)
+    data += noise
+    return out
+
+
+class NoiseStep(Step):
+    def __init__(self, **kwargs):
+        super().__init__(func=smooth)

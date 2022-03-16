@@ -62,8 +62,7 @@ class Controller:
 
     def _run_pipeline(self, key, draw=True):
         new_values = self._pipelines[key].run(self._models[key])
-        new_values.name = key
-        self._view.update(new_values, draw=draw)
+        self._view.update(new_values, key=key, draw=draw)
 
     def toggle_mask(self):
         pass

@@ -173,7 +173,7 @@ class View1d(View):
         # out[name] = values
         return out
 
-    def update(self, new_values, draw=True):
+    def update(self, new_values, key, draw=True):
         """
         Update the x and y positions of the data points when a new data slice
         is received for display.
@@ -188,19 +188,19 @@ class View1d(View):
 
         xmin = np.Inf
         xmax = np.NINF
-        name = new_values['name']
+        # name = new_values['name']
         # for name in raw_values:
         #     self.errorbars[name] = False
         vals, hist = self._preprocess_hist(new_values)
-        if name not in self._lines:
-            self._lines[name] = self._make_line(name,
-                                                mask=new_values['mask'],
-                                                hist=hist,
-                                                errorbars=errorbars)
-        line = self._lines[name]
+        if key not in self._lines:
+            self._lines[key] = self._make_line(key,
+                                               mask=new_values['mask'],
+                                               hist=hist,
+                                               errorbars=errorbars)
+        line = self._lines[key]
         line.data.set_data(new_values["values"]["x"], new_values["values"]["y"])
-        lab = new_values["label"] if len(new_values["label"]) > 0 else name
-        line.label = f'{name}[{lab}]'  # used later if line is kept
+        lab = new_values["label"] if len(new_values["label"]) > 0 else key
+        line.label = f'{key}[{lab}]'  # used later if line is kept
 
         if new_values["mask"] is not None:
             line.mask.set_data(new_values["mask"]["x"], new_values["mask"]["y"])

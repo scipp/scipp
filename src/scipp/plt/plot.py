@@ -211,12 +211,12 @@ class Plot:
         # Add step for slicing dimensions out with sliders
         slicing_step = SlicingStep(dims=array.dims, sizes=array.sizes, ndim=view_ndims)
         self._controller.add_pipeline_step(slicing_step)
-        self._widgets.append(slicing_step.widget)
+        self._widgets.append(slicing_step)
 
-        for key, model in self._models.items():
-            mask_step = MaskStep(masks=model.masks, name=key)
-            self._controller.add_pipeline_step(key=key, step=mask_step)
-            self._widgets.append(mask_step.widget)
+        # for key, model in self._models.items():
+        #     mask_step = MaskStep(masks=model.masks, name=key)
+        #     self._controller.add_pipeline_step(key=key, step=mask_step)
+        #     self._widgets.append(mask_step)
 
         self._render()
 

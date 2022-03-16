@@ -4,7 +4,7 @@
 from functools import partial
 from html import escape
 from ..utils import value_to_string
-from .step import Step
+from .step import WidgetStep
 
 
 class MaskWidget:
@@ -66,8 +66,6 @@ class MaskWidget:
 
     def values(self):
         """
-        Get information on masks: their keys and whether they should be
-        displayed.
         """
         return {key: chbx.value for key, chbx in self._checkboxes.items()}
 
@@ -86,7 +84,6 @@ class MaskWidget:
         change["owner"].description = "Hide all" if change["new"] else \
             "Show all"
         self._lock = False
-        # self._toggle_mask(None)
         self._callback()
 
 
@@ -98,6 +95,6 @@ def _hide_masks(model, masks):
     return out
 
 
-class MaskStep(Step):
+class MaskStep(WidgetStep):
     def __init__(self, **kwargs):
         super().__init__(func=_hide_masks, widget=MaskWidget(**kwargs))
