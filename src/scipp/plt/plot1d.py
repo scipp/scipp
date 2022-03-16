@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .objects import make_params, make_profile, Plot
-from .model1d import Model1d
+from .params import make_params
+from .plot import Plot
+# from .model1d import Model1d
 # from .panel1d import PlotPanel1d
 from .view1d import View1d
 from .controller1d import Controller1d

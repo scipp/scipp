@@ -155,34 +155,7 @@ class View1d(View):
         vals["variances"]["y"] = y
         return vals, hist
 
-    # def _make_masks(self, array):
-    #     # if not mask_info:
-    #     #     return {}
-    #     masks = {}
-    #     data = array.data
-    #     base_mask = ones(sizes=data.sizes, dtype='int32', unit=None)
-    #     for m in mask_info:
-    #         if m in array.masks:
-    #             msk = base_mask * Variable(
-    #                 dims=array.masks[m].dims, unit=None, values=array.masks[m].values)
-    #             masks[m] = msk.values
-    #         else:
-    #             masks[m] = None
-    #     return masks
-
     def _make_data(self, new_values):
-        # out = {}
-        # for name, array in new_values.items():
-        #     # self._dim = array.dims[0]  # should be same for all items
-        #     values = {"values": {}, "variances": {}, "masks": {}}
-        #     values['label'] = _make_label(array)
-        #     values["values"]["x"] = array.meta[self._dim].values.ravel()
-        #     values["values"]["y"] = array.values.ravel()
-        #     if array.variances is not None:
-        #         values["variances"]["e"] = vars_to_err(array.variances.ravel())
-        #     # values["masks"] = self._make_masks(array, mask_info=mask_info[name])
-        #     out[name] = values
-        # return out
         out = {"values": {}, "variances": {}, "mask": None}
         out['name'] = new_values.name
         out['label'] = _make_label(new_values)
@@ -200,12 +173,11 @@ class View1d(View):
         # out[name] = values
         return out
 
-    def update(self, new_values):
+    def update(self, new_values, draw=True):
         """
         Update the x and y positions of the data points when a new data slice
         is received for display.
         """
-        # self._data = new_values
         self._dim = new_values.dim
         self._unit = new_values.unit
         self._coord = new_values.meta[self._dim]
@@ -236,19 +208,14 @@ class View1d(View):
         else:
             line.mask.set_visible(False)
 
-        # for m in new_values["masks"]:
-        #     line.masks[m].set_data(
-        #         new_values["values"]["x"],
-        #         np.where(new_values["masks"][m], new_values["values"]["y"],
-        #                  None).astype(np.float32))
-
         if errorbars:
             coll = line.error.get_children()[0]
             coll.set_segments(
                 self._change_segments_y(new_values["variances"]["x"],
                                         new_values["variances"]["y"],
                                         new_values["variances"]["e"]))
-        # self.draw()
+        if draw:
+            self.draw()
 
     def _change_segments_y(self, x, y, e):
         """

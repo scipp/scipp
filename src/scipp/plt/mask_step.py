@@ -11,7 +11,7 @@ class MaskWidget:
     """
     Widget providing buttons to hide/show masks.
     """
-    def __init__(self, masks):
+    def __init__(self, masks, name):
 
         import ipywidgets as ipw
         self._callback = None
@@ -23,11 +23,10 @@ class MaskWidget:
                                                  description=f"{escape(key)}",
                                                  indent=False,
                                                  layout={"width": "initial"})
-            # setattr(self._checkboxes[key], "mask_name", key)
             self._checkboxes[key].observe(self._toggle_mask, names="value")
 
         if len(self._checkboxes):
-            self._label = ipw.Label(value="Masks:")
+            self._label = ipw.Label(value=f"Masks: {name}")
 
             # Add a master button to control all masks in one go
             self._all_masks_button = ipw.ToggleButton(value=True,
@@ -41,15 +40,6 @@ class MaskWidget:
                                           flex_flow='row wrap',
                                           align_items='stretch',
                                           width='70%')
-            # mask_list = []
-            # for key in self.mask_checkboxes:
-            #     for cbox in self.mask_checkboxes[key].values():
-            #         mask_list.append(cbox)
-
-            # masks_box = ipw.Box(children=mask_list, layout=box_layout)
-            # self._container += [
-            #     ipw.HBox([self.masks_lab, self.all_masks_button, self.masks_box])
-            # ]
 
     def _ipython_display_(self):
         """
@@ -73,17 +63,6 @@ class MaskWidget:
 
     def set_callback(self, callback):
         self._callback = callback
-
-    # def connect(self, controller):
-    #     """
-    #     Connect the widget interface to the callbacks provided by the
-    #     `PlotController`.
-    #     """
-    #     self._controller = controller
-    #     for key in self._checkboxes:
-    #         self._checkboxes[key].observe(self._toggle_mask, names="value")
-    #     if len(self._checkboxes):
-    #         self._all_masks_button.observe(self._toggle_all_masks, names="value")
 
     def values(self):
         """
@@ -120,5 +99,5 @@ def _hide_masks(model, masks):
 
 
 class MaskStep(Step):
-    def __init__(self, model):
-        super().__init__(func=_hide_masks, widget=MaskWidget(masks=model.masks))
+    def __init__(self, **kwargs):
+        super().__init__(func=_hide_masks, widget=MaskWidget(**kwargs))

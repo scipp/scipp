@@ -165,25 +165,22 @@ class Plot:
       - a `PlotController`: handles all the communication between all the
           pieces above.
     """
-    def __init__(
-            self,
-            models,
-            controller,
-            # model=None,
-            profile_figure=None,
-            errorbars=None,
-            panel=None,
-            labels=None,
-            resolution=None,
-            dims=None,
-            view=None,
-            vmin=None,
-            vmax=None,
-            axes=None,
-            scale=None,
-            view_ndims=None):
+    def __init__(self,
+                 models,
+                 controller,
+                 profile_figure=None,
+                 errorbars=None,
+                 panel=None,
+                 labels=None,
+                 resolution=None,
+                 dims=None,
+                 view=None,
+                 vmin=None,
+                 vmax=None,
+                 axes=None,
+                 scale=None,
+                 view_ndims=None):
 
-        # self._data_array_dict = data_array_dict
         self.panel = panel
         self.profile = None
         self.widgets = None
@@ -207,47 +204,17 @@ class Plot:
         else:
             self._dims = dims
 
-        # # errorbars = _make_errorbar_params(data_array_dict, errorbars)
-        # # figure.errorbars = errorbars
-        # # if profile_figure is not None:
-        # #     profile_figure.errorbars = errorbars
-        # labels, formatters = _make_formatters(arrays=data_array_dict,
-        #                                       labels=labels,
-        #                                       dims=self.dims)
-        # # self.profile = profile_figure
-        # self.view = view(**kwargs)
-
-        # self.preprocessors = make_default_preprocessors(array, ndim=self.view_ndims)
-
         self._widgets = WidgetCollection()
 
-        #     [
-        #     SliderWidget(
-        #         dims=self.dims,
-        #         formatters=formatters,
-        #         ndim=self.view_ndims,
-        #         dim_label_map=labels,
-        #         # masks=self._data_array_dict,
-        #         sizes={dim: array.sizes[dim]
-        #                for dim in self.dims}),
-        #     MaskWidget(array.masks)
-        # ])
+        self._controller = controller(models=self._models, view=self._view)
 
-        # self.model = model(data_array=array)
-        # profile_model = PlotModel1d(data_array_dict=self._data_array_dict)
-        self._controller = controller(
-            # dims=self.dims,
-            # preprocessors=self.preprocessors,
-            # widgets=self.widgets,
-            models=self._models,
-            view=self._view)
-
-        slicing_step = SlicingStep(model=array, ndim=view_ndims)
+        # Add step for slicing dimensions out with sliders
+        slicing_step = SlicingStep(dims=array.dims, sizes=array.sizes, ndim=view_ndims)
         self._controller.add_pipeline_step(slicing_step)
         self._widgets.append(slicing_step.widget)
 
         for key, model in self._models.items():
-            mask_step = MaskStep(model=model)
+            mask_step = MaskStep(masks=model.masks, name=key)
             self._controller.add_pipeline_step(key=key, step=mask_step)
             self._widgets.append(mask_step.widget)
 

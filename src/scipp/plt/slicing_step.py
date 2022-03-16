@@ -12,14 +12,11 @@ class SlicingWidget:
     Widgets containing a slider for each of the input's dimensions, as well as
     buttons to modify the currently displayed axes.
     """
-
-    # def __init__(self, *, dims, ndim, sizes, formatters=None, dim_label_map=None):
-    def __init__(self, model, ndim):
+    def __init__(self, dims, sizes, ndim):
 
         import ipywidgets as ipw
-        # self._dims = dims
-        dims = model.dims
-        sizes = model.sizes
+        # dims = model.dims
+        # sizes = model.sizes
         # self._labels = dim_label_map
         # self._controller = None
         # self._formatters = formatters
@@ -33,22 +30,6 @@ class SlicingWidget:
         self.dim_buttons = {}
 
         self._slider_dims = dims[:len(dims) - ndim]
-
-        # self.profile_button = ipw.Button(description="Profile",
-        #                                  button_style="",
-        #                                  layout={"width": "initial"})
-        # # TODO: hide the profile button for 3D plots. Renable this once
-        # # profile picking is supported on 3D plots
-        # if ndim == 3:
-        #     self.profile_button.layout.display = 'none'
-        # if len(self._slider_dims) != 1:
-        #     self.profile_button.layout.display = 'none'
-
-        # multid_coord = None
-        # for array in masks.values():
-        #     for dim, coord in array.meta.items():
-        #         if len(coord.dims) > 1:
-        #             multid_coord = dim
 
         for dim in dims:
             slider = ipw.IntSlider(step=1,
@@ -100,57 +81,36 @@ class SlicingWidget:
     def set_callback(self, callback):
         self._callback = callback
 
-    # def connect(self, controller):
-    #     """
-    #     Connect the widget interface to the callbacks provided by the
-    #     `PlotController`.
-    #     """
-    #     self._controller = controller
-    #     for dim in self._controls:
-    #         self._controls[dim]['slider'].observe(self._slider_moved, names="value")
-
-    # # def initialize(self, sizes):
-    # #     """
-    # #     Initialize widget parameters once the `PlotModel`, `PlotView` and
-    # #     `PlotController` have been created, since, for instance, slider limits
-    # #     depend on the dimensions of the input data, which are not known until
-    # #     the `PlotModel` is created.
-    # #     """
-    # #     self._sizes = sizes
-    # #     for dim in self._dims:
-    # #         self._set_slider_defaults(dim, sizes[dim])
-
     def _slider_moved(self, _):
         self._callback()
 
-    # @property
     def values(self):
         """
         Get the current range covered by the thick slice.
         """
         return {dim: self._controls[dim]['slider'].value for dim in self._slider_dims}
 
-    def update_slider_readout(self, bounds):
-        """
-        Update the slider readout with new slider bounds.
-        """
-        for dim in self._slider_dims:
+    # def update_slider_readout(self, bounds):
+    #     """
+    #     Update the slider readout with new slider bounds.
+    #     """
+    #     for dim in self._slider_dims:
 
-            def format(val):
-                form = self._formatters[dim]['linear']
-                if form is None:
-                    return value_to_string(val)
-                # pos=None causes datetime formatter to return full string
-                # rather than attempting to set a separate label and returning
-                # offset
-                return form(val, pos=None)
+    #         def format(val):
+    #             form = self._formatters[dim]['linear']
+    #             if form is None:
+    #                 return value_to_string(val)
+    #             # pos=None causes datetime formatter to return full string
+    #             # rather than attempting to set a separate label and returning
+    #             # offset
+    #             return form(val, pos=None)
 
-            if bounds[dim].values.ndim == 0:
-                bound = f'{format(bounds[dim].value)}'
-            else:
-                low, high = bounds[dim].values
-                bound = f'[{format(low)} {format(high)}]'
-            self._controls[dim]['value'].value = bound
+    #         if bounds[dim].values.ndim == 0:
+    #             bound = f'{format(bounds[dim].value)}'
+    #         else:
+    #             low, high = bounds[dim].values
+    #             bound = f'[{format(low)} {format(high)}]'
+    #         self._controls[dim]['value'].value = bound
 
 
 def _slicing_func(model, slices):
@@ -166,6 +126,5 @@ def _slicing_func(model, slices):
 
 
 class SlicingStep(Step):
-    def __init__(self, model, ndim):
-        super().__init__(func=_slicing_func,
-                         widget=SlicingWidget(model=model, ndim=ndim))
+    def __init__(self, **kwargs):
+        super().__init__(func=_slicing_func, widget=SlicingWidget(**kwargs))
