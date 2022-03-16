@@ -6,15 +6,13 @@ from html import escape
 from ..utils import value_to_string
 
 
-class WidgetCollection:
+class WidgetCollection(list):
     """
     Widgets containing a slider for each of the input's dimensions, as well as
     buttons to modify the currently displayed axes.
     It also provides buttons to hide/show masks.
     """
-    def __init__(self, children):
-
-        self.children = children
+    pass
 
     def _ipython_display_(self):
         """
@@ -27,7 +25,7 @@ class WidgetCollection:
         Gather all widgets in a single container box.
         """
         import ipywidgets as ipw
-        return ipw.VBox([child._to_widget() for child in self.children])
+        return ipw.VBox([child._to_widget() for child in self])
 
     def connect(self, *args, **kwargs):
         """

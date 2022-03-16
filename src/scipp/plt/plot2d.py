@@ -1,13 +1,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .objects import make_params, Plot
-from .model import Model
+from .params import make_params
+from .plot import Plot
+# from .model import Model
 from .view2d import View2d
 from .controller2d import Controller2d
 
 
-def plot2d(scipp_obj_dict,
+def plot2d(data_array_dict,
            norm=None,
            masks=None,
            ax=None,
@@ -43,11 +44,11 @@ def plot2d(scipp_obj_dict,
                   norm=params["values"]["norm"],
                   masks=params["masks"])
 
-    model = Model(next(iter(scipp_obj_dict.values())))
+    # model = Model(next(iter(scipp_obj_dict.values())))
 
     sp = Plot(
-        scipp_obj_dict=scipp_obj_dict,
-        model=model,
+        models=data_array_dict,
+        # model=model,
         view=view,
         controller=Controller2d,
         # norm=params["values"]["norm"],

@@ -4,22 +4,28 @@
 from functools import partial
 from html import escape
 from ..utils import value_to_string
+from .step import Step
 
 
-class SliderWidget:
+class SlicingWidget:
     """
     Widgets containing a slider for each of the input's dimensions, as well as
     buttons to modify the currently displayed axes.
     """
-    def __init__(self, *, dims, ndim, sizes, formatters=None, dim_label_map=None):
+
+    # def __init__(self, *, dims, ndim, sizes, formatters=None, dim_label_map=None):
+    def __init__(self, model, ndim):
 
         import ipywidgets as ipw
-        self._dims = dims
-        self._labels = dim_label_map
-        self._controller = None
-        self._formatters = formatters
+        # self._dims = dims
+        dims = model.dims
+        sizes = model.sizes
+        # self._labels = dim_label_map
+        # self._controller = None
+        # self._formatters = formatters
         # Dict of controls for each dim, one entry per dim of data
         self._controls = {}
+        self._callback = None
 
         # The container list to hold all widgets
         self.container = []
@@ -52,6 +58,7 @@ class SliderWidget:
                                    continuous_update=True,
                                    readout=True,
                                    layout={"width": "400px"})
+            slider.observe(self._slider_moved, names="value")
 
             continuous_update = ipw.Checkbox(value=True,
                                              description="Continuous update",
@@ -90,28 +97,31 @@ class SliderWidget:
         import ipywidgets as ipw
         return ipw.VBox(self.container)
 
-    def connect(self, controller):
-        """
-        Connect the widget interface to the callbacks provided by the
-        `PlotController`.
-        """
-        self._controller = controller
-        for dim in self._controls:
-            self._controls[dim]['slider'].observe(self._slider_moved, names="value")
+    def set_callback(self, callback):
+        self._callback = callback
 
-    # def initialize(self, sizes):
+    # def connect(self, controller):
     #     """
-    #     Initialize widget parameters once the `PlotModel`, `PlotView` and
-    #     `PlotController` have been created, since, for instance, slider limits
-    #     depend on the dimensions of the input data, which are not known until
-    #     the `PlotModel` is created.
+    #     Connect the widget interface to the callbacks provided by the
+    #     `PlotController`.
     #     """
-    #     self._sizes = sizes
-    #     for dim in self._dims:
-    #         self._set_slider_defaults(dim, sizes[dim])
+    #     self._controller = controller
+    #     for dim in self._controls:
+    #         self._controls[dim]['slider'].observe(self._slider_moved, names="value")
+
+    # # def initialize(self, sizes):
+    # #     """
+    # #     Initialize widget parameters once the `PlotModel`, `PlotView` and
+    # #     `PlotController` have been created, since, for instance, slider limits
+    # #     depend on the dimensions of the input data, which are not known until
+    # #     the `PlotModel` is created.
+    # #     """
+    # #     self._sizes = sizes
+    # #     for dim in self._dims:
+    # #         self._set_slider_defaults(dim, sizes[dim])
 
     def _slider_moved(self, _):
-        self._controller.update()
+        self._callback()
 
     # @property
     def values(self):
@@ -141,3 +151,21 @@ class SliderWidget:
                 low, high = bounds[dim].values
                 bound = f'[{format(low)} {format(high)}]'
             self._controls[dim]['value'].value = bound
+
+
+def _slicing_func(model, slices):
+    """
+    Slice the data along dimension sliders that are not disabled for all
+    entries in the dict of data arrays, and return a dict of 1d value
+    arrays for data values, variances, and masks.
+    """
+    out = model
+    for dim, sl in slices.items():
+        out = out[dim, sl]
+    return out
+
+
+class SlicingStep(Step):
+    def __init__(self, model, ndim):
+        super().__init__(func=_slicing_func,
+                         widget=SlicingWidget(model=model, ndim=ndim))

@@ -4,6 +4,7 @@
 from functools import partial
 from html import escape
 from ..utils import value_to_string
+from .step import Step
 
 
 class MaskWidget:
@@ -13,6 +14,7 @@ class MaskWidget:
     def __init__(self, masks):
 
         import ipywidgets as ipw
+        self._callback = None
 
         self._checkboxes = {}
         self._lock = False
@@ -21,7 +23,8 @@ class MaskWidget:
                                                  description=f"{escape(key)}",
                                                  indent=False,
                                                  layout={"width": "initial"})
-            setattr(self._checkboxes[key], "mask_name", key)
+            # setattr(self._checkboxes[key], "mask_name", key)
+            self._checkboxes[key].observe(self._toggle_mask, names="value")
 
         if len(self._checkboxes):
             self._label = ipw.Label(value="Masks:")
@@ -32,6 +35,7 @@ class MaskWidget:
                                                       disabled=False,
                                                       button_style="",
                                                       layout={"width": "initial"})
+            self._all_masks_button.observe(self._toggle_all_masks, names="value")
 
             self._box_layout = ipw.Layout(display='flex',
                                           flex_flow='row wrap',
@@ -67,16 +71,19 @@ class MaskWidget:
             ]
         return out
 
-    def connect(self, controller):
-        """
-        Connect the widget interface to the callbacks provided by the
-        `PlotController`.
-        """
-        self._controller = controller
-        for key in self._checkboxes:
-            self._checkboxes[key].observe(self._toggle_mask, names="value")
-        if len(self._checkboxes):
-            self._all_masks_button.observe(self._toggle_all_masks, names="value")
+    def set_callback(self, callback):
+        self._callback = callback
+
+    # def connect(self, controller):
+    #     """
+    #     Connect the widget interface to the callbacks provided by the
+    #     `PlotController`.
+    #     """
+    #     self._controller = controller
+    #     for key in self._checkboxes:
+    #         self._checkboxes[key].observe(self._toggle_mask, names="value")
+    #     if len(self._checkboxes):
+    #         self._all_masks_button.observe(self._toggle_all_masks, names="value")
 
     def values(self):
         """
@@ -88,7 +95,7 @@ class MaskWidget:
     def _toggle_mask(self, _):
         if self._lock:
             return
-        self._controller.update()
+        self._callback()
 
     def _toggle_all_masks(self, change):
         """
@@ -100,4 +107,18 @@ class MaskWidget:
         change["owner"].description = "Hide all" if change["new"] else \
             "Show all"
         self._lock = False
-        self._toggle_mask(None)
+        # self._toggle_mask(None)
+        self._callback()
+
+
+def _hide_masks(model, masks):
+    out = model.copy()
+    for name, value in masks.items():
+        if not value:
+            del out.masks[name]
+    return out
+
+
+class MaskStep(Step):
+    def __init__(self, model):
+        super().__init__(func=_hide_masks, widget=MaskWidget(masks=model.masks))

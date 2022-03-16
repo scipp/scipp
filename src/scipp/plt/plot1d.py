@@ -46,11 +46,11 @@ def plot1d(data_array_dict,
                   norm=params["values"]["norm"],
                   legend=legend)
 
-    model = Model1d(data_array_dict)
+    # model = Model1d(data_array_dict)
 
     sp = Plot(
-        data_array_dict=data_array_dict,
-        model=model,
+        # data_array_dict=data_array_dict,
+        models=data_array_dict,
         view=view,
         controller=Controller1d,
         # norm=params["values"]["norm"],

@@ -43,60 +43,6 @@ def to_bin_edges(x, dim):
         return concat([left, center, right], dim)
 
 
-def parse_params(params=None, defaults=None, globs=None, array=None):
-    """
-    Construct the colorbar settings using default and input values
-    """
-    from matplotlib.colors import Normalize, LogNorm, LinearSegmentedColormap
-    from matplotlib import cm
-
-    parsed = dict(config['plot']['params'])
-    if defaults is not None:
-        for key, val in defaults.items():
-            parsed[key] = val
-    if globs is not None:
-        for key, val in globs.items():
-            # Global parameters need special treatment because by default they
-            # are set to None, and we don't want to overwrite the defaults.
-            if val is not None:
-                parsed[key] = val
-    if params is not None:
-        if isinstance(params, bool):
-            params = {"show": params}
-        for key, val in params.items():
-            parsed[key] = val
-
-    # if parsed["norm"] == "log":
-    #     norm = LogNorm
-    # elif parsed["norm"] == "linear":
-    #     norm = Normalize
-    # else:
-    #     raise RuntimeError("Unknown norm. Expected 'linear' or 'log', "
-    #                        "got {}.".format(parsed["norm"]))
-    # vmin = parsed["vmin"]
-    # vmax = parsed["vmax"]
-    # parsed["norm"] = norm(vmin=vmin.value if vmin is not None else None,
-    #                       vmax=vmax.value if vmax is not None else None)
-
-    # Convert color into custom colormap
-    if parsed["color"] is not None:
-        parsed["cmap"] = LinearSegmentedColormap.from_list(
-            "tmp", [parsed["color"], parsed["color"]])
-    else:
-        parsed["cmap"] = copy(cm.get_cmap(parsed["cmap"]))
-
-    if parsed["under_color"] is None:
-        parsed["cmap"].set_under(parsed["cmap"](0.0))
-    else:
-        parsed["cmap"].set_under(parsed["under_color"])
-    if parsed["over_color"] is None:
-        parsed["cmap"].set_over(parsed["cmap"](1.0))
-    else:
-        parsed["cmap"].set_over(parsed["over_color"])
-
-    return parsed
-
-
 def vars_to_err(v):
     """
     Convert variances to errors.

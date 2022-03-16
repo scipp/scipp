@@ -77,7 +77,7 @@ class View2d(View):
         """
         return
 
-    def update(self, new_values=None):
+    def update(self, new_values=None, draw=True):
         """
         Update image array with new values.
         """
@@ -116,7 +116,8 @@ class View2d(View):
             rgba[one_mask] = self._mask_cmap(self._norm_func(flat_values[one_mask]))
 
         self._image.set_facecolors(rgba)
-        self.draw()
+        if draw:
+            self.draw()
 
     def _set_norm(self):
         vmin, vmax = self._make_limits()

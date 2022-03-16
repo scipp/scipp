@@ -11,11 +11,11 @@ class Model:
     def __init__(self, data_array):
         self._data_array = data_array
 
-    def update(self, data_processors):
-        out = self._data_array
-        for p in data_processors:
-            out = p.func(out, p.values)
-        return out
+    # def update(self, data_processors):
+    #     out = self._data_array
+    #     for p in data_processors:
+    #         out = p.func(out, p.values)
+    #     return out
 
 
 # class DataArrayDict(dict):

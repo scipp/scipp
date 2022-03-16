@@ -1,144 +1,318 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .._scipp import core as sc
-from .. import typing
-from ..compat.dict import from_dict
-from .dispatch import dispatch
-from .objects import PlotDict
-from .tools import get_line_param
-import numpy as np
-import itertools
+from .. import config, units
+# from .formatters import make_formatter
+from .params import make_params
+from ..core import DimensionError
+# from .model1d import PlotModel1d
+from .widgets import WidgetCollection
+# from .resampling_model import ResamplingMode
+# from .preprocessors import make_default_preprocessors
+from .slicing_step import SlicingStep
+from .mask_step import MaskStep
 
 
-def _ndarray_to_variable(ndarray):
+def _make_errorbar_params(arrays, errorbars):
     """
-    Convert a numpy ndarray to a Variable.
-    Fake dimension labels begin at 'x' and cycle through the alphabet.
+    Determine whether error bars should be plotted or not.
     """
-    dims = [f"axis-{i}" for i in range(len(ndarray.shape))]
-    return sc.Variable(dims=dims, values=ndarray)
-
-
-def _make_plot_key(plt_key, all_keys):
-    if plt_key in all_keys:
-        key_gen = (f'{plt_key}_{i}' for i in itertools.count(1))
-        plt_key = next(x for x in key_gen if x not in all_keys)
-    return plt_key
-
-
-def _brief_str(obj):
-    sizes = ', '.join([f'{dim}: {size}' for dim, size in obj.sizes.items()])
-    return f'scipp.{type(obj).__name__}({sizes})'
-
-
-def _input_to_data_array(item, all_keys, key=None):
-    """
-    Convert an input for the plot function to a DataArray or a dict of
-    DataArrays.
-    """
-    to_plot = {}
-    if isinstance(item, sc.Dataset):
-        for name in sorted(item.keys()):
-            if typing.has_numeric_type(item[name]):
-                proto_plt_key = f'{key}_{name}' if key else name
-                to_plot[_make_plot_key(proto_plt_key, all_keys)] = item[name]
-    elif isinstance(item, sc.Variable):
-        if typing.has_numeric_type(item):
-            if key is None:
-                key = _brief_str(item)
-            to_plot[_make_plot_key(key, all_keys)] = sc.DataArray(data=item)
-    elif isinstance(item, sc.DataArray):
-        if typing.has_numeric_type(item):
-            if key is None:
-                key = item.name
-            to_plot[_make_plot_key(key, all_keys)] = item
-    elif isinstance(item, np.ndarray):
-        if key is None:
-            key = str(type(item))
-        to_plot[_make_plot_key(
-            key, all_keys)] = sc.DataArray(data=_ndarray_to_variable(item))
+    if errorbars is None:
+        params = {}
     else:
-        raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
-                           "a Dataset, a DataArray, a Variable (and their "
-                           "respective views), a numpy ndarray, and a dict of "
-                           "Variables, DataArrays or ndarrays".format(type(item)))
-    return to_plot
+        if isinstance(errorbars, bool):
+            params = {name: errorbars for name in arrays}
+        elif isinstance(errorbars, dict):
+            params = errorbars
+        else:
+            raise TypeError("Unsupported type for argument "
+                            "'errorbars': {}".format(type(errorbars)))
+    for name, array in arrays.items():
+        has_variances = array.variances is not None
+        if name in params:
+            params[name] &= has_variances
+        else:
+            params[name] = has_variances
+    return params
 
 
-def plot(scipp_obj, projection=None, operation="sum", **kwargs):
+def _make_formatters(*, dims, arrays, labels):
+    array = next(iter(arrays.values()))
+    labs = {dim: dim for dim in dims}
+    if labels is not None:
+        labs.update(labels)
+    # formatters = {dim: make_formatter(array, labs[dim], dim) for dim in dims}
+    formatters = {}
+    return labs, formatters
+
+
+def make_profile(ax, mask_color):
+    from .profile import PlotProfile
+    cfg = config['plot']
+    bbox = list(cfg['bounding_box'])
+    bbox[2] = 0.77
+    return PlotProfile(ax=ax,
+                       mask_color=mask_color,
+                       figsize=(1.3 * cfg['width'] / cfg['dpi'],
+                                0.6 * cfg['height'] / cfg['dpi']),
+                       bounding_box=bbox,
+                       legend={
+                           "show": True,
+                           "loc": (1.02, 0.0)
+                       })
+
+
+class PlotDict():
     """
-    Wrapper function to plot a scipp object.
-
-    Possible inputs are:
-      - Variable
-      - Dataset
-      - DataArray
-      - numpy ndarray
-      - dict of Variables
-      - dict of DataArrays
-      - dict of numpy ndarrays
-      - dict that can be converted to a Scipp object via `from_dict`
-
-    1D Variables are grouped onto the same axes if they have the same dimension
-    and the same unit.
-
-    Any other Variables are displayed in their own figure.
-
-    Returns a Plot object which can be displayed in a Jupyter notebook.
+    The Plot object is used as output for the plot command.
+    It is a small wrapper around python dict, with an `_ipython_display_`
+    representation.
+    The dict will contain one entry for each entry in the input supplied to
+    the plot function.
+    More functionalities can be added in the future.
     """
+    def __init__(self, *args, **kwargs):
+        self._items = dict(*args, **kwargs)
 
-    # Decompose the input and return a dict of DataArrays.
-    inventory = {}
-    if isinstance(scipp_obj, dict):
-        try:
-            inventory.update(
-                _input_to_data_array(from_dict(scipp_obj), all_keys=inventory.keys()))
-        except:  # noqa: E722
-            for key, item in scipp_obj.items():
-                inventory.update(
-                    _input_to_data_array(item, all_keys=inventory.keys(), key=key))
-    else:
-        inventory.update(_input_to_data_array(scipp_obj, all_keys=inventory.keys()))
+    def __getitem__(self, key):
+        return self._items[key]
 
-    # Counter for 1d/event data
-    line_count = -1
+    def __len__(self):
+        return len(self._items)
 
-    # Create a list of variables which will then be dispatched to correct
-    # plotting function.
-    # Search through the variables and group the 1D datasets that have
-    # the same coordinates and units.
-    # tobeplotted is a dict that holds four items:
-    # {number_of_dimensions, Dataset, axes, line_parameters}.
-    tobeplotted = dict()
-    for name, item in sorted(inventory.items()):
-        if item.bins is not None:
-            item = getattr(item.bins, operation)()
-        ndims = len(item.dims)
-        if (ndims > 0) and (np.sum(item.shape) > 0):
-            if ndims == 1 or projection == "1d" or projection == "1D":
-                key = f"{item.dims}.{item.unit}"
-                line_count += 1
-            else:
-                key = name
+    def keys(self):
+        return self._items.keys()
 
-            if key not in tobeplotted.keys():
-                tobeplotted[key] = dict(ndims=ndims, scipp_obj_dict=dict())
-            tobeplotted[key]["scipp_obj_dict"][name] = item
+    def values(self):
+        return self._items.values()
 
-    # Plot all the subsets
-    output = PlotDict()
-    for key, val in tobeplotted.items():
-        output._items[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-                                      ndim=val["ndims"],
-                                      projection=projection,
-                                      **kwargs)
+    def items(self):
+        return self._items.items()
 
-    if len(output) > 1:
-        return output
-    elif len(output) > 0:
-        return output._items[list(output.keys())[0]]
-    else:
-        raise ValueError("Input contains nothing that can be plotted. "
-                         "Input may be of dtype vector or string, "
-                         f"or may have zero dimensions:\n{scipp_obj}")
+    def _ipython_display_(self):
+        """
+        IPython display representation for Jupyter notebooks.
+        """
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+        """
+        Return plot contents into a single VBocx container
+        """
+        import ipywidgets as ipw
+        contents = []
+        for item in self.values():
+            if item is not None:
+                contents.append(item._to_widget())
+        return ipw.VBox(contents)
+
+    def show(self):
+        """
+        """
+        for item in self.values():
+            item.show()
+
+    def hide_widgets(self):
+        for item in self.values():
+            item.hide_widgets()
+
+    def close(self):
+        """
+        Close all plots in dict, making them static.
+        """
+        for item in self.values():
+            item.close()
+
+    def redraw(self):
+        """
+        Redraw/update  all plots in dict.
+        """
+        for item in self.values():
+            item.redraw()
+
+    def set_draw_no_delay(self, value):
+        """
+        When set to True, try to update plots as soon as possible.
+        This is useful in the case where one wishes to update the plot inside
+        a loop (e.g. when listening to a data stream).
+        The plot update is then slightly more expensive than when it is set to
+        False.
+        """
+        for item in self.values():
+            item.set_draw_no_delay(value)
+
+
+class Plot:
+    """
+    Base class for plot objects. It uses the Model-View-Controller pattern to
+    separate displayed figures and user-interaction via widgets from the
+    operations performed on the data.
+
+    It contains:
+      - a `PlotModel`: contains the input data and performs all the heavy
+          calculations.
+      - a `PlotView`: contains a `PlotFigure` which is displayed and handles
+          communications between `PlotController` and `PlotFigure`, as well as
+          updating the `PlotProfile` depending on signals captured by the
+          `PlotFigure`.
+      - some `PlotWidgets`: a base collection of sliders and buttons which
+          provide interactivity to the user.
+      - a `PlotPanel` (optional): an extra set of widgets which is not part of
+          the base `PlotWidgets`.
+      - a `PlotProfile` (optional): used to display a profile plot under the
+          `PlotFigure` to show one of the slider dimensions as a 1 dimensional
+          line plot.
+      - a `PlotController`: handles all the communication between all the
+          pieces above.
+    """
+    def __init__(
+            self,
+            models,
+            controller,
+            # model=None,
+            profile_figure=None,
+            errorbars=None,
+            panel=None,
+            labels=None,
+            resolution=None,
+            dims=None,
+            view=None,
+            vmin=None,
+            vmax=None,
+            axes=None,
+            scale=None,
+            view_ndims=None):
+
+        # self._data_array_dict = data_array_dict
+        self.panel = panel
+        self.profile = None
+        self.widgets = None
+
+        self._view = view
+        self._models = models
+
+        self.show_widgets = True
+        self.view_ndims = view_ndims
+
+        # Shortcut access to the underlying figure for easier modification
+        self.fig = None
+        self.ax = None
+
+        # TODO use option to provide keys here
+        array = next(iter(self._models.values()))
+
+        self._name = list(self._models.keys())[0]
+        if dims is None:
+            self._dims = self._models[self._name].dims
+        else:
+            self._dims = dims
+
+        # # errorbars = _make_errorbar_params(data_array_dict, errorbars)
+        # # figure.errorbars = errorbars
+        # # if profile_figure is not None:
+        # #     profile_figure.errorbars = errorbars
+        # labels, formatters = _make_formatters(arrays=data_array_dict,
+        #                                       labels=labels,
+        #                                       dims=self.dims)
+        # # self.profile = profile_figure
+        # self.view = view(**kwargs)
+
+        # self.preprocessors = make_default_preprocessors(array, ndim=self.view_ndims)
+
+        self._widgets = WidgetCollection()
+
+        #     [
+        #     SliderWidget(
+        #         dims=self.dims,
+        #         formatters=formatters,
+        #         ndim=self.view_ndims,
+        #         dim_label_map=labels,
+        #         # masks=self._data_array_dict,
+        #         sizes={dim: array.sizes[dim]
+        #                for dim in self.dims}),
+        #     MaskWidget(array.masks)
+        # ])
+
+        # self.model = model(data_array=array)
+        # profile_model = PlotModel1d(data_array_dict=self._data_array_dict)
+        self._controller = controller(
+            # dims=self.dims,
+            # preprocessors=self.preprocessors,
+            # widgets=self.widgets,
+            models=self._models,
+            view=self._view)
+
+        slicing_step = SlicingStep(model=array, ndim=view_ndims)
+        self._controller.add_pipeline_step(slicing_step)
+        self._widgets.append(slicing_step.widget)
+
+        for key, model in self._models.items():
+            mask_step = MaskStep(model=model)
+            self._controller.add_pipeline_step(key=key, step=mask_step)
+            self._widgets.append(mask_step.widget)
+
+        self._render()
+
+    def _ipython_display_(self):
+        """
+        IPython display representation for Jupyter notebooks.
+        """
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+        """
+        Get the SciPlot object as an `ipywidget`.
+        """
+        import ipywidgets as ipw
+        widget_list = [self._view._to_widget()]
+        # if self.profile is not None:
+        #     widget_list.append(self.profile._to_widget())
+        if self.show_widgets:
+            widget_list.append(self._widgets._to_widget())
+        # if self.panel is not None and self.show_widgets:
+        #     widget_list.append(self.panel._to_widget())
+
+        return ipw.VBox(widget_list)
+
+    def hide_widgets(self):
+        """
+        Hide widgets for 1d and 2d (matplotlib) figures
+        """
+        self.show_widgets = False if self.view_ndims < 3 else True
+
+    def close(self):
+        """
+        Send close signal to the view.
+        """
+        self._view.close()
+
+    def show(self):
+        """
+        Call the show() method of a matplotlib figure.
+        """
+        self._view.show()
+
+    def _render(self):
+        """
+        Perform some initial calls to render the figure once all components
+        have been created.
+        """
+        self._controller.render()
+        self.fig = getattr(self._view, "fig", None)
+        self.ax = getattr(self._view, "ax", None)
+
+    def savefig(self, filename=None):
+        """
+        Save plot to file.
+        Possible file extensions are `.jpg`, `.png` and `.pdf`.
+        The default directory for writing the file is the same as the
+        directory where the script or notebook is running.
+        """
+        self.view.savefig(filename=filename)
+
+    def redraw(self):
+        """
+        Redraw the plot. Use this to update a figure when the underlying data
+        has been modified.
+        """
+        self.controller.redraw()
