@@ -18,7 +18,7 @@ def roundtrip(obj):
 
 def check_roundtrip(obj):
     result = roundtrip(obj)
-    assert sc.identical(result, obj, equal_nan=True)
+    assert sc.identical(result, obj)
     return result  # for optional addition tests
 
 
