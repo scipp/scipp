@@ -16,10 +16,10 @@ if _debug_:
     )
 
 from .._scipp import __version__
-from .._scipp.core import Coords, DataArray, Dataset, DType, GroupByDataArray,\
+from .cpp_classes import Coords, DataArray, Dataset, DType, GroupByDataArray,\
                          GroupByDataset, Masks, Unit, Variable
 # Import errors
-from .._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
+from .cpp_classes import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
                          DTypeError, SizeError, SliceError, \
                          UnitError, VariableError, VariancesError

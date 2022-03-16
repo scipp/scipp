@@ -38,16 +38,19 @@ void init_generated_special_values(py::module &);
 
 void init_core(py::module &m) {
   auto core = m.def_submodule("core");
+  // Bind classes before any functions that use them to make sure that
+  // pybind11 puts proper type annotations into the docstrings.
   init_units(core);
   init_exceptions(core);
   init_dtype(core);
   init_variable(core);
-  init_buckets(core);
+  init_dataset(core);
+
   init_choose(core);
   init_counts(core);
   init_creation(core);
   init_cumulative(core);
-  init_dataset(core);
+  init_buckets(core);
   init_groupby(core);
   init_comparison(core);
   init_operations(core);
