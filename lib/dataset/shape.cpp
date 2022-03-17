@@ -307,22 +307,26 @@ Dataset transpose(const Dataset &d, const scipp::span<const Dim> dims) {
       d, [](auto &&... _) { return transpose(_...); }, dims);
 }
 
-DataArray squeeze(const DataArray &a,
-                  const std::optional<scipp::span<const Dim>> dims) {
-  auto squeezed = a;
-  for (const auto &dim : dims_for_squeezing(a.dims(), dims)) {
+namespace {
+template <class T>
+T squeeze_impl(const T &x, const std::optional<scipp::span<const Dim>> dims) {
+  auto squeezed = x;
+  for (const auto &dim : dims_for_squeezing(x.dims(), dims)) {
     squeezed = squeezed.slice({dim, 0});
   }
-  return squeezed;
+  // Copy explicitly to make sure the output does not have its read-only flag
+  // set.
+  return T(squeezed);
+}
+} // namespace
+DataArray squeeze(const DataArray &a,
+                  const std::optional<scipp::span<const Dim>> dims) {
+  return squeeze_impl(a, dims);
 }
 
 Dataset squeeze(const Dataset &d,
                 const std::optional<scipp::span<const Dim>> dims) {
-  auto squeezed = d;
-  for (const auto &dim : dims_for_squeezing(d.dims(), dims)) {
-    squeezed = squeezed.slice({dim, 0});
-  }
-  return squeezed;
+  return squeeze_impl(d, dims);
 }
 
 } // namespace scipp::dataset

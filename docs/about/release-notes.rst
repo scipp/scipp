@@ -14,6 +14,7 @@ Features
 * Added advanced indexing support: boolean variable indexing `#2477 <https://github.com/scipp/scipp/pull/2477>`_.
 * Added or exposed to Python more functions for boolean logic `#2480 <https://github.com/scipp/scipp/pull/2480>`_, `#2489 <https://github.com/scipp/scipp/pull/2489>`_.
 * ``broadcast`` now supports :class:`scipp.DataArray`, and the ``sizes`` argument `#2488 <https://github.com/scipp/scipp/pull/2488>`_.
+* The output of :py:`squeeze` is no longer read-only `2494 <https://github.com/scipp/scipp/pull/2494>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
