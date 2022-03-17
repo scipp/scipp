@@ -213,10 +213,10 @@ class Plot:
         self._controller.add_pipeline_step(slicing_step)
         self._widgets.append(slicing_step)
 
-        # for key, model in self._models.items():
-        #     mask_step = MaskStep(masks=model.masks, name=key)
-        #     self._controller.add_pipeline_step(key=key, step=mask_step)
-        #     self._widgets.append(mask_step)
+        for key, model in self._models.items():
+            mask_step = MaskStep(masks=model.masks, name=key)
+            self._controller.add_pipeline_step(key=key, step=mask_step)
+            self._widgets.append(mask_step)
 
         self._render()
 

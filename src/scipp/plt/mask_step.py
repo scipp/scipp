@@ -23,7 +23,7 @@ class MaskWidget:
                                                  description=f"{escape(key)}",
                                                  indent=False,
                                                  layout={"width": "initial"})
-            self._checkboxes[key].observe(self._toggle_mask, names="value")
+            # self._checkboxes[key].observe(self._toggle_mask, names="value")
 
         if len(self._checkboxes):
             self._label = ipw.Label(value=f"Masks: {name}")
@@ -61,10 +61,15 @@ class MaskWidget:
             ]
         return out
 
-    def set_callback(self, callback):
-        self._callback = callback
+    def observe(self, callback, **kwargs):
+        for chbx in self._checkboxes.values():
+            chbx.observe(self._toggle_mask, **kwargs)
+        if len(self._checkboxes):
+            self._all_masks_button.observe(self._toggle_all_masks, **kwargs)
+        self._callback = partial(callback, change=None)
 
-    def values(self):
+    @property
+    def value(self):
         """
         """
         return {key: chbx.value for key, chbx in self._checkboxes.items()}
@@ -97,4 +102,4 @@ def _hide_masks(model, masks):
 
 class MaskStep(WidgetStep):
     def __init__(self, **kwargs):
-        super().__init__(func=_hide_masks, widget=MaskWidget(**kwargs))
+        super().__init__(func=_hide_masks, widgets={"masks": MaskWidget(**kwargs)})

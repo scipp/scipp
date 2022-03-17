@@ -49,7 +49,7 @@ class WidgetStep(Step):
         self._update_func()
         #self_update_func()
         for callback in self._callbacks:
-            callback()  # c will call Step.__call__
+            callback()  # callback will call Step.__call__
 
     def _ipython_display_(self):
         """

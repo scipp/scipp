@@ -86,7 +86,6 @@ class SlicingWidget:
 
     def observe(self, callback, **kwargs):
         """
-        Get the current range covered by the thick slice.
         """
         for dim in self._controls:
             self._controls[dim]['slider'].observe(callback, **kwargs)
