@@ -95,11 +95,11 @@ class SlicingWidget:
     def value(self):
         return {dim: self._controls[dim]['slider'].value for dim in self._slider_dims}
 
-    def _changed(self, change):
-        change = {"new": self.value}
-        super()._changed(change)
+    # def _changed(self, change):
+    #     change = {"new": self.value}
+    #     super()._changed(change)
 
-        # return {dim: self._controls[dim]['slider'].value for dim in self._slider_dims}
+    # return {dim: self._controls[dim]['slider'].value for dim in self._slider_dims}
 
     # def update_slider_readout(self, bounds):
     #     """
@@ -138,29 +138,34 @@ def _slicing_func(model, slices):
 
 class SlicingStep(WidgetStep):
     def __init__(self, **kwargs):
-        super().__init__(func=_slicing_func, widget=SlicingWidget(**kwargs))
+        super().__init__(func=_slicing_func,
+                         widgets={"slices": SlicingWidget(**kwargs)})
 
 
-########################################################################################
+# ########################################################################################
 
+# def smooth(da, radius):
+#     return da.smoothed(radius)
 
-def smooth(da, radius):
-    return da.smoothed(radius)
+# class SmoothingStep(WidgetStep):
+#     def __init__(self, **kwargs):
+#         super().__init__(func=smooth, widget=ipw.FloatSlider(min=0, max=10))
 
+# def resample(da, nx, ny):
+#     return da.resample(nx, ny)
 
-class SmoothingStep(WidgetStep):
-    def __init__(self, **kwargs):
-        super().__init__(func=smooth, widget=ipw.FloatSlider(min=0, max=10))
+# class ResamplingStep(WidgetStep):
+#     def __init__(self, **kwargs):
+#         widgets = {"nx": ipw.IntText(), "ny": ipw.IntText()}
+#         super().__init__(func=smooth, widget=widgets)
 
+# def add_noise(da):
+#     out = da.copy()
+#     data = out.values
+#     noise = np.random.random(data.shape)
+#     data += noise
+#     return out
 
-def add_noise(da):
-    out = da.copy()
-    data = out.values
-    noise = np.random.random(data.shape)
-    data += noise
-    return out
-
-
-class NoiseStep(Step):
-    def __init__(self, **kwargs):
-        super().__init__(func=smooth)
+# class NoiseStep(Step):
+#     def __init__(self, **kwargs):
+#         super().__init__(func=smooth)
