@@ -56,7 +56,6 @@ def scalar_numeric_dtypes() -> st.SearchStrategy:
 
 
 def _variables_from_fixed_args(args: dict) -> st.SearchStrategy:
-
     def make_array():
         return npst.arrays(args['dtype'],
                            tuple(args['sizes'].values()),
@@ -72,7 +71,6 @@ def _variables_from_fixed_args(args: dict) -> st.SearchStrategy:
 
 
 class _ConditionallyWithVariances:
-
     def __init__(self):
         self._strategy = st.booleans()
 
@@ -84,7 +82,6 @@ class _ConditionallyWithVariances:
 
 @st.composite
 def _concrete_args(draw, args: dict) -> st.SearchStrategy:
-
     def _draw(x):
         return draw(x) if isinstance(x, st.SearchStrategy) else x
 
@@ -192,7 +189,6 @@ def coord_dicts(draw, *, coords, sizes, args=None) -> dict:
 
 
 class _NotSetType:
-
     def __repr__(self):
         return 'Default'
 
