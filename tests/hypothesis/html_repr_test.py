@@ -22,3 +22,4 @@ def test_html_repr_array(var):
 @given(scst.dataarrays())
 def test_html_repr_data_array(da):
     sc.make_html(da)
+    assert False
