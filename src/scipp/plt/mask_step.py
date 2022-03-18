@@ -1,19 +1,22 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
+from ..core import DataArray
+from .widgets import WidgetStep
+from ..typing import MetaDataMap
+
 from functools import partial
 from html import escape
-from ..utils import value_to_string
-from .step import WidgetStep
+import ipywidgets as ipw
+from typing import Callable
 
 
 class MaskWidget:
     """
     Widget providing buttons to hide/show masks.
     """
-    def __init__(self, masks, name):
+    def __init__(self, masks: MetaDataMap, name: str):
 
-        import ipywidgets as ipw
         self._callback = None
 
         self._checkboxes = {}
@@ -47,11 +50,10 @@ class MaskWidget:
         """
         return self._to_widget()._ipython_display_()
 
-    def _to_widget(self):
+    def _to_widget(self) -> ipw.Widget:
         """
         Gather all widgets in a single container box.
         """
-        import ipywidgets as ipw
         out = ipw.HBox()
         if len(self._checkboxes):
             out.children = [
@@ -61,7 +63,7 @@ class MaskWidget:
             ]
         return out
 
-    def observe(self, callback, **kwargs):
+    def observe(self, callback: Callable, **kwargs):
         for chbx in self._checkboxes.values():
             chbx.observe(self._toggle_mask, **kwargs)
         if len(self._checkboxes):
@@ -69,7 +71,7 @@ class MaskWidget:
         self._callback = partial(callback, change=None)
 
     @property
-    def value(self):
+    def value(self) -> dict:
         """
         """
         return {key: chbx.value for key, chbx in self._checkboxes.items()}
@@ -79,7 +81,7 @@ class MaskWidget:
             return
         self._callback()
 
-    def _toggle_all_masks(self, change):
+    def _toggle_all_masks(self, change: dict):
         """
         A main button to hide or show all masks at once.
         """
@@ -92,7 +94,7 @@ class MaskWidget:
         self._callback()
 
 
-def _hide_masks(model, masks):
+def _hide_masks(model: DataArray, masks: MetaDataMap) -> DataArray:
     out = model.copy()
     for name, value in masks.items():
         if not value:

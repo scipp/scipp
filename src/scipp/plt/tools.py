@@ -2,15 +2,17 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .. import config, units
-from ..core import concat, values, scalar, histogram, full_like
-from ..core import DType, Variable, DataArray
-from ..core import abs as abs_
-import numpy as np
-from copy import copy
+from ..core import concat, values, scalar, histogram, full_like, Variable, DataArray
+from ..core import abs as abs_, flatten, ones
+from ..typing import MetaDataMap
+
 import io
+import numpy as np
+from numpy.typing import ArrayLike
+from typing import Any, Dict, Tuple
 
 
-def get_line_param(name, index):
+def get_line_param(name: str, index: int) -> Any:
     """
     Get the default line parameter from the config.
     If an index is supplied, return the i-th item in the list.
@@ -19,14 +21,14 @@ def get_line_param(name, index):
     return param[index % len(param)]
 
 
-def to_bin_centers(x, dim):
+def to_bin_centers(x: Variable, dim: str) -> Variable:
     """
     Convert array edges to centers
     """
     return 0.5 * (x[dim, 1:] + x[dim, :-1])
 
 
-def to_bin_edges(x, dim):
+def to_bin_edges(x: Variable, dim: str) -> Variable:
     """
     Convert array centers to edges
     """
@@ -43,7 +45,7 @@ def to_bin_edges(x, dim):
         return concat([left, center, right], dim)
 
 
-def vars_to_err(v):
+def vars_to_err(v: ArrayLike) -> ArrayLike:
     """
     Convert variances to errors.
     """
@@ -53,14 +55,13 @@ def vars_to_err(v):
     return v
 
 
-def find_log_limits(x):
+def find_log_limits(x: Variable) -> Tuple[Variable, ...]:
     """
     To find log scale limits, we histogram the data between 1.0-30
     and 1.0e+30 and include only bins that are non-zero.
     """
-    from .. import flatten, ones
     volume = np.product(x.shape)
-    pixel = flatten(values(x.astype(DType.float64)), to='pixel')
+    pixel = flatten(values(x.astype('float64')), to='pixel')
     weights = ones(dims=['pixel'], shape=[volume], unit='counts')
     hist = histogram(DataArray(data=weights, coords={'order': pixel}),
                      bins=Variable(dims=['order'],
@@ -83,10 +84,10 @@ def find_log_limits(x):
     else:
         vmin = hist.coords['order']['order', ar.min()]
         vmax = hist.coords['order']['order', ar.max() + 1]
-    return [vmin, vmax]
+    return (vmin, vmax)
 
 
-def find_linear_limits(x):
+def find_linear_limits(x: Variable) -> Tuple[Variable, ...]:
     """
     Find variable finite min and max.
     TODO: If we implement finitemin and finitemax for Variable, we would no longer need
@@ -96,13 +97,13 @@ def find_linear_limits(x):
     finite_vals = v[np.isfinite(v)]
     finite_min = np.amin(finite_vals)
     finite_max = np.amax(finite_vals)
-    return [
-        scalar(finite_min, unit=x.unit, dtype='float64'),
-        scalar(finite_max, unit=x.unit, dtype='float64')
-    ]
+    return (scalar(finite_min, unit=x.unit,
+                   dtype='float64'), scalar(finite_max, unit=x.unit, dtype='float64'))
 
 
-def find_limits(x, scale=None, flip=False):
+def find_limits(x: Variable,
+                scale: str = None,
+                flip: bool = False) -> Dict[str, Variable]:
     """
     Find sensible limits, depending on linear or log scale.
     """
@@ -119,7 +120,8 @@ def find_limits(x, scale=None, flip=False):
     return lims
 
 
-def fix_empty_range(lims, replacement=None):
+def fix_empty_range(lims: Tuple[Variable, ...],
+                    replacement: Variable = None) -> Tuple[Variable, ...]:
     """
     Range correction in case xmin == xmax
     """
@@ -134,7 +136,7 @@ def fix_empty_range(lims, replacement=None):
     return [lims[0] - dx, lims[1] + dx]
 
 
-def fig_to_pngbytes(fig):
+def fig_to_pngbytes(fig: Any):
     """
     Convert figure to png image bytes.
     We also close the figure to prevent it from showing up again in
@@ -148,7 +150,7 @@ def fig_to_pngbytes(fig):
     return buf.getvalue()
 
 
-def to_dict(meta):
+def to_dict(meta: MetaDataMap) -> Dict[str, Variable]:
     """
     Convert a coords, meta, attrs or masks object to a python dict.
     """

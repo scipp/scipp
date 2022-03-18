@@ -1,24 +1,24 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ..units import one
-from .pipeline import Pipeline
-import numpy as np
-from dataclasses import dataclass
-from typing import Callable
+from ..core import DataArray
+from .pipeline import Pipeline, Step
+from .view import View
+
 from functools import partial
+from typing import Dict
 
 
 class Controller:
     """
     Controller class plots.
     """
-    def __init__(self, models, view):
+    def __init__(self, models: Dict[str, DataArray], view: View):
         self._models = models
         self._view = view
         self._pipelines = {key: Pipeline() for key in self._models}
 
-    def add_pipeline_step(self, step, key=None):
+    def add_pipeline_step(self, step: Step, key: str = None):
         if key is None:
             for pipeline in self._pipelines.values():
                 pipeline.append(step)
@@ -35,6 +35,6 @@ class Controller:
             self._run_pipeline(key, draw=False)
         self._view.draw()
 
-    def _run_pipeline(self, key, draw=True):
+    def _run_pipeline(self, key: str, draw: bool = True):
         new_values = self._pipelines[key].run(self._models[key])
         self._view.update(new_values, key=key, draw=draw)

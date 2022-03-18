@@ -1,27 +1,24 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .view import View
+from ..core import Variable, scalar, DataArray
 from .toolbar import Toolbar1d
-from .tools import get_line_param, find_limits, fix_empty_range
+from .tools import get_line_param, find_limits, fix_empty_range, vars_to_err
 from ..utils import name_with_unit
-from ..core import Variable, scalar
-import numpy as np
-import copy as cp
-import warnings
-from .. import config
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-from .. import units
-import ipywidgets as ipw
+from .view import View
+
 from functools import reduce
+import numpy as np
+from numpy.typing import ArrayLike
+from typing import Any, Tuple, Union
+import warnings
 
 
-def _make_label(array):
+def _make_label(array: DataArray) -> str:
     # TODO use formatter
     labels = []
     for dim, coord in array.meta.items():
-        unit = '' if coord.unit == units.dimensionless else f' {coord.unit}'
+        unit = '' if coord.unit == 'dimensionless' else f' {coord.unit}'
         if dim not in array.dims:
             labels.append(f'{dim}={coord.values.round(decimals=2)}{unit}')
     return ', '.join(labels)
@@ -44,17 +41,17 @@ class View1d(View):
     previously saved line.
     """
     def __init__(self,
-                 ax=None,
-                 title=None,
-                 norm=None,
-                 grid=False,
-                 mask_color=None,
-                 figsize=None,
-                 legend=None,
-                 bounding_box=None,
-                 xlabel=None,
-                 ylabel=None,
-                 errorbars=True):
+                 ax: Any = None,
+                 title: str = None,
+                 norm: str = None,
+                 grid: bool = False,
+                 mask_color: str = None,
+                 figsize: Tuple[float, ...] = None,
+                 legend: dict = None,
+                 bounding_box: Tuple[float, ...] = None,
+                 xlabel: str = None,
+                 ylabel: str = None,
+                 errorbars: bool = True):
 
         super().__init__(ax=ax,
                          figsize=figsize,
@@ -83,7 +80,7 @@ class View1d(View):
         if "loc" not in self.legend:
             self.legend["loc"] = 0
 
-    def _make_line(self, name, mask, hist, errorbars):
+    def _make_line(self, mask: Union[dict, None], hist: bool, errorbars: bool) -> Line:
         index = len(self._lines)
         line = Line()
         line.mpl_params = {
@@ -127,7 +124,7 @@ class View1d(View):
                                           fmt="none")
         return line
 
-    def _preprocess_hist(self, vals):
+    def _preprocess_hist(self, vals: dict) -> Tuple[dict, bool]:
         """
         Convert 1d data to be plotted to internal format, e.g., padding
         histograms and duplicating info for variances.
@@ -145,7 +142,7 @@ class View1d(View):
         vals["variances"]["y"] = y
         return vals, hist
 
-    def _make_data(self, new_values):
+    def _make_data(self, new_values: DataArray) -> dict:
         out = {"values": {}, "variances": {}, "mask": None}
         out['name'] = new_values.name
         out['label'] = _make_label(new_values)
@@ -161,7 +158,7 @@ class View1d(View):
             }
         return out
 
-    def update(self, new_values, key, draw=True):
+    def update(self, new_values: DataArray, key: str, draw: bool = True):
         """
         Update the x and y positions of the data points when a new data slice
         is received for display.
@@ -174,12 +171,9 @@ class View1d(View):
 
         errorbars = self.errorbars and len(new_values["variances"])
 
-        xmin = np.Inf
-        xmax = np.NINF
         vals, hist = self._preprocess_hist(new_values)
         if key not in self._lines:
-            self._lines[key] = self._make_line(key,
-                                               mask=new_values['mask'],
+            self._lines[key] = self._make_line(mask=new_values['mask'],
                                                hist=hist,
                                                errorbars=errorbars)
         line = self._lines[key]
@@ -202,7 +196,7 @@ class View1d(View):
         if draw:
             self.draw()
 
-    def _change_segments_y(self, x, y, e):
+    def _change_segments_y(self, x: ArrayLike, y: ArrayLike, e: ArrayLike) -> ArrayLike:
         """
         Update the positions of the errorbars when `update_data` is called.
         """
@@ -210,7 +204,7 @@ class View1d(View):
         arr2 = np.array([y - e, y + e]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
 
-    def rescale_to_data(self, button=None):
+    def rescale_to_data(self):
         """
         Rescale y axis to the contents of the plot.
         """
@@ -248,7 +242,7 @@ class View1d(View):
 
         self.draw()
 
-    def toggle_norm(self, change):
+    def toggle_norm(self, change: dict):
         """
         Set yscale to either "log" or "linear", depending on norm.
         """

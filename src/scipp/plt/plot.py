@@ -1,62 +1,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import config, units
-# from .formatters import make_formatter
-from .params import make_params
-from ..core import DimensionError
-# from .model1d import PlotModel1d
-from .widgets import WidgetCollection
-# from .resampling_model import ResamplingMode
-# from .preprocessors import make_default_preprocessors
-from .slicing_step import SlicingStep
+from .controller import Controller
+from ..core import DataArray, Variable
 from .mask_step import MaskStep
+from .slicing_step import SlicingStep
+from .view import View
+from .widgets import WidgetCollection
 
-# def _make_errorbar_params(arrays, errorbars):
-#     """
-#     Determine whether error bars should be plotted or not.
-#     """
-#     if errorbars is None:
-#         params = {}
-#     else:
-#         if isinstance(errorbars, bool):
-#             params = {name: errorbars for name in arrays}
-#         elif isinstance(errorbars, dict):
-#             params = errorbars
-#         else:
-#             raise TypeError("Unsupported type for argument "
-#                             "'errorbars': {}".format(type(errorbars)))
-#     for name, array in arrays.items():
-#         has_variances = array.variances is not None
-#         if name in params:
-#             params[name] &= has_variances
-#         else:
-#             params[name] = has_variances
-#     return params
-
-# def _make_formatters(*, dims, arrays, labels):
-#     array = next(iter(arrays.values()))
-#     labs = {dim: dim for dim in dims}
-#     if labels is not None:
-#         labs.update(labels)
-#     # formatters = {dim: make_formatter(array, labs[dim], dim) for dim in dims}
-#     formatters = {}
-#     return labs, formatters
-
-# def make_profile(ax, mask_color):
-#     from .profile import PlotProfile
-#     cfg = config['plot']
-#     bbox = list(cfg['bounding_box'])
-#     bbox[2] = 0.77
-#     return PlotProfile(ax=ax,
-#                        mask_color=mask_color,
-#                        figsize=(1.3 * cfg['width'] / cfg['dpi'],
-#                                 0.6 * cfg['height'] / cfg['dpi']),
-#                        bounding_box=bbox,
-#                        legend={
-#                            "show": True,
-#                            "loc": (1.02, 0.0)
-#                        })
+from typing import Dict
 
 
 class PlotDict():
@@ -66,7 +18,6 @@ class PlotDict():
     representation.
     The dict will contain one entry for each entry in the input supplied to
     the plot function.
-    More functionalities can be added in the future.
     """
     def __init__(self, *args, **kwargs):
         self._items = dict(*args, **kwargs)
@@ -109,34 +60,12 @@ class PlotDict():
         for item in self.values():
             item.show()
 
-    def hide_widgets(self):
-        for item in self.values():
-            item.hide_widgets()
-
     def close(self):
         """
         Close all plots in dict, making them static.
         """
         for item in self.values():
             item.close()
-
-    def redraw(self):
-        """
-        Redraw/update  all plots in dict.
-        """
-        for item in self.values():
-            item.redraw()
-
-    def set_draw_no_delay(self, value):
-        """
-        When set to True, try to update plots as soon as possible.
-        This is useful in the case where one wishes to update the plot inside
-        a loop (e.g. when listening to a data stream).
-        The plot update is then slightly more expensive than when it is set to
-        False.
-        """
-        for item in self.values():
-            item.set_draw_no_delay(value)
 
 
 class Plot:
@@ -163,24 +92,16 @@ class Plot:
           pieces above.
     """
     def __init__(self,
-                 models,
-                 controller,
-                 profile_figure=None,
-                 errorbars=None,
-                 panel=None,
-                 labels=None,
-                 resolution=None,
-                 dims=None,
-                 view=None,
-                 vmin=None,
-                 vmax=None,
-                 axes=None,
-                 scale=None,
-                 view_ndims=None):
+                 models: Dict[str, DataArray],
+                 controller: Controller,
+                 view: View = None,
+                 vmin: Variable = None,
+                 vmax: Variable = None,
+                 view_ndims: int = None):
 
         self._view = view
         self._models = models
-        self.view_ndims = view_ndims
+        self._view_ndims = view_ndims
 
         # Shortcut access to the underlying figure for easier modification
         self.fig = None
@@ -195,7 +116,9 @@ class Plot:
     def _add_default_pipeline_steps(self):
         # Add step for slicing dimensions out with sliders
         array = next(iter(self._models.values()))
-        slicing_step = SlicingStep(dims=array.dims, sizes=array.sizes, ndim=view_ndims)
+        slicing_step = SlicingStep(dims=array.dims,
+                                   sizes=array.sizes,
+                                   ndim=self._view_ndims)
         self._controller.add_pipeline_step(slicing_step)
         self._widgets.append(slicing_step)
 
@@ -238,7 +161,7 @@ class Plot:
         self.fig = getattr(self._view, "fig", None)
         self.ax = getattr(self._view, "ax", None)
 
-    def savefig(self, filename=None):
+    def savefig(self, filename: str = None):
         """
         Save plot to file.
         Possible file extensions are `.jpg`, `.png` and `.pdf`.

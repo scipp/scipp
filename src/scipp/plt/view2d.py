@@ -2,17 +2,16 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .. import config
-from .view import View
+from ..core import broadcast, DataArray
 from .toolbar import Toolbar2d
 from .tools import find_limits, fix_empty_range
 from ..utils import name_with_unit
-from ..core import broadcast
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize, LogNorm
-import math
-import warnings
+from .view import View
+
 from functools import reduce
+from matplotlib.colors import Normalize, LogNorm
+import matplotlib.pyplot as plt
+from typing import Any, Tuple
 
 
 class View2d(View):
@@ -20,31 +19,29 @@ class View2d(View):
     Class for 2 dimensional plots.
     """
     def __init__(self,
-                 ax=None,
-                 cax=None,
-                 figsize=None,
-                 aspect=None,
-                 cmap=None,
-                 masks=None,
-                 norm=None,
-                 name=None,
-                 resolution=None,
-                 extend=None,
-                 title=None,
-                 xlabel=None,
-                 ylabel=None,
-                 grid=False):
+                 ax: Any = None,
+                 cax: Any = None,
+                 figsize: Tuple[float, ...] = None,
+                 aspect: str = None,
+                 cmap: str = None,
+                 masks: dict = None,
+                 norm: str = None,
+                 extend: bool = None,
+                 title: str = None,
+                 xlabel: str = None,
+                 ylabel: str = None,
+                 grid: bool = False):
 
         super().__init__(ax=ax,
                          figsize=figsize,
-                         title=name if title is None else title,
+                         title=title,
                          xlabel=xlabel,
                          ylabel=ylabel,
                          toolbar=Toolbar2d,
                          grid=grid)
 
-        if aspect is None:
-            aspect = config['plot']['aspect']
+        # if aspect is None:
+        #     aspect = config['plot']['aspect']
 
         self._cmap = cmap
         self._cax = cax
@@ -55,8 +52,10 @@ class View2d(View):
         self._image = None
         self._cbar = None
         self._data = None
+        self._title = title
+        self._aspect = aspect if aspect is not None else config['plot']['aspect']
 
-    def _make_limits(self):
+    def _make_limits(self) -> Tuple[float, ...]:
         vmin, vmax = fix_empty_range(
             find_limits(self._data.data, scale=self._norm_flag)[self._norm_flag])
         return vmin.value, vmax.value
@@ -71,13 +70,7 @@ class View2d(View):
         self._image.set_clim(vmin, vmax)
         self.update()
 
-    def toggle_mask(self, *args, **kwargs):
-        """
-        Show or hide a given mask.
-        """
-        return
-
-    def update(self, new_values=None, key=None, draw=True):
+    def update(self, new_values: DataArray = None, key: str = None, draw: bool = True):
         """
         Update image array with new values.
         """
@@ -104,6 +97,8 @@ class View2d(View):
             self.ax.set_ylabel(
                 self.ylabel if self.ylabel is not None else name_with_unit(
                     var=self._data.meta[dims[0]]))
+            if self._title is None:
+                self.ax.set_title(self._data.name)
 
         flat_values = self._data.values.flatten()
         rgba = self._cmap(self._norm_func(flat_values))
@@ -123,7 +118,7 @@ class View2d(View):
         self._norm_func = func(vmin=vmin, vmax=vmax)
         self._image.set_norm(self._norm_func)
 
-    def toggle_norm(self, change=None):
+    def toggle_norm(self, change: dict = None):
         self._norm_flag = "log" if change["new"] else "linear"
         self._set_norm()
         self.update()

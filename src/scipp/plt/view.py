@@ -3,9 +3,11 @@
 
 from .. import config
 from .tools import fig_to_pngbytes
+from .toolbar import Toolbar
+
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+from typing import Any, Tuple
 
 
 class SideBar:
@@ -24,14 +26,14 @@ class View:
     Base class for 1d and 2d figures, that holds matplotlib axes.
     """
     def __init__(self,
-                 ax=None,
-                 figsize=None,
-                 title=None,
-                 bounding_box=None,
-                 xlabel=None,
-                 ylabel=None,
-                 toolbar=None,
-                 grid=False):
+                 ax: Any = None,
+                 figsize: Tuple[float, ...] = None,
+                 title: str = None,
+                 bounding_box: Tuple[float, ...] = None,
+                 xlabel: str = None,
+                 ylabel: str = None,
+                 toolbar: Toolbar = None,
+                 grid: bool = False):
         self.fig = None
         self.closed = False
         self.ax = ax
@@ -71,14 +73,14 @@ class View:
 
         self.toolbar.connect(view=self)
 
-    def is_widget(self):
+    def is_widget(self) -> bool:
         """
         Check whether we are using the Matplotlib widget backend or not.
         "on_widget_constructed" is an attribute specific to `ipywidgets`.
         """
         return hasattr(self.fig.canvas, "on_widget_constructed")
 
-    def savefig(self, filename=None):
+    def savefig(self, filename: str = None):
         """
         Save plot to file.
         Possible file extensions are `.jpg`, `.png` and `.pdf`.
@@ -93,7 +95,7 @@ class View:
         """
         return self._to_widget()._ipython_display_()
 
-    def _to_widget(self):
+    def _to_widget(self) -> ipw.Widget:
         """
         Convert the Matplotlib figure to a widget. If the ipympl (widget)
         backend is in use, return the custom toolbar and the figure canvas.
@@ -113,7 +115,7 @@ class View:
         else:
             return self._to_image()
 
-    def _to_image(self):
+    def _to_image(self) -> ipw.Image:
         """
         Convert the Matplotlib figure to a static image.
         """
@@ -135,11 +137,11 @@ class View:
         """
         self.fig.show()
 
-    def toggle_xaxis_scale(self, change):
+    def toggle_xaxis_scale(self, change: dict):
         self.ax.set_xscale("log" if change['new'] else "linear")
         self.draw()
 
-    def toggle_yaxis_scale(self, change):
+    def toggle_yaxis_scale(self, change: dict):
         self.ax.set_yscale("log" if change['new'] else "linear")
         self.draw()
 

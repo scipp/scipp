@@ -1,25 +1,29 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
+from .controller1d import Controller1d
+from ..core import DataArray, Variable
 from .params import make_params
 from .plot import Plot
 from .view1d import View1d
-from .controller1d import Controller1d
+
+from typing import Any, Dict, Tuple
 
 
-def plot1d(data_array_dict,
-           norm=None,
-           masks=None,
-           ax=None,
-           figsize=None,
-           vmin=None,
-           vmax=None,
-           title=None,
-           xlabel=None,
-           ylabel=None,
-           grid=False,
-           legend=None,
-           filename=None):
+def plot1d(data_array_dict: Dict[str, DataArray],
+           norm: str = None,
+           masks: dict = None,
+           ax: Any = None,
+           figsize: Tuple[float, ...] = None,
+           vmin: Variable = None,
+           vmax: Variable = None,
+           title: str = None,
+           xlabel: str = None,
+           ylabel: str = None,
+           grid: bool = False,
+           legend: dict = None,
+           errorbars: bool = True,
+           filename: str = None) -> Plot:
     """
     Plot one or more Scipp data objects as a 1 dimensional line plot.
 
@@ -43,7 +47,8 @@ def plot1d(data_array_dict,
                   ylabel=ylabel,
                   grid=grid,
                   norm=params["values"]["norm"],
-                  legend=legend)
+                  legend=legend,
+                  errorbars=errorbars)
 
     sp = Plot(models=data_array_dict,
               view=view,

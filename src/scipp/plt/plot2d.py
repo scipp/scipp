@@ -1,28 +1,30 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
+from ..core import DataArray, Variable
+from .controller import Controller
 from .params import make_params
 from .plot import Plot
 from .view2d import View2d
-from .controller import Controller
+
+from typing import Any, Dict, Tuple
 
 
-def plot2d(data_array_dict,
-           norm=None,
-           masks=None,
-           ax=None,
-           cax=None,
-           pax=None,
-           figsize=None,
-           aspect=None,
-           cmap=None,
-           vmin=None,
-           vmax=None,
-           title=None,
-           xlabel=None,
-           ylabel=None,
-           grid=False,
-           filename=None):
+def plot2d(data_array_dict: Dict[str, DataArray],
+           norm: str = None,
+           masks: dict = None,
+           ax: Any = None,
+           cax: Any = None,
+           figsize: Tuple[float, ...] = None,
+           aspect: str = None,
+           cmap: str = None,
+           vmin: Variable = None,
+           vmax: Variable = None,
+           title: str = None,
+           xlabel: str = None,
+           ylabel: str = None,
+           grid: bool = False,
+           filename: str = None) -> Plot:
     """
     Plot a 2d slice through a N dimensional dataset.
     For every dimension above 2, a slider is created to adjust the position

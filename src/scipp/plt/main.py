@@ -1,63 +1,67 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .._scipp import core as sc
-from .. import typing
+from ..core import Variable, DataArray, Dataset
 from ..compat.dict import from_dict
 from .dispatch import dispatch
-from .plot import PlotDict
-from .tools import get_line_param
-import numpy as np
+from .plot import PlotDict, Plot
+from ..typing import VariableLike, has_numeric_type
+
 import itertools
+import numpy as np
+from numpy.typing import ArrayLike
+from typing import Dict, Union
 
 
-def _ndarray_to_variable(ndarray):
+def _ndarray_to_variable(ndarray: ArrayLike) -> Variable:
     """
     Convert a numpy ndarray to a Variable.
     Fake dimension labels begin at 'x' and cycle through the alphabet.
     """
     dims = [f"axis-{i}" for i in range(len(ndarray.shape))]
-    return sc.Variable(dims=dims, values=ndarray)
+    return Variable(dims=dims, values=ndarray)
 
 
-def _make_plot_key(plt_key, all_keys):
+def _make_plot_key(plt_key: str, all_keys: list) -> str:
     if plt_key in all_keys:
         key_gen = (f'{plt_key}_{i}' for i in itertools.count(1))
         plt_key = next(x for x in key_gen if x not in all_keys)
     return plt_key
 
 
-def _brief_str(obj):
+def _brief_str(obj: VariableLike) -> str:
     sizes = ', '.join([f'{dim}: {size}' for dim, size in obj.sizes.items()])
     return f'scipp.{type(obj).__name__}({sizes})'
 
 
-def _input_to_data_array(item, all_keys, key=None):
+def _input_to_data_array(item: Union[VariableLike, ArrayLike],
+                         all_keys: list,
+                         key: str = None) -> DataArray:
     """
     Convert an input for the plot function to a DataArray or a dict of
     DataArrays.
     """
     to_plot = {}
-    if isinstance(item, sc.Dataset):
+    if isinstance(item, Dataset):
         for name in sorted(item.keys()):
-            if typing.has_numeric_type(item[name]):
+            if has_numeric_type(item[name]):
                 proto_plt_key = f'{key}_{name}' if key else name
                 to_plot[_make_plot_key(proto_plt_key, all_keys)] = item[name]
-    elif isinstance(item, sc.Variable):
-        if typing.has_numeric_type(item):
+    elif isinstance(item, Variable):
+        if has_numeric_type(item):
             if key is None:
                 key = _brief_str(item)
-            to_plot[_make_plot_key(key, all_keys)] = sc.DataArray(data=item)
-    elif isinstance(item, sc.DataArray):
-        if typing.has_numeric_type(item):
+            to_plot[_make_plot_key(key, all_keys)] = DataArray(data=item)
+    elif isinstance(item, DataArray):
+        if has_numeric_type(item):
             if key is None:
                 key = item.name
             to_plot[_make_plot_key(key, all_keys)] = item
     elif isinstance(item, np.ndarray):
         if key is None:
             key = str(type(item))
-        to_plot[_make_plot_key(
-            key, all_keys)] = sc.DataArray(data=_ndarray_to_variable(item))
+        to_plot[_make_plot_key(key,
+                               all_keys)] = DataArray(data=_ndarray_to_variable(item))
     else:
         raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
                            "a Dataset, a DataArray, a Variable (and their "
@@ -66,7 +70,11 @@ def _input_to_data_array(item, all_keys, key=None):
     return to_plot
 
 
-def main(scipp_obj, projection=None, operation="sum", **kwargs):
+def main(scipp_obj: Union[VariableLike, ArrayLike, Dict[str, Union[VariableLike,
+                                                                   ArrayLike]]],
+         projection: str = None,
+         operation: str = "sum",
+         **kwargs) -> Union[Plot, PlotDict]:
     """
     Wrapper function to plot a scipp object.
 

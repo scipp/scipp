@@ -10,8 +10,6 @@ class Controller1d(Controller):
     """
     def render(self, *args, **kwargs):
         """
-        Update axes (and data) to render the figure once all components
-        have been created.
         """
         super().render(*args, **kwargs)
         self._view.rescale_to_data()

@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 import ipywidgets as ipw
-from .. import config
+from typing import Any
 
 
 class Toolbar:
@@ -10,7 +10,7 @@ class Toolbar:
     Custom toolbar with additional buttons for controlling log scales and
     normalization, and with back/forward buttons removed.
     """
-    def __init__(self, external_controls=None):
+    def __init__(self, external_controls: Any = None):
         self._dims = None
         self.controller = None
 
@@ -29,26 +29,26 @@ class Toolbar:
         """
         return self._to_widget()._ipython_display_()
 
-    def _to_widget(self):
+    def _to_widget(self) -> ipw.Widget:
         """
         Return the VBox container
         """
         return self.container
 
-    def set_visible(self, visible):
+    def set_visible(self, visible: bool):
         """
         Need to hide/show the toolbar when a canvas is hidden/shown.
         """
         self.container.layout.display = None if visible else 'none'
 
-    def add_button(self, name, **kwargs):
+    def add_button(self, name: str, **kwargs):
         """
         Create a new button and add it to the toolbar members list.
         """
         button = ipw.Button(**self._parse_button_args(**kwargs))
         self.members[name] = button
 
-    def add_togglebutton(self, name, value=False, **kwargs):
+    def add_togglebutton(self, name: str, value: bool = False, **kwargs):
         """
         Create a fake ToggleButton using Button because sometimes we want to
         change the value of the button without triggering an update, e.g. when
@@ -62,7 +62,7 @@ class Toolbar:
                                   **kwargs)
         self.members[name] = button
 
-    def connect(self, view):
+    def connect(self, view: Any):
         """
         Connect callbacks to button clicks.
         """
@@ -81,7 +81,7 @@ class Toolbar:
         """
         self.container.children = tuple(self.members.values())
 
-    def _parse_button_args(self, layout=None, **kwargs):
+    def _parse_button_args(self, layout: dict = None, **kwargs) -> dict:
         """
         Parse button arguments and add some default styling options.
         """
@@ -94,32 +94,29 @@ class Toolbar:
         return args
 
     @property
-    def tool_active(self):
+    def tool_active(self) -> bool:
         return self.members["zoom_view"].value or \
                 self.members["pan_view"].value
 
-    def home_view(self, button):
+    def home_view(self, button: ipw.Widget):
         self.external_controls.home()
 
-    def pan_view(self, change):
+    def pan_view(self, change: dict):
         if change["new"]:
             # In case the zoom button is selected, we need to de-select it
             if self.members["zoom_view"].value:
                 self.members["zoom_view"].value = False
             self.external_controls.pan()
 
-    def zoom_view(self, change):
+    def zoom_view(self, change: dict):
         if change["new"]:
             # In case the pan button is selected, we need to de-select it
             if self.members["pan_view"].value:
                 self.members["pan_view"].value = False
             self.external_controls.zoom()
 
-    def save_view(self, button):
+    def save_view(self, button: ipw.Widget):
         self.external_controls.save_figure()
-
-    def rescale_on_zoom(self):
-        return self.members["zoom_view"].value
 
 
 class Toolbar1d(Toolbar):
@@ -198,20 +195,20 @@ class Toolbar3d(Toolbar):
                               description="log",
                               tooltip="log(data)")
 
-    def home_view(self, button):
+    def home_view(self, button: ipw.Widget):
         self.external_controls.reset_camera()
 
-    def camera_x_normal(self, button):
+    def camera_x_normal(self, button: ipw.Widget):
         self.external_controls.camera_x_normal()
 
-    def camera_y_normal(self, button):
+    def camera_y_normal(self, button: ipw.Widget):
         self.external_controls.camera_y_normal()
 
-    def camera_z_normal(self, button):
+    def camera_z_normal(self, button: ipw.Widget):
         self.external_controls.camera_z_normal()
 
-    def toggle_axes_helper(self, button):
+    def toggle_axes_helper(self, button: ipw.Widget):
         self.external_controls.toggle_axes_helper(button.value)
 
-    def toggle_outline(self, button):
+    def toggle_outline(self, button: ipw.Widget):
         self.external_controls.toggle_outline(button.value)

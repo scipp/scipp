@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from functools import partial
-from html import escape
-from ..utils import value_to_string
-from .step import WidgetStep
+from ..core import DataArray
+from .widgets import WidgetStep
+
+import ipywidgets as ipw
+from typing import Callable
 
 
 class SlicingWidget:
@@ -12,18 +13,10 @@ class SlicingWidget:
     Widgets containing a slider for each of the input's dimensions, as well as
     buttons to modify the currently displayed axes.
     """
-    def __init__(self, dims, sizes, ndim):
+    def __init__(self, dims: list, sizes: dict, ndim: int):
 
-        import ipywidgets as ipw
-        # dims = model.dims
-        # sizes = model.sizes
-        # self._labels = dim_label_map
-        # self._controller = None
-        # self._formatters = formatters
-        # Dict of controls for each dim, one entry per dim of data
         self._controls = {}
         self._callback = None
-
         # The container list to hold all widgets
         self.container = []
         # dim_buttons: buttons to control which dimension the slider controls
@@ -39,8 +32,6 @@ class SlicingWidget:
                                    continuous_update=True,
                                    readout=True,
                                    layout={"width": "400px"})
-            # slider.observe(self._changed, names="value")
-
             continuous_update = ipw.Checkbox(value=True,
                                              description="Continuous update",
                                              indent=False,
@@ -48,9 +39,6 @@ class SlicingWidget:
             ipw.jslink((continuous_update, 'value'), (slider, 'continuous_update'))
 
             slider_readout = ipw.Label()
-
-            # unit = ipw.Label(value=self._formatters[dim]['unit'],
-            #                  layout={"width": "60px"})
             unit = ipw.Label(value='unit', layout={"width": "60px"})
 
             self._controls[dim] = {
@@ -60,7 +48,6 @@ class SlicingWidget:
                 'unit': unit
             }
 
-        first = True
         for index, dim in enumerate(self._slider_dims):
             row = list(self._controls[dim].values())
             self.container.append(ipw.HBox(row))
@@ -71,59 +58,22 @@ class SlicingWidget:
         """
         return self._to_widget()._ipython_display_()
 
-    def _to_widget(self):
+    def _to_widget(self) -> ipw.Widget:
         """
         Gather all widgets in a single container box.
         """
-        import ipywidgets as ipw
         return ipw.VBox(self.container)
 
-    # def set_callback(self, callback):
-    #     self._callback = callback
-
-    # def _slider_moved(self, _):
-    #     self._callback()
-
-    def observe(self, callback, **kwargs):
-        """
-        """
+    def observe(self, callback: Callable, **kwargs):
         for dim in self._controls:
             self._controls[dim]['slider'].observe(callback, **kwargs)
 
     @property
-    def value(self):
+    def value(self) -> dict:
         return {dim: self._controls[dim]['slider'].value for dim in self._slider_dims}
 
-    # def _changed(self, change):
-    #     change = {"new": self.value}
-    #     super()._changed(change)
 
-    # return {dim: self._controls[dim]['slider'].value for dim in self._slider_dims}
-
-    # def update_slider_readout(self, bounds):
-    #     """
-    #     Update the slider readout with new slider bounds.
-    #     """
-    #     for dim in self._slider_dims:
-
-    #         def format(val):
-    #             form = self._formatters[dim]['linear']
-    #             if form is None:
-    #                 return value_to_string(val)
-    #             # pos=None causes datetime formatter to return full string
-    #             # rather than attempting to set a separate label and returning
-    #             # offset
-    #             return form(val, pos=None)
-
-    #         if bounds[dim].values.ndim == 0:
-    #             bound = f'{format(bounds[dim].value)}'
-    #         else:
-    #             low, high = bounds[dim].values
-    #             bound = f'[{format(low)} {format(high)}]'
-    #         self._controls[dim]['value'].value = bound
-
-
-def _slicing_func(model, slices):
+def _slicing_func(model: DataArray, slices: dict) -> DataArray:
     """
     Slice the data along dimension sliders that are not disabled for all
     entries in the dict of data arrays, and return a dict of 1d value
@@ -139,32 +89,3 @@ class SlicingStep(WidgetStep):
     def __init__(self, **kwargs):
         super().__init__(func=_slicing_func,
                          widgets={"slices": SlicingWidget(**kwargs)})
-
-
-# ########################################################################################
-
-# def smooth(da, radius):
-#     return da.smoothed(radius)
-
-# class SmoothingStep(WidgetStep):
-#     def __init__(self, **kwargs):
-#         super().__init__(func=smooth, widget=ipw.FloatSlider(min=0, max=10))
-
-# def resample(da, nx, ny):
-#     return da.resample(nx, ny)
-
-# class ResamplingStep(WidgetStep):
-#     def __init__(self, **kwargs):
-#         widgets = {"nx": ipw.IntText(), "ny": ipw.IntText()}
-#         super().__init__(func=smooth, widget=widgets)
-
-# def add_noise(da):
-#     out = da.copy()
-#     data = out.values
-#     noise = np.random.random(data.shape)
-#     data += noise
-#     return out
-
-# class NoiseStep(Step):
-#     def __init__(self, **kwargs):
-#         super().__init__(func=smooth)
