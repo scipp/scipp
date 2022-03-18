@@ -12,54 +12,51 @@ from .widgets import WidgetCollection
 from .slicing_step import SlicingStep
 from .mask_step import MaskStep
 
+# def _make_errorbar_params(arrays, errorbars):
+#     """
+#     Determine whether error bars should be plotted or not.
+#     """
+#     if errorbars is None:
+#         params = {}
+#     else:
+#         if isinstance(errorbars, bool):
+#             params = {name: errorbars for name in arrays}
+#         elif isinstance(errorbars, dict):
+#             params = errorbars
+#         else:
+#             raise TypeError("Unsupported type for argument "
+#                             "'errorbars': {}".format(type(errorbars)))
+#     for name, array in arrays.items():
+#         has_variances = array.variances is not None
+#         if name in params:
+#             params[name] &= has_variances
+#         else:
+#             params[name] = has_variances
+#     return params
 
-def _make_errorbar_params(arrays, errorbars):
-    """
-    Determine whether error bars should be plotted or not.
-    """
-    if errorbars is None:
-        params = {}
-    else:
-        if isinstance(errorbars, bool):
-            params = {name: errorbars for name in arrays}
-        elif isinstance(errorbars, dict):
-            params = errorbars
-        else:
-            raise TypeError("Unsupported type for argument "
-                            "'errorbars': {}".format(type(errorbars)))
-    for name, array in arrays.items():
-        has_variances = array.variances is not None
-        if name in params:
-            params[name] &= has_variances
-        else:
-            params[name] = has_variances
-    return params
+# def _make_formatters(*, dims, arrays, labels):
+#     array = next(iter(arrays.values()))
+#     labs = {dim: dim for dim in dims}
+#     if labels is not None:
+#         labs.update(labels)
+#     # formatters = {dim: make_formatter(array, labs[dim], dim) for dim in dims}
+#     formatters = {}
+#     return labs, formatters
 
-
-def _make_formatters(*, dims, arrays, labels):
-    array = next(iter(arrays.values()))
-    labs = {dim: dim for dim in dims}
-    if labels is not None:
-        labs.update(labels)
-    # formatters = {dim: make_formatter(array, labs[dim], dim) for dim in dims}
-    formatters = {}
-    return labs, formatters
-
-
-def make_profile(ax, mask_color):
-    from .profile import PlotProfile
-    cfg = config['plot']
-    bbox = list(cfg['bounding_box'])
-    bbox[2] = 0.77
-    return PlotProfile(ax=ax,
-                       mask_color=mask_color,
-                       figsize=(1.3 * cfg['width'] / cfg['dpi'],
-                                0.6 * cfg['height'] / cfg['dpi']),
-                       bounding_box=bbox,
-                       legend={
-                           "show": True,
-                           "loc": (1.02, 0.0)
-                       })
+# def make_profile(ax, mask_color):
+#     from .profile import PlotProfile
+#     cfg = config['plot']
+#     bbox = list(cfg['bounding_box'])
+#     bbox[2] = 0.77
+#     return PlotProfile(ax=ax,
+#                        mask_color=mask_color,
+#                        figsize=(1.3 * cfg['width'] / cfg['dpi'],
+#                                 0.6 * cfg['height'] / cfg['dpi']),
+#                        bounding_box=bbox,
+#                        legend={
+#                            "show": True,
+#                            "loc": (1.02, 0.0)
+#                        })
 
 
 class PlotDict():
@@ -181,34 +178,23 @@ class Plot:
                  scale=None,
                  view_ndims=None):
 
-        self.panel = panel
-        self.profile = None
-        self.widgets = None
-
         self._view = view
         self._models = models
-
-        self.show_widgets = True
         self.view_ndims = view_ndims
 
         # Shortcut access to the underlying figure for easier modification
         self.fig = None
         self.ax = None
 
-        # TODO use option to provide keys here
-        array = next(iter(self._models.values()))
-
-        self._name = list(self._models.keys())[0]
-        if dims is None:
-            self._dims = self._models[self._name].dims
-        else:
-            self._dims = dims
-
         self._widgets = WidgetCollection()
-
         self._controller = controller(models=self._models, view=self._view)
 
+        self._add_default_pipeline_steps()
+        self._render()
+
+    def _add_default_pipeline_steps(self):
         # Add step for slicing dimensions out with sliders
+        array = next(iter(self._models.values()))
         slicing_step = SlicingStep(dims=array.dims, sizes=array.sizes, ndim=view_ndims)
         self._controller.add_pipeline_step(slicing_step)
         self._widgets.append(slicing_step)
@@ -217,8 +203,6 @@ class Plot:
             mask_step = MaskStep(masks=model.masks, name=key)
             self._controller.add_pipeline_step(key=key, step=mask_step)
             self._widgets.append(mask_step)
-
-        self._render()
 
     def _ipython_display_(self):
         """
@@ -231,21 +215,7 @@ class Plot:
         Get the SciPlot object as an `ipywidget`.
         """
         import ipywidgets as ipw
-        widget_list = [self._view._to_widget()]
-        # if self.profile is not None:
-        #     widget_list.append(self.profile._to_widget())
-        if self.show_widgets:
-            widget_list.append(self._widgets._to_widget())
-        # if self.panel is not None and self.show_widgets:
-        #     widget_list.append(self.panel._to_widget())
-
-        return ipw.VBox(widget_list)
-
-    def hide_widgets(self):
-        """
-        Hide widgets for 1d and 2d (matplotlib) figures
-        """
-        self.show_widgets = False if self.view_ndims < 3 else True
+        return ipw.VBox([self._view._to_widget(), self._widgets._to_widget()])
 
     def close(self):
         """
@@ -276,10 +246,3 @@ class Plot:
         directory where the script or notebook is running.
         """
         self.view.savefig(filename=filename)
-
-    def redraw(self):
-        """
-        Redraw the plot. Use this to update a figure when the underlying data
-        has been modified.
-        """
-        self.controller.redraw()

@@ -13,13 +13,9 @@ class SideBar:
         self._children = children if children is not None else []
 
     def _ipython_display_(self):
-        """
-        """
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
-        """
-        """
         return ipw.VBox([child._to_widget() for child in self._children])
 
 
@@ -74,10 +70,6 @@ class View:
         self.event_connections = {}
 
         self.toolbar.connect(view=self)
-
-    # def initialize_toolbar(self, **kwargs):
-    #     if self.toolbar is not None:
-    #         self.toolbar.initialize(**kwargs)
 
     def is_widget(self):
         """
@@ -158,16 +150,5 @@ class View:
         draws are performed on the canvas. Matplotlib's automatic drawing
         (which we have disabled by using `plt.ioff()`) can degrade performance
         significantly.
-        Matplotlib's `draw()` is slightly more expensive than `draw_idle()`
-        but won't update inside a loop (only when the loop has finished
-        executing).
-        If `draw_no_delay` has been set to True (via `set_draw_no_delay`,
-        then we use `draw()` instead of `draw_idle()`.
         """
         self.fig.canvas.draw_idle()
-
-    def get_axis_bounds(self, axis):
-        return getattr(self.ax, "get_{}lim".format(axis))()
-
-    def set_axis_label(self, axis, string):
-        getattr(self.ax, "set_{}label".format(axis))(string)

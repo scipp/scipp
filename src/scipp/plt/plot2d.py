@@ -3,9 +3,8 @@
 
 from .params import make_params
 from .plot import Plot
-# from .model import Model
 from .view2d import View2d
-from .controller2d import Controller2d
+from .controller import Controller
 
 
 def plot2d(data_array_dict,
@@ -46,7 +45,7 @@ def plot2d(data_array_dict,
 
     sp = Plot(models=data_array_dict,
               view=view,
-              controller=Controller2d,
+              controller=Controller,
               vmin=params["values"]["vmin"],
               vmax=params["values"]["vmax"],
               view_ndims=2)

@@ -108,11 +108,9 @@ class View2d(View):
         flat_values = self._data.values.flatten()
         rgba = self._cmap(self._norm_func(flat_values))
         if len(self._data.masks) > 0:
-            # Combine all masks into one
             one_mask = broadcast(reduce(lambda a, b: a | b, self._data.masks.values()),
                                  dims=self._data.dims,
                                  shape=self._data.shape).values.flatten()
-            # indices = np.where(new_values["masks"])
             rgba[one_mask] = self._mask_cmap(self._norm_func(flat_values[one_mask]))
 
         self._image.set_facecolors(rgba)

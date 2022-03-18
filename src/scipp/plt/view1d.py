@@ -99,25 +99,16 @@ class View1d(View):
                 zorder=10,
                 **{key: line.mpl_params[key]
                    for key in ["color", "linewidth"]})[0]
-            # if len(mask):
             line.mask = self.ax.step([1, 2], [1, 2],
                                      linewidth=line.mpl_params["linewidth"] * 3.0,
                                      color=self._mask_color,
                                      zorder=9,
                                      visible=mask is not None)[0]
-            # # Abuse a mostly unused property `gid` of Line2D to
-            # # identify the line as a mask. We set gid to `onaxes`.
-            # # This is used by the profile viewer in the 2D plotter
-            # # to know whether to show the mask or not, depending on
-            # # whether the cursor is hovering over the 2D image or
-            # # not.
-            # line.masks[m].set_gid("onaxes")
         else:
             line.data = self.ax.plot([1, 2], [1, 2],
                                      label=label,
                                      zorder=10,
                                      **line.mpl_params)[0]
-            # if len(mask):
             line.mask = self.ax.plot([1, 2], [1, 2],
                                      zorder=11,
                                      mec=self._mask_color,
@@ -126,7 +117,6 @@ class View1d(View):
                                      linestyle="none",
                                      marker=line.mpl_params["marker"],
                                      visible=mask is not None)[0]
-            # line.masks[m].set_gid("onaxes")
 
         # Add error bars
         if errorbars:
@@ -159,18 +149,16 @@ class View1d(View):
         out = {"values": {}, "variances": {}, "mask": None}
         out['name'] = new_values.name
         out['label'] = _make_label(new_values)
-        out["values"]["x"] = new_values.meta[self._dim].values  #.ravel()
-        out["values"]["y"] = new_values.values  #.ravel()
+        out["values"]["x"] = new_values.meta[self._dim].values
+        out["values"]["y"] = new_values.values
         if new_values.variances is not None:
-            out["variances"]["e"] = vars_to_err(new_values.variances)  #.ravel())
+            out["variances"]["e"] = vars_to_err(new_values.variances)
         if len(new_values.masks):
-            # out["masks"] = self._make_masks(new_values)
             one_mask = reduce(lambda a, b: a | b, new_values.masks.values()).values
             out["mask"] = {
                 "x": out["values"]["x"],
                 "y": np.where(one_mask, out["values"]["y"], None).astype(np.float32)
             }
-        # out[name] = values
         return out
 
     def update(self, new_values, key, draw=True):
@@ -188,9 +176,6 @@ class View1d(View):
 
         xmin = np.Inf
         xmax = np.NINF
-        # name = new_values['name']
-        # for name in raw_values:
-        #     self.errorbars[name] = False
         vals, hist = self._preprocess_hist(new_values)
         if key not in self._lines:
             self._lines[key] = self._make_line(key,

@@ -3,8 +3,6 @@
 
 from .params import make_params
 from .plot import Plot
-# from .model1d import Model1d
-# from .panel1d import PlotPanel1d
 from .view1d import View1d
 from .controller1d import Controller1d
 
@@ -47,24 +45,12 @@ def plot1d(data_array_dict,
                   norm=params["values"]["norm"],
                   legend=legend)
 
-    # model = Model1d(data_array_dict)
-
-    sp = Plot(
-        # data_array_dict=data_array_dict,
-        models=data_array_dict,
-        view=view,
-        controller=Controller1d,
-        # norm=params["values"]["norm"],
-        # masks=None,
-        # ax=None,
-        # figsize=None,
-        vmin=params["values"]["vmin"],
-        vmax=params["values"]["vmax"],
-        # title=None,
-        # xlabel=None,
-        # ylabel=None,
-        # grid=False,
-        view_ndims=1)
+    sp = Plot(models=data_array_dict,
+              view=view,
+              controller=Controller1d,
+              vmin=params["values"]["vmin"],
+              vmax=params["values"]["vmax"],
+              view_ndims=1)
 
     if filename is not None:
         sp.savefig(filename)
