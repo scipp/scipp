@@ -26,7 +26,6 @@ class MaskWidget:
                                                  description=f"{escape(key)}",
                                                  indent=False,
                                                  layout={"width": "initial"})
-            # self._checkboxes[key].observe(self._toggle_mask, names="value")
 
         if len(self._checkboxes):
             self._label = ipw.Label(value=f"Masks: {name}")
@@ -37,7 +36,6 @@ class MaskWidget:
                                                       disabled=False,
                                                       button_style="",
                                                       layout={"width": "initial"})
-            self._all_masks_button.observe(self._toggle_all_masks, names="value")
 
             self._box_layout = ipw.Layout(display='flex',
                                           flex_flow='row wrap',
