@@ -16,12 +16,20 @@ TEST(ElementToUnitTest, unit) {
 }
 
 TEST(ElementToUnitTest, type_preserved) {
-  EXPECT_TRUE((std::is_same_v<decltype(to_unit(double(1), 1)), double>));
-  EXPECT_TRUE((std::is_same_v<decltype(to_unit(float(1), 1)), float>));
-  EXPECT_TRUE((std::is_same_v<decltype(to_unit(int64_t(1), 1)), int64_t>));
-  EXPECT_TRUE((std::is_same_v<decltype(to_unit(int32_t(1), 1)), int32_t>));
-  EXPECT_TRUE((std::is_same_v<decltype(to_unit(core::time_point(1), 1)),
-                              core::time_point>));
+  static_assert(std::is_same_v<decltype(to_unit(double(1), 1.0)), double>);
+  static_assert(std::is_same_v<decltype(to_unit(float(1), 1.0)), float>);
+  static_assert(std::is_same_v<decltype(to_unit(int64_t(1), 1.0)), int64_t>);
+  static_assert(std::is_same_v<decltype(to_unit(int32_t(1), 1.0)), int32_t>);
+  static_assert(std::is_same_v<decltype(to_unit(core::time_point(1), 1.0)),
+                               core::time_point>);
+  static_assert(std::is_same_v<decltype(to_unit(Eigen::Vector3d(), 1.0)),
+                               Eigen::Vector3d>);
+  static_assert(std::is_same_v<decltype(to_unit(Eigen::Matrix3d(), 1.0)),
+                               Eigen::Matrix3d>);
+  static_assert(std::is_same_v<decltype(to_unit(Eigen::Affine3d(), 1.0)),
+                               Eigen::Affine3d>);
+  static_assert(
+      std::is_same_v<decltype(to_unit(Translation(), 1.0)), Translation>);
 }
 
 TEST(ElementToUnitTest, double) {
@@ -68,4 +76,24 @@ TEST(ElementToUnitTest, time_point) {
   EXPECT_EQ(to_unit(time_point(0), 0.1), time_point(0));
   EXPECT_EQ(to_unit(time_point(5), 0.1), time_point(1)); // 0.5 rounds up
   EXPECT_EQ(to_unit(time_point(1), 1e6), time_point(1000000));
+}
+
+TEST(ElementToUnitTest, vector3d) {
+  const Eigen::Vector3d expected{10, 20, 30};
+  EXPECT_EQ(to_unit(Eigen::Vector3d{1, 2, 3}, 10), expected);
+}
+
+TEST(ElementToUnitTest, affine3d) {
+  const Eigen::AngleAxisd rotation(10.0, Eigen::Vector3d{1, 0, 0});
+  const Eigen::Translation3d translation(2, 3, 4);
+  const Eigen::Affine3d affine = rotation * translation;
+  const Eigen::Affine3d expected =
+      rotation * (translation * Eigen::Scaling(10.0));
+  EXPECT_TRUE(to_unit(affine, 10).isApprox(expected));
+}
+
+TEST(ElementToUnitTest, translation) {
+  const Translation trans(Eigen::Vector3d{1, 2, 3});
+  const Translation expected(Eigen::Vector3d{10, 20, 30});
+  EXPECT_EQ(to_unit(trans, 10), expected);
 }
