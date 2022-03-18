@@ -18,3 +18,6 @@ test-command = "pytest {project}/tests"
 # PyPy builds fail with an error about ninja, probably https://github.com/pypa/setuptools/issues/2912
 # tbb-devel not available for musllinux
 skip = ["pp*", "*musllinux*"]
+
+[tool.pytest.ini_options]
+addopts = "-ra -v"
