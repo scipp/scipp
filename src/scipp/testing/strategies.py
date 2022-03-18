@@ -172,19 +172,6 @@ def n_variables(n: int,
 
 
 @st.composite
-def _make_vectors(draw, sizes):
-    values = draw(npst.arrays(float, (*sizes.values(), 3)))
-    return creation.vectors(dims=tuple(sizes), values=values, unit=draw(units()))
-
-
-@st.composite
-def vectors(draw, ndim=None) -> st.SearchStrategy:
-    if ndim is None:
-        ndim = draw(st.integers(0, 3))
-    return draw(sizes_dicts(ndim).flatmap(lambda s: _make_vectors(s)))
-
-
-@st.composite
 def coord_dicts(draw, *, coords, sizes, args=None) -> dict:
     args = (args or {})
     args['sizes'] = sizes
