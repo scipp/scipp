@@ -11,21 +11,6 @@ from hypothesis.extra import numpy as npst
 from ..core import variable as creation
 from ..core import DataArray, DType
 
-# TODO sometimes checks fail with (seen in test_astype_int_to_float)
-#  hypothesis.errors.FailedHealthCheck: Examples routinely exceeded the max
-#  allowable size. (20 examples overran while generating 9 valid ones).
-#  Generating examples this large will usually lead to bad results.
-#  You could try setting max_size parameters on your collections and turning
-#  max_leaves down on recursive() calls.
-#  See https://hypothesis.readthedocs.io/en/latest/healthchecks.html for more
-#  information about this. If you want to disable just this health check,
-#  add HealthCheck.data_too_large to the suppress_health_check settings for this test.
-#
-#  Maybe the variable strat has too many parameters or too many nested strats?
-#  Nested strats are reinited for every example,
-#  need to change to make them once up front
-#  But that is problematic because with_variances depends on dtype.
-
 
 def dims() -> st.SearchStrategy:
     # Allowing all graphic utf-8 characters and control characters
@@ -66,13 +51,8 @@ def scalar_numeric_dtypes() -> st.SearchStrategy:
     return st.sampled_from((integer_dtypes, floating_dtypes)).flatmap(lambda f: f())
 
 
-def use_variances(dtype) -> st.SearchStrategy:
-    if dtype in (DType.float32, DType.float64):
-        return st.booleans()
-    return st.just(False)
-
-
 def _variables_from_fixed_args(args) -> st.SearchStrategy:
+
     def make_array():
         return npst.arrays(args['dtype'],
                            tuple(args['sizes'].values()),
@@ -87,42 +67,51 @@ def _variables_from_fixed_args(args) -> st.SearchStrategy:
                      variances=make_array() if args['with_variances'] else st.none())
 
 
+class _ConditionallyWithVariances:
+
+    def __init__(self):
+        self._strategy = st.booleans()
+
+    def __call__(self, draw, dtype):
+        if dtype in (DType.float32, DType.float64):
+            return draw(self._strategy)
+        return False
+
+
 @st.composite
-def variable_args(draw,
-                  *,
-                  ndim=None,
-                  sizes=None,
-                  unit=None,
-                  dtype=None,
-                  with_variances=None,
-                  elements=None,
-                  fill=None,
-                  unique=None) -> dict:
+def _concrete_args(draw, args) -> dict:
+
+    def _draw(x):
+        return draw(x) if isinstance(x, st.SearchStrategy) else x
+
+    concrete = {key: _draw(val) for key, val in args.items()}
+    if isinstance(concrete['with_variances'], _ConditionallyWithVariances):
+        concrete['with_variances'] = concrete['with_variances'](draw, concrete['dtype'])
+    return concrete
+
+
+def _variable_arg_strategies(*,
+                             ndim=None,
+                             sizes=None,
+                             unit=None,
+                             dtype=None,
+                             with_variances=None,
+                             elements=None,
+                             fill=None,
+                             unique=None):
     if ndim is not None:
         if sizes is not None:
             raise InvalidArgument('Arguments `ndim` and `sizes` cannot both be used. '
-                                  f'Got ndim={ndim}, sizes={sizes}.')
+                                  f'Got {ndim=}, {sizes=}.')
     if sizes is None:
         sizes = sizes_dicts(ndim)
-    if isinstance(sizes, st.SearchStrategy):
-        sizes = draw(sizes)
-
     if unit is None:
         unit = units()
-    if isinstance(unit, st.SearchStrategy):
-        unit = draw(unit)
-
     if dtype is None:
         # TODO other dtypes?
         dtype = scalar_numeric_dtypes()
-    if isinstance(dtype, st.SearchStrategy):
-        dtype = draw(dtype)
-
     if with_variances is None:
-        with_variances = use_variances(dtype)
-    if isinstance(with_variances, st.SearchStrategy):
-        with_variances = draw(with_variances)
-
+        with_variances = _ConditionallyWithVariances()
     return dict(sizes=sizes,
                 unit=unit,
                 dtype=dtype,
@@ -132,6 +121,14 @@ def variable_args(draw,
                 unique=unique)
 
 
+# This implementation is designed such that the individual strategies
+# for default arguments are constructed only once, namely when
+# `variables` is called. Sampling via `_concrete_args` then reuses
+# those strategies.
+# A previous implementation constructed those component strategies inside
+# an `st.composite` function for every example drawn. This lead to high
+# memory consumption by hypothesis and failed
+# `hypothesis.HealthCheck.data_too_large`.
 def variables(*,
               ndim=None,
               sizes=None,
@@ -141,15 +138,15 @@ def variables(*,
               elements=None,
               fill=None,
               unique=None) -> st.SearchStrategy:
-    args = variable_args(ndim=ndim,
-                         sizes=sizes,
-                         unit=unit,
-                         dtype=dtype,
-                         with_variances=with_variances,
-                         elements=elements,
-                         fill=fill,
-                         unique=unique)
-    return args.flatmap(lambda a: _variables_from_fixed_args(a))
+    args = _variable_arg_strategies(ndim=ndim,
+                                    sizes=sizes,
+                                    unit=unit,
+                                    dtype=dtype,
+                                    with_variances=with_variances,
+                                    elements=elements,
+                                    fill=fill,
+                                    unique=unique)
+    return _concrete_args(args).flatmap(_variables_from_fixed_args)
 
 
 def n_variables(n: int,
@@ -162,15 +159,15 @@ def n_variables(n: int,
                 elements=None,
                 fill=None,
                 unique=None) -> st.SearchStrategy:
-    args = variable_args(ndim=ndim,
-                         sizes=sizes,
-                         unit=unit,
-                         dtype=dtype,
-                         with_variances=with_variances,
-                         elements=elements,
-                         fill=fill,
-                         unique=unique)
-    return args.flatmap(
+    args = _variable_arg_strategies(ndim=ndim,
+                                    sizes=sizes,
+                                    unit=unit,
+                                    dtype=dtype,
+                                    with_variances=with_variances,
+                                    elements=elements,
+                                    fill=fill,
+                                    unique=unique)
+    return _concrete_args(args).flatmap(
         lambda a: st.tuples(*(_variables_from_fixed_args(a) for _ in range(n))))
 
 
@@ -199,6 +196,7 @@ def coord_dicts(draw, *, coords, sizes, args=None) -> dict:
 
 
 class _NotSetType:
+
     def __repr__(self):
         return 'Default'
 
