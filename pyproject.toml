@@ -21,3 +21,7 @@ skip = ["pp*", "*musllinux*"]
 
 [tool.pytest.ini_options]
 addopts = "-ra -v"
+filterwarnings = [
+  'ignore:You are running a "Debug" build of scipp:'
+]
+testpaths = "tests"
