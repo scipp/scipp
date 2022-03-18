@@ -140,6 +140,19 @@ TEST(ToUnitTest, binned) {
             make_bins(indices, Dim::X, expected_buffer));
 }
 
+TEST(ToUnitTest, binned_can_avoid_copy) {
+  const auto indices = makeVariable<scipp::index_pair>(
+      Dims{Dim::Y}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 4}});
+  const auto input_buffer =
+      makeVariable<double>(Dims{Dim::X}, Shape{4},
+                           Values{1000, 2000, 3000, 4000}, units::Unit{"mm"});
+  const auto var = make_bins(indices, Dim::X, input_buffer);
+  EXPECT_TRUE(
+      to_unit(var, units::Unit{"mm"}, CopyPolicy::TryAvoid).is_same(var));
+  EXPECT_FALSE(
+      to_unit(var, units::Unit{"mm"}, CopyPolicy::Always).is_same(var));
+}
+
 TEST(ToUnitTest, throws_if_none_unit) {
   EXPECT_THROW_DISCARD(to_unit(makeVariable<int32_t>(Dims{Dim::X}, Shape{2},
                                                      units::none, Values{1, 2}),

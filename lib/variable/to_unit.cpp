@@ -27,16 +27,16 @@ bool greater_than_days(const units::Unit &unit) {
 
 Variable to_unit(const Variable &var, const units::Unit &unit,
                  const CopyPolicy copy) {
-  if (unit == var.unit())
-    return copy == CopyPolicy::Always ? variable::copy(var) : var;
   const auto var_unit = variableFactory().elem_unit(var);
+  if (unit == var_unit)
+    return copy == CopyPolicy::Always ? variable::copy(var) : var;
   if (var_unit == units::none)
     throw except::UnitError(
         "Unit conversion is not permitted as the input variable has no unit.");
   const auto scale =
       llnl::units::quick_convert(var_unit.underlying(), unit.underlying());
   if (std::isnan(scale))
-    throw except::UnitError("Conversion from `" + to_string(var.unit()) +
+    throw except::UnitError("Conversion from `" + to_string(var_unit) +
                             "` to `" + to_string(unit) + "` is not valid.");
   if (var.dtype() == dtype<core::time_point> &&
       (greater_than_days(variableFactory().elem_unit(var)) ||
@@ -44,7 +44,7 @@ Variable to_unit(const Variable &var, const units::Unit &unit,
     throw except::UnitError(
         "Unit conversions for datetimes with a unit of days or greater "
         "are not supported. Attempted conversion from `" +
-        to_string(var.unit()) + "` to `" + to_string(unit) + "`. " +
+        to_string(var_unit) + "` to `" + to_string(unit) + "`. " +
         "This limitation exists because such conversions would require "
         "information about calendars and time zones.");
   }
