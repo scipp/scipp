@@ -30,9 +30,8 @@ Variable to_unit(const Variable &var, const units::Unit &unit,
   const auto var_unit = variableFactory().elem_unit(var);
   if (unit == var_unit)
     return copy == CopyPolicy::Always ? variable::copy(var) : var;
-  if (var_unit == units::none)
-    throw except::UnitError(
-        "Unit conversion is not permitted as the input variable has no unit.");
+  if ((var_unit == units::none) || (unit == units::none))
+    throw except::UnitError("Unit conversion to / from None is not permitted.");
   const auto scale =
       llnl::units::quick_convert(var_unit.underlying(), unit.underlying());
   if (std::isnan(scale))

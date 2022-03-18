@@ -156,6 +156,16 @@ TEST(ToUnitTest, binned_can_avoid_copy) {
 TEST(ToUnitTest, throws_if_none_unit) {
   EXPECT_THROW_DISCARD(to_unit(makeVariable<int32_t>(Dims{Dim::X}, Shape{2},
                                                      units::none, Values{1, 2}),
-                               units::Unit("m")),
+                               units::m),
                        except::UnitError);
+  EXPECT_THROW_DISCARD(to_unit(makeVariable<int32_t>(Dims{Dim::X}, Shape{2},
+                                                     units::m, Values{1, 2}),
+                               units::none),
+                       except::UnitError);
+}
+
+TEST(ToUnitTest, does_not_throws_if_both_are_none) {
+  EXPECT_NO_THROW_DISCARD(to_unit(
+      makeVariable<int32_t>(Dims{Dim::X}, Shape{2}, units::none, Values{1, 2}),
+      units::none));
 }
