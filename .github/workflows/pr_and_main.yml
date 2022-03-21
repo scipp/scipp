@@ -82,7 +82,7 @@ jobs:
       - run: ccache --version
 
       - name: ccache
-        uses: hendrikmuhs/ccache-action@fedaed4959d48938cb5d4be1017da9649a151482
+        uses: hendrikmuhs/ccache-action@5d50846fe02576ad9b83c634e4b511b672c87a31
         with:
           key: ${{ matrix.os }}
 
