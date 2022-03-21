@@ -61,7 +61,7 @@ class View1d(View):
                          toolbar=Toolbar1d,
                          grid=grid)
 
-        self.errorbars = errorbars
+        self._errorbars = errorbars
 
         self._lines = {}
         self._dim = None
@@ -163,13 +163,15 @@ class View1d(View):
         Update the x and y positions of the data points when a new data slice
         is received for display.
         """
+        first_draw = self._dim is None
+
         self._dim = new_values.dim
         self._unit = new_values.unit
         self._coord = new_values.meta[self._dim]
 
         new_values = self._make_data(new_values)
 
-        errorbars = self.errorbars and len(new_values["variances"])
+        errorbars = self._errorbars and len(new_values["variances"])
 
         vals, hist = self._preprocess_hist(new_values)
         if key not in self._lines:
@@ -193,7 +195,11 @@ class View1d(View):
                 self._change_segments_y(new_values["variances"]["x"],
                                         new_values["variances"]["y"],
                                         new_values["variances"]["e"]))
-        if draw:
+
+        if first_draw:
+            self._set_axes_labels()
+            self.rescale_to_data()  # this calls draw()
+        elif draw:
             self.draw()
 
     def _change_segments_y(self, x: ArrayLike, y: ArrayLike, e: ArrayLike) -> ArrayLike:
@@ -250,7 +256,7 @@ class View1d(View):
         self.ax.set_yscale(self.norm)
         self.rescale_to_data()
 
-    def set_axes_labels(self):
+    def _set_axes_labels(self):
         self.ax.set_xlabel(self.xlabel if self.xlabel is not None else name_with_unit(
             var=self._coord))
         self.ax.set_ylabel(name_with_unit(var=scalar(1, unit=self._unit), name=""))

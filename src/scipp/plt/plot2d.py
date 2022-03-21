@@ -2,7 +2,6 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from ..core import DataArray, Variable
-from .controller import Controller
 from .params import make_params
 from .plot import Plot
 from .view2d import View2d
@@ -47,7 +46,6 @@ def plot2d(data_array_dict: Dict[str, DataArray],
 
     sp = Plot(models=data_array_dict,
               view=view,
-              controller=Controller,
               vmin=params["values"]["vmin"],
               vmax=params["values"]["vmax"],
               view_ndims=2)

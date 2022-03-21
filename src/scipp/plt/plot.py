@@ -93,7 +93,6 @@ class Plot:
     """
     def __init__(self,
                  models: Dict[str, DataArray],
-                 controller: Controller,
                  view: View = None,
                  vmin: Variable = None,
                  vmax: Variable = None,
@@ -108,7 +107,7 @@ class Plot:
         self.ax = None
 
         self._widgets = WidgetCollection()
-        self._controller = controller(models=self._models, view=self._view)
+        self._controller = Controller(models=self._models, view=self._view)
 
         self._add_default_pipeline_steps()
         self._render()

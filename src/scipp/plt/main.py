@@ -18,7 +18,7 @@ def _ndarray_to_variable(ndarray: ArrayLike) -> Variable:
     Convert a numpy ndarray to a Variable.
     Fake dimension labels begin at 'x' and cycle through the alphabet.
     """
-    dims = [f"axis-{i}" for i in range(len(ndarray.shape))]
+    dims = [f"dim_{i}" for i in range(len(ndarray.shape))]
     return Variable(dims=dims, values=ndarray)
 
 
@@ -70,7 +70,7 @@ def _input_to_data_array(item: Union[VariableLike, ArrayLike],
     return to_plot
 
 
-def main(scipp_obj: Union[VariableLike, ArrayLike, Dict[str, Union[VariableLike,
+def plot(scipp_obj: Union[VariableLike, ArrayLike, Dict[str, Union[VariableLike,
                                                                    ArrayLike]]],
          projection: str = None,
          operation: str = "sum",

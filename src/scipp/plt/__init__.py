@@ -3,4 +3,4 @@
 
 # flake8: noqa
 
-from .main import main as plot
+from .main import plot

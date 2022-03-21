@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .controller1d import Controller1d
 from ..core import DataArray, Variable
 from .params import make_params
 from .plot import Plot
@@ -52,7 +51,6 @@ def plot1d(data_array_dict: Dict[str, DataArray],
 
     sp = Plot(models=data_array_dict,
               view=view,
-              controller=Controller1d,
               vmin=params["values"]["vmin"],
               vmax=params["values"]["vmax"],
               view_ndims=1)
