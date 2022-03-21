@@ -18,16 +18,31 @@ namespace scipp::variable {
 
 namespace {
 Variable _values(Variable &&in) { return in.has_variances() ? values(in) : in; }
+
+template <class T, class... Remaining>
+std::optional<Variable>
+try_isclose_spatial(const Variable &a, const Variable &b, const Variable &rtol,
+                    const Variable &atol, const NanComparisons equal_nans) {
+  if (a.dtype() == dtype<T>)
+    return std::optional(
+        all(isclose(a.elements<T>(), b.elements<T>(), rtol, atol, equal_nans),
+            Dim::InternalStructureComponent));
+  if constexpr (sizeof...(Remaining) > 0)
+    return try_isclose_spatial<Remaining...>(a, b, rtol, atol, equal_nans);
+  else
+    return std::nullopt;
+}
 } // namespace
 
 Variable isclose(const Variable &a, const Variable &b, const Variable &rtol,
                  const Variable &atol, const NanComparisons equal_nans) {
   core::expect::unit(rtol, scipp::units::dimensionless, " For rtol arg");
-  // Element expansion comparison for vectors
-  if (a.dtype() == dtype<Eigen::Vector3d>)
-    return all(isclose(a.elements<Eigen::Vector3d>(),
-                       b.elements<Eigen::Vector3d>(), rtol, atol, equal_nans),
-               Dim::InternalStructureComponent);
+  if (const auto r = try_isclose_spatial<Eigen::Vector3d, Eigen::Affine3d,
+                                         core::Translation, core::Quaternion>(
+          a, b, rtol, atol, equal_nans);
+      r.has_value()) {
+    return *r;
+  }
 
   auto tol = atol + rtol * abs(b);
   if (a.has_variances() && b.has_variances()) {
