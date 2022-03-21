@@ -8,13 +8,6 @@ import ipywidgets as ipw
 
 
 class WidgetCollection(list):
-    """
-    Widgets containing a slider for each of the input's dimensions, as well as
-    buttons to modify the currently displayed axes.
-    It also provides buttons to hide/show masks.
-    """
-    pass
-
     def _ipython_display_(self):
         """
         IPython display representation for Jupyter notebooks.
@@ -26,12 +19,6 @@ class WidgetCollection(list):
         Gather all widgets in a single container box.
         """
         return ipw.VBox([child._to_widget() for child in self])
-
-    def connect(self, *args, **kwargs):
-        """
-        """
-        for widget in self.children:
-            widget.connect(*args, **kwargs)
 
 
 class WidgetStep(Step):

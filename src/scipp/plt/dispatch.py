@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 
-def dispatch(scipp_obj_dict, ndim=0, projection=None, **kwargs):
+def dispatch(scipp_obj_dict, ndim, projection=None, **kwargs):
     """
     Function to automatically dispatch the dict of DataArrays to the
     appropriate plotting function, depending on the number of dimensions.

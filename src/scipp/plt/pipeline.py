@@ -5,8 +5,6 @@ from ..core import DataArray
 
 
 class Pipeline(list):
-    pass
-
     def run(self, model: DataArray):
         out = model
         for step in self:
