@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ..core import DataArray
+from .. import DataArray
 from .widgets import WidgetStep
 
 import ipywidgets as ipw

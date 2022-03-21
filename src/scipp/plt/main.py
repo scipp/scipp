@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ..core import Variable, DataArray, Dataset
+from .. import Variable, DataArray, Dataset
 from ..compat.dict import from_dict
 from .dispatch import dispatch
 from .plot import PlotDict, Plot

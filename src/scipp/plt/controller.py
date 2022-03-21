@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ..core import DataArray
+from .. import DataArray
 from .pipeline import Pipeline, Step
 from .view import View
 
@@ -29,6 +29,7 @@ class Controller:
 
     def render(self):
         self._run_all_pipelines()
+        self._view.render()
 
     def _run_all_pipelines(self):
         for key in self._pipelines:

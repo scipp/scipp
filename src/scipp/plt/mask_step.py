@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ..core import DataArray
+from .. import DataArray
 from .widgets import WidgetStep
 from ..typing import MetaDataMap
 
@@ -66,7 +66,7 @@ class MaskWidget:
             chbx.observe(self._toggle_mask, **kwargs)
         if len(self._checkboxes):
             self._all_masks_button.observe(self._toggle_all_masks, **kwargs)
-        self._callback = partial(callback, change=None)
+        self._callback = partial(callback, None)
 
     @property
     def value(self) -> dict:

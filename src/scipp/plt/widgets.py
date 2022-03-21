@@ -39,8 +39,7 @@ class WidgetStep(Step):
 
     def _changed(self, change):
         self._update_func()
-        for callback in self._callbacks:
-            callback()  # callback will call Step.__call__
+        super()._changed()
 
     def _ipython_display_(self):
         """

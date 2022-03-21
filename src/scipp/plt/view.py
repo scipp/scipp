@@ -154,3 +154,6 @@ class View:
         significantly.
         """
         self.fig.canvas.draw_idle()
+
+    def render(self):
+        return

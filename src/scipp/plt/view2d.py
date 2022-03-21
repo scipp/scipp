@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .. import config
-from ..core import broadcast, DataArray
+from .. import broadcast, DataArray
 from .toolbar import Toolbar2d
 from .tools import find_limits, fix_empty_range
 from ..utils import name_with_unit
@@ -70,35 +70,36 @@ class View2d(View):
         self._image.set_clim(vmin, vmax)
         self.update()
 
+    def _make_image(self):
+        dims = self._data.dims
+        self._image = self.ax.pcolormesh(self._data.meta[dims[1]].values,
+                                         self._data.meta[dims[0]].values,
+                                         self._data.data.values,
+                                         shading='auto')
+        self._cbar = plt.colorbar(self._image,
+                                  ax=self.ax,
+                                  cax=self._cax,
+                                  extend=self._extend)
+        if self._cax is None:
+            self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
+        self._image.set_array(None)
+        self._set_norm()
+        self.ax.set_xlabel(self.xlabel if self.xlabel is not None else name_with_unit(
+            var=self._data.meta[dims[1]]))
+        self.ax.set_ylabel(self.ylabel if self.ylabel is not None else name_with_unit(
+            var=self._data.meta[dims[0]]))
+        if self._title is None:
+            self.ax.set_title(self._data.name)
+
     def update(self, new_values: DataArray = None, key: str = None, draw: bool = True):
         """
         Update image array with new values.
         """
         if new_values is not None:
             self._data = new_values
-        dims = self._data.dims
 
         if self._image is None:
-            self._image = self.ax.pcolormesh(self._data.meta[dims[1]].values,
-                                             self._data.meta[dims[0]].values,
-                                             self._data.data.values,
-                                             shading='auto')
-            self._cbar = plt.colorbar(self._image,
-                                      ax=self.ax,
-                                      cax=self._cax,
-                                      extend=self._extend)
-            if self._cax is None:
-                self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
-            self._image.set_array(None)
-            self._set_norm()
-            self.ax.set_xlabel(
-                self.xlabel if self.xlabel is not None else name_with_unit(
-                    var=self._data.meta[dims[1]]))
-            self.ax.set_ylabel(
-                self.ylabel if self.ylabel is not None else name_with_unit(
-                    var=self._data.meta[dims[0]]))
-            if self._title is None:
-                self.ax.set_title(self._data.name)
+            self._make_image()
 
         flat_values = self._data.values.flatten()
         rgba = self._cmap(self._norm_func(flat_values))

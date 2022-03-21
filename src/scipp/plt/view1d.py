@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ..core import Variable, scalar, DataArray
+from .. import Variable, scalar, DataArray
 from .toolbar import Toolbar1d
 from .tools import get_line_param, find_limits, fix_empty_range, vars_to_err
 from ..utils import name_with_unit
@@ -163,8 +163,6 @@ class View1d(View):
         Update the x and y positions of the data points when a new data slice
         is received for display.
         """
-        first_draw = self._dim is None
-
         self._dim = new_values.dim
         self._unit = new_values.unit
         self._coord = new_values.meta[self._dim]
@@ -196,10 +194,7 @@ class View1d(View):
                                         new_values["variances"]["y"],
                                         new_values["variances"]["e"]))
 
-        if first_draw:
-            self._set_axes_labels()
-            self.rescale_to_data()  # this calls draw()
-        elif draw:
+        if draw:
             self.draw()
 
     def _change_segments_y(self, x: ArrayLike, y: ArrayLike, e: ArrayLike) -> ArrayLike:
@@ -256,7 +251,8 @@ class View1d(View):
         self.ax.set_yscale(self.norm)
         self.rescale_to_data()
 
-    def _set_axes_labels(self):
+    def render(self):
         self.ax.set_xlabel(self.xlabel if self.xlabel is not None else name_with_unit(
             var=self._coord))
         self.ax.set_ylabel(name_with_unit(var=scalar(1, unit=self._unit), name=""))
+        self.rescale_to_data()  # this calls draw()

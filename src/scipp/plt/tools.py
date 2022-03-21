@@ -2,8 +2,8 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .. import config, units
-from ..core import concat, values, scalar, histogram, full_like, Variable, DataArray
-from ..core import abs as abs_, flatten, ones
+from .. import concat, values, scalar, histogram, full_like, Variable, DataArray
+from .. import abs as abs_, flatten, ones
 from ..typing import MetaDataMap
 
 import io

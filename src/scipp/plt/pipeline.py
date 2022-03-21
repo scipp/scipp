@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ..core import DataArray
+from .. import DataArray
 
 
 class Pipeline(list):
@@ -19,6 +19,10 @@ class Step:
 
     def __call__(self, data_array):
         return self._func(data_array)
+
+    def _changed(self):
+        for callback in self._callbacks:
+            callback()  # callback will call Step.__call__
 
     def register_callback(self, callback):
         self._callbacks.append(callback)

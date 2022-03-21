@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from ..core import DataArray, Variable
+from .. import DataArray, Variable
 from .params import make_params
 from .plot import Plot
 from .view2d import View2d

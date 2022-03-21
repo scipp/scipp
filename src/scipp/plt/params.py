@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .. import config
-from ..core import Variable
+from .. import Variable
 
 from copy import copy
 
