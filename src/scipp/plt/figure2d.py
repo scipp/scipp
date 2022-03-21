@@ -6,7 +6,7 @@ from .. import broadcast, DataArray
 from .toolbar import Toolbar2d
 from .tools import find_limits, fix_empty_range
 from ..utils import name_with_unit
-from .view import View
+from .figure import Figure
 
 from functools import reduce
 from matplotlib.colors import Normalize, LogNorm
@@ -14,27 +14,27 @@ import matplotlib.pyplot as plt
 from typing import Any, Tuple
 
 
-class View2d(View):
+class Figure2d(Figure):
     """
     Class for 2 dimensional plots.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        # ax: Any = None,
+        cax: Any = None,
+        # figsize: Tuple[float, ...] = None,
+        aspect: str = None,
+        cmap: str = None,
+        masks: dict = None,
+        norm: str = None,
+        extend: bool = None,
+        # title: str = None,
+        # xlabel: str = None,
+        # ylabel: str = None,
+        # grid: bool = False
+        **kwargs):
 
-        super().__init__(*args, **kwargs)
-
-        self.toolbar.add_togglebutton(name="pan_view", icon="arrows", tooltip="Pan")
-        self.toolbar.add_togglebutton(name="zoom_view", icon="square-o", tooltip="Zoom")
-        self.toolbar.add_button(name="rescale_to_data",
-                                icon="arrows-v",
-                                tooltip="Rescale")
-        self.toolbar.add_button(name="transpose", icon="retweet", tooltip="Transpose")
-        self.toolbar.add_togglebutton('toggle_xaxis_scale', description="logx")
-        self.toolbar.add_togglebutton('toggle_yaxis_scale', description="logy")
-        self.toolbar.add_togglebutton(name="toggle_norm",
-                                      description="log",
-                                      tooltip="log(data)")
-        self.toolbar.add_button(name="save_view", icon="save", tooltip="Save")
-        self._update_container()
+        super().__init__(**kwargs)
 
         # if aspect is None:
         #     aspect = config['plot']['aspect']

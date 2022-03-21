@@ -93,10 +93,10 @@ class Toolbar:
                 args[key] = value
         return args
 
-    @property
-    def tool_active(self) -> bool:
-        return self.members["zoom_view"].value or \
-                self.members["pan_view"].value
+    # @property
+    # def tool_active(self) -> bool:
+    #     return self.members["zoom_view"].value or \
+    #             self.members["pan_view"].value
 
     def home_view(self, button: ipw.Widget):
         self.external_controls.home()
