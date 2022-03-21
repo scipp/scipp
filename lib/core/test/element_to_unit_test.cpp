@@ -87,8 +87,10 @@ TEST(ElementToUnitTest, affine3d) {
   const Eigen::AngleAxisd rotation(10.0, Eigen::Vector3d{1, 0, 0});
   const Eigen::Translation3d translation(2, 3, 4);
   const Eigen::Affine3d affine = rotation * translation;
-  const Eigen::Affine3d expected =
-      rotation * (translation * Eigen::Scaling(10.0));
+
+  const Eigen::Translation3d expected_translation(20, 30, 40);
+  const Eigen::Affine3d expected = rotation * expected_translation;
+
   EXPECT_TRUE(to_unit(affine, 10).isApprox(expected));
 }
 

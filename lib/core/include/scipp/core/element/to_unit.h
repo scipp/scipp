@@ -51,7 +51,8 @@ constexpr auto to_unit = overloaded{
     },
     [](const Eigen::Affine3d &x, const auto &scale) {
       auto out = x;
-      return out.scale(scale);
+      out.translation() *= scale;
+      return out;
     },
     [](const Translation &x, const auto &scale) {
       return Translation(x.vector() * scale);
