@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "dtype.h"
 
+#include <iostream>
 #include <regex>
 
 #include "scipp/core/eigen.h"
@@ -61,13 +62,18 @@ objects containing binned data. They cannot be used directly to create arrays of
            [](const DType &self, const py::object &other) {
              return self == scipp_dtype(other);
            })
-      .def("__str__", [](const DType &self) { return to_string(self); })
+      .def("__str__",
+           [](const DType &self) {
+             std::cout << self.index << '\n';
+             return to_string(self);
+           })
       .def("__repr__", [](const DType &self) {
         return "DType('" + to_string(self) + "')";
       });
 
   // Explicit list of dtypes to bind since core::dtypeNameRegistry contains
   // types that are for internal use only and are never returned to Python.
+  int i = 0;
   for (const auto &t : {
            dtype<bool>,
            dtype<int32_t>,
@@ -88,10 +94,12 @@ objects containing binned data. They cannot be used directly to create arrays of
            dtype<core::bin<DataArray>>,
            dtype<core::bin<Dataset>>,
            dtype<python::PyObject>,
-       })
+       }) {
+    std::cout << i++ << '\n';
     PyDType.def_property_readonly_static(
         core::dtypeNameRegistry().at(t).c_str(),
         [&t](const py::object &) { return t; });
+  }
 }
 
 DType dtype_of(const py::object &x) {
