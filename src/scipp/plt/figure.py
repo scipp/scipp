@@ -7,6 +7,7 @@ from .toolbar import Toolbar
 
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
+from typing import Any, Tuple
 
 
 class Figure:
@@ -20,9 +21,12 @@ class Figure:
                  bounding_box: Tuple[float, ...] = None):
         self._fig = None
         self._closed = False
+        self._title = title
         self._ax = ax
-        # self._own_axes = True
         self._bounding_box = bounding_box
+        self._xlabel = xlabel
+        self._ylabel = ylabel
+
         cfg = config['plot']
         if self._ax is None:
             if figsize is None:
@@ -32,13 +36,11 @@ class Figure:
                 self._bounding_box = cfg['bounding_box']
             self._fig.tight_layout(rect=self._bounding_box)
             if self.is_widget():
-                # self.toolbar = toolbar(external_controls=self.fig.canvas.toolbar)
                 self._fig.canvas.toolbar_visible = False
         else:
-            # self.own_axes = False
             self._fig = self._ax.get_figure()
 
-        self._ax.set_title(title)
+        self._ax.set_title(self._title)
         if grid:
             self._ax.grid()
 
@@ -79,4 +81,46 @@ class Figure:
         (which we have disabled by using `plt.ioff()`) can degrade performance
         significantly.
         """
-        self.fig.canvas.draw_idle()
+        self._fig.canvas.draw_idle()
+
+    def home_view(self, *_):
+        self._fig.canvas.toolbar.home()
+
+    def pan_view(self, *_):
+        # if change["new"]:
+        # In case the zoom button is selected, we need to de-select it
+        # if self.members["zoom_view"].value:
+        #     self.members["zoom_view"].value = False
+        self._fig.canvas.toolbar.pan()
+
+    def zoom_view(self, *_):
+        # if change["new"]:
+        # In case the pan button is selected, we need to de-select it
+        # if self.members["pan_view"].value:
+        #     self.members["pan_view"].value = False
+        self._fig.canvas.toolbar.zoom()
+
+    def save_view(self, *_):
+        self._fig.canvas.toolbar.save_figure()
+
+    def toggle_xaxis_scale(self, *_):
+        swap_scales = {"linear": "log", "log": "linear"}
+        self._ax.set_xscale(swap_scales[self._ax.get_xscale()])
+        self.draw()
+
+    def toggle_yaxis_scale(self, *_):
+        swap_scales = {"linear": "log", "log": "linear"}
+        self._ax.set_yscale(swap_scales[self._ax.get_yscale()])
+        self.draw()
+
+    def render(self):
+        return
+
+    def savefig(self, filename: str = None):
+        """
+        Save plot to file.
+        Possible file extensions are `.jpg`, `.png` and `.pdf`.
+        The default directory for writing the file is the same as the
+        directory where the script or notebook is running.
+        """
+        self._fig.savefig(filename, bbox_inches="tight")

@@ -3,7 +3,7 @@
 
 from .. import config
 from .. import broadcast, DataArray
-from .toolbar import Toolbar2d
+# from .toolbar import Toolbar2d
 from .tools import find_limits, fix_empty_range
 from ..utils import name_with_unit
 from .figure import Figure
@@ -18,26 +18,16 @@ class Figure2d(Figure):
     """
     Class for 2 dimensional plots.
     """
-    def __init__(
-        self,
-        # ax: Any = None,
-        cax: Any = None,
-        # figsize: Tuple[float, ...] = None,
-        aspect: str = None,
-        cmap: str = None,
-        masks: dict = None,
-        norm: str = None,
-        extend: bool = None,
-        # title: str = None,
-        # xlabel: str = None,
-        # ylabel: str = None,
-        # grid: bool = False
-        **kwargs):
+    def __init__(self,
+                 cax: Any = None,
+                 aspect: str = None,
+                 cmap: str = None,
+                 masks: dict = None,
+                 norm: str = None,
+                 extend: bool = None,
+                 **kwargs):
 
         super().__init__(**kwargs)
-
-        # if aspect is None:
-        #     aspect = config['plot']['aspect']
 
         self._cmap = cmap
         self._cax = cax
@@ -48,7 +38,6 @@ class Figure2d(Figure):
         self._image = None
         self._cbar = None
         self._data = None
-        self._title = title
         self._aspect = aspect if aspect is not None else config['plot']['aspect']
 
     def _make_limits(self) -> Tuple[float, ...]:
@@ -56,7 +45,7 @@ class Figure2d(Figure):
             find_limits(self._data.data, scale=self._norm_flag)[self._norm_flag])
         return vmin.value, vmax.value
 
-    def rescale_to_data(self, _):
+    def rescale_to_data(self, *_):
         """
         Rescale the colorbar limits according to the supplied values.
         """
@@ -68,24 +57,26 @@ class Figure2d(Figure):
 
     def _make_image(self):
         dims = self._data.dims
-        self._image = self.ax.pcolormesh(self._data.meta[dims[1]].values,
-                                         self._data.meta[dims[0]].values,
-                                         self._data.data.values,
-                                         shading='auto')
+        self._image = self._ax.pcolormesh(self._data.meta[dims[1]].values,
+                                          self._data.meta[dims[0]].values,
+                                          self._data.data.values,
+                                          shading='auto')
         self._cbar = plt.colorbar(self._image,
-                                  ax=self.ax,
+                                  ax=self._ax,
                                   cax=self._cax,
                                   extend=self._extend)
         if self._cax is None:
             self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self._image.set_array(None)
         self._set_norm()
-        self.ax.set_xlabel(self.xlabel if self.xlabel is not None else name_with_unit(
-            var=self._data.meta[dims[1]]))
-        self.ax.set_ylabel(self.ylabel if self.ylabel is not None else name_with_unit(
-            var=self._data.meta[dims[0]]))
+        self._ax.set_xlabel(
+            self._xlabel if self._xlabel is not None else name_with_unit(
+                var=self._data.meta[dims[1]]))
+        self._ax.set_ylabel(
+            self._ylabel if self._ylabel is not None else name_with_unit(
+                var=self._data.meta[dims[0]]))
         if self._title is None:
-            self.ax.set_title(self._data.name)
+            self._ax.set_title(self._data.name)
 
     def update(self, new_values: DataArray = None, key: str = None, draw: bool = True):
         """
