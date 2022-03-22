@@ -35,6 +35,18 @@ def test_length_1_list_gives_corresponding_length_1_slice(obj, pos):
 
 
 @pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
+def test_omitting_dim_when_slicing_2d_object_raises_DimensionError(obj):
+    with pytest.raises(sc.DimensionError):
+        obj[[3, 1]]
+
+
+@pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
+def test_omitted_dim_is_equivalent_to_unique_dim(obj):
+    obj = obj['yy', 0]
+    assert sc.identical(obj[[3, 1]], obj[obj.dim, [3, 1]])
+
+
+@pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
 def test_every_other_index_gives_stride_2_slice(obj):
     assert sc.identical(obj['xx', [0, 2]], obj['xx', 0::2])
     assert sc.identical(obj['xx', [1, 3]], obj['xx', 1::2])

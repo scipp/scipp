@@ -198,6 +198,23 @@ void expect_implicit_dimension(const Sizes &dims) {
     throw except::DimensionError(msg);
   }
 }
+
+template <class T>
+T slice_by_list(const T &obj,
+                const std::tuple<Dim, std::vector<scipp::index>> &index) {
+  const auto &[dim, indices] = index;
+  std::vector<T> slices;
+  slices.reserve(indices.size());
+  const auto size = obj.dims()[dim];
+  for (const auto &pos : indices) {
+    const auto slice = py::slice(pos, pos + 1, 1);
+    ssize_t start, stop, step, slicelength;
+    if (!slice.compute(size, &start, &stop, &step, &slicelength))
+      throw py::error_already_set();
+    slices.emplace_back(obj.slice({dim, start, stop}));
+  }
+  return concat(slices, dim);
+}
 } // namespace
 
 template <class T, class... Ignored>
@@ -271,19 +288,9 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
       return out;
     });
   }
-  c.def("__getitem__",
-        [](T &self, const std::tuple<Dim, std::vector<scipp::index>> &index) {
-          const auto &[dim, indices] = index;
-          std::vector<T> slices;
-          slices.reserve(indices.size());
-          const auto size = self.dims()[dim];
-          for (const auto &pos : indices) {
-            const auto slice = py::slice(pos, pos + 1, 1);
-            ssize_t start, stop, step, slicelength;
-            if (!slice.compute(size, &start, &stop, &step, &slicelength))
-              throw py::error_already_set();
-            slices.emplace_back(self.slice({dim, start, stop}));
-          }
-          return concat(slices, dim);
-        });
+  c.def("__getitem__", [](T &self, const std::vector<scipp::index> &indices) {
+    expect_implicit_dimension(self.dims());
+    return slice_by_list(self, {self.dim(), indices});
+  });
+  c.def("__getitem__", slice_by_list<T>);
 }
