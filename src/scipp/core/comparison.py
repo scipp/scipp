@@ -143,7 +143,7 @@ def isclose(x: _cpp.Variable,
     ---------
         Vectors and matrices are compared element-wise.
         This is not necessarily a good measure for the similarity of `spatial`
-        dtypes like ``scipp.DType.vector3`` or ``scipp.Dtype.rotation3``
+        dtypes like ``scipp.DType.rotation3`` or ``scipp.Dtype.affine_transform3``
         (see :mod:`scipp.spatial`).
 
     Parameters
