@@ -73,13 +73,12 @@ TEST(IsCloseTest, with_vectors) {
 }
 
 TEST(IsCloseTest, with_matrices) {
-  Eigen::Matrix3d mat;
-  mat << 0, 0, 0, 0, 0, 0, 0, 0, 0;
-  const auto u = makeVariable<Eigen::Matrix3d>(Values{mat});
-  mat << 1, 1, 1, -1, 1, -1, 1, -1, -1;
-  const auto v = makeVariable<Eigen::Matrix3d>(Values{mat});
-  mat << 1, 1, 1, -1, 1.0001, -1, 1, -1.0001, -1;
-  const auto w = makeVariable<Eigen::Matrix3d>(Values{mat});
+  const Eigen::Matrix3d mat_u = Eigen::Matrix3d::Constant(3, 3, 0.0);
+  const auto u = makeVariable<Eigen::Matrix3d>(Values{mat_u});
+  const Eigen::Matrix3d mat_v = Eigen::Matrix3d::Constant(3, 3, 1.0);
+  const auto v = makeVariable<Eigen::Matrix3d>(Values{mat_v});
+  const Eigen::Matrix3d mat_w = Eigen::Matrix3d::Constant(3, 3, 1.0001);
+  const auto w = makeVariable<Eigen::Matrix3d>(Values{mat_w});
   const auto rtol = 0.0 * units::one;
   const auto atol = 1.0 * units::one;
   EXPECT_EQ(isclose(u, u, rtol, atol), makeVariable<bool>(Values{true}));
