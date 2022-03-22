@@ -58,9 +58,16 @@ def test_every_other_index_gives_stride_2_slice(obj):
 
 
 @pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
-def test_unordered_indices_yields_result_with_reordered_slices(obj):
+def test_unordered_outer_indices_yields_result_with_reordered_slices(obj):
     assert sc.identical(obj['xx', [2, 3, 0]],
                         sc.concat([obj['xx', 2:4], obj['xx', 0:1]], 'xx'))
+
+
+@pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
+def test_unordered_inner_indices_yields_result_with_reordered_slices(obj):
+    s0 = obj['yy', 0:1]
+    s1 = obj['yy', 1:2]
+    assert sc.identical(obj['yy', [1, 1, 0, 1]], sc.concat([s1, s1, s0, s1], 'yy'))
 
 
 @pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
