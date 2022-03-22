@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
-# @file
 # @author Simon Heybrock
 import pytest
 import scipp as sc
+import numpy as np
 
 
 def make_var() -> sc.Variable:
@@ -32,6 +32,11 @@ def make_dataset() -> sc.Dataset:
 @pytest.mark.parametrize("pos", [0, 1, 2, 3, -2, -3, -4])
 def test_length_1_list_gives_corresponding_length_1_slice(obj, pos):
     assert sc.identical(obj['xx', [pos]], obj['xx', pos:pos + 1])
+
+
+def test_slicing_with_numpy_array_works_and_gives_equivalent_result():
+    var = make_var()
+    assert sc.identical(var['xx', np.array([2, 3, 0])], var['xx', [2, 3, 0]])
 
 
 @pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
