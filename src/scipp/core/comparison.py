@@ -139,21 +139,41 @@ def isclose(x: _cpp.Variable,
         abs(x.value - y.value) <= atol + rtol * abs(y.value) and
           abs(sqrt(x.variance) - sqrt(y.variance)) <= atol + rtol * abs(sqrt(y.variance))
 
-    :param x: Left input.
-    :param y: Right input.
-    :param rtol: Tolerance value relative (to y).
-                 Can be a scalar or non-scalar.
-                 Defaults to scalar 1e-5 if unset.
-    :param atol: Tolerance value absolute. Can be a scalar or non-scalar.
-                 Defaults to scalar 1e-8 if unset and takes units from y arg.
-    :param equal_nan: if true, non-finite values at the same index in (x, y)
-                      are treated as equal.
-                      Signbit must match for infs.
-    :return: Variable same size as input.
-             Element True if absolute diff of value <= atol + rtol * abs(y),
-             otherwise False.
+    Attention
+    ---------
+        Vectors and matrices are compared element-wise.
+        This is not necessarily a good measure for the similarity of `spatial`
+        dtypes like ``scipp.DType.vector3`` or ``scipp.Dtype.rotation3``
+        (see :mod:`scipp.spatial`).
 
-    :seealso: :py:func:`scipp.allclose` : isclose applied over all dimensions
+    Parameters
+    ----------
+    x:
+        Left input.
+    y:
+        Right input.
+    rtol:
+        Tolerance value relative (to y).
+        Can be a scalar or non-scalar.
+        Defaults to scalar 1e-5 if unset.
+    atol:
+        Tolerance value absolute.
+        Can be a scalar or non-scalar.
+        Defaults to scalar 1e-8 if unset and takes units from y arg.
+    equal_nan:
+        If true, non-finite values at the same index in (x, y) are treated as equal.
+        Signbit must match for infs.
+
+    Returns
+    -------
+    :
+        Variable same size as input.
+        Element True if absolute diff of value <= atol + rtol * abs(y),
+        otherwise False.
+
+    See Also
+    --------
+    :py:func:`scipp.allclose`
     """
     if rtol is None:
         rtol = 1e-5 * _cpp.units.one
