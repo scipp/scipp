@@ -72,6 +72,22 @@ TEST(IsCloseTest, with_vectors) {
   EXPECT_EQ(isclose(u, w, rtol, atol), makeVariable<bool>(Values{false}));
 }
 
+TEST(IsCloseTest, with_matrices) {
+  Eigen::Matrix3d mat;
+  mat << 0, 0, 0, 0, 0, 0, 0, 0, 0;
+  const auto u = makeVariable<Eigen::Matrix3d>(Values{mat});
+  mat << 1, 1, 1, -1, 1, -1, 1, -1, -1;
+  const auto v = makeVariable<Eigen::Matrix3d>(Values{mat});
+  mat << 1, 1, 1, -1, 1.0001, -1, 1, -1.0001, -1;
+  const auto w = makeVariable<Eigen::Matrix3d>(Values{mat});
+  const auto rtol = 0.0 * units::one;
+  const auto atol = 1.0 * units::one;
+  EXPECT_EQ(isclose(u, u, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, v, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(v, w, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, w, rtol, atol), makeVariable<bool>(Values{false}));
+}
+
 TEST(IsCloseTest, with_affine) {
   // The interaction of rotation and translation is non-trivial.
   // we set angle=0 to help pick a meaningful atol.

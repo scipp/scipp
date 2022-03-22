@@ -37,9 +37,10 @@ try_isclose_spatial(const Variable &a, const Variable &b, const Variable &rtol,
 Variable isclose(const Variable &a, const Variable &b, const Variable &rtol,
                  const Variable &atol, const NanComparisons equal_nans) {
   core::expect::unit(rtol, scipp::units::dimensionless, " For rtol arg");
-  if (const auto r = try_isclose_spatial<Eigen::Vector3d, Eigen::Affine3d,
-                                         core::Translation, core::Quaternion>(
-          a, b, rtol, atol, equal_nans);
+  if (const auto r =
+          try_isclose_spatial<Eigen::Vector3d, Eigen::Matrix3d, Eigen::Affine3d,
+                              core::Translation, core::Quaternion>(
+              a, b, rtol, atol, equal_nans);
       r.has_value()) {
     return *r;
   }
