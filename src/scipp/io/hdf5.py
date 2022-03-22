@@ -7,6 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Union
 
+from ..logging import get_logger
 from ..typing import VariableLike
 
 
@@ -188,7 +189,8 @@ class VariableIO:
         if var.dtype not in cls._dtypes.values():
             # In practice this may make the file unreadable, e.g., if values
             # have unsupported dtype.
-            print(f'Writing with dtype={var.dtype} not implemented, skipping.')
+            get_logger().warning('Writing with dtype=%s not implemented, skipping.',
+                                 var.dtype)
             return
         _write_scipp_header(group, 'Variable')
         dset = cls._write_data(group, var)
