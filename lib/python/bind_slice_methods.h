@@ -11,6 +11,7 @@
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/groupby.h"
+#include "scipp/dataset/shape.h"
 #include "scipp/dataset/slice.h"
 #include "scipp/variable/slice.h"
 #include "scipp/variable/variable.h"
@@ -270,4 +271,19 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
       return out;
     });
   }
+  c.def("__getitem__",
+        [](T &self, const std::tuple<Dim, std::vector<scipp::index>> &index) {
+          const auto &[dim, indices] = index;
+          std::vector<T> slices;
+          slices.reserve(indices.size());
+          const auto size = self.dims()[dim];
+          for (const auto &pos : indices) {
+            const auto slice = py::slice(pos, pos + 1, 1);
+            ssize_t start, stop, step, slicelength;
+            if (!slice.compute(size, &start, &stop, &step, &slicelength))
+              throw py::error_already_set();
+            slices.emplace_back(self.slice({dim, start, stop}));
+          }
+          return concat(slices, dim);
+        });
 }
