@@ -17,7 +17,6 @@ dependencies:
   - pre-commit
   - yapf
   - flake8
-  - ccache
   # doc build requirements
   - confuse
   - graphlib-backport # for python < 3.9
