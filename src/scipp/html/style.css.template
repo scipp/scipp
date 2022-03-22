@@ -58,7 +58,9 @@
   color: var(--sc-font-color2);
 }
 
-.sc-sections {
+/* Also override settings of reveal.js as introduced when
+   generating slides using the rise package. */
+.sc-sections, .reveal .sc-sections {
   padding-left: 0 !important;
   display: grid;
   grid-template-columns: 150px auto auto auto 1fr 20px 20px;
@@ -197,7 +199,9 @@
 }
 
 .sc-var-list,
-.sc-var-item {
+.sc-var-item,
+.reveal .sc-var-list,
+.reveal .sc-var-item {
   display: contents;
 }
 
@@ -280,7 +284,7 @@
 .sc-var-attrs {
   display: block;
 }
-.sc-var-data {
+.sc-var-data, .reveal .sc-var-data {
   display: none;
 }
 .sc-var-attrs,
