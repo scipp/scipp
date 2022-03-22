@@ -173,7 +173,7 @@ def isclose(x: _cpp.Variable,
 
     See Also
     --------
-    :py:func:`scipp.allclose`
+    scipp.allclose
     """
     if rtol is None:
         rtol = 1e-5 * _cpp.units.one
