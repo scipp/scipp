@@ -97,7 +97,7 @@ class ResamplingModel():
     def edges(self):
         return self._edges
 
-    def _rebin(self, var, coords, *, sanitize=False):
+    def _rebin(self, var, *, sizes, coords, sanitize=False):
         """
         Rebin a variable with given coords to new edges.
 
@@ -124,7 +124,7 @@ class ResamplingModel():
                     if d not in data_dims:
                         data = broadcast(data,
                                          dims=[d] + data.dims,
-                                         shape=[coord.sizes[d]] + data.shape)
+                                         shape=[sizes[d]] + data.shape)
         array = DataArray(data=data)
         for dim in coords:
             try:
@@ -215,7 +215,8 @@ class ResamplingModel():
             self._resampled = self._resample(out)
             for name, mask in out.masks.items():
                 m = self._rebin(mask,
-                                out.meta,
+                                sizes=out.sizes,
+                                coords=out.meta,
                                 sanitize=isinstance(self, ResamplingBinnedModel))
                 # rebin changes to float-valued mask, but need bool
                 self._resampled.masks[name] = m.data.to(dtype='bool', copy=False)
@@ -331,7 +332,7 @@ class ResamplingDenseModel(ResamplingModel):
     def _resample(self, array):
         coords = _replace_edge_coords(array, self._array.dims, self.bounds,
                                       self._prefix)
-        return self._rebin(array.data, coords)
+        return self._rebin(array.data, sizes=array.sizes, coords=coords)
 
 
 def resampling_model(array, **kwargs):
