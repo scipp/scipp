@@ -46,6 +46,14 @@ def test_true_and_false_concats_slices(obj):
     assert sc.identical(obj[condition], sc.concat([obj['xx', 0], obj['xx', 2:]], 'xx'))
 
 
+def test_non_dimension_coords_are_preserved():
+    da = make_array()
+    da.coords['xx2'] = da.coords['xx']
+    condition = sc.array(dims=['xx'], values=[True, False, True, True])
+    assert sc.identical(da[condition].coords['xx2'],
+                        sc.array(dims=['xx'], dtype='int64', values=[0, 2, 3]))
+
+
 def test_bin_edges_are_dropped():
     da = make_array()
     base = da.copy()
