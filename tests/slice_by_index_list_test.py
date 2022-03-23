@@ -6,40 +6,14 @@ import scipp as sc
 import numpy as np
 
 
-def make_var() -> sc.Variable:
-    v = sc.arange('dummy', 12, dtype='int64')
-    return v.fold(dim='dummy', sizes={'xx': 4, 'yy': 3})
-
-
-def make_array() -> sc.DataArray:
-    da = sc.DataArray(make_var())
-    da.coords['xx'] = sc.arange('xx', 4, dtype='int64')
-    da.coords['yy'] = sc.arange('yy', 3, dtype='int64')
-    return da
-
-
-def make_dataset() -> sc.Dataset:
-    ds = sc.Dataset()
-    ds['xy'] = make_array()
-    ds['x'] = ds.coords['xx']
-    return ds
-
-
-@pytest.fixture(params=[make_var(), make_array(),
-                        make_dataset()],
-                ids=['Variable', 'DataArray', 'Dataset'])
-def sliceable(request):
-    return request.param
-
-
 @pytest.mark.parametrize("pos", [0, 1, 2, 3, -2, -3, -4])
 def test_length_1_list_gives_corresponding_length_1_slice(sliceable, pos):
     assert sc.identical(sliceable['xx', [pos]], sliceable['xx', pos:pos + 1])
 
 
-def test_slicing_with_numpy_array_works_and_gives_equivalent_result():
-    var = make_var()
-    assert sc.identical(var['xx', np.array([2, 3, 0])], var['xx', [2, 3, 0]])
+def test_slicing_with_numpy_array_works_and_gives_equivalent_result(sliceable):
+    assert sc.identical(sliceable['xx', np.array([2, 3, 0])], sliceable['xx',
+                                                                        [2, 3, 0]])
 
 
 def test_omitting_dim_when_slicing_2d_sliceableect_raises_DimensionError(sliceable):
@@ -81,10 +55,8 @@ def test_reversing_twice_gives_original(sliceable):
 
 
 @pytest.mark.parametrize("what", ["coords", "masks", "attrs"])
-def test_bin_edges_are_dropped(sliceable, what):
-    if isinstance(sliceable, sc.Variable):
-        return
-    sliceable = sliceable.copy()
+def test_bin_edges_are_dropped(labeled_sliceable, what):
+    sliceable = labeled_sliceable.copy()
     base = sliceable.copy()
     edges = sc.concat([sliceable.coords['xx'], sliceable.coords['xx'][-1] + 1], 'xx')
     da = sliceable if isinstance(sliceable,
@@ -94,15 +66,13 @@ def test_bin_edges_are_dropped(sliceable, what):
                         sc.concat([base['xx', 0], base['xx', 2:]], 'xx'))
 
 
-def test_dataset_item_independent_of_slice_dim_preserved_unchanged():
-    ds = make_dataset()
-    assert sc.identical(ds['yy', [0, 2]]['x'], ds['x'])
+def test_dataset_item_independent_of_slice_dim_preserved_unchanged(dataset_xx4_yy3):
+    assert sc.identical(dataset_xx4_yy3['yy', [0, 2]]['x'], dataset_xx4_yy3['x'])
 
 
-def test_2d_list_raises_TypeError():
-    var = make_var()
+def test_2d_list_raises_TypeError(sliceable):
     with pytest.raises(TypeError):
-        var['xx', [[0], [2]]]
+        sliceable['xx', [[0], [2]]]
 
 
 @pytest.mark.parametrize("pos", [-6, -5, 4, 5])
