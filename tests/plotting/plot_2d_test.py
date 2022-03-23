@@ -146,6 +146,14 @@ def test_plot_2d_with_2d_coord_1d_mask():
     plot(da)
 
 
+@pytest.mark.parametrize("unit", ['counts', 'K'])
+def test_plot_2d_with_1d_mask_and_2d_edges_in_other_dim(unit):
+    da = sc.DataArray(sc.arange('a', 6.0, unit=unit).fold('a', {'x': 2, 'y': 3}))
+    da.coords['y'] = sc.arange('a', 8).fold('a', {'x': 2, 'y': 4})
+    da.masks['m'] = sc.array(dims=['x'], values=[True, False])
+    plot(da)
+
+
 def test_plot_2d_with_non_regular_bin_edges():
     da = make_dense_data_array(ndim=2, binedges=True)
     da.coords['xx'].values = da.coords['xx'].values**2
