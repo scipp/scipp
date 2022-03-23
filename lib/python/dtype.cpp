@@ -6,6 +6,7 @@
 
 #include <regex>
 
+#include "scipp/core/eigen.h"
 #include "scipp/core/string.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/variable.h"
@@ -50,7 +51,11 @@ constexpr bool operator==(const scipp::index a, const DTypeSize b) {
 void init_dtype(py::module &m) {
   py::class_<DType> PyDType(m, "DType", R"(
 Representation of a data type of a Variable in scipp.
-See https://scipp.github.io/reference/dtype.html for details.)");
+See https://scipp.github.io/reference/dtype.html for details.
+
+The data types ``VariableView``, ``DataArrayView``, and ``DatasetView`` are used for
+objects containing binned data. They cannot be used directly to create arrays of bins.
+)");
   PyDType.def(py::init([](const py::object &x) { return scipp_dtype(x); }))
       .def("__eq__",
            [](const DType &self, const py::object &other) {
@@ -60,10 +65,33 @@ See https://scipp.github.io/reference/dtype.html for details.)");
       .def("__repr__", [](const DType &self) {
         return "DType('" + to_string(self) + "')";
       });
-  for (const auto &[key, name] : core::dtypeNameRegistry()) {
+
+  // Explicit list of dtypes to bind since core::dtypeNameRegistry contains
+  // types that are for internal use only and are never returned to Python.
+  for (const auto &t : {
+           dtype<bool>,
+           dtype<int32_t>,
+           dtype<int64_t>,
+           dtype<float>,
+           dtype<double>,
+           dtype<std::string>,
+           dtype<Eigen::Vector3d>,
+           dtype<Eigen::Matrix3d>,
+           dtype<Eigen::Affine3d>,
+           dtype<core::Quaternion>,
+           dtype<core::Translation>,
+           dtype<core::time_point>,
+           dtype<Variable>,
+           dtype<DataArray>,
+           dtype<Dataset>,
+           dtype<core::bin<Variable>>,
+           dtype<core::bin<DataArray>>,
+           dtype<core::bin<Dataset>>,
+           dtype<python::PyObject>,
+       })
     PyDType.def_property_readonly_static(
-        name.c_str(), [k = key](const py::object &) { return k; });
-  }
+        core::dtypeNameRegistry().at(t).c_str(),
+        [t](const py::object &) { return t; });
 }
 
 DType dtype_of(const py::object &x) {
