@@ -68,7 +68,6 @@ objects containing binned data. They cannot be used directly to create arrays of
 
   // Explicit list of dtypes to bind since core::dtypeNameRegistry contains
   // types that are for internal use only and are never returned to Python.
-  int i = 0;
   for (const auto &t : {
            dtype<bool>,
            dtype<int32_t>,
@@ -89,15 +88,10 @@ objects containing binned data. They cannot be used directly to create arrays of
            dtype<core::bin<DataArray>>,
            dtype<core::bin<Dataset>>,
            dtype<python::PyObject>,
-       }) {
-    // For some reason OSX causes trouble when we return `t` directly, with the
-    // dtype not matching the one in the registry (possibly related to problems
-    // of symbols across library boundaries). Instead, we find by name and
-    // return the key.
-    const auto &[d, name] = *core::dtypeNameRegistry().find(t);
+       })
     PyDType.def_property_readonly_static(
-        name.c_str(), [d2 = d](const py::object &) { return d2; });
-  }
+        core::dtypeNameRegistry().at(t).c_str(),
+        [t](const py::object &) { return t; });
 }
 
 DType dtype_of(const py::object &x) {
