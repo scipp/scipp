@@ -96,9 +96,9 @@ objects containing binned data. They cannot be used directly to create arrays of
            dtype<python::PyObject>,
        }) {
     std::cout << i++ << '\n';
+    const auto &[d, name] = *core::dtypeNameRegistry().find(t);
     PyDType.def_property_readonly_static(
-        core::dtypeNameRegistry().at(t).c_str(),
-        [&t](const py::object &) { return t; });
+        name.c_str(), [&d](const py::object &) { return d; });
   }
 }
 
