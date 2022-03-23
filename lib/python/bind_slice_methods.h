@@ -199,19 +199,31 @@ void expect_implicit_dimension(const Sizes &dims) {
   }
 }
 
+template <class T, class Op>
+void strip_edges(T &out, const T &base, Op op, const Dim dim) {
+  for (const auto &[name, var] : op(base))
+    if (core::is_edges(out.dims(), var.dims(), dim))
+      op(out).erase(name);
+}
+
 template <class T>
 T slice_by_list(const T &obj,
                 const std::tuple<Dim, std::vector<scipp::index>> &index) {
   const auto &[dim, indices] = index;
+  auto copy = obj;
+  if constexpr (std::is_same_v<T, DataArray>) {
+    strip_edges(copy, obj, get_coords, dim);
+  } else if constexpr (std::is_same_v<T, Dataset>) {
+  }
   std::vector<T> slices;
   slices.reserve(indices.size());
-  const auto size = obj.dims()[dim];
+  const auto size = copy.dims()[dim];
   for (const auto &pos : indices) {
     const auto slice = py::slice(pos, pos + 1, 1);
     ssize_t start, stop, step, slicelength;
     if (!slice.compute(size, &start, &stop, &step, &slicelength))
       throw py::error_already_set();
-    slices.emplace_back(obj.slice({dim, start, stop}));
+    slices.emplace_back(copy.slice({dim, start, stop}));
   }
   return concat(slices, dim);
 }

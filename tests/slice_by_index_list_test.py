@@ -82,12 +82,11 @@ def test_reversing_twice_gives_original(obj):
     assert sc.identical(obj['xx', [3, 2, 1, 0]]['xx', [3, 2, 1, 0]], obj)
 
 
-@pytest.mark.skip("Inconsistent behavior with slice by mask but consistent with concat")
-def test_bin_edges_are_dropped():
-    da = make_array()
-    base = da.copy()
-    da.coords['edges'] = sc.concat([da.coords['xx'], da.coords['xx'][-1] + 1], 'xx')
-    assert sc.identical(da['xx', [0, 2, 3]],
+@pytest.mark.parametrize("obj", [make_array(), make_dataset()])
+def test_bin_edges_are_dropped(obj):
+    base = obj.copy()
+    obj.coords['edges'] = sc.concat([obj.coords['xx'], obj.coords['xx'][-1] + 1], 'xx')
+    assert sc.identical(obj['xx', [0, 2, 3]],
                         sc.concat([base['xx', 0], base['xx', 2:]], 'xx'))
 
 
