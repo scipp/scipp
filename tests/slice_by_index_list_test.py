@@ -83,9 +83,13 @@ def test_reversing_twice_gives_original(obj):
 
 
 @pytest.mark.parametrize("obj", [make_array(), make_dataset()])
-def test_bin_edges_are_dropped(obj):
+@pytest.mark.parametrize("what", ["coords", "masks", "attrs"])
+def test_bin_edges_are_dropped(obj, what):
+    obj = obj.copy()
     base = obj.copy()
-    obj.coords['edges'] = sc.concat([obj.coords['xx'], obj.coords['xx'][-1] + 1], 'xx')
+    edges = sc.concat([obj.coords['xx'], obj.coords['xx'][-1] + 1], 'xx')
+    da = obj if isinstance(obj, sc.DataArray) or what == 'coords' else obj['xy']
+    getattr(da, what)['edges'] = edges
     assert sc.identical(obj['xx', [0, 2, 3]],
                         sc.concat([base['xx', 0], base['xx', 2:]], 'xx'))
 

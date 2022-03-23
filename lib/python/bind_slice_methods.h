@@ -213,7 +213,14 @@ T slice_by_list(const T &obj,
   auto copy = obj;
   if constexpr (std::is_same_v<T, DataArray>) {
     strip_edges(copy, obj, get_coords, dim);
+    strip_edges(copy, obj, get_masks, dim);
+    strip_edges(copy, obj, get_attrs, dim);
   } else if constexpr (std::is_same_v<T, Dataset>) {
+    strip_edges(copy, obj, get_coords, dim);
+    for (auto da : copy) {
+      strip_edges(da, obj[da.name()], get_masks, dim);
+      strip_edges(da, obj[da.name()], get_attrs, dim);
+    }
   }
   std::vector<T> slices;
   slices.reserve(indices.size());
