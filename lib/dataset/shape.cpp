@@ -19,18 +19,12 @@ namespace scipp::dataset {
 
 /// Map `op` over `items`, return vector of results
 template <class T, class Op> auto map(const T &items, Op op) {
-  std::vector<decltype(op(items.front()))> out;
+  std::vector<std::decay_t<decltype(op(items.front()))>> out;
   out.reserve(items.size());
   for (const auto &i : items)
     out.emplace_back(op(i));
   return out;
 }
-
-constexpr auto get_data = [](auto &&x) { return x.data(); };
-constexpr auto get_masks = [](auto &&x) { return x.masks(); };
-constexpr auto get_meta = [](auto &&x) { return x.meta(); };
-constexpr auto get_coords = [](auto &&x) { return x.coords(); };
-constexpr auto get_sizes = [](auto &&x) { return x.sizes(); };
 
 /// Concatenate a and b, assuming that a and b contain bin edges.
 ///
