@@ -42,7 +42,11 @@ def test_all_false_gives_empty_slice(sliceable):
 
 def test_all_true_gives_copy(sliceable):
     condition = sc.array(dims=['xx'], values=[True, True, True, True])
-    assert sc.identical(sliceable[condition], sliceable)
+    original = sliceable.copy()
+    sliced = sliceable[condition]
+    assert sc.identical(sliced, sliceable)
+    sliced *= 2
+    assert sc.identical(sliceable, original)
 
 
 def test_true_and_false_concats_slices(sliceable):
