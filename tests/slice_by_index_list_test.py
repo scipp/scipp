@@ -7,11 +7,8 @@ import numpy as np
 
 
 def make_var() -> sc.Variable:
-    return sc.arange('dummy', 12, dtype='int64').fold(dim='dummy',
-                                                      sizes={
-                                                          'xx': 4,
-                                                          'yy': 3
-                                                      })
+    v = sc.arange('dummy', 12, dtype='int64')
+    return v.fold(dim='dummy', sizes={'xx': 4, 'yy': 3})
 
 
 def make_array() -> sc.DataArray:
@@ -28,10 +25,16 @@ def make_dataset() -> sc.Dataset:
     return ds
 
 
-@pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
+@pytest.fixture(params=[make_var(), make_array(),
+                        make_dataset()],
+                ids=['Variable', 'DataArray', 'Dataset'])
+def sliceable(request):
+    return request.param
+
+
 @pytest.mark.parametrize("pos", [0, 1, 2, 3, -2, -3, -4])
-def test_length_1_list_gives_corresponding_length_1_slice(obj, pos):
-    assert sc.identical(obj['xx', [pos]], obj['xx', pos:pos + 1])
+def test_length_1_list_gives_corresponding_length_1_slice(sliceable, pos):
+    assert sc.identical(sliceable['xx', [pos]], sliceable['xx', pos:pos + 1])
 
 
 def test_slicing_with_numpy_array_works_and_gives_equivalent_result():
@@ -39,58 +42,54 @@ def test_slicing_with_numpy_array_works_and_gives_equivalent_result():
     assert sc.identical(var['xx', np.array([2, 3, 0])], var['xx', [2, 3, 0]])
 
 
-@pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
-def test_omitting_dim_when_slicing_2d_object_raises_DimensionError(obj):
+def test_omitting_dim_when_slicing_2d_sliceableect_raises_DimensionError(sliceable):
     with pytest.raises(sc.DimensionError):
-        obj[[3, 1]]
+        sliceable[[3, 1]]
 
 
-@pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
-def test_omitted_dim_is_equivalent_to_unique_dim(obj):
-    obj = obj['yy', 0]
-    assert sc.identical(obj[[3, 1]], obj[obj.dim, [3, 1]])
+def test_omitted_dim_is_equivalent_to_unique_dim(sliceable):
+    sliceable = sliceable['yy', 0]
+    assert sc.identical(sliceable[[3, 1]], sliceable[sliceable.dim, [3, 1]])
 
 
-@pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
-def test_every_other_index_gives_stride_2_slice(obj):
-    assert sc.identical(obj['xx', [0, 2]], obj['xx', 0::2])
-    assert sc.identical(obj['xx', [1, 3]], obj['xx', 1::2])
+def test_every_other_index_gives_stride_2_slice(sliceable):
+    assert sc.identical(sliceable['xx', [0, 2]], sliceable['xx', 0::2])
+    assert sc.identical(sliceable['xx', [1, 3]], sliceable['xx', 1::2])
 
 
-@pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
-def test_unordered_outer_indices_yields_result_with_reordered_slices(obj):
-    assert sc.identical(obj['xx', [2, 3, 0]],
-                        sc.concat([obj['xx', 2:4], obj['xx', 0:1]], 'xx'))
+def test_unordered_outer_indices_yields_result_with_reordered_slices(sliceable):
+    assert sc.identical(sliceable['xx', [2, 3, 0]],
+                        sc.concat([sliceable['xx', 2:4], sliceable['xx', 0:1]], 'xx'))
 
 
-@pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
-def test_unordered_inner_indices_yields_result_with_reordered_slices(obj):
-    s0 = obj['yy', 0:1]
-    s1 = obj['yy', 1:2]
-    assert sc.identical(obj['yy', [1, 1, 0, 1]], sc.concat([s1, s1, s0, s1], 'yy'))
+def test_unordered_inner_indices_yields_result_with_reordered_slices(sliceable):
+    s0 = sliceable['yy', 0:1]
+    s1 = sliceable['yy', 1:2]
+    assert sc.identical(sliceable['yy', [1, 1, 0, 1]], sc.concat([s1, s1, s0, s1],
+                                                                 'yy'))
 
 
-@pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
-def test_duplicate_indices_duplicate_slices_in_output(obj):
-    s1 = obj['xx', 1:2]
-    s2 = obj['xx', 2:3]
-    assert sc.identical(obj['xx', [2, 1, 1, 2]], sc.concat([s2, s1, s1, s2], 'xx'))
+def test_duplicate_indices_duplicate_slices_in_output(sliceable):
+    s1 = sliceable['xx', 1:2]
+    s2 = sliceable['xx', 2:3]
+    assert sc.identical(sliceable['xx', [2, 1, 1, 2]], sc.concat([s2, s1, s1, s2],
+                                                                 'xx'))
 
 
-@pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
-def test_reversing_twice_gives_original(obj):
-    assert sc.identical(obj['xx', [3, 2, 1, 0]]['xx', [3, 2, 1, 0]], obj)
+def test_reversing_twice_gives_original(sliceable):
+    assert sc.identical(sliceable['xx', [3, 2, 1, 0]]['xx', [3, 2, 1, 0]], sliceable)
 
 
-@pytest.mark.parametrize("obj", [make_array(), make_dataset()])
+@pytest.mark.parametrize("sliceable", [make_array(), make_dataset()])
 @pytest.mark.parametrize("what", ["coords", "masks", "attrs"])
-def test_bin_edges_are_dropped(obj, what):
-    obj = obj.copy()
-    base = obj.copy()
-    edges = sc.concat([obj.coords['xx'], obj.coords['xx'][-1] + 1], 'xx')
-    da = obj if isinstance(obj, sc.DataArray) or what == 'coords' else obj['xy']
+def test_bin_edges_are_dropped(sliceable, what):
+    sliceable = sliceable.copy()
+    base = sliceable.copy()
+    edges = sc.concat([sliceable.coords['xx'], sliceable.coords['xx'][-1] + 1], 'xx')
+    da = sliceable if isinstance(sliceable,
+                                 sc.DataArray) or what == 'coords' else sliceable['xy']
     getattr(da, what)['edges'] = edges
-    assert sc.identical(obj['xx', [0, 2, 3]],
+    assert sc.identical(sliceable['xx', [0, 2, 3]],
                         sc.concat([base['xx', 0], base['xx', 2:]], 'xx'))
 
 

@@ -28,22 +28,27 @@ def make_dataset() -> sc.Dataset:
     return ds
 
 
-@pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
-def test_all_false_gives_empty_slice(obj):
+@pytest.fixture(params=[make_var(), make_array(),
+                        make_dataset()],
+                ids=['Variable', 'DataArray', 'Dataset'])
+def sliceable(request):
+    return request.param
+
+
+def test_all_false_gives_empty_slice(sliceable):
     condition = sc.array(dims=['xx'], values=[False, False, False, False])
-    assert sc.identical(obj[condition], obj['xx', 0:0])
+    assert sc.identical(sliceable[condition], sliceable['xx', 0:0])
 
 
-@pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
-def test_all_true_gives_copy(obj):
+def test_all_true_gives_copy(sliceable):
     condition = sc.array(dims=['xx'], values=[True, True, True, True])
-    assert sc.identical(obj[condition], obj)
+    assert sc.identical(sliceable[condition], sliceable)
 
 
-@pytest.mark.parametrize("obj", [make_var(), make_array(), make_dataset()])
-def test_true_and_false_concats_slices(obj):
+def test_true_and_false_concats_slices(sliceable):
     condition = sc.array(dims=['xx'], values=[True, False, True, True])
-    assert sc.identical(obj[condition], sc.concat([obj['xx', 0], obj['xx', 2:]], 'xx'))
+    assert sc.identical(sliceable[condition],
+                        sc.concat([sliceable['xx', 0], sliceable['xx', 2:]], 'xx'))
 
 
 def test_non_dimension_coords_are_preserved():
