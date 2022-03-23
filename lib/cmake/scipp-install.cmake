@@ -13,6 +13,7 @@ function(scipp_install_component)
     install(
       TARGETS ${SCIPP_INSTALL_COMPONENT_TARGET}
       EXPORT ${EXPORT_NAME}
+      RUNTIME_DEPENDENCIES
       RUNTIME DESTINATION ${PYTHONDIR}
       ARCHIVE DESTINATION ${ARCHIVEDIR}
     )
