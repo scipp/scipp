@@ -2,12 +2,19 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/core/spatial_transforms.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/comparison.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/string.h"
 #include "scipp/variable/to_unit.h"
 #include "test_macros.h"
 
 using namespace scipp;
+using Translation = scipp::core::Translation;
+using Quaternion = scipp::core::Quaternion;
+using Affine3d = Eigen::Affine3d;
+using Vector3d = Eigen::Vector3d;
 
 TEST(ToUnitTest, not_compatible) {
   const Dimensions dims(Dim::X, 2);
@@ -128,6 +135,48 @@ TEST(ToUnitTest, time_point_bad_unit) {
       except::UnitError);
 }
 
+TEST(ToUnitTest, vector3d) {
+  const Dimensions dims(Dim::X, 1);
+  const auto var =
+      makeVariable<Vector3d>(dims, Values{Vector3d{0, 1, 2}}, units::m);
+  const auto expected =
+      makeVariable<Vector3d>(dims, Values{Vector3d{0, 1000, 2000}}, units::mm);
+  EXPECT_EQ(to_unit(var, units::mm), expected);
+}
+
+TEST(ToUnitTest, affine3d) {
+  const Eigen::AngleAxisd rotation(31.45, Eigen::Vector3d{0, 1, 0});
+  const Eigen::Translation3d translation(-4, 1, 3);
+  const Eigen::Affine3d affine = rotation * translation;
+
+  const Eigen::Translation3d expected_translation(-4000, 1000, 3000);
+  const Eigen::Affine3d expected_affine = rotation * expected_translation;
+
+  const Dimensions dims(Dim::X, 1);
+  const auto var = makeVariable<Affine3d>(dims, Values{affine}, units::m);
+  const auto expected =
+      makeVariable<Affine3d>(dims, Values{expected_affine}, units::mm);
+  EXPECT_TRUE(all(isclose(to_unit(var, units::mm), expected, 1e-8 * units::one,
+                          0.0 * units::mm))
+                  .value<bool>());
+}
+
+TEST(ToUnitTest, translation) {
+  const Dimensions dims(Dim::X, 1);
+  const auto var = makeVariable<Translation>(
+      dims, Values{Translation{Vector3d{1, 2, 3}}}, units::m);
+  const auto expected = makeVariable<Translation>(
+      dims, Values{Translation{Vector3d{1000, 2000, 3000}}}, units::mm);
+  EXPECT_EQ(to_unit(var, units::mm), expected);
+}
+
+TEST(ToUnitTest, quaternion) {
+  const Dimensions dims(Dim::X, 1);
+  const auto var = makeVariable<Quaternion>(
+      dims, Values{Quaternion{Eigen::Quaterniond{0, 0, 0, 0}}}, units::m);
+  EXPECT_THROW_DISCARD(to_unit(var, units::mm), except::TypeError);
+}
+
 TEST(ToUnitTest, binned) {
   const auto indices = makeVariable<scipp::index_pair>(
       Dims{Dim::Y}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 4}});
@@ -140,9 +189,32 @@ TEST(ToUnitTest, binned) {
             make_bins(indices, Dim::X, expected_buffer));
 }
 
+TEST(ToUnitTest, binned_can_avoid_copy) {
+  const auto indices = makeVariable<scipp::index_pair>(
+      Dims{Dim::Y}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 4}});
+  const auto input_buffer =
+      makeVariable<double>(Dims{Dim::X}, Shape{4},
+                           Values{1000, 2000, 3000, 4000}, units::Unit{"mm"});
+  const auto var = make_bins(indices, Dim::X, input_buffer);
+  EXPECT_TRUE(
+      to_unit(var, units::Unit{"mm"}, CopyPolicy::TryAvoid).is_same(var));
+  EXPECT_FALSE(
+      to_unit(var, units::Unit{"mm"}, CopyPolicy::Always).is_same(var));
+}
+
 TEST(ToUnitTest, throws_if_none_unit) {
   EXPECT_THROW_DISCARD(to_unit(makeVariable<int32_t>(Dims{Dim::X}, Shape{2},
                                                      units::none, Values{1, 2}),
-                               units::Unit("m")),
+                               units::m),
                        except::UnitError);
+  EXPECT_THROW_DISCARD(to_unit(makeVariable<int32_t>(Dims{Dim::X}, Shape{2},
+                                                     units::m, Values{1, 2}),
+                               units::none),
+                       except::UnitError);
+}
+
+TEST(ToUnitTest, does_not_throws_if_both_are_none) {
+  EXPECT_NO_THROW_DISCARD(to_unit(
+      makeVariable<int32_t>(Dims{Dim::X}, Shape{2}, units::none, Values{1, 2}),
+      units::none));
 }
