@@ -91,6 +91,9 @@ def test_bin_edges_are_dropped(sliceable, what):
     getattr(da, what)['edges'] = edges
     assert sc.identical(sliceable['xx', [0, 2, 3]],
                         sc.concat([base['xx', 0], base['xx', 2:]], 'xx'))
+    da = sliceable if isinstance(sliceable,
+                                 sc.DataArray) or what == 'coords' else sliceable['xy']
+    assert 'edges' in getattr(da, what)
 
 
 def test_dataset_item_independent_of_slice_dim_preserved_unchanged():
