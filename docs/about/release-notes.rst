@@ -25,6 +25,7 @@ Bugfixes
 ~~~~~~~~
 
 * Fix permissions error for configuration file where users do not have write access to their config dir `#2482 <https://github.com/scipp/scipp/pull/2482>`_.
+* Fix plotting of data with multi-dimension bin-edge coordinate in the presence of a mask that does not depend on the bin-edge dimension `#2505 <https://github.com/scipp/scipp/pull/2505>`_.
 
 Deprecations
 ~~~~~~~~~~~~
