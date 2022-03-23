@@ -61,7 +61,8 @@ class DateFormatter:
 
     def formatter(self, val, pos, axis=None, get_axis_bounds=None, set_axis_label=None):
         index = np.abs(self.coord_values - val).argmin()
-        d = (self.offset + scalar(index, unit=self.offset.unit)).value
+        d = (self.offset +
+             scalar(self.coord_values[index], unit=self.offset.unit)).value
         dt = str(d)
         if pos is None:  # Return full string, not split into label + offset
             return dt
