@@ -59,7 +59,9 @@
 }
 
 /* Also override settings of reveal.js as introduced when
-   generating slides using the rise package. */
+   generating slides using the rise package.
+   There are selectors for `.reveal ul` and `.reveal ul ul`
+   which take precedence over ours and mess up the formatting.*/
 .sc-sections, .reveal .sc-sections {
   padding-left: 0 !important;
   display: grid;
