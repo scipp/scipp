@@ -120,8 +120,8 @@ def plot(scipp_obj: Union[VariableLike, ArrayLike, Dict[str, Union[VariableLike,
     # {number_of_dimensions, Dataset, axes, line_parameters}.
     tobeplotted = dict()
     for name, item in sorted(inventory.items()):
-        if item.bins is not None:
-            item = getattr(item.bins, operation)()
+        #if item.bins is not None:
+        #    item = getattr(item.bins, operation)()
         ndims = len(item.dims)
         if (ndims > 0) and (np.sum(item.shape) > 0):
             if ndims == 1 or projection == "1d" or projection == "1D":

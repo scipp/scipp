@@ -110,7 +110,7 @@ class Plot:
         self._controller = Controller(models=self._models, view=self._view)
 
         self._add_default_pipeline_steps()
-        self._render()
+        #self._render()
 
     def _add_default_pipeline_steps(self):
         # Add step for slicing dimensions out with sliders

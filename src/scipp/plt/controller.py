@@ -34,7 +34,8 @@ class Controller:
     def _run_all_pipelines(self):
         for key in self._pipelines:
             self._run_pipeline(key, draw=False)
-        self._view.draw()
+        #self._view.draw()
+        self._view.figure.rescale_to_data()
 
     def _run_pipeline(self, key: str, draw: bool = True):
         new_values = self._pipelines[key].run(self._models[key])
