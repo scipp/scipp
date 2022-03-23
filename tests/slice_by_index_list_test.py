@@ -7,8 +7,11 @@ import numpy as np
 
 
 def make_var() -> sc.Variable:
-    v = sc.arange('dummy', 12, dtype='int64')
-    return v.fold(dim='dummy', sizes={'xx': 4, 'yy': 3})
+    return sc.arange('dummy', 12, dtype='int64').fold(dim='dummy',
+                                                      sizes={
+                                                          'xx': 4,
+                                                          'yy': 3
+                                                      })
 
 
 def make_array() -> sc.DataArray:
@@ -25,9 +28,7 @@ def make_dataset() -> sc.Dataset:
     return ds
 
 
-@pytest.fixture(params=[make_var(), make_array(),
-                        make_dataset()],
-                ids=['Variable', 'DataArray', 'Dataset'])
+@pytest.fixture(params=[make_var(), make_array(), make_dataset()])
 def sliceable(request):
     return request.param
 
@@ -80,10 +81,9 @@ def test_reversing_twice_gives_original(sliceable):
     assert sc.identical(sliceable['xx', [3, 2, 1, 0]]['xx', [3, 2, 1, 0]], sliceable)
 
 
+@pytest.mark.parametrize("sliceable", [make_array(), make_dataset()])
 @pytest.mark.parametrize("what", ["coords", "masks", "attrs"])
 def test_bin_edges_are_dropped(sliceable, what):
-    if isinstance(sliceable, sc.Variable):
-        return
     sliceable = sliceable.copy()
     base = sliceable.copy()
     edges = sc.concat([sliceable.coords['xx'], sliceable.coords['xx'][-1] + 1], 'xx')

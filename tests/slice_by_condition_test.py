@@ -7,8 +7,11 @@ import scipp as sc
 
 
 def make_var() -> sc.Variable:
-    v = sc.arange('dummy', 12, dtype='int64')
-    return v.fold(dim='dummy', sizes={'xx': 4, 'yy': 3})
+    return sc.arange('dummy', 12, dtype='int64').fold(dim='dummy',
+                                                      sizes={
+                                                          'xx': 4,
+                                                          'yy': 3
+                                                      })
 
 
 def make_array() -> sc.DataArray:
