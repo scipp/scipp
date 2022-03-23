@@ -10,7 +10,7 @@ from .figure import Figure
 from functools import reduce
 import numpy as np
 from numpy.typing import ArrayLike
-from typing import Any, Tuple, Union
+from typing import Tuple, Union
 import warnings
 
 
@@ -130,8 +130,9 @@ class Figure1d(Figure):
         hist = len(x) != len(y)
         if hist:
             vals["values"]["y"] = np.concatenate((y[0:1], y))
-            for key, mask in vals["masks"].items():
-                vals["masks"][key] = np.concatenate((mask[0:1], mask))
+            if vals["mask"] is not None:
+                for key, mask in vals["mask"].items():
+                    vals["mask"][key] = np.concatenate((mask[0:1], mask))
             vals["variances"]["x"] = 0.5 * (x[1:] + x[:-1])
         else:
             vals["variances"]["x"] = x
