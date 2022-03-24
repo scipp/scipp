@@ -65,7 +65,7 @@ auto copy_impl(const Slices &slices, const Data &data, const Dim slice_dim,
 template <class T>
 T GroupBy<T>::copy(const scipp::index group,
                    const AttrPolicy attrPolicy) const {
-  return copy_impl(groups()[group],
+  return copy_impl(groups().at(group),
                    strip_edges_along(m_data, m_grouping.sliceDim()),
                    m_grouping.sliceDim(), attrPolicy);
 }
