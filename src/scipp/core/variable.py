@@ -385,10 +385,36 @@ def logspace(dim: str,
                  dtype=dtype)
 
 
+def _normalize_args(*, unit, **kwargs):
+    args = {**kwargs}
+    is_var = {
+        key: isinstance(val, _cpp.Variable)
+        for key, val in args.items() if val is not None
+    }
+    if any(is_var.values()):
+        if not all(is_var.values()):
+            arg_types = {key: type(val) for key, val in args.items()}
+            raise TypeError('Either arguments all or none have to be variables, '
+                            f'got types {arg_types}')
+        if unit == default_unit:
+            units = {key: val.unit for key, val in args.items() if val is not None}
+            if len(set(units.values())) != 1:
+                raise _cpp.UnitError(
+                    f'All units must be equal, got {units}. '
+                    'You can specify a unit explicitly with the `unit` argument.')
+            unit = next(iter(units.values()))
+        args = {
+            key: _cpp.to_unit(val, unit, copy=False).value if val is not None else None
+            for key, val in args.items()
+        }
+
+    return args, unit
+
+
 def arange(dim: str,
            start: _Union[int, float, _np.datetime64],
            stop: _Union[int, float, _np.datetime64] = None,
-           step: _Union[int, float] = 1,
+           step: _Union[int, float] = None,
            *,
            unit: _Union[_cpp.Unit, str, None] = default_unit,
            dtype: _cpp.DType = None) -> _cpp.Variable:
@@ -410,13 +436,8 @@ def arange(dim: str,
     :seealso: :py:func:`scipp.linspace` :py:func:`scipp.geomspace`
               :py:func:`scipp.logspace`
     """
-    if stop is None:
-        stop = start
-        start = 0
-    return array(dims=[dim],
-                 values=_np.arange(start, stop, step),
-                 unit=unit,
-                 dtype=dtype)
+    range_args, unit = _normalize_args(unit=unit, start=start, stop=stop, step=step)
+    return array(dims=[dim], values=_np.arange(**range_args), unit=unit, dtype=dtype)
 
 
 def datetime(

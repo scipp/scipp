@@ -422,6 +422,61 @@ def test_arange():
     assert sc.identical(var, expected)
 
 
+def test_arange_with_variables():
+    start = sc.scalar(1)
+    stop = sc.scalar(4)
+    step = sc.scalar(1)
+    unit = 'one'
+    assert sc.identical(sc.arange('x', start, stop, step, unit=unit),
+                        sc.array(dims=['x'], values=[1, 2, 3], unit='one'))
+    assert sc.identical(sc.arange('x', start, stop, unit=unit),
+                        sc.array(dims=['x'], values=[1, 2, 3], unit='one'))
+    assert sc.identical(sc.arange('x', stop, unit=unit),
+                        sc.array(dims=['x'], values=[0, 1, 2, 3], unit='one'))
+
+    assert sc.identical(sc.arange('x', start, stop, step),
+                        sc.array(dims=['x'], values=[1, 2, 3], unit='one'))
+    assert sc.identical(sc.arange('x', start, stop),
+                        sc.array(dims=['x'], values=[1, 2, 3], unit='one'))
+    assert sc.identical(sc.arange('x', stop),
+                        sc.array(dims=['x'], values=[0, 1, 2, 3], unit='one'))
+
+
+def test_arange_with_variables_set_unit():
+    start = sc.scalar(1, unit='m')
+    stop = sc.scalar(4, unit='m')
+    step = sc.scalar(1, unit='m')
+    unit = 'm'
+    assert sc.identical(sc.arange('x', start, stop, step, unit=unit),
+                        sc.array(dims=['x'], values=[1, 2, 3], unit='m'))
+    assert sc.identical(sc.arange('x', start, stop, step, unit='mm'),
+                        sc.array(dims=['x'], values=[1000, 2000, 3000], unit='mm'))
+    assert sc.identical(
+        sc.arange('x', start, stop, sc.scalar(500, unit='mm'), unit='mm'),
+        sc.array(dims=['x'], values=[1000, 1500, 2000, 2500, 3000, 3500], unit='mm'))
+
+    with pytest.raises(sc.UnitError):
+        sc.arange('x', start, stop, sc.scalar(500, unit='mm'))
+
+
+def test_arange_with_variables_mixed_types_not_allowed():
+    start = sc.scalar(1, unit='m')
+    stop = 4
+    step = sc.scalar(1, unit='m')
+    unit = 'm'
+    with pytest.raises(TypeError):
+        sc.arange('x', start, stop, step)
+    with pytest.raises(TypeError):
+        sc.arange('x', start, stop, step, unit=unit)
+
+
+def test_arange_with_variables_requires_scalar():
+    with pytest.raises(sc.DimensionError):
+        sc.arange('x', sc.array(dims=['x'], values=[1, 2]))
+    with pytest.raises(sc.DimensionError):
+        sc.arange('x', sc.scalar(1), sc.array(dims=['x'], values=[1, 2]))
+
+
 def test_zeros_sizes():
     dims = ['x', 'y', 'z']
     shape = [2, 3, 4]
