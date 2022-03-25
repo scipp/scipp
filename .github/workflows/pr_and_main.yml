@@ -74,9 +74,6 @@ jobs:
           environment-name: buildenv
           cache-env: true
 
-      - run: echo "$CONDA/envs/buildenv/Library/bin" >> $GITHUB_PATH
-        if: ${{ contains(matrix.os, 'windows-latest') }}
-
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.1
         with:
