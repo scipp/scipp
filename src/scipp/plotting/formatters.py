@@ -3,7 +3,7 @@
 
 from .. import typing
 from ..utils import name_with_unit, value_to_string
-from ..core import arange, to_unit, Unit, scalar
+from ..core import arange, to_unit, Unit
 import enum
 import numpy as np
 
@@ -53,30 +53,30 @@ class DateFormatter:
     Format datetime ticks: adjust the time precision and update
     offset according to the currently displayed range.
     """
-    def __init__(self, coord, offset, dim):
+    def __init__(self, coord, labels, dim):
         self.coord_values = coord.values
-        self.offset = offset
+        self.labels = labels
         self.dim = dim
         self.indicators = []
 
-    def formatter(self, val, pos, axis=None, get_axis_bounds=None, set_axis_label=None):
+    def _get_nearest_label(self, val):
         index = np.abs(self.coord_values - val).argmin()
-        d = (self.offset +
-             scalar(self.coord_values[index], unit=self.offset.unit)).value
+        return self.labels[index]
+
+    def formatter(self, val, pos, axis=None, get_axis_bounds=None, set_axis_label=None):
+        d = self._get_nearest_label(val).value
         dt = str(d)
+
         if pos is None:  # Return full string, not split into label + offset
             return dt
         trim = 0
         bounds = get_axis_bounds(axis)
-        diff = scalar(bounds[1] - bounds[0], unit=self.offset.unit)
+        date_min = self._get_nearest_label(bounds[0])
+        date_max = self._get_nearest_label(bounds[1])
+        diff = date_max - date_min
         label = self.dim
         if pos == 0:
             self.indicators.clear()
-
-        date_min = str(
-            (scalar(int(bounds[0]), unit=self.offset.unit) + self.offset).value)
-        date_max = str(
-            (scalar(int(bounds[1]), unit=self.offset.unit) + self.offset).value)
 
         check_transition = True
         check_time = True
@@ -112,7 +112,7 @@ class DateFormatter:
             string = dt[11:13] + 'h'
             check_time = False
         elif (diff < to_unit(4 * Unit('year'), diff.unit)).value:
-            # label: 2017, tick: 01-13
+            # tick: 2017-01-13
             string = dt[:10]
             check_transition = False
         elif (diff < to_unit(100 * Unit('year'), diff.unit)).value:
@@ -125,8 +125,9 @@ class DateFormatter:
             check_transition = False
 
         if check_transition:
-            string, trim = self.check_for_transition(pos, string, date_min, date_max,
-                                                     dt, check_time, check_ms)
+            string, trim = self.check_for_transition(pos, string, str(date_min.value),
+                                                     str(date_max.value), dt,
+                                                     check_time, check_ms)
 
         if pos == 1:
             if trim > 0:
@@ -232,7 +233,7 @@ def make_formatter(array, key, dim):
         elif kind == Kind.datetime:
             coord = _get_or_make_coord(array, dim)
             coord = coord - coord.min()
-            form = DateFormatter(coord=coord, offset=labels.min(), dim=key).formatter
+            form = DateFormatter(coord=coord, labels=labels, dim=key).formatter
             formatter["need_callbacks"] = True
         elif dim is not key:
             coord = _get_or_make_coord(array, dim)
