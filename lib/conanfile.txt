@@ -18,3 +18,4 @@ LLNL-Units:namespace=llnl::units
 
 [generators]
 cmake_find_package_multi
+deploy

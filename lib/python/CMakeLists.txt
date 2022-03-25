@@ -66,11 +66,6 @@ add_sanitizers(_scipp)
 
 install(TARGETS _scipp DESTINATION ${PYTHONDIR})
 
-add_custom_command(TARGET _scipp POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:_scipp> $<TARGET_FILE_DIR:_scipp>
-  COMMAND_EXPAND_LIST
-)
-
 if(COVERAGE)
   append_coverage_compiler_flags()
 endif()
