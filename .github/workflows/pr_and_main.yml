@@ -66,13 +66,14 @@ jobs:
 
       - run: python tools/metatoenv.py --dir=conda --env-file=buildenv.yml --channels=conda-forge --merge-with=developer-extra.yml
 
-      - name: Setup Mambaforge and dev env
+      - name: Setup conda environment
         uses: mamba-org/provision-with-micromamba@v11
         with:
-          python-version: ${{ matrix.python-version }}
           environment-file: buildenv.yml
           environment-name: buildenv
           cache-env: true
+          extra-specs: |
+            python=${{ matrix.python-version }}
 
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.1
