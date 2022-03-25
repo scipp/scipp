@@ -32,7 +32,7 @@ class VectorFormatter:
     def formatter(self, val, pos):
         return "(" + ",".join([
             value_to_string(item, precision=2) for item in self.array_values[int(val)]
-        ]) + ")" if (int(val) >= 0 and int(val) < self.size) else ""
+        ]) + ")" if (0 <= int(val) < self.size) else ""
 
 
 class StringFormatter:
@@ -44,8 +44,7 @@ class StringFormatter:
         self.size = size
 
     def formatter(self, val, pos):
-        return self.array_values[int(val)] if (int(val) >= 0
-                                               and int(val) < self.size) else ""
+        return self.array_values[int(val)] if (0 <= int(val) < self.size) else ""
 
 
 class DateFormatter:
@@ -139,10 +138,9 @@ class DateFormatter:
                              check_ms):
         """
         Function that checks for transitions between years, months, days etc..
-        adds an additional row of information below the tick labels if
+        adds a row of information below the tick labels if
         required, to indicate the year on each side of the transition.
         """
-        different_date = False
         different_time = False
 
         trim = 0
