@@ -80,11 +80,9 @@ jobs:
         if: ${{ contains(matrix.os, 'windows-latest') }}
 
       - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2
+        uses: hendrikmuhs/ccache-action@v1.2.1
         with:
           key: ${{ matrix.os }}
-
-      - run: ccache --version
 
       - run: cmake --preset ${{ matrix.cmake-preset }}
       - run: cmake --build --preset build
