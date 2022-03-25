@@ -67,14 +67,12 @@ jobs:
       - run: python tools/metatoenv.py --dir=conda --env-file=buildenv.yml --channels=conda-forge --merge-with=developer-extra.yml
 
       - name: Setup Mambaforge and dev env
-        uses: conda-incubator/setup-miniconda@v2
+        uses: mambda-org/provision-with-micromambda@v11
         with:
-          miniforge-version: latest
-          miniforge-variant: Mambaforge
           python-version: ${{ matrix.python-version }}
           environment-file: buildenv.yml
-          activate-environment: buildenv
-          auto-activate-base: false
+          environment-name: buildenv
+          cache-env: true
 
       - run: echo "$CONDA/envs/buildenv/Library/bin" >> $GITHUB_PATH
         if: ${{ contains(matrix.os, 'windows-latest') }}
