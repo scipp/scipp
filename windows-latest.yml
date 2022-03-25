@@ -1,0 +1,33 @@
+##############################################################
+# WARNING! This environment file was generated from the
+# conda/meta.yaml file using the metatoenv.py tool.
+# Do not update this file in-place.
+# Use metatoenv.py to create a new file.
+##############################################################
+
+name: windows-latest
+channels:
+  - conda-forge
+dependencies:
+  - cmake
+  - conan>=1.45.0
+  - confuse
+  - graphlib-backport
+  - h5py
+  - hypothesis
+  - ipywidgets
+  - markupsafe>=1.1.1,<2.1.0
+  - matplotlib-base
+  - ninja
+  - nomkl
+  - numpy>=1.20.0
+  - pandas
+  - pytest
+  - python
+  - python-graphviz
+  - pythreejs
+  - pyyaml
+  - scipy>=1.7.0
+  - tbb=2020.2.*
+  - tbb-devel=2020.2.*
+  - xarray
