@@ -67,7 +67,7 @@ jobs:
       - run: python tools/metatoenv.py --dir=conda --env-file=buildenv.yml --channels=conda-forge --merge-with=developer-extra.yml
 
       - name: Setup Mambaforge and dev env
-        uses: mambda-org/provision-with-micromambda@v11
+        uses: mamba-org/provision-with-micromamba@v11
         with:
           python-version: ${{ matrix.python-version }}
           environment-file: buildenv.yml
