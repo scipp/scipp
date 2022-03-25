@@ -79,10 +79,8 @@ jobs:
       - run: echo "$CONDA/envs/buildenv/Library/bin" >> $GITHUB_PATH
         if: ${{ contains(matrix.os, 'windows-latest') }}
 
-      - run: ccache --version
-
       - name: ccache
-        uses: hendrikmuhs/ccache-action@fedaed4959d48938cb5d4be1017da9649a151482
+        uses: hendrikmuhs/ccache-action@v1.2.1
         with:
           key: ${{ matrix.os }}
 
