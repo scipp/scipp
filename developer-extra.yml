@@ -14,6 +14,7 @@ channels:
   - conda-forge
 
 dependencies:
+  - nomkl  # mkl leads to large conda env, slowing down CI and env caching
   - pre-commit
   - yapf
   - flake8
@@ -25,6 +26,7 @@ dependencies:
   - ipywidgets
   - matplotlib-base
   - nbsphinx
+  - jinja2==3.0.3  # jupyter/nbconvert#1736
   - python-graphviz
   - pythreejs
   - pyyaml

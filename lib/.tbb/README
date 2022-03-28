@@ -1,3 +1,0 @@
-The contents of this folder originate from the "conda-forge" package "tbb-devel".
-These are needed as a workaround for the current (as of tbb-devel 2021.4.0) lack
-of TBB cmake config fies in the "pip" packages of "tbb-devel".

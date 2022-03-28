@@ -39,9 +39,49 @@ include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
+if(SKBUILD)
+  # Conda builds install tbb via conda, not conan
+  set(CONAN_ONETBB onetbb/2021.3.0)
+  # The deploy generator is used to install dependencies into a know location.
+  # The RUNTIME_DEPENDENCIES DIRECTORIES install option is then used to find the
+  # dependencies. This is actually required only for Windows, since on Linux and
+  # OSX cmake finds the files anyway, based on the target's rpath.
+  set(CONAN_DEPLOY deploy)
+  set(CONAN_RUNTIME_DEPENDENCIES "tbb")
+endif()
+
+conan_cmake_configure(
+  REQUIRES
+  benchmark/1.5.3
+  boost/1.76.0
+  eigen/3.3.9
+  gtest/1.11.0
+  LLNL-Units/0.5.0.1
+  pybind11/2.6.2
+  ${CONAN_ONETBB}
+  OPTIONS
+  benchmark:shared=False
+  boost:header_only=True
+  gtest:shared=False
+  LLNL-Units:shared=False
+  LLNL-Units:fPIC=True
+  LLNL-Units:base_type=uint64_t
+  LLNL-Units:namespace=llnl::units
+  GENERATORS
+  cmake_find_package_multi
+  ${CONAN_DEPLOY}
+)
+
 conan_cmake_autodetect(conan_settings)
+if(DEFINED CMAKE_OSX_ARCHITECTURES)
+  if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
+    # For Apple M1
+    set(conan_settings "${conan_settings};arch=armv8")
+    set(THREADING OFF)
+  endif()
+endif()
 conan_cmake_install(
-  PATH_OR_REFERENCE ${CMAKE_CURRENT_SOURCE_DIR} SETTINGS ${conan_settings}
+  PATH_OR_REFERENCE ${CMAKE_CURRENT_BINARY_DIR} SETTINGS ${conan_settings}
   BUILD outdated
 )
 
@@ -89,15 +129,7 @@ include(GenerateExportHeader)
 
 option(THREADING "Build with multi-threading" ON)
 if(THREADING)
-  if(SKBUILD)
-    include(patch-pip-tbb-devel)
-    find_package(TBB CONFIG REQUIRED)
-    install(IMPORTED_RUNTIME_ARTIFACTS TBB::tbb RUNTIME DESTINATION
-            ${PYTHONDIR}
-    )
-  else()
-    find_package(TBB CONFIG REQUIRED)
-  endif()
+  find_package(TBB CONFIG REQUIRED)
   configure_file(
     core/include/scipp/core/parallel-tbb.h core/include/scipp/core/parallel.h
     COPYONLY
