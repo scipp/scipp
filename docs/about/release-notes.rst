@@ -3,7 +3,7 @@
 Release Notes
 =============
 
-v0.13.0 (unreleased)
+v0.13.0 (March 2022)
 --------------------
 
 Features
@@ -29,12 +29,6 @@ Bugfixes
 * Fix permissions error for configuration file where users do not have write access to their config dir `#2482 <https://github.com/scipp/scipp/pull/2482>`_.
 * Fix plotting of data with multi-dimension bin-edge coordinate in the presence of a mask that does not depend on the bin-edge dimension `#2505 <https://github.com/scipp/scipp/pull/2505>`_.
 * Fix segfault when calling :func:`scipp.GroupByDataArray.copy` or :func:`scipp.GroupByDataset.copy` with out of bounds index `#2511 <https://github.com/scipp/scipp/pull/2511>`_.
-
-Deprecations
-~~~~~~~~~~~~
-
-Stability, Maintainability, and Testing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Contributors
 ~~~~~~~~~~~~
