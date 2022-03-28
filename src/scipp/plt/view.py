@@ -1,13 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import config
-from .tools import fig_to_pngbytes
 from .toolbar import Toolbar
 
 import ipywidgets as ipw
-import matplotlib.pyplot as plt
-from typing import Any, Tuple
 
 
 class SideBar:

@@ -1,18 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import config
-from .. import broadcast, DataArray
 from .figure2d import Figure2d
-# from .toolbar import Toolbar2d
-from .tools import find_limits, fix_empty_range
-from ..utils import name_with_unit
 from .view import View
-
-from functools import reduce
-from matplotlib.colors import Normalize, LogNorm
-import matplotlib.pyplot as plt
-from typing import Any, Tuple
 
 
 class View2d(View):

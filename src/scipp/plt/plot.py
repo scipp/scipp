@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .controller import Controller
-from .. import DataArray, Variable
+from .. import DataArray
 from .mask_step import MaskStep
 from .slicing_step import SlicingStep
 from .view import View

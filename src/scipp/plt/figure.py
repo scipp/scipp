@@ -3,7 +3,6 @@
 
 from .. import config, Variable
 from .tools import fig_to_pngbytes
-from .toolbar import Toolbar
 
 import ipywidgets as ipw
 import matplotlib.pyplot as plt

@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 import ipywidgets as ipw
-from typing import Any, Callable
+from typing import Callable
 
 
 class Toolbar:
