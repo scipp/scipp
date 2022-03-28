@@ -192,7 +192,8 @@ if(NOT WIN32)
     $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
     $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
   )
-else()
+endif()
+if(MSVC)
   add_compile_options(
     $<$<COMPILE_LANGUAGE:CXX>:/bigobj> /EHsc /constexpr:steps2000000
   )
