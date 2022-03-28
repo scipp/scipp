@@ -100,15 +100,14 @@ class Plot:
         self._models = models
         self._view_ndims = view_ndims
 
-        # Shortcut access to the underlying figure for easier modification
-        self.fig = None
-        self.ax = None
-
         self._widgets = WidgetCollection()
         self._controller = Controller(models=self._models, view=self._view)
 
         self._add_default_pipeline_steps()
-        self._render()
+
+        # Shortcut access to the underlying figure for easier modification
+        self.fig = getattr(self._view, "fig", None)
+        self.ax = getattr(self._view, "ax", None)
 
     def _add_default_pipeline_steps(self):
         # Add step for slicing dimensions out with sliders
@@ -128,6 +127,7 @@ class Plot:
         """
         IPython display representation for Jupyter notebooks.
         """
+        self._controller.render()
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
@@ -147,16 +147,8 @@ class Plot:
         """
         Call the show() method of a matplotlib figure.
         """
-        self._view.show()
-
-    def _render(self):
-        """
-        Perform some initial calls to render the figure once all components
-        have been created.
-        """
         self._controller.render()
-        self.fig = getattr(self._view, "fig", None)
-        self.ax = getattr(self._view, "ax", None)
+        self._view.show()
 
     def savefig(self, filename: str = None):
         """

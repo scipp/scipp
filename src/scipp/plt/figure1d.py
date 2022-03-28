@@ -185,7 +185,6 @@ class Figure1d(Figure):
                                         new_values["variances"]["e"]))
 
         if draw:
-            self._rescale_to_data()
             self.draw()
 
     def _change_segments_y(self, x: ArrayLike, y: ArrayLike, e: ArrayLike) -> ArrayLike:
@@ -259,7 +258,6 @@ class Figure1d(Figure):
         """
         self._norm = "log" if change["new"] else "linear"
         self._ax.set_yscale(self._norm)
-        self._rescale_to_data()
         self.draw()
 
     def render(self):
@@ -267,5 +265,8 @@ class Figure1d(Figure):
                             _xlabel is not None else name_with_unit(var=self._coord))
         self._ax.set_ylabel(self._ylabel if self._ylabel is not None else
                             name_with_unit(var=scalar(1, unit=self._unit), name=""))
-        self._rescale_to_data()
         self.draw()
+
+    def draw(self):
+        self._rescale_to_data()
+        super().draw()
