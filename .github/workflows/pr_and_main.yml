@@ -86,7 +86,7 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ${{ steps.conan-cache-key.outputs.path }}
-          key: conan-${{ matrix.os }}-${{ hashFiles('lib/conanfile.txt') }}-${{ steps.conan-cache-key.outputs.key }}
+          key: conan-${{ matrix.os }}-${{ steps.conan-cache-key.outputs.key }}
 
       - run: cmake --preset ${{ matrix.cmake-preset }}
       - run: cmake --build --preset build
