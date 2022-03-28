@@ -3,7 +3,6 @@
 
 from .. import config
 from .. import broadcast, DataArray
-# from .toolbar import Toolbar2d
 from .tools import find_limits, fix_empty_range
 from ..utils import name_with_unit
 from .figure import Figure

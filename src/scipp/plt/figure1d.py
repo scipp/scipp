@@ -2,7 +2,6 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .. import Variable, scalar, DataArray
-# from .toolbar import Toolbar1d
 from .tools import get_line_param, find_limits, fix_empty_range, vars_to_err
 from ..utils import name_with_unit
 from .figure import Figure
@@ -40,20 +39,12 @@ class Figure1d(Figure):
     `PlotFigure1d` can "keep" the currently displayed line, or "remove" a
     previously saved line.
     """
-    def __init__(
-            self,
-            # ax: Any = None,
-            # title: str = None,
-            norm: str = None,
-            # grid: bool = False,
-            mask_color: str = None,
-            # figsize: Tuple[float, ...] = None,
-            legend: dict = None,
-            # bounding_box: Tuple[float, ...] = None,
-            # xlabel: str = None,
-            # ylabel: str = None,
-            errorbars: bool = True,
-            **kwargs):
+    def __init__(self,
+                 norm: str = None,
+                 mask_color: str = None,
+                 legend: dict = None,
+                 errorbars: bool = True,
+                 **kwargs):
 
         super().__init__(**kwargs)
 
@@ -194,6 +185,7 @@ class Figure1d(Figure):
                                         new_values["variances"]["e"]))
 
         if draw:
+            self._rescale_to_data()
             self.draw()
 
     def _change_segments_y(self, x: ArrayLike, y: ArrayLike, e: ArrayLike) -> ArrayLike:
@@ -249,8 +241,6 @@ class Figure1d(Figure):
         elif vmax > self._vmax:
             self._vmax = vmax
 
-        print(self._user_vmin, self._user_vmax, self._vmin, self._vmax)
-
         self._ax.set_ylim(self._vmin, self._vmax)
 
         if xmin < self._xmin:
@@ -263,14 +253,13 @@ class Figure1d(Figure):
             warnings.filterwarnings("ignore", category=UserWarning)
             self._ax.set_xlim([self._xmin - deltax, self._xmax + deltax])
 
-        # self.draw()
-
     def toggle_norm(self, change: dict):
         """
         Set yscale to either "log" or "linear", depending on norm.
         """
         self._norm = "log" if change["new"] else "linear"
         self._ax.set_yscale(self._norm)
+        self._rescale_to_data()
         self.draw()
 
     def render(self):
@@ -278,8 +267,5 @@ class Figure1d(Figure):
                             _xlabel is not None else name_with_unit(var=self._coord))
         self._ax.set_ylabel(self._ylabel if self._ylabel is not None else
                             name_with_unit(var=scalar(1, unit=self._unit), name=""))
-        self.draw()
-
-    def draw(self):
         self._rescale_to_data()
-        super().draw()
+        self.draw()

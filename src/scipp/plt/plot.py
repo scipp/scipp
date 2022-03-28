@@ -94,8 +94,6 @@ class Plot:
     def __init__(self,
                  models: Dict[str, DataArray],
                  view: View = None,
-                 vmin: Variable = None,
-                 vmax: Variable = None,
                  view_ndims: int = None):
 
         self._view = view
