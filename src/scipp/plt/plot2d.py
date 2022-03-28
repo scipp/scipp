@@ -42,13 +42,11 @@ def plot2d(data_array_dict: Dict[str, DataArray],
                   aspect=aspect,
                   cmap=params["values"]["cmap"],
                   norm=params["values"]["norm"],
-                  masks=params["masks"])
+                  masks=params["masks"],
+                  vmin=params["values"]["vmin"],
+                  vmax=params["values"]["vmax"])
 
-    sp = Plot(models=data_array_dict,
-              view=view,
-              vmin=params["values"]["vmin"],
-              vmax=params["values"]["vmax"],
-              view_ndims=2)
+    sp = Plot(models=data_array_dict, view=view, view_ndims=2)
     if filename is not None:
         sp.savefig(filename)
     else:

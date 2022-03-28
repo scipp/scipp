@@ -46,14 +46,12 @@ def plot1d(data_array_dict: Dict[str, DataArray],
                   ylabel=ylabel,
                   grid=grid,
                   norm=params["values"]["norm"],
+                  vmin=params["values"]["vmin"],
+                  vmax=params["values"]["vmax"],
                   legend=legend,
                   errorbars=errorbars)
 
-    sp = Plot(models=data_array_dict,
-              view=view,
-              vmin=params["values"]["vmin"],
-              vmax=params["values"]["vmax"],
-              view_ndims=1)
+    sp = Plot(models=data_array_dict, view=view, view_ndims=1)
 
     if filename is not None:
         sp.savefig(filename)

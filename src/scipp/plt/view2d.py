@@ -35,10 +35,6 @@ class View2d(View):
                                       callback=self.figure.zoom_view,
                                       icon="square-o",
                                       tooltip="Zoom")
-        self.toolbar.add_button(name="rescale_to_data",
-                                callback=self.figure.rescale_to_data,
-                                icon="arrows-v",
-                                tooltip="Rescale")
         self.toolbar.add_button(name="transpose",
                                 callback=self.figure.transpose,
                                 icon="retweet",

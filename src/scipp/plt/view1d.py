@@ -25,10 +25,6 @@ class View1d(View):
                                       callback=self.figure.zoom_view,
                                       icon="square-o",
                                       tooltip="Zoom")
-        self.toolbar.add_button(name="rescale_to_data",
-                                callback=self.figure.rescale_to_data,
-                                icon="arrows-v",
-                                tooltip="Rescale")
         self.toolbar.add_togglebutton(name='toggle_xaxis_scale',
                                       callback=self.figure.toggle_xaxis_scale,
                                       description="logx")

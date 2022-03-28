@@ -72,6 +72,8 @@ class Figure1d(Figure):
 
         self._mask_color = mask_color if mask_color is not None else 'k'
         self._norm = norm
+        self._xmin = np.inf
+        self._xmax = np.NINF
         # self.legend = legend
         # if "loc" not in self.legend:
         #     self.legend["loc"] = 0
@@ -202,14 +204,13 @@ class Figure1d(Figure):
         arr2 = np.array([y - e, y + e]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
 
-    def rescale_to_data(self, *_):
+    def _make_limits(self) -> Tuple[float, ...]:
         """
-        Rescale y axis to the contents of the plot.
         """
-        vmin = 1.0e30
-        vmax = -1.0e30
-        xmin = 1.0e30
-        xmax = -1.0e30
+        vmin = np.inf
+        vmax = np.NINF
+        xmin = np.inf
+        xmax = np.NINF
 
         for line in self._lines.values():
             data = Variable(dims=[self._dim], values=line.data.get_ydata())
@@ -230,15 +231,39 @@ class Figure1d(Figure):
             delta = 0.05 * (vmax - vmin)
             vmin -= delta
             vmax += delta
+        return xmin, xmax, vmin, vmax
 
-        self._ax.set_ylim(vmin, vmax)
+    def _rescale_to_data(self):
+        """
+        Rescale y axis to the contents of the plot.
+        """
+        xmin, xmax, vmin, vmax = self._make_limits()
+        if self._user_vmin is not None:
+            assert self._user_vmin.unit == self._unit
+            self._vmin = self._user_vmin.value
+        elif vmin < self._vmin:
+            self._vmin = vmin
+        if self._user_vmax is not None:
+            assert self._user_vmax.unit == self._unit
+            self._vmax = self._user_vmax.value
+        elif vmax > self._vmax:
+            self._vmax = vmax
 
-        deltax = 0.05 * (xmax - xmin)
+        print(self._user_vmin, self._user_vmax, self._vmin, self._vmax)
+
+        self._ax.set_ylim(self._vmin, self._vmax)
+
+        if xmin < self._xmin:
+            self._xmin = xmin
+        if xmax > self._xmax:
+            self._xmax = xmax
+
+        deltax = 0.05 * (self._xmax - self._xmin)
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
-            self._ax.set_xlim([xmin - deltax, xmax + deltax])
+            self._ax.set_xlim([self._xmin - deltax, self._xmax + deltax])
 
-        self.draw()
+        # self.draw()
 
     def toggle_norm(self, change: dict):
         """
@@ -246,11 +271,15 @@ class Figure1d(Figure):
         """
         self._norm = "log" if change["new"] else "linear"
         self._ax.set_yscale(self._norm)
-        self.rescale_to_data()
+        self.draw()
 
     def render(self):
         self._ax.set_xlabel(self._xlabel if self.
                             _xlabel is not None else name_with_unit(var=self._coord))
         self._ax.set_ylabel(self._ylabel if self._ylabel is not None else
                             name_with_unit(var=scalar(1, unit=self._unit), name=""))
-        self.rescale_to_data()  # this calls draw()
+        self.draw()
+
+    def draw(self):
+        self._rescale_to_data()
+        super().draw()

@@ -45,15 +45,25 @@ class Figure2d(Figure):
             find_limits(self._data.data, scale=self._norm_flag)[self._norm_flag])
         return vmin.value, vmax.value
 
-    def rescale_to_data(self, *_):
+    def _rescale_to_data(self):
         """
         Rescale the colorbar limits according to the supplied values.
         """
         vmin, vmax = self._make_limits()
-        self._norm_func.vmin = vmin
-        self._norm_func.vmax = vmax
-        self._image.set_clim(vmin, vmax)
-        self.update()
+        if self._user_vmin is not None:
+            assert self._user_vmin.unit == self._data.unit
+            self._vmin = self._user_vmin.value
+        elif vmin < self._vmin:
+            self._vmin = vmin
+        if self._user_vmax is not None:
+            assert self._user_vmax.unit == self._data.unit
+            self._vmax = self._user_vmax.value
+        elif vmax > self._vmax:
+            self._vmax = vmax
+
+        self._norm_func.vmin = self._vmin
+        self._norm_func.vmax = self._vmax
+        self._image.set_clim(self._vmin, self._vmax)
 
     def _make_image(self):
         dims = self._data.dims
@@ -84,9 +94,9 @@ class Figure2d(Figure):
         """
         if new_values is not None:
             self._data = new_values
-
         if self._image is None:
             self._make_image()
+        self._rescale_to_data()
 
         flat_values = self._data.values.flatten()
         rgba = self._cmap(self._norm_func(flat_values))

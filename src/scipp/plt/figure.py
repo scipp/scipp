@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import config
+from .. import config, Variable
 from .tools import fig_to_pngbytes
 from .toolbar import Toolbar
 
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
+import numpy as np
 from typing import Any, Tuple
 
 
@@ -17,6 +18,8 @@ class Figure:
                  title: str = None,
                  xlabel: str = None,
                  ylabel: str = None,
+                 vmin: Variable = None,
+                 vmax: Variable = None,
                  grid: bool = False,
                  bounding_box: Tuple[float, ...] = None):
         self._fig = None
@@ -26,6 +29,10 @@ class Figure:
         self._bounding_box = bounding_box
         self._xlabel = xlabel
         self._ylabel = ylabel
+        self._user_vmin = vmin
+        self._user_vmax = vmax
+        self._vmin = np.inf
+        self._vmax = np.NINF
 
         cfg = config['plot']
         if self._ax is None:
