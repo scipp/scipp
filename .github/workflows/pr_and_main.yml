@@ -82,9 +82,7 @@ jobs:
       - run: ctest --preset test
       - run: python -m pytest -v tests
 
-      - run: |
-          pip install sphinx-autodoc-typehints>=1.17.0
-          cmake --build --preset docs
+      - run: cmake --build --preset docs
         if: ${{ contains(matrix.os, 'ubuntu') }}
 
       - uses: actions/upload-artifact@v2
