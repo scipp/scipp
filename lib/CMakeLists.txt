@@ -40,7 +40,12 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
 if(SKBUILD)
+  # Conda builds install tbb via conda, not conan
   set(CONAN_ONETBB onetbb/2021.3.0)
+  # The deploy generator is used to install dependencies into a know location.
+  # The RUNTIME_DEPENDENCIES DIRECTORIES install option is then used to find the
+  # dependencies. This is actually required only for Windows, since on Linux and
+  # OSX cmake finds the files anyway, based on the target's rpath.
   set(CONAN_DEPLOY deploy)
 endif()
 
@@ -74,8 +79,6 @@ if(DEFINED CMAKE_OSX_ARCHITECTURES)
     set(THREADING OFF)
   endif()
 endif()
-message(STATUS "conan_settings")
-message(STATUS "${conan_settings}")
 conan_cmake_install(
   PATH_OR_REFERENCE ${CMAKE_CURRENT_BINARY_DIR} SETTINGS ${conan_settings}
   BUILD outdated
