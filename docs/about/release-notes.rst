@@ -11,7 +11,12 @@ Features
 
 * Added ``is_edges`` method to ``coords``, ``attrs``, ``masks``, and ``meta`` properties of DataArray and Dataset `#2469 <https://github.com/scipp/scipp/pull/2469>`_.
 * Added support for arithmetic of :class:`scipp.DataArray` and :class:`scipp.Dataset` with builtin ``int`` and ``float`` `#2473 <https://github.com/scipp/scipp/pull/2473>`_.
+* Added advanced indexing support: integer array indexing `#2502 <https://github.com/scipp/scipp/pull/2502>`_.
 * Added advanced indexing support: boolean variable indexing `#2477 <https://github.com/scipp/scipp/pull/2477>`_.
+* Added or exposed to Python more functions for boolean logic `#2480 <https://github.com/scipp/scipp/pull/2480>`_, `#2489 <https://github.com/scipp/scipp/pull/2489>`_.
+* ``broadcast`` now supports :class:`scipp.DataArray`, and the ``sizes`` argument `#2488 <https://github.com/scipp/scipp/pull/2488>`_.
+* The output of :func:`squeeze` is no longer read-only `2494 <https://github.com/scipp/scipp/pull/2494>`_.
+* Added support for spatial dtypes to :func:`scipp.to_unit` and :func:`scipp.isclose` `#2498 <https://github.com/scipp/scipp/pull/2498>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -22,6 +27,8 @@ Bugfixes
 ~~~~~~~~
 
 * Fix permissions error for configuration file where users do not have write access to their config dir `#2482 <https://github.com/scipp/scipp/pull/2482>`_.
+* Fix plotting of data with multi-dimension bin-edge coordinate in the presence of a mask that does not depend on the bin-edge dimension `#2505 <https://github.com/scipp/scipp/pull/2505>`_.
+* Fix segfault when calling :func:`scipp.GroupByDataArray.copy` or :func:`scipp.GroupByDataset.copy` with out of bounds index `#2511 <https://github.com/scipp/scipp/pull/2511>`_.
 
 Deprecations
 ~~~~~~~~~~~~

@@ -8,22 +8,43 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
+from ._sizes import _parse_dims_shape_sizes
 from ..typing import VariableLike
 
 
-def broadcast(x: _cpp.Variable, dims: Union[List[str], Tuple[str, ...]],
-              shape: Sequence[int]) -> _cpp.Variable:
-    """Broadcast a variable.
+def broadcast(
+    x: VariableLike,
+    dims: Optional[Union[List[str], Tuple[str, ...]]] = None,
+    shape: Optional[Sequence[int]] = None,
+    sizes: Optional[Dict[str, int]] = None,
+) -> _cpp.Variable:
+    """Broadcast a Variable or a DataArray.
+    If the input is a DataArray, coordinates and attributes are shallow-copied
+    and masks are deep copied.
 
     Note that scipp operations broadcast automatically, so using this function
     directly is rarely required.
 
-    :param x: Variable to broadcast.
-    :param dims: List of new dimensions.
-    :param shape: New extents in each dimension.
-    :return: New variable with requested dimension labels and shape.
+    :param x: Variable or DataArray to broadcast.
+    :param dims: Optional (if sizes is specified), list of new dimensions.
+    :param shape: Optional (if sizes is specified), new extents in each dimension.
+    :param sizes: Optional, new dimension labels to sizes map.
+    :return: New Variable or DataArray with requested dimension labels and shape.
     """
-    return _call_cpp_func(_cpp.broadcast, x, dims, shape)
+    sizes = _parse_dims_shape_sizes(dims=dims, shape=shape, sizes=sizes)
+    if isinstance(x, _cpp.Variable):
+        return _call_cpp_func(_cpp.broadcast, x, sizes["dims"], sizes["shape"])
+    elif isinstance(x, _cpp.DataArray):
+        return _cpp.DataArray(data=_call_cpp_func(_cpp.broadcast, x.data, sizes["dims"],
+                                                  sizes["shape"]),
+                              coords={c: coord
+                                      for c, coord in x.coords.items()},
+                              attrs={a: attr
+                                     for a, attr in x.attrs.items()},
+                              masks={m: mask.copy()
+                                     for m, mask in x.masks.items()})
+    else:
+        raise TypeError("Broadcast only supports Variable and DataArray as inputs.")
 
 
 def concat(x: Sequence[VariableLike], dim: str) -> VariableLike:
@@ -128,36 +149,28 @@ def fold(x: VariableLike,
       array([[0, 1, 2],
              [3, 4, 5]])
     """
-    if sizes is not None:
-        if (dims is not None) or (shape is not None):
-            raise RuntimeError(
-                "If sizes is defined, dims and shape must be None in fold.")
-        sizes = sizes.copy()
-    else:
-        if (dims is None) or (shape is None):
-            raise RuntimeError("Both dims and shape must be defined in fold.")
-        sizes = dict(zip(dims, shape))
+    sizes = _parse_dims_shape_sizes(dims=dims, shape=shape, sizes=sizes)
 
     # Handle potential size of -1.
     # Note that we implement this here on the Python layer, because one cannot create
     # a C++ Dimensions object with negative sizes.
-    new_shape = list(sizes.values())
+    new_shape = sizes["shape"]
     minus_one_count = new_shape.count(-1)
     if minus_one_count > 1:
         raise _cpp.DimensionError(
             "Can only have a single -1 in the new requested shape.")
     if minus_one_count == 1:
         ind = new_shape.index(-1)
-        del new_shape[ind]
+        new_shape[ind] = 1
         new_volume = np.prod(new_shape)
         dim_size = x.sizes[dim] // new_volume
         if x.sizes[dim] % new_volume != 0:
             raise ValueError("-1 in new shape was computed to be {}, but the original "
                              "shape {} cannot be divided by {}.".format(
                                  dim_size, x.sizes[dim], dim_size))
-        sizes[list(sizes.keys())[ind]] = dim_size
+        new_shape[ind] = dim_size
 
-    return _call_cpp_func(_cpp.fold, x, dim, sizes)
+    return _call_cpp_func(_cpp.fold, x, dim, sizes["dims"], new_shape)
 
 
 def flatten(x: VariableLike,

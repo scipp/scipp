@@ -614,6 +614,13 @@ TEST_F(SqueezeTest, data_array_3d_wrong_length_throws) {
                        except::DimensionError);
 }
 
+TEST_F(SqueezeTest, data_array_output_is_not_readonly) {
+  auto squeezed = squeeze(a, std::nullopt);
+  EXPECT_NO_THROW_DISCARD(squeezed.data().setSlice(
+      Slice{Dim::Z, 0}, makeVariable<double>(Dims{}, Values{-10.0})));
+  EXPECT_NO_THROW_DISCARD(squeezed.coords().erase(Dim::Z));
+}
+
 class SqueezeDatasetTest : public SqueezeTest {
 protected:
   SqueezeDatasetTest()
@@ -663,4 +670,11 @@ TEST_F(SqueezeDatasetTest, dataset_3d_all) {
   EXPECT_EQ(squeezed["a"], squeeze(a, dims));
   EXPECT_EQ(squeezed["b"], squeeze(b, std::vector<Dim>({Dim::Y})));
   EXPECT_EQ(squeezed["c"], squeeze(c, std::vector<Dim>({Dim::X})));
+}
+
+TEST_F(SqueezeDatasetTest, dataset_output_is_not_readonly) {
+  auto squeezed = squeeze(dset, std::nullopt);
+  EXPECT_NO_THROW_DISCARD(squeezed["a"].data().setSlice(
+      Slice{Dim::Z, 0}, makeVariable<double>(Dims{}, Values{-10.0})));
+  EXPECT_NO_THROW_DISCARD(squeezed.coords().erase(Dim::Z));
 }

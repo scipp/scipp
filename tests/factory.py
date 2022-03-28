@@ -27,7 +27,6 @@ def make_variable(ndim=1,
 
     a = 10.0 * np.sin(np.arange(np.prod(shapes), dtype=np.float64).reshape(*shapes))
 
-    print(dims, a, unit, dtype)
     var = sc.array(dims=dims, values=a, unit=unit, dtype=dtype)
     if with_variance:
         var.variances = np.abs(np.random.normal(a * 0.1, 0.05))

@@ -19,18 +19,12 @@ namespace scipp::dataset {
 
 /// Map `op` over `items`, return vector of results
 template <class T, class Op> auto map(const T &items, Op op) {
-  std::vector<decltype(op(items.front()))> out;
+  std::vector<std::decay_t<decltype(op(items.front()))>> out;
   out.reserve(items.size());
   for (const auto &i : items)
     out.emplace_back(op(i));
   return out;
 }
-
-constexpr auto get_data = [](auto &&x) { return x.data(); };
-constexpr auto get_masks = [](auto &&x) { return x.masks(); };
-constexpr auto get_meta = [](auto &&x) { return x.meta(); };
-constexpr auto get_coords = [](auto &&x) { return x.coords(); };
-constexpr auto get_sizes = [](auto &&x) { return x.sizes(); };
 
 /// Concatenate a and b, assuming that a and b contain bin edges.
 ///
@@ -307,22 +301,26 @@ Dataset transpose(const Dataset &d, const scipp::span<const Dim> dims) {
       d, [](auto &&... _) { return transpose(_...); }, dims);
 }
 
-DataArray squeeze(const DataArray &a,
-                  const std::optional<scipp::span<const Dim>> dims) {
-  auto squeezed = a;
-  for (const auto &dim : dims_for_squeezing(a.dims(), dims)) {
+namespace {
+template <class T>
+T squeeze_impl(const T &x, const std::optional<scipp::span<const Dim>> dims) {
+  auto squeezed = x;
+  for (const auto &dim : dims_for_squeezing(x.dims(), dims)) {
     squeezed = squeezed.slice({dim, 0});
   }
-  return squeezed;
+  // Copy explicitly to make sure the output does not have its read-only flag
+  // set.
+  return T(squeezed);
+}
+} // namespace
+DataArray squeeze(const DataArray &a,
+                  const std::optional<scipp::span<const Dim>> dims) {
+  return squeeze_impl(a, dims);
 }
 
 Dataset squeeze(const Dataset &d,
                 const std::optional<scipp::span<const Dim>> dims) {
-  auto squeezed = d;
-  for (const auto &dim : dims_for_squeezing(d.dims(), dims)) {
-    squeezed = squeezed.slice({dim, 0});
-  }
-  return squeezed;
+  return squeeze_impl(d, dims);
 }
 
 } // namespace scipp::dataset

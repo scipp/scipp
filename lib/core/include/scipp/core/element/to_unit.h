@@ -41,15 +41,24 @@ constexpr auto round = [](const auto x) {
 constexpr auto to_unit = overloaded{
     arg_list<double, std::tuple<float, double>, std::tuple<int64_t, double>,
              std::tuple<int32_t, double>, std::tuple<time_point, double>,
-             std::tuple<Eigen::Vector3d, double>>,
+             std::tuple<Eigen::Vector3d, double>,
+             std::tuple<Eigen::Affine3d, double>,
+             std::tuple<Translation, double>>,
     transform_flags::expect_no_variance_arg<1>,
     [](const units::Unit &, const units::Unit &target) { return target; },
+    [](const time_point &x, const auto &scale) {
+      return time_point{round<int64_t>(x.time_since_epoch() * scale)};
+    },
+    [](const Eigen::Affine3d &x, const auto &scale) {
+      auto out = x;
+      out.translation() *= scale;
+      return out;
+    },
+    [](const Translation &x, const auto &scale) {
+      return Translation(x.vector() * scale);
+    },
     [](const auto &x, const auto &scale) {
-      using T = std::decay_t<decltype(x)>;
-      if constexpr (std::is_same_v<T, time_point>)
-        return T{round<int64_t>(x.time_since_epoch() * scale)};
-      else
-        return round<T>(x * scale);
+      return round<std::decay_t<decltype(x)>>(x * scale);
     }};
 
 } // namespace scipp::core::element

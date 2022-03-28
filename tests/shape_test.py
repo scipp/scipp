@@ -8,6 +8,44 @@ import scipp as sc
 from .common import assert_export
 
 
+def test_broadcast_variable():
+    x = sc.array(dims=['x'], values=np.arange(6.0))
+    assert_export(sc.broadcast, x=x, sizes={'x': 6, 'y': 3})
+    assert_export(sc.broadcast, x=x, dims=['x', 'y'], shape=[6, 3])
+    assert sc.identical(sc.broadcast(x, sizes={
+        'x': 6,
+        'y': 3
+    }), sc.broadcast(x, dims=['x', 'y'], shape=[6, 3]))
+
+
+def test_broadcast_data_array():
+    N = 6
+    d = sc.linspace('x', 2., 10., N)
+    x = sc.arange('x', float(N))
+    a = sc.arange('x', float(N)) + 3.0
+    m = x < 3.
+    da = sc.DataArray(d, coords={'x': x}, attrs={'a': a}, masks={'m': m})
+    expected = sc.DataArray(sc.broadcast(d, sizes={
+        'x': 6,
+        'y': 3
+    }),
+                            coords={'x': x},
+                            attrs={'a': a},
+                            masks={'m': m})
+    assert sc.identical(sc.broadcast(da, sizes={'x': 6, 'y': 3}), expected)
+    assert sc.identical(sc.broadcast(da, dims=['x', 'y'], shape=[6, 3]), expected)
+
+
+def test_broadcast_fails_with_bad_inputs():
+    x = sc.array(dims=['x'], values=np.arange(6.0))
+    with pytest.raises(ValueError):
+        _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, dims=['x', 'y'], shape=[6, 3])
+    with pytest.raises(ValueError):
+        _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, dims=['x', 'y'])
+    with pytest.raises(ValueError):
+        _ = sc.broadcast(x, sizes={'x': 6, 'y': 3}, shape=[6, 3])
+
+
 def test_concat():
     var = sc.scalar(1.0)
     assert sc.identical(sc.concat([var, var + var, 3 * var], 'x'),
@@ -65,6 +103,7 @@ def test_fold_raises_two_minus_1():
     da = sc.DataArray(x)
     with pytest.raises(sc.DimensionError):
         sc.fold(x, dim='x', sizes={'x': -1, 'y': -1})
+    with pytest.raises(sc.DimensionError):
         sc.fold(da, dim='x', sizes={'x': -1, 'y': -1})
 
 
@@ -73,6 +112,7 @@ def test_fold_raises_non_divisible():
     da = sc.DataArray(x)
     with pytest.raises(ValueError):
         sc.fold(x, dim='x', sizes={'x': 3, 'y': -1})
+    with pytest.raises(ValueError):
         sc.fold(da, dim='x', sizes={'x': -1, 'y': 3})
 
 

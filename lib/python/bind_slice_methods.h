@@ -11,6 +11,7 @@
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/groupby.h"
+#include "scipp/dataset/shape.h"
 #include "scipp/dataset/slice.h"
 #include "scipp/variable/slice.h"
 #include "scipp/variable/variable.h"
@@ -197,6 +198,42 @@ void expect_implicit_dimension(const Sizes &dims) {
     throw except::DimensionError(msg);
   }
 }
+
+template <class T, class Op>
+void strip_edges(T &out, const T &base, Op op, const Dim dim) {
+  for (const auto &[name, var] : op(base))
+    if (core::is_edges(out.dims(), var.dims(), dim))
+      op(out).erase(name);
+}
+
+template <class T>
+T slice_by_list(const T &obj,
+                const std::tuple<Dim, std::vector<scipp::index>> &index) {
+  const auto &[dim, indices] = index;
+  auto copy = obj;
+  if constexpr (std::is_same_v<T, DataArray>) {
+    strip_edges(copy, obj, get_coords, dim);
+    strip_edges(copy, obj, get_masks, dim);
+    strip_edges(copy, obj, get_attrs, dim);
+  } else if constexpr (std::is_same_v<T, Dataset>) {
+    strip_edges(copy, obj, get_coords, dim);
+    for (auto da : copy) {
+      strip_edges(da, obj[da.name()], get_masks, dim);
+      strip_edges(da, obj[da.name()], get_attrs, dim);
+    }
+  }
+  std::vector<T> slices;
+  slices.reserve(indices.size());
+  const auto size = copy.dims()[dim];
+  for (const auto &pos : indices) {
+    const auto slice = py::slice(pos, pos + 1, 1);
+    ssize_t start, stop, step, slicelength;
+    if (!slice.compute(size, &start, &stop, &step, &slicelength))
+      throw py::error_already_set();
+    slices.emplace_back(copy.slice({dim, start, stop}));
+  }
+  return concat(slices, dim);
+}
 } // namespace
 
 template <class T, class... Ignored>
@@ -270,4 +307,9 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
       return out;
     });
   }
+  c.def("__getitem__", [](T &self, const std::vector<scipp::index> &indices) {
+    expect_implicit_dimension(self.dims());
+    return slice_by_list(self, {self.dim(), indices});
+  });
+  c.def("__getitem__", slice_by_list<T>);
 }

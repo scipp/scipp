@@ -53,7 +53,6 @@ def test_html_repr_scalar_array(variance, label, attr, mask, dtype, unit):
 @pytest.mark.parametrize("dtype", [sc.DType.float64, sc.DType.int64])
 @pytest.mark.parametrize("unit", ['dimensionless', 'counts', 's'])
 def test_html_repr_variable(ndim, variances, dtype, unit):
-    print(ndim, variances, dtype, unit)
     var = make_variable(ndim=ndim,
                         with_variance=maybe_variances(variances, dtype),
                         dtype=dtype,

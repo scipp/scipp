@@ -67,12 +67,82 @@ TEST(IsCloseTest, with_vectors) {
   const auto rtol = 0.0 * units::one;
   const auto atol = 1.0 * units::one;
   EXPECT_EQ(isclose(u, u, rtol, atol), makeVariable<bool>(Values{true}));
-  EXPECT_EQ(isclose(u, v, rtol, atol),
-
-            makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, v, rtol, atol), makeVariable<bool>(Values{true}));
   EXPECT_EQ(isclose(v, w, rtol, atol), makeVariable<bool>(Values{true}));
   EXPECT_EQ(isclose(u, w, rtol, atol), makeVariable<bool>(Values{false}));
 }
+
+TEST(IsCloseTest, with_matrices) {
+  const Eigen::Matrix3d mat_u = Eigen::Matrix3d::Constant(3, 3, 0.0);
+  const auto u = makeVariable<Eigen::Matrix3d>(Values{mat_u});
+  const Eigen::Matrix3d mat_v = Eigen::Matrix3d::Constant(3, 3, 1.0);
+  const auto v = makeVariable<Eigen::Matrix3d>(Values{mat_v});
+  const Eigen::Matrix3d mat_w = Eigen::Matrix3d::Constant(3, 3, 1.0001);
+  const auto w = makeVariable<Eigen::Matrix3d>(Values{mat_w});
+  const auto rtol = 0.0 * units::one;
+  const auto atol = 1.0 * units::one;
+  EXPECT_EQ(isclose(u, u, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, v, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(v, w, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, w, rtol, atol), makeVariable<bool>(Values{false}));
+}
+
+TEST(IsCloseTest, with_affine) {
+  // The interaction of rotation and translation is non-trivial.
+  // we set angle=0 to help pick a meaningful atol.
+  const Eigen::AngleAxisd u_rotation(0, Eigen::Vector3d{0, 1, 0});
+  const Eigen::Translation3d u_translation(-4, 1, 3);
+  const Eigen::Affine3d u_affine = u_rotation * u_translation;
+  const auto u = makeVariable<Eigen::Affine3d>(Values{u_affine});
+
+  const Eigen::AngleAxisd v_rotation(0, Eigen::Vector3d{0, 1, 0});
+  const Eigen::Translation3d v_translation(-5, 2, 2);
+  const Eigen::Affine3d v_affine = v_rotation * v_translation;
+  const auto v = makeVariable<Eigen::Affine3d>(Values{v_affine});
+
+  const Eigen::AngleAxisd w_rotation(0, Eigen::Vector3d{0, 1, 0});
+  const Eigen::Translation3d w_translation(-5, 2, 1.9999);
+  const Eigen::Affine3d w_affine = w_rotation * w_translation;
+  const auto w = makeVariable<Eigen::Affine3d>(Values{w_affine});
+
+  const auto rtol = 0.0 * units::one;
+  const auto atol = 1.0 * units::one;
+  EXPECT_EQ(isclose(u, u, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, v, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(v, w, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, w, rtol, atol), makeVariable<bool>(Values{false}));
+}
+
+TEST(IsCloseTest, with_translation) {
+  const auto u = makeVariable<core::Translation>(
+      Values{core::Translation{Eigen::Vector3d{0, 0, 0}}});
+  const auto v = makeVariable<core::Translation>(
+      Values{core::Translation{Eigen::Vector3d{1, 1, 1}}});
+  const auto w = makeVariable<core::Translation>(
+      Values{core::Translation{Eigen::Vector3d{1, 1, 1.0001}}});
+  const auto rtol = 0.0 * units::one;
+  const auto atol = 1.0 * units::one;
+  EXPECT_EQ(isclose(u, u, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, v, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(v, w, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, w, rtol, atol), makeVariable<bool>(Values{false}));
+}
+
+TEST(IsCloseTest, with_quaternion) {
+  const auto u = makeVariable<core::Quaternion>(
+      Values{core::Quaternion{Eigen::Quaterniond{0, 0, 0, 0}}});
+  const auto v = makeVariable<core::Quaternion>(
+      Values{core::Quaternion{Eigen::Quaterniond{1, -1, 0.5, -0.25}}});
+  const auto w = makeVariable<core::Quaternion>(
+      Values{core::Quaternion{Eigen::Quaterniond{1, -1, 0.5, -1.2}}});
+  const auto rtol = 0.0 * units::one;
+  const auto atol = 1.0 * units::one;
+  EXPECT_EQ(isclose(u, u, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, v, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(v, w, rtol, atol), makeVariable<bool>(Values{true}));
+  EXPECT_EQ(isclose(u, w, rtol, atol), makeVariable<bool>(Values{false}));
+}
+
 TEST(IsCloseTest, works_for_counts) {
   const auto a = makeVariable<double>(Values{1}, Variances{1}, units::counts);
   const auto rtol = 1e-5 * units::one;
