@@ -26,6 +26,7 @@ dependencies:
   - ipywidgets
   - matplotlib-base
   - nbsphinx
+  - jinja2==3.0.3  # jupyter/nbconvert#1736
   - python-graphviz
   - pythreejs
   - pyyaml
