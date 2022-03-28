@@ -73,7 +73,7 @@
       "name": "package-windows",
       "inherits": "package",
       "description": "Windows options for package build",
-      "generator": "Ninja"
+      "generator": "Visual Studio 17 2022"
     },
     {
       "name": "coverage",
