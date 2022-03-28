@@ -61,7 +61,7 @@ jobs:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
           ref: ${{ github.head_ref }}
-      
+
       - uses: ilammy/msvc-dev-cmd@v1  # Required to set up MSVC dev environment for Ninja builds.
 
       - name: Setup conda environment
@@ -76,6 +76,17 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2.1
         with:
           key: ${{ matrix.os }}
+
+      - name: Cache conan setup
+        id: conan-cache-key
+        run: |
+          echo "::set-output name=key::$(/bin/date -u "+%Y%m%d")"
+          echo "::set-output name=path::$(conan config home)"
+      - name: Cache conan
+        uses: actions/cache@v1
+        with:
+          path: ${{ steps.conan-cache-key.outputs.path }}
+          key: conan-${{ matrix.os }}-${{ steps.conan-cache-key.outputs.key }}
 
       - run: cmake --preset ${{ matrix.cmake-preset }}
       - run: cmake --build --preset build
