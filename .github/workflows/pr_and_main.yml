@@ -61,37 +61,39 @@ jobs:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
           ref: ${{ github.head_ref }}
-      
+
       - uses: ilammy/msvc-dev-cmd@v1  # Required to set up MSVC dev environment for Ninja builds.
 
-      - run: python tools/metatoenv.py --dir=conda --env-file=buildenv.yml --channels=conda-forge --merge-with=developer-extra.yml
-
-      - name: Setup Mambaforge and dev env
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Setup conda environment
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          miniforge-version: latest
-          miniforge-variant: Mambaforge
-          python-version: ${{ matrix.python-version }}
-          environment-file: buildenv.yml
-          activate-environment: buildenv
-          auto-activate-base: false
-
-      - run: echo "$CONDA/envs/buildenv/Library/bin" >> $GITHUB_PATH
-        if: ${{ contains(matrix.os, 'windows-latest') }}
+          environment-file: .buildconfig/${{ matrix.os }}.yml
+          cache-env: true
+          extra-specs: |
+            python=${{ matrix.python-version }}
 
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2.1
         with:
           key: ${{ matrix.os }}
 
+      - name: Cache conan setup
+        id: conan-cache-key
+        run: |
+          echo "::set-output name=key::$(/bin/date -u "+%Y%m%d")"
+          echo "::set-output name=path::$(conan config home)"
+      - name: Cache conan
+        uses: actions/cache@v1
+        with:
+          path: ${{ steps.conan-cache-key.outputs.path }}
+          key: conan-${{ matrix.os }}-${{ steps.conan-cache-key.outputs.key }}
+
       - run: cmake --preset ${{ matrix.cmake-preset }}
       - run: cmake --build --preset build
       - run: ctest --preset test
       - run: python -m pytest -v tests
 
-      - run: |
-          pip install sphinx-autodoc-typehints>=1.17.0
-          cmake --build --preset docs
+      - run: cmake --build --preset docs
         if: ${{ contains(matrix.os, 'ubuntu') }}
 
       - uses: actions/upload-artifact@v2
