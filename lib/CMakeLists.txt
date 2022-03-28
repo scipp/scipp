@@ -77,7 +77,7 @@ endif()
 message(STATUS "conan_settings")
 message(STATUS "${conan_settings}")
 conan_cmake_install(
-  PATH_OR_REFERENCE ${CMAKE_CURRENT_SOURCE_DIR} SETTINGS ${conan_settings}
+  PATH_OR_REFERENCE ${CMAKE_CURRENT_BINARY_DIR} SETTINGS ${conan_settings}
   BUILD outdated
 )
 
