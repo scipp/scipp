@@ -162,6 +162,8 @@ public:
   [[nodiscard]] Dict merge_from(const Dict &other) const;
 
   bool item_applies_to(const Key &key, const Dimensions &dims) const;
+  bool is_edges(const Key &key,
+                const std::optional<Dim> dim = std::nullopt) const;
 
 protected:
   Sizes m_sizes;
@@ -185,5 +187,14 @@ template <class Masks>
 
 template <class Key, class Value>
 bool equals_nan(const Dict<Key, Value> &a, const Dict<Key, Value> &b);
+
+constexpr auto get_data = [](auto &&a) -> decltype(auto) { return a.data(); };
+constexpr auto get_sizes = [](auto &&a) -> decltype(auto) { return a.sizes(); };
+constexpr auto get_meta = [](auto &&a) -> decltype(auto) { return a.meta(); };
+constexpr auto get_coords = [](auto &&a) -> decltype(auto) {
+  return a.coords();
+};
+constexpr auto get_attrs = [](auto &&a) -> decltype(auto) { return a.attrs(); };
+constexpr auto get_masks = [](auto &&a) -> decltype(auto) { return a.masks(); };
 
 } // namespace scipp::dataset

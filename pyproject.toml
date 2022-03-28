@@ -21,3 +21,10 @@ build-verbosity = 1
 
 [tool.cibuildwheel.macos]
 archs = ["x86_64", "arm64"]
+
+[tool.pytest.ini_options]
+addopts = "-ra -v"
+filterwarnings = [
+  'ignore:You are running a "Debug" build of scipp:'
+]
+testpaths = "tests"

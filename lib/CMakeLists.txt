@@ -99,7 +99,7 @@ find_package(Sanitizers REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 # libpython is not available on `manylinux` images, use `Development.Module`
 # instead of `Development`
-find_package(Python 3.7 REQUIRED COMPONENTS Interpreter Development.Module)
+find_package(Python 3.8 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(LLNL-Units REQUIRED)
 
@@ -110,23 +110,8 @@ find_program(CCACHE ccache)
 if(CCACHE)
   set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
 endif()
-
-if(MSVC)
-  set(CLCACHE_PATH
-      ""
-      CACHE PATH "Path to installed clcache executable directory"
-  )
-  if(EXISTS ${CLCACHE_PATH})
-    set(CMAKE_VS_GLOBALS "CLToolExe=clcache.exe" "CLToolPath=${CLCACHE_PATH}"
-                         "TrackFileAccess=false"
-    )
-    message(STATUS "Will attempt to use clcache")
-  else(EXISTS ${CLCACHE_PATH})
-    message(STATUS "CLCACHE_PATH not specified. Not enabled.")
-    unset(CMAKE_VS_GLOBALS) # Clear all vs globals
-  endif(EXISTS ${CLCACHE_PATH})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /constexpr:steps2000000")
-endif(MSVC)
+message(STATUS "Tried to find ccache, found:")
+message(STATUS ${CCACHE})
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
@@ -204,7 +189,9 @@ if(NOT WIN32)
     $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
   )
 else()
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:/bigobj>)
+  add_compile_options(
+    $<$<COMPILE_LANGUAGE:CXX>:/bigobj> /EHsc /constexpr:steps2000000
+  )
 endif()
 
 option(CPPCHECK "Enable running cppcheck during compilation if found." OFF)

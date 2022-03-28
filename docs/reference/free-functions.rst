@@ -15,6 +15,7 @@ General
    choose
    collapse
    histogram
+   logical_not
    logical_and
    logical_or
    logical_xor
@@ -53,7 +54,9 @@ Math
    log10
    mod
    multiply
+   negative
    norm
+   pow
    reciprocal
    round
    sqrt

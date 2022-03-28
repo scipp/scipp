@@ -51,7 +51,7 @@ TEST_F(ElementArithmeticTest, non_in_place) {
   EXPECT_EQ(divide(a, b), a / b);
 }
 
-TEST_F(ElementArithmeticTest, unary_minus) { EXPECT_EQ(unary_minus(a), -a); }
+TEST_F(ElementArithmeticTest, negative) { EXPECT_EQ(negative(a), -a); }
 
 TEST(ElementArithmeticIntegerDivisionTest, truediv_32bit) {
   const int32_t a = 2;

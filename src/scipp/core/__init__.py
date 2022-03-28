@@ -16,10 +16,10 @@ if _debug_:
     )
 
 from .._scipp import __version__
-from .._scipp.core import Variable, DataArray, Dataset, GroupByDataArray, \
-                         GroupByDataset, DType, Unit
+from .cpp_classes import Coords, DataArray, Dataset, DType, GroupByDataArray,\
+                         GroupByDataset, Masks, Unit, Variable
 # Import errors
-from .._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
+from .cpp_classes import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
                          DTypeError, SizeError, SliceError, \
                          UnitError, VariableError, VariancesError
@@ -70,15 +70,16 @@ for _cls in (Variable, DataArray, Dataset):
     setattr(_cls, '__array_ufunc__', None)
 del _cls
 
-from .arithmetic import add, divide, floor_divide, mod, multiply, subtract
+from .arithmetic import add, divide, floor_divide, mod, multiply, negative, subtract
 from .bins import lookup, histogram, bin, bins, bins_like
 from .comparison import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
 from .counts import counts_to_density, density_to_counts
 from .cumulative import cumsum
 from .dataset import irreducible_mask, merge
 from .groupby import groupby
-from .math import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc, midpoints
-from .operations import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where, to
+from .logical import logical_not, logical_and, logical_or, logical_xor
+from .math import abs, cross, dot, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc, midpoints
+from .operations import islinspace, issorted, allsorted, sort, values, variances, stddevs, rebin, where, to
 from .reduction import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
 from .shape import broadcast, concat, fold, flatten, squeeze, transpose
 from .trigonometry import sin, cos, tan, asin, acos, atan, atan2

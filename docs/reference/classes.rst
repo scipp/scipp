@@ -3,8 +3,22 @@
 Classes
 =======
 
-General
--------
+Data Structures
+---------------
+
+.. autosummary::
+   :toctree: ../generated/classes
+   :template: scipp-class-template.rst
+   :recursive:
+
+   DataArray
+   Dataset
+   DType
+   Unit
+   Variable
+
+Auxiliary Containers
+--------------------
 
 .. autosummary::
    :toctree: ../generated/classes
@@ -12,13 +26,10 @@ General
    :recursive:
 
    Bins
-   DataArray
-   Dataset
-   DType
+   Coords
    GroupByDataArray
    GroupByDataset
-   Unit
-   Variable
+   Masks
 
 Exceptions
 ----------

@@ -7,6 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Union
 
+from ..logging import get_logger
 from ..typing import VariableLike
 
 
@@ -30,6 +31,15 @@ def _as_hdf5_type(a):
     if np.issubdtype(a.dtype, np.datetime64):
         return a.view(np.int64)
     return a
+
+
+def collection_element_name(name, index):
+    """
+    Convert name into an ASCII string that can be used as an object name in HDF5.
+    """
+    ascii_name = name.replace('.', '&#46;').replace('/', '&#47;').encode(
+        'ascii', 'xmlcharrefreplace').decode('ascii')
+    return f'elem_{index:03d}_{ascii_name}'
 
 
 class NumpyDataIO:
@@ -179,7 +189,8 @@ class VariableIO:
         if var.dtype not in cls._dtypes.values():
             # In practice this may make the file unreadable, e.g., if values
             # have unsupported dtype.
-            print(f'Writing with dtype={var.dtype} not implemented, skipping.')
+            get_logger().warning('Writing with dtype=%s not implemented, skipping.',
+                                 var.dtype)
             return
         _write_scipp_header(group, 'Variable')
         dset = cls._write_data(group, var)
@@ -225,11 +236,14 @@ class DataArrayIO:
         # 2 separate groups.
         for view_name, view in zip(['coords', 'masks', 'attrs'], views):
             subgroup = group.create_group(view_name)
-            for name in view:
-                g = VariableIO.write(group=subgroup.create_group(str(name)),
+            for i, name in enumerate(view):
+                var_group_name = collection_element_name(name, i)
+                g = VariableIO.write(group=subgroup.create_group(var_group_name),
                                      var=view[name])
                 if g is None:
-                    del subgroup[str(name)]
+                    del subgroup[var_group_name]
+                else:
+                    g.attrs['name'] = str(name)
 
     @staticmethod
     def read(group):
@@ -239,10 +253,10 @@ class DataArrayIO:
         contents['name'] = group.attrs['name']
         contents['data'] = VariableIO.read(group['data'])
         for category in ['coords', 'masks', 'attrs']:
-            contents[category] = dict()
-            for name in group[category]:
-                g = group[category][name]
-                contents[category][name] = VariableIO.read(g)
+            contents[category] = {
+                g.attrs['name']: VariableIO.read(g)
+                for g in group[category].values()
+            }
         return DataArray(**contents)
 
 
@@ -252,16 +266,16 @@ class DatasetIO:
         _write_scipp_header(group, 'Dataset')
         # Slight redundancy here from writing aligned coords for each item,
         # but irrelevant for common case of 1D coords with 2D (or higher)
-        # data. The advantage is the we can read individual dataset entries
+        # data. The advantage is that we can read individual dataset entries
         # directly as data arrays.
-        for name in data:
-            HDF5IO.write(group.create_group(name), data[name])
+        for i, (name, da) in enumerate(data.items()):
+            HDF5IO.write(group.create_group(collection_element_name(name, i)), da)
 
     @staticmethod
     def read(group):
         _check_scipp_header(group, 'Dataset')
-        from .._scipp import core as sc
-        return sc.Dataset(data={name: HDF5IO.read(group[name]) for name in group})
+        from ..core import Dataset
+        return Dataset(data={g.attrs['name']: HDF5IO.read(g) for g in group.values()})
 
 
 class HDF5IO:

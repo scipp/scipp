@@ -15,19 +15,12 @@ namespace py = pybind11;
 
 namespace {
 
-Dimensions dict_to_dims(const py::dict &map) {
-  Dimensions dims;
-  for (const auto item : map)
-    dims.addInner(item.first.cast<Dim>(), item.second.cast<scipp::index>());
-  return dims;
-}
-
 template <class T> void bind_broadcast(py::module &m) {
   m.def(
       "broadcast",
       [](const T &self, const std::vector<Dim> &labels,
          const std::vector<scipp::index> &shape) {
-        Dimensions dims(labels, shape);
+        const Dimensions dims(labels, shape);
         return broadcast(self, dims);
       },
       py::arg("x"), py::arg("dims"), py::arg("shape"));
@@ -43,12 +36,13 @@ template <class T> void bind_concat(py::module &m) {
 template <class T> void bind_fold(pybind11::module &mod) {
   mod.def(
       "fold",
-      [](const T &self, const Dim dim, const py::dict &sizes) {
-        const auto new_dims = dict_to_dims(sizes);
-        py::gil_scoped_release release; // release only *after* using py::cast
-        return fold(self, dim, new_dims);
+      [](const T &self, const Dim dim, const std::vector<Dim> &labels,
+         const std::vector<scipp::index> &shape) {
+        const Dimensions dims(labels, shape);
+        return fold(self, dim, dims);
       },
-      py::arg("x"), py::arg("dim"), py::arg("sizes"));
+      py::arg("x"), py::arg("dim"), py::arg("dims"), py::arg("shape"),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_flatten(pybind11::module &mod) {

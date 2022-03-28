@@ -245,25 +245,26 @@ Initialize a variable with values and/or variances.
 At least one argument of ``values`` and ``variances`` must be used.
 if you want to preallocate memory to fill later, use :py:func:`scipp.empty`.
 
-:param dims: Dimension labels.
-:param values: Sequence of values for constructing an array variable.
-:param variances: Sequence of variances for constructing an array variable.
-:param value: A single value for constructing a scalar variable.
-:param variance: A single variance for constructing a scalar variable.
-:param unit: Physical unit, defaults to ``scipp.units.dimensionless``.
-:param dtype: Type of the variable's elements. Is deduced from other arguments
-              in most cases. Defaults to ``sc.DType.float64`` if no deduction is
-              possible.
+Attention
+---------
+This constructor is meant primarily for internal use.
+Use one of the Specialized
+`creation functions <../../reference/creation-functions.rst>`_ instead.
+See in particular :py:func:`scipp.array` and :py:func:`scipp.scalar`.
 
-:type dims: Sequence[str]
-:type values: numpy.ArrayLike
-:type variances: numpy.ArrayLike
-:type value: Any
-:type variance: Any
-:type unit: scipp.Unit
-:type dtype: Any
-
-:seealso: Specialized `creation functions <../../reference/creation-functions.rst>`_,
- in particular :py:func:`scipp.array` and :py:func:`scipp.scalar`.
+Parameters
+----------
+dims:
+   Dimension labels.
+values:
+   Sequence of values for constructing an array variable.
+variances:
+   Sequence of variances for constructing an array variable.
+unit:
+   Physical unit, defaults to ``scipp.units.dimensionless``.
+dtype:
+   Type of the variable's elements. Is deduced from other arguments
+   in most cases. Defaults to ``sc.DType.float64`` if no deduction is
+   possible.
 )raw");
 }

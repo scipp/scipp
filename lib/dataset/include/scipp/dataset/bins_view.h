@@ -12,13 +12,6 @@
 
 namespace scipp::dataset {
 
-constexpr auto get_meta = [](auto &&a) -> decltype(auto) { return a.meta(); };
-constexpr auto get_coords = [](auto &&a) -> decltype(auto) {
-  return a.coords();
-};
-constexpr auto get_attrs = [](auto &&a) -> decltype(auto) { return a.attrs(); };
-constexpr auto get_masks = [](auto &&a) -> decltype(auto) { return a.masks(); };
-
 namespace bins_view_detail {
 template <class T, class View> class BinsCommon {
 public:

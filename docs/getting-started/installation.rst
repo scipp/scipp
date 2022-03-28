@@ -3,7 +3,7 @@
 Installation
 ============
 
-Scipp requires Python 3.7 or above.
+Scipp requires Python 3.8 or above.
 
 Conda
 -----
@@ -15,8 +15,7 @@ It is recommended to create an environment rather than installing individual pac
 With the provided environment file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Download :download:`scipp.yml <../environments/scipp.yml>` for the stable release version of scipp.
-   Use :download:`scipp-latest.yml <../environments/scipp-latest.yml>` for the latest development version.
+1. Download :download:`scipp.yml <../environments/scipp.yml>` for the latest stable release version of scipp.
 2. In a terminal run:
 
    .. code-block:: sh

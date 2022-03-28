@@ -15,17 +15,7 @@ from numpy.typing import ArrayLike as array_like
 
 from .._scipp import core as _cpp
 from ..units import default_unit
-
-
-def _parse_dims_shape_sizes(dims, shape, sizes):
-    if sizes is not None:
-        if dims is not None or shape is not None:
-            raise ValueError("When sizes is specified, dims and shape must "
-                             "both be None. Got dims: {}, shape: {}".format(
-                                 dims, shape))
-        dims = list(sizes.keys())
-        shape = list(sizes.values())
-    return {"dims": dims, "shape": shape}
+from ._sizes import _parse_dims_shape_sizes
 
 
 def scalar(value: _Any,

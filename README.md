@@ -1,7 +1,7 @@
 [![PyPI badge](http://img.shields.io/pypi/v/scipp.svg)](https://pypi.python.org/pypi/scipp)
 [![Anaconda-Server Badge](https://anaconda.org/scipp/scipp/badges/installer/conda.svg)](https://conda.anaconda.org/scipp/label/dev)
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
-[![Package build](https://github.com/scipp/scipp/actions/workflows/package_nightly_and_release.yml/badge.svg)](https://github.com/scipp/scipp/actions/workflows/package_nightly_and_release.yml)
+[![Release build](https://github.com/scipp/scipp/actions/workflows/release.yml/badge.svg)](https://github.com/scipp/scipp/actions/workflows/release.yml)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4019/badge)](https://bestpractices.coreinfrastructure.org/projects/4019)
 [![Questions](https://img.shields.io/github/issues/scipp/scipp/question?color=%23d876e3&label=questions)](https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion)
 

@@ -33,7 +33,7 @@ from .core import BinEdgeError, BinnedDataError, CoordError, \
 from . import units
 from . import geometry
 # Import functions
-from ._scipp.core import as_const, choose, logical_and, logical_or, logical_xor
+from ._scipp.core import as_const, choose
 # Import python functions
 from .show import show, make_svg
 from .table import table
@@ -64,13 +64,14 @@ from .compat.dict import to_dict, from_dict
 
 from .coords import transform_coords, show_graph
 
-from .core import add, divide, floor_divide, mod, multiply, subtract
+from .core import add, divide, floor_divide, mod, multiply, negative, subtract
 from .core import lookup, histogram, bin, bins, bins_like
 from .core import less, greater, less_equal, greater_equal, equal, not_equal, identical, isclose, allclose
 from .core import counts_to_density, density_to_counts
 from .core import cumsum
 from .core import merge
 from .core import groupby
+from .core import logical_not, logical_and, logical_or, logical_xor
 from .core import abs, nan_to_num, norm, reciprocal, pow, sqrt, exp, log, log10, round, floor, ceil, erf, erfc, midpoints
 from .core import dot, islinspace, issorted, allsorted, cross, sort, values, variances, stddevs, rebin, where
 from .core import mean, nanmean, sum, nansum, min, max, nanmin, nanmax, all, any
@@ -85,7 +86,7 @@ from .logging import display_logs, get_logger
 from .reduction import reduce
 
 # Mainly imported for docs
-from .core import Bins, GroupByDataset, GroupByDataArray
+from .core import Bins, Coords, GroupByDataset, GroupByDataArray, Masks
 
 from . import _binding
 
@@ -110,5 +111,5 @@ del _cls
 del _binding
 
 from . import data
-
 from . import serialization
+from . import spatial

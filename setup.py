@@ -51,14 +51,14 @@ setup(name='scipp',
       cmake_args=get_cmake_args(),
       cmake_install_dir='src/scipp',
       include_package_data=True,
-      python_requires='>=3.7',
+      python_requires='>=3.8',
       install_requires=['confuse', 'graphlib-backport', 'numpy>=1.20'],
       extras_require={
           "test": ["pytest", "matplotlib", "xarray", "pandas", "pythreejs"],
-          'all': ['h5py', 'scipy>=1.7.0', 'graphviz'],
+          'all': ['h5py', 'scipy>=1.7.0', 'graphviz', 'hypothesis'],
           'interactive': [
-              'ipykernel==6.3.1', 'ipympl', 'ipython', 'ipywidgets', 'matplotlib',
-              'jupyterlab', 'jupyterlab-widgets', 'jupyter_nbextensions_configurator',
-              'nodejs', 'pythreejs'
+              'ipympl', 'ipython', 'ipywidgets', 'matplotlib', 'jupyterlab',
+              'jupyterlab-widgets', 'jupyter_nbextensions_configurator', 'nodejs',
+              'pythreejs'
           ],
       })
