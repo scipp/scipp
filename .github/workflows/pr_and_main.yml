@@ -77,12 +77,16 @@ jobs:
         with:
           key: ${{ matrix.os }}
 
-      - run: echo "CONAN_CONFIG_HOME=$(conan config home)" >> $GITHUB_ENV
+      - name: Cache conan setup
+        id: conan-cache-key
+        run: |
+          echo "::set-output name=key::$(/bin/date -u "+%Y%m%d")"
+          echo "::set-output name=path::$(conan config home)"
       - name: Cache conan
         uses: actions/cache@v1
         with:
-          path: ${{ env.CONAN_CONFIG_HOME }}
-          key: conan-${{ matrix.os }}-${{ hashFiles('lib/conanfile.txt') }}
+          path: ${{ steps.conan-cache-key.outputs.path }}
+          key: conan-${{ matrix.os }}-${{ hashFiles('lib/conanfile.txt') }}-${{ steps.conan-cache-key.outputs.key }}
 
       - run: cmake --preset ${{ matrix.cmake-preset }}
       - run: cmake --build --preset build
