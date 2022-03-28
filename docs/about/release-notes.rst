@@ -29,6 +29,7 @@ Bugfixes
 * Fix permissions error for configuration file where users do not have write access to their config dir `#2482 <https://github.com/scipp/scipp/pull/2482>`_.
 * Fix plotting of data with multi-dimension bin-edge coordinate in the presence of a mask that does not depend on the bin-edge dimension `#2505 <https://github.com/scipp/scipp/pull/2505>`_.
 * Fix incorrect axis labels in plots with datetime tick labels `#2507 <https://github.com/scipp/scipp/pull/2507>`_.
+* Fix segfault when calling :func:`scipp.GroupByDataArray.copy` or :func:`scipp.GroupByDataset.copy` with out of bounds index `#2511 <https://github.com/scipp/scipp/pull/2511>`_.
 
 Deprecations
 ~~~~~~~~~~~~

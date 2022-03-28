@@ -72,6 +72,13 @@ TEST_F(GroupbyTest, copy) {
   EXPECT_EQ(two_groups.copy(1), d.slice({Dim::X, 2, 3}));
 }
 
+TEST_F(GroupbyTest, copy_throws_with_out_of_bounds_index) {
+  auto two_groups = groupby(d, Dim("labels1"),
+                            makeVariable<double>(Dims{Dim("labels1")}, Shape{3},
+                                                 units::m, Values{0, 3, 4}));
+  EXPECT_THROW_DISCARD(two_groups.copy(3), std::out_of_range);
+}
+
 struct GroupbyTestCopyMultipleSubgroupsTest : public ::testing::Test {
 protected:
   const Variable var =
