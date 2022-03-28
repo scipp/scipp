@@ -16,7 +16,8 @@ function(scipp_install_component)
       RUNTIME_DEPENDENCIES
       PRE_INCLUDE_REGEXES "tbb"
       PRE_EXCLUDE_REGEXES ".*"
-      DIRECTORIES ${CMAKE_BINARY_DIR}/lib/onetbb ${CMAKE_BINARY_DIR}/lib/onetbb/lib ${CMAKE_BINARY_DIR}/lib/onetbb/bin
+      # Required for Windows. Other platforms search rpath
+      DIRECTORIES ${CMAKE_BINARY_DIR}/lib/onetbb/lib ${CMAKE_BINARY_DIR}/lib/onetbb/bin
       RUNTIME DESTINATION ${PYTHONDIR}
       ARCHIVE DESTINATION ${ARCHIVEDIR}
       FRAMEWORK DESTINATION ${ARCHIVEDIR}

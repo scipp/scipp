@@ -39,6 +39,33 @@ include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
+if(SKBUILD)
+  set(CONAN_ONETBB onetbb/2021.3.0)
+  set(CONAN_DEPLOY deploy)
+endif()
+
+conan_cmake_configure(
+  REQUIRES
+  benchmark/1.5.3
+  boost/1.76.0
+  eigen/3.3.9
+  gtest/1.11.0
+  LLNL-Units/0.5.0.1
+  pybind11/2.6.2
+  ${CONAN_ONETBB}
+  OPTIONS
+  benchmark:shared=False
+  boost:header_only=True
+  gtest:shared=False
+  LLNL-Units:shared=False
+  LLNL-Units:fPIC=True
+  LLNL-Units:base_type=uint64_t
+  LLNL-Units:namespace=llnl::units
+  GENERATORS
+  cmake_find_package_multi
+  ${CONAN_DEPLOY}
+)
+
 conan_cmake_autodetect(conan_settings)
 if(DEFINED CMAKE_OSX_ARCHITECTURES)
   if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
