@@ -140,36 +140,7 @@ include(GenerateExportHeader)
 
 option(THREADING "Build with multi-threading" ON)
 if(THREADING)
-  if(SKBUILD)
-    find_package(TBB CONFIG REQUIRED)
-    #get_target_property(TBB_LIBRARY_TYPE TBB::tbb TYPE)
-    #message(STATUS "TBB_LIBRARY_TYPE: ${TBB_LIBRARY_TYPE}")
-    #get_target_property(prop TBB::tbb INTERFACE_LINK_LIBRARIES)
-    #message(STATUS "INTERFACE_LINK_LIBRARIES: ${prop}")
-    #message(STATUS ${TBB_LIB_DIRS_RELEASE})
-    #install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/onetbb/ DESTINATION ${PYTHONDIR})
-    #get_target_property(TBB_LIBRARY_TYPE ${TBB_tbb_LINK_LIBS_RELEASE} TYPE)
-    #message(STATUS "TBB_LIBRARY_TYPE: ${TBB_LIBRARY_TYPE}")
-    #install(IMPORTED_RUNTIME_ARTIFACTS ${TBB_tbb_LINK_LIBS_RELEASE} RUNTIME DESTINATION
-    #        ${PYTHONDIR}
-    #)
-    #install(DIRECTORY ${TBB_LIB_DIRS_RELEASE} DESTINATION ${PYTHONDIR})
-    #install(IMPORTED_RUNTIME_ARTIFACTS TBB::tbb RUNTIME DESTINATION
-    #        ${PYTHONDIR}
-    #)
-    # Collect IMPORTED_LOCATION_RELEASE values from all TBB targets
-    #foreach(tbb_target ${TBB_IMPORTED_TARGETS})
-    #message(STATUS "TBB_IMPORTED_TARGETS")
-    #message(STATUS ${TBB_IMPORTED_TARGETS})
-    #get_target_property(tbb_lib TBB::tbb IMPORTED_LOCATION_RELEASE)
-    #list(APPEND tbb_libs_to_install ${tbb_lib})
-    #message(STATUS ${tbb_libs_to_install})
-    #endforeach()
-    # Install the collected values
-    #install(FILES ${tbb_libs_to_install} DESTINATION ${PYTHONDIR})
-  else()
-    find_package(TBB CONFIG REQUIRED)
-  endif()
+  find_package(TBB CONFIG REQUIRED)
   configure_file(
     core/include/scipp/core/parallel-tbb.h core/include/scipp/core/parallel.h
     COPYONLY
