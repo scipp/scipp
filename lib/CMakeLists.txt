@@ -47,6 +47,7 @@ if(SKBUILD)
   # dependencies. This is actually required only for Windows, since on Linux and
   # OSX cmake finds the files anyway, based on the target's rpath.
   set(CONAN_DEPLOY deploy)
+  set(CONAN_RUNTIME_DEPENDENCIES "tbb")
 endif()
 
 conan_cmake_configure(
