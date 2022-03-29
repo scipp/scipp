@@ -227,10 +227,11 @@ T slice_by_list(const T &obj,
   const auto size = copy.dims()[dim];
   for (const auto &pos : indices) {
     const auto slice = py::slice(pos, pos + 1, 1);
-    scipp::index start, stop, step, slicelength;
+    size_t start, stop, step, slicelength;
     if (!slice.compute(size, &start, &stop, &step, &slicelength))
       throw py::error_already_set();
-    slices.emplace_back(copy.slice({dim, start, stop}));
+    slices.emplace_back(copy.slice({dim, static_cast<scipp::index>(start),
+                                    static_cast<scipp::index>(stop)}));
   }
   return concat(slices, dim);
 }
