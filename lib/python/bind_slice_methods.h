@@ -199,6 +199,19 @@ void expect_implicit_dimension(const Sizes &dims) {
   }
 }
 
+void expect_positional_index(const py::slice &py_slice) {
+  for (const auto &key : {"start", "stop"}) {
+    if (const auto index = py::getattr(py_slice, key); !index.is_none()) {
+      try {
+        static_cast<void>(index.cast<Variable>());
+        throw except::DimensionError(
+            "Dimension must be specified when indexing with a label.");
+      } catch (const py::cast_error &) {
+      }
+    }
+  }
+}
+
 template <class T, class Op>
 void strip_edges(T &out, const T &base, Op op, const Dim dim) {
   for (const auto &[name, var] : op(base))
@@ -248,6 +261,7 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   });
   c.def("__getitem__", [](T &self, const py::slice &index) {
     expect_implicit_dimension(self.dims());
+    expect_positional_index(index);
     return getitem(self, {self.dim(), index});
   });
   // Note the order of overloads: For some reason pybind11(?) calls `len()` on
@@ -274,6 +288,7 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   c.def("__setitem__",
         [](T &self, const py::slice &index, const py::object &data) {
           expect_implicit_dimension(self.dims());
+          expect_positional_index(index);
           slicer<T>::template set<std::tuple<Dim, py::slice>>(
               self, {self.dim(), index}, data);
         });
