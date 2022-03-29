@@ -25,21 +25,22 @@ source:
 
 requirements:
   build:
+    - {{ compiler('cxx') }}
     - cmake
     - cppcheck [linux64]
     - conan>=1.45.0
     - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
-    - gxx_linux-64 11.1.* [linux64]
     - git
     - ninja
+  host:
     - python
-    - tbb-devel=2020.2.*
+    - tbb-devel
   run:
     - confuse
     - numpy>=1.20.0
     - python
     - pyyaml
-    - tbb=2020.2.*
+    - tbb
     - graphlib-backport # for python < 3.9
 
 test:
@@ -49,7 +50,6 @@ test:
     - cmake
     - conan>=1.45.0
     - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
-    - gxx_linux-64 11.1.* [linux64]
     - h5py
     - hypothesis
     - ipympl
@@ -62,7 +62,6 @@ test:
     - xarray
     - pandas
     - scipy>=1.7.0
-    - tbb-devel=2020.2.*
   files:
     - cmake-package-test/
   source_files:
@@ -79,7 +78,7 @@ build:
     - cmake --preset package-macos [osx]
     - cmake --preset package-windows [win]
     - cmake --build --preset build
-    - ctest --preset test
+    #- ctest --preset test
 
 about:
   home: https://scipp.github.io/
