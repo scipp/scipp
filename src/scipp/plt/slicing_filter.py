@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .. import DataArray
-from .widgets import WidgetStep
+from .widgets import WidgetFilter
 
 import ipywidgets as ipw
 from typing import Callable
@@ -85,7 +85,7 @@ def _slicing_func(model: DataArray, slices: dict) -> DataArray:
     return out
 
 
-class SlicingStep(WidgetStep):
+class SlicingFilter(WidgetFilter):
     def __init__(self, **kwargs):
         super().__init__(func=_slicing_func,
                          widgets={"slices": SlicingWidget(**kwargs)})

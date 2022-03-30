@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .. import DataArray
-from .widgets import WidgetStep
+from .widgets import WidgetFilter
 from ..typing import MetaDataMap
 
 from functools import partial
@@ -100,6 +100,6 @@ def _hide_masks(model: DataArray, masks: MetaDataMap) -> DataArray:
     return out
 
 
-class MaskStep(WidgetStep):
+class MaskFilter(WidgetFilter):
     def __init__(self, **kwargs):
         super().__init__(func=_hide_masks, widgets={"masks": MaskWidget(**kwargs)})

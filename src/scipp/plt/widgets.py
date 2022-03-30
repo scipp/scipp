@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .pipeline import Step
+from .filters import Filter
 
 from functools import partial
 import ipywidgets as ipw
@@ -21,7 +21,7 @@ class WidgetCollection(list):
         return ipw.VBox([child._to_widget() for child in self])
 
 
-class WidgetStep(Step):
+class WidgetFilter(Filter):
     def __init__(self, func, widgets):
         super().__init__(func=func)
         self._base_func = func  # func taking data array, dim, and int

@@ -3,8 +3,8 @@
 
 from .controller import Controller
 from .. import DataArray
-from .mask_step import MaskStep
-from .slicing_step import SlicingStep
+from .mask_filter import MaskFilter
+from .slicing_filter import SlicingFilter
 from .view import View
 from .widgets import WidgetCollection
 
@@ -103,25 +103,25 @@ class Plot:
         self._widgets = WidgetCollection()
         self._controller = Controller(models=self._models, view=self._view)
 
-        self._add_default_pipeline_steps()
+        self._add_default_filters()
 
         # Shortcut access to the underlying figure for easier modification
         self.fig = getattr(self._view, "fig", None)
         self.ax = getattr(self._view, "ax", None)
 
-    def _add_default_pipeline_steps(self):
-        # Add step for slicing dimensions out with sliders
+    def _add_default_filters(self):
+        # Add filter for slicing dimensions out with sliders
         array = next(iter(self._models.values()))
-        slicing_step = SlicingStep(dims=array.dims,
-                                   sizes=array.sizes,
-                                   ndim=self._view_ndims)
-        self._controller.add_pipeline_step(slicing_step)
-        self._widgets.append(slicing_step)
+        slicing_filter = SlicingFilter(dims=array.dims,
+                                       sizes=array.sizes,
+                                       ndim=self._view_ndims)
+        self._controller.add_filter(slicing_filter)
+        self._widgets.append(slicing_filter)
 
         for key, model in self._models.items():
-            mask_step = MaskStep(masks=model.masks, name=key)
-            self._controller.add_pipeline_step(key=key, step=mask_step)
-            self._widgets.append(mask_step)
+            mask_filter = MaskFilter(masks=model.masks, name=key)
+            self._controller.add_filter(mask_filter, key=key)
+            self._widgets.append(mask_filter)
 
     def _ipython_display_(self):
         """

@@ -4,15 +4,15 @@
 from .. import DataArray
 
 
-class Pipeline(list):
+class Workflow(list):
     def run(self, model: DataArray):
         out = model
-        for step in self:
-            out = step(out)
+        for item in self:
+            out = item(out)
         return out
 
 
-class Step:
+class Filter:
     def __init__(self, func):
         self._func = func
         self._callbacks = []
@@ -22,7 +22,7 @@ class Step:
 
     def _changed(self):
         for callback in self._callbacks:
-            callback()  # callback will call Step.__call__
+            callback()  # callback will call Filter.__call__
 
     def register_callback(self, callback):
         self._callbacks.append(callback)
