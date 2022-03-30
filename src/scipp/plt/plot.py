@@ -7,6 +7,7 @@ from .mask_filter import MaskFilter
 from .slicing_filter import SlicingFilter
 from .view import View
 from .widgets import WidgetCollection
+from .params import make_params
 
 from typing import Dict
 
@@ -91,23 +92,38 @@ class Plot:
       - a `PlotController`: handles all the communication between all the
           pieces above.
     """
-    def __init__(self,
-                 models: Dict[str, DataArray],
-                 view: View = None,
-                 view_ndims: int = None):
+    def __init__(
+            self,
+            models: Dict[str, DataArray],
+            view: View = None,
+            # view_ndims: int = None,
+            cmap=None,
+            norm=None,
+            vmin=None,
+            vmax=None,
+            masks=None,
+            **kwargs):
 
-        self._view = view
+        params = make_params(cmap=cmap, norm=norm, vmin=vmin, vmax=vmax, masks=masks)
+
+        self._view = View(cmap=params["values"]["cmap"],
+                          norm=params["values"]["norm"],
+                          masks=params["masks"],
+                          vmin=params["values"]["vmin"],
+                          vmax=params["values"]["vmax"],
+                          **kwargs)
         self._models = models
-        self._view_ndims = view_ndims
+        # self._view_ndims = view_ndims
+        # self._view_args = view_args
 
         self._widgets = WidgetCollection()
         self._controller = Controller(models=self._models, view=self._view)
 
-        self._add_default_filters()
+        # self._add_default_filters()
 
-        # Shortcut access to the underlying figure for easier modification
-        self.fig = getattr(self._view, "fig", None)
-        self.ax = getattr(self._view, "ax", None)
+        # # Shortcut access to the underlying figure for easier modification
+        # self.fig = getattr(self._view, "fig", None)
+        # self.ax = getattr(self._view, "ax", None)
 
     def _add_default_filters(self):
         # Add filter for slicing dimensions out with sliders

@@ -4,7 +4,7 @@
 from .. import Variable, scalar, DataArray
 from .tools import get_line_param, find_limits, fix_empty_range, vars_to_err
 from ..utils import name_with_unit
-from .figure import Figure
+# from .figure import Figure
 
 from functools import reduce
 import numpy as np
@@ -23,15 +23,15 @@ def _make_label(array: DataArray) -> str:
     return ', '.join(labels)
 
 
+# class Line:
+#     def __init__(self):
+#         self.data = None
+#         self.error = None
+#         self.mask = None
+#         self.mpl_params = {}
+
+
 class Line:
-    def __init__(self):
-        self.data = None
-        self.error = None
-        self.mask = None
-        self.mpl_params = {}
-
-
-class Figure1d(Figure):
     """
     Class for 1 dimensional plots. This is used by both the `PlotView1d` for
     normal 1d plots, and the `PlotProfile`.
@@ -40,17 +40,24 @@ class Figure1d(Figure):
     previously saved line.
     """
     def __init__(self,
+                 ax,
+                 data,
                  norm: str = None,
                  mask_color: str = None,
                  legend: dict = None,
                  errorbars: bool = True,
                  **kwargs):
 
-        super().__init__(**kwargs)
+        # super().__init__(**kwargs)
+
+        self._data = data
+        self._error = None
+        self._mask = None
+        self._mpl_params = {}
 
         self._errorbars = errorbars
 
-        self._lines = {}
+        # self._lines = {}
         self._dim = None
         self._unit = None
 
@@ -69,7 +76,7 @@ class Figure1d(Figure):
         # if "loc" not in self.legend:
         #     self.legend["loc"] = 0
 
-    def _make_line(self, mask: Union[dict, None], hist: bool, errorbars: bool) -> Line:
+    def _make_line(self, mask: Union[dict, None], hist: bool, errorbars: bool):
         index = len(self._lines)
         line = Line()
         line.mpl_params = {

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
+from .figure import Figure
 from .toolbar import Toolbar
 
 import ipywidgets as ipw
@@ -21,9 +22,12 @@ class View:
     """
     Base class for 1d and 2d figures, that holds matplotlib axes.
     """
-    def __init__(self, figure, **kwargs):
 
-        self.figure = figure(**kwargs)
+    # def __init__(self, figure, **kwargs):
+    def __init__(self, **kwargs):
+
+        # self.figure = figure(**kwargs)
+        self.figure = Figure(**kwargs)
         self.toolbar = Toolbar()
 
         self.left_bar = SideBar([self.toolbar])

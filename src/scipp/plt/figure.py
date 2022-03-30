@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import config, Variable
+from .. import config, Variable, make_html, DataArray
 from .tools import fig_to_pngbytes
+from .mesh import Mesh
+from .line import Line
 
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
@@ -20,7 +22,8 @@ class Figure:
                  vmin: Variable = None,
                  vmax: Variable = None,
                  grid: bool = False,
-                 bounding_box: Tuple[float, ...] = None):
+                 bounding_box: Tuple[float, ...] = None,
+                 **kwargs):
         self._fig = None
         self._closed = False
         self._title = title
@@ -28,10 +31,13 @@ class Figure:
         self._bounding_box = bounding_box
         self._xlabel = xlabel
         self._ylabel = ylabel
-        self._user_vmin = vmin
-        self._user_vmax = vmax
-        self._vmin = np.inf
-        self._vmax = np.NINF
+        # self._user_vmin = vmin
+        # self._user_vmax = vmax
+        # self._vmin = np.inf
+        # self._vmax = np.NINF
+        self._kwargs = kwargs
+
+        self._children = {}
 
         cfg = config['plot']
         if self._ax is None:
@@ -64,6 +70,7 @@ class Figure:
         If not, convert the plot to a png image and place inside an ipywidgets
         Image container.
         """
+        # return ipw.HTML(make_html(self._data))
         if self.is_widget() and not self._closed:
             return self._fig.canvas
         else:
@@ -130,3 +137,21 @@ class Figure:
         directory where the script or notebook is running.
         """
         self._fig.savefig(filename, bbox_inches="tight")
+
+    def update(self, new_values: DataArray = None, key: str = None, draw: bool = True):
+        """
+        Update image array with new values.
+        """
+        if key not in self._children:
+            if new_values.ndim == 1:
+                self._children[key] = Line()
+            elif new_values.ndim == 2:
+                self._children[key] = Mesh(ax=self._ax, data=new_values, **self._kwargs)
+        else:
+            self._children[key].update(new_values=new_values)
+
+        if draw:
+            self.draw()
+
+        # if new_values is not None:
+        #     self._data = new_values
