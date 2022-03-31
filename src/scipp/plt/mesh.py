@@ -24,7 +24,7 @@ class Mesh:
                  cax: Any = None,
                  aspect: str = None,
                  cmap: str = None,
-                 masks: dict = None,
+                 masks_cmap: dict = None,
                  norm: str = None,
                  extend: bool = None):
 
@@ -42,8 +42,8 @@ class Mesh:
 
         self._cmap = cmap
         self._cax = cax
-        self._mask_cmap = 'gray'
-        self._norm_flag = 'linear'
+        self._mask_cmap = masks_cmap
+        self._norm_flag = norm
         self._norm_func = None
         self._extend = extend
         self._mesh = None

@@ -73,6 +73,7 @@ def _input_to_data_array(item: Union[VariableLike, ArrayLike],
 def plot(scipp_obj: Union[VariableLike, ArrayLike, Dict[str, Union[VariableLike,
                                                                    ArrayLike]]],
          projection: str = None,
+         filters: list = None,
          **kwargs) -> Union[Plot, PlotDict]:
     """
     Wrapper function to plot a scipp object.
@@ -131,7 +132,7 @@ def plot(scipp_obj: Union[VariableLike, ArrayLike, Dict[str, Union[VariableLike,
     #             tobeplotted[key] = dict(ndims=ndims, scipp_obj_dict=dict())
     #         tobeplotted[key]["scipp_obj_dict"][name] = item
 
-    return Plot(models=inventory, **kwargs)
+    return Plot(models=inventory, filters=filters, **kwargs)
 
     # # Plot all the subsets
     # output = PlotDict()

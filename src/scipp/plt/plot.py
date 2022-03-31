@@ -6,8 +6,8 @@ from .. import DataArray
 from .mask_filter import MaskFilter
 from .slicing_filter import SlicingFilter
 from .view import View
-from .widgets import WidgetCollection
-from .params import make_params
+from .widgets import WidgetCollection, WidgetFilter
+# from .params import make_params
 
 from typing import Dict
 
@@ -95,23 +95,13 @@ class Plot:
     def __init__(
             self,
             models: Dict[str, DataArray],
-            view: View = None,
+            filters: list = None,
             # view_ndims: int = None,
-            cmap=None,
-            norm=None,
-            vmin=None,
-            vmax=None,
-            masks=None,
             **kwargs):
 
-        params = make_params(cmap=cmap, norm=norm, vmin=vmin, vmax=vmax, masks=masks)
+        # params = make_params(cmap=cmap, norm=norm, vmin=vmin, vmax=vmax, masks=masks)
 
-        self._view = View(cmap=params["values"]["cmap"],
-                          norm=params["values"]["norm"],
-                          masks=params["masks"],
-                          vmin=params["values"]["vmin"],
-                          vmax=params["values"]["vmax"],
-                          **kwargs)
+        self._view = View(**kwargs)
         self._models = models
         # self._view_ndims = view_ndims
         # self._view_args = view_args
@@ -119,25 +109,30 @@ class Plot:
         self._widgets = WidgetCollection()
         self._controller = Controller(models=self._models, view=self._view)
 
+        if filters is not None:
+            for f in filters:
+                self._controller.add_filter(f)
+                if isinstance(f, WidgetFilter):
+                    self._widgets.append(f)
         # self._add_default_filters()
 
         # # Shortcut access to the underlying figure for easier modification
         # self.fig = getattr(self._view, "fig", None)
         # self.ax = getattr(self._view, "ax", None)
 
-    def _add_default_filters(self):
-        # Add filter for slicing dimensions out with sliders
-        array = next(iter(self._models.values()))
-        slicing_filter = SlicingFilter(dims=array.dims,
-                                       sizes=array.sizes,
-                                       ndim=self._view_ndims)
-        self._controller.add_filter(slicing_filter)
-        self._widgets.append(slicing_filter)
+    # def _add_default_filters(self):
+    #     # Add filter for slicing dimensions out with sliders
+    #     array = next(iter(self._models.values()))
+    #     slicing_filter = SlicingFilter(dims=array.dims,
+    #                                    sizes=array.sizes,
+    #                                    ndim=self._view_ndims)
+    #     self._controller.add_filter(slicing_filter)
+    #     self._widgets.append(slicing_filter)
 
-        for key, model in self._models.items():
-            mask_filter = MaskFilter(masks=model.masks, name=key)
-            self._controller.add_filter(mask_filter, key=key)
-            self._widgets.append(mask_filter)
+    #     for key, model in self._models.items():
+    #         mask_filter = MaskFilter(masks=model.masks, name=key)
+    #         self._controller.add_filter(mask_filter, key=key)
+    #         self._widgets.append(mask_filter)
 
     def _ipython_display_(self):
         """

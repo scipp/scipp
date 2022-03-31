@@ -4,9 +4,9 @@
 from .. import DataArray
 
 
-class Workflow(list):
+class Pipeline(list):
     """
-    A Workflow is a list of filters that will be applied to the data
+    A Pipeline is a list of filters that will be applied to the data
     """
     def run(self, model: DataArray):
         out = model

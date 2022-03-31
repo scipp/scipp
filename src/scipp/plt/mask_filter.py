@@ -15,7 +15,7 @@ class MaskWidget:
     """
     Widget providing buttons to hide/show masks.
     """
-    def __init__(self, masks: MetaDataMap, name: str):
+    def __init__(self, masks: MetaDataMap, name: str = ''):
 
         self._callback = None
 

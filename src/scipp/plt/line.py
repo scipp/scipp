@@ -42,11 +42,11 @@ class Line:
     def __init__(self,
                  ax,
                  data,
+                 params,
                  norm: str = None,
                  mask_color: str = None,
                  legend: dict = None,
-                 errorbars: bool = True,
-                 **kwargs):
+                 errorbars: bool = True):
 
         # super().__init__(**kwargs)
 
@@ -60,7 +60,7 @@ class Line:
         self._error = None
 
         # self._mask = None
-        self._mpl_params = {}
+        # self._mpl_params = {}
 
         self._errorbars = errorbars
 
@@ -87,7 +87,7 @@ class Line:
         self._unit = self._data.unit
         self._coord = self._data.meta[self._dim]
 
-        self._make_line(data=self._make_data(), errorbars=errorbars)
+        self._make_line(data=self._make_data(), errorbars=errorbars, params=params)
 
         # self._ax.set_xlabel(self._xlabel if self.
         #                     _xlabel is not None else name_with_unit(var=self._coord))
@@ -95,14 +95,14 @@ class Line:
         #                     name_with_unit(var=scalar(1, unit=self._unit), name=""))
 
     # def _make_line(self, mask: Union[dict, None], hist: bool, errorbars: bool):
-    def _make_line(self, data, errorbars):
+    def _make_line(self, data, errorbars, params):
         # index = len(self._lines)
         index = 0
         # line = Line()
-        mpl_params = {
-            key: get_line_param(key, index)
-            for key in ["color", "marker", "linestyle", "linewidth"]
-        }
+        # params = {
+        #     key: get_line_param(key, index)
+        #     for key in ["color", "marker", "linestyle", "linewidth"]
+        # }
         label = None
 
         has_mask = data["mask"] is not None
@@ -114,12 +114,12 @@ class Line:
                 data["values"]["y"],
                 label=label,
                 zorder=10,
-                **{key: mpl_params[key]
+                **{key: params[key]
                    for key in ["color", "linewidth"]})[0]
 
             self._mask = self._ax.step(data[mask_data_key]["x"],
                                        data[mask_data_key]["y"],
-                                       linewidth=mpl_params["linewidth"] * 3.0,
+                                       linewidth=params["linewidth"] * 3.0,
                                        color=self._mask_color,
                                        zorder=9,
                                        visible=has_mask)[0]
@@ -128,7 +128,7 @@ class Line:
                                        data["values"]["y"],
                                        label=label,
                                        zorder=10,
-                                       **mpl_params)[0]
+                                       **params)[0]
             self._mask = self._ax.plot(data[mask_data_key]["x"],
                                        data[mask_data_key]["y"],
                                        zorder=11,
@@ -136,7 +136,7 @@ class Line:
                                        mfc="None",
                                        mew=3.0,
                                        linestyle="none",
-                                       marker=mpl_params["marker"],
+                                       marker=params["marker"],
                                        visible=has_mask)[0]
 
         # Add error bars
@@ -144,7 +144,7 @@ class Line:
             self._error = self._ax.errorbar(data["variances"]["x"],
                                             data["variances"]["y"],
                                             yerr=data["variances"]["e"],
-                                            color=mpl_params["color"],
+                                            color=params["color"],
                                             zorder=10,
                                             fmt="none")
         # return line
@@ -185,7 +185,7 @@ class Line:
             }
         return self._preprocess_hist(data)
 
-    def update(self, new_values: DataArray, key: str, draw: bool = True):
+    def update(self, new_values: DataArray):
         """
         Update the x and y positions of the data points when a new data slice
         is received for display.
@@ -195,9 +195,7 @@ class Line:
         # self._coord = new_values.meta[self._dim]
         self._data = new_values
 
-        new_values = self._make_data(new_values)
-
-        errorbars = self._errorbars and len(new_values["variances"])
+        new_values = self._make_data()
 
         # vals, hist = self._preprocess_hist(new_values)
         # if key not in self._lines:
@@ -205,10 +203,11 @@ class Line:
         #                                        hist=hist,
         #                                        errorbars=errorbars)
         # line = self._lines[key]
+        # print("new_values", new_values)
 
         self._line.set_data(new_values["values"]["x"], new_values["values"]["y"])
-        lab = new_values["label"] if len(new_values["label"]) > 0 else key
-        self._label = f'{key}[{lab}]'  # used later if line is kept
+        # lab = new_values["label"] if len(new_values["label"]) > 0 else key
+        # self._label = f'{key}[{lab}]'  # used later if line is kept
 
         if new_values["mask"] is not None:
             self._mask.set_data(new_values["mask"]["x"], new_values["mask"]["y"])
@@ -216,7 +215,9 @@ class Line:
         else:
             self._mask.set_visible(False)
 
-        if errorbars:
+        # errorbars = self._errorbars and len(new_values["variances"])
+
+        if self._errorbars and ("e" in new_values["variances"]):
             coll = self._error.get_children()[0]
             coll.set_segments(
                 self._change_segments_y(new_values["variances"]["x"],
@@ -234,7 +235,7 @@ class Line:
         arr2 = np.array([y - e, y + e]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
 
-    def _make_limits(self) -> Tuple[float, ...]:
+    def get_limits(self) -> Tuple[float, ...]:
         """
         """
         vmin = np.inf

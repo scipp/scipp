@@ -2,9 +2,10 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .. import config, Variable, make_html, DataArray
-from .tools import fig_to_pngbytes
+from .tools import fig_to_pngbytes, get_line_param
 from .mesh import Mesh
 from .line import Line
+from .params import make_params
 
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
@@ -23,7 +24,13 @@ class Figure:
                  vmax: Variable = None,
                  grid: bool = False,
                  bounding_box: Tuple[float, ...] = None,
-                 **kwargs):
+                 cmap=None,
+                 norm=None,
+                 masks=None,
+                 color=None,
+                 linestyle=None,
+                 marker=None,
+                 linewidth=None):
         self._fig = None
         self._closed = False
         self._title = title
@@ -35,9 +42,22 @@ class Figure:
         # self._user_vmax = vmax
         # self._vmin = np.inf
         # self._vmax = np.NINF
-        self._kwargs = kwargs
+        # self._kwargs = kwargs
 
         self._children = {}
+
+        params = make_params(cmap=cmap, norm=norm, vmin=vmin, vmax=vmax, masks=masks)
+
+        self._cmap = params["values"]["cmap"]
+        self._norm = params["values"]["norm"]
+        self._masks = params["masks"]
+        self._vmin = params["values"]["vmin"]
+        self._vmax = params["values"]["vmax"]
+
+        self._color = {} if color is None else color
+        self._linestyle = {} if linestyle is None else linestyle
+        self._marker = {} if marker is None else marker
+        self._linewidth = {} if linewidth is None else linewidth
 
         cfg = config['plot']
         if self._ax is None:
@@ -138,15 +158,45 @@ class Figure:
         """
         self._fig.savefig(filename, bbox_inches="tight")
 
+    def _gather_mpl_args(self, key, index):
+
+        return {
+            'color': self._color.get(key, get_line_param('color', index)),
+            'linestyle': self._linestyle.get(key, get_line_param('linestyle', index)),
+            'marker': self._marker.get(key, get_line_param('marker', index)),
+            'linewidth': self._linewidth.get(key, get_line_param('linewidth', index))
+        }
+
+        # args = {
+
+        # }
+        # if key in self._color:
+        #     args['color'] = self._color[key]
+        # if key in self._linestyle:
+        #     args['linestyle'] = self._linestyle[key]
+        # if key in self._marker:
+        #     args['marker'] = self._marker[key]
+        # if key in self._linewidth:
+        #     args['linewidth'] = self._linewidth[key]
+        # return args
+
     def update(self, new_values: DataArray = None, key: str = None, draw: bool = True):
         """
         Update image array with new values.
         """
+        # print("figure update")
         if key not in self._children:
             if new_values.ndim == 1:
-                self._children[key] = Line(ax=self._ax, data=new_values, **self._kwargs)
+                self._children[key] = Line(ax=self._ax,
+                                           data=new_values,
+                                           params=self._gather_mpl_args(
+                                               key, index=len(self._children)))
             elif new_values.ndim == 2:
-                self._children[key] = Mesh(ax=self._ax, data=new_values, **self._kwargs)
+                self._children[key] = Mesh(ax=self._ax,
+                                           data=new_values,
+                                           cmap=self._cmap,
+                                           masks_cmap=self._masks["cmap"],
+                                           norm=self._norm)
         else:
             self._children[key].update(new_values=new_values)
 
