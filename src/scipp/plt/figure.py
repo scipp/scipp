@@ -144,7 +144,7 @@ class Figure:
         """
         if key not in self._children:
             if new_values.ndim == 1:
-                self._children[key] = Line()
+                self._children[key] = Line(ax=self._ax, data=new_values, **self._kwargs)
             elif new_values.ndim == 2:
                 self._children[key] = Mesh(ax=self._ax, data=new_values, **self._kwargs)
         else:
