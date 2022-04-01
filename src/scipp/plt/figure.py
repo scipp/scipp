@@ -6,6 +6,7 @@ from .tools import fig_to_pngbytes, get_line_param
 from .mesh import Mesh
 from .line import Line
 from .params import make_params
+from ..utils import name_with_unit
 
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
@@ -40,8 +41,10 @@ class Figure:
         self._ylabel = ylabel
         # self._user_vmin = vmin
         # self._user_vmax = vmax
-        # self._vmin = np.inf
-        # self._vmax = np.NINF
+        self._xmin = np.inf
+        self._xmax = np.NINF
+        self._ymin = np.inf
+        self._ymax = np.NINF
         # self._kwargs = kwargs
 
         self._children = {}
@@ -51,8 +54,8 @@ class Figure:
         self._cmap = params["values"]["cmap"]
         self._norm = params["values"]["norm"]
         self._masks = params["masks"]
-        self._vmin = params["values"]["vmin"]
-        self._vmax = params["values"]["vmax"]
+        self._user_vmin = params["values"]["vmin"]
+        self._user_vmax = params["values"]["vmax"]
 
         self._color = {} if color is None else color
         self._linestyle = {} if linestyle is None else linestyle
@@ -108,6 +111,28 @@ class Figure:
                          width=width * dpi,
                          height=height * dpi)
 
+    def _autoscale(self):
+        xscale = self._ax.get_xscale()
+        yscale = self._ax.get_yscale()
+        for key, child in self._children.items():
+            xmin, xmax, ymin, ymax = child.get_limits(xscale=xscale, yscale=yscale)
+            if isinstance(child, Line):
+                if self._user_vmin is not None:
+                    ymin = self._user_vmin
+                if self._user_vmax is not None:
+                    ymax = self._user_vmax
+
+            if xmin.value < self._xmin:
+                self._xmin = xmin.value
+            if xmax.value > self._xmax:
+                self._xmax = xmax.value
+            if ymin.value < self._ymin:
+                self._ymin = ymin.value
+            if ymax.value > self._ymax:
+                self._ymax = ymax.value
+        self._ax.set_xlim(self._xmin, self._xmax)
+        self._ax.set_ylim(self._ymin, self._ymax)
+
     def draw(self):
         """
         Manually update the figure.
@@ -118,8 +143,19 @@ class Figure:
         """
         # self._ax.relim()
         # self._ax.autoscale_view()
+
+        # TODO: auto-scaling is not good if you have zoomed in and you then move a
+        # slider
+
+        # self._autoscale()
+
+        self._ax.set_xlabel(self._xlabel)
+        self._ax.set_ylabel(self._ylabel)
         if self._legend:
             self._ax.legend()
+        self._draw_canvas()
+
+    def _draw_canvas(self):
         self._fig.canvas.draw_idle()
 
     def home_view(self, *_):
@@ -145,12 +181,14 @@ class Figure:
     def toggle_xaxis_scale(self, *_):
         swap_scales = {"linear": "log", "log": "linear"}
         self._ax.set_xscale(swap_scales[self._ax.get_xscale()])
-        self.draw()
+        self._autoscale()
+        self._draw_canvas()
 
     def toggle_yaxis_scale(self, *_):
         swap_scales = {"linear": "log", "log": "linear"}
         self._ax.set_yscale(swap_scales[self._ax.get_yscale()])
-        self.draw()
+        self._autoscale()
+        self._draw_canvas()
 
     def render(self):
         return
@@ -184,12 +222,25 @@ class Figure:
                                            params=self._gather_mpl_args(
                                                key, index=len(self._children)))
                 self._legend = True
+
+                if self._xlabel is None:
+                    self._xlabel = name_with_unit(var=new_values.meta[new_values.dim])
+                if self._ylabel is None:
+                    self._ylabel = name_with_unit(var=new_values.data, name="")
+
             elif new_values.ndim == 2:
                 self._children[key] = Mesh(ax=self._ax,
                                            data=new_values,
                                            cmap=self._cmap,
                                            masks_cmap=self._masks["cmap"],
                                            norm=self._norm)
+                if self._xlabel is None:
+                    self._xlabel = name_with_unit(
+                        var=new_values.meta[new_values.dims[1]])
+                if self._ylabel is None:
+                    self._ylabel = name_with_unit(
+                        var=new_values.meta[new_values.dims[0]])
+
         else:
             self._children[key].update(new_values=new_values)
 

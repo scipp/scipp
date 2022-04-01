@@ -113,7 +113,7 @@ class Line:
     def _make_data(self) -> dict:
         data = {"values": {}, "variances": {}, "mask": None}
         data['name'] = self._data.name
-        data['label'] = _make_label(self._data)
+        # data['label'] = _make_label(self._data)
         data["values"]["x"] = self._data.meta[self._dim].values
         data["values"]["y"] = self._data.values
         if self._data.variances is not None:
@@ -156,31 +156,28 @@ class Line:
         arr2 = np.array([y - e, y + e]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
 
-    # def get_limits(self) -> Tuple[float, ...]:
-    #     """
-    #     """
-    #     vmin = np.inf
-    #     vmax = np.NINF
-    #     xmin = np.inf
-    #     xmax = np.NINF
+    def get_limits(self, xscale, yscale) -> Tuple[float, ...]:
+        """
+        """
+        xmin, xmax = fix_empty_range(find_limits(self._data.meta[self._dim])[xscale])
+        ymin, ymax = fix_empty_range(find_limits(self._data.data)[yscale])
 
-    #     for line in self._lines.values():
-    #         data = Variable(dims=[self._dim], values=line.data.get_ydata())
-    #         ylims = fix_empty_range(find_limits(data, scale=self._norm)[self._norm])
-    #         vmin = min(vmin, ylims[0].value)
-    #         vmax = max(vmax, ylims[1].value)
-    #         coord = Variable(dims=[self._dim], values=line.data.get_xdata())
-    #         xlims = fix_empty_range(find_limits(coord)["linear"])
-    #         xmin = min(xmin, xlims[0].value)
-    #         xmax = max(xmax, xlims[1].value)
+        # Add padding
+        if xscale == "log":
+            delta = 10**(0.03 * np.log10(xmax / xmin))
+            xmin /= delta
+            xmax *= delta
+        else:
+            delta = 0.05 * (xmax - xmin)
+            xmin -= delta
+            xmax += delta
+        if yscale == "log":
+            delta = 10**(0.03 * np.log10(ymax / ymin))
+            ymin /= delta
+            ymax *= delta
+        else:
+            delta = 0.05 * (ymax - ymin)
+            ymin -= delta
+            ymax += delta
 
-    #     # Add padding
-    #     if self._norm == "log":
-    #         delta = 10**(0.05 * np.log10(vmax / vmin))
-    #         vmin /= delta
-    #         vmax *= delta
-    #     else:
-    #         delta = 0.05 * (vmax - vmin)
-    #         vmin -= delta
-    #         vmax += delta
-    #     return xmin, xmax, vmin, vmax
+        return xmin, xmax, ymin, ymax

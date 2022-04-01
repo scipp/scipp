@@ -28,7 +28,6 @@ class Mesh:
                  norm: str = None,
                  extend: bool = None):
 
-        # super().__init__(**kwargs)
         self._ax = ax
         self._data = data
 
@@ -48,7 +47,6 @@ class Mesh:
         self._extend = extend
         self._mesh = None
         self._cbar = None
-        # self._data = None
         self._aspect = aspect if aspect is not None else config['plot']['aspect']
 
         self._make_mesh()
@@ -67,15 +65,6 @@ class Mesh:
             self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self._mesh.set_array(None)
         self._set_norm()
-        self._ax.set_xlabel(
-            self._xlabel if self._xlabel is not None else name_with_unit(
-                var=self._data.meta[dims[1]]))
-        self._ax.set_ylabel(
-            self._ylabel if self._ylabel is not None else name_with_unit(
-                var=self._data.meta[dims[0]]))
-        if self._title is None:
-            self._ax.set_title(self._data.name)
-
         self._set_mesh_colors()
 
     def _make_limits(self) -> Tuple[float, ...]:
@@ -83,7 +72,7 @@ class Mesh:
             find_limits(self._data.data, scale=self._norm_flag)[self._norm_flag])
         return vmin.value, vmax.value
 
-    def _rescale_to_data(self):
+    def _rescale_colormap(self):
         """
         Rescale the colorbar limits according to the supplied values.
         """
@@ -104,10 +93,7 @@ class Mesh:
         self._mesh.set_clim(self._vmin, self._vmax)
 
     def _set_mesh_colors(self):
-        # if self._mesh is None:
-        #     self._make_mesh()
-        self._rescale_to_data()
-
+        self._rescale_colormap()
         flat_values = self._data.values.flatten()
         rgba = self._cmap(self._norm_func(flat_values))
         if len(self._data.masks) > 0:
@@ -115,16 +101,12 @@ class Mesh:
                                  dims=self._data.dims,
                                  shape=self._data.shape).values.flatten()
             rgba[one_mask] = self._mask_cmap(self._norm_func(flat_values[one_mask]))
-
         self._mesh.set_facecolors(rgba)
-        # if draw:
-        #     self.draw()
 
     def update(self, new_values: DataArray):
         """
         Update image array with new values.
         """
-        # if new_values is not None:
         self._data = new_values
         self._set_mesh_colors()
 
@@ -141,3 +123,11 @@ class Mesh:
 
     def transpose(self):
         pass
+
+    def get_limits(self, xscale, yscale):
+        dims = self._data.dims
+        xmin = self._data.meta[dims[1]][0]
+        xmax = self._data.meta[dims[1]][-1]
+        ymin = self._data.meta[dims[0]][0]
+        ymax = self._data.meta[dims[0]][-1]
+        return xmin, xmax, ymin, ymax
