@@ -74,9 +74,9 @@ build:
   # Build number is number of Git commits since last tag, if that fails use 0
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
   script:
-    - cmake --preset package-linux -DPython_EXECUTABLE=$PYTHON [linux]
-    - cmake --preset package-macos -DPython_EXECUTABLE=$PYTHON [osx]
-    - cmake --preset package-windows -DPython_EXECUTABLE=$PYTHON [win]
+    - cmake --preset package-linux -DPython_EXECUTABLE=$PYTHON -DCMAKE_PREFIX_PATH=$CONDA_PREFIX [linux]
+    - cmake --preset package-macos -DPython_EXECUTABLE=$PYTHON -DCMAKE_PREFIX_PATH=$CONDA_PREFIX [osx]
+    - cmake --preset package-windows -DPython_EXECUTABLE=$PYTHON -DCMAKE_PREFIX_PATH=$CONDA_PREFIX [win]
     - cmake --build --preset build
     #- ctest --preset test
 
