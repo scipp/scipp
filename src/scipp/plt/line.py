@@ -39,14 +39,15 @@ class Line:
     `PlotFigure1d` can "keep" the currently displayed line, or "remove" a
     previously saved line.
     """
-    def __init__(self,
-                 ax,
-                 data,
-                 params,
-                 norm: str = None,
-                 mask_color: str = None,
-                 legend: dict = None,
-                 errorbars: bool = True):
+    def __init__(
+            self,
+            ax,
+            data,
+            params,
+            norm: str = None,
+            mask_color: str = None,
+            # legend: dict = None,
+            errorbars: bool = True):
 
         # super().__init__(**kwargs)
 
@@ -68,12 +69,12 @@ class Line:
         self._dim = None
         self._unit = None
 
-        if legend is None:
-            legend = {"show": True}
-        elif isinstance(legend, bool):
-            legend = {"show": legend}
-        elif "show" not in legend:
-            legend["show"] = True
+        # if legend is None:
+        #     legend = {"show": True}
+        # elif isinstance(legend, bool):
+        #     legend = {"show": legend}
+        # elif "show" not in legend:
+        #     legend["show"] = True
 
         self._mask_color = mask_color if mask_color is not None else 'k'
         self._norm = norm
@@ -103,7 +104,7 @@ class Line:
         #     key: get_line_param(key, index)
         #     for key in ["color", "marker", "linestyle", "linewidth"]
         # }
-        label = None
+        label = data["name"]
 
         has_mask = data["mask"] is not None
         mask_data_key = "mask" if has_mask else "values"
@@ -235,70 +236,70 @@ class Line:
         arr2 = np.array([y - e, y + e]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
 
-    def get_limits(self) -> Tuple[float, ...]:
-        """
-        """
-        vmin = np.inf
-        vmax = np.NINF
-        xmin = np.inf
-        xmax = np.NINF
+    # # def get_limits(self) -> Tuple[float, ...]:
+    # #     """
+    # #     """
+    # #     vmin = np.inf
+    # #     vmax = np.NINF
+    # #     xmin = np.inf
+    # #     xmax = np.NINF
 
-        for line in self._lines.values():
-            data = Variable(dims=[self._dim], values=line.data.get_ydata())
-            ylims = fix_empty_range(find_limits(data, scale=self._norm)[self._norm])
-            vmin = min(vmin, ylims[0].value)
-            vmax = max(vmax, ylims[1].value)
-            coord = Variable(dims=[self._dim], values=line.data.get_xdata())
-            xlims = fix_empty_range(find_limits(coord)["linear"])
-            xmin = min(xmin, xlims[0].value)
-            xmax = max(xmax, xlims[1].value)
+    # #     for line in self._lines.values():
+    # #         data = Variable(dims=[self._dim], values=line.data.get_ydata())
+    # #         ylims = fix_empty_range(find_limits(data, scale=self._norm)[self._norm])
+    # #         vmin = min(vmin, ylims[0].value)
+    # #         vmax = max(vmax, ylims[1].value)
+    # #         coord = Variable(dims=[self._dim], values=line.data.get_xdata())
+    # #         xlims = fix_empty_range(find_limits(coord)["linear"])
+    # #         xmin = min(xmin, xlims[0].value)
+    # #         xmax = max(xmax, xlims[1].value)
 
-        # Add padding
-        if self._norm == "log":
-            delta = 10**(0.05 * np.log10(vmax / vmin))
-            vmin /= delta
-            vmax *= delta
-        else:
-            delta = 0.05 * (vmax - vmin)
-            vmin -= delta
-            vmax += delta
-        return xmin, xmax, vmin, vmax
+    # #     # Add padding
+    # #     if self._norm == "log":
+    # #         delta = 10**(0.05 * np.log10(vmax / vmin))
+    # #         vmin /= delta
+    # #         vmax *= delta
+    # #     else:
+    # #         delta = 0.05 * (vmax - vmin)
+    # #         vmin -= delta
+    # #         vmax += delta
+    # #     return xmin, xmax, vmin, vmax
 
-    def _rescale_to_data(self):
-        """
-        Rescale y axis to the contents of the plot.
-        """
-        xmin, xmax, vmin, vmax = self._make_limits()
-        if self._user_vmin is not None:
-            assert self._user_vmin.unit == self._unit
-            self._vmin = self._user_vmin.value
-        elif vmin < self._vmin:
-            self._vmin = vmin
-        if self._user_vmax is not None:
-            assert self._user_vmax.unit == self._unit
-            self._vmax = self._user_vmax.value
-        elif vmax > self._vmax:
-            self._vmax = vmax
+    # # def _rescale_to_data(self):
+    # #     """
+    # #     Rescale y axis to the contents of the plot.
+    # #     """
+    # #     xmin, xmax, vmin, vmax = self._make_limits()
+    # #     if self._user_vmin is not None:
+    # #         assert self._user_vmin.unit == self._unit
+    # #         self._vmin = self._user_vmin.value
+    # #     elif vmin < self._vmin:
+    # #         self._vmin = vmin
+    # #     if self._user_vmax is not None:
+    # #         assert self._user_vmax.unit == self._unit
+    # #         self._vmax = self._user_vmax.value
+    # #     elif vmax > self._vmax:
+    # #         self._vmax = vmax
 
-        self._ax.set_ylim(self._vmin, self._vmax)
+    # #     self._ax.set_ylim(self._vmin, self._vmax)
 
-        if xmin < self._xmin:
-            self._xmin = xmin
-        if xmax > self._xmax:
-            self._xmax = xmax
+    # #     if xmin < self._xmin:
+    # #         self._xmin = xmin
+    # #     if xmax > self._xmax:
+    # #         self._xmax = xmax
 
-        deltax = 0.05 * (self._xmax - self._xmin)
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=UserWarning)
-            self._ax.set_xlim([self._xmin - deltax, self._xmax + deltax])
+    # #     deltax = 0.05 * (self._xmax - self._xmin)
+    # #     with warnings.catch_warnings():
+    # #         warnings.filterwarnings("ignore", category=UserWarning)
+    # #         self._ax.set_xlim([self._xmin - deltax, self._xmax + deltax])
 
-    def toggle_norm(self, change: dict):
-        """
-        Set yscale to either "log" or "linear", depending on norm.
-        """
-        self._norm = "log" if change["new"] else "linear"
-        self._ax.set_yscale(self._norm)
-        self.draw()
+    # def toggle_norm(self, change: dict):
+    #     """
+    #     Set yscale to either "log" or "linear", depending on norm.
+    #     """
+    #     self._norm = "log" if change["new"] else "linear"
+    #     self._ax.set_yscale(self._norm)
+    #     self.draw()
 
     # def render(self):
     #     self._ax.set_xlabel(self._xlabel if self.

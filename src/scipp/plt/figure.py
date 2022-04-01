@@ -76,6 +76,8 @@ class Figure:
         if grid:
             self._ax.grid()
 
+        self._legend = False
+
     def is_widget(self) -> bool:
         """
         Check whether we are using the Matplotlib widget backend or not.
@@ -114,6 +116,10 @@ class Figure:
         (which we have disabled by using `plt.ioff()`) can degrade performance
         significantly.
         """
+        # self._ax.relim()
+        # self._ax.autoscale_view()
+        if self._legend:
+            self._ax.legend()
         self._fig.canvas.draw_idle()
 
     def home_view(self, *_):
@@ -180,6 +186,8 @@ class Figure:
         #     args['linewidth'] = self._linewidth[key]
         # return args
 
+    # def _find_axis_limits(self):
+
     def update(self, new_values: DataArray = None, key: str = None, draw: bool = True):
         """
         Update image array with new values.
@@ -191,6 +199,7 @@ class Figure:
                                            data=new_values,
                                            params=self._gather_mpl_args(
                                                key, index=len(self._children)))
+                self._legend = True
             elif new_values.ndim == 2:
                 self._children[key] = Mesh(ax=self._ax,
                                            data=new_values,
