@@ -47,6 +47,7 @@ test:
   imports:
     - scipp
   requires:
+    - {{ compiler('cxx') }} [not win]
     - cmake
     - conan>=1.45.0
     - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
