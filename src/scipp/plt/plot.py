@@ -92,14 +92,7 @@ class Plot:
       - a `PlotController`: handles all the communication between all the
           pieces above.
     """
-    def __init__(
-            self,
-            models: Dict[str, DataArray],
-            filters: list = None,
-            # view_ndims: int = None,
-            **kwargs):
-
-        # params = make_params(cmap=cmap, norm=norm, vmin=vmin, vmax=vmax, masks=masks)
+    def __init__(self, models: Dict[str, DataArray], filters: list = None, **kwargs):
 
         self._view = View(**kwargs)
         self._models = models

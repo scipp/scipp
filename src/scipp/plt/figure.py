@@ -173,26 +173,10 @@ class Figure:
             'linewidth': self._linewidth.get(key, get_line_param('linewidth', index))
         }
 
-        # args = {
-
-        # }
-        # if key in self._color:
-        #     args['color'] = self._color[key]
-        # if key in self._linestyle:
-        #     args['linestyle'] = self._linestyle[key]
-        # if key in self._marker:
-        #     args['marker'] = self._marker[key]
-        # if key in self._linewidth:
-        #     args['linewidth'] = self._linewidth[key]
-        # return args
-
-    # def _find_axis_limits(self):
-
     def update(self, new_values: DataArray = None, key: str = None, draw: bool = True):
         """
         Update image array with new values.
         """
-        # print("figure update")
         if key not in self._children:
             if new_values.ndim == 1:
                 self._children[key] = Line(ax=self._ax,
@@ -211,6 +195,3 @@ class Figure:
 
         if draw:
             self.draw()
-
-        # if new_values is not None:
-        #     self._data = new_values

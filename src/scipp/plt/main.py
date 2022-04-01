@@ -109,44 +109,4 @@ def plot(scipp_obj: Union[VariableLike, ArrayLike, Dict[str, Union[VariableLike,
     else:
         inventory.update(_input_to_data_array(scipp_obj, all_keys=inventory.keys()))
 
-    # # Counter for 1d/event data
-    # line_count = -1
-
-    # # Create a list of variables which will then be dispatched to correct
-    # # plotting function.
-    # # Search through the variables and group the 1D datasets that have
-    # # the same coordinates and units.
-    # # tobeplotted is a dict that holds four items:
-    # # {number_of_dimensions, Dataset, axes, line_parameters}.
-    # tobeplotted = dict()
-    # for name, item in sorted(inventory.items()):
-    #     ndims = len(item.dims)
-    #     if (ndims > 0) and (np.sum(item.shape) > 0):
-    #         if ndims == 1 or projection == "1d" or projection == "1D":
-    #             key = f"{item.dims}.{item.unit}"
-    #             line_count += 1
-    #         else:
-    #             key = name
-
-    #         if key not in tobeplotted.keys():
-    #             tobeplotted[key] = dict(ndims=ndims, scipp_obj_dict=dict())
-    #         tobeplotted[key]["scipp_obj_dict"][name] = item
-
     return Plot(models=inventory, filters=filters, **kwargs)
-
-    # # Plot all the subsets
-    # output = PlotDict()
-    # for key, val in tobeplotted.items():
-    #     output._items[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-    #                                   ndim=val["ndims"],
-    #                                   projection=projection,
-    #                                   **kwargs)
-
-    # if len(output) > 1:
-    #     return output
-    # elif len(output) > 0:
-    #     return output._items[list(output.keys())[0]]
-    # else:
-    #     raise ValueError("Input contains nothing that can be plotted. "
-    #                      "Input may be of dtype vector or string, "
-    #                      f"or may have zero dimensions:\n{scipp_obj}")
