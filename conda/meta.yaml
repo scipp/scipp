@@ -59,6 +59,7 @@ test:
     - pytest
     - pythreejs
     - python-graphviz
+    - tbb-devel=2020.2.*
     - xarray
     - pandas
     - scipy>=1.7.0
