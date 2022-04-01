@@ -80,7 +80,7 @@ build:
     - cmake --preset package-macos -DPython_EXECUTABLE=$PYTHON -DCMAKE_PREFIX_PATH=$CONDA_PREFIX [osx]
     - cmake --preset package-windows -DPython_EXECUTABLE=$PYTHON -DCMAKE_PREFIX_PATH=$CONDA_PREFIX [win]
     - cmake --build --preset build
-    #- ctest --preset test
+    - ctest --preset test
 
 about:
   home: https://scipp.github.io/
