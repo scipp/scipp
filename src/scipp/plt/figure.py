@@ -41,10 +41,10 @@ class Figure:
         self._ylabel = ylabel
         # self._user_vmin = vmin
         # self._user_vmax = vmax
-        self._xmin = np.inf
-        self._xmax = np.NINF
-        self._ymin = np.inf
-        self._ymax = np.NINF
+        self._xmin = None  # np.inf
+        self._xmax = None  # np.NINF
+        self._ymin = None  # np.inf
+        self._ymax = None  # np.NINF
         # self._kwargs = kwargs
 
         self._children = {}
@@ -80,6 +80,7 @@ class Figure:
             self._ax.grid()
 
         self._legend = False
+        self._new_artist = False
 
     def is_widget(self) -> bool:
         """
@@ -112,6 +113,20 @@ class Figure:
                          height=height * dpi)
 
     def _autoscale(self):
+        current_xlims = self._ax.get_xlim()
+        current_ylims = self._ax.get_ylim()
+        if self._xmin is None:
+            self._xmin = current_xlims[0]
+        if self._xmax is None:
+            self._xmax = current_xlims[1]
+        if self._ymin is None:
+            self._ymin = current_ylims[0]
+        if self._ymax is None:
+            self._ymax = current_ylims[1]
+        # self._xmin = np.inf
+        # self._xmax = np.NINF
+        # self._ymin = np.inf
+        # self._ymax = np.NINF
         xscale = self._ax.get_xscale()
         yscale = self._ax.get_yscale()
         for key, child in self._children.items():
@@ -149,17 +164,21 @@ class Figure:
 
         # self._autoscale()
 
-        self._ax.set_xlabel(self._xlabel)
-        self._ax.set_ylabel(self._ylabel)
-        if self._legend:
-            self._ax.legend()
+        if self._new_artist:
+            self._ax.set_xlabel(self._xlabel)
+            self._ax.set_ylabel(self._ylabel)
+            if self._legend:
+                self._ax.legend()
+            self._new_artist = False
         self._draw_canvas()
 
     def _draw_canvas(self):
         self._fig.canvas.draw_idle()
 
     def home_view(self, *_):
-        self._fig.canvas.toolbar.home()
+        self._autoscale()
+        self._draw_canvas()
+        # self._fig.canvas.toolbar.home()
 
     def pan_view(self, *_):
         # if change["new"]:
@@ -215,7 +234,9 @@ class Figure:
         """
         Update image array with new values.
         """
+
         if key not in self._children:
+            self._new_artist = True
             if new_values.ndim == 1:
                 self._children[key] = Line(ax=self._ax,
                                            data=new_values,
