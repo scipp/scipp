@@ -40,7 +40,7 @@ class View:
                                       tooltip="Pan")
         self.toolbar.add_togglebutton(name="zoom_view",
                                       callback=self.figure.zoom_view,
-                                      icon="square-o",
+                                      icon="search-plus",
                                       tooltip="Zoom")
         self.toolbar.add_togglebutton(name='toggle_xaxis_scale',
                                       callback=self.figure.toggle_xaxis_scale,
