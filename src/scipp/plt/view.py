@@ -33,7 +33,7 @@ class View:
         self.toolbar.add_button(name="home_view",
                                 callback=self.figure.home_view,
                                 icon="home",
-                                tooltip="Reset original view")
+                                tooltip="Autoscale view")
         self.toolbar.add_togglebutton(name="pan_view",
                                       callback=self.figure.pan_view,
                                       icon="arrows",

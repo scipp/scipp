@@ -108,7 +108,8 @@ from . import data
 from . import serialization
 from . import spatial
 
-from .plotting import plot
+# from .plotting import plot
+from .plt import plot
 
 setattr(Variable, 'plot', plot)
 setattr(DataArray, 'plot', plot)

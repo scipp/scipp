@@ -26,7 +26,9 @@ class Mesh:
                  cmap: str = None,
                  masks_cmap: dict = None,
                  norm: str = None,
-                 extend: bool = None):
+                 extend: bool = None,
+                 vmin=None,
+                 vmax=None):
 
         self._ax = ax
         self._data = data
@@ -34,8 +36,8 @@ class Mesh:
         self._xlabel = None
         self._ylabel = None
         self._title = None
-        self._user_vmin = None
-        self._user_vmax = None
+        self._user_vmin = vmin
+        self._user_vmax = vmax
         self._vmin = np.inf
         self._vmax = np.NINF
 
@@ -56,37 +58,63 @@ class Mesh:
         self._mesh = self._ax.pcolormesh(self._data.meta[dims[1]].values,
                                          self._data.meta[dims[0]].values,
                                          self._data.data.values,
+                                         cmap=self._cmap,
                                          shading='auto')
         self._cbar = plt.colorbar(self._mesh,
                                   ax=self._ax,
                                   cax=self._cax,
-                                  extend=self._extend)
+                                  extend=self._extend,
+                                  label=name_with_unit(var=self._data.data, name=""))
         if self._cax is None:
             self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self._mesh.set_array(None)
         self._set_norm()
         self._set_mesh_colors()
 
-    def _make_limits(self) -> Tuple[float, ...]:
-        vmin, vmax = fix_empty_range(
-            find_limits(self._data.data, scale=self._norm_flag)[self._norm_flag])
-        return vmin.value, vmax.value
+    # def _set_colorbar_limits(self) -> Tuple[float, ...]:
+    #     vmin, vmax = fix_empty_range(
+    #         find_limits(self._data.data, scale=self._norm_flag)[self._norm_flag])
+    #     if self._user_vmin is not None:
+    #         assert self._user_vmin.unit == self._data.unit
+    #         self._vmin = self._user_vmin
+    #     elif vmin < self._vmin:
+    #         self._vmin = vmin
+    #     if self._user_vmax is not None:
+    #         assert self._user_vmax.unit == self._data.unit
+    #         self._vmax = self._user_vmax
+    #     elif vmax > self._vmax:
+    #         self._vmax = vmax
+
+    #     # return vmin.value, vmax.value
 
     def _rescale_colormap(self):
         """
         Rescale the colorbar limits according to the supplied values.
         """
-        vmin, vmax = self._make_limits()
+        # vmin, vmax = self._make_limits()
+        # if self._user_vmin is not None:
+        #     assert self._user_vmin.unit == self._data.unit
+        #     self._vmin = self._user_vmin.value
+        # elif vmin < self._vmin:
+        #     self._vmin = vmin
+        # if self._user_vmax is not None:
+        #     assert self._user_vmax.unit == self._data.unit
+        #     self._vmax = self._user_vmax.value
+        # elif vmax > self._vmax:
+        #     self._vmax = vmax
+
+        vmin, vmax = fix_empty_range(
+            find_limits(self._data.data, scale=self._norm_flag)[self._norm_flag])
         if self._user_vmin is not None:
             assert self._user_vmin.unit == self._data.unit
             self._vmin = self._user_vmin.value
-        elif vmin < self._vmin:
-            self._vmin = vmin
+        elif vmin.value < self._vmin:
+            self._vmin = vmin.value
         if self._user_vmax is not None:
             assert self._user_vmax.unit == self._data.unit
             self._vmax = self._user_vmax.value
-        elif vmax > self._vmax:
-            self._vmax = vmax
+        elif vmax.value > self._vmax:
+            self._vmax = vmax.value
 
         self._norm_func.vmin = self._vmin
         self._norm_func.vmax = self._vmax
@@ -111,9 +139,10 @@ class Mesh:
         self._set_mesh_colors()
 
     def _set_norm(self):
-        vmin, vmax = self._make_limits()
+        # vmin, vmax = self._make_limits()
         func = LogNorm if self._norm_flag == "log" else Normalize
-        self._norm_func = func(vmin=vmin, vmax=vmax)
+        # self._norm_func = func(vmin=vmin, vmax=vmax)
+        self._norm_func = func()
         self._mesh.set_norm(self._norm_func)
 
     def toggle_norm(self, change: dict = None):

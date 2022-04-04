@@ -59,7 +59,7 @@ class Line:
                 **{key: params[key]
                    for key in ["color", "linewidth"]})[0]
 
-            self._mask = self._ax.step(data[mask_data_key]["x"],
+            self._mask = self._ax.step(data["values"]["x"],
                                        data[mask_data_key]["y"],
                                        linewidth=params["linewidth"] * 3.0,
                                        color=self._mask_color,
@@ -71,7 +71,7 @@ class Line:
                                        label=label,
                                        zorder=10,
                                        **params)[0]
-            self._mask = self._ax.plot(data[mask_data_key]["x"],
+            self._mask = self._ax.plot(data["values"]["x"],
                                        data[mask_data_key]["y"],
                                        zorder=11,
                                        mec=self._mask_color,
@@ -101,8 +101,10 @@ class Line:
         if hist:
             data["values"]["y"] = np.concatenate((y[0:1], y))
             if data["mask"] is not None:
-                for key, mask in data["mask"].items():
-                    data["mask"][key] = np.concatenate((mask[0:1], mask))
+                data["mask"]["y"] = np.concatenate(
+                    (data["mask"]["y"][0:1], data["mask"]["y"]))
+                # for key, mask in data["mask"].items():
+                #     data["mask"][key] = np.concatenate((mask[0:1], mask))
             data["variances"]["x"] = 0.5 * (x[1:] + x[:-1])
         else:
             data["variances"]["x"] = x
@@ -120,8 +122,11 @@ class Line:
             data["variances"]["e"] = vars_to_err(self._data.variances)
         if len(self._data.masks):
             one_mask = reduce(lambda a, b: a | b, self._data.masks.values()).values
+            # data["mask"] = {
+            #     "x": data["values"]["x"],
+            #     "y": np.where(one_mask, data["values"]["y"], None).astype(np.float32)
+            # }
             data["mask"] = {
-                "x": data["values"]["x"],
                 "y": np.where(one_mask, data["values"]["y"], None).astype(np.float32)
             }
         return self._preprocess_hist(data)
@@ -136,7 +141,7 @@ class Line:
 
         self._line.set_data(new_values["values"]["x"], new_values["values"]["y"])
         if new_values["mask"] is not None:
-            self._mask.set_data(new_values["mask"]["x"], new_values["mask"]["y"])
+            self._mask.set_data(new_values["values"]["x"], new_values["mask"]["y"])
             self._mask.set_visible(True)
         else:
             self._mask.set_visible(False)

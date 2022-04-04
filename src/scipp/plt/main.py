@@ -51,17 +51,20 @@ def _input_to_data_array(item: Union[VariableLike, ArrayLike],
         if has_numeric_type(item):
             if key is None:
                 key = _brief_str(item)
-            to_plot[_make_plot_key(key, all_keys)] = DataArray(data=item)
+            to_plot[_make_plot_key(key, all_keys)] = DataArray(data=item, name=key)
     elif isinstance(item, DataArray):
         if has_numeric_type(item):
             if key is None:
                 key = item.name
-            to_plot[_make_plot_key(key, all_keys)] = item
+            da = item.copy(deep=False)
+            da.name = key
+            to_plot[_make_plot_key(key, all_keys)] = da
     elif isinstance(item, np.ndarray):
         if key is None:
             key = str(type(item))
         to_plot[_make_plot_key(key,
-                               all_keys)] = DataArray(data=_ndarray_to_variable(item))
+                               all_keys)] = DataArray(data=_ndarray_to_variable(item),
+                                                      name=key)
     else:
         raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
                            "a Dataset, a DataArray, a Variable (and their "
@@ -72,7 +75,6 @@ def _input_to_data_array(item: Union[VariableLike, ArrayLike],
 
 def plot(scipp_obj: Union[VariableLike, ArrayLike, Dict[str, Union[VariableLike,
                                                                    ArrayLike]]],
-         projection: str = None,
          filters: list = None,
          **kwargs) -> Union[Plot, PlotDict]:
     """

@@ -4,3 +4,6 @@
 # flake8: noqa
 
 from .main import plot
+import matplotlib.pyplot as plt
+
+plt.ioff()

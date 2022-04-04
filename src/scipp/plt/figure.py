@@ -31,7 +31,8 @@ class Figure:
                  color=None,
                  linestyle=None,
                  marker=None,
-                 linewidth=None):
+                 linewidth=None,
+                 errorbars=True):
         self._fig = None
         self._closed = False
         self._title = title
@@ -39,6 +40,7 @@ class Figure:
         self._bounding_box = bounding_box
         self._xlabel = xlabel
         self._ylabel = ylabel
+        self._errorbars = errorbars
         # self._user_vmin = vmin
         # self._user_vmax = vmax
         self._xmin = None  # np.inf
@@ -241,7 +243,8 @@ class Figure:
                 self._children[key] = Line(ax=self._ax,
                                            data=new_values,
                                            params=self._gather_mpl_args(
-                                               key, index=len(self._children)))
+                                               key, index=len(self._children)),
+                                           errorbars=self._errorbars)
                 self._legend = True
 
                 if self._xlabel is None:
@@ -254,7 +257,9 @@ class Figure:
                                            data=new_values,
                                            cmap=self._cmap,
                                            masks_cmap=self._masks["cmap"],
-                                           norm=self._norm)
+                                           norm=self._norm,
+                                           vmin=self._user_vmin,
+                                           vmax=self._user_vmax)
                 if self._xlabel is None:
                     self._xlabel = name_with_unit(
                         var=new_values.meta[new_values.dims[1]])
