@@ -7,7 +7,6 @@ from .mask_filter import MaskFilter
 from .slicing_filter import SlicingFilter
 from .view import View
 from .widgets import WidgetCollection, WidgetFilter
-# from .params import make_params
 
 from typing import Dict
 
@@ -71,34 +70,11 @@ class PlotDict():
 
 class Plot:
     """
-    Base class for plot objects. It uses the Model-View-Controller pattern to
-    separate displayed figures and user-interaction via widgets from the
-    operations performed on the data.
-
-    It contains:
-      - a `PlotModel`: contains the input data and performs all the heavy
-          calculations.
-      - a `PlotView`: contains a `PlotFigure` which is displayed and handles
-          communications between `PlotController` and `PlotFigure`, as well as
-          updating the `PlotProfile` depending on signals captured by the
-          `PlotFigure`.
-      - some `PlotWidgets`: a base collection of sliders and buttons which
-          provide interactivity to the user.
-      - a `PlotPanel` (optional): an extra set of widgets which is not part of
-          the base `PlotWidgets`.
-      - a `PlotProfile` (optional): used to display a profile plot under the
-          `PlotFigure` to show one of the slider dimensions as a 1 dimensional
-          line plot.
-      - a `PlotController`: handles all the communication between all the
-          pieces above.
     """
     def __init__(self, models: Dict[str, DataArray], filters: list = None, **kwargs):
 
         self._view = View(**kwargs)
         self._models = models
-        # self._view_ndims = view_ndims
-        # self._view_args = view_args
-
         self._widgets = WidgetCollection()
         self._controller = Controller(models=self._models, view=self._view)
 
@@ -107,25 +83,6 @@ class Plot:
                 self._controller.add_filter(f)
                 if isinstance(f, WidgetFilter):
                     self._widgets.append(f)
-        # self._add_default_filters()
-
-        # # Shortcut access to the underlying figure for easier modification
-        # self.fig = getattr(self._view, "fig", None)
-        # self.ax = getattr(self._view, "ax", None)
-
-    # def _add_default_filters(self):
-    #     # Add filter for slicing dimensions out with sliders
-    #     array = next(iter(self._models.values()))
-    #     slicing_filter = SlicingFilter(dims=array.dims,
-    #                                    sizes=array.sizes,
-    #                                    ndim=self._view_ndims)
-    #     self._controller.add_filter(slicing_filter)
-    #     self._widgets.append(slicing_filter)
-
-    #     for key, model in self._models.items():
-    #         mask_filter = MaskFilter(masks=model.masks, name=key)
-    #         self._controller.add_filter(mask_filter, key=key)
-    #         self._widgets.append(mask_filter)
 
     def _ipython_display_(self):
         """
@@ -136,7 +93,6 @@ class Plot:
 
     def _to_widget(self):
         """
-        Get the SciPlot object as an `ipywidget`.
         """
         import ipywidgets as ipw
         return ipw.VBox([self._view._to_widget(), self._widgets._to_widget()])
@@ -147,9 +103,13 @@ class Plot:
         """
         self._view.close()
 
+    def redraw(self):
+        """
+        """
+        self._controller.render()
+
     def show(self):
         """
-        Call the show() method of a matplotlib figure.
         """
         self._controller.render()
         self._view.show()

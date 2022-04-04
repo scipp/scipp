@@ -6,19 +6,9 @@ from .. import concat, values, scalar, histogram, full_like, Variable, DataArray
 from .. import abs as abs_, flatten, ones
 from ..typing import MetaDataMap
 
-import io
 import numpy as np
 from numpy.typing import ArrayLike
 from typing import Any, Dict, Tuple
-
-
-def get_line_param(name: str, index: int) -> Any:
-    """
-    Get the default line parameter from the config.
-    If an index is supplied, return the i-th item in the list.
-    """
-    param = config['plot'][name]
-    return param[index % len(param)]
 
 
 def to_bin_centers(x: Variable, dim: str) -> Variable:
@@ -134,20 +124,6 @@ def fix_empty_range(lims: Tuple[Variable, ...],
         else:
             dx = 0.5 * abs_(lims[0])
     return [lims[0] - dx, lims[1] + dx]
-
-
-def fig_to_pngbytes(fig: Any):
-    """
-    Convert figure to png image bytes.
-    We also close the figure to prevent it from showing up again in
-    cells further down the notebook.
-    """
-    import matplotlib.pyplot as plt
-    buf = io.BytesIO()
-    fig.savefig(buf, format='png')
-    plt.close(fig)
-    buf.seek(0)
-    return buf.getvalue()
 
 
 def to_dict(meta: MetaDataMap) -> Dict[str, Variable]:

@@ -22,11 +22,8 @@ class View:
     """
     Base class for 1d and 2d figures, that holds matplotlib axes.
     """
-
-    # def __init__(self, figure, **kwargs):
     def __init__(self, **kwargs):
 
-        # self.figure = figure(**kwargs)
         self.figure = Figure(**kwargs)
         self.toolbar = Toolbar()
 

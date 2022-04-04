@@ -3,9 +3,9 @@
 
 from .. import config
 from .. import broadcast, DataArray
+from .mpl_utils import get_cmap
 from .tools import find_limits, fix_empty_range
 from ..utils import name_with_unit
-# from .figure import Figure
 
 from functools import reduce
 from matplotlib.colors import Normalize, LogNorm
@@ -24,9 +24,8 @@ class Mesh:
                  cax: Any = None,
                  aspect: str = None,
                  cmap: str = None,
-                 masks_cmap: dict = None,
-                 norm: str = None,
-                 extend: bool = None,
+                 masks_cmap: str = "gray",
+                 norm: str = "linear",
                  vmin=None,
                  vmax=None):
 
@@ -41,15 +40,23 @@ class Mesh:
         self._vmin = np.inf
         self._vmax = np.NINF
 
-        self._cmap = cmap
+        self._cmap = get_cmap(cmap)
         self._cax = cax
-        self._mask_cmap = masks_cmap
+        self._mask_cmap = get_cmap(masks_cmap)
         self._norm_flag = norm
         self._norm_func = None
-        self._extend = extend
+
         self._mesh = None
         self._cbar = None
         self._aspect = aspect if aspect is not None else config['plot']['aspect']
+
+        self._extend = "neither"
+        if (vmin is not None) and (vmax is not None):
+            self._extend = "both"
+        elif vmin is not None:
+            self._extend = "min"
+        elif vmax is not None:
+            self._extend = "max"
 
         self._make_mesh()
 
@@ -71,38 +78,9 @@ class Mesh:
         self._set_norm()
         self._set_mesh_colors()
 
-    # def _set_colorbar_limits(self) -> Tuple[float, ...]:
-    #     vmin, vmax = fix_empty_range(
-    #         find_limits(self._data.data, scale=self._norm_flag)[self._norm_flag])
-    #     if self._user_vmin is not None:
-    #         assert self._user_vmin.unit == self._data.unit
-    #         self._vmin = self._user_vmin
-    #     elif vmin < self._vmin:
-    #         self._vmin = vmin
-    #     if self._user_vmax is not None:
-    #         assert self._user_vmax.unit == self._data.unit
-    #         self._vmax = self._user_vmax
-    #     elif vmax > self._vmax:
-    #         self._vmax = vmax
-
-    #     # return vmin.value, vmax.value
-
     def _rescale_colormap(self):
         """
-        Rescale the colorbar limits according to the supplied values.
         """
-        # vmin, vmax = self._make_limits()
-        # if self._user_vmin is not None:
-        #     assert self._user_vmin.unit == self._data.unit
-        #     self._vmin = self._user_vmin.value
-        # elif vmin < self._vmin:
-        #     self._vmin = vmin
-        # if self._user_vmax is not None:
-        #     assert self._user_vmax.unit == self._data.unit
-        #     self._vmax = self._user_vmax.value
-        # elif vmax > self._vmax:
-        #     self._vmax = vmax
-
         vmin, vmax = fix_empty_range(
             find_limits(self._data.data, scale=self._norm_flag)[self._norm_flag])
         if self._user_vmin is not None:
@@ -121,7 +99,6 @@ class Mesh:
         self._mesh.set_clim(self._vmin, self._vmax)
 
     def _set_mesh_colors(self):
-        self._rescale_colormap()
         flat_values = self._data.values.flatten()
         rgba = self._cmap(self._norm_func(flat_values))
         if len(self._data.masks) > 0:
@@ -136,19 +113,19 @@ class Mesh:
         Update image array with new values.
         """
         self._data = new_values
+        self._rescale_colormap()
         self._set_mesh_colors()
 
     def _set_norm(self):
-        # vmin, vmax = self._make_limits()
         func = LogNorm if self._norm_flag == "log" else Normalize
-        # self._norm_func = func(vmin=vmin, vmax=vmax)
         self._norm_func = func()
+        self._rescale_colormap()
         self._mesh.set_norm(self._norm_func)
 
     def toggle_norm(self, change: dict = None):
         self._norm_flag = "log" if change["new"] else "linear"
         self._set_norm()
-        self.update()
+        self._set_mesh_colors()
 
     def transpose(self):
         pass

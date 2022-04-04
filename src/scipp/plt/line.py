@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import Variable, scalar, DataArray
-from .tools import get_line_param, find_limits, fix_empty_range, vars_to_err
+from .. import Variable, scalar, DataArray, log10
+from .mpl_utils import get_line_param
+from .tools import find_limits, fix_empty_range, vars_to_err
 from ..utils import name_with_unit
 
 from functools import reduce
@@ -14,16 +15,15 @@ import warnings
 
 class Line:
     """
-    Class for 1 dimensional plots. This is used by both the `PlotView1d` for
-    normal 1d plots, and the `PlotProfile`.
-
-    `PlotFigure1d` can "keep" the currently displayed line, or "remove" a
-    previously saved line.
     """
     def __init__(self,
                  ax,
                  data,
-                 params,
+                 number=0,
+                 color=None,
+                 linestyle=None,
+                 marker=None,
+                 linewidth=None,
                  norm: str = None,
                  mask_color: str = None,
                  errorbars: bool = True):
@@ -43,7 +43,19 @@ class Line:
         self._unit = self._data.unit
         self._coord = self._data.meta[self._dim]
 
+        params = self._make_line_params(number=number,
+                                        color=color,
+                                        linestyle=linestyle,
+                                        marker=marker,
+                                        linewidth=linewidth)
+
         self._make_line(data=self._make_data(), errorbars=errorbars, params=params)
+
+    def _make_line_params(self, number, **kwargs):
+        return {
+            key: get_line_param(key, number) if arg is None else arg
+            for key, arg in kwargs.items()
+        }
 
     def _make_line(self, data, errorbars, params):
         label = data["name"]
@@ -103,8 +115,6 @@ class Line:
             if data["mask"] is not None:
                 data["mask"]["y"] = np.concatenate(
                     (data["mask"]["y"][0:1], data["mask"]["y"]))
-                # for key, mask in data["mask"].items():
-                #     data["mask"][key] = np.concatenate((mask[0:1], mask))
             data["variances"]["x"] = 0.5 * (x[1:] + x[:-1])
         else:
             data["variances"]["x"] = x
@@ -115,17 +125,12 @@ class Line:
     def _make_data(self) -> dict:
         data = {"values": {}, "variances": {}, "mask": None}
         data['name'] = self._data.name
-        # data['label'] = _make_label(self._data)
         data["values"]["x"] = self._data.meta[self._dim].values
         data["values"]["y"] = self._data.values
         if self._data.variances is not None:
             data["variances"]["e"] = vars_to_err(self._data.variances)
         if len(self._data.masks):
             one_mask = reduce(lambda a, b: a | b, self._data.masks.values()).values
-            # data["mask"] = {
-            #     "x": data["values"]["x"],
-            #     "y": np.where(one_mask, data["values"]["y"], None).astype(np.float32)
-            # }
             data["mask"] = {
                 "y": np.where(one_mask, data["values"]["y"], None).astype(np.float32)
             }
@@ -169,19 +174,19 @@ class Line:
 
         # Add padding
         if xscale == "log":
-            delta = 10**(0.03 * np.log10(xmax / xmin))
+            delta = 10**(0.03 * log10(xmax / xmin))
             xmin /= delta
             xmax *= delta
         else:
-            delta = 0.05 * (xmax - xmin)
+            delta = 0.03 * (xmax - xmin)
             xmin -= delta
             xmax += delta
         if yscale == "log":
-            delta = 10**(0.03 * np.log10(ymax / ymin))
+            delta = 10**(0.03 * log10(ymax / ymin))
             ymin /= delta
             ymax *= delta
         else:
-            delta = 0.05 * (ymax - ymin)
+            delta = 0.03 * (ymax - ymin)
             ymin -= delta
             ymax += delta
 

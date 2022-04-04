@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .. import config, Variable, make_html, DataArray
-from .tools import fig_to_pngbytes, get_line_param
+from .mpl_utils import fig_to_pngbytes, get_line_param
 from .mesh import Mesh
 from .line import Line
 from .params import make_params
@@ -21,18 +21,12 @@ class Figure:
                  title: str = None,
                  xlabel: str = None,
                  ylabel: str = None,
-                 vmin: Variable = None,
-                 vmax: Variable = None,
                  grid: bool = False,
                  bounding_box: Tuple[float, ...] = None,
-                 cmap=None,
-                 norm=None,
-                 masks=None,
-                 color=None,
-                 linestyle=None,
-                 marker=None,
-                 linewidth=None,
-                 errorbars=True):
+                 vmin=None,
+                 vmax=None,
+                 **kwargs):
+
         self._fig = None
         self._closed = False
         self._title = title
@@ -40,29 +34,15 @@ class Figure:
         self._bounding_box = bounding_box
         self._xlabel = xlabel
         self._ylabel = ylabel
-        self._errorbars = errorbars
-        # self._user_vmin = vmin
-        # self._user_vmax = vmax
-        self._xmin = None  # np.inf
-        self._xmax = None  # np.NINF
-        self._ymin = None  # np.inf
-        self._ymax = None  # np.NINF
-        # self._kwargs = kwargs
+        self._xmin = None
+        self._xmax = None
+        self._ymin = None
+        self._ymax = None
+        self._user_vmin = vmin
+        self._user_vmax = vmax
+        self._kwargs = kwargs
 
         self._children = {}
-
-        params = make_params(cmap=cmap, norm=norm, vmin=vmin, vmax=vmax, masks=masks)
-
-        self._cmap = params["values"]["cmap"]
-        self._norm = params["values"]["norm"]
-        self._masks = params["masks"]
-        self._user_vmin = params["values"]["vmin"]
-        self._user_vmax = params["values"]["vmax"]
-
-        self._color = {} if color is None else color
-        self._linestyle = {} if linestyle is None else linestyle
-        self._marker = {} if marker is None else marker
-        self._linewidth = {} if linewidth is None else linewidth
 
         cfg = config['plot']
         if self._ax is None:
@@ -125,10 +105,6 @@ class Figure:
             self._ymin = current_ylims[0]
         if self._ymax is None:
             self._ymax = current_ylims[1]
-        # self._xmin = np.inf
-        # self._xmax = np.NINF
-        # self._ymin = np.inf
-        # self._ymax = np.NINF
         xscale = self._ax.get_xscale()
         yscale = self._ax.get_yscale()
         for key, child in self._children.items():
@@ -152,20 +128,7 @@ class Figure:
 
     def draw(self):
         """
-        Manually update the figure.
-        We control update manually since we have better control on how many
-        draws are performed on the canvas. Matplotlib's automatic drawing
-        (which we have disabled by using `plt.ioff()`) can degrade performance
-        significantly.
         """
-        # self._ax.relim()
-        # self._ax.autoscale_view()
-
-        # TODO: auto-scaling is not good if you have zoomed in and you then move a
-        # slider
-
-        # self._autoscale()
-
         if self._new_artist:
             self._ax.set_xlabel(self._xlabel)
             self._ax.set_ylabel(self._ylabel)
@@ -180,7 +143,6 @@ class Figure:
     def home_view(self, *_):
         self._autoscale()
         self._draw_canvas()
-        # self._fig.canvas.toolbar.home()
 
     def pan_view(self, *_):
         # if change["new"]:
@@ -223,15 +185,6 @@ class Figure:
         """
         self._fig.savefig(filename, bbox_inches="tight")
 
-    def _gather_mpl_args(self, key, index):
-
-        return {
-            'color': self._color.get(key, get_line_param('color', index)),
-            'linestyle': self._linestyle.get(key, get_line_param('linestyle', index)),
-            'marker': self._marker.get(key, get_line_param('marker', index)),
-            'linewidth': self._linewidth.get(key, get_line_param('linewidth', index))
-        }
-
     def update(self, new_values: DataArray = None, key: str = None, draw: bool = True):
         """
         Update image array with new values.
@@ -242,9 +195,8 @@ class Figure:
             if new_values.ndim == 1:
                 self._children[key] = Line(ax=self._ax,
                                            data=new_values,
-                                           params=self._gather_mpl_args(
-                                               key, index=len(self._children)),
-                                           errorbars=self._errorbars)
+                                           number=len(self._children),
+                                           **self._kwargs)
                 self._legend = True
 
                 if self._xlabel is None:
@@ -255,11 +207,9 @@ class Figure:
             elif new_values.ndim == 2:
                 self._children[key] = Mesh(ax=self._ax,
                                            data=new_values,
-                                           cmap=self._cmap,
-                                           masks_cmap=self._masks["cmap"],
-                                           norm=self._norm,
                                            vmin=self._user_vmin,
-                                           vmax=self._user_vmax)
+                                           vmax=self._user_vmax,
+                                           **self._kwargs)
                 if self._xlabel is None:
                     self._xlabel = name_with_unit(
                         var=new_values.meta[new_values.dims[1]])
