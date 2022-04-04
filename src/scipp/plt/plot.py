@@ -3,8 +3,6 @@
 
 from .controller import Controller
 from .. import DataArray
-from .mask_filter import MaskFilter
-from .slicing_filter import SlicingFilter
 from .view import View
 from .widgets import WidgetCollection, WidgetFilter
 

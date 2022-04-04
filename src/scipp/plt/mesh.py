@@ -4,14 +4,14 @@
 from .. import config
 from .. import broadcast, DataArray
 from .mpl_utils import get_cmap
-from .tools import find_limits, fix_empty_range
+from .limits import find_limits, fix_empty_range
 from ..utils import name_with_unit
 
 from functools import reduce
 from matplotlib.colors import Normalize, LogNorm
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Any, Tuple
+from typing import Any
 
 
 class Mesh:

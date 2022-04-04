@@ -1,16 +1,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import config, Variable, make_html, DataArray
-from .mpl_utils import fig_to_pngbytes, get_line_param
+from .. import config, DataArray
+from .tools import fig_to_pngbytes
 from .mesh import Mesh
 from .line import Line
-from .params import make_params
 from ..utils import name_with_unit
 
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
-import numpy as np
 from typing import Any, Tuple
 
 

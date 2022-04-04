@@ -1,16 +1,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import Variable, scalar, DataArray, log10
-from .mpl_utils import get_line_param
-from .tools import find_limits, fix_empty_range, vars_to_err
-from ..utils import name_with_unit
+from .. import DataArray, log10, stddevs
+from .tools import get_line_param
+from .limits import find_limits, fix_empty_range
 
 from functools import reduce
 import numpy as np
 from numpy.typing import ArrayLike
-from typing import Tuple, Union
-import warnings
+from typing import Tuple
 
 
 class Line:
@@ -128,7 +126,7 @@ class Line:
         data["values"]["x"] = self._data.meta[self._dim].values
         data["values"]["y"] = self._data.values
         if self._data.variances is not None:
-            data["variances"]["e"] = vars_to_err(self._data.variances)
+            data["variances"]["e"] = stddevs(self._data.data).values
         if len(self._data.masks):
             one_mask = reduce(lambda a, b: a | b, self._data.masks.values()).values
             data["mask"] = {

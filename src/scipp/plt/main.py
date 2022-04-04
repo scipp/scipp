@@ -3,7 +3,6 @@
 
 from .. import Variable, DataArray, Dataset
 from ..compat.dict import from_dict
-from .dispatch import dispatch
 from .plot import PlotDict, Plot
 from ..typing import VariableLike, has_numeric_type
 
