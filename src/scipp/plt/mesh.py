@@ -3,8 +3,8 @@
 
 from .. import config
 from .. import broadcast, DataArray
-from .mpl_utils import get_cmap
 from .limits import find_limits, fix_empty_range
+from .tools import get_cmap
 from ..utils import name_with_unit
 
 from functools import reduce
