@@ -83,8 +83,8 @@ class Mesh:
     def _rescale_colormap(self):
         """
         """
-        vmin, vmax = fix_empty_range(
-            find_limits(self._data.data, scale=self._norm_flag)[self._norm_flag])
+        vmin, vmax = fix_empty_range(find_limits(self._data.data,
+                                                 scale=self._norm_flag))
         if self._user_vmin is not None:
             assert self._user_vmin.unit == self._data.unit
             self._vmin = self._user_vmin.value
@@ -136,9 +136,8 @@ class Mesh:
         self._make_mesh()
 
     def get_limits(self, xscale, yscale):
-        # dims = self._data.dims
-        xmin = self._data.meta[self._dims['x']][0]
-        xmax = self._data.meta[self._dims['x']][-1]
-        ymin = self._data.meta[self._dims['y']][0]
-        ymax = self._data.meta[self._dims['y']][-1]
+        xmin, xmax = fix_empty_range(
+            find_limits(self._data.meta[self._dims['x']], scale=xscale))
+        ymin, ymax = fix_empty_range(
+            find_limits(self._data.meta[self._dims['y']], scale=yscale))
         return xmin, xmax, ymin, ymax

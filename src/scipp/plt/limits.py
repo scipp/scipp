@@ -9,69 +9,20 @@ import numpy as np
 from typing import Dict, Tuple
 
 
-def find_log_limits(x: Variable) -> Tuple[Variable, ...]:
-    """
-    To find log scale limits, we histogram the data between 1.0-30
-    and 1.0e+30 and include only bins that are non-zero.
-    """
-    volume = np.product(x.shape)
-    pixel = flatten(values(x.astype('float64')), to='pixel')
-    weights = ones(dims=['pixel'], shape=[volume], unit='counts')
-    hist = histogram(DataArray(data=weights, coords={'order': pixel}),
-                     bins=Variable(dims=['order'],
-                                   values=np.geomspace(1e-30, 1e30, num=61),
-                                   unit=x.unit))
-    # Find the first and the last non-zero bins
-    inds = np.nonzero((hist.data > scalar(0.0, unit=units.counts)).values)
-    ar = np.arange(hist.data.shape[0])[inds]
-    # Safety check in case there are no values in range 1.0e-30:1.0e+30:
-    # fall back to the linear method and replace with arbitrary values if the
-    # limits are negative.
-    if len(ar) == 0:
-        [vmin, vmax] = find_linear_limits(x)
-        if vmin.value <= 0.0:
-            if vmax.value <= 0.0:
-                vmin = full_like(vmin, 0.1)
-                vmax = full_like(vmax, 1.0)
-            else:
-                vmin = 1.0e-3 * vmax
-    else:
-        vmin = hist.coords['order']['order', ar.min()]
-        vmax = hist.coords['order']['order', ar.max() + 1]
-    return (vmin, vmax)
-
-
-def find_linear_limits(x: Variable) -> Tuple[Variable, ...]:
-    """
-    Find variable finite min and max.
-    TODO: If we implement finitemin and finitemax for Variable, we would no longer need
-    to go via Numpy's isfinite.
-    """
-    v = x.values
-    finite_vals = v[np.isfinite(v)]
-    finite_min = np.amin(finite_vals)
-    finite_max = np.amax(finite_vals)
-    return (scalar(finite_min, unit=x.unit,
-                   dtype='float64'), scalar(finite_max, unit=x.unit, dtype='float64'))
-
-
-def find_limits(x: Variable,
-                scale: str = None,
-                flip: bool = False) -> Dict[str, Variable]:
+def find_limits(x: Variable, scale: str = "linear") -> Tuple[Variable, ...]:
     """
     Find sensible limits, depending on linear or log scale.
     """
-    if scale is not None:
-        if scale == "log":
-            lims = {"log": find_log_limits(x)}
-        else:
-            lims = {"linear": find_linear_limits(x)}
+    v = x.values
+    finite_vals = v[np.isfinite(v)]
+    if scale == "log":
+        finite_min = np.amin(finite_vals, initial=np.inf, where=finite_vals > 0)
     else:
-        lims = {"log": find_log_limits(x), "linear": find_linear_limits(x)}
-    if flip:
-        for key in lims:
-            lims[key] = np.flip(lims[key]).copy()
-    return lims
+        finite_min = np.amin(finite_vals)
+    finite_max = np.amax(finite_vals)
+
+    return (scalar(finite_min, unit=x.unit,
+                   dtype='float64'), scalar(finite_max, unit=x.unit, dtype='float64'))
 
 
 def fix_empty_range(lims: Tuple[Variable, ...],

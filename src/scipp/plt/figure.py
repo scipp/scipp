@@ -9,6 +9,7 @@ from ..utils import name_with_unit
 
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
+import numpy as np
 from typing import Any, Tuple
 
 
@@ -93,16 +94,22 @@ class Figure:
                          height=height * dpi)
 
     def _autoscale(self):
-        current_xlims = self._ax.get_xlim()
-        current_ylims = self._ax.get_ylim()
-        if self._xmin is None:
-            self._xmin = current_xlims[0]
-        if self._xmax is None:
-            self._xmax = current_xlims[1]
-        if self._ymin is None:
-            self._ymin = current_ylims[0]
-        if self._ymax is None:
-            self._ymax = current_ylims[1]
+        # current_xlims = self._ax.get_xlim()
+        # current_ylims = self._ax.get_ylim()
+        # if self._xmin is None:
+        #     self._xmin = current_xlims[0]
+        # if self._xmax is None:
+        #     self._xmax = current_xlims[1]
+        # if self._ymin is None:
+        #     self._ymin = current_ylims[0]
+        # if self._ymax is None:
+        #     self._ymax = current_ylims[1]
+
+        self._xmin = np.inf
+        self._xmax = np.NINF
+        self._ymin = np.inf
+        self._ymax = np.NINF
+
         xscale = self._ax.get_xscale()
         yscale = self._ax.get_yscale()
         for key, child in self._children.items():
@@ -121,6 +128,7 @@ class Figure:
                 self._ymin = ymin.value
             if ymax.value > self._ymax:
                 self._ymax = ymax.value
+        print(self._ymin, self._ymax)
         self._ax.set_xlim(self._xmin, self._xmax)
         self._ax.set_ylim(self._ymin, self._ymax)
 

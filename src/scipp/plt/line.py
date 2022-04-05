@@ -167,8 +167,9 @@ class Line:
     def get_limits(self, xscale, yscale) -> Tuple[float, ...]:
         """
         """
-        xmin, xmax = fix_empty_range(find_limits(self._data.meta[self._dim])[xscale])
-        ymin, ymax = fix_empty_range(find_limits(self._data.data)[yscale])
+        xmin, xmax = fix_empty_range(
+            find_limits(self._data.meta[self._dim], scale=xscale))
+        ymin, ymax = fix_empty_range(find_limits(self._data.data, scale=yscale))
 
         # Add padding
         if xscale == "log":
