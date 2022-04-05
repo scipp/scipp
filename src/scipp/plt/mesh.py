@@ -62,7 +62,6 @@ class Mesh:
         self._make_mesh()
 
     def _make_mesh(self):
-        # dims = self._data.dims
         self._mesh = self._ax.pcolormesh(self._data.meta[self._dims['x']].values,
                                          self._data.meta[self._dims['y']].values,
                                          self._data.data.values,
@@ -74,17 +73,17 @@ class Mesh:
                                   extend=self._extend,
                                   label=name_with_unit(var=self._data.data, name=""))
 
-        # def on_pick(event):
-        #     val = event.mouseevent.ydata
-        #     selection = np.ma.masked_outside(data, val - 0.05, val + 0.05)
-        #     highlight.set_data(selection)
-        #     fig.canvas.draw()
-
+        # Add event that toggles the norm of the colorbar when clicked on
+        # TODO: change this to a double-click event once this is supported in jupyterlab
+        # see https://github.com/matplotlib/ipympl/pull/446
         self._cbar.ax.set_picker(5)
         self._ax.figure.canvas.mpl_connect('pick_event', self.toggle_norm)
 
         if self._cax is None:
             self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
+        # When we transpose, we remove the mesh and make a new one calling _make_mesh().
+        # To ensure this doesn't add a new colorbar every time we hit transpose, we save
+        # and re-use the colorbar axis.
         self._cax = self._cbar.ax
         self._mesh.set_array(None)
         self._set_norm()
@@ -93,7 +92,6 @@ class Mesh:
     def _rescale_colormap(self):
         """
         """
-        print("self._norm_flag", self._norm_flag)
         vmin, vmax = fix_empty_range(find_limits(self._data.data,
                                                  scale=self._norm_flag))
         if self._user_vmin is not None:
@@ -109,8 +107,6 @@ class Mesh:
 
         self._norm_func.vmin = self._vmin
         self._norm_func.vmax = self._vmax
-        print('vminmax', self._vmin, self._vmax)
-        # self._mesh.set_clim(self._vmin, self._vmax)
 
     def _set_clim(self):
         self._mesh.set_clim(self._vmin, self._vmax)
@@ -143,7 +139,6 @@ class Mesh:
 
     def toggle_norm(self, event):
         self._norm_flag = "log" if self._norm_flag == "linear" else "linear"
-        print("self._norm_flag", self._norm_flag)
         self._vmin = np.inf
         self._vmax = np.NINF
         self._set_norm()
