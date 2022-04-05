@@ -142,11 +142,16 @@ class Figure:
         self._autoscale()
         self._draw_canvas()
 
+    # def pan_or_zoom(self, change):
+    #     func = change["old"] if change["new"] is None else change["new"]
+    #     getattr(self._fig.canvas.toolbar, func)()
+
     def pan_view(self, *_):
         # if change["new"]:
         # In case the zoom button is selected, we need to de-select it
         # if self.members["zoom_view"].value:
         #     self.members["zoom_view"].value = False
+        # fig.canvas.toolbar._current_action
         self._fig.canvas.toolbar.pan()
 
     def zoom_view(self, *_):
@@ -168,6 +173,13 @@ class Figure:
     def toggle_yaxis_scale(self, *_):
         swap_scales = {"linear": "log", "log": "linear"}
         self._ax.set_yscale(swap_scales[self._ax.get_yscale()])
+        self._autoscale()
+        self._draw_canvas()
+
+    def transpose(self, *_):
+        for child in self._children.values():
+            if isinstance(child, Mesh):
+                child.transpose()
         self._autoscale()
         self._draw_canvas()
 

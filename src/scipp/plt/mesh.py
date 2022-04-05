@@ -31,6 +31,7 @@ class Mesh:
 
         self._ax = ax
         self._data = data
+        self._dims = {'x': self._data.dims[1], 'y': self._data.dims[0]}
 
         self._xlabel = None
         self._ylabel = None
@@ -61,9 +62,9 @@ class Mesh:
         self._make_mesh()
 
     def _make_mesh(self):
-        dims = self._data.dims
-        self._mesh = self._ax.pcolormesh(self._data.meta[dims[1]].values,
-                                         self._data.meta[dims[0]].values,
+        # dims = self._data.dims
+        self._mesh = self._ax.pcolormesh(self._data.meta[self._dims['x']].values,
+                                         self._data.meta[self._dims['y']].values,
                                          self._data.data.values,
                                          cmap=self._cmap,
                                          shading='auto')
@@ -74,6 +75,7 @@ class Mesh:
                                   label=name_with_unit(var=self._data.data, name=""))
         if self._cax is None:
             self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
+        self._cax = self._cbar.ax
         self._mesh.set_array(None)
         self._set_norm()
         self._set_mesh_colors()
@@ -112,7 +114,7 @@ class Mesh:
         """
         Update image array with new values.
         """
-        self._data = new_values
+        self._data = new_values.transpose([self._dims['y'], self._dims['x']])
         self._rescale_colormap()
         self._set_mesh_colors()
 
@@ -128,12 +130,15 @@ class Mesh:
         self._set_mesh_colors()
 
     def transpose(self):
-        pass
+        self._dims['x'], self._dims['y'] = self._dims['y'], self._dims['x']
+        self._data = self._data.transpose([self._dims['y'], self._dims['x']])
+        self._mesh.remove()
+        self._make_mesh()
 
     def get_limits(self, xscale, yscale):
-        dims = self._data.dims
-        xmin = self._data.meta[dims[1]][0]
-        xmax = self._data.meta[dims[1]][-1]
-        ymin = self._data.meta[dims[0]][0]
-        ymax = self._data.meta[dims[0]][-1]
+        # dims = self._data.dims
+        xmin = self._data.meta[self._dims['x']][0]
+        xmax = self._data.meta[self._dims['x']][-1]
+        ymin = self._data.meta[self._dims['y']][0]
+        ymax = self._data.meta[self._dims['y']][-1]
         return xmin, xmax, ymin, ymax

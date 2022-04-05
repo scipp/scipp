@@ -5,6 +5,21 @@ import ipywidgets as ipw
 from typing import Callable
 
 
+class ToggleButtons(ipw.ToggleButtons):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.on_msg(self._reset)
+        self._current_value = self.value
+
+    def _reset(self, *ignored):
+        """
+        If the currently selected button is clicked again, set value to None.
+        """
+        if self.value == self._current_value:
+            self.value = None
+        self._current_value = self.value
+
+
 class Toolbar:
     """
     Custom toolbar with additional buttons for controlling log scales and
@@ -55,6 +70,27 @@ class Toolbar:
                                   **kwargs)
         button.observe(callback, names='value')
         self.members[name] = button
+        self._update_container()
+
+    def add_togglebuttons(self, name: str, callback: Callable, value=None, **kwargs):
+        """
+        Create a fake ToggleButton using Button because sometimes we want to
+        change the value of the button without triggering an update, e.g. when
+        we swap the axes.
+        """
+        buttons = ToggleButtons(button_style='',
+                                layout={
+                                    "width": "34px",
+                                    "padding": "0px 0px 0px 0px"
+                                },
+                                style={
+                                    "button_width": "20px",
+                                    "button_padding": "0px 0px 0px 0px"
+                                },
+                                value=value,
+                                **kwargs)
+        buttons.observe(callback, names='value')
+        self.members[name] = buttons
         self._update_container()
 
     def _update_container(self):
