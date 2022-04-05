@@ -128,7 +128,6 @@ class Figure:
                 self._ymin = ymin.value
             if ymax.value > self._ymax:
                 self._ymax = ymax.value
-        print(self._ymin, self._ymax)
         self._ax.set_xlim(self._xmin, self._xmax)
         self._ax.set_ylim(self._ymin, self._ymax)
 

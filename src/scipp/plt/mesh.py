@@ -73,6 +73,16 @@ class Mesh:
                                   cax=self._cax,
                                   extend=self._extend,
                                   label=name_with_unit(var=self._data.data, name=""))
+
+        # def on_pick(event):
+        #     val = event.mouseevent.ydata
+        #     selection = np.ma.masked_outside(data, val - 0.05, val + 0.05)
+        #     highlight.set_data(selection)
+        #     fig.canvas.draw()
+
+        self._cbar.ax.set_picker(5)
+        self._ax.figure.canvas.mpl_connect('pick_event', self.toggle_norm)
+
         if self._cax is None:
             self._cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self._cax = self._cbar.ax
@@ -83,6 +93,7 @@ class Mesh:
     def _rescale_colormap(self):
         """
         """
+        print("self._norm_flag", self._norm_flag)
         vmin, vmax = fix_empty_range(find_limits(self._data.data,
                                                  scale=self._norm_flag))
         if self._user_vmin is not None:
@@ -98,6 +109,10 @@ class Mesh:
 
         self._norm_func.vmin = self._vmin
         self._norm_func.vmax = self._vmax
+        print('vminmax', self._vmin, self._vmax)
+        # self._mesh.set_clim(self._vmin, self._vmax)
+
+    def _set_clim(self):
         self._mesh.set_clim(self._vmin, self._vmax)
 
     def _set_mesh_colors(self):
@@ -116,6 +131,7 @@ class Mesh:
         """
         self._data = new_values.transpose([self._dims['y'], self._dims['x']])
         self._rescale_colormap()
+        self._set_clim()
         self._set_mesh_colors()
 
     def _set_norm(self):
@@ -123,11 +139,16 @@ class Mesh:
         self._norm_func = func()
         self._rescale_colormap()
         self._mesh.set_norm(self._norm_func)
+        self._set_clim()
 
-    def toggle_norm(self, change: dict = None):
-        self._norm_flag = "log" if change["new"] else "linear"
+    def toggle_norm(self, event):
+        self._norm_flag = "log" if self._norm_flag == "linear" else "linear"
+        print("self._norm_flag", self._norm_flag)
+        self._vmin = np.inf
+        self._vmax = np.NINF
         self._set_norm()
         self._set_mesh_colors()
+        self._ax.figure.canvas.draw_idle()
 
     def transpose(self):
         self._dims['x'], self._dims['y'] = self._dims['y'], self._dims['x']
