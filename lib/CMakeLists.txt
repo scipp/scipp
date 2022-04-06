@@ -52,7 +52,7 @@ endif()
 
 conan_cmake_configure(
   REQUIRES
-  benchmark/1.6.0
+  benchmark/1.5.3
   boost/1.76.0
   eigen/3.3.9
   gtest/1.11.0
