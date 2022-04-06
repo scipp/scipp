@@ -533,8 +533,9 @@ def test_sort():
     assert_export(sc.allsorted, x=var, dim='x', order='ascending')
 
 
-def test_islinspace_true():
-    x = sc.Variable(dims=['x'], values=np.arange(5.), unit=sc.units.m)
+@pytest.mark.parametrize('dtype', ['float64', 'float32', 'int64', 'int32'])
+def test_islinspace_true(dtype):
+    x = sc.Variable(dims=['x'], values=np.arange(5.), unit=sc.units.m, dtype=dtype)
     assert sc.islinspace(x, 'x').value
     assert sc.islinspace(x).value
 
