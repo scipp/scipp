@@ -540,8 +540,9 @@ def test_islinspace_true(dtype):
     assert sc.islinspace(x).value
 
 
-def test_islinspace_false():
-    x = sc.Variable(dims=['x'], values=(1, 1.5, 4), unit=sc.units.m)
+@pytest.mark.parametrize('dtype', ['float64', 'float32', 'int64', 'int32'])
+def test_islinspace_false(dtype):
+    x = sc.Variable(dims=['x'], values=(1, 1.5, 4), unit=sc.units.m, dtype=dtype)
     assert not sc.islinspace(x, 'x').value
     assert not sc.islinspace(x).value
 
