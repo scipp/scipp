@@ -187,3 +187,8 @@ def test_with_scalar_dataarray():
 def test_with_scalar_dataset():
     ds = sc.Dataset(data={'a': sc.scalar(value=1.0), 'b': sc.scalar(value=2.0)})
     sc.table(ds)
+
+
+def test_set_max_rows():
+    ds = sc.data.table_xyz(20)
+    sc.table(ds, max_rows=10)
