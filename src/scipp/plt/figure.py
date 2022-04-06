@@ -17,7 +17,7 @@ class Figure:
     def __init__(self,
                  ax: Any = None,
                  figsize: Tuple[float, ...] = None,
-                 title: str = None,
+                 title: str = "",
                  xlabel: str = None,
                  ylabel: str = None,
                  grid: bool = False,
@@ -33,10 +33,6 @@ class Figure:
         self._bounding_box = bounding_box
         self._xlabel = xlabel
         self._ylabel = ylabel
-        self._xmin = None
-        self._xmax = None
-        self._ymin = None
-        self._ymax = None
         self._user_vmin = vmin
         self._user_vmax = vmax
         self._kwargs = kwargs
@@ -77,7 +73,6 @@ class Figure:
         If not, convert the plot to a png image and place inside an ipywidgets
         Image container.
         """
-        # return ipw.HTML(make_html(self._data))
         if self.is_widget() and not self._closed:
             return self._fig.canvas
         else:
@@ -94,22 +89,10 @@ class Figure:
                          height=height * dpi)
 
     def _autoscale(self):
-        # current_xlims = self._ax.get_xlim()
-        # current_ylims = self._ax.get_ylim()
-        # if self._xmin is None:
-        #     self._xmin = current_xlims[0]
-        # if self._xmax is None:
-        #     self._xmax = current_xlims[1]
-        # if self._ymin is None:
-        #     self._ymin = current_ylims[0]
-        # if self._ymax is None:
-        #     self._ymax = current_ylims[1]
-
-        self._xmin = np.inf
-        self._xmax = np.NINF
-        self._ymin = np.inf
-        self._ymax = np.NINF
-
+        global_xmin = np.inf
+        global_xmax = np.NINF
+        global_ymin = np.inf
+        global_ymax = np.NINF
         xscale = self._ax.get_xscale()
         yscale = self._ax.get_yscale()
         for key, child in self._children.items():
@@ -120,16 +103,16 @@ class Figure:
                 if self._user_vmax is not None:
                     ymax = self._user_vmax
 
-            if xmin.value < self._xmin:
-                self._xmin = xmin.value
-            if xmax.value > self._xmax:
-                self._xmax = xmax.value
-            if ymin.value < self._ymin:
-                self._ymin = ymin.value
-            if ymax.value > self._ymax:
-                self._ymax = ymax.value
-        self._ax.set_xlim(self._xmin, self._xmax)
-        self._ax.set_ylim(self._ymin, self._ymax)
+            if xmin.value < global_xmin:
+                global_xmin = xmin.value
+            if xmax.value > global_xmax:
+                global_xmax = xmax.value
+            if ymin.value < global_ymin:
+                global_ymin = ymin.value
+            if ymax.value > global_ymax:
+                global_ymax = ymax.value
+        self._ax.set_xlim(global_xmin, global_xmax)
+        self._ax.set_ylim(global_ymin, global_ymax)
 
     def draw(self):
         """
@@ -149,23 +132,10 @@ class Figure:
         self._autoscale()
         self._draw_canvas()
 
-    # def pan_or_zoom(self, change):
-    #     func = change["old"] if change["new"] is None else change["new"]
-    #     getattr(self._fig.canvas.toolbar, func)()
-
     def pan_view(self, *_):
-        # if change["new"]:
-        # In case the zoom button is selected, we need to de-select it
-        # if self.members["zoom_view"].value:
-        #     self.members["zoom_view"].value = False
-        # fig.canvas.toolbar._current_action
         self._fig.canvas.toolbar.pan()
 
     def zoom_view(self, *_):
-        # if change["new"]:
-        # In case the pan button is selected, we need to de-select it
-        # if self.members["pan_view"].value:
-        #     self.members["pan_view"].value = False
         self._fig.canvas.toolbar.zoom()
 
     def save_view(self, *_):

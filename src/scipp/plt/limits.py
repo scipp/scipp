@@ -1,12 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .. import units
-from .. import values, scalar, histogram, full_like, Variable, DataArray
-from .. import abs as abs_, flatten, ones
+from .. import scalar, Variable
+from .. import abs as abs_
 
 import numpy as np
-from typing import Dict, Tuple
+from typing import Tuple
 
 
 def find_limits(x: Variable, scale: str = "linear") -> Tuple[Variable, ...]:

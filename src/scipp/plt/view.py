@@ -31,11 +31,6 @@ class View:
                                 callback=self.figure.home_view,
                                 icon="home",
                                 tooltip="Autoscale view")
-        # self.toolbar.add_togglebuttons(name="pan_and_zoom",
-        #                                options=[('', 'pan'), (' ', 'zoom')],
-        #                                callback=self.figure.pan_or_zoom,
-        #                                icons=["arrows", "search-plus"],
-        #                                tooltips=["Pan", "Zoom"])
         self.toolbar.add_togglebutton(name="pan_view",
                                       callback=self.figure.pan_view,
                                       icon="arrows",
