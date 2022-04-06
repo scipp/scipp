@@ -3,6 +3,33 @@
 Release Notes
 =============
 
+v0.14.0 (unreleased)
+--------------------
+
+Features
+~~~~~~~~
+
+* Added argument `max_rows` to :func:`scipp.table` `#2526 <https://github.com/scipp/scipp/pull/2526>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas Wynen :sup:`a`
+
 v0.13.1 (April 2022)
 --------------------
 
