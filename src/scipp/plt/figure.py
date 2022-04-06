@@ -102,7 +102,6 @@ class Figure:
                     ymin = self._user_vmin
                 if self._user_vmax is not None:
                     ymax = self._user_vmax
-
             if xmin.value < global_xmin:
                 global_xmin = xmin.value
             if xmax.value > global_xmax:
@@ -159,9 +158,6 @@ class Figure:
                 child.transpose()
         self._autoscale()
         self._draw_canvas()
-
-    def render(self):
-        return
 
     def savefig(self, filename: str = None):
         """

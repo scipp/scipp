@@ -91,25 +91,10 @@ class View:
             self.bottom_bar._to_widget()
         ])
 
-    # def close(self):
-    #     """
-    #     Set the closed flag to True to output static images.
-    #     """
-    #     self.closed = True
-
-    # def show(self):
-    #     """
-    #     Show the matplotlib figure.
-    #     """
-    #     self.fig.show()
-
     def draw(self):
         """
         """
         self.figure.draw()
-
-    def render(self):
-        return self.figure.render()
 
     def update(self, *args, **kwargs):
         return self.figure.update(*args, **kwargs)

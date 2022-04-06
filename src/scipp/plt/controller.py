@@ -29,7 +29,6 @@ class Controller:
 
     def render(self):
         self._run_all_pipelines()
-        self._view.render()
 
     def _run_all_pipelines(self):
         for key in self._pipelines:
