@@ -169,3 +169,10 @@ class TestSliceByValue:
         by_value = self._d['x', :2.5 * sc.units.dimensionless]
         by_index = self._d['x', :2]
         assert sc.identical(by_value, by_index)
+
+
+def test_raises_DimensionError_if_dim_not_given():
+    var = sc.arange('x', 4)
+    da = sc.DataArray(var, coords={'x': var})
+    with pytest.raises(sc.DimensionError):
+        da[sc.scalar(1):sc.scalar(3)]

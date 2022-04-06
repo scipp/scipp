@@ -3,7 +3,15 @@
 Release Notes
 =============
 
-v0.13.0 (unreleased)
+v0.13.1 (April 2022)
+--------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix exception in :func:`scipp.islinspace` for dtypes other than float64 `#2523 <https://github.com/scipp/scipp/pull/2523>`_.
+
+v0.13.0 (March 2022)
 --------------------
 
 Features
@@ -30,12 +38,6 @@ Bugfixes
 * Fix plotting of data with multi-dimension bin-edge coordinate in the presence of a mask that does not depend on the bin-edge dimension `#2505 <https://github.com/scipp/scipp/pull/2505>`_.
 * Fix incorrect axis labels in plots with datetime tick labels `#2507 <https://github.com/scipp/scipp/pull/2507>`_.
 * Fix segfault when calling :func:`scipp.GroupByDataArray.copy` or :func:`scipp.GroupByDataset.copy` with out of bounds index `#2511 <https://github.com/scipp/scipp/pull/2511>`_.
-
-Deprecations
-~~~~~~~~~~~~
-
-Stability, Maintainability, and Testing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Contributors
 ~~~~~~~~~~~~

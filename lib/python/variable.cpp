@@ -131,15 +131,7 @@ of variances.)");
       "islinspace",
       [](const Variable &x,
          const std::optional<Dim> dim = std::optional<Dim>()) {
-        if (!dim.has_value() && x.dims().ndim() != 1)
-          throw scipp::except::VariableError(
-              "islinspace can only be called on a 1D Variable, or with a Dim "
-              "as an optional parameter.");
-        else if (dim.has_value())
-          return scipp::variable::islinspace(x, dim.value());
-        else
-          return makeVariable<bool>(
-              Values{scipp::numeric::islinspace(x.template values<double>())});
+        return scipp::variable::islinspace(x, dim.value_or(x.dim()));
       },
       py::arg("x"), py::arg("dim") = py::none(),
       py::call_guard<py::gil_scoped_release>());
