@@ -3,6 +3,14 @@
 Release Notes
 =============
 
+v0.13.1 (April 2022)
+--------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix exception in :func:`scipp.islinspace` for dtypes other than float64 `#2523 <https://github.com/scipp/scipp/pull/2523>`_.
+
 v0.13.0 (March 2022)
 --------------------
 
