@@ -35,3 +35,25 @@ def test_scalar_Variable_values_property_PyObject():
     'var', (sc.scalar(3.1), sc.scalar(-2), sc.scalar('abc'), sc.scalar([1, 2])))
 def test_scalar_Variable_value_is_same_as_values(var):
     assert var.value == var.values
+
+
+@pytest.mark.parametrize('var', (sc.scalar(4), sc.scalar(4.61), sc.scalar('4')))
+def test_scalar_Variable_conversion_to_builtin_int(var):
+    assert int(var) == 4
+
+
+def test_scalar_Variable_conversion_to_builtin_int_bad_dtype():
+    var = sc.vector(value=[1, 2, 3])
+    with pytest.raises(TypeError):
+        int(var)
+
+
+@pytest.mark.parametrize('var', (sc.scalar(-3), sc.scalar(-3.0), sc.scalar('-3.0')))
+def test_scalar_Variable_conversion_to_builtin_float(var):
+    assert float(var) == -3.0
+
+
+def test_scalar_Variable_conversion_to_builtin_float_bad_dtype():
+    var = sc.vector(value=[1.0, 2.0, 3.0])
+    with pytest.raises(TypeError):
+        float(var)

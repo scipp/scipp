@@ -30,6 +30,19 @@ def bind_get():
         setattr(cls, 'get', method)
 
 
+def _int_dunder(self) -> int:
+    return int(self.value)
+
+
+def _float_dunder(self) -> float:
+    return float(self.value)
+
+
+def bind_conversion_to_builtin(cls):
+    setattr(cls, '__int__', _convert_to_method(name='__int__', func=_int_dunder))
+    setattr(cls, '__float__', _convert_to_method(name='__float__', func=_float_dunder))
+
+
 class _NoDefaultType:
     def __repr__(self):
         return 'NotSpecified'
