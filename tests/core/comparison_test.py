@@ -5,7 +5,7 @@
 import pytest
 import scipp as sc
 import numpy as np
-from .common import assert_export
+from ..common import assert_export
 
 
 def _check_comparison_ops_on(obj):
@@ -71,6 +71,11 @@ def test_allclose_rtol_defaults():
     unit = sc.units.one
     a = sc.Variable(dims=['x'], values=np.array([1, 2, 3]), unit=unit)
     assert sc.allclose(a, a, atol=0 * unit)
+
+
+def test_allclose_no_unit():
+    a = sc.array(dims=['x'], values=[1, 2, 3], unit=None)
+    assert sc.allclose(a, a)
 
 
 def test_identical():
