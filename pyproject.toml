@@ -6,7 +6,7 @@ requires = [
   "conan@git+https://github.com/gabyx/conan.git@feature/improve-cmakedeps-find-package",
   "markupsafe>=1.1.1,<2.1.0",  # see https://github.com/pallets/markupsafe/issues/284
   "ninja",
-  "scikit-build",
+  "scikit-build==0.13.1",
 ]
 build-backend = "setuptools.build_meta"
 
