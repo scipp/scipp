@@ -182,10 +182,10 @@ def isclose(x: _cpp.Variable,
     --------
     scipp.allclose
     """
-    if rtol is None:
-        rtol = scalar(1e-5, unit=_cpp.units.one)
     if atol is None:
         atol = scalar(1e-8, unit=y.unit)
+    if rtol is None:
+        rtol = scalar(1e-5, unit=None if atol.unit is None else _cpp.units.one)
     return _call_cpp_func(_cpp.isclose, x, y, rtol, atol, equal_nan)
 
 
