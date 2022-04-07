@@ -24,21 +24,24 @@ def test_comparison_op_exports_for_variable():
 
 
 def test_isclose():
-    unit = sc.units.one
+    unit = sc.units.m
     a = sc.Variable(dims=['x'], values=np.array([1, 2, 3]), unit=unit)
-    assert sc.all(sc.isclose(a, a, rtol=0 * unit, atol=0 * unit)).value
+    assert sc.identical(sc.isclose(a, a, rtol=0 * sc.units.one, atol=0 * unit),
+                        sc.full(sizes={'x': 3}, value=True))
 
 
 def test_isclose_atol_defaults():
-    unit = sc.units.one
+    unit = sc.units.s
     a = sc.Variable(dims=['x'], values=np.array([1, 2, 3]), unit=unit)
-    assert sc.all(sc.isclose(a, a, rtol=0 * unit)).value
+    assert sc.identical(sc.isclose(a, a, rtol=0 * sc.units.one),
+                        sc.full(sizes={'x': 3}, value=True))
 
 
 def test_isclose_rtol_defaults():
-    unit = sc.units.one
+    unit = sc.units.kg
     a = sc.Variable(dims=['x'], values=np.array([1, 2, 3]), unit=unit)
-    assert sc.all(sc.isclose(a, a, atol=0 * unit)).value
+    assert sc.identical(sc.isclose(a, a, atol=0 * unit),
+                        sc.full(sizes={'x': 3}, value=True))
 
 
 def test_isclose_no_unit():
@@ -47,12 +50,12 @@ def test_isclose_no_unit():
 
 
 def test_allclose():
-    unit = sc.units.one
+    unit = sc.units.mm
     a = sc.Variable(dims=['x'], values=np.array([1, 2, 3]), unit=unit)
-    assert sc.allclose(a, a, 0 * unit, 0 * unit)
+    assert sc.allclose(a, a, rtol=0 * sc.units.one, atol=0 * unit)
     b = a.copy()
     b['x', 0] = 2
-    assert not sc.allclose(a, b, 0 * unit, 0 * unit)
+    assert not sc.allclose(a, b, rtol=0 * sc.units.one, atol=0 * unit)
 
 
 def test_allclose_vectors():
@@ -62,13 +65,13 @@ def test_allclose_vectors():
 
 
 def test_allclose_atol_defaults():
-    unit = sc.units.one
+    unit = sc.units.m
     a = sc.Variable(dims=['x'], values=np.array([1, 2, 3]), unit=unit)
-    assert sc.allclose(a, a, rtol=0 * unit)
+    assert sc.allclose(a, a, rtol=0 * sc.units.one)
 
 
 def test_allclose_rtol_defaults():
-    unit = sc.units.one
+    unit = sc.units.s
     a = sc.Variable(dims=['x'], values=np.array([1, 2, 3]), unit=unit)
     assert sc.allclose(a, a, atol=0 * unit)
 
