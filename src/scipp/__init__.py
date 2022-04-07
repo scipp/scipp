@@ -38,12 +38,6 @@ from ._scipp.core import as_const, choose
 from .show import show, make_svg
 from .table import table
 
-from .plotting import plot
-
-setattr(Variable, 'plot', plot)
-setattr(DataArray, 'plot', plot)
-setattr(Dataset, 'plot', plot)
-
 from .html import to_html, make_html
 
 setattr(Variable, '_repr_html_', make_html)
@@ -113,3 +107,9 @@ del _binding
 from . import data
 from . import serialization
 from . import spatial
+
+from .plotting import plot
+
+setattr(Variable, 'plot', plot)
+setattr(DataArray, 'plot', plot)
+setattr(Dataset, 'plot', plot)
