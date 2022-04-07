@@ -41,6 +41,11 @@ def test_isclose_rtol_defaults():
     assert sc.all(sc.isclose(a, a, atol=0 * unit)).value
 
 
+def test_isclose_no_unit():
+    a = sc.array(dims=['x'], values=[1, 2, 3], unit=None)
+    assert sc.identical(sc.isclose(a, a), sc.full(sizes={'x': 3}, value=True))
+
+
 def test_allclose():
     unit = sc.units.one
     a = sc.Variable(dims=['x'], values=np.array([1, 2, 3]), unit=unit)

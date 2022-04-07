@@ -6,8 +6,9 @@
 from __future__ import annotations
 
 from .._scipp import core as _cpp
+from ..typing import VariableLike
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from ..typing import VariableLike, VariableLike
+from .variable import scalar
 
 
 def less(x: VariableLike, y: VariableLike) -> VariableLike:
@@ -182,9 +183,9 @@ def isclose(x: _cpp.Variable,
     scipp.allclose
     """
     if rtol is None:
-        rtol = 1e-5 * _cpp.units.one
+        rtol = scalar(1e-5, unit=_cpp.units.one)
     if atol is None:
-        atol = 1e-8 * y.unit
+        atol = scalar(1e-8, unit=y.unit)
     return _call_cpp_func(_cpp.isclose, x, y, rtol, atol, equal_nan)
 
 

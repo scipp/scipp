@@ -32,11 +32,18 @@ try_isclose_spatial(const Variable &a, const Variable &b, const Variable &rtol,
   else
     return std::nullopt;
 }
+
+void expect_rtol_unit_dimensionless_or_none(const Variable &rtol,
+                                            const Variable &ref) {
+  const auto expected = ref.unit() == units::none ? scipp::units::none
+                                                  : scipp::units::dimensionless;
+  core::expect::unit(rtol, expected, " For rtol arg");
+}
 } // namespace
 
 Variable isclose(const Variable &a, const Variable &b, const Variable &rtol,
                  const Variable &atol, const NanComparisons equal_nans) {
-  core::expect::unit(rtol, scipp::units::dimensionless, " For rtol arg");
+  expect_rtol_unit_dimensionless_or_none(rtol, atol);
   if (const auto r =
           try_isclose_spatial<Eigen::Vector3d, Eigen::Matrix3d, Eigen::Affine3d,
                               core::Translation, core::Quaternion>(
