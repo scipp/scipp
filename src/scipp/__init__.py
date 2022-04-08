@@ -27,8 +27,7 @@ from .core import Variable, DataArray, Dataset, DType, Unit
 # Import errors
 from .core import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
-                         DTypeError, SizeError, SliceError, \
-                         UnitError, VariableError, VariancesError
+                         DTypeError, UnitError, VariableError, VariancesError
 # Import submodules
 from . import units
 from . import geometry

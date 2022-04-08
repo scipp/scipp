@@ -8,5 +8,4 @@ from .._scipp.core import Coords, DataArray, Dataset, DType, GroupByDataArray, \
 
 from .._scipp.core import BinEdgeError, BinnedDataError, CoordError, \
     DataArrayError, DatasetError, DimensionError, \
-    DTypeError, SizeError, SliceError, \
-    UnitError, VariableError, VariancesError
+    DTypeError, UnitError, VariableError, VariancesError
