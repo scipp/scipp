@@ -3,7 +3,8 @@
 
 from .controller import Controller
 from .. import DataArray
-from .view import View
+from .figure import Figure
+from .model import Model
 from .widgets import WidgetCollection, WidgetFilter
 
 from typing import Dict
@@ -69,18 +70,37 @@ class PlotDict():
 class Plot:
     """
     """
-    def __init__(self, models: Dict[str, DataArray], filters: list = None, **kwargs):
+    def __init__(self,
+                 data_arrays: Dict[str, DataArray],
+                 filters: list = None,
+                 **kwargs):
 
-        self._view = View(**kwargs)
-        self._models = models
+        self._views = {"figure": Figure(**kwargs)}
+        self._models = {
+            key: Model(data=array, parent=self, name=key)
+            for key, array in data_arrays.items()
+        }
         self._widgets = WidgetCollection()
-        self._controller = Controller(models=self._models, view=self._view)
+        # self._controller = Controller(models=self._models, view=self._view)
 
-        if filters is not None:
+        if isinstance(filters, list):
             for f in filters:
-                self._controller.add_filter(f)
-                if isinstance(f, WidgetFilter):
-                    self._widgets.append(f)
+                for model in self._models.values():
+                    model.add_filter(f)
+        if isinstance(filters, dict):
+            for key, filter_list in filters.items():
+                for f in filter_list:
+                    self._models[key].add_filter(f)
+
+        # if filters is not None:
+        #     for f in filters:
+        #         self._controller.add_filter(f)
+        #         if isinstance(f, WidgetFilter):
+        #             self._widgets.append(f)
+
+    def notify_change(self, change):
+        for view in self._views.values():
+            view.notify_change(change)
 
     def _ipython_display_(self):
         """

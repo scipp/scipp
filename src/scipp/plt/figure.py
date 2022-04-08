@@ -13,6 +13,17 @@ import numpy as np
 from typing import Any, Tuple
 
 
+class SideBar:
+    def __init__(self, children=None):
+        self._children = children if children is not None else []
+
+    def _ipython_display_(self):
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+        return ipw.VBox([child._to_widget() for child in self._children])
+
+
 class Figure:
     def __init__(self,
                  ax: Any = None,
@@ -37,6 +48,39 @@ class Figure:
         self._user_vmax = vmax
         self._kwargs = kwargs
 
+        self.toolbar = Toolbar()
+        self.toolbar.add_button(name="home_view",
+                                callback=self.home_view,
+                                icon="home",
+                                tooltip="Autoscale view")
+        self.toolbar.add_togglebutton(name="pan_view",
+                                      callback=self.pan_view,
+                                      icon="arrows",
+                                      tooltip="Pan")
+        self.toolbar.add_togglebutton(name="zoom_view",
+                                      callback=self.zoom_view,
+                                      icon="search-plus",
+                                      tooltip="Zoom")
+        self.toolbar.add_togglebutton(name='toggle_xaxis_scale',
+                                      callback=self.toggle_xaxis_scale,
+                                      description="logx")
+        self.toolbar.add_togglebutton(name="toggle_yaxis_scale",
+                                      callback=self.toggle_yaxis_scale,
+                                      description="logy")
+        self.toolbar.add_button(name="transpose",
+                                callback=self.transpose,
+                                icon="retweet",
+                                tooltip="Transpose")
+        self.toolbar.add_button(name="save_view",
+                                callback=self.save_view,
+                                icon="save",
+                                tooltip="Save")
+
+        self.left_bar = SideBar([self.toolbar])
+        self.right_bar = SideBar()
+        self.bottom_bar = SideBar()
+        self.top_bar = SideBar()
+
         self._children = {}
 
         cfg = config['plot']
@@ -59,6 +103,10 @@ class Figure:
         self._legend = False
         self._new_artist = False
 
+    def notify_change(self, change):
+        if change["type"] == "data":
+            return
+
     def is_widget(self) -> bool:
         """
         Check whether we are using the Matplotlib widget backend or not.
@@ -73,10 +121,15 @@ class Figure:
         If not, convert the plot to a png image and place inside an ipywidgets
         Image container.
         """
-        if self.is_widget() and not self._closed:
-            return self._fig.canvas
-        else:
-            return self._to_image()
+        canvas = self._fig.canvas if (self.is_widget()
+                                      and not self._closed) else self._to_image()
+
+        return ipw.VBox([
+            self.top_bar._to_widget(),
+            ipw.HBox([self.left_bar._to_widget(), canvas,
+                      self.right_bar._to_widget()]),
+            self.bottom_bar._to_widget()
+        ])
 
     def _to_image(self) -> ipw.Image:
         """
@@ -168,7 +221,7 @@ class Figure:
         """
         self._fig.savefig(filename, bbox_inches="tight")
 
-    def update(self, new_values: DataArray = None, key: str = None, draw: bool = True):
+    def update(self, new_values: DataArray, key: str, draw: bool = True):
         """
         Update image array with new values.
         """

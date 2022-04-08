@@ -3,16 +3,15 @@
 
 from .. import DataArray
 
-
-class Pipeline(list):
-    """
-    A Pipeline is a list of filters that will be applied to the data
-    """
-    def run(self, model: DataArray):
-        out = model
-        for item in self:
-            out = item(out)
-        return out
+# class Pipeline(list):
+#     """
+#     A Pipeline is a list of filters that will be applied to the data
+#     """
+#     def run(self, model: DataArray):
+#         out = model
+#         for item in self:
+#             out = item(out)
+#         return out
 
 
 class Filter:
