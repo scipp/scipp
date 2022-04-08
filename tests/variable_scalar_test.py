@@ -54,6 +54,12 @@ def test_scalar_Variable_conversion_to_builtin_int_bad_unit():
         int(var)
 
 
+def test_scalar_Variable_conversion_to_builtin_int_with_variance():
+    var = sc.scalar(7.0, variance=2.0)
+    with pytest.raises(sc.VariancesError):
+        int(var)
+
+
 @pytest.mark.parametrize('var', (sc.scalar(-3), sc.scalar(-3.0), sc.scalar('-3.0')))
 def test_scalar_Variable_conversion_to_builtin_float(var):
     assert float(var) == -3.0
@@ -68,4 +74,10 @@ def test_scalar_Variable_conversion_to_builtin_float_bad_dtype():
 def test_scalar_Variable_conversion_to_builtin_float_bad_unit():
     var = sc.scalar(7, unit='m')
     with pytest.raises(sc.UnitError):
+        float(var)
+
+
+def test_scalar_Variable_conversion_to_builtin_float_with_variance():
+    var = sc.scalar(7.0, variance=2.0)
+    with pytest.raises(sc.VariancesError):
         float(var)

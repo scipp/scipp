@@ -35,13 +35,20 @@ def _expect_dimensionless_or_unitless(x):
         raise core.UnitError(f'Expected unit dimensionless or no unit, got {x.unit}.')
 
 
+def _expect_no_variance(x):
+    if x.variance is not None:
+        raise core.VariancesError('Expected input without variances.')
+
+
 def _int_dunder(self) -> int:
     _expect_dimensionless_or_unitless(self)
+    _expect_no_variance(self)
     return int(self.value)
 
 
 def _float_dunder(self) -> float:
     _expect_dimensionless_or_unitless(self)
+    _expect_no_variance(self)
     return float(self.value)
 
 
