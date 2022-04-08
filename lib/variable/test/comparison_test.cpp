@@ -204,6 +204,20 @@ TEST(IsCloseTest, rtol_units) {
                        except::UnitError);
 }
 
+TEST(IsCloseTest, no_unit) {
+  const auto a = makeVariable<double>(Values{1.0}, Variances{1.0}, units::none);
+  EXPECT_EQ(isclose(a, a, 1.0 * scipp::units::none, 1.0 * scipp::units::none),
+            true * scipp::units::none);
+  EXPECT_THROW_DISCARD(isclose(a, a, 1.0 * scipp::units::dimensionless,
+                               1.0 * scipp::units::none),
+                       except::UnitError);
+  const auto b =
+      makeVariable<double>(Values{1.0}, Variances{1.0}, units::dimensionless);
+  EXPECT_THROW_DISCARD(isclose(b, b, 1.0 * scipp::units::dimensionless,
+                               1.0 * scipp::units::none),
+                       except::UnitError);
+}
+
 TEST(ComparisonTest, variances_test) {
   const auto a = makeVariable<float>(Values{1.0}, Variances{1.0});
   const auto b = makeVariable<float>(Values{2.0}, Variances{2.0});

@@ -17,6 +17,8 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
+* Fix :func:`scipp.isclose` and :func:`scipp.allclose` to support arguments without a unit `#2528 <https://github.com/scipp/scipp/pull/2528>`_.
+
 Deprecations
 ~~~~~~~~~~~~
 
