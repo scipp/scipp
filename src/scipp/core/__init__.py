@@ -23,15 +23,6 @@ from .cpp_classes import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
                          DTypeError, UnitError, VariableError, VariancesError
 
-BinEdgeError.__doc__ = 'Inappropriate bin-edge coordinate.'
-BinnedDataError.__doc__ = 'Incorrect use of binned data.'
-CoordError.__doc__ = 'Bad coordinate values or mismatching coordinates.'
-UnitError.__doc__ = 'Inappropriate unit value.'
-DimensionError.__doc__ = 'Inappropriate dimension labels and/or shape.'
-DTypeError.__doc__ = 'Inappropriate dtype.'
-VariancesError.__doc__ = 'Variances used where they are not supported or not used where they are required.'
-VariableError.__doc__ = 'Incorrect use of a scipp.Variable.'
-
 from .._scipp.core import get_slice_params
 
 from .dimensions import _make_sizes, _rename_variable, _rename_data_array, _rename_dataset
