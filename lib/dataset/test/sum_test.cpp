@@ -124,6 +124,6 @@ TEST_F(ReduceBinnedTest, masked) {
   buffer.masks().set("mask", less(data, data));
   binned = make_bins(indices, Dim::X, buffer);
   // Event masks not supported yet in reduction ops.
-  EXPECT_THROW_DISCARD(sum(binned), except::BinnedDataError);
-  EXPECT_THROW_DISCARD(mean(binned), except::BinnedDataError);
+  EXPECT_THROW_DISCARD(sum(binned), except::NotImplementedError);
+  EXPECT_THROW_DISCARD(mean(binned), except::NotImplementedError);
 }
