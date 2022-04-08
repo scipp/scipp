@@ -30,11 +30,18 @@ def bind_get():
         setattr(cls, 'get', method)
 
 
+def _expect_dimensionless_or_unitless(x):
+    if x.unit is not None and x.unit != core.units.dimensionless:
+        raise core.UnitError(f'Expected unit dimensionless or no unit, got {x.unit}.')
+
+
 def _int_dunder(self) -> int:
+    _expect_dimensionless_or_unitless(self)
     return int(self.value)
 
 
 def _float_dunder(self) -> float:
+    _expect_dimensionless_or_unitless(self)
     return float(self.value)
 
 
