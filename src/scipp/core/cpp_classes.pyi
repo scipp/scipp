@@ -63,9 +63,7 @@ __all__ = [
     "Masks_items_view",
     "Masks_keys_view",
     "Masks_values_view",
-    "SizeError",
     "Slice",
-    "SliceError",
     "Unit",
     "UnitError",
     "Variable",
@@ -78,10 +76,13 @@ class BinEdgeError(RuntimeError, Exception, BaseException):
     """
     pass
 class BinnedDataError(RuntimeError, Exception, BaseException):
+    """
+    Incorrect use of binned data.
+    """
     pass
 class CoordError(RuntimeError, Exception, BaseException):
     """
-    Inappropriate coordinate values.
+    Bad coordinate values or mismatching coordinates.
     """
     pass
 class Coords():
@@ -143,6 +144,9 @@ class DType():
     """
     Representation of a data type of a Variable in scipp.
     See https://scipp.github.io/reference/dtype.html for details.
+
+    The data types ``VariableView``, ``DataArrayView``, and ``DatasetView`` are used for
+    objects containing binned data. They cannot be used directly to create arrays of bins.
     """
     def __eq__(self, arg0: object) -> bool: ...
     def __init__(self, arg0: object) -> None: ...
@@ -153,7 +157,6 @@ class DType():
     Dataset: DType # value = DType('Dataset')
     DatasetView: DType # value = DType('DatasetView')
     PyObject: DType # value = DType('PyObject')
-    SubbinSizes: DType # value = DType('SubbinSizes')
     Variable: DType # value = DType('Variable')
     VariableView: DType # value = DType('VariableView')
     __hash__ = None
@@ -162,45 +165,13 @@ class DType():
     datetime64: DType # value = DType('datetime64')
     float32: DType # value = DType('float32')
     float64: DType # value = DType('float64')
-    index_pair: DType # value = DType('index_pair')
     int32: DType # value = DType('int32')
     int64: DType # value = DType('int64')
     linear_transform3: DType # value = DType('linear_transform3')
     rotation3: DType # value = DType('rotation3')
-    span_bool: DType # value = DType('span_bool')
-    span_const_bool: DType # value = DType('span_const_bool')
-    span_const_datetime64: DType # value = DType('span_const_datetime64')
-    span_const_float32: DType # value = DType('span_const_float32')
-    span_const_float64: DType # value = DType('span_const_float64')
-    span_const_int32: DType # value = DType('span_const_int32')
-    span_const_int64: DType # value = DType('span_const_int64')
-    span_const_string: DType # value = DType('span_const_string')
-    span_const_vector_3_float64: DType # value = DType('span_const_vector_3_float64')
-    span_datetime64: DType # value = DType('span_datetime64')
-    span_float32: DType # value = DType('span_float32')
-    span_float64: DType # value = DType('span_float64')
-    span_int32: DType # value = DType('span_int32')
-    span_int64: DType # value = DType('span_int64')
-    span_string: DType # value = DType('span_string')
-    span_vector_3_float64: DType # value = DType('span_vector_3_float64')
     string: DType # value = DType('string')
     translation3: DType # value = DType('translation3')
-    unordered_map_bool_to_int32_t: DType # value = DType('unordered_map_bool_to_int32_t')
-    unordered_map_bool_to_int64_t: DType # value = DType('unordered_map_bool_to_int64_t')
-    unordered_map_datetime64_to_int32_t: DType # value = DType('unordered_map_datetime64_to_int32_t')
-    unordered_map_datetime64_to_int64_t: DType # value = DType('unordered_map_datetime64_to_int64_t')
-    unordered_map_double_to_int32_t: DType # value = DType('unordered_map_double_to_int32_t')
-    unordered_map_double_to_int64_t: DType # value = DType('unordered_map_double_to_int64_t')
-    unordered_map_float32_to_int32_t: DType # value = DType('unordered_map_float32_to_int32_t')
-    unordered_map_float32_to_int64_t: DType # value = DType('unordered_map_float32_to_int64_t')
-    unordered_map_float64_to_int32_t: DType # value = DType('unordered_map_float64_to_int32_t')
-    unordered_map_float64_to_int64_t: DType # value = DType('unordered_map_float64_to_int64_t')
-    unordered_map_float_to_int32_t: DType # value = DType('unordered_map_float_to_int32_t')
-    unordered_map_float_to_int64_t: DType # value = DType('unordered_map_float_to_int64_t')
-    unordered_map_string_to_int32_t: DType # value = DType('unordered_map_string_to_int32_t')
-    unordered_map_string_to_int64_t: DType # value = DType('unordered_map_string_to_int64_t')
     vector3: DType # value = DType('vector3')
-    void: DType # value = DType('void')
     pass
 class DTypeError(TypeError, Exception, BaseException):
     """
@@ -261,11 +232,15 @@ class DataArray():
     @typing.overload
     def __getitem__(self, arg0: slice) -> DataArray: ...
     @typing.overload
+    def __getitem__(self, arg0: typing.List[int]) -> DataArray: ...
+    @typing.overload
     def __getitem__(self, arg0: typing.Tuple[Dim, Variable]) -> DataArray: ...
     @typing.overload
     def __getitem__(self, arg0: typing.Tuple[Dim, int]) -> DataArray: ...
     @typing.overload
     def __getitem__(self, arg0: typing.Tuple[Dim, slice]) -> DataArray: ...
+    @typing.overload
+    def __getitem__(self, arg0: typing.Tuple[Dim, typing.List[int]]) -> DataArray: ...
     @typing.overload
     def __gt__(self, arg0: DataArray) -> DataArray: ...
     @typing.overload
@@ -667,6 +642,9 @@ class DataArray():
     def transform_coords(self, targets: typing.Union[str, typing.Iterable[str]], graph: typing.Dict[typing.Union[str, typing.Tuple[str, ...]], typing.Union[str, typing.Callable]], *, rename_dims: bool = True, keep_aliases: bool = True, keep_intermediate: bool = True, keep_inputs: bool = True, quiet: bool = False) -> typing.Union[DataArray, Dataset]: ...
     def transpose(self, dims: typing.Union[typing.List[str], typing.Tuple[str, ...], None] = None) -> typing.Union[Variable, DataArray, Dataset]: ...
 class DataArrayError(RuntimeError, Exception, BaseException):
+    """
+    Incorrect use of scipp.DataArray.
+    """
     pass
 class Dataset():
     """
@@ -701,11 +679,15 @@ class Dataset():
     @typing.overload
     def __getitem__(self, arg0: str) -> DataArray: ...
     @typing.overload
+    def __getitem__(self, arg0: typing.List[int]) -> Dataset: ...
+    @typing.overload
     def __getitem__(self, arg0: typing.Tuple[Dim, Variable]) -> Dataset: ...
     @typing.overload
     def __getitem__(self, arg0: typing.Tuple[Dim, int]) -> Dataset: ...
     @typing.overload
     def __getitem__(self, arg0: typing.Tuple[Dim, slice]) -> Dataset: ...
+    @typing.overload
+    def __getitem__(self, arg0: typing.Tuple[Dim, typing.List[int]]) -> Dataset: ...
     @typing.overload
     def __iadd__(self, arg0: DataArray) -> object: ...
     @typing.overload
@@ -889,6 +871,9 @@ class Dataset():
     def to_hdf5(self, filename: 'typing.Union[str, Path]'): ...
     def transform_coords(self, targets: typing.Union[str, typing.Iterable[str]], graph: typing.Dict[typing.Union[str, typing.Tuple[str, ...]], typing.Union[str, typing.Callable]], *, rename_dims: bool = True, keep_aliases: bool = True, keep_intermediate: bool = True, keep_inputs: bool = True, quiet: bool = False) -> typing.Union[DataArray, Dataset]: ...
 class DatasetError(RuntimeError, Exception, BaseException):
+    """
+    Incorrect use of scipp.Dataset.
+    """
     pass
 class Dataset_items_view():
     @staticmethod
@@ -1357,11 +1342,7 @@ class Masks_values_view():
     def __iter__(self) -> typing.Iterator: ...
     def __len__(self) -> int: ...
     pass
-class SizeError(RuntimeError, Exception, BaseException):
-    pass
 class Slice():
-    pass
-class SliceError(IndexError, LookupError, Exception, BaseException):
     pass
 class Unit():
     """
@@ -1388,7 +1369,7 @@ class Unit():
     pass
 class UnitError(RuntimeError, Exception, BaseException):
     """
-    Inappropriate unit value.
+    Inappropriate unit.
     """
     pass
 class Variable():
@@ -1446,9 +1427,13 @@ class Variable():
     @typing.overload
     def __getitem__(self, arg0: slice) -> Variable: ...
     @typing.overload
+    def __getitem__(self, arg0: typing.List[int]) -> Variable: ...
+    @typing.overload
     def __getitem__(self, arg0: typing.Tuple[Dim, int]) -> Variable: ...
     @typing.overload
     def __getitem__(self, arg0: typing.Tuple[Dim, slice]) -> Variable: ...
+    @typing.overload
+    def __getitem__(self, arg0: typing.Tuple[Dim, typing.List[int]]) -> Variable: ...
     @typing.overload
     def __gt__(self, arg0: Variable) -> Variable: ...
     @typing.overload
@@ -1804,6 +1789,12 @@ class Variable():
     def to_hdf5(self, filename: 'typing.Union[str, Path]'): ...
     def transpose(self, dims: typing.Union[typing.List[str], typing.Tuple[str, ...], None] = None) -> typing.Union[Variable, DataArray, Dataset]: ...
 class VariableError(RuntimeError, Exception, BaseException):
+    """
+    Incorrect use of scipp.Variable.
+    """
     pass
 class VariancesError(RuntimeError, Exception, BaseException):
+    """
+    Variances used where they are not supported or not used where they are required.
+    """
     pass
