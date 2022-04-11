@@ -49,11 +49,15 @@ Variable to_unit(const Variable &var, const units::Unit &unit,
         "information about calendars and time zones.");
   }
   Variable scalevar;
-  if (const auto iscale = std::round(scale);
+  // Need to make sure that errors due to machine precision actually affect
+  // decimal places, otherwise the apporhac based on std::round will do nothing.
+  const auto base_scale = scale > 1e6 ? scale * 1e-6 : scale;
+  if (const auto iscale = std::round(base_scale);
       (var.dtype() == dtype<int64_t> ||
-       var.dtype() == dtype<core::time_point>)&&(std::abs(scale - iscale) <
-                                                 1e-12 * std::abs(scale)))
-    scalevar = static_cast<int64_t>(iscale) * unit;
+       var.dtype() == dtype<core::time_point>)&&(std::abs(base_scale - iscale) <
+                                                 1e-12 * std::abs(base_scale)))
+    scalevar = int64_t{scale > 1e6 ? 1000000 : 1} *
+               static_cast<int64_t>(iscale) * unit;
   else
     scalevar = scale * unit;
   return variable::transform(var, scalevar, core::element::to_unit, "to_unit");
