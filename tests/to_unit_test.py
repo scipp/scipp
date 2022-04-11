@@ -34,5 +34,5 @@ def test_datetime64_to_ns_is_precise(year):
 
 def test_int64_seconds_to_ns_is_precise():
     assert sc.identical(
-            sc.scalar(9223372036, unit='s').to(unit='ns'),
-            sc.scalar(9223372036000000000, unit='ns'))
+            sc.scalar(9223372036, dtype='int64', unit='s').to(unit='ns'),
+            sc.scalar(9223372036000000000, dtype='int64', unit='ns'))
