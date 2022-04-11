@@ -40,7 +40,8 @@ constexpr auto round = [](const auto x) {
 
 constexpr auto to_unit = overloaded{
     arg_list<double, std::tuple<float, double>, std::tuple<int64_t, double>,
-             std::tuple<int32_t, double>, std::tuple<time_point, double>,
+             std::tuple<int64_t, int64_t>, std::tuple<int32_t, double>,
+             std::tuple<time_point, double>, std::tuple<time_point, int64_t>,
              std::tuple<Eigen::Vector3d, double>,
              std::tuple<Eigen::Affine3d, double>,
              std::tuple<Translation, double>>,
