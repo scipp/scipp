@@ -345,6 +345,7 @@ def test_plot_redraw():
     da *= 5.0
     p.redraw()
     assert p.view.figure._lines[''].data.get_ydata()[2] == 50.0 * np.sin(2.0)
+    p.close()
 
 
 def test_plot_redraw_int64():
@@ -354,6 +355,7 @@ def test_plot_redraw_int64():
     da *= 5
     p.redraw()
     assert p.view.figure._lines[''].data.get_ydata()[2] == int(50.0 * np.sin(2.0))
+    p.close()
 
 
 def test_scale_arg_subplots_independent_dims():
@@ -365,4 +367,4 @@ def test_scale_arg_subplots_independent_dims():
 
 def test_plot_binned_with_mask():
     da = make_binned_data_array(ndim=1, masks=True)
-    da.plot()
+    da.plot().close()

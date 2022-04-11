@@ -6,4 +6,4 @@ generated/
 *.hdf5
 
 # Plots
-visualization/*.pdf
+visualization/plotting/*.pdf
