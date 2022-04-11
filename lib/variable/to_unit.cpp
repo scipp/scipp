@@ -50,8 +50,9 @@ Variable to_unit(const Variable &var, const units::Unit &unit,
   }
   Variable scalevar;
   if (const auto iscale = std::round(scale);
-      var.dtype() == dtype<core::time_point> &&
-      std::abs(scale - iscale) < 1e-12 * std::abs(scale))
+      (var.dtype() == dtype<int64_t> ||
+       var.dtype() == dtype<core::time_point>)&&(std::abs(scale - iscale) <
+                                                 1e-12 * std::abs(scale)))
     scalevar = static_cast<int64_t>(iscale) * unit;
   else
     scalevar = scale * unit;
