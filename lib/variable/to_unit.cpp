@@ -2,6 +2,7 @@
 // Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <cmath>
 #include <units/units.hpp>
 
 #include "scipp/core/element/to_unit.h"
@@ -47,8 +48,14 @@ Variable to_unit(const Variable &var, const units::Unit &unit,
         "This limitation exists because such conversions would require "
         "information about calendars and time zones.");
   }
-  return variable::transform(var, scale * unit, core::element::to_unit,
-                             "to_unit");
+  Variable scalevar;
+  if (const auto iscale = std::round(scale);
+      var.dtype() == dtype<core::time_point> &&
+      std::abs(scale - iscale) < 1e-12 * std::abs(scale))
+    scalevar = static_cast<int64_t>(iscale) * unit;
+  else
+    scalevar = scale * unit;
+  return variable::transform(var, scalevar, core::element::to_unit, "to_unit");
 }
 
 } // namespace scipp::variable
