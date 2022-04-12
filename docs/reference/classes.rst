@@ -40,10 +40,15 @@ Exceptions
    :recursive:
 
    BinEdgeError
+   BinnedDataError
    CoordError
+   DataArrayError
+   DatasetError
    DimensionError
    DTypeError
    UnitError
+   VariableError
+   VariancesError
 
 Typing
 ------

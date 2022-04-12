@@ -149,6 +149,7 @@ def test_plot_redraw():
     p.redraw()
     after = p.view.figure.points_geometry.attributes["color"].array
     assert np.any(before != after)
+    p.close()
 
 
 def test_plot_projection_3d_with_camera():

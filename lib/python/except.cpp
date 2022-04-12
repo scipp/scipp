@@ -12,6 +12,7 @@
 namespace py = pybind11;
 
 namespace {
+/// Translate an exception into a standard Python exception.
 template <class CppException, class PyException>
 void register_with_builtin_exception(const PyException &py_exception) {
   // Pybind11 does not like it when the lambda captures something,
@@ -26,32 +27,50 @@ void register_with_builtin_exception(const PyException &py_exception) {
     }
   });
 }
+
+template <class CppException>
+void register_exception(py::handle scope, const char *name, py::handle base,
+                        const char *doc) {
+  auto exc = py::register_exception<CppException>(scope, name, base);
+  exc.doc() = doc;
+}
 } // namespace
 
 void init_exceptions(py::module &m) {
   using namespace scipp;
-  py::register_exception<except::UnitError>(m, "UnitError", PyExc_RuntimeError);
 
-  py::register_exception<except::TypeError>(m, "DTypeError", PyExc_TypeError);
-  py::register_exception<except::DimensionError>(m, "DimensionError",
-                                                 PyExc_RuntimeError);
-  py::register_exception<except::BinnedDataError>(m, "BinnedDataError",
-                                                  PyExc_RuntimeError);
-  py::register_exception<except::SizeError>(m, "SizeError", PyExc_RuntimeError);
-  py::register_exception<except::SliceError>(m, "SliceError", PyExc_IndexError);
-  py::register_exception<except::VariancesError>(m, "VariancesError",
-                                                 PyExc_RuntimeError);
-  py::register_exception<except::BinEdgeError>(m, "BinEdgeError",
-                                               PyExc_RuntimeError);
+  register_exception<except::BinEdgeError>(
+      m, "BinEdgeError", PyExc_RuntimeError,
+      "Inappropriate bin-edge coordinate.");
+  register_exception<except::BinnedDataError>(m, "BinnedDataError",
+                                              PyExc_RuntimeError,
+                                              "Incorrect use of binned data.");
+  register_exception<except::CoordMismatchError>(
+      m, "CoordError", PyExc_RuntimeError,
+      "Bad coordinate values or mismatching coordinates.");
+  register_exception<except::DataArrayError>(
+      m, "DataArrayError", PyExc_RuntimeError,
+      "Incorrect use of scipp.DataArray.");
+  register_exception<except::DatasetError>(
+      m, "DatasetError", PyExc_RuntimeError, "Incorrect use of scipp.Dataset.");
+  register_exception<except::DimensionError>(
+      m, "DimensionError", PyExc_RuntimeError,
+      "Inappropriate dimension labels and/or shape.");
+  register_exception<except::TypeError>(m, "DTypeError", PyExc_TypeError,
+                                        "Inappropriate dtype.");
+  register_exception<except::UnitError>(m, "UnitError", PyExc_RuntimeError,
+                                        "Inappropriate unit.");
+  register_exception<except::VariableError>(m, "VariableError",
+                                            PyExc_RuntimeError,
+                                            "Incorrect use of scipp.Variable.");
+  register_exception<except::VariancesError>(
+      m, "VariancesError", PyExc_RuntimeError,
+      "Variances used where they are not supported or not used where they are "
+      "required.");
+
+  register_with_builtin_exception<except::SizeError>(PyExc_ValueError);
+  register_with_builtin_exception<except::SliceError>(PyExc_IndexError);
   register_with_builtin_exception<except::NotFoundError>(PyExc_KeyError);
-
-  py::register_exception<except::VariableError>(m, "VariableError",
-                                                PyExc_RuntimeError);
-
-  py::register_exception<except::DataArrayError>(m, "DataArrayError",
-                                                 PyExc_RuntimeError);
-  py::register_exception<except::DatasetError>(m, "DatasetError",
-                                               PyExc_RuntimeError);
-  py::register_exception<except::CoordMismatchError>(m, "CoordError",
-                                                     PyExc_RuntimeError);
+  register_with_builtin_exception<except::NotImplementedError>(
+      PyExc_NotImplementedError);
 }

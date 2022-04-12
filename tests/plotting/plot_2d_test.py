@@ -374,11 +374,13 @@ def test_plot_2d_binned_data_with_masks():
     da = make_binned_data_array(ndim=2, masks=True)
     p = da.plot()
     unmasked = p.view.figure.image_values.get_array()
+    p.close()
     da.masks['all'] = da.data.bins.sum() == da.data.bins.sum()
     p = da.plot()
     # Bin masks are *not* applied
     assert np.allclose(p.view.figure.image_values.get_array(), unmasked)
     assert not np.isclose(p.view.figure.image_values.get_array().sum(), 0.0)
+    p.close()
 
 
 def test_plot_customized_mpl_axes():
