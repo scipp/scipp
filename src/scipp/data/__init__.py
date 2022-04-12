@@ -4,6 +4,48 @@
 from ..core import array, bin, linspace, ones
 from ..core import DataArray
 
+_version = '1'
+
+
+def _make_pooch():
+    import pooch
+    return pooch.create(path=pooch.os_cache('scipp'),
+                        env='SCIPP_DATA_DIR',
+                        retry_if_failed=3,
+                        base_url='https://public.esss.dk/groups/scipp/scipp/{version}/',
+                        version=_version,
+                        registry={
+                            'rhessi_flares.h5': 'md5:13a73789d3777e79d60ee172d63b4af6',
+                        })
+
+
+_pooch = _make_pooch()
+
+
+def get_path(name: str) -> str:
+    """
+    Return the path to a data file bundled with scipp.
+
+    This function only works with example data and cannot handle
+    paths to custom files.
+    """
+    return _pooch.fetch(name)
+
+
+def rhessi_flares() -> str:
+    """
+    Return the path to the list of solar flares recorded by RHESSI
+    in scipp's HDF5 format.
+
+    The original is
+    https://hesperia.gsfc.nasa.gov/rhessi3/data-access/rhessi-data/flare-list/index.html
+
+    Attention
+    ---------
+    This data has been manipulated!
+    """
+    return get_path('rhessi_flares.h5')
+
 
 def table_xyz(nrow: int) -> DataArray:
     """
