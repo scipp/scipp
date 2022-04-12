@@ -133,6 +133,7 @@ Documentation
 
    tutorials/introduction
    tutorials/multi-d-datasets
+   tutorials/solar_flares
 
 .. toctree::
    :caption: About
