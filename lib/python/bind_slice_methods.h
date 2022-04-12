@@ -270,31 +270,10 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   c.def("__getitem__", [](T &self, const Variable &condition) {
     return extract(self, condition);
   });
-  c.def("__getitem__", [](T &self, const std::tuple<Dim, scipp::index> &index) {
-    return getitem(self, index);
-  });
-  c.def("__getitem__", [](T &self, const std::tuple<Dim, py::slice> &index) {
-    return getitem(self, index);
-  });
-  c.def("__getitem__", [](T &self, const py::ellipsis &index) {
-    return getitem(self, index);
-  });
-  c.def("__setitem__",
-        [](T &self, const scipp::index &index, const py::object &data) {
-          expect_implicit_dimension(self.dims());
-          slicer<T>::template set<std::tuple<Dim, scipp::index>>(
-              self, {self.dim(), index}, data);
-        });
-  c.def("__setitem__",
-        [](T &self, const py::slice &index, const py::object &data) {
-          expect_implicit_dimension(self.dims());
-          expect_positional_index(index);
-          slicer<T>::template set<std::tuple<Dim, py::slice>>(
-              self, {self.dim(), index}, data);
-        });
-  c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, scipp::index>>);
-  c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, py::slice>>);
-  c.def("__setitem__", &slicer<T>::template set<py::ellipsis>);
+  // These overloads must also be placed before the ones accepting std::tuple.
+  // Otherwise, pybind11 would call `int()` on the 2nd tuple element
+  // because of `Variable.__int__`.
+  //
   // Note that label-based indexing with an implicit unique dim is not supported
   // for now. Labels can also be taken from any other coord, so if the coord
   // label is omitted we would have to "default" to using the dimension coord.
@@ -323,6 +302,31 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
       return out;
     });
   }
+  c.def("__getitem__", [](T &self, const std::tuple<Dim, scipp::index> &index) {
+    return getitem(self, index);
+  });
+  c.def("__getitem__", [](T &self, const std::tuple<Dim, py::slice> &index) {
+    return getitem(self, index);
+  });
+  c.def("__getitem__", [](T &self, const py::ellipsis &index) {
+    return getitem(self, index);
+  });
+  c.def("__setitem__",
+        [](T &self, const scipp::index &index, const py::object &data) {
+          expect_implicit_dimension(self.dims());
+          slicer<T>::template set<std::tuple<Dim, scipp::index>>(
+              self, {self.dim(), index}, data);
+        });
+  c.def("__setitem__",
+        [](T &self, const py::slice &index, const py::object &data) {
+          expect_implicit_dimension(self.dims());
+          expect_positional_index(index);
+          slicer<T>::template set<std::tuple<Dim, py::slice>>(
+              self, {self.dim(), index}, data);
+        });
+  c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, scipp::index>>);
+  c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, py::slice>>);
+  c.def("__setitem__", &slicer<T>::template set<py::ellipsis>);
   c.def("__getitem__", [](T &self, const std::vector<scipp::index> &indices) {
     expect_implicit_dimension(self.dims());
     return slice_by_list(self, {self.dim(), indices});

@@ -26,6 +26,8 @@ archs = ["x86_64", "arm64"]
 addopts = "-ra -v"
 filterwarnings = [
   'ignore:You are running a "Debug" build of scipp:',
+  'ignore:sc.matrix\(\) has been deprecated:DeprecationWarning',
+  'ignore:sc.matrices\(\) has been deprecated:DeprecationWarning',
   # Explained in variable_init_test.py
   'ignore:Creating an ndarray from ragged nested sequences:DeprecationWarning',
   # Comes from pytest_asyncio and is not our fault.

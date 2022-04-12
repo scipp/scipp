@@ -30,6 +30,33 @@ def bind_get():
         setattr(cls, 'get', method)
 
 
+def _expect_dimensionless_or_unitless(x):
+    if x.unit is not None and x.unit != core.units.dimensionless:
+        raise core.UnitError(f'Expected unit dimensionless or no unit, got {x.unit}.')
+
+
+def _expect_no_variance(x):
+    if x.variance is not None:
+        raise core.VariancesError('Expected input without variances.')
+
+
+def _int_dunder(self) -> int:
+    _expect_dimensionless_or_unitless(self)
+    _expect_no_variance(self)
+    return int(self.value)
+
+
+def _float_dunder(self) -> float:
+    _expect_dimensionless_or_unitless(self)
+    _expect_no_variance(self)
+    return float(self.value)
+
+
+def bind_conversion_to_builtin(cls):
+    setattr(cls, '__int__', _convert_to_method(name='__int__', func=_int_dunder))
+    setattr(cls, '__float__', _convert_to_method(name='__float__', func=_float_dunder))
+
+
 class _NoDefaultType:
     def __repr__(self):
         return 'NotSpecified'
