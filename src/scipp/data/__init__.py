@@ -1,14 +1,30 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+from functools import lru_cache
+
 from ..core import array, bin, linspace, ones
 from ..core import DataArray
 
 _version = '1'
 
 
-def _make_pooch():
-    import pooch
+@lru_cache(maxsize=1)
+def _get_pooch():
+    try:
+        import pooch
+    except ImportError as err:
+        raise ImportError('''pooch is not installed.
+It is required to use scipp's bundled data files.
+
+Please install pooch either using conda:
+  conda install pooch
+or using pip:
+  python -m pip install pooch
+or install all optional components of scipp:
+  python -m pip install scipp[all]
+''') from err
+
     return pooch.create(path=pooch.os_cache('scipp'),
                         env='SCIPP_DATA_DIR',
                         retry_if_failed=3,
@@ -19,9 +35,6 @@ def _make_pooch():
                         })
 
 
-_pooch = _make_pooch()
-
-
 def get_path(name: str) -> str:
     """
     Return the path to a data file bundled with scipp.
@@ -29,7 +42,7 @@ def get_path(name: str) -> str:
     This function only works with example data and cannot handle
     paths to custom files.
     """
-    return _pooch.fetch(name)
+    return _get_pooch().fetch(name)
 
 
 def rhessi_flares() -> str:
