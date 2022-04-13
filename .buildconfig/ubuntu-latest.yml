@@ -19,6 +19,7 @@ dependencies:
   - nomkl
   - numpy>=1.20.0
   - pandas
+  - pooch
   - pytest
   - python-graphviz
   - pythreejs
