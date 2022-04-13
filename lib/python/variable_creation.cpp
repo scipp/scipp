@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #include "scipp/core/eigen.h"
 #include "scipp/core/tag_util.h"
-#include "scipp/dataset/dataset.h"
 #include "scipp/variable/creation.h"
 
 #include "dim.h"
