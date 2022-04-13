@@ -8,6 +8,8 @@
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/variable.h"
 
+#include "dim.h"
+
 using namespace scipp;
 using namespace scipp::variable;
 
@@ -18,10 +20,9 @@ namespace {
 template <class T> void bind_broadcast(py::module &m) {
   m.def(
       "broadcast",
-      [](const T &self, const std::vector<Dim> &labels,
+      [](const T &self, const std::vector<std::string> &labels,
          const std::vector<scipp::index> &shape) {
-        const Dimensions dims(labels, shape);
-        return broadcast(self, dims);
+        return broadcast(self, make_dims(labels, shape));
       },
       py::arg("x"), py::arg("dims"), py::arg("shape"));
 }
@@ -29,17 +30,19 @@ template <class T> void bind_broadcast(py::module &m) {
 template <class T> void bind_concat(py::module &m) {
   m.def(
       "concat",
-      [](const std::vector<T> &x, const Dim dim) { return concat(x, dim); },
+      [](const std::vector<T> &x, const std::string &dim) {
+        return concat(x, Dim{dim});
+      },
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_fold(pybind11::module &mod) {
   mod.def(
       "fold",
-      [](const T &self, const Dim dim, const std::vector<Dim> &labels,
+      [](const T &self, const std::string &dim,
+         const std::vector<std::string> &labels,
          const std::vector<scipp::index> &shape) {
-        const Dimensions dims(labels, shape);
-        return fold(self, dim, dims);
+        return fold(self, Dim{dim}, make_dims(labels, shape));
       },
       py::arg("x"), py::arg("dim"), py::arg("dims"), py::arg("shape"),
       py::call_guard<py::gil_scoped_release>());
@@ -48,8 +51,9 @@ template <class T> void bind_fold(pybind11::module &mod) {
 template <class T> void bind_flatten(pybind11::module &mod) {
   mod.def(
       "flatten",
-      [](const T &self, const std::vector<Dim> &dims, const Dim &to) {
-        return flatten(self, dims, to);
+      [](const T &self, const std::vector<std::string> &dims,
+         const std::string &to) {
+        return flatten(self, to_dim_type(dims), Dim{to});
       },
       py::arg("x"), py::arg("dims"), py::arg("to"),
       py::call_guard<py::gil_scoped_release>());
@@ -58,17 +62,19 @@ template <class T> void bind_flatten(pybind11::module &mod) {
 template <class T> void bind_transpose(pybind11::module &mod) {
   mod.def(
       "transpose",
-      [](const T &self, const std::vector<Dim> &dims) {
-        return transpose(self, dims);
+      [](const T &self, const std::vector<std::string> &dims) {
+        return transpose(self, to_dim_type(dims));
       },
-      py::arg("x"), py::arg("dims") = std::vector<Dim>{});
+      py::arg("x"), py::arg("dims") = std::vector<std::string>{});
 }
 
 template <class T> void bind_squeeze(pybind11::module &mod) {
   mod.def(
       "squeeze",
-      [](const T &self, const std::optional<std::vector<Dim>> &dims) {
-        return squeeze(self, dims);
+      [](const T &self, const std::optional<std::vector<std::string>> &dims) {
+        return squeeze(self, dims.has_value()
+                                 ? std::optional{to_dim_type(*dims)}
+                                 : std::optional<std::vector<Dim>>{});
       },
       py::arg("x"), py::arg("dims") = std::nullopt);
 }

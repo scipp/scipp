@@ -87,7 +87,8 @@ Dimensions build_dimensions(py::iterator &&label_it, py::iterator &&shape_it,
   scipp::index dim = 0;
   for (; label_it != label_it.end() && shape_it != shape_it.end();
        ++label_it, ++shape_it, ++dim) {
-    dims.addInner(label_it->cast<Dim>(), shape_it->cast<scipp::index>());
+    dims.addInner(Dim{label_it->cast<std::string>()},
+                  shape_it->cast<scipp::index>());
   }
   if (label_it != label_it.end() || shape_it != shape_it.end()) {
     throw_ndim_mismatch_error(dim + n_remaining(label_it), "dims",

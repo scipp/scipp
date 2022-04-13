@@ -122,14 +122,26 @@ void bind_data_array(py::class_<T, Ignored...> &c) {
 }
 
 template <class T> void bind_rebin(py::module &m) {
-  m.def("rebin",
-        py::overload_cast<const T &, const Dim, const Variable &>(&rebin),
-        py::arg("x"), py::arg("dim"), py::arg("bins"),
-        py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "rebin",
+      [](const T &x, const std::string &dim, const Variable &bins) {
+        return rebin(x, Dim{dim}, bins);
+      },
+      py::arg("x"), py::arg("dim"), py::arg("bins"),
+      py::call_guard<py::gil_scoped_release>());
+}
+
+template <class Value> auto to_cpp_dim_map(const py::dict &dict) {
+  std::unordered_map<Dim, Value> out;
+  for (const auto &[key, val] : dict) {
+    const Dim dim{key.template cast<std::string>()};
+    out.emplace(dim, val.template cast<Value &>());
+  }
+  return out;
 }
 
 void init_dataset(py::module &m) {
-  py::class_<Slice>(m, "Slice");
+  static_cast<void>(py::class_<Slice>(m, "Slice"));
 
   bind_helper_view<items_view, Dataset>(m, "Dataset");
   bind_helper_view<str_items_view, Coords>(m, "Coords");
@@ -156,19 +168,16 @@ Returned by :py:func:`DataArray.masks`)");
   options.disable_function_signatures();
   dataArray
       .def(
-          py::init([](const Variable &data,
-                      std::unordered_map<Dim, Variable> coords,
+          py::init([](const Variable &data, const py::dict &coords,
                       std::unordered_map<std::string, Variable> masks,
-                      std::unordered_map<Dim, Variable> attrs,
-                      const std::string &name) {
-            return DataArray{data, std::move(coords), std::move(masks),
-                             std::move(attrs), name};
+                      const py::dict &attrs, const std::string &name) {
+            return DataArray{data, to_cpp_dim_map<Variable>(coords),
+                             std::move(masks), to_cpp_dim_map<Variable>(attrs),
+                             name};
           }),
-          py::arg("data"), py::kw_only(),
-          py::arg("coords") = std::unordered_map<Dim, Variable>{},
+          py::arg("data"), py::kw_only(), py::arg("coords") = py::dict(),
           py::arg("masks") = std::unordered_map<std::string, Variable>{},
-          py::arg("attrs") = std::unordered_map<Dim, Variable>{},
-          py::arg("name") = std::string{},
+          py::arg("attrs") = py::dict(), py::arg("name") = std::string{},
           R"(__init__(self, data: Variable, coords: Dict[str, Variable] = {}, masks: Dict[str, Variable] = {}, attrs: Dict[str, Variable] = {}, name: str = '') -> None
 
           DataArray initializer.
@@ -178,11 +187,6 @@ Returned by :py:func:`DataArray.masks`)");
           :param masks: Masks referenced by name.
           :param attrs: Attributes referenced by dimension.
           :param name: Name of DataArray.
-          :type data: Variable
-          :type coords: Dict[str, Variable]
-          :type masks: Dict[str, Variable]
-          :type attrs: Dict[str, Variable]
-          :type name: str
           )")
       .def("__sizeof__",
            [](const DataArray &array) {
@@ -201,7 +205,7 @@ Returned by :py:func:`DataArray.masks`)");
   dataset.def(
       py::init([](const std::map<std::string, std::variant<Variable, DataArray>>
                       &data,
-                  const std::map<Dim, Variable> &coords) {
+                  const std::map<std::string, Variable> &coords) {
         Dataset d;
         for (auto &&[name, item] : data) {
           auto visitor = [&d, n = name](auto &object) {
@@ -210,12 +214,12 @@ Returned by :py:func:`DataArray.masks`)");
           std::visit(visitor, item);
         }
         for (auto &&[dim, coord] : coords)
-          d.setCoord(dim, coord);
+          d.setCoord(Dim{dim}, coord);
         return d;
       }),
       py::arg("data") =
           std::map<std::string, std::variant<Variable, DataArray>>{},
-      py::kw_only(), py::arg("coords") = std::map<Dim, Variable>{},
+      py::kw_only(), py::arg("coords") = std::map<std::string, Variable>{},
       R"(__init__(self, data: Dict[str, Union[Variable, DataArray]] = {}, coords: Dict[str, Variable] = {}) -> None
 
               Dataset initializer.
@@ -278,9 +282,9 @@ Returned by :py:func:`DataArray.masks`)");
 
   m.def(
       "irreducible_mask",
-      [](const Masks &masks, const Dim dim) {
+      [](const Masks &masks, const std::string dim) {
         py::gil_scoped_release release;
-        auto mask = irreducible_mask(masks, dim);
+        auto mask = irreducible_mask(masks, Dim{dim});
         py::gil_scoped_acquire acquire;
         return mask.is_valid() ? py::cast(mask) : py::none();
       },

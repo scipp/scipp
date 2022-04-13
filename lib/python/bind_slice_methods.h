@@ -21,6 +21,10 @@ using namespace scipp;
 using namespace scipp::variable;
 using namespace scipp::dataset;
 
+template <class T> auto to_dim_type(std::tuple<std::string, T> &&t) {
+  return std::tuple{Dim{std::move(std::get<0>(t))}, std::move(std::get<1>(t))};
+}
+
 template <class T> auto dim_extent(const T &object, const Dim dim) {
   if constexpr (std::is_same_v<T, Dataset>) {
     scipp::index extent = -1;
@@ -120,9 +124,10 @@ template <class T> auto getitem(T &self, const py::ellipsis &) {
 
 // Helpers wrapped in struct to avoid unresolvable overloads.
 template <class T> struct slicer {
-  static auto get_by_value(T &self, const std::tuple<Dim, Variable> &value) {
+  static auto get_by_value(T &self,
+                           const std::tuple<std::string, Variable> &value) {
     auto &[dim, val] = value;
-    return slice(self, dim, val);
+    return slice(self, Dim{dim}, val);
   }
 
   static void set_from_numpy(T &&slice, const py::object &obj) {
@@ -267,9 +272,12 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   // Note the order of overloads: For some reason pybind11(?) calls `len()` on
   // __getitem__ arguments when there is an overload accepting std::tuple. This
   // fails for scalar variables, so we place this before those overloads.
-  c.def("__getitem__", [](T &self, const Variable &condition) {
-    return extract(self, condition);
-  });
+  c.def(
+      "__getitem__",
+      [](T &self, const Variable &condition) {
+        return extract(self, condition);
+      },
+      py::call_guard<py::gil_scoped_release>());
   // These overloads must also be placed before the ones accepting std::tuple.
   // Otherwise, pybind11 would call `int()` on the 2nd tuple element
   // because of `Variable.__int__`.
@@ -302,11 +310,12 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
       return out;
     });
   }
-  c.def("__getitem__", [](T &self, const std::tuple<Dim, scipp::index> &index) {
-    return getitem(self, index);
-  });
-  c.def("__getitem__", [](T &self, const std::tuple<Dim, py::slice> &index) {
-    return getitem(self, index);
+  c.def("__getitem__",
+        [](T &self, std::tuple<std::string, scipp::index> index) {
+          return getitem(self, to_dim_type(std::move(index)));
+        });
+  c.def("__getitem__", [](T &self, std::tuple<std::string, py::slice> index) {
+    return getitem(self, to_dim_type(std::move(index)));
   });
   c.def("__getitem__", [](T &self, const py::ellipsis &index) {
     return getitem(self, index);
@@ -324,12 +333,26 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
           slicer<T>::template set<std::tuple<Dim, py::slice>>(
               self, {self.dim(), index}, data);
         });
-  c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, scipp::index>>);
-  c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, py::slice>>);
-  c.def("__setitem__", &slicer<T>::template set<py::ellipsis>);
-  c.def("__getitem__", [](T &self, const std::vector<scipp::index> &indices) {
-    expect_implicit_dimension(self.dims());
-    return slice_by_list(self, {self.dim(), indices});
+  c.def("__setitem__", [](T &self, std::tuple<std::string, scipp::index> index,
+                          const py::object &data) {
+    slicer<T>::template set(self, to_dim_type(std::move(index)), data);
   });
-  c.def("__getitem__", slice_by_list<T>);
+  c.def("__setitem__", [](T &self, std::tuple<std::string, py::slice> index,
+                          const py::object &data) {
+    slicer<T>::template set(self, to_dim_type(std::move(index)), data);
+  });
+  c.def("__setitem__", &slicer<T>::template set<py::ellipsis>);
+  c.def(
+      "__getitem__",
+      [](T &self, const std::vector<scipp::index> &indices) {
+        expect_implicit_dimension(self.dims());
+        return slice_by_list(self, {self.dim(), indices});
+      },
+      py::call_guard<py::gil_scoped_release>());
+  c.def(
+      "__getitem__",
+      [](T &self, std::tuple<std::string, std::vector<scipp::index>> indices) {
+        return slice_by_list<T>(self, to_dim_type(std::move(indices)));
+      },
+      py::call_guard<py::gil_scoped_release>());
 }

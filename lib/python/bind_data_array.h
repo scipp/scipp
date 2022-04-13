@@ -42,25 +42,34 @@ void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
   view.def("__len__", &T::size)
       .def(
           "__getitem__",
-          [](const T &self, const typename T::key_type &key) {
-            return self[key];
+          [](const T &self, const std::string &key) {
+            return self[typename T::key_type{key}];
           },
           py::return_value_policy::copy)
-      .def("__setitem__", [](T &self, const typename T::key_type key,
-                             const Variable &var) { self.set(key, var); })
-      .def("__delitem__", &T::erase, py::call_guard<py::gil_scoped_release>())
+      .def("__setitem__",
+           [](T &self, const std::string &key, const Variable &var) {
+             self.set(typename T::key_type{key}, var);
+           })
+      .def(
+          "__delitem__",
+          [](T &self, const std::string &key) {
+            self.erase(typename T::key_type{key});
+          },
+          py::call_guard<py::gil_scoped_release>())
       .def(
           "values", [](T &self) { return values_view(self); },
           py::keep_alive<0, 1>(), R"(view on self's values)")
-      .def("__contains__", &T::contains);
+      .def("__contains__", [](const T &self, const std::string &key) {
+        return self.contains(typename T::key_type{key});
+      });
 }
 
 template <class T, class... Ignored>
 void bind_pop(pybind11::class_<T, Ignored...> &view) {
   view.def(
       "_pop",
-      [](T &self, const typename T::key_type &key) {
-        return py::cast(self.extract(key));
+      [](T &self, const std::string &key) {
+        return py::cast(self.extract(typename T::key_type{key}));
       },
       py::arg("k"));
 }
@@ -69,8 +78,12 @@ template <class T, class... Ignored>
 void bind_is_edges(py::class_<T, Ignored...> &view) {
   view.def(
       "is_edges",
-      [](const T &self, const typename T::key_type &key,
-         const std::optional<Dim> dim) { return self.is_edges(key, dim); },
+      [](const T &self, const std::string &key,
+         const std::optional<std::string> dim) {
+        return self.is_edges(typename T::key_type{key},
+                             dim.has_value() ? std::optional{Dim{*dim}}
+                                             : std::optional<Dim>{});
+      },
       py::arg("key"), py::arg("dim") = std::nullopt,
       R"(Return True if the given key contains bin-edges in the given dim.)");
 }
