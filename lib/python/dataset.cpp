@@ -166,28 +166,36 @@ Returned by :py:func:`DataArray.masks`)");
     Named variable with associated coords, masks, and attributes.)");
   py::options options;
   options.disable_function_signatures();
-  dataArray
-      .def(
-          py::init([](const Variable &data, const py::dict &coords,
-                      std::unordered_map<std::string, Variable> masks,
-                      const py::dict &attrs, const std::string &name) {
-            return DataArray{data, to_cpp_dim_map<Variable>(coords),
-                             std::move(masks), to_cpp_dim_map<Variable>(attrs),
-                             name};
-          }),
-          py::arg("data"), py::kw_only(), py::arg("coords") = py::dict(),
-          py::arg("masks") = std::unordered_map<std::string, Variable>{},
-          py::arg("attrs") = py::dict(), py::arg("name") = std::string{},
-          R"(__init__(self, data: Variable, coords: Dict[str, Variable] = {}, masks: Dict[str, Variable] = {}, attrs: Dict[str, Variable] = {}, name: str = '') -> None
+  dataArray.def(
+      py::init([](const Variable &data, const py::dict &coords,
+                  std::unordered_map<std::string, Variable> masks,
+                  const py::dict &attrs, const std::string &name) {
+        return DataArray{data, to_cpp_dim_map<Variable>(coords),
+                         std::move(masks), to_cpp_dim_map<Variable>(attrs),
+                         name};
+      }),
+      py::arg("data"), py::kw_only(), py::arg("coords") = py::dict(),
+      py::arg("masks") = std::unordered_map<std::string, Variable>{},
+      py::arg("attrs") = py::dict(), py::arg("name") = std::string{},
+      R"doc(__init__(self, data: Variable, coords: Dict[str, Variable] = {}, masks: Dict[str, Variable] = {}, attrs: Dict[str, Variable] = {}, name: str = '') -> None
 
           DataArray initializer.
 
-          :param data: Data and optionally variances.
-          :param coords: Coordinates referenced by dimension.
-          :param masks: Masks referenced by name.
-          :param attrs: Attributes referenced by dimension.
-          :param name: Name of DataArray.
-          )")
+          Parameters
+          ----------
+          data:
+              Data and optionally variances.
+          coords:
+              Coordinates referenced by dimension.
+          masks:
+              Masks referenced by name.
+          attrs:
+              Attributes referenced by dimension.
+          name:
+              Name of DataArray.
+          )doc");
+  options.enable_function_signatures();
+  dataArray
       .def("__sizeof__",
            [](const DataArray &array) {
              return size_of(array, SizeofTag::ViewOnly, true);
@@ -195,13 +203,12 @@ Returned by :py:func:`DataArray.masks`)");
       .def("underlying_size", [](const DataArray &self) {
         return size_of(self, SizeofTag::Underlying);
       });
-  options.enable_function_signatures();
 
   bind_data_array(dataArray);
 
   py::class_<Dataset> dataset(m, "Dataset", R"(
   Dict of data arrays with aligned dimensions.)");
-
+  options.disable_function_signatures();
   dataset.def(
       py::init([](const std::map<std::string, std::variant<Variable, DataArray>>
                       &data,
@@ -220,15 +227,17 @@ Returned by :py:func:`DataArray.masks`)");
       py::arg("data") =
           std::map<std::string, std::variant<Variable, DataArray>>{},
       py::kw_only(), py::arg("coords") = std::map<std::string, Variable>{},
-      R"(__init__(self, data: Dict[str, Union[Variable, DataArray]] = {}, coords: Dict[str, Variable] = {}) -> None
+      R"doc(__init__(self, data: Dict[str, Union[Variable, DataArray]] = {}, coords: Dict[str, Variable] = {}) -> None
 
-              Dataset initializer.
+      Dataset initializer.
 
-             :param data: Dictionary of name and data pairs.
-             :param coords: Dictionary of name and coord pairs.
-             :type data: Dict[str, Union[Variable, DataArray]]
-             :type coords: Dict[str, Variable]
-             )");
+      Parameters
+      ----------
+      data:
+          Dictionary of name and data pairs.
+      coords:
+          Dictionary of name and coord pairs.
+      )doc");
   options.enable_function_signatures();
 
   dataset

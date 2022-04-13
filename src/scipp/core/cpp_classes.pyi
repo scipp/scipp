@@ -276,11 +276,18 @@ class DataArray():
         """
         DataArray initializer.
 
-        :param data: Data and optionally variances.
-        :param coords: Coordinates referenced by dimension.
-        :param masks: Masks referenced by name.
-        :param attrs: Attributes referenced by dimension.
-        :param name: Name of DataArray.
+        Parameters
+        ----------
+        data:
+            Data and optionally variances.
+        coords:
+            Coordinates referenced by dimension.
+        masks:
+            Masks referenced by name.
+        attrs:
+            Attributes referenced by dimension.
+        name:
+            Name of DataArray.
         """
     def __invert__(self) -> DataArray: ...
     @typing.overload
@@ -447,6 +454,7 @@ class DataArray():
         """
         Rename dimensions.
         """
+    def underlying_size(self) -> int: ...
     @property
     def attrs(self) -> Coords:
         """
@@ -701,18 +709,17 @@ class Dataset():
     def __imul__(self, arg0: float) -> object: ...
     @typing.overload
     def __imul__(self, arg0: int) -> object: ...
-    @typing.overload
     def __init__(self, data: typing.Dict[str, typing.Union[Variable, DataArray]] = {}, coords: typing.Dict[str, Variable] = {}) -> None: 
         """
-         Dataset initializer.
+        Dataset initializer.
 
-        :param data: Dictionary of name and data pairs.
-        :param coords: Dictionary of name and coord pairs.
-        :type data: Dict[str, Union[Variable, DataArray]]
-        :type coords: Dict[str, Variable]
+        Parameters
+        ----------
+        data:
+            Dictionary of name and data pairs.
+        coords:
+            Dictionary of name and coord pairs.
         """
-    @typing.overload
-    def __init__(self, data: typing.Dict[str, typing.Union[Variable, DataArray]] = {}, *, coords: typing.Dict[str, Variable] = {}) -> None: ...
     @typing.overload
     def __isub__(self, arg0: DataArray) -> object: ...
     @typing.overload
