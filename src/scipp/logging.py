@@ -47,6 +47,7 @@ The constructor raises `RuntimeError` otherwise.
 :seealso: :py:class:`scipp.logging.WidgetHandler`
 """
 
+# problem: this imports from IPython and ipykernel
 if running_in_jupyter():
     from ipywidgets import HTML
 

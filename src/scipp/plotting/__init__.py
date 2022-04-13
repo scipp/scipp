@@ -15,6 +15,7 @@ except ImportError:
     mpl = None
 
 # If we are running inside a notebook, then make plot interactive by default.
+# problem: this imports IPython and ipykernel even if we are *not* in a notebook
 if running_in_jupyter():
     from IPython import get_ipython
     ipy = get_ipython()
