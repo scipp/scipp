@@ -105,8 +105,6 @@ del _cls
 del _binding
 
 from . import data
-# this takes 500 ms, if distributed is installed, is there a point in having it here?
-# from . import serialization
 from . import spatial
 
 from .plotting import plot
