@@ -6,6 +6,7 @@ from fractions import Fraction
 from typing import Dict, Iterable, List, Mapping, Set, Union
 
 from ..core import DataArray, Dataset, DimensionError, VariableError, bins
+from ..logging import get_logger
 from .coord_table import Coord, CoordTable, Destination
 from .graph import Graph, GraphDict, rule_sequence
 from .options import Options
@@ -131,7 +132,6 @@ def _transform_dataset(original: Dataset, targets: Set[str], graph: Graph, *,
 
 def _log_transform(rules: List[Rule], targets: Set[str],
                    dim_name_changes: Mapping[str, str], coords: CoordTable) -> None:
-    from ..logging import get_logger
     inputs = set(rule_output_names(rules, FetchRule))
     byproducts = {
         name

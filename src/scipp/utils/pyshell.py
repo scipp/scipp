@@ -10,8 +10,6 @@ def running_in_jupyter() -> bool:
     Note that this includes not only Jupyter notebooks
     but also Jupyter console and qtconsole.
     """
-    return False
-
     try:
         from IPython import get_ipython
         import ipykernel.zmqshell

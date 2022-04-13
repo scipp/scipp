@@ -7,6 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Union
 
+from ..logging import get_logger
 from ..typing import VariableLike
 
 
@@ -186,7 +187,6 @@ class VariableIO:
     @classmethod
     def write(cls, group, var):
         if var.dtype not in cls._dtypes.values():
-            from ..logging import get_logger
             # In practice this may make the file unreadable, e.g., if values
             # have unsupported dtype.
             get_logger().warning('Writing with dtype=%s not implemented, skipping.',
