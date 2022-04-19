@@ -7,6 +7,60 @@ import warnings
 from .plot import plot as _plot
 from ..utils import running_in_jupyter
 
+is_doc_build = False
+matplotlib_first_import = True
+plt = None
+
+# If we are running inside a notebook, then make plot interactive by default.
+if running_in_jupyter():
+    from IPython import get_ipython
+    ipy = get_ipython()
+
+    # Check if a docs build is requested in the metadata. If so,
+    # use the default Qt/inline backend.
+    cfg = ipy.config
+    meta = cfg["Session"]["metadata"]
+    if hasattr(meta, "to_dict"):
+        meta = meta.to_dict()
+    if "scipp_docs_build" in meta:
+        is_doc_build = meta["scipp_docs_build"]
+
+
+def import_matplotlib_and_set_backend():
+
+    try:
+        import matplotlib as mpl
+    except ImportError:
+        return
+
+    # If we are running inside a notebook, then make plot interactive by default.
+    if running_in_jupyter():
+        try:
+            # Attempt to use ipympl backend
+            from ipympl.backend_nbagg import Canvas
+            mpl.use('module://ipympl.backend_nbagg')
+            # Hide the figure header:
+            # see https://github.com/matplotlib/ipympl/issues/229
+            Canvas.header_visible.default_value = False
+        except ImportError:
+            warnings.warn("The ipympl backend, which is required for "
+                          "interactive plots in Jupyter, was not found. "
+                          "Falling back to a static backend. Use "
+                          "conda install -c conda-forge ipympl to install ipympl.")
+
+    # Note: due to some strange behavior when importing matplotlib and pyplot in
+    # different order, we need to import pyplot after switching to the ipympl
+    # backend (see https://github.com/matplotlib/matplotlib/issues/19032).
+    import matplotlib.pyplot as _plt
+    if is_doc_build:
+        _plt.rcParams.update({
+            "figure.max_open_warning": 0,
+            "interactive": False,
+            "figure.figsize": [6.4, 4.8],
+            "figure.dpi": 96
+        })
+    return _plt
+
 
 def plot(*args, **kwargs):
     """
@@ -136,55 +190,13 @@ def plot(*args, **kwargs):
 
     """
 
-    is_doc_build = False
+    global matplotlib_first_import
+    global is_doc_build
+    global plt
 
-    try:
-        import matplotlib as mpl
-    except ImportError:
-        mpl = None
-
-    # If we are running inside a notebook, then make plot interactive by default.
-    if running_in_jupyter():
-        from IPython import get_ipython
-        ipy = get_ipython()
-
-        # Check if a docs build is requested in the metadata. If so,
-        # use the default Qt/inline backend.
-        cfg = ipy.config
-        meta = cfg["Session"]["metadata"]
-        if hasattr(meta, "to_dict"):
-            meta = meta.to_dict()
-        if "scipp_docs_build" in meta:
-            is_doc_build = meta["scipp_docs_build"]
-        if mpl is not None:
-            try:
-                # Attempt to use ipympl backend
-                from ipympl.backend_nbagg import Canvas
-                mpl.use('module://ipympl.backend_nbagg')
-                # Hide the figure header:
-                # see https://github.com/matplotlib/ipympl/issues/229
-                Canvas.header_visible.default_value = False
-            except ImportError:
-                warnings.warn("The ipympl backend, which is required for "
-                              "interactive plots in Jupyter, was not found. "
-                              "Falling back to a static backend. Use "
-                              "conda install -c conda-forge ipympl to install ipympl.")
-
-    # Note: due to some strange behavior when importing matplotlib and pyplot in
-    # different order, we need to import pyplot after switching to the ipympl
-    # backend (see https://github.com/matplotlib/matplotlib/issues/19032).
-    try:
-        import matplotlib.pyplot as plt
-    except ImportError:
-        plt = None
-
-    if is_doc_build and plt is not None:
-        plt.rcParams.update({
-            "figure.max_open_warning": 0,
-            "interactive": False,
-            "figure.figsize": [6.4, 4.8],
-            "figure.dpi": 96
-        })
+    if matplotlib_first_import:
+        plt = import_matplotlib_and_set_backend()
+        matplotlib_first_import = False
 
     if plt is None:
         raise RuntimeError("Matplotlib not found. Matplotlib is required to "
@@ -201,7 +213,7 @@ def plot(*args, **kwargs):
 
     if output is not None:
         # Hide all widgets if this is the inline backend
-        if mpl.get_backend().lower().endswith('inline'):
+        if plt.get_backend().lower().endswith('inline'):
             output.hide_widgets()
         # Turn mpl figure into image if doc build
         if is_doc_build:
