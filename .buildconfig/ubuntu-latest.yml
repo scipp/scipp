@@ -14,6 +14,7 @@ dependencies:
   - jinja2==3.0.3  # jupyter/nbconvert#1736
   - markupsafe>=1.1.1,<2.1.0
   - matplotlib-base
+  - nbconvert=6.4.5
   - nbsphinx
   - ninja
   - nomkl
