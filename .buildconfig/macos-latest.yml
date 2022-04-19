@@ -8,7 +8,7 @@ dependencies:
   - graphlib-backport
   - h5py
   - hypothesis
-  - ipympl
+  - ipympl<0.9
   - ipywidgets
   - markupsafe>=1.1.1,<2.1.0
   - matplotlib-base
