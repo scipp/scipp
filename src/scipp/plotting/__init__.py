@@ -8,25 +8,11 @@ from .plot import plot as _plot
 from ..utils import running_in_jupyter
 
 is_doc_build = False
-matplotlib_first_import = True
+initialized = False
 plt = None
 
-# If we are running inside a notebook, then make plot interactive by default.
-if running_in_jupyter():
-    from IPython import get_ipython
-    ipy = get_ipython()
 
-    # Check if a docs build is requested in the metadata. If so,
-    # use the default Qt/inline backend.
-    cfg = ipy.config
-    meta = cfg["Session"]["metadata"]
-    if hasattr(meta, "to_dict"):
-        meta = meta.to_dict()
-    if "scipp_docs_build" in meta:
-        is_doc_build = meta["scipp_docs_build"]
-
-
-def import_matplotlib_and_set_backend():
+def initialize(is_doc_build):
 
     try:
         import matplotlib as mpl
@@ -35,6 +21,18 @@ def import_matplotlib_and_set_backend():
 
     # If we are running inside a notebook, then make plot interactive by default.
     if running_in_jupyter():
+        from IPython import get_ipython
+        ipy = get_ipython()
+
+        # Check if a docs build is requested in the metadata. If so,
+        # use the default Qt/inline backend.
+        cfg = ipy.config
+        meta = cfg["Session"]["metadata"]
+        if hasattr(meta, "to_dict"):
+            meta = meta.to_dict()
+        if "scipp_docs_build" in meta:
+            is_doc_build = meta["scipp_docs_build"]
+
         try:
             # Attempt to use ipympl backend
             from ipympl.backend_nbagg import Canvas
@@ -190,13 +188,13 @@ def plot(*args, **kwargs):
 
     """
 
-    global matplotlib_first_import
+    global initialized
     global is_doc_build
     global plt
 
-    if matplotlib_first_import:
-        plt = import_matplotlib_and_set_backend()
-        matplotlib_first_import = False
+    if not initialized:
+        plt = initialize(is_doc_build)
+        initialized = True
 
     if plt is None:
         raise RuntimeError("Matplotlib not found. Matplotlib is required to "
