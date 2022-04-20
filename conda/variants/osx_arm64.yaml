@@ -4,3 +4,5 @@ cxx_compiler_version:
 - '13'
 target_platform:
 - osx-arm64
+numpy:
+- '1.20'
