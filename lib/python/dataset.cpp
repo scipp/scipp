@@ -291,7 +291,7 @@ Returned by :py:func:`DataArray.masks`)");
 
   m.def(
       "irreducible_mask",
-      [](const Masks &masks, const std::string dim) {
+      [](const Masks &masks, const std::string &dim) {
         py::gil_scoped_release release;
         auto mask = irreducible_mask(masks, Dim{dim});
         py::gil_scoped_acquire acquire;
