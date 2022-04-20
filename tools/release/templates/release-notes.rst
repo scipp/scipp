@@ -8,6 +8,9 @@ Breaking changes
 Bugfixes
 ~~~~~~~~
 
+Documentation
+~~~~~~~~~~~~~
+
 Deprecations
 ~~~~~~~~~~~~
 
