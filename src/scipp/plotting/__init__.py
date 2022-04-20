@@ -9,7 +9,6 @@ from ..utils import running_in_jupyter
 
 is_doc_build = False
 initialized = False
-plt = None
 
 
 def initialize(is_doc_build):
@@ -49,15 +48,14 @@ def initialize(is_doc_build):
     # Note: due to some strange behavior when importing matplotlib and pyplot in
     # different order, we need to import pyplot after switching to the ipympl
     # backend (see https://github.com/matplotlib/matplotlib/issues/19032).
-    import matplotlib.pyplot as _plt
+    import matplotlib.pyplot as plt
     if is_doc_build:
-        _plt.rcParams.update({
+        plt.rcParams.update({
             "figure.max_open_warning": 0,
             "interactive": False,
             "figure.figsize": [6.4, 4.8],
             "figure.dpi": 96
         })
-    return _plt
 
 
 def plot(*args, **kwargs):
@@ -187,18 +185,14 @@ def plot(*args, **kwargs):
     :type vmax: float, optional
 
     """
-
     global initialized
     global is_doc_build
-    global plt
 
     if not initialized:
-        plt = initialize(is_doc_build)
+        initialize(is_doc_build)
         initialized = True
 
-    if plt is None:
-        raise RuntimeError("Matplotlib not found. Matplotlib is required to "
-                           "use plotting in Scipp.")
+    import matplotlib.pyplot as plt
 
     # Switch auto figure display off for better control over when figures are
     # displayed.
