@@ -27,8 +27,9 @@ requirements:
   build:
     - {{ compiler('cxx') }} [not win]
     - cmake
-    - cppcheck [linux64]
     - conan>=1.45.0
+    - cppcheck [linux64]
+    - cross-python_{{ target_platform }} # [build_platform != target_platform]
     - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - git
     - ninja
@@ -50,6 +51,7 @@ test:
     - {{ compiler('cxx') }} [not win]
     - cmake
     - conan>=1.45.0
+    - cross-python_{{ target_platform }} # [build_platform != target_platform]
     - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - h5py
     - hypothesis
