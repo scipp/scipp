@@ -105,7 +105,6 @@ del _cls
 del _binding
 
 from . import data
-from . import serialization
 from . import spatial
 
 from .plotting import plot
