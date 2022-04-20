@@ -33,6 +33,7 @@ requirements:
     - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - git
     - ninja
+    - python # [build_platform != target_platform]
   host:
     - python
     - tbb-devel=2020.2.*
