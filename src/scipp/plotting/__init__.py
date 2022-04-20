@@ -3,20 +3,19 @@
 # @file
 # @author Neil Vaytet
 
+from functools import lru_cache
 import warnings
 from .plot import plot as _plot
 from ..utils import running_in_jupyter
 
-is_doc_build = False
-initialized = False
 
-
-def initialize(is_doc_build):
-
+@lru_cache
+def initialize():
+    is_doc_build = False
     try:
         import matplotlib as mpl
     except ImportError:
-        return
+        return is_doc_build
 
     # If we are running inside a notebook, then make plot interactive by default.
     if running_in_jupyter():
@@ -56,6 +55,7 @@ def initialize(is_doc_build):
             "figure.figsize": [6.4, 4.8],
             "figure.dpi": 96
         })
+    return is_doc_build
 
 
 def plot(*args, **kwargs):
@@ -185,13 +185,7 @@ def plot(*args, **kwargs):
     :type vmax: float, optional
 
     """
-    global initialized
-    global is_doc_build
-
-    if not initialized:
-        initialize(is_doc_build)
-        initialized = True
-
+    is_doc_build = initialize()
     import matplotlib.pyplot as plt
 
     # Switch auto figure display off for better control over when figures are
