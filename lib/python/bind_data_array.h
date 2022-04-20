@@ -79,9 +79,9 @@ void bind_is_edges(py::class_<T, Ignored...> &view) {
   view.def(
       "is_edges",
       [](const T &self, const std::string &key,
-         const std::optional<std::string> dim) {
+         const std::optional<std::string> &dim) {
         return self.is_edges(typename T::key_type{key},
-                             dim.has_value() ? std::optional{Dim{*dim}}
+                             dim.has_value() ? std::optional{Dim(*dim)}
                                              : std::optional<Dim>{});
       },
       py::arg("key"), py::arg("dim") = std::nullopt,
