@@ -25,15 +25,15 @@ source:
 
 requirements:
   build:
+    - python                                 # [build_platform != target_platform]
+    - cross-python_{{ target_platform }}     # [build_platform != target_platform]
     - {{ compiler('cxx') }} [not win]
     - cmake
     - conan>=1.45.0
     - cppcheck [linux64]
-    - cross-python_{{ target_platform }} # [build_platform != target_platform]
     - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - git
     - ninja
-    - python # [build_platform != target_platform]
   host:
     - python
     - tbb-devel=2020.2.*
