@@ -1,0 +1,6 @@
+cxx_compiler:
+- clangxx
+cxx_compiler_version:
+- '13'
+target_platform:
+- osx-64
