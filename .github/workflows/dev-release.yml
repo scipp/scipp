@@ -9,7 +9,7 @@ defaults:
 
 jobs:
   build_conda:
-    name: Package build (${{ matrix.os }}, py${{ matrix.python-version }})
+    name: Package build (${{ matrix.os }}, py${{ matrix.python-version }}), variant:${{ matrix.variant }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
