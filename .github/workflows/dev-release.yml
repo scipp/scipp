@@ -24,8 +24,8 @@ jobs:
           fetch-depth: 0  # history required so cmake can determine version
 
       - uses: conda-incubator/setup-miniconda@v2
-      - run: conda install --yes conda-build
-      - run: conda build --channel conda-forge --variant-config-files=conda/variants/${{ matrix.variant }} --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels --output-folder conda/package conda
+      - run: conda install --yes --channel conda-forge boa
+      - run: conda mambabuild --channel conda-forge --variant-config-files=conda/variants/${{ matrix.variant }} --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels --output-folder conda/package conda
 
       - uses: actions/upload-artifact@v2
         with:
