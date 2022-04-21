@@ -91,7 +91,7 @@ jobs:
       - run: cmake --preset ${{ matrix.cmake-preset }}
       - run: cmake --build --preset build
       - run: ctest --preset test
-      - run: python -m pytest -v tests
+      - run: python -m pytest -n auto -v tests
 
       - run: cmake --build --preset docs
         if: ${{ contains(matrix.os, 'ubuntu') }}

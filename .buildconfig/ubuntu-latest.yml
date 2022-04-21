@@ -23,6 +23,7 @@ dependencies:
   - pandas
   - pooch
   - pytest
+  - pytest-xdist
   - python-graphviz
   - pythreejs
   - pyyaml
