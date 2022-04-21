@@ -3,31 +3,34 @@
 # @file
 # @author Neil Vaytet
 
+from functools import lru_cache
 import warnings
 from .plot import plot as _plot
 from ..utils import running_in_jupyter
 
-is_doc_build = False
 
-try:
-    import matplotlib as mpl
-except ImportError:
-    mpl = None
+@lru_cache
+def initialize():
+    is_doc_build = False
+    try:
+        import matplotlib as mpl
+    except ImportError:
+        return is_doc_build
 
-# If we are running inside a notebook, then make plot interactive by default.
-if running_in_jupyter():
-    from IPython import get_ipython
-    ipy = get_ipython()
+    # If we are running inside a notebook, then make plot interactive by default.
+    if running_in_jupyter():
+        from IPython import get_ipython
+        ipy = get_ipython()
 
-    # Check if a docs build is requested in the metadata. If so,
-    # use the default Qt/inline backend.
-    cfg = ipy.config
-    meta = cfg["Session"]["metadata"]
-    if hasattr(meta, "to_dict"):
-        meta = meta.to_dict()
-    if "scipp_docs_build" in meta:
-        is_doc_build = meta["scipp_docs_build"]
-    if mpl is not None:
+        # Check if a docs build is requested in the metadata. If so,
+        # use the default Qt/inline backend.
+        cfg = ipy.config
+        meta = cfg["Session"]["metadata"]
+        if hasattr(meta, "to_dict"):
+            meta = meta.to_dict()
+        if "scipp_docs_build" in meta:
+            is_doc_build = meta["scipp_docs_build"]
+
         try:
             # Attempt to use ipympl backend
             from ipympl.backend_nbagg import Canvas
@@ -41,21 +44,18 @@ if running_in_jupyter():
                           "Falling back to a static backend. Use "
                           "conda install -c conda-forge ipympl to install ipympl.")
 
-# Note: due to some strange behavior when importing matplotlib and pyplot in
-# different order, we need to import pyplot after switching to the ipympl
-# backend (see https://github.com/matplotlib/matplotlib/issues/19032).
-try:
+    # Note: due to some strange behavior when importing matplotlib and pyplot in
+    # different order, we need to import pyplot after switching to the ipympl
+    # backend (see https://github.com/matplotlib/matplotlib/issues/19032).
     import matplotlib.pyplot as plt
-except ImportError:
-    plt = None
-
-if is_doc_build and plt is not None:
-    plt.rcParams.update({
-        "figure.max_open_warning": 0,
-        "interactive": False,
-        "figure.figsize": [6.4, 4.8],
-        "figure.dpi": 96
-    })
+    if is_doc_build:
+        plt.rcParams.update({
+            "figure.max_open_warning": 0,
+            "interactive": False,
+            "figure.figsize": [6.4, 4.8],
+            "figure.dpi": 96
+        })
+    return is_doc_build
 
 
 def plot(*args, **kwargs):
@@ -185,10 +185,8 @@ def plot(*args, **kwargs):
     :type vmax: float, optional
 
     """
-
-    if plt is None:
-        raise RuntimeError("Matplotlib not found. Matplotlib is required to "
-                           "use plotting in Scipp.")
+    is_doc_build = initialize()
+    import matplotlib.pyplot as plt
 
     # Switch auto figure display off for better control over when figures are
     # displayed.
@@ -201,7 +199,7 @@ def plot(*args, **kwargs):
 
     if output is not None:
         # Hide all widgets if this is the inline backend
-        if mpl.get_backend().lower().endswith('inline'):
+        if plt.get_backend().lower().endswith('inline'):
             output.hide_widgets()
         # Turn mpl figure into image if doc build
         if is_doc_build:
