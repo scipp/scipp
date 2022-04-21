@@ -4,9 +4,10 @@ from .. import DataArray
 class Model:
     """
     """
-    def __init__(self, data, parent, name, filters=None):
+
+    def __init__(self, data, notification_handler, name, filters=None):
         self._data = data
-        self._parent = parent
+        self._notification_handler = notification_handler
         self._name = name
         self._filters = []
         self._filtered_data = None
@@ -25,4 +26,4 @@ class Model:
         for f in self._filters:
             self._filtered_data = f(self._filtered_data)
         # return out
-        self._parent.notify_change({"name": self._name, "type": "data"})
+        self._notification_handler.notify_change({"name": self._name, "type": "data"})

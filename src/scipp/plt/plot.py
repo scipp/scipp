@@ -18,6 +18,7 @@ class PlotDict():
     The dict will contain one entry for each entry in the input supplied to
     the plot function.
     """
+
     def __init__(self, *args, **kwargs):
         self._items = dict(*args, **kwargs)
 
@@ -70,14 +71,18 @@ class PlotDict():
 class Plot:
     """
     """
+
     def __init__(self,
                  data_arrays: Dict[str, DataArray],
                  filters: list = None,
                  **kwargs):
 
+        self._notification_handler = NotificationHandler()
         self._views = {"figure": Figure(**kwargs)}
         self._models = {
-            key: Model(data=array, parent=self, name=key)
+            key: Model(data=array,
+                       name=key,
+                       notification_handler=self._notification_handler)
             for key, array in data_arrays.items()
         }
         self._widgets = WidgetCollection()
