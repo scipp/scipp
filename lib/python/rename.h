@@ -6,9 +6,10 @@
 
 #include "scipp/dataset/dataset.h"
 
-template <class T> T rename_dims(T &self, const std::map<Dim, Dim> &name_dict) {
+template <class T>
+T rename_dims(T &self, const std::map<std::string, std::string> &name_dict) {
   auto out(self);
   for (const auto &[from, to] : name_dict)
-    out.rename(from, to);
+    out.rename(Dim{from}, Dim{to});
   return out;
 }

@@ -8,7 +8,6 @@
 #include "scipp/common/numeric.h"
 
 #include "scipp/core/dtype.h"
-#include "scipp/core/except.h"
 #include "scipp/core/spatial_transforms.h"
 #include "scipp/core/time_point.h"
 
@@ -24,6 +23,7 @@
 #include "bind_data_access.h"
 #include "bind_operators.h"
 #include "bind_slice_methods.h"
+#include "dim.h"
 #include "numpy.h"
 #include "pybind11.h"
 #include "rename.h"
@@ -38,13 +38,13 @@ template <class T, class Elem, int... N>
 void bind_structured_creation(py::module &m, const std::string &name) {
   m.def(
       name.c_str(),
-      [](const std::vector<Dim> &labels, py::array_t<Elem> &values,
+      [](const std::vector<std::string> &labels, py::array_t<Elem> &values,
          const ProtoUnit &unit) {
         if (scipp::size(labels) != values.ndim() - scipp::index(sizeof...(N)))
           throw std::runtime_error("bad shape to make structured type");
         const auto unit_ = unit_or_default(unit, dtype<T>);
         auto var = variable::make_structures<T, Elem>(
-            Dimensions(labels,
+            Dimensions(to_dim_type(labels),
                        std::vector<scipp::index>(
                            values.shape(), values.shape() + labels.size())),
             unit_,
@@ -125,13 +125,12 @@ of variances.)");
 
   bind_data_properties(variable);
 
-  py::implicitly_convertible<std::string, Dim>();
-
   m.def(
       "islinspace",
       [](const Variable &x,
-         const std::optional<Dim> dim = std::optional<Dim>()) {
-        return scipp::variable::islinspace(x, dim.value_or(x.dim()));
+         const std::optional<std::string> &dim = std::nullopt) {
+        return scipp::variable::islinspace(x, dim.has_value() ? Dim{*dim}
+                                                              : x.dim());
       },
       py::arg("x"), py::arg("dim") = py::none(),
       py::call_guard<py::gil_scoped_release>());

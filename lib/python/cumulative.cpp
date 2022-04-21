@@ -29,8 +29,8 @@ template <class T> void bind_cumsum(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
   m.def(
       "cumsum",
-      [](const T &a, const Dim dim, const std::string &mode) {
-        return cumsum(a, dim, cumsum_mode(mode));
+      [](const T &a, const std::string &dim, const std::string &mode) {
+        return cumsum(a, Dim{dim}, cumsum_mode(mode));
       },
       py::arg("a"), py::arg("dim"), py::arg("mode") = "inclusive",
       py::call_guard<py::gil_scoped_release>());
