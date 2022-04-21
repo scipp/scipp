@@ -70,7 +70,7 @@
       }
     },
     {
-      "name": "package-osc-arm64",
+      "name": "package-osx-arm64",
       "inherits": "package",
       "description": "MacOS options for package build",
       "cacheVariables": {
