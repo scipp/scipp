@@ -28,8 +28,14 @@ jobs:
       - run: conda mambabuild --channel conda-forge --variant-config-files=conda/variants/${{ matrix.variant }} --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels --output-folder conda/package conda
 
       - uses: actions/upload-artifact@v2
+        if: failure()
         with:
-          name: conda-package-${{ matrix.os }}-py${{ matrix.python-version }}
+          name: benchmark-variant:${{ matrix.variant }}
+          path: /Users/runner/.conan/data/benchmark/*
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: conda-package-${{ matrix.os }}-py${{ matrix.python-version }}-variant:${{ matrix.variant }}
           path: conda/package/*/scipp*.tar.bz2
 
   upload_packages:
