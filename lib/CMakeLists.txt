@@ -77,7 +77,10 @@ if(DEFINED CMAKE_OSX_ARCHITECTURES)
   if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
     # For Apple M1
     set(conan_settings "${conan_settings};arch=armv8")
-    set(THREADING OFF)
+    if(SKBUILD)
+        # There is no tbb pip package for this architecture yet.
+        set(THREADING OFF)
+    endif()
   endif()
 endif()
 conan_cmake_install(
