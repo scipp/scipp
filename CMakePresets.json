@@ -62,11 +62,19 @@
       "description": "Linux options for package build"
     },
     {
-      "name": "package-macos",
+      "name": "package-osx-64",
       "inherits": "package",
       "description": "MacOS options for package build",
       "cacheVariables": {
         "CMAKE_OSX_DEPLOYMENT_TARGET": "10.15"
+      }
+    },
+    {
+      "name": "package-osc-arm64",
+      "inherits": "package",
+      "description": "MacOS options for package build",
+      "cacheVariables": {
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "11.0"
       }
     },
     {
