@@ -10,10 +10,12 @@ dependencies:
   - gxx_linux-64 11.1.*
   - h5py
   - hypothesis
+  - ipympl<0.9
   - ipywidgets
   - jinja2==3.0.3  # jupyter/nbconvert#1736
   - markupsafe>=1.1.1,<2.1.0
   - matplotlib-base
+  - nbconvert=6.4.5
   - nbsphinx
   - ninja
   - nomkl
