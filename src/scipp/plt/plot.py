@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
-from .controller import Controller
+# from .controller import Controller
 from .. import DataArray
 from .figure import Figure
-from .model import Model
+from .model import Model, ModelCollection
+from .notification_handler import NotificationHandler
 from .widgets import WidgetCollection, WidgetFilter
 
 from typing import Dict
@@ -76,13 +77,13 @@ class Plot:
                  **kwargs):
 
         self._notification_handler = NotificationHandler()
-        self._views = {"figure": Figure(**kwargs)}
-        self._models = {
+        self._models = ModelCollection({
             key: Model(data=array,
                        name=key,
                        notification_handler=self._notification_handler)
             for key, array in data_arrays.items()
-        }
+        })
+        self._views = {"figure": Figure(models=self._models, **kwargs)}
         for key, view in self._views.items():
             self._notification_handler.register_view(key, view)
 
@@ -104,22 +105,24 @@ class Plot:
         #         if isinstance(f, WidgetFilter):
         #             self._widgets.append(f)
 
-    def notify_change(self, change):
-        for view in self._views.values():
-            view.notify_change(change)
+    # def notify_change(self, change):
+    #     for view in self._views.values():
+    #         view.notify_change(change)
 
     def _ipython_display_(self):
         """
         IPython display representation for Jupyter notebooks.
         """
-        self._controller.render()
+        # self._controller.render()
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         """
         """
         import ipywidgets as ipw
-        return ipw.VBox([self._view._to_widget(), self._widgets._to_widget()])
+        return ipw.VBox(
+            [self._views["figure"]._to_widget(),
+             self._widgets._to_widget()])
 
     def close(self):
         """

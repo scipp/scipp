@@ -1,10 +1,9 @@
-from .. import DataArray
+from .filters import Filter
 
 
 class Model:
     """
     """
-
     def __init__(self, data, notification_handler, name, filters=None):
         self._data = data
         self._notification_handler = notification_handler
@@ -27,3 +26,11 @@ class Model:
             self._filtered_data = f(self._filtered_data)
         # return out
         self._notification_handler.notify_change({"name": self._name, "type": "data"})
+
+    def get_data(self):
+        return self._filtered_data
+
+
+class ModelCollection(dict):
+    def get_data(self, key):
+        return self[key].get_data()

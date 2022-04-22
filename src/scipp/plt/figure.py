@@ -3,6 +3,7 @@
 
 from .. import config, DataArray
 from .tools import fig_to_pngbytes
+from .toolbar import Toolbar
 from .mesh import Mesh
 from .line import Line
 from ..utils import name_with_unit
@@ -26,6 +27,7 @@ class SideBar:
 
 class Figure:
     def __init__(self,
+                 models,
                  ax: Any = None,
                  figsize: Tuple[float, ...] = None,
                  title: str = "",
@@ -36,6 +38,8 @@ class Figure:
                  vmin=None,
                  vmax=None,
                  **kwargs):
+
+        self._models = models
 
         self._fig = None
         self._closed = False
@@ -103,9 +107,9 @@ class Figure:
         self._legend = False
         self._new_artist = False
 
-    def notify_change(self, change):
-        if change["type"] == "data":
-            return
+    # def notify_change(self, change):
+    #     if change["type"] == "data":
+    #         return
 
     def is_widget(self) -> bool:
         """
@@ -220,6 +224,11 @@ class Figure:
         directory where the script or notebook is running.
         """
         self._fig.savefig(filename, bbox_inches="tight")
+
+    def notify(self, change):
+        if change["type"] == "data":
+            self.update(new_values=self._models.get_data(change["name"]),
+                        key=change["name"])
 
     def update(self, new_values: DataArray, key: str, draw: bool = True):
         """
