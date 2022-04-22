@@ -91,13 +91,22 @@ class Plot:
         # self._controller = Controller(models=self._models, view=self._view)
 
         if isinstance(filters, list):
-            for f in filters:
-                for model in self._models.values():
-                    model.add_filter(f)
-        if isinstance(filters, dict):
+            filters = {key: filters for key in self._models}
+            # for f in filters:
+            #     for model in self._models.values():
+            #         model.add_filter(f)
+
+        # if isinstance(filters, dict):
+        if filters is not None:
+
+            if isinstance(filters, list):
+                filters = {key: filters for key in self._models}
+
             for key, filter_list in filters.items():
                 for f in filter_list:
                     self._models[key].add_filter(f)
+                    if isinstance(f, WidgetFilter):
+                        self._notification_handler.register_view(key, f)
 
         # if filters is not None:
         #     for f in filters:

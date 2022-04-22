@@ -54,3 +54,6 @@ class WidgetFilter(Filter):
             widgets.append(
                 widget._to_widget() if hasattr(widget, "_to_widget") else widget)
         return ipw.Box(widgets)
+
+    def notify(self, change):
+        print(change)
