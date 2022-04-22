@@ -16,6 +16,8 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* Changed :meth:`scipp.Variable.dims` and :meth:`scipp.Variable.shape` and corresponding properties in `DataArray` and `Dataset` to return tuples `2543 <https://github.com/scipp/scipp/pull/2543>`_.
+
 Bugfixes
 ~~~~~~~~
 
