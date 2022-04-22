@@ -263,6 +263,9 @@ Dim Dataset::dim() const {
   core::expect::ndim_is(sizes(), 1);
   return *sizes().begin();
 }
+scipp::index Dataset::ndim() const {
+  return scipp::size(m_coords.sizes());
+}
 
 bool Dataset::is_readonly() const noexcept { return m_readonly; }
 

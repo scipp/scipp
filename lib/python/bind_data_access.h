@@ -421,10 +421,7 @@ using as_ElementArrayView = as_ElementArrayViewImpl<
     Eigen::Affine3d, scipp::core::Quaternion, scipp::core::Translation>;
 
 template <class T, class... Ignored>
-void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
-  c.def_property_readonly(
-      "dtype", [](const T &self) { return self.dtype(); },
-      "Data type contained in the variable.");
+void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property_readonly(
       "dims",
       [](const T &self) {
@@ -450,9 +447,22 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       "shape",
       [](const T &self) {
         const auto &dims = self.dims();
-        return std::vector<int64_t>(dims.shape().begin(), dims.shape().end());
+        const auto ndim = static_cast<size_t>(self.ndim());
+        py::tuple shape(ndim);
+        for (size_t i = 0; i < ndim; ++i) {
+          shape[i] = dims.sizes()[i];
+        }
+        return shape;
       },
       "Shape of the data (read-only).", py::return_value_policy::move);
+}
+
+template <class T, class... Ignored>
+void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
+  bind_common_data_properties(c);
+  c.def_property_readonly(
+      "dtype", [](const T &self) { return self.dtype(); },
+      "Data type contained in the variable.");
   c.def_property(
       "unit",
       [](const T &self) {

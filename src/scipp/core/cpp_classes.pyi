@@ -545,11 +545,11 @@ class DataArray():
         :type: int
         """
     @property
-    def shape(self) -> typing.List[int]:
+    def shape(self) -> tuple:
         """
         Shape of the data (read-only).
 
-        :type: typing.List[int]
+        :type: tuple
         """
     @property
     def sizes(self) -> None:
@@ -833,11 +833,11 @@ class Dataset():
         :type: str
         """
     @property
-    def dims(self) -> typing.List[str]:
+    def dims(self) -> tuple:
         """
-        List of dimensions.
+        Dimension labels of the data (read-only).
 
-        :type: typing.List[str]
+        :type: tuple
         """
     @property
     def meta(self) -> Coords:
@@ -847,11 +847,18 @@ class Dataset():
         :type: Coords
         """
     @property
-    def shape(self) -> typing.List[int]:
+    def ndim(self) -> int:
         """
-        List of shapes.
+        Number of dimensions of the data (read-only).
 
-        :type: typing.List[int]
+        :type: int
+        """
+    @property
+    def shape(self) -> tuple:
+        """
+        Shape of the data (read-only).
+
+        :type: tuple
         """
     @property
     def sizes(self) -> None:
@@ -1679,11 +1686,11 @@ class Variable():
         :type: int
         """
     @property
-    def shape(self) -> typing.List[int]:
+    def shape(self) -> tuple:
         """
         Shape of the data (read-only).
 
-        :type: typing.List[int]
+        :type: tuple
         """
     @property
     def sizes(self) -> None:
