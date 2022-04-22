@@ -126,27 +126,41 @@ def curve_fit(
       names. The variance of the returned optimal parameter values is set to the
       corresponding diagonal value of the covariance matrix.
 
-    :param f: The model function, f(x, ...). It must take the independent variable
+    Parameters
+    ----------
+    f:
+        The model function, f(x, ...). It must take the independent variable
         (coordinate of the data array da) as the first argument and the parameters
         to fit as keyword arguments.
-    :param da: One-dimensional data array. The dimension coordinate for the only
+    da:
+        One-dimensional data array. The dimension coordinate for the only
         dimension defines the independent variable where the data is measured. The
         values of the data array provide the dependent data. If the data array stores
         variances then the standard deviations (square root of the variances) are taken
         into account when fitting.
-    :param p0: An optional dict of optional initial guesses for the parameters. If None,
+    p0:
+        An optional dict of optional initial guesses for the parameters. If None,
         then the initial values will all be 1 (if the parameter names for the function
         can be determined using introspection, otherwise a ValueError is raised). If
         the fit function cannot handle initial values of 1, in particular for parameters
         that are not dimensionless, then typically a :py:class:`scipp.UnitError` is
         raised, but details will depend on the function.
-    :param bounds: Lower and upper bounds on parameters.
+    bounds:
+        Lower and upper bounds on parameters.
         Defaults to no bounds.
         Bounds for each parameter can either be given as a 2-tuple of (lower, upper)
         where lower and upper are either both Variables or plain numbers. Or as a
         length-2 variable with an arbitrary dimension name.
 
-    Example:
+    Returns
+    -------
+    popt:
+        Optimal values for the parameters.
+    pcov:
+        The estimated covariance of popt.
+
+    Examples
+    --------
 
       >>> def func(x, *, a, b):
       ...     return a * sc.exp(-b * x)
