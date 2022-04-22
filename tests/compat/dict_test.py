@@ -24,16 +24,16 @@ def test_variable_to_dict():
 def test_variable_0D_to_dict():
     var = 12.0 * sc.units.one
     var_dict = sc.to_dict(var)
-    assert var_dict["dims"] == []
-    assert var_dict["shape"] == []
+    assert var_dict["dims"] == ()
+    assert var_dict["shape"] == ()
     assert var_dict["values"] == 12.0
 
 
 def test_variable_vector_to_dict():
     var = sc.vectors(dims=['x'], values=np.random.random([10, 3]))
     var_dict = sc.to_dict(var)
-    assert var_dict["dims"] == ['x']
-    assert var_dict["shape"] == [10]
+    assert var_dict["dims"] == ('x', )
+    assert var_dict["shape"] == (10, )
     assert var_dict["values"].shape == (10, 3)
     assert var_dict["dtype"] == sc.DType.vector3
 
@@ -41,8 +41,8 @@ def test_variable_vector_to_dict():
 def test_variable_0D_vector_to_dict():
     var = sc.vector(value=[1, 2, 3])
     var_dict = sc.to_dict(var)
-    assert var_dict["dims"] == []
-    assert var_dict["shape"] == []
+    assert var_dict["dims"] == ()
+    assert var_dict["shape"] == ()
     assert np.array_equal(var_dict["values"], [1, 2, 3])
     assert var_dict["dtype"] == sc.DType.vector3
 
@@ -56,7 +56,7 @@ def test_variable_matrix_to_dict():
     ])
     var = sc.matrices(dims=['x'], values=data, unit=sc.units.m)
     var_dict = sc.to_dict(var)
-    assert var_dict["shape"] == [4]
+    assert var_dict["shape"] == (4, )
     assert var_dict["values"].shape == (4, 3, 3)
     assert var_dict["dtype"] == sc.DType.linear_transform3
 
@@ -64,51 +64,55 @@ def test_variable_matrix_to_dict():
 def test_variable_0D_matrix_to_dict():
     var = sc.matrix(value=np.arange(1, 10).reshape(3, 3))
     var_dict = sc.to_dict(var)
-    assert var_dict["dims"] == []
-    assert var_dict["shape"] == []
+    assert var_dict["dims"] == ()
+    assert var_dict["shape"] == ()
     assert np.array_equal(var_dict["values"], [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     assert var_dict["dtype"] == sc.DType.linear_transform3
 
 
 def test_variable_from_dict():
     var_dict = {
-        "dims": ['x'],
+        "dims": ('x', ),
         "values": np.random.random(10),
         "variances": np.random.random(10)
     }
     var = sc.from_dict(var_dict)
     assert var.dims == var_dict["dims"]
-    assert var.shape == [10]
+    assert var.shape == (10, )
     assert np.array_equal(var.values, var_dict["values"])
     assert np.array_equal(var.variances, var_dict["variances"])
     assert var.unit == sc.units.one
 
 
 def test_variable_0D_from_dict():
-    var_dict = {"dims": [], "values": 17., "variances": 0.2}
+    var_dict = {"dims": (), "values": 17., "variances": 0.2}
     var = sc.from_dict(var_dict)
-    assert var.dims == []
-    assert var.shape == []
+    assert var.dims == ()
+    assert var.shape == ()
     assert var.value == 17.0
     assert var.variance == 0.2
     assert var.unit == sc.units.one
 
 
 def test_variable_vector_from_dict():
-    var_dict = {"dims": ['x'], "values": np.arange(6).reshape(2, 3), "dtype": "vector3"}
+    var_dict = {
+        "dims": ('x', ),
+        "values": np.arange(6).reshape(2, 3),
+        "dtype": "vector3"
+    }
     var = sc.from_dict(var_dict)
     assert var.dims == var_dict["dims"]
-    assert var.shape == [2]
+    assert var.shape == (2, )
     assert np.array_equal(np.array(var.values), [[0, 1, 2], [3, 4, 5]])
     assert var.unit == sc.units.one
     assert var.dtype == sc.DType.vector3
 
 
 def test_variable_0D_vector_from_dict():
-    var_dict = {"dims": [], "values": [1, 2, 3], "dtype": "vector3"}
+    var_dict = {"dims": (), "values": [1, 2, 3], "dtype": "vector3"}
     var = sc.from_dict(var_dict)
-    assert var.dims == []
-    assert var.shape == []
+    assert var.dims == ()
+    assert var.shape == ()
     assert np.array_equal(np.array(var.values), [1, 2, 3])
     assert var.unit == sc.units.one
     assert var.dtype == sc.DType.vector3
@@ -116,13 +120,13 @@ def test_variable_0D_vector_from_dict():
 
 def test_variable_matrix_from_dict():
     var_dict = {
-        "dims": ['x'],
+        "dims": ('x', ),
         "values": np.arange(18).reshape(2, 3, 3),
         "dtype": "linear_transform3"
     }
     var = sc.from_dict(var_dict)
     assert var.dims == var_dict["dims"]
-    assert var.shape == [2]
+    assert var.shape == (2, )
     assert np.array_equal(np.array(var.values), var_dict["values"])
     assert var.unit == sc.units.one
     assert var.dtype == sc.DType.linear_transform3
@@ -130,13 +134,13 @@ def test_variable_matrix_from_dict():
 
 def test_variable_0D_matrix_from_dict():
     var_dict = {
-        "dims": [],
+        "dims": (),
         "values": np.arange(9).reshape(3, 3),
         "dtype": "linear_transform3"
     }
     var = sc.from_dict(var_dict)
-    assert var.dims == []
-    assert var.shape == []
+    assert var.dims == ()
+    assert var.shape == ()
     assert np.array_equal(np.array(var.value), var_dict["values"])
     assert var.unit == sc.units.one
     assert var.dtype == sc.DType.linear_transform3
@@ -152,7 +156,6 @@ def test_variable_round_trip():
 
 def test_variable_0D_round_trip():
     var = 12.0 * sc.units.one
-    print(sc.to_dict(var))
     assert sc.identical(var, sc.from_dict(sc.to_dict(var)))
 
 

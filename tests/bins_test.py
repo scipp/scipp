@@ -240,8 +240,8 @@ def test_bins_mean():
     # Mean of last (empty) bin should be NaN
     assert isnan(binned.bins.mean().values[2])
 
-    assert binned.bins.mean().dims == ["x"]
-    assert binned.bins.mean().shape == [3]
+    assert binned.bins.mean().dims == ('x', )
+    assert binned.bins.mean().shape == (3, )
     assert binned.bins.mean().unit == sc.units.counts
 
 
@@ -272,8 +272,8 @@ def test_bins_mean_with_masks():
     # Mean of last (empty) bin should be NaN
     assert isnan(binned.bins.mean().values[2])
 
-    assert binned.bins.mean().dims == ["x"]
-    assert binned.bins.mean().shape == [3]
+    assert binned.bins.mean().dims == ('x', )
+    assert binned.bins.mean().shape == (3, )
     assert binned.bins.mean().unit == sc.units.counts
 
 
