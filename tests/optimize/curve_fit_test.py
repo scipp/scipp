@@ -21,8 +21,32 @@ def array1d(*, a=1.2, b=1.3, noise_scale=0.1, size=50):
     return sc.DataArray(y, coords={'xx': x})
 
 
+# This function can handle a and b specified as dimensionful Variables.
+def func_with_vars(x, *, a, b):
+    return a * sc.sqrt(b / x)
+
+
+def array1d_from_vars(*, a, b, noise_scale=0.1, size=50):
+    x = sc.linspace(dim='xx', start=0.1, stop=4.0, num=size, unit='m')
+    y = func_with_vars(x, a=a, b=b)
+    rng = np.random.default_rng()
+    # Noise is random but avoiding unbounded values to avoid flaky tests
+    y.values += noise_scale * np.clip(rng.normal(size=size), -2.0, 2.0)
+    return sc.DataArray(y, coords={'xx': x})
+
+
 def test_should_not_raise_given_function_with_dimensionless_params_and_1d_array():
     curve_fit(func, array1d())
+
+
+def test_should_not_raise_given_function_with_dimensionful_params_and_1d_array():
+    data = array1d_from_vars(a=sc.scalar(1.2, unit='s'), b=sc.scalar(100.0, unit='m'))
+    curve_fit(func_with_vars,
+              data,
+              p0={
+                  'a': sc.scalar(1.0, unit='s'),
+                  'b': sc.scalar(1.0, unit='m')
+              })
 
 
 def test_should_raise_TypeError_when_xdata_given_as_param():
