@@ -552,12 +552,11 @@ class DataArray():
         :type: tuple
         """
     @property
-    def sizes(self) -> None:
+    def sizes(self) -> typing.Dict[str, int]:
         """
-            Makes a dictionary of dimensions labels to dimension sizes
-            
+        dict mapping dimension labels to dimension sizes (read-only).
 
-        :type: None
+        :type: typing.Dict[str, int]
         """
     @property
     def unit(self) -> object:
@@ -861,12 +860,11 @@ class Dataset():
         :type: tuple
         """
     @property
-    def sizes(self) -> None:
+    def sizes(self) -> typing.Dict[str, int]:
         """
-            Makes a dictionary of dimensions labels to dimension sizes
-            
+        dict mapping dimension labels to dimension sizes (read-only).
 
-        :type: None
+        :type: typing.Dict[str, int]
         """
     __array_ufunc__ = None
     pass
@@ -1693,12 +1691,11 @@ class Variable():
         :type: tuple
         """
     @property
-    def sizes(self) -> None:
+    def sizes(self) -> typing.Dict[str, int]:
         """
-            Makes a dictionary of dimensions labels to dimension sizes
-            
+        dict mapping dimension labels to dimension sizes (read-only).
 
-        :type: None
+        :type: typing.Dict[str, int]
         """
     @property
     def unit(self) -> object:

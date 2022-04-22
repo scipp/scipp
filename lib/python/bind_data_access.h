@@ -455,6 +455,18 @@ void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {
         return shape;
       },
       "Shape of the data (read-only).", py::return_value_policy::move);
+  c.def_property_readonly(
+      "sizes",
+      [](const T &self) {
+        const auto &dims = self.dims();
+        std::map<std::string, scipp::index> sizes;
+        for (const auto label : dims.labels()) {
+          sizes.emplace(label.name(), dims[label]);
+        }
+        return sizes;
+      },
+      "dict mapping dimension labels to dimension sizes (read-only).",
+      py::return_value_policy::move);
 }
 
 template <class T, class... Ignored>
