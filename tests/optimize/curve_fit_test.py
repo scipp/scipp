@@ -172,3 +172,91 @@ def test_default_params_with_initial_guess_are_used_for_fit():
                         p0={'b': 1.1})
     assert sc.allclose(popt['a'], sc.scalar(1.7), rtol=sc.scalar(2.0 * noise_scale))
     assert sc.allclose(popt['b'], sc.scalar(1.5), rtol=sc.scalar(2.0 * noise_scale))
+
+
+def test_bounds_limit_param_range_without_units():
+    data = array1d(a=40.0, b=30.0)
+    unconstrained, _ = curve_fit(func, data, p0={'a': 1.0, 'b': 1.0})
+    # Fit approaches correct value more closely than with the bound below.
+    assert sc.abs(unconstrained['a']).value > 3.0
+    assert sc.abs(unconstrained['b']).value > 2.0
+
+    constrained, _ = curve_fit(func,
+                               data,
+                               p0={
+                                   'a': 1.0,
+                                   'b': 1.0
+                               },
+                               bounds={
+                                   'a': (-3, 3),
+                                   'b': sc.array(dims=['qwe'], values=[-2.0, 2.0])
+                               })
+    assert sc.abs(constrained['a']).value < 3.0
+    assert sc.abs(constrained['b']).value < 2.0
+
+
+def test_bounds_limit_param_range_with_units():
+    data = array1d_from_vars(a=sc.scalar(20.0, unit='s'), b=sc.scalar(10.0, unit='m'))
+    unconstrained, _ = curve_fit(func_with_vars,
+                                 data,
+                                 p0={
+                                     'a': sc.scalar(1.0, unit='s'),
+                                     'b': sc.scalar(1.0, unit='m')
+                                 })
+    # Fit approaches correct value more closely than with the bound below.
+    assert (abs(unconstrained['a']) > sc.scalar(3.0, unit='s')).value
+    assert (abs(unconstrained['b']) > sc.scalar(2.0, unit='m')).value
+
+    constrained, _ = curve_fit(func_with_vars,
+                               data,
+                               p0={
+                                   'a': sc.scalar(1.0, unit='s'),
+                                   'b': sc.scalar(1.0, unit='m')
+                               },
+                               bounds={
+                                   'a': (sc.scalar(-3.0,
+                                                   unit='s'), sc.scalar(3.0, unit='s')),
+                                   'b':
+                                   sc.array(dims=['xyz'], values=[-2.0, 2.0], unit='m')
+                               })
+
+    assert (abs(constrained['a']) < sc.scalar(3.0, unit='s')).value
+    assert (abs(constrained['b']) < sc.scalar(2.0, unit='m')).value
+
+
+def test_bounds_limit_only_given_parameters_param_range():
+    data = array1d_from_vars(a=sc.scalar(20.0, unit='s'), b=sc.scalar(10.0, unit='m'))
+    unconstrained, _ = curve_fit(func_with_vars,
+                                 data,
+                                 p0={
+                                     'a': sc.scalar(1.0, unit='s'),
+                                     'b': sc.scalar(1.0, unit='m')
+                                 })
+    # Fit approaches correct value more closely than with the bound below.
+    assert (abs(unconstrained['a']) > sc.scalar(10.0, unit='s')).value
+    assert (abs(unconstrained['b']) > sc.scalar(2.0, unit='m')).value
+
+    constrained, _ = curve_fit(
+        func_with_vars,
+        data,
+        p0={
+            'a': sc.scalar(1.0, unit='s'),
+            'b': sc.scalar(1.0, unit='m')
+        },
+        bounds={'b': sc.array(dims=['xyz'], values=[-2.0, 2.0], unit='m')})
+
+    assert (abs(constrained['a']) > sc.scalar(10.0, unit='s')).value
+    assert (abs(constrained['b']) < sc.scalar(2.0, unit='m')).value
+
+
+def test_bounds_must_have_unit_convertable_to_param_unit():
+    data = array1d_from_vars(a=sc.scalar(1.2, unit='s'), b=sc.scalar(10.0, unit='m'))
+    with pytest.raises(sc.UnitError):
+        curve_fit(
+            func_with_vars,
+            data,
+            p0={
+                'a': sc.scalar(1.0, unit='s'),
+                'b': sc.scalar(1.0, unit='m')
+            },
+            bounds={'a': sc.array(dims=['asdf'], values=[-10.0, 10.0], unit='kg')})

@@ -9,12 +9,12 @@ This subpackage provides wrappers for a subset of functions from
 
 from ..core import scalar, stddevs, Variable, DataArray
 from ..core import BinEdgeError
-from ..units import default_unit
+from ..units import default_unit, dimensionless
 from ..interpolate import _drop_masked
 
 import numpy as np
 from numbers import Real
-from typing import Callable, Dict, Tuple, Union
+from typing import Callable, Dict, Optional, Tuple, Union
 from inspect import getfullargspec
 
 
@@ -59,12 +59,47 @@ def _make_defaults(f, p0):
     return kwargs
 
 
+def _get_specific_bounds(bounds, name, unit) -> Tuple[float, float]:
+    if name not in bounds:
+        return -np.inf, np.inf
+    b = bounds[name]
+    if isinstance(b, Variable):
+        if b.shape != [2]:
+            raise ValueError("Parameter bounds must be either a tuple of scalar "
+                             "variables or a 2-element array variable. "
+                             f"Got sizes={b.sizes} as bounds for '{name}'.")
+        return tuple(b.to(unit=unit, dtype=float).values)
+    if len(b) != 2:
+        raise ValueError("Parameter bounds must be either a tuple of scalar "
+                         "variables or a 2-element array variable. "
+                         f"Got a collection of length {len(b)} as bounds for '{name}'.")
+    if isinstance(b[0], Variable):
+        return b[0].to(unit=unit, dtype=float).value, b[1].to(unit=unit,
+                                                              dtype=float).value
+    return b
+
+
+def _parse_bounds(bounds,
+                  params) -> Union[Tuple[float, float], Tuple[np.ndarray, np.ndarray]]:
+    if bounds is None:
+        return -np.inf, np.inf
+
+    bounds_tuples = [
+        _get_specific_bounds(
+            bounds, name, param.unit if isinstance(param, Variable) else dimensionless)
+        for name, param in params.items()
+    ]
+    bounds_array = np.array(bounds_tuples).T
+    return bounds_array[0], bounds_array[1]
+
+
 def curve_fit(
     f: Callable,
     da: DataArray,
     *,
-    p0: Dict[str, Variable] = None,
-    bounds: Union[Tuple[Variable, Variable], Dict[str, Variable], None] = None,
+    p0: Dict[str, Union[Variable, Real]] = None,
+    bounds: Optional[Dict[str, Union[Tuple[Variable, Variable], Tuple[Real, Real],
+                                     Variable]]] = None,
     **kwargs
 ) -> Tuple[Dict[str, Union[Variable, Real]], Dict[str, Dict[str, Union[Variable,
                                                                        Real]]]]:
@@ -82,6 +117,7 @@ def curve_fit(
       arguments mapping to fit parameters must be keyword-only arguments.
     - The inital guess in p0 must be provided as a dict, mapping from fit-function
       parameter names to initial guesses.
+    - The parameter bounds must also be provided as a dict, like p0.
     - The fit parameters may be scalar scipp variables. In that case an initial guess
       p0 with the correct units must be provided.
     - The returned optimal parameter values popt and the coverance matrix pcov will
@@ -104,6 +140,11 @@ def curve_fit(
         the fit function cannot handle initial values of 1, in particular for parameters
         that are not dimensionless, then typically a :py:class:`scipp.UnitError` is
         raised, but details will depend on the function.
+    :param bounds: Lower and upper bounds on parameters.
+        Defaults to no bounds.
+        Bounds for each parameter can either be given as a 2-tuple of (lower, upper)
+        where lower and upper are either both Variables or plain numbers. Or as a
+        length-2 variable with an arbitrary dimension name.
 
     Example:
 
@@ -152,7 +193,8 @@ def curve_fit(
                                xdata=da.coords[da.dim],
                                ydata=da.values,
                                sigma=sigma,
-                               p0=p0)
+                               p0=p0,
+                               bounds=_parse_bounds(bounds, params))
     popt = {
         name: scalar(value=val, variance=var, unit=u)
         for name, val, var, u in zip(params.keys(), popt, np.diag(pcov), p_units)
