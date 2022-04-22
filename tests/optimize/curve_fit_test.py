@@ -233,7 +233,7 @@ def test_bounds_limit_only_given_parameters_param_range():
                                      'b': sc.scalar(1.0, unit='m')
                                  })
     # Fit approaches correct value more closely than with the bound below.
-    assert (abs(unconstrained['a']) > sc.scalar(10.0, unit='s')).value
+    assert (abs(unconstrained['a']) > sc.scalar(5.0, unit='s')).value
     assert (abs(unconstrained['b']) > sc.scalar(2.0, unit='m')).value
 
     constrained, _ = curve_fit(
@@ -245,7 +245,7 @@ def test_bounds_limit_only_given_parameters_param_range():
         },
         bounds={'b': sc.array(dims=['xyz'], values=[-2.0, 2.0], unit='m')})
 
-    assert (abs(constrained['a']) > sc.scalar(10.0, unit='s')).value
+    assert (abs(constrained['a']) > sc.scalar(5.0, unit='s')).value
     assert (abs(constrained['b']) < sc.scalar(2.0, unit='m')).value
 
 
@@ -266,3 +266,14 @@ def test_jac_is_not_implemented():
     # replace this with an actual test once jac is implemented
     with pytest.raises(NotImplementedError):
         curve_fit(func, array1d(), jac=np.array([[1, 2], [3, 4]]))
+
+
+def test_can_pass_extra_kwargs():
+    data = array1d()
+    data[2] = np.inf
+
+    # does not raise
+    curve_fit(func, data, check_finite=False)
+
+    with pytest.raises(ValueError):
+        curve_fit(func, data, check_finite=True)

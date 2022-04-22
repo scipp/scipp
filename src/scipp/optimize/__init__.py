@@ -197,7 +197,8 @@ def curve_fit(
                                ydata=da.values,
                                sigma=sigma,
                                p0=p0,
-                               bounds=_parse_bounds(bounds, params))
+                               bounds=_parse_bounds(bounds, params),
+                               **kwargs)
     popt = {
         name: scalar(value=val, variance=var, unit=u)
         for name, val, var, u in zip(params.keys(), popt, np.diag(pcov), p_units)
