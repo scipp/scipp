@@ -175,6 +175,9 @@ def curve_fit(
       >>> 'a' in popt
       True
     """
+    if 'jac' in kwargs:
+        raise NotImplementedError("The 'jac' argument is not yet supported. "
+                                  "See https://github.com/scipp/scipp/issues/2544")
     for arg in ['xdata', 'ydata', 'sigma']:
         if arg in kwargs:
             raise TypeError(

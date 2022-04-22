@@ -260,3 +260,9 @@ def test_bounds_must_have_unit_convertable_to_param_unit():
                 'b': sc.scalar(1.0, unit='m')
             },
             bounds={'a': sc.array(dims=['asdf'], values=[-10.0, 10.0], unit='kg')})
+
+
+def test_jac_is_not_implemented():
+    # replace this with an actual test once jac is implemented
+    with pytest.raises(NotImplementedError):
+        curve_fit(func, array1d(), jac=np.array([[1, 2], [3, 4]]))
