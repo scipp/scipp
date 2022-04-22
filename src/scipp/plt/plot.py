@@ -107,6 +107,7 @@ class Plot:
                     self._models[key].add_filter(f)
                     if isinstance(f, WidgetFilter):
                         self._notification_handler.register_view(key, f)
+                        f.register_models(self._models)
 
         # if filters is not None:
         #     for f in filters:
@@ -123,6 +124,7 @@ class Plot:
         IPython display representation for Jupyter notebooks.
         """
         # self._controller.render()
+        self._models.run()
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):

@@ -89,3 +89,10 @@ class SlicingFilter(WidgetFilter):
     def __init__(self, **kwargs):
         super().__init__(func=_slicing_func,
                          widgets={"slices": SlicingWidget(**kwargs)})
+
+    def notify(self, change):
+        widget = self._widgets["slices"]
+        for dim in widget._slider_dims:
+            coord = self._models.get_coord(key=change["name"], dim=dim)
+            widget._controls[dim]["value"].value = str(
+                coord[dim, widget._controls[dim]["slider"].value].value)

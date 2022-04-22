@@ -18,6 +18,7 @@ class Filter:
     def __init__(self, func):
         self._func = func
         self._callbacks = []
+        self._models = None
 
     def __call__(self, data_array):
         return self._func(data_array)
@@ -28,3 +29,6 @@ class Filter:
 
     def register_callback(self, callback):
         self._callbacks.append(callback)
+
+    def register_models(self, models):
+        self._models = models
