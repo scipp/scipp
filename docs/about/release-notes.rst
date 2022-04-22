@@ -21,6 +21,7 @@ Bugfixes
 
 * Fix :func:`scipp.isclose` and :func:`scipp.allclose` to support arguments without a unit `#2528 <https://github.com/scipp/scipp/pull/2528>`_.
 * :func:`scipp.to_unit` avoids a rounding problem when converting datetimes. This previously led to errors, e.g., of about 300 nanoseconds when converting a current (2020s) datetime64 from seconds to nanoseconds `#2533 <https://github.com/scipp/scipp/pull/2533>`_.
+* Fix handling of keyword arguments in :func:`scipp.optimize.curve_fit`. They were previously checked for conflicts but otherwise ignored `#2545 <https://github.com/scipp/scipp/pull/2545>`_.
 
 Documentation
 ~~~~~~~~~~~~~
