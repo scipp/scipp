@@ -429,9 +429,10 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       "dims",
       [](const T &self) {
         const auto &dims_ = self.dims();
-        std::vector<std::string> dims;
-        for (const auto &dim : dims_.labels()) {
-          dims.push_back(dim.name());
+        const auto ndim = static_cast<size_t>(self.ndim());
+        py::tuple dims(ndim);
+        for (size_t i = 0; i < ndim; ++i) {
+          dims[i] = dims_.labels()[i].name();
         }
         return dims;
       },

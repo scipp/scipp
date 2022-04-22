@@ -498,11 +498,11 @@ class DataArray():
         :type: str
         """
     @property
-    def dims(self) -> typing.List[str]:
+    def dims(self) -> tuple:
         """
         Dimension labels of the data (read-only).
 
-        :type: typing.List[str]
+        :type: tuple
         """
     @property
     def dtype(self) -> DType:
@@ -1651,11 +1651,11 @@ class Variable():
         :type: str
         """
     @property
-    def dims(self) -> typing.List[str]:
+    def dims(self) -> tuple:
         """
         Dimension labels of the data (read-only).
 
-        :type: typing.List[str]
+        :type: tuple
         """
     @property
     def dtype(self) -> DType:
@@ -1760,7 +1760,7 @@ class Variable():
     def any(self, dim: 'typing.Optional[str]' = None, *, out: 'typing.Optional[Variable]' = None) -> 'Variable': ...
     def broadcast(self, dims: typing.Union[typing.List[str], typing.Tuple[str, ...], None] = None, shape: typing.Union[typing.Sequence[int], None] = None, sizes: typing.Union[typing.Dict[str, int], None] = None) -> Variable: ...
     def ceil(self, *, out: 'typing.Optional[VariableLike]' = None) -> 'VariableLike': ...
-    def cumsum(self, dim: typing.Union[str, None] = None, mode: typing.Union[str, None] = 'inclusive') -> Variable: ...
+    def cumsum(self, dim: typing.Union[str, None] = None, mode: Literal['exclusive', 'inclusive'] = 'inclusive') -> Variable: ...
     def flatten(self, dims: typing.Union[typing.List[str], typing.Tuple[str, ...], None] = None, to: typing.Union[str, None] = None) -> typing.Union[Variable, DataArray, Dataset]: ...
     def floor(self, *, out: 'typing.Optional[VariableLike]' = None) -> 'VariableLike': ...
     def fold(self, dim: str, sizes: typing.Union[typing.Dict[str, int], None] = None, dims: typing.Union[typing.List[str], typing.Tuple[str, ...], None] = None, shape: typing.Union[typing.Sequence[int], None] = None) -> typing.Union[Variable, DataArray, Dataset]: ...
