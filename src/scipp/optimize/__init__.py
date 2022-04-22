@@ -64,6 +64,7 @@ def curve_fit(
     da: DataArray,
     *,
     p0: Dict[str, Variable] = None,
+    bounds: Union[Tuple[Variable, Variable], Dict[str, Variable], None] = None,
     **kwargs
 ) -> Tuple[Dict[str, Union[Variable, Real]], Dict[str, Dict[str, Union[Variable,
                                                                        Real]]]]:
@@ -142,19 +143,21 @@ def curve_fit(
     import scipy.optimize as opt
     da = _drop_masked(da, da.dim)
     sigma = stddevs(da).values if da.variances is not None else None
-    p = _make_defaults(f, p0)
-    p_units = [p.unit if isinstance(p, Variable) else default_unit for p in p.values()]
-    p0 = [p.value if isinstance(p, Variable) else p for p in p.values()]
-    popt, pcov = opt.curve_fit(f=_wrap_func(f, p.keys(), p_units),
+    params = _make_defaults(f, p0)
+    p_units = [
+        p.unit if isinstance(p, Variable) else default_unit for p in params.values()
+    ]
+    p0 = [p.value if isinstance(p, Variable) else p for p in params.values()]
+    popt, pcov = opt.curve_fit(f=_wrap_func(f, params.keys(), p_units),
                                xdata=da.coords[da.dim],
                                ydata=da.values,
                                sigma=sigma,
                                p0=p0)
     popt = {
         name: scalar(value=val, variance=var, unit=u)
-        for name, val, var, u in zip(p, popt, np.diag(pcov), p_units)
+        for name, val, var, u in zip(params.keys(), popt, np.diag(pcov), p_units)
     }
-    pcov = _covariance_with_units(list(p.keys()), pcov, p_units)
+    pcov = _covariance_with_units(list(params.keys()), pcov, p_units)
     return popt, pcov
 
 
