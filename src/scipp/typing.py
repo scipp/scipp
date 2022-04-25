@@ -12,7 +12,7 @@ def is_scalar(obj: _std_typing.Any) -> bool:
     """
     Return True if the input is a scalar.
     """
-    return obj.dims == ()
+    return obj.ndim == 0
 
 
 def has_vector_type(obj: _std_typing.Any) -> bool:
