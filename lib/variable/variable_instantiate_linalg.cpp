@@ -68,6 +68,14 @@ std::vector<std::string> element_keys(const Variable &var) {
   throw except::TypeError("dtype is not structured");
 }
 
+// Defining the destructor here ensures that all users of StructureArrayModel
+// use the same visibility of that class. Otherwise, instantiating the
+// StructureArrayModel template creates a class without visibility attribute.
+// But INSTANTIATE_STRUCTURE_ARRAY_VARIABLE below gives it SCIPP_EXPORT
+// visibility which would cause a mismatch.
+// With this explicit definition, instantiation is deferred.
+// This was observed with Apple Clang 13 and using
+// std::make_shared<StructureArrayModel<T, Elem>> in structures.cpp
 template <class T_, class Elem_>
 StructureArrayModel<T_, Elem_>::~StructureArrayModel() = default;
 
