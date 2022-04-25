@@ -68,6 +68,9 @@ std::vector<std::string> element_keys(const Variable &var) {
   throw except::TypeError("dtype is not structured");
 }
 
+template <class T_, class Elem_>
+StructureArrayModel<T_, Elem_>::~StructureArrayModel() = default;
+
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(vector3, Eigen::Vector3d, double)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(linear_transform3, Eigen::Matrix3d, double)
 INSTANTIATE_STRUCTURE_ARRAY_VARIABLE(affine_transform3, Eigen::Affine3d, double)
