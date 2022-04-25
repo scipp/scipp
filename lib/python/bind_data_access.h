@@ -459,9 +459,11 @@ void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {
       "sizes",
       [](const T &self) {
         const auto &dims = self.dims();
-        std::map<std::string, scipp::index> sizes;
+        // Use py::dict directly instead of std::map in order to guarantee
+        // that items are stored in the order of insertion.
+        py::dict sizes;
         for (const auto label : dims.labels()) {
-          sizes.emplace(label.name(), dims[label]);
+          sizes[label.name().c_str()] = dims[label];
         }
         return sizes;
       },
