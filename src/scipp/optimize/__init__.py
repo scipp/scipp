@@ -63,19 +63,12 @@ def _get_specific_bounds(bounds, name, unit) -> Tuple[float, float]:
     if name not in bounds:
         return -np.inf, np.inf
     b = bounds[name]
-    if isinstance(b, Variable):
-        if b.shape != [2]:
-            raise ValueError("Parameter bounds must be either a tuple of scalar "
-                             "variables or a 2-element array variable. "
-                             f"Got sizes={b.sizes} as bounds for '{name}'.")
-        return tuple(b.to(unit=unit, dtype=float).values)
     if len(b) != 2:
-        raise ValueError("Parameter bounds must be either a tuple of scalar "
-                         "variables or a 2-element array variable. "
+        raise ValueError("Parameter bounds must be given as a tuple of length 2. "
                          f"Got a collection of length {len(b)} as bounds for '{name}'.")
     if isinstance(b[0], Variable):
-        return b[0].to(unit=unit, dtype=float).value, b[1].to(unit=unit,
-                                                              dtype=float).value
+        return (b[0].to(unit=unit, dtype=float).value, b[1].to(unit=unit,
+                                                               dtype=float).value)
     return b
 
 
@@ -98,8 +91,8 @@ def curve_fit(
     da: DataArray,
     *,
     p0: Dict[str, Union[Variable, Real]] = None,
-    bounds: Optional[Dict[str, Union[Tuple[Variable, Variable], Tuple[Real, Real],
-                                     Variable]]] = None,
+    bounds: Optional[Dict[str, Union[Tuple[Variable, Variable], Tuple[Real,
+                                                                      Real]]]] = None,
     **kwargs
 ) -> Tuple[Dict[str, Union[Variable, Real]], Dict[str, Dict[str, Union[Variable,
                                                                        Real]]]]:
@@ -148,9 +141,9 @@ def curve_fit(
     bounds:
         Lower and upper bounds on parameters.
         Defaults to no bounds.
-        Bounds for each parameter can either be given as a 2-tuple of (lower, upper)
-        where lower and upper are either both Variables or plain numbers. Or as a
-        length-2 variable with an arbitrary dimension name.
+        Bounds are given as a dict of 2-tuples of (lower, upper) for each parameter
+        where lower and upper are either both Variables or plain numbers.
+        Parameters omitted from the `bounds` dict are unbounded.
 
     Returns
     -------

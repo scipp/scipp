@@ -189,7 +189,7 @@ def test_bounds_limit_param_range_without_units():
                                },
                                bounds={
                                    'a': (-3, 3),
-                                   'b': sc.array(dims=['qwe'], values=[-2.0, 2.0])
+                                   'b': (sc.scalar(-2), sc.scalar(2))
                                })
     assert sc.abs(constrained['a']).value < 3.0
     assert sc.abs(constrained['b']).value < 2.0
@@ -216,8 +216,8 @@ def test_bounds_limit_param_range_with_units():
                                bounds={
                                    'a': (sc.scalar(-3.0,
                                                    unit='s'), sc.scalar(3.0, unit='s')),
-                                   'b':
-                                   sc.array(dims=['xyz'], values=[-2.0, 2.0], unit='m')
+                                   'b': (sc.scalar(-2, unit='m'), sc.scalar(2,
+                                                                            unit='m')),
                                })
 
     assert (abs(constrained['a']) < sc.scalar(3.0, unit='s')).value
@@ -243,7 +243,7 @@ def test_bounds_limit_only_given_parameters_param_range():
             'a': sc.scalar(1.0, unit='s'),
             'b': sc.scalar(1.0, unit='m')
         },
-        bounds={'b': sc.array(dims=['xyz'], values=[-2.0, 2.0], unit='m')})
+        bounds={'b': (sc.scalar(-2, unit='m'), sc.scalar(2, unit='m'))})
 
     assert (abs(constrained['a']) > sc.scalar(5.0, unit='s')).value
     assert (abs(constrained['b']) < sc.scalar(2.0, unit='m')).value
@@ -259,7 +259,7 @@ def test_bounds_must_have_unit_convertable_to_param_unit():
                 'a': sc.scalar(1.0, unit='s'),
                 'b': sc.scalar(1.0, unit='m')
             },
-            bounds={'a': sc.array(dims=['asdf'], values=[-10.0, 10.0], unit='kg')})
+            bounds={'a': (sc.scalar(-10.0, unit='s'), sc.scalar(10.0, unit='kg'))})
 
 
 def test_jac_is_not_implemented():
