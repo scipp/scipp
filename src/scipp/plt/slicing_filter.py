@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .. import DataArray
-from .widgets import WidgetFilter
+from .filters import WidgetFilter
 
 import ipywidgets as ipw
 from typing import Callable

@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
 
 from .. import DataArray
-from .widgets import WidgetFilter
+from .filters import WidgetFilter
 from ..typing import MetaDataMap
 
 from functools import partial

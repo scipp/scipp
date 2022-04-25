@@ -6,7 +6,7 @@ from .. import DataArray
 from .figure import Figure
 from .model import Model, ModelCollection
 from .notification_handler import NotificationHandler
-from .widgets import WidgetCollection, WidgetFilter
+from .filters import WidgetFilter
 
 from typing import Dict
 
@@ -73,53 +73,32 @@ class Plot:
     """
     def __init__(self,
                  data_arrays: Dict[str, DataArray],
+                 views: list = None,
                  filters: list = None,
                  **kwargs):
 
         self._notification_handler = NotificationHandler()
+
         self._models = ModelCollection({
             key: Model(data=array,
                        name=key,
                        notification_handler=self._notification_handler)
             for key, array in data_arrays.items()
         })
-        self._views = {}
-        self.add_view(key="figure", view=Figure(**kwargs))
-        # self._views = {}
-        # for key, view in self._views.items():
-        #     self._notification_handler.register_view(key, view)
 
-        self._widgets = WidgetCollection()
-        # self._controller = Controller(models=self._models, view=self._view)
+        self._views = []
+        if views is not None:
+            for view in views:
+                self.add_view(view)
+        else:
+            self.add_view(Figure(**kwargs))
 
-        if isinstance(filters, list):
-            filters = {key: filters for key in self._models}
-            # for f in filters:
-            #     for model in self._models.values():
-            #         model.add_filter(f)
-
-        # if isinstance(filters, dict):
         if filters is not None:
-
             if isinstance(filters, list):
                 filters = {key: filters for key in self._models}
-
             for key, filter_list in filters.items():
                 for f in filter_list:
-                    self._models[key].add_filter(f)
-                    if isinstance(f, WidgetFilter):
-                        self._notification_handler.register_view(key, f)
-                        f.register_models(self._models)
-
-        # if filters is not None:
-        #     for f in filters:
-        #         self._controller.add_filter(f)
-        #         if isinstance(f, WidgetFilter):
-        #             self._widgets.append(f)
-
-    # def notify_change(self, change):
-    #     for view in self._views.values():
-    #         view.notify_change(change)
+                    self.add_filter(key, f)
 
     def add_model(self, key, data_array, notification_type="data"):
         model = Model(data=data_array,
@@ -130,20 +109,18 @@ class Plot:
 
     def add_filter(self, model, f):
         self._models[model].add_filter(f)
-        # if isinstance(f, WidgetFilter):
-        #     self._notification_handler.register_view(key, f)
-        #     f.register_models(self._models)
+        if isinstance(f, WidgetFilter):
+            self.add_view(f)
 
-    def add_view(self, key, view):
+    def add_view(self, view):
         view.register_models(self._models)
-        self._views[key] = view
-        self._notification_handler.register_view(key, view)
+        self._views.append(view)
+        self._notification_handler.add_view(view)
 
     def _ipython_display_(self):
         """
         IPython display representation for Jupyter notebooks.
         """
-        # self._controller.render()
         self._models.run()
         return self._to_widget()._ipython_display_()
 
@@ -151,9 +128,7 @@ class Plot:
         """
         """
         import ipywidgets as ipw
-        return ipw.VBox(
-            [self._views["figure"]._to_widget(),
-             self._widgets._to_widget()])
+        return ipw.VBox([view._to_widget() for view in self._views])
 
     def close(self):
         """

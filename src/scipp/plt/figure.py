@@ -26,19 +26,17 @@ class SideBar:
 
 
 class Figure:
-    def __init__(
-            self,
-            # models,
-            ax: Any = None,
-            figsize: Tuple[float, ...] = None,
-            title: str = "",
-            xlabel: str = None,
-            ylabel: str = None,
-            grid: bool = False,
-            bounding_box: Tuple[float, ...] = None,
-            vmin=None,
-            vmax=None,
-            **kwargs):
+    def __init__(self,
+                 ax: Any = None,
+                 figsize: Tuple[float, ...] = None,
+                 title: str = "",
+                 xlabel: str = None,
+                 ylabel: str = None,
+                 grid: bool = False,
+                 bounding_box: Tuple[float, ...] = None,
+                 vmin=None,
+                 vmax=None,
+                 **kwargs):
 
         self._models = None
 
@@ -108,10 +106,6 @@ class Figure:
 
         self._legend = False
         self._new_artist = False
-
-    # def notify_change(self, change):
-    #     if change["type"] == "data":
-    #         return
 
     def register_models(self, models):
         self._models = models
@@ -255,9 +249,6 @@ class Figure:
                                            **self._kwargs)
                 self._legend = True
                 self._dims["x"] = new_values.dim
-
-                # if self._xlabel is None:
-                #     self._xlabel = name_with_unit(var=new_values.meta[new_values.dim])
                 if self._ylabel is None:
                     self._ylabel = name_with_unit(var=new_values.data, name="")
 
@@ -268,13 +259,6 @@ class Figure:
                                            vmax=self._user_vmax,
                                            **self._kwargs)
                 self._dims.update({"x": new_values.dims[1], "y": new_values.dims[0]})
-
-                # if self._xlabel is None:
-                #     self._xlabel = name_with_unit(
-                #         var=new_values.meta[new_values.dims[1]])
-                # if self._ylabel is None:
-                #     self._ylabel = name_with_unit(
-                #         var=new_values.meta[new_values.dims[0]])
 
             if self._xlabel is None:
                 self._xlabel = name_with_unit(var=new_values.meta[self._dims["x"]])

@@ -1,10 +1,14 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022 Scipp contributors (https://github.com/scipp)
+
+
 class NotificationHandler:
     def __init__(self):
-        self._views = {}
+        self._views = []
 
-    def register_view(self, key, view):
-        self._views[key] = view
+    def add_view(self, view):
+        self._views.append(view)
 
     def notify_change(self, change):
-        for key, view in self._views.items():
+        for view in self._views:
             view.notify(change)

@@ -13,11 +13,6 @@ class Model:
         self._notification_type = notification_type
 
     def add_filter(self, filt: Filter):
-        # if key is None:
-        #     for pipeline in self._pipelines.values():
-        #         pipeline.append(filt)
-        #     filt.register_callback(self._run_all_pipelines)
-        # else:
         self._filters.append(filt)
         if hasattr(filt, "register_callback"):
             filt.register_callback(self.run)
@@ -26,8 +21,6 @@ class Model:
         self._filtered_data = self._data
         for f in self._filters:
             self._filtered_data = f(self._filtered_data)
-        # return out
-        # print(self._filtered_data)
         self._notification_handler.notify_change({
             "name": self._name,
             "type": self._notification_type
@@ -49,5 +42,4 @@ class ModelCollection(dict):
 
     def run(self):
         for model in self.values():
-            print("hello", model._name)
             model.run()
