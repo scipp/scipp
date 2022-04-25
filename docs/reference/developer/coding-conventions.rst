@@ -57,12 +57,20 @@ The example below shows how docstrings should be laid out in scipp including spa
         :
             The result.
 
+        Raises
+        ------
+        ValueError
+            If the input is bad.
+        IndexError
+            If some lookup failed.
+
         See Also
         --------
         scipp.fold
 
         Examples
         --------
+        This is how to use it:
 
           >>> sc.arange('x', 3)
           <scipp.Variable> (x: 3)      int64  [dimensionless]  [0, 1, 2]
@@ -101,6 +109,11 @@ The order of sections is fixed as shown in the example.
         The second return value.
     """
 
+* **Raises** (*optional*) We generally do not document what exceptions can be raised from a function.
+  But if there are some important cases, this section can list those exceptions with an explanation
+  of when the exception is raised.
+  The exception type is required.
+  Note that there are no colons here.
 * **See Also** (*optional*) List of related functions and / or classes without and reST markup.
 * **Examples** (*optional*) Example code given using ``>>>`` as the Python prompt.
   May include text before, after, and between code blocks.
