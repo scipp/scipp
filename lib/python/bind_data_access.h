@@ -425,11 +425,11 @@ void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property_readonly(
       "dims",
       [](const T &self) {
-        const auto &dims_ = self.dims();
+        const auto &labels = self.dims().labels();
         const auto ndim = static_cast<size_t>(self.ndim());
         py::tuple dims(ndim);
         for (size_t i = 0; i < ndim; ++i) {
-          dims[i] = dims_.labels()[i].name();
+          dims[i] = labels[i].name();
         }
         return dims;
       },
@@ -446,11 +446,11 @@ void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property_readonly(
       "shape",
       [](const T &self) {
-        const auto &dims = self.dims();
+        const auto &sizes = self.dims().sizes();
         const auto ndim = static_cast<size_t>(self.ndim());
         py::tuple shape(ndim);
         for (size_t i = 0; i < ndim; ++i) {
-          shape[i] = dims.sizes()[i];
+          shape[i] = sizes[i];
         }
         return shape;
       },
