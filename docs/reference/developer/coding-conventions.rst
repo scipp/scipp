@@ -1,14 +1,6 @@
 Coding conventions
 ==================
 
-Formatting
-----------
-
-There are no explicit formatting conventions since we use ``clang-format`` (C++) and ``yapf`` (Python).
-
-The exception to this is Python docstrings, for which we use the
-`sphinx docstrings format <https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html#the-sphinx-docstring-format>`_.
-
 Integer types
 -------------
 
@@ -25,3 +17,103 @@ Testing
 -------
 
 As a general rule all new functionality and bug fixes should be accompanied with sufficient unit tests to demonstrate that the feature or fix works as intended.
+
+Formatting
+----------
+
+There are no explicit formatting conventions since we use ``clang-format`` (C++) and ``yapf`` (Python).
+
+Docstrings
+~~~~~~~~~~
+
+The exception to this are Python docstrings, for which we use the
+`numpy docstring format <https://www.sphinx-doc.org/en/master/usage/extensions/example_numpy.html>`_.
+We use a tool to automatically insert type hints into the docstrings.
+Our format, therefore, deviates from the default numpy example given by the link above.
+The example below shows how docstrings should be laid out in scipp including spacing and punctuation.
+
+.. code-block:: python
+
+    def foo(x: int, y: float) -> float:
+        """Short description.
+
+        Long description.
+
+        With multiple paragraphs.
+
+        Warning
+        -------
+        Be careful!
+
+        Parameters
+        ----------
+        x:
+            First input.
+        y:
+            Second input.
+
+        Returns
+        -------
+        :
+            The result.
+
+        See Also
+        --------
+        scipp.fold
+
+        Examples
+        --------
+
+          >>> sc.arange('x', 3)
+          <scipp.Variable> (x: 3)      int64  [dimensionless]  [0, 1, 2]
+
+        And also:
+
+          >>> sc.linspace('x', 1, 4, 2)
+          <scipp.Variable> (x: 2)    float64  [dimensionless]  [1, 4]
+        """
+
+The order of sections is fixed as shown in the example.
+
+* **Short description** (*required*) A single sentence describing the purpose of the function / class.
+* **Long description** (*optional*) One or more paragraphs of detailed explanations.
+  Can include additional sections like `Warning` or `Hint`.
+* **Parameters** (*required for functions*) List of all function arguments including their name but not their type.
+  Listing arguments like this can seem ridiculous if the explanation is as devoid of content as in the example.
+  But it is still required in order for sphinx to show the types.
+* **Returns** (*required for functions*) Description of the return value.
+  Required for the same reason as the parameter list.
+
+  For a single return value, neither a name nor type should be given.
+  But a colon is required as in the example above in order to produce proper formatting.
+
+  For multiple return values, to produce proper formatting,
+  both name and type must by given even though the latter repeats the type annotation:
+
+  .. code-block:: python
+
+    """
+    Returns
+    -------
+    n: int
+        The first return value.
+    z: float
+        The second return value.
+    """
+
+* **See Also** (*optional*) List of related functions and / or classes without and reST markup.
+* **Examples** (*optional*) Example code given using ``>>>`` as the Python prompt.
+  May include text before, after, and between code blocks.
+  Note the spacing in the example.
+
+Some functions can be sufficiently described by a single sentence.
+In this case, the 'Parameters' and 'Returns' sections may be omitted and the docstring should be laid out on a single line.
+If it does not fit on a single line, it is too complicated.
+For example
+
+.. code-block:: python
+
+    def ndim(self) -> int:
+        """Returns the number of dimensions."""
+
+But note that the argument types are not shown in the rendered documentation!
