@@ -27,6 +27,7 @@ Documentation
 ~~~~~~~~~~~~~
 
 * Added new tutorial: *RHESSI Solar Flares* `2536 <https://github.com/scipp/scipp/pull/2536>`_.
+* Added documentation of our docstring format `2546 <https://github.com/scipp/scipp/pull/2546>`_.
 
 Deprecations
 ~~~~~~~~~~~~
