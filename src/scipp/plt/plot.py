@@ -83,9 +83,11 @@ class Plot:
                        notification_handler=self._notification_handler)
             for key, array in data_arrays.items()
         })
-        self._views = {"figure": Figure(models=self._models, **kwargs)}
-        for key, view in self._views.items():
-            self._notification_handler.register_view(key, view)
+        self._views = {}
+        self.add_view(key="figure", view=Figure(**kwargs))
+        # self._views = {}
+        # for key, view in self._views.items():
+        #     self._notification_handler.register_view(key, view)
 
         self._widgets = WidgetCollection()
         # self._controller = Controller(models=self._models, view=self._view)
@@ -118,6 +120,24 @@ class Plot:
     # def notify_change(self, change):
     #     for view in self._views.values():
     #         view.notify_change(change)
+
+    def add_model(self, key, data_array, notification_type="data"):
+        model = Model(data=data_array,
+                      name=key,
+                      notification_handler=self._notification_handler,
+                      notification_type=notification_type)
+        self._models[key] = model
+
+    def add_filter(self, model, f):
+        self._models[model].add_filter(f)
+        # if isinstance(f, WidgetFilter):
+        #     self._notification_handler.register_view(key, f)
+        #     f.register_models(self._models)
+
+    def add_view(self, key, view):
+        view.register_models(self._models)
+        self._views[key] = view
+        self._notification_handler.register_view(key, view)
 
     def _ipython_display_(self):
         """

@@ -26,20 +26,21 @@ class SideBar:
 
 
 class Figure:
-    def __init__(self,
-                 models,
-                 ax: Any = None,
-                 figsize: Tuple[float, ...] = None,
-                 title: str = "",
-                 xlabel: str = None,
-                 ylabel: str = None,
-                 grid: bool = False,
-                 bounding_box: Tuple[float, ...] = None,
-                 vmin=None,
-                 vmax=None,
-                 **kwargs):
+    def __init__(
+            self,
+            # models,
+            ax: Any = None,
+            figsize: Tuple[float, ...] = None,
+            title: str = "",
+            xlabel: str = None,
+            ylabel: str = None,
+            grid: bool = False,
+            bounding_box: Tuple[float, ...] = None,
+            vmin=None,
+            vmax=None,
+            **kwargs):
 
-        self._models = models
+        self._models = None
 
         self._fig = None
         self._closed = False
@@ -51,6 +52,7 @@ class Figure:
         self._user_vmin = vmin
         self._user_vmax = vmax
         self._kwargs = kwargs
+        self._dims = {}
 
         self.toolbar = Toolbar()
         self.toolbar.add_button(name="home_view",
@@ -111,12 +113,21 @@ class Figure:
     #     if change["type"] == "data":
     #         return
 
+    def register_models(self, models):
+        self._models = models
+
     def is_widget(self) -> bool:
         """
         Check whether we are using the Matplotlib widget backend or not.
         "on_widget_constructed" is an attribute specific to `ipywidgets`.
         """
         return hasattr(self._fig.canvas, "on_widget_constructed")
+
+    def _ipython_display_(self):
+        """
+        IPython display representation for Jupyter notebooks.
+        """
+        return self._to_widget()._ipython_display_()
 
     def _to_widget(self) -> ipw.Widget:
         """
@@ -243,9 +254,10 @@ class Figure:
                                            number=len(self._children),
                                            **self._kwargs)
                 self._legend = True
+                self._dims["x"] = new_values.dim
 
-                if self._xlabel is None:
-                    self._xlabel = name_with_unit(var=new_values.meta[new_values.dim])
+                # if self._xlabel is None:
+                #     self._xlabel = name_with_unit(var=new_values.meta[new_values.dim])
                 if self._ylabel is None:
                     self._ylabel = name_with_unit(var=new_values.data, name="")
 
@@ -255,12 +267,19 @@ class Figure:
                                            vmin=self._user_vmin,
                                            vmax=self._user_vmax,
                                            **self._kwargs)
-                if self._xlabel is None:
-                    self._xlabel = name_with_unit(
-                        var=new_values.meta[new_values.dims[1]])
-                if self._ylabel is None:
-                    self._ylabel = name_with_unit(
-                        var=new_values.meta[new_values.dims[0]])
+                self._dims.update({"x": new_values.dims[1], "y": new_values.dims[0]})
+
+                # if self._xlabel is None:
+                #     self._xlabel = name_with_unit(
+                #         var=new_values.meta[new_values.dims[1]])
+                # if self._ylabel is None:
+                #     self._ylabel = name_with_unit(
+                #         var=new_values.meta[new_values.dims[0]])
+
+            if self._xlabel is None:
+                self._xlabel = name_with_unit(var=new_values.meta[self._dims["x"]])
+            if self._ylabel is None and ("y" in self._dims):
+                self._ylabel = name_with_unit(var=new_values.meta[self._dims["y"]])
 
         else:
             self._children[key].update(new_values=new_values)

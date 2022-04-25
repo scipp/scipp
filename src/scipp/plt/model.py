@@ -4,12 +4,13 @@ from .filters import Filter
 class Model:
     """
     """
-    def __init__(self, data, notification_handler, name, filters=None):
+    def __init__(self, data, notification_handler, name, notification_type="data"):
         self._data = data
         self._notification_handler = notification_handler
         self._name = name
         self._filters = []
         self._filtered_data = None
+        self._notification_type = notification_type
 
     def add_filter(self, filt: Filter):
         # if key is None:
@@ -26,7 +27,11 @@ class Model:
         for f in self._filters:
             self._filtered_data = f(self._filtered_data)
         # return out
-        self._notification_handler.notify_change({"name": self._name, "type": "data"})
+        # print(self._filtered_data)
+        self._notification_handler.notify_change({
+            "name": self._name,
+            "type": self._notification_type
+        })
 
     def get_data(self):
         return self._filtered_data
@@ -44,4 +49,5 @@ class ModelCollection(dict):
 
     def run(self):
         for model in self.values():
+            print("hello", model._name)
             model.run()
