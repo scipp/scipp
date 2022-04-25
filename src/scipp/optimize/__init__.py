@@ -9,12 +9,12 @@ This subpackage provides wrappers for a subset of functions from
 
 from ..core import scalar, stddevs, Variable, DataArray
 from ..core import BinEdgeError
-from ..units import default_unit
+from ..units import default_unit, dimensionless
 from ..interpolate import _drop_masked
 
 import numpy as np
 from numbers import Real
-from typing import Callable, Dict, Tuple, Union
+from typing import Callable, Dict, Optional, Tuple, Union
 from inspect import getfullargspec
 
 
@@ -59,11 +59,40 @@ def _make_defaults(f, p0):
     return kwargs
 
 
+def _get_specific_bounds(bounds, name, unit) -> Tuple[float, float]:
+    if name not in bounds:
+        return -np.inf, np.inf
+    b = bounds[name]
+    if len(b) != 2:
+        raise ValueError("Parameter bounds must be given as a tuple of length 2. "
+                         f"Got a collection of length {len(b)} as bounds for '{name}'.")
+    if isinstance(b[0], Variable):
+        return (b[0].to(unit=unit, dtype=float).value, b[1].to(unit=unit,
+                                                               dtype=float).value)
+    return b
+
+
+def _parse_bounds(bounds,
+                  params) -> Union[Tuple[float, float], Tuple[np.ndarray, np.ndarray]]:
+    if bounds is None:
+        return -np.inf, np.inf
+
+    bounds_tuples = [
+        _get_specific_bounds(
+            bounds, name, param.unit if isinstance(param, Variable) else dimensionless)
+        for name, param in params.items()
+    ]
+    bounds_array = np.array(bounds_tuples).T
+    return bounds_array[0], bounds_array[1]
+
+
 def curve_fit(
     f: Callable,
     da: DataArray,
     *,
-    p0: Dict[str, Variable] = None,
+    p0: Dict[str, Union[Variable, Real]] = None,
+    bounds: Optional[Dict[str, Union[Tuple[Variable, Variable], Tuple[Real,
+                                                                      Real]]]] = None,
     **kwargs
 ) -> Tuple[Dict[str, Union[Variable, Real]], Dict[str, Dict[str, Union[Variable,
                                                                        Real]]]]:
@@ -81,6 +110,7 @@ def curve_fit(
       arguments mapping to fit parameters must be keyword-only arguments.
     - The inital guess in p0 must be provided as a dict, mapping from fit-function
       parameter names to initial guesses.
+    - The parameter bounds must also be provided as a dict, like p0.
     - The fit parameters may be scalar scipp variables. In that case an initial guess
       p0 with the correct units must be provided.
     - The returned optimal parameter values popt and the coverance matrix pcov will
@@ -89,22 +119,41 @@ def curve_fit(
       names. The variance of the returned optimal parameter values is set to the
       corresponding diagonal value of the covariance matrix.
 
-    :param f: The model function, f(x, ...). It must take the independent variable
+    Parameters
+    ----------
+    f:
+        The model function, f(x, ...). It must take the independent variable
         (coordinate of the data array da) as the first argument and the parameters
         to fit as keyword arguments.
-    :param da: One-dimensional data array. The dimension coordinate for the only
+    da:
+        One-dimensional data array. The dimension coordinate for the only
         dimension defines the independent variable where the data is measured. The
         values of the data array provide the dependent data. If the data array stores
         variances then the standard deviations (square root of the variances) are taken
         into account when fitting.
-    :param p0: An optional dict of optional initial guesses for the parameters. If None,
+    p0:
+        An optional dict of optional initial guesses for the parameters. If None,
         then the initial values will all be 1 (if the parameter names for the function
         can be determined using introspection, otherwise a ValueError is raised). If
         the fit function cannot handle initial values of 1, in particular for parameters
         that are not dimensionless, then typically a :py:class:`scipp.UnitError` is
         raised, but details will depend on the function.
+    bounds:
+        Lower and upper bounds on parameters.
+        Defaults to no bounds.
+        Bounds are given as a dict of 2-tuples of (lower, upper) for each parameter
+        where lower and upper are either both Variables or plain numbers.
+        Parameters omitted from the `bounds` dict are unbounded.
 
-    Example:
+    Returns
+    -------
+    popt:
+        Optimal values for the parameters.
+    pcov:
+        The estimated covariance of popt.
+
+    Examples
+    --------
 
       >>> def func(x, *, a, b):
       ...     return a * sc.exp(-b * x)
@@ -133,6 +182,9 @@ def curve_fit(
       >>> 'a' in popt
       True
     """
+    if 'jac' in kwargs:
+        raise NotImplementedError("The 'jac' argument is not yet supported. "
+                                  "See https://github.com/scipp/scipp/issues/2544")
     for arg in ['xdata', 'ydata', 'sigma']:
         if arg in kwargs:
             raise TypeError(
@@ -142,19 +194,23 @@ def curve_fit(
     import scipy.optimize as opt
     da = _drop_masked(da, da.dim)
     sigma = stddevs(da).values if da.variances is not None else None
-    p = _make_defaults(f, p0)
-    p_units = [p.unit if isinstance(p, Variable) else default_unit for p in p.values()]
-    p0 = [p.value if isinstance(p, Variable) else p for p in p.values()]
-    popt, pcov = opt.curve_fit(f=_wrap_func(f, p.keys(), p_units),
+    params = _make_defaults(f, p0)
+    p_units = [
+        p.unit if isinstance(p, Variable) else default_unit for p in params.values()
+    ]
+    p0 = [p.value if isinstance(p, Variable) else p for p in params.values()]
+    popt, pcov = opt.curve_fit(f=_wrap_func(f, params.keys(), p_units),
                                xdata=da.coords[da.dim],
                                ydata=da.values,
                                sigma=sigma,
-                               p0=p0)
+                               p0=p0,
+                               bounds=_parse_bounds(bounds, params),
+                               **kwargs)
     popt = {
         name: scalar(value=val, variance=var, unit=u)
-        for name, val, var, u in zip(p, popt, np.diag(pcov), p_units)
+        for name, val, var, u in zip(params.keys(), popt, np.diag(pcov), p_units)
     }
-    pcov = _covariance_with_units(list(p.keys()), pcov, p_units)
+    pcov = _covariance_with_units(list(params.keys()), pcov, p_units)
     return popt, pcov
 
 
