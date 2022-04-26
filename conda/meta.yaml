@@ -45,6 +45,7 @@ requirements:
     - tbb=2020.2.*
     - graphlib-backport # for python < 3.9
 
+{% if build_platform == target_platform %}
 test:
   imports:
     - scipp
@@ -73,6 +74,7 @@ test:
   commands:
     - python -m pytest -v tests
     - python cmake-package-test/build.py
+{% endif %}
 
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
@@ -80,7 +82,7 @@ build:
   script:
     - cmake --preset package-{{ target_platform }} -DPython_EXECUTABLE=$PYTHON
     - cmake --build --preset build
-    - ctest --preset test
+    - ctest --preset test  # [build_platform == target_platform]
 
 about:
   home: https://scipp.github.io/
