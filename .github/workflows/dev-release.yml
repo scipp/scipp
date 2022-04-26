@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         variant:
-          - {os: "ubuntu-latest", file: "osx_arm64.yaml"}
+          - {os: "macos-latest", file: "osx_arm64.yaml"}
           - {os: "macos-latest", file: "osx_64.yaml"}
         python-version: ["3.8"]
 
