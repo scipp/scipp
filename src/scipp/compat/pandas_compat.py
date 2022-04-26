@@ -38,12 +38,18 @@ def from_pandas_dataframe(df: pd.DataFrame) -> Dataset:
 
 
 def from_pandas(pd_obj: Union[pd.DataFrame, pd.Series]) -> VariableLike:
-    """
-    Converts a pandas.DataFrame or pandas.Series object into a
+    """Converts a pandas.DataFrame or pandas.Series object into a
     scipp Dataset or DataArray respectively.
 
-    :param pd_obj: The Dataframe or Series to convert
-    :return: The converted scipp object.
+    Parameters
+    ----------
+    :
+        The Dataframe or Series to convert.
+
+    Returns
+    -------
+    :
+        The converted scipp object.
     """
     import pandas as pd
     if isinstance(pd_obj, pd.DataFrame):
