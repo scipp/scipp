@@ -46,8 +46,8 @@ template <typename T> void bind_sort(py::module &m) {
 template <typename T> void bind_sort_dim(py::module &m) {
   m.def(
       "sort",
-      [](const T &x, const Dim &dim, const std::string &order) {
-        return sort(x, dim, get_sort_order(order));
+      [](const T &x, const std::string &dim, const std::string &order) {
+        return sort(x, Dim{dim}, get_sort_order(order));
       },
       py::arg("x"), py::arg("key"), py::arg("order"),
       py::call_guard<py::gil_scoped_release>());
@@ -56,8 +56,8 @@ template <typename T> void bind_sort_dim(py::module &m) {
 void bind_issorted(py::module &m) {
   m.def(
       "issorted",
-      [](const Variable &x, const Dim dim, const std::string &order) {
-        return issorted(x, dim, get_sort_order(order));
+      [](const Variable &x, const std::string &dim, const std::string &order) {
+        return issorted(x, Dim{dim}, get_sort_order(order));
       },
       py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
       py::call_guard<py::gil_scoped_release>());
@@ -66,14 +66,19 @@ void bind_issorted(py::module &m) {
 void bind_allsorted(py::module &m) {
   m.def(
       "allsorted",
-      [](const Variable &x, const Dim dim, const std::string &order) {
-        return allsorted(x, dim, get_sort_order(order));
+      [](const Variable &x, const std::string &dim, const std::string &order) {
+        return allsorted(x, Dim{dim}, get_sort_order(order));
       },
       py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
       py::call_guard<py::gil_scoped_release>());
 }
 
-void bind_midpoints(py::module &m) { m.def("midpoints", midpoints); }
+void bind_midpoints(py::module &m) {
+  m.def("midpoints", [](const Variable &var,
+                        const std::optional<std::string> &dim) {
+    return midpoints(var, dim.has_value() ? Dim{*dim} : std::optional<Dim>{});
+  });
+}
 
 void init_operations(py::module &m) {
   bind_dot<Variable>(m);

@@ -6,7 +6,7 @@ requires = [
   "conan@git+https://github.com/gabyx/conan.git@feature/improve-cmakedeps-find-package",
   "markupsafe>=1.1.1,<2.1.0",  # see https://github.com/pallets/markupsafe/issues/284
   "ninja",
-  "scikit-build",
+  "scikit-build==0.13.1",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -25,6 +25,12 @@ archs = ["x86_64", "arm64"]
 [tool.pytest.ini_options]
 addopts = "-ra -v"
 filterwarnings = [
-  'ignore:You are running a "Debug" build of scipp:'
+  'ignore:You are running a "Debug" build of scipp:',
+  'ignore:sc.matrix\(\) has been deprecated:DeprecationWarning',
+  'ignore:sc.matrices\(\) has been deprecated:DeprecationWarning',
+  # Explained in variable_init_test.py
+  'ignore:Creating an ndarray from ragged nested sequences:DeprecationWarning',
+  # Comes from pytest_asyncio and is not our fault.
+  "ignore:The 'asyncio_mode' default value will change to 'strict' in future:DeprecationWarning",
 ]
 testpaths = "tests"

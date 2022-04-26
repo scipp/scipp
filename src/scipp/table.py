@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 from html import escape
+from typing import Optional
 
 # Scipp imports
 from . import config
@@ -169,7 +170,7 @@ def _is_bin_centers(container, var, dim):
     return max(largest) == var.shape[0] + 1 if len(largest) > 0 else False
 
 
-def table(scipp_obj: VariableLike):
+def table(scipp_obj: VariableLike, max_rows: Optional[int] = None):
     """
     Create a html table from the contents of a Dataset (0D and 1D Variables
     only), DataArray, Variable or raw numpy array.
@@ -177,15 +178,16 @@ def table(scipp_obj: VariableLike):
     """
 
     from IPython.display import display
-    tv = TableViewer(scipp_obj)
+    tv = TableViewer(scipp_obj, max_rows=max_rows)
     display(tv.box)
 
 
 class TableViewer:
-    def __init__(self, scipp_obj):
+    def __init__(self, scipp_obj, max_rows: Optional[int]):
         # Delayed import
         self.widgets = __import__("ipywidgets")
 
+        self.max_rows = max_rows if max_rows is not None else config['table_max_size']
         groups = ["0D Variables", "1D Variables"]
         self.tabledict = {}
         self.is_bin_centers = {}
@@ -284,7 +286,7 @@ class TableViewer:
                         is_bin_centers=self.is_bin_centers[group][key],
                         size=self.sizes[group][key],
                         headers=self.headers,
-                        max_rows=config['table_max_size'],
+                        max_rows=self.max_rows,
                         group=group)
                     self.tables[group][key] = self.widgets.HTML(value=html)
                     hbox = self.make_hbox(group, key, self.sizes[group][key])
@@ -318,9 +320,9 @@ class TableViewer:
     def make_hbox(self, group, key, size):
         hbox = self.tables[group][key]
         if size is not None:
-            if size > config['table_max_size']:
+            if size > self.max_rows:
                 self.nrows[key] = self.widgets.BoundedIntText(
-                    value=config['table_max_size'],
+                    value=self.max_rows,
                     min=1,
                     max=size,
                     step=1,

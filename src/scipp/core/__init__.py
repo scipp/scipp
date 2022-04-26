@@ -21,14 +21,7 @@ from .cpp_classes import Coords, DataArray, Dataset, DType, GroupByDataArray,\
 # Import errors
 from .cpp_classes import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
-                         DTypeError, SizeError, SliceError, \
-                         UnitError, VariableError, VariancesError
-
-BinEdgeError.__doc__ = 'Inappropriate bin-edge coordinate.'
-CoordError.__doc__ = 'Inappropriate coordinate values.'
-UnitError.__doc__ = 'Inappropriate unit value.'
-DimensionError.__doc__ = 'Inappropriate dimension labels and/or shape.'
-DTypeError.__doc__ = 'Inappropriate dtype.'
+                         DTypeError, UnitError, VariableError, VariancesError
 
 from .._scipp.core import get_slice_params
 

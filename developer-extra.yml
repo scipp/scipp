@@ -32,7 +32,7 @@ dependencies:
   - pyyaml
   - scipy>=1.7.0
   - sphinx
-  - sphinx-book-theme
+  - sphinx-book-theme==0.2  # 0.3 breaks custom launchbuttons
   - sphinx-copybutton
   - pip
   - pip:

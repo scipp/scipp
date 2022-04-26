@@ -13,7 +13,7 @@ def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
 
     # Go through the dims that need to be collapsed, and create an array that
     # holds the range of indices for each dimension
-    # Say we have [Dim.Y, 5], and [Dim.Z, 3], then dim_list will contain
+    # Say we have [Y, 5], and [Z, 3], then dim_list will contain
     # [[0, 1, 2, 3, 4], [0, 1, 2]]
     dim_list = []
     for dim in slice_dims:
@@ -28,24 +28,20 @@ def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
     #   [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2] ]
     res = np.reshape(grid, (len(slice_dims), volume))
     # Now make a master array which also includes the dimension labels, i.e.
-    # [ [Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y,
-    #    Dim.Y, Dim.Y, Dim.Y, Dim.Y, Dim.Y],
-    #   [    0,     1,     2,     3,     4,     0,     1,     2,     3,     4,
-    #        0,     1,     2,     3,     4],
-    #   [Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z,
-    #    Dim.Z, Dim.Z, Dim.Z, Dim.Z, Dim.Z],
-    #   [    0,     0,     0,     0,     0,     1,     1,     1,     1,     1,
-    #        2,     2,     2,     2,     2] ]
+    # [ [Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y],
+    #   [0, 1, 2, 3, 4, 0, 1, 2, 3, 4, 0, 1, 2, 3, 4],
+    #   [Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z],
+    #   [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2] ]
     slice_list = []
     for i, dim in enumerate(slice_dims):
         slice_list.append([dim] * volume)
         slice_list.append(res[i])
     # Finally reshape the master array to look like
-    # [ [[Dim.Y, 0], [Dim.Z, 0]], [[Dim.Y, 1], [Dim.Z, 0]],
-    #   [[Dim.Y, 2], [Dim.Z, 0]], [[Dim.Y, 3], [Dim.Z, 0]],
-    #   [[Dim.Y, 4], [Dim.Z, 0]], [[Dim.Y, 0], [Dim.Z, 1]],
-    #   [[Dim.Y, 1], [Dim.Z, 1]], [[Dim.Y, 2], [Dim.Z, 1]],
-    #   [[Dim.Y, 3], [Dim.Z, 1]],
+    # [ [[Y, 0], [Z, 0]], [[Y, 1], [Z, 0]],
+    #   [[Y, 2], [Z, 0]], [[Y, 3], [Z, 0]],
+    #   [[Y, 4], [Z, 0]], [[Y, 0], [Z, 1]],
+    #   [[Y, 1], [Z, 1]], [[Y, 2], [Z, 1]],
+    #   [[Y, 3], [Z, 1]],
     # ...
     # ]
     slice_list = np.reshape(np.transpose(np.array(slice_list, dtype=np.dtype('O'))),

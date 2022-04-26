@@ -607,7 +607,7 @@ TEST_F(GroupbyBinnedTest, sum_data_array) {
 
 TEST_F(GroupbyBinnedTest, mean_data_array) {
   EXPECT_THROW_DISCARD(groupby(a, Dim("labels")).mean(Dim::Y),
-                       except::BinnedDataError);
+                       except::NotImplementedError);
 }
 
 TEST_F(GroupbyBinnedTest, sum_with_event_mask) {
@@ -615,7 +615,7 @@ TEST_F(GroupbyBinnedTest, sum_with_event_mask) {
   bins.masks().set("mask", equal(bins.data(), bins.data()));
   // Event masks not supported yet in reduction ops.
   EXPECT_THROW_DISCARD(groupby(a, Dim("labels")).sum(Dim::Y),
-                       except::BinnedDataError);
+                       except::NotImplementedError);
 }
 
 TEST_F(GroupbyBinnedTest, concatenate_data_array) {

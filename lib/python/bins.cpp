@@ -14,6 +14,7 @@
 #include "scipp/variable/variable_factory.h"
 
 #include "bind_data_array.h"
+#include "dim.h"
 #include "pybind11.h"
 
 using namespace scipp;
@@ -58,8 +59,10 @@ template <class T> void bind_bins(pybind11::module &m) {
   m.def(
       "bins",
       [](const std::optional<Variable> &begin,
-         const std::optional<Variable> &end, const Dim dim,
-         const T &data) { return call_make_bins(begin, end, dim, T(data)); },
+         const std::optional<Variable> &end, const std::string &dim,
+         const T &data) {
+        return call_make_bins(begin, end, Dim{dim}, T(data));
+      },
       py::arg("begin") = py::none(), py::arg("end") = py::none(),
       py::arg("dim"), py::arg("data")); // do not release GIL since using
                                         // implicit conversions in functor
@@ -160,14 +163,14 @@ void init_buckets(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
   buckets.def(
       "concatenate",
-      [](const Variable &var, const Dim dim) {
-        return dataset::buckets::concatenate(var, dim);
+      [](const Variable &var, const std::string &dim) {
+        return dataset::buckets::concatenate(var, Dim{dim});
       },
       py::call_guard<py::gil_scoped_release>());
   buckets.def(
       "concatenate",
-      [](const DataArray &array, const Dim dim) {
-        return dataset::buckets::concatenate(array, dim);
+      [](const DataArray &array, const std::string &dim) {
+        return dataset::buckets::concatenate(array, Dim{dim});
       },
       py::call_guard<py::gil_scoped_release>());
   buckets.def(
@@ -182,20 +185,29 @@ void init_buckets(py::module &m) {
         return dataset::buckets::append(a, b);
       },
       py::call_guard<py::gil_scoped_release>());
-  buckets.def("map", dataset::buckets::map,
-              py::call_guard<py::gil_scoped_release>());
-  buckets.def("scale", dataset::buckets::scale,
-              py::call_guard<py::gil_scoped_release>());
+  buckets.def(
+      "map",
+      [](const DataArray &function, const Variable &x, const std::string &dim) {
+        return dataset::buckets::map(function, x, Dim{dim});
+      },
+      py::call_guard<py::gil_scoped_release>());
+  buckets.def(
+      "scale",
+      [](DataArray &array, const DataArray &histogram, const std::string &dim) {
+        return dataset::buckets::scale(array, histogram, Dim{dim});
+      },
+      py::call_guard<py::gil_scoped_release>());
 
   m.def(
       "bin",
       [](const DataArray &array, const std::vector<Variable> &edges,
-         const std::vector<Variable> &groups, const std::vector<Dim> &erase) {
-        return dataset::bin(array, edges, groups, erase);
+         const std::vector<Variable> &groups,
+         const std::vector<std::string> &erase) {
+        return dataset::bin(array, edges, groups, to_dim_type(erase));
       },
       py::arg("array"), py::arg("edges"),
       py::arg("groups") = std::vector<Variable>{},
-      py::arg("erase") = std::vector<Dim>{},
+      py::arg("erase") = std::vector<std::string>{},
       py::call_guard<py::gil_scoped_release>());
 
   bind_bins_view<DataArray>(m);

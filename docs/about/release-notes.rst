@@ -3,6 +3,53 @@
 Release Notes
 =============
 
+v0.14.0 (unreleased)
+--------------------
+
+Features
+~~~~~~~~
+
+* Added argument `max_rows` to :func:`scipp.table` `#2526 <https://github.com/scipp/scipp/pull/2526>`_.
+* Added support for converting scalars to builtin objects via :func:`int` and :func:`float` `#2529 <https://github.com/scipp/scipp/pull/2529>`_.
+* Reduced time of initial import of scipp by delaying imports of optional dependencies `#2535 <https://github.com/scipp/scipp/pull/2535>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Bugfixes
+~~~~~~~~
+
+* Fix :func:`scipp.isclose` and :func:`scipp.allclose` to support arguments without a unit `#2528 <https://github.com/scipp/scipp/pull/2528>`_.
+* :func:`scipp.to_unit` avoids a rounding problem when converting datetimes. This previously led to errors, e.g., of about 300 nanoseconds when converting a current (2020s) datetime64 from seconds to nanoseconds `#2533 <https://github.com/scipp/scipp/pull/2533>`_.
+* Fix handling of keyword arguments in :func:`scipp.optimize.curve_fit`. They were previously checked for conflicts but otherwise ignored `#2545 <https://github.com/scipp/scipp/pull/2545>`_.
+
+Documentation
+~~~~~~~~~~~~~
+
+* Added new tutorial: *RHESSI Solar Flares* `2536 <https://github.com/scipp/scipp/pull/2536>`_.
+* Added documentation of our docstring format `2546 <https://github.com/scipp/scipp/pull/2546>`_.
+
+Deprecations
+~~~~~~~~~~~~
+
+Stability, Maintainability, and Testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+Simon Heybrock :sup:`a`\ ,
+Neil Vaytet :sup:`a`\ ,
+and Jan-Lukas Wynen :sup:`a`
+
+v0.13.1 (April 2022)
+--------------------
+
+Bugfixes
+~~~~~~~~
+
+* Fix exception in :func:`scipp.islinspace` for dtypes other than float64 `#2523 <https://github.com/scipp/scipp/pull/2523>`_.
+
 v0.13.0 (March 2022)
 --------------------
 

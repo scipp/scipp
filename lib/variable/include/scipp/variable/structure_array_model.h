@@ -38,6 +38,8 @@ public:
       : VariableConcept(units::one), // unit ignored
         m_elements(std::move(elements)) {}
 
+  ~StructureArrayModel() override;
+
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
   DType dtype() const noexcept override { return scipp::dtype<T>; }
   scipp::index size() const override {

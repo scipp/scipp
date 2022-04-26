@@ -27,8 +27,7 @@ from .core import Variable, DataArray, Dataset, DType, Unit
 # Import errors
 from .core import BinEdgeError, BinnedDataError, CoordError, \
                          DataArrayError, DatasetError, DimensionError, \
-                         DTypeError, SizeError, SliceError, \
-                         UnitError, VariableError, VariancesError
+                         DTypeError, UnitError, VariableError, VariancesError
 # Import submodules
 from . import units
 from . import geometry
@@ -37,12 +36,6 @@ from ._scipp.core import as_const, choose
 # Import python functions
 from .show import show, make_svg
 from .table import table
-
-from .plotting import plot
-
-setattr(Variable, 'plot', plot)
-setattr(DataArray, 'plot', plot)
-setattr(Dataset, 'plot', plot)
 
 from .html import to_html, make_html
 
@@ -92,6 +85,7 @@ from . import _binding
 
 _binding.bind_get()
 _binding.bind_pop()
+_binding.bind_conversion_to_builtin(Variable)
 # Assign method binding for both Variable and DataArray
 for _cls in (Variable, DataArray):
     _binding.bind_functions_as_methods(
@@ -111,5 +105,10 @@ del _cls
 del _binding
 
 from . import data
-from . import serialization
 from . import spatial
+
+from .plotting import plot
+
+setattr(Variable, 'plot', plot)
+setattr(DataArray, 'plot', plot)
+setattr(Dataset, 'plot', plot)

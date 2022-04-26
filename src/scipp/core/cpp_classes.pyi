@@ -25,7 +25,6 @@ __all__ = [
     "Dataset_keys_view",
     "Dataset_values_view",
     "DefaultUnit",
-    "Dim",
     "DimensionError",
     "ElementArrayView_DataArray",
     "ElementArrayView_DataArray_const",
@@ -63,9 +62,7 @@ __all__ = [
     "Masks_items_view",
     "Masks_keys_view",
     "Masks_values_view",
-    "SizeError",
     "Slice",
-    "SliceError",
     "Unit",
     "UnitError",
     "Variable",
@@ -78,10 +75,13 @@ class BinEdgeError(RuntimeError, Exception, BaseException):
     """
     pass
 class BinnedDataError(RuntimeError, Exception, BaseException):
+    """
+    Incorrect use of binned data.
+    """
     pass
 class CoordError(RuntimeError, Exception, BaseException):
     """
-    Inappropriate coordinate values.
+    Bad coordinate values or mismatching coordinates.
     """
     pass
 class Coords():
@@ -91,17 +91,17 @@ class Coords():
     Returned by :py:func:`DataArray.coords`, :py:func:`DataArray.attrs`, :py:func:`DataArray.meta`,
     and the corresponding properties of :py:class:`Dataset`.
     """
-    def __contains__(self, arg0: Dim) -> bool: ...
-    def __delitem__(self, arg0: Dim) -> None: ...
+    def __contains__(self, arg0: str) -> bool: ...
+    def __delitem__(self, arg0: str) -> None: ...
     def __eq__(self, arg0: Coords) -> bool: ...
-    def __getitem__(self, arg0: Dim) -> Variable: ...
+    def __getitem__(self, arg0: str) -> Variable: ...
     def __iter__(self) -> typing.Iterator: ...
     def __len__(self) -> int: ...
     def __ne__(self, arg0: Coords) -> bool: ...
-    def __setitem__(self, arg0: Dim, arg1: Variable) -> None: ...
+    def __setitem__(self, arg0: str, arg1: Variable) -> None: ...
     def _ipython_key_completions_(self) -> list: ...
-    def _pop(self, k: Dim) -> object: ...
-    def is_edges(self, key: Dim, dim: typing.Optional[Dim] = None) -> bool: 
+    def _pop(self, k: str) -> object: ...
+    def is_edges(self, key: str, dim: typing.Optional[str] = None) -> bool: 
         """
         Return True if the given key contains bin-edges in the given dim.
         """
@@ -143,6 +143,9 @@ class DType():
     """
     Representation of a data type of a Variable in scipp.
     See https://scipp.github.io/reference/dtype.html for details.
+
+    The data types ``VariableView``, ``DataArrayView``, and ``DatasetView`` are used for
+    objects containing binned data. They cannot be used directly to create arrays of bins.
     """
     def __eq__(self, arg0: object) -> bool: ...
     def __init__(self, arg0: object) -> None: ...
@@ -153,7 +156,6 @@ class DType():
     Dataset: DType # value = DType('Dataset')
     DatasetView: DType # value = DType('DatasetView')
     PyObject: DType # value = DType('PyObject')
-    SubbinSizes: DType # value = DType('SubbinSizes')
     Variable: DType # value = DType('Variable')
     VariableView: DType # value = DType('VariableView')
     __hash__ = None
@@ -162,45 +164,13 @@ class DType():
     datetime64: DType # value = DType('datetime64')
     float32: DType # value = DType('float32')
     float64: DType # value = DType('float64')
-    index_pair: DType # value = DType('index_pair')
     int32: DType # value = DType('int32')
     int64: DType # value = DType('int64')
     linear_transform3: DType # value = DType('linear_transform3')
     rotation3: DType # value = DType('rotation3')
-    span_bool: DType # value = DType('span_bool')
-    span_const_bool: DType # value = DType('span_const_bool')
-    span_const_datetime64: DType # value = DType('span_const_datetime64')
-    span_const_float32: DType # value = DType('span_const_float32')
-    span_const_float64: DType # value = DType('span_const_float64')
-    span_const_int32: DType # value = DType('span_const_int32')
-    span_const_int64: DType # value = DType('span_const_int64')
-    span_const_string: DType # value = DType('span_const_string')
-    span_const_vector_3_float64: DType # value = DType('span_const_vector_3_float64')
-    span_datetime64: DType # value = DType('span_datetime64')
-    span_float32: DType # value = DType('span_float32')
-    span_float64: DType # value = DType('span_float64')
-    span_int32: DType # value = DType('span_int32')
-    span_int64: DType # value = DType('span_int64')
-    span_string: DType # value = DType('span_string')
-    span_vector_3_float64: DType # value = DType('span_vector_3_float64')
     string: DType # value = DType('string')
     translation3: DType # value = DType('translation3')
-    unordered_map_bool_to_int32_t: DType # value = DType('unordered_map_bool_to_int32_t')
-    unordered_map_bool_to_int64_t: DType # value = DType('unordered_map_bool_to_int64_t')
-    unordered_map_datetime64_to_int32_t: DType # value = DType('unordered_map_datetime64_to_int32_t')
-    unordered_map_datetime64_to_int64_t: DType # value = DType('unordered_map_datetime64_to_int64_t')
-    unordered_map_double_to_int32_t: DType # value = DType('unordered_map_double_to_int32_t')
-    unordered_map_double_to_int64_t: DType # value = DType('unordered_map_double_to_int64_t')
-    unordered_map_float32_to_int32_t: DType # value = DType('unordered_map_float32_to_int32_t')
-    unordered_map_float32_to_int64_t: DType # value = DType('unordered_map_float32_to_int64_t')
-    unordered_map_float64_to_int32_t: DType # value = DType('unordered_map_float64_to_int32_t')
-    unordered_map_float64_to_int64_t: DType # value = DType('unordered_map_float64_to_int64_t')
-    unordered_map_float_to_int32_t: DType # value = DType('unordered_map_float_to_int32_t')
-    unordered_map_float_to_int64_t: DType # value = DType('unordered_map_float_to_int64_t')
-    unordered_map_string_to_int32_t: DType # value = DType('unordered_map_string_to_int32_t')
-    unordered_map_string_to_int64_t: DType # value = DType('unordered_map_string_to_int64_t')
     vector3: DType # value = DType('vector3')
-    void: DType # value = DType('void')
     pass
 class DTypeError(TypeError, Exception, BaseException):
     """
@@ -261,11 +231,15 @@ class DataArray():
     @typing.overload
     def __getitem__(self, arg0: slice) -> DataArray: ...
     @typing.overload
-    def __getitem__(self, arg0: typing.Tuple[Dim, Variable]) -> DataArray: ...
+    def __getitem__(self, arg0: typing.List[int]) -> DataArray: ...
     @typing.overload
-    def __getitem__(self, arg0: typing.Tuple[Dim, int]) -> DataArray: ...
+    def __getitem__(self, arg0: typing.Tuple[str, Variable]) -> DataArray: ...
     @typing.overload
-    def __getitem__(self, arg0: typing.Tuple[Dim, slice]) -> DataArray: ...
+    def __getitem__(self, arg0: typing.Tuple[str, int]) -> DataArray: ...
+    @typing.overload
+    def __getitem__(self, arg0: typing.Tuple[str, slice]) -> DataArray: ...
+    @typing.overload
+    def __getitem__(self, arg0: typing.Tuple[str, typing.List[int]]) -> DataArray: ...
     @typing.overload
     def __gt__(self, arg0: DataArray) -> DataArray: ...
     @typing.overload
@@ -302,16 +276,18 @@ class DataArray():
         """
         DataArray initializer.
 
-        :param data: Data and optionally variances.
-        :param coords: Coordinates referenced by dimension.
-        :param masks: Masks referenced by name.
-        :param attrs: Attributes referenced by dimension.
-        :param name: Name of DataArray.
-        :type data: Variable
-        :type coords: Dict[str, Variable]
-        :type masks: Dict[str, Variable]
-        :type attrs: Dict[str, Variable]
-        :type name: str
+        Parameters
+        ----------
+        data:
+            Data and optionally variances.
+        coords:
+            Coordinates referenced by dimension.
+        masks:
+            Masks referenced by name.
+        attrs:
+            Attributes referenced by dimension.
+        name:
+            Name of DataArray.
         """
     def __invert__(self) -> DataArray: ...
     @typing.overload
@@ -412,6 +388,9 @@ class DataArray():
     def __rtruediv__(self, arg0: float) -> DataArray: ...
     @typing.overload
     def __rtruediv__(self, arg0: int) -> DataArray: ...
+    @staticmethod
+    @typing.overload
+    def __setitem__(*args, **kwargs) -> typing.Any: ...
     @typing.overload
     def __setitem__(self, arg0: ellipsis, arg1: object) -> None: ...
     @typing.overload
@@ -419,13 +398,9 @@ class DataArray():
     @typing.overload
     def __setitem__(self, arg0: slice, arg1: object) -> None: ...
     @typing.overload
-    def __setitem__(self, arg0: typing.Tuple[Dim, Variable], arg1: DataArray) -> None: ...
+    def __setitem__(self, arg0: typing.Tuple[str, int], arg1: object) -> None: ...
     @typing.overload
-    def __setitem__(self, arg0: typing.Tuple[Dim, Variable], arg1: Variable) -> None: ...
-    @typing.overload
-    def __setitem__(self, arg0: typing.Tuple[Dim, int], arg1: object) -> None: ...
-    @typing.overload
-    def __setitem__(self, arg0: typing.Tuple[Dim, slice], arg1: object) -> None: ...
+    def __setitem__(self, arg0: typing.Tuple[str, slice], arg1: object) -> None: ...
     @staticmethod
     @typing.overload
     def __sub__(*args, **kwargs) -> typing.Any: ...
@@ -475,10 +450,11 @@ class DataArray():
         copy is made, and the returned data (and meta data) values are new views
         of the data and meta data values of this object.
         """
-    def rename_dims(self, dims_dict: typing.Dict[Dim, Dim], /) -> DataArray: 
+    def rename_dims(self, dims_dict: typing.Dict[str, str], /) -> DataArray: 
         """
         Rename dimensions.
         """
+    def underlying_size(self) -> int: ...
     @property
     def attrs(self) -> Coords:
         """
@@ -667,6 +643,9 @@ class DataArray():
     def transform_coords(self, targets: typing.Union[str, typing.Iterable[str]], graph: typing.Dict[typing.Union[str, typing.Tuple[str, ...]], typing.Union[str, typing.Callable]], *, rename_dims: bool = True, keep_aliases: bool = True, keep_intermediate: bool = True, keep_inputs: bool = True, quiet: bool = False) -> typing.Union[DataArray, Dataset]: ...
     def transpose(self, dims: typing.Union[typing.List[str], typing.Tuple[str, ...], None] = None) -> typing.Union[Variable, DataArray, Dataset]: ...
 class DataArrayError(RuntimeError, Exception, BaseException):
+    """
+    Incorrect use of scipp.DataArray.
+    """
     pass
 class Dataset():
     """
@@ -701,11 +680,15 @@ class Dataset():
     @typing.overload
     def __getitem__(self, arg0: str) -> DataArray: ...
     @typing.overload
-    def __getitem__(self, arg0: typing.Tuple[Dim, Variable]) -> Dataset: ...
+    def __getitem__(self, arg0: typing.List[int]) -> Dataset: ...
     @typing.overload
-    def __getitem__(self, arg0: typing.Tuple[Dim, int]) -> Dataset: ...
+    def __getitem__(self, arg0: typing.Tuple[str, Variable]) -> Dataset: ...
     @typing.overload
-    def __getitem__(self, arg0: typing.Tuple[Dim, slice]) -> Dataset: ...
+    def __getitem__(self, arg0: typing.Tuple[str, int]) -> Dataset: ...
+    @typing.overload
+    def __getitem__(self, arg0: typing.Tuple[str, slice]) -> Dataset: ...
+    @typing.overload
+    def __getitem__(self, arg0: typing.Tuple[str, typing.List[int]]) -> Dataset: ...
     @typing.overload
     def __iadd__(self, arg0: DataArray) -> object: ...
     @typing.overload
@@ -726,18 +709,17 @@ class Dataset():
     def __imul__(self, arg0: float) -> object: ...
     @typing.overload
     def __imul__(self, arg0: int) -> object: ...
-    @typing.overload
     def __init__(self, data: typing.Dict[str, typing.Union[Variable, DataArray]] = {}, coords: typing.Dict[str, Variable] = {}) -> None: 
         """
-         Dataset initializer.
+        Dataset initializer.
 
-        :param data: Dictionary of name and data pairs.
-        :param coords: Dictionary of name and coord pairs.
-        :type data: Dict[str, Union[Variable, DataArray]]
-        :type coords: Dict[str, Variable]
+        Parameters
+        ----------
+        data:
+            Dictionary of name and data pairs.
+        coords:
+            Dictionary of name and coord pairs.
         """
-    @typing.overload
-    def __init__(self, data: typing.Dict[str, typing.Union[Variable, DataArray]] = {}, *, coords: typing.Dict[Dim, Variable] = {}) -> None: ...
     @typing.overload
     def __isub__(self, arg0: DataArray) -> object: ...
     @typing.overload
@@ -767,6 +749,9 @@ class Dataset():
     @typing.overload
     def __mul__(self, arg0: Variable) -> Dataset: ...
     def __repr__(self) -> str: ...
+    @staticmethod
+    @typing.overload
+    def __setitem__(*args, **kwargs) -> typing.Any: ...
     @typing.overload
     def __setitem__(self, arg0: ellipsis, arg1: object) -> None: ...
     @typing.overload
@@ -778,11 +763,9 @@ class Dataset():
     @typing.overload
     def __setitem__(self, arg0: str, arg1: Variable) -> None: ...
     @typing.overload
-    def __setitem__(self, arg0: typing.Tuple[Dim, Variable], arg1: Dataset) -> None: ...
+    def __setitem__(self, arg0: typing.Tuple[str, int], arg1: object) -> None: ...
     @typing.overload
-    def __setitem__(self, arg0: typing.Tuple[Dim, int], arg1: object) -> None: ...
-    @typing.overload
-    def __setitem__(self, arg0: typing.Tuple[Dim, slice], arg1: object) -> None: ...
+    def __setitem__(self, arg0: typing.Tuple[str, slice], arg1: object) -> None: ...
     @typing.overload
     def __sub__(self, arg0: DataArray) -> Dataset: ...
     @typing.overload
@@ -817,7 +800,7 @@ class Dataset():
         """
         view on self's keys
         """
-    def rename_dims(self, dims_dict: typing.Dict[Dim, Dim], /) -> Dataset: 
+    def rename_dims(self, dims_dict: typing.Dict[str, str], /) -> Dataset: 
         """
         Rename dimensions.
         """
@@ -889,6 +872,9 @@ class Dataset():
     def to_hdf5(self, filename: 'typing.Union[str, Path]'): ...
     def transform_coords(self, targets: typing.Union[str, typing.Iterable[str]], graph: typing.Dict[typing.Union[str, typing.Tuple[str, ...]], typing.Union[str, typing.Callable]], *, rename_dims: bool = True, keep_aliases: bool = True, keep_intermediate: bool = True, keep_inputs: bool = True, quiet: bool = False) -> typing.Union[DataArray, Dataset]: ...
 class DatasetError(RuntimeError, Exception, BaseException):
+    """
+    Incorrect use of scipp.Dataset.
+    """
     pass
 class Dataset_items_view():
     @staticmethod
@@ -909,16 +895,6 @@ class Dataset_values_view():
     def __len__(self) -> int: ...
     pass
 class DefaultUnit():
-    pass
-class Dim():
-    """
-    Dimension label
-    """
-    def __eq__(self, arg0: Dim) -> bool: ...
-    def __hash__(self) -> int: ...
-    def __init__(self, arg0: str) -> None: ...
-    def __ne__(self, arg0: Dim) -> bool: ...
-    def __repr__(self) -> str: ...
     pass
 class DimensionError(RuntimeError, Exception, BaseException):
     """
@@ -1145,7 +1121,7 @@ class GroupByDataArray():
     """
     GroupBy object implementing split-apply-combine mechanism.
     """
-    def all(self, dim: Dim) -> DataArray: 
+    def all(self, dim: str) -> DataArray: 
         """
         Element-wise all over the specified dimension within a group.
 
@@ -1154,7 +1130,7 @@ class GroupByDataArray():
         :return: The computed all over each group, combined along the dimension specified when calling :py:func:`scipp.groupby`.
         :rtype: DataArray
         """
-    def any(self, dim: Dim) -> DataArray: 
+    def any(self, dim: str) -> DataArray: 
         """
         Element-wise any over the specified dimension within a group.
 
@@ -1163,7 +1139,7 @@ class GroupByDataArray():
         :return: The computed any over each group, combined along the dimension specified when calling :py:func:`scipp.groupby`.
         :rtype: DataArray
         """
-    def concat(self, dim: Dim) -> DataArray: 
+    def concat(self, dim: str) -> DataArray: 
         """
         Element-wise concat over the specified dimension within a group.
 
@@ -1180,7 +1156,7 @@ class GroupByDataArray():
         :type group: 
         :rtype: DataArray
         """
-    def max(self, dim: Dim) -> DataArray: 
+    def max(self, dim: str) -> DataArray: 
         """
         Element-wise max over the specified dimension within a group.
 
@@ -1189,7 +1165,7 @@ class GroupByDataArray():
         :return: The computed max over each group, combined along the dimension specified when calling :py:func:`scipp.groupby`.
         :rtype: DataArray
         """
-    def mean(self, dim: Dim) -> DataArray: 
+    def mean(self, dim: str) -> DataArray: 
         """
         Element-wise mean over the specified dimension within a group.
 
@@ -1198,7 +1174,7 @@ class GroupByDataArray():
         :return: The computed mean over each group, combined along the dimension specified when calling :py:func:`scipp.groupby`.
         :rtype: DataArray
         """
-    def min(self, dim: Dim) -> DataArray: 
+    def min(self, dim: str) -> DataArray: 
         """
         Element-wise min over the specified dimension within a group.
 
@@ -1207,7 +1183,7 @@ class GroupByDataArray():
         :return: The computed min over each group, combined along the dimension specified when calling :py:func:`scipp.groupby`.
         :rtype: DataArray
         """
-    def sum(self, dim: Dim) -> DataArray: 
+    def sum(self, dim: str) -> DataArray: 
         """
         Element-wise sum over the specified dimension within a group.
 
@@ -1226,7 +1202,7 @@ class GroupByDataset():
     """
     GroupBy object implementing split-apply-combine mechanism.
     """
-    def all(self, dim: Dim) -> Dataset: 
+    def all(self, dim: str) -> Dataset: 
         """
         Element-wise all over the specified dimension within a group.
 
@@ -1235,7 +1211,7 @@ class GroupByDataset():
         :return: The computed all over each group, combined along the dimension specified when calling :py:func:`scipp.groupby`.
         :rtype: Dataset
         """
-    def any(self, dim: Dim) -> Dataset: 
+    def any(self, dim: str) -> Dataset: 
         """
         Element-wise any over the specified dimension within a group.
 
@@ -1244,7 +1220,7 @@ class GroupByDataset():
         :return: The computed any over each group, combined along the dimension specified when calling :py:func:`scipp.groupby`.
         :rtype: Dataset
         """
-    def concat(self, dim: Dim) -> Dataset: 
+    def concat(self, dim: str) -> Dataset: 
         """
         Element-wise concat over the specified dimension within a group.
 
@@ -1261,7 +1237,7 @@ class GroupByDataset():
         :type group: 
         :rtype: Dataset
         """
-    def max(self, dim: Dim) -> Dataset: 
+    def max(self, dim: str) -> Dataset: 
         """
         Element-wise max over the specified dimension within a group.
 
@@ -1270,7 +1246,7 @@ class GroupByDataset():
         :return: The computed max over each group, combined along the dimension specified when calling :py:func:`scipp.groupby`.
         :rtype: Dataset
         """
-    def mean(self, dim: Dim) -> Dataset: 
+    def mean(self, dim: str) -> Dataset: 
         """
         Element-wise mean over the specified dimension within a group.
 
@@ -1279,7 +1255,7 @@ class GroupByDataset():
         :return: The computed mean over each group, combined along the dimension specified when calling :py:func:`scipp.groupby`.
         :rtype: Dataset
         """
-    def min(self, dim: Dim) -> Dataset: 
+    def min(self, dim: str) -> Dataset: 
         """
         Element-wise min over the specified dimension within a group.
 
@@ -1288,7 +1264,7 @@ class GroupByDataset():
         :return: The computed min over each group, combined along the dimension specified when calling :py:func:`scipp.groupby`.
         :rtype: Dataset
         """
-    def sum(self, dim: Dim) -> Dataset: 
+    def sum(self, dim: str) -> Dataset: 
         """
         Element-wise sum over the specified dimension within a group.
 
@@ -1319,7 +1295,7 @@ class Masks():
     def __setitem__(self, arg0: str, arg1: Variable) -> None: ...
     def _ipython_key_completions_(self) -> list: ...
     def _pop(self, k: str) -> object: ...
-    def is_edges(self, key: str, dim: typing.Optional[Dim] = None) -> bool: 
+    def is_edges(self, key: str, dim: typing.Optional[str] = None) -> bool: 
         """
         Return True if the given key contains bin-edges in the given dim.
         """
@@ -1357,11 +1333,7 @@ class Masks_values_view():
     def __iter__(self) -> typing.Iterator: ...
     def __len__(self) -> int: ...
     pass
-class SizeError(RuntimeError, Exception, BaseException):
-    pass
 class Slice():
-    pass
-class SliceError(IndexError, LookupError, Exception, BaseException):
     pass
 class Unit():
     """
@@ -1388,7 +1360,7 @@ class Unit():
     pass
 class UnitError(RuntimeError, Exception, BaseException):
     """
-    Inappropriate unit value.
+    Inappropriate unit.
     """
     pass
 class Variable():
@@ -1446,9 +1418,13 @@ class Variable():
     @typing.overload
     def __getitem__(self, arg0: slice) -> Variable: ...
     @typing.overload
-    def __getitem__(self, arg0: typing.Tuple[Dim, int]) -> Variable: ...
+    def __getitem__(self, arg0: typing.List[int]) -> Variable: ...
     @typing.overload
-    def __getitem__(self, arg0: typing.Tuple[Dim, slice]) -> Variable: ...
+    def __getitem__(self, arg0: typing.Tuple[str, int]) -> Variable: ...
+    @typing.overload
+    def __getitem__(self, arg0: typing.Tuple[str, slice]) -> Variable: ...
+    @typing.overload
+    def __getitem__(self, arg0: typing.Tuple[str, typing.List[int]]) -> Variable: ...
     @typing.overload
     def __gt__(self, arg0: Variable) -> Variable: ...
     @typing.overload
@@ -1608,9 +1584,9 @@ class Variable():
     @typing.overload
     def __setitem__(self, arg0: slice, arg1: object) -> None: ...
     @typing.overload
-    def __setitem__(self, arg0: typing.Tuple[Dim, int], arg1: object) -> None: ...
+    def __setitem__(self, arg0: typing.Tuple[str, int], arg1: object) -> None: ...
     @typing.overload
-    def __setitem__(self, arg0: typing.Tuple[Dim, slice], arg1: object) -> None: ...
+    def __setitem__(self, arg0: typing.Tuple[str, slice], arg1: object) -> None: ...
     @staticmethod
     @typing.overload
     def __sub__(*args, **kwargs) -> typing.Any: ...
@@ -1653,7 +1629,7 @@ class Variable():
         copy is made, and the returned data (and meta data) values are new views
         of the data and meta data values of this object.
         """
-    def rename_dims(self, dims_dict: typing.Dict[Dim, Dim], /) -> Variable: 
+    def rename_dims(self, dims_dict: typing.Dict[str, str], /) -> Variable: 
         """
         Rename dimensions.
         """
@@ -1804,6 +1780,12 @@ class Variable():
     def to_hdf5(self, filename: 'typing.Union[str, Path]'): ...
     def transpose(self, dims: typing.Union[typing.List[str], typing.Tuple[str, ...], None] = None) -> typing.Union[Variable, DataArray, Dataset]: ...
 class VariableError(RuntimeError, Exception, BaseException):
+    """
+    Incorrect use of scipp.Variable.
+    """
     pass
 class VariancesError(RuntimeError, Exception, BaseException):
+    """
+    Variances used where they are not supported or not used where they are required.
+    """
     pass

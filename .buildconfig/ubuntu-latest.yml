@@ -10,22 +10,26 @@ dependencies:
   - gxx_linux-64 11.1.*
   - h5py
   - hypothesis
+  - ipympl<0.9
   - ipywidgets
   - jinja2==3.0.3  # jupyter/nbconvert#1736
   - markupsafe>=1.1.1,<2.1.0
   - matplotlib-base
+  - nbconvert=6.4.5
   - nbsphinx
   - ninja
   - nomkl
   - numpy>=1.20.0
   - pandas
+  - pooch
   - pytest
+  - pytest-xdist
   - python-graphviz
   - pythreejs
   - pyyaml
   - scipy>=1.7.0
   - sphinx
-  - sphinx-book-theme
+  - sphinx-book-theme==0.2  # 0.3 breaks custom launchbuttons
   - sphinx-copybutton
   - tbb=2020.2.*
   - tbb-devel=2020.2.*

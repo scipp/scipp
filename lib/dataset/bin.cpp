@@ -528,7 +528,7 @@ void validate_bin_args(const DataArray &array,
         "groupby, it might be able to do what you need.");
   }
   if (edges.empty() && groups.empty())
-    throw except::BinnedDataError(
+    throw std::invalid_argument(
         "Arguments 'edges' and 'groups' of scipp.bin are "
         "both empty. At least one must be set.");
   for (const auto &edge : edges) {
