@@ -66,7 +66,10 @@ The example below shows how docstrings should be laid out in scipp including spa
 
         See Also
         --------
-        scipp.fold
+        scipp.fold:
+            For reshaping into multiple dimensions.
+        scipp.flatten:
+            For removing dimensions.
 
         Examples
         --------
@@ -114,7 +117,10 @@ The order of sections is fixed as shown in the example.
   of when the exception is raised.
   The exception type is required.
   Note that there are no colons here.
-* **See Also** (*optional*) List of related functions and / or classes without and reST markup.
+* **See Also** (*optional*) List of related functions and / or classes.
+  The function / class name should include the module it is in but without reST markup.
+  For simple cases, the explanation can be left out.
+  In this case, the colon should be omitted as well and multiple entries must be separated by commas.
 * **Examples** (*optional*) Example code given using ``>>>`` as the Python prompt.
   May include text before, after, and between code blocks.
   Note the spacing in the example.
