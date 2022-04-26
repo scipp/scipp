@@ -277,8 +277,8 @@ def test_plot_access_ax_and_fig_two_entries():
     d = make_dense_dataset(ndim=1)
     d['b'].unit = 'kg'
     out = sc.plot(d)
-    out["['xx'].counts"].ax.set_xlabel("MyXlabel")
-    out["['xx'].counts"].fig.set_dpi(120.)
+    out["('xx',).counts"].ax.set_xlabel("MyXlabel")
+    out["('xx',).counts"].fig.set_dpi(120.)
     out.close()
 
 

@@ -25,11 +25,8 @@ from .cpp_classes import BinEdgeError, BinnedDataError, CoordError, \
 
 from .._scipp.core import get_slice_params
 
-from .dimensions import _make_sizes, _rename_variable, _rename_data_array, _rename_dataset
+from .dimensions import _rename_variable, _rename_data_array, _rename_dataset
 
-setattr(Variable, 'sizes', property(_make_sizes))
-setattr(DataArray, 'sizes', property(_make_sizes))
-setattr(Dataset, 'sizes', property(_make_sizes))
 setattr(Variable, 'rename', _rename_variable)
 setattr(DataArray, 'rename', _rename_data_array)
 setattr(Dataset, 'rename', _rename_dataset)

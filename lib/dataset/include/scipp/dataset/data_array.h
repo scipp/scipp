@@ -52,7 +52,7 @@ public:
 
   Coords meta() const;
 
-  [[nodiscard]] Dimensions dims() const { return m_data->dims(); }
+  [[nodiscard]] const Dimensions &dims() const { return m_data->dims(); }
   [[nodiscard]] Dim dim() const { return m_data->dim(); }
   [[nodiscard]] scipp::index ndim() const { return m_data->ndim(); }
   [[nodiscard]] scipp::span<const scipp::index> strides() const {

@@ -27,7 +27,7 @@ def test_variable_1D_vector3_from_list():
     assert len(var.values) == 2
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
     np.testing.assert_array_equal(var.values[1], [4, 5, 6])
-    assert var.dims == ['x']
+    assert var.dims == ('x', )
     assert var.dtype == sc.DType.vector3
     assert var.unit == sc.units.m
 
@@ -39,7 +39,7 @@ def test_variable_1D_vector3_from_numpy():
     assert len(var.values) == 2
     np.testing.assert_array_equal(var.values[0], [1, 2, 3])
     np.testing.assert_array_equal(var.values[1], [4, 5, 6])
-    assert var.dims == ['x']
+    assert var.dims == ('x', )
     assert var.dtype == sc.DType.vector3
     assert var.unit == sc.units.m
 
@@ -147,7 +147,7 @@ def test_variable_1D_matrix_from_numpy():
     np.testing.assert_array_equal(var.values[0], [[0, 1, 2], [3, 4, 5], [6, 7, 8]])
     np.testing.assert_array_equal(var.values[1], [[5, 6, 7], [8, 9, 10], [11, 12, 13]])
     np.testing.assert_array_equal(var.values[2], [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-    assert var.dims == ['x']
+    assert var.dims == ('x', )
     assert var.dtype == sc.DType.linear_transform3
     assert var.unit == sc.units.us
 

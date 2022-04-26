@@ -72,31 +72,7 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
     }
     return out;
   });
-  c.def_property_readonly(
-      "dims",
-      [](const T &self) {
-        std::vector<std::string> dims;
-        for (const auto &dim : self.sizes()) {
-          dims.push_back(dim.name());
-        }
-        return dims;
-      },
-      R"(List of dimensions.)", py::return_value_policy::move);
-  // TODO should this be removed?
-  c.def_property_readonly(
-      "shape",
-      [](const T &self) {
-        std::vector<int64_t> shape;
-        for (const auto &size : self.sizes().sizes()) {
-          shape.push_back(size);
-        }
-        return shape;
-      },
-      R"(List of shapes.)", py::return_value_policy::move);
-  c.def_property_readonly(
-      "dim", [](const T &self) { return self.dim().name(); },
-      "The only dimension label for 1-dimensional data, raising an exception "
-      "if the data is not 1-dimensional.");
+  bind_common_data_properties(c);
   bind_pop(c);
 }
 

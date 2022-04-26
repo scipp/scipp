@@ -421,17 +421,15 @@ using as_ElementArrayView = as_ElementArrayViewImpl<
     Eigen::Affine3d, scipp::core::Quaternion, scipp::core::Translation>;
 
 template <class T, class... Ignored>
-void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
-  c.def_property_readonly(
-      "dtype", [](const T &self) { return self.dtype(); },
-      "Data type contained in the variable.");
+void bind_common_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property_readonly(
       "dims",
       [](const T &self) {
-        const auto &dims_ = self.dims();
-        std::vector<std::string> dims;
-        for (const auto &dim : dims_.labels()) {
-          dims.push_back(dim.name());
+        const auto &labels = self.dims().labels();
+        const auto ndim = static_cast<size_t>(self.ndim());
+        py::tuple dims(ndim);
+        for (size_t i = 0; i < ndim; ++i) {
+          dims[i] = labels[i].name();
         }
         return dims;
       },
@@ -448,10 +446,37 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property_readonly(
       "shape",
       [](const T &self) {
-        const auto &dims = self.dims();
-        return std::vector<int64_t>(dims.shape().begin(), dims.shape().end());
+        const auto &sizes = self.dims().sizes();
+        const auto ndim = static_cast<size_t>(self.ndim());
+        py::tuple shape(ndim);
+        for (size_t i = 0; i < ndim; ++i) {
+          shape[i] = sizes[i];
+        }
+        return shape;
       },
       "Shape of the data (read-only).", py::return_value_policy::move);
+  c.def_property_readonly(
+      "sizes",
+      [](const T &self) {
+        const auto &dims = self.dims();
+        // Use py::dict directly instead of std::map in order to guarantee
+        // that items are stored in the order of insertion.
+        py::dict sizes;
+        for (const auto label : dims.labels()) {
+          sizes[label.name().c_str()] = dims[label];
+        }
+        return sizes;
+      },
+      "dict mapping dimension labels to dimension sizes (read-only).",
+      py::return_value_policy::move);
+}
+
+template <class T, class... Ignored>
+void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
+  bind_common_data_properties(c);
+  c.def_property_readonly(
+      "dtype", [](const T &self) { return self.dtype(); },
+      "Data type contained in the variable.");
   c.def_property(
       "unit",
       [](const T &self) {
