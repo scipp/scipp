@@ -9,12 +9,13 @@ defaults:
 
 jobs:
   build_conda:
-    name: Package build (${{ matrix.os }}, py${{ matrix.python-version }}), variant:${{ matrix.variant }}
-    runs-on: ${{ matrix.os }}
+    name: Package build (${{ matrix.variant.os }}, py${{ matrix.python-version }}), variant:${{ matrix.variant.file }}
+    runs-on: ${{ matrix.variant.os }}
     strategy:
       matrix:
-        os: ["ubuntu-latest"]
-        variant: ["osx_arm64.yaml"]
+        variant:
+          - {os: "ubuntu-latest", file: "osx_arm64.yaml"}
+          - {os: "macos-latest", file: "osx_64.yaml"}
         python-version: ["3.8"]
 
     steps:
@@ -25,11 +26,11 @@ jobs:
 
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install --yes --channel conda-forge boa
-      - run: conda mambabuild --channel conda-forge --variant-config-files=conda/variants/${{ matrix.variant }} --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels --output-folder conda/package conda
+      - run: conda mambabuild --channel conda-forge --variant-config-files=conda/variants/${{ matrix.variant.file }} --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels --output-folder conda/package conda
 
       - uses: actions/upload-artifact@v2
         with:
-          name: conda-package-${{ matrix.os }}-py${{ matrix.python-version }}-variant${{ matrix.variant }}
+          name: conda-package-${{ matrix.variant.os }}-py${{ matrix.python-version }}-variant${{ matrix.variant }}
           path: conda/package/*/scipp*.tar.bz2
 
   upload_packages:
