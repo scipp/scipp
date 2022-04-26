@@ -1,0 +1,47 @@
+name: Dev-Release
+
+on:
+  pull_request:
+
+defaults:
+  run:
+    shell: bash -l {0}  # required for conda env
+
+jobs:
+  build_conda:
+    name: Package build (${{ matrix.variant.target }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.variant.os }}
+    strategy:
+      matrix:
+        variant:
+          - {os: ubuntu-latest, target: linux_64}
+          - {os: macos-latest, target: osx_64}
+          - {os: macos-latest, target: osx_arm64}
+          - {os: windows-latest, target: win_64}
+        python-version: ["3.8"]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+          fetch-depth: 0  # history required so cmake can determine version
+
+      - uses: conda-incubator/setup-miniconda@v2
+      - run: conda install --yes boa
+      - run: conda mambabuild --channel conda-forge --variant-config-files=conda/variants/${{ matrix.variant.config }}.yaml --python=${{ matrix.python-version }} --no-anaconda-upload --override-channels --output-folder conda/package conda
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: conda-package-${{ matrix.variant.os }}-py${{ matrix.python-version }}
+          path: conda/package/*/scipp*.tar.bz2
+
+  upload_packages:
+    name: Deploy packages
+    needs: [build_conda]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v2
+      - uses: conda-incubator/setup-miniconda@v2
+      - run: conda install -c conda-forge --yes anaconda-client
+      - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label dev $(ls conda-package-*/*/*.tar.bz2)
