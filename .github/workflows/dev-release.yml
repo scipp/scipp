@@ -41,5 +41,5 @@ jobs:
       - uses: actions/download-artifact@v2
       - uses: conda-incubator/setup-miniconda@v2
       - run: conda install -c conda-forge --yes anaconda-client
-      - run: anaconda --force --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label dev $(ls conda-package-*/*/*.tar.bz2)
+      - run: anaconda --token ${{ secrets.ANACONDATOKEN }} upload --user scipp --label dev $(ls conda-package-*/*/*.tar.bz2)
       - uses: actions/setup-python@v2
