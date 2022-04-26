@@ -25,22 +25,21 @@ source:
 
 requirements:
   build:
-    - python                              # [build_platform != target_platform]
+    - {{ compiler('cxx') }}
     - cross-python_{{ target_platform }}  # [build_platform != target_platform]
-    - {{ compiler('cxx') }} [not win]
     - cmake
     - conan>=1.45.0
     - cppcheck [linux64]
     - git
     - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - ninja
+    - python
   host:
     - python
     - tbb-devel=2020.2.*
   run:
     - confuse
     - numpy
-    - python
     - pyyaml
     - tbb=2020.2.*
     - graphlib-backport # for python < 3.9
@@ -53,7 +52,7 @@ test:
   imports:
     - scipp
   requires:
-    - {{ compiler('cxx') }} [not win]
+    - {{ compiler('cxx') }}
     - cmake
     - conan>=1.45.0
     - h5py
@@ -76,7 +75,7 @@ test:
   commands:
     - python -m pytest -v tests
     - python cmake-package-test/build.py
-%{ endif %}
+{% endif %}
 
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
