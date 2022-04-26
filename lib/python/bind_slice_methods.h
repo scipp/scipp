@@ -227,6 +227,15 @@ void strip_edges(T &out, const T &base, Op op, const Dim dim) {
 template <class T>
 T slice_by_list(const T &obj,
                 const std::tuple<Dim, std::vector<scipp::index>> &index) {
+  const auto make_slice = [](const scipp::index p, const scipp::index s) {
+    py::gil_scoped_acquire acquire;
+    const auto slice = py::slice(p, p + 1, 1);
+    size_t start, stop, step, slicelength;
+    if (!slice.compute(s, &start, &stop, &step, &slicelength))
+      throw py::error_already_set();
+    return std::tuple{start, stop};
+  };
+
   const auto &[dim, indices] = index;
   auto copy = obj;
   if constexpr (std::is_same_v<T, DataArray>) {
@@ -244,10 +253,7 @@ T slice_by_list(const T &obj,
   slices.reserve(indices.size());
   const auto size = copy.dims()[dim];
   for (const auto &pos : indices) {
-    const auto slice = py::slice(pos, pos + 1, 1);
-    size_t start, stop, step, slicelength;
-    if (!slice.compute(size, &start, &stop, &step, &slicelength))
-      throw py::error_already_set();
+    const auto [start, stop] = make_slice(pos, size);
     slices.emplace_back(copy.slice({dim, static_cast<scipp::index>(start),
                                     static_cast<scipp::index>(stop)}));
   }
