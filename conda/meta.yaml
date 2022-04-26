@@ -25,13 +25,15 @@ source:
 
 requirements:
   build:
+    - {{ compiler('cxx') }} [not win]
     - cmake
-    - cppcheck [linux64]
     - conan>=1.45.0
-    - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
-    - gxx_linux-64 11.1.* [linux64]
+    - cppcheck [linux64]
     - git
+    - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - ninja
+    - python
+  host:
     - python
     - tbb-devel=2020.2.*
   run:
@@ -46,23 +48,22 @@ test:
   imports:
     - scipp
   requires:
+    - {{ compiler('cxx') }} [not win]
     - cmake
     - conan>=1.45.0
-    - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
-    - gxx_linux-64 11.1.* [linux64]
     - h5py
     - hypothesis
     - ipympl
     - ipywidgets
     - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - matplotlib-base
+    - pandas
     - pytest
     - pythreejs
     - python-graphviz
-    - xarray
-    - pandas
     - scipy>=1.7.0
     - tbb-devel=2020.2.*
+    - xarray
   files:
     - cmake-package-test/
   source_files:
