@@ -1,0 +1,6 @@
+cxx_compiler:
+- vs2019
+numpy:
+- '1.20'
+target_platform:
+- win-64

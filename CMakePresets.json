@@ -57,23 +57,33 @@
       }
     },
     {
-      "name": "package-linux",
+      "name": "package-linux-64",
       "inherits": "package",
-      "description": "Linux options for package build"
+      "description": "Linux options for package build for x86_64"
     },
     {
-      "name": "package-macos",
+      "name": "package-osx-64",
       "inherits": "package",
-      "description": "MacOS options for package build",
+      "description": "MacOS options for package build for x86_64",
       "cacheVariables": {
-        "CMAKE_OSX_DEPLOYMENT_TARGET": "10.15"
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "10.15",
+        "CMAKE_OSX_ARCHITECTURES": "x86_64"
+      }
+    },
+    {
+      "name": "package-osx-arm64",
+      "inherits": "package",
+      "description": "MacOS options for package build for arm64",
+      "cacheVariables": {
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "11.0",
+        "CMAKE_OSX_ARCHITECTURES": "arm64"
       }
     },
     {
       "name": "package-windows",
       "inherits": "package",
       "description": "Windows options for package build",
-      "generator": "Visual Studio 17 2022"
+      "generator": "Visual Studio 19 2022"
     },
     {
       "name": "coverage",
