@@ -13,8 +13,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ["macos-latest"]
-        variant: ["osx_64.yaml", "osx_arm64.yaml"]
+        os: ["ubuntu-latest"]
+        variant: ["osx_arm64.yaml"]
         python-version: ["3.8"]
 
     steps:
