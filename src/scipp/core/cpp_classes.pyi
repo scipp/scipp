@@ -498,11 +498,11 @@ class DataArray():
         :type: str
         """
     @property
-    def dims(self) -> typing.List[str]:
+    def dims(self) -> tuple:
         """
         Dimension labels of the data (read-only).
 
-        :type: typing.List[str]
+        :type: tuple
         """
     @property
     def dtype(self) -> DType:
@@ -545,19 +545,18 @@ class DataArray():
         :type: int
         """
     @property
-    def shape(self) -> typing.List[int]:
+    def shape(self) -> tuple:
         """
         Shape of the data (read-only).
 
-        :type: typing.List[int]
+        :type: tuple
         """
     @property
-    def sizes(self) -> None:
+    def sizes(self) -> typing.Dict[str, int]:
         """
-            Makes a dictionary of dimensions labels to dimension sizes
-            
+        dict mapping dimension labels to dimension sizes (read-only).
 
-        :type: None
+        :type: typing.Dict[str, int]
         """
     @property
     def unit(self) -> object:
@@ -833,11 +832,11 @@ class Dataset():
         :type: str
         """
     @property
-    def dims(self) -> typing.List[str]:
+    def dims(self) -> tuple:
         """
-        List of dimensions.
+        Dimension labels of the data (read-only).
 
-        :type: typing.List[str]
+        :type: tuple
         """
     @property
     def meta(self) -> Coords:
@@ -847,19 +846,25 @@ class Dataset():
         :type: Coords
         """
     @property
-    def shape(self) -> typing.List[int]:
+    def ndim(self) -> int:
         """
-        List of shapes.
+        Number of dimensions of the data (read-only).
 
-        :type: typing.List[int]
+        :type: int
         """
     @property
-    def sizes(self) -> None:
+    def shape(self) -> tuple:
         """
-            Makes a dictionary of dimensions labels to dimension sizes
-            
+        Shape of the data (read-only).
 
-        :type: None
+        :type: tuple
+        """
+    @property
+    def sizes(self) -> typing.Dict[str, int]:
+        """
+        dict mapping dimension labels to dimension sizes (read-only).
+
+        :type: typing.Dict[str, int]
         """
     __array_ufunc__ = None
     pass
@@ -1651,11 +1656,11 @@ class Variable():
         :type: str
         """
     @property
-    def dims(self) -> typing.List[str]:
+    def dims(self) -> tuple:
         """
         Dimension labels of the data (read-only).
 
-        :type: typing.List[str]
+        :type: tuple
         """
     @property
     def dtype(self) -> DType:
@@ -1679,19 +1684,18 @@ class Variable():
         :type: int
         """
     @property
-    def shape(self) -> typing.List[int]:
+    def shape(self) -> tuple:
         """
         Shape of the data (read-only).
 
-        :type: typing.List[int]
+        :type: tuple
         """
     @property
-    def sizes(self) -> None:
+    def sizes(self) -> typing.Dict[str, int]:
         """
-            Makes a dictionary of dimensions labels to dimension sizes
-            
+        dict mapping dimension labels to dimension sizes (read-only).
 
-        :type: None
+        :type: typing.Dict[str, int]
         """
     @property
     def unit(self) -> object:
@@ -1760,7 +1764,7 @@ class Variable():
     def any(self, dim: 'typing.Optional[str]' = None, *, out: 'typing.Optional[Variable]' = None) -> 'Variable': ...
     def broadcast(self, dims: typing.Union[typing.List[str], typing.Tuple[str, ...], None] = None, shape: typing.Union[typing.Sequence[int], None] = None, sizes: typing.Union[typing.Dict[str, int], None] = None) -> Variable: ...
     def ceil(self, *, out: 'typing.Optional[VariableLike]' = None) -> 'VariableLike': ...
-    def cumsum(self, dim: typing.Union[str, None] = None, mode: typing.Union[str, None] = 'inclusive') -> Variable: ...
+    def cumsum(self, dim: typing.Union[str, None] = None, mode: Literal['exclusive', 'inclusive'] = 'inclusive') -> Variable: ...
     def flatten(self, dims: typing.Union[typing.List[str], typing.Tuple[str, ...], None] = None, to: typing.Union[str, None] = None) -> typing.Union[Variable, DataArray, Dataset]: ...
     def floor(self, *, out: 'typing.Optional[VariableLike]' = None) -> 'VariableLike': ...
     def fold(self, dim: str, sizes: typing.Union[typing.Dict[str, int], None] = None, dims: typing.Union[typing.List[str], typing.Tuple[str, ...], None] = None, shape: typing.Union[typing.Sequence[int], None] = None) -> typing.Union[Variable, DataArray, Dataset]: ...

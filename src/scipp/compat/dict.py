@@ -93,7 +93,7 @@ def _dims_to_strings(dims):
     """
     Convert dims that may or may not be strings to strings.
     """
-    return [str(dim) for dim in dims]
+    return tuple(str(dim) for dim in dims)
 
 
 def from_dict(dict_obj: dict) -> VariableLike:

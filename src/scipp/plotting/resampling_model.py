@@ -123,8 +123,8 @@ class ResamplingModel():
                 for d in coord_dims:
                     if d not in data_dims:
                         data = broadcast(data,
-                                         dims=[d] + data.dims,
-                                         shape=[sizes[d]] + data.shape)
+                                         dims=(d, *data.dims),
+                                         shape=(sizes[d], *data.shape))
         array = DataArray(data=data)
         for dim in coords:
             try:

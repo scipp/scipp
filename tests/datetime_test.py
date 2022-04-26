@@ -129,7 +129,7 @@ def test_construct_datetime(unit):
                 sc.Variable(dims=['x'], unit=unit, values=values),
                 sc.Variable(dims=['x'], dtype=dtype,
                             values=values), sc.Variable(dims=['x'], values=values)):
-        assert var.dims == ['x']
+        assert var.dims == ('x', )
         assert str(var.dtype) == 'datetime64'
         assert var.unit == unit
         assert var.values.dtype == dtype

@@ -251,6 +251,15 @@ def test_sizes():
     assert a.sizes == {'y': 3, 'z': 4}
 
 
+def test_dims():
+    a = sc.scalar(1)
+    assert a.dims == ()
+    a = sc.empty(dims=['x'], shape=[2])
+    assert a.dims == ('x', )
+    a = sc.empty(dims=['y', 'z'], shape=[3, 4])
+    assert a.dims == ('y', 'z')
+
+
 def test_concat():
     assert_export(sc.concat,
                   [sc.Variable(dims=(), values=0.0),
