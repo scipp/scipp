@@ -8,6 +8,7 @@ from .mesh import Mesh
 from .line import Line
 from ..utils import name_with_unit
 
+from functools import partial
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,6 +16,7 @@ from typing import Any, Tuple
 
 
 class SideBar:
+
     def __init__(self, children=None):
         self._children = children if children is not None else []
 
@@ -26,6 +28,7 @@ class SideBar:
 
 
 class Figure:
+
     def __init__(self,
                  ax: Any = None,
                  figsize: Tuple[float, ...] = None,
@@ -39,6 +42,7 @@ class Figure:
                  **kwargs):
 
         self._models = None
+        self._notifications = {"data": self.update}
 
         self._fig = None
         self._closed = False
@@ -109,6 +113,10 @@ class Figure:
 
     def register_models(self, models):
         self._models = models
+
+    def add_notification(self, key, func):
+        self._notifications[key] = partial(func, view=self)
+        print(self._notifications[key])
 
     def is_widget(self) -> bool:
         """
@@ -231,15 +239,23 @@ class Figure:
         self._fig.savefig(filename, bbox_inches="tight")
 
     def notify(self, change):
-        if change["type"] == "data":
-            self.update(new_values=self._models.get_data(change["name"]),
-                        key=change["name"])
+        if change["type"] in self._notifications:
+            self._notifications[change["type"]](change=change)
+        # if change["type"] == "data":
+        #     self.update(new_values=self._models.get_data(change["name"]),
+        #                 key=change["name"])
 
-    def update(self, new_values: DataArray, key: str, draw: bool = True):
+    # def _update_on_notify(self, change):
+    #     self.update(new_values=self._models.get_data(change["name"]),
+    #                 key=change["name"])
+
+    # def update(self, new_values: DataArray, key: str, draw: bool = True):
+    def update(self, change):
         """
         Update image array with new values.
         """
-
+        new_values = self._models.get_data(change["name"])
+        key = change["name"]
         if key not in self._children:
             self._new_artist = True
             if new_values.ndim == 1:
@@ -268,5 +284,5 @@ class Figure:
         else:
             self._children[key].update(new_values=new_values)
 
-        if draw:
-            self.draw()
+        # if draw:
+        self.draw()

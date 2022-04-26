@@ -4,6 +4,7 @@ from .filters import Filter
 class Model:
     """
     """
+
     def __init__(self, data, notification_handler, name, notification_type="data"):
         self._data = data
         self._notification_handler = notification_handler
@@ -34,6 +35,7 @@ class Model:
 
 
 class ModelCollection(dict):
+
     def get_data(self, key):
         return self[key].get_data()
 
