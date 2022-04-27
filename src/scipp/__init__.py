@@ -91,7 +91,8 @@ for _cls in (Variable, DataArray):
     _binding.bind_functions_as_methods(
         _cls, globals(),
         ('broadcast', 'flatten', 'fold', 'squeeze', 'transpose', 'all', 'any', 'mean',
-         'sum', 'nanmean', 'nansum', 'floor', 'ceil', 'round', 'to'))
+         'sum', 'nanmean', 'nansum', 'floor', 'ceil', 'round'))
+    _binding.bind_function_as_method(cls=_cls, name='to', func=to, abbreviate_doc=False)
 del _cls
 del to
 # Assign method binding for JUST Variable
