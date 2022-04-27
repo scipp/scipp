@@ -7,74 +7,131 @@ from typing import Optional
 
 from .._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
-from ..typing import VariableLike
+from ..typing import VariableLikeType
 
 
-def sin(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def sin(x: VariableLikeType,
+        *,
+        out: Optional[VariableLikeType] = None) -> VariableLikeType:
     """Element-wise sine.
 
-    :param x: Input data.
-    :param out: Optional output buffer.
-    :raises: If the unit is not a plane-angle unit, or if the sine cannot be
-             computed on the dtype, e.g., if it is an integer.
-    :return: The sine values of the input.
+    The input must have a plane-angle unit, i.e. ``rad``, ``deg``.
+
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Input data.
+    out:
+        Optional output buffer.
+
+    Returns
+    -------
+    : Same type as input
+        The sine values of the input.
     """
     return _call_cpp_func(_cpp.sin, x, out=out)
 
 
-def cos(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def cos(x: VariableLikeType,
+        *,
+        out: Optional[VariableLikeType] = None) -> VariableLikeType:
     """Element-wise cosine.
 
-    :param x: Input data.
-    :param out: Optional output buffer.
-    :raises: If the unit is not a plane-angle unit, or if the cosine cannot be
-             computed on the dtype, e.g., if it is an integer.
-    :return: The cosine values of the input.
+    The input must have a plane-angle unit, i.e. ``rad``, ``deg``.
+
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Input data.
+    out:
+        Optional output buffer.
+
+    Returns
+    -------
+    : Same type as input
+        The cosine values of the input.
     """
     return _call_cpp_func(_cpp.cos, x, out=out)
 
 
-def tan(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def tan(x: VariableLikeType,
+        *,
+        out: Optional[VariableLikeType] = None) -> VariableLikeType:
     """Element-wise tangent.
 
-    :param x: Input data.
-    :param out: Optional output buffer.
-    :raises: If the unit is not a plane-angle unit, or if the tangent cannot be
-             computed on the dtype, e.g., if it is an integer.
-    :return: The tangent values of the input.
+    The input must have a plane-angle unit, i.e. ``rad``, ``deg``.
+
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Input data.
+    out:
+        Optional output buffer.
+
+    Returns
+    -------
+    : Same type as input
+        The tangent values of the input.
     """
     return _call_cpp_func(_cpp.tan, x, out=out)
 
 
-def asin(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def asin(x: VariableLikeType,
+         *,
+         out: Optional[VariableLikeType] = None) -> VariableLikeType:
     """Element-wise inverse sine.
 
-    :param x: Input data.
-    :param out: Optional output buffer.
-    :raises: If the unit is not dimensionless.
-    :return: The inverse sine values of the input.
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Input data.
+    out:
+        Optional output buffer.
+
+    Returns
+    -------
+    : Same type as input
+        The inverse sine values of the input in radians.
     """
     return _call_cpp_func(_cpp.asin, x, out=out)
 
 
-def acos(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def acos(x: VariableLikeType,
+         *,
+         out: Optional[VariableLikeType] = None) -> VariableLikeType:
     """Element-wise inverse cosine.
 
-    :param x: Input data.
-    :param out: Optional output buffer.
-    :raises: If the unit is not dimensionless.
-    :return: The inverse cosine values of the input.
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Input data.
+    out:
+        Optional output buffer.
+
+    Returns
+    -------
+    : Same type as input
+        The inverse cosine values of the input in radians.
     """
     return _call_cpp_func(_cpp.acos, x, out=out)
 
 
-def atan(x: VariableLike, *, out: Optional[VariableLike] = None) -> VariableLike:
+def atan(x: VariableLikeType,
+         *,
+         out: Optional[VariableLikeType] = None) -> VariableLikeType:
     """Element-wise inverse tangent.
 
-    :param x: Input data.
-    :param out: Optional output buffer.
-    :raises: If the unit is not dimensionless.
-    :return: The inverse tangent values of the input.
+    Parameters
+    ----------
+    x: scipp.typing.VariableLike
+        Input data.
+    out:
+        Optional output buffer.
+
+    Returns
+    -------
+    : Same type as input
+        The inverse tangent values of the input in radians.
     """
     return _call_cpp_func(_cpp.atan, x, out=out)
 
@@ -85,12 +142,26 @@ def atan2(*,
           out: Optional[_cpp.Variable] = None) -> _cpp.Variable:
     """Element-wise inverse tangent of y/x determining the correct quadrant.
 
-    :param y: Input y values.
-    :param x: Input x values.
-    :param out: Optional output buffer.
-    :return: The signed inverse tangent values of y/x in the range [-π, π].
-    :seealso: All edge cases are documented
-              `here <https://en.cppreference.com/w/c/numeric/math/atan2>`_.
-              Note that domain errors are *not* propagated to Python.
+    Parameters
+    ----------
+    y:
+        Input y values.
+    x:
+        Input x values.
+    out:
+        Optional output buffer.
+
+    Returns
+    -------
+    :
+        The signed inverse tangent values of y/x in the range [-π, π].
+
+    See Also
+    --------
+    `<https://en.cppreference.com/w/c/numeric/math/atan2>`_:
+        Documentation of all edge cases.
+        Note that domain errors are *not* propagated to Python.
+    numpy.arctan2:
+        The equivalent in numpy with additional explanations.
     """
     return _call_cpp_func(_cpp.atan2, y=y, x=x, out=out)

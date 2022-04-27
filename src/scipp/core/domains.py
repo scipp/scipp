@@ -11,8 +11,15 @@ from .variable import empty
 def merge_equal_adjacent(da: DataArray) -> DataArray:
     """Merges adjacent bins that have identical values.
 
-    :param da: Input data array, must be a 1-D histogram.
-    :return: Data array with bins spanning domains of input.
+    Parameters
+    ----------
+    da:
+        Input data array, must be a 1-D histogram.
+
+    Returns
+    -------
+    :
+        Data array with bins spanning domains of input.
     """
     try:
         dim = da.dim
