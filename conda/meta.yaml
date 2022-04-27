@@ -25,44 +25,49 @@ source:
 
 requirements:
   build:
+    - {{ compiler('cxx') }}
+    - cross-python_{{ target_platform }}  # [build_platform != target_platform]
     - cmake
-    - cppcheck [linux64]
     - conan>=1.45.0
-    - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
-    - gxx_linux-64 11.1.* [linux64]
+    - cppcheck [linux64]
     - git
+    - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - ninja
+    - python
+  host:
     - python
     - tbb-devel=2020.2.*
   run:
     - confuse
-    - numpy>=1.20.0
-    - python
+    - numpy
     - pyyaml
     - tbb=2020.2.*
     - graphlib-backport # for python < 3.9
 
+# Only the cmake-package-test works when cross compiling.
+# But it is not very important at the moment and
+# leaving out the entire test section speeds up conda build
+{% if build_platform == target_platform %}
 test:
   imports:
     - scipp
   requires:
+    - {{ compiler('cxx') }}
     - cmake
     - conan>=1.45.0
-    - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
-    - gxx_linux-64 11.1.* [linux64]
     - h5py
     - hypothesis
     - ipympl
     - ipywidgets
     - markupsafe>=1.1.1,<2.1.0  # see https://github.com/pallets/markupsafe/issues/284
     - matplotlib-base
+    - pandas
     - pytest
     - pythreejs
     - python-graphviz
-    - xarray
-    - pandas
     - scipy>=1.7.0
     - tbb-devel=2020.2.*
+    - xarray
   files:
     - cmake-package-test/
   source_files:
@@ -70,16 +75,16 @@ test:
   commands:
     - python -m pytest -v tests
     - python cmake-package-test/build.py
+{% endif %}
 
 build:
   # Build number is number of Git commits since last tag, if that fails use 0
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
   script:
-    - cmake --preset package-linux [linux]
-    - cmake --preset package-macos [osx]
-    - cmake --preset package-windows [win]
+    # Passing Python_EXECUTABLE ensures that cmake sees the host interpreter instead of build.
+    - cmake --preset package-{{ target_platform }} -DPython_EXECUTABLE=$PYTHON
     - cmake --build --preset build
-    - ctest --preset test
+    - ctest --preset test  # [build_platform == target_platform]
 
 about:
   home: https://scipp.github.io/
