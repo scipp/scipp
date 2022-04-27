@@ -18,6 +18,7 @@ class Mesh:
     """
     Class for 2 dimensional plots.
     """
+
     def __init__(self,
                  ax,
                  data,

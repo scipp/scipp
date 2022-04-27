@@ -42,7 +42,7 @@ class Figure:
                  **kwargs):
 
         self._models = None
-        self._notifications = {"data": self.update}
+        # self._notifications = {"data": self.update}
 
         self._fig = None
         self._closed = False
@@ -239,23 +239,23 @@ class Figure:
         self._fig.savefig(filename, bbox_inches="tight")
 
     def notify(self, change):
-        if change["type"] in self._notifications:
-            self._notifications[change["type"]](change=change)
-        # if change["type"] == "data":
-        #     self.update(new_values=self._models.get_data(change["name"]),
-        #                 key=change["name"])
+        # if change["type"] in self._notifications:
+        #     self._notifications[change["type"]](change=change)
+        if change["id"] == "data":
+            self.update(new_values=self._models.get_data(change["name"]),
+                        key=change["name"])
 
     # def _update_on_notify(self, change):
     #     self.update(new_values=self._models.get_data(change["name"]),
     #                 key=change["name"])
 
-    # def update(self, new_values: DataArray, key: str, draw: bool = True):
-    def update(self, change):
+    def update(self, new_values: DataArray, key: str, draw: bool = True):
+        # def update(self, change):
         """
         Update image array with new values.
         """
-        new_values = self._models.get_data(change["name"])
-        key = change["name"]
+        # new_values = self._models.get_data(change["name"])
+        # key = change["name"]
         if key not in self._children:
             self._new_artist = True
             if new_values.ndim == 1:

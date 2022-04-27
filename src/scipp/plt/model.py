@@ -5,13 +5,13 @@ class Model:
     """
     """
 
-    def __init__(self, data, notification_handler, name, notification_type="data"):
+    def __init__(self, data, notification_handler, name, notification_id=None):
         self._data = data
         self._notification_handler = notification_handler
         self._name = name
         self._filters = []
         self._filtered_data = None
-        self._notification_type = notification_type
+        self._notification_id = notification_id
 
     def add_filter(self, filt: Filter):
         self._filters.append(filt)
@@ -22,10 +22,11 @@ class Model:
         self._filtered_data = self._data
         for f in self._filters:
             self._filtered_data = f(self._filtered_data)
-        self._notification_handler.notify_change({
-            "name": self._name,
-            "type": self._notification_type
-        })
+        if self._notification_id is not None:
+            self._notification_handler.notify_change({
+                "name": self._name,
+                "id": self._notification_id
+            })
 
     def get_data(self):
         return self._filtered_data
