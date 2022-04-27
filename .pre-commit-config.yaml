@@ -1,15 +1,15 @@
 repos:
   -   repo: https://github.com/pycqa/flake8
-      rev: 3.8.3
+      rev: 4.0.1
       hooks:
         - id: flake8
   -   repo: https://github.com/pre-commit/mirrors-yapf
-      rev: v0.30.0
+      rev: v0.32.0
       hooks:
         - id: yapf
           args: ["-i", "-r"]
           files: "python"
-  - repo: https://github.com/mantidproject/pre-commit-hooks.git
-    rev: ebd7eb9cc07498e58a8af5688104ab1e98f25b04
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v10.0.1
     hooks:
       - id: clang-format
