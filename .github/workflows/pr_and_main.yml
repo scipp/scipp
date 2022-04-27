@@ -15,16 +15,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{ github.head_ref }}
-      - run: sudo apt-get install --yes clang-format-10
-      - run: find lib -type f -regex '.*\.\(cpp\|h\|tcc\)' -exec clang-format-10 -i {} +
-      - run: pip install cmake_format==0.6.9 flake8 nb-clean==2.1.0 yapf==0.30.0
-      - run: find . -type f -name CMakeLists.txt -or -name '*.cmake' -not -path "./lib/.tbb/*" | xargs cmake-format -i
-      - run: find . -type f -regex '.*\.ipynb' | xargs nb-clean clean --remove-empty-cells --preserve-cell-metadata
-      - run: yapf --recursive --in-place .
-      - run: flake8 .
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.8
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements/ci.txt
+      - run: tox -e static
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: Apply automatic formatting
