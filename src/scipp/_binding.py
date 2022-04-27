@@ -58,6 +58,7 @@ def bind_conversion_to_builtin(cls):
 
 
 class _NoDefaultType:
+
     def __repr__(self):
         return 'NotSpecified'
 

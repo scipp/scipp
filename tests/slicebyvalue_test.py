@@ -8,6 +8,7 @@ import pytest
 
 
 class TestSliceByValue:
+
     def setup_method(self):
         var = sc.Variable(dims=['x'], values=np.arange(5, dtype=float) + 0.5)
         values_a = sc.Variable(dims=['x'],
@@ -19,6 +20,7 @@ class TestSliceByValue:
         self._d = sc.Dataset(data={'a': values_a, 'b': values_b}, coords={'x': var})
 
     def test_slice_by_single_value(self):
+
         def test(sliceable):
             by_value = sliceable['x', 1.5 * sc.units.dimensionless]
             by_index = sliceable['x', 1]
@@ -64,6 +66,7 @@ class TestSliceByValue:
         assert slice == np.array(1.0)
 
     def test_slice_with_range(self):
+
         def test(sliceable):
 
             by_value = sliceable['x', 1.5 * sc.units.dimensionless:4.5 *

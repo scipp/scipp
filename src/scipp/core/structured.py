@@ -5,6 +5,7 @@ from .._scipp.core import _element_keys, _get_elements, _set_elements, DType
 
 
 def _prop(key):
+
     def getter(fields):
         return _get_elements(fields._var, key)
 
@@ -21,7 +22,9 @@ def is_structured(obj):
 
 
 def _fields(obj):
+
     class Fields():
+
         def __init__(self, keys, var):
             self._var = var
             self._keys = keys

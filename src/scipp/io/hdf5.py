@@ -43,6 +43,7 @@ def collection_element_name(name, index):
 
 
 class NumpyDataIO:
+
     @staticmethod
     def write(group, data):
         dset = group.create_dataset('values', data=_as_hdf5_type(data.values))
@@ -65,6 +66,7 @@ class NumpyDataIO:
 
 
 class BinDataIO:
+
     @staticmethod
     def write(group, data):
         bins = data.bins.constituents
@@ -97,6 +99,7 @@ class BinDataIO:
 
 
 class ScippDataIO:
+
     @staticmethod
     def write(group, data):
         values = group.create_group('values')
@@ -118,6 +121,7 @@ class ScippDataIO:
 
 
 class StringDataIO:
+
     @staticmethod
     def write(group, data):
         import h5py
@@ -223,6 +227,7 @@ class VariableIO:
 
 
 class DataArrayIO:
+
     @staticmethod
     def write(group, data):
         _write_scipp_header(group, 'DataArray')
@@ -261,6 +266,7 @@ class DataArrayIO:
 
 
 class DatasetIO:
+
     @staticmethod
     def write(group, data):
         _write_scipp_header(group, 'Dataset')

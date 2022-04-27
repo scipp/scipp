@@ -97,6 +97,7 @@ class PlotDict():
     the plot function.
     More functionalities can be added in the future.
     """
+
     def __init__(self, *args, **kwargs):
         self._items = dict(*args, **kwargs)
 
@@ -198,6 +199,7 @@ class Plot:
       - a `PlotController`: handles all the communication between all the
           pieces above.
     """
+
     def __init__(self,
                  scipp_obj_dict,
                  controller,

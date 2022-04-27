@@ -14,6 +14,7 @@ def func1d(da, dim, **kwargs):
 
 @wrap1d(is_partial=True)
 def factory1d(da, dim, **kwargs):
+
     def func(arg):
         assert kwargs['axis'] == da.dims.index(dim)
         out = da[dim, 1:3].copy()

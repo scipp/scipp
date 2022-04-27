@@ -7,6 +7,7 @@ import time as _time
 
 def time(method):
     """Decorator that prints function run time."""
+
     def timed(*args, **kw):
         indent = time.counter
         time.counter += 1
