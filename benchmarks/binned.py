@@ -69,6 +69,7 @@ class Lookup:
     """
     Benchmark map operations using sc.lookup()
     """
+
     def setup(self):
         self.data = sc.data.binned_x(100_000_000, 10000)
         x = sc.linspace(dim='x', start=0.0, stop=1.0, num=1_000_001, unit='m')
