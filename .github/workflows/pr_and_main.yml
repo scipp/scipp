@@ -56,7 +56,6 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
-          ref: ${{ github.head_ref }}
 
       - uses: ilammy/msvc-dev-cmd@v1  # Required to set up MSVC dev environment for Ninja builds.
 
