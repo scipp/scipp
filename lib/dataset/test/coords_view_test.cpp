@@ -104,16 +104,6 @@ TYPED_TEST(CoordsViewTest, find_and_contains) {
   EXPECT_EQ(coords.find(Dim::X)->second, coords[Dim::X]);
 }
 
-auto make_dataset_2d_coord_x_1d_coord_y() {
-  Dataset d;
-  const auto x = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
-                                      Values{1, 2, 3, 4, 5, 6});
-  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
-  d.setCoord(Dim::X, x);
-  d.setCoord(Dim::Y, y);
-  return d;
-}
-
 TEST(MutableCoordsViewTest, item_write) {
   Dataset d;
   const auto x = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
