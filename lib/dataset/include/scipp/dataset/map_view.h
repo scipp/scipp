@@ -160,6 +160,7 @@ public:
   [[nodiscard]] bool is_readonly() const noexcept;
   [[nodiscard]] Dict as_const() const;
   [[nodiscard]] Dict merge_from(const Dict &other) const;
+  void update(const Dict &other);
 
   bool item_applies_to(const Key &key, const Dimensions &dims) const;
   bool is_edges(const Key &key,

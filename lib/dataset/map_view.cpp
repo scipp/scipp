@@ -330,6 +330,13 @@ Dict<Key, Value> Dict<Key, Value>::merge_from(const Dict &other) const {
 }
 
 template <class Key, class Value>
+void Dict<Key, Value>::update(const Dict &other) {
+  for (const auto &[key, value] : other) {
+    set(key, value);
+  }
+}
+
+template <class Key, class Value>
 bool Dict<Key, Value>::item_applies_to(const Key &key,
                                        const Dimensions &dims) const {
   const auto &val = m_items.at(key);
