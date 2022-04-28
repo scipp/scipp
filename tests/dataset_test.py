@@ -177,6 +177,48 @@ def test_coords_pop():
     assert len(list(d.coords.keys())) == 0
 
 
+def test_coords_update_from_dict_adds_items():
+    d = sc.Dataset()
+    d.coords['a'] = sc.scalar(1.0)
+    d.coords.update({'b': sc.scalar(2.0)})
+    assert sc.identical(d.coords['a'], sc.scalar(1.0))
+    assert sc.identical(d.coords['b'], sc.scalar(2.0))
+
+
+def test_coords_update_from_coords_adds_items():
+    d = sc.Dataset()
+    d.coords['a'] = sc.scalar(1.0)
+    other = sc.Dataset()
+    other.coords['b'] = sc.scalar(2.0)
+    d.coords.update(other.coords)
+    assert sc.identical(d.coords['a'], sc.scalar(1.0))
+    assert sc.identical(d.coords['b'], sc.scalar(2.0))
+
+
+def test_coords_update_from_sequence_of_tuples_adds_items():
+    d = sc.Dataset()
+    d.coords['a'] = sc.scalar(1.0)
+    d.coords.update([('b', sc.scalar(2.0))])
+    assert sc.identical(d.coords['a'], sc.scalar(1.0))
+    assert sc.identical(d.coords['b'], sc.scalar(2.0))
+
+
+def test_coords_update_from_kwargs_adds_items():
+    d = sc.Dataset()
+    d.coords['a'] = sc.scalar(1.0)
+    d.coords.update(b=sc.scalar(2.0))
+    assert sc.identical(d.coords['a'], sc.scalar(1.0))
+    assert sc.identical(d.coords['b'], sc.scalar(2.0))
+
+
+def test_coords_update_from_kwargs_overwrites_other_dict():
+    d = sc.Dataset()
+    d.coords['a'] = sc.scalar(1.0)
+    d.coords.update({'b': sc.scalar(2.0)}, b=sc.scalar(3.0))
+    assert sc.identical(d.coords['a'], sc.scalar(1.0))
+    assert sc.identical(d.coords['b'], sc.scalar(3.0))
+
+
 def test_slice_item():
     d = sc.Dataset(coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'], values=np.arange(4))

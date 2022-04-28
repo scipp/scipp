@@ -59,9 +59,39 @@ void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
       .def(
           "values", [](T &self) { return values_view(self); },
           py::keep_alive<0, 1>(), R"(view on self's values)")
-      .def("__contains__", [](const T &self, const std::string &key) {
-        return self.contains(typename T::key_type{key});
-      });
+      .def("__contains__",
+           [](const T &self, const std::string &key) {
+             return self.contains(typename T::key_type{key});
+           })
+      .def(
+          "update",
+          [](T &self, const py::object &other, const py::kwargs &kwargs) {
+            if (!other.is_none()) {
+              if (py::hasattr(other, "keys")) {
+                // other is dict-like
+                for (const auto &key : other.attr("keys")()) {
+                  self.set(typename T::key_type{key.cast<std::string>()},
+                           other[key].cast<Variable>());
+                }
+              } else {
+                // other is sequence of tuples
+                for (const auto &item : other) {
+                  const auto &t = item.cast<py::tuple>();
+                  const auto key =
+                      typename T::key_type{t[0].cast<std::string>()};
+                  self.set(key, t[1].cast<Variable>());
+                }
+              }
+            }
+
+            for (const auto &item : kwargs) {
+              const auto key =
+                  typename T::key_type{item.first.cast<std::string>()};
+              auto val = item.second.cast<Variable>();
+              self.set(key, std::move(val));
+            }
+          },
+          py::arg("other") = py::none(), py::pos_only());
 }
 
 template <class T, class... Ignored>
