@@ -50,6 +50,11 @@ setattr(DataArray, 'to_hdf5', _to_hdf5)
 setattr(Dataset, 'to_hdf5', _to_hdf5)
 del _to_hdf5
 
+from .format import formatter as _formatter
+
+setattr(Variable, '__format__', _formatter)
+del _formatter
+
 from .extend_units import *
 from .object_list import _repr_html_
 from .utils import collapse, slices
