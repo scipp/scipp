@@ -4,19 +4,21 @@ from ...utils.graph import Graph
 
 
 class PipelineNode:
+
     def __init__(self, name):
         self.name = name  # TODO do we need the name?
         self.dependency = None
 
     @property
     def dependencies(self) -> Tuple[str]:
-        return self.dependency,
+        return (self.dependency, )
 
     def send_notification(self, message):
         print(f'hey there! from {self.name}: ', message)
 
 
 class PipelineGraph(Graph):
+
     def __init__(self):
         super().__init__({})
 
