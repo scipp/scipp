@@ -17,13 +17,6 @@ namespace py = pybind11;
 
 void init_units(py::module &m) {
   py::class_<DefaultUnit>(m, "DefaultUnit");
-  py::class_<units::Dim>(m, "Dim", "Dimension label")
-      .def(py::init<const std::string &>())
-      .def(py::self == py::self)
-      .def(py::self != py::self)
-      .def(hash(py::self))
-      .def("__repr__", [](const Dim &dim) { return dim.name(); });
-
   py::class_<units::Unit>(m, "Unit", "A physical unit.")
       .def(py::init<const std::string &>())
       .def("__repr__", [](const units::Unit &u) { return u.name(); })

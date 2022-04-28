@@ -49,13 +49,3 @@ def test_explicit_default_unit_for_string_gives_none():
 def test_default_unit_for_string_is_none():
     var = sc.scalar('abcdef')
     assert var.unit is None
-
-
-def test_to_unit():
-    var = sc.scalar(1, unit='m')
-    assert sc.to_unit(var, unit='mm').unit == sc.Unit('mm')
-    assert sc.to_unit(var, unit=sc.Unit('mm')).unit == sc.Unit('mm')
-    with pytest.raises(sc.UnitError):
-        sc.to_unit(var, unit='abcdef')  # does not parse
-    with pytest.raises(TypeError):
-        sc.to_unit(var, unit=5)  # neither str nor Unit

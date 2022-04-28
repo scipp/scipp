@@ -76,8 +76,9 @@ auto resize_array(const DataArray &da, const Dim reductionDim,
   if (!is_bins(da))
     return resize(da, reductionDim, size, fill);
   if (variableFactory().has_masks(da.data()))
-    throw except::BinnedDataError("Reduction operations for binned data with "
-                                  "event masks not supported yet.");
+    throw except::NotImplementedError(
+        "Reduction operations for binned data with "
+        "event masks not supported yet.");
   DataArray dense_dummy(da);
   dense_dummy.setData(empty(da.dims(), variableFactory().elem_unit(da.data()),
                             variableFactory().elem_dtype(da.data()),
@@ -210,7 +211,7 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
     // TODO Supporting binned data requires generalized approach to compute
     // scale factor.
     if (is_bins(data))
-      throw except::BinnedDataError(
+      throw except::NotImplementedError(
           "groupby.mean does not support binned data yet.");
     auto scale = makeVariable<double>(Dims{dim()}, Shape{size()});
     const auto scaleT = scale.template values<double>();

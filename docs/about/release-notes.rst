@@ -10,14 +10,26 @@ Features
 ~~~~~~~~
 
 * Added argument `max_rows` to :func:`scipp.table` `#2526 <https://github.com/scipp/scipp/pull/2526>`_.
+* Added support for converting scalars to builtin objects via :func:`int` and :func:`float` `#2529 <https://github.com/scipp/scipp/pull/2529>`_.
+* Reduced time of initial import of scipp by delaying imports of optional dependencies `#2535 <https://github.com/scipp/scipp/pull/2535>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
+
+* Changed :meth:`scipp.Variable.dims` and :meth:`scipp.Variable.shape` and corresponding properties in `DataArray` and `Dataset` to return tuples `2543 <https://github.com/scipp/scipp/pull/2543>`_.
 
 Bugfixes
 ~~~~~~~~
 
 * Fix :func:`scipp.isclose` and :func:`scipp.allclose` to support arguments without a unit `#2528 <https://github.com/scipp/scipp/pull/2528>`_.
+* :func:`scipp.to_unit` avoids a rounding problem when converting datetimes. This previously led to errors, e.g., of about 300 nanoseconds when converting a current (2020s) datetime64 from seconds to nanoseconds `#2533 <https://github.com/scipp/scipp/pull/2533>`_.
+* Fix handling of keyword arguments in :func:`scipp.optimize.curve_fit`. They were previously checked for conflicts but otherwise ignored `#2545 <https://github.com/scipp/scipp/pull/2545>`_.
+
+Documentation
+~~~~~~~~~~~~~
+
+* Added new tutorial: *RHESSI Solar Flares* `2536 <https://github.com/scipp/scipp/pull/2536>`_.
+* Added documentation of our docstring format `2546 <https://github.com/scipp/scipp/pull/2546>`_.
 
 Deprecations
 ~~~~~~~~~~~~

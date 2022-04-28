@@ -191,6 +191,7 @@ public:
   const Sizes &sizes() const;
   const Sizes &dims() const;
   Dim dim() const;
+  [[nodiscard]] scipp::index ndim() const;
 
   bool is_readonly() const noexcept;
 

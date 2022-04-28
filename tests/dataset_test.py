@@ -11,7 +11,7 @@ import scipp as sc
 def test_shape():
     a = sc.scalar(1)
     d = sc.Dataset(data={'a': a})
-    assert d.shape == []
+    assert d.shape == ()
     a = sc.empty(dims=['x'], shape=[2])
     b = sc.empty(dims=['y', 'z'], shape=[3, 4])
     d = sc.Dataset(data={'a': a, 'b': b})

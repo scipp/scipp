@@ -72,31 +72,7 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
     }
     return out;
   });
-  c.def_property_readonly(
-      "dims",
-      [](const T &self) {
-        std::vector<std::string> dims;
-        for (const auto &dim : self.sizes()) {
-          dims.push_back(dim.name());
-        }
-        return dims;
-      },
-      R"(List of dimensions.)", py::return_value_policy::move);
-  // TODO should this be removed?
-  c.def_property_readonly(
-      "shape",
-      [](const T &self) {
-        std::vector<int64_t> shape;
-        for (const auto &size : self.sizes().sizes()) {
-          shape.push_back(size);
-        }
-        return shape;
-      },
-      R"(List of shapes.)", py::return_value_policy::move);
-  c.def_property_readonly(
-      "dim", [](const T &self) { return self.dim().name(); },
-      "The only dimension label for 1-dimensional data, raising an exception "
-      "if the data is not 1-dimensional.");
+  bind_common_data_properties(c);
   bind_pop(c);
 }
 
@@ -122,14 +98,26 @@ void bind_data_array(py::class_<T, Ignored...> &c) {
 }
 
 template <class T> void bind_rebin(py::module &m) {
-  m.def("rebin",
-        py::overload_cast<const T &, const Dim, const Variable &>(&rebin),
-        py::arg("x"), py::arg("dim"), py::arg("bins"),
-        py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "rebin",
+      [](const T &x, const std::string &dim, const Variable &bins) {
+        return rebin(x, Dim{dim}, bins);
+      },
+      py::arg("x"), py::arg("dim"), py::arg("bins"),
+      py::call_guard<py::gil_scoped_release>());
+}
+
+template <class Value> auto to_cpp_dim_map(const py::dict &dict) {
+  std::unordered_map<Dim, Value> out;
+  for (const auto &[key, val] : dict) {
+    const Dim dim{key.template cast<std::string>()};
+    out.emplace(dim, val.template cast<Value &>());
+  }
+  return out;
 }
 
 void init_dataset(py::module &m) {
-  py::class_<Slice>(m, "Slice");
+  static_cast<void>(py::class_<Slice>(m, "Slice"));
 
   bind_helper_view<items_view, Dataset>(m, "Dataset");
   bind_helper_view<str_items_view, Coords>(m, "Coords");
@@ -154,36 +142,36 @@ Returned by :py:func:`DataArray.masks`)");
     Named variable with associated coords, masks, and attributes.)");
   py::options options;
   options.disable_function_signatures();
-  dataArray
-      .def(
-          py::init([](const Variable &data,
-                      std::unordered_map<Dim, Variable> coords,
-                      std::unordered_map<std::string, Variable> masks,
-                      std::unordered_map<Dim, Variable> attrs,
-                      const std::string &name) {
-            return DataArray{data, std::move(coords), std::move(masks),
-                             std::move(attrs), name};
-          }),
-          py::arg("data"), py::kw_only(),
-          py::arg("coords") = std::unordered_map<Dim, Variable>{},
-          py::arg("masks") = std::unordered_map<std::string, Variable>{},
-          py::arg("attrs") = std::unordered_map<Dim, Variable>{},
-          py::arg("name") = std::string{},
-          R"(__init__(self, data: Variable, coords: Dict[str, Variable] = {}, masks: Dict[str, Variable] = {}, attrs: Dict[str, Variable] = {}, name: str = '') -> None
+  dataArray.def(
+      py::init([](const Variable &data, const py::dict &coords,
+                  std::unordered_map<std::string, Variable> masks,
+                  const py::dict &attrs, const std::string &name) {
+        return DataArray{data, to_cpp_dim_map<Variable>(coords),
+                         std::move(masks), to_cpp_dim_map<Variable>(attrs),
+                         name};
+      }),
+      py::arg("data"), py::kw_only(), py::arg("coords") = py::dict(),
+      py::arg("masks") = std::unordered_map<std::string, Variable>{},
+      py::arg("attrs") = py::dict(), py::arg("name") = std::string{},
+      R"doc(__init__(self, data: Variable, coords: Dict[str, Variable] = {}, masks: Dict[str, Variable] = {}, attrs: Dict[str, Variable] = {}, name: str = '') -> None
 
           DataArray initializer.
 
-          :param data: Data and optionally variances.
-          :param coords: Coordinates referenced by dimension.
-          :param masks: Masks referenced by name.
-          :param attrs: Attributes referenced by dimension.
-          :param name: Name of DataArray.
-          :type data: Variable
-          :type coords: Dict[str, Variable]
-          :type masks: Dict[str, Variable]
-          :type attrs: Dict[str, Variable]
-          :type name: str
-          )")
+          Parameters
+          ----------
+          data:
+              Data and optionally variances.
+          coords:
+              Coordinates referenced by dimension.
+          masks:
+              Masks referenced by name.
+          attrs:
+              Attributes referenced by dimension.
+          name:
+              Name of DataArray.
+          )doc");
+  options.enable_function_signatures();
+  dataArray
       .def("__sizeof__",
            [](const DataArray &array) {
              return size_of(array, SizeofTag::ViewOnly, true);
@@ -191,17 +179,16 @@ Returned by :py:func:`DataArray.masks`)");
       .def("underlying_size", [](const DataArray &self) {
         return size_of(self, SizeofTag::Underlying);
       });
-  options.enable_function_signatures();
 
   bind_data_array(dataArray);
 
   py::class_<Dataset> dataset(m, "Dataset", R"(
   Dict of data arrays with aligned dimensions.)");
-
+  options.disable_function_signatures();
   dataset.def(
       py::init([](const std::map<std::string, std::variant<Variable, DataArray>>
                       &data,
-                  const std::map<Dim, Variable> &coords) {
+                  const std::map<std::string, Variable> &coords) {
         Dataset d;
         for (auto &&[name, item] : data) {
           auto visitor = [&d, n = name](auto &object) {
@@ -210,21 +197,23 @@ Returned by :py:func:`DataArray.masks`)");
           std::visit(visitor, item);
         }
         for (auto &&[dim, coord] : coords)
-          d.setCoord(dim, coord);
+          d.setCoord(Dim{dim}, coord);
         return d;
       }),
       py::arg("data") =
           std::map<std::string, std::variant<Variable, DataArray>>{},
-      py::kw_only(), py::arg("coords") = std::map<Dim, Variable>{},
-      R"(__init__(self, data: Dict[str, Union[Variable, DataArray]] = {}, coords: Dict[str, Variable] = {}) -> None
+      py::kw_only(), py::arg("coords") = std::map<std::string, Variable>{},
+      R"doc(__init__(self, data: Dict[str, Union[Variable, DataArray]] = {}, coords: Dict[str, Variable] = {}) -> None
 
-              Dataset initializer.
+      Dataset initializer.
 
-             :param data: Dictionary of name and data pairs.
-             :param coords: Dictionary of name and coord pairs.
-             :type data: Dict[str, Union[Variable, DataArray]]
-             :type coords: Dict[str, Variable]
-             )");
+      Parameters
+      ----------
+      data:
+          Dictionary of name and data pairs.
+      coords:
+          Dictionary of name and coord pairs.
+      )doc");
   options.enable_function_signatures();
 
   dataset
@@ -278,9 +267,9 @@ Returned by :py:func:`DataArray.masks`)");
 
   m.def(
       "irreducible_mask",
-      [](const Masks &masks, const Dim dim) {
+      [](const Masks &masks, const std::string &dim) {
         py::gil_scoped_release release;
-        auto mask = irreducible_mask(masks, dim);
+        auto mask = irreducible_mask(masks, Dim{dim});
         py::gil_scoped_acquire acquire;
         return mask.is_valid() ? py::cast(mask) : py::none();
       },

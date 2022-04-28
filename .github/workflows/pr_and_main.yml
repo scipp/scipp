@@ -18,10 +18,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
           ref: ${{ github.head_ref }}
-      # Run this before any other commands so that git diff does not pick up formatting changes.
-      - run: |
-          find . -type f -not -path '.git/*' -exec sed -ri "s/[0-9]{4} (Scipp contributors)/$(date +%Y) \1/g" {} +
-          git diff --exit-code
       - run: sudo apt-get install --yes clang-format-10
       - run: find lib -type f -regex '.*\.\(cpp\|h\|tcc\)' -exec clang-format-10 -i {} +
       - run: pip install cmake_format==0.6.9 flake8 nb-clean==2.1.0 yapf==0.30.0
@@ -60,7 +56,6 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0  # history required so cmake can determine version
-          ref: ${{ github.head_ref }}
 
       - uses: ilammy/msvc-dev-cmd@v1  # Required to set up MSVC dev environment for Ninja builds.
 
@@ -91,7 +86,7 @@ jobs:
       - run: cmake --preset ${{ matrix.cmake-preset }}
       - run: cmake --build --preset build
       - run: ctest --preset test
-      - run: python -m pytest -v tests
+      - run: python -m pytest -n auto -v tests
 
       - run: cmake --build --preset docs
         if: ${{ contains(matrix.os, 'ubuntu') }}

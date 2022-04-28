@@ -5,13 +5,6 @@ from .._scipp.core import Variable, DataArray, Dataset, CoordError
 from .dataset import merge
 
 
-def _make_sizes(obj):
-    """
-    Makes a dictionary of dimensions labels to dimension sizes
-    """
-    return dict(zip(obj.dims, obj.shape))
-
-
 def _rename_variable(var: Variable, dims_dict: dict = None, /, **names) -> Variable:
     """
     Rename the dimensions labels of a Variable.
