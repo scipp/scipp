@@ -42,31 +42,73 @@ def collection_element_name(name, index):
     return f'elem_{index:03d}_{ascii_name}'
 
 
+def referenced_name():
+    from uuid import uuid4
+    return f'/referenced/{uuid4()}'
+
+
+def _not_referenced_groups(itr):
+    return filter(lambda x: r'/referenced' != x.name, itr)
+
+
 class NumpyDataIO:
     @staticmethod
-    def write(group, data):
-        dset = group.create_dataset('values', data=_as_hdf5_type(data.values))
-        if data.variances is not None:
-            variances = group.create_dataset('variances', data=data.variances)
-            dset.attrs['variances'] = variances.ref
-        return dset
+    def write(group, data, reference=False, h5ref=None):
+        from h5py.h5r import Reference
+        var_h5ref = None
+        if h5ref is None:
+            name = referenced_name() if reference else 'values'
+            h5ref = group.create_dataset(name=name, data=_as_hdf5_type(data.values)).ref
+            if data.variances is not None:
+                name = referenced_name() if reference else 'variances'
+                var_h5ref = group.create_dataset(name, data=data.variances).ref
+        elif 'variances' in group[h5ref].attrs:
+            var_h5ref = group[h5ref].attrs['variances']
+
+        if not reference:
+            dset = group[h5ref]
+            # group['values'] = dset  # this is a self reference in this case?
+            if isinstance(var_h5ref, Reference):
+                # var_dset = group[var_h5ref]
+                dset.attrs['variances'] = var_h5ref
+                # group['variances'] = var_dset  # also a self reference ...
+        else:
+            group.attrs['values'] = h5ref
+            if isinstance(var_h5ref, Reference):
+                group.attrs['variances'] = var_h5ref
+
+        return h5ref
 
     @staticmethod
-    def read(group, data):
-        # h5py's read_direct method fails if any dim has zero size.
-        # see https://github.com/h5py/h5py/issues/870
-        if data.values.flags['C_CONTIGUOUS'] and data.values.size > 0:
-            group['values'].read_direct(_as_hdf5_type(data.values))
+    def read(group, data, reference=False, contents=None):
+        def read_obj(dset):
+            # h5py's read_direct method fails if any dim has zero size.
+            # see https://github.com/h5py/h5py/issues/870
+            if data.values.flags['C_CONTIGUOUS'] and data.values.size > 0:
+                dset.read_direct(_as_hdf5_type(data.values))
+            else:
+                data.values = dset
+            if 'variances' in dset.attrs and data.variances.size > 0:
+                group[dset.attrs['variances']].read_direct(data.variances)
+
+        if reference:
+            if contents is None:
+                contents = dict()
+            ref = group.attrs['values']
+            if ref in contents:
+                # if we've already read this array, don't read it again (its variances are part of contents too)
+                data = contents[ref]
+            else:
+                read_obj(group[ref])
+                contents[ref] = data
         else:
-            # Values of Eigen matrices are transposed
-            data.values = group['values']
-        if 'variances' in group and data.variances.size > 0:
-            group['variances'].read_direct(data.variances)
+            read_obj(group['values'])
+        return contents
 
 
 class BinDataIO:
     @staticmethod
-    def write(group, data):
+    def write(group, data, **kwargs):
         bins = data.bins.constituents
         buffer_len = bins['data'].sizes[bins['dim']]
         # Crude mechanism to avoid writing large buffers, e.g., from
@@ -78,48 +120,53 @@ class BinDataIO:
             data = data.copy()
             bins = data.bins.constituents
         values = group.create_group('values')
-        VariableIO.write(values.create_group('begin'), var=bins['begin'])
-        VariableIO.write(values.create_group('end'), var=bins['end'])
+        VariableIO.write(values.create_group('begin'), var=bins['begin'], **kwargs)
+        VariableIO.write(values.create_group('end'), var=bins['end'], **kwargs)
         data_group = values.create_group('data')
         data_group.attrs['dim'] = bins['dim']
-        HDF5IO.write(data_group, bins['data'])
+        HDF5IO.write(data_group, bins['data'], **kwargs)
         return values
 
     @staticmethod
-    def read(group):
+    def read(group, contents=None, **kwargs):
+        if contents is None:
+            contents = {}
         from .._scipp import core as sc
         values = group['values']
-        begin = VariableIO.read(values['begin'])
-        end = VariableIO.read(values['end'])
+        begin = VariableIO.read(values['begin'], **kwargs)
+        end = VariableIO.read(values['end'], **kwargs)
         dim = values['data'].attrs['dim']
-        data = HDF5IO.read(values['data'])
-        return sc.bins(begin=begin, end=end, dim=dim, data=data)
+        data = HDF5IO.read(values['data'], **kwargs)
+        return sc.bins(begin=begin, end=end, dim=dim, data=data), contents
 
 
 class ScippDataIO:
     @staticmethod
-    def write(group, data):
+    def write(group, data, **kwargs):
         values = group.create_group('values')
         if len(data.shape) == 0:
-            HDF5IO.write(values, data.value)
+            HDF5IO.write(values, data.value, **kwargs)
         else:
             for i, item in enumerate(data.values):
-                HDF5IO.write(values.create_group(f'value-{i}'), item)
+                HDF5IO.write(values.create_group(f'value-{i}'), item, **kwargs)
         return values
 
     @staticmethod
-    def read(group, data):
+    def read(group, data, contents=None, **kwargs):
+        if contents is None:
+            contents = dict()
         values = group['values']
         if len(data.shape) == 0:
-            data.value = HDF5IO.read(values)
+            data.value = HDF5IO.read(values, **kwargs)
         else:
             for i in range(len(data.values)):
-                data.values[i] = HDF5IO.read(values[f'value-{i}'])
+                data.values[i] = HDF5IO.read(values[f'value-{i}'], **kwargs)
+        return contents
 
 
 class StringDataIO:
     @staticmethod
-    def write(group, data):
+    def write(group, data, **kwargs):
         import h5py
         dt = h5py.string_dtype(encoding='utf-8')
         dset = group.create_dataset('values', shape=data.shape, dtype=dt)
@@ -131,19 +178,23 @@ class StringDataIO:
         return dset
 
     @staticmethod
-    def read(group, data):
+    def read(group, data, contents=None, **kwargs):
+        if contents is None:
+            contents = dict()
         values = group['values']
         if len(data.shape) == 0:
             data.value = values[()]
         else:
             for i in range(len(data.values)):
                 data.values[i] = values[i]
+        return contents
 
 
-def _write_scipp_header(group, what):
+def _write_scipp_header(group, what, reference=False, **kwargs):
     from .._scipp import __version__
     group.attrs['scipp-version'] = __version__
     group.attrs['scipp-type'] = what
+    _write_reference_attr(group, reference)
 
 
 def _check_scipp_header(group, what):
@@ -153,6 +204,16 @@ def _check_scipp_header(group, what):
     if group.attrs['scipp-type'] != what:
         raise RuntimeError(
             f"Attempt to read {what}, found {group.attrs['scipp-type']}.")
+    return _read_reference_attr(group)
+
+
+def _write_reference_attr(group, reference=False):
+    if reference:
+        group.attrs['scipp-uuid-reference'] = 1
+
+
+def _read_reference_attr(group):
+    return group.attrs.get('scipp-uuid-reference', 0) > 0
 
 
 def _data_handler_lut():
@@ -177,105 +238,145 @@ class VariableIO:
     _data_handlers = _data_handler_lut()
 
     @classmethod
-    def _write_data(cls, group, data):
-        return cls._data_handlers[str(data.dtype)].write(group, data)
+    def _write_data(cls, group, data, **kwargs):
+        return cls._data_handlers[str(data.dtype)].write(group, data, **kwargs)
 
     @classmethod
-    def _read_data(cls, group, data):
-        return cls._data_handlers[str(data.dtype)].read(group, data)
+    def _read_data(cls, group, data, **kwargs):
+        return cls._data_handlers[str(data.dtype)].read(group, data, **kwargs)
 
     @classmethod
-    def write(cls, group, var):
+    def write(cls, group, var, **kwargs):
+        from h5py.h5r import Reference
         if var.dtype not in cls._dtypes.values():
             # In practice this may make the file unreadable, e.g., if values
             # have unsupported dtype.
             get_logger().warning('Writing with dtype=%s not implemented, skipping.',
                                  var.dtype)
             return
-        _write_scipp_header(group, 'Variable')
-        dset = cls._write_data(group, var)
+        _write_scipp_header(group, 'Variable', **kwargs)
+        dset = cls._write_data(group, var, **kwargs)
+        is_ref = isinstance(dset, Reference)
+        if is_ref:
+            # we need to set more object attributes, but also want to return the reference
+            dset = group[dset]
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
         dset.attrs['shape'] = var.shape
         dset.attrs['dtype'] = str(var.dtype)
         if var.unit is not None:
             dset.attrs['unit'] = str(var.unit)
+        if is_ref:
+            # return the reference instead of the group -- the calling scope already has the group object anyway
+            return dset.ref
         return group
 
     @classmethod
-    def read(cls, group):
-        _check_scipp_header(group, 'Variable')
+    def read(cls, group, contents=None, **kwargs):
+        has_contents = contents is not None
+        if not has_contents:
+            contents = dict()
+        reference = _check_scipp_header(group, 'Variable')
         from .._scipp import core as sc
         from .._scipp.core import DType as d
-        values = group['values']
-        contents = {key: values.attrs[key] for key in ['dims', 'shape']}
-        contents['dtype'] = cls._dtypes[values.attrs['dtype']]
+
+        values = group[group.attrs['values']] if reference else group['values']
+        parts = {key: values.attrs[key] for key in ['dims', 'shape']}
+        parts['dtype'] = cls._dtypes[values.attrs['dtype']]
         if 'unit' in values.attrs:
-            contents['unit'] = sc.Unit(values.attrs['unit'])
+            parts['unit'] = sc.Unit(values.attrs['unit'])
         else:
-            contents['unit'] = None  # essential, otherwise default unit is used
-        contents['with_variances'] = 'variances' in group
-        if contents['dtype'] in [d.VariableView, d.DataArrayView, d.DatasetView]:
-            var = BinDataIO.read(group)
+            parts['unit'] = None  # essential, otherwise default unit is used
+        parts['with_variances'] = 'variances' in group or 'variances' in values.attrs
+        if parts['dtype'] in [d.VariableView, d.DataArrayView, d.DatasetView]:
+            var, contents = BinDataIO.read(group, contents=contents, **kwargs)
         else:
-            var = sc.empty(**contents)
-            cls._read_data(group, var)
-        return var
+            var = sc.empty(**parts)
+            contents = cls._read_data(group, var, contents=contents, **kwargs)
+        return (var, contents) if has_contents else var
 
 
 class DataArrayIO:
     @staticmethod
-    def write(group, data):
+    def write(group, data, reference=False, contents=None, **kwargs):
+        from h5py.h5r import Reference
+        if contents is None:
+            contents = {}
         _write_scipp_header(group, 'DataArray')
         group.attrs['name'] = data.name
         if data.data is None:
             raise RuntimeError("Cannot write object with invalid data.")
-        VariableIO.write(group.create_group('data'), var=data.data)
+        VariableIO.write(group.create_group('data'), var=data.data, **kwargs)
         views = [data.coords, data.masks, data.attrs]
         # Note that we write aligned and unaligned coords into the same group.
         # Distinction is via an attribute, which is more natural than having
         # 2 separate groups.
         for view_name, view in zip(['coords', 'masks', 'attrs'], views):
             subgroup = group.create_group(view_name)
+            if len(view):
+                _write_reference_attr(subgroup, reference)
             for i, name in enumerate(view):
                 var_group_name = collection_element_name(name, i)
+                content_key = f"{view_name}_{name}"
+                content = contents.get(content_key, None)
+
                 g = VariableIO.write(group=subgroup.create_group(var_group_name),
-                                     var=view[name])
+                                     var=view[name], reference=reference, h5ref=content)
                 if g is None:
                     del subgroup[var_group_name]
                 else:
-                    g.attrs['name'] = str(name)
+                    if isinstance(g, Reference):
+                        contents[content_key] = g if reference else None
+                    # refer to the group by name in case g is a Reference
+                    subgroup[var_group_name].attrs['name'] = str(name)
+
+        return contents
 
     @staticmethod
-    def read(group):
-        _check_scipp_header(group, 'DataArray')
+    def read(group, contents=None, **kwargs):
+        has_contents = contents is not None
+        if not has_contents:
+            contents = {}
+        reference = _check_scipp_header(group, 'DataArray')
         from ..core import DataArray
-        contents = dict()
-        contents['name'] = group.attrs['name']
-        contents['data'] = VariableIO.read(group['data'])
+        parts = dict()
+        parts['name'] = group.attrs['name']
+        parts['data'], contents = VariableIO.read(group['data'], contents=contents, reference=reference, **kwargs)
+
         for category in ['coords', 'masks', 'attrs']:
-            contents[category] = {
-                g.attrs['name']: VariableIO.read(g)
-                for g in group[category].values()
-            }
-        return DataArray(**contents)
+            part = dict()
+            reference = _read_reference_attr(group[category])
+            for g in group[category].values():
+                v, contents = VariableIO.read(g, contents=contents, reference=reference, **kwargs)
+                part[g.attrs['name']] = v
+            parts[category] = part
+        da = DataArray(**parts)
+        return (da, contents) if has_contents else da
 
 
 class DatasetIO:
     @staticmethod
-    def write(group, data):
-        _write_scipp_header(group, 'Dataset')
+    def write(group, data, reference=True, **kwargs):
+        _write_scipp_header(group, 'Dataset', reference=False)  # this group has no referenced data (lower levels might)
         # Slight redundancy here from writing aligned coords for each item,
         # but irrelevant for common case of 1D coords with 2D (or higher)
         # data. The advantage is that we can read individual dataset entries
         # directly as data arrays.
+        contents = {}
         for i, (name, da) in enumerate(data.items()):
-            HDF5IO.write(group.create_group(collection_element_name(name, i)), da)
+            contents = HDF5IO.write(group.create_group(collection_element_name(name, i)), da, reference=reference, contents=contents)
 
     @staticmethod
-    def read(group):
+    def read(group, contents=None, **kwargs):
         _check_scipp_header(group, 'Dataset')
         from ..core import Dataset
-        return Dataset(data={g.attrs['name']: HDF5IO.read(g) for g in group.values()})
+        if contents is None:
+            contents = dict()
+        data = dict()
+        for g in _not_referenced_groups(group.values()):
+            if 'scipp-type' in g.attrs:
+                # protect against attempting to read non-scipp type data
+                data[g.attrs['name']], contents = HDF5IO.read(g, contents=contents, **kwargs)
+        return Dataset(data=data)
 
 
 class HDF5IO:
@@ -283,13 +384,13 @@ class HDF5IO:
         zip(['Variable', 'DataArray', 'Dataset'], [VariableIO, DataArrayIO, DatasetIO]))
 
     @classmethod
-    def write(cls, group, data):
+    def write(cls, group, data, **kwargs):
         name = data.__class__.__name__.replace('View', '')
-        return cls._handlers[name].write(group, data)
+        return cls._handlers[name].write(group, data, **kwargs)
 
     @classmethod
-    def read(cls, group):
-        return cls._handlers[group.attrs['scipp-type']].read(group)
+    def read(cls, group, **kwargs):
+        return cls._handlers[group.attrs['scipp-type']].read(group, **kwargs)
 
 
 def to_hdf5(obj: VariableLike, filename: Union[str, Path]):
