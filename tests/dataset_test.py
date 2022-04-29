@@ -188,27 +188,50 @@ def test_coords_update_from_dict_adds_items():
 def test_coords_update_from_coords_adds_items():
     d = sc.Dataset()
     d.coords['a'] = sc.scalar(1.0)
+    d.coords['b'] = sc.scalar(2.0)
     other = sc.Dataset()
-    other.coords['b'] = sc.scalar(2.0)
+    other.coords['b'] = sc.scalar(3.0)
+    other.coords['c'] = sc.scalar(4.0)
     d.coords.update(other.coords)
     assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(2.0))
+    assert sc.identical(d.coords['b'], sc.scalar(3.0))
+    assert sc.identical(d.coords['c'], sc.scalar(4.0))
 
 
 def test_coords_update_from_sequence_of_tuples_adds_items():
     d = sc.Dataset()
     d.coords['a'] = sc.scalar(1.0)
-    d.coords.update([('b', sc.scalar(2.0))])
+    d.coords['b'] = sc.scalar(2.0)
+    d.coords.update([('b', sc.scalar(3.0))])
+    d.coords.update([('c', sc.scalar(4.0))])
     assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(2.0))
+    assert sc.identical(d.coords['b'], sc.scalar(3.0))
+    assert sc.identical(d.coords['c'], sc.scalar(4.0))
+
+
+def test_coords_update_from_iterable_of_tuples_adds_items():
+
+    def extra_items():
+        yield 'b', sc.scalar(3.0)
+        yield 'c', sc.scalar(4.0)
+
+    d = sc.Dataset()
+    d.coords['a'] = sc.scalar(1.0)
+    d.coords['b'] = sc.scalar(2.0)
+    d.coords.update(extra_items())
+    assert sc.identical(d.coords['a'], sc.scalar(1.0))
+    assert sc.identical(d.coords['b'], sc.scalar(3.0))
+    assert sc.identical(d.coords['c'], sc.scalar(4.0))
 
 
 def test_coords_update_from_kwargs_adds_items():
     d = sc.Dataset()
     d.coords['a'] = sc.scalar(1.0)
-    d.coords.update(b=sc.scalar(2.0))
+    d.coords['b'] = sc.scalar(2.0)
+    d.coords.update(b=sc.scalar(3.0), c=sc.scalar(4.0))
     assert sc.identical(d.coords['a'], sc.scalar(1.0))
-    assert sc.identical(d.coords['b'], sc.scalar(2.0))
+    assert sc.identical(d.coords['b'], sc.scalar(3.0))
+    assert sc.identical(d.coords['c'], sc.scalar(4.0))
 
 
 def test_coords_update_from_kwargs_overwrites_other_dict():
