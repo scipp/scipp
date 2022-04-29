@@ -43,7 +43,7 @@ def from_pandas(pd_obj: Union[pd.DataFrame, pd.Series]) -> VariableLike:
 
     Parameters
     ----------
-    :
+    pd_obj:
         The Dataframe or Series to convert.
 
     Returns
