@@ -231,7 +231,7 @@ def _write_mapping(parent, mapping, override=None):
         override = {}
     for i, name in enumerate(mapping):
         var_group_name = collection_element_name(name, i)
-        if (g := override.get(name)) is not None:
+        if (g := override.get(var_group_name)) is not None:
             parent[var_group_name] = g
         else:
             g = VariableIO.write(group=parent.create_group(var_group_name),
