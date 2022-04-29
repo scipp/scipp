@@ -254,8 +254,6 @@ class DataArrayIO:
             override = {}
         _write_scipp_header(group, 'DataArray')
         group.attrs['name'] = data.name
-        if data.data is None:
-            raise RuntimeError("Cannot write object with invalid data.")
         VariableIO.write(group.create_group('data'), var=data.data)
         views = [data.coords, data.masks, data.attrs]
         # Note that we write aligned and unaligned coords into the same group.
