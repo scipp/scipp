@@ -315,6 +315,15 @@ def test_coords_update_from_kwargs_overwrites_other_dict():
     assert sc.identical(d.coords['b'], sc.scalar(3.0))
 
 
+def test_corods_update_without_args_does_nothing():
+    d = sc.Dataset()
+    d.coords['a'] = sc.scalar(1.0)
+    d.coords['b'] = sc.scalar(2.0)
+    d.coords.update()
+    assert sc.identical(d.coords['a'], sc.scalar(1.0))
+    assert sc.identical(d.coords['b'], sc.scalar(2.0))
+
+
 def test_attrs_update_from_dict_adds_items():
     da = sc.DataArray(sc.scalar(0.0), attrs={'a': sc.scalar(1.0)})
     da.attrs.update({'b': sc.scalar(2.0)})

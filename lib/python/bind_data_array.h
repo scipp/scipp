@@ -83,26 +83,20 @@ void bind_dict_update(pybind11::class_<T, Ignored...> &view, Set &&set_item) {
   view.def(
       "update",
       [set_item](T &self, const py::object &other, const py::kwargs &kwargs) {
+        // Piggyback on dict to implement argument handling.
+        py::dict args;
         if (!other.is_none()) {
-          if (py::hasattr(other, "keys")) {
-            // other is dict-like
-            for (const auto &key : other.attr("keys")()) {
-              set_item(self, cast_to_dict_key<T>(key),
-                       cast_to_dict_value<T>(other[key]));
-            }
-          } else {
-            // other is sequence of tuples
-            for (const auto &item : other) {
-              const auto &t = item.cast<py::tuple>();
-              set_item(self, cast_to_dict_key<T>(t[0]),
-                       cast_to_dict_value<T>(t[1]));
-            }
-          }
+          args.attr("update")(other, **kwargs);
+        } else {
+          // Cannot call dict.update(None, **kwargs) because dict.update
+          // expects either an iterable as the positional argument or nothing
+          // at all (nullptr). But we cannot express 'nothing' here.
+          // The best we can do it pass None, which does not work.
+          args.attr("update")(**kwargs);
         }
 
-        for (const auto &item : kwargs) {
-          set_item(self, cast_to_dict_key<T>(item.first),
-                   cast_to_dict_value<T>(item.second));
+        for (const auto &[key, val] : args) {
+          set_item(self, cast_to_dict_key<T>(key), cast_to_dict_value<T>(val));
         }
       },
       py::arg("other") = py::none(), py::pos_only(),
