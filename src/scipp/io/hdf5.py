@@ -229,7 +229,7 @@ class VariableIO:
 class DataArrayIO:
 
     @staticmethod
-    def write(group, data):
+    def write(group, data, shared_metadata=None):
         _write_scipp_header(group, 'DataArray')
         group.attrs['name'] = data.name
         if data.data is None:
@@ -243,12 +243,16 @@ class DataArrayIO:
             subgroup = group.create_group(view_name)
             for i, name in enumerate(view):
                 var_group_name = collection_element_name(name, i)
-                g = VariableIO.write(group=subgroup.create_group(var_group_name),
-                                     var=view[name])
-                if g is None:
-                    del subgroup[var_group_name]
+                shared = shared_metadata is not None and view_name in shared_metadata
+                if shared and (g := shared_metadata[view_name].get(name)) is not None:
+                    subgroup[var_group_name] = g
                 else:
-                    g.attrs['name'] = str(name)
+                    g = VariableIO.write(group=subgroup.create_group(var_group_name),
+                                         var=view[name])
+                    if g is None:
+                        del subgroup[var_group_name]
+                    else:
+                        g.attrs['name'] = str(name)
 
     @staticmethod
     def read(group):
@@ -274,14 +278,30 @@ class DatasetIO:
         # but irrelevant for common case of 1D coords with 2D (or higher)
         # data. The advantage is that we can read individual dataset entries
         # directly as data arrays.
+        coords = group.create_group('coords')
+        for i, name in enumerate(data.coords):
+            var_group_name = collection_element_name(name, i)
+            g = VariableIO.write(group=coords.create_group(var_group_name),
+                                 var=data.coords[name])
+            if g is None:
+                del coords[var_group_name]
+            else:
+                g.attrs['name'] = str(name)
+
         for i, (name, da) in enumerate(data.items()):
-            HDF5IO.write(group.create_group(collection_element_name(name, i)), da)
+            HDF5IO.write(group.create_group(collection_element_name(name, i)),
+                         da,
+                         shared_metadata={'coords': coords})
 
     @staticmethod
     def read(group):
         _check_scipp_header(group, 'Dataset')
         from ..core import Dataset
-        return Dataset(data={g.attrs['name']: HDF5IO.read(g) for g in group.values()})
+        return Dataset(
+            data={
+                entry.attrs['name']: HDF5IO.read(entry)
+                for name, entry in group.items() if name.startswith('elem_')
+            })
 
 
 class HDF5IO:
@@ -289,9 +309,9 @@ class HDF5IO:
         zip(['Variable', 'DataArray', 'Dataset'], [VariableIO, DataArrayIO, DatasetIO]))
 
     @classmethod
-    def write(cls, group, data):
+    def write(cls, group, data, **kwargs):
         name = data.__class__.__name__.replace('View', '')
-        return cls._handlers[name].write(group, data)
+        return cls._handlers[name].write(group, data, **kwargs)
 
     @classmethod
     def read(cls, group):
