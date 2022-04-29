@@ -91,7 +91,22 @@ void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
               self.set(key, std::move(val));
             }
           },
-          py::arg("other") = py::none(), py::pos_only());
+          py::arg("other") = py::none(), py::pos_only(),
+          R"doc(Update metadata from dict-like or iterable.
+
+If ``other`` has a .keys() method, then update does:
+``for k in other.keys(): self[k] = other[k]``.
+
+If ``other`` is given but does not have a .keys() method, then update does:
+``for k, v in other: self[k] = v``.
+
+In either case, this is followed by:
+``for k in kwargs: self[k] = other[k]``.
+
+See Also
+--------
+dict.update
+)doc");
 }
 
 template <class T, class... Ignored>
