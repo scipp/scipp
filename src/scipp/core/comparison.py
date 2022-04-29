@@ -269,9 +269,12 @@ def allclose(x, y, rtol=None, atol=None, equal_nan=False) -> True:
     rtol:
         Tolerance value relative (to y).
         Can be a scalar or non-scalar.
+        Cannot have variances.
         Defaults to scalar 1e-5 if unset.
     atol:
-        Tolerance value absolute. Can be a scalar or non-scalar.
+        Tolerance value absolute.
+        Can be a scalar or non-scalar.
+        Cannot have variances.
         Defaults to scalar 1e-8 if unset and takes units from y arg.
     equal_nan:
         If true, non-finite values at the same index in (x, y) are treated as equal.

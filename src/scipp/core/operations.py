@@ -122,6 +122,11 @@ def sort(x: VariableLikeType,
     -------
     : scipp.typing.VariableLike
         The sorted equivalent of the input with the same type.
+
+    Raises
+    ------
+    scipp.DimensionError
+        If the key is a Variable that does not have exactly 1 dimension.
     """
     return _call_cpp_func(_cpp.sort, x, key, order)
 
@@ -192,7 +197,7 @@ def rebin(x: _ContainerWithCoords, dim: str,
           bins: _cpp.Variable) -> _ContainerWithCoords:
     """Rebin a dimension of a data array or dataset.
 
-    The input must contain bin edges for the given dimension `dim`.
+    The coordinate of the input for the given dimension `dim` must contain bin edges.
 
     If the input has masks that contain the dimension being rebinned then those
     masks are applied to the data before rebinning. That is, masked values are treated
@@ -282,6 +287,13 @@ def to(
     -------
     : Same as input
         New object with specified dtype and unit.
+
+    Raises
+    ------
+    scipp.DTypeError
+        If the input cannot be converted to the given dtype.
+    scipp.UnitError
+        If the input cannot be converted to the given unit.
 
     See Also
     --------

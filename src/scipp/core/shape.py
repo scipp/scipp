@@ -131,6 +131,11 @@ def fold(x: VariableLikeType,
          shape: Optional[Sequence[int]] = None) -> VariableLikeType:
     """Fold a single dimension of a variable or data array into multiple dims.
 
+    One and only one of these sets of arguments must be given:
+
+    - ``dims`` and ``shape``
+    - ``sizes``
+
     Parameters
     ----------
     x: scipp.typing.VariableLike

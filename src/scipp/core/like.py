@@ -46,6 +46,8 @@ def zeros_like(obj: VariableLikeType, /) -> VariableLikeType:
         Create an object initialized with ones.
     scipp.full_like:
         Create an object filled with a given value.
+    scipp.empty_like:
+        Create an object with uninitialized elements.
     """
     new_values = zeros(dims=obj.dims,
                        shape=obj.shape,
@@ -81,6 +83,8 @@ def ones_like(obj: VariableLikeType, /) -> VariableLikeType:
         Create an object initialized with zeros.
     scipp.full_like:
         Create an object filled with a given value.
+    scipp.empty_like:
+        Create an object with uninitialized elements.
     """
     new_values = ones(dims=obj.dims,
                       shape=obj.shape,
@@ -165,6 +169,8 @@ def full_like(obj: VariableLikeType,
         Create an object initialized with zeros.
     scipp.ones_like:
         Create an object initialized with ones.
+    scipp.empty_like:
+        Create an object with uninitialized elements.
     """
     new_values = full(dims=obj.dims,
                       shape=obj.shape,
