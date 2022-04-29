@@ -7,4 +7,5 @@ dependencies:
   - cppcheck
   - gxx_linux-64 11.1.*
   - ninja
+  - pandoc
   - tox
