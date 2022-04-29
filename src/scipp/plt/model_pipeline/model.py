@@ -5,9 +5,10 @@ from ...utils.graph import Graph
 
 class PipelineNode:
 
-    def __init__(self, name):
+    def __init__(self, name, func):
         self.name = name  # TODO do we need the name?
         self.dependency = None
+        self.func = func
 
     @property
     def dependencies(self) -> Tuple[str]:
@@ -19,8 +20,10 @@ class PipelineNode:
 
 class PipelineGraph(Graph):
 
-    def __init__(self):
-        super().__init__({})
+    def __init__(self, da):
+        root_node = PipelineNode(name='root', func=lambda: da)
+        super().__init__({'root': root_node})
+        # super().__init__({})
 
     def insert(self, name: str, node: PipelineNode, after: str):
         assert after in self.nodes()
@@ -36,6 +39,14 @@ class PipelineGraph(Graph):
             self[node].send_notification('dummy message')
             for child in self.children_of(node):
                 depth_first_stack.append(child)
+
+    def request_data(self, name: str):
+        pipeline = []
+        node = self[name]
+        while node.dependency is not None:
+            pipeline.append(node.func)
+            node = self[node.dependency]
+        return pipeline[::-1]
 
     def end(self) -> str:
         ends = []

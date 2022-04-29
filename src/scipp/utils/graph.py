@@ -7,12 +7,14 @@ from typing import Dict, Iterable, Protocol, Tuple
 
 
 class Node(Protocol):
+
     @property
     def dependencies(self) -> Tuple[str]:
         ...
 
 
 class Graph:
+
     def __init__(self, nodes: Dict[str, Node]):
         self._nodes: Dict[str, Node] = nodes
 

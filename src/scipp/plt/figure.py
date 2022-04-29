@@ -41,7 +41,7 @@ class Figure:
                  vmax=None,
                  **kwargs):
 
-        self._models = None
+        self._models = {}
         # self._notifications = {"data": self.update}
 
         self._fig = None
@@ -111,8 +111,8 @@ class Figure:
         self._legend = False
         self._new_artist = False
 
-    def register_models(self, models):
-        self._models = models
+    def add_model_node(self, key, node):
+        self._model_nodes[key] = node
 
     def add_notification(self, key, func):
         self._notifications[key] = partial(func, view=self)
@@ -238,12 +238,15 @@ class Figure:
         """
         self._fig.savefig(filename, bbox_inches="tight")
 
-    def notify(self, change):
+    def notify(self, message):
         # if change["type"] in self._notifications:
         #     self._notifications[change["type"]](change=change)
-        if change["id"] == "data":
-            self.update(new_values=self._models.get_data(change["name"]),
-                        key=change["name"])
+        # if change["id"] == "data":
+        #     self.update(new_values=self._models.get_data(change["name"]),
+        #                 key=change["name"])
+        name = message["name"]
+        new_values = self._model_nodes[name].request_data()
+        self.update(new_values=new_values, key=name)
 
     # def _update_on_notify(self, change):
     #     self.update(new_values=self._models.get_data(change["name"]),
