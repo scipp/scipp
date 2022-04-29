@@ -87,4 +87,4 @@ jobs:
         if: ${{ contains(matrix.os, 'ubuntu') }}
         with:
           name: DocumentationHTML
-          path: build/html/
+          path: html/
