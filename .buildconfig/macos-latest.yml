@@ -5,4 +5,6 @@ dependencies:
   - cmake
   - conan>=1.45.0
   - ninja
+  - tbb=2020.2.*
+  - tbb-devel=2020.2.*
   - tox

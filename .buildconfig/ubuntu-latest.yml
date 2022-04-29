@@ -8,4 +8,6 @@ dependencies:
   - gxx_linux-64 11.1.*
   - ninja
   - pandoc
+  - tbb=2020.2.*
+  - tbb-devel=2020.2.*
   - tox

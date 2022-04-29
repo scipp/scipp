@@ -39,7 +39,7 @@ include(${CMAKE_CURRENT_BINARY_DIR}/conan.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_BINARY_DIR})
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
-#if(SKBUILD)
+if(SKBUILD)
   # Conda builds install tbb via conda, not conan
   set(CONAN_ONETBB onetbb/2021.3.0)
   # The deploy generator is used to install dependencies into a know location.
@@ -48,7 +48,7 @@ list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR})
   # OSX cmake finds the files anyway, based on the target's rpath.
   set(CONAN_DEPLOY deploy)
   set(CONAN_RUNTIME_DEPENDENCIES "tbb")
-  #endif()
+endif()
 
 conan_cmake_configure(
   REQUIRES
