@@ -113,6 +113,23 @@ class Coords():
         """
         view on self's keys
         """
+    def update(self, other: object = None, /, **kwargs) -> None: 
+        """
+        Update metadata from dict-like or iterable.
+
+        If ``other`` has a .keys() method, then update does:
+        ``for k in other.keys(): self[k] = other[k]``.
+
+        If ``other`` is given but does not have a .keys() method, then update does:
+        ``for k, v in other: self[k] = v``.
+
+        In either case, this is followed by:
+        ``for k in kwargs: self[k] = other[k]``.
+
+        See Also
+        --------
+        dict.update
+        """
     def values(self) -> Coords_values_view: 
         """
         view on self's values
@@ -552,11 +569,11 @@ class DataArray():
         :type: tuple
         """
     @property
-    def sizes(self) -> typing.Dict[str, int]:
+    def sizes(self) -> dict:
         """
         dict mapping dimension labels to dimension sizes (read-only).
 
-        :type: typing.Dict[str, int]
+        :type: dict
         """
     @property
     def unit(self) -> object:
@@ -860,11 +877,11 @@ class Dataset():
         :type: tuple
         """
     @property
-    def sizes(self) -> typing.Dict[str, int]:
+    def sizes(self) -> dict:
         """
         dict mapping dimension labels to dimension sizes (read-only).
 
-        :type: typing.Dict[str, int]
+        :type: dict
         """
     __array_ufunc__ = None
     pass
@@ -1312,6 +1329,23 @@ class Masks():
         """
         view on self's keys
         """
+    def update(self, other: object = None, /, **kwargs) -> None: 
+        """
+        Update metadata from dict-like or iterable.
+
+        If ``other`` has a .keys() method, then update does:
+        ``for k in other.keys(): self[k] = other[k]``.
+
+        If ``other`` is given but does not have a .keys() method, then update does:
+        ``for k, v in other: self[k] = v``.
+
+        In either case, this is followed by:
+        ``for k in kwargs: self[k] = other[k]``.
+
+        See Also
+        --------
+        dict.update
+        """
     def values(self) -> Masks_values_view: 
         """
         view on self's values
@@ -1691,11 +1725,11 @@ class Variable():
         :type: tuple
         """
     @property
-    def sizes(self) -> typing.Dict[str, int]:
+    def sizes(self) -> dict:
         """
         dict mapping dimension labels to dimension sizes (read-only).
 
-        :type: typing.Dict[str, int]
+        :type: dict
         """
     @property
     def unit(self) -> object:
