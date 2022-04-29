@@ -283,14 +283,9 @@ class DatasetIO:
     @staticmethod
     def write(group, data):
         _write_scipp_header(group, 'Dataset')
-        # Slight redundancy here from writing aligned coords for each item,
-        # but irrelevant for common case of 1D coords with 2D (or higher)
-        # data. The advantage is that we can read individual dataset entries
-        # directly as data arrays.
         coords = group.create_group('coords')
         _write_mapping(coords, data.coords)
         entries = group.create_group('entries')
-
         for i, (name, da) in enumerate(data.items()):
             HDF5IO.write(entries.create_group(collection_element_name(name, i)),
                          da,
@@ -301,8 +296,9 @@ class DatasetIO:
         _check_scipp_header(group, 'Dataset')
         from ..core import Dataset
         coords = _read_mapping(group['coords'])
-        return Dataset(
-            data=_read_mapping(group['entries'], override={'coords': coords}))
+        return Dataset(coords=coords,
+                       data=_read_mapping(group['entries'], override={'coords':
+                                                                      coords}))
 
 
 class HDF5IO:
