@@ -316,6 +316,20 @@ def test_coords_update_from_kwargs_overwrites_other_dict():
     assert sc.identical(d.coords['b'], sc.scalar(3.0))
 
 
+def test_attrs_update_from_dict_adds_items():
+    da = sc.DataArray(sc.scalar(0.0), attrs={'a': sc.scalar(1.0)})
+    da.attrs.update({'b': sc.scalar(2.0)})
+    assert sc.identical(da.attrs['a'], sc.scalar(1.0))
+    assert sc.identical(da.attrs['b'], sc.scalar(2.0))
+
+
+def test_masks_update_from_dict_adds_items():
+    da = sc.DataArray(sc.scalar(0.0), masks={'a': sc.scalar(True)})
+    da.masks.update({'b': sc.scalar(False)})
+    assert sc.identical(da.masks['a'], sc.scalar(True))
+    assert sc.identical(da.masks['b'], sc.scalar(False))
+
+
 def test_slice_item():
     d = sc.Dataset(coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'], values=np.arange(4))
