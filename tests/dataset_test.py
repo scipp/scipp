@@ -123,6 +123,81 @@ def test_del_item_missing():
         del d['not an item']
 
 
+def test_update_from_dict_adds_items():
+    a = sc.DataArray(sc.scalar(1.0))
+    b = sc.DataArray(sc.scalar(2.0))
+    b2 = sc.DataArray(sc.scalar(3.0))
+    c = sc.DataArray(sc.scalar(4.0))
+    d = sc.Dataset({'a': a, 'b': b})
+    d.update({'b': b2, 'c': c})
+    assert sc.identical(d['a'], a)
+    assert sc.identical(d['b'], b2)
+    assert sc.identical(d['c'], c)
+
+
+def test_update_from_dataset_adds_items():
+    a = sc.DataArray(sc.scalar(1.0))
+    b = sc.DataArray(sc.scalar(2.0))
+    b2 = sc.DataArray(sc.scalar(3.0))
+    c = sc.DataArray(sc.scalar(4.0))
+    d = sc.Dataset({'a': a, 'b': b})
+    d.update(sc.Dataset({'b': b2, 'c': c}))
+    assert sc.identical(d['a'], a)
+    assert sc.identical(d['b'], b2)
+    assert sc.identical(d['c'], c)
+
+
+def test_update_from_sequence_of_tuples_adds_items():
+    a = sc.DataArray(sc.scalar(1.0))
+    b = sc.DataArray(sc.scalar(2.0))
+    b2 = sc.DataArray(sc.scalar(3.0))
+    c = sc.DataArray(sc.scalar(4.0))
+    d = sc.Dataset({'a': a, 'b': b})
+    d.update([('b', b2), ('c', c)])
+    assert sc.identical(d['a'], a)
+    assert sc.identical(d['b'], b2)
+    assert sc.identical(d['c'], c)
+
+
+def test_update_from_iterable_of_tuples_adds_items():
+    a = sc.DataArray(sc.scalar(1.0))
+    b = sc.DataArray(sc.scalar(2.0))
+    b2 = sc.DataArray(sc.scalar(3.0))
+    c = sc.DataArray(sc.scalar(4.0))
+
+    def extra_items():
+        yield 'b', b2
+        yield 'c', c
+
+    d = sc.Dataset({'a': a, 'b': b})
+    d.update(extra_items())
+    assert sc.identical(d['a'], a)
+    assert sc.identical(d['b'], b2)
+    assert sc.identical(d['c'], c)
+
+
+def test_update_from_kwargs_adds_items():
+    a = sc.DataArray(sc.scalar(1.0))
+    b = sc.DataArray(sc.scalar(2.0))
+    b2 = sc.DataArray(sc.scalar(3.0))
+    c = sc.DataArray(sc.scalar(4.0))
+    d = sc.Dataset({'a': a, 'b': b})
+    d.update(b=b2, c=c)
+    assert sc.identical(d['a'], a)
+    assert sc.identical(d['b'], b2)
+    assert sc.identical(d['c'], c)
+
+
+def test_update_from_kwargs_overwrites_other_dict():
+    a = sc.DataArray(sc.scalar(1.0))
+    b = sc.DataArray(sc.scalar(2.0))
+    b2 = sc.DataArray(sc.scalar(3.0))
+    d = sc.Dataset({'a': a})
+    d.update({'b': b}, b=b2)
+    assert sc.identical(d['a'], a)
+    assert sc.identical(d['b'], b2)
+
+
 def test_ipython_key_completion():
     var = sc.Variable(dims=['x'], values=np.arange(4))
     da = sc.DataArray(data=var, coords={'x': var, 'aux': var})
@@ -202,8 +277,7 @@ def test_coords_update_from_sequence_of_tuples_adds_items():
     d = sc.Dataset()
     d.coords['a'] = sc.scalar(1.0)
     d.coords['b'] = sc.scalar(2.0)
-    d.coords.update([('b', sc.scalar(3.0))])
-    d.coords.update([('c', sc.scalar(4.0))])
+    d.coords.update([('b', sc.scalar(3.0)), ('c', sc.scalar(4.0))])
     assert sc.identical(d.coords['a'], sc.scalar(1.0))
     assert sc.identical(d.coords['b'], sc.scalar(3.0))
     assert sc.identical(d.coords['c'], sc.scalar(4.0))

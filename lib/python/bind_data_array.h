@@ -59,40 +59,54 @@ void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
       .def(
           "values", [](T &self) { return values_view(self); },
           py::keep_alive<0, 1>(), R"(view on self's values)")
-      .def("__contains__",
-           [](const T &self, const std::string &key) {
-             return self.contains(typename T::key_type{key});
-           })
-      .def(
-          "update",
-          [](T &self, const py::object &other, const py::kwargs &kwargs) {
-            if (!other.is_none()) {
-              if (py::hasattr(other, "keys")) {
-                // other is dict-like
-                for (const auto &key : other.attr("keys")()) {
-                  self.set(typename T::key_type{key.cast<std::string>()},
-                           other[key].cast<Variable>());
-                }
-              } else {
-                // other is sequence of tuples
-                for (const auto &item : other) {
-                  const auto &t = item.cast<py::tuple>();
-                  const auto key =
-                      typename T::key_type{t[0].cast<std::string>()};
-                  self.set(key, t[1].cast<Variable>());
-                }
-              }
-            }
+      .def("__contains__", [](const T &self, const std::string &key) {
+        return self.contains(typename T::key_type{key});
+      });
+}
 
-            for (const auto &item : kwargs) {
-              const auto key =
-                  typename T::key_type{item.first.cast<std::string>()};
-              auto val = item.second.cast<Variable>();
-              self.set(key, std::move(val));
+template <class D> auto cast_to_dict_key(const py::handle &obj) {
+  using key_type = typename D::key_type;
+  if constexpr (std::is_same_v<key_type, std::string>) {
+    return obj.cast<std::string>();
+  } else {
+    return key_type{obj.cast<std::string>()};
+  }
+}
+
+template <class D> auto cast_to_dict_value(const py::handle &obj) {
+  using val_type = typename D::mapped_type;
+  return obj.cast<val_type>();
+}
+
+template <class T, class... Ignored, class Set>
+void bind_dict_update(pybind11::class_<T, Ignored...> &view, Set &&set_item) {
+  view.def(
+      "update",
+      [set_item](T &self, const py::object &other, const py::kwargs &kwargs) {
+        if (!other.is_none()) {
+          if (py::hasattr(other, "keys")) {
+            // other is dict-like
+            for (const auto &key : other.attr("keys")()) {
+              set_item(self, cast_to_dict_key<T>(key),
+                       cast_to_dict_value<T>(other[key]));
             }
-          },
-          py::arg("other") = py::none(), py::pos_only(),
-          R"doc(Update metadata from dict-like or iterable.
+          } else {
+            // other is sequence of tuples
+            for (const auto &item : other) {
+              const auto &t = item.cast<py::tuple>();
+              set_item(self, cast_to_dict_key<T>(t[0]),
+                       cast_to_dict_value<T>(t[1]));
+            }
+          }
+        }
+
+        for (const auto &item : kwargs) {
+          set_item(self, cast_to_dict_key<T>(item.first),
+                   cast_to_dict_value<T>(item.second));
+        }
+      },
+      py::arg("other") = py::none(), py::pos_only(),
+      R"doc(Update items from dict-like or iterable.
 
 If ``other`` has a .keys() method, then update does:
 ``for k in other.keys(): self[k] = other[k]``.
@@ -171,6 +185,9 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name,
   py::class_<T> view(m, name.c_str(), docs.c_str());
   bind_common_mutable_view_operators<T>(view);
   bind_inequality_to_operator<T>(view);
+  bind_dict_update(view, [](T &self, const auto &key, const Variable &value) {
+    self.set(key, value);
+  });
   bind_pop(view);
   bind_is_edges(view);
   view.def(

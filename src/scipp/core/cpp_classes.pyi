@@ -115,7 +115,7 @@ class Coords():
         """
     def update(self, other: object = None, /, **kwargs) -> None: 
         """
-        Update metadata from dict-like or iterable.
+        Update items from dict-like or iterable.
 
         If ``other`` has a .keys() method, then update does:
         ``for k in other.keys(): self[k] = other[k]``.
@@ -821,6 +821,23 @@ class Dataset():
         Rename dimensions.
         """
     def underlying_size(self) -> int: ...
+    def update(self, other: object = None, /, **kwargs) -> None: 
+        """
+        Update items from dict-like or iterable.
+
+        If ``other`` has a .keys() method, then update does:
+        ``for k in other.keys(): self[k] = other[k]``.
+
+        If ``other`` is given but does not have a .keys() method, then update does:
+        ``for k, v in other: self[k] = v``.
+
+        In either case, this is followed by:
+        ``for k in kwargs: self[k] = other[k]``.
+
+        See Also
+        --------
+        dict.update
+        """
     def values(self) -> Dataset_values_view: 
         """
         view on self's values
@@ -1328,23 +1345,6 @@ class Masks():
     def keys(self) -> Masks_keys_view: 
         """
         view on self's keys
-        """
-    def update(self, other: object = None, /, **kwargs) -> None: 
-        """
-        Update metadata from dict-like or iterable.
-
-        If ``other`` has a .keys() method, then update does:
-        ``for k in other.keys(): self[k] = other[k]``.
-
-        If ``other`` is given but does not have a .keys() method, then update does:
-        ``for k, v in other: self[k] = v``.
-
-        In either case, this is followed by:
-        ``for k in kwargs: self[k] = other[k]``.
-
-        See Also
-        --------
-        dict.update
         """
     def values(self) -> Masks_values_view: 
         """
