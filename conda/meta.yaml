@@ -36,12 +36,12 @@ requirements:
     - python
   host:
     - python
-    - tbb-devel=2020.2.*
+    - tbb-devel
   run:
     - confuse
     - numpy
     - pyyaml
-    - tbb=2020.2.*
+    - tbb
     - graphlib-backport # for python < 3.9
 
 # Only the cmake-package-test works when cross compiling.
@@ -66,7 +66,7 @@ test:
     - pythreejs
     - python-graphviz
     - scipy>=1.7.0
-    - tbb-devel=2020.2.*
+    - tbb-devel
     - xarray
   files:
     - cmake-package-test/
